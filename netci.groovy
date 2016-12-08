@@ -11,13 +11,13 @@ def branch = GithubBranchName
         if (os == 'Windows_NT') {
             newJob.with {
                 steps {
-                    batchFile(".\build.cmd")
+                    batchFile("build.cmd")
                 }
             }
         } else if (os == 'Ubuntu') {
             newJob.with {
                 steps {
-                    shell("\build.sh")
+                    shell("build.sh")
                 }
             }
         }
