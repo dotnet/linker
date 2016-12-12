@@ -4,13 +4,6 @@ def project = GithubProject
 def branch = GithubBranchName
 
 def static setRecursiveSubmoduleOption(def job) {
-    job.with {
-        configure {
-            it / 'scm' / 'extensions' << 'hudson.plugins.git.extensions.impl.SubmoduleOption' {
-                recursiveSubmodules(true)
-            }
-        }
-    }
 }
 
 [true, false].each { isPR ->
