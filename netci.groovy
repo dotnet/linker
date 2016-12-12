@@ -17,3 +17,5 @@ def branch = GithubBranchName
         }
     }
 }
+
+out.println("done generating jobs!")
