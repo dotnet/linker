@@ -3,8 +3,6 @@ import jobs.generation.Utilities;
 def project = GithubProject
 def branch = GithubBranchName
 
-def static setRecursiveSubmoduleOption(def job) {
-}
 
 [true, false].each { isPR ->
     ['Windows_NT'].each { os ->
@@ -28,7 +26,6 @@ def static setRecursiveSubmoduleOption(def job) {
         Utilities.setMachineAffinity(newJob, os, 'latest-or-auto')
 
         Utilities.standardJobSetup(newJob, project, isPR, "*/${branch}")
-        setRecursiveSubmoduleOption(newJob)
 
         if (isPR) {
             Utilities.addGithubPRTriggerForBranch(newJob, branch, "${os} Build")
