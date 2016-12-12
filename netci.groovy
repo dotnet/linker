@@ -7,19 +7,9 @@ def branch = GithubBranchName
 [true, false].each { isPR ->
     ['Windows_NT'].each { os ->
 
-        def newJob = job(Utilities.getFullJobName(project, os.toLowerCase(), isPR)) {}
-
-        if (os == 'Windows_NT') {
-            newJob.with {
-                steps {
-                    batchFile("build.cmd")
-                }
-            }
-        } else if (os == 'Ubuntu') {
-            newJob.with {
-                steps {
-                    shell("build.sh")
-                }
+        def newJob = job(Utilities.getFullJobName(project, os.toLowerCase(), isPR)) {
+            steps {
+                batchFile("build.cmd")
             }
         }
     }
