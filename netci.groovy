@@ -7,9 +7,12 @@ def branch = GithubBranchName
 [true, false].each { isPR ->
     ['Windows_NT'].each { os ->
 
-        def newJob = job(Utilities.getFullJobName(project, os.toLowerCase(), isPR)) {
+        def jobName = Utilities.getFullJobName(project, os.toLowerCase(), isPR)
+        out.println("job name: ${jobName}")
+        
+        def newJob = job(jobName) {
             steps {
-                batchFile("build.cmd")
+                batchFile('build.cmd')
             }
         }
     }
