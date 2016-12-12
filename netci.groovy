@@ -9,6 +9,7 @@ def branch = GithubBranchName
 
         def newJob = job(Utilities.getFullJobName(project, os.toLowerCase(), isPR)) {
             steps {
+                batchFile("build.cmd")
             }
         }
     }
