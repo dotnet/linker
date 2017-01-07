@@ -117,6 +117,9 @@ namespace Mono.Linker {
 					case 'o':
 						context.OutputDirectory = GetParam ();
 						break;
+					case 'f':
+						context.FullAssemblyOnlyRemoval = true;
+						break;
 					case 'c':
 						context.CoreAction = ParseAssemblyAction (GetParam ());
 						break;
@@ -289,6 +292,8 @@ namespace Mono.Linker {
 			Console.WriteLine ("   --about     About the {0}", _linker);
 			Console.WriteLine ("   --version   Print the version number of the {0}", _linker);
 			Console.WriteLine ("   -out        Specify the output directory, default to `output'");
+			Console.WriteLine ("   -f          Remove only full assemblies when they are unused;");
+			Console.WriteLine ("                 keep partially used assemblies intact");
 			Console.WriteLine ("   -c          Action on the core assemblies, skip, copy or link, default to skip");
 			Console.WriteLine ("   -p          Action per assembly");
 			Console.WriteLine ("   -s          Add a new step to the pipeline.");
