@@ -46,7 +46,7 @@ namespace Mono.Linker {
 		bool _linkSymbols;
 		bool _keepTypeForwarderOnlyAssemblies;
 
-		AssemblyResolver _resolver;
+		ILinkerAssemblyResolver _resolver;
 
 		ReaderParameters _readerParameters;
 		ISymbolReaderProvider _symbolReaderProvider;
@@ -92,7 +92,7 @@ namespace Mono.Linker {
 			get { return _actions; }
 		}
 
-		public AssemblyResolver Resolver {
+		public ILinkerAssemblyResolver Resolver {
 			get { return _resolver; }
 		}
 
@@ -117,7 +117,7 @@ namespace Mono.Linker {
 		{
 		}
 
-		public LinkContext(Pipeline pipeline, AssemblyResolver resolver)
+		public LinkContext(Pipeline pipeline, ILinkerAssemblyResolver resolver)
 			: this(pipeline, resolver, new ReaderParameters
 			{
 				AssemblyResolver = resolver,
@@ -125,7 +125,7 @@ namespace Mono.Linker {
 		{
 		}
 
-		public LinkContext (Pipeline pipeline, AssemblyResolver resolver, ReaderParameters readerParameters)
+		public LinkContext (Pipeline pipeline, ILinkerAssemblyResolver resolver, ReaderParameters readerParameters)
 		{
 			_pipeline = pipeline;
 			_resolver = resolver;
