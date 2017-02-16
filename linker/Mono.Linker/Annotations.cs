@@ -56,6 +56,18 @@ namespace Mono.Linker {
 		System.Xml.XmlWriter writer;
 		GZipStream zipStream;
 
+		public void Clear ()
+		{
+			method_actions.Clear ();
+			marked.RemoveWhere (m => m is MethodReference);
+			processed.Clear ();
+			preserved_types.Clear ();
+			preserved_methods.Clear ();
+			public_api.Clear ();
+			override_methods.Clear ();
+			base_methods.Clear ();
+		}
+
 		public void PrepareDependenciesDump ()
 		{
 			PrepareDependenciesDump ("linker-dependencies.xml.gz");
