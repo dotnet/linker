@@ -184,7 +184,7 @@ namespace Mono.Linker {
 			}
 		}
 
-		bool SeenFirstTime (AssemblyDefinition assembly)
+		protected bool SeenFirstTime (AssemblyDefinition assembly)
 		{
 			return !_annotations.HasAction (assembly);
 		}
@@ -222,7 +222,7 @@ namespace Mono.Linker {
 			return reference;
 		}
 
-		internal void SetAction (AssemblyDefinition assembly, AssemblyAction defaultAction)
+		protected void SetAction (AssemblyDefinition assembly, AssemblyAction defaultAction)
 		{
 			AssemblyAction action = defaultAction;
 
