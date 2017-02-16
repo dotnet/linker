@@ -172,7 +172,7 @@ namespace Mono.Linker {
 			p.Process (context);
 		}
 
-		static void AddCustomStep (Pipeline pipeline, string arg)
+		protected void AddCustomStep (Pipeline pipeline, string arg)
 		{
 			int pos = arg.IndexOf (":");
 			if (pos == -1) {
@@ -233,7 +233,7 @@ namespace Mono.Linker {
 			return (string []) lines.ToArray (typeof (string));
 		}
 
-		static I18nAssemblies ParseI18n (string str)
+		protected I18nAssemblies ParseI18n (string str)
 		{
 			I18nAssemblies assemblies = I18nAssemblies.None;
 			string [] parts = str.Split (',');
