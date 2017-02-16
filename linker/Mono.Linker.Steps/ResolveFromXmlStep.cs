@@ -404,7 +404,7 @@ namespace Mono.Linker.Steps {
 
 		static void ProcessReferences (AssemblyDefinition assembly, LinkContext context)
 		{
-			foreach (AssemblyNameReference name in assembly.MainModule.AssemblyReferences) {
+			foreach (AssemblyNameReference name in context.DependenciesFor (assembly)) {
 				try {
 					context.Resolve (name);
 				}
