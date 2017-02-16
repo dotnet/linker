@@ -232,9 +232,10 @@ namespace Mono.Linker.Steps {
 
 			TypeReference constructor_type = ca.Constructor.DeclaringType;
 			TypeDefinition type = constructor_type.Resolve ();
-			if (type == null) {
+
+			if (!ContinueWith (type, constructor_type)) {
 				Annotations.Pop ();
-				throw new ResolutionException (constructor_type);
+				return;
 			}
 
 			MarkCustomAttributeProperties (ca, type);
@@ -519,8 +520,8 @@ namespace Mono.Linker.Steps {
 
 			TypeDefinition type = ResolveTypeDefinition (reference);
 
-			if (type == null)
-				throw new ResolutionException (reference);
+			if (!ContinueWith (type, reference))
+				return null;
 
 			if (CheckProcessed (type))
 				return null;
@@ -958,9 +959,9 @@ namespace Mono.Linker.Steps {
 
 			MethodDefinition method = ResolveMethodDefinition (reference);
 
-			if (method == null) {
+			if (!ContinueWith (method, reference)) {
 				Annotations.Pop ();
-				throw new ResolutionException (reference);
+				return null;
 			}
 
 			if (Annotations.GetAction (method) == MethodAction.Nothing)
@@ -1197,6 +1198,24 @@ namespace Mono.Linker.Steps {
 			default:
 				break;
 			}
+		}
+
+		protected virtual bool ContinueWith(TypeDefinition type, TypeReference reference)
+		{
+			if (type == null) {
+				throw new ResolutionException (reference);
+			}
+
+			return true;
+		}
+
+		protected virtual bool ContinueWith(MethodDefinition method, MethodReference reference)
+		{
+			if (method == null) {
+				throw new ResolutionException (reference);
+			}
+
+			return true;
 		}
 	}
 }
