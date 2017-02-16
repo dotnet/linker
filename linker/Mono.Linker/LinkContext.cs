@@ -116,17 +116,18 @@ namespace Mono.Linker {
 			: this(pipeline, resolver, new ReaderParameters
 			{
 				AssemblyResolver = resolver,
-			})
+			},
+			new AnnotationStore ())
 		{
 		}
 
-		public LinkContext (Pipeline pipeline, AssemblyResolver resolver, ReaderParameters readerParameters)
+		public LinkContext (Pipeline pipeline, ILinkerAssemblyResolver resolver, ReaderParameters readerParameters, AnnotationStore annotations)
 		{
 			_pipeline = pipeline;
 			_resolver = resolver;
 			_actions = new Hashtable ();
 			_parameters = new Hashtable ();
-			_annotations = new AnnotationStore ();
+			_annotations = annotations;
 			_readerParameters = readerParameters;
 		}
 
@@ -189,7 +190,7 @@ namespace Mono.Linker {
 			return !_annotations.HasAction (assembly);
 		}
 
-		public void SafeReadSymbols (AssemblyDefinition assembly)
+		public virtual void SafeReadSymbols (AssemblyDefinition assembly)
 		{
 			if (!_linkSymbols)
 				return;
