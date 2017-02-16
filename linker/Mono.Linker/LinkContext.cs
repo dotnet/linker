@@ -111,7 +111,7 @@ namespace Mono.Linker {
 		{
 		}
 
-		public LinkContext(Pipeline pipeline, AssemblyResolver resolver)
+		public LinkContext(Pipeline pipeline, ILinkerAssemblyResolver resolver)
 			: this(pipeline, resolver, new ReaderParameters
 			{
 				AssemblyResolver = resolver,
@@ -178,7 +178,7 @@ namespace Mono.Linker {
 			}
 		}
 
-		bool SeenFirstTime (AssemblyDefinition assembly)
+		protected bool SeenFirstTime (AssemblyDefinition assembly)
 		{
 			return !_annotations.HasAction (assembly);
 		}
@@ -216,7 +216,7 @@ namespace Mono.Linker {
 			return reference;
 		}
 
-		void SetAction (AssemblyDefinition assembly)
+		protected void SetAction (AssemblyDefinition assembly)
 		{
 			AssemblyAction action = AssemblyAction.Link;
 
