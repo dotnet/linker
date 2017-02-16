@@ -28,8 +28,9 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
-
+using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
@@ -176,6 +177,11 @@ namespace Mono.Linker {
 			catch {
 				throw new AssemblyResolutionException (reference);
 			}
+		}
+
+		public virtual ICollection<AssemblyDefinition> DependenciesFor(AssemblyDefinition assembly)
+		{
+			return assembly.MainModule.AssemblyReferences.Select(Resolve).ToList();
 		}
 
 		protected bool SeenFirstTime (AssemblyDefinition assembly)
