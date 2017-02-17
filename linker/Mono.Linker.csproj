@@ -70,8 +70,10 @@
     <Compile Include="Mono.Linker\LinkContext.cs" />
     <Compile Include="Mono.Linker\MarkException.cs" />
     <Compile Include="Mono.Linker\MethodAction.cs" />
+    <Compile Include="Mono.Linker\MethodReferenceExtensions.cs" />
     <Compile Include="Mono.Linker\Pipeline.cs" />
     <Compile Include="Mono.Linker\TypePreserve.cs" />
+    <Compile Include="Mono.Linker\TypeReferenceExtensions.cs" />
     <Compile Include="Mono.Linker\XApiReader.cs" />
     <Compile Include="Mono.Linker.Steps\TypeMapStep.cs" />
   </ItemGroup>
