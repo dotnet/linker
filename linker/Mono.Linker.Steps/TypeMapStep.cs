@@ -210,6 +210,9 @@ namespace Mono.Linker.Steps {
 			if (cp.Count != mp.Count)
 				return false;
 
+			if (candidate.GenericParameters.Count != method.GenericParameters.Count)
+				return false;
+
 			for (int i = 0; i < cp.Count; i++) {
 				if (!TypeMatch (candidate.GetParameterType (i), method.GetParameterType (i), ref genericParameters))
 					return false;
