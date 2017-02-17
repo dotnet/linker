@@ -69,6 +69,7 @@
     <Compile Include="Mono.Linker\MethodAction.cs" />
     <Compile Include="Mono.Linker\Pipeline.cs" />
     <Compile Include="Mono.Linker\TypePreserve.cs" />
+    <Compile Include="Mono.Linker\Utilities.cs" />
     <Compile Include="Mono.Linker\XApiReader.cs" />
     <Compile Include="Mono.Linker.Steps\TypeMapStep.cs" />
   </ItemGroup>

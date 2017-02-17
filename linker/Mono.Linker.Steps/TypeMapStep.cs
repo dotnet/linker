@@ -138,13 +138,13 @@ namespace Mono.Linker.Steps {
 
 		static MethodDefinition GetBaseMethodInTypeHierarchy (TypeDefinition type, MethodDefinition method)
 		{
-			TypeDefinition @base = GetBaseType (type);
+			TypeReference @base = type.GetBaseType ();
 			while (@base != null) {
 				MethodDefinition base_method = TryMatchMethod (@base, method);
 				if (base_method != null)
 					return base_method;
 
-				@base = GetBaseType (@base);
+				@base = @base.GetBaseType();
 			}
 
 			return null;
@@ -155,34 +155,25 @@ namespace Mono.Linker.Steps {
 			return GetBaseMethodsInInterfaceHierarchy (method.DeclaringType, method);
 		}
 
-		static IEnumerable<MethodDefinition> GetBaseMethodsInInterfaceHierarchy (TypeDefinition type, MethodDefinition method)
+		static IEnumerable<MethodDefinition> GetBaseMethodsInInterfaceHierarchy (TypeReference type, MethodDefinition method)
 		{
-			if (!type.HasInterfaces)
-				yield break;
-
-			foreach (var interface_ref in type.Interfaces) {
-				TypeDefinition @interface = interface_ref.InterfaceType.Resolve ();
-				if (@interface == null)
-					continue;
-
-				MethodDefinition base_method = TryMatchMethod (@interface, method);
+			foreach (TypeReference @interface in type.GetInterfaces())
+			{
+				MethodDefinition base_method = TryMatchMethod(@interface, method);
 				if (base_method != null)
 					yield return base_method;
 
-				foreach (MethodDefinition @base in GetBaseMethodsInInterfaceHierarchy (@interface, method))
+				foreach (MethodDefinition @base in GetBaseMethodsInInterfaceHierarchy(@interface, method))
 					yield return @base;
 			}
 		}
 
-		static MethodDefinition TryMatchMethod (TypeDefinition type, MethodDefinition method)
+		static MethodDefinition TryMatchMethod (TypeReference type, MethodDefinition method)
 		{
-			if (!type.HasMethods)
-				return null;
-
 			Dictionary<string,string> gp = null;
-			foreach (MethodDefinition candidate in type.Methods) {
+			foreach (var candidate in type.GetMethods ()) {
 				if (MethodMatch (candidate, method, ref gp))
-					return candidate;
+					return candidate.Resolve();
 				if (gp != null)
 					gp.Clear ();
 			}
@@ -190,9 +181,11 @@ namespace Mono.Linker.Steps {
 			return null;
 		}
 
-		static bool MethodMatch (MethodDefinition candidate, MethodDefinition method, ref Dictionary<string,string> genericParameters)
+		static bool MethodMatch (MethodReference candidate, MethodDefinition method, ref Dictionary<string,string> genericParameters)
 		{
-			if (!candidate.IsVirtual)
+			var candidateDef = candidate.Resolve();
+
+			if (!candidateDef.IsVirtual)
 				return false;
 
 			if (candidate.HasParameters != method.HasParameters)
@@ -206,7 +199,7 @@ namespace Mono.Linker.Steps {
 
 			// we need to track what the generic parameter represent - as we cannot allow it to
 			// differ between the return type or any parameter
-			if (!TypeMatch (candidate.ReturnType, method.ReturnType, ref genericParameters))
+			if (!TypeMatch (candidate.GetReturnType(), method.GetReturnType(), ref genericParameters))
 				return false;
 
 			if (!candidate.HasParameters)
@@ -218,7 +211,7 @@ namespace Mono.Linker.Steps {
 				return false;
 
 			for (int i = 0; i < cp.Count; i++) {
-				if (!TypeMatch (cp [i].ParameterType, mp [i].ParameterType, ref genericParameters))
+				if (!TypeMatch (candidate.GetParameterType (i), method.GetParameterType (i), ref genericParameters))
 					return false;
 			}
 
@@ -294,14 +287,6 @@ namespace Mono.Linker.Steps {
 			}
 
 			return a.FullName == b.FullName;
-		}
-
-		static TypeDefinition GetBaseType (TypeDefinition type)
-		{
-			if (type == null || type.BaseType == null)
-				return null;
-
-			return type.BaseType.Resolve ();
 		}
 	}
 }
