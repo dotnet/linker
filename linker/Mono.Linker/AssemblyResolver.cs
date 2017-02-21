@@ -71,5 +71,10 @@ namespace Mono.Linker {
 			_assemblies [assembly.Name.Name] = assembly;
 			base.AddSearchDirectory (Path.GetDirectoryName (assembly.MainModule.FileName));
 		}
+
+		public AssemblyNameReference ResolveName(AssemblyNameReference name)
+		{
+			return Resolve(name).Name;
+		}
 	}
 }
