@@ -175,6 +175,8 @@ namespace Mono.Linker.Steps {
 			foreach (TypeReference tr in assembly.MainModule.GetTypeReferences ()) {
 				if (hash.ContainsKey (tr))
 					continue;
+				if (!CanChangeScope (tr))
+					continue;
 				var td = tr.Resolve ();
 				IMetadataScope scope = tr.Scope;
 				// at this stage reference might include things that can't be resolved
@@ -290,6 +292,11 @@ namespace Mono.Linker.Steps {
 			for (int i = 0; i < list.Count; i++)
 				if (!Annotations.IsMarked ((IMetadataTokenProvider) list [i]))
 					list.RemoveAt (i--);
+		}
+
+		protected virtual bool CanChangeScope(TypeReference type)
+		{
+			return true;
 		}
 
 		static bool AreSameReference (AssemblyNameReference a, AssemblyNameReference b)
