@@ -12,5 +12,7 @@ namespace Mono.Linker
 		void AddSearchDirectory(string directory);
 
 		AssemblyDefinition CacheAssembly(AssemblyDefinition assembly);
+
+		AssemblyNameReference ResolveName(AssemblyNameReference name);
 	}
 }

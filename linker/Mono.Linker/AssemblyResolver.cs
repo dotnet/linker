@@ -68,5 +68,10 @@ namespace Mono.Linker {
 			base.AddSearchDirectory (Path.GetDirectoryName (assembly.MainModule.FileName));
 			return assembly;
 		}
+
+		public AssemblyNameReference ResolveName(AssemblyNameReference name)
+		{
+			return Resolve(name).Name;
+		}
 	}
 }
