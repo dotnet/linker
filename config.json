@@ -5,21 +5,65 @@
       "valueType": "passThrough",
       "values": [],
       "defaultValue": ""
-    }
+    },
+    "configuration": {
+      "description": "configuration (Debug or Release)",
+        "valueType": "property",
+        "values": ["Release", "Debug"],
+        "defaultValue": "Debug"
+    },
+    "framework": {
+      "description": "framework",
+      "valueType": "property",
+      "values": ["net451","netcoreapp1.1"],
+      "defaultValue": ""
+    },
+    "runtime": {
+      "description": "runtime",
+      "valueType": "property",
+      "values": ["win10-x64", "ubuntu.16.04-x64"],
+      "defaultValue": ""
+    },
   },
   "commands": {
-    "build-native": {
+    "build": {
+      "alias": {
+        "Release": {
+            "description": "Build the Release configuration.",
+            "settings": {
+                "configuration": "Release"
+            }
+        },
+        "Debug": {
+          "description": "Build the Debug configuration.",
+            "settings": {
+                "configuration": "Debug"
+            }
+        }
+      },
+      "defaultValues": {
+          "toolName": "dotnet-build",
+          "settings": {}
+      }
+    },
+    "restore": {
       "alias": {},
       "defaultValues": {
-        "toolName": "terminal",
-        "Project": "src/Native/build-native",
+        "toolName": "dotnet-restore",
         "settings": {}
       }
     },
-    "build": {
+    "publish": {
       "alias": {},
       "defaultValues": {
-        "toolName": "msbuild",
+        "toolName": "dotnet-publish",
+        "settings": {}
+      }
+    },
+    "test": {
+      "alias": {},
+      "defaultValues": {
+        "toolName": "dotnet-test",
         "settings": {}
       }
     }
@@ -51,6 +95,68 @@
         "property": "/p:{name}={value}",
         "target": "/t:{name}",
         "internal": "/{name}"
+      }
+    },
+    "dotnet-build": {
+      "osSpecific": {
+        "windows": {
+          "defaultParameters": "build",
+          "path": "Tools/dotnetcli/dotnet.exe"
+        },
+        "unix": {
+          "defaultParameters": "build",
+          "path": "Tools/dotnetcli/dotnet"
+        }
+      },
+      "valueTypes": {
+        "dotnetFlag": "--{name} {value}",
+        "property": "/p:{name}={value}"
+      }
+    },
+    "dotnet-restore": {
+      "osSpecific": {
+        "windows": {
+          "defaultParameters": "restore",
+          "path": "Tools/dotnetcli/dotnet.exe"
+        },
+        "unix": {
+          "defaultParameters": "restore",
+          "path": "Tools/dotnetcli/dotnet"
+        }
+      },
+      "valueTypes": {
+        "dotnetFlag": "--{name} {value}",
+        "property": "/p:{name}={value}"
+      }
+    },
+    "dotnet-publish": {
+      "osSpecific": {
+        "windows": {
+          "defaultParameters": "publish",
+          "path": "Tools/dotnetcli/dotnet.exe"
+        },
+        "unix": {
+          "defaultParameters": "publish",
+          "path": "Tools/dotnetcli/dotnet"
+        }
+      },
+      "valueTypes": {
+        "dotnetFlag": "--{name} {value}"
+      }
+    },
+    "dotnet-test": {
+      "osSpecific": {
+        "windows": {
+          "defaultParameters": "test",
+          "path": "Tools/dotnetcli/dotnet.exe"
+        },
+        "unix": {
+          "defaultParameters": "test",
+          "path": "Tools/dotnetcli/dotnet"
+        }
+      },
+      "valueTypes": {
+        "dotnetFlag": "--{name} {value}"
       }
     }
   }

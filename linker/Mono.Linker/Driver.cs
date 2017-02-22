@@ -29,7 +29,7 @@
 using System;
 using System.Collections;
 using System.IO;
-using SR = System.Reflection;
+using System.Reflection;
 using System.Xml.XPath;
 
 using Mono.Linker.Steps;
@@ -225,10 +225,12 @@ namespace Mono.Linker {
 		static string [] ReadLines (string file)
 		{
 			ArrayList lines = new ArrayList ();
-			using (StreamReader reader = new StreamReader (file)) {
-				string line;
-				while ((line = reader.ReadLine ()) != null)
-					lines.Add (line);
+			using (FileStream fileStream = new FileStream (file, FileMode.Open)) {
+				using (StreamReader reader = new StreamReader (fileStream)) {
+					string line;
+					while ((line = reader.ReadLine ()) != null)
+						lines.Add (line);
+				}
 			}
 			return (string []) lines.ToArray (typeof (string));
 		}
@@ -296,7 +298,7 @@ namespace Mono.Linker {
 		{
 			Console.WriteLine ("{0} Version {1}",
 				_linker,
-			    System.Reflection.Assembly.GetExecutingAssembly ().GetName ().Version);
+                                typeof (Driver).GetTypeInfo ().Assembly.GetName ().Version);
 
 			Environment.Exit(1);
 		}

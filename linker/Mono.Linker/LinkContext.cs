@@ -147,7 +147,7 @@ namespace Mono.Linker {
 				return assembly;
 			}
 
-			return Resolve (new AssemblyNameReference (name, new Version ()));
+			return Resolve (new AssemblyNameReference (name, new Version (0, 0)));
 		}
 
 		public AssemblyDefinition Resolve (IMetadataScope scope)
@@ -189,8 +189,12 @@ namespace Mono.Linker {
 
 					_annotations.AddSymbolReader (assembly, symbolReader);
 					assembly.MainModule.ReadSymbols (symbolReader);
-				} else
+				}
+#if !NET_CORE
+				else {
 					assembly.MainModule.ReadSymbols ();
+				}
+#endif
 			} catch {}
 		}
 

@@ -316,9 +316,10 @@ namespace Mono.Linker {
 			writer.WriteEndElement ();
 			writer.WriteEndDocument ();
 			writer.Flush ();
+#if !NET_CORE
 			writer.Close ();
 			zipStream.Close ();
-
+#endif
 			writer.Dispose ();
 			zipStream.Dispose ();
 			writer = null;
