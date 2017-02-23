@@ -71,22 +71,11 @@ namespace Mono.Linker {
 			if (assembly != null)
 				return assembly;
 
-			// TODO: understand whether we need special logic for
-			// retargetable references, like BaseAssemblyResolver in
-			// Mono.Cecil
-
 			var framework_dir = Path.GetDirectoryName(typeof(object).GetTypeInfo().Module.FullyQualifiedName);
-
-			// TODO: understand whether we need special logic for
-			// checking whether the version is zero, like
-			// BaseAssemblyResolver in Mono.Cecil
 
 			assembly = SearchDirectory(name, new[] { framework_dir }, parameters);
 			if (assembly != null)
 				return assembly;
-
-			// TODO: possibly add assembly resolve failure event
-			// handler and call it here
 
 			throw new AssemblyResolutionException(name);
 		}
