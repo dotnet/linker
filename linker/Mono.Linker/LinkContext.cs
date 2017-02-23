@@ -265,9 +265,9 @@ namespace Mono.Linker {
 
 		public AssemblyDefinition [] GetAssemblies ()
 		{
-			IDictionary cache = _resolver.AssemblyCache;
-			AssemblyDefinition [] asms = new AssemblyDefinition [cache.Count];
-			cache.Values.CopyTo (asms, 0);
+			var assemblies = Annotations.GetAssemblies();
+			AssemblyDefinition [] asms = new AssemblyDefinition [assemblies.Count];
+			assemblies.CopyTo (asms, 0);
 			return asms;
 		}
 
