@@ -18,8 +18,8 @@
       "values": ["net451","netcoreapp1.1"],
       "defaultValue": ""
     },
-    "runtime": {
-      "description": "runtime",
+    "runtimeidentifier": {
+      "description": "runtimeidentifier",
       "valueType": "property",
       "values": ["win10-x64", "ubuntu.16.04-x64"],
       "defaultValue": ""

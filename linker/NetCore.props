@@ -5,6 +5,8 @@
     <DefineConstants>$(DefineConstants);NET_CORE</DefineConstants>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AssemblyName>monolinker</AssemblyName>
+    <OutputType>exe</OutputType>
   </PropertyGroup>
 
   <ItemGroup>
