@@ -9,8 +9,8 @@
     "configuration": {
       "description": "configuration (Debug or Release)",
         "valueType": "property",
-        "values": ["Release", "Debug"],
-        "defaultValue": "Debug"
+        "values": ["netcore_Release", "netcore_Debug"],
+        "defaultValue": "netcore_Debug"
     },
     "framework": {
       "description": "framework",
@@ -31,19 +31,21 @@
         "Release": {
             "description": "Build the Release configuration.",
             "settings": {
-                "configuration": "Release"
+                "configuration": "netcore_Release"
             }
         },
         "Debug": {
           "description": "Build the Debug configuration.",
             "settings": {
-                "configuration": "Debug"
+                "configuration": "netcore_Debug"
             }
         }
       },
       "defaultValues": {
           "toolName": "dotnet-build",
-          "settings": {}
+          "settings": {
+              "configuration": "netcore_Debug"
+          }
       }
     },
     "restore": {
