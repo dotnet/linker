@@ -27,32 +27,32 @@ namespace Mono.Linker {
 
 		readonly Collection<string> directories;
 
-		public void AddSearchDirectory(string directory)
+		public void AddSearchDirectory (string directory)
 		{
-			directories.Add(directory);
+			directories.Add (directory);
 		}
 
-		public void RemoveSearchDirectory(string directory)
+		public void RemoveSearchDirectory (string directory)
 		{
-			directories.Remove(directory);
+			directories.Remove (directory);
 		}
 
-		public string[] GetSearchDirectories()
+		public string[] GetSearchDirectories ()
 		{
-			return this.directories.ToArray();
+			return this.directories.ToArray ();
 		}
 
-		protected DirectoryAssemblyResolver()
+		protected DirectoryAssemblyResolver ()
 		{
-			directories = new Collection<string>(2) { "." };
+			directories = new Collection<string> (2) { "." };
 		}
 
-		AssemblyDefinition GetAssembly(string file, ReaderParameters parameters)
+		AssemblyDefinition GetAssembly (string file, ReaderParameters parameters)
 		{
 			if (parameters.AssemblyResolver == null)
 				parameters.AssemblyResolver = this;
 
-			return ModuleDefinition.ReadModule(file, parameters).Assembly;
+			return ModuleDefinition.ReadModule (file, parameters).Assembly;
 		}
 
 		public virtual AssemblyDefinition Resolve (AssemblyNameReference name)
@@ -60,42 +60,37 @@ namespace Mono.Linker {
 			return Resolve (name, new ReaderParameters ());
 		}
 
-		public virtual AssemblyDefinition Resolve(AssemblyNameReference name, ReaderParameters parameters)
+		public virtual AssemblyDefinition Resolve (AssemblyNameReference name, ReaderParameters parameters)
 		{
 			if (name == null)
-				throw new ArgumentNullException("name");
+				throw new ArgumentNullException ("name");
 			if (parameters == null)
-				parameters = new ReaderParameters();
+				parameters = new ReaderParameters ();
 
-			var assembly = SearchDirectory(name, directories, parameters);
+			var assembly = SearchDirectory (name, directories, parameters);
 			if (assembly != null)
 				return assembly;
 
-			var framework_dir = Path.GetDirectoryName(typeof(object).GetTypeInfo().Module.FullyQualifiedName);
+			var framework_dir = Path.GetDirectoryName(typeof (object).GetTypeInfo ().Module.FullyQualifiedName);
 
-			assembly = SearchDirectory(name, new[] { framework_dir }, parameters);
+			assembly = SearchDirectory (name, new [] { framework_dir }, parameters);
 			if (assembly != null)
 				return assembly;
 
-			throw new AssemblyResolutionException(name);
+			throw new AssemblyResolutionException (name);
 		}
 
-		AssemblyDefinition SearchDirectory(AssemblyNameReference name, IEnumerable<string> directories, ReaderParameters parameters)
+		AssemblyDefinition SearchDirectory (AssemblyNameReference name, IEnumerable<string> directories, ReaderParameters parameters)
 		{
 			var extensions = new [] { ".dll" };
-			foreach (var directory in directories)
-			{
-				foreach (var extension in extensions)
-				{
-					string file = Path.Combine(directory, name.Name + extension);
-					if (!File.Exists(file))
+			foreach (var directory in directories) {
+				foreach (var extension in extensions) {
+					string file = Path.Combine (directory, name.Name + extension);
+					if (!File.Exists (file))
 						continue;
-					try
-					{
-						return GetAssembly(file, parameters);
-					}
-					catch (System.BadImageFormatException)
-					{
+					try {
+						return GetAssembly (file, parameters);
+					} catch (System.BadImageFormatException) {
 						continue;
 					}
 				}
@@ -104,13 +99,13 @@ namespace Mono.Linker {
 			return null;
 		}
 
-		public void Dispose()
+		public void Dispose ()
 		{
-			Dispose(true);
-			GC.SuppressFinalize(this);
+			Dispose (true);
+			GC.SuppressFinalize (this);
 		}
 
-		protected virtual void Dispose(bool disposing)
+		protected virtual void Dispose (bool disposing)
 		{
 		}
 	}
