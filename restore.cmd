@@ -1,3 +1,5 @@
+@if not defined _echo @echo off
+
 REM restore.cmd will bootstrap the cli and ultimately call "dotnet
 REM restore". The configuration specified here is just a workaround to
 REM set the correct conditional properties for the netcore/netstandard
