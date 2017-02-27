@@ -189,12 +189,8 @@ namespace Mono.Linker {
 
 					_annotations.AddSymbolReader (assembly, symbolReader);
 					assembly.MainModule.ReadSymbols (symbolReader);
-				}
-#if !NET_CORE
-				else {
+				} else
 					assembly.MainModule.ReadSymbols ();
-				}
-#endif
 			} catch {}
 		}
 
