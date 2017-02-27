@@ -147,7 +147,7 @@ namespace Mono.Linker {
 				return assembly;
 			}
 
-			return Resolve (new AssemblyNameReference (name, new Version (0, 0)));
+			return Resolve (new AssemblyNameReference (name, new Version ()));
 		}
 
 		public AssemblyDefinition Resolve (IMetadataScope scope)

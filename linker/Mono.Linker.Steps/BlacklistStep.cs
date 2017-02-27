@@ -46,7 +46,7 @@ namespace Mono.Linker.Steps {
 
 		protected override void Process ()
 		{
-			foreach (string name in typeof (BlacklistStep).GetTypeInfo ().Assembly.GetManifestResourceNames ()) {
+			foreach (string name in Assembly.GetExecutingAssembly ().GetManifestResourceNames ()) {
 				if (!name.EndsWith (".xml", StringComparison.OrdinalIgnoreCase) || !IsReferenced (GetAssemblyName (name)))
 					continue;
 
@@ -107,7 +107,7 @@ namespace Mono.Linker.Steps {
 
 		static ResolveFromXmlStep GetResolveStep (string descriptor)
 		{
-			return new ResolveFromXmlStep (GetDescriptor (descriptor), "descriptor " + descriptor + " from " + typeof (BlacklistStep).GetTypeInfo ().Assembly.FullName);
+			return new ResolveFromXmlStep (GetDescriptor (descriptor), "descriptor " + descriptor + " from " + Assembly.GetExecutingAssembly ().FullName);
 		}
 
 		static XPathDocument GetExternalDescriptor (EmbeddedResource resource)
@@ -126,7 +126,7 @@ namespace Mono.Linker.Steps {
 
 		static Stream GetResource (string descriptor)
 		{
-			return typeof (BlacklistStep).GetTypeInfo ().Assembly.GetManifestResourceStream (descriptor);
+			return Assembly.GetExecutingAssembly ().GetManifestResourceStream (descriptor);
 		}
 	}
 }

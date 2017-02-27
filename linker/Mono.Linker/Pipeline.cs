@@ -29,7 +29,6 @@
 using System;
 using System.Collections;
 using System.Diagnostics;
-using System.Reflection;
 
 using Mono.Linker.Steps;
 
@@ -57,7 +56,7 @@ namespace Mono.Linker {
 		public void AddStepBefore (Type target, IStep step)
 		{
 			for (int i = 0; i < _steps.Count; i++) {
-				if (target.GetTypeInfo ().IsInstanceOfType (_steps [i])) {
+				if (target.IsInstanceOfType (_steps [i])) {
 					_steps.Insert (i, step);
 					return;
 				}

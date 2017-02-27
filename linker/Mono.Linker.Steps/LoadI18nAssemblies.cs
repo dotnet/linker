@@ -96,7 +96,7 @@ namespace Mono.Linker.Steps {
 				if (assembly.Name.Name == "mscorlib")
 					return assembly.Name.Version;
 
-			return new Version (0, 0);
+			return new Version ();
 		}
 	}
 }
