@@ -8,21 +8,6 @@ using Mono.Cecil;
 #if NET_CORE
 namespace Mono.Linker {
 
-	public sealed class AssemblyResolutionException : FileNotFoundException {
-
-		readonly AssemblyNameReference reference;
-
-		public AssemblyNameReference AssemblyReference {
-			get { return reference; }
-		}
-
-		public AssemblyResolutionException (AssemblyNameReference reference)
-			: base (string.Format ("Failed to resolve assembly: '{0}'", reference))
-		{
-			this.reference = reference;
-		}
-	}
-
 	public abstract class DirectoryAssemblyResolver : IAssemblyResolver {
 
 		readonly Collection<string> directories;
@@ -37,7 +22,7 @@ namespace Mono.Linker {
 			directories.Remove (directory);
 		}
 
-		public string[] GetSearchDirectories ()
+		public string [] GetSearchDirectories ()
 		{
 			return this.directories.ToArray ();
 		}
@@ -71,7 +56,7 @@ namespace Mono.Linker {
 			if (assembly != null)
 				return assembly;
 
-			var framework_dir = Path.GetDirectoryName(typeof (object).GetTypeInfo ().Module.FullyQualifiedName);
+			var framework_dir = Path.GetDirectoryName (typeof (object).Module.FullyQualifiedName);
 
 			assembly = SearchDirectory (name, new [] { framework_dir }, parameters);
 			if (assembly != null)
