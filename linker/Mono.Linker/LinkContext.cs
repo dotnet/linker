@@ -187,7 +187,16 @@ namespace Mono.Linker {
 
 		public virtual ICollection<AssemblyDefinition> DependenciesFor(AssemblyDefinition assembly)
 		{
-			return assembly.MainModule.AssemblyReferences.Select(Resolve).ToList();
+			List<AssemblyDefinition> references = new List<AssemblyDefinition> ();
+			foreach (AssemblyNameReference reference in assembly.MainModule.AssemblyReferences) {
+				try {
+					references.Add (Resolve (reference));
+				}
+				catch (AssemblyResolutionException) {
+					continue;
+				}
+			}
+			return references;
 		}
 
 		protected bool SeenFirstTime (AssemblyDefinition assembly)
@@ -228,7 +237,7 @@ namespace Mono.Linker {
 			return reference;
 		}
 
-		protected void SetAction (AssemblyDefinition assembly, AssemblyAction defaultAction)
+		protected internal void SetAction (AssemblyDefinition assembly, AssemblyAction defaultAction)
 		{
 			AssemblyAction action = defaultAction;
 

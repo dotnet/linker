@@ -49,18 +49,11 @@ namespace Mono.Linker.Steps {
 
 			_references.Add (assembly.Name, assembly);
 
-			foreach (AssemblyNameReference reference in Context.DependenciesFor (assembly)) {
+			foreach (AssemblyDefinition definition in Context.DependenciesFor (assembly)) {
 				try {
-					AssemblyDefinition definition = null;
-					try {
-						definition = Context.Resolve (reference);
-					}
-					catch (AssemblyResolutionException) {
-						continue;
-					}
 					ProcessReferences (definition);
 				}
-				catch (Exception e) {
+				catch (Exception ex) {
 					throw new Exception(string.Format("Error while processing references of '{0}'", assembly.FullName), ex);
 				}
 			}
