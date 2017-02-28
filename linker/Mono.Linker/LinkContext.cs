@@ -46,7 +46,7 @@ namespace Mono.Linker {
 		bool _linkSymbols;
 		bool _keepTypeForwarderOnlyAssemblies;
 
-		AssemblyResolver _resolver;
+		ILinkerAssemblyResolver _resolver;
 
 		ReaderParameters _readerParameters;
 		ISymbolReaderProvider _symbolReaderProvider;
@@ -87,7 +87,7 @@ namespace Mono.Linker {
 			get { return _actions; }
 		}
 
-		public AssemblyResolver Resolver {
+		public ILinkerAssemblyResolver Resolver {
 			get { return _resolver; }
 		}
 
@@ -182,7 +182,16 @@ namespace Mono.Linker {
 
 		public virtual ICollection<AssemblyDefinition> DependenciesFor(AssemblyDefinition assembly)
 		{
-			return assembly.MainModule.AssemblyReferences.Select(Resolve).ToList();
+			List<AssemblyDefinition> references = new List<AssemblyDefinition> ();
+			foreach (AssemblyNameReference reference in assembly.MainModule.AssemblyReferences) {
+				try {
+					references.Add (Resolve (reference));
+				}
+				catch (AssemblyResolutionException) {
+					continue;
+				}
+			}
+			return references;
 		}
 
 		protected bool SeenFirstTime (AssemblyDefinition assembly)
@@ -223,7 +232,7 @@ namespace Mono.Linker {
 			return reference;
 		}
 
-		protected void SetAction (AssemblyDefinition assembly)
+		protected internal void SetAction (AssemblyDefinition assembly)
 		{
 			AssemblyAction action = AssemblyAction.Link;
 

@@ -34,9 +34,9 @@ using Mono.Cecil;
 namespace Mono.Linker {
 
 #if NET_CORE
-	public class AssemblyResolver : DirectoryAssemblyResolver {
+	public class AssemblyResolver : DirectoryAssemblyResolver, ILinkerAssemblyResolver {
 #else
-	public class AssemblyResolver : BaseAssemblyResolver {
+	public class AssemblyResolver : BaseAssemblyResolver, ILinkerAssemblyResolver {
 #endif
 
 		IDictionary _assemblies;
@@ -66,10 +66,11 @@ namespace Mono.Linker {
 			return asm;
 		}
 
-		public void CacheAssembly (AssemblyDefinition assembly)
+		public AssemblyDefinition CacheAssembly (AssemblyDefinition assembly)
 		{
 			_assemblies [assembly.Name.Name] = assembly;
 			base.AddSearchDirectory (Path.GetDirectoryName (assembly.MainModule.FileName));
+			return assembly;
 		}
 
 		public AssemblyNameReference ResolveName(AssemblyNameReference name)
