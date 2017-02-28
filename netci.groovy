@@ -21,15 +21,15 @@ def static setRecursiveSubmoduleOption(def job) {
         if (os == 'Windows_NT') {
             newJob.with {
                 steps {
-                    batchFile("restore.cmd")
-                    batchFile("build.cmd")
+                    batchFile("cd corebuild && restore.cmd")
+                    batchFile("cd corebuild && build.cmd")
                 }
             }
         } else if (os == 'Ubuntu') {
             newJob.with {
                 steps {
-                    shell("restore.sh")
-                    shell("build.sh")
+                    shell("cd corebuild && ./restore.sh")
+                    shell("cd corebuild && ./build.sh")
                 }
             }
         }

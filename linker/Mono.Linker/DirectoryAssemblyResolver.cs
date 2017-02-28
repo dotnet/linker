@@ -82,7 +82,7 @@ namespace Mono.Linker {
 
 		AssemblyDefinition SearchDirectory (AssemblyNameReference name, IEnumerable<string> directories, ReaderParameters parameters)
 		{
-			var extensions = new [] { ".dll" };
+			var extensions = new [] { ".dll", ".exe" };
 			foreach (var directory in directories) {
 				foreach (var extension in extensions) {
 					string file = Path.Combine (directory, name.Name + extension);
