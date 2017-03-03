@@ -111,8 +111,8 @@ namespace Mono.Linker {
 		{
 		}
 
-		public LinkContext(Pipeline pipeline, ILinkerAssemblyResolver resolver)
-			: this(pipeline, resolver, new ReaderParameters
+		public LinkContext (Pipeline pipeline, ILinkerAssemblyResolver resolver)
+			: this (pipeline, resolver, new ReaderParameters
 			{
 				AssemblyResolver = resolver,
 			},
@@ -178,7 +178,7 @@ namespace Mono.Linker {
 			}
 		}
 
-		public virtual ICollection<AssemblyDefinition> DependenciesFor(AssemblyDefinition assembly)
+		public virtual ICollection<AssemblyDefinition> DependenciesFor (AssemblyDefinition assembly)
 		{
 			List<AssemblyDefinition> references = new List<AssemblyDefinition> ();
 			foreach (AssemblyNameReference reference in assembly.MainModule.AssemblyReferences) {
@@ -267,7 +267,7 @@ namespace Mono.Linker {
 
 		public AssemblyDefinition [] GetAssemblies ()
 		{
-			var assemblies = Annotations.GetAssemblies();
+			var assemblies = Annotations.GetAssemblies ();
 			AssemblyDefinition [] asms = new AssemblyDefinition [assemblies.Count];
 			assemblies.CopyTo (asms, 0);
 			return asms;
