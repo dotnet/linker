@@ -40,7 +40,6 @@ namespace Mono.Linker {
 
 		Pipeline _pipeline;
 		AssemblyAction _coreAction;
-		AssemblyAction _userAction;
 		Hashtable _actions;
 		string _outputDirectory;
 		Hashtable _parameters;
@@ -71,11 +70,6 @@ namespace Mono.Linker {
 		public AssemblyAction CoreAction {
 			get { return _coreAction; }
 			set { _coreAction = value; }
-		}
-
-		public AssemblyAction UserAction {
-			get { return _userAction; }
-			set { _userAction = value; }
 		}
 
 		public bool LinkSymbols {
@@ -175,7 +169,7 @@ namespace Mono.Linker {
 
 				if (SeenFirstTime (assembly)) {
 					SafeReadSymbols (assembly);
-					SetAction (assembly, UserAction);
+					SetAction (assembly);
 				}
 
 				return assembly;
@@ -237,9 +231,9 @@ namespace Mono.Linker {
 			return reference;
 		}
 
-		protected internal void SetAction (AssemblyDefinition assembly, AssemblyAction defaultAction)
+		protected void SetAction (AssemblyDefinition assembly)
 		{
-			AssemblyAction action = defaultAction;
+			AssemblyAction action = AssemblyAction.Link;
 
 			AssemblyNameDefinition name = assembly.Name;
 
