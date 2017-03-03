@@ -9,10 +9,10 @@ namespace Mono.Linker
 {
 	public interface ILinkerAssemblyResolver : IAssemblyResolver
 	{
-		void AddSearchDirectory(string directory);
+		void AddSearchDirectory (string directory);
 
-		AssemblyDefinition CacheAssembly(AssemblyDefinition assembly);
+		AssemblyDefinition CacheAssembly (AssemblyDefinition assembly);
 
-		AssemblyNameReference ResolveName(AssemblyNameReference name);
+		AssemblyNameReference ResolveName (AssemblyNameReference name);
 	}
 }

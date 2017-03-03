@@ -172,7 +172,7 @@ namespace Mono.Linker {
 			p.Process (context);
 		}
 
-		protected virtual void AddResolutionStep(Pipeline p, IStep resolveStep)
+		protected virtual void AddResolutionStep (Pipeline p, IStep resolveStep)
 		{
 			p.PrependStep (resolveStep);
 		}

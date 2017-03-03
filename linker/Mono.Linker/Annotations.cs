@@ -90,7 +90,7 @@ namespace Mono.Linker {
 			writer.WriteEndAttribute ();
 		}
 
-		public ICollection<AssemblyDefinition> GetAssemblies()
+		public ICollection<AssemblyDefinition> GetAssemblies ()
 		{
 			return assembly_actions.Keys;
 		}
@@ -156,13 +156,13 @@ namespace Mono.Linker {
 
 		public void SetPreserve (TypeDefinition type, TypePreserve preserve)
 		{
-			if (preserved_types.ContainsKey(type))
-				preserved_types[type] = ChoosePreserveActionWhichPreservesTheMost(preserved_types[type], preserve);
+			if (preserved_types.ContainsKey (type))
+				preserved_types [type] = ChoosePreserveActionWhichPreservesTheMost (preserved_types [type], preserve);
 			else
-				preserved_types[type] = preserve;
+				preserved_types [type] = preserve;
 		}
 
-		public static TypePreserve ChoosePreserveActionWhichPreservesTheMost(TypePreserve leftPreserveAction, TypePreserve rightPreserveAction)
+		public static TypePreserve ChoosePreserveActionWhichPreservesTheMost (TypePreserve leftPreserveAction, TypePreserve rightPreserveAction)
 		{
 			if (leftPreserveAction == rightPreserveAction)
 				return leftPreserveAction;

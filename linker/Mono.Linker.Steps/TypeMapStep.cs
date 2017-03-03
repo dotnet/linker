@@ -144,7 +144,7 @@ namespace Mono.Linker.Steps {
 				if (base_method != null)
 					return base_method;
 
-				@base = @base.GetBaseType();
+				@base = @base.GetBaseType ();
 			}
 
 			return null;
@@ -157,13 +157,12 @@ namespace Mono.Linker.Steps {
 
 		static IEnumerable<MethodDefinition> GetBaseMethodsInInterfaceHierarchy (TypeReference type, MethodDefinition method)
 		{
-			foreach (TypeReference @interface in type.GetInterfaces())
-			{
-				MethodDefinition base_method = TryMatchMethod(@interface, method);
+			foreach (TypeReference @interface in type.GetInterfaces ()) {
+				MethodDefinition base_method = TryMatchMethod (@interface, method);
 				if (base_method != null)
 					yield return base_method;
 
-				foreach (MethodDefinition @base in GetBaseMethodsInInterfaceHierarchy(@interface, method))
+				foreach (MethodDefinition @base in GetBaseMethodsInInterfaceHierarchy (@interface, method))
 					yield return @base;
 			}
 		}
@@ -173,7 +172,7 @@ namespace Mono.Linker.Steps {
 			Dictionary<string,string> gp = null;
 			foreach (var candidate in type.GetMethods ()) {
 				if (MethodMatch (candidate, method, ref gp))
-					return candidate.Resolve();
+					return candidate.Resolve ();
 				if (gp != null)
 					gp.Clear ();
 			}
@@ -183,7 +182,7 @@ namespace Mono.Linker.Steps {
 
 		static bool MethodMatch (MethodReference candidate, MethodDefinition method, ref Dictionary<string,string> genericParameters)
 		{
-			var candidateDef = candidate.Resolve();
+			var candidateDef = candidate.Resolve ();
 
 			if (!candidateDef.IsVirtual)
 				return false;
@@ -199,7 +198,7 @@ namespace Mono.Linker.Steps {
 
 			// we need to track what the generic parameter represent - as we cannot allow it to
 			// differ between the return type or any parameter
-			if (!TypeMatch (candidate.GetReturnType(), method.GetReturnType(), ref genericParameters))
+			if (!TypeMatch (candidate.GetReturnType (), method.GetReturnType (), ref genericParameters))
 				return false;
 
 			if (!candidate.HasParameters)

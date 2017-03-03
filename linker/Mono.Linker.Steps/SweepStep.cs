@@ -295,7 +295,7 @@ namespace Mono.Linker.Steps {
 					list.RemoveAt (i--);
 		}
 
-		protected virtual bool CanChangeScope(TypeReference type)
+		protected virtual bool CanChangeScope (TypeReference type)
 		{
 			return true;
 		}
