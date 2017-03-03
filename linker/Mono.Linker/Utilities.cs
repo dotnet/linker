@@ -8,161 +8,146 @@ namespace Mono.Linker
 {
 	public static class Utilities
 	{
-		public static TypeReference GetBaseType(this TypeReference type)
+		public static TypeReference GetBaseType (this TypeReference type)
 		{
 			if (type == null)
 				return null;
 
-			if (type is TypeSpecification)
-			{
+			if (type is TypeSpecification) {
 				if (type.IsGenericParameter || type.IsByReference || type.IsPointer)
 					return null;
 
 				var sentinelType = type as SentinelType;
 				if (sentinelType != null)
-					return sentinelType.ElementType.GetBaseType();
+					return sentinelType.ElementType.GetBaseType ();
 
 				var pinnedType = type as PinnedType;
 				if (pinnedType != null)
-					return pinnedType.ElementType.GetBaseType();
+					return pinnedType.ElementType.GetBaseType ();
 
 				var requiredModifierType = type as RequiredModifierType;
 				if (requiredModifierType != null)
-					return requiredModifierType.ElementType.GetBaseType();
+					return requiredModifierType.ElementType.GetBaseType ();
 
 				var genericInstance = type as GenericInstanceType;
-				if (genericInstance != null)
-				{
-					var baseType = type.Resolve().BaseType;
+				if (genericInstance != null) {
+					var baseType = type.Resolve ().BaseType;
 					var baseTypeGenericInstance = baseType as GenericInstanceType;
 
 					if (baseTypeGenericInstance != null)
-						return InflateGenericType(genericInstance, baseType);
+						return InflateGenericType (genericInstance, baseType);
 
 					return baseType;
 				}
 			}
 
-			return type.Resolve().BaseType;
+			return type.Resolve ().BaseType;
 		}
 
-		public static IEnumerable<TypeReference> GetInterfaces(this TypeReference typeRef)
+		public static IEnumerable<TypeReference> GetInterfaces (this TypeReference typeRef)
 		{
-			var typeDef = typeRef.Resolve();
+			var typeDef = typeRef.Resolve ();
 
 			if (!typeDef.HasInterfaces)
 				yield break;
 
 			var genericInstance = typeRef as GenericInstanceType;
-			if (genericInstance != null)
-			{
+			if (genericInstance != null) {
 				foreach (var interfaceImpl in typeDef.Interfaces)
-					yield return InflateGenericType(genericInstance, interfaceImpl.InterfaceType);
-			}
-			else
-			{
+					yield return InflateGenericType (genericInstance, interfaceImpl.InterfaceType);
+			} else {
 				foreach (var interfaceImpl in typeDef.Interfaces)
 					yield return interfaceImpl.InterfaceType;
 			}
 		}
 
-		public static TypeReference InflateGenericType(GenericInstanceType genericInstanceProvider, TypeReference typeToInflate)
+		public static TypeReference InflateGenericType (GenericInstanceType genericInstanceProvider, TypeReference typeToInflate)
 		{
 			var arrayType = typeToInflate as ArrayType;
-			if (arrayType != null)
-			{
-				var inflatedElementType = InflateGenericType(genericInstanceProvider, arrayType.ElementType);
+			if (arrayType != null) {
+				var inflatedElementType = InflateGenericType (genericInstanceProvider, arrayType.ElementType);
 
 				if (inflatedElementType != arrayType.ElementType)
-					return new ArrayType(inflatedElementType, arrayType.Rank);
+					return new ArrayType (inflatedElementType, arrayType.Rank);
 
 				return arrayType;
 			}
 
 			var genericInst = typeToInflate as GenericInstanceType;
 			if (genericInst != null)
-				return MakeGenericType(genericInstanceProvider, genericInst);
+				return MakeGenericType (genericInstanceProvider, genericInst);
 
 			var genericParameter = typeToInflate as GenericParameter;
-			if (genericParameter != null)
-			{
+			if (genericParameter != null) {
 				if (genericParameter.Owner is MethodReference)
 					return genericParameter;
 
-				var elementType = genericInstanceProvider.ElementType.Resolve();
-				var parameter = elementType.GenericParameters.Single(p => p == genericParameter);
-				return genericInstanceProvider.GenericArguments[parameter.Position];
+				var elementType = genericInstanceProvider.ElementType.Resolve ();
+				var parameter = elementType.GenericParameters.Single (p => p == genericParameter);
+				return genericInstanceProvider.GenericArguments [parameter.Position];
 			}
 
 			var functionPointerType = typeToInflate as FunctionPointerType;
-			if (functionPointerType != null)
-			{
-				var result = new FunctionPointerType();
-				result.ReturnType = InflateGenericType(genericInstanceProvider, functionPointerType.ReturnType);
+			if (functionPointerType != null) {
+				var result = new FunctionPointerType ();
+				result.ReturnType = InflateGenericType (genericInstanceProvider, functionPointerType.ReturnType);
 
-				for (int i = 0; i < functionPointerType.Parameters.Count; i++)
-				{
-					var inflatedParameterType = InflateGenericType(genericInstanceProvider, functionPointerType.Parameters[i].ParameterType);
-					result.Parameters.Add(new ParameterDefinition(inflatedParameterType));
+				for (int i = 0; i < functionPointerType.Parameters.Count; i++) {
+					var inflatedParameterType = InflateGenericType (genericInstanceProvider, functionPointerType.Parameters [i].ParameterType);
+					result.Parameters.Add (new ParameterDefinition (inflatedParameterType));
 				}
 
 				return result;
 			}
 
 			var modifierType = typeToInflate as IModifierType;
-			if (modifierType != null)
-			{
-				var modifier = InflateGenericType(genericInstanceProvider, modifierType.ModifierType);
-				var elementType = InflateGenericType(genericInstanceProvider, modifierType.ElementType);
+			if (modifierType != null) {
+				var modifier = InflateGenericType (genericInstanceProvider, modifierType.ModifierType);
+				var elementType = InflateGenericType (genericInstanceProvider, modifierType.ElementType);
 
-				if (modifierType is OptionalModifierType)
-				{
-					return new OptionalModifierType(modifier, elementType);
+				if (modifierType is OptionalModifierType) {
+					return new OptionalModifierType (modifier, elementType);
 				}
 
-				return new RequiredModifierType(modifier, elementType);
+				return new RequiredModifierType (modifier, elementType);
 			}
 
 			var pinnedType = typeToInflate as PinnedType;
-			if (pinnedType != null)
-			{
-				var elementType = InflateGenericType(genericInstanceProvider, pinnedType.ElementType);
+			if (pinnedType != null) {
+				var elementType = InflateGenericType (genericInstanceProvider, pinnedType.ElementType);
 
 				if (elementType != pinnedType.ElementType)
-					return new PinnedType(elementType);
+					return new PinnedType (elementType);
 
 				return pinnedType;
 			}
 
 			var pointerType = typeToInflate as PointerType;
-			if (pointerType != null)
-			{
-				var elementType = InflateGenericType(genericInstanceProvider, pointerType.ElementType);
+			if (pointerType != null) {
+				var elementType = InflateGenericType (genericInstanceProvider, pointerType.ElementType);
 
 				if (elementType != pointerType.ElementType)
-					return new PointerType(elementType);
+					return new PointerType (elementType);
 
 				return pointerType;
 			}
 
 			var byReferenceType = typeToInflate as ByReferenceType;
-			if (byReferenceType != null)
-			{
-				var elementType = InflateGenericType(genericInstanceProvider, byReferenceType.ElementType);
+			if (byReferenceType != null) {
+				var elementType = InflateGenericType (genericInstanceProvider, byReferenceType.ElementType);
 
 				if (elementType != byReferenceType.ElementType)
-					return new ByReferenceType(elementType);
+					return new ByReferenceType (elementType);
 
 				return byReferenceType;
 			}
 
 			var sentinelType = typeToInflate as SentinelType;
-			if (sentinelType != null)
-			{
-				var elementType = InflateGenericType(genericInstanceProvider, sentinelType.ElementType);
+			if (sentinelType != null) {
+				var elementType = InflateGenericType (genericInstanceProvider, sentinelType.ElementType);
 
 				if (elementType != sentinelType.ElementType)
-					return new SentinelType(elementType);
+					return new SentinelType (elementType);
 
 				return sentinelType;
 			}
@@ -170,13 +155,12 @@ namespace Mono.Linker
 			return typeToInflate;
 		}
 
-		public static GenericInstanceType MakeGenericType(GenericInstanceType genericInstanceProvider, GenericInstanceType type)
+		public static GenericInstanceType MakeGenericType (GenericInstanceType genericInstanceProvider, GenericInstanceType type)
 		{
-			var result = new GenericInstanceType(type.ElementType);
+			var result = new GenericInstanceType (type.ElementType);
 
-			for (var i = 0; i < type.GenericArguments.Count; ++i)
-			{
-				result.GenericArguments.Add(InflateGenericType(genericInstanceProvider, type.GenericArguments[i]));
+			for (var i = 0; i < type.GenericArguments.Count; ++i) {
+				result.GenericArguments.Add (InflateGenericType (genericInstanceProvider, type.GenericArguments [i]));
 			}
 
 			return result;
@@ -184,19 +168,16 @@ namespace Mono.Linker
 
 		public static IEnumerable<MethodReference> GetMethods(this TypeReference type)
 		{
-			var typeDef = type.Resolve();
+			var typeDef = type.Resolve ();
 
 			if (!typeDef.HasMethods)
 				yield break;
 
 			var genericInstanceType = type as GenericInstanceType;
-			if (genericInstanceType != null)
-			{
+			if (genericInstanceType != null) {
 				foreach (var methodDef in typeDef.Methods)
-					yield return MakeMethodReferenceForGenericInstanceType(genericInstanceType, methodDef);
-			}
-			else
-			{
+					yield return MakeMethodReferenceForGenericInstanceType (genericInstanceType, methodDef);
+			} else {
 				foreach (var method in typeDef.Methods)
 					yield return method;
 			}
@@ -204,7 +185,7 @@ namespace Mono.Linker
 
 		public static MethodReference MakeMethodReferenceForGenericInstanceType(GenericInstanceType genericInstanceType, MethodDefinition methodDef)
 		{
-			var method = new MethodReference(methodDef.Name, methodDef.ReturnType, genericInstanceType)
+			var method = new MethodReference (methodDef.Name, methodDef.ReturnType, genericInstanceType)
 			{
 				HasThis = methodDef.HasThis,
 				ExplicitThis = methodDef.ExplicitThis,
@@ -212,10 +193,10 @@ namespace Mono.Linker
 			};
 
 			foreach (var parameter in methodDef.Parameters)
-				method.Parameters.Add(new ParameterDefinition(parameter.Name, parameter.Attributes, parameter.ParameterType));
+				method.Parameters.Add (new ParameterDefinition (parameter.Name, parameter.Attributes, parameter.ParameterType));
 
 			foreach (var gp in methodDef.GenericParameters)
-				method.GenericParameters.Add(new GenericParameter(gp.Name, method));
+				method.GenericParameters.Add (new GenericParameter (gp.Name, method));
 
 			return method;
 		}
@@ -225,7 +206,7 @@ namespace Mono.Linker
 			var genericInstance = method.DeclaringType as GenericInstanceType;
 
 			if (genericInstance != null)
-				return InflateGenericType(genericInstance, method.ReturnType);
+				return InflateGenericType (genericInstance, method.ReturnType);
 
 			return method.ReturnType;
 		}
@@ -235,9 +216,9 @@ namespace Mono.Linker
 			var genericInstance = method.DeclaringType as GenericInstanceType;
 
 			if (genericInstance != null)
-				return InflateGenericType(genericInstance, method.Parameters[parameterIndex].ParameterType);
+				return InflateGenericType (genericInstance, method.Parameters [parameterIndex].ParameterType);
 
-			return method.Parameters[parameterIndex].ParameterType;
+			return method.Parameters [parameterIndex].ParameterType;
 		}
 	}
 }
