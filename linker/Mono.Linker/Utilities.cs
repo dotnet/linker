@@ -6,9 +6,9 @@ using System.Text;
 
 namespace Mono.Linker
 {
-	static class Utilities
+	public static class Utilities
 	{
-		internal static TypeReference GetBaseType(this TypeReference type)
+		public static TypeReference GetBaseType(this TypeReference type)
 		{
 			if (type == null)
 				return null;
@@ -46,7 +46,7 @@ namespace Mono.Linker
 			return type.Resolve().BaseType;
 		}
 
-		internal static IEnumerable<TypeReference> GetInterfaces(this TypeReference typeRef)
+		public static IEnumerable<TypeReference> GetInterfaces(this TypeReference typeRef)
 		{
 			var typeDef = typeRef.Resolve();
 
@@ -66,7 +66,7 @@ namespace Mono.Linker
 			}
 		}
 
-		internal static TypeReference InflateGenericType(GenericInstanceType genericInstanceProvider, TypeReference typeToInflate)
+		public static TypeReference InflateGenericType(GenericInstanceType genericInstanceProvider, TypeReference typeToInflate)
 		{
 			var arrayType = typeToInflate as ArrayType;
 			if (arrayType != null)
@@ -170,7 +170,7 @@ namespace Mono.Linker
 			return typeToInflate;
 		}
 
-		internal static GenericInstanceType MakeGenericType(GenericInstanceType genericInstanceProvider, GenericInstanceType type)
+		public static GenericInstanceType MakeGenericType(GenericInstanceType genericInstanceProvider, GenericInstanceType type)
 		{
 			var result = new GenericInstanceType(type.ElementType);
 
@@ -182,7 +182,7 @@ namespace Mono.Linker
 			return result;
 		}
 
-		internal static IEnumerable<MethodReference> GetMethods(this TypeReference type)
+		public static IEnumerable<MethodReference> GetMethods(this TypeReference type)
 		{
 			var typeDef = type.Resolve();
 
@@ -202,7 +202,7 @@ namespace Mono.Linker
 			}
 		}
 
-		internal static MethodReference MakeMethodReferenceForGenericInstanceType(GenericInstanceType genericInstanceType, MethodDefinition methodDef)
+		public static MethodReference MakeMethodReferenceForGenericInstanceType(GenericInstanceType genericInstanceType, MethodDefinition methodDef)
 		{
 			var method = new MethodReference(methodDef.Name, methodDef.ReturnType, genericInstanceType)
 			{
@@ -220,7 +220,7 @@ namespace Mono.Linker
 			return method;
 		}
 
-		internal static TypeReference GetReturnType(this MethodReference method)
+		public static TypeReference GetReturnType(this MethodReference method)
 		{
 			var genericInstance = method.DeclaringType as GenericInstanceType;
 
@@ -230,7 +230,7 @@ namespace Mono.Linker
 			return method.ReturnType;
 		}
 
-		internal static TypeReference GetParameterType(this MethodReference method, int parameterIndex)
+		public static TypeReference GetParameterType(this MethodReference method, int parameterIndex)
 		{
 			var genericInstance = method.DeclaringType as GenericInstanceType;
 
