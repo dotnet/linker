@@ -134,6 +134,7 @@ namespace Mono.Linker.Steps {
 				catch (AssemblyResolutionException) {
 					continue;
 				}
+
 				if (!AreSameReference (r, target.Name))
 					continue;
 
