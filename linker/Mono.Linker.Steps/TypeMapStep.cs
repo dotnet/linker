@@ -262,9 +262,9 @@ namespace Mono.Linker.Steps {
 			return true;
 		}
 
-		static bool TypeMatch(GenericParameter a, GenericParameter b)
+		static bool TypeMatch (GenericParameter a, GenericParameter b)
 		{
-			if (ReferenceEquals(a, b))
+			if (ReferenceEquals (a, b))
 				return true;
 
 			if (a.Position != b.Position)
