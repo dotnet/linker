@@ -49,6 +49,7 @@
     <Compile Include="Mono.Linker.Steps\CleanStep.cs" />
     <Compile Include="Mono.Linker.Steps\RegenerateGuidStep.cs" />
     <Compile Include="Mono.Linker.Steps\LoadI18nAssemblies.cs" />
+    <Compile Include="Mono.Linker\ILinkerAssemblyResolver.cs" />
     <Compile Include="Mono.Linker\IXApiVisitor.cs" />
     <Compile Include="Mono.Linker\I18nAssemblies.cs" />
     <Compile Include="Mono.Linker.Steps\IStep.cs" />
@@ -70,6 +71,7 @@
     <Compile Include="Mono.Linker\MethodAction.cs" />
     <Compile Include="Mono.Linker\Pipeline.cs" />
     <Compile Include="Mono.Linker\TypePreserve.cs" />
+    <Compile Include="Mono.Linker\Utilities.cs" />
     <Compile Include="Mono.Linker\XApiReader.cs" />
     <Compile Include="Mono.Linker.Steps\TypeMapStep.cs" />
   </ItemGroup>

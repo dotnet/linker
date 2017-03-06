@@ -129,17 +129,17 @@ namespace Mono.Linker {
 					break;
 				case 'x':
 					foreach (string file in GetFiles (GetParam ()))
-						p.PrependStep (new ResolveFromXmlStep (new XPathDocument (file)));
+						AddResolutionStep (p, new ResolveFromXmlStep (new XPathDocument (file)));
 					resolver = true;
 					break;
 				case 'a':
 					foreach (string file in GetFiles (GetParam ()))
-						p.PrependStep (new ResolveFromAssemblyStep (file));
+						AddResolutionStep (p, new ResolveFromAssemblyStep (file));
 					resolver = true;
 					break;
 				case 'i':
 					foreach (string file in GetFiles (GetParam ()))
-						p.PrependStep (new ResolveFromXApiStep (new XPathDocument (file)));
+						AddResolutionStep (p, new ResolveFromXApiStep (new XPathDocument (file)));
 					resolver = true;
 					break;
 				case 'l':
@@ -172,7 +172,12 @@ namespace Mono.Linker {
 			p.Process (context);
 		}
 
-		static void AddCustomStep (Pipeline pipeline, string arg)
+		protected virtual void AddResolutionStep (Pipeline p, IStep resolveStep)
+		{
+			p.PrependStep (resolveStep);
+		}
+
+		protected void AddCustomStep (Pipeline pipeline, string arg)
 		{
 			int pos = arg.IndexOf (":");
 			if (pos == -1) {
@@ -233,7 +238,7 @@ namespace Mono.Linker {
 			return (string []) lines.ToArray (typeof (string));
 		}
 
-		static I18nAssemblies ParseI18n (string str)
+		protected I18nAssemblies ParseI18n (string str)
 		{
 			I18nAssemblies assemblies = I18nAssemblies.None;
 			string [] parts = str.Split (',');
