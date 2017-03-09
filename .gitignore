@@ -19,3 +19,6 @@ linker/bin
 # Mac crap
 .DS_Store
 
+
+*.force
+*.FileListAbsolute.txt
