@@ -16,7 +16,6 @@ linker/obj
 linker/bin
 
 
-# Mac crap
 .DS_Store
 
 
