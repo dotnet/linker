@@ -73,9 +73,9 @@ namespace Mono.Linker {
 			return assembly;
 		}
 
-		public AssemblyNameReference ResolveName(AssemblyNameReference name)
+		public AssemblyNameReference ResolveName (AssemblyNameReference name)
 		{
-			return Resolve(name).Name;
+			return Resolve (name).Name;
 		}
 	}
 }

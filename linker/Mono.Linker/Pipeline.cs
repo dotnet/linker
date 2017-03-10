@@ -65,13 +65,11 @@ namespace Mono.Linker {
 			throw new InvalidOperationException (msg);
 		}
 
-		public void AddStepBefore(IStep target, IStep step)
+		public void AddStepBefore (IStep target, IStep step)
 		{
-			for (int i = 0; i < _steps.Count; i++)
-			{
-				if (_steps[i] == target)
-				{
-					_steps.Insert(i, step);
+			for (int i = 0; i < _steps.Count; i++) {
+				if (_steps [i] == target) {
+					_steps.Insert (i, step);
 					return;
 				}
 			}

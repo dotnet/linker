@@ -112,7 +112,7 @@ namespace Mono.Linker {
 		{
 		}
 
-		public LinkContext(Pipeline pipeline, ILinkerAssemblyResolver resolver)
+		public LinkContext (Pipeline pipeline, ILinkerAssemblyResolver resolver)
 			: this(pipeline, resolver, new ReaderParameters
 			{
 				AssemblyResolver = resolver,
@@ -180,7 +180,7 @@ namespace Mono.Linker {
 			}
 		}
 
-		public virtual ICollection<AssemblyDefinition> DependenciesFor(AssemblyDefinition assembly)
+		public virtual ICollection<AssemblyDefinition> DependenciesFor (AssemblyDefinition assembly)
 		{
 			List<AssemblyDefinition> references = new List<AssemblyDefinition> ();
 			foreach (AssemblyNameReference reference in assembly.MainModule.AssemblyReferences) {
