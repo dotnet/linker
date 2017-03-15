@@ -1200,7 +1200,7 @@ namespace Mono.Linker.Steps {
 			}
 		}
 
-		protected virtual bool ContinueWith(TypeDefinition type, TypeReference reference)
+		protected virtual bool ContinueWith (TypeDefinition type, TypeReference reference)
 		{
 			if (type == null) {
 				throw new ResolutionException (reference);
@@ -1209,7 +1209,7 @@ namespace Mono.Linker.Steps {
 			return true;
 		}
 
-		protected virtual bool ContinueWith(MethodDefinition method, MethodReference reference)
+		protected virtual bool ContinueWith (MethodDefinition method, MethodReference reference)
 		{
 			if (method == null) {
 				throw new ResolutionException (reference);
