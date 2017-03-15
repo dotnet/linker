@@ -127,14 +127,15 @@ namespace Mono.Linker.Steps {
 			var references = assembly.MainModule.AssemblyReferences;
 			for (int i = 0; i < references.Count; i++) {
 				var reference = references [i];
-				AssemblyDefinition r = null;
+				AssemblyNameReference r = null;
 				try {
-					r = Context.Resolver.Resolve (reference);
+					r = Context.Resolver.ResolveName (reference);
 				}
 				catch (AssemblyResolutionException) {
 					continue;
 				}
-				if (!AreSameReference (r.Name, target.Name))
+
+				if (!AreSameReference (r, target.Name))
 					continue;
 
 				references.RemoveAt (i);
@@ -175,6 +176,8 @@ namespace Mono.Linker.Steps {
 			foreach (TypeReference tr in assembly.MainModule.GetTypeReferences ()) {
 				if (hash.ContainsKey (tr))
 					continue;
+				if (!CanChangeScope (tr))
+					continue;
 				var td = tr.Resolve ();
 				IMetadataScope scope = tr.Scope;
 				// at this stage reference might include things that can't be resolved
@@ -209,7 +212,7 @@ namespace Mono.Linker.Steps {
 			return changes;
 		}
 
-		void SweepType (TypeDefinition type)
+		protected virtual void SweepType (TypeDefinition type)
 		{
 			if (type.HasFields)
 				SweepCollection (type.Fields);
@@ -221,7 +224,7 @@ namespace Mono.Linker.Steps {
 				SweepNestedTypes (type);
 		}
 
-		void SweepNestedTypes (TypeDefinition type)
+		protected void SweepNestedTypes (TypeDefinition type)
 		{
 			for (int i = 0; i < type.NestedTypes.Count; i++) {
 				var nested = type.NestedTypes [i];
@@ -285,11 +288,16 @@ namespace Mono.Linker.Steps {
 			}
 		}
 
-		void SweepCollection (IList list)
+		protected void SweepCollection (IList list)
 		{
 			for (int i = 0; i < list.Count; i++)
 				if (!Annotations.IsMarked ((IMetadataTokenProvider) list [i]))
 					list.RemoveAt (i--);
+		}
+
+		protected virtual bool CanChangeScope (TypeReference type)
+		{
+			return true;
 		}
 
 		static bool AreSameReference (AssemblyNameReference a, AssemblyNameReference b)
