@@ -243,7 +243,7 @@ namespace Mono.Linker {
 
 		public AssemblyDefinition [] GetAssemblies ()
 		{
-			var assemblies = Annotations.GetAssemblies();
+			var assemblies = Annotations.GetAssemblies ();
 			AssemblyDefinition [] asms = new AssemblyDefinition [assemblies.Count];
 			assemblies.CopyTo (asms, 0);
 			return asms;
