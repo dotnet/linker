@@ -153,12 +153,9 @@ namespace Mono.Linker.Steps {
 			while (!QueueIsEmpty ()) {
 				MethodDefinition method = (MethodDefinition) _methods.Dequeue ();
 				Annotations.Push (method);
-				try
-				{
+				try {
 					ProcessMethod (method);
-				}
-				catch (Exception e)
-				{
+				} catch (Exception e) {
 					throw new Exception (string.Format ("Error processing method: '{0}' in assembly: '{1}'", method.FullName, method.Module.Name), e);
 				}
 				Annotations.Pop ();
