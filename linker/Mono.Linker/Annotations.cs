@@ -139,10 +139,11 @@ namespace Mono.Linker {
 
 		public void SetPreserve (TypeDefinition type, TypePreserve preserve)
 		{
-			if (preserved_types.ContainsKey (type))
-				preserved_types [type] = ChoosePreserveActionWhichPreservesTheMost (preserved_types [type], preserve);
+			TypePreserve existing;
+			if (preserved_types.TryGetValue (type, out existing))
+				preserved_types [type] = ChoosePreserveActionWhichPreservesTheMost (existing, preserve);
 			else
-				preserved_types [type] = preserve;
+				preserved_types.Add (type, preserve);
 		}
 
 		public static TypePreserve ChoosePreserveActionWhichPreservesTheMost (TypePreserve leftPreserveAction, TypePreserve rightPreserveAction)
@@ -153,10 +154,10 @@ namespace Mono.Linker {
 			if (leftPreserveAction == TypePreserve.All || rightPreserveAction == TypePreserve.All)
 				return TypePreserve.All;
 
-			if (leftPreserveAction == TypePreserve.Nothing && rightPreserveAction != TypePreserve.Nothing)
+			if (leftPreserveAction == TypePreserve.Nothing)
 				return rightPreserveAction;
 
-			if (rightPreserveAction == TypePreserve.Nothing && leftPreserveAction != TypePreserve.Nothing)
+			if (rightPreserveAction == TypePreserve.Nothing)
 				return leftPreserveAction;
 
 			if ((leftPreserveAction == TypePreserve.Methods && rightPreserveAction == TypePreserve.Fields) ||
