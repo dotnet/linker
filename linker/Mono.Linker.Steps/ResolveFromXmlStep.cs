@@ -404,7 +404,7 @@ namespace Mono.Linker.Steps {
 
 		static void ProcessReferences (AssemblyDefinition assembly, LinkContext context)
 		{
-			context.DependenciesFor (assembly);
+			context.ResolveReferences (assembly);
 		}
 
 		static bool IsRequired (XPathNavigator nav)
