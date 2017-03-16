@@ -156,7 +156,7 @@ namespace Mono.Linker.Steps {
 				try {
 					ProcessMethod (method);
 				} catch (Exception e) {
-					throw new Exception (string.Format ("Error processing method: '{0}' in assembly: '{1}'", method.FullName, method.Module.Name), e);
+					throw new MarkException (string.Format ("Error processing method: '{0}' in assembly: '{1}'", method.FullName, method.Module.Name), e);
 				}
 				Annotations.Pop ();
 			}
