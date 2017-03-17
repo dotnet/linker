@@ -235,9 +235,8 @@ namespace Mono.Linker.Steps {
 				TypeDefinition type = constructor_type.Resolve ();
 
 				if (type == null) {
-					if (!HandleUnresolvedType (constructor_type)) {
-						return;
-					}
+					HandleUnresolvedType (constructor_type);
+					return;
 				}
 
 				MarkCustomAttributeProperties (ca, type);
@@ -525,8 +524,8 @@ namespace Mono.Linker.Steps {
 			TypeDefinition type = ResolveTypeDefinition (reference);
 
 			if (type == null) {
-				if (!HandleUnresolvedType (reference))
-					return null;
+				HandleUnresolvedType (reference);
+				return null;
 			}
 
 			if (CheckProcessed (type))
@@ -967,9 +966,8 @@ namespace Mono.Linker.Steps {
 
 			try {
 				if (method == null) {
-					if (!HandleUnresolvedMethod (reference)) {
-						return null;
-					}
+					HandleUnresolvedMethod (reference);
+					return null;
 				}
 
 				if (Annotations.GetAction (method) == MethodAction.Nothing)
@@ -1209,12 +1207,12 @@ namespace Mono.Linker.Steps {
 			}
 		}
 
-		protected virtual bool HandleUnresolvedType (TypeReference reference)
+		protected virtual void HandleUnresolvedType (TypeReference reference)
 		{
 			throw new ResolutionException (reference);
 		}
 
-		protected virtual bool HandleUnresolvedMethod (MethodReference reference)
+		protected virtual void HandleUnresolvedMethod (MethodReference reference)
 		{
 			throw new ResolutionException (reference);
 		}
