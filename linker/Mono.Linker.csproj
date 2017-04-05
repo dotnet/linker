@@ -55,6 +55,7 @@
     <Compile Include="Mono.Linker.Steps\IStep.cs" />
     <Compile Include="Mono.Linker.Steps\LoadReferencesStep.cs" />
     <Compile Include="Mono.Linker.Steps\MarkStep.cs" />
+    <Compile Include="Mono.Linker.Steps\MarkStepWithReflectionHeuristics.cs" />
     <Compile Include="Mono.Linker.Steps\OutputStep.cs" />
     <Compile Include="Mono.Linker.Steps\ResolveFromXApiStep.cs" />
     <Compile Include="Mono.Linker.Steps\ResolveFromAssemblyStep.cs" />
