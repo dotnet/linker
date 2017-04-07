@@ -115,6 +115,7 @@ namespace Mono.Linker.Steps {
 			while (!QueueIsEmpty ()) {
 				ProcessQueue ();
 				ProcessVirtualMethods ();
+				DoAdditionalProcessing ();
 			}
 
 			// deal with [TypeForwardedTo] pseudo-attributes
@@ -599,6 +600,11 @@ namespace Mono.Linker.Steps {
 			return type;
 		}
 
+		// Allow subclassers to mark additional things in the main processing loop
+		protected virtual void DoAdditionalProcessing()
+		{
+		}
+
 		// Allow subclassers to mark additional things when marking a method
 		protected virtual void DoAdditionalTypeProcessing (TypeDefinition method)
 		{
@@ -841,9 +847,9 @@ namespace Mono.Linker.Steps {
 				parameters [1].ParameterType.Name == "StreamingContext";
 		}
 
-		delegate bool MethodPredicate (MethodDefinition method);
+		protected delegate bool MethodPredicate (MethodDefinition method);
 
-		void MarkMethodsIf (ICollection methods, MethodPredicate predicate)
+		protected void MarkMethodsIf (ICollection methods, MethodPredicate predicate)
 		{
 			foreach (MethodDefinition method in methods)
 				if (predicate (method)) {
@@ -860,7 +866,9 @@ namespace Mono.Linker.Steps {
 			return IsConstructor (method) && !method.HasParameters;
 		}
 
-		static bool IsConstructor (MethodDefinition method)
+		protected static MethodPredicate IsConstructorPredicate = new MethodPredicate (IsConstructor);
+
+		protected static bool IsConstructor (MethodDefinition method)
 		{
 			return method.IsConstructor && !method.IsStatic;
 		}
