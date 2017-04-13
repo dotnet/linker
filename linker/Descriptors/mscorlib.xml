@@ -290,6 +290,11 @@
 		<type fullname="System.Runtime.CompilerServices.RuntimeHelpers" />
 		<type fullname="System.Runtime.CompilerServices.TypeForwardedToAttribute" /> -->
 
+		<type fullname="System.Runtime.CompilerServices. AsyncTaskMethodBuilder">
+		  <!-- Called by the debugger -->
+		  <method name="SetNotificationForWaitCompletion"/>
+		</type>
+
 		<!-- <type fullname="System.Runtime.InteropServices.DllImportAttribute" /> -->
 		<type fullname="System.Runtime.InteropServices.GCHandle" />
 		<!-- <type fullname="System.Runtime.InteropServices.GuidAttribute" /> -->
