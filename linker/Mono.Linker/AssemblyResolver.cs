@@ -67,10 +67,11 @@ namespace Mono.Linker {
 			return asm;
 		}
 
-		public void CacheAssembly (AssemblyDefinition assembly)
+		public AssemblyDefinition CacheAssembly (AssemblyDefinition assembly)
 		{
 			_assemblies [assembly.Name.Name] = assembly;
 			base.AddSearchDirectory (Path.GetDirectoryName (assembly.MainModule.FileName));
+			return assembly;
 		}
 	}
 }
