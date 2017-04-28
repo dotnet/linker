@@ -37,12 +37,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Mono.Linker.Tests.Cases.Expectations\Mono.Linker.Tests.Cases.Expectations.csproj">
-      <Project>{2c26601f-3e2f-45b9-a02f-58ee9296e19e}</Project>
-      <Name>Mono.Linker.Tests.Cases.Expectations</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="Attributes\AttributeOnPreservedTypeWithTypeUsedInConstructorIsKept.cs" />
     <Compile Include="Attributes\AttributeOnPreservedTypeWithTypeUsedInDifferentNamespaceIsKept.cs" />
     <Compile Include="Attributes\AttributeOnPreservedTypeWithTypeUsedInFieldIsKept.cs" />
@@ -96,6 +90,12 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="LinkXml\UnusedTypePreservedByLinkXmlIsKept.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Mono.Linker.Tests.Cases.Expectations\Mono.Linker.Tests.Cases.Expectations.csproj">
+      <Project>{2C26601F-3E2F-45B9-A02F-58EE9296E19E}</Project>
+      <Name>Mono.Linker.Tests.Cases.Expectations</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

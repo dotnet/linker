@@ -45,14 +45,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Mono.Linker.Tests\AbstractLinkingTestFixture.cs" />
-    <Compile Include="Mono.Linker.Tests\AbstractTestFixture.cs" />
-    <Compile Include="Mono.Linker.Tests\LinkingTestFixture.cs" />
-    <Compile Include="Mono.Linker.Tests\AssemblyInfo.cs" />
-    <Compile Include="Mono.Linker.Tests\XmlLinkingTestFixture.cs" />
-    <Compile Include="Mono.Linker.Tests\ResolveLinkedAssemblyStep.cs" />
-  </ItemGroup>
-  <ItemGroup>
     <Folder Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
@@ -64,12 +56,18 @@
       <Project>{DD28E2B1-057B-4B4D-A04D-B2EBD9E76E46}</Project>
       <Name>Mono.Linker</Name>
     </ProjectReference>
-    <ProjectReference Include="TestCases\TestCases.csproj">
-      <Project>{26D857FB-EEE3-4A5B-95BC-DAB39F880A99}</Project>
-      <Name>TestCases</Name>
+    <ProjectReference Include="Mono.Linker.Tests.Core\Mono.Linker.Tests.Core.csproj">
+      <Project>{750F688B-11E3-4B8E-9F4A-9944EFA3464B}</Project>
+      <Name>Mono.Linker.Tests.Core</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="Mono.Linker.Tests\AbstractLinkingTestFixture.cs" />
+    <None Include="Mono.Linker.Tests\AbstractTestFixture.cs" />
+    <None Include="Mono.Linker.Tests\LinkingTestFixture.cs" />
+    <None Include="Mono.Linker.Tests\AssemblyInfo.cs" />
+    <None Include="Mono.Linker.Tests\XmlLinkingTestFixture.cs" />
+    <None Include="Mono.Linker.Tests\ResolveLinkedAssemblyStep.cs" />
   </ItemGroup>
 </Project>
