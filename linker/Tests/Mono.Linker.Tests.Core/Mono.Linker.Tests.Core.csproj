@@ -1,0 +1,86 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{750F688B-11E3-4B8E-9F4A-9944EFA3464B}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Mono.Linker.Tests.Core</RootNamespace>
+    <AssemblyName>Mono.Linker.Tests.Core</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Base\BaseAssertions.cs" />
+    <Compile Include="Base\BaseChecker.cs" />
+    <Compile Include="Base\BaseCompiler.cs" />
+    <Compile Include="Base\BaseLinker.cs" />
+    <Compile Include="Base\BaseLinkerArgumentBuilder.cs" />
+    <Compile Include="Base\BaseObjectFactory.cs" />
+    <Compile Include="Base\BaseTestCaseMetadaProvider.cs" />
+    <Compile Include="Base\BaseTestSandbox.cs" />
+    <Compile Include="DefaultChecker.cs" />
+    <Compile Include="DefaultCompiler.cs" />
+    <Compile Include="DefaultLinkerArgumentBuilder.cs" />
+    <Compile Include="DefaultTestCaseMetadaProvider.cs" />
+    <Compile Include="DefaultTestSandbox.cs" />
+    <Compile Include="LinkedTestCaseResult.cs" />
+    <Compile Include="LinkXmlHelpers.cs" />
+    <Compile Include="ManagedCompilationResult.cs" />
+    <Compile Include="TestCase.cs" />
+    <Compile Include="TestCaseCollector.cs" />
+    <Compile Include="TestCaseLinkerOptions.cs" />
+    <Compile Include="TestRunner.cs" />
+    <Compile Include="Utils\ExpectationUtils.cs" />
+    <Compile Include="Utils\CecilExtensions.cs" />
+    <Compile Include="Utils\NiceIO.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\cecil\Mono.Cecil.csproj">
+      <Project>{d68133bd-1e63-496e-9ede-4fbdbf77b486}</Project>
+      <Name>Mono.Cecil</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Mono.Linker.Tests.Cases.Expectations\Mono.Linker.Tests.Cases.Expectations.csproj">
+      <Project>{2c26601f-3e2f-45b9-a02f-58ee9296e19e}</Project>
+      <Name>Mono.Linker.Tests.Cases.Expectations</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Mono.Linker.Tests.Cases\Mono.Linker.Tests.Cases.csproj">
+      <Project>{b6bee6aa-ada0-4e1d-9a17-fbf2936f82b5}</Project>
+      <Name>Mono.Linker.Tests.Cases</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
