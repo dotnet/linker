@@ -46,6 +46,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
+    <Folder Include="TestsCases\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\cecil\Mono.Cecil.csproj">
@@ -60,6 +61,10 @@
       <Project>{750F688B-11E3-4B8E-9F4A-9944EFA3464B}</Project>
       <Name>Mono.Linker.Tests.Core</Name>
     </ProjectReference>
+    <ProjectReference Include="Mono.Linker.Tests.Cases\Mono.Linker.Tests.Cases.csproj">
+      <Project>{B6BEE6AA-ADA0-4E1D-9A17-FBF2936F82B5}</Project>
+      <Name>Mono.Linker.Tests.Cases</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -69,5 +74,12 @@
     <None Include="Mono.Linker.Tests\AssemblyInfo.cs" />
     <None Include="Mono.Linker.Tests\XmlLinkingTestFixture.cs" />
     <None Include="Mono.Linker.Tests\ResolveLinkedAssemblyStep.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="TestsCases\TestSuites.cs" />
+    <Compile Include="TestsCases\TestDatabase.cs" />
+    <Compile Include="TestsCases\ObjectFactory.cs" />
+    <Compile Include="TestsCases\MonoLinker.cs" />
+    <Compile Include="TestsCases\NUnitAssertions.cs" />
   </ItemGroup>
 </Project>
