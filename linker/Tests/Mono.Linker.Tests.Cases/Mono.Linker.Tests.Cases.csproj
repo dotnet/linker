@@ -58,8 +58,11 @@
     <Compile Include="Basic\UsedPropertyIsKept.cs" />
     <Compile Include="Future\DeadCodeElimination1.cs" />
     <Compile Include="Future\FieldThatOnlyGetsSetIsRemoved.cs" />
+    <Compile Include="Generics\DerivedClassWithMethodOfSameNameAsBaseButDifferentNumberOfGenericParametersUnusedBaseWillGetStripped.cs" />
     <Compile Include="Generics\GenericInstanceInterfaceMethodImplementedWithDifferentGenericArgumentNameDoesNotGetStripped.cs" />
     <Compile Include="Generics\MethodWithParameterWhichHasGenericParametersAndOverrideUsesADifferentNameForGenericParameter.cs" />
+    <Compile Include="Generics\MethodWithParameterWhichHasGenericParametersAndOverrideUsesADifferentNameForGenericParameterNestedCase.cs" />
+    <Compile Include="Generics\MethodWithParameterWhichHasGenericParametersAndOverrideUsesADifferentNameForGenericParameterNestedCase2.cs" />
     <Compile Include="Generics\OverrideWithAnotherVirtualMethodOfSameNameWithDifferentParameterType.cs" />
     <Compile Include="Interop\InternalCalls\DefaultConstructorOfReturnTypeIsNotRemoved.cs" />
     <Compile Include="Interop\PInvoke\DefaultConstructorOfReturnTypeIsNotRemoved.cs" />
