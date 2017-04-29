@@ -56,6 +56,7 @@
     <Compile Include="Basic\UnusedPropertyGetsRemoved.cs" />
     <Compile Include="Basic\UnusedPropertySetterRemoved.cs" />
     <Compile Include="Basic\UsedPropertyIsKept.cs" />
+    <Compile Include="CoreLink\LinkingOfCoreLibrariesRemovesUnusedTypes.cs" />
     <Compile Include="Future\DeadCodeElimination1.cs" />
     <Compile Include="Future\FieldThatOnlyGetsSetIsRemoved.cs" />
     <Compile Include="Generics\DerivedClassWithMethodOfSameNameAsBaseButDifferentNumberOfGenericParametersUnusedBaseWillGetStripped.cs" />
