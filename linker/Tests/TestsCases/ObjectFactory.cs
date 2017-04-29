@@ -5,21 +5,13 @@ namespace Mono.Linker.Tests.TestsCases
 {
 	public class ObjectFactory : BaseObjectFactory
 	{
-		private readonly BaseAssertions _assertions;
-
-		public ObjectFactory (BaseAssertions assertions)
+		public ObjectFactory ()
 		{
-			_assertions = assertions;
 		}
 
 		public override BaseLinker CreateLinker (TestCase testCase)
 		{
 			return new MonoLinker (testCase);
-		}
-
-		public override BaseAssertions CreateAssertions ()
-		{
-			return _assertions;
 		}
 	}
 }

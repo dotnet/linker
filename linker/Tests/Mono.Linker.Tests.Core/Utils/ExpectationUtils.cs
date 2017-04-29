@@ -82,5 +82,17 @@ namespace Mono.Linker.Tests.Core.Utils
 		{
 			return attr.AttributeType.Name == nameof(KeptAttribute) || attr.AttributeType.Name == nameof(RemovedAttribute);
 		}
+
+		// TODO by Mike : Going to have to refactor this, no way to get the Unity StubAttribute included here
+		public static bool IsMemberAssertion(this CustomAttribute attr)
+		{
+			return attr.AttributeType.Name == nameof(KeptMemberAttribute) || attr.AttributeType.Name == nameof(RemovedMemberAttribute);
+		}
+
+		// TODO by Mike : Going to have to refactor this, no way to get the Unity StubAttribute included here
+		public static bool IsAssemblyAssertion(this CustomAttribute attr)
+		{
+			return attr.AttributeType.Name == nameof(KeptAssemblyAttribute) || attr.AttributeType.Name == nameof(RemovedAssemblyAttribute);
+		}
 	}
 }

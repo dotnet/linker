@@ -5,41 +5,68 @@ using Mono.Cecil;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Core.Base;
 using Mono.Linker.Tests.Core.Utils;
+using NUnit.Framework;
 
 namespace Mono.Linker.Tests.Core
 {
 	public class DefaultChecker : BaseChecker
 	{
-		private readonly BaseAssertions _realAssertions;
 		private readonly AssertionCounter _assertionCounter;
 
-		public DefaultChecker(TestCase testCase, BaseAssertions assertions)
-			: base(testCase, new AssertionCounter(assertions))
+		public DefaultChecker(TestCase testCase)
+			: base(testCase)
 		{
-			_realAssertions = assertions;
-			_assertionCounter = (AssertionCounter)Assert;
+			_assertionCounter = new AssertionCounter();
 		}
-
-		protected BaseAssertions AssertNonCounted => _realAssertions;
 
 		protected void BumpAssertionCounter()
 		{
 			_assertionCounter.Bump();
 		}
 
-		public override void Check(LinkedTestCaseResult linkResult)
+		protected void BumpAssertionCounter(Action assertion)
 		{
-			AssertNonCounted.IsTrue(linkResult.LinkedAssemblyPath.FileExists(), $"The linked output assembly was not found.  Expected at {linkResult.LinkedAssemblyPath}");
-			using (var original = AssemblyDefinition.ReadAssembly(linkResult.InputAssemblyPath.ToString()))
-			{
-				using (var linked = AssemblyDefinition.ReadAssembly(linkResult.LinkedAssemblyPath.ToString()))
-				{
-					CompareAssemblies(original, linked);
-				}
-			}
+			_assertionCounter.Bump(assertion);
 		}
 
-		protected virtual void CompareAssemblies(AssemblyDefinition original, AssemblyDefinition linked)
+		public override void Check(LinkedTestCaseResult linkResult)
+		{
+			Assert.IsTrue(linkResult.LinkedAssemblyPath.FileExists(), $"The linked output assembly was not found.  Expected at {linkResult.LinkedAssemblyPath}");
+
+			int expectedNumberOfAssertionsToMake = 0;
+
+			using (var original = AssemblyDefinition.ReadAssembly(linkResult.InputAssemblyPath.ToString()))
+			{
+				expectedNumberOfAssertionsToMake += PerformOutputAssemblyChecks(original, linkResult.LinkedAssemblyPath.Parent);
+
+				using (var linked = AssemblyDefinition.ReadAssembly(linkResult.LinkedAssemblyPath.ToString()))
+				{
+					expectedNumberOfAssertionsToMake += CompareAssemblies(original, linked);
+				}
+			}
+
+			// These are safety checks to help reduce false positive passes.  A test could pass if there was a bug in the checking logic that never made an assert.  This check is here
+			// to make sure we make the number of assertions that we expect
+			if (expectedNumberOfAssertionsToMake == 0)
+				Assert.Fail($"Did not find any assertions to make.  Does the test case define any assertions to make?  Or there may be a bug in the collection of assertions to make");
+
+			Assert.AreEqual(_assertionCounter.AssertionsMade, expectedNumberOfAssertionsToMake, $"Expected to make {expectedNumberOfAssertionsToMake} assertions, but only made {_assertionCounter.AssertionsMade}.  The test may be invalid or there may be a bug in the checking logic");
+		}
+
+		private int PerformOutputAssemblyChecks (AssemblyDefinition original, NPath outputDirectory)
+		{
+			var assembliesToCheck = original.MainModule.Types.SelectMany(t => t.CustomAttributes).Where(attr => attr.IsAssemblyAssertion()).ToArray();
+
+			foreach (var assemblyAttr in assembliesToCheck)
+			{
+				var name = (string)assemblyAttr.ConstructorArguments.First().Value;
+				var expectedPath = outputDirectory.Combine(name);
+				BumpAssertionCounter(() => Assert.IsTrue(expectedPath.FileExists(), $"Expected the assembly {name} to exist in {outputDirectory}, but it did not"));
+			}
+			return assembliesToCheck.Length;
+		}
+
+		protected virtual int CompareAssemblies(AssemblyDefinition original, AssemblyDefinition linked)
 		{
 			var membersToAssert = CollectMembersToAssert(original).ToArray();
 			foreach (var originalMember in membersToAssert)
@@ -70,12 +97,7 @@ namespace Mono.Linker.Tests.Core
 				}
 			}
 
-			// These are safety checks to help reduce false positive passes.  A test could pass if there was a bug in the checking logic that never made an assert.  This check is here
-			// to make sure we make the number of assertions that we expect
-			if (membersToAssert.Length == 0)
-				_realAssertions.Fail($"Did not find any assertions to make.  Does the test case define any assertions to make?  Or there may be a bug in the collection of assertions to make");
-
-			AssertNonCounted.AreEqual(_assertionCounter.AssertionsMade, membersToAssert.Length, $"Expected to make {membersToAssert.Length} assertions, but only made {_assertionCounter.AssertionsMade}.  The test may be invalid or there may be a bug in the checking logic");
+			return membersToAssert.Length;
 		}
 
 		protected virtual void CheckTypeMember<T>(DefinitionAndExpectation originalMember, TypeDefinition linkedParentTypeDefinition, string definitionTypeName, Func<IEnumerable<T>> getLinkedMembers) where T : IMemberDefinition
@@ -92,7 +114,7 @@ namespace Mono.Linker.Tests.Core
 				{
 					var originalName = originalMember.Definition.GetFullName();
 					var linkedMember = getLinkedMembers().FirstOrDefault(linked => linked.GetFullName() == originalName);
-					Assert.IsNull(linkedMember, $"{definitionTypeName}: `{originalMember}' should have been removed");
+					BumpAssertionCounter(() => Assert.IsNull(linkedMember, $"{definitionTypeName}: `{originalMember}' should have been removed"));
 				}
 
 				return;
@@ -102,11 +124,11 @@ namespace Mono.Linker.Tests.Core
 			{
 				// if the member should be kept, then there's an implied requirement that the parent type exists.  Let's make that check
 				// even if the test case didn't request it otherwise we are just going to hit a null reference exception when we try to get the members on the type
-				_realAssertions.IsNotNull(linkedParentTypeDefinition, $"{definitionTypeName}: `{originalMember}' should have been kept, but the entire parent type was removed {originalMember.Definition.DeclaringType}");
+				Assert.IsNotNull(linkedParentTypeDefinition, $"{definitionTypeName}: `{originalMember}' should have been kept, but the entire parent type was removed {originalMember.Definition.DeclaringType}");
 
 				var originalName = originalMember.Definition.GetFullName();
 				var linkedMember = getLinkedMembers().FirstOrDefault(linked => linked.GetFullName() == originalName);
-				Assert.IsNotNull(linkedMember, $"{definitionTypeName}: `{originalMember}' should have been kept");
+				BumpAssertionCounter(() => Assert.IsNotNull(linkedMember, $"{definitionTypeName}: `{originalMember}' should have been kept"));
 			}
 		}
 
@@ -114,13 +136,13 @@ namespace Mono.Linker.Tests.Core
 		{
 			if (original.ShouldBeRemoved())
 			{
-				Assert.IsNull(linked, $"Type: `{original}' should have been removed");
+				BumpAssertionCounter(() => Assert.IsNull(linked, $"Type: `{original}' should have been removed"));
 				return;
 			}
 
 			if (original.ShouldBeKept())
 			{
-				Assert.IsNotNull(linked, $"Type: `{original}' should have been kept");
+				BumpAssertionCounter(() => Assert.IsNotNull(linked, $"Type: `{original}' should have been kept"));
 			}
 		}
 
@@ -164,10 +186,10 @@ namespace Mono.Linker.Tests.Core
 
 			foreach (var attr in typeDefinition.CustomAttributes)
 			{
-				if (attr.IsSelfAssertion())
+				if (!attr.IsExpectedLinkerBehaviorAttribute())
 					continue;
 
-				if (!attr.IsExpectedLinkerBehaviorAttribute())
+				if (!attr.IsMemberAssertion())
 					continue;
 
 				var name = (string)attr.ConstructorArguments.First().Value;
@@ -231,15 +253,8 @@ namespace Mono.Linker.Tests.Core
 			}
 		}
 
-		private class AssertionCounter : BaseAssertions
+		private class AssertionCounter
 		{
-			private readonly BaseAssertions _realAssertions;
-
-			public AssertionCounter(BaseAssertions realAssertions)
-			{
-				_realAssertions = realAssertions;
-			}
-
 			public int AssertionsMade { get; private set; }
 
 			public void Bump()
@@ -247,38 +262,10 @@ namespace Mono.Linker.Tests.Core
 				AssertionsMade++;
 			}
 
-			public override void IsNull(object obj, string message)
+			public void Bump(Action assertion)
 			{
 				Bump();
-				_realAssertions.IsNull(obj, message);
-			}
-
-			public override void IsNotNull(object obj, string message)
-			{
-				Bump();
-				_realAssertions.IsNotNull(obj, message);
-			}
-
-			public override void IsTrue(bool value, string message)
-			{
-				Bump();
-				_realAssertions.IsTrue(value, message);
-			}
-
-			public override void Ignore(string reason)
-			{
-				throw new NotSupportedException();
-			}
-
-			public override void AreEqual(object expected, object actual, string message)
-			{
-				Bump();
-				_realAssertions.AreEqual(expected, actual, message);
-			}
-
-			public override void Fail(string message)
-			{
-				_realAssertions.Fail(message);
+			    assertion();
 			}
 		}
 	}
