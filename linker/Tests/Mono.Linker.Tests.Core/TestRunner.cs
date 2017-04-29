@@ -1,6 +1,7 @@
 ﻿using System;
 using Mono.Cecil;
 using Mono.Linker.Tests.Core.Base;
+using NUnit.Framework;
 
 namespace Mono.Linker.Tests.Core
 {
@@ -17,18 +18,17 @@ namespace Mono.Linker.Tests.Core
 		{
 			using (var fullTestCaseAssemblyDefinition = AssemblyDefinition.ReadAssembly(testCase.OriginalTestCaseAssemblyPath.ToString()))
 			{
-				var assertions = _factory.CreateAssertions();
 				var metadataProvider = _factory.CreateMetadatProvider(testCase, fullTestCaseAssemblyDefinition);
 
 				string ignoreReason;
 				if (metadataProvider.IsIgnored(out ignoreReason))
-					assertions.Ignore(ignoreReason);
+					Assert.Ignore(ignoreReason);
 
 				var sandbox = Sandbox(testCase, metadataProvider);
 				var compilationResult = Compile(testCase, sandbox, metadataProvider);
 				PrepForLink(sandbox, compilationResult);
 				var linkResult = Link(testCase, sandbox, compilationResult, metadataProvider);
-				Check(testCase, assertions, linkResult);
+				Check(testCase, linkResult);
 			}
 		}
 
@@ -72,9 +72,9 @@ namespace Mono.Linker.Tests.Core
 			return new LinkedTestCaseResult { InputAssemblyPath = compilationResult.AssemblyPath, LinkedAssemblyPath = sandbox.OutputDirectory.Combine(compilationResult.AssemblyPath.FileName) };
 		}
 
-		private void Check(TestCase testCase, BaseAssertions assertions, LinkedTestCaseResult linkResult)
+		private void Check(TestCase testCase, LinkedTestCaseResult linkResult)
 		{
-			var checker = _factory.CreateChecker(testCase, assertions);
+			var checker = _factory.CreateChecker(testCase);
 
 			checker.Check(linkResult);
 		}

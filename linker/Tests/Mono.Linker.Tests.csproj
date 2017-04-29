@@ -80,6 +80,5 @@
     <Compile Include="TestsCases\TestDatabase.cs" />
     <Compile Include="TestsCases\ObjectFactory.cs" />
     <Compile Include="TestsCases\MonoLinker.cs" />
-    <Compile Include="TestsCases\NUnitAssertions.cs" />
   </ItemGroup>
 </Project>

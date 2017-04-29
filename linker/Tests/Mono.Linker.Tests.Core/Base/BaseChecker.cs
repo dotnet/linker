@@ -4,14 +4,11 @@
 	{
 		protected readonly TestCase _testCase;
 
-		protected BaseChecker(TestCase testCase, BaseAssertions assertions)
+		protected BaseChecker(TestCase testCase)
 		{
 			_testCase = testCase;
-			Assert = assertions;
 		}
 
 		public abstract void Check(LinkedTestCaseResult linkResult);
-
-		protected BaseAssertions Assert { get; }
 	}
 }

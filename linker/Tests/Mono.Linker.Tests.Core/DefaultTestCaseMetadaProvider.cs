@@ -27,7 +27,11 @@ namespace Mono.Linker.Tests.Core
 		{
 			// This will end up becoming more complicated as we get into more complex test cases that require additional
 			// data
-			return new TestCaseLinkerOptions { CoreLink = "skip" };
+			var value = "skip";
+			var coreLinkAttribute = _testCaseTypeDefinition.CustomAttributes.FirstOrDefault(attr => attr.AttributeType.Name == nameof(CoreLinkAttribute));
+			if (coreLinkAttribute != null)
+				value = (string)coreLinkAttribute.ConstructorArguments.First().Value;
+			return new TestCaseLinkerOptions { CoreLink = value };
 		}
 
 		public override NPath ProfileDirectory

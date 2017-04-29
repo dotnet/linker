@@ -11,7 +11,7 @@ namespace Mono.Linker.Tests.TestsCases
 			[TestCaseSource (typeof (TestDatabase), nameof (TestDatabase.AllTests))]
 			public void AllTests (TestCase testCase)
 			{
-				var runner = new TestRunner (new ObjectFactory (new NUnitAssertions ()));
+				var runner = new TestRunner (new ObjectFactory ());
 				runner.Run (testCase);
 			}
 		}

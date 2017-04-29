@@ -16,17 +16,15 @@ namespace Mono.Linker.Tests.Core.Base
 
 		public abstract BaseLinker CreateLinker(TestCase testCase);
 
-		public virtual BaseChecker CreateChecker(TestCase testCase, BaseAssertions assertions)
+		public virtual BaseChecker CreateChecker(TestCase testCase)
 		{
-			return new DefaultChecker(testCase, assertions);
+			return new DefaultChecker(testCase);
 		}
 
 		public virtual BaseTestCaseMetadaProvider CreateMetadatProvider(TestCase testCase, AssemblyDefinition fullTestCaseAssemblyDefinition)
 		{
 			return new DefaultTestCaseMetadaProvider(testCase, fullTestCaseAssemblyDefinition);
 		}
-
-		public abstract BaseAssertions CreateAssertions();
 
 		public virtual BaseLinkerArgumentBuilder CreateLinkerArgumentBuilder()
 		{
