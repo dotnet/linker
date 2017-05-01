@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Mono.Linker.Tests.Cases.Expectations.Assertions;
+﻿using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
 namespace Mono.Linker.Tests.Cases.References {
-	[IgnoreTestCase ("TODO by Mike : Needs to be implemented still")]
+	[IgnoreTestCase ("TODO by Mike : This test needs to be implemented still")]
 	// Need a way to define additional references
 	// Need a way to assert a reference is removed
 	class ReferencesAreRemovedWhenAllUsagesAreRemoved {

@@ -46,9 +46,9 @@ namespace Mono.Linker.Tests.Core.Customizable {
 
 		public bool IsIgnored (out string reason)
 		{
-			if (_testCaseTypeDefinition.HasAttribute (nameof (IgnoreTestCaseAttribute))) {
-				// TODO by Mike : Implement obtaining the real reason
-				reason = "TODO : Need to implement parsing reason";
+			var ignoreAttribute = _testCaseTypeDefinition.CustomAttributes.FirstOrDefault (attr => attr.AttributeType.Name == nameof (IgnoreTestCaseAttribute));
+			if (ignoreAttribute != null) {
+				reason = (string)ignoreAttribute.ConstructorArguments.First ().Value;
 				return true;
 			}
 
