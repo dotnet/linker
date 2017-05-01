@@ -30,7 +30,7 @@ namespace Mono.Linker.Tests.Core.Customizable {
 			Append (value);
 		}
 
-		public string[] ToArgs ()
+		public string [] ToArgs ()
 		{
 			return _arguments.ToArray ();
 		}

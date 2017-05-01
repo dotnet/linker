@@ -3,7 +3,7 @@ using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
 namespace Mono.Linker.Tests.Cases.Generics {
 	class MethodWithParameterWhichHasGenericParametersAndOverrideUsesADifferentNameForGenericParameterNestedCase {
-		public static void Main (string[] args)
+		public static void Main (string [] args)
 		{
 			Derived<int, int> tmp = new Derived<int, int> ();
 			tmp.Method<int> (i => i);
