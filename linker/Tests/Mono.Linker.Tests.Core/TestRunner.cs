@@ -71,7 +71,7 @@ namespace Mono.Linker.Tests.Core {
 
 		private void Check (LinkedTestCaseResult linkResult)
 		{
-			var checker = _factory.CreateChecker ();
+			var checker = _factory.CreateChecker (_factory.CreateExpectationsProvider ());
 
 			checker.Check (linkResult);
 		}

@@ -17,7 +17,7 @@ namespace Mono.Linker.Tests.Core.Customizable {
 			_testCase = testCase;
 			_fullTestCaseAssemblyDefinition = fullTestCaseAssemblyDefinition;
 			// The test case types are never nested so we don't need to worry about that
-			_testCaseTypeDefinition = fullTestCaseAssemblyDefinition.MainModule.GetType (_testCase.FullTypeName);
+			_testCaseTypeDefinition = fullTestCaseAssemblyDefinition.MainModule.GetType (_testCase.ReconstructedFullTypeName);
 
 			if (_testCaseTypeDefinition == null)
 				throw new InvalidOperationException ($"Could not find the type definition for {_testCase.Name} in {_testCase.SourceFile}");

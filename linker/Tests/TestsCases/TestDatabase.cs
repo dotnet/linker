@@ -61,9 +61,9 @@ namespace Mono.Linker.Tests.TestsCases
 					.Concat(CoreLinkTests())
 					.Concat(StaticsTests())
 					.Concat(InteropTests())
-					.Select(c => ((TestCase)c.Arguments[0]).FullTypeName));
+					.Select(c => ((TestCase)c.Arguments[0]).ReconstructedFullTypeName));
 
-			return AllCases().Where(c => !allGroupedTestNames.Contains(c.FullTypeName)).Select(c => CreateNUnitTestCase(c, c.DisplayName));
+			return AllCases().Where(c => !allGroupedTestNames.Contains(c.ReconstructedFullTypeName)).Select(c => CreateNUnitTestCase(c, c.DisplayName));
 		}
 
 		static IEnumerable<TestCase> AllCases()

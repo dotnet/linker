@@ -43,6 +43,7 @@
     <Compile Include="Customizable\LinkerDriver.cs" />
     <Compile Include="Customizable\ObjectFactory.cs" />
     <Compile Include="Customizable\ResultChecker.cs" />
+    <Compile Include="Customizable\ExpectationsProvider.cs" />
     <Compile Include="Customizable\TestCaseCompiler.cs" />
     <Compile Include="Customizable\LinkerArgumentBuilder.cs" />
     <Compile Include="Customizable\TestCaseMetadaProvider.cs" />
@@ -54,7 +55,6 @@
     <Compile Include="TestCaseCollector.cs" />
     <Compile Include="TestCaseLinkerOptions.cs" />
     <Compile Include="TestRunner.cs" />
-    <Compile Include="Utils\ExpectationUtils.cs" />
     <Compile Include="Utils\CecilExtensions.cs" />
     <Compile Include="Utils\NiceIO.cs" />
   </ItemGroup>
