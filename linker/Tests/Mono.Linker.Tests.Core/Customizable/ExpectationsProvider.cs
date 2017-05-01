@@ -1,4 +1,5 @@
-﻿using Mono.Cecil;
+﻿using System;
+using Mono.Cecil;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Core.Utils;
 
@@ -14,23 +15,23 @@ namespace Mono.Linker.Tests.Core.Customizable {
 			return attr.AttributeType.Resolve ().DerivesFrom (nameof (BaseExpectedLinkedBehaviorAttribute));
 		}
 
+		public bool IsRemovedAttribute (CustomAttribute attr)
+		{
+			return attr.AttributeType.Resolve ().DerivesFrom (nameof (RemovedAttribute));
+		}
+
+		public bool IsKeptAttribute (CustomAttribute attr)
+		{
+			return attr.AttributeType.Resolve ().DerivesFrom (nameof (KeptAttribute));
+		}
+
 		public virtual bool ShouldBeRemoved (ICustomAttributeProvider provider)
 		{
-			// TODO by Mike : Is it time to ditch the extension method and do something that doesn't require this casting?
-			var asMethodDef = provider as MethodDefinition;
-			if (asMethodDef != null)
-				return ShouldBeRemoved (asMethodDef);
-
 			return provider.HasAttribute (nameof (RemovedAttribute));
 		}
 
 		public virtual bool ShouldBeKept (ICustomAttributeProvider provider)
 		{
-			// TODO by Mike : Is it time to ditch the extension method and do something that doesn't require this casting?
-			var asMethodDef = provider as MethodDefinition;
-			if (asMethodDef != null)
-				return ShouldBeKept (asMethodDef);
-
 			return provider.HasAttribute (nameof (KeptAttribute));
 		}
 

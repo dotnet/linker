@@ -98,7 +98,7 @@ namespace Mono.Linker.Tests.Core.Customizable {
 		protected virtual void CheckTypeMember<T> (DefinitionAndExpectation originalMember, TypeDefinition linkedParentTypeDefinition, string definitionTypeName, Func<IEnumerable<T>> getLinkedMembers)
 			where T : IMemberDefinition
 		{
-			if (ShouldBeRemoved (originalMember)) {
+			if (_expectations.IsRemovedAttribute (originalMember.ExpectedResult)) {
 				if (linkedParentTypeDefinition == null) {
 					// The entire type was removed, which means the field or method was also removed.  This is OK.
 					// We don't have anything we can assert in this case.
@@ -112,7 +112,7 @@ namespace Mono.Linker.Tests.Core.Customizable {
 				return;
 			}
 
-			if (ShouldBeKept (originalMember)) {
+			if (_expectations.IsKeptAttribute (originalMember.ExpectedResult)) {
 				// if the member should be kept, then there's an implied requirement that the parent type exists.  Let's make that check
 				// even if the test case didn't request it otherwise we are just going to hit a null reference exception when we try to get the members on the type
 				Assert.IsNotNull (linkedParentTypeDefinition, $"{definitionTypeName}: `{originalMember}' should have been kept, but the entire parent type was removed {originalMember.Definition.DeclaringType}");
@@ -208,16 +208,6 @@ namespace Mono.Linker.Tests.Core.Customizable {
 
 			yield return new DefinitionAndExpectation (propertyDefinition.GetMethod, expectationAttribute);
 			yield return new DefinitionAndExpectation (propertyDefinition.SetMethod, expectationAttribute);
-		}
-
-		protected static bool ShouldBeRemoved (DefinitionAndExpectation expectation)
-		{
-			return expectation.ExpectedResult.AttributeType.Resolve ().DerivesFrom (nameof (RemovedAttribute));
-		}
-
-		protected static bool ShouldBeKept (DefinitionAndExpectation expectation)
-		{
-			return expectation.ExpectedResult.AttributeType.Resolve ().DerivesFrom (nameof (KeptAttribute));
 		}
 
 		public class DefinitionAndExpectation {
