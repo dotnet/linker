@@ -37,6 +37,10 @@ namespace Mono.Linker.Tests.Core.Customizable {
 		public virtual IEnumerable<string> GetReferencedAssemblies ()
 		{
 			yield return "mscorlib.dll";
+
+			foreach (var referenceAttr in _testCaseTypeDefinition.CustomAttributes.Where (attr => attr.AttributeType.Name == nameof (ReferenceAttribute))) {
+				yield return (string) referenceAttr.ConstructorArguments.First ().Value;
+			}
 		}
 
 		public virtual IEnumerable<NPath> GetExtraLinkerSearchDirectories ()

@@ -55,6 +55,12 @@ namespace Mono.Linker.Tests.TestsCases
 			Run (testCase);
 		}
 
+		[TestCaseSource(typeof(TestDatabase), nameof(TestDatabase.ReferencesTests))]
+		public void ReferencesTests(TestCase testCase)
+		{
+			Run(testCase);
+		}
+
 		[TestCaseSource (typeof (TestDatabase), nameof (TestDatabase.OtherTests))]
 		public void OtherTests (TestCase testCase)
 		{

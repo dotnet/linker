@@ -49,6 +49,7 @@
     <Compile Include="Metadata\CoreLinkAttribute.cs" />
     <Compile Include="Metadata\NotATestCaseAttribute.cs" />
     <Compile Include="Assertions\RemovedAttribute.cs" />
+    <Compile Include="Metadata\ReferenceAttribute.cs" />
     <Compile Include="Metadata\SandboxDependencyAttribute.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -1,19 +1,20 @@
-﻿using Mono.Linker.Tests.Cases.Expectations.Assertions;
+﻿using System;
+using Mono.Linker.Tests.Cases.Expectations.Assertions;
+using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.References {
-	[IgnoreTestCase ("TODO by Mike : This test needs to be implemented still")]
-	// Need a way to define additional references
-	// Need a way to assert a reference is removed
+	[CoreLink ("link")]
+	[Reference ("System.dll")]
+	[RemovedAssembly ("System.dll")]
 	class ReferencesAreRemovedWhenAllUsagesAreRemoved {
 		public static void Main ()
 		{
 		}
 
-		class UnusedClassThatUsesTypeFromAnotherAssembly {
-			void SomeMethod ()
-			{
-				// Use something in a different assembly
-			}
+		private static void Unused ()
+		{
+			// Use something from System.dll so that we know the input assembly was compiled with the reference
+			var uri = new Uri ("w/e");
 		}
 	}
 }
