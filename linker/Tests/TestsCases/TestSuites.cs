@@ -1,4 +1,5 @@
 ﻿using Mono.Linker.Tests.Core;
+using Mono.Linker.Tests.Core.Customizable;
 using NUnit.Framework;
 
 namespace Mono.Linker.Tests.TestsCases

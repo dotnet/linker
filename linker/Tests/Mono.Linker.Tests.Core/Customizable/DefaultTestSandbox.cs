@@ -1,17 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using Mono.Linker.Tests.Cases.Expectations;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
-using Mono.Linker.Tests.Core.Base;
 using Mono.Linker.Tests.Core.Utils;
 
-namespace Mono.Linker.Tests.Core
+namespace Mono.Linker.Tests.Core.Customizable
 {
-	public class DefaultTestSandbox : BaseTestSandbox
+	public class DefaultTestSandbox
 	{
-		private readonly NPath _directory;
+		protected readonly TestCase _testCase;
+		protected readonly NPath _directory;
 
 		public DefaultTestSandbox(TestCase testCase)
 			: this(testCase, NPath.SystemTemp)
@@ -29,8 +26,8 @@ namespace Mono.Linker.Tests.Core
 		}
 
 		public DefaultTestSandbox(TestCase testCase, NPath rootTemporaryDirectory, string namePrefix)
-			: base(testCase)
 		{
+			_testCase = testCase;
 			var name = string.IsNullOrEmpty(namePrefix) ? "linker_tests" : $"{namePrefix}_linker_tests";
 			_directory = rootTemporaryDirectory.Combine(name);
 
@@ -40,26 +37,26 @@ namespace Mono.Linker.Tests.Core
 			OutputDirectory = _directory.Combine("output").EnsureDirectoryExists();
 		}
 
-		public override NPath InputDirectory { get; }
+		public NPath InputDirectory { get; }
 
-		public override NPath OutputDirectory { get; }
+		public NPath OutputDirectory { get; }
 
-		public override IEnumerable<NPath> SourceFiles
+		public  IEnumerable<NPath> SourceFiles
 		{
 			get { return _directory.Files("*.cs"); }
 		}
 
-		public override IEnumerable<NPath> References
+		public IEnumerable<NPath> References
 		{
 			get { return InputDirectory.Files("*.dll"); }
 		}
 
-		public override IEnumerable<NPath> LinkXmlFiles
+		public IEnumerable<NPath> LinkXmlFiles
 		{
 			get { return InputDirectory.Files("*.xml"); }
 		}
 
-		public override void Populate(BaseTestCaseMetadaProvider metadataProvider)
+		public virtual void Populate(DefaultTestCaseMetadaProvider metadataProvider)
 		{
 			_testCase.SourceFile.Copy(_directory);
 

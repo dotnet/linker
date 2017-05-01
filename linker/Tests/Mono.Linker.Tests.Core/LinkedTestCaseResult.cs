@@ -1,11 +1,18 @@
-﻿using Mono.Linker.Tests.Core.Base;
-using Mono.Linker.Tests.Core.Utils;
+﻿using Mono.Linker.Tests.Core.Utils;
 
 namespace Mono.Linker.Tests.Core
 {
 	public class LinkedTestCaseResult
 	{
-		public NPath InputAssemblyPath;
-		public NPath LinkedAssemblyPath;
+		public readonly TestCase TestCase;
+		public readonly NPath InputAssemblyPath;
+		public readonly NPath OutputAssemblyPath;
+
+		public LinkedTestCaseResult(TestCase testCase, NPath inputAssemblyPath, NPath outputAssemblyPath)
+		{
+			TestCase = testCase;
+			InputAssemblyPath = inputAssemblyPath;
+			OutputAssemblyPath = outputAssemblyPath;
+		}
 	}
 }
