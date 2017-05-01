@@ -68,6 +68,10 @@
       <Project>{d68133bd-1e63-496e-9ede-4fbdbf77b486}</Project>
       <Name>Mono.Cecil</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Mono.Linker.csproj">
+      <Project>{dd28e2b1-057b-4b4d-a04d-b2ebd9e76e46}</Project>
+      <Name>Mono.Linker</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Mono.Linker.Tests.Cases.Expectations\Mono.Linker.Tests.Cases.Expectations.csproj">
       <Project>{2c26601f-3e2f-45b9-a02f-58ee9296e19e}</Project>
       <Name>Mono.Linker.Tests.Cases.Expectations</Name>

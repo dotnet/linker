@@ -35,13 +35,13 @@ namespace Mono.Linker.Tests.Core
 
 			int expectedNumberOfAssertionsToMake = 0;
 
-			using (var original = AssemblyDefinition.ReadAssembly(linkResult.InputAssemblyPath.ToString()))
+			using (var original = ReadAssembly(linkResult.InputAssemblyPath))
 			{
-				expectedNumberOfAssertionsToMake += PerformOutputAssemblyChecks(original, linkResult.LinkedAssemblyPath.Parent);
+				expectedNumberOfAssertionsToMake += PerformOutputAssemblyChecks(original.Definition, linkResult.LinkedAssemblyPath.Parent);
 
-				using (var linked = AssemblyDefinition.ReadAssembly(linkResult.LinkedAssemblyPath.ToString()))
+				using (var linked = ReadAssembly(linkResult.LinkedAssemblyPath))
 				{
-					expectedNumberOfAssertionsToMake += CompareAssemblies(original, linked);
+					expectedNumberOfAssertionsToMake += CompareAssemblies(original.Definition, linked.Definition);
 				}
 			}
 
@@ -51,6 +51,15 @@ namespace Mono.Linker.Tests.Core
 				Assert.Fail($"Did not find any assertions to make.  Does the test case define any assertions to make?  Or there may be a bug in the collection of assertions to make");
 
 			Assert.AreEqual(_assertionCounter.AssertionsMade, expectedNumberOfAssertionsToMake, $"Expected to make {expectedNumberOfAssertionsToMake} assertions, but only made {_assertionCounter.AssertionsMade}.  The test may be invalid or there may be a bug in the checking logic");
+		}
+
+		private static AssemblyContainer ReadAssembly(NPath assemblyPath)
+		{
+			var readerParams = new ReaderParameters();
+			var resolver = new AssemblyResolver();
+			readerParams.AssemblyResolver = resolver;
+			resolver.AddSearchDirectory(assemblyPath.Parent.ToString());
+			return new AssemblyContainer(AssemblyDefinition.ReadAssembly(assemblyPath.ToString(), readerParams), resolver);
 		}
 
 		private int PerformOutputAssemblyChecks (AssemblyDefinition original, NPath outputDirectory)
@@ -250,6 +259,24 @@ namespace Mono.Linker.Tests.Core
 			public override string ToString()
 			{
 				return Definition.ToString();
+			}
+		}
+
+		private class AssemblyContainer : IDisposable
+		{
+			public readonly AssemblyResolver Resolver;
+			public readonly AssemblyDefinition Definition;
+
+			public AssemblyContainer(AssemblyDefinition definition, AssemblyResolver resolver)
+			{
+				Definition = definition;
+				Resolver = resolver;
+			}
+
+			public void Dispose()
+			{
+				Resolver?.Dispose();
+				Definition?.Dispose();
 			}
 		}
 
