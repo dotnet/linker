@@ -82,7 +82,6 @@ namespace Mono.Linker.Tests.Core.Customizable {
 					TypeDefinition linkedType = linked.MainModule.GetType (originalMember.Definition.DeclaringType.FullName);
 					CheckTypeMember (originalMember, linkedType, "Field", () => linkedType.Fields);
 				} else if (originalMember.Definition is MethodDefinition) {
-					//var originalMethodDef = (MethodDefinition) originalMember.Definition;
 					TypeDefinition linkedType = linked.MainModule.GetType (originalMember.Definition.DeclaringType.FullName);
 					CheckTypeMember (originalMember, linkedType, "Method", () => linkedType.Methods);
 				} else if (originalMember.Definition is PropertyDefinition) {
