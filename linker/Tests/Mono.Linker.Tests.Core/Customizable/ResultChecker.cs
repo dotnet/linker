@@ -8,11 +8,11 @@ using NUnit.Framework;
 
 namespace Mono.Linker.Tests.Core.Customizable
 {
-	public class DefaultChecker
+	public class ResultChecker
 	{
 		private readonly AssertionCounter _assertionCounter;
 
-		public DefaultChecker()
+		public ResultChecker()
 		{
 			_assertionCounter = new AssertionCounter();
 		}

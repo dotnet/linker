@@ -8,13 +8,13 @@ using Mono.Linker.Tests.Core.Utils;
 
 namespace Mono.Linker.Tests.Core.Customizable
 {
-	public class DefaultTestCaseMetadaProvider
+	public class TestCaseMetadaProvider
 	{
 		protected readonly TestCase _testCase;
 		protected readonly AssemblyDefinition _fullTestCaseAssemblyDefinition;
 		protected readonly TypeDefinition _testCaseTypeDefinition;
 
-		public DefaultTestCaseMetadaProvider(TestCase testCase, AssemblyDefinition fullTestCaseAssemblyDefinition)
+		public TestCaseMetadaProvider(TestCase testCase, AssemblyDefinition fullTestCaseAssemblyDefinition)
 		{
 			_testCase = testCase;
 			_fullTestCaseAssemblyDefinition = fullTestCaseAssemblyDefinition;

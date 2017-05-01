@@ -7,9 +7,9 @@ using Mono.Linker.Tests.Core.Utils;
 
 namespace Mono.Linker.Tests.Core.Customizable
 {
-	public class DefaultCompiler
+	public class TestCaseCompiler
 	{
-		public virtual ManagedCompilationResult CompileTestIn(DefaultTestSandbox sandbox, IEnumerable<string> referencesExternalToSandbox)
+		public virtual ManagedCompilationResult CompileTestIn(TestCaseSandbox sandbox, IEnumerable<string> referencesExternalToSandbox)
 		{
 			var compilerOptions = CreateCompilerOptions(sandbox, referencesExternalToSandbox);
 			var provider = CodeDomProvider.CreateProvider("C#");
@@ -23,7 +23,7 @@ namespace Mono.Linker.Tests.Core.Customizable
 			throw new Exception("Compilation errors: " + errors);
 		}
 
-		protected virtual CompilerParameters CreateCompilerOptions(DefaultTestSandbox sandbox, IEnumerable<string> referencesExternalToSandbox)
+		protected virtual CompilerParameters CreateCompilerOptions(TestCaseSandbox sandbox, IEnumerable<string> referencesExternalToSandbox)
 		{
 			var outputPath = sandbox.InputDirectory.Combine("test.exe");
 

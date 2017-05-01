@@ -4,7 +4,7 @@ using Mono.Linker.Tests.Core.Utils;
 
 namespace Mono.Linker.Tests.Core.Customizable
 {
-	public class DefaultLinkerArgumentBuilder
+	public class LinkerArgumentBuilder
 	{
 		private readonly List<string> _arguments = new List<string>();
 

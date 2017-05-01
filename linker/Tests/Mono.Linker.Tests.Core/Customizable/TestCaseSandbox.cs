@@ -5,27 +5,27 @@ using Mono.Linker.Tests.Core.Utils;
 
 namespace Mono.Linker.Tests.Core.Customizable
 {
-	public class DefaultTestSandbox
+	public class TestCaseSandbox
 	{
 		protected readonly TestCase _testCase;
 		protected readonly NPath _directory;
 
-		public DefaultTestSandbox(TestCase testCase)
+		public TestCaseSandbox(TestCase testCase)
 			: this(testCase, NPath.SystemTemp)
 		{
 		}
 
-		public DefaultTestSandbox(TestCase testCase, NPath rootTemporaryDirectory)
+		public TestCaseSandbox(TestCase testCase, NPath rootTemporaryDirectory)
 			 : this(testCase, rootTemporaryDirectory, string.Empty)
 		{
 		}
 
-		public DefaultTestSandbox(TestCase testCase, string rootTemporaryDirectory, string namePrefix)
+		public TestCaseSandbox(TestCase testCase, string rootTemporaryDirectory, string namePrefix)
 			: this(testCase, rootTemporaryDirectory.ToNPath(), namePrefix)
 		{
 		}
 
-		public DefaultTestSandbox(TestCase testCase, NPath rootTemporaryDirectory, string namePrefix)
+		public TestCaseSandbox(TestCase testCase, NPath rootTemporaryDirectory, string namePrefix)
 		{
 			_testCase = testCase;
 			var name = string.IsNullOrEmpty(namePrefix) ? "linker_tests" : $"{namePrefix}_linker_tests";
@@ -56,7 +56,7 @@ namespace Mono.Linker.Tests.Core.Customizable
 			get { return InputDirectory.Files("*.xml"); }
 		}
 
-		public virtual void Populate(DefaultTestCaseMetadaProvider metadataProvider)
+		public virtual void Populate(TestCaseMetadaProvider metadataProvider)
 		{
 			_testCase.SourceFile.Copy(_directory);
 

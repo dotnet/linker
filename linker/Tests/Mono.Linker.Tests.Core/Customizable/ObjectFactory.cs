@@ -4,34 +4,34 @@ namespace Mono.Linker.Tests.Core.Customizable
 {
 	public class ObjectFactory
 	{
-		public virtual DefaultTestSandbox CreateSandbox(TestCase testCase)
+		public virtual TestCaseSandbox CreateSandbox(TestCase testCase)
 		{
-			return new DefaultTestSandbox(testCase);
+			return new TestCaseSandbox(testCase);
 		}
 
-		public virtual DefaultCompiler CreateCompiler()
+		public virtual TestCaseCompiler CreateCompiler()
 		{
-			return new DefaultCompiler();
+			return new TestCaseCompiler();
 		}
 
-		public virtual DefaultLinker CreateLinker()
+		public virtual LinkerDriver CreateLinker()
 		{
-			return new DefaultLinker();
+			return new LinkerDriver();
 		}
 
-		public virtual DefaultChecker CreateChecker()
+		public virtual ResultChecker CreateChecker()
 		{
-			return new DefaultChecker();
+			return new ResultChecker();
 		}
 
-		public virtual DefaultTestCaseMetadaProvider CreateMetadatProvider(TestCase testCase, AssemblyDefinition fullTestCaseAssemblyDefinition)
+		public virtual TestCaseMetadaProvider CreateMetadatProvider(TestCase testCase, AssemblyDefinition fullTestCaseAssemblyDefinition)
 		{
-			return new DefaultTestCaseMetadaProvider(testCase, fullTestCaseAssemblyDefinition);
+			return new TestCaseMetadaProvider(testCase, fullTestCaseAssemblyDefinition);
 		}
 
-		public virtual DefaultLinkerArgumentBuilder CreateLinkerArgumentBuilder()
+		public virtual LinkerArgumentBuilder CreateLinkerArgumentBuilder()
 		{
-			return new DefaultLinkerArgumentBuilder();
+			return new LinkerArgumentBuilder();
 		}
 	}
 }

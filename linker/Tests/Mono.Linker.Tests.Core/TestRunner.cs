@@ -32,26 +32,26 @@ namespace Mono.Linker.Tests.Core
 			}
 		}
 
-		private DefaultTestSandbox Sandbox(TestCase testCase, DefaultTestCaseMetadaProvider metadataProvider)
+		private TestCaseSandbox Sandbox(TestCase testCase, TestCaseMetadaProvider metadataProvider)
 		{
 			var sandbox = _factory.CreateSandbox(testCase);
 			sandbox.Populate(metadataProvider);
 			return sandbox;
 		}
 
-		private ManagedCompilationResult Compile(DefaultTestSandbox sandbox, DefaultTestCaseMetadaProvider metadataProvider)
+		private ManagedCompilationResult Compile(TestCaseSandbox sandbox, TestCaseMetadaProvider metadataProvider)
 		{
 			var compiler = _factory.CreateCompiler();
 			return compiler.CompileTestIn(sandbox, metadataProvider.GetReferencedAssemblies());
 		}
 
-		private void PrepForLink(DefaultTestSandbox sandbox, ManagedCompilationResult compilationResult)
+		private void PrepForLink(TestCaseSandbox sandbox, ManagedCompilationResult compilationResult)
 		{
 			var entryPointLinkXml = sandbox.InputDirectory.Combine("entrypoint.xml");
 			LinkXmlHelpers.WriteXmlFileToPreserveEntryPoint(compilationResult.AssemblyPath, entryPointLinkXml);
 		}
 
-		private LinkedTestCaseResult Link(TestCase testCase, DefaultTestSandbox sandbox, ManagedCompilationResult compilationResult, DefaultTestCaseMetadaProvider metadataProvider)
+		private LinkedTestCaseResult Link(TestCase testCase, TestCaseSandbox sandbox, ManagedCompilationResult compilationResult, TestCaseMetadaProvider metadataProvider)
 		{
 			var linker = _factory.CreateLinker();
 			var builder = _factory.CreateLinkerArgumentBuilder();

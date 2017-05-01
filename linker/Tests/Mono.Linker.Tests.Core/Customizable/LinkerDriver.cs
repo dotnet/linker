@@ -1,6 +1,6 @@
 ﻿namespace Mono.Linker.Tests.Core.Customizable
 {
-	public class DefaultLinker
+	public class LinkerDriver
 	{
 		public virtual void Link(string[] args)
 		{
