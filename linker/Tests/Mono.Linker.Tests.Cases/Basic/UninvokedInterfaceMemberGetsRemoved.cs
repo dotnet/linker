@@ -1,21 +1,22 @@
 ﻿using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
-namespace Mono.Linker.Tests.Cases.Basic
-{
-	class UninvokedInterfaceMemberGetsRemoved
-	{
-		public static void Main() { new B(); }
-
-		interface I
+namespace Mono.Linker.Tests.Cases.Basic {
+	class UninvokedInterfaceMemberGetsRemoved {
+		public static void Main ()
 		{
-			[Removed]
-			void Method();
+			new B ();
 		}
 
-		class B : I
-		{
+		interface I {
 			[Removed]
-			public void Method() { }
+			void Method ();
+		}
+
+		class B : I {
+			[Removed]
+			public void Method ()
+			{
+			}
 		}
 	}
 }

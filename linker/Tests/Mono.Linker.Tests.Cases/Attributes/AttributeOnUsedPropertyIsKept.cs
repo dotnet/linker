@@ -1,24 +1,20 @@
 ﻿using System;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
-namespace Mono.Linker.Tests.Cases.Attributes
-{
-	class AttributeOnUsedPropertyIsKept
-	{
-		public static void Main()
+namespace Mono.Linker.Tests.Cases.Attributes {
+	class AttributeOnUsedPropertyIsKept {
+		public static void Main ()
 		{
-			var val = new A().Field;
+			var val = new A ().Field;
 		}
 
-		class A
-		{
+		class A {
 			[Foo]
 			public int Field { get; set; }
 		}
 
 		[Kept]
-		class FooAttribute : Attribute
-		{
+		class FooAttribute : Attribute {
 		}
 	}
 }

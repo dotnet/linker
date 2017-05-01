@@ -1,21 +1,22 @@
 ﻿using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
-namespace Mono.Linker.Tests.Cases.Generics
-{
-	public class UsedOverloadedGenericMethodInstanceInGenericClassIsNotStripped
-	{
-		public static void Main()
+namespace Mono.Linker.Tests.Cases.Generics {
+	public class UsedOverloadedGenericMethodInstanceInGenericClassIsNotStripped {
+		public static void Main ()
 		{
-			B<int>.Method(1);
+			B<int>.Method (1);
 		}
 
-		class B<TBase>
-		{
+		class B<TBase> {
 			[Removed]
-			public static void Method<T>(T value) { }
+			public static void Method<T> (T value)
+			{
+			}
 
 			[Kept]
-			public static void Method(TBase value) { }
+			public static void Method (TBase value)
+			{
+			}
 		}
 	}
 }

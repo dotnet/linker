@@ -1,26 +1,27 @@
 ﻿using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
-namespace Mono.Linker.Tests.Cases.Generics
-{
-	public class UsedOverloadedGenericMethodWithNoParametersIsNotStripped
-	{
-		public static void Main()
+namespace Mono.Linker.Tests.Cases.Generics {
+	public class UsedOverloadedGenericMethodWithNoParametersIsNotStripped {
+		public static void Main ()
 		{
-			B.Call<string, int>();
+			B.Call<string, int> ();
 		}
 
-		public class B
-		{
+		public class B {
 			[Removed]
-			public static void Method<T>() { }
-
-			[Kept]
-			public static void Method<TKey, TValue>() { }
-
-			[Kept]
-			public static void Call<TKey, TValue>()
+			public static void Method<T> ()
 			{
-				B.Method<TKey, TValue>();
+			}
+
+			[Kept]
+			public static void Method<TKey, TValue> ()
+			{
+			}
+
+			[Kept]
+			public static void Call<TKey, TValue> ()
+			{
+				B.Method<TKey, TValue> ();
 			}
 		}
 	}

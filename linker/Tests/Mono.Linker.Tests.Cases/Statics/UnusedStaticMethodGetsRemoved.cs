@@ -1,22 +1,23 @@
 ﻿using System;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
-namespace Mono.Linker.Tests.Cases.Statics
-{
-	public class UnusedStaticMethodGetsRemoved
-	{
-		public static void Main()
+namespace Mono.Linker.Tests.Cases.Statics {
+	public class UnusedStaticMethodGetsRemoved {
+		public static void Main ()
 		{
-			A.UsedMethod();
+			A.UsedMethod ();
 		}
 	}
 
-	class A
-	{
+	class A {
 		[Kept]
-		public static void UsedMethod() { }
+		public static void UsedMethod ()
+		{
+		}
 
 		[Removed]
-		static void UnusedMethod() { }
+		static void UnusedMethod ()
+		{
+		}
 	}
 }

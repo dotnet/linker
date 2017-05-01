@@ -1,28 +1,29 @@
 ﻿using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
-namespace Mono.Linker.Tests.Cases.VirtualMethods
-{
-	class HarderToDetectUnusedVirtualMethodGetsRemoved
-	{
-		public static void Main()
+namespace Mono.Linker.Tests.Cases.VirtualMethods {
+	class HarderToDetectUnusedVirtualMethodGetsRemoved {
+		public static void Main ()
 		{
-			new Base().Call();
+			new Base ().Call ();
 		}
 
-		static void DeadCode()
+		static void DeadCode ()
 		{
-			new B();
+			new B ();
 		}
 
-		class Base
-		{
+		class Base {
 			[Kept]
-			public virtual void Call() { }
+			public virtual void Call ()
+			{
+			}
 		}
-		class B : Base
-		{
+
+		class B : Base {
 			[Removed]
-			public override void Call() { }
-	   }
+			public override void Call ()
+			{
+			}
+		}
 	}
 }

@@ -1,30 +1,25 @@
 ﻿using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
-namespace Mono.Linker.Tests.Cases.Generics
-{
-	class GenericInstanceInterfaceMethodImplementedWithDifferentGenericArgumentNameDoesNotGetStripped
-	{
-		public static void Main()
+namespace Mono.Linker.Tests.Cases.Generics {
+	class GenericInstanceInterfaceMethodImplementedWithDifferentGenericArgumentNameDoesNotGetStripped {
+		public static void Main ()
 		{
-			ISomething it = new Concrete();
-			it.ShouldNotGetStripped<int>();
+			ISomething it = new Concrete ();
+			it.ShouldNotGetStripped<int> ();
 		}
 
-		public class GenericType<T>
-		{
+		public class GenericType<T> {
 		}
 
-		public interface ISomething
-		{
-			GenericType<TInInterface> ShouldNotGetStripped<TInInterface>();
+		public interface ISomething {
+			GenericType<TInInterface> ShouldNotGetStripped<TInInterface> ();
 		}
 
-		public class Concrete : ISomething
-		{
+		public class Concrete : ISomething {
 			[Kept]
-			public GenericType<TInConcrete> ShouldNotGetStripped<TInConcrete>()
+			public GenericType<TInConcrete> ShouldNotGetStripped<TInConcrete> ()
 			{
-				throw new System.Exception();
+				throw new System.Exception ();
 			}
 		}
 	}

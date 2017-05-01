@@ -1,28 +1,31 @@
 ﻿using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
-namespace Mono.Linker.Tests.Cases.VirtualMethods
-{
-	class TypeGetsMarkedThatImplementsAlreadyMarkedInterfaceMethod
-	{
-		public static void Main()
+namespace Mono.Linker.Tests.Cases.VirtualMethods {
+	class TypeGetsMarkedThatImplementsAlreadyMarkedInterfaceMethod {
+		public static void Main ()
 		{
-			IFoo i = new A(); i.Foo();
+			IFoo i = new A ();
+			i.Foo ();
 		}
 
-		interface IFoo
-		{
+		interface IFoo {
 			[Kept]
-			void Foo();
+			void Foo ();
 		}
-		class B : IFoo
-		{
+
+		class B : IFoo {
 			[Kept]
-			public void Foo() { }
+			public void Foo ()
+			{
+			}
 		}
-		class A : IFoo
-		{
+
+		class A : IFoo {
 			[Kept]
-			public void Foo() { new B(); /*this will cause us to mark B, but will we be smart enough to realize B.Foo implements the already marked IFoo.Foo?*/ }
+			public void Foo ()
+			{
+				new B (); /*this will cause us to mark B, but will we be smart enough to realize B.Foo implements the already marked IFoo.Foo?*/
+			}
 		}
 	}
 }
