@@ -13,7 +13,7 @@ namespace Mono.Linker.Tests.Core {
 
 			// A little hacky, but good enough for name.  No reason why namespace & type names
 			// should not follow the directory structure
-			FullTypeName = $"{sourceFile.Parent.RelativeTo (rootCasesDirectory.Parent).ToString (SlashMode.Forward).Replace ('/', '.')}.{sourceFile.FileNameWithoutExtension}";
+			ReconstructedFullTypeName = $"{sourceFile.Parent.RelativeTo (rootCasesDirectory.Parent).ToString (SlashMode.Forward).Replace ('/', '.')}.{sourceFile.FileNameWithoutExtension}";
 		}
 
 		public string Name { get; }
@@ -24,7 +24,7 @@ namespace Mono.Linker.Tests.Core {
 
 		public NPath OriginalTestCaseAssemblyPath { get; }
 
-		public string FullTypeName { get; }
+		public string ReconstructedFullTypeName { get; }
 
 		public bool HasLinkXmlFile {
 			get { return SourceFile.ChangeExtension ("xml").FileExists (); }

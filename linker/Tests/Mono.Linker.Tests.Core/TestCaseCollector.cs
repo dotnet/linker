@@ -76,20 +76,25 @@ namespace Mono.Linker.Tests.Core {
 
 		private static TypeDefinition FindTypeDefinition (AssemblyDefinition caseAssemblyDefinition, TestCase testCase)
 		{
-			var typeDefinition = caseAssemblyDefinition.MainModule.GetType (testCase.FullTypeName);
+			var typeDefinition = caseAssemblyDefinition.MainModule.GetType (testCase.ReconstructedFullTypeName);
 
+			// For all of the Test Cases, the full type name we constructed from the directory structure will be correct and we can successfully find
+			// the type from GetType.
 			if (typeDefinition != null)
 				return typeDefinition;
 
-			// TODO by Mike : Is this to hacky?  It's for unity tests to pair up MonoBehaviour.cs which the MonoBehavioir type which has UnityEngine as a namespace
+			// However, some of types are supporting types rather than test cases.  and may not follow the standardized naming scheme of the test cases
+			// We still need to be able to locate these type defs so that we can parse some of the metadata on them.
+			// One example, Unity run's into this with it's tests that require a type UnityEngine.MonoBehaviours to exist.  This tpe is defined in it's own
+			// file and it cannot follow our standardized naming directory & namespace naming scheme since the namespace must be UnityEngine
 			foreach (var type in caseAssemblyDefinition.MainModule.Types) {
 				//  Let's assume we should never have to search for a test case that has no namespace.  If we don't find the type from GetType, then o well, that's not a test case.
 				if (string.IsNullOrEmpty (type.Namespace))
 					continue;
 
 				if (type.Name == testCase.Name) {
-					// TODO by Mike : This is really hacky.  Maybe there is a way to improve it by getting the debug information and if that knows about the source
-					// file location we could check to see if that source file matches the testCase.SourceFile.
+					// This isn't foolproof, but let's do a little extra vetting to make sure the type we found corresponds to the source file we are
+					// processing.
 					if (!testCase.SourceFile.ReadAllText ().Contains ($"namespace {type.Namespace}"))
 						continue;
 
