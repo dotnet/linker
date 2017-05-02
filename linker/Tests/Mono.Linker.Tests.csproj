@@ -75,6 +75,7 @@
     <None Include="Mono.Linker.Tests\ResolveLinkedAssemblyStep.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Mono.Linker.Tests\PreserveActionComparisonTests.cs" />
     <Compile Include="TestsCases\TestSuites.cs" />
     <Compile Include="TestsCases\TestDatabase.cs" />
   </ItemGroup>
