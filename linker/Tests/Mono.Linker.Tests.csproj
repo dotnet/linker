@@ -46,7 +46,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
-    <Folder Include="TestsCases\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\cecil\Mono.Cecil.csproj">
@@ -78,7 +77,5 @@
   <ItemGroup>
     <Compile Include="TestsCases\TestSuites.cs" />
     <Compile Include="TestsCases\TestDatabase.cs" />
-    <Compile Include="TestsCases\ObjectFactory.cs" />
-    <Compile Include="TestsCases\MonoLinker.cs" />
   </ItemGroup>
 </Project>

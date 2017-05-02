@@ -4,26 +4,28 @@ using System.Linq;
 using Mono.Cecil;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
-using Mono.Linker.Tests.Core.Base;
 using Mono.Linker.Tests.Core.Utils;
 
-namespace Mono.Linker.Tests.Core
+namespace Mono.Linker.Tests.Core.Customizable
 {
-	public class DefaultTestCaseMetadaProvider : BaseTestCaseMetadaProvider
+	public class TestCaseMetadaProvider
 	{
+		protected readonly TestCase _testCase;
+		protected readonly AssemblyDefinition _fullTestCaseAssemblyDefinition;
 		protected readonly TypeDefinition _testCaseTypeDefinition;
 
-		public DefaultTestCaseMetadaProvider(TestCase testCase, AssemblyDefinition fullTestCaseAssemblyDefinition)
-			: base(testCase, fullTestCaseAssemblyDefinition)
+		public TestCaseMetadaProvider(TestCase testCase, AssemblyDefinition fullTestCaseAssemblyDefinition)
 		{
+			_testCase = testCase;
+			_fullTestCaseAssemblyDefinition = fullTestCaseAssemblyDefinition;
 			// The test case types are never nested so we don't need to worry about that
-			_testCaseTypeDefinition = FullTestCaseAssemblyDefinition.MainModule.GetType(_testCase.FullTypeName);
+			_testCaseTypeDefinition = fullTestCaseAssemblyDefinition.MainModule.GetType(_testCase.FullTypeName);
 
 			if (_testCaseTypeDefinition == null)
 				throw new InvalidOperationException($"Could not find the type definition for {_testCase.Name} in {_testCase.SourceFile}");
 		}
 
-		public override TestCaseLinkerOptions GetLinkerOptions()
+		public virtual TestCaseLinkerOptions GetLinkerOptions()
 		{
 			// This will end up becoming more complicated as we get into more complex test cases that require additional
 			// data
@@ -34,25 +36,17 @@ namespace Mono.Linker.Tests.Core
 			return new TestCaseLinkerOptions { CoreLink = value };
 		}
 
-		public override NPath ProfileDirectory
-		{
-			get
-			{
-				throw new NotImplementedException();
-			}
-		}
-
-		public override IEnumerable<string> GetReferencedAssemblies()
+		public virtual IEnumerable<string> GetReferencedAssemblies()
 		{
 			yield return "mscorlib.dll";
 		}
 
-		public override IEnumerable<NPath> GetExtraLinkerSearchDirectories()
+		public virtual IEnumerable<NPath> GetExtraLinkerSearchDirectories()
 		{
 			yield break;
 		}
 
-		public override bool IsIgnored(out string reason)
+		public bool IsIgnored(out string reason)
 		{
 			if (_testCaseTypeDefinition.HasAttribute(nameof(IgnoreTestCaseAttribute)))
 			{
@@ -65,7 +59,7 @@ namespace Mono.Linker.Tests.Core
 			return false;
 		}
 
-		public override IEnumerable<NPath> AdditionalFilesToSandbox()
+		public virtual IEnumerable<NPath> AdditionalFilesToSandbox()
 		{
 			foreach (var attr in _testCaseTypeDefinition.CustomAttributes)
 			{

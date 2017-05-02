@@ -3,18 +3,16 @@ using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
-using Mono.Linker.Tests.Core.Base;
 using Mono.Linker.Tests.Core.Utils;
 using NUnit.Framework;
 
-namespace Mono.Linker.Tests.Core
+namespace Mono.Linker.Tests.Core.Customizable
 {
-	public class DefaultChecker : BaseChecker
+	public class ResultChecker
 	{
 		private readonly AssertionCounter _assertionCounter;
 
-		public DefaultChecker(TestCase testCase)
-			: base(testCase)
+		public ResultChecker()
 		{
 			_assertionCounter = new AssertionCounter();
 		}
@@ -29,17 +27,17 @@ namespace Mono.Linker.Tests.Core
 			_assertionCounter.Bump(assertion);
 		}
 
-		public override void Check(LinkedTestCaseResult linkResult)
+		public virtual void Check(LinkedTestCaseResult linkResult)
 		{
-			Assert.IsTrue(linkResult.LinkedAssemblyPath.FileExists(), $"The linked output assembly was not found.  Expected at {linkResult.LinkedAssemblyPath}");
+			Assert.IsTrue(linkResult.OutputAssemblyPath.FileExists(), $"The linked output assembly was not found.  Expected at {linkResult.OutputAssemblyPath}");
 
 			int expectedNumberOfAssertionsToMake = 0;
 
 			using (var original = ReadAssembly(linkResult.InputAssemblyPath))
 			{
-				expectedNumberOfAssertionsToMake += PerformOutputAssemblyChecks(original.Definition, linkResult.LinkedAssemblyPath.Parent);
+				expectedNumberOfAssertionsToMake += PerformOutputAssemblyChecks(original.Definition, linkResult.OutputAssemblyPath.Parent);
 
-				using (var linked = ReadAssembly(linkResult.LinkedAssemblyPath))
+				using (var linked = ReadAssembly(linkResult.OutputAssemblyPath))
 				{
 					expectedNumberOfAssertionsToMake += CompareAssemblies(original.Definition, linked.Definition);
 				}

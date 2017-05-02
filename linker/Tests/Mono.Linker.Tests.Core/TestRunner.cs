@@ -1,15 +1,15 @@
 ﻿using System;
 using Mono.Cecil;
-using Mono.Linker.Tests.Core.Base;
+using Mono.Linker.Tests.Core.Customizable;
 using NUnit.Framework;
 
 namespace Mono.Linker.Tests.Core
 {
 	public class TestRunner
 	{
-		private readonly BaseObjectFactory _factory;
+		private readonly ObjectFactory _factory;
 
-		public TestRunner(BaseObjectFactory factory)
+		public TestRunner(ObjectFactory factory)
 		{
 			_factory = factory;
 		}
@@ -25,35 +25,35 @@ namespace Mono.Linker.Tests.Core
 					Assert.Ignore(ignoreReason);
 
 				var sandbox = Sandbox(testCase, metadataProvider);
-				var compilationResult = Compile(testCase, sandbox, metadataProvider);
+				var compilationResult = Compile(sandbox, metadataProvider);
 				PrepForLink(sandbox, compilationResult);
 				var linkResult = Link(testCase, sandbox, compilationResult, metadataProvider);
-				Check(testCase, linkResult);
+				Check(linkResult);
 			}
 		}
 
-		private BaseTestSandbox Sandbox(TestCase testCase, BaseTestCaseMetadaProvider metadataProvider)
+		private TestCaseSandbox Sandbox(TestCase testCase, TestCaseMetadaProvider metadataProvider)
 		{
 			var sandbox = _factory.CreateSandbox(testCase);
 			sandbox.Populate(metadataProvider);
 			return sandbox;
 		}
 
-		private ManagedCompilationResult Compile(TestCase testCase, BaseTestSandbox sandbox, BaseTestCaseMetadaProvider metadataProvider)
+		private ManagedCompilationResult Compile(TestCaseSandbox sandbox, TestCaseMetadaProvider metadataProvider)
 		{
-			var compiler = _factory.CreateCompiler(testCase);
+			var compiler = _factory.CreateCompiler();
 			return compiler.CompileTestIn(sandbox, metadataProvider.GetReferencedAssemblies());
 		}
 
-		private void PrepForLink(BaseTestSandbox sandbox, ManagedCompilationResult compilationResult)
+		private void PrepForLink(TestCaseSandbox sandbox, ManagedCompilationResult compilationResult)
 		{
 			var entryPointLinkXml = sandbox.InputDirectory.Combine("entrypoint.xml");
 			LinkXmlHelpers.WriteXmlFileToPreserveEntryPoint(compilationResult.AssemblyPath, entryPointLinkXml);
 		}
 
-		private LinkedTestCaseResult Link(TestCase testCase, BaseTestSandbox sandbox, ManagedCompilationResult compilationResult, BaseTestCaseMetadaProvider metadataProvider)
+		private LinkedTestCaseResult Link(TestCase testCase, TestCaseSandbox sandbox, ManagedCompilationResult compilationResult, TestCaseMetadaProvider metadataProvider)
 		{
-			var linker = _factory.CreateLinker(testCase);
+			var linker = _factory.CreateLinker();
 			var builder = _factory.CreateLinkerArgumentBuilder();
 			var caseDefinedOptions = metadataProvider.GetLinkerOptions();
 
@@ -69,12 +69,12 @@ namespace Mono.Linker.Tests.Core
 
 			linker.Link(builder.ToArgs());
 
-			return new LinkedTestCaseResult { InputAssemblyPath = compilationResult.AssemblyPath, LinkedAssemblyPath = sandbox.OutputDirectory.Combine(compilationResult.AssemblyPath.FileName) };
+			return new LinkedTestCaseResult(testCase, compilationResult.AssemblyPath, sandbox.OutputDirectory.Combine(compilationResult.AssemblyPath.FileName));
 		}
 
-		private void Check(TestCase testCase, LinkedTestCaseResult linkResult)
+		private void Check(LinkedTestCaseResult linkResult)
 		{
-			var checker = _factory.CreateChecker(testCase);
+			var checker = _factory.CreateChecker();
 
 			checker.Check(linkResult);
 		}

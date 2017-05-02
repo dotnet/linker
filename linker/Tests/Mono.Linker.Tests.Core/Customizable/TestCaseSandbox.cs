@@ -1,36 +1,33 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using Mono.Linker.Tests.Cases.Expectations;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
-using Mono.Linker.Tests.Core.Base;
 using Mono.Linker.Tests.Core.Utils;
 
-namespace Mono.Linker.Tests.Core
+namespace Mono.Linker.Tests.Core.Customizable
 {
-	public class DefaultTestSandbox : BaseTestSandbox
+	public class TestCaseSandbox
 	{
-		private readonly NPath _directory;
+		protected readonly TestCase _testCase;
+		protected readonly NPath _directory;
 
-		public DefaultTestSandbox(TestCase testCase)
+		public TestCaseSandbox(TestCase testCase)
 			: this(testCase, NPath.SystemTemp)
 		{
 		}
 
-		public DefaultTestSandbox(TestCase testCase, NPath rootTemporaryDirectory)
+		public TestCaseSandbox(TestCase testCase, NPath rootTemporaryDirectory)
 			 : this(testCase, rootTemporaryDirectory, string.Empty)
 		{
 		}
 
-		public DefaultTestSandbox(TestCase testCase, string rootTemporaryDirectory, string namePrefix)
+		public TestCaseSandbox(TestCase testCase, string rootTemporaryDirectory, string namePrefix)
 			: this(testCase, rootTemporaryDirectory.ToNPath(), namePrefix)
 		{
 		}
 
-		public DefaultTestSandbox(TestCase testCase, NPath rootTemporaryDirectory, string namePrefix)
-			: base(testCase)
+		public TestCaseSandbox(TestCase testCase, NPath rootTemporaryDirectory, string namePrefix)
 		{
+			_testCase = testCase;
 			var name = string.IsNullOrEmpty(namePrefix) ? "linker_tests" : $"{namePrefix}_linker_tests";
 			_directory = rootTemporaryDirectory.Combine(name);
 
@@ -40,26 +37,26 @@ namespace Mono.Linker.Tests.Core
 			OutputDirectory = _directory.Combine("output").EnsureDirectoryExists();
 		}
 
-		public override NPath InputDirectory { get; }
+		public NPath InputDirectory { get; }
 
-		public override NPath OutputDirectory { get; }
+		public NPath OutputDirectory { get; }
 
-		public override IEnumerable<NPath> SourceFiles
+		public  IEnumerable<NPath> SourceFiles
 		{
 			get { return _directory.Files("*.cs"); }
 		}
 
-		public override IEnumerable<NPath> References
+		public IEnumerable<NPath> References
 		{
 			get { return InputDirectory.Files("*.dll"); }
 		}
 
-		public override IEnumerable<NPath> LinkXmlFiles
+		public IEnumerable<NPath> LinkXmlFiles
 		{
 			get { return InputDirectory.Files("*.xml"); }
 		}
 
-		public override void Populate(BaseTestCaseMetadaProvider metadataProvider)
+		public virtual void Populate(TestCaseMetadaProvider metadataProvider)
 		{
 			_testCase.SourceFile.Copy(_directory);
 

@@ -3,19 +3,13 @@ using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Mono.Linker.Tests.Core.Base;
 using Mono.Linker.Tests.Core.Utils;
 
-namespace Mono.Linker.Tests.Core
+namespace Mono.Linker.Tests.Core.Customizable
 {
-	public class DefaultCompiler : BaseCompiler
+	public class TestCaseCompiler
 	{
-		public DefaultCompiler(TestCase testCase)
-			: base(testCase)
-		{
-		}
-
-		public override ManagedCompilationResult CompileTestIn(BaseTestSandbox sandbox, IEnumerable<string> referencesExternalToSandbox)
+		public virtual ManagedCompilationResult CompileTestIn(TestCaseSandbox sandbox, IEnumerable<string> referencesExternalToSandbox)
 		{
 			var compilerOptions = CreateCompilerOptions(sandbox, referencesExternalToSandbox);
 			var provider = CodeDomProvider.CreateProvider("C#");
@@ -29,7 +23,7 @@ namespace Mono.Linker.Tests.Core
 			throw new Exception("Compilation errors: " + errors);
 		}
 
-		protected virtual CompilerParameters CreateCompilerOptions(BaseTestSandbox sandbox, IEnumerable<string> referencesExternalToSandbox)
+		protected virtual CompilerParameters CreateCompilerOptions(TestCaseSandbox sandbox, IEnumerable<string> referencesExternalToSandbox)
 		{
 			var outputPath = sandbox.InputDirectory.Combine("test.exe");
 

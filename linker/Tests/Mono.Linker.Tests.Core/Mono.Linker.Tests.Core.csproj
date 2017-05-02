@@ -40,18 +40,13 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Base\BaseChecker.cs" />
-    <Compile Include="Base\BaseCompiler.cs" />
-    <Compile Include="Base\BaseLinker.cs" />
-    <Compile Include="Base\BaseLinkerArgumentBuilder.cs" />
-    <Compile Include="Base\BaseObjectFactory.cs" />
-    <Compile Include="Base\BaseTestCaseMetadaProvider.cs" />
-    <Compile Include="Base\BaseTestSandbox.cs" />
-    <Compile Include="DefaultChecker.cs" />
-    <Compile Include="DefaultCompiler.cs" />
-    <Compile Include="DefaultLinkerArgumentBuilder.cs" />
-    <Compile Include="DefaultTestCaseMetadaProvider.cs" />
-    <Compile Include="DefaultTestSandbox.cs" />
+    <Compile Include="Customizable\LinkerDriver.cs" />
+    <Compile Include="Customizable\ObjectFactory.cs" />
+    <Compile Include="Customizable\ResultChecker.cs" />
+    <Compile Include="Customizable\TestCaseCompiler.cs" />
+    <Compile Include="Customizable\LinkerArgumentBuilder.cs" />
+    <Compile Include="Customizable\TestCaseMetadaProvider.cs" />
+    <Compile Include="Customizable\TestCaseSandbox.cs" />
     <Compile Include="LinkedTestCaseResult.cs" />
     <Compile Include="LinkXmlHelpers.cs" />
     <Compile Include="ManagedCompilationResult.cs" />
