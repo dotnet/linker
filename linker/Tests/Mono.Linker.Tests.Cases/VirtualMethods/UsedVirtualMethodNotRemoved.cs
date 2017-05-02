@@ -1,25 +1,26 @@
 ﻿using System;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
-namespace Mono.Linker.Tests.Cases.VirtualMethods
-{
-	public class UsedVirtualMethodNotRemoved
-	{
-		public static void Main()
+namespace Mono.Linker.Tests.Cases.VirtualMethods {
+	public class UsedVirtualMethodNotRemoved {
+		public static void Main ()
 		{
-			new B(); new Base().Call();
+			new B ();
+			new Base ().Call ();
 		}
 
-		class Base
-		{
+		class Base {
 			[Kept]
-			public virtual void Call() { }
+			public virtual void Call ()
+			{
+			}
 		}
 
-		class B : Base
-		{
+		class B : Base {
 			[Kept]
-			public override void Call() { }
+			public override void Call ()
+			{
+			}
 		}
 	}
 }

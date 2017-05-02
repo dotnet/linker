@@ -4,49 +4,44 @@ using System.Linq;
 using System.Text;
 using Mono.Cecil;
 
-namespace Mono.Linker.Tests.Core.Utils
-{
-	public static class CecilExtensions
-	{
-		public static IEnumerable<TypeDefinition> AllDefinedTypes(this AssemblyDefinition assemblyDefinition)
+namespace Mono.Linker.Tests.Core.Utils {
+	public static class CecilExtensions {
+		public static IEnumerable<TypeDefinition> AllDefinedTypes (this AssemblyDefinition assemblyDefinition)
 		{
-			return assemblyDefinition.Modules.SelectMany(m => m.AllDefinedTypes());
+			return assemblyDefinition.Modules.SelectMany (m => m.AllDefinedTypes ());
 		}
 
-		public static IEnumerable<TypeDefinition> AllDefinedTypes(this ModuleDefinition moduleDefinition)
+		public static IEnumerable<TypeDefinition> AllDefinedTypes (this ModuleDefinition moduleDefinition)
 		{
-			foreach (var typeDefinition in moduleDefinition.Types)
-			{
+			foreach (var typeDefinition in moduleDefinition.Types) {
 				yield return typeDefinition;
 
-				foreach (var definition in typeDefinition.AllDefinedTypes())
+				foreach (var definition in typeDefinition.AllDefinedTypes ())
 					yield return definition;
 			}
 		}
 
-		public static IEnumerable<TypeDefinition> AllDefinedTypes(this TypeDefinition typeDefinition)
+		public static IEnumerable<TypeDefinition> AllDefinedTypes (this TypeDefinition typeDefinition)
 		{
-			foreach (var nestedType in typeDefinition.NestedTypes)
-			{
+			foreach (var nestedType in typeDefinition.NestedTypes) {
 				yield return nestedType;
 
-				foreach (var definition in nestedType.AllDefinedTypes())
+				foreach (var definition in nestedType.AllDefinedTypes ())
 					yield return definition;
 			}
 		}
 
-		public static IEnumerable<IMemberDefinition> AllMembers(this ModuleDefinition module)
+		public static IEnumerable<IMemberDefinition> AllMembers (this ModuleDefinition module)
 		{
-			foreach (var type in module.AllDefinedTypes())
-			{
+			foreach (var type in module.AllDefinedTypes ()) {
 				yield return type;
 
-				foreach (var member in type.AllMembers())
+				foreach (var member in type.AllMembers ())
 					yield return member;
 			}
 		}
 
-		public static IEnumerable<IMemberDefinition> AllMembers(this TypeDefinition type)
+		public static IEnumerable<IMemberDefinition> AllMembers (this TypeDefinition type)
 		{
 			foreach (var field in type.Fields)
 				yield return field;
@@ -61,17 +56,17 @@ namespace Mono.Linker.Tests.Core.Utils
 				yield return @event;
 		}
 
-		public static bool HasAttribute(this ICustomAttributeProvider provider, string name)
+		public static bool HasAttribute (this ICustomAttributeProvider provider, string name)
 		{
-			return provider.CustomAttributes.Any(ca => ca.AttributeType.Name == name);
+			return provider.CustomAttributes.Any (ca => ca.AttributeType.Name == name);
 		}
 
-		public static bool HasAttributeDerivedFrom(this ICustomAttributeProvider provider, string name)
+		public static bool HasAttributeDerivedFrom (this ICustomAttributeProvider provider, string name)
 		{
-			return provider.CustomAttributes.Any(ca => ca.AttributeType.Resolve().DerivesFrom(name));
+			return provider.CustomAttributes.Any (ca => ca.AttributeType.Resolve ().DerivesFrom (name));
 		}
 
-		public static bool DerivesFrom(this TypeDefinition type, string baseTypeName)
+		public static bool DerivesFrom (this TypeDefinition type, string baseTypeName)
 		{
 			if (type.Name == baseTypeName)
 				return true;
@@ -82,52 +77,51 @@ namespace Mono.Linker.Tests.Core.Utils
 			if (type.BaseType.Name == baseTypeName)
 				return true;
 
-			return type.BaseType.Resolve().DerivesFrom(baseTypeName);
+			return type.BaseType.Resolve ().DerivesFrom (baseTypeName);
 		}
 
-		public static string GetFullName(this IMemberDefinition memberDefinition)
+		public static string GetFullName (this IMemberDefinition memberDefinition)
 		{
 			var methoDef = memberDefinition as MethodReference;
 			if (methoDef != null)
-				return methoDef.GetFullName();
+				return methoDef.GetFullName ();
 
 			return memberDefinition.FullName;
 		}
 
-		public static PropertyDefinition GetPropertyDefinition(this MethodDefinition method)
+		public static PropertyDefinition GetPropertyDefinition (this MethodDefinition method)
 		{
 			if (!method.IsSetter && !method.IsGetter)
-				throw new ArgumentException();
+				throw new ArgumentException ();
 
-			var propertyName = method.Name.Substring(4);
-			return method.DeclaringType.Properties.First(p => p.Name == propertyName);
+			var propertyName = method.Name.Substring (4);
+			return method.DeclaringType.Properties.First (p => p.Name == propertyName);
 		}
 
-		public static string GetFullName(this MethodReference method)
+		public static string GetFullName (this MethodReference method)
 		{
 			if (!method.HasGenericParameters)
 				return method.FullName;
 
-			var builder = new StringBuilder();
-			builder.Append($"{method.ReturnType} {method.DeclaringType}::{method.Name}");
-			builder.Append('<');
+			var builder = new StringBuilder ();
+			builder.Append ($"{method.ReturnType} {method.DeclaringType}::{method.Name}");
+			builder.Append ('<');
 
 			for (int i = 0; i < method.GenericParameters.Count - 1; i++)
-				builder.Append($"{method.GenericParameters[i]},");
+				builder.Append ($"{method.GenericParameters [i]},");
 
-			builder.Append($"{method.GenericParameters[method.GenericParameters.Count - 1]}>(");
+			builder.Append ($"{method.GenericParameters [method.GenericParameters.Count - 1]}>(");
 
-			if (method.HasParameters)
-			{
+			if (method.HasParameters) {
 				for (int i = 0; i < method.Parameters.Count - 1; i++)
-					builder.Append($"{method.Parameters[i].ParameterType},");
+					builder.Append ($"{method.Parameters [i].ParameterType},");
 
-				builder.Append(method.Parameters[method.Parameters.Count - 1].ParameterType);
+				builder.Append (method.Parameters [method.Parameters.Count - 1].ParameterType);
 			}
 
-			builder.Append(")");
+			builder.Append (")");
 
-			return builder.ToString();
+			return builder.ToString ();
 		}
 	}
 }

@@ -5,32 +5,28 @@ using System.Text;
 using Mono.Cecil;
 using Mono.Linker.Tests.Core.Utils;
 
-namespace Mono.Linker.Tests.Core
-{
-	public static class LinkXmlHelpers
-	{
-		public static void WriteXmlFileToPreserveEntryPoint(NPath targetProgram, NPath xmlFile)
+namespace Mono.Linker.Tests.Core {
+	public static class LinkXmlHelpers {
+		public static void WriteXmlFileToPreserveEntryPoint (NPath targetProgram, NPath xmlFile)
 		{
-			using (var assembly = AssemblyDefinition.ReadAssembly(targetProgram.ToString()))
-			{
+			using (var assembly = AssemblyDefinition.ReadAssembly (targetProgram.ToString ())) {
 				var method = assembly.EntryPoint;
 
-				var sb = new StringBuilder();
-				sb.AppendLine("<linker>");
+				var sb = new StringBuilder ();
+				sb.AppendLine ("<linker>");
 
-				sb.AppendLine(" <assembly fullname=\"" + assembly.FullName + "\">");
+				sb.AppendLine (" <assembly fullname=\"" + assembly.FullName + "\">");
 
-				if (method != null)
-				{
-					sb.AppendLine("  <type fullname=\"" + method.DeclaringType.FullName + "\">");
-					sb.AppendLine("   <method name=\"" + method.Name + "\"/>");
-					sb.AppendLine("  </type>");
+				if (method != null) {
+					sb.AppendLine ("  <type fullname=\"" + method.DeclaringType.FullName + "\">");
+					sb.AppendLine ("   <method name=\"" + method.Name + "\"/>");
+					sb.AppendLine ("  </type>");
 				}
 
-				sb.AppendLine(" </assembly>");
+				sb.AppendLine (" </assembly>");
 
-				sb.AppendLine("</linker>");
-				xmlFile.WriteAllText(sb.ToString());
+				sb.AppendLine ("</linker>");
+				xmlFile.WriteAllText (sb.ToString ());
 			}
 		}
 	}

@@ -1,22 +1,21 @@
 ﻿using System.Runtime.InteropServices;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
-namespace Mono.Linker.Tests.Cases.Interop.PInvoke
-{
-	class DefaultConstructorOfReturnTypeIsNotRemoved
-	{
-		public static void Main()
+namespace Mono.Linker.Tests.Cases.Interop.PInvoke {
+	class DefaultConstructorOfReturnTypeIsNotRemoved {
+		public static void Main ()
 		{
-			var a = SomeMethod();
+			var a = SomeMethod ();
 		}
 
-		class A
-		{
+		class A {
 			[Kept]
-			public A() { }
+			public A ()
+			{
+			}
 		}
 
-		[DllImport("Unused")]
-		private static extern A SomeMethod();
+		[DllImport ("Unused")]
+		private static extern A SomeMethod ();
 	}
 }

@@ -1,18 +1,22 @@
 ﻿using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
-namespace Mono.Linker.Tests.Cases.Statics
-{
-	class UnusedStaticConstructorGetsRemoved
-	{
-		public static void Main() { }
+namespace Mono.Linker.Tests.Cases.Statics {
+	class UnusedStaticConstructorGetsRemoved {
+		public static void Main ()
+		{
+		}
 
-		static void Dead() { new B(); }
+		static void Dead ()
+		{
+			new B ();
+		}
 
 		[Removed]
-		class B
-		{
+		class B {
 			[Removed]
-			static B() { }
+			static B ()
+			{
+			}
 		}
 	}
 }

@@ -1,22 +1,21 @@
 ﻿using System.Runtime.CompilerServices;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
-namespace Mono.Linker.Tests.Cases.Interop.InternalCalls
-{
-	class DefaultConstructorOfReturnTypeIsNotRemoved
-	{
-		public static void Main()
+namespace Mono.Linker.Tests.Cases.Interop.InternalCalls {
+	class DefaultConstructorOfReturnTypeIsNotRemoved {
+		public static void Main ()
 		{
-			var a = SomeMethod();
+			var a = SomeMethod ();
 		}
 
-		class A
-		{
+		class A {
 			[Kept]
-			public A() { }
+			public A ()
+			{
+			}
 		}
 
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		static extern A SomeMethod();
+		[MethodImpl (MethodImplOptions.InternalCall)]
+		static extern A SomeMethod ();
 	}
 }

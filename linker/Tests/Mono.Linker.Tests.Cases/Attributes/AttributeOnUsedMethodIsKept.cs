@@ -1,26 +1,22 @@
 ﻿using System;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
-namespace Mono.Linker.Tests.Cases.Attributes
-{
-	class AttributeOnUsedMethodIsKept
-	{
-		public static void Main()
+namespace Mono.Linker.Tests.Cases.Attributes {
+	class AttributeOnUsedMethodIsKept {
+		public static void Main ()
 		{
-			new A().Method();
+			new A ().Method ();
 		}
 
-		class A
-		{
+		class A {
 			[Foo]
-			public void Method()
+			public void Method ()
 			{
 			}
 		}
 
 		[Kept]
-		class FooAttribute : Attribute
-		{
+		class FooAttribute : Attribute {
 		}
 	}
 }
