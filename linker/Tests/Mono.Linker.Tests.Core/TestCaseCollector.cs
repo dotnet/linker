@@ -24,30 +24,50 @@ namespace Mono.Linker.Tests.Core {
 
 		public IEnumerable<TestCase> Collect ()
 		{
+			return Collect (AllSourceFiles ());
+		}
+
+		public TestCase Collect (NPath sourceFile)
+		{
+			return Collect (new [] { sourceFile }).First ();
+		}
+
+		public IEnumerable<TestCase> Collect (IEnumerable<NPath> sourceFiles)
+		{
 			_rootDirectory.DirectoryMustExist ();
 			_testCaseAssemblyPath.FileMustExist ();
 
 			using (var caseAssemblyDefinition = AssemblyDefinition.ReadAssembly (_testCaseAssemblyPath.ToString ())) {
-				foreach (var file in _rootDirectory.Files ("*.cs")) {
+				foreach (var file in sourceFiles) {
 					TestCase testCase;
-					if (ProcessSourceFile (caseAssemblyDefinition, file, out testCase))
+					if (CreateCase (caseAssemblyDefinition, file, out testCase))
 						yield return testCase;
-				}
-
-				foreach (var subDir in _rootDirectory.Directories ()) {
-					if (subDir.FileName == "bin" || subDir.FileName == "obj" || subDir.FileName == "Properties")
-						continue;
-
-					foreach (var file in subDir.Files ("*.cs", true)) {
-						TestCase testCase;
-						if (ProcessSourceFile (caseAssemblyDefinition, file, out testCase))
-							yield return testCase;
-					}
 				}
 			}
 		}
 
-		private bool ProcessSourceFile (AssemblyDefinition caseAssemblyDefinition, NPath sourceFile, out TestCase testCase)
+		public IEnumerable<NPath> AllSourceFiles ()
+		{
+			_rootDirectory.DirectoryMustExist ();
+
+			foreach (var file in _rootDirectory.Files ("*.cs"))
+			{
+				yield return file;
+			}
+
+			foreach (var subDir in _rootDirectory.Directories ())
+			{
+				if (subDir.FileName == "bin" || subDir.FileName == "obj" || subDir.FileName == "Properties")
+					continue;
+
+				foreach (var file in subDir.Files ("*.cs", true))
+				{
+					yield return file;
+				}
+			}
+		}
+
+		private bool CreateCase (AssemblyDefinition caseAssemblyDefinition, NPath sourceFile, out TestCase testCase)
 		{
 			var potentialCase = new TestCase (sourceFile, _rootDirectory, _testCaseAssemblyPath);
 
