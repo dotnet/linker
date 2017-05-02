@@ -49,6 +49,11 @@ namespace Mono.Linker.Tests.TestsCases
 			return NUnitCasesByPrefix("Interop.");
 		}
 
+		public static IEnumerable<TestCaseData> ReferencesTests()
+		{
+			return NUnitCasesByPrefix("References.");
+		}
+
 		public static IEnumerable<TestCaseData> OtherTests()
 		{
 			var allGroupedTestNames = new HashSet<string>(
@@ -61,9 +66,10 @@ namespace Mono.Linker.Tests.TestsCases
 					.Concat(CoreLinkTests())
 					.Concat(StaticsTests())
 					.Concat(InteropTests())
-					.Select(c => ((TestCase)c.Arguments[0]).FullTypeName));
+					.Concat(ReferencesTests ())
+					.Select(c => ((TestCase)c.Arguments[0]).ReconstructedFullTypeName));
 
-			return AllCases().Where(c => !allGroupedTestNames.Contains(c.FullTypeName)).Select(c => CreateNUnitTestCase(c, c.DisplayName));
+			return AllCases().Where(c => !allGroupedTestNames.Contains(c.ReconstructedFullTypeName)).Select(c => CreateNUnitTestCase(c, c.DisplayName));
 		}
 
 		static IEnumerable<TestCase> AllCases()

@@ -17,14 +17,19 @@ namespace Mono.Linker.Tests.Core.Customizable {
 			return new LinkerDriver ();
 		}
 
-		public virtual ResultChecker CreateChecker ()
+		public virtual ResultChecker CreateChecker (ExpectationsProvider expectations)
 		{
-			return new ResultChecker ();
+			return new ResultChecker (expectations);
 		}
 
 		public virtual TestCaseMetadaProvider CreateMetadatProvider (TestCase testCase, AssemblyDefinition fullTestCaseAssemblyDefinition)
 		{
 			return new TestCaseMetadaProvider (testCase, fullTestCaseAssemblyDefinition);
+		}
+
+		public virtual ExpectationsProvider CreateExpectationsProvider ()
+		{
+			return new ExpectationsProvider();
 		}
 
 		public virtual LinkerArgumentBuilder CreateLinkerArgumentBuilder ()

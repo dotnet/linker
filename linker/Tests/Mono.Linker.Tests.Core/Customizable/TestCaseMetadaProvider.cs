@@ -17,7 +17,7 @@ namespace Mono.Linker.Tests.Core.Customizable {
 			_testCase = testCase;
 			_fullTestCaseAssemblyDefinition = fullTestCaseAssemblyDefinition;
 			// The test case types are never nested so we don't need to worry about that
-			_testCaseTypeDefinition = fullTestCaseAssemblyDefinition.MainModule.GetType (_testCase.FullTypeName);
+			_testCaseTypeDefinition = fullTestCaseAssemblyDefinition.MainModule.GetType (_testCase.ReconstructedFullTypeName);
 
 			if (_testCaseTypeDefinition == null)
 				throw new InvalidOperationException ($"Could not find the type definition for {_testCase.Name} in {_testCase.SourceFile}");
@@ -37,6 +37,10 @@ namespace Mono.Linker.Tests.Core.Customizable {
 		public virtual IEnumerable<string> GetReferencedAssemblies ()
 		{
 			yield return "mscorlib.dll";
+
+			foreach (var referenceAttr in _testCaseTypeDefinition.CustomAttributes.Where (attr => attr.AttributeType.Name == nameof (ReferenceAttribute))) {
+				yield return (string) referenceAttr.ConstructorArguments.First ().Value;
+			}
 		}
 
 		public virtual IEnumerable<NPath> GetExtraLinkerSearchDirectories ()
@@ -46,9 +50,9 @@ namespace Mono.Linker.Tests.Core.Customizable {
 
 		public bool IsIgnored (out string reason)
 		{
-			if (_testCaseTypeDefinition.HasAttribute (nameof (IgnoreTestCaseAttribute))) {
-				// TODO by Mike : Implement obtaining the real reason
-				reason = "TODO : Need to implement parsing reason";
+			var ignoreAttribute = _testCaseTypeDefinition.CustomAttributes.FirstOrDefault (attr => attr.AttributeType.Name == nameof (IgnoreTestCaseAttribute));
+			if (ignoreAttribute != null) {
+				reason = (string)ignoreAttribute.ConstructorArguments.First ().Value;
 				return true;
 			}
 

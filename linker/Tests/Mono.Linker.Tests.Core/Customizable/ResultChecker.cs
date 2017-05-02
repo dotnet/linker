@@ -9,10 +9,12 @@ using NUnit.Framework;
 namespace Mono.Linker.Tests.Core.Customizable {
 	public class ResultChecker {
 		private readonly AssertionCounter _assertionCounter;
+		private readonly ExpectationsProvider _expectations;
 
-		public ResultChecker ()
+		public ResultChecker (ExpectationsProvider expectations)
 		{
 			_assertionCounter = new AssertionCounter ();
+			_expectations = expectations;
 		}
 
 		protected void BumpAssertionCounter ()
@@ -59,7 +61,7 @@ namespace Mono.Linker.Tests.Core.Customizable {
 
 		private int PerformOutputAssemblyChecks (AssemblyDefinition original, NPath outputDirectory)
 		{
-			var assembliesToCheck = original.MainModule.Types.SelectMany (t => t.CustomAttributes).Where (attr => attr.IsAssemblyAssertion ()).ToArray ();
+			var assembliesToCheck = original.MainModule.Types.SelectMany (t => t.CustomAttributes).Where (attr => _expectations.IsAssemblyAssertion(attr)).ToArray ();
 
 			foreach (var assemblyAttr in assembliesToCheck) {
 				var name = (string) assemblyAttr.ConstructorArguments.First ().Value;
@@ -80,7 +82,6 @@ namespace Mono.Linker.Tests.Core.Customizable {
 					TypeDefinition linkedType = linked.MainModule.GetType (originalMember.Definition.DeclaringType.FullName);
 					CheckTypeMember (originalMember, linkedType, "Field", () => linkedType.Fields);
 				} else if (originalMember.Definition is MethodDefinition) {
-					//var originalMethodDef = (MethodDefinition) originalMember.Definition;
 					TypeDefinition linkedType = linked.MainModule.GetType (originalMember.Definition.DeclaringType.FullName);
 					CheckTypeMember (originalMember, linkedType, "Method", () => linkedType.Methods);
 				} else if (originalMember.Definition is PropertyDefinition) {
@@ -96,7 +97,7 @@ namespace Mono.Linker.Tests.Core.Customizable {
 		protected virtual void CheckTypeMember<T> (DefinitionAndExpectation originalMember, TypeDefinition linkedParentTypeDefinition, string definitionTypeName, Func<IEnumerable<T>> getLinkedMembers)
 			where T : IMemberDefinition
 		{
-			if (ShouldBeRemoved (originalMember)) {
+			if (_expectations.IsRemovedAttribute (originalMember.ExpectedResult)) {
 				if (linkedParentTypeDefinition == null) {
 					// The entire type was removed, which means the field or method was also removed.  This is OK.
 					// We don't have anything we can assert in this case.
@@ -110,7 +111,7 @@ namespace Mono.Linker.Tests.Core.Customizable {
 				return;
 			}
 
-			if (ShouldBeKept (originalMember)) {
+			if (_expectations.IsKeptAttribute (originalMember.ExpectedResult)) {
 				// if the member should be kept, then there's an implied requirement that the parent type exists.  Let's make that check
 				// even if the test case didn't request it otherwise we are just going to hit a null reference exception when we try to get the members on the type
 				Assert.IsNotNull (linkedParentTypeDefinition, $"{definitionTypeName}: `{originalMember}' should have been kept, but the entire parent type was removed {originalMember.Definition.DeclaringType}");
@@ -123,19 +124,19 @@ namespace Mono.Linker.Tests.Core.Customizable {
 
 		protected virtual void CheckTypeDefinition (TypeDefinition original, TypeDefinition linked)
 		{
-			if (original.ShouldBeRemoved ()) {
+			if (_expectations.ShouldBeRemoved (original)) {
 				BumpAssertionCounter (() => Assert.IsNull (linked, $"Type: `{original}' should have been removed"));
 				return;
 			}
 
-			if (original.ShouldBeKept ()) {
+			if (_expectations.ShouldBeKept (original)) {
 				BumpAssertionCounter (() => Assert.IsNotNull (linked, $"Type: `{original}' should have been kept"));
 			}
 		}
 
 		private IEnumerable<DefinitionAndExpectation> CollectMembersToAssert (AssemblyDefinition original)
 		{
-			var membersWithAssertAttributes = original.MainModule.AllMembers ().Where (m => m.HasExpectedLinkerBehaviorAttribute ());
+			var membersWithAssertAttributes = original.MainModule.AllMembers ().Where (m => _expectations.HasExpectedLinkerBehaviorAttribute (m));
 
 			// Some of the assert attributes on classes flag methods that are not in the .cs for checking.  We need to collection the member definitions for these
 			foreach (var member in membersWithAssertAttributes) {
@@ -155,24 +156,24 @@ namespace Mono.Linker.Tests.Core.Customizable {
 				}
 
 				// It's some other basic member such as a Field or method that requires no extra special processing
-				yield return new DefinitionAndExpectation (member, member.CustomAttributes.First (attr => attr.IsSelfAssertion ()));
+				yield return new DefinitionAndExpectation (member, member.CustomAttributes.First (attr => _expectations.IsSelfAssertion (attr)));
 			}
 		}
 
-		private static IEnumerable<DefinitionAndExpectation> ExpandTypeDefinition (TypeDefinition typeDefinition)
+		private IEnumerable<DefinitionAndExpectation> ExpandTypeDefinition (TypeDefinition typeDefinition)
 		{
-			if (typeDefinition.HasSelfAssertions ())
-				yield return new DefinitionAndExpectation (typeDefinition, typeDefinition.CustomAttributes.First (attr => attr.IsSelfAssertion ()));
+			if (_expectations.HasSelfAssertions (typeDefinition))
+				yield return new DefinitionAndExpectation (typeDefinition, typeDefinition.CustomAttributes.First (attr => _expectations.IsSelfAssertion (attr)));
 
 			// Check if the type definition only has self assertions, if so, no need to continue to trying to expand the other assertions
 			if (typeDefinition.CustomAttributes.Count == 1)
 				yield break;
 
 			foreach (var attr in typeDefinition.CustomAttributes) {
-				if (!attr.IsExpectedLinkerBehaviorAttribute ())
+				if (!_expectations.IsExpectedLinkerBehaviorAttribute (attr))
 					continue;
 
-				if (!attr.IsMemberAssertion ())
+				if (!_expectations.IsMemberAssertion (attr))
 					continue;
 
 				var name = (string) attr.ConstructorArguments.First ().Value;
@@ -189,33 +190,23 @@ namespace Mono.Linker.Tests.Core.Customizable {
 			}
 		}
 
-		private static IEnumerable<DefinitionAndExpectation> ExpandPropertyDefinition (PropertyDefinition propertyDefinition)
+		protected virtual IEnumerable<DefinitionAndExpectation> ExpandPropertyDefinition (PropertyDefinition propertyDefinition)
 		{
 			// Let's do some error checking to make sure test cases are not setup in incorrect ways.
-			if (propertyDefinition.GetMethod.HasExpectedLinkerBehaviorAttribute ())
+			if (_expectations.HasExpectedLinkerBehaviorAttribute (propertyDefinition.GetMethod))
 				throw new InvalidOperationException (
 					$"Invalid test.  Both the PropertyDefinition {propertyDefinition} and {propertyDefinition.GetMethod} have an expectation attribute on them.  Put the attribute on one or the other");
 
-			if (propertyDefinition.SetMethod.HasExpectedLinkerBehaviorAttribute ())
+			if (_expectations.HasExpectedLinkerBehaviorAttribute (propertyDefinition.SetMethod))
 				throw new InvalidOperationException (
 					$"Invalid test.  Both the PropertyDefinition {propertyDefinition} and {propertyDefinition.SetMethod} have an expectation attribute on them.  Put the attribute on one or the other");
 
 			// We don't want to return the PropertyDefinition itself, the assertion logic won't know what to do with them.  Instead return the getter and setters
 			// When the PropertyDefinition has an expectation on it, it will apply to both the getter and setter
-			var expectationAttribute = propertyDefinition.CustomAttributes.First (attr => attr.IsExpectedLinkerBehaviorAttribute ());
+			var expectationAttribute = propertyDefinition.CustomAttributes.First (attr => _expectations.IsExpectedLinkerBehaviorAttribute (attr));
 
 			yield return new DefinitionAndExpectation (propertyDefinition.GetMethod, expectationAttribute);
 			yield return new DefinitionAndExpectation (propertyDefinition.SetMethod, expectationAttribute);
-		}
-
-		protected static bool ShouldBeRemoved (DefinitionAndExpectation expectation)
-		{
-			return expectation.ExpectedResult.AttributeType.Resolve ().DerivesFrom (nameof (RemovedAttribute));
-		}
-
-		protected static bool ShouldBeKept (DefinitionAndExpectation expectation)
-		{
-			return expectation.ExpectedResult.AttributeType.Resolve ().DerivesFrom (nameof (KeptAttribute));
 		}
 
 		public class DefinitionAndExpectation {
