@@ -49,7 +49,7 @@ namespace Mono.Linker.Tests.TestsCases
 			return NUnitCasesByPrefix("Interop.");
 		}
 
-		public static IEnumerable<TestCaseData> UngroupedTests()
+		public static IEnumerable<TestCaseData> OtherTests()
 		{
 			var allGroupedTestNames = new HashSet<string>(
 				XmlTests()
