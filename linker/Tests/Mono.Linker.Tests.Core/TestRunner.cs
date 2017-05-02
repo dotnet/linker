@@ -12,7 +12,7 @@ namespace Mono.Linker.Tests.Core {
 			_factory = factory;
 		}
 
-		public void Run (TestCase testCase)
+		public LinkedTestCaseResult Run (TestCase testCase)
 		{
 			using (var fullTestCaseAssemblyDefinition = AssemblyDefinition.ReadAssembly (testCase.OriginalTestCaseAssemblyPath.ToString ())) {
 				var metadataProvider = _factory.CreateMetadatProvider (testCase, fullTestCaseAssemblyDefinition);
@@ -24,8 +24,7 @@ namespace Mono.Linker.Tests.Core {
 				var sandbox = Sandbox (testCase, metadataProvider);
 				var compilationResult = Compile (sandbox, metadataProvider);
 				PrepForLink (sandbox, compilationResult);
-				var linkResult = Link (testCase, sandbox, compilationResult, metadataProvider);
-				Check (linkResult);
+				return Link (testCase, sandbox, compilationResult, metadataProvider);
 			}
 		}
 
@@ -67,13 +66,6 @@ namespace Mono.Linker.Tests.Core {
 			linker.Link (builder.ToArgs ());
 
 			return new LinkedTestCaseResult (testCase, compilationResult.AssemblyPath, sandbox.OutputDirectory.Combine (compilationResult.AssemblyPath.FileName));
-		}
-
-		private void Check (LinkedTestCaseResult linkResult)
-		{
-			var checker = _factory.CreateChecker (_factory.CreateExpectationsProvider ());
-
-			checker.Check (linkResult);
 		}
 	}
 }
