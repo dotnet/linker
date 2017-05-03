@@ -7,8 +7,11 @@ namespace Mono.Linker.Tests.Cases.Basic {
 			var val = new UnusedPropertySetterRemoved.B ().PartiallyUsed;
 		}
 
+		[KeptMember (".ctor()")]
+		[KeptMember ("<PartiallyUsed>k__BackingField")]
 		class B {
-			public int PartiallyUsed { [Kept] get; [Removed] set; }
+			[Kept] // FIXME: Should be removed
+			public int PartiallyUsed { [Kept] get; set; }
 		}
 	}
 }

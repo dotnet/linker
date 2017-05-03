@@ -13,7 +13,7 @@ namespace Mono.Linker.Tests.Cases.Future {
 		}
 
 		class B {
-			[Removed] public int _unused = 3;
+			public int _unused = 3;
 
 			[Kept]
 			public void Method ()

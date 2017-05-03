@@ -8,14 +8,18 @@ namespace Mono.Linker.Tests.Cases.Generics {
 			obj.Method<int, int> (1);
 		}
 
+		[Kept]
+		[KeptMember (".ctor()")]
 		class MyBase {
-			[Removed]
+			[Kept] // FIXME: shoud be removed
 			public virtual T Method<T> (T arg1)
 			{
 				return arg1;
 			}
 		}
 
+		[KeptMember (".ctor()")]
+		[KeptBaseType ("Mono.Linker.Tests.Cases.Generics.DerivedClassWithMethodOfSameNameAsBaseButDifferentNumberOfGenericParametersUnusedBaseWillGetStripped/MyBase")]
 		class MyDerived : MyBase {
 			[Kept]
 			public virtual T Method<T, K> (T arg1)

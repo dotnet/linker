@@ -7,6 +7,7 @@ namespace Mono.Linker.Tests.Cases.LinkXml {
 		}
 
 		[Kept]
+		[KeptMember (".ctor()")]
 		class Unused {
 		}
 	}

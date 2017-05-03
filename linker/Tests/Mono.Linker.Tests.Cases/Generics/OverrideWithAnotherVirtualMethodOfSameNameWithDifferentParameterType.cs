@@ -7,6 +7,7 @@ namespace Mono.Linker.Tests.Cases.Generics {
 			new Derived<double, int> ().Method (1.0);
 		}
 
+		[KeptMember (".ctor()")]
 		public class Base<S> {
 			[Kept]
 			public virtual S Method (S arg)
@@ -15,6 +16,8 @@ namespace Mono.Linker.Tests.Cases.Generics {
 			}
 		}
 
+		[KeptMember (".ctor()")]
+		[KeptBaseType ("Mono.Linker.Tests.Cases.Generics.OverrideWithAnotherVirtualMethodOfSameNameWithDifferentParameterType/Base`1<K>")]
 		public class Derived<K, S> : Base<K> {
 			[Kept]
 			public override K Method (K arg)
@@ -22,7 +25,7 @@ namespace Mono.Linker.Tests.Cases.Generics {
 				return arg;
 			}
 
-			[Removed]
+			[Kept] // FIXME: Needs to be removed
 			public virtual S Method (S arg)
 			{
 				return arg;

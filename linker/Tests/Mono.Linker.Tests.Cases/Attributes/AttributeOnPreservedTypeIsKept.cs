@@ -8,7 +8,7 @@ namespace Mono.Linker.Tests.Cases.Attributes {
 		{
 		}
 
-		[Kept]
+		[KeptBaseType ("System.Attribute")]
 		class FooAttribute : Attribute {
 			[Kept]
 			public FooAttribute ()

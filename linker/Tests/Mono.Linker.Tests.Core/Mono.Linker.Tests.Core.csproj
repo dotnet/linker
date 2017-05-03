@@ -57,6 +57,7 @@
     <Compile Include="TestRunner.cs" />
     <Compile Include="Utils\CecilExtensions.cs" />
     <Compile Include="Utils\NiceIO.cs" />
+    <Compile Include="Customizable\AssemblyChecker.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\cecil\Mono.Cecil.csproj">

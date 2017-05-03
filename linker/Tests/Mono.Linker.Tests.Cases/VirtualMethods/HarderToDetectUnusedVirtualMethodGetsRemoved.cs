@@ -12,6 +12,8 @@ namespace Mono.Linker.Tests.Cases.VirtualMethods {
 			new B ();
 		}
 
+		[Kept]
+		[KeptMember (".ctor()")]
 		class Base {
 			[Kept]
 			public virtual void Call ()
@@ -20,7 +22,6 @@ namespace Mono.Linker.Tests.Cases.VirtualMethods {
 		}
 
 		class B : Base {
-			[Removed]
 			public override void Call ()
 			{
 			}

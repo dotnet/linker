@@ -9,13 +9,13 @@ namespace Mono.Linker.Tests.Cases.Statics {
 		}
 	}
 
+	[Kept]
 	class A {
 		[Kept]
 		public static void UsedMethod ()
 		{
 		}
 
-		[Removed]
 		static void UnusedMethod ()
 		{
 		}

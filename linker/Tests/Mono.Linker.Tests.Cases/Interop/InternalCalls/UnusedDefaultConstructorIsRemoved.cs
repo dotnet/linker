@@ -10,16 +10,17 @@ namespace Mono.Linker.Tests.Cases.Interop.InternalCalls {
 		}
 
 		class A {
-			[Removed]
 			public A ()
 			{
 			}
 
+			[Kept]
 			public A (int other)
 			{
 			}
 		}
 
+		[Kept]
 		[MethodImpl (MethodImplOptions.InternalCall)]
 		static extern void SomeMethod (A a);
 	}

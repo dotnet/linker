@@ -8,11 +8,15 @@ namespace Mono.Linker.Tests.Cases.Attributes {
 			var val = new A ().field;
 		}
 
+		[KeptMember (".ctor()")]
 		class A {
+			[Kept]
 			[Foo] public int field;
 		}
 
 		[Kept]
+		[KeptMember(".ctor()")]
+		[KeptBaseType ("System.Attribute")]
 		class FooAttribute : Attribute {
 		}
 	}

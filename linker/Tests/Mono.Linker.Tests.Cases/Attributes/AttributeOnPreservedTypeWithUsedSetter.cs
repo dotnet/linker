@@ -8,8 +8,12 @@ namespace Mono.Linker.Tests.Cases.Attributes {
 		{
 		}
 
+		[KeptMember ("<Val>k__BackingField")]
+		[KeptMember (".ctor()")]
+		[KeptBaseType ("System.Attribute")]
 		class FooAttribute : Attribute {
-			public int Val { [Removed] get; [Kept] set; }
+			[Kept]
+			public int Val { get; [Kept] set; }
 		}
 	}
 }

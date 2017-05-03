@@ -9,12 +9,14 @@ namespace Mono.Linker.Tests.Cases.Interop.InternalCalls {
 			SomeMethod (ref a);
 		}
 
+		[KeptMember (".ctor()")]
 		class A {
 			[Kept] private int field1;
 
 			[Kept] private int field2;
 		}
 
+		[Kept]
 		[MethodImpl (MethodImplOptions.InternalCall)]
 		static extern void SomeMethod (ref A a);
 	}

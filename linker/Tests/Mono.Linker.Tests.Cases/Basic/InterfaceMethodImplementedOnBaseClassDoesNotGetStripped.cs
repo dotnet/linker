@@ -10,11 +10,13 @@ namespace Mono.Linker.Tests.Cases.Basic {
 
 		public interface I1 {
 			void Unused ();
+
+			[Kept]
 			void Used ();
 		}
 
+		[KeptMember (".ctor()")]
 		public class Base {
-			[Removed]
 			public void Unused ()
 			{
 			}
@@ -25,6 +27,10 @@ namespace Mono.Linker.Tests.Cases.Basic {
 			}
 		}
 
+		[Kept]
+		[KeptMember (".ctor()")]
+		[KeptBaseType ("Mono.Linker.Tests.Cases.Basic.InterfaceMethodImplementedOnBaseClassDoesNotGetStripped/Base")]
+		[KeptInterface ("Mono.Linker.Tests.Cases.Basic.InterfaceMethodImplementedOnBaseClassDoesNotGetStripped/I1")]
 		public class Derived : Base, I1 {
 		}
 	}

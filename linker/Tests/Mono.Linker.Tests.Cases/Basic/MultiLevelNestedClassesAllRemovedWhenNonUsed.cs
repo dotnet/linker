@@ -6,15 +6,11 @@ namespace Mono.Linker.Tests.Cases.Basic {
 		{
 		}
 
-		[Removed]
 		public class A {
-			[Removed]
 			public class AB {
-				[Removed]
 				public class ABC {
 				}
 
-				[Removed]
 				public class ABD {
 				}
 			}

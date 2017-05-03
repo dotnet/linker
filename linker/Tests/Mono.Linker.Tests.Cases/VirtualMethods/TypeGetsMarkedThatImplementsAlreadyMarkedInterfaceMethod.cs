@@ -13,6 +13,8 @@ namespace Mono.Linker.Tests.Cases.VirtualMethods {
 			void Foo ();
 		}
 
+		[KeptMember (".ctor()")]
+		[KeptInterface ("Mono.Linker.Tests.Cases.VirtualMethods.TypeGetsMarkedThatImplementsAlreadyMarkedInterfaceMethod/IFoo")]
 		class B : IFoo {
 			[Kept]
 			public void Foo ()
@@ -20,6 +22,8 @@ namespace Mono.Linker.Tests.Cases.VirtualMethods {
 			}
 		}
 
+		[KeptMember (".ctor()")]
+		[KeptInterface ("Mono.Linker.Tests.Cases.VirtualMethods.TypeGetsMarkedThatImplementsAlreadyMarkedInterfaceMethod/IFoo")]
 		class A : IFoo {
 			[Kept]
 			public void Foo ()

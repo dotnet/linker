@@ -15,6 +15,7 @@ namespace Mono.Linker.Tests.Cases.Interop.InternalCalls {
 			}
 		}
 
+		[Kept]
 		[MethodImpl (MethodImplOptions.InternalCall)]
 		static extern A SomeMethod ();
 	}

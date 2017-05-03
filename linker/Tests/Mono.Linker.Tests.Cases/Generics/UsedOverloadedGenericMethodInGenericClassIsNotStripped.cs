@@ -13,7 +13,6 @@ namespace Mono.Linker.Tests.Cases.Generics {
 			{
 			}
 
-			[Removed]
 			public static void Method (TBase value)
 			{
 			}

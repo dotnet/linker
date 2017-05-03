@@ -11,7 +11,6 @@ namespace Mono.Linker.Tests.Cases.Future {
 		}
 
 		class B {
-			[Removed]
 			public void Method ()
 			{
 			}

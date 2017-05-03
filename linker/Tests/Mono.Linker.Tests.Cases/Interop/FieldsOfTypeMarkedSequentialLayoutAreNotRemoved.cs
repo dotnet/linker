@@ -9,6 +9,7 @@ namespace Mono.Linker.Tests.Cases.Interop {
 		}
 
 		[StructLayout (LayoutKind.Sequential)]
+		[KeptMember (".ctor()")]
 		class A {
 			[Kept] int a;
 		}

@@ -8,7 +8,6 @@ namespace Mono.Linker.Tests.Cases.Generics {
 		}
 
 		class B<TBase> {
-			[Removed]
 			public static void Method<T> (T value)
 			{
 			}
