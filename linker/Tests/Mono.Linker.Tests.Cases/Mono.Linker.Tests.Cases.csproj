@@ -59,6 +59,7 @@
     <Compile Include="CoreLink\LinkingOfCoreLibrariesRemovesUnusedTypes.cs" />
     <Compile Include="Future\DeadCodeElimination1.cs" />
     <Compile Include="Future\FieldThatOnlyGetsSetIsRemoved.cs" />
+    <Compile Include="Generics\CorrectOverloadedMethodGetsStrippedInGenericClass.cs" />
     <Compile Include="Generics\DerivedClassWithMethodOfSameNameAsBaseButDifferentNumberOfGenericParametersUnusedBaseWillGetStripped.cs" />
     <Compile Include="Generics\GenericInstanceInterfaceMethodImplementedWithDifferentGenericArgumentNameDoesNotGetStripped.cs" />
     <Compile Include="Generics\MethodWithParameterWhichHasGenericParametersAndOverrideUsesADifferentNameForGenericParameter.cs" />
@@ -80,6 +81,11 @@
     <Compile Include="Interop\UnusedTypeWithSequentialLayoutIsRemoved.cs" />
     <Compile Include="LinkXml\UnusedTypePreservedByLinkXmlIsKept.cs" />
     <Compile Include="References\ReferencesAreRemovedWhenAllUsagesAreRemoved.cs" />
+    <Compile Include="VirtualMethods\ClassImplemtingInterfaceMethodsThroughBaseClass2.cs" />
+    <Compile Include="VirtualMethods\ClassImplemtingInterfaceMethodsThroughBaseClass3.cs" />
+    <Compile Include="VirtualMethods\ClassImplemtingInterfaceMethodsThroughBaseClass4.cs" />
+    <Compile Include="VirtualMethods\ClassImplemtingInterfaceMethodsThroughBaseClass5.cs" />
+    <Compile Include="VirtualMethods\ClassImplemtingInterfaceMethodsThroughBaseClass6.cs" />
     <Compile Include="VirtualMethods\HarderToDetectUnusedVirtualMethodGetsRemoved.cs" />
     <Compile Include="Basic\UnusedClassGetsRemoved.cs" />
     <Compile Include="Basic\UnusedNestedClassGetsRemoved.cs" />
@@ -91,6 +97,8 @@
     <Compile Include="Generics\UsedOverloadedGenericMethodWithNoParametersIsNotStripped.cs" />
     <Compile Include="Statics\UnusedStaticConstructorGetsRemoved.cs" />
     <Compile Include="VirtualMethods\TypeGetsMarkedThatImplementsAlreadyMarkedInterfaceMethod.cs" />
+    <Compile Include="VirtualMethods\VirtualMethodGetsPerservedIfBaseMethodGetsInvoked.cs" />
+    <Compile Include="VirtualMethods\VirtualMethodGetsStrippedIfImplementingMethodGetsInvokedDirectly.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="LinkXml\UnusedTypePreservedByLinkXmlIsKept.xml" />
