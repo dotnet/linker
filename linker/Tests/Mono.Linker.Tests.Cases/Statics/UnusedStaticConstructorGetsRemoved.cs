@@ -11,9 +11,7 @@ namespace Mono.Linker.Tests.Cases.Statics {
 			new B ();
 		}
 
-		[Removed]
 		class B {
-			[Removed]
 			static B ()
 			{
 			}

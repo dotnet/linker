@@ -9,12 +9,14 @@ namespace Mono.Linker.Tests.Cases.Interop.PInvoke {
 			SomeMethod (a);
 		}
 
+		[KeptMember (".ctor()")]
 		class A {
 			[Kept] private int field1;
 
 			[Kept] private int field2;
 		}
 
+		[Kept]
 		[DllImport ("Unused")]
 		private static extern void SomeMethod (A a);
 	}

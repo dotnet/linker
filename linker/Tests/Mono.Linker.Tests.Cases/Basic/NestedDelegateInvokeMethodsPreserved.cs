@@ -2,6 +2,7 @@
 
 namespace Mono.Linker.Tests.Cases.Basic {
 	class NestedDelegateInvokeMethodsPreserved {
+		[Kept]
 		static B.Delegate @delegate;
 
 		static void Main ()
@@ -13,6 +14,10 @@ namespace Mono.Linker.Tests.Cases.Basic {
 		public class B {
 			[Kept]
 			[KeptMember ("Invoke()")]
+			[KeptMember ("BeginInvoke(System.AsyncCallback,System.Object)")]
+			[KeptMember ("EndInvoke(System.IAsyncResult)")]
+			[KeptMember (".ctor(System.Object,System.IntPtr)")]
+			[KeptBaseType ("System.MulticastDelegate")]
 			public delegate void Delegate ();
 		}
 	}

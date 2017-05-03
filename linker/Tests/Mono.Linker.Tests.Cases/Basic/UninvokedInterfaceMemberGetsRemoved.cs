@@ -7,13 +7,15 @@ namespace Mono.Linker.Tests.Cases.Basic {
 			new B ();
 		}
 
+		[Kept]
 		interface I {
-			[Removed]
 			void Method ();
 		}
 
+		[Kept]
+		[KeptMember (".ctor()")]
+		[KeptInterface ("Mono.Linker.Tests.Cases.Basic.UninvokedInterfaceMemberGetsRemoved/I")]
 		class B : I {
-			[Removed]
 			public void Method ()
 			{
 			}

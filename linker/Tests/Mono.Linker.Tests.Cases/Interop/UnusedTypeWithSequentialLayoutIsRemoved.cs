@@ -7,7 +7,6 @@ namespace Mono.Linker.Tests.Cases.Interop {
 		{
 		}
 
-		[Removed]
 		[StructLayout (LayoutKind.Sequential)]
 		class B {
 			int a;

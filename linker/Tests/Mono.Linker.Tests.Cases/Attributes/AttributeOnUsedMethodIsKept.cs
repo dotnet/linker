@@ -8,14 +8,18 @@ namespace Mono.Linker.Tests.Cases.Attributes {
 			new A ().Method ();
 		}
 
+		[KeptMember (".ctor()")]
 		class A {
 			[Foo]
+			[Kept]
 			public void Method ()
 			{
 			}
 		}
 
 		[Kept]
+		[KeptMember (".ctor()")]
+		[KeptBaseType ("System.Attribute")]
 		class FooAttribute : Attribute {
 		}
 	}

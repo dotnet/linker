@@ -80,15 +80,6 @@ namespace Mono.Linker.Tests.Core.Utils {
 			return type.BaseType.Resolve ().DerivesFrom (baseTypeName);
 		}
 
-		public static string GetFullName (this IMemberDefinition memberDefinition)
-		{
-			var methoDef = memberDefinition as MethodReference;
-			if (methoDef != null)
-				return methoDef.GetFullName ();
-
-			return memberDefinition.FullName;
-		}
-
 		public static PropertyDefinition GetPropertyDefinition (this MethodDefinition method)
 		{
 			if (!method.IsSetter && !method.IsGetter)
@@ -98,23 +89,27 @@ namespace Mono.Linker.Tests.Core.Utils {
 			return method.DeclaringType.Properties.First (p => p.Name == propertyName);
 		}
 
-		public static string GetFullName (this MethodReference method)
+		public static string GetSignature (this MethodDefinition method)
 		{
-			if (!method.HasGenericParameters)
-				return method.FullName;
-
 			var builder = new StringBuilder ();
-			builder.Append ($"{method.ReturnType} {method.DeclaringType}::{method.Name}");
-			builder.Append ('<');
+			builder.Append (method.Name);
+			if (method.HasGenericParameters) {
+				builder.Append ('<');
 
-			for (int i = 0; i < method.GenericParameters.Count - 1; i++)
-				builder.Append ($"{method.GenericParameters [i]},");
+				for (int i = 0; i < method.GenericParameters.Count - 1; i++)
+					builder.Append ($"{method.GenericParameters [i]},");
 
-			builder.Append ($"{method.GenericParameters [method.GenericParameters.Count - 1]}>(");
+				builder.Append ($"{method.GenericParameters [method.GenericParameters.Count - 1]}>");
+			}
+
+			builder.Append ("(");
 
 			if (method.HasParameters) {
-				for (int i = 0; i < method.Parameters.Count - 1; i++)
+				for (int i = 0; i < method.Parameters.Count - 1; i++) {
+					// TODO: modifiers
+					// TODO: default values
 					builder.Append ($"{method.Parameters [i].ParameterType},");
+				}
 
 				builder.Append (method.Parameters [method.Parameters.Count - 1].ParameterType);
 			}

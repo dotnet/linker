@@ -7,15 +7,16 @@ namespace Mono.Linker.Tests.Cases.Basic {
 			new A.AB.ABD ();
 		}
 
+		[Kept]
 		public class A {
+			[Kept]
 			public class AB {
-				[Removed]
 				public class ABC {
 				}
 
 				[Kept]
+				[KeptMember(".ctor()")]
 				public class ABD {
-					[Removed]
 					public class ABDE {
 					}
 				}

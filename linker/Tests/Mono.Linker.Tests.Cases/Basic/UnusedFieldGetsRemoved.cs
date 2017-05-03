@@ -7,8 +7,9 @@ namespace Mono.Linker.Tests.Cases.Basic {
 			new B ().Method ();
 		}
 
+		[KeptMember (".ctor()")]
 		class B {
-			[Removed] public int _unused;
+			public int _unused;
 
 			[Kept]
 			public void Method ()

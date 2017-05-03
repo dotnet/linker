@@ -15,11 +15,13 @@ namespace Mono.Linker.Tests.Cases.Interop.InternalCalls {
 			{
 			}
 
+			[Kept]
 			public A (int other)
 			{
 			}
 		}
 
+		[Kept]
 		[MethodImpl (MethodImplOptions.InternalCall)]
 		static extern void SomeMethod (ref A a);
 	}

@@ -67,7 +67,7 @@ namespace Mono.Linker.Tests.Core.Customizable {
 
 		private static NPath GetExpectationsAssemblyPath ()
 		{
-			return new Uri (typeof (RemovedAttribute).Assembly.CodeBase).LocalPath.ToNPath ();
+			return new Uri (typeof (KeptAttribute).Assembly.CodeBase).LocalPath.ToNPath ();
 		}
 	}
 }

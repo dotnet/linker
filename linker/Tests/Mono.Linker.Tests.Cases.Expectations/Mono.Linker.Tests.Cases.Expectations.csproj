@@ -42,15 +42,13 @@
     <Compile Include="Assertions\KeptAttribute.cs" />
     <Compile Include="Assertions\BaseExpectedLinkedBehaviorAttribute.cs" />
     <Compile Include="Assertions\KeptMemberAttribute.cs" />
-    <Compile Include="Assertions\KeptTypeInAssemblyAttribute.cs" />
     <Compile Include="Assertions\RemovedAssemblyAttribute.cs" />
-    <Compile Include="Assertions\RemovedTypeInAssemblyAttribute.cs" />
-    <Compile Include="Assertions\RemovedMemberAttribute.cs" />
     <Compile Include="Metadata\CoreLinkAttribute.cs" />
     <Compile Include="Metadata\NotATestCaseAttribute.cs" />
-    <Compile Include="Assertions\RemovedAttribute.cs" />
     <Compile Include="Metadata\ReferenceAttribute.cs" />
     <Compile Include="Metadata\SandboxDependencyAttribute.cs" />
+    <Compile Include="Assertions\KeptBaseTypeAttribute.cs" />
+    <Compile Include="Assertions\KeptInterfaceAttribute.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

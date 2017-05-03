@@ -9,9 +9,11 @@ namespace Mono.Linker.Tests.Cases.Interop.InternalCalls {
 			a.SomeMethod ();
 		}
 
+		[KeptMember (".ctor()")]
 		class A {
 			[Kept] private int field1;
 
+			[Kept]
 			[MethodImpl (MethodImplOptions.InternalCall)]
 			public extern void SomeMethod ();
 		}

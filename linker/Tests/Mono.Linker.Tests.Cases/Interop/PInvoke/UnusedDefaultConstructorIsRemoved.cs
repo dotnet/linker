@@ -10,16 +10,17 @@ namespace Mono.Linker.Tests.Cases.Interop.PInvoke {
 		}
 
 		class A {
-			[Removed]
 			public A ()
 			{
 			}
 
+			[Kept]
 			public A (int other)
 			{
 			}
 		}
 
+		[Kept]
 		[DllImport ("Unused")]
 		private static extern void SomeMethod (A a);
 	}

@@ -1,5 +1,4 @@
-﻿using System;
-using Mono.Linker.Tests.Cases.Expectations.Assertions;
+﻿using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
 namespace Mono.Linker.Tests.Cases.VirtualMethods {
 	class UnusedVirtualMethodRemoved {
@@ -8,6 +7,7 @@ namespace Mono.Linker.Tests.Cases.VirtualMethods {
 			new Base ().Call ();
 		}
 
+		[KeptMember (".ctor()")]
 		class Base {
 			[Kept]
 			public virtual void Call ()
@@ -16,7 +16,6 @@ namespace Mono.Linker.Tests.Cases.VirtualMethods {
 		}
 
 		class B : Base {
-			[Removed]
 			public override void Call ()
 			{
 			}

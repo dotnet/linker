@@ -7,10 +7,11 @@ namespace Mono.Linker.Tests.Cases.Basic {
 			new UnusedPropertyGetsRemoved.B ().Method ();
 		}
 
+		[KeptMember(".ctor()")]
 		class B {
-			[Removed]
 			public int Unused { get; set; }
 
+			[Kept]
 			public void Method ()
 			{
 			}

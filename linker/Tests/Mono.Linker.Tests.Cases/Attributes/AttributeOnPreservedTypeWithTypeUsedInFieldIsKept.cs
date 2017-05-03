@@ -8,13 +8,15 @@ namespace Mono.Linker.Tests.Cases.Attributes {
 		{
 		}
 
+		[KeptMember(".ctor()")]
+		[KeptBaseType ("System.Attribute")]
 		class FooAttribute : Attribute {
+			[Kept]
 			public Type Val;
 		}
 
 		[Kept]
 		class A {
-			[Removed]
 			public A ()
 			{
 			}
