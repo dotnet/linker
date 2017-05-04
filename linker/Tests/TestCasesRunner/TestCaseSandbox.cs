@@ -1,9 +1,10 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
-using Mono.Linker.Tests.Core.Utils;
+using Mono.Linker.Tests.Extensions;
+using Mono.Linker.Tests.TestCases;
 
-namespace Mono.Linker.Tests.Core.Customizable {
+namespace Mono.Linker.Tests.TestCasesRunner {
 	public class TestCaseSandbox {
 		protected readonly TestCase _testCase;
 		protected readonly NPath _directory;

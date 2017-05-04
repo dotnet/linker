@@ -1,11 +1,11 @@
-﻿using System;
+﻿﻿using System;
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Mono.Linker.Tests.Core.Utils;
+using Mono.Linker.Tests.Extensions;
 
-namespace Mono.Linker.Tests.Core.Customizable {
+namespace Mono.Linker.Tests.TestCasesRunner {
 	public class TestCaseCompiler {
 		public virtual ManagedCompilationResult CompileTestIn (TestCaseSandbox sandbox, IEnumerable<string> referencesExternalToSandbox)
 		{

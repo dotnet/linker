@@ -1,10 +1,10 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Mono.Cecil;
 
-namespace Mono.Linker.Tests.Core.Utils {
+namespace Mono.Linker.Tests.Extensions {
 	public static class CecilExtensions {
 		public static IEnumerable<TypeDefinition> AllDefinedTypes (this AssemblyDefinition assemblyDefinition)
 		{

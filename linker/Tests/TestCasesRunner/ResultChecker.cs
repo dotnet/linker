@@ -1,10 +1,10 @@
-﻿using System;
+﻿﻿using System;
 using System.Linq;
 using Mono.Cecil;
-using Mono.Linker.Tests.Core.Utils;
+using Mono.Linker.Tests.Extensions;
 using NUnit.Framework;
 
-namespace Mono.Linker.Tests.Core.Customizable {
+namespace Mono.Linker.Tests.TestCasesRunner {
 	public class ResultChecker {
 
 		public virtual void Check (LinkedTestCaseResult linkResult)

@@ -1,8 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using Mono.Linker.Tests.Core.Utils;
+﻿using System.Collections.Generic;
+using Mono.Linker.Tests.Extensions;
 
-namespace Mono.Linker.Tests.Core.Customizable {
+namespace Mono.Linker.Tests.TestCasesRunner {
 	public class LinkerArgumentBuilder {
 		private readonly List<string> _arguments = new List<string> ();
 

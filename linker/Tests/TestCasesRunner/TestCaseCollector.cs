@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using Mono.Cecil;
+using Mono.Linker.Tests.TestCases;
+using Mono.Linker.Tests.Extensions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
-using Mono.Linker.Tests.Core.Utils;
 
-namespace Mono.Linker.Tests.Core {
+namespace Mono.Linker.Tests.TestCasesRunner {
 	public class TestCaseCollector {
 		private readonly NPath _rootDirectory;
 		private readonly NPath _testCaseAssemblyPath;
@@ -50,18 +50,15 @@ namespace Mono.Linker.Tests.Core {
 		{
 			_rootDirectory.DirectoryMustExist ();
 
-			foreach (var file in _rootDirectory.Files ("*.cs"))
-			{
+			foreach (var file in _rootDirectory.Files ("*.cs")) {
 				yield return file;
 			}
 
-			foreach (var subDir in _rootDirectory.Directories ())
-			{
+			foreach (var subDir in _rootDirectory.Directories ()) {
 				if (subDir.FileName == "bin" || subDir.FileName == "obj" || subDir.FileName == "Properties")
 					continue;
 
-				foreach (var file in subDir.Files ("*.cs", true))
-				{
+				foreach (var file in subDir.Files ("*.cs", true)) {
 					yield return file;
 				}
 			}

@@ -1,11 +1,11 @@
-﻿using System.Linq;
+﻿﻿using System.Linq;
 using System.Collections.Generic;
 using NUnit.Framework;
-using Mono.Linker.Tests.Core;
 using System.Runtime.CompilerServices;
 using System.IO;
+using Mono.Linker.Tests.TestCasesRunner;
 
-namespace Mono.Linker.Tests.TestsCases
+namespace Mono.Linker.Tests.TestCases
 {
 	static class TestDatabase
 	{

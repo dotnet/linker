@@ -1,11 +1,10 @@
-﻿using Mono.Linker.Tests.Core;
-using Mono.Linker.Tests.Core.Customizable;
+﻿using Mono.Linker.Tests.TestCasesRunner;
 using NUnit.Framework;
 
-namespace Mono.Linker.Tests.TestsCases
+namespace Mono.Linker.Tests.TestCases
 {
 	[TestFixture]
-	public class TestSuites
+	public class All
 	{
 		[TestCaseSource (typeof (TestDatabase), nameof (TestDatabase.BasicTests))]
 		public void BasicTests (TestCase testCase)

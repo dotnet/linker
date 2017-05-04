@@ -1,9 +1,8 @@
-﻿using System;
-using Mono.Cecil;
-using Mono.Linker.Tests.Core.Customizable;
+﻿using Mono.Cecil;
+using Mono.Linker.Tests.TestCases;
 using NUnit.Framework;
 
-namespace Mono.Linker.Tests.Core {
+namespace Mono.Linker.Tests.TestCasesRunner {
 	public class TestRunner {
 		private readonly ObjectFactory _factory;
 
@@ -15,7 +14,7 @@ namespace Mono.Linker.Tests.Core {
 		public LinkedTestCaseResult Run (TestCase testCase)
 		{
 			using (var fullTestCaseAssemblyDefinition = AssemblyDefinition.ReadAssembly (testCase.OriginalTestCaseAssemblyPath.ToString ())) {
-				var metadataProvider = _factory.CreateMetadatProvider (testCase, fullTestCaseAssemblyDefinition);
+				var metadataProvider = _factory.CreateMetadataProvider (testCase, fullTestCaseAssemblyDefinition);
 
 				string ignoreReason;
 				if (metadataProvider.IsIgnored (out ignoreReason))
