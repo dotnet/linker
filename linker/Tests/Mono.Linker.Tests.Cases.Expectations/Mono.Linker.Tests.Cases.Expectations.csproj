@@ -49,6 +49,7 @@
     <Compile Include="Metadata\SandboxDependencyAttribute.cs" />
     <Compile Include="Assertions\KeptBaseTypeAttribute.cs" />
     <Compile Include="Assertions\KeptInterfaceAttribute.cs" />
+    <Compile Include="Assertions\KeptAttributeAttribute.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -23,7 +23,7 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 			// TODO: Implement fully, probably via custom Kept attribute
 			Assert.IsFalse (linkedAssembly.MainModule.HasExportedTypes);
 
-			VerifyCustomAttributes (linkedAssembly, linkedAssembly);
+			VerifyCustomAttributes (linkedAssembly, originalAssembly);
 
 			linkedMembers = new HashSet<string> (linkedAssembly.MainModule.AllMembers ().Select (s => {
 				return s.FullName;
@@ -203,10 +203,23 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 
 		static void VerifyCustomAttributes (ICustomAttributeProvider src, ICustomAttributeProvider linked)
 		{
-			var expected = src.CustomAttributes.Where (w => !w.AttributeType.Resolve ().DerivesFrom (nameof (BaseExpectedLinkedBehaviorAttribute)));
+			var expectedAttrs = new List<string> (GetCustomAttributeStringCtorValues (src, nameof (KeptAttributeAttribute)));
+			var linkedAttrs = new List<string> (FilterLinkedAttributes (linked));
 
-			// FIXME: Custom Attributes are not linked
-			// Assert.That (expected, Is.EquivalentTo (linked.CustomAttributes), src.ToString ());
+			// FIXME: Linker unused attributes removal is not working
+			// Assert.That (linkedAttrs, Is.EquivalentTo (expectedAttrs), $"Custom attributes on `{src}' are not matching");
+		}
+
+		static IEnumerable<string> FilterLinkedAttributes (ICustomAttributeProvider linked)
+		{
+			foreach (var attr in linked.CustomAttributes) {
+				switch (attr.AttributeType.FullName) {
+				case "System.Runtime.CompilerServices.RuntimeCompatibilityAttribute":
+					continue;
+				}
+
+				yield return attr.AttributeType.FullName;
+			}
 		}
 
 		static void VerifyGenericParameters (IGenericParameterProvider src, IGenericParameterProvider linked)
