@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Mono.Linker.Tests.Cases.Expectations.Assertions;
+﻿using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
-namespace Mono.Linker.Tests.Cases.Future {
+namespace Mono.Linker.Tests.Cases.Advanced {
 	[IgnoreTestCase ("We cannot do this yet")]
 	class FieldThatOnlyGetsSetIsRemoved {
 		public static void Main ()
@@ -12,6 +8,7 @@ namespace Mono.Linker.Tests.Cases.Future {
 			new B ().Method ();
 		}
 
+		[KeptMember (".ctor()")]
 		class B {
 			public int _unused = 3;
 

@@ -1,19 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
-using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Core.Utils;
 using NUnit.Framework;
 
 namespace Mono.Linker.Tests.Core.Customizable {
 	public class ResultChecker {
-		private readonly ExpectationsProvider _expectations;
-
-		public ResultChecker (ExpectationsProvider expectations)
-		{
-			_expectations = expectations;
-		}
 
 		public virtual void Check (LinkedTestCaseResult linkResult)
 		{
@@ -40,7 +32,7 @@ namespace Mono.Linker.Tests.Core.Customizable {
 
 		void PerformOutputAssemblyChecks (AssemblyDefinition original, NPath outputDirectory)
 		{
-			var assembliesToCheck = original.MainModule.Types.SelectMany (t => t.CustomAttributes).Where (attr => _expectations.IsAssemblyAssertion(attr));
+			var assembliesToCheck = original.MainModule.Types.SelectMany (t => t.CustomAttributes).Where (attr => ExpectationsProvider.IsAssemblyAssertion(attr));
 
 			foreach (var assemblyAttr in assembliesToCheck) {
 				var name = (string) assemblyAttr.ConstructorArguments.First ().Value;
