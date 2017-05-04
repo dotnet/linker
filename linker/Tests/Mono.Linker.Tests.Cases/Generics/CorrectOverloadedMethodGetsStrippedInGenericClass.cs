@@ -9,17 +9,18 @@ namespace Mono.Linker.Tests.Cases.Generics {
 			item.OverloadedMethod (5);
 		}
 
+		[KeptMember (".ctor()")]
 		public abstract class GenericClassWithTwoOverloadedAbstractMethods<T> {
-			[Removed]
 			public abstract string OverloadedMethod (T thing); // Don't call this one, it should be stripped
 
 			[Kept]
 			public abstract string OverloadedMethod (int thing); // Call to this should preserve the overriden one
 		}
 
+		[KeptMember (".ctor()")]
+		[KeptBaseType ("Mono.Linker.Tests.Cases.Generics.CorrectOverloadedMethodGetsStrippedInGenericClass/GenericClassWithTwoOverloadedAbstractMethods`1<System.Single>")]
 		public class SpecializedClassWithTwoOverloadedVirtualMethods : GenericClassWithTwoOverloadedAbstractMethods<float> {
 			// Don't call this one, it should be stripped
-			[Removed]
 			public override string OverloadedMethod (float thing)
 			{
 				return "first";

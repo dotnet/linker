@@ -7,11 +7,12 @@ namespace Mono.Linker.Tests.Cases.VirtualMethods {
 			new A ().Foo ();
 		}
 
+		[Kept]
 		interface IFoo {
-			[Removed]
 			void Foo ();
 		}
 
+		[KeptMember (".ctor()")]
 		class B {
 			[Kept]
 			public void Foo ()
@@ -19,6 +20,9 @@ namespace Mono.Linker.Tests.Cases.VirtualMethods {
 			}
 		}
 
+		[KeptMember (".ctor()")]
+		[KeptBaseType ("Mono.Linker.Tests.Cases.VirtualMethods.ClassImplemtingInterfaceMethodsThroughBaseClass4/B")]
+		[KeptInterface ("Mono.Linker.Tests.Cases.VirtualMethods.ClassImplemtingInterfaceMethodsThroughBaseClass4/IFoo")] // FIXME: Why is it not removed
 		class A : B, IFoo {
 			//my IFoo.Foo() is actually implemented by B which doesn't know about it.
 		}

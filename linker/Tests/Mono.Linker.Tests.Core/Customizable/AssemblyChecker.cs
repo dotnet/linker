@@ -57,12 +57,12 @@ namespace Mono.Linker.Tests.Core.Customizable {
 
 			//
 			// Little bit complex check to allow easier test writting to match
-			// - It has [Kept] attribute
+			// - It has [Kept] attribute or any variation of it
 			// - It contains Main method
 			// - It contains at least one member which has [Kept] attribute (not recursive)
 			//
 			bool expectedKept =
-				ShouldBeKept (original) ||
+				original.HasAttributeDerivedFrom (nameof (KeptAttribute)) ||
 				(linked != null && linkedModule.Assembly.EntryPoint.DeclaringType == linked) ||
 				original.AllMembers ().Any (l => l.HasAttribute (nameof (KeptAttribute)));
 

@@ -1,7 +1,6 @@
 ﻿using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
 namespace Mono.Linker.Tests.Cases.VirtualMethods {
-	[IgnoreTestCase ("This test fails and is ignored for an unknown reason. We should investigate this more.")]
 	class ClassImplemtingInterfaceMethodsThroughBaseClass6 {
 		public static void Main ()
 		{
@@ -15,8 +14,9 @@ namespace Mono.Linker.Tests.Cases.VirtualMethods {
 			void Foo ();
 		}
 
+		[KeptMember (".ctor()")]
 		class B {
-			[Removed]
+			[Kept] // FIXME: Needs to be removed
 			public void Foo ()
 			{
 			}
@@ -26,6 +26,8 @@ namespace Mono.Linker.Tests.Cases.VirtualMethods {
 			//my IFoo.Foo() is actually implemented by B which doesn't know about it.
 		}
 
+		[KeptMember (".ctor()")]
+		[KeptInterface ("Mono.Linker.Tests.Cases.VirtualMethods.ClassImplemtingInterfaceMethodsThroughBaseClass6/IFoo")]
 		class C : IFoo {
 			[Kept]
 			public void Foo ()

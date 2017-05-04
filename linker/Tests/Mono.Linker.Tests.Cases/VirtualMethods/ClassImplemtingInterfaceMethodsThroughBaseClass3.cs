@@ -8,10 +8,10 @@ namespace Mono.Linker.Tests.Cases.VirtualMethods {
 		}
 
 		interface IFoo {
-			[Removed]
 			void Foo ();
 		}
 
+		[KeptMember (".ctor()")]
 		class B {
 			[Kept]
 			public void Foo ()

@@ -8,6 +8,7 @@ namespace Mono.Linker.Tests.Cases.VirtualMethods {
 			new B ().Foo ();
 		}
 
+		[KeptMember (".ctor()")]
 		class B {
 			[Kept]
 			public virtual void Foo ()
@@ -15,6 +16,8 @@ namespace Mono.Linker.Tests.Cases.VirtualMethods {
 			}
 		}
 
+		[KeptMember (".ctor()")]
+		[KeptBaseType ("Mono.Linker.Tests.Cases.VirtualMethods.VirtualMethodGetsPerservedIfBaseMethodGetsInvoked/B")]
 		class A : B {
 			[Kept]
 			public override void Foo ()
