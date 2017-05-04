@@ -7,7 +7,7 @@ using System.IO;
 
 namespace Mono.Linker.Tests.TestsCases
 {
-	public class TestDatabase
+	static class TestDatabase
 	{
 		public static IEnumerable<TestCaseData> XmlTests()
 		{
