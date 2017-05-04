@@ -1,16 +1,13 @@
 ﻿using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
-namespace Mono.Linker.Tests.Cases.LinkXml
-{
-	class UnusedTypeWithPreserveNothingHasMembersRemoved
-	{
-		public static void Main()
+namespace Mono.Linker.Tests.Cases.LinkXml {
+	class UnusedTypeWithPreserveNothingHasMembersRemoved {
+		public static void Main ()
 		{
 		}
 
 		[Kept]
 		class Unused {
-
 			public int Field1;
 			private int Field2;
 			internal int Field3;
@@ -29,23 +26,23 @@ namespace Mono.Linker.Tests.Cases.LinkXml
 			{
 			}
 
-			private void Method2()
+			private void Method2 ()
 			{
 			}
 
-			internal void Method3()
+			internal void Method3 ()
 			{
 			}
 
-			public static void Method4()
+			public static void Method4 ()
 			{
 			}
 
-			private static void Method5()
+			private static void Method5 ()
 			{
 			}
 
-			internal static void Method6()
+			internal static void Method6 ()
 			{
 			}
 		}

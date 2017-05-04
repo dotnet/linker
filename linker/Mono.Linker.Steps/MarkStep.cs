@@ -1124,7 +1124,7 @@ namespace Mono.Linker.Steps {
 				MarkMethods (type);
 				break;
 			case TypePreserve.Fields:
-				MarkFields (type, true);
+				MarkFields (type, true, true);
 				break;
 			case TypePreserve.Methods:
 				MarkMethods (type);
@@ -1150,7 +1150,7 @@ namespace Mono.Linker.Steps {
 			MarkMethodCollection (list);
 		}
 
-		protected void MarkFields (TypeDefinition type, bool includeStatic)
+		protected void MarkFields (TypeDefinition type, bool includeStatic, bool markBackingFieldsOnlyIfPropertyMarked = false)
 		{
 			if (!type.HasFields)
 				return;
@@ -1158,6 +1158,19 @@ namespace Mono.Linker.Steps {
 			foreach (FieldDefinition field in type.Fields) {
 				if (!includeStatic && field.IsStatic)
 					continue;
+
+				if (markBackingFieldsOnlyIfPropertyMarked && field.Name.EndsWith (">k__BackingField")) {
+					var expectedPropertyName = field.Name.Substring (1, field.Name.LastIndexOf ('>') - 1);
+
+					// TODO: Extra work is required to figure out the backing field name in some cases becaues system types in the explicit interface
+					// generic arguments are different between the field name and the property name.  Ex:  The field name uses IFoo<int>.Bar
+					// while the property name uses IFoo<System.Int32>.Bar
+					// When we hit these cases we will fail to find the property and the backing field for these properties
+					// will end up being preserved when they really can be removed
+					var propertyDefinition = type.Properties.FirstOrDefault (p => p.Name == expectedPropertyName);
+					if (propertyDefinition != null && !Annotations.IsMarked (propertyDefinition))
+						continue;
+				}
 				MarkField (field);
 			}
 		}

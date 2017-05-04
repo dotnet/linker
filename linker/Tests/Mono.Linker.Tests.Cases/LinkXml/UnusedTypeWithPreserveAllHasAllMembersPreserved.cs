@@ -1,8 +1,6 @@
-﻿
-using Mono.Linker.Tests.Cases.Expectations.Assertions;
+﻿using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
-namespace Mono.Linker.Tests.Cases.LinkXml
-{
+namespace Mono.Linker.Tests.Cases.LinkXml {
 	class UnusedTypeWithPreserveAllHasAllMembersPreserved {
 		public static void Main ()
 		{
@@ -10,37 +8,46 @@ namespace Mono.Linker.Tests.Cases.LinkXml
 
 		[Kept]
 		[KeptMember (".ctor()")]
-		[KeptMember("<Property1>k__BackingField")]
-		[KeptMember("<Property2>k__BackingField")]
-		[KeptMember("<Property3>k__BackingField")]
-		[KeptMember("<Property4>k__BackingField")]
-		[KeptMember("<Property5>k__BackingField")]
-		[KeptMember("<Property6>k__BackingField")]
+		[KeptMember ("<Property1>k__BackingField")]
+		[KeptMember ("<Property2>k__BackingField")]
+		[KeptMember ("<Property3>k__BackingField")]
+		[KeptMember ("<Property4>k__BackingField")]
+		[KeptMember ("<Property5>k__BackingField")]
+		[KeptMember ("<Property6>k__BackingField")]
 		class Unused {
-
 			[Kept]
 			public int Field1;
+
 			[Kept]
 			private int Field2;
+
 			[Kept]
 			internal int Field3;
+
 			[Kept]
 			public static int Field4;
+
 			[Kept]
 			private static int Field5;
+
 			[Kept]
 			internal static int Field6;
 
 			[Kept]
-			public string Property1 { [Kept] get; [Kept] set; }
+			public string Property1 { [Kept] get; [Kept] set;}
+
 			[Kept]
 			private string Property2 { [Kept] get; [Kept] set; }
+
 			[Kept]
 			internal string Property3 { [Kept] get; [Kept] set; }
+
 			[Kept]
 			public static string Property4 { [Kept] get; [Kept] set; }
+
 			[Kept]
 			private static string Property5 { [Kept] get; [Kept] set; }
+
 			[Kept]
 			internal static string Property6 { [Kept] get; [Kept] set; }
 
