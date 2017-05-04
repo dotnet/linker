@@ -5,10 +5,10 @@ namespace Mono.Linker.Tests.Cases.LinkXml {
 		public static void Main ()
 		{
 		}
+	}
 
-		[Kept]
-		[KeptMember (".ctor()")]
-		class Unused {
-		}
+	[Kept]
+	[KeptMember (".ctor()")]
+	class UnusedTypePreservedByLinkXmlIsKeptUnusedType {
 	}
 }
