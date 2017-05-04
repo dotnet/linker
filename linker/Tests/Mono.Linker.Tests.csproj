@@ -67,16 +67,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="Mono.Linker.Tests\AbstractLinkingTestFixture.cs" />
-    <None Include="Mono.Linker.Tests\AbstractTestFixture.cs" />
-    <None Include="Mono.Linker.Tests\LinkingTestFixture.cs" />
-    <None Include="Mono.Linker.Tests\AssemblyInfo.cs" />
-    <None Include="Mono.Linker.Tests\XmlLinkingTestFixture.cs" />
-    <None Include="Mono.Linker.Tests\ResolveLinkedAssemblyStep.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Mono.Linker.Tests\PreserveActionComparisonTests.cs" />
     <Compile Include="TestsCases\TestSuites.cs" />
     <Compile Include="TestsCases\TestDatabase.cs" />
+    <Compile Include="Mono.Linker.Tests\PreserveActionComparisonTests.cs" />
   </ItemGroup>
 </Project>
