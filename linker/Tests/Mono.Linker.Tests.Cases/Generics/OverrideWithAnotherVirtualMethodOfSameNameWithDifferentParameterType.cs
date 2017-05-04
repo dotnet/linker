@@ -25,7 +25,6 @@ namespace Mono.Linker.Tests.Cases.Generics {
 				return arg;
 			}
 
-			[Kept] // FIXME: Needs to be removed
 			public virtual S Method (S arg)
 			{
 				return arg;

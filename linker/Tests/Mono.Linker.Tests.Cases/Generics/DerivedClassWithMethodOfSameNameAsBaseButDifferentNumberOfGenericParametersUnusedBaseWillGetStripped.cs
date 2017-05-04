@@ -11,7 +11,6 @@ namespace Mono.Linker.Tests.Cases.Generics {
 		[Kept]
 		[KeptMember (".ctor()")]
 		class MyBase {
-			[Kept] // FIXME: shoud be removed
 			public virtual T Method<T> (T arg1)
 			{
 				return arg1;
