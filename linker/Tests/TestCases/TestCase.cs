@@ -1,7 +1,7 @@
-﻿using System;
-using Mono.Linker.Tests.Core.Utils;
+﻿﻿using System;
+using Mono.Linker.Tests.Extensions;
 
-namespace Mono.Linker.Tests.Core {
+namespace Mono.Linker.Tests.TestCases {
 	public class TestCase {
 		public TestCase (NPath sourceFile, NPath rootCasesDirectory, NPath originalTestCaseAssemblyPath)
 		{
@@ -9,7 +9,6 @@ namespace Mono.Linker.Tests.Core {
 			OriginalTestCaseAssemblyPath = originalTestCaseAssemblyPath;
 			Name = sourceFile.FileNameWithoutExtension;
 			DisplayName = $"{sourceFile.RelativeTo (rootCasesDirectory).Parent.ToString (SlashMode.Forward).Replace ('/', '.')}.{sourceFile.FileNameWithoutExtension}";
-			;
 
 			// A little hacky, but good enough for name.  No reason why namespace & type names
 			// should not follow the directory structure

@@ -1,10 +1,10 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace Mono.Linker.Tests.Core.Utils
+namespace Mono.Linker.Tests.Extensions
 {
 	public class NPath : IEquatable<NPath>, IComparable
 	{

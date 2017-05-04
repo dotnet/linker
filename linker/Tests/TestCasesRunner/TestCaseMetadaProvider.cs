@@ -1,12 +1,13 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
-using Mono.Linker.Tests.Core.Utils;
+using Mono.Linker.Tests.Extensions;
+using Mono.Linker.Tests.TestCases;
 
-namespace Mono.Linker.Tests.Core.Customizable {
+namespace Mono.Linker.Tests.TestCasesRunner {
 	public class TestCaseMetadaProvider {
 		protected readonly TestCase _testCase;
 		protected readonly AssemblyDefinition _fullTestCaseAssemblyDefinition;

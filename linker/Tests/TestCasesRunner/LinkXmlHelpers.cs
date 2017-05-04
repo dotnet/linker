@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Text;
 using Mono.Cecil;
-using Mono.Linker.Tests.Core.Utils;
+using Mono.Linker.Tests.Extensions;
 
-namespace Mono.Linker.Tests.Core {
+namespace Mono.Linker.Tests.TestCasesRunner {
 	public static class LinkXmlHelpers {
 		public static void WriteXmlFileToPreserveEntryPoint (NPath targetProgram, NPath xmlFile)
 		{

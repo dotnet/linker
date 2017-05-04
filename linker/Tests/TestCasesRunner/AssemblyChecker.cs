@@ -1,12 +1,12 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
-using Mono.Linker.Tests.Core.Utils;
+using Mono.Linker.Tests.Extensions;
 using NUnit.Framework;
 
-namespace Mono.Linker.Tests.Core.Customizable {
+namespace Mono.Linker.Tests.TestCasesRunner {
 	class AssemblyChecker {
 		readonly AssemblyDefinition originalAssembly, linkedAssembly;
 

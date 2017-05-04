@@ -1,6 +1,7 @@
-﻿using Mono.Linker.Tests.Core.Utils;
+﻿using Mono.Linker.Tests.Extensions;
+using Mono.Linker.Tests.TestCases;
 
-namespace Mono.Linker.Tests.Core {
+namespace Mono.Linker.Tests.TestCasesRunner {
 	public class LinkedTestCaseResult {
 		public readonly TestCase TestCase;
 		public readonly NPath InputAssemblyPath;

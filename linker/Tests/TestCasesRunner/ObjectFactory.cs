@@ -1,6 +1,7 @@
-﻿using Mono.Cecil;
+﻿﻿using Mono.Cecil;
+using Mono.Linker.Tests.TestCases;
 
-namespace Mono.Linker.Tests.Core.Customizable {
+namespace Mono.Linker.Tests.TestCasesRunner {
 	public class ObjectFactory {
 		public virtual TestCaseSandbox CreateSandbox (TestCase testCase)
 		{
@@ -17,14 +18,9 @@ namespace Mono.Linker.Tests.Core.Customizable {
 			return new LinkerDriver ();
 		}
 		
-		public virtual TestCaseMetadaProvider CreateMetadatProvider (TestCase testCase, AssemblyDefinition fullTestCaseAssemblyDefinition)
+		public virtual TestCaseMetadaProvider CreateMetadataProvider (TestCase testCase, AssemblyDefinition fullTestCaseAssemblyDefinition)
 		{
 			return new TestCaseMetadaProvider (testCase, fullTestCaseAssemblyDefinition);
-		}
-
-		public virtual ExpectationsProvider CreateExpectationsProvider ()
-		{
-			return new ExpectationsProvider();
 		}
 
 		public virtual LinkerArgumentBuilder CreateLinkerArgumentBuilder ()
