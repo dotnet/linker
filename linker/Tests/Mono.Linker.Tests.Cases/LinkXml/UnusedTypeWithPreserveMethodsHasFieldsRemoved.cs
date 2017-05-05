@@ -8,12 +8,6 @@ namespace Mono.Linker.Tests.Cases.LinkXml {
 
 		[Kept]
 		[KeptMember (".ctor()")]
-		[KeptMember ("<Property1>k__BackingField")]
-		[KeptMember ("<Property2>k__BackingField")]
-		[KeptMember ("<Property3>k__BackingField")]
-		[KeptMember ("<Property4>k__BackingField")]
-		[KeptMember ("<Property5>k__BackingField")]
-		[KeptMember ("<Property6>k__BackingField")]
 		class Unused {
 			public int Field1;
 			private int Field2;
@@ -23,21 +17,27 @@ namespace Mono.Linker.Tests.Cases.LinkXml {
 			internal static int Field6;
 
 			[Kept]
+			[KeptBackingField]
 			public string Property1 { [Kept] get; [Kept] set; }
 
 			[Kept]
+			[KeptBackingField]
 			private string Property2 { [Kept] get; [Kept] set; }
 
 			[Kept]
+			[KeptBackingField]
 			internal string Property3 { [Kept] get; [Kept] set; }
 
 			[Kept]
+			[KeptBackingField]
 			public static string Property4 { [Kept] get; [Kept] set; }
 
 			[Kept]
+			[KeptBackingField]
 			private static string Property5 { [Kept] get; [Kept] set; }
 
 			[Kept]
+			[KeptBackingField]
 			internal static string Property6 { [Kept] get; [Kept] set; }
 
 			[Kept]

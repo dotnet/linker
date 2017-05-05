@@ -9,10 +9,10 @@ namespace Mono.Linker.Tests.Cases.Basic {
 			var val = obj.Prop;
 		}
 
-		[KeptMember ("<Prop>k__BackingField")]
 		[KeptMember (".ctor()")]
 		class B {
 			[Kept]
+			[KeptBackingField]
 			public int Prop { [Kept] get; [Kept] set; }
 		}
 	}

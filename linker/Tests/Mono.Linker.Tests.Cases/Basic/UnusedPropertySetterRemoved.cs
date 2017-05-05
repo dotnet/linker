@@ -8,9 +8,9 @@ namespace Mono.Linker.Tests.Cases.Basic {
 		}
 
 		[KeptMember (".ctor()")]
-		[KeptMember ("<PartiallyUsed>k__BackingField")]
 		class B {
 			[Kept] // FIXME: Should be removed
+			[KeptBackingField]
 			public int PartiallyUsed { [Kept] get; set; }
 		}
 	}

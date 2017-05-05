@@ -41,6 +41,7 @@
     <Compile Include="Assertions\KeptAssemblyAttribute.cs" />
     <Compile Include="Assertions\KeptAttribute.cs" />
     <Compile Include="Assertions\BaseExpectedLinkedBehaviorAttribute.cs" />
+    <Compile Include="Assertions\KeptBackingFieldAttribute.cs" />
     <Compile Include="Assertions\KeptMemberAttribute.cs" />
     <Compile Include="Assertions\RemovedAssemblyAttribute.cs" />
     <Compile Include="Metadata\CoreLinkAttribute.cs" />

@@ -1,6 +1,7 @@
 ﻿﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Mono.Cecil;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Extensions;
@@ -11,6 +12,7 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 		readonly AssemblyDefinition originalAssembly, linkedAssembly;
 
 		HashSet<string> linkedMembers;
+		HashSet<string> verifiedBackingFields = new HashSet<string> ();
 
 		public AssemblyChecker (AssemblyDefinition original, AssemblyDefinition linked)
 		{
@@ -100,7 +102,15 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 				linkedMembers.Remove (td.FullName);
 			}
 
+			// Need to check properties before fields so that the KeptBackingFieldAttribute is handled correctly
+			foreach (var p in original.Properties) {
+				VerifyProperty (p, linked?.Properties.FirstOrDefault (l => p.Name == l.Name), linked);
+				linkedMembers.Remove (p.FullName);
+			}
+
 			foreach (var f in original.Fields) {
+				if (verifiedBackingFields.Contains (f.FullName))
+					continue;
 				VerifyField (f, linked?.Fields.FirstOrDefault (l => f.Name == l.Name));
 				linkedMembers.Remove (f.FullName);
 			}
@@ -108,11 +118,6 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 			foreach (var m in original.Methods) {
 				VerifyMethod (m, linked?.Methods.FirstOrDefault (l => m.GetSignature () == l.GetSignature ()));
 				linkedMembers.Remove (m.FullName);
-			}
-
-			foreach (var p in original.Properties) {
-				VerifyProperty (p, linked?.Properties.FirstOrDefault (l => p.Name == l.Name));
-				linkedMembers.Remove (p.FullName);
 			}
 
 			foreach (var e in original.Events) {
@@ -132,6 +137,11 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 				return;
 			}
 
+			VerifyFieldKept (src, linked);
+		}
+
+		void VerifyFieldKept (FieldDefinition src, FieldDefinition linked)
+		{
 			if (linked == null)
 				Assert.Fail ($"Field `{src}' should have been kept");
 
@@ -141,8 +151,10 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 			VerifyCustomAttributes (src, linked);
 		}
 
-		void VerifyProperty (PropertyDefinition src, PropertyDefinition linked)
+		void VerifyProperty (PropertyDefinition src, PropertyDefinition linked, TypeDefinition linkedType)
 		{
+			VerifyBackingField (src, linkedType);
+
 			bool expectedKept = ShouldBeKept (src);
 
 			if (!expectedKept) {
@@ -199,6 +211,32 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 
 			VerifyGenericParameters (src, linked);
 			VerifyCustomAttributes (src, linked);
+		}
+
+		void VerifyBackingField (PropertyDefinition src, TypeDefinition linkedType)
+		{
+			var keptBackingFieldAttribute = src.CustomAttributes.FirstOrDefault (attr => attr.AttributeType.Name == nameof (KeptBackingFieldAttribute));
+			if (keptBackingFieldAttribute == null)
+				return;
+
+			var backingFieldName = $"<{src.Name}>k__BackingField";
+			var srcField = src.DeclaringType.Fields.FirstOrDefault (f => f.Name == backingFieldName);
+
+			if (srcField == null) {
+				// Can add more here if necessary
+				backingFieldName = backingFieldName.Replace ("System.Int32", "int");
+				backingFieldName = backingFieldName.Replace ("System.String", "string");
+				backingFieldName = backingFieldName.Replace ("System.Char", "char");
+
+				srcField = src.DeclaringType.Fields.FirstOrDefault (f => f.Name == backingFieldName);
+			}
+
+			if (srcField == null)
+				Assert.Fail ($"Property `{src}', could not locate the expected backing field {backingFieldName}");
+
+			VerifyFieldKept (srcField, linkedType?.Fields.FirstOrDefault (l => srcField.Name == l.Name));
+			verifiedBackingFields.Add (srcField.FullName);
+			linkedMembers.Remove (srcField.FullName);
 		}
 
 		static void VerifyCustomAttributes (ICustomAttributeProvider src, ICustomAttributeProvider linked)
