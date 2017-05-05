@@ -27,14 +27,38 @@
 //
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Cecil.PE;
 
 namespace Mono.Linker.Steps {
 
 	public class OutputStep : BaseStep {
+
+		private Dictionary<UInt16, TargetArchitecture> architectureMap;
+
+		private enum NativeOSOverride {
+			Apple = 0x4644,
+			FreeBSD = 0xadc4,
+			Linux = 0x7b79,
+			NetBSD = 0x1993,
+			Default = 0
+		}
+
+		public OutputStep ()
+		{
+			architectureMap = new Dictionary<UInt16, TargetArchitecture> ();
+			foreach (var os in Enum.GetValues (typeof (NativeOSOverride))) {
+				ushort osVal = (ushort) (NativeOSOverride) os;
+				foreach (var arch in Enum.GetValues (typeof (TargetArchitecture))) {
+					ushort archVal = (ushort) (TargetArchitecture)arch;
+					architectureMap.Add ((ushort) (archVal ^ osVal), (TargetArchitecture) arch);
+				}
+			}
+		}
 
 		protected override void Process ()
 		{
@@ -55,6 +79,29 @@ namespace Mono.Linker.Steps {
 			OutputAssembly (assembly);
 		}
 
+		private bool isR2R(ModuleDefinition module) {
+			return ((module.Attributes & ModuleAttributes.ILOnly) == 0 &&
+					(module.Attributes & (ModuleAttributes) 0x04) != 0);
+		}
+
+		void WriteAssembly (AssemblyDefinition assembly, string directory)
+		{
+			foreach (var module in assembly.Modules) {
+				// Write back pure IL even for R2R assemblies
+				if (isR2R (module)) {
+					module.Attributes |= ModuleAttributes.ILOnly;
+					module.Attributes ^= (ModuleAttributes) (uint) 0x04;
+					if (!architectureMap.ContainsKey ((ushort) module.Architecture)) {
+						throw new BadImageFormatException ("unrecognized module attributes");
+					} else {
+						module.Architecture = architectureMap [(ushort) module.Architecture];
+					}
+				}
+			}
+
+			assembly.Write (GetAssemblyFileName (assembly, directory), SaveSymbols (assembly));
+		}
+
 		void OutputAssembly (AssemblyDefinition assembly)
 		{
 			string directory = Context.OutputDirectory;
@@ -65,7 +112,7 @@ namespace Mono.Linker.Steps {
 			case AssemblyAction.Save:
 			case AssemblyAction.Link:
 				Context.Annotations.AddDependency (assembly);
-				assembly.Write (GetAssemblyFileName (assembly, directory), SaveSymbols (assembly));
+				WriteAssembly (assembly, directory);
 				break;
 			case AssemblyAction.Copy:
 				Context.Annotations.AddDependency (assembly);
