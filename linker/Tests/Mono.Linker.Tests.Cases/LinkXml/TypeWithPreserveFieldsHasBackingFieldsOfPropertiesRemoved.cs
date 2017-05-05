@@ -27,30 +27,20 @@ namespace Mono.Linker.Tests.Cases.LinkXml
 
 			string IDog.Name { get; set; }
 
-			// FIXME: We should be able to remove this, but we can't currently.  See backing field comment in the MarkStep for more details.
-			[KeptBackingField]
 			int IFoo<int>.Bar { get; set; }
 
-			// FIXME: We should be able to remove this, but we can't currently.  See backing field comment in the MarkStep for more details.
-			[KeptBackingField]
 			int IFoo<string>.Bar { get; set; }
 
 			int IFoo<Cat>.Bar { get; set; }
 
 			int Bar2 { get; set; }
 
-			// FIXME: We should be able to remove this, but we can't currently.  See backing field comment in the MarkStep for more details.
-			[KeptBackingField]
 			int IFoo2<int>.Bar2 { get; set; }
 
 			int Bar3 { get; set; }
 
-			// FIXME: We should be able to remove this, but we can't currently.  See backing field comment in the MarkStep for more details.
-			[KeptBackingField]
 			int IFoo3<int, string, char>.Bar3 { get; set; }
 
-			// FIXME: We should be able to remove this, but we can't currently.  See backing field comment in the MarkStep for more details.
-			[KeptBackingField]
 			int IFoo<IFoo<int>>.Bar { get; set; }
 		}
 
