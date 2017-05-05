@@ -1,4 +1,5 @@
-﻿using Mono.Cecil;
+﻿using System.Linq;
+using Mono.Cecil;
 using Mono.Linker.Tests.TestCases;
 using NUnit.Framework;
 
@@ -37,13 +38,20 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 		private ManagedCompilationResult Compile (TestCaseSandbox sandbox, TestCaseMetadaProvider metadataProvider)
 		{
 			var compiler = _factory.CreateCompiler ();
-			return compiler.CompileTestIn (sandbox, metadataProvider.GetReferencedAssemblies ());
+			var sourceFiles = sandbox.SourceFiles.Select(s => s.ToString()).ToArray();
+
+			var references = metadataProvider.GetReferencedAssemblies ().Concat (sandbox.InputDirectoryReferences.Select (r => r.ToString ())).ToArray ();
+			var inputAssemblyPath = compiler.CompileTestIn (sandbox.InputDirectory, sourceFiles, references, null);
+
+			references = metadataProvider.GetReferencedAssemblies ().Concat (sandbox.ExpectationsDirectoryReferences.Select (r => r.ToString ())).ToArray ();
+			var expectationsAssemblyPath = compiler.CompileTestIn (sandbox.ExpectationsDirectory, sourceFiles, references, new [] { "INCLUDE_EXPECTATIONS" });
+			return new ManagedCompilationResult (inputAssemblyPath, expectationsAssemblyPath);
 		}
 
 		private void PrepForLink (TestCaseSandbox sandbox, ManagedCompilationResult compilationResult)
 		{
 			var entryPointLinkXml = sandbox.InputDirectory.Combine ("entrypoint.xml");
-			LinkXmlHelpers.WriteXmlFileToPreserveEntryPoint (compilationResult.AssemblyPath, entryPointLinkXml);
+			LinkXmlHelpers.WriteXmlFileToPreserveEntryPoint (compilationResult.InputAssemblyPath, entryPointLinkXml);
 		}
 
 		private LinkedTestCaseResult Link (TestCase testCase, TestCaseSandbox sandbox, ManagedCompilationResult compilationResult, TestCaseMetadaProvider metadataProvider)
@@ -64,7 +72,7 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 
 			linker.Link (builder.ToArgs ());
 
-			return new LinkedTestCaseResult (testCase, compilationResult.AssemblyPath, sandbox.OutputDirectory.Combine (compilationResult.AssemblyPath.FileName));
+			return new LinkedTestCaseResult (testCase, compilationResult.InputAssemblyPath, sandbox.OutputDirectory.Combine (compilationResult.InputAssemblyPath.FileName), compilationResult.ExpectationsAssemblyPath);
 		}
 	}
 }

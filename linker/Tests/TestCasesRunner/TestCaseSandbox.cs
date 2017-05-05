@@ -34,18 +34,25 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 
 			InputDirectory = _directory.Combine ("input").EnsureDirectoryExists ();
 			OutputDirectory = _directory.Combine ("output").EnsureDirectoryExists ();
+			ExpectationsDirectory = _directory.Combine ("expectations").EnsureDirectoryExists ();
 		}
 
 		public NPath InputDirectory { get; }
 
 		public NPath OutputDirectory { get; }
 
+		public NPath ExpectationsDirectory { get; }
+
 		public IEnumerable<NPath> SourceFiles {
 			get { return _directory.Files ("*.cs"); }
 		}
 
-		public IEnumerable<NPath> References {
+		public IEnumerable<NPath> InputDirectoryReferences {
 			get { return InputDirectory.Files ("*.dll"); }
+		}
+
+		public IEnumerable<NPath> ExpectationsDirectoryReferences {
+			get { return ExpectationsDirectory.Files ("*.dll"); }
 		}
 
 		public IEnumerable<NPath> LinkXmlFiles {
@@ -64,6 +71,8 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 			foreach (var dep in metadataProvider.AdditionalFilesToSandbox ()) {
 				dep.FileMustExist ().Copy (_directory);
 			}
+
+			InputDirectoryReferences.Copy (ExpectationsDirectory);
 		}
 
 		private static NPath GetExpectationsAssemblyPath ()

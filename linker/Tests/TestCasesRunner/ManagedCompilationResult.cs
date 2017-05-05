@@ -2,11 +2,14 @@
 
 namespace Mono.Linker.Tests.TestCasesRunner {
 	public class ManagedCompilationResult {
-		public ManagedCompilationResult (NPath assemblyPath)
+		public ManagedCompilationResult (NPath inputAssemblyPath, NPath expectationsAssemblyPath)
 		{
-			AssemblyPath = assemblyPath;
+			InputAssemblyPath = inputAssemblyPath;
+			ExpectationsAssemblyPath = expectationsAssemblyPath;
 		}
 
-		public NPath AssemblyPath { get; }
+		public NPath InputAssemblyPath { get; }
+
+		public NPath ExpectationsAssemblyPath { get; }
 	}
 }

@@ -2,7 +2,7 @@
 
 namespace Mono.Linker.Tests.Cases.Expectations.Metadata {
 	[AttributeUsage (AttributeTargets.Class)]
-	public class CoreLinkAttribute : Attribute {
+	public class CoreLinkAttribute : BaseMetadataAttribute {
 		public readonly string Value;
 
 		public CoreLinkAttribute (string value)
