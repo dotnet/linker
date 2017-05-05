@@ -6,12 +6,14 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 		public readonly TestCase TestCase;
 		public readonly NPath InputAssemblyPath;
 		public readonly NPath OutputAssemblyPath;
+		public readonly NPath ExpectationsAssemblyPath;
 
-		public LinkedTestCaseResult (TestCase testCase, NPath inputAssemblyPath, NPath outputAssemblyPath)
+		public LinkedTestCaseResult (TestCase testCase, NPath inputAssemblyPath, NPath outputAssemblyPath, NPath expectationsAssemblyPath)
 		{
 			TestCase = testCase;
 			InputAssemblyPath = inputAssemblyPath;
 			OutputAssemblyPath = outputAssemblyPath;
+			ExpectationsAssemblyPath = expectationsAssemblyPath;
 		}
 	}
 }

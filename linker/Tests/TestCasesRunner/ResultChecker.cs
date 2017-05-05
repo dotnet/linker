@@ -11,7 +11,7 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 		{
 			Assert.IsTrue (linkResult.OutputAssemblyPath.FileExists (), $"The linked output assembly was not found.  Expected at {linkResult.OutputAssemblyPath}");
 
-			using (var original = ReadAssembly (linkResult.InputAssemblyPath)) {
+			using (var original = ReadAssembly (linkResult.ExpectationsAssemblyPath)) {
 				PerformOutputAssemblyChecks (original.Definition, linkResult.OutputAssemblyPath.Parent);
 
 				using (var linked = ReadAssembly (linkResult.OutputAssemblyPath)) {

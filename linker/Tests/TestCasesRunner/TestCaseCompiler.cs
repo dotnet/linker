@@ -7,13 +7,13 @@ using Mono.Linker.Tests.Extensions;
 
 namespace Mono.Linker.Tests.TestCasesRunner {
 	public class TestCaseCompiler {
-		public virtual ManagedCompilationResult CompileTestIn (TestCaseSandbox sandbox, IEnumerable<string> referencesExternalToSandbox)
+		public virtual NPath CompileTestIn (NPath outputDirectory, IEnumerable<string> sourceFiles, IEnumerable<string> references, IEnumerable<string> defines)
 		{
-			var compilerOptions = CreateCompilerOptions (sandbox, referencesExternalToSandbox);
+			var compilerOptions = CreateCompilerOptions (outputDirectory, references, defines);
 			var provider = CodeDomProvider.CreateProvider ("C#");
-			var result = provider.CompileAssemblyFromFile (compilerOptions, sandbox.SourceFiles.Select (f => f.ToString ()).ToArray ());
+			var result = provider.CompileAssemblyFromFile (compilerOptions, sourceFiles.ToArray ());
 			if (!result.Errors.HasErrors)
-				return new ManagedCompilationResult (compilerOptions.OutputAssembly.ToNPath ());
+				return compilerOptions.OutputAssembly.ToNPath ();
 
 			var errors = new StringBuilder ();
 			foreach (var error in result.Errors)
@@ -21,9 +21,9 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 			throw new Exception ("Compilation errors: " + errors);
 		}
 
-		protected virtual CompilerParameters CreateCompilerOptions (TestCaseSandbox sandbox, IEnumerable<string> referencesExternalToSandbox)
+		protected virtual CompilerParameters CreateCompilerOptions (NPath outputDirectory, IEnumerable<string> references, IEnumerable<string> defines)
 		{
-			var outputPath = sandbox.InputDirectory.Combine ("test.exe");
+			var outputPath = outputDirectory.Combine ("test.exe");
 
 			var compilerParameters = new CompilerParameters
 			{
@@ -31,8 +31,9 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 				GenerateExecutable = true
 			};
 
-			compilerParameters.ReferencedAssemblies.AddRange (referencesExternalToSandbox.ToArray ());
-			compilerParameters.ReferencedAssemblies.AddRange (sandbox.References.Select (r => r.ToString ()).ToArray ());
+			compilerParameters.CompilerOptions = defines?.Aggregate (string.Empty, (buff, arg) => $"{buff} /define:{arg}");
+
+			compilerParameters.ReferencedAssemblies.AddRange (references.ToArray ());
 
 			return compilerParameters;
 		}
