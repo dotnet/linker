@@ -9,10 +9,10 @@ namespace Mono.Linker.Tests.Cases.Attributes {
 		}
 
 		[KeptMember (".ctor()")]
-		[KeptMember ("<Field>k__BackingField")]
 		[KeptMember ("get_Field()")]
 		class A {
 			[Kept]
+			[KeptBackingField]
 			[Foo]
 			public int Field { get; set; }
 		}

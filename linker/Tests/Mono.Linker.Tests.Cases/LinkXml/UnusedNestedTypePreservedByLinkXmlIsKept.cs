@@ -1,14 +1,14 @@
 ﻿using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
 namespace Mono.Linker.Tests.Cases.LinkXml {
-	class UnusedTypePreservedByLinkXmlIsKept {
+	class UnusedNestedTypePreservedByLinkXmlIsKept {
 		public static void Main ()
 		{
 		}
-	}
 
-	[Kept]
-	[KeptMember (".ctor()")]
-	class UnusedTypePreservedByLinkXmlIsKeptUnusedType {
+		[Kept]
+		[KeptMember (".ctor()")]
+		class Unused {
+		}
 	}
 }
