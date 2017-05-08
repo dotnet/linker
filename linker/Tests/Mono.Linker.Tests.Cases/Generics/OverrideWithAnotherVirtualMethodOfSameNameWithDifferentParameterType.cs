@@ -17,7 +17,7 @@ namespace Mono.Linker.Tests.Cases.Generics {
 		}
 
 		[KeptMember (".ctor()")]
-		[KeptBaseType ("Mono.Linker.Tests.Cases.Generics.OverrideWithAnotherVirtualMethodOfSameNameWithDifferentParameterType/Base`1<K>")]
+		[KeptBaseType (typeof (Base<>), "K")]
 		public class Derived<K, S> : Base<K> {
 			[Kept]
 			public override K Method (K arg)

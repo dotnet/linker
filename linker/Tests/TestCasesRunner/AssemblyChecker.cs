@@ -78,21 +78,10 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 			if (linked == null)
 				Assert.Fail ($"Type `{original}' should have been kept");
 
-			if (!original.IsInterface) {
-				var expectedBase = GetCustomAttributeStringCtorValue (original, nameof (KeptBaseTypeAttribute)) ?? "System.Object";
-				Assert.AreEqual (expectedBase, linked.BaseType?.FullName);
-			}
+			if (!original.IsInterface)
+				VerifyBaseType (original, linked);
 
-			var expectedInterfaces = new HashSet<string> (GetCustomAttributeStringCtorValues (original, nameof (KeptInterfaceAttribute)));
-			if (expectedInterfaces.Count == 0) {
-				Assert.IsFalse (linked.HasInterfaces, $"Type `{original}' has unexpected interfaces");
-			} else {
-				foreach (var iface in linked.Interfaces) {
-					Assert.IsTrue (expectedInterfaces.Remove (iface.InterfaceType.FullName), $"Type `{original}' interface `{iface.InterfaceType.FullName}' should have been removed");
-				}
-
-				Assert.IsEmpty (expectedInterfaces);
-			}
+			VerifyInterfaces (original, linked);
 
 			VerifyGenericParameters (original, linked);
 			VerifyCustomAttributes (original, linked);
@@ -123,6 +112,42 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 			foreach (var e in original.Events) {
 				VerifyEvent (e, linked?.Events.FirstOrDefault (l => e.Name == l.Name));
 				linkedMembers.Remove (e.FullName);
+			}
+		}
+
+		void VerifyBaseType (TypeDefinition src, TypeDefinition linked)
+		{
+			string expectedBaseName;
+			var expectedBaseGenericAttr = src.CustomAttributes.FirstOrDefault (w => w.AttributeType.Name == nameof (KeptBaseTypeAttribute) && w.ConstructorArguments.Count > 1);
+			if (expectedBaseGenericAttr != null) {
+				StringBuilder builder = new StringBuilder ();
+				builder.Append (expectedBaseGenericAttr.ConstructorArguments [0].Value);
+				builder.Append ("<");
+				var genericParams = expectedBaseGenericAttr.ConstructorArguments
+					.Skip (1)
+					.TakeWhile (arg => arg.Value != null)
+					.Aggregate (string.Empty, (buff, arg) => $"{buff}{arg.Value},");
+
+				builder.Append (genericParams.TrimEnd (','));
+				builder.Append (">");
+				expectedBaseName = builder.ToString ();
+			} else {
+				expectedBaseName = GetCustomAttributeCtorValues<object> (src, nameof (KeptBaseTypeAttribute)).FirstOrDefault ()?.ToString () ?? "System.Object";
+			}
+			Assert.AreEqual (expectedBaseName, linked.BaseType?.FullName);
+		}
+
+		void VerifyInterfaces (TypeDefinition src, TypeDefinition linked)
+		{
+			var expectedInterfaces = new HashSet<string> (GetCustomAttributeCtorValues<object> (src, nameof (KeptInterfaceAttribute)).Select (val => val.ToString ()));
+			if (expectedInterfaces.Count == 0) {
+				Assert.IsFalse (linked.HasInterfaces, $"Type `{src}' has unexpected interfaces");
+			} else {
+				foreach (var iface in linked.Interfaces) {
+					Assert.IsTrue (expectedInterfaces.Remove (iface.InterfaceType.FullName), $"Type `{src}' interface `{iface.InterfaceType.FullName}' should have been removed");
+				}
+
+				Assert.IsEmpty (expectedInterfaces);
 			}
 		}
 
@@ -241,7 +266,7 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 
 		static void VerifyCustomAttributes (ICustomAttributeProvider src, ICustomAttributeProvider linked)
 		{
-			var expectedAttrs = new List<string> (GetCustomAttributeStringCtorValues (src, nameof (KeptAttributeAttribute)));
+			var expectedAttrs = new List<string> (GetCustomAttributeCtorValues<string> (src, nameof (KeptAttributeAttribute)));
 			var linkedAttrs = new List<string> (FilterLinkedAttributes (linked));
 
 			// FIXME: Linker unused attributes removal is not working
@@ -280,19 +305,14 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 			if (cap == null)
 				return false;
 
-			return GetCustomAttributeStringCtorValues (cap, nameof (KeptMemberAttribute)).Any (a => a == (signature ?? member.Name));
+			return GetCustomAttributeCtorValues<string> (cap, nameof (KeptMemberAttribute)).Any (a => a == (signature ?? member.Name));
 		}
 
-		static string GetCustomAttributeStringCtorValue (ICustomAttributeProvider provider, string attributeName)
-		{
-			return GetCustomAttributeStringCtorValues (provider, attributeName).FirstOrDefault ();
-		}
-
-		static IEnumerable<string> GetCustomAttributeStringCtorValues (ICustomAttributeProvider provider, string attributeName)
+		static IEnumerable<T> GetCustomAttributeCtorValues<T> (ICustomAttributeProvider provider, string attributeName) where T : class
 		{
 			return provider.CustomAttributes.
 						   Where (w => w.AttributeType.Name == attributeName && w.Constructor.Parameters.Count == 1).
-						   Select (l => l.ConstructorArguments [0].Value as string);
+						   Select (l => l.ConstructorArguments [0].Value as T);
 		}
 	}
 }

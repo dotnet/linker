@@ -18,7 +18,7 @@ namespace Mono.Linker.Tests.Cases.Generics {
 		}
 
 		[KeptMember (".ctor()")]
-		[KeptBaseType ("Mono.Linker.Tests.Cases.Generics.CorrectOverloadedMethodGetsStrippedInGenericClass/GenericClassWithTwoOverloadedAbstractMethods`1<System.Single>")]
+		[KeptBaseType (typeof (GenericClassWithTwoOverloadedAbstractMethods<System.Single>))]
 		public class SpecializedClassWithTwoOverloadedVirtualMethods : GenericClassWithTwoOverloadedAbstractMethods<float> {
 			// Don't call this one, it should be stripped
 			public override string OverloadedMethod (float thing)

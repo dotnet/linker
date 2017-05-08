@@ -6,11 +6,11 @@ namespace Mono.Linker.Tests.Cases.Expectations.Assertions
 	[AttributeUsage (AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
 	public class KeptInterfaceAttribute : KeptAttribute
 	{
-		public readonly string TypeName;
+		public readonly Type InterfaceType;
 
-		public KeptInterfaceAttribute (string typeName)
+		public KeptInterfaceAttribute (Type interfaceType)
 		{
-			TypeName = typeName;
+			InterfaceType = interfaceType;
 		}
 	}
 }

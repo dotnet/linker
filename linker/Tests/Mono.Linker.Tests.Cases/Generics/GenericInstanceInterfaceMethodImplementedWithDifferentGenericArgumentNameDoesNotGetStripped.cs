@@ -18,7 +18,7 @@ namespace Mono.Linker.Tests.Cases.Generics {
 		}
 
 		[KeptMember (".ctor()")]
-		[KeptInterface ("Mono.Linker.Tests.Cases.Generics.GenericInstanceInterfaceMethodImplementedWithDifferentGenericArgumentNameDoesNotGetStripped/ISomething")]
+		[KeptInterface (typeof (ISomething))]
 		public class Concrete : ISomething {
 			[Kept]
 			public GenericType<TInConcrete> ShouldNotGetStripped<TInConcrete> ()

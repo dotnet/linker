@@ -29,8 +29,8 @@ namespace Mono.Linker.Tests.Cases.Basic {
 
 		[Kept]
 		[KeptMember (".ctor()")]
-		[KeptBaseType ("Mono.Linker.Tests.Cases.Basic.InterfaceMethodImplementedOnBaseClassDoesNotGetStripped/Base")]
-		[KeptInterface ("Mono.Linker.Tests.Cases.Basic.InterfaceMethodImplementedOnBaseClassDoesNotGetStripped/I1")]
+		[KeptBaseType (typeof (Base))]
+		[KeptInterface (typeof (I1))]
 		public class Derived : Base, I1 {
 		}
 	}

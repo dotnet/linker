@@ -21,8 +21,8 @@ namespace Mono.Linker.Tests.Cases.VirtualMethods {
 		}
 
 		[KeptMember (".ctor()")]
-		[KeptBaseType ("Mono.Linker.Tests.Cases.VirtualMethods.ClassImplemtingInterfaceMethodsThroughBaseClass4/B")]
-		[KeptInterface ("Mono.Linker.Tests.Cases.VirtualMethods.ClassImplemtingInterfaceMethodsThroughBaseClass4/IFoo")] // FIXME: Why is it not removed
+		[KeptBaseType (typeof (B))]
+		[KeptInterface (typeof (IFoo))] // FIXME: Why is it not removed
 		class A : B, IFoo {
 			//my IFoo.Foo() is actually implemented by B which doesn't know about it.
 		}
