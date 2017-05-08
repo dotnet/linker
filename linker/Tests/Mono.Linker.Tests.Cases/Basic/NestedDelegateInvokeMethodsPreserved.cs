@@ -17,7 +17,7 @@ namespace Mono.Linker.Tests.Cases.Basic {
 			[KeptMember ("BeginInvoke(System.AsyncCallback,System.Object)")]
 			[KeptMember ("EndInvoke(System.IAsyncResult)")]
 			[KeptMember (".ctor(System.Object,System.IntPtr)")]
-			[KeptBaseType ("System.MulticastDelegate")]
+			[KeptBaseType (typeof (System.MulticastDelegate))]
 			public delegate void Delegate ();
 		}
 	}

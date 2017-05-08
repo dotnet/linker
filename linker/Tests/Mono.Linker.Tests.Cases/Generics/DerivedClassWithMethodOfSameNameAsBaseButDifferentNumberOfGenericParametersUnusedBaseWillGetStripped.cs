@@ -18,7 +18,7 @@ namespace Mono.Linker.Tests.Cases.Generics {
 		}
 
 		[KeptMember (".ctor()")]
-		[KeptBaseType ("Mono.Linker.Tests.Cases.Generics.DerivedClassWithMethodOfSameNameAsBaseButDifferentNumberOfGenericParametersUnusedBaseWillGetStripped/MyBase")]
+		[KeptBaseType (typeof (MyBase))]
 		class MyDerived : MyBase {
 			[Kept]
 			public virtual T Method<T, K> (T arg1)

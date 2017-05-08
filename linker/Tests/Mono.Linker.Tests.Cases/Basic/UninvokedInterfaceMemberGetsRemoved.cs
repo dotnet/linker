@@ -14,7 +14,7 @@ namespace Mono.Linker.Tests.Cases.Basic {
 
 		[Kept]
 		[KeptMember (".ctor()")]
-		[KeptInterface ("Mono.Linker.Tests.Cases.Basic.UninvokedInterfaceMemberGetsRemoved/I")]
+		[KeptInterface (typeof (I))]
 		class B : I {
 			public void Method ()
 			{

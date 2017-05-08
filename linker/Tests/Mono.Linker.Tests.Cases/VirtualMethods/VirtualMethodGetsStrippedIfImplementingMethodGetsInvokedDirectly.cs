@@ -16,7 +16,7 @@ namespace Mono.Linker.Tests.Cases.VirtualMethods {
 		}
 
 		[KeptMember (".ctor()")]
-		[KeptBaseType ("Mono.Linker.Tests.Cases.VirtualMethods.VirtualMethodGetsStrippedIfImplementingMethodGetsInvokedDirectly/B")]
+		[KeptBaseType (typeof (B))]
 		class A : B {
 			[Kept]
 			public override void Foo ()

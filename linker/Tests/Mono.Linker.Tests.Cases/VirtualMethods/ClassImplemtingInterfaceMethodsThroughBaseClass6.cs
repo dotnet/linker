@@ -27,7 +27,7 @@ namespace Mono.Linker.Tests.Cases.VirtualMethods {
 		}
 
 		[KeptMember (".ctor()")]
-		[KeptInterface ("Mono.Linker.Tests.Cases.VirtualMethods.ClassImplemtingInterfaceMethodsThroughBaseClass6/IFoo")]
+		[KeptInterface (typeof (IFoo))]
 		class C : IFoo {
 			[Kept]
 			public void Foo ()

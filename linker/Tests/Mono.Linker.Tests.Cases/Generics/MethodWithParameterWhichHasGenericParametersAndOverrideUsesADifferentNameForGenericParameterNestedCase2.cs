@@ -19,7 +19,7 @@ namespace Mono.Linker.Tests.Cases.Generics {
 		}
 
 		[KeptMember (".ctor()")]
-		[KeptBaseType ("Mono.Linker.Tests.Cases.Generics.MethodWithParameterWhichHasGenericParametersAndOverrideUsesADifferentNameForGenericParameterNestedCase2/Base`1/Nested`3<TResult1,System.Int32,System.Int32,System.String>")]
+		[KeptBaseType (typeof (Base<>.Nested<,,>), "TResult1", typeof (int), typeof (int), typeof (string))]
 		public class Derived<TSource, TResult1> : Base<TResult1>.Nested<int, int, string> {
 			[Kept]
 			public override TResult2 Method<TResult2> (System.Func<TResult1, TResult2> arg)

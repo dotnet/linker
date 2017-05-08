@@ -17,7 +17,7 @@ namespace Mono.Linker.Tests.Cases.Attributes {
 		{
 		}
 
-		[KeptBaseType ("System.Attribute")]
+		[KeptBaseType (typeof (System.Attribute))]
 		class FooAttribute : Attribute {
 			[Kept]
 			public FooAttribute (Type val)

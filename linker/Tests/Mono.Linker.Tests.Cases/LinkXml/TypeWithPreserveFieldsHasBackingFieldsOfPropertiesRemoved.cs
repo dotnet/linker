@@ -9,13 +9,13 @@ namespace Mono.Linker.Tests.Cases.LinkXml
 		}
 
 		[Kept]
-		[KeptInterface("Mono.Linker.Tests.Cases.LinkXml.TypeWithPreserveFieldsHasBackingFieldsOfPropertiesRemoved/IFoo`1<System.Int32>")]
-		[KeptInterface("Mono.Linker.Tests.Cases.LinkXml.TypeWithPreserveFieldsHasBackingFieldsOfPropertiesRemoved/IFoo`1<System.String>")]
-		[KeptInterface("Mono.Linker.Tests.Cases.LinkXml.TypeWithPreserveFieldsHasBackingFieldsOfPropertiesRemoved/IFoo`1<Mono.Linker.Tests.Cases.LinkXml.TypeWithPreserveFieldsHasBackingFieldsOfPropertiesRemoved/Cat>")]
-		[KeptInterface("Mono.Linker.Tests.Cases.LinkXml.TypeWithPreserveFieldsHasBackingFieldsOfPropertiesRemoved/IFoo2`1<System.Int32>")]
-		[KeptInterface("Mono.Linker.Tests.Cases.LinkXml.TypeWithPreserveFieldsHasBackingFieldsOfPropertiesRemoved/IFoo3`3<System.Int32,System.String,System.Char>")]
-		[KeptInterface("Mono.Linker.Tests.Cases.LinkXml.TypeWithPreserveFieldsHasBackingFieldsOfPropertiesRemoved/IDog")]
-		[KeptInterface("Mono.Linker.Tests.Cases.LinkXml.TypeWithPreserveFieldsHasBackingFieldsOfPropertiesRemoved/IFoo`1<Mono.Linker.Tests.Cases.LinkXml.TypeWithPreserveFieldsHasBackingFieldsOfPropertiesRemoved/IFoo`1<System.Int32>>")]
+		[KeptInterface(typeof (IFoo<System.Int32>))]
+		[KeptInterface(typeof (IFoo<System.String>))]
+		[KeptInterface(typeof (IFoo<Cat>))]
+		[KeptInterface(typeof (IFoo2<System.Int32>))]
+		[KeptInterface(typeof (IFoo3<System.Int32,System.String,System.Char>))]
+		[KeptInterface(typeof (IDog))]
+		[KeptInterface(typeof (IFoo<IFoo<System.Int32>>))]
 		class Unused : IFoo<int>, IFoo<string>, IFoo<Cat>, IFoo2<int>, IFoo3<int, string, char>, IDog, IFoo<IFoo<int>> {
 			[Kept]
 			public int Field1;

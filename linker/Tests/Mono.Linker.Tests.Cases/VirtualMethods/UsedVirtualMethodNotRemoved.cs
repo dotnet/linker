@@ -18,7 +18,7 @@ namespace Mono.Linker.Tests.Cases.VirtualMethods {
 		}
 
 		[KeptMember (".ctor()")]
-		[KeptBaseType ("Mono.Linker.Tests.Cases.VirtualMethods.UsedVirtualMethodNotRemoved/Base")]
+		[KeptBaseType (typeof (Base))]
 		class B : Base {
 			[Kept]
 			public override void Call ()
