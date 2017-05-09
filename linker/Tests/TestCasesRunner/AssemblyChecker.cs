@@ -123,12 +123,17 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 				StringBuilder builder = new StringBuilder ();
 				builder.Append (expectedBaseGenericAttr.ConstructorArguments [0].Value);
 				builder.Append ("<");
-				var genericParams = expectedBaseGenericAttr.ConstructorArguments
-					.Skip (1)
-					.TakeWhile (arg => arg.Value != null)
-					.Aggregate (string.Empty, (buff, arg) => $"{buff}{arg.Value},");
+				bool separator = false;
+				foreach (var caa in (CustomAttributeArgument[])expectedBaseGenericAttr.ConstructorArguments [1].Value) {
+					if (separator)
+						builder.Append (",");
+					else
+						separator = true;
 
-				builder.Append (genericParams.TrimEnd (','));
+					var arg = (CustomAttributeArgument)caa.Value;
+					builder.Append (arg.Value);
+				}
+
 				builder.Append (">");
 				expectedBaseName = builder.ToString ();
 			} else {
