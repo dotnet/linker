@@ -38,7 +38,7 @@ namespace Mono.Linker.Steps {
 
 	public class OutputStep : BaseStep {
 
-		private Dictionary<UInt16, TargetArchitecture> architectureMap;
+		private static Dictionary<UInt16, TargetArchitecture> architectureMap;
 
 		private enum NativeOSOverride {
 			Apple = 0x4644,
@@ -48,16 +48,24 @@ namespace Mono.Linker.Steps {
 			Default = 0
 		}
 
-		public OutputStep ()
+		static TargetArchitecture CalculateArchitecture (TargetArchitecture readyToRunArch)
 		{
-			architectureMap = new Dictionary<UInt16, TargetArchitecture> ();
-			foreach (var os in Enum.GetValues (typeof (NativeOSOverride))) {
-				ushort osVal = (ushort) (NativeOSOverride) os;
-				foreach (var arch in Enum.GetValues (typeof (TargetArchitecture))) {
-					ushort archVal = (ushort) (TargetArchitecture)arch;
-					architectureMap.Add ((ushort) (archVal ^ osVal), (TargetArchitecture) arch);
+			if (architectureMap == null) {
+				architectureMap = new Dictionary<UInt16, TargetArchitecture> ();
+				foreach (var os in Enum.GetValues (typeof (NativeOSOverride))) {
+					ushort osVal = (ushort) (NativeOSOverride) os;
+					foreach (var arch in Enum.GetValues (typeof (TargetArchitecture))) {
+						ushort archVal = (ushort) (TargetArchitecture)arch;
+						architectureMap.Add ((ushort) (archVal ^ osVal), (TargetArchitecture) arch);
+					}
 				}
 			}
+
+			TargetArchitecture pureILArch;
+			if (architectureMap.TryGetValue ((ushort) readyToRunArch, out pureILArch)) {
+				return pureILArch;
+			}
+			throw new BadImageFormatException ("unrecognized module attributes");
 		}
 
 		protected override void Process ()
@@ -79,23 +87,20 @@ namespace Mono.Linker.Steps {
 			OutputAssembly (assembly);
 		}
 
-		private bool isR2R(ModuleDefinition module) {
-			return ((module.Attributes & ModuleAttributes.ILOnly) == 0 &&
-					(module.Attributes & (ModuleAttributes) 0x04) != 0);
+		static bool IsReadyToRun (ModuleDefinition module)
+		{
+			return (module.Attributes & ModuleAttributes.ILOnly) == 0 &&
+				(module.Attributes & (ModuleAttributes) 0x04) != 0;
 		}
 
 		void WriteAssembly (AssemblyDefinition assembly, string directory)
 		{
 			foreach (var module in assembly.Modules) {
 				// Write back pure IL even for R2R assemblies
-				if (isR2R (module)) {
+				if (IsReadyToRun (module)) {
 					module.Attributes |= ModuleAttributes.ILOnly;
 					module.Attributes ^= (ModuleAttributes) (uint) 0x04;
-					if (!architectureMap.ContainsKey ((ushort) module.Architecture)) {
-						throw new BadImageFormatException ("unrecognized module attributes");
-					} else {
-						module.Architecture = architectureMap [(ushort) module.Architecture];
-					}
+					module.Architecture = CalculateArchitecture (module.Architecture);
 				}
 			}
 
