@@ -35,8 +35,9 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 			return new TestCaseLinkerOptions {CoreLink = value};
 		}
 
-		public virtual IEnumerable<string> GetReferencedAssemblies ()
+		public virtual IEnumerable<string> GetReferencedAssemblies (NPath workingDirectory)
 		{
+			yield return workingDirectory.Combine ("Mono.Linker.Tests.Cases.Expectations.dll").ToString ();
 			yield return "mscorlib.dll";
 
 			foreach (var referenceAttr in _testCaseTypeDefinition.CustomAttributes.Where (attr => attr.AttributeType.Name == nameof (ReferenceAttribute))) {
