@@ -163,8 +163,8 @@ namespace Mono.Linker {
 
 				return assembly;
 			}
-			catch {
-				throw new AssemblyResolutionException (reference);
+			catch (Exception e) {
+				throw new AssemblyResolutionException (reference, e);
 			}
 		}
 
