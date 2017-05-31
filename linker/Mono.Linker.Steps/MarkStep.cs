@@ -1247,6 +1247,14 @@ namespace Mono.Linker.Steps {
 		{
 			if (type.HasMethods)
 				MarkMethodCollection (type.Methods);
+
+			if (type.IsInterface) {
+				foreach (var implementedInterface in type.Interfaces) {
+					var interfaceType = ResolveTypeDefinition (implementedInterface.InterfaceType);
+					if (interfaceType != null)
+						MarkMethods (interfaceType);
+				}
+			}
 		}
 
 		void MarkMethodCollection (IList<MethodDefinition> methods)
