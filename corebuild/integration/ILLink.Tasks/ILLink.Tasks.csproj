@@ -2,6 +2,7 @@
   <PropertyGroup>
     <VersionPrefix>0.1.4-preview</VersionPrefix>
     <TargetFrameworks>netcoreapp2.0;net46</TargetFrameworks>
+    <TargetFrameworks Condition=" '$(OS)' != 'Windows_NT' ">netcoreapp2.0</TargetFrameworks>
     <RuntimeFrameworkVersion>2.0.0-beta-001509-00</RuntimeFrameworkVersion>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <PackageOutputPath>../nupkgs</PackageOutputPath>
@@ -41,7 +42,7 @@
          references from being marked as dependencies. -->
     <!-- TODO: Remove the custom .nuspec once the P2P PrivateAssets
          issue is fixed. -->
-   <NuspecFile>ILLink.Tasks.nuspec</NuspecFile>
+    <NuspecFile>ILLink.Tasks.nuspec</NuspecFile>
     <NuspecProperties>id=$(AssemblyName);authors=$(AssemblyName);description=linker tasks;</NuspecProperties>
   </PropertyGroup>
 
@@ -162,7 +163,7 @@
            (because some target gets its reference information from
            the lock file, which doesn't have configuration info).
       -->
-      <SetConfiguration>Configuration=netcore_$(Configuration)</SetConfiguration>
+      <SetConfiguration>Configuration=illink_$(Configuration)</SetConfiguration>
     </ProjectReference>
   </ItemGroup>
 
