@@ -16,7 +16,10 @@ def static setRecursiveSubmoduleOption(def job) {
 [true, false].each { isPR ->
     ['Windows_NT', 'Ubuntu'].each { os ->
 
-        def newJob = job(Utilities.getFullJobName(project, os.toLowerCase(), isPR)) {}
+        def jobName = Utilities.getFullJobName(project, os.toLowerCase(), isPR)
+        out.println("job name: ${jobName}")
+
+        def newJob = job(jobName) {}
 
         if (os == 'Windows_NT') {
             newJob.with {
@@ -46,3 +49,5 @@ def static setRecursiveSubmoduleOption(def job) {
         }
     }
 }
+
+out.println("done generating jobs!")
