@@ -60,6 +60,12 @@ namespace Mono.Linker.Tests.TestCases
 			Run(testCase);
 		}
 
+		[TestCaseSource (typeof (TestDatabase), nameof (TestDatabase.TypeForwardingTests))]
+		public void TypeForwardingTests (TestCase testCase)
+		{
+			Run (testCase);
+		}
+
 		[TestCaseSource (typeof (TestDatabase), nameof (TestDatabase.OtherTests))]
 		public void OtherTests (TestCase testCase)
 		{

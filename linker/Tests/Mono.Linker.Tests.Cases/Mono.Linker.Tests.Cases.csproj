@@ -60,6 +60,11 @@
     <Compile Include="LinkXml\UnusedAssemblyWithNoDefinedPreserveHasAllTypesPreserved.cs" />
     <Compile Include="LinkXml\UnusedEventPreservedByLinkXmlIsKept.cs" />
     <Compile Include="LinkXml\UnusedTypeWithNoDefinedPreserveHasAllMembersPreserved.cs" />
+    <Compile Include="TypeForwarding\Dependencies\ForwarderLibrary.cs" />
+    <Compile Include="TypeForwarding\Dependencies\ImplementationLibrary.cs" />
+    <Compile Include="TypeForwarding\Dependencies\ReferenceImplementationLibrary.cs" />
+    <Compile Include="TypeForwarding\TypeForwarderOnlyAssembliesRemoved.cs" />
+    <Compile Include="TypeForwarding\TypeForwarderOnlyAssembliesKept.cs" />
     <Compile Include="VirtualMethods\ClassUsedFromConcreteTypeHasInterfaceMethodRemoved.cs" />
     <Compile Include="VirtualMethods\ClassUsedFromInterfaceHasInterfaceMethodKept.cs" />
     <Compile Include="VirtualMethods\StructUsedFromConcreteTypeHasInterfaceMethodRemoved.cs" />
