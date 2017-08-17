@@ -39,7 +39,18 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 			yield return "mscorlib.dll";
 
 			foreach (var referenceAttr in _testCaseTypeDefinition.CustomAttributes.Where (attr => attr.AttributeType.Name == nameof (ReferenceAttribute))) {
-				yield return (string) referenceAttr.ConstructorArguments.First ().Value;
+				switch (referenceAttr.ConstructorArguments.First ().Value) {
+				case string s:
+					if (referenceAttr.ConstructorArguments.Count () == 2 && referenceAttr.ConstructorArguments[1].Value is true)
+						yield return workingDirectory.Combine (s).ToString ();
+					else
+						yield return s;
+					
+					continue;
+				case CustomAttributeArgument [] ca:
+					yield return workingDirectory.Combine (ca.Select (l => l.Value as string).ToArray ()).ToString ();
+					continue;
+				}
 			}
 		}
 

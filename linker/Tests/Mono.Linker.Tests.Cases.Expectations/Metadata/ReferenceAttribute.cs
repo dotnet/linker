@@ -9,5 +9,17 @@ namespace Mono.Linker.Tests.Cases.Expectations.Metadata {
 			if (string.IsNullOrEmpty (value))
 				throw new ArgumentException ("Value cannot be null or empty.", nameof (value));
 		}
+
+		public ReferenceAttribute (string value, bool isSandboxed)
+		{
+			if (string.IsNullOrEmpty (value))
+				throw new ArgumentException ("Value cannot be null or empty.", nameof (value));
+		}
+
+		public ReferenceAttribute (params string[] values)
+		{
+			if (values == null)
+				throw new ArgumentNullException (nameof (values));	
+		}
 	}
 }

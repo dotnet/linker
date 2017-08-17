@@ -61,7 +61,7 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 			CopyToInputAndExpectations (GetExpectationsAssemblyPath ());
 
 			foreach (var dep in metadataProvider.AdditionalFilesToSandbox ()) {
-				dep.FileMustExist ().Copy (_directory);
+				dep.FileMustExist ().Copy (InputDirectory);
 			}
 		}
 
