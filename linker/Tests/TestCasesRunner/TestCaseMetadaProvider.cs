@@ -73,6 +73,26 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 			}
 		}
 
+		public virtual IEnumerable<CompileAssemblyInfo> GetCompileAssembliesBefore ()
+		{
+			return _testCaseTypeDefinition.CustomAttributes
+				.Where (attr => attr.AttributeType.Name == nameof (CompileAssemblyBeforeAttribute))
+				.Select (CreateCompileAssemblyInfo);
+		}
+
+		public virtual IEnumerable<CompileAssemblyInfo> GetCompileAssembliesAfter ()
+		{
+			return _testCaseTypeDefinition.CustomAttributes
+				.Where (attr => attr.AttributeType.Name == nameof (CompileAssemblyAfterAttribute))
+				.Select (CreateCompileAssemblyInfo);
+		}
+
+		public virtual IEnumerable<string> GetDefines ()
+		{
+			return _testCaseTypeDefinition.CustomAttributes.Where (attr => attr.AttributeType.Name == nameof (DefineAttribute))
+				.Select(attr => (string) attr.ConstructorArguments.First ().Value);
+		}
+
 		T GetOptionAttributeValue<T> (string attributeName, T defaultValue)
 		{
 			var attribute = _testCaseTypeDefinition.CustomAttributes.FirstOrDefault (attr => attr.AttributeType.Name == attributeName);
@@ -80,6 +100,18 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 				return (T) attribute.ConstructorArguments.First ().Value;
 
 			return defaultValue;
+		}
+
+		private CompileAssemblyInfo CreateCompileAssemblyInfo (CustomAttribute attribute)
+		{
+			return new CompileAssemblyInfo
+			{
+				OutputName = (string) attribute.ConstructorArguments [0].Value,
+				SourceFiles = ((CustomAttributeArgument []) attribute.ConstructorArguments [1].Value).Select (arg => _testCase.SourceFile.Parent.Combine (arg.Value.ToString ())).ToArray (),
+				References = ((CustomAttributeArgument []) attribute.ConstructorArguments [2].Value)?.Select (arg => arg.Value.ToString ()).ToArray (),
+				Defines = ((CustomAttributeArgument []) attribute.ConstructorArguments [3].Value)?.Select (arg => arg.Value.ToString ()).ToArray (),
+				AddAsReference = attribute.ConstructorArguments.Count >= 5 ? (bool) attribute.ConstructorArguments [4].Value : true
+			};
 		}
 	}
 }

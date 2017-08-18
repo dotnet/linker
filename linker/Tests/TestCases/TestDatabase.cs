@@ -54,6 +54,11 @@ namespace Mono.Linker.Tests.TestCases
 			return NUnitCasesByPrefix("References.");
 		}
 
+		public static IEnumerable<TestCaseData> TypeForwardingTests ()
+		{
+			return NUnitCasesByPrefix ("TypeForwarding.");
+		}
+
 		public static IEnumerable<TestCaseData> OtherTests()
 		{
 			var allGroupedTestNames = new HashSet<string>(
@@ -67,6 +72,7 @@ namespace Mono.Linker.Tests.TestCases
 					.Concat(StaticsTests())
 					.Concat(InteropTests())
 					.Concat(ReferencesTests ())
+					.Concat(TypeForwardingTests ())
 					.Select(c => ((TestCase)c.Arguments[0]).ReconstructedFullTypeName));
 
 			return AllCases().Where(c => !allGroupedTestNames.Contains(c.ReconstructedFullTypeName)).Select(c => CreateNUnitTestCase(c, c.DisplayName));
