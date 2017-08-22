@@ -35,6 +35,9 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="TypeForwardersLibrary">
+      <HintPath>References\SupportProjects\TypeForwardersLibrary.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Attributes\AttributeOnPreservedTypeWithTypeUsedInConstructorIsKept.cs" />
@@ -138,6 +141,7 @@
     <Compile Include="VirtualMethods\TypeGetsMarkedThatImplementsAlreadyMarkedInterfaceMethod.cs" />
     <Compile Include="VirtualMethods\VirtualMethodGetsPerservedIfBaseMethodGetsInvoked.cs" />
     <Compile Include="VirtualMethods\VirtualMethodGetsStrippedIfImplementingMethodGetsInvokedDirectly.cs" />
+    <Compile Include="References\UsedTypeForwarderRemovesForwardingAssembly.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="LinkXml\TypeWithPreserveFieldsHasBackingFieldsOfPropertiesRemoved.xml" />
