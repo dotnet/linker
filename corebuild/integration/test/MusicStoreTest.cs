@@ -37,9 +37,6 @@ namespace ILLink.Tests
 			Dictionary<string, string> extraPublishArgs = new Dictionary<string, string>();
 			extraPublishArgs.Add("JITBENCH_FRAMEWORK_VERSION", netcoreappVersion);
 			BuildAndLink(csproj, rootFiles, extraPublishArgs);
-
-			// int ret = RunApp(csproj, out string commandOutput);
-			// Assert.True(ret == 0);
 		}
 
 		string ObtainSDK(string repoDir)

@@ -123,9 +123,11 @@ namespace ILLink.Tests
 				rootFilesStr = String.Join(";", rootFiles);
 				publishArgs += $" /p:LinkerRootDescriptors={rootFilesStr}";
 			}
-			foreach (var item in extraPublishArgs) {
+			if (extraPublishArgs != null) {
+                            foreach (var item in extraPublishArgs) {
 				publishArgs += $" /p:{item.Key}={item.Value}";
-			}
+                            }
+                        }
 			int ret = Dotnet(publishArgs, demoRoot);
 
 			if (ret != 0) {
