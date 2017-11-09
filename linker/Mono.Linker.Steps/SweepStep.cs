@@ -83,6 +83,10 @@ namespace Mono.Linker.Steps {
 				return;
 			}
 
+			if (Context.FullAssemblyOnlyRemoval) {
+				return;
+			}
+
 			var types = new List<TypeDefinition> ();
 
 			foreach (TypeDefinition type in assembly.MainModule.Types) {
