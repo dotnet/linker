@@ -11,6 +11,7 @@ param
 )
 
 $rootCliVersion = Join-Path $RepositoryRoot ".cliversion"
+$globalJson = Join-Path $RepositoryRoot "global.json"
 $bootstrapComplete = Join-Path $ToolsLocalPath "bootstrap.complete"
 
 # if the force switch is specified delete the semaphore file if it exists
@@ -58,6 +59,8 @@ if ($LastExitCode -ne 0)
     Write-Output "The .NET CLI installation failed with exit code $LastExitCode"
     exit $LastExitCode
 }
+
+echo "{ `"sdk`": { `"version`": `"$dotNetCliVersion`" { }" > $globalJson
 
 # write semaphore file
 copy $rootCliVersion $bootstrapComplete
