@@ -54,7 +54,7 @@ namespace ILLink.Tests
 			BuildAndLink(csproj, rootFiles, extraPublishArgs);
 		}
 
-		string ObtainSDK(string repoDir)
+		string ObtainSDK(string rootDir, string repoDir)
 		{
 			int ret;
 			string dotnetDirName = ".dotnet";
@@ -70,30 +70,30 @@ namespace ILLink.Tests
 			}
 
 			if (context.RuntimeIdentifier.Contains("win")) {
-				ret = RunCommand("powershell", $"{dotnetInstall} -SharedRuntime -InstallDir {dotnetDirName} -Channel master -Architecture x64 -Version {runtimeVersion}", repoDir);
+				ret = RunCommand("powershell", $"{dotnetInstall} -SharedRuntime -InstallDir {dotnetDirName} -Channel master -Architecture x64 -Version {runtimeVersion}", rootDir);
 				if (ret != 0) {
 					output.WriteLine("failed to retrieve shared runtime");
 					Assert.True(false);
 				}
-				ret = RunCommand("powershell", $"{dotnetInstall} -InstallDir {dotnetDirName} -Channel master -Architecture x64 -Version {sdkVersion}", repoDir);
+				ret = RunCommand("powershell", $"{dotnetInstall} -InstallDir {dotnetDirName} -Channel master -Architecture x64 -Version {sdkVersion}", rootDir);
 				if (ret != 0) {
 					output.WriteLine("failed to retrieve sdk");
 					Assert.True(false);
 				}
 			} else {
-                            ret = RunCommand(dotnetInstall, $"-sharedruntime -runtimeid {context.RuntimeIdentifier} -installdir {dotnetDirName} -channel master -architecture x64 -version {runtimeVersion}", repoDir);
+                            ret = RunCommand(dotnetInstall, $"-sharedruntime -runtimeid {context.RuntimeIdentifier} -installdir {dotnetDirName} -channel master -architecture x64 -version {runtimeVersion}", rootDir);
 				if (ret != 0) {
 					output.WriteLine("failed to retrieve shared runtime");
 					Assert.True(false);
 				}
-				ret = RunCommand(dotnetInstall, $"-installdir {dotnetDirName} -channel master -architecture x64 -version {sdkVersion}", repoDir);
+				ret = RunCommand(dotnetInstall, $"-installdir {dotnetDirName} -channel master -architecture x64 -version {sdkVersion}", rootDir);
 				if (ret != 0) {
 					output.WriteLine("failed to retrieve sdk");
 					Assert.True(false);
 				}
 			}
 
-			string dotnetDir = Path.Combine(repoDir, dotnetDirName);
+			string dotnetDir = Path.Combine(rootDir, dotnetDirName);
 			string dotnetToolName = Directory.GetFiles(dotnetDir)
 				.Select(p => Path.GetFileName(p))
 				.Where(p => p.Contains("dotnet"))
@@ -104,7 +104,7 @@ namespace ILLink.Tests
 				Assert.True(false);
 			}
 
-			string globalJson = Path.Combine(repoDir, "global.json");
+			string globalJson = Path.Combine(rootDir, "global.json");
 			string globalJsonContents = "{ \"sdk\": { \"version\": \"" + sdkVersion + "\" } }\n";
 			File.WriteAllText(globalJson, globalJsonContents);
 
@@ -140,7 +140,7 @@ namespace ILLink.Tests
 			// MusicStore targets .NET Core 2.1, so it must be built
 			// using an SDK that can target 2.1. We obtain that SDK
 			// here.
-			context.DotnetToolPath = ObtainSDK(repoName);
+			context.DotnetToolPath = ObtainSDK(context.TestBin, repoName);
 
 			string csproj = Path.Combine(demoRoot, "MusicStore.csproj");
 			return csproj;
