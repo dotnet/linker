@@ -58,7 +58,7 @@ namespace ILLink.Tests
 		{
 			int ret;
 			string dotnetDirName = ".dotnet";
-			string dotnetInstall = Path.Combine(repoDir, "dotnet-install");
+			string dotnetInstall = Path.Combine(Path.GetFullPath(repoDir), "dotnet-install");
 			if (context.RuntimeIdentifier.Contains("win")) {
 				dotnetInstall += ".ps1";
 			} else {
@@ -70,12 +70,12 @@ namespace ILLink.Tests
 			}
 
 			if (context.RuntimeIdentifier.Contains("win")) {
-				ret = RunCommand(dotnetInstall, $"-SharedRuntime -InstallDir {dotnetDirName} -Channel master -Architecture x64 -Version {runtimeVersion}", repoDir);
+				ret = RunCommand("powershell", $"{dotnetInstall} -SharedRuntime -InstallDir {dotnetDirName} -Channel master -Architecture x64 -Version {runtimeVersion}", repoDir);
 				if (ret != 0) {
 					output.WriteLine("failed to retrieve shared runtime");
 					Assert.True(false);
 				}
-				ret = RunCommand(dotnetInstall, $"-InstallDir {dotnetDirName} -Channel master -Architecture x64 -Version {sdkVersion}", repoDir);
+				ret = RunCommand("powershell", $"{dotnetInstall} -InstallDir {dotnetDirName} -Channel master -Architecture x64 -Version {sdkVersion}", repoDir);
 				if (ret != 0) {
 					output.WriteLine("failed to retrieve sdk");
 					Assert.True(false);
