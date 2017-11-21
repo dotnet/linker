@@ -60,7 +60,7 @@ if ($LastExitCode -ne 0)
     exit $LastExitCode
 }
 
-echo "{ `"sdk`": { `"version`": `"$dotNetCliVersion`" { }" > $globalJson
+"{ `"sdk`": { `"version`": `"$dotNetCliVersion`" } }" | Out-File -Encoding utf8 -FilePath $globalJson
 
 # write semaphore file
 copy $rootCliVersion $bootstrapComplete
