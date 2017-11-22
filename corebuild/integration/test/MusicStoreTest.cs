@@ -31,6 +31,9 @@ namespace ILLink.Tests
 		// musicstore.
 		private static string sdkVersion = "2.2.0-preview1-007525";
 
+		// The version of Microsoft.AspNetCore.All to publish with.
+		private static string aspNetVersion = "2.1.0-preview1-27654";
+
 		[Fact]
 		public void RunMusicStore()
 		{
@@ -51,6 +54,7 @@ namespace ILLink.Tests
 
 			Dictionary<string, string> extraPublishArgs = new Dictionary<string, string>();
 			extraPublishArgs.Add("JITBENCH_FRAMEWORK_VERSION", runtimeVersion);
+			extraPublishArgs.Add("JITBENCH_ASPNET_VERSION", aspNetVersion);
 			BuildAndLink(csproj, rootFiles, extraPublishArgs);
 
 			int ret = RunApp(csproj, out string commandOutput);
