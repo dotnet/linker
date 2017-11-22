@@ -15,6 +15,14 @@
         </type> 
     </assembly>
 
+    <assembly fullname="System.Text.RegularExpressions">
+        <type fullname="System.Text.RegularExpressions.RegexRunner" required="true" />
+    </assembly>
+
+    <assembly fullname="System.Net.Sockets">
+        <type fullname="System.Net.Sockets.Socket/CachedTaskEventArgs" required="true" />
+    </assembly>
+
     <assembly fullname="System.ComponentModel.TypeConverter">
         <!-- Called by System.RuntimeTypeHandle.CreateInstance -->
         <type fullname="System.ComponentModel.StringConverter" required="true" >

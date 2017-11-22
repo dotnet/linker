@@ -52,6 +52,12 @@ namespace ILLink.Tests
 			Dictionary<string, string> extraPublishArgs = new Dictionary<string, string>();
 			extraPublishArgs.Add("JITBENCH_FRAMEWORK_VERSION", runtimeVersion);
 			BuildAndLink(csproj, rootFiles, extraPublishArgs);
+
+			int ret = RunApp(csproj, out string commandOutput);
+			Assert.True(commandOutput.Contains("Starting request to http://localhost:5000"));
+			Assert.True(commandOutput.Contains("Response: OK"));
+			Assert.True(commandOutput.Contains("Running 100 requests"));
+			Assert.True(ret == 0);
 		}
 
 		string ObtainSDK(string rootDir, string repoDir)
