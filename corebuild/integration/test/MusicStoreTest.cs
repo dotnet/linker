@@ -81,7 +81,7 @@ namespace ILLink.Tests
 					Assert.True(false);
 				}
 			} else {
-                            ret = RunCommand(dotnetInstall, $"-sharedruntime -runtimeid {context.RuntimeIdentifier} -installdir {dotnetDirName} -channel master -architecture x64 -version {runtimeVersion}", rootDir);
+				ret = RunCommand(dotnetInstall, $"-sharedruntime -runtimeid {context.RuntimeIdentifier} -installdir {dotnetDirName} -channel master -architecture x64 -version {runtimeVersion}", rootDir);
 				if (ret != 0) {
 					output.WriteLine("failed to retrieve shared runtime");
 					Assert.True(false);
@@ -104,7 +104,7 @@ namespace ILLink.Tests
 				Assert.True(false);
 			}
 
-			string globalJson = Path.Combine(rootDir, "global.json");
+			string globalJson = Path.Combine(repoDir, "global.json");
 			string globalJsonContents = "{ \"sdk\": { \"version\": \"" + sdkVersion + "\" } }\n";
 			File.WriteAllText(globalJson, globalJsonContents);
 
