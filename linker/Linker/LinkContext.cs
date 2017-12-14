@@ -129,6 +129,8 @@ namespace Mono.Linker {
 
 		public MarkingHelpers MarkingHelpers { get; private set; }
 
+		public Dependencies Dependencies { get; }
+
 		public LinkContext (Pipeline pipeline)
 			: this (pipeline, new AssemblyResolver ())
 		{
@@ -138,20 +140,20 @@ namespace Mono.Linker {
 			: this(pipeline, resolver, new ReaderParameters
 			{
 				AssemblyResolver = resolver
-			},
-			new AnnotationStore ())
+			})
 		{
 		}
 
-		public LinkContext (Pipeline pipeline, AssemblyResolver resolver, ReaderParameters readerParameters, AnnotationStore annotations)
+		public LinkContext (Pipeline pipeline, AssemblyResolver resolver, ReaderParameters readerParameters)
 		{
 			_pipeline = pipeline;
 			_resolver = resolver;
 			_actions = new Dictionary<string, AssemblyAction> ();
 			_parameters = new Dictionary<string, string> ();
-			_annotations = annotations;
+			_annotations = CreateAnnotations ();
 			_readerParameters = readerParameters;
 			MarkingHelpers = CreateMarkingHelpers ();
+			Dependencies = CreateDependencies ();
 		}
 
 		public TypeDefinition GetType (string fullName)
@@ -334,6 +336,16 @@ namespace Mono.Linker {
 		protected virtual MarkingHelpers CreateMarkingHelpers ()
 		{
 			return new MarkingHelpers (this);
+		}
+
+		protected virtual Dependencies CreateDependencies ()
+		{
+			return new Dependencies (this);
+		}
+
+		protected virtual AnnotationStore CreateAnnotations ()
+		{
+			return new AnnotationStore (this);
 		}
 	}
 }

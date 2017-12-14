@@ -101,7 +101,7 @@ namespace Mono.Linker.Steps
 			var action = rootVisibility == RootVisibility.Any ? AssemblyAction.Copy : AssemblyAction.Link;
 			SetAction (context, assembly, action);
 
-			context.Annotations.Push (assembly);
+			context.Dependencies.Push (assembly);
 
 			foreach (TypeDefinition type in assembly.MainModule.Types)
 				MarkType (context, type, rootVisibility);
@@ -148,7 +148,7 @@ namespace Mono.Linker.Steps
 				}
 			}
 
-			context.Annotations.Pop ();
+			context.Dependencies.Pop ();
 		}
 
 		static void MarkType (LinkContext context, TypeDefinition type, RootVisibility rootVisibility)
@@ -174,7 +174,7 @@ namespace Mono.Linker.Steps
 
 			context.Annotations.Mark (type);
 
-			context.Annotations.Push (type);
+			context.Dependencies.Push (type);
 
 			if (type.HasFields)
 				MarkFields (context, type.Fields, rootVisibility);
@@ -184,20 +184,20 @@ namespace Mono.Linker.Steps
 				foreach (var nested in type.NestedTypes)
 					MarkType (context, nested, rootVisibility);
 
-			context.Annotations.Pop ();
+			context.Dependencies.Pop ();
 		}
 
 		void ProcessExecutable (AssemblyDefinition assembly)
 		{
 			SetAction (Context, assembly, AssemblyAction.Link);
 
-			Annotations.Push (assembly);
+			Dependencies.Push (assembly);
 
 			Annotations.Mark (assembly.EntryPoint.DeclaringType);
 
 			MarkMethod (Context, assembly.EntryPoint, MethodAction.Parse, RootVisibility.Any);
 
-			Annotations.Pop ();
+			Dependencies.Pop ();
 		}
 
 		static void MarkFields (LinkContext context, Collection<FieldDefinition> fields, RootVisibility rootVisibility)

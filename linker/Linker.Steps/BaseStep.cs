@@ -44,6 +44,8 @@ namespace Mono.Linker.Steps {
 
 		public MarkingHelpers MarkingHelpers => _context.MarkingHelpers;
 
+		public Dependencies Dependencies => _context.Dependencies;
+
 		public void Process (LinkContext context)
 		{
 			_context = context;
