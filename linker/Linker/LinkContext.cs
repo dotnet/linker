@@ -149,6 +149,7 @@ namespace Mono.Linker {
 			_resolver = resolver;
 			_actions = new Dictionary<string, AssemblyAction> ();
 			_parameters = new Dictionary<string, string> ();
+			_userAction = AssemblyAction.Link;
 			_annotations = annotations;
 			_readerParameters = readerParameters;
 			MarkingHelpers = CreateMarkingHelpers ();
