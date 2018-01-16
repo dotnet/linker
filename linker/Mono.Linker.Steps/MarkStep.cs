@@ -1215,7 +1215,7 @@ namespace Mono.Linker.Steps {
 				if (!includeStatic && field.IsStatic)
 					continue;
 
-				if (markBackingFieldsOnlyIfPropertyMarked && field.Name.EndsWith (">k__BackingField")) {
+				if (markBackingFieldsOnlyIfPropertyMarked && field.Name.EndsWith (">k__BackingField", StringComparison.Ordinal)) {
 					// We can't reliably construct the expected property name from the backing field name for all compilers
 					// because csc shortens the name of the backing field in some cases
 					// For example:
@@ -1234,8 +1234,12 @@ namespace Mono.Linker.Steps {
 		static PropertyDefinition SearchPropertiesForMatchingFieldDefinition (FieldDefinition field)
 		{
 			foreach (var property in field.DeclaringType.Properties) {
-				foreach (var ins in property.GetMethod.Body.Instructions) {
-					if (ins.Operand != null && ins.Operand == field)
+				var instr = property.GetMethod?.Body?.Instructions;
+				if (instr == null)
+					continue;
+
+				foreach (var ins in instr) {
+					if (ins?.Operand == field)
 						return property;
 				}
 			}
