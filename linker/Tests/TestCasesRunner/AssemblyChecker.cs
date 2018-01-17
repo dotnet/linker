@@ -222,26 +222,22 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 					Assert.Fail ($"Event `{src}' should have been removed");
 
 				return;
-			} else {
-				var keptBackingFieldAttribute = src.CustomAttributes
-					.FirstOrDefault (attr => attr.AttributeType.Name == nameof (KeptBackingFieldAttribute));
-
-				// If we have KeepBackingFieldAttribute set, 
-				// then we expect having 'add' and 'remove' accessors marked as 'kept' implicitly.
-				if (keptBackingFieldAttribute != null)
-				{
-					VerifyMethodInternal (src.AddMethod, linked.AddMethod, true);
-					verifiedEventMethods.Add (src.AddMethod.FullName);
-					linkedMembers.Remove (src.AddMethod.FullName);
-
-					VerifyMethodInternal (src.RemoveMethod, linked.RemoveMethod, true);
-					verifiedEventMethods.Add (src.RemoveMethod.FullName);
-					linkedMembers.Remove (src.RemoveMethod.FullName);
-				}
 			}
 
 			if (linked == null)
 				Assert.Fail ($"Event `{src}' should have been kept");
+
+			if (src.CustomAttributes.Any (attr => attr.AttributeType.Name == nameof (KeptEventAddMethodAttribute))) {
+				VerifyMethodInternal (src.AddMethod, linked.AddMethod, true);
+				verifiedEventMethods.Add (src.AddMethod.FullName);
+				linkedMembers.Remove (src.AddMethod.FullName);
+			}
+
+			if (src.CustomAttributes.Any (attr => attr.AttributeType.Name == nameof (KeptEventRemoveMethodAttribute))) {
+				VerifyMethodInternal (src.RemoveMethod, linked.RemoveMethod, true);
+				verifiedEventMethods.Add (src.RemoveMethod.FullName);
+				linkedMembers.Remove (src.RemoveMethod.FullName);
+			}
 
 			Assert.AreEqual (src?.Attributes, linked?.Attributes, $"Event `{src}' attributes");
 
