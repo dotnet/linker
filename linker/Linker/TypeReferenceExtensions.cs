@@ -28,7 +28,7 @@ namespace Mono.Linker
 
 			var genericInstance = type as GenericInstanceType;
 			if (genericInstance != null) {
-				var baseType = type.Resolve ().BaseType;
+				var baseType = type.Resolve ()?.BaseType;
 				var baseTypeGenericInstance = baseType as GenericInstanceType;
 
 				if (baseTypeGenericInstance != null)
@@ -37,14 +37,14 @@ namespace Mono.Linker
 				return baseType;
 			}
 
-			return type.Resolve ().BaseType;
+			return type.Resolve ()?.BaseType;
 		}
 
 		public static IEnumerable<TypeReference> GetInflatedInterfaces (this TypeReference typeRef)
 		{
 			var typeDef = typeRef.Resolve ();
 
-			if (!typeDef.HasInterfaces)
+			if ((typeDef == null) || !typeDef.HasInterfaces)
 				yield break;
 
 			var genericInstance = typeRef as GenericInstanceType;
@@ -166,7 +166,7 @@ namespace Mono.Linker
 		{
 			var typeDef = type.Resolve ();
 
-			if (!typeDef.HasMethods)
+			if ((typeDef == null) || !typeDef.HasMethods)
 				yield break;
 
 			var genericInstanceType = type as GenericInstanceType;
