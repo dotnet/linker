@@ -281,6 +281,11 @@
       <_ManagedAssembliesToLink Include="@(IntermediateAssembly)" />
       <_ManagedAssembliesToLink Include="@(_ManagedResolvedAssembliesToPublish)" />
     </ItemGroup>
+    <ItemGroup Condition=" '$(SelfContained)' != 'true' ">
+      <!-- Portable publish: need to supply the linker with any needed reference assemblies as well -->
+      <_ReferencedLibraries Include="@(ReferencePath->'%(ResolvedPath)')" Exclude="@(_ManagedAssembliesToLink)" />
+      <_ManagedAssembliesToLink Include="@(_ReferencedLibraries)" />
+    </ItemGroup>
   </Target>
 
 
@@ -363,7 +368,7 @@
   </Target>
 
   <UsingTask TaskName="CheckEmbeddedRootDescriptor" AssemblyFile="$(LinkTaskDllPath)" />
-  <Target Name="_CheckSystemPrivateCorelibEmbeddedRoots"
+  <Target Name="_CheckSystemPrivateCorelibEmbeddedRoots" Condition=" '$(SelfContained)' == 'true' "
           DependsOnTargets="_ComputeManagedAssembliesToLink">
     <CheckEmbeddedRootDescriptor AssemblyPath="@(_ManagedAssembliesToLink->WithMetadataValue('Filename', 'System.Private.CoreLib'))">
       <Output TaskParameter="HasEmbeddedRootDescriptor" PropertyName="_SPCHasEmbeddedRootDescriptor" />
@@ -373,13 +378,20 @@
   <!-- Platform libraries are the managed runtime assets needed by the
        "platform", currently Microsoft.NETCore.App. -->
   <UsingTask TaskName="GetRuntimeLibraries" AssemblyFile="$(LinkTaskDllPath)" />
-  <Target Name="_ComputePlatformLibraries">
-    <GetRuntimeLibraries AssetsFilePath="$(ProjectAssetsFile)"
+  <Target Name="_ComputePlatformLibraries"
+          DependsOnTargets="_ComputeManagedAssembliesToLink">
+    <GetRuntimeLibraries Condition=" '$(SelfContained)' == 'true' "
+                         AssetsFilePath="$(ProjectAssetsFile)"
                          TargetFramework="$(TargetFrameworkMoniker)"
                          RuntimeIdentifier="$(RuntimeIdentifier)"
                          PackageNames="$(MicrosoftNETPlatformLibrary)">
       <Output TaskParameter="RuntimeLibraries" ItemName="PlatformLibraries" />
     </GetRuntimeLibraries>
+    <ItemGroup Condition=" '$(SelfContained)' != 'true' ">
+      <!-- Portable publish: computed referenced-not-published set in _ComputeManagedAssembliesToLink -->
+      <PlatformLibraries Include="@(_ReferencedLibraries)" />
+    </ItemGroup>
+    <!-- Message Text="Jobu: @(PlatformLibraries)" Importance="High" / -->
   </Target>
 
 
