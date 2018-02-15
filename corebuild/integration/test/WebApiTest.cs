@@ -8,11 +8,21 @@ namespace ILLink.Tests
 {
 	public class WebApiTest : IntegrationTestBase
 	{
-		public WebApiTest(ITestOutputHelper output) : base(output) {}
+		private string csproj;
+
+		public WebApiTest(ITestOutputHelper output) : base(output) {
+			csproj = SetupProject();
+		}
 
 		public string SetupProject()
 		{
 			string projectRoot = "webapi";
+			string csproj = Path.Combine(projectRoot, $"{projectRoot}.csproj");
+
+			if (File.Exists(csproj)) {
+				output.WriteLine($"using existing project {csproj}");
+				return csproj;
+			}
 
 			if (Directory.Exists(projectRoot)) {
 				Directory.Delete(projectRoot, true);
@@ -25,7 +35,10 @@ namespace ILLink.Tests
 				Assert.True(false);
 			}
 
-			string csproj = Path.Combine(projectRoot, $"{projectRoot}.csproj");
+			PreventPublishFiltering(csproj);
+
+			AddLinkerReference(csproj);
+
 			return csproj;
 		}
 
@@ -51,12 +64,6 @@ namespace ILLink.Tests
 		[Fact]
 		public void RunWebApi()
 		{
-			string csproj = SetupProject();
-
-			PreventPublishFiltering(csproj);
-
-			AddLinkerReference(csproj);
-
 			BuildAndLink(csproj);
 
 			string terminatingOutput = "Now listening on: http://localhost:5000";
