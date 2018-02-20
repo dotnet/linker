@@ -64,10 +64,10 @@ namespace ILLink.Tests
 		[Fact]
 		public void RunWebApi()
 		{
-			BuildAndLink(csproj);
+			string target = BuildAndLink(csproj);
 
 			string terminatingOutput = "Now listening on: http://localhost:5000";
-			int ret = RunApp(csproj, out string commandOutput, 60000, terminatingOutput);
+			int ret = RunApp(target, out string commandOutput, 60000, terminatingOutput);
 			Assert.True(commandOutput.Contains("Application started. Press Ctrl+C to shut down."));
 			Assert.True(commandOutput.Contains(terminatingOutput));
 		}
