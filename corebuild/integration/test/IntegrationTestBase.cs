@@ -68,7 +68,7 @@ namespace ILLink.Tests
 		{
 			string demoRoot = Path.GetDirectoryName(csproj);
 
-			string publishArgs = $"publish -r {rid} -c {config} /v:n /p:ShowLinkerSizeComparison=true";
+			string publishArgs = $"publish -c {context.Configuration} /v:n /p:ShowLinkerSizeComparison=true";
 			if (selfContained) {
 				publishArgs += $" -r {context.RuntimeIdentifier}";
 			}
