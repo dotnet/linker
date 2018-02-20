@@ -32,17 +32,17 @@ namespace ILLink.Tests
 		// The version of Microsoft.AspNetCore.All to publish with.
 		private static string aspNetVersion = "2.1.0-preview1-27654";
 
-		private static Dictionary<string, string> extraPublishArgs;
-		private static Dictionary<string, string> ExtraPublishArgs
+		private static Dictionary<string, string> versionPublishArgs;
+		private static Dictionary<string, string> VersionPublishArgs
 		{
 			get {
-				if (extraPublishArgs != null) {
-					return extraPublishArgs;
+				if (versionPublishArgs != null) {
+					return versionPublishArgs;
 				}
-				extraPublishArgs = new Dictionary<string, string>();
-				extraPublishArgs.Add("JITBENCH_FRAMEWORK_VERSION", runtimeVersion);
-				extraPublishArgs.Add("JITBENCH_ASPNET_VERSION", aspNetVersion);
-				return extraPublishArgs;
+				versionPublishArgs = new Dictionary<string, string>();
+				versionPublishArgs.Add("JITBENCH_FRAMEWORK_VERSION", runtimeVersion);
+				versionPublishArgs.Add("JITBENCH_ASPNET_VERSION", aspNetVersion);
+				return versionPublishArgs;
 			}
 		}
 
@@ -60,14 +60,16 @@ namespace ILLink.Tests
 		[Fact]
 		public void RunMusicStoreStandalone()
 		{
-			string executablePath = BuildAndLink(csproj, rootFiles, ExtraPublishArgs, selfContained: true);
+			string executablePath = BuildAndLink(csproj, rootFiles, VersionPublishArgs, selfContained: true);
 			CheckOutput(executablePath, selfContained: true);
 		}
 
 		[Fact]
 		public void RunMusicStorePortable()
 		{
-			string target = BuildAndLink(csproj, rootFiles, ExtraPublishArgs, selfContained: false);
+			Dictionary<string, string> extraPublishArgs = new Dictionary<string, string>(VersionPublishArgs);
+			extraPublishArgs.Add("PublishWithAspNetCoreTargetManifest", "false");
+			string target = BuildAndLink(csproj, null, extraPublishArgs, selfContained: false);
 			CheckOutput(target, selfContained: false);
 		}
 
