@@ -62,12 +62,23 @@ namespace ILLink.Tests
 		}
 
 		[Fact]
-		public void RunWebApi()
+		public void RunWebApiStandalone()
 		{
-			string target = BuildAndLink(csproj);
+			string executablePath = BuildAndLink(csproj, selfContained: true);
+			CheckOutput(executablePath, selfContained: true);
+		}
 
+		[Fact]
+		public void RunWebApiPortable()
+		{
+			string target = BuildAndLink(csproj, selfContained: false);
+			CheckOutput(target, selfContained: false);
+		}
+
+		void CheckOutput(string target, bool selfContained = false)
+		{
 			string terminatingOutput = "Now listening on: http://localhost:5000";
-			int ret = RunApp(target, out string commandOutput, 60000, terminatingOutput);
+			int ret = RunApp(target, out string commandOutput, 60000, terminatingOutput, selfContained: selfContained);
 			Assert.True(commandOutput.Contains("Application started. Press Ctrl+C to shut down."));
 			Assert.True(commandOutput.Contains(terminatingOutput));
 		}
