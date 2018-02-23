@@ -40,6 +40,8 @@ namespace Mono.Linker {
 #endif
 
 		readonly Dictionary<string, AssemblyDefinition> _assemblies;
+		readonly HashSet<string> _unresolvedAssemblies;
+		bool _ignoreUnresolved = false;
 
 		public IDictionary<string, AssemblyDefinition> AssemblyCache {
 			get { return _assemblies; }
@@ -53,14 +55,32 @@ namespace Mono.Linker {
 		public AssemblyResolver (Dictionary<string, AssemblyDefinition> assembly_cache)
 		{
 			_assemblies = assembly_cache;
+                        _unresolvedAssemblies = new HashSet<string>();
+		}
+
+		public bool IgnoreUnresolved
+		{
+			get { return _ignoreUnresolved; }
+			set { _ignoreUnresolved = value; }
 		}
 
 		public override AssemblyDefinition Resolve (AssemblyNameReference name, ReaderParameters parameters)
 		{
-			AssemblyDefinition asm;
-			if (!_assemblies.TryGetValue (name.Name, out asm)) {
-				asm = base.Resolve (name, parameters);
-				_assemblies [asm.Name.Name] = asm;
+			AssemblyDefinition asm = null;
+			if (!_assemblies.TryGetValue (name.Name, out asm) && !_unresolvedAssemblies.Contains (name.Name)) {
+				try
+				{
+					asm = base.Resolve (name, parameters);
+					_assemblies [name.Name] = asm;
+				}
+				catch (AssemblyResolutionException)
+				{
+					if (!_ignoreUnresolved) {
+						throw;
+					}
+					Console.WriteLine($"warning: unresolved assembly {name.Name}");
+					_unresolvedAssemblies.Add (name.Name);
+				}
 			}
 
 			return asm;
@@ -80,6 +100,7 @@ namespace Mono.Linker {
 			}
 
 			_assemblies.Clear ();
+			_unresolvedAssemblies.Clear ();
 		}
 	}
 }

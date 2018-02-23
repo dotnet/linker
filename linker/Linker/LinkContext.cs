@@ -104,7 +104,10 @@ namespace Mono.Linker {
 		public bool IgnoreUnresolved
 		{
 			get { return _ignoreUnresolved; }
-			set { _ignoreUnresolved = value; }
+			set {
+				_ignoreUnresolved = value;
+				_resolver.IgnoreUnresolved = value;
+			}
 		}
 
 		public bool EnableReducedTracing { get; set; }
@@ -208,7 +211,7 @@ namespace Mono.Linker {
 			try {
 				AssemblyDefinition assembly = _resolver.Resolve (reference, _readerParameters);
 
-				if (SeenFirstTime (assembly)) {
+				if (assembly != null && SeenFirstTime (assembly)) {
 					SafeReadSymbols (assembly);
 					SetAction (assembly);
 				}
@@ -248,11 +251,9 @@ namespace Mono.Linker {
 		{
 			List<AssemblyDefinition> references = new List<AssemblyDefinition> ();
 			foreach (AssemblyNameReference reference in assembly.MainModule.AssemblyReferences) {
-				try {
-					references.Add (Resolve (reference));
-				}
-				catch (AssemblyResolutionException) {
-				}
+				AssemblyDefinition definition = Resolve (reference);
+				if (definition != null)
+					references.Add (definition);
 			}
 			return references;
 		}
