@@ -106,7 +106,9 @@ namespace Mono.Linker {
 							Usage ("Option is too short");
 
 						if (token == "--skip-unresolved") {
-							context.IgnoreUnresolved = bool.Parse (GetParam ());
+							bool ignoreUnresolved = bool.Parse (GetParam ());
+							context.IgnoreUnresolved = ignoreUnresolved;
+							context.Resolver.IgnoreUnresolved = ignoreUnresolved;
 							continue;
 						}
 

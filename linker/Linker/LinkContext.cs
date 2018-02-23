@@ -104,10 +104,7 @@ namespace Mono.Linker {
 		public bool IgnoreUnresolved
 		{
 			get { return _ignoreUnresolved; }
-			set {
-				_ignoreUnresolved = value;
-				_resolver.IgnoreUnresolved = value;
-			}
+			set { _ignoreUnresolved = value; }
 		}
 
 		public bool EnableReducedTracing { get; set; }
@@ -161,6 +158,7 @@ namespace Mono.Linker {
 		{
 			_pipeline = pipeline;
 			_resolver = resolver;
+			_resolver.Context = this;
 			_actions = new Dictionary<string, AssemblyAction> ();
 			_parameters = new Dictionary<string, string> ();
 			_readerParameters = readerParameters;
