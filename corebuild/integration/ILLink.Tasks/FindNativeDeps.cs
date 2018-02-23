@@ -21,7 +21,7 @@ namespace ILLink.Tasks
 
 		/// <summary>
 		///   The set of native dependencies to keep even if they
-		///   aren't found to be referenced by a managed assembly..
+		///   aren't found to be referenced by a managed assembly.
 		/// </summary>
 		public ITaskItem [] NativeDepsToKeep { get; set; }
 
@@ -45,11 +45,12 @@ namespace ILLink.Tasks
 		public override bool Execute ()
 		{
 			var allNativeNames = new HashSet<string> ();
-			foreach (var nativeDep in NativeDepsPaths) {
-				var fileName = Path.GetFileName (nativeDep.ItemSpec);
-				allNativeNames.Add (fileName);
-			}
+			foreach (var nativeDep in NativeDepsPaths)
+				allNativeNames.Add (Path.GetFileName (nativeDep.ItemSpec));
 			var keptNativeNames = new HashSet<string> ();
+			foreach (var nativeDep in NativeDepsToKeep)
+				keptNativeNames.Add (Path.GetFileName (nativeDep.ItemSpec));
+
 			var managedAssemblies = ManagedAssemblyPaths.Select (i => i.ItemSpec).ToArray ();
 			foreach (string managedAssembly in managedAssemblies) {
 				using (var peReader = new PEReader(new FileStream (managedAssembly, FileMode.Open, FileAccess.Read, FileShare.Read))) {
