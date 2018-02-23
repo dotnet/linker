@@ -44,16 +44,13 @@ namespace ILLink.Tasks
 
 		public override bool Execute()
 		{
-			var allNative = new Dictionary<string, ITaskItem> ();
-			foreach (var n in NativeDepsPaths)
+			var allNativeNames = new HashSet<string> ();
+			foreach (var nativeDep in NativeDepsPaths)
 			{
-				var fileName = Path.GetFileName(n.ItemSpec);
-				if (!allNative.ContainsKey(fileName))
-				{
-					allNative.Add(fileName, n);
-				}
+				var fileName = Path.GetFileName(nativeDep.ItemSpec);
+				allNativeNames.Add(fileName);
 			}
-			var keptNative = new List<ITaskItem> ();
+			var keptNativeNames = new HashSet<string> ();
 			var managedAssemblies = ManagedAssemblyPaths.Select (i => i.ItemSpec).ToArray();
 			foreach (string managedAssembly in managedAssemblies)
 			{
@@ -69,38 +66,36 @@ namespace ILLink.Tasks
 
 							var moduleRefCandidates = new[] { moduleName, moduleName + ".dll", moduleName + ".so", moduleName + ".dylib" };
 
-							ITaskItem referencedNativeFile = null;
+							bool foundModuleRef = false;
 							foreach (string moduleRefCandidate in moduleRefCandidates)
 							{
-								if (allNative.TryGetValue (moduleRefCandidate, out referencedNativeFile))
+								if (allNativeNames.Contains (moduleRefCandidate))
 								{
-									break;
+									keptNativeNames.Add (moduleRefCandidate);
+									foundModuleRef = true;
 								}
 							}
 
-							if (referencedNativeFile != null)
+							if (!foundModuleRef)
 							{
-								keptNative.Add(referencedNativeFile);
-							}
-							else
-							{
-								// DLLImport that wasn't satisfied
-								Log.LogMessage(MessageImportance.High, "unsatisfied DLLImport: " + managedAssembly + " -> " + moduleName);
+								Log.LogMessage("unsatisfied DLLImport: " + managedAssembly + " -> " + moduleName);
 							}
 						}
 					}
 				}
 			}
 
-			foreach (var n in NativeDepsToKeep)
+			var keptNativeDeps = new List<ITaskItem> ();
+			foreach (var nativeDep in NativeDepsPaths)
 			{
-				ITaskItem nativeFile = null;
-				if (allNative.TryGetValue (n.ItemSpec, out nativeFile))
+				var fileName = Path.GetFileName (nativeDep.ItemSpec);
+				if (keptNativeNames.Contains (fileName))
 				{
-					keptNative.Add(nativeFile);
+					keptNativeDeps.Add (nativeDep);
 				}
 			}
-			KeptNativeDepsPaths = keptNative.ToArray();
+
+			KeptNativeDepsPaths = keptNativeDeps.ToArray ();
 			return true;
 		}
 	}
