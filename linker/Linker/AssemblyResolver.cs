@@ -103,7 +103,8 @@ namespace Mono.Linker {
 			}
 
 			_assemblies.Clear ();
-			_unresolvedAssemblies.Clear ();
+			if (_unresolvedAssemblies != null)
+				_unresolvedAssemblies.Clear ();
 		}
 	}
 }
