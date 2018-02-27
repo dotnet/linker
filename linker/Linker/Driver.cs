@@ -112,8 +112,12 @@ namespace Mono.Linker {
 							continue;
 						}
 
-						if (token == "--dependencies-file")
-						{
+                                                if (token == "--log-messages") {
+                                                    context.LogMessages = true;
+                                                    continue;
+                                                }
+
+						if (token == "--dependencies-file") {
 							context.Tracer.DependenciesFileName = GetParam ();
 							continue;
 						}
@@ -130,11 +134,6 @@ namespace Mono.Linker {
 
 						if (token == "--used-attrs-only") {
 							context.KeepUsedAttributeTypesOnly = bool.Parse (GetParam ());
-							continue;
-						}
-
-						if (token == "--log-warnings") {
-							context.LogInternalExceptions = true;
 							continue;
 						}
 
@@ -351,7 +350,7 @@ namespace Mono.Linker {
 			Console.WriteLine ("   --about             About the {0}", _linker);
 			Console.WriteLine ("   --version           Print the version number of the {0}", _linker);
 			Console.WriteLine ("   --skip-unresolved   Ignore unresolved types, methods, and assemblies (true or false)");
-			Console.WriteLine ("   --log-warnings      Log warnings for internal exceptions");
+			Console.WriteLine ("   --log-messages      Log messages indicating progress and warnings");
 			Console.WriteLine ("   --dependencies-file Specify the dependencies file path, if unset the default path is used: <output directory>/linker-dependencies.xml.gz");
 			Console.WriteLine ("   --dump-dependencies Dump dependencies for the linker analyzer tool");
 			Console.WriteLine ("   --reduced-tracing   Reduces dependency output related to assemblies that will not be modified");
