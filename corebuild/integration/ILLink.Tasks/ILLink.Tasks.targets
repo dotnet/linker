@@ -285,9 +285,8 @@
     <!-- Portable publish: need to supply the linker with any needed
          reference assemblies as well.
 
-         We want to exclude assemblies that are going to be published
-         with the app. Sometimes assemblies have separate reference
-         and implementation assemblies. In these cases, prefer the
+         Sometimes assemblies have separate reference and
+         implementation assemblies. In these cases, prefer the
          implementation assembly, and prevent inclusion of the ref
          assembly by filtering on filename instead of the full
          path. -->

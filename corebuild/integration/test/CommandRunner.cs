@@ -67,7 +67,7 @@ namespace ILLink.Tests
 				RedirectStandardOutput = true,
 				RedirectStandardError = true,
 			};
-                        outputHelper.WriteLine($"from caller working directory {Environment.CurrentDirectory}");
+			outputHelper.WriteLine($"caller working directory: {Environment.CurrentDirectory}");
 			if (!String.IsNullOrEmpty(args)) {
 				psi.Arguments = args;
 				outputHelper.WriteLine($"{command} {args}");
