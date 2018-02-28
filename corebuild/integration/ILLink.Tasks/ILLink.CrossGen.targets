@@ -208,8 +208,6 @@
       <FilesToCrossGen Include="@(_PlatformLibrariesForCrossGen)" />
     </ItemGroup>
 
-    <Error Text="System.Private.CoreLib should already be crossgen compiled."
-           Condition=" '%(FilesToCrossGen.Filename)' == 'System.Private.CoreLib' " />
   </Target>
 
   <UsingTask TaskName="ComputeReadyToRunAssemblies" AssemblyFile="$(LinkTaskDllPath)" />
