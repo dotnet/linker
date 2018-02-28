@@ -232,17 +232,6 @@
       <Output TaskParameter="AssemblyPathsWithActions" ItemName="_ManagedAssembliesToLinkWithActions" />
     </SetAssemblyActions>
 
-    <!-- For System.Private.CoreLib, we set the action to skip if it
-         doesn't have an embedded root descriptor. This prevents it
-         from being analyzed, but it can still potentially be modified
-         and output by the linker if it needs to add the
-         BypassNGenAttribute. -->
-    <ItemGroup Condition=" '$(_SPCHasEmbeddedRootDescriptor)' != 'true' ">
-      <_ManagedAssembliesToLinkWithActions Condition=" '%(Filename)' == 'System.Private.CoreLib' ">
-        <action>skip</action>
-      </_ManagedAssembliesToLinkWithActions>
-    </ItemGroup>
-
     <ItemGroup>
       <_ManagedAssembliesToLink Remove="@(_ManagedAssembliesToLink)" />
       <_ManagedAssembliesToLink Include="@(_ManagedAssembliesToLinkWithActions)" />
