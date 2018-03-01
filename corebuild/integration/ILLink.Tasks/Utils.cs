@@ -2,7 +2,7 @@ using System;
 using Mono.Cecil;
 using Mono.Linker;
 
-public class Utils
+public static class Utils
 {
 	public static bool IsManagedAssembly (string fileName)
 	{
@@ -18,7 +18,7 @@ public class Utils
 	{
 		try {
 			ModuleDefinition module = ModuleDefinition.ReadModule (fileName);
-			return AssemblyUtilities.IsReadyToRun (module);
+			return module.IsReadyToRun ();
 		} catch (BadImageFormatException) {
 			return false;
 		}

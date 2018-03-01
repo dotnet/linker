@@ -96,7 +96,7 @@ namespace Mono.Linker.Steps {
 		{
 			foreach (var module in assembly.Modules) {
 				// Write back pure IL even for R2R assemblies
-				if (AssemblyUtilities.IsReadyToRun (module)) {
+				if (module.IsReadyToRun ()) {
 					module.Attributes |= ModuleAttributes.ILOnly;
 					module.Attributes ^= ModuleAttributes.ILLibrary;
 					module.Architecture = CalculateArchitecture (module.Architecture);
