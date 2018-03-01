@@ -14,11 +14,11 @@ public static class Utils
 		}
 	}
 
-	public static bool IsReadyToRunAssembly (string fileName)
+	public static bool IsCrossgenedAssembly (string fileName)
 	{
 		try {
 			ModuleDefinition module = ModuleDefinition.ReadModule (fileName);
-			return module.IsReadyToRun ();
+			return module.IsCrossgened ();
 		} catch (BadImageFormatException) {
 			return false;
 		}

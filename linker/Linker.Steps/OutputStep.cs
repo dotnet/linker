@@ -95,8 +95,8 @@ namespace Mono.Linker.Steps {
 		protected virtual void WriteAssembly (AssemblyDefinition assembly, string directory, WriterParameters writerParameters)
 		{
 			foreach (var module in assembly.Modules) {
-				// Write back pure IL even for R2R assemblies
-				if (module.IsReadyToRun ()) {
+				// Write back pure IL even for crossgen-ed assemblies
+				if (module.IsCrossgened ()) {
 					module.Attributes |= ModuleAttributes.ILOnly;
 					module.Attributes ^= ModuleAttributes.ILLibrary;
 					module.Architecture = CalculateArchitecture (module.Architecture);

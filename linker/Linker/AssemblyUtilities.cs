@@ -5,7 +5,7 @@ namespace Mono.Linker {
 
 	public static class AssemblyUtilities {
 
-		public static bool IsReadyToRun (this ModuleDefinition module)
+		public static bool IsCrossgened (this ModuleDefinition module)
 		{
 			return (module.Attributes & ModuleAttributes.ILOnly) == 0 &&
 				(module.Attributes & ModuleAttributes.ILLibrary) != 0;
