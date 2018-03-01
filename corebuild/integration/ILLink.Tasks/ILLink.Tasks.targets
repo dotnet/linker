@@ -205,6 +205,11 @@
       <Output TaskParameter="CrossgenedAssemblies" ItemName="_OriginalLinkedAssembliesThatWereCrossgened" />
     </ComputeCrossgenedAssemblies>
 
+    <!-- Ideally, we would remember which assemblies were R2R and
+         which were fragile crossgen-ed, and do the same after
+         linking. Currently this makes no difference because
+         System.Private.CoreLib is the only fragile image, and it
+         can't be ready-to-run crossgen-ed. -->
     <ItemGroup>
       <_LinkedAssembliesToCrossgen Include="@(_OriginalLinkedAssembliesThatWereCrossgened->'$(IntermediateLinkDir)/%(Filename)%(Extension)')" />
       <FilesToCrossgen Include="@(_LinkedAssembliesToCrossgen)" />
