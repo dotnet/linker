@@ -214,7 +214,7 @@
 
   <UsingTask TaskName="SetAssemblyActions" AssemblyFile="$(LinkTaskDllPath)" />
   <Target Name="_SetAssemblyActions"
-          DependsOnTargets="_ComputeManagedAssembliesToLink;_ComputePlatformLibraries;_CheckSystemPrivateCorelibEmbeddedRoots">
+          DependsOnTargets="_ComputeManagedAssembliesToLink;_ComputePlatformLibraries">
 
     <ItemGroup>
       <_PlatformAssembliesToLink Include="@(PlatformLibraries->'%(Filename)')" />
@@ -391,7 +391,7 @@
        be part of the build step or pack step, OR pack could be made
        to work on the publish output. -->
   <Target Name="_ComputeLinkerRootAssemblies"
-          DependsOnTargets="_ComputeManagedResolvedAssembliesToPublish;_ComputePlatformLibraries">
+          DependsOnTargets="_ComputeManagedResolvedAssembliesToPublish;_ComputePlatformLibraries;_CheckSystemPrivateCorelibEmbeddedRoots">
     <!-- If RootAllApplicationAssemblies is true, roots are everything
          minus the framework assemblies. This doesn't include the
          intermediate assembly, because we root it separately using an
@@ -412,6 +412,11 @@
     <ItemGroup Condition=" '$(RootAllApplicationAssemblies)' == 'false' ">
       <LinkerRootAssemblies Include="@(IntermediateAssembly)" />
     </ItemGroup>
+
+    <ItemGroup Condition=" '$(_SPCHasEmbeddedRootDescriptor)' != 'true' ">
+      <LinkerRootAssemblies Include="@(_ManagedResolvedAssembliesToPublish->'%(Filename)'" Condition=" '%(Filename)' == 'System.Private.CoreLib' " />
+    </ItemGroup>
+
   </Target>
 
   <UsingTask TaskName="CheckEmbeddedRootDescriptor" AssemblyFile="$(LinkTaskDllPath)" />
