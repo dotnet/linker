@@ -1,5 +1,6 @@
 using System;
 using Mono.Cecil;
+using Mono.Linker;
 
 public class Utils
 {
@@ -17,8 +18,7 @@ public class Utils
 	{
 		try {
 			ModuleDefinition module = ModuleDefinition.ReadModule (fileName);
-			return (module.Attributes & ModuleAttributes.ILOnly) == 0 &&
-				(module.Attributes & (ModuleAttributes) 0x04) != 0;
+			return AssemblyUtilities.IsReadyToRun (module);
 		} catch (BadImageFormatException) {
 			return false;
 		}

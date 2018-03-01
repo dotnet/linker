@@ -87,12 +87,6 @@ namespace Mono.Linker.Steps {
 			OutputAssembly (assembly);
 		}
 
-		static bool IsReadyToRun (ModuleDefinition module)
-		{
-			return (module.Attributes & ModuleAttributes.ILOnly) == 0 &&
-				(module.Attributes & (ModuleAttributes) 0x04) != 0;
-		}
-
 		protected void WriteAssembly (AssemblyDefinition assembly, string directory)
 		{
 			WriteAssembly (assembly, directory, SaveSymbols (assembly));
@@ -102,9 +96,9 @@ namespace Mono.Linker.Steps {
 		{
 			foreach (var module in assembly.Modules) {
 				// Write back pure IL even for R2R assemblies
-				if (IsReadyToRun (module)) {
+				if (AssemblyUtilities.IsReadyToRun (module)) {
 					module.Attributes |= ModuleAttributes.ILOnly;
-					module.Attributes ^= (ModuleAttributes) (uint) 0x04;
+					module.Attributes ^= ModuleAttributes.ILLibrary;
 					module.Architecture = CalculateArchitecture (module.Architecture);
 				}
 			}
