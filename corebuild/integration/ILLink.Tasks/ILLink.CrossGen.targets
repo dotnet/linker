@@ -210,17 +210,17 @@
 
   </Target>
 
-  <UsingTask TaskName="ComputeReadyToRunAssemblies" AssemblyFile="$(LinkTaskDllPath)" />
+  <UsingTask TaskName="ComputeCrossgenedAssemblies" AssemblyFile="$(LinkTaskDllPath)" />
   <Target Name="_ComputeFilesToCrossGen"
           DependsOnTargets="_ComputeDefaultFilesToCrossGen">
 
-    <ComputeReadyToRunAssemblies Assemblies="@(FilesToCrossGen)">
-      <Output TaskParameter="ReadyToRunAssemblies" ItemName="_ReadyToRunFiles" />
-    </ComputeReadyToRunAssemblies>
+    <ComputeCrossgenedAssemblies Assemblies="@(FilesToCrossGen)">
+      <Output TaskParameter="CrossgenedAssemblies" ItemName="_CrossgenedFiles" />
+    </ComputeCrossgenedAssemblies>
 
     <!-- Don't try to run crossgen on assemblies that are already R2R. -->
     <ItemGroup>
-      <FilesToCrossGen Remove="@(_ReadyToRunFiles)" />
+      <FilesToCrossGen Remove="@(_CrossgenedFiles)" />
     </ItemGroup>
 
     <Message Text="files to crossgen: @(FilesToCrossGen)" />

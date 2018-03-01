@@ -201,12 +201,12 @@
       <Output TaskParameter="FilteredItems" ItemName="_OriginalLinkedAssemblies" />
     </FilterByMetadata>
 
-    <ComputeReadyToRunAssemblies Assemblies="@(_OriginalLinkedAssemblies)">
-      <Output TaskParameter="ReadyToRunAssemblies" ItemName="_OriginalLinkedAssembliesThatWereCrossgend" />
-    </ComputeReadyToRunAssemblies>
+    <ComputeCrossgenedAssemblies Assemblies="@(_OriginalLinkedAssemblies)">
+      <Output TaskParameter="CrossgenedAssemblies" ItemName="_OriginalLinkedAssembliesThatWereCrossgened" />
+    </ComputeCrossgenedAssemblies>
 
     <ItemGroup>
-      <_LinkedAssembliesToCrossgen Include="@(_OriginalLinkedAssembliesThatWereCrossgend->'$(IntermediateLinkDir)/%(Filename)%(Extension)')" />
+      <_LinkedAssembliesToCrossgen Include="@(_OriginalLinkedAssembliesThatWereCrossgened->'$(IntermediateLinkDir)/%(Filename)%(Extension)')" />
       <FilesToCrossgen Include="@(_LinkedAssembliesToCrossgen)" />
     </ItemGroup>
 
