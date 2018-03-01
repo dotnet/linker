@@ -414,7 +414,7 @@
     </ItemGroup>
 
     <ItemGroup Condition=" '$(_SPCHasEmbeddedRootDescriptor)' != 'true' ">
-      <LinkerRootAssemblies Include="@(_ManagedResolvedAssembliesToPublish->'%(Filename)'" Condition=" '%(Filename)' == 'System.Private.CoreLib' " />
+      <LinkerRootAssemblies Include="@(_ManagedResolvedAssembliesToPublish->'%(Filename)')" Condition=" '%(Filename)' == 'System.Private.CoreLib' " />
     </ItemGroup>
 
   </Target>
