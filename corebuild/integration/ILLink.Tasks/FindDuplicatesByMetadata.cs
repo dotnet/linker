@@ -28,12 +28,19 @@ namespace ILLink.Tasks
 		[Output]
 		public ITaskItem [] DuplicateItems { get; set; }
 
+		/// <summary>
+		///   Duplicate representatives: includes one input
+		///   item from each set of duplicates.
+		/// </summary>
+		[Output]
+		public ITaskItem [] DuplicateRepresentatives { get; set; }
+
 		public override bool Execute ()
 		{
-			DuplicateItems = Items.GroupBy (i => i.GetMetadata(MetadataName))
-				.Where (g => g.Count () > 1)
-				.SelectMany (g => g)
-				.ToArray ();
+			var duplicateGroups = Items.GroupBy (i => i.GetMetadata(MetadataName))
+				.Where (g => g.Count () > 1);
+			DuplicateItems = duplicateGroups.SelectMany (g => g).ToArray ();
+			DuplicateRepresentatives = duplicateGroups.Select (g => g.First ()).ToArray ();
 			return true;
 		}
 	}

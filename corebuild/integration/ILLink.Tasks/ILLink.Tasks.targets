@@ -299,7 +299,7 @@
       <_NativeDepsToAlwaysKeep Include="hostpolicy.dll;libhostpolicy.dylib;libhostpolicy.so" />
     </ItemGroup>
 
-    <FindNativeDeps ManagedAssemblyPaths="@(_ManagedLinkedAssemblies);@(_DuplicateManagedAssemblies)"
+    <FindNativeDeps ManagedAssemblyPaths="@(_ManagedLinkedAssemblies);@(_DuplicateManagedAssembliesToSkip)"
                     NativeDepsPaths="@(_NativeResolvedDepsToPublish)"
                     NativeDepsToKeep="@(_NativeDepsToAlwaysKeep)">
       <Output TaskParameter="KeptNativeDepsPaths" ItemName="_NativeKeptDepsToPublish" />
@@ -326,9 +326,12 @@
     <FindDuplicatesByMetadata Items="@(_ManagedAssembliesToLink)"
                               MetadataName="Filename">
       <Output TaskParameter="DuplicateItems" ItemName="_DuplicateManagedAssemblies" />
+      <Output TaskParameter="DuplicateRepresentatives" ItemName="_DuplicateManagedAssembliesToLink" />
     </FindDuplicatesByMetadata>
     <ItemGroup>
-      <_ManagedAssembliesToLink Remove="@(_DuplicateManagedAssemblies)" />
+      <_DuplicateManagedAssembliesToSkip Include="@(_DuplicateManagedAssemblies)" />
+      <_DuplicateManagedAssembliesToSkip Remove="@(_DuplicateManagedAssembliesToLink)" />
+      <_ManagedAssembliesToLink Remove="@(_DuplicateManagedAssembliesToSkip)" />
     </ItemGroup>
 
     <!-- Portable publish: need to supply the linker with any needed
@@ -422,7 +425,7 @@
     <ItemGroup Condition=" '$(RootAllApplicationAssemblies)' == 'true' ">
       <_LinkerRootAssemblies Include="@(_ManagedResolvedAssembliesToPublish->'%(Filename)')" />
       <_LinkerRootAssemblies Remove="@(PlatformLibraries->'%(Filename)')" />
-      <_LinkerRootAssemblies Remove="@(_DuplicateManagedAssemblies->'%(Filename)')" />
+      <_LinkerRootAssemblies Remove="@(_DuplicateManagedAssembliesToSkip->'%(Filename)')" />
       <LinkerRootAssemblies Include="@(_LinkerRootAssemblies)" />
     </ItemGroup>
 
