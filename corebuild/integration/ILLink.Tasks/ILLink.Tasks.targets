@@ -172,6 +172,7 @@
           DependsOnTargets="_ComputeManagedResolvedAssembliesToPublish;ILLink">
     <ItemGroup>
       <__LinkedResolvedAssemblies Include="@(_ManagedResolvedAssembliesToPublish->'$(IntermediateLinkDir)/%(Filename)%(Extension)')" />
+      <__LinkedResolvedAssemblies Remove="@(_DuplicateManagedAssembliesToSkip->'$(IntermediateLinkDir)/%(Filename)%(Extension)')" />
       <_LinkedResolvedAssemblies Include="@(__LinkedResolvedAssemblies)" Condition="Exists('%(Identity)')" />
     </ItemGroup>
 
