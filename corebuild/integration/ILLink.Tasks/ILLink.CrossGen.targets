@@ -28,8 +28,7 @@
     <ItemGroup>
       <_CrossGenResolvedAssembliesToPublishCandidates Include="@(ResolvedAssembliesToPublish->'$(IntermediateOptimizedDir)/%(Filename)%(Extension)')" />
       <_CrossGenResolvedAssembliesToPublish Include="@(_CrossGenResolvedAssembliesToPublishCandidates)" Condition="Exists('%(Identity)')" />
-      <!-- FilesToCrossGen doesn't contain System.Private.CoreLib, so
-           it will still be published. -->
+
       <ResolvedAssembliesToPublish Remove="@(FilesToCrossGen)" />
       <ResolvedAssembliesToPublish Include="@(_CrossGenResolvedAssembliesToPublish)" />
     </ItemGroup>
