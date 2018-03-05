@@ -502,7 +502,7 @@
           DependsOnTargets="_ComputeManagedResolvedAssembliesToPublish;_ComputeLinkedAssemblies;_FindNativeDeps;_HandlePublishFileConflicts"
           BeforeTargets="GeneratePublishDependencyFile"
           Condition=" '$(LinkDuringPublish)' == 'true' ">
-    <ComputeRemovedAssemblies InputAssemblies="@(_ManagedResolvedAssembliesToPublish)"
+    <ComputeRemovedAssemblies InputAssemblies="@(_ManagedAssembliesToLink)"
                               KeptAssemblies="@(_LinkedResolvedAssemblies)">
       <Output TaskParameter="RemovedAssemblies" ItemName="_RemovedManagedAssemblies" />
     </ComputeRemovedAssemblies>
