@@ -95,7 +95,7 @@
     <!-- Rewrite ResolvedAssembliesToPublish, which is an input to
          ComputeFilesToPublish. -->
     <ItemGroup>
-      <ResolvedAssembliesToPublish Remove="@(_ManagedResolvedAssembliesToPublish)" />
+      <ResolvedAssembliesToPublish Remove="@(_ManagedAssembliesToLink)" />
       <ResolvedAssembliesToPublish Remove="@(_NativeResolvedDepsToPublish)" />
       <ResolvedAssembliesToPublish Include="@(_NativeKeptDepsToPublish)" />
       <ResolvedAssembliesToPublish Include="@(_LinkedResolvedAssemblies)" />
@@ -299,7 +299,7 @@
       <_NativeDepsToAlwaysKeep Include="hostpolicy.dll;libhostpolicy.dylib;libhostpolicy.so" />
     </ItemGroup>
 
-    <FindNativeDeps ManagedAssemblyPaths="@(_ManagedLinkedAssemblies)"
+    <FindNativeDeps ManagedAssemblyPaths="@(_ManagedLinkedAssemblies);@(_DuplicateManagedAssemblies)"
                     NativeDepsPaths="@(_NativeResolvedDepsToPublish)"
                     NativeDepsToKeep="@(_NativeDepsToAlwaysKeep)">
       <Output TaskParameter="KeptNativeDepsPaths" ItemName="_NativeKeptDepsToPublish" />
@@ -310,11 +310,25 @@
   <!-- Computes the managed assemblies that are input to the
        linker. Includes managed assemblies from
        ResolvedAssembliesToPublish, and IntermediateAssembly. -->
+  <UsingTask TaskName="FindDuplicatesByMetadata" AssemblyFile="$(LinkTaskDllPath)" />
   <Target Name="_ComputeManagedAssembliesToLink"
           DependsOnTargets="_ComputeManagedResolvedAssembliesToPublish">
     <ItemGroup>
       <_ManagedAssembliesToLink Include="@(IntermediateAssembly)" />
       <_ManagedAssembliesToLink Include="@(_ManagedResolvedAssembliesToPublish)" />
+    </ItemGroup>
+
+    <!-- Remove all implementation dlls that have duplicates. This can
+         happen if a portable app has platform-specific managed
+         assemblies. The linker isn't currently able to analyze
+         multiple assemblies with the same identity, so we skip
+         these. -->
+    <FindDuplicatesByMetadata Items="@(_ManagedAssembliesToLink)"
+                              MetadataName="Filename">
+      <Output TaskParameter="DuplicateItems" ItemName="_DuplicateManagedAssemblies" />
+    </FindDuplicatesByMetadata>
+    <ItemGroup>
+      <_ManagedAssembliesToLink Remove="@(_DuplicateManagedAssemblies)" />
     </ItemGroup>
 
     <!-- Portable publish: need to supply the linker with any needed
@@ -408,6 +422,7 @@
     <ItemGroup Condition=" '$(RootAllApplicationAssemblies)' == 'true' ">
       <_LinkerRootAssemblies Include="@(_ManagedResolvedAssembliesToPublish->'%(Filename)')" />
       <_LinkerRootAssemblies Remove="@(PlatformLibraries->'%(Filename)')" />
+      <_LinkerRootAssemblies Remove="@(_DuplicateManagedAssemblies->'%(Filename)')" />
       <LinkerRootAssemblies Include="@(_LinkerRootAssemblies)" />
     </ItemGroup>
 
