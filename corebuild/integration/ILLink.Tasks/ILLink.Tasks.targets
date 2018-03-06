@@ -426,8 +426,13 @@
     <ItemGroup Condition=" '$(RootAllApplicationAssemblies)' == 'true' ">
       <_LinkerRootAssemblies Include="@(_ManagedResolvedAssembliesToPublish->'%(Filename)')" />
       <_LinkerRootAssemblies Remove="@(PlatformLibraries->'%(Filename)')" />
-      <_LinkerRootAssemblies Remove="@(_DuplicateManagedAssembliesToSkip->'%(Filename)')" />
-      <LinkerRootAssemblies Include="@(_LinkerRootAssemblies)" />
+    </ItemGroup>
+    <RemoveDuplicates Inputs="@(_LinkerRootAssemblies)"
+                      Condition=" '$(RootAllApplicationAssemblies)' == 'true' ">
+      <Output TaskParameter="Filtered" ItemName="_UniqueLinkerRootAssemblies" />
+    </RemoveDuplicates>
+    <ItemGroup Condition=" '$(RootAllApplicationAssemblies)' == 'true' ">
+      <LinkerRootAssemblies Include="@(_UniqueLinkerRootAssemblies)" />
     </ItemGroup>
 
     <ItemGroup Condition=" '$(RootAllApplicationAssemblies)' == 'false' ">

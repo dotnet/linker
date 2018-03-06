@@ -37,7 +37,7 @@ namespace ILLink.Tasks
 
 		public override bool Execute ()
 		{
-			var duplicateGroups = Items.GroupBy (i => i.GetMetadata(MetadataName))
+			var duplicateGroups = Items.GroupBy (i => i.GetMetadata (MetadataName))
 				.Where (g => g.Count () > 1);
 			DuplicateItems = duplicateGroups.SelectMany (g => g).ToArray ();
 			DuplicateRepresentatives = duplicateGroups.Select (g => g.First ()).ToArray ();
