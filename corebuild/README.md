@@ -48,14 +48,12 @@ the dll file includes with the following:
 Add a package reference to the linker. Ensure that either the
 [dotnet-core](https://dotnet.myget.org/gallery/dotnet-core) myget feed
 or the path to the locally-built linker package path exists in the
-project's nuget.config.
+project's nuget.config. If using myget, you probably want to ensure
+that you're using the latest version available at
+https://dotnet.myget.org/feed/dotnet-core/package/nuget/ILLink.Tasks.
 
 After adding the package, linking will be turned on during `dotnet
 publish`. The publish output will contain the linked assemblies.
-
-You should make sure to test the publish output before deploying your
-code, because the linker can potentially break apps that use
-reflection.
 
 ## Default behavior
 
@@ -84,6 +82,29 @@ continue to work, with runtime JIT compilation.
 Native dependencies that aren't referenced by any of the kept managed
 assemblies will be removed from the publish output as well.
 
+## Caveats
+
+You should make sure to test the publish output before deploying your
+code, because the linker can potentially break apps that use
+reflection.
+
+The linker does not analyze reflection calls, so any reflection
+targets outside of the kept assemblies will need to be rooted
+explicitly using either `LinkerRootAssemblies` or
+`LinkerRootDescriptors` (see below).
+
+Sometimes an application may include multiple versions of the same
+assembly. This may happen when portable apps include platform-specific
+managed code, which gets placed in the `runtimes` directory of the
+publish output. In such cases, the linker will pick one of the
+duplicate assemblies to analyze. This means that dependencies of the
+un-analyzed duplicates may not be included in the application, so you
+may need to root such dependencies manually.
+
+Native compilation only works when the target platform is the same as
+the host. To use the linker when cross-targeting (building a unix app
+from windows, for example), disable `CrossGenDuringPublish`.
+
 ## Options
 
 The following MSBuild properties can be used to control the behavior
@@ -110,7 +131,7 @@ and
   depends on the value of `RootAllApplicationAssemblies`. Additional
   assemblies can be rooted by adding them to this ItemGroup.
 
-- `LinkerRootDescripotrs` - The set of [xml descriptors](../linker#syntax-of-xml-descriptor)
+- `LinkerRootDescriptors` - The set of [xml descriptors](../linker#syntax-of-xml-descriptor)
   specifying additional roots within assemblies. The default is to
   include a generated descriptor that roots everything in the
   application assembly if `RootAllApplicationAssemblies` is
@@ -134,19 +155,20 @@ and
   be set for each of these groups independently, for assemblies that
   are analyzed as used and as unused, with the following switches:
 
-  - `UsedApplicationAssemblyAction` - The default is to copy any used
+  - `UsedApplicationAssemblyAction` - The default is to `Copy` any used
     application assemblies to the output, leaving them as-is.
-  - `UnusedApplicationAssemblyAction` - The default is to delete (not
+  - `UnusedApplicationAssemblyAction` - The default is to `Delete` (not
     publish) unused application assemblies.
   - `UsedPlatformAssemblyAction` - For self-contained publish, the
-    default is to add the BypassNGenAttribute to unused code in used
-    platform assemblies. This causes the native compilation step to
-    compile only parts of these assemblies that are used. For portable
-    publish, the default is to skip these, because the platform
-    assemblies are generally not published with the app.
+    default is `AddBypassNGen`, which will add the BypassNGenAttribute
+    to unused code in used platform assemblies. This causes the native
+    compilation step to compile only parts of these assemblies that
+    are used. For portable publish, the default is to `Skip` these,
+    because the platform assemblies are generally not published with
+    the app.
   - `UnusedPlatformAssemblyAction` - For self-contained publish, the
-    default is to delete (not publish) unused platform assemblies. For
-    portable publish, the default is to skip.
+    default is to `Delete` (not publish) unused platform
+    assemblies. For portable publish, the default is to `Skip`.
 
   The full list of assembly actions is described in
   [AssemblyAction.cs](../linker/Linker/AssemblyAction.cs) Some
