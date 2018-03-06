@@ -319,11 +319,11 @@
       <_ManagedAssembliesToLink Include="@(_ManagedResolvedAssembliesToPublish)" />
     </ItemGroup>
 
-    <!-- Remove all implementation dlls that have duplicates. This can
-         happen if a portable app has platform-specific managed
-         assemblies. The linker isn't currently able to analyze
-         multiple assemblies with the same identity, so we skip
-         these. -->
+    <!-- Remove duplicate implementation dlls. This can happen if a
+         portable app has platform-specific managed assemblies. The
+         linker isn't currently able to analyze multiple assemblies
+         with the same identity, so we skip these, keeping only one
+         representative assembly from each set of duplicates. -->
     <FindDuplicatesByMetadata Items="@(_ManagedAssembliesToLink)"
                               MetadataName="Filename">
       <Output TaskParameter="DuplicateItems" ItemName="_DuplicateManagedAssemblies" />
