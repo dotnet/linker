@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Mono.Cecil;
 using Mono.Linker.Tests.TestCases;
 using NUnit.Framework;
@@ -20,6 +21,8 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 				string ignoreReason;
 				if (metadataProvider.IsIgnored (out ignoreReason))
 					Assert.Ignore (ignoreReason);
+				
+				Console.WriteLine ($"Running : {testCase.ReconstructedFullTypeName}");
 
 				var sandbox = Sandbox (testCase, metadataProvider);
 				var compilationResult = Compile (sandbox, metadataProvider);
