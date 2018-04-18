@@ -179,7 +179,7 @@ namespace Mono.Linker {
 		public TypeDefinition GetType (string fullName)
 		{
 			int pos = fullName.IndexOf (",");
-			fullName = fullName.Replace ("+", "/");
+			fullName = TypeReferenceExtensions.ToCecilName (fullName);
 			if (pos == -1) {
 				foreach (AssemblyDefinition asm in GetAssemblies ()) {
 					var type = asm.MainModule.GetType (fullName);
