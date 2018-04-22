@@ -280,7 +280,24 @@ namespace Mono.Linker.Steps {
 
 		protected virtual void MarkUserDependency (MethodReference context, CustomAttribute ca)
 		{
-			if (ca.ConstructorArguments.Count == 1 && ca.ConstructorArguments[0].Value is string dependency) {
+			var args = ca.ConstructorArguments;
+			if (args.Count == 2 && args[1].Value is string condition) {
+				switch (condition) {
+				case "":
+				case null:
+					break;
+				case "DEBUG":
+					if (!_context.KeepMembersForDebugger)
+						return;
+
+					break;
+				default:
+					// Don't have yet a way to match the general condition so everything is excluded
+					return;
+				}
+			}
+
+			if (args.Count >= 1 && args[0].Value is string dependency) {
 				string member = null;
 				string type = null;
 				string[] signature = null;
@@ -1006,7 +1023,7 @@ namespace Mono.Linker.Steps {
 
 		void MarkTypeWithDebuggerDisplayAttribute (TypeDefinition type, CustomAttribute attribute)
 		{
-			if (_context.KeepMembersForDebuggerAttributes) {
+			if (_context.KeepMembersForDebugger) {
 
 				string displayString = (string) attribute.ConstructorArguments[0].Value;
 
@@ -1060,7 +1077,7 @@ namespace Mono.Linker.Steps {
 
 		void MarkTypeWithDebuggerTypeProxyAttribute (TypeDefinition type, CustomAttribute attribute)
 		{
-			if (_context.KeepMembersForDebuggerAttributes) {
+			if (_context.KeepMembersForDebugger) {
 				object constructorArgument = attribute.ConstructorArguments[0].Value;
 				TypeReference proxyTypeReference = constructorArgument as TypeReference;
 				if (proxyTypeReference == null) {

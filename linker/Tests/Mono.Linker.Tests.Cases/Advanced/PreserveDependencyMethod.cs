@@ -7,6 +7,8 @@ namespace Mono.Linker.Tests.Cases.Advanced {
 		{
 			B.Method ();
 			B.SameContext ();
+			B.Broken ();
+			B.Conditional ();
 		}
 
 		class B
@@ -36,10 +38,17 @@ namespace Mono.Linker.Tests.Cases.Advanced {
 			{
 			}
 
+			[Kept]
 			[PreserveDependency ("Mono.Linker.Tests.Cases.Advanced.C.Missing")]
 			[PreserveDependency ("Mono.Linker.Tests.Cases.Advanced.C.Dependency2`1 (T, System.Int32, System.Object)")]
 			[PreserveDependency ("")]
 			public static void Broken ()
+			{
+			}
+
+			[Kept]
+			[PreserveDependency ("Mono.Linker.Tests.Cases.Advanced.C.ConditionalTest()", "don't have it")]
+			public static void Conditional ()
 			{
 			}
 		}
@@ -69,6 +78,10 @@ namespace Mono.Linker.Tests.Cases.Advanced {
 
 		[Kept]
 		internal void Dependency2<T> (T[] arg1, int arg2)
+		{
+		}
+
+		internal void ConditionalTest ()
 		{
 		}
 	}

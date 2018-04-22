@@ -32,5 +32,9 @@ namespace System.LinkerServices {
 		public PreserveDependencyAttribute (string metadataSignature)
 		{
 		}
+
+		public PreserveDependencyAttribute (string metadataSignature, string condition)
+		{
+		}
 	}
 }
