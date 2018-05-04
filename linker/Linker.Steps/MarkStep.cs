@@ -1736,16 +1736,21 @@ namespace Mono.Linker.Steps {
 				var typeAssemblyQualifiedName = OperandOfNearestInstructionBefore<string> (i, OpCodes.Ldstr, instructions);
 
 				//We're not going to support preserving generic types yet
-				if (typeAssemblyQualifiedName == null || typeAssemblyQualifiedName.Contains ("`"))
+				if (typeAssemblyQualifiedName == null || typeAssemblyQualifiedName.IndexOf ('`') >= 0)
 					continue;
 
 				//Filter the assembly qualified name down to the basic type by removing pointer, reference, and array markers on the type
 				//We must also convert nested types from + to / to match cecil's formatting
 				typeAssemblyQualifiedName = typeAssemblyQualifiedName
-					.Replace ("+", "/")
+					.Replace ('+', '/')
 					.Replace ("*", string.Empty)
 					.Replace ("&", string.Empty);
-				typeAssemblyQualifiedName = Regex.Replace (typeAssemblyQualifiedName, @"\[(.*?)\]", string.Empty);
+
+				while (typeAssemblyQualifiedName.Contains ('[')) {
+					var openidx = typeAssemblyQualifiedName.IndexOf ('[');
+					var closeidx = typeAssemblyQualifiedName.IndexOf (']');
+					typeAssemblyQualifiedName = typeAssemblyQualifiedName.Remove (openidx, closeidx + 1 - openidx);
+				}
 
 				var tokens = typeAssemblyQualifiedName.Split (',');
 				var typeName = tokens [0].Trim ();
@@ -1759,7 +1764,10 @@ namespace Mono.Linker.Steps {
 
 					var type = assemblyDefinition.MainModule.GetType (typeName);
 					if (type != null)
-						MarkType (type);
+					{
+						MarkType(type);
+						break;
+					}
 				}
 				_context.Tracer.Pop ();
 			}
