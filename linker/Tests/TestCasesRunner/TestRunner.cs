@@ -19,7 +19,7 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 
 				string ignoreReason;
 				if (metadataProvider.IsIgnored (out ignoreReason))
-					Assert.Ignore (ignoreReason);
+					Assert.Pass (ignoreReason);
 
 				var sandbox = Sandbox (testCase, metadataProvider);
 				var compilationResult = Compile (sandbox, metadataProvider);
