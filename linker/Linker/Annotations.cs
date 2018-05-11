@@ -28,6 +28,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text;
 
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -85,7 +86,13 @@ namespace Mono.Linker {
 			if (assembly_actions.TryGetValue (assembly, out action))
 				return action;
 
-			throw new NotSupportedException ();
+			var sb = new StringBuilder();
+
+			sb.Append($"assembly: {assembly.FullName}, no action found for this.\n");
+			foreach (var asmDef in assembly_actions.Keys)
+				sb.Append($"   asmDef {asmDef.FullName} -> action {assembly_actions[asmDef]}\n");
+
+			throw new NotSupportedException (sb.ToString());
 		}
 
 		public MethodAction GetAction (MethodDefinition method)
