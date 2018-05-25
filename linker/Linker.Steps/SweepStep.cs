@@ -179,7 +179,8 @@ namespace Mono.Linker.Steps {
 					continue;
 
 				ReferenceRemoved (assembly, reference);
-				references.RemoveAt (i);
+				// removal from `references` requires an adjustment to `i`
+				references.RemoveAt (i--);
 				// Removing the reference does not mean it will be saved back to disk!
 				// That depends on the AssemblyAction set for the `assembly`
 				switch (Annotations.GetAction (assembly)) {
@@ -208,8 +209,6 @@ namespace Mono.Linker.Steps {
 					}
 					break;
 				}
-				// earlier removal from `references` requires an adjustment
-				i--;
 			}
 		}
 
