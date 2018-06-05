@@ -343,14 +343,14 @@
          implementation assembly, and prevent inclusion of the ref
          assembly by filtering on filename instead of the full
          path. -->
-    <FilterByMetadata Items="@(ReferencePath->'%(ResolvedPath)')"
+    <FilterByMetadata Items="@(ReferencePath)"
                       MetadataName="Filename"
                       MetadataValues="@(_ManagedAssembliesToLink->'%(Filename)')"
                       Condition=" '$(SelfContained)' != 'true' ">
       <Output TaskParameter="FilteredItems" ItemName="_ReferencedLibrariesToExclude" />
     </FilterByMetadata>
     <ItemGroup Condition=" '$(SelfContained)' != 'true' ">
-      <_ReferencedLibraries Include="@(ReferencePath->'%(ResolvedPath)')" Exclude="@(_ReferencedLibrariesToExclude)" />
+      <_ReferencedLibraries Include="@(ReferencePath)" Exclude="@(_ReferencedLibrariesToExclude)" />
       <_ManagedAssembliesToLink Include="@(_ReferencedLibraries)" />
     </ItemGroup>
 
