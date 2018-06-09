@@ -26,7 +26,7 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-namespace System.LinkerServices {
+namespace System.Runtime.CompilerServices {
 	[AttributeUsage (AttributeTargets.Method | AttributeTargets.Constructor, AllowMultiple = true)]
 	public sealed class PreserveDependencyAttribute : Attribute {
 		public PreserveDependencyAttribute (string metadataSignature)

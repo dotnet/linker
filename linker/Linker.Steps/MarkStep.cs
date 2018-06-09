@@ -275,7 +275,7 @@ namespace Mono.Linker.Steps {
 		protected virtual bool IsUserDependencyMarker (TypeReference type)
 		{
 			return type.Name == "PreserveDependencyAttribute" &&
-				       type.Namespace == "System.LinkerServices";
+				       type.Namespace == "System.Runtime.CompilerServices";
 		}
 
 		protected virtual void MarkUserDependency (MethodReference context, CustomAttribute ca)
@@ -346,7 +346,7 @@ namespace Mono.Linker.Steps {
 				if (MarkDependencyField (td, member))
 					return;
 
-				_context.Logger.LogMessage (MessageImportance.Low, $"Could not resolve dependency member '{member}' declared in type '{dependency}'");
+				_context.Logger.LogMessage (MessageImportance.High, $"Could not resolve dependency member '{member}' declared in type '{dependency}'");
 			}
 		}
 
