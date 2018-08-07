@@ -29,6 +29,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Microsoft.Win32;
 using Mono.Cecil;
 
 namespace Mono.Linker {
@@ -56,6 +57,12 @@ namespace Mono.Linker {
 		public AssemblyResolver (Dictionary<string, AssemblyDefinition> assembly_cache)
 		{
 			_assemblies = assembly_cache;
+
+			if (Environment.OSVersion.Platform == PlatformID.Win32NT) {
+				var directory = GetWindowsMetadataReferenceDirectory ();
+				if (Directory.Exists (directory))
+					AddSearchDirectory (directory);
+			}
 		}
 
 		public bool IgnoreUnresolved {
@@ -87,6 +94,22 @@ namespace Mono.Linker {
 			}
 
 			return asm;
+		}
+		
+		private static string GetSdkDirectory ()
+		{
+			var key = Registry.LocalMachine.OpenSubKey (@"SOFTWARE\Wow6432Node\Microsoft\Microsoft SDKs\Windows\v10.0");
+			if (key == null)
+				return null;
+			return ((string) key.GetValue ("InstallationFolder"));
+		}
+
+		private static string GetWindowsMetadataReferenceDirectory ()
+		{
+			var sdk = GetSdkDirectory ();
+			if (sdk == null)
+				return null;
+			return Path.Combine (sdk, "UnionMetadata");
 		}
 
 		public virtual AssemblyDefinition CacheAssembly (AssemblyDefinition assembly)
