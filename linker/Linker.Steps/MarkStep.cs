@@ -460,6 +460,9 @@ namespace Mono.Linker.Steps {
 				case "System.ThreadStaticAttribute":
 				case "System.ContextStaticAttribute":
 					return true;
+				case "System.Runtime.InteropServices.InterfaceTypeAttribute":
+				case "System.Runtime.InteropServices.GuidAttribute":
+					return !_context.IsFeatureExcluded ("com");
 				}
 				
 				if (!Annotations.IsMarked (attr_type.Resolve ()))
