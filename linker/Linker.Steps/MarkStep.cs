@@ -815,6 +815,7 @@ namespace Mono.Linker.Steps {
 			MarkType (field.FieldType);
 			MarkCustomAttributes (field);
 			MarkMarshalSpec (field);
+			DoAdditionalFieldProcessing (field);
 
 			Annotations.Mark (field);
 		}
@@ -930,8 +931,23 @@ namespace Mono.Linker.Steps {
 		{
 		}
 
-		// Allow subclassers to mark additional things when marking a method
-		protected virtual void DoAdditionalTypeProcessing (TypeDefinition method)
+		// Allow subclassers to mark additional things
+		protected virtual void DoAdditionalTypeProcessing (TypeDefinition type)
+		{
+		}
+		
+		// Allow subclassers to mark additional things
+		protected virtual void DoAdditionalFieldProcessing (FieldDefinition field)
+		{
+		}
+
+		// Allow subclassers to mark additional things
+		protected virtual void DoAdditionalPropertyProcessing (PropertyDefinition property)
+		{
+		}
+
+		// Allow subclassers to mark additional things
+		protected virtual void DoAdditionalEventProcessing (EventDefinition evt)
 		{
 		}
 
@@ -1744,6 +1760,7 @@ namespace Mono.Linker.Steps {
 		protected void MarkProperty (PropertyDefinition prop)
 		{
 			MarkCustomAttributes (prop);
+			DoAdditionalPropertyProcessing (prop);
 		}
 
 		protected virtual void MarkEvent (EventDefinition evt)
@@ -1752,6 +1769,7 @@ namespace Mono.Linker.Steps {
 			MarkMethodIfNotNull (evt.AddMethod);
 			MarkMethodIfNotNull (evt.InvokeMethod);
 			MarkMethodIfNotNull (evt.RemoveMethod);
+			DoAdditionalEventProcessing (evt);
 		}
 
 		void MarkMethodIfNotNull (MethodReference method)
