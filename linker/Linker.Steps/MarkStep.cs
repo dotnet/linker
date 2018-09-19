@@ -813,6 +813,12 @@ namespace Mono.Linker.Steps {
 			MarkMarshalSpec (field);
 			DoAdditionalFieldProcessing (field);
 
+			var parent = reference.DeclaringType.Resolve ();
+			if (parent.IsBeforeFieldInit && !Annotations.HasPreservedStaticCtor (parent)) {
+				if (MarkMethodIf (parent.Methods, IsStaticConstructor))
+					Annotations.SetPreservedStaticCtor (parent);
+			}
+
 			Annotations.Mark (field);
 		}
 
@@ -907,7 +913,10 @@ namespace Mono.Linker.Steps {
 
 			if (type.HasMethods) {
 				MarkMethodsIf (type.Methods, IsVirtualAndHasPreservedParent);
-				MarkMethodsIf (type.Methods, IsStaticConstructor);
+				if (!type.IsBeforeFieldInit) {
+					if (MarkMethodIf (type.Methods, IsStaticConstructor))
+						Annotations.SetPreservedStaticCtor (type);
+				}
 				MarkMethodsIf (type.Methods, HasSerializationAttribute);
 			}
 
@@ -1235,6 +1244,18 @@ namespace Mono.Linker.Steps {
 			foreach (MethodDefinition method in methods)
 				if (predicate (method))
 					MarkMethod (method);
+		}
+
+		protected bool MarkMethodIf (Collection<MethodDefinition> methods, Func<MethodDefinition, bool> predicate)
+		{
+			foreach (MethodDefinition method in methods) {
+				if (predicate (method)) {
+					MarkMethod (method);
+					return true;
+				}
+			}
+
+			return false;
 		}
 
 		static bool IsDefaultConstructor (MethodDefinition method)
