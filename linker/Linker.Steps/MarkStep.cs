@@ -465,6 +465,11 @@ namespace Mono.Linker.Steps {
 			return true;
 		}
 
+		protected virtual bool ShoulMarkTypeConstructor (TypeDefinition type)
+		{
+			return !type.IsBeforeFieldInit;
+		}
+
 		protected virtual bool ShouldMarkTopLevelCustomAttribute (AttributeProviderPair app, MethodDefinition resolvedConstructor)
 		{
 			var ca = app.Attribute;
@@ -913,10 +918,10 @@ namespace Mono.Linker.Steps {
 
 			if (type.HasMethods) {
 				MarkMethodsIf (type.Methods, IsVirtualAndHasPreservedParent);
-				if (!type.IsBeforeFieldInit) {
-					if (MarkMethodIf (type.Methods, IsStaticConstructor))
-						Annotations.SetPreservedStaticCtor (type);
-				}
+
+				if (ShoulMarkTypeConstructor (type) && MarkMethodIf (type.Methods, IsStaticConstructor))
+					Annotations.SetPreservedStaticCtor (type);
+
 				MarkMethodsIf (type.Methods, HasSerializationAttribute);
 			}
 
