@@ -467,7 +467,7 @@ namespace Mono.Linker.Steps {
 
 		protected virtual bool ShoulMarkTypeConstructor (TypeDefinition type)
 		{
-			return !type.IsBeforeFieldInit;
+			return !type.IsBeforeFieldInit && _context.IsOptimizationEnabled (CodeOptimizations.BeforeFieldInit);
 		}
 
 		protected virtual bool ShouldMarkTopLevelCustomAttribute (AttributeProviderPair app, MethodDefinition resolvedConstructor)
@@ -819,7 +819,7 @@ namespace Mono.Linker.Steps {
 			DoAdditionalFieldProcessing (field);
 
 			var parent = reference.DeclaringType.Resolve ();
-			if (parent.IsBeforeFieldInit && !Annotations.HasPreservedStaticCtor (parent)) {
+			if (parent.IsBeforeFieldInit && !Annotations.HasPreservedStaticCtor (parent) && _context.IsOptimizationEnabled (CodeOptimizations.BeforeFieldInit)) {
 				if (MarkMethodIf (parent.Methods, IsStaticConstructor))
 					Annotations.SetPreservedStaticCtor (parent);
 			}
