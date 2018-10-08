@@ -1459,10 +1459,12 @@ namespace Mono.Linker.Steps {
 				MarkMethods (type);
 				break;
 			case TypePreserve.Fields:
-				MarkFields (type, true, true);
+				if (!MarkFields (type, true, true))
+					_context.LogMessage ($"Type {type.FullName} has no fields to preserve");
 				break;
 			case TypePreserve.Methods:
-				MarkMethods (type);
+				if (!MarkMethods (type))
+					_context.LogMessage ($"Type {type.FullName} has no methods to preserve");
 				break;
 			}
 		}
@@ -1485,10 +1487,10 @@ namespace Mono.Linker.Steps {
 			MarkMethodCollection (list);
 		}
 
-		protected void MarkFields (TypeDefinition type, bool includeStatic, bool markBackingFieldsOnlyIfPropertyMarked = false)
+		protected bool MarkFields (TypeDefinition type, bool includeStatic, bool markBackingFieldsOnlyIfPropertyMarked = false)
 		{
 			if (!type.HasFields)
-				return;
+				return false;
 
 			foreach (FieldDefinition field in type.Fields) {
 				if (!includeStatic && field.IsStatic)
@@ -1508,6 +1510,8 @@ namespace Mono.Linker.Steps {
 				}
 				MarkField (field);
 			}
+
+			return true;
 		}
 
 		static PropertyDefinition SearchPropertiesForMatchingFieldDefinition (FieldDefinition field)
@@ -1537,10 +1541,13 @@ namespace Mono.Linker.Steps {
 			}
 		}
 
-		protected virtual void MarkMethods (TypeDefinition type)
+		protected virtual bool MarkMethods (TypeDefinition type)
 		{
-			if (type.HasMethods)
-				MarkMethodCollection (type.Methods);
+			if (!type.HasMethods)
+				return false;
+
+			MarkMethodCollection (type.Methods);
+			return true;
 		}
 
 		void MarkMethodCollection (IList<MethodDefinition> methods)
