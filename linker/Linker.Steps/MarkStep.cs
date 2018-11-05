@@ -1429,7 +1429,7 @@ namespace Mono.Linker.Steps {
 				if (argument_definition == null)
 					continue;
 
-				MarkMethodsIf (argument_definition.Methods, ctor => !ctor.IsStatic && !ctor.HasParameters);
+				MarkDefaultConstructor (argument_definition);
 			}
 		}
 
