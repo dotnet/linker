@@ -54,6 +54,7 @@ namespace Mono.Linker {
 		protected readonly HashSet<CustomAttribute> marked_attributes = new HashSet<CustomAttribute> ();
 		readonly HashSet<TypeDefinition> marked_types_with_cctor = new HashSet<TypeDefinition> ();
 		protected readonly HashSet<TypeDefinition> marked_instantiated = new HashSet<TypeDefinition> ();
+		readonly HashSet<MethodDefinition> needs_caller_assembly = new HashSet<MethodDefinition> ();
 
 		public AnnotationStore (LinkContext context) => this.context = context;
 
@@ -350,5 +351,14 @@ namespace Mono.Linker {
 			return marked_types_with_cctor.Add (type);
 		}
 
+		public bool NeedsCallerAssembly (MethodDefinition method)
+		{
+			return needs_caller_assembly.Contains (method);
+		}
+
+		public void SetNeedsCallerAssembly (MethodDefinition method)
+		{
+			needs_caller_assembly.Add (method);
+		}
 	}
 }

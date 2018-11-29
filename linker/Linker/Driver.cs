@@ -295,6 +295,10 @@ namespace Mono.Linker {
 					}
 				}
 
+#if WASM
+				p.AddStepAfter (typeof (CleanStep), new WebAssembly.Linker.Steps.NeedsCallerAssemblyStep ());
+#endif
+
 				try {
 					p.Process (context);
 				}

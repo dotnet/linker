@@ -1923,6 +1923,29 @@ namespace Mono.Linker.Steps {
 				MarkInstruction (instruction);
 
 			MarkThingsUsedViaReflection (body);
+
+#if WASM
+			//
+			// Remember methods which need access to the caller's
+			// assembly
+			//
+			foreach (VariableDefinition var in body.Variables) {
+				if (var.VariableType.Name == "StackCrawlMark")
+					Annotations.SetNeedsCallerAssembly (body.Method);
+			}
+
+			// It would be nicer to do this in a separate pass but
+			// iterating over IL twice is too slow
+			foreach (Instruction instruction in body.Instructions) {
+				switch (instruction.OpCode.OperandType) {
+				case OperandType.InlineMethod:
+					var m = (MethodReference) instruction.Operand;
+					if (m.Name == "GetCallingAssembly" && m.DeclaringType.Name == "Assembly")
+						Annotations.SetNeedsCallerAssembly (body.Method);
+					break;
+				}
+			}
+#endif
 		}
 
 		protected virtual void MarkThingsUsedViaReflection (MethodBody body)
