@@ -28,7 +28,7 @@
 
 using System;
 using System.Collections.Generic;
-
+using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
@@ -355,5 +355,9 @@ namespace Mono.Linker {
 			return marked_types_with_cctor.Add (type);
 		}
 
+		public List<TypeDefinition> GetMarkedTypes ()
+		{
+			return marked.Where (m => m is TypeDefinition).Cast<TypeDefinition> ().ToList ();
+		}
 	}
 }

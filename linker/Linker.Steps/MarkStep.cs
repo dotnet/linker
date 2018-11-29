@@ -46,6 +46,7 @@ namespace Mono.Linker.Steps {
 		protected Queue<AttributeProviderPair> _assemblyLevelAttributes;
 		protected Queue<AttributeProviderPair> _lateMarkedAttributes;
 		protected List<TypeDefinition> _typesWithInterfaces;
+		protected List<ActivatorCreateInstanceMarkingInformation> _activatorCreateInstanceTypes;
 
 		public AnnotationStore Annotations {
 			get { return _context.Annotations; }
@@ -64,6 +65,7 @@ namespace Mono.Linker.Steps {
 			_assemblyLevelAttributes = new Queue<AttributeProviderPair> ();
 			_lateMarkedAttributes = new Queue<AttributeProviderPair> ();
 			_typesWithInterfaces = new List<TypeDefinition> ();
+			_activatorCreateInstanceTypes = new List<ActivatorCreateInstanceMarkingInformation> ();
 		}
 
 		public virtual void Process (LinkContext context)
@@ -185,6 +187,7 @@ namespace Mono.Linker.Steps {
 
 			while (!QueueIsEmpty ()) {
 				ProcessQueue ();
+				ProcessActivatorCreateInstanceType ();
 				ProcessVirtualMethods ();
 				ProcessMarkedTypesWithInterfaces ();
 				DoAdditionalProcessing ();
@@ -224,6 +227,38 @@ namespace Mono.Linker.Steps {
 				Tracer.Push (method);
 				ProcessVirtualMethod (method);
 				Tracer.Pop ();
+			}
+		}
+
+		void ProcessActivatorCreateInstanceType ()
+		{
+			if (_activatorCreateInstanceTypes.Count == 0)
+				return;
+
+			var markedTypes = Annotations.GetMarkedTypes ();
+			foreach (var information in _activatorCreateInstanceTypes) {
+				_context.Tracer.Push (information.CallingBody.Method);
+				try {
+					foreach (var markedType in markedTypes) {
+						if (markedType.DerivesFrom (information.CastType)) {
+							foreach (var ctor in information.ConstructorCollector (markedType, information.DefaultCtorOnly)) {
+								// Note : Ideally we should use a separate table to avoid reprocessing.  The way it's implemented now
+								// we wouldn't record a dependency if a constructor was already marked for some other reason
+								if (Annotations.IsProcessed (ctor))
+									continue;
+
+								_context.Tracer.Push ($"Reflection-ActivatorUsage {ctor}");
+								try {
+									MarkMethod (ctor);
+								} finally {
+									_context.Tracer.Pop ();
+								}
+							}
+						}
+					}
+				} finally {
+					_context.Tracer.Pop ();
+				}
 			}
 		}
 
@@ -1991,6 +2026,7 @@ namespace Mono.Linker.Steps {
 			MarkSomethingUsedViaReflection ("GetField", MarkFieldUsedViaReflection, body.Instructions);
 			MarkSomethingUsedViaReflection ("GetEvent", MarkEventUsedViaReflection, body.Instructions);
 			MarkTypeUsedViaReflection (body.Instructions);
+			MarkActivatorCreateInstance (body);
 		}
 
 		protected virtual void MarkInstruction (Instruction instruction)
@@ -2069,6 +2105,246 @@ namespace Mono.Linker.Steps {
 				return false;
 
 			return true;
+		}
+
+		void MarkActivatorCreateInstance (MethodBody body)
+		{
+			var instructions = body.Instructions;
+			for (var i = 0; i < instructions.Count; i++) {
+				var instruction = instructions [i];
+
+				if (instruction.OpCode != OpCodes.Call && instruction.OpCode != OpCodes.Callvirt)
+					continue;
+
+				var methodBeingCalled = instruction.Operand as MethodReference;
+				if (methodBeingCalled == null)
+					continue;
+
+				if (!BCL.Activator.IsCreateInstance (methodBeingCalled))
+					continue;
+
+				if (BCL.Activator.IsCreateInstanceWithGeneric (methodBeingCalled))
+					MarkCreateInstanceWithGeneric (methodBeingCalled);
+				else if (BCL.Activator.IsCreateInstanceWithType (methodBeingCalled))
+					MarkCreateInstanceWithType (body, methodBeingCalled, instruction);
+				else if (BCL.Activator.IsCreateInstanceWithStringString (methodBeingCalled))
+					MarkCreateInstanceWithStringString (body, methodBeingCalled, instruction);
+				else
+					UnhandledActivatorCreateInstanceUsage (body, methodBeingCalled, instruction);
+			}
+		}
+
+		protected virtual void UnhandledActivatorCreateInstanceUsage (MethodBody body, MethodReference createInstanceMethod, Instruction callInstruction)
+		{
+			// At some point it would be nice to record undetectable reflection usage so that we can report it somehow.
+		}
+
+		protected virtual void MarkCreateInstanceWithGeneric (MethodReference method)
+		{
+			if (method is GenericInstanceMethod genericInstanceMethod) {
+				var resolved = genericInstanceMethod.GenericArguments [0].Resolve ();
+				if (resolved == null)
+					return;
+
+				MarkConstructorsToForActivatorCreateInstanceUsage (resolved, true);
+			}
+		}
+
+		void MarkCreateInstanceWithType (MethodBody callingBody, MethodReference method, Instruction callInstruction)
+		{
+			if (MarkCreationTypeOfCreateInstanceWithType (callingBody, method, callInstruction))
+				return;
+
+			if (MarkCastTypeOfCreateInstanceWithType (callingBody, method, callInstruction))
+				return;
+
+			UnhandledActivatorCreateInstanceUsage (callingBody, method, callInstruction);
+		}
+
+		void MarkCreateInstanceWithStringString (MethodBody callingBody, MethodReference method, Instruction callInstruction)
+		{
+			if (MarkCreationTypeOfCreateInstanceWithStringString (callingBody, method, callInstruction))
+				return;
+
+			if (MarkCastTypeOfCreateInstanceWithStringString (callingBody, method, callInstruction))
+				return;
+
+			UnhandledActivatorCreateInstanceUsage (callingBody, method, callInstruction);
+		}
+
+		/// <summary>
+		/// Note : Extra unused arguments are passed so that derived MarkStep's can try to do more sophisticated detection if they choose
+		/// </summary>
+		/// <param name="callingBody"></param>
+		/// <param name="method"></param>
+		/// <param name="callInstruction"></param>
+		/// <returns></returns>
+		protected virtual bool MarkCreationTypeOfCreateInstanceWithType (MethodBody callingBody, MethodReference method, Instruction callInstruction)
+		{
+			if (method.Parameters.Count == 0 || method.Parameters.Count > 2)
+				return false;
+			//
+			// Expected pattern is
+			// IL_0000: ldtoken Mono.Linker.Tests.Cases.Reflection.Activator.TypeOverload.DetectedByCreationType/Foo
+			// IL_0005: call class [mscorlib]System.Type [mscorlib]System.Type::GetTypeFromHandle(valuetype [mscorlib]System.RuntimeTypeHandle)
+			// IL_000a: call object [mscorlib]System.Activator::CreateInstance(class [mscorlib]System.Type)
+			//
+			var previousInstruction = callInstruction.Previous;
+			if (previousInstruction == null)
+				return false;
+			
+			// If it's the overload with a bool then we need to shift back 1 additional instruction
+			if (method.Parameters.Count == 2 && method.Parameters [1].ParameterType.MetadataType == MetadataType.Boolean) {
+				previousInstruction = previousInstruction.Previous;
+				if (previousInstruction == null)
+					return false;
+			}
+
+			var previousPreviousInstruction = previousInstruction.Previous;
+			if (previousPreviousInstruction == null)
+				return false;
+
+			if (previousInstruction.OpCode.Code != Code.Call || previousPreviousInstruction.OpCode.Code != Code.Ldtoken)
+				return false;
+
+			var creationType = (previousPreviousInstruction.Operand as TypeReference)?.Resolve ();
+
+			if (creationType == null)
+				return false;
+
+			// We can only detect the cases that use ctor arguments so we can assume we should only mark the default ctor
+			MarkDefaultConstructor (creationType);
+			return true;
+		}
+
+		/// <summary>
+		/// Note : Extra unused arguments are passed so that derived MarkStep's can try to do more sophisticated detection if they choose
+		/// </summary>
+		/// <param name="callingBody"></param>
+		/// <param name="method"></param>
+		/// <param name="callInstruction"></param>
+		/// <returns></returns>
+		protected virtual bool MarkCreationTypeOfCreateInstanceWithStringString (MethodBody callingBody, MethodReference method, Instruction callInstruction)
+		{
+			//
+			// Expected pattern is
+			// IL_0000: ldstr "test"
+			// IL_0005: ldstr "Mono.Linker.Tests.Cases.Reflection.Activator.StringOverload.SameAssembly+Foo"
+			// IL_000a: call class [mscorlib]System.Runtime.Remoting.ObjectHandle [mscorlib]System.Activator::CreateInstance(string, string)
+			//
+			var previousInstruction = callInstruction.Previous;
+			if (previousInstruction == null)
+				return false;
+			
+			var previousPreviousInstruction = previousInstruction.Previous;
+			if (previousPreviousInstruction == null)
+				return false;
+
+			if (previousInstruction.OpCode.Code != Code.Ldstr || previousPreviousInstruction.OpCode.Code != Code.Ldstr)
+				return false;
+
+			var typeName = previousInstruction.Operand as string;
+			var assemblyName = previousPreviousInstruction.Operand as string;
+
+			if (string.IsNullOrEmpty (typeName) || string.IsNullOrEmpty (assemblyName))
+				return false;
+
+			var assemblyDefinition = _context.GetAssemblies ().FirstOrDefault (asm => asm.Name.Name == assemblyName);
+			var createdType = assemblyDefinition?.MainModule.GetType (typeName.ToCecilName ());
+
+			if (createdType == null)
+				return false;
+
+			// We can only detect the cases that don't pass ctor arguments so it's safe to assume only default ctor is needed
+			MarkDefaultConstructor (createdType);
+			return true;
+		}
+
+		bool MarkCastTypeOfCreateInstanceWithType (MethodBody callingBody, MethodReference method, Instruction callInstruction)
+		{
+			var nextInstruction = callInstruction.Next;
+			if (nextInstruction == null)
+				return false;
+
+			if (nextInstruction.OpCode.Code != Code.Isinst && nextInstruction.OpCode.Code != Code.Castclass)
+				return false;
+			
+			var instanceBeingCastedToType = nextInstruction.Operand as TypeReference;
+			if (instanceBeingCastedToType == null)
+				return false;
+
+			var castType = BCL.Activator.ResolveCastType (instanceBeingCastedToType);
+
+			if (castType == null || castType.IsValueType)
+				return false;
+
+			var defaultCtorOnly = method.Parameters.Count == 1 || (method.Parameters.Count == 2 && method.Parameters [1].ParameterType.MetadataType == MetadataType.Boolean);
+			var information = new ActivatorCreateInstanceMarkingInformation (
+				callingBody,
+				castType,
+				BCL.Activator.CollectConstructorsToMarkForActivatorCreateInstanceUsage,
+				defaultCtorOnly);
+
+			_activatorCreateInstanceTypes.Add (information);
+			return true;
+		}
+
+		bool MarkCastTypeOfCreateInstanceWithStringString(MethodBody callingBody, MethodReference method, Instruction callInstruction)
+		{
+			var nextInstruction = callInstruction.Next;
+			if (nextInstruction == null)
+				return false;
+
+			// The StringString variation is harder to detect since the cast will actually come after the Unwrap call.  That Unwrap call could be anywhere
+			// after the CreateInstance call in the body.  Let's at least cover the case where the call is immediately following CreateInstance
+
+			if (nextInstruction.OpCode.Code != Code.Callvirt)
+				return false;
+			
+			var nextCallMethod = nextInstruction.Operand as MethodReference;
+			if (nextCallMethod == null)
+				return false;
+
+			if (!BCL.Activator.IsUnwrap (nextCallMethod))
+				return false;
+
+			nextInstruction = nextInstruction.Next;
+			if (nextInstruction == null)
+				return false;
+
+			if (nextInstruction.OpCode.Code != Code.Isinst && nextInstruction.OpCode.Code != Code.Castclass)
+				return false;
+
+			var instanceBeingCastedToType = nextInstruction.Operand as TypeReference;
+			if (instanceBeingCastedToType == null)
+				return false;
+
+			var castType = BCL.Activator.ResolveCastType (instanceBeingCastedToType);
+
+			if (castType == null)
+				return false;
+
+			var defaultCtorOnly = method.Parameters.Count == 2;
+			var information = new ActivatorCreateInstanceMarkingInformation (
+				callingBody,
+				castType,
+				BCL.Activator.CollectConstructorsToMarkForActivatorCreateInstanceUsage,
+				defaultCtorOnly);
+
+			_activatorCreateInstanceTypes.Add (information);
+			return true;
+		}
+
+		protected void MarkConstructorsToForActivatorCreateInstanceUsage (TypeDefinition type, bool defaultCtorOnly)
+		{
+			foreach (var ctor in BCL.Activator.CollectConstructorsToMarkForActivatorCreateInstanceUsage (type, defaultCtorOnly)) {
+				_context.Tracer.Push ($"Reflection-ActivatorUsage {ctor}");
+				try {
+					MarkMethod (ctor);
+				} finally {
+					_context.Tracer.Pop ();
+				}
+			}
 		}
 
 		void MarkSomethingUsedViaReflection (string reflectionMethod, Action<Collection<Instruction>, string, TypeDefinition, BindingFlags> markMethod, Collection<Instruction> instructions)
@@ -2248,6 +2524,21 @@ namespace Mono.Linker.Steps {
 
 			public CustomAttribute Attribute { get; private set; }
 			public ICustomAttributeProvider Provider { get; private set; }
+		}
+		
+		protected class ActivatorCreateInstanceMarkingInformation {
+			public ActivatorCreateInstanceMarkingInformation (MethodBody callingBody, TypeDefinition castType, Func<TypeDefinition, bool, MethodDefinition[]> constructorCollector, bool defaultCtorOnly)
+			{
+				CallingBody = callingBody;
+				CastType = castType;
+				ConstructorCollector = constructorCollector;
+				DefaultCtorOnly = defaultCtorOnly;
+			}
+
+			public MethodBody CallingBody { get; private set; }
+			public TypeDefinition CastType { get; private set; }
+			public Func<TypeDefinition, bool, MethodDefinition[]> ConstructorCollector { get; private set; }
+			public bool DefaultCtorOnly { get; private set; }
 		}
 	}
 

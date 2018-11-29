@@ -1,4 +1,5 @@
-﻿using Mono.Cecil;
+﻿using System;
+using Mono.Cecil;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -210,6 +211,37 @@ namespace Mono.Linker
 				var definition = m.Resolve ();
 				if (definition?.IsDefaultConstructor () == true)
 					return true;
+			}
+
+			return false;
+		}
+
+		public static bool DerivesFrom (this TypeReference type, TypeReference potentialBaseType, bool checkInterfaces = true)
+		{
+			var resolvedType = type.Resolve ();
+			if (resolvedType == null)
+				throw new ArgumentException ($"Failed to resolve argument {nameof(type)}");
+			
+			var resolvedPotentialBaseType = potentialBaseType.Resolve ();
+			if (resolvedPotentialBaseType == null)
+				return false;
+			
+			while (resolvedType != null) {
+				if (resolvedType == resolvedPotentialBaseType)
+					return true;
+
+				if (checkInterfaces) {
+					foreach (var @interface in resolvedType.Interfaces) {
+						var resolvedInterfaceType = @interface.InterfaceType.Resolve ();
+						if (resolvedInterfaceType == null)
+							continue;
+
+						if (resolvedInterfaceType == potentialBaseType)
+							return true;
+					}
+				}
+
+				resolvedType = resolvedType.BaseType?.Resolve ();
 			}
 
 			return false;

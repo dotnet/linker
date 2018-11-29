@@ -89,7 +89,13 @@ namespace Mono.Linker.Tests.TestCases
 		{
 			Run (testCase);
 		}
-		
+
+		[TestCaseSource (typeof (TestDatabase), nameof (TestDatabase.ReflectionActivatorTests))]
+		public void ReflectionActivatorTests (TestCase testCase)
+		{
+			Run (testCase);
+		}
+
 		[TestCaseSource (typeof (TestDatabase), nameof (TestDatabase.PreserveDependenciesTests))]
 		public void PreserveDependenciesTests (TestCase testCase)
 		{

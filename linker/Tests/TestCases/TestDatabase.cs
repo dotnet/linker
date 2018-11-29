@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 using System.Collections.Generic;
 using NUnit.Framework;
 using System.Runtime.CompilerServices;
@@ -75,7 +75,12 @@ namespace Mono.Linker.Tests.TestCases
 		{
 			return NUnitCasesBySuiteName ("Reflection");
 		}
-		
+
+		public static IEnumerable<TestCaseData> ReflectionActivatorTests ()
+		{
+			return NUnitCasesBySuiteName ("Reflection.Activator");
+		}
+
 		public static IEnumerable<TestCaseData> SymbolsTests ()
 		{
 			return NUnitCasesBySuiteName ("Symbols");
