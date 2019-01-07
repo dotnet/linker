@@ -48,12 +48,14 @@ namespace Mono.Linker {
 		protected readonly Dictionary<MethodDefinition, List<MethodDefinition>> override_methods = new Dictionary<MethodDefinition, List<MethodDefinition>> ();
 		protected readonly Dictionary<MethodDefinition, List<MethodDefinition>> base_methods = new Dictionary<MethodDefinition, List<MethodDefinition>> ();
 		protected readonly Dictionary<AssemblyDefinition, ISymbolReader> symbol_readers = new Dictionary<AssemblyDefinition, ISymbolReader> ();
+		protected readonly Dictionary<TypeDefinition, List<TypeDefinition>> type_base_hierarchy = new Dictionary<TypeDefinition, List<TypeDefinition>>();
 
 		protected readonly Dictionary<object, Dictionary<IMetadataTokenProvider, object>> custom_annotations = new Dictionary<object, Dictionary<IMetadataTokenProvider, object>> ();
 		protected readonly Dictionary<AssemblyDefinition, HashSet<string>> resources_to_remove = new Dictionary<AssemblyDefinition, HashSet<string>> ();
 		protected readonly HashSet<CustomAttribute> marked_attributes = new HashSet<CustomAttribute> ();
 		readonly HashSet<TypeDefinition> marked_types_with_cctor = new HashSet<TypeDefinition> ();
 		protected readonly HashSet<TypeDefinition> marked_instantiated = new HashSet<TypeDefinition> ();
+		protected readonly HashSet<TypeDefinition> marked_base_required = new HashSet<TypeDefinition> ();
 
 		public AnnotationStore (LinkContext context) => this.context = context;
 
@@ -149,6 +151,16 @@ namespace Mono.Linker {
 		public bool IsInstantiated (TypeDefinition type)
 		{
 			return marked_instantiated.Contains (type);
+		}
+
+		public void MarkBaseRequired (TypeDefinition type)
+		{
+			marked_base_required.Add (type);
+		}
+		
+		public bool IsBaseRequired (TypeDefinition type)
+		{
+			return marked_base_required.Contains (type);
 		}
 
 		public void Processed (IMetadataTokenProvider provider)
@@ -355,5 +367,17 @@ namespace Mono.Linker {
 			return marked_types_with_cctor.Add (type);
 		}
 
+		public void SetBaseHierarchy (TypeDefinition type, List<TypeDefinition> bases)
+		{
+			type_base_hierarchy [type] = bases;
+		}
+
+		public List<TypeDefinition> GetBaseHierarchy (TypeDefinition type)
+		{
+			if (type_base_hierarchy.TryGetValue (type, out List<TypeDefinition> bases))
+				return bases;
+
+			return null;
+		}
 	}
 }

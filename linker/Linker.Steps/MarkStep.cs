@@ -984,6 +984,10 @@ namespace Mono.Linker.Steps {
 				MarkRequirementsForInstantiatedTypes (type);
 			}
 
+			// A future PR will remove this and introduce changes so that we only mark the base type when it's needed.
+			if (type.IsClass)
+				MarkBaseHierarchyAsRequired (type);
+
 			if (type.HasInterfaces)
 				_typesWithInterfaces.Add (type);
 
@@ -1749,6 +1753,25 @@ namespace Mono.Linker.Steps {
 		// Allow subclassers to mark additional things when marking a method
 		protected virtual void DoAdditionalMethodProcessing (MethodDefinition method)
 		{
+		}
+		
+		void MarkBaseHierarchyAsRequired (TypeDefinition type)
+		{
+			Annotations.MarkBaseRequired (type);
+			if (type.BaseType != null)
+				MarkType (type.BaseType);
+
+			// We could resolve the base and recursively call ourselves but already have a list
+			// of the bases built up so let's just use that.
+			var bases = Annotations.GetBaseHierarchy (type);
+			if (bases == null)
+				return;
+
+			foreach (var @base in bases) {
+				Annotations.MarkBaseRequired (@base);
+				if (@base.BaseType != null)
+					MarkType (@base.BaseType);
+			}
 		}
 
 		protected virtual bool ShouldMarkAsInstancePossible (MethodDefinition method)

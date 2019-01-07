@@ -292,6 +292,24 @@ namespace Mono.Linker.Steps {
 
 			if (type.HasFields && !type.IsBeforeFieldInit && !Annotations.HasPreservedStaticCtor (type) && !type.IsEnum)
 				type.IsBeforeFieldInit = true;
+			
+			SweepBaseType (type);
+		}
+
+		protected void SweepBaseType (TypeDefinition type)
+		{
+			if (!type.IsClass)
+				return;
+
+			if (type.BaseType == type.Module.TypeSystem.Object)
+				return;
+
+			if (Annotations.IsBaseRequired (type))
+				return;
+
+			var oldBase = type.BaseType;
+			type.BaseType = type.Module.TypeSystem.Object;
+			BaseTypeReduced (type, oldBase, type.BaseType);
 		}
 
 		protected void SweepNestedTypes (TypeDefinition type)
@@ -515,6 +533,10 @@ namespace Mono.Linker.Steps {
 		}
 
 		protected virtual void CustomAttributeUsageRemoved (ICustomAttributeProvider provider, CustomAttribute attribute)
+		{
+		}
+
+		protected virtual void BaseTypeReduced (TypeDefinition type, TypeReference oldBase, TypeReference newBase)
 		{
 		}
 	}
