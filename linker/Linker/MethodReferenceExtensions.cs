@@ -24,5 +24,13 @@ namespace Mono.Linker
 
 			return method.Parameters [parameterIndex].ParameterType;
 		}
+		
+		public static bool IsSpecialArrayMethod (this MethodReference method)
+		{
+			if (!method.DeclaringType.IsArray)
+				return false;
+
+			return method.Name == "Set" || method.Name == "Get" || method.Name == "Address" || method.Name == ".ctor";
+		}
 	}
 }

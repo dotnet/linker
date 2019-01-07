@@ -9,6 +9,7 @@ namespace Mono.Linker.Tests.Cases.LinkXml {
 	}
 
 	[Kept]
+	[KeptMember (".ctor()")]
 	[KeptBaseType (typeof (UnusedTypeDeclarationPreservedByLinkXmlIsKeptUnusedTypeBase))]
 	class UnusedTypeDeclarationPreservedByLinkXmlIsKeptUnusedType : UnusedTypeDeclarationPreservedByLinkXmlIsKeptUnusedTypeBase 
 	{
@@ -21,6 +22,7 @@ namespace Mono.Linker.Tests.Cases.LinkXml {
 	}
 
 	[Kept]
+	[KeptMember (".ctor()")]
 	class UnusedTypeDeclarationPreservedByLinkXmlIsKeptUnusedTypeBase
 	{
 	}

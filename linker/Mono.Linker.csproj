@@ -60,6 +60,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Linker.Steps\BaseStep.cs" />
+    <Compile Include="Linker.Steps\BaseMarkingUtils.cs" />
     <Compile Include="Linker.Steps\BlacklistStep.cs" />
     <Compile Include="Linker.Steps\CleanStep.cs" />
     <Compile Include="Linker.Steps\RegenerateGuidStep.cs" />

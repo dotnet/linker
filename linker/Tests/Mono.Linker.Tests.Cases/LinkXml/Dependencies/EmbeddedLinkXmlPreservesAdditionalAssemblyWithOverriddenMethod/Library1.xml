@@ -1,10 +1,12 @@
 ﻿<linker>
     <assembly fullname="Library1, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
-        <type fullname="Mono.Linker.Tests.Cases.LinkXml.Dependencies.EmbeddedLinkXmlPreservesAdditionalAssemblyWithOverriddenMethod.Library1Secondary" preserve="nothing">
+        <type fullname="Mono.Linker.Tests.Cases.LinkXml.Dependencies.EmbeddedLinkXmlPreservesAdditionalAssemblyWithOverriddenMethod.Library1Secondary">
+            <method name=".ctor"/>
         </type>
     </assembly>
     <assembly fullname="Library2, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
-        <type fullname="Mono.Linker.Tests.Cases.LinkXml.Dependencies.EmbeddedLinkXmlPreservesAdditionalAssemblyWithOverriddenMethod.Library2" preserve="nothing">
+        <type fullname="Mono.Linker.Tests.Cases.LinkXml.Dependencies.EmbeddedLinkXmlPreservesAdditionalAssemblyWithOverriddenMethod.Library2">
+            <method name=".ctor"/>
         </type>
     </assembly>
 </linker>
