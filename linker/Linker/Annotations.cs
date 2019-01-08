@@ -87,7 +87,7 @@ namespace Mono.Linker {
 			if (assembly_actions.TryGetValue (assembly, out action))
 				return action;
 
-			throw new InvalidOperationException($"No action for the assembly {assembly.Name.Name} defined");
+			throw new InvalidOperationException($"No action for the assembly {assembly.Name} defined");
 		}
 
 		public MethodAction GetAction (MethodDefinition method)
