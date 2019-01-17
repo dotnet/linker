@@ -32,3 +32,9 @@ The SHA in Version.Details.xml is a commit hash on the arcade github repo. I *gu
 TODO: Make sure we know where does the verison number goes
 TODO: Confirm my understanding for the SHA usage is fine
 
+## Step 5: Add dotnet-core feed to NuGet.config.
+
+The repo already have a Nuget.config file, it has an extra feed called nuget-build, associated with it is a comment related to sdk build. I have no idea what does it mean, but we better keep it around, and then it missed the arcade feed, which is probably important, so I added it there. The feed named dotnet-core is not the same, I *upgraded* it, so let's hope for the best that the new feed got better bits.
+
+Here is the moment where things might start to fail, since I am not adding extra files, but changing existing ones ... wish me luck!
+
