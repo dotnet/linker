@@ -41,3 +41,8 @@ Here is the moment where things might start to fail, since I am not adding extra
 ## Step 6: Must have a root project/solution file for the repo to build.
 
 This is unclear what I am supposed to do. I heard that we need SDK style project, but that is not told in the documents. We also have an existing solution file in the root directory. Not knowing what to do, I get myself unstuck with just renaming the existing solution (so that it won't screw up things) and copied in the HelloWorld from arcade-minimal-ci, the idea is to slowly port the full build over.
+
+## Step 7: Additional package feeds can be added to the eng\Version.props file
+
+I am guessing the additional package feeds are meant for the feed I will need to use to build the product, it is unclear from the documentation. As of now, my idea is simply to build HelloWorld, so I don't think I have to do anything in this step, yet.
+
