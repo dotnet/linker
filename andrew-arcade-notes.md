@@ -38,3 +38,6 @@ The repo already have a Nuget.config file, it has an extra feed called nuget-bui
 
 Here is the moment where things might start to fail, since I am not adding extra files, but changing existing ones ... wish me luck!
 
+## Step 6: Must have a root project/solution file for the repo to build.
+
+This is unclear what I am supposed to do. I heard that we need SDK style project, but that is not told in the documents. We also have an existing solution file in the root directory. Not knowing what to do, I get myself unstuck with just renaming the existing solution (so that it won't screw up things) and copied in the HelloWorld from arcade-minimal-ci, the idea is to slowly port the full build over.
