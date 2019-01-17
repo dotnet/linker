@@ -46,3 +46,12 @@ This is unclear what I am supposed to do. I heard that we need SDK style project
 
 I am guessing the additional package feeds are meant for the feed I will need to use to build the product, it is unclear from the documentation. As of now, my idea is simply to build HelloWorld, so I don't think I have to do anything in this step, yet.
 
+# Start hacking!
+
+## Step 1: Getting HelloWorld to build in the linker repo
+
+This remaining tasks seems to be related to CI. Let's get the build going for now. Hopefully after this is done I can clarify some of the questions I have above and contribute back to the docs.
+
+The first thing I did is copying the build.cmd from the arcade-minimal-ci example, without which I don't even know how to start the build. After fixing the accidentally copied xunit package references, it starts to produce some output! `Build.cmd -Test` will also work.
+
+Also modifying the `.gitignore` so that we won't accidentally commit the build output!

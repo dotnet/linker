@@ -36,3 +36,8 @@ corebuild/**/obj
 corebuild/testbin
 
 monobuild/TestResults.xml
+
+##################################
+Arcade generated build outputs
+##################################
+artifacts/
