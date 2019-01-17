@@ -17,3 +17,7 @@ I just copied the file from the arcade-minimal-ci example
 
 TODO: What does these file do?
 
+## Step 3: Copy eng\common from Arcade into repo.
+
+This is trivial, done
+
