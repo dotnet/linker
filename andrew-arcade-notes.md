@@ -55,3 +55,6 @@ This remaining tasks seems to be related to CI. Let's get the build going for no
 The first thing I did is copying the build.cmd from the arcade-minimal-ci example, without which I don't even know how to start the build. After fixing the accidentally copied xunit package references, it starts to produce some output! `Build.cmd -Test` will also work.
 
 Also modifying the `.gitignore` so that we won't accidentally commit the build output!
+
+## Step 2: Picking a project to start porting to build using Arcade
+
