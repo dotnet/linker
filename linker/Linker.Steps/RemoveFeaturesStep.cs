@@ -7,6 +7,17 @@ namespace Mono.Linker.Steps
 	{
 		public bool FeatureCOM { get; set; }
 		public bool FeatureETW { get; set; }
+		public bool FeatureCollation { get; set; }
+
+		static string[] CollationResources = new string[] {
+			"collation.cjkCHS.bin",
+			"collation.cjkCHT.bin",
+			"collation.cjkJA.bin",
+			"collation.cjkKO.bin",
+			"collation.cjkKOlv2.bin",
+			"collation.core.bin",
+			"collation.tailoring.bin"
+		};
 
 		protected override void ProcessAssembly (AssemblyDefinition assembly)
 		{
@@ -15,6 +26,11 @@ namespace Mono.Linker.Steps
 
 			foreach (var type in assembly.MainModule.Types)
 				ProcessType (type);
+
+			if (FeatureCollation) {
+				foreach (var res in CollationResources)
+					Context.Annotations.AddResourceToRemove (assembly, res);
+			}
 		}
 
 		void ProcessType (TypeDefinition type)
@@ -36,6 +52,9 @@ namespace Mono.Linker.Steps
 					type.IsImport = false;
 				}
 			}
+
+			if (FeatureCollation)
+				ExcludeCollation (type);
 
 			foreach (var field in type.Fields)
 				RemoveCustomAttributes (field);
@@ -122,6 +141,23 @@ namespace Mono.Linker.Steps
 
 				if (!skip)
 					annotations.SetAction (method, MethodAction.ConvertToThrow);
+			}
+		}
+
+		void ExcludeCollation (TypeDefinition type) {
+			var annotations = Context.Annotations;
+
+			if (type.FullName == "Mono.Globalization.Unicode.SimpleCollator") {
+				foreach (var method in type.Methods) {
+					annotations.SetAction (method, MethodAction.ConvertToThrow);
+				}
+			}
+
+			if (type.FullName == "System.Globalization.CompareInfo") {
+				foreach (var method in type.Methods) {
+					if (method.Name == "get_UseManagedCollation")
+						annotations.SetAction (method, MethodAction.ConvertToFalse);
+				}
 			}
 		}
 
