@@ -280,7 +280,7 @@ namespace Mono.Linker {
 					p.AddStepBefore (typeof (MarkStep), new RemoveFeaturesStep () {
 						FeatureCOM = excluded_features.Contains ("com"),
 						FeatureETW = excluded_features.Contains ("etw"),
-						FeatureCollation = excluded_features.Contains ("collation")
+						FeatureGlobalization = excluded_features.Contains ("globalization")
 					});
 
 					var excluded = new string [excluded_features.Count];
@@ -459,7 +459,7 @@ namespace Mono.Linker {
 			Console.WriteLine ("                              etw: Event Tracing for Windows");
 			Console.WriteLine ("                              remoting: .NET Remoting dependencies");
 			Console.WriteLine ("                              sre: System.Reflection.Emit namespace");
-			Console.WriteLine ("                              collation: Unicode collation");
+			Console.WriteLine ("                              globalization: Globalization data and globalization behavior");
 			Console.WriteLine ("  --ignore-descriptors      Skips reading embedded descriptors (short -z). Defaults to false");
 			Console.WriteLine ("  --keep-facades            Keep assemblies with type-forwarders (short -t). Defaults to false");
 			Console.WriteLine ("  --new-mvid                Generate a new guid for each linked assembly (short -g). Defaults to true");

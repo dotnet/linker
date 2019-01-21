@@ -5,11 +5,21 @@ namespace Mono.Linker.Steps
 {
 	public class RemoveFeaturesStep : BaseStep
 	{
+		//
+		// When any of the features bellow is set, the linker will remove the code and change
+		// the behaviour of the program but it should not cause it to crash
+		//
+
 		public bool FeatureCOM { get; set; }
 		public bool FeatureETW { get; set; }
-		public bool FeatureCollation { get; set; }
 
-		static string[] CollationResources = new string[] {
+		//
+		// Manually overrides System.Globalization.Invariant mode
+		// https://github.com/dotnet/corefx/blob/master/Documentation/architecture/globalization-invariant-mode.md
+		//
+		public bool FeatureGlobalization { get; set; }
+
+		readonly static string[] MonoCollationResources = new [] {
 			"collation.cjkCHS.bin",
 			"collation.cjkCHT.bin",
 			"collation.cjkJA.bin",
@@ -27,8 +37,8 @@ namespace Mono.Linker.Steps
 			foreach (var type in assembly.MainModule.Types)
 				ProcessType (type);
 
-			if (FeatureCollation) {
-				foreach (var res in CollationResources)
+			if (FeatureGlobalization) {
+				foreach (var res in MonoCollationResources)
 					Context.Annotations.AddResourceToRemove (assembly, res);
 			}
 		}
@@ -53,8 +63,8 @@ namespace Mono.Linker.Steps
 				}
 			}
 
-			if (FeatureCollation)
-				ExcludeCollation (type);
+			if (FeatureGlobalization)
+				ExcludeMonoCollation (type);
 
 			foreach (var field in type.Fields)
 				RemoveCustomAttributes (field);
@@ -144,20 +154,26 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void ExcludeCollation (TypeDefinition type) {
+		void ExcludeMonoCollation (TypeDefinition type)
+		{
 			var annotations = Context.Annotations;
 
-			if (type.FullName == "Mono.Globalization.Unicode.SimpleCollator") {
+			switch (type.Name) {
+			case "SimpleCollator" when type.Namespace == "Mono.Globalization.Unicode":
 				foreach (var method in type.Methods) {
 					annotations.SetAction (method, MethodAction.ConvertToThrow);
 				}
-			}
 
-			if (type.FullName == "System.Globalization.CompareInfo") {
+				break;
+			case "CompareInfo" when type.Namespace == "System.Globalization":
 				foreach (var method in type.Methods) {
-					if (method.Name == "get_UseManagedCollation")
+					if (method.Name == "get_UseManagedCollation") {
 						annotations.SetAction (method, MethodAction.ConvertToFalse);
+						break;
+					}
 				}
+
+				break;
 			}
 		}
 
