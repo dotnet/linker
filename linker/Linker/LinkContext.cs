@@ -323,7 +323,6 @@ namespace Mono.Linker {
 			case "UIAutomationTypes":
 			case "PresentationUI":
 			case "ReachFramework":
-				// netstandard assemblies
 			case "netstandard":
 					return true;
 			default:
