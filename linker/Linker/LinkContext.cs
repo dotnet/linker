@@ -323,7 +323,9 @@ namespace Mono.Linker {
 			case "UIAutomationTypes":
 			case "PresentationUI":
 			case "ReachFramework":
-				return true;
+				// netstandard assemblies
+			case "netstandard":
+					return true;
 			default:
 				return name.Name.StartsWith ("System")
 					|| name.Name.StartsWith ("Microsoft");
