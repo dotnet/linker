@@ -8,14 +8,14 @@ It appears the global.json might be related to https://docs.microsoft.com/en-us/
 
 I just copied the file from the arcade-minimal-ci example
 
-TODO: What does this file does?
-TODO: I have no idea what those version number means
+* TODO: What does this file does?
+* TODO: I have no idea what those version number means
 
 ## Step 2: Add (or copy) Directory.Build.props and Directory.build.targets.
 
 I just copied the file from the arcade-minimal-ci example
 
-TODO: What does these file do?
+* TODO: What does these file do?
 
 ## Step 3: Copy eng\common from Arcade into repo.
 
@@ -29,8 +29,8 @@ If I understand it correctly, there is a version number in the versions.prop, it
 
 The SHA in Version.Details.xml is a commit hash on the arcade github repo. I *guess* this is used for synchronizing the arcade build scripts. Therefore I changed it to the SHA corresponding to the eng/common folder I copied.
 
-TODO: Make sure we know where does the verison number goes
-TODO: Confirm my understanding for the SHA usage is fine
+* TODO: Make sure we know where does the verison number goes
+* TODO: Confirm my understanding for the SHA usage is fine
 
 ## Step 5: Add dotnet-core feed to NuGet.config.
 
@@ -58,3 +58,18 @@ Also modifying the `.gitignore` so that we won't accidentally commit the build o
 
 ## Step 2: Picking a project to start porting to build using Arcade
 
+All projects depends on `Mono.Cecil`, so we have two choices here.
+1. Arcadify `Mono.Cecil`, or
+2. Depends on `Mono.Cecil` through package reference
+
+I decided to try #2, because even if we move on with 1, linker better consume `Mono.Cecil` through nuget anyway.
+
+We are lucky here - we have already got an existing `Mono.Cecil` package available on nuget.
+
+We have to make the quantum jump here - so I did. Moved all the files, deleted the existing project files, created new ones, and so on. It looks like a big change but not really, it is just dropping some existing things and move files around.
+
+The dropping existing things is alarming - I am not sure what I am dropping. By consuming a package reference instead of the submodule source, I have no idea the diff between the versions either.
+
+* TODO: Inspect the logic in the deleted project files and see what is skipped
+* TODO: Arcadify `Mono.Cecil`
+* TODO: The change to copyright is alarming, what should we do from the legal aspect of things?
