@@ -161,7 +161,7 @@ namespace Mono.Linker.Steps
 
 			switch (type.Name)
 			{
-				case "SimpleCollator" when type.Namespace == "Mono.Globalization.Unicode":
+				case "SimpleCollator":
 					if (type.Namespace == "Mono.Globalization.Unicode")
 					{
 						foreach (var method in type.Methods)
@@ -171,7 +171,7 @@ namespace Mono.Linker.Steps
 					}
 
 					break;
-				case "CompareInfo" when type.Namespace == "System.Globalization":
+				case "CompareInfo":
 					if (type.Namespace == "System.Globalization")
 					{
 						foreach (var method in type.Methods)
