@@ -55,9 +55,7 @@ namespace Mono.Linker {
 		readonly HashSet<TypeDefinition> marked_types_with_cctor = new HashSet<TypeDefinition> ();
 		protected readonly HashSet<TypeDefinition> marked_instantiated = new HashSet<TypeDefinition> ();
 
-		public AnnotationStore(LinkContext context) {
-			this.context = context;
-		}
+		public AnnotationStore (LinkContext context) => this.context = context;
 
 		protected Tracer Tracer {
 			get {

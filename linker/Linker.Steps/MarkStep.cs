@@ -113,8 +113,7 @@ namespace Mono.Linker.Steps {
 
 		protected bool IsFullyPreserved (TypeDefinition type)
 		{
-			TypePreserve preserve;
-			if (Annotations.TryGetPreserve (type, out preserve) && preserve == TypePreserve.All)
+			if (Annotations.TryGetPreserve (type, out TypePreserve preserve) && preserve == TypePreserve.All)
 				return true;
 
 			switch (Annotations.GetAction (type.Module.Assembly)) {
@@ -1055,8 +1054,7 @@ namespace Mono.Linker.Steps {
 				}
 
 				if (property.Name == "TargetTypeName") {
-					string typeName, assemblyName;
-					if (TypeNameParser.TryParseTypeAssemblyQualifiedName ((string) property.Argument.Value, out typeName, out assemblyName)) {
+					if (TypeNameParser.TryParseTypeAssemblyQualifiedName ((string) property.Argument.Value, out string typeName, out string assemblyName)) {
 						if (string.IsNullOrEmpty (assemblyName))
 							targetTypeReference = asm.MainModule.GetType (typeName);
 						else
@@ -1516,8 +1514,7 @@ namespace Mono.Linker.Steps {
 		{
 			ApplyPreserveMethods (type);
 
-			TypePreserve preserve;
-			if (!Annotations.TryGetPreserve (type, out preserve))
+			if (!Annotations.TryGetPreserve (type, out TypePreserve preserve))
 				return;
 
 			switch (preserve) {
@@ -2106,8 +2103,7 @@ namespace Mono.Linker.Steps {
 
 				var typeAssemblyQualifiedName = OperandOfNearestInstructionBefore<string> (i, OpCodes.Ldstr, instructions);
 
-				string typeName, assemblyName;
-				if (!TypeNameParser.TryParseTypeAssemblyQualifiedName (typeAssemblyQualifiedName, out typeName, out assemblyName))
+				if (!TypeNameParser.TryParseTypeAssemblyQualifiedName (typeAssemblyQualifiedName, out string typeName, out string assemblyName))
 					continue;
 
 				TypeDefinition foundType = null;

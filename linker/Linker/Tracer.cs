@@ -46,9 +46,7 @@ namespace Mono.Linker
 		System.Xml.XmlWriter writer;
 		Stream stream;
 
-		public Tracer(LinkContext context) {
-			this.context = context;
-		}
+		public Tracer (LinkContext context) => this.context = context;
 
 		public void Start ()
 		{
