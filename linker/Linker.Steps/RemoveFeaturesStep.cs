@@ -158,23 +158,33 @@ namespace Mono.Linker.Steps
 		{
 			var annotations = Context.Annotations;
 
-			if (type.Name == "SimpleCollator" && type.Namespace == "Mono.Globalization.Unicode") {
-				foreach (var method in type.Methods)
-				{
-					annotations.SetAction(method, MethodAction.ConvertToThrow);
-				}
-			}
 
-			if (type.Name == "CompareInfo" && type.Namespace == "System.Globalization")
+			switch (type.Name)
 			{
-				foreach (var method in type.Methods)
-				{
-					if (method.Name == "get_UseManagedCollation")
+				case "SimpleCollator" when type.Namespace == "Mono.Globalization.Unicode":
+					if (type.Namespace == "Mono.Globalization.Unicode")
 					{
-						annotations.SetAction(method, MethodAction.ConvertToFalse);
-						break;
+						foreach (var method in type.Methods)
+						{
+							annotations.SetAction(method, MethodAction.ConvertToThrow);
+						}
 					}
-				}
+
+					break;
+				case "CompareInfo" when type.Namespace == "System.Globalization":
+					if (type.Namespace == "System.Globalization")
+					{
+						foreach (var method in type.Methods)
+						{
+							if (method.Name == "get_UseManagedCollation")
+							{
+								annotations.SetAction(method, MethodAction.ConvertToFalse);
+								break;
+							}
+						}
+					}
+
+					break;
 			}
 		}
 
