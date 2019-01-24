@@ -14,6 +14,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Hello.Tests", "Hello.Tests\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "illinker", "src\linker\illinker.csproj", "{1F756DF9-B2D5-450A-BD49-6838769975E5}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mono.Linker.Tests", "test\Mono.Linker.Tests\Mono.Linker.Tests.csproj", "{06B79E54-0B26-4B0E-9C21-9A4D07FA4722}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -32,6 +34,10 @@ Global
 		{1F756DF9-B2D5-450A-BD49-6838769975E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1F756DF9-B2D5-450A-BD49-6838769975E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1F756DF9-B2D5-450A-BD49-6838769975E5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{06B79E54-0B26-4B0E-9C21-9A4D07FA4722}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{06B79E54-0B26-4B0E-9C21-9A4D07FA4722}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{06B79E54-0B26-4B0E-9C21-9A4D07FA4722}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{06B79E54-0B26-4B0E-9C21-9A4D07FA4722}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

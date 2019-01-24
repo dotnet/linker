@@ -1,59 +1,59 @@
-using NUnit.Framework;
+using Xunit;
 using System.Collections.Generic;
 
 namespace Mono.Linker.Tests {
-	[TestFixture]
+	
 	public class ParseResponseFileLinesTests {
-		[Test]
+		[Fact]
 		public void TestOneArg ()
 		{
 			TestParseResponseFileLines (@"abc", new string [] { @"abc" });
 		}
 
-		[Test]
+		[Fact]
 		public void TestTwoArgsOnOneLine ()
 		{
 			TestParseResponseFileLines (@"abc def", new string [] { @"abc", @"def" });
 		}
 
-		[Test]
+		[Fact]
 		public void TestTwoArgsOnTwoLine ()
 		{
 			TestParseResponseFileLines (@"abc
 def", new string [] { @"abc", @"def" });
 		}
 
-		[Test]
+		[Fact]
 		public void TestOneSlashWithoutQuote ()
 		{
 			TestParseResponseFileLines (@"\", new string [] { @"\" });
 		}
 
-		[Test]
+		[Fact]
 		public void TestTwoSlashesWithoutQuote ()
 		{
 			TestParseResponseFileLines (@"\\", new string [] { @"\\" });
 		}
 
-		[Test]
+		[Fact]
 		public void TestOneSlashWithQuote ()
 		{
 			TestParseResponseFileLines (@"""x \"" y""", new string [] { @"x "" y" });
 		}
 
-		[Test]
+		[Fact]
 		public void TestTwoSlashesWithQuote ()
 		{
 			TestParseResponseFileLines (@"""Trailing Slash\\""", new string [] { @"Trailing Slash\" });
 		}
 
-		[Test]
+		[Fact]
 		public void TestWindowsPath ()
 		{
 			TestParseResponseFileLines (@"C:\temp\test.txt", new string [] { @"C:\temp\test.txt" });
 		}
 
-		[Test]
+		[Fact]
 		public void TestLinuxPath ()
 		{
 			TestParseResponseFileLines (@"/tmp/test.txt", new string [] { @"/tmp/test.txt" });
@@ -63,7 +63,7 @@ def", new string [] { @"abc", @"def" });
 		{
 			var result = new Queue<string> ();
 			Driver.ParseResponseFileLines (v1.Split ('\n'), result);
-			Assert.That (result, Is.EquivalentTo (v2));
+			Assert.Equal (result, v2);
 		}
 	}
 }

@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netcoreapp2.0;netcoreapp2.1</TargetFrameworks>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- 
+        TODO: Is it a bad idea to use relative path like this? 
+        How would I do it better?
+    -->
+    <ProjectReference Include="..\..\src\linker\illinker.csproj" />
+  </ItemGroup>
+
+</Project>
