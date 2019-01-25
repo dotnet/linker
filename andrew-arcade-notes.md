@@ -80,4 +80,4 @@ I was warned that porting from nunit to xunit for this project is going to be tr
 
 ## Step 4: Time to eliminate our scaffolding
 
-... to be continued ...
+This is trivial, done
