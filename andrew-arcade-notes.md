@@ -73,3 +73,11 @@ The dropping existing things is alarming - I am not sure what I am dropping. By 
 * TODO: Inspect the logic in the deleted project files and see what is skipped
 * TODO: Arcadify `Mono.Cecil`
 * TODO: The change to copyright is alarming, what should we do from the legal aspect of things?
+
+## Step 3: Port some tests
+
+I was warned that porting from nunit to xunit for this project is going to be tricky, but the reality is not quite, at least with the subset I was choosing. There are some manual work (feel like they could be automated), perhaps I am picking the easy subset to begin with
+
+## Step 4: Time to eliminate our scaffolding
+
+... to be continued ...

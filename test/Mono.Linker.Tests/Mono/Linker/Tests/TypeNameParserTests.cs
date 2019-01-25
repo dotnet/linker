@@ -98,20 +98,19 @@ namespace Mono.Linker.Tests {
 			Assert.Null (assemblyName);
 		}
 
-		/*
-		[TestCase ("A[]][")]
-		[TestCase ("A][")]
-		[TestCase ("A[")]
-		[TestCase (",    ,    ")]
-		[TestCase (", , , ")]
-		[TestCase (", , , , ")]
+		[Theory]
+		[InlineData ("A[]][")]
+		[InlineData ("A][")]
+		[InlineData ("A[")]
+		[InlineData (",    ,    ")]
+		[InlineData (", , , ")]
+		[InlineData (", , , , ")]
 		public void InvalidValues (string name)
 		{
 			Assert.False (TypeNameParser.TryParseTypeAssemblyQualifiedName (name, out string typeName, out string assemblyName));
 			Assert.Null (typeName);
 			Assert.Null (assemblyName);
 		}
-		*/
 
 		class SampleNestedType {
 		}
