@@ -41,3 +41,4 @@ monobuild/TestResults.xml
 Arcade generated build outputs
 ##################################
 artifacts/
+.dotnet/
