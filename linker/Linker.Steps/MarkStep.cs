@@ -1412,6 +1412,9 @@ namespace Mono.Linker.Steps {
 				case "Delegate":
 				case "MulticastDelegate":
 					return td.Namespace == "System";
+				// InternalThread doesn't have a ctor that is marked, but it is a very important type not to mess with!
+				case "InternalThread":
+					return td.Namespace == "System.Threading";
 			}
 
 			return false;
