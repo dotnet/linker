@@ -18,4 +18,4 @@ prepare:
 	rm -f ../linker/obj/project.assets.json
 
 check: prepare
-	mono ../packages/NUnit.ConsoleRunner.3.6.1/tools/nunit3-console.exe --result="TestResults.xml;format=nunit2" ../linker/Tests/bin/$(CONFIGURATION)/Mono.Linker.Tests.dll
+	mono ../packages/NUnit.ConsoleRunner.3.6.1/tools/nunit3-console.exe --result="TestResults.xml;format=nunit2" ../test/Mono.Linker.Tests/bin/$(CONFIGURATION)/Mono.Linker.Tests.dll
