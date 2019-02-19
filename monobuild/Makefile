@@ -12,9 +12,9 @@ clean:
 prepare:
 	nuget restore ../linker.sln
 	# A hack for project.assets.json issues
-	rm -f ../src/cecil/obj/project.assets.json
-	rm -f ../src/cecil/symbols/pdb/obj/project.assets.json
-	rm -f ../src/cecil/symbols/mdb/obj/project.assets.json
+	rm -f ../external/cecil/obj/project.assets.json
+	rm -f ../external/cecil/symbols/pdb/obj/project.assets.json
+	rm -f ../external/cecil/symbols/mdb/obj/project.assets.json
 	rm -f ../src/linker/obj/project.assets.json
 
 check: prepare

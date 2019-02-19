@@ -186,7 +186,7 @@
       -->
       <SetConfiguration>Configuration=illink_$(Configuration)</SetConfiguration>
     </ProjectReference>
-    <ProjectReference Include="../cecil/Mono.Cecil.csproj" />
+    <ProjectReference Include="../../external/cecil/Mono.Cecil.csproj" />
 
     <ProjectReference Include="../ILLink.CustomSteps/ILLink.CustomSteps.csproj">
       <SetConfiguration>Configuration=illink_$(Configuration)</SetConfiguration>
