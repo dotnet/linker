@@ -55,6 +55,7 @@ namespace Mono.Linker {
 		protected readonly HashSet<CustomAttribute> marked_attributes = new HashSet<CustomAttribute> ();
 		readonly HashSet<TypeDefinition> marked_types_with_cctor = new HashSet<TypeDefinition> ();
 		protected readonly HashSet<TypeDefinition> marked_instantiated = new HashSet<TypeDefinition> ();
+		protected readonly HashSet<LinkerFeature> linker_features = new HashSet<LinkerFeature> ();
 
 		public AnnotationStore (LinkContext context) => this.context = context;
 
@@ -150,6 +151,16 @@ namespace Mono.Linker {
 		public bool IsInstantiated (TypeDefinition type)
 		{
 			return marked_instantiated.Contains (type);
+		}
+
+		public void Mark (LinkerFeature feature)
+		{
+			linker_features.Add (feature);
+		}
+
+		public bool IsMarked (LinkerFeature feature)
+		{
+			return linker_features.Contains (feature);
 		}
 
 		public void Processed (IMetadataTokenProvider provider)

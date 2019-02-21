@@ -34,6 +34,8 @@ namespace Mono.Linker {
 		ForceParse,
 		ConvertToStub,
 		ConvertToThrow,
-		ConvertToFalse
+		ConvertToThrowNull,
+		ConvertToReturn,
+		Delete
 	}
 }

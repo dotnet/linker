@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Linq;
+using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
@@ -21,13 +22,20 @@ namespace Mono.Linker.Steps {
 
 		void ProcessType (TypeDefinition type)
 		{
-			foreach (var method in type.Methods) {
-				if (method.HasBody)
-					ProcessMethod (method);
-			}
+			ProcessMethods (type.Methods);
 
 			foreach (var nested in type.NestedTypes)
 				ProcessType (nested);
+		}
+
+		void ProcessMethods (IList<MethodDefinition> methods)
+		{
+			for (int i = 0; i < methods.Count; i++) {
+				if (Annotations.GetAction (methods[i]) == MethodAction.Delete)
+					methods.RemoveAt (i--);
+				else if (methods[i].HasBody)
+					ProcessMethod (methods[i]);
+			}
 		}
 
 		void ProcessMethod (MethodDefinition method)
@@ -39,8 +47,12 @@ namespace Mono.Linker.Steps {
 			case MethodAction.ConvertToThrow:
 				RewriteBodyToLinkedAway (method);
 				break;
-			case MethodAction.ConvertToFalse:
-				RewriteBodyToFalse (method);
+			case MethodAction.ConvertToThrowNull:
+				// We only use this for internal framework code.
+				RewriteBodyToThrowNull (method);
+				break;
+			case MethodAction.ConvertToReturn:
+				RewriteBodyToReturn (method);
 				break;
 			}
 		}
@@ -54,6 +66,15 @@ namespace Mono.Linker.Steps {
 			ClearDebugInformation (method);
 		}
 
+		void RewriteBodyToThrowNull (MethodDefinition method)
+		{
+			method.ImplAttributes &= ~(MethodImplAttributes.AggressiveInlining | MethodImplAttributes.Synchronized);
+			method.ImplAttributes |= MethodImplAttributes.NoInlining;
+
+			method.Body = CreateThrowNullBody (method);
+			ClearDebugInformation (method);
+		}
+
 		void RewriteBodyToStub (MethodDefinition method)
 		{
 			if (!method.IsIL)
@@ -64,12 +85,12 @@ namespace Mono.Linker.Steps {
 			ClearDebugInformation (method);
 		}
 
-		void RewriteBodyToFalse (MethodDefinition method)
+		void RewriteBodyToReturn (MethodDefinition method)
 		{
 			if (!method.IsIL)
 				throw new NotImplementedException ();
 
-			method.Body = CreateReturnFalseBody (method);
+			method.Body = CreateReturnBody (method);
 
 			ClearDebugInformation (method);
 		}
@@ -85,6 +106,16 @@ namespace Mono.Linker.Steps {
 
 			il.Emit (OpCodes.Ldstr, "Linked away");
 			il.Emit (OpCodes.Newobj, ctor);
+			il.Emit (OpCodes.Throw);
+			return body;
+		}
+
+		MethodBody CreateThrowNullBody (MethodDefinition method)
+		{
+			var body = new MethodBody (method);
+			var il = body.GetILProcessor ();
+
+			il.Emit (OpCodes.Ldnull);
 			il.Emit (OpCodes.Throw);
 			return body;
 		}
@@ -119,14 +150,23 @@ namespace Mono.Linker.Steps {
 			return body;
 		}
 
-		MethodBody CreateReturnFalseBody (MethodDefinition method)
+		MethodBody CreateReturnBody (MethodDefinition method)
 		{
-			if (method.ReturnType.MetadataType != MetadataType.Boolean)
-				throw new NotImplementedException ();
-
 			var body = new MethodBody (method);
 			var il = body.GetILProcessor ();
-			il.Emit (OpCodes.Ldc_I4_0);
+			switch (method.ReturnType.MetadataType) {
+			case MetadataType.Boolean:
+				il.Emit (OpCodes.Ldc_I4_0);
+				break;
+			case MetadataType.Class:
+			case MetadataType.Object:
+				il.Emit (OpCodes.Ldnull);
+				break;
+			case MetadataType.Void:
+				break;
+			default:
+				throw new NotImplementedException ();
+			}
 			il.Emit (OpCodes.Ret);
 			return body;
 		}

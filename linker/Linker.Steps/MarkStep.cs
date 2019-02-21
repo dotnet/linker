@@ -46,6 +46,8 @@ namespace Mono.Linker.Steps {
 		protected Queue<AttributeProviderPair> _assemblyLevelAttributes;
 		protected Queue<AttributeProviderPair> _lateMarkedAttributes;
 		protected List<TypeDefinition> _typesWithInterfaces;
+		protected Queue<ConditionalType> _conditionalTypes;
+		protected Queue<ConditionalMethod> _conditionalMethods;
 
 		public AnnotationStore Annotations {
 			get { return _context.Annotations; }
@@ -64,6 +66,8 @@ namespace Mono.Linker.Steps {
 			_assemblyLevelAttributes = new Queue<AttributeProviderPair> ();
 			_lateMarkedAttributes = new Queue<AttributeProviderPair> ();
 			_typesWithInterfaces = new List<TypeDefinition> ();
+			_conditionalTypes = new Queue<ConditionalType> ();
+			_conditionalMethods = new Queue<ConditionalMethod> ();
 		}
 
 		public virtual void Process (LinkContext context)
@@ -146,6 +150,15 @@ namespace Mono.Linker.Steps {
 			if (QueueIsEmpty ())
 				throw new InvalidOperationException ("No entry methods");
 
+			ProcessMainQueue ();
+
+			ProcessConditionalQueue ();
+
+			ProcessMainQueue ();
+		}
+
+		void ProcessMainQueue ()
+		{
 			while (ProcessPrimaryQueue () || ProcessLazyAttributes () || ProcessLateMarkedAttributes ())
 
 			// deal with [TypeForwardedTo] pseudo-attributes
@@ -213,9 +226,80 @@ namespace Mono.Linker.Steps {
 			return _methods.Count == 0;
 		}
 
+		bool ConditionalQueueIsEmpty ()
+		{
+			return _conditionalMethods.Count == 0;
+		}
+
 		protected virtual void EnqueueMethod (MethodDefinition method)
 		{
-			_methods.Enqueue (method);
+			if (!CheckEnqueueConditionalMethod (method))
+				_methods.Enqueue (method);
+		}
+
+		bool CheckEnqueueConditionalMethod (MethodDefinition method)
+		{
+			bool found = false;
+			foreach (var ca in method.DeclaringType.CustomAttributes) {
+				found |= CheckEnqueueConditionalMethod (method, ca);
+			}
+			foreach (var ca in method.CustomAttributes) {
+				found |= CheckEnqueueConditionalMethod (method, ca);
+			}
+			return found;
+		}
+
+		bool CheckEnqueueConditionalMethod (MethodDefinition method, CustomAttribute attribute)
+		{
+			if (attribute.AttributeType.FullName != "System.Runtime.CompilerServices.MonoLinkerConditionalAttribute")
+				return false;
+			if (attribute.ConstructorArguments.Count != 2)
+				throw new NotSupportedException ();
+			var feature = (LinkerFeature)attribute.ConstructorArguments [0].Value;
+			var action = (LinkerConditionalAction)attribute.ConstructorArguments [1].Value;
+			_conditionalMethods.Enqueue (new ConditionalMethod (method, feature, action));
+			return true;
+		}
+
+		void ProcessConditionalQueue ()
+		{
+			while (!ConditionalQueueIsEmpty ()) {
+				ConditionalMethod conditional = _conditionalMethods.Dequeue ();
+				var method = conditional.Method;
+				Tracer.Push (method);
+				try {
+					ProcessConditionalMethod (conditional);
+				} catch (Exception e) {
+					throw new MarkException (string.Format ("Error processing method: '{0}' in assembly: '{1}'", method.FullName, method.Module.Name), e, method);
+				} finally {
+					Tracer.Pop ();
+				}
+			}
+		}
+
+		void ProcessConditionalMethod (ConditionalMethod conditional)
+		{
+			if (Annotations.IsMarked (conditional.Feature)) {
+				_methods.Enqueue (conditional.Method);
+				return;
+			}
+
+			if (conditional.Action == LinkerConditionalAction.Remove) {
+				var marked = Annotations.IsMarked (conditional.Method);
+				Annotations.SetAction (conditional.Method, MethodAction.Delete);
+				return;
+			}
+
+			MarkType (conditional.Method.DeclaringType);
+			Annotations.Mark (conditional.Method);
+			switch (conditional.Action) {
+			case LinkerConditionalAction.Throw:
+				Annotations.SetAction (conditional.Method, MethodAction.ConvertToThrowNull);
+				break;
+			case LinkerConditionalAction.Return:
+				Annotations.SetAction (conditional.Method, MethodAction.ConvertToReturn);
+				break;
+			}
 		}
 
 		void ProcessVirtualMethods ()
@@ -495,23 +579,23 @@ namespace Mono.Linker.Steps {
 		{
 			var attr_type = ca.AttributeType;
 
-			if (_context.KeepUsedAttributeTypesOnly) {
-				switch (attr_type.FullName) {
-				// [ThreadStatic] and [ContextStatic] are required by the runtime
-				case "System.ThreadStaticAttribute":
-				case "System.ContextStaticAttribute":
-					return true;
-				// Attributes related to `fixed` keyword used to declare fixed length arrays
-				case "System.Runtime.CompilerServices.FixedBufferAttribute":
-					return true;
-				case "System.Runtime.InteropServices.InterfaceTypeAttribute":
-				case "System.Runtime.InteropServices.GuidAttribute":
-					return true;
-				}
-				
-				if (!Annotations.IsMarked (attr_type.Resolve ()))
-					return false;
+			switch (attr_type.FullName) {
+			// [ThreadStatic] and [ContextStatic] are required by the runtime
+			case "System.ThreadStaticAttribute":
+			case "System.ContextStaticAttribute":
+				return true;
+			// Attributes related to `fixed` keyword used to declare fixed length arrays
+			case "System.Runtime.CompilerServices.FixedBufferAttribute":
+				return true;
+			case "System.Runtime.InteropServices.InterfaceTypeAttribute":
+			case "System.Runtime.InteropServices.GuidAttribute":
+				return true;
+			case "System.Runtime.CompilerServices.MonoLinkerConditionalAttribute":
+				return false;
 			}
+
+			if (_context.KeepUsedAttributeTypesOnly && !Annotations.IsMarked (attr_type.Resolve ()))
+				return false;
 
 			return true;
 		}
@@ -918,6 +1002,27 @@ namespace Mono.Linker.Steps {
 			MarkMethodsIf (type.Methods, IsSpecialSerializationConstructor);
 		}
 
+		bool CheckConditionalType (TypeDefinition type)
+		{
+			bool found = false;
+			foreach (var ca in type.CustomAttributes) {
+				found |= CheckConditionalType (type, ca);
+			}
+			return found;
+		}
+
+		bool CheckConditionalType (TypeDefinition type, CustomAttribute attribute)
+		{
+			if (attribute.AttributeType.FullName != "System.Runtime.CompilerServices.MonoLinkerConditionalAttribute")
+				return false;
+			if (attribute.ConstructorArguments.Count != 2)
+				throw new NotSupportedException ();
+			var feature = (LinkerFeature)attribute.ConstructorArguments[0].Value;
+			var action = (LinkerConditionalAction)attribute.ConstructorArguments[1].Value;
+			_conditionalTypes.Enqueue (new ConditionalType (type, feature, action));
+			return true;
+		}
+
 		protected virtual TypeDefinition MarkType (TypeReference reference)
 		{
 			if (reference == null)
@@ -942,6 +1047,9 @@ namespace Mono.Linker.Steps {
 			}
 
 			if (CheckProcessed (type))
+				return null;
+
+			if (false && CheckConditionalType (type))
 				return null;
 
 			Tracer.Push (type);
@@ -1101,6 +1209,9 @@ namespace Mono.Linker.Steps {
 				case "System.Diagnostics.Tracing.EventDataAttribute":
 					MarkMethodsIf (type.Methods, IsPublicInstancePropertyMethod);
 					break;
+				case "System.Runtime.CompilerServices.MonoLinkerFeatureAttribute":
+					MarkLinkerFeature (type, attribute);
+					break;
 				}
 			}
 		}
@@ -1114,6 +1225,9 @@ namespace Mono.Linker.Steps {
 				switch (attribute.Constructor.DeclaringType.FullName) {
 				case "System.Web.Services.Protocols.SoapHeaderAttribute":
 					MarkSoapHeader (method, attribute);
+					break;
+				case "System.Runtime.CompilerServices.MonoLinkerFeatureAttribute":
+					MarkLinkerFeature (method, attribute);
 					break;
 				}
 			}
@@ -1220,6 +1334,21 @@ namespace Mono.Linker.Steps {
 			return argument != null;
 		}
 
+		static bool TryGetIntArgument (CustomAttribute attribute, out int argument)
+		{
+			argument = default;
+
+			if (attribute.ConstructorArguments.Count < 1)
+				return false;
+
+			if (attribute.ConstructorArguments[0].Value is int int_arg) {
+				argument = int_arg;
+				return true;
+			}
+
+			return false;
+		}
+
 		protected int MarkNamedMethod (TypeDefinition type, string method_name)
 		{
 			if (!type.HasMethods)
@@ -1245,6 +1374,22 @@ namespace Mono.Linker.Steps {
 
 			MarkNamedField (method.DeclaringType, member_name);
 			MarkNamedProperty (method.DeclaringType, member_name);
+		}
+
+		void MarkLinkerFeature (MethodDefinition method, CustomAttribute attribute)
+		{
+			if (!TryGetIntArgument (attribute, out var int_arg))
+				return;
+			var feature = (LinkerFeature)int_arg;
+			Annotations.Mark (feature);
+		}
+
+		void MarkLinkerFeature (TypeDefinition type, CustomAttribute attribute)
+		{
+			if (!TryGetIntArgument (attribute, out var int_arg))
+				return;
+			var feature = (LinkerFeature)int_arg;
+			Annotations.Mark (feature);
 		}
 
 		void MarkNamedField (TypeDefinition type, string field_name)
@@ -2297,6 +2442,34 @@ namespace Mono.Linker.Steps {
 			public CustomAttribute Attribute { get; private set; }
 			public ICustomAttributeProvider Provider { get; private set; }
 		}
+
+		protected class ConditionalMethod {
+			public ConditionalMethod (MethodDefinition method, LinkerFeature feature, LinkerConditionalAction action)
+			{
+				Method = method;
+				Feature = feature;
+				Action = action;
+			}
+
+			public MethodDefinition Method { get; }
+			public LinkerFeature Feature { get; }
+			public LinkerConditionalAction Action { get; }
+		}
+
+		protected class ConditionalType
+		{
+			public ConditionalType (TypeDefinition type, LinkerFeature feature, LinkerConditionalAction action)
+			{
+				Type = type;
+				Feature = feature;
+				Action = action;
+			}
+
+			public TypeDefinition Type { get; }
+			public LinkerFeature Feature { get; }
+			public LinkerConditionalAction Action { get; }
+		}
+
 	}
 
 	// Make our own copy of the BindingFlags enum, so that we don't depend on System.Reflection.

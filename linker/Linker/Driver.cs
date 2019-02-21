@@ -1,4 +1,4 @@
-﻿//
+//
 // Driver.cs
 //
 // Author:
@@ -364,6 +364,8 @@ namespace Mono.Linker {
 						}
 					}
 				}
+
+				p.AddStepAfter (typeof (SweepStep), new SizeCheckStep ());
 
 				PreProcessPipeline (p);
 

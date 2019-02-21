@@ -86,6 +86,8 @@
     <Compile Include="Linker\DirectoryAssemblyResolver.cs" />
     <Compile Include="Linker\Driver.cs" />
     <Compile Include="Linker\LinkContext.cs" />
+    <Compile Include="Linker\LinkerConditionalAction.cs" />
+    <Compile Include="Linker\LinkerFeature.cs" />
     <Compile Include="Linker\LoadException.cs" />
     <Compile Include="Linker\MarkException.cs" />
     <Compile Include="Linker\MarkingHelpers.cs" />
