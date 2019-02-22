@@ -1,13 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <ILLinkBuild Condition=" $(Configuration.StartsWith('illink')) ">true</ILLinkBuild>
-    <AssemblyName Condition=" '$(ILLinkBuild)' != 'true' ">monolinker</AssemblyName>
-    <AssemblyName Condition=" '$(ILLinkBuild)' == 'true' ">illink</AssemblyName>
-    <OutputType>Exe</OutputType>
-    <DefineConstants Condition=" $(Configuration.StartsWith('illink')) ">$(DefineConstants);FEATURE_ILLINK</DefineConstants>
+  <PropertyGroup Condition=" $(Configuration.StartsWith('illink')) ">
+    <AssemblyName>illink</AssemblyName>
+    <DefineConstants>$(DefineConstants);FEATURE_ILLINK</DefineConstants>
     <!-- net46 build is disabled until cecil uses SDK-style projects. -->
     <TargetFrameworks>netcoreapp2.0</TargetFrameworks>
+    <TargetFrameworks Condition=" '$(MSBuildRuntimeType)' == 'Core' And '$(OS)' != 'Windows_NT' ">netcoreapp2.0</TargetFrameworks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" ! $(Configuration.StartsWith('illink')) ">
+    <AssemblyName>monolinker</AssemblyName>
+    <TargetFrameworks>net462</TargetFrameworks>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <RootNamespace>Mono</RootNamespace>
     <AssemblyTitle>Mono.Linker</AssemblyTitle>
