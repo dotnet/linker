@@ -24,6 +24,15 @@
     <Version>0.2.0.0</Version>
   </PropertyGroup>
 
+  <PropertyGroup Condition=" $(Configuration.EndsWith('Debug')) ">
+    <DebugSymbols Condition=" '$(DebugSymbols)' == '' ">true</DebugSymbols>
+    <Optimize Condition=" '$(Optimize)' == '' ">false</Optimize>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" $(Configuration.EndsnWith('Release')) ">
+    <Optimize Condition=" '$(Optimize)' == '' ">true</Optimize>
+  </PropertyGroup>
+
   <ItemGroup>
     <Compile Include="Linker.Steps\BaseStep.cs" />
     <Compile Include="Linker.Steps\BlacklistStep.cs" />
