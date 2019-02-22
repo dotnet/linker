@@ -2,6 +2,7 @@
 
   <PropertyGroup Condition=" $(Configuration.StartsWith('illink')) ">
     <AssemblyName>illink</AssemblyName>
+    <Description>IL Linker</Description>
     <DefineConstants>$(DefineConstants);FEATURE_ILLINK</DefineConstants>
     <!-- net46 build is disabled until cecil uses SDK-style projects. -->
     <TargetFrameworks>netcoreapp2.0</TargetFrameworks>
@@ -10,6 +11,8 @@
 
   <PropertyGroup Condition=" ! $(Configuration.StartsWith('illink')) ">
     <AssemblyName>monolinker</AssemblyName>
+    <AssemblyTitle>Mono.Linker</AssemblyTitle>
+    <Description>Mono CIL Linker</Description>
     <TargetFrameworks>net462</TargetFrameworks>
   </PropertyGroup>
 
@@ -17,8 +20,6 @@
     <OutputType>Exe</OutputType>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <RootNamespace>Mono</RootNamespace>
-    <AssemblyTitle>Mono.Linker</AssemblyTitle>
-    <Description>Mono CIL Linker</Description>
     <Copyright>(C) 2006, Jb Evain</Copyright>
     <Version>0.2.0.0</Version>
   </PropertyGroup>
