@@ -1,0 +1,8 @@
+<Project>
+  <!-- These libraries are 3rd-party based on the copyright info. -->
+  <FileSignInfo Include="Mono.Cecil.dll" CertificateName="3PartySHA2" />
+  <FileSignInfo Include="Mono.Cecil.Mdb.dll" CertificateName="3PartySHA2" />
+  <FileSignInfo Include="Mono.Cecil.Pdb.dll" CertificateName="3PartySHA2" />
+  <FileSignInfo Include="illink.dll" CertificateName="3PartySHA2" />
+  <FileSignInfo Include="ILLink.CustomSteps.dll" CertificateName="3PartySHA2" />
+</Project>
