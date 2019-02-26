@@ -23,8 +23,6 @@ jobs:
     enableTelemetry: true
     pool:
       'Hosted Ubuntu 1604' # available on internal and public. recommended for both.
-    # Publish asset manifests to pipeline storage
-    enablePublishBuildAssets: true
     # enablePublishTestResults
     # Publish build logs to pipeline storage
     enablePublishBuildArtifacts: true
@@ -44,6 +42,7 @@ jobs:
     pool:
       'dotnet-internal-temp' # internal
       # for public, need to use 'Hosted VS2017'
+    # publish asset manifests to pipeline storage (only for legs that publish)
     enablePublishBuildAssets: true
     enablePublishBuildArtifacts: true
     helixRepo: 'mono/linker'
