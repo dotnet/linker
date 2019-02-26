@@ -1,6 +1,7 @@
 variables:
 - group: 'DotNet-HelixApi-Access' # TODO: make available internally only
-- _DotNetPublishToBlobFeed: true
+- name: _DotNetPublishToBlobFeed
+  value: true
 
 jobs:
 - template: /eng/common/templates/job/job.yml
