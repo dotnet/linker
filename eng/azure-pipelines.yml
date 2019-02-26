@@ -6,10 +6,17 @@ variables:
 - name: _BuildConfig
   value: Release
 - name: _PublishArgs
+         # these args are for publish only AFAIK
   value: /p:DotNetPublishToBlobFeed=$(_DotNetPublishToBlobFeed)
          /p:DotNetPublishBlobFeedUrl=https://dotnetfeed.blob.core.windows.net/dotnet-core/index.json
          /p:DotNetPublishBlobFeedKey=$(dotnetfeed-storage-access-key-1)
+         # this I believe is used for publish and pack?? maybe also build, for versioning...
          /p:OfficialBuildId=$(Build.BuildNumber)
+  # _SignType is used for microbuild install step
+  # DotNetSignType needs to be passed for the arcade signing targets
+  # required by microbuild install step
+- name: _TeamName
+  value: .NET
 
 jobs:
 - template: /eng/common/templates/job/job.yml
