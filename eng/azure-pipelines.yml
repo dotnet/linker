@@ -1,3 +1,6 @@
+variables:
+- group: 'DotNet-HelixApi-Access' # TODO: make available internally only
+
 jobs:
 - template: /eng/common/templates/job/job.yml
   parameters:
