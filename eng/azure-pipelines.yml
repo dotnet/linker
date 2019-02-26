@@ -1,12 +1,12 @@
 jobs:
 - template: /eng/common/templates/job/job.yml
   parameters:
-    name: build
-    displayName: Build linker
+    name: build_linux
+    displayName: Build linker on linux
     enableTelemetry: true
     enableMicrobuild: true
     pool:
-      dnceng-linux-internal-temp
+      'Hosted Ubuntu 1604' # available on internal and public. recommended for both.
     # Publish asset manifests to pipeline storage
     enablePublishBuildAssets: true
     # enablePublishTestResults
@@ -14,3 +14,17 @@ jobs:
     helixRepo: 'mono/linker'
     steps:
     - script: eng/common/cibuild.sh --projects $(Build.SourcesDirectory)/illink.sln /p:ArcadeBuild=true
+
+- template: /eng/common/templates/job/job.yml
+  parameters:
+    name: build_windows
+    displayName: Build linker on windows
+    enableTelemetry: true
+    enableMicrobuild: true
+    pool:
+      'dotnet-internal-temp' # internal
+      # for public, need to use 'Hosted VS2017'
+    enablePublishBuildAssets: true
+    helixRepo: 'mono/linker'
+    steps:
+    - script: eng\common\cibuild.cmd -projects $(Build.SourcesDirectory)\illink.sln /p:ArcadeBuild=true
