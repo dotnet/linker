@@ -13,7 +13,8 @@ jobs:
     # Publish asset manifests to pipeline storage
     enablePublishBuildAssets: true
     # enablePublishTestResults
-    # enablePublishBuildArtifacts
+    # Publish build logs to pipeline storage
+    enablePublishBuildArtifacts: true
     helixRepo: 'mono/linker'
     steps:
     - checkout: self
@@ -30,6 +31,7 @@ jobs:
       'dotnet-internal-temp' # internal
       # for public, need to use 'Hosted VS2017'
     enablePublishBuildAssets: true
+    enablePublishBuildArtifacts: true
     helixRepo: 'mono/linker'
     steps:
     - checkout: self
