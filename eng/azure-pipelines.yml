@@ -4,6 +4,8 @@ variables:
   value: true
 - name: _BuildConfig
   value: Release
+- name: _PublishArgs
+  value: /p:DotNetPublishToBlobFeed=$(_DotNetPublishToBlobFeed)
 
 jobs:
 - template: /eng/common/templates/job/job.yml
@@ -23,7 +25,7 @@ jobs:
     steps:
     - checkout: self
       submodules: true
-    - script: eng/common/cibuild.sh --projects $(Build.SourcesDirectory)/illink.sln --configuration $(_BuildConfig) /p:ArcadeBuild=true
+    - script: eng/common/cibuild.sh --projects $(Build.SourcesDirectory)/illink.sln --configuration $(_BuildConfig) $(_PublishArgs) /p:ArcadeBuild=true
 
 - template: /eng/common/templates/job/job.yml
   parameters:
@@ -40,4 +42,4 @@ jobs:
     steps:
     - checkout: self
       submodules: true
-    - script: eng\common\cibuild.cmd -projects $(Build.SourcesDirectory)\illink.sln -configuration $(_BuildConfig) /p:ArcadeBuild=true
+    - script: eng\common\cibuild.cmd -projects $(Build.SourcesDirectory)\illink.sln -configuration $(_BuildConfig) $(_PublishArgs) /p:ArcadeBuild=true
