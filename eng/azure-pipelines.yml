@@ -1,5 +1,6 @@
 variables:
-- group: 'DotNet-HelixApi-Access' # TODO: make available internally only
+- group: DotNet-HelixApi-Access # TODO: make available internally only
+- group: DotNet-Blob-Feed
 - name: _DotNetPublishToBlobFeed
   value: true
 - name: _BuildConfig
@@ -7,6 +8,8 @@ variables:
 - name: _PublishArgs
   value: /p:DotNetPublishToBlobFeed=$(_DotNetPublishToBlobFeed)
          /p:DotNetPublishBlobFeedUrl=https://dotnetfeed.blob.core.windows.net/dotnet-core/index.json
+         /p:DotNetPublishBlobFeedKey=$(dotnetfeed-storage-access-key-1)
+         /p:OfficialBuildId=$(Build.BuildNumber)
 
 jobs:
 - template: /eng/common/templates/job/job.yml
