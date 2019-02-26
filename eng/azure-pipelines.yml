@@ -47,12 +47,12 @@ jobs:
     # DotNetSignType needs to be passed for arcade signing targets, otherwise it defaults to real.
     # _SignType is used in the arcade templates that install microbuild.
     - DotNetSignType: $(_SignType)
+    - _PublishArgs: /p:DotNetPublishToBlobFeed=$(_DotNetPublishToBlobFeed)
+                    /p:DotNetPublishBlobFeedUrl=https://dotnetfeed.blob.core.windows.net/dotnet-core/index.json
+                    /p:DotNetPublishBlobFeedKey=$(dotnetfeed-storage-access-key-1)
     steps:
     - checkout: self
       submodules: true
     - script: eng\common\cibuild.cmd -projects $(Build.SourcesDirectory)\illink.sln
-              -configuration $(_BuildConfig) $(_BuildArgs)
-              /p:DotNetPublishToBlobFeed=$(_DotNetPublishToBlobFeed)
-              /p:DotNetPublishBlobFeedUrl=https://dotnetfeed.blob.core.windows.net/dotnet-core/index.json
-              /p:DotNetPublishBlobFeedKey=$(dotnetfeed-storage-access-key-1)
-      displayName: Build illink.sln $(_BuildConfig)
+              -configuration $(_BuildConfig) $(_BuildArgs) $(_PublishArgs)
+      displayName: Build and publish illink.sln $(_BuildConfig)
