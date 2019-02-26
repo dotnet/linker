@@ -1,11 +1,19 @@
 pool:
   vmImage: 'Ubuntu-16.04'
 
-steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
-
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+jobs:
+- template: /eng/common/templates/job/job.yml
+  parameters:
+    name: build
+    displayName: Build linker
+    enableTelemetry: true
+    enableMicrobuild: true
+    pool:
+      dnceng-linux-internal-temp
+    # Publish asset manifests to pipeline storage
+    enablePublishBuildAssets: true
+    # enablePublishTestResults
+    # enablePublishBuildArtifacts
+    # helixRepo
+    steps:
+    - script: eng/common/cibuild.sh --projects $(Build.SourcesDirectory)/illink.sln /p:ArcadeBuild=true
