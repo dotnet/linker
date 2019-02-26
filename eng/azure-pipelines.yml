@@ -16,6 +16,8 @@ jobs:
     # enablePublishBuildArtifacts
     helixRepo: 'mono/linker'
     steps:
+    - checkout: self
+      submodules: true
     - script: eng/common/cibuild.sh --projects $(Build.SourcesDirectory)/illink.sln /p:ArcadeBuild=true
 
 - template: /eng/common/templates/job/job.yml
@@ -30,4 +32,6 @@ jobs:
     enablePublishBuildAssets: true
     helixRepo: 'mono/linker'
     steps:
+    - checkout: self
+      submodules: true
     - script: eng\common\cibuild.cmd -projects $(Build.SourcesDirectory)\illink.sln /p:ArcadeBuild=true
