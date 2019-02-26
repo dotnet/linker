@@ -11,6 +11,6 @@ jobs:
     enablePublishBuildAssets: true
     # enablePublishTestResults
     # enablePublishBuildArtifacts
-    # helixRepo
+    helixRepo: 'mono/linker'
     steps:
     - script: eng/common/cibuild.sh --projects $(Build.SourcesDirectory)/illink.sln /p:ArcadeBuild=true
