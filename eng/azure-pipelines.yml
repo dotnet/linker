@@ -6,6 +6,7 @@ variables:
   value: Release
 - name: _PublishArgs
   value: /p:DotNetPublishToBlobFeed=$(_DotNetPublishToBlobFeed)
+         /p:DotNetPublishBlobFeedUrl=https://dotnetfeed.blob.core.windows.net/dotnet-core/index.json
 
 jobs:
 - template: /eng/common/templates/job/job.yml
