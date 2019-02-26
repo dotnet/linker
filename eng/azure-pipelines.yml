@@ -14,7 +14,9 @@ variables:
 
   # official build I believe is used for publish and pack?? maybe also build, for versioning...
   # _SignType is used for microbuild install step
-  # DotNetSignType needs to be passed for the arcade signing targets
+  # DotNetSignType needs to be passed for the arcade signing targets, otherwise it defaults to real.
+- name: DotNetSignType
+  value: $(_SignType)
   # required by microbuild install step
 - name: _TeamName
   value: .NET
