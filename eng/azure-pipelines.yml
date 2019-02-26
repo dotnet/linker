@@ -24,6 +24,7 @@ jobs:
       submodules: true
     - script: eng/common/cibuild.sh --projects $(Build.SourcesDirectory)/illink.sln
               --configuration $(_BuildConfig) $(_BuildArgs)
+      displayName: Build illink.sln $(_BuildConfig)
 
 - template: /eng/common/templates/job/job.yml
   parameters:
@@ -54,3 +55,4 @@ jobs:
               /p:DotNetPublishToBlobFeed=$(_DotNetPublishToBlobFeed)
               /p:DotNetPublishBlobFeedUrl=https://dotnetfeed.blob.core.windows.net/dotnet-core/index.json
               /p:DotNetPublishBlobFeedKey=$(dotnetfeed-storage-access-key-1)
+      displayName: Build illink.sln $(_BuildConfig)
