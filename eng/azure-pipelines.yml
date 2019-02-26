@@ -6,14 +6,6 @@ variables:
   value: /p:OfficialBuildId=$(Build.BuildNumber)
          /p:ArcadeBuild=true
 
-  # official build I believe is used for publish and pack?? maybe also build, for versioning...
-  # _SignType is used for microbuild install step
-  # DotNetSignType needs to be passed for the arcade signing targets, otherwise it defaults to real.
-- name: DotNetSignType
-  value: $(_SignType)
-  # required by microbuild install step
-- name: _TeamName
-  value: .NET
 
 jobs:
 - template: /eng/common/templates/job/job.yml
@@ -49,6 +41,11 @@ jobs:
     variables:
     - group: DotNet-Blob-Feed
     - _DotNetPublishToBlobFeed: true
+    # required by microbuild install step
+    - _TeamName: .NET
+    # DotNetSignType needs to be passed for arcade signing targets, otherwise it defaults to real.
+    # _SignType is used in the arcade templates that install microbuild.
+    - DotNetSignType: $(_SignType)
     steps:
     - checkout: self
       submodules: true
