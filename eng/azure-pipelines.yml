@@ -1,16 +1,10 @@
 variables:
 - group: DotNet-HelixApi-Access # TODO: make available internally only
-- group: DotNet-Blob-Feed
-- name: _DotNetPublishToBlobFeed
-  value: true
 - name: _BuildConfig
   value: Release
-- name: _PublishArgs
-         # these args are for publish only AFAIK
-  value: /p:DotNetPublishToBlobFeed=$(_DotNetPublishToBlobFeed)
-         /p:DotNetPublishBlobFeedUrl=https://dotnetfeed.blob.core.windows.net/dotnet-core/index.json
-         /p:DotNetPublishBlobFeedKey=$(dotnetfeed-storage-access-key-1)
-         /p:OfficialBuildId=$(Build.BuildNumber)
+- name: _BuildArgs
+  value: /p:OfficialBuildId=$(Build.BuildNumber)
+         /p:ArcadeBuild=true
 
   # official build I believe is used for publish and pack?? maybe also build, for versioning...
   # _SignType is used for microbuild install step
@@ -27,7 +21,6 @@ jobs:
     name: build_linux
     displayName: Build linker on linux
     enableTelemetry: true
-    enableMicrobuild: true
     pool:
       'Hosted Ubuntu 1604' # available on internal and public. recommended for both.
     # Publish asset manifests to pipeline storage
@@ -39,7 +32,8 @@ jobs:
     steps:
     - checkout: self
       submodules: true
-    - script: eng/common/cibuild.sh --projects $(Build.SourcesDirectory)/illink.sln --configuration $(_BuildConfig) $(_PublishArgs) /p:ArcadeBuild=true
+    - script: eng/common/cibuild.sh --projects $(Build.SourcesDirectory)/illink.sln
+              --configuration $(_BuildConfig) $(_BuildArgs)
 
 - template: /eng/common/templates/job/job.yml
   parameters:
@@ -53,7 +47,14 @@ jobs:
     enablePublishBuildAssets: true
     enablePublishBuildArtifacts: true
     helixRepo: 'mono/linker'
+    variables:
+    - group: DotNet-Blob-Feed
+    - _DotNetPublishToBlobFeed: true
     steps:
     - checkout: self
       submodules: true
-    - script: eng\common\cibuild.cmd -projects $(Build.SourcesDirectory)\illink.sln -configuration $(_BuildConfig) $(_PublishArgs) /p:ArcadeBuild=true
+    - script: eng\common\cibuild.cmd -projects $(Build.SourcesDirectory)\illink.sln
+              -configuration $(_BuildConfig) $(_BuildArgs)
+              /p:DotNetPublishToBlobFeed=$(_DotNetPublishToBlobFeed)
+              /p:DotNetPublishBlobFeedUrl=https://dotnetfeed.blob.core.windows.net/dotnet-core/index.json
+              /p:DotNetPublishBlobFeedKey=$(dotnetfeed-storage-access-key-1)
