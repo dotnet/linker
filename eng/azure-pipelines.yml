@@ -1,6 +1,3 @@
-pool:
-  vmImage: 'Ubuntu-16.04'
-
 jobs:
 - template: /eng/common/templates/job/job.yml
   parameters:
