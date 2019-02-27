@@ -60,10 +60,12 @@ namespace ILLink.Tests
 		/// </summary>
 		public static TestContext CreateDefaultContext()
 		{
-			var packageName = "ILLink.Tasks";
 			// test working directory is test project's <baseoutputpath>/<config>/<tfm>
-			var testBin = "../../";
-			var repoRoot = Path.Combine(testBin, "..", "..", "..");
+			var testBin = Path.Combine(Environment.CurrentDirectory, "..", "..");
+			var repoRoot = Path.GetFullPath(Path.Combine(testBin, "..", "..", ".."));
+
+			// Locate task package
+			var packageName = "ILLink.Tasks";
 			var packageSource = Path.Combine(repoRoot, "src", "ILLink.Tasks", "bin", "nupkgs");
 			var tasksPackages = Directory.GetFiles(packageSource)
 				.Where(p => Path.GetExtension(p) == ".nupkg")
@@ -77,17 +79,13 @@ namespace ILLink.Tests
 			}
 			var tasksPackage = tasksPackages.Single();
 			var version = tasksPackage.Remove(0, packageName.Length + 1);
-			var dotnetDir = Path.Combine(repoRoot, "corebuild", "Tools", "dotnetcli");
-			var dotnetToolNames = Directory.GetFiles(dotnetDir)
+
+			// Locate dotnet host
+			var dotnetDir = Path.Combine(repoRoot, ".dotnet");
+			var dotnetToolName = Directory.GetFiles(dotnetDir)
 				.Select(p => Path.GetFileName(p))
-				.Where(p => p.Contains("dotnet"));
-			var nTools = dotnetToolNames.Count();
-			if (nTools > 1) {
-				throw new Exception($"multiple dotnet tools in {dotnetDir}");
-			} else if (nTools == 0) {
-				throw new Exception($"no dotnet tool found in {dotnetDir}");
-			}
-			var dotnetToolName = dotnetToolNames.Single();
+				.Where(p => p.StartsWith("dotnet"))
+				.First();
 			var dotnetToolPath = Path.Combine(dotnetDir, dotnetToolName);
 
 			var context = new TestContext();
