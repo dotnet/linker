@@ -119,5 +119,11 @@
     <Compile Include="Tests\TypeNameParserTests.cs" />
     <Compile Include="Tests\ParseResponseFileLinesTests.cs" />
   </ItemGroup>
+
+  <ItemGroup Condition=" $(ILLinkBuild) ">
+    <PackageReference Include="System.CodeDom" Version="4.5.0" />
+    <PackageReference Include="Microsoft.Win32.Registry" Version="4.5.0" />
+  </ItemGroup>
+
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" Condition=" $(ILLinkBuild) " />
 </Project>
