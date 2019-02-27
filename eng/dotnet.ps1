@@ -1,4 +1,4 @@
-. $PSScriptRoot/../eng/common/tools.ps1
+. $PSScriptRoot/common/tools.ps1
 
 $dotnetRoot = InitializeDotNetCli -install:$true
 Join-Path $dotnetRoot "dotnet.exe"

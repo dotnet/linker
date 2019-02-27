@@ -2,7 +2,7 @@
 
 source="${BASH_SOURCE[0]}"
 scriptroot="$( cd -P "$( dirname "$source" )" && pwd )"
-. "$scriptroot/../eng/common/tools.sh"
+. "$scriptroot/common/tools.sh"
 
 InitializeDotNetCli true
 echo "$_InitializeDotNetCli/dotnet" "$@"
