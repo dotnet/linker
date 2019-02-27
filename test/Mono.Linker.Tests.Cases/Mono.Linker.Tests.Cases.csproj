@@ -17,6 +17,7 @@
     <TargetFramework Condition=" $(ILLinkBuild) ">netcoreapp2.0</TargetFramework>
     <EnableDefaultCompileItems Condition=" $(ILLinkBuild) ">false</EnableDefaultCompileItems>
     <TargetFrameworkVersion Condition=" ! $(ILLinkBuild) ">v4.7.1</TargetFrameworkVersion>
+    <GenerateAssemblyInfo Condition=" $(ILLinkBuild) ">false</GenerateAssemblyInfo>
     <FileAlignment>512</FileAlignment>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
