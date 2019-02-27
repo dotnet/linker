@@ -1,4 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="$(MSBuildThisFileDirectory)../../eng/Versions.props" Condition=" '$(ArcadeBuild)' != 'true' " />
   <PropertyGroup>
     <!-- net46 build is disabled until cecil uses SDK-style projects. -->
     <TargetFrameworks>netcoreapp2.0</TargetFrameworks>
