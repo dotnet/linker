@@ -4,7 +4,7 @@
     <ILLinkBuild Condition=" $(Configuration.StartsWith('illink')) ">true</ILLinkBuild>
     <ILLinkBuild Condition=" '$(ILLinkBuild)' == '' ">false</ILLinkBuild>
   </PropertyGroup>
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props') And ! $(ILLinkBuild) " />
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" Condition=" $(ILLinkBuild) " />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
