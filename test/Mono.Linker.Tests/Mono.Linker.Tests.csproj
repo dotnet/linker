@@ -17,6 +17,8 @@
     <TargetFramework Condition=" $(ILLinkBuild) ">netcoreapp2.0</TargetFramework>
     <EnableDefaultCompileItems Condition=" $(ILLinkBuild) ">false</EnableDefaultCompileItems>
     <TargetFrameworkVersion Condition=" ! $(ILLinkBuild) ">v4.7.1</TargetFrameworkVersion>
+    <DefineConstants Condition=" $(ILLinkBuild) ">$(DefineConstants);ILLINK</DefineConstants>
+    <DefineConstants Condition=" '$(Configuration)' == 'illink_Debug' ">$(DefineConstants);DEBUG</DefineConstants>
     <IsTestProject Condition=" $(ILLinkBuild) ">true</IsTestProject>
     <RootNamespace>Mono.Linker.Tests</RootNamespace>
   </PropertyGroup>
@@ -82,6 +84,8 @@
       <Name>Mono.Linker</Name>
     </ProjectReference>
     <ProjectReference Include="..\Mono.Linker.Tests.Cases\Mono.Linker.Tests.Cases.csproj">
+      <SetConfiguration Condition=" '$(Configuration)' == 'illink_Debug' ">Configuration=illink_Debug</SetConfiguration>
+      <SetConfiguration Condition=" '$(Configuration)' == 'illink_Release' ">Configuration=illink_Release</SetConfiguration>
       <Project>{B6BEE6AA-ADA0-4E1D-9A17-FBF2936F82B5}</Project>
       <Name>Mono.Linker.Tests.Cases</Name>
     </ProjectReference>

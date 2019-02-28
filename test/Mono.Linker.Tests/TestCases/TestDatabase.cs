@@ -164,12 +164,26 @@ namespace Mono.Linker.Tests.TestCases
 		{
 			var thisDirectory = Path.GetDirectoryName(thisFile);
 			rootSourceDirectory = Path.GetFullPath(Path.Combine(thisDirectory, "..", "..", "Mono.Linker.Tests.Cases"));
+#if ILLINK
+#if DEBUG
+			var configDirectoryName = "illink_Debug";
+#else
+			var configDirectoryName = "illink_Release";
+#endif
+#else
 #if DEBUG
 			var configDirectoryName = "Debug";
 #else
 			var configDirectoryName = "Release";
 #endif
-			testCaseAssemblyPath = Path.GetFullPath(Path.Combine(rootSourceDirectory, "bin", configDirectoryName, "Mono.Linker.Tests.Cases.dll"));
+#endif
+
+#if NETCOREAPP2_0
+			var tfm = "netcoreapp2.0";
+#else
+			var tfm = "";
+#endif
+			testCaseAssemblyPath = Path.GetFullPath(Path.Combine(rootSourceDirectory, "bin", configDirectoryName, tfm, "Mono.Linker.Tests.Cases.dll"));
 		}
 	}
 }
