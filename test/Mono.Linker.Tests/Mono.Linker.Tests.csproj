@@ -17,6 +17,7 @@
     <TargetFramework Condition=" $(ILLinkBuild) ">netcoreapp2.0</TargetFramework>
     <EnableDefaultCompileItems Condition=" $(ILLinkBuild) ">false</EnableDefaultCompileItems>
     <TargetFrameworkVersion Condition=" ! $(ILLinkBuild) ">v4.7.1</TargetFrameworkVersion>
+    <IsTestProject Condition=" $(ILLinkBuild) ">true</IsTestProject>
     <RootNamespace>Mono.Linker.Tests</RootNamespace>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
