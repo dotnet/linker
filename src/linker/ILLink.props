@@ -7,7 +7,8 @@
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AssemblyName>illink</AssemblyName>
-    <OutputType>Library</OutputType>
+    <!-- OutputType is Exe in Mono.Linker.csproj, but it needs to be set before importing SDK targets. -->
+    <OutputType>Exe</OutputType>
   </PropertyGroup>
 
 </Project>
