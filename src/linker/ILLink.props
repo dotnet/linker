@@ -11,4 +11,14 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
 
+  <!-- When publishing illink as a dependency of ILLink.Tasks, we want
+       to include files needed to run it as an application in the
+       publish output. See https://github.com/dotnet/sdk/issues/1675. -->
+  <Target Name="AddRuntimeDependenciesToContent" Condition=" '$(TargetFrameworkIdentifier)' == '.NETCoreApp'" BeforeTargets="GetCopyToOutputDirectoryItems">
+    <ItemGroup>
+      <ContentWithTargetPath Include="$(ProjectDepsFilePath)" CopyToOutputDirectory="PreserveNewest" TargetPath="$(ProjectDepsFileName)" />
+      <ContentWithTargetPath Include="$(ProjectRuntimeConfigFilePath)" CopyToOutputDirectory="PreserveNewest" TargetPath="$(ProjectRuntimeConfigFileName)" />
+    </ItemGroup>
+  </Target>
+
 </Project>
