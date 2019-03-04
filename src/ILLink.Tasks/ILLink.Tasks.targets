@@ -95,10 +95,10 @@
     <!-- Rewrite ResolvedAssembliesToPublish, which is an input to
          ComputeFilesToPublish. -->
     <ItemGroup>
-      <ResolvedAssembliesToPublish Remove="@(_ManagedAssembliesToLink)" />
-      <ResolvedAssembliesToPublish Remove="@(_NativeResolvedDepsToPublish)" />
-      <ResolvedAssembliesToPublish Include="@(_NativeKeptDepsToPublish)" />
-      <ResolvedAssembliesToPublish Include="@(_LinkedResolvedAssemblies)" />
+      <_ResolvedCopyLocalPublishAssets Remove="@(_ManagedAssembliesToLink)" />
+      <_ResolvedCopyLocalPublishAssets Remove="@(_NativeResolvedDepsToPublish)" />
+      <_ResolvedCopyLocalPublishAssets Include="@(_NativeKeptDepsToPublish)" />
+      <_ResolvedCopyLocalPublishAssets Include="@(_LinkedResolvedAssemblies)" />
     </ItemGroup>
 
     <!-- Rewrite IntermediateAssembly, which is an input to
@@ -131,14 +131,14 @@
   <Target Name="SaveResolvedAssembliesToPublish"
           BeforeTargets="ComputeLinkedFilesToPublish">
     <ItemGroup>
-      <PreLinkResolvedAssembliesToPublish Include="@(ResolvedAssembliesToPublish)" />
+      <PreLinkResolvedAssembliesToPublish Include="@(_ResolvedCopyLocalPublishAssets)" />
     </ItemGroup>
   </Target>
   <Target Name="RestoreResolvedAssembliesToPublish"
           BeforeTargets="ComputeRefAssembliesToPublish">
     <ItemGroup>
-      <ResolvedAssembliesToPublish Remove="@(ResolvedAssembliesToPublish)" />
-      <ResolvedAssembliesToPublish Include="@(PreLinkResolvedAssembliesToPublish)" />
+      <_ResolvedCopyLocalPublishAssets Remove="@(_ResolvedCopyLocalPublishAssets)" />
+      <_ResolvedCopyLocalPublishAssets Include="@(PreLinkResolvedAssembliesToPublish)" />
     </ItemGroup>
   </Target>
 
@@ -153,7 +153,7 @@
           AfterTargets="ComputeFilesToPublish"
           DependsOnTargets="_ComputeManagedAssembliesToLink;_ComputeLinkedAssemblies"
           Condition=" '$(LinkDuringPublish)' == 'true' And '$(ShowLinkerSizeComparison)' == 'true' ">
-    <FilterByMetadata Items="@(ResolvedAssembliesToPublish);@(IntermediateAssembly)"
+    <FilterByMetadata Items="@(_ResolvedCopyLocalPublishAssets);@(IntermediateAssembly)"
                       MetadataName="Filename"
                       MetadataValues="@(_ManagedAssembliesToLink->'%(Filename)')">
       <Output TaskParameter="FilteredItems" ItemName="_FinalAssembliesTouchedByLinker" />
@@ -283,7 +283,7 @@
           DependsOnTargets="_ComputeLinkedAssemblies"
           Condition=" '$(LinkerTrimNativeDeps)' == 'true' ">
     <ItemGroup>
-      <_NativeResolvedDepsToPublish Include="@(ResolvedAssembliesToPublish)" />
+      <_NativeResolvedDepsToPublish Include="@(_ResolvedCopyLocalPublishAssets)" />
       <_NativeResolvedDepsToPublish Remove="@(_ManagedResolvedAssembliesToPublish)" />
       <_NativeResolvedDepsToPublish Remove="@(_NativeResolvedDepsToPublish->WithMetadataValue('AssetType', 'resources'))" />
     </ItemGroup>
@@ -370,7 +370,7 @@
          from ResolvedAssembliesToPublish? We may be able to check for
          AssetType="runtime" on managed assemblies - would that give
          the same set of assemblies? -->
-    <ComputeManagedAssemblies Assemblies="@(ResolvedAssembliesToPublish)">
+    <ComputeManagedAssemblies Assemblies="@(_ResolvedCopyLocalPublishAssets)">
       <Output TaskParameter="ManagedAssemblies" ItemName="_ManagedResolvedAssembliesToPublish" />
     </ComputeManagedAssemblies>
     <!-- For now, hard-code System.Private.CoreLib.ni, the only .ni
