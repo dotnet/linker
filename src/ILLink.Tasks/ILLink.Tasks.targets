@@ -472,14 +472,11 @@
        "platform", currently Microsoft.NETCore.App. -->
   <UsingTask TaskName="GetRuntimeLibraries" AssemblyFile="$(LinkTaskDllPath)" />
   <Target Name="_ComputePlatformLibraries"
-          DependsOnTargets="_ComputeManagedAssembliesToLink">
-    <GetRuntimeLibraries Condition=" '$(SelfContained)' == 'true' "
-                         AssetsFilePath="$(ProjectAssetsFile)"
-                         TargetFramework="$(TargetFrameworkMoniker)"
-                         RuntimeIdentifier="$(RuntimeIdentifier)"
-                         PackageNames="$(MicrosoftNETPlatformLibrary)">
-      <Output TaskParameter="RuntimeLibraries" ItemName="PlatformLibraries" />
-    </GetRuntimeLibraries>
+          DependsOnTargets="_ComputeManagedAssembliesToLink;ResolveRuntimePackAssets">
+
+    <ItemGroup>
+      <PlatformLibraries Include="@(RuntimePackAssets)" />
+    </ItemGroup>
 
     <ItemGroup>
       <PlatformLibraries Include="@(_ManagedAssembliesToLink)" Condition=" '%(Filename)' == 'System.Private.CoreLib' " />
