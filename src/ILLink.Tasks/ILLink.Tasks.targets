@@ -90,7 +90,7 @@
        ComputeFilesToPublish, but after all of its dependencies. -->
   <Target Name="ComputeLinkedFilesToPublish"
           BeforeTargets="ComputeFilesToPublish"
-          DependsOnTargets="_ComputeLinkedAssemblies;_FindNativeDeps"
+          DependsOnTargets="_ComputeLinkedAssemblies;_FindNativeDeps;_RemoveDuplicatesFrom_ResolvedCopyLocalPublishAssets"
           Condition=" '$(LinkDuringPublish)' == 'true' ">
     <!-- Rewrite ResolvedAssembliesToPublish, which is an input to
          ComputeFilesToPublish. -->
@@ -116,6 +116,19 @@
     </ItemGroup>
   </Target>
 
+  <!-- Work around duplicate items in
+       _ResolvedCopyLocalPublishAssets. See
+       https://github.com/dotnet/sdk/issues/3007. -->
+  <Target Name="_RemoveDuplicatesFrom_ResolvedCopyLocalPublishAssets">
+    <RemoveDuplicates Inputs="@(_ResolvedCopyLocalPublishAssets)">
+      <Output TaskParameter="Filtered" ItemName="_Unique_ResolvedCopyLocalPublishAssets" />
+    </RemoveDuplicates>
+    <ItemGroup>
+      <_ResolvedCopyLocalPublishAssets Remove="@(_ResolvedCopyLocalPublishAssets)" />
+      <_ResolvedCopyLocalPublishAssets Include="@(_Unique_ResolvedCopyLocalPublishAssets)" />
+    </ItemGroup>
+  </Target>
+
   <!-- The SDK has a target called ComputeRefAssembliesToPublish that
        runs after ComputeFilesToPublish and rewrites
        ResolvedFileToPublish to include any reference assemblies that
@@ -129,7 +142,8 @@
        restore it to its pre-link state before
        ComputeRefAssembliesToPublish. -->
   <Target Name="SaveResolvedAssembliesToPublish"
-          BeforeTargets="ComputeLinkedFilesToPublish">
+          BeforeTargets="ComputeLinkedFilesToPublish"
+          DependsOnTargets="_RemoveDuplicatesFrom_ResolvedCopyLocalPublishAssets">
     <ItemGroup>
       <PreLinkResolvedAssembliesToPublish Include="@(_ResolvedCopyLocalPublishAssets)" />
     </ItemGroup>
@@ -151,7 +165,7 @@
   <UsingTask TaskName="CompareAssemblySizes" AssemblyFile="$(LinkTaskDllPath)" />
   <Target Name="_CompareLinkedAssemblySizes"
           AfterTargets="ComputeFilesToPublish"
-          DependsOnTargets="_ComputeManagedAssembliesToLink;_ComputeLinkedAssemblies"
+          DependsOnTargets="_ComputeManagedAssembliesToLink;_ComputeLinkedAssemblies;_RemoveDuplicatesFrom_ResolvedCopyLocalPublishAssets"
           Condition=" '$(LinkDuringPublish)' == 'true' And '$(ShowLinkerSizeComparison)' == 'true' ">
     <FilterByMetadata Items="@(_ResolvedCopyLocalPublishAssets);@(IntermediateAssembly)"
                       MetadataName="Filename"
@@ -280,7 +294,7 @@
        dependencies, and these are prevented from being published. -->
   <UsingTask TaskName="FindNativeDeps" AssemblyFile="$(LinkTaskDllPath)" />
   <Target Name="_FindNativeDeps"
-          DependsOnTargets="_ComputeLinkedAssemblies"
+          DependsOnTargets="_ComputeLinkedAssemblies;_RemoveDuplicatesFrom_ResolvedCopyLocalPublishAssets"
           Condition=" '$(LinkerTrimNativeDeps)' == 'true' ">
     <ItemGroup>
       <_NativeResolvedDepsToPublish Include="@(_ResolvedCopyLocalPublishAssets)" />
@@ -365,7 +379,8 @@
        because we use the list of managed assemblies to filter the
        publish output. -->
   <UsingTask TaskName="ComputeManagedAssemblies" AssemblyFile="$(LinkTaskDllPath)" />
-  <Target Name="_ComputeManagedResolvedAssembliesToPublish">
+  <Target Name="_ComputeManagedResolvedAssembliesToPublish"
+          DependsOnTargets="_RemoveDuplicatesFrom_ResolvedCopyLocalPublishAssets">
     <!-- TODO: Is there a better way to get the managed assemblies
          from ResolvedAssembliesToPublish? We may be able to check for
          AssetType="runtime" on managed assemblies - would that give
