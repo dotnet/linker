@@ -83,7 +83,6 @@
   <Target Name="BinPlacePackageDeps">
     <Copy SourceFiles="$(NuspecFileName)" DestinationFolder="$(BaseOutputPath)" />
     <Copy SourceFiles="ILLink.Tasks.targets" DestinationFolder="$(BaseOutputPath)" />
-    <Copy SourceFiles="ILLink.CrossGen.targets" DestinationFolder="$(BaseOutputPath)" />
   </Target>
 
   <Target Name="LayoutPackage">
