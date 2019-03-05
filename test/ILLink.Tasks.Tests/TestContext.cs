@@ -85,7 +85,11 @@ namespace ILLink.Tests
 			var dotnetToolName = Directory.GetFiles(dotnetDir)
 				.Select(p => Path.GetFileName(p))
 				.Where(p => p.StartsWith("dotnet"))
-				.First();
+				.Where(p => {
+					var ext = Path.GetExtension(p);
+					return ext == "" || ext == ".exe";
+				})
+				.Single();
 			var dotnetToolPath = Path.Combine(dotnetDir, dotnetToolName);
 
 			var context = new TestContext();
