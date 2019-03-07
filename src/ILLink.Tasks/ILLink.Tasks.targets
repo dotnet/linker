@@ -525,4 +525,6 @@
     </ItemGroup>
   </Target>
 
+  <!-- Workaround for https://github.com/dotnet/sdk/issues/3010 -->
+  <UsingTask TaskName="GenerateDepsFile" AssemblyFile="$(LinkTaskDllPath)" />
 </Project>
