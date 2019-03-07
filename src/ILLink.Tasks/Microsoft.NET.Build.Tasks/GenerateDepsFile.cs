@@ -18,7 +18,7 @@ namespace Microsoft.NET.Build.Tasks
     /// <summary>
     /// Generates the $(project).deps.json file.
     /// </summary>
-    public class GenerateDepsFile : TaskBase
+    public class GenerateDepsFile : Task
     {
         [Required]
         public string ProjectPath { get; set; }
@@ -104,11 +104,24 @@ namespace Microsoft.NET.Build.Tasks
             return filteredPackages;
         }
 
-        protected override void ExecuteCore()
+        public override bool Execute()
+        {
+            try
+            {
+                ExecuteCore();
+            }
+            catch (BuildErrorException e)
+            {
+                return false;
+            }
+            return true;
+        }
+
+        private void ExecuteCore()
         {
             LoadFilesToSkip();
 
-            LockFile lockFile = new LockFileCache(this).GetLockFile(AssetsFilePath);
+            LockFile lockFile = new LockFileCache(BuildEngine4).GetLockFile(AssetsFilePath);
             CompilationOptions compilationOptions = CompilationOptionsConverter.ConvertFrom(CompilerOptions);
 
             SingleProjectInfo mainProject = SingleProjectInfo.Create(
@@ -183,6 +196,13 @@ namespace Microsoft.NET.Build.Tasks
                     continue;
                 }
 
+                // Heuristic for runtime pack files. These come from "runtime.os-arch..." packages,
+                // but are listed in the deps.json with a "runtimepack." prefix.
+                if (packageId.StartsWith("runtime."))
+                {
+                    packageId = "runtimepack." + packageId;
+                }
+
                 var itemType = fileToSkip.GetMetadata(nameof(ConflictResolution.ConflictItemType));
                 var packagesWithFilesToSkip = (itemType == nameof(ConflictResolution.ConflictItemType.Reference)) ? compileFilesToSkip : runtimeFilesToSkip;
 
@@ -216,8 +236,8 @@ namespace Microsoft.NET.Build.Tasks
                                               runtimeLibrary.Name,
                                               runtimeLibrary.Version,
                                               runtimeLibrary.Hash,
-                                              TrimAssetGroups(runtimeLibrary.RuntimeAssemblyGroups, filesToSkip).ToArray(),
-                                              TrimAssetGroups(runtimeLibrary.NativeLibraryGroups, filesToSkip).ToArray(),
+                                              TrimAssetGroups(runtimeLibrary.Type, runtimeLibrary.RuntimeAssemblyGroups, filesToSkip).ToArray(),
+                                              TrimAssetGroups(runtimeLibrary.Type, runtimeLibrary.NativeLibraryGroups, filesToSkip).ToArray(),
                                               TrimResourceAssemblies(runtimeLibrary.ResourceAssemblies, filesToSkip),
                                               runtimeLibrary.Dependencies,
                                               runtimeLibrary.Serviceable,
@@ -232,11 +252,11 @@ namespace Microsoft.NET.Build.Tasks
             }
         }
 
-        private IEnumerable<RuntimeAssetGroup> TrimAssetGroups(IEnumerable<RuntimeAssetGroup> assetGroups, ISet<string> filesToTrim)
+        private IEnumerable<RuntimeAssetGroup> TrimAssetGroups(string type, IEnumerable<RuntimeAssetGroup> assetGroups, ISet<string> filesToTrim)
         {
             foreach (var assetGroup in assetGroups)
             {
-                yield return new RuntimeAssetGroup(assetGroup.Runtime, TrimRuntimeFiles(assetGroup.RuntimeFiles, filesToTrim));
+                yield return new RuntimeAssetGroup(assetGroup.Runtime, TrimRuntimeFiles(type, assetGroup.RuntimeFiles, filesToTrim));
             }
         }
 
@@ -287,11 +307,32 @@ namespace Microsoft.NET.Build.Tasks
         }
 
 
-        private IEnumerable<RuntimeFile> TrimRuntimeFiles(IEnumerable<RuntimeFile> assemblies, ISet<string> filesToTrim)
+        private IEnumerable<RuntimeFile> TrimRuntimeFiles(string type, IEnumerable<RuntimeFile> assemblies, ISet<string> filesToTrim)
         {
             foreach (var assembly in assemblies)
             {
-                if (!filesToTrim.Contains(assembly.Path))
+                // Workaround for runtime packs: https://github.com/dotnet/sdk/issues/3010
+                if (type == "runtimepack")
+                {
+                    // For runtime packs, the dependency model runtime assembly path is just the filename
+                    // of the assembly. Currently this is  prefixed with a "./". That should go away, but in either
+                    // case we don't expect filesToTrim to match the assembly path exactly, but rather just the filename.
+                    bool shouldTrim = false;
+                    var assemblyName = Path.GetFileName(assembly.Path);
+                    foreach (var f in filesToTrim)
+                    {
+                        if (Path.GetFileName(f) == assemblyName)
+                        {
+                            shouldTrim = true;
+                            break;
+                        }
+                    }
+                    if (!shouldTrim)
+                    {
+                        yield return assembly;
+                    }
+                }
+                else if (!filesToTrim.Contains(assembly.Path))
                 {
                     yield return assembly;
                 }
