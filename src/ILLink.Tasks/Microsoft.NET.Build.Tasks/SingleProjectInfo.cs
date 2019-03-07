@@ -86,7 +86,7 @@ namespace Microsoft.NET.Build.Tasks
 
                 if (string.IsNullOrEmpty(sourceProjectFile))
                 {
-                    throw new BuildErrorException(Strings.MissingItemMetadata, MetadataKeys.MSBuildSourceProjectFile, "ReferencePath", projectReferencePath.ItemSpec);
+                    throw new BuildErrorException("Missing item metadata", MetadataKeys.MSBuildSourceProjectFile, "ReferencePath", projectReferencePath.ItemSpec);
                 }
 
                 string outputName = Path.GetFileName(projectReferencePath.ItemSpec);
@@ -110,7 +110,7 @@ namespace Microsoft.NET.Build.Tasks
 
                 if (string.IsNullOrEmpty(sourceProjectFile))
                 {
-                    throw new BuildErrorException(Strings.MissingItemMetadata, MetadataKeys.MSBuildSourceProjectFile, "ReferenceDependencyPath", projectReferenceDependencyPath.ItemSpec);
+                    throw new BuildErrorException("Missing item metadata", MetadataKeys.MSBuildSourceProjectFile, "ReferenceDependencyPath", projectReferenceDependencyPath.ItemSpec);
                 }
 
                 SingleProjectInfo referenceProjectInfo;
@@ -129,7 +129,7 @@ namespace Microsoft.NET.Build.Tasks
 
                 if (string.IsNullOrEmpty(sourceProjectFile))
                 {
-                    throw new BuildErrorException(Strings.MissingItemMetadata, MetadataKeys.MSBuildSourceProjectFile, "ReferenceSatellitePath", projectReferenceSatellitePath.ItemSpec);
+                    throw new BuildErrorException("Missing item metadata", MetadataKeys.MSBuildSourceProjectFile, "ReferenceSatellitePath", projectReferenceSatellitePath.ItemSpec);
                 }
 
                 SingleProjectInfo referenceProjectInfo;

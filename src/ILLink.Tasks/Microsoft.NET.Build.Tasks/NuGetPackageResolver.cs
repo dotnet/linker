@@ -51,7 +51,7 @@ namespace Microsoft.NET.Build.Tasks
             if (packagePath == null)
             {
                 throw new BuildErrorException(
-                    string.Format(Strings.PackageNotFound, package.Name, package.Version));
+                    string.Format("Package not found", package.Name, package.Version));
             }
 
             return Path.Combine(packagePath, NormalizeRelativePath(relativePath));

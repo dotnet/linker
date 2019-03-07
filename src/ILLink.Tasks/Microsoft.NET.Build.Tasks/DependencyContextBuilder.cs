@@ -718,7 +718,7 @@ namespace Microsoft.NET.Build.Tasks
             string projectPath = library.MSBuildProject;
             if (string.IsNullOrEmpty(projectPath))
             {
-                throw new BuildErrorException(Strings.CannotFindProjectInfo, library.Name);
+                throw new BuildErrorException("Cannot find project info", library.Name);
             }
 
             string mainProjectDirectory = Path.GetDirectoryName(_mainProjectInfo.ProjectPath);

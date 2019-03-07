@@ -26,11 +26,11 @@ namespace Microsoft.NET.Build.Tasks
                 string message;
                 if (string.IsNullOrEmpty(runtime))
                 {
-                    message = string.Format(Strings.AssetsFileMissingTarget, lockFile.Path, targetMoniker, framework.GetShortFolderName());
+                    message = string.Format("Assets file missing target", lockFile.Path, targetMoniker, framework.GetShortFolderName());
                 }
                 else
                 {
-                    message = string.Format(Strings.AssetsFileMissingRuntimeIdentifier, lockFile.Path, targetMoniker, framework.GetShortFolderName(), runtime);
+                    message = string.Format("Assets file missing runtime identifier", lockFile.Path, targetMoniker, framework.GetShortFolderName(), runtime);
                 }
 
                 throw new BuildErrorException(message);
