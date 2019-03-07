@@ -366,13 +366,13 @@ namespace Microsoft.NET.Build.Tasks
                     {
                         new RuntimeAssetGroup(string.Empty,
                             runtimePackAssetGroup.Where(asset => asset.AssetType == AssetType.Runtime)
-                            .Select(asset => CreateRuntimeFile(asset.DestinationSubPath, asset.SourcePath)))
+                            .Select(asset => CreateRuntimeFile("./" + asset.DestinationSubPath, asset.SourcePath)))
                     };
                     List<RuntimeAssetGroup> nativeLibraryGroups = new List<RuntimeAssetGroup>()
                     {
                         new RuntimeAssetGroup(string.Empty,
                             runtimePackAssetGroup.Where(asset => asset.AssetType == AssetType.Native)
-                            .Select(asset => CreateRuntimeFile(asset.DestinationSubPath, asset.SourcePath)))
+                            .Select(asset => CreateRuntimeFile("./" + asset.DestinationSubPath, asset.SourcePath)))
                     };
                     
                     return new RuntimeLibrary("runtimepack",
