@@ -115,6 +115,8 @@
     <None Include="GetRuntimeLibraries.cs" />
     <None Include="Microsoft.NET.Build.Tasks/LockFileCache.cs" />
     <None Include="Microsoft.NET.Build.Tasks/BuildErrorException.cs" />
+    <!-- Include sources for generating the deps file. -->
+    <Compile Include="Microsoft.NET.Build.Tasks/**/*.cs" />
   </ItemGroup>
 
   <!-- TODO: Uncomment this once we can avoid hard-coding this in a
@@ -221,5 +223,15 @@
                       PrivateAssets="All" />
     <PackageReference Include="System.Reflection.Metadata" Version="1.3.0"
                       PrivateAssets="All" />
+
+    <!-- Used for generating the deps file. -->
+    <PackageReference Include="NuGet.ProjectModel" Version="4.9.3"
+                      PrivateAssets="All" />
+    <!-- Used for generating the deps file. We use the same version as the SDK:
+         https://github.com/dotnet/sdk/blob/master/eng/Versions.props -->
+    <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="2.1.0-preview2-26306-03"
+                      PrivateAssets="All" />
+
   </ItemGroup>
+
 </Project>
