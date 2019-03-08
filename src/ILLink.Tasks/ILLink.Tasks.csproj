@@ -100,7 +100,7 @@
     <Compile Include="LinkTask.cs" />
     <Compile Include="CheckEmbeddedRootDescriptor.cs" />
     <Compile Include="CompareSizes.cs" />
-    <Compile Include="ComputeCrossgenedAssemblies.cs" />
+    <None Include="ComputeCrossgenedAssemblies.cs" />
     <Compile Include="ComputeManagedAssemblies.cs" />
     <Compile Include="ComputeRemovedAssemblies.cs" />
     <Compile Include="CreateRootDescriptorFile.cs" />
