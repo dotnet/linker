@@ -7,6 +7,7 @@
     <BaseOutputPath>bin/</BaseOutputPath>
     <PackageOutputPath>$(BaseOutputPath)nupkgs</PackageOutputPath>
     <IsPackable>true</IsPackable>
+    <LangVersion>7.2</LangVersion> <!-- Required to build GenerateDepsFile -->
     <!-- IsTool true causes the build output to be placed in the
          package's tools folder. This allows projects to reference the
          tasks package without including the tasks dll in their
