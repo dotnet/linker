@@ -123,14 +123,12 @@ namespace ILLink.Tasks
 
 			if (RootDescriptorFiles != null) {
 				foreach (var rootFile in RootDescriptorFiles) {
-					args.Append (" -x");
-					args.Append ($" {rootFile.ItemSpec}");
+					args.Append (" -x ").Append (rootFile.ItemSpec);
 				}
 			}
 
 			foreach (var assemblyItem in RootAssemblyNames) {
-				args.Append (" -a");
-				args.Append ($" {assemblyItem.ItemSpec}");
+				args.Append (" -a ").Append (assemblyItem.ItemSpec);
 			}
 
 			HashSet<string> directories = new HashSet<string> ();
@@ -139,36 +137,33 @@ namespace ILLink.Tasks
 				var dir = Path.GetDirectoryName (assemblyPath);
 				if (!directories.Contains (dir)) {
 					directories.Add (dir);
-					args.Append (" -d");
-					args.Append ($" {dir}");
+					args.Append (" -d ").Append (dir);
 				}
 
 				string action = assembly.GetMetadata ("action");
 				if ((action != null) && (action.Length > 0)) {
-					args.Append (" -p");
-					args.Append ($" {action}");
-					args.Append (" " + Path.GetFileNameWithoutExtension (assemblyPath));
+					args.Append (" -p ");
+					args.Append (action);
+					args.Append (" ").Append (Path.GetFileNameWithoutExtension (assemblyPath));
 				}
 			}
 
 			if (OutputDirectory != null) {
-				args.Append (" -out");
-				args.Append ($" {OutputDirectory.ItemSpec}");
+				args.Append (" -out ").Append (OutputDirectory.ItemSpec);
 			}
 
 			if (ClearInitLocals) {
-				args.Append (" -s");
+				args.Append (" -s ");
 				// Version of ILLink.CustomSteps is passed as a workaround for msbuild issue #3016
-				args.Append (" LLink.CustomSteps.ClearInitLocalsStep,ILLink.CustomSteps,Version=0.0.0.0:OutputStep");
+				args.Append ("LLink.CustomSteps.ClearInitLocalsStep,ILLink.CustomSteps,Version=0.0.0.0:OutputStep");
 				if ((ClearInitLocalsAssemblies != null) && (ClearInitLocalsAssemblies.Length > 0)) {
-					args.Append (" -m");
-					args.Append (" ClearInitLocalsAssemblies");
-					args.Append ($" {ClearInitLocalsAssemblies}");
+					args.Append (" -m ClearInitLocalsAssemblies ");
+					args.Append (ClearInitLocalsAssemblies);
 				}
 			}
 
 			if (ExtraArgs != null) {
-				args.Append ($" {ExtraArgs}");
+				args.Append (" ").Append (ExtraArgs);
 			}
 
 			if (DumpDependencies)
