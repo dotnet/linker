@@ -61,9 +61,14 @@ namespace Mono.Linker {
 				driver.Run (customLogger);
 
 			} catch (Exception e) {
+#if FEATURE_ILLINK
+				Console.Error.WriteLine ("Fatal error in {0}", _linker);
+				throw;
+#else
 				Console.WriteLine ("Fatal error in {0}", _linker);
 				Console.WriteLine (e);
 				return 1;
+#endif
 			}
 
 			return 0;
