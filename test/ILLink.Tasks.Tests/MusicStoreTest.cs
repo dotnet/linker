@@ -18,15 +18,15 @@ namespace ILLink.Tests
 		// Revision can also be a branch name. We generally
 		// want to ensure that we are able to link the latest
 		// MusicStore from the dev branch.
-		private static string gitRevision = "536f89ac6178246e58125401480b0a3b6406efe8";
+		private static string gitRevision = "ac314bd68294ae0f91bd16df20cf5ebd4b8ef5b5";
 
 		// The version of Microsoft.NETCore.App that
 		// musicstore will run on (and deploy with, for
 		// self-contained deployments).
-		private static string runtimeVersion = "2.1.0-preview1-25915-01";
+		private static string runtimeVersion = "3.0.0-preview-27324-5";
 
 		// The version of the SDK used to build and link
-		// musicstore.
+		// musicstore, if a specific version is desired.
 		private static string sdkVersion = "2.2.0-preview1-007525";
 
 		// The version of Microsoft.AspNetCore.All to publish with.
@@ -51,10 +51,10 @@ namespace ILLink.Tests
 		public MusicStoreTest(ITestOutputHelper output) : base(output) {
 			csproj = SetupProject();
 
-			// MusicStore targets .NET Core 2.1, so it must be built
-			// using an SDK that can target 2.1. We obtain that SDK
-			// here.
-			context.DotnetToolPath = ObtainSDK(context.TestBin, repoName);
+			// MusicStore has been updated to target netcoreapp3.0, so
+			// we should be able to run on the SDK used to build this
+			// repo.
+			// context.DotnetToolPath = ObtainSDK(context.TestBin, repoName);
 		}
 
 		[Fact]
@@ -128,7 +128,9 @@ namespace ILLink.Tests
 
 			AddLinkerReference(csproj);
 
-			AddGlobalJson(repoName);
+			// We no longer need a custom global.json, because we are
+			// using the same SDK used in the repo.
+			// AddGlobalJson(repoName);
 
 			return csproj;
 		}
