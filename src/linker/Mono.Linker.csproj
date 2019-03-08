@@ -29,7 +29,7 @@
     <Optimize Condition=" '$(Optimize)' == '' ">false</Optimize>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" $(Configuration.EndsnWith('Release')) ">
+  <PropertyGroup Condition=" $(Configuration.EndsWith('Release')) ">
     <Optimize Condition=" '$(Optimize)' == '' ">true</Optimize>
   </PropertyGroup>
 
