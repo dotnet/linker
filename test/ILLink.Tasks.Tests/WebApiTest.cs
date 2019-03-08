@@ -77,9 +77,9 @@ namespace ILLink.Tests
 
 		void CheckOutput(string target, bool selfContained = false)
 		{
-			string terminatingOutput = "Now listening on: http://localhost:5000";
+			string terminatingOutput = "Application started. Press Ctrl+C to shut down.";
 			int ret = RunApp(target, out string commandOutput, 60000, terminatingOutput, selfContained: selfContained);
-			Assert.True(commandOutput.Contains("Application started. Press Ctrl+C to shut down."));
+			Assert.True(commandOutput.Contains("Now listening on: http://localhost:5000"));
 			Assert.True(commandOutput.Contains(terminatingOutput));
 		}
 	}
