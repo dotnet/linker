@@ -57,14 +57,14 @@ namespace ILLink.Tests
 			// context.DotnetToolPath = ObtainSDK(context.TestBin, repoName);
 		}
 
-		[Fact]
+		// [Fact]
 		public void RunMusicStoreStandalone()
 		{
 			string executablePath = BuildAndLink(csproj, rootFiles, VersionPublishArgs, selfContained: true);
 			CheckOutput(executablePath, selfContained: true);
 		}
 
-		[Fact]
+		// [Fact]
 		public void RunMusicStorePortable()
 		{
 			Dictionary<string, string> extraPublishArgs = new Dictionary<string, string>(VersionPublishArgs);
