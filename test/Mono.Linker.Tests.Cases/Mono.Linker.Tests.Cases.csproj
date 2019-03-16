@@ -14,7 +14,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Mono.Linker.Tests.Cases</RootNamespace>
     <AssemblyName>Mono.Linker.Tests.Cases</AssemblyName>
-    <TargetFramework Condition=" $(ILLinkBuild) ">netcoreapp2.0</TargetFramework>
+    <TargetFramework Condition=" $(ILLinkBuild) ">netcoreapp3.0</TargetFramework>
     <EnableDefaultCompileItems Condition=" $(ILLinkBuild) ">false</EnableDefaultCompileItems>
     <TargetFrameworkVersion Condition=" ! $(ILLinkBuild) ">v4.7.1</TargetFrameworkVersion>
     <GenerateAssemblyInfo Condition=" $(ILLinkBuild) ">false</GenerateAssemblyInfo>

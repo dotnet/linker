@@ -178,8 +178,8 @@ namespace Mono.Linker.Tests.TestCases
 #endif
 #endif
 
-#if NETCOREAPP2_0
-			var tfm = "netcoreapp2.0";
+#if NETCOREAPP3_0
+			var tfm = "netcoreapp3.0";
 #else
 			var tfm = "";
 #endif
