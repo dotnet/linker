@@ -231,11 +231,21 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 				options: compilationOptions
 			);
 
+			var manifestResources = options.Resources.Select (r => {
+				var fullPath = r.ToString ();
+				return new ResourceDescription (
+					resourceName: Path.GetFileName (fullPath),
+					dataProvider: () => new FileStream (fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite),
+					isPublic: true
+				);
+			});
+
 			EmitResult result;
 			using (var outputStream = File.Create (options.OutputPath.ToString ()))
 			{
 				result = compilation.Emit(
-					peStream: outputStream
+					peStream: outputStream,
+					manifestResources: manifestResources
 				);
 			}
 
