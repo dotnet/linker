@@ -88,13 +88,29 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 		{
 			foreach (var fileName in GetReferenceValues ()) {
 				if (fileName.StartsWith ("System.", StringComparison.Ordinal) || fileName.StartsWith ("Mono.", StringComparison.Ordinal) || fileName.StartsWith ("Microsoft.", StringComparison.Ordinal))
+#if NETCOREAPP
+				{
+					// Try to find the assembly alongside the host's framework dependencies
+					var frameworkDir = Path.GetDirectoryName (typeof (object).Assembly.Location);
+					var filePath = Path.Combine (frameworkDir, fileName);
+					if (File.Exists (filePath))
+					{
+						yield return filePath;
+					}
+					else
+					{
+						yield return fileName;
+					}
+				}
+#else
 					yield return fileName;
+#endif
 				else
 					// Drop any relative path information.  Sandboxing will have taken care of copying the reference to the directory
 					yield return workingDirectory.Combine (Path.GetFileName (fileName));
 			}
 		}
-		
+
 		public virtual IEnumerable<string> GetReferenceDependencies ()
 		{
 			return _testCaseTypeDefinition.CustomAttributes
