@@ -204,6 +204,18 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 			var compilationOptions = new CSharpCompilationOptions (
 				outputKind: options.OutputPath.FileName.EndsWith (".exe") ? OutputKind.ConsoleApplication : OutputKind.DynamicallyLinkedLibrary
 			);
+			if (options.AdditionalArguments != null)
+			{
+				foreach (var option in options.AdditionalArguments)
+				{
+					switch (option)
+					{
+						case "/unsafe":
+							compilationOptions = compilationOptions.WithAllowUnsafe(true);
+							break;
+					}
+				}
+			}
 
 			var syntaxTrees = options.SourceFiles.Select (p =>
 				CSharpSyntaxTree.ParseText (
