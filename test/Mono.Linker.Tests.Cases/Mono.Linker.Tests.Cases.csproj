@@ -18,6 +18,7 @@
     <EnableDefaultCompileItems Condition=" $(ILLinkBuild) ">false</EnableDefaultCompileItems>
     <TargetFrameworkVersion Condition=" ! $(ILLinkBuild) ">v4.7.1</TargetFrameworkVersion>
     <GenerateAssemblyInfo Condition=" $(ILLinkBuild) ">false</GenerateAssemblyInfo>
+    <DefineConstants Condition=" $(ILLinkBuild) ">$(DefineConstants);INCLUDE_EXPECTATIONS</DefineConstants>
     <FileAlignment>512</FileAlignment>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
