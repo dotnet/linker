@@ -200,13 +200,15 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 #if NETCOREAPP
 		protected virtual NPath CompileCSharpAssemblyWithRoslyn (CompilerOptions options)
 		{
+			var parseOptions = new CSharpParseOptions (preprocessorSymbols: options.Defines);
 			var compilationOptions = new CSharpCompilationOptions (
 				outputKind: options.OutputPath.FileName.EndsWith (".exe") ? OutputKind.ConsoleApplication : OutputKind.DynamicallyLinkedLibrary
 			);
 
 			var syntaxTrees = options.SourceFiles.Select (p =>
 				CSharpSyntaxTree.ParseText (
-					text: p.ReadAllText ()
+					text: p.ReadAllText (),
+					options: parseOptions
 				)
 			);
 
