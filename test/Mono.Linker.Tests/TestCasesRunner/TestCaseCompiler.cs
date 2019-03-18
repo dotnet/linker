@@ -8,6 +8,7 @@ using System.Text;
 using Mono.Linker.Tests.Extensions;
 using NUnit.Framework;
 #if NETCOREAPP
+using System.Runtime.InteropServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis.CSharp;
@@ -204,6 +205,9 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 			var compilationOptions = new CSharpCompilationOptions (
 				outputKind: options.OutputPath.FileName.EndsWith (".exe") ? OutputKind.ConsoleApplication : OutputKind.DynamicallyLinkedLibrary
 			);
+			// Default debug info format for the current platform.
+			DebugInformationFormat debugType = RuntimeInformation.IsOSPlatform (OSPlatform.Windows) ? DebugInformationFormat.Pdb : DebugInformationFormat.PortablePdb;
+			bool emitPdb = false;
 			if (options.AdditionalArguments != null)
 			{
 				foreach (var option in options.AdditionalArguments)
@@ -213,9 +217,27 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 						case "/unsafe":
 							compilationOptions = compilationOptions.WithAllowUnsafe(true);
 							break;
+						case "/optimize+":
+							compilationOptions = compilationOptions.WithOptimizationLevel(OptimizationLevel.Release);
+							break;
+						case "/debug:full":
+						case "/debug:pdbonly":
+							// Use platform's default debug info. This behavior is the same as csc.
+							emitPdb = true;
+							break;
+						case "/debug:portable":
+							emitPdb = true;
+							debugType = DebugInformationFormat.PortablePdb;
+							break;
+						case "/debug:embedded":
+							emitPdb = true;
+							debugType = DebugInformationFormat.Embedded;
+							break;
 					}
 				}
 			}
+			var emitOptions = new EmitOptions (debugInformationFormat: debugType);
+			var pdbPath = (!emitPdb || debugType == DebugInformationFormat.Embedded) ? null : options.OutputPath.ChangeExtension (".pdb").ToString ();
 
 			var syntaxTrees = options.SourceFiles.Select (p =>
 				CSharpSyntaxTree.ParseText (
@@ -242,10 +264,13 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 
 			EmitResult result;
 			using (var outputStream = File.Create (options.OutputPath.ToString ()))
+			using (var pdbStream = (pdbPath == null ? null : File.Create (pdbPath)))
 			{
 				result = compilation.Emit(
 					peStream: outputStream,
-					manifestResources: manifestResources
+					pdbStream: pdbStream,
+					manifestResources: manifestResources,
+					options: emitOptions
 				);
 			}
 
