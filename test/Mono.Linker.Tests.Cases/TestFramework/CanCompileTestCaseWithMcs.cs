@@ -6,6 +6,9 @@ using Mono.Linker.Tests.Cases.TestFramework.Dependencies;
 [assembly: KeptAttributeAttribute (typeof (System.Diagnostics.DebuggableAttribute))]
 
 namespace Mono.Linker.Tests.Cases.TestFramework {
+#if NETCOREAPP
+	[IgnoreTestCase ("Don't try to compile with mcs on .NET Core.")]
+#endif
 	[SetupCSharpCompilerToUse ("mcs")]
 
 	// Use all of the compiler setup attributes so that we can verify they all work

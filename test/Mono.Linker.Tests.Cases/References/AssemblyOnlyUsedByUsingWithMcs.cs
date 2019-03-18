@@ -3,9 +3,12 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 using Mono.Linker.Tests.Cases.References.Dependencies;
 
 namespace Mono.Linker.Tests.Cases.References {
+#if NETCOREAPP
+	[IgnoreTestCase ("Don't try to compile with mcs on .NET Core")]
+#endif
 	[SetupLinkerAction ("copy", "copied")]
 	[SetupCompileBefore ("library.dll", new [] {"Dependencies/AssemblyOnlyUsedByUsing_Lib.cs"})]
-	
+
 	// When mcs is used, `copied.dll` will not have a reference to `library.dll`
 	[SetupCompileBefore ("copied.dll", new [] {"Dependencies/AssemblyOnlyUsedByUsing_Copied.cs"}, new [] {"library.dll"}, compilerToUse: "mcs")]
 
