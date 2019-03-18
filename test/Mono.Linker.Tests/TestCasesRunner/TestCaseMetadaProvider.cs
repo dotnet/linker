@@ -75,7 +75,9 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 #if NETCOREAPP
 			foreach (var path in GetTrustedPlatformAssemblies())
 			{
-				yield return path;
+				// Don't reference testcases dll, as these will be compiled dynamically.
+				if (Path.GetFileName (path) != "Mono.Linker.Tests.Cases.dll")
+					yield return path;
 			}
 #else
 			yield return "mscorlib.dll";
