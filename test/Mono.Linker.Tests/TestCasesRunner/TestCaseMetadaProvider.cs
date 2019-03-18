@@ -191,6 +191,10 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 			if (Environment.OSVersion.Platform == PlatformID.Win32NT)
 				yield return "WIN32";
 
+#if NETCOREAPP
+			yield return "NETCOREAPP";
+#endif
+
 			foreach (var attr in  _testCaseTypeDefinition.CustomAttributes.Where (attr => attr.AttributeType.Name == nameof (DefineAttribute)))
 				yield return (string) attr.ConstructorArguments.First ().Value;
 		}
