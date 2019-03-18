@@ -122,7 +122,15 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 
 		public virtual IEnumerable<NPath> GetExtraLinkerSearchDirectories ()
 		{
+#if NETCOREAPP
+			var tpaDirs = GetTrustedPlatformAssemblies ().Select (p => Path.GetDirectoryName (p)).Distinct ();
+			foreach (var dir in tpaDirs)
+			{
+				yield return dir.ToNPath ();
+			}
+#else
 			yield break;
+#endif
 		}
 
 		public virtual bool IsIgnored (out string reason)
