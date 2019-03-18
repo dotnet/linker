@@ -9,6 +9,23 @@ namespace Mono.Linker.Tests.Cases.CoreLink {
 	[SetupLinkerArgument ("--strip-security", "true")]
 	[SetupLinkerArgument ("--used-attrs-only", "true")]
 	[Reference ("System.dll")]
+#if NETCOREAPP
+	[RemovedTypeInAssembly ("System.Private.CoreLib.dll", typeof (SecurityPermissionAttribute))]
+	[RemovedTypeInAssembly ("System.Private.CoreLib.dll", typeof (PermissionSetAttribute))]
+	[RemovedTypeInAssembly ("System.Private.CoreLib.dll", typeof (ReflectionPermissionAttribute))]
+	[RemovedTypeInAssembly ("System.Private.CoreLib.dll", typeof (RegistryPermissionAttribute))]
+	[RemovedTypeInAssembly ("System.Private.CoreLib.dll", typeof (StrongNameIdentityPermissionAttribute))]
+	[RemovedTypeInAssembly ("System.Private.CoreLib.dll", typeof (CodeAccessSecurityAttribute))]
+	[RemovedTypeInAssembly ("System.Private.CoreLib.dll", typeof (EnvironmentPermissionAttribute))]
+	[RemovedTypeInAssembly ("System.Private.CoreLib.dll", typeof (FileIOPermissionAttribute))]
+	[RemovedTypeInAssembly ("System.Private.CoreLib.dll", typeof (HostProtectionAttribute))]
+	[RemovedTypeInAssembly ("System.Private.CoreLib.dll", typeof (SecurityCriticalAttribute))]
+	[RemovedTypeInAssembly ("System.Private.CoreLib.dll", typeof (SecuritySafeCriticalAttribute))]
+	[RemovedTypeInAssembly ("System.Private.CoreLib.dll", typeof (SuppressUnmanagedCodeSecurityAttribute))]
+	[RemovedTypeInAssembly ("System.Private.CoreLib.dll", typeof (SecurityRulesAttribute))]
+	[RemovedTypeInAssembly ("System.Private.CoreLib.dll", typeof (AllowPartiallyTrustedCallersAttribute))]
+	[RemovedTypeInAssembly ("System.Private.CoreLib.dll", typeof (UnverifiableCodeAttribute))]
+#else
 	[RemovedTypeInAssembly ("mscorlib.dll", typeof (SecurityPermissionAttribute))]
 	[RemovedTypeInAssembly ("mscorlib.dll", typeof (PermissionSetAttribute))]
 	[RemovedTypeInAssembly ("mscorlib.dll", typeof (ReflectionPermissionAttribute))]
@@ -24,6 +41,7 @@ namespace Mono.Linker.Tests.Cases.CoreLink {
 	[RemovedTypeInAssembly ("mscorlib.dll", typeof (SecurityRulesAttribute))]
 	[RemovedTypeInAssembly ("mscorlib.dll", typeof (AllowPartiallyTrustedCallersAttribute))]
 	[RemovedTypeInAssembly ("mscorlib.dll", typeof (UnverifiableCodeAttribute))]
+#endif
 	// Fails with `Runtime critical type System.Reflection.CustomAttributeData not found` which is a known short coming
 	[SkipPeVerify (SkipPeVerifyForToolchian.Pedump)]
 	[SkipPeVerify ("System.dll")]
