@@ -17,6 +17,8 @@
     <TargetFramework Condition=" $(ILLinkBuild) ">netcoreapp3.0</TargetFramework>
     <EnableDefaultCompileItems Condition=" $(ILLinkBuild) ">false</EnableDefaultCompileItems>
     <TargetFrameworkVersion Condition=" ! $(ILLinkBuild) ">v4.7.1</TargetFrameworkVersion>
+    <!-- Simulate https://github.com/dotnet/sdk/pull/2073 until it ships. -->
+    <DefineConstants Condition=" '$(TargetFramework)' == 'netcoreapp3.0' ">$(DefineConstants);NETCOREAPP</DefineConstants>
     <DefineConstants Condition=" $(ILLinkBuild) ">$(DefineConstants);ILLINK</DefineConstants>
     <DefineConstants Condition=" '$(Configuration)' == 'illink_Debug' ">$(DefineConstants);DEBUG</DefineConstants>
     <IsTestProject Condition=" $(ILLinkBuild) ">true</IsTestProject>

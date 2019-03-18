@@ -55,10 +55,31 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 			return tclo;
 		}
 
+#if NETCOREAPP
+		public static IEnumerable<string> GetTrustedPlatformAssemblies ()
+		{
+			if (AppContext.GetData ("TRUSTED_PLATFORM_ASSEMBLIES") is string tpaPaths)
+			{
+				foreach (var path in tpaPaths.Split(Path.PathSeparator))
+				{
+					if (Path.GetExtension (path) == ".dll")
+						yield return path;
+				}
+			}
+		}
+#endif
+
 		public virtual IEnumerable<string> GetCommonReferencedAssemblies (NPath workingDirectory)
 		{
 			yield return workingDirectory.Combine ("Mono.Linker.Tests.Cases.Expectations.dll").ToString ();
+#if NETCOREAPP
+			foreach (var path in GetTrustedPlatformAssemblies())
+			{
+				yield return path;
+			}
+#else
 			yield return "mscorlib.dll";
+#endif
 		}
 
 		public virtual IEnumerable<string> GetReferencedAssemblies (NPath workingDirectory)
