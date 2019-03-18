@@ -28,19 +28,17 @@ jobs:
           name: Hosted VS2017
         ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
           name: dotnet-internal-temp
-      ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
-        variables:
-        - group: DotNet-Blob-Feed
-        - _TeamName: .NET # required by microbuild install step
-        - _SignType: real
-        # _SignType is used in the arcade templates that install microbuild.
+      variables:
+        - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
+          - group: DotNet-Blob-Feed
+          - _TeamName: .NET # required by microbuild install step
+          - _SignType: real # used in the arcade templates that install microbuild.
+          - _PublishArgs: /p:DotNetPublishToBlobFeed=true
+                          /p:DotNetPublishBlobFeedUrl=https://dotnetfeed.blob.core.windows.net/dotnet-core/index.json
+                          /p:DotNetPublishBlobFeedKey=$(dotnetfeed-storage-access-key-1)
+        - ${{ if or(eq(variables['System.TeamProject'], 'public'), in(variables['Build.Reason'], 'PullRequest')) }}:
+          - _SignType: test
         - DotNetSignType: $(_SignType) # DotNetSignType defaults to real if not specified
-        - _PublishArgs: /p:DotNetPublishToBlobFeed=true
-                        /p:DotNetPublishBlobFeedUrl=https://dotnetfeed.blob.core.windows.net/dotnet-core/index.json
-                        /p:DotNetPublishBlobFeedKey=$(dotnetfeed-storage-access-key-1)
-      ${{ if or(eq(variables['System.TeamProject'], 'public'), in(variables['Build.Reason'], 'PullRequest')) }}:
-        variables:
-        - _SignType: test
       steps:
       - checkout: self
         submodules: true
