@@ -3,7 +3,9 @@ using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 using Mono.Linker.Tests.Cases.Symbols.Dependencies;
 
+#if !NETCOREAPP
 [assembly: KeptAttributeAttribute (typeof (System.Diagnostics.DebuggableAttribute))]
+#endif
 
 namespace Mono.Linker.Tests.Cases.Symbols {
 	[Reference ("Dependencies/LibraryWithMdb/LibraryWithMdb.dll")]
