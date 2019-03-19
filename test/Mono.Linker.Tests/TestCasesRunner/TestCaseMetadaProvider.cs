@@ -58,10 +58,8 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 #if NETCOREAPP
 		public static IEnumerable<string> GetTrustedPlatformAssemblies ()
 		{
-			if (AppContext.GetData ("TRUSTED_PLATFORM_ASSEMBLIES") is string tpaPaths)
-			{
-				foreach (var path in tpaPaths.Split(Path.PathSeparator))
-				{
+			if (AppContext.GetData ("TRUSTED_PLATFORM_ASSEMBLIES") is string tpaPaths) {
+				foreach (var path in tpaPaths.Split(Path.PathSeparator)) {
 					if (Path.GetExtension (path) == ".dll")
 						yield return path;
 				}
@@ -73,8 +71,7 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 		{
 			yield return workingDirectory.Combine ("Mono.Linker.Tests.Cases.Expectations.dll").ToString ();
 #if NETCOREAPP
-			foreach (var path in GetTrustedPlatformAssemblies())
-			{
+			foreach (var path in GetTrustedPlatformAssemblies ()) {
 				// Don't reference testcases dll, as these will be compiled dynamically.
 				if (Path.GetFileName (path) != "Mono.Linker.Tests.Cases.dll")
 					yield return path;
@@ -87,27 +84,23 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 		public virtual IEnumerable<string> GetReferencedAssemblies (NPath workingDirectory)
 		{
 			foreach (var fileName in GetReferenceValues ()) {
-				if (fileName.StartsWith ("System.", StringComparison.Ordinal) || fileName.StartsWith ("Mono.", StringComparison.Ordinal) || fileName.StartsWith ("Microsoft.", StringComparison.Ordinal))
+				if (fileName.StartsWith ("System.", StringComparison.Ordinal) || fileName.StartsWith ("Mono.", StringComparison.Ordinal) || fileName.StartsWith ("Microsoft.", StringComparison.Ordinal)) {
 #if NETCOREAPP
-				{
 					// Try to find the assembly alongside the host's framework dependencies
 					var frameworkDir = Path.GetDirectoryName (typeof (object).Assembly.Location);
 					var filePath = Path.Combine (frameworkDir, fileName);
-					if (File.Exists (filePath))
-					{
+					if (File.Exists (filePath)) {
 						yield return filePath;
-					}
-					else
-					{
+					} else {
 						yield return fileName;
 					}
-				}
 #else
 					yield return fileName;
 #endif
-				else
+				} else {
 					// Drop any relative path information.  Sandboxing will have taken care of copying the reference to the directory
 					yield return workingDirectory.Combine (Path.GetFileName (fileName));
+				}
 			}
 		}
 
@@ -143,9 +136,7 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 #if NETCOREAPP
 			var tpaDirs = GetTrustedPlatformAssemblies ().Select (p => Path.GetDirectoryName (p)).Distinct ();
 			foreach (var dir in tpaDirs)
-			{
 				yield return dir.ToNPath ();
-			}
 #else
 			yield break;
 #endif

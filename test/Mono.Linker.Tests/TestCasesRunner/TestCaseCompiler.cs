@@ -208,12 +208,9 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 			// Default debug info format for the current platform.
 			DebugInformationFormat debugType = RuntimeInformation.IsOSPlatform (OSPlatform.Windows) ? DebugInformationFormat.Pdb : DebugInformationFormat.PortablePdb;
 			bool emitPdb = false;
-			if (options.AdditionalArguments != null)
-			{
-				foreach (var option in options.AdditionalArguments)
-				{
-					switch (option)
-					{
+			if (options.AdditionalArguments != null) {
+				foreach (var option in options.AdditionalArguments) {
+					switch (option) {
 						case "/unsafe":
 							compilationOptions = compilationOptions.WithAllowUnsafe(true);
 							break;
@@ -264,8 +261,7 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 
 			EmitResult result;
 			using (var outputStream = File.Create (options.OutputPath.ToString ()))
-			using (var pdbStream = (pdbPath == null ? null : File.Create (pdbPath)))
-			{
+			using (var pdbStream = (pdbPath == null ? null : File.Create (pdbPath))) {
 				result = compilation.Emit(
 					peStream: outputStream,
 					pdbStream: pdbStream,

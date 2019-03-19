@@ -592,8 +592,7 @@ namespace Mono.Linker.Steps {
 		{
 			TypeReference security_type = sa.AttributeType;
 			TypeDefinition type = security_type.Resolve ();
-			if (type == null)
-			{
+			if (type == null) {
 				HandleUnresolvedType (security_type);
 				return;
 			}
