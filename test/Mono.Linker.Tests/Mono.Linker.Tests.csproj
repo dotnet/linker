@@ -140,6 +140,10 @@
     <PackageReference Include="nunit" Version="3.10.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.10.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.2" />
+    <!-- This reference is purely so that the linker can resolve this
+         dependency of mscorlib. It is not actually required to build
+         the tests. -->
+    <PackageReference Include="System.Threading.AccessControl" Version="4.5.0" />
   </ItemGroup>
 
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" Condition=" $(ILLinkBuild) " />
