@@ -2,10 +2,6 @@
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
-#if !NETCOREAPP
-[assembly: KeptAttributeAttribute (typeof (System.Diagnostics.DebuggableAttribute))]
-#endif
-
 namespace Mono.Linker.Tests.Cases.Attributes.Csc {
 	/// <summary>
 	/// This explicit csc test exists to ensure that csc adds references in this scenario

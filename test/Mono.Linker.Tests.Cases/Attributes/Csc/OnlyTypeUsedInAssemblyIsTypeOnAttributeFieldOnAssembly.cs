@@ -2,9 +2,6 @@
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
-#if !NETCOREAPP
-[assembly: KeptAttributeAttribute (typeof (System.Diagnostics.DebuggableAttribute))]
-#endif
 [assembly: AttributeDefinedInReference (FieldType = typeof (TypeDefinedInReference))]
 
 namespace Mono.Linker.Tests.Cases.Attributes.Csc {

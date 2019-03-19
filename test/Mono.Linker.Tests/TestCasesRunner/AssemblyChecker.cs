@@ -615,11 +615,9 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 					case "System.Diagnostics.DebuggerBrowsableAttribute":
 						continue;
 
-#if NETCOREAPP
 					// When compiling with roslyn, assemblies get the DebuggableAttribute by default.
 					case "System.Diagnostics.DebuggableAttribute":
 						continue;
-#endif
 
 					case "System.Runtime.CompilerServices.CompilationRelaxationsAttribute":
 						if (linked is AssemblyDefinition)
