@@ -244,7 +244,7 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 			);
 
 			var compilation = CSharpCompilation.Create (
-				assemblyName: Path.GetFileNameWithoutExtension (options.OutputPath.ToString ()),
+				assemblyName: options.OutputPath.FileNameWithoutExtension,
 				syntaxTrees: syntaxTrees,
 				references: options.References.Select (r => MetadataReference.CreateFromFile (r)),
 				options: compilationOptions
