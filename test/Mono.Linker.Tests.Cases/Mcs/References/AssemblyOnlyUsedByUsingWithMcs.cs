@@ -2,7 +2,7 @@ using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 using Mono.Linker.Tests.Cases.References.Dependencies;
 
-namespace Mono.Linker.Tests.Cases.References {
+namespace Mono.Linker.Tests.Cases.Mcs.References {
 	[SetupLinkerAction ("copy", "copied")]
 	[SetupCompileBefore ("library.dll", new [] {"Dependencies/AssemblyOnlyUsedByUsing_Lib.cs"})]
 	

@@ -2,7 +2,7 @@
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 using Mono.Linker.Tests.Cases.TestFramework.Dependencies;
 
-namespace Mono.Linker.Tests.Cases.TestFramework {
+namespace Mono.Linker.Tests.Cases.Mcs.TestFramework {
 	[SetupCompileBefore ("library.dll",
 		new [] { "Dependencies/CanCompileReferencesWithResources_Lib1.cs" },
 		resources: new [] { "Dependencies/CanCompileReferencesWithResources_Lib1.txt" },

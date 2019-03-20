@@ -2,9 +2,9 @@
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
-[assembly: AttributeDefinedInReference (typeof (TypeDefinedInReference))]
+[assembly: AttributeDefinedInReference (FieldType = typeof (TypeDefinedInReference))]
 
-namespace Mono.Linker.Tests.Cases.Attributes.Mcs {
+namespace Mono.Linker.Tests.Cases.Mcs.Attributes {
 	/// <summary>
 	/// In the case of attributes on assemblies, we expect both assemblies to be removed because we don't keep assembly level attributes
 	/// when that is the only type marked in the assembly
@@ -14,8 +14,9 @@ namespace Mono.Linker.Tests.Cases.Attributes.Mcs {
 	[SetupCompileBefore ("LibraryWithAttribute.dll", new [] { typeof(AttributeDefinedInReference) })]
 	[RemovedAssembly ("LibraryWithType.dll")]
 	[RemovedAssembly ("LibraryWithAttribute.dll")]
-	public class OnlyTypeUsedInAssemblyIsTypeOnAttributeCtorOnAssembly {
-		public static void Main()
+	public class OnlyTypeUsedInAssemblyIsTypeOnAttributeFieldOnAssembly
+	{
+		public static void Main ()
 		{
 		}
 	}

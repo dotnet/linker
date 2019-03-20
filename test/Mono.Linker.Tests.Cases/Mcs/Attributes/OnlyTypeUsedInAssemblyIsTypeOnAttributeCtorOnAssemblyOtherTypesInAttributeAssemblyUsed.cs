@@ -5,7 +5,7 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 [assembly: KeptAttributeAttribute (typeof (AttributeDefinedInReference))]
 [assembly: AttributeDefinedInReference (typeof (TypeDefinedInReference))]
 
-namespace Mono.Linker.Tests.Cases.Attributes.Mcs {
+namespace Mono.Linker.Tests.Cases.Mcs.Attributes {
 	/// <summary>
 	/// This explicit mcs test exists because mcs did not add a reference prior to https://github.com/mono/mono/commit/f71b208ca7b41a2a97ca70b955df0c4c411ce8e5
 	/// </summary>

@@ -1,11 +1,11 @@
 ﻿using System;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
-using Mono.Linker.Tests.Cases.TestFramework.Dependencies;
+using Mono.Linker.Tests.Cases.Mcs.TestFramework.Dependencies;
 
 [assembly: KeptAttributeAttribute (typeof (System.Diagnostics.DebuggableAttribute))]
 
-namespace Mono.Linker.Tests.Cases.TestFramework {
+namespace Mono.Linker.Tests.Cases.Mcs.TestFramework {
 	[SetupCSharpCompilerToUse ("mcs")]
 
 	// Use all of the compiler setup attributes so that we can verify they all work
