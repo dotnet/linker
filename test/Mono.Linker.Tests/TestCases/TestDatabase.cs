@@ -126,6 +126,11 @@ namespace Mono.Linker.Tests.TestCases
 			return NUnitCasesBySuiteName ("CommandLine");
 		}
 
+		public static IEnumerable<TestCaseData> McsTests ()
+		{
+			return NUnitCasesBySuiteName ("Mcs");
+		}
+
 		public static TestCaseCollector CreateCollector ()
 		{
 			string rootSourceDirectory;

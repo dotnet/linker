@@ -144,6 +144,13 @@ namespace Mono.Linker.Tests.TestCases
 			Run (testCase);
 		}
 
+		[TestCaseSource (typeof (TestDatabase), nameof (TestDatabase.McsTests))
+		]
+		public void McsTests (TestCase testCase)
+		{
+			Run (testCase);
+		}
+
 		protected virtual void Run (TestCase testCase)
 		{
 			var runner = new TestRunner (new ObjectFactory ());
