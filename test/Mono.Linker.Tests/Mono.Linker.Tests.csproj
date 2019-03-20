@@ -22,6 +22,8 @@
     <DefineConstants Condition=" $(ILLinkBuild) ">$(DefineConstants);ILLINK</DefineConstants>
     <DefineConstants Condition=" '$(Configuration)' == 'illink_Debug' ">$(DefineConstants);DEBUG</DefineConstants>
     <IsTestProject Condition=" $(ILLinkBuild) ">true</IsTestProject>
+    <!-- Arcade's custom test imports assume that we are using xunit. -->
+    <DisableArcadeTestFramework Condition=" '$(ArcadeBuild)' == 'true' ">true</DisableArcadeTestFramework>
     <RootNamespace>Mono.Linker.Tests</RootNamespace>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
