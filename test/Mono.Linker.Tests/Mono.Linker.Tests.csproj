@@ -21,6 +21,7 @@
     <DefineConstants Condition=" '$(TargetFramework)' == 'netcoreapp3.0' ">$(DefineConstants);NETCOREAPP</DefineConstants>
     <DefineConstants Condition=" $(ILLinkBuild) ">$(DefineConstants);ILLINK</DefineConstants>
     <DefineConstants Condition=" '$(Configuration)' == 'illink_Debug' ">$(DefineConstants);DEBUG</DefineConstants>
+    <DefineConstants Condition=" '$(ArcadeBuild)' == 'true' ">$(DefineConstants);ARCADE</DefineConstants>
     <IsTestProject Condition=" $(ILLinkBuild) ">true</IsTestProject>
     <!-- Arcade's custom test imports assume that we are using xunit. -->
     <DisableArcadeTestFramework Condition=" '$(ArcadeBuild)' == 'true' ">true</DisableArcadeTestFramework>
