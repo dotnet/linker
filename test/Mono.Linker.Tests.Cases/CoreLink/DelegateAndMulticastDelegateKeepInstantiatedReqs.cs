@@ -8,28 +8,19 @@ namespace Mono.Linker.Tests.Cases.CoreLink {
 	/// Delegate and is created from 
 	/// </summary>
 	[SetupLinkerCoreAction ("link")]
+	[KeptBaseOnTypeInAssembly (PlatformAssemblies.CoreLib, typeof (MulticastDelegate), PlatformAssemblies.CoreLib, typeof (Delegate))]
+
+	// Check a couple override methods to verify they were not removed
+	[KeptMemberInAssembly (PlatformAssemblies.CoreLib, typeof (MulticastDelegate), "GetHashCode()")]
+	[KeptMemberInAssembly (PlatformAssemblies.CoreLib, typeof (MulticastDelegate), "Equals(System.Object)")]
+
+	[KeptMemberInAssembly (PlatformAssemblies.CoreLib, typeof (Delegate), "GetHashCode()")]
+	[KeptMemberInAssembly (PlatformAssemblies.CoreLib, typeof (Delegate), "Equals(System.Object)")]
+	[KeptInterfaceOnTypeInAssembly(PlatformAssemblies.CoreLib, typeof (Delegate), PlatformAssemblies.CoreLib, typeof (ICloneable))]
 #if NETCOREAPP
-	[KeptBaseOnTypeInAssembly ("System.Private.CoreLib.dll", typeof (MulticastDelegate), "System.Private.CoreLib.dll", typeof (Delegate))]
-
-	// Check a couple override methods to verify they were not removed
-	[KeptMemberInAssembly ("System.Private.CoreLib.dll", typeof (MulticastDelegate), "GetHashCode()")]
-	[KeptMemberInAssembly ("System.Private.CoreLib.dll", typeof (MulticastDelegate), "Equals(System.Object)")]
-
-	[KeptMemberInAssembly ("System.Private.CoreLib.dll", typeof (Delegate), "GetHashCode()")]
-	[KeptMemberInAssembly ("System.Private.CoreLib.dll", typeof (Delegate), "Equals(System.Object)")]
-	[KeptInterfaceOnTypeInAssembly("System.Private.CoreLib.dll", typeof (Delegate), "System.Private.CoreLib.dll", typeof (ICloneable))]
-	[KeptInterfaceOnTypeInAssembly("System.Private.CoreLib.dll", typeof (Delegate), "System.Runtime.dll", typeof (ISerializable))]
+	[KeptInterfaceOnTypeInAssembly(PlatformAssemblies.CoreLib, typeof (Delegate), "System.Runtime.dll", typeof (ISerializable))]
 #else
-	[KeptBaseOnTypeInAssembly ("mscorlib.dll", typeof (MulticastDelegate), "mscorlib.dll", typeof (Delegate))]
-
-	// Check a couple override methods to verify they were not removed
-	[KeptMemberInAssembly ("mscorlib.dll", typeof (MulticastDelegate), "GetHashCode()")]
-	[KeptMemberInAssembly ("mscorlib.dll", typeof (MulticastDelegate), "Equals(System.Object)")]
-
-	[KeptMemberInAssembly ("mscorlib.dll", typeof (Delegate), "GetHashCode()")]
-	[KeptMemberInAssembly ("mscorlib.dll", typeof (Delegate), "Equals(System.Object)")]
-	[KeptInterfaceOnTypeInAssembly("mscorlib.dll", typeof (Delegate), "mscorlib.dll", typeof (ICloneable))]
-	[KeptInterfaceOnTypeInAssembly("mscorlib.dll", typeof (Delegate), "mscorlib.dll", typeof (ISerializable))]
+	[KeptInterfaceOnTypeInAssembly(PlatformAssemblies.CoreLib, typeof (Delegate), PlatformAssemblies.CoreLib, typeof (ISerializable))]
 #endif
 
 	// Fails due to Runtime critical type System.Reflection.CustomAttributeData not found.

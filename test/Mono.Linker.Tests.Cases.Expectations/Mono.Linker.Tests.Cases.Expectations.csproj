@@ -116,6 +116,7 @@
     <Compile Include="Metadata\SetupLinkerLinkSymbolsAttribute.cs" />
     <Compile Include="Support\PreserveDependencyAttribute.cs" />
     <Compile Include="Assertions\AddedPseudoAttributeAttribute.cs" />
+    <Compile Include="Support\PlatformAssemblies.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" Condition=" ! $(ILLinkBuild) "/>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -7,10 +7,8 @@ namespace Mono.Linker.Tests.Cases.Attributes.OnlyKeepUsed {
 	[Reference ("System.dll")]
 	[SetupLinkerCoreAction ("link")]
 	[SetupLinkerArgument ("--used-attrs-only", "true")]
-#if NETCOREAPP
-	[KeptAttributeInAssembly ("System.Private.CoreLib.dll", typeof (AssemblyDescriptionAttribute))]
-#else
-	[KeptAttributeInAssembly ("mscorlib.dll", typeof (AssemblyDescriptionAttribute))]
+	[KeptAttributeInAssembly (PlatformAssemblies.CoreLib, typeof (AssemblyDescriptionAttribute))]
+#if !NETCOREAPP
 	[KeptAttributeInAssembly ("System.dll", typeof (AssemblyDescriptionAttribute))]
 #endif
 	[SkipPeVerify]

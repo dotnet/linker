@@ -8,41 +8,22 @@ namespace Mono.Linker.Tests.Cases.Attributes.NoSecurity {
 	[SetupLinkerCoreAction ("link")]
 	[SetupLinkerArgument ("--strip-security", "true")]
 	[Reference ("System.dll")]
-#if NETCOREAPP
 	// Attributes from System.Security.Permissions
-	[RemovedTypeInAssembly ("System.Private.CoreLib.dll", typeof (SecurityPermissionAttribute))]
-	[RemovedTypeInAssembly ("System.Private.CoreLib.dll", typeof (PermissionSetAttribute))]
-	[RemovedTypeInAssembly ("System.Private.CoreLib.dll", typeof (ReflectionPermissionAttribute))]
-	[RemovedTypeInAssembly ("System.Private.CoreLib.dll", typeof (RegistryPermissionAttribute))]
-	[RemovedTypeInAssembly ("System.Private.CoreLib.dll", typeof (StrongNameIdentityPermissionAttribute))]
-	[RemovedTypeInAssembly ("System.Private.CoreLib.dll", typeof (CodeAccessSecurityAttribute))]
-	[RemovedTypeInAssembly ("System.Private.CoreLib.dll", typeof (EnvironmentPermissionAttribute))]
-	[RemovedTypeInAssembly ("System.Private.CoreLib.dll", typeof (FileIOPermissionAttribute))]
-	[RemovedTypeInAssembly ("System.Private.CoreLib.dll", typeof (HostProtectionAttribute))]
+	[RemovedTypeInAssembly (PlatformAssemblies.CoreLib, typeof (SecurityPermissionAttribute))]
+	[RemovedTypeInAssembly (PlatformAssemblies.CoreLib, typeof (PermissionSetAttribute))]
+	[RemovedTypeInAssembly (PlatformAssemblies.CoreLib, typeof (ReflectionPermissionAttribute))]
+	[RemovedTypeInAssembly (PlatformAssemblies.CoreLib, typeof (RegistryPermissionAttribute))]
+	[RemovedTypeInAssembly (PlatformAssemblies.CoreLib, typeof (StrongNameIdentityPermissionAttribute))]
+	[RemovedTypeInAssembly (PlatformAssemblies.CoreLib, typeof (CodeAccessSecurityAttribute))]
+	[RemovedTypeInAssembly (PlatformAssemblies.CoreLib, typeof (EnvironmentPermissionAttribute))]
+	[RemovedTypeInAssembly (PlatformAssemblies.CoreLib, typeof (FileIOPermissionAttribute))]
+	[RemovedTypeInAssembly (PlatformAssemblies.CoreLib, typeof (HostProtectionAttribute))]
 
 	// "Special" attributes from System.Security namespace that we seem to need to remove in order to set HasSecurity = false and not have
 	// pe verify complain
-	[RemovedTypeInAssembly ("System.Private.CoreLib.dll", typeof (SecurityCriticalAttribute))]
-	[RemovedTypeInAssembly ("System.Private.CoreLib.dll", typeof (SecuritySafeCriticalAttribute))]
-	[RemovedTypeInAssembly ("System.Private.CoreLib.dll", typeof (SuppressUnmanagedCodeSecurityAttribute))]
-#else
-	// Attributes from System.Security.Permissions
-	[RemovedTypeInAssembly ("mscorlib.dll", typeof (SecurityPermissionAttribute))]
-	[RemovedTypeInAssembly ("mscorlib.dll", typeof (PermissionSetAttribute))]
-	[RemovedTypeInAssembly ("mscorlib.dll", typeof (ReflectionPermissionAttribute))]
-	[RemovedTypeInAssembly ("mscorlib.dll", typeof (RegistryPermissionAttribute))]
-	[RemovedTypeInAssembly ("mscorlib.dll", typeof (StrongNameIdentityPermissionAttribute))]
-	[RemovedTypeInAssembly ("mscorlib.dll", typeof (CodeAccessSecurityAttribute))]
-	[RemovedTypeInAssembly ("mscorlib.dll", typeof (EnvironmentPermissionAttribute))]
-	[RemovedTypeInAssembly ("mscorlib.dll", typeof (FileIOPermissionAttribute))]
-	[RemovedTypeInAssembly ("mscorlib.dll", typeof (HostProtectionAttribute))]
-
-	// "Special" attributes from System.Security namespace that we seem to need to remove in order to set HasSecurity = false and not have
-	// pe verify complain
-	[RemovedTypeInAssembly ("mscorlib.dll", typeof (SecurityCriticalAttribute))]
-	[RemovedTypeInAssembly ("mscorlib.dll", typeof (SecuritySafeCriticalAttribute))]
-	[RemovedTypeInAssembly ("mscorlib.dll", typeof (SuppressUnmanagedCodeSecurityAttribute))]
-#endif
+	[RemovedTypeInAssembly (PlatformAssemblies.CoreLib, typeof (SecurityCriticalAttribute))]
+	[RemovedTypeInAssembly (PlatformAssemblies.CoreLib, typeof (SecuritySafeCriticalAttribute))]
+	[RemovedTypeInAssembly (PlatformAssemblies.CoreLib, typeof (SuppressUnmanagedCodeSecurityAttribute))]
 
 	// Fails with `Runtime critical type System.Reflection.CustomAttributeData not found` which is a known short coming
 	[SkipPeVerify (SkipPeVerifyForToolchian.Pedump)]

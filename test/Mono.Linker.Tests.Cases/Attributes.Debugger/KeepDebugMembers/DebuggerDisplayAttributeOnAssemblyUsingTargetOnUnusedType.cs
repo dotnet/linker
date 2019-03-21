@@ -12,11 +12,7 @@ namespace Mono.Linker.Tests.Cases.Attributes.Debugger.KeepDebugMembers {
 	// Can be removed once this bug is fixed https://bugzilla.xamarin.com/show_bug.cgi?id=58168
 	[SkipPeVerify (SkipPeVerifyForToolchian.Pedump)]
 
-#if NETCOREAPP
-	[KeptMemberInAssembly ("System.Private.CoreLib.dll", typeof (DebuggerDisplayAttribute), ".ctor(System.String)")]
-#else
-	[KeptMemberInAssembly ("mscorlib.dll", typeof (DebuggerDisplayAttribute), ".ctor(System.String)")]
-#endif
+	[KeptMemberInAssembly (PlatformAssemblies.CoreLib, typeof (DebuggerDisplayAttribute), ".ctor(System.String)")]
 	public class DebuggerDisplayAttributeOnAssemblyUsingTargetOnUnusedType {
 		public static void Main ()
 		{

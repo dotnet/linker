@@ -6,13 +6,9 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 namespace Mono.Linker.Tests.Cases.Attributes {
 	[Reference ("System.dll")]
 	[SetupLinkerCoreAction ("link")]
-#if NETCOREAPP
-	[KeptAttributeInAssembly ("System.Private.CoreLib.dll", typeof (AssemblyDescriptionAttribute))]
-	[KeptAttributeInAssembly ("System.Private.CoreLib.dll", typeof (AssemblyCompanyAttribute))]
-	// System.dll isn't kept
-#else
-	[KeptAttributeInAssembly ("mscorlib.dll", typeof (AssemblyDescriptionAttribute))]
-	[KeptAttributeInAssembly ("mscorlib.dll", typeof (AssemblyCompanyAttribute))]
+	[KeptAttributeInAssembly (PlatformAssemblies.CoreLib, typeof (AssemblyDescriptionAttribute))]
+	[KeptAttributeInAssembly (PlatformAssemblies.CoreLib, typeof (AssemblyCompanyAttribute))]
+#if !NETCOREAPP
 	[KeptAttributeInAssembly ("System.dll", typeof (AssemblyDescriptionAttribute))]
 	[KeptAttributeInAssembly ("System.dll", typeof (AssemblyCompanyAttribute))]
 #endif

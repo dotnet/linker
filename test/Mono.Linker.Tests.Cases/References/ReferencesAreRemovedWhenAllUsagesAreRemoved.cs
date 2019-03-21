@@ -9,11 +9,7 @@ namespace Mono.Linker.Tests.Cases.References {
 	[Il8n ("none")]
 	[Reference ("System.dll")]
 	[RemovedAssembly ("System.dll")]
-#if NETCOREAPP
-	[KeptReference ("System.Private.CoreLib")]
-#else
-	[KeptReference ("mscorlib.dll")]
-#endif
+	[KeptReference (PlatformAssemblies.CoreLib)]
 	// Can be removed once this bug is fixed https://bugzilla.xamarin.com/show_bug.cgi?id=58168
 	[SkipPeVerify(SkipPeVerifyForToolchian.Pedump)]
 	// System.Core.dll is referenced by System.dll in the .NET FW class libraries. Our GetType reflection marking code
