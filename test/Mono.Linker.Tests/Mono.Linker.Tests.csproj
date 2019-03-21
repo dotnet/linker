@@ -149,5 +149,22 @@
     <PackageReference Include="System.Threading.AccessControl" Version="4.5.0" />
   </ItemGroup>
 
+  <Target Name="PrepareTools"
+          BeforeTargets="Build"
+          Condition=" $(ILLinkBuild) ">
+    <!-- Restore ilasm using ilasm.ilproj. Restore must be done
+         separately from copy with a different set of input
+         properties, to force MSBuild to re-evaluate using new props
+         and targets from the restored package. -->
+    <PropertyGroup>
+      <IlasmProject>$(MSBuildThisFileDirectory)../../eng/ilasm.ilproj</IlasmProject>
+      <IlasmDir Condition=" '$(ArcadeBuild)' == 'true' ">$(ArtifactsDir)tools</IlasmDir>
+      <IlasmDir Condition=" '$(ArcadeBuild)' != 'true' ">$(MSBuildThisFileDirectory)$(BaseIntermediateOutputPath)tools</IlasmDir>
+    </PropertyGroup>
+
+    <MSBuild Projects="$(IlasmProject)" Targets="Restore" Properties="BaseIntermediateOutputPath=$(IlasmDir)" />
+    <MSBuild Projects="$(IlasmProject)" Targets="CopyILAsmTool" Properties="BaseIntermediateOutputPath=$(IlasmDir);__BuildPhase=Copy" />
+  </Target>
+
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" Condition=" $(ILLinkBuild) " />
 </Project>
