@@ -29,6 +29,9 @@
     <Compile Include="HelloWorldTest.cs" />
     <Compile Include="WebApiTest.cs" />
     <Compile Include="MusicStoreTest.cs" />
+
+    <!-- tell xunit to log diagnostic messages -->
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
