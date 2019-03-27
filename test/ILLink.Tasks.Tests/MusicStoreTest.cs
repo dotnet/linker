@@ -231,9 +231,9 @@ namespace ILLink.Tests
 		{
 			int ret = RunApp(target, out string commandOutput, selfContained: selfContained);
 
-			Assert.True(commandOutput.Contains("Starting request to http://localhost:5000"));
-			Assert.True(commandOutput.Contains("Response: OK"));
-			Assert.True(commandOutput.Contains("Running 100 requests"));
+			Assert.Contains("starting request to http://localhost:5000", commandOutput);
+			Assert.Contains("Response: OK", commandOutput);
+			Assert.Contains("Running 100 requests", commandOutput);
 			Assert.True(ret == 0);
 		}
 

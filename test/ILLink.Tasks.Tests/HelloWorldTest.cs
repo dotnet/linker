@@ -69,7 +69,7 @@ namespace ILLink.Tests
 		{
 			int ret = RunApp(target, out string commandOutput, selfContained: selfContained);
 			Assert.True(ret == 0);
-			Assert.True(commandOutput.Contains("Hello World!"));
+			Assert.Contains("Hello World!", commandOutput);
 		}
 	}
 }
