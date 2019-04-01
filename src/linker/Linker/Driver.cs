@@ -218,6 +218,10 @@ namespace Mono.Linker {
 							}
 							continue;
 
+						case "--annotate-unseen-callers":
+							context.AnnotateUnseenCallers = true;
+							continue;
+
 						case "--custom-step":
 							custom_steps.Add (GetParam ());
 							continue;
@@ -327,6 +331,9 @@ namespace Mono.Linker {
 
 				foreach (string custom_step in custom_steps)
 					AddCustomStep (p, custom_step);
+
+				if (context.AnnotateUnseenCallers)
+					p.AddStepAfter (typeof (MarkStep), new UnseenCallerAnnotateStep ());
 
 				p.AddStepAfter (typeof (LoadReferencesStep), new LoadI18nAssemblies (assemblies));
 
@@ -534,6 +541,7 @@ namespace Mono.Linker {
 			Console.WriteLine ("  --strip-resources         Remove XML descriptor resources for linked assemblies. Defaults to true");
 			Console.WriteLine ("  --strip-security          Remove metadata and code related to Code Access Security. Defaults to true");
 			Console.WriteLine ("  --used-attrs-only         Any attribute is removed if the attribute type is not used. Defaults to false");
+			Console.WriteLine ("  --annotate-unseen-callers Mark methods without calls through reflection, assist JIT codegen. Defaults to false");
 
 			Console.WriteLine ();
 			Console.WriteLine ("Analyzer");

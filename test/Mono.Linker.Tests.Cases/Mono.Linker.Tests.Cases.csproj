@@ -566,6 +566,7 @@
     <Compile Include="BCLFeatures\ETW\BaseRemovedEventSource.cs" />
     <Compile Include="Generics\NewConstraintOnClass.cs" />
     <Compile Include="BCLFeatures\ETW\NonEventWithLog.cs" />
+    <Compile Include="CodegenAnnotation\UnseenCallersAnnotation.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Attributes\OnlyKeepUsed\Dependencies\AssemblyWithUnusedAttributeOnReturnParameterDefinition.il" />
@@ -643,6 +644,7 @@
     <Content Include="LinkXml\PreserveBackingFieldWhenPropertyIsKept.xml" />
     <Content Include="TypeForwarding\TypeForwarderOnlyAssemblyCanBePreservedViaLinkXml.xml" />
     <Content Include="LinkXml\UnusedTypeDeclarationPreservedByLinkXmlIsKept.xml" />
+    <Content Include="CodegenAnnotation\UnseenCallersAnnotation.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Mono.Linker.Tests.Cases.Expectations\Mono.Linker.Tests.Cases.Expectations.csproj">

@@ -55,6 +55,8 @@ namespace Mono.Linker {
 		protected readonly HashSet<CustomAttribute> marked_attributes = new HashSet<CustomAttribute> ();
 		readonly HashSet<TypeDefinition> marked_types_with_cctor = new HashSet<TypeDefinition> ();
 		protected readonly HashSet<TypeDefinition> marked_instantiated = new HashSet<TypeDefinition> ();
+		protected readonly HashSet<MethodDefinition> marked_reflected = new HashSet<MethodDefinition>();
+
 
 		public AnnotationStore (LinkContext context) => this.context = context;
 
@@ -140,6 +142,17 @@ namespace Mono.Linker {
 		public bool IsMarked (CustomAttribute attribute)
 		{
 			return marked_attributes.Contains (attribute);
+		}
+
+
+		internal void MarkUnseenCallers (MethodDefinition method)
+		{
+			marked_reflected.Add (method);
+		}
+
+		public bool HasUnseenCallers (MethodDefinition method)
+		{
+			return marked_reflected.Contains (method);
 		}
 
 		public void MarkInstantiated (TypeDefinition type)
