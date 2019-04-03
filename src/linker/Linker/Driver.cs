@@ -221,6 +221,10 @@ namespace Mono.Linker {
 						case "--annotate-unseen-callers":
 							context.AnnotateUnseenCallers = true;
 							continue;
+						case "--strip-codegen-annotations":
+							context.StripCodegenAnnotations = GetParam ();
+							resolver = true;
+							continue;
 
 						case "--custom-step":
 							custom_steps.Add (GetParam ());
@@ -374,7 +378,10 @@ namespace Mono.Linker {
 					}
 				}
 
-				PreProcessPipeline (p);
+				if (context.StripCodegenAnnotations != null)
+					p = GetStripAnnotationsPipeline (context.StripCodegenAnnotations);
+
+				PreProcessPipeline(p);
 
 				try {
 					p.Process (context);
@@ -542,6 +549,7 @@ namespace Mono.Linker {
 			Console.WriteLine ("  --strip-security          Remove metadata and code related to Code Access Security. Defaults to true");
 			Console.WriteLine ("  --used-attrs-only         Any attribute is removed if the attribute type is not used. Defaults to false");
 			Console.WriteLine ("  --annotate-unseen-callers Mark methods without calls through reflection, assist JIT codegen. Defaults to false");
+			Console.WriteLine ("  --strip-codegen-annotations Do no transformations beyond removing annotations specific to JIT codegen. Defaults to false");
 
 			Console.WriteLine ();
 			Console.WriteLine ("Analyzer");
@@ -568,6 +576,18 @@ namespace Mono.Linker {
 			Console.WriteLine ("   http://www.mono-project.com/");
 
 			Environment.Exit(1);
+		}
+
+		static Pipeline GetStripAnnotationsPipeline (string source)
+		{
+			Pipeline p = new Pipeline ();
+			foreach (string file in GetFiles (source))
+				p.AppendStep (new ResolveFromAssemblyStep (file, ResolveFromAssemblyStep.RootVisibility.Any));
+			p.AppendStep (new LoadReferencesStep ());
+			p.AppendStep (new StripAnnotationsStep());
+			p.AppendStep (new OutputStep ());
+
+			return p;
 		}
 
 		static Pipeline GetStandardPipeline ()

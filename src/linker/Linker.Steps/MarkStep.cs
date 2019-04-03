@@ -2252,6 +2252,8 @@ namespace Mono.Linker.Steps {
 					Tracer.Push ($"Reflection-{method}");
 					try {
 						MarkMethod (method);
+						if (_context.AnnotateUnseenCallers)
+							MarkMethodReflected (method);
 					} finally {
 						Tracer.Pop ();
 					}
@@ -2271,8 +2273,15 @@ namespace Mono.Linker.Steps {
 						// It is not easy to reliably detect in the IL code whether the getter or setter (or both) are used.
 						// Be conservative and mark everything for the property.
 						MarkProperty (property);
+
 						MarkMethodIfNotNull (property.GetMethod);
+						if (property.GetMethod != null && _context.AnnotateUnseenCallers)
+							MarkMethodReflected (property.GetMethod);
+
 						MarkMethodIfNotNull (property.SetMethod);
+						if (property.SetMethod != null && _context.AnnotateUnseenCallers)
+							MarkMethodReflected (property.SetMethod);
+
 					} finally {
 						Tracer.Pop ();
 					}

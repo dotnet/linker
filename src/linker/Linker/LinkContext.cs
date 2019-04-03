@@ -151,6 +151,8 @@ namespace Mono.Linker {
 
 		public bool AnnotateUnseenCallers { get; set; }
 
+		public string StripCodegenAnnotations { get; set; }
+
 		public LinkContext (Pipeline pipeline)
 			: this (pipeline, new AssemblyResolver ())
 		{
