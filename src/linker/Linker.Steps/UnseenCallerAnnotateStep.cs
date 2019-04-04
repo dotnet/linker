@@ -10,6 +10,28 @@ namespace Mono.Linker.Steps {
 		AssemblyDefinition assembly;
 		MethodReference noOptAttr;
 
+		static MethodDefinition _reflectionMethod;
+
+		static MethodDefinition GetReflectionMethod (LinkContext context) {
+			if (_reflectionMethod != null)
+				return _reflectionMethod;
+
+			TypeDefinition methodImpl = BCL.FindPredefinedType("System.Runtime.CompilerServices", "ReflectionBlockedAttribute", context);
+			if (methodImpl == null)
+				throw new Exception("Could not find System.Runtime.CompilerServices.ReflectionBlockedAttribute in BCL.");
+
+			foreach (var ref_method in methodImpl.Methods)
+			{
+				if (!ref_method.IsConstructor)
+					continue;
+				if (ref_method.Parameters.Count != 0)
+					continue;
+				_reflectionMethod = ref_method;
+			}
+
+			return _reflectionMethod;
+		}
+
 		protected override void ProcessAssembly (AssemblyDefinition assembly)
 		{
 			if (Annotations.GetAction (assembly) != AssemblyAction.Link)
@@ -49,20 +71,7 @@ namespace Mono.Linker.Steps {
 			}
 
 			if (noOptAttr == null) {
-				TypeDefinition methodImpl = BCL.FindPredefinedType("System.Runtime.CompilerServices", "ReflectionBlockedAttribute", Context);
-				if (methodImpl == null)
-					throw new Exception("Could not find System.Runtime.CompilerServices.ReflectionBlockedAttribute in BCL.");
-
-				MethodDefinition reflectionMethod = null;
-				foreach (var ref_method in methodImpl.Methods)
-				{
-					if (!ref_method.IsConstructor)
-						continue;
-					if (ref_method.Parameters.Count != 0)
-						continue;
-					reflectionMethod = ref_method;
-				}
-				noOptAttr = assembly.MainModule.ImportReference (reflectionMethod);
+				noOptAttr = assembly.MainModule.ImportReference (GetReflectionMethod (Context));
 				if (noOptAttr == null)
 					throw new Exception("Could not import System.Runtime.CompilerServices.ReflectionBlockedAttribute in BCL.");
 			}
