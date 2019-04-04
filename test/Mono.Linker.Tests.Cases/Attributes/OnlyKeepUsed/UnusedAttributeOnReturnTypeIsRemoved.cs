@@ -14,6 +14,7 @@ namespace Mono.Linker.Tests.Cases.Attributes.OnlyKeepUsed {
 		{
 #if IL_ASSEMBLY_AVAILABLE
 			var tmp = new Mono.Linker.Tests.Cases.Attributes.OnlyKeepUsed.Dependencies.AssemblyWithUnusedAttributeOnReturnParameterDefinition ().Method (1);
+			var tmp2 = new Mono.Linker.Tests.Cases.Attributes.OnlyKeepUsed.Dependencies.AssemblyWithUnusedAttributeOnReturnParameterDefinition ().MethodWithoutParameters ();
 #endif
 		}
 	}
