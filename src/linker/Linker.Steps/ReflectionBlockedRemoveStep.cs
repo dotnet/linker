@@ -3,7 +3,7 @@
 namespace Mono.Linker.Steps
 {
 
-	public class StripAnnotationsStep : BaseStep
+	public class ReflectionBlockedRemoveStep : BaseStep
 	{
 		AssemblyDefinition assembly;
 

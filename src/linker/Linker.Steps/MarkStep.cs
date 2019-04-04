@@ -1683,8 +1683,21 @@ namespace Mono.Linker.Steps {
 				MarkMethod (method);
 		}
 
+		bool markedReflectionBlocked;
+
 		protected void MarkMethodReflected (MethodDefinition method)
 		{
+			if (!method.IsPrivate)
+				return;
+
+			if (!markedReflectionBlocked) {
+				markedReflectionBlocked = true;
+
+				MethodDefinition ctor = ReflectionBlockedStep.GetReflectionBlockedAttr (_context);
+				Annotations.Mark (ctor.Resolve ());
+				Annotations.Mark (ctor.DeclaringType.Resolve ());
+			}
+
 			Annotations.MarkUnseenCallers (method);
 		}
 
@@ -2232,7 +2245,7 @@ namespace Mono.Linker.Steps {
 					Tracer.Push ($"Reflection-{method}");
 					try {
 						MarkMethod (method);
-						if (_context.AnnotateUnseenCallers)
+						if (_context.NoReflectionMethods)
 							MarkMethodReflected (method);
 					} finally {
 						Tracer.Pop ();
@@ -2252,7 +2265,7 @@ namespace Mono.Linker.Steps {
 					Tracer.Push ($"Reflection-{method}");
 					try {
 						MarkMethod (method);
-						if (_context.AnnotateUnseenCallers)
+						if (_context.NoReflectionMethods)
 							MarkMethodReflected (method);
 					} finally {
 						Tracer.Pop ();
@@ -2275,11 +2288,11 @@ namespace Mono.Linker.Steps {
 						MarkProperty (property);
 
 						MarkMethodIfNotNull (property.GetMethod);
-						if (property.GetMethod != null && _context.AnnotateUnseenCallers)
+						if (property.GetMethod != null && _context.NoReflectionMethods)
 							MarkMethodReflected (property.GetMethod);
 
 						MarkMethodIfNotNull (property.SetMethod);
-						if (property.SetMethod != null && _context.AnnotateUnseenCallers)
+						if (property.SetMethod != null && _context.NoReflectionMethods)
 							MarkMethodReflected (property.SetMethod);
 
 					} finally {

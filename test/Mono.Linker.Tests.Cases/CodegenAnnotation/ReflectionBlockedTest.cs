@@ -5,9 +5,11 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.CodegenAnnotation
 {
-	[SetupLinkerArgument("--annotate-unseen-callers")]
-	public class UnseenCallersAnnotation
+	[SetupLinkerArgument("--no-reflection-methods")]
+	[KeptAttributeAttribute("System.Runtime.CompilerServices.ReflectionBlockedAttribute")]
+	public class ReflectionBlockedTest
 	{
+		[Kept]
 		public static void Main()
 		{
 			var obj = new A();
@@ -15,11 +17,46 @@ namespace Mono.Linker.Tests.Cases.CodegenAnnotation
 			method.Invoke (obj, new object[] { });
 
 			obj.FooPub ();
+
+			var obj2 = new All();
+			obj2.FooPub ();
+		}
+
+		[Kept]
+		[KeptAttributeAttribute("System.Runtime.CompilerServices.ReflectionBlockedAttribute")]
+		public class All
+		{
+			[Kept]
+			private int FooPrivSpecializable()
+			{
+				return 42;
+			}
+
+			[Kept]
+			public int FooPub ()
+			{
+				return FooPrivSpecializable();
+			}
+
+			[Kept]
+			public All()
+			{
+			}
 		}
 
 		[Kept]
 		public class A
 		{
+			[Kept]
+			private int Field
+			{
+				[Kept]
+				[KeptAttributeAttribute("System.Runtime.CompilerServices.ReflectionBlockedAttribute")]
+				get {
+					return 42;
+				}
+			}
+
 			[Kept]
 			public int FooPub()
 			{
@@ -29,7 +66,7 @@ namespace Mono.Linker.Tests.Cases.CodegenAnnotation
 			[Kept]
 			private int FooPrivRefl()
 			{
-				return 42;
+				return this.Field;
 			}
 
 			[Kept]

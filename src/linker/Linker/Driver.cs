@@ -218,11 +218,11 @@ namespace Mono.Linker {
 							}
 							continue;
 
-						case "--annotate-unseen-callers":
-							context.AnnotateUnseenCallers = true;
+						case "--no-reflection-methods":
+							context.NoReflectionMethods = true;
 							continue;
-						case "--strip-codegen-annotations":
-							context.StripCodegenAnnotations = GetParam ();
+						case "--strip-no-reflection":
+							context.StripNoReflectionAttr = GetParam ();
 							resolver = true;
 							continue;
 
@@ -336,8 +336,8 @@ namespace Mono.Linker {
 				foreach (string custom_step in custom_steps)
 					AddCustomStep (p, custom_step);
 
-				if (context.AnnotateUnseenCallers)
-					p.AddStepAfter (typeof (MarkStep), new UnseenCallerAnnotateStep ());
+				if (context.NoReflectionMethods)
+					p.AddStepAfter (typeof (MarkStep), new ReflectionBlockedStep ());
 
 				p.AddStepAfter (typeof (LoadReferencesStep), new LoadI18nAssemblies (assemblies));
 
@@ -378,8 +378,8 @@ namespace Mono.Linker {
 					}
 				}
 
-				if (context.StripCodegenAnnotations != null)
-					p = GetStripAnnotationsPipeline (context.StripCodegenAnnotations);
+				if (context.StripNoReflectionAttr != null)
+					p = GetStripAnnotationsPipeline (context.StripNoReflectionAttr);
 
 				PreProcessPipeline(p);
 
@@ -548,8 +548,8 @@ namespace Mono.Linker {
 			Console.WriteLine ("  --strip-resources         Remove XML descriptor resources for linked assemblies. Defaults to true");
 			Console.WriteLine ("  --strip-security          Remove metadata and code related to Code Access Security. Defaults to true");
 			Console.WriteLine ("  --used-attrs-only         Any attribute is removed if the attribute type is not used. Defaults to false");
-			Console.WriteLine ("  --annotate-unseen-callers Mark methods without calls through reflection, assist JIT codegen. Defaults to false");
-			Console.WriteLine ("  --strip-codegen-annotations Do no transformations beyond removing annotations specific to JIT codegen. Defaults to false");
+			Console.WriteLine ("  --no-reflection-methods   Mark all methods never used using reflection. Defaults to false. Defaults to false");
+			Console.WriteLine ("  --strip-no-reflection     Remove CustomAttributes used to mark methods not used by reflection. Defaults to false");
 
 			Console.WriteLine ();
 			Console.WriteLine ("Analyzer");
@@ -584,7 +584,7 @@ namespace Mono.Linker {
 			foreach (string file in GetFiles (source))
 				p.AppendStep (new ResolveFromAssemblyStep (file, ResolveFromAssemblyStep.RootVisibility.Any));
 			p.AppendStep (new LoadReferencesStep ());
-			p.AppendStep (new StripAnnotationsStep());
+			p.AppendStep (new ReflectionBlockedRemoveStep());
 			p.AppendStep (new OutputStep ());
 
 			return p;

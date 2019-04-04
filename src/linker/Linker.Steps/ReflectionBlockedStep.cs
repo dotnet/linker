@@ -1,18 +1,19 @@
 ﻿using System;
+using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
 using System.Runtime.CompilerServices;
 
 namespace Mono.Linker.Steps {
-	public class UnseenCallerAnnotateStep : BaseStep
+	public class ReflectionBlockedStep : BaseStep
 	{
 		AssemblyDefinition assembly;
 		MethodReference noOptAttr;
 
 		static MethodDefinition _reflectionMethod;
 
-		static MethodDefinition GetReflectionMethod (LinkContext context) {
+		public static MethodDefinition GetReflectionBlockedAttr (LinkContext context) {
 			if (_reflectionMethod != null)
 				return _reflectionMethod;
 
@@ -38,6 +39,9 @@ namespace Mono.Linker.Steps {
 				return;
 
 			this.assembly = assembly;
+			this.noOptAttr = assembly.MainModule.ImportReference (GetReflectionBlockedAttr (Context));
+			if (noOptAttr == null)
+				throw new Exception("Could not import System.Runtime.CompilerServices.ReflectionBlockedAttribute in BCL.");
 
 			foreach (var type in assembly.MainModule.Types)
 				ProcessType (type);
@@ -45,42 +49,51 @@ namespace Mono.Linker.Steps {
 
 		void ProcessType (TypeDefinition type)
 		{
+			bool canAnnotateAll = true;
+			List<MethodDefinition> canAnnotate = new List<MethodDefinition> ();
+
 			foreach (var method in type.Methods) {
-				if (method.HasBody)
-					ProcessMethod (method);
+				// Public methods have non-visible call sites by default, this attribute doesn't
+				// help us at all.
+				//
+				// See mono_aot_can_specialize in aot-compiler.c in mono
+				if (!method.IsPrivate)
+					continue;
+
+				if (!method.HasBody)
+					continue;
+
+				if (Annotations.HasUnseenCallers (method)) {
+					canAnnotateAll = false;
+					continue;
+				}
+
+				canAnnotate.Add (method);
+			}
+
+			if (canAnnotateAll) {
+				AnnotateType (type);
+			} else {
+				foreach (var method in canAnnotate)
+					AnnotateMethod (method);
 			}
 
 			foreach (var nested in type.NestedTypes)
 				ProcessType (nested);
 		}
 
-		void ProcessMethod (MethodDefinition method)
+		void AnnotateType (TypeDefinition type)
 		{
-			// Public methods have non-visible call sites by default, this attribute doesn't
-			// help us at all.
-			//
-			// See mono_aot_can_specialize in aot-compiler.c in mono
-			if (!method.IsPrivate)
-				return;
+			var cattr = new CustomAttribute (noOptAttr);
+			type.CustomAttributes.Add (cattr);
+			Annotations.Mark (cattr);
+		}
 
-			if (Annotations.HasUnseenCallers (method)) {
-				Console.WriteLine ("{0} has unseen callers", method.Name);
-				return;
-			} else {
-				Console.WriteLine ("{0} has no unseen callers", method.Name);
-			}
-
-			if (noOptAttr == null) {
-				noOptAttr = assembly.MainModule.ImportReference (GetReflectionMethod (Context));
-				if (noOptAttr == null)
-					throw new Exception("Could not import System.Runtime.CompilerServices.ReflectionBlockedAttribute in BCL.");
-			}
+		void AnnotateMethod (MethodDefinition method)
+		{
 			var cattr = new CustomAttribute (noOptAttr);
 			method.CustomAttributes.Add (cattr);
-
 			Annotations.Mark (cattr);
-			Annotations.Mark (cattr.AttributeType.Resolve ());
-			Annotations.Mark (cattr.Constructor.Resolve ());
 		}
 	}
 }
