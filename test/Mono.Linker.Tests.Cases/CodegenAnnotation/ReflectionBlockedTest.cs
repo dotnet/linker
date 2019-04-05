@@ -6,7 +6,7 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 namespace Mono.Linker.Tests.Cases.CodegenAnnotation
 {
 	[SetupLinkerArgument("--no-reflection-methods")]
-	[KeptAttributeAttribute("System.Runtime.CompilerServices.ReflectionBlockedAttribute")]
+	[KeptAttributeAttribute("System.Runtime.CompilerServices.DisablePrivateReflectionAttribute")]
 	public class ReflectionBlockedTest
 	{
 		[Kept]
@@ -23,7 +23,7 @@ namespace Mono.Linker.Tests.Cases.CodegenAnnotation
 		}
 
 		[Kept]
-		[KeptAttributeAttribute("System.Runtime.CompilerServices.ReflectionBlockedAttribute")]
+		[KeptAttributeAttribute("System.Runtime.CompilerServices.DisablePrivateReflectionAttribute")]
 		public class All
 		{
 			[Kept]
@@ -51,7 +51,7 @@ namespace Mono.Linker.Tests.Cases.CodegenAnnotation
 			private int Field
 			{
 				[Kept]
-				[KeptAttributeAttribute("System.Runtime.CompilerServices.ReflectionBlockedAttribute")]
+				[KeptAttributeAttribute("System.Runtime.CompilerServices.DisablePrivateReflectionAttribute")]
 				get {
 					return 42;
 				}
@@ -70,7 +70,7 @@ namespace Mono.Linker.Tests.Cases.CodegenAnnotation
 			}
 
 			[Kept]
-			[KeptAttributeAttribute("System.Runtime.CompilerServices.ReflectionBlockedAttribute")]
+			[KeptAttributeAttribute("System.Runtime.CompilerServices.DisablePrivateReflectionAttribute")]
 			private int FooPrivSpecializable()
 			{
 				return 42;

@@ -31,7 +31,7 @@ namespace Mono.Linker.Steps
 		{
 			for (int i = 0; i < method.CustomAttributes.Count; i++) {
 				var attr = method.CustomAttributes[i].AttributeType;
-				if (attr.Namespace == "System.Runtime.CompilerServices" && attr.Name == "ReflectionBlockedAttribute")
+				if (attr.Namespace == ReflectionBlockedStep.AttributeNamespace && attr.Name == ReflectionBlockedStep.AttributeName)
 					method.CustomAttributes.RemoveAt (i--);
 			}
 		}

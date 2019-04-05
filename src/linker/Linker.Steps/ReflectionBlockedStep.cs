@@ -8,6 +8,9 @@ using System.Runtime.CompilerServices;
 namespace Mono.Linker.Steps {
 	public class ReflectionBlockedStep : BaseStep
 	{
+		public const string AttributeNamespace = "System.Runtime.CompilerServices";
+		public const string AttributeName = "DisablePrivateReflectionAttribute";
+
 		AssemblyDefinition assembly;
 		MethodReference noOptAttr;
 
@@ -17,7 +20,7 @@ namespace Mono.Linker.Steps {
 			if (_reflectionMethod != null)
 				return _reflectionMethod;
 
-			TypeDefinition methodImpl = BCL.FindPredefinedType("System.Runtime.CompilerServices", "ReflectionBlockedAttribute", context);
+			TypeDefinition methodImpl = BCL.FindPredefinedType(AttributeNamespace, AttributeName, context);
 			if (methodImpl == null)
 				throw new Exception("Could not find System.Runtime.CompilerServices.ReflectionBlockedAttribute in BCL.");
 
