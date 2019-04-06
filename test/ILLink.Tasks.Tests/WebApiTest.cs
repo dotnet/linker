@@ -3,44 +3,17 @@ using System.IO;
 using System.Xml.Linq;
 using Xunit;
 using Xunit.Abstractions;
+using System.Collections.Generic;
 
 namespace ILLink.Tests
 {
-	public class WebApiFixture : ProjectFixture
+	public class WebApiFixture : TemplateProjectFixture
 	{
-		public string csproj;
+		public WebApiFixture(IMessageSink diagnosticMessageSink) : base(diagnosticMessageSink) {}
 
-		public WebApiFixture(IMessageSink diagnosticMessageSink) : base(diagnosticMessageSink) {
-			csproj = SetupProject();
-		}
+		protected override string TemplateName { get; } = "webapi";
 
-		public string SetupProject()
-		{
-			string projectRoot = "webapi";
-			string csproj = Path.Combine(projectRoot, $"{projectRoot}.csproj");
-
-			if (File.Exists(csproj)) {
-				LogMessage($"using existing project {csproj}");
-				return csproj;
-			}
-
-			if (Directory.Exists(projectRoot)) {
-				Directory.Delete(projectRoot, true);
-			}
-
-			Directory.CreateDirectory(projectRoot);
-			int ret = CommandHelper.Dotnet("new webapi", projectRoot);
-			if (ret != 0) {
-				LogMessage("dotnet new failed");
-				Assert.True(false);
-			}
-
-			PreventPublishFiltering(csproj);
-
-			AddLinkerReference(csproj);
-
-			return csproj;
-		}
+		protected override HashSet<string> RootFiles { get; } = new HashSet<string> () { "WebApiReflection.xml", "WebApiReflectionPortable.xml" };
 
 		// TODO: Remove this once we figure out what to do about apps
 		// that have the publish output filtered by a manifest
@@ -64,24 +37,19 @@ namespace ILLink.Tests
 
 	public class WebApiTest : IntegrationTestBase, IClassFixture<WebApiFixture>
 	{
-		private WebApiFixture fixture;
-
-		public WebApiTest(WebApiFixture fixture, ITestOutputHelper output) : base(output)
-		{
-			this.fixture = fixture;
-		}
+		public WebApiTest(WebApiFixture fixture, ITestOutputHelper output) : base(fixture, output) {}
 
 		[Fact]
 		public void RunWebApiStandalone()
 		{
-			string executablePath = BuildAndLink(fixture.csproj, selfContained: true);
+			string executablePath = Link(Fixture.csproj, selfContained: true, rootFile: "WebApiReflection.xml");
 			CheckOutput(executablePath, selfContained: true);
 		}
 
 		[Fact]
 		public void RunWebApiPortable()
 		{
-			string target = BuildAndLink(fixture.csproj, selfContained: false);
+			string target = Link(Fixture.csproj, selfContained: false, rootFile: "WebApiReflectionPortable.xml");
 			CheckOutput(target, selfContained: false);
 		}
 

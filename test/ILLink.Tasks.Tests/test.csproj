@@ -26,7 +26,7 @@
     <Compile Include="IntegrationTestBase.cs" />
     <Compile Include="Loggers.cs" />
     <Compile Include="TestContext.cs" />
-    <Compile Include="HelloWorldTest.cs" />
+    <Compile Include="ConsoleTest.cs" />
     <Compile Include="WebApiTest.cs" />
     <Compile Include="MusicStoreTest.cs" />
 

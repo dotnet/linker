@@ -11,15 +11,64 @@ using Xunit.Abstractions;
 namespace ILLink.Tests
 {
 
+	public abstract class TemplateProjectFixture : ProjectFixture
+	{
+		public TemplateProjectFixture(IMessageSink diagnosticMessageSink) : base(diagnosticMessageSink) {}
+
+		/// <summary>
+		///   The name of the project template to be passed to "dotnet new".
+		/// </summary>
+		protected abstract string TemplateName { get; }
+
+		public override string SetupProject()
+		{
+			string projectRoot = TemplateName;
+			string csproj = Path.Combine(projectRoot, $"{projectRoot}.csproj");
+
+			if (File.Exists(csproj)) {
+				LogMessage ($"using existing project {csproj}");
+				return csproj;
+			}
+
+			if (Directory.Exists(projectRoot)) {
+				Directory.Delete(projectRoot, true);
+			}
+
+			Directory.CreateDirectory(projectRoot);
+			int ret = CommandHelper.Dotnet($"new {TemplateName} --no-restore", projectRoot);
+			if (ret != 0) {
+				LogMessage ("dotnet new failed");
+				Assert.True(false);
+			}
+
+			return csproj;
+
+		}
+	}
+
 	/// <summary>
 	///   Represents a project. Each fixture contains setup code run
 	///   once before all tests in the same test class. ProjectFixture
-	///   is the base type for different specific project fixtures.
+	///   is the base type for different specific project
+	///   fixtures. The surface area of this class represents the
+	///   information each test class can access about the project
+	///   under test.
 	/// </summary>
-	public class ProjectFixture
+	public abstract class ProjectFixture
 	{
 		private FixtureLogger logger;
 		protected CommandHelper CommandHelper;
+
+		public string csproj;
+
+		/// <summary>
+		///   Linker root files to be copied to be included in the
+		///   test project directory. This may contain different files
+		///   for standalone and portable publish.
+		/// </summary>
+		protected virtual HashSet<string> RootFiles { get; }
+
+		public Dictionary<string, string> extraBuildArgs;
 
 		protected void LogMessage (string message)
 		{
@@ -30,9 +79,37 @@ namespace ILLink.Tests
 		{
 			logger = new FixtureLogger (diagnosticMessageSink);
 			CommandHelper = new CommandHelper (logger);
+			csproj = SetupProject();
+			// Todo: don't add redundant linker references
+			AddLinkerReference();
+			CopyRootFiles();
+			// AddLinkerRoots();
+			PrepareForLink();
 		}
 
-		protected void AddLinkerReference(string csproj)
+		public abstract string SetupProject();
+
+		private void PrepareForLink()
+		{
+			Restore();
+			Build(selfContained: true);
+			Build(selfContained: false);
+		}
+
+		/// <summary>
+		///   Copies linker root files from the integration test
+		///   project to the individual test project.
+		/// </summary>
+		private void CopyRootFiles()
+		{
+			if (RootFiles == null)
+				return;
+			foreach (var rootFile in RootFiles) {
+				if (!String.IsNullOrEmpty(rootFile))
+					File.Copy(rootFile, Path.GetDirectoryName(csproj), overwrite: true);
+			}
+		}
+		private void AddLinkerReference()
 		{
 			var xdoc = XDocument.Load(csproj);
 			var ns = xdoc.Root.GetDefaultNamespace();
@@ -59,25 +136,57 @@ namespace ILLink.Tests
 			}
 		}
 
-		static void AddLinkerRoots(string csproj, List<string> rootFiles)
+		private void Restore()
 		{
-			var xdoc = XDocument.Load(csproj);
-			var ns = xdoc.Root.GetDefaultNamespace();
-
-			var rootsItemGroup = new XElement(ns+"ItemGroup");
-			foreach (var rootFile in rootFiles) {
-				rootsItemGroup.Add(new XElement(ns+"LinkerRootFiles",
-					new XAttribute("Include", rootFile)));
+			string projectDir = Path.GetDirectoryName(csproj);
+			string lockFile = Path.Combine(projectDir, "obj", "project.assets.json");
+			if (File.Exists(lockFile))
+			{
+				LogMessage("using lock file at " + lockFile);
+				return;
 			}
 
-			var propertyGroup = xdoc.Root.Elements(ns + "PropertyGroup").First();
-			propertyGroup.AddAfterSelf(rootsItemGroup);
-
-			using (var fs = new FileStream(csproj, FileMode.Create)) {
-				xdoc.Save(fs);
+			int ret = CommandHelper.Dotnet($"restore -r {TestContext.RuntimeIdentifier}", projectDir);
+			if (ret != 0) {
+				LogMessage("restore failed, returning " + ret);
+				Assert.True(false);
 			}
 		}
 
+		private void Build(bool selfContained)
+		{
+			string projectDir = Path.GetDirectoryName(csproj);
+
+			// TODO: don't hard-code target framework
+			string objPath = Path.Combine(projectDir, "obj", TestContext.Configuration, "netcoreapp3.0");
+			string outputDllPath;
+			if (selfContained) {
+				outputDllPath = Path.Combine(objPath, TestContext.RuntimeIdentifier, Path.GetFileName(projectDir));
+			} else {
+				outputDllPath = Path.Combine(objPath, Path.GetFileName(projectDir));
+			}
+			if (File.Exists(outputDllPath)) {
+				LogMessage("using build artifacts at " + outputDllPath);
+				return;
+			}
+
+			string buildArgs = $"build --no-restore -c {TestContext.Configuration} /v:n";
+			if (selfContained) {
+				buildArgs += $" -r {TestContext.RuntimeIdentifier}";
+			}
+			if (extraBuildArgs != null) {
+				foreach (var item in extraBuildArgs) {
+					buildArgs += $" /p:{item.Key}={item.Value}";
+				}
+			}
+
+			int ret = CommandHelper.Dotnet(buildArgs, projectDir);
+
+			if (ret != 0) {
+				LogMessage("build failed, returning " + ret);
+				Assert.True(false);
+			}
+		}
 	}
 
 	/// <summary>
@@ -87,11 +196,14 @@ namespace ILLink.Tests
 	{
 		private readonly TestLogger logger;
 		protected readonly CommandHelper CommandHelper;
+		protected readonly ProjectFixture Fixture;
 
-		public IntegrationTestBase(ITestOutputHelper output)
+
+		public IntegrationTestBase(ProjectFixture fixture, ITestOutputHelper output)
 		{
 			logger = new TestLogger(output);
 			CommandHelper = new CommandHelper(logger);
+			Fixture = fixture;
 		}
 
 		private void LogMessage (string message)
@@ -108,25 +220,23 @@ namespace ILLink.Tests
 		///   host for self-contained publish, or the dll containing
 		///   the entry point.
 		/// </summary>
-		public string BuildAndLink(string csproj, List<string> rootFiles = null, Dictionary<string, string> extraPublishArgs = null, bool selfContained = false)
+		public string Link(string csproj, Dictionary<string, string> extraPublishArgs = null, bool selfContained = false, string rootFile = null)
 		{
-			string demoRoot = Path.GetDirectoryName(csproj);
+			string projectDir = Path.GetDirectoryName(csproj);
 
-			string publishArgs = $"publish -c {TestContext.Configuration} /v:n /p:ShowLinkerSizeComparison=true";
+			string publishArgs = $"publish --no-build -c {TestContext.Configuration} /v:n /p:ShowLinkerSizeComparison=true";
 			if (selfContained) {
 				publishArgs += $" -r {TestContext.RuntimeIdentifier}";
 			}
-			string rootFilesStr;
-			if (rootFiles != null && rootFiles.Any()) {
-				rootFilesStr = String.Join(";", rootFiles);
-				publishArgs += $" /p:LinkerRootDescriptors={rootFilesStr}";
+			if (!String.IsNullOrEmpty (rootFile)) {
+				publishArgs += $" /p:LinkerRootFile={rootFile}";
 			}
 			if (extraPublishArgs != null) {
 				foreach (var item in extraPublishArgs) {
 					publishArgs += $" /p:{item.Key}={item.Value}";
 				}
 			}
-			int ret = CommandHelper.Dotnet(publishArgs, demoRoot);
+			int ret = CommandHelper.Dotnet(publishArgs, projectDir);
 
 			if (ret != 0) {
 				LogMessage("publish failed, returning " + ret);
@@ -134,7 +244,7 @@ namespace ILLink.Tests
 			}
 
 			// detect the target framework for which the app was published
-			string tfmDir = Path.Combine(demoRoot, "bin", TestContext.Configuration);
+			string tfmDir = Path.Combine(projectDir, "bin", TestContext.Configuration);
 			string tfm = Directory.GetDirectories(tfmDir).Select(p => Path.GetFileName(p)).Single();
 			string builtApp = Path.Combine(tfmDir, tfm);
 			if (selfContained) {

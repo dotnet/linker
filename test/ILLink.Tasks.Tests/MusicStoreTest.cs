@@ -10,7 +10,7 @@ namespace ILLink.Tests
 {
 	public class MusicStoreFixture : ProjectFixture
 	{
-		public static List<string> rootFiles = new List<string> { "MusicStoreReflection.xml" };
+		protected override HashSet<string> RootFiles { get; } = new HashSet<string> () { "MusicStoreReflection.xml" };
 
 		private static string gitRepo = "http://github.com/aspnet/JitBench";
 		private static string repoName = "JitBench";
@@ -46,15 +46,12 @@ namespace ILLink.Tests
 			}
 		}
 
-		public static string csproj;
-
 		public MusicStoreFixture(IMessageSink diagnosticMessageSink) : base(diagnosticMessageSink)
 		{
-			csproj = SetupProject();
 		}
 
 		// returns path to .csproj project file
-		string SetupProject()
+		public override string SetupProject()
 		{
 			int ret;
 			string demoRoot = Path.Combine(repoName, Path.Combine("src", "MusicStore"));
@@ -86,17 +83,12 @@ namespace ILLink.Tests
 				Assert.True(false);
 			}
 
-			// Copy root files into the project directory
-			CopyRootFiles(demoRoot);
-
 			// This is necessary because JitBench comes with a
 			// NuGet.Config that has a <clear /> line, preventing
 			// NuGet.Config sources defined in outer directories from
 			// applying.
 			string nugetConfig = Path.Combine(repoName, "NuGet.config");
 			AddLocalNugetFeedAfterClear(nugetConfig);
-
-			AddLinkerReference(csproj);
 
 			// We no longer need a custom global.json, because we are
 			// using the same SDK used in the repo.
@@ -175,13 +167,6 @@ namespace ILLink.Tests
 			return GetDotnetToolPath(dotnetDir);
 		}
 
-		static void CopyRootFiles(string demoRoot)
-		{
-			foreach (var rf in rootFiles) {
-				File.Copy(rf, Path.Combine(demoRoot, rf));
-			}
-		}
-
 		private void AddLocalNugetFeedAfterClear(string nugetConfig)
 		{
 			string localPackagePath = Path.GetFullPath(TestContext.PackageSource);
@@ -200,11 +185,9 @@ namespace ILLink.Tests
 
 	public class MusicStoreTest : IntegrationTestBase, IClassFixture<MusicStoreFixture>
 	{
+		public static string rootFile = "MusicStoreReflection.xml";
 
-		MusicStoreFixture fixture;
-
-		public MusicStoreTest(MusicStoreFixture fixture, ITestOutputHelper output) : base(output) {
-			this.fixture = fixture;
+		public MusicStoreTest(MusicStoreFixture fixture, ITestOutputHelper output) : base(fixture, output) {
 			// MusicStore has been updated to target netcoreapp3.0, so
 			// we should be able to run on the SDK used to build this
 			// repo.
@@ -214,7 +197,7 @@ namespace ILLink.Tests
 		[Fact]
 		public void RunMusicStoreStandalone()
 		{
-			string executablePath = BuildAndLink(MusicStoreFixture.csproj, MusicStoreFixture.rootFiles, MusicStoreFixture.VersionPublishArgs, selfContained: true);
+			string executablePath = Link(Fixture.csproj, MusicStoreFixture.VersionPublishArgs, selfContained: true, rootFile: rootFile);
 			CheckOutput(executablePath, selfContained: true);
 		}
 
@@ -223,7 +206,7 @@ namespace ILLink.Tests
 		{
 			Dictionary<string, string> extraPublishArgs = new Dictionary<string, string>(MusicStoreFixture.VersionPublishArgs);
 			extraPublishArgs.Add("PublishWithAspNetCoreTargetManifest", "false");
-			string target = BuildAndLink(MusicStoreFixture.csproj, null, extraPublishArgs, selfContained: false);
+			string target = Link(Fixture.csproj, extraPublishArgs, selfContained: false, rootFile: rootFile);
 			CheckOutput(target, selfContained: false);
 		}
 
