@@ -48,6 +48,10 @@ namespace ILLink.Tests
 
 		public MusicStoreFixture(IMessageSink diagnosticMessageSink) : base(diagnosticMessageSink)
 		{
+			// Xunit doesn't have a way to disable entire test classes, so the fixture ctor will
+			// run even though we don't want to run any tests.
+			// This exception ensures we never try to use this fixture.
+			throw new Exception("Musicstore tests are disabled: https://github.com/aspnet/JitBench/issues/96");
 		}
 
 		// returns path to .csproj project file
@@ -172,14 +176,14 @@ namespace ILLink.Tests
 			// context.DotnetToolPath = ObtainSDK(context.TestBin, repoName);
 		}
 
-		[Fact]
+		[Fact(Skip = "Musicstore doesn't support the latest 3.0 preview.0: https://github.com/aspnet/JitBench/issues/96")]
 		public void RunMusicStoreStandalone()
 		{
 			string executablePath = Link(Fixture.csproj, MusicStoreFixture.VersionPublishArgs, selfContained: true, rootFile: rootFile);
 			CheckOutput(executablePath, selfContained: true);
 		}
 
-		[Fact]
+		[Fact(Skip = "Musicstore doesn't support the latest 3.0 preview: https://github.com/aspnet/JitBench/issues/96")]
 		public void RunMusicStorePortable()
 		{
 			Dictionary<string, string> extraPublishArgs = new Dictionary<string, string>(MusicStoreFixture.VersionPublishArgs);
