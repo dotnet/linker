@@ -80,8 +80,6 @@ namespace ILLink.Tests
 			logger = new FixtureLogger (diagnosticMessageSink);
 			CommandHelper = new CommandHelper (logger);
 			csproj = SetupProject();
-			// Todo: don't add redundant linker references
-			AddLinkerReference();
 			CopyRootFiles();
 			// AddLinkerRoots();
 			PrepareForLink();
@@ -109,32 +107,7 @@ namespace ILLink.Tests
 					File.Copy(rootFile, Path.GetDirectoryName(csproj), overwrite: true);
 			}
 		}
-		private void AddLinkerReference()
-		{
-			var xdoc = XDocument.Load(csproj);
-			var ns = xdoc.Root.GetDefaultNamespace();
-			bool added = false;
-			foreach (var el in xdoc.Root.Elements(ns + "ItemGroup")) {
-				if (el.Elements(ns + "PackageReference").Any()) {
-					el.Add(new XElement(ns+"PackageReference",
-						new XAttribute("Include", TestContext.TasksPackageName),
-						new XAttribute("Version", TestContext.TasksPackageVersion)));
-					added = true;
-					break;
-				}
-			}
-			if (!added) {
-				xdoc.Root.Add(new XElement(ns + "ItemGroup",
-					new XElement(ns + "PackageReference",
-						new XAttribute("Include", TestContext.TasksPackageName),
-						new XAttribute("Version", TestContext.TasksPackageVersion))));
-				added= true;
-			}
 
-			using (var fs = new FileStream(csproj, FileMode.Create)) {
-				xdoc.Save(fs);
-			}
-		}
 
 		private void Restore()
 		{
@@ -236,6 +209,10 @@ namespace ILLink.Tests
 					publishArgs += $" /p:{item.Key}={item.Value}";
 				}
 			}
+
+			// Override the path to the link task dll, to use our local build.
+			publishArgs += $" /p:LinkTaskDllPath={TestContext.TasksPath}";
+
 			int ret = CommandHelper.Dotnet(publishArgs, projectDir);
 
 			if (ret != 0) {

@@ -8,22 +8,9 @@ namespace ILLink.Tests
 	public static class TestContext
 	{
 		/// <summary>
-		///   The name of the tasks package to add to the integration
-		///   projects.
+		///   The path to the linker tasks dll.
 		/// </summary>
-		public static string TasksPackageName { get; private set; }
-
-		/// <summary>
-		///   The version of the tasks package to add to the
-		///   integration projects.
-		/// </summary>
-		public static string TasksPackageVersion { get; private set; }
-
-		/// <summary>
-		///   The path of the directory from which to get the linker
-		///   package.
-		/// </summary>
-		public static string PackageSource { get; private set; }
+		public static string TasksPath { get; private set; }
 
 		/// <summary>
 		///   The path to the dotnet tool to use to run the
@@ -66,24 +53,15 @@ namespace ILLink.Tests
 		public static void SetupDefaultContext()
 		{
 			// test working directory is test project's <baseoutputpath>/<config>/<tfm>
-			var testBin = Path.Combine(Environment.CurrentDirectory, "..", "..");
-			var repoRoot = Path.GetFullPath(Path.Combine(testBin, "..", "..", ".."));
+			TestBin = Path.Combine(Environment.CurrentDirectory, "..", "..");
+			var repoRoot = Path.GetFullPath(Path.Combine(TestBin, "..", "..", ".."));
 
-			// Locate task package
-			var packageName = "ILLink.Tasks";
-			var packageSource = Path.Combine(repoRoot, "src", "ILLink.Tasks", "bin", "nupkgs");
-			var tasksPackages = Directory.GetFiles(packageSource)
-				.Where(p => Path.GetExtension(p) == ".nupkg")
-				.Select(p => Path.GetFileNameWithoutExtension(p))
-				.Where(p => p.StartsWith(packageName));
-			var nPackages = tasksPackages.Count();
-			if (nPackages > 1) {
-				throw new Exception($"duplicate {packageName} packages in {packageSource}");
-			} else if (nPackages == 0) {
-				throw new Exception($"{packageName} package not found in {packageSource}");
-			}
-			var tasksPackage = tasksPackages.Single();
-			var version = tasksPackage.Remove(0, packageName.Length + 1);
+			// Locate task dll
+#if ARCADE
+			TasksPath = Path.Combine(repoRoot, "artifacts", "bin", "ILLink.Tasks", "Release", "netcoreapp2.0", "ILLink.Tasks.dll");
+#else
+			TasksPath = Path.Combine(repoRoot, "src", "ILLink.Tasks", "bin", "Debug", "netcoreapp2.0", "ILLink.Tasks.dll");
+#endif
 
 			// Locate dotnet host
 			var dotnetDir = Path.Combine(repoRoot, ".dotnet");
@@ -95,13 +73,8 @@ namespace ILLink.Tests
 					return ext == "" || ext == ".exe";
 				})
 				.Single();
-			var dotnetToolPath = Path.Combine(dotnetDir, dotnetToolName);
+			DotnetToolPath = Path.Combine(dotnetDir, dotnetToolName);
 
-			// Initialize static members
-			PackageSource = packageSource;
-			TasksPackageName = packageName;
-			TasksPackageVersion = version;
-			DotnetToolPath = dotnetToolPath;
 			// This sets the RID to the RID of the currently-executing system.
 			RuntimeIdentifier = RuntimeEnvironment.GetRuntimeIdentifier();
 			// workaround: the osx.10.13-x64 RID doesn't exist yet.
@@ -113,7 +86,6 @@ namespace ILLink.Tests
 			// We want to build and link integration projects in the
 			// release configuration.
 			Configuration = "Release";
-			TestBin = testBin;
 		}
 	}
 }

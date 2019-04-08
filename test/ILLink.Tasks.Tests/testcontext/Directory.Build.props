@@ -1,0 +1,16 @@
+<Project>
+
+  <!-- The test infrastructure sets LinkTaskDllPath to our local build of the tasks. 
+       When this is set, we want to use linker tasks from this dll.
+  -->
+  <PropertyGroup Condition=" '$(LinkTaskDllPath)' != '' ">
+    <IntermediateLinkDirName Condition=" '$(IntermediateLinkDirName)' == '' ">linked</IntermediateLinkDirName>
+    <IntermediateLinkDir Condition=" '$(IntermediateLinkDir)' == '' ">$(IntermediateOutputPath)$(IntermediateLinkDirName)</IntermediateLinkDir>
+  </PropertyGroup>
+
+  <UsingTask Condition=" '$(LinkTaskDllPath)' != '' " TaskName="ILLink" AssemblyFile="$(LinkTaskDllPath)" />
+  <UsingTask Condition=" '$(LinkTaskDllPath)' != '' " TaskName="ComputeManagedAssemblies" AssemblyFile="$(LinkTaskDllPath)" />
+  <UsingTask Condition=" '$(LinkTaskDllPath)' != '' " TaskName="ComputeRemovedAssemblies" AssemblyFile="$(LinkTaskDllPath)" />
+  <UsingTask Condition=" '$(LinkTaskDllPath)' != '' " TaskName="GenerateDepsFile" AssemblyFile="$(LinkTaskDllPath)" />
+
+</Project>

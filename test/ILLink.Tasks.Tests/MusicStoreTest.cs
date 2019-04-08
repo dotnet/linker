@@ -83,13 +83,6 @@ namespace ILLink.Tests
 				Assert.True(false);
 			}
 
-			// This is necessary because JitBench comes with a
-			// NuGet.Config that has a <clear /> line, preventing
-			// NuGet.Config sources defined in outer directories from
-			// applying.
-			string nugetConfig = Path.Combine(repoName, "NuGet.config");
-			AddLocalNugetFeedAfterClear(nugetConfig);
-
 			// We no longer need a custom global.json, because we are
 			// using the same SDK used in the repo.
 			// AddGlobalJson(repoName);
@@ -165,21 +158,6 @@ namespace ILLink.Tests
 			}
 
 			return GetDotnetToolPath(dotnetDir);
-		}
-
-		private void AddLocalNugetFeedAfterClear(string nugetConfig)
-		{
-			string localPackagePath = Path.GetFullPath(TestContext.PackageSource);
-			var xdoc = XDocument.Load(nugetConfig);
-			var ns = xdoc.Root.GetDefaultNamespace();
-			var clear = xdoc.Root.Element(ns+"packageSources").Element(ns+"clear");
-			clear.Parent.Add(new XElement(ns+"add",
-						new XAttribute("key", "local linker feed"),
-						new XAttribute("value", localPackagePath)));
-
-			using (var fs = new FileStream(nugetConfig, FileMode.Create)) {
-				xdoc.Save(fs);
-			}
 		}
 	}
 

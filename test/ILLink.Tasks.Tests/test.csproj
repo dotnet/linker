@@ -7,6 +7,7 @@
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <IsTestProject>true</IsTestProject>
     <IsIntegrationTestProject>true</IsIntegrationTestProject>
+    <DefineConstants Condition=" '$(ArcadeBuild)' == 'true' ">$(DefineConstants);ARCADE</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,9 +18,11 @@
     </Content>
   </ItemGroup>
 
-  <Target Name="CopyNuGetConfig"
+  <Target Name="CopyTestContextFiles"
           AfterTargets="AfterBuild">
-    <Copy SourceFiles="nuget/NuGet.config" DestinationFolder="$(OutDir)" />
+    <Copy SourceFiles="testcontext/NuGet.config" DestinationFolder="$(OutDir)" />
+    <Copy SourceFiles="testcontext/Directory.Build.props" DestinationFolder="$(OutDir)" />
+    <Copy SourceFiles="testcontext/Directory.Build.targets" DestinationFolder="$(OutDir)" />
   </Target>
 
   <ItemGroup>
