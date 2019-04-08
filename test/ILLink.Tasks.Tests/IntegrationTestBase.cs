@@ -104,7 +104,7 @@ namespace ILLink.Tests
 				return;
 			foreach (var rootFile in RootFiles) {
 				if (!String.IsNullOrEmpty(rootFile))
-					File.Copy(rootFile, Path.GetDirectoryName(csproj), overwrite: true);
+					File.Copy(rootFile, Path.Combine(Path.GetDirectoryName(csproj), Path.GetFileName(rootFile)), overwrite: true);
 			}
 		}
 
