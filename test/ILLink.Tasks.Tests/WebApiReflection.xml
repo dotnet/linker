@@ -52,6 +52,10 @@
     <type fullname="Microsoft.AspNetCore.DataProtection.Internal.HostingApplicationDiscriminator">
       <method name=".ctor" />
     </type>
+    <!-- Windows-only root. -->
+    <type fullname="Microsoft.AspNetCore.DataProtection.RegistryPolicyResolver">
+      <method name=".ctor" />
+    </type>
   </assembly>
 
   <assembly fullname="Microsoft.AspNetCore.HostFiltering">
