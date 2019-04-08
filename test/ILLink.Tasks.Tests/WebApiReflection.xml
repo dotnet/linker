@@ -1,0 +1,443 @@
+<linker>
+
+  <assembly fullname="webapi">
+    <type fullname="webapi.Startup">
+      <method name=".ctor" />
+      <method name="Configure" />
+      <method name="ConfigureServices" />
+    </type>
+  </assembly>
+
+  <assembly fullname="Microsoft.AspNetCore">
+    <type fullname="Microsoft.AspNetCore.HostFilteringStartupFilter">
+      <method name=".ctor" />
+    </type>
+  </assembly>
+
+  <assembly fullname="Microsoft.AspNetCore.Authorization">
+    <type fullname="Microsoft.AspNetCore.Authorization.DefaultAuthorizationPolicyProvider">
+      <method name=".ctor" />
+    </type>
+  </assembly>
+
+  <assembly fullname="Microsoft.AspNetCore.Authorization.Policy">
+    <type fullname="Microsoft.AspNetCore.Authorization.AuthorizationMiddleware">
+      <method name=".ctor" />
+      <method name="Invoke" />
+    </type>
+  </assembly>
+
+  <assembly fullname="Microsoft.AspNetCore.DataProtection">
+    <type fullname="Microsoft.AspNetCore.DataProtection.Internal.DataProtectionStartupFilter">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.DataProtection.KeyManagement.KeyRingProvider">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.DataProtection.Internal.KeyManagementOptionsSetup">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.DataProtection.TypeForwardingActivator">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.DataProtection.KeyManagement.DefaultKeyResolver">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.DataProtection.Internal.DataProtectionOptionsSetup">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.DataProtection.Internal.HostingApplicationDiscriminator">
+      <method name=".ctor" />
+    </type>
+  </assembly>
+
+  <assembly fullname="Microsoft.AspNetCore.HostFiltering">
+    <type fullname="Microsoft.AspNetCore.HostFiltering.HostFilteringMiddleware">
+      <method name="Invoke" />
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.HostFiltering.HostFilteringOptions">
+      <method name=".ctor" />
+    </type>
+  </assembly>
+
+  <assembly fullname="Microsoft.AspNetCore.Hosting">
+    <type fullname="Microsoft.AspNetCore.Hosting.Internal.GenericWebHostService">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Hosting.Internal.GenericWebHostApplicationLifetime">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Hosting.Builder.ApplicationBuilderFactory">
+      <method name=".ctor" />
+    </type>
+  </assembly>
+
+  <assembly fullname="Microsoft.AspNetCore.HttpsPolicy">
+    <type fullname="Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware">
+      <method name="Invoke" />
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.HttpsPolicy.HstsMiddleware">
+      <method name="Invoke" />
+      <method name=".ctor" />
+    </type>
+  </assembly>
+
+  <assembly fullname="Microsoft.AspNetCore.Http">
+    <type fullname="Microsoft.AspNetCore.Http.DefaultHttpContext">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Http.DefaultHttpContextFactory">
+      <method name=".ctor" />
+    </type>
+  </assembly>
+
+  <assembly fullname="Microsoft.AspNetCore.Mvc.Core">
+    <type fullname="Microsoft.AspNetCore.Mvc.Filters.MiddlewareFilterBuilderStartupFilter">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.Filters.MiddlewareFilterBuilder">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.Filters.MiddlewareFilterConfigurationProvider">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.Extensions.DependencyInjection.MvcCoreRouteOptionsSetup">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.Routing.MvcEndpointDataSource">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.Infrastructure.DefaultActionDescriptorCollectionProvider">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.ApplicationModels.ControllerActionDescriptorProvider">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.ApplicationModels.ApplicationModelFactory">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.ApplicationModels.DefaultApplicationModelProvider">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.MvcCoreMvcOptionsSetup">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.Infrastructure.MemoryPoolHttpRequestStreamReaderFactory">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.Infrastructure.MvcOptionsConfigureCompatibilityOptions">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.ModelBinding.Metadata.DefaultModelMetadataProvider">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.ApplicationModels.ApiBehaviorApplicationModelProvider">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.Extensions.DependencyInjection.ApiBehaviorOptionsSetup">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.Infrastructure.ProblemDetailsClientErrorFactory">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.ApplicationModels.AuthorizationApplicationModelProvider">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.Routing.MvcEndpointInvokerFactory">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.Infrastructure.ActionInvokerFactory">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvokerProvider">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvokerCache">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.ModelBinding.ParameterBinder">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.ModelBinding.ModelBinderFactory">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.Filters.DefaultFilterProvider">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.Controllers.ControllerFactoryProvider">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.Controllers.ControllerActivatorProvider">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.Controllers.DefaultControllerActivator">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.Infrastructure.TypeActivatorCache">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.Controllers.DefaultControllerFactory">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.Controllers.DefaultControllerPropertyActivator">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.Infrastructure.ActionResultTypeMapper">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.Routing.UrlHelperFactory">
+      <method name=".ctor" />
+    </type>
+  </assembly>
+
+  <assembly fullname="Microsoft.AspNetCore.Mvc.Cors">
+    <type fullname="Microsoft.AspNetCore.Mvc.Cors.CorsApplicationModelProvider">
+      <method name=".ctor" />
+    </type>
+  </assembly>
+
+  <assembly fullname="Microsoft.AspNetCore.Mvc.DataAnnotations">
+    <type fullname="Microsoft.Extensions.DependencyInjection.MvcDataAnnotationsMvcOptionsSetup">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.DataAnnotations.ValidationAttributeAdapterProvider">
+      <method name=".ctor" />
+    </type>
+  </assembly>
+
+  <assembly fullname="Microsoft.AspNetCore.Mvc.NewtonsoftJson">
+    <type fullname="Microsoft.Extensions.DependencyInjection.NewtonsoftJsonMvcOptionsSetup">
+      <method name="Configure" />
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.NewtonsoftJson.JsonPatchOperationsArrayProvider">
+      <method name="get_Order" />
+      <method name="OnProvidersExecuting" />
+      <method name="OnProvidersExecuted" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.NewtonsoftJson.JsonResultExecutor">
+      <method name="ExecuteAsync" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.NewtonsoftJson.BsonTempDataSerializer">
+      <method name="Deserialize" />
+      <method name="Serialize" />
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.NewtonsoftJson.NewtonsoftJsonHelper">
+      <method name="Serialize" />
+      <method name=".ctor" />
+    </type>
+  </assembly>
+
+  <assembly fullname="Microsoft.AspNetCore.Mvc.Razor">
+    <type fullname="Microsoft.AspNetCore.Mvc.Razor.Compilation.RazorViewCompilerProvider">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.Razor.Compilation.DefaultRazorPageFactoryProvider">
+      <method name=".ctor" />
+    </type>
+  </assembly>
+
+  <assembly fullname="Microsoft.AspNetCore.Mvc.RazorPages">
+    <type fullname="Microsoft.AspNetCore.Mvc.RazorPages.Infrastructure.PageActionDescriptorProvider">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.ApplicationModels.CompiledPageRouteModelProvider">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.RazorPages.Infrastructure.PageActionInvokerProvider">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.RazorPages.Infrastructure.DefaultPageLoader">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.ApplicationModels.DefaultPageApplicationModelProvider">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.ApplicationModels.AutoValidateAntiforgeryPageApplicationModelProvider">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.ApplicationModels.AuthorizationPageApplicationModelProvider">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.ApplicationModels.TempDataFilterPageApplicationModelProvider">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.ApplicationModels.ViewDataAttributePageApplicationModelProvider">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.ApplicationModels.ResponseCacheFilterApplicationModelProvider">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.RazorPages.Infrastructure.DefaultPageFactoryProvider">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.RazorPages.Infrastructure.DefaultPageActivatorProvider">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.RazorPages.Infrastructure.DefaultPageModelFactoryProvider">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.RazorPages.Infrastructure.DefaultPageModelActivatorProvider">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.RazorPages.Infrastructure.DefaultPageHandlerMethodSelector">
+      <method name=".ctor" />
+    </type>
+  </assembly>
+
+  <assembly fullname="Microsoft.AspNetCore.Mvc.ViewFeatures">
+    <type fullname="Microsoft.Extensions.DependencyInjection.TempDataMvcOptionsSetup">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.ViewFeatures.Filters.TempDataApplicationModelProvider">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.ViewFeatures.Filters.ViewDataAttributeApplicationModelProvider">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionaryControllerPropertyActivator">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.ViewFeatures.TempDataDictionaryFactory">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.ViewFeatures.CookieTempDataProvider">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.ViewFeatures.ModelExpressionProvider">
+      <method name=".ctor" />
+    </type>
+  </assembly>
+
+  <assembly fullname="Microsoft.AspNetCore.Routing">
+    <type fullname="Microsoft.AspNetCore.Builder.RoutingBuilderExtensions">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Routing.Internal.RoutingMarkerService">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Routing.DefaultEndpointRouteBuilder">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Routing.DefaultParameterPolicyFactory">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Routing.Patterns.DefaultRoutePatternTransformer">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Routing.EndpointRoutingMiddleware">
+      <method name="Invoke" />
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Routing.Matching.DfaMatcherFactory">
+      <method name=".ctor" />
+    </type>
+  </assembly>
+
+  <assembly fullname="Microsoft.AspNetCore.Server.Kestrel.Core">
+    <type fullname="Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServer">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Server.Kestrel.Core.Internal.KestrelServerOptionsSetup">
+      <method name=".ctor" />
+    </type>
+  </assembly>
+
+  <assembly fullname="Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets">
+    <type fullname="Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketTransportFactory">
+      <method name=".ctor" />
+    </type>
+  </assembly>
+
+  <assembly fullname="Microsoft.Extensions.Hosting">
+    <type fullname="Microsoft.Extensions.Hosting.Internal.Host" />
+    <type fullname="Microsoft.Extensions.Hosting.Internal.ApplicationLifetime">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.Extensions.Hosting.Internal.ConsoleLifetime">
+      <method name=".ctor" />
+    </type>
+  </assembly>
+
+  <assembly fullname="Microsoft.Extensions.Logging">
+    <type fullname="Microsoft.Extensions.Logging.LoggerFactory">
+      <method name=".ctor" />
+    </type>
+  </assembly>
+
+  <assembly fullname="Microsoft.Extensions.Logging.Configuration">
+    <type fullname="Microsoft.Extensions.Logging.Configuration.LoggerProviderConfigureOptions`2">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.Extensions.Logging.Configuration.LoggerProviderConfiguration`1">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.Extensions.Logging.Configuration.LoggerProviderConfigurationFactory">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.Extensions.Logging.Configuration.LoggerProviderOptionsChangeTokenSource`2">
+      <method name=".ctor" />
+    </type>
+  </assembly>
+
+  <assembly fullname="Microsoft.Extensions.Logging.Console">
+    <type fullname="Microsoft.Extensions.Logging.Console.ConsoleLoggerProvider">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.Extensions.Logging.Console.ConsoleLoggerOptions">
+      <method name=".ctor" />
+    </type>
+  </assembly>
+
+  <assembly fullname="Microsoft.Extensions.Logging.Debug">
+    <type fullname="Microsoft.Extensions.Logging.Debug.DebugLoggerProvider">
+      <method name=".ctor" />
+    </type>
+  </assembly>
+
+  <assembly fullname="Microsoft.Extensions.Logging.EventSource">
+    <type fullname="Microsoft.Extensions.Logging.EventSource.EventSourceLoggerProvider">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.Extensions.Logging.EventLogFiltersConfigureOptions">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.Extensions.Logging.EventLogFiltersConfigureOptionsChangeSource">
+      <method name=".ctor" />
+    </type>
+  </assembly>
+
+  <assembly fullname="Microsoft.Extensions.ObjectPool">
+    <type fullname="Microsoft.Extensions.ObjectPool.DefaultObjectPoolProvider">
+      <method name=".ctor" />
+    </type>
+  </assembly>
+
+  <assembly fullname="Microsoft.Extensions.Options">
+    <type fullname="Microsoft.Extensions.Options.OptionsMonitor`1">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.Extensions.Options.OptionsFactory`1">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.Extensions.Options.OptionsCache`1">
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.Extensions.Options.OptionsManager`1">
+      <method name=".ctor" />
+    </type>
+  </assembly>
+
+  <assembly fullname="System.Private.CoreLib">
+    <type fullname="System.Collections.Generic.GenericArraySortHelper`1">
+      <method name=".ctor" />
+    </type>
+  </assembly>
+
+</linker>

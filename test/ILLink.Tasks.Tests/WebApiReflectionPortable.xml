@@ -1,0 +1,35 @@
+<linker>
+
+  <assembly fullname="webapi">
+    <type fullname="webapi.Startup">
+      <method name=".ctor" />
+      <method name="Configure" />
+      <method name="ConfigureServices" />
+    </type>
+  </assembly>
+
+  <assembly fullname="Microsoft.AspNetCore.Mvc.NewtonsoftJson">
+    <type fullname="Microsoft.AspNetCore.Mvc.NewtonsoftJson.BsonTempDataSerializer">
+      <method name="Deserialize" />
+      <method name="Serialize" />
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.NewtonsoftJson.JsonPatchOperationsArrayProvider">
+      <method name="get_Order" />
+      <method name="OnProvidersExecuting" />
+      <method name="OnProvidersExecuted" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.NewtonsoftJson.JsonResultExecutor">
+      <method name="ExecuteAsync" />
+    </type>
+    <type fullname="Microsoft.AspNetCore.Mvc.NewtonsoftJson.NewtonsoftJsonHelper">
+      <method name="Serialize" />
+      <method name=".ctor" />
+    </type>
+    <type fullname="Microsoft.Extensions.DependencyInjection.NewtonsoftJsonMvcOptionsSetup">
+      <method name="Configure" />
+      <method name=".ctor" />
+    </type>
+  </assembly>
+
+</linker>
