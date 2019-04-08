@@ -1,6 +1,10 @@
 <Project>
-  <!-- Workaround for https://github.com/dotnet/corefx/issues/16322 -->
+
+  <!-- "dotnet test" on solution runs the "VSTest" target on each
+       project, which outputs a warning for every project that does
+       not have IsTestProject set to true. Silence these warnings. -->
   <Target Name="VSTest">
     <MSBuild Projects="@(ProjectReference)" Targets="VSTestIfTestProject" />
   </Target>
+
 </Project>

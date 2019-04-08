@@ -5,7 +5,8 @@
 
     <IsPackable>false</IsPackable>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
-    <IsTestProject>false</IsTestProject>
+    <IsTestProject>true</IsTestProject>
+    <IsIntegrationTestProject>true</IsIntegrationTestProject>
   </PropertyGroup>
 
   <ItemGroup>

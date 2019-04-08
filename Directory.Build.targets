@@ -1,14 +1,22 @@
 <Project>
   <Import Project="Sdk.targets" Sdk="Microsoft.DotNet.Arcade.Sdk" Condition=" '$(ArcadeBuild)' == 'true' " />
 
-  <!-- Map the Arcade "Test" target to the "VSTest" target used by "dotnet test" -->
+  <!-- Map the Arcade "Test" target to our "UnitTest" target. -->
   <Target Name="Test"
           Condition=" '$(ArcadeBuild)' == 'true' And '$(DisableArcadeTestFramework)' == 'true' ">
-    <MSBuild Projects="$(MSBuildProjectFile)" Targets="VSTest" />
+    <CallTarget Targets="UnitTest" />
   </Target>
 
   <Target Name="VSTestIfTestProject">
     <CallTarget Targets="VSTest" Condition="'$(IsTestProject)' == 'true'" />
+  </Target>
+
+  <Target Name="UnitTest">
+    <CallTarget Targets="VSTest" Condition="'$(IsUnitTestProject)' == 'true'" />
+  </Target>
+
+  <Target Name="IntegrationTest">
+    <CallTarget Targets="VSTest" Condition="'$(IsIntegrationTestProject)' == 'true'" />
   </Target>
 
 </Project>

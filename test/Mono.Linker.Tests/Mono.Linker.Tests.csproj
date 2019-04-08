@@ -9,6 +9,8 @@
     <DefineConstants Condition=" '$(TargetFramework)' == 'netcoreapp3.0' ">$(DefineConstants);NETCOREAPP</DefineConstants>
 
     <DefineConstants Condition=" '$(ArcadeBuild)' == 'true' ">$(DefineConstants);ARCADE</DefineConstants>
+    <IsTestProject>true</IsTestProject>
+    <IsUnitTestProject>true</IsUnitTestProject>
     <!-- Arcade's custom test imports assume that we are using xunit. -->
     <DisableArcadeTestFramework Condition=" '$(ArcadeBuild)' == 'true' ">true</DisableArcadeTestFramework>
   </PropertyGroup>
