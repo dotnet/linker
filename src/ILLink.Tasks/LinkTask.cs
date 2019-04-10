@@ -190,11 +190,14 @@ namespace ILLink.Tasks
 				}
 			}
 
-			if (ExtraArgs != null)
-				args.AppendLine (ExtraArgs);
+			args.AppendLine (" -c link");
 
 			if (DumpDependencies)
 				args.AppendLine ("--dump-dependencies");
+
+			if (ExtraArgs != null) {
+				args.Append (" ").Append (ExtraArgs);
+			}
 
 			return args.ToString ();
 		}
