@@ -3,32 +3,31 @@
   <!-- Include linker targets in our tests, until the SDK comes with its own linker targets. -->
 
   <Target Name="ILLink"
-          BeforeTargets="ComputeFilesToPublish">
-    <ComputeManagedAssemblies Assemblies="@(_ResolvedCopyLocalPublishAssets)">
-      <Output TaskParameter="ManagedAssemblies" ItemName="_ManagedResolvedAssembliesToPublish" />
+          AfterTargets="ComputeFilesToPublish">
+
+    <ComputeManagedAssemblies Assemblies="@(ResolvedFileToPublish)">
+      <Output TaskParameter="ManagedAssemblies" ItemName="_ManagedResolvedFileToPublish" />
     </ComputeManagedAssemblies>
     <ItemGroup>
-      <_ManagedResolvedAssembliesToPublish Remove="@(_ManagedResolvedAssembliesToPublish->WithMetadataValue('AssetType', 'resources'))" />
-      <_ManagedAssembliesToLink Include="@(IntermediateAssembly);@(_ManagedResolvedAssembliesToPublish)" />
+      <_ManagedResolvedFileToPublish Remove="@(_ManagedResolvedFileToPublish->WithMetadataValue('AssetType', 'resources'))" />
     </ItemGroup>
-    <ILLink AssemblyPaths="@(_ManagedAssembliesToLink)"
+
+    <ILLink AssemblyPaths="@(_ManagedResolvedFileToPublish)"
             ReferenceAssemblyPaths="@(ReferencePath)"
             RootAssemblyNames="@(IntermediateAssembly->'%(Filename)')"
             RootDescriptorFiles="$(LinkerRootFile)"
             OutputDirectory="$(IntermediateLinkDir)"
             ExtraArgs="--skip-unresolved true" />
+
     <ItemGroup>
-      <__LinkedResolvedAssemblies Include="@(_ManagedResolvedAssembliesToPublish->'$(IntermediateLinkDir)/%(Filename)%(Extension)')" />
-      <_LinkedResolvedAssemblies Include="@(__LinkedResolvedAssemblies)" Condition="Exists('%(Identity)')" />
-      <__LinkedIntermediateAssembly Include="@(IntermediateAssembly->'$(IntermediateLinkDir)/%(Filename)%(Extension)')" />
-      <_LinkedIntermediateAssembly Include="@(__LinkedIntermediateAssembly)" Condition="Exists('%(Identity)')" />
-      <_ResolvedCopyLocalPublishAssets Remove="@(_ManagedAssembliesToLink)" />
-      <_ResolvedCopyLocalPublishAssets Include="@(_LinkedResolvedAssemblies)" />
-      <IntermediateAssembly Remove="@(IntermediateAssembly)" />
-      <IntermediateAssembly Include="@(_LinkedIntermediateAssembly)" />
+      <__LinkedResolvedFileToPublish Include="@(_ManagedResolvedFileToPublish->'$(IntermediateLinkDir)/%(Filename)%(Extension)')" />
+      <_LinkedResolvedFileToPublish Include="@(__LinkedResolvedFileToPublish)" Condition="Exists('%(Identity)')" />
+      <ResolvedFileToPublish Remove="@(_ManagedResolvedFileToPublish)" />
+      <ResolvedFileToPublish Include="@(_LinkedResolvedFileToPublish)" />
     </ItemGroup>
-    <ComputeRemovedAssemblies InputAssemblies="@(_ManagedAssembliesToLink)"
-                               KeptAssemblies="@(_LinkedResolvedAssemblies)">
+
+    <ComputeRemovedAssemblies InputAssemblies="@(_ManagedResolvedFileToPublish)"
+                              KeptAssemblies="@(_LinkedResolvedFileToPublish)">
       <Output TaskParameter="RemovedAssemblies" ItemName="_RemovedManagedAssemblies" />
     </ComputeRemovedAssemblies>
     <ItemGroup>
