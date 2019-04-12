@@ -1,10 +1,10 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ILLinkBuild Condition=" $(Configuration.StartsWith('illink')) ">true</ILLinkBuild>
     <ILLinkBuild Condition=" '$(ILLinkBuild)' == '' ">false</ILLinkBuild>
   </PropertyGroup>
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props') And ! $(ILLinkBuild) "/>
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props') And ! $(ILLinkBuild) " />
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" Condition=" $(ILLinkBuild) " />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -179,6 +179,7 @@
     <Compile Include="Basic\UsedEventOnInterfaceIsRemovedWhenUsedFromClass.cs" />
     <Compile Include="Basic\UsedPropertyIsKept.cs" />
     <Compile Include="Basic\UsedStructIsKept.cs" />
+    <Compile Include="BCLFeatures\ETW\BaseRemovedEventSourceEmptyBody.cs" />
     <Compile Include="BCLFeatures\ETW\LocalsOfModifiedMethodAreRemoved.cs" />
     <Compile Include="BCLFeatures\ETW\StubbedMethodWithExceptionHandlers.cs" />
     <Compile Include="CommandLine\ResponseFilesWork.cs" />
@@ -187,6 +188,7 @@
     <Compile Include="CoreLink\InstantiatedStructWithOverridesFromObject.cs" />
     <Compile Include="CoreLink\NeverInstantiatedTypeWithOverridesFromObject.cs" />
     <Compile Include="CoreLink\NoSecurityPlusOnlyKeepUsedRemovesAllSecurityAttributesFromCoreLibraries.cs" />
+    <Compile Include="Inheritance.AbstractClasses\NoKeptCtor\OverrideRemoval\OverrideOfAbstractIsKeptNonEmpty.cs" />
     <Compile Include="CoreLink\InstantiatedTypeWithOverridesFromObject.cs" />
     <Compile Include="Inheritance.AbstractClasses\NoKeptCtor\OverrideRemoval\CanDisableOverrideRemoval.cs" />
     <Compile Include="Inheritance.AbstractClasses\NoKeptCtor\OverrideRemoval\OverrideOfAbstractIsKept.cs" />
@@ -196,6 +198,23 @@
     <Compile Include="Inheritance.AbstractClasses\NoKeptCtor\OverrideRemoval\OverrideThatAlsoFulfilsInterface.cs" />
     <Compile Include="Inheritance.AbstractClasses\NoKeptCtor\OverrideRemoval\PreservesOverriddenMethodOverrideOfUsedVirtualStillRemoved.cs" />
     <Compile Include="Inheritance.AbstractClasses\NoKeptCtor\OverrideRemoval\PreservesOverriddenMethodOverrideOfUsedVirtualStillRemoved2.cs" />
+    <Compile Include="Inheritance.AbstractClasses\Dependencies\TypeWithBaseInCopiedAssembly2_Base.cs" />
+    <Compile Include="Inheritance.AbstractClasses\Dependencies\TypeWithBaseInCopiedAssembly3_Base.cs" />
+    <Compile Include="Inheritance.AbstractClasses\Dependencies\TypeWithBaseInCopiedAssembly4_Base.cs" />
+    <Compile Include="Inheritance.AbstractClasses\Dependencies\TypeWithBaseInCopiedAssembly6_Base.cs" />
+    <Compile Include="Inheritance.AbstractClasses\Dependencies\TypeWithBaseInCopiedAssembly_Base.cs" />
+    <Compile Include="Inheritance.AbstractClasses\NotKeptCtor\NeverInstantiatedTypeWithBaseInCopiedAssembly.cs" />
+    <Compile Include="Inheritance.AbstractClasses\NotKeptCtor\NeverInstantiatedTypeWithBaseInCopiedAssembly2.cs" />
+    <Compile Include="Inheritance.AbstractClasses\NotKeptCtor\NeverInstantiatedTypeWithBaseInCopiedAssembly3.cs" />
+    <Compile Include="Inheritance.AbstractClasses\NotKeptCtor\NeverInstantiatedTypeWithBaseInCopiedAssembly4.cs" />
+    <Compile Include="Inheritance.AbstractClasses\NotKeptCtor\NeverInstantiatedTypeWithBaseInCopiedAssembly5.cs" />
+    <Compile Include="Inheritance.AbstractClasses\NotKeptCtor\NeverInstantiatedTypeWithBaseInCopiedAssembly6.cs" />
+    <Compile Include="Inheritance.AbstractClasses\TypeWithBaseInCopiedAssembly.cs" />
+    <Compile Include="Inheritance.AbstractClasses\TypeWithBaseInCopiedAssembly2.cs" />
+    <Compile Include="Inheritance.AbstractClasses\TypeWithBaseInCopiedAssembly3.cs" />
+    <Compile Include="Inheritance.AbstractClasses\TypeWithBaseInCopiedAssembly4.cs" />
+    <Compile Include="Inheritance.AbstractClasses\TypeWithBaseInCopiedAssembly5.cs" />
+    <Compile Include="Inheritance.AbstractClasses\TypeWithBaseInCopiedAssembly6.cs" />
     <Compile Include="Inheritance.AbstractClasses\UnusedAbstractMethodRemoved.cs" />
     <Compile Include="Inheritance.AbstractClasses\UnusedVirtualMethodRemoved.cs" />
     <Compile Include="Inheritance.AbstractClasses\UsedOverrideOfAbstractMethodIsKept.cs" />
@@ -327,13 +346,47 @@
     <Compile Include="Inheritance.Interfaces\OnValueType\UnusedExplicitInterfaceIsRemoved.cs" />
     <Compile Include="Inheritance.Interfaces\OnValueType\UnusedInterfaceHasMethodPreservedViaXml.cs" />
     <Compile Include="Inheritance.Interfaces\OnValueType\UnusedInterfaceTypeIsRemoved.cs" />
+    <Compile Include="Inheritance.VirtualMethods\Dependencies\TypeWithBaseInCopiedAssembly_Base.cs" />
     <Compile Include="Inheritance.VirtualMethods\HarderToDetectUnusedVirtualMethodGetsRemoved.cs" />
+    <Compile Include="Inheritance.VirtualMethods\NotKeptCtor\NeverInstantiatedTypeWithBaseInCopiedAssembly.cs" />
+    <Compile Include="Inheritance.VirtualMethods\NeverInstantiatedTypeWithBaseInCopiedAssembly.cs" />
     <Compile Include="Inheritance.VirtualMethods\UnusedTypeWithOverrideOfVirtualMethodIsRemoved.cs" />
     <Compile Include="Inheritance.VirtualMethods\UnusedVirtualMethodRemoved.cs" />
     <Compile Include="Inheritance.VirtualMethods\UsedOverrideOfVirtualMethodIsKept.cs" />
     <Compile Include="Inheritance.VirtualMethods\UsedTypeWithOverrideOfVirtualMethodHasOverrideKept.cs" />
     <Compile Include="Inheritance.VirtualMethods\VirtualMethodGetsPerservedIfBaseMethodGetsInvoked.cs" />
     <Compile Include="Inheritance.VirtualMethods\VirtualMethodGetsStrippedIfImplementingMethodGetsInvokedDirectly.cs" />
+    <Compile Include="UnreachableBody\CanDisableLazyBodyMarking.cs" />
+    <Compile Include="UnreachableBody\Dependencies\OtherAssembly.cs" />
+    <Compile Include="UnreachableBody\DoesNotApplyToCopiedAssembly.cs" />
+    <Compile Include="UnreachableBody\DoesNotApplyToCopiedAssembly2.cs" />
+    <Compile Include="UnreachableBody\DoesNotApplyToSavedAssembly.cs" />
+    <Compile Include="UnreachableBody\DoesNotApplyToSavedAssembly2.cs" />
+    <Compile Include="UnreachableBody\NotWorthConvertingEmpty.cs" />
+    <Compile Include="UnreachableBody\ExplicitInstructionCheck.cs" />
+    <Compile Include="UnreachableBody\InterfaceMethod.cs" />
+    <Compile Include="UnreachableBody\MixOfMethods.cs" />
+    <Compile Include="UnreachableBody\LinkedOtherIncludedLibrary.cs" />
+    <Compile Include="UnreachableBody\LinkedOtherIncludedLibraryNoInstanceCtor.cs" />
+    <Compile Include="UnreachableBody\NotWorthConvertingReturnDouble.cs" />
+    <Compile Include="UnreachableBody\NotWorthConvertingReturnFalse.cs" />
+    <Compile Include="UnreachableBody\NotWorthConvertingReturnFloat.cs" />
+    <Compile Include="UnreachableBody\NotWorthConvertingReturnInt.cs" />
+    <Compile Include="UnreachableBody\NotWorthConvertingReturnLong.cs" />
+    <Compile Include="UnreachableBody\NotWorthConvertingReturnNull.cs" />
+    <Compile Include="UnreachableBody\NotWorthConvertingReturnTrue.cs" />
+    <Compile Include="UnreachableBody\OverrideOfAbstractAndInterfaceMethodCalledFromLocal.cs" />
+    <Compile Include="UnreachableBody\OverrideOfAbstractAndInterfaceMethodCalledFromLocal2.cs" />
+    <Compile Include="UnreachableBody\OverrideOfAbstractAndInterfaceMethodCalledFromLocal3.cs" />
+    <Compile Include="UnreachableBody\OverrideOfAbstractAndInterfaceMethodWhenInterfaceRemoved2.cs" />
+    <Compile Include="UnreachableBody\OverrideOfAbstractIsStubbed.cs" />
+    <Compile Include="UnreachableBody\OverrideOfAbstractIsStubbedWithUnusedInterface.cs" />
+    <Compile Include="UnreachableBody\SimpleGetter.cs" />
+    <Compile Include="UnreachableBody\SimpleMethod.cs" />
+    <Compile Include="UnreachableBody\OverrideOfAVirtual.cs" />
+    <Compile Include="UnreachableBody\SimpleSetter.cs" />
+    <Compile Include="UnreachableBody\WorksWithLinkXml.cs" />
+    <Compile Include="UnreachableBody\WorksWithPreserveDependency.cs" />
     <Compile Include="Libraries\CanLinkPublicApisOfLibrary.cs" />
     <Compile Include="Libraries\DefaultLibraryLinkBehavior.cs" />
     <Compile Include="Libraries\Dependencies\UserAssemblyActionWorks_Lib.cs" />
@@ -595,6 +648,8 @@
     <Content Include="Inheritance.Interfaces\OnReferenceType\UnusedInterfaceHasMethodPreservedViaXml.xml" />
     <Content Include="Inheritance.Interfaces\OnValueType\UnusedExplicitInterfaceHasMethodPreservedViaXml.xml" />
     <Content Include="Inheritance.Interfaces\OnValueType\UnusedInterfaceHasMethodPreservedViaXml.xml" />
+    <Content Include="UnreachableBody\Dependencies\OtherAssemblyNoInstanceCtor.il" />
+    <Content Include="UnreachableBody\WorksWithLinkXml.xml" />
     <Content Include="LinkXml\AssemblyWithPreserveAll.xml" />
     <Content Include="LinkXml\CanPreserveTypesUsingRegex.xml" />
     <Content Include="LinkXml\CanPreserveAnExportedType.xml" />
@@ -672,7 +727,7 @@
     <PackageReference Include="NUnit.Extension.NUnitV2ResultWriter" Version="3.5.0" />
   </ItemGroup>
 
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" Condition=" ! $(ILLinkBuild) "/>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" Condition=" ! $(ILLinkBuild) " />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

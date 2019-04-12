@@ -46,6 +46,7 @@ namespace Mono.Linker.Steps {
 		protected Queue<AttributeProviderPair> _assemblyLevelAttributes;
 		protected Queue<AttributeProviderPair> _lateMarkedAttributes;
 		protected List<TypeDefinition> _typesWithInterfaces;
+		protected List<MethodBody> _unreachableBodies;
 
 		public AnnotationStore Annotations {
 			get { return _context.Annotations; }
@@ -64,6 +65,7 @@ namespace Mono.Linker.Steps {
 			_assemblyLevelAttributes = new Queue<AttributeProviderPair> ();
 			_lateMarkedAttributes = new Queue<AttributeProviderPair> ();
 			_typesWithInterfaces = new List<TypeDefinition> ();
+			_unreachableBodies = new List<MethodBody> ();
 		}
 
 		public virtual void Process (LinkContext context)
@@ -72,6 +74,7 @@ namespace Mono.Linker.Steps {
 
 			Initialize ();
 			Process ();
+			Complete ();
 		}
 
 		void Initialize ()
@@ -90,6 +93,13 @@ namespace Mono.Linker.Steps {
 					InitializeType (type);
 			} finally {
 				Tracer.Pop ();
+			}
+		}
+
+		void Complete ()
+		{
+			foreach (var body in _unreachableBodies) {
+				Annotations.SetAction (body.Method, MethodAction.ConvertToThrow);
 			}
 		}
 
@@ -188,6 +198,7 @@ namespace Mono.Linker.Steps {
 				ProcessQueue ();
 				ProcessVirtualMethods ();
 				ProcessMarkedTypesWithInterfaces ();
+				ProcessPendingBodies ();
 				DoAdditionalProcessing ();
 			}
 
@@ -239,6 +250,17 @@ namespace Mono.Linker.Steps {
 					continue;
 
 				MarkInterfaceImplementations (type);
+			}
+		}
+
+		void ProcessPendingBodies ()
+		{
+			for (int i = 0; i < _unreachableBodies.Count; i++) {
+				var body = _unreachableBodies [i];
+				if (Annotations.IsInstantiated (body.Method.DeclaringType)) {
+					MarkMethodBody (body);
+					_unreachableBodies.RemoveAt (i--);
+				}
 			}
 		}
 
@@ -1035,6 +1057,7 @@ namespace Mono.Linker.Steps {
 				_typesWithInterfaces.Add (type);
 
 			if (type.HasMethods) {
+				MarkMethodsIf (type.Methods, IsVirtualNeededByTypeDueToPreservedScope);
 				if (ShouldMarkTypeStaticConstructor (type))
 					MarkStaticConstructor (type);
 
@@ -1346,7 +1369,38 @@ namespace Mono.Linker.Steps {
 				MarkType (constraint);
 		}
 
-		bool IsVirtualAndHasPreservedParent (MethodDefinition method)
+		bool IsVirtualNeededByTypeDueToPreservedScope (MethodDefinition method)
+		{
+			if (!method.IsVirtual)
+				return false;
+
+			var base_list = Annotations.GetBaseMethods (method);
+			if (base_list == null)
+				return false;
+
+			foreach (MethodDefinition @base in base_list) {
+				// Just because the type is marked does not mean we need interface methods.
+				// if the type is never instantiated, interfaces will be removed
+				if (@base.DeclaringType.IsInterface)
+					continue;
+				
+				// If the type is marked, we need to keep overrides of abstract members defined in assemblies
+				// that are copied.  However, if the base method is virtual, then we don't need to keep the override
+				// until the type could be instantiated
+				if (!@base.IsAbstract)
+					continue;
+
+				if (IgnoreScope (@base.DeclaringType.Scope))
+					return true;
+
+				if (IsVirtualNeededByTypeDueToPreservedScope (@base))
+					return true;
+			}
+
+			return false;
+		}
+		
+		bool IsVirtualNeededByInstantiatedTypeDueToPreservedScope (MethodDefinition method)
 		{
 			if (!method.IsVirtual)
 				return false;
@@ -1359,7 +1413,7 @@ namespace Mono.Linker.Steps {
 				if (IgnoreScope (@base.DeclaringType.Scope))
 					return true;
 
-				if (IsVirtualAndHasPreservedParent (@base))
+				if (IsVirtualNeededByTypeDueToPreservedScope (@base))
 					return true;
 			}
 
@@ -1859,7 +1913,7 @@ namespace Mono.Linker.Steps {
 			foreach (var method in type.Methods) {
 				if (method.IsFinalizer ())
 					MarkMethod (method);
-				else if (IsVirtualAndHasPreservedParent (method))
+				else if (IsVirtualNeededByInstantiatedTypeDueToPreservedScope (method))
 					MarkMethod (method);
 			}
 
@@ -1905,23 +1959,28 @@ namespace Mono.Linker.Steps {
 				break;
 
 			case MethodAction.ConvertToThrow:
-				if (_context.MarkedKnownMembers.NotSupportedExceptionCtorString != null)
-					break;
-
-				var nse = BCL.FindPredefinedType ("System", "NotSupportedException", _context);
-				if (nse == null)
-					throw new NotSupportedException ("Missing predefined 'System.NotSupportedException' type");
-
-				MarkType (nse);
-
-				var nseCtor = MarkMethodIf (nse.Methods, KnownMembers.IsNotSupportedExceptionCtorString);
-				if (nseCtor == null)
-					throw new MarkException ($"Could not find constructor on '{nse.FullName}'");
-
-				_context.MarkedKnownMembers.NotSupportedExceptionCtorString = nseCtor;
+				MarkAndCacheNotSupportedCtorString ();
 				break;
 			}
-		}		
+		}
+
+		void MarkAndCacheNotSupportedCtorString ()
+		{
+			if (_context.MarkedKnownMembers.NotSupportedExceptionCtorString != null)
+				return;
+
+			var nse = BCL.FindPredefinedType ("System", "NotSupportedException", _context);
+			if (nse == null)
+				throw new NotSupportedException ("Missing predefined 'System.NotSupportedException' type");
+
+			MarkType (nse);
+
+			var nseCtor = MarkMethodIf (nse.Methods, KnownMembers.IsNotSupportedExceptionCtorString);
+			if (nseCtor == null)
+				throw new MarkException ($"Could not find constructor on '{nse.FullName}'");
+
+			_context.MarkedKnownMembers.NotSupportedExceptionCtorString = nseCtor;
+		}
 
 		void MarkBaseMethods (MethodDefinition method)
 		{
@@ -2054,6 +2113,12 @@ namespace Mono.Linker.Steps {
 
 		protected virtual void MarkMethodBody (MethodBody body)
 		{
+			if (_context.IsOptimizationEnabled (CodeOptimizations.UnreachableBodies) && IsUnreachableBody (body)) {
+				MarkAndCacheNotSupportedCtorString ();
+				_unreachableBodies.Add (body);
+				return;
+			}
+
 			foreach (VariableDefinition var in body.Variables)
 				MarkType (var.VariableType);
 
@@ -2070,6 +2135,14 @@ namespace Mono.Linker.Steps {
 
 			PostMarkMethodBody (body);
 		}
+
+		bool IsUnreachableBody (MethodBody body)
+		{
+			return !body.Method.IsStatic
+				&& !Annotations.IsInstantiated (body.Method.DeclaringType)
+				&& MethodBodyScanner.IsWorthConvertingToThrow (body);
+		}
+		
 
 		partial void PostMarkMethodBody (MethodBody body);
 
