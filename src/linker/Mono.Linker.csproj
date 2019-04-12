@@ -111,7 +111,6 @@
     <Compile Include="Linker\KnownMembers.cs" />
     <Compile Include="Linker\BCL.cs" />
     <Compile Include="Linker\MethodDefinitionExtensions.cs" />
-    <Compile Include="Linker.Steps\ReflectionBlockedRemoveStep.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

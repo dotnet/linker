@@ -471,7 +471,7 @@ namespace Mono.Linker.Steps {
 					continue;
 
 				if (signature == null) {
-					MarkMethod (m);
+					MarkIndirectlyCalledMethod (m);
 					marked = true;
 					continue;
 				}
@@ -491,7 +491,7 @@ namespace Mono.Linker.Steps {
 				if (i < 0)
 					continue;
 
-				MarkMethod (m);
+				MarkIndirectlyCalledMethod (m);
 				marked = true;
 			}
 
@@ -835,6 +835,9 @@ namespace Mono.Linker.Steps {
 
 		bool ProcessLazyAttributes ()
 		{
+			if (Annotations.HasMarkedAnyIndirectlyCalledMethods () && MarkDisablePrivateReflectionAttribute ())
+				return true;
+
 			var startingQueueCount = _assemblyLevelAttributes.Count;
 			if (startingQueueCount == 0)
 				return false;
@@ -1737,22 +1740,10 @@ namespace Mono.Linker.Steps {
 				MarkMethod (method);
 		}
 
-		bool markedReflectionBlocked;
-
-		protected void MarkMethodReflected (MethodDefinition method)
+		protected void MarkIndirectlyCalledMethod (MethodDefinition method)
 		{
-			if (!method.IsPrivate)
-				return;
-
-			if (!markedReflectionBlocked) {
-				markedReflectionBlocked = true;
-
-				MethodDefinition ctor = ReflectionBlockedStep.GetReflectionBlockedAttr (_context);
-				Annotations.Mark (ctor.Resolve ());
-				Annotations.Mark (ctor.DeclaringType.Resolve ());
-			}
-
-			Annotations.MarkUnseenCallers (method);
+			MarkMethod (method);
+			Annotations.MarkIndirectlyCalledMethod (method);
 		}
 
 		protected virtual MethodDefinition MarkMethod (MethodReference reference)
@@ -1980,6 +1971,25 @@ namespace Mono.Linker.Steps {
 				throw new MarkException ($"Could not find constructor on '{nse.FullName}'");
 
 			_context.MarkedKnownMembers.NotSupportedExceptionCtorString = nseCtor;
+		}
+
+		bool MarkDisablePrivateReflectionAttribute ()
+		{
+			if (_context.MarkedKnownMembers.DisablePrivateReflectionAttributeCtor != null)
+				return false;
+
+			var nse = BCL.FindPredefinedType ("System.Runtime.CompilerServices", "DisablePrivateReflectionAttribute", _context);
+			if (nse == null)
+				throw new NotSupportedException ("Missing predefined 'System.Runtime.CompilerServices.DisablePrivateReflectionAttribute' type");
+
+			MarkType (nse);
+
+			var ctor = MarkMethodIf (nse.Methods, MethodDefinitionExtensions.IsDefaultConstructor);
+			if (ctor == null)
+				throw new MarkException ($"Could not find constructor on '{nse.FullName}'");
+
+			_context.MarkedKnownMembers.DisablePrivateReflectionAttributeCtor = ctor;
+			return true;
 		}
 
 		void MarkBaseMethods (MethodDefinition method)
@@ -2317,9 +2327,7 @@ namespace Mono.Linker.Steps {
 				if ((bindingFlags == BindingFlags.Default || bindingFlags.IsSet(BindingFlags.Public) == method.IsPublic) && method.Name == ".ctor") {
 					Tracer.Push ($"Reflection-{method}");
 					try {
-						MarkMethod (method);
-						if (_context.NoReflectionMethods)
-							MarkMethodReflected (method);
+						MarkIndirectlyCalledMethod (method);
 					} finally {
 						Tracer.Pop ();
 					}
@@ -2337,9 +2345,7 @@ namespace Mono.Linker.Steps {
 					&& method.Name == name) {
 					Tracer.Push ($"Reflection-{method}");
 					try {
-						MarkMethod (method);
-						if (_context.NoReflectionMethods)
-							MarkMethodReflected (method);
+						MarkIndirectlyCalledMethod (method);
 					} finally {
 						Tracer.Pop ();
 					}
@@ -2360,13 +2366,11 @@ namespace Mono.Linker.Steps {
 						// Be conservative and mark everything for the property.
 						MarkProperty (property);
 
-						MarkMethodIfNotNull (property.GetMethod);
-						if (property.GetMethod != null && _context.NoReflectionMethods)
-							MarkMethodReflected (property.GetMethod);
+						if (property.GetMethod != null)
+							MarkIndirectlyCalledMethod (property.GetMethod);
 
-						MarkMethodIfNotNull (property.SetMethod);
-						if (property.SetMethod != null && _context.NoReflectionMethods)
-							MarkMethodReflected (property.SetMethod);
+						if (property.SetMethod != null)
+							MarkIndirectlyCalledMethod (property.SetMethod);
 
 					} finally {
 						Tracer.Pop ();

@@ -218,12 +218,8 @@ namespace Mono.Linker {
 							}
 							continue;
 
-						case "--no-reflection-methods":
-							context.NoReflectionMethods = true;
-							continue;
-						case "--strip-no-reflection":
-							context.StripNoReflectionAttr = GetParam ();
-							resolver = true;
+						case "--explicit-reflection":
+							context.AddReflectionAnnotations = true;
 							continue;
 
 						case "--custom-step":
@@ -336,7 +332,7 @@ namespace Mono.Linker {
 				foreach (string custom_step in custom_steps)
 					AddCustomStep (p, custom_step);
 
-				if (context.NoReflectionMethods)
+				if (context.AddReflectionAnnotations)
 					p.AddStepAfter (typeof (MarkStep), new ReflectionBlockedStep ());
 
 				p.AddStepAfter (typeof (LoadReferencesStep), new LoadI18nAssemblies (assemblies));
@@ -381,10 +377,7 @@ namespace Mono.Linker {
 					}
 				}
 
-				if (context.StripNoReflectionAttr != null)
-					p = GetStripAnnotationsPipeline (context.StripNoReflectionAttr);
-
-				PreProcessPipeline(p);
+				PreProcessPipeline (p);
 
 				try {
 					p.Process (context);
@@ -552,8 +545,7 @@ namespace Mono.Linker {
 			Console.WriteLine ("  --strip-resources         Remove XML descriptor resources for linked assemblies. Defaults to true");
 			Console.WriteLine ("  --strip-security          Remove metadata and code related to Code Access Security. Defaults to true");
 			Console.WriteLine ("  --used-attrs-only         Any attribute is removed if the attribute type is not used. Defaults to false");
-			Console.WriteLine ("  --no-reflection-methods   Mark all methods never used using reflection. Defaults to false. Defaults to false");
-			Console.WriteLine ("  --strip-no-reflection     Remove CustomAttributes used to mark methods not used by reflection. Defaults to false");
+			Console.WriteLine ("  --explicit-reflection     Adds to members never used through reflection DisablePrivateReflection attribute. Defaults to false");
 
 			Console.WriteLine ();
 			Console.WriteLine ("Analyzer");
@@ -580,18 +572,6 @@ namespace Mono.Linker {
 			Console.WriteLine ("   http://www.mono-project.com/");
 
 			Environment.Exit(1);
-		}
-
-		static Pipeline GetStripAnnotationsPipeline (string source)
-		{
-			Pipeline p = new Pipeline ();
-			foreach (string file in GetFiles (source))
-				p.AppendStep (new ResolveFromAssemblyStep (file, ResolveFromAssemblyStep.RootVisibility.Any));
-			p.AppendStep (new LoadReferencesStep ());
-			p.AppendStep (new ReflectionBlockedRemoveStep());
-			p.AppendStep (new OutputStep ());
-
-			return p;
 		}
 
 		static Pipeline GetStandardPipeline ()

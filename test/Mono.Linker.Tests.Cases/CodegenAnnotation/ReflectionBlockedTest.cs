@@ -5,11 +5,10 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.CodegenAnnotation
 {
-	[SetupLinkerArgument("--no-reflection-methods")]
-	[KeptAttributeAttribute("System.Runtime.CompilerServices.DisablePrivateReflectionAttribute")]
+	[SetupLinkerArgument("--explicit-reflection")]
 	public class ReflectionBlockedTest
 	{
-		[Kept]
+		[KeptAttributeAttribute ("System.Runtime.CompilerServices.DisablePrivateReflectionAttribute")]
 		public static void Main()
 		{
 			var obj = new A();
@@ -58,6 +57,7 @@ namespace Mono.Linker.Tests.Cases.CodegenAnnotation
 			}
 
 			[Kept]
+			[KeptAttributeAttribute ("System.Runtime.CompilerServices.DisablePrivateReflectionAttribute")]
 			public int FooPub()
 			{
 				return FooPrivSpecializable();
@@ -77,10 +77,10 @@ namespace Mono.Linker.Tests.Cases.CodegenAnnotation
 			}
 
 			[Kept]
-			public A()
+			[KeptAttributeAttribute ("System.Runtime.CompilerServices.DisablePrivateReflectionAttribute")]
+			public A ()
 			{
 			}
-
 		}
 	}
 }

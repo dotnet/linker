@@ -149,9 +149,7 @@ namespace Mono.Linker {
 
 		public CodeOptimizations DisabledOptimizations { get; set; }
 
-		public bool NoReflectionMethods { get; set; }
-
-		public string StripNoReflectionAttr { get; set; }
+		public bool AddReflectionAnnotations { get; set; }
 
 		public LinkContext (Pipeline pipeline)
 			: this (pipeline, new AssemblyResolver ())

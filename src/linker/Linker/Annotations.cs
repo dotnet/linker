@@ -55,7 +55,7 @@ namespace Mono.Linker {
 		protected readonly HashSet<CustomAttribute> marked_attributes = new HashSet<CustomAttribute> ();
 		readonly HashSet<TypeDefinition> marked_types_with_cctor = new HashSet<TypeDefinition> ();
 		protected readonly HashSet<TypeDefinition> marked_instantiated = new HashSet<TypeDefinition> ();
-		protected readonly HashSet<MethodDefinition> marked_reflected = new HashSet<MethodDefinition>();
+		protected readonly HashSet<MethodDefinition> indirectly_called = new HashSet<MethodDefinition>();
 
 
 		public AnnotationStore (LinkContext context) => this.context = context;
@@ -144,15 +144,22 @@ namespace Mono.Linker {
 			return marked_attributes.Contains (attribute);
 		}
 
-
-		internal void MarkUnseenCallers (MethodDefinition method)
+		public void MarkIndirectlyCalledMethod (MethodDefinition method)
 		{
-			marked_reflected.Add (method);
+			if (!context.AddReflectionAnnotations)
+				return;
+
+			indirectly_called.Add (method);
 		}
 
-		public bool HasUnseenCallers (MethodDefinition method)
+		public bool HasMarkedAnyIndirectlyCalledMethods ()
 		{
-			return marked_reflected.Contains (method);
+			return indirectly_called.Count != 0;
+		}
+
+		public bool IsIndirectlyCalled (MethodDefinition method)
+		{
+			return indirectly_called.Contains (method);
 		}
 
 		public void MarkInstantiated (TypeDefinition type)

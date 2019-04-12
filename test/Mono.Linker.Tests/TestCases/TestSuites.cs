@@ -154,6 +154,7 @@ namespace Mono.Linker.Tests.TestCases
 #if NETCOREAPP
 			Assert.Ignore("These tests are not valid when linking against .NET Core");
 #endif
+			Run (testCase);
 		}
 
 		[TestCaseSource (typeof (TestDatabase), nameof (TestDatabase.UnreachableBodyTests))]
