@@ -24,7 +24,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-<!--    <Compile Include="AdapterLogger.cs" /> -->
     <Compile Include="LinkTask.cs" />
     <Compile Include="CheckEmbeddedRootDescriptor.cs" />
     <Compile Include="CompareSizes.cs" />
@@ -83,7 +82,7 @@
   <ItemGroup>
     <ProjectReference Include="../linker/Mono.Linker.csproj"
                       PrivateAssets="All"
-                      Condition=" '$(TargetFramework)' == 'netcoreapp2.0' "/>
+                      Condition=" '$(TargetFramework)' == 'netcoreapp2.0' ">
       <!-- SetConfiguration isn't required when the configuration is
            already set in the solution. Setting it here allows packing
            the tasks csproj on its own. This lets us avoid some of the
@@ -104,9 +103,8 @@
            (because some target gets its reference information from
            the lock file, which doesn't have configuration info).
       -->
-      <!--
       <SetConfiguration>Configuration=illink_$(Configuration)</SetConfiguration>
-    </ProjectReference>-->
+    </ProjectReference>
     <ProjectReference Include="../../external/cecil/Mono.Cecil.csproj"
                       PrivateAssets="All" />
 
