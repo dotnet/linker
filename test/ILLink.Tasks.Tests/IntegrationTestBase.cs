@@ -210,8 +210,7 @@ namespace ILLink.Tests
 				}
 			}
 
-			// Override the path to the link task dll, to use our local build.
-			publishArgs += $" /p:LinkTaskDllPath={TestContext.TasksPath}";
+			publishArgs += $" /p:LinkDuringPublish=true";
 
 			int ret = CommandHelper.Dotnet(publishArgs, projectDir);
 

@@ -19,6 +19,8 @@ namespace ILLink.Tests
 
 		public int Dotnet(string args, string workingDir, string additionalPath = null)
 		{
+			args += $" /p:_ILLinkTasksDirectoryRoot={TestContext.TasksDirectoryRoot}";
+			args += $" /p:_ILLinkTasksSdkPropsPath={TestContext.SdkPropsPath}";
 			return RunCommand(Path.GetFullPath(TestContext.DotnetToolPath), args,
 				workingDir, additionalPath, out string commandOutput);
 		}

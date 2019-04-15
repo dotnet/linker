@@ -8,9 +8,18 @@ namespace ILLink.Tests
 	public static class TestContext
 	{
 		/// <summary>
-		///   The path to the linker tasks dll.
+		///   The root directory of the linker tasks. This
+		///   contains a subdirectory for each
+		///   TargetFramework, one for each build of the
+		///   tasks.
+		public static string TasksDirectoryRoot { get; private set; }
+
+		/// <summary>
+		///   The path to the local linker Sdk.props file,
+		///   which sets linker properties used in the
+		///   targets.
 		/// </summary>
-		public static string TasksPath { get; private set; }
+		public static string SdkPropsPath { get; private set; }
 
 		/// <summary>
 		///   The path to the dotnet tool to use to run the
@@ -58,10 +67,13 @@ namespace ILLink.Tests
 
 			// Locate task dll
 #if ARCADE
-			TasksPath = Path.Combine(repoRoot, "artifacts", "bin", "ILLink.Tasks", "Release", "netcoreapp2.0", "ILLink.Tasks.dll");
+                        // TODO: fix this!
+			TasksDirectoryRoot = Path.Combine(repoRoot, "artifacts", "bin", "ILLink.Tasks", "Release", "netcoreapp2.0", "ILLink.Tasks.dll");
 #else
-			TasksPath = Path.Combine(repoRoot, "src", "ILLink.Tasks", "bin", "Debug", "netcoreapp2.0", "ILLink.Tasks.dll");
+			// This is the publish directory.
+			TasksDirectoryRoot = Path.Combine(repoRoot, "src", "ILLink.Tasks", "bin") + Path.DirectorySeparatorChar;
 #endif
+			SdkPropsPath = Path.Combine(repoRoot, "src", "ILLink.Tasks", "Sdk", "Sdk.props");
 
 			// Locate dotnet host
 			var dotnetDir = Path.Combine(repoRoot, ".dotnet");
