@@ -12,14 +12,14 @@ Copyright (c) .NET Foundation. All rights reserved.
 <Project ToolsVersion="14.0">
 
   <PropertyGroup>
-    <_LinkTaskDirectoryRoot>$(MSBuildThisFileDirectory)../tools/</_LinkTaskDirectoryRoot>
-    <_LinkTaskTFM Condition=" '$(MSBuildRuntimeType)' == 'Core' ">netcoreapp2.0</_LinkTaskTFM>
-    <_LinkTaskTFM Condition=" '$(_LinkTaskTFM)' == '' ">net472</_LinkTaskTFM>
-    <_LinkTaskDirectory>$(_LinkTaskDirectoryRoot)$(_LinkTaskTFM)</_LinkTaskDirectory>
-    <LinkTaskDllPath Condition=" '$(LinkTaskDllPath)' == '' ">$(MSBuildThisFileDirectory)..\tools\netcoreapp2.0\ILLink.Tasks.dll" />
+    <_ILLinkTasksDirectoryRoot>$(MSBuildThisFileDirectory)../tools/</_ILLinkTasksDirectoryRoot>
+    <_ILLinkTasksTFM Condition=" '$(MSBuildRuntimeType)' == 'Core' ">netcoreapp2.0</_ILLinkTaskTFM>
+    <_ILLinkTasksTFM Condition=" '$(_ILLinkTasksTFM)' == '' ">net472</_ILLinkTasksTFM>
+    <_ILLinkTasksDirectory>$(_ILLinkTasksDirectoryRoot)$(_ILLinkTasksTFM)/</_ILLinkTasksDirectory>
+    <ILLinkTasksAssembly Condition=" '$(ILLinkTasksAssembly)' == '' ">$(_ILLinkTasksDirectory)ILLink.Tasks.dll" />
   </PropertyGroup>
 
-  <UsingTask TaskName="ILLink.Tasks.ILLink" AssemblyFile="$(LinkTaskDllPath)" />
-  <UsingTask TaskName="ILLink.Tasks.ComputeManagedAssemblies" AssemblyFile=$(LinkTaskDllPath)" />
+  <UsingTask TaskName="ILLink.Tasks.ILLink" AssemblyFile="$(ILLinkTasksAssembly)" />
+  <UsingTask TaskName="ILLink.Tasks.ComputeManagedAssemblies" AssemblyFile=$(ILLinkTasksAssembly)" />
 
 </Project>
