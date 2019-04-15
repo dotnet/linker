@@ -1,3 +1,5 @@
+TEST
+
 # [IL Linker](src/linker/README.md)
 
 The IL Linker is a tool one can use to only ship the minimal possible IL code and metadata that a set of 
