@@ -44,7 +44,13 @@
          https://github.com/dotnet/sdk/issues/3010. -->
     <ItemGroup>
       <_RemovedManagedAssemblies Include="@(_ManagedAssembliesToLink)" Condition="!Exists('$(IntermediateLinkDir)/%(Filename)%(Extension)')" />
-      <_PublishConflictPackageFiles Include="@(_RemovedManagedAssemblies)" />
+
+      <ResolvedCompileFileDefinitions Remove="@(_RemovedManagedAssemblies)" />
+      <NativeCopyLocalItems Remove="@(_RemovedManagedAssemblies)" />
+      <ResourceCopyLocalItems Remove="@(_RemovedManagedAssemblies)" />
+      <RuntimeCopyLocalItems Remove="@(_RemovedManagedAssemblies)" />
+      <RuntimeTargetsCopyLocalItems Remove="@(_RemovedManagedAssemblies)" />
+      <RuntimePackAsset Remove="@(_RemovedManagedAssemblies)" />
     </ItemGroup>
 
   </Target>
@@ -65,7 +71,6 @@
            Outputs="$(_LinkSemaphore)">
 
      <Delete Files="@(_LinkedResolvedFileToPublishCandidates)" />
-     <!-- TODO: add ReferenceAssemblyPaths="@(ReferencePath)" -->
      <ILLink AssemblyPaths="@(_ManagedAssembliesToLink)"
              ReferenceAssemblyPaths="@(ReferencePath)"
              RootAssemblyNames="@(IntermediateAssembly->'%(Filename)')"
