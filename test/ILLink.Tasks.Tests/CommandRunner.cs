@@ -141,11 +141,6 @@ namespace ILLink.Tests
 			psi.Environment.Remove("CscToolExe");
 			psi.Environment.Remove("MSBUILD_EXE_PATH");
 
-			LogMessage ("environment:");
-			foreach (var item in psi.Environment) {
-				LogMessage ($"\t{item.Key}={item.Value}");
-			}
-
 			StringBuilder processOutput = new StringBuilder();
 			DataReceivedEventHandler handler = (sender, e) => {
 				processOutput.Append(e.Data);
