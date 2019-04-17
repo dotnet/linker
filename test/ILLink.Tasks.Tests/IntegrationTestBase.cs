@@ -119,7 +119,10 @@ namespace ILLink.Tests
 				return;
 			}
 
-			int ret = CommandHelper.Dotnet($"restore -r {TestContext.RuntimeIdentifier}", projectDir);
+			var restoreArgs = $"restore -r {TestContext.RuntimeIdentifier}";
+			restoreArgs += $" /p:_ILLinkTasksDirectoryRoot={TestContext.TasksDirectoryRoot}";
+			restoreArgs += $" /p:_ILLinkTasksSdkPropsPath={TestContext.SdkPropsPath}";
+			int ret = CommandHelper.Dotnet(restoreArgs, projectDir);
 			if (ret != 0) {
 				LogMessage("restore failed, returning " + ret);
 				Assert.True(false);
@@ -153,6 +156,8 @@ namespace ILLink.Tests
 				}
 			}
 
+			buildArgs += $" /p:_ILLinkTasksDirectoryRoot={TestContext.TasksDirectoryRoot}";
+			buildArgs += $" /p:_ILLinkTasksSdkPropsPath={TestContext.SdkPropsPath}";
 			int ret = CommandHelper.Dotnet(buildArgs, projectDir);
 
 			if (ret != 0) {
@@ -211,7 +216,8 @@ namespace ILLink.Tests
 			}
 
 			publishArgs += $" /p:LinkDuringPublish=true";
-
+			publishArgs += $" /p:_ILLinkTasksDirectoryRoot={TestContext.TasksDirectoryRoot}";
+			publishArgs += $" /p:_ILLinkTasksSdkPropsPath={TestContext.SdkPropsPath}";
 			int ret = CommandHelper.Dotnet(publishArgs, projectDir);
 
 			if (ret != 0) {
