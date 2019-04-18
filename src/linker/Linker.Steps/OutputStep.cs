@@ -103,7 +103,34 @@ namespace Mono.Linker.Steps {
 				}
 			}
 
-			assembly.Write (GetAssemblyFileName (assembly, directory), writerParameters);
+			writerParameters.DeterministicMvid = true;
+
+			var stream = new MemoryStream ();
+
+			var fileName = GetAssemblyFileName (assembly, directory);
+			assembly.Write (stream, writerParameters);
+
+			//
+			// Check whenever the output exits and has the same guid
+			//
+			var prevGuid = Guid.Empty;
+			if (File.Exists (fileName)) {
+				try {
+					var prevModule = ModuleDefinition.ReadModule (fileName);
+					prevGuid = prevModule.Mvid;
+				} catch {
+				}
+			}
+			if (assembly.MainModule.Mvid != prevGuid) {
+				if (Context.LogMessages)
+					Console.WriteLine ("Create:\t " + fileName);
+				stream.Seek (0, SeekOrigin.Begin);
+				using (var file = File.Create (fileName))
+					stream.WriteTo (file);
+			} else {
+				if (Context.LogMessages)
+					Console.WriteLine ("Unchanged:\t " + fileName);
+			}
 		}
 
 		void OutputAssembly (AssemblyDefinition assembly)
