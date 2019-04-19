@@ -207,7 +207,7 @@ namespace ILLink.Tests
 				publishArgs += $" -r {TestContext.RuntimeIdentifier}";
 			}
 			if (!String.IsNullOrEmpty (rootFile)) {
-				publishArgs += $" /p:LinkerRootFile={rootFile}";
+				publishArgs += $" /p:TrimmerRootDescriptors={rootFile}";
 			}
 			if (extraPublishArgs != null) {
 				foreach (var item in extraPublishArgs) {
@@ -215,7 +215,7 @@ namespace ILLink.Tests
 				}
 			}
 
-			publishArgs += $" /p:LinkDuringPublish=true";
+			publishArgs += $" /p:PublishTrimmed=true";
 			publishArgs += $" /p:_ILLinkTasksDirectoryRoot={TestContext.TasksDirectoryRoot}";
 			publishArgs += $" /p:_ILLinkTasksSdkPropsPath={TestContext.SdkPropsPath}";
 			int ret = CommandHelper.Dotnet(publishArgs, projectDir);

@@ -8,8 +8,8 @@ to run the linker from an MSBuild project file:
 
 ```xml
 <ILLink AssemblyPaths="@(AssemblyFilesToLink)"
-        RootAssemblyNames="@(LinkerRootAssemblies)"
-        RootDescriptorFiles="@(LinkerRootDescriptors)"
+        RootAssemblyNames="@(TrimmerRootAssemblies)"
+        RootDescriptorFiles="@(TrimmerRootDescriptors)"
         OutputDirectory="output"
         ExtraArgs="-t -c link -l none" />
 ```
@@ -86,8 +86,8 @@ reflection.
 
 The linker does not analyze reflection calls, so any reflection
 targets outside of the kept assemblies will need to be rooted
-explicitly using either `LinkerRootAssemblies` or
-`LinkerRootDescriptors` (see below).
+explicitly using either `TrimmerRootAssemblies` or
+`TrimmerRootDescriptors` (see below).
 
 Sometimes an application may include multiple versions of the same
 assembly. This may happen when portable apps include platform-specific
@@ -106,7 +106,7 @@ of the linker, from the command-line (via `dotnet publish
 used in
 [ILLink.Tasks.targets](ILLink.Tasks.targets).
 
-- `LinkDuringPublish` (default `true`) - Set to `false` to disable
+- `PublishTrimmed` (default `true`) - Set to `false` to disable
   linking.
 
 - `ShowLinkerSizeComparison` (default `false`) - Set to `true` to
@@ -117,11 +117,11 @@ used in
   kept in their entirety, and analyzed for dependencies. If `false`,
   only the app dll's entry point is rooted.
 
-- `LinkerRootAssemblies` - The set of assemblies to root. The default
+- `TrimmerRootAssemblies` - The set of assemblies to root. The default
   depends on the value of `RootAllApplicationAssemblies`. Additional
   assemblies can be rooted by adding them to this ItemGroup.
 
-- `LinkerRootDescriptors` - The set of [xml descriptors](../linker#syntax-of-xml-descriptor)
+- `TrimmerRootDescriptors` - The set of [xml descriptors](../linker#syntax-of-xml-descriptor)
   specifying additional roots within assemblies. The default is to
   include a generated descriptor that roots everything in the
   application assembly if `RootAllApplicationAssemblies` is
