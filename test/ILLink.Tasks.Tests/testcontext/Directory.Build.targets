@@ -1,6 +1,11 @@
 <Project>
 
   <!-- Include linker targets in our tests, until the SDK comes with its own linker targets. -->
+
   <Import Project="Microsoft.NET.ILLink.targets" />
+
+  <Target Name="_ILLinkHook"
+          DependsOnTargets="_ILLink"
+          AfterTargets="ComputeFilesToPublish" />
 
 </Project>

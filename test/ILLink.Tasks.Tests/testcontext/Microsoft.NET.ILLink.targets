@@ -1,0 +1,153 @@
+<!--
+***********************************************************************************************
+Microsoft.NET.ILLink.targets
+
+WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and have
+          created a backup copy.  Incorrect changes to this file will make it
+          impossible to load or build your projects from the command-line or the IDE.
+
+Copyright (c) .NET Foundation. All rights reserved.
+***********************************************************************************************
+-->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+<!--
+  <Import Project="Sdk.props" Sdk="ILLink.Tasks" />
+-->
+
+  <PropertyGroup>
+    <IntermediateLinkDir Condition=" '$(IntermediateLinkDir)' == '' ">$(IntermediateOutputPath)linked\</IntermediateLinkDir>
+    <IntermediateLinkDir Condition=" !HasTrailingSlash('$(IntermediateLinkDir)') ">$(IntermediateLinkDir)\</IntermediateLinkDir>
+    <!-- Used to enable incremental build for the linker target. -->
+    <_LinkSemaphore>$(IntermediateOutputPath)Link.semaphore</_LinkSemaphore>
+    <!-- Disable old deps file generation logic until
+         https://github.com/dotnet/sdk/issues/3098 is fixed. -->
+    <DepsFileGenerationMode>new</DepsFileGenerationMode>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <TrimmerRootDescriptors Include="$(TrimmerRootDescriptors)" />
+  </ItemGroup>
+
+  <!--
+    ============================================================
+                     _ILLink
+
+    Replace the files to be published with versions that have been
+    passed through the linker. Also prevent removed files from being
+    included in the generated deps.json.
+    ============================================================
+    -->
+  <UsingTask TaskName="FindNativeDeps" AssemblyFile="$(ILLinkTasksAssembly)" />
+  <Target Name="_ILLink"
+          Condition=" '$(PublishTrimmed)' == 'true' And
+                      '$(_TargetFrameworkVersionWithoutV)' >= '3.0' And '$(TargetFrameworkIdentifier)' == '.NETCoreApp' "
+          DependsOnTargets="_RunILLink">
+
+    <ItemGroup>
+      <_LinkedManagedAssemblies Include="@(_LinkedManagedAssembliesCandidates)" Condition="Exists('%(Identity)')" />
+    </ItemGroup>
+
+    <!-- Filter out native assets no longer needed after linking. -->
+    <ItemGroup Condition=" '$(TrimmerKeepNativeAssets)' != 'true' ">
+      <_NativeAssetsToAlwaysKeep Include="coreclr.dll;libcoreclr.dylib;libcoreclr.so" />
+      <_NativeAssetsToAlwaysKeep Include="clrjit.dll;libclrjit.dylib;libclrjit.so" />
+      <_NativeAssetsToAlwaysKeep Include="hostfxr.dll;libhostfxr.dylib;libhostfxr.so" />
+      <_NativeAssetsToAlwaysKeep Include="hostpolicy.dll;libhostpolicy.dylib;libhostpolicy.so" />
+      <!-- The full publish deps file path is generated after this target, so just depend on the filename. -->
+      <_NativeAssetsToAlwaysKeep Include="$(ProjectDepsFileName)" />
+      <_NativeAssetsToAlwaysKeep Include="$(ProjectRuntimeConfigFilePath)" />
+      <_NativeAssetsToAlwaysKeep Include="$(AppHostIntermediatePath)" />
+    </ItemGroup>
+    <FindNativeDeps ManagedAssemblyPaths="@(_LinkedManagedAssemblies)"
+                    NativeDepsPaths="@(_NativeAssetsToFilter)"
+                    NativeDepsToKeep="@(_NativeAssetsToAlwaysKeep)"
+                    Condition=" '$(TrimmerKeepNativeAssets)' != 'true' ">
+      <Output TaskParameter="KeptNativeDepsPaths" ItemName="_FilteredNativeAssets" />
+    </FindNativeDeps>
+
+    <!-- For now, use ResolvedFileToPublish as input/output. This
+         should go away in favor of a well-defined set of runtime
+         assemblies with https://github.com/dotnet/sdk/issues/3109. -->
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="@(_ManagedAssembliesToLink);@(_NativeAssetsToFilter)" />
+      <ResolvedFileToPublish Include="@(_LinkedManagedAssemblies);@(_FilteredNativeAssets)" />
+    </ItemGroup>
+
+    <!-- Remove assemblies from inputs to GenerateDepsFile. See
+         https://github.com/dotnet/sdk/pull/3086. -->
+    <ItemGroup>
+      <_RemovedManagedAssemblies Include="@(_ManagedAssembliesToLink)" Condition="!Exists('$(IntermediateLinkDir)%(Filename)%(Extension)')" />
+      <_RemovedNativeAssets Include="@(_NativeAssetsToFilter)" />
+      <_RemovedNativeAssets Remove="@(_FilteredNativeAssets)" />
+
+      <_AssetsToExcludeFromDepsFile Include="@(_RemovedManagedAssemblies);@(_RemovedNativeAssets)" />
+
+      <ResolvedCompileFileDefinitions Remove="@(_AssetsToExcludeFromDepsFile)" />
+      <NativeCopyLocalItems Remove="@(_AssetsToExcludeFromDepsFile)" />
+      <ResourceCopyLocalItems Remove="@(_AssetsToExcludeFromDepsFile)" />
+      <RuntimeCopyLocalItems Remove="@(_AssetsToExcludeFromDepsFile)" />
+      <RuntimeTargetsCopyLocalItems Remove="@(_AssetsToExcludeFromDepsFile)" />
+      <RuntimePackAsset Remove="@(_AssetsToExcludeFromDepsFile)" />
+    </ItemGroup>
+
+  </Target>
+
+
+  <!--
+    ============================================================
+                     _RunILLink
+
+    Execute the linker. This target runs incrementally, only executing
+    if the output semaphore file is out of date with respect to the inputs.
+    ============================================================
+    -->
+   <UsingTask TaskName="ILLink" AssemblyFile="$(ILLinkTasksAssembly)" />
+   <Target Name="_RunILLink"
+           DependsOnTargets="_ComputeLinkerInputs"
+           Inputs="$(MSBuildAllProjects);@(_ManagedAssembliesToLink);@(TrimmerRootDescriptors);@(ReferencePath)"
+           Outputs="$(_LinkSemaphore)">
+
+     <Delete Files="@(_LinkedManagedAssembliesCandidates)" />
+     <ILLink AssemblyPaths="@(_ManagedAssembliesToLink)"
+             ReferenceAssemblyPaths="@(ReferencePath)"
+             RootAssemblyNames="@(IntermediateAssembly->'%(Filename)')"
+             RootDescriptorFiles="@(TrimmerRootDescriptors)"
+             OutputDirectory="$(IntermediateLinkDir)"
+             ExtraArgs="$(_ExtraTrimmerArgs) --skip-unresolved true" />
+
+     <Touch Files="$(_LinkSemaphore)" AlwaysCreate="true" />
+
+  </Target>
+
+  <!--
+    ============================================================
+                     _ComputeLinkerInputs
+
+    Compute the set of inputs to the linker. Currently this uses a
+    heuristic to get the relevant input from ResolvedFileToPublish,
+    but with https://github.com/dotnet/sdk/issues/3109, this should be
+    replaced with the exact set of runtime assemblies that will be in
+    the deps file.
+    ============================================================
+    -->
+  <UsingTask TaskName="ComputeManagedAssemblies" AssemblyFile="$(ILLinkTasksAssembly)" />
+  <Target Name="_ComputeLinkerInputs">
+    <ComputeManagedAssemblies Assemblies="@(ResolvedFileToPublish)">
+      <Output TaskParameter="ManagedAssemblies" ItemName="_ManagedAssembliesToLink" />
+    </ComputeManagedAssemblies>
+
+    <ItemGroup Condition=" '$(TrimmerKeepNativeAssets)' != 'true' ">
+      <_NativeAssetsToFilter Include="@(ResolvedFileToPublish)" />
+      <_NativeAssetsToFilter Remove="@(_ManagedAssembliesToLink)" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <_ManagedAssembliesToLink Remove="@(_ManagedResolvedFileToPublish->WithMetadataValue('AssetType', 'resources'))" />
+      <_LinkedManagedAssembliesCandidates Include="@(_ManagedAssembliesToLink->'$(IntermediateLinkDir)%(Filename)%(Extension)')" />
+    </ItemGroup>
+
+  </Target>
+
+
+</Project>
