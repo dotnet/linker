@@ -123,7 +123,7 @@ namespace ILLink.Tasks
 			set => _illinkPath = value;
 		}
 
-		private string Quote (string path)
+		private static string Quote (string path)
 		{
 			return $"\"{path.TrimEnd('\\')}\"";
 		}
