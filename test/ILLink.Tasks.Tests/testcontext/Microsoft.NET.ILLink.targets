@@ -111,7 +111,7 @@ Copyright (c) .NET Foundation. All rights reserved.
              RootAssemblyNames="@(IntermediateAssembly->'%(Filename)')"
              RootDescriptorFiles="@(TrimmerRootDescriptors)"
              OutputDirectory="$(IntermediateLinkDir)"
-             ExtraArgs="$(_ExtraTrimmerArgs) --skip-unresolved true" />
+             ExtraArgs="$(_ExtraTrimmerArgs)" />
 
      <Touch Files="$(_LinkSemaphore)" AlwaysCreate="true" />
 

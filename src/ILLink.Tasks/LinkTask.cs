@@ -190,7 +190,7 @@ namespace ILLink.Tasks
 				}
 			}
 
-			args.AppendLine (" -c link");
+			args.AppendLine (" -c copyused -u copyused --skip-unresolved true");
 
 			if (DumpDependencies)
 				args.AppendLine ("--dump-dependencies");
