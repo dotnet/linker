@@ -202,7 +202,7 @@ namespace ILLink.Tests
 		{
 			string projectDir = Path.GetDirectoryName(csproj);
 
-			string publishArgs = $"publish --no-build -c {TestContext.Configuration} /v:n /p:ShowLinkerSizeComparison=true";
+			string publishArgs = $"publish --no-build -c {TestContext.Configuration} /v:n /bl";
 			if (selfContained) {
 				publishArgs += $" -r {TestContext.RuntimeIdentifier}";
 			}
