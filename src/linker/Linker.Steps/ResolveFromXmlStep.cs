@@ -402,22 +402,44 @@ namespace Mono.Linker.Steps {
 
 		protected virtual void ProcessMethod (TypeDefinition type, XPathNodeIterator iterator)
 		{
-			if (IsExcluded (iterator.Current))
-				return;
+			string action = null;
+			if (IsExcluded (iterator.Current)) {
+				action = GetAttribute (iterator.Current, "action");
+				if (String.IsNullOrEmpty (action))
+					return;
+			}
 			
 			string value = GetSignature (iterator.Current);
 			if (!String.IsNullOrEmpty (value))
-				ProcessMethodSignature (type, value);
+				ProcessMethodSignature (type, value, action);
 
 			value = GetAttribute (iterator.Current, "name");
 			if (!String.IsNullOrEmpty (value))
-				ProcessMethodName (type, value);
+				ProcessMethodName (type, value, action);
 		}
 
-		void ProcessMethodSignature (TypeDefinition type, string signature)
+		void ProcessMethodSignature (TypeDefinition type, string signature, string action)
 		{
 			MethodDefinition meth = GetMethod (type, signature);
-			MarkMethod (type, meth, signature);
+			if (action == null)
+				MarkMethod (type, meth, signature);
+			else
+				MarkMethodAction (meth, action);
+		}
+
+		void MarkMethodAction (MethodDefinition method, string action)
+		{
+			switch (action) {
+			case "throw":
+				Annotations.SetAction (method, MethodAction.ConvertToThrow);
+				break;
+			case "stub":
+				Annotations.SetAction (method, MethodAction.ConvertToStub);
+				break;
+			default:
+				Context.LogMessage ($"Unknown method action `{action}`.");
+				break;
+			}
 		}
 
 		void MarkMethod (TypeDefinition type, MethodDefinition method, string signature)
@@ -447,14 +469,19 @@ namespace Mono.Linker.Steps {
 			MarkMethod (method);
 		}
 
-		void ProcessMethodName (TypeDefinition type, string name)
+		void ProcessMethodName (TypeDefinition type, string name, string action)
 		{
 			if (!type.HasMethods)
 				return;
 
-			foreach (MethodDefinition method in type.Methods)
-				if (name == method.Name)
+			foreach (MethodDefinition method in type.Methods) {
+				if (name != method.Name)
+					continue;
+				if (action == null)
 					MarkMethod (type, method, name);
+				else
+					MarkMethodAction (method, action);
+			}
 		}
 
 		protected static MethodDefinition GetMethod (TypeDefinition type, string signature)
