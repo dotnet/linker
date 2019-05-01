@@ -71,10 +71,7 @@
 
     <MSBuild Projects="@(ProjectsToPublish)" Targets="Publish" />
     <ItemGroup>
-      <TfmSpecificPackageFile Include="$(PublishDir)/ILLink.*.dll" PackagePath="tools\$(TargetFramework)" />
-      <TfmSpecificPackageFile Include="$(PublishDir)/Mono.Cecil*.dll" PackagePath="tools\$(TargetFramework)" />
-      <TfmSpecificPackageFile Include="$(PublishDir)/illink.dll" PackagePath="tools\$(TargetFramework)"
-                              Condition=" '$(TargetFramework)' == 'netcoreapp2.0' " />
+      <TfmSpecificPackageFile Include="$(PublishDir)/*.dll" PackagePath="tools\$(TargetFramework)" />
       <TfmSpecificPackageFile Include="$(PublishDir)/*.json" PackagePath="tools\$(TargetFramework)" />
     </ItemGroup>
 
@@ -138,6 +135,7 @@
                       PrivateAssets="All" />
     <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)"
                       Condition=" '$(TargetFramework)' == 'net472' "
-                      PrivateAssets="All" />
+                      PrivateAssets="All"
+                      Publish="True" />
   </ItemGroup>
 </Project>
