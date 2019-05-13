@@ -11,10 +11,16 @@ namespace Mono.Linker {
 	public abstract class DirectoryAssemblyResolver : IAssemblyResolver {
 
 		readonly Collection<string> directories;
+		readonly Collection<string> assemblyPaths;
 
 		public void AddSearchDirectory (string directory)
 		{
 			directories.Add (directory);
+		}
+
+		public void AddAssemblyPath (string assemblyPath)
+		{
+			assemblyPaths.Add (assemblyPath);
 		}
 
 		public void RemoveSearchDirectory (string directory)
@@ -30,6 +36,7 @@ namespace Mono.Linker {
 		protected DirectoryAssemblyResolver ()
 		{
 			directories = new Collection<string> (2) { "." };
+			assemblyPaths = new Collection<string> (10) { };
 		}
 
 		AssemblyDefinition GetAssembly (string file, ReaderParameters parameters)
@@ -52,11 +59,30 @@ namespace Mono.Linker {
 			if (parameters == null)
 				parameters = new ReaderParameters ();
 
-			var assembly = SearchDirectory (name, directories, parameters);
+			var assembly = SearchAssemblyPaths (name, assemblyPaths, parameters);
+			if (assembly != null)
+				return assembly;
+
+			assembly = SearchDirectory (name, directories, parameters);
 			if (assembly != null)
 				return assembly;
 
 			throw new AssemblyResolutionException (name);
+		}
+
+		AssemblyDefinition SearchAssemblyPaths (AssemblyNameReference name, IEnumerable<string> assemblyPaths, ReaderParameters parameters)
+		{
+			foreach (var assemblyPath in assemblyPaths) {
+				if (Path.GetFileName (assemblyPath) != name.Name + ".dll")
+					continue;
+				try {
+					return GetAssembly (assemblyPath, parameters);
+				} catch (System.BadImageFormatException) {
+					continue;
+				}
+			}
+
+			return null;
 		}
 
 		AssemblyDefinition SearchDirectory (AssemblyNameReference name, IEnumerable<string> directories, ReaderParameters parameters)
