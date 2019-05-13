@@ -32,4 +32,10 @@
     </type>
   </assembly>
 
+  <assembly fullname="System.Text.Json">
+    <type fullname="System.Text.Json.Serialization.JsonSerializerOptions">
+      <method name="set_IgnoreNullPropertyValueOnRead" />
+    </type>
+  </assembly>
+
 </linker>
