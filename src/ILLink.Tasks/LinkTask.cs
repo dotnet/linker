@@ -133,11 +133,11 @@ namespace ILLink.Tasks
 
 			if (RootDescriptorFiles != null) {
 				foreach (var rootFile in RootDescriptorFiles)
-					args.Append (" -x ").Append (Quote (rootFile.ItemSpec));
+					args.Append ("-x ").AppendLine (Quote (rootFile.ItemSpec));
 			}
 
 			foreach (var assemblyItem in RootAssemblyNames)
-				args.Append (" -a ").Append (Quote (assemblyItem.ItemSpec));
+				args.Append ("-a ").AppendLine (Quote (assemblyItem.ItemSpec));
 
 			HashSet<string> assemblyNames = new HashSet<string> (StringComparer.OrdinalIgnoreCase);
 			foreach (var assembly in AssemblyPaths) {
@@ -148,13 +148,13 @@ namespace ILLink.Tasks
 				if (!assemblyNames.Add (assemblyName))
 					continue;
 
-				args.Append (" --ref ").Append (Quote (assemblyPath));
+				args.Append ("--ref ").AppendLine (Quote (assemblyPath));
 
 				string action = assembly.GetMetadata ("action");
 				if ((action != null) && (action.Length > 0)) {
-					args.Append (" -p ");
+					args.Append ("-p ");
 					args.Append (action);
-					args.Append (" ").Append (Quote (assemblyName));
+					args.Append (" ").AppendLine (Quote (assemblyName));
 				}
 			}
 
@@ -168,33 +168,33 @@ namespace ILLink.Tasks
 					if (assemblyNames.Contains (assemblyName))
 						continue;
 
-					args.Append (" --ref ").Append (Quote (assemblyPath));
+					args.Append ("--ref ").AppendLine (Quote (assemblyPath));
 
 					// Treat reference assemblies as "skip". Ideally we
 					// would not even look at the IL, but only use them to
 					// resolve surface area.
-					args.Append (" -p skip ").Append (Quote (assemblyName));
+					args.Append ("-p skip ").AppendLine (Quote (assemblyName));
 				}
 			}
 
 			if (OutputDirectory != null)
-				args.Append (" -out ").Append (Quote (OutputDirectory.ItemSpec));
+				args.Append ("-out ").AppendLine (Quote (OutputDirectory.ItemSpec));
 
 			if (ClearInitLocals) {
-				args.Append (" -s ");
+				args.Append ("-s ");
 				// Version of ILLink.CustomSteps is passed as a workaround for msbuild issue #3016
-				args.Append ("LLink.CustomSteps.ClearInitLocalsStep,ILLink.CustomSteps,Version=0.0.0.0:OutputStep");
+				args.AppendLine ("ILLink.CustomSteps.ClearInitLocalsStep,ILLink.CustomSteps,Version=0.0.0.0:OutputStep");
 				if ((ClearInitLocalsAssemblies != null) && (ClearInitLocalsAssemblies.Length > 0)) {
-					args.Append (" -m ClearInitLocalsAssemblies ");
-					args.Append (ClearInitLocalsAssemblies);
+					args.Append ("-m ClearInitLocalsAssemblies ");
+					args.AppendLine (ClearInitLocalsAssemblies);
 				}
 			}
 
 			if (ExtraArgs != null)
-				args.Append (" ").Append (ExtraArgs);
+				args.AppendLine (ExtraArgs);
 
 			if (DumpDependencies)
-				args.Append (" --dump-dependencies");
+				args.AppendLine ("--dump-dependencies");
 
 			return args.ToString ();
 		}
