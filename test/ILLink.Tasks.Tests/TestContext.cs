@@ -15,8 +15,8 @@ namespace ILLink.Tests
 		public static string TasksDirectoryRoot { get; private set; }
 
 		/// <summary>
-		///   The path to the local linker Sdk.props file,
-		///   which sets linker properties used in the
+		///   The path to the local linker package's Sdk.props file,
+		///   which sets linker properties used in the targets.
 		///   targets.
 		/// </summary>
 		public static string SdkPropsPath { get; private set; }

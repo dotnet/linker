@@ -11,9 +11,11 @@ Copyright (c) .NET Foundation. All rights reserved.
 -->
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-<!--
-  <Import Project="Sdk.props" Sdk="ILLink.Tasks" />
--->
+  <!-- This is a local version of the targets that exist in the sdk at
+       https://github.com/dotnet/sdk/blob/master/src/Tasks/Microsoft.NET.Build.Tasks/targets/Microsoft.NET.ILLink.targets.
+       We use this to test changes before making them in the SDK repo. Unlike the file in the sdk repo,
+       we inject custom logic for testing purposes. -->
+  <Import Project="$(MSBuildThisFileDirectory)ILLinkTestLogic.targets" />
 
   <PropertyGroup>
     <IntermediateLinkDir Condition=" '$(IntermediateLinkDir)' == '' ">$(IntermediateOutputPath)linked\</IntermediateLinkDir>

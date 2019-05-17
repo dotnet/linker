@@ -1,0 +1,8 @@
+<!--
+-->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- This file contains extension points to the usual SDK logic for
+       ILLink, used for testing purposes. -->
+
+</Project>

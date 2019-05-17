@@ -30,6 +30,7 @@
     <Copy SourceFiles="testcontext/Directory.Build.props" DestinationFolder="$(OutDir)" />
     <Copy SourceFiles="testcontext/Directory.Build.targets" DestinationFolder="$(OutDir)" />
     <Copy SourceFiles="testcontext/Microsoft.NET.ILLink.targets" DestinationFolder="$(OutDir)" />
+    <Copy SourceFiles="testcontext/ILLinkTestLogic.targets" DestinationFolder="$(OutDir)" />
   </Target>
 
   <ItemGroup>
