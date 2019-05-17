@@ -57,7 +57,7 @@ namespace ILLink.Tests
 		// returns path to .csproj project file
 		public override string SetupProject()
 		{
-			int ret;
+			CommandResult ret;
 			string demoRoot = Path.Combine(repoName, Path.Combine("src", "MusicStore"));
 			string csproj = Path.Combine(demoRoot, "MusicStore.csproj");
 
@@ -71,7 +71,7 @@ namespace ILLink.Tests
 			}
 
 			ret = CommandHelper.RunCommand("git", $"clone {gitRepo} {repoName}");
-			if (ret != 0) {
+			if (ret.ExitCode != 0) {
 				LogMessage("git failed");
 				Assert.True(false);
 			}
@@ -82,7 +82,7 @@ namespace ILLink.Tests
 			}
 
 			ret = CommandHelper.RunCommand("git", $"checkout {gitRevision}", demoRoot);
-			if (ret != 0) {
+			if (ret.ExitCode != 0) {
 				LogMessage($"problem checking out revision {gitRevision}");
 				Assert.True(false);
 			}
@@ -119,7 +119,7 @@ namespace ILLink.Tests
 
 		string ObtainSDK(string rootDir, string repoDir)
 		{
-			int ret;
+			CommandResult ret;
 			string dotnetDirName = ".dotnet";
 			string dotnetDir = Path.Combine(rootDir, dotnetDirName);
 			if (Directory.Exists(dotnetDir)) {
@@ -139,23 +139,23 @@ namespace ILLink.Tests
 
 			if (TestContext.RuntimeIdentifier.Contains("win")) {
 				ret = CommandHelper.RunCommand("powershell", $"{dotnetInstall} -SharedRuntime -InstallDir {dotnetDirName} -Channel master -Architecture x64 -Version {runtimeVersion}", rootDir);
-				if (ret != 0) {
+				if (ret.ExitCode != 0) {
 					LogMessage("failed to retrieve shared runtime");
 					Assert.True(false);
 				}
 				ret = CommandHelper.RunCommand("powershell", $"{dotnetInstall} -InstallDir {dotnetDirName} -Channel master -Architecture x64 -Version {sdkVersion}", rootDir);
-				if (ret != 0) {
+				if (ret.ExitCode != 0) {
 					LogMessage("failed to retrieve sdk");
 					Assert.True(false);
 				}
 			} else {
 				ret = CommandHelper.RunCommand(dotnetInstall, $"-sharedruntime -runtimeid {TestContext.RuntimeIdentifier} -installdir {dotnetDirName} -channel master -architecture x64 -version {runtimeVersion}", rootDir);
-				if (ret != 0) {
+				if (ret.ExitCode != 0) {
 					LogMessage("failed to retrieve shared runtime");
 					Assert.True(false);
 				}
 				ret = CommandHelper.RunCommand(dotnetInstall, $"-installdir {dotnetDirName} -channel master -architecture x64 -version {sdkVersion}", rootDir);
-				if (ret != 0) {
+				if (ret.ExitCode != 0) {
 					LogMessage("failed to retrieve sdk");
 					Assert.True(false);
 				}
@@ -194,12 +194,12 @@ namespace ILLink.Tests
 
 		void CheckOutput(string target, bool selfContained = false)
 		{
-			int ret = RunApp(target, out string commandOutput, selfContained: selfContained);
+			var ret = RunApp(target, selfContained: selfContained);
 
-			Assert.Contains("starting request to http://localhost:5000", commandOutput);
-			Assert.Contains("Response: OK", commandOutput);
-			Assert.Contains("Running 100 requests", commandOutput);
-			Assert.True(ret == 0);
+			Assert.Contains("starting request to http://localhost:5000", ret.StdOut);
+			Assert.Contains("Response: OK", ret.StdOut);
+			Assert.Contains("Running 100 requests", ret.StdOut);
+			Assert.True(ret.ExitCode == 0);
 		}
 
 	}

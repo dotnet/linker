@@ -33,9 +33,9 @@ namespace ILLink.Tests
 
 		void CheckOutput(string target, bool selfContained = false)
 		{
-			int ret = RunApp(target, out string commandOutput, selfContained: selfContained);
-			Assert.True(ret == 0);
-			Assert.Contains("Hello World!", commandOutput);
+			var ret = RunApp(target, selfContained: selfContained);
+			Assert.True(ret.ExitCode == 0);
+			Assert.Contains("Hello World!", ret.StdOut);
 		}
 	}
 }

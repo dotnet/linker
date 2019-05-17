@@ -8,6 +8,20 @@ using Xunit.Abstractions;
 namespace ILLink.Tests
 {
 
+	public readonly struct CommandResult
+	{
+		public readonly string StdOut;
+		public readonly string StdErr;
+		public readonly int ExitCode;
+
+		public CommandResult(int exitCode, string stdOut, string stdErr)
+		{
+			StdOut = stdOut;
+			StdErr = stdErr;
+			ExitCode = exitCode;
+		}
+	}
+
 	public class CommandHelper
 	{
 		private ILogger logger;
@@ -17,24 +31,23 @@ namespace ILLink.Tests
 			this.logger = logger;
 		}
 
-		public int Dotnet(string args, string workingDir, string additionalPath = null)
+		public CommandResult Dotnet(string args, string workingDir, string additionalPath = null)
 		{
 			return RunCommand(Path.GetFullPath(TestContext.DotnetToolPath), args,
-				workingDir, additionalPath, out string commandOutput);
+				workingDir, additionalPath);
 		}
 
-		public int RunCommand(string command, string args, int timeout = Int32.MaxValue)
+		public CommandResult RunCommand(string command, string args, int timeout = Int32.MaxValue)
 		{
-			return RunCommand(command, args, null, null, out string commandOutput, timeout);
+			return RunCommand(command, args, null, null, timeout);
 		}
 
-		public int RunCommand(string command, string args, string workingDir)
+		public CommandResult RunCommand(string command, string args, string workingDir)
 		{
-			return RunCommand(command, args, workingDir, null, out string commandOutput);
+			return RunCommand(command, args, workingDir, null);
 		}
 
-		public int RunCommand(string command, string args, string workingDir, string additionalPath,
-			out string commandOutput, int timeout = Int32.MaxValue, string terminatingOutput = null)
+		public CommandResult RunCommand(string command, string args, string workingDir, string additionalPath, int timeout = Int32.MaxValue, string terminatingOutput = null)
 		{
 			return (new CommandRunner(command, logger))
 				.WithArguments(args)
@@ -42,7 +55,7 @@ namespace ILLink.Tests
 				.WithAdditionalPath(additionalPath)
 				.WithTimeout(timeout)
 				.WithTerminatingOutput(terminatingOutput)
-				.Run(out commandOutput);
+				.Run();
 		}
 	}
 
@@ -92,12 +105,7 @@ namespace ILLink.Tests
 			return this;
 		}
 
-		public int Run()
-		{
-			return Run(out string commandOutputUnused);
-		}
-
-		public int Run(out string commandOutput)
+		public CommandResult Run()
 		{
 			if (String.IsNullOrEmpty(command)) {
 				throw new Exception("No command was specified specified.");
@@ -179,8 +187,8 @@ namespace ILLink.Tests
 			string processErrorStr = processError.ToString();
 			LogMessage(processOutputStr);
 			LogMessage(processErrorStr);
-			commandOutput = processOutputStr;
-			return process.ExitCode;
+
+			return new CommandResult(process.ExitCode, processOutputStr, processErrorStr);
 		}
 	}
 }

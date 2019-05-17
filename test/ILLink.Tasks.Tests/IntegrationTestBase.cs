@@ -35,8 +35,8 @@ namespace ILLink.Tests
 			}
 
 			Directory.CreateDirectory(projectRoot);
-			int ret = CommandHelper.Dotnet($"new {TemplateName} --no-restore", projectRoot);
-			if (ret != 0) {
+			var ret = CommandHelper.Dotnet($"new {TemplateName} --no-restore", projectRoot);
+			if (ret.ExitCode != 0) {
 				LogMessage ("dotnet new failed");
 				Assert.True(false);
 			}
@@ -122,8 +122,8 @@ namespace ILLink.Tests
 			var restoreArgs = $"restore -r {TestContext.RuntimeIdentifier}";
 			restoreArgs += $" /p:_ILLinkTasksDirectoryRoot={TestContext.TasksDirectoryRoot}";
 			restoreArgs += $" /p:_ILLinkTasksSdkPropsPath={TestContext.SdkPropsPath}";
-			int ret = CommandHelper.Dotnet(restoreArgs, projectDir);
-			if (ret != 0) {
+			var ret = CommandHelper.Dotnet(restoreArgs, projectDir);
+			if (ret.ExitCode != 0) {
 				LogMessage("restore failed, returning " + ret);
 				Assert.True(false);
 			}
@@ -158,9 +158,9 @@ namespace ILLink.Tests
 
 			buildArgs += $" /p:_ILLinkTasksDirectoryRoot={TestContext.TasksDirectoryRoot}";
 			buildArgs += $" /p:_ILLinkTasksSdkPropsPath={TestContext.SdkPropsPath}";
-			int ret = CommandHelper.Dotnet(buildArgs, projectDir);
+			var ret = CommandHelper.Dotnet(buildArgs, projectDir);
 
-			if (ret != 0) {
+			if (ret.ExitCode != 0) {
 				LogMessage("build failed, returning " + ret);
 				Assert.True(false);
 			}
@@ -216,11 +216,14 @@ namespace ILLink.Tests
 			}
 
 			publishArgs += $" /p:PublishTrimmed=true";
+			// Use the local version of Microsoft.NET.ILLink.targets, by overriding
+			// the properties set by the linker package's Sdk.props
 			publishArgs += $" /p:_ILLinkTasksDirectoryRoot={TestContext.TasksDirectoryRoot}";
 			publishArgs += $" /p:_ILLinkTasksSdkPropsPath={TestContext.SdkPropsPath}";
-			int ret = CommandHelper.Dotnet(publishArgs, projectDir);
 
-			if (ret != 0) {
+			var ret = CommandHelper.Dotnet(publishArgs, projectDir);
+
+			if (ret.ExitCode != 0) {
 				LogMessage("publish failed, returning " + ret);
 				Assert.True(false);
 			}
@@ -245,24 +248,22 @@ namespace ILLink.Tests
 			return builtApp;
 		}
 
-		public int RunApp(string target, out string processOutput, int timeout = Int32.MaxValue,
+		public CommandResult RunApp(string target, int timeout = Int32.MaxValue,
 			string terminatingOutput = null, bool selfContained = false)
 		{
 			Assert.True(File.Exists(target));
-			int ret;
 			if (selfContained) {
-				ret = CommandHelper.RunCommand(
-					target, null,
-					Directory.GetParent(target).FullName,
-					null, out processOutput, timeout, terminatingOutput);
+				return CommandHelper.RunCommand(
+						target, null,
+						Directory.GetParent(target).FullName,
+						null, timeout, terminatingOutput);
 			} else {
-				ret = CommandHelper.RunCommand(
-					Path.GetFullPath(TestContext.DotnetToolPath),
-					Path.GetFullPath(target),
-					Directory.GetParent(target).FullName,
-					null, out processOutput, timeout, terminatingOutput);
+				return CommandHelper.RunCommand(
+						Path.GetFullPath(TestContext.DotnetToolPath),
+						Path.GetFullPath(target),
+						Directory.GetParent(target).FullName,
+						null, timeout, terminatingOutput);
 			}
-			return ret;
 		}
 	}
 }
