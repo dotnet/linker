@@ -86,8 +86,10 @@ namespace Mono.Linker.Steps
 
 		public static void ProcessLibrary (LinkContext context, AssemblyDefinition assembly, RootVisibility rootVisibility = RootVisibility.Any)
 		{
-			var action = rootVisibility == RootVisibility.Any ? AssemblyAction.Copy : AssemblyAction.Link;
-			context.SetAction (assembly, action);
+			if (!context.Actions.Contains (assembly.Name.Name)) {
+				var action = rootVisibility == RootVisibility.Any ? AssemblyAction.Copy : AssemblyAction.Link;
+				context.SetAction (assembly, action);
+			}
 
 			context.Tracer.Push (assembly);
 
@@ -170,7 +172,8 @@ namespace Mono.Linker.Steps
 
 		void ProcessExecutable (AssemblyDefinition assembly)
 		{
-			Context.SetAction (assembly, AssemblyAction.Link);
+			if (!Context.Actions.Contains (assembly.Name.Name))
+				Context.SetAction (assembly, AssemblyAction.Link);
 
 			Tracer.Push (assembly);
 
