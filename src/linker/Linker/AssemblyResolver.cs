@@ -83,25 +83,6 @@ namespace Mono.Linker {
 		}
 #endif
 
-		private AssemblyDefinition ResolveWithPaths (AssemblyNameReference name, ReaderParameters parameters)
-		{
-			// Validate arguments, similarly to how the base class does it.
-			if (name == null)
-				throw new ArgumentNullException ("name");
-			if (parameters == null)
-				throw new ArgumentNullException ("parameters");
-
-			AssemblyDefinition asm = null;
-
-			// Try the new resolution behavior. This can't live in the cecil-owned base class.
-			asm = SearchAssemblyPaths (name, _assemblyPaths, parameters);
-			if (asm != null)
-				return asm;
-
-			// Fall back to the base class resolution logic
-			return base.Resolve (name, parameters);
-		}
-
 		private AssemblyDefinition SearchAssemblyPaths (AssemblyNameReference name, IEnumerable<string> assemblyPaths, ReaderParameters parameters)
 		{
 			foreach (var assemblyPath in assemblyPaths) {
@@ -122,7 +103,19 @@ namespace Mono.Linker {
 			AssemblyDefinition asm = null;
 			if (!_assemblies.TryGetValue (name.Name, out asm) && (_unresolvedAssemblies == null || !_unresolvedAssemblies.Contains (name.Name))) {
 				try {
-					asm = ResolveWithPaths (name, parameters);
+					// Validate arguments, similarly to how the base class does it.
+					if (name == null)
+						throw new ArgumentNullException ("name");
+					if (parameters == null)
+						throw new ArgumentNullException ("parameters");
+
+					// Try the new resolution behavior. This can't live in the cecil-owned base class.
+					asm = SearchAssemblyPaths (name, _assemblyPaths, parameters);
+
+					// Fall back to the base class resolution logic
+					if (asm == null)
+						asm = base.Resolve (name, parameters);
+
 					_assemblies [name.Name] = asm;
 				} catch (AssemblyResolutionException) {
 					if (!_ignoreUnresolved)
