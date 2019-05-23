@@ -241,8 +241,8 @@ namespace Mono.Linker {
 
 							continue;
 
-						case "--ref":
-							context.Resolver.AddAssemblyPath (GetParam ());
+						case "--reference":
+							context.Resolver.AddReferenceAssembly (GetParam ());
 							continue;
 						}
 
@@ -508,7 +508,7 @@ namespace Mono.Linker {
 			Console.WriteLine ("  -r                  Link from a list of assemblies using roots visible outside of the assembly");
 			Console.WriteLine ("  -x                  Link from XML descriptor");
 			Console.WriteLine ("  -d <path>           Specify additional directories to search in for references");
-			Console.WriteLine ("  --ref <path>        Specify additional assemblies to use as references");
+			Console.WriteLine ("  --reference <file>  Specify additional assemblies to use as references");
 			Console.WriteLine ("  -b                  Update debug symbols for each linked module. Defaults to false");
 			Console.WriteLine ("  -v                  Keep members and types used by debugger. Defaults to false");
 			Console.WriteLine ("  -l <name>,<name>    List of i18n assemblies to copy to the output directory. Defaults to 'all'");

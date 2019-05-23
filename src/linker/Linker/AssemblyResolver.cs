@@ -44,7 +44,7 @@ namespace Mono.Linker {
 		HashSet<string> _unresolvedAssemblies;
 		bool _ignoreUnresolved;
 		LinkContext _context;
-		readonly Collection<string> _assemblyPaths;
+		readonly Collection<string> _references;
 
 
 		public IDictionary<string, AssemblyDefinition> AssemblyCache {
@@ -59,7 +59,7 @@ namespace Mono.Linker {
 		public AssemblyResolver (Dictionary<string, AssemblyDefinition> assembly_cache)
 		{
 			_assemblies = assembly_cache;
-			_assemblyPaths = new Collection<string> (10) { };
+			_references = new Collection<string> () { };
 		}
 
 		public bool IgnoreUnresolved {
@@ -83,14 +83,15 @@ namespace Mono.Linker {
 		}
 #endif
 
-		private AssemblyDefinition SearchAssemblyPaths (AssemblyNameReference name, IEnumerable<string> assemblyPaths, ReaderParameters parameters)
+		private AssemblyDefinition ResolveFromReferences (AssemblyNameReference name, Collection<string> references, ReaderParameters parameters)
 		{
-			foreach (var assemblyPath in assemblyPaths) {
-				if (Path.GetFileName (assemblyPath) != name.Name + ".dll")
+			var fileName = name.Name + ".dll";
+			foreach (var reference in references) {
+				if (Path.GetFileName (reference) != fileName)
 					continue;
 				try {
-					return GetAssembly (assemblyPath, parameters);
-				} catch (System.BadImageFormatException) {
+					return GetAssembly (reference, parameters);
+				} catch (BadImageFormatException) {
 					continue;
 				}
 			}
@@ -100,17 +101,17 @@ namespace Mono.Linker {
 
 		public override AssemblyDefinition Resolve (AssemblyNameReference name, ReaderParameters parameters)
 		{
+			// Validate arguments, similarly to how the base class does it.
+			if (name == null)
+				throw new ArgumentNullException ("name");
+			if (parameters == null)
+				throw new ArgumentNullException ("parameters");
+
 			AssemblyDefinition asm = null;
 			if (!_assemblies.TryGetValue (name.Name, out asm) && (_unresolvedAssemblies == null || !_unresolvedAssemblies.Contains (name.Name))) {
 				try {
-					// Validate arguments, similarly to how the base class does it.
-					if (name == null)
-						throw new ArgumentNullException ("name");
-					if (parameters == null)
-						throw new ArgumentNullException ("parameters");
-
 					// Try the new resolution behavior. This can't live in the cecil-owned base class.
-					asm = SearchAssemblyPaths (name, _assemblyPaths, parameters);
+					asm = ResolveFromReferences (name, _references, parameters);
 
 					// Fall back to the base class resolution logic
 					if (asm == null)
@@ -138,9 +139,9 @@ namespace Mono.Linker {
 			return assembly;
 		}
 
-		public void AddAssemblyPath (string assemblyPath)
+		public void AddReferenceAssembly (string referencePath)
 		{
-			_assemblyPaths.Add (assemblyPath);
+			_references.Add (referencePath);
 		}
 
 		protected override void Dispose (bool disposing)
