@@ -295,9 +295,13 @@ namespace Mono.Linker {
 			return reference;
 		}
 		
-		public void SetAction(AssemblyDefinition assembly, AssemblyAction action)
+		public void SetAction (AssemblyDefinition assembly, AssemblyAction defaultAction)
 		{
 			RegisterAssembly (assembly);
+
+			if (!_actions.TryGetValue (assembly.Name.Name, out AssemblyAction action))
+				action = defaultAction;
+
 			Annotations.SetAction (assembly, action);
 		}
 
