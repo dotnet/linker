@@ -168,7 +168,7 @@ namespace ILLink.Tasks
 					if (assemblyNames.Contains (assemblyName))
 						continue;
 
-					args.Append ("--ref ").AppendLine (Quote (assemblyPath));
+					args.Append ("-reference ").AppendLine (Quote (assemblyPath));
 
 					// Treat reference assemblies as "skip". Ideally we
 					// would not even look at the IL, but only use them to
