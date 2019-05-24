@@ -241,7 +241,7 @@ namespace Mono.Linker {
 
 							continue;
 
-						case "--reference":
+						case "-reference":
 							context.Resolver.AddReferenceAssembly (GetParam ());
 							continue;
 						}
