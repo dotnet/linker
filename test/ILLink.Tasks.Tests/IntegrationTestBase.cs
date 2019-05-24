@@ -22,8 +22,8 @@ namespace ILLink.Tests
 
 		public override string SetupProject()
 		{
-			string projectRoot = TemplateName;
-			string csproj = Path.Combine(projectRoot, $"{projectRoot}.csproj");
+			string projectRoot = Path.Combine(TestContext.TestBin, TemplateName);
+			string csproj = Path.Combine(projectRoot, $"{TemplateName}.csproj");
 
 			if (File.Exists(csproj)) {
 				LogMessage ($"using existing project {csproj}");
@@ -121,7 +121,6 @@ namespace ILLink.Tests
 
 			var restoreArgs = $"restore -r {TestContext.RuntimeIdentifier}";
 			restoreArgs += $" /p:_ILLinkTasksDirectoryRoot={TestContext.TasksDirectoryRoot}";
-			restoreArgs += $" /p:_ILLinkTasksSdkPropsPath={TestContext.SdkPropsPath}";
 			var ret = CommandHelper.Dotnet(restoreArgs, projectDir);
 			if (ret.ExitCode != 0) {
 				LogMessage("restore failed, returning " + ret);
@@ -137,9 +136,9 @@ namespace ILLink.Tests
 			string objPath = Path.Combine(projectDir, "obj", TestContext.Configuration, "netcoreapp3.0");
 			string outputDllPath;
 			if (selfContained) {
-				outputDllPath = Path.Combine(objPath, TestContext.RuntimeIdentifier, Path.GetFileName(projectDir));
+				outputDllPath = Path.Combine(objPath, TestContext.RuntimeIdentifier, Path.GetFileName(projectDir) + ".dll");
 			} else {
-				outputDllPath = Path.Combine(objPath, Path.GetFileName(projectDir));
+				outputDllPath = Path.Combine(objPath, Path.GetFileName(projectDir) + ".dll");
 			}
 			if (File.Exists(outputDllPath)) {
 				LogMessage("using build artifacts at " + outputDllPath);
@@ -157,7 +156,6 @@ namespace ILLink.Tests
 			}
 
 			buildArgs += $" /p:_ILLinkTasksDirectoryRoot={TestContext.TasksDirectoryRoot}";
-			buildArgs += $" /p:_ILLinkTasksSdkPropsPath={TestContext.SdkPropsPath}";
 			var ret = CommandHelper.Dotnet(buildArgs, projectDir);
 
 			if (ret.ExitCode != 0) {
@@ -219,7 +217,12 @@ namespace ILLink.Tests
 			// Use the local version of Microsoft.NET.ILLink.targets, by overriding
 			// the properties set by the linker package's Sdk.props
 			publishArgs += $" /p:_ILLinkTasksDirectoryRoot={TestContext.TasksDirectoryRoot}";
-			publishArgs += $" /p:_ILLinkTasksSdkPropsPath={TestContext.SdkPropsPath}";
+
+			// Output directory, relative to project
+			string publishDir = "linked";
+			if (!selfContained)
+				publishDir += "_portable";
+			publishArgs += $" -o {publishDir}";
 
 			var ret = CommandHelper.Dotnet(publishArgs, projectDir);
 
@@ -228,19 +231,10 @@ namespace ILLink.Tests
 				Assert.True(false);
 			}
 
-			// detect the target framework for which the app was published
-			string tfmDir = Path.Combine(projectDir, "bin", TestContext.Configuration);
-			string tfm = Directory.GetDirectories(tfmDir).Select(p => Path.GetFileName(p)).Single();
-			string builtApp = Path.Combine(tfmDir, tfm);
+			var builtApp = Path.Combine(projectDir, publishDir, Path.GetFileNameWithoutExtension(csproj));
 			if (selfContained) {
-				builtApp = Path.Combine(builtApp, TestContext.RuntimeIdentifier);
-			}
-			builtApp = Path.Combine(builtApp, "publish",
-				Path.GetFileNameWithoutExtension(csproj));
-			if (selfContained) {
-				if (TestContext.RuntimeIdentifier.Contains("win")) {
+				if (TestContext.RuntimeIdentifier.Contains("win"))
 					builtApp += ".exe";
-				}
 			} else {
 				builtApp += ".dll";
 			}

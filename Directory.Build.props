@@ -3,4 +3,10 @@
   <PropertyGroup>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
+
+  <PropertyGroup>
+    <BaseOutputPath>$(MSBuildThisFileDirectory)bin/$(MSBuildProjectName)/</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(BaseOutputPath)obj</BaseIntermediateOutputPath>
+  </PropertyGroup>
+
 </Project>

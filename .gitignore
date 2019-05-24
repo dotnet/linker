@@ -31,5 +31,6 @@ bin/
 .dotnet
 .packages
 artifacts
+testprojects
 
 monobuild/TestResults.xml

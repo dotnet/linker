@@ -15,13 +15,6 @@ namespace ILLink.Tests
 		public static string TasksDirectoryRoot { get; private set; }
 
 		/// <summary>
-		///   The path to the local linker package's Sdk.props file,
-		///   which sets linker properties used in the targets.
-		///   targets.
-		/// </summary>
-		public static string SdkPropsPath { get; private set; }
-
-		/// <summary>
 		///   The path to the dotnet tool to use to run the
 		///   integration tests.
 		/// </summary>
@@ -40,7 +33,8 @@ namespace ILLink.Tests
 		public static string Configuration { get; private set; }
 
 		/// <summary>
-		///   The root testbin directory. Used to install test
+		///   The root testbin directory. This is where individual test
+		///   projects are generated. Also used to install test
 		///   assets that don't depend on the configuration or
 		///   target framework.
 		/// </summary>
@@ -61,19 +55,23 @@ namespace ILLink.Tests
 		/// </summary>
 		public static void SetupDefaultContext()
 		{
-			// test working directory is test project's <baseoutputpath>/<config>/<tfm>
-			TestBin = Path.Combine(Environment.CurrentDirectory, "..", "..");
-			var repoRoot = Path.GetFullPath(Path.Combine(TestBin, "..", "..", ".."));
+			// The tests are run from <root>/bin/ILLink.Tasks.Tests/Debug/netcoreapp3.0
+			var repoRoot = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, "..", "..", "..", ".."));
+
+			// Keep this in sync with the TestBin defined in ILLink.Tasks.Tests.csproj,
+			// and with the paths in testcontext/Directory.Build.targets.
+			TestBin = Path.Combine(repoRoot, "testprojects");
 
 			// Locate task dll
 #if ARCADE
-                        // TODO: fix this!
+			// TODO: fix this!
 			TasksDirectoryRoot = Path.Combine(repoRoot, "artifacts", "bin", "ILLink.Tasks", "Release", "netcoreapp2.0", "ILLink.Tasks.dll");
 #else
 			// This is the publish directory.
-			TasksDirectoryRoot = Path.Combine(repoRoot, "src", "ILLink.Tasks", "bin") + Path.DirectorySeparatorChar;
+			TasksDirectoryRoot = Path.Combine(repoRoot, "bin", "ILLink.Tasks") + Path.DirectorySeparatorChar;
 #endif
-			SdkPropsPath = Path.Combine(repoRoot, "src", "ILLink.Tasks", "Sdk", "Sdk.props");
+			if (!Directory.Exists(TasksDirectoryRoot))
+				throw new Exception("failed to locate local linker tasks");
 
 			// Locate dotnet host
 			var dotnetDir = Path.Combine(repoRoot, ".dotnet");

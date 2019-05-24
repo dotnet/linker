@@ -1,13 +1,6 @@
 <Project>
 
-  <!-- The test infrastructure injects a local value for the tasks
-  root directory. When this is set, the standard Sdk.props import will
-  use our local tasks dll. -->
-<!--
-  <PropertyGroup>
-    <_ILLinkTasksSdkPropsPath Condition=" '$(_ILLinkTasksSdkPropsPath)' == '' ">nonexistentfile</_ILLinkTasksSdkPropsPath>
-  </PropertyGroup>
--->
-  <Import Project="$(_ILLinkTasksSdkPropsPath)" Condition="Exists('$(_ILLinkTasksSdkPropsPath)')" />
+    <!-- This file exists so that the test projects will
+         not get the linker repo Directory.Build.props. -->
 
 </Project>

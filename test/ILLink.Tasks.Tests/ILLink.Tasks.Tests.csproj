@@ -8,6 +8,8 @@
     <IsTestProject>true</IsTestProject>
     <IsIntegrationTestProject>true</IsIntegrationTestProject>
     <DefineConstants Condition=" '$(ArcadeBuild)' == 'true' ">$(DefineConstants);ARCADE</DefineConstants>
+   <!-- Keep this in sync with the TestBin in TestContext. -->
+   <TestBin>$(MSBuildThisFileDirectory)../../testprojects</TestBin>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,11 +28,10 @@
 
   <Target Name="CopyTestContextFiles"
           AfterTargets="AfterBuild">
-    <Copy SourceFiles="testcontext/NuGet.config" DestinationFolder="$(OutDir)" />
-    <Copy SourceFiles="testcontext/Directory.Build.props" DestinationFolder="$(OutDir)" />
-    <Copy SourceFiles="testcontext/Directory.Build.targets" DestinationFolder="$(OutDir)" />
-    <Copy SourceFiles="testcontext/Microsoft.NET.ILLink.targets" DestinationFolder="$(OutDir)" />
-    <Copy SourceFiles="testcontext/ILLinkTestLogic.targets" DestinationFolder="$(OutDir)" />
+    <ItemGroup>
+      <TestContextFiles Include="testcontext/*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(TestContextFiles)" DestinationFolder="$(TestBin)" />
   </Target>
 
   <ItemGroup>
