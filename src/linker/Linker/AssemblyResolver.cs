@@ -83,7 +83,7 @@ namespace Mono.Linker {
 		}
 #endif
 
-		private AssemblyDefinition ResolveFromReferences (AssemblyNameReference name, Collection<string> references, ReaderParameters parameters)
+		AssemblyDefinition ResolveFromReferences (AssemblyNameReference name, Collection<string> references, ReaderParameters parameters)
 		{
 			var fileName = name.Name + ".dll";
 			foreach (var reference in references) {
@@ -110,7 +110,7 @@ namespace Mono.Linker {
 			AssemblyDefinition asm = null;
 			if (!_assemblies.TryGetValue (name.Name, out asm) && (_unresolvedAssemblies == null || !_unresolvedAssemblies.Contains (name.Name))) {
 				try {
-					// Try the new resolution behavior. This can't live in the cecil-owned base class.
+					// Any full path explicit reference takes precedence over other look up logic
 					asm = ResolveFromReferences (name, _references, parameters);
 
 					// Fall back to the base class resolution logic
