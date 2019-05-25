@@ -42,6 +42,7 @@
     <Compile Include="ConsoleTest.cs" />
     <Compile Include="WebApiTest.cs" />
     <Compile Include="MusicStoreTest.cs" />
+    <Compile Include="CheckProjects.cs" />
 
     <!-- tell xunit to log diagnostic messages -->
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />

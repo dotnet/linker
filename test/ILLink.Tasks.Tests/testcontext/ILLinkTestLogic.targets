@@ -5,4 +5,12 @@
   <!-- This file contains extension points to the usual SDK logic for
        ILLink, used for testing purposes. -->
 
+  <Target Name="CheckTargetIncludes">
+    <Message Importance="High" Text="test logic targets were included" />
+  </Target>
+
+  <Target Name="CheckTasksPath">
+    <Message Importance="High" Text="_ILLinkTasksDirectoryRoot: $(_ILLinkTasksDirectoryRoot)" />
+  </Target>
+
 </Project>
