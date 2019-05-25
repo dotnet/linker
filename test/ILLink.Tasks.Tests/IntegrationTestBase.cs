@@ -145,7 +145,7 @@ namespace ILLink.Tests
 				return;
 			}
 
-			string buildArgs = $"build --no-restore -c {TestContext.Configuration} /v:n";
+			string buildArgs = $"build --no-restore -c {TestContext.Configuration}";
 			if (selfContained) {
 				buildArgs += $" -r {TestContext.RuntimeIdentifier}";
 			}
@@ -200,7 +200,7 @@ namespace ILLink.Tests
 		{
 			string projectDir = Path.GetDirectoryName(csproj);
 
-			string publishArgs = $"publish --no-build -c {TestContext.Configuration} /v:n /bl";
+			string publishArgs = $"publish --no-build -c {TestContext.Configuration} /bl";
 			if (selfContained) {
 				publishArgs += $" -r {TestContext.RuntimeIdentifier}";
 			}
