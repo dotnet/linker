@@ -227,7 +227,7 @@ namespace ILLink.Tests
 			var ret = CommandHelper.Dotnet(publishArgs, projectDir);
 
 			if (ret.ExitCode != 0) {
-				LogMessage("publish failed, returning " + ret);
+				LogMessage("publish failed, returning " + ret.ExitCode);
 				Assert.True(false);
 			}
 
