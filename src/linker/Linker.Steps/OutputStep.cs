@@ -122,14 +122,12 @@ namespace Mono.Linker.Steps {
 				}
 			}
 			if (assembly.MainModule.Mvid != prevGuid) {
-				if (Context.LogMessages)
-					Console.WriteLine ("Create:\t " + fileName);
+				Context.LogMessage ("Create:\t " + fileName);
 				stream.Seek (0, SeekOrigin.Begin);
 				using (var file = File.Create (fileName))
 					stream.WriteTo (file);
 			} else {
-				if (Context.LogMessages)
-					Console.WriteLine ("Unchanged:\t " + fileName);
+				Context.LogMessage ("Unchanged:\t " + fileName);
 			}
 		}
 
