@@ -1,11 +1,6 @@
 <Project>
 
   <!-- Include linker targets in our tests, until the SDK comes with its own linker targets. -->
-  <PropertyGroup>
-    <!-- Keep this in sync with TestContext. -->
-    <_ILLinkTasksDirectoryRoot>$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)../bin/ILLink.Tasks/'))</_ILLinkTasksDirectoryRoot>
-  </PropertyGroup>
-
 
   <Import Project="Microsoft.NET.ILLink.targets" />
 

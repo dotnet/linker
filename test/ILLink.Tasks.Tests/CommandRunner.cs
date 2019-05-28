@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -22,6 +23,8 @@ namespace ILLink.Tests
 		}
 	}
 
+	// Helpers that contain convenience APIs to run commands
+	// and .NET CLI commands in the context of our test environment.
 	public class CommandHelper
 	{
 		private ILogger logger;
@@ -49,12 +52,17 @@ namespace ILLink.Tests
 
 		public CommandResult RunCommand(string command, string args, string workingDir, string additionalPath, int timeout = Int32.MaxValue, string terminatingOutput = null)
 		{
+			var testEnv = new Dictionary<string, string> () {
+				{ "_ILLinkTasksDirectoryRoot", TestContext.TasksDirectoryRoot }
+				};
+
 			return (new CommandRunner(command, logger))
 				.WithArguments(args)
 				.WithWorkingDir(workingDir)
 				.WithAdditionalPath(additionalPath)
 				.WithTimeout(timeout)
 				.WithTerminatingOutput(terminatingOutput)
+				.WithEnvironment(testEnv)
 				.Run();
 		}
 	}
@@ -69,6 +77,8 @@ namespace ILLink.Tests
 		private string additionalPath;
 		private int timeout = Int32.MaxValue;
 		private string terminatingOutput;
+
+		private Dictionary<string, string> additionalEnvironment;
 
 		private void LogMessage (string message)
 		{
@@ -102,6 +112,11 @@ namespace ILLink.Tests
 
 		public CommandRunner WithTerminatingOutput(string terminatingOutput) {
 			this.terminatingOutput = terminatingOutput;
+			return this;
+		}
+
+		public CommandRunner WithEnvironment(Dictionary<string, string> additionalEnvironment) {
+			this.additionalEnvironment = additionalEnvironment;
 			return this;
 		}
 
@@ -146,6 +161,12 @@ namespace ILLink.Tests
 			psi.Environment.Remove("VbcToolExe");
 			psi.Environment.Remove("CscToolExe");
 			psi.Environment.Remove("MSBUILD_EXE_PATH");
+
+			if (additionalEnvironment != null) {
+				foreach (var entry in additionalEnvironment) {
+					psi.Environment.Add(entry.Key, entry.Value);
+				}
+			}
 
 			StringBuilder processOutput = new StringBuilder();
 			DataReceivedEventHandler handler = (sender, e) => {

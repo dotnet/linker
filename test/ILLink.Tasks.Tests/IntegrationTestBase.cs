@@ -120,7 +120,6 @@ namespace ILLink.Tests
 			}
 
 			var restoreArgs = $"restore -r {TestContext.RuntimeIdentifier}";
-			restoreArgs += $" /p:_ILLinkTasksDirectoryRoot={TestContext.TasksDirectoryRoot}";
 			var ret = CommandHelper.Dotnet(restoreArgs, projectDir);
 			if (ret.ExitCode != 0) {
 				LogMessage("restore failed, returning " + ret);
@@ -155,7 +154,6 @@ namespace ILLink.Tests
 				}
 			}
 
-			buildArgs += $" /p:_ILLinkTasksDirectoryRoot={TestContext.TasksDirectoryRoot}";
 			var ret = CommandHelper.Dotnet(buildArgs, projectDir);
 
 			if (ret.ExitCode != 0) {
@@ -216,7 +214,6 @@ namespace ILLink.Tests
 			publishArgs += $" /p:PublishTrimmed=true";
 			// Use the local version of Microsoft.NET.ILLink.targets, by overriding
 			// the properties set by the linker package's Sdk.props
-			publishArgs += $" /p:_ILLinkTasksDirectoryRoot={TestContext.TasksDirectoryRoot}";
 
 			// Output directory, relative to project
 			string publishDir = "linked";

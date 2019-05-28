@@ -55,23 +55,23 @@ namespace ILLink.Tests
 		/// </summary>
 		public static void SetupDefaultContext()
 		{
-			// The tests are run from <root>/bin/ILLink.Tasks.Tests/Debug/netcoreapp3.0
-			var repoRoot = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, "..", "..", "..", ".."));
-
-			// Keep this in sync with the TestBin defined in ILLink.Tasks.Tests.csproj,
-			// and with the paths in testcontext/Directory.Build.targets.
-			TestBin = Path.Combine(repoRoot, "testprojects");
-
 			// Locate task dll
 #if ARCADE
 			// TODO: fix this!
-			TasksDirectoryRoot = Path.Combine(repoRoot, "artifacts", "bin", "ILLink.Tasks", "Release", "netcoreapp2.0", "ILLink.Tasks.dll");
+			// Tests are run from <root>/artifacts/bin/ILLink.Tasks.Tests/Release/netcoreapp3.0
+			string repoRoot = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, "..", "..", "..", "..", ".."));
+			TasksDirectoryRoot = Path.Combine(repoRoot, "artifacts", "bin", "ILLink.Tasks", "Release") + Path.DirectorySeparatorChar;
 #else
+			// The tests are run from <root>/bin/ILLink.Tasks.Tests/Debug/netcoreapp3.0
+			string repoRoot = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, "..", "..", "..", ".."));
 			// This is the publish directory.
 			TasksDirectoryRoot = Path.Combine(repoRoot, "bin", "ILLink.Tasks") + Path.DirectorySeparatorChar;
 #endif
 			if (!Directory.Exists(TasksDirectoryRoot))
-				throw new Exception("failed to locate local linker tasks");
+				throw new Exception($"failed to locate local linker tasks at {TasksDirectoryRoot}");
+
+			// Keep this in sync with the TestBin defined in ILLink.Tasks.Tests.csproj,
+			TestBin = Path.Combine(repoRoot, "testprojects");
 
 			// Locate dotnet host
 			var dotnetDir = Path.Combine(repoRoot, ".dotnet");
