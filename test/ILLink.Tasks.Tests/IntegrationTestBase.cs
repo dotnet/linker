@@ -131,7 +131,6 @@ namespace ILLink.Tests
 		{
 			string projectDir = Path.GetDirectoryName(csproj);
 
-			// TODO: don't hard-code target framework
 			string objPath = Path.Combine(projectDir, "obj", TestContext.Configuration, "netcoreapp3.0");
 			string outputDllPath;
 			if (selfContained) {
@@ -245,15 +244,15 @@ namespace ILLink.Tests
 			Assert.True(File.Exists(target));
 			if (selfContained) {
 				return CommandHelper.RunCommand(
-						target, null,
-						Directory.GetParent(target).FullName,
-						null, timeout, terminatingOutput);
+					target, null,
+					Directory.GetParent(target).FullName,
+					null, timeout, terminatingOutput);
 			} else {
 				return CommandHelper.RunCommand(
-						Path.GetFullPath(TestContext.DotnetToolPath),
-						Path.GetFullPath(target),
-						Directory.GetParent(target).FullName,
-						null, timeout, terminatingOutput);
+					Path.GetFullPath(TestContext.DotnetToolPath),
+					Path.GetFullPath(target),
+					Directory.GetParent(target).FullName,
+					null, timeout, terminatingOutput);
 			}
 		}
 	}
