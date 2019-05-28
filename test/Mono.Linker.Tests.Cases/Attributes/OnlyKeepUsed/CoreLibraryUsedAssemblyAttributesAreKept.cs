@@ -7,6 +7,9 @@ namespace Mono.Linker.Tests.Cases.Attributes.OnlyKeepUsed {
 	[Reference ("System.dll")]
 	[SetupLinkerCoreAction ("link")]
 	[SetupLinkerArgument ("--used-attrs-only", "true")]
+#if NETCOREAPP
+	[IgnoreTestCase ("AssemblyDescriptionAttribute was removed from CoreLib.")]
+#endif
 	[KeptAttributeInAssembly (PlatformAssemblies.CoreLib, typeof (AssemblyDescriptionAttribute))]
 #if !NETCOREAPP
 	[KeptAttributeInAssembly ("System.dll", typeof (AssemblyDescriptionAttribute))]

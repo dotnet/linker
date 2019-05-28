@@ -6,6 +6,9 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 namespace Mono.Linker.Tests.Cases.Attributes {
 	[Reference ("System.dll")]
 	[SetupLinkerCoreAction ("link")]
+#if NETCOREAPP
+	[IgnoreTestCase ("AssemblyDescriptionAttribute was removed from CoreLib.")]
+#endif
 	[KeptAttributeInAssembly (PlatformAssemblies.CoreLib, typeof (AssemblyDescriptionAttribute))]
 	[KeptAttributeInAssembly (PlatformAssemblies.CoreLib, typeof (AssemblyCompanyAttribute))]
 #if !NETCOREAPP
