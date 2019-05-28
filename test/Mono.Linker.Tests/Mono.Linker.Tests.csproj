@@ -95,7 +95,7 @@
     <PropertyGroup>
       <IlasmProject>$(MSBuildThisFileDirectory)../../eng/ilasm.ilproj</IlasmProject>
       <IlasmDir Condition=" '$(ArcadeBuild)' == 'true' ">$(ArtifactsDir)tools</IlasmDir>
-      <IlasmDir Condition=" '$(ArcadeBuild)' != 'true' ">$(MSBuildThisFileDirectory)$(BaseIntermediateOutputPath)tools</IlasmDir>
+      <IlasmDir Condition=" '$(ArcadeBuild)' != 'true' ">$(BaseIntermediateOutputPath)tools</IlasmDir>
     </PropertyGroup>
 
     <MSBuild Projects="$(IlasmProject)" Targets="Restore" Properties="BaseIntermediateOutputPath=$(IlasmDir)" />

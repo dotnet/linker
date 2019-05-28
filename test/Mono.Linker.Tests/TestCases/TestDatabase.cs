@@ -204,16 +204,17 @@ namespace Mono.Linker.Tests.TestCases
 			rootSourceDirectory = Path.GetFullPath (Path.Combine (artifactsBinDir, "..", "..", "test", "Mono.Linker.Tests.Cases"));
 			testCaseAssemblyPath = Path.GetFullPath (Path.Combine (artifactsBinDir, "Mono.Linker.Tests.Cases", configDirectoryName, tfm, "Mono.Linker.Tests.Cases.dll"));
 #else
-			// working directory is test/Mono.Linker.Tests/bin/<config>/<tfm>
-			var testDir = Path.Combine (Directory.GetCurrentDirectory (), "..", "..", "..", "..");
-			rootSourceDirectory = Path.GetFullPath (Path.Combine (testDir, "Mono.Linker.Tests.Cases"));
-			testCaseAssemblyPath = Path.GetFullPath (Path.Combine (rootSourceDirectory, "bin", configDirectoryName, tfm, "Mono.Linker.Tests.Cases.dll"));
+			// working directory is bin/Mono.Linker.Tests/<config>/<tfm>
+			var binDir = Path.Combine (Directory.GetCurrentDirectory (), "..", "..", "..");
+			rootSourceDirectory = Path.GetFullPath (Path.Combine (binDir, "..", "test", "Mono.Linker.Tests.Cases"));
+			testCaseAssemblyPath = Path.GetFullPath (Path.Combine (binDir, "Mono.Linker.Tests.Cases", configDirectoryName, tfm, "Mono.Linker.Tests.Cases.dll"));
 #endif // ARCADE
 
 #else
 			var thisDirectory = Path.GetDirectoryName (thisFile);
-			rootSourceDirectory = Path.GetFullPath (Path.Combine (thisDirectory, "..", "..", "Mono.Linker.Tests.Cases"));
-			testCaseAssemblyPath = Path.GetFullPath (Path.Combine (rootSourceDirectory, "bin", configDirectoryName, tfm, "Mono.Linker.Tests.Cases.dll"));
+			var repoSourceDirectory = Path.GetFullPath (Path.Combine (thisDirectory, "..", ".."));
+			rootSourceDirectory = Path.GetFullPath (Path.Combine (repoSourceDirectory, "Mono.Linker.Tests.Cases"));
+			testCaseAssemblyPath = Path.GetFullPath (Path.Combine (repoSourceDirectory, "..", "bin", "Mono.Linker.Tests.Cases", configDirectoryName, tfm, "Mono.Linker.Tests.Cases.dll"));
 #endif // ILLINK
 		}
 	}
