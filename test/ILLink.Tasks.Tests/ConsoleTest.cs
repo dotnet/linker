@@ -6,6 +6,13 @@ using Xunit.Sdk;
 
 namespace ILLink.Tests
 {
+	[CollectionDefinition("Console collection")]
+	public class ConsoleCollection : ICollectionFixture<ConsoleFixture>
+	{
+		// This class exists to ensure that the console
+		// project is shared between test classes that use it.
+	}
+
 	public class ConsoleFixture : TemplateProjectFixture
 	{
 		public ConsoleFixture (IMessageSink diagnosticMessageSink) : base (diagnosticMessageSink) {}
@@ -13,7 +20,8 @@ namespace ILLink.Tests
 		protected override string TemplateName { get; } = "console";
 	}
 
-	public class ConsoleTest : IntegrationTestBase, IClassFixture<ConsoleFixture>
+	[Collection("Console collection")]
+	public class ConsoleTest : IntegrationTestBase
 	{
 		public ConsoleTest(ConsoleFixture fixture, ITestOutputHelper helper) : base(fixture, helper) {}
 

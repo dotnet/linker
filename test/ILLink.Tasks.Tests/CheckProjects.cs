@@ -6,7 +6,8 @@ using Xunit.Sdk;
 
 namespace ILLink.Tests
 {
-	public class CheckProjects : IntegrationTestBase, IClassFixture<ConsoleFixture>
+	[Collection("Console collection")]
+	public class CheckProjects : IntegrationTestBase
 	{
 		public CheckProjects(ConsoleFixture fixture, ITestOutputHelper helper) : base(fixture, helper) {}
 
