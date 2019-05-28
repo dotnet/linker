@@ -171,7 +171,6 @@ namespace Mono.Linker {
 						Usage ("Expecting an option, got instead: " + token);
 
 					if (token [0] == '-' && token [1] == '-') {
-
 						if (token.Length < 3)
 							Usage ("Option is too short");
 
@@ -246,13 +245,8 @@ namespace Mono.Linker {
 							continue;
 
 						case "--new-mvid":
-							if (!bool.Parse (GetParam()))
-								p.RemoveStep (typeof (RegenerateGuidStep));
-							continue;
-
-						case "--deterministic":
-							context.DeterministicOutput = true;
-							p.RemoveStep (typeof (RegenerateGuidStep));
+							if (bool.Parse (GetParam()))
+								context.DeterministicOutput = false;
 							continue;
 						}
 
@@ -318,10 +312,6 @@ namespace Mono.Linker {
 					case 'b':
 						context.LinkSymbols = bool.Parse (GetParam ());
 						break;
-					case 'g':
-						if (!bool.Parse (GetParam ()))
-							p.RemoveStep (typeof (RegenerateGuidStep));
-						break;
 					case 'z':
 						ignoreDescriptors = !bool.Parse (GetParam ());
 						break;
@@ -339,6 +329,9 @@ namespace Mono.Linker {
 
 				if (ignoreDescriptors)
 					p.RemoveStep (typeof (BlacklistStep));
+
+				if (context.DeterministicOutput)
+					p.RemoveStep (typeof (RegenerateGuidStep));
 					
 				if (dumpDependencies)
 					context.Tracer.Start ();
@@ -504,6 +497,7 @@ namespace Mono.Linker {
 			context.UserAction = AssemblyAction.Link;
 			context.OutputDirectory = "output";
 			context.StripResources = true;
+			context.DeterministicOutput = true;
 			return context;
 		}
 
@@ -548,7 +542,6 @@ namespace Mono.Linker {
 			Console.WriteLine ();
 			Console.WriteLine ("Advanced");
 			Console.WriteLine ("  --custom-step <name>      Add a custom step to the pipeline");
-			Console.WriteLine ("  --deterministic           Produce a deterministic output for linked assemblies");
 			Console.WriteLine ("  --disable-opt <name>      Disable one of the default optimizations");
 			Console.WriteLine ("                              beforefieldinit: Unused static fields are removed if there is no static ctor");
 			Console.WriteLine ("                              overrideremoval: Overrides of virtual methods on types that are never instantiated are removed");
@@ -561,7 +554,7 @@ namespace Mono.Linker {
 			Console.WriteLine ("                              globalization: Globalization data and globalization behavior");
 			Console.WriteLine ("  --ignore-descriptors      Skips reading embedded descriptors (short -z). Defaults to false");
 			Console.WriteLine ("  --keep-facades            Keep assemblies with type-forwarders (short -t). Defaults to false");
-			Console.WriteLine ("  --new-mvid                Generate a new guid for each linked assembly (short -g). Defaults to true");
+			Console.WriteLine ("  --new-mvid <bool>         Generate a new guid for each linked assembly. Defaults to false");
 			Console.WriteLine ("  --skip-unresolved         Ignore unresolved types, methods, and assemblies. Defaults to false");			
 			Console.WriteLine ("  --strip-resources         Remove XML descriptor resources for linked assemblies. Defaults to true");
 			Console.WriteLine ("  --strip-security          Remove metadata and code related to Code Access Security. Defaults to true");
