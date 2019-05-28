@@ -32,7 +32,7 @@ namespace ILLink.Tests
 			CheckOutput(executablePath, selfContained: true);
 		}
 
-		[Fact]
+		[Fact(Skip = "Linker does not yet look in the right reference assemblies for portable apps.")]
 		public void RunConsolePortable()
 		{
 			string target = Link(Fixture.csproj, selfContained: false);
