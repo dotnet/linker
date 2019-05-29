@@ -59,10 +59,12 @@ namespace Mono.Linker.Steps
 			}
 
 			if (FeatureSRE) {
-				if (type.FullName == "System.RuntimeType") {
+				if (type.Namespace == "System" && type.Name == "RuntimeType") {
 					foreach (var method in type.Methods) {
-						if (method.Name == "MakeTypeBuilderInstantiation")
+						if (method.Name == "MakeTypeBuilderInstantiation") {
 							Annotations.SetAction (method, MethodAction.ConvertToThrow);
+							break;
+						}
 					}
 				}
 			}
