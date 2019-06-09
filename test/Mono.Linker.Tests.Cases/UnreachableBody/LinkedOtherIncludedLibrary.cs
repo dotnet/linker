@@ -8,6 +8,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBody {
 	[KeptMemberInAssembly ("other2.dll", typeof (OtherAssembly.Foo), "Method()")]
 	[KeptMemberInAssembly ("other2.dll", typeof (OtherAssembly.Foo), "UsedByMethod()")]
 	[KeptMemberInAssembly ("other2.dll", typeof (OtherAssembly), "UnusedSanityCheck()")]
+	[SetupLinkerArgument ("--disable-opt", "-unreachablebodies")]
 	public class LinkedOtherIncludedLibrary {
 		public static void Main()
 		{

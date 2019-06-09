@@ -390,6 +390,9 @@ namespace Mono.Linker {
 						case "unreachablebodies":
 							context.DisabledOptimizations |= CodeOptimizations.UnreachableBodies;
 							break;
+						case "-unreachablebodies":
+							context.DisabledOptimizations &= ~CodeOptimizations.UnreachableBodies;
+							break;
 						}
 					}
 				}
