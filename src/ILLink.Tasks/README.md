@@ -6,10 +6,10 @@ Note: in previous versions of .NET Core, ILLink.Tasks was shipped as an external
 
 ## Usage
 
-To use this tool, set `PublishTrimmed=true` in your project and publish a self-contained app:
+To use this tool, set `PublishTrimmed` to `true` in your project and publish a self-contained app:
 
 ```
-dotnet publish -r <rid>
+dotnet publish -r <rid> -c Release
 ```
 
 The publish output will include a subset of the framework libraries, depending on what the application code calls. For a "hello world" app, this reduces the size from ~68MB to ~28MB.
@@ -48,7 +48,7 @@ To ensure that this works with `PublishTrimmed=true`:
 - You can tell the linker to explicitly keep an assembly by adding it
   to your csproj (use the assembly name *without* extension):
 
-  ```
+  ```xml
   <ItemGroup>
     <TrimmerRootAssembly Include="System.IO.FileSystem" />
   </ItemGroup>
@@ -59,14 +59,14 @@ To ensure that this works with `PublishTrimmed=true`:
   http://github.com/mono/linker
 
   `.csproj`:
-  ```
+  ```xml
   <ItemGroup>
     <TrimmerRootDescriptor Include="TrimmerRoots.xml" />
   </ItemGroup>
   ```
 
   `TrimmerRoots.xml`:
-  ```
+  ```xml
   <linker>
     <assembly fullname="System.IO.FileSystem">
       <type fullname="System.IO.File" />
