@@ -36,7 +36,7 @@ the features used. If you know beforehand what your app will require
 at runtime, you can tell the linker about this in a few ways.
 
 For example, an app may reflect over `System.IO.File`:
-```
+```csharp
 Type file = System.Type.GetType("System.IO.File,System.IO.FileSystem");
 ```
 
