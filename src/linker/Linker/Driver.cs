@@ -157,6 +157,7 @@ namespace Mono.Linker {
 				var custom_steps = new List<string> ();
 				var excluded_features = new HashSet<string> (StringComparer.Ordinal);
 				var disabled_optimizations = new HashSet<string> (StringComparer.Ordinal);
+				var enabled_optimizations = new HashSet<string> (StringComparer.Ordinal);
 				bool dumpDependencies = false;
 				bool ignoreDescriptors = false;
 				bool removeCAS = true;
@@ -238,6 +239,13 @@ namespace Mono.Linker {
 							var opt = GetParam ().ToLower ();
 							if (!disabled_optimizations.Contains (opt))
 								disabled_optimizations.Add (opt);
+
+							continue;
+
+						case "--enable-opt":
+							opt = GetParam ().ToLower ();
+							if (!enabled_optimizations.Contains (opt))
+								enabled_optimizations.Add (opt);
 
 							continue;
 
@@ -390,7 +398,14 @@ namespace Mono.Linker {
 						case "unreachablebodies":
 							context.DisabledOptimizations |= CodeOptimizations.UnreachableBodies;
 							break;
-						case "-unreachablebodies":
+						}
+					}
+				}
+
+				if (enabled_optimizations.Count > 0) {
+					foreach (var item in enabled_optimizations) {
+						switch (item) {
+						case "unreachablebodies":
 							context.DisabledOptimizations &= ~CodeOptimizations.UnreachableBodies;
 							break;
 						}

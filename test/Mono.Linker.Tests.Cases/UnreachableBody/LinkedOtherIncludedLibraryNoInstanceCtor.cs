@@ -8,7 +8,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBody  {
 	[KeptMemberInAssembly ("other.dll", "Mono.Linker.Tests.Cases.UnreachableBody.Dependencies.OtherAssemblyNoInstanceCtor/Foo", "Method()")]
 	[RemovedMemberInAssembly ("other.dll", "Mono.Linker.Tests.Cases.UnreachableBody.Dependencies.OtherAssemblyNoInstanceCtor/Foo", "UsedByMethod()")]
 	[KeptMemberInAssembly ("other.dll", "Mono.Linker.Tests.Cases.UnreachableBody.Dependencies.OtherAssemblyNoInstanceCtor", "UnusedSanityCheck()")]
-	[SetupLinkerArgument ("--disable-opt", "-unreachablebodies")]
+	[SetupLinkerArgument ("--enable-opt", "unreachablebodies")]
 	public class LinkedOtherIncludedLibraryNoInstanceCtor {
 		public static void Main ()
 		{

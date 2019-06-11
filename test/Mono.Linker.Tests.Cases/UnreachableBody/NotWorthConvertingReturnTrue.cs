@@ -3,7 +3,7 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.UnreachableBody {
 	[SetupCompileArgument ("/optimize+")]
-	[SetupLinkerArgument ("--disable-opt", "-unreachablebodies")]
+	[SetupLinkerArgument ("--enable-opt", "unreachablebodies")]
 	public class NotWorthConvertingReturnTrue {
 		public static void Main ()
 		{
