@@ -181,9 +181,8 @@ namespace ILLink.Tasks
 				args.Append ("-out ").AppendLine (Quote (OutputDirectory.ItemSpec));
 
 			if (ClearInitLocals) {
-				args.Append ("-s ");
-				// Version of ILLink.CustomSteps is passed as a workaround for msbuild issue #3016
-				args.AppendLine ("ILLink.CustomSteps.ClearInitLocalsStep,ILLink.CustomSteps,Version=0.0.0.0:OutputStep");
+				args.Append ("--custom-step ");
+				args.AppendLine (Quote ("Mono.Linker.Steps.ClearInitLocalsStep,illink:OutputStep"));
 				if ((ClearInitLocalsAssemblies != null) && (ClearInitLocalsAssemblies.Length > 0)) {
 					args.Append ("-m ClearInitLocalsAssemblies ");
 					args.AppendLine (ClearInitLocalsAssemblies);
