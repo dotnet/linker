@@ -181,8 +181,7 @@ namespace ILLink.Tasks
 				args.Append ("-out ").AppendLine (Quote (OutputDirectory.ItemSpec));
 
 			if (ClearInitLocals) {
-				args.Append ("--custom-step ");
-				args.AppendLine (Quote ("Mono.Linker.Steps.ClearInitLocalsStep,illink:OutputStep"));
+				args.AppendLine ("--enable-opt clearinitlocals");
 				if ((ClearInitLocalsAssemblies != null) && (ClearInitLocalsAssemblies.Length > 0)) {
 					args.Append ("-m ClearInitLocalsAssemblies ");
 					args.AppendLine (ClearInitLocalsAssemblies);
