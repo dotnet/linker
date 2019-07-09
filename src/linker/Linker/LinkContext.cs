@@ -430,6 +430,11 @@ namespace Mono.Linker {
 		/// <summary>
 		/// Option to clear the initlocals flag on methods
 		/// </summary>
-		ClearInitLocals = 1 << 3
+		ClearInitLocals = 1 << 3,
+
+		/// <summary>
+		/// Option to remove .interfaceimpl for interface types that are not used
+		/// </summary>
+		InterfaceSweeping = 1 << 4
 	}
 }
