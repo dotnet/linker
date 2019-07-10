@@ -587,7 +587,7 @@ namespace Mono.Linker {
 			Console.WriteLine ("  --disable-opt <name>      Disable one of the default optimizations");
 			Console.WriteLine ("                              beforefieldinit: Unused static fields are removed if there is no static ctor");
 			Console.WriteLine ("                              overrideremoval: Overrides of virtual methods on types that are never instantiated are removed");
-			Console.WriteLine ("                              interfacesweeping: interfaceimpls of unused interface types are removed");
+			Console.WriteLine ("                              interfacesweeping: Interface implementations of unused interfaces are removed");
 			Console.WriteLine ("                              unreachablebodies: Instance methods that are marked but can never be entered are converted to throws");
 			Console.WriteLine ("  --enable-opt <name>       Enable one of the non-default optimizations");
 			Console.WriteLine ("                              clearinitlocals: Remove initlocals");
