@@ -3,7 +3,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.Dependencies {
 		public static void ToKeepReferenceAtCompileTime ()
 		{
 		}
-		
+
 		public class A : InterfaceTypeInOtherUsedOnlyByCopiedAssembly_Link.IFoo {
 			public void Method ()
 			{
@@ -19,5 +19,16 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.Dependencies {
 			{
 			}
 		}
+
+		public class C : IBaz {
+			public void Method ()
+			{
+			}
+		}
+
+		private interface IBaz {
+			void Method ();
+		}
+
 	}
 }

@@ -8,7 +8,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.OnReferenceType {
 
 	[SetupLinkerAction ("link", "link")]
 	[SetupLinkerAction ("skip", "skipped")]
-	[SetupLinkerArgument ("-a", "link")]
+	[SetupLinkerArgument ("-r", "link")]
 
 	[KeptMemberInAssembly ("link.dll", typeof (InterfaceTypeInOtherUsedOnlyByCopiedAssembly_Copy.A), "Method()")]
 	[KeptMemberInAssembly ("link.dll", typeof (InterfaceTypeInOtherUsedOnlyByCopiedAssembly_Copy.B), "Method()")]
@@ -16,6 +16,10 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.OnReferenceType {
 	[ExpectInterfaceTypeReferenceInAssembly ("link.dll", typeof (InterfaceTypeInOtherUsedOnlyByCopiedAssembly_Copy.A), "skipped.dll", typeof (InterfaceTypeInOtherUsedOnlyByCopiedAssembly_Link.IFoo))]
 	[ExpectInterfaceTypeReferenceInAssembly ("link.dll", typeof (InterfaceTypeInOtherUsedOnlyByCopiedAssembly_Copy.B), "skipped.dll", typeof (InterfaceTypeInOtherUsedOnlyByCopiedAssembly_Link.IFoo))]
 	[ExpectInterfaceTypeReferenceInAssembly ("link.dll", typeof (InterfaceTypeInOtherUsedOnlyByCopiedAssembly_Copy.B), "skipped.dll", typeof (InterfaceTypeInOtherUsedOnlyByCopiedAssembly_Link.IBar))]
+	[RemovedInterfaceOnTypeInAssembly ("link.dll",
+		"Mono.Linker.Tests.Cases.Inheritance.Interfaces.Dependencies.InterfaceTypeInOtherUsedOnlyByCopiedAssembly_Copy/C",
+		"link.dll",
+		"Mono.Linker.Tests.Cases.Inheritance.Interfaces.Dependencies.InterfaceTypeInOtherUsedOnlyByCopiedAssembly_Copy/IBaz")]
 	public class InterfaceTypeInOtherUsedOnlyByLinkedAssembly {
 		public static void Main ()
 		{
