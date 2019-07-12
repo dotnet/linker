@@ -2266,8 +2266,6 @@ namespace Mono.Linker.Steps {
 
 		protected virtual bool ShouldMarkInterfaceImplementation (TypeDefinition type, InterfaceImplementation iface, TypeDefinition resolvedInterfaceType)
 		{
-			if (Annotations.IsMarked (iface))
-				return false;
 
 			if (Annotations.IsMarked (resolvedInterfaceType) && !Annotations.IsMarked (iface))
 				return true;

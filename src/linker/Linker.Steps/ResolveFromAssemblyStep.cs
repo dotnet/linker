@@ -134,7 +134,7 @@ namespace Mono.Linker.Steps
 			context.Tracer.Pop ();
 		}
 
-		static void MarkType (LinkContext context, TypeDefinition type, RootVisibility rootVisibility)
+		static bool MarkType (LinkContext context, TypeDefinition type, RootVisibility rootVisibility)
 		{
 			bool markType;
 			switch (rootVisibility) {
@@ -152,7 +152,7 @@ namespace Mono.Linker.Steps
 			}
 
 			if (!markType) {
-				return;
+				return false;
 			}
 
 			context.Annotations.MarkAndPush (type);
@@ -164,8 +164,15 @@ namespace Mono.Linker.Steps
 			if (type.HasNestedTypes)
 				foreach (var nested in type.NestedTypes)
 					MarkType (context, nested, rootVisibility);
+			if (type.HasInterfaces)
+				foreach (var iface in type.Interfaces) {
+					var @interface = iface.InterfaceType.Resolve ();
+					if (@interface != null && MarkType (context, @interface, rootVisibility))
+						context.Annotations.Mark (iface);
+				}
 
 			context.Tracer.Pop ();
+			return true;
 		}
 
 		void ProcessExecutable (AssemblyDefinition assembly)
