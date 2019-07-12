@@ -9,5 +9,15 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.Dependencies {
 			{
 			}
 		}
+
+		public class B : InterfaceTypeInOtherUsedOnlyByCopiedAssembly_Link.IBar {
+			public void Method ()
+			{
+			}
+
+			public void Method2 ()
+			{
+			}
+		}
 	}
 }

@@ -3,5 +3,9 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.Dependencies {
 		public interface IFoo {
 			void Method ();
 		}
+
+		public interface IBar : IFoo {
+			void Method2 ();
+		}
 	}
 }
