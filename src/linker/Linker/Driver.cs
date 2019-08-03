@@ -244,8 +244,8 @@ namespace Mono.Linker {
 							context.Resolver.AddReferenceAssembly (GetParam ());
 							continue;
 
-						case "--new-mvid":
-							if (bool.Parse (GetParam()))
+						case "--deterministic":
+							if (!bool.Parse (GetParam()))
 								context.DeterministicOutput = false;
 							continue;
 						}
@@ -542,6 +542,7 @@ namespace Mono.Linker {
 			Console.WriteLine ();
 			Console.WriteLine ("Advanced");
 			Console.WriteLine ("  --custom-step <name>      Add a custom step to the pipeline");
+			Console.WriteLine ("  --deterministic           Produce a deterministic output for linked assemblies. Defaults to true");			
 			Console.WriteLine ("  --disable-opt <name>      Disable one of the default optimizations");
 			Console.WriteLine ("                              beforefieldinit: Unused static fields are removed if there is no static ctor");
 			Console.WriteLine ("                              overrideremoval: Overrides of virtual methods on types that are never instantiated are removed");
@@ -554,7 +555,6 @@ namespace Mono.Linker {
 			Console.WriteLine ("                              globalization: Globalization data and globalization behavior");
 			Console.WriteLine ("  --ignore-descriptors      Skips reading embedded descriptors (short -z). Defaults to false");
 			Console.WriteLine ("  --keep-facades            Keep assemblies with type-forwarders (short -t). Defaults to false");
-			Console.WriteLine ("  --new-mvid <bool>         Generate a new guid for each linked assembly. Defaults to false");
 			Console.WriteLine ("  --skip-unresolved         Ignore unresolved types, methods, and assemblies. Defaults to false");			
 			Console.WriteLine ("  --strip-resources         Remove XML descriptor resources for linked assemblies. Defaults to true");
 			Console.WriteLine ("  --strip-security          Remove metadata and code related to Code Access Security. Defaults to true");
