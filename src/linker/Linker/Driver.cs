@@ -368,6 +368,12 @@ namespace Mono.Linker
 							set_optimizations.Add ((opt, assemblyName, true));
 
 							continue;
+								
+						// Legacy options
+						case "--new-mvid":
+							if (bool.Parse (GetParam()))
+								context.DeterministicOutput = false;
+							continue;								
 						}
 					case "--feature": {
 							string featureName = null;
