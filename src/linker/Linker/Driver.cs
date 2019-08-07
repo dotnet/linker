@@ -248,6 +248,12 @@ namespace Mono.Linker {
 							if (!bool.Parse (GetParam()))
 								context.DeterministicOutput = false;
 							continue;
+								
+						// Legacy options
+						case "--new-mvid":
+							if (bool.Parse (GetParam()))
+								context.DeterministicOutput = false;
+							continue;								
 						}
 
 						switch (token [2]) {
