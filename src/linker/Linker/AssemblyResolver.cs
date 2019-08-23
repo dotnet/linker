@@ -121,7 +121,10 @@ namespace Mono.Linker {
 				} catch (AssemblyResolutionException) {
 					if (!_ignoreUnresolved)
 						throw;
-
+					
+					char[] invalidChars = { '\'', '/', ' ', ':', '!', '@', '#', '$', '^', '&', '*', '(', ')', '+', '=', '{', '}', '[', ']', ',', '<', '>', '?', '\\', '|', '`', '~', '°', '¬' };
+					if (name.Name.IndexOfAny(invalidChars) != -1)
+						_context.LogMessage($"warning: suspicious characters had been entered, verify your assembly name is correct");
 					_context.LogMessage ($"warning: unresolved assembly {name.Name}");
 					if (_unresolvedAssemblies == null)
 						_unresolvedAssemblies = new HashSet<string> ();
