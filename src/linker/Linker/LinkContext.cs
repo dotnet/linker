@@ -285,7 +285,7 @@ namespace Mono.Linker {
 		public virtual ICollection<AssemblyDefinition> ResolveReferences (AssemblyDefinition assembly)
 		{
 			List<AssemblyDefinition> references = new List<AssemblyDefinition> ();
-			if(assembly == null)
+			if (assembly == null)
 				return references;
 			foreach (AssemblyNameReference reference in assembly.MainModule.AssemblyReferences) {
 				AssemblyDefinition definition = Resolve (reference);
