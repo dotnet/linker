@@ -104,7 +104,7 @@ namespace Mono.Linker.Steps {
 		{
 			while (iterator.MoveNext ()) {
 				AssemblyDefinition assembly = GetAssembly (context, GetAssemblyName (iterator.Current));
-				if(assembly != null)
+				if (assembly != null)
 					ProcessAssembly (assembly, iterator);
 			}
 		}
