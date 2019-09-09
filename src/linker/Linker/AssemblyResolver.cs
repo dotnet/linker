@@ -121,7 +121,7 @@ namespace Mono.Linker {
 				} catch (AssemblyResolutionException) {
 					if (!_ignoreUnresolved)
 						throw;
-					_context.LogMessage ($"warning: unresolved assembly {name.Name}, skipping this assembly");
+					_context.LogMessage ($"Ignoring unresolved assembly '{name.Name}'.");
 					if (_unresolvedAssemblies == null)
 						_unresolvedAssemblies = new HashSet<string> ();
 					_unresolvedAssemblies.Add (name.Name);
