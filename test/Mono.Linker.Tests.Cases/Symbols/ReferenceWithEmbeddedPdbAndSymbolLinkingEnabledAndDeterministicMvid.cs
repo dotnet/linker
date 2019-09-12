@@ -5,7 +5,7 @@ using Mono.Linker.Tests.Cases.Symbols.Dependencies;
 namespace Mono.Linker.Tests.Cases.Symbols {
 	[SetupCompileBefore ("LibraryWithEmbeddedPdbSymbols.dll", new[] { "Dependencies/LibraryWithEmbeddedPdbSymbols.cs" }, additionalArguments: "/debug:embedded", compilerToUse: "csc")]
 	[SetupLinkerLinkSymbols ("true")]
-	[SetupLinkerArgument ("--deterministic")]
+	[SetupLinkerArgument ("--deterministic", "true")]
 
 	[KeptSymbols ("LibraryWithEmbeddedPdbSymbols.dll")]
 

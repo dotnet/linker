@@ -6,7 +6,7 @@ using Mono.Linker.Tests.Cases.Symbols.Dependencies;
 namespace Mono.Linker.Tests.Cases.Symbols {
 	[Reference ("Dependencies/LibraryWithPdb/LibraryWithPdb.dll")]
 	[ReferenceDependency ("Dependencies/LibraryWithPdb/LibraryWithPdb.pdb")]
-	[SetupLinkerLinkSymbols( "true")]
+	[SetupLinkerLinkSymbols("true")]
 
 #if WIN32
 	[KeptSymbols ("LibraryWithPdb.dll")]
