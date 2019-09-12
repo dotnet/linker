@@ -3,9 +3,8 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.CommandLine.Mvid
 {
-	[SetupLinkerArgument ("--deterministic")]
-	public class DeterministicMvidWorks
-	{
+	[SetupLinkerArgument ("--deterministic", "true")]
+	public class DeterministicMvidWorks {
 		public static void Main ()
 		{
 			Method ();
