@@ -185,6 +185,10 @@ namespace Mono.Linker {
 			Tracer = factory.CreateTracer (this);
 			MarkedKnownMembers = new KnownMembers ();
 			StripResources = true;
+
+			// See https://github.com/mono/linker/issues/612
+			DisabledOptimizations |= CodeOptimizations.UnreachableBodies;
+			DisabledOptimizations |= CodeOptimizations.ClearInitLocals;
 		}
 
 		public TypeDefinition GetType (string fullName)
@@ -281,6 +285,8 @@ namespace Mono.Linker {
 		public virtual ICollection<AssemblyDefinition> ResolveReferences (AssemblyDefinition assembly)
 		{
 			List<AssemblyDefinition> references = new List<AssemblyDefinition> ();
+			if (assembly == null)
+				return references;
 			foreach (AssemblyNameReference reference in assembly.MainModule.AssemblyReferences) {
 				AssemblyDefinition definition = Resolve (reference);
 				if (definition != null)
@@ -417,6 +423,11 @@ namespace Mono.Linker {
 		/// <summary>
 		/// Option to disable delaying marking of instance methods until an instance of that type could exist
 		/// </summary>
-		UnreachableBodies = 1 << 2
+		UnreachableBodies = 1 << 2,
+
+		/// <summary>
+		/// Option to clear the initlocals flag on methods
+		/// </summary>
+		ClearInitLocals = 1 << 3
 	}
 }

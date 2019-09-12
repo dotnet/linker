@@ -355,7 +355,9 @@ namespace Mono.Linker.Steps {
 				foreach (CustomAttribute ca in provider.CustomAttributes) {
 					if (IsUserDependencyMarker (ca.AttributeType) && provider is MemberReference mr) {
 						MarkUserDependency (mr, ca);
-						continue;
+
+						if (Annotations.GetAction (mr.DeclaringType.Module.Assembly) == AssemblyAction.Link)
+							continue;
 					}
 
 					if (_context.KeepUsedAttributeTypesOnly) {
@@ -677,7 +679,7 @@ namespace Mono.Linker.Steps {
 			if (property != null)
 				MarkMethod (property.SetMethod);
 
-			MarkIfType (namedArgument.Argument);
+			MarkCustomAttributeArgument (namedArgument.Argument);
 			Tracer.Pop ();
 		}
 
@@ -709,7 +711,7 @@ namespace Mono.Linker.Steps {
 			if (field != null)
 				MarkField (field);
 
-			MarkIfType (namedArgument.Argument);
+			MarkCustomAttributeArgument (namedArgument.Argument);
 		}
 
 		FieldDefinition GetField (TypeDefinition type, string fieldname)
@@ -744,26 +746,39 @@ namespace Mono.Linker.Steps {
 				return;
 
 			foreach (var argument in ca.ConstructorArguments)
-				MarkIfType (argument);
+				MarkCustomAttributeArgument (argument);
 		}
 
-		void MarkIfType (CustomAttributeArgument argument)
+		void MarkCustomAttributeArgument (CustomAttributeArgument argument)
 		{
 			var at = argument.Type;
+
 			if (at.IsArray) {
 				var et = at.GetElementType ();
-				if (et.Namespace != "System" || et.Name != "Type")
-					return;
 
 				MarkType (et);
 				if (argument.Value == null)
 					return;
 
-				foreach (var cac in (CustomAttributeArgument[]) argument.Value)
-					MarkWithResolvedScope ((TypeReference) cac.Value);
-			} else if (at.Namespace == "System" && at.Name == "Type") {
-				MarkType (argument.Type);
-				MarkWithResolvedScope ((TypeReference) argument.Value);
+				foreach (var caa in (CustomAttributeArgument [])argument.Value)
+					MarkCustomAttributeArgument (caa);
+
+				return;
+			}
+
+			if (at.Namespace == "System") {
+				switch (at.Name) {
+				case "Type":
+					MarkType (argument.Type);
+					MarkWithResolvedScope ((TypeReference)argument.Value);
+					return;
+
+				case "Object":
+					var boxed_value = (CustomAttributeArgument)argument.Value;
+					MarkType (boxed_value.Type);
+					MarkCustomAttributeArgument (boxed_value);
+					return;
+				}
 			}
 		}
 
@@ -1368,8 +1383,8 @@ namespace Mono.Linker.Steps {
 		void MarkGenericParameter (GenericParameter parameter)
 		{
 			MarkCustomAttributes (parameter);
-			foreach (TypeReference constraint in parameter.Constraints)
-				MarkType (constraint);
+			foreach (var constraint in parameter.Constraints)
+				MarkType (constraint.ConstraintType);
 		}
 
 		bool IsVirtualNeededByTypeDueToPreservedScope (MethodDefinition method)
@@ -2141,7 +2156,7 @@ namespace Mono.Linker.Steps {
 
 			MarkInterfacesNeededByBodyStack (body);
 
-			MarkThingsUsedViaReflection (body);
+			MarkReflectionLikeDependencies (body);
 
 			PostMarkMethodBody (body);
 		}
@@ -2167,16 +2182,6 @@ namespace Mono.Linker.Steps {
 
 			foreach (var implementation in implementations)
 				MarkInterfaceImplementation (implementation);
-		}
-
-		protected virtual void MarkThingsUsedViaReflection (MethodBody body)
-		{
-			MarkSomethingUsedViaReflection ("GetConstructor", MarkConstructorsUsedViaReflection, body.Instructions);
-			MarkSomethingUsedViaReflection ("GetMethod", MarkMethodsUsedViaReflection, body.Instructions);
-			MarkSomethingUsedViaReflection ("GetProperty", MarkPropertyUsedViaReflection, body.Instructions);
-			MarkSomethingUsedViaReflection ("GetField", MarkFieldUsedViaReflection, body.Instructions);
-			MarkSomethingUsedViaReflection ("GetEvent", MarkEventUsedViaReflection, body.Instructions);
-			MarkTypeUsedViaReflection (body.Instructions);
 		}
 
 		protected virtual void MarkInstruction (Instruction instruction)
@@ -2249,192 +2254,590 @@ namespace Mono.Linker.Steps {
 			Annotations.Mark (iface);
 		}
 
-		bool CheckReflectionMethod (Instruction instruction, string reflectionMethod)
+		//
+		// Tries to mark additional dependencies used in reflection like calls (e.g. typeof (MyClass).GetField ("fname"))
+		//
+		protected virtual void MarkReflectionLikeDependencies (MethodBody body)
 		{
-			if (instruction.OpCode != OpCodes.Call && instruction.OpCode != OpCodes.Callvirt)
-				return false;
+			var instructions = body.Instructions;
 
-			var methodBeingCalled = instruction.Operand as MethodReference;
-			if (methodBeingCalled == null || methodBeingCalled.DeclaringType.Name != "Type" || methodBeingCalled.DeclaringType.Namespace != "System")
-				return false;
-
-			if (methodBeingCalled.Name != reflectionMethod)
-				return false;
-
-			return true;
-		}
-
-		void MarkSomethingUsedViaReflection (string reflectionMethod, Action<Collection<Instruction>, string, TypeDefinition, BindingFlags> markMethod, Collection<Instruction> instructions)
-		{
-			for (var i = 0; i < instructions.Count; i++) {
+			//
+			// Starting at 1 because all patterns require at least 1 instruction backward lookup
+			//
+			for (var i = 1; i < instructions.Count; i++) {
 				var instruction = instructions [i];
 
-				if (!CheckReflectionMethod (instruction, reflectionMethod))
+				if (instruction.OpCode != OpCodes.Call && instruction.OpCode != OpCodes.Callvirt)
 					continue;
 
-				var nameOfThingUsedViaReflection = OperandOfNearestInstructionBefore<string> (i, OpCodes.Ldstr, instructions);
-				var bindingFlags = (BindingFlags) OperandOfNearestInstructionBefore<sbyte> (i, OpCodes.Ldc_I4_S, instructions);
-
-				// There might be more than one ldtoken opcode above the call in the IL stream. Be conservative and check all of
-				// the types which were loaded for the method being used.
-				var declaringTypesOfThingInvokedViaReflection = OperandsOfInstructionsBefore (i, OpCodes.Ldtoken, instructions);
-				foreach (var declaringTypeOfThingInvokedViaReflection in declaringTypesOfThingInvokedViaReflection) {
-					var typeDefinition = declaringTypeOfThingInvokedViaReflection?.Resolve ();
-					if (typeDefinition != null)
-						markMethod (instructions, nameOfThingUsedViaReflection, typeDefinition, bindingFlags);
-				}
-			}
-		}
-
-		void MarkTypeUsedViaReflection (Collection<Instruction> instructions)
-		{
-			for (var i = 0; i < instructions.Count; i++) {
-				var instruction = instructions [i];
-
-				if (!CheckReflectionMethod (instruction, "GetType"))
+				var methodCalled = instruction.Operand as MethodReference;
+				if (methodCalled == null)
 					continue;
 
-				var typeAssemblyQualifiedName = OperandOfNearestInstructionBefore<string> (i, OpCodes.Ldstr, instructions);
-
-				if (!TypeNameParser.TryParseTypeAssemblyQualifiedName (typeAssemblyQualifiedName, out string typeName, out string assemblyName))
+				var methodCalledDefinition = methodCalled.Resolve ();
+				if (methodCalledDefinition == null)
 					continue;
 
-				TypeDefinition foundType = null;
-				foreach (var assemblyDefinition in _context.GetAssemblies ()) {
-					if (assemblyName != null && assemblyDefinition.Name.Name != assemblyName)
-						continue;
+				var methodCalledType = methodCalled.DeclaringType;
 
-					foundType = assemblyDefinition.MainModule.GetType (typeName);
-					if (foundType != null)
+				int first_arg_instr, second_arg_instr;
+				Instruction first_arg;
+				string name = default;
+
+				//
+				// System.Type
+				//
+				if (methodCalledType.Name == "Type" && methodCalledType.Namespace == "System") {
+					System.Reflection.MemberTypes memberTypes = default;
+					BindingFlags bindingFlags = default;
+
+					switch (methodCalled.Name) {
+					//
+					// GetConstructor (Type [])
+					// GetConstructor (BindingFlags, Binder, Type [], ParameterModifier [])
+					// GetConstructor (BindingFlags, Binder, CallingConventions, Type [], ParameterModifier [])
+					//
+					case "GetConstructor":
+						memberTypes = System.Reflection.MemberTypes.Constructor;
+						goto case "Get_?_Instance";
+
+					//
+					// GetMethod (String)
+					// GetMethod (String, BindingFlags)
+					// GetMethod (String, Type [])
+					// GetMethod (String, Type [], ParameterModifier [])
+					// GetMethod (String, BindingFlags, Binder, Type [], ParameterModifier [])
+					// GetMethod (String, BindingFlags, Binder, CallingConventions, Type [], ParameterModifier [])
+					//
+					// TODO: .NET Core extensions
+					// GetMethod (String, int, Type[])
+					// GetMethod (String, int, Type[], ParameterModifier[]?)
+					// GetMethod (String, int, BindingFlags, Binder?, Type[], ParameterModifier[]?)
+					// GetMethod (String, int, BindingFlags, Binder?, CallingConventions, Type[], ParameterModifier[]?)
+					//
+					// GetField (String)
+					// GetField (String, BindingFlags)
+					//
+					// GetEvent (String)
+					// GetEvent (String, BindingFlags)
+					//
+					// GetProperty (String)
+					// GetProperty (String, BindingFlags)
+					// GetProperty (String, Type)
+					// GetProperty (String, Type [])
+					// GetProperty (String, Type, Type [])
+					// GetProperty (String, Type, Type [], ParameterModifier [])
+					// GetProperty (String, BindingFlags, Binder, Type, Type [], ParameterModifier [])
+					//
+					case "GetMethod":
+						memberTypes = System.Reflection.MemberTypes.Method;
+						goto case "Get_?_Instance";
+					case "GetField":
+						memberTypes = System.Reflection.MemberTypes.Field;
+						goto case "Get_?_Instance";
+					case "GetEvent":
+						memberTypes = System.Reflection.MemberTypes.Event;
+						goto case "Get_?_Instance";
+					case "GetProperty":
+						memberTypes = System.Reflection.MemberTypes.Property;
+						goto case "Get_?_Instance";
+
+					case "Get_?_Instance":
+						if (methodCalledDefinition.IsStatic)
+							continue;
+
+						first_arg_instr = GetInstructionAtStackDepth (instructions, i - 1, methodCalledDefinition.Parameters.Count);
+						if (first_arg_instr < 0) {
+							_context.LogMessage (MessageImportance.Low, $"Reflection call '{methodCalled.FullName}' couldn't be decomposed");
+							continue;
+						}
+
+						first_arg = instructions [first_arg_instr];
+
+						if (memberTypes == System.Reflection.MemberTypes.Constructor) {
+							if (first_arg.OpCode == OpCodes.Ldc_I4_S && methodCalled.Parameters.Count > 0 && methodCalled.Parameters [0].ParameterType.Name == "BindingFlags") {
+								bindingFlags = (BindingFlags)(sbyte)first_arg.Operand;
+							}
+						} else {
+							//
+							// The next value must be string constant (we don't handle anything else)
+							//
+							if (first_arg.OpCode != OpCodes.Ldstr) {
+								_context.LogMessage (MessageImportance.Low, $"Reflection call '{methodCalled.FullName}' was detected with argument which cannot be analyzed");
+								continue;
+							}
+
+							name = (string)first_arg.Operand;
+
+							var pos_arg = instructions [first_arg_instr + 1];
+							if (pos_arg.OpCode == OpCodes.Ldc_I4_S && methodCalled.Parameters.Count > 1 && methodCalled.Parameters [1].ParameterType.Name == "BindingFlags") {
+								bindingFlags = (BindingFlags)(sbyte)pos_arg.Operand;
+							}
+						}
+
+						var declaringType = FindReflectionTypeForLookup (instructions, first_arg_instr - 1);
+						if (declaringType == null) {
+							_context.LogMessage (MessageImportance.Low, $"Reflection call '{methodCalled.FullName}' does not use detectable instance type extraction");
+							continue;
+						}
+
+						switch (memberTypes) {
+						case System.Reflection.MemberTypes.Constructor:
+							MarkMethodsFromReflectionCall (declaringType, ".ctor", 0, bindingFlags);
+							break;
+						case System.Reflection.MemberTypes.Method:
+							MarkMethodsFromReflectionCall (declaringType, name, 0, bindingFlags);
+							break;
+						case System.Reflection.MemberTypes.Field:
+							MarkFieldsFromReflectionCall (declaringType, name);
+							break;
+						case System.Reflection.MemberTypes.Property:
+							MarkPropertiesFromReflectionCall (declaringType, name);
+							break;
+						case System.Reflection.MemberTypes.Event:
+							MarkEventsFromReflectionCall (declaringType, name);
+							break;
+						}
+
 						break;
-				}
 
-				if (foundType == null)
+					//
+					// GetType (String)
+					// GetType (String, Boolean)
+					// GetType (String, Boolean, Boolean)
+					// GetType (String, Func<AssemblyName, Assembly>, Func<Assembly, String, Boolean, Type>)
+					// GetType (String, Func<AssemblyName, Assembly>, Func<Assembly, String, Boolean, Type>, Boolean)
+					// GetType (String, Func<AssemblyName, Assembly>, Func<Assembly, String, Boolean, Type>, Boolean, Boolean)
+					//
+					case "GetType":
+						if (!methodCalledDefinition.IsStatic)
+							continue;
+
+						first_arg_instr = GetInstructionAtStackDepth (instructions, i - 1, methodCalledDefinition.Parameters.Count);
+						if (first_arg_instr < 0) {
+							_context.LogMessage (MessageImportance.Low, $"Reflection call '{methodCalled.FullName}' couldn't be decomposed");
+							continue;
+						}
+
+						//
+						// The next value must be string constant (we don't handle anything else)
+						//
+						first_arg = instructions [first_arg_instr];
+						if (first_arg.OpCode != OpCodes.Ldstr) {
+							_context.LogMessage (MessageImportance.Low, $"Reflection call '{methodCalled.FullName}' was detected with argument which cannot be analyzed");
+							continue;
+						}
+
+						name = (string)first_arg.Operand;
+
+						if (!TypeNameParser.TryParseTypeAssemblyQualifiedName (name, out string typeName, out string assemblyName))
+							continue;
+
+						TypeDefinition foundType = null;
+						foreach (var assemblyDefinition in _context.GetAssemblies ()) {
+							if (assemblyName != null && assemblyDefinition.Name.Name != assemblyName)
+								continue;
+
+							foundType = assemblyDefinition.MainModule.GetType (typeName);
+							if (foundType != null)
+								break;
+						}
+
+						if (foundType == null)
+							continue;
+
+						_context.Tracer.Push ($"Reflection-{foundType}");
+						try {
+							MarkType (foundType);
+						} finally {
+							_context.Tracer.Pop ();
+						}
+
+						break;
+					}
+
 					continue;
-				
-				_context.Tracer.Push ($"Reflection-{foundType}");
+				}
+
+				//
+				// System.Linq.Expressions.Expression
+				//
+				if (methodCalledType.Name == "Expression" && methodCalledType.Namespace == "System.Linq.Expressions") {
+					Instruction second_argument;
+					TypeDefinition declaringType;
+
+					if (!methodCalledDefinition.IsStatic)
+						break;
+
+					switch (methodCalled.Name) {
+
+					//
+					// Call (Type, String, Type[], Expression[])
+					//
+					case "Call":
+						first_arg_instr = GetInstructionAtStackDepth (instructions, i - 1, 4);
+						if (first_arg_instr < 0) {
+							_context.LogMessage (MessageImportance.Low, $"Expression call '{methodCalled.FullName}' couldn't be decomposed");
+							continue;
+						}
+
+						first_arg = instructions [first_arg_instr];
+						if (first_arg.OpCode == OpCodes.Ldtoken)
+							first_arg_instr++;
+
+						declaringType = FindReflectionTypeForLookup (instructions, first_arg_instr);
+						if (declaringType == null) {
+							_context.LogMessage (MessageImportance.Low, $"Expression call '{methodCalled.FullName}' was detected with 1st argument which cannot be analyzed");
+							continue;
+						}
+
+						second_arg_instr = GetInstructionAtStackDepth (instructions, i - 1, 3);
+						second_argument = instructions [second_arg_instr];
+						if (second_argument.OpCode != OpCodes.Ldstr) {
+							_context.LogMessage (MessageImportance.Low, $"Expression call '{methodCalled.FullName}' was detected with 2nd argument which cannot be analyzed");
+							continue;
+						}
+
+						name = (string)second_argument.Operand;
+
+						MarkMethodsFromReflectionCall (declaringType, name, null, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+
+						break;
+
+					//
+					// Field (Expression, Type, String)
+					// Property(Expression, Type, String)
+					//
+					case "Property":
+					case "Field":
+
+						second_arg_instr = GetInstructionAtStackDepth (instructions, i - 1, 2);
+						if (second_arg_instr < 0) {
+							_context.LogMessage (MessageImportance.Low, $"Expression call '{methodCalled.FullName}' couldn't be decomposed");
+							continue;
+						}
+
+						var second_arg = instructions [second_arg_instr];
+						if (second_arg.OpCode == OpCodes.Ldtoken)
+							second_arg_instr++;
+
+						declaringType = FindReflectionTypeForLookup (instructions, second_arg_instr);
+						if (declaringType == null) {
+							_context.LogMessage (MessageImportance.Low, $"Expression call '{methodCalled.FullName}' was detected with 2nd argument which cannot be analyzed");
+							continue;
+						}
+
+						var third_arg_inst = GetInstructionAtStackDepth (instructions, i - 1, 1);
+						var third_argument = instructions [third_arg_inst];
+						if (third_argument.OpCode != OpCodes.Ldstr) {
+							_context.LogMessage (MessageImportance.Low, $"Expression call '{methodCalled.FullName}' was detected with the 3rd argument which cannot be analyzed");
+							continue;
+						}
+
+						name = (string)third_argument.Operand;
+
+						//
+						// The first argument can be any expression but we are looking only for simple null
+						// which we can convert to static only field lookup
+						//
+						first_arg_instr = GetInstructionAtStackDepth (instructions, i - 1, 3);
+						bool staticOnly = false;
+
+						if (first_arg_instr >= 0) {
+							first_arg = instructions [first_arg_instr];
+							if (first_arg.OpCode == OpCodes.Ldnull)
+								staticOnly = true;
+						}
+
+						if (methodCalled.Name [0] == 'P')
+							MarkPropertiesFromReflectionCall (declaringType, name, staticOnly);
+						else
+							MarkFieldsFromReflectionCall (declaringType, name, staticOnly);
+
+						break;
+
+					//
+					// New (Type)
+					//
+					case "New":
+						// TODO: Same as Activator
+						break;
+					}
+
+					continue;
+				}
+			}
+		}
+
+		static int GetInstructionAtStackDepth (Collection<Instruction> instructions, int startIndex, int stackSizeToBacktrace)
+		{
+			for (int i = startIndex; i >= 0; --i) {
+				var instruction = instructions [i];
+
+				switch (instruction.OpCode.StackBehaviourPop) {
+				case StackBehaviour.Pop0:
+					break;
+				case StackBehaviour.Pop1:
+				case StackBehaviour.Popi:
+				case StackBehaviour.Popref:
+					stackSizeToBacktrace++;
+					break;
+				case StackBehaviour.Pop1_pop1:
+				case StackBehaviour.Popi_pop1:
+				case StackBehaviour.Popi_popi:
+				case StackBehaviour.Popi_popi8:
+				case StackBehaviour.Popi_popr4:
+				case StackBehaviour.Popi_popr8:
+				case StackBehaviour.Popref_pop1:
+				case StackBehaviour.Popref_popi:
+					stackSizeToBacktrace += 2;
+					break;
+				case StackBehaviour.Popref_popi_popi:
+				case StackBehaviour.Popref_popi_popi8:
+				case StackBehaviour.Popref_popi_popr4:
+				case StackBehaviour.Popref_popi_popr8:
+				case StackBehaviour.Popref_popi_popref:
+					stackSizeToBacktrace += 3;
+					break;
+				case StackBehaviour.Varpop:
+					switch (instruction.OpCode.Code) {
+					case Code.Call:
+					case Code.Calli:
+					case Code.Callvirt:
+						if (instruction.Operand is MethodReference mr) {
+							stackSizeToBacktrace += mr.Parameters.Count;
+							if (mr.Resolve ()?.IsStatic == false)
+								stackSizeToBacktrace++;
+						}
+
+						break;
+					case Code.Newobj:
+						if (instruction.Operand is MethodReference ctor) {
+							stackSizeToBacktrace += ctor.Parameters.Count;
+						}
+						break;
+					case Code.Ret:
+						// TODO: Need method return type for correct stack size but this path should not be hit yet
+						break;
+					default:
+						return -3;
+					}
+					break;
+				}
+
+				switch (instruction.OpCode.StackBehaviourPush) {
+				case StackBehaviour.Push0:
+					break;
+				case StackBehaviour.Push1:
+				case StackBehaviour.Pushi:
+				case StackBehaviour.Pushi8:
+				case StackBehaviour.Pushr4:
+				case StackBehaviour.Pushr8:
+				case StackBehaviour.Pushref:
+					stackSizeToBacktrace--;
+					break;
+				case StackBehaviour.Push1_push1:
+					stackSizeToBacktrace -= 2;
+					break;
+				case StackBehaviour.Varpush:
+					//
+					// Only call, calli, callvirt will hit this
+					//
+					if (instruction.Operand is MethodReference mr && mr.ReturnType.MetadataType != MetadataType.Void) {
+						stackSizeToBacktrace--;
+					}
+					break;
+				}
+
+				if (stackSizeToBacktrace == 0)
+					return i;
+
+				if (stackSizeToBacktrace < 0)
+					return -1;
+			}
+
+			return -2;
+		}
+
+		static TypeDefinition FindReflectionTypeForLookup (Collection<Instruction> instructions, int startIndex)
+		{
+			while (startIndex >= 1) {
+				int storeIndex = -1;
+				var instruction = instructions [startIndex];
+				switch (instruction.OpCode.Code) {
+				//
+				// Pattern #1
+				//
+				// typeof (Foo).ReflectionCall ()
+				//
+				case Code.Call:
+					var mr = instruction.Operand as MethodReference;
+					if (mr == null || mr.Name != "GetTypeFromHandle")
+						return null;
+
+					var ldtoken = instructions [startIndex - 1];
+
+					if (ldtoken.OpCode != OpCodes.Ldtoken)
+						return null;
+
+					return (ldtoken.Operand as TypeReference).Resolve ();
+
+				//
+				// Patern #2
+				//
+				// var temp = typeof (Foo);
+				// temp.ReflectionCall ()
+				//
+				case Code.Ldloc_0:
+					storeIndex = GetIndexOfInstruction (instructions, OpCodes.Stloc_0, startIndex - 1);
+					startIndex = storeIndex - 1;
+					break;
+				case Code.Ldloc_1:
+					storeIndex = GetIndexOfInstruction (instructions, OpCodes.Stloc_1, startIndex - 1);
+					startIndex = storeIndex - 1;
+					break;
+				case Code.Ldloc_2:
+					storeIndex = GetIndexOfInstruction (instructions, OpCodes.Stloc_2, startIndex - 1);
+					startIndex = storeIndex - 1;
+					break;
+				case Code.Ldloc_3:
+					storeIndex = GetIndexOfInstruction (instructions, OpCodes.Stloc_3, startIndex - 1);
+					startIndex = storeIndex - 1;
+					break;
+				case Code.Ldloc_S:
+					storeIndex = GetIndexOfInstruction (instructions, OpCodes.Stloc_S, startIndex - 1, l => (VariableReference)l.Operand == (VariableReference)instruction.Operand);
+					startIndex = storeIndex - 1;
+					break;
+				case Code.Ldloc:
+					storeIndex = GetIndexOfInstruction (instructions, OpCodes.Stloc, startIndex - 1, l => (VariableReference)l.Operand == (VariableReference)instruction.Operand);
+					startIndex = storeIndex - 1;
+					break;
+
+				case Code.Nop:
+					startIndex--;
+					break;
+
+				default:
+					return null;
+				}
+			}
+
+			return null;
+		}
+
+		static int GetIndexOfInstruction (Collection<Instruction> instructions, OpCode opcode, int startIndex, Predicate<Instruction> comparer = null)
+		{
+			while (startIndex >= 0) {
+				var instr = instructions [startIndex];
+				if (instr.OpCode == opcode && (comparer == null || comparer (instr)))
+					return startIndex;
+
+				startIndex--;
+			}
+
+			return -1;
+		}
+
+		//
+		// arity == null for name match regardless of arity
+		//
+		void MarkMethodsFromReflectionCall (TypeDefinition declaringType, string name, int? arity, BindingFlags? bindingFlags)
+		{
+			foreach (var method in declaringType.Methods) {
+				var mname = method.Name;
+
+				// Either exact match or generic method with any arity when unspecified
+				if (mname != name && !(arity == null && mname.StartsWith (name, StringComparison.Ordinal) && mname.Length > name.Length + 2 && mname [name.Length + 1] == '`')) {
+					continue;
+				}
+
+				if ((bindingFlags & (BindingFlags.Instance | BindingFlags.Static)) == BindingFlags.Static && !method.IsStatic)
+					continue;
+
+				if ((bindingFlags & (BindingFlags.Instance | BindingFlags.Static)) == BindingFlags.Instance && method.IsStatic)
+					continue;
+
+				if ((bindingFlags & (BindingFlags.Public | BindingFlags.NonPublic)) == BindingFlags.Public && !method.IsPublic)
+					continue;
+
+				if ((bindingFlags & (BindingFlags.Public | BindingFlags.NonPublic)) == BindingFlags.NonPublic && method.IsPublic)
+					continue;
+
+				Tracer.Push ($"Reflection-{method}");
 				try {
-					MarkType (foundType);
+					MarkIndirectlyCalledMethod (method);
 				} finally {
-					_context.Tracer.Pop ();
+					Tracer.Pop ();
 				}
 			}
 		}
 
-		void MarkConstructorsUsedViaReflection (Collection<Instruction> instructions, string unused, TypeDefinition declaringType, BindingFlags bindingFlags)
+		void MarkPropertiesFromReflectionCall (TypeDefinition declaringType, string name, bool staticOnly = false)
 		{
-			foreach (var method in declaringType.Methods) {
-				if ((bindingFlags == BindingFlags.Default || bindingFlags.IsSet(BindingFlags.Public) == method.IsPublic) && method.Name == ".ctor") {
-					Tracer.Push ($"Reflection-{method}");
-					try {
-						MarkIndirectlyCalledMethod (method);
-					} finally {
-						Tracer.Pop ();
-					}
-				}
-			}
-		}
-
-		void MarkMethodsUsedViaReflection (Collection<Instruction> instructions, string name, TypeDefinition declaringType, BindingFlags bindingFlags)
-		{
-			if (name == null)
-				return;
-
-			foreach (var method in declaringType.Methods) {
-				if ((bindingFlags == BindingFlags.Default || bindingFlags.IsSet(BindingFlags.Public) == method.IsPublic && bindingFlags.IsSet(BindingFlags.Static) == method.IsStatic)
-					&& method.Name == name) {
-					Tracer.Push ($"Reflection-{method}");
-					try {
-						MarkIndirectlyCalledMethod (method);
-					} finally {
-						Tracer.Pop ();
-					}
-				}
-			}
-		}
-
-		void MarkPropertyUsedViaReflection (Collection<Instruction> instructions, string name, TypeDefinition declaringType, BindingFlags unused)
-		{
-			if (name == null)
-				return;
-
 			foreach (var property in declaringType.Properties) {
-				if (property.Name == name) {
-					Tracer.Push ($"Reflection-{property}");
-					try {
-						// It is not easy to reliably detect in the IL code whether the getter or setter (or both) are used.
-						// Be conservative and mark everything for the property.
+				if (property.Name != name)
+					continue;
+
+				Tracer.Push ($"Reflection-{property}");
+				try {
+					bool markedAny = false;
+
+					// It is not easy to reliably detect in the IL code whether the getter or setter (or both) are used.
+					// Be conservative and mark everything for the property.
+					var getter  = property.GetMethod;
+					if (getter != null && (!staticOnly || staticOnly && getter.IsStatic)) {
+						MarkIndirectlyCalledMethod (getter);
+						markedAny = true;
+					}
+
+					var setter = property.SetMethod;
+					if (setter != null && (!staticOnly || staticOnly && setter.IsStatic)) {
+						MarkIndirectlyCalledMethod (setter);
+						markedAny = true;
+					}
+
+					if (markedAny)
 						MarkProperty (property);
 
-						if (property.GetMethod != null)
-							MarkIndirectlyCalledMethod (property.GetMethod);
-
-						if (property.SetMethod != null)
-							MarkIndirectlyCalledMethod (property.SetMethod);
-
-					} finally {
-						Tracer.Pop ();
-					}
+				} finally {
+					Tracer.Pop ();
 				}
 			}
 		}
 
-		void MarkFieldUsedViaReflection (Collection<Instruction> instructions, string name, TypeDefinition declaringType, BindingFlags unused)
+		void MarkFieldsFromReflectionCall (TypeDefinition declaringType, string name, bool staticOnly = false)
 		{
-			if (name == null)
-				return;
-
 			foreach (var field in declaringType.Fields) {
-				if (field.Name == name) {
-					Tracer.Push ($"Reflection-{field}");
-					try {
-						MarkField (field);
-					} finally {
-						Tracer.Pop ();
-					}
+				if (field.Name != name)
+					continue;
+
+				if (staticOnly && !field.IsStatic)
+					continue;
+
+				Tracer.Push ($"Reflection-{field}");
+				try {
+					MarkField (field);
+				} finally {
+					Tracer.Pop ();
 				}
+
+				break;
 			}
 		}
 
-		void MarkEventUsedViaReflection (Collection<Instruction> instructions, string name, TypeDefinition declaringType, BindingFlags unused)
+		void MarkEventsFromReflectionCall (TypeDefinition declaringType, string name)
 		{
-			if (name == null)
-				return;
-
 			foreach (var eventInfo in declaringType.Events) {
-				if (eventInfo.Name == name) {
-					Tracer.Push ($"Reflection-{eventInfo}");
-					try {
-						MarkEvent (eventInfo);
-					} finally {
-						Tracer.Pop ();
-					}
+				if (eventInfo.Name != name)
+					continue;
+
+				Tracer.Push ($"Reflection-{eventInfo}");
+				try {
+					MarkEvent (eventInfo);
+				} finally {
+					Tracer.Pop ();
 				}
 			}
-		}
-
-		static TOperand OperandOfNearestInstructionBefore<TOperand> (int startingInstructionIndex, OpCode opCode, IList<Instruction> instructions)
-		{
-			for (var i = startingInstructionIndex; i >= 0; i--) {
-				if (instructions [i].OpCode == opCode)
-					return (TOperand) instructions [i].Operand;
-			}
-
-			return default (TOperand);
-		}
-
-		static List<TypeReference> OperandsOfInstructionsBefore (int startingInstructionIndex, OpCode opCode, IList<Instruction> instructions)
-		{
-			var operands = new List<TypeReference> ();
-			for (var i = startingInstructionIndex; i >= 0; i--) {
-				if (instructions [i].OpCode == opCode) {
-					var type = instructions [i].Operand as TypeReference;
-					if (type != null)
-						operands.Add (type);
-				}
-			}
-
-			return operands;
 		}
 
 		protected class AttributeProviderPair {
@@ -2473,13 +2876,5 @@ namespace Mono.Linker.Steps {
 		SuppressChangeType = 131072,
 		OptionalParamBinding = 262144,
 		IgnoreReturn = 16777216
-	}
-
-	static class BindingFlagsExtensions
-	{
-		public static bool IsSet(this BindingFlags flags, BindingFlags check)
-		{
-			return (flags & check) == check;
-		}
 	}
 }

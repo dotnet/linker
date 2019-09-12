@@ -3,11 +3,13 @@ using System.Reflection;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
 namespace Mono.Linker.Tests.Cases.Reflection {
-	public class MightKeepExtraThings {
+	public class MethodUsedViaReflectionAndLocal
+	{
 		public static void Main ()
 		{
 			new A (); // Needed to avoid lazy body marking stubbing
 			new B (); // Needed to avoid lazy body marking stubbing
+
 			var typeA = typeof (A);
 			var typeB = typeof (B);
 			Console.WriteLine (typeB); // Use typeB so the C# compiler keeps it in the IL code.
@@ -28,7 +30,6 @@ namespace Mono.Linker.Tests.Cases.Reflection {
 		[Kept]
 		[KeptMember (".ctor()")]
 		public class B {
-			[Kept]
 			public int Foo ()
 			{
 				return 43;
