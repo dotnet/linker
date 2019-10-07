@@ -84,18 +84,18 @@ namespace Mono.Linker.Steps
 
 		protected virtual void ProcessLibrary ()
 		{
-			ProcessLibrary (_rootVisibility);
+			ProcessLibrary (Context, _rootVisibility);
 		}
 
-		public void ProcessLibrary (RootVisibility rootVisibility = RootVisibility.Any)
+		public void ProcessLibrary (LinkContext context, RootVisibility rootVisibility = RootVisibility.Any)
 		{
 			var action = rootVisibility == RootVisibility.Any ? AssemblyAction.Copy : AssemblyAction.Link;
-			Context.SetAction (_assembly, action);
+			context.SetAction (_assembly, action);
 
-			Context.Tracer.Push (_assembly);
+			context.Tracer.Push (_assembly);
 
 			foreach (TypeDefinition type in _assembly.MainModule.Types)
-				MarkType (type, rootVisibility);
+				MarkType (context, type, rootVisibility);
 
 			if (_assembly.MainModule.HasExportedTypes) {
 				foreach (var exported in _assembly.MainModule.ExportedTypes) {
@@ -123,21 +123,21 @@ namespace Mono.Linker.Steps
 						// Both cases are bugs not on our end but we still want to link all assemblies
 						// especially when such types cannot be used anyway
 						//
-						Context.LogMessage ($"Cannot find declaration of exported type '{exported}' from the assembly '{_assembly}'");
+						context.LogMessage ($"Cannot find declaration of exported type '{exported}' from the assembly '{_assembly}'");
 
 						continue;
 					}
 
-					Context.Resolve (resolvedExportedType.Scope);
-					MarkType (resolvedExportedType, rootVisibility);
-					Context.MarkingHelpers.MarkExportedType (exported, _assembly.MainModule);
+					context.Resolve (resolvedExportedType.Scope);
+					MarkType (context, resolvedExportedType, rootVisibility);
+					context.MarkingHelpers.MarkExportedType (exported, _assembly.MainModule);
 				}
 			}
 
-			Context.Tracer.Pop ();
+			context.Tracer.Pop ();
 		}
 
-		bool MarkType (TypeDefinition type, RootVisibility rootVisibility)
+		bool MarkType (LinkContext context, TypeDefinition type, RootVisibility rootVisibility)
 		{
 			if (type.IsInterface) {
 				if (_markedInterfaces == null)
@@ -165,25 +165,25 @@ namespace Mono.Linker.Steps
 				return false;
 			}
 
-			Context.Annotations.MarkAndPush (type);
+			context.Annotations.MarkAndPush (type);
 			if (type.IsInterface)
 				_markedInterfaces.Add (type);
 
 			if (type.HasFields)
-				MarkFields (type.Fields, rootVisibility);
+				MarkFields (context, type.Fields, rootVisibility);
 			if (type.HasMethods)
-				MarkMethods (type.Methods, rootVisibility);
+				MarkMethods (context, type.Methods, rootVisibility);
 			if (type.HasNestedTypes)
 				foreach (var nested in type.NestedTypes)
-					MarkType (nested, rootVisibility);
+					MarkType (context, nested, rootVisibility);
 			if (type.HasInterfaces)
 				foreach (var iface in type.Interfaces) {
 					var @interface = iface.InterfaceType.Resolve ();
-					if (@interface != null && MarkType (@interface, rootVisibility))
-						Context.Annotations.Mark (iface);
+					if (@interface != null && MarkType (context, @interface, rootVisibility))
+						context.Annotations.Mark (iface);
 				}
 
-			Context.Tracer.Pop ();
+			context.Tracer.Pop ();
 			return true;
 		}
 
@@ -195,12 +195,12 @@ namespace Mono.Linker.Steps
 
 			Annotations.Mark (_assembly.EntryPoint.DeclaringType);
 
-			MarkMethod (_assembly.EntryPoint, MethodAction.Parse, RootVisibility.Any);
+			MarkMethod (Context, _assembly.EntryPoint, MethodAction.Parse, RootVisibility.Any);
 
 			Tracer.Pop ();
 		}
 
-		void MarkFields (Collection<FieldDefinition> fields, RootVisibility rootVisibility)
+		void MarkFields (LinkContext context, Collection<FieldDefinition> fields, RootVisibility rootVisibility)
 		{
 			foreach (FieldDefinition field in fields) {
 				bool markField;
@@ -218,18 +218,18 @@ namespace Mono.Linker.Steps
 					break;
 				}
 				if (markField) {
-					Context.Annotations.Mark (field);
+					context.Annotations.Mark (field);
 				}
 			}
 		}
 
-		void MarkMethods (Collection<MethodDefinition> methods, RootVisibility rootVisibility)
+		void MarkMethods (LinkContext context, Collection<MethodDefinition> methods, RootVisibility rootVisibility)
 		{
 			foreach (MethodDefinition method in methods)
-				MarkMethod (method, MethodAction.ForceParse, rootVisibility);
+				MarkMethod (context, method, MethodAction.ForceParse, rootVisibility);
 		}
 
-		void MarkMethod (MethodDefinition method, MethodAction action, RootVisibility rootVisibility)
+		void MarkMethod (LinkContext context, MethodDefinition method, MethodAction action, RootVisibility rootVisibility)
 		{
 			bool markMethod;
 			switch (rootVisibility) {
@@ -247,8 +247,8 @@ namespace Mono.Linker.Steps
 			}
 
 			if (markMethod) {
-				Context.Annotations.Mark (method);
-				Context.Annotations.SetAction (method, action);
+				context.Annotations.Mark (method);
+				context.Annotations.SetAction (method, action);
 			}
 		}
 
