@@ -2266,8 +2266,7 @@ namespace Mono.Linker.Steps {
 
 		protected virtual bool ShouldMarkInterfaceImplementation (TypeDefinition type, InterfaceImplementation iface, TypeDefinition resolvedInterfaceType)
 		{
-
-			if (Annotations.IsMarked (resolvedInterfaceType) && !Annotations.IsMarked (iface))
+			if (Annotations.IsMarked (resolvedInterfaceType))
 				return true;
 
 			// It's hard to know if a com or windows runtime interface will be needed from managed code alone,
@@ -2280,6 +2279,9 @@ namespace Mono.Linker.Steps {
 
 		protected virtual void MarkInterfaceImplementation (InterfaceImplementation iface)
 		{
+			if (CheckProcessed (iface))
+				return;
+
 			MarkCustomAttributes (iface);
 			MarkType (iface.InterfaceType);
 			Annotations.Mark (iface);
