@@ -229,11 +229,6 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 									Assert.Fail ($"Type `{expectedTypeName}' should have been kept");
 								VerifyKeptInterfaceOnTypeInAssembly (checkAttrInAssembly, linkedType);
 								break;
-							case nameof (ExpectInterfaceTypeReferenceInAssemblyAttribute):
-								if (linkedType == null)
-									Assert.Fail ($"Type `{expectedTypeName}` should have been kept");
-								VerifyExpectInterfaceTypeReferenceInAssembly (checkAttrInAssembly, linkedType);
-								break;
 							case nameof (RemovedMemberInAssemblyAttribute):
 								if (linkedType == null)
 									continue;
@@ -409,43 +404,6 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 			var linkedInterfaceImpl = GetMatchingInterfaceImplementationOnType (linkedType, originalInterface.FullName);
 			if (linkedInterfaceImpl == null)
 				Assert.Fail ($"Expected `{linkedType}` to have interface of type {originalInterface.FullName}");
-		}
-
-		void VerifyExpectInterfaceTypeReferenceInAssembly (CustomAttribute inAssemblyAttribute, TypeDefinition linkedType)
-		{
-			var originalType = GetOriginalTypeFromInAssemblyAttribute (inAssemblyAttribute);
-
-			var interfaceAssemblyName = inAssemblyAttribute.ConstructorArguments [2].Value.ToString ();
-			var interfaceType = inAssemblyAttribute.ConstructorArguments [3].Value;
-
-			var originalInterface = GetOriginalTypeFromInAssemblyAttribute (interfaceAssemblyName, interfaceType);
-			if (!originalType.HasInterfaces)
-				Assert.Fail ("Invalid assertion.  Original type does not have any interfaces");
-
-			var originalInterfaceImpl = originalType.Interfaces.FirstOrDefault (impl => impl.InterfaceType.FullName == originalInterface.FullName);
-			if (originalInterfaceImpl == null)
-				Assert.Fail ($"Invalid assertion.  Original type did not have an interface of type `{originalInterface}`");
-
-			var originalInterfaceReference = originalInterfaceImpl.InterfaceType;
-			var originalInterfaceReferenceAssembly = originalInterfaceReference.Scope as AssemblyNameReference;
-			if (originalInterfaceReferenceAssembly == null)
-				Assert.Fail ("Invalid assertion.  Original type's interface does not have assembly scope");
-
-			if (originalInterfaceReference.Resolve () != originalInterface)
-				Assert.Fail ("Invalid assertion.  Original type's interface does not match the expected interface");
-
-			var linkedInterfaceImpl = linkedType.Interfaces.FirstOrDefault (impl => impl.InterfaceType.FullName == originalInterface.FullName);
-			if (linkedInterfaceImpl == null)
-				Assert.Fail ($"Expected `{linkedType}` to have interface of type `{originalInterface.FullName}`");
-
-			var linkedInterfaceReference = linkedInterfaceImpl.InterfaceType;
-			var linkedInterfaceReferenceAssembly = linkedInterfaceReference.Scope as AssemblyNameReference;
-			if (linkedInterfaceReferenceAssembly == null)
-				Assert.Fail ($"Expected `{linkedType}` to have interface with assembly scope");
-
-			interfaceAssemblyName = Path.GetFileNameWithoutExtension (interfaceAssemblyName);
-			Assert.That (linkedInterfaceReferenceAssembly.Name, Is.EqualTo (interfaceAssemblyName),
-				$"Incorrect assembly for interface type reference on `{linkedType}`.  Expected `{interfaceAssemblyName}` but was `{linkedInterfaceReferenceAssembly.Name}`");
 		}
 
 		void VerifyKeptBaseOnTypeInAssembly (CustomAttribute inAssemblyAttribute, TypeDefinition linkedType)

@@ -13,9 +13,9 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.OnReferenceType {
 	[KeptMemberInAssembly ("link.dll", typeof (InterfaceTypeInOtherUsedOnlyByCopiedAssembly_Copy.A), "Method()")]
 	[KeptMemberInAssembly ("link.dll", typeof (InterfaceTypeInOtherUsedOnlyByCopiedAssembly_Copy.B), "Method()")]
 	[KeptMemberInAssembly ("link.dll", typeof (InterfaceTypeInOtherUsedOnlyByCopiedAssembly_Copy.B), "Method2()")]
-	[ExpectInterfaceTypeReferenceInAssembly ("link.dll", typeof (InterfaceTypeInOtherUsedOnlyByCopiedAssembly_Copy.A), "copied.dll", typeof (InterfaceTypeInOtherUsedOnlyByCopiedAssembly_Link.IFoo))]
-	[ExpectInterfaceTypeReferenceInAssembly ("link.dll", typeof (InterfaceTypeInOtherUsedOnlyByCopiedAssembly_Copy.B), "copied.dll", typeof (InterfaceTypeInOtherUsedOnlyByCopiedAssembly_Link.IFoo))]
-	[ExpectInterfaceTypeReferenceInAssembly ("link.dll", typeof (InterfaceTypeInOtherUsedOnlyByCopiedAssembly_Copy.B), "copied.dll", typeof (InterfaceTypeInOtherUsedOnlyByCopiedAssembly_Link.IBar))]
+	[KeptInterfaceOnTypeInAssembly ("link.dll", typeof (InterfaceTypeInOtherUsedOnlyByCopiedAssembly_Copy.A), "copied.dll", typeof (InterfaceTypeInOtherUsedOnlyByCopiedAssembly_Link.IFoo))]
+	[KeptInterfaceOnTypeInAssembly ("link.dll", typeof (InterfaceTypeInOtherUsedOnlyByCopiedAssembly_Copy.B), "copied.dll", typeof (InterfaceTypeInOtherUsedOnlyByCopiedAssembly_Link.IFoo))]
+	[KeptInterfaceOnTypeInAssembly ("link.dll", typeof (InterfaceTypeInOtherUsedOnlyByCopiedAssembly_Copy.B), "copied.dll", typeof (InterfaceTypeInOtherUsedOnlyByCopiedAssembly_Link.IBar))]
 	[RemovedInterfaceOnTypeInAssembly ("link.dll",
 		"Mono.Linker.Tests.Cases.Inheritance.Interfaces.Dependencies.InterfaceTypeInOtherUsedOnlyByCopiedAssembly_Copy/C",
 		"link.dll",
