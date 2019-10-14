@@ -200,7 +200,7 @@ namespace Mono.Linker.Steps
 			Tracer.Pop ();
 		}
 
-		void MarkFields (LinkContext context, Collection<FieldDefinition> fields, RootVisibility rootVisibility)
+		static void MarkFields (LinkContext context, Collection<FieldDefinition> fields, RootVisibility rootVisibility)
 		{
 			foreach (FieldDefinition field in fields) {
 				bool markField;
@@ -223,13 +223,13 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void MarkMethods (LinkContext context, Collection<MethodDefinition> methods, RootVisibility rootVisibility)
+		static void MarkMethods (LinkContext context, Collection<MethodDefinition> methods, RootVisibility rootVisibility)
 		{
 			foreach (MethodDefinition method in methods)
 				MarkMethod (context, method, MethodAction.ForceParse, rootVisibility);
 		}
 
-		void MarkMethod (LinkContext context, MethodDefinition method, MethodAction action, RootVisibility rootVisibility)
+		static void MarkMethod (LinkContext context, MethodDefinition method, MethodAction action, RootVisibility rootVisibility)
 		{
 			bool markMethod;
 			switch (rootVisibility) {
