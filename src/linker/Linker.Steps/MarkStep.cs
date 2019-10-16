@@ -1953,7 +1953,7 @@ namespace Mono.Linker.Steps {
 
 			MarkInterfaceImplementations (type);
 
-			foreach (var method in CollectRequiredMethodsForInstantiatedType (type))
+			foreach (var method in GetRequiredMethodsForInstantiatedType (type))
 				MarkMethod (method);
 
 			DoAdditionalInstantiatedTypeProcessing (type);
@@ -1966,7 +1966,7 @@ namespace Mono.Linker.Steps {
 		/// </summary>
 		/// <param name="type"></param>
 		/// <returns></returns>
-		protected virtual IEnumerable<MethodDefinition> CollectRequiredMethodsForInstantiatedType (TypeDefinition type)
+		protected virtual IEnumerable<MethodDefinition> GetRequiredMethodsForInstantiatedType (TypeDefinition type)
 		{
 			foreach (var method in type.Methods) {
 				if (method.IsFinalizer () || IsVirtualNeededByInstantiatedTypeDueToPreservedScope (method))
