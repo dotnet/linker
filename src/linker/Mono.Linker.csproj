@@ -3,7 +3,7 @@
   <PropertyGroup Condition=" $(Configuration.StartsWith('illink')) ">
     <AssemblyName>illink</AssemblyName>
     <Description>IL Linker</Description>
-    <DefineConstants>$(DefineConstants);FEATURE_ILLINK</DefineConstants>
+    <DefineConstants>$(DefineConstants);FEATURE_ILLINK;INTERFACE_SWEEPING_OPTION</DefineConstants>
     <!-- net46 build is disabled until cecil uses SDK-style projects. -->
     <TargetFrameworks>netcoreapp2.0</TargetFrameworks>
     <TargetFrameworks Condition=" '$(MSBuildRuntimeType)' == 'Core' And '$(OS)' != 'Windows_NT' ">netcoreapp2.0</TargetFrameworks>
