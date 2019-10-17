@@ -46,6 +46,7 @@ namespace Mono.Linker {
 		AssemblyAction _coreAction;
 		AssemblyAction _userAction;
 		Dictionary<string, AssemblyAction> _actions;
+		HashSet<string> _publicAssemblies;
 		string _outputDirectory;
 		readonly Dictionary<string, string> _parameters;
 		bool _linkSymbols;
@@ -174,6 +175,7 @@ namespace Mono.Linker {
 			_resolver = resolver;
 			_resolver.Context = this;
 			_actions = new Dictionary<string, AssemblyAction> ();
+			_publicAssemblies = new HashSet<string> ();
 			_parameters = new Dictionary<string, string> ();
 			_readerParameters = readerParameters;
 			
@@ -333,6 +335,17 @@ namespace Mono.Linker {
 			}
 
 			_annotations.SetAction (assembly, action);
+		}
+
+		public void SetPublicAssembly (AssemblyDefinition assembly)
+		{
+			AssemblyNameDefinition name = assembly.Name;
+			_publicAssemblies.Add (name.Name);
+		}
+
+		public bool IsPublicAssembly (AssemblyDefinition assembly)
+		{
+			return _publicAssemblies.Contains(assembly.Name.Name);
 		}
 
 		public static bool IsCore (AssemblyNameReference name)

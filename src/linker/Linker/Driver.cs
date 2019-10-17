@@ -310,12 +310,13 @@ namespace Mono.Linker {
 						resolver = true;
 						break;
 					case 'r':
-					case 'a':
-						var rootVisibility = (token [1] == 'r')
-							? ResolveFromAssemblyStep.RootVisibility.PublicAndFamily
-							: ResolveFromAssemblyStep.RootVisibility.Any;
 						foreach (string file in GetFiles (GetParam ()))
-							p.PrependStep (new ResolveFromAssemblyStep (file, rootVisibility));
+							p.PrependStep (new MarkPublicFromAssemblyStep (file));
+						resolver = true;
+						break;
+					case 'a':
+						foreach (string file in GetFiles (GetParam ()))
+							p.PrependStep (new ResolveFromAssemblyStep (file));
 						resolver = true;
 						break;
 					case 'i':

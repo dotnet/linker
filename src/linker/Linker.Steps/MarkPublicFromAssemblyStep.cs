@@ -1,46 +1,259 @@
-//
-// MarkStep.cs
-//
-// Author:
-//   Jb Evain (jbevain@gmail.com)
-//
-// (C) 2006 Jb Evain
-// (C) 2007 Novell, Inc.
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Linq;
+using Mono.Collections.Generic;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using Mono.Collections.Generic;
 
-namespace Mono.Linker.Steps {
+namespace Mono.Linker.Steps
+{
+	public class MarkPublicFromAssemblyStep : BaseStep
+	{
 
-	public partial class MarkStep : IStep {
+		AssemblyDefinition _assembly;
+		string _file;
+		RootVisibility _rootVisibility;
+		HashSet<TypeDefinition> _markedInterfaces;
 
-		protected LinkContext _context;
+		public enum RootVisibility
+		{
+			Any = 0,
+			PublicAndFamily = 1,
+			PublicAndFamilyAndAssembly = 2
+		}
+
+		public MarkPublicFromAssemblyStep (string assembly)
+		{
+			_file = assembly;
+			_rootVisibility = RootVisibility.PublicAndFamily;
+			InitializeMarkStepMembers();
+		}
+
+		public MarkPublicFromAssemblyStep (AssemblyDefinition assembly)
+		{
+			_assembly = assembly;
+			_rootVisibility = RootVisibility.PublicAndFamily;
+			InitializeMarkStepMembers();
+		}
+
+		AssemblyAction referenceAciton;
+
+		protected override void Process ()
+		{
+			if (_assembly != null)
+				Context.Resolver.CacheAssembly (_assembly);
+
+			if (_assembly == null)
+				_assembly = Context.Resolve (_file);
+
+			Context.SetPublicAssembly (_assembly);
+
+			if (HasInternalsVisibleTo (_assembly)) {
+				_rootVisibility = RootVisibility.PublicAndFamilyAndAssembly;
+			}
+
+			MarkPublicSurfaceArea ();
+			ProcessMarkStep ();
+			Complete ();
+		}
+
+		readonly HashSet<AssemblyNameDefinition> references = new HashSet<AssemblyNameDefinition> ();
+
+		protected virtual void MarkPublicSurfaceArea ()
+		{
+			MarkPublicSurfaceArea (_rootVisibility);
+		}
+
+		public void MarkPublicSurfaceArea (RootVisibility rootVisibility = RootVisibility.Any)
+		{
+			Context.SetAction (_assembly, AssemblyAction.Link);
+
+			Context.Tracer.Push (_assembly);
+
+			try {
+				// from initialize
+				MarkAssembly (_assembly);
+
+				foreach (TypeDefinition type in _assembly.MainModule.Types) {
+					MarkPublicType (type, rootVisibility);
+				}
+
+				// from resolve
+				if (_assembly.MainModule.HasExportedTypes) {
+					foreach (var exported in _assembly.MainModule.ExportedTypes) {
+						bool isForwarder = exported.IsForwarder;
+						var declaringType = exported.DeclaringType;
+						while (!isForwarder && (declaringType != null)) {
+							isForwarder = declaringType.IsForwarder;
+							declaringType = declaringType.DeclaringType;
+						}
+
+						if (!isForwarder)
+							continue;
+						TypeDefinition resolvedExportedType = exported.Resolve ();
+
+						if (resolvedExportedType == null) {
+							//
+							// It's quite common for assemblies to have broken exported types
+							//
+							// One source of them is from native csc which added all nested types of
+							// type-forwarded types automatically including private ones. 
+							//
+							// Next source of broken type-forwarders is from custom metadata writers which
+							// simply write bogus information.
+							//
+							// Both cases are bugs not on our end but we still want to link all assemblies
+							// especially when such types cannot be used anyway
+							//
+							Context.LogMessage ($"Cannot find declaration of exported type '{exported}' from the assembly '{_assembly}'");
+
+							continue;
+						}
+
+						Context.Resolve (resolvedExportedType.Scope);
+						MarkPublicType (resolvedExportedType, rootVisibility);
+						Context.MarkingHelpers.MarkExportedType (exported, _assembly.MainModule);
+					}
+				}
+
+			} finally {
+				Tracer.Pop ();
+			}
+
+		}
+
+
+		// MarkPublic* methods do up-front marking of public surface area.
+		// they don't necessarily do all of the work that MarkStep does - that's done later.
+		bool MarkPublicType (TypeDefinition type, RootVisibility rootVisibility) {
+			if (type.IsInterface) {
+				if (_markedInterfaces == null)
+					_markedInterfaces = new HashSet<TypeDefinition> ();
+				if (_markedInterfaces.Contains(type))
+					return true;
+			}
+
+			bool markType;
+			switch (rootVisibility) {
+			default:
+				markType = true;
+				break;
+
+			case RootVisibility.PublicAndFamilyAndAssembly:
+				markType = !type.IsNestedPrivate;
+				break;
+
+			case RootVisibility.PublicAndFamily:
+				markType = type.IsPublic || type.IsNestedPublic || type.IsNestedFamily || type.IsNestedFamilyOrAssembly;
+				break;
+			}
+
+			if (!markType) {
+				return false;
+			}
+
+			Context.Annotations.MarkAndPush (type);
+			// TODO: MarkType here... like InitializeType used to
+			if (type.IsInterface)
+				_markedInterfaces.Add (type);
+
+			if (type.HasFields)
+				MarkPublicFields (type.Fields, rootVisibility);
+			if (type.HasMethods)
+				MarkPublicMethods (type.Methods, rootVisibility);
+			if (type.HasNestedTypes)
+				foreach (var nested in type.NestedTypes) {
+					MarkPublicType (nested, rootVisibility);
+				}
+			if (type.HasInterfaces)
+				foreach (var iface in type.Interfaces) {
+					var @interface = iface.InterfaceType.Resolve ();
+					if (@interface != null && MarkPublicType (@interface, rootVisibility))
+						Context.Annotations.Mark (iface);
+				}
+
+			Tracer.Pop ();
+			return true;
+		}
+
+		void MarkPublicFields (Collection<FieldDefinition> fields, RootVisibility rootVisibility)
+		{
+			foreach (FieldDefinition field in fields) {
+				bool markField;
+				switch (rootVisibility) {
+				default:
+					markField = true;
+					break;
+
+				case RootVisibility.PublicAndFamily:
+					markField = field.IsPublic || field.IsFamily || field.IsFamilyOrAssembly;
+					break;
+
+				case RootVisibility.PublicAndFamilyAndAssembly:
+					markField = field.IsPublic || field.IsFamily || field.IsFamilyOrAssembly || field.IsAssembly || field.IsFamilyAndAssembly;
+					break;
+				}
+				if (markField) {
+					Context.Annotations.Mark (field);
+					// TODO: merge these
+					MarkField (field);
+				}
+			}
+		}
+
+		void MarkPublicMethods (Collection<MethodDefinition> methods, RootVisibility rootVisibility)
+		{
+			foreach (MethodDefinition method in methods)
+				MarkPublicMethod (method, MethodAction.ForceParse, rootVisibility);
+		}
+
+		void MarkPublicMethod (MethodDefinition method, MethodAction action, RootVisibility rootVisibility)
+		{
+			bool markMethod;
+			switch (rootVisibility) {
+			default:
+				markMethod = true;
+				break;
+
+			case RootVisibility.PublicAndFamily:
+				markMethod = method.IsPublic || method.IsFamily || method.IsFamilyOrAssembly;
+				break;
+
+			case RootVisibility.PublicAndFamilyAndAssembly:
+				markMethod = method.IsPublic || method.IsFamily || method.IsFamilyOrAssembly || method.IsAssembly || method.IsFamilyAndAssembly;
+				break;
+			}
+
+			if (markMethod) {
+				Context.Annotations.Mark (method);
+				Context.Annotations.SetAction (method, action);
+				EnqueueMethod (method);
+			}
+		}
+
+		static bool HasInternalsVisibleTo (AssemblyDefinition assembly)
+		{
+			foreach (CustomAttribute attribute in assembly.CustomAttributes) {
+				if (attribute.Constructor.DeclaringType.FullName ==
+					"System.Runtime.CompilerServices.InternalsVisibleToAttribute")
+					return true;
+			}
+
+			return false;
+		}
+
+
+
+
+
+
+
+
+		//
+		// duplicated from MarkStep
+		//
 		protected Queue<MethodDefinition> _methods;
 		protected List<MethodDefinition> _virtual_methods;
 		protected Queue<AttributeProviderPair> _assemblyLevelAttributes;
@@ -48,17 +261,8 @@ namespace Mono.Linker.Steps {
 		protected List<TypeDefinition> _typesWithInterfaces;
 		protected List<MethodBody> _unreachableBodies;
 
-		public AnnotationStore Annotations {
-			get { return _context.Annotations; }
-		}
-
-		public Tracer Tracer {
-			get { return _context.Tracer; }
-		}
-
-		private MarkingHelpers MarkingHelpers => _context.MarkingHelpers;
-
-		public MarkStep ()
+		// TODO: clean up
+		void InitializeMarkStepMembers ()
 		{
 			_methods = new Queue<MethodDefinition> ();
 			_virtual_methods = new List<MethodDefinition> ();
@@ -68,37 +272,6 @@ namespace Mono.Linker.Steps {
 			_unreachableBodies = new List<MethodBody> ();
 		}
 
-		public virtual void Process (LinkContext context)
-		{
-			_context = context;
-
-			Initialize ();
-			Process ();
-			Complete ();
-		}
-
-		void Initialize ()
-		{
-			foreach (AssemblyDefinition assembly in _context.GetAssemblies ()) {
-				if (_context.IsPublicAssembly (assembly))
-					continue;
-				InitializeAssembly (assembly);
-			}
-		}
-
-		protected virtual void InitializeAssembly (AssemblyDefinition assembly)
-		{
-			Tracer.Push (assembly);
-			try {
-				MarkAssembly (assembly);
-
-				foreach (TypeDefinition type in assembly.MainModule.Types)
-					InitializeType (type);
-			} finally {
-				Tracer.Pop ();
-			}
-		}
-
 		void Complete ()
 		{
 			foreach (var body in _unreachableBodies) {
@@ -106,28 +279,15 @@ namespace Mono.Linker.Steps {
 			}
 		}
 
-		void InitializeType (TypeDefinition type)
-		{
-			if (type.HasNestedTypes) {
-				foreach (var nested in type.NestedTypes)
-					InitializeType (nested);
-			}
-
-			if (!Annotations.IsMarked (type))
-				return;
-
-			MarkType (type);
-
-			if (type.HasFields)
-				InitializeFields (type);
-			if (type.HasMethods)
-				InitializeMethods (type.Methods);
-		}
-
 		protected bool IsFullyPreserved (TypeDefinition type)
 		{
 			if (Annotations.TryGetPreserve (type, out TypePreserve preserve) && preserve == TypePreserve.All)
 				return true;
+
+			// TODO: careful getting action
+			if (!Annotations.HasAction (type.Module.Assembly)) {
+				return false;
+			}
 
 			switch (Annotations.GetAction (type.Module.Assembly)) {
 			case AssemblyAction.Save:
@@ -141,21 +301,7 @@ namespace Mono.Linker.Steps {
 			return false;
 		}
 
-		void InitializeFields (TypeDefinition type)
-		{
-			foreach (FieldDefinition field in type.Fields)
-				if (Annotations.IsMarked (field))
-					MarkField (field);
-		}
-
-		void InitializeMethods (Collection<MethodDefinition> methods)
-		{
-			foreach (MethodDefinition method in methods)
-				if (Annotations.IsMarked (method))
-					EnqueueMethod (method);
-		}
-
-		void Process ()
+		void ProcessMarkStep ()
 		{
 			if (QueueIsEmpty ())
 				throw new InvalidOperationException ("No entry methods");
@@ -163,8 +309,8 @@ namespace Mono.Linker.Steps {
 			while (ProcessPrimaryQueue () || ProcessLazyAttributes () || ProcessLateMarkedAttributes ())
 
 			// deal with [TypeForwardedTo] pseudo-attributes
-			foreach (AssemblyDefinition assembly in _context.GetAssemblies ()) {
-				if (_context.IsPublicAssembly (assembly))
+			foreach (AssemblyDefinition assembly in Context.GetAssemblies ()) {
+				if (Context.IsPublicAssembly (assembly))
 					continue;
 
 				if (!assembly.MainModule.HasExportedTypes)
@@ -249,11 +395,7 @@ namespace Mono.Linker.Steps {
 		{
 			// We may mark an interface type later on.  Which means we need to reprocess any time with one or more interface implementations that have not been marked
 			// and if an interface type is found to be marked and implementation is not marked, then we need to mark that implementation
-
-			// copy the data to avoid modified while enumerating error potential, which can happen under certain conditions.
-			var typesWithInterfaces = _typesWithInterfaces.ToArray ();
-
-			foreach (var type in typesWithInterfaces) {
+			foreach (var type in _typesWithInterfaces) {
 				// Exception, types that have not been flagged as instantiated yet.  These types may not need their interfaces even if the
 				// interface type is marked
 				if (!Annotations.IsInstantiated (type))
@@ -304,7 +446,7 @@ namespace Mono.Linker.Steps {
 			if (IsInterfaceOverrideThatDoesNotNeedMarked (overrideInformation, isInstantiated))
 				return;
 
-			if (!isInstantiated && !@base.IsAbstract && _context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval))
+			if (!isInstantiated && !@base.IsAbstract && Context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval))
 				return;
 
 			MarkMethod (method);
@@ -366,16 +508,17 @@ namespace Mono.Linker.Steps {
 					if (IsUserDependencyMarker (ca.AttributeType) && provider is MemberReference mr) {
 						MarkUserDependency (mr, ca);
 
-						if (_context.KeepDependencyAttributes) {
+						if (Context.KeepDependencyAttributes) {
 							MarkCustomAttribute (ca);
 							continue;
 						}
 
+						// TODO: careful getting action
 						if (Annotations.GetAction (mr.DeclaringType.Module.Assembly) == AssemblyAction.Link)
 							continue;
 					}
 
-					if (_context.KeepUsedAttributeTypesOnly) {
+					if (Context.KeepUsedAttributeTypesOnly) {
 						_lateMarkedAttributes.Enqueue (new AttributeProviderPair (ca, provider));
 					} else {
 						if (!ShouldMarkCustomAttribute (ca, provider))
@@ -403,7 +546,7 @@ namespace Mono.Linker.Steps {
 				case null:
 					break;
 				case "DEBUG":
-					if (!_context.KeepMembersForDebugger)
+					if (!Context.KeepMembersForDebugger)
 						return;
 
 					break;
@@ -416,8 +559,8 @@ namespace Mono.Linker.Steps {
 			AssemblyDefinition assembly;
 			var args = ca.ConstructorArguments;
 			if (args.Count >= 3 && args [2].Value is string assemblyName) {
-				if (!_context.Resolver.AssemblyCache.TryGetValue (assemblyName, out assembly)) {
-					_context.Logger.LogMessage (MessageImportance.Low, $"Could not resolve '{assemblyName}' assembly dependency");
+				if (!Context.Resolver.AssemblyCache.TryGetValue (assemblyName, out assembly)) {
+					Context.Logger.LogMessage (MessageImportance.Low, $"Could not resolve '{assemblyName}' assembly dependency");
 					return;
 				}
 			} else {
@@ -429,7 +572,7 @@ namespace Mono.Linker.Steps {
 				td = FindType (assembly ?? context.Module.Assembly, typeName);
 
 				if (td == null) {
-					_context.Logger.LogMessage (MessageImportance.Low, $"Could not resolve '{typeName}' type dependency");
+					Context.Logger.LogMessage (MessageImportance.Low, $"Could not resolve '{typeName}' type dependency");
 					return;
 				}
 			} else {
@@ -457,7 +600,7 @@ namespace Mono.Linker.Steps {
 			if (MarkDependencyField (td, member))
 				return;
 
-			_context.Logger.LogMessage (MessageImportance.High, $"Could not resolve dependency member '{member}' declared in type '{td.FullName}'");
+			Context.Logger.LogMessage (MessageImportance.High, $"Could not resolve dependency member '{member}' declared in type '{td.FullName}'");
 		}
 
 		static TypeDefinition FindType (AssemblyDefinition assembly, string fullName)
@@ -564,7 +707,7 @@ namespace Mono.Linker.Steps {
 		{
 			var attr_type = ca.AttributeType;
 
-			if (_context.KeepUsedAttributeTypesOnly) {
+			if (Context.KeepUsedAttributeTypesOnly) {
 				switch (attr_type.FullName) {
 				// [ThreadStatic] and [ContextStatic] are required by the runtime
 				case "System.ThreadStaticAttribute":
@@ -590,7 +733,7 @@ namespace Mono.Linker.Steps {
 			if (Annotations.HasPreservedStaticCtor (type))
 				return false;
 			
-			if (type.IsBeforeFieldInit && _context.IsOptimizationEnabled (CodeOptimizations.BeforeFieldInit))
+			if (type.IsBeforeFieldInit && Context.IsOptimizationEnabled (CodeOptimizations.BeforeFieldInit))
 				return false;
 
 			return true;
@@ -953,6 +1096,7 @@ namespace Mono.Linker.Steps {
 		protected virtual bool IgnoreScope (IMetadataScope scope)
 		{
 			AssemblyDefinition assembly = ResolveAssembly (scope);
+						// TODO: careful getting action
 			return Annotations.GetAction (assembly) != AssemblyAction.Link;
 		}
 
@@ -1021,7 +1165,7 @@ namespace Mono.Linker.Steps {
 			if (IsSerializable (type))
 				MarkSerializable (type);
 
-			if (!_context.IsFeatureExcluded ("etw") && BCL.EventTracingForWindows.IsEventSourceImplementation (type, _context)) {
+			if (!Context.IsFeatureExcluded ("etw") && BCL.EventTracingForWindows.IsEventSourceImplementation (type, Context)) {
 				MarkEventSourceProviders (type);
 			}
 
@@ -1133,9 +1277,9 @@ namespace Mono.Linker.Steps {
 						if (string.IsNullOrEmpty (assemblyName))
 							targetTypeReference = asm.MainModule.GetType (typeName);
 						else
-							targetTypeReference = _context.GetAssemblies ().FirstOrDefault (
+							targetTypeReference = Context.GetAssemblies ().FirstOrDefault (
 								a => a.Name.Name == assemblyName &&
-								!_context.IsPublicAssembly (a)
+								!Context.IsPublicAssembly (a)
 								)?.MainModule.GetType (typeName);
 					}
 					break;
@@ -1225,7 +1369,7 @@ namespace Mono.Linker.Steps {
 
 		void MarkTypeWithDebuggerDisplayAttribute (TypeDefinition type, CustomAttribute attribute)
 		{
-			if (_context.KeepMembersForDebugger) {
+			if (Context.KeepMembersForDebugger) {
 
 				string displayString = (string) attribute.ConstructorArguments[0].Value;
 
@@ -1279,7 +1423,7 @@ namespace Mono.Linker.Steps {
 
 		void MarkTypeWithDebuggerTypeProxyAttribute (TypeDefinition type, CustomAttribute attribute)
 		{
-			if (_context.KeepMembersForDebugger) {
+			if (Context.KeepMembersForDebugger) {
 				object constructorArgument = attribute.ConstructorArguments[0].Value;
 				TypeReference proxyTypeReference = constructorArgument as TypeReference;
 				if (proxyTypeReference == null) {
@@ -1587,8 +1731,8 @@ namespace Mono.Linker.Steps {
 			if (!TypeNameParser.TryParseTypeAssemblyQualifiedName (name, out string typeName, out string assemblyName))
 				return null;
 
-			foreach (var assemblyDefinition in _context.GetAssemblies ()) {
-				if (_context.IsPublicAssembly (assemblyDefinition))
+			foreach (var assemblyDefinition in Context.GetAssemblies ()) {
+				if (Context.IsPublicAssembly (assemblyDefinition))
 					continue;
 
 				if (assemblyName != null && assemblyDefinition.Name.Name != assemblyName)
@@ -1705,11 +1849,11 @@ namespace Mono.Linker.Steps {
 				break;
 			case TypePreserve.Fields:
 				if (!MarkFields (type, true, true))
-					_context.LogMessage ($"Type {type.FullName} has no fields to preserve");
+					Context.LogMessage ($"Type {type.FullName} has no fields to preserve");
 				break;
 			case TypePreserve.Methods:
 				if (!MarkMethods (type))
-					_context.LogMessage ($"Type {type.FullName} has no methods to preserve");
+					Context.LogMessage ($"Type {type.FullName} has no methods to preserve");
 				break;
 			}
 		}
@@ -1829,6 +1973,7 @@ namespace Mono.Linker.Steps {
 					return null;
 				}
 
+						// TODO: careful getting action
 				if (Annotations.GetAction (method) == MethodAction.Nothing)
 					Annotations.SetAction (method, MethodAction.Parse);
 
@@ -1843,7 +1988,7 @@ namespace Mono.Linker.Steps {
 
 		AssemblyDefinition ResolveAssembly (IMetadataScope scope)
 		{
-			AssemblyDefinition assembly = _context.Resolve (scope);
+			AssemblyDefinition assembly = Context.Resolve (scope);
 			MarkAssembly (assembly);
 			return assembly;
 		}
@@ -1965,25 +2110,14 @@ namespace Mono.Linker.Steps {
 
 			MarkInterfaceImplementations (type);
 
-			foreach (var method in GetRequiredMethodsForInstantiatedType (type))
-				MarkMethod (method);
+			foreach (var method in type.Methods) {
+				if (method.IsFinalizer ())
+					MarkMethod (method);
+				else if (IsVirtualNeededByInstantiatedTypeDueToPreservedScope (method))
+					MarkMethod (method);
+			}
 
 			DoAdditionalInstantiatedTypeProcessing (type);
-		}
-
-		/// <summary>
-		/// Collect methods that must be marked once a type is determined to be instantiated.
-		///
-		/// This method is virtual in order to give derived mark steps an opportunity to modify the collection of methods that are needed 
-		/// </summary>
-		/// <param name="type"></param>
-		/// <returns></returns>
-		protected virtual IEnumerable<MethodDefinition> GetRequiredMethodsForInstantiatedType (TypeDefinition type)
-		{
-			foreach (var method in type.Methods) {
-				if (method.IsFinalizer () || IsVirtualNeededByInstantiatedTypeDueToPreservedScope (method))
-					yield return method;
-			}
 		}
 
 		void MarkExplicitInterfaceImplementation (MethodDefinition method, MethodReference ov)
@@ -2013,6 +2147,7 @@ namespace Mono.Linker.Steps {
 
 		void MarkNewCodeDependencies (MethodDefinition method)
 		{
+						// TODO: careful getting action
 			switch (Annotations.GetAction (method)) {
 			case MethodAction.ConvertToStub:
 				if (!method.IsInstanceConstructor ())
@@ -2032,10 +2167,10 @@ namespace Mono.Linker.Steps {
 
 		protected virtual void MarkAndCacheConvertToThrowExceptionCtor ()
 		{
-			if (_context.MarkedKnownMembers.NotSupportedExceptionCtorString != null)
+			if (Context.MarkedKnownMembers.NotSupportedExceptionCtorString != null)
 				return;
 
-			var nse = BCL.FindPredefinedType ("System", "NotSupportedException", _context);
+			var nse = BCL.FindPredefinedType ("System", "NotSupportedException", Context);
 			if (nse == null)
 				throw new NotSupportedException ("Missing predefined 'System.NotSupportedException' type");
 
@@ -2045,15 +2180,15 @@ namespace Mono.Linker.Steps {
 			if (nseCtor == null)
 				throw new MarkException ($"Could not find constructor on '{nse.FullName}'");
 
-			_context.MarkedKnownMembers.NotSupportedExceptionCtorString = nseCtor;
+			Context.MarkedKnownMembers.NotSupportedExceptionCtorString = nseCtor;
 		}
 
 		bool MarkDisablePrivateReflectionAttribute ()
 		{
-			if (_context.MarkedKnownMembers.DisablePrivateReflectionAttributeCtor != null)
+			if (Context.MarkedKnownMembers.DisablePrivateReflectionAttributeCtor != null)
 				return false;
 
-			var nse = BCL.FindPredefinedType ("System.Runtime.CompilerServices", "DisablePrivateReflectionAttribute", _context);
+			var nse = BCL.FindPredefinedType ("System.Runtime.CompilerServices", "DisablePrivateReflectionAttribute", Context);
 			if (nse == null)
 				throw new NotSupportedException ("Missing predefined 'System.Runtime.CompilerServices.DisablePrivateReflectionAttribute' type");
 
@@ -2063,7 +2198,7 @@ namespace Mono.Linker.Steps {
 			if (ctor == null)
 				throw new MarkException ($"Could not find constructor on '{nse.FullName}'");
 
-			_context.MarkedKnownMembers.DisablePrivateReflectionAttributeCtor = ctor;
+			Context.MarkedKnownMembers.DisablePrivateReflectionAttributeCtor = ctor;
 			return true;
 		}
 
@@ -2115,11 +2250,13 @@ namespace Mono.Linker.Steps {
 			if (!method.HasBody)
 				return false;
 
+						// TODO: careful getting action
 			switch (Annotations.GetAction (method)) {
 			case MethodAction.ForceParse:
 				return true;
 			case MethodAction.Parse:
 				AssemblyDefinition assembly = ResolveAssembly (method.DeclaringType.Scope);
+						// TODO: careful getting action
 				switch (Annotations.GetAction (assembly)) {
 				case AssemblyAction.Link:
 				case AssemblyAction.Copy:
@@ -2198,7 +2335,7 @@ namespace Mono.Linker.Steps {
 
 		protected virtual void MarkMethodBody (MethodBody body)
 		{
-			if (_context.IsOptimizationEnabled (CodeOptimizations.UnreachableBodies) && IsUnreachableBody (body)) {
+			if (Context.IsOptimizationEnabled (CodeOptimizations.UnreachableBodies) && IsUnreachableBody (body)) {
 				MarkAndCacheConvertToThrowExceptionCtor ();
 				_unreachableBodies.Add (body);
 				return;
@@ -2217,8 +2354,6 @@ namespace Mono.Linker.Steps {
 			MarkInterfacesNeededByBodyStack (body);
 
 			MarkReflectionLikeDependencies (body);
-
-			PostMarkMethodBody (body);
 		}
 
 		bool IsUnreachableBody (MethodBody body)
@@ -2227,16 +2362,13 @@ namespace Mono.Linker.Steps {
 				&& !Annotations.IsInstantiated (body.Method.DeclaringType)
 				&& MethodBodyScanner.IsWorthConvertingToThrow (body);
 		}
-		
-
-		partial void PostMarkMethodBody (MethodBody body);
 
 		void MarkInterfacesNeededByBodyStack (MethodBody body)
 		{
 			// If a type could be on the stack in the body and an interface it implements could be on the stack on the body
 			// then we need to mark that interface implementation.  When this occurs it is not safe to remove the interface implementation from the type
 			// even if the type is never instantiated
-			var implementations = MethodBodyScanner.GetReferencedInterfaces (_context.Annotations, body);
+			var implementations = MethodBodyScanner.GetReferencedInterfaces (Annotations, body);
 			if (implementations == null)
 				return;
 
@@ -2272,31 +2404,28 @@ namespace Mono.Linker.Steps {
 
 		protected virtual void HandleUnresolvedType (TypeReference reference)
 		{
-			if (!_context.IgnoreUnresolved) {
+			if (!Context.IgnoreUnresolved) {
 				throw new ResolutionException (reference);
 			}
 		}
 
 		protected virtual void HandleUnresolvedMethod (MethodReference reference)
 		{
-			if (!_context.IgnoreUnresolved) {
+			if (!Context.IgnoreUnresolved) {
 				throw new ResolutionException (reference);
 			}
 		}
 
 		protected virtual void HandleUnresolvedField (FieldReference reference)
 		{
-			if (!_context.IgnoreUnresolved) {
+			if (!Context.IgnoreUnresolved) {
 				throw new ResolutionException (reference);
 			}
 		}
 
 		protected virtual bool ShouldMarkInterfaceImplementation (TypeDefinition type, InterfaceImplementation iface, TypeDefinition resolvedInterfaceType)
 		{
-			if (Annotations.IsMarked (iface))
-				return false;
-
-			if (Annotations.IsMarked (resolvedInterfaceType) && !Annotations.IsMarked (iface))
+			if (Annotations.IsMarked (resolvedInterfaceType))
 				return true;
 
 			// It's hard to know if a com or windows runtime interface will be needed from managed code alone,
@@ -2309,6 +2438,9 @@ namespace Mono.Linker.Steps {
 
 		protected virtual void MarkInterfaceImplementation (InterfaceImplementation iface)
 		{
+			if (CheckProcessed (iface))
+				return;
+
 			MarkCustomAttributes (iface);
 			MarkType (iface.InterfaceType);
 			Annotations.Mark (iface);
@@ -2430,7 +2562,7 @@ namespace Mono.Linker.Steps {
 						first_arg_instr = GetInstructionAtStackDepth (instructions, i - 1, methodCalledDefinition.Parameters.Count);
 						if (first_arg_instr < 0) {
 							if (!HasManuallyTrackedDependency (body))
-								_context.LogMessage (MessageImportance.Low, $"Reflection call '{methodCalled.FullName}' inside '{body.Method.FullName}' couldn't be decomposed");
+								Context.LogMessage (MessageImportance.Low, $"Reflection call '{methodCalled.FullName}' inside '{body.Method.FullName}' couldn't be decomposed");
 							continue;
 						}
 
@@ -2440,7 +2572,7 @@ namespace Mono.Linker.Steps {
 						first_arg = instructions [first_arg_instr];
 						if (first_arg.OpCode != OpCodes.Ldstr) {
 							if (!HasManuallyTrackedDependency (body))
-								_context.LogMessage (MessageImportance.Low, $"Reflection call '{methodCalled.FullName}' inside '{body.Method.FullName}' was detected with argument which cannot be analyzed");
+								Context.LogMessage (MessageImportance.Low, $"Reflection call '{methodCalled.FullName}' inside '{body.Method.FullName}' was detected with argument which cannot be analyzed");
 							continue;
 						}
 
@@ -2448,11 +2580,11 @@ namespace Mono.Linker.Steps {
 						if (foundType == null)
 							continue;
 
-						_context.Tracer.Push ($"Reflection-{foundType}");
+						Tracer.Push ($"Reflection-{foundType}");
 						try {
 							MarkType (foundType);
 						} finally {
-							_context.Tracer.Pop ();
+							Tracer.Pop ();
 						}
 
 						break;
@@ -2480,7 +2612,7 @@ namespace Mono.Linker.Steps {
 						first_arg_instr = GetInstructionAtStackDepth (instructions, i - 1, 4);
 						if (first_arg_instr < 0) {
 							if (!HasManuallyTrackedDependency (body))
-								_context.LogMessage (MessageImportance.Low, $"Expression call '{methodCalled.FullName}' inside '{body.Method.FullName}' couldn't be decomposed");
+								Context.LogMessage (MessageImportance.Low, $"Expression call '{methodCalled.FullName}' inside '{body.Method.FullName}' couldn't be decomposed");
 							continue;
 						}
 
@@ -2491,7 +2623,7 @@ namespace Mono.Linker.Steps {
 						declaringType = FindReflectionTypeForLookup (instructions, first_arg_instr);
 						if (declaringType == null ) {
 							if (!HasManuallyTrackedDependency (body))
-								_context.LogMessage (MessageImportance.Low, $"Expression call '{methodCalled.FullName}' inside '{body.Method.FullName}' was detected with 1st argument which cannot be analyzed");
+								Context.LogMessage (MessageImportance.Low, $"Expression call '{methodCalled.FullName}' inside '{body.Method.FullName}' was detected with 1st argument which cannot be analyzed");
 							continue;
 						}
 
@@ -2499,7 +2631,7 @@ namespace Mono.Linker.Steps {
 						second_argument = instructions [second_arg_instr];
 						if (second_argument.OpCode != OpCodes.Ldstr) {
 							if (!HasManuallyTrackedDependency (body))
-								_context.LogMessage (MessageImportance.Low, $"Expression call '{methodCalled.FullName}' inside '{body.Method.FullName}' was detected with 2nd argument which cannot be analyzed");
+								Context.LogMessage (MessageImportance.Low, $"Expression call '{methodCalled.FullName}' inside '{body.Method.FullName}' was detected with 2nd argument which cannot be analyzed");
 							continue;
 						}
 
@@ -2519,7 +2651,7 @@ namespace Mono.Linker.Steps {
 						second_arg_instr = GetInstructionAtStackDepth (instructions, i - 1, 2);
 						if (second_arg_instr < 0) {
 							if (!HasManuallyTrackedDependency (body))
-								_context.LogMessage (MessageImportance.Low, $"Expression call '{methodCalled.FullName}' inside '{body.Method.FullName}' couldn't be decomposed");
+								Context.LogMessage (MessageImportance.Low, $"Expression call '{methodCalled.FullName}' inside '{body.Method.FullName}' couldn't be decomposed");
 							continue;
 						}
 
@@ -2530,7 +2662,7 @@ namespace Mono.Linker.Steps {
 						declaringType = FindReflectionTypeForLookup (instructions, second_arg_instr);
 						if (declaringType == null) {
 							if (!HasManuallyTrackedDependency (body))
-								_context.LogMessage (MessageImportance.Low, $"Expression call '{methodCalled.FullName}' inside '{body.Method.FullName}' was detected with 2nd argument which cannot be analyzed");
+								Context.LogMessage (MessageImportance.Low, $"Expression call '{methodCalled.FullName}' inside '{body.Method.FullName}' was detected with 2nd argument which cannot be analyzed");
 							continue;
 						}
 
@@ -2538,7 +2670,7 @@ namespace Mono.Linker.Steps {
 						var third_argument = instructions [third_arg_inst];
 						if (third_argument.OpCode != OpCodes.Ldstr) {
 							if (!HasManuallyTrackedDependency (body))
-								_context.LogMessage (MessageImportance.Low, $"Expression call '{methodCalled.FullName}' inside '{body.Method.FullName}' was detected with the 3rd argument which cannot be analyzed");
+								Context.LogMessage (MessageImportance.Low, $"Expression call '{methodCalled.FullName}' inside '{body.Method.FullName}' was detected with the 3rd argument which cannot be analyzed");
 							continue;
 						}
 
@@ -2628,7 +2760,7 @@ namespace Mono.Linker.Steps {
 				var first_arg_instr = GetInstructionAtStackDepth (instructions, startIndex, first_instance_arg);
 				if (first_arg_instr < 0 && !HasManuallyTrackedDependency (null)) {
 					if (!HasManuallyTrackedDependency (body))
-						_context.LogMessage (MessageImportance.Low, $"Reflection call '{methodCalledDefinition.FullName}' inside '{body.Method.FullName}' couldn't be decomposed");
+						Context.LogMessage (MessageImportance.Low, $"Reflection call '{methodCalledDefinition.FullName}' inside '{body.Method.FullName}' couldn't be decomposed");
 					return;
 				}
 
@@ -2646,7 +2778,7 @@ namespace Mono.Linker.Steps {
 					//
 					if (first_arg.OpCode != OpCodes.Ldstr) {
 						if (!HasManuallyTrackedDependency (body))
-							_context.LogMessage (MessageImportance.Low, $"Reflection call '{methodCalledDefinition.FullName}' inside '{body.Method.FullName}' was detected with argument which cannot be analyzed");
+							Context.LogMessage (MessageImportance.Low, $"Reflection call '{methodCalledDefinition.FullName}' inside '{body.Method.FullName}' was detected with argument which cannot be analyzed");
 						return;
 					}
 
@@ -2661,7 +2793,7 @@ namespace Mono.Linker.Steps {
 				var declaringType = FindReflectionTypeForLookup (instructions, first_arg_instr - 1);
 				if (declaringType == null) {
 					if (!HasManuallyTrackedDependency (body))
-						_context.LogMessage (MessageImportance.Low, $"Reflection call '{methodCalledDefinition.FullName}' inside '{body.Method.FullName}' does not use detectable instance type extraction");
+						Context.LogMessage (MessageImportance.Low, $"Reflection call '{methodCalledDefinition.FullName}' inside '{body.Method.FullName}' does not use detectable instance type extraction");
 					return;
 				}
 
@@ -2966,31 +3098,5 @@ namespace Mono.Linker.Steps {
 			public CustomAttribute Attribute { get; private set; }
 			public ICustomAttributeProvider Provider { get; private set; }
 		}
-	}
-
-	// Make our own copy of the BindingFlags enum, so that we don't depend on System.Reflection.
-	[Flags]
-	enum BindingFlags
-	{
-		Default = 0,
-		IgnoreCase = 1,
-		DeclaredOnly = 2,
-		Instance = 4,
-		Static = 8,
-		Public = 16,
-		NonPublic = 32,
-		FlattenHierarchy = 64,
-		InvokeMethod = 256,
-		CreateInstance = 512,
-		GetField = 1024,
-		SetField = 2048,
-		GetProperty = 4096,
-		SetProperty = 8192,
-		PutDispProperty = 16384,
-		PutRefDispProperty = 32768,
-		ExactBinding = 65536,
-		SuppressChangeType = 131072,
-		OptionalParamBinding = 262144,
-		IgnoreReturn = 16777216
 	}
 }
