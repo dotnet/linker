@@ -89,8 +89,15 @@ namespace Mono.Linker.Steps {
 			try {
 				MarkAssembly (assembly);
 
-				foreach (TypeDefinition type in assembly.MainModule.Types)
-					InitializeType (type);
+				var forceFullMark = NeedToFullyMarkAssembly (assembly);
+				if (forceFullMark) {
+					ForceFullMarkingOfAssembly (assembly);
+				} else {
+					foreach (TypeDefinition type in assembly.MainModule.Types)
+						InitializeType (type);
+				}
+
+
 			} finally {
 				Tracer.Pop ();
 			}
@@ -150,6 +157,119 @@ namespace Mono.Linker.Steps {
 			foreach (MethodDefinition method in methods)
 				if (Annotations.IsMarked (method))
 					EnqueueMethod (method);
+		}
+
+		bool NeedToFullyMarkAssembly (AssemblyDefinition assembly)
+		{
+			switch (_context.Annotations.GetAction (assembly)) {
+				// The *Used actions cannot be handled by this method.  If they were added here it would cause assemblies with these actions to always survive
+				// even if they were not used
+				case AssemblyAction.Save:
+				case AssemblyAction.Copy:
+				return true;
+			}
+
+			return false;
+		}
+
+		void ForceFullMarkingOfAssembly (AssemblyDefinition assembly)
+		{
+			ForceFullMarkingOfCustomAttributes (assembly);
+			ForceFullMarkingOfCustomAttributes (assembly.MainModule);
+			ForceFullMarkingOfTypes (assembly.MainModule.Types);
+		}
+
+		void ForceFullMarkingOfType (TypeDefinition type)
+		{
+			if (type.HasNestedTypes)
+				ForceFullMarkingOfTypes (type.NestedTypes);
+			Annotations.Mark (type);
+			MarkType (type);
+			ForceFullMarkingOfCustomAttributes (type);
+			if (type.HasInterfaces)
+				ForceFullMarkingOfInterfaceImplementations (type.Interfaces);
+			if (type.HasGenericParameters)
+				ForceFullMarkingOfGenericParameters (type.GenericParameters);
+			if (type.HasFields)
+				ForceFullMarkingOfFields (type.Fields);
+			if (type.HasMethods)
+				ForceFullMarkingOfMethods (type.Methods);
+			if (type.HasProperties)
+				ForceFullMarkingOfProperties (type.Properties);
+			if (type.HasEvents)
+				ForceFullMarkingOfEvents (type.Events);
+		}
+
+		void ForceFullMarkingOfTypes (Collection<TypeDefinition> types)
+		{
+			foreach (TypeDefinition type in types)
+				ForceFullMarkingOfType (type);
+		}
+
+		void ForceFullMarkingOfFields (Collection<FieldDefinition> fields)
+		{
+			foreach (FieldDefinition field in fields) {
+				Annotations.Mark (field);
+				MarkField (field);
+				ForceFullMarkingOfCustomAttributes (field);
+			}
+		}
+
+		void ForceFullMarkingOfMethods(Collection<MethodDefinition> methods)
+		{
+			foreach (MethodDefinition method in methods) {
+				Annotations.Mark (method);
+				Annotations.SetAction (method, MethodAction.ForceParse);
+				ForceFullMarkingOfCustomAttributes (method);
+				ForceFullMarkingOfCustomAttributes (method.MethodReturnType);
+				foreach (var param in method.Parameters)
+					ForceFullMarkingOfCustomAttributes (param);
+				ForceFullMarkingOfGenericParameters (method.GenericParameters);
+				EnqueueMethod (method);
+			}
+		}
+
+		void ForceFullMarkingOfProperties (Collection<PropertyDefinition> properties)
+		{
+			foreach (var property in properties) {
+				MarkProperty (property);
+				ForceFullMarkingOfCustomAttributes (property);
+			}
+		}
+
+		void ForceFullMarkingOfEvents (Collection<EventDefinition> events)
+		{
+			foreach (var @event in events) {
+				MarkEvent (@event);
+				ForceFullMarkingOfCustomAttributes (@event);
+			}
+		}
+
+		void ForceFullMarkingOfInterfaceImplementations (Collection<InterfaceImplementation> interfaceImplementations)
+		{
+			foreach (var iface in interfaceImplementations) {
+				_context.Annotations.Mark (iface);
+				MarkType (iface.InterfaceType);
+				ForceFullMarkingOfCustomAttributes (iface);
+			}
+		}
+
+		void ForceFullMarkingOfGenericParameters (Collection<GenericParameter> genericParameters)
+		{
+			foreach (var gp in genericParameters) {
+				ForceFullMarkingOfCustomAttributes (gp);
+				foreach (var constraint in gp.Constraints)
+					ForceFullMarkingOfCustomAttributes (constraint);
+			}
+		}
+
+		void ForceFullMarkingOfCustomAttributes (ICustomAttributeProvider provider)
+		{
+			if (!provider.HasCustomAttributes)
+				return;
+
+			foreach (var attr in provider.CustomAttributes)
+				MarkCustomAttribute (attr);
 		}
 
 		void Process ()
