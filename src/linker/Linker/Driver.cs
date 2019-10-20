@@ -230,6 +230,10 @@ namespace Mono.Linker {
 							context.KeepTypeForwarderOnlyAssemblies = bool.Parse (GetParam ());
 							continue;
 
+						case "--keep-dep-attributes":
+							context.KeepDependencyAttributes = bool.Parse (GetParam ());
+							continue;
+
 						case "--ignore-descriptors":
 							ignoreDescriptors = bool.Parse (GetParam ());
 							continue;
@@ -559,13 +563,14 @@ namespace Mono.Linker {
 			Console.WriteLine ("  --about             About the {0}", _linker);
 			Console.WriteLine ("  --verbose           Log messages indicating progress and warnings");
 			Console.WriteLine ("  --version           Print the version number of the {0}", _linker);
+			Console.WriteLine ("  @<file>             Read response file for more options");
 
 			Console.WriteLine ();
 			Console.WriteLine ("Actions");
-			Console.WriteLine ("  -c <action>         Action on the core assemblies. Defaults to 'skip'");
-			Console.WriteLine ("                        copy: Copy the files into the output directory");
-			Console.WriteLine ("                        copyused: Copy the files only when anything from the assembly is used");
-			Console.WriteLine ("                        link: Link the assembly");
+			Console.WriteLine ("  -c <action>         Action on the framework assemblies. Defaults to 'skip'");
+			Console.WriteLine ("                        copy: Copy the assembly into the output (it can be updated when any of its dependencies is removed)");
+			Console.WriteLine ("                        copyused: Same as copy but only for assemblies which are needed");
+			Console.WriteLine ("                        link: Remove any ununsed code or metadata from the assembly");
 			Console.WriteLine ("                        skip: Do not process the assembly");
 			Console.WriteLine ("                        addbypassngen: Add BypassNGenAttribute to unused methods");
 			Console.WriteLine ("                        addbypassngenused: Same as addbypassngen but unused assemblies are removed");
@@ -590,6 +595,7 @@ namespace Mono.Linker {
 			Console.WriteLine ("                              globalization: Globalization data and globalization behavior");
 			Console.WriteLine ("  --ignore-descriptors      Skips reading embedded descriptors (short -z). Defaults to false");
 			Console.WriteLine ("  --keep-facades            Keep assemblies with type-forwarders (short -t). Defaults to false");
+			Console.WriteLine ("  --keep-dep-attributes     Keep attributes used for manual dependency tracking. Defaults to false");
 			Console.WriteLine ("  --skip-unresolved         Ignore unresolved types, methods, and assemblies. Defaults to false");			
 			Console.WriteLine ("  --strip-resources         Remove XML descriptor resources for linked assemblies. Defaults to true");
 			Console.WriteLine ("  --strip-security          Remove metadata and code related to Code Access Security. Defaults to true");

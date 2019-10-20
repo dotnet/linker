@@ -3,6 +3,7 @@
   <PropertyGroup Condition=" $(Configuration.StartsWith('illink')) ">
     <TargetFramework>netcoreapp3.0</TargetFramework>
     <ILLinkBuild>true</ILLinkBuild>
+    <DefineConstants>$(DefineConstants);ILLINK</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition=" ! $(Configuration.StartsWith('illink')) ">
@@ -15,6 +16,7 @@
     <WarningLevel>0</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <LangVersion>8.0</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,6 +24,8 @@
     <Compile Remove="LinkXml\Dependencies\CanPreserveAnExportedType_Forwarder.cs" />
     <Compile Remove="TypeForwarding\Dependencies\ForwarderLibrary.cs" />
     <Compile Remove="TypeForwarding\Dependencies\ForwarderLibrary_2.cs" />
+    <Compile Remove="TypeForwarding\Dependencies\ForwarderLibrary_3.cs" />
+    <Compile Remove="TypeForwarding\Dependencies\ImplementationLibrary_3.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Attributes\OnlyKeepUsed\Dependencies\UnusedAttributeWithTypeForwarderIsRemoved_Forwarder.cs" />

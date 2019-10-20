@@ -93,13 +93,17 @@ namespace Mono.Linker.Steps {
 				goto case AssemblyAction.Copy;
 
 			case AssemblyAction.Copy:
-				// Copy assemblies can still contain Type references with
-				// type forwarders from Delete assemblies
-				// thus try to resolve all the type references and see
-				// if some changed the scope. if yes change the action to Save
-				if (!Context.KeepTypeForwarderOnlyAssemblies && SweepTypeForwarders (assembly)) {
+				//
+				// Facade assemblies can have unused forwarders pointing to
+				// removed type (when facades are kept)
+				//
+				//		main.exe -> facade.dll -> lib.dll
+				//		link     |  copy       |  link
+				//
+				// when main.exe has unused reference to type in lib.dll
+				//
+				if (SweepTypeForwarders (assembly))
 					Annotations.SetAction (assembly, AssemblyAction.Save);
-				}
 
 				break;
 
@@ -108,6 +112,12 @@ namespace Mono.Linker.Steps {
 				break;
 
 			case AssemblyAction.Save:
+				//
+				// Save means we need to rewrite the assembly due to removed assembly
+				// reference. We do any additional removed assembly reference clean up here
+				//
+				UpdateForwardedTypesScope (assembly);
+				UpdateCustomAttributesTypesScopes (assembly);
 				SweepTypeForwarders (assembly);
 				break;
 			}
@@ -141,6 +151,8 @@ namespace Mono.Linker.Steps {
 				SweepCustomAttributes (module);
 
 			SweepTypeForwarders (assembly);
+
+			UpdateForwardedTypesScope (assembly);
 		}
 
 		bool IsUsedAssembly (AssemblyDefinition assembly)
@@ -220,8 +232,21 @@ namespace Mono.Linker.Steps {
 					break;
 
 				case AssemblyAction.Copy:
-					// We need to save the assembly if a reference was removed, otherwise we can end up
-					// with an assembly that references an assembly that no longer exists
+					//
+					// Assembly has a reference to another assembly which has been fully removed. This can
+					// happen when for example the reference assembly is 'copy-used' and it's not needed.
+					//
+					// or
+					//
+					// Assembly can contain type references with
+					// type forwarders to deleted assembly (facade) when
+					// facade assemblies are not kept. For that reason we need to
+					// rewrite the copy to save to update the scopes not to point
+					// forwarding assembly (facade).
+					//
+					//		foo.dll -> facade.dll    -> lib.dll
+					//		copy    |  copy (delete) |  link
+					//
 					Annotations.SetAction (assembly, AssemblyAction.Save);
 					break;
 
@@ -241,23 +266,14 @@ namespace Mono.Linker.Steps {
 
 		bool SweepTypeForwarders (AssemblyDefinition assembly)
 		{
-			bool any_change = false;
-
-			// if we save (only or by linking) then unmarked exports (e.g. forwarders) must be cleaned
-			// or they can point to nothing which will break later (e.g. when re-loading for stripping IL)
-			// reference: https://bugzilla.xamarin.com/show_bug.cgi?id=36577
 			if (assembly.MainModule.HasExportedTypes) {
-
-				// TODO: This sweeps only type forwarders of types which are not marked. The types
-				// which are have their type forwarders keept even if they are unused
-				any_change = SweepCollectionMetadata (assembly.MainModule.ExportedTypes);
+				return SweepCollectionMetadata (assembly.MainModule.ExportedTypes);
 			}
 
-			any_change |= UpdateForwardedTypesScope (assembly);
-			return any_change;
+			return false;
 		}
 
-		bool UpdateForwardedTypesScope (AssemblyDefinition assembly)
+		void UpdateForwardedTypesScope (AssemblyDefinition assembly)
 		{
 			var changed_types = new Dictionary<TypeReference, IMetadataScope> ();
 
@@ -265,7 +281,14 @@ namespace Mono.Linker.Steps {
 				if (tr.IsWindowsRuntimeProjection)
 					continue;
 
-				var td = tr.Resolve ();
+				TypeDefinition td;
+				try {
+					td = tr.Resolve ();
+				} catch (AssemblyResolutionException) {
+					// Don't crash on unresolved assembly
+					continue;
+				}
+
 				// at this stage reference might include things that can't be resolved
 				// and if it is (resolved) it needs to be kept only if marked (#16213)
 				if (td == null || !Annotations.IsMarked (td))
@@ -294,8 +317,133 @@ namespace Mono.Linker.Steps {
 					et.Scope = assembly.MainModule.ImportReference (td).Scope;
 				}
 			}
+		}
 
-			return changed_types.Count != 0;
+		static void UpdateCustomAttributesTypesScopes (AssemblyDefinition assembly)
+		{
+			UpdateCustomAttributesTypesScopes ((ICustomAttributeProvider) assembly);
+
+			foreach (var module in assembly.Modules)
+				UpdateCustomAttributesTypesScopes (module);
+
+			foreach (var type in assembly.MainModule.Types)
+				UpdateCustomAttributesTypesScopes (type);
+		}
+
+		static void UpdateCustomAttributesTypesScopes (TypeDefinition typeDefinition)
+		{
+			UpdateCustomAttributesTypesScopes ((ICustomAttributeProvider)typeDefinition);
+
+			if (typeDefinition.HasEvents)
+				UpdateCustomAttributesTypesScopes (typeDefinition.Events);
+
+			if (typeDefinition.HasFields)
+				UpdateCustomAttributesTypesScopes (typeDefinition.Fields);
+
+			if (typeDefinition.HasMethods)
+				UpdateCustomAttributesTypesScopes (typeDefinition.Methods);
+
+			if (typeDefinition.HasProperties)
+				UpdateCustomAttributesTypesScopes (typeDefinition.Properties);
+
+			if (typeDefinition.HasGenericParameters)
+				UpdateCustomAttributesTypesScopes (typeDefinition.GenericParameters);
+
+			if (typeDefinition.HasNestedTypes) {
+				foreach (var nestedType in typeDefinition.NestedTypes) {
+					UpdateCustomAttributesTypesScopes (nestedType);
+				}
+			}
+		}
+
+		static void UpdateCustomAttributesTypesScopes<T> (Collection<T> providers) where T : ICustomAttributeProvider
+		{
+			foreach (var provider in providers)
+				UpdateCustomAttributesTypesScopes (provider);
+		}
+
+		static void UpdateCustomAttributesTypesScopes (Collection<GenericParameter> genericParameters)
+		{
+			foreach (var gp in genericParameters) {
+				UpdateCustomAttributesTypesScopes (gp);
+
+				if (gp.HasConstraints)
+					UpdateCustomAttributesTypesScopes (gp.Constraints);
+			}
+		}
+
+		static void UpdateCustomAttributesTypesScopes (ICustomAttributeProvider customAttributeProvider)
+		{
+			if (!customAttributeProvider.HasCustomAttributes)
+				return;
+
+			foreach (var ca in customAttributeProvider.CustomAttributes)
+				UpdateForwardedTypesScope (ca);
+		}
+
+		static void UpdateForwardedTypesScope (CustomAttribute attribute)
+		{
+			AssemblyDefinition assembly = attribute.Constructor.Module.Assembly;
+
+			if (attribute.HasConstructorArguments) {
+				foreach (var ca in attribute.ConstructorArguments)
+					UpdateForwardedTypesScope (ca, assembly);
+			}
+
+			if (attribute.HasFields) {
+				foreach (var field in attribute.Fields)
+					UpdateForwardedTypesScope (field.Argument, assembly);
+			}
+
+			if (attribute.HasProperties) {
+				foreach (var property in attribute.Properties)
+					UpdateForwardedTypesScope (property.Argument, assembly);
+			}
+		}
+
+		static void UpdateForwardedTypesScope (CustomAttributeArgument attributeArgument, AssemblyDefinition assembly)
+		{
+			UpdateTypeScope (attributeArgument.Type, assembly);
+
+			switch (attributeArgument.Value) {
+			case TypeReference tr:
+				UpdateTypeScope (tr, assembly);
+				break;
+			case CustomAttributeArgument caa:
+				UpdateForwardedTypesScope (caa, assembly);
+				break;
+			case CustomAttributeArgument[] array:
+				foreach (var item in array)
+					UpdateForwardedTypesScope (item, assembly);
+				break;
+			}
+		}
+
+		static void UpdateTypeScope (TypeReference type, AssemblyDefinition assembly)
+		{
+			// Can't update the scope of windows runtime projections
+			if (type.IsWindowsRuntimeProjection)
+				return;
+
+			if (type is GenericInstanceType git && git.HasGenericArguments) {
+				UpdateTypeScope (git.ElementType, assembly);
+				foreach (var ga in git.GenericArguments)
+					UpdateTypeScope (ga, assembly);
+				return;
+			}
+
+			if (type is ArrayType at) {
+				UpdateTypeScope (at.ElementType, assembly);
+				return;
+			}
+
+			TypeDefinition td = type.Resolve ();
+			if (td == null)
+				return;
+
+			IMetadataScope scope = assembly.MainModule.ImportReference (td).Scope;
+			if (type.Scope != scope)
+				type.Scope = td.Scope;
 		}
 
 		protected virtual void SweepType (TypeDefinition type)
@@ -316,7 +464,7 @@ namespace Mono.Linker.Steps {
 				SweepCustomAttributes (type);
 
 			if (type.HasGenericParameters)
-				SweepCustomAttributeCollection (type.GenericParameters);
+				SweepGenericParameters (type.GenericParameters);
 
 			if (type.HasProperties)
 				SweepCustomAttributeCollection (type.Properties);
@@ -351,6 +499,16 @@ namespace Mono.Linker.Steps {
 				}
 				InterfaceRemoved (type, iface);
 				type.Interfaces.RemoveAt (i);
+			}
+		}
+
+		protected void SweepGenericParameters (Collection<GenericParameter> genericParameters)
+		{
+			foreach (var gp in genericParameters) {
+				SweepCustomAttributes (gp);
+
+				if (gp.HasConstraints)
+					SweepCustomAttributeCollection (gp.Constraints);
 			}
 		}
 
@@ -410,7 +568,9 @@ namespace Mono.Linker.Steps {
 
 			for (int i = provider.CustomAttributes.Count - 1; i >= 0; i--) {
 				var attribute = provider.CustomAttributes [i];
-				if (!Annotations.IsMarked (attribute)) {
+				if (Annotations.IsMarked (attribute)) {
+					UpdateForwardedTypesScope (attribute);
+				} else {
 					CustomAttributeUsageRemoved (provider, attribute);
 					removed.Add (provider.CustomAttributes [i]);
 					provider.CustomAttributes.RemoveAt (i);
@@ -434,7 +594,7 @@ namespace Mono.Linker.Steps {
 
 			foreach (var method in methods) {
 				if (method.HasGenericParameters)
-					SweepCustomAttributeCollection (method.GenericParameters);
+					SweepGenericParameters (method.GenericParameters);
 
 				SweepCustomAttributes (method.MethodReturnType);
 
