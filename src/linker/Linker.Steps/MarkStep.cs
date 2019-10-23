@@ -2287,10 +2287,8 @@ namespace Mono.Linker.Steps {
 			if (Annotations.IsMarked (resolvedInterfaceType))
 				return true;
 
-#if INTERFACE_SWEEPING_OPTION
-			if (!_context.IsOptimizationEnabled (CodeOptimizations.InterfaceSweeping))
+			if (!_context.IsOptimizationEnabled (CodeOptimizations.UnusedInterfaces))
 				return true;
-#endif
 
 			// It's hard to know if a com or windows runtime interface will be needed from managed code alone,
 			// so as a precaution we will mark these interfaces once the type is instantiated

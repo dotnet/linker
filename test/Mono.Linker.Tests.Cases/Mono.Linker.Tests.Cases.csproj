@@ -3,7 +3,7 @@
   <PropertyGroup Condition=" $(Configuration.StartsWith('illink')) ">
     <TargetFramework>netcoreapp3.0</TargetFramework>
     <ILLinkBuild>true</ILLinkBuild>
-    <DefineConstants>$(DefineConstants);ILLINK;INTERFACE_SWEEPING_OPTION</DefineConstants>
+    <DefineConstants>$(DefineConstants);ILLINK</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition=" ! $(Configuration.StartsWith('illink')) ">
@@ -26,10 +26,6 @@
     <Compile Remove="TypeForwarding\Dependencies\ForwarderLibrary_2.cs" />
     <Compile Remove="TypeForwarding\Dependencies\ForwarderLibrary_3.cs" />
     <Compile Remove="TypeForwarding\Dependencies\ImplementationLibrary_3.cs" />
-  </ItemGroup>
-  <ItemGroup Condition=" ! $(DefineConstants.Contains('INTERFACE_SWEEPING_OPTION')) " >
-    <Compile Remove="Inheritance.Interfaces\CanDisableInterfaceSweeping.cs" />
-    <Compile Remove="Inheritance.Interfaces\InterfaceOnUninstantiatedTypeRemoved.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Attributes\OnlyKeepUsed\Dependencies\UnusedAttributeWithTypeForwarderIsRemoved_Forwarder.cs" />
