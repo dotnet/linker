@@ -3,7 +3,7 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces {
 	[SetupLinkerArgument ("--disable-opt", "unusedinterfaces")]
-	public class CanDisableInterfaceSweeping {
+	public class CanDisableUnusedInterfaces {
 		public static void Main ()
 		{
 			IFoo i = new A ();
