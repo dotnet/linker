@@ -87,17 +87,21 @@ namespace Mono.Linker.Steps {
 		{
 			Tracer.Push (assembly);
 			try {
-				MarkAssembly (assembly);
+				switch (_context.Annotations.GetAction (assembly)) {
+				case AssemblyAction.Copy:
+				case AssemblyAction.Save:
+					MarkEntireAssembly (assembly);
+					break;
+				case AssemblyAction.Link:
+				case AssemblyAction.AddBypassNGen:
+				case AssemblyAction.AddBypassNGenUsed:
+					MarkAssembly (assembly);
 
-				var forceFullMark = NeedToFullyMarkAssembly (assembly);
-				if (forceFullMark) {
-					ForceFullMarkingOfAssembly (assembly);
-				} else {
 					foreach (TypeDefinition type in assembly.MainModule.Types)
 						InitializeType (type);
+
+					break;
 				}
-
-
 			} finally {
 				Tracer.Pop ();
 			}
@@ -159,117 +163,50 @@ namespace Mono.Linker.Steps {
 					EnqueueMethod (method);
 		}
 
-		bool NeedToFullyMarkAssembly (AssemblyDefinition assembly)
+		void MarkEntireType (TypeDefinition type)
 		{
-			switch (_context.Annotations.GetAction (assembly)) {
-				// The *Used actions cannot be handled by this method.  If they were added here it would cause assemblies with these actions to always survive
-				// even if they were not used
-				case AssemblyAction.Save:
-				case AssemblyAction.Copy:
-				return true;
+			if (type.HasNestedTypes) {
+				foreach (TypeDefinition nested in type.NestedTypes)
+					MarkEntireType (nested);
 			}
 
-			return false;
-		}
-
-		void ForceFullMarkingOfAssembly (AssemblyDefinition assembly)
-		{
-			ForceFullMarkingOfCustomAttributes (assembly);
-			ForceFullMarkingOfCustomAttributes (assembly.MainModule);
-			ForceFullMarkingOfTypes (assembly.MainModule.Types);
-		}
-
-		void ForceFullMarkingOfType (TypeDefinition type)
-		{
-			if (type.HasNestedTypes)
-				ForceFullMarkingOfTypes (type.NestedTypes);
 			Annotations.Mark (type);
-			MarkType (type);
-			ForceFullMarkingOfCustomAttributes (type);
-			if (type.HasInterfaces)
-				ForceFullMarkingOfInterfaceImplementations (type.Interfaces);
-			if (type.HasGenericParameters)
-				ForceFullMarkingOfGenericParameters (type.GenericParameters);
-			if (type.HasFields)
-				ForceFullMarkingOfFields (type.Fields);
-			if (type.HasMethods)
-				ForceFullMarkingOfMethods (type.Methods);
-			if (type.HasProperties)
-				ForceFullMarkingOfProperties (type.Properties);
-			if (type.HasEvents)
-				ForceFullMarkingOfEvents (type.Events);
-		}
+			MarkCustomAttributes (type);
+			MarkTypeSpecialCustomAttributes (type);
 
-		void ForceFullMarkingOfTypes (Collection<TypeDefinition> types)
-		{
-			foreach (TypeDefinition type in types)
-				ForceFullMarkingOfType (type);
-		}
-
-		void ForceFullMarkingOfFields (Collection<FieldDefinition> fields)
-		{
-			foreach (FieldDefinition field in fields) {
-				Annotations.Mark (field);
-				MarkField (field);
-				ForceFullMarkingOfCustomAttributes (field);
+			if (type.HasInterfaces) {
+				foreach (InterfaceImplementation iface in type.Interfaces) {
+					MarkInterfaceImplementation (iface);
+				}
 			}
-		}
 
-		void ForceFullMarkingOfMethods(Collection<MethodDefinition> methods)
-		{
-			foreach (MethodDefinition method in methods) {
-				Annotations.Mark (method);
-				Annotations.SetAction (method, MethodAction.ForceParse);
-				ForceFullMarkingOfCustomAttributes (method);
-				ForceFullMarkingOfCustomAttributes (method.MethodReturnType);
-				foreach (var param in method.Parameters)
-					ForceFullMarkingOfCustomAttributes (param);
-				ForceFullMarkingOfGenericParameters (method.GenericParameters);
-				EnqueueMethod (method);
+			MarkGenericParameterProvider (type);
+
+			if (type.HasFields) {
+				foreach (FieldDefinition field in type.Fields) {
+					MarkField (field);
+				}
 			}
-		}
 
-		void ForceFullMarkingOfProperties (Collection<PropertyDefinition> properties)
-		{
-			foreach (var property in properties) {
-				MarkProperty (property);
-				ForceFullMarkingOfCustomAttributes (property);
+			if (type.HasMethods) {
+				foreach (MethodDefinition method in type.Methods) {
+					Annotations.Mark (method);
+					Annotations.SetAction (method, MethodAction.ForceParse);
+					EnqueueMethod (method);
+				}
 			}
-		}
 
-		void ForceFullMarkingOfEvents (Collection<EventDefinition> events)
-		{
-			foreach (var @event in events) {
-				MarkEvent (@event);
-				ForceFullMarkingOfCustomAttributes (@event);
+			if (type.HasProperties) {
+				foreach (var property in type.Properties) {
+					MarkProperty (property);
+				}
 			}
-		}
 
-		void ForceFullMarkingOfInterfaceImplementations (Collection<InterfaceImplementation> interfaceImplementations)
-		{
-			foreach (var iface in interfaceImplementations) {
-				_context.Annotations.Mark (iface);
-				MarkType (iface.InterfaceType);
-				ForceFullMarkingOfCustomAttributes (iface);
+			if (type.HasEvents) {
+				foreach (var ev in type.Events) {
+					MarkEvent (ev);
+				}
 			}
-		}
-
-		void ForceFullMarkingOfGenericParameters (Collection<GenericParameter> genericParameters)
-		{
-			foreach (var gp in genericParameters) {
-				ForceFullMarkingOfCustomAttributes (gp);
-				foreach (var constraint in gp.Constraints)
-					ForceFullMarkingOfCustomAttributes (constraint);
-			}
-		}
-
-		void ForceFullMarkingOfCustomAttributes (ICustomAttributeProvider provider)
-		{
-			if (!provider.HasCustomAttributes)
-				return;
-
-			foreach (var attr in provider.CustomAttributes)
-				MarkCustomAttribute (attr);
 		}
 
 		void Process ()
@@ -474,6 +411,8 @@ namespace Mono.Linker.Steps {
 			if (!provider.HasCustomAttributes)
 				return;
 
+			bool markOnUse = _context.KeepUsedAttributeTypesOnly && Annotations.GetAction (GetAssemblyFromCustomAttributeProvider (provider)) == AssemblyAction.Link;
+
 			Tracer.Push (provider);
 			try {
 				foreach (CustomAttribute ca in provider.CustomAttributes) {
@@ -485,23 +424,42 @@ namespace Mono.Linker.Steps {
 							continue;
 						}
 
-						if (Annotations.GetAction (mr.DeclaringType.Module.Assembly) == AssemblyAction.Link)
+						if (Annotations.GetAction (mr.Module.Assembly) == AssemblyAction.Link)
 							continue;
 					}
 
-					if (_context.KeepUsedAttributeTypesOnly) {
+					if (markOnUse) {
 						_lateMarkedAttributes.Enqueue (new AttributeProviderPair (ca, provider));
 						continue;
 					}
-
-					if (!ShouldMarkCustomAttribute (ca, provider))
-						continue;
 
 					MarkCustomAttribute (ca);
 					MarkSpecialCustomAttributeDependencies (ca);
 				}
 			} finally {
 				Tracer.Pop ();
+			}
+		}
+
+		static AssemblyDefinition GetAssemblyFromCustomAttributeProvider (ICustomAttributeProvider provider)
+		{
+			switch (provider) {
+			case MemberReference mr:
+				return mr.Module.Assembly;
+			case AssemblyDefinition ad:
+				return ad;
+			case ModuleDefinition md:
+				return md.Assembly;
+			case InterfaceImplementation ii:
+				return ii.InterfaceType.Module.Assembly;
+			case GenericParameterConstraint gpc:
+				return gpc.ConstraintType.Module.Assembly;
+			case ParameterDefinition pd:
+				return pd.ParameterType.Module.Assembly;
+			case MethodReturnType mrt:
+				return mrt.ReturnType.Module.Assembly;
+			default:
+				throw new NotImplementedException (provider.GetType ().ToString ());
 			}
 		}
 
@@ -935,6 +893,19 @@ namespace Mono.Linker.Steps {
 
 			foreach (ModuleDefinition module in assembly.Modules)
 				LazyMarkCustomAttributes (module, assembly);
+		}
+
+		void MarkEntireAssembly (AssemblyDefinition assembly)
+		{
+			MarkCustomAttributes (assembly);
+			MarkCustomAttributes (assembly.MainModule);
+
+			if (assembly.MainModule.HasExportedTypes) {
+				// TODO: This needs more work accross all steps
+			}
+
+			foreach (TypeDefinition type in assembly.MainModule.Types)
+				MarkEntireType (type);
 		}
 
 		void ProcessModule (AssemblyDefinition assembly)
