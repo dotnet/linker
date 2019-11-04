@@ -21,6 +21,21 @@ namespace Mono.Linker.Steps
 			}
 		}
 
+		private static List<TypeDefinition> GetAllTypesInModule (ModuleDefinition module)
+		{
+			List<TypeDefinition> allTypes = new List<TypeDefinition> (module.Types);
+
+			// This is a breadth-first traversal through all the types in the assembly
+			// at all levels of nesting. We use a 'for' loop instead of a 'foreach' loop
+			// below because we're appending elements to the list while we iterate.
+
+			for (int i = 0; i < allTypes.Count; i++) {
+				allTypes.AddRange (allTypes [i].NestedTypes);
+			}
+
+			return allTypes;
+		}
+
 		protected override void ProcessAssembly (AssemblyDefinition assembly)
 		{
 			if ((_assemblies != null) && (!_assemblies.Contains (assembly.Name.Name))) {
@@ -30,7 +45,7 @@ namespace Mono.Linker.Steps
 			bool changed = false;
 
 			foreach (ModuleDefinition module in assembly.Modules) {
-				foreach (TypeDefinition type in module.Types) {
+				foreach (TypeDefinition type in GetAllTypesInModule (module)) {
 					foreach (MethodDefinition method in type.Methods) {
 						if (method.Body != null) {
 							if (method.Body.InitLocals) {
