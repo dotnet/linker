@@ -21,19 +21,17 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		private static List<TypeDefinition> GetAllTypesInModule (ModuleDefinition module)
+		private static IEnumerable<TypeDefinition> EnumerateTypesAndNestedTypes (IEnumerable<TypeDefinition> types)
 		{
-			List<TypeDefinition> allTypes = new List<TypeDefinition> (module.Types);
+			// Recursively (depth-first) yield each element in 'types' and all nested types under each element.
 
-			// This is a breadth-first traversal through all the types in the assembly
-			// at all levels of nesting. We use a 'for' loop instead of a 'foreach' loop
-			// below because we're appending elements to the list while we iterate.
+			foreach (TypeDefinition type in types) {
+				yield return type;
 
-			for (int i = 0; i < allTypes.Count; i++) {
-				allTypes.AddRange (allTypes [i].NestedTypes);
+				foreach (TypeDefinition nestedType in EnumerateTypesAndNestedTypes (type.NestedTypes)) {
+					yield return nestedType;
+				}
 			}
-
-			return allTypes;
 		}
 
 		protected override void ProcessAssembly (AssemblyDefinition assembly)
@@ -45,7 +43,7 @@ namespace Mono.Linker.Steps
 			bool changed = false;
 
 			foreach (ModuleDefinition module in assembly.Modules) {
-				foreach (TypeDefinition type in GetAllTypesInModule (module)) {
+				foreach (TypeDefinition type in EnumerateTypesAndNestedTypes (module.Types)) {
 					foreach (MethodDefinition method in type.Methods) {
 						if (method.Body != null) {
 							if (method.Body.InitLocals) {
