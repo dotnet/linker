@@ -2303,6 +2303,14 @@ namespace Mono.Linker.Steps {
 		}
 
 		//
+		// Callback for other mark steps to prevent normal reflection logic from running
+		//
+		protected virtual bool ShouldProcessReflectionDependencies (MethodBody body, Instruction instruction)
+		{
+			return true;
+		}
+
+		//
 		// Tries to mark additional dependencies used in reflection like calls (e.g. typeof (MyClass).GetField ("fname"))
 		//
 		protected virtual void MarkReflectionLikeDependencies (MethodBody body)
@@ -2316,6 +2324,9 @@ namespace Mono.Linker.Steps {
 				var instruction = instructions [i];
 
 				if (instruction.OpCode != OpCodes.Call && instruction.OpCode != OpCodes.Callvirt)
+					continue;
+
+				if (!ShouldProcessReflectionDependencies (body, instruction))
 					continue;
 
 				var methodCalled = instruction.Operand as MethodReference;
