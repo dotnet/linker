@@ -2303,9 +2303,9 @@ namespace Mono.Linker.Steps {
 		}
 
 		//
-		// Callback for other mark steps to prevent normal reflection logic from running
+		// Extension point for reflection logic handling customization
 		//
-		protected virtual bool ShouldProcessReflectionDependencies (MethodBody body, Instruction instruction)
+		protected virtual bool ProcessReflectionDependency (MethodBody body, Instruction instruction)
 		{
 			return true;
 		}
@@ -2326,7 +2326,7 @@ namespace Mono.Linker.Steps {
 				if (instruction.OpCode != OpCodes.Call && instruction.OpCode != OpCodes.Callvirt)
 					continue;
 
-				if (!ShouldProcessReflectionDependencies (body, instruction))
+				if (!ProcessReflectionDependency (body, instruction))
 					continue;
 
 				var methodCalled = instruction.Operand as MethodReference;
