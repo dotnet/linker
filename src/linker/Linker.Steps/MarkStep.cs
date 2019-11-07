@@ -2307,7 +2307,7 @@ namespace Mono.Linker.Steps {
 		//
 		protected virtual bool ProcessReflectionDependency (MethodBody body, Instruction instruction)
 		{
-			return true;
+			return false;
 		}
 
 		//
@@ -2326,7 +2326,7 @@ namespace Mono.Linker.Steps {
 				if (instruction.OpCode != OpCodes.Call && instruction.OpCode != OpCodes.Callvirt)
 					continue;
 
-				if (!ProcessReflectionDependency (body, instruction))
+				if (ProcessReflectionDependency (body, instruction))
 					continue;
 
 				var methodCalled = instruction.Operand as MethodReference;
