@@ -2379,7 +2379,7 @@ namespace Mono.Linker.Steps {
 					// These "internal" calls are not interesting to analyze, the outermost call is the one
 					// which needs to be analyzed. The assumption is that all overloads have the same semantics.
 					// (for example that all overload of GetConstructor if used require the specified type to have a .ctor).
-					if (methodCalling.Name == methodCalled.Name && methodCalling.DeclaringType.Name == "Type" && methodCalling.DeclaringType.Namespace == "System")
+					if (methodCalling.DeclaringType == methodCalling.DeclaringType && methodCalling.Name == methodCalled.Name)
 						break;
 
 					switch (methodCalled.Name) {
