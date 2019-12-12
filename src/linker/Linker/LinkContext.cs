@@ -47,6 +47,7 @@ namespace Mono.Linker {
 		AssemblyAction _userAction;
 		Dictionary<string, AssemblyAction> _actions;
 		string _outputDirectory;
+		readonly Dictionary<string, AssemblyActionFlag> _actionFlags;
 		readonly Dictionary<string, string> _parameters;
 		bool _linkSymbols;
 		bool _keepTypeForwarderOnlyAssemblies;
@@ -123,6 +124,10 @@ namespace Mono.Linker {
 			get { return _actions; }
 		}
 
+		public IDictionary<string, AssemblyActionFlag> ActionFlags {
+			get { return _actionFlags; }
+		}
+
 		public AssemblyResolver Resolver {
 			get { return _resolver; }
 		}
@@ -178,6 +183,7 @@ namespace Mono.Linker {
 			_resolver = resolver;
 			_resolver.Context = this;
 			_actions = new Dictionary<string, AssemblyAction> ();
+			_actionFlags = new Dictionary<string, AssemblyActionFlag> ();
 			_parameters = new Dictionary<string, string> ();
 			_readerParameters = readerParameters;
 			

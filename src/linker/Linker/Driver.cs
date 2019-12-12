@@ -309,6 +309,13 @@ namespace Mono.Linker {
 						AssemblyAction action = ParseAssemblyAction (GetParam ());
 						context.Actions [GetParam ()] = action;
 						break;
+					case 'f':
+						AssemblyActionFlag newFlag = ParseAssemblyActionFlag (GetParam ());
+						string flagTargetName = GetParam ();
+						context.ActionFlags [flagTargetName] = context.ActionFlags.TryGetValue (flagTargetName, out AssemblyActionFlag existingFlag)
+							? existingFlag | newFlag
+							: newFlag;
+						break;
 					case 't':
 						context.KeepTypeForwarderOnlyAssemblies = true;
 						break;
@@ -535,6 +542,11 @@ namespace Mono.Linker {
 			return assemblyAction;
 		}
 
+		AssemblyActionFlag ParseAssemblyActionFlag (string s)
+		{
+			return (AssemblyActionFlag)Enum.Parse (typeof (AssemblyActionFlag), s, true);
+		}
+
 		string GetParam ()
 		{
 			if (_queue.Count == 0)
@@ -591,6 +603,8 @@ namespace Mono.Linker {
 			Console.WriteLine ("                        addbypassngenused: Same as addbypassngen but unused assemblies are removed");
 			Console.WriteLine ("  -u <action>         Action on the user assemblies. Defaults to 'link'");
 			Console.WriteLine ("  -p <action> <name>  Overrides the default action for an assembly");
+			Console.WriteLine ("  -f <flag> <name>    Adds a linker action flag for an assembly");
+			Console.WriteLine ("                        typegranularity: If there is any reference to a type, preserve the whole type");
 
 			Console.WriteLine ();
 			Console.WriteLine ("Advanced");
