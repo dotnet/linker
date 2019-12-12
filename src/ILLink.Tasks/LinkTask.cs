@@ -158,6 +158,13 @@ namespace ILLink.Tasks
 					args.Append (action);
 					args.Append (" ").AppendLine (Quote (assemblyName));
 				}
+
+				string actionflag = assembly.GetMetadata ("actionflag");
+				if ((actionflag != null) && (actionflag.Length > 0)) {
+					args.Append ("-f ");
+					args.Append (actionflag);
+					args.Append (" ").AppendLine (Quote (assemblyName));
+				}
 			}
 
 			if (ReferenceAssemblyPaths != null) {
