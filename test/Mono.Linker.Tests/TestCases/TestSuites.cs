@@ -103,6 +103,12 @@ namespace Mono.Linker.Tests.TestCases
 			Run (testCase);
 		}
 		
+		[TestCaseSource (typeof (TestDatabase), nameof (TestDatabase.TypeGranularityTests))]
+		public void TypeGranularityTests (TestCase testCase)
+		{
+			Run (testCase);
+		}
+
 		[TestCaseSource (typeof (TestDatabase), nameof (TestDatabase.SymbolsTests))]
 		public void SymbolsTests (TestCase testCase)
 		{

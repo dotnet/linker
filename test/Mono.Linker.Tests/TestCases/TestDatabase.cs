@@ -91,6 +91,11 @@ namespace Mono.Linker.Tests.TestCases
 			return NUnitCasesBySuiteName ("PreserveDependencies");
 		}
 		
+		public static IEnumerable<TestCaseData> TypeGranularityTests ()
+		{
+			return NUnitCasesBySuiteName ("TypeGranularity");
+		}
+		
 		public static IEnumerable<TestCaseData> LibrariesTests ()
 		{
 			return NUnitCasesBySuiteName ("Libraries");
