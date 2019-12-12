@@ -1699,6 +1699,10 @@ namespace Mono.Linker.Steps {
 		{
 			ApplyPreserveMethods (type);
 
+			if (_context.HasActionFlag(type.Module.Assembly, AssemblyActionFlag.TypeGranularity)) {
+				Annotations.SetPreserve (type, TypePreserve.All);
+			}
+
 			if (!Annotations.TryGetPreserve (type, out TypePreserve preserve))
 				return;
 

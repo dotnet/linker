@@ -406,6 +406,12 @@ namespace Mono.Linker {
 			return val;
 		}
 
+		public bool HasActionFlag (AssemblyDefinition assembly, AssemblyActionFlag flag)
+		{
+			return ActionFlags.TryGetValue (assembly.Name.Name, out AssemblyActionFlag foundFlags)
+				&& foundFlags.HasFlag (flag);
+		}
+
 		public void Dispose ()
 		{
 			_resolver.Dispose ();
