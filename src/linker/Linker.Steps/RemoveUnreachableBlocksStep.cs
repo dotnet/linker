@@ -21,6 +21,9 @@ namespace Mono.Linker.Steps
 
 		protected override void Process ()
 		{
+			if (Context.Substitutions == null)
+				return;
+
 			var assemblies = Context.Annotations.GetAssemblies ().ToArray ();
 
 			constExprMethods = new Dictionary<MethodDefinition, Instruction> ();
@@ -81,9 +84,8 @@ namespace Mono.Linker.Steps
 						continue;
 
 					var analyzer = new ConstantExpressionMethodAnalyzer (method);
-					if (analyzer.Analyze ()) {
+					if (analyzer.Analyze ())
 						constExprMethods [method] = analyzer.Result;
-					}
 				}
 
 				if (type.HasNestedTypes)
