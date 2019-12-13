@@ -417,6 +417,9 @@ namespace Mono.Linker {
 						case "unusedinterfaces":
 							context.DisabledOptimizations |= CodeOptimizations.UnusedInterfaces;
 							break;
+						case "ipconstprop":
+							context.DisabledOptimizations |= CodeOptimizations.IPConstantPropagation;
+							break;
 						}
 					}
 				}
@@ -429,6 +432,9 @@ namespace Mono.Linker {
 							break;
 						case "clearinitlocals":
 							context.DisabledOptimizations &= ~CodeOptimizations.ClearInitLocals;
+							break;
+						case "ipconstprop":
+							context.DisabledOptimizations &= ~CodeOptimizations.IPConstantPropagation;
 							break;
 						}
 					}
