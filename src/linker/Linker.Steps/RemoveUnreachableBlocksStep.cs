@@ -21,9 +21,6 @@ namespace Mono.Linker.Steps
 
 		protected override void Process ()
 		{
-			if (!Context.IsOptimizationEnabled (CodeOptimizations.IPConstantPropagation))
-				return;
-
 			var assemblies = Context.Annotations.GetAssemblies ().ToArray ();
 
 			constExprMethods = new Dictionary<MethodDefinition, Instruction> ();
@@ -81,6 +78,9 @@ namespace Mono.Linker.Steps
 						continue;
 
 					if (constExprMethods.ContainsKey (method))
+						continue;
+
+					if (!Context.IsOptimizationEnabled (CodeOptimizations.IPConstantPropagation))
 						continue;
 
 					var analyzer = new ConstantExpressionMethodAnalyzer (method);
