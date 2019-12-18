@@ -29,7 +29,6 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Xml.XPath;
 
@@ -443,6 +442,8 @@ namespace Mono.Linker {
 				if (context.IsOptimizationEnabled (CodeOptimizations.ClearInitLocals))
 					p.AddStepBefore (typeof (OutputStep), new ClearInitLocalsStep ());
 
+				CustomizeContext (context);
+
 				PreProcessPipeline (p);
 
 				try {
@@ -456,6 +457,10 @@ namespace Mono.Linker {
 		}
 
 		partial void PreProcessPipeline (Pipeline pipeline);
+
+		protected virtual void CustomizeContext(LinkContext context)
+		{
+		}
 
 		protected static void AddCustomStep (Pipeline pipeline, string arg)
 		{
