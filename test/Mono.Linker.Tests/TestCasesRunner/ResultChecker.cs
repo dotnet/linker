@@ -634,10 +634,10 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 							})) {
 
 							string targetCandidates = string.Join(Environment.NewLine, dependencyRecorder.Dependencies
-								.Where (d => d.Target.Contains (expectedTarget, StringComparison.OrdinalIgnoreCase))
+								.Where (d => d.Target.ToLowerInvariant().Contains (expectedTarget.ToLowerInvariant()))
 								.Select (d => "\t" + DependencyToString (d)));
 							string sourceCandidates = string.Join (Environment.NewLine, dependencyRecorder.Dependencies
-								.Where (d => d.Source.Contains (expectedSource, StringComparison.OrdinalIgnoreCase))
+								.Where (d => d.Source.ToLowerInvariant().Contains (expectedSource.ToLowerInvariant()))
 								.Select (d => "\t" + DependencyToString (d)));
 
 							Assert.Fail (
