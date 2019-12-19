@@ -35,13 +35,15 @@ namespace Mono.Linker
 	/// <summary>
 	/// Class which implements IDependencyRecorder and writes the dependencies into an XML file.
 	/// </summary>
-	class XmlDependencyRecorder : IDependencyRecorder, IDisposable
+	public class XmlDependencyRecorder : IDependencyRecorder, IDisposable
 	{
+		public const string DefaultDependenciesFileName = "linker-dependencies.xml.gz";
+
 		private readonly LinkContext context;
 		private XmlWriter writer;
 		private Stream stream;
 
-		public XmlDependencyRecorder (string fileName, LinkContext context)
+		public XmlDependencyRecorder (LinkContext context, string fileName = null)
 		{
 			this.context = context;
 
@@ -49,6 +51,14 @@ namespace Mono.Linker
 				Indent = true,
 				IndentChars = "\t"
 			};
+
+			if (fileName == null)
+				fileName = DefaultDependenciesFileName;
+
+			if (string.IsNullOrEmpty (Path.GetDirectoryName (fileName)) && !string.IsNullOrEmpty (context.OutputDirectory)) {
+				fileName = Path.Combine (context.OutputDirectory, fileName);
+				Directory.CreateDirectory (context.OutputDirectory);
+			}
 
 			var depsFile = File.OpenWrite (fileName);
 

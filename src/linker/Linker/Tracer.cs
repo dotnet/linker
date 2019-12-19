@@ -26,20 +26,14 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
+using System;
 using System.Collections.Generic;
-using System.IO;
 
 namespace Mono.Linker
 {
 	public class Tracer
 	{
-		public const string DefaultDependenciesFileName = "linker-dependencies.xml.gz";
-
-		public string DependenciesFileName { get; set; } = DefaultDependenciesFileName;
-
 		protected readonly LinkContext context;
-
-		private XmlDependencyRecorder xmlDependencyRecorder;
 
 		Stack<object> dependency_stack;
 		List<IDependencyRecorder> recorders;
@@ -50,26 +44,17 @@ namespace Mono.Linker
 			dependency_stack = new Stack<object> ();
 		}
 
-		public void Start ()
-		{
-			if (string.IsNullOrEmpty (Path.GetDirectoryName (DependenciesFileName)) && !string.IsNullOrEmpty (context.OutputDirectory)) {
-				DependenciesFileName = Path.Combine (context.OutputDirectory, DependenciesFileName);
-				Directory.CreateDirectory (context.OutputDirectory);
-			}
-
-			xmlDependencyRecorder = new XmlDependencyRecorder (DependenciesFileName, context);
-			AddRecorder (xmlDependencyRecorder);
-		}
-
 		public void Finish ()
 		{
 			dependency_stack = null;
-			recorders = null;
-
-			if (xmlDependencyRecorder != null) {
-				xmlDependencyRecorder.Dispose ();
-				xmlDependencyRecorder = null;
+			if (recorders != null) {
+				foreach (var recorder in recorders) {
+					if (recorder is IDisposable disposableRecorder)
+						disposableRecorder.Dispose ();
+				}
 			}
+
+			recorders = null;
 		}
 
 		public void AddRecorder (IDependencyRecorder recorder)

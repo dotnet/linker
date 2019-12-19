@@ -9,11 +9,11 @@
 				_customization = customizations;
 			}
 
-			protected override void CustomizeContext (LinkContext context)
+			protected override LinkContext GetDefaultContext (Pipeline pipeline)
 			{
-				base.CustomizeContext (context);
-
+				LinkContext context = base.GetDefaultContext (pipeline);
 				_customization.CustomizeLinkContext (context);
+				return context;
 			}
 		}
 

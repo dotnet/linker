@@ -158,6 +158,7 @@ namespace Mono.Linker {
 				var disabled_optimizations = new HashSet<string> (StringComparer.Ordinal);
 				var enabled_optimizations = new HashSet<string> (StringComparer.Ordinal);
 				bool dumpDependencies = false;
+				string dependenciesFileName = null;
 				bool ignoreDescriptors = false;
 				bool removeCAS = true;
 
@@ -187,7 +188,7 @@ namespace Mono.Linker {
 							continue;
 
 						case "--dependencies-file":
-							context.Tracer.DependenciesFileName = GetParam ();
+							dependenciesFileName = GetParam ();
 							continue;
 
 						case "--dump-dependencies":
@@ -360,9 +361,9 @@ namespace Mono.Linker {
 
 				if (ignoreDescriptors)
 					p.RemoveStep (typeof (BlacklistStep));
-					
+
 				if (dumpDependencies)
-					context.Tracer.Start ();
+					context.Tracer.AddRecorder (new XmlDependencyRecorder (context, dependenciesFileName));
 
 				foreach (string custom_step in custom_steps)
 					AddCustomStep (p, custom_step);
@@ -442,25 +443,18 @@ namespace Mono.Linker {
 				if (context.IsOptimizationEnabled (CodeOptimizations.ClearInitLocals))
 					p.AddStepBefore (typeof (OutputStep), new ClearInitLocalsStep ());
 
-				CustomizeContext (context);
-
 				PreProcessPipeline (p);
 
 				try {
 					p.Process (context);
 				}
 				finally {
-					if (dumpDependencies)
-						context.Tracer.Finish ();
+					context.Tracer.Finish ();
 				}
 			}
 		}
 
 		partial void PreProcessPipeline (Pipeline pipeline);
-
-		protected virtual void CustomizeContext(LinkContext context)
-		{
-		}
 
 		protected static void AddCustomStep (Pipeline pipeline, string arg)
 		{
@@ -554,7 +548,7 @@ namespace Mono.Linker {
 			return _queue.Dequeue ();
 		}
 
-		static LinkContext GetDefaultContext (Pipeline pipeline)
+		protected virtual LinkContext GetDefaultContext (Pipeline pipeline)
 		{
 			LinkContext context = new LinkContext (pipeline);
 			context.CoreAction = AssemblyAction.Skip;

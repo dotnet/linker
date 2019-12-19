@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Mono.Linker.Tests.TestCasesRunner
 {
@@ -16,7 +14,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 		public void CustomizeLinkContext(LinkContext context)
 		{
-			CustomizeContext (context);
+			CustomizeContext?.Invoke (context);
 		}
 	}
 }
