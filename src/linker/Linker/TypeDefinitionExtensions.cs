@@ -1,3 +1,5 @@
+
+using System;
 using Mono.Cecil;
 
 namespace Mono.Linker {
@@ -16,6 +18,17 @@ namespace Mono.Linker {
 			}
 
 			return false;
+		}
+
+		public static TypeReference GetEnumUnderlyingType (this TypeDefinition enumType)
+		{
+			foreach (var field in enumType.Fields) {
+				if (!field.IsStatic && field.Name == "value__") {
+					return field.FieldType;
+				}
+			}
+
+			throw new MissingFieldException ($"Enum type '{enumType.FullName}' is missing 'value__' field");
 		}
 	}
 }
