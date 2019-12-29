@@ -141,6 +141,21 @@ namespace Mono.Linker.Tests.TestCases
 			return NUnitCasesBySuiteName ("CodegenAnnotation");
 		}
 
+		public static IEnumerable<TestCaseData> UnreachableBlockTests ()
+		{
+			return NUnitCasesBySuiteName ("UnreachableBlock");
+		}
+
+		public static IEnumerable<TestCaseData> SubstitutionsTests ()
+		{
+			return NUnitCasesBySuiteName ("Substitutions");
+		}
+
+		public static IEnumerable<TestCaseData> TracingTests ()
+		{
+			return NUnitCasesBySuiteName ("Tracing");
+		}
+
 		public static TestCaseCollector CreateCollector ()
 		{
 			string rootSourceDirectory;

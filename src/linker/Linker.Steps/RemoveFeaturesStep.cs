@@ -67,6 +67,10 @@ namespace Mono.Linker.Steps
 						}
 					}
 				}
+				if (type.Namespace == "System.Reflection.Emit") {
+					foreach (var method in type.Methods)
+						Annotations.SetAction (method, MethodAction.ConvertToThrow);
+				}
 			}
 
 			if (FeatureGlobalization)
@@ -255,7 +259,7 @@ namespace Mono.Linker.Steps
 						{
 							if (method.Name == "get_UseManagedCollation")
 							{
-								annotations.SetAction(method, MethodAction.ConvertToFalse);
+								annotations.SetAction(method, MethodAction.ConvertToStub);
 								break;
 							}
 						}

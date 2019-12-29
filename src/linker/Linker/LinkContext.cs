@@ -117,6 +117,8 @@ namespace Mono.Linker {
 
 		public bool StripResources { get; set; }
 
+		public List<string> Substitutions { get; private set; }
+
 		public System.Collections.IDictionary Actions {
 			get { return _actions; }
 		}
@@ -155,6 +157,8 @@ namespace Mono.Linker {
 
 		public bool AddReflectionAnnotations { get; set; }
 
+		public string AssemblyListFile { get; set; }
+
 		public LinkContext (Pipeline pipeline)
 			: this (pipeline, new AssemblyResolver ())
 		{
@@ -191,6 +195,20 @@ namespace Mono.Linker {
 			// See https://github.com/mono/linker/issues/612
 			DisabledOptimizations |= CodeOptimizations.UnreachableBodies;
 			DisabledOptimizations |= CodeOptimizations.ClearInitLocals;
+		}
+
+		public void AddSubstitutionFile (string file)
+		{
+			if (Substitutions == null) {
+				Substitutions = new List<string> ();
+				Substitutions.Add (file);
+				return;
+			}
+
+			if (Substitutions.Contains (file))
+				return;
+
+			Substitutions.Add (file);
 		}
 
 		public TypeDefinition GetType (string fullName)
@@ -430,6 +448,16 @@ namespace Mono.Linker {
 		/// <summary>
 		/// Option to clear the initlocals flag on methods
 		/// </summary>
-		ClearInitLocals = 1 << 3
+		ClearInitLocals = 1 << 3,
+
+		/// <summary>
+		/// Option to remove .interfaceimpl for interface types that are not used
+		/// </summary>
+		UnusedInterfaces = 1 << 4,
+
+		/// <summary>
+		/// Option to do interprocedural constant propagation on return values
+		/// </summary>
+		IPConstantPropagation = 1 << 5
 	}
 }

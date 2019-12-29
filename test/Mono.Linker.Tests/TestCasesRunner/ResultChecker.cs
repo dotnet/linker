@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
@@ -165,6 +166,8 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 
 		protected virtual void AdditionalChecking (LinkedTestCaseResult linkResult, AssemblyDefinition original, AssemblyDefinition linked)
 		{
+			VerifyLoggedMessages(original, linkResult.Logger);
+			VerifyRecordedDependencies (original, linkResult.Customizations.DependencyRecorder);
 		}
 
 		protected virtual void InitialChecking (LinkedTestCaseResult linkResult, AssemblyDefinition original, AssemblyDefinition linked)
@@ -583,6 +586,73 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 				var missingMembersInLinked = originalMembers.Except (linkedMembers);
 				
 				Assert.That (missingMembersInLinked, Is.Empty, $"Expected all members of `{originalKvp.Key}`to exist in the linked assembly, but one or more were missing");
+			}
+		}
+
+		void VerifyLoggedMessages (AssemblyDefinition original, LinkerTestLogger logger)
+		{
+			string allMessages = string.Join (Environment.NewLine, logger.Messages.Select (mc => mc.Message));
+
+			foreach (var typeWithRemoveInAssembly in original.AllDefinedTypes ()) {
+				foreach (var attr in typeWithRemoveInAssembly.CustomAttributes) {
+					if (attr.AttributeType.Resolve ().Name == nameof (LogContainsAttribute)) {
+						var expectedMessagePattern = (string)attr.ConstructorArguments [0].Value;
+						Assert.That (
+							logger.Messages.Any (mc => Regex.IsMatch (mc.Message, expectedMessagePattern)),
+							$"Expected to find logged message matching `{expectedMessagePattern}`, but no such message was found.{Environment.NewLine}Logged messages:{Environment.NewLine}{allMessages}");
+					}
+
+					if (attr.AttributeType.Resolve ().Name == nameof (LogDoesNotContainAttribute)) {
+						var unexpectedMessagePattern = (string)attr.ConstructorArguments [0].Value;
+						foreach (var loggedMessage in logger.Messages) {
+							Assert.That (
+								!Regex.IsMatch (loggedMessage.Message, unexpectedMessagePattern),
+								$"Expected to not find logged message matching `{unexpectedMessagePattern}`, but found:{Environment.NewLine}{loggedMessage.Message}{Environment.NewLine}Logged messages:{Environment.NewLine}{allMessages}");
+						}
+					}
+				}
+			}
+		}
+
+		void VerifyRecordedDependencies (AssemblyDefinition original, TestDependencyRecorder dependencyRecorder)
+		{
+			foreach (var typeWithRemoveInAssembly in original.AllDefinedTypes ()) {
+				foreach (var attr in typeWithRemoveInAssembly.CustomAttributes) {
+					if (attr.AttributeType.Resolve ().Name == nameof (DependencyRecordedAttribute)) {
+						var expectedSource = (string)attr.ConstructorArguments [0].Value;
+						var expectedTarget = (string)attr.ConstructorArguments [1].Value;
+						var expectedMarked = (string)attr.ConstructorArguments [2].Value;
+
+						if (!dependencyRecorder.Dependencies.Any (dependency => {
+								if (dependency.Source != expectedSource)
+									return false;
+
+								if (dependency.Target != expectedTarget)
+									return false;
+
+								return expectedMarked == null || dependency.Marked.ToString () == expectedMarked;
+							})) {
+
+							string targetCandidates = string.Join(Environment.NewLine, dependencyRecorder.Dependencies
+								.Where (d => d.Target.ToLowerInvariant().Contains (expectedTarget.ToLowerInvariant()))
+								.Select (d => "\t" + DependencyToString (d)));
+							string sourceCandidates = string.Join (Environment.NewLine, dependencyRecorder.Dependencies
+								.Where (d => d.Source.ToLowerInvariant().Contains (expectedSource.ToLowerInvariant()))
+								.Select (d => "\t" + DependencyToString (d)));
+
+							Assert.Fail (
+								$"Expected to find recorded dependency '{expectedSource} -> {expectedTarget} {expectedMarked ?? string.Empty}'{Environment.NewLine}" +
+								$"Potential dependencies matching the target: {Environment.NewLine}{targetCandidates}{Environment.NewLine}" +
+								$"Potential dependencies matching the source: {Environment.NewLine}{sourceCandidates}{Environment.NewLine}" +
+								$"If there's no matches, try to specify just a part of the source/target name and rerun the test.");
+						}
+					}
+				}
+			}
+
+			string DependencyToString(TestDependencyRecorder.Dependency dependency)
+			{
+				return $"{dependency.Source} -> {dependency.Target} Marked: {dependency.Marked}";
 			}
 		}
 

@@ -371,12 +371,14 @@ namespace Mono.Linker.Steps {
 
 					if (_context.KeepUsedAttributeTypesOnly) {
 						_lateMarkedAttributes.Enqueue (new AttributeProviderPair (ca, provider));
-					} else {
-						if (!ShouldMarkCustomAttribute (ca, provider))
-							continue;
-
-						MarkCustomAttribute (ca);
+						continue;
 					}
+
+					if (!ShouldMarkCustomAttribute (ca, provider))
+						continue;
+
+					MarkCustomAttribute (ca);
+					MarkSpecialCustomAttributeDependencies (ca);
 				}
 			} finally {
 				Tracer.Pop ();
@@ -903,6 +905,7 @@ namespace Mono.Linker.Steps {
 
 				markOccurred = true;
 				MarkCustomAttribute (customAttribute);
+				MarkSpecialCustomAttributeDependencies (customAttribute);
 			}
 
 			// requeue the items we skipped in case we need to make another pass
@@ -914,20 +917,21 @@ namespace Mono.Linker.Steps {
 
 		protected void MarkField (FieldReference reference)
 		{
-//			if (IgnoreScope (reference.DeclaringType.Scope))
-//				return;
-
 			if (reference.DeclaringType is GenericInstanceType)
 				MarkType (reference.DeclaringType);
 
 			FieldDefinition field = ResolveFieldDefinition (reference);
 
-			if (field == null)
-			{
+			if (field == null) {
 				HandleUnresolvedField (reference);
 				return;
 			}
 
+			MarkField (field);
+		}
+
+		void MarkField (FieldDefinition field)
+		{
 			if (CheckProcessed (field))
 				return;
 
@@ -937,7 +941,7 @@ namespace Mono.Linker.Steps {
 			MarkMarshalSpec (field);
 			DoAdditionalFieldProcessing (field);
 
-			var parent = reference.DeclaringType.Resolve ();
+			var parent = field.DeclaringType;
 			if (!Annotations.HasPreservedStaticCtor (parent))
 				MarkStaticConstructor (parent);
 
@@ -950,13 +954,12 @@ namespace Mono.Linker.Steps {
 			return Annotations.GetAction (assembly) != AssemblyAction.Link;
 		}
 
-		FieldDefinition ResolveFieldDefinition (FieldReference field)
+		static FieldDefinition ResolveFieldDefinition (FieldReference field)
 		{
-			FieldDefinition fd = field as FieldDefinition;
-			if (fd == null)
-				fd = field.Resolve ();
+			if (field is FieldDefinition fd)
+				return fd;
 
-			return fd;
+			return field.Resolve ();
 		}
 
 		void MarkScope (IMetadataScope scope)
@@ -1159,12 +1162,27 @@ namespace Mono.Linker.Steps {
 				case "EventDataAttribute" when attrType.Namespace == "System.Diagnostics.Tracing":
 					MarkMethodsIf (type.Methods, IsPublicInstancePropertyMethod);
 					break;
-				case "TypeConverterAttribute" when attrType.Namespace == "System.ComponentModel":
-					// The attribute can be applied anywhere but in reality it's always associated with type
-					MarkTypeConverterDependency (attribute);
+				case "TypeDescriptionProviderAttribute" when attrType.Namespace == "System.ComponentModel":
+					MarkTypeConverterLikeDependency (attribute, l => l.IsDefaultConstructor ());
 					break;
 				}
 			}
+		}
+
+		//
+		// Used for known framework attributes which can be applied to any element
+		//
+		bool MarkSpecialCustomAttributeDependencies (CustomAttribute ca)
+		{
+			var dt = ca.Constructor.DeclaringType;
+			if (dt.Name == "TypeConverterAttribute" && dt.Namespace == "System.ComponentModel") {
+				MarkTypeConverterLikeDependency (ca, l =>
+					l.IsDefaultConstructor () ||
+					l.Parameters.Count == 1 && l.Parameters [0].ParameterType.IsTypeOf ("System", "Type"));
+				return true;
+			}
+
+			return false;
 		}
 
 		void MarkMethodSpecialCustomAttributes (MethodDefinition method)
@@ -1190,7 +1208,7 @@ namespace Mono.Linker.Steps {
 			MarkNamedMethod (type, method_name);
 		}
 
-		void MarkTypeConverterDependency (CustomAttribute attribute)
+		protected virtual void MarkTypeConverterLikeDependency (CustomAttribute attribute, Func<MethodDefinition, bool> predicate)
 		{
 			var args = attribute.ConstructorArguments;
 			if (args.Count < 1)
@@ -1209,9 +1227,7 @@ namespace Mono.Linker.Steps {
 			if (tdef == null)
 				return;
 
-			MarkMethodsIf (tdef.Methods, l =>
-				l.IsDefaultConstructor () ||
-				l.Parameters.Count == 1 && l.Parameters [0].ParameterType.IsTypeOf ("System", "Type"));
+			MarkMethodsIf (tdef.Methods, predicate);
 		}
 
 		void MarkTypeWithDebuggerDisplayAttribute (TypeDefinition type, CustomAttribute attribute)
@@ -1849,13 +1865,12 @@ namespace Mono.Linker.Steps {
 			return method;
 		}
 
-		MethodDefinition ResolveMethodDefinition (MethodReference method)
+		static MethodDefinition ResolveMethodDefinition (MethodReference method)
 		{
-			MethodDefinition md = method as MethodDefinition;
-			if (md == null)
-				md = method.Resolve ();
+			if (method is MethodDefinition md)
+				return md;
 
-			return md;
+			return method.Resolve ();
 		}
 
 		protected virtual void ProcessMethod (MethodDefinition method)
@@ -2034,6 +2049,18 @@ namespace Mono.Linker.Steps {
 				throw new MarkException ($"Could not find constructor on '{nse.FullName}'");
 
 			_context.MarkedKnownMembers.NotSupportedExceptionCtorString = nseCtor;
+
+			var objectType = BCL.FindPredefinedType ("System", "Object", _context);
+			if (objectType == null)
+				throw new NotSupportedException ("Missing predefined 'System.Object' type");
+
+			MarkType (objectType);
+
+			var objectCtor = MarkMethodIf (objectType.Methods, MethodDefinitionExtensions.IsDefaultConstructor);
+			if (objectCtor == null)
+				throw new MarkException ($"Could not find constructor on '{objectType.FullName}'");
+
+			_context.MarkedKnownMembers.ObjectCtor = objectCtor;
 		}
 
 		bool MarkDisablePrivateReflectionAttribute ()
@@ -2284,7 +2311,10 @@ namespace Mono.Linker.Steps {
 			if (Annotations.IsMarked (iface))
 				return false;
 
-			if (Annotations.IsMarked (resolvedInterfaceType) && !Annotations.IsMarked (iface))
+			if (Annotations.IsMarked (resolvedInterfaceType))
+				return true;
+
+			if (!_context.IsOptimizationEnabled (CodeOptimizations.UnusedInterfaces))
 				return true;
 
 			// It's hard to know if a com or windows runtime interface will be needed from managed code alone,
@@ -2308,6 +2338,14 @@ namespace Mono.Linker.Steps {
 		}
 
 		//
+		// Extension point for reflection logic handling customization
+		//
+		protected virtual bool ProcessReflectionDependency (MethodBody body, Instruction instruction)
+		{
+			return false;
+		}
+
+		//
 		// Tries to mark additional dependencies used in reflection like calls (e.g. typeof (MyClass).GetField ("fname"))
 		//
 		protected virtual void MarkReflectionLikeDependencies (MethodBody body)
@@ -2315,6 +2353,7 @@ namespace Mono.Linker.Steps {
 			if (HasManuallyTrackedDependency (body))
 				return;
 
+			var methodCalling = body.Method;
 			var instructions = body.Instructions;
 
 			//
@@ -2324,6 +2363,9 @@ namespace Mono.Linker.Steps {
 				var instruction = instructions [i];
 
 				if (instruction.OpCode != OpCodes.Call && instruction.OpCode != OpCodes.Callvirt)
+					continue;
+
+				if (ProcessReflectionDependency (body, instruction))
 					continue;
 
 				var methodCalled = instruction.Operand as MethodReference;
@@ -2344,6 +2386,13 @@ namespace Mono.Linker.Steps {
 				// System.Type
 				//
 				case "Type" when methodCalledType.Namespace == "System":
+
+					// Some of the overloads are implemented by calling another overload of the same name.
+					// These "internal" calls are not interesting to analyze, the outermost call is the one
+					// which needs to be analyzed. The assumption is that all overloads have the same semantics.
+					// (for example that all overload of GetConstructor if used require the specified type to have a .ctor).
+					if (methodCalling.DeclaringType == methodCalling.DeclaringType && methodCalling.Name == methodCalled.Name)
+						break;
 
 					switch (methodCalled.Name) {
 					//

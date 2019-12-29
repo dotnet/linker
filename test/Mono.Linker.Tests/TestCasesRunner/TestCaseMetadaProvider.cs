@@ -25,7 +25,7 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 				throw new InvalidOperationException ($"Could not find the type definition for {_testCase.Name} in {_testCase.SourceFile}");
 		}
 
-		public virtual TestCaseLinkerOptions GetLinkerOptions ()
+		public virtual TestCaseLinkerOptions GetLinkerOptions (NPath inputPath)
 		{
 			var tclo = new TestCaseLinkerOptions {
 				Il8n = GetOptionAttributeValue (nameof (Il8nAttribute), "none"),
@@ -36,13 +36,19 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 				CoreAssembliesAction = GetOptionAttributeValue<string> (nameof (SetupLinkerCoreActionAttribute), null),
 				UserAssembliesAction = GetOptionAttributeValue<string> (nameof (SetupLinkerUserActionAttribute), null),
 				SkipUnresolved = GetOptionAttributeValue (nameof (SkipUnresolvedAttribute), false),
-				StripResources = GetOptionAttributeValue (nameof (StripResourcesAttribute), true)
+				StripResources = GetOptionAttributeValue (nameof (StripResourcesAttribute), true),
 			};
 
 			foreach (var assemblyAction in _testCaseTypeDefinition.CustomAttributes.Where (attr => attr.AttributeType.Name == nameof (SetupLinkerActionAttribute)))
 			{
 				var ca = assemblyAction.ConstructorArguments;
 				tclo.AssembliesAction.Add (new KeyValuePair<string, string> ((string)ca [0].Value, (string)ca [1].Value));
+			}
+
+			foreach (var subsFile in _testCaseTypeDefinition.CustomAttributes.Where (attr => attr.AttributeType.Name == nameof (SetupLinkerSubstitutionFileAttribute))) {
+				var ca = subsFile.ConstructorArguments;
+				var file = (string)ca [0].Value;
+				tclo.Substitutions.Add (Path.Combine (inputPath, file));
 			}
 
 			foreach (var additionalArgumentAttr in _testCaseTypeDefinition.CustomAttributes.Where (attr => attr.AttributeType.Name == nameof (SetupLinkerArgumentAttribute)))
@@ -52,7 +58,23 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 				tclo.AdditionalArguments.Add (new KeyValuePair<string, string []> ((string)ca [0].Value, values));
 			}
 
+			if (_testCaseTypeDefinition.CustomAttributes.Any (attr => 
+				attr.AttributeType.Name == nameof (LogContainsAttribute) || attr.AttributeType.Name == nameof (LogDoesNotContainAttribute))) {
+				tclo.AdditionalArguments.Add (new KeyValuePair<string, string []> ("--verbose", new string [] { }));
+			}
+
 			return tclo;
+		}
+
+		public virtual void CustomizeLinker (LinkerDriver linker, LinkerCustomizations customizations)
+		{
+			if (_testCaseTypeDefinition.CustomAttributes.Any (attr =>
+				attr.AttributeType.Name == nameof (DependencyRecordedAttribute))) {
+				customizations.DependencyRecorder = new TestDependencyRecorder ();
+				customizations.CustomizeContext += context => {
+					context.Tracer.AddRecorder (customizations.DependencyRecorder);
+				};
+			}
 		}
 
 #if NETCOREAPP
@@ -128,6 +150,13 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 		{
 			return _testCaseTypeDefinition.CustomAttributes
 				.Where (attr => attr.AttributeType.Name == nameof (SetupLinkerResponseFileAttribute))
+				.Select (GetSourceAndRelativeDestinationValue);
+		}
+
+		public virtual IEnumerable<SourceAndDestinationPair> GetSubstitutionFiles ()
+		{
+			return _testCaseTypeDefinition.CustomAttributes
+				.Where (attr => attr.AttributeType.Name == nameof (SetupLinkerSubstitutionFileAttribute))
 				.Select (GetSourceAndRelativeDestinationValue);
 		}
 
