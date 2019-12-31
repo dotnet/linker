@@ -29,6 +29,16 @@ namespace Mono.Linker {
 			}
 
 			throw new MissingFieldException ($"Enum type '{enumType.FullName}' is missing 'value__' field");
+    }
+    
+		public static bool IsMulticastDelegate (this TypeDefinition td)
+		{
+			return td.BaseType?.Name == "MulticastDelegate" && td.BaseType.Namespace == "System";
+		}
+
+		public static bool IsSerializable (this TypeDefinition td)
+		{
+			return (td.Attributes & TypeAttributes.Serializable) != 0;
 		}
 	}
 }
