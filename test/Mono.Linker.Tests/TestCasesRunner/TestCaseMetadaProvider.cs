@@ -75,6 +75,15 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 					context.Tracer.AddRecorder (customizations.DependencyRecorder);
 				};
 			}
+
+			if (_testCaseTypeDefinition.CustomAttributes.Any (attr =>
+				attr.AttributeType.Name == nameof (RecognizedReflectionAccessPatternAttribute) ||
+				attr.AttributeType.Name == nameof (UnrecognizedReflectionAccessPatternAttribute))) {
+				customizations.ReflectionPatternRecorder = new TestReflectionPatternRecorder ();
+				customizations.CustomizeContext += context => {
+					context.ReflectionPatternRecorder = customizations.ReflectionPatternRecorder;
+				};
+			};
 		}
 
 #if NETCOREAPP

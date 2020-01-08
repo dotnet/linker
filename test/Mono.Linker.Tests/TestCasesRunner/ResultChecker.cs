@@ -168,6 +168,7 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 		{
 			VerifyLoggedMessages(original, linkResult.Logger);
 			VerifyRecordedDependencies (original, linkResult.Customizations.DependencyRecorder);
+			VerifyRecordedReflectionPatterns (original, linkResult.Customizations.ReflectionPatternRecorder);
 		}
 
 		protected virtual void InitialChecking (LinkedTestCaseResult linkResult, AssemblyDefinition original, AssemblyDefinition linked)
@@ -644,15 +645,97 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 								$"Expected to find recorded dependency '{expectedSource} -> {expectedTarget} {expectedMarked ?? string.Empty}'{Environment.NewLine}" +
 								$"Potential dependencies matching the target: {Environment.NewLine}{targetCandidates}{Environment.NewLine}" +
 								$"Potential dependencies matching the source: {Environment.NewLine}{sourceCandidates}{Environment.NewLine}" +
-								$"If there's no matches, try to specify just a part of the source/target name and rerun the test.");
+								$"If there's no matches, try to specify just a part of the source/target name and rerun the test to get potential matches.");
 						}
 					}
 				}
 			}
 
-			string DependencyToString(TestDependencyRecorder.Dependency dependency)
+			static string DependencyToString(TestDependencyRecorder.Dependency dependency)
 			{
 				return $"{dependency.Source} -> {dependency.Target} Marked: {dependency.Marked}";
+			}
+		}
+
+		void VerifyRecordedReflectionPatterns (AssemblyDefinition original, TestReflectionPatternRecorder reflectionPatternRecorder)
+		{
+			foreach (var typeWithRemoveInAssembly in original.AllDefinedTypes ()) {
+				foreach (var attr in typeWithRemoveInAssembly.CustomAttributes) {
+					if (attr.AttributeType.Resolve ().Name == nameof (RecognizedReflectionAccessPatternAttribute)) {
+						var expectedSourceMethod = (string)attr.ConstructorArguments [0].Value;
+						var expectedReflectionMethod = (string)attr.ConstructorArguments [1].Value;
+						var expectedAccessedItem = (string)attr.ConstructorArguments [2].Value;
+
+						if (!reflectionPatternRecorder.RecognizedPatterns.Any (pattern => {
+							if (pattern.SourceMethod.ToString() != expectedSourceMethod)
+								return false;
+
+							if (pattern.ReflectionMethod.ToString() != expectedReflectionMethod)
+								return false;
+
+							if (pattern.AccessedItem.ToString () != expectedAccessedItem)
+								return false;
+
+							return true;
+						})) {
+
+							string sourceMethodCandidates = string.Join (Environment.NewLine, reflectionPatternRecorder.RecognizedPatterns
+								.Where (p => p.SourceMethod.ToString().ToLowerInvariant ().Contains (expectedSourceMethod.ToLowerInvariant ()))
+								.Select (p => "\t" + RecognizedReflectionAccessPatternToString (p)));
+							string reflectionMethodCandidates = string.Join (Environment.NewLine, reflectionPatternRecorder.RecognizedPatterns
+								.Where (p => p.ReflectionMethod.ToString().ToLowerInvariant ().Contains (expectedReflectionMethod.ToLowerInvariant ()))
+								.Select (p => "\t" + RecognizedReflectionAccessPatternToString (p)));
+
+							Assert.Fail (
+								$"Expected to find recognized reflection access pattern '{expectedSourceMethod}: Call to {expectedReflectionMethod} accessed {expectedAccessedItem}'{Environment.NewLine}" +
+								$"Potential patterns matching the source method: {Environment.NewLine}{sourceMethodCandidates}{Environment.NewLine}" +
+								$"Potential patterns matching the reflection method: {Environment.NewLine}{reflectionMethodCandidates}{Environment.NewLine}" +
+								$"If there's no matches, try to specify just a part of the source method or reflection method name and rerun the test to get potential matches.");
+						}
+					}
+					else if (attr.AttributeType.Resolve().Name == nameof (UnrecognizedReflectionAccessPatternAttribute)) {
+						var expectedSourceMethod = (string)attr.ConstructorArguments [0].Value;
+						var expectedReflectionMethod = (string)attr.ConstructorArguments [1].Value;
+						var expectedMessage = (string)attr.ConstructorArguments [2].Value;
+
+						if (!reflectionPatternRecorder.UnrecognizedPatterns.Any (pattern => {
+							if (pattern.SourceMethod.ToString () != expectedSourceMethod)
+								return false;
+
+							if (pattern.ReflectionMethod.ToString () != expectedReflectionMethod)
+								return false;
+
+							if (expectedMessage != null && pattern.Message != expectedMessage)
+								return false;
+
+							return true;
+						})) {
+
+							string sourceMethodCandidates = string.Join (Environment.NewLine, reflectionPatternRecorder.UnrecognizedPatterns
+								.Where (p => p.SourceMethod.ToString ().ToLowerInvariant ().Contains (expectedSourceMethod.ToLowerInvariant ()))
+								.Select (p => "\t" + UnrecognizedReflectionAccessPatternToString (p)));
+							string reflectionMethodCandidates = string.Join (Environment.NewLine, reflectionPatternRecorder.UnrecognizedPatterns
+								.Where (p => p.ReflectionMethod.ToString ().ToLowerInvariant ().Contains (expectedReflectionMethod.ToLowerInvariant ()))
+								.Select (p => "\t" + UnrecognizedReflectionAccessPatternToString (p)));
+
+							Assert.Fail (
+								$"Expected to find unrecognized reflection access pattern '{expectedSourceMethod}: Call to {expectedReflectionMethod} unrecognized {expectedMessage ?? string.Empty}'{Environment.NewLine}" +
+								$"Potential patterns matching the source method: {Environment.NewLine}{sourceMethodCandidates}{Environment.NewLine}" +
+								$"Potential patterns matching the reflection method: {Environment.NewLine}{reflectionMethodCandidates}{Environment.NewLine}" +
+								$"If there's no matches, try to specify just a part of the source method or reflection method name and rerun the test to get potential matches.");
+						}
+					}
+				}
+			}
+
+			static string RecognizedReflectionAccessPatternToString (TestReflectionPatternRecorder.ReflectionAccessPattern pattern)
+			{
+				return $"{pattern.SourceMethod}: Call to {pattern.ReflectionMethod} accessed {pattern.AccessedItem}";
+			}
+
+			static string UnrecognizedReflectionAccessPatternToString (TestReflectionPatternRecorder.ReflectionAccessPattern pattern)
+			{
+				return $"{pattern.SourceMethod}: Call to {pattern.ReflectionMethod} unrecognized '{pattern.Message}'";
 			}
 		}
 

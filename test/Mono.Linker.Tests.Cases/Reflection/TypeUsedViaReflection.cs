@@ -2,6 +2,14 @@
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
 namespace Mono.Linker.Tests.Cases.Reflection {
+	[RecognizedReflectionAccessPattern(
+		"System.Void Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection::TestType()",
+		"System.Type System.Type::GetType(System.String,System.Boolean)",
+		"Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection/AType")]
+	[UnrecognizedReflectionAccessPattern(
+		"System.Void Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection::TestNull()",
+		"System.Type System.Type::GetType(System.String,System.Boolean)",
+		null)]
 	public class TypeUsedViaReflection {
 		public static void Main ()
 		{

@@ -2,6 +2,11 @@
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
 namespace Mono.Linker.Tests.Cases.Reflection {
+
+	[RecognizedReflectionAccessPattern(
+		"System.Void Mono.Linker.Tests.Cases.Reflection.MethodUsedViaReflection::Main()",
+		"System.Reflection.MethodInfo System.Type::GetMethod(System.String,System.Reflection.BindingFlags)",
+		"System.Int32 Mono.Linker.Tests.Cases.Reflection.MethodUsedViaReflection::OnlyCalledViaReflection()")]
 	public class MethodUsedViaReflection {
 		public static void Main ()
 		{
