@@ -651,7 +651,7 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 				}
 			}
 
-			static string DependencyToString(TestDependencyRecorder.Dependency dependency)
+			string DependencyToString(TestDependencyRecorder.Dependency dependency)
 			{
 				return $"{dependency.Source} -> {dependency.Target} Marked: {dependency.Marked}";
 			}
@@ -728,12 +728,12 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 				}
 			}
 
-			static string RecognizedReflectionAccessPatternToString (TestReflectionPatternRecorder.ReflectionAccessPattern pattern)
+			string RecognizedReflectionAccessPatternToString (TestReflectionPatternRecorder.ReflectionAccessPattern pattern)
 			{
 				return $"{pattern.SourceMethod}: Call to {pattern.ReflectionMethod} accessed {pattern.AccessedItem}";
 			}
 
-			static string UnrecognizedReflectionAccessPatternToString (TestReflectionPatternRecorder.ReflectionAccessPattern pattern)
+			string UnrecognizedReflectionAccessPatternToString (TestReflectionPatternRecorder.ReflectionAccessPattern pattern)
 			{
 				return $"{pattern.SourceMethod}: Call to {pattern.ReflectionMethod} unrecognized '{pattern.Message}'";
 			}
