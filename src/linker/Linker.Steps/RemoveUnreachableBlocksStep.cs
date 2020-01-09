@@ -192,7 +192,6 @@ namespace Mono.Linker.Steps
 						break;
 					if (Context.Annotations.TryGetFieldValue (field, out object value)) {
 						targetResult = CodeRewriterStep.CreateConstantResultInstruction (field.FieldType, value);
-						Console.WriteLine ("MOO: " + field + " " + targetResult);
 						reducer.Rewrite (i, targetResult);
 						changed = true;
 					}
