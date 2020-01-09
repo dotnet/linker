@@ -166,7 +166,7 @@ namespace Mono.Linker.Steps
 				var instr = instructions [i];
 				switch (instr.OpCode.Code) {
 
-				case Code.Call:
+				case Code.Call: {
 					var target = (MethodReference)instr.Operand;
 					var md = target.Resolve ();
 					if (md == null)
@@ -184,7 +184,20 @@ namespace Mono.Linker.Steps
 					reducer.Rewrite (i, targetResult);
 					changed = true;
 					break;
-
+				}
+				case Code.Ldsfld: {
+					var target = (FieldReference)instr.Operand;
+					var field = target.Resolve ();
+					if (field == null)
+						break;
+					if (Context.Annotations.TryGetFieldValue (field, out object value)) {
+						targetResult = CodeRewriterStep.CreateConstantResultInstruction (field.FieldType, value);
+						Console.WriteLine ("MOO: " + field + " " + targetResult);
+						reducer.Rewrite (i, targetResult);
+						changed = true;
+					}
+					break;
+				}
 				case Code.Sizeof:
 					//
 					// sizeof (IntPtr) and sizeof (UIntPtr) are just aliases for IntPtr.Size and UIntPtr.Size
@@ -898,7 +911,7 @@ namespace Mono.Linker.Steps
 
 			Instruction GetReturnInitialization (out Instruction[] initInstructions)
 			{
-				var cinstr = CodeRewriterStep.CreateConstantResultInstruction (body.Method);
+				var cinstr = CodeRewriterStep.CreateConstantResultInstruction (body.Method.ReturnType);
 				if (cinstr != null) {
 					initInstructions = null;
 					return cinstr;

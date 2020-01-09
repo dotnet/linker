@@ -151,12 +151,11 @@ namespace Mono.Linker.Steps {
 		public static Instruction CreateConstantResultInstruction (LinkContext context, MethodDefinition method)
 		{
 			context.Annotations.TryGetMethodStubValue (method, out object value);
-			return CreateConstantResultInstruction (method, value);
+			return CreateConstantResultInstruction (method.ReturnType, value);
 		}
 
-		public static Instruction CreateConstantResultInstruction (MethodDefinition method, object value = null)
+		public static Instruction CreateConstantResultInstruction (TypeReference rtype, object value = null)
 		{
-			var rtype = method.ReturnType;
 			switch (rtype.MetadataType) {
 			case MetadataType.ValueType:
 				var definition = rtype.Resolve ();
