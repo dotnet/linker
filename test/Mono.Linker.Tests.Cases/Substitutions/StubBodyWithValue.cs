@@ -144,7 +144,8 @@ namespace Mono.Linker.Tests.Cases.Substitutions
 			throw new NotImplementedException ();
 		}
 
-		static bool StaticField;
+		[Kept]
+		static bool StaticField = true;
 
 		[Kept]
 		[ExpectedInstructionSequence (new [] {
