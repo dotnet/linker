@@ -21,7 +21,6 @@ namespace Mono.Linker.Tests.Cases.Substitutions
 			TestMethod_10 ();
 			TestMethod_11 ();
 			TestMethod_12 ();
-			TestMethod_13 ();
 		}
 
 		[Kept]
@@ -142,19 +141,6 @@ namespace Mono.Linker.Tests.Cases.Substitutions
 		static uint TestMethod_12 ()
 		{
 			throw new NotImplementedException ();
-		}
-
-		[Kept]
-		static bool StaticField = true;
-
-		[Kept]
-		[ExpectedInstructionSequence (new [] {
-				"ldc.i4",
-				"ret",
-			})]
-		static bool TestMethod_13 ()
-		{
-			return StaticField;
 		}
 	}
 }

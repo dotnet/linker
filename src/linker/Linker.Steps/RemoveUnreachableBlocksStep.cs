@@ -166,7 +166,7 @@ namespace Mono.Linker.Steps
 				var instr = instructions [i];
 				switch (instr.OpCode.Code) {
 
-				case Code.Call: {
+				case Code.Call:
 					var target = (MethodReference)instr.Operand;
 					var md = target.Resolve ();
 					if (md == null)
@@ -184,19 +184,22 @@ namespace Mono.Linker.Steps
 					reducer.Rewrite (i, targetResult);
 					changed = true;
 					break;
-				}
-				case Code.Ldsfld: {
-					var target = (FieldReference)instr.Operand;
-					var field = target.Resolve ();
+
+				case Code.Ldsfld:
+					var ftarget = (FieldReference)instr.Operand;
+					var field = ftarget.Resolve ();
 					if (field == null)
 						break;
-					if (Context.Annotations.TryGetFieldValue (field, out object value)) {
+
+					if (Context.Annotations.TryGetFieldUserValue (field, out object value)) {
 						targetResult = CodeRewriterStep.CreateConstantResultInstruction (field.FieldType, value);
+						if (targetResult == null)
+							break;
 						reducer.Rewrite (i, targetResult);
 						changed = true;
 					}
 					break;
-				}
+
 				case Code.Sizeof:
 					//
 					// sizeof (IntPtr) and sizeof (UIntPtr) are just aliases for IntPtr.Size and UIntPtr.Size

@@ -249,7 +249,7 @@ namespace Mono.Linker {
 			return method_stub_values.TryGetValue (method, out value);
 		}
 
-		public bool TryGetFieldValue (FieldDefinition field, out object value)
+		public bool TryGetFieldUserValue (FieldDefinition field, out object value)
 		{
 			return field_values.TryGetValue (field, out value);
 		}

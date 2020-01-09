@@ -157,7 +157,7 @@ namespace Mono.Linker.Steps
 
 			var field = type.Fields.FirstOrDefault (f => f.Name == name);
 			if (field == null) {
-				Context.LogMessage (MessageImportance.High, $"Could not find field '{name}' for substitution.");
+				Context.LogMessage (MessageImportance.Low, $"Could not find field '{name}' for substitution.");
 				return;
 			}
 
