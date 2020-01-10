@@ -41,6 +41,8 @@ namespace Mono.Linker {
 		protected readonly Dictionary<MethodDefinition, MethodAction> method_actions = new Dictionary<MethodDefinition, MethodAction> ();
 		protected readonly Dictionary<MethodDefinition, object> method_stub_values = new Dictionary<MethodDefinition, object> ();
 		protected readonly Dictionary<FieldDefinition, object> field_values = new Dictionary<FieldDefinition, object> ();
+		protected readonly HashSet<FieldDefinition> field_init = new HashSet<FieldDefinition> ();
+		protected readonly HashSet<TypeDefinition> fieldType_init = new HashSet<TypeDefinition> ();
 		protected readonly HashSet<IMetadataTokenProvider> marked = new HashSet<IMetadataTokenProvider> ();
 		protected readonly HashSet<IMetadataTokenProvider> processed = new HashSet<IMetadataTokenProvider> ();
 		protected readonly Dictionary<TypeDefinition, TypePreserve> preserved_types = new Dictionary<TypeDefinition, TypePreserve> ();
@@ -128,6 +130,26 @@ namespace Mono.Linker {
 		public void SetFieldValue (FieldDefinition field, object value)
 		{
 			field_values [field] = value;
+		}
+
+		public void SetSubstitutedInit (FieldDefinition field)
+		{
+			field_init.Add (field);
+		}
+
+		public bool HasSubstitutedInit (FieldDefinition field)
+		{
+			return field_init.Contains (field);
+		}
+
+		public void SetSubstitutedInit (TypeDefinition type)
+		{
+			fieldType_init.Add (type);
+		}
+
+		public bool HasSubstitutedInit (TypeDefinition type)
+		{
+			return fieldType_init.Contains (type);
 		}
 
 		public void Mark (IMetadataTokenProvider provider)

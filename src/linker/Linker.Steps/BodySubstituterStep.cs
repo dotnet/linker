@@ -161,6 +161,11 @@ namespace Mono.Linker.Steps
 				return;
 			}
 
+			if (!field.IsStatic || field.IsLiteral) {
+				Context.LogMessage (MessageImportance.Normal, $"Substituted field '{name}' needs to be static field.");
+				return;
+			}
+
 			string value = GetAttribute (iterator.Current, "value");
 			if (string.IsNullOrEmpty (value)) {
 				Context.LogMessage (MessageImportance.High, $"Missing 'value' attribute for field '{field}'.");
@@ -172,6 +177,11 @@ namespace Mono.Linker.Steps
 			}
 
 			Annotations.SetFieldValue (field, res);
+
+			string init = GetAttribute (iterator.Current, "initialize");
+			if (init?.ToLowerInvariant () == "true") {
+				Annotations.SetSubstitutedInit (field);
+			}
 		}
 
 		static bool TryConvertValue (string value, TypeReference target, out object result)
