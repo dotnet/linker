@@ -121,7 +121,7 @@ namespace Mono.Linker.Steps
 
 			MethodDefinition method = FindMethod (type, signature);
 			if (method == null) {
-				Context.LogMessage (MessageImportance.Low, $"Could not find method '{signature}' for substitution");
+				Context.LogMessage (MessageImportance.Normal, $"Could not find method '{signature}' for substitution");
 				return;
 			}
 
@@ -157,7 +157,7 @@ namespace Mono.Linker.Steps
 
 			var field = type.Fields.FirstOrDefault (f => f.Name == name);
 			if (field == null) {
-				Context.LogMessage (MessageImportance.Low, $"Could not find field '{name}' for substitution.");
+				Context.LogMessage (MessageImportance.Normal, $"Could not find field '{name}' for substitution.");
 				return;
 			}
 
