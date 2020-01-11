@@ -88,6 +88,7 @@ namespace Mono.Linker.Steps {
 				case AssemblyAction.Link:
 				case AssemblyAction.AddBypassNGen:
 				case AssemblyAction.AddBypassNGenUsed:
+				case AssemblyAction.Skip:
 					MarkAssembly (assembly);
 
 					foreach (TypeDefinition type in assembly.MainModule.Types)
