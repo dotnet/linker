@@ -2,19 +2,23 @@
 
 namespace Mono.Linker.Tests.Cases.Expectations.Assertions
 {
-	[AttributeUsage (AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+	[AttributeUsage (AttributeTargets.Method, AllowMultiple = true, Inherited = false)]
 	public class RecognizedReflectionAccessPatternAttribute : BaseExpectedLinkedBehaviorAttribute
 	{
-		public RecognizedReflectionAccessPatternAttribute (string sourceMethod, string reflectionMethod, string accessedItem)
+		public RecognizedReflectionAccessPatternAttribute (Type reflectionMethodType, string reflectionMethodName, Type[] reflectionMethodParameters,
+			Type accessedItemType, string accessedItemName, Type[] accessedItemParameters)
 		{
-			if (string.IsNullOrEmpty(sourceMethod))
-				throw new ArgumentException ("Value cannot be null or empty.", nameof (sourceMethod));
+			if (reflectionMethodType == null)
+				throw new ArgumentException ("Value cannot be null or empty.", nameof (reflectionMethodType));
+			if (reflectionMethodName == null)
+				throw new ArgumentException ("Value cannot be null or empty.", nameof (reflectionMethodName));
+			if (reflectionMethodParameters == null)
+				throw new ArgumentException ("Value cannot be null or empty.", nameof (reflectionMethodParameters));
 
-			if (string.IsNullOrEmpty (reflectionMethod))
-				throw new ArgumentException ("Value cannot be null or empty.", nameof (reflectionMethod));
-
-			if (string.IsNullOrEmpty (accessedItem))
-				throw new ArgumentException ("Value cannot be null or empty.", nameof (accessedItem));
+			if (accessedItemType == null)
+				throw new ArgumentException ("Value cannot be null or empty.", nameof (accessedItemType));
+			if (accessedItemName == null)
+				throw new ArgumentException ("Value cannot be null or empty.", nameof (accessedItemName));
 		}
 	}
 }

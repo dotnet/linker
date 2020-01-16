@@ -1,13 +1,13 @@
-﻿using System.Reflection;
+﻿using System;
+using System.Reflection;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
 namespace Mono.Linker.Tests.Cases.Reflection {
 
-	[RecognizedReflectionAccessPattern(
-		"System.Void Mono.Linker.Tests.Cases.Reflection.MethodUsedViaReflection::Main()",
-		"System.Reflection.MethodInfo System.Type::GetMethod(System.String,System.Reflection.BindingFlags)",
-		"System.Int32 Mono.Linker.Tests.Cases.Reflection.MethodUsedViaReflection::OnlyCalledViaReflection()")]
 	public class MethodUsedViaReflection {
+		[RecognizedReflectionAccessPattern (
+			typeof (Type), nameof (Type.GetMethod), new Type [] { typeof(string), typeof(BindingFlags) },
+			typeof (MethodUsedViaReflection), nameof (MethodUsedViaReflection.OnlyCalledViaReflection), new Type [0])]
 		public static void Main ()
 		{
 			var method = typeof (MethodUsedViaReflection).GetMethod ("OnlyCalledViaReflection", BindingFlags.Static | BindingFlags.NonPublic);

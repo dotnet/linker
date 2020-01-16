@@ -2,14 +2,6 @@
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
 namespace Mono.Linker.Tests.Cases.Reflection {
-	[RecognizedReflectionAccessPattern(
-		"System.Void Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection::TestType()",
-		"System.Type System.Type::GetType(System.String,System.Boolean)",
-		"Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection/AType")]
-	[UnrecognizedReflectionAccessPattern(
-		"System.Void Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection::TestNull()",
-		"System.Type System.Type::GetType(System.String,System.Boolean)",
-		null)]
 	public class TypeUsedViaReflection {
 		public static void Main ()
 		{
@@ -32,6 +24,8 @@ namespace Mono.Linker.Tests.Cases.Reflection {
 		}
 
 		[Kept]
+		[UnrecognizedReflectionAccessPattern (
+			typeof (Type), nameof (Type.GetType), new Type [] { typeof (string), typeof (bool) })]
 		public static void TestNull ()
 		{
 			const string reflectionTypeKeptString = null;
@@ -89,6 +83,9 @@ namespace Mono.Linker.Tests.Cases.Reflection {
 		public class AType { }
 
 		[Kept]
+		[RecognizedReflectionAccessPattern (
+			typeof (Type), nameof (Type.GetType), new Type[] { typeof (string), typeof (bool) },
+			typeof (AType), null, null)]
 		public static void TestType ()
 		{
 			const string reflectionTypeKeptString = "Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection+AType";

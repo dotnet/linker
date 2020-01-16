@@ -2,19 +2,21 @@
 
 namespace Mono.Linker.Tests.Cases.Expectations.Assertions
 {
-	[AttributeUsage (AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+	[AttributeUsage (AttributeTargets.Method, AllowMultiple = true, Inherited = false)]
 	public class UnrecognizedReflectionAccessPatternAttribute : BaseExpectedLinkedBehaviorAttribute
 	{
-		public UnrecognizedReflectionAccessPatternAttribute (string sourceMethod, string reflectionMethod, string accessedItem)
+		public UnrecognizedReflectionAccessPatternAttribute (Type reflectionMethodType, string reflectionMethodName, Type [] reflectionMethodParameters,
+			string message = null)
 		{
-			if (string.IsNullOrEmpty (sourceMethod))
-				throw new ArgumentException ("Value cannot be null or empty.", nameof (sourceMethod));
+			if (reflectionMethodType == null)
+				throw new ArgumentException ("Value cannot be null or empty.", nameof (reflectionMethodType));
+			if (reflectionMethodName == null)
+				throw new ArgumentException ("Value cannot be null or empty.", nameof (reflectionMethodName));
+			if (reflectionMethodParameters == null)
+				throw new ArgumentException ("Value cannot be null or empty.", nameof (reflectionMethodParameters));
 
-			if (string.IsNullOrEmpty (reflectionMethod))
-				throw new ArgumentException ("Value cannot be null or empty.", nameof (reflectionMethod));
-
-			if (string.IsNullOrEmpty (accessedItem))
-				throw new ArgumentException ("Value cannot be null or empty.", nameof (accessedItem));
+			if (message == null)
+				throw new ArgumentException ("Value cannot be null or empty.", nameof (message));
 		}
 	}
 }

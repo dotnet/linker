@@ -76,9 +76,9 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 				};
 			}
 
-			if (_testCaseTypeDefinition.CustomAttributes.Any (attr =>
+			if (_testCaseTypeDefinition.AllMethods().Any(method => method.CustomAttributes.Any (attr =>
 				attr.AttributeType.Name == nameof (RecognizedReflectionAccessPatternAttribute) ||
-				attr.AttributeType.Name == nameof (UnrecognizedReflectionAccessPatternAttribute))) {
+				attr.AttributeType.Name == nameof (UnrecognizedReflectionAccessPatternAttribute)))) {
 				customizations.ReflectionPatternRecorder = new TestReflectionPatternRecorder ();
 				customizations.CustomizeContext += context => {
 					context.ReflectionPatternRecorder = customizations.ReflectionPatternRecorder;
