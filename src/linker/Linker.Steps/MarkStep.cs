@@ -2757,6 +2757,14 @@ namespace Mono.Linker.Steps {
 
 					switch (methodCalled.Name) {
 						//
+						// static T CreateInstance<T> ()
+						//
+						case "CreateInstance" when methodCalled.ContainsGenericParameter:
+							// Not sure it's worth implementing as we cannot expant T and simple cases can be rewritten
+							ReportUnrecognizedReflectionCallPattern ($"Activator call '{methodCalled.FullName}' inside '{body.Method.FullName}' is not supported");
+							break;
+
+						//
 						// static CreateInstance (string assemblyName, string typeName)
 						// static CreateInstance (string assemblyName, string typeName, bool ignoreCase, System.Reflection.BindingFlags bindingAttr, System.Reflection.Binder? binder, object?[]? args, System.Globalization.CultureInfo? culture, object?[]? activationAttributes)
 						// static CreateInstance (string assemblyName, string typeName, object?[]? activationAttributes)
@@ -2818,13 +2826,6 @@ namespace Mono.Linker.Steps {
 								}
 							}
 
-							break;
-						//
-						// static T CreateInstance<T> ()
-						//
-						case "CreateInstance`1":
-							// Not sure it's worth implementing as we cannot expant T and simple cases can be rewritten
-							_context.LogMessage (MessageImportance.Low, $"Activator call '{methodCalled.FullName}' inside '{body.Method.FullName}' is not supported");
 							break;
 
 						//
