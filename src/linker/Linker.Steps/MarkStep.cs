@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -2380,6 +2381,7 @@ namespace Mono.Linker.Steps {
 		struct ReflectionPatternContext : IDisposable
 		{
 			readonly LinkContext _context;
+			bool _patternAnalysisAttempted;
 			bool _patternReported;
 
 			public MethodDefinition MethodCalling { get; private set; }
@@ -2391,12 +2393,20 @@ namespace Mono.Linker.Steps {
 				MethodCalling = methodCalling;
 				MethodCalled = methodCalled;
 
+				_patternAnalysisAttempted = false;
 				_patternReported = false;
+			}
+
+			public void AnalyzingPattern ()
+			{
+				_patternAnalysisAttempted = true;
 			}
 
 			public void RecordRecognizedPattern<T> (T accessedItem, Action mark)
 				where T : IMemberDefinition
 			{
+				Debug.Assert (_patternAnalysisAttempted, "To correctly report all patterns, when starting to analyze a pattern the AnalyzingPattern must be called first.");
+
 				_context.Tracer.Push ($"Reflection-{accessedItem}");
 				try {
 					_patternReported = true;
@@ -2409,13 +2419,15 @@ namespace Mono.Linker.Steps {
 
 			public void RecordUnrecognizedPattern (string message)
 			{
+				Debug.Assert (_patternAnalysisAttempted, "To correctly report all patterns, when starting to analyze a pattern the AnalyzingPattern must be called first.");
+
 				_patternReported = true;
 				_context.ReflectionPatternRecorder.UnrecognizedReflectionAccessPattern (MethodCalling, MethodCalled, message);
 			}
 
 			public void Dispose ()
 			{
-				if (!_patternReported) {
+				if (_patternAnalysisAttempted && !_patternReported) {
 					_context.ReflectionPatternRecorder.UnrecognizedReflectionAccessPattern (MethodCalling, MethodCalled, $"Call to'`{MethodCalled.FullName}' inside '{MethodCalling.FullName}' could not be recognized as a known pattern");
 				}
 			}
@@ -2449,7 +2461,7 @@ namespace Mono.Linker.Steps {
 						// which needs to be analyzed. The assumption is that all overloads have the same semantics.
 						// (for example that all overload of GetConstructor if used require the specified type to have a .ctor).
 						if (_methodCalling.DeclaringType == methodCalled.DeclaringType && _methodCalling.Name == methodCalled.Name)
-							return;
+							break;
 
 						switch (methodCalled.Name) {
 							//
@@ -2528,8 +2540,10 @@ namespace Mono.Linker.Steps {
 							//
 							case "GetType":
 								if (!methodCalled.IsStatic) {
-									return;
+									break;
 								} else {
+									reflectionContext.AnalyzingPattern ();
+
 									var first_arg_instr = GetInstructionAtStackDepth (_instructions, instructionIndex - 1, methodCalled.Parameters.Count);
 									if (first_arg_instr < 0) {
 										reflectionContext.RecordUnrecognizedPattern ($"Reflection call '{methodCalled.FullName}' inside '{_methodCalling.FullName}' couldn't be decomposed");
@@ -2552,9 +2566,6 @@ namespace Mono.Linker.Steps {
 									reflectionContext.RecordRecognizedPattern (foundType, () => _markStep.MarkType (foundType));
 								}
 								break;
-
-							default:
-								return;
 						}
 
 						break;
@@ -2575,6 +2586,8 @@ namespace Mono.Linker.Steps {
 							// static Call (Type, String, Type[], Expression[])
 							//
 							case "Call": {
+									reflectionContext.AnalyzingPattern ();
+
 									var first_arg_instr = GetInstructionAtStackDepth (_instructions, instructionIndex - 1, 4);
 									if (first_arg_instr < 0) {
 										reflectionContext.RecordUnrecognizedPattern ($"Expression call '{methodCalled.FullName}' inside '{_methodCalling.FullName}' couldn't be decomposed");
@@ -2611,6 +2624,8 @@ namespace Mono.Linker.Steps {
 							//
 							case "Property":
 							case "Field": {
+									reflectionContext.AnalyzingPattern ();
+
 									var second_arg_instr = GetInstructionAtStackDepth (_instructions, instructionIndex - 1, 2);
 									if (second_arg_instr < 0) {
 										reflectionContext.RecordUnrecognizedPattern ($"Expression call '{methodCalled.FullName}' inside '{_methodCalling.FullName}' couldn't be decomposed");
@@ -2661,6 +2676,8 @@ namespace Mono.Linker.Steps {
 							// static New (Type)
 							//
 							case "New": {
+									reflectionContext.AnalyzingPattern ();
+
 									var first_arg_instr = GetInstructionAtStackDepth (_instructions, instructionIndex - 1, 1);
 									if (first_arg_instr < 0) {
 										reflectionContext.RecordUnrecognizedPattern ($"Expression call '{methodCalled.FullName}' inside '{_methodCalling.FullName}' couldn't be decomposed");
@@ -2680,9 +2697,6 @@ namespace Mono.Linker.Steps {
 									MarkMethodsFromReflectionCall (ref reflectionContext, declaringType, ".ctor", 0, BindingFlags.Instance, parametersCount: 0);
 								}
 								break;
-
-							default:
-								return;
 						}
 
 						break;
@@ -2719,9 +2733,6 @@ namespace Mono.Linker.Steps {
 							case "GetRuntimeEvent":
 								ProcessSystemTypeGetMemberLikeCall (ref reflectionContext, System.Reflection.MemberTypes.Event, instructionIndex - 1, thisExtension: true);
 								break;
-
-							default:
-								return;
 						}
 
 						break;
@@ -2754,9 +2765,6 @@ namespace Mono.Linker.Steps {
 							case "CreateInstanceFromAndUnwrap":
 								ProcessActivatorCallWithStrings (ref reflectionContext, instructionIndex - 1, methodCalled.Parameters.Count < 4);
 								break;
-
-							default:
-								return;
 						}
 
 						break;
@@ -2774,18 +2782,19 @@ namespace Mono.Linker.Steps {
 							//
 							// TODO: This could be supported for `this` only calls
 							//
+							reflectionContext.AnalyzingPattern ();
 							reflectionContext.RecordUnrecognizedPattern ($"Activator call '{methodCalled.FullName}' inside '{_methodCalling.FullName}' is not yet supported");
 							break;
-						} else {
-							return;
 						}
+
+						break;
 
 					//
 					// System.Activator
 					//
 					case "Activator" when methodCalledType.Namespace == "System":
 						if (!methodCalled.IsStatic)
-							return;
+							break;
 
 						switch (methodCalled.Name) {
 							//
@@ -2793,6 +2802,7 @@ namespace Mono.Linker.Steps {
 							//
 							case "CreateInstance" when methodCalled.ContainsGenericParameter:
 								// Not sure it's worth implementing as we cannot expant T and simple cases can be rewritten
+								reflectionContext.AnalyzingPattern ();
 								reflectionContext.RecordUnrecognizedPattern ($"Activator call '{methodCalled.FullName}' inside '{_methodCalling.FullName}' is not supported");
 								break;
 
@@ -2809,9 +2819,11 @@ namespace Mono.Linker.Steps {
 							// static CreateInstance (System.Type type, System.Reflection.BindingFlags bindingAttr, System.Reflection.Binder? binder, object?[]? args, System.Globalization.CultureInfo? culture, object?[]? activationAttributes) { throw null; }
 							//
 							case "CreateInstance": {
+									reflectionContext.AnalyzingPattern ();
+
 									var parameters = methodCalled.Parameters;
 									if (parameters.Count < 1)
-										return;
+										break;
 
 									if (parameters [0].ParameterType.MetadataType == MetadataType.String) {
 										ProcessActivatorCallWithStrings (ref reflectionContext, instructionIndex - 1, parameters.Count < 4);
@@ -2868,15 +2880,9 @@ namespace Mono.Linker.Steps {
 							case "CreateInstanceFrom":
 								ProcessActivatorCallWithStrings (ref reflectionContext, instructionIndex - 1, methodCalled.Parameters.Count < 4);
 								break;
-
-							default:
-								return;
 						}
 
 						break;
-
-					default:
-						return;
 				}
 
 			}
@@ -2886,6 +2892,8 @@ namespace Mono.Linker.Steps {
 			//
 			void ProcessActivatorCallWithStrings (ref ReflectionPatternContext reflectionContext, int startIndex, bool defaultCtorOnly)
 			{
+				reflectionContext.AnalyzingPattern ();
+
 				var parameters = reflectionContext.MethodCalled.Parameters;
 				if (parameters.Count < 2)
 					return;
@@ -2941,6 +2949,8 @@ namespace Mono.Linker.Steps {
 			//
 			void ProcessSystemTypeGetMemberLikeCall (ref ReflectionPatternContext reflectionContext, System.Reflection.MemberTypes memberTypes, int startIndex, bool thisExtension = false)
 			{
+				reflectionContext.AnalyzingPattern ();
+
 				int first_instance_arg = reflectionContext.MethodCalled.Parameters.Count;
 				if (thisExtension)
 					--first_instance_arg;

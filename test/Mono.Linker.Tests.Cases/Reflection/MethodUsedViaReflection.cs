@@ -4,6 +4,7 @@ using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
 namespace Mono.Linker.Tests.Cases.Reflection {
 
+	[VerifyAllReflectionAccessPatternsAreValidated]
 	public class MethodUsedViaReflection {
 		[RecognizedReflectionAccessPattern (
 			typeof (Type), nameof (Type.GetMethod), new Type [] { typeof(string), typeof(BindingFlags) },
