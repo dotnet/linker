@@ -2368,9 +2368,9 @@ namespace Mono.Linker.Steps {
 				if (methodCalledDefinition == null)
 					continue;
 
-				ReflectionPatternContext reflectionContext = new ReflectionPatternContext (_context, body.Method, methodCalledDefinition);
+				ReflectionPatternContext reflectionContext = new ReflectionPatternContext (_context, body.Method, methodCalledDefinition, i);
 				try {
-					detector.Process (ref reflectionContext, methodCalledDefinition, i);
+					detector.Process (ref reflectionContext);
 				}
 				finally {
 					reflectionContext.Dispose ();
@@ -2386,12 +2386,14 @@ namespace Mono.Linker.Steps {
 
 			public MethodDefinition MethodCalling { get; private set; }
 			public MethodDefinition MethodCalled { get; private set; }
+			public int InstructionIndex { get; private set; }
 
-			public ReflectionPatternContext (LinkContext context, MethodDefinition methodCalling, MethodDefinition methodCalled)
+			public ReflectionPatternContext (LinkContext context, MethodDefinition methodCalling, MethodDefinition methodCalled, int instructionIndex)
 			{
 				_context = context;
 				MethodCalling = methodCalling;
 				MethodCalled = methodCalled;
+				InstructionIndex = instructionIndex;
 
 				_patternAnalysisAttempted = false;
 				_patternReported = false;
@@ -2428,7 +2430,7 @@ namespace Mono.Linker.Steps {
 			public void Dispose ()
 			{
 				if (_patternAnalysisAttempted && !_patternReported) {
-					_context.ReflectionPatternRecorder.UnrecognizedReflectionAccessPattern (MethodCalling, MethodCalled, $"Call to'`{MethodCalled.FullName}' inside '{MethodCalling.FullName}' could not be recognized as a known pattern");
+					Debug.Fail ("A reflection pattern was analyzed, but no result was reported.");
 				}
 			}
 		}
@@ -2446,8 +2448,10 @@ namespace Mono.Linker.Steps {
 				_instructions = _methodCalling.Body.Instructions;
 			}
 
-			public void Process (ref ReflectionPatternContext reflectionContext, MethodDefinition methodCalled, int instructionIndex)
+			public void Process (ref ReflectionPatternContext reflectionContext)
 			{
+				var methodCalled = reflectionContext.MethodCalled;
+				var instructionIndex = reflectionContext.InstructionIndex;
 				var methodCalledType = methodCalled.DeclaringType;
 
 				switch (methodCalledType.Name) {
@@ -2543,7 +2547,7 @@ namespace Mono.Linker.Steps {
 									break;
 								} else {
 									reflectionContext.AnalyzingPattern ();
-
+									
 									var first_arg_instr = GetInstructionAtStackDepth (_instructions, instructionIndex - 1, methodCalled.Parameters.Count);
 									if (first_arg_instr < 0) {
 										reflectionContext.RecordUnrecognizedPattern ($"Reflection call '{methodCalled.FullName}' inside '{_methodCalling.FullName}' couldn't be decomposed");
@@ -2559,9 +2563,12 @@ namespace Mono.Linker.Steps {
 										break;
 									}
 
-									TypeDefinition foundType = _markStep.ResolveFullyQualifiedTypeName ((string)first_arg.Operand);
-									if (foundType == null)
+									string typeName = (string)first_arg.Operand;
+									TypeDefinition foundType = _markStep.ResolveFullyQualifiedTypeName (typeName);
+									if (foundType == null) {
+										reflectionContext.RecordUnrecognizedPattern ($"Reflection call '{methodCalled.FullName}' inside '{_methodCalling.FullName}' was detected with type name `{typeName}` which can't be resolved.");
 										break;
+									}
 
 									reflectionContext.RecordRecognizedPattern (foundType, () => _markStep.MarkType (foundType));
 								}
@@ -2619,8 +2626,8 @@ namespace Mono.Linker.Steps {
 								break;
 
 							//
-							// static Field (Expression, Type, String)
 							// static Property(Expression, Type, String)
+							// static Field (Expression, Type, String)
 							//
 							case "Property":
 							case "Field": {
@@ -2895,8 +2902,10 @@ namespace Mono.Linker.Steps {
 				reflectionContext.AnalyzingPattern ();
 
 				var parameters = reflectionContext.MethodCalled.Parameters;
-				if (parameters.Count < 2)
+				if (parameters.Count < 2) {
+					reflectionContext.RecordUnrecognizedPattern ($"Activator call '{reflectionContext.MethodCalled.FullName}' inside '{_methodCalling.FullName}' is not supported");
 					return;
+				}
 
 				if (parameters [0].ParameterType.MetadataType != MetadataType.String && parameters [1].ParameterType.MetadataType != MetadataType.String) {
 					reflectionContext.RecordUnrecognizedPattern ($"Activator call '{reflectionContext.MethodCalled.FullName}' inside '{_methodCalling.FullName}' is not supported");
@@ -3008,6 +3017,10 @@ namespace Mono.Linker.Steps {
 					case System.Reflection.MemberTypes.Event:
 						MarkEventsFromReflectionCall (ref reflectionContext, declaringType, name);
 						break;
+					default:
+						Debug.Fail ("Unsupported member type");
+						reflectionContext.RecordUnrecognizedPattern ($"Reflection call '{reflectionContext.MethodCalled.FullName}' inside '{_methodCalling.FullName}' is of unexpected member type.");
+						break;
 				}
 			}
 
@@ -3016,6 +3029,7 @@ namespace Mono.Linker.Steps {
 			//
 			void MarkMethodsFromReflectionCall (ref ReflectionPatternContext reflectionContext, TypeDefinition declaringType, string name, int? arity, BindingFlags? bindingFlags, int? parametersCount = null)
 			{
+				bool foundMatch = false;
 				foreach (var method in declaringType.Methods) {
 					var mname = method.Name;
 
@@ -3039,12 +3053,17 @@ namespace Mono.Linker.Steps {
 					if (parametersCount != null && parametersCount != method.Parameters.Count)
 						continue;
 
+					foundMatch = true;
 					reflectionContext.RecordRecognizedPattern (method, () => _markStep.MarkIndirectlyCalledMethod (method));
 				}
+
+				if (!foundMatch)
+					reflectionContext.RecordUnrecognizedPattern ($"Reflection call '{reflectionContext.MethodCalled.FullName}' inside '{reflectionContext.MethodCalling.FullName}' could not resolve method `{name}` on type `{declaringType.FullName}`.");
 			}
 
 			void MarkPropertiesFromReflectionCall (ref ReflectionPatternContext reflectionContext, TypeDefinition declaringType, string name, bool staticOnly = false)
 			{
+				bool foundMatch = false;
 				foreach (var property in declaringType.Properties) {
 					if (property.Name != name)
 						continue;
@@ -3066,13 +3085,18 @@ namespace Mono.Linker.Steps {
 					}
 
 					if (markedAny) {
+						foundMatch = true;
 						reflectionContext.RecordRecognizedPattern (property, () => _markStep.MarkProperty (property));
 					}
 				}
+
+				if (!foundMatch)
+					reflectionContext.RecordUnrecognizedPattern ($"Reflection call '{reflectionContext.MethodCalled.FullName}' inside '{reflectionContext.MethodCalling.FullName}' could not resolve property `{name}` on type `{declaringType.FullName}`.");
 			}
 
 			void MarkFieldsFromReflectionCall (ref ReflectionPatternContext reflectionContext, TypeDefinition declaringType, string name, bool staticOnly = false)
 			{
+				bool foundMatch = false;
 				foreach (var field in declaringType.Fields) {
 					if (field.Name != name)
 						continue;
@@ -3080,19 +3104,28 @@ namespace Mono.Linker.Steps {
 					if (staticOnly && !field.IsStatic)
 						continue;
 
+					foundMatch = true;
 					reflectionContext.RecordRecognizedPattern (field, () => _markStep.MarkField (field));
 					break;
 				}
+
+				if (!foundMatch)
+					reflectionContext.RecordUnrecognizedPattern ($"Reflection call '{reflectionContext.MethodCalled.FullName}' inside '{reflectionContext.MethodCalling.FullName}' could not resolve field `{name}` on type `{declaringType.FullName}`.");
 			}
 
 			void MarkEventsFromReflectionCall (ref ReflectionPatternContext reflectionContext, TypeDefinition declaringType, string name)
 			{
+				bool foundMatch = false;
 				foreach (var eventInfo in declaringType.Events) {
 					if (eventInfo.Name != name)
 						continue;
 
+					foundMatch = true;
 					reflectionContext.RecordRecognizedPattern (eventInfo, () => _markStep.MarkEvent (eventInfo));
 				}
+
+				if (!foundMatch)
+					reflectionContext.RecordUnrecognizedPattern ($"Reflection call '{reflectionContext.MethodCalled.FullName}' inside '{reflectionContext.MethodCalling.FullName}' could not resolve event `{name}` on type `{declaringType.FullName}`.");
 			}
 		}
 
