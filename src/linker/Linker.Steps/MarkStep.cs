@@ -2422,13 +2422,13 @@ namespace Mono.Linker.Steps {
 			public void RecordRecognizedPattern<T> (T accessedItem, Action mark)
 				where T : IMemberDefinition
 			{
+#if DEBUG
 				Debug.Assert (_patternAnalysisAttempted, "To correctly report all patterns, when starting to analyze a pattern the AnalyzingPattern must be called first.");
+				_patternReported = true;
+#endif
 
 				_context.Tracer.Push ($"Reflection-{accessedItem}");
 				try {
-#if DEBUG
-					_patternReported = true;
-#endif
 					mark ();
 					_context.ReflectionPatternRecorder.RecognizedReflectionAccessPattern (MethodCalling, MethodCalled, accessedItem);
 				} finally {
@@ -2438,17 +2438,19 @@ namespace Mono.Linker.Steps {
 
 			public void RecordUnrecognizedPattern (string message)
 			{
-				Debug.Assert (_patternAnalysisAttempted, "To correctly report all patterns, when starting to analyze a pattern the AnalyzingPattern must be called first.");
-
 #if DEBUG
+				Debug.Assert (_patternAnalysisAttempted, "To correctly report all patterns, when starting to analyze a pattern the AnalyzingPattern must be called first.");
 				_patternReported = true;
 #endif
+
 				_context.ReflectionPatternRecorder.UnrecognizedReflectionAccessPattern (MethodCalling, MethodCalled, message);
 			}
 
 			public void Dispose ()
 			{
+#if DEBUG
 				Debug.Assert(!_patternAnalysisAttempted || _patternReported, "A reflection pattern was analyzed, but no result was reported.");
+#endif
 			}
 		}
 
