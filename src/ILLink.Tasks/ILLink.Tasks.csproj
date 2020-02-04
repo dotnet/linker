@@ -23,6 +23,8 @@
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);_LayoutPackage</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
 
+  <Target Name="PackDuringBuild" AfterTargets="Build" DependsOnTargets="Pack" />
+
   <ItemGroup>
     <Compile Include="LinkTask.cs" />
     <Compile Include="CheckEmbeddedRootDescriptor.cs" />
