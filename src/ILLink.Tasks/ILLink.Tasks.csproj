@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp2.0;net472</TargetFrameworks>
+    <TargetFrameworks>netcoreapp3.0</TargetFrameworks>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <IsPackable>true</IsPackable>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -75,7 +75,7 @@
   </Target>
 
   <ItemGroup>
-    <ProjectReference Include="../linker/Mono.Linker.csproj" PrivateAssets="All" Condition=" '$(TargetFramework)' == 'netcoreapp2.0' " />
+    <ProjectReference Include="../linker/Mono.Linker.csproj" PrivateAssets="All" />
     <ProjectReference Include="../../external/cecil/Mono.Cecil.csproj" PrivateAssets="All" />
   </ItemGroup>
 
@@ -86,8 +86,5 @@
          these are already a part of the SDK. -->
     <PackageReference Include="Microsoft.Build.Framework" Version="$(MicrosoftBuildFrameworkVersion)" PrivateAssets="All" ExcludeAssets="Runtime" />
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildUtilitiesCoreVersion)" PrivateAssets="All" ExcludeAssets="Runtime" />
-    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" Condition=" '$(TargetFramework)' == 'net472' " PrivateAssets="All" Publish="True" />
-
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="All" Version="1.0.0" />
   </ItemGroup>
 </Project>
