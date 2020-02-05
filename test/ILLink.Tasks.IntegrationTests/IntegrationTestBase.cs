@@ -112,7 +112,7 @@ namespace ILLink.Tests
 		{
 			string demoRoot = Path.GetDirectoryName(csproj);
 
-			string publishArgs = $"publish -c {TestContext.Configuration} /v:n /p:ShowLinkerSizeComparison=true";
+			string publishArgs = $"publish -c {TestContext.Configuration} /v:n /p:ShowLinkerSizeComparison=true /p:DisableArcadeImport=true";
 			if (selfContained) {
 				publishArgs += $" -r {TestContext.RuntimeIdentifier}";
 			}

@@ -11,7 +11,7 @@ variables:
 - name: _BuildConfig
   value: Release
 - name: _BuildArgs
-  value: /p:ArcadeBuild=true
+  value:
 - name: _DotNetArtifactsCategory
   value: .NETCore
 - ${{ if eq(variables.officialBuild, 'true') }}:
