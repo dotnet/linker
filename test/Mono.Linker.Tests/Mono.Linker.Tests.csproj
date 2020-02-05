@@ -1,7 +1,7 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project>
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
 
   <PropertyGroup>
-    <IsTestProject>true</IsTestProject>
     <Configurations>Debug;Release;illink_Debug;illink_Release</Configurations>
   </PropertyGroup>
 
@@ -14,8 +14,6 @@
     <DefineConstants Condition="'$(TargetFramework)' == 'netcoreapp3.0'">$(DefineConstants);NETCOREAPP</DefineConstants>
 
     <DefineConstants Condition="'$(ArcadeBuild)' == 'true'">$(DefineConstants);ARCADE</DefineConstants>
-    <!-- Arcade's custom test imports assume that we are using xunit. -->
-    <DisableArcadeTestFramework Condition="'$(ArcadeBuild)' == 'true'">true</DisableArcadeTestFramework>
   </PropertyGroup>
 
   <PropertyGroup Condition="!$(Configuration.StartsWith('illink'))">
@@ -71,6 +69,15 @@
 
   <Target Name="RunTestsOnMono" Condition="!$(ILLinkBuild)">
     <Exec Command="mono $(PkgNUnit_ConsoleRunner)/tools/nunit3-console.exe --result=TestResults.xml $(OutputPath)Mono.Linker.Tests.dll" />
+  </Target>
+
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+
+  <!-- Arcade's custom test imports assume that we are using xunit. -->
+  <!-- Map the Arcade "Test" target to the "VSTest" target used by "dotnet test" -->
+  <Target Name="Test"
+          Condition=" '$(ArcadeBuild)' == 'true' ">
+    <MSBuild Projects="$(MSBuildProjectFile)" Targets="VSTest" />
   </Target>
 
 </Project>

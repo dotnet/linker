@@ -211,14 +211,14 @@ namespace ILLink.Tests
 			// context.DotnetToolPath = ObtainSDK(context.TestBin, repoName);
 		}
 
-		[Fact]
+		//[Fact] // https://github.com/aspnet/JitBench/issues/96
 		public void RunMusicStoreStandalone()
 		{
 			string executablePath = BuildAndLink(MusicStoreFixture.csproj, MusicStoreFixture.rootFiles, MusicStoreFixture.VersionPublishArgs, selfContained: true);
 			CheckOutput(executablePath, selfContained: true);
 		}
 
-		[Fact]
+		//[Fact] // https://github.com/aspnet/JitBench/issues/96
 		public void RunMusicStorePortable()
 		{
 			Dictionary<string, string> extraPublishArgs = new Dictionary<string, string>(MusicStoreFixture.VersionPublishArgs);

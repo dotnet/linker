@@ -4,14 +4,14 @@
     <TargetFrameworks>netcoreapp2.0;net472</TargetFrameworks>
     <TargetFrameworks Condition=" '$(OS)' != 'Windows_NT' ">netcoreapp2.0</TargetFrameworks>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
-    <BaseOutputPath>bin/</BaseOutputPath>
-    <PackageOutputPath>$(BaseOutputPath)nupkgs</PackageOutputPath>
     <IsPackable>true</IsPackable>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Description>MSBuild tasks for running the IL Linker</Description>
     <!-- Don't include the build output. Instead, we want to include
          the TargetFramework-specific publish output. -->
     <IncludeBuildOutput>false</IncludeBuildOutput>
+    <!-- Suppress NuGet warning for package which sets IncludeBuildOutput=false, see https://github.com/NuGet/Home/issues/8583 -->
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
     <!-- We want to package the tasks package together with its
          transitive dependencies and the linker, without marking them
          as dependencies in the tasks package.

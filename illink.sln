@@ -19,7 +19,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mono.Linker.Tests.Cases", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mono.Linker.Tests.Cases.Expectations", "test\Mono.Linker.Tests.Cases.Expectations\Mono.Linker.Tests.Cases.Expectations.csproj", "{2C26601F-3E2F-45B9-A02F-58EE9296E19E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ILLink.Tasks.Tests", "test\ILLink.Tasks.Tests\ILLink.Tasks.Tests.csproj", "{10249F19-1B72-4087-AF7F-C95B7672B204}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ILLink.Tasks.IntegrationTests", "test\ILLink.Tasks.IntegrationTests\ILLink.Tasks.IntegrationTests.csproj", "{10249F19-1B72-4087-AF7F-C95B7672B204}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "analyzer", "analyzer", "{AA0569FB-73E9-4B42-9A19-714BB1229DAE}"
 EndProject
