@@ -12,7 +12,7 @@
     <TargetFrameworks>netcoreapp3.0</TargetFrameworks>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(MonoBuild)' == ''">
+  <PropertyGroup Condition="'$(MonoBuild)' != ''">
     <TargetFrameworks>net471</TargetFrameworks>
   </PropertyGroup>
 
