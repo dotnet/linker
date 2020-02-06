@@ -5,16 +5,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="MusicStoreReflection.xml">
-      <!-- It doesn't seem to get copied unless we specify this
-           explicitly. -->
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <Content Remove="MusicStoreReflection.xml" />
   </ItemGroup>
 
-  <Target Name="CopyNuGetConfig" AfterTargets="AfterBuild">
-    <Copy SourceFiles="nuget/NuGet.config" DestinationFolder="$(OutDir)" />
-  </Target>
+  <ItemGroup>
+    <EmbeddedResource Include="MusicStoreReflection.xml" LogicalName="MusicStoreReflection.xml" />
+  </ItemGroup>
 
   <ItemGroup>
     <!-- tell xunit to log diagnostic messages -->

@@ -13,7 +13,6 @@ namespace ILLink.Tests
 		public static List<string> rootFiles = new List<string> { "MusicStoreReflection.xml" };
 
 		private static string gitRepo = "http://github.com/aspnet/JitBench";
-		private static string repoName = "JitBench";
 
 		// Revision can also be a branch name. We generally
 		// want to ensure that we are able to link the latest
@@ -57,6 +56,7 @@ namespace ILLink.Tests
 		string SetupProject()
 		{
 			int ret;
+			string repoName = CreateTestFolder("MusicStore");
 			string demoRoot = Path.Combine(repoName, Path.Combine("src", "MusicStore"));
 			string csproj = Path.Combine(demoRoot, "MusicStore.csproj");
 
@@ -86,8 +86,10 @@ namespace ILLink.Tests
 				Assert.True(false);
 			}
 
-			// Copy root files into the project directory
-			CopyRootFiles(demoRoot);
+			// Write root files into the project directory
+			foreach (var rf in rootFiles) {
+				WriteEmbeddedResource(rf, Path.Combine(demoRoot, rf));
+			}
 
 			// This is necessary because JitBench comes with a
 			// NuGet.Config that has a <clear /> line, preventing
@@ -173,13 +175,6 @@ namespace ILLink.Tests
 			}
 
 			return GetDotnetToolPath(dotnetDir);
-		}
-
-		static void CopyRootFiles(string demoRoot)
-		{
-			foreach (var rf in rootFiles) {
-				File.Copy(rf, Path.Combine(demoRoot, rf));
-			}
 		}
 
 		private void AddLocalNugetFeedAfterClear(string nugetConfig)

@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Xml.Linq;
 using Xunit;
@@ -32,6 +33,27 @@ namespace ILLink.Tests
 			CommandHelper = new CommandHelper (logger);
 		}
 
+		protected void AddNuGetConfig(string projectRoot)
+		{
+			var nugetConfig = Path.Combine(projectRoot, "NuGet.config");
+			var xdoc = new XDocument();
+			var configuration = new XElement("configuration");
+			var packageSources = new XElement("packageSources");
+			packageSources.Add(new XElement("add",
+						new XAttribute("key", "dotnet-core"),
+						new XAttribute("value", "https://dotnet.myget.org/F/dotnet-core/api/v3/index.json")));
+			packageSources.Add(new XElement("add",
+						new XAttribute("key", "local linker feed"),
+						new XAttribute("value", TestContext.PackageSource)));
+
+			configuration.Add(packageSources);
+			xdoc.Add(configuration);
+
+			using (var fs = new FileStream(nugetConfig, FileMode.Create)) {
+				xdoc.Save(fs);
+			}
+		}
+
 		protected void AddLinkerReference(string csproj)
 		{
 			var xdoc = XDocument.Load(csproj);
@@ -57,6 +79,21 @@ namespace ILLink.Tests
 			using (var fs = new FileStream(csproj, FileMode.Create)) {
 				xdoc.Save(fs);
 			}
+		}
+
+		protected string CreateTestFolder(string name)
+		{
+			string folder = Path.Combine(Path.GetTempPath(), Assembly.GetExecutingAssembly().GetName().Name + "." + Process.GetCurrentProcess().Id, name);
+			Directory.CreateDirectory(folder);
+
+			return folder;
+		}
+
+		protected void WriteEmbeddedResource(string resourceName, string destination)
+		{
+			var assembly = Assembly.GetExecutingAssembly();
+			var resourceStream = assembly.GetManifestResourceStream(resourceName);
+			resourceStream.CopyTo(File.Create(destination));
 		}
 
 		static void AddLinkerRoots(string csproj, List<string> rootFiles)
@@ -112,7 +149,7 @@ namespace ILLink.Tests
 		{
 			string demoRoot = Path.GetDirectoryName(csproj);
 
-			string publishArgs = $"publish -c {TestContext.Configuration} /v:n /p:ShowLinkerSizeComparison=true /p:DisableArcadeImport=true";
+			string publishArgs = $"publish -c {TestContext.Configuration} /v:n /p:ShowLinkerSizeComparison=true";
 			if (selfContained) {
 				publishArgs += $" -r {TestContext.RuntimeIdentifier}";
 			}
