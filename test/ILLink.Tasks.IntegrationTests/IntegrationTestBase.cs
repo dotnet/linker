@@ -81,12 +81,16 @@ namespace ILLink.Tests
 			}
 		}
 
-		protected string CreateTestFolder(string name)
+		protected string CreateTestFolder(string projectName)
 		{
-			string folder = Path.Combine(Path.GetTempPath(), Assembly.GetExecutingAssembly().GetName().Name + "." + Process.GetCurrentProcess().Id, name);
-			Directory.CreateDirectory(folder);
+			string tempFolder = Path.GetFullPath(Path.Combine("tests-temp", projectName));
+			Directory.CreateDirectory(tempFolder);
 
-			return folder;
+			// write empty Directory.Build.props and Directory.Build.targets to disable accidental import of arcade from repo root
+			File.WriteAllText(Path.Combine(tempFolder, "Directory.Build.props"), "<Project></Project>");
+			File.WriteAllText(Path.Combine(tempFolder, "Directory.Build.targets"), "<Project></Project>");
+
+			return Path.Combine(tempFolder, projectName);
 		}
 
 		protected void WriteEmbeddedResource(string resourceName, string destination)
