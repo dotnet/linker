@@ -91,7 +91,7 @@ namespace ILLink.Tests
 			var version = tasksPackage.Remove(0, packageName.Length + 1);
 
 			// Locate dotnet host
-			var dotnetDir = Environment.GetEnvironmentVariable ("DOTNET_INSTALL_DIR") ?? Path.Combine(repoRoot, ".dotnet");
+			var dotnetDir = Path.Combine(repoRoot, ".dotnet");
 			var dotnetToolName = Directory.GetFiles(dotnetDir)
 				.Select(p => Path.GetFileName(p))
 				.Where(p => p.StartsWith("dotnet"))
@@ -100,7 +100,6 @@ namespace ILLink.Tests
 					return ext == "" || ext == ".exe";
 				})
 				.Single();
-
 			var dotnetToolPath = Path.Combine(dotnetDir, dotnetToolName);
 
 			// Initialize static members
