@@ -27,16 +27,14 @@ namespace Mono.Linker.Steps
 
 		static XPathDocument GetSubstitutions (string substitutionsFile)
 		{
-			using (FileStream fs = File.OpenRead (substitutionsFile)) {
-				return GetSubstitutions (fs);
-			}
+			using FileStream fs = File.OpenRead (substitutionsFile);
+			return GetSubstitutions (fs);
 		}
 
 		static XPathDocument GetSubstitutions (Stream substitutions)
 		{
-			using (StreamReader sr = new StreamReader (substitutions)) {
-				return new XPathDocument (sr);
-			}
+			using StreamReader sr = new StreamReader (substitutions);
+			return new XPathDocument (sr);
 		}
 
 		void ReadSubstitutionFile (XPathDocument document)
