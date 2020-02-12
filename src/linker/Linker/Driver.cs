@@ -486,6 +486,11 @@ namespace Mono.Linker {
 					return false;
 				}
 
+				// Default to deterministic output
+				if (!new_mvid_used && !deterministic_used) {
+					context.DeterministicOutput = true;
+				}
+
 				if (dumpDependencies)
 					context.Tracer.AddRecorder (new XmlDependencyRecorder (context, dependenciesFileName));
 
@@ -779,7 +784,6 @@ namespace Mono.Linker {
 				UserAction = AssemblyAction.Link,
 				OutputDirectory = "output",
 				StripResources = true,
-				DeterministicOutput = true
 			};
 			return context;
 		}
