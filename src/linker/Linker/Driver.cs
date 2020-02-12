@@ -578,6 +578,11 @@ namespace Mono.Linker
 				return -1;
 			}
 
+			// Default to deterministic output
+			if (!new_mvid_used && !deterministic_used)
+			{
+				context.DeterministicOutput = true;
+			}
 			if (dumpDependencies)
 				AddXmlDependencyRecorder (context, dependenciesFileName);
 
