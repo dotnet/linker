@@ -48,7 +48,7 @@ namespace Mono.Linker.Steps {
 			Default = 0
 		}
 
-		List<string> assembliesWritten;
+		readonly List<string> assembliesWritten;
 
 		public OutputStep () {
 			assembliesWritten = new List<string> ();
@@ -67,8 +67,7 @@ namespace Mono.Linker.Steps {
 				}
 			}
 
-			TargetArchitecture pureILArch;
-			if (architectureMap.TryGetValue ((ushort) readyToRunArch, out pureILArch)) {
+			if (architectureMap.TryGetValue ((ushort) readyToRunArch, out TargetArchitecture pureILArch)) {
 				return pureILArch;
 			}
 			throw new BadImageFormatException ("unrecognized module attributes");
@@ -83,9 +82,8 @@ namespace Mono.Linker.Steps {
 		protected override void EndProcess ()
 		{
 			if (Context.AssemblyListFile != null) {
-				using (var w = File.CreateText (Context.AssemblyListFile)) {
-					w.WriteLine ("[" + String.Join (", ", assembliesWritten.Select (a => "\"" + a + "\"").ToArray ()) + "]");
-				}
+				using var w = File.CreateText (Context.AssemblyListFile);
+				w.WriteLine ("[" + String.Join (", ", assembliesWritten.Select (a => "\"" + a + "\"").ToArray ()) + "]");
 			}
 		}
 
