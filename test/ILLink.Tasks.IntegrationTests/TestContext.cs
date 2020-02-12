@@ -69,9 +69,20 @@ namespace ILLink.Tests
 			var testBin = Path.Combine(Environment.CurrentDirectory, "..", "..");
 			var repoRoot = Path.GetFullPath(Path.Combine(testBin, "..", "..", ".."));
 
+			// We want to build and link integration projects in the
+			// release configuration.
+			Configuration = "Release";
+			TestBin = testBin;
+
+#if DEBUG
+			var illinkConfiguration = "Debug";
+#else
+			var illinkConfiguration = "Release";
+#endif
+
 			// Locate task package
 			var packageName = "ILLink.Tasks";
-			var packageSource = Path.Combine(repoRoot, "src", "ILLink.Tasks", "bin", "nupkgs");
+			var packageSource = Path.Combine(repoRoot, "artifacts", "packages", illinkConfiguration, "Shipping");
 			var tasksPackages = Directory.GetFiles(packageSource)
 				.Where(p => Path.GetExtension(p) == ".nupkg")
 				.Select(p => Path.GetFileNameWithoutExtension(p))
@@ -110,10 +121,6 @@ namespace ILLink.Tests
 			{
 				RuntimeIdentifier = "osx.10.13-x64";
 			}
-			// We want to build and link integration projects in the
-			// release configuration.
-			Configuration = "Release";
-			TestBin = testBin;
 		}
 	}
 }
