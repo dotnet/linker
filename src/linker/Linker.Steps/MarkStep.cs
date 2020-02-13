@@ -2255,10 +2255,10 @@ namespace Mono.Linker.Steps {
 				break;
 			case OperandType.InlineTok:
 				object token = instruction.Operand;
-				if (token is TypeReference reference)
-					MarkType (reference);
-				else if (token is MethodReference reference1)
-					MarkMethod (reference1);
+				if (token is TypeReference typeReference)
+					MarkType (typeReference);
+				else if (token is MethodReference methodReference)
+					MarkMethod (methodReference);
 				else
 					MarkField ((FieldReference) token);
 				break;

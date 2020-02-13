@@ -30,7 +30,6 @@ namespace Mono.Linker {
 		{
 			if (typeReference is GenericParameter genericParameter)
 			{
-				// TODO: code style?
 				if (context.Method == null && genericParameter.Type != GenericParameterType.Type)
 				{
 					// If no method is specified assume only partial inflation is desired.
