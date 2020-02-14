@@ -3,6 +3,7 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.Symbols {
 	[SetupCompileArgument ("/debug:full")]
+	[SetupLinkerArgument ("--deterministic", "true")]
 	[SetupLinkerLinkSymbols ("true")]
 	[KeptSymbols ("test.exe")]
 	public class AssemblyWithDefaultSymbolsAndSymbolLinkingEnabled {
