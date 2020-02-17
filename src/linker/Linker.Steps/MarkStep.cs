@@ -1046,7 +1046,8 @@ namespace Mono.Linker.Steps {
 		protected virtual void MarkSerializable (TypeDefinition type)
 		{
 			MarkDefaultConstructor (type);
-			MarkMethodsIf (type.Methods, IsSpecialSerializationConstructor);
+			if (!_context.IsFeatureExcluded ("deserialization"))
+				MarkMethodsIf (type.Methods, IsSpecialSerializationConstructor);
 		}
 
 		protected virtual TypeDefinition MarkType (TypeReference reference)
@@ -1135,7 +1136,8 @@ namespace Mono.Linker.Steps {
 				if (ShouldMarkTypeStaticConstructor (type))
 					MarkStaticConstructor (type);
 
-				MarkMethodsIf (type.Methods, HasSerializationAttribute);
+				if (!_context.IsFeatureExcluded ("deserialization"))
+					MarkMethodsIf (type.Methods, HasSerializationAttribute);
 			}
 
 			DoAdditionalTypeProcessing (type);
