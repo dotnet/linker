@@ -34,7 +34,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		}
 		[Kept]
 		[ExpectBodyModified]
-		[ExpectedLocalsSequence(new string [] { "System.Boolean", "System.Int32", "System.Int32", "System.DivideByZeroException"})]
+		[ExpectedLocalsSequence(new string [] { "System.Int32", "System.Boolean", "System.Boolean", "System.Int32", "System.DivideByZeroException"})]
 		static void Test_2 ()
 		{
 			/* 
