@@ -9,6 +9,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		public static void Main()
 		{
 			Test_1 (null);
+			Test_2 ();
 		}
 
 		[Kept]
@@ -45,7 +46,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 			if (IsDynamicCodeSupported)
 				zero = 0;
 			/* Guid.Parse function in order to not be replaced by constants in TryInlineBodyDependencies */
-			if (Guid.Parse ("3F2504E0-4F89-11D3-9A0C-0305E82C3301") != Guid.Empty || Guid.Parse ("3F2504E0-4F89-11D3-9A0C-0305E82C3302") != Guid.Empty) {
+			if (Guid.Parse ("3F2504E0-4F89-11D3-9A0C-0305E82C3301") == Guid.Empty || Guid.Parse ("3F2504E0-4F89-11D3-9A0C-0305E82C3302") == Guid.Empty) {
 				throw new ArgumentException ();
 			}
 			try {
