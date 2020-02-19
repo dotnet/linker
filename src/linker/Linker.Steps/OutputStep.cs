@@ -82,8 +82,9 @@ namespace Mono.Linker.Steps {
 		protected override void EndProcess ()
 		{
 			if (Context.AssemblyListFile != null) {
-				using var w = File.CreateText (Context.AssemblyListFile);
-				w.WriteLine ("[" + String.Join (", ", assembliesWritten.Select (a => "\"" + a + "\"").ToArray ()) + "]");
+				using (var w = File.CreateText (Context.AssemblyListFile)) {
+					w.WriteLine ("[" + String.Join (", ", assembliesWritten.Select (a => "\"" + a + "\"").ToArray ()) + "]");
+				}
 			}
 		}
 

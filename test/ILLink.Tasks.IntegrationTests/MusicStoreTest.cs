@@ -188,8 +188,9 @@ namespace ILLink.Tests
 						new XAttribute("key", "local linker feed"),
 						new XAttribute("value", localPackagePath)));
 
-			using var fs = new FileStream(nugetConfig, FileMode.Create);
-			xdoc.Save(fs);
+			using (var fs = new FileStream(nugetConfig, FileMode.Create)) {
+				xdoc.Save(fs);
+			}
 		}
 	}
 

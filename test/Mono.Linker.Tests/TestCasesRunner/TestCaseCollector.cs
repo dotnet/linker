@@ -37,10 +37,11 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 			_rootDirectory.DirectoryMustExist ();
 			_testCaseAssemblyPath.FileMustExist ();
 
-			using var caseAssemblyDefinition = AssemblyDefinition.ReadAssembly (_testCaseAssemblyPath.ToString ());
-			foreach (var file in sourceFiles) {
-				if (CreateCase (caseAssemblyDefinition, file, out TestCase testCase))
-					yield return testCase;
+			using (var caseAssemblyDefinition = AssemblyDefinition.ReadAssembly (_testCaseAssemblyPath.ToString ())) {
+				foreach (var file in sourceFiles) {
+					if (CreateCase (caseAssemblyDefinition, file, out TestCase testCase))
+						yield return testCase;
+				}
 			}
 		}
 
@@ -83,11 +84,12 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 			var pathRelativeToAssembly = $"{testCaseType.FullName.Substring (testCaseType.Module.Name.Length - 3).Replace ('.', '/')}.cs";
 			var fullSourcePath = _rootDirectory.Combine (pathRelativeToAssembly).FileMustExist ();
 
-			using var caseAssemblyDefinition = AssemblyDefinition.ReadAssembly (_testCaseAssemblyPath.ToString ());
-			if (!CreateCase (caseAssemblyDefinition, fullSourcePath, out TestCase testCase))
-				throw new ArgumentException ($"Could not create a test case for `{testCaseType}`.  Ensure the namespace matches it's location on disk");
+			using (var caseAssemblyDefinition = AssemblyDefinition.ReadAssembly (_testCaseAssemblyPath.ToString ())) {
+				if (!CreateCase (caseAssemblyDefinition, fullSourcePath, out TestCase testCase))
+					throw new ArgumentException ($"Could not create a test case for `{testCaseType}`.  Ensure the namespace matches it's location on disk");
 
-			return testCase;
+				return testCase;
+			}
 		}
 
 		private bool CreateCase (AssemblyDefinition caseAssemblyDefinition, NPath sourceFile, out TestCase testCase)

@@ -49,8 +49,9 @@ namespace ILLink.Tests
 			configuration.Add(packageSources);
 			xdoc.Add(configuration);
 
-			using var fs = new FileStream(nugetConfig, FileMode.Create);
-			xdoc.Save(fs);
+			using (var fs = new FileStream(nugetConfig, FileMode.Create)) {
+				xdoc.Save(fs);
+			}
 		}
 
 		protected void AddLinkerReference(string csproj)
@@ -74,8 +75,9 @@ namespace ILLink.Tests
 						new XAttribute("Version", TestContext.TasksPackageVersion))));
 			}
 
-			using var fs = new FileStream(csproj, FileMode.Create);
-			xdoc.Save(fs);
+			using (var fs = new FileStream(csproj, FileMode.Create)) {
+				xdoc.Save(fs);
+			}
 		}
 
 		protected string CreateTestFolder(string projectName)

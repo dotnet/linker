@@ -48,11 +48,12 @@ namespace Mono.Linker.Tests.TestCases
 				Assert.Fail($"The dependency dump file is missing.  Expected it to exist at {outputPath}");
 
 			// Do a basic check to verify that the contents of the file are uncompressed xml
-			using var reader = new XmlTextReader (outputPath.ToString ());
-			reader.Read ();
-			reader.Read ();
-			reader.Read ();
-			Assert.That (reader.Name, Is.EqualTo ("dependencies"), $"Expected to be at the dependencies element, but the current node name is `{reader.Name}`");
+			using (var reader = new XmlTextReader (outputPath.ToString ())) {
+				reader.Read ();
+				reader.Read ();
+				reader.Read ();
+				Assert.That (reader.Name, Is.EqualTo ("dependencies"), $"Expected to be at the dependencies element, but the current node name is `{reader.Name}`");
+			}
 		}
 
 		[Test]
@@ -150,8 +151,9 @@ namespace Mono.Linker.Tests.TestCases
 
 		protected Guid GetMvid (NPath assemblyPath)
 		{
-			using var assembly = AssemblyDefinition.ReadAssembly (assemblyPath);
-			return assembly.MainModule.Mvid;
+			using (var assembly = AssemblyDefinition.ReadAssembly (assemblyPath)) {
+				return assembly.MainModule.Mvid;
+			}
 		}
 
 		private TestCase CreateIndividualCase (Type testCaseType)

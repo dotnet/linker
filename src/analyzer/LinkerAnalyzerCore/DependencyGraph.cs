@@ -41,9 +41,10 @@ namespace LinkerAnalyzer.Core
 			Console.WriteLine ("Loading dependency tree from: {0}", filename);
 
 			try {
-				using var fileStream = File.OpenRead (filename);
-				using var zipStream = new GZipStream (fileStream, CompressionMode.Decompress);
-				Load (zipStream);
+				using (var fileStream = File.OpenRead (filename))
+				using (var zipStream = new GZipStream (fileStream, CompressionMode.Decompress)) {
+					Load (zipStream);
+				}
 			} catch (Exception) {
 				Console.WriteLine ("Unable to open and read the dependencies.");
 				Environment.Exit (1);
@@ -51,32 +52,33 @@ namespace LinkerAnalyzer.Core
 		}
 
 		void Load (GZipStream zipStream) {
-			using XmlReader reader = XmlReader.Create (zipStream);
-			while (reader.Read ()) {
-				switch (reader.NodeType) {
-				case XmlNodeType.Element:
-					//Console.WriteLine (reader.Name);
-					if (reader.Name == "edge" && reader.IsStartElement ()) {
-						string b = reader.GetAttribute ("b");
-						string e = reader.GetAttribute ("e");
-						//Console.WriteLine ("edge value " + b + "  -->  " + e);
+			using (XmlReader reader = XmlReader.Create (zipStream)) {
+				while (reader.Read ()) {
+					switch (reader.NodeType) {
+					case XmlNodeType.Element:
+						//Console.WriteLine (reader.Name);
+						if (reader.Name == "edge" && reader.IsStartElement ()) {
+							string b = reader.GetAttribute ("b");
+							string e = reader.GetAttribute ("e");
+							//Console.WriteLine ("edge value " + b + "  -->  " + e);
 
-						if (e != b) {
-							VertexData begin = Vertex (b, true);
-							VertexData end = Vertex (e, true);
+							if (e != b) {
+								VertexData begin = Vertex (b, true);
+								VertexData end = Vertex (e, true);
 
-							if (end.parentIndexes == null)
-								end.parentIndexes = new List<int> ();
-							if (!end.parentIndexes.Contains (begin.index)) {
-								end.parentIndexes.Add (begin.index);
-								//Console.WriteLine (" end parent index: {0}", end.parentIndexes);
+								if (end.parentIndexes == null)
+									end.parentIndexes = new List<int> ();
+								if (!end.parentIndexes.Contains (begin.index)) {
+									end.parentIndexes.Add (begin.index);
+									//Console.WriteLine (" end parent index: {0}", end.parentIndexes);
+								}
 							}
 						}
+						break;
+					default:
+						//Console.WriteLine ("node: " + reader.NodeType);
+						break;
 					}
-					break;
-				default:
-					//Console.WriteLine ("node: " + reader.NodeType);
-					break;
 				}
 			}
 		}

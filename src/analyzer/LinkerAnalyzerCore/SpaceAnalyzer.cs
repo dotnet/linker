@@ -98,7 +98,7 @@ namespace LinkerAnalyzer.Core
 					size += GetMethodSize (method);
 			}
 
-			type.Resolve();
+			type.Resolve ();
 			try {
 				sizes.Add (GetTypeKey (type), size);
 			} catch (ArgumentException e) {

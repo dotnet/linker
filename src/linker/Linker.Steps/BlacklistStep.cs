@@ -126,14 +126,16 @@ namespace Mono.Linker.Steps {
 
 		protected static XPathDocument GetExternalDescriptor (EmbeddedResource resource)
 		{
-			using var sr = new StreamReader (resource.GetResourceStream ());
-			return new XPathDocument (sr);
+			using (var sr = new StreamReader (resource.GetResourceStream ())) {
+				return new XPathDocument (sr);
+			}
 		}
 
 		static XPathDocument GetDescriptor (string descriptor)
 		{
-			using StreamReader sr = new StreamReader (GetResource (descriptor));
-			return new XPathDocument (sr);
+			using (StreamReader sr = new StreamReader (GetResource (descriptor))) {
+				return new XPathDocument (sr);
+			}
 		}
 
 		static Stream GetResource (string descriptor)

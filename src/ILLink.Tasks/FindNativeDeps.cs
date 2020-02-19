@@ -53,25 +53,26 @@ namespace ILLink.Tasks
 
 			var managedAssemblies = ManagedAssemblyPaths.Select (i => i.ItemSpec).ToArray ();
 			foreach (string managedAssembly in managedAssemblies) {
-				using var peReader = new PEReader(new FileStream (managedAssembly, FileMode.Open, FileAccess.Read, FileShare.Read));
-				if (peReader.HasMetadata) {
-					var reader = peReader.GetMetadataReader ();
-					for (int i = 1, count = reader.GetTableRowCount (TableIndex.ModuleRef); i <= count; i++) {
-						var moduleRef = reader.GetModuleReference (MetadataTokens.ModuleReferenceHandle (i));
-						var moduleName = reader.GetString (moduleRef.Name);
+				using (var peReader = new PEReader(new FileStream (managedAssembly, FileMode.Open, FileAccess.Read, FileShare.Read))) {
+					if (peReader.HasMetadata) {
+						var reader = peReader.GetMetadataReader ();
+						for (int i = 1, count = reader.GetTableRowCount (TableIndex.ModuleRef); i <= count; i++) {
+							var moduleRef = reader.GetModuleReference (MetadataTokens.ModuleReferenceHandle (i));
+							var moduleName = reader.GetString (moduleRef.Name);
 
-						var moduleRefCandidates = new [] { moduleName, moduleName + ".dll", moduleName + ".so", moduleName + ".dylib" };
+							var moduleRefCandidates = new [] { moduleName, moduleName + ".dll", moduleName + ".so", moduleName + ".dylib" };
 
-						bool foundModuleRef = false;
-						foreach (string moduleRefCandidate in moduleRefCandidates) {
-							if (allNativeNames.Contains (moduleRefCandidate)) {
-								keptNativeNames.Add (moduleRefCandidate);
-								foundModuleRef = true;
+							bool foundModuleRef = false;
+							foreach (string moduleRefCandidate in moduleRefCandidates) {
+								if (allNativeNames.Contains (moduleRefCandidate)) {
+									keptNativeNames.Add (moduleRefCandidate);
+									foundModuleRef = true;
+								}
 							}
-						}
 
-						if (!foundModuleRef)
-							Log.LogMessage("unsatisfied DLLImport: " + managedAssembly + " -> " + moduleName);
+							if (!foundModuleRef)
+								Log.LogMessage("unsatisfied DLLImport: " + managedAssembly + " -> " + moduleName);
+						}
 					}
 				}
 			}

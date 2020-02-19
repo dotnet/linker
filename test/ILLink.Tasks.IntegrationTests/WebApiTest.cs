@@ -58,8 +58,9 @@ namespace ILLink.Tests
 			propertygroup.Add(new XElement(ns + "PublishWithAspNetCoreTargetManifest",
 										   "false"));
 
-			using var fs = new FileStream(csproj, FileMode.Create);
-			xdoc.Save(fs);
+			using (var fs = new FileStream(csproj, FileMode.Create)) {
+				xdoc.Save(fs);
+			}
 		}
 	}
 
