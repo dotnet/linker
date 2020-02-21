@@ -295,13 +295,23 @@ namespace Mono.Linker.Steps
 
 			public bool RewriteBody ()
 			{
+				Boolean firstPass = true;
+				HashSet<int> branchInfo = new HashSet<int> ();
+
 				if (FoldedInstructions == null)
 					return false;
-				HashSet<int> branchInfo = getBranchInfo ();
-				if (!RemoveConditions (branchInfo))
+				
+				bool ChangedFirstPass = RemoveConditions (firstPass, branchInfo);
+				GetReachableInstructionsMap (out branchInfo, out var unreachableEH);
+				
+				firstPass = false;
+				bool ChangedSecondPass = RemoveConditions (firstPass, branchInfo);
+				
+				if (!ChangedFirstPass && !ChangedSecondPass)
 					return false;
-
-				var reachableInstrs = GetReachableInstructionsMap (out var unreachableEH);
+				
+				var reachableInstrs = GetReachableInstructionsMap (out branchInfo, out unreachableEH);
+				
 				if (reachableInstrs == null)
 					return false;
 
@@ -317,25 +327,7 @@ namespace Mono.Linker.Steps
 				return InstructionsReplaced > 0;
 			}
 
-			HashSet<int> getBranchInfo ()
-			{
-				HashSet<int> branchInfo = new HashSet<int> ();
-				Instruction target;
-				int i = 0;
-				while (i < FoldedInstructions.Count) {
-					var instr = FoldedInstructions [i++];
-
-					switch (instr.OpCode.FlowControl) {
-					case FlowControl.Branch:
-						target = (Instruction)instr.Operand;
-						branchInfo.Add(GetInstructionIndex (target));
-						continue;
-					}
-				}
-				return branchInfo;
-			}
-
-			bool RemoveConditions (HashSet<int> branchInfo)
+			bool RemoveConditions (bool firstPass, HashSet<int> branchInfo)
 			{
 				bool changed = false;
 				object left, right;
@@ -357,8 +349,6 @@ namespace Mono.Linker.Steps
 								continue;
 
 							if (left is int lint && right is int rint) {
-								if (branchInfo.Contains (i - 1) || branchInfo.Contains (i))
-									continue;
 								RewriteToNop (i - 2);
 								RewriteToNop (i - 1);
 
@@ -376,6 +366,8 @@ namespace Mono.Linker.Steps
 						}
 
 						if (opcode.StackBehaviourPop == StackBehaviour.Popi) {
+							if (firstPass)
+								continue;
 							if (i > 0 && GetConstantValue (FoldedInstructions [i - 1], out var operand)) {
 								if (operand is int opint) {
 									if (branchInfo.Contains (i))
@@ -435,8 +427,6 @@ namespace Mono.Linker.Steps
 							continue;
 
 						if (left is int lint && right is int rint) {
-							if (branchInfo.Contains (i - 1)) 
-								break;
 							RewriteToNop (i - 2);
 							RewriteToNop (i - 1);
 
@@ -467,9 +457,10 @@ namespace Mono.Linker.Steps
 				return changed;
 			}
 
-			BitArray GetReachableInstructionsMap (out List<ExceptionHandler> unreachableHandlers)
+			BitArray GetReachableInstructionsMap (out HashSet<int> branchInfo, out List<ExceptionHandler> unreachableHandlers)
 			{
 				unreachableHandlers = null;
+				branchInfo = new HashSet<int> ();
 				var reachable = new BitArray (FoldedInstructions.Count);
 
 				Stack<int> condBranches = null;
@@ -488,6 +479,7 @@ namespace Mono.Linker.Steps
 						case FlowControl.Branch:
 							target = (Instruction)instr.Operand;
 							i = GetInstructionIndex (target);
+							branchInfo.Add (i);
 							continue;
 
 						case FlowControl.Cond_Branch:
@@ -497,10 +489,13 @@ namespace Mono.Linker.Steps
 							switch (instr.Operand) {
 								case Instruction starget:
 									condBranches.Push (GetInstructionIndex (starget));
+									branchInfo.Add (GetInstructionIndex (starget));
 									continue;
 								case Instruction [] mtargets:
-									foreach (var t in mtargets)
+									foreach (var t in mtargets) { 
 										condBranches.Push (GetInstructionIndex (t));
+										branchInfo.Add (GetInstructionIndex (t));
+									}
 									continue;
 								default:
 									throw new NotImplementedException ();
