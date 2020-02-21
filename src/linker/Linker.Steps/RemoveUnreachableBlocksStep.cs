@@ -297,14 +297,10 @@ namespace Mono.Linker.Steps
 			{
 				if (FoldedInstructions == null)
 					return false;
-				Boolean firstPass = true;
-				HashSet<int> branchInfo = new HashSet<int> ();
-				bool ChangedFirstPass = RemoveConditions (firstPass, branchInfo);
-				branchInfo = getBranchInfo ();
-				firstPass = false;
-				bool ChangedSecondPass = RemoveConditions (firstPass, branchInfo);
-				if (!ChangedFirstPass && !ChangedSecondPass)
+				HashSet<int> branchInfo = getBranchInfo ();
+				if (!RemoveConditions (branchInfo))
 					return false;
+
 				var reachableInstrs = GetReachableInstructionsMap (out var unreachableEH);
 				if (reachableInstrs == null)
 					return false;
@@ -333,22 +329,16 @@ namespace Mono.Linker.Steps
 					case FlowControl.Branch:
 						target = (Instruction)instr.Operand;
 						branchInfo.Add(GetInstructionIndex (target));
-						i = GetInstructionIndex (target);
-						continue;
-					case FlowControl.Cond_Branch:
-						target = (Instruction)instr.Operand;
-						branchInfo.Add (GetInstructionIndex (target));
 						continue;
 					}
 				}
 				return branchInfo;
 			}
 
-			bool RemoveConditions (bool firstPass, HashSet<int> branchInfo)
+			bool RemoveConditions (HashSet<int> branchInfo)
 			{
 				bool changed = false;
 				object left, right;
-				Instruction target;
 
 				//
 				// Finds any branchable instruction and checks if the operand or operands
@@ -367,13 +357,13 @@ namespace Mono.Linker.Steps
 								continue;
 
 							if (left is int lint && right is int rint) {
+								if (branchInfo.Contains (i - 1) || branchInfo.Contains (i))
+									continue;
 								RewriteToNop (i - 2);
 								RewriteToNop (i - 1);
 
 								if (IsComparisonAlwaysTrue (opcode, lint, rint)) {
-									target = (Instruction)instr.Operand;
-									Rewrite (i, Instruction.Create (OpCodes.Br, target));
-									i = GetInstructionIndex (target);
+									Rewrite (i, Instruction.Create (OpCodes.Br, (Instruction)instr.Operand));
 								} else {
 									RewriteConditionToNop (i);
 								}
@@ -386,8 +376,6 @@ namespace Mono.Linker.Steps
 						}
 
 						if (opcode.StackBehaviourPop == StackBehaviour.Popi) {
-							if (firstPass)
-								continue;
 							if (i > 0 && GetConstantValue (FoldedInstructions [i - 1], out var operand)) {
 								if (operand is int opint) {
 									if (branchInfo.Contains (i))
@@ -395,9 +383,7 @@ namespace Mono.Linker.Steps
 									RewriteToNop (i - 1);
 
 									if (IsConstantBranch (opcode, opint)) {
-										target = (Instruction)instr.Operand;
-										Rewrite (i, Instruction.Create (OpCodes.Br, target));
-										i = GetInstructionIndex (target);
+										Rewrite (i, Instruction.Create (OpCodes.Br, (Instruction)instr.Operand));
 									} else {
 										RewriteConditionToNop (i);
 									}
@@ -410,9 +396,7 @@ namespace Mono.Linker.Steps
 									if (branchInfo.Contains (i))
 										continue;
 									RewriteToNop (i - 1);
-									target = (Instruction)instr.Operand;
-									Rewrite (i, Instruction.Create (OpCodes.Br, target));
-									i = GetInstructionIndex (target);
+									Rewrite (i, Instruction.Create (OpCodes.Br, (Instruction)instr.Operand));
 									changed = true;
 									continue;
 								}
@@ -427,10 +411,7 @@ namespace Mono.Linker.Steps
 								RewriteToNop (i - 1);
 
 								if (IsConstantBranch (opcode, opint2)) {
-									target = (Instruction)instr.Operand;
-									Rewrite (i, Instruction.Create (OpCodes.Br, target));
-									i = GetInstructionIndex (target);
-									
+									Rewrite (i, Instruction.Create (OpCodes.Br, (Instruction)instr.Operand));
 								} else {
 									RewriteConditionToNop (i);
 								}
@@ -454,6 +435,8 @@ namespace Mono.Linker.Steps
 							continue;
 
 						if (left is int lint && right is int rint) {
+							if (branchInfo.Contains (i - 1)) 
+								break;
 							RewriteToNop (i - 2);
 							RewriteToNop (i - 1);
 
