@@ -67,7 +67,7 @@ namespace Mono.Linker {
 				if (!driver.Run (customLogger))
 					return 1;
 
-			} catch {
+			} catch (Exception e) {
 				String source = e.TargetSite.DeclaringType.FullName + "." + e.TargetSite.Name;
 				Console.Error.WriteLine ("{0} : Fatal error: At {1}. {2}", _linker, source, e.Message);
 				throw;
