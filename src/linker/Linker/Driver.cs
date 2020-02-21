@@ -68,7 +68,8 @@ namespace Mono.Linker {
 					return 1;
 
 			} catch {
-				Console.Error.WriteLine ("Fatal error in {0}", _linker);
+				String source = e.TargetSite.DeclaringType.FullName + "." + e.TargetSite.Name;
+				Console.Error.WriteLine ("{0} : Fatal error: At {1}. {2}", _linker, source, e.Message);
 				throw;
 			}
 
