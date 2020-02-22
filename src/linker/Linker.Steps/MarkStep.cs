@@ -1136,8 +1136,10 @@ namespace Mono.Linker.Steps {
 				if (ShouldMarkTypeStaticConstructor (type))
 					MarkStaticConstructor (type);
 
-				if (!_context.IsFeatureExcluded ("deserialization"))
-					MarkMethodsIf (type.Methods, HasSerializationAttribute);
+				if (_context.IsFeatureExcluded ("deserialization"))
+					MarkMethodsIf (type.Methods, HasOnSerializeAttribute);
+				else
+					MarkMethodsIf (type.Methods, HasOnSerializeOrDeserializeAttribute);
 			}
 
 			DoAdditionalTypeProcessing (type);
@@ -1588,7 +1590,24 @@ namespace Mono.Linker.Steps {
 			return method.Body.Instructions [0].OpCode.Code != Code.Ret;
 		}
 
-		static bool HasSerializationAttribute (MethodDefinition method)
+		static bool HasOnSerializeAttribute (MethodDefinition method)
+		{
+			if (!method.HasCustomAttributes)
+				return false;
+			foreach (var ca in method.CustomAttributes) {
+				var cat = ca.AttributeType;
+				if (cat.Namespace != "System.Runtime.Serialization")
+					continue;
+				switch (cat.Name) {
+				case "OnSerializedAttribute":
+				case "OnSerializingAttribute":
+					return true;
+				}
+			}
+			return false;
+		}
+
+		static bool HasOnSerializeOrDeserializeAttribute (MethodDefinition method)
 		{
 			if (!method.HasCustomAttributes)
 				return false;
