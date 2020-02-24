@@ -516,6 +516,10 @@ namespace Mono.Linker.Steps {
 			if (MarkDependencyField (td, member))
 				return;
 
+			// Don't report missing .ctor() or .cctor() as those can be compiler generated and thus hard to control their existence of
+			if (((member == ".ctor") || (member == ".cctor")) && signature.Length == 0)
+				return;
+
 			_context.LogMessage (MessageImportance.High, $"Could not resolve dependency member '{member}' declared in type '{td.FullName}'");
 		}
 
