@@ -7,5 +7,10 @@ namespace Mono.Linker
 		{
 			Console.WriteLine (message, values);
 		}
+
+		public void LogMessage (Message message)
+		{
+			Console.WriteLine (message.ToString ());
+		}
 	}
 }

@@ -20,5 +20,10 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				Message = string.Format(message, values)
 			});
 		}
+
+		public void LogMessage(Message message)
+		{
+			// TODO
+		}
 	}
 }

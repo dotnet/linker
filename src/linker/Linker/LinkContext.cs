@@ -435,6 +435,12 @@ namespace Mono.Linker {
 			if (LogMessages && Logger != null)
 				Logger.LogMessage (importance, "{0}", message);
 		}
+
+		public void LogMessage (Message message)
+		{
+			if (LogMessages && Logger != null)
+				Logger.LogMessage (message);
+		}
 	}
 
 	public class CodeOptimizationsSettings
