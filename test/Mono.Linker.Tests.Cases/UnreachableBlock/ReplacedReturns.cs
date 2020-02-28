@@ -6,6 +6,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 {
 	[SetupCSharpCompilerToUse ("csc")]
 	[SetupCompileArgument ("/optimize+")]
+	[SetupLinkerArgument ("--enable-opt", "ipconstprop")]
 	public class ReplacedReturns
 	{
 		public static void Main ()
