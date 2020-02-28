@@ -27,8 +27,10 @@
 //
 
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Xml.XPath;
 
@@ -170,7 +172,7 @@ namespace Mono.Linker {
 #if !FEATURE_ILLINK
 				I18nAssemblies assemblies = I18nAssemblies.All;
 #endif
-				var custom_steps = new List<string> ();
+				var custom_steps = new Stack<string> ();
 				var excluded_features = new HashSet<string> (StringComparer.Ordinal);
 				var set_optimizations = new List<(CodeOptimizations, string, bool)> ();
 				bool dumpDependencies = false;
@@ -271,7 +273,7 @@ namespace Mono.Linker {
 							continue;
 
 						case "--custom-step":
-							if (!GetStringParam (token, l => custom_steps.Add (l)))
+							if (!GetCustomStepParams (token, l => custom_steps.Push (l)))
 								return false;
 
 							continue;
@@ -568,10 +570,16 @@ namespace Mono.Linker {
 				// ClearInitLocalsStep
 				// OutputStep
 				//
-
-				foreach (string custom_step in custom_steps) {
-					if (!AddCustomStep (p, custom_step))
+				
+				if (custom_steps.Any()) {
+					List<Assembly> custom_step_assemblies;
+					if (!ResolveCustomStepAssemblies (custom_steps, context.Resolver.GetSearchDirectories (), out custom_step_assemblies))
 						return false;
+
+					while (custom_steps.Any()) {
+						if (!AddCustomStep (p, custom_steps.Pop (), custom_step_assemblies))
+							return false;
+					}
 				}
 
 				PreProcessPipeline (p);
@@ -588,11 +596,46 @@ namespace Mono.Linker {
 
 		partial void PreProcessPipeline (Pipeline pipeline);
 
-		protected static bool AddCustomStep (Pipeline pipeline, string arg)
+		private bool ResolveCustomStepAssemblies (Stack<string> custom_steps, string[] search_directories, out List<Assembly> custom_steps_assemblies)
+		{
+			custom_steps_assemblies = new List<Assembly> ();
+			while (custom_steps.Peek ().EndsWith (".dll")) {
+				var assembly = custom_steps.Pop ();
+				if (Path.IsPathRooted (assembly)) {
+					var assemblyPath = Path.GetFullPath (assembly);
+					if (File.Exists (assemblyPath)) {
+						custom_steps_assemblies.Add (Assembly.LoadFrom (assemblyPath));
+						continue;
+					} else {
+						Console.WriteLine ($"Invalid assembly path '{assembly}' specified for '--custom-step' option");
+						return false;
+					}
+				} else {
+					bool assemblyFound = false;
+					foreach (var directory in search_directories) {
+						var assemblyPath = Path.Combine (directory, assembly);
+						if (File.Exists (assemblyPath)) {
+							custom_steps_assemblies.Add (Assembly.LoadFrom (assemblyPath));
+							assemblyFound = true;
+							break;
+						}
+					}
+
+					if (!assemblyFound) {
+						Console.WriteLine ($"The assembly '{assembly}' specified for '--custom-step' option could not be found");
+						return false;
+					}
+				}
+			}
+
+			return true;
+		}
+
+		protected static bool AddCustomStep (Pipeline pipeline, string arg, List<Assembly> assemblies)
 		{
 			int pos = arg.IndexOf (":");
 			if (pos == -1) {
-				var step = ResolveStep (arg);
+				var step = ResolveStep (arg, assemblies);
 				if (step == null)
 					return false;
 
@@ -620,7 +663,7 @@ namespace Mono.Linker {
 				return false;
 			}
 
-			IStep newStep = ResolveStep (parts [1]);
+			IStep newStep = ResolveStep (parts [1], assemblies);
 			if (newStep == null)
 				return false;
 
@@ -643,9 +686,17 @@ namespace Mono.Linker {
 			return null;
 		}
 
-		static IStep ResolveStep (string type)
+		static IStep ResolveStep (string type, List<Assembly> assemblies)
 		{
 			Type step = Type.GetType (type, false);
+			if (step == null) {
+				foreach (var assembly in assemblies) {
+					step = assembly.GetType (type);
+					if (step != null)
+						break;
+				}
+			}
+
 			if (step == null) {
 				Console.WriteLine ($"Custom step '{type}' could not be found");
 				return null;
@@ -769,6 +820,24 @@ namespace Mono.Linker {
 
 			ErrorMissingArgument (token);
 			return false;
+		}
+
+		bool GetCustomStepParams (string token, Action<string> action)
+		{
+			if (arguments.Count < 1) {
+				ErrorMissingArgument (token);
+				return false;
+			}
+
+			while (arguments.Count > 0 && !string.IsNullOrEmpty (arguments.Peek())) {
+				var step_or_assembly = arguments.Peek ();
+				if (step_or_assembly.StartsWith ("-") && !step_or_assembly.EndsWith (".dll"))
+					break;
+				action (step_or_assembly);
+				arguments.Dequeue ();
+			}
+
+			return true;
 		}
 
 		string GetNextStringValue ()

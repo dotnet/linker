@@ -114,6 +114,7 @@
     <Content Include="LinkXml\UnusedTypeDeclarationPreservedByLinkXmlIsKept.xml" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\src\linker\Mono.Linker.csproj" />
     <ProjectReference Include="..\Mono.Linker.Tests.Cases.Expectations\Mono.Linker.Tests.Cases.Expectations.csproj" />
   </ItemGroup>
   <ItemGroup>
