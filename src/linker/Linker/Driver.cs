@@ -816,24 +816,6 @@ namespace Mono.Linker {
 			return false;
 		}
 
-		bool GetCustomStepParams (string token, Action<string> action)
-		{
-			if (arguments.Count < 1) {
-				ErrorMissingArgument (token);
-				return false;
-			}
-
-			while (arguments.Count > 0 && !string.IsNullOrEmpty (arguments.Peek())) {
-				var step_or_assembly = arguments.Peek ();
-				if (step_or_assembly.StartsWith ("-") && !step_or_assembly.EndsWith (".dll"))
-					break;
-				action (step_or_assembly);
-				arguments.Dequeue ();
-			}
-
-			return true;
-		}
-
 		string GetNextStringValue ()
 		{
 			if (arguments.Count < 1)
