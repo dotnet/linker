@@ -198,6 +198,7 @@ namespace Mono.Linker {
 			// See https://github.com/mono/linker/issues/612
 			DisabledOptimizations |= CodeOptimizations.UnreachableBodies;
 			DisabledOptimizations |= CodeOptimizations.ClearInitLocals;
+			DisabledOptimizations |= CodeOptimizations.IPConstantPropagation;
 		}
 
 		public void AddSubstitutionFile (string file)
