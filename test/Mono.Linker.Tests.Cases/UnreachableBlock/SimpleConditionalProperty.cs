@@ -4,6 +4,7 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.UnreachableBlock
 {
+	[SetupLinkerArgument ("--enable-opt", "ipconstprop")]
 //	[SetupCSharpCompilerToUse ("csc")]
 	public class SimpleConditionalProperty
 	{
