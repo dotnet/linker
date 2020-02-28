@@ -29,7 +29,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Xml.XPath;
@@ -172,7 +171,8 @@ namespace Mono.Linker {
 #if !FEATURE_ILLINK
 				I18nAssemblies assemblies = I18nAssemblies.All;
 #endif
-				var custom_steps = new Stack<string> ();
+				var custom_steps = new List<string> ();
+				var custom_assemblies = new List<string> ();
 				var excluded_features = new HashSet<string> (StringComparer.Ordinal);
 				var set_optimizations = new List<(CodeOptimizations, string, bool)> ();
 				bool dumpDependencies = false;
@@ -273,7 +273,13 @@ namespace Mono.Linker {
 							continue;
 
 						case "--custom-step":
-							if (!GetCustomStepParams (token, l => custom_steps.Push (l)))
+							if (!GetStringParam (token, l => custom_steps.Add (l)))
+								return false;
+
+							continue;
+
+						case "--custom-assembly":
+							if (!GetStringParam (token, l => custom_assemblies.Add (l)))
 								return false;
 
 							continue;
@@ -570,16 +576,18 @@ namespace Mono.Linker {
 				// ClearInitLocalsStep
 				// OutputStep
 				//
-				
-				if (custom_steps.Any()) {
-					List<Assembly> custom_step_assemblies;
-					if (!ResolveCustomStepAssemblies (custom_steps, context.Resolver.GetSearchDirectories (), out custom_step_assemblies))
-						return false;
 
-					while (custom_steps.Any()) {
-						if (!AddCustomStep (p, custom_steps.Pop (), custom_step_assemblies))
-							return false;
-					}
+				List<Assembly> custom_step_assemblies = new List<Assembly> ();
+				foreach (string custom_assembly in custom_assemblies) {
+					var assembly = GetCustomAssembly (custom_assembly, context.Resolver.GetSearchDirectories ());
+					if (assembly == null)
+						return false;
+					custom_step_assemblies.Add (assembly);
+				}
+
+				foreach (string custom_step in custom_steps) {
+					if (!AddCustomStep (p, custom_step, custom_step_assemblies))
+						return false;
 				}
 
 				PreProcessPipeline (p);
@@ -596,39 +604,25 @@ namespace Mono.Linker {
 
 		partial void PreProcessPipeline (Pipeline pipeline);
 
-		private bool ResolveCustomStepAssemblies (Stack<string> custom_steps, string[] search_directories, out List<Assembly> custom_steps_assemblies)
-		{
-			custom_steps_assemblies = new List<Assembly> ();
-			while (custom_steps.Peek ().EndsWith (".dll")) {
-				var assembly = custom_steps.Pop ();
-				if (Path.IsPathRooted (assembly)) {
-					var assemblyPath = Path.GetFullPath (assembly);
-					if (File.Exists (assemblyPath)) {
-						custom_steps_assemblies.Add (Assembly.LoadFrom (assemblyPath));
-						continue;
-					} else {
-						Console.WriteLine ($"Invalid assembly path '{assembly}' specified for '--custom-step' option");
-						return false;
-					}
-				} else {
-					bool assemblyFound = false;
-					foreach (var directory in search_directories) {
-						var assemblyPath = Path.Combine (directory, assembly);
-						if (File.Exists (assemblyPath)) {
-							custom_steps_assemblies.Add (Assembly.LoadFrom (assemblyPath));
-							assemblyFound = true;
-							break;
-						}
-					}
-
-					if (!assemblyFound) {
-						Console.WriteLine ($"The assembly '{assembly}' specified for '--custom-step' option could not be found");
-						return false;
-					}
+		protected static Assembly GetCustomAssembly (string arg, string[] search_directories) {
+			Assembly custom_assembly = null;
+			if (Path.IsPathRooted (arg)) {
+				var assemblyPath = Path.GetFullPath (arg);
+				if (File.Exists (assemblyPath))
+					return Assembly.LoadFrom (assemblyPath);
+				else
+					Console.WriteLine ($"Invalid assembly path '{arg}' specified for '--custom-step' option");
+			}
+			else {
+				foreach (var directory in search_directories) {
+					var assemblyPath = Path.Combine (directory, arg);
+					if (File.Exists (assemblyPath))
+						return Assembly.LoadFrom (assemblyPath);
 				}
 			}
 
-			return true;
+			Console.WriteLine ($"The assembly '{arg}' specified for '--custom-step' option could not be found");
+			return custom_assembly;
 		}
 
 		protected static bool AddCustomStep (Pipeline pipeline, string arg, List<Assembly> assemblies)
@@ -914,6 +908,8 @@ namespace Mono.Linker {
 			Console.WriteLine ("                            TYPE: Add user defined type as last step to the pipeline");
 			Console.WriteLine ("                            +NAME:TYPE: Inserts step type before existing step with name");
 			Console.WriteLine ("                            -NAME:TYPE: Add step type after existing step");
+			Console.WriteLine ("  --custom-assembly PATH    Specify the path to an assembly that contains the definition of a specified");
+			Console.WriteLine ("                            custom step");
 			Console.WriteLine ("  --ignore-descriptors      Skips reading embedded descriptors (short -z). Defaults to false");
 			Console.WriteLine ("  --keep-facades            Keep assemblies with type-forwarders (short -t). Defaults to false");
 			Console.WriteLine ("  --skip-unresolved         Ignore unresolved types, methods, and assemblies. Defaults to false");
