@@ -123,13 +123,9 @@ namespace Foo {
 
 That is compiled against the linker to `Foo.dll` assembly.
 
-You can let the linker know where this assembly is located either by passing it's full path:
+You can let the linker know where this assembly is located by passing it's full path:
 
 `--custom-assembly D:\Bar\Foo.dll`
-
-Or by specifying an additional directory to search for references together with the assembly file name:
-
-`-d D:\Bar --custom-assembly Foo.dll`
 
 You can now ask the linker to add the custom step at the end of the pipeline:
 

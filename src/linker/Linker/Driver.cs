@@ -579,7 +579,7 @@ namespace Mono.Linker {
 
 				List<Assembly> custom_step_assemblies = new List<Assembly> ();
 				foreach (string custom_assembly in custom_assemblies) {
-					var assembly = GetCustomAssembly (custom_assembly, context.Resolver.GetSearchDirectories ());
+					var assembly = GetCustomAssembly (custom_assembly);
 					if (assembly == null)
 						return false;
 					custom_step_assemblies.Add (assembly);
@@ -604,24 +604,18 @@ namespace Mono.Linker {
 
 		partial void PreProcessPipeline (Pipeline pipeline);
 
-		protected static Assembly GetCustomAssembly (string arg, string[] search_directories) {
+		protected static Assembly GetCustomAssembly (string arg) {
 			Assembly custom_assembly = null;
 			if (Path.IsPathRooted (arg)) {
 				var assemblyPath = Path.GetFullPath (arg);
 				if (File.Exists (assemblyPath))
 					return Assembly.LoadFrom (assemblyPath);
 				else
-					Console.WriteLine ($"Invalid assembly path '{arg}' specified for '--custom-step' option");
+					Console.WriteLine ($"The assembly '{arg}' specified for '--custom-assembly' option could not be found");
 			}
-			else {
-				foreach (var directory in search_directories) {
-					var assemblyPath = Path.Combine (directory, arg);
-					if (File.Exists (assemblyPath))
-						return Assembly.LoadFrom (assemblyPath);
-				}
-			}
+			else
+				Console.WriteLine ($"The path to the assembly '{arg}' specified for '--custom-assembly' must be rooted");
 
-			Console.WriteLine ($"The assembly '{arg}' specified for '--custom-step' option could not be found");
 			return custom_assembly;
 		}
 
