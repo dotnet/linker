@@ -5,8 +5,9 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 namespace Mono.Linker.Tests.Cases.CommandLine
 {
 	[SetupCompileBefore ("CustomStep.dll", new [] { "Dependencies/CustomStepDummy.cs" })]
-	[SetupLinkerArgument ("--custom-step", "CustomStep.CustomStepDummy")]
-	[SetupLinkerArgument ("--custom-assembly", "CustomStep.dll")]
+	[SetupLinkerArgument ("--custom-step", "CustomStep.CustomStepDummy,,CustomStep.dll")]
+	[SetupLinkerArgument ("--custom-step", "-CleanStep:CustomStep.CustomStepDummy,,CustomStep.dll")]
+	[SetupLinkerArgument ("--custom-step", "+CleanStep:CustomStep.CustomStepDummy,,CustomStep.dll")]
 	[LogContains("Custom step added")]
 	public class AddCustomStep
 	{

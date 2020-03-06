@@ -172,7 +172,6 @@ namespace Mono.Linker {
 				I18nAssemblies assemblies = I18nAssemblies.All;
 #endif
 				var custom_steps = new List<string> ();
-				var custom_assemblies = new List<string> ();
 				var excluded_features = new HashSet<string> (StringComparer.Ordinal);
 				var set_optimizations = new List<(CodeOptimizations, string, bool)> ();
 				bool dumpDependencies = false;
@@ -274,12 +273,6 @@ namespace Mono.Linker {
 
 						case "--custom-step":
 							if (!GetStringParam (token, l => custom_steps.Add (l)))
-								return false;
-
-							continue;
-
-						case "--custom-assembly":
-							if (!GetStringParam (token, l => custom_assemblies.Add (l)))
 								return false;
 
 							continue;
@@ -577,16 +570,8 @@ namespace Mono.Linker {
 				// OutputStep
 				//
 
-				List<Assembly> custom_step_assemblies = new List<Assembly> ();
-				foreach (string custom_assembly in custom_assemblies) {
-					var assembly = GetCustomAssembly (custom_assembly);
-					if (assembly == null)
-						return false;
-					custom_step_assemblies.Add (assembly);
-				}
-
 				foreach (string custom_step in custom_steps) {
-					if (!AddCustomStep (p, custom_step, custom_step_assemblies))
+					if (!AddCustomStep (p, custom_step))
 						return false;
 				}
 
@@ -609,21 +594,30 @@ namespace Mono.Linker {
 			if (Path.IsPathRooted (arg)) {
 				var assemblyPath = Path.GetFullPath (arg);
 				if (File.Exists (assemblyPath))
-					return Assembly.LoadFrom (assemblyPath);
+					return Assembly.Load (File.ReadAllBytes (assemblyPath));
 				else
-					Console.WriteLine ($"The assembly '{arg}' specified for '--custom-assembly' option could not be found");
+					Console.WriteLine ($"The assembly '{arg}' specified for '--custom-step' option could not be found");
 			}
 			else
-				Console.WriteLine ($"The path to the assembly '{arg}' specified for '--custom-assembly' must be rooted");
+				Console.WriteLine ($"The path to the assembly '{arg}' specified for '--custom-step' must be rooted");
 
 			return custom_assembly;
 		}
 
-		protected static bool AddCustomStep (Pipeline pipeline, string arg, List<Assembly> assemblies)
+		protected static bool AddCustomStep (Pipeline pipeline, string arg)
 		{
-			int pos = arg.IndexOf (":");
+			Assembly custom_assembly = null;
+			int pos = arg.IndexOf (",,");
+			if (pos != -1) {
+				custom_assembly = GetCustomAssembly (arg.Substring (pos + 2));
+				if (custom_assembly == null)
+					return false;
+				arg = arg.Substring (0, pos);
+			}
+
+			pos = arg.IndexOf (":");
 			if (pos == -1) {
-				var step = ResolveStep (arg, assemblies);
+				var step = ResolveStep (arg, custom_assembly);
 				if (step == null)
 					return false;
 
@@ -651,7 +645,7 @@ namespace Mono.Linker {
 				return false;
 			}
 
-			IStep newStep = ResolveStep (parts [1], assemblies);
+			IStep newStep = ResolveStep (parts [1], custom_assembly);
 			if (newStep == null)
 				return false;
 
@@ -674,15 +668,11 @@ namespace Mono.Linker {
 			return null;
 		}
 
-		static IStep ResolveStep (string type, List<Assembly> assemblies)
+		static IStep ResolveStep (string type, Assembly assembly)
 		{
 			Type step = Type.GetType (type, false);
 			if (step == null) {
-				foreach (var assembly in assemblies) {
-					step = assembly.GetType (type);
-					if (step != null)
-						break;
-				}
+				step = assembly.GetType (type);
 			}
 
 			if (step == null) {
@@ -881,11 +871,9 @@ namespace Mono.Linker {
 			Console.WriteLine ("Advanced");
 			Console.WriteLine ("  --custom-step CFG         Add a custom step <config> to the existing pipeline");
 			Console.WriteLine ("                            Step can use one of following configurations");
-			Console.WriteLine ("                            TYPE: Add user defined type as last step to the pipeline");
-			Console.WriteLine ("                            +NAME:TYPE: Inserts step type before existing step with name");
-			Console.WriteLine ("                            -NAME:TYPE: Add step type after existing step");
-			Console.WriteLine ("  --custom-assembly PATH    Specify the path to an assembly that contains the definition of a specified");
-			Console.WriteLine ("                            custom step");
+			Console.WriteLine ("                            TYPE,,PATH_TO_ASSEMBLY: Add user defined type as last step to the pipeline");
+			Console.WriteLine ("                            +NAME:TYPE,,PATH_TO_ASSEMBLY: Inserts step type before existing step with name");
+			Console.WriteLine ("                            -NAME:TYPE,,PATH_TO_ASSEMBLY: Add step type after existing step");
 			Console.WriteLine ("  --ignore-descriptors      Skips reading embedded descriptors (short -z). Defaults to false");
 			Console.WriteLine ("  --keep-facades            Keep assemblies with type-forwarders (short -t). Defaults to false");
 			Console.WriteLine ("  --skip-unresolved         Ignore unresolved types, methods, and assemblies. Defaults to false");
