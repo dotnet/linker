@@ -25,6 +25,7 @@
     <Compile Remove="TypeForwarding\Dependencies\ForwarderLibrary_2.cs" />
     <Compile Remove="TypeForwarding\Dependencies\ForwarderLibrary_3.cs" />
     <Compile Remove="TypeForwarding\Dependencies\ImplementationLibrary_3.cs" />
+    <Compile Remove="CommandLine\Dependencies\CustomStepDummy.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Attributes\OnlyKeepUsed\Dependencies\UnusedAttributeWithTypeForwarderIsRemoved_Forwarder.cs" />
@@ -114,7 +115,6 @@
     <Content Include="LinkXml\UnusedTypeDeclarationPreservedByLinkXmlIsKept.xml" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\linker\Mono.Linker.csproj" />
     <ProjectReference Include="..\Mono.Linker.Tests.Cases.Expectations\Mono.Linker.Tests.Cases.Expectations.csproj" />
   </ItemGroup>
   <ItemGroup>

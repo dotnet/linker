@@ -589,27 +589,25 @@ namespace Mono.Linker {
 
 		partial void PreProcessPipeline (Pipeline pipeline);
 
-		protected static Assembly GetCustomAssembly (string arg) {
-			Assembly custom_assembly = null;
+		private static Assembly GetCustomAssembly (string arg) {
 			if (Path.IsPathRooted (arg)) {
 				var assemblyPath = Path.GetFullPath (arg);
 				if (File.Exists (assemblyPath))
 					return Assembly.Load (File.ReadAllBytes (assemblyPath));
-				else
-					Console.WriteLine ($"The assembly '{arg}' specified for '--custom-step' option could not be found");
+				Console.WriteLine ($"The assembly '{arg}' specified for '--custom-step' option could not be found");
 			}
 			else
-				Console.WriteLine ($"The path to the assembly '{arg}' specified for '--custom-step' must be rooted");
+				Console.WriteLine ($"The path to the assembly '{arg}' specified for '--custom-step' must be fully qualified");
 
-			return custom_assembly;
+			return null;
 		}
 
 		protected static bool AddCustomStep (Pipeline pipeline, string arg)
 		{
 			Assembly custom_assembly = null;
-			int pos = arg.IndexOf (",,");
+			int pos = arg.IndexOf (",");
 			if (pos != -1) {
-				custom_assembly = GetCustomAssembly (arg.Substring (pos + 2));
+				custom_assembly = GetCustomAssembly (arg.Substring (pos + 1));
 				if (custom_assembly == null)
 					return false;
 				arg = arg.Substring (0, pos);
@@ -670,10 +668,7 @@ namespace Mono.Linker {
 
 		static IStep ResolveStep (string type, Assembly assembly)
 		{
-			Type step = Type.GetType (type, false);
-			if (step == null) {
-				step = assembly.GetType (type);
-			}
+			Type step = assembly != null ? assembly.GetType(type) : Type.GetType (type, false);
 
 			if (step == null) {
 				Console.WriteLine ($"Custom step '{type}' could not be found");
