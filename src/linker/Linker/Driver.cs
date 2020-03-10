@@ -866,9 +866,9 @@ namespace Mono.Linker {
 			Console.WriteLine ("Advanced");
 			Console.WriteLine ("  --custom-step CFG         Add a custom step <config> to the existing pipeline");
 			Console.WriteLine ("                            Step can use one of following configurations");
-			Console.WriteLine ("                            TYPE,,PATH_TO_ASSEMBLY: Add user defined type as last step to the pipeline");
-			Console.WriteLine ("                            +NAME:TYPE,,PATH_TO_ASSEMBLY: Inserts step type before existing step with name");
-			Console.WriteLine ("                            -NAME:TYPE,,PATH_TO_ASSEMBLY: Add step type after existing step");
+			Console.WriteLine ("                            TYPE,PATH_TO_ASSEMBLY: Add user defined type as last step to the pipeline");
+			Console.WriteLine ("                            +NAME:TYPE,PATH_TO_ASSEMBLY: Inserts step type before existing step with name");
+			Console.WriteLine ("                            -NAME:TYPE,PATH_TO_ASSEMBLY: Add step type after existing step");
 			Console.WriteLine ("  --ignore-descriptors      Skips reading embedded descriptors (short -z). Defaults to false");
 			Console.WriteLine ("  --keep-facades            Keep assemblies with type-forwarders (short -t). Defaults to false");
 			Console.WriteLine ("  --skip-unresolved         Ignore unresolved types, methods, and assemblies. Defaults to false");
