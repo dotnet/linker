@@ -23,7 +23,9 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 		public void LogMessage(Message message)
 		{
-			// TODO
+			Messages.Add (new MessageRecord {
+				Message = message.ToString ()
+			});
 		}
 	}
 }

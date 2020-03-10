@@ -1,7 +1,5 @@
-﻿using System;
-using Mono.Linker.Tests.Cases.Expectations.Assertions;
+﻿using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
-
 
 namespace Mono.Linker.Tests.Cases.Logging {
 
@@ -10,10 +8,10 @@ namespace Mono.Linker.Tests.Cases.Logging {
 #else
 	[SetupCompileBefore ("LogStep.dll", new [] { "Dependencies/LogStep.cs" }, new [] { "illink.dll" })]
 #endif
-	[SetupLinkerArgument ("--custom-step", "Log.LogWarningStep,LogStep.dll")]
-	[LogContains ("illinker: error L100: error")]
-	[LogContains ("illinker: warning L400: warning")]
-	[LogContains ("illinker: info L900: info")]
+	[SetupLinkerArgument ("--custom-step", "Log.LogStep,LogStep.dll")]
+	[LogContains ("logtest: error L100: Error")]
+	[LogContains ("logtest: warning L400: Warning")]
+	[LogContains ("illinker: info L900: Info")]
 	public class CommonLogs
 	{
 		public static void Main ()
