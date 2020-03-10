@@ -125,19 +125,19 @@ That is compiled against the linker to `Foo.dll` assembly.
 
 To tell the linker where this assembly is located, you have to append its full path after two commas that separate the custom step's name from the custom assembly's path:
 
-`--custom-step [custom step],,[custom assembly]`
+`--custom-step [custom step],[custom assembly]`
 
 You can now ask the linker to add the custom step at the end of the pipeline:
 
-`illinker --custom-step Foo.FooStep,,D:\Bar\Foo.dll`
+`illinker --custom-step Foo.FooStep,D:\Bar\Foo.dll`
 
 Or you can ask the linker to add it after a specific step:
 
-`illinker --custom-step +MarkStep:Foo.FooStep,,D:\Bar\Foo.dll -a program.exe`
+`illinker --custom-step +MarkStep:Foo.FooStep,D:\Bar\Foo.dll -a program.exe`
 
 Or before a specific step:
 
-`illinker --custom-step -MarkStep:Foo.FooStep,,D:\Bar\Foo.dll -a program.exe`
+`illinker --custom-step -MarkStep:Foo.FooStep,D:\Bar\Foo.dll -a program.exe`
 
 ## Mono specific options
 
