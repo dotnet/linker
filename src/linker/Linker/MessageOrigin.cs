@@ -1,7 +1,12 @@
 ﻿namespace Mono.Linker {
 	public class MessageOrigin {
+
+#if NETCOREAPP
 		private const string DefaultOrigin = "illinker";
-		
+#else
+		private const string DefaultOrigin = "monolinker";
+#endif
+
 		public string Origin { get; }
 		
 		public int? Line { get; }

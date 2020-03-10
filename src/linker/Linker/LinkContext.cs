@@ -438,8 +438,13 @@ namespace Mono.Linker {
 
 		public void LogMessage (Message message)
 		{
-			if (LogMessages && Logger != null)
-				Logger.LogMessage (message);
+			if (Logger == null)
+				return;
+
+			if (message.Category == MessageCategory.Info && !LogMessages)
+				return;
+
+			Logger.LogMessage (message);
 		}
 	}
 
