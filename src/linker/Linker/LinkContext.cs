@@ -200,8 +200,7 @@ namespace Mono.Linker {
 			const CodeOptimizations defaultOptimizations =
 				CodeOptimizations.BeforeFieldInit |
 				CodeOptimizations.OverrideRemoval |
-				CodeOptimizations.UnusedInterfaces |
-				CodeOptimizations.IPConstantPropagation;
+				CodeOptimizations.UnusedInterfaces;
 
 			Optimizations = new CodeOptimizationsSettings (defaultOptimizations);
 		}
