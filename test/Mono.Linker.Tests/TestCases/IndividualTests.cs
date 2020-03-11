@@ -1,12 +1,15 @@
 ﻿using System;
+using System.IO;
 using System.Xml;
 using Mono.Cecil;
 using Mono.Linker.Tests.Cases.CommandLine.Mvid;
+using Mono.Linker.Tests.Cases.Interop.PInvoke.Individual;
 using Mono.Linker.Tests.Cases.References.Individual;
 using Mono.Linker.Tests.Cases.Tracing.Individual;
 using Mono.Linker.Tests.Extensions;
 using Mono.Linker.Tests.TestCasesRunner;
 using NUnit.Framework;
+using NUnit.Framework.Internal;
 
 namespace Mono.Linker.Tests.TestCases
 {
@@ -24,6 +27,21 @@ namespace Mono.Linker.Tests.TestCases
 			// missing types/methods
 			if (!result.OutputAssemblyPath.Exists ())
 				Assert.Fail ($"The linked assembly is missing.  Should have existed at {result.OutputAssemblyPath}");
+		}
+
+		[Test]
+		public void CanOutputPInvokes ()
+		{
+			var testcase = CreateIndividualCase (typeof (CanOutputPInvokes));
+			var result = Run (testcase);
+
+			var outputPath = result.OutputAssemblyPath.Parent.Combine ("pinvokes.json");
+			if (!outputPath.Exists ())
+				Assert.Fail ($"The json file with the list of all the PInvokes found by the linker is missing. Expected it to exist at {outputPath}");
+
+			Assert.That (File.ReadAllText (outputPath),
+				Is.EqualTo ("[{\"entryPoint\":\"FooEntryPoint\",\"moduleName\":\"lib\"},"
+				+ "{\"entryPoint\":\"CustomEntryPoint\",\"moduleName\":\"lib\"}]"));
 		}
 
 		[Test]

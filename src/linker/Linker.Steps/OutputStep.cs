@@ -30,7 +30,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-
+using System.Runtime.Serialization.Json;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.PE;
@@ -76,6 +76,7 @@ namespace Mono.Linker.Steps {
 		protected override void Process ()
 		{
 			CheckOutputDirectory ();
+			OutputPInvokes ();
 			Tracer.Finish ();
 		}
 
@@ -157,6 +158,17 @@ namespace Mono.Linker.Steps {
 			default:
 				CloseSymbols (assembly);
 				break;
+			}
+		}
+
+		private void OutputPInvokes ()
+		{
+			if (Context.PInvokesListFile != null) {
+				using (var s = new MemoryStream ())
+				using (var fs = File.Open (Path.Combine (Context.OutputDirectory, Context.PInvokesListFile), FileMode.Create)) {
+					var jsonSerializer = new DataContractJsonSerializer (typeof (List<PInvokeInfo>));
+					jsonSerializer.WriteObject (fs, Context.PInvokes);
+				}
 			}
 		}
 

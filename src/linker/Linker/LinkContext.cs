@@ -120,6 +120,19 @@ namespace Mono.Linker {
 
 		public List<string> Substitutions { get; private set; }
 
+		public List<PInvokeInfo> PInvokes { get; private set; }
+
+		private string pinvokesListFile;
+		public string PInvokesListFile {
+			get {
+				return pinvokesListFile;
+			}
+			set {
+				PInvokes = new List<PInvokeInfo> ();
+				pinvokesListFile = value;
+			}
+		}
+
 		public System.Collections.IDictionary Actions {
 			get { return _actions; }
 		}
