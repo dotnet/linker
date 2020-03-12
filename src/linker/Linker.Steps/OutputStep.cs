@@ -164,7 +164,6 @@ namespace Mono.Linker.Steps {
 		private void OutputPInvokes ()
 		{
 			if (Context.PInvokesListFile != null) {
-				using (var s = new MemoryStream ())
 				using (var fs = File.Open (Path.Combine (Context.OutputDirectory, Context.PInvokesListFile), FileMode.Create)) {
 					var jsonSerializer = new DataContractJsonSerializer (typeof (List<PInvokeInfo>));
 					jsonSerializer.WriteObject (fs, Context.PInvokes);
