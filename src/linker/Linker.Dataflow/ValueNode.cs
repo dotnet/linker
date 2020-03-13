@@ -41,10 +41,10 @@ namespace Mono.Linker.Dataflow
 		public ValueNode ()
 		{
 #if false // Helpful for debugging a cycle that has inadvertently crept into the graph
-            if (this.DetectCycle(new HashSet<ValueNode>()))
-            {
-                throw new Exception("Found a cycle");
-            }
+			if (this.DetectCycle(new HashSet<ValueNode>()))
+			{
+				throw new Exception("Found a cycle");
+			}
 #endif
 		}
 
@@ -712,10 +712,10 @@ namespace Mono.Linker.Dataflow
 				m_values.Add (node);
 
 #if false
-            if (this.DetectCycle(new HashSet<ValueNode>()))
-            {
-                throw new Exception("Found a cycle");
-            }
+			if (this.DetectCycle(new HashSet<ValueNode>()))
+			{
+				throw new Exception("Found a cycle");
+			}
 #endif
 		}
 

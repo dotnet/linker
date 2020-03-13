@@ -57,17 +57,15 @@ namespace Mono.Linker.Dataflow
 			}
 		}
 
-		private static void PushUnknown (Stack<StackSlot> stack, int count)
+		private static void PushUnknown (Stack<StackSlot> stack)
 		{
-			for (int i = 0; i < count; ++i) {
-				stack.Push (new StackSlot ());
-			}
+			stack.Push (new StackSlot ());
 		}
 
 		private void PushUnknownAndWarnAboutInvalidIL (Stack<StackSlot> stack, MethodBody methodBody, int offset, bool invalidateBody)
 		{
 			WarnAboutInvalidILInMethod (methodBody, offset);
-			PushUnknown (stack, 1);
+			PushUnknown (stack);
 		}
 
 		private StackSlot PopUnknown (Stack<StackSlot> stack, int count, MethodBody method, int ilOffset)
@@ -189,8 +187,8 @@ namespace Mono.Linker.Dataflow
 			ValueBasicBlockPair newValue = new ValueBasicBlockPair { BasicBlockIndex = curBasicBlock };
 
 			ValueBasicBlockPair existingValue;
-			valueCollection.TryGetValue (collectionKey, out existingValue);
-			if (existingValue.BasicBlockIndex == curBasicBlock) {
+			if (valueCollection.TryGetValue (collectionKey, out existingValue)
+				&& existingValue.BasicBlockIndex == curBasicBlock) {
 				// If the previous value was stored in the current basic block, then we can safely 
 				// overwrite the previous value with the new one.
 				newValue.Value = valueToStore;
@@ -272,7 +270,7 @@ namespace Mono.Linker.Dataflow
 					case Code.Ldelema:
 					case Code.Ceq:
 						PopUnknown (currentStack, 2, methodBody, operation.Offset);
-						PushUnknown (currentStack, 1);
+						PushUnknown (currentStack);
 						break;
 
 					case Code.Dup:
@@ -331,7 +329,7 @@ namespace Mono.Linker.Dataflow
 					case Code.Ldc_R8:
 					case Code.Ldsfld:
 					case Code.Ldsflda:
-						PushUnknown (currentStack, 1);
+						PushUnknown (currentStack);
 						break;
 
 					case Code.Ldarg:
@@ -423,7 +421,7 @@ namespace Mono.Linker.Dataflow
 					case Code.Neg:
 					case Code.Not:
 						PopUnknown (currentStack, 1, methodBody, operation.Offset);
-						PushUnknown (currentStack, 1);
+						PushUnknown (currentStack);
 						break;
 
 					case Code.Isinst:
@@ -437,7 +435,7 @@ namespace Mono.Linker.Dataflow
 					case Code.Ldflda:
 						// TODO: model field loads
 						PopUnknown (currentStack, 1, methodBody, operation.Offset);
-						PushUnknown (currentStack, 1);
+						PushUnknown (currentStack);
 						break;
 
 					case Code.Newarr: {
@@ -503,12 +501,6 @@ namespace Mono.Linker.Dataflow
 					case Code.Stloc_2:
 					case Code.Stloc_3:
 						ScanStloc (operation, currentStack, methodBody, locals, curBasicBlock);
-						break;
-
-					case Code.Break:
-					case Code.Ckfinite:
-					case Code.Nop:
-						// Effectively, do nothing.
 						break;
 
 					case Code.Constrained:
@@ -661,7 +653,7 @@ namespace Mono.Linker.Dataflow
 				ValueNode valueToPush = localValue.Value;
 				currentStack.Push (new StackSlot (valueToPush, isByRef));
 			} else {
-				PushUnknown (currentStack, 1);
+				PushUnknown (currentStack);
 			}
 		}
 
@@ -671,14 +663,13 @@ namespace Mono.Linker.Dataflow
 			MethodDefinition thisMethod,
 			MethodBody methodBody)
 		{
-			TypeReference typeReference = operation.Operand as TypeReference;
-			if (typeReference != null) {
+			if (operation.Operand is TypeReference typeReference) {
 				StackSlot slot = new StackSlot (new RuntimeTypeHandleValue (typeReference.Resolve()));
 				currentStack.Push (slot);
 				return;
 			}
 
-			PushUnknown (currentStack, 1);
+			PushUnknown (currentStack);
 		}
 
 		private void ScanStloc (
@@ -709,11 +700,6 @@ namespace Mono.Linker.Dataflow
 			return (VariableDefinition)operation.Operand;
 		}
 
-		private static bool HasThisParam (MethodReference method)
-		{
-			return method.HasThis && !method.ExplicitThis;
-		}
-
 		private ValueNodeList PopCallArguments (
 			Stack<StackSlot> currentStack,
 			MethodReference methodCalled,
@@ -724,7 +710,7 @@ namespace Mono.Linker.Dataflow
 			newObjValue = null;
 
 			int countToPop = 0;
-			if (!isNewObj && HasThisParam (methodCalled))
+			if (!isNewObj && methodCalled.HasThis && !methodCalled.ExplicitThis)
 				countToPop++;
 			countToPop += methodCalled.Parameters.Count;
 
@@ -767,7 +753,7 @@ namespace Mono.Linker.Dataflow
 			if (!handledFunction) {
 				if (isNewObj) {
 					if (newObjValue == null)
-						PushUnknown (currentStack, 1);
+						PushUnknown (currentStack);
 					else
 						methodReturnValue = newObjValue;
 				} else {
@@ -787,39 +773,5 @@ namespace Mono.Linker.Dataflow
 			Instruction operation,
 			ValueNodeList methodParams,
 			out ValueNode methodReturnValue);
-	}
-
-	static class Extensions
-	{
-		public static bool IsControlFlowInstruction (in this OpCode opcode)
-		{
-			return opcode.FlowControl == FlowControl.Branch
-				|| opcode.FlowControl == FlowControl.Cond_Branch
-				|| (opcode.FlowControl == FlowControl.Return && opcode.Code != Code.Ret);
-		}
-
-		public static HashSet<int> ComputeBranchTargets (this MethodBody methodBody)
-		{
-			HashSet<int> branchTargets = new HashSet<int> ();
-			foreach (Instruction operation in methodBody.Instructions) {
-				if (!operation.OpCode.IsControlFlowInstruction ())
-					continue;
-				Object value = operation.Operand;
-				if (value is Instruction inst) {
-					branchTargets.Add (inst.Offset);
-				} else if (value is Instruction [] instructions) {
-					foreach (Instruction switchLabel in instructions) {
-						branchTargets.Add (switchLabel.Offset);
-					}
-				}
-			}
-			foreach (ExceptionHandler einfo in methodBody.ExceptionHandlers) {
-				if (einfo.HandlerType == ExceptionHandlerType.Filter) {
-					branchTargets.Add (einfo.FilterStart.Offset);
-				}
-				branchTargets.Add (einfo.HandlerStart.Offset);
-			}
-			return branchTargets;
-		}
 	}
 }
