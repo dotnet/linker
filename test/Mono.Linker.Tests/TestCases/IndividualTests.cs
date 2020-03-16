@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Runtime.Serialization.Json;
 using System.Xml;
 using Mono.Cecil;
 using Mono.Linker.Tests.Cases.CommandLine.Mvid;
@@ -39,9 +41,15 @@ namespace Mono.Linker.Tests.TestCases
 			if (!outputPath.Exists ())
 				Assert.Fail ($"The json file with the list of all the PInvokes found by the linker is missing. Expected it to exist at {outputPath}");
 
-			Assert.That (File.ReadAllText (outputPath),
-				Is.EqualTo ("[{\"entryPoint\":\"FooEntryPoint\",\"moduleName\":\"lib\"},"
-				+ "{\"entryPoint\":\"CustomEntryPoint\",\"moduleName\":\"lib\"}]"));
+			var jsonSerializer = new DataContractJsonSerializer (typeof (List<PInvokeInfo>));
+			var actual = jsonSerializer
+				.ReadObject (File.Open (outputPath, FileMode.Open))
+				.ToString ();
+			var expected = jsonSerializer
+				.ReadObject (File.Open ("../../../../../test/Mono.Linker.Tests/TestCases/Dependencies/pinvokes.json", FileMode.Open))
+				.ToString ();
+
+			Assert.That (actual, Is.EqualTo (expected));
 		}
 
 		[Test]

@@ -2153,7 +2153,9 @@ namespace Mono.Linker.Steps {
 
 			if (!string.IsNullOrEmpty(_context.PInvokesListFile) && method.IsPInvokeImpl) {
 				_context.PInvokes.Add (new PInvokeInfo {
+					AssemblyName = method.DeclaringType.Module.Name,
 					EntryPoint = method.PInvokeInfo.EntryPoint,
+					FullName = method.FullName,
 					ModuleName = method.PInvokeInfo.Module.Name
 				});
 			}

@@ -879,7 +879,6 @@ namespace Mono.Linker {
 			Console.WriteLine ("  --keep-facades            Keep assemblies with type-forwarders (short -t). Defaults to false");
 			Console.WriteLine ("  --skip-unresolved         Ignore unresolved types, methods, and assemblies. Defaults to false");
 			Console.WriteLine ("  --output-pinvokes PATH    Output a JSON file with all modules and entry points of the P/Invokes found");
-			Console.WriteLine ("                            by the IL linker");
 
 			Console.WriteLine ();
 			Console.WriteLine ("Linking");
