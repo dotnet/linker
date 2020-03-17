@@ -12,7 +12,7 @@ pr:
     - master
     - release/*
     - mono-*
-    - feature/dataflow
+    - feature/*
 
 variables:
 - name: officialBuild
@@ -138,4 +138,3 @@ stages:
 # Post-Build Arcade logic
 - ${{ if eq(variables.officialBuild, 'true') }}:
   - template: /eng/common/templates/post-build/post-build.yml
-
