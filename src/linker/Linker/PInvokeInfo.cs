@@ -26,16 +26,13 @@ namespace Mono.Linker
 			int compareField = string.Compare (this.AssemblyName, compareTo.AssemblyName);
 			if (compareField != 0) return compareField;
 
-			compareField = string.Compare (this.EntryPoint, compareTo.EntryPoint);
+			compareField = string.Compare (this.ModuleName, compareTo.ModuleName);
 			if (compareField != 0) return compareField;
 
 			compareField = string.Compare (this.FullName, compareTo.FullName);
 			if (compareField != 0) return compareField;
 
-			compareField = string.Compare (this.ModuleName, compareTo.ModuleName);
-			if (compareField != 0) return compareField;
-
-			return 0;
+			return string.Compare (this.EntryPoint, compareTo.EntryPoint);
 		}
 	}
 }
