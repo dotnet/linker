@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.Serialization.Json;
 using System.Xml;
 using Mono.Cecil;
@@ -42,14 +43,15 @@ namespace Mono.Linker.Tests.TestCases
 				Assert.Fail ($"The json file with the list of all the PInvokes found by the linker is missing. Expected it to exist at {outputPath}");
 
 			var jsonSerializer = new DataContractJsonSerializer (typeof (List<PInvokeInfo>));
-			var actual = jsonSerializer
-				.ReadObject (File.Open (outputPath, FileMode.Open))
-				.ToString ();
-			var expected = jsonSerializer
-				.ReadObject (File.Open ("../../../../../test/Mono.Linker.Tests/TestCases/Dependencies/pinvokes.json", FileMode.Open))
-				.ToString ();
 
-			Assert.That (actual, Is.EqualTo (expected));
+			using (var fsActual = File.Open(outputPath, FileMode.Open))
+			using (var fsExpected = File.Open("../../../../../test/Mono.Linker.Tests/TestCases/Dependencies/pinvokes.json", FileMode.Open)) {
+				var actual = jsonSerializer.ReadObject (fsActual) as List<PInvokeInfo>;
+				var expected = jsonSerializer.ReadObject (fsExpected) as List<PInvokeInfo>;
+				foreach (var pinvokePair in Enumerable.Zip(actual, expected)) {
+					Assert.That (pinvokePair.First.CompareTo (pinvokePair.Second), Is.EqualTo (0));
+				}
+			}
 		}
 
 		[Test]

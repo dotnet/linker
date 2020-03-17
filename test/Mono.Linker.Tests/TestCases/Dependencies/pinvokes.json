@@ -1,15 +1,9 @@
 [
     {
-        "assembly": "test.exe",
-        "entryPoint": "FooEntryPoint",
-        "fullName": "Mono.Linker.Tests.Cases.Interop.PInvoke.Individual.CanOutputPInvokes\/Foo Mono.Linker.Tests.Cases.Interop.PInvoke.Individual.CanOutputPInvokes::FooEntryPoint()",
-        "moduleName": "lib"
-    },
-    {
-        "assembly": "test.exe",
+        "assembly": "copyassembly.dll",
         "entryPoint": "CustomEntryPoint",
-        "fullName": "Mono.Linker.Tests.Cases.Interop.PInvoke.Individual.CanOutputPInvokes\/Foo Mono.Linker.Tests.Cases.Interop.PInvoke.Individual.CanOutputPInvokes::CustomEntryPoint()",
-        "moduleName": "lib"
+        "fullName": "Mono.Linker.Tests.Cases.Interop.PInvoke.Individual.Dependencies.CanOutputPInvokes_CopyAssembly Mono.Linker.Tests.Cases.Interop.PInvoke.Individual.Dependencies.CanOutputPInvokes_CopyAssembly::CustomEntryPoint()",
+        "moduleName": "lib_copyassembly"
     },
     {
         "assembly": "copyassembly.dll",
@@ -18,9 +12,21 @@
         "moduleName": "lib_copyassembly"
     },
     {
-        "assembly": "copyassembly.dll",
+        "assembly": "test.exe",
         "entryPoint": "CustomEntryPoint",
-        "fullName": "Mono.Linker.Tests.Cases.Interop.PInvoke.Individual.Dependencies.CanOutputPInvokes_CopyAssembly Mono.Linker.Tests.Cases.Interop.PInvoke.Individual.Dependencies.CanOutputPInvokes_CopyAssembly::CustomEntryPoint()",
-        "moduleName": "lib_copyassembly"
+        "fullName": "Mono.Linker.Tests.Cases.Interop.PInvoke.Individual.CanOutputPInvokes\/Foo Mono.Linker.Tests.Cases.Interop.PInvoke.Individual.CanOutputPInvokes::CustomEntryPoint()",
+        "moduleName": "lib"
+    },
+    {
+        "assembly": "test.exe",
+        "entryPoint": "CustomEntryPoint",
+        "fullName": "Mono.Linker.Tests.Cases.Interop.PInvoke.Individual.CanOutputPInvokes\/Foo Mono.Linker.Tests.Cases.Interop.PInvoke.Individual.CanOutputPInvokes::CustomEntryPoint0()",
+        "moduleName": "lib"
+    },
+    {
+        "assembly": "test.exe",
+        "entryPoint": "FooEntryPoint",
+        "fullName": "Mono.Linker.Tests.Cases.Interop.PInvoke.Individual.CanOutputPInvokes\/Foo Mono.Linker.Tests.Cases.Interop.PInvoke.Individual.CanOutputPInvokes::FooEntryPoint()",
+        "moduleName": "lib"
     }
 ]
