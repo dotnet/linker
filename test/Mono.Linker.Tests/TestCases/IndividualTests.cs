@@ -48,8 +48,8 @@ namespace Mono.Linker.Tests.TestCases
 			using (var fsExpected = File.Open("../../../../../test/Mono.Linker.Tests/TestCases/Dependencies/pinvokes.json", FileMode.Open)) {
 				var actual = jsonSerializer.ReadObject (fsActual) as List<PInvokeInfo>;
 				var expected = jsonSerializer.ReadObject (fsExpected) as List<PInvokeInfo>;
-				foreach (var pinvokePair in Enumerable.Zip(actual, expected)) {
-					Assert.That (pinvokePair.First.CompareTo (pinvokePair.Second), Is.EqualTo (0));
+				foreach (var pinvokePair in Enumerable.Zip(actual, expected, (fst, snd) => Tuple.Create(fst, snd))) {
+					Assert.That (pinvokePair.Item1.CompareTo (pinvokePair.Item2), Is.EqualTo (0));
 				}
 			}
 		}
