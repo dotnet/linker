@@ -664,9 +664,13 @@ namespace Mono.Linker.Dataflow
 			MethodBody methodBody)
 		{
 			if (operation.Operand is TypeReference typeReference) {
-				StackSlot slot = new StackSlot (new RuntimeTypeHandleValue (typeReference.Resolve()));
-				currentStack.Push (slot);
-				return;
+				var resolvedReference = typeReference.Resolve();
+				if (resolvedReference != null)
+				{
+					StackSlot slot = new StackSlot (new RuntimeTypeHandleValue (resolvedReference));
+					currentStack.Push (slot);
+					return;
+				}
 			}
 
 			PushUnknown (currentStack);
