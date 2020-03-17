@@ -4,8 +4,8 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-using TYPE = Mono.Cecil.TypeDefinition;
-using FIELD = Mono.Cecil.FieldDefinition;
+using TypeDefinition = Mono.Cecil.TypeDefinition;
+using FieldDefinition = Mono.Cecil.FieldDefinition;
 
 namespace Mono.Linker.Dataflow
 {
@@ -535,13 +535,13 @@ namespace Mono.Linker.Dataflow
 	/// </summary>
 	class SystemTypeValue : LeafValueNode
 	{
-		public SystemTypeValue (TYPE typeRepresented)
+		public SystemTypeValue (TypeDefinition typeRepresented)
 		{
 			Kind = ValueNodeKind.SystemType;
 			TypeRepresented = typeRepresented;
 		}
 
-		public TYPE TypeRepresented { get; private set; }
+		public TypeDefinition TypeRepresented { get; private set; }
 
 		public override bool Equals (ValueNode other)
 		{
@@ -550,7 +550,7 @@ namespace Mono.Linker.Dataflow
 			if (this.Kind != other.Kind)
 				return false;
 
-			return TypeHelper.TypesAreEquivalent (this.TypeRepresented, ((SystemTypeValue)other).TypeRepresented);
+			return Equals(this.TypeRepresented, ((SystemTypeValue)other).TypeRepresented);
 		}
 
 		public override int GetHashCode ()
@@ -569,13 +569,13 @@ namespace Mono.Linker.Dataflow
 	/// </summary>
 	class RuntimeTypeHandleValue : LeafValueNode
 	{
-		public RuntimeTypeHandleValue (TYPE typeRepresented)
+		public RuntimeTypeHandleValue (TypeDefinition typeRepresented)
 		{
 			Kind = ValueNodeKind.RuntimeTypeHandle;
 			TypeRepresented = typeRepresented;
 		}
 
-		public TYPE TypeRepresented { get; private set; }
+		public TypeDefinition TypeRepresented { get; private set; }
 
 		public override bool Equals (ValueNode other)
 		{
@@ -584,7 +584,7 @@ namespace Mono.Linker.Dataflow
 			if (this.Kind != other.Kind)
 				return false;
 
-			return TypeHelper.TypesAreEquivalent (this.TypeRepresented, ((RuntimeTypeHandleValue)other).TypeRepresented);
+			return Equals(this.TypeRepresented, ((RuntimeTypeHandleValue)other).TypeRepresented);
 		}
 
 		public override int GetHashCode ()
@@ -781,7 +781,7 @@ namespace Mono.Linker.Dataflow
 		}
 	}
 
-	delegate TYPE TypeResolver (string assemblyString, string typeString);
+	delegate TypeDefinition TypeResolver (string assemblyString, string typeString);
 
 	/// <summary>
 	/// The result of a Type.GetType.
@@ -834,7 +834,7 @@ namespace Mono.Linker.Dataflow
 						string assemblyName = ((KnownStringValue)assemblyValue).Contents;
 
 						foreach (string name in names) {
-							TYPE typeDefinition = _resolver (assemblyName, name);
+							TypeDefinition typeDefinition = _resolver (assemblyName, name);
 							if (typeDefinition != null) {
 								foundAtLeastOne = true;
 								yield return new SystemTypeValue (typeDefinition);
@@ -878,14 +878,14 @@ namespace Mono.Linker.Dataflow
 	/// </summary>
 	class LoadFieldValue : ValueNode
 	{
-		public LoadFieldValue (ValueNode instanceValue, FIELD fieldToLoad)
+		public LoadFieldValue (ValueNode instanceValue, FieldDefinition fieldToLoad)
 		{
 			Kind = ValueNodeKind.LoadField;
 			InstanceValue = instanceValue;
 			Field = fieldToLoad;
 		}
 
-		public FIELD Field { get; private set; }
+		public FieldDefinition Field { get; private set; }
 
 		public ValueNode InstanceValue { get; private set; }
 
@@ -915,7 +915,7 @@ namespace Mono.Linker.Dataflow
 				return false;
 
 			LoadFieldValue otherLfv = (LoadFieldValue)other;
-			if (!TypeHelper.FieldsAreEquivalent (this.Field, otherLfv.Field))
+			if (!Equals (this.Field, otherLfv.Field))
 				return false;
 
 			return this.InstanceValue.Equals (otherLfv.InstanceValue);
@@ -1093,23 +1093,6 @@ namespace Mono.Linker.Dataflow
 			return (int)(((uint)value << shift) | ((uint)value >> (32 - shift)));
 		}
 
-		static int GetHashCode<T> (T obj) where T : class
-		{
-			if (obj == null)
-				return 0;
-			if (obj is ValueNode) {
-				return obj.GetHashCode ();
-			}
-			if (obj is TYPE t) {
-				return TypeHelper.GetHashCode (t);
-			}
-			if (obj is FIELD f) {
-				return TypeHelper.GetHashCode (f);
-			}
-
-			return obj.GetHashCode ();
-		}
-
 		public static int CalcHashCodeEnumerable<T> (IEnumerable<T> list) where T : class
 		{
 			int length = list.Count ();
@@ -1129,13 +1112,13 @@ namespace Mono.Linker.Dataflow
 				}
 				element2 = element;
 
-				hash1 = (hash1 + _rotl (hash1, 5)) ^ GetHashCode (element1);
-				hash2 = (hash2 + _rotl (hash2, 5)) ^ GetHashCode (element2);
+				hash1 = (hash1 + _rotl (hash1, 5)) ^ element1.GetHashCode();
+				hash2 = (hash2 + _rotl (hash2, 5)) ^ element2.GetHashCode();
 			}
 
 			// If we had an odd length, we haven't included the last element yet.
 			if ((length & 1) != 0)
-				hash1 = (hash1 + _rotl (hash1, 5)) ^ GetHashCode (element1);
+				hash1 = (hash1 + _rotl (hash1, 5)) ^ element1.GetHashCode();
 
 			hash1 += _rotl (hash1, 8);
 			hash2 += _rotl (hash2, 8);
@@ -1146,7 +1129,7 @@ namespace Mono.Linker.Dataflow
 		public static int CalcHashCode<T1> (ValueNodeKind kind, T1 obj1)
 			where T1 : class
 		{
-			return CalcHashCode (kind, GetHashCode (obj1));
+			return CalcHashCode (kind, obj1.GetHashCode());
 		}
 
 		public static int CalcHashCode (ValueNodeKind kind, int val1)
@@ -1170,18 +1153,12 @@ namespace Mono.Linker.Dataflow
 			return hash1 ^ hash2;
 		}
 
-		public static int CalcHashCode<T1> (ValueNodeKind kind, int val1, T1 obj1)
-			where T1 : class
-		{
-			return CalcHashCode (kind, val1, GetHashCode (obj1));
-		}
-
 		public static int CalcHashCode<T1, T2> (ValueNodeKind kind, T1 obj1, T2 obj2)
 			where T1 : class
 			where T2 : class
 
 		{
-			return CalcHashCode (kind, GetHashCode (obj1), GetHashCode (obj2));
+			return CalcHashCode (kind, obj1.GetHashCode(), obj2.GetHashCode());
 		}
 
 		static int CalcHashCode (ValueNodeKind kind, int hashCode1, int hashCode2)
@@ -1194,60 +1171,6 @@ namespace Mono.Linker.Dataflow
 			hash1 = (hash1 + _rotl (hash1, 5)) ^ kind.GetHashCode ();
 			hash2 = (hash2 + _rotl (hash2, 5)) ^ hashCode1;
 			hash1 = (hash1 + _rotl (hash1, 5)) ^ hashCode2;
-
-			hash1 += _rotl (hash1, 8);
-			hash2 += _rotl (hash2, 8);
-
-			return hash1 ^ hash2;
-		}
-
-		public static int CalcHashCode<T1, T2, T3> (ValueNodeKind kind, T1 obj1, T2 obj2, T3 obj3)
-			where T1 : class
-			where T2 : class
-			where T3 : class
-		{
-			return CalcHashCode (kind, GetHashCode (obj1), GetHashCode (obj2), GetHashCode (obj3));
-		}
-
-		public static int CalcHashCode (ValueNodeKind kind, int hashCode1, int hashCode2, int hashCode3)
-		{
-			int length = 4;
-
-			int hash1 = 0x449b3ad6;
-			int hash2 = (length << 3) + 0x55399219;
-
-			hash1 = (hash1 + _rotl (hash1, 5)) ^ kind.GetHashCode ();
-			hash2 = (hash2 + _rotl (hash2, 5)) ^ hashCode1;
-			hash1 = (hash1 + _rotl (hash1, 5)) ^ hashCode2;
-			hash2 = (hash2 + _rotl (hash2, 5)) ^ hashCode3;
-
-			hash1 += _rotl (hash1, 8);
-			hash2 += _rotl (hash2, 8);
-
-			return hash1 ^ hash2;
-		}
-
-		public static int CalcHashCode<T1, T2, T3, T4> (ValueNodeKind kind, T1 obj1, T2 obj2, T3 obj3, T4 obj4)
-			where T1 : class
-			where T2 : class
-			where T3 : class
-			where T4 : class
-		{
-			return CalcHashCode (kind, GetHashCode (obj1), GetHashCode (obj2), GetHashCode (obj3), GetHashCode (obj4));
-		}
-
-		public static int CalcHashCode (ValueNodeKind kind, int hashCode1, int hashCode2, int hashCode3, int hashCode4)
-		{
-			int length = 5;
-
-			int hash1 = 0x449b3ad6;
-			int hash2 = (length << 3) + 0x55399219;
-
-			hash1 = (hash1 + _rotl (hash1, 5)) ^ kind.GetHashCode ();
-			hash2 = (hash2 + _rotl (hash2, 5)) ^ hashCode1;
-			hash1 = (hash1 + _rotl (hash1, 5)) ^ hashCode2;
-			hash2 = (hash2 + _rotl (hash2, 5)) ^ hashCode3;
-			hash1 = (hash1 + _rotl (hash1, 5)) ^ hashCode4;
 
 			hash1 += _rotl (hash1, 8);
 			hash2 += _rotl (hash2, 8);

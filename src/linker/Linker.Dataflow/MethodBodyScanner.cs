@@ -35,7 +35,7 @@ namespace Mono.Linker.Dataflow
 	{
 		internal ValueNode MethodReturnValue { private set; get; }
 
-		protected virtual void WarnAboutInvalidILInMethod(MethodBody method, int ilOffset)
+		protected virtual void WarnAboutInvalidILInMethod (MethodBody method, int ilOffset)
 		{
 		}
 
