@@ -12,6 +12,7 @@ pr:
     - master
     - release/*
     - mono-*
+    - feature/dataflow
 
 variables:
 - name: officialBuild
