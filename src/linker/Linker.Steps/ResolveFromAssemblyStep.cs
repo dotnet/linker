@@ -132,7 +132,7 @@ namespace Mono.Linker.Steps
 
 					context.Resolve (resolvedExportedType.Scope);
 					MarkType (context, resolvedExportedType, rootVisibility);
-					context.MarkingHelpers.MarkExportedType (exported, assembly.MainModule);
+					context.MarkingHelpers.MarkExportedType (exported, assembly.MainModule, new DependencyInfo (DependencyKind.ExportedType, resolvedExportedType));
 				}
 			}
 
@@ -151,7 +151,8 @@ namespace Mono.Linker.Steps
 				return;
 			}
 
-			context.Annotations.MarkAndPush (type);
+			context.Annotations.Mark (type, new DependencyInfo (DependencyKind.RootAssembly, type.Module.Assembly));
+			context.Annotations.Push (type);
 
 			if (type.HasFields)
 				MarkFields (context, type.Fields, rootVisibility);
@@ -170,9 +171,11 @@ namespace Mono.Linker.Steps
 
 			Tracer.Push (assembly);
 
-			Annotations.Mark (assembly.EntryPoint.DeclaringType);
+			MethodDefinition entryPoint = assembly.EntryPoint;
+			TypeDefinition declaringType = entryPoint.DeclaringType;
+			Annotations.Mark (declaringType, new DependencyInfo (DependencyKind.RootAssembly, declaringType.Module.Assembly));
 
-			MarkMethod (Context, assembly.EntryPoint, MethodAction.Parse, RootVisibility.Any);
+			MarkMethod (Context, entryPoint, MethodAction.Parse, RootVisibility.Any);
 
 			Tracer.Pop ();
 		}
@@ -186,7 +189,7 @@ namespace Mono.Linker.Steps
 					_ => true
 				};
 				if (markField) {
-					context.Annotations.Mark (field);
+					context.Annotations.Mark (field, new DependencyInfo (DependencyKind.RootAssembly, field.Module.Assembly));
 				}
 			}
 		}
@@ -206,7 +209,7 @@ namespace Mono.Linker.Steps
 			};
 
 			if (markMethod) {
-				context.Annotations.Mark (method);
+				context.Annotations.Mark (method, new DependencyInfo (DependencyKind.RootAssembly, method.Module.Assembly));
 				context.Annotations.SetAction (method, action);
 			}
 		}

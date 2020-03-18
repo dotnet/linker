@@ -28,6 +28,7 @@
 
 using System;
 using System.Collections.Generic;
+using Mono.Cecil;
 
 namespace Mono.Linker
 {
@@ -37,6 +38,7 @@ namespace Mono.Linker
 
 		Stack<object> dependency_stack;
 		List<IDependencyRecorder> recorders;
+		List<IReflectionPatternRecorder> reflectionPatternRecorders;
 
 		public Tracer (LinkContext context)
 		{
@@ -66,6 +68,15 @@ namespace Mono.Linker
 			recorders.Add (recorder);
 		}
 
+		public void AddReflectionPatternRecorder (IReflectionPatternRecorder recorder)
+		{
+			if (reflectionPatternRecorders == null) {
+				reflectionPatternRecorders = new List<IReflectionPatternRecorder> ();
+			}
+
+			reflectionPatternRecorders.Add (recorder);
+		}
+
 		public void Push (object o, bool addDependency = true)
 		{
 			if (!IsRecordingEnabled ())
@@ -90,9 +101,22 @@ namespace Mono.Linker
 			return recorders != null;
 		}
 
+		bool IsReflectionRecordingEnabled ()
+		{
+			return reflectionPatternRecorders != null;
+		}
+
 		public void AddDirectDependency (object b, object e)
 		{
 			ReportDependency (b, e, false);
+		}
+
+		public void AddDirectDependency (object target, DependencyInfo reason, bool marked)
+		{
+			if (IsRecordingEnabled ()) {
+				foreach (IDependencyRecorder recorder in recorders)
+					recorder.RecordDependency (target, reason, marked);
+			}
 		}
 
 		public void AddDependency (object o, bool marked = false)
@@ -108,6 +132,24 @@ namespace Mono.Linker
 			if (IsRecordingEnabled ()) {
 				foreach (IDependencyRecorder recorder in recorders) {
 					recorder.RecordDependency (source, target, marked);
+				}
+			}
+		}
+
+		public void ReportUnrecognizedReflectionPattern (MethodDefinition sourceMethod, MethodDefinition reflectionMethod, string message)
+		{
+			if (IsReflectionRecordingEnabled ()) {
+				foreach (IReflectionPatternRecorder recorder in reflectionPatternRecorders) {
+					recorder.UnrecognizedReflectionAccessPattern (sourceMethod, reflectionMethod, message);
+				}
+			}
+		}
+
+		public void ReportRecognizedReflectionPattern (MethodDefinition sourceMethod, MethodDefinition reflectionMethod, IMemberDefinition accessedItem)
+		{
+			if (IsReflectionRecordingEnabled ()) {
+				foreach (IReflectionPatternRecorder recorder in reflectionPatternRecorders) {
+					recorder.RecognizedReflectionAccessPattern (sourceMethod, reflectionMethod, accessedItem);
 				}
 			}
 		}

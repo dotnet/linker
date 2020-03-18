@@ -137,7 +137,8 @@ namespace Mono.Linker.Steps {
 
 		void MarkAndPreserveAll (TypeDefinition type)
 		{
-			Annotations.MarkAndPush (type);
+			Annotations.Mark (type, new DependencyInfo (DependencyKind.XmlDescriptor, _xmlDocumentLocation));
+			Annotations.Push (type);
 			Annotations.SetPreserve (type, TypePreserve.All);
 
 			if (!type.HasNestedTypes) {
@@ -170,7 +171,7 @@ namespace Mono.Linker.Steps {
 						foreach (var exported in assembly.MainModule.ExportedTypes) {
 							if (fullname == exported.FullName) {
 								Tracer.Push (exported);
-								MarkingHelpers.MarkExportedType (exported, assembly.MainModule);
+								MarkingHelpers.MarkExportedType (exported, assembly.MainModule, new DependencyInfo (DependencyKind.XmlDescriptor, _xmlDocumentLocation));
 								var resolvedExternal = exported.Resolve ();
 								Tracer.Pop ();
 								if (resolvedExternal != null) {
@@ -214,7 +215,7 @@ namespace Mono.Linker.Steps {
 		void MatchExportedType (ExportedType exportedType, ModuleDefinition module, Regex regex, XPathNavigator nav)
 		{
 			if (regex.Match (exportedType.FullName).Success) {
-				MarkingHelpers.MarkExportedType (exportedType, module);
+				MarkingHelpers.MarkExportedType (exportedType, module, new DependencyInfo (DependencyKind.XmlDescriptor, _xmlDocumentLocation));
 				TypeDefinition type = exportedType.Resolve ();
 				if (type != null) {
 					ProcessType (type, nav);
@@ -257,14 +258,16 @@ namespace Mono.Linker.Steps {
 				Context.LogMessage ($"Duplicate preserve in {_xmlDocumentLocation} of {type.FullName} ({existingLevel}).  Duplicate uses ({duplicateLevel})"); 
 			} 
 
-			Annotations.MarkAndPush (type);
+			Annotations.Mark (type, new DependencyInfo (DependencyKind.XmlDescriptor, _xmlDocumentLocation));
+			Annotations.Push (type);
 			Tracer.AddDirectDependency (this, type);
 
 			if (type.IsNested) {
-				var parent = type;
-				while (parent.IsNested) {
-					parent = parent.DeclaringType;
-					Annotations.Mark (parent);
+				var currentType = type;
+				while (currentType.IsNested) {
+					var parent = currentType.DeclaringType;
+					Context.Annotations.Mark (parent, new DependencyInfo (DependencyKind.DeclaringType, currentType));
+					currentType = parent;
 				}
 			}
 
@@ -363,7 +366,7 @@ namespace Mono.Linker.Steps {
 				if (Annotations.IsMarked (field))
 					Context.LogMessage ($"Duplicate preserve in {_xmlDocumentLocation} of {field.FullName}");
 				
-				Annotations.Mark (field);
+				Context.Annotations.Mark (field, new DependencyInfo (DependencyKind.XmlDescriptor, _xmlDocumentLocation));
 			} else {
 				AddUnresolveMarker (string.Format ("T: {0}; F: {1}", type, signature));
 			}
@@ -435,7 +438,7 @@ namespace Mono.Linker.Steps {
 			if (Annotations.IsMarked (method)) 
 				Context.LogMessage ($"Duplicate preserve in {_xmlDocumentLocation} of {method.FullName}"); 
 
-			Annotations.Mark (method);
+			Annotations.Mark (method, new DependencyInfo (DependencyKind.XmlDescriptor, _xmlDocumentLocation));
 			Annotations.MarkIndirectlyCalledMethod (method);
 			Tracer.AddDirectDependency (this, method);
 			Annotations.SetAction (method, MethodAction.Parse);
@@ -525,7 +528,7 @@ namespace Mono.Linker.Steps {
 				if (Annotations.IsMarked (@event))
 					Context.LogMessage ($"Duplicate preserve in {_xmlDocumentLocation} of {@event.FullName}");
 
-				Annotations.Mark (@event);
+				Annotations.Mark (@event, new DependencyInfo (DependencyKind.XmlDescriptor, _xmlDocumentLocation));
 
 				MarkMethod (@event.AddMethod);
 				MarkMethod (@event.RemoveMethod);
@@ -593,7 +596,7 @@ namespace Mono.Linker.Steps {
 				if (Annotations.IsMarked (property))
 					Context.LogMessage ($"Duplicate preserve in {_xmlDocumentLocation} of {property.FullName}");
 				
-				Annotations.Mark (property);
+				Annotations.Mark (type, new DependencyInfo (DependencyKind.XmlDescriptor, _xmlDocumentLocation));
 
 				MarkPropertyAccessors (type, property, accessors);
 			} else

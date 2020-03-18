@@ -93,7 +93,7 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 					attr.AttributeType.Name == nameof (UnrecognizedReflectionAccessPatternAttribute)))) {
 				customizations.ReflectionPatternRecorder = new TestReflectionPatternRecorder ();
 				customizations.CustomizeContext += context => {
-					context.ReflectionPatternRecorder = customizations.ReflectionPatternRecorder;
+					context.Tracer.AddReflectionPatternRecorder (customizations.ReflectionPatternRecorder);
 				};
 			};
 		}

@@ -89,6 +89,12 @@ namespace Mono.Linker
 			stream = null;
 		}
 
+		public void RecordDependency (object target, DependencyInfo reason, bool marked)
+		{
+			// Used for the DependencyInfo-based recorders. Don't do anything as we only
+			// record dependencies for the stack-based recorder.
+		}
+
 		public void RecordDependency (object source, object target, bool marked)
 		{
 			if (!ShouldRecord (source) && !ShouldRecord (target))

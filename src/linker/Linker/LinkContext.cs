@@ -1,4 +1,4 @@
-﻿//
+//
 // LinkContext.cs
 //
 // Author:
@@ -156,8 +156,6 @@ namespace Mono.Linker {
 
 		public Tracer Tracer { get; private set; }
 
-		public IReflectionPatternRecorder ReflectionPatternRecorder { get; set; }
-
 		public string [] ExcludedFeatures { get; set; }
 
 		public CodeOptimizationsSettings Optimizations { get; set; }
@@ -196,7 +194,6 @@ namespace Mono.Linker {
 			_annotations = factory.CreateAnnotationStore (this);
 			MarkingHelpers = factory.CreateMarkingHelpers (this);
 			Tracer = factory.CreateTracer (this);
-			ReflectionPatternRecorder = new LoggingReflectionPatternRecorder (this);
 			MarkedKnownMembers = new KnownMembers ();
 			StripResources = true;
 			PInvokes = new List<PInvokeInfo> ();

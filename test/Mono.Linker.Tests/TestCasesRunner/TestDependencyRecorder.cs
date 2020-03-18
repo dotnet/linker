@@ -21,5 +21,14 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				Marked = marked
 			});
 		}
+
+		public void RecordDependency (object target, DependencyInfo reason, bool marked)
+		{
+			Dependencies.Add (new Dependency () {
+				Source = reason.Source?.ToString (),
+				Target = target.ToString (),
+				Marked = marked
+			});
+		}
 	}
 }
