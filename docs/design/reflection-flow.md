@@ -46,7 +46,7 @@ Activator.CreateInstance(t);
 // Linker should infer we need method Foo on the 2 types above
 var mi = t.GetMethod("Foo");
 // Linker should infer we need field Bar on the 2 types above
-var fi = t.GetMethod("Bar");
+var fi = t.GetField("Bar");
 ```
 
 In an ideal world, this would be the extent of the reflection that can be made safe by the linker. Such small subset would not be practical because reflection often happens across method bodies. Instead of introducing cross-method dataflow analysis, we'll help linker reason about reflection happening across method bodies with annotations.
@@ -186,4 +186,3 @@ public sealed class TypeConverterAttribute : Attribute
     public string ConverterTypeName { get; }
 }
 ```
-
