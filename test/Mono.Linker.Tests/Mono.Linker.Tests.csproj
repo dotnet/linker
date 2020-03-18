@@ -72,8 +72,7 @@
 
   <!-- Arcade's custom test imports assume that we are using xunit. -->
   <!-- Map the Arcade "Test" target to the "VSTest" target used by "dotnet test" -->
-  <Target Name="Test"
-          Condition="'$(MonoBuild)' == ''">
+  <Target Name="Test" Condition="'$(MonoBuild)' == ''">
     <MSBuild Projects="$(MSBuildProjectFile)" Targets="VSTest" />
   </Target>
 
