@@ -8,10 +8,11 @@ namespace Log
 	{
 		public void Process (LinkContext context)
 		{
-			MessageOrigin msgOrigin = new MessageOrigin ("logtest");
-			Message msgError = new Message (msgOrigin, MessageCategory.Error, MessageCode.L100, text: "Error");
-			Message msgWarning = new Message (msgOrigin, MessageCategory.Warning, MessageCode.L400, text: "Warning");
-			Message msgInfo = new Message (new MessageOrigin(), MessageCategory.Info, MessageCode.L900, text: "Info");
+			MessageOrigin msgOrigin = new MessageOrigin ();
+			MSBuildMessageContainer msgError = new MSBuildMessageContainer(msgOrigin, MessageCategory.Error, MessageCode.IL1000, text: "Error");
+			MSBuildMessageContainer msgWarning = new MSBuildMessageContainer(msgOrigin, MessageCategory.Warning, MessageCode.IL4000, text: "Warning");
+			MSBuildMessageContainer msgInfo = new MSBuildMessageContainer (new MessageOrigin("logtest", new Position(1, 1)),
+				MessageCategory.Info, MessageCode.IL9000);
 			context.LogMessage (msgError);
 			context.LogMessage (msgWarning);
 			context.LogMessage (msgInfo);

@@ -8,9 +8,9 @@ namespace Mono.Linker
 			Console.WriteLine (message, values);
 		}
 
-		public void LogMessage (Message message)
+		public void LogMessage (MSBuildMessageContainer MSBuildMessage)
 		{
-			Console.WriteLine (message.ToString ());
+			Console.WriteLine (MSBuildMessage.ToString ());
 		}
 	}
 }

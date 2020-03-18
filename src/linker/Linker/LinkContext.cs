@@ -436,15 +436,10 @@ namespace Mono.Linker {
 				Logger.LogMessage (importance, "{0}", message);
 		}
 
-		public void LogMessage (Message message)
+		public void LogMessage (MSBuildMessageContainer MSBuildMessage)
 		{
-			if (Logger == null)
-				return;
-
-			if (message.Category == MessageCategory.Info && !LogMessages)
-				return;
-
-			Logger.LogMessage (message);
+			if (LogMessages && Logger != null)
+				Logger.LogMessage (MSBuildMessage);
 		}
 	}
 

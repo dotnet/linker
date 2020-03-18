@@ -4,19 +4,33 @@ using System.Text;
 
 namespace Mono.Linker
 {
-	public class Message
+	public struct MSBuildMessageContainer
 	{
+		/// <summary>
+		/// Can either be the tool name (illinker, monolinker) or a filename with
+		/// parenthesized information about the line and column that triggered the
+		/// linker to output an error (or warning) message.
+		/// </summary>
 		public MessageOrigin Origin { get; }
 		
-		public string Subcategory { get; }
-		
 		public MessageCategory Category { get; }
-		
+
+		/// <summary>
+		/// Further categorize the message.
+		/// </summary>
+		public string Subcategory { get; }
+
+		/// <summary>
+		/// Code identifier for errors and warnings reported by the IL linker.
+		/// </summary>
 		public MessageCode Code { get; }
 		
+		/// <summary>
+		/// Optional user friendly text describing the error or warning.
+		/// </summary>
 		public string Text { get; }
 
-		public Message (
+		public MSBuildMessageContainer (
 			MessageOrigin origin,
 			MessageCategory category,
 			MessageCode code,

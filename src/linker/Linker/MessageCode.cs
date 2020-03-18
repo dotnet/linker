@@ -1,7 +1,7 @@
 ﻿namespace Mono.Linker {
 	public enum MessageCode {
-		L100, // Error
-		L400, // Warning
-		L900, // Info.
+		IL1000, // Error
+		IL4000, // Warning
+		IL9000, // Info.
 	}
 }

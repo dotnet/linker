@@ -603,6 +603,12 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 							$"Expected to find logged message matching `{expectedMessagePattern}`, but no such message was found.{Environment.NewLine}Logged messages:{Environment.NewLine}{allMessages}");
 					}
 
+					if (attr.AttributeType.Resolve ().Name == nameof (LogContainsExactAttribute)) {
+						var expectedMessage = (string)attr.ConstructorArguments [0].Value;
+						Assert.That (logger.Messages.Where (s => s.Message.Contains (expectedMessage)), Is.Not.Null,
+							$"Expected to find logged message matching `{expectedMessage}`, but no such message was found.{Environment.NewLine}Logged messages:{Environment.NewLine}{allMessages}");
+					}
+
 					if (attr.AttributeType.Resolve ().Name == nameof (LogDoesNotContainAttribute)) {
 						var unexpectedMessagePattern = (string)attr.ConstructorArguments [0].Value;
 						foreach (var loggedMessage in logger.Messages) {

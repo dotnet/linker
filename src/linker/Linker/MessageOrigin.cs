@@ -1,36 +1,33 @@
-﻿namespace Mono.Linker {
+﻿namespace Mono.Linker
+{
 	public class MessageOrigin {
 
 #if NETCOREAPP
-		private const string DefaultOrigin = "illinker";
+		private const string ToolName = "illinker";
 #else
-		private const string DefaultOrigin = "monolinker";
+		private const string ToolName = "monolinker";
 #endif
 
-		public string Origin { get; }
-		
-		public int? Line { get; }
-		
-		public int? Column { get; }
-		
-		public MessageOrigin(string messageOrigin = DefaultOrigin, int? lineOrigin = null, int? columnOrigin = null)
+		public string FileName { get; }
+
+		public Position SourcePosition { get; }
+
+		public MessageOrigin ()
 		{
-			Origin = messageOrigin;
-			Line = lineOrigin;
-			Column = columnOrigin;
+		}
+
+		public MessageOrigin (string fileName, Position sourcePosition)
+		{
+			FileName = fileName;
+			SourcePosition = sourcePosition;
 		}
 
 		public override string ToString ()
 		{
-			string str = Origin;
-			if (Line != null) {
-				str += "(" + Line.ToString ();
-				if (Column != null)
-					str += "," + Column;
-				str += ")";
-			}
+			if (FileName == string.Empty || FileName == null)
+				return ToolName;
 
-			return str;
+			return string.Format ("{0}{1}", FileName, SourcePosition.ToString ());
 		}
 	}
 }
