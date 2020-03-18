@@ -120,7 +120,7 @@ namespace Mono.Linker {
 
 		public List<string> Substitutions { get; private set; }
 
-		public HashSet<PInvokeInfo> PInvokes { get; private set; }
+		public List<PInvokeInfo> PInvokes { get; private set; }
 
 		public string PInvokesListFile;
 
@@ -199,7 +199,7 @@ namespace Mono.Linker {
 			ReflectionPatternRecorder = new LoggingReflectionPatternRecorder (this);
 			MarkedKnownMembers = new KnownMembers ();
 			StripResources = true;
-			PInvokes = new HashSet<PInvokeInfo> ();
+			PInvokes = new List<PInvokeInfo> ();
 
 			// See https://github.com/mono/linker/issues/612
 			const CodeOptimizations defaultOptimizations =

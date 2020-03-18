@@ -23,16 +23,16 @@ namespace Mono.Linker
 			if (obj == null) return 1;
 
 			PInvokeInfo compareTo = obj as PInvokeInfo;
-			int compareField = string.Compare (this.AssemblyName, compareTo.AssemblyName);
+			int compareField = string.Compare (this.AssemblyName, compareTo.AssemblyName, StringComparison.Ordinal);
 			if (compareField != 0) return compareField;
 
-			compareField = string.Compare (this.ModuleName, compareTo.ModuleName);
+			compareField = string.Compare (this.ModuleName, compareTo.ModuleName, StringComparison.Ordinal);
 			if (compareField != 0) return compareField;
 
-			compareField = string.Compare (this.FullName, compareTo.FullName);
+			compareField = string.Compare (this.FullName, compareTo.FullName, StringComparison.Ordinal);
 			if (compareField != 0) return compareField;
 
-			return string.Compare (this.EntryPoint, compareTo.EntryPoint);
+			return string.Compare (this.EntryPoint, compareTo.EntryPoint, StringComparison.Ordinal);
 		}
 	}
 }

@@ -167,10 +167,10 @@ namespace Mono.Linker.Steps {
 				return;
 			
 			using (var fs = File.Open (Path.Combine (Context.OutputDirectory, Context.PInvokesListFile), FileMode.Create)) {
-				var pinvokesList = Context.PInvokes.ToList ();
-				pinvokesList.Sort ();
+				Context.PInvokes.Distinct ();
+				Context.PInvokes.Sort ();
 				var jsonSerializer = new DataContractJsonSerializer (typeof (List<PInvokeInfo>));
-				jsonSerializer.WriteObject (fs, pinvokesList);
+				jsonSerializer.WriteObject (fs, Context.PInvokes);
 			}
 		}
 
