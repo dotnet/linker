@@ -45,7 +45,7 @@ namespace Mono.Linker.Tests.TestCases
 			var jsonSerializer = new DataContractJsonSerializer (typeof (List<PInvokeInfo>));
 
 			using (var fsActual = File.Open(outputPath, FileMode.Open))
-			using (var fsExpected = File.Open("../../../../../test/Mono.Linker.Tests/TestCases/Dependencies/pinvokes.json", FileMode.Open)) {
+			using (var fsExpected = File.Open("TestCases/Dependencies/PInvokesExpectations.json", FileMode.Open)) {
 				var actual = jsonSerializer.ReadObject (fsActual) as List<PInvokeInfo>;
 				var expected = jsonSerializer.ReadObject (fsExpected) as List<PInvokeInfo>;
 				foreach (var pinvokePair in Enumerable.Zip(actual, expected, (fst, snd) => Tuple.Create(fst, snd))) {
