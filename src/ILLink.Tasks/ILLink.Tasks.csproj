@@ -3,7 +3,6 @@
     <TargetFrameworks>netcoreapp3.0;net472</TargetFrameworks>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <IsPackable>true</IsPackable>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Description>MSBuild tasks for running the IL Linker</Description>
     <!-- Don't include the build output. Instead, we want to include
          the TargetFramework-specific publish output. -->

@@ -2,8 +2,19 @@
   <PropertyGroup>
     <MonoBuild Condition="'$(MonoBuild)' == '' and '$(SolutionName)' == 'monolinker'">true</MonoBuild>
   </PropertyGroup>
+
+  <PropertyGroup>
+    <IsReferenceAssembly Condition="'$(IsReferenceAssembly)' == '' and '$([System.IO.Path]::GetFileName($(MSBuildProjectDirectory)))' == 'ref'">true</IsReferenceAssembly>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(IsReferenceAssembly)' == 'true' ">
+    <!-- used by Arcade to compute OutputPath, IntermediateOutputPath, etc. early in the import chain. -->
+    <OutDirName>$(MSBuildProjectName)/ref</OutDirName>
+    <ProduceOnlyReferenceAssembly>true</ProduceOnlyReferenceAssembly>
+  </PropertyGroup>
+
   <Import Project="Sdk.props" Sdk="Microsoft.DotNet.Arcade.Sdk" Condition="'$(MonoBuild)' == ''" />
   <PropertyGroup>
     <IsPackable>false</IsPackable>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 </Project>

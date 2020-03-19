@@ -23,15 +23,9 @@
     <TargetFrameworks>net471</TargetFrameworks>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
-    <DefineConstants>$(DefineConstants);DEBUG</DefineConstants>
-    <DebugSymbols Condition="'$(DebugSymbols)' == ''">true</DebugSymbols>
-    <Optimize Condition="'$(Optimize)' == ''">false</Optimize>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
-    <Optimize Condition="'$(Optimize)' == ''">true</Optimize>
-  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="ref\**\*.cs" />
+  </ItemGroup>
 
   <ItemGroup Condition="'$(MonoBuild)' == ''">
     <Compile Remove="Linker\I18nAssemblies.cs" />
