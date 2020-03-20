@@ -12,11 +12,16 @@
     <OutDirName>$(MSBuildProjectName)/ref</OutDirName>
     <!-- don't try to publish PDBs for ref assemblies that have none. -->
     <PublishWindowsPdb>false</PublishWindowsPdb>
+    <RunApiCompat>false</RunApiCompat>
   </PropertyGroup>
 
   <Import Project="Sdk.props" Sdk="Microsoft.DotNet.Arcade.Sdk" Condition="'$(MonoBuild)' == ''" />
   <PropertyGroup>
     <IsPackable>false</IsPackable>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <_ToolsProjectTargets>$(ArtifactsToolsetDir)Common\Tools.proj.nuget.g.targets</_ToolsProjectTargets>
   </PropertyGroup>
+
+  <Import Project="$(_ToolsProjectTargets)" Condition="Exists('$(_ToolsProjectTargets)')" />
+
 </Project>

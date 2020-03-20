@@ -5,6 +5,19 @@
     <CallTarget Targets="VSTest" Condition="'$(IsTestProject)' == 'true'" />
   </Target>
 
+  <!-- set up ApiCompat with ref assemblies -->
+  <PropertyGroup Condition=" '$(RunApiCompat)' == 'true' ">
+    <ContractProject Condition="'$(ContractProject)' == ''">$(MSBuildProjectDirectory)\ref\$(MSBuildProjectName).csproj</ContractProject>
+    <HasMatchingContract Condition="Exists('$(ContractProject)')">true</HasMatchingContract>
+    <RunApiCompat Condition="'$(HasMatchingContract)' != 'true'">false</RunApiCompat>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(HasMatchingContract)' == 'true' ">
+    <ProjectReference Include="$(ContractProject)">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <OutputItemType>ResolvedMatchingContract</OutputItemType>
+    </ProjectReference>
+  </ItemGroup>
+
   <!-- Shared logic to publish multiple projects in the same
        package. Pack doesn't support including project references
        (https://github.com/NuGet/Home/issues/3891), so we work around

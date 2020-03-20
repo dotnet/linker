@@ -101,8 +101,6 @@ namespace Mono.Linker {
 		public void AddPreservedMethod (TypeDefinition type, MethodDefinition method) { throw null; }
 		public List<MethodDefinition> GetPreservedMethods (MethodDefinition method) { throw null; }
 		public void AddPreservedMethod (MethodDefinition key, MethodDefinition method) { throw null; }
-		public List<MethodDefinition> GetPreservedMethods (IMemberDefinition definition) { throw null; }
-		public void AddPreservedMethod (IMemberDefinition definition, MethodDefinition method) { throw null; }
 		public void AddSymbolReader (AssemblyDefinition assembly, ISymbolReader symbolReader) { throw null; }
 		public void CloseSymbolReader (AssemblyDefinition assembly) { throw null; }
 		public Dictionary<IMetadataTokenProvider, object> GetCustomAnnotations (object key) { throw null; }
