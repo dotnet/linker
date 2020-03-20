@@ -6,7 +6,6 @@
     <LangVersion>latest</LangVersion>
     <AssemblyName>illink</AssemblyName>
     <Description>IL Linker</Description>
-    <DefineConstants>$(DefineConstants);FEATURE_ILLINK</DefineConstants>
     <TargetFramework>netstandard2.0</TargetFramework>
     <IsPackable>true</IsPackable>
     <!-- Nuget issues a warning about missing <reference> items in the generated nuspec,

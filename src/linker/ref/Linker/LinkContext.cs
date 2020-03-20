@@ -11,12 +11,6 @@ using Mono.Cecil.Cil;
 
 namespace Mono.Linker {
 
-	public class UnintializedContextFactory {
-		virtual public AnnotationStore CreateAnnotationStore (LinkContext context) => throw null;
-		virtual public MarkingHelpers CreateMarkingHelpers (LinkContext context) => throw null;
-		virtual public Tracer CreateTracer (LinkContext context) => throw null;
-	}
-
 	public class LinkContext : IDisposable {
 		public Pipeline Pipeline { get { throw null; } }
 		public AnnotationStore Annotations { get { throw null; } }
@@ -34,13 +28,11 @@ namespace Mono.Linker {
 		public bool StripResources { get { throw null; } set { throw null; } }
 		public List<string> Substitutions { get { throw null; } }
 		public System.Collections.IDictionary Actions { get { throw null; } }
-		public AssemblyResolver Resolver { get { throw null; } }
 		public ReaderParameters ReaderParameters { get { throw null; } }
 		public ISymbolReaderProvider SymbolReaderProvider { get { throw null; } set { throw null; } }
 		public ISymbolWriterProvider SymbolWriterProvider { get { throw null; } set { throw null; } }
 		public bool LogMessages { get { throw null; } set { throw null; } }
 		public ILogger Logger { set { throw null; } }
-		public MarkingHelpers MarkingHelpers { get { throw null; } }
 		public KnownMembers MarkedKnownMembers { get { throw null; } }
 		public Tracer Tracer { get { throw null; } }
 		public IReflectionPatternRecorder ReflectionPatternRecorder { get { throw null; } set { throw null; } }
@@ -49,19 +41,15 @@ namespace Mono.Linker {
 		public bool AddReflectionAnnotations { get { throw null; } set { throw null; } }
 		public string AssemblyListFile { get { throw null; } set { throw null; } }
 		public LinkContext (Pipeline pipeline) { throw null; }
-		public LinkContext (Pipeline pipeline, AssemblyResolver resolver) { throw null; }
-		public LinkContext (Pipeline pipeline, AssemblyResolver resolver, ReaderParameters readerParameters, UnintializedContextFactory factory) { throw null; }
 		public void AddSubstitutionFile (string file) { throw null; }
 		public TypeDefinition GetType (string fullName) { throw null; }
 		public AssemblyDefinition Resolve (string name) { throw null; }
 		public AssemblyDefinition Resolve (IMetadataScope scope) { throw null; }
 		public void RegisterAssembly (AssemblyDefinition assembly) { throw null; }
-		protected bool SeenFirstTime (AssemblyDefinition assembly) { throw null; }
 		public virtual void SafeReadSymbols (AssemblyDefinition assembly) { throw null; }
 		public virtual ICollection<AssemblyDefinition> ResolveReferences (AssemblyDefinition assembly) { throw null; }
 		static AssemblyNameReference GetReference (IMetadataScope scope) { throw null; }
 		public void SetAction (AssemblyDefinition assembly, AssemblyAction defaultAction) { throw null; }
-		protected void SetDefaultAction (AssemblyDefinition assembly) { throw null; }
 		public static bool IsCore (AssemblyNameReference name) { throw null; }
 		public virtual AssemblyDefinition [] GetAssemblies () { throw null; }
 		public void SetParameter (string key, string value) { throw null; }

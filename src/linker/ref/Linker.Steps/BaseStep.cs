@@ -10,7 +10,6 @@ namespace Mono.Linker.Steps {
 		public LinkContext Context { get { throw null; } }
 		public AnnotationStore Annotations { get { throw null; } }
 		public Tracer Tracer { get { throw null; } }
-		public MarkingHelpers MarkingHelpers => throw null;
 		public void Process (LinkContext context) { throw null; }
 		protected virtual bool ConditionToProcess () { throw null; }
 		protected virtual void Process () { throw null; }
