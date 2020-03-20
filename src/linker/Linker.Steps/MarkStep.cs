@@ -248,7 +248,7 @@ namespace Mono.Linker.Steps {
 					EnqueueMethod (method, new DependencyInfo (DependencyKind.AlreadyMarked));
 		}
 
-		void MarkEntireType (TypeDefinition type, DependencyInfo reason)
+		void MarkEntireType (TypeDefinition type, in DependencyInfo reason)
 		{
 #if DEBUG
 			if (!_entireTypeReasons.Contains (reason.Kind))
@@ -370,7 +370,7 @@ namespace Mono.Linker.Steps {
 			return _methods.Count == 0;
 		}
 
-		protected virtual void EnqueueMethod (MethodDefinition method, DependencyInfo reason)
+		protected virtual void EnqueueMethod (MethodDefinition method, in DependencyInfo reason)
 		{
 			_methods.Enqueue ((method, reason));
 		}
@@ -491,7 +491,7 @@ namespace Mono.Linker.Steps {
 			return type.HasInterface (@interfaceType, out InterfaceImplementation implementation) && Annotations.IsMarked (implementation);
 		}
 
-		void MarkMarshalSpec (IMarshalInfoProvider spec, DependencyInfo reason)
+		void MarkMarshalSpec (IMarshalInfoProvider spec, in DependencyInfo reason)
 		{
 			if (!spec.HasMarshalInfo)
 				return;
@@ -500,7 +500,7 @@ namespace Mono.Linker.Steps {
 				MarkType (marshaler.ManagedType, reason);
 		}
 
-		void MarkCustomAttributes (ICustomAttributeProvider provider, DependencyInfo reason)
+		void MarkCustomAttributes (ICustomAttributeProvider provider, in DependencyInfo reason)
 		{
 			if (!provider.HasCustomAttributes)
 				return;
@@ -527,7 +527,7 @@ namespace Mono.Linker.Steps {
 			}
 		}
 
-		protected virtual bool ProcessLinkerSpecialAttribute (CustomAttribute ca, ICustomAttributeProvider provider, DependencyInfo reason)
+		protected virtual bool ProcessLinkerSpecialAttribute (CustomAttribute ca, ICustomAttributeProvider provider, in DependencyInfo reason)
 		{
 			if (IsUserDependencyMarker (ca.AttributeType) && provider is MemberReference mr) {
 				MarkUserDependency (mr, ca);
@@ -643,7 +643,7 @@ namespace Mono.Linker.Steps {
 			return type?.Resolve ();
 		}
 
-		bool MarkDependencyMethod (TypeDefinition type, string name, string[] signature, DependencyInfo reason)
+		bool MarkDependencyMethod (TypeDefinition type, string name, string[] signature, in DependencyInfo reason)
 		{
 			bool marked = false;
 
@@ -689,7 +689,7 @@ namespace Mono.Linker.Steps {
 			return marked;
 		}
 
-		bool MarkDependencyField (TypeDefinition type, string name, DependencyInfo reason)
+		bool MarkDependencyField (TypeDefinition type, string name, in DependencyInfo reason)
 		{
 			foreach (var f in type.Fields) {
 				if (f.Name == name) {
@@ -710,7 +710,7 @@ namespace Mono.Linker.Steps {
 				_assemblyLevelAttributes.Enqueue (new AttributeProviderPair (ca, module));
 		}
 
-		protected virtual void MarkCustomAttribute (CustomAttribute ca, DependencyInfo reason)
+		protected virtual void MarkCustomAttribute (CustomAttribute ca, in DependencyInfo reason)
 		{
 			Tracer.Push ((object)ca.AttributeType ?? (object)ca);
 			try {
@@ -772,7 +772,7 @@ namespace Mono.Linker.Steps {
 			return true;
 		}
 
-		protected void MarkStaticConstructor (TypeDefinition type, DependencyInfo reason)
+		protected void MarkStaticConstructor (TypeDefinition type, in DependencyInfo reason)
 		{
 			if (MarkMethodIf (type.Methods, IsNonEmptyStaticConstructor, reason) != null)
 				Annotations.SetPreservedStaticCtor (type);
@@ -804,7 +804,7 @@ namespace Mono.Linker.Steps {
 			return true;
 		}
 
-		protected void MarkSecurityDeclarations (ISecurityDeclarationProvider provider, DependencyInfo reason)
+		protected void MarkSecurityDeclarations (ISecurityDeclarationProvider provider, in DependencyInfo reason)
 		{
 			// most security declarations are removed (if linked) but user code might still have some
 			// and if the attributes references types then they need to be marked too
@@ -815,7 +815,7 @@ namespace Mono.Linker.Steps {
 				MarkSecurityDeclaration (sd, reason);
 		}
 
-		protected virtual void MarkSecurityDeclaration (SecurityDeclaration sd, DependencyInfo reason)
+		protected virtual void MarkSecurityDeclaration (SecurityDeclaration sd, in DependencyInfo reason)
 		{
 			if (!sd.HasSecurityAttributes)
 				return;
@@ -824,7 +824,7 @@ namespace Mono.Linker.Steps {
 				MarkSecurityAttribute (sa, reason);
 		}
 
-		protected virtual void MarkSecurityAttribute (SecurityAttribute sa, DependencyInfo reason)
+		protected virtual void MarkSecurityAttribute (SecurityAttribute sa, in DependencyInfo reason)
 		{
 			TypeReference security_type = sa.AttributeType;
 			TypeDefinition type = security_type.Resolve ();
@@ -849,7 +849,7 @@ namespace Mono.Linker.Steps {
 				MarkCustomAttributeProperty (named_argument, attribute, ca, new DependencyInfo (DependencyKind.AttributeProperty, ca));
 		}
 
-		protected void MarkCustomAttributeProperty (CustomAttributeNamedArgument namedArgument, TypeDefinition attribute, ICustomAttribute ca, DependencyInfo reason)
+		protected void MarkCustomAttributeProperty (CustomAttributeNamedArgument namedArgument, TypeDefinition attribute, ICustomAttribute ca, in DependencyInfo reason)
 		{
 			PropertyDefinition property = GetProperty (attribute, namedArgument.Name);
 			Tracer.Push (property);
@@ -1126,7 +1126,7 @@ namespace Mono.Linker.Steps {
 			MarkField (field, reason);
 		}
 
-		void MarkField (FieldDefinition field, DependencyInfo reason)
+		void MarkField (FieldDefinition field, in DependencyInfo reason)
 		{
 #if DEBUG
 			if (!_fieldReasons.Contains (reason.Kind))
@@ -1558,7 +1558,7 @@ namespace Mono.Linker.Steps {
 			return argument != null;
 		}
 
-		protected int MarkNamedMethod (TypeDefinition type, string method_name, DependencyInfo reason)
+		protected int MarkNamedMethod (TypeDefinition type, string method_name, in DependencyInfo reason)
 		{
 			if (!type.HasMethods)
 				return 0;
@@ -1585,7 +1585,7 @@ namespace Mono.Linker.Steps {
 		}
 
 		// TODO: combine with MarkDependencyField?
-		void MarkNamedField (TypeDefinition type, string field_name, DependencyInfo reason)
+		void MarkNamedField (TypeDefinition type, string field_name, in DependencyInfo reason)
 		{
 			if (!type.HasFields)
 				return;
@@ -1598,7 +1598,7 @@ namespace Mono.Linker.Steps {
 			}
 		}
 
-		void MarkNamedProperty (TypeDefinition type, string property_name, DependencyInfo reason)
+		void MarkNamedProperty (TypeDefinition type, string property_name, in DependencyInfo reason)
 		{
 			if (!type.HasProperties)
 				return;
@@ -1719,7 +1719,7 @@ namespace Mono.Linker.Steps {
 				parameters [1].ParameterType.Name == "StreamingContext";
 		}
 
-		protected bool MarkMethodsIf (Collection<MethodDefinition> methods, Func<MethodDefinition, bool> predicate, DependencyInfo reason)
+		protected bool MarkMethodsIf (Collection<MethodDefinition> methods, Func<MethodDefinition, bool> predicate, in DependencyInfo reason)
 		{
 			bool marked = false;
 			foreach (MethodDefinition method in methods) {
@@ -1731,7 +1731,7 @@ namespace Mono.Linker.Steps {
 			return marked;
 		}
 
-		protected MethodDefinition MarkMethodIf (Collection<MethodDefinition> methods, Func<MethodDefinition, bool> predicate, DependencyInfo reason)
+		protected MethodDefinition MarkMethodIf (Collection<MethodDefinition> methods, Func<MethodDefinition, bool> predicate, in DependencyInfo reason)
 		{
 			foreach (MethodDefinition method in methods) {
 				if (predicate (method)) {
@@ -1742,7 +1742,7 @@ namespace Mono.Linker.Steps {
 			return null;
 		}
 
-		protected bool MarkDefaultConstructor (TypeDefinition type, DependencyInfo reason)
+		protected bool MarkDefaultConstructor (TypeDefinition type, in DependencyInfo reason)
 		{
 			if (type?.HasMethods != true)
 				return false;
@@ -1977,7 +1977,7 @@ namespace Mono.Linker.Steps {
 			MarkMethodCollection (list, new DependencyInfo (DependencyKind.PreservedMethod, method));
 		}
 
-		protected bool MarkFields (TypeDefinition type, bool includeStatic, DependencyInfo reason, bool markBackingFieldsOnlyIfPropertyMarked = false)
+		protected bool MarkFields (TypeDefinition type, bool includeStatic, in DependencyInfo reason, bool markBackingFieldsOnlyIfPropertyMarked = false)
 		{
 			if (!type.HasFields)
 				return false;
@@ -2020,7 +2020,7 @@ namespace Mono.Linker.Steps {
 			return null;
 		}
 
-		protected void MarkStaticFields (TypeDefinition type, DependencyInfo reason)
+		protected void MarkStaticFields (TypeDefinition type, in DependencyInfo reason)
 		{
 			if (!type.HasFields)
 				return;
@@ -2031,7 +2031,7 @@ namespace Mono.Linker.Steps {
 			}
 		}
 
-		protected virtual bool MarkMethods (TypeDefinition type, DependencyInfo reason)
+		protected virtual bool MarkMethods (TypeDefinition type, in DependencyInfo reason)
 		{
 			if (!type.HasMethods)
 				return false;
@@ -2040,13 +2040,13 @@ namespace Mono.Linker.Steps {
 			return true;
 		}
 
-		void MarkMethodCollection (IList<MethodDefinition> methods, DependencyInfo reason)
+		void MarkMethodCollection (IList<MethodDefinition> methods, in DependencyInfo reason)
 		{
 			foreach (MethodDefinition method in methods)
 				MarkMethod (method, reason);
 		}
 
-		protected void MarkIndirectlyCalledMethod (MethodDefinition method, DependencyInfo reason)
+		protected void MarkIndirectlyCalledMethod (MethodDefinition method, in DependencyInfo reason)
 		{
 			MarkMethod (method, reason);
 			Annotations.MarkIndirectlyCalledMethod (method);
@@ -2114,7 +2114,7 @@ namespace Mono.Linker.Steps {
 			return (method, reason);
 		}
 
-		protected virtual void ProcessMethod (MethodDefinition method, DependencyInfo reason)
+		protected virtual void ProcessMethod (MethodDefinition method, in DependencyInfo reason)
 		{
 #if DEBUG
 			if (!_methodReasons.Contains (reason.Kind))
@@ -2407,7 +2407,7 @@ namespace Mono.Linker.Steps {
 			}
 		}
 
-		protected void MarkProperty (PropertyDefinition prop, DependencyInfo reason)
+		protected void MarkProperty (PropertyDefinition prop, in DependencyInfo reason)
 		{
 			Tracer.AddDirectDependency (prop, reason, marked: false);
 			// Consider making this more similar to MarkEvent method?
@@ -2415,7 +2415,7 @@ namespace Mono.Linker.Steps {
 			DoAdditionalPropertyProcessing (prop);
 		}
 
-		protected virtual void MarkEvent (EventDefinition evt, DependencyInfo reason)
+		protected virtual void MarkEvent (EventDefinition evt, in DependencyInfo reason)
 		{
 			// Record the event without marking it in Annotations.
 			Tracer.AddDirectDependency (evt, reason, marked: false);
@@ -2426,7 +2426,7 @@ namespace Mono.Linker.Steps {
 			DoAdditionalEventProcessing (evt);
 		}
 
-		void MarkMethodIfNotNull (MethodReference method, DependencyInfo reason)
+		void MarkMethodIfNotNull (MethodReference method, in DependencyInfo reason)
 		{
 			if (method == null)
 				return;

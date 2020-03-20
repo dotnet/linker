@@ -111,7 +111,7 @@ namespace Mono.Linker
 			ReportDependency (b, e, false);
 		}
 
-		public void AddDirectDependency (object target, DependencyInfo reason, bool marked)
+		public void AddDirectDependency (object target, in DependencyInfo reason, bool marked)
 		{
 			if (IsRecordingEnabled ()) {
 				foreach (IDependencyRecorder recorder in recorders)

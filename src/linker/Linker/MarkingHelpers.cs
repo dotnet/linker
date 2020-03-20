@@ -10,7 +10,7 @@ namespace Mono.Linker {
 			_context = context;
 		}
 
-		public void MarkExportedType (ExportedType type, ModuleDefinition module, DependencyInfo reason)
+		public void MarkExportedType (ExportedType type, ModuleDefinition module, in DependencyInfo reason)
 		{
 			_context.Annotations.Mark (type, reason);
 			if (_context.KeepTypeForwarderOnlyAssemblies)

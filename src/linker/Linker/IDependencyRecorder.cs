@@ -50,6 +50,6 @@ namespace Mono.Linker
 		/// <remarks>The target is typically a Cecil metadata object (MethodDefinition, TypeDefinition, ...)
 		/// but can also be the linker steps or really any other object. "marked" may be false for a target that
 		/// is still marked for some other reason.</remarks>
-		void RecordDependency (object target, DependencyInfo reason, bool marked);
+		void RecordDependency (object target, in DependencyInfo reason, bool marked);
 	}
 }

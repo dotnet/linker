@@ -158,7 +158,7 @@ namespace Mono.Linker {
 			Tracer.AddDependency (provider, true);
 		}
 
-		public void Mark (IMetadataTokenProvider provider, DependencyInfo reason)
+		public void Mark (IMetadataTokenProvider provider, in DependencyInfo reason)
 		{
 			Debug.Assert (!(reason.Kind == DependencyKind.AlreadyMarked));
 			marked.Add (provider);
@@ -171,7 +171,7 @@ namespace Mono.Linker {
 			marked_attributes.Add (attribute);
 		}
 
-		public void Mark (CustomAttribute attribute, DependencyInfo reason)
+		public void Mark (CustomAttribute attribute, in DependencyInfo reason)
 		{
 			Debug.Assert (!(reason.Kind == DependencyKind.AlreadyMarked));
 			marked_attributes.Add (attribute);

@@ -22,7 +22,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			});
 		}
 
-		public void RecordDependency (object target, DependencyInfo reason, bool marked)
+		public void RecordDependency (object target, in DependencyInfo reason, bool marked)
 		{
 			Dependencies.Add (new Dependency () {
 				Source = reason.Source?.ToString (),
