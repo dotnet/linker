@@ -3,127 +3,126 @@ using System;
 namespace Mono.Linker
 {
 	public enum DependencyKind {
+	// For use when we don't care about tracking a particular dependency
+		Unspecified = 0, // currently unused
 
 	// Entry points to the analysis
-		AssemblyAction, // assembly action -> entry assembly
-		RootAssembly, // assembly -> entry type
-		XmlDescriptor, // xml document -> entry member
+		AssemblyAction = 1, // assembly action -> entry assembly
+		RootAssembly = 2, // assembly -> entry type
+		XmlDescriptor = 3, // xml document -> entry member
 		// Attributes on assemblies are marked whether or not we keep
 		// the assembly, so mark these as entry points.
-		AssemblyOrModuleAttribute, // assembly/module -> entry attribute
+		AssemblyOrModuleAttribute = 4, // assembly/module -> entry attribute
 
 	// Membership and containment relationships
-		NestedType, // parent type -> nested type
-		MemberOfType, // type -> member
-		DeclaringType, // member -> type
-		FieldOnGenericInstance, // fieldref on instantiated generic -> field on generic typedef
-		MethodOnGenericInstance, // methodref on instantiated generic -> method on generic typedef
+		NestedType = 5, // parent type -> nested type
+		MemberOfType = 6, // type -> member
+		DeclaringType = 7, // member -> type
+		FieldOnGenericInstance = 8, // fieldref on instantiated generic -> field on generic typedef
+		MethodOnGenericInstance = 9, // methodref on instantiated generic -> method on generic typedef
 
 	// Type relationships
-		BaseType, // type -> its base type
-		FieldType, // field -> its type
-		ParameterType, // method -> types of its parameters
-		ReturnType, // method -> type it returns
-		VariableType, // method -> types of its variables
-		CatchType, // method -> types of its exception handlers
+		BaseType = 10, // type -> its base type
+		FieldType = 11, // field -> its type
+		ParameterType = 12, // method -> types of its parameters
+		ReturnType = 13, // method -> type it returns
+		VariableType = 14, // method -> types of its variables
+		CatchType = 15, // method -> types of its exception handlers
 
 	// Override relationships
-		BaseMethod, // override -> base method
-		Override, // base method -> override
-		MethodImplOverride, // method -> .override on the method
-		VirtualNeededDueToPreservedScope, // type -> virtuals kept because scope requires it
-		MethodForInstantiatedType, // type -> methods kept because type is instantiated or scope requires it
-		BaseDefaultCtorForStubbedMethod, // stubbed method -> default ctor of base type
+		BaseMethod = 16, // override -> base method
+		Override = 17, // base method -> override
+		MethodImplOverride = 18, // method -> .override on the method
+		VirtualNeededDueToPreservedScope = 19, // type -> virtuals kept because scope requires it
+		MethodForInstantiatedType = 20, // type -> methods kept because type is instantiated or scope requires it
+		BaseDefaultCtorForStubbedMethod = 21, // stubbed method -> default ctor of base type
 
 	// Generic type relationships
-		GenericArgumentType, // generic instance -> argument type
-		GenericParameterConstraintType, // generic typedef/methoddef -> parameter constraint type
-		DefaultCtorForNewConstrainedGenericArgument, // generic instance -> argument ctor
-		ElementType, // generic type instantiation -> generic typedef
-		ElementMethod, // generic method instantiation -> generic methoddef
-		ModifierType, // modified type -> type modifier
+		GenericArgumentType = 22, // generic instance -> argument type
+		GenericParameterConstraintType = 23, // generic typedef/methoddef -> parameter constraint type
+		DefaultCtorForNewConstrainedGenericArgument = 24, // generic instance -> argument ctor
+		ElementType = 25, // generic type instantiation -> generic typedef
+		ElementMethod = 26, // generic method instantiation -> generic methoddef
+		ModifierType = 27, // modified type -> type modifier
 
 	// Modules and assemblies
-		ScopeOfType, // type -> module/assembly
-		TypeInAssembly, // assembly -> type
-		ModuleOfExportedType, // exported type -> module
-		ExportedType, // type -> exported type
+		ScopeOfType = 28, // type -> module/assembly
+		TypeInAssembly = 29, // assembly -> type
+		ModuleOfExportedType = 30, // exported type -> module
+		ExportedType = 31, // type -> exported type
 
 	// Grouping of property/event methods
-		PropertyOfPropertyMethod, // property method -> its property
-		EventOfEventMethod, // event method -> its event
-		EventMethod, // event -> its event methods
+		PropertyOfPropertyMethod = 32, // property method -> its property
+		EventOfEventMethod = 33, // event method -> its event
+		EventMethod = 34, // event -> its event methods
 		// PropertyMethod doesn't exist because property methods aren't always marked for a property
 
 	// Interface implementations
-		InterfaceImplementationInterfaceType, // interfaceimpl -> interface type
-		InterfaceImplementationOnType, // type -> interfaceimpl on it
+		InterfaceImplementationInterfaceType = 35, // interfaceimpl -> interface type
+		InterfaceImplementationOnType = 36, // type -> interfaceimpl on it
 
 	// Interop methods
-		ReturnTypeMarshalSpec, // interop method -> marshal spec of its return type
-		ParameterMarshalSpec, // interop method -> marshal spec of its parameters
-		FieldMarshalSpec, // field -> its marshal spec
-		InteropMethodDependency, // interop method -> required members of its parameters, return type, declaring type
+		ReturnTypeMarshalSpec = 37, // interop method -> marshal spec of its return type
+		ParameterMarshalSpec = 38, // interop method -> marshal spec of its parameters
+		FieldMarshalSpec = 39, // field -> its marshal spec
+		InteropMethodDependency = 40, // interop method -> required members of its parameters, return type, declaring type
 
 	// Dependencies created by instructions
-		DirectCall, // method -> method
-		VirtualCall, // method -> method
-		Ldvirtftn, // method -> method
-		Ldftn, // method -> method
-		Newobj, // method -> method
-		Ldtoken, // method -> member referenced
-		FieldAccess, // method -> field (for instructions that load/store fields)
-		InstructionTypeRef, // other instructions that have an inline type token (method -> type)
+		DirectCall = 41, // method -> method
+		VirtualCall = 42, // method -> method
+		Ldvirtftn = 43, // method -> method
+		Ldftn = 44, // method -> method
+		Newobj = 45, // method -> method
+		Ldtoken = 46, // method -> member referenced
+		FieldAccess = 47, // method -> field (for instructions that load/store fields)
+		InstructionTypeRef = 48, // other instructions that have an inline type token (method -> type)
 
 	// Custom attributes on various providers
-		CustomAttribute, // attribute provider (type/field/method/etc...) -> attribute on it
-		ParameterAttribute, // method parameter -> attribute on it
-		ReturnTypeAttribute, // method return type -> attribute on it
-		GenericParameterCustomAttribute, // generic parameter -> attribute on it
-		GenericParameterConstraintCustomAttribute, // generic parameter constraint -> attribute on it
+		CustomAttribute = 49, // attribute provider (type/field/method/etc...) -> attribute on it
+		ParameterAttribute = 50, // method parameter -> attribute on it
+		ReturnTypeAttribute = 51, // method return type -> attribute on it
+		GenericParameterCustomAttribute = 52, // generic parameter -> attribute on it
+		GenericParameterConstraintCustomAttribute = 53, // generic parameter constraint -> attribute on it
 
 	// Dependencies of custom attributes
-		AttributeConstructor, // attribute -> its ctor
+		AttributeConstructor = 54, // attribute -> its ctor
 		// used for security attributes, where we mark the type/properties directly
-		AttributeType, // attribute -> attribute type
-		AttributeProperty, // attribute -> attribute property
-		CustomAttributeArgumentType, // attribute -> type of an argument to the attribute ctor
-		CustomAttributeArgumentValue, // attribute -> type passed as an argument to the attribute ctor
-		CustomAttributeField, // attribute -> field on the attribute
+		AttributeType = 55, // attribute -> attribute type
+		AttributeProperty = 56, // attribute -> attribute property
+		CustomAttributeArgumentType = 57, // attribute -> type of an argument to the attribute ctor
+		CustomAttributeArgumentValue = 58, // attribute -> type passed as an argument to the attribute ctor
+		CustomAttributeField = 59, // attribute -> field on the attribute
 
 	// Tracking cctors
-		TriggersCctorThroughFieldAccess, // field-accessing method -> cctor of field's declaring type
-		TriggersCctorForCalledMethod, // caller method -> callee method type cctor
-		DeclaringTypeOfCalledMethod, // called method -> its declaring type (used to track when a cctor is triggered by a method call)
-		CctorForType, // type -> cctor of type
-		CctorForField, // field -> cctor of field's declaring type
+		TriggersCctorThroughFieldAccess = 60, // field-accessing method -> cctor of field's declaring type
+		TriggersCctorForCalledMethod = 61, // caller method -> callee method type cctor
+		DeclaringTypeOfCalledMethod = 62, // called method -> its declaring type (used to track when a cctor is triggered by a method call)
+		CctorForType = 63, // type -> cctor of type
+		CctorForField = 64, // field -> cctor of field's declaring type
 
 	// Tracking instantiations
-		InstantiatedByCtor, // ctor -> its declaring type (indicating that it was marked instantiated due to the ctor)
-		OverrideOnInstantiatedType, // instantiated type -> override method on the type
+		InstantiatedByCtor = 65, // ctor -> its declaring type (indicating that it was marked instantiated due to the ctor)
+		OverrideOnInstantiatedType = 66, // instantiated type -> override method on the type
 
 	// Linker-specific behavior (preservation hints, patterns, user inputs, linker outputs, etc.)
-		PreservedDependency, // PreserveDependency attribute -> member
-		AccessedViaReflection, // method -> detected member accessed via reflection from that method
-		PreservedMethod, // type/method -> preserved method (explicitly preserved in Annotations by XML or other steps)
-		TypePreserve, // type -> field/method preserved for the type (explicitly set in Annotations by XML or other steps)
-		DisablePrivateReflection, // type/method -> DisablePrivateReflection attribute added by linkerf
+		PreservedDependency = 67, // PreserveDependency attribute -> member
+		AccessedViaReflection = 68, // method -> detected member accessed via reflection from that method
+		PreservedMethod = 69, // type/method -> preserved method (explicitly preserved in Annotations by XML or other steps)
+		TypePreserve = 70, // type -> field/method preserved for the type (explicitly set in Annotations by XML or other steps)
+		DisablePrivateReflection = 71, // type/method -> DisablePrivateReflection attribute added by linkerf
 
 	// Built-in knowledge of special runtime/diagnostic subsystems
 		// XmlSchemaProvider, DebuggerDisplay, DebuggerTypeProxy, SoapHeader, TypeDescriptionProvider
-		ReferencedBySpecialAttribute, // attribute -> referenced members
-		KeptForSpecialAttribute, // attribute -> kept members (used when the members are not explicitly referenced)
-		SerializationMethodForType, // type -> method required for serialization
-		EventSourceProviderField, // EventSource derived type -> fields on nested Keywords/Tasks/Opcodes provider classes
-		MethodForSpecialType, // type -> methods kept (currently used for MulticastDelegate)
+		ReferencedBySpecialAttribute = 72, // attribute -> referenced members
+		KeptForSpecialAttribute = 73, // attribute -> kept members (used when the members are not explicitly referenced)
+		SerializationMethodForType = 74, // type -> method required for serialization
+		EventSourceProviderField = 75, // EventSource derived type -> fields on nested Keywords/Tasks/Opcodes provider classes
+		MethodForSpecialType = 76, // type -> methods kept (currently used for MulticastDelegate)
 
 	// Linker internals, requirements for certain optimizations
-		UnreachableBodyRequirement, // method -> well-known type required for unreachable bodies optimization
-		DisablePrivateReflectionRequirement, // null -> DisablePrivateReflectionAttribute type/methods (note that no specific source is reported)
-		AlreadyMarked, // null -> member that has already been marked for a particular reason (used to propagate reasons internally, not reported)
-
-	// For use when we don't care about tracking a particular dependency
-		Unspecified, // currently unused
+		UnreachableBodyRequirement = 77, // method -> well-known type required for unreachable bodies optimization
+		DisablePrivateReflectionRequirement = 78, // null -> DisablePrivateReflectionAttribute type/methods (note that no specific source is reported)
+		AlreadyMarked = 79, // null -> member that has already been marked for a particular reason (used to propagate reasons internally, not reported)
 	}
 
 	readonly public struct DependencyInfo : IEquatable<DependencyInfo> {
