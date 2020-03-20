@@ -1,6 +1,8 @@
 <Project>
   <Import Project="Sdk.targets" Sdk="Microsoft.DotNet.Arcade.Sdk" Condition="'$(MonoBuild)' == ''" />
 
+  <Import Project="$(_ToolsProjectTargets)" Condition="Exists('$(_ToolsProjectTargets)')" />
+
   <Target Name="VSTestIfTestProject">
     <CallTarget Targets="VSTest" Condition="'$(IsTestProject)' == 'true'" />
   </Target>

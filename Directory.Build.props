@@ -22,6 +22,4 @@
     <_ToolsProjectTargets>$(ArtifactsToolsetDir)Common\Tools.proj.nuget.g.targets</_ToolsProjectTargets>
   </PropertyGroup>
 
-  <Import Project="$(_ToolsProjectTargets)" Condition="Exists('$(_ToolsProjectTargets)')" />
-
 </Project>
