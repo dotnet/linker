@@ -7,6 +7,7 @@ namespace Mono.Linker.Tests.Cases.LinkXml
 {
 	[SetupCompileBefore ("Library.dll", new [] { "Dependencies/CanPreserveMarkedChildrenOfUnrequiredType_Library.cs" })]
 	[KeptMemberInAssembly ("Library.dll", typeof (CanPreserveMarkedChildrenOfUnrequiredType_Library), "Field1", "Method1()", "Property1")]
+	[RemovedMemberInAssembly ("Library.dll", typeof (CanPreserveMarkedChildrenOfUnrequiredType_Library), "Field2", "Method2()", "Property2")]
 
 	class CanPreserveMarkedChildrenOfUnrequiredType
 	{
