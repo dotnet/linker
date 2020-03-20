@@ -30,12 +30,12 @@ namespace Mono.Linker.Steps
 		{
 			foreach (var a in Context.GetAssemblies ()) {
 				foreach (var s in a.MainModule.Types) {
-					if (s.BaseType != null && s.BaseType.IsTypeOf (type.Namespace, type.Name) == true)
+					if (s.BaseType?.IsTypeOf (type.Namespace, type.Name) == true)
 						return true;
 
 					if (s.HasNestedTypes) {
 						foreach (var ns in s.NestedTypes) {
-							if (ns.BaseType.IsTypeOf (type.Namespace, type.Name))
+							if (ns.BaseType?.IsTypeOf (type.Namespace, type.Name) == true)
 								return true;
 						}
 					}
@@ -56,9 +56,9 @@ namespace Mono.Linker.Steps
 			// the code does not include any subclass for this type
 			//
 			if (!type.IsAbstract && !type.IsSealed && !IsSubclassed (type))
-				type.IsSealed = true;
+				SealType (type);
 
-			if (!type.IsSealed && type.HasNestedTypes) {
+			if (type.HasNestedTypes) {
 				foreach (var nt in type.NestedTypes) {
 					ProcessType (nt);
 				}
@@ -84,7 +84,7 @@ namespace Mono.Linker.Steps
 				if (IsAnyMarked (overrides))
 					continue;
 
-				method.IsFinal = true;
+				SealMethod (method);
 
 				// subclasses might need this method to satisfy an interface requirement
 				// and requires dispatch/virtual support
@@ -96,6 +96,16 @@ namespace Mono.Linker.Steps
 				if (!IsAnyMarked (bases))
 					method.IsVirtual = false;
 			}
+		}
+
+		protected virtual void SealType (TypeDefinition type)
+		{
+			type.IsSealed = true;
+		}
+
+		protected virtual void SealMethod (MethodDefinition method)
+		{
+			method.IsFinal = true;
 		}
 
 		bool IsAnyMarked (List<OverrideInformation> list)

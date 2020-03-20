@@ -13,16 +13,25 @@ namespace Mono.Linker.Tests.Cases.Sealer
 		public static void Main ()
 		{
 			Type t;
-			t = typeof (Data.SimpleClass);
 			t = typeof (SimpleNestedClass);
+			t = typeof (SimpleNestedIface);
+
+			t = typeof (Data.SimpleClass);
 			t = typeof (Data.AlreadySealed);
 			t = typeof (Data.Derived);
 			t = typeof (Data.DerivedWithNested.Nested);
 			t = typeof (Data.DerivedWithNested);
+			t = typeof (Data.BaseWithUnusedDerivedClass);
 		}
 
 		[Kept]
+		[AddedPseudoAttributeAttribute ((uint)TypeAttributes.Sealed)]
 		class SimpleNestedClass
+		{
+		}
+
+		[Kept]
+		interface SimpleNestedIface
 		{
 		}
 	}
@@ -71,6 +80,17 @@ namespace Mono.Linker.Tests.Cases.Sealer.Data
 	}
 
 	class UnusedClass
+	{
+	}
+
+	[Kept]
+	[AddedPseudoAttributeAttribute ((uint)TypeAttributes.Sealed)]
+	class BaseWithUnusedDerivedClass
+	{
+
+	}
+
+	class UnusedDerivedClass: BaseWithUnusedDerivedClass
 	{
 	}
 }
