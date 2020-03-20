@@ -244,10 +244,10 @@ namespace Mono.Linker.Steps {
 				return;
 			
 			TypePreserve preserve = GetTypePreserve (nav);
+			MarkChildren (type, nav);
 
 			if (!IsRequired (nav)) {
 				Annotations.SetPreserve (type, preserve);
-				MarkChildren (type, nav);
 				return;
 			}
 
@@ -271,7 +271,6 @@ namespace Mono.Linker.Steps {
 			if (preserve != TypePreserve.Nothing)
 				Annotations.SetPreserve (type, preserve);
 
-			MarkChildren (type, nav);
 			Tracer.Pop ();
 		}
 
