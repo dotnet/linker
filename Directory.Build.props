@@ -7,9 +7,11 @@
     <IsReferenceAssembly Condition="'$(IsReferenceAssembly)' == '' and '$([System.IO.Path]::GetFileName($(MSBuildProjectDirectory)))' == 'ref'">true</IsReferenceAssembly>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(IsReferenceAssembly)' == 'true' ">
+    <ProduceOnlyReferenceAssembly>true</ProduceOnlyReferenceAssembly>
     <!-- used by Arcade to compute OutputPath, IntermediateOutputPath, etc. early in the import chain. -->
     <OutDirName>$(MSBuildProjectName)/ref</OutDirName>
-    <ProduceOnlyReferenceAssembly>true</ProduceOnlyReferenceAssembly>
+    <!-- don't try to publish PDBs for ref assemblies that have none. -->
+    <PublishWindowsPdb>false</PublishWindowsPdb>
   </PropertyGroup>
 
   <Import Project="Sdk.props" Sdk="Microsoft.DotNet.Arcade.Sdk" Condition="'$(MonoBuild)' == ''" />

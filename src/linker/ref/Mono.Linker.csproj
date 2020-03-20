@@ -8,15 +8,18 @@
     <Description>IL Linker</Description>
     <DefineConstants>$(DefineConstants);FEATURE_ILLINK</DefineConstants>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <IsPackable>true</IsPackable>
     <!-- Nuget issues a warning about missing <reference> items in the generated nuspec,
         used for packages.config which we do not support. -->
     <NoWarn>$(NoWarn);NU5131</NoWarn>
-    <IsPackable>true</IsPackable>
+    <!-- We need to create a package that includes the build output of the cecil projectreference below. -->
+    <IncludePublishOutput>true</IncludePublishOutput>
     <BuildOutputTargetFolder>ref</BuildOutputTargetFolder>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\external\cecil\Mono.Cecil.csproj" ExcludeAssets="All" />
+    <!-- Use PrivateAssets to prevent the generated package from having a package dependency on cecil. -->
+    <ProjectReference Include="..\..\cecil\ref\Mono.Cecil.csproj" PrivateAssets="All" />
   </ItemGroup>
 
 </Project>

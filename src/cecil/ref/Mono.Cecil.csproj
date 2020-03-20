@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <_CecilDir>..\..\..\external\cecil</_CecilDir>
+  </PropertyGroup>
+
+  <!-- Keep this in sync with the submodule's Mono.Cecil.csproj. -->
+  <ItemGroup>
+    <Compile Include="$(_CecilDir)\ProjectInfo.cs" />
+    <Compile Include="$(_CecilDir)\Mono\*.cs" />
+    <Compile Include="$(_CecilDir)\Mono.Cecil\*.cs" />
+    <Compile Include="$(_CecilDir)\Mono.Cecil.Cil\*.cs" />
+    <Compile Include="$(_CecilDir)\Mono.Cecil.Metadata\*.cs" />
+    <Compile Include="$(_CecilDir)\Mono.Cecil.PE\*.cs" />
+    <Compile Include="$(_CecilDir)\Mono.Collections.Generic\*.cs" />
+    <Compile Include="$(_CecilDir)\Mono.Security.Cryptography\*.cs" />
+  </ItemGroup>
+
+</Project>
