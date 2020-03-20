@@ -31,7 +31,6 @@ namespace Mono.Linker
 		BaseMethod, // override -> base method
 		Override, // base method -> override
 		MethodImplOverride, // method -> .override on the method
-	// 
 		VirtualNeededDueToPreservedScope, // type -> virtuals kept because scope requires it
 		MethodForInstantiatedType, // type -> methods kept because type is instantiated or scope requires it
 		BaseDefaultCtorForStubbedMethod, // stubbed method -> default ctor of base type
@@ -77,20 +76,20 @@ namespace Mono.Linker
 		InstructionTypeRef, // other instructions that have an inline type token (method -> type)
 
 	// Custom attributes on various providers
-		CustomAttribute,
-		ParameterAttribute,
-		ReturnTypeAttribute,
-		GenericParameterCustomAttribute,
-		GenericParameterConstraintCustomAttribute,
+		CustomAttribute, // attribute provider (type/field/method/etc...) -> attribute on it
+		ParameterAttribute, // method parameter -> attribute on it
+		ReturnTypeAttribute, // method return type -> attribute on it
+		GenericParameterCustomAttribute, // generic parameter -> attribute on it
+		GenericParameterConstraintCustomAttribute, // generic parameter constraint -> attribute on it
 
 	// Dependencies of custom attributes
 		AttributeConstructor, // attribute -> its ctor
 		// used for security attributes, where we mark the type/properties directly
 		AttributeType, // attribute -> attribute type
-		AttributeProperty, // attribute -> attribute ptroperty
-		CustomAttributeArgumentType,
-		CustomAttributeArgumentValue,
-		CustomAttributeField,
+		AttributeProperty, // attribute -> attribute property
+		CustomAttributeArgumentType, // attribute -> type of an argument to the attribute ctor
+		CustomAttributeArgumentValue, // attribute -> type passed as an argument to the attribute ctor
+		CustomAttributeField, // attribute -> field on the attribute
 
 	// Tracking cctors
 		TriggersCctorThroughFieldAccess, // field-accessing method -> cctor of field's declaring type
@@ -100,7 +99,7 @@ namespace Mono.Linker
 		CctorForField, // field -> cctor of field's declaring type
 
 	// Tracking instantiations
-		InstantiatedByCtor, // ctor -> type it instantiates			
+		InstantiatedByCtor, // ctor -> its declaring type (indicating that it was marked instantiated due to the ctor)
 		OverrideOnInstantiatedType, // instantiated type -> override method on the type
 
 	// Linker-specific behavior (preservation hints, patterns, user inputs, linker outputs, etc.)

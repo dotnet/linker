@@ -49,6 +49,92 @@ namespace Mono.Linker.Steps {
 		protected List<TypeDefinition> _typesWithInterfaces;
 		protected List<MethodBody> _unreachableBodies;
 
+#if DEBUG
+		static DependencyKind [] _entireTypeReasons = new DependencyKind [] {
+			DependencyKind.NestedType,
+			DependencyKind.PreservedDependency,
+			DependencyKind.TypeInAssembly,
+		};
+
+		static DependencyKind [] _fieldReasons = new DependencyKind [] {
+			DependencyKind.AccessedViaReflection,
+			DependencyKind.AlreadyMarked,
+			DependencyKind.CustomAttributeField,
+			DependencyKind.EventSourceProviderField,
+			DependencyKind.FieldAccess,
+			DependencyKind.FieldOnGenericInstance,
+			DependencyKind.InteropMethodDependency,
+			DependencyKind.Ldtoken,
+			DependencyKind.MemberOfType,
+			DependencyKind.PreservedDependency,
+			DependencyKind.ReferencedBySpecialAttribute,
+			DependencyKind.TypePreserve,
+		};
+
+		static DependencyKind [] _typeReasons = new DependencyKind [] {
+			DependencyKind.AccessedViaReflection,
+			DependencyKind.AlreadyMarked,
+			DependencyKind.AttributeType,
+			DependencyKind.BaseType,
+			DependencyKind.CatchType,
+			DependencyKind.CustomAttributeArgumentType,
+			DependencyKind.CustomAttributeArgumentValue,
+			DependencyKind.DeclaringType,
+			DependencyKind.DeclaringTypeOfCalledMethod,
+			DependencyKind.ElementType,
+			DependencyKind.FieldType,
+			DependencyKind.GenericArgumentType,
+			DependencyKind.GenericParameterConstraintType,
+			DependencyKind.InterfaceImplementationInterfaceType,
+			DependencyKind.Ldtoken,
+			DependencyKind.ModifierType,
+			DependencyKind.InstructionTypeRef,
+			DependencyKind.ParameterType,
+			DependencyKind.ReferencedBySpecialAttribute,
+			DependencyKind.ReturnType,
+			DependencyKind.UnreachableBodyRequirement,
+			DependencyKind.VariableType,
+		};
+
+		static DependencyKind [] _methodReasons = new DependencyKind [] {
+			DependencyKind.AccessedViaReflection,
+			DependencyKind.AlreadyMarked,
+			DependencyKind.AttributeConstructor,
+			DependencyKind.AttributeProperty,
+			DependencyKind.BaseDefaultCtorForStubbedMethod,
+			DependencyKind.BaseMethod,
+			DependencyKind.CctorForType,
+			DependencyKind.CctorForField,
+			DependencyKind.DefaultCtorForNewConstrainedGenericArgument,
+			DependencyKind.DirectCall,
+			DependencyKind.ElementMethod,
+			DependencyKind.EventMethod,
+			DependencyKind.EventOfEventMethod,
+			DependencyKind.InteropMethodDependency,
+			DependencyKind.KeptForSpecialAttribute,
+			DependencyKind.Ldftn,
+			DependencyKind.Ldtoken,
+			DependencyKind.Ldvirtftn,
+			DependencyKind.MemberOfType,
+			DependencyKind.MethodForInstantiatedType,
+			DependencyKind.MethodForSpecialType,
+			DependencyKind.MethodImplOverride,
+			DependencyKind.MethodOnGenericInstance,
+			DependencyKind.Newobj,
+			DependencyKind.Override,
+			DependencyKind.OverrideOnInstantiatedType,
+			DependencyKind.PreservedDependency,
+			DependencyKind.ReferencedBySpecialAttribute,
+			DependencyKind.SerializationMethodForType,
+			DependencyKind.TriggersCctorForCalledMethod,
+			DependencyKind.TriggersCctorThroughFieldAccess,
+			DependencyKind.TypePreserve,
+			DependencyKind.UnreachableBodyRequirement,
+			DependencyKind.VirtualCall,
+			DependencyKind.VirtualNeededDueToPreservedScope,
+		};
+#endif
+
 		public MarkStep ()
 		{
 			_methods = new Queue<(MethodDefinition, DependencyInfo)> ();
@@ -165,13 +251,8 @@ namespace Mono.Linker.Steps {
 		void MarkEntireType (TypeDefinition type, DependencyInfo reason)
 		{
 #if DEBUG
-			var reasons = new DependencyKind [] {
-				DependencyKind.NestedType,
-				DependencyKind.PreservedDependency,
-				DependencyKind.TypeInAssembly,
-			};
-			if (!reasons.Contains (reason.Kind))
-				throw new InvalidOperationException ($"Internal error: unsupported type dependency {reason.Kind}");
+			if (!_entireTypeReasons.Contains (reason.Kind))
+				throw new ArgumentOutOfRangeException ($"Internal error: unsupported type dependency {reason.Kind}");
 #endif
 
 			if (type.HasNestedTypes) {
@@ -1048,22 +1129,8 @@ namespace Mono.Linker.Steps {
 		void MarkField (FieldDefinition field, DependencyInfo reason)
 		{
 #if DEBUG
-			var reasons = new DependencyKind [] {
-				DependencyKind.AccessedViaReflection,
-				DependencyKind.AlreadyMarked,
-				DependencyKind.CustomAttributeField,
-				DependencyKind.EventSourceProviderField,
-				DependencyKind.FieldAccess,
-				DependencyKind.FieldOnGenericInstance,
-				DependencyKind.InteropMethodDependency,
-				DependencyKind.Ldtoken,
-				DependencyKind.MemberOfType,
-				DependencyKind.PreservedDependency,
-				DependencyKind.ReferencedBySpecialAttribute,
-				DependencyKind.TypePreserve,
-			};
-			if (!reasons.Contains (reason.Kind))
-				throw new InvalidOperationException ($"Internal error: unsupported field dependency {reason.Kind}");
+			if (!_fieldReasons.Contains (reason.Kind))
+				throw new ArgumentOutOfRangeException ($"Internal error: unsupported field dependency {reason.Kind}");
 #endif
 
 			if (CheckProcessed (field))
@@ -1111,7 +1178,7 @@ namespace Mono.Linker.Steps {
 
 		protected virtual void MarkSerializable (TypeDefinition type)
 		{
-			// TODO: This marks default ctor even for types that aren't [Serializable]. Is this necessary?
+			// Keep default ctor for XmlSerializer support. See https://github.com/mono/linker/issues/957
 			MarkDefaultConstructor (type, new DependencyInfo (DependencyKind.SerializationMethodForType, type));
 			if (!_context.IsFeatureExcluded ("deserialization"))
 				MarkMethodsIf (type.Methods, IsSpecialSerializationConstructor, new DependencyInfo (DependencyKind.SerializationMethodForType, type));
@@ -1120,32 +1187,8 @@ namespace Mono.Linker.Steps {
 		protected virtual TypeDefinition MarkType (TypeReference reference, DependencyInfo reason)
 		{
 #if DEBUG
-			var reasons = new DependencyKind [] {
-				DependencyKind.AccessedViaReflection,
-				DependencyKind.AlreadyMarked,
-				DependencyKind.AttributeType,
-				DependencyKind.BaseType,
-				DependencyKind.CatchType,
-				DependencyKind.CustomAttributeArgumentType,
-				DependencyKind.CustomAttributeArgumentValue,
-				DependencyKind.DeclaringType,
-				DependencyKind.DeclaringTypeOfCalledMethod,
-				DependencyKind.ElementType,
-				DependencyKind.FieldType,
-				DependencyKind.GenericArgumentType,
-				DependencyKind.GenericParameterConstraintType,
-				DependencyKind.InterfaceImplementationInterfaceType,
-				DependencyKind.Ldtoken,
-				DependencyKind.ModifierType,
-				DependencyKind.InstructionTypeRef,
-				DependencyKind.ParameterType,
-				DependencyKind.ReferencedBySpecialAttribute,
-				DependencyKind.ReturnType,
-				DependencyKind.UnreachableBodyRequirement,
-				DependencyKind.VariableType,
-			};
-			if (!reasons.Contains (reason.Kind))
-				throw new InvalidOperationException ($"Internal error: unsupported type dependency {reason.Kind}");
+			if (!_typeReasons.Contains (reason.Kind))
+				throw new ArgumentOutOfRangeException ($"Internal error: unsupported type dependency {reason.Kind}");
 #endif
 			if (reference == null)
 				return null;
@@ -2074,45 +2117,8 @@ namespace Mono.Linker.Steps {
 		protected virtual void ProcessMethod (MethodDefinition method, DependencyInfo reason)
 		{
 #if DEBUG
-			var reasons = new DependencyKind [] {
-				DependencyKind.AccessedViaReflection,
-				DependencyKind.AlreadyMarked,
-				DependencyKind.AttributeConstructor,
-				DependencyKind.AttributeProperty,
-				DependencyKind.BaseDefaultCtorForStubbedMethod,
-				DependencyKind.BaseMethod,
-				DependencyKind.CctorForType,
-				DependencyKind.CctorForField,
-				DependencyKind.DefaultCtorForNewConstrainedGenericArgument,
-				DependencyKind.DirectCall,
-				DependencyKind.ElementMethod,
-				DependencyKind.EventMethod,
-				DependencyKind.EventOfEventMethod,
-				DependencyKind.InteropMethodDependency,
-				DependencyKind.KeptForSpecialAttribute,
-				DependencyKind.Ldftn,
-				DependencyKind.Ldtoken,
-				DependencyKind.Ldvirtftn,
-				DependencyKind.MemberOfType,
-				DependencyKind.MethodForInstantiatedType,
-				DependencyKind.MethodForSpecialType,
-				DependencyKind.MethodImplOverride,
-				DependencyKind.MethodOnGenericInstance,
-				DependencyKind.Newobj,
-				DependencyKind.Override,
-				DependencyKind.OverrideOnInstantiatedType,
-				DependencyKind.PreservedDependency,
-				DependencyKind.ReferencedBySpecialAttribute,
-				DependencyKind.SerializationMethodForType,
-				DependencyKind.TriggersCctorForCalledMethod,
-				DependencyKind.TriggersCctorThroughFieldAccess,
-				DependencyKind.TypePreserve,
-				DependencyKind.UnreachableBodyRequirement,
-				DependencyKind.VirtualCall,
-				DependencyKind.VirtualNeededDueToPreservedScope,
-			};
-			if (!reasons.Contains (reason.Kind))
-				throw new InvalidOperationException ($"Internal error: unsupported method dependency {reason.Kind}");
+			if (!_methodReasons.Contains (reason.Kind))
+				throw new ArgumentOutOfRangeException ($"Internal error: unsupported method dependency {reason.Kind}");
 #endif
 
 			// Record the reason for marking a method on each call. The logic under CheckProcessed happens
