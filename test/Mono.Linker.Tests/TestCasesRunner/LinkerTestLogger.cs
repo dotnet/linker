@@ -21,10 +21,10 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			});
 		}
 
-		public void LogMessage(MSBuildMessageContainer MSBuildMessage)
+		public void LogMessage(MSBuildMessageContainer msBuildMessage)
 		{
 			Messages.Add (new MessageRecord {
-				Message = MSBuildMessage.ToString ()
+				Message = msBuildMessage.ToString ()
 			});
 		}
 	}

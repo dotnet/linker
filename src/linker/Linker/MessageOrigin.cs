@@ -10,16 +10,19 @@
 
 		public string FileName { get; }
 
-		public Position SourcePosition { get; }
+		public int MessageSourceLine { get; }
+
+		public int MessageSourceColumn { get; }
 
 		public MessageOrigin ()
 		{
 		}
 
-		public MessageOrigin (string fileName, Position sourcePosition)
+		public MessageOrigin (string fileName = ToolName, int messageSourceLine = 0, int messageSourceColumn = 0)
 		{
 			FileName = fileName;
-			SourcePosition = sourcePosition;
+			MessageSourceLine = messageSourceLine;
+			MessageSourceColumn = messageSourceColumn;
 		}
 
 		public override string ToString ()
@@ -27,7 +30,16 @@
 			if (FileName == string.Empty || FileName == null)
 				return ToolName;
 
-			return string.Format ("{0}{1}", FileName, SourcePosition.ToString ());
+			string posStr = "";
+			if (MessageSourceLine != 0) {
+				posStr = "(" + MessageSourceLine.ToString ();
+				if (MessageSourceColumn != 0)
+					posStr += "," + MessageSourceColumn.ToString ();
+
+				posStr += ")";
+			}
+
+			return string.Format ("{0}{1}", FileName, posStr);
 		}
 	}
 }

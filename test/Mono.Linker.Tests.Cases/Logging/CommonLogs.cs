@@ -11,9 +11,9 @@ namespace Mono.Linker.Tests.Cases.Logging
 #endif
 	[SetupLinkerArgument ("--custom-step", "Log.LogStep,LogStep.dll")]
 
-	[LogContainsExact ("illinker: error IL1000: Error")]
-	[LogContainsExact ("illinker: warning IL4000: Warning")]
-	[LogContainsExact ("logtest(1,1): info IL9000")]
+	[LogContains ("illinker: error IL0000: Error")]
+	[LogContains ("illinker: warning IL2001: Warning")]
+	[LogContains ("logtest(1,1): info IL6001")]
 	public class CommonLogs
 	{
 		public static void Main ()
