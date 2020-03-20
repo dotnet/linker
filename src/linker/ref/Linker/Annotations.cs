@@ -10,6 +10,7 @@ using Mono.Cecil.Cil;
 namespace Mono.Linker {
 
 	public partial class AnnotationStore {
+		public AnnotationStore (LinkContext context) => throw null;
 		public void Mark (IMetadataTokenProvider provider) { throw null; }
 		public void Mark (CustomAttribute attribute) { throw null; }
 	}
