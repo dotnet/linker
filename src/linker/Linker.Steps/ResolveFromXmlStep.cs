@@ -247,6 +247,7 @@ namespace Mono.Linker.Steps {
 
 			if (!IsRequired (nav)) {
 				Annotations.SetPreserve (type, preserve);
+				MarkChildren (type, nav);
 				return;
 			}
 
@@ -270,12 +271,7 @@ namespace Mono.Linker.Steps {
 			if (preserve != TypePreserve.Nothing)
 				Annotations.SetPreserve (type, preserve);
 
-			if (nav.HasChildren) {
-				MarkSelectedFields (nav, type);
-				MarkSelectedMethods (nav, type);
-				MarkSelectedEvents (nav, type);
-				MarkSelectedProperties (nav, type);
-			}
+			MarkChildren (type, nav);
 			Tracer.Pop ();
 		}
 
@@ -286,6 +282,16 @@ namespace Mono.Linker.Steps {
 				return;
 
 			ProcessFields (type, fields);
+		}
+
+		private void MarkChildren (TypeDefinition type, XPathNavigator nav)
+		{
+			if (nav.HasChildren) {
+				MarkSelectedFields (nav, type);
+				MarkSelectedMethods (nav, type);
+				MarkSelectedEvents (nav, type);
+				MarkSelectedProperties (nav, type);
+			}
 		}
 
 		void MarkSelectedMethods (XPathNavigator nav, TypeDefinition type)
