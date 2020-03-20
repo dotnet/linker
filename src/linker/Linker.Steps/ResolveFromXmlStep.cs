@@ -283,7 +283,7 @@ namespace Mono.Linker.Steps {
 			ProcessFields (type, fields);
 		}
 
-		private void MarkChildren (TypeDefinition type, XPathNavigator nav)
+		void MarkChildren (TypeDefinition type, XPathNavigator nav)
 		{
 			if (nav.HasChildren) {
 				MarkSelectedFields (nav, type);
