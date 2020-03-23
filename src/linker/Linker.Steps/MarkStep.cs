@@ -209,7 +209,7 @@ namespace Mono.Linker.Steps {
 			// We may get here for a type marked by an earlier step, or by a type
 			// marked indirectly as the result of some other InitializeType call.
 			// Just track this as already marked, and don't include a new source.
-			MarkType (type, new DependencyInfo (DependencyKind.AlreadyMarked));
+			MarkType (type, DependencyInfo.AlreadyMarked);
 
 			if (type.HasFields)
 				InitializeFields (type);
@@ -238,14 +238,14 @@ namespace Mono.Linker.Steps {
 		{
 			foreach (FieldDefinition field in type.Fields)
 				if (Annotations.IsMarked (field))
-					MarkField (field, new DependencyInfo (DependencyKind.AlreadyMarked));
+					MarkField (field, DependencyInfo.AlreadyMarked);
 		}
 
 		void InitializeMethods (Collection<MethodDefinition> methods)
 		{
 			foreach (MethodDefinition method in methods)
 				if (Annotations.IsMarked (method))
-					EnqueueMethod (method, new DependencyInfo (DependencyKind.AlreadyMarked));
+					EnqueueMethod (method, DependencyInfo.AlreadyMarked);
 		}
 
 		void MarkEntireType (TypeDefinition type, in DependencyInfo reason)
@@ -2322,7 +2322,7 @@ namespace Mono.Linker.Steps {
 			if (disablePrivateReflection == null)
 				throw new NotSupportedException ("Missing predefined 'System.Runtime.CompilerServices.DisablePrivateReflectionAttribute' type");
 
-			MarkType (disablePrivateReflection, new DependencyInfo (DependencyKind.DisablePrivateReflectionRequirement));
+			MarkType (disablePrivateReflection, DependencyInfo.DisablePrivateReflectionRequirement);
 
 			var ctor = MarkMethodIf (disablePrivateReflection.Methods, MethodDefinitionExtensions.IsDefaultConstructor, new DependencyInfo (DependencyKind.DisablePrivateReflectionRequirement, disablePrivateReflection));
 			_context.MarkedKnownMembers.DisablePrivateReflectionAttributeCtor = ctor ?? throw new MarkException ($"Could not find constructor on '{disablePrivateReflection.FullName}'");
