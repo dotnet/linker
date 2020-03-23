@@ -2679,7 +2679,7 @@ namespace Mono.Linker.Steps {
 				_context.Tracer.Push ($"Reflection-{accessedItem}");
 				try {
 					mark ();
-					_context.Tracer.ReportRecognizedReflectionPattern (MethodCalling, MethodCalled, accessedItem);
+					_context.ReflectionPatternRecorder.RecognizedReflectionAccessPattern (MethodCalling, MethodCalled, accessedItem);
 				} finally {
 					_context.Tracer.Pop ();
 				}
@@ -2694,7 +2694,7 @@ namespace Mono.Linker.Steps {
 				_patternReported = true;
 #endif
 
-				_context.Tracer.ReportUnrecognizedReflectionPattern (MethodCalling, MethodCalled, message);
+				_context.ReflectionPatternRecorder.UnrecognizedReflectionAccessPattern (MethodCalling, MethodCalled, message);
 			}
 
 			public void Dispose ()

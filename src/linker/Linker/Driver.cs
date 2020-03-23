@@ -500,8 +500,6 @@ namespace Mono.Linker {
 				if (dumpDependencies)
 					context.Tracer.AddRecorder (new XmlDependencyRecorder (context, dependenciesFileName));
 
-				context.Tracer.AddReflectionPatternRecorder (new LoggingReflectionPatternRecorder (context));
-
 				if (set_optimizations.Count > 0) {
 					foreach (var item in set_optimizations) {
 						if (item.Item3)
