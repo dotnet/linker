@@ -59,6 +59,7 @@ namespace Mono.Linker.Steps {
 		static DependencyKind [] _fieldReasons = new DependencyKind [] {
 			DependencyKind.AccessedViaReflection,
 			DependencyKind.AlreadyMarked,
+			DependencyKind.Custom,
 			DependencyKind.CustomAttributeField,
 			DependencyKind.EventSourceProviderField,
 			DependencyKind.FieldAccess,
@@ -77,6 +78,7 @@ namespace Mono.Linker.Steps {
 			DependencyKind.AttributeType,
 			DependencyKind.BaseType,
 			DependencyKind.CatchType,
+			DependencyKind.Custom,
 			DependencyKind.CustomAttributeArgumentType,
 			DependencyKind.CustomAttributeArgumentValue,
 			DependencyKind.DeclaringType,
@@ -105,6 +107,7 @@ namespace Mono.Linker.Steps {
 			DependencyKind.BaseMethod,
 			DependencyKind.CctorForType,
 			DependencyKind.CctorForField,
+			DependencyKind.Custom,
 			DependencyKind.DefaultCtorForNewConstrainedGenericArgument,
 			DependencyKind.DirectCall,
 			DependencyKind.ElementMethod,
