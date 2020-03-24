@@ -24,9 +24,4 @@
     <NoWarn>$(NoWarn);0618</NoWarn>
   </PropertyGroup>
 
-  <!-- Point the cecil project from the submodule to our ref/Mono.Cecil.csproj project for api compat -->
-  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Mono.Cecil' And '$(IsReferenceAssembly)' != 'true' And '$(TargetFramework)' != 'net40'">
-    <ContractProject>$(MSBuildThisFileDirectory)../src/cecil/ref/Mono.Cecil.csproj</ContractProject>
-  </PropertyGroup>
-
 </Project>
