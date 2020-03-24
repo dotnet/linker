@@ -16,10 +16,14 @@
   </PropertyGroup>
 
   <Import Project="Sdk.props" Sdk="Microsoft.DotNet.Arcade.Sdk" Condition="'$(MonoBuild)' == ''" />
+  <!-- Still use global versions even if not using arcade. -->
+  <Import Project="eng/Versions.props" Condition="'$(MonoBuild)' != ''" />
   <PropertyGroup>
     <IsPackable>false</IsPackable>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <_ToolsProjectTargets>$(ArtifactsToolsetDir)Common\Tools.proj.nuget.g.targets</_ToolsProjectTargets>
+    <!-- Set this to true to build against the submodule. Convenient for experimenting locally. -->
+    <UseLocalCecil Condition="'$(UseLocalCecil)' == ''">false</UseLocalCecil>
   </PropertyGroup>
 
 </Project>
