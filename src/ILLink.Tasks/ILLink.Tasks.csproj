@@ -13,8 +13,10 @@
     <!-- Include deps.json and runtimeconfig.json since we run illink.dll as a separate process. -->
     <IncludeJsonFilesInPackage>true</IncludeJsonFilesInPackage>
     <BuildOutputTargetFolder>tools</BuildOutputTargetFolder>
-    <!-- recommended by arcade for tools projects. generates an assembly version that includes patch number derived from date and build revision -->
+    <!-- Recommended by arcade for tools projects. generates an assembly version that includes patch number derived from date and build revision -->
     <AutoGenerateAssemblyVersion>true</AutoGenerateAssemblyVersion>
+    <!-- Place linker and cecil alongside ILLink.Tasks in the output, for integration tests. -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <ItemGroup>
