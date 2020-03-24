@@ -3,6 +3,9 @@ using System;
 namespace Mono.Linker
 {
 	public enum DependencyKind {
+	// For tracking any other kinds of dependencies in extensions to the core logic
+		Custom = -1, // the source is reserved to carry any dependency information tracked by the extender
+
 	// For use when we don't care about tracking a particular dependency
 		Unspecified = 0, // currently unused
 
@@ -123,9 +126,6 @@ namespace Mono.Linker
 		UnreachableBodyRequirement = 77, // method -> well-known type required for unreachable bodies optimization
 		DisablePrivateReflectionRequirement = 78, // null -> DisablePrivateReflectionAttribute type/methods (note that no specific source is reported)
 		AlreadyMarked = 79, // null -> member that has already been marked for a particular reason (used to propagate reasons internally, not reported)
-
-	// For tracking any other kinds of dependencies in extensions to the core logic
-		Custom = 80, // the source is reserved to carry any dependency information tracked by the extender
 	}
 
 	readonly public struct DependencyInfo : IEquatable<DependencyInfo> {
