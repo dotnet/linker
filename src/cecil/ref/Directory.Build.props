@@ -1,8 +1,0 @@
-<Project>
-
-  <!-- Explicitly import cecil's build properties because we are building from a different directory -->
-  <Import Project="../../../external/cecil/Directory.Build.props" />
-  <!-- Cecil's build properties don't find the overrides for projects in other directories, so import them explicitly. -->
-  <Import Project="../../../external/Mono.Cecil.overrides" />
-
-</Project>

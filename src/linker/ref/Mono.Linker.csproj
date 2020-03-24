@@ -18,7 +18,7 @@
 
   <ItemGroup>
     <PackageReference Condition="'$(UseLocalCecil)' == 'false'" Include="Mono.Cecil" Version="$(MonoCecilVersion)" />
-    <ProjectReference Condition="'$(UseLocalCecil)' == 'true'" Include="..\..\cecil\Mono.Cecil.csproj" />
+    <ProjectReference Condition="'$(UseLocalCecil)' == 'true'" Include="..\..\..\external\cecil\Mono.Cecil.csproj" />
   </ItemGroup>
 
 </Project>
