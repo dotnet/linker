@@ -12,13 +12,13 @@
         used for packages.config which we do not support. -->
     <NoWarn>$(NoWarn);NU5131</NoWarn>
     <!-- We need to create a package that includes the build output of the cecil projectreference below. -->
-    <IncludePublishOutput>true</IncludePublishOutput>
+    <IncludeBuildOutput>true</IncludeBuildOutput>
     <BuildOutputTargetFolder>ref</BuildOutputTargetFolder>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Use PrivateAssets to prevent the generated package from having a package dependency on cecil. -->
-    <ProjectReference Include="..\..\cecil\ref\Mono.Cecil.csproj" PrivateAssets="All" />
+    <PackageReference Condition="'$(UseLocalCecil)' == 'false'" Include="Mono.Cecil" Version="$(MonoCecilVersion)" />
+    <ProjectReference Condition="'$(UseLocalCecil)' == 'true'" Include="..\..\..\external\cecil\Mono.Cecil.csproj" />
   </ItemGroup>
 
 </Project>

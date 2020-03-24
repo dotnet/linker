@@ -12,6 +12,7 @@
     <AssemblyName>illink</AssemblyName>
     <Description>IL Linker</Description>
     <DefineConstants>$(DefineConstants);FEATURE_ILLINK</DefineConstants>
+    <!-- Ensure that this netcore TFM matches that in LinkTask.cs's ILLinkPath. -->
     <TargetFrameworks>netcoreapp3.0;net471</TargetFrameworks>
   </PropertyGroup>
 
@@ -36,8 +37,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\external\cecil\Mono.Cecil.csproj" />
-    <ProjectReference Include="..\..\external\cecil\symbols\pdb\Mono.Cecil.Pdb.csproj" />
+    <PackageReference Condition="'$(UseLocalCecil)' == 'false'" Include="Mono.Cecil" Version="$(MonoCecilVersion)" />
+    <ProjectReference Condition="'$(UseLocalCecil)' == 'true'" Include="..\..\external\cecil\Mono.Cecil.csproj" />
+    <ProjectReference Condition="'$(UseLocalCecil)' == 'true'" Include="..\..\external\cecil\symbols\pdb\Mono.Cecil.Pdb.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(MonoBuild)' == ''">
@@ -45,7 +47,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(MonoBuild)' != ''">
-    <ProjectReference Include="..\..\external\cecil\symbols\mdb\Mono.Cecil.Mdb.csproj" />
+    <ProjectReference Condition="'$(UseLocalCecil)' == 'true'" Include="..\..\external\cecil\symbols\mdb\Mono.Cecil.Mdb.csproj" />
   </ItemGroup>
 
   <!-- When publishing illink as a dependency of ILLink.Tasks, we want

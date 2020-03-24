@@ -17,18 +17,9 @@
     <TargetFrameworks>net471</TargetFrameworks>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
-    <DebugSymbols Condition="'$(DebugSymbols)' == ''">true</DebugSymbols>
-    <Optimize Condition="'$(Optimize)' == ''">false</Optimize>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
-    <Optimize Condition="'$(Optimize)' == ''">true</Optimize>
-  </PropertyGroup>
-
   <ItemGroup>
-    <ProjectReference Include="../../external/cecil/Mono.Cecil.csproj">
-    </ProjectReference>
+    <PackageReference Condition="'$(UseLocalCecil)' == 'false'" Include="Mono.Cecil" Version="$(MonoCecilVersion)" />
+    <ProjectReference Condition="'$(UseLocalCecil)' == 'true'" Include="../../external/cecil/Mono.Cecil.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(MonoBuild)' == ''">
