@@ -151,6 +151,12 @@ namespace Mono.Linker {
 			return fieldType_init.Contains (type);
 		}
 
+		[Obsolete ("Mark token providers with a reason instead.")]
+		public void Mark (IMetadataTokenProvider provider)
+		{
+			marked.Add (provider);
+		}
+
 		public void Mark (IMetadataTokenProvider provider, in DependencyInfo reason)
 		{
 			Debug.Assert (!(reason.Kind == DependencyKind.AlreadyMarked));
