@@ -9,7 +9,9 @@ using Mono.Cecil.Cil;
 
 namespace Mono.Linker {
 
-	public partial class AnnotationStore {
+	public partial class AnnotationStore
+	{
+		internal AnnotationStore() {}
 		public void Mark (IMetadataTokenProvider provider) { throw null; }
 		public void Mark (CustomAttribute attribute) { throw null; }
 	}

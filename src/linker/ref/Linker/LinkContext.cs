@@ -11,7 +11,9 @@ using Mono.Cecil.Cil;
 
 namespace Mono.Linker {
 
-	public class LinkContext {
+	public class LinkContext
+	{
+		internal LinkContext () { }
 		public AnnotationStore Annotations { get { throw null; } }
 		public TypeDefinition GetType (string fullName) { throw null; }
 	}
