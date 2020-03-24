@@ -22,8 +22,8 @@
     <IsPackable>false</IsPackable>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <_ToolsProjectTargets>$(ArtifactsToolsetDir)Common\Tools.proj.nuget.g.targets</_ToolsProjectTargets>
-    <!-- Set this to true to build against the submodule. Convenient for experimenting locally. -->
-    <UseLocalCecil Condition="'$(UseLocalCecil)' == ''">false</UseLocalCecil>
+    <!-- Set this to false to build against the submodule. Convenient for experimenting locally. -->
+    <UseCecilPackage Condition="'$(UseCecilPackage)' == ''">true</UseCecilPackage>
   </PropertyGroup>
 
 </Project>

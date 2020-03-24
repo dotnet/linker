@@ -40,8 +40,8 @@
 
   <ItemGroup>
     <ProjectReference Include="../linker/Mono.Linker.csproj" PrivateAssets="All" />
-    <PackageReference Condition="'$(UseLocalCecil)' == 'false'" Include="Mono.Cecil" Version="$(MonoCecilVersion)" PrivateAssets="All" />
-    <ProjectReference Condition="'$(UseLocalCecil)' == 'true'" Include="../../external/cecil/Mono.Cecil.csproj" PrivateAssets="All" />
+    <PackageReference Condition="'$(UseCecilPackage)' == 'true'" Include="Mono.Cecil" Version="$(MonoCecilVersion)" PrivateAssets="All" />
+    <ProjectReference Condition="'$(UseCecilPackage)' != 'true'" Include="../../external/cecil/Mono.Cecil.csproj" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>
