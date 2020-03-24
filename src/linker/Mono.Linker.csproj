@@ -12,6 +12,7 @@
     <AssemblyName>illink</AssemblyName>
     <Description>IL Linker</Description>
     <DefineConstants>$(DefineConstants);FEATURE_ILLINK</DefineConstants>
+    <!-- Ensure that this netcore TFM matches that in LinkTask.cs's ILLinkPath. -->
     <TargetFrameworks>netcoreapp3.0;net471</TargetFrameworks>
   </PropertyGroup>
 

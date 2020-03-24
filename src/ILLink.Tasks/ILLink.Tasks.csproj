@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <!-- Keep these in sync with _ILLinkTasksTFM in Sdk.props. -->
     <TargetFrameworks>netcoreapp3.0;net472</TargetFrameworks>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <Description>MSBuild tasks for running the IL Linker</Description>
