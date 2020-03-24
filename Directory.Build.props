@@ -23,6 +23,7 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <_ToolsProjectTargets>$(ArtifactsToolsetDir)Common\Tools.proj.nuget.g.targets</_ToolsProjectTargets>
     <!-- Set this to false to build against the submodule. Convenient for experimenting locally. -->
+    <UseCecilPackage Condition="'$(MonoBuild)' != '' And '$(UseCecilPackage)' == ''">false</UseCecilPackage>
     <UseCecilPackage Condition="'$(UseCecilPackage)' == ''">true</UseCecilPackage>
   </PropertyGroup>
 
