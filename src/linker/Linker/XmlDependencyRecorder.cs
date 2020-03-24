@@ -91,8 +91,8 @@ namespace Mono.Linker
 
 		public void RecordDependency (object target, in DependencyInfo reason, bool marked)
 		{
-			// Used for the DependencyInfo-based recorders. Don't do anything as we only
-			// record dependencies for the stack-based recorder.
+			// For now, just report a dependency from source to target without noting the DependencyKind.
+			RecordDependency (reason.Source, target, marked);
 		}
 
 		public void RecordDependency (object source, object target, bool marked)

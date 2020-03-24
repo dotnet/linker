@@ -151,13 +151,6 @@ namespace Mono.Linker {
 			return fieldType_init.Contains (type);
 		}
 
-		[Obsolete ("Mark token providers with a reason instead.")]
-		public void Mark (IMetadataTokenProvider provider)
-		{
-			marked.Add (provider);
-			Tracer.AddDependency (provider, true);
-		}
-
 		public void Mark (IMetadataTokenProvider provider, in DependencyInfo reason)
 		{
 			Debug.Assert (!(reason.Kind == DependencyKind.AlreadyMarked));
@@ -176,18 +169,6 @@ namespace Mono.Linker {
 			Debug.Assert (!(reason.Kind == DependencyKind.AlreadyMarked));
 			marked_attributes.Add (attribute);
 			Tracer.AddDirectDependency (attribute, reason, marked: true);
-		}
-
-		public void Push (IMetadataTokenProvider provider)
-		{
-			Tracer.Push (provider, false);
-		}
-
-		[Obsolete ("Mark token providers with a reason instead.")]
-		public void MarkAndPush (IMetadataTokenProvider provider)
-		{
-			Mark (provider);
-			Tracer.Push (provider, false);
 		}
 
 		public bool IsMarked (IMetadataTokenProvider provider)

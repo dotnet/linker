@@ -165,27 +165,22 @@ namespace Mono.Linker.Steps {
 
 		protected virtual void InitializeAssembly (AssemblyDefinition assembly)
 		{
-			Tracer.Push (assembly);
-			try {
-				var action = _context.Annotations.GetAction (assembly);
-				switch (action) {
-				case AssemblyAction.Copy:
-				case AssemblyAction.Save:
-					Tracer.AddDirectDependency (assembly, new DependencyInfo (DependencyKind.AssemblyAction, action), marked: false);
-					MarkEntireAssembly (assembly);
-					break;
-				case AssemblyAction.Link:
-				case AssemblyAction.AddBypassNGen:
-				case AssemblyAction.AddBypassNGenUsed:
-					MarkAssembly (assembly);
+			var action = _context.Annotations.GetAction (assembly);
+			switch (action) {
+			case AssemblyAction.Copy:
+			case AssemblyAction.Save:
+				Tracer.AddDirectDependency (assembly, new DependencyInfo (DependencyKind.AssemblyAction, action), marked: false);
+				MarkEntireAssembly (assembly);
+				break;
+			case AssemblyAction.Link:
+			case AssemblyAction.AddBypassNGen:
+			case AssemblyAction.AddBypassNGenUsed:
+				MarkAssembly (assembly);
 
-					foreach (TypeDefinition type in assembly.MainModule.Types)
-						InitializeType (type);
+				foreach (TypeDefinition type in assembly.MainModule.Types)
+					InitializeType (type);
 
-					break;
-				}
-			} finally {
-				Tracer.Pop ();
+				break;
 			}
 		}
 
@@ -324,12 +319,7 @@ namespace Mono.Linker.Steps {
 						continue;
 					if (!Annotations.IsMarked (type))
 						continue;
-					Tracer.Push (type);
-					try {
-						_context.MarkingHelpers.MarkExportedType (exported, assembly.MainModule, new DependencyInfo (DependencyKind.ExportedType, type));
-					} finally {
-						Tracer.Pop ();
-					}
+					_context.MarkingHelpers.MarkExportedType (exported, assembly.MainModule, new DependencyInfo (DependencyKind.ExportedType, type));
 				}
 			}
 		}
@@ -354,13 +344,10 @@ namespace Mono.Linker.Steps {
 		{
 			while (!QueueIsEmpty ()) {
 				(MethodDefinition method, DependencyInfo reason) = _methods.Dequeue ();
-				Tracer.Push (method);
 				try {
 					ProcessMethod (method, reason);
 				} catch (Exception e) {
 					throw new MarkException (string.Format ("Error processing method: '{0}' in assembly: '{1}'", method.FullName, method.Module.Name), e, method);
-				} finally {
-					Tracer.Pop ();
 				}
 			}
 		}
@@ -378,9 +365,7 @@ namespace Mono.Linker.Steps {
 		void ProcessVirtualMethods ()
 		{
 			foreach (MethodDefinition method in _virtual_methods) {
-				Tracer.Push (method);
 				ProcessVirtualMethod (method);
-				Tracer.Pop ();
 			}
 		}
 
@@ -507,23 +492,18 @@ namespace Mono.Linker.Steps {
 
 			bool markOnUse = _context.KeepUsedAttributeTypesOnly && Annotations.GetAction (GetAssemblyFromCustomAttributeProvider (provider)) == AssemblyAction.Link;
 
-			Tracer.Push (provider);
-			try {
-				foreach (CustomAttribute ca in provider.CustomAttributes) {
-					if (ProcessLinkerSpecialAttribute (ca, provider, reason)) {
-						continue;
-					}
-
-					if (markOnUse) {
-						_lateMarkedAttributes.Enqueue ((new AttributeProviderPair (ca, provider), reason));
-						continue;
-					}
-
-					MarkCustomAttribute (ca, reason);
-					MarkSpecialCustomAttributeDependencies (ca, provider);
+			foreach (CustomAttribute ca in provider.CustomAttributes) {
+				if (ProcessLinkerSpecialAttribute (ca, provider, reason)) {
+					continue;
 				}
-			} finally {
-				Tracer.Pop ();
+
+				if (markOnUse) {
+					_lateMarkedAttributes.Enqueue ((new AttributeProviderPair (ca, provider), reason));
+					continue;
+				}
+
+				MarkCustomAttribute (ca, reason);
+				MarkSpecialCustomAttributeDependencies (ca, provider);
 			}
 		}
 
@@ -712,26 +692,21 @@ namespace Mono.Linker.Steps {
 
 		protected virtual void MarkCustomAttribute (CustomAttribute ca, in DependencyInfo reason)
 		{
-			Tracer.Push ((object)ca.AttributeType ?? (object)ca);
-			try {
-				Annotations.Mark (ca, reason);
-				MarkMethod (ca.Constructor, new DependencyInfo (DependencyKind.AttributeConstructor, ca));
+			Annotations.Mark (ca, reason);
+			MarkMethod (ca.Constructor, new DependencyInfo (DependencyKind.AttributeConstructor, ca));
 
-				MarkCustomAttributeArguments (ca);
+			MarkCustomAttributeArguments (ca);
 
-				TypeReference constructor_type = ca.Constructor.DeclaringType;
-				TypeDefinition type = constructor_type.Resolve ();
+			TypeReference constructor_type = ca.Constructor.DeclaringType;
+			TypeDefinition type = constructor_type.Resolve ();
 
-				if (type == null) {
-					HandleUnresolvedType (constructor_type);
-					return;
-				}
-
-				MarkCustomAttributeProperties (ca, type);
-				MarkCustomAttributeFields (ca, type);
-			} finally {
-				Tracer.Pop ();
+			if (type == null) {
+				HandleUnresolvedType (constructor_type);
+				return;
 			}
+
+			MarkCustomAttributeProperties (ca, type);
+			MarkCustomAttributeFields (ca, type);
 		}
 
 		protected virtual bool ShouldMarkCustomAttribute (CustomAttribute ca, ICustomAttributeProvider provider)
@@ -852,12 +827,10 @@ namespace Mono.Linker.Steps {
 		protected void MarkCustomAttributeProperty (CustomAttributeNamedArgument namedArgument, TypeDefinition attribute, ICustomAttribute ca, in DependencyInfo reason)
 		{
 			PropertyDefinition property = GetProperty (attribute, namedArgument.Name);
-			Tracer.Push (property);
 			if (property != null)
 				MarkMethod (property.SetMethod, reason);
 
 			MarkCustomAttributeArgument (namedArgument.Argument, ca);
-			Tracer.Pop ();
 		}
 
 		PropertyDefinition GetProperty (TypeDefinition type, string propertyname)
@@ -1228,8 +1201,6 @@ namespace Mono.Linker.Steps {
 			if (CheckProcessed (type))
 				return null;
 
-			Tracer.Push (type);
-
 			MarkScope (type.Scope, type);
 			MarkType (type.BaseType, new DependencyInfo (DependencyKind.BaseType, type));
 			MarkType (type.DeclaringType, new DependencyInfo (DependencyKind.DeclaringType, type));
@@ -1299,8 +1270,6 @@ namespace Mono.Linker.Steps {
 			}
 
 			DoAdditionalTypeProcessing (type);
-
-			Tracer.Pop ();
 
 			ApplyPreserveInfo (type);
 
@@ -1607,11 +1576,9 @@ namespace Mono.Linker.Steps {
 				if (property.Name != property_name)
 					continue;
 
-				Tracer.Push (property);
 				// This marks methods directly without reporting the property.
 				MarkMethod (property.GetMethod, reason);
 				MarkMethod (property.SetMethod, reason);
-				Tracer.Pop ();
 			}
 		}
 
@@ -2059,7 +2026,6 @@ namespace Mono.Linker.Steps {
 			if (reference.DeclaringType is ArrayType)
 				return null;
 
-			Tracer.Push (reference);
 			if (reference.DeclaringType is GenericInstanceType) {
 				// Blame the method reference on the original reason without marking it.
 				Tracer.AddDirectDependency (reference, reason, marked: false);
@@ -2073,20 +2039,15 @@ namespace Mono.Linker.Steps {
 
 			MethodDefinition method = reference.Resolve ();
 
-			try {
-				if (method == null) {
-					HandleUnresolvedMethod (reference);
-					return null;
-				}
-
-				if (Annotations.GetAction (method) == MethodAction.Nothing)
-					Annotations.SetAction (method, MethodAction.Parse);
-
-				EnqueueMethod (method, reason);
-			} finally {
-				Tracer.Pop ();
+			if (method == null) {
+				HandleUnresolvedMethod (reference);
+				return null;
 			}
-			Tracer.AddDependency (method);
+
+			if (Annotations.GetAction (method) == MethodAction.Nothing)
+				Annotations.SetAction (method, MethodAction.Parse);
+
+			EnqueueMethod (method, reason);
 
 			return method;
 		}
@@ -2140,15 +2101,12 @@ namespace Mono.Linker.Steps {
 			if (markedForCall) {
 				// Record declaring type of a called method up-front as a special case so that we may
 				// track at least some method calls that trigger a cctor.
-				Tracer.Push (method);
 				MarkType (method.DeclaringType, new DependencyInfo (DependencyKind.DeclaringTypeOfCalledMethod, method));
-				Tracer.Pop ();
 			}
 
 			if (CheckProcessed (method))
 				return;
 
-			Tracer.Push (method);
 			if (!markedForCall)
 				MarkType (method.DeclaringType, new DependencyInfo (DependencyKind.DeclaringType, method));
 			MarkCustomAttributes (method, new DependencyInfo (DependencyKind.CustomAttribute, method));
@@ -2207,7 +2165,6 @@ namespace Mono.Linker.Steps {
 			DoAdditionalMethodProcessing (method);
 
 			ApplyPreserveMethods (method);
-			Tracer.Pop ();
 		}
 
 		// Allow subclassers to mark additional things when marking a method
@@ -2676,13 +2633,8 @@ namespace Mono.Linker.Steps {
 				_patternReported = true;
 #endif
 
-				_context.Tracer.Push ($"Reflection-{accessedItem}");
-				try {
-					mark ();
-					_context.ReflectionPatternRecorder.RecognizedReflectionAccessPattern (MethodCalling, MethodCalled, accessedItem);
-				} finally {
-					_context.Tracer.Pop ();
-				}
+				mark ();
+				_context.ReflectionPatternRecorder.RecognizedReflectionAccessPattern (MethodCalling, MethodCalled, accessedItem);
 			}
 
 			public void RecordUnrecognizedPattern (string message)

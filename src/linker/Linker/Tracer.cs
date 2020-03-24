@@ -66,33 +66,9 @@ namespace Mono.Linker
 			recorders.Add (recorder);
 		}
 
-		public void Push (object o, bool addDependency = true)
-		{
-			if (!IsRecordingEnabled ())
-				return;
-
-			if (addDependency && dependency_stack.Count > 0)
-				AddDependency (o);
-
-			dependency_stack.Push (o);
-		}
-
-		public void Pop ()
-		{
-			if (!IsRecordingEnabled ())
-				return;
-
-			dependency_stack.Pop ();
-		}
-
 		bool IsRecordingEnabled ()
 		{
 			return recorders != null;
-		}
-
-		public void AddDirectDependency (object b, object e)
-		{
-			ReportDependency (b, e, false);
 		}
 
 		public void AddDirectDependency (object target, in DependencyInfo reason, bool marked)
@@ -100,23 +76,6 @@ namespace Mono.Linker
 			if (IsRecordingEnabled ()) {
 				foreach (IDependencyRecorder recorder in recorders)
 					recorder.RecordDependency (target, reason, marked);
-			}
-		}
-
-		public void AddDependency (object o, bool marked = false)
-		{
-			if (!IsRecordingEnabled ())
-				return;
-
-			ReportDependency (dependency_stack.Count > 0 ? dependency_stack.Peek () : null, o, marked);
-		}
-
-		private void ReportDependency (object source, object target, bool marked)
-		{
-			if (IsRecordingEnabled ()) {
-				foreach (IDependencyRecorder recorder in recorders) {
-					recorder.RecordDependency (source, target, marked);
-				}
 			}
 		}
 	}
