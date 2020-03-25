@@ -66,7 +66,7 @@ namespace Mono.Linker
 		public override string ToString ()
 		{
 			string message = string.Format ("{0}: {1}{2} {3}{4}",
-						Origin.ToString() == null ?
+						Origin == null ?
 						#if NETCOREAPP
 							"illinker"
 						#else

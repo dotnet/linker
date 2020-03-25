@@ -7,9 +7,6 @@
 
 		public int MessageSourceColumn { get; }
 
-		public MessageOrigin ()
-		{
-		}
 
 		public MessageOrigin (string fileName, int messageSourceLine = 0, int messageSourceColumn = 0)
 		{
@@ -20,9 +17,6 @@
 
 		public override string ToString ()
 		{
-			if (FileName == string.Empty || FileName == null)
-				return null;
-
 			string posStr = "";
 			if (MessageSourceLine != 0) {
 				posStr = "(" + MessageSourceLine.ToString ();
