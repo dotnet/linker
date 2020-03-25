@@ -1,13 +1,6 @@
 ﻿namespace Mono.Linker
 {
 	public class MessageOrigin {
-
-#if NETCOREAPP
-		private const string ToolName = "illinker";
-#else
-		private const string ToolName = "monolinker";
-#endif
-
 		public string FileName { get; }
 
 		public int MessageSourceLine { get; }
@@ -18,7 +11,7 @@
 		{
 		}
 
-		public MessageOrigin (string fileName = ToolName, int messageSourceLine = 0, int messageSourceColumn = 0)
+		public MessageOrigin (string fileName, int messageSourceLine = 0, int messageSourceColumn = 0)
 		{
 			FileName = fileName;
 			MessageSourceLine = messageSourceLine;
@@ -28,7 +21,7 @@
 		public override string ToString ()
 		{
 			if (FileName == string.Empty || FileName == null)
-				return ToolName;
+				return null;
 
 			string posStr = "";
 			if (MessageSourceLine != 0) {

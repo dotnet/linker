@@ -12,7 +12,7 @@ namespace Mono.Linker
 		/// linker to output an error (or warning) message.
 		/// </summary>
 		public MessageOrigin Origin { get; }
-		
+
 		public MessageCategory Category { get; }
 
 		/// <summary>
@@ -24,18 +24,13 @@ namespace Mono.Linker
 		/// Code identifier for errors and warnings reported by the IL linker.
 		/// </summary>
 		public int Code { get; }
-		
+
 		/// <summary>
 		/// Optional user friendly text describing the error or warning.
 		/// </summary>
 		public string Text { get; }
 
-		public MSBuildMessageContainer (
-			int code,
-			MessageCategory category,
-			MessageOrigin origin,
-			string subcategory = MessageSubcategory.None,
-			string text = "")
+		public MSBuildMessageContainer (string text, int code, MessageCategory category, string subcategory = MessageSubcategory.None, MessageOrigin origin = null)
 		{
 			switch (code) {
 				// Errors
@@ -68,14 +63,20 @@ namespace Mono.Linker
 			Text = text;
 		}
 
-		public override string ToString()
+		public override string ToString ()
 		{
 			string message = string.Format ("{0}: {1}{2} {3}{4}",
-				Origin.ToString(),
-				Subcategory != MessageSubcategory.None ? Subcategory + " " : "",
-				Category.ToString().ToLowerInvariant(),
-				"IL" + Code.ToString("D4"),
-				!String.IsNullOrEmpty(Text) ? ": " + Text : Text);
+						Origin.ToString() == null ?
+						#if NETCOREAPP
+							"illinker"
+						#else
+							"monolinker"
+						#endif
+						: Origin.ToString (),
+						Subcategory != MessageSubcategory.None ? Subcategory + " " : "",
+						Category.ToString ().ToLowerInvariant (),
+						"IL" + Code.ToString ("D4"),
+						!String.IsNullOrEmpty (Text) ? ": " + Text : Text) ;
 			return message;
 		}
 	}
