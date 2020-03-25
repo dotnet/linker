@@ -108,7 +108,7 @@ namespace Mono.Linker.Steps
 				var bases = Annotations.GetBaseMethods (method);
 				// Devirtualize if a method is not override to existing marked methods
 				if (!IsAnyMarked (bases))
-					method.IsVirtual = false;
+					method.IsVirtual = method.IsFinal = method.IsNewSlot = false;
 			}
 		}
 

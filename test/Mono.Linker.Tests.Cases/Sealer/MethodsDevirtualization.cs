@@ -69,8 +69,8 @@ namespace Mono.Linker.Tests.Cases.Sealer.Data
 		public override bool B () => true;
 
 		[Kept]
-		[AddedPseudoAttributeAttribute ((uint)MethodAttributes.Final)]
 		[RemovedPseudoAttributeAttribute ((uint)MethodAttributes.Virtual)]
+		[RemovedPseudoAttributeAttribute ((uint)MethodAttributes.VtableLayoutMask)]
 		public virtual bool B2 () => false;
 
 		[Kept]
