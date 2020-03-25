@@ -10,6 +10,8 @@ namespace Mono.Linker.Steps
 {
 	public class SealerStep : BaseStep
 	{
+		HashSet<TypeDefinition> referencedBaseTypeCache;
+
 		public SealerStep ()
 		{
 		}
@@ -26,22 +28,34 @@ namespace Mono.Linker.Steps
 				ProcessType (type);
 		}
 
+		protected override void EndProcess ()
+		{
+			referencedBaseTypeCache = null;
+		}
+
 		bool IsSubclassed (TypeDefinition type)
 		{
-			foreach (var a in Context.GetAssemblies ()) {
-				foreach (var s in a.MainModule.Types) {
-					if (s.BaseType?.IsTypeOf (type.Namespace, type.Name) == true)
-						return true;
+			if (referencedBaseTypeCache == null) {
+				referencedBaseTypeCache = new HashSet<TypeDefinition> ();
+				foreach (var a in Context.GetAssemblies ()) {
+					foreach (var s in a.MainModule.Types) {
+						var btd = s.BaseType?.Resolve ();
+						if (btd != null)
+							referencedBaseTypeCache.Add (btd);
 
-					if (s.HasNestedTypes) {
-						foreach (var ns in s.NestedTypes) {
-							if (ns.BaseType?.IsTypeOf (type.Namespace, type.Name) == true)
-								return true;
+						if (s.HasNestedTypes) {
+							foreach (var ns in s.NestedTypes) {
+								btd = s.BaseType?.Resolve ();
+								if (btd != null)
+									referencedBaseTypeCache.Add (btd);
+							}
 						}
 					}
 				}
 			}
-			return false;
+
+			var bt = type.Resolve ();
+			return referencedBaseTypeCache.Contains (bt);
 		}
 
 		void ProcessType (TypeDefinition type)
