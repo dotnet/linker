@@ -13,7 +13,7 @@ namespace Mono.Linker.Tests.Cases.Logging
 
 	[LogContains ("illinker: error IL0000: Error")]
 	[LogContains ("illinker: warning IL2001: Warning")]
-	[LogContains ("logtest(1,1): info IL6001")]
+	[LogContains ("logtest(1,1): IL6001")]
 	public class CommonLogs
 	{
 		public static void Main ()

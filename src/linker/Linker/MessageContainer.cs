@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
+using System.Text;
 
 namespace Mono.Linker
 {
@@ -35,19 +36,19 @@ namespace Mono.Linker
 		{
 			switch (code) {
 				// Errors
-				case int _code when (_code >= 0 && _code <= 2000):
+				case int _code when (_code > 0 && _code <= 2000):
 					if (category != MessageCategory.Error)
 						throw new ArgumentException ($"MSBuild Message Container with code ${code} was expected to be of 'Error' category.");
 					break;
 
 				// Warnings
-				case int _code when (_code >= 2001 && _code <= 6000):
+				case int _code when (_code > 2000 && _code <= 6000):
 					if (category != MessageCategory.Warning)
 						throw new ArgumentException ($"MSBuild Message Container with code ${code} was expected to be of 'Warning' category.");
 					break;
 
 				// Info.
-				case int _code when (_code >= 6001 && _code <= 8000):
+				case int _code when (_code > 6000 && _code <= 8000):
 					if (category != MessageCategory.Info)
 						throw new ArgumentException ($"MSBuild Message Container with code ${code} was expected to be of 'Info' category.");
 					break;
@@ -68,15 +69,15 @@ namespace Mono.Linker
 
 		public string ToMSBuildString ()
 		{
-			const string originApp =
-#if NETCOREAPP
-			"illinker";
-#else
-			"monolinker";
-#endif
-
+			const string originApp = "illinker";
 			string origin = Origin?.ToString () ?? originApp;
-			string subCat = SubCategory != MessageSubCategory.None ? SubCategory + " " : "";
+
+			StringBuilder sb = new StringBuilder ();
+			sb.Append (origin).Append (":");
+
+			if (!string.IsNullOrEmpty (SubCategory))
+				sb.Append (" ").Append (SubCategory);
+
 			string cat;
 			switch (Category) {
 			case MessageCategory.Error:
@@ -90,10 +91,15 @@ namespace Mono.Linker
 				break;
 			}
 
-			string code = Code.ToString ("D4");
-			string text = !string.IsNullOrEmpty (Text) ? ": " + Text : Text;
+			if (!string.IsNullOrEmpty (cat))
+				sb.Append (" ").Append (cat);
 
-			return string.Format ($"{origin}: {subCat}{cat} IL{code}{text}");
+			sb.Append (" IL").Append (Code.ToString ("D4"));
+			if (!string.IsNullOrEmpty (Text))
+				sb.Append (": ").Append (Text);
+
+			// Expected output $"{Origin}: {SubCategory}{Category} IL{Code}: {Text}");
+			return sb.ToString ();
 		}
 	}
 }
