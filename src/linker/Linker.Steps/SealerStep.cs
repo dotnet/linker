@@ -60,6 +60,12 @@ namespace Mono.Linker.Steps
 
 		void ProcessType (TypeDefinition type)
 		{
+			if (type.HasNestedTypes) {
+				foreach (var nt in type.NestedTypes) {
+					ProcessType (nt);
+				}
+			}
+
 			//
 			// interface members are virtual (and we cannot change this)
 			//
@@ -71,12 +77,6 @@ namespace Mono.Linker.Steps
 			//
 			if (!type.IsAbstract && !type.IsSealed && !IsSubclassed (type))
 				SealType (type);
-
-			if (type.HasNestedTypes) {
-				foreach (var nt in type.NestedTypes) {
-					ProcessType (nt);
-				}
-			}
 
 			if (!type.HasMethods)
 				return;
