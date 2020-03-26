@@ -16,6 +16,7 @@ namespace ILLink.Tasks
 		///   Each path can also have an "action" metadata,
 		///   which will set the illink action to take for
 		///   that assembly.
+		///   Maps to '-reference', and possibly '-p'.
 		/// </summary>
 		[Required]
 		public ITaskItem [] AssemblyPaths { get; set; }
@@ -23,6 +24,7 @@ namespace ILLink.Tasks
 		/// <summary>
 		///    Paths to assembly files that are reference assemblies,
 		///    representing the surface area for compilation.
+		///    Maps to '-reference', with action set to 'skip' via '-p'.
 		/// </summary>
 		public ITaskItem [] ReferenceAssemblyPaths { get; set; }
 
@@ -41,6 +43,7 @@ namespace ILLink.Tasks
 
 		/// <summary>
 		///   The directory in which to place linked assemblies.
+		//    Maps to '-out'.
 		/// </summary>
 		[Required]
 		public ITaskItem OutputDirectory { get; set; }
@@ -49,17 +52,20 @@ namespace ILLink.Tasks
 		///   A list of XML root descriptor files specifying linker
 		///   roots at a granular level. See the mono/linker
 		///   documentation for details about the format.
+		///   Maps to '-x'.
 		/// </summary>
 		public ITaskItem [] RootDescriptorFiles { get; set; }
 
 		/// <summary>
 		///   Boolean specifying whether to clear initlocals flag on methods.
+		///   Maps to '--enable-opt clearinitlocals'.
 		/// </summary>
 		public bool ClearInitLocals { get; set; }
 
 		/// <summary>
 		///   A comma-separated list of assemblies whose methods
 		///   should have initlocals flag cleared if ClearInitLocals is true.
+		///   Maps to '-m ClearInitLocalsAssemblies <list>'
 		/// </summary>
 		public string ClearInitLocalsAssemblies { get; set; }
 
@@ -70,9 +76,35 @@ namespace ILLink.Tasks
 
 		/// <summary>
 		///   Make illink dump dependencies file for linker analyzer tool.
+		///   Maps to '--dump-dependencies'.
 		/// </summary>
 		public bool DumpDependencies { get; set; }
 
+		/// <summary>
+		///   Output linked debug symbols for linked assemblies.
+		///   Maps to '-b'.
+		/// </summary>
+		public bool LinkSymbols { get; set; }
+
+		/// <summary>
+		///	  Sets the default action for assemblies.
+		///   Maps to '-c' and '-u'.
+		/// </summary>
+		public string DefaultAction { get; set; }
+
+		/// <summary>
+		///	  A list of custom steps to insert into the linker pipeline.
+		///   Each ItemSpec should be the path to the assembly containing the custom step.
+		///   Each Item requires "type" metadata with the name of the custom step type.
+		///   Optional metadata:
+		///   beforestep: The name of a linker step. The custom step will be inserted before it.
+		///   afterstep: The name of a linker step. The custom step will be inserted after it.
+		///   The default (if neither beforestep or afterstep is specified) is to insert the
+		///   custom step at the end of the pipeline.
+		///   It is an error to specify both beforestep and afterstep.
+		///   Maps to '--custom-step'.
+		/// </summary>
+		public ITaskItem [] CustomSteps { get; set; }
 
 		private readonly static string DotNetHostPathEnvironmentName = "DOTNET_HOST_PATH";
 
@@ -187,6 +219,31 @@ namespace ILLink.Tasks
 				if ((ClearInitLocalsAssemblies != null) && (ClearInitLocalsAssemblies.Length > 0)) {
 					args.Append ("-m ClearInitLocalsAssemblies ");
 					args.AppendLine (ClearInitLocalsAssemblies);
+				}
+			}
+
+			if (LinkSymbols)
+				args.AppendLine ("-b");
+
+			if (DefaultAction != null)
+				args.Append ("-c ").Append (DefaultAction).Append ("-u ").AppendLine (DefaultAction);
+
+			if (CustomSteps != null) {
+				foreach (var customStep in CustomSteps) {
+					args.Append ("--custom-step ");
+					var stepPath = customStep.ItemSpec;
+					var stepType = customStep.GetMetadata ("type");
+					if (stepType == null)
+						throw new ArgumentException ("custom step requires \"type\" metadata");
+					var beforeStep = customStep.GetMetadata ("beforestep");
+					var afterStep = customStep.GetMetadata ("afterstep");
+					if (beforeStep != null && afterStep != null)
+						throw new ArgumentException ("custom step may not have both \"beforestep\" and \"afterstep\" metadata");
+					if (beforeStep != null)
+						args.Append ("+").Append(beforeStep).Append(":");
+					if (afterStep != null)
+						args.Append ("-").Append(afterStep).Append(":");
+					args.Append (stepType).Append (",").Append (stepPath);
 				}
 			}
 
