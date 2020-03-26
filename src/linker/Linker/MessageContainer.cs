@@ -1,24 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
+using System;
 
 namespace Mono.Linker
 {
-	public readonly struct MSBuildMessageContainer
+	public readonly struct MessageContainer
 	{
 		/// <summary>
-		/// Can either be the tool name (illinker, monolinker) or a filename with
-		/// parenthesized information about the line and column that triggered the
+		/// Optional data with a filename, line and column that triggered the
 		/// linker to output an error (or warning) message.
 		/// </summary>
-		public MessageOrigin Origin { get; }
+		public MessageOrigin? Origin { get; }
 
 		public MessageCategory Category { get; }
 
 		/// <summary>
 		/// Further categorize the message.
 		/// </summary>
-		public string Subcategory { get; }
+		public string SubCategory { get; }
 
 		/// <summary>
 		/// Code identifier for errors and warnings reported by the IL linker.
@@ -30,7 +31,7 @@ namespace Mono.Linker
 		/// </summary>
 		public string Text { get; }
 
-		public MSBuildMessageContainer (string text, int code, MessageCategory category, string subcategory = MessageSubcategory.None, MessageOrigin origin = null)
+		public MessageContainer (MessageCategory category, string text, int code, string subcategory = MessageSubCategory.None, MessageOrigin? origin = null)
 		{
 			switch (code) {
 				// Errors
@@ -59,25 +60,40 @@ namespace Mono.Linker
 			Code = code;
 			Category = category;
 			Origin = origin;
-			Subcategory = subcategory;
+			SubCategory = subcategory;
 			Text = text;
 		}
 
-		public override string ToString ()
+		public override string ToString () => ToMSBuildString ();
+
+		public string ToMSBuildString ()
 		{
-			string message = string.Format ("{0}: {1}{2} {3}{4}",
-						Origin == null ?
-						#if NETCOREAPP
-							"illinker"
-						#else
-							"monolinker"
-						#endif
-						: Origin.ToString (),
-						Subcategory != MessageSubcategory.None ? Subcategory + " " : "",
-						Category.ToString ().ToLowerInvariant (),
-						"IL" + Code.ToString ("D4"),
-						!String.IsNullOrEmpty (Text) ? ": " + Text : Text) ;
-			return message;
+			const string originApp =
+#if NETCOREAPP
+			"illinker";
+#else
+			"monolinker";
+#endif
+
+			string origin = Origin?.ToString () ?? originApp;
+			string subCat = SubCategory != MessageSubCategory.None ? SubCategory + " " : "";
+			string cat;
+			switch (Category) {
+			case MessageCategory.Error:
+				cat = "error";
+				break;
+			case MessageCategory.Warning:
+				cat = "warning";
+				break;
+			default:
+				cat = "";
+				break;
+			}
+
+			string code = Code.ToString ("D4");
+			string text = !string.IsNullOrEmpty (Text) ? ": " + Text : Text;
+
+			return string.Format ($"{origin}: {subCat}{cat} IL{code}{text}");
 		}
 	}
 }

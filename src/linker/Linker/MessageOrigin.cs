@@ -1,32 +1,37 @@
-﻿namespace Mono.Linker
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
+using System.Text;
+
+namespace Mono.Linker
 {
-	public class MessageOrigin {
+	public readonly struct MessageOrigin
+	{
 		public string FileName { get; }
+		public int SourceLine { get; }
+		public int SourceColumn { get; }
 
-		public int MessageSourceLine { get; }
-
-		public int MessageSourceColumn { get; }
-
-
-		public MessageOrigin (string fileName, int messageSourceLine = 0, int messageSourceColumn = 0)
+		public MessageOrigin (string fileName, int sourceLine = 0, int sourceColumn = 0)
 		{
 			FileName = fileName;
-			MessageSourceLine = messageSourceLine;
-			MessageSourceColumn = messageSourceColumn;
+			SourceLine = sourceLine;
+			SourceColumn = sourceColumn;
 		}
 
 		public override string ToString ()
 		{
-			string posStr = "";
-			if (MessageSourceLine != 0) {
-				posStr = "(" + MessageSourceLine.ToString ();
-				if (MessageSourceColumn != 0)
-					posStr += "," + MessageSourceColumn.ToString ();
+			StringBuilder sb = new StringBuilder (FileName);
 
-				posStr += ")";
+			if (SourceLine != 0) {
+				sb.Append ("(").Append (SourceLine);
+				if (SourceColumn != 0)
+					sb.Append (",").Append (SourceColumn);
+
+				sb.Append (")");
 			}
 
-			return string.Format ("{0}{1}", FileName, posStr);
+			return sb.ToString ();
 		}
 	}
 }
