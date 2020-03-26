@@ -8,9 +8,9 @@ namespace Log
 	{
 		public void Process (LinkContext context)
 		{
-			MSBuildMessageContainer msgError = new MSBuildMessageContainer("Error", 0, MessageCategory.Error);
-			MSBuildMessageContainer msgWarning = new MSBuildMessageContainer("Warning", 2001, MessageCategory.Warning);
-			MSBuildMessageContainer msgInfo = new MSBuildMessageContainer(null, 6001, MessageCategory.Info, origin: new MessageOrigin("logtest", 1, 1));
+			var msgError = new MessageContainer (MessageCategory.Error, "Error", 0);
+			var msgWarning = new MessageContainer (MessageCategory.Warning, "Warning", 2001);
+			var msgInfo = new MessageContainer (MessageCategory.Info, null, 6001, origin: new MessageOrigin("logtest", 1, 1));
 			context.LogMessage (msgError);
 			context.LogMessage (msgWarning);
 			context.LogMessage (msgInfo);
