@@ -97,10 +97,9 @@ namespace Mono.Linker.Dataflow
 
 					// We convert indices from metadata space to IL space here.
 					// IL space assigns index 0 to the `this` parameter on instance methods.
-					int offset = method.HasThis && !method.ExplicitThis ? 1 : 0;
+					int offset = method.HasImplicitThis () ? 1 : 0;
 
-					for (int i = 0; i < method.Parameters.Count; i++) {
-						
+					for (int i = 0; i < method.Parameters.Count; i++) {						
 						if (!IsTypeInterestingForDataflow (method.Parameters [i].ParameterType)) {
 							continue;
 						}
@@ -165,7 +164,7 @@ namespace Mono.Linker.Dataflow
 						if (annotatedMethods.Any (a => a.Method == setMethod)) {
 							// TODO: warn: duplicate annotation. not propagating.
 						} else {
-							int offset = setMethod.HasThis && !setMethod.ExplicitThis ? 1 : 0;
+							int offset = setMethod.HasImplicitThis () ? 1 : 0;
 							if (setMethod.Parameters.Count > 0) {
 								DynamicallyAccessedMemberKinds [] paramAnnotations = new DynamicallyAccessedMemberKinds [setMethod.Parameters.Count + offset];
 								paramAnnotations [offset] = annotation;
@@ -176,7 +175,7 @@ namespace Mono.Linker.Dataflow
 
 					FieldDefinition backingFieldFromGetter = null;
 
-					// Propagate the annotation to the setter method
+					// Propagate the annotation to the getter method
 					MethodDefinition getMethod = property.GetMethod;
 					if (getMethod != null) {
 
@@ -216,7 +215,7 @@ namespace Mono.Linker.Dataflow
 		private bool ScanMethodBodyForFieldAccess (MethodBody body, bool write, out FieldDefinition found)
 		{
 			// Tries to find the backing field for a property getter/setter.
-			// Returns true if this is a method body that we can unambiguous analyze.
+			// Returns true if this is a method body that we can unambiguously analyze.
 			// The found field could still be null if there's no backing store.
 
 			// TODO: could restrict this to compiler-generated fields as well so that
