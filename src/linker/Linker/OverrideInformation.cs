@@ -11,9 +11,9 @@ namespace Mono.Linker {
 			MatchingInterfaceImplementation = matchingInterfaceImplementation;
 		}
 
-		public MethodDefinition Base { get; private set; }
-		public MethodDefinition Override { get; private set; }
-		public InterfaceImplementation MatchingInterfaceImplementation { get; private set; }
+		public MethodDefinition Base { get; }
+		public MethodDefinition Override { get; }
+		public InterfaceImplementation MatchingInterfaceImplementation { get; }
 
 		public bool IsOverrideOfInterfaceMember
 		{
