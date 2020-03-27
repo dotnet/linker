@@ -218,10 +218,7 @@ namespace Mono.Linker.Dataflow
 			// Returns true if this is a method body that we can unambiguously analyze.
 			// The found field could still be null if there's no backing store.
 
-			// TODO: could restrict this to compiler-generated fields as well so that
-			// it only works for auto properties, but maybe that's too restrictive.
-
-			found = null;
+			FieldReference foundReference = null;
 
 			foreach (Instruction instruction in body.Instructions) {
 				switch (instruction.OpCode.Code) {
@@ -230,24 +227,38 @@ namespace Mono.Linker.Dataflow
 					case Code.Stsfld when write:
 					case Code.Stfld when write:
 
-						FieldDefinition field = (instruction.Operand as FieldReference)?.Resolve ();
-						if (field != null && field.IsStatic == body.Method.IsStatic) {
-							if (found != null) {
-								// This writes/reads multiple fields - can't guess which one is the backing store.
-								found = null;
-								return false;
-							}
-
-							found = field;
+						if (foundReference != null) {
+							// This writes/reads multiple fields - can't guess which one is the backing store.
+							// Return failure.
+							found = null;
+							return false;
 						}
+
+						foundReference = (FieldReference)instruction.Operand;
 						break;
 				}
 			}
 
-			// If the field we found is not a field on this type, let's treat this as a failure to propagate.
-			if (found != null
-				&& found.DeclaringType != body.Method.DeclaringType) {
+			if (foundReference == null) {
+				// Doesn't access any fields. Could be e.g. "Type Foo => typeof(Bar);"
+				// Return success.
+				found = null;
+				return true;
+			}
 
+			found = foundReference.Resolve ();
+
+			if (found == null) {
+				// If the field doesn't resolve, it can't be a field on the current type
+				// anyway. Return failure.
+				return false;
+			}
+
+			if (found.DeclaringType != body.Method.DeclaringType ||
+				found.IsStatic != body.Method.IsStatic ||
+				!found.IsCompilerGenerated()) {
+				// A couple heuristics to make sure we got the right field.
+				// Return failure.
 				found = null;
 				return false;
 			}
