@@ -289,6 +289,12 @@ namespace Mono.Linker {
 
 							continue;
 
+						case "--keep-fsharp-compilation-resources":
+							if (!GetBoolParam (token, l => context.KeepFSharpCompilationResources = l))
+								return false;
+
+							continue;
+
 						case "--ignore-descriptors":
 							if (!GetBoolParam (token, l => ignoreDescriptors = l))
 								return false;
