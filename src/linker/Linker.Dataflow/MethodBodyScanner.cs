@@ -164,7 +164,7 @@ namespace Mono.Linker.Dataflow
 					_foundEndOfPrevBlock = false;
 				}
 
-				if (op.OpCode.IsControlFlowInstruction()) {
+				if (op.OpCode.IsControlFlowInstruction ()) {
 					_foundEndOfPrevBlock = true;
 				}
 
@@ -281,7 +281,7 @@ namespace Mono.Linker.Dataflow
 						currentStack.Push (new StackSlot (NullValue.Instance));
 						break;
 
-					
+
 					case Code.Ldc_I4_0:
 					case Code.Ldc_I4_1:
 					case Code.Ldc_I4_2:
@@ -327,9 +327,12 @@ namespace Mono.Linker.Dataflow
 					case Code.Ldc_I8:
 					case Code.Ldc_R4:
 					case Code.Ldc_R8:
-					case Code.Ldsfld:
 					case Code.Ldsflda:
 						PushUnknown (currentStack);
+						break;
+
+					case Code.Ldsfld:
+						ScanLdsfld (operation, currentStack, thisMethod);
 						break;
 
 					case Code.Ldarg:
@@ -432,8 +435,11 @@ namespace Mono.Linker.Dataflow
 						break;
 
 					case Code.Ldfld:
+						ScanLdfld (operation, currentStack, thisMethod, methodBody);
+						break;
+
 					case Code.Ldflda:
-						// TODO: model field loads
+						// TODO: model field loads by ref
 						PopUnknown (currentStack, 1, methodBody, operation.Offset);
 						PushUnknown (currentStack);
 						break;
@@ -443,7 +449,7 @@ namespace Mono.Linker.Dataflow
 							currentStack.Push (new StackSlot (new ArrayValue (count.Value)));
 						}
 						break;
-					
+
 					case Code.Cpblk:
 					case Code.Initblk:
 					case Code.Stelem_I:
@@ -458,16 +464,12 @@ namespace Mono.Linker.Dataflow
 						PopUnknown (currentStack, 3, methodBody, operation.Offset);
 						break;
 
-					case Code.Stfld: {
-							StackSlot valueToStoreSlot = PopUnknown (currentStack, 1, methodBody, operation.Offset);
-							StackSlot objectToStoreIntoSlot = PopUnknown (currentStack, 1, methodBody, operation.Offset);
-							// TODO: model field stores
-						}
+					case Code.Stfld:
+						ScanStfld (operation, currentStack, thisMethod, methodBody);
 						break;
 
 					case Code.Stsfld:
-						PopUnknown (currentStack, 1, methodBody, operation.Offset);
-						// TODO: model field stores
+						ScanStsfld (operation, currentStack, thisMethod, methodBody);
 						break;
 
 					case Code.Cpobj:
@@ -666,9 +668,8 @@ namespace Mono.Linker.Dataflow
 			MethodBody methodBody)
 		{
 			if (operation.Operand is TypeReference typeReference) {
-				var resolvedReference = typeReference.Resolve();
-				if (resolvedReference != null)
-				{
+				var resolvedReference = typeReference.Resolve ();
+				if (resolvedReference != null) {
 					StackSlot slot = new StackSlot (new RuntimeTypeHandleValue (resolvedReference));
 					currentStack.Push (slot);
 					return;
@@ -693,6 +694,72 @@ namespace Mono.Linker.Dataflow
 			}
 
 			StoreMethodLocalValue (locals, valueToStore.Value, localDef, curBasicBlock);
+		}
+
+		protected abstract ValueNode GetFieldValue (MethodDefinition method, ValueNode instanceValue, FieldDefinition field);
+
+		private void ScanLdsfld (
+			Instruction operation,
+			Stack<StackSlot> currentStack,
+			MethodDefinition thisMethod)
+		{
+			FieldDefinition field = (FieldDefinition)operation.Operand;
+			if (field != null) {
+				StackSlot slot = new StackSlot (GetFieldValue (thisMethod, null, field), isByRef: false);
+				currentStack.Push (slot);
+				return;
+			}
+
+			PushUnknown (currentStack);
+		}
+
+		private void ScanLdfld (
+			Instruction operation,
+			Stack<StackSlot> currentStack,
+			MethodDefinition thisMethod,
+			MethodBody methodBody)
+		{
+			StackSlot instanceValue = PopUnknown (currentStack, 1, methodBody, operation.Offset);
+
+			FieldDefinition field = (FieldDefinition)operation.Operand;
+			if (field != null) {
+				StackSlot slot = new StackSlot (GetFieldValue (thisMethod, instanceValue.Value, field), isByRef: false);
+				currentStack.Push (slot);
+				return;
+			}
+
+			PushUnknown (currentStack);
+		}
+
+		protected abstract void HandleStoreField (MethodDefinition method, FieldDefinition field, Instruction operation, ValueNode instanceValue, ValueNode valueToStore);
+
+		private void ScanStfld (
+			Instruction operation,
+			Stack<StackSlot> currentStack,
+			MethodDefinition thisMethod,
+			MethodBody methodBody)
+		{
+			StackSlot valueToStoreSlot = PopUnknown (currentStack, 1, methodBody, operation.Offset);
+			StackSlot objectToStoreIntoSlot = PopUnknown (currentStack, 1, methodBody, operation.Offset);
+
+			FieldDefinition field = (FieldDefinition)operation.Operand;
+			if (field != null) {
+				HandleStoreField (thisMethod, field, operation, objectToStoreIntoSlot.Value, valueToStoreSlot.Value);
+			}
+		}
+
+		private void ScanStsfld (
+			Instruction operation,
+			Stack<StackSlot> currentStack,
+			MethodDefinition thisMethod,
+			MethodBody methodBody)
+		{
+			StackSlot valueToStoreSlot = PopUnknown (currentStack, 1, methodBody, operation.Offset);
+
+			FieldDefinition field = (FieldDefinition)operation.Operand;
+			if (field != null) {
+				HandleStoreField (thisMethod, field, operation, null, valueToStoreSlot.Value);
+			}
 		}
 
 		private static VariableDefinition GetLocalDef (Instruction operation, Collection<VariableDefinition> localVariables)

@@ -3548,6 +3548,25 @@ namespace Mono.Linker.Steps {
 				};
 			}
 
+			protected override ValueNode GetFieldValue (MethodDefinition method, ValueNode instanceValue, FieldDefinition field)
+			{
+				DynamicallyAccessedMemberKinds memberKinds = _flowAnnotations.GetFieldAnnotation (field);
+				return new LoadFieldValue (instanceValue, field, memberKinds) {
+					SourceContext = method
+				};
+			}
+
+			protected override void HandleStoreField (MethodDefinition method, FieldDefinition field, Instruction operation, ValueNode instanceValue, ValueNode valueToStore)
+			{
+				var requiredMemberKinds = _flowAnnotations.GetFieldAnnotation (field);
+				if (requiredMemberKinds != 0) {
+					// TODO: There's no way to represent store to a field given current ReflectionPatternContext (and the underlying IReflectionPatterRecorder)
+					var reflectionContext = new ReflectionPatternContext (_markStep._context, method, method, operation.Offset);
+					reflectionContext.AnalyzingPattern ();
+					RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberKinds, valueToStore, field);
+				}
+			}
+
 			public override bool HandleCall (MethodBody callingMethodBody, MethodReference calledMethod, Instruction operation, ValueNodeList methodParams, out ValueNode methodReturnValue)
 			{
 				var reflectionContext = new ReflectionPatternContext (_markStep._context, callingMethodBody.Method, calledMethod.Resolve (), operation.Offset);
