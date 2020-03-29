@@ -3670,9 +3670,10 @@ namespace Mono.Linker.Steps {
 			{
 				switch (value) {
 					case MethodParameterValue methodParameterValue: {
-							if (methodParameterValue.SourceContext is MethodDefinition method &&
-								method.Parameters.Count > (methodParameterValue.ParameterIndex - (method.HasImplicitThis () ? 1 : 0))) {
-								return GetMetadataTokenDescriptionForErrorMessage (method.Parameters [methodParameterValue.ParameterIndex - (method.HasImplicitThis () ? 1 : 0)]);
+							if (methodParameterValue.SourceContext is MethodDefinition method) {
+								int declaredParameterIndex = methodParameterValue.ParameterIndex - (method.HasImplicitThis () ? 1 : 0);
+								if (declaredParameterIndex >= 0 && declaredParameterIndex < method.Parameters.Count)
+									return GetMetadataTokenDescriptionForErrorMessage (method.Parameters [declaredParameterIndex]);
 							}
 
 							return $"method prameter #{methodParameterValue.ParameterIndex}";
