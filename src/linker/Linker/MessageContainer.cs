@@ -25,39 +25,41 @@ namespace Mono.Linker
 		/// <summary>
 		/// Code identifier for errors and warnings reported by the IL linker.
 		/// </summary>
-		public int Code { get; }
+		public int? Code { get; }
 
 		/// <summary>
 		/// Optional user friendly text describing the error or warning.
 		/// </summary>
 		public string Text { get; }
 
-		public MessageContainer (MessageCategory category, string text, int code, string subcategory = MessageSubCategory.None, MessageOrigin? origin = null)
+		public static MessageContainer CreateErrorMessage (string text, int code, string subcategory = MessageSubCategory.None, MessageOrigin? origin = null)
 		{
-			switch (code) {
-				// Errors
-				case int _code when (_code > 0 && _code <= 2000):
-					if (category != MessageCategory.Error)
-						throw new ArgumentException ($"MSBuild Message Container with code ${code} was expected to be of 'Error' category.");
-					break;
+			if (!(code >= 0 && code <= 2000))
+				throw new ArgumentException ($"The provided code '${code}' does not fall into the error category, which is in the range of 0 to 2000 (inclusive).");
 
-				// Warnings
-				case int _code when (_code > 2000 && _code <= 6000):
-					if (category != MessageCategory.Warning)
-						throw new ArgumentException ($"MSBuild Message Container with code ${code} was expected to be of 'Warning' category.");
-					break;
+			return new MessageContainer (MessageCategory.Error, text, code, subcategory, origin);
+		}
 
-				// Info.
-				case int _code when (_code > 6000 && _code <= 8000):
-					if (category != MessageCategory.Info)
-						throw new ArgumentException ($"MSBuild Message Container with code ${code} was expected to be of 'Info' category.");
-					break;
+		public static MessageContainer CreateWarningMessage (string text, int code, string subcategory = MessageSubCategory.None, MessageOrigin? origin = null)
+		{
+			if (!(code > 2000 && code <= 6000))
+				throw new ArgumentException ($"The provided code '${code}' does not fall into the warning category, which is in the range of 2001 to 6000 (inclusive).");
 
-				// Custom step
-				default:
-					break;
-			}
+			return new MessageContainer (MessageCategory.Warning, text, code, subcategory, origin);
+		}
 
+		public static MessageContainer CreateInfoMessage (string text)
+		{
+			return new MessageContainer (MessageCategory.Info, text, null);
+		}
+
+		public static MessageContainer CreateDiagnosticsMessage (string text)
+		{
+			return new MessageContainer (MessageCategory.Diagnostic, text, null);
+		}
+
+		private MessageContainer (MessageCategory category, string text, int? code, string subcategory = MessageSubCategory.None, MessageOrigin? origin = null)
+		{
 			Code = code;
 			Category = category;
 			Origin = origin;
@@ -91,12 +93,18 @@ namespace Mono.Linker
 				break;
 			}
 
-			if (!string.IsNullOrEmpty (cat))
-				sb.Append (" ").Append (cat);
+			if (!string.IsNullOrEmpty (cat)) {
+				sb.Append (" ")
+					.Append (cat)
+					.Append (" IL")
+					.Append (Code.Value.ToString ("D4"));
 
-			sb.Append (" IL").Append (Code.ToString ("D4"));
-			if (!string.IsNullOrEmpty (Text))
-				sb.Append (": ").Append (Text);
+				if (!string.IsNullOrEmpty (Text))
+					sb.Append (": ").Append (Text);
+			}
+			else {
+				sb.Append (" " + Text);
+			}
 
 			// Expected output $"{Origin}: {SubCategory}{Category} IL{Code}: {Text}");
 			return sb.ToString ();

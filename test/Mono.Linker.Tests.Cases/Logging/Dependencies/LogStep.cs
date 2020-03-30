@@ -6,14 +6,16 @@ namespace Log
 {
 	public class LogStep : IStep
 	{
-		public void Process (LinkContext context)
+		public void Process(LinkContext context)
 		{
-			var msgError = new MessageContainer (MessageCategory.Error, "Error", 0);
-			var msgWarning = new MessageContainer (MessageCategory.Warning, "Warning", 2001);
-			var msgInfo = new MessageContainer (MessageCategory.Info, null, 6001, origin: new MessageOrigin("logtest", 1, 1));
+			var msgError = MessageContainer.CreateErrorMessage ("Error", 0);
+			var msgWarning = MessageContainer.CreateWarningMessage("Warning", 2001, origin: new MessageOrigin("logtest", 1, 1));
+			var msgInfo = MessageContainer.CreateInfoMessage ("Info");
+			var msgDiagnostics = MessageContainer.CreateDiagnosticsMessage ("Diagnostics");
 			context.LogMessage (msgError);
 			context.LogMessage (msgWarning);
 			context.LogMessage (msgInfo);
+			context.LogMessage (msgDiagnostics);
 		}
 	}
 }
