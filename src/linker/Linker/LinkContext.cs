@@ -116,8 +116,6 @@ namespace Mono.Linker {
 
 		public bool KeepDependencyAttributes { get; set; }
 
-		public bool KeepFSharpCompilationResources { get; set; }
-
 		public bool StripResources { get; set; }
 
 		public List<string> Substitutions { get; private set; }

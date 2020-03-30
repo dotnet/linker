@@ -180,6 +180,7 @@ namespace Mono.Linker {
 				bool removeCAS = true;
 				bool new_mvid_used = false;
 				bool deterministic_used = false;
+				bool keepFSharpCompilationResources = false;
 
 				bool resolver = false;
 				while (arguments.Count > 0) {
@@ -290,7 +291,7 @@ namespace Mono.Linker {
 							continue;
 
 						case "--keep-fsharp-compilation-resources":
-							if (!GetBoolParam (token, l => context.KeepFSharpCompilationResources = l))
+							if (!GetBoolParam (token, l => keepFSharpCompilationResources = l))
 								return false;
 
 							continue;
@@ -555,6 +556,10 @@ namespace Mono.Linker {
 					var excluded = new string [excluded_features.Count];
 					excluded_features.CopyTo (excluded);
 					context.ExcludedFeatures = excluded;
+				}
+
+				if (keepFSharpCompilationResources) {
+					p.RemoveStep (typeof (RemoveResourcesStep));
 				}
 
 				p.AddStepBefore (typeof (MarkStep), new RemoveUnreachableBlocksStep ());
@@ -947,6 +952,7 @@ namespace Mono.Linker {
 			p.AppendStep (new PreserveDependencyLookupStep ());
 			p.AppendStep (new TypeMapStep ());
 			p.AppendStep (new MarkStep ());
+			p.AppendStep (new RemoveResourcesStep());
 			p.AppendStep (new SweepStep ());
 			p.AppendStep (new CodeRewriterStep ());
 			p.AppendStep (new CleanStep ());

@@ -26,9 +26,6 @@ namespace Mono.Linker.Steps
 			constExprMethods = new Dictionary<MethodDefinition, Instruction> ();
 			foreach (var assembly in assemblies) {
 				FindConstantExpressionsMethods (assembly.MainModule.Types);
-
-				if (Context.KeepFSharpCompilationResources) continue;
-				RemoveFSharpCompilationResources (assembly);
 			}
 
 			if (constExprMethods.Count == 0)
@@ -48,18 +45,6 @@ namespace Mono.Linker.Steps
 					RewriteBodies (assembly.MainModule.Types);
 				}
 			} while (constExprMethodsCount < constExprMethods.Count);
-		}
-
-		private void RemoveFSharpCompilationResources (AssemblyDefinition assembly)
-		{
-			var resourcesInAssembly = assembly.MainModule.Resources.Select (r => r.Name);
-			foreach (var resource in resourcesInAssembly.Where (IsFSharpCompilationResource)) {
-				Annotations.AddResourceToRemove (assembly, resource);
-			}
-
-			static bool IsFSharpCompilationResource (string resourceName)
-				=> resourceName.StartsWith ("FSharpSignatureData")
-				|| resourceName.StartsWith ("FSharpOptimizationData");
 		}
 
 		void FindConstantExpressionsMethods (Collection<TypeDefinition> types)
