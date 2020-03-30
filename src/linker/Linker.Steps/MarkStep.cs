@@ -3563,7 +3563,7 @@ namespace Mono.Linker.Steps {
 					// TODO: There's no way to represent store to a field given current ReflectionPatternContext (and the underlying IReflectionPatterRecorder)
 					var reflectionContext = new ReflectionPatternContext (_markStep._context, method, method, operation.Offset);
 					reflectionContext.AnalyzingPattern ();
-					RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberKinds, valueToStore, field);
+					RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberKinds, valueToStore);
 				}
 			}
 
