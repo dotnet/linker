@@ -226,7 +226,7 @@ namespace ILLink.Tasks
 				args.AppendLine ("-b");
 
 			if (DefaultAction != null)
-				args.Append ("-c ").Append (DefaultAction).Append ("-u ").AppendLine (DefaultAction);
+				args.Append ("-c ").Append (DefaultAction).Append (" -u ").AppendLine (DefaultAction);
 
 			if (CustomSteps != null) {
 				foreach (var customStep in CustomSteps) {
@@ -235,15 +235,19 @@ namespace ILLink.Tasks
 					var stepType = customStep.GetMetadata ("type");
 					if (stepType == null)
 						throw new ArgumentException ("custom step requires \"type\" metadata");
+					var customStepString = $"{stepType},{stepPath}";
+
+					// handle optional before/aftersteps
 					var beforeStep = customStep.GetMetadata ("beforestep");
 					var afterStep = customStep.GetMetadata ("afterstep");
-					if (beforeStep != null && afterStep != null)
+					if (!String.IsNullOrEmpty (beforeStep) && !String.IsNullOrEmpty (afterStep))
 						throw new ArgumentException ("custom step may not have both \"beforestep\" and \"afterstep\" metadata");
-					if (beforeStep != null)
-						args.Append ("+").Append(beforeStep).Append(":");
-					if (afterStep != null)
-						args.Append ("-").Append(afterStep).Append(":");
-					args.Append (stepType).Append (",").Append (stepPath);
+					if (!String.IsNullOrEmpty (beforeStep))
+						customStepString = $"+{beforeStep}:{customStepString}";
+					if (!String.IsNullOrEmpty (afterStep))
+						customStepString = $"-{afterStep}:{customStepString}";
+
+					args.AppendLine (Quote (customStepString));
 				}
 			}
 
