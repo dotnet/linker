@@ -120,6 +120,8 @@ namespace Mono.Linker {
 
 		public List<string> Substitutions { get; private set; }
 
+		public List<(string, bool)> ConstantProperties { get; private set; }
+
 		public List<PInvokeInfo> PInvokes { get; private set; }
 
 		public string PInvokesListFile;
@@ -209,6 +211,21 @@ namespace Mono.Linker {
 				CodeOptimizations.IPConstantPropagation;
 
 			Optimizations = new CodeOptimizationsSettings (defaultOptimizations);
+		}
+
+		public void AddConstantProperty (string property, bool value)
+		{
+			Debug.Assert (!String.IsNullOrEmpty (property));
+			var pair = (property, value);
+			if (ConstantProperties == null) {
+				ConstantProperties = new List<(string, bool)> { pair };
+				return;
+			}
+
+			if (ConstantProperties.Contains (pair))
+				return;
+
+			ConstantProperties.Add (pair);
 		}
 
 		public void AddSubstitutionFile (string file)

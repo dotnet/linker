@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Globalization;
@@ -12,16 +13,88 @@ namespace Mono.Linker.Steps
 		protected override void Process ()
 		{
 			var files = Context.Substitutions;
-			if (files == null)
+			if (files != null) {
+				foreach (var file in files) {
+					try {
+						ReadSubstitutionFile (GetSubstitutions (file));
+					} catch (Exception ex) when (!(ex is XmlResolutionException)) {
+						throw new XmlResolutionException ($"Failed to process XML substitution '{file}'", ex);
+					}
+				}
+			}
+
+			// Property substitutions passed on the command-line win over substitutions file
+			SubstituteConstantProperties ();
+		}
+
+		static PropertyDefinition FindProperty (TypeDefinition type, string propertyName)
+		{
+			if (!type.HasProperties)
+				return null;
+
+			foreach (PropertyDefinition prop in type.Properties)
+				if (propertyName == prop.Name)
+					return prop;
+
+			return null;
+		}
+
+		void SubstituteConstantProperties ()
+		{
+			if (Context.ConstantProperties == null)
 				return;
 
-			foreach (var file in files) {
-				try {
-					ReadSubstitutionFile (GetSubstitutions (file));
-				} catch (Exception ex) when (!(ex is XmlResolutionException)) {
-					throw new XmlResolutionException ($"Failed to process XML substitution '{file}'", ex);
+			foreach (var (propertyStr, propertyValue) in Context.ConstantProperties) {
+				Debug.Assert (!String.IsNullOrEmpty (propertyStr));
+
+				// Parse out type name and property name from the property string
+				var separatorIndex = propertyStr.LastIndexOf (Type.Delimiter);
+				var typeFullname = separatorIndex < 0 ? null : propertyStr.Remove (propertyStr.LastIndexOf (Type.Delimiter));
+				var propertyName = separatorIndex < 0 ? null : propertyStr.Substring (propertyStr.LastIndexOf (Type.Delimiter) + 1);
+				if (separatorIndex < 0 || String.IsNullOrEmpty (typeFullname) || String.IsNullOrEmpty (propertyName)) {
+					Context.LogMessage (MessageImportance.High, $"Invaliad property name '{propertyStr}'");
+					continue;
 				}
 
+				PropertyDefinition foundProperty = null;
+				foreach (var assembly in Context.GetAssemblies ()) {
+					// Only look in the MainModule, as we do elsewhere
+					var type = assembly.MainModule.GetType (typeFullname);
+					if (type == null)
+						continue;
+					var property = FindProperty (type, propertyName);
+					if (property == null)
+						continue;
+					if (foundProperty != null)
+						Context.LogMessage (MessageImportance.High, $"Property '{propertyStr}' exists in multiple assemblies");
+					foundProperty = property;
+
+					// Retrieve the get method and check it is static
+					var getMethod = foundProperty.GetMethod;
+					if (getMethod == null) {
+						Context.LogMessage (MessageImportance.High, $"Property '{propertyStr}' has no get method");
+						continue;
+					}
+					if (!getMethod.IsStatic) {
+						Context.LogMessage (MessageImportance.High, $"Property '{propertyStr}' is not static");
+						continue;
+					}
+					// Only support boolean properties
+					if (getMethod.ReturnType.MetadataType != MetadataType.Boolean) {
+						Context.LogMessage (MessageImportance.High, $"Property '{propertyStr}' is not a boolean property");
+						continue;
+					}
+
+					// TODO: should we enforce that the getter only reads from a readonly static field?
+					// Set the field value itself to a constant?
+
+					// Stub the getter to return a constant. The stub logic uses integers to represent bools.
+					Annotations.SetMethodStubValue (getMethod, propertyValue ? 1 : 0);
+					Annotations.SetAction (getMethod, MethodAction.ConvertToStub);
+				}
+
+				if (foundProperty == null)
+					Context.LogMessage (MessageImportance.High, $"Could not resolve property '{propertyStr}' for substitution");
 			}
 		}
 

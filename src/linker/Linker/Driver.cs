@@ -319,6 +319,17 @@ namespace Mono.Linker {
 
 							continue;
 
+						case "--set-property":
+							if (!GetStringParam (token, prop => {
+								if (!GetBoolParam (token, value => {
+									context.AddConstantProperty (prop, value);
+								}))
+									return;
+							}))
+								return false;
+
+							continue;
+
 						case "--new-mvid":
 							//
 							// This is not same as --deterministic which calculates MVID
@@ -904,6 +915,7 @@ namespace Mono.Linker {
 #endif
 			Console.WriteLine ("                              sre: System.Reflection.Emit namespace");
 			Console.WriteLine ("                              globalization: Globalization data and globalization behavior");
+			Console.WriteLine ("  --set-property PROP BOOL  Rewrites the specified static property to return a constant value");
 			Console.WriteLine ("  --explicit-reflection     Adds to members never used through reflection DisablePrivateReflection attribute. Defaults to false");
 			Console.WriteLine ("  --keep-dep-attributes     Keep attributes used for manual dependency tracking. Defaults to false");
 			Console.WriteLine ("  --new-mvid                Generate a new guid for each linked assembly (short -g). Defaults to true");
