@@ -1,15 +1,16 @@
-﻿namespace Mono.Linker.Steps
-{
-    public class RemoveResourcesStep : IStep 
-	{
-        public void Process(LinkContext context)
-        {
-            var assemblies = context.Annotations.GetAssemblies().ToArray();
+﻿using System;
+using System.Linq;
+using Mono.Cecil;
 
-            foreach (var assembly in assemblies) {
-                RemoveFSharpCompilationResources(assembly);
-            }
-        }
+namespace Mono.Linker.Steps
+{
+	public class RemoveResourcesStep : BaseStep 
+	{
+		protected override void ProcessAssembly (AssemblyDefinition assembly)
+		{
+			if (!assembly.MainModule.HasResources) return;
+			RemoveFSharpCompilationResources (assembly);
+		}
 
         private void RemoveFSharpCompilationResources(AssemblyDefinition assembly)
         {
