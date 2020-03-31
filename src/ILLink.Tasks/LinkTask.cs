@@ -185,7 +185,7 @@ namespace ILLink.Tasks
 				args.Append ("-reference ").AppendLine (Quote (assemblyPath));
 
 				string action = assembly.GetMetadata ("action");
-				if ((action != null) && (action.Length > 0)) {
+				if (!String.IsNullOrEmpty (action)) {
 					args.Append ("-p ");
 					args.Append (action);
 					args.Append (" ").AppendLine (Quote (assemblyName));
