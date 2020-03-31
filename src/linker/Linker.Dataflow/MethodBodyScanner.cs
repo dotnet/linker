@@ -331,10 +331,6 @@ namespace Mono.Linker.Dataflow
 						PushUnknown (currentStack);
 						break;
 
-					case Code.Ldsfld:
-						ScanLdsfld (operation, currentStack, thisMethod);
-						break;
-
 					case Code.Ldarg:
 					case Code.Ldarg_0:
 					case Code.Ldarg_1:
@@ -435,6 +431,7 @@ namespace Mono.Linker.Dataflow
 						break;
 
 					case Code.Ldfld:
+					case Code.Ldsfld:
 						ScanLdfld (operation, currentStack, thisMethod, methodBody);
 						break;
 
@@ -465,11 +462,8 @@ namespace Mono.Linker.Dataflow
 						break;
 
 					case Code.Stfld:
-						ScanStfld (operation, currentStack, thisMethod, methodBody);
-						break;
-
 					case Code.Stsfld:
-						ScanStsfld (operation, currentStack, thisMethod, methodBody);
+						ScanStfld (operation, currentStack, thisMethod, methodBody);
 						break;
 
 					case Code.Cpobj:
@@ -696,22 +690,7 @@ namespace Mono.Linker.Dataflow
 			StoreMethodLocalValue (locals, valueToStore.Value, localDef, curBasicBlock);
 		}
 
-		protected abstract ValueNode GetFieldValue (MethodDefinition method, ValueNode instanceValue, FieldDefinition field);
-
-		private void ScanLdsfld (
-			Instruction operation,
-			Stack<StackSlot> currentStack,
-			MethodDefinition thisMethod)
-		{
-			FieldDefinition field = (FieldDefinition)operation.Operand;
-			if (field != null) {
-				StackSlot slot = new StackSlot (GetFieldValue (thisMethod, null, field), isByRef: false);
-				currentStack.Push (slot);
-				return;
-			}
-
-			PushUnknown (currentStack);
-		}
+		protected abstract ValueNode GetFieldValue (MethodDefinition method, FieldDefinition field);
 
 		private void ScanLdfld (
 			Instruction operation,
@@ -719,11 +698,12 @@ namespace Mono.Linker.Dataflow
 			MethodDefinition thisMethod,
 			MethodBody methodBody)
 		{
-			StackSlot instanceValue = PopUnknown (currentStack, 1, methodBody, operation.Offset);
+			if (operation.OpCode.Code == Code.Ldfld)
+				PopUnknown (currentStack, 1, methodBody, operation.Offset);
 
-			FieldDefinition field = (FieldDefinition)operation.Operand;
+			FieldDefinition field = (operation.Operand as FieldReference)?.Resolve ();
 			if (field != null) {
-				StackSlot slot = new StackSlot (GetFieldValue (thisMethod, instanceValue.Value, field), isByRef: false);
+				StackSlot slot = new StackSlot (GetFieldValue (thisMethod, field), isByRef: false);
 				currentStack.Push (slot);
 				return;
 			}
@@ -731,7 +711,9 @@ namespace Mono.Linker.Dataflow
 			PushUnknown (currentStack);
 		}
 
-		protected abstract void HandleStoreField (MethodDefinition method, FieldDefinition field, Instruction operation, ValueNode instanceValue, ValueNode valueToStore);
+		protected virtual void HandleStoreField (MethodDefinition method, FieldDefinition field, Instruction operation, ValueNode valueToStore)
+		{
+		}
 
 		private void ScanStfld (
 			Instruction operation,
@@ -740,25 +722,12 @@ namespace Mono.Linker.Dataflow
 			MethodBody methodBody)
 		{
 			StackSlot valueToStoreSlot = PopUnknown (currentStack, 1, methodBody, operation.Offset);
-			StackSlot objectToStoreIntoSlot = PopUnknown (currentStack, 1, methodBody, operation.Offset);
+			if (operation.OpCode.Code == Code.Stfld)
+				PopUnknown (currentStack, 1, methodBody, operation.Offset);
 
-			FieldDefinition field = (FieldDefinition)operation.Operand;
+			FieldDefinition field = (operation.Operand as FieldReference)?.Resolve ();
 			if (field != null) {
-				HandleStoreField (thisMethod, field, operation, objectToStoreIntoSlot.Value, valueToStoreSlot.Value);
-			}
-		}
-
-		private void ScanStsfld (
-			Instruction operation,
-			Stack<StackSlot> currentStack,
-			MethodDefinition thisMethod,
-			MethodBody methodBody)
-		{
-			StackSlot valueToStoreSlot = PopUnknown (currentStack, 1, methodBody, operation.Offset);
-
-			FieldDefinition field = (FieldDefinition)operation.Operand;
-			if (field != null) {
-				HandleStoreField (thisMethod, field, operation, null, valueToStoreSlot.Value);
+				HandleStoreField (thisMethod, field, operation, valueToStoreSlot.Value);
 			}
 		}
 

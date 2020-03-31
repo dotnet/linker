@@ -364,6 +364,7 @@ namespace Mono.Linker.Dataflow
 				case ValueNodeKind.KnownString:
 				case ValueNodeKind.ConstInt:
 				case ValueNodeKind.MethodParameter:
+				case ValueNodeKind.LoadField:
 					break;
 
 				//
@@ -381,11 +382,6 @@ namespace Mono.Linker.Dataflow
 					GetTypeFromStringValue gtfsv = (GetTypeFromStringValue)node;
 					foundCycle = gtfsv.AssemblyIdentity.DetectCycle (seenNodes, allNodesSeen);
 					foundCycle |= gtfsv.NameString.DetectCycle (seenNodes, allNodesSeen);
-					break;
-
-				case ValueNodeKind.LoadField:
-					LoadFieldValue lfv = (LoadFieldValue)node;
-					foundCycle = lfv.InstanceValue != null && lfv.InstanceValue.DetectCycle (seenNodes, allNodesSeen);
 					break;
 
 				case ValueNodeKind.Array:
@@ -927,17 +923,14 @@ namespace Mono.Linker.Dataflow
 	/// </summary>
 	class LoadFieldValue : LeafValueWithDynamicallyAccessedMemberNode
 	{
-		public LoadFieldValue (ValueNode instanceValue, FieldDefinition fieldToLoad, DynamicallyAccessedMemberKinds dynamicallyAccessedMemberKinds)
+		public LoadFieldValue (FieldDefinition fieldToLoad, DynamicallyAccessedMemberKinds dynamicallyAccessedMemberKinds)
 		{
 			Kind = ValueNodeKind.LoadField;
-			InstanceValue = instanceValue;
 			Field = fieldToLoad;
 			DynamicallyAccessedMemberKinds = dynamicallyAccessedMemberKinds;
 		}
 
 		public FieldDefinition Field { get; private set; }
-
-		public ValueNode InstanceValue { get; private set; }
 
 		public override bool Equals (ValueNode other)
 		{
@@ -950,21 +943,17 @@ namespace Mono.Linker.Dataflow
 			if (!Equals (this.Field, otherLfv.Field))
 				return false;
 			
-			if ((this.InstanceValue != null && (otherLfv.InstanceValue == null || !this.InstanceValue.Equals (otherLfv.InstanceValue))) ||
-				(this.InstanceValue == null && otherLfv.InstanceValue != null))
-				return false;
-
 			return this.DynamicallyAccessedMemberKinds == otherLfv.DynamicallyAccessedMemberKinds;
 		}
 
 		public override int GetHashCode ()
 		{
-			return HashUtils.CalcHashCode(HashUtils.CalcHashCode (Kind, Field, InstanceValue), (int)this.DynamicallyAccessedMemberKinds);
+			return HashUtils.CalcHashCode(HashUtils.CalcHashCode (Kind, Field), (int)this.DynamicallyAccessedMemberKinds);
 		}
 
 		protected override string NodeToString ()
 		{
-			return ValueNodeDump.ValueNodeToString (this, Field, InstanceValue, DynamicallyAccessedMemberKinds);
+			return ValueNodeDump.ValueNodeToString (this, Field, DynamicallyAccessedMemberKinds);
 		}
 	}
 
