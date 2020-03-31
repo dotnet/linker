@@ -19,9 +19,9 @@ namespace Mono.Linker.Steps
                 Annotations.AddResourceToRemove(assembly, resource);
             }
 
-            static bool IsFSharpCompilationResource(string resourceName)
-                => resourceName.StartsWith("FSharpSignatureData")
-                || resourceName.StartsWith("FSharpOptimizationData");
-        }
-    }
+			static bool IsFSharpCompilationResource (string resourceName)
+				=> resourceName.StartsWith ("FSharpSignatureData", StringComparison.Ordinal)
+				|| resourceName.StartsWith ("FSharpOptimizationData", StringComparison.Ordinal);
+		}
+	}
 }
