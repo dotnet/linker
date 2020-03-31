@@ -180,7 +180,7 @@ namespace Mono.Linker {
 				bool removeCAS = true;
 				bool new_mvid_used = false;
 				bool deterministic_used = false;
-				bool keepFSharpCompilationResources = false;
+				bool keepCompilersResources = false;
 
 				bool resolver = false;
 				while (arguments.Count > 0) {
@@ -290,8 +290,8 @@ namespace Mono.Linker {
 
 							continue;
 
-						case "--keep-fsharp-compilation-resources":
-							if (!GetBoolParam (token, l => keepFSharpCompilationResources = l))
+						case "--keep-compilers-resources":
+							if (!GetBoolParam (token, l => keepCompilersResources = l))
 								return false;
 
 							continue;
@@ -558,7 +558,7 @@ namespace Mono.Linker {
 					context.ExcludedFeatures = excluded;
 				}
 
-				if (keepFSharpCompilationResources) {
+				if (keepCompilersResources) {
 					p.RemoveStep (typeof (RemoveResourcesStep));
 				}
 
