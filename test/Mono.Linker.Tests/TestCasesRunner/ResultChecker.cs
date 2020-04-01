@@ -6,7 +6,6 @@ using System.Text.RegularExpressions;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
-using Mono.Linker.Tests.Cases.Expectations.Metadata;
 using Mono.Linker.Tests.Extensions;
 using NUnit.Framework;
 
@@ -58,8 +57,10 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 				PerformOutputAssemblyChecks (original, linkResult.OutputAssemblyPath.Parent);
 				PerformOutputSymbolChecks (original, linkResult.OutputAssemblyPath.Parent);
 
-				if (!original.CustomAttributes.Any (ca => ca.AttributeType.Resolve().Name == nameof (DisableKeptItemsValidationAttribute)))
+				if (!original.MainModule.GetType (linkResult.TestCase.ReconstructedFullTypeName).CustomAttributes
+					.Any (attr => attr.AttributeType.Name == nameof (SkipKeptItemsValidationAttribute))) {
 					CreateAssemblyChecker (original, linked).Verify ();
+				}
 
 				VerifyLinkingOfOtherAssemblies (original);
 
