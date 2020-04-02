@@ -11,8 +11,8 @@
     <AssemblyName>illink</AssemblyName>
     <Description>IL Linker</Description>
     <DefineConstants>$(DefineConstants);FEATURE_ILLINK</DefineConstants>
-    <!-- Ensure that this netcore TFM matches that in LinkTask.cs's ILLinkPath. -->
-    <TargetFrameworks>netcoreapp3.0;net471</TargetFrameworks>
+    <!-- Ensure that this TFM matches that in LinkTask.cs's ILLinkPath. -->
+    <TargetFrameworks>netcoreapp3.0</TargetFrameworks>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(MonoBuild)' != ''">
@@ -39,10 +39,6 @@
     <PackageReference Condition="'$(UseCecilPackage)' == 'true'" Include="Mono.Cecil" Version="$(MonoCecilVersion)" />
     <ProjectReference Condition="'$(UseCecilPackage)' != 'true'" Include="..\..\external\cecil\Mono.Cecil.csproj" />
     <ProjectReference Condition="'$(UseCecilPackage)' != 'true'" Include="..\..\external\cecil\symbols\pdb\Mono.Cecil.Pdb.csproj" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(MonoBuild)' == ''">
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="All" Version="1.0.0" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(MonoBuild)' != ''">
