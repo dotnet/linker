@@ -93,7 +93,7 @@ namespace ILLink.Tasks
 		public string DefaultAction { get; set; }
 
 		/// <summary>
-		///	  A list of custom steps to insert into the linker pipeline.
+		///   A list of custom steps to insert into the linker pipeline.
 		///   Each ItemSpec should be the path to the assembly containing the custom step.
 		///   Each Item requires "type" metadata with the name of the custom step type.
 		///   Optional metadata:
@@ -243,9 +243,9 @@ namespace ILLink.Tasks
 					if (!String.IsNullOrEmpty (beforeStep) && !String.IsNullOrEmpty (afterStep))
 						throw new ArgumentException ("custom step may not have both \"beforestep\" and \"afterstep\" metadata");
 					if (!String.IsNullOrEmpty (beforeStep))
-						customStepString = $"+{beforeStep}:{customStepString}";
+						customStepString = $"-{beforeStep}:{customStepString}";
 					if (!String.IsNullOrEmpty (afterStep))
-						customStepString = $"-{afterStep}:{customStepString}";
+						customStepString = $"+{afterStep}:{customStepString}";
 
 					args.AppendLine (Quote (customStepString));
 				}

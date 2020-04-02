@@ -168,7 +168,7 @@ namespace Mono.Linker {
 		// 0 => successfully set up context with all arguments
 		// 1 => argument processing stopped early without errors
 		// -1 => error setting up context
-		public int SetupContext (ILogger customLogger = null)
+		protected int SetupContext (ILogger customLogger = null)
 		{
 			Pipeline p = GetStandardPipeline ();
 			context = GetDefaultContext (p);
@@ -413,8 +413,7 @@ namespace Mono.Linker {
 					case "x":
 						if (!GetStringParam (token, l => {
 							foreach (string file in GetFiles (l))
-								p.PrependStep (new ResolveFromXmlStep (new XPathDocument (file), file));
-
+								AddResolveFromXmlStep (p, file);
 							}))
 							return -1;
 
@@ -506,14 +505,14 @@ namespace Mono.Linker {
 			}
 
 			if (dumpDependencies)
-				context.Tracer.AddRecorder (new XmlDependencyRecorder (context, dependenciesFileName));
+				AddXmlDependencyRecorder (context, dependenciesFileName);
 
 			if (set_optimizations.Count > 0) {
-				foreach (var item in set_optimizations) {
-					if (item.Item3)
-						context.Optimizations.Enable (item.Item1, item.Item2);
+				foreach (var (opt, assemblyName, enable) in set_optimizations) {
+					if (enable)
+						context.Optimizations.Enable (opt, assemblyName);
 					else
-						context.Optimizations.Disable (item.Item1, item.Item2);
+						context.Optimizations.Disable (opt, assemblyName);
 				}
 			}
 
@@ -626,6 +625,16 @@ namespace Mono.Linker {
 				Console.WriteLine ($"The path to the assembly '{arg}' specified for '--custom-step' must be fully qualified");
 
 			return null;
+		}
+
+		protected virtual void AddResolveFromXmlStep (Pipeline pipeline, string file)
+		{
+			pipeline.PrependStep (new ResolveFromXmlStep (new XPathDocument (file), file));
+		}
+
+		protected virtual void AddXmlDependencyRecorder (LinkContext context, string fileName)
+		{
+			context.Tracer.AddRecorder (new XmlDependencyRecorder (context, fileName));
 		}
 
 		protected static bool AddCustomStep (Pipeline pipeline, string arg)
@@ -896,8 +905,8 @@ namespace Mono.Linker {
 			Console.WriteLine ("  --custom-step CFG         Add a custom step <config> to the existing pipeline");
 			Console.WriteLine ("                            Step can use one of following configurations");
 			Console.WriteLine ("                            TYPE,PATH_TO_ASSEMBLY: Add user defined type as last step to the pipeline");
-			Console.WriteLine ("                            +NAME:TYPE,PATH_TO_ASSEMBLY: Inserts step type before existing step with name");
-			Console.WriteLine ("                            -NAME:TYPE,PATH_TO_ASSEMBLY: Add step type after existing step");
+			Console.WriteLine ("                            -NAME:TYPE,PATH_TO_ASSEMBLY: Inserts step type before existing step with name");
+			Console.WriteLine ("                            +NAME:TYPE,PATH_TO_ASSEMBLY: Add step type after existing step");
 			Console.WriteLine ("  --ignore-descriptors      Skips reading embedded descriptors (short -z). Defaults to false");
 			Console.WriteLine ("  --keep-facades            Keep assemblies with type-forwarders (short -t). Defaults to false");
 			Console.WriteLine ("  --skip-unresolved         Ignore unresolved types, methods, and assemblies. Defaults to false");
