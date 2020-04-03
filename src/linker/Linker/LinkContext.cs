@@ -442,6 +442,12 @@ namespace Mono.Linker {
 			if (LogMessages && Logger != null)
 				Logger.LogMessage (importance, "{0}", message);
 		}
+
+		public void LogMessage (MessageContainer message)
+		{
+			if (LogMessages)
+				Logger?.LogMessage (message);
+		}
 	}
 
 	public class CodeOptimizationsSettings
