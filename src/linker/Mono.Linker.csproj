@@ -2,17 +2,14 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <RootNamespace>Mono</RootNamespace>
-    <Configurations>Debug;Release</Configurations>
-    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(MonoBuild)' == ''">
-    <AssemblyName>illink</AssemblyName>
-    <Description>IL Linker</Description>
     <DefineConstants>$(DefineConstants);FEATURE_ILLINK</DefineConstants>
-    <!-- Ensure that this TFM matches that in LinkTask.cs's ILLinkPath. -->
-    <TargetFrameworks>netcoreapp3.0</TargetFrameworks>
+    <IsPackable>true</IsPackable>
+    <!-- Nuget issues a warning about missing <reference> items in the generated nuspec,
+         used for packages.config which we do not support. -->
+    <NoWarn>$(NoWarn);NU5131</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(MonoBuild)' != ''">
@@ -20,7 +17,7 @@
     <AssemblyTitle>Mono.Linker</AssemblyTitle>
     <Description>Mono CIL Linker</Description>
     <Copyright>(C) 2006, Jb Evain</Copyright>
-    <TargetFrameworks>net471</TargetFrameworks>
+    <TargetFramework>net471</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
