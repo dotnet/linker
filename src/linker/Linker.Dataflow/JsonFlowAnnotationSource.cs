@@ -57,20 +57,7 @@ namespace Mono.Linker.Dataflow
 		private void Initialize(LinkContext context, string jsonFile)
 		{
 			// TODO: what if file is not Utf-8? System.Text.Json seems like a PITA to use on non-utf-8 inputs.
-			//using JsonDocument jsonDoc = JsonDocument.Parse (File.OpenRead (jsonFile));
-
-			using JsonDocument jsonDoc = JsonDocument.Parse (@"
-{
-    ""System.Private.CoreLib"": {
-        ""System"": {
-            ""Activator"": {
-			    ""CreateInstance(System.Type)"": {
-				    ""type"": ""DefaultConstructor""
-			    }
-			}
-		}
-    }
-}");
+			using JsonDocument jsonDoc = JsonDocument.Parse (File.OpenRead (jsonFile));
 
 			// TODO: need to also check the document is structurally sound.
 			//       Too bad this is not not XML. We would just validate schema...
