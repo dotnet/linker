@@ -4,7 +4,6 @@
 
   <PropertyGroup>
     <RootNamespace>Mono</RootNamespace>
-    <Configurations>Debug;Release</Configurations>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
