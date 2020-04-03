@@ -124,6 +124,8 @@ namespace Mono.Linker {
 
 		public string PInvokesListFile;
 
+		public string DataflowJsonFile;
+
 		public System.Collections.IDictionary Actions {
 			get { return _actions; }
 		}

@@ -353,7 +353,13 @@ namespace Mono.Linker {
 
 							continue;
 
-						case "--version":
+						case "--dataflow-json":
+							if (!GetStringParam (token, l => context.DataflowJsonFile = l))
+								return false;
+
+							continue;
+
+							case "--version":
 							Version ();
 							return true;
 
