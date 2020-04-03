@@ -57,10 +57,11 @@
     <!-- Option to include Json files in the package. Default is to just include dlls. -->
     <IncludeJsonFilesInPackage Condition="'$(IncludeJsonFilesInPackage)' == ''">false</IncludeJsonFilesInPackage>
     <!-- Use a NuGet extension point to publish and set up the package files. -->
+    <!-- We can't use TargetsForTfmSpecificBuildOutput, because it doesn't run when IncludeBuildOutput is false. -->
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);_AddPublishOutputToPackage</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
 
-  <Target Name="_AddPublishOutputToPackage" Condition="'$(IncludePublishOutput)' == 'true'">
+  <Target Name="_AddPublishOutputToPackage">
     <PropertyGroup>
       <PublishDir>$(BaseOutputPath)$(TargetFramework)</PublishDir>
     </PropertyGroup>
@@ -78,8 +79,13 @@
     <Delete Files="@(_FilesToDelete)" />
     <MSBuild Projects="@(ProjectsToPublish)" Targets="Publish" />
     <ItemGroup>
-      <TfmSpecificPackageFile Include="$(PublishDir)/*.dll" PackagePath="$(BuildOutputTargetFolder)\$(TargetFramework)" />
-      <TfmSpecificPackageFile Include="$(PublishDir)/*.json" PackagePath="$(BuildOutputTargetFolder)\$(TargetFramework)" Condition="'$(IncludeJsonFilesInPackage)' == 'true'" />
+      <_PublishOutputInPackage Include="$(PublishDir)/*.dll" />
+      <_PublishOutputInPackage Include="$(PublishDir)/*.json" Condition="'$(IncludeJsonFilesInPackage)' == 'true'" />
+    </ItemGroup>
+    <!-- Sanity check. -->
+    <Error Condition="@(_PublishOutputInPackage->Count()) == 0" Text="No publish output included in package." />
+    <ItemGroup>
+      <TfmSpecificPackageFile Include="@(_PublishOutputInPackage)" PackagePath="$(BuildOutputTargetFolder)\$(TargetFramework)" />
     </ItemGroup>
   </Target>
 
