@@ -159,7 +159,7 @@ namespace Mono.Linker.Steps {
 			_context = context;
 
 			IFlowAnnotationSource annotationSource = new AttributeFlowAnnotationSource ();
-			if (_context.DataflowAnnotations.Count > 0) {
+			if (_context.DataflowAnnotations != null && _context.DataflowAnnotations.Count > 0) {
 				annotationSource = new AggregateFlowAnnotationSource (
 					_context.DataflowAnnotations.Select (s => new JsonFlowAnnotationSource (_context, s))
 					.Append (annotationSource));
