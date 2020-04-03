@@ -56,8 +56,11 @@ namespace Mono.Linker.Dataflow
 
 		private void Initialize(LinkContext context, string jsonFile)
 		{
+			// Need "using" because JsonDocument won't close this as part of Dispose().
+			using FileStream jsonFileStream = File.OpenRead (jsonFile);
+
 			// We only support UTF-8
-			using JsonDocument jsonDoc = JsonDocument.Parse (File.OpenRead (jsonFile));
+			using JsonDocument jsonDoc = JsonDocument.Parse (jsonFileStream);
 
 			// TODO: need to also check the document is structurally sound.
 			foreach (var assemblyElement in jsonDoc.RootElement.EnumerateObject ()) {
