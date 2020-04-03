@@ -10,7 +10,7 @@
 
   <!-- Shared logic for reference assemblies. This enables apicompat and
        packaging logic for projects that have corresponding reference assemblies. -->
-  <PropertyGroup>
+  <PropertyGroup Condition="'$(MonoBuild)' == ''">
     <ContractProject Condition="'$(ContractProject)' == ''">$(MSBuildProjectDirectory)\ref\$(MSBuildProjectName).csproj</ContractProject>
     <HasMatchingContract Condition="Exists('$(ContractProject)')">true</HasMatchingContract>
     <RunApiCompat Condition="'$(HasMatchingContract)' != 'true'">false</RunApiCompat>
