@@ -34,8 +34,8 @@ namespace Mono.Linker
 
 		public static MessageContainer CreateErrorMessage (string text, int code, string subcategory = MessageSubCategory.None, MessageOrigin? origin = null)
 		{
-			if (!(code >= 0 && code <= 2000))
-				throw new ArgumentException ($"The provided code '${code}' does not fall into the error category, which is in the range of 0 to 2000 (inclusive).");
+			if (!(code >= 1000 && code <= 2000))
+				throw new ArgumentException ($"The provided code '${code}' does not fall into the error category, which is in the range of 1000 to 2000 (inclusive).");
 
 			return new MessageContainer (MessageCategory.Error, text, code, subcategory, origin);
 		}
