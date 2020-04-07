@@ -821,7 +821,11 @@ namespace Mono.Linker {
 		protected virtual LinkContext GetDefaultContext (Pipeline pipeline)
 		{
 			LinkContext context = new LinkContext (pipeline) {
+#if FEATURE_ILLINK
+				CoreAction = AssemblyAction.Link,
+#else
 				CoreAction = AssemblyAction.Skip,
+#endif
 				UserAction = AssemblyAction.Link,
 				OutputDirectory = "output",
 				StripResources = true
