@@ -7,17 +7,17 @@ Unconstrained reflection in .NET presents a challenge for discovering parts of .
 
 Even with the level of investment in .NET Native it wasn't possible to make arbitrary reflection "just work" – before shipping, we had to make a decision to not do any tree-shaking on user assemblies by default because the reflection patterns were often (~20% of the Store app catalog) arbitrary enough that it wasn't possible to describe them in generic ways or detect them. The .NET Native compiler did not warn the user about presence of unrecognized patterns either because we expected there would be too much noise due to the disconnect between RD.XML (that simply described what to keep) and the dataflow analysis (that focused on reflection API usage).
 
-## Linker-safe reflection
+## Linker-friendly reflection
 
 Note: While this document mostly talks about reflection, this includes reflection-like APIs with impact on linker's analysis such as `RuntimeHelpers.GetUninitializedObject`, `Marshal.PtrToStructure`, or `RuntimeHelpers.RunClassConstructor`.
 
-In .NET 5, we would like to carve out a _subset_ of reflection patterns that can be made safe in the presence of IL linker. Since IL linking is optional, users do not have to adhere to this subset. They can still use IL Linker if they do not adhere to this subset, but we will not provide guarantees that linking won't change the semantics of their app. Linker will warn if a reflection pattern within the app is not safe.
+In .NET 5, we would like to carve out a _subset_ of reflection patterns that can be made compatible in the presence of IL linker. Since IL linking is optional, users do not have to adhere to this subset. They can still use IL Linker if they do not adhere to this subset, but we will not provide guarantees that linking won't change the semantics of their app. Linker will warn if a reflection pattern within the app is not compatible.
 
-To achieve safety, we'll logically classify methods into following categories:
+To achieve compatibility, we'll logically classify methods into following categories:
 
-* Linker-safe: most code will fall into this category. Linking can be done safely based on information in the static callgraph.
-* Potentially unsafe: call to the method is unsafe if the linker cannot reason about a parameter value (e.g. `Type.GetType` with a type name string that could be unknown)
-* Always unsafe: calls to these methods are never safe (e.g. `Assembly.ExportedTypes`).
+* Linker-friendly: most code will fall into this category. Linking can be done safely based on information in the static callgraph.
+* Potentially unfriendly: call to the method is unsafe if the linker cannot reason about a parameter value (e.g. `Type.GetType` with a type name string that could be unknown)
+* Always unfriendly: calls to these methods are never safe in the presence of linker (e.g. `Assembly.ExportedTypes`).
 
 Explicit non-goals of this proposal:
 
@@ -26,9 +26,9 @@ Explicit non-goals of this proposal:
 
 It is our belief that _linker-friendly_ serialization and dependency injection would be better solved by source generators.
 
-## Analyzing calls to potentially unsafe methods
+## Analyzing calls to potentially unfriendly methods
 
-The most interesting category to discuss are the "potentially unsafe" methods: reasoning about a parameter to a method call requires being able to trace the value of the parameter through the method body. IL linker is currently capable of doing this in a limited way. We'll be expanding this functionality further so that it can cover patterns like:
+The most interesting category to discuss are the "potentially unfriendly" methods: reasoning about a parameter to a method call requires being able to trace the value of the parameter through the method body. IL linker is currently capable of doing this in a limited way. We'll be expanding this functionality further so that it can cover patterns like:
 
 ```csharp
 Type t;
@@ -53,7 +53,7 @@ In an ideal world, this would be the extent of the reflection that can be made s
 
 ## Cross-method annotations
 
-To document reflection use across methods, we'll introduce a new attribute `DynamicallyAccessedMembersAttribute` that can be attached to method parameters, the method return parameter, fields, and properties (whose type is `System.Type`, or `System.String`). The attribute will provide additional metadata related to linker-safety of the parameter or field.
+To document reflection use across methods, we'll introduce a new attribute `DynamicallyAccessedMembersAttribute` that can be attached to method parameters, the method return parameter, fields, and properties (whose type is `System.Type`, or `System.String`). The attribute will provide additional metadata related to linker-friendliness of the parameter or field.
 
 (When the attribute is applied to a location of type `System.String`, the assumption is that the string represents a fully qualified type name.)
 
@@ -84,8 +84,8 @@ public enum MemberKinds
 ```
 
 When a method or field is annotated with this attribute, two things will happen:
-* The method/field becomes potentially linker-unsafe. Linker will ensure that the values logically written to the annotated location (i.e. passed as a parameter, returned from the method, written to the field) can be statically reasoned about, or a warning will be generated.
-* The analysis of the value read from the annotated location will have richer information available and the linker can assume that linker-unsafe operations with an otherwise unknown value could still be safe.
+* The method/field becomes potentially linker-friendly. Linker will ensure that the values logically written to the annotated location (i.e. passed as a parameter, returned from the method, written to the field) can be statically reasoned about, or a warning will be generated.
+* The analysis of the value read from the annotated location will have richer information available and the linker can assume that linker-unfriendly operations with an otherwise unknown value could still be safe.
 
 Example:
 
@@ -111,20 +111,20 @@ class Program
 }
 ```
 
-(The above pattern exists in CoreLib and is currently unsafe.)
+(The above pattern exists in CoreLib and is currently unfriendly.)
 
 
-TODO:  Creating a delegate to a potentially linker unsafe method could be solvable. Reflection invoking a potentially linker unsafe method is hard. Both out of scope?
+TODO:  Creating a delegate to a potentially linker unfriendly method could be solvable. Reflection invoking a potentially linker unfriendly method is hard. Both out of scope?
 TODO: It might be possible to apply similar pattern to generic parameters. The DynamizallAccessedMembers could be added to the generic parameter declaration and linker could make sure that when it's "assigned to" the requirements are met.
 
-## Linker unsafe annotations
+## Linker unfriendly annotations
 
-Another annotation will be used to mark methods that are never linker safe:
+Another annotation will be used to mark methods that are never linker friendly:
 
 ```csharp
-public sealed class LinkerUnsafeAttribute : Attribute
+public sealed class LinkerUnfriendlyAttribute : Attribute
 {
-    public LinkerUnsafeAttribute(string message)
+    public LinkerUnfriendlyAttribute(string message)
     {
         Message = message;
     }
@@ -133,9 +133,9 @@ public sealed class LinkerUnsafeAttribute : Attribute
 }
 ```
 
-All calls to methods annotated with LinkerUnsafe will result in a warning and the linker will not analyze linker-safety within the method body or the parts of the static callgraph that are only reachable through this method.
+All calls to methods annotated with LinkerUnfriendly will result in a warning and the linker will not analyze linker-friendliness within the method body or the parts of the static callgraph that are only reachable through this method.
 
-TODO: Do we care about localization issues connected with the message string? Do we need an enum with possible messages ("this is never safe", "use different overload", "use different method", etc.) This is probably the same bucket as `ObsoleteAttribute`.
+TODO: Do we care about localization issues connected with the message string? Do we need an enum with possible messages ("this is never friendly", "use different overload", "use different method", etc.) This is probably the same bucket as `ObsoleteAttribute`.
 
 ## Escape hatch: DynamicDependencyAttribute annotation
 
