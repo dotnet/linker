@@ -161,6 +161,116 @@ namespace ILLink.Tasks.Tests
 			}
 		}
 
+		public static IEnumerable<object []> OptimizationsCases () {
+			foreach (var optimization in MockTask.OptimizationNames) {
+				yield return new object [] { optimization, true };
+				yield return new object [] { optimization, false };
+			}
+		}
+
+		[Theory]
+		[MemberData (nameof (OptimizationsCases))]
+		public void TestGlobalOptimizations (string optimization, bool enabled)
+		{
+			var task = new MockTask ();
+			task.SetOptimization (optimization, enabled);
+			// get the corresponding CodeOptimizations value
+			Assert.True (MockDriver.GetOptimizationName (optimization, out CodeOptimizations codeOptimizations));
+			using (var driver = task.CreateDriver ()) {
+				var actualValue = driver.Context.Optimizations.IsEnabled (codeOptimizations, assemblyName: null);
+				Assert.Equal (enabled, actualValue);
+			}
+		}
+
+		public static IEnumerable<object []> PerAssemblyOptimizationsCases () {
+			// test that we can individually enable/disable each optimization
+			foreach (var optimization in MockTask.OptimizationNames) {
+				yield return new object [] {
+					new ITaskItem [] {
+						new TaskItem ("path/to/Assembly.dll", new Dictionary<string, string> {
+							{ optimization, "True" }
+						})
+					}
+				};
+				yield return new object [] {
+					new ITaskItem [] {
+						new TaskItem ("path/to/Assembly.dll", new Dictionary<string, string> {
+							{ optimization, "False" }
+						})
+					}
+				};
+			}
+			// complex case with multiple optimizations, assemblies
+			yield return new object [] {
+				new ITaskItem [] {
+					new TaskItem ("path/to/Assembly1.dll", new Dictionary<string, string> {
+						{ "ClearInitLocals", "True" },
+						{ "BeforeFieldInit", "False" }
+					}),
+					new TaskItem ("path/to/Assembly2.dll", new Dictionary<string, string> {
+						{ "ClearInitLocals", "False" },
+						{ "Sealer", "True" }
+					})
+				}
+			};
+		}
+
+		[Theory]
+		[MemberData (nameof (PerAssemblyOptimizationsCases))]
+		public void TestPerAssemblyOptimizations (ITaskItem [] assemblyPaths)
+		{
+			var task = new MockTask () {
+				AssemblyPaths = assemblyPaths
+			};
+			using (var driver = task.CreateDriver ()) {
+				foreach (var item in assemblyPaths) {
+					var assemblyName = Path.GetFileNameWithoutExtension (item.ItemSpec);
+					foreach (var optimization in MockTask.OptimizationNames) {
+						Assert.True (MockDriver.GetOptimizationName (optimization, out CodeOptimizations codeOptimizations));
+						var optimizationValue = item.GetMetadata (optimization);
+						if (String.IsNullOrEmpty (optimizationValue))
+							continue;
+						var enabled = Boolean.Parse (optimizationValue);
+						var actualValue = driver.Context.Optimizations.IsEnabled (codeOptimizations, assemblyName: assemblyName);
+						Assert.Equal (enabled, actualValue);
+					}
+				}
+			}
+		}
+
+		[Fact]
+		public void TestInvalidPerAssemblyOptimizations ()
+		{
+			var task = new MockTask () {
+				AssemblyPaths = new ITaskItem [] {
+					new TaskItem ("path/to/Assembly.dll", new Dictionary<string, string> {
+						{ "ClearInitLocals", "invalid" }
+					})
+				}
+			};
+			Assert.Throws<ArgumentException> (() => task.CreateDriver ());
+		}
+
+		[Fact]
+		public void TestOptimizationsDefaults ()
+		{
+			var task = new MockTask ();
+			using (var driver = task.CreateDriver ()) {
+				var expectedOptimizations = driver.GetDefaultOptimizations ();
+				var actualOptimizations = driver.Context.Optimizations.Global;
+				Assert.Equal (expectedOptimizations, actualOptimizations);
+			}
+		}
+
+		[Fact]
+		public void CheckGlobalOptimizationsMatchPerAssemblyOptimizations ()
+		{
+			var task = new MockTask ();
+			var optimizationMetadataNames = MockTask.OptimizationNames;
+			var optimizationPropertyNames = MockTask.GetOptimizationPropertyNames ();
+			Assert.Equal (optimizationMetadataNames.OrderBy (o => o), optimizationPropertyNames.OrderBy (o => o));
+		}
+
 		[Theory]
 		[InlineData (true)]
 		[InlineData (false)]

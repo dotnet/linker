@@ -13,10 +13,18 @@ namespace ILLink.Tasks
 		/// <summary>
 		///   Paths to the assembly files that should be considered as
 		///   input to the linker.
-		///   Each path can also have an "Action" metadata,
-		///   which will set the illink action to take for
-		///   that assembly.
-		///   Maps to '-reference', and possibly '-p'.
+		///   Optional metadata:
+		///       Action ("copy", "link", etc...): sets the illink action to take for this assembly.
+		///   There is an optional metadata for each optimization that can be set to "True" or "False" to
+		///   enable or disable it per-assembly:
+		///       BeforeFieldInit
+		///       OverrideRemoval
+		///       UnreachableBodies
+		///       ClearInitLocals
+		///       UnusedInterfaces
+		///       IPConstProp
+		///       Sealer
+		///   Maps to '-reference', and possibly '-p', '--enable-opt', '--disable-opt'
 		/// </summary>
 		[Required]
 		public ITaskItem [] AssemblyPaths { get; set; }
@@ -57,10 +65,63 @@ namespace ILLink.Tasks
 		public ITaskItem [] RootDescriptorFiles { get; set; }
 
 		/// <summary>
-		///   Boolean specifying whether to clear initlocals flag on methods.
-		///   Maps to '--enable-opt clearinitlocals'.
+		///   Boolean specifying whether to enable beforefieldinit optimization globally.
+		///   Maps to '--enable-opt beforefieldinit' or '--disable-opt beforefieldinit'.
 		/// </summary>
-		public bool ClearInitLocals { get; set; }
+		public bool BeforeFieldInit { set => _beforeFieldInit = value; }
+		bool? _beforeFieldInit;
+
+		/// <summary>
+		///   Boolean specifying whether to enable overrideremoval optimization globally.
+		///   Maps to '--enable-opt overrideremoval' or '--disable-opt overrideremoval'.
+		/// </summary>
+		public bool OverrideRemoval { set => _overrideRemoval = value; }
+		bool? _overrideRemoval;
+
+		/// <summary>
+		///   Boolean specifying whether to enable unreachablebodies optimization globally.
+		///   Maps to '--enable-opt unreachablebodies' or '--disable-opt unreachablebodies'.
+		/// </summary>
+		public bool UnreachableBodies { set => _unreachableBodies = value; }
+		bool? _unreachableBodies;
+
+		/// <summary>
+		///   Boolean specifying whether to enable clearinitlocals optimization globally.
+		///   Maps to '--enable-opt clearinitlocals' or '--disable-opt clearinitlocals'.
+		/// </summary>
+		public bool ClearInitLocals { set => _clearInitLocals = value; }
+		bool? _clearInitLocals;
+
+		/// <summary>
+		///   Boolean specifying whether to enable unusedinterfaces optimization globally.
+		///   Maps to '--enable-opt unusedinterfaces' or '--disable-opt unusedinterfaces'.
+		/// </summary>
+		public bool UnusedInterfaces { set => _unusedInterfaces = value; }
+		bool? _unusedInterfaces;
+
+		/// <summary>
+		///   Boolean specifying whether to enable ipconstprop optimization globally.
+		///   Maps to '--enable-opt ipconstprop' or '--disable-opt ipconstprop'.
+		/// </summary>
+		public bool IPConstProp { set => _iPConstProp = value; }
+		bool? _iPConstProp;
+
+		/// <summary>
+		///   Boolean specifying whether to enable sealer optimization globally.
+		///   Maps to '--enable-opt sealer' or '--disable-opt sealer'.
+		/// </summary>
+		public bool Sealer { set => _sealer = value; }
+		bool? _sealer;
+
+		static readonly string [] _optimizationNames = new string [] {
+			"BeforeFieldInit",
+			"OverrideRemoval",
+			"UnreachableBodies",
+			"ClearInitLocals",
+			"UnusedInterfaces",
+			"IPConstProp",
+			"Sealer"
+		};
 
 		/// <summary>
 		///   A comma-separated list of assemblies whose methods
@@ -161,6 +222,16 @@ namespace ILLink.Tasks
 			return args.ToString ();
 		}
 
+		private void SetOpt (StringBuilder args, string opt, bool enabled)
+		{
+			args.Append (enabled ? "--enable-opt " : "--disable-opt ").AppendLine (opt);
+		}
+
+		private void SetOpt (StringBuilder args, string opt, string assembly, bool enabled)
+		{
+			args.Append (enabled ? "--enable-opt " : "--disable-opt ").Append (opt).Append (" ").AppendLine (assembly);
+		}
+
 		protected override string GenerateResponseFileCommands ()
 		{
 			var args = new StringBuilder ();
@@ -190,6 +261,18 @@ namespace ILLink.Tasks
 					args.Append (action);
 					args.Append (" ").AppendLine (Quote (assemblyName));
 				}
+
+				// Add per-assembly optimization arguments
+				foreach (var optimization in _optimizationNames) {
+					string optimizationValue = assembly.GetMetadata (optimization);
+					if (String.IsNullOrEmpty (optimizationValue))
+						continue;
+
+					if (!Boolean.TryParse (optimizationValue, out bool enabled))
+						throw new ArgumentException ($"optimization metadata {optimization} must be True or False");
+
+					SetOpt (args, optimization, assemblyName, enabled);
+				}
 			}
 
 			if (ReferenceAssemblyPaths != null) {
@@ -214,7 +297,32 @@ namespace ILLink.Tasks
 			if (OutputDirectory != null)
 				args.Append ("-out ").AppendLine (Quote (OutputDirectory.ItemSpec));
 
-			if (ClearInitLocals) {
+			// Add global optimization arguments
+			if (_beforeFieldInit is bool beforeFieldInit)
+				SetOpt (args, "beforefieldinit", beforeFieldInit);
+
+			if (_overrideRemoval is bool overrideRemoval)
+				SetOpt (args, "overrideremoval", overrideRemoval);
+
+			if (_unreachableBodies is bool unreachableBodies)
+				SetOpt (args, "unreachablebodies", unreachableBodies);
+
+			if (_clearInitLocals is bool clearInitLocals) {
+				SetOpt (args, "clearinitlocals", clearInitLocals);
+			} else {
+				clearInitLocals = false;
+			}
+
+			if (_unusedInterfaces is bool unusedInterfaces)
+				SetOpt (args, "unusedinterfaces", unusedInterfaces);
+
+			if (_iPConstProp is bool iPConstProp)
+				SetOpt (args, "ipconstprop", iPConstProp);
+
+			if (_sealer is bool sealer)
+				SetOpt (args, "sealer", sealer);
+
+			if (clearInitLocals) {
 				args.AppendLine ("--enable-opt clearinitlocals");
 				if ((ClearInitLocalsAssemblies != null) && (ClearInitLocalsAssemblies.Length > 0)) {
 					args.Append ("-m ClearInitLocalsAssemblies ");

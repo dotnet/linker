@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using Microsoft.Build.Framework; // ITask
+using System.Linq;
+using Microsoft.Build.Framework;
 using Mono.Linker;
 using Mono.Linker.Steps;
 using Xunit;
@@ -21,6 +22,35 @@ namespace ILLink.Tasks.Tests
 			var arguments = new Queue<string> ();
 			Driver.ParseResponseFileLines (responseFileLines, arguments);
 			return new MockDriver (arguments);
+		}
+
+		public static string [] OptimizationNames {
+			get {
+				var field = typeof (ILLink).GetField ("_optimizationNames", BindingFlags.NonPublic | BindingFlags.Static);
+				var value = (string []) (field.GetValue (null));
+				return value;
+			}
+		}
+
+		public void SetOptimization (string optimization, bool enabled) {
+			var property = typeof (ILLink).GetProperty (optimization);
+			var setter = property.GetSetMethod ();
+			property.GetSetMethod ().Invoke (this, new object [] { enabled });
+		}
+
+		static readonly string [] nonOptimizationBooleanProperties = new string [] {
+			"DumpDependencies",
+			"LinkSymbols"
+		};
+
+		public static IEnumerable<string> GetOptimizationPropertyNames () {
+			foreach (var property in typeof (ILLink).GetProperties (BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance)) {
+				if (property.PropertyType != typeof (bool))
+					continue;
+				if (nonOptimizationBooleanProperties.Contains (property.Name))
+					continue;
+				yield return property.Name;
+			}
 		}
 	}
 
@@ -78,6 +108,19 @@ namespace ILLink.Tasks.Tests
 
 		public IEnumerable<IDependencyRecorder> GetDependencyRecorders () {
 			return (IEnumerable<IDependencyRecorder>)(typeof (Tracer).GetField ("recorders", BindingFlags.NonPublic | BindingFlags.Instance).GetValue (context.Tracer));
+		}
+
+		public static bool GetOptimizationName (string optimization, out CodeOptimizations codeOptimizations) {
+			var method =  typeof (Driver).GetMethod ("GetOptimizationName", BindingFlags.NonPublic | BindingFlags.Static);
+			var parameters = new object [] { optimization, null };
+			var ret = (bool) (method.Invoke (null, parameters));
+			codeOptimizations = (CodeOptimizations) (parameters [1]);
+			return ret;
+		}
+
+		public CodeOptimizations GetDefaultOptimizations () {
+			var context = base.GetDefaultContext (null);
+			return context.Optimizations.Global;
 		}
 	}
 
