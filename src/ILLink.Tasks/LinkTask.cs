@@ -148,7 +148,7 @@ namespace ILLink.Tasks
 		public bool LinkSymbols { get; set; }
 
 		/// <summary>
-		///	  Sets the default action for assemblies.
+		///   Sets the default action for assemblies.
 		///   Maps to '-c' and '-u'.
 		/// </summary>
 		public string DefaultAction { get; set; }
