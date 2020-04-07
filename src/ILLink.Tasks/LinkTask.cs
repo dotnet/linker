@@ -13,7 +13,7 @@ namespace ILLink.Tasks
 		/// <summary>
 		///   Paths to the assembly files that should be considered as
 		///   input to the linker.
-		///   Each path can also have an "action" metadata,
+		///   Each path can also have an "Action" metadata,
 		///   which will set the illink action to take for
 		///   that assembly.
 		///   Maps to '-reference', and possibly '-p'.
@@ -95,13 +95,13 @@ namespace ILLink.Tasks
 		/// <summary>
 		///   A list of custom steps to insert into the linker pipeline.
 		///   Each ItemSpec should be the path to the assembly containing the custom step.
-		///   Each Item requires "type" metadata with the name of the custom step type.
+		///   Each Item requires "Type" metadata with the name of the custom step type.
 		///   Optional metadata:
-		///   beforestep: The name of a linker step. The custom step will be inserted before it.
-		///   afterstep: The name of a linker step. The custom step will be inserted after it.
-		///   The default (if neither beforestep or afterstep is specified) is to insert the
+		///   BeforeStep: The name of a linker step. The custom step will be inserted before it.
+		///   AfterStep: The name of a linker step. The custom step will be inserted after it.
+		///   The default (if neither BeforeStep or AfterStep is specified) is to insert the
 		///   custom step at the end of the pipeline.
-		///   It is an error to specify both beforestep and afterstep.
+		///   It is an error to specify both BeforeStep and AfterStep.
 		///   Maps to '--custom-step'.
 		/// </summary>
 		public ITaskItem [] CustomSteps { get; set; }
@@ -184,7 +184,7 @@ namespace ILLink.Tasks
 
 				args.Append ("-reference ").AppendLine (Quote (assemblyPath));
 
-				string action = assembly.GetMetadata ("action");
+				string action = assembly.GetMetadata ("Action");
 				if (!String.IsNullOrEmpty (action)) {
 					args.Append ("-p ");
 					args.Append (action);
@@ -232,16 +232,16 @@ namespace ILLink.Tasks
 				foreach (var customStep in CustomSteps) {
 					args.Append ("--custom-step ");
 					var stepPath = customStep.ItemSpec;
-					var stepType = customStep.GetMetadata ("type");
+					var stepType = customStep.GetMetadata ("Type");
 					if (stepType == null)
-						throw new ArgumentException ("custom step requires \"type\" metadata");
+						throw new ArgumentException ("custom step requires \"Type\" metadata");
 					var customStepString = $"{stepType},{stepPath}";
 
 					// handle optional before/aftersteps
-					var beforeStep = customStep.GetMetadata ("beforestep");
-					var afterStep = customStep.GetMetadata ("afterstep");
+					var beforeStep = customStep.GetMetadata ("BeforeStep");
+					var afterStep = customStep.GetMetadata ("AfterStep");
 					if (!String.IsNullOrEmpty (beforeStep) && !String.IsNullOrEmpty (afterStep))
-						throw new ArgumentException ("custom step may not have both \"beforestep\" and \"afterstep\" metadata");
+						throw new ArgumentException ("custom step may not have both \"BeforeStep\" and \"AfterStep\" metadata");
 					if (!String.IsNullOrEmpty (beforeStep))
 						customStepString = $"-{beforeStep}:{customStepString}";
 					if (!String.IsNullOrEmpty (afterStep))

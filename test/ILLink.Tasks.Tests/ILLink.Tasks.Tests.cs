@@ -6,8 +6,7 @@ using System.Reflection;
 using Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
-using Xunit.Abstractions; // TestLogger
-using Microsoft.Build.Framework; // ITask
+using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using ILLink.Tasks;
 using Mono.Linker;
@@ -146,7 +145,6 @@ namespace ILLink.Tasks.Tests
 			}
 		}
 
-		// rootdescriptorfiles
 		[Theory]
 		[InlineData (new object [] { new string [] { "path/to/descriptor.xml" } })]
 		[InlineData (new object [] { new string [] { "path with/spaces/descriptor.xml" } })]
@@ -163,7 +161,6 @@ namespace ILLink.Tasks.Tests
 			}
 		}
 
-		// clearinitlocals and
 		[Theory]
 		[InlineData (true)]
 		[InlineData (false)]
@@ -265,31 +262,44 @@ namespace ILLink.Tasks.Tests
 			new object [] {
 				new ITaskItem [] {
 					new TaskItem (Assembly.GetExecutingAssembly ().Location, new Dictionary<string, string> {
-						{ "type", "ILLink.Tasks.Tests.MockCustomStep" } })
+						{ "Type", "ILLink.Tasks.Tests.MockCustomStep" }
+					})
+				},
+			},
+			new object [] {
+				new ITaskItem [] {
+					new TaskItem (Assembly.GetExecutingAssembly ().Location, new Dictionary<string, string> {
+						{ "Type", "ILLink.Tasks.Tests.MockCustomStep" },
+						{ "BeforeStep", "MarkStep" }
+					})
 				},
 			},
 			new object [] {
 				new ITaskItem [] {
 					new TaskItem (Assembly.GetExecutingAssembly ().Location, new Dictionary<string, string> {
 						{ "type", "ILLink.Tasks.Tests.MockCustomStep" },
-						{ "beforestep", "MarkStep" } })
+						{ "beforebtep", "MarkStep" }
+					})
 				},
 			},
 			new object [] {
 				new ITaskItem [] {
 					new TaskItem (Assembly.GetExecutingAssembly ().Location, new Dictionary<string, string> {
-						{ "type", "ILLink.Tasks.Tests.MockCustomStep" },
-						{ "afterstep", "MarkStep" } })
+						{ "Type", "ILLink.Tasks.Tests.MockCustomStep" },
+						{ "AfterStep", "MarkStep" }
+					})
 				},
 			},
 			new object [] {
 				new ITaskItem [] {
 					new TaskItem (Assembly.GetExecutingAssembly ().Location, new Dictionary<string, string> {
-						{ "type", "ILLink.Tasks.Tests.MockCustomStep" },
-						{ "beforestep", "MarkStep" } }),
+						{ "Type", "ILLink.Tasks.Tests.MockCustomStep" },
+						{ "BeforeStep", "MarkStep" }
+					}),
 					new TaskItem (Assembly.GetExecutingAssembly ().Location, new Dictionary<string, string> {
-						{ "type", "ILLink.Tasks.Tests.MockCustomStep" },
-						{ "afterstep", "MarkStep" } })
+						{ "Type", "ILLink.Tasks.Tests.MockCustomStep" },
+						{ "AfterStep", "MarkStep" }
+					})
 				},
 			}
 		};
@@ -303,32 +313,47 @@ namespace ILLink.Tasks.Tests
 			};
 			using (var driver = task.CreateDriver ()) {
 				foreach (var customStep in customSteps) {
-					var beforeStepName = customStep.GetMetadata ("beforestep");
-					var afterStepName = customStep.GetMetadata ("afterstep");
+					var stepType = customStep.GetMetadata ("Type");
+					var stepName = stepType.Substring (stepType.LastIndexOf (Type.Delimiter) + 1);
+					var beforeStepName = customStep.GetMetadata ("BeforeStep");
+					var afterStepName = customStep.GetMetadata ("AfterStep");
 					Assert.True (String.IsNullOrEmpty (beforeStepName) || String.IsNullOrEmpty (afterStepName));
 
 					var actualStepNames = driver.Context.Pipeline.GetSteps ().Select (s => s.GetType ().Name);
 					if (!String.IsNullOrEmpty (beforeStepName)) {
 						Assert.Contains (beforeStepName, actualStepNames);
-						Assert.Equal ("MockCustomStep", actualStepNames.TakeWhile (s => s != beforeStepName).Last ());
+						Assert.Equal (stepName, actualStepNames.TakeWhile (s => s != beforeStepName).Last ());
 					} else if (!String.IsNullOrEmpty (afterStepName)) {
 						Assert.Contains (afterStepName, actualStepNames);
-						Assert.Equal ("MockCustomStep", actualStepNames.SkipWhile (s => s != afterStepName).ElementAt (1));
+						Assert.Equal (stepName, actualStepNames.SkipWhile (s => s != afterStepName).ElementAt (1));
 					} else {
-						Assert.Equal ("MockCustomStep", actualStepNames.Last ());
+						Assert.Equal (stepName, actualStepNames.Last ());
 					}
 				}
 			}
 		}
 
 		[Fact]
-		public void TestInvalidCustomSteps ()
+		public void TestCustomStepsWithBeforeAndAfterSteps ()
 		{
 			var customSteps = new ITaskItem [] {
 				new TaskItem (Assembly.GetExecutingAssembly ().Location, new Dictionary<string, string> {
-					{ "type", "ILLink.Tasks.Tests.MockCustomStep" },
-					{ "beforestep", "MarkStep" },
-					{ "afterstep", "MarkStep" } })
+					{ "Type", "ILLink.Tasks.Tests.MockCustomStep" },
+					{ "BeforeStep", "MarkStep" },
+					{ "AfterStep", "MarkStep" }
+				})
+			};
+			var task = new MockTask () {
+				CustomSteps = customSteps
+			};
+			Assert.Throws <ArgumentException> (() => task.CreateDriver ());
+		}
+
+		[Fact]
+		public void TestCustomStepsMissingType ()
+		{
+			var customSteps = new ITaskItem [] {
+				new TaskItem (Assembly.GetExecutingAssembly ().Location)
 			};
 			var task = new MockTask () {
 				CustomSteps = customSteps
