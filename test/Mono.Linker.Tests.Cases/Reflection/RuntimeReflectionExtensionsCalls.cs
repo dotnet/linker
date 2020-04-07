@@ -1,9 +1,11 @@
 using System;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace Mono.Linker.Tests.Cases.Reflection
 {
+	[SkipKeptItemsValidation]
 	public class RuntimeReflectionExtensionsCalls
 	{
 		public static void Main ()
@@ -13,55 +15,104 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 			TestGetRuntimeEvent ();
 			TestGetRuntimeField ();
+			TestGetRuntimeMethod ();
 			TestGetRuntimeProperty ();
 
-			TestGetRuntimeMethod ();
 		}
 
-		[Kept]
-		public static void TestGetRuntimeEvent ()
+		#region GetRuntimeEvent
+		[UnrecognizedReflectionAccessPattern (typeof (RuntimeReflectionExtensions), nameof (RuntimeReflectionExtensions.GetRuntimeEvent),
+			new Type [] { typeof (Type), typeof (string) })]
+		static void TestGetRuntimeEvent ()
 		{
 			typeof (Foo).GetRuntimeEvent ("Event");
+			GetTypeWithEvents ().GetRuntimeEvent ("Event");
+			GetUnknownType ().GetRuntimeEvent ("Event");
+			typeof (Foo).GetRuntimeEvent (GetUnknownString ());
 		}
+		#endregion
 
-		[Kept]
+		#region GetRuntimeField
+		[UnrecognizedReflectionAccessPattern (typeof (RuntimeReflectionExtensions), nameof (RuntimeReflectionExtensions.GetRuntimeField),
+			new Type [] { typeof (Type), typeof (string) })]
 		public static void TestGetRuntimeField ()
 		{
 			typeof (Foo).GetRuntimeField ("Field");
+			GetTypeWithFields ().GetRuntimeField ("Field");
+			GetUnknownType ().GetRuntimeField ("Field");
+			typeof (Foo).GetRuntimeField (GetUnknownString ());
 		}
+		#endregion
 
-		[Kept]
+		#region GetRuntimeMethod
+		[UnrecognizedReflectionAccessPattern (typeof (RuntimeReflectionExtensions), nameof (RuntimeReflectionExtensions.GetRuntimeMethod),
+			new Type [] { typeof (Type), typeof (string), typeof (Type []) })]
+		public static void TestGetRuntimeMethod ()
+		{
+			typeof (Foo).GetRuntimeMethod ("Method", Type.EmptyTypes);
+			GetTypeWithMethods ().GetRuntimeMethod ("Method", Type.EmptyTypes);
+			GetUnknownType ().GetRuntimeMethod ("Method", Type.EmptyTypes);
+			typeof (Foo).GetRuntimeMethod (GetUnknownString (), Type.EmptyTypes);
+		}
+		#endregion
+
+		#region GetRuntimeProperty
+		[UnrecognizedReflectionAccessPattern (typeof (RuntimeReflectionExtensions), nameof (RuntimeReflectionExtensions.GetRuntimeProperty),
+			new Type [] { typeof (Type), typeof (string) })]
 		public static void TestGetRuntimeProperty ()
 		{
 			typeof (Foo).GetRuntimeProperty ("Property");
+			GetTypeWithProperties ().GetRuntimeProperty ("Property");
+			GetUnknownType ().GetRuntimeProperty ("Property");
+			typeof (Foo).GetRuntimeProperty (GetUnknownString ());
 		}
+		#endregion
 
-		[Kept]
-		public static void TestGetRuntimeMethod ()
-		{
-			typeof (Foo).GetRuntimeMethod ("Method1", Type.EmptyTypes);
-		}
-
-		[KeptMember (".ctor()")]
 		class Foo
 		{
-			[Kept]
-			[KeptBackingField]
-			[KeptEventAddMethod]
-			[KeptEventRemoveMethod]
 			event EventHandler<EventArgs> Event;
 
-			[Kept]
 			int Field;
 
-			[Kept]
-			[KeptBackingField]
-			public long Property { [Kept] get; [Kept] set; }
-
-			[Kept]
-			public void Method1 (int someArg)
+			public void Method (int arg)
 			{
 			}
+
+			public long Property { get; set; }
+		}
+
+		private static Type GetUnknownType ()
+		{
+			return null;
+		}
+
+		private static string GetUnknownString ()
+		{
+			return null;
+		}
+
+		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberKinds.Events)]
+		private static Type GetTypeWithEvents ()
+		{
+			return null;
+		}
+
+		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberKinds.Fields)]
+		private static Type GetTypeWithFields ()
+		{
+			return null;
+		}
+
+		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberKinds.Methods)]
+		private static Type GetTypeWithMethods ()
+		{
+			return null;
+		}
+
+		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberKinds.Properties)]
+		private static Type GetTypeWithProperties ()
+		{
+			return null;
 		}
 	}
 }
