@@ -3386,9 +3386,11 @@ namespace Mono.Linker.Steps {
 
 			public void ProcessAttributeDataflow (MethodDefinition method, Collection<CustomAttributeArgument> arguments)
 			{
+				int paramOffset = method.HasImplicitThis () ? 1 : 0;
+
 				for (int i = 0; i < method.Parameters.Count; i++)
 				{
-					var annotation = _flowAnnotations.GetParameterAnnotation (method, i + 1 /* adjust for `this` */);
+					var annotation = _flowAnnotations.GetParameterAnnotation (method, i + paramOffset);
 					if (annotation != 0) {
 						ValueNode valueNode = GetValueNodeForCustomAttributeArgument (arguments [i]);
 						if (valueNode != null) {
@@ -3424,8 +3426,8 @@ namespace Mono.Linker.Steps {
 				} else if (argument.Type.MetadataType == MetadataType.String) {
 					valueNode = new KnownStringValue ((string)argument.Value);
 				} else {
-					Debug.Fail ("We shouldn't have gotten a non-null annotation for this from GetParameterAnnotation.");
-					valueNode = null;
+					// We shouldn't have gotten a non-null annotation for this from GetParameterAnnotation
+					throw new InvalidOperationException ();
 				}
 
 				return valueNode;
