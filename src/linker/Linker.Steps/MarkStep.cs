@@ -3902,17 +3902,21 @@ namespace Mono.Linker.Steps {
 			{
 				bool foundMatch = false;
 				var methodCalling = reflectionContext.MethodCalling;
-				foreach (var field in declaringType.Fields) {
-					if (field.Name != name)
-						continue;
 
-					if (staticOnly && !field.IsStatic)
-						continue;
+				do {
+					foreach (var field in declaringType.Fields) {
+						if (field.Name != name)
+							continue;
 
-					foundMatch = true;
-					reflectionContext.RecordRecognizedPattern (field, () => _markStep.MarkField (field, new DependencyInfo (DependencyKind.AccessedViaReflection, methodCalling)));
-					break;
-				}
+						if (staticOnly && !field.IsStatic)
+							continue;
+
+						foundMatch = true;
+						reflectionContext.RecordRecognizedPattern (field, () => _markStep.MarkField (field, new DependencyInfo (DependencyKind.AccessedViaReflection, methodCalling)));
+						break;
+					}
+					declaringType = declaringType.BaseType.Resolve ();
+				} while (!foundMatch && declaringType.FullName != "System.Object");
 
 				if (!foundMatch)
 					reflectionContext.RecordUnrecognizedPattern ($"Reflection call '{reflectionContext.MethodCalled.FullName}' inside '{reflectionContext.MethodCalling.FullName}' could not resolve field `{name}` on type `{declaringType.FullName}`.");
@@ -3922,13 +3926,18 @@ namespace Mono.Linker.Steps {
 			{
 				bool foundMatch = false;
 				var methodCalling = reflectionContext.MethodCalling;
-				foreach (var eventInfo in declaringType.Events) {
-					if (eventInfo.Name != name)
-						continue;
 
-					foundMatch = true;
-					reflectionContext.RecordRecognizedPattern (eventInfo, () => _markStep.MarkEvent (eventInfo, new DependencyInfo (DependencyKind.AccessedViaReflection, methodCalling)));
-				}
+				do {
+					foreach (var eventInfo in declaringType.Events) {
+						if (eventInfo.Name != name)
+							continue;
+
+						foundMatch = true;
+						reflectionContext.RecordRecognizedPattern (eventInfo, () => _markStep.MarkEvent (eventInfo, new DependencyInfo (DependencyKind.AccessedViaReflection, methodCalling)));
+					}
+
+					declaringType = declaringType.BaseType.Resolve ();
+				} while (!foundMatch && declaringType.FullName != "System.Object");
 
 				if (!foundMatch)
 					reflectionContext.RecordUnrecognizedPattern ($"Reflection call '{reflectionContext.MethodCalled.FullName}' inside '{reflectionContext.MethodCalling.FullName}' could not resolve event `{name}` on type `{declaringType.FullName}`.");
