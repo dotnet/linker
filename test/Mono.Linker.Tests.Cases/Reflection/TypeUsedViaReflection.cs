@@ -34,8 +34,6 @@ namespace Mono.Linker.Tests.Cases.Reflection {
 		}
 
 		[Kept]
-		[UnrecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetType), new Type [] { typeof (string), typeof (bool) })]
 		public static void TestEmptyString ()
 		{
 			const string reflectionTypeKeptString = "";

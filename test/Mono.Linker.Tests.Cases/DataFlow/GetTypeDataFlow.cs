@@ -86,12 +86,6 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		static int _switchOnField;
 
-		[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.GetType), new Type [] { typeof (string) },
-			"Reflection call 'System.Type System.Type::GetType(System.String)' inside 'System.Void Mono.Linker.Tests.Cases.DataFlow.GetTypeDataFlow::TestMultipleConstantValues()' " +
-			"was detected with type name `UnknownType` which can't be resolved.")]
-		[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.GetType), new Type [] { typeof (string) },
-			"Reflection call 'System.Type System.Type::GetType(System.String)' inside 'System.Void Mono.Linker.Tests.Cases.DataFlow.GetTypeDataFlow::TestMultipleConstantValues()' " +
-			"was detected with type name `AnotherUnknownType` which can't be resolved.")]
 		static void TestMultipleConstantValues ()
 		{
 			string typeName = null;

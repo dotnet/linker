@@ -3552,7 +3552,8 @@ namespace Mono.Linker.Steps {
 									if (typeNameValue is KnownStringValue knownStringValue) {
 										TypeDefinition foundType = _markStep.ResolveFullyQualifiedTypeName (knownStringValue.Contents);
 										if (foundType == null) {
-											reflectionContext.RecordUnrecognizedPattern ($"Reflection call '{calledMethod.FullName}' inside '{reflectionContext.MethodCalling.FullName}' was detected with type name `{knownStringValue.Contents}` which can't be resolved.");
+											// Intentionally ignore - it's not wrong for code to call Type.GetType on non-existing name, the code might expect null/exception back.
+											reflectionContext.RecordHandledPattern ();
 										} else {
 											var methodCalling = reflectionContext.MethodCalling;
 											reflectionContext.RecordRecognizedPattern (foundType, () => _markStep.MarkType (foundType, new DependencyInfo (DependencyKind.AccessedViaReflection, methodCalling)));
@@ -3736,9 +3737,8 @@ namespace Mono.Linker.Steps {
 					} else if (uniqueValue is KnownStringValue knownStringValue) {
 						TypeDefinition foundType = _markStep.ResolveFullyQualifiedTypeName (knownStringValue.Contents);
 						if (foundType == null) {
-							reflectionContext.RecordUnrecognizedPattern ($"Value '{knownStringValue.Contents}' was passed into the {GetMetadataTokenDescriptionForErrorMessage (targetContext)} " +
-								$"which requires it to be a valid type name because it requires dynamically accessed member kinds '{GetDynamicallyAccessedMemberKindsDescription (requiredMemberKinds)}'. " +
-								$"But value '{knownStringValue.Contents}' could not be resolved into a type.");
+							// Intentionally ignore - it's not wrong for code to call Type.GetType on non-existing name, the code might expect null/exception back.
+							reflectionContext.RecordHandledPattern ();
 						} else {
 							MarkTypeForDynamicallyAccessedMembers (ref reflectionContext, foundType, requiredMemberKinds);
 						}
