@@ -1,4 +1,4 @@
-﻿using Mono.Linker.Tests.Cases.Expectations.Assertions;
+using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -14,6 +14,11 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			RequireDefaultConstructor (typeof (DefaultConstructorType));
 			RequirePublicConstructors (typeof (PublicConstructorsType));
 			RequireConstructors (typeof (ConstructorsType));
+			RequireDefaultConstructor (typeof (PrivateDefaultConstructorType));
+			RequireDefaultOrPublicConstructors (typeof (PrivateDefaultAndPublicConstructorsType));
+			// I expect this^ to have the same effect on the type as:
+			//   RequireDefaultConstructor (typeof (PrivateDefaultAndPublicConstructorsType));
+			//   RequirePublicConstructors (typeof (PrivateDefaultAndPublicConstructorsType));
 			RequirePublicMethods (typeof (PublicMethodsType));
 			RequireMethods (typeof (MethodsType));
 			RequirePublicFields (typeof (PublicFieldsType));
@@ -60,6 +65,66 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			public bool Field1;
 		}
 
+		[Kept]
+		private static void RequireDefaultOrPublicConstructors (
+			// Encoded the same as just PublicConstructors
+			[DynamicallyAccessedMembers(DynamicallyAccessedMemberKinds.DefaultConstructor | DynamicallyAccessedMemberKinds.PublicConstructors)]
+			[KeptAttributeAttribute(typeof(DynamicallyAccessedMembersAttribute))]
+			Type type)
+		{
+		}
+
+		[Kept]
+		class PrivateDefaultConstructorBaseType
+		{
+			[Kept]
+			protected PrivateDefaultConstructorBaseType () { }
+
+			PrivateDefaultConstructorBaseType (int i) { }
+		}
+
+		[Kept]
+		[KeptBaseType (typeof (PrivateDefaultConstructorBaseType))]
+		class PrivateDefaultConstructorType : PrivateDefaultConstructorBaseType
+		{
+			[Kept]
+			PrivateDefaultConstructorType () { }
+
+			public PrivateDefaultConstructorType (int i) { }
+
+			public void Method1 () { }
+
+			public bool Property1 { get; set; }
+
+			public bool Field1;
+		}
+
+		[Kept]
+		class PrivateDefaultAndPublicConstructorsBaseType
+		{
+			[Kept]
+			protected PrivateDefaultAndPublicConstructorsBaseType () { }
+
+			public PrivateDefaultAndPublicConstructorsBaseType (int i) { }
+		}
+
+		// Same as PrivateDefaultConstructorType, with different [Kept] expectations
+		[Kept]
+		[KeptBaseType (typeof (PrivateDefaultAndPublicConstructorsBaseType))]
+		class PrivateDefaultAndPublicConstructorsType : PrivateDefaultAndPublicConstructorsBaseType
+		{
+			[Kept]
+			PrivateDefaultAndPublicConstructorsType () { }
+
+			[Kept]
+			public PrivateDefaultAndPublicConstructorsType (int i) { }
+
+			public void Method1 () { }
+
+			public bool Property1 { get; set; }
+
+			public bool Field1;
+		}
 
 		[Kept]
 		private static void RequirePublicConstructors (
