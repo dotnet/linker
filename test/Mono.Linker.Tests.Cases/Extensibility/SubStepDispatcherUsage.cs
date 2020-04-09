@@ -23,6 +23,6 @@ namespace Mono.Linker.Tests.Cases.Extensibility
 			public static void SomeMethod ()
 			{
 			}
-        }
+		}
 	}
 }

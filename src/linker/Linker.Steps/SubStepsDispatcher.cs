@@ -14,7 +14,7 @@ namespace Mono.Linker.Steps
 	// consist of multiple steps. It simplifies their implementation as well as the
 	// way how to hook them into the pipeline of existing steps.
 	//
-	public abstract class SubStepsDispatcher : IStep, IEnumerable<ISubStep>
+	public abstract class SubStepsDispatcher : IStep
 	{
 		readonly List<ISubStep> substeps;
 
@@ -78,45 +78,29 @@ namespace Mono.Linker.Steps
 			foreach (TypeDefinition type in types) {
 				DispatchType (type);
 
-				if (type.HasFields && HasSubSteps (on_fields))
-					BrowseFields (type.Fields);
+				if (type.HasFields && HasSubSteps (on_fields)) {
+					foreach (FieldDefinition field in type.Fields)
+						DispatchField (field);
+				}
 
-				if (type.HasMethods && HasSubSteps (on_methods))
-					BrowseMethods (type.Methods);
+				if (type.HasMethods && HasSubSteps (on_methods)) {
+					foreach (MethodDefinition method in type.Methods)
+						DispatchMethod (method);
+				}
 
-				if (type.HasProperties && HasSubSteps (on_properties))
-					BrowseProperties (type.Properties);
+				if (type.HasProperties && HasSubSteps (on_properties)) {
+					foreach (PropertyDefinition property in type.Properties)
+						DispatchProperty (property);
+				}
 
-				if (type.HasEvents && HasSubSteps (on_events))
-					BrowseEvents (type.Events);
+				if (type.HasEvents && HasSubSteps (on_events)) {
+					foreach (EventDefinition @event in type.Events)
+						DispatchEvent (@event);
+				}
 
 				if (type.HasNestedTypes)
 					BrowseTypes (type.NestedTypes);
 			}
-		}
-
-		void BrowseFields (Collection<FieldDefinition> fields)
-		{
-			foreach (FieldDefinition field in fields)
-				DispatchField (field);
-		}
-
-		void BrowseMethods (Collection<MethodDefinition> methods)
-		{
-			foreach (MethodDefinition method in methods)
-				DispatchMethod (method);
-		}
-
-		void BrowseProperties (Collection<PropertyDefinition> properties)
-		{
-			foreach (PropertyDefinition property in properties)
-				DispatchProperty (property);
-		}
-
-		void BrowseEvents (Collection<EventDefinition> events)
-		{
-			foreach (EventDefinition @event in events)
-				DispatchEvent (@event);
 		}
 
 		void DispatchAssembly (AssemblyDefinition assembly)
@@ -205,15 +189,5 @@ namespace Mono.Linker.Steps
 		}
 
 		static bool Targets (ISubStep substep, SubStepTargets target) => (substep.Targets & target) == target;
-
-		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator ()
-		{
-			return GetEnumerator ();
-		}
-
-		public IEnumerator<ISubStep> GetEnumerator ()
-		{
-			return substeps.GetEnumerator ();
-		}
 	}
 }
