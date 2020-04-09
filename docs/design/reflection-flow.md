@@ -127,7 +127,7 @@ While it would be possible to annotate reflection primitives with the proposed D
 * `Type.GetMember`
 * `Type.GetNestedType`
 
-Are going to be special cased so that if the type and name is exactly known at linking time, only the specific member will be preserved. If the name is not known, all matching members are going to be preserved instead. Liker may look at other parameters to these methods, such as the binding flags and parameter counts to further restrict the set of members preserved.
+Are going to be special cased so that if the type and name is exactly known at linking time, only the specific member will be preserved. If the name is not known, all matching members are going to be preserved instead. Linker may look at other parameters to these methods, such as the binding flags and parameter counts to further restrict the set of members preserved.
 
 The special casing will also help in situations such as when the type is not statically known and we only have an annotated value - e.g. calling `GetMethod(...BindingFlags.Public)` on a `System.Type` instance annotated as `MemberKinds.PublicMethods` should be considered valid.
 
