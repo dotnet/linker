@@ -15,10 +15,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			RequirePublicConstructors (typeof (PublicConstructorsType));
 			RequireConstructors (typeof (ConstructorsType));
 			RequireDefaultConstructor (typeof (PrivateDefaultConstructorType));
-			RequireDefaultOrPublicConstructors (typeof (PrivateDefaultAndPublicConstructorsType));
-			// I expect this^ to have the same effect on the type as:
-			//   RequireDefaultConstructor (typeof (PrivateDefaultAndPublicConstructorsType));
-			//   RequirePublicConstructors (typeof (PrivateDefaultAndPublicConstructorsType));
+			RequirePublicConstructors (typeof (PrivateDefaultAndPublicConstructorsType));
 			RequirePublicMethods (typeof (PublicMethodsType));
 			RequireMethods (typeof (MethodsType));
 			RequirePublicFields (typeof (PublicFieldsType));
@@ -63,15 +60,6 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			public void Method1 () { }
 			public bool Property1 { get; set; }
 			public bool Field1;
-		}
-
-		[Kept]
-		private static void RequireDefaultOrPublicConstructors (
-			// Encoded the same as just PublicConstructors
-			[DynamicallyAccessedMembers(DynamicallyAccessedMemberKinds.DefaultConstructor | DynamicallyAccessedMemberKinds.PublicConstructors)]
-			[KeptAttributeAttribute(typeof(DynamicallyAccessedMembersAttribute))]
-			Type type)
-		{
 		}
 
 		[Kept]
@@ -147,6 +135,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		[KeptBaseType (typeof (PublicConstructorsBaseType))]
 		class PublicConstructorsType : PublicConstructorsBaseType
 		{
+			// Private default ctor is also kept for DynamicallyAccessedMemberKinds.PublicConstructors
+			[Kept]
 			private PublicConstructorsType () { }
 
 			[Kept]
