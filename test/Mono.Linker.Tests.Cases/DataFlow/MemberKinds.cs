@@ -12,10 +12,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		public static void Main ()
 		{
 			RequireDefaultConstructor (typeof (DefaultConstructorType));
+			RequireDefaultConstructor (typeof (PrivateParameterlessConstructorType));
+			RequireDefaultConstructor (typeof (DefaultConstructorBeforeFieldInitType));
 			RequirePublicConstructors (typeof (PublicConstructorsType));
+			RequirePublicConstructors (typeof (PublicConstructorsBeforeFieldInitType));
 			RequireConstructors (typeof (ConstructorsType));
-			RequireDefaultConstructor (typeof (PrivateDefaultConstructorType));
-			RequirePublicConstructors (typeof (PrivateDefaultAndPublicConstructorsType));
+			RequireConstructors (typeof (ConstructorsBeforeFieldInitType));
 			RequirePublicMethods (typeof (PublicMethodsType));
 			RequireMethods (typeof (MethodsType));
 			RequirePublicFields (typeof (PublicFieldsType));
@@ -57,55 +59,40 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			private DefaultConstructorType (int i, int j) { }
 
+			// Not implied by the DynamicallyAccessedMemberKinds logic, but
+			// explicit cctors would be kept by the linker.
+			// [Kept]
+			// static DefaultConstructorType () { }
+
 			public void Method1 () { }
 			public bool Property1 { get; set; }
 			public bool Field1;
 		}
 
 		[Kept]
-		class PrivateDefaultConstructorBaseType
+		class DefaultConstructorBeforeFieldInitType
 		{
-			[Kept]
-			protected PrivateDefaultConstructorBaseType () { }
+			static int i = 10;
 
-			PrivateDefaultConstructorBaseType (int i) { }
+			[Kept]
+			public DefaultConstructorBeforeFieldInitType () { }
 		}
 
 		[Kept]
-		[KeptBaseType (typeof (PrivateDefaultConstructorBaseType))]
-		class PrivateDefaultConstructorType : PrivateDefaultConstructorBaseType
+		class PrivateParameterlessConstructorBaseType
 		{
-			[Kept]
-			PrivateDefaultConstructorType () { }
+			protected PrivateParameterlessConstructorBaseType () { }
 
-			public PrivateDefaultConstructorType (int i) { }
-
-			public void Method1 () { }
-
-			public bool Property1 { get; set; }
-
-			public bool Field1;
+			PrivateParameterlessConstructorBaseType (int i) { }
 		}
 
 		[Kept]
-		class PrivateDefaultAndPublicConstructorsBaseType
+		[KeptBaseType (typeof (PrivateParameterlessConstructorBaseType))]
+		class PrivateParameterlessConstructorType : PrivateParameterlessConstructorBaseType
 		{
-			[Kept]
-			protected PrivateDefaultAndPublicConstructorsBaseType () { }
+			PrivateParameterlessConstructorType () { }
 
-			public PrivateDefaultAndPublicConstructorsBaseType (int i) { }
-		}
-
-		// Same as PrivateDefaultConstructorType, with different [Kept] expectations
-		[Kept]
-		[KeptBaseType (typeof (PrivateDefaultAndPublicConstructorsBaseType))]
-		class PrivateDefaultAndPublicConstructorsType : PrivateDefaultAndPublicConstructorsBaseType
-		{
-			[Kept]
-			PrivateDefaultAndPublicConstructorsType () { }
-
-			[Kept]
-			public PrivateDefaultAndPublicConstructorsType (int i) { }
+			public PrivateParameterlessConstructorType (int i) { }
 
 			public void Method1 () { }
 
@@ -135,8 +122,6 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		[KeptBaseType (typeof (PublicConstructorsBaseType))]
 		class PublicConstructorsType : PublicConstructorsBaseType
 		{
-			// Private default ctor is also kept for DynamicallyAccessedMemberKinds.PublicConstructors
-			[Kept]
 			private PublicConstructorsType () { }
 
 			[Kept]
@@ -144,9 +129,22 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			private PublicConstructorsType (int i, int j) { }
 
+			// Not implied by the DynamicallyAccessedMemberKinds logic, but
+			// explicit cctors would be kept by the linker.
+			// [Kept]
+			// static PublicConstructorsType () { }
+
 			public void Method1 () { }
 			public bool Property1 { get; set; }
 			public bool Field1;
+		}
+
+		class PublicConstructorsBeforeFieldInitType
+		{
+			static int i = 10;
+
+			[Kept]
+			public PublicConstructorsBeforeFieldInitType () { }
 		}
 
 
@@ -180,6 +178,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[Kept]
 			private ConstructorsType (int i, int j) { }
 
+			// Kept by the DynamicallyAccessedMembers logic
 			[Kept]
 			static ConstructorsType () { }
 
@@ -188,6 +187,15 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			public bool Field1;
 		}
 
+		[Kept]
+		class ConstructorsBeforeFieldInitType
+		{
+			[Kept]
+			public int i = 10;
+
+			[Kept]
+			public ConstructorsBeforeFieldInitType () { }
+		}
 
 		[Kept]
 		private static void RequirePublicMethods (
