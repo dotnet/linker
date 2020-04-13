@@ -10,30 +10,20 @@ namespace Mono.Linker.Tests.Cases.Reflection
 	{
 		public static void Main ()
 		{
-			// Create a foo so that this test gives the expected result when unreachable bodies is turned on
-			new A ();
-
 			TestGetRuntimeEvent ();
 			TestGetRuntimeField ();
-			//TestGetRuntimeMethod ();
-			//TestGetRuntimeProperty ();
+			TestGetRuntimeMethod ();
+			TestGetRuntimeProperty ();
 
 		}
 
 		#region GetRuntimeEvent
 		[Kept]
-		[UnrecognizedReflectionAccessPattern (typeof (RuntimeReflectionExtensions), nameof (RuntimeReflectionExtensions.GetRuntimeEvent),
-			new Type [] { typeof (Type), typeof (System.String) },
-			"The return value of method 'System.Type Mono.Linker.Tests.Cases.Reflection.RuntimeReflectionExtensionsCalls::GetUnknownType()' with " +
-			"dynamically accessed member kinds 'None' is passed into the parameter '' of method " +
-			"'System.Reflection.EventInfo System.Reflection.RuntimeReflectionExtensions::GetRuntimeEvent(System.Type,System.String)' which requires " +
-			"dynamically accessed member kinds `Events`. To fix this add DynamicallyAccessedMembersAttribute to it and specify at least these member " +
-			"kinds 'Events'.")]
 		public static void TestGetRuntimeEvent ()
 		{
-			typeof (A).GetRuntimeEvent ("Event");
-			typeof (B).GetRuntimeEvent (GetUnknownString ());
-			GetC ().GetRuntimeEvent ("This string will not be reached");
+			typeof (ClassWithPubicMembers).GetRuntimeEvent ("Event");
+			typeof (ClassWithPrivateMembers).GetRuntimeEvent (GetUnknownString ());
+			GetClassWithEvent ().GetRuntimeEvent ("This string will not be reached");
 			typeof (Derived).GetRuntimeEvent ("Event");
 			GetUnknownType ().GetRuntimeEvent (GetUnknownString ()); // UnrecognizedReflectionAccessPattern
 		}
@@ -41,50 +31,42 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 		#region GetRuntimeField
 		[Kept]
-		[UnrecognizedReflectionAccessPattern (typeof (RuntimeReflectionExtensions), nameof (RuntimeReflectionExtensions.GetRuntimeField),
-			new Type [] { typeof (Type), typeof (System.String) },
-			"The return value of method 'System.Type Mono.Linker.Tests.Cases.Reflection.RuntimeReflectionExtensionsCalls::GetUnknownType()' with " +
-			"dynamically accessed member kinds 'None' is passed into the parameter '' of method " +
-			"'System.Reflection.FieldInfo System.Reflection.RuntimeReflectionExtensions::GetRuntimeField(System.Type,System.String)' which requires " +
-			"dynamically accessed member kinds `Fields`. To fix this add DynamicallyAccessedMembersAttribute to it and specify at least these member " +
-			"kinds 'Fields'.")]
 		public static void TestGetRuntimeField ()
 		{
-			typeof (A).GetRuntimeField ("Field");
-			typeof (B).GetRuntimeField (GetUnknownString ());
-			GetC ().GetRuntimeField ("This string will not be reached");
+			typeof (ClassWithPubicMembers).GetRuntimeField ("Field");
+			typeof (ClassWithPrivateMembers).GetRuntimeField (GetUnknownString ());
+			GetClassWithField ().GetRuntimeField ("This string will not be reached");
 			typeof (Derived).GetRuntimeField ("Field");
 			GetUnknownType ().GetRuntimeField (GetUnknownString ()); // UnrecognizedReflectionAccessPattern
 		}
 		#endregion
 
-		//#region GetRuntimeMethod
-		//[UnrecognizedReflectionAccessPattern (typeof (RuntimeReflectionExtensions), nameof (RuntimeReflectionExtensions.GetRuntimeMethod),
-		//	new Type [] { typeof (Type), typeof (string), typeof (Type []) })]
-		//public static void TestGetRuntimeMethod ()
-		//{
-		//	typeof (Foo).GetRuntimeMethod ("Method", Type.EmptyTypes);
-		//	GetTypeWithMethods ().GetRuntimeMethod ("Method", Type.EmptyTypes);
-		//	GetUnknownType ().GetRuntimeMethod ("Method", Type.EmptyTypes);
-		//	typeof (Foo).GetRuntimeMethod (GetUnknownString (), Type.EmptyTypes);
-		//}
-		//#endregion
+		#region GetRuntimeMethod
+		[Kept]
+		public static void TestGetRuntimeMethod ()
+		{
+			typeof (ClassWithPubicMembers).GetRuntimeMethod ("Method", Type.EmptyTypes);
+			typeof (ClassWithPrivateMembers).GetRuntimeMethod (GetUnknownString (), Type.EmptyTypes);
+			GetClassWithMethod ().GetRuntimeMethod ("This string will not be reached", Type.EmptyTypes);
+			typeof (Derived).GetRuntimeMethod ("Method", Type.EmptyTypes);
+			GetUnknownType ().GetRuntimeMethod (GetUnknownString (), Type.EmptyTypes); // UnrecognizedReflectionAccessPattern
+		}
+		#endregion
 
-		//#region GetRuntimeProperty
-		//[UnrecognizedReflectionAccessPattern (typeof (RuntimeReflectionExtensions), nameof (RuntimeReflectionExtensions.GetRuntimeProperty),
-		//	new Type [] { typeof (Type), typeof (string) })]
-		//public static void TestGetRuntimeProperty ()
-		//{
-		//	typeof (Foo).GetRuntimeProperty ("Property");
-		//	GetTypeWithProperties ().GetRuntimeProperty ("Property");
-		//	GetUnknownType ().GetRuntimeProperty ("Property");
-		//	typeof (Foo).GetRuntimeProperty (GetUnknownString ());
-		//}
-		//#endregion
+		#region GetRuntimeProperty
+		[Kept]
+		public static void TestGetRuntimeProperty ()
+		{
+			typeof (ClassWithPubicMembers).GetRuntimeProperty ("Property");
+			typeof (ClassWithPrivateMembers).GetRuntimeProperty (GetUnknownString ());
+			GetClassWithProperty ().GetRuntimeProperty ("This string will not be reached");
+			typeof (Derived).GetRuntimeProperty ("Property");
+			GetUnknownType ().GetRuntimeProperty (GetUnknownString ()); // UnrecognizedReflectionAccessPattern
+		}
+		#endregion
 
 		#region Helpers
-		[KeptMember (".ctor()")]
-		class A
+		class ClassWithPubicMembers
 		{
 			[Kept]
 			[KeptBackingField]
@@ -95,14 +77,17 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			[Kept]
 			public int Field;
 
-			//public void Method1 (int arg)
-			//{
-			//}
+			[Kept]
+			public void Method (int arg)
+			{
+			}
 
-			//public long Property1 { get; set; }
+			[Kept]
+			[KeptBackingField]
+			public long Property { [Kept] get; [Kept] set; }
 		}
 
-		class B
+		class ClassWithPrivateMembers
 		{
 			[Kept]
 			[KeptBackingField]
@@ -112,18 +97,45 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 			[Kept]
 			private int Field;
+
+			[Kept]
+			private void Method (int arg)
+			{
+			}
+
+			[Kept]
+			[KeptBackingField]
+			private long Property { [Kept] get; [Kept] set; }
 		}
 
-		class C
+		class ClassWithEvent
 		{
 			[Kept]
 			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
 			static protected event EventHandler<EventArgs> Event;
+		}
 
+		class ClassWithField
+		{
 			[Kept]
-			static protected int Field;
+			protected int Field;
+		}
+
+		class ClassWithMethod
+		{
+			[Kept]
+			protected void Method (int arg)
+			{
+			}
+		}
+
+		class ClassWithProperty
+		{
+			[Kept]
+			[KeptBackingField]
+			protected long Property { [Kept] get; [Kept] set; }
 		}
 
 		[Kept]
@@ -137,6 +149,15 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 			[Kept]
 			public int Field;
+
+			[Kept]
+			public void Method (int arg)
+			{
+			}
+
+			[Kept]
+			[KeptBackingField]
+			protected long Property { [Kept] get; [Kept] set; }
 		}
 
 		[Kept]
@@ -159,12 +180,34 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 		[Kept]
 		[return: KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
-		[return: DynamicallyAccessedMembers(
-			DynamicallyAccessedMemberKinds.Events |
-			DynamicallyAccessedMemberKinds.Fields)]
-		private static Type GetC ()
+		[return: DynamicallyAccessedMembers(DynamicallyAccessedMemberKinds.Events)]
+		private static Type GetClassWithEvent ()
 		{
-			return typeof(C);
+			return typeof(ClassWithEvent);
+		}
+
+		[Kept]
+		[return: KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberKinds.Fields)]
+		private static Type GetClassWithField ()
+		{
+			return typeof (ClassWithField);
+		}
+
+		[Kept]
+		[return: KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberKinds.Methods)]
+		private static Type GetClassWithMethod ()
+		{
+			return typeof (ClassWithMethod);
+		}
+
+		[Kept]
+		[return: KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberKinds.Properties)]
+		private static Type GetClassWithProperty ()
+		{
+			return typeof (ClassWithProperty);
 		}
 		#endregion
 	}

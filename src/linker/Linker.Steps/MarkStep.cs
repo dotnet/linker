@@ -3534,16 +3534,20 @@ namespace Mono.Linker.Steps {
 											if (stringParam is KnownStringValue stringValue) {
 												switch (memberKind) {
 													case DynamicallyAccessedMemberKinds.Events:
-														MarkEventsFromReflectionCall (ref reflectionContext, systemTypeValue.TypeRepresented, stringValue.Contents);
+														MarkEventsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, e => e.Name == stringValue.Contents);
+														reflectionContext.RecordHandledPattern ();
 														break;
 													case DynamicallyAccessedMemberKinds.Fields:
-														MarkFieldsFromReflectionCall (ref reflectionContext, systemTypeValue.TypeRepresented, stringValue.Contents);
+														MarkFieldsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, f => f.Name == stringValue.Contents);
+														reflectionContext.RecordHandledPattern ();
 														break;
 													case DynamicallyAccessedMemberKinds.Methods:
-														MarkMethodsFromReflectionCall (ref reflectionContext, systemTypeValue.TypeRepresented, stringValue.Contents, null);
+														MarkMethodsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, m => m.Name == stringValue.Contents);
+														reflectionContext.RecordHandledPattern ();
 														break;
 													case DynamicallyAccessedMemberKinds.Properties:
-														MarkPropertiesFromReflectionCall (ref reflectionContext, systemTypeValue.TypeRepresented, stringValue.Contents);
+														MarkPropertiesOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, p => p.Name == stringValue.Contents);
+														reflectionContext.RecordHandledPattern ();
 														break;
 													default:
 														Debug.Fail ("Unreachable.");
