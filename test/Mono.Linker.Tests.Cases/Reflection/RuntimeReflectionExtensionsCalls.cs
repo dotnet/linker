@@ -19,6 +19,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 		#region GetRuntimeEvent
 		[Kept]
+		[UnrecognizedReflectionAccessPattern (typeof (RuntimeReflectionExtensions), nameof (RuntimeReflectionExtensions.GetRuntimeEvent),
+			new Type [] { typeof (Type), typeof (string) })]
 		public static void TestGetRuntimeEvent ()
 		{
 			typeof (ClassWithPubicMembers).GetRuntimeEvent ("Event");
@@ -31,6 +33,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 		#region GetRuntimeField
 		[Kept]
+		[UnrecognizedReflectionAccessPattern (typeof (RuntimeReflectionExtensions), nameof (RuntimeReflectionExtensions.GetRuntimeField),
+			new Type [] { typeof (Type), typeof (string) })]
 		public static void TestGetRuntimeField ()
 		{
 			typeof (ClassWithPubicMembers).GetRuntimeField ("Field");
@@ -43,6 +47,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 		#region GetRuntimeMethod
 		[Kept]
+		[UnrecognizedReflectionAccessPattern (typeof (RuntimeReflectionExtensions), nameof (RuntimeReflectionExtensions.GetRuntimeMethod),
+			new Type [] { typeof (Type), typeof (string), typeof (Type []) })]
 		public static void TestGetRuntimeMethod ()
 		{
 			typeof (ClassWithPubicMembers).GetRuntimeMethod ("Method", Type.EmptyTypes);
@@ -55,6 +61,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 		#region GetRuntimeProperty
 		[Kept]
+		[UnrecognizedReflectionAccessPattern (typeof (RuntimeReflectionExtensions), nameof (RuntimeReflectionExtensions.GetRuntimeProperty),
+			new Type [] { typeof (Type), typeof (string) })]
 		public static void TestGetRuntimeProperty ()
 		{
 			typeof (ClassWithPubicMembers).GetRuntimeProperty ("Property");
