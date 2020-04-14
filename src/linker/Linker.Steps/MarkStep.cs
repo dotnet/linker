@@ -3531,6 +3531,7 @@ namespace Mono.Linker.Steps {
 							&& calledMethod.Parameters [0].ParameterType.FullName == "System.Type": {
 
 								reflectionContext.AnalyzingPattern ();
+								BindingFlags bindingFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy;
 
 								foreach (var value in methodParams [0].UniqueValues ()) {
 									if (value is SystemTypeValue systemTypeValue) {
@@ -3538,7 +3539,7 @@ namespace Mono.Linker.Steps {
 											// TODO: Change this as needed after deciding whether or not we are to keep
 											// all methods on a type that was accessed via reflection.
 											if (stringParam is KnownStringValue stringValue) {
-												MarkMethodsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, m => m.Name == stringValue.Contents, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+												MarkMethodsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, m => m.Name == stringValue.Contents, bindingFlags);
 												reflectionContext.RecordHandledPattern ();
 											} else {
 												RequireDynamicallyAccessedMembers (ref reflectionContext, DynamicallyAccessedMemberKinds.Methods, value, calledMethod.Parameters [0]);
