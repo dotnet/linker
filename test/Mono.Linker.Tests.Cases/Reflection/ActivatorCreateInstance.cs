@@ -44,6 +44,9 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			AppDomainCreateInstance ();
 
 			UnsupportedCreateInstance ();
+
+			TestCreateInstanceOfTWithNewConstraint<TestCreateInstanceOfTWithNewConstraintType> ();
+			TestCreateInstanceOfTWithNoConstraint<TestCreateInstanceOfTWithNoConstraintType> ();
 		}
 
 		[Kept]
@@ -364,6 +367,45 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			typeof (ActivatorCreateInstance).Assembly.CreateInstance ("NonExistent", ignoreCase: false);
 			typeof (ActivatorCreateInstance).Assembly.CreateInstance ("NonExistent", false, BindingFlags.Public, null, new object [] { }, null, new object [] { });
 
+		}
+
+		[Kept]
+		class TestCreateInstanceOfTWithNewConstraintType
+		{
+			[Kept]
+			public TestCreateInstanceOfTWithNewConstraintType ()
+			{
+			}
+
+			public TestCreateInstanceOfTWithNewConstraintType (int i)
+			{
+			}
+		}
+
+		[Kept]
+		[RecognizedReflectionAccessPattern]
+		private static void TestCreateInstanceOfTWithNewConstraint<T> () where T : new()
+		{
+			Activator.CreateInstance<T> ();
+		}
+
+		[Kept]
+		class TestCreateInstanceOfTWithNoConstraintType
+		{
+			public TestCreateInstanceOfTWithNoConstraintType ()
+			{
+			}
+
+			public TestCreateInstanceOfTWithNoConstraintType (int i)
+			{
+			}
+		}
+
+		[Kept]
+		[UnrecognizedReflectionAccessPattern (typeof (Activator), nameof (Activator.CreateInstance) + "<T>", new Type [0])]
+		private static void TestCreateInstanceOfTWithNoConstraint<T> ()
+		{
+			Activator.CreateInstance<T> ();
 		}
 	}
 }

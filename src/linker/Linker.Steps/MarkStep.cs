@@ -3827,8 +3827,18 @@ namespace Mono.Linker.Steps {
 							&& calledMethod.DeclaringType.Namespace == "System"
 							&& calledMethod.DeclaringType.Name == "Activator"
 							&& calledMethod.Parameters.Count == 0: {
-								// Not yet supported in any combination
 								reflectionContext.AnalyzingPattern ();
+
+								if (calledMethod is GenericInstanceMethod genericCalledMethod && genericCalledMethod.GenericArguments.Count == 1
+									&& genericCalledMethod.GenericArguments [0] is GenericParameter genericParameter) {
+									if (genericParameter.HasDefaultConstructorConstraint) {
+										// This is safe, the linker would have marked the default .ctor already
+										reflectionContext.RecordHandledPattern ();
+										break;
+									}
+								}
+
+								// Not yet supported in any combination
 								reflectionContext.RecordUnrecognizedPattern ($"Activator call '{reflectionContext.MethodCalled.FullName}' inside '{reflectionContext.MethodCalling.FullName}' is not supported");
 							}
 							break;
