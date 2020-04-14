@@ -3505,19 +3505,19 @@ namespace Mono.Linker.Steps {
 
 								switch (getRuntimeMember) {
 									case var mt when getRuntimeMember.EndsWith ("Event"):
-										memberKind = DynamicallyAccessedMemberKinds.Events;
+										memberKind = DynamicallyAccessedMemberKinds.PublicEvents;
 										break;
 
 									case var mt when getRuntimeMember.EndsWith ("Field"):
-										memberKind = DynamicallyAccessedMemberKinds.Fields;
+										memberKind = DynamicallyAccessedMemberKinds.PublicFields;
 										break;
 
 									case var mt when getRuntimeMember.EndsWith ("Method"):
-										memberKind = DynamicallyAccessedMemberKinds.Methods;
+										memberKind = DynamicallyAccessedMemberKinds.PublicMethods;
 										break;
 
 									case var mt when getRuntimeMember.EndsWith ("Property"):
-										memberKind = DynamicallyAccessedMemberKinds.Properties;
+										memberKind = DynamicallyAccessedMemberKinds.PublicProperties;
 										break;
 
 									default:
@@ -3534,19 +3534,19 @@ namespace Mono.Linker.Steps {
 										foreach (var stringParam in methodParams [1].UniqueValues ()) {
 											if (stringParam is KnownStringValue stringValue) {
 												switch (memberKind) {
-													case DynamicallyAccessedMemberKinds.Events:
+													case DynamicallyAccessedMemberKinds.PublicEvents:
 														MarkEventsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, e => e.Name == stringValue.Contents, bindingFlags);
 														reflectionContext.RecordHandledPattern ();
 														break;
-													case DynamicallyAccessedMemberKinds.Fields:
+													case DynamicallyAccessedMemberKinds.PublicFields:
 														MarkFieldsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, f => f.Name == stringValue.Contents, bindingFlags);
 														reflectionContext.RecordHandledPattern ();
 														break;
-													case DynamicallyAccessedMemberKinds.Methods:
+													case DynamicallyAccessedMemberKinds.PublicMethods:
 														MarkMethodsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, m => m.Name == stringValue.Contents, bindingFlags);
 														reflectionContext.RecordHandledPattern ();
 														break;
-													case DynamicallyAccessedMemberKinds.Properties:
+													case DynamicallyAccessedMemberKinds.PublicProperties:
 														MarkPropertiesOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, p => p.Name == stringValue.Contents, bindingFlags);
 														reflectionContext.RecordHandledPattern ();
 														break;

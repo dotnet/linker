@@ -195,7 +195,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 		[Kept]
 		[return: KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
-		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberKinds.Events)]
+		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberKinds.PublicEvents)]
 		private static Type GetClassWithEvent ()
 		{
 			return typeof (ClassWithEvent);
@@ -203,7 +203,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 		[Kept]
 		[return: KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
-		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberKinds.Fields)]
+		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberKinds.PublicFields)]
 		private static Type GetClassWithField ()
 		{
 			return typeof (ClassWithField);
@@ -211,7 +211,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 		[Kept]
 		[return: KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
-		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberKinds.Methods)]
+		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberKinds.PublicMethods)]
 		private static Type GetClassWithMethod ()
 		{
 			return typeof (ClassWithMethod);
@@ -219,7 +219,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 		[Kept]
 		[return: KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
-		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberKinds.Properties)]
+		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberKinds.PublicProperties)]
 		private static Type GetClassWithProperty ()
 		{
 			return typeof (ClassWithProperty);
