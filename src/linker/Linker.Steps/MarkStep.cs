@@ -3492,7 +3492,7 @@ namespace Mono.Linker.Steps {
 												// TODO: Change this as needed after deciding if we are to keep all fields/properties on a type
 												// that is accessed via reflection. For now, let's only keep the field/property that is retrieved.
 												if (memberKind is DynamicallyAccessedMemberKinds.Properties) {
-													MarkPropertiesOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, filter: p => p.Name == stringValue.Contents, staticOnly);
+													MarkPropertiesOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, filter: p => p.Name == stringValue.Contents, bindingFlags);
 												} else {
 													MarkFieldsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, filter: f => f.Name == stringValue.Contents, bindingFlags);
 												}
