@@ -3551,8 +3551,7 @@ namespace Mono.Linker.Steps {
 														reflectionContext.RecordHandledPattern ();
 														break;
 													default:
-														Debug.Fail ("Unreachable.");
-														break;
+														throw new MarkException (string.Format ("Error processing reflection call: '{0}' inside {1}. Unexpected member kind.", calledMethod.FullName, callingMethodBody.Method.FullName));
 												}
 											} else {
 												RequireDynamicallyAccessedMembers (ref reflectionContext, (DynamicallyAccessedMemberKinds)memberKind, value, calledMethod.Parameters [0]);
