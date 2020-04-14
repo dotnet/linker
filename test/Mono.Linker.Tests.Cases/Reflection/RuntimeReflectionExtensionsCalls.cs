@@ -23,8 +23,9 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			new Type [] { typeof (Type), typeof (string) })]
 		public static void TestGetRuntimeEvent ()
 		{
-			typeof (ClassWithPubicMembers).GetRuntimeEvent ("Event");
-			typeof (ClassWithPrivateMembers).GetRuntimeEvent (GetUnknownString ());
+			typeof (ClassWithKeptMembers).GetRuntimeEvent ("PublicEvent");
+			typeof (ClassWithUnkeptMembers).GetRuntimeEvent ("PrivateEvent");
+			typeof (ClassWithUnkeptMembers).GetRuntimeEvent ("ProtectedEvent");
 			GetClassWithEvent ().GetRuntimeEvent ("This string will not be reached");
 			typeof (Derived).GetRuntimeEvent ("Event");
 			GetUnknownType ().GetRuntimeEvent (GetUnknownString ()); // UnrecognizedReflectionAccessPattern
@@ -37,8 +38,9 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			new Type [] { typeof (Type), typeof (string) })]
 		public static void TestGetRuntimeField ()
 		{
-			typeof (ClassWithPubicMembers).GetRuntimeField ("Field");
-			typeof (ClassWithPrivateMembers).GetRuntimeField (GetUnknownString ());
+			typeof (ClassWithKeptMembers).GetRuntimeField ("PublicField");
+			typeof (ClassWithUnkeptMembers).GetRuntimeField ("PrivateField");
+			typeof (ClassWithUnkeptMembers).GetRuntimeField ("ProtectedField");
 			GetClassWithField ().GetRuntimeField ("This string will not be reached");
 			typeof (Derived).GetRuntimeField ("Field");
 			GetUnknownType ().GetRuntimeField (GetUnknownString ()); // UnrecognizedReflectionAccessPattern
@@ -51,8 +53,9 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			new Type [] { typeof (Type), typeof (string), typeof (Type []) })]
 		public static void TestGetRuntimeMethod ()
 		{
-			typeof (ClassWithPubicMembers).GetRuntimeMethod ("Method", Type.EmptyTypes);
-			typeof (ClassWithPrivateMembers).GetRuntimeMethod (GetUnknownString (), Type.EmptyTypes);
+			typeof (ClassWithKeptMembers).GetRuntimeMethod ("PublicMethod", Type.EmptyTypes);
+			typeof (ClassWithUnkeptMembers).GetRuntimeMethod ("PrivateMethod", Type.EmptyTypes);
+			typeof (ClassWithUnkeptMembers).GetRuntimeMethod ("ProtectedMethod", Type.EmptyTypes);
 			GetClassWithMethod ().GetRuntimeMethod ("This string will not be reached", Type.EmptyTypes);
 			typeof (Derived).GetRuntimeMethod ("Method", Type.EmptyTypes);
 			GetUnknownType ().GetRuntimeMethod (GetUnknownString (), Type.EmptyTypes); // UnrecognizedReflectionAccessPattern
@@ -65,8 +68,9 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			new Type [] { typeof (Type), typeof (string) })]
 		public static void TestGetRuntimeProperty ()
 		{
-			typeof (ClassWithPubicMembers).GetRuntimeProperty ("Property");
-			typeof (ClassWithPrivateMembers).GetRuntimeProperty (GetUnknownString ());
+			typeof (ClassWithKeptMembers).GetRuntimeProperty ("PublicProperty");
+			typeof (ClassWithUnkeptMembers).GetRuntimeProperty ("PrivateProperty");
+			typeof (ClassWithUnkeptMembers).GetRuntimeProperty ("ProtectedProperty");
 			GetClassWithProperty ().GetRuntimeProperty ("This string will not be reached");
 			typeof (Derived).GetRuntimeProperty ("Property");
 			GetUnknownType ().GetRuntimeProperty (GetUnknownString ()); // UnrecognizedReflectionAccessPattern
@@ -74,46 +78,49 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		#endregion
 
 		#region Helpers
-		class ClassWithPubicMembers
+		class ClassWithKeptMembers
 		{
 			[Kept]
 			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
-			public event EventHandler<EventArgs> Event;
+			public event EventHandler<EventArgs> PublicEvent;
 
 			[Kept]
-			public int Field;
+			public int PublicField;
 
 			[Kept]
-			public void Method (int arg)
+			public void PublicMethod (int arg)
 			{
 			}
 
 			[Kept]
 			[KeptBackingField]
-			public long Property { [Kept] get; [Kept] set; }
+			public long PublicProperty { [Kept] get; [Kept] set; }
 		}
 
-		class ClassWithPrivateMembers
+		[Kept]
+		class ClassWithUnkeptMembers
 		{
-			[Kept]
-			[KeptBackingField]
-			[KeptEventAddMethod]
-			[KeptEventRemoveMethod]
-			private event EventHandler<EventArgs> Event;
+			private event EventHandler<EventArgs> PrivateEvent;
 
-			[Kept]
-			private int Field;
+			private int PrivateField;
 
-			[Kept]
-			private void Method (int arg)
+			private void PrivateMethod (int arg)
 			{
 			}
 
-			[Kept]
-			[KeptBackingField]
-			private long Property { [Kept] get; [Kept] set; }
+			private long PrivateProperty { get; set; }
+
+			protected event EventHandler<EventArgs> ProtectedEvent;
+
+			protected int ProtectedField;
+
+			protected void ProtectedMethod (int arg)
+			{
+			}
+
+			protected long ProtectedProperty { get; set; }
 		}
 
 		class ClassWithEvent
@@ -122,19 +129,19 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
-			static protected event EventHandler<EventArgs> Event;
+			public static event EventHandler<EventArgs> Event;
 		}
 
 		class ClassWithField
 		{
 			[Kept]
-			protected int Field;
+			public static int Field;
 		}
 
 		class ClassWithMethod
 		{
 			[Kept]
-			protected void Method (int arg)
+			public static void Method (int arg)
 			{
 			}
 		}
@@ -143,7 +150,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		{
 			[Kept]
 			[KeptBackingField]
-			protected long Property { [Kept] get; [Kept] set; }
+			public static long Property { [Kept] get; [Kept] set; }
 		}
 
 		[Kept]
@@ -165,7 +172,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 			[Kept]
 			[KeptBackingField]
-			protected long Property { [Kept] get; [Kept] set; }
+			public long Property { [Kept] get; [Kept] set; }
 		}
 
 		[Kept]
@@ -188,10 +195,10 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 		[Kept]
 		[return: KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
-		[return: DynamicallyAccessedMembers(DynamicallyAccessedMemberKinds.Events)]
+		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberKinds.Events)]
 		private static Type GetClassWithEvent ()
 		{
-			return typeof(ClassWithEvent);
+			return typeof (ClassWithEvent);
 		}
 
 		[Kept]

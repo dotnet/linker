@@ -3501,6 +3501,7 @@ namespace Mono.Linker.Steps {
 
 								reflectionContext.AnalyzingPattern ();
 								DynamicallyAccessedMemberKinds? memberKind = null;
+								BindingFlags bindingFlags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public;
 
 								switch (getRuntimeMember) {
 									case var mt when getRuntimeMember.EndsWith ("Event"):
@@ -3534,19 +3535,19 @@ namespace Mono.Linker.Steps {
 											if (stringParam is KnownStringValue stringValue) {
 												switch (memberKind) {
 													case DynamicallyAccessedMemberKinds.Events:
-														MarkEventsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, e => e.Name == stringValue.Contents);
+														MarkEventsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, e => e.Name == stringValue.Contents, bindingFlags);
 														reflectionContext.RecordHandledPattern ();
 														break;
 													case DynamicallyAccessedMemberKinds.Fields:
-														MarkFieldsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, f => f.Name == stringValue.Contents);
+														MarkFieldsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, f => f.Name == stringValue.Contents, bindingFlags);
 														reflectionContext.RecordHandledPattern ();
 														break;
 													case DynamicallyAccessedMemberKinds.Methods:
-														MarkMethodsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, m => m.Name == stringValue.Contents);
+														MarkMethodsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, m => m.Name == stringValue.Contents, bindingFlags);
 														reflectionContext.RecordHandledPattern ();
 														break;
 													case DynamicallyAccessedMemberKinds.Properties:
-														MarkPropertiesOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, p => p.Name == stringValue.Contents);
+														MarkPropertiesOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, p => p.Name == stringValue.Contents, bindingFlags);
 														reflectionContext.RecordHandledPattern ();
 														break;
 													default:
