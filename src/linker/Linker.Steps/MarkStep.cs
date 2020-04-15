@@ -2715,7 +2715,7 @@ namespace Mono.Linker.Steps {
 			{
 				MethodDefinition methodDefinition = method.Resolve ();
 				if (methodDefinition != null) {
-					return GetIntrinsicIdForMethod (methodDefinition) != IntrinsicId.None || flowAnnotations.RequiresDataFlowAnalysis (methodDefinition);
+					return GetIntrinsicIdForMethod (methodDefinition) > IntrinsicId.RequiresReflectionBodyScanner_Sentinel || flowAnnotations.RequiresDataFlowAnalysis (methodDefinition);
 				}
 
 				return false;
@@ -2849,6 +2849,10 @@ namespace Mono.Linker.Steps {
 				None = 0,
 				IntrospectionExtensions_GetTypeInfo,
 				Type_GetTypeFromHandle,
+
+				// Anything above this marker will require the method to be run through
+				// the reflection body scanner.
+				RequiresReflectionBodyScanner_Sentinel = 1000,
 				Type_MakeGenericType,
 				Type_GetType,
 				Type_GetConstructor,
