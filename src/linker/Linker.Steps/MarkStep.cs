@@ -2476,7 +2476,17 @@ namespace Mono.Linker.Steps {
 		{
 			switch (instruction.OpCode.OperandType) {
 				case OperandType.InlineField:
-					requiresReflectionMethodBodyScanner |= ReflectionMethodBodyScanner.RequiresReflectionMethodBodyScanner (_flowAnnotations, (FieldReference)instruction.Operand);
+					switch (instruction.OpCode.Code) {
+						case Code.Stfld: // Field stores (Storing value to annotated field must be checked)
+						case Code.Stsfld:
+						case Code.Ldflda: // Field address loads (as those can be used to store values to annotated field and thus must be checked)
+						case Code.Ldsflda:
+							requiresReflectionMethodBodyScanner |= ReflectionMethodBodyScanner.RequiresReflectionMethodBodyScanner (_flowAnnotations, (FieldReference)instruction.Operand);
+							break;
+
+						default: // Other field operations are not interesting as they don't need to be checked
+							break;
+					}
 					MarkField ((FieldReference)instruction.Operand, new DependencyInfo (DependencyKind.FieldAccess, method));
 					break;
 
@@ -2503,10 +2513,8 @@ namespace Mono.Linker.Steps {
 						if (token is TypeReference typeReference) {
 							MarkType (typeReference, reason);
 						} else if (token is MethodReference methodReference) {
-							requiresReflectionMethodBodyScanner |= ReflectionMethodBodyScanner.RequiresReflectionMethodBodyScanner (_flowAnnotations, methodReference);
 							MarkMethod (methodReference, reason);
 						} else {
-							requiresReflectionMethodBodyScanner |= ReflectionMethodBodyScanner.RequiresReflectionMethodBodyScanner (_flowAnnotations, (FieldReference)instruction.Operand);
 							MarkField ((FieldReference)token, reason);
 						}
 						break;
