@@ -3164,7 +3164,7 @@ namespace Mono.Linker.Steps {
 
 						case IntrinsicId.Type_GetTypeFromHandle: {
 								// Infrastructure piece to support "typeof(Foo)"
-								if (methodParams[0] is RuntimeTypeHandleValue typeHandle)
+								if (methodParams [0] is RuntimeTypeHandleValue typeHandle)
 									methodReturnValue = new SystemTypeValue (typeHandle.TypeRepresented);
 							}
 							break;
@@ -3323,7 +3323,7 @@ namespace Mono.Linker.Steps {
 						// static New (Type)
 						//
 						case IntrinsicId.Expression_New: {
-								reflectionContext.AnalyzingPattern();
+								reflectionContext.AnalyzingPattern ();
 
 								foreach (var value in methodParams [0].UniqueValues ()) {
 									if (value is SystemTypeValue systemTypeValue) {
@@ -3387,10 +3387,9 @@ namespace Mono.Linker.Steps {
 
 								var parameters = calledMethod.Parameters;
 								BindingFlags bindingFlags = BindingFlags.Default;
-								if (parameters.Count > 1)
-								{
-									if (methodParams[1].AsConstInt() != null)
-										bindingFlags |= (BindingFlags)methodParams[1].AsConstInt();
+								if (parameters.Count > 1) {
+									if (methodParams [1].AsConstInt () != null)
+										bindingFlags |= (BindingFlags)methodParams [1].AsConstInt ();
 								}
 								// Go over all types we've seen
 								foreach (var value in methodParams [0].UniqueValues ()) {
@@ -3402,7 +3401,7 @@ namespace Mono.Linker.Steps {
 										var requiredMemberKinds = ((bindingFlags & BindingFlags.NonPublic) == 0)
 												? DynamicallyAccessedMemberKinds.PublicConstructors
 												: DynamicallyAccessedMemberKinds.Constructors;
-										RequireDynamicallyAccessedMembers(ref reflectionContext, requiredMemberKinds, value, calledMethod.Parameters[0]);
+										RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberKinds, value, calledMethod.Parameters [0]);
 									}
 								}
 							}
@@ -3430,34 +3429,26 @@ namespace Mono.Linker.Steps {
 									bindingFlags |= (BindingFlags)methodParams [3].AsConstInt ();
 								}
 
-								foreach (var value in methodParams[0].UniqueValues())
-								{
-									if (value is SystemTypeValue systemTypeValue)
-									{
-										foreach (var stringParam in methodParams[1].UniqueValues())
-										{
-											if (stringParam is KnownStringValue stringValue)
-											{
-												MarkMethodsOnTypeHierarchy(ref reflectionContext, systemTypeValue.TypeRepresented, m => m.Name == stringValue.Contents, bindingFlags);
-												reflectionContext.RecordHandledPattern();
-											}
-											else
-											{
+								foreach (var value in methodParams [0].UniqueValues ()) {
+									if (value is SystemTypeValue systemTypeValue) {
+										foreach (var stringParam in methodParams [1].UniqueValues ()) {
+											if (stringParam is KnownStringValue stringValue) {
+												MarkMethodsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, m => m.Name == stringValue.Contents, bindingFlags);
+												reflectionContext.RecordHandledPattern ();
+											} else {
 												// Otherwise fall back to the bitfield requirements
 												var requiredMemberKinds = ((bindingFlags & BindingFlags.NonPublic) == 0)
 														? DynamicallyAccessedMemberKinds.PublicMethods
 														: DynamicallyAccessedMemberKinds.Methods;
-												RequireDynamicallyAccessedMembers(ref reflectionContext, requiredMemberKinds, value, calledMethod.Parameters[0]);
+												RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberKinds, value, calledMethod.Parameters [0]);
 											}
 										}
-									}
-									else
-									{
+									} else {
 										// Otherwise fall back to the bitfield requirements
 										var requiredMemberKinds = ((bindingFlags & BindingFlags.NonPublic) == 0)
 												? DynamicallyAccessedMemberKinds.PublicMethods
 												: DynamicallyAccessedMemberKinds.Methods;
-										RequireDynamicallyAccessedMembers(ref reflectionContext, requiredMemberKinds, value, calledMethod.Parameters[0]);
+										RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberKinds, value, calledMethod.Parameters [0]);
 									}
 								}
 							}
@@ -3498,51 +3489,41 @@ namespace Mono.Linker.Steps {
 										break;
 
 									default:
-										throw new ArgumentException($"Reflection call '{calledMethod.FullName}' inside '{callingMethodBody.Method.FullName}' is of unexpected member type.");
+										throw new ArgumentException ($"Reflection call '{calledMethod.FullName}' inside '{callingMethodBody.Method.FullName}' is of unexpected member type.");
 								}
 								if (memberKind == null)
 									break;
 
 								BindingFlags bindingFlags = BindingFlags.Default;
-								if (calledMethod.Parameters.Count > 1 && calledMethod.Parameters[1].ParameterType.Name == "BindingFlags" && methodParams[2].AsConstInt() != null)
-								{
-									bindingFlags |= (BindingFlags)methodParams[2].AsConstInt();
+								if (calledMethod.Parameters.Count > 1 && calledMethod.Parameters [1].ParameterType.Name == "BindingFlags" && methodParams [2].AsConstInt () != null) {
+									bindingFlags |= (BindingFlags)methodParams [2].AsConstInt ();
 								}
 
-								foreach (var value in methodParams[0].UniqueValues())
-								{
-									if (value is SystemTypeValue systemTypeValue)
-									{
-										foreach (var stringParam in methodParams[1].UniqueValues())
-										{
-											if (stringParam is KnownStringValue stringValue)
-											{
-												switch (memberKind)
-												{
+								foreach (var value in methodParams [0].UniqueValues ()) {
+									if (value is SystemTypeValue systemTypeValue) {
+										foreach (var stringParam in methodParams [1].UniqueValues ()) {
+											if (stringParam is KnownStringValue stringValue) {
+												switch (memberKind) {
 													case DynamicallyAccessedMemberKinds.Events:
-														MarkEventsOnTypeHierarchy(ref reflectionContext, systemTypeValue.TypeRepresented, filter: e => e.Name == stringValue.Contents, bindingFlags);
+														MarkEventsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, filter: e => e.Name == stringValue.Contents, bindingFlags);
 														break;
 													case DynamicallyAccessedMemberKinds.Fields:
-														MarkFieldsOnTypeHierarchy(ref reflectionContext, systemTypeValue.TypeRepresented, filter: f => f.Name == stringValue.Contents, bindingFlags);
+														MarkFieldsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, filter: f => f.Name == stringValue.Contents, bindingFlags);
 														break;
 													case DynamicallyAccessedMemberKinds.Properties:
-														MarkPropertiesOnTypeHierarchy(ref reflectionContext, systemTypeValue.TypeRepresented, filter: p => p.Name == stringValue.Contents, bindingFlags);
+														MarkPropertiesOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, filter: p => p.Name == stringValue.Contents, bindingFlags);
 														break;
 													default:
-														Debug.Fail("Unreachable.");
+														Debug.Fail ("Unreachable.");
 														break;
 												}
-												reflectionContext.RecordHandledPattern();
-											}
-											else
-											{
-												RequireDynamicallyAccessedMembers(ref reflectionContext, (DynamicallyAccessedMemberKinds)memberKind, value, calledMethod.Parameters[0]);
+												reflectionContext.RecordHandledPattern ();
+											} else {
+												RequireDynamicallyAccessedMembers (ref reflectionContext, (DynamicallyAccessedMemberKinds)memberKind, value, calledMethod.Parameters [0]);
 											}
 										}
-									}
-									else
-									{
-										RequireDynamicallyAccessedMembers(ref reflectionContext, (DynamicallyAccessedMemberKinds)memberKind, value, calledMethod.Parameters[0]);
+									} else {
+										RequireDynamicallyAccessedMembers (ref reflectionContext, (DynamicallyAccessedMemberKinds)memberKind, value, calledMethod.Parameters [0]);
 									}
 								}
 							}
@@ -3581,7 +3562,7 @@ namespace Mono.Linker.Steps {
 									} else {
 										// Overload that has the parameters as the second or fourth argument
 										int argsParam = parameters.Count == 2 || parameters.Count == 3 ? 1 : 3;
-										
+
 										if (methodParams.Count > argsParam &&
 											methodParams [argsParam] is ArrayValue arrayValue &&
 											arrayValue.Size.AsConstInt () != null) {
@@ -3597,8 +3578,7 @@ namespace Mono.Linker.Steps {
 											bindingFlags |= BindingFlags.Public;
 										}
 									}
-								}
-								else {
+								} else {
 									// The overload with a single System.Type argument
 									ctorParameterCount = 0;
 									bindingFlags |= BindingFlags.Public;
@@ -3609,7 +3589,7 @@ namespace Mono.Linker.Steps {
 									if (value is SystemTypeValue systemTypeValue) {
 										// Special case known type values as we can do better by applying exact binding flags and parameter count.
 										MarkConstructorsOnType (ref reflectionContext, systemTypeValue.TypeRepresented,
-											ctorParameterCount == null ? (Func<MethodDefinition, bool>) null : m => m.Parameters.Count == ctorParameterCount, bindingFlags);
+											ctorParameterCount == null ? (Func<MethodDefinition, bool>)null : m => m.Parameters.Count == ctorParameterCount, bindingFlags);
 										reflectionContext.RecordHandledPattern ();
 									} else {
 										// Otherwise fall back to the bitfield requirements
@@ -3712,7 +3692,7 @@ namespace Mono.Linker.Steps {
 						default:
 							if (requiresDataFlowAnalysis) {
 								reflectionContext.AnalyzingPattern ();
-								for (int parameterIndex = 0; parameterIndex < methodParams.Count; parameterIndex ++) {
+								for (int parameterIndex = 0; parameterIndex < methodParams.Count; parameterIndex++) {
 									var requiredMemberKinds = _flowAnnotations.GetParameterAnnotation (calledMethodDefinition, parameterIndex);
 									if (requiredMemberKinds != 0) {
 										IMetadataTokenProvider targetContext;
@@ -3721,8 +3701,7 @@ namespace Mono.Linker.Steps {
 												targetContext = calledMethodDefinition;
 											else
 												targetContext = calledMethodDefinition.Parameters [parameterIndex - 1];
-										}
-										else {
+										} else {
 											targetContext = calledMethodDefinition.Parameters [parameterIndex];
 										}
 
