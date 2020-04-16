@@ -43,7 +43,8 @@ namespace Mono.Linker
 
 		public void UnrecognizedReflectionAccessPattern (MethodDefinition sourceMethod, MethodDefinition reflectionMethod, string message)
 		{
-			_context.LogMessage (MessageImportance.Low, message);
+			// TODO: Add origin
+			_context.LogMessage (MessageContainer.CreateWarningMessage (message, 2006));
 		}
 	}
 }

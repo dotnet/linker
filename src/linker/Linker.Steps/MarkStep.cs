@@ -571,7 +571,8 @@ namespace Mono.Linker.Steps {
 			if (args.Count >= 3 && args [2].Value is string assemblyName) {
 				assembly = _context.GetLoadedAssembly (assemblyName);
 				if (assembly == null) {
-					_context.LogMessage (MessageImportance.Low, $"Could not resolve '{assemblyName}' assembly dependency");
+					// TODO: Add origin, basically the place where `PreserveDependencyAttribute` is used.
+					_context.LogMessage (MessageContainer.CreateWarningMessage ($"Could not resolve '{assemblyName}' assembly dependency", 2003));
 					return;
 				}
 			} else {
@@ -583,7 +584,8 @@ namespace Mono.Linker.Steps {
 				td = FindType (assembly ?? context.Module.Assembly, typeName);
 
 				if (td == null) {
-					_context.LogMessage (MessageImportance.Low, $"Could not resolve '{typeName}' type dependency");
+					// TODO: Add origin, basically the place where `PreserveDependencyAttribute` is used.
+					_context.LogMessage (MessageContainer.CreateWarningMessage ($"Could not resolve '{typeName}' type dependency", 2004));
 					return;
 				}
 			} else {
@@ -616,7 +618,8 @@ namespace Mono.Linker.Steps {
 			if (MarkDependencyField (td, member, new DependencyInfo (DependencyKind.PreservedDependency, ca)))
 				return;
 
-			_context.LogMessage (MessageImportance.High, $"Could not resolve dependency member '{member}' declared in type '{td.FullName}'");
+			// TODO: Add origin, basically the place where `PreserveDependencyAttribute` is used.
+			_context.LogMessage (MessageContainer.CreateWarningMessage ($"Could not resolve dependency member '{member}' declared in type '{td.FullName}'", 2005));
 		}
 
 		static TypeDefinition FindType (AssemblyDefinition assembly, string fullName)
@@ -1921,11 +1924,11 @@ namespace Mono.Linker.Steps {
 				break;
 			case TypePreserve.Fields:
 				if (!MarkFields (type, true, new DependencyInfo (DependencyKind.TypePreserve, type), true))
-					_context.LogMessage ($"Type {type.FullName} has no fields to preserve");
+					_context.LogMessage (MessageContainer.CreateWarningMessage ($"Type {type.FullName} has no fields to preserve", 2001));
 				break;
 			case TypePreserve.Methods:
 				if (!MarkMethods (type, new DependencyInfo (DependencyKind.TypePreserve, type)))
-					_context.LogMessage ($"Type {type.FullName} has no methods to preserve");
+					_context.LogMessage (MessageContainer.CreateWarningMessage ($"Type {type.FullName} has no methods to preserve", 2002));
 				break;
 			}
 		}
