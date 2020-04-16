@@ -67,7 +67,7 @@ namespace Mono.Linker.Dataflow
 		static DynamicallyAccessedMemberKinds ParseKinds(JsonElement attributes)
 		{
 			foreach (var attribute in attributes.EnumerateObject ()) {
-				if (attribute.Name == "System.Runtime.CompilerServices.DynamicallyAccessedMembersAttribute") {
+				if (attribute.Name == "System.Runtime.CompilerServices.DynamicallyAccessedMembers") {
 					string value = attribute.Value.GetString ();
 					
 					// Enum.Parse accepts a comma as a separator for Flags
