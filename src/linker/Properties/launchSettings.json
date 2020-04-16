@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Mono.Linker": {
+      "commandName": "Project",
+      "commandLineArgs": "-a c:\\git\\system.private.corelib.dll"
+    }
+  }
+}
