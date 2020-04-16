@@ -115,7 +115,7 @@ namespace Mono.Linker.Dataflow
 
 							// Let's assume fields cannot have '(' in their names and cross our fingers nobody names
 							// one that way and needs to annotate it with this json.
-							if (memberName.Contains('(')) {
+							if (memberName.Contains("(")) {
 								// This is a method
 
 								// Parser uses same format as PreserveDependencyAttribute
