@@ -113,8 +113,9 @@ namespace Mono.Linker.Dataflow
 						foreach (var member in typeElement.Value.EnumerateObject ()) {
 							string memberName = member.Name;
 
-							// Let's assume fields cannot have '(' in their names and cross our fingers nobody names
-							// one that way and needs to annotate it with this json.
+							// Technically, '(' is a valid character in both method and field names,
+							// but the existing PreserveDependencyAttribute parser has a limitation in supporting
+							// that anyway, so we will use '(' to distinguish methods from fields/properties.
 							if (memberName.Contains("(")) {
 								// This is a method
 
