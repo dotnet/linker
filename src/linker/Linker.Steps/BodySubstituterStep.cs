@@ -71,6 +71,7 @@ namespace Mono.Linker.Steps
 		void ProcessAssembly (AssemblyDefinition assembly, XPathNodeIterator iterator)
 		{
 			ProcessTypes (assembly, iterator.Current.SelectChildren ("type", ""));
+			ProcessResources (assembly, iterator.Current.SelectChildren ("resource", ""));
 		}
 
 		void ProcessTypes (AssemblyDefinition assembly, XPathNodeIterator iterator)
@@ -181,6 +182,21 @@ namespace Mono.Linker.Steps
 			string init = GetAttribute (iterator.Current, "initialize");
 			if (init?.ToLowerInvariant () == "true") {
 				Annotations.SetSubstitutedInit (field);
+			}
+		}
+
+		void ProcessResources (AssemblyDefinition assembly, XPathNodeIterator iterator)
+		{
+			while (iterator.MoveNext ()) {
+				XPathNavigator nav = iterator.Current;
+
+				string name = GetAttribute (nav, "name");
+				if (String.IsNullOrEmpty (name)) {
+					Context.LogMessage (MessageImportance.High, $"Invalid value for 'name' attribute: '{name}'.");
+					return;
+				}
+
+				Context.Annotations.AddResourceToRemove (assembly, name);
 			}
 		}
 
