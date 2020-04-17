@@ -186,75 +186,65 @@ namespace Mono.Linker.Dataflow
 			RuntimeReflectionExtensions_GetRuntimeProperty
 		}
 
-		static bool IsMethodDeclaredOnType (MethodDefinition method, string namespaceName, string typeName)
-		{
-			return method.DeclaringType.Name == typeName && method.DeclaringType.Namespace == namespaceName;
-		}
-
-		static bool HasParameterOfType (MethodDefinition method, int parameterIndex, string typeFullName)
-		{
-			return method.Parameters.Count > parameterIndex && method.Parameters [parameterIndex].ParameterType.FullName == typeFullName;
-		}
-
 		static IntrinsicId GetIntrinsicIdForMethod (MethodDefinition calledMethod)
 		{
 			return calledMethod.Name switch
 			{
 				// static System.Reflection.IntrospectionExtensions.GetTypeInfo (Type type)
-				"GetTypeInfo" when IsMethodDeclaredOnType (calledMethod, "System.Reflection", "IntrospectionExtensions") => IntrinsicId.IntrospectionExtensions_GetTypeInfo,
+				"GetTypeInfo" when calledMethod.IsDeclaredOnType ("System.Reflection", "IntrospectionExtensions") => IntrinsicId.IntrospectionExtensions_GetTypeInfo,
 
 				// System.Type.GetTypeInfo (Type type)
-				"GetTypeFromHandle" when IsMethodDeclaredOnType (calledMethod, "System", "Type") => IntrinsicId.Type_GetTypeFromHandle,
+				"GetTypeFromHandle" when calledMethod.IsDeclaredOnType ("System", "Type") => IntrinsicId.Type_GetTypeFromHandle,
 
 				// static System.Type.MakeGenericType (Type [] typeArguments)
-				"MakeGenericType" when IsMethodDeclaredOnType (calledMethod, "System", "Type") => IntrinsicId.Type_MakeGenericType,
+				"MakeGenericType" when calledMethod.IsDeclaredOnType ("System", "Type") => IntrinsicId.Type_MakeGenericType,
 
 				// static System.Reflection.RuntimeReflectionExtensions.GetRuntimeEvent (this Type type, string name)
-				"GetRuntimeEvent" when IsMethodDeclaredOnType (calledMethod, "System.Reflection", "RuntimeReflectionExtensions")
-					&& HasParameterOfType (calledMethod, 0, "System.Type")
-					&& HasParameterOfType (calledMethod, 1, "System.String") 
+				"GetRuntimeEvent" when calledMethod.IsDeclaredOnType ("System.Reflection", "RuntimeReflectionExtensions")
+					&& calledMethod.HasParameterOfType (0, "System", "Type")
+					&& calledMethod.HasParameterOfType (1, "System", "String")
 					=> IntrinsicId.RuntimeReflectionExtensions_GetRuntimeEvent,
 
 				// static System.Reflection.RuntimeReflectionExtensions.GetRuntimeField (this Type type, string name)
-				"GetRuntimeField" when IsMethodDeclaredOnType (calledMethod, "System.Reflection", "RuntimeReflectionExtensions")
-					&& HasParameterOfType (calledMethod, 0, "System.Type")
-					&& HasParameterOfType (calledMethod, 1, "System.String") 
+				"GetRuntimeField" when calledMethod.IsDeclaredOnType ("System.Reflection", "RuntimeReflectionExtensions")
+					&& calledMethod.HasParameterOfType (0, "System", "Type")
+					&& calledMethod.HasParameterOfType (1, "System", "String")
 					=> IntrinsicId.RuntimeReflectionExtensions_GetRuntimeField,
 
 				// static System.Reflection.RuntimeReflectionExtensions.GetRuntimeMethod (this Type type, string name, Type[] parameters)
-				"GetRuntimeMethod" when IsMethodDeclaredOnType (calledMethod, "System.Reflection", "RuntimeReflectionExtensions")
-					&& HasParameterOfType (calledMethod, 0, "System.Type")
-					&& HasParameterOfType (calledMethod, 1, "System.String") 
+				"GetRuntimeMethod" when calledMethod.IsDeclaredOnType ("System.Reflection", "RuntimeReflectionExtensions")
+					&& calledMethod.HasParameterOfType (0, "System", "Type")
+					&& calledMethod.HasParameterOfType (1, "System", "String")
 					=> IntrinsicId.RuntimeReflectionExtensions_GetRuntimeMethod,
 
 				// static System.Reflection.RuntimeReflectionExtensions.GetRuntimeProperty (this Type type, string name)
-				"GetRuntimeProperty" when IsMethodDeclaredOnType (calledMethod, "System.Reflection", "RuntimeReflectionExtensions")
-					&& HasParameterOfType (calledMethod, 0, "System.Type")
-					&& HasParameterOfType (calledMethod, 1, "System.String") 
+				"GetRuntimeProperty" when calledMethod.IsDeclaredOnType ("System.Reflection", "RuntimeReflectionExtensions")
+					&& calledMethod.HasParameterOfType (0, "System", "Type")
+					&& calledMethod.HasParameterOfType (1, "System", "String")
 					=> IntrinsicId.RuntimeReflectionExtensions_GetRuntimeProperty,
 
 				// static System.Linq.Expressions.Expression.Call (Type, String, Type[], Expression[])
-				"Call" when IsMethodDeclaredOnType (calledMethod, "System.Linq.Expressions", "Expression")
-					&& HasParameterOfType (calledMethod, 0, "System.Type")
-					&& calledMethod.Parameters.Count == 4 
+				"Call" when calledMethod.IsDeclaredOnType ("System.Linq.Expressions", "Expression")
+					&& calledMethod.HasParameterOfType (0, "System", "Type")
+					&& calledMethod.Parameters.Count == 4
 					=> IntrinsicId.Expression_Call,
 
 				// static System.Linq.Expressions.Expression.Field (Expression, Type, String)
-				"Field" when IsMethodDeclaredOnType (calledMethod, "System.Linq.Expressions", "Expression")
-					&& HasParameterOfType (calledMethod, 1, "System.Type")
-					&& calledMethod.Parameters.Count == 3 
+				"Field" when calledMethod.IsDeclaredOnType ("System.Linq.Expressions", "Expression")
+					&& calledMethod.HasParameterOfType (1, "System", "Type")
+					&& calledMethod.Parameters.Count == 3
 					=> IntrinsicId.Expression_Field,
 
 				// static System.Linq.Expressions.Expression.Property (Expression, Type, String)
-				"Property" when IsMethodDeclaredOnType (calledMethod, "System.Linq.Expressions", "Expression")
-					&& HasParameterOfType (calledMethod, 1, "System.Type")
-					&& calledMethod.Parameters.Count == 3 
+				"Property" when calledMethod.IsDeclaredOnType ("System.Linq.Expressions", "Expression")
+					&& calledMethod.HasParameterOfType (1, "System", "Type")
+					&& calledMethod.Parameters.Count == 3
 					=> IntrinsicId.Expression_Property,
 
 				// static System.Linq.Expressions.Expression.New (Type)
-				"New" when IsMethodDeclaredOnType (calledMethod, "System.Linq.Expressions", "Expression")
-					&& HasParameterOfType (calledMethod, 0, "System.Type")
-					&& calledMethod.Parameters.Count == 1 
+				"New" when calledMethod.IsDeclaredOnType ("System.Linq.Expressions", "Expression")
+					&& calledMethod.HasParameterOfType (0, "System", "Type")
+					&& calledMethod.Parameters.Count == 1
 					=> IntrinsicId.Expression_New,
 
 				// static System.Type.GetType (string)
@@ -263,15 +253,15 @@ namespace Mono.Linker.Dataflow
 				// static System.Type.GetType (string, Func<AssemblyName, Assembly>, Func<Assembly, String, Boolean, Type>)
 				// static System.Type.GetType (string, Func<AssemblyName, Assembly>, Func<Assembly, String, Boolean, Type>, Boolean)
 				// static System.Type.GetType (string, Func<AssemblyName, Assembly>, Func<Assembly, String, Boolean, Type>, Boolean, Boolean)
-				"GetType" when IsMethodDeclaredOnType (calledMethod, "System", "Type")
-					&& HasParameterOfType (calledMethod, 0, "System.String") 
+				"GetType" when calledMethod.IsDeclaredOnType ("System", "Type")
+					&& calledMethod.HasParameterOfType (0, "System", "String")
 					=> IntrinsicId.Type_GetType,
 
 				// System.Type.GetConstructor (Type[])
 				// System.Type.GetConstructor (BindingFlags, Binder, Type[], ParameterModifier [])
 				// System.Type.GetConstructor (BindingFlags, Binder, CallingConventions, Type[], ParameterModifier [])
-				"GetConstructor" when IsMethodDeclaredOnType (calledMethod, "System", "Type")
-					&& calledMethod.HasThis 
+				"GetConstructor" when calledMethod.IsDeclaredOnType ("System", "Type")
+					&& calledMethod.HasThis
 					=> IntrinsicId.Type_GetConstructor,
 
 				// System.Type.GetMethod (string)
@@ -284,23 +274,23 @@ namespace Mono.Linker.Dataflow
 				// System.Type.GetMethod (string, int, Type[], ParameterModifier[]?)
 				// System.Type.GetMethod (string, int, BindingFlags, Binder?, Type[], ParameterModifier[]?)
 				// System.Type.GetMethod (string, int, BindingFlags, Binder?, CallingConventions, Type[], ParameterModifier[]?)
-				"GetMethod" when IsMethodDeclaredOnType (calledMethod, "System", "Type")
-					&& HasParameterOfType (calledMethod, 0, "System.String")
-					&& calledMethod.HasThis 
+				"GetMethod" when calledMethod.IsDeclaredOnType ("System", "Type")
+					&& calledMethod.HasParameterOfType (0, "System", "String")
+					&& calledMethod.HasThis
 					=> IntrinsicId.Type_GetMethod,
 
 				// System.Type.GetField (string)
 				// System.Type.GetField (string, BindingFlags)
-				"GetField" when IsMethodDeclaredOnType (calledMethod, "System", "Type")
-					&& HasParameterOfType (calledMethod, 0, "System.String")
-					&& calledMethod.HasThis 
+				"GetField" when calledMethod.IsDeclaredOnType ("System", "Type")
+					&& calledMethod.HasParameterOfType (0, "System", "String")
+					&& calledMethod.HasThis
 					=> IntrinsicId.Type_GetField,
 
 				// System.Type.GetEvent (string)
 				// System.Type.GetEvent (string, BindingFlags)
-				"GetEvent" when IsMethodDeclaredOnType (calledMethod, "System", "Type")
-					&& HasParameterOfType (calledMethod, 0, "System.String")
-					&& calledMethod.HasThis 
+				"GetEvent" when calledMethod.IsDeclaredOnType ("System", "Type")
+					&& calledMethod.HasParameterOfType (0, "System", "String")
+					&& calledMethod.HasThis
 					=> IntrinsicId.Type_GetEvent,
 
 				// System.Type.GetProperty (string)
@@ -310,9 +300,9 @@ namespace Mono.Linker.Dataflow
 				// System.Type.GetProperty (string, Type, Type[])
 				// System.Type.GetProperty (string, Type, Type[], ParameterModifier[])
 				// System.Type.GetProperty (string, BindingFlags, Binder, Type, Type[], ParameterModifier[])
-				"GetProperty" when IsMethodDeclaredOnType (calledMethod, "System", "Type")
-					&& HasParameterOfType (calledMethod, 0, "System.String")
-					&& calledMethod.HasThis 
+				"GetProperty" when calledMethod.IsDeclaredOnType ("System", "Type")
+					&& calledMethod.HasParameterOfType (0, "System", "String")
+					&& calledMethod.HasThis
 					=> IntrinsicId.Type_GetProperty,
 
 				// static System.Activator.CreateInstance (System.Type type)
@@ -321,72 +311,72 @@ namespace Mono.Linker.Dataflow
 				// static System.Activator.CreateInstance (System.Type type, object?[]? args, object?[]? activationAttributes)
 				// static System.Activator.CreateInstance (System.Type type, System.Reflection.BindingFlags bindingAttr, System.Reflection.Binder? binder, object?[]? args, System.Globalization.CultureInfo? culture)
 				// static System.Activator.CreateInstance (System.Type type, System.Reflection.BindingFlags bindingAttr, System.Reflection.Binder? binder, object?[]? args, System.Globalization.CultureInfo? culture, object?[]? activationAttributes) { throw null; }
-				"CreateInstance" when IsMethodDeclaredOnType (calledMethod, "System", "Activator")
+				"CreateInstance" when calledMethod.IsDeclaredOnType ("System", "Activator")
 					&& !calledMethod.ContainsGenericParameter
-					&& HasParameterOfType (calledMethod, 0, "System.Type") 
+					&& calledMethod.HasParameterOfType (0, "System", "Type")
 					=> IntrinsicId.Activator_CreateInstance_Type,
 
 				// static System.Activator.CreateInstance (string assemblyName, string typeName)
 				// static System.Activator.CreateInstance (string assemblyName, string typeName, bool ignoreCase, System.Reflection.BindingFlags bindingAttr, System.Reflection.Binder? binder, object?[]? args, System.Globalization.CultureInfo? culture, object?[]? activationAttributes)
 				// static System.Activator.CreateInstance (string assemblyName, string typeName, object?[]? activationAttributes)
-				"CreateInstance" when IsMethodDeclaredOnType (calledMethod, "System", "Activator")
+				"CreateInstance" when calledMethod.IsDeclaredOnType ("System", "Activator")
 					&& !calledMethod.ContainsGenericParameter
-					&& HasParameterOfType (calledMethod, 0, "System.String")
-					&& HasParameterOfType (calledMethod, 1, "System.String") 
+					&& calledMethod.HasParameterOfType (0, "System", "String")
+					&& calledMethod.HasParameterOfType (1, "System", "String")
 					=> IntrinsicId.Activator_CreateInstance_AssemblyName_TypeName,
 
 				// static System.Activator.CreateInstanceFrom (string assemblyFile, string typeName)
 				// static System.Activator.CreateInstanceFrom (string assemblyFile, string typeName, bool ignoreCase, System.Reflection.BindingFlags bindingAttr, System.Reflection.Binder? binder, object? []? args, System.Globalization.CultureInfo? culture, object? []? activationAttributes)
 				// static System.Activator.CreateInstanceFrom (string assemblyFile, string typeName, object? []? activationAttributes)
-				"CreateInstanceFrom" when IsMethodDeclaredOnType (calledMethod, "System", "Activator")
+				"CreateInstanceFrom" when calledMethod.IsDeclaredOnType ("System", "Activator")
 					&& !calledMethod.ContainsGenericParameter
-					&& HasParameterOfType (calledMethod, 0, "System.String")
-					&& HasParameterOfType (calledMethod, 1, "System.String") 
+					&& calledMethod.HasParameterOfType (0, "System", "String")
+					&& calledMethod.HasParameterOfType (1, "System", "String")
 					=> IntrinsicId.Activator_CreateInstanceFrom,
 
 				// static T System.Activator.CreateInstance<T> ()
-				"CreateInstance" when IsMethodDeclaredOnType (calledMethod, "System", "Activator")
+				"CreateInstance" when calledMethod.IsDeclaredOnType ("System", "Activator")
 					&& calledMethod.ContainsGenericParameter
-					&& calledMethod.Parameters.Count == 0 
+					&& calledMethod.Parameters.Count == 0
 					=> IntrinsicId.Activator_CreateInstanceOfT,
 
 				// System.AppDomain.CreateInstance (string assemblyName, string typeName)
 				// System.AppDomain.CreateInstance (string assemblyName, string typeName, bool ignoreCase, System.Reflection.BindingFlags bindingAttr, System.Reflection.Binder? binder, object? []? args, System.Globalization.CultureInfo? culture, object? []? activationAttributes)
 				// System.AppDomain.CreateInstance (string assemblyName, string typeName, object? []? activationAttributes)
-				"CreateInstance" when IsMethodDeclaredOnType (calledMethod, "System", "AppDomain")
-					&& HasParameterOfType (calledMethod, 0, "System.String")
-					&& HasParameterOfType (calledMethod, 1, "System.String") 
+				"CreateInstance" when calledMethod.IsDeclaredOnType ("System", "AppDomain")
+					&& calledMethod.HasParameterOfType (0, "System", "String")
+					&& calledMethod.HasParameterOfType (1, "System", "String")
 					=> IntrinsicId.AppDomain_CreateInstance,
 
 				// System.AppDomain.CreateInstanceAndUnwrap (string assemblyName, string typeName)
 				// System.AppDomain.CreateInstanceAndUnwrap (string assemblyName, string typeName, bool ignoreCase, System.Reflection.BindingFlags bindingAttr, System.Reflection.Binder? binder, object? []? args, System.Globalization.CultureInfo? culture, object? []? activationAttributes)
 				// System.AppDomain.CreateInstanceAndUnwrap (string assemblyName, string typeName, object? []? activationAttributes)
-				"CreateInstanceAndUnwrap" when IsMethodDeclaredOnType (calledMethod, "System", "AppDomain")
-					&& HasParameterOfType (calledMethod, 0, "System.String")
-					&& HasParameterOfType (calledMethod, 1, "System.String") 
+				"CreateInstanceAndUnwrap" when calledMethod.IsDeclaredOnType ("System", "AppDomain")
+					&& calledMethod.HasParameterOfType (0, "System", "String")
+					&& calledMethod.HasParameterOfType (1, "System", "String")
 					=> IntrinsicId.AppDomain_CreateInstanceAndUnwrap,
 
 				// System.AppDomain.CreateInstanceFrom (string assemblyFile, string typeName)
 				// System.AppDomain.CreateInstanceFrom (string assemblyFile, string typeName, bool ignoreCase, System.Reflection.BindingFlags bindingAttr, System.Reflection.Binder? binder, object? []? args, System.Globalization.CultureInfo? culture, object? []? activationAttributes)
 				// System.AppDomain.CreateInstanceFrom (string assemblyFile, string typeName, object? []? activationAttributes)
-				"CreateInstanceFrom" when IsMethodDeclaredOnType (calledMethod, "System", "AppDomain")
-					&& HasParameterOfType (calledMethod, 0, "System.String")
-					&& HasParameterOfType (calledMethod, 1, "System.String") 
+				"CreateInstanceFrom" when calledMethod.IsDeclaredOnType ("System", "AppDomain")
+					&& calledMethod.HasParameterOfType (0, "System", "String")
+					&& calledMethod.HasParameterOfType (1, "System", "String")
 					=> IntrinsicId.AppDomain_CreateInstanceFrom,
 
 				// System.AppDomain.CreateInstanceFromAndUnwrap (string assemblyFile, string typeName)
 				// System.AppDomain.CreateInstanceFromAndUnwrap (string assemblyFile, string typeName, bool ignoreCase, System.Reflection.BindingFlags bindingAttr, System.Reflection.Binder? binder, object? []? args, System.Globalization.CultureInfo? culture, object? []? activationAttributes)
 				// System.AppDomain.CreateInstanceFromAndUnwrap (string assemblyFile, string typeName, object? []? activationAttributes)
-				"CreateInstanceFromAndUnwrap" when IsMethodDeclaredOnType (calledMethod, "System", "AppDomain")
-					&& HasParameterOfType (calledMethod, 0, "System.String")
-					&& HasParameterOfType (calledMethod, 1, "System.String") 
+				"CreateInstanceFromAndUnwrap" when calledMethod.IsDeclaredOnType ("System", "AppDomain")
+					&& calledMethod.HasParameterOfType (0, "System", "String")
+					&& calledMethod.HasParameterOfType (1, "System", "String")
 					=> IntrinsicId.AppDomain_CreateInstanceFromAndUnwrap,
 
 				// System.Reflection.Assembly.CreateInstance (string typeName)
 				// System.Reflection.Assembly.CreateInstance (string typeName, bool ignoreCase)
 				// System.Reflection.Assembly.CreateInstance (string typeName, bool ignoreCase, BindingFlags bindingAttr, Binder? binder, object []? args, CultureInfo? culture, object []? activationAttributes)
-				"CreateInstance" when IsMethodDeclaredOnType (calledMethod, "System.Reflection", "Assembly")
-					&& HasParameterOfType (calledMethod, 0, "System.String") 
+				"CreateInstance" when calledMethod.IsDeclaredOnType ("System.Reflection", "Assembly")
+					&& calledMethod.HasParameterOfType (0, "System", "String")
 					=> IntrinsicId.Assembly_CreateInstance,
 
 				_ => IntrinsicId.None,
