@@ -119,7 +119,8 @@ An example of a substitution XML file
     <type fullname="UserCode.Substitutions.Playground" feature="EnableOptionalFeature" featurevalue="false">
       <method signature="System.String UseOptionalFeature()" body="remove" />
     </type>
-  </assembly>
+  <resource name="res1" action="remove"/>
+</assembly>
 </linker>
 ```
 
@@ -134,6 +135,8 @@ A similar mechanism is available for fields where a field can be initialized wit
 value and override the existing behaviour. The rule can also apply to static fields which
 if set to default value without explicit `initialize` setting could help to elide whole
 explicit static constructor.
+
+Managed resources can also be removed using the `resource` element.
 
 The `feature` and `featurevalue` attributes are optional, but must be used together if they are used.
 They can be applied to any other element to specify conditions under which the contained substitutions
