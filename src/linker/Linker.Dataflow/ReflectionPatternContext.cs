@@ -3,8 +3,10 @@
 // See the LICENSE file in the project root for more information.
 
 using Mono.Cecil;
+using Mono.Cecil.Cil;
 using System;
 using System.Diagnostics;
+using System.Linq;
 
 namespace Mono.Linker.Dataflow
 {
@@ -68,7 +70,7 @@ namespace Mono.Linker.Dataflow
 #endif
 
 			mark ();
-			_context.ReflectionPatternRecorder.RecognizedReflectionAccessPattern (MethodCalling, MethodCalled, accessedItem);
+			_context.ReflectionPatternRecorder.RecognizedReflectionAccessPattern (MethodCalling, GetMethodCalledInstruction (), accessedItem);
 		}
 
 		public void RecordUnrecognizedPattern (string message)
@@ -79,8 +81,7 @@ namespace Mono.Linker.Dataflow
 
 			_patternReported = true;
 #endif
-
-			_context.ReflectionPatternRecorder.UnrecognizedReflectionAccessPattern (MethodCalling, MethodCalled, message);
+			_context.ReflectionPatternRecorder.UnrecognizedReflectionAccessPattern (MethodCalling, GetMethodCalledInstruction (), message);
 		}
 
 		public void Dispose ()
@@ -89,6 +90,12 @@ namespace Mono.Linker.Dataflow
 			if (_patternAnalysisAttempted && !_patternReported)
 				throw new InvalidOperationException ($"Internal error: A reflection pattern was analyzed, but no result was reported. {MethodCalling} -> {MethodCalled}");
 #endif
+		}
+
+		private Instruction GetMethodCalledInstruction ()
+		{
+			int instructionIndex = InstructionIndex;
+			return MethodCalling.Body.Instructions.Where (x => x.Offset == instructionIndex).First ();
 		}
 	}
 }
