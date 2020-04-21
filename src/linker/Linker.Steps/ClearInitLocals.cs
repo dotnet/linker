@@ -10,7 +10,6 @@ namespace Mono.Linker.Steps
 
 		protected override void Process ()
 		{
-			string parameterName = "ClearInitLocalsAssemblies";
 
 			if (Context.TryGetCustomData (parameterName, out string parameter)) {
 				_assemblies = new HashSet<string> (parameter.Split(','), StringComparer.OrdinalIgnoreCase);
