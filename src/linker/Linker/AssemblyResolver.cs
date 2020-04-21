@@ -99,6 +99,11 @@ namespace Mono.Linker {
 			return null;
 		}
 
+		public AssemblyDefinition ResolveFromPath(string path, ReaderParameters parameters)
+		{
+			return CacheAssembly (GetAssembly (path, parameters));
+		}
+
 		public override AssemblyDefinition Resolve (AssemblyNameReference name, ReaderParameters parameters)
 		{
 			// Validate arguments, similarly to how the base class does it.
@@ -133,7 +138,7 @@ namespace Mono.Linker {
 		public virtual AssemblyDefinition CacheAssembly (AssemblyDefinition assembly)
 		{
 			_assemblies [assembly.Name.Name] = assembly;
-			base.AddSearchDirectory (Path.GetDirectoryName (assembly.MainModule.FileName));
+			base.AddSearchDirectory (Path.GetDirectoryName (AssemblyToPath[assembly]));
 			return assembly;
 		}
 
@@ -151,6 +156,8 @@ namespace Mono.Linker {
 			_assemblies.Clear ();
 			if (_unresolvedAssemblies != null)
 				_unresolvedAssemblies.Clear ();
+
+			base.Dispose (disposing);
 		}
 	}
 }
