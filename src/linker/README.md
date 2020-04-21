@@ -175,6 +175,11 @@ Or before a specific step:
 
 `illink --custom-step -MarkStep:Foo.FooStep,D:\Bar\Foo.dll -a program.exe`
 
+### Passing data to custom steps
+
+For advanced custom steps which needs interaction with external values (for example for the custom step configuration), there is `--custom-data KEY=VALUE` option. The key
+data are stored inside a linker context and can be obtained in the custom stop using `context.TryGetCustomData` method. Each key can have a simple value assigned which means
+if you need to store multiple values for the same key use custom separator for the values and pass them as one key-value pair.
 
 ## MonoLinker specific options
 

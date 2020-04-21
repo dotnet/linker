@@ -12,8 +12,7 @@ namespace Mono.Linker.Steps
 		{
 			string parameterName = "ClearInitLocalsAssemblies";
 
-			if (Context.HasParameter (parameterName)) {
-				string parameter = Context.GetParameter (parameterName);
+			if (Context.TryGetCustomData (parameterName, out string parameter)) {
 				_assemblies = new HashSet<string> (parameter.Split(','), StringComparer.OrdinalIgnoreCase);
 			}
 		}
