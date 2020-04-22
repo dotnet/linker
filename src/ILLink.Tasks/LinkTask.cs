@@ -107,8 +107,10 @@ namespace ILLink.Tasks
 		bool? _iPConstProp;
 
 		/// <summary>
-		///	  
-		///
+		///   A list of feature names used by the body substitution logic.
+		///   Each Item requires "Value" boolean metadata with the value of
+		///   the feature setting.
+		///   Maps to '--set-feature'.
 		/// </summary>
 		public ITaskItem [] FeatureSettings { get; set; }
 
