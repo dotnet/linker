@@ -223,10 +223,9 @@ namespace Mono.Linker {
 				return;
 			}
 
-			if (FeatureSettings.TryAdd (feature, value))
-				return;
+			if (FeatureSettings.ContainsKey (feature))
+				LogMessage ($"Duplicate feature setting for {feature}");
 
-			LogMessage ($"Duplicate feature setting for {feature}");
 			FeatureSettings [feature] = value;
 		}
 
