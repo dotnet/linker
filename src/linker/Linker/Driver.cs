@@ -178,9 +178,9 @@ namespace Mono.Linker {
 
 #if !FEATURE_ILLINK
 			I18nAssemblies assemblies = I18nAssemblies.All;
+			var excluded_features = new HashSet<string> (StringComparer.Ordinal);
 #endif
 			var custom_steps = new List<string> ();
-			var excluded_features = new HashSet<string> (StringComparer.Ordinal);
 			var set_optimizations = new List<(CodeOptimizations, string, bool)> ();
 			bool dumpDependencies = false;
 			string dependenciesFileName = null;
@@ -256,7 +256,7 @@ namespace Mono.Linker {
 							return -1;
 
 						continue;
-
+#if !FEATURE_ILLINK
 					case "--exclude-feature":
 						if (arguments.Count < 1) {
 							ErrorMissingArgument (token);
@@ -272,7 +272,7 @@ namespace Mono.Linker {
 							return -1;
 
 						continue;
-
+#endif
 					case "--explicit-reflection":
 						if (!GetBoolParam (token, l => context.AddReflectionAnnotations = l))
 							return -1;
@@ -573,6 +573,7 @@ namespace Mono.Linker {
 			if (removeCAS)
 				p.AddStepBefore (typeof (MarkStep), new RemoveSecurityStep ());
 
+#if !FEATURE_ILLINK
 			if (excluded_features.Count > 0) {
 				p.AddStepBefore (typeof (MarkStep), new RemoveFeaturesStep () {
 					FeatureCOM = excluded_features.Contains ("com"),
@@ -585,6 +586,7 @@ namespace Mono.Linker {
 				excluded_features.CopyTo (excluded);
 				context.ExcludedFeatures = excluded;
 			}
+#endif
 
 			p.AddStepBefore (typeof (MarkStep), new RemoveUnreachableBlocksStep ());
 			p.AddStepBefore (typeof (OutputStep), new ClearInitLocalsStep ());
@@ -966,14 +968,14 @@ namespace Mono.Linker {
 			Console.WriteLine ("  --enable-opt NAME [ASM]   Enable one of the additional optimizations globaly or for a specific assembly name");
 			Console.WriteLine ("                              clearinitlocals: Remove initlocals");
 			Console.WriteLine ("                              sealer: Any method or type which does not have override is marked as sealed");
+#if !FEATURE_ILLINK
 			Console.WriteLine ("  --exclude-feature NAME    Any code which has a feature <name> in linked assemblies will be removed");
 			Console.WriteLine ("                              com: Support for COM Interop");
 			Console.WriteLine ("                              etw: Event Tracing for Windows");
-#if !FEATURE_ILLINK
 			Console.WriteLine ("                              remoting: .NET Remoting dependencies");
-#endif
 			Console.WriteLine ("                              sre: System.Reflection.Emit namespace");
 			Console.WriteLine ("                              globalization: Globalization data and globalization behavior");
+#endif
 			Console.WriteLine ("  --explicit-reflection     Adds to members never used through reflection DisablePrivateReflection attribute. Defaults to false");
 			Console.WriteLine ("  --keep-dep-attributes     Keep attributes used for manual dependency tracking. Defaults to false");
 			Console.WriteLine ("  --feature FEATURE VALUE   Apply any optimizations defined when this feature setting is a constant known at link time");

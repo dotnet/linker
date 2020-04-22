@@ -161,8 +161,9 @@ namespace Mono.Linker {
 
 		public IReflectionPatternRecorder ReflectionPatternRecorder { get; set; }
 
+#if !FEATURE_ILLINK
 		public string [] ExcludedFeatures { get; set; }
-
+#endif
 		public CodeOptimizationsSettings Optimizations { get; set; }
 
 		public bool AddReflectionAnnotations { get; set; }
@@ -437,10 +438,12 @@ namespace Mono.Linker {
 			_resolver.Dispose ();
 		}
 
+#if !FEATURE_ILLINK
 		public bool IsFeatureExcluded (string featureName)
 		{
 			return ExcludedFeatures != null && Array.IndexOf (ExcludedFeatures, featureName) >= 0;
 		}
+#endif
 
 		public bool IsOptimizationEnabled (CodeOptimizations optimization, MemberReference context)
 		{
