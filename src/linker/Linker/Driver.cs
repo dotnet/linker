@@ -928,18 +928,18 @@ namespace Mono.Linker {
 			Console.WriteLine ();
 			Console.WriteLine ("Actions");
 #if FEATURE_ILLINK
-			Console.WriteLine ("  -c ACTION         Action on the framework assemblies. Defaults to 'link'");
+			Console.WriteLine ("  -c ACTION           Action on the framework assemblies. Defaults to 'link'");
 #else
-			Console.WriteLine ("  -c ACTION         Action on the framework assemblies. Defaults to 'skip'");
+			Console.WriteLine ("  -c ACTION           Action on the framework assemblies. Defaults to 'skip'");
 #endif
-			Console.WriteLine ("                      copy: Copy the assembly into the output (it can be updated when any of its dependencies is removed)");
-			Console.WriteLine ("                      copyused: Same as copy but only for assemblies which are needed");
-			Console.WriteLine ("                      link: Remove any ununsed code or metadata from the assembly");
-			Console.WriteLine ("                      skip: Do not process the assembly");
-			Console.WriteLine ("                      addbypassngen: Add BypassNGenAttribute to unused methods");
-			Console.WriteLine ("                      addbypassngenused: Same as addbypassngen but unused assemblies are removed");
-			Console.WriteLine ("  -u ACTION         Action on the user assemblies. Defaults to 'link'");
-			Console.WriteLine ("  -p ACTION ASM     Overrides the default action for an assembly");
+			Console.WriteLine ("                        copy: Copy the assembly into the output (it can be updated when any of its dependencies is removed)");
+			Console.WriteLine ("                        copyused: Same as copy but only for assemblies which are needed");
+			Console.WriteLine ("                        link: Remove any ununsed code or metadata from the assembly");
+			Console.WriteLine ("                        skip: Do not process the assembly");
+			Console.WriteLine ("                        addbypassngen: Add BypassNGenAttribute to unused methods");
+			Console.WriteLine ("                        addbypassngenused: Same as addbypassngen but unused assemblies are removed");
+			Console.WriteLine ("  -u ACTION           Action on the user assemblies. Defaults to 'link'");
+			Console.WriteLine ("  -p ACTION ASM       Overrides the default action for an assembly");
 
 			Console.WriteLine ();
 			Console.WriteLine ("Advanced");
