@@ -110,7 +110,7 @@ namespace ILLink.Tasks
 		///   A list of feature names used by the body substitution logic.
 		///   Each Item requires "Value" boolean metadata with the value of
 		///   the feature setting.
-		///   Maps to '--set-feature'.
+		///   Maps to '--feature'.
 		/// </summary>
 		public ITaskItem [] FeatureSettings { get; set; }
 
@@ -343,7 +343,7 @@ namespace ILLink.Tasks
 					var featureValue = featureSetting.GetMetadata ("Value");
 					if (String.IsNullOrEmpty(featureValue))
 						throw new ArgumentException ("feature settings require \"Value\" metadata");
-					args.Append ("--set-feature ").Append (feature).Append(" ").AppendLine (featureValue);
+					args.Append ("--feature ").Append (feature).Append(" ").AppendLine (featureValue);
 				}
 			}
 

@@ -4,7 +4,7 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 namespace Mono.Linker.Tests.Cases.Substitutions
 {
 	[SetupLinkerSubstitutionFile ("FeatureSubstitutions.xml")]
-	[SetupLinkerArgument ("--set-feature", "OptionalFeature", "false")]
+	[SetupLinkerArgument ("--feature", "OptionalFeature", "false")]
 	public class FeatureSubstitutions
 	{
 		[Kept]

@@ -4,11 +4,11 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 namespace Mono.Linker.Tests.Cases.Substitutions
 {
 	[SetupLinkerSubstitutionFile ("FeatureSubstitutionsInvalid.xml")]
-	[SetupLinkerArgument ("--set-feature", "NoValueFeature", "true")]
+	[SetupLinkerArgument ("--feature", "NoValueFeature", "true")]
 	[LogContains ("Feature NoValueFeature does not specify a \"featurevalue\" attribute")]
-	[SetupLinkerArgument ("--set-feature", "NonBooleanFeature", "nonboolean")]
+	[SetupLinkerArgument ("--feature", "NonBooleanFeature", "nonboolean")]
 	[LogContains ("Unsupported non-boolean feature definition NonBooleanFeature")]
-	[SetupLinkerArgument ("--set-feature", "BooleanFeature", "nonboolean")]
+	[SetupLinkerArgument ("--feature", "BooleanFeature", "nonboolean")]
 	[LogContains ("Boolean feature BooleanFeature was set to a non-boolean value")]
 	public class FeatureSubstitutionsInvalid
 	{

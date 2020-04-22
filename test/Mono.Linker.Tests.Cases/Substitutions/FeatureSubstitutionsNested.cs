@@ -7,11 +7,11 @@ namespace Mono.Linker.Tests.Cases.Substitutions
 	[SetupLinkerSubstitutionFile ("FeatureSubstitutionsGlobalTrue.xml")]
 	[SetupLinkerSubstitutionFile ("FeatureSubstitutionsGlobalFalse.xml")]
 	[SetupLinkerSubstitutionFile ("FeatureSubstitutionsNested.xml")]
-	[SetupLinkerArgument ("--set-feature", "GlobalCondition", "true")]
-	[SetupLinkerArgument ("--set-feature", "AssemblyCondition", "false")]
-	[SetupLinkerArgument ("--set-feature", "TypeCondition", "true")]
-	[SetupLinkerArgument ("--set-feature", "MethodCondition", "false")]
-	[SetupLinkerArgument ("--set-feature", "FieldCondition", "true")]
+	[SetupLinkerArgument ("--feature", "GlobalCondition", "true")]
+	[SetupLinkerArgument ("--feature", "AssemblyCondition", "false")]
+	[SetupLinkerArgument ("--feature", "TypeCondition", "true")]
+	[SetupLinkerArgument ("--feature", "MethodCondition", "false")]
+	[SetupLinkerArgument ("--feature", "FieldCondition", "true")]
 	public class FeatureSubstitutionsNested
 	{
 		public static void Main () {

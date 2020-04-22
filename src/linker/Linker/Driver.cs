@@ -343,7 +343,7 @@ namespace Mono.Linker {
 
 						continue;
 
-					case "--set-feature":
+					case "--feature":
 						if (!GetStringParam (token, feature => {
 							if (!GetStringParam (token, value => {
 								context.SetFeatureValue (feature, value);
@@ -928,61 +928,61 @@ namespace Mono.Linker {
 			Console.WriteLine ();
 			Console.WriteLine ("Actions");
 #if FEATURE_ILLINK
-			Console.WriteLine ("  -c ACTION           Action on the framework assemblies. Defaults to 'link'");
+			Console.WriteLine ("  -c ACTION         Action on the framework assemblies. Defaults to 'link'");
 #else
-			Console.WriteLine ("  -c ACTION           Action on the framework assemblies. Defaults to 'skip'");
+			Console.WriteLine ("  -c ACTION         Action on the framework assemblies. Defaults to 'skip'");
 #endif
-			Console.WriteLine ("                        copy: Copy the assembly into the output (it can be updated when any of its dependencies is removed)");
-			Console.WriteLine ("                        copyused: Same as copy but only for assemblies which are needed");
-			Console.WriteLine ("                        link: Remove any ununsed code or metadata from the assembly");
-			Console.WriteLine ("                        skip: Do not process the assembly");
-			Console.WriteLine ("                        addbypassngen: Add BypassNGenAttribute to unused methods");
-			Console.WriteLine ("                        addbypassngenused: Same as addbypassngen but unused assemblies are removed");
-			Console.WriteLine ("  -u ACTION           Action on the user assemblies. Defaults to 'link'");
-			Console.WriteLine ("  -p ACTION ASM       Overrides the default action for an assembly");
+			Console.WriteLine ("                      copy: Copy the assembly into the output (it can be updated when any of its dependencies is removed)");
+			Console.WriteLine ("                      copyused: Same as copy but only for assemblies which are needed");
+			Console.WriteLine ("                      link: Remove any ununsed code or metadata from the assembly");
+			Console.WriteLine ("                      skip: Do not process the assembly");
+			Console.WriteLine ("                      addbypassngen: Add BypassNGenAttribute to unused methods");
+			Console.WriteLine ("                      addbypassngenused: Same as addbypassngen but unused assemblies are removed");
+			Console.WriteLine ("  -u ACTION         Action on the user assemblies. Defaults to 'link'");
+			Console.WriteLine ("  -p ACTION ASM     Overrides the default action for an assembly");
 
 			Console.WriteLine ();
 			Console.WriteLine ("Advanced");
-			Console.WriteLine ("  --custom-step CFG           Add a custom step <config> to the existing pipeline");
-			Console.WriteLine ("                              Step can use one of following configurations");
-			Console.WriteLine ("                              TYPE,PATH_TO_ASSEMBLY: Add user defined type as last step to the pipeline");
-			Console.WriteLine ("                              -NAME:TYPE,PATH_TO_ASSEMBLY: Inserts step type before existing step with name");
-			Console.WriteLine ("                              +NAME:TYPE,PATH_TO_ASSEMBLY: Add step type after existing step");
-			Console.WriteLine ("  --custom-data KEY=VALUE     Populates context data set with user specified key-value pair");
-			Console.WriteLine ("  --ignore-descriptors        Skips reading embedded descriptors (short -z). Defaults to false");
-			Console.WriteLine ("  --keep-facades              Keep assemblies with type-forwarders (short -t). Defaults to false");
-			Console.WriteLine ("  --skip-unresolved           Ignore unresolved types, methods, and assemblies. Defaults to false");
-			Console.WriteLine ("  --output-pinvokes PATH      Output a JSON file with all modules and entry points of the P/Invokes found");
+			Console.WriteLine ("  --custom-step CFG         Add a custom step <config> to the existing pipeline");
+			Console.WriteLine ("                            Step can use one of following configurations");
+			Console.WriteLine ("                            TYPE,PATH_TO_ASSEMBLY: Add user defined type as last step to the pipeline");
+			Console.WriteLine ("                            -NAME:TYPE,PATH_TO_ASSEMBLY: Inserts step type before existing step with name");
+			Console.WriteLine ("                            +NAME:TYPE,PATH_TO_ASSEMBLY: Add step type after existing step");
+			Console.WriteLine ("  --custom-data KEY=VALUE   Populates context data set with user specified key-value pair");
+			Console.WriteLine ("  --ignore-descriptors      Skips reading embedded descriptors (short -z). Defaults to false");
+			Console.WriteLine ("  --keep-facades            Keep assemblies with type-forwarders (short -t). Defaults to false");
+			Console.WriteLine ("  --skip-unresolved         Ignore unresolved types, methods, and assemblies. Defaults to false");
+			Console.WriteLine ("  --output-pinvokes PATH    Output a JSON file with all modules and entry points of the P/Invokes found");
 
 			Console.WriteLine ();
 			Console.WriteLine ("Linking");
-			Console.WriteLine ("  --deterministic             Produce a deterministic output for linked assemblies");
-			Console.WriteLine ("  --disable-opt NAME [ASM]    Disable one of the default optimizations globaly or for a specific assembly name");
-			Console.WriteLine ("                                beforefieldinit: Unused static fields are removed if there is no static ctor");
-			Console.WriteLine ("                                ipconstprop: Interprocedural constant propagation on return values");
-			Console.WriteLine ("                                overrideremoval: Overrides of virtual methods on types that are never instantiated are removed");
-			Console.WriteLine ("                                unreachablebodies: Instance methods that are marked but not executed are converted to throws");
-			Console.WriteLine ("                                unusedinterfaces: Removes interface types from declaration when not used");
-			Console.WriteLine ("  --enable-opt NAME [ASM]     Enable one of the additional optimizations globaly or for a specific assembly name");
-			Console.WriteLine ("                                clearinitlocals: Remove initlocals");
-			Console.WriteLine ("                                sealer: Any method or type which does not have override is marked as sealed");
-			Console.WriteLine ("  --exclude-feature NAME      Any code which has a feature <name> in linked assemblies will be removed");
-			Console.WriteLine ("                                com: Support for COM Interop");
-			Console.WriteLine ("                                etw: Event Tracing for Windows");
+			Console.WriteLine ("  --deterministic           Produce a deterministic output for linked assemblies");
+			Console.WriteLine ("  --disable-opt NAME [ASM]  Disable one of the default optimizations globaly or for a specific assembly name");
+			Console.WriteLine ("                              beforefieldinit: Unused static fields are removed if there is no static ctor");
+			Console.WriteLine ("                              ipconstprop: Interprocedural constant propagation on return values");
+			Console.WriteLine ("                              overrideremoval: Overrides of virtual methods on types that are never instantiated are removed");
+			Console.WriteLine ("                              unreachablebodies: Instance methods that are marked but not executed are converted to throws");
+			Console.WriteLine ("                              unusedinterfaces: Removes interface types from declaration when not used");
+			Console.WriteLine ("  --enable-opt NAME [ASM]   Enable one of the additional optimizations globaly or for a specific assembly name");
+			Console.WriteLine ("                              clearinitlocals: Remove initlocals");
+			Console.WriteLine ("                              sealer: Any method or type which does not have override is marked as sealed");
+			Console.WriteLine ("  --exclude-feature NAME    Any code which has a feature <name> in linked assemblies will be removed");
+			Console.WriteLine ("                              com: Support for COM Interop");
+			Console.WriteLine ("                              etw: Event Tracing for Windows");
 #if !FEATURE_ILLINK
-			Console.WriteLine ("                                remoting: .NET Remoting dependencies");
+			Console.WriteLine ("                              remoting: .NET Remoting dependencies");
 #endif
-			Console.WriteLine ("                                sre: System.Reflection.Emit namespace");
-			Console.WriteLine ("                                globalization: Globalization data and globalization behavior");
-			Console.WriteLine ("  --explicit-reflection       Adds to members never used through reflection DisablePrivateReflection attribute. Defaults to false");
-			Console.WriteLine ("  --keep-dep-attributes       Keep attributes used for manual dependency tracking. Defaults to false");
-			Console.WriteLine ("  --set-feature FEATURE VALUE Bakes in constant return values for any substitutions defined under this feature setting");
-			Console.WriteLine ("  --new-mvid                  Generate a new guid for each linked assembly (short -g). Defaults to true");
-			Console.WriteLine ("  --strip-resources           Remove XML descriptor resources for linked assemblies. Defaults to true");
-			Console.WriteLine ("  --strip-security            Remove metadata and code related to Code Access Security. Defaults to true");
-			Console.WriteLine ("  --substitutions FILE        Configuration file with field or methods substitution rules");
-			Console.WriteLine ("  --used-attrs-only           Attribute usage is removed if the attribute type is not used. Defaults to false");
-			Console.WriteLine ("  --attribute-defs FILE       Supplementary custom attribute definitions for attributes controlling the linker behavior.");
+			Console.WriteLine ("                              sre: System.Reflection.Emit namespace");
+			Console.WriteLine ("                              globalization: Globalization data and globalization behavior");
+			Console.WriteLine ("  --explicit-reflection     Adds to members never used through reflection DisablePrivateReflection attribute. Defaults to false");
+			Console.WriteLine ("  --keep-dep-attributes     Keep attributes used for manual dependency tracking. Defaults to false");
+			Console.WriteLine ("  --feature FEATURE VALUE   Applies any optimizations defined when this feature setting is a constant known at link time");
+			Console.WriteLine ("  --new-mvid                Generate a new guid for each linked assembly (short -g). Defaults to true");
+			Console.WriteLine ("  --strip-resources         Remove XML descriptor resources for linked assemblies. Defaults to true");
+			Console.WriteLine ("  --strip-security          Remove metadata and code related to Code Access Security. Defaults to true");
+			Console.WriteLine ("  --substitutions FILE      Configuration file with field or methods substitution rules");
+			Console.WriteLine ("  --used-attrs-only         Attribute usage is removed if the attribute type is not used. Defaults to false");
+			Console.WriteLine ("  --attribute-defs FILE     Supplementary custom attribute definitions for attributes controlling the linker behavior.");
 
 			Console.WriteLine ();
 			Console.WriteLine ("Analyzer");
