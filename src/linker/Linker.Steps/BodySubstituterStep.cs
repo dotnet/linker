@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Globalization;
@@ -50,12 +50,12 @@ namespace Mono.Linker.Steps
 
 			var value = GetAttribute (nav, "featurevalue");
 			if (string.IsNullOrEmpty (value)) {
-				Context.LogMessage($"Feature {feature} does not specify a \"featurevalue\" attribute");
+				Context.LogMessage(MessageImportance.High, $"Feature {feature} does not specify a \"featurevalue\" attribute");
 				return false;
 			}
 
 			if (!bool.TryParse (value, out bool bValue)) {
-				Context.LogMessage($"Unsupported non-boolean feature definition {feature}");
+				Context.LogMessage(MessageImportance.High, $"Unsupported non-boolean feature definition {feature}");
 				return false;
 			}
 
@@ -63,7 +63,7 @@ namespace Mono.Linker.Steps
 				return false;
 
 			if (!bool.TryParse (featureSetting, out bool bFeatureSetting)) {
-				Context.LogMessage($"Boolean feature {feature} was set to a non-boolean value {featureSetting}");
+				Context.LogMessage(MessageImportance.High, $"Boolean feature {feature} was set to a non-boolean value {featureSetting}");
 				return false;
 			}
 
