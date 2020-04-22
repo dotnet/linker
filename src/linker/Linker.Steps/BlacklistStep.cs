@@ -42,7 +42,7 @@ namespace Mono.Linker.Steps {
 		protected override void Process ()
 		{
 			foreach (string name in Assembly.GetExecutingAssembly ().GetManifestResourceNames ()) {
-				if (!name.EndsWith (".xml", StringComparison.OrdinalIgnoreCase) || !ShouldProcessAssemblyResource (GetAssemblyName (name)))
+				if (!name.EndsWith (".xml", StringComparison.OrdinalIgnoreCase) || !ShouldProcessRootDescriptorResource (GetAssemblyName (name)))
 					continue;
 
 				try {
@@ -55,11 +55,12 @@ namespace Mono.Linker.Steps {
 			}
 
 			foreach (var asm in Context.GetAssemblies ()) {
-				foreach (var rsc in asm.Modules
-									.SelectMany (mod => mod.Resources)
-									.Where (res => res.ResourceType == ResourceType.Embedded)
-									.Where (res => res.Name.EndsWith (".xml", StringComparison.OrdinalIgnoreCase))
-									.Where (res => ShouldProcessAssemblyResource (GetAssemblyName (res.Name)))
+				var embeddedXml = asm.Modules
+					.SelectMany (mod => mod.Resources)
+					.Where (res => res.ResourceType == ResourceType.Embedded)
+					.Where (res => res.Name.EndsWith (".xml", StringComparison.OrdinalIgnoreCase));
+				foreach (var rsc in embeddedXml
+									.Where (res => ShouldProcessRootDescriptorResource (GetAssemblyName (res.Name)))
 									.Cast<EmbeddedResource> ()) {
 					try {
 						Context.LogMessage ($"Processing embedded resource linker descriptor: {rsc.Name}");
@@ -67,6 +68,18 @@ namespace Mono.Linker.Steps {
 						AddToPipeline (GetExternalResolveStep (rsc, asm));
 					} catch (XmlException ex) {
 						/* This could happen if some broken XML file is embedded. */
+						Context.LogMessage ($"Error processing {rsc.Name}: {ex}");
+					}
+				}
+
+				foreach (var rsc in embeddedXml
+									.Where (res => res.Name.Equals ("substitutions.xml", StringComparison.OrdinalIgnoreCase))
+									.Cast<EmbeddedResource> ()) {
+					try {
+						Context.LogMessage ($"Processing embedded {rsc.Name} from {asm.Name}");
+						Context.Pipeline.AddStepBefore (typeof (MarkStep), GetExternalSubstitutionStep (rsc, asm));
+						GetExternalDescriptor (rsc);
+					} catch (XmlException ex) {
 						Context.LogMessage ($"Error processing {rsc.Name}: {ex}");
 					}
 				}
@@ -82,7 +95,7 @@ namespace Mono.Linker.Steps {
 			return descriptor.Substring (0, pos);
 		}
 
-		bool ShouldProcessAssemblyResource (string name)
+		bool ShouldProcessRootDescriptorResource (string name)
 		{
 			AssemblyDefinition assembly = Context.GetLoadedAssembly (name);
 
@@ -108,6 +121,11 @@ namespace Mono.Linker.Steps {
 		protected virtual IStep GetExternalResolveStep (EmbeddedResource resource, AssemblyDefinition assembly)
 		{
 			return new ResolveFromXmlStep (GetExternalDescriptor (resource), resource.Name, assembly, "resource " + resource.Name + " in " + assembly.FullName);
+		}
+
+		IStep GetExternalSubstitutionStep (EmbeddedResource resource, AssemblyDefinition assembly)
+		{
+			return new BodySubstituterStep (GetExternalDescriptor (resource), resource.Name, assembly, "resource " + resource.Name + " in " + assembly.FullName);
 		}
 
 		static ResolveFromXmlStep GetResolveStep (string descriptor)

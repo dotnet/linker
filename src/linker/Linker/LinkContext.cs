@@ -118,7 +118,7 @@ namespace Mono.Linker {
 
 		public bool StripResources { get; set; }
 
-		public List<string> Substitutions { get; private set; }
+		public Dictionary<string, string> FeatureSettings { get; private set; }
 
 		public List<string> AttributeDefinitions { get; private set; }
 
@@ -214,17 +214,20 @@ namespace Mono.Linker {
 			Optimizations = new CodeOptimizationsSettings (defaultOptimizations);
 		}
 
-		public void AddSubstitutionFile (string file)
+		public void SetFeatureValue (string feature, string value)
 		{
-			if (Substitutions == null) {
-				Substitutions = new List<string> { file };
+			Debug.Assert (!String.IsNullOrEmpty (feature));
+			Debug.Assert (!String.IsNullOrEmpty (value));
+			if (FeatureSettings == null) {
+				FeatureSettings = new Dictionary<string, string> { { feature, value } };
 				return;
 			}
 
-			if (Substitutions.Contains (file))
+			if (FeatureSettings.TryAdd (feature, value))
 				return;
 
-			Substitutions.Add (file);
+			LogMessage ($"Duplicate feature setting for {feature}");
+			FeatureSettings [feature] = value;
 		}
 
 		public void AddAttributeDefinitionFile (string file)
