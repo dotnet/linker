@@ -77,7 +77,7 @@ namespace Mono.Linker.Steps {
 									.Cast<EmbeddedResource> ()) {
 					try {
 						Context.LogMessage ($"Processing embedded {rsc.Name} from {asm.Name}");
-						Context.Pipeline.AddStepBefore (typeof (MarkStep), GetExternalSubstitutionStep (rsc, asm));
+						AddToPipeline (GetExternalSubstitutionStep (rsc, asm));
 						GetExternalDescriptor (rsc);
 					} catch (XmlException ex) {
 						Context.LogMessage ($"Error processing {rsc.Name}: {ex}");

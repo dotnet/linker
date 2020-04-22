@@ -62,7 +62,7 @@ namespace Mono.Linker.Steps {
 		readonly string _resourceName;
 		readonly AssemblyDefinition _resourceAssembly;
 
-		public ResolveFromXmlStep (XPathDocument document, string xmlDocumentLocation = "<unspecified>")
+		public ResolveFromXmlStep (XPathDocument document, string xmlDocumentLocation)
 		{
 			_document = document;
 			_xmlDocumentLocation = xmlDocumentLocation;

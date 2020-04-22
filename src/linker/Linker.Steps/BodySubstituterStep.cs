@@ -13,7 +13,7 @@ namespace Mono.Linker.Steps
 		readonly string _resourceName;
 		readonly AssemblyDefinition _resourceAssembly;
 
-		public BodySubstituterStep (XPathDocument document, string xmlDocumentLocation = "<unspecified>")
+		public BodySubstituterStep (XPathDocument document, string xmlDocumentLocation)
 		{
 			_document = document;
 			_xmlDocumentLocation = xmlDocumentLocation;
