@@ -737,6 +737,11 @@ namespace Mono.Linker.Steps {
 				case "System.Runtime.CompilerServices.InternalsVisibleToAttribute":
 					return true;
 				}
+
+				// Used by the AOT compiler
+				// No fixed namespace
+				if (attr_type.Name == "MonoPInvokeCallbackAttribute")
+					return true;
 				
 				if (!Annotations.IsMarked (attr_type.Resolve ()))
 					return false;
