@@ -16,7 +16,7 @@ namespace Mono.Linker {
 
 		readonly Collection<string> directories;
 
-		public readonly Dictionary<AssemblyDefinition, string> AssemblyToPath = new Dictionary<AssemblyDefinition, string> ();
+		protected readonly Dictionary<AssemblyDefinition, string> assemblyToPath = new Dictionary<AssemblyDefinition, string> ();
 
 		readonly List<MemoryMappedViewStream> viewStreams = new List<MemoryMappedViewStream> ();
 
@@ -45,19 +45,17 @@ namespace Mono.Linker {
 			if (parameters.AssemblyResolver == null)
 				parameters.AssemblyResolver = this;
 
-			FileStream fileStream = null;
-			MemoryMappedFile mappedFile = null;
 			MemoryMappedViewStream viewStream = null;
 			try {
 				// Create stream because CreateFromFile(string, ...) uses FileShare.None which is too strict
-				fileStream = new FileStream (file, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, false);
-				mappedFile = MemoryMappedFile.CreateFromFile (
+				using var fileStream = new FileStream (file, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, false);
+				using var mappedFile = MemoryMappedFile.CreateFromFile (
 					fileStream, null, fileStream.Length, MemoryMappedFileAccess.Read, HandleInheritability.None, true);
 				viewStream = mappedFile.CreateViewStream (0, 0, MemoryMappedFileAccess.Read);
 
 				AssemblyDefinition result = ModuleDefinition.ReadModule (viewStream, parameters).Assembly;
 
-				AssemblyToPath.Add (result, file);
+				assemblyToPath.Add (result, file);
 
 				viewStreams.Add (viewStream);
 
@@ -66,10 +64,6 @@ namespace Mono.Linker {
 
 				return result;
 			} finally {
-				if (fileStream != null)
-					fileStream.Dispose ();
-				if (mappedFile != null)
-					mappedFile.Dispose ();
 				if (viewStream != null)
 					viewStream.Dispose ();
 			}

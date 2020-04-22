@@ -313,7 +313,7 @@ namespace Mono.Linker {
 			try {
 				var symbolReader = _symbolReaderProvider.GetSymbolReader (
 					assembly.MainModule,
-					_resolver.AssemblyToPath[assembly]);
+					_resolver.GetAssemblyFileName(assembly));
 
 				if (symbolReader == null)
 					return;

@@ -259,7 +259,7 @@ namespace Mono.Linker.Steps {
 
 		FileInfo GetOriginalAssemblyFileInfo (AssemblyDefinition assembly)
 		{
-			return new FileInfo (Context.Resolver.AssemblyToPath [assembly]);
+			return new FileInfo (Context.Resolver.GetAssemblyFileName (assembly));
 		}
 
 		protected virtual void CopyAssembly (AssemblyDefinition assembly, string directory)

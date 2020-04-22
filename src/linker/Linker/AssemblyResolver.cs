@@ -83,6 +83,20 @@ namespace Mono.Linker {
 		}
 #endif
 
+		public string GetAssemblyFileName(AssemblyDefinition assembly)
+		{
+#if FEATURE_ILLINK
+			if (assemblyToPath.TryGetValue(assembly, out string path)) {
+				return path;
+			}
+			else
+#endif
+			{
+				// Must be an assembly that we didn't open through the resolver
+				return assembly.MainModule.FileName;
+			}
+		}
+
 		AssemblyDefinition ResolveFromReferences (AssemblyNameReference name, Collection<string> references, ReaderParameters parameters)
 		{
 			var fileName = name.Name + ".dll";
@@ -138,7 +152,7 @@ namespace Mono.Linker {
 		public virtual AssemblyDefinition CacheAssembly (AssemblyDefinition assembly)
 		{
 			_assemblies [assembly.Name.Name] = assembly;
-			base.AddSearchDirectory (Path.GetDirectoryName (AssemblyToPath[assembly]));
+			base.AddSearchDirectory (Path.GetDirectoryName (GetAssemblyFileName(assembly)));
 			return assembly;
 		}
 
