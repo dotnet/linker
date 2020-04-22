@@ -3,7 +3,7 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.Substitutions
 {
-	[SetupCompileResource ("EmbeddedSubstitutions.xml", "substitutions.xml")]
+	[SetupCompileResource ("EmbeddedSubstitutions.xml", "ILLink.Substitutions.xml")]
 	[IncludeBlacklistStep (true)]
 	public class EmbeddedSubstitutions
 	{
