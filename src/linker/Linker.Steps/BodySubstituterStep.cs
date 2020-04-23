@@ -49,12 +49,12 @@ namespace Mono.Linker.Steps
 
 			var value = GetAttribute (nav, "featurevalue");
 			if (string.IsNullOrEmpty (value)) {
-				Context.LogMessage(MessageImportance.High, $"Feature {feature} does not specify a \"featurevalue\" attribute");
+				Context.LogMessage (MessageContainer.CreateErrorMessage ($"Feature {feature} does not specify a \"featurevalue\" attribute", 1001));
 				return false;
 			}
 
 			if (!bool.TryParse (value, out bool bValue)) {
-				Context.LogMessage(MessageImportance.High, $"Unsupported non-boolean feature definition {feature}");
+				Context.LogMessage(MessageContainer.CreateErrorMessage ($"Unsupported non-boolean feature definition {feature}", 1002));
 				return false;
 			}
 
