@@ -3,13 +3,14 @@ using System.Diagnostics.Tracing;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
-namespace Mono.Linker.Tests.Cases.BCLFeatures.ETW
-{
+namespace Mono.Linker.Tests.Cases.BCLFeatures.ETW {
+#if NETCOREAPP
+	[IgnoreTestCase ("--exclude-feature is not supported on .NET Core")]
+#endif
 	[SetupLinkerArgument ("--exclude-feature", "etw")]
 	// Used to avoid different compilers generating different IL which can mess up the instruction asserts
 	[SetupCompileArgument ("/optimize+")]
-	public class NonEventWithLog
-	{
+	public class NonEventWithLog {
 		public static void Main ()
 		{
 			var n = new NonEventWithLogSource ();
@@ -22,8 +23,7 @@ namespace Mono.Linker.Tests.Cases.BCLFeatures.ETW
 	[KeptMember (".ctor()")]
 
 	[EventSource (Name = "MyCompany")]
-	class NonEventWithLogSource : EventSource
-	{
+	class NonEventWithLogSource : EventSource {
 
 		[NonEvent]
 		[Kept]
@@ -34,7 +34,7 @@ namespace Mono.Linker.Tests.Cases.BCLFeatures.ETW
 		}
 
 		[Kept]
-		[ExpectedInstructionSequence (new[]
+		[ExpectedInstructionSequence (new []
 		{
 			"ldstr",
 			"newobj",

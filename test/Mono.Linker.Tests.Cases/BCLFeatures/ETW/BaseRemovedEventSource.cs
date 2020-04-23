@@ -3,13 +3,14 @@ using System.Diagnostics.Tracing;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
-namespace Mono.Linker.Tests.Cases.BCLFeatures.ETW
-{
+namespace Mono.Linker.Tests.Cases.BCLFeatures.ETW {
+#if NETCOREAPP
+	[IgnoreTestCase ("--exclude-feature is not supported on .NET Core")]
+#endif
 	[SetupLinkerArgument ("--exclude-feature", "etw")]
 	// Keep framework code that calls EventSource methods like OnEventCommand
 	[SetupLinkerCoreAction ("skip")]
-	public class BaseRemovedEventSource
-	{
+	public class BaseRemovedEventSource {
 		public static void Main ()
 		{
 			var b = CustomCtorEventSource.Log.IsEnabled ();
@@ -23,11 +24,9 @@ namespace Mono.Linker.Tests.Cases.BCLFeatures.ETW
 	[KeptMember (".ctor()")]
 	[KeptMember (".cctor()")]
 	[EventSource (Name = "MyCompany")]
-	class CustomCtorEventSource : EventSource
-	{
-		public class Keywords
-		{
-			public const EventKeywords Page = (EventKeywords) 1;
+	class CustomCtorEventSource : EventSource {
+		public class Keywords {
+			public const EventKeywords Page = (EventKeywords)1;
 
 			public int Unused;
 		}
@@ -36,7 +35,7 @@ namespace Mono.Linker.Tests.Cases.BCLFeatures.ETW
 		public static CustomCtorEventSource Log = new MyEventSourceBasedOnCustomCtorEventSource (1);
 
 		[Kept]
-		[ExpectedInstructionSequence (new[]
+		[ExpectedInstructionSequence (new []
 		{
 			"ldarg.0",
 			"call",
@@ -48,7 +47,7 @@ namespace Mono.Linker.Tests.Cases.BCLFeatures.ETW
 		}
 
 		[Kept]
-		[ExpectedInstructionSequence (new[]
+		[ExpectedInstructionSequence (new []
 		{
 			"ldstr",
 			"newobj",
@@ -64,7 +63,7 @@ namespace Mono.Linker.Tests.Cases.BCLFeatures.ETW
 		}
 
 		[Kept]
-		[ExpectedInstructionSequence (new[]
+		[ExpectedInstructionSequence (new []
 		{
 			"ldstr",
 			"newobj",
@@ -83,8 +82,7 @@ namespace Mono.Linker.Tests.Cases.BCLFeatures.ETW
 
 	[Kept]
 	[KeptBaseType (typeof (CustomCtorEventSource))]
-	class MyEventSourceBasedOnCustomCtorEventSource : CustomCtorEventSource
-	{
+	class MyEventSourceBasedOnCustomCtorEventSource : CustomCtorEventSource {
 		[Kept]
 		public MyEventSourceBasedOnCustomCtorEventSource (int value) : base (value)
 		{

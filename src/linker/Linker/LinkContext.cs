@@ -33,17 +33,16 @@ using System.IO;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
-namespace Mono.Linker
-{
-	public class UnintializedContextFactory
-	{
+namespace Mono.Linker {
+
+	public class UnintializedContextFactory {
 		virtual public AnnotationStore CreateAnnotationStore (LinkContext context) => new AnnotationStore (context);
 		virtual public MarkingHelpers CreateMarkingHelpers (LinkContext context) => new MarkingHelpers (context);
 		virtual public Tracer CreateTracer (LinkContext context) => new Tracer (context);
 	}
 
-	public class LinkContext : IDisposable
-	{
+	public class LinkContext : IDisposable {
+
 		readonly Pipeline _pipeline;
 		AssemblyAction _coreAction;
 		AssemblyAction _userAction;
@@ -93,17 +92,20 @@ namespace Mono.Linker
 			set { _linkSymbols = value; }
 		}
 
-		public bool KeepTypeForwarderOnlyAssemblies {
+		public bool KeepTypeForwarderOnlyAssemblies
+		{
 			get { return _keepTypeForwarderOnlyAssemblies; }
 			set { _keepTypeForwarderOnlyAssemblies = value; }
 		}
 
-		public bool KeepMembersForDebugger {
+		public bool KeepMembersForDebugger
+		{
 			get { return _keepMembersForDebugger; }
 			set { _keepMembersForDebugger = value; }
 		}
 
-		public bool IgnoreUnresolved {
+		public bool IgnoreUnresolved
+		{
 			get { return _ignoreUnresolved; }
 			set { _ignoreUnresolved = value; }
 		}
@@ -116,7 +118,7 @@ namespace Mono.Linker
 
 		public bool StripResources { get; set; }
 
-		public List<string> Substitutions { get; private set; }
+		public Dictionary<string, bool> FeatureSettings { get; private set; }
 
 		public List<string> AttributeDefinitions { get; private set; }
 
@@ -159,8 +161,9 @@ namespace Mono.Linker
 
 		public IReflectionPatternRecorder ReflectionPatternRecorder { get; set; }
 
-		public string[] ExcludedFeatures { get; set; }
-
+#if !FEATURE_ILLINK
+		public string [] ExcludedFeatures { get; set; }
+#endif
 		public CodeOptimizationsSettings Optimizations { get; set; }
 
 		public bool AddReflectionAnnotations { get; set; }
@@ -173,7 +176,8 @@ namespace Mono.Linker
 		}
 
 		public LinkContext (Pipeline pipeline, AssemblyResolver resolver)
-			: this (pipeline, resolver, new ReaderParameters {
+			: this(pipeline, resolver, new ReaderParameters
+			{
 				AssemblyResolver = resolver
 			}, new UnintializedContextFactory ())
 		{
@@ -187,7 +191,7 @@ namespace Mono.Linker
 			_actions = new Dictionary<string, AssemblyAction> ();
 			_parameters = new Dictionary<string, string> (StringComparer.Ordinal);
 			_readerParameters = readerParameters;
-
+			
 			SymbolReaderProvider = new DefaultSymbolReaderProvider (false);
 
 			if (factory == null)
@@ -211,17 +215,15 @@ namespace Mono.Linker
 			Optimizations = new CodeOptimizationsSettings (defaultOptimizations);
 		}
 
-		public void AddSubstitutionFile (string file)
+		public void SetFeatureValue (string feature, bool value)
 		{
-			if (Substitutions == null) {
-				Substitutions = new List<string> { file };
+			Debug.Assert (!String.IsNullOrEmpty (feature));
+			if (FeatureSettings == null) {
+				FeatureSettings = new Dictionary<string, bool> { { feature, value } };
 				return;
 			}
 
-			if (Substitutions.Contains (file))
-				return;
-
-			Substitutions.Add (file);
+			FeatureSettings [feature] = value;
 		}
 
 		public void AddAttributeDefinitionFile (string file)
@@ -280,7 +282,8 @@ namespace Mono.Linker
 					RegisterAssembly (assembly);
 
 				return assembly;
-			} catch (Exception e) {
+			}
+			catch (Exception e) {
 				throw new AssemblyResolutionException (reference, e);
 			}
 		}
@@ -309,7 +312,7 @@ namespace Mono.Linker
 			try {
 				var symbolReader = _symbolReaderProvider.GetSymbolReader (
 					assembly.MainModule,
-					_resolver.GetAssemblyFileName (assembly));
+					_resolver.GetAssemblyFileName(assembly));
 
 				if (symbolReader == null)
 					return;
@@ -350,7 +353,7 @@ namespace Mono.Linker
 
 			return reference;
 		}
-
+		
 		public void SetAction (AssemblyDefinition assembly, AssemblyAction defaultAction)
 		{
 			RegisterAssembly (assembly);
@@ -381,7 +384,7 @@ namespace Mono.Linker
 			case "mscorlib":
 			case "Accessibility":
 			case "Mono.Security":
-			// WPF
+				// WPF
 			case "PresentationFramework":
 			case "PresentationCore":
 			case "WindowsBase":
@@ -390,17 +393,17 @@ namespace Mono.Linker
 			case "PresentationUI":
 			case "ReachFramework":
 			case "netstandard":
-				return true;
+					return true;
 			default:
 				return name.Name.StartsWith ("System")
 					|| name.Name.StartsWith ("Microsoft");
 			}
 		}
 
-		public virtual AssemblyDefinition[] GetAssemblies ()
+		public virtual AssemblyDefinition [] GetAssemblies ()
 		{
 			var cache = _resolver.AssemblyCache;
-			AssemblyDefinition[] asms = new AssemblyDefinition[cache.Count];
+			AssemblyDefinition [] asms = new AssemblyDefinition [cache.Count];
 			cache.Values.CopyTo (asms, 0);
 			return asms;
 		}
@@ -415,7 +418,7 @@ namespace Mono.Linker
 
 		public void SetCustomData (string key, string value)
 		{
-			_parameters[key] = value;
+			_parameters [key] = value;
 		}
 
 		public bool HasCustomData (string key)
@@ -433,10 +436,12 @@ namespace Mono.Linker
 			_resolver.Dispose ();
 		}
 
+#if !FEATURE_ILLINK
 		public bool IsFeatureExcluded (string featureName)
 		{
 			return ExcludedFeatures != null && Array.IndexOf (ExcludedFeatures, featureName) >= 0;
 		}
+#endif
 
 		public bool IsOptimizationEnabled (CodeOptimizations optimization, MemberReference context)
 		{
@@ -507,7 +512,7 @@ namespace Mono.Linker
 				return;
 			}
 
-			perAssembly[assemblyContext] |= optimizations;
+			perAssembly [assemblyContext] |= optimizations;
 		}
 
 		public void Disable (CodeOptimizations optimizations, string assemblyContext = null)
@@ -522,7 +527,7 @@ namespace Mono.Linker
 				return;
 			}
 
-			perAssembly[assemblyContext] &= ~optimizations;
+			perAssembly [assemblyContext] &= ~optimizations;
 		}
 	}
 
@@ -530,7 +535,7 @@ namespace Mono.Linker
 	public enum CodeOptimizations
 	{
 		BeforeFieldInit = 1 << 0,
-
+		
 		/// <summary>
 		/// Option to disable removal of overrides of virtual methods when a type is never instantiated
 		///
@@ -538,7 +543,7 @@ namespace Mono.Linker
 		/// that do not get an instance constructor marked.
 		/// </summary>
 		OverrideRemoval = 1 << 1,
-
+		
 		/// <summary>
 		/// Option to disable delaying marking of instance methods until an instance of that type could exist
 		/// </summary>
