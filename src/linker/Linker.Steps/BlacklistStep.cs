@@ -27,6 +27,7 @@
 //
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using System.Reflection;
@@ -41,13 +42,15 @@ namespace Mono.Linker.Steps {
 
 		protected override void Process ()
 		{
+			var steps_to_add = new Stack<IStep> ();
+
 			foreach (string name in Assembly.GetExecutingAssembly ().GetManifestResourceNames ()) {
 				if (!name.EndsWith (".xml", StringComparison.OrdinalIgnoreCase) || !ShouldProcessRootDescriptorResource (GetAssemblyName (name)))
 					continue;
 
 				try {
 					Context.LogMessage ($"Processing resource linker descriptor: {name}");
-					AddToPipeline (GetResolveStep (name));
+					steps_to_add.Push (GetResolveStep (name));
 				} catch (XmlException ex) {
 					/* This could happen if some broken XML file is included. */
 					Context.LogMessage ($"Error processing {name}: {ex}");
@@ -64,8 +67,7 @@ namespace Mono.Linker.Steps {
 									.Cast<EmbeddedResource> ()) {
 					try {
 						Context.LogMessage ($"Processing embedded resource linker descriptor: {rsc.Name}");
-
-						AddToPipeline (GetExternalResolveStep (rsc, asm));
+						steps_to_add.Push (GetExternalResolveStep (rsc, asm));
 					} catch (XmlException ex) {
 						/* This could happen if some broken XML file is embedded. */
 						Context.LogMessage ($"Error processing {rsc.Name}: {ex}");
@@ -77,13 +79,15 @@ namespace Mono.Linker.Steps {
 									.Cast<EmbeddedResource> ()) {
 					try {
 						Context.LogMessage ($"Processing embedded {rsc.Name} from {asm.Name}");
-						AddToPipeline (GetExternalSubstitutionStep (rsc, asm));
-						GetExternalDescriptor (rsc);
+						steps_to_add.Push (GetExternalSubstitutionStep (rsc, asm));
 					} catch (XmlException ex) {
 						Context.LogMessage ($"Error processing {rsc.Name}: {ex}");
 					}
 				}
 			}
+
+			foreach (var step in steps_to_add)
+				AddToPipeline (step);
 		}
 
 		static string GetAssemblyName (string descriptor)

@@ -179,8 +179,12 @@ namespace Mono.Linker {
 #if !FEATURE_ILLINK
 			I18nAssemblies assemblies = I18nAssemblies.All;
 			var excluded_features = new HashSet<string> (StringComparer.Ordinal);
+			var resolve_from_xapi_steps = new Stack<string> ();
 #endif
-			var custom_steps = new List<string> ();
+			var resolve_from_assembly_steps = new Stack<(string, ResolveFromAssemblyStep.RootVisibility)> ();
+			var resolve_from_xml_steps = new Stack<string> ();
+			var body_substituter_steps = new Stack<string> ();
+			var custom_steps = new Stack<string> ();
 			var set_optimizations = new List<(CodeOptimizations, string, bool)> ();
 			bool dumpDependencies = false;
 			string dependenciesFileName = null;
@@ -252,7 +256,7 @@ namespace Mono.Linker {
 							return -1;
 						}
 
-						if (!GetStringParam (token, l => AddBodySubstituterStep (p, l)))
+						if (!GetStringParam (token, l => body_substituter_steps.Push (l)))
 							return -1;
 
 						continue;
@@ -280,7 +284,7 @@ namespace Mono.Linker {
 						continue;
 
 					case "--custom-step":
-						if (!GetStringParam (token, l => custom_steps.Add (l)))
+						if (!GetStringParam (token, l => custom_steps.Push (l)))
 							return -1;
 
 						continue;
@@ -451,7 +455,7 @@ namespace Mono.Linker {
 					case "x":
 						if (!GetStringParam (token, l => {
 							foreach (string file in GetFiles (l))
-								AddResolveFromXmlStep (p, file);
+								resolve_from_xml_steps.Push (file);
 							}))
 							return -1;
 
@@ -465,7 +469,7 @@ namespace Mono.Linker {
 								? ResolveFromAssemblyStep.RootVisibility.PublicAndFamily
 								: ResolveFromAssemblyStep.RootVisibility.Any;
 							foreach (string file in GetFiles (l))
-								p.PrependStep (new ResolveFromAssemblyStep (file, rootVisibility));
+								resolve_from_assembly_steps.Push ((file, rootVisibility));
 						}))
 							return -1;
 
@@ -475,7 +479,7 @@ namespace Mono.Linker {
 					case "i":
 						if (!GetStringParam (token, l => {
 							foreach (string file in GetFiles (l))
-								p.PrependStep (new ResolveFromXApiStep (new XPathDocument (file)));
+								resolve_from_xapi_steps.Push (file);
 							}))
 							return -1;
 
@@ -549,6 +553,21 @@ namespace Mono.Linker {
 			//
 			// Modify the default pipeline
 			//
+
+#if !FEATURE_ILLINK
+			foreach (var file in resolve_from_xapi_steps)
+				p.PrependStep (new ResolveFromXApiStep (new XPathDocument (file)));
+#endif
+
+			foreach (var file in resolve_from_xml_steps)
+				AddResolveFromXmlStep (p, file);
+
+			foreach (var (file, rootVisibility) in resolve_from_assembly_steps)
+				p.PrependStep (new ResolveFromAssemblyStep (file, rootVisibility));
+
+			foreach (var file in body_substituter_steps)
+				AddBodySubstituterStep (p, file);
+
 			if (ignoreDescriptors)
 				p.RemoveStep (typeof (BlacklistStep));
 
@@ -561,14 +580,12 @@ namespace Mono.Linker {
 #if !FEATURE_ILLINK
 			p.AddStepAfter (typeof (LoadReferencesStep), new LoadI18nAssemblies (assemblies));
 
-			if (assemblies != I18nAssemblies.None) {
+			if (assemblies != I18nAssemblies.None)
 				p.AddStepAfter (typeof (PreserveDependencyLookupStep), new PreserveCalendarsStep (assemblies));
-			}
 #endif
 
-			if (_needAddBypassNGenStep) {
+			if (_needAddBypassNGenStep)
 				p.AddStepAfter (typeof (SweepStep), new AddBypassNGenStep ());
-			}
 
 			if (removeCAS)
 				p.AddStepBefore (typeof (MarkStep), new RemoveSecurityStep ());
@@ -595,13 +612,21 @@ namespace Mono.Linker {
 			//
 			// Pipeline setup with all steps enabled
 			//
+			// ResolveFromAssemblyStep [optional, possibly many]
+			// ResolveFromXmlStep [optional, possibly many]
+			// [mono only] ResolveFromXApiStep [optional, possibly many]
 			// LoadReferencesStep
+			// [mono only] LoadI18nAssemblies
 			// BlacklistStep [optional]
+			//   dynamically adds steps:
+			//     ResolveFromXmlStep [optional, possibly many]
+			//     BodySubstituterStep [optional, possibly many]
 			// PreserveDependencyLookupStep
+			// [mono only] PreselveCalendarsStep [optional]
 			// TypeMapStep
 			// BodySubstituterStep [optional]
 			// RemoveSecurityStep [optional]
-			// RemoveFeaturesStep [optional]
+			// [mono only] RemoveFeaturesStep [optional]
 			// RemoveUnreachableBlocksStep [optional]
 			// MarkStep
 			// ReflectionBlockedStep [optional]
@@ -611,6 +636,7 @@ namespace Mono.Linker {
 			// CleanStep
 			// RegenerateGuidStep [optional]
 			// ClearInitLocalsStep
+			// SealerStep
 			// OutputStep
 			//
 
