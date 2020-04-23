@@ -134,7 +134,13 @@ stages:
               custom: 'tool'
               arguments: 'restore'
           - task: DotNetCoreCLI@2
-            displayName: 'Lint ILLinker'
+            displayName: 'Lint Sources'
+            inputs:
+              command: 'custom'
+              custom: 'tool'
+              arguments: 'run dotnet-format --dry-run --check --verbosity diagnostic -f src/ --exclude src/analyzer,src/tuner --report $(Build.SourcesDirectory)/artifacts/log/$(_BuildConfig)'
+          - task: DotNetCoreCLI@2
+            displayName: 'Lint Tests'
             inputs:
               command: 'custom'
               custom: 'tool'
