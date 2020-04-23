@@ -54,7 +54,7 @@ namespace Mono.Linker.Steps
 			}
 
 			if (!bool.TryParse (value, out bool bValue)) {
-				Context.LogMessage(MessageContainer.CreateErrorMessage ($"Unsupported non-boolean feature definition {feature}", 1002));
+				Context.LogMessage (MessageContainer.CreateErrorMessage ($"Unsupported non-boolean feature definition {feature}", 1002));
 				return false;
 			}
 

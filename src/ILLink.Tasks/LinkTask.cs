@@ -112,7 +112,7 @@ namespace ILLink.Tasks
 		///   the feature setting.
 		///   Maps to '--feature'.
 		/// </summary>
-		public ITaskItem [] FeatureSettings { get; set; }
+		public ITaskItem[] FeatureSettings { get; set; }
 
 		/// <summary>
 		///   Boolean specifying whether to enable sealer optimization globally.
@@ -339,9 +339,9 @@ namespace ILLink.Tasks
 				foreach (var featureSetting in FeatureSettings) {
 					var feature = featureSetting.ItemSpec;
 					var featureValue = featureSetting.GetMetadata ("Value");
-					if (String.IsNullOrEmpty(featureValue))
+					if (String.IsNullOrEmpty (featureValue))
 						throw new ArgumentException ("feature settings require \"Value\" metadata");
-					args.Append ("--feature ").Append (feature).Append(" ").AppendLine (featureValue);
+					args.Append ("--feature ").Append (feature).Append (" ").AppendLine (featureValue);
 				}
 			}
 
