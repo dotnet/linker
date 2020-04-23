@@ -137,7 +137,7 @@ stages:
         inputs:
           command: 'custom'
           custom: 'tool'
-          arguments: 'run dotnet-format --dry-run --check --verbosity diagnostic -f . --exclude src/analyzer,src/tuner'
+          arguments: 'run dotnet-format --dry-run --check --verbosity diagnostic -f . --exclude src/analyzer,src/tuner,external'
 
   - ${{ if eq(variables.officialBuild, 'false') }}:
     - job: Linux_Mono
