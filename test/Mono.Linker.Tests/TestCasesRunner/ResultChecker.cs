@@ -684,7 +684,7 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 							if (GetFullMemberNameFromDefinition (pattern.SourceMethod) != expectedSourceMethod)
 								return false;
 
-							if (GetFullMemberNameFromDefinition (pattern.ReflectionMethodCall.Operand as MethodReference) != expectedReflectionMethod)
+							if (GetFullMemberNameFromDefinition (pattern.ReflectionMethodCall.Operand as IMetadataTokenProvider) != expectedReflectionMethod)
 								return false;
 
 							if (GetFullMemberNameFromDefinition (pattern.AccessedItem) != expectedAccessedItem)
@@ -697,7 +697,7 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 								.Where (p => GetFullMemberNameFromDefinition (p.SourceMethod).ToLowerInvariant ().Contains (expectedSourceMethod.ToLowerInvariant ()))
 								.Select (p => "\t" + RecognizedReflectionAccessPatternToString (p)));
 							string reflectionMethodCandidates = string.Join (Environment.NewLine, reflectionPatternRecorder.RecognizedPatterns
-								.Where (p => GetFullMemberNameFromDefinition (p.ReflectionMethodCall.Operand as MethodReference).ToLowerInvariant ().Contains (expectedReflectionMethod.ToLowerInvariant ()))
+								.Where (p => GetFullMemberNameFromDefinition (p.ReflectionMethodCall.Operand as IMetadataTokenProvider).ToLowerInvariant ().Contains (expectedReflectionMethod.ToLowerInvariant ()))
 								.Select (p => "\t" + RecognizedReflectionAccessPatternToString (p)));
 
 							Assert.Fail (
@@ -716,7 +716,7 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 							if (GetFullMemberNameFromDefinition (pattern.SourceMethod) != expectedSourceMethod)
 								return false;
 
-							if (GetFullMemberNameFromDefinition (pattern.ReflectionMethodCall.Operand as MethodReference) != expectedReflectionMethod)
+							if (GetFullMemberNameFromDefinition (pattern.ReflectionMethodCall != null ? pattern.ReflectionMethodCall.Operand as IMetadataTokenProvider : pattern.AccessedItem) != expectedReflectionMethod)
 								return false;
 
 							if (expectedMessage != null && pattern.Message != expectedMessage)
@@ -729,7 +729,7 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 								.Where (p => GetFullMemberNameFromDefinition (p.SourceMethod).ToLowerInvariant ().Contains (expectedSourceMethod.ToLowerInvariant ()))
 								.Select (p => "\t" + UnrecognizedReflectionAccessPatternToString (p)));
 							string reflectionMethodCandidates = string.Join (Environment.NewLine, reflectionPatternRecorder.UnrecognizedPatterns
-								.Where (p => GetFullMemberNameFromDefinition (p.ReflectionMethodCall.Operand as MethodReference).ToLowerInvariant ().Contains (expectedReflectionMethod.ToLowerInvariant ()))
+								.Where (p => GetFullMemberNameFromDefinition (p.ReflectionMethodCall != null ? p.ReflectionMethodCall.Operand as IMetadataTokenProvider : p.AccessedItem).ToLowerInvariant ().Contains (expectedReflectionMethod.ToLowerInvariant ()))
 								.Select (p => "\t" + UnrecognizedReflectionAccessPatternToString (p)));
 
 							Assert.Fail (
@@ -816,6 +816,9 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 			// as it would have to actually resolve the referenced method, which is very expensive and no necessary
 			// for the tests to work (the return types are redundant piece of information anyway).
 
+			if (member is ParameterDefinition param)
+				member = param.ParameterType.Resolve ();
+
 			if (member is MemberReference memberReference)
 				member = memberReference.Resolve ();
 
@@ -839,12 +842,12 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 
 		static string RecognizedReflectionAccessPatternToString (TestReflectionPatternRecorder.ReflectionAccessPattern pattern)
 		{
-			return $"{GetFullMemberNameFromDefinition (pattern.SourceMethod)}: Call to {GetFullMemberNameFromDefinition (pattern.ReflectionMethodCall.Operand as MethodReference)} accessed {GetFullMemberNameFromDefinition (pattern.AccessedItem)}";
+			return $"{GetFullMemberNameFromDefinition (pattern.SourceMethod)}: Call to {GetFullMemberNameFromDefinition (pattern.ReflectionMethodCall.Operand as IMetadataTokenProvider)} accessed {GetFullMemberNameFromDefinition (pattern.AccessedItem)}";
 		}
 
 		static string UnrecognizedReflectionAccessPatternToString (TestReflectionPatternRecorder.ReflectionAccessPattern pattern)
 		{
-			return $"{GetFullMemberNameFromDefinition (pattern.SourceMethod)}: Call to {GetFullMemberNameFromDefinition (pattern.ReflectionMethodCall.Operand as MethodReference)} unrecognized '{pattern.Message}'";
+			return $"{GetFullMemberNameFromDefinition (pattern.SourceMethod)}: Call to {GetFullMemberNameFromDefinition (pattern.ReflectionMethodCall != null ? pattern.ReflectionMethodCall.Operand as IMetadataTokenProvider : pattern.AccessedItem)} unrecognized '{pattern.Message}'";
 		}
 
 

@@ -27,14 +27,14 @@ namespace Mono.Linker.Dataflow
 #endif
 
 		public MethodDefinition MethodCalling { get; private set; }
-		public MethodDefinition MethodCalled { get; private set; }
+		public IMetadataTokenProvider MemberCalled { get; private set; }
 		public int InstructionIndex { get; private set; }
 
-		public ReflectionPatternContext (LinkContext context, MethodDefinition methodCalling, MethodDefinition methodCalled, int instructionIndex)
+		public ReflectionPatternContext (LinkContext context, MethodDefinition methodCalling, IMetadataTokenProvider memberCalled, int instructionIndex)
 		{
 			_context = context;
 			MethodCalling = methodCalling;
-			MethodCalled = methodCalled;
+			MemberCalled = memberCalled;
 			InstructionIndex = instructionIndex;
 
 #if DEBUG
@@ -64,7 +64,7 @@ namespace Mono.Linker.Dataflow
 		{
 #if DEBUG
 			if (!_patternAnalysisAttempted)
-				throw new InvalidOperationException ($"Internal error: To correctly report all patterns, when starting to analyze a pattern the AnalyzingPattern must be called first. {MethodCalling} -> {MethodCalled}");
+				throw new InvalidOperationException ($"Internal error: To correctly report all patterns, when starting to analyze a pattern the AnalyzingPattern must be called first. {MethodCalling} -> {MemberCalled}");
 
 			_patternReported = true;
 #endif
@@ -77,23 +77,26 @@ namespace Mono.Linker.Dataflow
 		{
 #if DEBUG
 			if (!_patternAnalysisAttempted)
-				throw new InvalidOperationException ($"Internal error: To correctly report all patterns, when starting to analyze a pattern the AnalyzingPattern must be called first. {MethodCalling} -> {MethodCalled}");
+				throw new InvalidOperationException ($"Internal error: To correctly report all patterns, when starting to analyze a pattern the AnalyzingPattern must be called first. {MethodCalling} -> {MemberCalled}");
 
 			_patternReported = true;
 #endif
-			_context.ReflectionPatternRecorder.UnrecognizedReflectionAccessPattern (MethodCalling, GetMethodCalledInstruction (), message);
+			_context.ReflectionPatternRecorder.UnrecognizedReflectionAccessPattern (MethodCalling, GetMethodCalledInstruction (), MemberCalled,  message);
 		}
 
 		public void Dispose ()
 		{
 #if DEBUG
 			if (_patternAnalysisAttempted && !_patternReported)
-				throw new InvalidOperationException ($"Internal error: A reflection pattern was analyzed, but no result was reported. {MethodCalling} -> {MethodCalled}");
+				throw new InvalidOperationException ($"Internal error: A reflection pattern was analyzed, but no result was reported. {MethodCalling} -> {MemberCalled}");
 #endif
 		}
 
 		private Instruction GetMethodCalledInstruction ()
 		{
+			if (InstructionIndex == 0)
+				return null;
+
 			int instructionIndex = InstructionIndex;
 			return MethodCalling.Body.Instructions.Where (x => x.Offset == instructionIndex).First ();
 		}

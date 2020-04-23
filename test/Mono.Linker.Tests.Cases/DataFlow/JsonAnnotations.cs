@@ -49,7 +49,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			RequirePublicConstructors (type2);
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (JsonAnnotations), nameof (ReturnConstructorsFailure), new Type [] { typeof (Type) })]
+		[UnrecognizedReflectionAccessPattern (typeof (Type), null)]
 		private Type ReturnConstructorsFailure (
 			Type defaultConstructorType)
 		{

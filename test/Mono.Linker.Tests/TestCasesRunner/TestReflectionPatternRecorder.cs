@@ -26,12 +26,12 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			});
 		}
 
-		public void UnrecognizedReflectionAccessPattern (MethodDefinition sourceMethod, Instruction reflectionMethodCall, string message)
+		public void UnrecognizedReflectionAccessPattern (MethodDefinition sourceMethod, Instruction reflectionMethodCall, IMetadataTokenProvider accessedItem, string message)
 		{
-			MessageOrigin.TryGetOrigin (sourceMethod, reflectionMethodCall.Offset);
 			UnrecognizedPatterns.Add (new ReflectionAccessPattern {
 				SourceMethod = sourceMethod,
 				ReflectionMethodCall = reflectionMethodCall,
+				AccessedItem = accessedItem,
 				Message = message
 			});
 		}
