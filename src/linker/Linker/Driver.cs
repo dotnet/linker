@@ -35,9 +35,11 @@ using System.Xml.XPath;
 
 using Mono.Linker.Steps;
 
-namespace Mono.Linker {
+namespace Mono.Linker
+{
 
-	public partial class Driver : IDisposable {
+	public partial class Driver : IDisposable
+	{
 
 #if FEATURE_ILLINK
 		const string resolvers = "-a|-r|-x";
@@ -47,7 +49,7 @@ namespace Mono.Linker {
 		static readonly string _linker = "Mono IL Linker";
 #endif
 
-		public static int Main (string [] args)
+		public static int Main (string[] args)
 		{
 			return Execute (args);
 		}
@@ -113,7 +115,7 @@ namespace Mono.Linker {
 				var responseFileText = rawResponseFileText.Trim ();
 				int idx = 0;
 				while (idx < responseFileText.Length) {
-					while (idx < responseFileText.Length && char.IsWhiteSpace (responseFileText [idx])) {
+					while (idx < responseFileText.Length && char.IsWhiteSpace (responseFileText[idx])) {
 						idx++;
 					}
 					if (idx == responseFileText.Length) {
@@ -124,13 +126,13 @@ namespace Mono.Linker {
 					while (true) {
 						bool copyChar = true;
 						int numBackslash = 0;
-						while (idx < responseFileText.Length && responseFileText [idx] == '\\') {
+						while (idx < responseFileText.Length && responseFileText[idx] == '\\') {
 							numBackslash++;
 							idx++;
 						}
-						if (idx < responseFileText.Length && responseFileText [idx] == '"') {
-							if ( (numBackslash % 2) == 0) {
-								if (inquote && (idx + 1) < responseFileText.Length && responseFileText [idx + 1] == '"') {
+						if (idx < responseFileText.Length && responseFileText[idx] == '"') {
+							if ((numBackslash % 2) == 0) {
+								if (inquote && (idx + 1) < responseFileText.Length && responseFileText[idx + 1] == '"') {
 									idx++;
 								} else {
 									copyChar = false;
@@ -140,11 +142,11 @@ namespace Mono.Linker {
 							numBackslash /= 2;
 						}
 						argBuilder.Append (new String ('\\', numBackslash));
-						if (idx == responseFileText.Length || (!inquote && Char.IsWhiteSpace (responseFileText [idx]))) {
+						if (idx == responseFileText.Length || (!inquote && Char.IsWhiteSpace (responseFileText[idx]))) {
 							break;
 						}
 						if (copyChar) {
-							argBuilder.Append (responseFileText [idx]);
+							argBuilder.Append (responseFileText[idx]);
 						}
 						idx++;
 					}
@@ -200,7 +202,7 @@ namespace Mono.Linker {
 				//
 				// Handling of --value like options
 				//
-				if (token [0] == '-' && token [1] == '-') {
+				if (token[0] == '-' && token[1] == '-') {
 					switch (token) {
 					case "--skip-unresolved":
 						if (!GetBoolParam (token, l => context.IgnoreUnresolved = context.Resolver.IgnoreUnresolved = l))
@@ -292,13 +294,13 @@ namespace Mono.Linker {
 						}
 
 						var arg = arguments.Dequeue ();
-						string [] values = arg.Split ('=');
+						string[] values = arg.Split ('=');
 						if (values?.Length != 2) {
 							Console.WriteLine ($"Value used with '--custom-data' has to be in the KEY=VALUE format");
 							return -1;
 						}
 
-						context.SetCustomData (values [0], values [1]);
+						context.SetCustomData (values[0], values[1]);
 						continue;
 
 					case "--keep-facades":
@@ -377,20 +379,20 @@ namespace Mono.Linker {
 
 						continue;
 
-						case "--attribute-defs":
-							if (arguments.Count < 1) {
-								ErrorMissingArgument (token);
-								return -1;
-							}
+					case "--attribute-defs":
+						if (arguments.Count < 1) {
+							ErrorMissingArgument (token);
+							return -1;
+						}
 
-							if (!GetStringParam (token, l => context.AddAttributeDefinitionFile (l)))
-								return -1;
+						if (!GetStringParam (token, l => context.AddAttributeDefinitionFile (l)))
+							return -1;
 
-							continue;
+						continue;
 
-						case "--version":
-							Version ();
-							return 1;
+					case "--version":
+						Version ();
+						return 1;
 
 					case "--about":
 						About ();
@@ -398,7 +400,7 @@ namespace Mono.Linker {
 					}
 				}
 
-				if (token [0] == '-' || token [1] == '/') {
+				if (token[0] == '-' || token[1] == '/') {
 
 					switch (token.Substring (1)) {
 					case "d":
@@ -432,7 +434,7 @@ namespace Mono.Linker {
 						}
 
 						AssemblyAction action = ParseAssemblyAction (arguments.Dequeue ());
-						context.Actions [arguments.Dequeue ()] = action;
+						context.Actions[arguments.Dequeue ()] = action;
 						continue;
 					case "t":
 						context.KeepTypeForwarderOnlyAssemblies = true;
@@ -441,7 +443,7 @@ namespace Mono.Linker {
 						if (!GetStringParam (token, l => {
 							foreach (string file in GetFiles (l))
 								AddResolveFromXmlStep (p, file);
-							}))
+						}))
 							return -1;
 
 						resolver = true;
@@ -450,7 +452,7 @@ namespace Mono.Linker {
 					case "a":
 						if (!GetStringParam (token, l => {
 
-							var rootVisibility = (token [1] == 'r')
+							var rootVisibility = (token[1] == 'r')
 								? ResolveFromAssemblyStep.RootVisibility.PublicAndFamily
 								: ResolveFromAssemblyStep.RootVisibility.Any;
 							foreach (string file in GetFiles (l))
@@ -465,7 +467,7 @@ namespace Mono.Linker {
 						if (!GetStringParam (token, l => {
 							foreach (string file in GetFiles (l))
 								p.PrependStep (new ResolveFromXApiStep (new XPathDocument (file)));
-							}))
+						}))
 							return -1;
 
 						resolver = true;
@@ -572,7 +574,7 @@ namespace Mono.Linker {
 					FeatureGlobalization = excluded_features.Contains ("globalization")
 				});
 
-				var excluded = new string [excluded_features.Count];
+				var excluded = new string[excluded_features.Count];
 				excluded_features.CopyTo (excluded);
 				context.ExcludedFeatures = excluded;
 			}
@@ -633,14 +635,14 @@ namespace Mono.Linker {
 
 		partial void PreProcessPipeline (Pipeline pipeline);
 
-		private static Assembly GetCustomAssembly (string arg) {
+		private static Assembly GetCustomAssembly (string arg)
+		{
 			if (Path.IsPathRooted (arg)) {
 				var assemblyPath = Path.GetFullPath (arg);
 				if (File.Exists (assemblyPath))
 					return Assembly.Load (File.ReadAllBytes (assemblyPath));
 				Console.WriteLine ($"The assembly '{arg}' specified for '--custom-step' option could not be found");
-			}
-			else
+			} else
 				Console.WriteLine ($"The path to the assembly '{arg}' specified for '--custom-step' must be fully qualified");
 
 			return null;
@@ -683,13 +685,13 @@ namespace Mono.Linker {
 				return false;
 			}
 
-			if (!parts[0].StartsWith ("-") && !parts [0].StartsWith ("+")) {
+			if (!parts[0].StartsWith ("-") && !parts[0].StartsWith ("+")) {
 				Console.WriteLine ($"Expected '+' or '-' to control new step insertion");
 				return false;
 			}
 
-			bool before = parts [0][0] == '-';
-			string name = parts [0].Substring (1);
+			bool before = parts[0][0] == '-';
+			string name = parts[0].Substring (1);
 
 			IStep target = FindStep (pipeline, name);
 			if (target == null) {
@@ -697,7 +699,7 @@ namespace Mono.Linker {
 				return false;
 			}
 
-			IStep newStep = ResolveStep (parts [1], custom_assembly);
+			IStep newStep = ResolveStep (parts[1], custom_assembly);
 			if (newStep == null)
 				return false;
 
@@ -722,7 +724,7 @@ namespace Mono.Linker {
 
 		static IStep ResolveStep (string type, Assembly assembly)
 		{
-			Type step = assembly != null ? assembly.GetType(type) : Type.GetType (type, false);
+			Type step = assembly != null ? assembly.GetType (type) : Type.GetType (type, false);
 
 			if (step == null) {
 				Console.WriteLine ($"Custom step '{type}' could not be found");
@@ -737,16 +739,16 @@ namespace Mono.Linker {
 			return (IStep) Activator.CreateInstance (step);
 		}
 
-		static string [] GetFiles (string param)
+		static string[] GetFiles (string param)
 		{
-			if (param.Length < 1 || param [0] != '@')
-				return new string [] {param};
+			if (param.Length < 1 || param[0] != '@')
+				return new string[] { param };
 
 			string file = param.Substring (1);
 			return ReadLines (file);
 		}
 
-		static string [] ReadLines (string file)
+		static string[] ReadLines (string file)
 		{
 			var lines = new List<string> ();
 			using (StreamReader reader = new StreamReader (file)) {
@@ -761,7 +763,7 @@ namespace Mono.Linker {
 		protected static I18nAssemblies ParseI18n (string str)
 		{
 			I18nAssemblies assemblies = I18nAssemblies.None;
-			string [] parts = str.Split (',');
+			string[] parts = str.Split (',');
 			foreach (string part in parts)
 				assemblies |= (I18nAssemblies) Enum.Parse (typeof (I18nAssemblies), part.Trim (), true);
 
@@ -771,7 +773,7 @@ namespace Mono.Linker {
 
 		AssemblyAction ParseAssemblyAction (string s)
 		{
-			var assemblyAction = (AssemblyAction)Enum.Parse(typeof(AssemblyAction), s, true);
+			var assemblyAction = (AssemblyAction) Enum.Parse (typeof (AssemblyAction), s, true);
 			// The AddBypassNGenStep is necessary if any actions (default or per-assembly) are AddBypassNGen(Used).
 			// We enable this step as soon as we see such an action. Even if subsequent parameters change an action we have
 			// already seen, the step will only operate on assemblies with a final action AddBypassNGen(Used).

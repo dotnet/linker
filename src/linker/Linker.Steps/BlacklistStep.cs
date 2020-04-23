@@ -35,9 +35,11 @@ using System.Xml.XPath;
 
 using Mono.Cecil;
 
-namespace Mono.Linker.Steps {
+namespace Mono.Linker.Steps
+{
 
-	public class BlacklistStep : BaseStep {
+	public class BlacklistStep : BaseStep
+	{
 
 		protected override void Process ()
 		{

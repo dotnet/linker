@@ -36,16 +36,19 @@ using System.Xml.XPath;
 
 using Mono.Cecil;
 
-namespace Mono.Linker.Steps {
+namespace Mono.Linker.Steps
+{
 
-	public class XmlResolutionException : Exception {
+	public class XmlResolutionException : Exception
+	{
 		public XmlResolutionException (string message, Exception innerException)
 			: base (message, innerException)
 		{
 		}
 	}
 
-	public class ResolveFromXmlStep : ResolveStep {
+	public class ResolveFromXmlStep : ResolveStep
+	{
 
 		static readonly string _signature = "signature";
 		static readonly string _fullname = "fullname";
@@ -84,7 +87,7 @@ namespace Mono.Linker.Steps {
 
 			// This step can be created with XML files that aren't necessarily
 			// linker descriptor files. So bail if we don't have a <linker> element.
-			if (!nav.MoveToChild("linker", _ns))
+			if (!nav.MoveToChild ("linker", _ns))
 				return;
 
 			try {
@@ -234,7 +237,7 @@ namespace Mono.Linker.Steps {
 		{
 			if (IsExcluded (nav))
 				return;
-			
+
 			TypePreserve preserve = GetTypePreserve (nav);
 			if (preserve != TypePreserve.Nothing)
 				Annotations.SetPreserve (type, preserve);
@@ -245,11 +248,11 @@ namespace Mono.Linker.Steps {
 			if (!required)
 				return;
 
-			if (Annotations.IsMarked (type)) { 
-				var existingLevel = Annotations.TryGetPreserve (type, out TypePreserve existingPreserve) ? existingPreserve : TypePreserve.Nothing; 
-				var duplicateLevel = preserve != TypePreserve.Nothing ? preserve : nav.HasChildren ? TypePreserve.Nothing : TypePreserve.All; 
-				Context.LogMessage ($"Duplicate preserve in {_xmlDocumentLocation} of {type.FullName} ({existingLevel}).  Duplicate uses ({duplicateLevel})"); 
-			} 
+			if (Annotations.IsMarked (type)) {
+				var existingLevel = Annotations.TryGetPreserve (type, out TypePreserve existingPreserve) ? existingPreserve : TypePreserve.Nothing;
+				var duplicateLevel = preserve != TypePreserve.Nothing ? preserve : nav.HasChildren ? TypePreserve.Nothing : TypePreserve.All;
+				Context.LogMessage ($"Duplicate preserve in {_xmlDocumentLocation} of {type.FullName} ({existingLevel}).  Duplicate uses ({duplicateLevel})");
+			}
 
 			Annotations.Mark (type, new DependencyInfo (DependencyKind.XmlDescriptor, _xmlDocumentLocation));
 
@@ -330,7 +333,7 @@ namespace Mono.Linker.Steps {
 		{
 			if (IsExcluded (iterator.Current))
 				return;
-			
+
 			string value = GetSignature (iterator.Current);
 			if (!String.IsNullOrEmpty (value))
 				ProcessFieldSignature (type, value);
@@ -355,7 +358,7 @@ namespace Mono.Linker.Steps {
 		{
 			if (Annotations.IsMarked (field))
 				Context.LogMessage ($"Duplicate preserve in {_xmlDocumentLocation} of {field.FullName}");
-				
+
 			Context.Annotations.Mark (field, new DependencyInfo (DependencyKind.XmlDescriptor, _xmlDocumentLocation));
 		}
 
@@ -396,7 +399,7 @@ namespace Mono.Linker.Steps {
 		{
 			if (IsExcluded (iterator.Current))
 				return;
-			
+
 			string value = GetSignature (iterator.Current);
 			if (!String.IsNullOrEmpty (value))
 				ProcessMethodSignature (type, value, required);
@@ -419,7 +422,7 @@ namespace Mono.Linker.Steps {
 
 		void MarkMethod (TypeDefinition type, MethodDefinition method, bool required)
 		{
-			if (Annotations.IsMarked (method)) 
+			if (Annotations.IsMarked (method))
 				Context.LogMessage ($"Duplicate preserve in {_xmlDocumentLocation} of {method.FullName}");
 
 			Annotations.Mark (method, new DependencyInfo (DependencyKind.XmlDescriptor, _xmlDocumentLocation));
@@ -475,7 +478,7 @@ namespace Mono.Linker.Steps {
 					if (i > 0)
 						sb.Append (",");
 
-					sb.Append (meth.Parameters [i].ParameterType.FullName);
+					sb.Append (meth.Parameters[i].ParameterType.FullName);
 				}
 			}
 			sb.Append (")");
@@ -492,7 +495,7 @@ namespace Mono.Linker.Steps {
 		{
 			if (IsExcluded (iterator.Current))
 				return;
-			
+
 			string value = GetSignature (iterator.Current);
 			if (!String.IsNullOrEmpty (value))
 				ProcessEventSignature (type, value, required);
@@ -562,7 +565,7 @@ namespace Mono.Linker.Steps {
 		{
 			if (IsExcluded (iterator.Current))
 				return;
-			
+
 			string value = GetSignature (iterator.Current);
 			if (!String.IsNullOrEmpty (value))
 				ProcessPropertySignature (type, value, GetAccessors (iterator.Current), required);
@@ -587,7 +590,7 @@ namespace Mono.Linker.Steps {
 		{
 			if (Annotations.IsMarked (property))
 				Context.LogMessage ($"Duplicate preserve in {_xmlDocumentLocation} of {property.FullName}");
-				
+
 			Annotations.Mark (property, new DependencyInfo (DependencyKind.XmlDescriptor, _xmlDocumentLocation));
 
 			MarkPropertyAccessors (type, property, accessors, required);
@@ -605,7 +608,7 @@ namespace Mono.Linker.Steps {
 				MarkMethod (type, property.GetMethod, required);
 			else if (property.GetMethod == null)
 				AddUnresolveMarker (string.Format ("T: {0}' M: {1} get_{2}", type, property.PropertyType, property.Name));
-			
+
 			if (property.SetMethod != null && Array.IndexOf (accessors, "set") >= 0)
 				MarkMethod (type, property.SetMethod, required);
 			else if (property.SetMethod == null)
@@ -679,7 +682,7 @@ namespace Mono.Linker.Steps {
 		{
 			string accessorsValue = GetAttribute (nav, _accessors);
 
-			if (accessorsValue != null)	{
+			if (accessorsValue != null) {
 				string[] accessors = accessorsValue.Split (
 					_accessorsSep, StringSplitOptions.RemoveEmptyEntries);
 
@@ -697,7 +700,7 @@ namespace Mono.Linker.Steps {
 		{
 			return nav.GetAttribute (attribute, _ns);
 		}
-		
+
 		protected virtual bool IsExcluded (XPathNavigator nav)
 		{
 			var value = GetAttribute (nav, "feature");

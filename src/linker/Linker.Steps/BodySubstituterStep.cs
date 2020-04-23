@@ -234,7 +234,7 @@ namespace Mono.Linker.Steps
 				if (!uint.TryParse (value, NumberStyles.Integer, CultureInfo.InvariantCulture, out uint uresult))
 					break;
 
-				result = (int)uresult;
+				result = (int) uresult;
 				return true;
 
 			case MetadataType.Double:
@@ -262,7 +262,7 @@ namespace Mono.Linker.Steps
 				if (!ulong.TryParse (value, NumberStyles.Integer, CultureInfo.InvariantCulture, out ulong ulresult))
 					break;
 
-				result = (long)ulresult;
+				result = (long) ulresult;
 				return true;
 
 			case MetadataType.Char:
