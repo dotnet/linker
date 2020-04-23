@@ -138,7 +138,7 @@ stages:
             inputs:
               command: 'custom'
               custom: 'tool'
-              arguments: 'run dotnet-format --dry-run --check --verbosity diagnostic -f test/'
+              arguments: 'run dotnet-format --dry-run --check --verbosity diagnostic -f test/ --report $(Build.SourcesDirectory)/artifacts/log/$(_BuildConfig)'
 
   - ${{ if eq(variables.officialBuild, 'false') }}:
     - job: Linux_Mono
