@@ -126,6 +126,7 @@ stages:
           steps:
           - checkout: self
             submodules: true
+          - script: mkdir -p artifacts/log/$(_BuildConfig)
           - task: DotNetCoreCLI@2
             displayName: 'Restore dotnet tools'
             inputs:
