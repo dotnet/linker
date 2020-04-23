@@ -58,15 +58,10 @@ namespace Mono.Linker.Steps
 				return false;
 			}
 
-			if (Context.FeatureSettings == null || !Context.FeatureSettings.TryGetValue (feature, out string featureSetting))
+			if (Context.FeatureSettings == null || !Context.FeatureSettings.TryGetValue (feature, out bool featureSetting))
 				return false;
 
-			if (!bool.TryParse (featureSetting, out bool bFeatureSetting)) {
-				Context.LogMessage(MessageImportance.High, $"Boolean feature {feature} was set to a non-boolean value {featureSetting}");
-				return false;
-			}
-
-			return bValue == bFeatureSetting;
+			return bValue == featureSetting;
 		}
 
 		void ReadSubstitutions (XPathDocument document)

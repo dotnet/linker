@@ -118,7 +118,7 @@ namespace Mono.Linker {
 
 		public bool StripResources { get; set; }
 
-		public Dictionary<string, string> FeatureSettings { get; private set; }
+		public Dictionary<string, bool> FeatureSettings { get; private set; }
 
 		public List<string> AttributeDefinitions { get; private set; }
 
@@ -215,12 +215,11 @@ namespace Mono.Linker {
 			Optimizations = new CodeOptimizationsSettings (defaultOptimizations);
 		}
 
-		public void SetFeatureValue (string feature, string value)
+		public void SetFeatureValue (string feature, bool value)
 		{
 			Debug.Assert (!String.IsNullOrEmpty (feature));
-			Debug.Assert (!String.IsNullOrEmpty (value));
 			if (FeatureSettings == null) {
-				FeatureSettings = new Dictionary<string, string> { { feature, value } };
+				FeatureSettings = new Dictionary<string, bool> { { feature, value } };
 				return;
 			}
 

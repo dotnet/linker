@@ -324,40 +324,46 @@ namespace Mono.Linker {
 						continue;
 
 					case "--disable-opt":
-						if (!GetStringParam (token, l => {
-							if (!GetOptimizationName (l, out var opt))
-								return;
-
-							string assemblyName = GetNextStringValue ();
-							set_optimizations.Add ((opt, assemblyName, false));
-						}))
+					{
+						string optName = null;
+						if (!GetStringParam (token, l => optName = l))
 							return -1;
 
-						continue;
+						if (!GetOptimizationName (optName, out var opt))
+							return -1;
 
+						string assemblyName = GetNextStringValue ();
+						set_optimizations.Add ((opt, assemblyName, false));
+
+						continue;
+					}
 					case "--enable-opt":
-						if (!GetStringParam (token, l => {
-							if (!GetOptimizationName (l, out var opt))
-								return;
-
-							string assemblyName = GetNextStringValue ();
-							set_optimizations.Add ((opt, assemblyName, true));
-						}))
+					{
+						string optName = null;
+						if (!GetStringParam (token, l => optName = l))
+							return -1;
+						
+						if (!GetOptimizationName (optName, out var opt))
 							return -1;
 
-						continue;
+						string assemblyName = GetNextStringValue ();
+						set_optimizations.Add ((opt, assemblyName, true));
 
+						continue;
+					}
 					case "--feature":
-						if (!GetStringParam (token, feature => {
-							if (!GetStringParam (token, value => {
-								context.SetFeatureValue (feature, value);
+					{
+						string featureName = null;
+						if (!GetStringParam (token, l => featureName = l))
+							return -1;
+
+						if (!GetBoolParam (token, value => {
+							context.SetFeatureValue (featureName, value);
 							}))
-								return;
-						}))
 							return -1;
 
 						continue;
-
+					}
 					case "--new-mvid":
 						//
 						// This is not same as --deterministic which calculates MVID

@@ -318,11 +318,6 @@ namespace ILLink.Tasks.Tests
 			},
 			new object [] {
 				new ITaskItem [] {
-					new TaskItem ("FeatureName", new Dictionary<string, string> { { "Value", "nonboolean" } })
-				},
-			},
-			new object [] {
-				new ITaskItem [] {
 					new TaskItem ("FeatureName1", new Dictionary<string, string> { { "value", "true" } }),
 					new TaskItem ("FeatureName2", new Dictionary<string, string> { { "value", "false" } }),
 				},
@@ -340,7 +335,7 @@ namespace ILLink.Tasks.Tests
 				var expectedSettings = featureSettings.Select (f => new { Feature = f.ItemSpec, Value = f.GetMetadata ("Value") })
 					.GroupBy (f => f.Feature)
 					.Select (f => f.Last())
-					.ToDictionary (f => f.Feature, f => f.Value);
+					.ToDictionary (f => f.Feature, f => bool.Parse(f.Value));
 				var actualSettings = driver.Context.FeatureSettings;
 				Assert.Equal (expectedSettings, actualSettings);
 			}
