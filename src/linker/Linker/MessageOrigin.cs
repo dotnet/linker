@@ -22,18 +22,18 @@ namespace Mono.Linker
 			SourceColumn = sourceColumn;
 		}
 
-		public static MessageOrigin? TryGetOrigin (IMemberDefinition sourceMethod, int reflectionCallOffset)
+		public static MessageOrigin? TryGetOrigin (IMemberDefinition sourceMethod, int ilOffset)
 		{
 			if (sourceMethod is MethodDefinition methodDef) {
 				if (!methodDef.DebugInformation.HasSequencePoints)
 					return null;
 
-				SequencePoint reflectionCall = methodDef.DebugInformation.SequencePoints
-					.Where (s => s.Offset <= reflectionCallOffset)?.First ();
-				if (reflectionCall == null)
+				SequencePoint correspondingSequencePoint = methodDef.DebugInformation.SequencePoints
+					.Where (s => s.Offset <= ilOffset)?.First ();
+				if (correspondingSequencePoint == null)
 					return null;
 
-				return new MessageOrigin (reflectionCall.Document.Url, reflectionCall.StartLine, reflectionCall.StartColumn);
+				return new MessageOrigin (correspondingSequencePoint.Document.Url, correspondingSequencePoint.StartLine, correspondingSequencePoint.StartColumn);
 			}
 
 			return null;
