@@ -119,6 +119,26 @@ stages:
               MSBUILDENSURESTDOUTFORTASKPROCESSES: 1
             displayName: Build illink.sln $(_BuildConfig)
 
+      - ${{ if eq(variables.officialBuild, 'false') }}:
+        - job: lint
+          pool:
+              name: Hosted Ubuntu 1604
+          steps:
+          - checkout: self
+            submodules: true
+          - task: DotNetCoreCLI@2
+            displayName: 'Install dotnet format'
+            inputs:
+              command: 'custom'
+              custom: 'tool'
+              arguments: 'update -g dotnet-format'
+          - task: DotNetCoreCLI@2
+            displayName: 'Lint ILLinker'
+            inputs:
+              command: 'custom'
+              custom: 'format'
+              arguments: '--dry-run --check --verbosity diagnostic -f test/'
+
   - ${{ if eq(variables.officialBuild, 'false') }}:
     - job: Linux_Mono
       pool:
