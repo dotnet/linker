@@ -119,32 +119,25 @@ stages:
               MSBUILDENSURESTDOUTFORTASKPROCESSES: 1
             displayName: Build illink.sln $(_BuildConfig)
 
-      - ${{ if eq(variables.officialBuild, 'false') }}:
-        - job: lint
-          pool:
-              name: Hosted Ubuntu 1604
-          steps:
-          - checkout: self
-            submodules: true
-          - script: mkdir -p artifacts/log/$(_BuildConfig)
-          - task: DotNetCoreCLI@2
-            displayName: 'Restore dotnet tools'
-            inputs:
-              command: 'custom'
-              custom: 'tool'
-              arguments: 'restore'
-          - task: DotNetCoreCLI@2
-            displayName: 'Lint Sources'
-            inputs:
-              command: 'custom'
-              custom: 'tool'
-              arguments: 'run dotnet-format --dry-run --check --verbosity diagnostic -f src/ --exclude src/analyzer,src/tuner --report $(Build.SourcesDirectory)/artifacts/log/$(_BuildConfig)'
-          - task: DotNetCoreCLI@2
-            displayName: 'Lint Tests'
-            inputs:
-              command: 'custom'
-              custom: 'tool'
-              arguments: 'run dotnet-format --dry-run --check --verbosity diagnostic -f test/ --report $(Build.SourcesDirectory)/artifacts/log/$(_BuildConfig)'
+  - ${{ if eq(variables.officialBuild, 'false') }}:
+    - job: Lint
+      pool:
+          name: Hosted Ubuntu 1604
+      steps:
+      - checkout: self
+        submodules: true
+      - task: DotNetCoreCLI@2
+        displayName: 'Restore dotnet tools'
+        inputs:
+          command: 'custom'
+          custom: 'tool'
+          arguments: 'restore'
+      - task: DotNetCoreCLI@2
+        displayName: 'Lint ILLinker'
+        inputs:
+          command: 'custom'
+          custom: 'tool'
+          arguments: 'run dotnet-format --dry-run --check --verbosity diagnostic -f test/'
 
   - ${{ if eq(variables.officialBuild, 'false') }}:
     - job: Linux_Mono
