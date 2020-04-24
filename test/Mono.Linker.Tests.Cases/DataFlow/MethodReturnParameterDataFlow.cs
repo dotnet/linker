@@ -50,16 +50,16 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			Type constructorsType)
 		{
 			switch (GetHashCode ()) {
-				case 1:
-					return defaultConstructorType;
-				case 2:
-					return publicConstructorsType;
-				case 3:
-					return constructorsType;
-				case 4:
-					return typeof (TestType);
-				default:
-					return null;
+			case 1:
+				return defaultConstructorType;
+			case 2:
+				return publicConstructorsType;
+			case 3:
+				return constructorsType;
+			case 4:
+				return typeof (TestType);
+			default:
+				return null;
 			}
 		}
 
@@ -108,9 +108,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			return publicConstructorsType;
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (MethodReturnParameterDataFlow), nameof (RequirePublicConstructors), new Type [] { typeof (Type) })]
-		[UnrecognizedReflectionAccessPattern (typeof (MethodReturnParameterDataFlow), nameof (RequireConstructors), new Type [] { typeof (Type) })]
-		private void PropagateReturnDefaultConstructor()
+		[UnrecognizedReflectionAccessPattern (typeof (MethodReturnParameterDataFlow), nameof (RequirePublicConstructors), new Type[] { typeof (Type) })]
+		[UnrecognizedReflectionAccessPattern (typeof (MethodReturnParameterDataFlow), nameof (RequireConstructors), new Type[] { typeof (Type) })]
+		private void PropagateReturnDefaultConstructor ()
 		{
 			Type t = ReturnDefaultConstructor (typeof (TestType), typeof (TestType), typeof (TestType));
 			RequireDefaultConstructor (t);
@@ -119,8 +119,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			RequireNothing (t);
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (MethodReturnParameterDataFlow), nameof (RequirePublicConstructors), new Type [] { typeof (Type) })]
-		[UnrecognizedReflectionAccessPattern (typeof (MethodReturnParameterDataFlow), nameof (RequireConstructors), new Type [] { typeof (Type) })]
+		[UnrecognizedReflectionAccessPattern (typeof (MethodReturnParameterDataFlow), nameof (RequirePublicConstructors), new Type[] { typeof (Type) })]
+		[UnrecognizedReflectionAccessPattern (typeof (MethodReturnParameterDataFlow), nameof (RequireConstructors), new Type[] { typeof (Type) })]
 		private void PropagateReturnDefaultConstructorFromConstant ()
 		{
 			Type t = ReturnDefaultConstructorFromConstant ();

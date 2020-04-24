@@ -9,7 +9,7 @@ namespace Mono.Linker.Tests.Cases.Expectations.Assertions
 	[AttributeUsage (AttributeTargets.Method, AllowMultiple = true, Inherited = false)]
 	public class UnrecognizedReflectionAccessPatternAttribute : BaseExpectedLinkedBehaviorAttribute
 	{
-		public UnrecognizedReflectionAccessPatternAttribute (Type reflectionMethodType, string reflectionMethodName, Type [] reflectionMethodParameters,
+		public UnrecognizedReflectionAccessPatternAttribute (Type reflectionMethodType, string reflectionMethodName, Type[] reflectionMethodParameters,
 			string message = null)
 		{
 			if (reflectionMethodType == null)

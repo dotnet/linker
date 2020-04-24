@@ -15,7 +15,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 	[SetupLinkerAttributeDefinitionsFile ("JsonAnnotations.json")]
 	class JsonAnnotations
 	{
-		public static void Main()
+		public static void Main ()
 		{
 			var instance = new JsonAnnotations ();
 

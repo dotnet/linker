@@ -35,9 +35,11 @@ using System.Xml.XPath;
 
 using Mono.Linker.Steps;
 
-namespace Mono.Linker {
+namespace Mono.Linker
+{
 
-	public partial class Driver : IDisposable {
+	public partial class Driver : IDisposable
+	{
 
 #if FEATURE_ILLINK
 		const string resolvers = "-a|-r|-x";
@@ -47,7 +49,7 @@ namespace Mono.Linker {
 		static readonly string _linker = "Mono IL Linker";
 #endif
 
-		public static int Main (string [] args)
+		public static int Main (string[] args)
 		{
 			return Execute (args);
 		}
@@ -113,7 +115,7 @@ namespace Mono.Linker {
 				var responseFileText = rawResponseFileText.Trim ();
 				int idx = 0;
 				while (idx < responseFileText.Length) {
-					while (idx < responseFileText.Length && char.IsWhiteSpace (responseFileText [idx])) {
+					while (idx < responseFileText.Length && char.IsWhiteSpace (responseFileText[idx])) {
 						idx++;
 					}
 					if (idx == responseFileText.Length) {
@@ -124,13 +126,13 @@ namespace Mono.Linker {
 					while (true) {
 						bool copyChar = true;
 						int numBackslash = 0;
-						while (idx < responseFileText.Length && responseFileText [idx] == '\\') {
+						while (idx < responseFileText.Length && responseFileText[idx] == '\\') {
 							numBackslash++;
 							idx++;
 						}
-						if (idx < responseFileText.Length && responseFileText [idx] == '"') {
-							if ( (numBackslash % 2) == 0) {
-								if (inquote && (idx + 1) < responseFileText.Length && responseFileText [idx + 1] == '"') {
+						if (idx < responseFileText.Length && responseFileText[idx] == '"') {
+							if ((numBackslash % 2) == 0) {
+								if (inquote && (idx + 1) < responseFileText.Length && responseFileText[idx + 1] == '"') {
 									idx++;
 								} else {
 									copyChar = false;
@@ -140,11 +142,11 @@ namespace Mono.Linker {
 							numBackslash /= 2;
 						}
 						argBuilder.Append (new String ('\\', numBackslash));
-						if (idx == responseFileText.Length || (!inquote && Char.IsWhiteSpace (responseFileText [idx]))) {
+						if (idx == responseFileText.Length || (!inquote && Char.IsWhiteSpace (responseFileText[idx]))) {
 							break;
 						}
 						if (copyChar) {
-							argBuilder.Append (responseFileText [idx]);
+							argBuilder.Append (responseFileText[idx]);
 						}
 						idx++;
 					}
@@ -178,9 +180,13 @@ namespace Mono.Linker {
 
 #if !FEATURE_ILLINK
 			I18nAssemblies assemblies = I18nAssemblies.All;
-#endif
-			var custom_steps = new List<string> ();
 			var excluded_features = new HashSet<string> (StringComparer.Ordinal);
+			var resolve_from_xapi_steps = new Stack<string> ();
+#endif
+			var resolve_from_assembly_steps = new Stack<(string, ResolveFromAssemblyStep.RootVisibility)> ();
+			var resolve_from_xml_steps = new Stack<string> ();
+			var body_substituter_steps = new Stack<string> ();
+			var custom_steps = new Stack<string> ();
 			var set_optimizations = new List<(CodeOptimizations, string, bool)> ();
 			bool dumpDependencies = false;
 			string dependenciesFileName = null;
@@ -200,7 +206,7 @@ namespace Mono.Linker {
 				//
 				// Handling of --value like options
 				//
-				if (token [0] == '-' && token [1] == '-') {
+				if (token[0] == '-' && token[1] == '-') {
 					switch (token) {
 					case "--skip-unresolved":
 						if (!GetBoolParam (token, l => context.IgnoreUnresolved = context.Resolver.IgnoreUnresolved = l))
@@ -252,11 +258,11 @@ namespace Mono.Linker {
 							return -1;
 						}
 
-						if (!GetStringParam (token, l => context.AddSubstitutionFile (l)))
+						if (!GetStringParam (token, l => body_substituter_steps.Push (l)))
 							return -1;
 
 						continue;
-
+#if !FEATURE_ILLINK
 					case "--exclude-feature":
 						if (arguments.Count < 1) {
 							ErrorMissingArgument (token);
@@ -272,7 +278,7 @@ namespace Mono.Linker {
 							return -1;
 
 						continue;
-
+#endif
 					case "--explicit-reflection":
 						if (!GetBoolParam (token, l => context.AddReflectionAnnotations = l))
 							return -1;
@@ -280,9 +286,25 @@ namespace Mono.Linker {
 						continue;
 
 					case "--custom-step":
-						if (!GetStringParam (token, l => custom_steps.Add (l)))
+						if (!GetStringParam (token, l => custom_steps.Push (l)))
 							return -1;
 
+						continue;
+
+					case "--custom-data":
+						if (arguments.Count < 1) {
+							ErrorMissingArgument (token);
+							return -1;
+						}
+
+						var arg = arguments.Dequeue ();
+						string[] values = arg.Split ('=');
+						if (values?.Length != 2) {
+							Console.WriteLine ($"Value used with '--custom-data' has to be in the KEY=VALUE format");
+							return -1;
+						}
+
+						context.SetCustomData (values[0], values[1]);
 						continue;
 
 					case "--keep-facades":
@@ -303,30 +325,44 @@ namespace Mono.Linker {
 
 						continue;
 
-					case "--disable-opt":
-						if (!GetStringParam (token, l => {
-							if (!GetOptimizationName (l, out var opt))
-								return;
+					case "--disable-opt": {
+							string optName = null;
+							if (!GetStringParam (token, l => optName = l))
+								return -1;
+
+							if (!GetOptimizationName (optName, out var opt))
+								return -1;
 
 							string assemblyName = GetNextStringValue ();
 							set_optimizations.Add ((opt, assemblyName, false));
-						}))
-							return -1;
 
-						continue;
+							continue;
+						}
+					case "--enable-opt": {
+							string optName = null;
+							if (!GetStringParam (token, l => optName = l))
+								return -1;
 
-					case "--enable-opt":
-						if (!GetStringParam (token, l => {
-							if (!GetOptimizationName (l, out var opt))
-								return;
+							if (!GetOptimizationName (optName, out var opt))
+								return -1;
 
 							string assemblyName = GetNextStringValue ();
 							set_optimizations.Add ((opt, assemblyName, true));
-						}))
-							return -1;
 
-						continue;
+							continue;
+						}
+					case "--feature": {
+							string featureName = null;
+							if (!GetStringParam (token, l => featureName = l))
+								return -1;
 
+							if (!GetBoolParam (token, value => {
+								context.SetFeatureValue (featureName, value);
+							}))
+								return -1;
+
+							continue;
+						}
 					case "--new-mvid":
 						//
 						// This is not same as --deterministic which calculates MVID
@@ -361,20 +397,20 @@ namespace Mono.Linker {
 
 						continue;
 
-						case "--attribute-defs":
-							if (arguments.Count < 1) {
-								ErrorMissingArgument (token);
-								return -1;
-							}
+					case "--attribute-defs":
+						if (arguments.Count < 1) {
+							ErrorMissingArgument (token);
+							return -1;
+						}
 
-							if (!GetStringParam (token, l => context.AddAttributeDefinitionFile (l)))
-								return -1;
+						if (!GetStringParam (token, l => context.AddAttributeDefinitionFile (l)))
+							return -1;
 
-							continue;
+						continue;
 
-						case "--version":
-							Version ();
-							return 1;
+					case "--version":
+						Version ();
+						return 1;
 
 					case "--about":
 						About ();
@@ -382,7 +418,7 @@ namespace Mono.Linker {
 					}
 				}
 
-				if (token [0] == '-' || token [1] == '/') {
+				if (token[0] == '-' || token[1] == '/') {
 
 					switch (token.Substring (1)) {
 					case "d":
@@ -416,7 +452,7 @@ namespace Mono.Linker {
 						}
 
 						AssemblyAction action = ParseAssemblyAction (arguments.Dequeue ());
-						context.Actions [arguments.Dequeue ()] = action;
+						context.Actions[arguments.Dequeue ()] = action;
 						continue;
 					case "t":
 						context.KeepTypeForwarderOnlyAssemblies = true;
@@ -424,8 +460,8 @@ namespace Mono.Linker {
 					case "x":
 						if (!GetStringParam (token, l => {
 							foreach (string file in GetFiles (l))
-								AddResolveFromXmlStep (p, file);
-							}))
+								resolve_from_xml_steps.Push (file);
+						}))
 							return -1;
 
 						resolver = true;
@@ -434,11 +470,11 @@ namespace Mono.Linker {
 					case "a":
 						if (!GetStringParam (token, l => {
 
-							var rootVisibility = (token [1] == 'r')
+							var rootVisibility = (token[1] == 'r')
 								? ResolveFromAssemblyStep.RootVisibility.PublicAndFamily
 								: ResolveFromAssemblyStep.RootVisibility.Any;
 							foreach (string file in GetFiles (l))
-								p.PrependStep (new ResolveFromAssemblyStep (file, rootVisibility));
+								resolve_from_assembly_steps.Push ((file, rootVisibility));
 						}))
 							return -1;
 
@@ -448,8 +484,8 @@ namespace Mono.Linker {
 					case "i":
 						if (!GetStringParam (token, l => {
 							foreach (string file in GetFiles (l))
-								p.PrependStep (new ResolveFromXApiStep (new XPathDocument (file)));
-							}))
+								resolve_from_xapi_steps.Push (file);
+						}))
 							return -1;
 
 						resolver = true;
@@ -460,14 +496,6 @@ namespace Mono.Linker {
 
 						continue;
 #endif
-					case "m":
-						if (arguments.Count < 2) {
-							ErrorMissingArgument (token);
-							return -1;
-						}
-
-						context.SetParameter (arguments.Dequeue (), arguments.Dequeue ());
-						continue;
 					case "b":
 						if (!GetBoolParam (token, l => context.LinkSymbols = l))
 							return -1;
@@ -530,6 +558,21 @@ namespace Mono.Linker {
 			//
 			// Modify the default pipeline
 			//
+
+#if !FEATURE_ILLINK
+			foreach (var file in resolve_from_xapi_steps)
+				p.PrependStep (new ResolveFromXApiStep (new XPathDocument (file)));
+#endif
+
+			foreach (var file in resolve_from_xml_steps)
+				AddResolveFromXmlStep (p, file);
+
+			foreach (var (file, rootVisibility) in resolve_from_assembly_steps)
+				p.PrependStep (new ResolveFromAssemblyStep (file, rootVisibility));
+
+			foreach (var file in body_substituter_steps)
+				AddBodySubstituterStep (p, file);
+
 			if (ignoreDescriptors)
 				p.RemoveStep (typeof (BlacklistStep));
 
@@ -542,20 +585,17 @@ namespace Mono.Linker {
 #if !FEATURE_ILLINK
 			p.AddStepAfter (typeof (LoadReferencesStep), new LoadI18nAssemblies (assemblies));
 
-			if (assemblies != I18nAssemblies.None) {
+			if (assemblies != I18nAssemblies.None)
 				p.AddStepAfter (typeof (PreserveDependencyLookupStep), new PreserveCalendarsStep (assemblies));
-			}
 #endif
 
-			if (_needAddBypassNGenStep) {
+			if (_needAddBypassNGenStep)
 				p.AddStepAfter (typeof (SweepStep), new AddBypassNGenStep ());
-			}
-
-			p.AddStepBefore (typeof (MarkStep), new BodySubstituterStep ());
 
 			if (removeCAS)
 				p.AddStepBefore (typeof (MarkStep), new RemoveSecurityStep ());
 
+#if !FEATURE_ILLINK
 			if (excluded_features.Count > 0) {
 				p.AddStepBefore (typeof (MarkStep), new RemoveFeaturesStep () {
 					FeatureCOM = excluded_features.Contains ("com"),
@@ -564,10 +604,11 @@ namespace Mono.Linker {
 					FeatureGlobalization = excluded_features.Contains ("globalization")
 				});
 
-				var excluded = new string [excluded_features.Count];
+				var excluded = new string[excluded_features.Count];
 				excluded_features.CopyTo (excluded);
 				context.ExcludedFeatures = excluded;
 			}
+#endif
 
 			p.AddStepBefore (typeof (MarkStep), new RemoveUnreachableBlocksStep ());
 			p.AddStepBefore (typeof (OutputStep), new ClearInitLocalsStep ());
@@ -576,13 +617,21 @@ namespace Mono.Linker {
 			//
 			// Pipeline setup with all steps enabled
 			//
+			// ResolveFromAssemblyStep [optional, possibly many]
+			// ResolveFromXmlStep [optional, possibly many]
+			// [mono only] ResolveFromXApiStep [optional, possibly many]
 			// LoadReferencesStep
+			// [mono only] LoadI18nAssemblies
 			// BlacklistStep [optional]
+			//   dynamically adds steps:
+			//     ResolveFromXmlStep [optional, possibly many]
+			//     BodySubstituterStep [optional, possibly many]
 			// PreserveDependencyLookupStep
+			// [mono only] PreselveCalendarsStep [optional]
 			// TypeMapStep
 			// BodySubstituterStep [optional]
 			// RemoveSecurityStep [optional]
-			// RemoveFeaturesStep [optional]
+			// [mono only] RemoveFeaturesStep [optional]
 			// RemoveUnreachableBlocksStep [optional]
 			// MarkStep
 			// ReflectionBlockedStep [optional]
@@ -592,6 +641,7 @@ namespace Mono.Linker {
 			// CleanStep
 			// RegenerateGuidStep [optional]
 			// ClearInitLocalsStep
+			// SealerStep
 			// OutputStep
 			//
 
@@ -625,14 +675,14 @@ namespace Mono.Linker {
 
 		partial void PreProcessPipeline (Pipeline pipeline);
 
-		private static Assembly GetCustomAssembly (string arg) {
+		private static Assembly GetCustomAssembly (string arg)
+		{
 			if (Path.IsPathRooted (arg)) {
 				var assemblyPath = Path.GetFullPath (arg);
 				if (File.Exists (assemblyPath))
 					return Assembly.Load (File.ReadAllBytes (assemblyPath));
 				Console.WriteLine ($"The assembly '{arg}' specified for '--custom-step' option could not be found");
-			}
-			else
+			} else
 				Console.WriteLine ($"The path to the assembly '{arg}' specified for '--custom-step' must be fully qualified");
 
 			return null;
@@ -641,6 +691,11 @@ namespace Mono.Linker {
 		protected virtual void AddResolveFromXmlStep (Pipeline pipeline, string file)
 		{
 			pipeline.PrependStep (new ResolveFromXmlStep (new XPathDocument (file), file));
+		}
+
+		void AddBodySubstituterStep (Pipeline pipeline, string file)
+		{
+			pipeline.AddStepBefore (typeof (MarkStep), new BodySubstituterStep (new XPathDocument (file), file));
 		}
 
 		protected virtual void AddXmlDependencyRecorder (LinkContext context, string fileName)
@@ -675,13 +730,13 @@ namespace Mono.Linker {
 				return false;
 			}
 
-			if (!parts[0].StartsWith ("-") && !parts [0].StartsWith ("+")) {
+			if (!parts[0].StartsWith ("-") && !parts[0].StartsWith ("+")) {
 				Console.WriteLine ($"Expected '+' or '-' to control new step insertion");
 				return false;
 			}
 
-			bool before = parts [0][0] == '-';
-			string name = parts [0].Substring (1);
+			bool before = parts[0][0] == '-';
+			string name = parts[0].Substring (1);
 
 			IStep target = FindStep (pipeline, name);
 			if (target == null) {
@@ -689,7 +744,7 @@ namespace Mono.Linker {
 				return false;
 			}
 
-			IStep newStep = ResolveStep (parts [1], custom_assembly);
+			IStep newStep = ResolveStep (parts[1], custom_assembly);
 			if (newStep == null)
 				return false;
 
@@ -714,7 +769,7 @@ namespace Mono.Linker {
 
 		static IStep ResolveStep (string type, Assembly assembly)
 		{
-			Type step = assembly != null ? assembly.GetType(type) : Type.GetType (type, false);
+			Type step = assembly != null ? assembly.GetType (type) : Type.GetType (type, false);
 
 			if (step == null) {
 				Console.WriteLine ($"Custom step '{type}' could not be found");
@@ -729,16 +784,16 @@ namespace Mono.Linker {
 			return (IStep) Activator.CreateInstance (step);
 		}
 
-		static string [] GetFiles (string param)
+		static string[] GetFiles (string param)
 		{
-			if (param.Length < 1 || param [0] != '@')
-				return new string [] {param};
+			if (param.Length < 1 || param[0] != '@')
+				return new string[] { param };
 
 			string file = param.Substring (1);
 			return ReadLines (file);
 		}
 
-		static string [] ReadLines (string file)
+		static string[] ReadLines (string file)
 		{
 			var lines = new List<string> ();
 			using (StreamReader reader = new StreamReader (file)) {
@@ -753,7 +808,7 @@ namespace Mono.Linker {
 		protected static I18nAssemblies ParseI18n (string str)
 		{
 			I18nAssemblies assemblies = I18nAssemblies.None;
-			string [] parts = str.Split (',');
+			string[] parts = str.Split (',');
 			foreach (string part in parts)
 				assemblies |= (I18nAssemblies) Enum.Parse (typeof (I18nAssemblies), part.Trim (), true);
 
@@ -763,7 +818,7 @@ namespace Mono.Linker {
 
 		AssemblyAction ParseAssemblyAction (string s)
 		{
-			var assemblyAction = (AssemblyAction)Enum.Parse(typeof(AssemblyAction), s, true);
+			var assemblyAction = (AssemblyAction) Enum.Parse (typeof (AssemblyAction), s, true);
 			// The AddBypassNGenStep is necessary if any actions (default or per-assembly) are AddBypassNGen(Used).
 			// We enable this step as soon as we see such an action. Even if subsequent parameters change an action we have
 			// already seen, the step will only operate on assemblies with a final action AddBypassNGen(Used).
@@ -926,6 +981,7 @@ namespace Mono.Linker {
 			Console.WriteLine ("                            TYPE,PATH_TO_ASSEMBLY: Add user defined type as last step to the pipeline");
 			Console.WriteLine ("                            -NAME:TYPE,PATH_TO_ASSEMBLY: Inserts step type before existing step with name");
 			Console.WriteLine ("                            +NAME:TYPE,PATH_TO_ASSEMBLY: Add step type after existing step");
+			Console.WriteLine ("  --custom-data KEY=VALUE   Populates context data set with user specified key-value pair");
 			Console.WriteLine ("  --ignore-descriptors      Skips reading embedded descriptors (short -z). Defaults to false");
 			Console.WriteLine ("  --keep-facades            Keep assemblies with type-forwarders (short -t). Defaults to false");
 			Console.WriteLine ("  --skip-unresolved         Ignore unresolved types, methods, and assemblies. Defaults to false");
@@ -943,16 +999,17 @@ namespace Mono.Linker {
 			Console.WriteLine ("  --enable-opt NAME [ASM]   Enable one of the additional optimizations globaly or for a specific assembly name");
 			Console.WriteLine ("                              clearinitlocals: Remove initlocals");
 			Console.WriteLine ("                              sealer: Any method or type which does not have override is marked as sealed");
+#if !FEATURE_ILLINK
 			Console.WriteLine ("  --exclude-feature NAME    Any code which has a feature <name> in linked assemblies will be removed");
 			Console.WriteLine ("                              com: Support for COM Interop");
 			Console.WriteLine ("                              etw: Event Tracing for Windows");
-#if !FEATURE_ILLINK
 			Console.WriteLine ("                              remoting: .NET Remoting dependencies");
-#endif
 			Console.WriteLine ("                              sre: System.Reflection.Emit namespace");
 			Console.WriteLine ("                              globalization: Globalization data and globalization behavior");
+#endif
 			Console.WriteLine ("  --explicit-reflection     Adds to members never used through reflection DisablePrivateReflection attribute. Defaults to false");
 			Console.WriteLine ("  --keep-dep-attributes     Keep attributes used for manual dependency tracking. Defaults to false");
+			Console.WriteLine ("  --feature FEATURE VALUE   Apply any optimizations defined when this feature setting is a constant known at link time");
 			Console.WriteLine ("  --new-mvid                Generate a new guid for each linked assembly (short -g). Defaults to true");
 			Console.WriteLine ("  --strip-resources         Remove XML descriptor resources for linked assemblies. Defaults to true");
 			Console.WriteLine ("  --strip-security          Remove metadata and code related to Code Access Security. Defaults to true");

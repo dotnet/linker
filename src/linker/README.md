@@ -116,6 +116,9 @@ An example of a substitution XML file
       <field name="MyNumericField" value="5" initialize="true">
       </field>	    
     </type>
+    <type fullname="UserCode.Substitutions.Playground" feature="EnableOptionalFeature" featurevalue="false">
+      <method signature="System.String UseOptionalFeature()" body="remove" />
+    </type>
   </assembly>
 </linker>
 ```
@@ -131,6 +134,11 @@ A similar mechanism is available for fields where a field can be initialized wit
 value and override the existing behaviour. The rule can also apply to static fields which
 if set to default value without explicit `initialize` setting could help to elide whole
 explicit static constructor.
+
+The `feature` and `featurevalue` attributes are optional, but must be used together if they are used.
+They can be applied to any other element to specify conditions under which the contained substitutions
+are applied. For example, the above substitution for `UseOptionalFeature` will be applied only if
+`--feature EnableOptionalFeature false` is passed to the linker.
 
 ### Adding custom steps to the linker.
 
@@ -175,6 +183,11 @@ Or before a specific step:
 
 `illink --custom-step -MarkStep:Foo.FooStep,D:\Bar\Foo.dll -a program.exe`
 
+### Passing data to custom steps
+
+For advanced custom steps which needs interaction with external values (for example for the custom step configuration), there is `--custom-data KEY=VALUE` option. The key
+data are stored inside a linker context and can be obtained in the custom step using `context.TryGetCustomData` method. Each key can have a simple value assigned which means
+if you need to store multiple values for the same key use custom separator for the values and pass them as one key-value pair.
 
 ## MonoLinker specific options
 
@@ -451,4 +464,3 @@ and if it's link, it will save the modified assembly to the output directory.
 # Reporting a bug
 
 If you face a bug in the linker, please report it using GitHub issues
-
