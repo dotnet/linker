@@ -60,25 +60,20 @@ To document reflection use across methods, we'll introduce a new attribute `Dyna
 ```csharp
 public sealed class DynamicallyAccessedMembersAttribute : Attribute
 {
-    public DynamicallyAccessedMembersAttribute(MemberKinds memberKinds)
+    public DynamicallyAccessedMembersAttribute(DynamicallyAccessedMemberTypes memberKinds)
     {
-        MemberKinds = memberKinds;
+        MemberTypes = memberTypes;
     }
 
-    public MemberKinds MemberKinds { get; }
+    public DynamicallyAccessedMemberTypes MemberTypes { get; }
 }
 
 [Flags]
-public enum MemberKinds
+public enum DynamicallyAccessedMemberTypes
 {
-    DefaultConstructor = 1,
-    PublicConstructors = 3, // Maps to BindingFlags.Public
-    Constructors = 7, // Maps to BindingFlags.Public | BindingFlags.NonPublic
-    PublicProperties = 0x10,
-    Properties = 0x30,
-    PublicMethods = 0x40,
-    Methods = 0x70,
-    NestedTypes = 0x80,
+    DefaultConstructor = 0x0001,
+    PublicConstructors = 0x0002 | DefaultConstructor,
+    NonPublicConstructors = 0x0004,
     // ...
 }
 ```
@@ -92,7 +87,7 @@ Example:
 ```csharp
 class Program
 {
-    [DynamicallyAccessedMembers(MemberKinds.Methods)]
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
     private static readonly Type _otherType;
 
     static Program()
@@ -113,6 +108,7 @@ class Program
 
 (The above pattern exists in CoreLib and is currently unfriendly.)
 
+More details discussed in https://github.com/dotnet/runtime/issues/33861.
 
 TODO:  Creating a delegate to a potentially linker unfriendly method could be solvable. Reflection invoking a potentially linker unfriendly method is hard. Both out of scope?
 TODO: It might be possible to apply similar pattern to generic parameters. The DynamizallAccessedMembers could be added to the generic parameter declaration and linker could make sure that when it's "assigned to" the requirements are met.
@@ -129,7 +125,7 @@ While it would be possible to annotate reflection primitives with the proposed D
 
 are going to be special cased so that if the type and name is exactly known at linking time, only the specific member will be preserved. If the name is not known, all matching members are going to be preserved instead. Linker may look at other parameters to these methods, such as the binding flags and parameter counts to further restrict the set of members preserved.
 
-The special casing will also help in situations such as when the type is not statically known and we only have an annotated value - e.g. calling `GetMethod(...BindingFlags.Public)` on a `System.Type` instance annotated as `MemberKinds.PublicMethods` should be considered valid.
+The special casing will also help in situations such as when the type is not statically known and we only have an annotated value - e.g. calling `GetMethod(...BindingFlags.Public)` on a `System.Type` instance annotated as `DynamicallyAccessedMemberTypes.PublicMethods` should be considered valid.
 
 ## Linker unfriendly annotations
 
@@ -151,14 +147,39 @@ All calls to methods annotated with LinkerUnfriendly will result in a warning an
 
 TODO: Do we care about localization issues connected with the message string? Do we need an enum with possible messages ("this is never friendly", "use different overload", "use different method", etc.) This is probably the same bucket as `ObsoleteAttribute`.
 
+## Escape hatch: Warning supression
+
+We will provide a way to supress reflection flow related warnings within linker. This is meant to be used in cases where we know that a pattern is safe, but the linker is not smart enough to reason about it.
+
+A good example of such pattern could be caches and maps using System.Type. If the cache only stores values that have a certain annotation, all values read from the cache should be annotated the same way, but linker won't be able to see this though.
+
+```csharp
+private Dictionary<Type, Type> _interfaceToImpl;
+
+public void RegisterInterface(Type intface, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.DefaultConstructor)]Type impl)
+{
+    _interfaceToImpl.Add(intface, impl);
+}
+
+// Microsoft.ILLinker and IL000:UnsafeReflectionUse are made up values. Real values TBD.
+[UnconditionalSuppressMessage("Microsoft.ILLinker", "IL000:UnsafeReflectionUse", MessageId = "CreateInstance")]
+public object Activate(Type intface)
+{
+    // This would normally warn because value retrieved from the dictionary is not annotated, but since
+    // all values placed into the dictionary were annotated, this is safe.
+    return Activator.CreateInstance(_interfaceToImpl[intface]);
+}
+
+```
+
+More details discussed in https://github.com/dotnet/runtime/issues/35339.
+
 ## Escape hatch: DynamicDependencyAttribute annotation
 
 This is an existing custom attribute (known as `PreserveDependencyAttribute`) understood by the linker. This attribute allows the user to declare the type name, method/field name, and signature (all as a string) of a method or field that the method dynamically depends on.
 
 When the linker sees a method/constructor/field annotated with this attribute as necessary, it also marks the referenced member as necessary. It also suppresses all analysis within the method. 
 See issue https://github.com/dotnet/runtime/issues/30902 for details.
-
-The attribute can also be used as an escape to indicate "shut up, this is safe" to IL linker in edge cases that cannot be captured by the analysis by having the `DynamicDependencyAttribute` refer to something that is always needed (e.g. the decorated method itself).
 
 ## Case study: Custom attributes
 
@@ -174,7 +195,7 @@ public sealed class TypeConverterAttribute : Attribute
         ConverterTypeName = string.Empty;
     }
 
-    public TypeConverterAttribute([DynamicallyAccessedMembers(MemberKinds.DefaultConstructor)] Type type)
+    public TypeConverterAttribute([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.DefaultConstructor)] Type type)
     {
         if (type == null)
         {
@@ -185,7 +206,7 @@ public sealed class TypeConverterAttribute : Attribute
         ConverterTypeName = type.AssemblyQualifiedName!;
     }
 
-    public TypeConverterAttribute([DynamicallyAccessedMembers(MemberKinds.DefaultConstructor)] string typeName)
+    public TypeConverterAttribute([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.DefaultConstructor)] string typeName)
     {
         if (typeName == null)
         {
@@ -196,7 +217,7 @@ public sealed class TypeConverterAttribute : Attribute
         ConverterTypeName = typeName;
     }
 
-    [DynamicallyAccessedMembers(MemberKinds.DefaultConstructor)]
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.DefaultConstructor)]
     public string ConverterTypeName { get; }
 }
 ```
