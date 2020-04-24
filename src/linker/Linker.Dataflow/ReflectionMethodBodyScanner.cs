@@ -904,10 +904,10 @@ namespace Mono.Linker.Dataflow
 							}
 						}
 
-							// Not yet supported in any combination
-							reflectionContext.RecordUnrecognizedPattern ($"Activator call '{reflectionContext.AccessedMember}' inside '{reflectionContext.SourceMethod.FullName}' is not supported");
-						}
-						break;
+						// Not yet supported in any combination
+						reflectionContext.RecordUnrecognizedPattern ($"Activator call '{reflectionContext.AccessedMember}' inside '{reflectionContext.SourceMethod.FullName}' is not supported");
+					}
+					break;
 
 				//
 				// System.AppDomain
@@ -935,20 +935,20 @@ namespace Mono.Linker.Dataflow
 					ProcessCreateInstanceByName (ref reflectionContext, calledMethodDefinition, methodParams);
 					break;
 
+				//
+				// System.Reflection.Assembly
+				//
+				// CreateInstance (string typeName)
+				// CreateInstance (string typeName, bool ignoreCase)
+				// CreateInstance (string typeName, bool ignoreCase, BindingFlags bindingAttr, Binder? binder, object []? args, CultureInfo? culture, object []? activationAttributes)
+				//
+				case IntrinsicId.Assembly_CreateInstance:
 					//
-					// System.Reflection.Assembly
+					// TODO: This could be supported for `this` only calls
 					//
-					// CreateInstance (string typeName)
-					// CreateInstance (string typeName, bool ignoreCase)
-					// CreateInstance (string typeName, bool ignoreCase, BindingFlags bindingAttr, Binder? binder, object []? args, CultureInfo? culture, object []? activationAttributes)
-					//
-					case IntrinsicId.Assembly_CreateInstance:
-						//
-						// TODO: This could be supported for `this` only calls
-						//
-						reflectionContext.AnalyzingPattern ();
-						reflectionContext.RecordUnrecognizedPattern ($"Activator call '{reflectionContext.AccessedMember}' inside '{reflectionContext.SourceMethod.FullName}' is not yet supported");
-						break;
+					reflectionContext.AnalyzingPattern ();
+					reflectionContext.RecordUnrecognizedPattern ($"Activator call '{reflectionContext.AccessedMember}' inside '{reflectionContext.SourceMethod.FullName}' is not yet supported");
+					break;
 
 				//
 				// System.Runtime.CompilerServices.RuntimeHelpers
