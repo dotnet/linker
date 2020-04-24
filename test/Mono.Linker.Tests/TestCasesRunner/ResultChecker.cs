@@ -816,9 +816,6 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 			// as it would have to actually resolve the referenced method, which is very expensive and no necessary
 			// for the tests to work (the return types are redundant piece of information anyway).
 
-			if (member is ParameterDefinition param)
-				member = param.ParameterType.Resolve ();
-
 			if (member is MemberReference memberReference)
 				member = memberReference.Resolve ();
 
@@ -835,6 +832,9 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 				}
 
 				return fullName;
+			} else if (member is ParameterDefinition param) {
+				string type = param.ParameterType.FullName;
+				return $"{type}::{param.Name}";
 			}
 
 			throw new NotImplementedException ($"Getting the full member name has not been implemented for {member}");

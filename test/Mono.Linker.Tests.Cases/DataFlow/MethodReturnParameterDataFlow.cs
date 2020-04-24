@@ -63,7 +63,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (Type), null)]
+		[UnrecognizedReflectionAccessPattern (typeof (Type), "unknownType")]
 		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberKinds.DefaultConstructor)]
 		private Type ReturnDefaultConstructorFromUnknownType (Type unknownType)
 		{
@@ -85,7 +85,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		// Validate error message when insufficiently annotated value is returned from a method
-		[UnrecognizedReflectionAccessPattern (typeof (Type), null, message:
+		[UnrecognizedReflectionAccessPattern (typeof (Type), "defaultConstructorType", message:
 			"The parameter 'defaultConstructorType' of method 'System.Type Mono.Linker.Tests.Cases.DataFlow.MethodReturnParameterDataFlow::ReturnPublicConstructorsFailure(System.Type)' " +
 			"with dynamically accessed member kinds 'DefaultConstructor' is " +
 			"passed into the return value of method 'System.Type Mono.Linker.Tests.Cases.DataFlow.MethodReturnParameterDataFlow::ReturnPublicConstructorsFailure(System.Type)' " +
@@ -99,7 +99,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			return defaultConstructorType;
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (Type), null)]
+		[UnrecognizedReflectionAccessPattern (typeof (Type), "publicConstructorsType")]
 		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberKinds.Constructors)]
 		private Type ReturnConstructorsFailure (
 			[DynamicallyAccessedMembers(DynamicallyAccessedMemberKinds.PublicConstructors)]

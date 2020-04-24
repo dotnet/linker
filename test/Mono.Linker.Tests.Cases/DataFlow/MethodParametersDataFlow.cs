@@ -83,7 +83,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			RequirePublicConstructors (type);
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (Type), null)]
+		[UnrecognizedReflectionAccessPattern (typeof (Type), "type")]
 		private void WriteToParameterOnInstanceMethod (
 			[DynamicallyAccessedMembers(DynamicallyAccessedMemberKinds.Constructors)]
 			Type type)
@@ -91,7 +91,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			type = ReturnThingsWithDefaultConstructor ();
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (Type), null)]
+		[UnrecognizedReflectionAccessPattern (typeof (Type), "type")]
 		private static void WriteToParameterOnStaticMethod (
 			[DynamicallyAccessedMembers(DynamicallyAccessedMemberKinds.Constructors)]
 			Type type)
@@ -99,7 +99,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			type = ReturnThingsWithDefaultConstructor ();
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (Type), null)]
+		[UnrecognizedReflectionAccessPattern (typeof (Type), "type")]
 		private void LongWriteToParameterOnInstanceMethod (
 			int a, int b, int c, int d,
 			[DynamicallyAccessedMembers(DynamicallyAccessedMemberKinds.Constructors)]
@@ -108,7 +108,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			type = ReturnThingsWithDefaultConstructor ();
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (Type), null)]
+		[UnrecognizedReflectionAccessPattern (typeof (Type), "type")]
 		private static void LongWriteToParameterOnStaticMethod (
 			int a, int b, int c, int d,
 			[DynamicallyAccessedMembers(DynamicallyAccessedMemberKinds.Constructors)]
