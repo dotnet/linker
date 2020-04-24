@@ -29,8 +29,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		Type PropertyWithDefaultConstructor { get; set; }
 
-		[UnrecognizedReflectionAccessPattern (typeof (JsonAnnotations), nameof (RequirePublicConstructors), new Type [] { typeof (Type) })]
-		[UnrecognizedReflectionAccessPattern (typeof (JsonAnnotations), nameof (RequireConstructors), new Type [] { typeof (Type) })]
+		[UnrecognizedReflectionAccessPattern (typeof (JsonAnnotations), nameof (RequirePublicConstructors), new Type[] { typeof (Type) })]
+		[UnrecognizedReflectionAccessPattern (typeof (JsonAnnotations), nameof (RequireConstructors), new Type[] { typeof (Type) })]
 		private void ReadFromInstanceField ()
 		{
 			RequireDefaultConstructor (_typeWithDefaultConstructor);
@@ -38,7 +38,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			RequireConstructors (_typeWithDefaultConstructor);
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (JsonAnnotations), nameof (RequirePublicConstructors), new Type [] { typeof (Type) })]
+		[UnrecognizedReflectionAccessPattern (typeof (JsonAnnotations), nameof (RequirePublicConstructors), new Type[] { typeof (Type) })]
 		private void TwoAnnotatedParameters (
 			Type type,
 			Type type2)
@@ -56,8 +56,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			return defaultConstructorType;
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (JsonAnnotations), nameof (RequirePublicConstructors), new Type [] { typeof (Type) })]
-		[UnrecognizedReflectionAccessPattern (typeof (JsonAnnotations), nameof (RequireConstructors), new Type [] { typeof (Type) })]
+		[UnrecognizedReflectionAccessPattern (typeof (JsonAnnotations), nameof (RequirePublicConstructors), new Type[] { typeof (Type) })]
+		[UnrecognizedReflectionAccessPattern (typeof (JsonAnnotations), nameof (RequireConstructors), new Type[] { typeof (Type) })]
 		private void ReadFromInstanceProperty ()
 		{
 			RequireDefaultConstructor (PropertyWithDefaultConstructor);

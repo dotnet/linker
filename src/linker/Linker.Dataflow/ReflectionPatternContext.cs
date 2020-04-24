@@ -6,7 +6,6 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using System;
 using System.Diagnostics;
-using System.Linq;
 
 namespace Mono.Linker.Dataflow
 {
@@ -81,7 +80,7 @@ namespace Mono.Linker.Dataflow
 
 			_patternReported = true;
 #endif
-			_context.ReflectionPatternRecorder.UnrecognizedReflectionAccessPattern (SourceMethod, Instruction, AccessedMember,  message);
+			_context.ReflectionPatternRecorder.UnrecognizedReflectionAccessPattern (SourceMethod, Instruction, AccessedMember, message);
 		}
 
 		public void Dispose ()

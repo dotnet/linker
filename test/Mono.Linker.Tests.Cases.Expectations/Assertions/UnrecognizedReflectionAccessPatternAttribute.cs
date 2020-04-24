@@ -24,7 +24,7 @@ namespace Mono.Linker.Tests.Cases.Expectations.Assertions
 		}
 
 		public UnrecognizedReflectionAccessPatternAttribute (Type reflectionMethodType, string reflectionMethodName,
-			string [] reflectionMethodParameters = null,
+			string[] reflectionMethodParameters = null,
 			string message = null)
 		{
 			if (reflectionMethodType == null)
