@@ -67,12 +67,6 @@ namespace Mono.Linker.Steps
 				foreach (var rsc in embeddedXml
 									.Where (res => ShouldProcessRootDescriptorResource (GetAssemblyName (res.Name)))
 									.Cast<EmbeddedResource> ()) {
-					if (Context.StripResources)
-						Context.Annotations.AddResourceToRemove (asm, rsc.Name);
-
-					if (Context.IgnoreDescriptors)
-						continue;
-
 					try {
 						Context.LogMessage ($"Processing embedded resource linker descriptor: {rsc.Name}");
 						steps_to_add.Push (GetExternalResolveStep (rsc, asm));
@@ -85,12 +79,6 @@ namespace Mono.Linker.Steps
 				foreach (var rsc in embeddedXml
 									.Where (res => res.Name.Equals ("ILLink.Substitutions.xml", StringComparison.OrdinalIgnoreCase))
 									.Cast<EmbeddedResource> ()) {
-					if (Context.StripResources)
-						Context.Annotations.AddResourceToRemove (asm, rsc.Name);
-
-					if (Context.IgnoreDescriptors)
-						continue;
-
 					try {
 						Context.LogMessage ($"Processing embedded {rsc.Name} from {asm.Name}");
 						steps_to_add.Push (GetExternalSubstitutionStep (rsc, asm));

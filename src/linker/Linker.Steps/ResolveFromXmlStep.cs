@@ -90,6 +90,12 @@ namespace Mono.Linker.Steps
 			if (!nav.MoveToChild ("linker", _ns))
 				return;
 
+			if (!string.IsNullOrEmpty (_resourceName) && Context.StripResources)
+				Context.Annotations.AddResourceToRemove (_resourceAssembly, _resourceName);
+
+			if (Context.IgnoreDescriptors)
+				return;
+
 			try {
 				ProcessAssemblies (Context, nav.SelectChildren ("assembly", _ns));
 			} catch (Exception ex) when (!(ex is XmlResolutionException)) {

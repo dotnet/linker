@@ -31,6 +31,12 @@ namespace Mono.Linker.Steps
 
 		protected override void Process ()
 		{
+			if (!string.IsNullOrEmpty (_resourceName) && Context.StripResources)
+				Context.Annotations.AddResourceToRemove (_resourceAssembly, _resourceName);
+
+			if (Context.IgnoreDescriptors)
+				return;
+
 			try {
 				ReadSubstitutions (_document);
 			} catch (Exception ex) when (!(ex is XmlResolutionException)) {
