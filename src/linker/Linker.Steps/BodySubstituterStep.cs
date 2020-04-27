@@ -34,7 +34,7 @@ namespace Mono.Linker.Steps
 			if (!string.IsNullOrEmpty (_resourceName) && Context.StripResources)
 				Context.Annotations.AddResourceToRemove (_resourceAssembly, _resourceName);
 
-			if (Context.IgnoreDescriptors)
+			if (!string.IsNullOrEmpty (_resourceName) && Context.IgnoreDescriptors)
 				return;
 
 			try {
