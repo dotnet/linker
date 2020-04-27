@@ -18,6 +18,7 @@
     <Description>Mono CIL Linker</Description>
     <Copyright>(C) 2006, Jb Evain</Copyright>
     <TargetFramework>net471</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>

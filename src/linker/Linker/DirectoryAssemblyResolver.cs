@@ -18,7 +18,7 @@ namespace Mono.Linker {
 
 		protected readonly Dictionary<AssemblyDefinition, string> assemblyToPath = new Dictionary<AssemblyDefinition, string> ();
 
-		readonly List<MemoryMappedViewStream> viewStreams = new List<MemoryMappedViewStream> ();
+		readonly Dictionary<AssemblyDefinition, MemoryMappedViewStream> assemblyToMemoryMappedViewStream = new Dictionary<AssemblyDefinition, MemoryMappedViewStream> ();
 
 		public void AddSearchDirectory (string directory)
 		{
@@ -28,6 +28,20 @@ namespace Mono.Linker {
 		public void RemoveSearchDirectory (string directory)
 		{
 			directories.Remove (directory);
+		}
+
+		public unsafe System.Reflection.Metadata.MetadataReader GetMetadataReaderForAssembly(AssemblyDefinition a)
+		{
+			if (assemblyToMemoryMappedViewStream.TryGetValue(a, out var viewStream)) {
+				var safeBuffer = viewStream.SafeMemoryMappedViewHandle;
+				var peReader = new System.Reflection.PortableExecutable.PEReader ((byte*) safeBuffer.DangerousGetHandle (), (int) safeBuffer.ByteLength);
+				if (!peReader.HasMetadata)
+					return null;
+
+				return System.Reflection.Metadata.PEReaderExtensions.GetMetadataReader (peReader);
+			}
+
+			return null;
 		}
 
 		public string [] GetSearchDirectories ()
@@ -57,7 +71,7 @@ namespace Mono.Linker {
 
 				assemblyToPath.Add (result, file);
 
-				viewStreams.Add (viewStream);
+				assemblyToMemoryMappedViewStream.Add (result, viewStream);
 
 				// We transferred the ownership of the viewStream to the collection.
 				viewStream = null;
@@ -116,11 +130,11 @@ namespace Mono.Linker {
 		protected virtual void Dispose (bool disposing)
 		{
 			if (disposing) {
-				foreach (var viewStream in viewStreams) {
+				foreach (var viewStream in assemblyToMemoryMappedViewStream.Values) {
 					viewStream.Dispose ();
 				}
 
-				viewStreams.Clear ();
+				assemblyToMemoryMappedViewStream.Clear ();
 			}
 		}
 	}

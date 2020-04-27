@@ -271,11 +271,11 @@ namespace Mono.Linker
 			return Resolve (new AssemblyNameReference (name, new Version ()));
 		}
 
-		public AssemblyDefinition Resolve (IMetadataScope scope)
+		public AssemblyDefinition Resolve (IMetadataScope scope, bool reportFailures = true)
 		{
 			AssemblyNameReference reference = GetReference (scope);
 			try {
-				AssemblyDefinition assembly = _resolver.Resolve (reference, _readerParameters);
+				AssemblyDefinition assembly = _resolver.Resolve (reference, _readerParameters, reportFailures);
 
 				if (assembly != null)
 					RegisterAssembly (assembly);

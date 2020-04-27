@@ -122,6 +122,11 @@ namespace Mono.Linker
 
 		public override AssemblyDefinition Resolve (AssemblyNameReference name, ReaderParameters parameters)
 		{
+			return Resolve (name, parameters, reportFailures: true);
+		}
+
+		public AssemblyDefinition Resolve (AssemblyNameReference name, ReaderParameters parameters, bool reportFailures)
+		{
 			// Validate arguments, similarly to how the base class does it.
 			if (name == null)
 				throw new ArgumentNullException ("name");
@@ -139,9 +144,10 @@ namespace Mono.Linker
 
 					_assemblies[name.Name] = asm;
 				} catch (AssemblyResolutionException) {
-					if (!_ignoreUnresolved)
+					if (reportFailures && !_ignoreUnresolved)
 						throw;
-					_context.LogMessage ($"warning: Ignoring unresolved assembly '{name.Name}'.");
+					if (reportFailures)
+						_context.LogMessage ($"warning: Ignoring unresolved assembly '{name.Name}'.");
 					if (_unresolvedAssemblies == null)
 						_unresolvedAssemblies = new HashSet<string> ();
 					_unresolvedAssemblies.Add (name.Name);
