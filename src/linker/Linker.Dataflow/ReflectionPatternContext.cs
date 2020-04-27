@@ -28,17 +28,14 @@ namespace Mono.Linker.Dataflow
 		public MethodDefinition SourceMethod { get; private set; }
 		public IMetadataTokenProvider MemberWithRequirements { get; private set; }
 		public Instruction Instruction { get; private set; }
-		public int? ParameterIndex { get; private set; }
 
 		public ReflectionPatternContext (LinkContext context, MethodDefinition sourceMethod, IMetadataTokenProvider memberWithRequirements,
-			Instruction instruction = null,
-			int? parameterIndex = null)
+			Instruction instruction = null)
 		{
 			_context = context;
 			SourceMethod = sourceMethod;
 			MemberWithRequirements = memberWithRequirements;
 			Instruction = instruction;
-			ParameterIndex = parameterIndex;
 
 #if DEBUG
 			_patternAnalysisAttempted = false;

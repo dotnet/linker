@@ -51,11 +51,7 @@ namespace Mono.Linker.Dataflow
 			if (MethodReturnValue != null) {
 				var requiredMemberKinds = _flowAnnotations.GetReturnParameterAnnotation (methodBody.Method);
 				if (requiredMemberKinds != 0) {
-					int? parameterIndex = null;
-					if (MethodReturnValue is MethodParameterValue param)
-						parameterIndex = param.ParameterIndex - 1;
-
-					var reflectionContext = new ReflectionPatternContext (_context, methodBody.Method, methodBody.Method.MethodReturnType, null, parameterIndex);
+					var reflectionContext = new ReflectionPatternContext (_context, methodBody.Method, methodBody.Method.MethodReturnType);
 					reflectionContext.AnalyzingPattern ();
 					RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberKinds, MethodReturnValue, methodBody.Method.MethodReturnType);
 				}
