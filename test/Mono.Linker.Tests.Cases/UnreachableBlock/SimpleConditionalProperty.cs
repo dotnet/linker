@@ -9,7 +9,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 	[SetupLinkerArgument ("--enable-opt", "ipconstprop")]
 	public class SimpleConditionalProperty
 	{
-		public static void Main()
+		public static void Main ()
 		{
 			TestProperty_int_1 ();
 			TestProperty_int_2 ();
@@ -23,7 +23,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		}
 
 		[Kept]
-		[ExpectedInstructionSequence (new [] {
+		[ExpectedInstructionSequence (new[] {
 			"call",
 			"ldc.i4.3",
 			"beq.s",
@@ -36,7 +36,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		}
 
 		[Kept]
-		[ExpectedInstructionSequence (new [] {
+		[ExpectedInstructionSequence (new[] {
 			"ldc.i4.3",
 			"call",
 			"beq.s",
@@ -52,7 +52,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		}
 
 		[Kept]
-		[ExpectedInstructionSequence (new [] {
+		[ExpectedInstructionSequence (new[] {
 			"call",
 			"ldc.i4.5",
 			"ble.s",
@@ -69,10 +69,9 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		}
 
 		[Kept]
-		[ExpectedInstructionSequence (new [] {
+		[ExpectedInstructionSequence (new[] {
 			"call",
 			"pop",
-			"nop",
 			"ldloca.s",
 			"initobj",
 			"ldloc.0",
@@ -87,7 +86,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		}
 
 		[Kept]
-		[ExpectedInstructionSequence (new [] {
+		[ExpectedInstructionSequence (new[] {
 			"call",
 			"brfalse.s",
 			"ret"
@@ -102,7 +101,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		}
 
 		[Kept]
-		[ExpectedInstructionSequence (new [] {
+		[ExpectedInstructionSequence (new[] {
 			"call",
 			"brfalse.s",
 			"ret"
@@ -115,7 +114,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		}
 
 		[Kept]
-		[ExpectedInstructionSequence (new [] {
+		[ExpectedInstructionSequence (new[] {
 			"call",
 			"call",
 			"beq.s",
@@ -129,11 +128,10 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		}
 
 		[Kept]
-		[ExpectedInstructionSequence (new [] {
+		[ExpectedInstructionSequence (new[] {
 			"br.s",
 			"call",
 			"pop",
-			"nop",
 			"ret"
 			})]
 		static void TestProperty_enum_1 ()
@@ -144,7 +142,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		}
 
 		[Kept]
-		[ExpectedInstructionSequence (new [] {
+		[ExpectedInstructionSequence (new[] {
 			"call",
 			"brfalse.s",
 			"ret"
@@ -189,13 +187,14 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		}
 
 		static void NeverReached_1 ()
-		{			
+		{
 		}
 
 		[Kept]
 		[KeptMember ("value__")]
 		[KeptBaseType (typeof (Enum))]
-		enum TestEnum {
+		enum TestEnum
+		{
 			[Kept]
 			A = 0,
 			[Kept]
