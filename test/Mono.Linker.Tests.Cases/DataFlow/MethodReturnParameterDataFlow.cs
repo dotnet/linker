@@ -86,8 +86,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		// Validate error message when insufficiently annotated value is returned from a method
-		[UnrecognizedReflectionAccessPattern (typeof (MethodReturnParameterDataFlow), nameof (ReturnPublicConstructorsFailure), 
-			new Type [] { typeof (Type) },
+		[UnrecognizedReflectionAccessPattern (typeof (MethodReturnParameterDataFlow), nameof (ReturnPublicConstructorsFailure),
+			new Type[] { typeof (Type) },
 			"The parameter 'defaultConstructorType' of method 'System.Type Mono.Linker.Tests.Cases.DataFlow.MethodReturnParameterDataFlow::ReturnPublicConstructorsFailure(System.Type)' " +
 			"with dynamically accessed member kinds 'DefaultConstructor' is " +
 			"passed into the return value of method 'System.Type Mono.Linker.Tests.Cases.DataFlow.MethodReturnParameterDataFlow::ReturnPublicConstructorsFailure(System.Type)' " +

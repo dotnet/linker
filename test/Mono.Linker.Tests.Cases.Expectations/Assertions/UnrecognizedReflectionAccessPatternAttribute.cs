@@ -32,7 +32,7 @@ namespace Mono.Linker.Tests.Cases.Expectations.Assertions
 			if (reflectionMethodType == null)
 				throw new ArgumentException ("Value cannot be null or empty.", nameof (reflectionMethodType));
 			if (reflectionMethodName == null)
-				throw new ArgumentException ("Value cannot be null or empty.", nameof (reflectionMethodName));;
+				throw new ArgumentException ("Value cannot be null or empty.", nameof (reflectionMethodName));
 			if (reflectionMethodParameters == null)
 				throw new ArgumentException ("Value cannot be null or empty.", nameof (reflectionMethodParameters));
 
