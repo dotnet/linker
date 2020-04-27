@@ -110,7 +110,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		Type PropertyConstructorsWithExplicitAccessors {
-			[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), nameof (_fieldWithPublicConstructors))]
+			[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), "get_" + nameof (PropertyConstructorsWithExplicitAccessors),
+				new Type[] { }, returnType: typeof (Type))]
 			[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberKinds.Constructors)]
 			get {
 				return _fieldWithPublicConstructors;

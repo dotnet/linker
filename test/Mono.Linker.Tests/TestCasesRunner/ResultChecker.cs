@@ -795,6 +795,13 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			var parameterTypes = (CustomAttributeArgument[]) attr.ConstructorArguments[constructorArgumentsOffset + 2].Value;
 
 			string fullName = type.ToString ();
+			if (attr.AttributeType.Name == "UnrecognizedReflectionAccessPatternAttribute") {
+				var returnType = attr.ConstructorArguments[constructorArgumentsOffset + 4].Value;
+				if (returnType != null) {
+					fullName = fullName.Insert (0, returnType.ToString () + " ");
+				}
+			}
+
 			if (memberName == null) {
 				return fullName;
 			}
@@ -834,6 +841,8 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			} else if (member is ParameterDefinition param) {
 				string type = param.ParameterType.FullName;
 				return $"{type}::{param.Name}";
+			} else if (member is MethodReturnType returnType) {
+				return returnType.Method.ToString ();
 			}
 
 			throw new NotImplementedException ($"Getting the full member name has not been implemented for {member}");

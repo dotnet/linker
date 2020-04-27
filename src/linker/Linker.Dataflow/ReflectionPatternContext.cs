@@ -26,15 +26,19 @@ namespace Mono.Linker.Dataflow
 #endif
 
 		public MethodDefinition SourceMethod { get; private set; }
-		public IMetadataTokenProvider AccessedMember { get; private set; }
+		public IMetadataTokenProvider MemberWithRequirements { get; private set; }
 		public Instruction Instruction { get; private set; }
+		public int? ParameterIndex { get; private set; }
 
-		public ReflectionPatternContext (LinkContext context, MethodDefinition sourceMethod, IMetadataTokenProvider accessedMember, Instruction instruction)
+		public ReflectionPatternContext (LinkContext context, MethodDefinition sourceMethod, IMetadataTokenProvider memberWithRequirements,
+			Instruction instruction = null,
+			int? parameterIndex = null)
 		{
 			_context = context;
 			SourceMethod = sourceMethod;
-			AccessedMember = accessedMember;
+			MemberWithRequirements = memberWithRequirements;
 			Instruction = instruction;
+			ParameterIndex = parameterIndex;
 
 #if DEBUG
 			_patternAnalysisAttempted = false;
@@ -63,7 +67,7 @@ namespace Mono.Linker.Dataflow
 		{
 #if DEBUG
 			if (!_patternAnalysisAttempted)
-				throw new InvalidOperationException ($"Internal error: To correctly report all patterns, when starting to analyze a pattern the AnalyzingPattern must be called first. {SourceMethod} -> {AccessedMember}");
+				throw new InvalidOperationException ($"Internal error: To correctly report all patterns, when starting to analyze a pattern the AnalyzingPattern must be called first. {SourceMethod} -> {MemberWithRequirements}");
 
 			_patternReported = true;
 #endif
@@ -76,18 +80,18 @@ namespace Mono.Linker.Dataflow
 		{
 #if DEBUG
 			if (!_patternAnalysisAttempted)
-				throw new InvalidOperationException ($"Internal error: To correctly report all patterns, when starting to analyze a pattern the AnalyzingPattern must be called first. {SourceMethod} -> {AccessedMember}");
+				throw new InvalidOperationException ($"Internal error: To correctly report all patterns, when starting to analyze a pattern the AnalyzingPattern must be called first. {SourceMethod} -> {MemberWithRequirements}");
 
 			_patternReported = true;
 #endif
-			_context.ReflectionPatternRecorder.UnrecognizedReflectionAccessPattern (SourceMethod, Instruction, AccessedMember, message);
+			_context.ReflectionPatternRecorder.UnrecognizedReflectionAccessPattern (SourceMethod, Instruction, MemberWithRequirements, message);
 		}
 
 		public void Dispose ()
 		{
 #if DEBUG
 			if (_patternAnalysisAttempted && !_patternReported)
-				throw new InvalidOperationException ($"Internal error: A reflection pattern was analyzed, but no result was reported. {SourceMethod} -> {AccessedMember}");
+				throw new InvalidOperationException ($"Internal error: A reflection pattern was analyzed, but no result was reported. {SourceMethod} -> {MemberWithRequirements}");
 #endif
 		}
 	}

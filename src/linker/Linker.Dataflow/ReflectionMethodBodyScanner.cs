@@ -51,12 +51,11 @@ namespace Mono.Linker.Dataflow
 			if (MethodReturnValue != null) {
 				var requiredMemberKinds = _flowAnnotations.GetReturnParameterAnnotation (methodBody.Method);
 				if (requiredMemberKinds != 0) {
-					IMetadataTokenProvider accessedMember = methodBody.Method.MethodReturnType;
-					if (MethodReturnValue is LoadFieldValue field)
-						accessedMember = field.Field;
-					else if (MethodReturnValue is MethodParameterValue param)
-						accessedMember = methodBody.Method.Parameters[param.ParameterIndex - 1];
-					var reflectionContext = new ReflectionPatternContext (_context, methodBody.Method, accessedMember, null);
+					int? parameterIndex = null;
+					if (MethodReturnValue is MethodParameterValue param)
+						parameterIndex = param.ParameterIndex - 1;
+
+					var reflectionContext = new ReflectionPatternContext (_context, methodBody.Method, methodBody.Method.MethodReturnType, null, parameterIndex);
 					reflectionContext.AnalyzingPattern ();
 					RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberKinds, MethodReturnValue, methodBody.Method.MethodReturnType);
 				}
@@ -72,7 +71,7 @@ namespace Mono.Linker.Dataflow
 				if (annotation != 0) {
 					ValueNode valueNode = GetValueNodeForCustomAttributeArgument (arguments[i]);
 					if (valueNode != null) {
-						ReflectionPatternContext context = new ReflectionPatternContext (_context, source, method.Parameters[i], null);
+						ReflectionPatternContext context = new ReflectionPatternContext (_context, source, method.Parameters[i]);
 						context.AnalyzingPattern ();
 						RequireDynamicallyAccessedMembers (ref context, annotation, valueNode, method);
 					}
@@ -87,7 +86,7 @@ namespace Mono.Linker.Dataflow
 
 			ValueNode valueNode = GetValueNodeForCustomAttributeArgument (value);
 			if (valueNode != null) {
-				var reflectionContext = new ReflectionPatternContext (_context, field.DeclaringType.Methods[0], value.Value as IMemberDefinition, null);
+				var reflectionContext = new ReflectionPatternContext (_context, field.DeclaringType.Methods[0], value.Value as IMemberDefinition);
 				reflectionContext.AnalyzingPattern ();
 				RequireDynamicallyAccessedMembers (ref reflectionContext, annotation, valueNode, field);
 			}
@@ -905,7 +904,7 @@ namespace Mono.Linker.Dataflow
 						}
 
 						// Not yet supported in any combination
-						reflectionContext.RecordUnrecognizedPattern ($"Activator call '{reflectionContext.AccessedMember}' inside '{reflectionContext.SourceMethod.FullName}' is not supported");
+						reflectionContext.RecordUnrecognizedPattern ($"Activator call '{reflectionContext.MemberWithRequirements}' inside '{reflectionContext.SourceMethod.FullName}' is not supported");
 					}
 					break;
 
@@ -947,7 +946,7 @@ namespace Mono.Linker.Dataflow
 					// TODO: This could be supported for `this` only calls
 					//
 					reflectionContext.AnalyzingPattern ();
-					reflectionContext.RecordUnrecognizedPattern ($"Activator call '{reflectionContext.AccessedMember}' inside '{reflectionContext.SourceMethod.FullName}' is not yet supported");
+					reflectionContext.RecordUnrecognizedPattern ($"Activator call '{reflectionContext.MemberWithRequirements}' inside '{reflectionContext.SourceMethod.FullName}' is not yet supported");
 					break;
 
 				//
@@ -965,7 +964,7 @@ namespace Mono.Linker.Dataflow
 								reflectionContext.RecordHandledPattern ();
 							else {
 								reflectionContext.RecordUnrecognizedPattern ($"A {GetValueDescriptionForErrorMessage (typeHandleValue)} " +
-									$"is passed into the {GetMetadataTokenDescriptionForErrorMessage ((reflectionContext.AccessedMember as MethodDefinition).Parameters[0])}. " +
+									$"is passed into the {GetMetadataTokenDescriptionForErrorMessage ((reflectionContext.MemberWithRequirements as MethodDefinition).Parameters[0])}. " +
 									$"It's not possible to guarantee availability of the target static constructor.");
 							}
 						}
@@ -1058,24 +1057,24 @@ namespace Mono.Linker.Dataflow
 						if (typeNameValue is KnownStringValue typeNameStringValue) {
 							var resolvedAssembly = _context.GetLoadedAssembly (assemblyNameStringValue.Contents);
 							if (resolvedAssembly == null) {
-								reflectionContext.RecordUnrecognizedPattern ($"Activator call '{reflectionContext.AccessedMember}' inside '{reflectionContext.SourceMethod.FullName}' references assembly '{assemblyNameStringValue.Contents}' which could not be found");
+								reflectionContext.RecordUnrecognizedPattern ($"Activator call '{reflectionContext.MemberWithRequirements}' inside '{reflectionContext.SourceMethod.FullName}' references assembly '{assemblyNameStringValue.Contents}' which could not be found");
 								continue;
 							}
 
 							var resolvedType = resolvedAssembly.FindType (typeNameStringValue.Contents);
 							if (resolvedType == null) {
-								reflectionContext.RecordUnrecognizedPattern ($"Activator call '{reflectionContext.AccessedMember}' inside '{reflectionContext.SourceMethod.FullName}' references type '{typeNameStringValue}' in assembly '{resolvedAssembly.FullName}' which could not be found");
+								reflectionContext.RecordUnrecognizedPattern ($"Activator call '{reflectionContext.MemberWithRequirements}' inside '{reflectionContext.SourceMethod.FullName}' references type '{typeNameStringValue}' in assembly '{resolvedAssembly.FullName}' which could not be found");
 								continue;
 							}
 
 							MarkConstructorsOnType (ref reflectionContext, resolvedType,
 								parameterlessConstructor ? m => m.Parameters.Count == 0 : (Func<MethodDefinition, bool>) null, bindingFlags);
 						} else {
-							reflectionContext.RecordUnrecognizedPattern ($"Activator call '{reflectionContext.AccessedMember}' inside '{reflectionContext.SourceMethod.FullName}' has unrecognized value for the 'typeName' parameter.");
+							reflectionContext.RecordUnrecognizedPattern ($"Activator call '{reflectionContext.MemberWithRequirements}' inside '{reflectionContext.SourceMethod.FullName}' has unrecognized value for the 'typeName' parameter.");
 						}
 					}
 				} else {
-					reflectionContext.RecordUnrecognizedPattern ($"Activator call '{reflectionContext.AccessedMember}' inside '{reflectionContext.SourceMethod.FullName}' has unrecognized value for the 'assemblyName' parameter.");
+					reflectionContext.RecordUnrecognizedPattern ($"Activator call '{reflectionContext.MemberWithRequirements}' inside '{reflectionContext.SourceMethod.FullName}' has unrecognized value for the 'assemblyName' parameter.");
 				}
 			}
 		}
