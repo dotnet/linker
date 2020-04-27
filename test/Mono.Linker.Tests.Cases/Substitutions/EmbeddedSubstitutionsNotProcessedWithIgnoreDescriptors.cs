@@ -3,10 +3,11 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.Substitutions
 {
-	[SetupCompileResource ("Dependencies/EmbeddedSubstitutions.xml", "ILLink.Substitutions.xml")]
-	[IgnoreDescriptors (false)]
-	[RemovedResourceInAssembly ("test.exe", "ILLink.Substitutions.xml")]
-	public class EmbeddedSubstitutions
+	[SetupCompileResource ("Dependencies/EmbeddedSubstitutionsNotProcessedWithIgnoreDescriptors.xml", "ILLink.Substitutions.xml")]
+	[IgnoreDescriptors (true)]
+	[StripResources (false)]
+	[KeptResource ("ILLink.Substitutions.xml")]
+	public class EmbeddedSubstitutionsNotProcessedWithIgnoreDescriptors
 	{
 		public static void Main ()
 		{
@@ -15,9 +16,8 @@ namespace Mono.Linker.Tests.Cases.Substitutions
 
 		[Kept]
 		[ExpectedInstructionSequence (new[] {
-			"ldstr",
-			"newobj",
-			"throw"
+			"nop",
+			"ret"
 		})]
 		public static void ConvertToThrowMethod ()
 		{

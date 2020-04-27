@@ -116,6 +116,8 @@ namespace Mono.Linker
 
 		public bool KeepDependencyAttributes { get; set; }
 
+		public bool IgnoreDescriptors { get; set; }
+
 		public bool StripResources { get; set; }
 
 		public Dictionary<string, bool> FeatureSettings { get; private set; }

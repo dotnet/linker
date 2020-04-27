@@ -5,19 +5,19 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 namespace Mono.Linker.Tests.Cases.Resources
 {
 	[SetupLinkerCoreAction ("link")]
-	[IgnoreDescriptors (false)]
+	[IgnoreDescriptors (true)]
+	[StripResources (true)]
 
 	// We need to rename the resource so that it matches the name of an assembly being processed.  This is a requriement of the black list step
-	[SetupCompileResource ("Dependencies/EmbeddedLinkXmlFileIsProcessed.xml", "test.xml")]
+	[SetupCompileResource ("Dependencies/EmbeddedLinkXmlFileIsNotProcessedWithIgnoreDescriptorsAndRemoved.xml", "test.xml")]
 	[SkipPeVerify]
-	public class EmbeddedLinkXmlFileIsProcessed
+	[RemovedResourceInAssembly ("test.exe", "test.xml")]
+	public class EmbeddedLinkXmlFileIsNotProcessedWithIgnoreDescriptorsAndRemoved
 	{
 		public static void Main ()
 		{
 		}
 
-		[Kept]
-		[KeptMember (".ctor()")]
 		public class Unused
 		{
 		}

@@ -1,10 +1,10 @@
 ﻿namespace Mono.Linker.Tests.Cases.Expectations.Metadata
 {
-	public sealed class IncludeBlacklistStepAttribute : BaseMetadataAttribute
+	public sealed class IgnoreDescriptorsAttribute : BaseMetadataAttribute
 	{
 		public readonly bool Value;
 
-		public IncludeBlacklistStepAttribute (bool value)
+		public IgnoreDescriptorsAttribute (bool value)
 		{
 			Value = value;
 		}

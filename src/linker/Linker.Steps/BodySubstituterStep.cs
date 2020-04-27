@@ -33,9 +33,6 @@ namespace Mono.Linker.Steps
 		{
 			try {
 				ReadSubstitutions (_document);
-
-				if (!string.IsNullOrEmpty (_resourceName) && Context.StripResources)
-					Context.Annotations.AddResourceToRemove (_resourceAssembly, _resourceName);
 			} catch (Exception ex) when (!(ex is XmlResolutionException)) {
 				throw new XmlResolutionException ($"Failed to process XML substitution: '{_xmlDocumentLocation}'", ex);
 			}

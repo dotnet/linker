@@ -60,9 +60,9 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			Append (fileName);
 		}
 
-		public virtual void IncludeBlacklist (bool value)
+		public virtual void IgnoreDescriptors (bool value)
 		{
-			Append ("-z");
+			Append ("--ignore-descriptors");
 			Append (value ? "true" : "false");
 		}
 
@@ -167,7 +167,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 			// Running the blacklist step causes a ton of stuff to be preserved.  That's good for normal use cases, but for
 			// our test cases that pollutes the results
-			IncludeBlacklist (options.IncludeBlacklistStep);
+			IgnoreDescriptors (options.IgnoreDescriptors);
 
 #if !NETCOREAPP
 			if (!string.IsNullOrEmpty (options.Il8n))

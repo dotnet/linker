@@ -190,7 +190,6 @@ namespace Mono.Linker
 			var set_optimizations = new List<(CodeOptimizations, string, bool)> ();
 			bool dumpDependencies = false;
 			string dependenciesFileName = null;
-			bool ignoreDescriptors = false;
 			bool removeCAS = true;
 			bool new_mvid_used = false;
 			bool deterministic_used = false;
@@ -320,7 +319,7 @@ namespace Mono.Linker
 						continue;
 
 					case "--ignore-descriptors":
-						if (!GetBoolParam (token, l => ignoreDescriptors = l))
+						if (!GetBoolParam (token, l => context.IgnoreDescriptors = l))
 							return -1;
 
 						continue;
@@ -507,7 +506,7 @@ namespace Mono.Linker
 
 						continue;
 					case "z":
-						if (!GetBoolParam (token, l => ignoreDescriptors = !l))
+						if (!GetBoolParam (token, l => context.IgnoreDescriptors = !l))
 							return -1;
 
 						continue;
@@ -573,9 +572,6 @@ namespace Mono.Linker
 			foreach (var file in body_substituter_steps)
 				AddBodySubstituterStep (p, file);
 
-			if (ignoreDescriptors)
-				p.RemoveStep (typeof (BlacklistStep));
-
 			if (context.DeterministicOutput)
 				p.RemoveStep (typeof (RegenerateGuidStep));
 
@@ -622,7 +618,7 @@ namespace Mono.Linker
 			// [mono only] ResolveFromXApiStep [optional, possibly many]
 			// LoadReferencesStep
 			// [mono only] LoadI18nAssemblies
-			// BlacklistStep [optional]
+			// BlacklistStep
 			//   dynamically adds steps:
 			//     ResolveFromXmlStep [optional, possibly many]
 			//     BodySubstituterStep [optional, possibly many]
