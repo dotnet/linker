@@ -61,7 +61,8 @@ namespace Mono.Linker.Steps
 					string assumedAssemblyName = s.Substring (indexOfComma + 1, indexOfEndAssemblyName - indexOfComma - 1).Trim ();
 
 					// Does this look like an assembly name?
-					if (IsValidIdentifier (assumedAssemblyName)) {
+					if (IsValidIdentifier (assumedAssemblyName) &&
+						!IsProblematicAssembly(assumedAssemblyName)) {
 
 						// If we had more components after the assembly name, let's look at them
 						if (indexOfEndAssemblyName == s.Length
@@ -77,6 +78,12 @@ namespace Mono.Linker.Steps
 					}
 				}
 			}
+		}
+
+		static bool IsProblematicAssembly(string s)
+		{
+			// Workaround for https://github.com/mono/linker/issues/1151
+			return s == "System.Runtime.WindowsRuntime";
 		}
 
 		static bool IsValidIdentifier (string id)
