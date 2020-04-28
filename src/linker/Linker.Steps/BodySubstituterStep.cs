@@ -31,10 +31,10 @@ namespace Mono.Linker.Steps
 
 		protected override void Process ()
 		{
-			if (!string.IsNullOrEmpty (_resourceName) && Context.StripResources)
+			if (!string.IsNullOrEmpty (_resourceName) && Context.StripSubstitutions)
 				Context.Annotations.AddResourceToRemove (_resourceAssembly, _resourceName);
 
-			if (!string.IsNullOrEmpty (_resourceName) && Context.IgnoreDescriptors)
+			if (!string.IsNullOrEmpty (_resourceName) && Context.IgnoreSubstitutions)
 				return;
 
 			try {

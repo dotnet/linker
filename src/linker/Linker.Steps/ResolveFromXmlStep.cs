@@ -90,7 +90,7 @@ namespace Mono.Linker.Steps
 			if (!nav.MoveToChild ("linker", _ns))
 				return;
 
-			if (!string.IsNullOrEmpty (_resourceName) && Context.StripResources)
+			if (!string.IsNullOrEmpty (_resourceName) && Context.StripDescriptors)
 				Context.Annotations.AddResourceToRemove (_resourceAssembly, _resourceName);
 
 			if (!string.IsNullOrEmpty (_resourceName) && Context.IgnoreDescriptors)

@@ -4,8 +4,8 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 namespace Mono.Linker.Tests.Cases.Substitutions
 {
 	[SetupCompileResource ("Dependencies/EmbeddedSubstitutionsKept.xml", "ILLink.Substitutions.xml")]
-	[IgnoreDescriptors (false)]
-	[StripResources (false)]
+	[IgnoreSubstitutions (false)]
+	[StripSubstitutions (false)]
 	[KeptResource ("ILLink.Substitutions.xml")]
 	public class EmbeddedSubstitutionsKept
 	{

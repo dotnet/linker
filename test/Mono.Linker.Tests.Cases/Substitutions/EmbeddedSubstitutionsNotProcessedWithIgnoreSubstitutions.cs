@@ -3,11 +3,11 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.Substitutions
 {
-	[SetupCompileResource ("Dependencies/EmbeddedSubstitutionsNotProcessedWithIgnoreDescriptorsAndRemoved.xml", "ILLink.Substitutions.xml")]
-	[IgnoreDescriptors (true)]
-	[StripResources (true)]
-	[RemovedResourceInAssembly ("test.exe", "ILLink.Substitutions.xml")]
-	public class EmbeddedSubstitutionsNotProcessedWithIgnoreDescriptorsAndRemoved
+	[SetupCompileResource ("Dependencies/EmbeddedSubstitutionsNotProcessedWithIgnoreSubstitutions.xml", "ILLink.Substitutions.xml")]
+	[IgnoreSubstitutions (true)]
+	[StripSubstitutions (false)]
+	[KeptResource ("ILLink.Substitutions.xml")]
+	public class EmbeddedSubstitutionsNotProcessedWithIgnoreSubstitutions
 	{
 		public static void Main ()
 		{

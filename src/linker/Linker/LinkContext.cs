@@ -118,7 +118,11 @@ namespace Mono.Linker
 
 		public bool IgnoreDescriptors { get; set; }
 
-		public bool StripResources { get; set; }
+		public bool IgnoreSubstitutions { get; set; }
+
+		public bool StripDescriptors { get; set; }
+
+		public bool StripSubstitutions { get; set; }
 
 		public Dictionary<string, bool> FeatureSettings { get; private set; }
 
@@ -203,7 +207,8 @@ namespace Mono.Linker
 			Tracer = factory.CreateTracer (this);
 			ReflectionPatternRecorder = new LoggingReflectionPatternRecorder (this);
 			MarkedKnownMembers = new KnownMembers ();
-			StripResources = true;
+			StripDescriptors = true;
+			StripSubstitutions = true;
 			PInvokes = new List<PInvokeInfo> ();
 
 			// See https://github.com/mono/linker/issues/612
