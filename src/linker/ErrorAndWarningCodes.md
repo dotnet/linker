@@ -83,7 +83,7 @@ The method 'method' in the substitution XML could not be resolved.
 Invalid value for 'signature' stub
 ```
 
-The value used in the substitution XML is not a built-in type or does not match the return type of the method.
+The value 'value' used in the substitution XML for method 'signature' does not represent a value of a built-in type, or does not match the return type of the method.
 
 ---
 
@@ -92,7 +92,7 @@ The value used in the substitution XML is not a built-in type or does not match 
 Unknown body modification 'action' for 'signature'
 ```
 
-The value 'action' of the body attribute used in the substitution XML is invalid (currently the only supported options are `remove` and `stub`).
+The value 'action' of the body attribute used in the substitution XML is invalid (the only supported options are `remove` and `stub`).
 
 ---
 
@@ -119,7 +119,7 @@ The substituted field 'field' was non-static or constant. Only static non-consta
 Missing 'value' attribute for field 'field'
 ```
 
-A field was specified for substitution but no value to be substituted for was given.
+A field was specified for substitution but no value to be substituted was given.
 
 ---
 
@@ -128,4 +128,4 @@ A field was specified for substitution but no value to be substituted for was gi
 Invalid value for 'field': 'value'
 ```
 
-The value 'value' used in the substitution XML for field 'field' is not a build-in type or does not match the type of 'field'.
+The value 'value' used in the substitution XML for field 'field' is not a built-in type, or does not match the type of 'field'.
