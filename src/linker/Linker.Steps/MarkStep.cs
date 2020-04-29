@@ -587,8 +587,8 @@ namespace Mono.Linker.Steps
 			if (args.Count >= 3 && args[2].Value is string assemblyName) {
 				assembly = _context.GetLoadedAssembly (assemblyName);
 				if (assembly == null) {
-					// TODO: Add origin, basically the place where `PreserveDependencyAttribute` is used.
-					_context.LogMessage (MessageContainer.CreateWarningMessage ($"Could not resolve '{assemblyName}' assembly dependency", 2003));
+					_context.LogMessage (MessageContainer.CreateWarningMessage ($"Could not resolve '{assemblyName}' assembly dependency",
+						2003, origin: MessageOrigin.TryGetOrigin (context.Resolve (), 0)));
 					return;
 				}
 			} else {
@@ -600,8 +600,8 @@ namespace Mono.Linker.Steps
 				td = (assembly ?? context.Module.Assembly).FindType (typeName);
 
 				if (td == null) {
-					// TODO: Add origin, basically the place where `PreserveDependencyAttribute` is used.
-					_context.LogMessage (MessageContainer.CreateWarningMessage ($"Could not resolve '{typeName}' type dependency", 2004));
+					_context.LogMessage (MessageContainer.CreateWarningMessage ($"Could not resolve '{typeName}' type dependency",
+						2004, origin: MessageOrigin.TryGetOrigin (context.Resolve (), 0)));
 					return;
 				}
 			} else {
@@ -634,8 +634,8 @@ namespace Mono.Linker.Steps
 			if (MarkDependencyField (td, member, new DependencyInfo (DependencyKind.PreservedDependency, ca)))
 				return;
 
-			// TODO: Add origin, basically the place where `PreserveDependencyAttribute` is used.
-			_context.LogMessage (MessageContainer.CreateWarningMessage ($"Could not resolve dependency member '{member}' declared in type '{td.FullName}'", 2005));
+			_context.LogMessage (MessageContainer.CreateWarningMessage ($"Could not resolve dependency member '{member}' declared in type '{td.FullName}'",
+				2005, origin: MessageOrigin.TryGetOrigin (context.Resolve (), 0)));
 		}
 
 		bool MarkDependencyMethod (TypeDefinition type, string name, string[] signature, in DependencyInfo reason)

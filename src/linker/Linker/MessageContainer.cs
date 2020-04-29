@@ -7,106 +7,108 @@ using System.Text;
 
 namespace Mono.Linker
 {
-	public readonly struct MessageContainer
-	{
-		/// <summary>
-		/// Optional data with a filename, line and column that triggered the
-		/// linker to output an error (or warning) message.
-		/// </summary>
-		public MessageOrigin? Origin { get; }
+    // See a list of error and warning codes at https://github.com/mono/linker/blob/master/src/linker/ErrorAndWarningCodes.md
 
-		public MessageCategory Category { get; }
+    public readonly struct MessageContainer
+    {
+        /// <summary>
+        /// Optional data with a filename, line and column that triggered the
+        /// linker to output an error (or warning) message.
+        /// </summary>
+        public MessageOrigin? Origin { get; }
 
-		/// <summary>
-		/// Further categorize the message.
-		/// </summary>
-		public string SubCategory { get; }
+        public MessageCategory Category { get; }
 
-		/// <summary>
-		/// Code identifier for errors and warnings reported by the IL linker.
-		/// </summary>
-		public int? Code { get; }
+        /// <summary>
+        /// Further categorize the message.
+        /// </summary>
+        public string SubCategory { get; }
 
-		/// <summary>
-		/// Optional user friendly text describing the error or warning.
-		/// </summary>
-		public string Text { get; }
+        /// <summary>
+        /// Code identifier for errors and warnings reported by the IL linker.
+        /// </summary>
+        public int? Code { get; }
 
-		public static MessageContainer CreateErrorMessage (string text, int code, string subcategory = MessageSubCategory.None, MessageOrigin? origin = null)
-		{
-			if (!(code >= 1000 && code <= 2000))
-				throw new ArgumentException ($"The provided code '{code}' does not fall into the error category, which is in the range of 1000 to 2000 (inclusive).");
+        /// <summary>
+        /// Optional user friendly text describing the error or warning.
+        /// </summary>
+        public string Text { get; }
 
-			return new MessageContainer (MessageCategory.Error, text, code, subcategory, origin);
-		}
+        public static MessageContainer CreateErrorMessage (string text, int code, string subcategory = MessageSubCategory.None, MessageOrigin? origin = null)
+        {
+            if (!(code >= 1000 && code <= 2000))
+                throw new ArgumentException ($"The provided code '{code}' does not fall into the error category, which is in the range of 1000 to 2000 (inclusive).");
 
-		public static MessageContainer CreateWarningMessage (string text, int code, string subcategory = MessageSubCategory.None, MessageOrigin? origin = null)
-		{
-			if (!(code > 2000 && code <= 6000))
-				throw new ArgumentException ($"The provided code '{code}' does not fall into the warning category, which is in the range of 2001 to 6000 (inclusive).");
+            return new MessageContainer (MessageCategory.Error, text, code, subcategory, origin);
+        }
 
-			return new MessageContainer (MessageCategory.Warning, text, code, subcategory, origin);
-		}
+        public static MessageContainer CreateWarningMessage (string text, int code, string subcategory = MessageSubCategory.None, MessageOrigin? origin = null)
+        {
+            if (!(code > 2000 && code <= 6000))
+                throw new ArgumentException ($"The provided code '{code}' does not fall into the warning category, which is in the range of 2001 to 6000 (inclusive).");
 
-		public static MessageContainer CreateInfoMessage (string text)
-		{
-			return new MessageContainer (MessageCategory.Info, text, null);
-		}
+            return new MessageContainer (MessageCategory.Warning, text, code, subcategory, origin);
+        }
 
-		public static MessageContainer CreateDiagnosticMessage (string text)
-		{
-			return new MessageContainer (MessageCategory.Diagnostic, text, null);
-		}
+        public static MessageContainer CreateInfoMessage (string text)
+        {
+            return new MessageContainer (MessageCategory.Info, text, null);
+        }
 
-		private MessageContainer (MessageCategory category, string text, int? code, string subcategory = MessageSubCategory.None, MessageOrigin? origin = null)
-		{
-			Code = code;
-			Category = category;
-			Origin = origin;
-			SubCategory = subcategory;
-			Text = text;
-		}
+        public static MessageContainer CreateDiagnosticMessage (string text)
+        {
+            return new MessageContainer (MessageCategory.Diagnostic, text, null);
+        }
 
-		public override string ToString () => ToMSBuildString ();
+        private MessageContainer (MessageCategory category, string text, int? code, string subcategory = MessageSubCategory.None, MessageOrigin? origin = null)
+        {
+            Code = code;
+            Category = category;
+            Origin = origin;
+            SubCategory = subcategory;
+            Text = text;
+        }
 
-		public string ToMSBuildString ()
-		{
-			const string originApp = "illinker";
-			string origin = Origin?.ToString () ?? originApp;
+        public override string ToString () => ToMSBuildString ();
 
-			StringBuilder sb = new StringBuilder ();
-			sb.Append (origin).Append (":");
+        public string ToMSBuildString ()
+        {
+            const string originApp = "illinker";
+            string origin = Origin?.ToString () ?? originApp;
 
-			if (!string.IsNullOrEmpty (SubCategory))
-				sb.Append (" ").Append (SubCategory);
+            StringBuilder sb = new StringBuilder ();
+            sb.Append (origin).Append (":");
 
-			string cat;
-			switch (Category) {
-			case MessageCategory.Error:
-				cat = "error";
-				break;
-			case MessageCategory.Warning:
-				cat = "warning";
-				break;
-			default:
-				cat = "";
-				break;
-			}
+            if (!string.IsNullOrEmpty (SubCategory))
+                sb.Append (" ").Append (SubCategory);
 
-			if (!string.IsNullOrEmpty (cat)) {
-				sb.Append (" ")
-					.Append (cat)
-					.Append (" IL")
-					.Append (Code.Value.ToString ("D4"));
+            string cat;
+            switch (Category) {
+            case MessageCategory.Error:
+                cat = "error";
+                break;
+            case MessageCategory.Warning:
+                cat = "warning";
+                break;
+            default:
+                cat = "";
+                break;
+            }
 
-				if (!string.IsNullOrEmpty (Text))
-					sb.Append (": ").Append (Text);
-			} else {
-				sb.Append (" ").Append (Text);
-			}
+            if (!string.IsNullOrEmpty (cat)) {
+                sb.Append (" ")
+                    .Append (cat)
+                    .Append (" IL")
+                    .Append (Code.Value.ToString ("D4"));
 
-			// Expected output $"{Origin}: {SubCategory}{Category} IL{Code}: {Text}");
-			return sb.ToString ();
-		}
-	}
+                if (!string.IsNullOrEmpty (Text))
+                    sb.Append (": ").Append (Text);
+            } else {
+                sb.Append (" ").Append (Text);
+            }
+
+            // Expected output $"{Origin}: {SubCategory}{Category} IL{Code}: {Text}");
+            return sb.ToString ();
+        }
+    }
 }
