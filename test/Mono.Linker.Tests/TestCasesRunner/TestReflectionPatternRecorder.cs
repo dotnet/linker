@@ -29,10 +29,11 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			});
 		}
 
+		/// See a list of error and warning codes at https://github.com/mono/linker/blob/master/src/linker/ErrorAndWarningCodes.md
 		public void UnrecognizedReflectionAccessPattern (MethodDefinition sourceMethod, Instruction reflectionMethodCall, IMetadataTokenProvider accessedItem, string message)
 		{
 			LogMessage (MessageContainer.CreateWarningMessage (message, 2006, "Unrecognized reflection pattern",
-				MessageOrigin.TryGetOrigin (sourceMethod, reflectionMethodCall != null ? reflectionMethodCall.Offset : 0)));
+				reflectionMethodCall != null ? MessageOrigin.TryGetOrigin (sourceMethod, reflectionMethodCall.Offset) : null));
 			UnrecognizedPatterns.Add (new ReflectionAccessPattern {
 				SourceMethod = sourceMethod,
 				ReflectionMethodCall = reflectionMethodCall,
