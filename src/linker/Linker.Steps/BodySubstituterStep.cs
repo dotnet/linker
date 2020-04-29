@@ -41,6 +41,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
+		/// See a list of error and warning codes at https://github.com/mono/linker/blob/master/src/linker/ErrorAndWarningCodes.md
 		bool ShouldProcessSubstitutions (XPathNavigator nav)
 		{
 			var feature = GetAttribute (nav, "feature");
@@ -78,6 +79,7 @@ namespace Mono.Linker.Steps
 			ProcessAssemblies (nav.SelectChildren ("assembly", ""));
 		}
 
+		/// See a list of error and warning codes at https://github.com/mono/linker/blob/master/src/linker/ErrorAndWarningCodes.md
 		void ProcessAssemblies (XPathNodeIterator iterator)
 		{
 			while (iterator.MoveNext ()) {
@@ -102,6 +104,7 @@ namespace Mono.Linker.Steps
 			ProcessTypes (assembly, iterator.Current.SelectChildren ("type", ""));
 		}
 
+		/// See a list of error and warning codes at https://github.com/mono/linker/blob/master/src/linker/ErrorAndWarningCodes.md
 		void ProcessTypes (AssemblyDefinition assembly, XPathNodeIterator iterator)
 		{
 			while (iterator.MoveNext ()) {
@@ -156,6 +159,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
+		/// See a list of error and warning codes at https://github.com/mono/linker/blob/master/src/linker/ErrorAndWarningCodes.md
 		void ProcessMethod (TypeDefinition type, XPathNodeIterator iterator)
 		{
 			string signature = GetAttribute (iterator.Current, "signature");

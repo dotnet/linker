@@ -7,7 +7,7 @@ using System.Text;
 
 namespace Mono.Linker
 {
-	// See a list of error and warning codes at https://github.com/mono/linker/blob/master/src/linker/ErrorAndWarningCodes.md
+	/// See a list of error and warning codes at https://github.com/mono/linker/blob/master/src/linker/ErrorAndWarningCodes.md
 
 	public readonly struct MessageContainer
 	{

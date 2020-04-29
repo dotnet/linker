@@ -21,7 +21,7 @@ The XML descriptor preserves methods on type 'type', but this type has no method
 
 ### IL2003
 ```
-Could not resolve 'assembly' assembly dependency
+Could not resolve 'assembly' assembly dependency specified in a `PreserveDependency` attribute that targets method 'method'
 ```
 
 The assembly 'assembly' in `PreserveDependency` attribute could not be resolved.
@@ -30,7 +30,7 @@ The assembly 'assembly' in `PreserveDependency` attribute could not be resolved.
 
 ### IL2004
 ```
-Could not resolve 'type' type dependency
+Could not resolve 'type' type dependency specified in a `PreserveDependency` attribute that targets method 'method'
 ```
 
 The type 'type' in `PreserveDependency` attribute could not be resolved.
@@ -39,7 +39,7 @@ The type 'type' in `PreserveDependency` attribute could not be resolved.
 
 ### IL2005
 ```
-Could not resolve dependency member 'member' declared in type 'type'
+Could not resolve dependency member 'member' declared in type 'type' specified in a `PreserveDependency` attribute that targets method 'method'
 ```
 
 The member 'member' in `PreserveDependency` attribute could not be resolved.
@@ -47,6 +47,10 @@ The member 'member' in `PreserveDependency` attribute could not be resolved.
 ---
 
 ### IL2006
+```
+Unrecognized reflection pattern ...
+```
+
 The linker found an unrecognized reflection access pattern. The most likely reason for this is that the linker could not resolve a member that is being accessed dynamicallly. To fix this, use the `DynamicallyAccessedMemberAttribute` and specify the member kinds you're trying to access.
 
 ---

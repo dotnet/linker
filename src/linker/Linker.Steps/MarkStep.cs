@@ -563,6 +563,7 @@ namespace Mono.Linker.Steps
 			return PreserveDependencyLookupStep.IsPreserveDependencyAttribute (type);
 		}
 
+		/// See a list of error and warning codes at https://github.com/mono/linker/blob/master/src/linker/ErrorAndWarningCodes.md
 		protected virtual void MarkUserDependency (MemberReference context, CustomAttribute ca)
 		{
 			if (ca.HasProperties && ca.Properties[0].Name == "Condition") {
@@ -587,8 +588,7 @@ namespace Mono.Linker.Steps
 			if (args.Count >= 3 && args[2].Value is string assemblyName) {
 				assembly = _context.GetLoadedAssembly (assemblyName);
 				if (assembly == null) {
-					_context.LogMessage (MessageContainer.CreateWarningMessage ($"Could not resolve '{assemblyName}' assembly dependency",
-						2003, origin: MessageOrigin.TryGetOrigin (context.Resolve (), 0)));
+					_context.LogMessage (MessageContainer.CreateWarningMessage ($"Could not resolve '{assemblyName}' assembly dependency specified in a `PreserveDependency` attribute that targets method '{context.FullName}'", 2003));
 					return;
 				}
 			} else {
@@ -600,8 +600,7 @@ namespace Mono.Linker.Steps
 				td = (assembly ?? context.Module.Assembly).FindType (typeName);
 
 				if (td == null) {
-					_context.LogMessage (MessageContainer.CreateWarningMessage ($"Could not resolve '{typeName}' type dependency",
-						2004, origin: MessageOrigin.TryGetOrigin (context.Resolve (), 0)));
+					_context.LogMessage (MessageContainer.CreateWarningMessage ($"Could not resolve '{typeName}' type dependency specified in a `PreserveDependency` attribute that targets method '{context.FullName}'", 2004));
 					return;
 				}
 			} else {
@@ -634,8 +633,7 @@ namespace Mono.Linker.Steps
 			if (MarkDependencyField (td, member, new DependencyInfo (DependencyKind.PreservedDependency, ca)))
 				return;
 
-			_context.LogMessage (MessageContainer.CreateWarningMessage ($"Could not resolve dependency member '{member}' declared in type '{td.FullName}'",
-				2005, origin: MessageOrigin.TryGetOrigin (context.Resolve (), 0)));
+			_context.LogMessage (MessageContainer.CreateWarningMessage ($"Could not resolve dependency member '{member}' declared in type '{td.FullName}' specified in a `PreserveDependency` attribute that targets method '{context.FullName}'", 2005));
 		}
 
 		bool MarkDependencyMethod (TypeDefinition type, string name, string[] signature, in DependencyInfo reason)
@@ -1924,6 +1922,7 @@ namespace Mono.Linker.Steps
 			return null;
 		}
 
+		/// See a list of error and warning codes at https://github.com/mono/linker/blob/master/src/linker/ErrorAndWarningCodes.md
 		void ApplyPreserveInfo (TypeDefinition type)
 		{
 			ApplyPreserveMethods (type);
