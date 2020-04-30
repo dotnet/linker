@@ -1,6 +1,6 @@
 # Documentation Index
 
-This folder includes several documents that explain both high-level and low-level concepts about the IL Linker and related tools.
+This folder includes several documents that explain both high-level and low-level concepts about the ILLinker and related tools.
 
 ## Usage Docs
 - [MSBuild Integration](illink-tasks.md)
@@ -11,4 +11,4 @@ This folder includes several documents that explain both high-level and low-leve
 
 ## Design Docs
 - [Linker Steps Explained](design/steps-explained.md)
-- [Reflection and IL Linker](design/reflection-flow.md)
+- [Reflection Handling](design/reflection-flow.md)
