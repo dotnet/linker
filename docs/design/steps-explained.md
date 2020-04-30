@@ -22,7 +22,7 @@ Here are the current steps that are implemented, in the order they are used:
 
 ## ResolveFromAssembly or ResolveFromXml
 
-Those steps are used to initialize the context and pre-mark the root code
+These steps are used to initialize the context and pre-mark the root code
 that will be used as a source for the linker.
 
 Resolving from an assembly or resolving from an xml descriptor is a decision
