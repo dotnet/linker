@@ -3,6 +3,7 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.Substitutions
 {
+	[NoLinkedOutput]
 	[SetupLinkerSubstitutionFile ("FeatureSubstitutionsInvalid.xml")]
 	[SetupLinkerArgument ("--feature", "NoValueFeature", "true")]
 	[LogContains ("Feature NoValueFeature does not specify a \"featurevalue\" attribute")]

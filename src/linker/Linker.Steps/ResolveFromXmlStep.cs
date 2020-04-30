@@ -38,15 +38,6 @@ using Mono.Cecil;
 
 namespace Mono.Linker.Steps
 {
-
-	public class XmlResolutionException : Exception
-	{
-		public XmlResolutionException (string message, Exception innerException)
-			: base (message, innerException)
-		{
-		}
-	}
-
 	public class ResolveFromXmlStep : ResolveStep
 	{
 
@@ -98,8 +89,8 @@ namespace Mono.Linker.Steps
 
 			try {
 				ProcessAssemblies (Context, nav.SelectChildren ("assembly", _ns));
-			} catch (Exception ex) when (!(ex is XmlResolutionException)) {
-				throw new XmlResolutionException (string.Format ("Failed to process XML description: {0}", _xmlDocumentLocation), ex);
+			} catch (Exception ex) {
+				throw new LinkerErrorException (MessageContainer.CreateErrorMessage ($"Failed to process description file '{_xmlDocumentLocation}': {ex}", 1006));
 			}
 		}
 

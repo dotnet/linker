@@ -674,6 +674,13 @@ namespace Mono.Linker
 
 			try {
 				p.Process (context);
+			} catch (Exception ex) {
+				Console.Error.WriteLine ("The illinker exited with error:");
+				if (ex is LinkerErrorException le) {
+					context.LogMessage (le.MessageContainer);
+				} else {
+					Console.Error.WriteLine (ex);
+				}
 			} finally {
 				context.Tracer.Finish ();
 			}

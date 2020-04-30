@@ -1,4 +1,59 @@
 # IL Linker Error Codes
+
+### IL1001
+```
+Failed to process XML substitution: 'XML document location'. Feature 'feature' does not specify a "featurevalue" attribute
+```
+
+The substitution in 'XML document location' with feature value 'feature' does not use the `featurevalue` attribute. These attributes have to be used together.
+
+---
+
+### IL1002
+```
+Failed to process XML substitution: 'XML document location'. Unsupported non-boolean feature definition 'feature'
+```
+
+The substitution in 'XML document location' with feature value 'feature' sets the attribute `featurevalue` to a non-boolean value. Only boolean values are supported for this attribute.
+
+---
+
+### IL1003
+```
+Error processing 'XML document name': 'XmlException'
+```
+
+There was an error processing a resource linker descriptor. The most likely reason for this is that the descriptor file has syntactical errors.
+
+---
+
+### IL1004
+```
+Error processing 'XML document name': 'XmlException'
+```
+
+There was an error processing an embedded resource linker descriptor. The most likely reason for this is that the descriptor file has syntactical errors.
+
+---
+
+### IL1005
+```
+Error processing 'XML document name': 'XmlException'
+```
+
+There was an error processing an external substitution XML (`ILLink.Substitutions.xml`). The most likely reason for this is that the substitution file has syntactical errors.
+
+---
+
+### IL1006
+```
+Failed to process description file 'XML document location': 'XmlException'
+```
+
+There was an error processing an XML descriptor. The most likely reason for this is that the descriptor file has syntactical errors.
+
+---
+
 # IL Linker Warning Codes 
 
 ### IL2001
