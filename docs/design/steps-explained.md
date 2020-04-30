@@ -77,8 +77,8 @@ on their annotations, remove them or keep them.
 ## Clean
 
 This step will clean parts of the assemblies, like properties. If a property
-used to have a getter and a setter, and that after the mark & sweep steps,
-only the getter is linked, it will update the property to reflect that.
+used to have a getter and a setter and after the mark & sweep steps
+only the getter is retained it will update the property to reflect that.
 
 There are a few things to keep clean like properties we've seen, events,
 nested classes, and probably a few others.
