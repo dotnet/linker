@@ -59,7 +59,7 @@ it, and add it to the queue, if it hasn't been processed already.
 To know if something has been marked to be linked, or processed, the linker
 is using a functionality of Cecil called annotations. Almost everything in
 Cecil can be annotated. Concretely, it means that almost everything owns an
-Hashtable in which you can add what you want, using the keys and the values you
+hashtable in which you can add what you want, using the keys and the values you
 want.
 
 So the linker will annotate assemblies, types, methods and fields to know
