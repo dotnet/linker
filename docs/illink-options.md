@@ -98,8 +98,7 @@ The list of controllable features for .NET Core is available at https://docs.mic
 ### Using custom [substitutions](data-formats.md#substitution-format)
 
 An option called `--substitutions FILE` allows external customization of any
-method or field for assemblies which are linked. The syntax used for that is based on
-XML files. Using substitutions with `ipconstprop` optimization (enabled by
+method or field for assemblies which are linked. The syntax used is described in [data-formats document](../data-formats.md). Using substitutions with `ipconstprop` optimization (enabled by
 default) can help reduce output size as any dependencies under conditional
 logic which will be evaluated as unreachable will be removed.
 
