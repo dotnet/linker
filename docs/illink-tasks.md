@@ -2,7 +2,7 @@
 
 ## Usage
 
-To enable ILLinker set `PublishTrimmed` property to `true` in your project and publish your app as a self-contained.
+To enable ILLinker set `PublishTrimmed` property to `true` in your project and publish your app as self-contained.
 
 ```
 dotnet publish -r <rid> -c Release -p:PublishTrimmed=true
