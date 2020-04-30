@@ -84,7 +84,7 @@ One of the ways to reduce core assembly sizes is by removing framework capabilit
 is usually something that the developer decides about as it alters the program behaviour
 therefore the decision whether the size saving is worth it is left to the developer.
 
-Each feature can be controlled independly using `--feature NAME value` option.
+Each feature can be controlled independently using `--feature NAME value` option.
 
 The list of available features names is framework dependent and can vary between different framework
 versions. 
