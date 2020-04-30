@@ -13,8 +13,7 @@ The command:
 `illink -a Program.exe`
 
 will use the assembly `Program.exe` as a source. That means that the linker will
-walk through all the methods of Program.exe to generate only what is necessary
-for this assembly to run.
+start with the main entry point method of `Program.exe` (typically the `Main` method) and process all its dependencies to determine what is necessary for this assembly to run.
 
 ### Linking from an [XML descriptor](data-formats.md#descriptor-format)
 
