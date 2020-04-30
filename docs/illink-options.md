@@ -138,7 +138,7 @@ present in the input assemblies. The attributes can be applied to any existing m
 
 ### Ignoring embedded XML control files
 
-The linker recognizes embedded XML resources based on name as special one which can
+The linker recognizes embedded XML resources based on name as special ones which can
 alter the linking behaviour. The behaviour can be suppressed if necessary by using
 control options listed below.
 
