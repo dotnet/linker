@@ -15,7 +15,7 @@ linking process, such as the assemblies involved, the output directory and
 probably other useful stuff.
 
 The Pipeline is simply a queue of actions (steps), to be applied to the current
-context. The whole process of linking is split into those different steps
+context. The whole process of linking is split into these different steps
 that are all located in the Linker.Steps namespace.
 
 Here are the current steps that are implemented, in the order they are used:
