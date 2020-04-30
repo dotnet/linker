@@ -131,7 +131,7 @@ values and pass them as one key-value pair.
 
 ### Supplementary [custom attributes](data-formats.md#custom-attributes-annotations-format)
 
-Much of the linker behaviour is controled by the custom attributes but they are not always
+Much of the linker behaviour is controlled by the custom attributes but they are not always
 present in the input assemblies. The attributes can be applied to any existing metadata using
 `--attribute-defs FILE` option.
 
