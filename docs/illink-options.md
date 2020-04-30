@@ -23,7 +23,7 @@ The command:
 
 will use the XML descriptor as a source. That means that the linker will
 use this file to decide what to link in a set of assemblies. The format of the
-descriptors is described further on in this document.
+descriptors is described in [data-formats document](../data-formats.md).
 
 ### Actions on the assemblies
 
