@@ -1,6 +1,6 @@
 # ILLinker Errors and Warnings
 
-Every ILLinker error and warning has assign unique error code for easier
+Every IL Linker error and warning has an assigned unique error code for easier
 identification. The known codes are in the range 1000 to 6000. A custom
 steps should avoid using this range not to collide with ILLinker error and
 warning codes.
