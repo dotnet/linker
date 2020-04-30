@@ -63,7 +63,7 @@ Hashtable in which you can add what you want, using the keys and the values you
 want.
 
 So the linker will annotate assemblies, types, methods and fields to know
-what should be linked or not, and what has been processed, and how it should
+what should be linked or not, what has been processed and how it should
 process them.
 
 This is really useful as we don't have to recreate a full hierarchy of classes
