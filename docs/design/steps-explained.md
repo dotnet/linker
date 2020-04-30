@@ -54,7 +54,7 @@ instance, if a source assembly has a call to `Console.WriteLine`, the linker
 will resolve the appropriate method `WriteLine` in the `System.Console` type from the
 `System.Console` assembly, and add it to the queue. When this `WriteLine` method is
 dequeued, and processed, the linker will go through everything that is used in
-it, and add it to the queue, if they have not been processed already.
+it, and add it to the queue, if it hasn't been processed already.
 
 To know if something has been marked to be linked, or processed, the linker
 is using a functionality of Cecil called annotations. Almost everything in
