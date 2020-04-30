@@ -12,7 +12,7 @@ The command:
 
 `illink -a Program.exe`
 
-will use the assembly Program.exe as a source. That means that the linker will
+will use the assembly `Program.exe` as a source. That means that the linker will
 walk through all the methods of Program.exe to generate only what is necessary
 for this assembly to run.
 
