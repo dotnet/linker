@@ -4,7 +4,7 @@
 
 The `illink` is IL Linker version shipping with .NET Core or .NET 5 platforms. It's bundled with
 the .NET SDK and most of the options are accessible using msbuild properties but any option
-can also be passed using `ExtraArgs` property.
+can also be passed using `_ExtraTrimmerArgs` property.
 
 ### Linking from the main assembly
 
