@@ -42,7 +42,6 @@ namespace Mono.Linker
 			// Do nothing - there's no logging for successfully recognized patterns
 		}
 
-		/// See a list of error and warning codes at https://github.com/mono/linker/blob/master/src/linker/ErrorAndWarningCodes.md
 		public void UnrecognizedReflectionAccessPattern (MethodDefinition sourceMethod, Instruction reflectionMethodCall, IMetadataTokenProvider accessedItem, string message)
 		{
 			_context.LogMessage (MessageContainer.CreateWarningMessage (message, 2006, "Unrecognized reflection pattern",

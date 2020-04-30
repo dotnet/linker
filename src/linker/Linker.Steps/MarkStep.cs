@@ -52,13 +52,13 @@ namespace Mono.Linker.Steps
 		protected List<MethodBody> _unreachableBodies;
 
 #if DEBUG
-		static readonly DependencyKind [] _entireTypeReasons = new DependencyKind [] {
+		static readonly DependencyKind[] _entireTypeReasons = new DependencyKind[] {
 			DependencyKind.NestedType,
 			DependencyKind.PreservedDependency,
 			DependencyKind.TypeInAssembly,
 		};
 
-		static readonly DependencyKind [] _fieldReasons = new DependencyKind [] {
+		static readonly DependencyKind[] _fieldReasons = new DependencyKind[] {
 			DependencyKind.AccessedViaReflection,
 			DependencyKind.AlreadyMarked,
 			DependencyKind.Custom,
@@ -74,7 +74,7 @@ namespace Mono.Linker.Steps
 			DependencyKind.TypePreserve,
 		};
 
-		static readonly DependencyKind [] _typeReasons = new DependencyKind [] {
+		static readonly DependencyKind[] _typeReasons = new DependencyKind[] {
 			DependencyKind.AccessedViaReflection,
 			DependencyKind.AlreadyMarked,
 			DependencyKind.AttributeType,
@@ -100,7 +100,7 @@ namespace Mono.Linker.Steps
 			DependencyKind.VariableType,
 		};
 
-		static readonly DependencyKind [] _methodReasons = new DependencyKind [] {
+		static readonly DependencyKind[] _methodReasons = new DependencyKind[] {
 			DependencyKind.AccessedViaReflection,
 			DependencyKind.AlreadyMarked,
 			DependencyKind.AttributeConstructor,
@@ -563,7 +563,6 @@ namespace Mono.Linker.Steps
 			return PreserveDependencyLookupStep.IsPreserveDependencyAttribute (type);
 		}
 
-		/// See a list of error and warning codes at https://github.com/mono/linker/blob/master/src/linker/ErrorAndWarningCodes.md
 		protected virtual void MarkUserDependency (MemberReference context, CustomAttribute ca)
 		{
 			if (ca.HasProperties && ca.Properties[0].Name == "Condition") {
@@ -1922,7 +1921,6 @@ namespace Mono.Linker.Steps
 			return null;
 		}
 
-		/// See a list of error and warning codes at https://github.com/mono/linker/blob/master/src/linker/ErrorAndWarningCodes.md
 		void ApplyPreserveInfo (TypeDefinition type)
 		{
 			ApplyPreserveMethods (type);
