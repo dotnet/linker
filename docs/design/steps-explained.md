@@ -36,9 +36,7 @@ current context.
 ## Blacklist
 
 This step is used if and only if you have specified that the code should be
-linked. It will load a bunch of resources from the assemblies, that are
-actually a few XML descriptors, that will ensure that some types and methods
-that are used from inside the runtime are properly linked and not removed.
+linked. It will load XML descriptor resources from the participating assemblies. These describe which types and methods are necessary to be properly linked and not removed (for example because they are directly used from inside the runtime).
 
 It is doing so by inserting a ResolveFromXml step per blacklist in the
 pipeline.
