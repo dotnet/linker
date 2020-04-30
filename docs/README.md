@@ -4,8 +4,8 @@ This folder includes several documents that explain both high-level and low-leve
 
 ## Usage Docs
 - [MSBuild Integration](illink-tasks.md)
-- [ILLinker Command Line Options](illink-options.md)
-- [ILLinker Error and Warning Codes](error-codes.md)
+- [Available Command Line Options](illink-options.md)
+- [Error and Warning Codes](error-codes.md)
 - [Data Formats](data-formats.md)
 - [Authoring Custom Steps](custom-steps.md)
 

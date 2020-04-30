@@ -59,7 +59,8 @@ The linker can be invoked as an MSBuild task, `ILLink`. We recommend not using t
 
 By default, the linker will operate in a full linking mode for all framework or 
 core managed assemblies. The 3rd party libraries or final app will be analyzed but not linked.
-This setting can be altered by setting  
+This setting can be altered by setting `_TrimmerDefaultAction` property to different
+linker action mode.
 
 ### .NET 3.x
 

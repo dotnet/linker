@@ -25,7 +25,7 @@ Here are the current steps that are implemented, in the order they are used:
 These steps are used to initialize the context and pre-mark the root code
 that will be used as a source for the linker.
 
-Resolving from an assembly or resolving from an xml descriptor is a decision
+Resolving from an assembly or resolving from XML descriptor is a decision
 taken in the command line parsing.
 
 ## LoadReferences
@@ -57,8 +57,8 @@ dequeued, and processed, the linker will go through everything that is used in
 it, and add it to the queue, if it hasn't been processed already.
 
 To know if something has been marked to be linked, or processed, the linker
-is using a functionality of Cecil called annotations. Almost everything in
-Cecil can be annotated. Concretely, it means that almost everything owns an
+is using functionality of Cecil called annotations. Almost everything in
+Cecil can be annotated. Specifically, it means that almost everything owns a
 hashtable in which you can add what you want, using the keys and the values you
 want.
 
@@ -66,7 +66,7 @@ So the linker will annotate assemblies, types, methods and fields to know
 what should be linked or not, what has been processed and how it should
 process them.
 
-This is really useful as we don't have to recreate a full hierarchy of classes
+This is useful as we don't have to recreate a full hierarchy of classes
 to encapsulate the different Cecil types to add the few pieces of information we want.
 
 ## Sweep
@@ -88,4 +88,4 @@ nested classes, and probably a few others.
 For each assembly in the context, this step will act on the action associated
 with the assembly. If the assembly is marked as skip, it won't do anything,
 if it's marked as copy, it will copy the assembly to the output directory,
-and if it's link, it will save the modified assembly to the output directory.
+and if it's linked, it will save the modified assembly to the output directory.

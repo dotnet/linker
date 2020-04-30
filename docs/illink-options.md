@@ -37,8 +37,6 @@ The linker can do the following things on all or individual assemblies
 - `link` - link them to reduce their size
 - `delete`- remove them from the output
 - `save` - save them in memory without linking
-- `AddBypassNGen` - add BypassNGenAttribute to unmarked methods
-- `AddBypassNgenUsed` - add BypassNGenAttribute to unmarked methods in used assemblies
 
 You can specify an action per assembly using `-p` option like this:
 
@@ -86,20 +84,19 @@ therefore the decision whether the size saving is worth it is left to the develo
 
 Each feature can be controlled independently using `--feature NAME value` option.
 
-The list of available features names is framework dependent and can vary between different framework
-versions. 
+The list of available feature names is framework-dependent and can vary between different
+framework versions. 
 
 The list of controllable features for .NET Core is available at https://docs.microsoft.com/en-us/dotnet/core/run-time-config/.
 
-
-`ILLink.Substitutions.xml`
-
-### Using custom [substitutions](data-formats.md#substitution-format)
+### Using custom substitutions
 
 An option called `--substitutions FILE` allows external customization of any
-method or field for assemblies which are linked. The syntax used is described in [data-formats document](../data-formats.md). Using substitutions with `ipconstprop` optimization (enabled by
-default) can help reduce output size as any dependencies under conditional
-logic which will be evaluated as unreachable will be removed.
+method or field for assemblies which are linked. The syntax used is fully described
+in [data-formats document](data-formats.md#substitution-format). Using substitutions
+with `ipconstprop` optimization (enabled by default) can help reduce output 
+size as any dependencies under conditional logic which will be evaluated as 
+unreachable will be removed.
 
 ### Adding custom linker steps
 
