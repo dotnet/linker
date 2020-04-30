@@ -16,7 +16,7 @@ To create such project you create a library project and add package reference to
 `Microsoft.NET.ILLink` package.
 
 Such library then need to be registered with the linker using `--custom-step` option or
-using `_TrimmerCustomSteps` msbuild property.
+using `_TrimmerCustomSteps` msbuild `ItemGroup`.
 
 ## Custom Step Example
 
