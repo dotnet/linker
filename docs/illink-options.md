@@ -80,7 +80,7 @@ Example:
 
 ### Excluding framework features
 
-One of the ways how to reduce core assemblies size is by removing framework capabilities. This
+One of the ways to reduce core assembly sizes is by removing framework capabilities. This
 is usually something that the developer decides about as it alters the program behaviour
 therefore the decision whether the size saving is worth it is left to the developer.
 
