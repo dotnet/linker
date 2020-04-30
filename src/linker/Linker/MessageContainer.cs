@@ -56,7 +56,7 @@ namespace Mono.Linker
 		/// <param name="code">Code of the warning. Please see https://github.com/mono/linker/blob/master/src/linker/ErrorAndWarningCodes.md
 		/// for the list of warnings and possibly add a new one</param>
 		/// <param name="subcategory">Optionally, further categorize this warning</param>
-		/// <param name="origin">Filename, line, and column where the error was found</param>
+		/// <param name="origin">Filename, line, and column where the warning was found</param>
 		/// <returns>New MessageContainer of 'Warning' category</returns>
 		public static MessageContainer CreateWarningMessage (string text, int code, string subcategory = MessageSubCategory.None, MessageOrigin? origin = null)
 		{
