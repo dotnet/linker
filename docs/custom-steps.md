@@ -45,7 +45,7 @@ namespace MyLinkerExtension
 ### Consuming External Data
 
 When building a custom step which needs interaction with external values (for example for the custom step
-configuration), there is option `--custom-data` which allow passing the data to the linker. The data are
+configuration), there is an option `--custom-data` which allows passing the data to the linker. The data are
 stored inside a linker context and can be obtained in the custom step using `context.TryGetCustomData` method.
 
 ### Reporting Custom Errors and Warnings
