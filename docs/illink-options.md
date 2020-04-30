@@ -51,7 +51,7 @@ or
 Or you can specify what to do for the core assemblies.
 
 Core assemblies are the assemblies that belong to the base class library,
-like mscorlib.dll, System.dll or System.Windows.Forms.dll.
+like `System.Private.CoreLib.dll`, `System.dll` or `System.Windows.Forms.dll`.
 
 You can specify what action to do on the core assemblies with the option:
 
