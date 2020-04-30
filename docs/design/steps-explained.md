@@ -51,7 +51,7 @@ to find references to other fields, types, or methods.
 When it encounters such a reference, it will resolve the original definition of
 this reference, and add this to the queue of items to be processed. For
 instance, if a source assembly has a call to `Console.WriteLine`, the linker
-will resolve the appropriate method WriteLine in the Console type from the
+will resolve the appropriate method `WriteLine` in the `System.Console` type from the
 mscorlib assembly, and add it to the queue. When this WriteLine method will be
 dequeued, and processed, the linker will go through everything that is used in
 it, and add it to the queue, if they have not been processed already.
