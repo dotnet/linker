@@ -12,7 +12,7 @@ important objects, a LinkContext, and a Pipeline.
 
 The LinkContext contains all the information that will be used during the
 linking process, such as the assemblies involved, the output directory and
-probably other useful stuff.
+other useful things.
 
 The Pipeline is simply a queue of actions (steps), to be applied to the current
 context. The whole process of linking is split into these different steps
