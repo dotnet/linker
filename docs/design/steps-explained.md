@@ -35,7 +35,7 @@ current context.
 
 ## Blacklist
 
-This step is used if and only if you have specified that the core should be
+This step is used if and only if you have specified that the code should be
 linked. It will load a bunch of resources from the assemblies, that are
 actually a few XML descriptors, that will ensure that some types and methods
 that are used from inside the runtime are properly linked and not removed.
