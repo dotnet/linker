@@ -126,7 +126,7 @@ Or before a specific step:
 
 For advanced custom steps which need interaction with external values there is a
 `--custom-data KEY=VALUE` option. Each key can have a simple value assigned which means
-if you need to store multiple values for the same key use custom separator for the
+if you need to store multiple values for the same key, you should use custom separators for the
 values and pass them as one key-value pair.
 
 ### Supplementary [custom attributes](data-formats.md#custom-attributes-annotations-format)
