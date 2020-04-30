@@ -68,7 +68,7 @@ assemblies. You can change the output directory with the option:
 If you specify the ouput directory `.`, please ensure that you won't write over
 important assemblies of yours.
 
-### Specifying assemblies look up paths
+### Specifying assembly lookup paths
 
 By default, the linker will first look for assemblies in the directories `.`
 and `bin`. You can specify additional locations where assemblies will be searched
