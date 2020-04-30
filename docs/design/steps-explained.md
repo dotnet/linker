@@ -1,6 +1,6 @@
 # Inside the linker
 
-The linker is a quite small piece of code, and it pretty simple to address.
+The linker is quite a small piece of code, and it's pretty simple to address.
 Its only dependency is `Mono.Cecil`, that is used to read, modify and write back
 the assemblies.
 
