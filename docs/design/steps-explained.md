@@ -7,7 +7,7 @@ the assemblies.
 Everything is located in the namespace Linker, or in sub namespaces.
 Being a command line utility, its entry point function is in the class Driver.
 
-This class is in charge of analyzing the command line, and to instantiate two
+This class is in charge of analyzing the command line, and instantiating two
 important objects, a LinkContext, and a Pipeline.
 
 The LinkContext contains all the information that will be used during the
