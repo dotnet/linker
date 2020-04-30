@@ -124,7 +124,7 @@ Or before a specific step:
 
 ### Passing data to custom steps
 
-For advanced custom steps which needs interaction with external values there is
+For advanced custom steps which need interaction with external values there is a
 `--custom-data KEY=VALUE` option. Each key can have a simple value assigned which means
 if you need to store multiple values for the same key use custom separator for the
 values and pass them as one key-value pair.
