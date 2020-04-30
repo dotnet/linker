@@ -164,8 +164,7 @@ The `required` attribute specifies that if the type is not marked, during the ma
 
 ### Substitute method body with a constant
 
-The `value` attribute is optional and only required when the method requires needs to
-return the non-default value and the return type is not `void`.
+The `value` attribute is optional and only required when the method should be hardcoded to return a non-default value and the return type is not `void`.
 
 ```xml
 <linker>
