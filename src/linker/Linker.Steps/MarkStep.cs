@@ -56,6 +56,8 @@ namespace Mono.Linker.Steps
 			DependencyKind.NestedType,
 			DependencyKind.PreservedDependency,
 			DependencyKind.TypeInAssembly,
+			DependencyKind.AccessedViaReflection,
+			DependencyKind.BaseType,
 		};
 
 		static readonly DependencyKind[] _fieldReasons = new DependencyKind[] {
@@ -261,7 +263,7 @@ namespace Mono.Linker.Steps
 					EnqueueMethod (method, DependencyInfo.AlreadyMarked);
 		}
 
-		void MarkEntireType (TypeDefinition type, in DependencyInfo reason)
+		internal void MarkEntireType (TypeDefinition type, bool includeBaseTypes, in DependencyInfo reason)
 		{
 #if DEBUG
 			if (!_entireTypeReasons.Contains (reason.Kind))
@@ -270,10 +272,14 @@ namespace Mono.Linker.Steps
 
 			if (type.HasNestedTypes) {
 				foreach (TypeDefinition nested in type.NestedTypes)
-					MarkEntireType (nested, new DependencyInfo (DependencyKind.NestedType, type));
+					MarkEntireType (nested, includeBaseTypes, new DependencyInfo (DependencyKind.NestedType, type));
 			}
 
 			Annotations.Mark (type, reason);
+			var baseTypeReference = type.BaseType;
+			if (includeBaseTypes && baseTypeReference != null && baseTypeReference.Resolve() != null) {
+				MarkEntireType (baseTypeReference.Resolve (), includeBaseTypes: true, new DependencyInfo (DependencyKind.BaseType, type));
+			}
 			MarkCustomAttributes (type, new DependencyInfo (DependencyKind.CustomAttribute, type));
 			MarkTypeSpecialCustomAttributes (type);
 
@@ -622,7 +628,7 @@ namespace Mono.Linker.Steps
 			}
 
 			if (member == "*") {
-				MarkEntireType (td, new DependencyInfo (DependencyKind.PreservedDependency, ca));
+				MarkEntireType (td, includeBaseTypes: false, new DependencyInfo (DependencyKind.PreservedDependency, ca));
 				return;
 			}
 
@@ -1003,7 +1009,7 @@ namespace Mono.Linker.Steps
 			}
 
 			foreach (TypeDefinition type in assembly.MainModule.Types)
-				MarkEntireType (type, new DependencyInfo (DependencyKind.TypeInAssembly, assembly));
+				MarkEntireType (type, includeBaseTypes: false, new DependencyInfo (DependencyKind.TypeInAssembly, assembly));
 		}
 
 		void ProcessModule (AssemblyDefinition assembly)
