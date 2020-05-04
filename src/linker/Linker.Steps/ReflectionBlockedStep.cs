@@ -61,7 +61,7 @@ namespace Mono.Linker.Steps
 
 			var ca = new CustomAttribute (ctor);
 			caProvider.CustomAttributes.Add (ca);
-			Annotations.Mark (ca, new DependencyInfo (DependencyKind.DisablePrivateReflection, ca));
+			Annotations.Mark (ca, new MarkingInfo (MarkingReason.ReflectionBlocked, ca));
 		}
 	}
 }

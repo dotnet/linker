@@ -1,30 +1,8 @@
-﻿//
-// Tracer.cs
-//
-// Copyright (C) 2017 Microsoft Corporation (http://www.microsoft.com)
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 using Mono.Cecil;
-using Mono.Linker.Steps;
 using System;
 using System.IO;
 using System.IO.Compression;
@@ -42,6 +20,9 @@ namespace Mono.Linker
 		private readonly LinkContext context;
 		private XmlWriter writer;
 		private Stream stream;
+
+		readonly static System.Reflection.FieldInfo etModuleFieldInfo =
+			typeof (ExportedType).GetField ("module", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
 		public XmlDependencyRecorder (LinkContext context, string fileName = null)
 		{
@@ -71,7 +52,7 @@ namespace Mono.Linker
 			writer.WriteStartDocument ();
 			writer.WriteStartElement ("dependencies");
 			writer.WriteStartAttribute ("version");
-			writer.WriteString ("1.2");
+			writer.WriteString ("1.3");
 			writer.WriteEndAttribute ();
 		}
 
@@ -89,74 +70,95 @@ namespace Mono.Linker
 			stream = null;
 		}
 
-		public void RecordDependency (object target, in DependencyInfo reason, bool marked)
+		public void RecordDependency (object target, in MarkingInfo markingInfo)
 		{
-			// For now, just report a dependency from source to target without noting the DependencyKind.
-			RecordDependency (reason.Source, target, marked);
-		}
+			if (target == null)
+				throw new ArgumentNullException (nameof (target));
 
-		public void RecordDependency (object source, object target, bool marked)
-		{
+			object source = markingInfo.Source;
+			if (source == null)
+				throw new ArgumentNullException (nameof (source));
+
 			if (!ShouldRecord (source) && !ShouldRecord (target))
-				return;
-
-			// We use a few hacks to work around MarkStep outputting thousands of edges even
-			// with the above ShouldRecord checks. Ideally we would format these into a meaningful format
-			// however I don't think that is worth the effort at the moment.
-
-			// Prevent useless logging of attributes like `e="Other:Mono.Cecil.CustomAttribute"`.
-			if (source is CustomAttribute || target is CustomAttribute)
-				return;
-
-			// Prevent useless logging of interface implementations like `e="InterfaceImpl:Mono.Cecil.InterfaceImplementation"`.
-			if (source is InterfaceImplementation || target is InterfaceImplementation)
 				return;
 
 			if (source != target) {
 				writer.WriteStartElement ("edge");
-				if (marked)
-					writer.WriteAttributeString ("mark", "1");
-				writer.WriteAttributeString ("b", TokenString (source));
-				writer.WriteAttributeString ("e", TokenString (target));
+				writer.WriteAttributeString ("b", TokenString (source, out string bAssembly));
+				if (bAssembly != null)
+					writer.WriteAttributeString ("ba", bAssembly);
+
+				writer.WriteAttributeString ("e", TokenString (target, out string eAssembly));
+				if (eAssembly != null && bAssembly != eAssembly)
+					writer.WriteAttributeString ("ea", eAssembly);
+
+				writer.WriteAttributeString ("c", markingInfo.Reason.ToString ());
 				writer.WriteEndElement ();
 			}
 		}
 
-		static bool IsAssemblyBound (TypeDefinition td)
+		string TokenString (object o, out string assembly)
 		{
-			do {
-				if (td.IsNestedPrivate || td.IsNestedAssembly || td.IsNestedFamilyAndAssembly)
-					return true;
+			switch (o) {
+			case MemberReference mr:
+				assembly = mr.Module.Assembly.Name.Name;
+				return FormatTypeReference (mr.MetadataToken.TokenType, mr);
 
-				td = td.DeclaringType;
-			} while (td != null);
+			case CustomAttribute ca:
+				assembly = ca.AttributeType.Module.Assembly.Name.Name;
+				return FormatTypeReference (TokenType.CustomAttribute, ca.AttributeType);
 
-			return false;
+			case ExportedType et:
+				ModuleDefinition md = (ModuleDefinition) etModuleFieldInfo.GetValue (et);
+				assembly = md.Assembly.Name.Name;
+				return TokenTypeToCodeID (TokenType.ExportedType) + ":" + et.FullName;
+
+			case IMetadataTokenProvider itp:
+				assembly = null;
+				return TokenTypeToCodeID (itp.MetadataToken.TokenType) + ":" + o.ToString ();
+
+			case (string str, AssemblyDefinition a):
+				assembly = a.Name.Name;
+				return "OT:" + str.ToString ();
+
+			default:
+				assembly = null;
+				return "OT:" + o.ToString ();
+			}
 		}
 
-		string TokenString (object o)
+		static string FormatTypeReference (TokenType tokenType, MemberReference tr)
 		{
-			if (o == null)
-				return "N:null";
-
-			if (o is TypeReference t) {
-				bool addAssembly = true;
-				var td = t as TypeDefinition ?? t.Resolve ();
-
-				if (td != null) {
-					addAssembly = td.IsNotPublic || IsAssemblyBound (td);
-					t = td;
-				}
-
-				var addition = addAssembly ? $":{t.Module}" : "";
-
-				return $"{(o as IMetadataTokenProvider).MetadataToken.TokenType}:{o}{addition}";
+			string fullName = tr.FullName;
+			if (tr is MemberReference || tr is FieldReference || tr is PropertyReference || tr is EventReference) {
+				// Remove return-type
+				int rt_idx = fullName.IndexOf (' ');
+				fullName = fullName.Substring (rt_idx + 1);
 			}
 
-			if (o is IMetadataTokenProvider)
-				return (o as IMetadataTokenProvider).MetadataToken.TokenType + ":" + o;
+			return TokenTypeToCodeID (tokenType) + ":" + fullName;
+		}
 
-			return "Other:" + o;
+		static string TokenTypeToCodeID (TokenType tokenType)
+		{
+			return tokenType switch
+			{
+				TokenType.Assembly => "AS",
+				TokenType.Module => "MO",
+				TokenType.ModuleRef => "MF",
+				TokenType.TypeDef => "TD",
+				TokenType.TypeSpec => "TS",
+				TokenType.Method => "ME",
+				TokenType.MethodSpec => "MS",
+				TokenType.Field => "FI",
+				TokenType.Property => "PR",
+				TokenType.CustomAttribute => "CA",
+				TokenType.InterfaceImpl => "II",
+				TokenType.MemberRef => "MR",
+				TokenType.Event => "EV",
+				TokenType.ExportedType => "ET",
+				_ => throw new NotImplementedException (tokenType.ToString ()),
+			};
 		}
 
 		bool WillAssemblyBeModified (AssemblyDefinition assembly)

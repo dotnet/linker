@@ -23,7 +23,7 @@ The command:
 
 will use the XML descriptor as a source. That means that the linker will
 use this file to decide what to link in a set of assemblies. The format of the
-descriptors is described in [data-formats document](../data-formats.md).
+descriptors is described in [data-formats document](data-formats.md).
 
 ### Actions on the assemblies
 
@@ -143,6 +143,15 @@ control options listed below.
 | Descriptor  | assemblyname.xml  |   --ignore-descriptors |
 | Substition  | ILLink.Substitution.xml  |  --ignore-substitutions |
 
+### Detailed dependencies tracing
+
+For tracking why linker kept specific metadata you can use `--trace-dependencies` option
+which by default writes detailed information into a compressed file called `linker-dependencies.xml.gz`
+inside output directory. The default output filename can be changed with `--dependencies-file`
+option.
+
+The format of the data is out XML and it's intentionally human-readable but due
+to a large amount of data, it's recommended to use tools which can analyze the data.
 
 ## monolinker specific options
 

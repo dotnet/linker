@@ -187,7 +187,7 @@ namespace Mono.Linker
 			var body_substituter_steps = new Stack<string> ();
 			var custom_steps = new Stack<string> ();
 			var set_optimizations = new List<(CodeOptimizations, string, bool)> ();
-			bool dumpDependencies = false;
+			bool trace_dependencies = false;
 			string dependenciesFileName = null;
 			bool removeCAS = true;
 			bool new_mvid_used = false;
@@ -222,8 +222,8 @@ namespace Mono.Linker
 
 						continue;
 
-					case "--dump-dependencies":
-						dumpDependencies = true;
+					case "--trace-dependencies":
+						trace_dependencies = true;
 						continue;
 
 					case "--reduced-tracing":
@@ -553,7 +553,7 @@ namespace Mono.Linker
 				return -1;
 			}
 
-			if (dumpDependencies)
+			if (trace_dependencies)
 				AddXmlDependencyRecorder (context, dependenciesFileName);
 
 			if (set_optimizations.Count > 0) {
@@ -1036,9 +1036,9 @@ namespace Mono.Linker
 
 			Console.WriteLine ();
 			Console.WriteLine ("Analyzer");
-			Console.WriteLine ("  --dependencies-file PATH   Specify the dependencies output. Defaults to 'output/linker-dependencies.xml.gz'");
-			Console.WriteLine ("  --dump-dependencies        Dump dependencies for the linker analyzer tool");
-			Console.WriteLine ("  --reduced-tracing          Reduces dependency output related to assemblies that will not be modified");
+			Console.WriteLine ("  --dependencies-file FILE   Specify the dependencies file in output directory. Defaults to 'linker-dependencies.xml.gz'");
+			Console.WriteLine ("  --trace-dependencies       Record retained dependencies for detailed analysis");
+			Console.WriteLine ("  --reduced-tracing          Reduces dependency output to assemblies that will be modified");
 			Console.WriteLine ("");
 		}
 

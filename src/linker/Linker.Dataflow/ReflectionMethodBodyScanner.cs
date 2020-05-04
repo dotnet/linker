@@ -707,7 +707,7 @@ namespace Mono.Linker.Dataflow
 									reflectionContext.RecordHandledPattern ();
 								} else {
 									var methodCalling = callingMethodBody.Method;
-									reflectionContext.RecordRecognizedPattern (foundType, () => _markStep.MarkType (foundType, new DependencyInfo (DependencyKind.AccessedViaReflection, methodCalling)));
+									reflectionContext.RecordRecognizedPattern (foundType, () => _markStep.MarkType (foundType, new MarkingInfo (MarkingReason.Reflection, methodCalling)));
 									methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new SystemTypeValue (foundType));
 								}
 							} else if (typeNameValue == NullValue.Instance) {
@@ -1066,7 +1066,7 @@ namespace Mono.Linker.Dataflow
 						reflectionContext.AnalyzingPattern ();
 						foreach (var typeHandleValue in methodParams[0].UniqueValues ()) {
 							if (typeHandleValue is RuntimeTypeHandleValue runtimeTypeHandleValue) {
-								_markStep.MarkStaticConstructor (runtimeTypeHandleValue.TypeRepresented, new DependencyInfo (DependencyKind.AccessedViaReflection, reflectionContext.Source));
+								_markStep.MarkStaticConstructor (runtimeTypeHandleValue.TypeRepresented, new MarkingInfo (MarkingReason.Reflection, reflectionContext.Source));
 								reflectionContext.RecordHandledPattern ();
 							} else if (typeHandleValue == NullValue.Instance)
 								reflectionContext.RecordHandledPattern ();
@@ -1239,7 +1239,7 @@ namespace Mono.Linker.Dataflow
 		{
 			if (requiredMemberKinds == DynamicallyAccessedMemberTypes.All) {
 				var source = reflectionContext.Source;
-				reflectionContext.RecordRecognizedPattern (typeDefinition, () => _markStep.MarkEntireType (typeDefinition, includeBaseTypes: true, new DependencyInfo (DependencyKind.AccessedViaReflection, source)));
+				reflectionContext.RecordRecognizedPattern (typeDefinition, () => _markStep.MarkEntireType (typeDefinition, includeBaseTypes: true, new MarkingInfo (MarkingReason.Reflection, source)));
 				return;
 			}
 
@@ -1305,7 +1305,7 @@ namespace Mono.Linker.Dataflow
 					continue;
 
 				var source = reflectionContext.Source;
-				reflectionContext.RecordRecognizedPattern (method, () => _markStep.MarkIndirectlyCalledMethod (method, new DependencyInfo (DependencyKind.AccessedViaReflection, source)));
+				reflectionContext.RecordRecognizedPattern (method, () => _markStep.MarkIndirectlyCalledMethod (method, new MarkingInfo (MarkingReason.Reflection, source)));
 			}
 		}
 
@@ -1342,7 +1342,7 @@ namespace Mono.Linker.Dataflow
 						continue;
 
 					var source = reflectionContext.Source;
-					reflectionContext.RecordRecognizedPattern (method, () => _markStep.MarkIndirectlyCalledMethod (method, new DependencyInfo (DependencyKind.AccessedViaReflection, source)));
+					reflectionContext.RecordRecognizedPattern (method, () => _markStep.MarkIndirectlyCalledMethod (method, new MarkingInfo (MarkingReason.Reflection, source)));
 				}
 
 				type = type.BaseType?.Resolve ();
@@ -1379,7 +1379,7 @@ namespace Mono.Linker.Dataflow
 						continue;
 
 					var source = reflectionContext.Source;
-					reflectionContext.RecordRecognizedPattern (field, () => _markStep.MarkField (field, new DependencyInfo (DependencyKind.AccessedViaReflection, source)));
+					reflectionContext.RecordRecognizedPattern (field, () => _markStep.MarkField (field, new MarkingInfo (MarkingReason.Reflection, source)));
 				}
 
 				type = type.BaseType?.Resolve ();
@@ -1408,7 +1408,7 @@ namespace Mono.Linker.Dataflow
 				result.Add (nestedType);
 
 				var source = reflectionContext.Source;
-				reflectionContext.RecordRecognizedPattern (nestedType, () => _markStep.MarkType (nestedType, new DependencyInfo (DependencyKind.AccessedViaReflection, source)));
+				reflectionContext.RecordRecognizedPattern (nestedType, () => _markStep.MarkType (nestedType, new MarkingInfo (MarkingReason.Reflection, source)));
 			}
 
 			return result.ToArray ();
@@ -1454,13 +1454,13 @@ namespace Mono.Linker.Dataflow
 					var source = reflectionContext.Source;
 					reflectionContext.RecordRecognizedPattern (property, () => {
 						// Marking the property itself actually doesn't keep it (it only marks its attributes and records the dependency), we have to mark the methods on it
-						_markStep.MarkProperty (property, new DependencyInfo (DependencyKind.AccessedViaReflection, source));
+						_markStep.MarkProperty (property);
 						// TODO - this is sort of questionable - when somebody asks for a property they probably want to call either get or set
 						// but linker tracks those separately, and so accessing the getter/setter will raise a warning as it's potentially trimmed.
 						// So including them here doesn't actually remove the warning even if the code is written correctly.
-						_markStep.MarkMethodIfNotNull (property.GetMethod, new DependencyInfo (DependencyKind.AccessedViaReflection, source));
-						_markStep.MarkMethodIfNotNull (property.SetMethod, new DependencyInfo (DependencyKind.AccessedViaReflection, source));
-						_markStep.MarkMethodsIf (property.OtherMethods, m => true, new DependencyInfo (DependencyKind.AccessedViaReflection, source));
+						_markStep.MarkMethodIfNotNull (property.GetMethod, new MarkingInfo (MarkingReason.Reflection, source));
+						_markStep.MarkMethodIfNotNull (property.SetMethod, new MarkingInfo (MarkingReason.Reflection, source));
+						_markStep.MarkMethodsIf (property.OtherMethods, m => true, new MarkingInfo (MarkingReason.Reflection, source));
 					});
 				}
 
@@ -1509,8 +1509,8 @@ namespace Mono.Linker.Dataflow
 					var source = reflectionContext.Source;
 					reflectionContext.RecordRecognizedPattern (@event, () => {
 						// MarkEvent actually marks the add/remove/invoke methods as well, so no need to mark those explicitly
-						_markStep.MarkEvent (@event, new DependencyInfo (DependencyKind.AccessedViaReflection, source));
-						_markStep.MarkMethodsIf (@event.OtherMethods, m => true, new DependencyInfo (DependencyKind.AccessedViaReflection, source));
+						_markStep.MarkEvent (@event);
+						_markStep.MarkMethodsIf (@event.OtherMethods, m => true, new MarkingInfo (MarkingReason.Reflection, source));
 					});
 				}
 

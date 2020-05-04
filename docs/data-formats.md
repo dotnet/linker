@@ -1,6 +1,18 @@
 # Data Formats
 
+## Input Data Formats
+
 ILLinker uses several data formats to control or influnce the linking process. The data formats are not versioned but are backward compatible.
+
+- [Descriptors](#descriptor-format)
+- [Substitutions](#substitution-format)
+- [Custom Attributes Annotations](#custom-attributes-annotations-format)
+
+## Output Data Formats
+
+- [Dependencies Trace](#dependencies-trace-format)
+
+# Data Formats in Details
 
 ## Descriptor Format
 
@@ -236,7 +248,7 @@ are applied.
 </linker>
 ```
 
-###Custom attribute on type
+### Custom attribute on type
 
 This allows to add a custom attribute to a class, interface, delegate, struct or enum 
 
@@ -418,4 +430,86 @@ For fields and properties, you need to include the name since they are not order
   <field name="fieldName">SomeValue</field>
   <property name="propertyName">SomeValue</property>
 </attribute>
+```
+
+## Dependencies Trace Format
+
+This is the format of data used to capture linker logic about why
+members, type and other metadata elements were marked by the linker
+as required and persisted in the linked output. The format output edges
+of the graph for every dependency which was tracked by the linker.
+
+### Schema Design - Version 1.3
+
+```xsd
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="dependencies">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="edge" maxOccurs="unbounded" minOccurs="0">
+          <xs:complexType>
+            <xs:simpleContent>
+              <xs:extension base="xs:string">
+                <xs:attribute type="xs:string" name="b"/>
+                <xs:attribute type="xs:string" name="ba" use="optional"/>
+                <xs:attribute type="xs:string" name="e"/>
+                <xs:attribute type="xs:string" name="ea" use="optional"/>
+                <xs:attribute type="xs:string" name="c"/>
+              </xs:extension>
+            </xs:simpleContent>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute type="xs:float" name="version"/>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>
+```
+
+Every edge has `b` and `e` attribute which represent vertices of the directed graph. They can have
+any value in defined (format)[#vertex-type-format] and are directed from `b` to `e`.
+
+Each of the vertices can have `ba` and `ea` attributes which include the name of the assembly
+to further specify the vertex. When both of the values are same only `ba` attribute is used.
+
+The last attribute called `c` is used to describe the edge reason. It's a textual description of
+linker logic which decided to keep the dependency.
+
+#### Vertex Type Format
+
+The data format of every vertice is string which fits into following pattern
+
+```
+{VT}:{info}
+```
+
+VT is one of following values 2 letters acronyms describing `info` format
+
+| VT  | Vertex Type  | Info Format
+|---|---|---|
+| AS  | Assembly  | fully-qualified-name |
+| CA  | Custom Attribute  | attribute-type |
+| EV  | Event | declaring-type:property-name |
+| ET  | Exported Type | |
+| FI  | Field   | declaring-type:field-name |
+| II  | Interface Implementation |
+| ME  | Method  | declaring-type:method-signature |
+| MF  | Module Reference  | |
+| MO  | Module   | |
+| MR  | Member Reference  | |
+| MS  | Method Spec  | |
+| PR  | Property  | declaring-type:property-name |
+| TD  | Type Definition  | type-name |
+| TS  | Type Spec   | |
+| OT  | Other | any-string-value |
+
+### Data Example
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<dependencies version="1.3">
+  <edge b="FI:System.Exception::_innerException" ba="System.Private.CoreLib" e="TD:System.Exception" c="FieldType" />
+  <edge b="ME:System.Runtime.CompilerServices.NullableAttribute::.ctor(System.Byte)" ba="System.Private.CoreLib" e="TD:System.Byte" c="ParameterType" />
+  <edge b="AS:sample, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null" e="ME:AppDelegate::Main(System.String[])" ea="sample" c="RootAssembly" />
+</dependencies>
 ```

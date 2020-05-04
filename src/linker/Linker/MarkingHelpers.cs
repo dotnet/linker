@@ -12,11 +12,11 @@ namespace Mono.Linker
 			_context = context;
 		}
 
-		public void MarkExportedType (ExportedType type, ModuleDefinition module, in DependencyInfo reason)
+		public void MarkExportedType (ExportedType type, ModuleDefinition module, in MarkingInfo reason)
 		{
 			_context.Annotations.Mark (type, reason);
 			if (_context.KeepTypeForwarderOnlyAssemblies)
-				_context.Annotations.Mark (module, new DependencyInfo (DependencyKind.ModuleOfExportedType, type));
+				_context.Annotations.Mark (module, reason);
 		}
 	}
 }

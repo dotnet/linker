@@ -71,12 +71,16 @@ namespace Mono.Linker
 			return recorders != null;
 		}
 
-		public void AddDirectDependency (object target, in DependencyInfo reason, bool marked)
+		public void LogMarkingReason (object target, in MarkingInfo reason)
 		{
-			if (IsRecordingEnabled ()) {
-				foreach (IDependencyRecorder recorder in recorders)
-					recorder.RecordDependency (target, reason, marked);
-			}
+			if (!IsRecordingEnabled ())
+				return;
+
+			if (reason.Reason == MarkingReason.Hidden)
+				return;
+
+			foreach (IDependencyRecorder recorder in recorders)
+				recorder.RecordDependency (target, reason);
 		}
 	}
 }

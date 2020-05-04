@@ -159,11 +159,10 @@ namespace Mono.Linker
 			marked.Add (provider);
 		}
 
-		public void Mark (IMetadataTokenProvider provider, in DependencyInfo reason)
+		public void Mark (IMetadataTokenProvider provider, in MarkingInfo reason)
 		{
-			Debug.Assert (!(reason.Kind == DependencyKind.AlreadyMarked));
 			marked.Add (provider);
-			Tracer.AddDirectDependency (provider, reason, marked: true);
+			Tracer.LogMarkingReason (provider, reason);
 		}
 
 		[Obsolete ("Mark attributes with a reason instead.")]
@@ -172,11 +171,10 @@ namespace Mono.Linker
 			marked_attributes.Add (attribute);
 		}
 
-		public void Mark (CustomAttribute attribute, in DependencyInfo reason)
+		public void Mark (CustomAttribute attribute, in MarkingInfo reason)
 		{
-			Debug.Assert (!(reason.Kind == DependencyKind.AlreadyMarked));
 			marked_attributes.Add (attribute);
-			Tracer.AddDirectDependency (attribute, reason, marked: true);
+			Tracer.LogMarkingReason (attribute, reason);
 		}
 
 		public bool IsMarked (IMetadataTokenProvider provider)

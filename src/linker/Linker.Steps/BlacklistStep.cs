@@ -126,17 +126,17 @@ namespace Mono.Linker.Steps
 
 		protected virtual IStep GetExternalResolveStep (EmbeddedResource resource, AssemblyDefinition assembly)
 		{
-			return new ResolveFromXmlStep (GetExternalDescriptor (resource), resource.Name, assembly, "resource " + resource.Name + " in " + assembly.FullName);
+			return new ResolveFromXmlStep (GetExternalDescriptor (resource), resource.Name, assembly);
 		}
 
 		IStep GetExternalSubstitutionStep (EmbeddedResource resource, AssemblyDefinition assembly)
 		{
-			return new BodySubstituterStep (GetExternalDescriptor (resource), resource.Name, assembly, "resource " + resource.Name + " in " + assembly.FullName);
+			return new BodySubstituterStep (GetExternalDescriptor (resource), resource.Name, assembly, $"Embedded resource {resource.Name} in {assembly.Name}");
 		}
 
 		static ResolveFromXmlStep GetResolveStep (string descriptor)
 		{
-			return new ResolveFromXmlStep (GetDescriptor (descriptor), "descriptor " + descriptor + " from " + Assembly.GetExecutingAssembly ().FullName);
+			return new ResolveFromXmlStep (GetDescriptor (descriptor), $"External descriptor {descriptor} from {Assembly.GetExecutingAssembly ().GetName ().Name}");
 		}
 
 		protected static XPathDocument GetExternalDescriptor (EmbeddedResource resource)
