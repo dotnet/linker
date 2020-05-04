@@ -675,9 +675,11 @@ namespace Mono.Linker
 			try {
 				p.Process (context);
 			} catch (Exception ex) {
-				Console.Error.WriteLine ("The illinker exited with error:");
+				Console.Error.WriteLine ("The ILlinker exited with error:");
 				if (ex is LinkerErrorException le) {
 					context.LogMessage (le.MessageContainer);
+					if (le.InnerException != null)
+						Console.Error.WriteLine (le.InnerException);
 				} else {
 					Console.Error.WriteLine (ex);
 				}
@@ -685,7 +687,7 @@ namespace Mono.Linker
 				context.Tracer.Finish ();
 			}
 
-			return true;
+			return !LinkerErrorException.FoundErrors;
 		}
 
 		partial void PreProcessPipeline (Pipeline pipeline);

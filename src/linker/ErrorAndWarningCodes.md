@@ -54,6 +54,86 @@ There was an error processing an XML descriptor. The most likely reason for this
 
 ---
 
+### IL1007
+```
+Error processing method 'method' in assembly 'assembly'
+```
+
+There was an error processing method 'method'. An exception with more details is printed.
+
+---
+
+### IL1008
+```
+Cannot stub constructor on 'type' when base type does not have default constructor
+```
+
+There was an error trying to create a new instance of type 'type'. Its construtor was marked for substitution in a substitution XML, but the base type of 'type' doesn't have a default constructor. Constructors of derived types marked for substitution require to have a default constructor in its base type.
+
+---
+
+### IL1009
+```
+Missing predefined 'System.NotSupportedException' type
+```
+
+---
+
+### IL1010
+```
+Could not find constructor on 'type'
+```
+
+---
+
+### IL1011
+```
+Could not find constructor on 'type'
+```
+
+---
+
+### IL1012
+```
+Missing predefined 'System.Runtime.CompilerServices.DisablePrivateReflectionAttribute' type
+```
+
+---
+
+### IL1013
+```
+Could not find constructor on '{disablePrivateReflection.FullName}'
+```
+
+---
+
+### IL1014
+```
+Assembly 'assembly' reference 'reference' could not be resolved
+```
+
+There was en error resolving the reference assembly 'reference'. An exception with more details is printed.
+
+---
+
+### IL1015
+```
+Assembly 'assembly' cannot be loaded due to failure in processing 'reference' reference
+```
+
+The assembly 'assembly' could not be loaded due to an error processing the reference assembly 'reference'. An exception with more details is printed.
+
+---
+
+### IL1016
+```
+Failed to write 'output'
+```
+
+There was an error writing the linked assembly 'output'. An exception with more details is printed.
+
+---
+
 # IL Linker Warning Codes 
 
 ### IL2001

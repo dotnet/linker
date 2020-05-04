@@ -89,8 +89,8 @@ namespace Mono.Linker.Steps
 
 			try {
 				ProcessAssemblies (Context, nav.SelectChildren ("assembly", _ns));
-			} catch (Exception ex) {
-				throw new LinkerErrorException (MessageContainer.CreateErrorMessage ($"Failed to process description file '{_xmlDocumentLocation}': {ex}", 1006));
+			} catch (Exception ex) when (!(ex is LinkerErrorException)) {
+				throw new LinkerErrorException (MessageContainer.CreateErrorMessage ($"Failed to process description file '{_xmlDocumentLocation}'", 1006), ex);
 			}
 		}
 
