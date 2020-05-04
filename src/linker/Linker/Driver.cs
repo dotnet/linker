@@ -687,7 +687,7 @@ namespace Mono.Linker
 				context.Tracer.Finish ();
 			}
 
-			return !LinkerErrorException.FoundErrors;
+			return !context.FoundErrors;
 		}
 
 		partial void PreProcessPipeline (Pipeline pipeline);

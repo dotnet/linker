@@ -55,7 +55,6 @@ namespace Mono.Linker.Steps
 					steps_to_add.Push (GetResolveStep (name));
 				} catch (XmlException ex) {
 					/* This could happen if some broken XML file is included. */
-					LinkerErrorException.FoundError ();
 					Context.LogMessage (MessageContainer.CreateErrorMessage ($"Error processing {name}: {ex}", 1003));
 				}
 			}
@@ -73,7 +72,6 @@ namespace Mono.Linker.Steps
 						steps_to_add.Push (GetExternalResolveStep (rsc, asm));
 					} catch (XmlException ex) {
 						/* This could happen if some broken XML file is embedded. */
-						LinkerErrorException.FoundError ();
 						Context.LogMessage (MessageContainer.CreateErrorMessage ($"Error processing {rsc.Name}: {ex}", 1004));
 					}
 				}
@@ -85,7 +83,6 @@ namespace Mono.Linker.Steps
 						Context.LogMessage ($"Processing embedded {rsc.Name} from {asm.Name}");
 						steps_to_add.Push (GetExternalSubstitutionStep (rsc, asm));
 					} catch (XmlException ex) {
-						LinkerErrorException.FoundError ();
 						Context.LogMessage (MessageContainer.CreateErrorMessage ($"Error processing {rsc.Name}: {ex}", 1005));
 					}
 				}
