@@ -6,7 +6,7 @@ namespace Mono.Linker.Tests.Cases.Substitutions
 	[NoLinkedOutput]
 	[SetupLinkerSubstitutionFile ("FeatureSubstitutionsInvalid.xml")]
 	[SetupLinkerArgument ("--feature", "NoValueFeature", "true")]
-	[LogContains ("Feature NoValueFeature does not specify a \"featurevalue\" attribute")]
+	[LogContains ("Feature NoValueFeature does not specify a 'featurevalue' attribute")]
 	public class FeatureSubstitutionsInvalid
 	{
 		public static void Main ()
