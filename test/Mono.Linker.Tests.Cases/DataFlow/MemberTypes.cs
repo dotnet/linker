@@ -1682,7 +1682,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			static public bool HideStaticField;
 
 			[Kept]
-			[KeptMember(".ctor()")]
+			[KeptMember (".ctor()")]
 			public class PublicBaseNestedType { }
 			[Kept]
 			[KeptMember (".ctor()")]
@@ -1835,7 +1835,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				[Kept]
 				private void Method () { }
 			}
-			
+
 			[Kept]
 			[KeptMember (".ctor()")]
 			protected class ProtectedNestedType { }

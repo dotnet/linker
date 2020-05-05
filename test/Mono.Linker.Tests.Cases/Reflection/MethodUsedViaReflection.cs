@@ -206,7 +206,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		{
 			return 42;
 		}
-	
+
 		private static int PrivateMethod ()
 		{
 			return 42;

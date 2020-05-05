@@ -566,8 +566,8 @@ namespace Mono.Linker.Dataflow
 				//
 				case var fieldOrPropertyInstrinsic when fieldOrPropertyInstrinsic == IntrinsicId.Expression_Field || fieldOrPropertyInstrinsic == IntrinsicId.Expression_Property: {
 						reflectionContext.AnalyzingPattern ();
-						DynamicallyAccessedMemberTypes memberKind = fieldOrPropertyInstrinsic == IntrinsicId.Expression_Property 
-							? DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.NonPublicProperties 
+						DynamicallyAccessedMemberTypes memberKind = fieldOrPropertyInstrinsic == IntrinsicId.Expression_Property
+							? DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.NonPublicProperties
 							: DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields;
 
 						foreach (var value in methodParams[1].UniqueValues ()) {
@@ -1138,7 +1138,7 @@ namespace Mono.Linker.Dataflow
 
 			if (requiredMemberKinds.HasFlag (DynamicallyAccessedMemberTypes.NonPublicFields))
 				MarkFieldsOnTypeHierarchy (ref reflectionContext, typeDefinition, filter: null, bindingFlags: BindingFlags.NonPublic);
-			
+
 			if (requiredMemberKinds.HasFlag (DynamicallyAccessedMemberTypes.PublicFields))
 				MarkFieldsOnTypeHierarchy (ref reflectionContext, typeDefinition, filter: null, bindingFlags: BindingFlags.Public);
 
@@ -1454,25 +1454,25 @@ namespace Mono.Linker.Dataflow
 
 			if (memberKinds.HasFlag (DynamicallyAccessedMemberTypes.NonPublicProperties))
 				results.Add (DynamicallyAccessedMemberTypes.NonPublicProperties);
-			
+
 			if (memberKinds.HasFlag (DynamicallyAccessedMemberTypes.PublicProperties))
 				results.Add (DynamicallyAccessedMemberTypes.PublicProperties);
 
 			if (memberKinds.HasFlag (DynamicallyAccessedMemberTypes.NonPublicFields))
 				results.Add (DynamicallyAccessedMemberTypes.NonPublicFields);
-			
+
 			if (memberKinds.HasFlag (DynamicallyAccessedMemberTypes.PublicFields))
 				results.Add (DynamicallyAccessedMemberTypes.PublicFields);
 
 			if (memberKinds.HasFlag (DynamicallyAccessedMemberTypes.NonPublicEvents))
 				results.Add (DynamicallyAccessedMemberTypes.NonPublicEvents);
-			
+
 			if (memberKinds.HasFlag (DynamicallyAccessedMemberTypes.PublicEvents))
 				results.Add (DynamicallyAccessedMemberTypes.PublicEvents);
 
 			if (memberKinds.HasFlag (DynamicallyAccessedMemberTypes.NonPublicNestedTypes))
 				results.Add (DynamicallyAccessedMemberTypes.NonPublicNestedTypes);
-			
+
 			if (memberKinds.HasFlag (DynamicallyAccessedMemberTypes.PublicNestedTypes))
 				results.Add (DynamicallyAccessedMemberTypes.PublicNestedTypes);
 
@@ -1483,8 +1483,8 @@ namespace Mono.Linker.Dataflow
 		}
 
 		DynamicallyAccessedMemberTypes GetDynamicallyAccessedMemberTypesFromBindingFlagsForConstructors (BindingFlags bindingFlags) =>
-			(bindingFlags.HasFlag(BindingFlags.Public)? DynamicallyAccessedMemberTypes.PublicConstructors : DynamicallyAccessedMemberTypes.None) |
-			(bindingFlags.HasFlag(BindingFlags.NonPublic)? DynamicallyAccessedMemberTypes.NonPublicConstructors : DynamicallyAccessedMemberTypes.None);
+			(bindingFlags.HasFlag (BindingFlags.Public) ? DynamicallyAccessedMemberTypes.PublicConstructors : DynamicallyAccessedMemberTypes.None) |
+			(bindingFlags.HasFlag (BindingFlags.NonPublic) ? DynamicallyAccessedMemberTypes.NonPublicConstructors : DynamicallyAccessedMemberTypes.None);
 
 		DynamicallyAccessedMemberTypes GetDynamicallyAccessedMemberTypesFromBindingFlagsForMethods (BindingFlags bindingFlags) =>
 			(bindingFlags.HasFlag (BindingFlags.Public) ? DynamicallyAccessedMemberTypes.PublicMethods : DynamicallyAccessedMemberTypes.None) |

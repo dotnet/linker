@@ -101,7 +101,7 @@ namespace System
 		}
 
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicMethods)]
-		[UnrecognizedReflectionAccessPattern (typeof(TypeTest), nameof (RequirePublicMethods), new Type[] { typeof (Type) })]
+		[UnrecognizedReflectionAccessPattern (typeof (TypeTest), nameof (RequirePublicMethods), new Type[] { typeof (Type) })]
 		public void RequireThisNonPublicMethods ()
 		{
 			RequirePublicMethods (this);

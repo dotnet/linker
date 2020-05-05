@@ -119,7 +119,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				return _fieldWithPublicConstructors;
 			}
 
-			[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), nameof(_fieldWithPublicConstructors))]
+			[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), nameof (_fieldWithPublicConstructors))]
 			[param: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicConstructors)]
 			set {
 				_fieldWithPublicConstructors = value;
