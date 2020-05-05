@@ -366,7 +366,7 @@ namespace Mono.Linker.Steps
 					ProcessMethod (method, reason);
 				} catch (Exception e) when (!(e is LinkerFatalErrorException)) {
 					throw new LinkerFatalErrorException (
-						MessageContainer.CreateErrorMessage ($"Error processing method '{method.FullName}' in assembly '{method.Module.Name}'", 1007,
+						MessageContainer.CreateErrorMessage ($"Error processing method '{method.FullName}' in assembly '{method.Module.Name}'", 1005,
 						origin: MessageOrigin.TryGetOrigin (method, 0)), e);
 				}
 			}
@@ -2259,7 +2259,7 @@ namespace Mono.Linker.Steps
 				var baseType = method.DeclaringType.BaseType.Resolve ();
 				if (!MarkDefaultConstructor (baseType, new DependencyInfo (DependencyKind.BaseDefaultCtorForStubbedMethod, method)))
 					throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage ($"Cannot stub constructor on '{method.DeclaringType}' when base type does not have default constructor",
-						1008, origin: MessageOrigin.TryGetOrigin (method, 0)));
+						1006, origin: MessageOrigin.TryGetOrigin (method, 0)));
 
 				break;
 
@@ -2276,13 +2276,13 @@ namespace Mono.Linker.Steps
 
 			var nse = BCL.FindPredefinedType ("System", "NotSupportedException", _context);
 			if (nse == null)
-				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage ("Missing predefined 'System.NotSupportedException' type", 1009));
+				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage ("Missing predefined 'System.NotSupportedException' type", 1007));
 
 			MarkType (nse, reason);
 
 			var nseCtor = MarkMethodIf (nse.Methods, KnownMembers.IsNotSupportedExceptionCtorString, reason);
 			_context.MarkedKnownMembers.NotSupportedExceptionCtorString = nseCtor ??
-				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage ($"Could not find constructor on '{nse.FullName}'", 1010));
+				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage ($"Could not find constructor on '{nse.FullName}'", 1008));
 
 			var objectType = BCL.FindPredefinedType ("System", "Object", _context);
 			if (objectType == null)
@@ -2292,7 +2292,7 @@ namespace Mono.Linker.Steps
 
 			var objectCtor = MarkMethodIf (objectType.Methods, MethodDefinitionExtensions.IsDefaultConstructor, reason);
 			_context.MarkedKnownMembers.ObjectCtor = objectCtor ??
-				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage ($"Could not find constructor on '{objectType.FullName}'", 1010));
+				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage ($"Could not find constructor on '{objectType.FullName}'", 1008));
 		}
 
 		bool MarkDisablePrivateReflectionAttribute ()
@@ -2302,7 +2302,7 @@ namespace Mono.Linker.Steps
 
 			var disablePrivateReflection = BCL.FindPredefinedType ("System.Runtime.CompilerServices", "DisablePrivateReflectionAttribute", _context);
 			if (disablePrivateReflection == null)
-				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage ("Missing predefined 'System.Runtime.CompilerServices.DisablePrivateReflectionAttribute' type", 1009));
+				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage ("Missing predefined 'System.Runtime.CompilerServices.DisablePrivateReflectionAttribute' type", 1007));
 			
 			MarkType (disablePrivateReflection, DependencyInfo.DisablePrivateReflectionRequirement);
 

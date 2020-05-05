@@ -349,7 +349,7 @@ namespace Mono.Linker
 					if (definition != null)
 						references.Add (definition);
 				} catch (Exception e) {
-					throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage ($"Assembly '{assembly.FullName}' reference '{reference.FullName}' could not be resolved", 1011), e);
+					throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage ($"Assembly '{assembly.FullName}' reference '{reference.FullName}' could not be resolved", 1009), e);
 				}
 			}
 			return references;

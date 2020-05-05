@@ -17,41 +17,33 @@ error and warning codes.
 
 #### `IL1003`: Error processing 'XML document name': 'XmlException'
 
-- There was an error processing a resource linker descriptor. The most likely reason for this is that the descriptor file has syntactical errors.
+- There was an error processing a resource linker descriptor, embedded resource linker descriptor or external substitution XML (`ILLink.Substitutions.xml`). The most likely reason for this is that the descriptor file has syntactical errors.
 
-#### `IL1004`: Error processing 'XML document name': 'XmlException'
-
-- There was an error processing an embedded resource linker descriptor. The most likely reason for this is that the descriptor file has syntactical errors.
-
-#### `IL1005`: Error processing 'XML document name': 'XmlException'
-
-- There was an error processing an external substitution XML (`ILLink.Substitutions.xml`). The most likely reason for this is that the substitution file has syntactical errors.
-
-#### `IL1006`: Failed to process description file 'XML document location': 'XmlException'
+#### `IL1004`: Failed to process description file 'XML document location': 'XmlException'
 
 - There was an error processing an XML descriptor. The most likely reason for this is that the descriptor file has syntactical errors.
 
-#### `IL1007`: Error processing method 'method' in assembly 'assembly'
+#### `IL1005`: Error processing method 'method' in assembly 'assembly'
 
 - There was an error processing method 'method'. An exception with more details is printed.
 
-#### `IL1008`: Cannot stub constructor on 'type' when base type does not have default constructor
+#### `IL1006`: Cannot stub constructor on 'type' when base type does not have default constructor
 
 - There was an error trying to create a new instance of type 'type'. Its construtor was marked for substitution in a substitution XML, but the base type of 'type' doesn't have a default constructor. Constructors of derived types marked for substitution require to have a default constructor in its base type.
 
-#### `IL1009`: Missing predefined 'type' type
+#### `IL1007`: Missing predefined 'type' type
 
-#### `IL1010`: Could not find constructor on 'type'
+#### `IL1008`: Could not find constructor on 'type'
 
-#### `IL1011`: Assembly 'assembly' reference 'reference' could not be resolved
+#### `IL1009`: Assembly 'assembly' reference 'reference' could not be resolved
 
 - There was en error resolving the reference assembly 'reference'. An exception with more details is printed.
 
-#### `IL1012`: Assembly 'assembly' cannot be loaded due to failure in processing 'reference' reference
+#### `IL1010`: Assembly 'assembly' cannot be loaded due to failure in processing 'reference' reference
 
 - The assembly 'assembly' could not be loaded due to an error processing the reference assembly 'reference'. An exception with more details is printed.
 
-#### `IL1013`: Failed to write 'output'
+#### `IL1011`: Failed to write 'output'
 
 - There was an error writing the linked assembly 'output'. An exception with more details is printed.
 
