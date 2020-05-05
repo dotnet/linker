@@ -48,11 +48,13 @@ namespace Mono.Linker.Steps
 
 			var value = GetAttribute (nav, "featurevalue");
 			if (string.IsNullOrEmpty (value)) {
-				throw new LinkerErrorException (MessageContainer.CreateErrorMessage ($"Failed to process XML substitution: '{_xmlDocumentLocation}'. Feature {feature} does not specify a \"featurevalue\" attribute", 1001));
+				Context.LogMessage (MessageContainer.CreateErrorMessage ($"Failed to process XML substitution: '{_xmlDocumentLocation}'. Feature {feature} does not specify a 'featurevalue' attribute", 1001));
+				return false;
 			}
 
 			if (!bool.TryParse (value, out bool bValue)) {
-				throw new LinkerErrorException (MessageContainer.CreateErrorMessage ($"Failed to process XML substitution: '{_xmlDocumentLocation}'. Unsupported non-boolean feature definition {feature}", 1002));
+				Context.LogMessage (MessageContainer.CreateErrorMessage ($"Failed to process XML substitution: '{_xmlDocumentLocation}'. Unsupported non-boolean feature definition {feature}", 1002));
+				return false;
 			}
 
 			if (Context.FeatureSettings == null || !Context.FeatureSettings.TryGetValue (feature, out bool featureSetting))

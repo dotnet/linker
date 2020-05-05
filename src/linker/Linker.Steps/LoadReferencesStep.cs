@@ -52,8 +52,8 @@ namespace Mono.Linker.Steps
 				try {
 					ProcessReferences (referenceDefinition);
 				} catch (Exception ex) {
-					throw new LinkerErrorException (
-						MessageContainer.CreateErrorMessage ($"Assembly '{assembly.FullName}' cannot be loaded due to failure in processing '{referenceDefinition.FullName}' reference", 1015), ex);
+					throw new LinkerFatalErrorException (
+						MessageContainer.CreateErrorMessage ($"Assembly '{assembly.FullName}' cannot be loaded due to failure in processing '{referenceDefinition.FullName}' reference", 1012), ex);
 				}
 			}
 		}

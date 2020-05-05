@@ -2,17 +2,17 @@
 
 namespace Mono.Linker
 {
-	public class LinkerErrorException : Exception
+	public class LinkerFatalErrorException : Exception
 	{
 		public MessageContainer MessageContainer { get; }
 
-		public LinkerErrorException (MessageContainer message)
+		public LinkerFatalErrorException (MessageContainer message)
 			: base (message.ToString ())
 		{
 			MessageContainer = message;
 		}
 
-		public LinkerErrorException (MessageContainer message, Exception innerException)
+		public LinkerFatalErrorException (MessageContainer message, Exception innerException)
 			: base (message.ToString (), innerException)
 		{
 			MessageContainer = message;
