@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text.Json;
 using Mono.Cecil;
@@ -67,7 +68,7 @@ namespace Mono.Linker.Dataflow
 		static DynamicallyAccessedMemberTypes ParseKinds (JsonElement attributes)
 		{
 			foreach (var attribute in attributes.EnumerateObject ()) {
-				if (attribute.Name == "System.Runtime.CompilerServices.DynamicallyAccessedMembers") {
+				if (attribute.Name == "System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers") {
 					string value = attribute.Value.GetString ();
 
 					// Enum.Parse accepts a comma as a separator for Flags

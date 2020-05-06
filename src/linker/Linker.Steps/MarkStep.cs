@@ -276,9 +276,9 @@ namespace Mono.Linker.Steps
 			}
 
 			Annotations.Mark (type, reason);
-			var baseTypeReference = type.BaseType;
-			if (includeBaseTypes && baseTypeReference != null && baseTypeReference.Resolve () != null) {
-				MarkEntireType (baseTypeReference.Resolve (), includeBaseTypes: true, new DependencyInfo (DependencyKind.BaseType, type));
+			var baseTypeDefinition = type.BaseType?.Resolve();
+			if (includeBaseTypes && baseTypeDefinition != null) {
+				MarkEntireType (baseTypeDefinition, includeBaseTypes: true, new DependencyInfo (DependencyKind.BaseType, type));
 			}
 			MarkCustomAttributes (type, new DependencyInfo (DependencyKind.CustomAttribute, type));
 			MarkTypeSpecialCustomAttributes (type);
@@ -2624,31 +2624,5 @@ namespace Mono.Linker.Steps
 			public CustomAttribute Attribute { get; private set; }
 			public ICustomAttributeProvider Provider { get; private set; }
 		}
-	}
-
-	// Make our own copy of the BindingFlags enum, so that we don't depend on System.Reflection.
-	[Flags]
-	enum BindingFlags
-	{
-		Default = 0,
-		IgnoreCase = 1,
-		DeclaredOnly = 2,
-		Instance = 4,
-		Static = 8,
-		Public = 16,
-		NonPublic = 32,
-		FlattenHierarchy = 64,
-		InvokeMethod = 256,
-		CreateInstance = 512,
-		GetField = 1024,
-		SetField = 2048,
-		GetProperty = 4096,
-		SetProperty = 8192,
-		PutDispProperty = 16384,
-		PutRefDispProperty = 32768,
-		ExactBinding = 65536,
-		SuppressChangeType = 131072,
-		OptionalParamBinding = 262144,
-		IgnoreReturn = 16777216
 	}
 }

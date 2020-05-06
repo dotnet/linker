@@ -2,9 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System;
-
-namespace Mono.Linker.Dataflow
+namespace System.Diagnostics.CodeAnalysis
 {
 	/// <summary>
 	/// Specifies the types of members that are dynamically accessed.
@@ -16,7 +14,7 @@ namespace Mono.Linker.Dataflow
 	/// This is a copy of the enum definition in the framework at https://github.com/dotnet/runtime/blob/master/src/libraries/System.Private.CoreLib/src/System/Diagnostics/CodeAnalysis/DynamicallyAccessedMemberTypes.cs
 	/// </remarks>
 	[Flags]
-	public enum DynamicallyAccessedMemberTypes
+	internal enum DynamicallyAccessedMemberTypes
 	{
 		/// <summary>
 		/// Specifies no members.
