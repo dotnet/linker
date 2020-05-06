@@ -623,7 +623,7 @@ namespace Mono.Linker.Steps
 				MarkMethod (type, property.GetMethod, required);
 			else if (property.GetMethod == null)
 				Context.LogMessage (MessageContainer.CreateWarningMessage ($"Could not find the get accessor of property '{property.Name}' in type '{type.FullName}' specified in {_xmlDocumentLocation}", 2020));
-			
+
 			if (property.SetMethod != null && Array.IndexOf (accessors, "set") >= 0)
 				MarkMethod (type, property.SetMethod, required);
 			else if (property.SetMethod == null)
