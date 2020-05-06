@@ -675,19 +675,23 @@ namespace Mono.Linker
 			try {
 				p.Process (context);
 			} catch (Exception ex) {
-				Console.Error.WriteLine ("IL Linker has encountered an unexpected error. Please report the issue at https://github.com/mono/linker/issues");
-				if (ex is LinkerFatalErrorException le) {
-					context.LogMessage (le.MessageContainer);
-					if (le.InnerException != null)
-						Console.Error.WriteLine (le.InnerException);
+				if (ex is LinkerFatalErrorException lex) {
+					context.LogMessage (lex.MessageContainer);
 				} else {
-					Console.Error.WriteLine (ex);
+					string exceptionMessage = ex.Message ?? string.Empty;
+					context.LogMessage (MessageContainer.CreateErrorMessage ($"IL Linker has encountered an unexpected error. Please report the issue at https://github.com/mono/linker/issues \n{exceptionMessage}", 1012));
 				}
+
+				string innerMessage = ex.InnerException?.Message ?? null;
+				if (innerMessage != null)
+					Console.Error.WriteLine (innerMessage);
+
+				return false;
 			} finally {
 				context.Tracer.Finish ();
 			}
 
-			return !context.FoundErrors;
+			return true;
 		}
 
 		partial void PreProcessPipeline (Pipeline pipeline);

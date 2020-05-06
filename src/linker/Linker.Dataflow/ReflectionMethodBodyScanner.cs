@@ -479,7 +479,7 @@ namespace Mono.Linker.Dataflow
 							break;
 
 						default:
-							throw new InternalErrorException ($"Reflection call '{calledMethod.FullName}' inside '{callingMethodBody.Method.FullName}' is of unexpected member type.", _context);
+							throw new InternalErrorException ($"Reflection call '{calledMethod.FullName}' inside '{callingMethodBody.Method.FullName}' is of unexpected member type.");
 						}
 
 						if (memberKind == null)
@@ -507,7 +507,7 @@ namespace Mono.Linker.Dataflow
 											reflectionContext.RecordHandledPattern ();
 											break;
 										default:
-											throw new InternalErrorException ($"Error processing reflection call '{calledMethod.FullName}' inside {callingMethodBody.Method.FullName}. Unexpected member kind.", _context);
+											throw new InternalErrorException ($"Error processing reflection call '{calledMethod.FullName}' inside {callingMethodBody.Method.FullName}. Unexpected member kind.");
 										}
 									} else {
 										RequireDynamicallyAccessedMembers (ref reflectionContext, (DynamicallyAccessedMemberKinds) memberKind, value, calledMethod.Parameters[0]);

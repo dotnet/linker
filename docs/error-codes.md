@@ -47,6 +47,10 @@ error and warning codes.
 
 - There was an error writing the linked assembly 'output'. An exception with more details is printed.
 
+#### `IL1012`: IL Linker has encountered an unexpected error. Please report the issue at https://github.com/mono/linker/issues
+
+- There was an unexpected error while linking. An exception with more details is printed.
+
 ----
 ## Warning Codes
 

@@ -124,8 +124,6 @@ namespace Mono.Linker
 
 		public bool StripSubstitutions { get; set; }
 
-		public bool FoundErrors { get; set; }
-
 		public Dictionary<string, bool> FeatureSettings { get; private set; }
 
 		public List<string> AttributeDefinitions { get; private set; }
@@ -211,7 +209,6 @@ namespace Mono.Linker
 			MarkedKnownMembers = new KnownMembers ();
 			StripDescriptors = true;
 			StripSubstitutions = true;
-			FoundErrors = false;
 			PInvokes = new List<PInvokeInfo> ();
 
 			// See https://github.com/mono/linker/issues/612
@@ -479,9 +476,6 @@ namespace Mono.Linker
 
 		public void LogMessage (MessageContainer message)
 		{
-			if (message.Category == MessageCategory.Error)
-				FoundErrors = true;
-
 			if (LogMessages)
 				Logger?.LogMessage (message);
 		}
