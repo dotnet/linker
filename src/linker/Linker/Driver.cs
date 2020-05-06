@@ -675,7 +675,7 @@ namespace Mono.Linker
 			try {
 				p.Process (context);
 			} catch (Exception ex) {
-				Console.Error.WriteLine ("IL Linker exited with error:");
+				Console.Error.WriteLine ("IL Linker has encountered an unexpected error. Please report the issue at https://github.com/mono/linker/issues");
 				if (ex is LinkerFatalErrorException le) {
 					context.LogMessage (le.MessageContainer);
 					if (le.InnerException != null)
