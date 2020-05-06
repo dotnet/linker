@@ -13,4 +13,4 @@ while [[ -h $source ]]; do
 done
 
 scriptroot="$( cd -P "$( dirname "$source" )" && pwd )"
-"$scriptroot/eng/common/build.sh" --projects "$scriptroot/illink.sln" --build --restore $@
+"$scriptroot/eng/dotnet.sh" tool run dotnet-format --verbosity diagnostic -f . --exclude src/analyzer,src/tuner,external $@
