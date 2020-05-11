@@ -30,7 +30,7 @@ namespace ILLink.Tests
 			}
 
 			Directory.CreateDirectory (projectRoot);
-			int ret = CommandHelper.Dotnet ("new webapi", projectRoot);
+			int ret = CommandHelper.Dotnet ("new webapi --no-https", projectRoot);
 			if (ret != 0) {
 				LogMessage ("dotnet new failed");
 				Assert.True (false);
