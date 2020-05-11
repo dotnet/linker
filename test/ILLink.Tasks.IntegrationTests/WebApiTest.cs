@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Xml.Linq;
+using System.Runtime.InteropServices;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -78,6 +79,11 @@ namespace ILLink.Tests
 		[Fact]
 		public void RunWebApiStandalone ()
 		{
+			if (RuntimeInformation.IsOSPlatform (OSPlatform.OSX) && !String.IsNullOrEmpty (Environment.GetEnvironmentVariable ("TF_BUILD"))) {
+				// CI has issues with the HTTPS dev cert
+				return;
+			}
+
 			string executablePath = BuildAndLink (fixture.csproj, selfContained: true);
 			CheckOutput (executablePath, selfContained: true);
 		}
