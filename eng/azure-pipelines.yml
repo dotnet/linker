@@ -126,7 +126,7 @@ stages:
       steps:
       - checkout: self
         submodules: true
-      - script: ./lint.sh --dry-run
+      - script: ./lint.sh --dry-run --check
 
   - ${{ if eq(variables.officialBuild, 'false') }}:
     - job: Linux_Mono
