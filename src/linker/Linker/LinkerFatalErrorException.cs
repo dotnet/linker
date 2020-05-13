@@ -28,7 +28,7 @@ namespace Mono.Linker
 			: base (message.ToString (), innerException)
 		{
 			if (message.Category != MessageCategory.Error)
-				throw new ArgumentException ($"'{nameof(LinkerFatalErrorException)}' ought to be used for errors only");
+				throw new ArgumentException ($"'{nameof (LinkerFatalErrorException)}' ought to be used for errors only");
 
 			MessageContainer = message;
 		}
