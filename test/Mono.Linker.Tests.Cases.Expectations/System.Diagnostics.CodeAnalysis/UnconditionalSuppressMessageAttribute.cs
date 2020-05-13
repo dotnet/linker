@@ -12,6 +12,9 @@ namespace System.Diagnostics.CodeAnalysis
 	/// <see cref="UnconditionalSuppressMessageAttribute"/> is different than
 	/// <see cref="SuppressMessageAttribute"/> in that it doesn't have a
 	/// <see cref="ConditionalAttribute"/>. So it is always preserved in the compiled assembly.
+	/// 
+	/// This file was copied from the dotnet/runtime repo:
+	/// https://github.com/dotnet/runtime/blob/master/src/libraries/System.Private.CoreLib/src/System/Diagnostics/CodeAnalysis/UnconditionalSuppressMessageAttribute.cs
 	/// </remarks>
 	[AttributeUsage (AttributeTargets.All, Inherited = false, AllowMultiple = true)]
 	public sealed class UnconditionalSuppressMessageAttribute : Attribute
@@ -46,6 +49,7 @@ namespace System.Diagnostics.CodeAnalysis
 		/// </remarks>
 		public string CheckId { get; }
 
+#nullable enable
 		/// <summary>
 		/// Gets or sets the scope of the code that is relevant for the attribute.
 		/// </summary>
@@ -82,5 +86,6 @@ namespace System.Diagnostics.CodeAnalysis
 		/// Gets or sets the justification for suppressing the code analysis message.
 		/// </summary>
 		public string? Justification { get; set; }
+#nullable disable
 	}
 }

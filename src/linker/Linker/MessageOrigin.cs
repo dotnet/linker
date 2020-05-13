@@ -17,13 +17,21 @@ namespace Mono.Linker
 		public bool IsSuppressed { get; }
 		public SuppressMessageInfo SuppressionInfo { get; }
 
-		public MessageOrigin (string fileName, int sourceLine = 0, int sourceColumn = 0, bool isSuppressed = false, SuppressMessageInfo suppressionInfo = default)
+		public MessageOrigin (string fileName, int sourceLine = 0, int sourceColumn = 0)
 		{
 			FileName = fileName;
 			SourceLine = sourceLine;
 			SourceColumn = sourceColumn;
-			IsSuppressed = isSuppressed;
+			IsSuppressed = false;
+			SuppressionInfo = default;
+		}
+
+		internal MessageOrigin (SuppressMessageInfo suppressionInfo)
+		{
+			IsSuppressed = true;
 			SuppressionInfo = suppressionInfo;
+			FileName = string.Empty;
+			SourceLine = SourceColumn = 0;
 		}
 
 		public static MessageOrigin? TryGetOrigin (IMemberDefinition sourceMethod, int ilOffset)
@@ -43,11 +51,11 @@ namespace Mono.Linker
 			return null;
 		}
 
-		public static MessageOrigin? TryGetOrigin (IMemberDefinition sourceMethod, int ilOffset,
+		internal static MessageOrigin? TryGetOrigin (IMemberDefinition sourceMethod, int ilOffset,
 			UnconditionalSuppressMessageAttributeState unconditionalSuppressions, int warningCode)
 		{
 			if (unconditionalSuppressions.IsSuppressed ("IL" + warningCode, sourceMethod, out SuppressMessageInfo info))
-				return new MessageOrigin (string.Empty, isSuppressed: true, suppressionInfo: info);
+				return new MessageOrigin (info);
 
 			return TryGetOrigin (sourceMethod, ilOffset);
 		}
