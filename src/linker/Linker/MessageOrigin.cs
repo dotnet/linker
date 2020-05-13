@@ -14,12 +14,16 @@ namespace Mono.Linker
 		public string FileName { get; }
 		public int SourceLine { get; }
 		public int SourceColumn { get; }
+		public bool IsSuppressed { get; }
+		public SuppressMessageInfo SuppressionInfo { get; }
 
-		public MessageOrigin (string fileName, int sourceLine = 0, int sourceColumn = 0)
+		public MessageOrigin (string fileName, int sourceLine = 0, int sourceColumn = 0, bool isSuppressed = false, SuppressMessageInfo suppressionInfo = default)
 		{
 			FileName = fileName;
 			SourceLine = sourceLine;
 			SourceColumn = sourceColumn;
+			IsSuppressed = isSuppressed;
+			SuppressionInfo = suppressionInfo;
 		}
 
 		public static MessageOrigin? TryGetOrigin (IMemberDefinition sourceMethod, int ilOffset)
@@ -37,6 +41,15 @@ namespace Mono.Linker
 			}
 
 			return null;
+		}
+
+		public static MessageOrigin? TryGetOrigin (IMemberDefinition sourceMethod, int ilOffset,
+			UnconditionalSuppressMessageAttributeState unconditionalSuppressions, int warningCode)
+		{
+			if (unconditionalSuppressions.IsSuppressed ("IL" + warningCode, sourceMethod, out SuppressMessageInfo info))
+				return new MessageOrigin (string.Empty, isSuppressed: true, suppressionInfo: info);
+
+			return TryGetOrigin (sourceMethod, ilOffset);
 		}
 
 		public override string ToString ()

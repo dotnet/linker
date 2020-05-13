@@ -163,6 +163,8 @@ namespace Mono.Linker
 
 		public KnownMembers MarkedKnownMembers { get; private set; }
 
+		public UnconditionalSuppressMessageAttributeState Suppressions { get; set; }
+
 		public Tracer Tracer { get; private set; }
 
 		public IReflectionPatternRecorder ReflectionPatternRecorder { get; set; }

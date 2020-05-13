@@ -999,6 +999,8 @@ namespace Mono.Linker.Steps
 
 			foreach (ModuleDefinition module in assembly.Modules)
 				LazyMarkCustomAttributes (module, module);
+
+			_context.Suppressions = new UnconditionalSuppressMessageAttributeState (assembly);
 		}
 
 		void MarkEntireAssembly (AssemblyDefinition assembly)
@@ -1426,6 +1428,8 @@ namespace Mono.Linker.Steps
 					l.Parameters.Count == 1 && l.Parameters[0].ParameterType.IsTypeOf ("System", "Type"),
 					provider);
 				return true;
+			} else if (dt.Name == "UnconditionalSuppressMessageAttribute" && dt.Namespace == "System.Diagnostics.CodeAnalysis") {
+				_context.Suppressions.AddLocalSuppression (ca, provider.MetadataToken);
 			}
 
 			return false;
