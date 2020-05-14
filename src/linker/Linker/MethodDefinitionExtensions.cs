@@ -85,7 +85,7 @@ namespace Mono.Linker
 			return true;
 		}
 #endif
-		
+
 		public static void ClearDebugInformation (this MethodDefinition method)
 		{
 			// TODO: This always allocates, update when Cecil catches up
