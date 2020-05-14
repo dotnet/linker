@@ -74,15 +74,15 @@ namespace Mono.Linker
 #if !FEATURE_ILLINK
 		// This implementation is wrong. It should return true if this is a virtual override
 		// of System.Object::Finalize, but that's not what this is doing. Do not use.
-		public static bool IsFinalizer (this MethodDefinition method)	
-		{	
-			if (method.Name != "Finalize" || method.ReturnType.MetadataType != MetadataType.Void)	
-				return false;	
+		public static bool IsFinalizer (this MethodDefinition method)
+		{
+			if (method.Name != "Finalize" || method.ReturnType.MetadataType != MetadataType.Void)
+				return false;
 
-			if (method.HasParameters || method.HasGenericParameters || method.IsStatic)	
-				return false;	
+			if (method.HasParameters || method.HasGenericParameters || method.IsStatic)
+				return false;
 
-			return true;	
+			return true;
 		}
 #endif
 		
