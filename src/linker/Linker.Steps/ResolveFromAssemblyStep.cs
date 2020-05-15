@@ -124,7 +124,7 @@ namespace Mono.Linker.Steps
 						// especially when such types cannot be used anyway
 						//						
 						context.LogMessage (MessageContainer.CreateInfoMessage ($"Cannot find declaration of exported type '{exported}' from the assembly '{assembly}'"));
-						
+
 						continue;
 					}
 
