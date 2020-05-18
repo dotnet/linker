@@ -150,6 +150,9 @@ namespace Mono.Linker.Steps
 			foreach (var module in assembly.Modules)
 				SweepCustomAttributes (module);
 
+			//
+			// MainModule module references are used by pinvoke
+			//
 			if (assembly.MainModule.HasModuleReferences)
 				SweepCollectionMetadata (assembly.MainModule.ModuleReferences);
 
