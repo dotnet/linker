@@ -38,7 +38,7 @@ namespace Mono.Linker.Tests
 			var module = (member as TypeDefinition)?.Module ?? member.DeclaringType?.Module;
 			Assert.NotNull (module);
 			var parseResults = DocumentationSignatureParser.GetSymbolsForDeclarationId (input, module);
-			Assert.AreEqual (1, parseResults.Length);
+			Assert.AreEqual (1, parseResults.Count ());
 			Assert.AreEqual (member, parseResults.First ());
 		}
 
@@ -81,7 +81,7 @@ namespace Mono.Linker.Tests
 			var module = (member as TypeDefinition)?.Module ?? member.DeclaringType?.Module;
 			Assert.NotNull (module);
 			var parseResults = DocumentationSignatureParser.GetSymbolsForDeclarationId (input, module);
-			Assert.AreEqual (0, parseResults.Length);
+			Assert.AreEqual (0, parseResults.Count ());
 		}
 
 		static IEnumerable<(IMemberDefinition member, CustomAttribute ca)> GetMemberAssertions (Type type)

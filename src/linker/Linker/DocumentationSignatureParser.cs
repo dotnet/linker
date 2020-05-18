@@ -6,7 +6,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -30,7 +29,7 @@ namespace Mono.Linker
 	///
 	public static class DocumentationSignatureParser
 	{
-		public static ImmutableArray<IMemberDefinition> GetSymbolsForDeclarationId (string id, ModuleDefinition module)
+		public static IEnumerable<IMemberDefinition> GetSymbolsForDeclarationId (string id, ModuleDefinition module)
 		{
 			if (id == null)
 				throw new ArgumentNullException (nameof (id));
@@ -40,7 +39,7 @@ namespace Mono.Linker
 
 			var results = new List<IMemberDefinition> ();
 			Parser.ParseDeclaredSymbolId (id, module, results);
-			return results.ToImmutableArray();
+			return results;
 		}
 
 		public static string GetSignaturePart (this TypeReference type)
