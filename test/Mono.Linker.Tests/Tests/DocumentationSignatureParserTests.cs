@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.IO;
 using System.Linq;
+using System.Text;
 using NUnit.Framework;
 using Mono.Cecil;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
+using Mono.Linker.Tests.Extensions;
 
 namespace Mono.Linker.Tests
 {
@@ -86,9 +88,12 @@ namespace Mono.Linker.Tests
 
 		static IEnumerable<(IMemberDefinition member, CustomAttribute ca)> GetMemberAssertions (Type type)
 		{
-			var assembly = AssemblyDefinition.ReadAssembly (type.Assembly.Location);
+			var resolver = new DefaultAssemblyResolver ();
+			resolver.AddSearchDirectory (Path.GetDirectoryName (type.Assembly.Location));
+			var assembly = resolver.Resolve (new AssemblyNameReference (type.Assembly.GetName ().Name, null));
 			var t = assembly.MainModule.GetType (type.Namespace + "." + type.Name);
-			Assert.NotNull (t);
+			if (t == null)
+				throw new InvalidOperationException ($"type {type} not found in {assembly}");
 			var results = new List<(IMemberDefinition, CustomAttribute)> ();
 			CollectMemberAssertions (t, results);
 			return results;
@@ -99,10 +104,10 @@ namespace Mono.Linker.Tests
 			if (attributeType == null)
 				return false;
 
-			if (attributeType.Namespace == "Mono.Linker.Tests.Cases.Expectations.Assertions" && attributeType.Name == nameof (BaseMemberAssertionAttribute))
-				return true;
+			if (attributeType.Namespace != "Mono.Linker.Tests.Cases.Expectations.Assertions")
+				return false;
 
-			return IsMemberAssertion (attributeType.Resolve ()?.BaseType);
+			return attributeType.Resolve ().DerivesFrom (nameof (BaseMemberAssertionAttribute));
 		}
 
 		private static void CollectMemberAssertions (TypeDefinition type, List<(IMemberDefinition, CustomAttribute)> results)
