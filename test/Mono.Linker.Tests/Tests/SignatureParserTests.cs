@@ -198,17 +198,20 @@ namespace Mono.Linker.Tests
 
 			[ExpectGeneratedString ("M:Mono.Linker.Tests.SignatureParserTests.A.M(System.Int32[])")]
 			[ExpectUniqueParsedString ("M:Mono.Linker.Tests.SignatureParserTests.A.M(System.Int32[])")]
-			public void M (int[] a) {
+			public void M (int[] a)
+			{
 			}
 
 			[ExpectUniqueParsedString ("M:Mono.Linker.Tests.SignatureParserTests.A.M(System.Int32,System.Int32,System.Int32)~System.Int32")]
-			public int M (int a, int b, int c) {
+			public int M (int a, int b, int c)
+			{
 				return 0;
 			}
 
 			[ExpectGeneratedString ("M:Mono.Linker.Tests.SignatureParserTests.A.MRef(System.Int32@)")]
 			[ExpectUniqueParsedString ("M:Mono.Linker.Tests.SignatureParserTests.A.MRef(System.Int32@)")]
-			public void MRef (ref int a) { 
+			public void MRef (ref int a)
+			{
 			}
 
 			[ExpectGeneratedString ("M:Mono.Linker.Tests.SignatureParserTests.A.MOut(System.Int32@)")]
@@ -280,7 +283,7 @@ namespace Mono.Linker.Tests
 
 			[ExpectGeneratedString ("M:Mono.Linker.Tests.SignatureParserTests.A.M``1(Mono.Linker.Tests.SignatureParserTests.S{Mono.Linker.Tests.SignatureParserTests.G{Mono.Linker.Tests.SignatureParserTests.A,``0}}**[0:,0:,0:][][][0:,0:]@)")]
 			[ExpectUniqueParsedString ("M:Mono.Linker.Tests.SignatureParserTests.A.M``1(Mono.Linker.Tests.SignatureParserTests.S{Mono.Linker.Tests.SignatureParserTests.G{Mono.Linker.Tests.SignatureParserTests.A,``0}}**[0:,0:,0:][][][0:,0:]@)")]
-			public unsafe void M<T> (ref S<G<A,T>>**[,][][][,,] a)
+			public unsafe void M<T> (ref S<G<A, T>>**[,][][][,,] a)
 			{
 			}
 
@@ -375,7 +378,7 @@ namespace Mono.Linker.Tests
 			public int this[T t] {
 				get => 0;
 				set { }
-		 	}
+			}
 		}
 
 		[ExpectUniqueParsedString ("T:Mono.Linker.Tests.SignatureParserTests.B")]
@@ -493,11 +496,13 @@ namespace Mono.Linker.Tests
 			{
 				[ExpectNoParsedString ("M:Mono.Linker.Tests.SignatureParserTests.Invalid.Generic``1.MethodSyntaxForTypeParameter(`0)")]
 
-				public void MethodSyntaxForTypeParameter (T t) {
+				public void MethodSyntaxForTypeParameter (T t)
+				{
 				}
 
 				[ExpectNoParsedString ("M:Mono.Linker.Tests.SignatureParserTests.Invalid.Generic`1.MethodSyntaxForTypeGenericArgument(Mono.Linker.Tests.SignatureParserTests.Invalid.Generic{``0})")]
-				public void MethodSyntaxForTypeGenericArgument (Generic<T> g) {
+				public void MethodSyntaxForTypeGenericArgument (Generic<T> g)
+				{
 				}
 
 				[ExpectNoParsedString ("P:Mono.Linker.Tests.SignatureParserTests.Invalid.Generic`1.Item(``0)")]
@@ -508,16 +513,19 @@ namespace Mono.Linker.Tests
 			}
 
 			[ExpectNoParsedString ("M:Mono.Linker.Tests.SignatureParserTests.Invalid.MethodWithGenericInstantiation(Mono.Linker.Tests.SignatureParserTests.Invalid.Generic`1)")]
-			public void MethodWithGenericInstantiation (Generic<A> g) {
+			public void MethodWithGenericInstantiation (Generic<A> g)
+			{
 			}
 
 			[ExpectNoParsedString ("M:Mono.Linker.Tests.SignatureParserTests.Invalid.Method(System.Int32[:,:])")]
 			[ExpectNoParsedString ("M:Mono.Linker.Tests.SignatureParserTests.Invalid.Method(System.Int32[0:,)")]
-			public void Method (int[,] a) {
+			public void Method (int[,] a)
+			{
 			}
 
 			[ExpectNoParsedString ("M:Mono.Linker.Tests.SignatureParserTests.Invalid.NonGenericMethod(``0)")]
-			public void NonGenericMethod (int i) {
+			public void NonGenericMethod (int i)
+			{
 			}
 
 			[ExpectNoParsedString ("P:Mono.Linker.Tests.SignatureParserTests.Invalid.Item(`0)")]
@@ -528,34 +536,41 @@ namespace Mono.Linker.Tests
 			}
 
 			[ExpectNoParsedString ("M:Mono.Linker.Tests.SignatureParserTests.Invalid.MethodMissingArgumentTypeName(System.)")]
-			public void MethodMissingArgumentTypeName (int i) {
+			public void MethodMissingArgumentTypeName (int i)
+			{
 			}
 
 			[ExpectNoParsedString ("T:Mono.Linker.Tests.SignatureParserTests.Invalid.")]
-			public class NoType {
+			public class NoType
+			{
 			}
 
 			[ExpectNoParsedString ("T:Mono.Linker.Tests.SignatureParserTests.Invalid.NoParameterType()")]
-			public void NoParameterType (int i) {
+			public void NoParameterType (int i)
+			{
 			}
 
 			[ExpectNoParsedString ("T:Mono.Linker.Tests.SignatureParserTests.Invalid.NoParameterType(Mono.Linker.Tests.SignatureParserTests.Invalid.Generic{})")]
-			public void NoGenericParameterType (Generic<A> g) {
+			public void NoGenericParameterType (Generic<A> g)
+			{
 			}
 
 			// these work, but seem like they shouldn't.
 			// see https://github.com/dotnet/roslyn/issues/44315
 
 			[ExpectUniqueParsedString ("TMono.Linker.Tests.SignatureParserTests.Invalid.NoColon")]
-			public class NoColon {
+			public class NoColon
+			{
 			}
 
 			[ExpectUniqueParsedString ("M:Mono.Linker.Tests.SignatureParserTests.Invalid.NoClosingParenWithParameters(System.Int32")]
-			public void NoClosingParenWithParameters (int a) {
+			public void NoClosingParenWithParameters (int a)
+			{
 			}
 
 			[ExpectUniqueParsedString ("M:Mono.Linker.Tests.SignatureParserTests.Invalid.NoClosingBrace(Mono.Linker.Tests.SignatureParserTests.Invalid.Generic{Mono.Linker.Tests.SignatureParserTests.A)")]
-			public void NoClosingBrace (Generic<A> g) {
+			public void NoClosingBrace (Generic<A> g)
+			{
 			}
 		}
 	}
