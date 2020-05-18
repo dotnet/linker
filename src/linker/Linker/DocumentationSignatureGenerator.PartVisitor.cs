@@ -7,7 +7,7 @@ using Mono.Cecil;
 namespace Mono.Linker
 {
 
-	public sealed partial class SignatureGenerator
+	public sealed partial class DocumentationSignatureGenerator
 	{
 		/// <summary>
 		///  A visitor that generates the part of the documentation comment after the initial type
@@ -153,6 +153,8 @@ namespace Mono.Linker
 				// This includes '`n' for mangled generic types
 				builder.Append (typeReference.Name);
 
+				// For uninstantiated generic types (we already built the mangled name)
+				// or non-generic types, we are done.
 				if (typeReference.HasGenericParameters || !typeReference.IsGenericInstance)
 					return;
 

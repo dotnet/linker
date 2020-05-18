@@ -28,7 +28,7 @@ namespace Mono.Linker
 	/// This API instead works with the Cecil OM. It can be used to refer to IL definitions
 	/// where the signature of a member can contain references to instantiated generics.
 	///
-	public static class SignatureParser
+	public static class DocumentationSignatureParser
 	{
 		public static ImmutableArray<IMemberDefinition> GetSymbolsForDeclarationId (string id, ModuleDefinition module)
 		{
@@ -40,7 +40,14 @@ namespace Mono.Linker
 
 			var results = new List<IMemberDefinition> ();
 			Parser.ParseDeclaredSymbolId (id, module, results);
-			return results.ToImmutableArray ();
+			return results.ToImmutableArray();
+		}
+
+		public static string GetSignaturePart (this TypeReference type)
+		{
+			var builder = new StringBuilder ();
+			DocumentationSignatureGenerator.PartVisitor.Instance.VisitTypeReference (type, builder);
+			return builder.ToString ();
 		}
 
 		private static class Parser
@@ -211,12 +218,11 @@ namespace Mono.Linker
 		{
 			var results = new List<string> ();
 			ParseTypeSymbol (id, ref index, typeParameterContext, results);
-			if (results.Count == 0) {
-				return null;
-			} else {
-				Debug.Assert (results.Count == 1);
+			if (results.Count == 1)
 				return results[0];
-			}
+
+			Debug.Assert (results.Count == 0);
+			return null;
 		}
 
 		private static void ParseTypeSymbol (string id, ref int index, IGenericParameterProvider? typeParameterContext, List<string> results)

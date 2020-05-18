@@ -224,13 +224,6 @@ namespace Mono.Linker
 			return fullTypeName.Replace ('+', '/');
 		}
 
-		public static string GetSignaturePart (this TypeReference type)
-		{
-			var builder = new StringBuilder ();
-			SignatureGenerator.PartVisitor.Instance.VisitTypeReference (type, builder);
-			return builder.ToString ();
-		}
-
 		public static bool HasDefaultConstructor (this TypeReference type)
 		{
 			foreach (var m in type.GetMethods ()) {

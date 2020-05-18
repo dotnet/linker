@@ -12,11 +12,11 @@ namespace Mono.Linker
 	///  Adapted from Roslyn's DocumentationCommentIDVisitor:
 	///  https://github.com/dotnet/roslyn/blob/master/src/Compilers/CSharp/Portable/DocumentationComments/DocumentationCommentIDVisitor.cs
 	/// </summary>
-	public sealed partial class SignatureGenerator
+	public sealed partial class DocumentationSignatureGenerator
 	{
-		public static readonly SignatureGenerator Instance = new SignatureGenerator ();
+		public static readonly DocumentationSignatureGenerator Instance = new DocumentationSignatureGenerator ();
 
-		private SignatureGenerator ()
+		private DocumentationSignatureGenerator ()
 		{
 		}
 
