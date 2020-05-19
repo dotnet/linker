@@ -158,3 +158,7 @@ error and warning codes.
 #### `IL2025`: Duplicate preserve of 'member' in 'XML document location'
 
 - The XML descriptor marks for preservation the member or type 'member' more than once.
+
+#### `IL2026`: Calling method annotated with `RequiresUnreferencedCodeAttribute`
+
+- The linker found a call to a method which is annotated with `RequiresUnreferencedCodeAttribute` which can break functionality of a trimmed application.
