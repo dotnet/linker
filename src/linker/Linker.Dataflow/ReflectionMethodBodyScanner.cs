@@ -25,10 +25,10 @@ namespace Mono.Linker.Dataflow
 		{
 			MethodDefinition methodDefinition = calledMethod.Resolve ();
 			if (methodDefinition != null) {
-				return 
+				return
 					GetIntrinsicIdForMethod (methodDefinition) > IntrinsicId.RequiresReflectionBodyScanner_Sentinel ||
 					flowAnnotations.RequiresDataFlowAnalysis (methodDefinition) ||
-					context.Annotations.TryGetLinkerAttribute <RequiresUnreferencedCodeAttribute> (methodDefinition, out _);
+					context.Annotations.TryGetLinkerAttribute<RequiresUnreferencedCodeAttribute> (methodDefinition, out _);
 			}
 
 			return false;

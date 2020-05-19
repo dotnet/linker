@@ -93,7 +93,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			RequiresAndCallsOtherRequiresMethods ();
 		}
 
-		[RequiresUnreferencedCode("Message for --RequiresAndCallsOtherRequiresMethods--")]
+		[RequiresUnreferencedCode ("Message for --RequiresAndCallsOtherRequiresMethods--")]
 		[LogDoesNotContain ("Message for --RequiresUnreferencedCodeMethod--")]
 		[RecognizedReflectionAccessPattern]
 		static void RequiresAndCallsOtherRequiresMethods ()
@@ -105,12 +105,12 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			RequiresPublicFields (GetTypeWithPublicMethods ());
 		}
 
-		[RequiresUnreferencedCode("Message for --RequiresUnreferencedCodeMethod--")]
+		[RequiresUnreferencedCode ("Message for --RequiresUnreferencedCodeMethod--")]
 		static void RequiresUnreferencedCodeMethod ()
 		{
 		}
 
-		static void RequiresPublicFields ([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)] Type type)
+		static void RequiresPublicFields ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] Type type)
 		{
 		}
 

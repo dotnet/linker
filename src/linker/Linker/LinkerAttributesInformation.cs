@@ -29,7 +29,7 @@ namespace Mono.Linker
 			attributeValue = null;
 
 			if (_linkerAttributes != null && _linkerAttributes.TryGetValue (typeof (T), out var returnValue)) {
-				attributeValue = (T)returnValue;
+				attributeValue = (T) returnValue;
 				return true;
 			}
 

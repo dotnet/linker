@@ -2460,7 +2460,7 @@ namespace Mono.Linker.Steps
 				if (eh.HandlerType == ExceptionHandlerType.Catch)
 					MarkType (eh.CatchType, new DependencyInfo (DependencyKind.CatchType, body.Method));
 
-			bool requiresReflectionMethodBodyScanner = 
+			bool requiresReflectionMethodBodyScanner =
 				ReflectionMethodBodyScanner.RequiresReflectionMethodBodyScannerForMethodBody (_flowAnnotations, body.Method);
 			foreach (Instruction instruction in body.Instructions)
 				MarkInstruction (instruction, body.Method, ref requiresReflectionMethodBodyScanner);
@@ -2507,7 +2507,7 @@ namespace Mono.Linker.Steps
 				case Code.Stsfld:
 				case Code.Ldflda: // Field address loads (as those can be used to store values to annotated field and thus must be checked)
 				case Code.Ldsflda:
-					requiresReflectionMethodBodyScanner |= 
+					requiresReflectionMethodBodyScanner |=
 						ReflectionMethodBodyScanner.RequiresReflectionMethodBodyScannerForAccess (_flowAnnotations, (FieldReference) instruction.Operand);
 					break;
 
@@ -2528,7 +2528,7 @@ namespace Mono.Linker.Steps
 						Code.Ldftn => DependencyKind.Ldftn,
 						_ => throw new Exception ($"unexpected opcode {instruction.OpCode}")
 					};
-					requiresReflectionMethodBodyScanner |= 
+					requiresReflectionMethodBodyScanner |=
 						ReflectionMethodBodyScanner.RequiresReflectionMethodBodyScannerForCallSite (_context, _flowAnnotations, (MethodReference) instruction.Operand);
 					MarkMethod ((MethodReference) instruction.Operand, new DependencyInfo (dependencyKind, method));
 					break;
