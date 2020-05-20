@@ -826,11 +826,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 			if (member is IMemberDefinition memberDefinition) {
 				if (memberDefinition is TypeDefinition type) {
-					if (type.DeclaringType != null) {
-						return GetFullMemberNameFromDefinition (type.DeclaringType) + "::" + type.Name;
-					} else {
-						return memberDefinition.FullName;
-					}
+					return memberDefinition.FullName;
 				}
 
 				string fullName = memberDefinition.DeclaringType.FullName + "::";

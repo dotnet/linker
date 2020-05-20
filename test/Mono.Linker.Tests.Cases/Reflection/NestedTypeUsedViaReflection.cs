@@ -26,7 +26,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		[Kept]
 		[RecognizedReflectionAccessPattern (
 			typeof (Type), nameof (Type.GetNestedType), new Type[] { typeof (string) },
-			typeof (NestedTypeUsedViaReflection), nameof (NestedTypeUsedViaReflection.NestedType), (Type[]) null)]
+			typeof (NestedTypeUsedViaReflection.NestedType), null, (Type[]) null)]
 		static void TestByName ()
 		{
 			_ = typeof (NestedTypeUsedViaReflection).GetNestedType (nameof (NestedType));
@@ -53,13 +53,13 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		[Kept]
 		[RecognizedReflectionAccessPattern (
 			typeof (Type), nameof (Type.GetNestedType), new Type[] { typeof (string), typeof (BindingFlags) },
-			typeof (NestedTypeUsedViaReflection), nameof (NestedTypeUsedViaReflection.PrivateNestedType), (Type[]) null)]
+			typeof (NestedTypeUsedViaReflection.PrivateNestedType), null, (Type[]) null)]
 		[RecognizedReflectionAccessPattern (
 			typeof (Type), nameof (Type.GetNestedType), new Type[] { typeof (string), typeof (BindingFlags) },
-			typeof (NestedTypeUsedViaReflection), nameof (NestedTypeUsedViaReflection.PublicNestedType), (Type[]) null)]
+			typeof (NestedTypeUsedViaReflection.PublicNestedType), null, (Type[]) null)]
 		[RecognizedReflectionAccessPattern (
 			typeof (Type), nameof (Type.GetNestedType), new Type[] { typeof (string), typeof (BindingFlags) },
-			typeof (NestedTypeUsedViaReflection), nameof (NestedTypeUsedViaReflection.ProtectedNestedType), (Type[]) null)]
+			typeof (NestedTypeUsedViaReflection.ProtectedNestedType), null, (Type[]) null)]
 		static void TestByBindingFlags ()
 		{
 			_ = typeof (NestedTypeUsedViaReflection).GetNestedType (nameof (PrivateNestedType), BindingFlags.NonPublic);
