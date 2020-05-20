@@ -21,21 +21,46 @@ namespace Mono.Linker.Dataflow
 		readonly MarkStep _markStep;
 		readonly FlowAnnotations _flowAnnotations;
 
-		public static bool RequiresReflectionMethodBodyScanner (FlowAnnotations flowAnnotations, MethodReference method)
+		public static bool RequiresReflectionMethodBodyScannerForCallSite (LinkContext context, FlowAnnotations flowAnnotations, MethodReference calledMethod)
 		{
-			MethodDefinition methodDefinition = method.Resolve ();
+			MethodDefinition methodDefinition = calledMethod.Resolve ();
 			if (methodDefinition != null) {
-				return GetIntrinsicIdForMethod (methodDefinition) > IntrinsicId.RequiresReflectionBodyScanner_Sentinel || flowAnnotations.RequiresDataFlowAnalysis (methodDefinition);
+				return
+					GetIntrinsicIdForMethod (methodDefinition) > IntrinsicId.RequiresReflectionBodyScanner_Sentinel ||
+					flowAnnotations.RequiresDataFlowAnalysis (methodDefinition) ||
+					context.Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (methodDefinition);
 			}
 
 			return false;
 		}
 
-		public static bool RequiresReflectionMethodBodyScanner (FlowAnnotations flowAnnotations, FieldReference field)
+		public static bool RequiresReflectionMethodBodyScannerForMethodBody (FlowAnnotations flowAnnotations, MethodReference method)
+		{
+			MethodDefinition methodDefinition = method.Resolve ();
+			if (methodDefinition != null) {
+				return
+					GetIntrinsicIdForMethod (methodDefinition) > IntrinsicId.RequiresReflectionBodyScanner_Sentinel ||
+					flowAnnotations.RequiresDataFlowAnalysis (methodDefinition);
+			}
+
+			return false;
+		}
+
+		public static bool RequiresReflectionMethodBodyScannerForAccess (FlowAnnotations flowAnnotations, FieldReference field)
 		{
 			FieldDefinition fieldDefinition = field.Resolve ();
 			if (fieldDefinition != null)
 				return flowAnnotations.RequiresDataFlowAnalysis (fieldDefinition);
+
+			return false;
+		}
+
+		public static bool AutomaticallySuppressReflectionMethodBodyScannerForMethod (LinkContext context, MethodReference method)
+		{
+			MethodDefinition methodDefinition = method.Resolve ();
+			if (methodDefinition != null) {
+				return context.Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (methodDefinition);
+			}
 
 			return false;
 		}
@@ -407,7 +432,6 @@ namespace Mono.Linker.Dataflow
 
 			try {
 
-
 				bool requiresDataFlowAnalysis = _flowAnnotations.RequiresDataFlowAnalysis (calledMethodDefinition);
 				returnValueDynamicallyAccessedMemberKinds = requiresDataFlowAnalysis ?
 					_flowAnnotations.GetReturnParameterAnnotation (calledMethodDefinition) : 0;
@@ -461,51 +485,34 @@ namespace Mono.Linker.Dataflow
 					|| getRuntimeMember == IntrinsicId.RuntimeReflectionExtensions_GetRuntimeProperty: {
 
 						reflectionContext.AnalyzingPattern ();
-						DynamicallyAccessedMemberTypes? memberKind = null;
 						BindingFlags bindingFlags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public;
-
-						switch (getRuntimeMember) {
-						case IntrinsicId.RuntimeReflectionExtensions_GetRuntimeEvent:
-							memberKind = DynamicallyAccessedMemberTypes.PublicEvents;
-							break;
-
-						case IntrinsicId.RuntimeReflectionExtensions_GetRuntimeField:
-							memberKind = DynamicallyAccessedMemberTypes.PublicFields;
-							break;
-
-						case IntrinsicId.RuntimeReflectionExtensions_GetRuntimeMethod:
-							memberKind = DynamicallyAccessedMemberTypes.PublicMethods;
-							break;
-
-						case IntrinsicId.RuntimeReflectionExtensions_GetRuntimeProperty:
-							memberKind = DynamicallyAccessedMemberTypes.PublicProperties;
-							break;
-
-						default:
-							throw new InternalErrorException ($"Reflection call '{calledMethod.FullName}' inside '{callingMethodBody.Method.FullName}' is of unexpected member type.");
-						}
-
-						if (memberKind == null)
-							break;
+						DynamicallyAccessedMemberTypes requiredMemberTypes = getRuntimeMember switch
+						{
+							IntrinsicId.RuntimeReflectionExtensions_GetRuntimeEvent => DynamicallyAccessedMemberTypes.PublicEvents,
+							IntrinsicId.RuntimeReflectionExtensions_GetRuntimeField => DynamicallyAccessedMemberTypes.PublicFields,
+							IntrinsicId.RuntimeReflectionExtensions_GetRuntimeMethod => DynamicallyAccessedMemberTypes.PublicMethods,
+							IntrinsicId.RuntimeReflectionExtensions_GetRuntimeProperty => DynamicallyAccessedMemberTypes.PublicProperties,
+							_ => throw new InternalErrorException ($"Reflection call '{calledMethod.FullName}' inside '{callingMethodBody.Method.FullName}' is of unexpected member type."),
+						};
 
 						foreach (var value in methodParams[0].UniqueValues ()) {
 							if (value is SystemTypeValue systemTypeValue) {
 								foreach (var stringParam in methodParams[1].UniqueValues ()) {
 									if (stringParam is KnownStringValue stringValue) {
-										switch (memberKind) {
-										case DynamicallyAccessedMemberTypes.PublicEvents:
+										switch (getRuntimeMember) {
+										case IntrinsicId.RuntimeReflectionExtensions_GetRuntimeEvent:
 											MarkEventsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, e => e.Name == stringValue.Contents, bindingFlags);
 											reflectionContext.RecordHandledPattern ();
 											break;
-										case DynamicallyAccessedMemberTypes.PublicFields:
+										case IntrinsicId.RuntimeReflectionExtensions_GetRuntimeField:
 											MarkFieldsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, f => f.Name == stringValue.Contents, bindingFlags);
 											reflectionContext.RecordHandledPattern ();
 											break;
-										case DynamicallyAccessedMemberTypes.PublicMethods:
+										case IntrinsicId.RuntimeReflectionExtensions_GetRuntimeMethod:
 											MarkMethodsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, m => m.Name == stringValue.Contents, bindingFlags);
 											reflectionContext.RecordHandledPattern ();
 											break;
-										case DynamicallyAccessedMemberTypes.PublicProperties:
+										case IntrinsicId.RuntimeReflectionExtensions_GetRuntimeProperty:
 											MarkPropertiesOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, p => p.Name == stringValue.Contents, bindingFlags);
 											reflectionContext.RecordHandledPattern ();
 											break;
@@ -513,16 +520,15 @@ namespace Mono.Linker.Dataflow
 											throw new InternalErrorException ($"Error processing reflection call '{calledMethod.FullName}' inside {callingMethodBody.Method.FullName}. Unexpected member kind.");
 										}
 									} else {
-										RequireDynamicallyAccessedMembers (ref reflectionContext, (DynamicallyAccessedMemberTypes) memberKind, value, calledMethod.Parameters[0]);
+										RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberTypes, value, calledMethod.Parameters[0]);
 									}
 								}
 							} else {
-								RequireDynamicallyAccessedMembers (ref reflectionContext, (DynamicallyAccessedMemberTypes) memberKind, value, calledMethod.Parameters[0]);
+								RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberTypes, value, calledMethod.Parameters[0]);
 							}
 						}
 					}
 					break;
-
 				//
 				// System.Linq.Expressions.Expression
 				// 
@@ -991,6 +997,18 @@ namespace Mono.Linker.Dataflow
 						}
 
 						reflectionContext.RecordHandledPattern ();
+					}
+
+					if (_context.Annotations.TryGetLinkerAttribute (calledMethodDefinition, out RequiresUnreferencedCodeAttribute requiresUnreferencedCode)) {
+						string message =
+							$"Calling '{calledMethodDefinition}' which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. " +
+							$"{requiresUnreferencedCode.Message}.";
+
+						if (requiresUnreferencedCode.Url != null) {
+							message += " " + requiresUnreferencedCode.Url;
+						}
+
+						_context.LogMessage (MessageContainer.CreateWarningMessage (message, 2026, origin: MessageOrigin.TryGetOrigin (callingMethodBody.Method, operation.Offset)));
 					}
 
 					// To get good reporting of errors we need to track the origin of the value for all method calls
