@@ -652,16 +652,13 @@ namespace Mono.Linker.Dataflow
 							if (callingMethodBody.Method.HasThis) {
 								if (methodParam.ParameterIndex == 0) {
 									staticType = callingMethodBody.Method.DeclaringType;
-								}
-								else {
+								} else {
 									staticType = callingMethodBody.Method.Parameters[methodParam.ParameterIndex - 1].ParameterType.Resolve ();
 								}
-							}
-							else {
+							} else {
 								staticType = callingMethodBody.Method.Parameters[methodParam.ParameterIndex].ParameterType.Resolve ();
 							}
-						}
-						else if (methodParams[0] is LoadFieldValue loadedField) {
+						} else if (methodParams[0] is LoadFieldValue loadedField) {
 							staticType = loadedField.Field.FieldType.Resolve ();
 						}
 
@@ -807,7 +804,7 @@ namespace Mono.Linker.Dataflow
 							bindingFlags = (BindingFlags) methodParams[2].AsConstInt ();
 						}
 
-						var requiredMemberKinds = GetDynamicallyAccessedMemberTypesFromBindingFlagsForTypes (bindingFlags);
+						var requiredMemberKinds = GetDynamicallyAccessedMemberTypesFromBindingFlagsForNestedTypes (bindingFlags);
 						foreach (var value in methodParams[0].UniqueValues ()) {
 							if (value is SystemTypeValue systemTypeValue) {
 								foreach (var stringParam in methodParams[1].UniqueValues ()) {
@@ -1190,7 +1187,7 @@ namespace Mono.Linker.Dataflow
 			foreach (var uniqueValue in value.UniqueValues ()) {
 				if (uniqueValue is LeafValueWithDynamicallyAccessedMemberNode valueWithDynamicallyAccessedMember) {
 					if (!valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberKinds.HasFlag (requiredMemberKinds)) {
-						reflectionContext.RecordUnrecognizedPattern ($"{reflectionContext.SourceMethod} The {GetValueDescriptionForErrorMessage (valueWithDynamicallyAccessedMember)} " +
+						reflectionContext.RecordUnrecognizedPattern ($"The {GetValueDescriptionForErrorMessage (valueWithDynamicallyAccessedMember)} " +
 							$"with dynamically accessed member kinds '{GetDynamicallyAccessedMemberKindsDescription (valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberKinds)}' " +
 							$"is passed into the {GetMetadataTokenDescriptionForErrorMessage (targetContext)} " +
 							$"which requires dynamically accessed member kinds '{GetDynamicallyAccessedMemberKindsDescription (requiredMemberKinds)}'. " +
@@ -1251,10 +1248,10 @@ namespace Mono.Linker.Dataflow
 				MarkFieldsOnTypeHierarchy (ref reflectionContext, typeDefinition, filter: null, bindingFlags: BindingFlags.Public);
 
 			if (requiredMemberKinds.HasFlag (DynamicallyAccessedMemberTypes.NonPublicNestedTypes))
-				MarkNestedTypesOnType (ref reflectionContext, typeDefinition, filter: t => !t.IsNestedPublic);
+				MarkNestedTypesOnType (ref reflectionContext, typeDefinition, filter: null, bindingFlags: BindingFlags.NonPublic);
 
 			if (requiredMemberKinds.HasFlag (DynamicallyAccessedMemberTypes.PublicNestedTypes))
-				MarkNestedTypesOnType (ref reflectionContext, typeDefinition, filter: t => t.IsNestedPublic);
+				MarkNestedTypesOnType (ref reflectionContext, typeDefinition, filter: null, bindingFlags: BindingFlags.Public);
 
 			if (requiredMemberKinds.HasFlag (DynamicallyAccessedMemberTypes.NonPublicProperties))
 				MarkPropertiesOnTypeHierarchy (ref reflectionContext, typeDefinition, filter: null, bindingFlags: BindingFlags.NonPublic);
@@ -1375,7 +1372,7 @@ namespace Mono.Linker.Dataflow
 
 		TypeDefinition[] MarkNestedTypesOnType (ref ReflectionPatternContext reflectionContext, TypeDefinition type, Func<TypeDefinition, bool> filter, BindingFlags bindingFlags = BindingFlags.Default)
 		{
-			var result = new ArrayBuilder<TypeDefinition>();
+			var result = new ArrayBuilder<TypeDefinition> ();
 
 			foreach (var nestedType in type.NestedTypes) {
 				if (filter != null && !filter (nestedType))
@@ -1606,7 +1603,7 @@ namespace Mono.Linker.Dataflow
 			return string.Join (" | ", results.Select (r => r.ToString ()));
 		}
 
-		static DynamicallyAccessedMemberTypes GetDynamicallyAccessedMemberTypesFromBindingFlagsForTypes (BindingFlags bindingFlags) =>
+		static DynamicallyAccessedMemberTypes GetDynamicallyAccessedMemberTypesFromBindingFlagsForNestedTypes (BindingFlags bindingFlags) =>
 			(bindingFlags.HasFlag (BindingFlags.Public) ? DynamicallyAccessedMemberTypes.PublicNestedTypes : DynamicallyAccessedMemberTypes.None) |
 			(bindingFlags.HasFlag (BindingFlags.NonPublic) ? DynamicallyAccessedMemberTypes.NonPublicNestedTypes : DynamicallyAccessedMemberTypes.None);
 
