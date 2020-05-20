@@ -47,8 +47,7 @@ namespace Mono.Linker.Dataflow
 						parameterAnnotation = Annotation;
 					} else if (ParamName == paramName && !firstAppearance) {
 						_context.LogMessage (MessageContainer.CreateWarningMessage (_context,
-							$"There are duplicate parameter names for '{paramName}' inside '{method.Name}' in '{_xmlDocumentLocation}'",
-							2024, new MessageOrigin (_xmlDocumentLocation)));
+							$"There are duplicate parameter names for '{paramName}' inside '{method.Name}' in '{_xmlDocumentLocation}'", 2024, _xmlDocumentLocation));
 					}
 				}
 			}
@@ -83,7 +82,7 @@ namespace Mono.Linker.Dataflow
 				if (attribute.attributeName == "System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers") {
 					if (attribute.arguments.Count == 0) {
 						_context.LogMessage (MessageContainer.CreateWarningMessage (_context, $"DynamicallyAccessedMembers attribute was specified but no argument was proportioned",
-							2020, new MessageOrigin (_xmlDocumentLocation)));
+							2020, _xmlDocumentLocation));
 					} else if (attribute.arguments.Count == 1) {
 						DynamicallyAccessedMemberTypes result;
 						foreach (var argument in attribute.arguments.ToArray ()) {
@@ -93,14 +92,12 @@ namespace Mono.Linker.Dataflow
 								return result;
 							} else {
 								_context.LogMessage (MessageContainer.CreateWarningMessage (_context,
-									$"Could not parse argument '{argument}' specified in '{_xmlDocumentLocation}' as a DynamicallyAccessedMemberTypes",
-									2021, new MessageOrigin (_xmlDocumentLocation)));
+									$"Could not parse argument '{argument}' specified in '{_xmlDocumentLocation}' as a DynamicallyAccessedMemberTypes", 2021, _xmlDocumentLocation));
 							}
 						}
 					} else {
 						_context.LogMessage (MessageContainer.CreateWarningMessage (_context,
-							$"DynamicallyAccessedMembers attribute was specified but there is more than one argument",
-							2022, new MessageOrigin (_xmlDocumentLocation)));
+							$"DynamicallyAccessedMembers attribute was specified but there is more than one argument", 2022, _xmlDocumentLocation));
 					}
 				}
 			}
@@ -135,8 +132,7 @@ namespace Mono.Linker.Dataflow
 
 				if (assembly == null) {
 					_context.LogMessage (MessageContainer.CreateWarningMessage (_context,
-						$"Could not resolve assembly {GetAssemblyName (iterator.Current).Name} specified in {_xmlDocumentLocation}",
-						2007, new MessageOrigin (_xmlDocumentLocation)));
+						$"Could not resolve assembly {GetAssemblyName (iterator.Current).Name} specified in {_xmlDocumentLocation}", 2007, _xmlDocumentLocation));
 					continue;
 				}
 				ProcessTypes (assembly, iterator.Current.SelectChildren ("type", string.Empty));
@@ -195,8 +191,7 @@ namespace Mono.Linker.Dataflow
 				}
 
 				if (type == null) {
-					_context.LogMessage (MessageContainer.CreateWarningMessage (_context, $"Could not resolve type '{fullname}' specified in {_xmlDocumentLocation}",
-						2008, new MessageOrigin (_xmlDocumentLocation)));
+					_context.LogMessage (MessageContainer.CreateWarningMessage (_context, $"Could not resolve type '{fullname}' specified in {_xmlDocumentLocation}", 2008, _xmlDocumentLocation));
 					continue;
 				}
 
@@ -327,8 +322,7 @@ namespace Mono.Linker.Dataflow
 			FieldDefinition field = GetField (type, signature);
 			if (field == null) {
 				_context.LogMessage (MessageContainer.CreateWarningMessage (_context,
-					$"Could not find field '{signature}' in type '{type.FullName}' specified in { _xmlDocumentLocation}",
-					2016, new MessageOrigin (_xmlDocumentLocation)));
+					$"Could not find field '{signature}' in type '{type.FullName}' specified in { _xmlDocumentLocation}", 2016, _xmlDocumentLocation));
 				return;
 			}
 			ArrayBuilder<Attribute> attributes = ProcessAttributes (iterator);
@@ -369,8 +363,7 @@ namespace Mono.Linker.Dataflow
 			MethodDefinition method = GetMethod (type, signature);
 			if (method == null) {
 				_context.LogMessage (MessageContainer.CreateWarningMessage (_context,
-					$"Could not find method '{signature}' in type '{type.FullName}' specified in '{_xmlDocumentLocation}'",
-					2009, new MessageOrigin (_xmlDocumentLocation)));
+					$"Could not find method '{signature}' in type '{type.FullName}' specified in '{_xmlDocumentLocation}'", 2009, _xmlDocumentLocation));
 				return;
 			}
 			ProcessMethodChildren (type, method, iterator);
@@ -403,8 +396,7 @@ namespace Mono.Linker.Dataflow
 				}
 			} else {
 				_context.LogMessage (MessageContainer.CreateWarningMessage (_context,
-					$"There is more than one return parameter specified for '{method.Name}' in '{_xmlDocumentLocation}'",
-					2023, new MessageOrigin (_xmlDocumentLocation)));
+					$"There is more than one return parameter specified for '{method.Name}' in '{_xmlDocumentLocation}'", 2023, _xmlDocumentLocation));
 			}
 			if (returnAnnotation != 0 || parameterAnnotation.Count > 0)
 				_methods[method] = new AnnotatedMethod (returnAnnotation, parameterAnnotation.ToArray ());

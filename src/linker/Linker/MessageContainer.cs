@@ -4,6 +4,7 @@
 
 using System;
 using System.Text;
+using Mono.Cecil;
 
 namespace Mono.Linker
 {
@@ -68,6 +69,50 @@ namespace Mono.Linker
 				return null;
 
 			return new MessageContainer (MessageCategory.Warning, text, code, subcategory, origin);
+		}
+
+		/// <summary>
+		/// Create a warning message.
+		/// </summary>
+		/// <param name="context">Context with the relevant warning suppression info.</param>
+		/// <param name="text">Humanly readable message describing the warning</param>
+		/// <param name="code">Unique warning ID. Please see https://github.com/mono/linker/blob/master/doc/error-codes.md
+		/// for the list of warnings and possibly add a new one</param>
+		/// /// <param name="origin">Filename where the warning is coming from</param>
+		/// <param name="subcategory">Optionally, further categorize this warning</param>
+		/// <returns>New MessageContainer of 'Warning' category</returns>
+		internal static MessageContainer? CreateWarningMessage (LinkContext context, string text, int code, string origin, string subcategory = MessageSubCategory.None)
+		{
+			if (!(code > 2000 && code <= 6000))
+				throw new ArgumentException ($"The provided code '{code}' does not fall into the warning category, which is in the range of 2001 to 6000 (inclusive).");
+
+			MessageOrigin _origin = new MessageOrigin (origin);
+			if (context.IsSuppressed (code, _origin))
+				return null;
+
+			return new MessageContainer (MessageCategory.Warning, text, code, subcategory, _origin);
+		}
+
+		/// <summary>
+		/// Create a warning message.
+		/// </summary>
+		/// <param name="context">Context with the relevant warning suppression info.</param>
+		/// <param name="text">Humanly readable message describing the warning</param>
+		/// <param name="code">Unique warning ID. Please see https://github.com/mono/linker/blob/master/doc/error-codes.md
+		/// for the list of warnings and possibly add a new one</param>
+		/// /// <param name="origin">Type or member where the warning is coming from</param>
+		/// <param name="subcategory">Optionally, further categorize this warning</param>
+		/// <returns>New MessageContainer of 'Warning' category</returns>
+		internal static MessageContainer? CreateWarningMessage (LinkContext context, string text, int code, IMetadataTokenProvider origin, string subcategory = MessageSubCategory.None)
+		{
+			if (!(code > 2000 && code <= 6000))
+				throw new ArgumentException ($"The provided code '{code}' does not fall into the warning category, which is in the range of 2001 to 6000 (inclusive).");
+
+			MessageOrigin _origin = new MessageOrigin (origin);
+			if (context.IsSuppressed (code, _origin))
+				return null;
+
+			return new MessageContainer (MessageCategory.Warning, text, code, subcategory, _origin);
 		}
 
 		/// <summary>

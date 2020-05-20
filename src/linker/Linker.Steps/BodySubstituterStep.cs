@@ -89,8 +89,7 @@ namespace Mono.Linker.Steps
 
 				if (assembly == null) {
 					Context.LogMessage (MessageContainer.CreateWarningMessage (Context,
-						$"Could not resolve assembly {GetAssemblyName (iterator.Current).Name} specified in {_xmlDocumentLocation}",
-						2007, new MessageOrigin (_xmlDocumentLocation)));
+						$"Could not resolve assembly {GetAssemblyName (iterator.Current).Name} specified in {_xmlDocumentLocation}", 2007, _xmlDocumentLocation));
 					continue;
 				}
 
@@ -116,8 +115,7 @@ namespace Mono.Linker.Steps
 				TypeDefinition type = assembly.MainModule.GetType (fullname);
 
 				if (type == null) {
-					Context.LogMessage (MessageContainer.CreateWarningMessage (Context, $"Could not resolve type '{fullname}' specified in {_xmlDocumentLocation}",
-						2008, new MessageOrigin (_xmlDocumentLocation)));
+					Context.LogMessage (MessageContainer.CreateWarningMessage (Context, $"Could not resolve type '{fullname}' specified in {_xmlDocumentLocation}", 2008, _xmlDocumentLocation));
 					continue;
 				}
 
@@ -167,8 +165,7 @@ namespace Mono.Linker.Steps
 			MethodDefinition method = FindMethod (type, signature);
 			if (method == null) {
 				Context.LogMessage (MessageContainer.CreateWarningMessage (Context,
-					$"Could not find method '{signature}' in type '{type.FullName}' specified in {_xmlDocumentLocation}",
-					2009, new MessageOrigin (_xmlDocumentLocation)));
+					$"Could not find method '{signature}' in type '{type.FullName}' specified in {_xmlDocumentLocation}", 2009, _xmlDocumentLocation));
 				return;
 			}
 
@@ -181,8 +178,7 @@ namespace Mono.Linker.Steps
 				string value = GetAttribute (iterator.Current, "value");
 				if (value != "") {
 					if (!TryConvertValue (value, method.ReturnType, out object res)) {
-						Context.LogMessage (MessageContainer.CreateWarningMessage (Context, $"Invalid value for '{signature}' stub",
-							2010, new MessageOrigin (_xmlDocumentLocation)));
+						Context.LogMessage (MessageContainer.CreateWarningMessage (Context, $"Invalid value for '{signature}' stub", 2010, _xmlDocumentLocation));
 						return;
 					}
 
@@ -192,8 +188,7 @@ namespace Mono.Linker.Steps
 				Annotations.SetAction (method, MethodAction.ConvertToStub);
 				return;
 			default:
-				Context.LogMessage (MessageContainer.CreateWarningMessage (Context, $"Unknown body modification '{action}' for '{signature}'",
-					2011, new MessageOrigin (_xmlDocumentLocation)));
+				Context.LogMessage (MessageContainer.CreateWarningMessage (Context, $"Unknown body modification '{action}' for '{signature}'", 2011, _xmlDocumentLocation));
 				return;
 			}
 		}
@@ -206,26 +201,22 @@ namespace Mono.Linker.Steps
 
 			var field = type.Fields.FirstOrDefault (f => f.Name == name);
 			if (field == null) {
-				Context.LogMessage (MessageContainer.CreateWarningMessage (Context, $"Could not find field '{name}' in type '{type.FullName}' specified in { _xmlDocumentLocation}",
-					2012, new MessageOrigin(_xmlDocumentLocation)));
+				Context.LogMessage (MessageContainer.CreateWarningMessage (Context, $"Could not find field '{name}' in type '{type.FullName}' specified in { _xmlDocumentLocation}", 2012, _xmlDocumentLocation));
 				return;
 			}
 
 			if (!field.IsStatic || field.IsLiteral) {
-				Context.LogMessage (MessageContainer.CreateWarningMessage (Context, $"Substituted field '{name}' needs to be static field.",
-					2013, new MessageOrigin (_xmlDocumentLocation)));
+				Context.LogMessage (MessageContainer.CreateWarningMessage (Context, $"Substituted field '{name}' needs to be static field.", 2013, _xmlDocumentLocation));
 				return;
 			}
 
 			string value = GetAttribute (iterator.Current, "value");
 			if (string.IsNullOrEmpty (value)) {
-				Context.LogMessage (MessageContainer.CreateWarningMessage (Context, $"Missing 'value' attribute for field '{field}'.",
-					2014, new MessageOrigin (_xmlDocumentLocation)));
+				Context.LogMessage (MessageContainer.CreateWarningMessage (Context, $"Missing 'value' attribute for field '{field}'.", 2014, _xmlDocumentLocation));
 				return;
 			}
 			if (!TryConvertValue (value, field.FieldType, out object res)) {
-				Context.LogMessage (MessageContainer.CreateWarningMessage (Context, $"Invalid value for '{field}': '{value}'.",
-					2015, new MessageOrigin (_xmlDocumentLocation)));
+				Context.LogMessage (MessageContainer.CreateWarningMessage (Context, $"Invalid value for '{field}': '{value}'.", 2015, _xmlDocumentLocation));
 				return;
 			}
 
