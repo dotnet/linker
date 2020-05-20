@@ -14,7 +14,7 @@ namespace Mono.Linker
 	{
 		readonly Dictionary<Type, List<Attribute>> _linkerAttributes;
 
-		public LinkerAttributesInformation (MethodDefinition method)
+		public LinkerAttributesInformation (LinkContext context, MethodDefinition method)
 		{
 			_linkerAttributes = null;
 
@@ -23,7 +23,7 @@ namespace Mono.Linker
 					var attributeType = customAttribute.AttributeType;
 					Attribute attributeValue = null;
 					if (attributeType.Name == "RequiresUnreferencedCodeAttribute" && attributeType.Namespace == "System.Diagnostics.CodeAnalysis") {
-						attributeValue = ProcessRequiresUnreferencedCodeAttribute (customAttribute);
+						attributeValue = ProcessRequiresUnreferencedCodeAttribute (context, method, customAttribute);
 					}
 
 					if (attributeValue != null) {
@@ -49,18 +49,17 @@ namespace Mono.Linker
 
 		public IEnumerable<T> GetAttributes<T> () where T : Attribute
 		{
-			if (_linkerAttributes != null && _linkerAttributes.TryGetValue (typeof (T), out var attributeList)) {
-				if (attributeList == null || attributeList.Count == 0) {
-					throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage ("IL Linker has encountered an unexpected error. Please report the issue at https://github.com/mono/linker/issues \nUnexpected list of attributes.", 1012));
-				}
+			if (_linkerAttributes == null || !_linkerAttributes.TryGetValue (typeof (T), out var attributeList))
+				return Enumerable.Empty<T> ();
 
-				return attributeList.Cast<T> ();
+			if (attributeList == null || attributeList.Count == 0) {
+				throw new LinkerFatalErrorException ("Unexpected list of attributes.");
 			}
 
-			return Enumerable.Empty<T> ();
+			return attributeList.Cast<T> ();
 		}
 
-		static Attribute ProcessRequiresUnreferencedCodeAttribute (CustomAttribute customAttribute)
+		static Attribute ProcessRequiresUnreferencedCodeAttribute (LinkContext context, MethodDefinition method, CustomAttribute customAttribute)
 		{
 			if (customAttribute.HasConstructorArguments) {
 				string message = (string) customAttribute.ConstructorArguments[0].Value;
@@ -73,6 +72,11 @@ namespace Mono.Linker
 
 				return new RequiresUnreferencedCodeAttribute (message) { Url = url };
 			}
+
+			context.LogMessage (MessageContainer.CreateWarningMessage (
+				$"Attribute '{typeof (RequiresUnreferencedCodeAttribute).FullName}' on '{method}' doesn't have a required constructor argument.",
+				2028,
+				origin: MessageOrigin.TryGetOrigin (method, 0)));
 
 			return null;
 		}

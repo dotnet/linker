@@ -999,7 +999,7 @@ namespace Mono.Linker.Dataflow
 						reflectionContext.RecordHandledPattern ();
 					}
 
-					if (_context.Annotations.TryGetLinkerAttribute<RequiresUnreferencedCodeAttribute> (calledMethodDefinition, out var requiresUnreferencedCode)) {
+					if (_context.Annotations.TryGetLinkerAttribute (calledMethodDefinition, out RequiresUnreferencedCodeAttribute requiresUnreferencedCode)) {
 						string message =
 							$"Calling '{calledMethodDefinition}' which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. " +
 							$"{requiresUnreferencedCode.Message}.";

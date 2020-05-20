@@ -432,7 +432,7 @@ namespace Mono.Linker
 		public bool HasLinkerAttribute<T> (MethodDefinition method) where T : Attribute
 		{
 			if (!method_linker_attributes.TryGetValue (method, out var linkerAttributeInformation)) {
-				linkerAttributeInformation = new LinkerAttributesInformation (method);
+				linkerAttributeInformation = new LinkerAttributesInformation (context, method);
 				method_linker_attributes.Add (method, linkerAttributeInformation);
 			}
 
@@ -442,7 +442,7 @@ namespace Mono.Linker
 		public IEnumerable<T> GetLinkerAttributes<T> (MethodDefinition method) where T : Attribute
 		{
 			if (!method_linker_attributes.TryGetValue (method, out var linkerAttributeInformation)) {
-				linkerAttributeInformation = new LinkerAttributesInformation (method);
+				linkerAttributeInformation = new LinkerAttributesInformation (context, method);
 				method_linker_attributes.Add (method, linkerAttributeInformation);
 			}
 
@@ -454,7 +454,7 @@ namespace Mono.Linker
 			var attributes = GetLinkerAttributes<T> (method);
 			if (attributes.Count () > 1) {
 				context.LogMessage (MessageContainer.CreateWarningMessage (
-					$"Found multiple instances of attribute '{typeof (T).FullName}' on '{method}', but only one is allowed. Only the first one will be used, the others will be ignored.",
+					$"Attribute '{typeof (T).FullName}' should only be used once on '{method}'.",
 					2027,
 					origin: MessageOrigin.TryGetOrigin (method, 0)));
 			}

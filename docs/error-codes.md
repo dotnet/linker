@@ -163,6 +163,10 @@ error and warning codes.
 
 - The linker found a call to a method which is annotated with 'RequiresUnreferencedCodeAttribute' which can break functionality of a trimmed application.
 
-#### `IL2027`: Found multiple instances of attribute 'attribut'` on 'method', but only one is allowed. Only the first one will be used, the others will be ignored.
+#### `IL2027`: Attribute 'attribute' should only be used once on 'method'.
 
 - The linker found multiple instances of attribute 'attribute' on 'method'. This attribute is only allowed to have one instance, linker will only use the fist instance and ignore the rest.
+
+#### `IL2028`: Attribute 'attribute' on 'method' doesn't have a required constructor argument.
+
+- The linker found an instance of attribute 'attribute' on 'method' but it lacks a required constructor argument. Linker will ignore this attribute.
