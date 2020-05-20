@@ -29,6 +29,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
@@ -428,14 +429,38 @@ namespace Mono.Linker
 			return marked_types_with_cctor.Add (type);
 		}
 
-		public bool TryGetLinkerAttribute<T> (MethodDefinition method, out T attributeValue) where T : class
+		public bool HasLinkerAttribute<T> (MethodDefinition method) where T : Attribute
 		{
 			if (!method_linker_attributes.TryGetValue (method, out var linkerAttributeInformation)) {
-				linkerAttributeInformation.InitializeForMethod (method);
+				linkerAttributeInformation = new LinkerAttributesInformation (method);
 				method_linker_attributes.Add (method, linkerAttributeInformation);
 			}
 
-			return linkerAttributeInformation.TryGetAttribute (out attributeValue);
+			return linkerAttributeInformation.HasAttribute<T> ();
+		}
+
+		public IEnumerable<T> GetLinkerAttributes<T> (MethodDefinition method) where T : Attribute
+		{
+			if (!method_linker_attributes.TryGetValue (method, out var linkerAttributeInformation)) {
+				linkerAttributeInformation = new LinkerAttributesInformation (method);
+				method_linker_attributes.Add (method, linkerAttributeInformation);
+			}
+
+			return linkerAttributeInformation.GetAttributes<T> ();
+		}
+
+		public bool TryGetLinkerAttribute<T> (MethodDefinition method, out T attribute) where T : Attribute
+		{
+			var attributes = GetLinkerAttributes<T> (method);
+			if (attributes.Count () > 1) {
+				context.LogMessage (MessageContainer.CreateWarningMessage (
+					$"Found multiple instances of attribute '{typeof (T).FullName}' on '{method}', but only one is allowed. Only the first one will be used, the others will be ignored.",
+					2027,
+					origin: MessageOrigin.TryGetOrigin (method, 0)));
+			}
+
+			attribute = attributes.FirstOrDefault ();
+			return attribute != null;
 		}
 	}
 }

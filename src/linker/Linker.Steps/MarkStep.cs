@@ -2465,7 +2465,7 @@ namespace Mono.Linker.Steps
 			foreach (Instruction instruction in body.Instructions)
 				MarkInstruction (instruction, body.Method, ref requiresReflectionMethodBodyScanner);
 
-			if (ReflectionMethodBodyScanner.AutomaticallySuppressReflectionmethodBodyScannerForMethod (_context, body.Method))
+			if (ReflectionMethodBodyScanner.AutomaticallySuppressReflectionMethodBodyScannerForMethod (_context, body.Method))
 				requiresReflectionMethodBodyScanner = false;
 
 			MarkInterfacesNeededByBodyStack (body);

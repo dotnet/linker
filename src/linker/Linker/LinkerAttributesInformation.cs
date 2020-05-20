@@ -5,49 +5,62 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using Mono.Cecil;
 
 namespace Mono.Linker
 {
-	struct LinkerAttributesInformation
+	readonly struct LinkerAttributesInformation
 	{
-		Dictionary<Type, object> _linkerAttributes;
+		readonly Dictionary<Type, List<Attribute>> _linkerAttributes;
 
-		public void InitializeForMethod (MethodDefinition method)
+		public LinkerAttributesInformation (MethodDefinition method)
 		{
-			if (method.HasCustomAttributes)
+			_linkerAttributes = null;
+
+			if (method.HasCustomAttributes) {
 				foreach (var customAttribute in method.CustomAttributes) {
 					var attributeType = customAttribute.AttributeType;
+					Attribute attributeValue = null;
 					if (attributeType.Name == "RequiresUnreferencedCodeAttribute" && attributeType.Namespace == "System.Diagnostics.CodeAnalysis") {
-						AddAttribute (ProcessRequiresUnreferencedCodeAttribute (customAttribute));
+						attributeValue = ProcessRequiresUnreferencedCodeAttribute (customAttribute);
+					}
+
+					if (attributeValue != null) {
+						if (_linkerAttributes == null)
+							_linkerAttributes = new Dictionary<Type, List<Attribute>> ();
+
+						Type attributeValueType = attributeValue.GetType ();
+						if (!_linkerAttributes.TryGetValue (attributeValueType, out var attributeList)) {
+							attributeList = new List<Attribute> ();
+							_linkerAttributes.Add (attributeValueType, attributeList);
+						}
+
+						attributeList.Add (attributeValue);
 					}
 				}
+			}
 		}
 
-		public bool TryGetAttribute<T> (out T attributeValue) where T : class
+		public bool HasAttribute<T> () where T : Attribute
 		{
-			attributeValue = null;
+			return _linkerAttributes != null && _linkerAttributes.ContainsKey (typeof (T));
+		}
 
-			if (_linkerAttributes != null && _linkerAttributes.TryGetValue (typeof (T), out var returnValue)) {
-				attributeValue = (T) returnValue;
-				return true;
+		public IEnumerable<T> GetAttributes<T> () where T : Attribute
+		{
+			if (_linkerAttributes != null && _linkerAttributes.TryGetValue (typeof (T), out var attributeList)) {
+				if (attributeList == null || attributeList.Count == 0) {
+					throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage ("IL Linker has encountered an unexpected error. Please report the issue at https://github.com/mono/linker/issues \nUnexpected list of attributes.", 1012));
+				}
+
+				return attributeList.Cast<T> ();
 			}
 
-			return false;
+			return Enumerable.Empty<T> ();
 		}
 
-		void AddAttribute (object attribute)
-		{
-			if (attribute == null)
-				return;
-
-			if (_linkerAttributes == null)
-				_linkerAttributes = new Dictionary<Type, object> ();
-
-			_linkerAttributes.Add (attribute.GetType (), attribute);
-		}
-
-		static object ProcessRequiresUnreferencedCodeAttribute (CustomAttribute customAttribute)
+		static Attribute ProcessRequiresUnreferencedCodeAttribute (CustomAttribute customAttribute)
 		{
 			if (customAttribute.HasConstructorArguments) {
 				string message = (string) customAttribute.ConstructorArguments[0].Value;

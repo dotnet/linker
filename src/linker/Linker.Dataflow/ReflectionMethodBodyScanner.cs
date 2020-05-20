@@ -28,7 +28,7 @@ namespace Mono.Linker.Dataflow
 				return
 					GetIntrinsicIdForMethod (methodDefinition) > IntrinsicId.RequiresReflectionBodyScanner_Sentinel ||
 					flowAnnotations.RequiresDataFlowAnalysis (methodDefinition) ||
-					context.Annotations.TryGetLinkerAttribute<RequiresUnreferencedCodeAttribute> (methodDefinition, out _);
+					context.Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (methodDefinition);
 			}
 
 			return false;
@@ -55,11 +55,11 @@ namespace Mono.Linker.Dataflow
 			return false;
 		}
 
-		public static bool AutomaticallySuppressReflectionmethodBodyScannerForMethod (LinkContext context, MethodReference method)
+		public static bool AutomaticallySuppressReflectionMethodBodyScannerForMethod (LinkContext context, MethodReference method)
 		{
 			MethodDefinition methodDefinition = method.Resolve ();
 			if (methodDefinition != null) {
-				return context.Annotations.TryGetLinkerAttribute<RequiresUnreferencedCodeAttribute> (methodDefinition, out _);
+				return context.Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (methodDefinition);
 			}
 
 			return false;
