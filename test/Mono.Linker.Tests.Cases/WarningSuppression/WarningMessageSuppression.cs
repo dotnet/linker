@@ -12,7 +12,6 @@ namespace Mono.Linker.Tests.Cases.WarningSuppression
 {
 	[SetupCompileBefore ("library.dll", new[] { "Dependencies/WarningMessageSuppression_Lib.cs" })]
 	[KeptAssembly ("library.dll")]
-	[LogContains ("ILlinker: Warning 'IL2006' was suppressed")]
 	[LogDoesNotContain ("ILlinker: Unrecognized reflection pattern warning IL2006: The return value of method " +
 		"'System.Type Mono.Linker.Tests.Cases.WarningSuppression.WarningMessageSuppression::TriggerUnrecognizedPattern()'")]
 	[LogDoesNotContain ("ILlinker: Unrecognized reflection pattern warning IL2006: The return value of method " +

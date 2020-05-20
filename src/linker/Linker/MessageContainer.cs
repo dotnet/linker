@@ -52,20 +52,20 @@ namespace Mono.Linker
 		/// <summary>
 		/// Create a warning message.
 		/// </summary>
+		/// <param name="context">Context with the relevant warning suppression info.</param>
 		/// <param name="text">Humanly readable message describing the warning</param>
 		/// <param name="code">Unique warning ID. Please see https://github.com/mono/linker/blob/master/doc/error-codes.md
 		/// for the list of warnings and possibly add a new one</param>
+		/// /// <param name="origin">Filename or member where the warning is coming from</param>
 		/// <param name="subcategory">Optionally, further categorize this warning</param>
-		/// <param name="origin">Filename, line, and column where the warning was found</param>
 		/// <returns>New MessageContainer of 'Warning' category</returns>
-		public static MessageContainer CreateWarningMessage (string text, int code, string subcategory = MessageSubCategory.None, MessageOrigin? origin = null)
+		public static MessageContainer? CreateWarningMessage (LinkContext context, string text, int code, MessageOrigin origin, string subcategory = MessageSubCategory.None)
 		{
 			if (!(code > 2000 && code <= 6000))
 				throw new ArgumentException ($"The provided code '{code}' does not fall into the warning category, which is in the range of 2001 to 6000 (inclusive).");
 
-			if (origin != null && origin.Value.IsSuppressed) {
-				return CreateInfoMessage ($"Warning '{origin.Value.SuppressionInfo.Id}' was suppressed");
-			}
+			if (context.IsSuppressed (code, origin))
+				return null;
 
 			return new MessageContainer (MessageCategory.Warning, text, code, subcategory, origin);
 		}

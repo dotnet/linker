@@ -11,59 +11,60 @@ namespace Mono.Linker
 {
 	public readonly struct MessageOrigin
 	{
-		public string FileName { get; }
+#nullable enable
+		public string? FileName { get; }
+		public IMetadataTokenProvider? MdTokenProvider { get; }
+#nullable disable
 		public int SourceLine { get; }
 		public int SourceColumn { get; }
-		public bool IsSuppressed { get; }
-		public SuppressMessageInfo SuppressionInfo { get; }
 
 		public MessageOrigin (string fileName, int sourceLine = 0, int sourceColumn = 0)
 		{
 			FileName = fileName;
 			SourceLine = sourceLine;
 			SourceColumn = sourceColumn;
-			IsSuppressed = false;
-			SuppressionInfo = default;
+			MdTokenProvider = null;
 		}
 
-		internal MessageOrigin (SuppressMessageInfo suppressionInfo)
+		public MessageOrigin (IMetadataTokenProvider mdTokenProvider, int sourceLine = 0, int sourceColumn = 0)
 		{
-			IsSuppressed = true;
-			SuppressionInfo = suppressionInfo;
-			FileName = string.Empty;
-			SourceLine = SourceColumn = 0;
+			FileName = null;
+			MdTokenProvider = mdTokenProvider;
+			SourceLine = sourceLine;
+			SourceColumn = sourceColumn;
 		}
 
-		public static MessageOrigin? TryGetOrigin (IMemberDefinition sourceMethod, int ilOffset)
+		private MessageOrigin (string fileName, IMetadataTokenProvider mdTokenProvider, int sourceLine = 0, int sourceColumn = 0)
+		{
+			FileName = fileName;
+			MdTokenProvider = mdTokenProvider;
+			SourceLine = sourceLine;
+			SourceColumn = sourceColumn;
+		}
+
+		public static MessageOrigin TryGetOrigin (IMetadataTokenProvider sourceMethod, int ilOffset)
 		{
 			if (sourceMethod is MethodDefinition methodDef) {
 				if (!methodDef.DebugInformation.HasSequencePoints)
-					return null;
+					return new MessageOrigin (methodDef);
 
 				SequencePoint correspondingSequencePoint = methodDef.DebugInformation.SequencePoints
 					.Where (s => s.Offset <= ilOffset)?.Last ();
 				if (correspondingSequencePoint == null)
-					return null;
+					return new MessageOrigin (correspondingSequencePoint.Document.Url, methodDef);
 
-				return new MessageOrigin (correspondingSequencePoint.Document.Url, correspondingSequencePoint.StartLine, correspondingSequencePoint.StartColumn);
+				return new MessageOrigin (correspondingSequencePoint.Document.Url, methodDef, correspondingSequencePoint.StartLine, correspondingSequencePoint.StartColumn);
 			}
 
-			return null;
-		}
-
-		internal static MessageOrigin? TryGetOrigin (IMemberDefinition sourceMethod, int ilOffset,
-			UnconditionalSuppressMessageAttributeState unconditionalSuppressions, int warningCode)
-		{
-			if (unconditionalSuppressions.IsSuppressed ("IL" + warningCode, sourceMethod, out SuppressMessageInfo info))
-				return new MessageOrigin (info);
-
-			return TryGetOrigin (sourceMethod, ilOffset);
+			return new MessageOrigin (sourceMethod);
 		}
 
 		public override string ToString ()
 		{
-			StringBuilder sb = new StringBuilder (FileName);
+			if (FileName == null)
+				return null;
 
+			StringBuilder sb = new StringBuilder (FileName);
 			if (SourceLine != 0) {
 				sb.Append ("(").Append (SourceLine);
 				if (SourceColumn != 0)

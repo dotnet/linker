@@ -57,7 +57,7 @@ namespace Mono.Linker
 			HasLocalSuppressions = true;
 		}
 
-		public bool IsSuppressed (string id, IMetadataTokenProvider mdTokenProvider, out SuppressMessageInfo info)
+		public bool IsSuppressed (string id, MessageOrigin warningOrigin, out SuppressMessageInfo info)
 		{
 			info = default;
 
@@ -65,7 +65,8 @@ namespace Mono.Linker
 				return true;
 			}
 
-			if (HasSuppressions) {
+			if (HasSuppressions && warningOrigin.MdTokenProvider != null) {
+				IMetadataTokenProvider mdTokenProvider = warningOrigin.MdTokenProvider;
 				do {
 					if (IsLocallySuppressed (id, mdTokenProvider.MetadataToken, out info)) {
 						return true;

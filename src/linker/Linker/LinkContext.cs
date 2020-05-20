@@ -465,10 +465,20 @@ namespace Mono.Linker
 			return Optimizations.IsEnabled (optimization, context);
 		}
 
-		public void LogMessage (MessageContainer message)
+		public void LogMessage (MessageContainer? message)
 		{
-			if (LogMessages)
-				Logger?.LogMessage (message);
+			if (!LogMessages || message == null)
+				return;
+
+			Logger?.LogMessage (message.Value);
+		}
+
+		public bool IsSuppressed (int warningCode, MessageOrigin origin)
+		{
+			if (Suppressions == null)
+				return false;
+
+			return Suppressions.IsSuppressed ("IL" + warningCode, origin, out _);
 		}
 	}
 
