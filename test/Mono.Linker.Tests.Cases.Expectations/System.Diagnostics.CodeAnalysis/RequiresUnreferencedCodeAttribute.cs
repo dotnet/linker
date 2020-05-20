@@ -2,8 +2,6 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-#nullable enable
-
 namespace System.Diagnostics.CodeAnalysis
 {
 	/// <summary>
@@ -40,6 +38,6 @@ namespace System.Diagnostics.CodeAnalysis
 		/// Gets or sets an optional URL that contains more information about the method,
 		/// why it requries unreferenced code, and what options a consumer has to deal with it.
 		/// </summary>
-		public string? Url { get; set; }
+		public string Url { get; set; }
 	}
 }
