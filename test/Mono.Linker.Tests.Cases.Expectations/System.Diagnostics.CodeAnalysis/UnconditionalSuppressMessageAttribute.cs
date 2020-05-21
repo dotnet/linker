@@ -49,7 +49,6 @@ namespace System.Diagnostics.CodeAnalysis
 		/// </remarks>
 		public string CheckId { get; }
 
-#nullable enable
 		/// <summary>
 		/// Gets or sets the scope of the code that is relevant for the attribute.
 		/// </summary>
@@ -86,6 +85,5 @@ namespace System.Diagnostics.CodeAnalysis
 		/// Gets or sets the justification for suppressing the code analysis message.
 		/// </summary>
 		public string? Justification { get; set; }
-#nullable disable
 	}
 }

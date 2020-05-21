@@ -9,7 +9,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 	{
 		public LinkContext Context { private get; set; }
 
-		public Action<MessageContainer?> LogMessage {
+		public Action<MessageContainer> LogMessage {
 			get {
 				return Context.LogMessage;
 			}

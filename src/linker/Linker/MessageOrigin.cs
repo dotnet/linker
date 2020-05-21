@@ -75,5 +75,13 @@ namespace Mono.Linker
 
 			return sb.ToString ();
 		}
+
+		public bool Equals (MessageOrigin other) =>
+			(FileName, MdTokenProvider, SourceLine, SourceColumn) == (other.FileName, other.MdTokenProvider, other.SourceLine, other.SourceColumn);
+
+		public override bool Equals (object obj) => obj is MessageOrigin messageOrigin && Equals (messageOrigin);
+		public override int GetHashCode () => (FileName, MdTokenProvider, SourceLine, SourceColumn).GetHashCode ();
+		public static bool operator == (MessageOrigin lhs, MessageOrigin rhs) => lhs.Equals (rhs);
+		public static bool operator != (MessageOrigin lhs, MessageOrigin rhs) => !lhs.Equals (rhs);
 	}
 }

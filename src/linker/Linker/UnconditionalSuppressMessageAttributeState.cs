@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Threading;
 using Mono.Cecil;
 
 namespace Mono.Linker
@@ -13,22 +11,50 @@ namespace Mono.Linker
 		private GlobalSuppressions _lazyGlobalSuppressions;
 		private readonly Dictionary<MetadataToken, ImmutableDictionary<string, SuppressMessageInfo>> _localSuppressionsByMdToken;
 
-		private static readonly Dictionary<string, TargetScope> _suppressMessageScopeTypes = new Dictionary<string, TargetScope> (StringComparer.OrdinalIgnoreCase)
+		private bool TryGetTargetScope (SuppressMessageInfo info, out TargetScope scope)
 		{
-			{ string.Empty, TargetScope.None },
-			{ "module", TargetScope.Module },
-			{ "namespace", TargetScope.Namespace },
-			{ "resource", TargetScope.Resource },
-			{ "type", TargetScope.Type },
-			{ "member", TargetScope.Member },
-			{ "namespaceanddescendants", TargetScope.NamespaceAndDescendants }
-		};
+			switch (info.Scope) {
+			case "":
+				scope = TargetScope.None;
+				break;
+			case "module":
+				scope = TargetScope.Module;
+				break;
+			case "namespace":
+				scope = TargetScope.Namespace;
+				break;
+			case "resource":
+				scope = TargetScope.Resource;
+				break;
+			case "type":
+				scope = TargetScope.Type;
+				break;
+			case "member":
+				scope = TargetScope.Member;
+				break;
+			case "namespaceanddescendants":
+				scope = TargetScope.NamespaceAndDescendants;
+				break;
+			default:
+				scope = default;
+				return false;
+			}
 
-		private static bool TryGetTargetScope (SuppressMessageInfo info, out TargetScope scope)
-			=> _suppressMessageScopeTypes.TryGetValue (info.Scope ?? string.Empty, out scope);
+			return true;
+		}
 
-		private bool HasLocalSuppressions { get; set; }
-		private bool HasGlobalSuppressions { get; set; }
+		private bool HasLocalSuppressions {
+			get {
+				return _localSuppressionsByMdToken.Keys.Count != 0;
+			}
+		}
+
+		private bool HasGlobalSuppressions {
+			get {
+				return _lazyGlobalSuppressions != null && _lazyGlobalSuppressions.HasSuppressions;
+			}
+		}
+
 		public bool HasSuppressions {
 			get {
 				return (HasLocalSuppressions || HasGlobalSuppressions);
@@ -53,8 +79,6 @@ namespace Mono.Linker
 			} else {
 				_localSuppressionsByMdToken[mdToken] = new Dictionary<string, SuppressMessageInfo> { { info.Id, info } }.ToImmutableDictionary ();
 			}
-
-			HasLocalSuppressions = true;
 		}
 
 		public bool IsSuppressed (string id, MessageOrigin warningOrigin, out SuppressMessageInfo info)
@@ -67,26 +91,12 @@ namespace Mono.Linker
 
 			if (HasSuppressions && warningOrigin.MdTokenProvider != null) {
 				IMetadataTokenProvider mdTokenProvider = warningOrigin.MdTokenProvider;
-				do {
-					if (IsLocallySuppressed (id, mdTokenProvider.MetadataToken, out info)) {
+				while (mdTokenProvider != null) {
+					if (IsLocallySuppressed (id, mdTokenProvider.MetadataToken, out info))
 						return true;
-					}
 
-					if (mdTokenProvider is FieldDefinition ||
-						mdTokenProvider is PropertyDefinition ||
-						mdTokenProvider is EventDefinition ||
-						mdTokenProvider is MethodDefinition) {
-						mdTokenProvider = (mdTokenProvider as IMemberDefinition).DeclaringType;
-					} else if (mdTokenProvider is TypeDefinition type) {
-						if (type.IsNested) {
-							_ = type.BaseType.Resolve ();
-						}
-
-						mdTokenProvider = type.Module;
-					} else if (mdTokenProvider is ModuleDefinition module) {
-						mdTokenProvider = null;
-					}
-				} while (mdTokenProvider != null);
+					mdTokenProvider = (mdTokenProvider as IMemberDefinition).DeclaringType;
+				}
 			}
 
 			return false;
@@ -142,6 +152,12 @@ namespace Mono.Linker
 			private readonly Dictionary<MetadataToken, Dictionary<string, SuppressMessageInfo>> _globalSuppressions =
 				new Dictionary<MetadataToken, Dictionary<string, SuppressMessageInfo>> ();
 
+			public bool HasSuppressions {
+				get {
+					return _compilationWideSuppressions.Keys.Count != 0 || _globalSuppressions.Keys.Count != 0;
+				}
+			}
+
 			public void AddCompilationWideSuppression (SuppressMessageInfo info)
 			{
 				AddOrUpdate (info, _compilationWideSuppressions);
@@ -187,7 +203,7 @@ namespace Mono.Linker
 					DecodeGlobalSuppressMessageAttributes (module, suppressions);
 				}
 
-				Interlocked.CompareExchange (ref _lazyGlobalSuppressions, suppressions, null);
+				_lazyGlobalSuppressions = suppressions;
 			}
 		}
 
@@ -206,24 +222,23 @@ namespace Mono.Linker
 			foreach (var customAttribute in customAttributes) {
 				SuppressMessageInfo info;
 				if (!TryDecodeSuppressMessageAttributeData (customAttribute, out info)) {
-					return;
+					continue;
 				}
 
 				if (TryGetTargetScope (info, out TargetScope scope)) {
 					if ((scope == TargetScope.Module || scope == TargetScope.None) && info.Target == null) {
 						// This suppression applies to the entire compilation
 						globalSuppressions.AddCompilationWideSuppression (info);
-						HasGlobalSuppressions = true;
-						return;
+						continue;
 					}
 				} else {
 					// Invalid value for scope
-					return;
+					continue;
 				}
 
 				// Decode Target
 				if (info.Target == null) {
-					return;
+					continue;
 				}
 
 				// TODO: Resolve target symbols

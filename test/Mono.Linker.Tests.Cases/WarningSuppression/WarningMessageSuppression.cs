@@ -28,6 +28,7 @@ namespace Mono.Linker.Tests.Cases.WarningSuppression
 			suppressWarningsInMembers.Method ();
 			int propertyThatTriggersWarning = suppressWarningsInMembers.Property;
 
+			NestedType.TriggerWarning ();
 			WarningMessageSuppression_Lib.Warning ();
 		}
 
@@ -35,6 +36,16 @@ namespace Mono.Linker.Tests.Cases.WarningSuppression
 		public static Type TriggerUnrecognizedPattern ()
 		{
 			return typeof (WarningMessageSuppression);
+		}
+
+		[Kept]
+		public class NestedType
+		{
+			[Kept]
+			public static void TriggerWarning ()
+			{
+				Expression.Call (WarningMessageSuppression.TriggerUnrecognizedPattern (), "", Type.EmptyTypes);
+			}
 		}
 	}
 
@@ -66,6 +77,11 @@ namespace Mono.Linker.Tests.Cases.WarningSuppression
 		public void Method ()
 		{
 			Expression.Call (WarningMessageSuppression.TriggerUnrecognizedPattern (), "", Type.EmptyTypes);
+
+			void LocalFunction ()
+			{
+				Expression.Call (WarningMessageSuppression.TriggerUnrecognizedPattern (), "", Type.EmptyTypes);
+			}
 		}
 
 		[UnconditionalSuppressMessage ("Test", "IL2006:UnrecognizedReflectionPattern")]
