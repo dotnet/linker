@@ -42,18 +42,15 @@ namespace Mono.Linker
 			SourceColumn = sourceColumn;
 		}
 
-		public static MessageOrigin TryGetOrigin (IMetadataTokenProvider sourceMethod, int ilOffset)
+		public static MessageOrigin TryGetOrigin (MethodDefinition sourceMethod, int ilOffset)
 		{
-			if (sourceMethod is MethodDefinition methodDef) {
-				if (!methodDef.DebugInformation.HasSequencePoints)
-					return new MessageOrigin (methodDef);
-
-				SequencePoint correspondingSequencePoint = methodDef.DebugInformation.SequencePoints
+			if (sourceMethod.DebugInformation.HasSequencePoints) {
+				SequencePoint correspondingSequencePoint = sourceMethod.DebugInformation.SequencePoints
 					.Where (s => s.Offset <= ilOffset)?.Last ();
 				if (correspondingSequencePoint == null)
-					return new MessageOrigin (correspondingSequencePoint.Document.Url, methodDef);
+					return new MessageOrigin (correspondingSequencePoint.Document.Url, sourceMethod);
 
-				return new MessageOrigin (correspondingSequencePoint.Document.Url, methodDef, correspondingSequencePoint.StartLine, correspondingSequencePoint.StartColumn);
+				return new MessageOrigin (correspondingSequencePoint.Document.Url, sourceMethod, correspondingSequencePoint.StartLine, correspondingSequencePoint.StartColumn);
 			}
 
 			return new MessageOrigin (sourceMethod);

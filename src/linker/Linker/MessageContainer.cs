@@ -67,7 +67,7 @@ namespace Mono.Linker
 			if (!(code > 2000 && code <= 6000))
 				throw new ArgumentException ($"The provided code '{code}' does not fall into the warning category, which is in the range of 2001 to 6000 (inclusive).");
 
-			if (context.IsSuppressed (code, origin))
+			if (context.IsWarningSuppressed (code, origin))
 				return Empty;
 
 			return new MessageContainer (MessageCategory.Warning, text, code, subcategory, origin);

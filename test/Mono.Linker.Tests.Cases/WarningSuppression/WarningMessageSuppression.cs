@@ -6,16 +6,11 @@ using System.Reflection;
 using System.Text;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
-using Mono.Linker.Tests.Cases.WarningSuppression.Dependencies;
 
 namespace Mono.Linker.Tests.Cases.WarningSuppression
 {
-	[SetupCompileBefore ("library.dll", new[] { "Dependencies/WarningMessageSuppression_Lib.cs" })]
-	[KeptAssembly ("library.dll")]
 	[LogDoesNotContain ("ILlinker: Unrecognized reflection pattern warning IL2006: The return value of method " +
 		"'System.Type Mono.Linker.Tests.Cases.WarningSuppression.WarningMessageSuppression::TriggerUnrecognizedPattern()'")]
-	[LogDoesNotContain ("ILlinker: Unrecognized reflection pattern warning IL2006: The return value of method " +
-		"'System.Type Mono.Linker.Tests.Cases.WarningSuppression.Dependencies.WarningMessageSuppression_Lib::TriggerUnrecognizedPattern()'")]
 	public class WarningMessageSuppression
 	{
 		public static void Main ()
@@ -29,7 +24,6 @@ namespace Mono.Linker.Tests.Cases.WarningSuppression
 			int propertyThatTriggersWarning = suppressWarningsInMembers.Property;
 
 			NestedType.TriggerWarning ();
-			WarningMessageSuppression_Lib.Warning ();
 		}
 
 		[Kept]

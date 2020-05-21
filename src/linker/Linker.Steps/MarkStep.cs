@@ -1448,7 +1448,7 @@ namespace Mono.Linker.Steps
 					provider);
 				return true;
 			} else if (dt.Name == "UnconditionalSuppressMessageAttribute" && dt.Namespace == "System.Diagnostics.CodeAnalysis") {
-				_context.Suppressions.AddLocalSuppression (ca, provider.MetadataToken);
+				_context.Suppressions.AddLocalSuppression (ca, provider);
 			}
 
 			return false;
