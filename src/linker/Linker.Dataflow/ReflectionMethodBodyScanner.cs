@@ -92,12 +92,12 @@ namespace Mono.Linker.Dataflow
 
 			for (int i = 0; i < method.Parameters.Count; i++) {
 				var annotation = _flowAnnotations.GetParameterAnnotation (method, i + paramOffset);
-				if (annotation != 0) {
+				if (annotation != DynamicallyAccessedMemberTypes.None) {
 					ValueNode valueNode = GetValueNodeForCustomAttributeArgument (arguments[i]);
 					if (valueNode != null) {
-						ReflectionPatternContext context = new ReflectionPatternContext (_context, source, method.Parameters[i]);
-						context.AnalyzingPattern ();
-						RequireDynamicallyAccessedMembers (ref context, annotation, valueNode, method);
+						var reflectionContext = new ReflectionPatternContext (_context, source, method.Parameters[i]);
+						reflectionContext.AnalyzingPattern ();
+						RequireDynamicallyAccessedMembers (ref reflectionContext, annotation, valueNode, method);
 					}
 				}
 			}
@@ -106,7 +106,7 @@ namespace Mono.Linker.Dataflow
 		public void ProcessAttributeDataflow (FieldDefinition field, CustomAttributeArgument value)
 		{
 			var annotation = _flowAnnotations.GetFieldAnnotation (field);
-			Debug.Assert (annotation != 0);
+			Debug.Assert (annotation != DynamicallyAccessedMemberTypes.None);
 
 			ValueNode valueNode = GetValueNodeForCustomAttributeArgument (value);
 			if (valueNode != null) {
@@ -130,6 +130,32 @@ namespace Mono.Linker.Dataflow
 			}
 
 			return valueNode;
+		}
+
+		public void ProcessGenericArgumentDataFlow (GenericParameter genericParameter, TypeReference genericArgument, IMemberDefinition source)
+		{
+			var annotation = _flowAnnotations.GetGenericParameterAnnotation (genericParameter);
+			Debug.Assert (annotation != DynamicallyAccessedMemberTypes.None);
+
+			ValueNode valueNode;
+			if (genericArgument is GenericParameter inputGenericParameter) {
+				// Technically this should be a new value node type as it's not a System.Type instance representation, but just the generic parameter
+				// That said we only use it to perform the dynamically accessed members checks and for that purpose treating it as System.Type is perfectly valid.
+				valueNode = new SystemTypeForGenericParameterValue (inputGenericParameter, _flowAnnotations.GetGenericParameterAnnotation (inputGenericParameter));
+			} else {
+				TypeDefinition genericArgumentTypeDef = genericArgument.Resolve ();
+				if (genericArgumentTypeDef != null) {
+					valueNode = new SystemTypeValue (genericArgumentTypeDef);
+				} else {
+					throw new InvalidOperationException ();
+				}
+			}
+
+			if (valueNode != null) {
+				var reflectionContext = new ReflectionPatternContext (_context, source, genericParameter);
+				reflectionContext.AnalyzingPattern ();
+				RequireDynamicallyAccessedMembers (ref reflectionContext, annotation, valueNode, genericParameter);
+			}
 		}
 
 		protected override void WarnAboutInvalidILInMethod (MethodBody method, int ilOffset)
@@ -497,6 +523,11 @@ namespace Mono.Linker.Dataflow
 						// Infrastructure piece to support "typeof(Foo)"
 						if (methodParams[0] is RuntimeTypeHandleValue typeHandle)
 							methodReturnValue = new SystemTypeValue (typeHandle.TypeRepresented);
+						else if (methodParams[0] is RuntimeTypeHandleForGenericParameterValue typeHandleForGenericParameter) {
+							methodReturnValue = new SystemTypeForGenericParameterValue (
+								typeHandleForGenericParameter.GenericParameter,
+								_flowAnnotations.GetGenericParameterAnnotation (typeHandleForGenericParameter.GenericParameter));
+						}
 					}
 					break;
 
@@ -736,11 +767,11 @@ namespace Mono.Linker.Dataflow
 								}
 							} else if (typeNameValue == NullValue.Instance) {
 								reflectionContext.RecordHandledPattern ();
-							} else if (typeNameValue is LeafValueWithDynamicallyAccessedMemberNode valueWithDynamicallyAccessedMember && valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberKinds != 0) {
+							} else if (typeNameValue is LeafValueWithDynamicallyAccessedMemberNode valueWithDynamicallyAccessedMember && valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes != 0) {
 								// Propagate the annotation from the type name to the return value. Annotation on a string value will be fullfilled whenever a value is assigned to the string with annotation.
 								// So while we don't know which type it is, we can guarantee that it will fullfill the annotation.
 								reflectionContext.RecordHandledPattern ();
-								methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new MethodReturnValue (valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberKinds) {
+								methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new MethodReturnValue (valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes) {
 									SourceContext = calledMethod.Parameters[0]
 								});
 							} else {
@@ -1201,7 +1232,7 @@ namespace Mono.Linker.Dataflow
 			// Validate that the return value has the correct annotations as per the method return value annotations
 			if (returnValueDynamicallyAccessedMemberKinds != 0 && methodReturnValue != null) {
 				if (methodReturnValue is LeafValueWithDynamicallyAccessedMemberNode methodReturnValueWithMemberKinds) {
-					if (!methodReturnValueWithMemberKinds.DynamicallyAccessedMemberKinds.HasFlag (returnValueDynamicallyAccessedMemberKinds))
+					if (!methodReturnValueWithMemberKinds.DynamicallyAccessedMemberTypes.HasFlag (returnValueDynamicallyAccessedMemberKinds))
 						throw new InvalidOperationException ($"Internal linker error: processing of call from {callingMethodBody.Method} to {calledMethod} returned value which is not correctly annotated with the expected dynamic member access kinds.");
 				} else if (methodReturnValue is SystemTypeValue) {
 					// SystemTypeValue can fullfill any requirement, so it's always valid
@@ -1260,9 +1291,9 @@ namespace Mono.Linker.Dataflow
 		{
 			foreach (var uniqueValue in value.UniqueValues ()) {
 				if (uniqueValue is LeafValueWithDynamicallyAccessedMemberNode valueWithDynamicallyAccessedMember) {
-					if (!valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberKinds.HasFlag (requiredMemberKinds)) {
+					if (!valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes.HasFlag (requiredMemberKinds)) {
 						reflectionContext.RecordUnrecognizedPattern ($"The {GetValueDescriptionForErrorMessage (valueWithDynamicallyAccessedMember)} " +
-							$"with dynamically accessed member kinds '{GetDynamicallyAccessedMemberKindsDescription (valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberKinds)}' " +
+							$"with dynamically accessed member kinds '{GetDynamicallyAccessedMemberKindsDescription (valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes)}' " +
 							$"is passed into the {GetMetadataTokenDescriptionForErrorMessage (targetContext)} " +
 							$"which requires dynamically accessed member kinds '{GetDynamicallyAccessedMemberKindsDescription (requiredMemberKinds)}'. " +
 							$"To fix this add DynamicallyAccessedMembersAttribute to it and specify at least these member kinds '{GetDynamicallyAccessedMemberKindsDescription (requiredMemberKinds)}'.");
@@ -1437,6 +1468,9 @@ namespace Mono.Linker.Dataflow
 			case LoadFieldValue loadFieldValue:
 				return GetMetadataTokenDescriptionForErrorMessage (loadFieldValue.Field);
 
+			case SystemTypeForGenericParameterValue genericParameterValue:
+				return GetGenericParameterDescriptionForErrorMessage (genericParameterValue.GenericParameter);
+
 			default:
 				return $"value from unknown source";
 			}
@@ -1451,6 +1485,7 @@ namespace Mono.Linker.Dataflow
 				FieldDefinition fieldDefinition => $"field '{fieldDefinition}'",
 				// MethodDefinition is used to represent the "this" parameter as we don't support annotations on the method itself.
 				MethodDefinition methodDefinition => $"implicit 'this' parameter of method '{methodDefinition}'",
+				GenericParameter genericParameter => GetGenericParameterDescriptionForErrorMessage (genericParameter),
 				_ => $"'{targetContext}'",
 			};
 			;
@@ -1462,6 +1497,14 @@ namespace Mono.Linker.Dataflow
 				return $"parameter #{parameterDefinition.Index} of method '{parameterDefinition.Method}'";
 
 			return $"parameter '{parameterDefinition.Name}' of method '{parameterDefinition.Method}'";
+		}
+
+		static string GetGenericParameterDescriptionForErrorMessage (GenericParameter genericParameter)
+		{
+			var declaringMemberName = genericParameter.DeclaringMethod != null ?
+				genericParameter.DeclaringMethod.FullName :
+				genericParameter.DeclaringType.FullName;
+			return $"generic parameter '{genericParameter.Name}' from '{declaringMemberName}'";
 		}
 
 		string GetDynamicallyAccessedMemberKindsDescription (DynamicallyAccessedMemberTypes memberKinds)

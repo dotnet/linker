@@ -1285,7 +1285,17 @@ namespace Mono.Linker.Steps
 			MarkMethodsIf (type.Methods, IsSpecialSerializationConstructor, new DependencyInfo (DependencyKind.SerializationMethodForType, type));
 		}
 
-		internal protected virtual TypeDefinition MarkType (TypeReference reference, DependencyInfo reason)
+		/// <summary>
+		/// Marks the specified <paramref name="reference"/> as referenced.
+		/// </summary>
+		/// <param name="reference">The type reference to mark.</param>
+		/// <param name="reason">The reason why the marking is occuring</param>
+		/// <param name="sourceLocationMember">The member which is the "source location" for the marking.
+		/// For example if the type is marked due to an instruction in a method's body, this should be the method which body it is.
+		/// Can be null if the source location is not mappable to a specific member.</param>
+		/// <returns>The resolved type definition if the reference can be resolved and if the call ended up actually marking.
+		/// If the type definition was already marked, the method returns null.</returns>
+		internal protected virtual TypeDefinition MarkType (TypeReference reference, DependencyInfo reason, IMemberDefinition sourceLocationMember = null)
 		{
 #if DEBUG
 			if (!_typeReasons.Contains (reason.Kind))
@@ -1294,7 +1304,7 @@ namespace Mono.Linker.Steps
 			if (reference == null)
 				return null;
 
-			(reference, reason) = GetOriginalType (reference, reason);
+			(reference, reason) = GetOriginalType (reference, reason, sourceLocationMember);
 
 			if (reference is FunctionPointerType)
 				return null;
@@ -1881,6 +1891,7 @@ namespace Mono.Linker.Steps
 			return method.Body.Instructions[0].OpCode.Code != Code.Ret;
 		}
 
+#if !FEATURE_ILLINK
 		static bool HasOnSerializeAttribute (MethodDefinition method)
 		{
 			if (!method.HasCustomAttributes)
@@ -1897,6 +1908,7 @@ namespace Mono.Linker.Steps
 			}
 			return false;
 		}
+#endif
 
 		static bool HasOnSerializeOrDeserializeAttribute (MethodDefinition method)
 		{
@@ -1946,11 +1958,11 @@ namespace Mono.Linker.Steps
 			MarkMethodCollection (type.Methods, new DependencyInfo (DependencyKind.MethodForSpecialType, type));
 		}
 
-		protected (TypeReference, DependencyInfo) GetOriginalType (TypeReference type, DependencyInfo reason)
+		protected (TypeReference, DependencyInfo) GetOriginalType (TypeReference type, DependencyInfo reason, IMemberDefinition sourceLocationMember)
 		{
 			while (type is TypeSpecification specification) {
 				if (type is GenericInstanceType git) {
-					MarkGenericArguments (git);
+					MarkGenericArguments (git, sourceLocationMember ?? (reason.Source as IMemberDefinition) ?? (reason.Source as MemberReference)?.Resolve ());
 					Debug.Assert (!(specification.ElementType is TypeSpecification));
 				}
 
@@ -1987,15 +1999,15 @@ namespace Mono.Linker.Steps
 			MarkType (mod.ModifierType, new DependencyInfo (DependencyKind.ModifierType, mod));
 		}
 
-		void MarkGenericArguments (IGenericInstance instance)
+		void MarkGenericArguments (IGenericInstance instance, IMemberDefinition sourceLocationMember)
 		{
 			foreach (TypeReference argument in instance.GenericArguments)
-				MarkType (argument, new DependencyInfo (DependencyKind.GenericArgumentType, instance));
+				MarkType (argument, new DependencyInfo (DependencyKind.GenericArgumentType, instance), sourceLocationMember);
 
-			MarkGenericArgumentConstructors (instance);
+			MarkGenericArgumentConstructors (instance, sourceLocationMember);
 		}
 
-		void MarkGenericArgumentConstructors (IGenericInstance instance)
+		void MarkGenericArgumentConstructors (IGenericInstance instance, IMemberDefinition sourceLocationMember)
 		{
 			var arguments = instance.GenericArguments;
 
@@ -2011,6 +2023,14 @@ namespace Mono.Linker.Steps
 			for (int i = 0; i < arguments.Count; i++) {
 				var argument = arguments[i];
 				var parameter = parameters[i];
+
+				if (_flowAnnotations.RequiresDataFlowAnalysis (parameter)) {
+					// The only two implementations of IGenericInstance both derive from MemberReference
+					Debug.Assert (instance is MemberReference);
+
+					var scanner = new ReflectionMethodBodyScanner (_context, this, _flowAnnotations);
+					scanner.ProcessGenericArgumentDataFlow (parameter, argument, sourceLocationMember ?? (instance as MemberReference).Resolve ());
+				}
 
 				if (!parameter.HasDefaultConstructorConstraint)
 					continue;
@@ -2159,7 +2179,7 @@ namespace Mono.Linker.Steps
 			if (reference.DeclaringType is GenericInstanceType) {
 				// Blame the method reference on the original reason without marking it.
 				Tracer.AddDirectDependency (reference, reason, marked: false);
-				MarkType (reference.DeclaringType, new DependencyInfo (DependencyKind.DeclaringType, reference));
+				MarkType (reference.DeclaringType, new DependencyInfo (DependencyKind.DeclaringType, reference), (reason.Source as IMemberDefinition) ?? (reason.Source as MemberReference)?.Resolve ());
 				// Mark the resolved method definition as a dependency of the reference.
 				reason = new DependencyInfo (DependencyKind.MethodOnGenericInstance, reference);
 			}
@@ -2196,7 +2216,7 @@ namespace Mono.Linker.Steps
 				Tracer.AddDirectDependency (specification, reason, marked: false);
 				// Blame the outgoing element method on the specification.
 				if (method is GenericInstanceMethod gim)
-					MarkGenericArguments (gim);
+					MarkGenericArguments (gim, (reason.Source as IMemberDefinition) ?? (reason.Source as MemberReference)?.Resolve ());
 
 				(method, reason) = (specification.ElementMethod, new DependencyInfo (DependencyKind.ElementMethod, specification));
 				Debug.Assert (!(method is MethodSpecification));
@@ -2687,7 +2707,7 @@ namespace Mono.Linker.Steps
 			// Blame the type that has the interfaceimpl, expecting the type itself to get marked for other reasons.
 			MarkCustomAttributes (iface, new DependencyInfo (DependencyKind.CustomAttribute, iface));
 			// Blame the interface type on the interfaceimpl itself.
-			MarkType (iface.InterfaceType, new DependencyInfo (DependencyKind.InterfaceImplementationInterfaceType, iface));
+			MarkType (iface.InterfaceType, new DependencyInfo (DependencyKind.InterfaceImplementationInterfaceType, iface), type);
 			Annotations.Mark (iface, new DependencyInfo (DependencyKind.InterfaceImplementationOnType, type));
 		}
 
