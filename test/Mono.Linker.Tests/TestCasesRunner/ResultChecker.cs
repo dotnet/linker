@@ -825,7 +825,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				member = memberReference.Resolve ();
 
 			if (member is IMemberDefinition memberDefinition) {
-				if (memberDefinition is TypeDefinition type) {
+				if (memberDefinition is TypeDefinition) {
 					return memberDefinition.FullName;
 				}
 
