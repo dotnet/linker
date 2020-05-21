@@ -31,7 +31,7 @@ namespace Mono.Linker
 				suppressions = new Dictionary<string, SuppressMessageInfo> ();
 				_localSuppressionsByMdToken.Add (mdTokenProvider, suppressions);
 			}
-			
+
 			suppressions.Add (info.Id, info);
 		}
 
