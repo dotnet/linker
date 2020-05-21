@@ -45,7 +45,7 @@ namespace Mono.Linker
 
 		private bool HasLocalSuppressions {
 			get {
-				return _localSuppressionsByMdToken.Keys.Count != 0;
+				return _localSuppressionsByMdToken.Count != 0;
 			}
 		}
 
@@ -74,11 +74,12 @@ namespace Mono.Linker
 				return;
 			}
 
-			if (_localSuppressionsByMdToken.ContainsKey (mdToken)) {
-				_localSuppressionsByMdToken[mdToken].Add (info.Id, info);
-			} else {
-				_localSuppressionsByMdToken[mdToken] = new Dictionary<string, SuppressMessageInfo> { { info.Id, info } }.ToImmutableDictionary ();
+			if (!_localSuppressionsByMdToken.TryGetValue (mdToken, out var suppressions) {
+				suppressions = new Dictionary<string, SuppressMessageInfo> { { info.Id, info } }.ToImmutableDictionary ();
+				_localSuppressionsByMdToken.Add (mdToken, suppressions);
 			}
+			
+			suppressions.Add (info.Id, info);
 		}
 
 		public bool IsSuppressed (string id, MessageOrigin warningOrigin, out SuppressMessageInfo info)

@@ -471,7 +471,7 @@ namespace Mono.Linker
 				Logger?.LogMessage (message);
 		}
 
-		public bool IsSuppressed (int warningCode, MessageOrigin origin)
+		public bool IsWarningSuppressed (int warningCode, MessageOrigin origin)
 		{
 			if (Suppressions == null)
 				return false;
