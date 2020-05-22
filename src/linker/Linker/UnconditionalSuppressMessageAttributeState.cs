@@ -99,7 +99,7 @@ namespace Mono.Linker
 		{
 			// TODO: How should we deal with multiple SuppressMessage attributes, with different suppression info/states?
 			// For now, we just pick the last attribute, if not suppressed.
-			if (!builder.TryGetValue (info.Id, out _)) {
+			if (!builder.ContainsKey (info.Id)) {
 				builder[info.Id] = info;
 			}
 		}
