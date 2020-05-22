@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using Mono.Cecil;
 
 namespace Mono.Linker
@@ -35,7 +34,7 @@ namespace Mono.Linker
 
 			if (suppressions.ContainsKey (info.Id))
 				_context.LogMessage (MessageContainer.CreateInfoMessage (
-					$"Type or member {mdTokenProvider} has more than one unconditional suppression. Note that only the last one is kept."));
+					$"Type or member {mdTokenProvider} has more than one unconditional suppression. Note that only the last one is used."));
 
 			suppressions[info.Id] = info;
 		}
@@ -71,11 +70,11 @@ namespace Mono.Linker
 			// and category information can be obtained from warnings themselves.
 			// We only support warnings with code pattern IL####.
 			if (!(attribute.ConstructorArguments[1].Value is string warningId) ||
-				!Regex.IsMatch (warningId, "^IL\\d{4}")) {
+				warningId.Length < 6 ||
+				!int.TryParse (warningId.Substring (2, 4), out info.Id)) {
 				return false;
 			}
 
-			info.Id = int.Parse (warningId.Substring (2, 4));
 			if (attribute.HasProperties) {
 				foreach (var p in attribute.Properties) {
 					switch (p.Name) {
