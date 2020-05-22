@@ -76,6 +76,9 @@ namespace Mono.Linker
 				return false;
 			}
 
+			if (warningId.Length > 6 && warningId[6] != ':')
+				return false;
+
 			if (attribute.HasProperties) {
 				foreach (var p in attribute.Properties) {
 					switch (p.Name) {
