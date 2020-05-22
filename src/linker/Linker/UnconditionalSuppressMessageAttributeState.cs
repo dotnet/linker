@@ -30,7 +30,7 @@ namespace Mono.Linker
 				_localSuppressionsByMdToken.Add (mdTokenProvider, suppressions);
 			}
 
-			suppressions.TryAdd (info.Id, info);
+			suppressions[info.Id] = info;
 		}
 
 		public bool IsSuppressed (string id, MessageOrigin warningOrigin, out SuppressMessageInfo info)
