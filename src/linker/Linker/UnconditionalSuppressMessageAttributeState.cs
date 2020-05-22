@@ -71,7 +71,7 @@ namespace Mono.Linker
 			// We only support warnings with code pattern IL####.
 			if (!(attribute.ConstructorArguments[1].Value is string warningId) ||
 				warningId.Length < 6 ||
-				warningId.StartsWith ("IL") ||
+				!warningId.StartsWith ("IL") ||
 				!int.TryParse (warningId.Substring (2, 4), out info.Id)) {
 				return false;
 			}
