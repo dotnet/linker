@@ -2,7 +2,6 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-#nullable enable
 namespace System.Diagnostics.CodeAnalysis
 {
 	/// <summary>
@@ -16,6 +15,10 @@ namespace System.Diagnostics.CodeAnalysis
 	/// 
 	/// This file was copied from the dotnet/runtime repo:
 	/// https://github.com/dotnet/runtime/blob/master/src/libraries/System.Private.CoreLib/src/System/Diagnostics/CodeAnalysis/UnconditionalSuppressMessageAttribute.cs
+	/// 
+	/// This file should be removed when we start using .NET 5
+	/// The nullable reference types where changed to optional properties due to monobuild
+	/// using C# v.7.3., which is incompatible with the former feature.
 	/// </remarks>
 	[AttributeUsage (AttributeTargets.All, Inherited = false, AllowMultiple = true)]
 	public sealed class UnconditionalSuppressMessageAttribute : Attribute
@@ -57,7 +60,7 @@ namespace System.Diagnostics.CodeAnalysis
 		/// The Scope property is an optional argument that specifies the metadata scope for which
 		/// the attribute is relevant.
 		/// </remarks>
-		public string? Scope { get; set; }
+		public string Scope { get; set; } = null;
 
 		/// <summary>
 		/// Gets or sets a fully qualified path that represents the target of the attribute.
@@ -68,7 +71,7 @@ namespace System.Diagnostics.CodeAnalysis
 		/// Because it is fully qualified, it can be long, particularly for targets such as parameters.
 		/// The analysis tool user interface should be capable of automatically formatting the parameter.
 		/// </remarks>
-		public string? Target { get; set; }
+		public string Target { get; set; } = null;
 
 		/// <summary>
 		/// Gets or sets an optional argument expanding on exclusion criteria.
@@ -80,11 +83,11 @@ namespace System.Diagnostics.CodeAnalysis
 		/// and it may be desirable to suppress a violation against a statement in the method that will
 		/// give a rule violation, but not against all statements in the method.
 		/// </remarks>
-		public string? MessageId { get; set; }
+		public string MessageId { get; set; } = null;
 
 		/// <summary>
 		/// Gets or sets the justification for suppressing the code analysis message.
 		/// </summary>
-		public string? Justification { get; set; }
+		public string Justification { get; set; } = null;
 	}
 }
