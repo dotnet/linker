@@ -5,7 +5,6 @@ namespace Mono.Linker
 {
 	public class UnconditionalSuppressMessageAttributeState
 	{
-		private readonly AssemblyDefinition _assembly;
 		private readonly Dictionary<IMetadataTokenProvider, Dictionary<string, SuppressMessageInfo>> _localSuppressionsByMdToken;
 
 		private bool HasLocalSuppressions {
@@ -14,9 +13,8 @@ namespace Mono.Linker
 			}
 		}
 
-		public UnconditionalSuppressMessageAttributeState (AssemblyDefinition assembly)
+		public UnconditionalSuppressMessageAttributeState ()
 		{
-			_assembly = assembly;
 			_localSuppressionsByMdToken = new Dictionary<IMetadataTokenProvider, Dictionary<string, SuppressMessageInfo>> ();
 		}
 
@@ -32,7 +30,7 @@ namespace Mono.Linker
 				_localSuppressionsByMdToken.Add (mdTokenProvider, suppressions);
 			}
 
-			suppressions.Add (info.Id, info);
+			suppressions.TryAdd (info.Id, info);
 		}
 
 		public bool IsSuppressed (string id, MessageOrigin warningOrigin, out SuppressMessageInfo info)
@@ -52,7 +50,7 @@ namespace Mono.Linker
 			return false;
 		}
 
-		private bool TryDecodeSuppressMessageAttributeData (CustomAttribute attribute, out SuppressMessageInfo info)
+		private static bool TryDecodeSuppressMessageAttributeData (CustomAttribute attribute, out SuppressMessageInfo info)
 		{
 			info = default;
 
@@ -93,15 +91,6 @@ namespace Mono.Linker
 			}
 
 			return true;
-		}
-
-		private static void AddOrUpdate (SuppressMessageInfo info, IDictionary<string, SuppressMessageInfo> builder)
-		{
-			// TODO: How should we deal with multiple SuppressMessage attributes, with different suppression info/states?
-			// For now, we just pick the last attribute, if not suppressed.
-			if (!builder.TryGetValue (info.Id, out _)) {
-				builder[info.Id] = info;
-			}
 		}
 
 		private bool IsLocallySuppressed (string id, IMetadataTokenProvider mdTokenProvider, out SuppressMessageInfo info)

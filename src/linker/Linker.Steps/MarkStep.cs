@@ -1015,8 +1015,6 @@ namespace Mono.Linker.Steps
 
 			foreach (ModuleDefinition module in assembly.Modules)
 				LazyMarkCustomAttributes (module, module);
-
-			_context.Suppressions = new UnconditionalSuppressMessageAttributeState (assembly);
 		}
 
 		void MarkEntireAssembly (AssemblyDefinition assembly)

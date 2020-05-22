@@ -9,8 +9,7 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.WarningSuppression
 {
-	[LogDoesNotContain ("ILlinker: Unrecognized reflection pattern warning IL2006: The return value of method " +
-		"'System.Type Mono.Linker.Tests.Cases.WarningSuppression.WarningMessageSuppression::TriggerUnrecognizedPattern()'")]
+	[LogDoesNotContain ("TriggerUnrecognizedPattern()")]
 	public class WarningMessageSuppression
 	{
 		public static void Main ()
@@ -33,6 +32,8 @@ namespace Mono.Linker.Tests.Cases.WarningSuppression
 		}
 
 		[Kept]
+		[KeptAttributeAttribute (typeof (UnconditionalSuppressMessageAttribute))]
+		[UnconditionalSuppressMessage ("Test", "IL2006:UnrecognizedReflectionPattern")]
 		public class NestedType
 		{
 			[Kept]
@@ -78,11 +79,11 @@ namespace Mono.Linker.Tests.Cases.WarningSuppression
 			}
 		}
 
-		[UnconditionalSuppressMessage ("Test", "IL2006:UnrecognizedReflectionPattern")]
 		[Kept]
-		[KeptAttributeAttribute (typeof (UnconditionalSuppressMessageAttribute))]
 		public int Property {
 			[Kept]
+			[UnconditionalSuppressMessage ("Test", "IL2006:UnrecognizedReflectionPattern")]
+			[KeptAttributeAttribute (typeof (UnconditionalSuppressMessageAttribute))]
 			get {
 				Expression.Call (WarningMessageSuppression.TriggerUnrecognizedPattern (), "", Type.EmptyTypes);
 				return 0;

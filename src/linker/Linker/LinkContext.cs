@@ -212,6 +212,7 @@ namespace Mono.Linker
 			StripDescriptors = true;
 			StripSubstitutions = true;
 			PInvokes = new List<PInvokeInfo> ();
+			Suppressions = new UnconditionalSuppressMessageAttributeState ();
 
 			// See https://github.com/mono/linker/issues/612
 			const CodeOptimizations defaultOptimizations =
