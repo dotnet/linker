@@ -212,7 +212,7 @@ namespace Mono.Linker
 			StripDescriptors = true;
 			StripSubstitutions = true;
 			PInvokes = new List<PInvokeInfo> ();
-			Suppressions = new UnconditionalSuppressMessageAttributeState ();
+			Suppressions = new UnconditionalSuppressMessageAttributeState (this);
 
 			// See https://github.com/mono/linker/issues/612
 			const CodeOptimizations defaultOptimizations =
@@ -477,7 +477,7 @@ namespace Mono.Linker
 			if (Suppressions == null)
 				return false;
 
-			return Suppressions.IsSuppressed ("IL" + warningCode, origin, out _);
+			return Suppressions.IsSuppressed (warningCode, origin, out _);
 		}
 	}
 

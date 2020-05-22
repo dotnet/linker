@@ -1,11 +1,13 @@
 ﻿using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using Mono.Cecil;
 
 namespace Mono.Linker
 {
 	public class UnconditionalSuppressMessageAttributeState
 	{
-		private readonly Dictionary<IMetadataTokenProvider, Dictionary<string, SuppressMessageInfo>> _localSuppressionsByMdToken;
+		private readonly LinkContext _context;
+		private readonly Dictionary<IMetadataTokenProvider, Dictionary<int, SuppressMessageInfo>> _localSuppressionsByMdToken;
 
 		private bool HasLocalSuppressions {
 			get {
@@ -13,9 +15,10 @@ namespace Mono.Linker
 			}
 		}
 
-		public UnconditionalSuppressMessageAttributeState ()
+		public UnconditionalSuppressMessageAttributeState (LinkContext context)
 		{
-			_localSuppressionsByMdToken = new Dictionary<IMetadataTokenProvider, Dictionary<string, SuppressMessageInfo>> ();
+			_context = context;
+			_localSuppressionsByMdToken = new Dictionary<IMetadataTokenProvider, Dictionary<int, SuppressMessageInfo>> ();
 		}
 
 		public void AddLocalSuppression (CustomAttribute ca, IMetadataTokenProvider mdTokenProvider)
@@ -26,14 +29,18 @@ namespace Mono.Linker
 			}
 
 			if (!_localSuppressionsByMdToken.TryGetValue (mdTokenProvider, out var suppressions)) {
-				suppressions = new Dictionary<string, SuppressMessageInfo> ();
+				suppressions = new Dictionary<int, SuppressMessageInfo> ();
 				_localSuppressionsByMdToken.Add (mdTokenProvider, suppressions);
 			}
+
+			if (suppressions.ContainsKey (info.Id))
+				_context.LogMessage (MessageContainer.CreateInfoMessage (
+					$"Type or member {mdTokenProvider} has more than one unconditional suppression. Note that only the last one is kept."));
 
 			suppressions[info.Id] = info;
 		}
 
-		public bool IsSuppressed (string id, MessageOrigin warningOrigin, out SuppressMessageInfo info)
+		public bool IsSuppressed (int id, MessageOrigin warningOrigin, out SuppressMessageInfo info)
 		{
 			info = default;
 
@@ -62,18 +69,13 @@ namespace Mono.Linker
 
 			// Ignore the category parameter because it does not identify the warning
 			// and category information can be obtained from warnings themselves.
-			info.Id = attribute.ConstructorArguments[1].Value as string;
-			if (info.Id == null) {
+			// We only support warnings with code pattern IL####.
+			if (!(attribute.ConstructorArguments[1].Value is string warningId) ||
+				!Regex.IsMatch (warningId, "^IL\\d{4}")) {
 				return false;
 			}
 
-			// Allow an optional human-readable descriptive name on the end of an Id.
-			// See http://msdn.microsoft.com/en-us/library/ms244717.aspx
-			var separatorIndex = info.Id.IndexOf (':');
-			if (separatorIndex != -1) {
-				info.Id = info.Id.Remove (separatorIndex);
-			}
-
+			info.Id = int.Parse (warningId.Substring (2, 4));
 			if (attribute.HasProperties) {
 				foreach (var p in attribute.Properties) {
 					switch (p.Name) {
@@ -93,9 +95,9 @@ namespace Mono.Linker
 			return true;
 		}
 
-		private bool IsLocallySuppressed (string id, IMetadataTokenProvider mdTokenProvider, out SuppressMessageInfo info)
+		private bool IsLocallySuppressed (int id, IMetadataTokenProvider mdTokenProvider, out SuppressMessageInfo info)
 		{
-			Dictionary<string, SuppressMessageInfo> suppressions;
+			Dictionary<int, SuppressMessageInfo> suppressions;
 			info = default;
 			return _localSuppressionsByMdToken.TryGetValue (mdTokenProvider, out suppressions) &&
 				suppressions.TryGetValue (id, out info);
