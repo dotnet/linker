@@ -39,7 +39,7 @@ namespace Mono.Linker.Tests
 		{
 			var module = (member as TypeDefinition)?.Module ?? member.DeclaringType?.Module;
 			Assert.NotNull (module);
-			var parseResults = DocumentationSignatureParser.GetSymbolsForDeclarationId (input, module);
+			var parseResults = DocumentationSignatureParser.GetMembersForDocumentationSignature (input, module);
 			Assert.AreEqual (1, parseResults.Count ());
 			Assert.AreEqual (member, parseResults.First ());
 		}
@@ -74,7 +74,7 @@ namespace Mono.Linker.Tests
 		{
 			var module = (member as TypeDefinition)?.Module ?? member.DeclaringType?.Module;
 			Assert.NotNull (module);
-			var parseResults = DocumentationSignatureParser.GetSymbolsForDeclarationId (input, module);
+			var parseResults = DocumentationSignatureParser.GetMembersForDocumentationSignature (input, module);
 			CollectionAssert.Contains (parseResults, member);
 		}
 
@@ -82,7 +82,7 @@ namespace Mono.Linker.Tests
 		{
 			var module = (member as TypeDefinition)?.Module ?? member.DeclaringType?.Module;
 			Assert.NotNull (module);
-			var parseResults = DocumentationSignatureParser.GetSymbolsForDeclarationId (input, module);
+			var parseResults = DocumentationSignatureParser.GetMembersForDocumentationSignature (input, module);
 			CollectionAssert.DoesNotContain (parseResults, member);
 		}
 
@@ -548,6 +548,17 @@ namespace Mono.Linker.Tests
 			[ExpectUnresolvedDocumentationSignature ("T:Mono.Linker.Tests.DocumentationSignatureParserTests.Invalid.")]
 			public class NoType
 			{
+				[ExpectUnresolvedDocumentationSignature ("M:Mono.Linker.Tests.DocumentationSignatureParserTests.Invalid..Method")]
+				public void Method ()
+				{
+				}
+			}
+
+			// prevent warning about unused events
+			public void UseEvents ()
+			{
+				OnEvent?.Invoke (null, null);
+				OnEventArgs?.Invoke (null, null);
 			}
 
 			[ExpectUnresolvedDocumentationSignature ("T:Mono.Linker.Tests.DocumentationSignatureParserTests.Invalid.NoParameterType()")]
@@ -560,7 +571,14 @@ namespace Mono.Linker.Tests
 			{
 			}
 
-			// these work, but seem like they shouldn't.
+			// our parser won't match fields with `, unlike roslyn.
+			[ExpectUnresolvedDocumentationSignature ("F:Mono.Linker.Tests.DocumentationSignatureParserTests.Invalid.field`gibberish")]
+			public int field;
+
+			[ExpectUnresolvedDocumentationSignature ("E:Mono.Linker.Tests.DocumentationSignatureParserTests.Invalid.OnEvent`gibberish")]
+			public event EventHandler OnEvent;
+
+			// the below work, but seem like they shouldn't.
 			// see https://github.com/dotnet/roslyn/issues/44315
 
 			[ExpectExactlyResolvedDocumentationSignature ("TMono.Linker.Tests.DocumentationSignatureParserTests.Invalid.NoColon")]
@@ -575,6 +593,17 @@ namespace Mono.Linker.Tests
 
 			[ExpectExactlyResolvedDocumentationSignature ("M:Mono.Linker.Tests.DocumentationSignatureParserTests.Invalid.NoClosingBrace(Mono.Linker.Tests.DocumentationSignatureParserTests.Invalid.Generic{Mono.Linker.Tests.DocumentationSignatureParserTests.A)")]
 			public void NoClosingBrace (Generic<A> g)
+			{
+			}
+
+			[ExpectExactlyResolvedDocumentationSignature ("F:Mono.Linker.Tests.DocumentationSignatureParserTests.Invalid.fieldArgs(gibberish")]
+			public int fieldArgs;
+
+			[ExpectExactlyResolvedDocumentationSignature ("E:Mono.Linker.Tests.DocumentationSignatureParserTests.Invalid.OnEventArgs(gibberish")]
+			public event EventHandler OnEventArgs;
+
+			[ExpectExactlyResolvedDocumentationSignature ("T:Mono.Linker.Tests.DocumentationSignatureParserTests.Invalid.NestedType{")]
+			public class NestedType
 			{
 			}
 		}

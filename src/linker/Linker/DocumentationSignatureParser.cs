@@ -29,7 +29,18 @@ namespace Mono.Linker
 	///
 	public static class DocumentationSignatureParser
 	{
-		public static IEnumerable<IMemberDefinition> GetSymbolsForDeclarationId (string id, ModuleDefinition module)
+		[Flags]
+		public enum MemberType
+		{
+			Method = 0x0001,
+			Field = 0x0002,
+			Type = 0x0004,
+			Property = 0x0008,
+			Event = 0x0010,
+			All = Method | Field | Type | Property | Event
+		}
+
+		public static IEnumerable<IMemberDefinition> GetMembersForDocumentationSignature (string id, ModuleDefinition module)
 		{
 			if (id == null)
 				throw new ArgumentNullException (nameof (id));
@@ -38,7 +49,7 @@ namespace Mono.Linker
 				throw new ArgumentNullException (nameof (module));
 
 			var results = new List<IMemberDefinition> ();
-			Parser.ParseDeclaredSymbolId (id, module, results);
+			ParseDocumentationSignature (id, module, results);
 			return results;
 		}
 
@@ -49,171 +60,194 @@ namespace Mono.Linker
 			return builder.ToString ();
 		}
 
-		private static class Parser
+		static bool ParseDocumentationSignature (string id, ModuleDefinition module, List<IMemberDefinition> results)
 		{
+			if (id == null)
+				return false;
 
-			enum MemberType
-			{
-				Type,
-				Method,
-				Field,
-				Property,
-				Event,
+			if (id.Length < 2)
+				return false;
+
+			int index = 0;
+			results.Clear ();
+			ParseSignature (id, ref index, module, results);
+			return results.Count > 0;
+		}
+
+		static void ParseSignature (string id, ref int index, ModuleDefinition module, List<IMemberDefinition> results)
+		{
+			Debug.Assert (results.Count == 0);
+			var memberTypeChar = PeekNextChar (id, index);
+			MemberType memberType;
+
+			switch (memberTypeChar) {
+			case 'E':
+				memberType = MemberType.Event;
+				break;
+			case 'F':
+				memberType = MemberType.Field;
+				break;
+			case 'M':
+				memberType = MemberType.Method;
+				break;
+			case 'N':
+				// We do not support namespaces, which do not exist in IL.
+				return;
+			case 'P':
+				memberType = MemberType.Property;
+				break;
+			case 'T':
+				memberType = MemberType.Type;
+				break;
+			default:
+				// Documentation comment id must start with E, F, M, P, or T
+				return;
 			}
 
-			public static bool ParseDeclaredSymbolId (string id, ModuleDefinition module, List<IMemberDefinition> results)
-			{
-				if (id == null)
-					return false;
-
-				if (id.Length < 2)
-					return false;
-
-				int index = 0;
-				results.Clear ();
-				ParseDeclaredId (id, ref index, module, results);
-				return results.Count > 0;
-			}
-
-			private static void ParseDeclaredId (string id, ref int index, ModuleDefinition module, List<IMemberDefinition> results)
-			{
-				Debug.Assert (results.Count == 0);
-				var memberTypeChar = PeekNextChar (id, index);
-				MemberType memberType;
-
-				switch (memberTypeChar) {
-				case 'E':
-					memberType = MemberType.Event;
-					break;
-				case 'F':
-					memberType = MemberType.Field;
-					break;
-				case 'M':
-					memberType = MemberType.Method;
-					break;
-				case 'N':
-					// We do not support namespaces, which do not exist in IL.
-					return;
-				case 'P':
-					memberType = MemberType.Property;
-					break;
-				case 'T':
-					memberType = MemberType.Type;
-					break;
-				default:
-					// Documentation comment id must start with E, F, M, P, or T
-					return;
-				}
-
+			index++;
+			// Note: this allows leaving out the ':'.
+			if (PeekNextChar (id, index) == ':')
 				index++;
-				// Note: this allows leaving out the ':'.
-				if (PeekNextChar (id, index) == ':')
-					index++;
 
-				// Roslyn resolves types by searching namespaces top-down.
-				// We don't have namespace info. Instead try treating each part of a
-				// dotted name as a type first, then as a namespace if it fails
-				// to resolve to a type.
-				TypeDefinition? containingType = null;
-				var nameBuilder = new StringBuilder ();
+			ParseSignaturePart (id, ref index, module, memberType, results);
+		}
 
-				string name;
-				int arity;
+		// Parses and resolves a fully-qualified (namespace and nested types but no assembly) member signature,
+		// without the member type prefix. The results include all members matching the specified member types.
+		public static void ParseSignaturePart (string id, ref int index, ModuleDefinition module, MemberType memberTypes, List<IMemberDefinition> results)
+		{
+			// Roslyn resolves types by searching namespaces top-down.
+			// We don't have namespace info. Instead try treating each part of a
+			// dotted name as a type first, then as a namespace if it fails
+			// to resolve to a type.
+			TypeDefinition? containingType = null;
+			var nameBuilder = new StringBuilder ();
 
-				// process dotted names
-				while (true) {
-					name = ParseName (id, ref index);
-					// if we are at the end of the dotted name and still haven't resolved it to
-					// a type, there are no results.
-					if (String.IsNullOrEmpty (name))
-						return;
-					nameBuilder.Append (name);
-					arity = 0;
+			string name;
+			int arity;
 
-					// has type parameters?
-					if (PeekNextChar (id, index) == '`') {
-						index++;
-
-						bool genericType = true;
-
-						// method type parameters?
-						// note: this allows `` for type parameters
-						if (PeekNextChar (id, index) == '`') {
-							index++;
-							genericType = false;
-						}
-
-						arity = ReadNextInteger (id, ref index);
-
-						if (genericType) {
-							// We need to mangle generic type names but not generic method names.
-							nameBuilder.Append ('`');
-							nameBuilder.Append (arity);
-						}
-					}
-
-					// no more dots, so don't loop any more
-					if (PeekNextChar (id, index) != '.')
-						break;
-
-					// must be a namespace or type since name continues after dot
-					index++;
-
-					// try to resolve it as a type
-					var typeOrNamespaceName = nameBuilder.ToString ();
-					GetMatchingTypes (module, declaringType: containingType, name: typeOrNamespaceName, results: results);
-					Debug.Assert (results.Count <= 1);
-					if (results.Any ()) {
-						// the name resolved to a type
-						var result = results.Single ();
-						Debug.Assert (result is TypeDefinition);
-						// result becomes the new container
-						containingType = result as TypeDefinition;
-						nameBuilder.Clear ();
-						results.Clear ();
-						continue;
-					}
-
-					// it didn't resolve as a type.
-
-					// only types have arity.
-					if (arity > 0)
-						return;
-
-					// treat it as a namespace and continue building up the type name
-					nameBuilder.Append ('.');
-				}
-
-				if (containingType == null && memberType != MemberType.Type)
+			// process dotted names
+			while (true) {
+				(name, arity) = ParseTypeOrNamespaceName (id, ref index, nameBuilder);
+				// if we are at the end of the dotted name and still haven't resolved it to
+				// a type, there are no results.
+				if (String.IsNullOrEmpty (name))
 					return;
 
-				var memberName = nameBuilder.ToString ();
+				// no more dots, so don't loop any more
+				if (PeekNextChar (id, index) != '.')
+					break;
 
-				switch (memberType) {
-				case MemberType.Method:
-					GetMatchingMethods (id, ref index, containingType, memberName, arity, results);
-					break;
-				case MemberType.Type:
-					GetMatchingTypes (module, containingType, memberName, results);
-					break;
-				case MemberType.Property:
-					GetMatchingProperties (id, ref index, containingType, memberName, results);
-					break;
-				case MemberType.Event:
-					GetMatchingEvents (containingType, memberName, results);
-					break;
-				case MemberType.Field:
-					GetMatchingFields (containingType, memberName, results);
-					break;
+				// must be a namespace or type since name continues after dot
+				index++;
+
+				// try to resolve it as a type
+				var typeOrNamespaceName = nameBuilder.ToString ();
+				GetMatchingTypes (module, declaringType: containingType, name: typeOrNamespaceName, results: results);
+				Debug.Assert (results.Count <= 1);
+				if (results.Any ()) {
+					// the name resolved to a type
+					var result = results.Single ();
+					Debug.Assert (result is TypeDefinition);
+					// result becomes the new container
+					containingType = result as TypeDefinition;
+					nameBuilder.Clear ();
+					results.Clear ();
+					continue;
+				}
+
+				// it didn't resolve as a type.
+
+				// only types have arity.
+				if (arity > 0)
+					return;
+
+				// treat it as a namespace and continue building up the type name
+				nameBuilder.Append ('.');
+			}
+
+			var memberName = nameBuilder.ToString ();
+			GetMatchingMembers (id, ref index, module, containingType, memberName, arity, memberTypes, results);
+		}
+
+		// Gets all members of the specified member kinds of the containing type, with
+		// mathing name, arity, and signature at the current index (for methods and properties).
+		// This will also resolve types from the given module if no containing type is given.
+		public static void GetMatchingMembers (string id, ref int index, ModuleDefinition module, TypeDefinition? containingType, string memberName, int arity, MemberType memberTypes, List<IMemberDefinition> results)
+		{
+			if (memberTypes.HasFlag (MemberType.Type))
+				GetMatchingTypes (module, containingType, memberName, results);
+
+			if (containingType == null)
+				return;
+
+			int startIndex = index;
+			int endIndex = index;
+
+			if (memberTypes.HasFlag (MemberType.Method)) {
+				GetMatchingMethods (id, ref index, containingType, memberName, arity, results);
+				endIndex = index;
+				index = startIndex;
+			}
+
+			if (memberTypes.HasFlag (MemberType.Property)) {
+				GetMatchingProperties (id, ref index, containingType, memberName, results);
+				endIndex = index;
+				index = startIndex;
+			}
+
+			index = endIndex;
+
+			if (memberTypes.HasFlag (MemberType.Event))
+				GetMatchingEvents (containingType, memberName, results);
+
+			if (memberTypes.HasFlag (MemberType.Field))
+				GetMatchingFields (containingType, memberName, results);
+		}
+
+		// Parses a part of a dotted declaration name, including generic definitions.
+		// Returns the name (either a namespace or the unmangled name of a C# type) and an arity
+		// which may be non-zero for generic types.
+		public static (string name, int arity) ParseTypeOrNamespaceName (string id, ref int index, StringBuilder nameBuilder)
+		{
+			var name = ParseName (id, ref index);
+			// don't parse ` after an empty name
+			if (string.IsNullOrEmpty (name))
+				return (name, 0);
+
+			nameBuilder.Append (name);
+			var arity = 0;
+
+			// has type parameters?
+			if (PeekNextChar (id, index) == '`') {
+				index++;
+
+				bool genericType = true;
+
+				// method type parameters?
+				// note: this allows `` for type parameters
+				if (PeekNextChar (id, index) == '`') {
+					index++;
+					genericType = false;
+				}
+
+				arity = ReadNextInteger (id, ref index);
+
+				if (genericType) {
+					// We need to mangle generic type names but not generic method names.
+					nameBuilder.Append ('`');
+					nameBuilder.Append (arity);
 				}
 			}
+
+			return (name, arity);
 		}
 
 		// Roslyn resolves types in a signature to their declaration by searching through namespaces.
 		// To avoid looking for types by name in all referenced assemblies, we just represent types
 		// that are part of a signature by their doc comment strings, and we check for matching
 		// strings when looking for matching member signatures.
-		private static string? ParseTypeSymbol (string id, ref int index, IGenericParameterProvider? typeParameterContext)
+		static string? ParseTypeSymbol (string id, ref int index, IGenericParameterProvider? typeParameterContext)
 		{
 			var results = new List<string> ();
 			ParseTypeSymbol (id, ref index, typeParameterContext, results);
@@ -224,7 +258,7 @@ namespace Mono.Linker
 			return null;
 		}
 
-		private static void ParseTypeSymbol (string id, ref int index, IGenericParameterProvider? typeParameterContext, List<string> results)
+		static void ParseTypeSymbol (string id, ref int index, IGenericParameterProvider? typeParameterContext, List<string> results)
 		{
 			// Note: Roslyn has a special case that deviates from the language spec, which
 			// allows context expressions embedded in a type reference => <context-definition>:<type-parameter>
@@ -280,7 +314,7 @@ namespace Mono.Linker
 			index = endIndex;
 		}
 
-		private static void ParseTypeParameterSymbol (string id, ref int index, IGenericParameterProvider? typeParameterContext, List<string> results)
+		static void ParseTypeParameterSymbol (string id, ref int index, IGenericParameterProvider? typeParameterContext, List<string> results)
 		{
 			// skip the first `
 			Debug.Assert (PeekNextChar (id, index) == '`');
@@ -319,7 +353,7 @@ namespace Mono.Linker
 			}
 		}
 
-		private static void ParseNamedTypeSymbol (string id, ref int index, IGenericParameterProvider? typeParameterContext, List<string> results)
+		static void ParseNamedTypeSymbol (string id, ref int index, IGenericParameterProvider? typeParameterContext, List<string> results)
 		{
 			Debug.Assert (results.Count == 0);
 			var nameBuilder = new StringBuilder ();
@@ -368,7 +402,7 @@ namespace Mono.Linker
 			results.Add (nameBuilder.ToString ());
 		}
 
-		private static int ParseArrayBounds (string id, ref int index)
+		static int ParseArrayBounds (string id, ref int index)
 		{
 			index++; // skip '['
 
@@ -408,7 +442,7 @@ namespace Mono.Linker
 			return bounds;
 		}
 
-		private static bool ParseTypeArguments (string id, ref int index, IGenericParameterProvider? typeParameterContext, List<string> typeArguments)
+		static bool ParseTypeArguments (string id, ref int index, IGenericParameterProvider? typeParameterContext, List<string> typeArguments)
 		{
 			index++; // skip over {
 
@@ -439,7 +473,7 @@ namespace Mono.Linker
 			return true;
 		}
 
-		private static void GetMatchingTypes (ModuleDefinition module, TypeDefinition? declaringType, string name, List<IMemberDefinition> results)
+		static void GetMatchingTypes (ModuleDefinition module, TypeDefinition? declaringType, string name, List<IMemberDefinition> results)
 		{
 			Debug.Assert (module != null);
 
@@ -463,7 +497,7 @@ namespace Mono.Linker
 			}
 		}
 
-		private static void GetMatchingMethods (string id, ref int index, TypeDefinition? type, string memberName, int arity, List<IMemberDefinition> results)
+		static void GetMatchingMethods (string id, ref int index, TypeDefinition? type, string memberName, int arity, List<IMemberDefinition> results)
 		{
 			if (type == null)
 				return;
@@ -488,6 +522,8 @@ namespace Mono.Linker
 						continue;
 				}
 
+				// note: this allows extra characters at the end
+
 				if (!AllParametersMatch (method.Parameters, parameters))
 					continue;
 
@@ -511,7 +547,7 @@ namespace Mono.Linker
 			index = endIndex;
 		}
 
-		private static void GetMatchingProperties (string id, ref int index, TypeDefinition? type, string memberName, List<IMemberDefinition> results)
+		static void GetMatchingProperties (string id, ref int index, TypeDefinition? type, string memberName, List<IMemberDefinition> results)
 		{
 			if (type == null)
 				return;
@@ -547,7 +583,7 @@ namespace Mono.Linker
 			index = endIndex;
 		}
 
-		private static void GetMatchingFields (TypeDefinition? type, string memberName, List<IMemberDefinition> results)
+		static void GetMatchingFields (TypeDefinition? type, string memberName, List<IMemberDefinition> results)
 		{
 			if (type == null)
 				return;
@@ -558,7 +594,7 @@ namespace Mono.Linker
 			}
 		}
 
-		private static void GetMatchingEvents (TypeDefinition? type, string memberName, List<IMemberDefinition> results)
+		static void GetMatchingEvents (TypeDefinition? type, string memberName, List<IMemberDefinition> results)
 		{
 			if (type == null)
 				return;
@@ -569,7 +605,7 @@ namespace Mono.Linker
 			}
 		}
 
-		private static bool AllParametersMatch (Collection<ParameterDefinition> methodParameters, List<string> expectedParameters)
+		static bool AllParametersMatch (Collection<ParameterDefinition> methodParameters, List<string> expectedParameters)
 		{
 			if (methodParameters.Count != expectedParameters.Count)
 				return false;
@@ -582,7 +618,7 @@ namespace Mono.Linker
 			return true;
 		}
 
-		private static bool ParseParameterList (string id, ref int index, IGenericParameterProvider typeParameterContext, List<string> parameters)
+		static bool ParseParameterList (string id, ref int index, IGenericParameterProvider typeParameterContext, List<string> parameters)
 		{
 			System.Diagnostics.Debug.Assert (typeParameterContext != null);
 
@@ -618,14 +654,14 @@ namespace Mono.Linker
 			return true;
 		}
 
-		private static char PeekNextChar (string id, int index)
+		static char PeekNextChar (string id, int index)
 		{
 			return index >= id.Length ? '\0' : id[index];
 		}
 
-		private static readonly char[] s_nameDelimiters = { ':', '.', '(', ')', '{', '}', '[', ']', ',', '\'', '@', '*', '`', '~' };
+		static readonly char[] s_nameDelimiters = { ':', '.', '(', ')', '{', '}', '[', ']', ',', '\'', '@', '*', '`', '~' };
 
-		private static string ParseName (string id, ref int index)
+		static string ParseName (string id, ref int index)
 		{
 			string name;
 
@@ -642,7 +678,7 @@ namespace Mono.Linker
 		}
 
 		// undoes dot encodings within names...
-		private static string DecodeName (string name)
+		static string DecodeName (string name)
 		{
 			if (name.IndexOf ('#') >= 0)
 				return name.Replace ('#', '.');
@@ -650,7 +686,7 @@ namespace Mono.Linker
 			return name;
 		}
 
-		private static int ReadNextInteger (string id, ref int index)
+		static int ReadNextInteger (string id, ref int index)
 		{
 			int n = 0;
 
