@@ -103,8 +103,14 @@ namespace Mono.Linker.Tests.TestCases
 			Run (testCase);
 		}
 
-		[TestCaseSource (typeof (TestDatabase), nameof (TestDatabase.PreserveDependenciesTests))]
+		[TestCaseSource (typeof (TestDatabase),nameof (TestDatabase.PreserveDependenciesTests))]
 		public void PreserveDependenciesTests (TestCase testCase)
+		{
+			Run (testCase);
+		}
+
+		[TestCaseSource (typeof (TestDatabase), nameof (TestDatabase.DynamicDependenciesTests))]
+		public void DynamicDependenciesTests (TestCase testCase)
 		{
 			Run (testCase);
 		}

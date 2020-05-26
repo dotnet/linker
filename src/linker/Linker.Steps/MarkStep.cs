@@ -639,7 +639,7 @@ namespace Mono.Linker.Steps
 				members = type.FindMembersByDocumentationSignature (memberSignature);
 				if (!members.Any ()) {
 					_context.LogMessage (MessageContainer.CreateWarningMessage (_context,
-						$"Unresolved member '{memberSignature}' in DynamicDependencyAttribute",
+						$"Unresolved member '{memberSignature}' in DynamicDependencyAttribute on '{context}'",
 						2037, MessageOrigin.TryGetOrigin (member)));
 					return;
 				}
