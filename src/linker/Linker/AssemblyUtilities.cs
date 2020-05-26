@@ -1,4 +1,5 @@
-using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using Mono.Cecil;
 
 namespace Mono.Linker
@@ -38,6 +39,17 @@ namespace Mono.Linker
 
 			var type = assembly.MainModule.GetType (fullName);
 			return type?.Resolve ();
+		}
+
+		// Takes a documentation signature (not including the documentation member type prefix) and resolves it to a type
+		// in the assembly.
+		public static TypeDefinition FindTypeByDocumentationSignature (this AssemblyDefinition assembly, string signature)
+		{
+			int index = 0;
+			var results = new List<IMemberDefinition> ();
+			DocumentationSignatureParser.ParseSignaturePart (signature, ref index, assembly.MainModule, DocumentationSignatureParser.MemberType.Type, results);
+			Debug.Assert (results.Count <= 1);
+			return results.Count == 0 ? null : (TypeDefinition) results[0];
 		}
 	}
 }

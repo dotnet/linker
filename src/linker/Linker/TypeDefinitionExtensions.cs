@@ -1,5 +1,6 @@
-
 using System;
+using System.Collections.Generic;
+using System.Text;
 using Mono.Cecil;
 
 namespace Mono.Linker
@@ -41,6 +42,17 @@ namespace Mono.Linker
 		public static bool IsSerializable (this TypeDefinition td)
 		{
 			return (td.Attributes & TypeAttributes.Serializable) != 0;
+		}
+
+		// Takes a member signature (not including the declaring type) and returns the matching members on the type.
+		public static IEnumerable<IMemberDefinition> FindMembersByDocumentationSignature (this TypeDefinition type, string signature)
+		{
+			int index = 0;
+			var results = new List<IMemberDefinition> ();
+			var nameBuilder = new StringBuilder ();
+			var (name, arity) = DocumentationSignatureParser.ParseTypeOrNamespaceName (signature, ref index, nameBuilder);
+			DocumentationSignatureParser.GetMatchingMembers (signature, ref index, type.Module, type, name, arity, DocumentationSignatureParser.MemberType.All, results);
+			return results;
 		}
 	}
 }

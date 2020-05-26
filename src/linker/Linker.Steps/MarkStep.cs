@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Mono.Cecil;
@@ -54,7 +55,10 @@ namespace Mono.Linker.Steps
 #if DEBUG
 		static readonly DependencyKind[] _entireTypeReasons = new DependencyKind[] {
 			DependencyKind.NestedType,
+#if !FEATURE_ILLINK
 			DependencyKind.PreservedDependency,
+#endif
+			DependencyKind.DynamicDependency,
 			DependencyKind.TypeInAssembly,
 			DependencyKind.AccessedViaReflection,
 			DependencyKind.BaseType,
@@ -71,7 +75,10 @@ namespace Mono.Linker.Steps
 			DependencyKind.InteropMethodDependency,
 			DependencyKind.Ldtoken,
 			DependencyKind.MemberOfType,
+#if !FEATURE_ILLINK
 			DependencyKind.PreservedDependency,
+#endif
+			DependencyKind.DynamicDependency,
 			DependencyKind.ReferencedBySpecialAttribute,
 			DependencyKind.TypePreserve,
 		};
@@ -130,7 +137,10 @@ namespace Mono.Linker.Steps
 			DependencyKind.Newobj,
 			DependencyKind.Override,
 			DependencyKind.OverrideOnInstantiatedType,
+#if !FEATURE_ILLINK
 			DependencyKind.PreservedDependency,
+#endif
+			DependencyKind.DynamicDependency,
 			DependencyKind.PreservedMethod,
 			DependencyKind.ReferencedBySpecialAttribute,
 			DependencyKind.SerializationMethodForType,
@@ -521,10 +531,13 @@ namespace Mono.Linker.Steps
 
 			bool markOnUse = _context.KeepUsedAttributeTypesOnly && Annotations.GetAction (GetAssemblyFromCustomAttributeProvider (provider)) == AssemblyAction.Link;
 
+			bool hasDynamicDependencyAttributes = false;
 			foreach (CustomAttribute ca in provider.CustomAttributes) {
-				if (ProcessLinkerSpecialAttribute (ca, provider, reason)) {
+				if (LinkerAttributesInformation.IsAttribute<DynamicDependencyAttribute> (ca.AttributeType))
+					hasDynamicDependencyAttributes = true;
+
+				if (ProcessLinkerSpecialAttribute (ca, provider, reason))
 					continue;
-				}
 
 				if (markOnUse) {
 					_lateMarkedAttributes.Enqueue ((new AttributeProviderPair (ca, provider), reason));
@@ -534,24 +547,145 @@ namespace Mono.Linker.Steps
 				MarkCustomAttribute (ca, reason);
 				MarkSpecialCustomAttributeDependencies (ca, provider);
 			}
+
+			// avoid allocating linker attributes for members that don't need them
+			if (!hasDynamicDependencyAttributes)
+				return;
+
+			var dynamicDependencies = provider switch
+			{
+				MethodDefinition method => _context.Annotations.GetLinkerAttributes<DynamicDependency> (method),
+				FieldDefinition field => _context.Annotations.GetLinkerAttributes<DynamicDependency> (field),
+				_ => null
+			};
+
+			if (dynamicDependencies == null)
+				return;
+
+			foreach (var dynamicDependency in dynamicDependencies)
+				MarkDynamicDependency (dynamicDependency, (MemberReference) provider);
 		}
 
 		protected virtual bool ProcessLinkerSpecialAttribute (CustomAttribute ca, ICustomAttributeProvider provider, in DependencyInfo reason)
 		{
-			if (IsUserDependencyMarker (ca.AttributeType) && provider is MemberReference mr) {
+			var isPreserveDependency = IsUserDependencyMarker (ca.AttributeType);
+			var isDynamicDependency = LinkerAttributesInformation.IsAttribute<DynamicDependencyAttribute> (ca.AttributeType);
+
+			if (!((isPreserveDependency || isDynamicDependency) && provider is MemberReference mr))
+				return false;
+
+#if !FEATURE_ILLINK
+			if (isPreserveDependency)
 				MarkUserDependency (mr, ca);
+#endif
 
-				if (_context.KeepDependencyAttributes || Annotations.GetAction (mr.Module.Assembly) != AssemblyAction.Link) {
-					MarkCustomAttribute (ca, reason);
-				} else {
-					// Record the custom attribute so that it has a reason, without actually marking it.
-					Tracer.AddDirectDependency (ca, reason, marked: false);
-				}
-
-				return true;
+			if (_context.KeepDependencyAttributes || Annotations.GetAction (mr.Module.Assembly) != AssemblyAction.Link) {
+				MarkCustomAttribute (ca, reason);
+			} else {
+				// Record the custom attribute so that it has a reason, without actually marking it.
+				Tracer.AddDirectDependency (ca, reason, marked: false);
 			}
 
-			return false;
+			return true;
+		}
+
+		void MarkDynamicDependency (DynamicDependency dynamicDependency, MemberReference context)
+		{
+			Debug.Assert (context is MethodDefinition || context is FieldDefinition);
+			var member = context as IMemberDefinition;
+			AssemblyDefinition assembly;
+			if (dynamicDependency.AssemblyName is string assemblyName) {
+				assembly = _context.GetLoadedAssembly (assemblyName);
+				if (assembly == null) {
+					_context.LogMessage (MessageContainer.CreateWarningMessage (_context,
+						$"Unresolved assembly '{assemblyName}' in DynamicDependencyAttribute on '{context}'",
+						2035, MessageOrigin.TryGetOrigin (member)));
+					return;
+				}
+			} else {
+				assembly = context.Module.Assembly;
+				Debug.Assert (assembly != null);
+			}
+
+			TypeDefinition type;
+			if (dynamicDependency.TypeName is string typeName) {
+				type = assembly.FindTypeByDocumentationSignature (typeName);
+				if (type == null) {
+					_context.LogMessage (MessageContainer.CreateWarningMessage (_context,
+						$"Unresolved type '{typeName}' in DynamicDependencyAttribute on '{context}'",
+						2036, MessageOrigin.TryGetOrigin (member)));
+					return;
+				}
+			} else if (dynamicDependency.Type is TypeReference typeReference) {
+				type = typeReference.Resolve ();
+				if (type == null) {
+					_context.LogMessage (MessageContainer.CreateWarningMessage (_context,
+						$"Unresolved type '{typeReference}' in DynamicDependencyAtribute on '{context}'",
+						2036, MessageOrigin.TryGetOrigin (member)));
+					return;
+				}
+			} else {
+				type = context.DeclaringType.Resolve ();
+				if (type == null) {
+					_context.LogMessage (MessageContainer.CreateWarningMessage (_context,
+						$"Unresolved type '{context.DeclaringType}' in DynamicDependencyAttribute on '{context}'",
+						2036, MessageOrigin.TryGetOrigin (member)));
+					return;
+				}
+			}
+
+			IEnumerable<IMemberDefinition> members;
+			if (dynamicDependency.MemberSignature is string memberSignature) {
+				members = type.FindMembersByDocumentationSignature (memberSignature);
+				if (!members.Any ()) {
+					_context.LogMessage (MessageContainer.CreateWarningMessage (_context,
+						$"Unresolved member '{memberSignature}' in DynamicDependencyAttribute",
+						2037, MessageOrigin.TryGetOrigin (member)));
+					return;
+				}
+			} else {
+				var memberTypes = dynamicDependency.MemberTypes;
+				members = DynamicallyAccessedMembersBinder.GetDynamicallyAccessedMembers (type, memberTypes);
+				if (!members.Any ()) {
+					_context.LogMessage (MessageContainer.CreateWarningMessage (_context,
+						$"No members were resolved for '{memberTypes}' in DynamicDependencyAttribute on '{context}'",
+						2038, MessageOrigin.TryGetOrigin (member)));
+					return;
+				}
+			}
+
+			MarkMembers (type, members, new DependencyInfo (DependencyKind.DynamicDependency, dynamicDependency.OriginalAttribute));
+		}
+
+		void MarkMembers (TypeDefinition typeDefinition, IEnumerable<IMemberDefinition> members, DependencyInfo reason)
+		{
+			foreach (var member in members) {
+				if (member == typeDefinition) {
+					MarkEntireType (typeDefinition, includeBaseTypes: true, reason);
+					continue;
+				}
+				switch (member) {
+				case TypeDefinition type:
+					MarkType (type, reason);
+					break;
+				case MethodDefinition method:
+					MarkMethod (method, reason);
+					break;
+				case FieldDefinition field:
+					MarkField (field, reason);
+					break;
+				case PropertyDefinition property:
+					MarkProperty (property, reason);
+					MarkMethodIfNotNull (property.GetMethod, reason);
+					MarkMethodIfNotNull (property.SetMethod, reason);
+					MarkMethodsIf (property.OtherMethods, m => true, reason);
+					break;
+				case EventDefinition @event:
+					MarkEvent (@event, reason);
+					MarkMethodsIf (@event.OtherMethods, m => true, reason);
+					break;
+				}
+			}
 		}
 
 		protected static AssemblyDefinition GetAssemblyFromCustomAttributeProvider (ICustomAttributeProvider provider)
@@ -571,27 +705,14 @@ namespace Mono.Linker.Steps
 
 		protected virtual bool IsUserDependencyMarker (TypeReference type)
 		{
-			return PreserveDependencyLookupStep.IsPreserveDependencyAttribute (type);
+			return DynamicDependencyLookupStep.IsPreserveDependencyAttribute (type);
 		}
 
+#if !FEATURE_ILLINK
 		protected virtual void MarkUserDependency (MemberReference context, CustomAttribute ca)
 		{
-			if (ca.HasProperties && ca.Properties[0].Name == "Condition") {
-				var condition = ca.Properties[0].Argument.Value as string;
-				switch (condition) {
-				case "":
-				case null:
-					break;
-				case "DEBUG":
-					if (!_context.KeepMembersForDebugger)
-						return;
-
-					break;
-				default:
-					// Don't have yet a way to match the general condition so everything is excluded
-					return;
-				}
-			}
+			if (!LinkerAttributesInformation.ShouldProcessDependencyAttribute (_context, ca))
+				return;
 
 			AssemblyDefinition assembly;
 			var args = ca.ConstructorArguments;
@@ -706,6 +827,7 @@ namespace Mono.Linker.Steps
 
 			return false;
 		}
+#endif // !FEATURE_ILLINK
 
 		void LazyMarkCustomAttributes (ICustomAttributeProvider provider, ModuleDefinition module)
 		{
@@ -2610,7 +2732,21 @@ namespace Mono.Linker.Steps
 
 		bool HasManuallyTrackedDependency (MethodBody methodBody)
 		{
-			return PreserveDependencyLookupStep.HasPreserveDependencyAttribute (methodBody.Method);
+			var method = methodBody.Method;
+
+			if (!method.HasCustomAttributes)
+				return false;
+
+			// avoid allocating linker attributes for members that don't need them
+			foreach (var ca in method.CustomAttributes) {
+				if (LinkerAttributesInformation.IsAttribute<DynamicDependencyAttribute> (ca.AttributeType))
+					return true;
+#if !FEATURE_ILLINK
+				if (DynamicDependencyLookupStep.IsPreserveDependencyAttribute (ca.AttributeType))
+					return true;
+#endif
+			}
+			return false;
 		}
 
 		//
