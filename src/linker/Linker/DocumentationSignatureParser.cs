@@ -53,7 +53,7 @@ namespace Mono.Linker
 			return results;
 		}
 
-		public static string GetSignaturePart (this TypeReference type)
+		static string GetSignaturePart (TypeReference type)
 		{
 			var builder = new StringBuilder ();
 			DocumentationSignatureGenerator.PartVisitor.Instance.VisitTypeReference (type, builder);
@@ -334,7 +334,7 @@ namespace Mono.Linker
 				if (typeParameterContext is MethodDefinition methodContext) {
 					var count = methodContext.HasGenericParameters ? methodContext.GenericParameters.Count : 0;
 					if (count > 0 && methodTypeParameterIndex < count) {
-						results.Add ($"``{methodTypeParameterIndex}");
+						results.Add ("``" + methodTypeParameterIndex);
 					}
 				}
 			} else {
@@ -534,7 +534,7 @@ namespace Mono.Linker
 						continue;
 
 					// if return type is specified, then it must match
-					if (method.ReturnType.GetSignaturePart () == returnType) {
+					if (GetSignaturePart (method.ReturnType) == returnType) {
 						results.Add (method);
 						endIndex = index;
 					}
@@ -611,7 +611,7 @@ namespace Mono.Linker
 				return false;
 
 			for (int i = 0; i < expectedParameters.Count; i++) {
-				if (methodParameters[i].ParameterType.GetSignaturePart () != expectedParameters[i])
+				if (GetSignaturePart (methodParameters[i].ParameterType) != expectedParameters[i])
 					return false;
 			}
 
@@ -680,10 +680,7 @@ namespace Mono.Linker
 		// undoes dot encodings within names...
 		static string DecodeName (string name)
 		{
-			if (name.IndexOf ('#') >= 0)
-				return name.Replace ('#', '.');
-
-			return name;
+			return name.Replace ('#', '.');
 		}
 
 		static int ReadNextInteger (string id, ref int index)
