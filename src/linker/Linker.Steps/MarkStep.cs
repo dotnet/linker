@@ -2717,24 +2717,6 @@ namespace Mono.Linker.Steps
 			Annotations.Mark (iface, new DependencyInfo (DependencyKind.InterfaceImplementationOnType, type));
 		}
 
-		bool HasManuallyTrackedDependency (MethodBody methodBody)
-		{
-			var method = methodBody.Method;
-
-			if (!method.HasCustomAttributes)
-				return false;
-
-			foreach (var ca in method.CustomAttributes) {
-				if (LinkerAttributesInformation.IsAttribute<DynamicDependencyAttribute> (ca.AttributeType))
-					return true;
-#if !FEATURE_ILLINK
-				if (DynamicDependencyLookupStep.IsPreserveDependencyAttribute (ca.AttributeType))
-					return true;
-#endif
-			}
-			return false;
-		}
-
 		//
 		// Extension point for reflection logic handling customization
 		//
@@ -2748,9 +2730,6 @@ namespace Mono.Linker.Steps
 		//
 		protected virtual void MarkReflectionLikeDependencies (MethodBody body, bool requiresReflectionMethodBodyScanner)
 		{
-			if (HasManuallyTrackedDependency (body))
-				return;
-
 			if (requiresReflectionMethodBodyScanner) {
 				var scanner = new ReflectionMethodBodyScanner (_context, this, _flowAnnotations);
 				scanner.ScanAndProcessReturnValue (body);
