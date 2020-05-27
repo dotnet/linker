@@ -428,7 +428,7 @@ namespace Mono.Linker
 			return marked_types_with_cctor.Add (type);
 		}
 
-		public bool HasLinkerAttribute<T> (IMemberDefinition member)
+		public bool HasLinkerAttribute<T> (IMemberDefinition member) where T : Attribute
 		{
 			// Avoid setting up and inserting LinkerAttributesInformation for members without attributes.
 			if (!member.HasCustomAttributes)
@@ -442,7 +442,7 @@ namespace Mono.Linker
 			return linkerAttributeInformation.HasAttribute<T> ();
 		}
 
-		public IEnumerable<T> GetLinkerAttributes<T> (IMemberDefinition member)
+		public IEnumerable<T> GetLinkerAttributes<T> (IMemberDefinition member) where T : Attribute
 		{
 			// Avoid setting up and inserting LinkerAttributesInformation for members without attributes.
 			if (!member.HasCustomAttributes)
@@ -456,7 +456,7 @@ namespace Mono.Linker
 			return linkerAttributeInformation.GetAttributes<T> ();
 		}
 
-		public bool TryGetLinkerAttribute<T> (IMemberDefinition member, out T attribute)
+		public bool TryGetLinkerAttribute<T> (IMemberDefinition member, out T attribute) where T : Attribute
 		{
 			var attributes = GetLinkerAttributes<T> (member);
 			if (attributes.Count () > 1) {

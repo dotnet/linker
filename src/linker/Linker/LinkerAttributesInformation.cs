@@ -13,7 +13,7 @@ namespace Mono.Linker
 {
 	readonly struct LinkerAttributesInformation
 	{
-		readonly Dictionary<Type, List<object>> _linkerAttributes;
+		readonly Dictionary<Type, List<Attribute>> _linkerAttributes;
 
 		public LinkerAttributesInformation (LinkContext context, ICustomAttributeProvider provider)
 		{
@@ -22,39 +22,39 @@ namespace Mono.Linker
 			if (provider.HasCustomAttributes) {
 				foreach (var customAttribute in provider.CustomAttributes) {
 					var attributeType = customAttribute.AttributeType;
-					object attributeValue = null;
+					Attribute attributeValue = null;
 					if (IsAttribute<RequiresUnreferencedCodeAttribute> (attributeType))
 						attributeValue = ProcessRequiresUnreferencedCodeAttribute (context, provider, customAttribute);
 					else if (IsAttribute<DynamicDependencyAttribute> (attributeType))
-						attributeValue = ProcessDynamicDependencyAttribute (context, provider, customAttribute);
+						attributeValue = DynamicDependency.ProcessAttribute (context, provider, customAttribute);
 					AddAttribute (ref _linkerAttributes, attributeValue);
 				}
 			}
 		}
 
-		static void AddAttribute (ref Dictionary<Type, List<object>> attributes, object attributeValue)
+		static void AddAttribute (ref Dictionary<Type, List<Attribute>> attributes, Attribute attributeValue)
 		{
 			if (attributeValue == null)
 				return;
 
 			if (attributes == null)
-				attributes = new Dictionary<Type, List<object>> ();
+				attributes = new Dictionary<Type, List<Attribute>> ();
 
 			Type attributeValueType = attributeValue.GetType ();
 			if (!attributes.TryGetValue (attributeValueType, out var attributeList)) {
-				attributeList = new List<object> ();
+				attributeList = new List<Attribute> ();
 				attributes.Add (attributeValueType, attributeList);
 			}
 
 			attributeList.Add (attributeValue);
 		}
 
-		public bool HasAttribute<T> ()
+		public bool HasAttribute<T> () where T : Attribute
 		{
 			return _linkerAttributes != null && _linkerAttributes.ContainsKey (typeof (T));
 		}
 
-		public IEnumerable<T> GetAttributes<T> ()
+		public IEnumerable<T> GetAttributes<T> () where T : Attribute
 		{
 			if (_linkerAttributes == null || !_linkerAttributes.TryGetValue (typeof (T), out var attributeList))
 				return Enumerable.Empty<T> ();
@@ -66,7 +66,7 @@ namespace Mono.Linker
 			return attributeList.Cast<T> ();
 		}
 
-		public static bool IsAttribute<T> (TypeReference tr)
+		public static bool IsAttribute<T> (TypeReference tr) where T : Attribute
 		{
 			var type = typeof (T);
 			return tr.Name == type.Name && tr.Namespace == tr.Namespace;
