@@ -8,12 +8,11 @@ namespace Mono.Linker.Dataflow
 {
 	internal static class DynamicallyAccessedMembersBinder
 	{
-		// Returns the members of the type bound by memberTypes. For MemberTypes.All, this returts a single member
-		// which is the type itself.
+		// Returns the members of the type bound by memberTypes. For MemberTypes.All, this returns a single null result.
 		public static IEnumerable<IMemberDefinition> GetDynamicallyAccessedMembers (TypeDefinition typeDefinition, DynamicallyAccessedMemberTypes memberTypes)
 		{
 			if (memberTypes == DynamicallyAccessedMemberTypes.All) {
-				yield return typeDefinition;
+				yield return null;
 				yield break;
 			}
 

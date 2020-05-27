@@ -1237,13 +1237,7 @@ namespace Mono.Linker.Dataflow
 
 		void MarkTypeForDynamicallyAccessedMembers (ref ReflectionPatternContext reflectionContext, TypeDefinition typeDefinition, DynamicallyAccessedMemberTypes requiredMemberKinds)
 		{
-
 			foreach (var member in DynamicallyAccessedMembersBinder.GetDynamicallyAccessedMembers (typeDefinition, requiredMemberKinds)) {
-				if (member == typeDefinition) {
-					var source = reflectionContext.Source;
-					reflectionContext.RecordRecognizedPattern (typeDefinition, () => _markStep.MarkEntireType (typeDefinition, includeBaseTypes: true, new DependencyInfo (DependencyKind.AccessedViaReflection, source)));
-					continue;
-				}
 				switch (member) {
 				case MethodDefinition method:
 					MarkMethod (ref reflectionContext, typeDefinition, method);
@@ -1259,6 +1253,10 @@ namespace Mono.Linker.Dataflow
 					break;
 				case EventDefinition @event:
 					MarkEvent (ref reflectionContext, typeDefinition, @event);
+					break;
+				case null:
+					var source = reflectionContext.Source;
+					reflectionContext.RecordRecognizedPattern (typeDefinition, () => _markStep.MarkEntireType (typeDefinition, includeBaseTypes: true, new DependencyInfo (DependencyKind.AccessedViaReflection, source)));
 					break;
 				}
 			}
