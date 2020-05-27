@@ -15,33 +15,18 @@ namespace Mono.Linker
 	{
 		readonly Dictionary<Type, List<object>> _linkerAttributes;
 
-		public LinkerAttributesInformation (LinkContext context, IMemberDefinition member)
+		public LinkerAttributesInformation (LinkContext context, ICustomAttributeProvider provider)
 		{
 			_linkerAttributes = null;
 
-			if (member.HasCustomAttributes) {
-				foreach (var customAttribute in member.CustomAttributes) {
+			if (provider.HasCustomAttributes) {
+				foreach (var customAttribute in provider.CustomAttributes) {
 					var attributeType = customAttribute.AttributeType;
 					object attributeValue = null;
 					if (IsAttribute<RequiresUnreferencedCodeAttribute> (attributeType))
-						attributeValue = ProcessRequiresUnreferencedCodeAttribute (context, member, customAttribute);
+						attributeValue = ProcessRequiresUnreferencedCodeAttribute (context, provider, customAttribute);
 					else if (IsAttribute<DynamicDependencyAttribute> (attributeType))
-						attributeValue = ProcessDynamicDependencyAttribute (context, member, customAttribute);
-					AddAttribute (ref _linkerAttributes, attributeValue);
-				}
-			}
-		}
-
-		public LinkerAttributesInformation (LinkContext context, FieldDefinition field)
-		{
-			_linkerAttributes = null;
-
-			if (field.HasCustomAttributes) {
-				foreach (var customAttribute in field.CustomAttributes) {
-					var attributeType = customAttribute.AttributeType;
-					object attributeValue = null;
-					if (IsAttribute<DynamicDependencyAttribute> (attributeType))
-						attributeValue = ProcessDynamicDependencyAttribute (context, field, customAttribute);
+						attributeValue = ProcessDynamicDependencyAttribute (context, provider, customAttribute);
 					AddAttribute (ref _linkerAttributes, attributeValue);
 				}
 			}
@@ -87,8 +72,11 @@ namespace Mono.Linker
 			return tr.Name == type.Name && tr.Namespace == tr.Namespace;
 		}
 
-		static Attribute ProcessRequiresUnreferencedCodeAttribute (LinkContext context, IMemberDefinition method, CustomAttribute customAttribute)
+		static Attribute ProcessRequiresUnreferencedCodeAttribute (LinkContext context, ICustomAttributeProvider provider, CustomAttribute customAttribute)
 		{
+			if (!(provider is MethodDefinition method))
+				return null;
+
 			if (customAttribute.HasConstructorArguments) {
 				string message = (string) customAttribute.ConstructorArguments[0].Value;
 				string url = null;
@@ -106,21 +94,23 @@ namespace Mono.Linker
 			return null;
 		}
 
-		static DynamicDependency ProcessDynamicDependencyAttribute (LinkContext context, IMemberDefinition member, CustomAttribute customAttribute)
+		static DynamicDependency ProcessDynamicDependencyAttribute (LinkContext context, ICustomAttributeProvider provider, CustomAttribute customAttribute)
 		{
+			if (!(provider is MethodDefinition || provider is FieldDefinition))
+				return null;
+			var member = provider as IMemberDefinition;
+
 			if (!ShouldProcessDependencyAttribute (context, customAttribute))
 				return null;
 
 			var dynamicDependency = GetDynamicDependency (context, customAttribute);
-			if (dynamicDependency == null) {
-				context.LogMessage (MessageContainer.CreateWarningMessage (context,
-					$"Invalid DynamicDependencyAttribute on '{member}'",
-					2034, MessageOrigin.TryGetOrigin (member)));
-				return null;
-			}
+			if (dynamicDependency != null)
+				return dynamicDependency;
 
-			dynamicDependency.OriginalAttribute = customAttribute;
-			return dynamicDependency;
+			context.LogMessage (MessageContainer.CreateWarningMessage (context,
+				$"Invalid DynamicDependencyAttribute on '{member}'",
+				2034, MessageOrigin.TryGetOrigin (member)));
+			return null;
 		}
 
 		static DynamicDependency GetDynamicDependency (LinkContext context, CustomAttribute ca)
@@ -159,7 +149,10 @@ namespace Mono.Linker
 			if (!(args[2].Value is string assemblyName))
 				return null;
 
-			return memberSignature == null ? new DynamicDependency (memberTypes.Value, typeName, assemblyName) : new DynamicDependency (memberSignature, typeName, assemblyName);
+			var dynamicDependency = memberSignature == null ? new DynamicDependency (memberTypes.Value, typeName, assemblyName) : new DynamicDependency (memberSignature, typeName, assemblyName);
+			dynamicDependency.OriginalAttribute = ca;
+
+			return dynamicDependency;
 		}
 
 		public static bool ShouldProcessDependencyAttribute (LinkContext context, CustomAttribute ca)

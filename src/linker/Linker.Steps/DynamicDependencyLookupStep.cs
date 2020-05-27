@@ -55,11 +55,7 @@ namespace Mono.Linker.Steps
 		{
 			Debug.Assert (member is MethodDefinition || member is FieldDefinition);
 
-			bool hasDynamicDependencyAttributes = false;
 			foreach (var ca in member.CustomAttributes) {
-				if (LinkerAttributesInformation.IsAttribute<DynamicDependencyAttribute> (ca.AttributeType))
-					hasDynamicDependencyAttributes = true;
-
 				if (!IsPreserveDependencyAttribute (ca.AttributeType))
 					continue;
 #if FEATURE_ILLINK
@@ -80,16 +76,8 @@ namespace Mono.Linker.Steps
 #endif
 			}
 
-			// avoid allocating linker attributes for members that don't need them
-			if (!hasDynamicDependencyAttributes)
-				return;
-
-			var dynamicDependencies = member switch
-			{
-				MethodDefinition method => Context.Annotations.GetLinkerAttributes<DynamicDependency> (method),
-				FieldDefinition field => Context.Annotations.GetLinkerAttributes<DynamicDependency> (field),
-				_ => throw new InternalErrorException ("Unexpected member type")
-			};
+			var dynamicDependencies = Context.Annotations.GetLinkerAttributes<DynamicDependency> (member);
+			Debug.Assert (dynamicDependencies != null);
 
 			foreach (var dynamicDependency in dynamicDependencies) {
 				if (dynamicDependency.AssemblyName == null)

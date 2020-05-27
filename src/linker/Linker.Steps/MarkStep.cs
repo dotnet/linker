@@ -531,11 +531,7 @@ namespace Mono.Linker.Steps
 
 			bool markOnUse = _context.KeepUsedAttributeTypesOnly && Annotations.GetAction (GetAssemblyFromCustomAttributeProvider (provider)) == AssemblyAction.Link;
 
-			bool hasDynamicDependencyAttributes = false;
 			foreach (CustomAttribute ca in provider.CustomAttributes) {
-				if (LinkerAttributesInformation.IsAttribute<DynamicDependencyAttribute> (ca.AttributeType))
-					hasDynamicDependencyAttributes = true;
-
 				if (ProcessLinkerSpecialAttribute (ca, provider, reason))
 					continue;
 
@@ -548,19 +544,11 @@ namespace Mono.Linker.Steps
 				MarkSpecialCustomAttributeDependencies (ca, provider);
 			}
 
-			// avoid allocating linker attributes for members that don't need them
-			if (!hasDynamicDependencyAttributes)
+			if (!(provider is MethodDefinition || provider is FieldDefinition))
 				return;
 
-			var dynamicDependencies = provider switch
-			{
-				MethodDefinition method => _context.Annotations.GetLinkerAttributes<DynamicDependency> (method),
-				FieldDefinition field => _context.Annotations.GetLinkerAttributes<DynamicDependency> (field),
-				_ => null
-			};
-
-			if (dynamicDependencies == null)
-				return;
+			var dynamicDependencies = _context.Annotations.GetLinkerAttributes<DynamicDependency> ((IMemberDefinition) provider);
+			Debug.Assert (dynamicDependencies != null);
 
 			foreach (var dynamicDependency in dynamicDependencies)
 				MarkDynamicDependency (dynamicDependency, (MemberReference) provider);
@@ -2736,7 +2724,6 @@ namespace Mono.Linker.Steps
 			if (!method.HasCustomAttributes)
 				return false;
 
-			// avoid allocating linker attributes for members that don't need them
 			foreach (var ca in method.CustomAttributes) {
 				if (LinkerAttributesInformation.IsAttribute<DynamicDependencyAttribute> (ca.AttributeType))
 					return true;

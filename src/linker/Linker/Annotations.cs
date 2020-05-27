@@ -55,8 +55,7 @@ namespace Mono.Linker
 		protected readonly Dictionary<MethodDefinition, List<OverrideInformation>> override_methods = new Dictionary<MethodDefinition, List<OverrideInformation>> ();
 		protected readonly Dictionary<MethodDefinition, List<MethodDefinition>> base_methods = new Dictionary<MethodDefinition, List<MethodDefinition>> ();
 		protected readonly Dictionary<AssemblyDefinition, ISymbolReader> symbol_readers = new Dictionary<AssemblyDefinition, ISymbolReader> ();
-		readonly Dictionary<MethodDefinition, LinkerAttributesInformation> method_linker_attributes = new Dictionary<MethodDefinition, LinkerAttributesInformation> ();
-		readonly Dictionary<FieldDefinition, LinkerAttributesInformation> field_linker_attributes = new Dictionary<FieldDefinition, LinkerAttributesInformation> ();
+		readonly Dictionary<IMemberDefinition, LinkerAttributesInformation> linker_attributes = new Dictionary<IMemberDefinition, LinkerAttributesInformation> ();
 
 		readonly Dictionary<object, Dictionary<IMetadataTokenProvider, object>> custom_annotations = new Dictionary<object, Dictionary<IMetadataTokenProvider, object>> ();
 		protected readonly Dictionary<AssemblyDefinition, HashSet<string>> resources_to_remove = new Dictionary<AssemblyDefinition, HashSet<string>> ();
@@ -429,76 +428,46 @@ namespace Mono.Linker
 			return marked_types_with_cctor.Add (type);
 		}
 
-		public bool HasLinkerAttribute<T> (MethodDefinition method)
+		public bool HasLinkerAttribute<T> (IMemberDefinition member)
 		{
-			if (!method_linker_attributes.TryGetValue (method, out var linkerAttributeInformation)) {
-				linkerAttributeInformation = new LinkerAttributesInformation (context, method);
-				method_linker_attributes.Add (method, linkerAttributeInformation);
+			// Avoid setting up and inserting LinkerAttributesInformation for members without attributes.
+			if (!member.HasCustomAttributes)
+				return false;
+
+			if (!linker_attributes.TryGetValue (member, out var linkerAttributeInformation)) {
+				linkerAttributeInformation = new LinkerAttributesInformation (context, member);
+				linker_attributes.Add (member, linkerAttributeInformation);
 			}
 
 			return linkerAttributeInformation.HasAttribute<T> ();
 		}
 
-		public bool HasLinkerAttribute<T> (FieldDefinition field)
+		public IEnumerable<T> GetLinkerAttributes<T> (IMemberDefinition member)
 		{
-			if (!field_linker_attributes.TryGetValue (field, out var linkerAttributeInformation)) {
-				linkerAttributeInformation = new LinkerAttributesInformation (context, field);
-				field_linker_attributes.Add (field, linkerAttributeInformation);
-			}
+			// Avoid setting up and inserting LinkerAttributesInformation for members without attributes.
+			if (!member.HasCustomAttributes)
+				return Enumerable.Empty<T> ();
 
-			return linkerAttributeInformation.HasAttribute<T> ();
-		}
-
-		public IEnumerable<T> GetLinkerAttributes<T> (MethodDefinition method)
-		{
-			if (!method_linker_attributes.TryGetValue (method, out var linkerAttributeInformation)) {
-				linkerAttributeInformation = new LinkerAttributesInformation (context, method);
-				method_linker_attributes.Add (method, linkerAttributeInformation);
+			if (!linker_attributes.TryGetValue (member, out var linkerAttributeInformation)) {
+				linkerAttributeInformation = new LinkerAttributesInformation (context, member);
+				linker_attributes.Add (member, linkerAttributeInformation);
 			}
 
 			return linkerAttributeInformation.GetAttributes<T> ();
 		}
 
-		public IEnumerable<T> GetLinkerAttributes<T> (FieldDefinition field)
+		public bool TryGetLinkerAttribute<T> (IMemberDefinition member, out T attribute)
 		{
-			if (!field_linker_attributes.TryGetValue (field, out var linkerAttributeInformation)) {
-				linkerAttributeInformation = new LinkerAttributesInformation (context, field);
-				field_linker_attributes.Add (field, linkerAttributeInformation);
-			}
-
-			return linkerAttributeInformation.GetAttributes<T> ();
-		}
-
-		public bool TryGetLinkerAttribute<T> (MethodDefinition method, out T attribute)
-		{
-			var attributes = GetLinkerAttributes<T> (method);
-			if (attributes.Count () > 1) {
-				context.LogWarning ($"Attribute '{typeof (T).FullName}' should only be used once on '{method}'.",
-					2027, MessageOrigin.TryGetOrigin (method, 0));
-			}
-
-			Debug.Assert (attributes.Count () <= 1);
-			attribute = attributes.FirstOrDefault ();
-			return attribute != null;
-		}
-
-		public bool TryGetLinkerAttribute<T> (FieldDefinition field, out T attribute)
-		{
-			var attributes = GetLinkerAttributes<T> (field);
+			var attributes = GetLinkerAttributes<T> (member);
 			if (attributes.Count () > 1) {
 				context.LogMessage (MessageContainer.CreateWarningMessage (context,
-					$"Attribute '{typeof (T).FullName}' should only be used once on '{field}'.",
-					2027,
-					origin: MessageOrigin.TryGetOrigin (field, 0)));
+					$"Attribute '{typeof (T).FullName}' should only be used once on '{member}'.",
+					2027, MessageOrigin.TryGetOrigin (member, 0)));
 			}
+
 			Debug.Assert (attributes.Count () <= 1);
 			attribute = attributes.FirstOrDefault ();
 			return attribute != null;
-		}
-
-		public bool IsAttribute<T> (CustomAttribute attribute)
-		{
-			return attribute.AttributeType.FullName == typeof (T).FullName;
 		}
 	}
 }
