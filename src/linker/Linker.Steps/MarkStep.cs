@@ -660,10 +660,6 @@ namespace Mono.Linker.Steps
 		void MarkMembers (TypeDefinition typeDefinition, IEnumerable<IMemberDefinition> members, DependencyInfo reason)
 		{
 			foreach (var member in members) {
-				if (member == typeDefinition) {
-					MarkEntireType (typeDefinition, includeBaseTypes: true, reason);
-					continue;
-				}
 				switch (member) {
 				case TypeDefinition type:
 					MarkType (type, reason);
@@ -683,6 +679,9 @@ namespace Mono.Linker.Steps
 				case EventDefinition @event:
 					MarkEvent (@event, reason);
 					MarkMethodsIf (@event.OtherMethods, m => true, reason);
+					break;
+				case null:
+					MarkEntireType (typeDefinition, includeBaseTypes: true, reason);
 					break;
 				}
 			}
