@@ -29,7 +29,7 @@ namespace Mono.Linker.Tests.Cases.DynamicDependencies
 		}
 
 		[Kept]
-		[DynamicDependency (".ctor()", "Mono.Linker.Tests.Cases.DynamicDependencies.Dependencies.DynamicDependencyMethodInNonReferencedAssemblyLibrary", "DynamicDependencyMethodInNonReferencedAssemblyLibrary")]
+		[DynamicDependency ("#ctor()", "Mono.Linker.Tests.Cases.DynamicDependencies.Dependencies.DynamicDependencyMethodInNonReferencedAssemblyLibrary", "DynamicDependencyMethodInNonReferencedAssemblyLibrary")]
 		static void Dependency ()
 		{
 		}
