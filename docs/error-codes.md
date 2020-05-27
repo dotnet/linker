@@ -135,17 +135,17 @@ error and warning codes.
 
 - The 'XML document location' defined the set accessor of property 'property' on type 'type', but the accessor was not found.
 
-#### `IL2020`: DynamicallyAccessedMembers attribute was specified but no argument was proportioned 
+#### `IL2020`: Argument 'xml argument' specified in 'XML Document location' could not be transformed to a currently supported metadatatype in the xml
 
-- The XML descriptor has a DynamicallyAccessedMembers attribute but the argument 'argument' does not match any of the existing DynamicallyAccessedMemberTypes 
+- There is no way to convert the 'xml argument' string to the constructor parameter type. The constructor parameter type is not supported.
 
-#### `IL2021`: Could not parse argument 'argument' specified in 'XML document location' as a DynamicallyAccessedMemberTypes
+#### `IL2021`: Could not parse argument 'argument' specified in 'XML document location' as a 'type'
 
-- The XML descriptor has a DynamicallyAccessedMembers attribute but the argument 'argument' does not match any of the existing DynamicallyAccessedMemberTypes 
+- The XML descriptor has a 'type' attribute but the argument 'argument' does not match any of the existing enum 'type' values
 
-#### `IL2022`: DynamicallyAccessedMembers attribute was specified but there is more than one argument
+#### `IL2022`: Could not find a constructor for type 'attribute type' that receives 'number of arguments' arguments as parameter
 
-- The XML descriptor has more than one argument for a single DynamicallyAccessedMembers attribute, there can only be one argument in order to parse it
+- The 'attribute type' 'number of arguments' doesnt match with the number of arguments in any of the constructor function described in 'attribute type'
 
 #### `IL2023`: There is more than one return parameter specified for 'method' in 'XML document location'
 
@@ -170,3 +170,19 @@ error and warning codes.
 #### `IL2028`: Attribute 'attribute' on 'method' doesn't have a required constructor argument.
 
 - The linker found an instance of attribute 'attribute' on 'method' but it lacks a required constructor argument. Linker will ignore this attribute.
+
+#### `IL2029`: There is no xml attribute 'fullname' in xml element '{attributeFullName}'
+
+- The linker found an instance of attribute 'attribute' on 'method' but it lacks a required constructor argument. Linker will ignore this attribute.
+
+#### `IL2030`: There is no xml attribute 'assembly' in xml element 'attribute element'
+
+- The linker found an 'attribute element' on the xml file but it didnt contain an 'assembly' attribute
+
+#### `IL2031`: Could not resolve assembly 'assembly' in attribute 'attribute' specified in the 'XML document location'
+
+- The assembly 'assembly' described as a attribute property of 'attribute' could not be resolved in 'XML document location'
+
+#### `IL2032`: Attribute type 'attribute type' could not be found
+
+- The described 'attribute type' could not be found in the assemblies
