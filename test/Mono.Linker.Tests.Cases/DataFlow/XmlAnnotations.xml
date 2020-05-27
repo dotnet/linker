@@ -6,7 +6,7 @@
         <attribute fullname="System.DoesNotExistattribute" assembly="Mono.Linker.Tests.Cases.Expectations">
           <argument>0</argument>
         </attribute>
-        <attribute fullname="System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers" assembly="Mono.Linker.Tests.Cases.Expectations">
+        <attribute fullname="System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers" assembly="*">
           <argument>DefaultConstructor</argument>
         </attribute>
       </field>

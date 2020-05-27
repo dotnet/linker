@@ -10,7 +10,6 @@ using System.Text.RegularExpressions;
 using System.Xml.XPath;
 
 using Mono.Cecil;
-using Mono.Cecil.Rocks;
 
 namespace Mono.Linker.Dataflow
 {
@@ -57,7 +56,7 @@ namespace Mono.Linker.Dataflow
 					_context.LogMessage (MessageContainer.CreateWarningMessage ($"Attribute element doest not contain attribute 'assembly' in xml element '{attributeFullName}'", 2030));
 					continue;
 				} else if (assemblyName == "*")
-					attributeType = GetTypeFromName (concatAttribute);
+					attributeType = _context.GetType (concatAttribute);
 				else {
 					try {
 						assembly = GetAssembly (_context, AssemblyNameReference.Parse (assemblyName));
@@ -73,7 +72,7 @@ namespace Mono.Linker.Dataflow
 				}
 
 				ArrayBuilder<string> arguments = GetAttributeChildren (iterator.Current.SelectChildren ("argument", string.Empty));
-				MethodDefinition constructor = attributeType.GetConstructors ().FirstOrDefault (c => c.Parameters.Count == arguments.Count);
+				MethodDefinition constructor = attributeType.Methods.Where (method => method.IsConstructor).FirstOrDefault (c => c.Parameters.Count == arguments.Count);
 				if (constructor == null) {
 					_context.LogMessage (MessageContainer.CreateWarningMessage ($"Could not find a constructor for type '{attributeType}' that receives '{arguments.Count}' arguments as parameter", 2022));
 					continue;
@@ -102,7 +101,12 @@ namespace Mono.Linker.Dataflow
 							argumentValue = xmlArguments[i];
 							break;
 						case MetadataType.Int32:
-							argumentValue = int.Parse (xmlArguments[i]);
+							int result;
+							if (int.TryParse (xmlArguments[i], out result))
+								argumentValue = result;
+							else {
+								_context.LogMessage (MessageContainer.CreateWarningMessage ($"Argument '{xmlArguments[i]}' specified in '{_xmlDocumentLocation}' could not be transformed to the constructor parameter type", 2033));
+							}
 							break;
 						default:
 							_context.LogMessage (MessageContainer.CreateWarningMessage ($"Argument '{xmlArguments[i]}' specified in '{_xmlDocumentLocation}' could not be transformed to a currently supported metadatatype in the xml", 2020));
@@ -118,30 +122,13 @@ namespace Mono.Linker.Dataflow
 			return attributes;
 		}
 
-		public TypeDefinition GetTypeFromName (string fullName)
-		{
-			TypeDefinition attributeType;
-			foreach (AssemblyDefinition asm in _context.GetAssemblies ()) {
-				attributeType = asm.FindType (fullName);
-				if (attributeType != null)
-					return attributeType;
-
-				foreach (AssemblyDefinition refasm in _context.ResolveReferences (asm)) {
-					attributeType = refasm.FindType (fullName);
-					if (attributeType != null)
-						return attributeType;
-				}
-			}
-			return null;
-		}
-
 		ArrayBuilder<string> GetAttributeChildren (XPathNodeIterator iterator)
 		{
-			ArrayBuilder<string> childs = new ArrayBuilder<string> ();
+			ArrayBuilder<string> children = new ArrayBuilder<string> ();
 			while (iterator.MoveNext ()) {
-				childs.Add (iterator.Current.Value);
+				children.Add (iterator.Current.Value);
 			}
-			return childs;
+			return children;
 		}
 
 		public void ParseXml (string document)
@@ -169,7 +156,7 @@ namespace Mono.Linker.Dataflow
 
 				if (GetFullName (iterator.Current) == "*") {
 					foreach (AssemblyDefinition assemblyIterator in context.GetAssemblies ()) {
-						ProcessTypes (assemblyIterator, iterator);
+						ProcessTypes (assemblyIterator, iterator, true);
 					}
 				} else {
 					AssemblyDefinition assembly = GetAssembly (context, GetAssemblyName (iterator.Current));
@@ -186,7 +173,7 @@ namespace Mono.Linker.Dataflow
 			}
 		}
 
-		void ProcessTypes (AssemblyDefinition assembly, XPathNodeIterator iterator)
+		void ProcessTypes (AssemblyDefinition assembly, XPathNodeIterator iterator, bool searchOnAllAssemblies = false)
 		{
 			iterator = iterator.Current.SelectChildren ("type", string.Empty);
 			while (iterator.MoveNext ()) {
@@ -217,7 +204,8 @@ namespace Mono.Linker.Dataflow
 				}
 
 				if (type == null) {
-					_context.LogMessage (MessageContainer.CreateWarningMessage ($"Could not resolve type '{fullname}' specified in {_xmlDocumentLocation}", 2008));
+					if (!searchOnAllAssemblies)
+						_context.LogMessage (MessageContainer.CreateWarningMessage ($"Could not resolve type '{fullname}' specified in {_xmlDocumentLocation}", 2008));
 					continue;
 				}
 

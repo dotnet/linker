@@ -171,9 +171,9 @@ error and warning codes.
 
 - The linker found an instance of attribute 'attribute' on 'method' but it lacks a required constructor argument. Linker will ignore this attribute.
 
-#### `IL2029`: There is no xml attribute 'fullname' in xml element '{attributeFullName}'
+#### `IL2029`: Attribute element does not contain attribute 'fullname'
 
-- The linker found an instance of attribute 'attribute' on 'method' but it lacks a required constructor argument. Linker will ignore this attribute.
+- An attribute element was declared but does not contain the attribute 'fullname' or 'fullname' attribute is empty
 
 #### `IL2030`: There is no xml attribute 'assembly' in xml element 'attribute element'
 
@@ -186,3 +186,7 @@ error and warning codes.
 #### `IL2032`: Attribute type 'attribute type' could not be found
 
 - The described 'attribute type' could not be found in the assemblies
+
+#### `IL2033`: Argument 'argument' specified in 'XML document location' could not be transformed to the constructor parameter type
+
+- The number of arguments correspond to a certain type constructor, but the type of arguments specified in the xml does not match the type of arguments in the constructor.
