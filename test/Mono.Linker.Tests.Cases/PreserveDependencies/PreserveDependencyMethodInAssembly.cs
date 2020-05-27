@@ -4,6 +4,9 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.PreserveDependencies
 {
+#if NETCOREAPP
+	[IgnoreTestCase ("PreserveDependencyAttribute is not supported on .NET Core")]
+#endif
 	[KeptMemberInAssembly ("library.dll", "Mono.Linker.Tests.Cases.PreserveDependencies.Dependencies.PreserveDependencyMethodInAssemblyLibrary", ".ctor()")]
 	[SetupCompileBefore ("FakeSystemAssembly.dll", new[] { "Dependencies/PreserveDependencyAttribute.cs" })]
 	[SetupCompileBefore ("library.dll", new[] { "Dependencies/PreserveDependencyMethodInAssemblyLibrary.cs" })]

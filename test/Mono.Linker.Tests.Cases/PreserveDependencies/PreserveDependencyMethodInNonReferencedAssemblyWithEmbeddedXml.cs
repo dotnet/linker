@@ -8,6 +8,9 @@ namespace Mono.Linker.Tests.Cases.PreserveDependencies
 	/// <summary>
 	/// This is an acceptable bug with the currently implementation.  Embedded link xml files will not be processed
 	/// </summary>
+#if NETCOREAPP
+	[IgnoreTestCase ("PreserveDependencyAttribute is not supported on .NET Core")]
+#endif
 	[IgnoreDescriptors (false)]
 	[SetupCompileBefore ("FakeSystemAssembly.dll", new[] { "Dependencies/PreserveDependencyAttribute.cs" })]
 	[SetupCompileBefore ("base.dll", new[] { "Dependencies/PreserveDependencyMethodInNonReferencedAssemblyBase.cs" })]
