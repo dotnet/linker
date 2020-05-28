@@ -37,16 +37,30 @@ namespace Mono.Linker
 			_context = context;
 		}
 
-		public void RecognizedReflectionAccessPattern (MethodDefinition sourceMethod, Instruction reflectionMethodCall, IMetadataTokenProvider accessedItem)
+		public void RecognizedReflectionAccessPattern (IMetadataTokenProvider source, Instruction sourceInstruction, IMetadataTokenProvider accessedItem)
 		{
 			// Do nothing - there's no logging for successfully recognized patterns
 		}
 
-		public void UnrecognizedReflectionAccessPattern (MethodDefinition sourceMethod, Instruction reflectionMethodCall, IMetadataTokenProvider accessedItem, string message)
+		public void UnrecognizedReflectionAccessPattern (IMetadataTokenProvider source, Instruction sourceInstruction, IMetadataTokenProvider accessedItem, string message)
 		{
-			var origin = reflectionMethodCall != null ? MessageOrigin.TryGetOrigin (sourceMethod, reflectionMethodCall.Offset) : new MessageOrigin (sourceMethod);
-			var locationInfo = origin == null ? (sourceMethod.DeclaringType.FullName + "::" + GetSignature (sourceMethod) + ": ") : string.Empty;
-			_context.LogMessage (MessageContainer.CreateWarningMessage (_context, locationInfo + message, 2006, origin, "Unrecognized reflection pattern"));
+			MessageOrigin origin = new MessageOrigin ((IMemberDefinition)null);
+			string location = string.Empty;
+			if (source is IMemberDefinition member) {
+				if (sourceInstruction != null && member is MethodDefinition method)
+					origin = MessageOrigin.TryGetOrigin(method, sourceInstruction.Offset);
+				else
+					origin = new MessageOrigin(member);
+
+				if (origin.FileName == null) {
+					if (member is MethodDefinition methodDefinition)
+						location = methodDefinition.DeclaringType.FullName + "::" + GetSignature(methodDefinition) + ": ";
+					else
+						location = member.DeclaringType?.FullName + "::" + member.Name;
+				}
+			}
+
+			_context.LogMessage (MessageContainer.CreateWarningMessage (_context, location + message, 2006, origin, "Unrecognized reflection pattern"));
 		}
 
 		static string GetSignature (MethodDefinition method)
