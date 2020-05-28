@@ -99,7 +99,7 @@ namespace Mono.Linker
 		/// /// <param name="origin">Type or member where the warning is coming from</param>
 		/// <param name="subcategory">Optionally, further categorize this warning</param>
 		/// <returns>New MessageContainer of 'Warning' category</returns>
-		internal static MessageContainer CreateWarningMessage (LinkContext context, string text, int code, IMetadataTokenProvider origin, string subcategory = MessageSubCategory.None)
+		internal static MessageContainer CreateWarningMessage (LinkContext context, string text, int code, IMemberDefinition origin, string subcategory = MessageSubCategory.None)
 		{
 			MessageOrigin _origin = new MessageOrigin (origin);
 			return CreateWarningMessage (context, text, code, _origin, subcategory);

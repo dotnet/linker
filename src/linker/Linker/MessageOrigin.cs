@@ -13,7 +13,7 @@ namespace Mono.Linker
 	{
 #nullable enable
 		public string? FileName { get; }
-		public IMetadataTokenProvider? MdTokenProvider { get; }
+		public IMemberDefinition? MemberDefinition { get; }
 #nullable disable
 		public int SourceLine { get; }
 		public int SourceColumn { get; }
@@ -23,21 +23,21 @@ namespace Mono.Linker
 			FileName = fileName;
 			SourceLine = sourceLine;
 			SourceColumn = sourceColumn;
-			MdTokenProvider = null;
+			MemberDefinition = null;
 		}
 
-		public MessageOrigin (IMetadataTokenProvider mdTokenProvider, int sourceLine = 0, int sourceColumn = 0)
+		public MessageOrigin (IMemberDefinition memberDefinition, int sourceLine = 0, int sourceColumn = 0)
 		{
 			FileName = null;
-			MdTokenProvider = mdTokenProvider;
+			MemberDefinition = memberDefinition;
 			SourceLine = sourceLine;
 			SourceColumn = sourceColumn;
 		}
 
-		private MessageOrigin (string fileName, IMetadataTokenProvider mdTokenProvider, int sourceLine = 0, int sourceColumn = 0)
+		private MessageOrigin (string fileName, IMemberDefinition memberDefinition, int sourceLine = 0, int sourceColumn = 0)
 		{
 			FileName = fileName;
-			MdTokenProvider = mdTokenProvider;
+			MemberDefinition = memberDefinition;
 			SourceLine = sourceLine;
 			SourceColumn = sourceColumn;
 		}
@@ -74,10 +74,10 @@ namespace Mono.Linker
 		}
 
 		public bool Equals (MessageOrigin other) =>
-			(FileName, MdTokenProvider, SourceLine, SourceColumn) == (other.FileName, other.MdTokenProvider, other.SourceLine, other.SourceColumn);
+			(FileName, MemberDefinition, SourceLine, SourceColumn) == (other.FileName, other.MemberDefinition, other.SourceLine, other.SourceColumn);
 
 		public override bool Equals (object obj) => obj is MessageOrigin messageOrigin && Equals (messageOrigin);
-		public override int GetHashCode () => (FileName, MdTokenProvider, SourceLine, SourceColumn).GetHashCode ();
+		public override int GetHashCode () => (FileName, MemberDefinition, SourceLine, SourceColumn).GetHashCode ();
 		public static bool operator == (MessageOrigin lhs, MessageOrigin rhs) => lhs.Equals (rhs);
 		public static bool operator != (MessageOrigin lhs, MessageOrigin rhs) => !lhs.Equals (rhs);
 	}

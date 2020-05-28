@@ -609,7 +609,7 @@ namespace Mono.Linker.Steps
 				assembly = _context.GetLoadedAssembly (assemblyName);
 				if (assembly == null) {
 					_context.LogMessage (MessageContainer.CreateWarningMessage (_context,
-						$"Could not resolve '{assemblyName}' assembly dependency specified in a `PreserveDependency` attribute that targets method '{context.FullName}'", 2003, context));
+						$"Could not resolve '{assemblyName}' assembly dependency specified in a `PreserveDependency` attribute that targets method '{context.FullName}'", 2003, context.Resolve ()));
 					return;
 				}
 			} else {
@@ -622,7 +622,7 @@ namespace Mono.Linker.Steps
 
 				if (td == null) {
 					_context.LogMessage (MessageContainer.CreateWarningMessage (_context,
-						$"Could not resolve '{typeName}' type dependency specified in a `PreserveDependency` attribute that targets method '{context.FullName}'", 2004, context));
+						$"Could not resolve '{typeName}' type dependency specified in a `PreserveDependency` attribute that targets method '{context.FullName}'", 2004, context.Resolve ()));
 					return;
 				}
 			} else {

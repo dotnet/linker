@@ -6,53 +6,52 @@ namespace Mono.Linker
 	public class UnconditionalSuppressMessageAttributeState
 	{
 		private readonly LinkContext _context;
-		private readonly Dictionary<IMetadataTokenProvider, Dictionary<int, SuppressMessageInfo>> _localSuppressionsByMdToken;
+		private readonly Dictionary<ICustomAttributeProvider, Dictionary<int, SuppressMessageInfo>> _localSuppressions;
 
 		private bool HasLocalSuppressions {
 			get {
-				return _localSuppressionsByMdToken.Count != 0;
+				return _localSuppressions.Count != 0;
 			}
 		}
 
 		public UnconditionalSuppressMessageAttributeState (LinkContext context)
 		{
 			_context = context;
-			_localSuppressionsByMdToken = new Dictionary<IMetadataTokenProvider, Dictionary<int, SuppressMessageInfo>> ();
+			_localSuppressions = new Dictionary<ICustomAttributeProvider, Dictionary<int, SuppressMessageInfo>> ();
 		}
 
-		public void AddLocalSuppression (CustomAttribute ca, IMetadataTokenProvider mdTokenProvider)
+		public void AddLocalSuppression (CustomAttribute ca, ICustomAttributeProvider provider)
 		{
 			SuppressMessageInfo info;
 			if (!TryDecodeSuppressMessageAttributeData (ca, out info)) {
 				return;
 			}
 
-			if (!_localSuppressionsByMdToken.TryGetValue (mdTokenProvider, out var suppressions)) {
+			if (!_localSuppressions.TryGetValue (provider, out var suppressions)) {
 				suppressions = new Dictionary<int, SuppressMessageInfo> ();
-				_localSuppressionsByMdToken.Add (mdTokenProvider, suppressions);
+				_localSuppressions.Add (provider, suppressions);
 			}
 
 			if (suppressions.ContainsKey (info.Id))
 				_context.LogMessage (MessageContainer.CreateInfoMessage (
-					$"Type or member {mdTokenProvider} has more than one unconditional suppression. Note that only the last one is used."));
+					$"Element {provider} has more than one unconditional suppression. Note that only the last one is used."));
 
 			suppressions[info.Id] = info;
 		}
 
 		public bool IsSuppressed (int id, MessageOrigin warningOrigin, out SuppressMessageInfo info)
 		{
-			info = default;
-
-			if (HasLocalSuppressions && warningOrigin.MdTokenProvider != null) {
-				IMetadataTokenProvider mdTokenProvider = warningOrigin.MdTokenProvider;
-				while (mdTokenProvider != null) {
-					if (IsLocallySuppressed (id, mdTokenProvider, out info))
+			if (HasLocalSuppressions && warningOrigin.MemberDefinition != null) {
+				IMemberDefinition memberDefinition = warningOrigin.MemberDefinition;
+				while (memberDefinition != null) {
+					if (IsLocallySuppressed (id, memberDefinition, out info))
 						return true;
 
-					mdTokenProvider = (mdTokenProvider as IMemberDefinition).DeclaringType;
+					memberDefinition = memberDefinition.DeclaringType;
 				}
 			}
 
+			info = default;
 			return false;
 		}
 
@@ -83,7 +82,7 @@ namespace Mono.Linker
 				foreach (var p in attribute.Properties) {
 					switch (p.Name) {
 					case "Scope":
-						info.Scope = (p.Argument.Value as string).ToLower ();
+						info.Scope = (p.Argument.Value as string)?.ToLower ();
 						break;
 					case "Target":
 						info.Target = p.Argument.Value as string;
@@ -98,11 +97,11 @@ namespace Mono.Linker
 			return true;
 		}
 
-		private bool IsLocallySuppressed (int id, IMetadataTokenProvider mdTokenProvider, out SuppressMessageInfo info)
+		private bool IsLocallySuppressed (int id, ICustomAttributeProvider provider, out SuppressMessageInfo info)
 		{
 			Dictionary<int, SuppressMessageInfo> suppressions;
 			info = default;
-			return _localSuppressionsByMdToken.TryGetValue (mdTokenProvider, out suppressions) &&
+			return _localSuppressions.TryGetValue (provider, out suppressions) &&
 				suppressions.TryGetValue (id, out info);
 		}
 	}
