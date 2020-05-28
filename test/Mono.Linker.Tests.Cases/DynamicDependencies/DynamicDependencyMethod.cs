@@ -42,6 +42,10 @@ namespace Mono.Linker.Tests.Cases.DynamicDependencies
 			[DynamicDependency ("#cctor()", typeof (Nested))]
 			// Dependency on a property itself should be expressed as a dependency on one or both accessor methods
 			[DynamicDependency ("get_Property()", typeof (C))]
+			[DynamicDependency ("M``1(Mono.Linker.Tests.Cases.DynamicDependencies.DynamicDependencyMethod.Complex.S{" +
+				"Mono.Linker.Tests.Cases.DynamicDependencies.DynamicDependencyMethod.Complex.G{" +
+					"Mono.Linker.Tests.Cases.DynamicDependencies.DynamicDependencyMethod.Complex.A,``0}}" +
+					"[0:,0:,0:][][][0:,0:]@)", typeof (Complex))]
 			public static void Method ()
 			{
 			}
@@ -81,6 +85,21 @@ namespace Mono.Linker.Tests.Cases.DynamicDependencies
 			static Nested ()
 			{
 
+			}
+		}
+
+		class Complex
+		{
+			[Kept]
+			public struct S<T> { }
+			[Kept]
+			public class A { }
+			[Kept]
+			public class G<T, U> { }
+
+			[Kept]
+			public void M<V> (ref S<G<A, V>>[,][][][,,] a)
+			{
 			}
 		}
 

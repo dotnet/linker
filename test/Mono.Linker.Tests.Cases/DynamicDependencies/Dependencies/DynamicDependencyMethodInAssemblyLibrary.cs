@@ -10,5 +10,7 @@ namespace Mono.Linker.Tests.Cases.DynamicDependencies.Dependencies
 		private void Foo ()
 		{
 		}
+
+		private int privateField;
 	}
 }

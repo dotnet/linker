@@ -94,6 +94,7 @@ namespace Mono.Linker.Steps
 			DependencyKind.CustomAttributeArgumentValue,
 			DependencyKind.DeclaringType,
 			DependencyKind.DeclaringTypeOfCalledMethod,
+			DependencyKind.DynamicDependency,
 			DependencyKind.ElementType,
 			DependencyKind.FieldType,
 			DependencyKind.GenericArgumentType,
@@ -698,7 +699,7 @@ namespace Mono.Linker.Steps
 #if !FEATURE_ILLINK
 		protected virtual void MarkUserDependency (MemberReference context, CustomAttribute ca)
 		{
-			if (!LinkerAttributesInformation.ShouldProcessDependencyAttribute (_context, ca))
+			if (!DynamicDependency.ShouldProcess (_context, ca))
 				return;
 
 			AssemblyDefinition assembly;
