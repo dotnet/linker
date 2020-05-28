@@ -209,4 +209,4 @@ error and warning codes.
 
 #### `IL2038`: No members were resolved for for 'memberTypes' in DynamicDependencyAttribute on 'member'
 
-- The DynamicallyAccessedMemberTypes passed into the DynamicDependencyAttribute constructor did not match any members on the specified type. No members will be kept for this attribute. Ensure that you are using DynamicallyAccessedMemberTypes which exist for the type.
+- The DynamicallyAccessedMemberTypes passed into the DynamicDependencyAttribute constructor did not match any members on the specified type. No members will be kept for this type. Ensure that you are using DynamicallyAccessedMemberTypes which exist for the type.
