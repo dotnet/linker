@@ -5,7 +5,7 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.DynamicDependencies
 {
-	[LogContains ("IL2073: Unresolved member '*' in DynamicDependencyAttribute")]
+	[LogContains ("IL2037: No members were resolved for '*' in DynamicDependencyAttribute on 'System.Void Mono.Linker.Tests.Cases.DynamicDependencies.DynamicDependencyMemberSignatureWildcard::Dependency()'")]
 	[SetupCompileBefore ("library.dll", new[] { "Dependencies/DynamicDependencyMethodInAssemblyLibrary.cs" })]
 	public class DynamicDependencyMemberSignatureWildcard
 	{

@@ -5,10 +5,10 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.DynamicDependencies
 {
-	[LogContains ("IL2037: Unresolved member 'MissingMethod' in DynamicDependencyAttribute on 'System.Void Mono.Linker.Tests.Cases.DynamicDependencies.DynamicDependencyMethod/B::Broken()'")]
-	[LogContains ("IL2037: Unresolved member 'Dependency2``1(``0,System.Int32,System.Object)' in DynamicDependencyAttribute on 'System.Void Mono.Linker.Tests.Cases.DynamicDependencies.DynamicDependencyMethod/B::Broken()'")]
-	[LogContains ("IL2037: Unresolved member '#ctor()' in DynamicDependencyAttribute on 'System.Void Mono.Linker.Tests.Cases.DynamicDependencies.DynamicDependencyMethod/B::Broken()'")]
-	[LogContains ("IL2037: Unresolved member '#cctor()' in DynamicDependencyAttribute on 'System.Void Mono.Linker.Tests.Cases.DynamicDependencies.DynamicDependencyMethod/B::Broken()'")]
+	[LogContains ("IL2037: No members were resolved for 'MissingMethod' in DynamicDependencyAttribute on 'System.Void Mono.Linker.Tests.Cases.DynamicDependencies.DynamicDependencyMethod/B::Broken()'")]
+	[LogContains ("IL2037: No members were resolved for 'Dependency2``1(``0,System.Int32,System.Object)' in DynamicDependencyAttribute on 'System.Void Mono.Linker.Tests.Cases.DynamicDependencies.DynamicDependencyMethod/B::Broken()'")]
+	[LogContains ("IL2037: No members were resolved for '#ctor()' in DynamicDependencyAttribute on 'System.Void Mono.Linker.Tests.Cases.DynamicDependencies.DynamicDependencyMethod/B::Broken()'")]
+	[LogContains ("IL2037: No members were resolved for '#cctor()' in DynamicDependencyAttribute on 'System.Void Mono.Linker.Tests.Cases.DynamicDependencies.DynamicDependencyMethod/B::Broken()'")]
 	class DynamicDependencyMethod
 	{
 		public static void Main ()
