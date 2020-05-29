@@ -48,13 +48,13 @@ namespace Mono.Linker
 			string location = string.Empty;
 			var method = source as MethodDefinition;
 			if (sourceInstruction != null && method != null)
-				origin = MessageOrigin.TryGetOrigin(method, sourceInstruction.Offset);
+				origin = MessageOrigin.TryGetOrigin (method, sourceInstruction.Offset);
 			else
-				origin = new MessageOrigin(source);
+				origin = new MessageOrigin (source);
 
 			if (origin.FileName == null) {
 				if (method != null)
-					location = method.DeclaringType.FullName + "::" + GetSignature(method) + ": ";
+					location = method.DeclaringType.FullName + "::" + GetSignature (method) + ": ";
 				else
 					location = source.DeclaringType?.FullName + "::" + source.Name;
 			}
