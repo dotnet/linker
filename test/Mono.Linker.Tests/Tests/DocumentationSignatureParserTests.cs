@@ -571,6 +571,11 @@ namespace Mono.Linker.Tests
 			{
 			}
 
+			[ExpectUnresolvedDocumentationSignature ("T:Mono.Linker.Tests.DocumentationSignatureParserTests.Invalid.TypeWithMethodGenericParameters``1")]
+			public class TypeWithMethodGenericParameters
+			{
+			}
+
 			// our parser won't match fields with `, unlike roslyn.
 			[ExpectUnresolvedDocumentationSignature ("F:Mono.Linker.Tests.DocumentationSignatureParserTests.Invalid.field`gibberish")]
 			public int field;
