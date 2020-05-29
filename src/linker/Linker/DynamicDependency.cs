@@ -64,7 +64,7 @@ namespace Mono.Linker
 				return null;
 			var member = provider as IMemberDefinition;
 
-			if (!DynamicDependency.ShouldProcess (context, customAttribute))
+			if (!ShouldProcess (context, customAttribute))
 				return null;
 
 			var dynamicDependency = GetDynamicDependency (context, customAttribute);
@@ -90,7 +90,7 @@ namespace Mono.Linker
 			DynamicallyAccessedMemberTypes? memberTypes = null;
 			if (memberSignature == null) {
 				var argType = args[0].Type;
-				if (!(argType.Namespace == "System.Diagnostics.CodeAnalysis" && argType.Name == "DynamicallyAccessedMemberTypes"))
+				if (!argType.IsTypeOf<DynamicallyAccessedMemberTypes> ())
 					return null;
 				try {
 					memberTypes = (DynamicallyAccessedMemberTypes) args[0].Value;

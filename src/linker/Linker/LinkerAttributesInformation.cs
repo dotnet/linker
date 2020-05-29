@@ -23,9 +23,9 @@ namespace Mono.Linker
 				foreach (var customAttribute in provider.CustomAttributes) {
 					var attributeType = customAttribute.AttributeType;
 					Attribute attributeValue = null;
-					if (IsAttribute<RequiresUnreferencedCodeAttribute> (attributeType))
+					if (attributeType.IsTypeOf<RequiresUnreferencedCodeAttribute> ())
 						attributeValue = ProcessRequiresUnreferencedCodeAttribute (context, provider, customAttribute);
-					else if (IsAttribute<DynamicDependencyAttribute> (attributeType))
+					else if (attributeType.IsTypeOf<DynamicDependencyAttribute> ())
 						attributeValue = DynamicDependency.ProcessAttribute (context, provider, customAttribute);
 					AddAttribute (ref _linkerAttributes, attributeValue);
 				}
@@ -64,12 +64,6 @@ namespace Mono.Linker
 			}
 
 			return attributeList.Cast<T> ();
-		}
-
-		public static bool IsAttribute<T> (TypeReference tr) where T : Attribute
-		{
-			var type = typeof (T);
-			return tr.Name == type.Name && tr.Namespace == tr.Namespace;
 		}
 
 		static Attribute ProcessRequiresUnreferencedCodeAttribute (LinkContext context, ICustomAttributeProvider provider, CustomAttribute customAttribute)

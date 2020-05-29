@@ -203,10 +203,6 @@ error and warning codes.
 
 - The type in a DynamicDependencyAttribute constructor could not be resolved. Ensure that the argument specifies a valid type name or type reference, that the type exists in the specified assembly, and that the assembly is available to the linker.
 
-#### `IL2037`: Unresolved member 'memberSignature' in DynamicDependencyAttribute on 'member'
+### `IL2037`: No members were resolved for 'memberSignature/memberTypes' in DynamicDependencyAttribute on 'member'
 
-- The member signature in a DynamicDependencyAttribute constructor could not be resolved. Ensure that it refers to an existing member, and that it uses the format defined at https://github.com/dotnet/csharplang/blob/master/spec/documentation-comments.md#id-string-format.
-
-#### `IL2038`: No members were resolved for for 'memberTypes' in DynamicDependencyAttribute on 'member'
-
-- The DynamicallyAccessedMemberTypes passed into the DynamicDependencyAttribute constructor did not match any members on the specified type. No members will be kept for this type. Ensure that you are using DynamicallyAccessedMemberTypes which exist for the type.
+- The member signature or DynamicallyAccessedMemberTypes in a DynamicDependencyAttribute constructor did not resolve to any members on the type. If you using a signature, ensure that it refers to an existing member, and that it uses the format defined at https://github.com/dotnet/csharplang/blob/master/spec/documentation-comments.md#id-string-format. If using DynamicallyAccessedMemberTypes, ensure that the type contains members of the specified member types.

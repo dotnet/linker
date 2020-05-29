@@ -549,7 +549,6 @@ namespace Mono.Linker.Steps
 				return;
 
 			var dynamicDependencies = _context.Annotations.GetLinkerAttributes<DynamicDependency> ((IMemberDefinition) provider);
-			Debug.Assert (dynamicDependencies != null);
 
 			foreach (var dynamicDependency in dynamicDependencies)
 				MarkDynamicDependency (dynamicDependency, (MemberReference) provider);
@@ -558,7 +557,7 @@ namespace Mono.Linker.Steps
 		protected virtual bool ProcessLinkerSpecialAttribute (CustomAttribute ca, ICustomAttributeProvider provider, in DependencyInfo reason)
 		{
 			var isPreserveDependency = IsUserDependencyMarker (ca.AttributeType);
-			var isDynamicDependency = LinkerAttributesInformation.IsAttribute<DynamicDependencyAttribute> (ca.AttributeType);
+			var isDynamicDependency = ca.AttributeType.IsTypeOf<DynamicDependencyAttribute> ();
 
 			if (!((isPreserveDependency || isDynamicDependency) && provider is MemberReference mr))
 				return false;
@@ -598,7 +597,7 @@ namespace Mono.Linker.Steps
 
 			TypeDefinition type;
 			if (dynamicDependency.TypeName is string typeName) {
-				type = assembly.FindTypeByDocumentationSignature (typeName);
+				type = DocumentationSignatureParser.GetTypeByDocumentationSignature (assembly, typeName);
 				if (type == null) {
 					_context.LogMessage (MessageContainer.CreateWarningMessage (_context,
 						$"Unresolved type '{typeName}' in DynamicDependencyAttribute on '{context}'",
@@ -625,10 +624,10 @@ namespace Mono.Linker.Steps
 
 			IEnumerable<IMemberDefinition> members;
 			if (dynamicDependency.MemberSignature is string memberSignature) {
-				members = type.FindMembersByDocumentationSignature (memberSignature);
+				members = DocumentationSignatureParser.GetMembersByDocumentationSignature (type, memberSignature);
 				if (!members.Any ()) {
 					_context.LogMessage (MessageContainer.CreateWarningMessage (_context,
-						$"Unresolved member '{memberSignature}' in DynamicDependencyAttribute on '{context}'",
+						$"No members were resolved for '{memberSignature}' in DynamicDependencyAttribute on '{context}'",
 						2037, MessageOrigin.TryGetOrigin (member)));
 					return;
 				}
@@ -638,7 +637,7 @@ namespace Mono.Linker.Steps
 				if (!members.Any ()) {
 					_context.LogMessage (MessageContainer.CreateWarningMessage (_context,
 						$"No members were resolved for '{memberTypes}' in DynamicDependencyAttribute on '{context}'",
-						2038, MessageOrigin.TryGetOrigin (member)));
+						2037, MessageOrigin.TryGetOrigin (member)));
 					return;
 				}
 			}
