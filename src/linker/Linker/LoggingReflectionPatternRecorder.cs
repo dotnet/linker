@@ -37,27 +37,26 @@ namespace Mono.Linker
 			_context = context;
 		}
 
-		public void RecognizedReflectionAccessPattern (IMetadataTokenProvider source, Instruction sourceInstruction, IMetadataTokenProvider accessedItem)
+		public void RecognizedReflectionAccessPattern (IMemberDefinition source, Instruction sourceInstruction, IMetadataTokenProvider accessedItem)
 		{
 			// Do nothing - there's no logging for successfully recognized patterns
 		}
 
-		public void UnrecognizedReflectionAccessPattern (IMetadataTokenProvider source, Instruction sourceInstruction, IMetadataTokenProvider accessedItem, string message)
+		public void UnrecognizedReflectionAccessPattern (IMemberDefinition source, Instruction sourceInstruction, IMetadataTokenProvider accessedItem, string message)
 		{
-			MessageOrigin origin = new MessageOrigin ((IMemberDefinition)null);
+			MessageOrigin origin;
 			string location = string.Empty;
-			if (source is IMemberDefinition member) {
-				if (sourceInstruction != null && member is MethodDefinition method)
-					origin = MessageOrigin.TryGetOrigin(method, sourceInstruction.Offset);
-				else
-					origin = new MessageOrigin(member);
+			var method = source as MethodDefinition;
+			if (sourceInstruction != null && method != null)
+				origin = MessageOrigin.TryGetOrigin(method, sourceInstruction.Offset);
+			else
+				origin = new MessageOrigin(source);
 
-				if (origin.FileName == null) {
-					if (member is MethodDefinition methodDefinition)
-						location = methodDefinition.DeclaringType.FullName + "::" + GetSignature(methodDefinition) + ": ";
-					else
-						location = member.DeclaringType?.FullName + "::" + member.Name;
-				}
+			if (origin.FileName == null) {
+				if (method != null)
+					location = method.DeclaringType.FullName + "::" + GetSignature(method) + ": ";
+				else
+					location = source.DeclaringType?.FullName + "::" + source.Name;
 			}
 
 			_context.LogMessage (MessageContainer.CreateWarningMessage (_context, location + message, 2006, origin, "Unrecognized reflection pattern"));

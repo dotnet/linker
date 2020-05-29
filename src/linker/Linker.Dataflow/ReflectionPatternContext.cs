@@ -25,11 +25,11 @@ namespace Mono.Linker.Dataflow
 		bool _patternReported;
 #endif
 
-		public IMetadataTokenProvider Source { get; private set; }
+		public IMemberDefinition Source { get; private set; }
 		public IMetadataTokenProvider MemberWithRequirements { get; private set; }
 		public Instruction Instruction { get; private set; }
 
-		public ReflectionPatternContext (LinkContext context, IMetadataTokenProvider source, IMetadataTokenProvider memberWithRequirements,
+		public ReflectionPatternContext (LinkContext context, IMemberDefinition source, IMetadataTokenProvider memberWithRequirements,
 			Instruction instruction = null)
 		{
 			_context = context;
