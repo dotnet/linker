@@ -9,6 +9,8 @@ namespace Mono.Linker.Dataflow
 	internal static class DynamicallyAccessedMembersBinder
 	{
 		// Returns the members of the type bound by memberTypes. For MemberTypes.All, this returns a single null result.
+		// This sentinel value allows callers to handle the case where MemberTypes.All conceptually binds to the entire type
+		// including all recursive nested members.	
 		public static IEnumerable<IMemberDefinition> GetDynamicallyAccessedMembers (TypeDefinition typeDefinition, DynamicallyAccessedMemberTypes memberTypes)
 		{
 			if (memberTypes == DynamicallyAccessedMemberTypes.All) {
