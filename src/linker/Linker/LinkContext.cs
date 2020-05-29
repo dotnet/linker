@@ -468,8 +468,80 @@ namespace Mono.Linker
 
 		public void LogMessage (MessageContainer message)
 		{
-			if (LogMessages && message != MessageContainer.Empty)
-				Logger?.LogMessage (message);
+			if ((message.Category == MessageCategory.Info ||
+				message.Category == MessageCategory.Diagnostic) &&
+				!LogMessages)
+				return;
+
+			Logger?.LogMessage (message);
+		}
+
+		public void LogMessage (string message, bool isDiagnostic = false)
+		{
+			if (!LogMessages)
+				return;
+
+			MessageContainer messageContainer;
+			if (isDiagnostic)
+				messageContainer = MessageContainer.CreateDiagnosticMessage (message);
+			else
+				messageContainer = MessageContainer.CreateInfoMessage (message);
+
+			Logger?.LogMessage (messageContainer);
+		}
+
+
+		/// <summary>
+		/// Display a warning message to the end user.
+		/// </summary>
+		/// <param name="text">Humanly readable message describing the warning</param>
+		/// <param name="code">Unique warning ID. Please see https://github.com/mono/linker/blob/master/doc/error-codes.md for the list of warnings and possibly add a new one</param>
+		/// <param name="origin">Filename or member where the warning is coming from</param>
+		/// <param name="subcategory">Optionally, further categorize this warning</param>
+		public void LogWarning (string text, int code, MessageOrigin origin, string subcategory = MessageSubCategory.None)
+		{
+			var warning = MessageContainer.CreateWarningMessage (this, text, code, origin, subcategory);
+			Logger?.LogMessage (warning);
+		}
+
+		/// <summary>
+		/// Display a warning message to the end user.
+		/// </summary>
+		/// <param name="text">Humanly readable message describing the warning</param>
+		/// <param name="code">Unique warning ID. Please see https://github.com/mono/linker/blob/master/doc/error-codes.md for the list of warnings and possibly add a new one</param>
+		/// <param name="origin">Type or member where the warning is coming from</param>
+		/// <param name="subcategory">Optionally, further categorize this warning</param>
+		public void LogWarning (string text, int code, IMemberDefinition origin, string subcategory = MessageSubCategory.None)
+		{
+			MessageOrigin _origin = new MessageOrigin (origin);
+			LogWarning (text, code, _origin, subcategory);
+		}
+
+		/// <summary>
+		/// Display a warning message to the end user.
+		/// </summary>
+		/// <param name="text">Humanly readable message describing the warning</param>
+		/// <param name="code">Unique warning ID. Please see https://github.com/mono/linker/blob/master/doc/error-codes.md for the list of warnings and possibly add a new one</param>
+		/// <param name="origin">Filename where the warning is coming from</param>
+		/// <param name="subcategory">Optionally, further categorize this warning</param>
+		public void LogWarning (string text, int code, string origin, string subcategory = MessageSubCategory.None)
+		{
+			MessageOrigin _origin = new MessageOrigin (origin);
+			LogWarning (text, code, _origin, subcategory);
+		}
+
+		/// <summary>
+		/// Display an error message to the end user.
+		/// </summary>
+		/// <param name="text">Humanly readable message describing the error</param>
+		/// <param name="code">Unique error ID. Please see https://github.com/mono/linker/blob/master/doc/error-codes.md for the list of errors and possibly add a new one</param>
+		/// <param name="subcategory">Optionally, further categorize this error</param>
+		/// <param name="origin">Filename, line, and column where the error was found</param>
+		/// <returns>New MessageContainer of 'Error' category</returns>
+		public void LogError (string text, int code, string subcategory = MessageSubCategory.None, MessageOrigin? origin = null)
+		{
+			var error = MessageContainer.CreateErrorMessage (text, code, subcategory, origin);
+			Logger?.LogMessage (error);
 		}
 
 		public bool IsWarningSuppressed (int warningCode, MessageOrigin origin)
