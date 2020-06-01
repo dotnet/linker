@@ -4,9 +4,6 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.UnreachableBody
 {
-#if NETCOREAPP
-	[IgnoreTestCase ("PreserveDependencyAttribute is not supported on .NET Core")]
-#endif
 	[SetupLinkerArgument ("--enable-opt", "unreachablebodies")]
 	[SetupCompileBefore ("FakeSystemAssembly.dll", new[] { "../PreserveDependencies/Dependencies/PreserveDependencyAttribute.cs" })]
 	public class WorksWithPreserveDependency

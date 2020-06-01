@@ -60,9 +60,9 @@ namespace Mono.Linker.Steps
 					continue;
 #if FEATURE_ILLINK
 				Context.LogMessage (MessageContainer.CreateWarningMessage (Context,
-					$"Unsupported PreserveDependencyAttribute on '{member}'. Use DynamicDependencyAttribute instead.",
+					$"Deprecated PreserveDependencyAttribute on '{member}'. Use DynamicDependencyAttribute instead.",
 					2033, MessageOrigin.TryGetOrigin (member)));
-#else
+#endif
 				if (ca.ConstructorArguments.Count != 3)
 					continue;
 
@@ -73,7 +73,6 @@ namespace Mono.Linker.Steps
 				if (assembly == null)
 					continue;
 				ProcessReferences (assembly);
-#endif
 			}
 
 			var dynamicDependencies = Context.Annotations.GetLinkerAttributes<DynamicDependency> (member);
@@ -93,7 +92,6 @@ namespace Mono.Linker.Steps
 
 				ProcessReferences (assembly);
 			}
-
 		}
 
 		public static bool IsPreserveDependencyAttribute (TypeReference tr)

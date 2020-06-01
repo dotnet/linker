@@ -7,9 +7,6 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.OnReferenceType.NoKeptC
 	/// <summary>
 	/// The interface can still be removed in this case because PreserveDependency is just preserving Foo() on the current type
 	/// </summary>
-#if NETCOREAPP
-	[IgnoreTestCase ("PreserveDependencyAttribute is not supported on .NET Core")]
-#endif
 	[SetupCompileBefore ("FakeSystemAssembly.dll", new[] { "../../../PreserveDependencies/Dependencies/PreserveDependencyAttribute.cs" })]
 	public class PreserveDependencyPreservesInterfaceMethod
 	{

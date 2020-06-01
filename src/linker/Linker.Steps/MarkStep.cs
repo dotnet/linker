@@ -562,10 +562,8 @@ namespace Mono.Linker.Steps
 			if (!((isPreserveDependency || isDynamicDependency) && provider is MemberReference mr))
 				return false;
 
-#if !FEATURE_ILLINK
 			if (isPreserveDependency)
 				MarkUserDependency (mr, ca);
-#endif
 
 			if (_context.KeepDependencyAttributes || Annotations.GetAction (mr.Module.Assembly) != AssemblyAction.Link) {
 				MarkCustomAttribute (ca, reason);
@@ -695,7 +693,6 @@ namespace Mono.Linker.Steps
 			return DynamicDependencyLookupStep.IsPreserveDependencyAttribute (type);
 		}
 
-#if !FEATURE_ILLINK
 		protected virtual void MarkUserDependency (MemberReference context, CustomAttribute ca)
 		{
 			if (!DynamicDependency.ShouldProcess (_context, ca))
@@ -814,7 +811,6 @@ namespace Mono.Linker.Steps
 
 			return false;
 		}
-#endif // !FEATURE_ILLINK
 
 		void LazyMarkCustomAttributes (ICustomAttributeProvider provider, ModuleDefinition module)
 		{

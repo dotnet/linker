@@ -187,7 +187,7 @@ error and warning codes.
 
 - The number of arguments correspond to a certain type constructor, but the type of arguments specified in the xml does not match the type of arguments in the constructor.
 
-#### `IL2033`: Unsupported PreserveDependencyAttribute on 'member'. Use DynamicDependencyAttribute instead.
+#### `IL2033`: Deprecated PreserveDependencyAttribute on 'member'. Use DynamicDependencyAttribute instead.
 
 - PreserveDependencyAttribute was an internal attribute that was never officially supported. Instead, use the similar DynamicDependencyAttribute.
 

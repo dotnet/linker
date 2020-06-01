@@ -4,10 +4,6 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.PreserveDependencies
 {
-
-#if NETCOREAPP
-	[IgnoreTestCase ("PreserveDependencyAttribute is not supported on .NET Core")]
-#endif
 	[SetupCompileBefore ("FakeSystemAssembly.dll", new[] { "Dependencies/PreserveDependencyAttribute.cs" })]
 	[LogContains ("Could not resolve 'Mono.Linker.Tests.Cases.PreserveDependencies.MissingType' type dependency")]
 	[LogContains ("Could not resolve dependency member 'MissingMethod' declared in type 'Mono.Linker.Tests.Cases.PreserveDependencies.C'")]
