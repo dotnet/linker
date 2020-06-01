@@ -4,14 +4,14 @@ using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Mono.Cecil;
 
-namespace Mono.Linker.Dataflow
+namespace Mono.Linker
 {
 	internal static class DynamicallyAccessedMembersBinder
 	{
 		// Returns the members of the type bound by memberTypes. For MemberTypes.All, this returns a single null result.
 		// This sentinel value allows callers to handle the case where MemberTypes.All conceptually binds to the entire type
 		// including all recursive nested members.	
-		public static IEnumerable<IMemberDefinition> GetDynamicallyAccessedMembers (TypeDefinition typeDefinition, DynamicallyAccessedMemberTypes memberTypes)
+		public static IEnumerable<IMemberDefinition> GetDynamicallyAccessedMembers (this TypeDefinition typeDefinition, DynamicallyAccessedMemberTypes memberTypes)
 		{
 			if (memberTypes == DynamicallyAccessedMemberTypes.All) {
 				yield return null;
@@ -19,72 +19,72 @@ namespace Mono.Linker.Dataflow
 			}
 
 			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.NonPublicConstructors)) {
-				foreach (var c in GetConstructorsOnType (typeDefinition, filter: null, bindingFlags: BindingFlags.NonPublic))
+				foreach (var c in typeDefinition.GetConstructorsOnType (filter: null, bindingFlags: BindingFlags.NonPublic))
 					yield return c;
 			}
 
 			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicConstructors)) {
-				foreach (var c in GetConstructorsOnType (typeDefinition, filter: null, bindingFlags: BindingFlags.Public))
+				foreach (var c in typeDefinition.GetConstructorsOnType (filter: null, bindingFlags: BindingFlags.Public))
 					yield return c;
 			}
 
 			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.DefaultConstructor)) {
-				foreach (var c in GetConstructorsOnType (typeDefinition, filter: m => m.IsPublic && m.Parameters.Count == 0))
+				foreach (var c in typeDefinition.GetConstructorsOnType (filter: m => m.IsPublic && m.Parameters.Count == 0))
 					yield return c;
 			}
 
 			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.NonPublicMethods)) {
-				foreach (var m in GetMethodsOnTypeHierarchy (typeDefinition, filter: null, bindingFlags: BindingFlags.NonPublic))
+				foreach (var m in typeDefinition.GetMethodsOnTypeHierarchy (filter: null, bindingFlags: BindingFlags.NonPublic))
 					yield return m;
 			}
 
 			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicMethods)) {
-				foreach (var m in GetMethodsOnTypeHierarchy (typeDefinition, filter: null, bindingFlags: BindingFlags.Public))
+				foreach (var m in typeDefinition.GetMethodsOnTypeHierarchy (filter: null, bindingFlags: BindingFlags.Public))
 					yield return m;
 			}
 
 			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.NonPublicFields)) {
-				foreach (var f in GetFieldsOnTypeHierarchy (typeDefinition, filter: null, bindingFlags: BindingFlags.NonPublic))
+				foreach (var f in typeDefinition.GetFieldsOnTypeHierarchy (filter: null, bindingFlags: BindingFlags.NonPublic))
 					yield return f;
 			}
 
 			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicFields)) {
-				foreach (var f in GetFieldsOnTypeHierarchy (typeDefinition, filter: null, bindingFlags: BindingFlags.Public))
+				foreach (var f in typeDefinition.GetFieldsOnTypeHierarchy (filter: null, bindingFlags: BindingFlags.Public))
 					yield return f;
 			}
 
 			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.NonPublicNestedTypes)) {
-				foreach (var t in GetNestedTypesOnType (typeDefinition, filter: null, bindingFlags: BindingFlags.NonPublic))
+				foreach (var t in typeDefinition.GetNestedTypesOnType (filter: null, bindingFlags: BindingFlags.NonPublic))
 					yield return t;
 			}
 
 			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicNestedTypes)) {
-				foreach (var t in GetNestedTypesOnType (typeDefinition, filter: null, bindingFlags: BindingFlags.Public))
+				foreach (var t in typeDefinition.GetNestedTypesOnType (filter: null, bindingFlags: BindingFlags.Public))
 					yield return t;
 			}
 
 			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.NonPublicProperties)) {
-				foreach (var p in GetPropertiesOnTypeHierarchy (typeDefinition, filter: null, bindingFlags: BindingFlags.NonPublic))
+				foreach (var p in typeDefinition.GetPropertiesOnTypeHierarchy (filter: null, bindingFlags: BindingFlags.NonPublic))
 					yield return p;
 			}
 
 			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicProperties)) {
-				foreach (var p in GetPropertiesOnTypeHierarchy (typeDefinition, filter: null, bindingFlags: BindingFlags.Public))
+				foreach (var p in typeDefinition.GetPropertiesOnTypeHierarchy (filter: null, bindingFlags: BindingFlags.Public))
 					yield return p;
 			}
 
 			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.NonPublicEvents)) {
-				foreach (var e in GetEventsOnTypeHierarchy (typeDefinition, filter: null, bindingFlags: BindingFlags.NonPublic))
+				foreach (var e in typeDefinition.GetEventsOnTypeHierarchy (filter: null, bindingFlags: BindingFlags.NonPublic))
 					yield return e;
 			}
 
 			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicEvents)) {
-				foreach (var e in GetEventsOnTypeHierarchy (typeDefinition, filter: null, bindingFlags: BindingFlags.Public))
+				foreach (var e in typeDefinition.GetEventsOnTypeHierarchy (filter: null, bindingFlags: BindingFlags.Public))
 					yield return e;
 			}
 		}
 
-		public static IEnumerable<MethodDefinition> GetConstructorsOnType (TypeDefinition type, Func<MethodDefinition, bool> filter, BindingFlags? bindingFlags = null)
+		public static IEnumerable<MethodDefinition> GetConstructorsOnType (this TypeDefinition type, Func<MethodDefinition, bool> filter, BindingFlags? bindingFlags = null)
 		{
 			foreach (var method in type.Methods) {
 				if (!method.IsConstructor)
@@ -109,7 +109,7 @@ namespace Mono.Linker.Dataflow
 			}
 		}
 
-		public static IEnumerable<MethodDefinition> GetMethodsOnTypeHierarchy (TypeDefinition type, Func<MethodDefinition, bool> filter, BindingFlags? bindingFlags = null)
+		public static IEnumerable<MethodDefinition> GetMethodsOnTypeHierarchy (this TypeDefinition type, Func<MethodDefinition, bool> filter, BindingFlags? bindingFlags = null)
 		{
 			bool onBaseType = false;
 			while (type != null) {
@@ -149,7 +149,7 @@ namespace Mono.Linker.Dataflow
 			}
 		}
 
-		public static IEnumerable<FieldDefinition> GetFieldsOnTypeHierarchy (TypeDefinition type, Func<FieldDefinition, bool> filter, BindingFlags bindingFlags = BindingFlags.Default)
+		public static IEnumerable<FieldDefinition> GetFieldsOnTypeHierarchy (this TypeDefinition type, Func<FieldDefinition, bool> filter, BindingFlags bindingFlags = BindingFlags.Default)
 		{
 			bool onBaseType = false;
 			while (type != null) {
@@ -185,7 +185,7 @@ namespace Mono.Linker.Dataflow
 			}
 		}
 
-		public static IEnumerable<TypeDefinition> GetNestedTypesOnType (TypeDefinition type, Func<TypeDefinition, bool> filter, BindingFlags bindingFlags = BindingFlags.Default)
+		public static IEnumerable<TypeDefinition> GetNestedTypesOnType (this TypeDefinition type, Func<TypeDefinition, bool> filter, BindingFlags bindingFlags = BindingFlags.Default)
 		{
 			foreach (var nestedType in type.NestedTypes) {
 				if (filter != null && !filter (nestedType))
@@ -205,7 +205,7 @@ namespace Mono.Linker.Dataflow
 			}
 		}
 
-		public static IEnumerable<PropertyDefinition> GetPropertiesOnTypeHierarchy (TypeDefinition type, Func<PropertyDefinition, bool> filter, BindingFlags bindingFlags = BindingFlags.Default)
+		public static IEnumerable<PropertyDefinition> GetPropertiesOnTypeHierarchy (this TypeDefinition type, Func<PropertyDefinition, bool> filter, BindingFlags bindingFlags = BindingFlags.Default)
 		{
 			bool onBaseType = false;
 			while (type != null) {
@@ -250,7 +250,7 @@ namespace Mono.Linker.Dataflow
 			}
 		}
 
-		public static IEnumerable<EventDefinition> GetEventsOnTypeHierarchy (TypeDefinition type, Func<EventDefinition, bool> filter, BindingFlags bindingFlags = BindingFlags.Default)
+		public static IEnumerable<EventDefinition> GetEventsOnTypeHierarchy (this TypeDefinition type, Func<EventDefinition, bool> filter, BindingFlags bindingFlags = BindingFlags.Default)
 		{
 			bool onBaseType = false;
 			while (type != null) {

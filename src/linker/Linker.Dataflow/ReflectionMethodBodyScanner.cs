@@ -1237,7 +1237,7 @@ namespace Mono.Linker.Dataflow
 
 		void MarkTypeForDynamicallyAccessedMembers (ref ReflectionPatternContext reflectionContext, TypeDefinition typeDefinition, DynamicallyAccessedMemberTypes requiredMemberKinds)
 		{
-			foreach (var member in DynamicallyAccessedMembersBinder.GetDynamicallyAccessedMembers (typeDefinition, requiredMemberKinds)) {
+			foreach (var member in typeDefinition.GetDynamicallyAccessedMembers (requiredMemberKinds)) {
 				switch (member) {
 				case MethodDefinition method:
 					MarkMethod (ref reflectionContext, typeDefinition, method);
@@ -1308,19 +1308,19 @@ namespace Mono.Linker.Dataflow
 
 		void MarkConstructorsOnType (ref ReflectionPatternContext reflectionContext, TypeDefinition type, Func<MethodDefinition, bool> filter, BindingFlags? bindingFlags = null)
 		{
-			foreach (var ctor in DynamicallyAccessedMembersBinder.GetConstructorsOnType (type, filter, bindingFlags))
+			foreach (var ctor in type.GetConstructorsOnType (filter, bindingFlags))
 				MarkMethod (ref reflectionContext, type, ctor);
 		}
 
 		void MarkMethodsOnTypeHierarchy (ref ReflectionPatternContext reflectionContext, TypeDefinition type, Func<MethodDefinition, bool> filter, BindingFlags? bindingFlags = null)
 		{
-			foreach (var method in DynamicallyAccessedMembersBinder.GetMethodsOnTypeHierarchy (type, filter, bindingFlags))
+			foreach (var method in type.GetMethodsOnTypeHierarchy (filter, bindingFlags))
 				MarkMethod (ref reflectionContext, type, method);
 		}
 
 		void MarkFieldsOnTypeHierarchy (ref ReflectionPatternContext reflectionContext, TypeDefinition type, Func<FieldDefinition, bool> filter, BindingFlags bindingFlags = BindingFlags.Default)
 		{
-			foreach (var field in DynamicallyAccessedMembersBinder.GetFieldsOnTypeHierarchy (type, filter, bindingFlags))
+			foreach (var field in type.GetFieldsOnTypeHierarchy (filter, bindingFlags))
 				MarkField (ref reflectionContext, type, field);
 		}
 
@@ -1328,7 +1328,7 @@ namespace Mono.Linker.Dataflow
 		{
 			var result = new ArrayBuilder<TypeDefinition> ();
 
-			foreach (var nestedType in DynamicallyAccessedMembersBinder.GetNestedTypesOnType (type, filter, bindingFlags)) {
+			foreach (var nestedType in type.GetNestedTypesOnType (filter, bindingFlags)) {
 				result.Add (nestedType);
 				MarkNestedType (ref reflectionContext, type, nestedType);
 			}
@@ -1338,13 +1338,13 @@ namespace Mono.Linker.Dataflow
 
 		void MarkPropertiesOnTypeHierarchy (ref ReflectionPatternContext reflectionContext, TypeDefinition type, Func<PropertyDefinition, bool> filter, BindingFlags bindingFlags = BindingFlags.Default)
 		{
-			foreach (var property in DynamicallyAccessedMembersBinder.GetPropertiesOnTypeHierarchy (type, filter, bindingFlags))
+			foreach (var property in type.GetPropertiesOnTypeHierarchy (filter, bindingFlags))
 				MarkProperty (ref reflectionContext, type, property);
 		}
 
 		void MarkEventsOnTypeHierarchy (ref ReflectionPatternContext reflectionContext, TypeDefinition type, Func<EventDefinition, bool> filter, BindingFlags bindingFlags = BindingFlags.Default)
 		{
-			foreach (var @event in DynamicallyAccessedMembersBinder.GetEventsOnTypeHierarchy (type, filter, bindingFlags))
+			foreach (var @event in type.GetEventsOnTypeHierarchy (filter, bindingFlags))
 				MarkEvent (ref reflectionContext, type, @event);
 		}
 
