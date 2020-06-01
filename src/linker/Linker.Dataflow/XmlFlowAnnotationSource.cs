@@ -49,30 +49,25 @@ namespace Mono.Linker.Dataflow
 					_context.LogMessage (MessageContainer.CreateWarningMessage ($"Attribute element does not contain attribute 'fullname'", 2029));
 					continue;
 				}
-				string concatAttribute;
-				concatAttribute = attributeFullName.EndsWith ("Attribute") ? attributeFullName : String.Concat (attributeFullName, "Attribute");
 				string assemblyName = GetAttribute (iterator.Current, "assembly");
-				if (assemblyName == String.Empty) {
-					_context.LogMessage (MessageContainer.CreateWarningMessage ($"Attribute element doest not contain attribute 'assembly' in xml element '{attributeFullName}'", 2030));
-					continue;
-				} else if (assemblyName == "*")
-					attributeType = _context.GetType (concatAttribute);
+				if (assemblyName == String.Empty)
+					attributeType = _context.GetType (attributeFullName);
 				else {
 					try {
 						assembly = GetAssembly (_context, AssemblyNameReference.Parse (assemblyName));
 					} catch (Exception) {
-						_context.LogMessage (MessageContainer.CreateWarningMessage ($"Could not resolve assembly '{assemblyName}' in attribute '{attributeFullName}' specified in the '{_xmlDocumentLocation}'", 2031));
+						_context.LogMessage (MessageContainer.CreateWarningMessage ($"Could not resolve assembly '{assemblyName}' in attribute '{attributeFullName}' specified in the '{_xmlDocumentLocation}'", 2030));
 						continue;
 					}
-					attributeType = assembly.FindType (concatAttribute);
+					attributeType = assembly.FindType (attributeFullName);
 				}
 				if (attributeType == null) {
-					_context.LogMessage (MessageContainer.CreateWarningMessage ($"Attribute type '{attributeFullName}' could not be found", 2032));
+					_context.LogMessage (MessageContainer.CreateWarningMessage ($"Attribute type '{attributeFullName}' could not be found", 2031));
 					continue;
 				}
 
 				ArrayBuilder<string> arguments = GetAttributeChildren (iterator.Current.SelectChildren ("argument", string.Empty));
-				MethodDefinition constructor = attributeType.Methods.Where (method => method.IsConstructor).FirstOrDefault (c => c.Parameters.Count == arguments.Count);
+				MethodDefinition constructor = attributeType.Methods.Where (method => method.IsInstanceConstructor ()).FirstOrDefault (c => c.Parameters.Count == arguments.Count);
 				if (constructor == null) {
 					_context.LogMessage (MessageContainer.CreateWarningMessage ($"Could not find a constructor for type '{attributeType}' that receives '{arguments.Count}' arguments as parameter", 2022));
 					continue;
@@ -105,7 +100,7 @@ namespace Mono.Linker.Dataflow
 							if (int.TryParse (xmlArguments[i], out result))
 								argumentValue = result;
 							else {
-								_context.LogMessage (MessageContainer.CreateWarningMessage ($"Argument '{xmlArguments[i]}' specified in '{_xmlDocumentLocation}' could not be transformed to the constructor parameter type", 2033));
+								_context.LogMessage (MessageContainer.CreateWarningMessage ($"Argument '{xmlArguments[i]}' specified in '{_xmlDocumentLocation}' could not be transformed to the constructor parameter type", 2032));
 							}
 							break;
 						default:

@@ -175,18 +175,14 @@ error and warning codes.
 
 - An attribute element was declared but does not contain the attribute 'fullname' or 'fullname' attribute is empty
 
-#### `IL2030`: There is no xml attribute 'assembly' in xml element 'attribute element'
-
-- The linker found an 'attribute element' on the xml file but it didnt contain an 'assembly' attribute
-
-#### `IL2031`: Could not resolve assembly 'assembly' in attribute 'attribute' specified in the 'XML document location'
+#### `IL2030`: Could not resolve assembly 'assembly' in attribute 'attribute' specified in the 'XML document location'
 
 - The assembly 'assembly' described as a attribute property of 'attribute' could not be resolved in 'XML document location'
 
-#### `IL2032`: Attribute type 'attribute type' could not be found
+#### `IL2031`: Attribute type 'attribute type' could not be found
 
 - The described 'attribute type' could not be found in the assemblies
 
-#### `IL2033`: Argument 'argument' specified in 'XML document location' could not be transformed to the constructor parameter type
+#### `IL2032`: Argument 'argument' specified in 'XML document location' could not be transformed to the constructor parameter type
 
 - The number of arguments correspond to a certain type constructor, but the type of arguments specified in the xml does not match the type of arguments in the constructor.

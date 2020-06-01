@@ -403,8 +403,9 @@ attributes are applied.
 
 ### Custom attributes elements
 
-The attribute element requires fullname and assembly attributes without them it will generate
-a warning and skip the attribute.
+The attribute element requires 'fullname' attribute without it linker will generate a warning and skip
+the attribute. Optionally you can use the 'assembly' attribute to point to certain assembly to look
+for the attribute, if not specified the linker will look the attribute in any loaded assembly.
 Inside an attribute element in the xml you can define argument, field and property elements. 
 An attribute could have several arguments, several fields or several properties. When writing 
 custom attribute with multiple arguments you need to write the xml elements in an order dependent 

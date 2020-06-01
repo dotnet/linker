@@ -55,19 +55,17 @@ namespace Mono.Linker.Dataflow
 
 		private DynamicallyAccessedMemberTypes GetMemberTypesForDynamicallyAccessedMemberAttribute (ICustomAttributeProvider provider)
 		{
-			if (_source.HasCustomAttributes (provider)) {
-				foreach (var attribute in _source.GetCustomAttributes (provider)) {
-					if (IsDynamicallyAccessedMembersAttribute (attribute)) {
-						if (attribute.ConstructorArguments.Count == 0) {
-							_context.LogMessage (MessageContainer.CreateWarningMessage ($"DynamicallyAccessedMembers attribute was specified but no argument was proportioned", 2020));
-						} else if (attribute.ConstructorArguments.Count == 1) {
-							var arguments = attribute.ConstructorArguments.ToArray ();
-							return (DynamicallyAccessedMemberTypes) arguments[0].Value;
-						} else {
-							_context.LogMessage (MessageContainer.CreateWarningMessage ($"DynamicallyAccessedMembers attribute was specified but there is more than one argument", 2022));
-						}
-					}
-				}
+			if (!_source.HasCustomAttributes (provider))
+				return DynamicallyAccessedMemberTypes.None;
+			foreach (var attribute in _source.GetCustomAttributes (provider)) {
+				if (!IsDynamicallyAccessedMembersAttribute (attribute))
+					continue;
+				if (attribute.ConstructorArguments.Count == 0)
+					_context.LogMessage (MessageContainer.CreateWarningMessage ($"DynamicallyAccessedMembers attribute was specified but no argument was proportioned", 2020));
+				else if (attribute.ConstructorArguments.Count == 1)
+					return (DynamicallyAccessedMemberTypes) (int) attribute.ConstructorArguments[0].Value;
+				else
+					_context.LogMessage (MessageContainer.CreateWarningMessage ($"DynamicallyAccessedMembers attribute was specified but there is more than one argument", 2022));
 			}
 			return DynamicallyAccessedMemberTypes.None;
 		}

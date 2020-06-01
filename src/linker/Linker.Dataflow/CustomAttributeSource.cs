@@ -10,33 +10,35 @@ namespace Mono.Linker.Dataflow
 {
 	class CustomAttributeSource
 	{
-		private readonly XmlFlowAnnotationSource[] _sources;
+		private readonly List<XmlFlowAnnotationSource> _sources;
 
-		public CustomAttributeSource (LinkContext _context)
+		public CustomAttributeSource (LinkContext context)
 		{
-			ArrayBuilder<XmlFlowAnnotationSource> annotationSources = new ArrayBuilder<XmlFlowAnnotationSource> ();
-			if (_context.AttributeDefinitions != null && _context.AttributeDefinitions.Count > 0) {
-				foreach (string a in _context.AttributeDefinitions) {
-					XmlFlowAnnotationSource xmlAnnotations = new XmlFlowAnnotationSource (_context);
+			List<XmlFlowAnnotationSource> annotationSources = new List<XmlFlowAnnotationSource> ();
+			if (context.AttributeDefinitions?.Count > 0) {
+				foreach (string a in context.AttributeDefinitions) {
+					XmlFlowAnnotationSource xmlAnnotations = new XmlFlowAnnotationSource (context);
 					xmlAnnotations.ParseXml (a);
 					annotationSources.Add (xmlAnnotations);
 				}
 			}
-			_sources = annotationSources.ToArray ();
+			_sources = annotationSources;
 		}
 
 		public IEnumerable<CustomAttribute> GetCustomAttributes (ICustomAttributeProvider provider)
 		{
-			IEnumerable<CustomAttribute> aggregateAttributes = null;
-			if (_sources != null) {
+			if (_sources.Count > 0) {
 				foreach (var source in _sources) {
-					if (source.HasCustomAttributes (provider))
-						aggregateAttributes = aggregateAttributes == null ? source.GetCustomAttributes (provider) : aggregateAttributes.Concat (source.GetCustomAttributes (provider));
+					if (source.HasCustomAttributes (provider)) {
+						foreach (var customAttribute in source.GetCustomAttributes (provider))
+							yield return customAttribute;
+					}
 				}
 			}
-			if (provider.HasCustomAttributes)
-				aggregateAttributes = aggregateAttributes == null ? provider.CustomAttributes : aggregateAttributes.Concat (provider.CustomAttributes);
-			return aggregateAttributes ?? Enumerable.Empty<CustomAttribute> ();
+			if (provider.HasCustomAttributes) {
+				foreach (var customAttribute in provider.CustomAttributes)
+					yield return customAttribute;
+			}
 		}
 
 		public bool HasCustomAttributes (ICustomAttributeProvider provider)
@@ -48,10 +50,7 @@ namespace Mono.Linker.Dataflow
 					}
 				}
 			}
-			if (provider.HasCustomAttributes) {
-				return true;
-			}
-			return false;
+			return provider.HasCustomAttributes;
 		}
 	}
 }
