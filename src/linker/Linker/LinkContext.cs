@@ -468,22 +468,24 @@ namespace Mono.Linker
 
 		public void LogMessage (MessageContainer message)
 		{
-			if (LogMessages)
+			if (LogMessages && message != MessageContainer.Empty)
 				Logger?.LogMessage (message);
 		}
 
-		public void LogMessage (string message, bool isDiagnostic = false)
+		public void LogMessage (string message)
 		{
 			if (!LogMessages)
 				return;
 
-			MessageContainer messageContainer;
-			if (isDiagnostic)
-				messageContainer = MessageContainer.CreateDiagnosticMessage (message);
-			else
-				messageContainer = MessageContainer.CreateInfoMessage (message);
+			LogMessage (MessageContainer.CreateInfoMessage (message));
+		}
 
-			Logger?.LogMessage (messageContainer);
+		public void LogDiagnostic (string message)
+		{
+			if (!LogMessages)
+				return;
+
+			LogMessage (MessageContainer.CreateDiagnosticMessage (message));
 		}
 
 
@@ -500,7 +502,7 @@ namespace Mono.Linker
 				return;
 
 			var warning = MessageContainer.CreateWarningMessage (this, text, code, origin, subcategory);
-			Logger?.LogMessage (warning);
+			LogMessage (warning);
 		}
 
 		/// <summary>

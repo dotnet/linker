@@ -13,9 +13,6 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 		public void LogMessage (MessageContainer msBuildMessage)
 		{
-			if (msBuildMessage == MessageContainer.Empty)
-				return;
-
 			Messages.Add (new MessageRecord {
 				Message = msBuildMessage.ToString ()
 			});
