@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Transactions;
 using Mono.Cecil;
 
 namespace Mono.Linker
@@ -44,14 +43,6 @@ namespace Mono.Linker
 				return false;
 
 			IMemberDefinition memberDefinition = warningOrigin.MemberDefinition;
-			if (IsGloballySuppressed (id, memberDefinition, out info))
-				return true;
-
-			// Check if there's a module level suppression.
-			if ((memberDefinition is TypeDefinition type && IsLocallySuppressed (id, type.Module, out info)) ||
-					IsLocallySuppressed (id, memberDefinition.DeclaringType?.Module, out info))
-				return true;
-
 			while (memberDefinition != null) {
 				if (IsLocallySuppressed (id, memberDefinition, out info) ||
 					IsGloballySuppressed (id, memberDefinition, out info))
@@ -59,6 +50,12 @@ namespace Mono.Linker
 
 				memberDefinition = memberDefinition.DeclaringType;
 			}
+
+			// Check if there's a module level suppression.
+			memberDefinition = warningOrigin.MemberDefinition;
+			if ((memberDefinition is TypeDefinition type && IsLocallySuppressed (id, type?.Module, out info)) ||
+					IsLocallySuppressed (id, memberDefinition.DeclaringType?.Module, out info))
+				return true;
 
 			return false;
 		}
@@ -125,14 +122,11 @@ namespace Mono.Linker
 		{
 			if (_globalSuppressions == null) {
 				var suppressions = new GlobalSuppressions ();
-				HashSet<ModuleDefinition> modules = new HashSet<ModuleDefinition> ();
 				foreach (var assembly in _context.Resolver.AssemblyCache.Values) {
 					DecodeGlobalSuppressMessageAttributes (assembly, suppressions);
-					modules.Add (assembly.MainModule);
+					foreach (var module in assembly.Modules)
+						DecodeGlobalSuppressMessageAttributes (module, suppressions);
 				}
-
-				foreach (var module in modules)
-					DecodeGlobalSuppressMessageAttributes (module, suppressions);
 
 				_globalSuppressions = suppressions;
 			}
@@ -140,23 +134,33 @@ namespace Mono.Linker
 
 		private void DecodeGlobalSuppressMessageAttributes (ICustomAttributeProvider provider, GlobalSuppressions globalSuppressions)
 		{
-			var attributes = provider.CustomAttributes.Where (a => a.AttributeType.Name == "UnconditionalSuppressMessageAttribute");
+			var attributes = provider.CustomAttributes.
+				Where (a => a.AttributeType.Name == "UnconditionalSuppressMessageAttribute" && a.AttributeType.Namespace == "System.Diagnostics.CodeAnalysis");
 			foreach (var instance in attributes) {
 				SuppressMessageInfo info;
 				if (!TryDecodeSuppressMessageAttributeData (instance, out info))
 					continue;
 
 				ModuleDefinition module = null;
-				if (provider is ModuleDefinition _module)
-					module = _module;
-				else if (provider is AssemblyDefinition assembly)
-					module = assembly.MainModule;
-				else if (provider is TypeDefinition type)
-					module = type.Module;
-				else if (provider is IMemberDefinition member)
-					module = member.DeclaringType.Module;
-				else {
+				switch (provider.MetadataToken.TokenType) {
+				case TokenType.Module:
+					module = provider as ModuleDefinition;
+					break;
+				case TokenType.Assembly:
+					module = (provider as AssemblyDefinition).MainModule;
+					break;
+				case TokenType.TypeDef:
+					module = (provider as TypeDefinition).Module;
+					break;
+				case TokenType.Method:
+				case TokenType.Property:
+				case TokenType.Field:
+				case TokenType.Event:
+					module = (provider as IMemberDefinition).DeclaringType.Module;
+					break;
+				default:
 					_context.LogMessage (MessageContainer.CreateInfoMessage ("`UnconditionalSuppressMessage` attribute was placed in an language element which is currently not supported."));
+					continue;
 				}
 
 				Debug.Assert (module != null);
@@ -175,13 +179,8 @@ namespace Mono.Linker
 						globalSuppressions.AddGlobalSuppression (result, info);
 
 					break;
-				case "resource":
-				case "module":
-				case "namespace":
-				case "namespaceanddescendants":
-					_context.LogMessage (MessageContainer.CreateInfoMessage ($"Scope `{info.Scope}` used in `UnconditionalSuppressMessage` is currently not supported."));
-					break;
 				default:
+					_context.LogMessage (MessageContainer.CreateInfoMessage ($"Scope `{info.Scope}` used in `UnconditionalSuppressMessage` is currently not supported."));
 					break;
 				}
 			}
