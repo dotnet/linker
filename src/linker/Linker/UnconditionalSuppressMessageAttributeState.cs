@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Transactions;
 using Mono.Cecil;
@@ -10,12 +11,6 @@ namespace Mono.Linker
 		private readonly LinkContext _context;
 		private readonly Dictionary<ICustomAttributeProvider, Dictionary<int, SuppressMessageInfo>> _localSuppressions;
 		private GlobalSuppressions _globalSuppressions;
-
-		private bool HasLocalSuppressions {
-			get {
-				return _localSuppressions.Count != 0;
-			}
-		}
 
 		public UnconditionalSuppressMessageAttributeState (LinkContext context)
 		{
@@ -44,24 +39,27 @@ namespace Mono.Linker
 
 		public bool IsSuppressed (int id, MessageOrigin warningOrigin, out SuppressMessageInfo info)
 		{
-			if (IsGloballySuppressed (id, warningOrigin, out info))
+			info = default;
+			if (warningOrigin.MemberDefinition == null)
+				return false;
+
+			IMemberDefinition memberDefinition = warningOrigin.MemberDefinition;
+			if (IsGloballySuppressed (id, memberDefinition, out info))
 				return true;
 
-			if (HasLocalSuppressions && warningOrigin.MemberDefinition != null) {
-				IMemberDefinition memberDefinition = warningOrigin.MemberDefinition;
-				// Check if it's suppressed by a module level suppression.
-				if (IsLocallySuppressed (id, memberDefinition.DeclaringType.Module, out info))
+			// Check if there's a module level suppression.
+			if ((memberDefinition is TypeDefinition type && IsLocallySuppressed (id, type.Module, out info)) ||
+					IsLocallySuppressed (id, memberDefinition.DeclaringType?.Module, out info))
+				return true;
+
+			while (memberDefinition != null) {
+				if (IsLocallySuppressed (id, memberDefinition, out info) ||
+					IsGloballySuppressed (id, memberDefinition, out info))
 					return true;
 
-				while (memberDefinition != null) {
-					if (IsLocallySuppressed (id, memberDefinition, out info))
-						return true;
-
-					memberDefinition = memberDefinition.DeclaringType;
-				}
+				memberDefinition = memberDefinition.DeclaringType;
 			}
 
-			info = default;
 			return false;
 		}
 
@@ -109,18 +107,19 @@ namespace Mono.Linker
 
 		private bool IsLocallySuppressed (int id, ICustomAttributeProvider provider, out SuppressMessageInfo info)
 		{
-			Dictionary<int, SuppressMessageInfo> suppressions;
 			info = default;
+			if (provider == null)
+				return false;
+
+			Dictionary<int, SuppressMessageInfo> suppressions;
 			return _localSuppressions.TryGetValue (provider, out suppressions) &&
 				suppressions.TryGetValue (id, out info);
 		}
 
-		private bool IsGloballySuppressed (int id, MessageOrigin origin, out SuppressMessageInfo info)
+		private bool IsGloballySuppressed (int id, ICustomAttributeProvider provider, out SuppressMessageInfo info)
 		{
 			DecodeGlobalSuppressMessageAttributes ();
-			// TODO
-			info = default;
-			return false;
+			return _globalSuppressions.HasGlobalSuppressions (id, provider, out info);
 		}
 
 		private void DecodeGlobalSuppressMessageAttributes ()
@@ -148,28 +147,42 @@ namespace Mono.Linker
 				if (!TryDecodeSuppressMessageAttributeData (instance, out info))
 					continue;
 
-				if (info.Target == null && (info.Scope == "module" || info.Scope == null)) {
-					if (provider is ModuleDefinition)
-						AddLocalSuppression (instance, provider);
-					else if (provider is AssemblyDefinition assembly)
-						AddLocalSuppression (instance, assembly.MainModule);
+				ModuleDefinition module = null;
+				if (provider is ModuleDefinition _module)
+					module = _module;
+				else if (provider is AssemblyDefinition assembly)
+					module = assembly.MainModule;
+				else if (provider is TypeDefinition type)
+					module = type.Module;
+				else if (provider is IMemberDefinition member)
+					module = member.DeclaringType.Module;
+				else {
+					_context.LogMessage (MessageContainer.CreateInfoMessage ("`UnconditionalSuppressMessage` attribute was placed in an language element which is currently not supported."));
+				}
 
+				Debug.Assert (module != null);
+				if (info.Target == null && (info.Scope == "module" || info.Scope == null)) {
+					AddLocalSuppression (instance, module);
 					continue;
 				}
 
+				if (info.Target == null || info.Scope == null)
+					continue;
+
 				switch (info.Scope) {
-				case "module":
 				case "type":
-				case "method":
 				case "member":
-					// Integrate Sven's work here
+					foreach (var result in DocumentationSignatureParser.GetMembersForDocumentationSignature (info.Target, module))
+						globalSuppressions.AddGlobalSuppression (result, info);
+
 					break;
 				case "resource":
-					// TODO
-					break;
+				case "module":
 				case "namespace":
 				case "namespaceanddescendants":
-					// TODO
+					_context.LogMessage (MessageContainer.CreateInfoMessage ($"Scope `{info.Scope}` used in `UnconditionalSuppressMessage` is currently not supported."));
+					break;
+				default:
 					break;
 				}
 			}
@@ -177,7 +190,34 @@ namespace Mono.Linker
 
 		private class GlobalSuppressions
 		{
+			private readonly Dictionary<ICustomAttributeProvider, Dictionary<int, SuppressMessageInfo>> _globalSuppressions = new Dictionary<ICustomAttributeProvider, Dictionary<int, SuppressMessageInfo>> ();
 
+			public bool HasGlobalSuppressions (int id, ICustomAttributeProvider provider, out SuppressMessageInfo info)
+			{
+				Dictionary<int, SuppressMessageInfo> suppressions = null;
+				if (_globalSuppressions.TryGetValue (provider, out suppressions) && suppressions != null)
+					return suppressions.TryGetValue (id, out info);
+
+				info = default;
+				return false;
+			}
+
+			public void AddGlobalSuppression (ICustomAttributeProvider provider, SuppressMessageInfo info)
+			{
+				if (_globalSuppressions.TryGetValue (provider, out var suppressions)) {
+					AddOrUpdate (info, suppressions);
+					return;
+				}
+
+				var _suppressions = new Dictionary<int, SuppressMessageInfo> { { info.Id, info } };
+				_globalSuppressions.Add (provider, _suppressions);
+			}
+
+			private void AddOrUpdate (SuppressMessageInfo info, IDictionary<int, SuppressMessageInfo> builder)
+			{
+				if (builder.ContainsKey (info.Id))
+					builder[info.Id] = info;
+			}
 		}
 	}
 }
