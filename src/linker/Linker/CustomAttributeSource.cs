@@ -4,25 +4,23 @@
 
 using System.Collections.Generic;
 using Mono.Cecil;
-using System.Linq;
 
-namespace Mono.Linker.Dataflow
+namespace Mono.Linker
 {
 	class CustomAttributeSource
 	{
-		private readonly List<XmlFlowAnnotationSource> _sources;
+		readonly List<XmlCustomAttributeSource> _sources;
 
 		public CustomAttributeSource (LinkContext context)
 		{
-			List<XmlFlowAnnotationSource> annotationSources = new List<XmlFlowAnnotationSource> ();
+			_sources = new List<XmlCustomAttributeSource>();
 			if (context.AttributeDefinitions?.Count > 0) {
 				foreach (string a in context.AttributeDefinitions) {
-					XmlFlowAnnotationSource xmlAnnotations = new XmlFlowAnnotationSource (context);
+					XmlCustomAttributeSource xmlAnnotations = new XmlCustomAttributeSource (context);
 					xmlAnnotations.ParseXml (a);
-					annotationSources.Add (xmlAnnotations);
+					_sources.Add (xmlAnnotations);
 				}
 			}
-			_sources = annotationSources;
 		}
 
 		public IEnumerable<CustomAttribute> GetCustomAttributes (ICustomAttributeProvider provider)

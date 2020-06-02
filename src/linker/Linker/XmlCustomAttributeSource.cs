@@ -8,12 +8,11 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml.XPath;
-
 using Mono.Cecil;
 
-namespace Mono.Linker.Dataflow
+namespace Mono.Linker
 {
-	class XmlFlowAnnotationSource
+	class XmlCustomAttributeSource
 	{
 		readonly Dictionary<ICustomAttributeProvider, IEnumerable<CustomAttribute>> _attributes = new Dictionary<ICustomAttributeProvider, IEnumerable<CustomAttribute>> ();
 
@@ -21,7 +20,7 @@ namespace Mono.Linker.Dataflow
 		XPathDocument _document;
 		string _xmlDocumentLocation;
 
-		public XmlFlowAnnotationSource (LinkContext context)
+		public XmlCustomAttributeSource (LinkContext context)
 		{
 			_context = context;
 		}
@@ -143,7 +142,7 @@ namespace Mono.Linker.Dataflow
 			}
 		}
 
-		private void ProcessAssemblies (LinkContext context, XPathNodeIterator iterator)
+		void ProcessAssemblies (LinkContext context, XPathNodeIterator iterator)
 		{
 			while (iterator.MoveNext ()) {
 				if (!ShouldProcessElement (iterator.Current))
@@ -395,19 +394,19 @@ namespace Mono.Linker.Dataflow
 				_context.LogMessage (MessageContainer.CreateWarningMessage ($"Could not find method '{signature}' in type '{type.FullName}' specified in '{_xmlDocumentLocation}'", 2009));
 				return;
 			}
-			ProcessMethod (type, method, iterator);
+			ProcessMethod (method, iterator);
 		}
 
-		void ProcessMethod (TypeDefinition type, MethodDefinition method, XPathNodeIterator iterator)
+		void ProcessMethod (MethodDefinition method, XPathNodeIterator iterator)
 		{
 			IEnumerable<CustomAttribute> attributes = ProcessAttributes (iterator.Current);
 			if (attributes.Count () > 0)
 				_attributes[method] = attributes;
-			ProcessReturnParameters (type, method, iterator);
-			ProcessParameters (type, method, iterator);
+			ProcessReturnParameters (method, iterator);
+			ProcessParameters (method, iterator);
 		}
 
-		void ProcessParameters (TypeDefinition type, MethodDefinition method, XPathNodeIterator iterator)
+		void ProcessParameters (MethodDefinition method, XPathNodeIterator iterator)
 		{
 			iterator = iterator.Current.SelectChildren ("parameter", string.Empty);
 			while (iterator.MoveNext ()) {
@@ -426,7 +425,7 @@ namespace Mono.Linker.Dataflow
 			}
 		}
 
-		void ProcessReturnParameters (TypeDefinition type, MethodDefinition method, XPathNodeIterator iterator)
+		void ProcessReturnParameters (MethodDefinition method, XPathNodeIterator iterator)
 		{
 			iterator = iterator.Current.SelectChildren ("return", string.Empty);
 			bool firstAppearance = true;
@@ -449,7 +448,7 @@ namespace Mono.Linker.Dataflow
 
 			foreach (MethodDefinition method in type.Methods)
 				if (name == method.Name)
-					ProcessMethod (type, method, iterator);
+					ProcessMethod (method, iterator);
 		}
 
 		static MethodDefinition GetMethod (TypeDefinition type, string signature)
