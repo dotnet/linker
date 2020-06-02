@@ -111,8 +111,7 @@ namespace Mono.Linker
 			if (provider == null)
 				return false;
 
-			Dictionary<int, SuppressMessageInfo> suppressions;
-			return _localSuppressions.TryGetValue (provider, out suppressions) &&
+			return _localSuppressions.TryGetValue (provider, out var suppressions) &&
 				suppressions.TryGetValue (id, out info);
 		}
 
@@ -213,7 +212,7 @@ namespace Mono.Linker
 				_globalSuppressions.Add (provider, _suppressions);
 			}
 
-			private void AddOrUpdate (SuppressMessageInfo info, IDictionary<int, SuppressMessageInfo> builder)
+			private static void AddOrUpdate (SuppressMessageInfo info, IDictionary<int, SuppressMessageInfo> builder)
 			{
 				if (builder.ContainsKey (info.Id))
 					builder[info.Id] = info;
