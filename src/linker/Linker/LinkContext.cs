@@ -545,7 +545,7 @@ namespace Mono.Linker
 				return;
 
 			var error = MessageContainer.CreateErrorMessage (text, code, subcategory, origin);
-			Logger?.LogMessage (error);
+			LogMessage (error);
 		}
 
 		public bool IsWarningSuppressed (int warningCode, MessageOrigin origin)
