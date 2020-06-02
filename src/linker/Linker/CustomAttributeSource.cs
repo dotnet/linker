@@ -13,7 +13,7 @@ namespace Mono.Linker
 
 		public CustomAttributeSource (LinkContext context)
 		{
-			_sources = new List<XmlCustomAttributeSource>();
+			_sources = new List<XmlCustomAttributeSource> ();
 			if (context.AttributeDefinitions?.Count > 0) {
 				foreach (string a in context.AttributeDefinitions) {
 					XmlCustomAttributeSource xmlAnnotations = new XmlCustomAttributeSource (context);
