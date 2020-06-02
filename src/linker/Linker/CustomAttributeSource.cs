@@ -25,6 +25,11 @@ namespace Mono.Linker
 
 		public IEnumerable<CustomAttribute> GetCustomAttributes (ICustomAttributeProvider provider)
 		{
+			if (provider.HasCustomAttributes) {
+				foreach (var customAttribute in provider.CustomAttributes)
+					yield return customAttribute;
+			}
+
 			if (_sources.Count > 0) {
 				foreach (var source in _sources) {
 					if (source.HasCustomAttributes (provider)) {
@@ -33,22 +38,22 @@ namespace Mono.Linker
 					}
 				}
 			}
-			if (provider.HasCustomAttributes) {
-				foreach (var customAttribute in provider.CustomAttributes)
-					yield return customAttribute;
-			}
 		}
 
 		public bool HasCustomAttributes (ICustomAttributeProvider provider)
 		{
-			if (_sources != null) {
+			if (provider.HasCustomAttributes)
+				return true;
+
+			if (_sources.Count > 0) {
 				foreach (var source in _sources) {
 					if (source.HasCustomAttributes (provider)) {
 						return true;
 					}
 				}
 			}
-			return provider.HasCustomAttributes;
+
+			return false;
 		}
 	}
 }

@@ -378,6 +378,20 @@ This allows to add a custom attribute to a class, interface, delegate, struct or
 </linker>
 ```
 
+### Custom attribute on type in all assemblies
+
+```xml
+<linker>
+  <assembly fullname="*">
+    <type fullname="Namespace.SpecialAttribute">
+      <attribute fullname="System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute" assembly="System.Runtime">
+        <argument>DefaultConstructor</argument>
+      </attribute>
+    </type>
+  </assembly>
+</linker>
+```
+
 ### Conditional custom attributes
 
 The `feature` and `featurevalue` attributes are optional, but must be used together when used.

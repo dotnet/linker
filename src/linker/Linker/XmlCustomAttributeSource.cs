@@ -103,7 +103,7 @@ namespace Mono.Linker
 							}
 							break;
 						default:
-							_context.LogMessage (MessageContainer.CreateWarningMessage (_context, $"Argument '{xmlArguments[i]}' specified in '{_xmlDocumentLocation}' could not be transformed to a currently supported metadatatype in the xml", 2020, _xmlDocumentLocation));
+							_context.LogMessage (MessageContainer.CreateWarningMessage (_context, $"Argument '{xmlArguments[i]}' specified in '{_xmlDocumentLocation}' is of unsupported type '{constructor.Parameters[i].ParameterType}'", 2020, _xmlDocumentLocation));
 							recognizedArgument = false;
 							break;
 						}

@@ -23,12 +23,6 @@ namespace Mono.Linker.Dataflow
 			_context = context;
 		}
 
-		public bool IsDynamicallyAccessedMembersAttribute (CustomAttribute attribute)
-		{
-			var attributeType = attribute.AttributeType;
-			return attributeType.Name == "DynamicallyAccessedMembersAttribute" && attributeType.Namespace == "System.Diagnostics.CodeAnalysis";
-		}
-
 		public bool RequiresDataFlowAnalysis (MethodDefinition method)
 		{
 			return GetAnnotations (method.DeclaringType).TryGetAnnotation (method, out _);
@@ -50,23 +44,6 @@ namespace Mono.Linker.Dataflow
 				return annotation.ParameterAnnotations[parameterIndex];
 			}
 
-			return DynamicallyAccessedMemberTypes.None;
-		}
-
-		DynamicallyAccessedMemberTypes GetMemberTypesForDynamicallyAccessedMemberAttribute (ICustomAttributeProvider provider, IMemberDefinition locationMember = null)
-		{
-			if (!_source.HasCustomAttributes (provider))
-				return DynamicallyAccessedMemberTypes.None;
-			foreach (var attribute in _source.GetCustomAttributes (provider)) {
-				if (!IsDynamicallyAccessedMembersAttribute (attribute))
-					continue;
-				if (attribute.ConstructorArguments.Count == 0)
-					_context.LogMessage (MessageContainer.CreateWarningMessage (_context, $"DynamicallyAccessedMembersAttribute was specified but no argument was proportioned", 2020, locationMember ?? (provider as IMemberDefinition)));
-				else if (attribute.ConstructorArguments.Count == 1)
-					return (DynamicallyAccessedMemberTypes) (int) attribute.ConstructorArguments[0].Value;
-				else
-					_context.LogMessage (MessageContainer.CreateWarningMessage (_context, $"DynamicallyAccessedMembersAttribute was specified but there is more than one argument", 2022, locationMember ?? (provider as IMemberDefinition)));
-			}
 			return DynamicallyAccessedMemberTypes.None;
 		}
 
@@ -96,6 +73,29 @@ namespace Mono.Linker.Dataflow
 			}
 
 			return value;
+		}
+
+		static bool IsDynamicallyAccessedMembersAttribute (CustomAttribute attribute)
+		{
+			var attributeType = attribute.AttributeType;
+			return attributeType.Name == "DynamicallyAccessedMembersAttribute" && attributeType.Namespace == "System.Diagnostics.CodeAnalysis";
+		}
+
+		DynamicallyAccessedMemberTypes GetMemberTypesForDynamicallyAccessedMemberAttribute (ICustomAttributeProvider provider, IMemberDefinition locationMember = null)
+		{
+			if (!_source.HasCustomAttributes (provider))
+				return DynamicallyAccessedMemberTypes.None;
+			foreach (var attribute in _source.GetCustomAttributes (provider)) {
+				if (!IsDynamicallyAccessedMembersAttribute (attribute))
+					continue;
+				if (attribute.ConstructorArguments.Count == 1)
+					return (DynamicallyAccessedMemberTypes) (int) attribute.ConstructorArguments[0].Value;
+				else if (attribute.ConstructorArguments.Count == 0)
+					_context.LogMessage (MessageContainer.CreateWarningMessage (_context, $"DynamicallyAccessedMembersAttribute was specified but no argument was proportioned", 2020, locationMember ?? (provider as IMemberDefinition)));
+				else
+					_context.LogMessage (MessageContainer.CreateWarningMessage (_context, $"DynamicallyAccessedMembersAttribute was specified but there is more than one argument", 2022, locationMember ?? (provider as IMemberDefinition)));
+			}
+			return DynamicallyAccessedMemberTypes.None;
 		}
 
 		TypeAnnotations BuildTypeAnnotations (TypeDefinition type)

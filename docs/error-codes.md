@@ -135,9 +135,9 @@ error and warning codes.
 
 - The 'XML document location' defined the set accessor of property 'property' on type 'type', but the accessor was not found.
 
-#### `IL2020`: Argument 'xml argument' specified in 'XML Document location' could not be transformed to a currently supported metadatatype in the xml
+#### `IL2020`: Argument 'argument' specified in 'XML document location' is of unsupported type 'type'
 
-- There is no way to convert the 'xml argument' string to the constructor parameter type. The constructor parameter type is not supported.
+- The constructor parameter type is not supported in the XML reading code.
 
 #### `IL2021`: Could not parse argument 'argument' specified in 'XML document location' as a 'type'
 
