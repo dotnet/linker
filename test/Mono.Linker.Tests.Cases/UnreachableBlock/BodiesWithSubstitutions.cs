@@ -68,7 +68,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 			if (NoInliningInner () != 1)
 				Reached_1 ();
 		}
-		
+
 		[Kept]
 		static void Reached_1 ()
 		{
