@@ -17,9 +17,8 @@ namespace Mono.Linker
 		public LinkerAttributesInformation (LinkContext context, MethodDefinition method)
 		{
 			_linkerAttributes = null;
-
-			if (method.HasCustomAttributes) {
-				foreach (var customAttribute in method.CustomAttributes) {
+			if (context.CustomAttributes.HasCustomAttributes (method)) {
+				foreach (var customAttribute in context.CustomAttributes.GetCustomAttributes (method)) {
 					var attributeType = customAttribute.AttributeType;
 					Attribute attributeValue = null;
 					if (attributeType.Name == "RequiresUnreferencedCodeAttribute" && attributeType.Namespace == "System.Diagnostics.CodeAnalysis") {
