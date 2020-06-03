@@ -157,7 +157,7 @@ namespace Mono.Linker
 					AssemblyDefinition assembly = GetAssembly (context, GetAssemblyName (iterator.Current));
 
 					if (assembly == null) {
-						_context.LogWarning ($"Could not resolve assembly {GetAssemblyName(iterator.Current).Name} specified in {_xmlDocumentLocation}", 2007, _xmlDocumentLocation);
+						_context.LogWarning ($"Could not resolve assembly {GetAssemblyName (iterator.Current).Name} specified in {_xmlDocumentLocation}", 2007, _xmlDocumentLocation);
 						continue;
 					}
 					IEnumerable<CustomAttribute> attributes = ProcessAttributes (iterator.Current);
@@ -354,7 +354,7 @@ namespace Mono.Linker
 		{
 			FieldDefinition field = GetField (type, signature);
 			if (field == null) {
-				_context.LogMessage (MessageContainer.CreateWarningMessage (_context, $"Could not find field '{signature}' in type '{type.FullName}' specified in { _xmlDocumentLocation}", 2016, _xmlDocumentLocation));
+				_context.LogWarning ($"Could not find field '{signature}' in type '{type.FullName}' specified in { _xmlDocumentLocation}", 2016, _xmlDocumentLocation);
 				return;
 			}
 			IEnumerable<CustomAttribute> attributes = ProcessAttributes (iterator.Current);
@@ -392,7 +392,7 @@ namespace Mono.Linker
 		{
 			MethodDefinition method = GetMethod (type, signature);
 			if (method == null) {
-				_context.LogMessage (MessageContainer.CreateWarningMessage (_context, $"Could not find method '{signature}' in type '{type.FullName}' specified in '{_xmlDocumentLocation}'", 2009, _xmlDocumentLocation));
+				_context.LogWarning ($"Could not find method '{signature}' in type '{type.FullName}' specified in '{_xmlDocumentLocation}'", 2009, _xmlDocumentLocation);
 				return;
 			}
 			ProcessMethod (method, iterator);
@@ -416,7 +416,7 @@ namespace Mono.Linker
 					string paramName = GetAttribute (iterator.Current, "name");
 					foreach (ParameterDefinition parameter in method.Parameters) {
 						if (paramName == parameter.Name) {
-							if (_attributes.ContainsKey(parameter))
+							if (_attributes.ContainsKey (parameter))
 								_context.LogWarning ($"There are duplicate parameter names for '{paramName}' inside '{method.Name}' in '{_xmlDocumentLocation}'", 2024, _xmlDocumentLocation);
 							_attributes[parameter] = attributes;
 							break;
