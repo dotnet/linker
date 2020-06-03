@@ -149,10 +149,18 @@ namespace Mono.Linker.Dataflow
 
 		protected override ValueNode GetFieldValue (MethodDefinition method, FieldDefinition field)
 		{
-			DynamicallyAccessedMemberTypes memberKinds = _flowAnnotations.GetFieldAnnotation (field);
-			return new LoadFieldValue (field, memberKinds) {
-				SourceContext = method
-			};
+			switch (field.Name) {
+			case "EmptyTypes" when field.DeclaringType.IsTypeOf ("System", "Type"): {
+					return new ArrayValue (new ConstIntValue (0));
+				}
+
+			default: {
+					DynamicallyAccessedMemberTypes memberKinds = _flowAnnotations.GetFieldAnnotation (field);
+					return new LoadFieldValue (field, memberKinds) {
+						SourceContext = method
+					};
+				}
+			}
 		}
 
 		protected override void HandleStoreField (MethodDefinition method, FieldDefinition field, Instruction operation, ValueNode valueToStore)
@@ -184,6 +192,7 @@ namespace Mono.Linker.Dataflow
 			Type_get_TypeHandle,
 			Object_GetType,
 			TypeDelegator_Ctor,
+			Array_Empty,
 
 			// Anything above this marker will require the method to be run through
 			// the reflection body scanner.
@@ -353,6 +362,9 @@ namespace Mono.Linker.Dataflow
 					&& calledMethod.HasParameterOfType (0, "System", "Type")
 					=> IntrinsicId.TypeDelegator_Ctor,
 
+				"Empty" when calledMethod.IsDeclaredOnType ("System", "Array")
+					=> IntrinsicId.Array_Empty,
+
 				// static System.Activator.CreateInstance (System.Type type)
 				// static System.Activator.CreateInstance (System.Type type, bool nonPublic)
 				// static System.Activator.CreateInstance (System.Type type, params object?[]? args)
@@ -466,6 +478,11 @@ namespace Mono.Linker.Dataflow
 				case IntrinsicId.TypeDelegator_Ctor: {
 						// This is an identity function for analysis purposes
 						methodReturnValue = methodParams[1];
+					}
+					break;
+
+				case IntrinsicId.Array_Empty: {
+						methodReturnValue = new ArrayValue (new ConstIntValue (0));
 					}
 					break;
 
@@ -741,6 +758,14 @@ namespace Mono.Linker.Dataflow
 							if (methodParams[1].AsConstInt () != null)
 								bindingFlags |= (BindingFlags) methodParams[1].AsConstInt ();
 						}
+						int? ctorParameterCount = parameters.Count switch
+						{
+							1 => (methodParams[1] as ArrayValue)?.Size.AsConstInt (),
+							2 => (methodParams[3] as ArrayValue)?.Size.AsConstInt (),
+							5 => (methodParams[4] as ArrayValue)?.Size.AsConstInt (),
+							_ => null,
+						};
+
 						// Go over all types we've seen
 						foreach (var value in methodParams[0].UniqueValues ()) {
 							if (value is SystemTypeValue systemTypeValue) {
@@ -750,6 +775,9 @@ namespace Mono.Linker.Dataflow
 								// Otherwise fall back to the bitfield requirements
 								var requiredMemberKinds = bindingFlags.HasFlag (BindingFlags.Public) ? DynamicallyAccessedMemberTypes.PublicConstructors : DynamicallyAccessedMemberTypes.None;
 								requiredMemberKinds |= bindingFlags.HasFlag (BindingFlags.NonPublic) ? DynamicallyAccessedMemberTypes.NonPublicConstructors : DynamicallyAccessedMemberTypes.None;
+								// We can scope down the public constructors requirement if we know the number of parameters is 0
+								if (requiredMemberKinds == DynamicallyAccessedMemberTypes.PublicConstructors && ctorParameterCount == 0)
+									requiredMemberKinds = DynamicallyAccessedMemberTypes.DefaultConstructor;
 								RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberKinds, value, calledMethodDefinition);
 							}
 						}
@@ -1111,7 +1139,7 @@ namespace Mono.Linker.Dataflow
 							message += " " + requiresUnreferencedCode.Url;
 						}
 
-						_context.LogMessage (MessageContainer.CreateWarningMessage (_context, message, 2026, origin: MessageOrigin.TryGetOrigin (callingMethodBody.Method, operation.Offset)));
+						_context.LogWarning (message, 2026, MessageOrigin.TryGetOrigin (callingMethodBody.Method, operation.Offset));
 					}
 
 					// To get good reporting of errors we need to track the origin of the value for all method calls
@@ -1237,178 +1265,100 @@ namespace Mono.Linker.Dataflow
 
 		void MarkTypeForDynamicallyAccessedMembers (ref ReflectionPatternContext reflectionContext, TypeDefinition typeDefinition, DynamicallyAccessedMemberTypes requiredMemberKinds)
 		{
-			if (requiredMemberKinds == DynamicallyAccessedMemberTypes.All) {
-				var source = reflectionContext.Source;
-				reflectionContext.RecordRecognizedPattern (typeDefinition, () => _markStep.MarkEntireType (typeDefinition, includeBaseTypes: true, new DependencyInfo (DependencyKind.AccessedViaReflection, source)));
-				return;
+			foreach (var member in typeDefinition.GetDynamicallyAccessedMembers (requiredMemberKinds)) {
+				switch (member) {
+				case MethodDefinition method:
+					MarkMethod (ref reflectionContext, typeDefinition, method);
+					break;
+				case FieldDefinition field:
+					MarkField (ref reflectionContext, typeDefinition, field);
+					break;
+				case TypeDefinition nestedType:
+					MarkNestedType (ref reflectionContext, typeDefinition, nestedType);
+					break;
+				case PropertyDefinition property:
+					MarkProperty (ref reflectionContext, typeDefinition, property);
+					break;
+				case EventDefinition @event:
+					MarkEvent (ref reflectionContext, typeDefinition, @event);
+					break;
+				case null:
+					var source = reflectionContext.Source;
+					reflectionContext.RecordRecognizedPattern (typeDefinition, () => _markStep.MarkEntireType (typeDefinition, includeBaseTypes: true, new DependencyInfo (DependencyKind.AccessedViaReflection, source)));
+					break;
+				}
 			}
+		}
 
-			if (requiredMemberKinds.HasFlag (DynamicallyAccessedMemberTypes.NonPublicConstructors))
-				MarkConstructorsOnType (ref reflectionContext, typeDefinition, filter: null, bindingFlags: BindingFlags.NonPublic);
+		void MarkMethod (ref ReflectionPatternContext reflectionContext, TypeDefinition typeDefinition, MethodDefinition method)
+		{
+			var source = reflectionContext.Source;
+			reflectionContext.RecordRecognizedPattern (method, () => _markStep.MarkIndirectlyCalledMethod (method, new DependencyInfo (DependencyKind.AccessedViaReflection, source)));
+		}
 
-			if (requiredMemberKinds.HasFlag (DynamicallyAccessedMemberTypes.PublicConstructors))
-				MarkConstructorsOnType (ref reflectionContext, typeDefinition, filter: null, bindingFlags: BindingFlags.Public);
+		void MarkNestedType (ref ReflectionPatternContext reflectionContext, TypeDefinition typeDefinition, TypeDefinition nestedType)
+		{
+			var source = reflectionContext.Source;
+			reflectionContext.RecordRecognizedPattern (nestedType, () => _markStep.MarkType (nestedType, new DependencyInfo (DependencyKind.AccessedViaReflection, source)));
+		}
 
-			if (requiredMemberKinds.HasFlag (DynamicallyAccessedMemberTypes.DefaultConstructor))
-				MarkConstructorsOnType (ref reflectionContext, typeDefinition, filter: m => m.IsPublic && m.Parameters.Count == 0);
+		void MarkField (ref ReflectionPatternContext reflectionContext, TypeDefinition typeDefinition, FieldDefinition field)
+		{
+			var source = reflectionContext.Source;
+			reflectionContext.RecordRecognizedPattern (field, () => _markStep.MarkField (field, new DependencyInfo (DependencyKind.AccessedViaReflection, source)));
+		}
 
-			if (requiredMemberKinds.HasFlag (DynamicallyAccessedMemberTypes.NonPublicMethods))
-				MarkMethodsOnTypeHierarchy (ref reflectionContext, typeDefinition, filter: null, bindingFlags: BindingFlags.NonPublic);
+		void MarkProperty (ref ReflectionPatternContext reflectionContext, TypeDefinition typeDefinition, PropertyDefinition property)
+		{
+			var source = reflectionContext.Source;
+			var dependencyInfo = new DependencyInfo (DependencyKind.AccessedViaReflection, source);
+			reflectionContext.RecordRecognizedPattern (property, () => {
+				// Marking the property itself actually doesn't keep it (it only marks its attributes and records the dependency), we have to mark the methods on it
+				_markStep.MarkProperty (property, dependencyInfo);
+				// TODO - this is sort of questionable - when somebody asks for a property they probably want to call either get or set
+				// but linker tracks those separately, and so accessing the getter/setter will raise a warning as it's potentially trimmed.
+				// So including them here doesn't actually remove the warning even if the code is written correctly.
+				_markStep.MarkMethodIfNotNull (property.GetMethod, dependencyInfo);
+				_markStep.MarkMethodIfNotNull (property.SetMethod, dependencyInfo);
+				_markStep.MarkMethodsIf (property.OtherMethods, m => true, dependencyInfo);
+			});
+		}
 
-			if (requiredMemberKinds.HasFlag (DynamicallyAccessedMemberTypes.PublicMethods))
-				MarkMethodsOnTypeHierarchy (ref reflectionContext, typeDefinition, filter: null, bindingFlags: BindingFlags.Public);
-
-			if (requiredMemberKinds.HasFlag (DynamicallyAccessedMemberTypes.NonPublicFields))
-				MarkFieldsOnTypeHierarchy (ref reflectionContext, typeDefinition, filter: null, bindingFlags: BindingFlags.NonPublic);
-
-			if (requiredMemberKinds.HasFlag (DynamicallyAccessedMemberTypes.PublicFields))
-				MarkFieldsOnTypeHierarchy (ref reflectionContext, typeDefinition, filter: null, bindingFlags: BindingFlags.Public);
-
-			if (requiredMemberKinds.HasFlag (DynamicallyAccessedMemberTypes.NonPublicNestedTypes))
-				MarkNestedTypesOnType (ref reflectionContext, typeDefinition, filter: null, bindingFlags: BindingFlags.NonPublic);
-
-			if (requiredMemberKinds.HasFlag (DynamicallyAccessedMemberTypes.PublicNestedTypes))
-				MarkNestedTypesOnType (ref reflectionContext, typeDefinition, filter: null, bindingFlags: BindingFlags.Public);
-
-			if (requiredMemberKinds.HasFlag (DynamicallyAccessedMemberTypes.NonPublicProperties))
-				MarkPropertiesOnTypeHierarchy (ref reflectionContext, typeDefinition, filter: null, bindingFlags: BindingFlags.NonPublic);
-
-			if (requiredMemberKinds.HasFlag (DynamicallyAccessedMemberTypes.PublicProperties))
-				MarkPropertiesOnTypeHierarchy (ref reflectionContext, typeDefinition, filter: null, bindingFlags: BindingFlags.Public);
-
-			if (requiredMemberKinds.HasFlag (DynamicallyAccessedMemberTypes.NonPublicEvents))
-				MarkEventsOnTypeHierarchy (ref reflectionContext, typeDefinition, filter: null, bindingFlags: BindingFlags.NonPublic);
-
-			if (requiredMemberKinds.HasFlag (DynamicallyAccessedMemberTypes.PublicEvents))
-				MarkEventsOnTypeHierarchy (ref reflectionContext, typeDefinition, filter: null, bindingFlags: BindingFlags.Public);
+		void MarkEvent (ref ReflectionPatternContext reflectionContext, TypeDefinition typeDefinition, EventDefinition @event)
+		{
+			var dependencyInfo = new DependencyInfo (DependencyKind.AccessedViaReflection, reflectionContext.Source);
+			reflectionContext.RecordRecognizedPattern (@event, () => {
+				// MarkEvent actually marks the add/remove/invoke methods as well, so no need to mark those explicitly
+				_markStep.MarkEvent (@event, dependencyInfo);
+				_markStep.MarkMethodsIf (@event.OtherMethods, m => true, dependencyInfo);
+			});
 		}
 
 		void MarkConstructorsOnType (ref ReflectionPatternContext reflectionContext, TypeDefinition type, Func<MethodDefinition, bool> filter, BindingFlags? bindingFlags = null)
 		{
-			foreach (var method in type.Methods) {
-				if (!method.IsConstructor)
-					continue;
-
-				if (filter != null && !filter (method))
-					continue;
-
-				if ((bindingFlags & (BindingFlags.Instance | BindingFlags.Static)) == BindingFlags.Static && !method.IsStatic)
-					continue;
-
-				if ((bindingFlags & (BindingFlags.Instance | BindingFlags.Static)) == BindingFlags.Instance && method.IsStatic)
-					continue;
-
-				if ((bindingFlags & (BindingFlags.Public | BindingFlags.NonPublic)) == BindingFlags.Public && !method.IsPublic)
-					continue;
-
-				if ((bindingFlags & (BindingFlags.Public | BindingFlags.NonPublic)) == BindingFlags.NonPublic && method.IsPublic)
-					continue;
-
-				var source = reflectionContext.Source;
-				reflectionContext.RecordRecognizedPattern (method, () => _markStep.MarkIndirectlyCalledMethod (method, new DependencyInfo (DependencyKind.AccessedViaReflection, source)));
-			}
+			foreach (var ctor in type.GetConstructorsOnType (filter, bindingFlags))
+				MarkMethod (ref reflectionContext, type, ctor);
 		}
 
 		void MarkMethodsOnTypeHierarchy (ref ReflectionPatternContext reflectionContext, TypeDefinition type, Func<MethodDefinition, bool> filter, BindingFlags? bindingFlags = null)
 		{
-			bool onBaseType = false;
-			while (type != null) {
-				foreach (var method in type.Methods) {
-					// Ignore constructors as those are not considered methods from a reflection's point of view
-					if (method.IsConstructor)
-						continue;
-
-					// Ignore private methods on a base type - those are completely ignored by reflection
-					// (anything private on the base type is not visible via the derived type)
-					if (onBaseType && method.IsPrivate)
-						continue;
-
-					// Note that special methods like property getter/setter, event adder/remover will still get through and will be marked.
-					// This is intentional as reflection treats these as methods as well.
-
-					if (filter != null && !filter (method))
-						continue;
-
-					if ((bindingFlags & (BindingFlags.Instance | BindingFlags.Static)) == BindingFlags.Static && !method.IsStatic)
-						continue;
-
-					if ((bindingFlags & (BindingFlags.Instance | BindingFlags.Static)) == BindingFlags.Instance && method.IsStatic)
-						continue;
-
-					if ((bindingFlags & (BindingFlags.Public | BindingFlags.NonPublic)) == BindingFlags.Public && !method.IsPublic)
-						continue;
-
-					if ((bindingFlags & (BindingFlags.Public | BindingFlags.NonPublic)) == BindingFlags.NonPublic && method.IsPublic)
-						continue;
-
-					var source = reflectionContext.Source;
-					reflectionContext.RecordRecognizedPattern (method, () => _markStep.MarkIndirectlyCalledMethod (method, new DependencyInfo (DependencyKind.AccessedViaReflection, source)));
-				}
-
-				type = type.BaseType?.Resolve ();
-				onBaseType = true;
-			}
+			foreach (var method in type.GetMethodsOnTypeHierarchy (filter, bindingFlags))
+				MarkMethod (ref reflectionContext, type, method);
 		}
 
 		void MarkFieldsOnTypeHierarchy (ref ReflectionPatternContext reflectionContext, TypeDefinition type, Func<FieldDefinition, bool> filter, BindingFlags bindingFlags = BindingFlags.Default)
 		{
-			bool onBaseType = false;
-			while (type != null) {
-				foreach (var field in type.Fields) {
-					// Ignore private fields on a base type - those are completely ignored by reflection
-					// (anything private on the base type is not visible via the derived type)
-					if (onBaseType && field.IsPrivate)
-						continue;
-
-					// Note that compiler generated fields backing some properties and events will get through here.
-					// This is intentional as reflection treats these as fields as well.
-
-					if (filter != null && !filter (field))
-						continue;
-
-					if ((bindingFlags & (BindingFlags.Instance | BindingFlags.Static)) == BindingFlags.Static && !field.IsStatic)
-						continue;
-
-					if ((bindingFlags & (BindingFlags.Instance | BindingFlags.Static)) == BindingFlags.Instance && field.IsStatic)
-						continue;
-
-					if ((bindingFlags & (BindingFlags.Public | BindingFlags.NonPublic)) == BindingFlags.Public && !field.IsPublic)
-						continue;
-
-					if ((bindingFlags & (BindingFlags.Public | BindingFlags.NonPublic)) == BindingFlags.NonPublic && field.IsPublic)
-						continue;
-
-					var source = reflectionContext.Source;
-					reflectionContext.RecordRecognizedPattern (field, () => _markStep.MarkField (field, new DependencyInfo (DependencyKind.AccessedViaReflection, source)));
-				}
-
-				type = type.BaseType?.Resolve ();
-				onBaseType = true;
-			}
+			foreach (var field in type.GetFieldsOnTypeHierarchy (filter, bindingFlags))
+				MarkField (ref reflectionContext, type, field);
 		}
 
 		TypeDefinition[] MarkNestedTypesOnType (ref ReflectionPatternContext reflectionContext, TypeDefinition type, Func<TypeDefinition, bool> filter, BindingFlags bindingFlags = BindingFlags.Default)
 		{
 			var result = new ArrayBuilder<TypeDefinition> ();
 
-			foreach (var nestedType in type.NestedTypes) {
-				if (filter != null && !filter (nestedType))
-					continue;
-
-				if ((bindingFlags & (BindingFlags.Public | BindingFlags.NonPublic)) == BindingFlags.Public) {
-					if (!nestedType.IsNestedPublic)
-						continue;
-				}
-
-				if ((bindingFlags & (BindingFlags.Public | BindingFlags.NonPublic)) == BindingFlags.NonPublic) {
-					if (nestedType.IsNestedPublic)
-						continue;
-				}
-
+			foreach (var nestedType in type.GetNestedTypesOnType (filter, bindingFlags)) {
 				result.Add (nestedType);
-
-				var source = reflectionContext.Source;
-				reflectionContext.RecordRecognizedPattern (nestedType, () => _markStep.MarkType (nestedType, new DependencyInfo (DependencyKind.AccessedViaReflection, source)));
+				MarkNestedType (ref reflectionContext, type, nestedType);
 			}
 
 			return result.ToArray ();
@@ -1416,107 +1366,14 @@ namespace Mono.Linker.Dataflow
 
 		void MarkPropertiesOnTypeHierarchy (ref ReflectionPatternContext reflectionContext, TypeDefinition type, Func<PropertyDefinition, bool> filter, BindingFlags bindingFlags = BindingFlags.Default)
 		{
-			bool onBaseType = false;
-			while (type != null) {
-				foreach (var property in type.Properties) {
-					// Ignore private properties on a base type - those are completely ignored by reflection
-					// (anything private on the base type is not visible via the derived type)
-					// Note that properties themselves are not actually private, their accessors are
-					if (onBaseType &&
-						(property.GetMethod == null || property.GetMethod.IsPrivate) &&
-						(property.SetMethod == null || property.SetMethod.IsPrivate))
-						continue;
-
-					if (filter != null && !filter (property))
-						continue;
-
-					if ((bindingFlags & (BindingFlags.Instance | BindingFlags.Static)) == BindingFlags.Static) {
-						if ((property.GetMethod != null) && !property.GetMethod.IsStatic) continue;
-						if ((property.SetMethod != null) && !property.SetMethod.IsStatic) continue;
-					}
-
-					if ((bindingFlags & (BindingFlags.Instance | BindingFlags.Static)) == BindingFlags.Instance) {
-						if ((property.GetMethod != null) && property.GetMethod.IsStatic) continue;
-						if ((property.SetMethod != null) && property.SetMethod.IsStatic) continue;
-					}
-
-					if ((bindingFlags & (BindingFlags.Public | BindingFlags.NonPublic)) == BindingFlags.Public) {
-						if ((property.GetMethod == null || !property.GetMethod.IsPublic)
-							&& (property.SetMethod == null || !property.SetMethod.IsPublic))
-							continue;
-					}
-
-					if ((bindingFlags & (BindingFlags.Public | BindingFlags.NonPublic)) == BindingFlags.NonPublic) {
-						if ((property.GetMethod != null) && property.GetMethod.IsPublic) continue;
-						if ((property.SetMethod != null) && property.SetMethod.IsPublic) continue;
-					}
-
-					var source = reflectionContext.Source;
-					reflectionContext.RecordRecognizedPattern (property, () => {
-						// Marking the property itself actually doesn't keep it (it only marks its attributes and records the dependency), we have to mark the methods on it
-						_markStep.MarkProperty (property, new DependencyInfo (DependencyKind.AccessedViaReflection, source));
-						// TODO - this is sort of questionable - when somebody asks for a property they probably want to call either get or set
-						// but linker tracks those separately, and so accessing the getter/setter will raise a warning as it's potentially trimmed.
-						// So including them here doesn't actually remove the warning even if the code is written correctly.
-						_markStep.MarkMethodIfNotNull (property.GetMethod, new DependencyInfo (DependencyKind.AccessedViaReflection, source));
-						_markStep.MarkMethodIfNotNull (property.SetMethod, new DependencyInfo (DependencyKind.AccessedViaReflection, source));
-						_markStep.MarkMethodsIf (property.OtherMethods, m => true, new DependencyInfo (DependencyKind.AccessedViaReflection, source));
-					});
-				}
-
-				type = type.BaseType?.Resolve ();
-				onBaseType = true;
-			}
+			foreach (var property in type.GetPropertiesOnTypeHierarchy (filter, bindingFlags))
+				MarkProperty (ref reflectionContext, type, property);
 		}
 
 		void MarkEventsOnTypeHierarchy (ref ReflectionPatternContext reflectionContext, TypeDefinition type, Func<EventDefinition, bool> filter, BindingFlags bindingFlags = BindingFlags.Default)
 		{
-			bool onBaseType = false;
-			while (type != null) {
-				foreach (var @event in type.Events) {
-					// Ignore private properties on a base type - those are completely ignored by reflection
-					// (anything private on the base type is not visible via the derived type)
-					// Note that properties themselves are not actually private, their accessors are
-					if (onBaseType &&
-						(@event.AddMethod == null || @event.AddMethod.IsPrivate) &&
-						(@event.RemoveMethod == null || @event.RemoveMethod.IsPrivate))
-						continue;
-
-					if (filter != null && !filter (@event))
-						continue;
-
-					if ((bindingFlags & (BindingFlags.Instance | BindingFlags.Static)) == BindingFlags.Static) {
-						if ((@event.AddMethod != null) && !@event.AddMethod.IsStatic) continue;
-						if ((@event.RemoveMethod != null) && !@event.RemoveMethod.IsStatic) continue;
-					}
-
-					if ((bindingFlags & (BindingFlags.Instance | BindingFlags.Static)) == BindingFlags.Instance) {
-						if ((@event.AddMethod != null) && @event.AddMethod.IsStatic) continue;
-						if ((@event.RemoveMethod != null) && @event.RemoveMethod.IsStatic) continue;
-					}
-
-					if ((bindingFlags & (BindingFlags.Public | BindingFlags.NonPublic)) == BindingFlags.Public) {
-						if ((@event.AddMethod == null || !@event.AddMethod.IsPublic)
-							&& (@event.RemoveMethod == null || !@event.RemoveMethod.IsPublic))
-							continue;
-					}
-
-					if ((bindingFlags & (BindingFlags.Public | BindingFlags.NonPublic)) == BindingFlags.NonPublic) {
-						if ((@event.AddMethod != null) && @event.AddMethod.IsPublic) continue;
-						if ((@event.RemoveMethod != null) && @event.RemoveMethod.IsPublic) continue;
-					}
-
-					var source = reflectionContext.Source;
-					reflectionContext.RecordRecognizedPattern (@event, () => {
-						// MarkEvent actually marks the add/remove/invoke methods as well, so no need to mark those explicitly
-						_markStep.MarkEvent (@event, new DependencyInfo (DependencyKind.AccessedViaReflection, source));
-						_markStep.MarkMethodsIf (@event.OtherMethods, m => true, new DependencyInfo (DependencyKind.AccessedViaReflection, source));
-					});
-				}
-
-				type = type.BaseType?.Resolve ();
-				onBaseType = true;
-			}
+			foreach (var @event in type.GetEventsOnTypeHierarchy (filter, bindingFlags))
+				MarkEvent (ref reflectionContext, type, @event);
 		}
 
 		string GetValueDescriptionForErrorMessage (ValueNode value)
