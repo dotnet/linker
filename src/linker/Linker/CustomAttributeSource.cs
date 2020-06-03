@@ -7,21 +7,19 @@ using Mono.Cecil;
 
 namespace Mono.Linker
 {
-	class CustomAttributeSource
+	public class CustomAttributeSource
 	{
-		readonly List<XmlCustomAttributeSource> _sources;
+		private Dictionary<ICustomAttributeProvider, IEnumerable<CustomAttribute>> _xmlCustomAttributes;
 
-		public CustomAttributeSource (LinkContext context)
+		public CustomAttributeSource ()
 		{
-			_sources = new List<XmlCustomAttributeSource> ();
-			if (context.AttributeDefinitions?.Count > 0) {
-				foreach (string a in context.AttributeDefinitions) {
-					XmlCustomAttributeSource xmlAnnotations = new XmlCustomAttributeSource (context);
-					xmlAnnotations.ParseXml (a);
-					_sources.Add (xmlAnnotations);
-				}
-			}
+			_xmlCustomAttributes = new Dictionary<ICustomAttributeProvider, IEnumerable<CustomAttribute>> ();
 		}
+
+		public void AddCustomAttributes (ICustomAttributeProvider provider, IEnumerable<CustomAttribute> customAttributes)
+		{
+			_xmlCustomAttributes[provider] = customAttributes;
+		} 
 
 		public IEnumerable<CustomAttribute> GetCustomAttributes (ICustomAttributeProvider provider)
 		{
@@ -30,13 +28,9 @@ namespace Mono.Linker
 					yield return customAttribute;
 			}
 
-			if (_sources.Count > 0) {
-				foreach (var source in _sources) {
-					if (source.HasCustomAttributes (provider)) {
-						foreach (var customAttribute in source.GetCustomAttributes (provider))
-							yield return customAttribute;
-					}
-				}
+			if (_xmlCustomAttributes.ContainsKey (provider)) {
+				foreach (var customAttribute in _xmlCustomAttributes.TryGetValue (provider, out var ann) ? ann : null)
+					yield return customAttribute;
 			}
 		}
 
@@ -45,12 +39,8 @@ namespace Mono.Linker
 			if (provider.HasCustomAttributes)
 				return true;
 
-			if (_sources.Count > 0) {
-				foreach (var source in _sources) {
-					if (source.HasCustomAttributes (provider)) {
-						return true;
-					}
-				}
+			if (_xmlCustomAttributes.ContainsKey (provider)) {
+				return true;
 			}
 
 			return false;

@@ -185,6 +185,7 @@ namespace Mono.Linker
 			var resolve_from_assembly_steps = new Stack<(string, ResolveFromAssemblyStep.RootVisibility)> ();
 			var resolve_from_xml_steps = new Stack<string> ();
 			var body_substituter_steps = new Stack<string> ();
+			var xml_custom_attribute_steps = new Stack<string> ();
 			var custom_steps = new Stack<string> ();
 			var set_optimizations = new List<(CodeOptimizations, string, bool)> ();
 			bool dumpDependencies = false;
@@ -413,7 +414,10 @@ namespace Mono.Linker
 							return -1;
 						}
 
-						if (!GetStringParam (token, l => context.AddAttributeDefinitionFile (l)))
+						if (!GetStringParam (token, l => {
+							foreach (string file in GetFiles (l))
+								xml_custom_attribute_steps.Push (file);
+						}))
 							return -1;
 
 						continue;
@@ -577,6 +581,9 @@ namespace Mono.Linker
 			foreach (var file in resolve_from_xml_steps)
 				AddResolveFromXmlStep (p, file);
 
+			foreach (var file in xml_custom_attribute_steps)
+				AddXmlCustomAttributesStep (p, file);
+
 			foreach (var (file, rootVisibility) in resolve_from_assembly_steps)
 				p.PrependStep (new ResolveFromAssemblyStep (file, rootVisibility));
 
@@ -707,6 +714,11 @@ namespace Mono.Linker
 		protected virtual void AddResolveFromXmlStep (Pipeline pipeline, string file)
 		{
 			pipeline.PrependStep (new ResolveFromXmlStep (new XPathDocument (file), file));
+		}
+
+		protected virtual void AddXmlCustomAttributesStep (Pipeline pipeline, string file)
+		{
+			pipeline.PrependStep (new XmlCustomAttributesStep (new XPathDocument (file), file));
 		}
 
 		void AddBodySubstituterStep (Pipeline pipeline, string file)

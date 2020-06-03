@@ -32,6 +32,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Xml.XPath;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Collections.Generic;
@@ -161,10 +162,7 @@ namespace Mono.Linker.Steps
 		public virtual void Process (LinkContext context)
 		{
 			_context = context;
-
-			CustomAttributeSource annotationSources = new CustomAttributeSource (_context);
-
-			_flowAnnotations = new FlowAnnotations (_context, annotationSources);
+			_flowAnnotations = new FlowAnnotations (_context);
 
 			Initialize ();
 			Process ();
