@@ -28,7 +28,7 @@ namespace ILLink.Tasks
 			foreach (var linkerXmlFile in LinkerXmlFiles) {
 				XDocument subFile = XDocument.Load (linkerXmlFile.ItemSpec);
 
-				foreach (var element in subFile.Root.Elements()) {
+				foreach (var element in subFile.Root.Elements ()) {
 					combined.Add (element);
 				}
 			}
