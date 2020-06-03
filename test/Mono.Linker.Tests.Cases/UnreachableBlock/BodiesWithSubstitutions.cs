@@ -63,7 +63,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 
 		// Methods with NoInlining won't be evaluated by the linker
 		[Kept]
-		static int NoInlining ()
+		static void NoInlining ()
 		{
 			if (NoInliningInner () != 1)
 				Reached_1 ();
