@@ -61,14 +61,17 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 			return 1;
 		}
 
-		// Methods with NoInlining set shouldn't be inlined by the linker
+		// Methods with NoInlining won't be evaluated by the linker
 		[Kept]
 		static int NoInlining ()
 		{
-			if (NoInliningInner () == 1)
-				return 0;
-			else
-				return 1;
+			if (NoInliningInner () != 1)
+				Reached_1 ();
+		}
+		
+		[Kept]
+		static void Reached_1 ()
+		{
 		}
 	}
 }
