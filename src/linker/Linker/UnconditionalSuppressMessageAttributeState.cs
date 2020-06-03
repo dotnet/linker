@@ -9,12 +9,13 @@ namespace Mono.Linker
 	{
 		private readonly LinkContext _context;
 		private readonly Dictionary<ICustomAttributeProvider, Dictionary<int, SuppressMessageInfo>> _localSuppressions;
-		private GlobalSuppressions _globalSuppressions;
+		private readonly GlobalSuppressions _globalSuppressions;
 
 		public UnconditionalSuppressMessageAttributeState (LinkContext context)
 		{
 			_context = context;
 			_localSuppressions = new Dictionary<ICustomAttributeProvider, Dictionary<int, SuppressMessageInfo>> ();
+			_globalSuppressions = new GlobalSuppressions ();
 		}
 
 		public void AddLocalSuppression (CustomAttribute ca, ICustomAttributeProvider provider)
@@ -51,10 +52,11 @@ namespace Mono.Linker
 				memberDefinition = memberDefinition.DeclaringType;
 			}
 
-			// Check if there's a module level suppression.
+			// Check if there's an assembly or module level suppression.
 			memberDefinition = warningOrigin.MemberDefinition;
 			if ((memberDefinition is TypeDefinition type && IsLocallySuppressed (id, type?.Module, out info)) ||
-					IsLocallySuppressed (id, memberDefinition.DeclaringType?.Module, out info))
+					IsLocallySuppressed (id, memberDefinition.DeclaringType?.Module, out info) ||
+					IsLocallySuppressed (id, memberDefinition.DeclaringType?.Module?.Assembly, out info))
 				return true;
 
 			return false;
@@ -114,85 +116,94 @@ namespace Mono.Linker
 
 		private bool IsGloballySuppressed (int id, ICustomAttributeProvider provider, out SuppressMessageInfo info)
 		{
-			DecodeGlobalSuppressMessageAttributes ();
+			DecodeGlobalSuppressMessageAttributes (provider);
 			return _globalSuppressions.HasGlobalSuppressions (id, provider, out info);
 		}
 
-		private void DecodeGlobalSuppressMessageAttributes ()
+		private void DecodeGlobalSuppressMessageAttributes (ICustomAttributeProvider provider)
 		{
-			if (_globalSuppressions == null) {
-				var suppressions = new GlobalSuppressions ();
-				foreach (var assembly in _context.Resolver.AssemblyCache.Values) {
-					DecodeGlobalSuppressMessageAttributes (assembly, suppressions);
-					foreach (var module in assembly.Modules)
-						DecodeGlobalSuppressMessageAttributes (module, suppressions);
-				}
+			ModuleDefinition module;
+			switch (provider.MetadataToken.TokenType) {
+			case TokenType.Module:
+				module = provider as ModuleDefinition;
+				break;
+			case TokenType.Assembly:
+				module = (provider as AssemblyDefinition).MainModule;
+				break;
+			case TokenType.TypeDef:
+				module = (provider as TypeDefinition).Module;
+				break;
+			case TokenType.Method:
+			case TokenType.Property:
+			case TokenType.Field:
+			case TokenType.Event:
+				module = (provider as IMemberDefinition).DeclaringType.Module;
+				break;
+			default:
+				_context.LogMessage (MessageContainer.CreateInfoMessage ("`UnconditionalSuppressMessage` attribute was placed in an language element which is currently not supported."));
+				return;
+			}
 
-				_globalSuppressions = suppressions;
+			Debug.Assert (module != null);
+			AssemblyDefinition assembly = module.Assembly;
+			if (!_globalSuppressions.InitializedAssemblies.Contains (assembly)) {
+				DecodeGlobalSuppressMessageAttributes (assembly);
+				_globalSuppressions.InitializedAssemblies.Add (assembly);
 			}
 		}
 
-		private void DecodeGlobalSuppressMessageAttributes (ICustomAttributeProvider provider, GlobalSuppressions globalSuppressions)
+		private void DecodeGlobalSuppressMessageAttributes (AssemblyDefinition assembly)
 		{
-			var attributes = provider.CustomAttributes.
-				Where (a => a.AttributeType.Name == "UnconditionalSuppressMessageAttribute" && a.AttributeType.Namespace == "System.Diagnostics.CodeAnalysis");
-			foreach (var instance in attributes) {
-				SuppressMessageInfo info;
-				if (!TryDecodeSuppressMessageAttributeData (instance, out info))
-					continue;
+			void LookForSuppressions (ICustomAttributeProvider provider) {
+				ModuleDefinition module = provider is ModuleDefinition ? provider as ModuleDefinition : (provider as AssemblyDefinition).MainModule; 
+				var attributes = provider.CustomAttributes.
+					Where (a => a.AttributeType.Name == "UnconditionalSuppressMessageAttribute" && a.AttributeType.Namespace == "System.Diagnostics.CodeAnalysis");
+				foreach (var instance in attributes) {
+					SuppressMessageInfo info;
+					if (!TryDecodeSuppressMessageAttributeData (instance, out info))
+						continue;
 
-				ModuleDefinition module = null;
-				switch (provider.MetadataToken.TokenType) {
-				case TokenType.Module:
-					module = provider as ModuleDefinition;
-					break;
-				case TokenType.Assembly:
-					module = (provider as AssemblyDefinition).MainModule;
-					break;
-				case TokenType.TypeDef:
-					module = (provider as TypeDefinition).Module;
-					break;
-				case TokenType.Method:
-				case TokenType.Property:
-				case TokenType.Field:
-				case TokenType.Event:
-					module = (provider as IMemberDefinition).DeclaringType.Module;
-					break;
-				default:
-					_context.LogMessage (MessageContainer.CreateInfoMessage ("`UnconditionalSuppressMessage` attribute was placed in an language element which is currently not supported."));
-					continue;
-				}
+					if (info.Target == null && (info.Scope == "module" || info.Scope == null)) {
+						AddLocalSuppression (instance, provider);
+						continue;
+					}
 
-				Debug.Assert (module != null);
-				if (info.Target == null && (info.Scope == "module" || info.Scope == null)) {
-					AddLocalSuppression (instance, module);
-					continue;
-				}
+					if (info.Target == null || info.Scope == null)
+						continue;
 
-				if (info.Target == null || info.Scope == null)
-					continue;
+					switch (info.Scope) {
+					case "type":
+					case "member":
+						foreach (var result in DocumentationSignatureParser.GetMembersForDocumentationSignature (info.Target, module))
+							_globalSuppressions.AddGlobalSuppression (result, info);
 
-				switch (info.Scope) {
-				case "type":
-				case "member":
-					foreach (var result in DocumentationSignatureParser.GetMembersForDocumentationSignature (info.Target, module))
-						globalSuppressions.AddGlobalSuppression (result, info);
-
-					break;
-				default:
-					_context.LogMessage (MessageContainer.CreateInfoMessage ($"Scope `{info.Scope}` used in `UnconditionalSuppressMessage` is currently not supported."));
-					break;
+						break;
+					default:
+						_context.LogMessage (MessageContainer.CreateInfoMessage ($"Scope `{info.Scope}` used in `UnconditionalSuppressMessage` is currently not supported."));
+						break;
+					}
 				}
 			}
+
+			LookForSuppressions (assembly);
+			foreach (var module in assembly.Modules)
+				LookForSuppressions (module);
 		}
 
 		private class GlobalSuppressions
 		{
-			private readonly Dictionary<ICustomAttributeProvider, Dictionary<int, SuppressMessageInfo>> _globalSuppressions = new Dictionary<ICustomAttributeProvider, Dictionary<int, SuppressMessageInfo>> ();
+			private readonly Dictionary<ICustomAttributeProvider, Dictionary<int, SuppressMessageInfo>> _globalSuppressions;
+			public HashSet<AssemblyDefinition> InitializedAssemblies { get; private set; }
+
+			public GlobalSuppressions ()
+			{
+				_globalSuppressions = new Dictionary<ICustomAttributeProvider, Dictionary<int, SuppressMessageInfo>> ();
+				InitializedAssemblies = new HashSet<AssemblyDefinition> ();
+			}
 
 			public bool HasGlobalSuppressions (int id, ICustomAttributeProvider provider, out SuppressMessageInfo info)
 			{
-				Dictionary<int, SuppressMessageInfo> suppressions = null;
+				Dictionary<int, SuppressMessageInfo> suppressions;
 				if (_globalSuppressions.TryGetValue (provider, out suppressions) && suppressions != null)
 					return suppressions.TryGetValue (id, out info);
 
