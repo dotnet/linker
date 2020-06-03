@@ -758,12 +758,12 @@ namespace Mono.Linker.Dataflow
 							if (methodParams[1].AsConstInt () != null)
 								bindingFlags |= (BindingFlags) methodParams[1].AsConstInt ();
 						}
-						int ctorParameterCount = parameters.Count switch
+						int? ctorParameterCount = parameters.Count switch
 						{
-							1 => (methodParams[1] as ArrayValue)?.Size.AsConstInt () ?? -1,
-							2 => (methodParams[3] as ArrayValue)?.Size.AsConstInt () ?? -1,
-							5 => (methodParams[4] as ArrayValue)?.Size.AsConstInt () ?? -1,
-							_ => -1,
+							1 => (methodParams[1] as ArrayValue)?.Size.AsConstInt (),
+							2 => (methodParams[3] as ArrayValue)?.Size.AsConstInt (),
+							5 => (methodParams[4] as ArrayValue)?.Size.AsConstInt (),
+							_ => null,
 						};
 
 						// Go over all types we've seen
