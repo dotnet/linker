@@ -45,7 +45,7 @@ namespace Mono.Linker.Steps
 
 				string attributeFullName = GetFullName (iterator.Current);
 				if (attributeFullName == String.Empty) {
-					Context.LogMessage (MessageContainer.CreateWarningMessage (Context, $"Attribute element does not contain attribute 'fullname'", 2029, _xmlDocumentLocation));
+					Context.LogWarning ($"Attribute element does not contain attribute 'fullname'", 2029, _xmlDocumentLocation);
 					continue;
 				}
 				string assemblyName = GetAttribute (iterator.Current, "assembly");
@@ -55,20 +55,20 @@ namespace Mono.Linker.Steps
 					try {
 						assembly = GetAssembly (Context, AssemblyNameReference.Parse (assemblyName));
 					} catch (Exception) {
-						Context.LogMessage (MessageContainer.CreateWarningMessage (Context, $"Could not resolve assembly '{assemblyName}' in attribute '{attributeFullName}' specified in the '{_xmlDocumentLocation}'", 2030, _xmlDocumentLocation));
+						Context.LogWarning ($"Could not resolve assembly '{assemblyName}' in attribute '{attributeFullName}' specified in the '{_xmlDocumentLocation}'", 2030, _xmlDocumentLocation);
 						continue;
 					}
 					attributeType = assembly.FindType (attributeFullName);
 				}
 				if (attributeType == null) {
-					Context.LogMessage (MessageContainer.CreateWarningMessage (Context, $"Attribute type '{attributeFullName}' could not be found", 2031, _xmlDocumentLocation));
+					Context.LogWarning ($"Attribute type '{attributeFullName}' could not be found", 2031, _xmlDocumentLocation);
 					continue;
 				}
 
 				ArrayBuilder<string> arguments = GetAttributeChildren (iterator.Current.SelectChildren ("argument", string.Empty));
 				MethodDefinition constructor = attributeType.Methods.Where (method => method.IsInstanceConstructor ()).FirstOrDefault (c => c.Parameters.Count == arguments.Count);
 				if (constructor == null) {
-					Context.LogMessage (MessageContainer.CreateWarningMessage (Context, $"Could not find a constructor for type '{attributeType}' that receives '{arguments.Count}' arguments as parameter", 2022, _xmlDocumentLocation));
+					Context.LogWarning ($"Could not find a constructor for type '{attributeType}' that receives '{arguments.Count}' arguments as parameter", 2022, _xmlDocumentLocation);
 					continue;
 				}
 				string[] xmlArguments = arguments.ToArray ();
@@ -86,7 +86,7 @@ namespace Mono.Linker.Steps
 							}
 						}
 						if (argumentValue == null) {
-							Context.LogMessage (MessageContainer.CreateWarningMessage (Context, $"Could not parse argument '{xmlArguments[i]}' specified in '{_xmlDocumentLocation}' as a {constructor.Parameters[i].ParameterType.FullName}", 2021, _xmlDocumentLocation));
+							Context.LogWarning ($"Could not parse argument '{xmlArguments[i]}' specified in '{_xmlDocumentLocation}' as a {constructor.Parameters[i].ParameterType.FullName}", 2021, _xmlDocumentLocation);
 							recognizedArgument = false;
 						}
 					} else {
@@ -99,11 +99,11 @@ namespace Mono.Linker.Steps
 							if (int.TryParse (xmlArguments[i], out result))
 								argumentValue = result;
 							else {
-								Context.LogMessage (MessageContainer.CreateWarningMessage (Context, $"Argument '{xmlArguments[i]}' specified in '{_xmlDocumentLocation}' could not be transformed to the constructor parameter type", 2032, _xmlDocumentLocation));
+								Context.LogWarning ($"Argument '{xmlArguments[i]}' specified in '{_xmlDocumentLocation}' could not be transformed to the constructor parameter type", 2032, _xmlDocumentLocation);
 							}
 							break;
 						default:
-							Context.LogMessage (MessageContainer.CreateWarningMessage (Context, $"Argument '{xmlArguments[i]}' specified in '{_xmlDocumentLocation}' is of unsupported type '{constructor.Parameters[i].ParameterType}'", 2020, _xmlDocumentLocation));
+							Context.LogWarning ($"Argument '{xmlArguments[i]}' specified in '{_xmlDocumentLocation}' is of unsupported type '{constructor.Parameters[i].ParameterType}'", 2020, _xmlDocumentLocation);
 							recognizedArgument = false;
 							break;
 						}
@@ -156,7 +156,7 @@ namespace Mono.Linker.Steps
 					AssemblyDefinition assembly = GetAssembly (context, GetAssemblyName (iterator.Current));
 
 					if (assembly == null) {
-						Context.LogMessage (MessageContainer.CreateWarningMessage (Context, $"Could not resolve assembly {GetAssemblyName (iterator.Current).Name} specified in {_xmlDocumentLocation}", 2007, _xmlDocumentLocation));
+						Context.LogWarning ($"Could not resolve assembly {GetAssemblyName (iterator.Current).Name} specified in {_xmlDocumentLocation}", 2007, _xmlDocumentLocation);
 						continue;
 					}
 					IEnumerable<CustomAttribute> attributes = ProcessAttributes (iterator.Current);
@@ -199,7 +199,7 @@ namespace Mono.Linker.Steps
 
 				if (type == null) {
 					if (!searchOnAllAssemblies)
-						Context.LogMessage (MessageContainer.CreateWarningMessage (Context, $"Could not resolve type '{fullname}' specified in {_xmlDocumentLocation}", 2008, _xmlDocumentLocation));
+						Context.LogWarning ($"Could not resolve type '{fullname}' specified in {_xmlDocumentLocation}", 2008, _xmlDocumentLocation);
 					continue;
 				}
 
@@ -353,7 +353,7 @@ namespace Mono.Linker.Steps
 		{
 			FieldDefinition field = GetField (type, signature);
 			if (field == null) {
-				Context.LogMessage (MessageContainer.CreateWarningMessage (Context, $"Could not find field '{signature}' in type '{type.FullName}' specified in { _xmlDocumentLocation}", 2016, _xmlDocumentLocation));
+				Context.LogWarning ($"Could not find field '{signature}' in type '{type.FullName}' specified in { _xmlDocumentLocation}", 2016, _xmlDocumentLocation);
 				return;
 			}
 			IEnumerable<CustomAttribute> attributes = ProcessAttributes (iterator.Current);
@@ -391,7 +391,7 @@ namespace Mono.Linker.Steps
 		{
 			MethodDefinition method = GetMethod (type, signature);
 			if (method == null) {
-				Context.LogMessage (MessageContainer.CreateWarningMessage (Context, $"Could not find method '{signature}' in type '{type.FullName}' specified in '{_xmlDocumentLocation}'", 2009, _xmlDocumentLocation));
+				Context.LogWarning ($"Could not find method '{signature}' in type '{type.FullName}' specified in '{_xmlDocumentLocation}'", 2009, _xmlDocumentLocation);
 				return;
 			}
 			ProcessMethod (method, iterator);
@@ -416,7 +416,7 @@ namespace Mono.Linker.Steps
 					foreach (ParameterDefinition parameter in method.Parameters) {
 						if (paramName == parameter.Name) {
 							if (Context.CustomAttributes.HasCustomAttributes (parameter))
-								Context.LogMessage (MessageContainer.CreateWarningMessage (Context, $"There are duplicate parameter names for '{paramName}' inside '{method.Name}' in '{_xmlDocumentLocation}'", 2024, _xmlDocumentLocation));
+								Context.LogWarning ($"There are duplicate parameter names for '{paramName}' inside '{method.Name}' in '{_xmlDocumentLocation}'", 2024, _xmlDocumentLocation);
 							Context.CustomAttributes.AddCustomAttributes (parameter, attributes);
 							break;
 						}
@@ -436,7 +436,7 @@ namespace Mono.Linker.Steps
 					if (attributes.Count () > 0)
 						Context.CustomAttributes.AddCustomAttributes (method.MethodReturnType, attributes);
 				} else {
-					Context.LogMessage (MessageContainer.CreateWarningMessage (Context, $"There is more than one return parameter specified for '{method.Name}' in '{_xmlDocumentLocation}'", 2023, _xmlDocumentLocation));
+					Context.LogWarning ($"There is more than one return parameter specified for '{method.Name}' in '{_xmlDocumentLocation}'", 2023, _xmlDocumentLocation);
 				}
 			}
 		}
@@ -519,7 +519,7 @@ namespace Mono.Linker.Steps
 		{
 			EventDefinition @event = GetEvent (type, signature);
 			if (@event == null) {
-				Context.LogMessage (MessageContainer.CreateWarningMessage (Context, $"Could not find event '{signature}' in type '{type.FullName}' specified in {_xmlDocumentLocation}", 2016, _xmlDocumentLocation));
+				Context.LogWarning ($"Could not find event '{signature}' in type '{type.FullName}' specified in {_xmlDocumentLocation}", 2016, _xmlDocumentLocation);
 				return;
 			}
 			IEnumerable<CustomAttribute> attributes = ProcessAttributes (iterator.Current);
@@ -600,12 +600,12 @@ namespace Mono.Linker.Steps
 
 			var value = GetAttribute (nav, "featurevalue");
 			if (string.IsNullOrEmpty (value)) {
-				Context.LogMessage (MessageContainer.CreateErrorMessage ($"Feature {feature} does not specify a \"featurevalue\" attribute", 1001));
+				Context.LogError ($"Feature {feature} does not specify a \"featurevalue\" attribute", 1001);
 				return false;
 			}
 
 			if (!bool.TryParse (value, out bool bValue)) {
-				Context.LogMessage (MessageContainer.CreateErrorMessage ($"Unsupported non-boolean feature definition {feature}", 1002));
+				Context.LogError ($"Unsupported non-boolean feature definition {feature}", 1002);
 				return false;
 			}
 
