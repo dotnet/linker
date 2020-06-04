@@ -65,7 +65,7 @@ namespace Mono.Linker
 
 		readonly AnnotationStore _annotations;
 		readonly CustomAttributeSource _customAttributes;
-		
+
 		public Pipeline Pipeline {
 			get { return _pipeline; }
 		}

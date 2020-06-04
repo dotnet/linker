@@ -19,7 +19,7 @@ namespace Mono.Linker
 		public void AddCustomAttributes (ICustomAttributeProvider provider, IEnumerable<CustomAttribute> customAttributes)
 		{
 			_xmlCustomAttributes[provider] = customAttributes;
-		} 
+		}
 
 		public IEnumerable<CustomAttribute> GetCustomAttributes (ICustomAttributeProvider provider)
 		{
