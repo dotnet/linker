@@ -24,10 +24,8 @@ namespace Mono.Linker.Steps
 			if (!Context.IsOptimizationEnabled (CodeOptimizations.ClearInitLocals, assembly))
 				return;
 
-			if (Annotations.GetAction (assembly) != AssemblyAction.Link) {
-				Context.LogMessage (MessageContainer.CreateErrorMessage ($"Clearinitlocals is not supported for copy assembly '{assembly.Name.Name}'.", 1014));
+			if (Annotations.GetAction (assembly) != AssemblyAction.Link)
 				return;
-			}
 
 			foreach (ModuleDefinition module in assembly.Modules) {
 				foreach (TypeDefinition type in EnumerateTypesAndNestedTypes (module.Types)) {

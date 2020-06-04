@@ -55,10 +55,6 @@ error and warning codes.
 
 - There was an error processing 'XML document location' xml file. The most likely reason for this is that the descriptor file has syntactical errors.
 
-#### `IL1014`: Clearinitlocals is not supported for copy assembly 'assembly'.
-
-- The clearinitlocals rewrites assemblies, and so only operates on 'link' assemblies. Either disable the optimization for this assembly, or change the assembly action to 'link'.
-
 ----
 ## Warning Codes
 
