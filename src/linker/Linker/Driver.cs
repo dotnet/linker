@@ -638,7 +638,6 @@ namespace Mono.Linker
 			//
 			// ResolveFromAssemblyStep [optional, possibly many]
 			// ResolveFromXmlStep [optional, possibly many]
-			// XmlCustomAttributesStep [optional, possibly many]
 			// [mono only] ResolveFromXApiStep [optional, possibly many]
 			// LoadReferencesStep
 			// [mono only] LoadI18nAssemblies
@@ -647,6 +646,7 @@ namespace Mono.Linker
 			//     ResolveFromXmlStep [optional, possibly many]
 			//     BodySubstituterStep [optional, possibly many]
 			//     XmlCustomAttributesStep [optional, possibly many]
+			// XmlCustomAttributesStep [optional, possibly many]
 			// PreserveDependencyLookupStep
 			// [mono only] PreselveCalendarsStep [optional]
 			// TypeMapStep
@@ -725,7 +725,7 @@ namespace Mono.Linker
 
 		protected virtual void AddXmlCustomAttributesStep (Pipeline pipeline, string file)
 		{
-			pipeline.PrependStep (new XmlCustomAttributesStep (new XPathDocument (file), file));
+			pipeline.AddStepAfter (typeof (BlacklistStep), new XmlCustomAttributesStep (new XPathDocument (file), file));
 		}
 
 		void AddBodySubstituterStep (Pipeline pipeline, string file)
