@@ -417,7 +417,7 @@ namespace Mono.Linker
 					foreach (ParameterDefinition parameter in method.Parameters) {
 						if (paramName == parameter.Name) {
 							if (_attributes.ContainsKey (parameter))
-								_context.LogWarning ($"There are duplicate parameter names for '{paramName}' inside '{method.Name}' in '{_xmlDocumentLocation}'", 2024, _xmlDocumentLocation);
+								_context.LogWarning ($"There are duplicate parameter names for '{paramName}' inside '{method.GetName ()}' in '{_xmlDocumentLocation}'", 2024, _xmlDocumentLocation);
 							_attributes[parameter] = attributes;
 							break;
 						}
@@ -437,7 +437,7 @@ namespace Mono.Linker
 					if (attributes.Count () > 0)
 						_attributes[method.MethodReturnType] = attributes;
 				} else {
-					_context.LogWarning ($"There is more than one return parameter specified for '{method.Name}' in '{_xmlDocumentLocation}'", 2023, _xmlDocumentLocation);
+					_context.LogWarning ($"There is more than one return parameter specified for '{method.GetName ()}' in '{_xmlDocumentLocation}'", 2023, _xmlDocumentLocation);
 				}
 			}
 		}
