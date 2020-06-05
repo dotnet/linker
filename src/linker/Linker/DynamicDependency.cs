@@ -75,9 +75,7 @@ namespace Mono.Linker
 			if (dynamicDependency != null)
 				return dynamicDependency;
 
-			context.LogMessage (MessageContainer.CreateWarningMessage (context,
-				$"Invalid DynamicDependencyAttribute on '{member}'",
-				2030, MessageOrigin.TryGetOrigin (member)));
+			context.LogWarning ($"Invalid DynamicDependencyAttribute on '{member}'", 2030, MessageOrigin.TryGetOrigin (member));
 			return null;
 		}
 
