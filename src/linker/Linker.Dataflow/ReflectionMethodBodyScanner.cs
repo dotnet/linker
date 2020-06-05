@@ -883,6 +883,7 @@ namespace Mono.Linker.Dataflow
 								transformedResult = MergePointValue.MergeValues (transformedResult, annotatedString);
 							} else {
 								transformedResult = null;
+								break;
 							}
 						}
 
