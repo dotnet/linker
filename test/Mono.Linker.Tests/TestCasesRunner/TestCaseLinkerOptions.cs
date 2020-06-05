@@ -12,6 +12,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 		public string Il8n;
 		public bool IgnoreDescriptors;
 		public bool IgnoreSubstitutions;
+		public bool IgnoreAttributes;
 		public string KeepTypeForwarderOnlyAssemblies;
 		public string KeepDebugMembers;
 		public string LinkSymbols;

@@ -72,6 +72,12 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			Append (value ? "true" : "false");
 		}
 
+		public virtual void IgnoreAttributes (bool value)
+		{
+			Append ("--ignore-attributes");
+			Append (value ? "true" : "false");
+		}
+
 		public virtual void AddIl8n (string value)
 		{
 			Append ("-l");
@@ -184,6 +190,8 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			IgnoreDescriptors (options.IgnoreDescriptors);
 
 			IgnoreSubstitutions (options.IgnoreSubstitutions);
+
+			IgnoreAttributes (options.IgnoreAttributes);
 
 #if !NETCOREAPP
 			if (!string.IsNullOrEmpty (options.Il8n))

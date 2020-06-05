@@ -132,7 +132,7 @@ Much of the linker behaviour is controlled by the custom attributes but they are
 present in the input assemblies. The attributes can be applied to any existing metadata using
 `--attribute-defs FILE` option.
 
-Alternatively, the linker recognizes the embedded XML resource 'ILLink.Annotations.xml' as a
+Alternatively, the linker recognizes the embedded XML resource 'ILLink.Attributes.xml' as a
 special resource to alter the custom attributes applied.
 
 ### Ignoring embedded XML control files
@@ -145,7 +145,7 @@ control options listed below.
 |---|---|---|
 | Descriptor  | assemblyname.xml  |   --ignore-descriptors |
 | Substition  | ILLink.Substitution.xml  |  --ignore-substitutions |
-| Annotations | ILLink.Annotations.xml   |  --ignore-annotations |
+| Attributes  | ILLink.Attributes.xml    |  --ignore-attributes |
 
 
 ## monolinker specific options

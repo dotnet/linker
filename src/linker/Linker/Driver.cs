@@ -336,8 +336,8 @@ namespace Mono.Linker
 
 						continue;
 
-					case "--ignore-annotations":
-						if (!GetBoolParam (token, l => context.IgnoreAnnotations = l))
+					case "--ignore-attributes":
+						if (!GetBoolParam (token, l => context.IgnoreAttributes = l))
 							return -1;
 
 						continue;
@@ -1052,6 +1052,7 @@ namespace Mono.Linker
 			Console.WriteLine ("  --strip-substitutions     Remove XML substitution resources for linked assemblies. Defaults to true");
 			Console.WriteLine ("  --used-attrs-only         Attribute usage is removed if the attribute type is not used. Defaults to false");
 			Console.WriteLine ("  --attribute-defs FILE     Supplementary custom attribute definitions for attributes controlling the linker behavior.");
+			Console.WriteLine ("  --ignore-attributes       Skips reading embedded attributes. Defaults to false");
 
 			Console.WriteLine ();
 			Console.WriteLine ("Analyzer");

@@ -8,22 +8,22 @@ using System.Text;
 namespace Mono.Linker.Tests.Cases.DataFlow
 {
 	[SkipKeptItemsValidation]
-	[SetupCompileResource ("Dependencies/EmbeddedAnnotations.xml", "ILLink.Annotations.xml")]
+	[SetupCompileResource ("Dependencies/EmbeddedAttributes.xml", "ILLink.Attributes.xml")]
 	[IgnoreSubstitutions (false)]
-	[RemovedResourceInAssembly ("test.exe", "ILLink.Annotations.xml")]
-	class EmbeddedAnnotations
+	[RemovedResourceInAssembly ("test.exe", "ILLink.Attributes.xml")]
+	class EmbeddedAttributes
 	{
 		public static void Main ()
 		{
-			var instance = new EmbeddedAnnotations ();
+			var instance = new EmbeddedAttributes ();
 
 			instance.ReadFromInstanceField ();
 		}
 
 		Type _typeWithDefaultConstructor;
 
-		[UnrecognizedReflectionAccessPattern (typeof (EmbeddedAnnotations), nameof (RequirePublicConstructors), new Type[] { typeof (Type) })]
-		[UnrecognizedReflectionAccessPattern (typeof (EmbeddedAnnotations), nameof (RequireNonPublicConstructors), new Type[] { typeof (Type) })]
+		[UnrecognizedReflectionAccessPattern (typeof (EmbeddedAttributes), nameof (RequirePublicConstructors), new Type[] { typeof (Type) })]
+		[UnrecognizedReflectionAccessPattern (typeof (EmbeddedAttributes), nameof (RequireNonPublicConstructors), new Type[] { typeof (Type) })]
 		[RecognizedReflectionAccessPattern]
 		private void ReadFromInstanceField ()
 		{

@@ -1,6 +1,6 @@
 ﻿<linker>
   <assembly fullname="test, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
-    <type fullname="Mono.Linker.Tests.Cases.DataFlow.EmbeddedAnnotations">
+    <type fullname="Mono.Linker.Tests.Cases.DataFlow.EmbeddedAttributes">
       <field name="_typeWithDefaultConstructor">
         <attribute fullname="System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute">
           <argument>DefaultConstructor</argument>

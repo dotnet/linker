@@ -31,9 +31,6 @@ namespace Mono.Linker.Steps
 			if (string.IsNullOrEmpty (resourceName))
 				throw new ArgumentNullException (nameof (resourceName));
 
-			if (!string.IsNullOrEmpty (resourceName) && Context.IgnoreAnnotations)
-				return;
-
 			_resourceName = resourceName;
 			_resourceAssembly = resourceAssembly ?? throw new ArgumentNullException (nameof (resourceAssembly));
 		}
@@ -137,6 +134,9 @@ namespace Mono.Linker.Steps
 
 			if (!string.IsNullOrEmpty (_resourceName) && Context.StripDescriptors)
 				Context.Annotations.AddResourceToRemove (_resourceAssembly, _resourceName);
+
+			if (!string.IsNullOrEmpty (_resourceName) && Context.IgnoreAttributes)
+				return;
 
 			try {
 				ProcessAssemblies (Context, nav.SelectChildren ("assembly", string.Empty));
