@@ -26,12 +26,12 @@ namespace Mono.Linker
 			MemberDefinition = null;
 		}
 
-		public MessageOrigin (IMemberDefinition memberDefinition, int sourceLine = 0, int sourceColumn = 0)
+		public MessageOrigin (IMemberDefinition memberDefinition)
 		{
 			FileName = null;
 			MemberDefinition = memberDefinition;
-			SourceLine = sourceLine;
-			SourceColumn = sourceColumn;
+			SourceLine = 0;
+			SourceColumn = 0;
 		}
 
 		private MessageOrigin (string fileName, IMemberDefinition memberDefinition, int sourceLine = 0, int sourceColumn = 0)
