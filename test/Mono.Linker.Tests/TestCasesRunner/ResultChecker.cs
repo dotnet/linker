@@ -733,9 +733,6 @@ namespace Mono.Linker.Tests.TestCasesRunner
 							else
 								actualAccessOperation = GetFullMemberNameFromDefinition (pattern.AccessedItem);
 
-							if (actualAccessOperation.Contains ("CreateInstance<"))
-								Debug.WriteLine ("");
-
 							if (actualAccessOperation != expectedReflectionMember)
 								return false;
 

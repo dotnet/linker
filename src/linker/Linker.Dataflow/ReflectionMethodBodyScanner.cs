@@ -249,7 +249,8 @@ namespace Mono.Linker.Dataflow
 			RuntimeReflectionExtensions_GetRuntimeField,
 			RuntimeReflectionExtensions_GetRuntimeMethod,
 			RuntimeReflectionExtensions_GetRuntimeProperty,
-			RuntimeHelpers_RunClassConstructor
+			RuntimeHelpers_RunClassConstructor,
+			MethodInfo_MakeGenericMethod,
 		}
 
 		static IntrinsicId GetIntrinsicIdForMethod (MethodDefinition calledMethod)
@@ -477,6 +478,12 @@ namespace Mono.Linker.Dataflow
 					&& calledMethod.HasParameterOfType (0, "System", "RuntimeTypeHandle")
 					=> IntrinsicId.RuntimeHelpers_RunClassConstructor,
 
+				// System.Reflection.MethodInfo.MakeGenericMethod (Type[] typeArguments)
+				"MakeGenericMethod" when calledMethod.IsDeclaredOnType ("System.Reflection", "MethodInfo")
+					&& calledMethod.HasThis
+					&& calledMethod.Parameters.Count == 1
+					=> IntrinsicId.MethodInfo_MakeGenericMethod,
+
 				_ => IntrinsicId.None,
 			};
 		}
@@ -544,7 +551,28 @@ namespace Mono.Linker.Dataflow
 					break;
 
 				case IntrinsicId.Type_MakeGenericType: {
-						// Don't care about the actual arguments, but we don't want to lose track of the type
+						reflectionContext.AnalyzingPattern ();
+						foreach (var value in methodParams[0].UniqueValues ()) {
+							if (value is SystemTypeValue typeValue) {
+								foreach (var genericParameter in typeValue.TypeRepresented.GenericParameters) {
+									if (_flowAnnotations.GetGenericParameterAnnotation (genericParameter) != DynamicallyAccessedMemberTypes.None) {
+										// There is a generic parameter which has some requirements on the input types.
+										// For now we don't support tracking actual array elements, so we can't validate that the requirements are fulfilled.
+										reflectionContext.RecordUnrecognizedPattern ($"Calling to 'System.Type.MakeGenericType' on type '{typeValue.TypeRepresented.FullName}' is not recognized due to presense of DynamicallyAccessedMembersAttribute on some of the generic parameters.");
+									}
+								}
+
+								// We haven't found any generic parameters with annotations, so there's nothing to validate.
+								reflectionContext.RecordHandledPattern ();
+							} else if (value == NullValue.Instance)
+								reflectionContext.RecordHandledPattern ();
+							else {
+								// We have no way to "include more" to fix this if we don't know, so we have to warn
+								reflectionContext.RecordUnrecognizedPattern ($"Calling to 'System.Type.MakeGenericType' on unrecognized value.");
+							}
+						}
+
+						// We don't want to lose track of the type
 						// in case this is e.g. Activator.CreateInstance(typeof(Foo<>).MakeGenericType(...));
 						methodReturnValue = methodParams[0];
 					}
@@ -1167,6 +1195,20 @@ namespace Mono.Linker.Dataflow
 					}
 					break;
 
+				//
+				// System.Reflection.MethodInfo
+				//
+				// MakeGenericMethod (Type[] typeArguments)
+				//
+				case IntrinsicId.MethodInfo_MakeGenericMethod: {
+						reflectionContext.AnalyzingPattern ();
+
+						// We don't track MethodInfo values, so we can't determine if the MakeGenericMethod is problematic or not.
+						// Since some of the generic parameters may have annotations, all calls are potentially dangerous.
+						reflectionContext.RecordUnrecognizedPattern ($"Call to 'System.Reflection.MethodInfo.MakeGenericMethod' is not recognized.");
+					}
+					break;
+
 				default:
 					if (requiresDataFlowAnalysis) {
 						reflectionContext.AnalyzingPattern ();
@@ -1328,19 +1370,19 @@ namespace Mono.Linker.Dataflow
 			foreach (var member in typeDefinition.GetDynamicallyAccessedMembers (requiredMemberKinds)) {
 				switch (member) {
 				case MethodDefinition method:
-					MarkMethod (ref reflectionContext, typeDefinition, method);
+					MarkMethod (ref reflectionContext, method);
 					break;
 				case FieldDefinition field:
-					MarkField (ref reflectionContext, typeDefinition, field);
+					MarkField (ref reflectionContext, field);
 					break;
 				case TypeDefinition nestedType:
-					MarkNestedType (ref reflectionContext, typeDefinition, nestedType);
+					MarkNestedType (ref reflectionContext, nestedType);
 					break;
 				case PropertyDefinition property:
-					MarkProperty (ref reflectionContext, typeDefinition, property);
+					MarkProperty (ref reflectionContext, property);
 					break;
 				case EventDefinition @event:
-					MarkEvent (ref reflectionContext, typeDefinition, @event);
+					MarkEvent (ref reflectionContext, @event);
 					break;
 				case null:
 					var source = reflectionContext.Source;
@@ -1350,25 +1392,25 @@ namespace Mono.Linker.Dataflow
 			}
 		}
 
-		void MarkMethod (ref ReflectionPatternContext reflectionContext, TypeDefinition typeDefinition, MethodDefinition method)
+		void MarkMethod (ref ReflectionPatternContext reflectionContext, MethodDefinition method)
 		{
 			var source = reflectionContext.Source;
 			reflectionContext.RecordRecognizedPattern (method, () => _markStep.MarkIndirectlyCalledMethod (method, new DependencyInfo (DependencyKind.AccessedViaReflection, source)));
 		}
 
-		void MarkNestedType (ref ReflectionPatternContext reflectionContext, TypeDefinition typeDefinition, TypeDefinition nestedType)
+		void MarkNestedType (ref ReflectionPatternContext reflectionContext, TypeDefinition nestedType)
 		{
 			var source = reflectionContext.Source;
 			reflectionContext.RecordRecognizedPattern (nestedType, () => _markStep.MarkType (nestedType, new DependencyInfo (DependencyKind.AccessedViaReflection, source)));
 		}
 
-		void MarkField (ref ReflectionPatternContext reflectionContext, TypeDefinition typeDefinition, FieldDefinition field)
+		void MarkField (ref ReflectionPatternContext reflectionContext, FieldDefinition field)
 		{
 			var source = reflectionContext.Source;
 			reflectionContext.RecordRecognizedPattern (field, () => _markStep.MarkField (field, new DependencyInfo (DependencyKind.AccessedViaReflection, source)));
 		}
 
-		void MarkProperty (ref ReflectionPatternContext reflectionContext, TypeDefinition typeDefinition, PropertyDefinition property)
+		void MarkProperty (ref ReflectionPatternContext reflectionContext, PropertyDefinition property)
 		{
 			var source = reflectionContext.Source;
 			var dependencyInfo = new DependencyInfo (DependencyKind.AccessedViaReflection, source);
@@ -1384,7 +1426,7 @@ namespace Mono.Linker.Dataflow
 			});
 		}
 
-		void MarkEvent (ref ReflectionPatternContext reflectionContext, TypeDefinition typeDefinition, EventDefinition @event)
+		void MarkEvent (ref ReflectionPatternContext reflectionContext, EventDefinition @event)
 		{
 			var dependencyInfo = new DependencyInfo (DependencyKind.AccessedViaReflection, reflectionContext.Source);
 			reflectionContext.RecordRecognizedPattern (@event, () => {
@@ -1397,19 +1439,19 @@ namespace Mono.Linker.Dataflow
 		void MarkConstructorsOnType (ref ReflectionPatternContext reflectionContext, TypeDefinition type, Func<MethodDefinition, bool> filter, BindingFlags? bindingFlags = null)
 		{
 			foreach (var ctor in type.GetConstructorsOnType (filter, bindingFlags))
-				MarkMethod (ref reflectionContext, type, ctor);
+				MarkMethod (ref reflectionContext, ctor);
 		}
 
 		void MarkMethodsOnTypeHierarchy (ref ReflectionPatternContext reflectionContext, TypeDefinition type, Func<MethodDefinition, bool> filter, BindingFlags? bindingFlags = null)
 		{
 			foreach (var method in type.GetMethodsOnTypeHierarchy (filter, bindingFlags))
-				MarkMethod (ref reflectionContext, type, method);
+				MarkMethod (ref reflectionContext, method);
 		}
 
 		void MarkFieldsOnTypeHierarchy (ref ReflectionPatternContext reflectionContext, TypeDefinition type, Func<FieldDefinition, bool> filter, BindingFlags bindingFlags = BindingFlags.Default)
 		{
 			foreach (var field in type.GetFieldsOnTypeHierarchy (filter, bindingFlags))
-				MarkField (ref reflectionContext, type, field);
+				MarkField (ref reflectionContext, field);
 		}
 
 		TypeDefinition[] MarkNestedTypesOnType (ref ReflectionPatternContext reflectionContext, TypeDefinition type, Func<TypeDefinition, bool> filter, BindingFlags bindingFlags = BindingFlags.Default)
@@ -1418,7 +1460,7 @@ namespace Mono.Linker.Dataflow
 
 			foreach (var nestedType in type.GetNestedTypesOnType (filter, bindingFlags)) {
 				result.Add (nestedType);
-				MarkNestedType (ref reflectionContext, type, nestedType);
+				MarkNestedType (ref reflectionContext, nestedType);
 			}
 
 			return result.ToArray ();
@@ -1427,13 +1469,13 @@ namespace Mono.Linker.Dataflow
 		void MarkPropertiesOnTypeHierarchy (ref ReflectionPatternContext reflectionContext, TypeDefinition type, Func<PropertyDefinition, bool> filter, BindingFlags bindingFlags = BindingFlags.Default)
 		{
 			foreach (var property in type.GetPropertiesOnTypeHierarchy (filter, bindingFlags))
-				MarkProperty (ref reflectionContext, type, property);
+				MarkProperty (ref reflectionContext, property);
 		}
 
 		void MarkEventsOnTypeHierarchy (ref ReflectionPatternContext reflectionContext, TypeDefinition type, Func<EventDefinition, bool> filter, BindingFlags bindingFlags = BindingFlags.Default)
 		{
 			foreach (var @event in type.GetEventsOnTypeHierarchy (filter, bindingFlags))
-				MarkEvent (ref reflectionContext, type, @event);
+				MarkEvent (ref reflectionContext, @event);
 		}
 
 		string GetValueDescriptionForErrorMessage (ValueNode value)

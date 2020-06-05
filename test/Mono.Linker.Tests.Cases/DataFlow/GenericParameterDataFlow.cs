@@ -5,6 +5,8 @@ using System.Security.Policy;
 using System.Text;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
+using BindingFlags = System.Reflection.BindingFlags;
+
 namespace Mono.Linker.Tests.Cases.DataFlow
 {
 	[SkipKeptItemsValidation]
@@ -22,6 +24,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TestSingleGenericParameterOnMethod ();
 			TestMultipleGenericParametersOnMethod ();
 			TestMethodGenericParametersViaInheritance ();
+
+			TestMakeGenericType ();
+			TestMakeGenericMethod ();
 		}
 
 		static void TestSingleGenericParameterOnType ()
@@ -627,6 +632,129 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		static void RequiresNothing (Type type)
+		{
+		}
+
+		static void TestMakeGenericType()
+		{
+			TestMakeGenericTypeNullType ();
+			TestMakeGenericTypeUnknownInput (null);
+			TestMakeGenericTypeNoArguments ();
+
+			TestMakeGenericWithRequirements ();
+			TestMakeGenericWithRequirementsFromParam (null);
+			TestMakeGenericWithRequirementsFromGenericParam<TestType> ();
+
+			TestMakeGenericWithNoRequirements ();
+			TestMakeGenericWithNoRequirementsFromParam (null);
+
+			TestMakeGenericWithMultipleArgumentsWithRequirements ();
+		}
+
+		// This is OK since we know it's null, so MakeGenericType is effectively a no-op (will throw)
+		// so no validation necessary.
+		[RecognizedReflectionAccessPattern]
+		static void TestMakeGenericTypeNullType ()
+		{
+			Type nullType = null;
+			nullType.MakeGenericType (typeof (TestType));
+		}
+
+		[UnrecognizedReflectionAccessPattern(typeof (Type), nameof (Type.MakeGenericType), new Type[] { typeof (Type[]) })]
+		static void TestMakeGenericTypeUnknownInput(Type inputType)
+		{
+			inputType.MakeGenericType (typeof (TestType));
+		}
+
+		[RecognizedReflectionAccessPattern]
+		static void TestMakeGenericTypeNoArguments()
+		{
+			typeof (TypeMakeGenericNoArguments).MakeGenericType ();
+		}
+
+		class TypeMakeGenericNoArguments
+		{
+		}
+
+		[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.MakeGenericType), new Type[] { typeof (Type[]) })]
+		static void TestMakeGenericWithRequirements()
+		{
+			// Currently this is not analyzable since we don't track array elements.
+			// Would be really nice to support this kind of code in the future though.
+			typeof (TypeMakeGenericWithPublicFieldsArgument<>).MakeGenericType (typeof (TestType));
+		}
+
+		[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.MakeGenericType), new Type[] { typeof (Type[]) })]
+		static void TestMakeGenericWithRequirementsFromParam(
+			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)] Type type)
+		{
+			typeof (TypeMakeGenericWithPublicFieldsArgument<>).MakeGenericType (type);
+		}
+
+		[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.MakeGenericType), new Type[] { typeof (Type[]) })]
+		static void TestMakeGenericWithRequirementsFromGenericParam<
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] T> ()
+		{
+			typeof (TypeMakeGenericWithPublicFieldsArgument<>).MakeGenericType (typeof (T));
+		}
+
+		class TypeMakeGenericWithPublicFieldsArgument<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)] T>
+		{
+		}
+
+		[RecognizedReflectionAccessPattern]
+		static void TestMakeGenericWithNoRequirements()
+		{
+			typeof (TypeMakeGenericWithNoRequirements<>).MakeGenericType (typeof (TestType));
+		}
+
+		[RecognizedReflectionAccessPattern]
+		static void TestMakeGenericWithNoRequirementsFromParam (Type type)
+		{
+			typeof (TypeMakeGenericWithNoRequirements<>).MakeGenericType (type);
+		}
+
+		class TypeMakeGenericWithNoRequirements<T>
+		{
+		}
+
+		[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.MakeGenericType), new Type[] { typeof (Type[]) })]
+		static void TestMakeGenericWithMultipleArgumentsWithRequirements ()
+		{
+			typeof (TypeMakeGenericWithMultipleArgumentsWithRequirements<,>).MakeGenericType (typeof (TestType), typeof (TestType));
+		}
+
+		class TypeMakeGenericWithMultipleArgumentsWithRequirements<
+			TOne,
+			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] TTwo>
+		{
+		}
+
+		static void TestMakeGenericMethod ()
+		{
+			TestMakeGenericMethodWithRequirements ();
+			TestMakeGenericMethodWithNoRequirements ();
+		}
+
+		[UnrecognizedReflectionAccessPattern(typeof (System.Reflection.MethodInfo), nameof (System.Reflection.MethodInfo.MakeGenericMethod), new Type[] { typeof (Type[]) })]
+		static void TestMakeGenericMethodWithRequirements()
+		{
+			typeof (GenericParameterDataFlow).GetMethod (nameof (MethodMakeGenericWithRequirements), BindingFlags.Static | BindingFlags.NonPublic)
+				.MakeGenericMethod (typeof (TestType));
+		}
+
+		static void MethodMakeGenericWithRequirements<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] T> ()
+		{
+		}
+
+		[UnrecognizedReflectionAccessPattern (typeof (System.Reflection.MethodInfo), nameof (System.Reflection.MethodInfo.MakeGenericMethod), new Type[] { typeof (Type[]) })]
+		static void TestMakeGenericMethodWithNoRequirements ()
+		{
+			typeof (GenericParameterDataFlow).GetMethod (nameof (MethodMakeGenericWithNoRequirements), BindingFlags.Static | BindingFlags.NonPublic)
+				.MakeGenericMethod (typeof (TestType));
+		}
+
+		static void MethodMakeGenericWithNoRequirements<T> ()
 		{
 		}
 
