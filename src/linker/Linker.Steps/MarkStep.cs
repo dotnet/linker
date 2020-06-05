@@ -580,11 +580,11 @@ namespace Mono.Linker.Steps
 			Debug.Assert (context is MethodDefinition || context is FieldDefinition);
 			var member = context as IMemberDefinition;
 			AssemblyDefinition assembly;
-			if (dynamicDependency.AssemblyName is string assemblyName) {
-				assembly = _context.GetLoadedAssembly (assemblyName);
+			if (dynamicDependency.AssemblyName != null) {
+				assembly = _context.GetLoadedAssembly (dynamicDependency.AssemblyName);
 				if (assembly == null) {
 					_context.LogMessage (MessageContainer.CreateWarningMessage (_context,
-						$"Unresolved assembly '{assemblyName}' in DynamicDependencyAttribute on '{context}'",
+						$"Unresolved assembly '{dynamicDependency.AssemblyName}' in DynamicDependencyAttribute on '{context}'",
 						2035, MessageOrigin.TryGetOrigin (member)));
 					return;
 				}

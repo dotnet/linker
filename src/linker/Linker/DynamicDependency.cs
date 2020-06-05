@@ -60,12 +60,16 @@ namespace Mono.Linker
 
 		public static DynamicDependency? ProcessAttribute (LinkContext context, ICustomAttributeProvider provider, CustomAttribute customAttribute)
 		{
-			if (!(provider is MethodDefinition || provider is FieldDefinition))
+			if (!(provider is IMemberDefinition member))
 				return null;
-			var member = provider as IMemberDefinition;
 
-			if (!ShouldProcess (context, customAttribute))
+			if (!(member is MethodDefinition || member is FieldDefinition))
 				return null;
+
+			// Don't honor the Condition until we have figured out the behavior for DynamicDependencyAttribute:
+			// https://github.com/mono/linker/issues/1231
+			// if (!ShouldProcess (context, customAttribute))
+			// 	return null;
 
 			var dynamicDependency = GetDynamicDependency (context, customAttribute);
 			if (dynamicDependency != null)

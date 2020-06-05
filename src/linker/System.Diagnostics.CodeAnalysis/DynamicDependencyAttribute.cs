@@ -6,7 +6,7 @@
 
 namespace System.Diagnostics.CodeAnalysis
 {
-	/// This is a n internal version of copy of the attribute in the framework at https://github.com/dotnet/runtime/blob/master/src/libraries/System.Private.CoreLib/src/System/Diagnostics/CodeAnalysis/DynamicDependencyAttribute.cs
+	/// This is an internal version of the attribute in the framework at https://github.com/dotnet/runtime/blob/master/src/libraries/System.Private.CoreLib/src/System/Diagnostics/CodeAnalysis/DynamicDependencyAttribute.cs
 	/// We currently only use the type as a generic parameter, so the implementation isn't copied.
 	internal sealed class DynamicDependencyAttribute : Attribute
 	{
