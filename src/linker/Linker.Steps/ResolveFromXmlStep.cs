@@ -29,7 +29,6 @@
 //
 
 using System;
-using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml.XPath;
@@ -38,16 +37,7 @@ using Mono.Cecil;
 
 namespace Mono.Linker.Steps
 {
-
-	public class XmlResolutionException : Exception
-	{
-		public XmlResolutionException (string message, Exception innerException)
-			: base (message, innerException)
-		{
-		}
-	}
-
-	public class ResolveFromXmlStep : ResolveStep
+	public class ResolveFromXmlStep : BaseStep
 	{
 
 		static readonly string _signature = "signature";
@@ -90,13 +80,16 @@ namespace Mono.Linker.Steps
 			if (!nav.MoveToChild ("linker", _ns))
 				return;
 
+			if (!string.IsNullOrEmpty (_resourceName) && Context.StripDescriptors)
+				Context.Annotations.AddResourceToRemove (_resourceAssembly, _resourceName);
+
+			if (!string.IsNullOrEmpty (_resourceName) && Context.IgnoreDescriptors)
+				return;
+
 			try {
 				ProcessAssemblies (Context, nav.SelectChildren ("assembly", _ns));
-
-				if (!string.IsNullOrEmpty (_resourceName) && Context.StripResources)
-					Context.Annotations.AddResourceToRemove (_resourceAssembly, _resourceName);
-			} catch (Exception ex) when (!(ex is XmlResolutionException)) {
-				throw new XmlResolutionException (string.Format ("Failed to process XML description: {0}", _xmlDocumentLocation), ex);
+			} catch (Exception ex) when (!(ex is LinkerFatalErrorException)) {
+				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage ($"Failed to process description file '{_xmlDocumentLocation}'", 1004), ex);
 			}
 		}
 
@@ -253,9 +246,8 @@ namespace Mono.Linker.Steps
 				return;
 
 			if (Annotations.IsMarked (type)) {
-				var existingLevel = Annotations.TryGetPreserve (type, out TypePreserve existingPreserve) ? existingPreserve : TypePreserve.Nothing;
 				var duplicateLevel = preserve != TypePreserve.Nothing ? preserve : nav.HasChildren ? TypePreserve.Nothing : TypePreserve.All;
-				Context.LogMessage ($"Duplicate preserve in {_xmlDocumentLocation} of {type.FullName} ({existingLevel}).  Duplicate uses ({duplicateLevel})");
+				Context.LogWarning ($"Duplicate preserve of '{type.FullName}' in '{_xmlDocumentLocation}'", 2025, _xmlDocumentLocation);
 			}
 
 			Annotations.Mark (type, new DependencyInfo (DependencyKind.XmlDescriptor, _xmlDocumentLocation));
@@ -353,7 +345,7 @@ namespace Mono.Linker.Steps
 		{
 			FieldDefinition field = GetField (type, signature);
 			if (field == null) {
-				AddUnresolveMarker (string.Format ("T: {0}; F: {1}", type, signature));
+				Context.LogWarning ($"Could not find field '{signature}' in type '{type.FullName}' specified in {_xmlDocumentLocation}", 2012, _xmlDocumentLocation);
 				return;
 			}
 
@@ -363,7 +355,7 @@ namespace Mono.Linker.Steps
 		void MarkField (TypeDefinition type, FieldDefinition field)
 		{
 			if (Annotations.IsMarked (field))
-				Context.LogMessage ($"Duplicate preserve in {_xmlDocumentLocation} of {field.FullName}");
+				Context.LogWarning ($"Duplicate preserve of '{field.FullName}' in '{_xmlDocumentLocation}'", 2025, _xmlDocumentLocation);
 
 			Context.Annotations.Mark (field, new DependencyInfo (DependencyKind.XmlDescriptor, _xmlDocumentLocation));
 		}
@@ -419,19 +411,19 @@ namespace Mono.Linker.Steps
 
 		void ProcessMethodSignature (TypeDefinition type, string signature, bool required)
 		{
-			MethodDefinition meth = GetMethod (type, signature);
-			if (meth == null) {
-				AddUnresolveMarker (string.Format ("T: {0}; M: {1}", type, signature));
+			MethodDefinition method = GetMethod (type, signature);
+			if (method == null) {
+				Context.LogWarning ($"Could not find method '{signature}' in type '{type.FullName}' specified in {_xmlDocumentLocation}", 2009, _xmlDocumentLocation);
 				return;
 			}
 
-			MarkMethod (type, meth, required);
+			MarkMethod (type, method, required);
 		}
 
 		void MarkMethod (TypeDefinition type, MethodDefinition method, bool required)
 		{
 			if (Annotations.IsMarked (method))
-				Context.LogMessage ($"Duplicate preserve in {_xmlDocumentLocation} of {method.FullName}");
+				Context.LogWarning ($"Duplicate preserve of '{method.FullName}' in '{_xmlDocumentLocation}'", 2025, _xmlDocumentLocation);
 
 			Annotations.Mark (method, new DependencyInfo (DependencyKind.XmlDescriptor, _xmlDocumentLocation));
 			Annotations.MarkIndirectlyCalledMethod (method);
@@ -519,7 +511,7 @@ namespace Mono.Linker.Steps
 		{
 			EventDefinition @event = GetEvent (type, signature);
 			if (@event == null) {
-				AddUnresolveMarker (string.Format ("T: {0}; E: {1}", type, signature));
+				Context.LogWarning ($"Could not find event '{signature}' in type '{type.FullName}' specified in {_xmlDocumentLocation}", 2016, _xmlDocumentLocation);
 				return;
 			}
 
@@ -529,7 +521,7 @@ namespace Mono.Linker.Steps
 		void MarkEvent (TypeDefinition type, EventDefinition @event, bool required)
 		{
 			if (Annotations.IsMarked (@event))
-				Context.LogMessage ($"Duplicate preserve in {_xmlDocumentLocation} of {@event.FullName}");
+				Context.LogWarning ($"Duplicate preserve of '{@event.FullName}' in '{_xmlDocumentLocation}'", 2025, _xmlDocumentLocation);
 
 			Annotations.Mark (@event, new DependencyInfo (DependencyKind.XmlDescriptor, _xmlDocumentLocation));
 
@@ -591,7 +583,7 @@ namespace Mono.Linker.Steps
 		{
 			PropertyDefinition property = GetProperty (type, signature);
 			if (property == null) {
-				AddUnresolveMarker (string.Format ("T: {0}; P: {1}", type, signature));
+				Context.LogWarning ($"Could not find property '{signature}' in type '{type.FullName}' specified in {_xmlDocumentLocation}", 2017, _xmlDocumentLocation);
 				return;
 			}
 
@@ -601,7 +593,7 @@ namespace Mono.Linker.Steps
 		void MarkProperty (TypeDefinition type, PropertyDefinition property, string[] accessors, bool required)
 		{
 			if (Annotations.IsMarked (property))
-				Context.LogMessage ($"Duplicate preserve in {_xmlDocumentLocation} of {property.FullName}");
+				Context.LogWarning ($"Duplicate preserve of '{property.FullName}' in '{_xmlDocumentLocation}'", 2025, _xmlDocumentLocation);
 
 			Annotations.Mark (property, new DependencyInfo (DependencyKind.XmlDescriptor, _xmlDocumentLocation));
 
@@ -619,12 +611,12 @@ namespace Mono.Linker.Steps
 			if (property.GetMethod != null && Array.IndexOf (accessors, "get") >= 0)
 				MarkMethod (type, property.GetMethod, required);
 			else if (property.GetMethod == null)
-				AddUnresolveMarker (string.Format ("T: {0}' M: {1} get_{2}", type, property.PropertyType, property.Name));
+				Context.LogWarning ($"Could not find the get accessor of property '{property.Name}' in type '{type.FullName}' specified in {_xmlDocumentLocation}", 2018, _xmlDocumentLocation);
 
 			if (property.SetMethod != null && Array.IndexOf (accessors, "set") >= 0)
 				MarkMethod (type, property.SetMethod, required);
 			else if (property.SetMethod == null)
-				AddUnresolveMarker (string.Format ("T: {0}' M: System.Void set_{2} ({1})", type, property.PropertyType, property.Name));
+				Context.LogWarning ($"Could not find the set accessor of property '{property.Name}' in type '{type.FullName}' specified in {_xmlDocumentLocation}", 2019, _xmlDocumentLocation);
 		}
 
 		void ProcessPropertyName (TypeDefinition type, string name, string[] accessors, bool required)

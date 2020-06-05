@@ -116,7 +116,13 @@ namespace Mono.Linker
 
 		public bool KeepDependencyAttributes { get; set; }
 
-		public bool StripResources { get; set; }
+		public bool IgnoreDescriptors { get; set; }
+
+		public bool IgnoreSubstitutions { get; set; }
+
+		public bool StripDescriptors { get; set; }
+
+		public bool StripSubstitutions { get; set; }
 
 		public Dictionary<string, bool> FeatureSettings { get; private set; }
 
@@ -156,6 +162,8 @@ namespace Mono.Linker
 		public MarkingHelpers MarkingHelpers { get; private set; }
 
 		public KnownMembers MarkedKnownMembers { get; private set; }
+
+		public UnconditionalSuppressMessageAttributeState Suppressions { get; set; }
 
 		public Tracer Tracer { get; private set; }
 
@@ -201,8 +209,10 @@ namespace Mono.Linker
 			Tracer = factory.CreateTracer (this);
 			ReflectionPatternRecorder = new LoggingReflectionPatternRecorder (this);
 			MarkedKnownMembers = new KnownMembers ();
-			StripResources = true;
+			StripDescriptors = true;
+			StripSubstitutions = true;
 			PInvokes = new List<PInvokeInfo> ();
+			Suppressions = new UnconditionalSuppressMessageAttributeState (this);
 
 			// See https://github.com/mono/linker/issues/612
 			const CodeOptimizations defaultOptimizations =
@@ -339,7 +349,7 @@ namespace Mono.Linker
 					if (definition != null)
 						references.Add (definition);
 				} catch (Exception e) {
-					throw new LoadException ($"Assembly '{assembly.FullName}' reference '{reference.FullName}' could not be resolved", e);
+					throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage ($"Assembly '{assembly.FullName}' reference '{reference.FullName}' could not be resolved", 1009), e);
 				}
 			}
 			return references;
@@ -456,21 +466,94 @@ namespace Mono.Linker
 			return Optimizations.IsEnabled (optimization, context);
 		}
 
-		public void LogMessage (string message)
-		{
-			LogMessage (MessageImportance.Normal, message);
-		}
-
-		public void LogMessage (MessageImportance importance, string message)
-		{
-			if (LogMessages && Logger != null)
-				Logger.LogMessage (importance, "{0}", message);
-		}
-
 		public void LogMessage (MessageContainer message)
 		{
-			if (LogMessages)
+			if (LogMessages && message != MessageContainer.Empty)
 				Logger?.LogMessage (message);
+		}
+
+		public void LogMessage (string message)
+		{
+			if (!LogMessages)
+				return;
+
+			LogMessage (MessageContainer.CreateInfoMessage (message));
+		}
+
+		public void LogDiagnostic (string message)
+		{
+			if (!LogMessages)
+				return;
+
+			LogMessage (MessageContainer.CreateDiagnosticMessage (message));
+		}
+
+
+		/// <summary>
+		/// Display a warning message to the end user.
+		/// </summary>
+		/// <param name="text">Humanly readable message describing the warning</param>
+		/// <param name="code">Unique warning ID. Please see https://github.com/mono/linker/blob/master/doc/error-codes.md for the list of warnings and possibly add a new one</param>
+		/// <param name="origin">Filename or member where the warning is coming from</param>
+		/// <param name="subcategory">Optionally, further categorize this warning</param>
+		public void LogWarning (string text, int code, MessageOrigin origin, string subcategory = MessageSubCategory.None)
+		{
+			if (!LogMessages)
+				return;
+
+			var warning = MessageContainer.CreateWarningMessage (this, text, code, origin, subcategory);
+			LogMessage (warning);
+		}
+
+		/// <summary>
+		/// Display a warning message to the end user.
+		/// </summary>
+		/// <param name="text">Humanly readable message describing the warning</param>
+		/// <param name="code">Unique warning ID. Please see https://github.com/mono/linker/blob/master/doc/error-codes.md for the list of warnings and possibly add a new one</param>
+		/// <param name="origin">Type or member where the warning is coming from</param>
+		/// <param name="subcategory">Optionally, further categorize this warning</param>
+		public void LogWarning (string text, int code, IMemberDefinition origin, string subcategory = MessageSubCategory.None)
+		{
+			MessageOrigin _origin = new MessageOrigin (origin);
+			LogWarning (text, code, _origin, subcategory);
+		}
+
+		/// <summary>
+		/// Display a warning message to the end user.
+		/// </summary>
+		/// <param name="text">Humanly readable message describing the warning</param>
+		/// <param name="code">Unique warning ID. Please see https://github.com/mono/linker/blob/master/doc/error-codes.md for the list of warnings and possibly add a new one</param>
+		/// <param name="origin">Filename where the warning is coming from</param>
+		/// <param name="subcategory">Optionally, further categorize this warning</param>
+		public void LogWarning (string text, int code, string origin, string subcategory = MessageSubCategory.None)
+		{
+			MessageOrigin _origin = new MessageOrigin (origin);
+			LogWarning (text, code, _origin, subcategory);
+		}
+
+		/// <summary>
+		/// Display an error message to the end user.
+		/// </summary>
+		/// <param name="text">Humanly readable message describing the error</param>
+		/// <param name="code">Unique error ID. Please see https://github.com/mono/linker/blob/master/doc/error-codes.md for the list of errors and possibly add a new one</param>
+		/// <param name="subcategory">Optionally, further categorize this error</param>
+		/// <param name="origin">Filename, line, and column where the error was found</param>
+		/// <returns>New MessageContainer of 'Error' category</returns>
+		public void LogError (string text, int code, string subcategory = MessageSubCategory.None, MessageOrigin? origin = null)
+		{
+			if (!LogMessages)
+				return;
+
+			var error = MessageContainer.CreateErrorMessage (text, code, subcategory, origin);
+			LogMessage (error);
+		}
+
+		public bool IsWarningSuppressed (int warningCode, MessageOrigin origin)
+		{
+			if (Suppressions == null)
+				return false;
+
+			return Suppressions.IsSuppressed (warningCode, origin, out _);
 		}
 	}
 

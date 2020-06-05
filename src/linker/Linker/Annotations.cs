@@ -29,6 +29,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
@@ -54,8 +55,7 @@ namespace Mono.Linker
 		protected readonly Dictionary<MethodDefinition, List<OverrideInformation>> override_methods = new Dictionary<MethodDefinition, List<OverrideInformation>> ();
 		protected readonly Dictionary<MethodDefinition, List<MethodDefinition>> base_methods = new Dictionary<MethodDefinition, List<MethodDefinition>> ();
 		protected readonly Dictionary<AssemblyDefinition, ISymbolReader> symbol_readers = new Dictionary<AssemblyDefinition, ISymbolReader> ();
-		protected readonly Dictionary<TypeDefinition, List<TypeDefinition>> class_type_base_hierarchy = new Dictionary<TypeDefinition, List<TypeDefinition>> ();
-		protected readonly Dictionary<TypeDefinition, List<TypeDefinition>> derived_interfaces = new Dictionary<TypeDefinition, List<TypeDefinition>> ();
+		readonly Dictionary<MethodDefinition, LinkerAttributesInformation> method_linker_attributes = new Dictionary<MethodDefinition, LinkerAttributesInformation> ();
 
 		readonly Dictionary<object, Dictionary<IMetadataTokenProvider, object>> custom_annotations = new Dictionary<object, Dictionary<IMetadataTokenProvider, object>> ();
 		protected readonly Dictionary<AssemblyDefinition, HashSet<string>> resources_to_remove = new Dictionary<AssemblyDefinition, HashSet<string>> ();
@@ -429,42 +429,36 @@ namespace Mono.Linker
 			return marked_types_with_cctor.Add (type);
 		}
 
-		public void SetClassHierarchy (TypeDefinition type, List<TypeDefinition> bases)
+		public bool HasLinkerAttribute<T> (MethodDefinition method) where T : Attribute
 		{
-			class_type_base_hierarchy[type] = bases;
+			if (!method_linker_attributes.TryGetValue (method, out var linkerAttributeInformation)) {
+				linkerAttributeInformation = new LinkerAttributesInformation (context, method);
+				method_linker_attributes.Add (method, linkerAttributeInformation);
+			}
+
+			return linkerAttributeInformation.HasAttribute<T> ();
 		}
 
-		public List<TypeDefinition> GetClassHierarchy (TypeDefinition type)
+		public IEnumerable<T> GetLinkerAttributes<T> (MethodDefinition method) where T : Attribute
 		{
-			if (class_type_base_hierarchy.TryGetValue (type, out List<TypeDefinition> bases))
-				return bases;
+			if (!method_linker_attributes.TryGetValue (method, out var linkerAttributeInformation)) {
+				linkerAttributeInformation = new LinkerAttributesInformation (context, method);
+				method_linker_attributes.Add (method, linkerAttributeInformation);
+			}
 
-			return null;
+			return linkerAttributeInformation.GetAttributes<T> ();
 		}
 
-		public void AddDerivedInterfaceForInterface (TypeDefinition @base, TypeDefinition derived)
+		public bool TryGetLinkerAttribute<T> (MethodDefinition method, out T attribute) where T : Attribute
 		{
-			if (!@base.IsInterface)
-				throw new ArgumentException ($"{nameof (@base)} must be an interface");
+			var attributes = GetLinkerAttributes<T> (method);
+			if (attributes.Count () > 1) {
+				context.LogWarning ($"Attribute '{typeof (T).FullName}' should only be used once on '{method}'.",
+					2027, MessageOrigin.TryGetOrigin (method, 0));
+			}
 
-			if (!derived.IsInterface)
-				throw new ArgumentException ($"{nameof (derived)} must be an interface");
-
-			if (!derived_interfaces.TryGetValue (@base, out List<TypeDefinition> derivedInterfaces))
-				derived_interfaces[@base] = derivedInterfaces = new List<TypeDefinition> ();
-
-			derivedInterfaces.Add (derived);
-		}
-
-		public List<TypeDefinition> GetDerivedInterfacesForInterface (TypeDefinition @interface)
-		{
-			if (!@interface.IsInterface)
-				throw new ArgumentException ($"{nameof (@interface)} must be an interface");
-
-			if (derived_interfaces.TryGetValue (@interface, out List<TypeDefinition> derivedInterfaces))
-				return derivedInterfaces;
-
-			return null;
+			attribute = attributes.FirstOrDefault ();
+			return attribute != null;
 		}
 	}
 }

@@ -139,6 +139,13 @@ namespace ILLink.Tasks
 		public string ClearInitLocalsAssemblies { get; set; }
 
 		/// <summary>
+		///   Custom data key-value pairs to pass to the linker.
+		///   The name of the item is the key, and the required "Value"
+		///   metadata is the value. Maps to '--custom-data key=value'.
+		/// </summary>
+		public ITaskItem[] CustomData { get; set; }
+
+		/// <summary>
 		///   Extra arguments to pass to illink, delimited by spaces.
 		/// </summary>
 		public string ExtraArgs { get; set; }
@@ -328,11 +335,18 @@ namespace ILLink.Tasks
 			if (_sealer is bool sealer)
 				SetOpt (args, "sealer", sealer);
 
-			if (clearInitLocals) {
-				args.AppendLine ("--enable-opt clearinitlocals");
-				if (ClearInitLocalsAssemblies?.Length > 0) {
-					args.AppendFormat ($"--custom-data ClearInitLocalsAssemblies={ClearInitLocalsAssemblies} ");
+			if (CustomData != null) {
+				foreach (var customData in CustomData) {
+					var key = customData.ItemSpec;
+					var value = customData.GetMetadata ("Value");
+					if (String.IsNullOrEmpty (value))
+						throw new ArgumentException ("custom data requires \"Value\" metadata");
+					args.Append ("--custom-data ").Append (" ").Append (key).Append ("=").AppendLine (Quote (value));
 				}
+			}
+
+			if (clearInitLocals && ClearInitLocalsAssemblies?.Length > 0) {
+				args.AppendFormat ($"--custom-data ClearInitLocalsAssemblies={ClearInitLocalsAssemblies} ");
 			}
 
 			if (FeatureSettings != null) {

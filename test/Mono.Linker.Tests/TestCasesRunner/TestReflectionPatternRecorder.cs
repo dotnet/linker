@@ -6,10 +6,12 @@ namespace Mono.Linker.Tests.TestCasesRunner
 {
 	public class TestReflectionPatternRecorder : IReflectionPatternRecorder
 	{
+		public IReflectionPatternRecorder PreviousRecorder = null;
+
 		public struct ReflectionAccessPattern
 		{
-			public MethodDefinition SourceMethod;
-			public Instruction ReflectionMethodCall;
+			public IMemberDefinition Source;
+			public Instruction SourceInstruction;
 			public IMetadataTokenProvider AccessedItem;
 			public string Message;
 		}
@@ -17,20 +19,22 @@ namespace Mono.Linker.Tests.TestCasesRunner
 		public List<ReflectionAccessPattern> RecognizedPatterns = new List<ReflectionAccessPattern> ();
 		public List<ReflectionAccessPattern> UnrecognizedPatterns = new List<ReflectionAccessPattern> ();
 
-		public void RecognizedReflectionAccessPattern (MethodDefinition sourceMethod, Instruction reflectionMethodCall, IMetadataTokenProvider accessedItem)
+		public void RecognizedReflectionAccessPattern (IMemberDefinition source, Instruction sourceInstruction, IMetadataTokenProvider accessedItem)
 		{
+			PreviousRecorder?.RecognizedReflectionAccessPattern (source, sourceInstruction, accessedItem);
 			RecognizedPatterns.Add (new ReflectionAccessPattern {
-				SourceMethod = sourceMethod,
-				ReflectionMethodCall = reflectionMethodCall,
+				Source = source,
+				SourceInstruction = sourceInstruction,
 				AccessedItem = accessedItem
 			});
 		}
 
-		public void UnrecognizedReflectionAccessPattern (MethodDefinition sourceMethod, Instruction reflectionMethodCall, IMetadataTokenProvider accessedItem, string message)
+		public void UnrecognizedReflectionAccessPattern (IMemberDefinition source, Instruction sourceInstruction, IMetadataTokenProvider accessedItem, string message)
 		{
+			PreviousRecorder?.UnrecognizedReflectionAccessPattern (source, sourceInstruction, accessedItem, message);
 			UnrecognizedPatterns.Add (new ReflectionAccessPattern {
-				SourceMethod = sourceMethod,
-				ReflectionMethodCall = reflectionMethodCall,
+				Source = source,
+				SourceInstruction = sourceInstruction,
 				AccessedItem = accessedItem,
 				Message = message
 			});

@@ -31,14 +31,13 @@ namespace Mono.Linker.Steps
 
 		protected override void Process ()
 		{
-			try {
-				ReadSubstitutions (_document);
+			if (!string.IsNullOrEmpty (_resourceName) && Context.StripSubstitutions)
+				Context.Annotations.AddResourceToRemove (_resourceAssembly, _resourceName);
 
-				if (!string.IsNullOrEmpty (_resourceName) && Context.StripResources)
-					Context.Annotations.AddResourceToRemove (_resourceAssembly, _resourceName);
-			} catch (Exception ex) when (!(ex is XmlResolutionException)) {
-				throw new XmlResolutionException ($"Failed to process XML substitution: '{_xmlDocumentLocation}'", ex);
-			}
+			if (!string.IsNullOrEmpty (_resourceName) && Context.IgnoreSubstitutions)
+				return;
+
+			ReadSubstitutions (_document);
 		}
 
 		bool ShouldProcessSubstitutions (XPathNavigator nav)
@@ -49,12 +48,12 @@ namespace Mono.Linker.Steps
 
 			var value = GetAttribute (nav, "featurevalue");
 			if (string.IsNullOrEmpty (value)) {
-				Context.LogMessage (MessageContainer.CreateErrorMessage ($"Feature {feature} does not specify a \"featurevalue\" attribute", 1001));
+				Context.LogError ($"Failed to process XML substitution: '{_xmlDocumentLocation}'. Feature {feature} does not specify a 'featurevalue' attribute", 1001);
 				return false;
 			}
 
 			if (!bool.TryParse (value, out bool bValue)) {
-				Context.LogMessage (MessageContainer.CreateErrorMessage ($"Unsupported non-boolean feature definition {feature}", 1002));
+				Context.LogError ($"Failed to process XML substitution: '{_xmlDocumentLocation}'. Unsupported non-boolean feature definition {feature}", 1002);
 				return false;
 			}
 
@@ -89,7 +88,7 @@ namespace Mono.Linker.Steps
 				AssemblyDefinition assembly = Context.GetLoadedAssembly (name.Name);
 
 				if (assembly == null) {
-					Context.LogMessage (MessageImportance.Low, $"Could not match assembly '{name.FullName}' for substitution");
+					Context.LogWarning ($"Could not resolve assembly {GetAssemblyName (iterator.Current).Name} specified in {_xmlDocumentLocation}", 2007, _xmlDocumentLocation);
 					continue;
 				}
 
@@ -116,7 +115,7 @@ namespace Mono.Linker.Steps
 				TypeDefinition type = assembly.MainModule.GetType (fullname);
 
 				if (type == null) {
-					Context.LogMessage (MessageImportance.Low, $"Could not resolve type '{fullname}' for substitution");
+					Context.LogWarning ($"Could not resolve type '{fullname}' specified in {_xmlDocumentLocation}", 2008, _xmlDocumentLocation);
 					continue;
 				}
 
@@ -165,7 +164,7 @@ namespace Mono.Linker.Steps
 
 			MethodDefinition method = FindMethod (type, signature);
 			if (method == null) {
-				Context.LogMessage (MessageImportance.Normal, $"Could not find method '{signature}' for substitution");
+				Context.LogWarning ($"Could not find method '{signature}' in type '{type.FullName}' specified in {_xmlDocumentLocation}", 2009, _xmlDocumentLocation);
 				return;
 			}
 
@@ -178,7 +177,7 @@ namespace Mono.Linker.Steps
 				string value = GetAttribute (iterator.Current, "value");
 				if (value != "") {
 					if (!TryConvertValue (value, method.ReturnType, out object res)) {
-						Context.LogMessage (MessageImportance.High, $"Invalid value for '{signature}' stub");
+						Context.LogWarning ($"Invalid value for '{signature}' stub", 2010, _xmlDocumentLocation);
 						return;
 					}
 
@@ -188,7 +187,7 @@ namespace Mono.Linker.Steps
 				Annotations.SetAction (method, MethodAction.ConvertToStub);
 				return;
 			default:
-				Context.LogMessage (MessageImportance.High, $"Unknown body modification '{action}' for '{signature}'");
+				Context.LogWarning ($"Unknown body modification '{action}' for '{signature}'", 2011, _xmlDocumentLocation);
 				return;
 			}
 		}
@@ -201,22 +200,22 @@ namespace Mono.Linker.Steps
 
 			var field = type.Fields.FirstOrDefault (f => f.Name == name);
 			if (field == null) {
-				Context.LogMessage (MessageImportance.Normal, $"Could not find field '{name}' for substitution.");
+				Context.LogWarning ($"Could not find field '{name}' in type '{type.FullName}' specified in { _xmlDocumentLocation}", 2012, _xmlDocumentLocation);
 				return;
 			}
 
 			if (!field.IsStatic || field.IsLiteral) {
-				Context.LogMessage (MessageImportance.Normal, $"Substituted field '{name}' needs to be static field.");
+				Context.LogWarning ($"Substituted field '{name}' needs to be static field.", 2013, _xmlDocumentLocation);
 				return;
 			}
 
 			string value = GetAttribute (iterator.Current, "value");
 			if (string.IsNullOrEmpty (value)) {
-				Context.LogMessage (MessageImportance.High, $"Missing 'value' attribute for field '{field}'.");
+				Context.LogWarning ($"Missing 'value' attribute for field '{field}'.", 2014, _xmlDocumentLocation);
 				return;
 			}
 			if (!TryConvertValue (value, field.FieldType, out object res)) {
-				Context.LogMessage (MessageImportance.High, $"Invalid value for '{field}': '{value}'.");
+				Context.LogWarning ($"Invalid value for '{field}': '{value}'.", 2015, _xmlDocumentLocation);
 				return;
 			}
 
@@ -235,13 +234,13 @@ namespace Mono.Linker.Steps
 
 				string name = GetAttribute (nav, "name");
 				if (String.IsNullOrEmpty (name)) {
-					Context.LogMessage (MessageImportance.High, $"Invalid value for 'name' attribute: '{name}'.");
+					Context.LogWarning ($"Missing 'name' attribute for resource.", 2033, _xmlDocumentLocation);
 					return;
 				}
 
 				string action = GetAttribute (nav, "action");
-				if (!String.IsNullOrEmpty (name) && action != "remove") {
-					Context.LogMessage (MessageImportance.High, $"Invalid value for 'action' attribute: '{action}'.");
+				if (action != "remove") {
+					Context.LogWarning ($"Invalid 'action' attribute for resource '{name}'.", 2034, _xmlDocumentLocation);
 					return;
 				}
 

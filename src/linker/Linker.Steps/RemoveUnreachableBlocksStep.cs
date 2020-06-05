@@ -74,7 +74,7 @@ namespace Mono.Linker.Steps
 						continue;
 					}
 
-					if (method.IsIntrinsic ())
+					if (method.IsIntrinsic () || method.NoInlining)
 						continue;
 
 					if (constExprMethods.ContainsKey (method))
@@ -142,7 +142,7 @@ namespace Mono.Linker.Steps
 			if (!reducer.RewriteBody ())
 				return;
 
-			Context.LogMessage (MessageImportance.Low, $"Reduced '{reducer.InstructionsReplaced}' instructions in conditional branches for [{method.DeclaringType.Module.Assembly.Name}] method {method.FullName}");
+			Context.LogMessage ($"Reduced '{reducer.InstructionsReplaced}' instructions in conditional branches for [{method.DeclaringType.Module.Assembly.Name}] method {method.FullName}");
 
 			if (method.ReturnType.MetadataType == MetadataType.Void)
 				return;
@@ -307,7 +307,7 @@ namespace Mono.Linker.Steps
 
 				var bodySweeper = new BodySweeper (Body, reachableInstrs, unreachableEH, context);
 				if (!bodySweeper.Initialize ()) {
-					context.LogMessage (MessageImportance.Low, $"Unreachable IL reduction is not supported for method '{Body.Method.FullName}'");
+					context.LogMessage ($"Unreachable IL reduction is not supported for method '{Body.Method.FullName}'");
 					return false;
 				}
 
@@ -785,30 +785,6 @@ namespace Mono.Linker.Steps
 			public bool Initialize ()
 			{
 				var instrs = body.Instructions;
-
-				if (body.HasExceptionHandlers) {
-					foreach (var handler in body.ExceptionHandlers) {
-						if (unreachableExceptionHandlers?.Contains (handler) == true)
-							continue;
-
-						// Cecil TryEnd is off by 1 instruction
-						var handlerEnd = handler.TryEnd.Previous;
-
-						switch (handlerEnd.OpCode.Code) {
-						case Code.Leave:
-						case Code.Leave_S:
-							//
-							// Keep original leave to correctly mark handler exit
-							//
-							int index = instrs.IndexOf (handlerEnd);
-							reachable[index] = true;
-							break;
-						default:
-							Debug.Fail ("Exception handler without leave instruction");
-							return false;
-						}
-					}
-				}
 
 				//
 				// Reusing same reachable map and altering it at indexes which

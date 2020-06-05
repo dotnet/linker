@@ -175,6 +175,12 @@ namespace Mono.Linker.Tests.TestCases
 			Run (testCase);
 		}
 
+		[TestCaseSource (typeof (TestDatabase), nameof (TestDatabase.WarningSuppressionTests))]
+		public void WarningSuppressionTests (TestCase testCase)
+		{
+			Run (testCase);
+		}
+
 		[TestCaseSource (typeof (TestDatabase), nameof (TestDatabase.UnreachableBlockTests))]
 		public void UnreachableBlockTests (TestCase testCase)
 		{
@@ -208,6 +214,12 @@ namespace Mono.Linker.Tests.TestCases
 
 		[TestCaseSource (typeof (TestDatabase), nameof (TestDatabase.DataFlowTests))]
 		public void DataFlowTests (TestCase testCase)
+		{
+			Run (testCase);
+		}
+
+		[TestCaseSource (typeof (TestDatabase), nameof (TestDatabase.RequiresCapabilityTests))]
+		public void RequiresCapabilityTests (TestCase testCase)
 		{
 			Run (testCase);
 		}

@@ -3,8 +3,9 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.Substitutions
 {
-	[SetupCompileResource ("EmbeddedSubstitutions.xml", "ILLink.Substitutions.xml")]
-	[IncludeBlacklistStep (true)]
+	[SetupCompileResource ("Dependencies/EmbeddedSubstitutions.xml", "ILLink.Substitutions.xml")]
+	[IgnoreSubstitutions (false)]
+	[RemovedResourceInAssembly ("test.exe", "ILLink.Substitutions.xml")]
 	public class EmbeddedSubstitutions
 	{
 		public static void Main ()

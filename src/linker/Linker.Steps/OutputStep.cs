@@ -126,7 +126,7 @@ namespace Mono.Linker.Steps
 			try {
 				assembly.Write (outputName, writerParameters);
 			} catch (Exception e) {
-				throw new OutputException ($"Failed to write '{outputName}", e);
+				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage ($"Failed to write '{outputName}", 1011), e);
 			}
 		}
 
@@ -137,7 +137,7 @@ namespace Mono.Linker.Steps
 			CopyConfigFileIfNeeded (assembly, directory);
 
 			var action = Annotations.GetAction (assembly);
-			Context.LogMessage (MessageImportance.Low, $"Output action: {action,8} assembly: {assembly}");
+			Context.LogMessage ($"Output action: {action,8} assembly: {assembly}");
 
 			switch (action) {
 			case AssemblyAction.Save:

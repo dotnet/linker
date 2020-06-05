@@ -8,14 +8,16 @@ namespace Mono.Linker.Tests
 		[Test]
 		public void MSBuildFormat ()
 		{
-			var msg = MessageContainer.CreateErrorMessage ("text", 1000);
-			Assert.AreEqual ("illinker: error IL1000: text", msg.ToMSBuildString ());
+			LinkContext context = new LinkContext (new Pipeline ());
 
-			msg = MessageContainer.CreateWarningMessage ("message", 2001, origin: new MessageOrigin ("logtest", 1, 1));
+			var msg = MessageContainer.CreateErrorMessage ("text", 1000);
+			Assert.AreEqual ("ILlinker: error IL1000: text", msg.ToMSBuildString ());
+
+			msg = MessageContainer.CreateWarningMessage (context, "message", 2001, new MessageOrigin ("logtest", 1, 1));
 			Assert.AreEqual ("logtest(1,1): warning IL2001: message", msg.ToMSBuildString ());
 
 			msg = MessageContainer.CreateInfoMessage ("log test");
-			Assert.AreEqual ("illinker: log test", msg.ToMSBuildString ());
+			Assert.AreEqual ("ILlinker: log test", msg.ToMSBuildString ());
 		}
 	}
 }

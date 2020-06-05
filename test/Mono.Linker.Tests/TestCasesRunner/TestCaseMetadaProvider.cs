@@ -31,14 +31,16 @@ namespace Mono.Linker.Tests.TestCasesRunner
 		{
 			var tclo = new TestCaseLinkerOptions {
 				Il8n = GetOptionAttributeValue (nameof (Il8nAttribute), "none"),
-				IncludeBlacklistStep = GetOptionAttributeValue (nameof (IncludeBlacklistStepAttribute), false),
+				IgnoreDescriptors = GetOptionAttributeValue (nameof (IgnoreDescriptorsAttribute), true),
+				IgnoreSubstitutions = GetOptionAttributeValue (nameof (IgnoreSubstitutionsAttribute), true),
 				KeepTypeForwarderOnlyAssemblies = GetOptionAttributeValue (nameof (KeepTypeForwarderOnlyAssembliesAttribute), string.Empty),
 				KeepDebugMembers = GetOptionAttributeValue (nameof (SetupLinkerKeepDebugMembersAttribute), string.Empty),
 				LinkSymbols = GetOptionAttributeValue (nameof (SetupLinkerLinkSymbolsAttribute), string.Empty),
 				CoreAssembliesAction = GetOptionAttributeValue<string> (nameof (SetupLinkerCoreActionAttribute), null),
 				UserAssembliesAction = GetOptionAttributeValue<string> (nameof (SetupLinkerUserActionAttribute), null),
 				SkipUnresolved = GetOptionAttributeValue (nameof (SkipUnresolvedAttribute), false),
-				StripResources = GetOptionAttributeValue (nameof (StripResourcesAttribute), true),
+				StripDescriptors = GetOptionAttributeValue (nameof (StripDescriptorsAttribute), true),
+				StripSubstitutions = GetOptionAttributeValue (nameof (StripSubstitutionsAttribute), true),
 			};
 
 			foreach (var assemblyAction in _testCaseTypeDefinition.CustomAttributes.Where (attr => attr.AttributeType.Name == nameof (SetupLinkerActionAttribute))) {
@@ -75,7 +77,9 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			}
 
 			if (_testCaseTypeDefinition.CustomAttributes.Any (attr =>
-				attr.AttributeType.Name == nameof (LogContainsAttribute) || attr.AttributeType.Name == nameof (LogDoesNotContainAttribute))) {
+				attr.AttributeType.Name == nameof (LogContainsAttribute) || attr.AttributeType.Name == nameof (LogDoesNotContainAttribute)) ||
+				_testCaseTypeDefinition.AllMembers ().Any (method => method.CustomAttributes.Any (attr =>
+				attr.AttributeType.Name == nameof (LogContainsAttribute) || attr.AttributeType.Name == nameof (LogDoesNotContainAttribute)))) {
 				tclo.AdditionalArguments.Add (new KeyValuePair<string, string[]> ("--verbose", new string[] { }));
 			}
 
@@ -95,12 +99,14 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			if (ValidatesReflectionAccessPatterns (_testCaseTypeDefinition)) {
 				customizations.ReflectionPatternRecorder = new TestReflectionPatternRecorder ();
 				customizations.CustomizeContext += context => {
+					customizations.ReflectionPatternRecorder.PreviousRecorder = context.ReflectionPatternRecorder;
 					context.ReflectionPatternRecorder = customizations.ReflectionPatternRecorder;
+					context.LogMessages = true;
 				};
 			}
 		}
 
-		private bool ValidatesReflectionAccessPatterns (TypeDefinition testCaseTypeDefinition)
+		bool ValidatesReflectionAccessPatterns (TypeDefinition testCaseTypeDefinition)
 		{
 			if (testCaseTypeDefinition.HasNestedTypes) {
 				var nestedTypes = new Queue<TypeDefinition> (testCaseTypeDefinition.NestedTypes.ToList ());

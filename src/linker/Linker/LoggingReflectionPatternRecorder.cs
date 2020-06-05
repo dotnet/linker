@@ -37,14 +37,57 @@ namespace Mono.Linker
 			_context = context;
 		}
 
-		public void RecognizedReflectionAccessPattern (MethodDefinition sourceMethod, Instruction reflectionMethodCall, IMetadataTokenProvider accessedItem)
+		public void RecognizedReflectionAccessPattern (IMemberDefinition source, Instruction sourceInstruction, IMetadataTokenProvider accessedItem)
 		{
 			// Do nothing - there's no logging for successfully recognized patterns
 		}
 
-		public void UnrecognizedReflectionAccessPattern (MethodDefinition sourceMethod, Instruction reflectionMethodCall, IMetadataTokenProvider accessedItem, string message)
+		public void UnrecognizedReflectionAccessPattern (IMemberDefinition source, Instruction sourceInstruction, IMetadataTokenProvider accessedItem, string message)
 		{
-			_context.LogMessage (MessageImportance.Low, message);
+			MessageOrigin origin;
+			string location = string.Empty;
+			var method = source as MethodDefinition;
+			if (sourceInstruction != null && method != null)
+				origin = MessageOrigin.TryGetOrigin (method, sourceInstruction.Offset);
+			else
+				origin = new MessageOrigin (source);
+
+			if (origin.FileName == null) {
+				if (method != null)
+					location = method.DeclaringType.FullName + "::" + GetSignature (method) + ": ";
+				else
+					location = source.DeclaringType?.FullName + "::" + source.Name;
+			}
+
+			_context.LogMessage (MessageContainer.CreateWarningMessage (_context, location + message, 2006, origin, "Unrecognized reflection pattern"));
+		}
+
+		static string GetSignature (MethodDefinition method)
+		{
+			var builder = new System.Text.StringBuilder ();
+			builder.Append (method.Name);
+			if (method.HasGenericParameters) {
+				builder.Append ('<');
+
+				for (int i = 0; i < method.GenericParameters.Count - 1; i++)
+					builder.Append ($"{method.GenericParameters[i]},");
+
+				builder.Append ($"{method.GenericParameters[method.GenericParameters.Count - 1]}>");
+			}
+
+			builder.Append ("(");
+
+			if (method.HasParameters) {
+				for (int i = 0; i < method.Parameters.Count - 1; i++) {
+					builder.Append ($"{method.Parameters[i].ParameterType},");
+				}
+
+				builder.Append (method.Parameters[method.Parameters.Count - 1].ParameterType);
+			}
+
+			builder.Append (")");
+
+			return builder.ToString ();
 		}
 	}
 }

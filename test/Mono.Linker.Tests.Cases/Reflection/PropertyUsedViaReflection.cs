@@ -10,6 +10,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		public static void Main ()
 		{
 			TestGetterAndSetter ();
+			TestGetterAndSetterInternal ();
 			TestSetterOnly ();
 			TestGetterOnly ();
 			TestNullName ();
@@ -28,6 +29,14 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		static void TestGetterAndSetter ()
 		{
 			var property = typeof (PropertyUsedViaReflection).GetProperty ("OnlyUsedViaReflection");
+			property.GetValue (null, new object[] { });
+		}
+
+		[Kept]
+		static void TestGetterAndSetterInternal ()
+		{
+			// This will not mark the property as GetProperty(string) only returns public properties
+			var property = typeof (PropertyUsedViaReflection).GetProperty ("InternalProperty");
 			property.GetValue (null, new object[] { });
 		}
 
@@ -84,7 +93,10 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 		[Kept]
 		[UnrecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetProperty), new Type[] { typeof (string) })]
+			typeof (Type), nameof (Type.GetProperty), new Type[] { typeof (string) },
+			"The return value of method 'System.Type Mono.Linker.Tests.Cases.Reflection.PropertyUsedViaReflection::FindType()' with dynamically accessed member kinds 'None' " +
+			"is passed into the implicit 'this' parameter of method 'System.Reflection.PropertyInfo System.Type::GetProperty(System.String)' which requires dynamically accessed member kinds 'PublicProperties'. " +
+			"To fix this add DynamicallyAccessedMembersAttribute to it and specify at least these member kinds 'PublicProperties'.")]
 		static void TestDataFlowType ()
 		{
 			Type type = FindType ();
@@ -133,21 +145,26 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		static int _field;
 
 		[Kept]
-		static int OnlyUsedViaReflection {
+		public static int OnlyUsedViaReflection {
 			[Kept]
 			get { return _field; }
 			[Kept]
 			set { _field = value; }
 		}
 
+		static int InternalProperty {
+			get { return _field; }
+			set { _field = value; }
+		}
+
 		[Kept]
-		static int SetterOnly {
+		public static int SetterOnly {
 			[Kept]
 			set { _field = value; }
 		}
 
 		[Kept]
-		static int GetterOnly {
+		public static int GetterOnly {
 			[Kept]
 			get { return _field; }
 		}

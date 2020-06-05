@@ -11,6 +11,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		public static void Main ()
 		{
 			TestByName ();
+			TestPrivateByName ();
 			TestNameBindingFlags ();
 			TestNameWrongBindingFlags ();
 			TestNullName ();
@@ -25,10 +26,17 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		[Kept]
 		[RecognizedReflectionAccessPattern (
 			typeof (Type), nameof (Type.GetField), new Type[] { typeof (string) },
-			typeof (FieldUsedViaReflection), nameof (FieldUsedViaReflection.field), (Type[]) null)]
+			typeof (FieldUsedViaReflection), nameof (FieldUsedViaReflection.publicField), (Type[]) null)]
 		static void TestByName ()
 		{
-			var field = typeof (FieldUsedViaReflection).GetField ("field");
+			var field = typeof (FieldUsedViaReflection).GetField ("publicField");
+			field.GetValue (null);
+		}
+
+		[Kept]
+		static void TestPrivateByName ()
+		{
+			var field = typeof (FieldUsedViaReflection).GetField ("field"); // This will not mark the field as GetField(string) only returns public fields
 			field.GetValue (null);
 		}
 
@@ -69,7 +77,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		static void TestNullType ()
 		{
 			Type type = null;
-			var field = type.GetField ("field");
+			var field = type.GetField ("publicField");
 		}
 
 		[Kept]
@@ -80,11 +88,14 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 		[Kept]
 		[UnrecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetField), new Type[] { typeof (string) })]
+			typeof (Type), nameof (Type.GetField), new Type[] { typeof (string) },
+			"The return value of method 'System.Type Mono.Linker.Tests.Cases.Reflection.FieldUsedViaReflection::FindType()' with dynamically accessed member kinds 'None' " +
+			"is passed into the implicit 'this' parameter of method 'System.Reflection.FieldInfo System.Type::GetField(System.String)' which requires dynamically accessed member kinds 'PublicFields'. " +
+			"To fix this add DynamicallyAccessedMembersAttribute to it and specify at least these member kinds 'PublicFields'.")]
 		static void TestDataFlowType ()
 		{
 			Type type = FindType ();
-			var field = type.GetField ("field");
+			var field = type.GetField ("publicField");
 		}
 
 		[Kept]
@@ -117,12 +128,14 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			typeof (BaseClass), nameof (BaseClass.publicFieldOnBase), (Type[]) null)]
 		static void TestFieldInBaseType ()
 		{
-			var protectedField = typeof (DerivedClass).GetField ("protectedFieldOnBase");
+			var protectedField = typeof (DerivedClass).GetField ("protectedFieldOnBase"); // Will not be marked - only public fields work this way
 			var publicField = typeof (DerivedClass).GetField ("publicFieldOnBase");
 		}
 
-		[Kept]
 		static int field;
+
+		[Kept]
+		public static int publicField;
 
 		[Kept]
 		private class Foo
@@ -139,7 +152,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			[Kept]
 			public static int ifField;
 			[Kept]
-			private int elseField;
+			public int elseField;
 			protected int nonKept;
 		}
 
@@ -149,14 +162,13 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			[Kept]
 			public int elseField;
 			[Kept]
-			static string ifField;
+			public static string ifField;
 			volatile char nonKept;
 		}
 
 		[Kept]
 		class BaseClass
 		{
-			[Kept]
 			protected int protectedFieldOnBase;
 			[Kept]
 			public char publicFieldOnBase;

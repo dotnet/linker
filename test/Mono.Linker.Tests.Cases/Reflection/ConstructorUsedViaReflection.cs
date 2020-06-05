@@ -19,8 +19,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[RecognizedReflectionAccessPattern (
-					   typeof (Type), nameof (Type.GetConstructor), new Type[] { typeof (Type[]) },
-					   typeof (IntegerParameterConstructor), ".ctor", new Type[0])]
+			typeof (Type), nameof (Type.GetConstructor), new Type[] { typeof (Type[]) },
+			typeof (IntegerParameterConstructor), ".ctor", new Type[0])]
 		[Kept]
 		static void TestWithIntegerParameter ()
 		{
@@ -62,7 +62,10 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[UnrecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetConstructor), new Type[] { typeof (Type[]) })]
+			typeof (Type), nameof (Type.GetConstructor), new Type[] { typeof (Type[]) },
+			"The return value of method 'System.Type Mono.Linker.Tests.Cases.Reflection.ConstructorUsedViaReflection::FindType()' with dynamically accessed member kinds 'None' " +
+			"is passed into the implicit 'this' parameter of method 'System.Reflection.ConstructorInfo System.Type::GetConstructor(System.Type[])' which requires dynamically accessed member kinds 'DefaultConstructor'. " +
+			"To fix this add DynamicallyAccessedMembersAttribute to it and specify at least these member kinds 'DefaultConstructor'.")]
 		[Kept]
 		static void TestDataFlowType ()
 		{
@@ -106,11 +109,9 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			public IntegerParameterConstructor (int i)
 			{ }
 
-			[Kept]
 			private IntegerParameterConstructor (string foo)
 			{ }
 
-			[Kept]
 			protected IntegerParameterConstructor (string foo, string bar)
 			{ }
 		}
