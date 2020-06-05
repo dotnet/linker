@@ -125,6 +125,8 @@ namespace Mono.Linker
 
 		public bool IgnoreSubstitutions { get; set; }
 
+		public bool IgnoreAnnotations { get; set; }
+
 		public bool StripDescriptors { get; set; }
 
 		public bool StripSubstitutions { get; set; }

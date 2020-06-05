@@ -94,7 +94,7 @@ namespace Mono.Linker.Steps
 						Context.LogMessage (MessageContainer.CreateInfoMessage ($"Processing embedded {rsc.Name} from {asm.Name}"));
 						steps_to_add.Push (GetExternalCustomAttributesStep (rsc, asm));
 					} catch (XmlException ex) {
-						Context.LogMessage (MessageContainer.CreateErrorMessage ($"Error processing {rsc.Name}: {ex}", 1003));
+						Context.LogMessage (MessageContainer.CreateErrorMessage ($"Error processing {rsc.Name} from {asm.Name}: {ex}", 1003));
 					}
 				}
 			}

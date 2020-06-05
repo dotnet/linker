@@ -336,6 +336,12 @@ namespace Mono.Linker
 
 						continue;
 
+					case "--ignore-annotations":
+						if (!GetBoolParam (token, l => context.IgnoreAnnotations = l))
+							return -1;
+
+						continue;
+
 					case "--disable-opt": {
 							string optName = null;
 							if (!GetStringParam (token, l => optName = l))
@@ -577,12 +583,11 @@ namespace Mono.Linker
 			foreach (var file in resolve_from_xapi_steps)
 				p.PrependStep (new ResolveFromXApiStep (new XPathDocument (file)));
 #endif
+			foreach (var file in xml_custom_attribute_steps)
+				AddXmlCustomAttributesStep (p, file);
 
 			foreach (var file in resolve_from_xml_steps)
 				AddResolveFromXmlStep (p, file);
-
-			foreach (var file in xml_custom_attribute_steps)
-				AddXmlCustomAttributesStep (p, file);
 
 			foreach (var (file, rootVisibility) in resolve_from_assembly_steps)
 				p.PrependStep (new ResolveFromAssemblyStep (file, rootVisibility));
@@ -633,6 +638,7 @@ namespace Mono.Linker
 			//
 			// ResolveFromAssemblyStep [optional, possibly many]
 			// ResolveFromXmlStep [optional, possibly many]
+			// XmlCustomAttributesStep [optional, possibly many]
 			// [mono only] ResolveFromXApiStep [optional, possibly many]
 			// LoadReferencesStep
 			// [mono only] LoadI18nAssemblies
@@ -640,6 +646,7 @@ namespace Mono.Linker
 			//   dynamically adds steps:
 			//     ResolveFromXmlStep [optional, possibly many]
 			//     BodySubstituterStep [optional, possibly many]
+			//     XmlCustomAttributesStep [optional, possibly many]
 			// PreserveDependencyLookupStep
 			// [mono only] PreselveCalendarsStep [optional]
 			// TypeMapStep

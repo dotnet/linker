@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using System.Collections.Generic;
+using System.Linq;
 using Mono.Cecil;
 
 namespace Mono.Linker
@@ -18,7 +19,10 @@ namespace Mono.Linker
 
 		public void AddCustomAttributes (ICustomAttributeProvider provider, IEnumerable<CustomAttribute> customAttributes)
 		{
-			_xmlCustomAttributes[provider] = customAttributes;
+			if (!_xmlCustomAttributes.ContainsKey (provider))
+				_xmlCustomAttributes[provider] = customAttributes;
+			else
+				_xmlCustomAttributes[provider] = _xmlCustomAttributes[provider].Concat (customAttributes);
 		}
 
 		public IEnumerable<CustomAttribute> GetCustomAttributes (ICustomAttributeProvider provider)
@@ -29,7 +33,7 @@ namespace Mono.Linker
 			}
 
 			if (_xmlCustomAttributes.ContainsKey (provider)) {
-				foreach (var customAttribute in _xmlCustomAttributes.TryGetValue (provider, out var ann) ? ann : null)
+				foreach (var customAttribute in _xmlCustomAttributes[provider])
 					yield return customAttribute;
 			}
 		}
@@ -39,9 +43,8 @@ namespace Mono.Linker
 			if (provider.HasCustomAttributes)
 				return true;
 
-			if (_xmlCustomAttributes.ContainsKey (provider)) {
+			if (_xmlCustomAttributes.ContainsKey (provider))
 				return true;
-			}
 
 			return false;
 		}

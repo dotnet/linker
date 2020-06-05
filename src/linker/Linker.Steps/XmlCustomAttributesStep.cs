@@ -31,6 +31,9 @@ namespace Mono.Linker.Steps
 			if (string.IsNullOrEmpty (resourceName))
 				throw new ArgumentNullException (nameof (resourceName));
 
+			if (!string.IsNullOrEmpty (resourceName) && Context.IgnoreAnnotations)
+				return;
+
 			_resourceName = resourceName;
 			_resourceAssembly = resourceAssembly ?? throw new ArgumentNullException (nameof (resourceAssembly));
 		}
