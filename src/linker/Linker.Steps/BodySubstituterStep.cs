@@ -232,6 +232,9 @@ namespace Mono.Linker.Steps
 			while (iterator.MoveNext ()) {
 				XPathNavigator nav = iterator.Current;
 
+				if (!ShouldProcessSubstitutions (nav))
+					continue;
+
 				string name = GetAttribute (nav, "name");
 				if (String.IsNullOrEmpty (name)) {
 					Context.LogWarning ($"Missing 'name' attribute for resource.", 2033, _xmlDocumentLocation);
