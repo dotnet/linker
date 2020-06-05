@@ -237,19 +237,19 @@ namespace Mono.Linker.Steps
 
 				string name = GetAttribute (nav, "name");
 				if (String.IsNullOrEmpty (name)) {
-					Context.LogWarning ($"Missing 'name' attribute for resource.", 2033, _xmlDocumentLocation);
+					Context.LogWarning ($"Missing 'name' attribute for resource.", 2038, _xmlDocumentLocation);
 					continue;
 				}
 
 				string action = GetAttribute (nav, "action");
 				if (action != "remove") {
-					Context.LogWarning ($"Invalid 'action' attribute for resource '{name}'.", 2034, _xmlDocumentLocation);
+					Context.LogWarning ($"Invalid 'action' attribute for resource '{name}'.", 2039, _xmlDocumentLocation);
 					continue;
 				}
 
 				EmbeddedResource resource = assembly.FindEmbeddedResource (name);
 				if (resource == null) {
-					Context.LogWarning ($"Could not find embedded resource '{name}' to remove in assembly '{assembly.Name.Name}'.", 2035, _xmlDocumentLocation);
+					Context.LogWarning ($"Could not find embedded resource '{name}' to remove in assembly '{assembly.Name.Name}'.", 2040, _xmlDocumentLocation);
 					continue;
 				}
 

@@ -55,7 +55,6 @@ error and warning codes.
 
 - There was an error processing 'XML document location' xml file. The most likely reason for this is that the descriptor file has syntactical errors.
 
-
 ----
 ## Warning Codes
 
@@ -163,9 +162,9 @@ error and warning codes.
 
 - The linker found a call to a method which is annotated with 'RequiresUnreferencedCodeAttribute' which can break functionality of a trimmed application.
 
-#### `IL2027`: Attribute 'attribute' should only be used once on 'method'.
+#### `IL2027`: Attribute 'attribute' should only be used once on 'member'.
 
-- The linker found multiple instances of attribute 'attribute' on 'method'. This attribute is only allowed to have one instance, linker will only use the fist instance and ignore the rest.
+- The linker found multiple instances of attribute 'attribute' on 'member'. This attribute is only allowed to have one instance, linker will only use the fist instance and ignore the rest.
 
 #### `IL2028`: Attribute 'attribute' on 'method' doesn't have a required constructor argument.
 
@@ -187,14 +186,34 @@ error and warning codes.
 
 - The number of arguments correspond to a certain type constructor, but the type of arguments specified in the xml does not match the type of arguments in the constructor.
 
-#### `IL2033`: Missing 'name' attribute for resource.
+#### `IL2033`: Deprecated PreserveDependencyAttribute on 'member'. Use DynamicDependencyAttribute instead.
+
+- PreserveDependencyAttribute was an internal attribute that was never officially supported. Instead, use the similar DynamicDependencyAttribute.
+
+#### `IL2034`: Invalid DynamicDependencyAttribute on 'member'
+
+- The input contains an invalid use of DynamicDependencyAttribute. Ensure that you are using one of the officially supported constructors.
+
+#### `IL2035`: Unresolved assembly 'assemblyName' in DynamicDependencyAttribute on 'member'
+
+- The assembly string given in a DynamicDependencyAttribute constructor could not be resolved. Ensure that the argument specifies a valid asembly name, and that the assembly is available to the linker.
+
+#### `IL2036`: Unresolved type 'typeName' in DynamicDependencyAttribute on 'member'
+
+- The type in a DynamicDependencyAttribute constructor could not be resolved. Ensure that the argument specifies a valid type name or type reference, that the type exists in the specified assembly, and that the assembly is available to the linker.
+
+### `IL2037`: No members were resolved for 'memberSignature/memberTypes' in DynamicDependencyAttribute on 'member'
+
+- The member signature or DynamicallyAccessedMemberTypes in a DynamicDependencyAttribute constructor did not resolve to any members on the type. If you using a signature, ensure that it refers to an existing member, and that it uses the format defined at https://github.com/dotnet/csharplang/blob/master/spec/documentation-comments.md#id-string-format. If using DynamicallyAccessedMemberTypes, ensure that the type contains members of the specified member types.
+
+#### `IL2038`: Missing 'name' attribute for resource.
 
 - The resource element in a substitution file did not have a 'name' attribute. Add a 'name' attribute with the name of the resource to remove.
 
-#### `IL2034`: Invalid 'action' attribute for resource 'resource'.
+#### `IL2039`: Invalid 'action' attribute for resource 'resource'.
 
 - The resource element in a substitution file did not have a valid 'action' attribute. Add an 'action' attribute to this element, with value 'remove' to tell the linker to remove this resource.
 
-#### `IL2035`: Could not find embedded resource 'resource' to remove in assembly 'assembly'.
+#### `IL2040`: Could not find embedded resource 'resource' to remove in assembly 'assembly'.
 
 - The resource name in a substitution file could not be found in the specified assembly. Ensure that the resource name matches the name of an embedded resource in the assembly.
