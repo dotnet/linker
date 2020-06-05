@@ -194,3 +194,7 @@ error and warning codes.
 #### `IL2034`: Invalid 'action' attribute for resource 'resource'.
 
 - The resource element in a substitution file did not have a valid 'action' attribute. Add an 'action' attribute to this element, with value 'remove' to tell the linker to remove this resource.
+
+#### `IL2035`: Could not find embedded resource 'resource' to remove in assembly 'assembly'.
+
+- The resource name in a substitution file could not be found in the specified assembly. Ensure that the resource name matches the name of an embedded resource in the assembly.
