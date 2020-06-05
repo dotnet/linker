@@ -17,6 +17,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TestSingleGenericParameterOnType ();
 			TestMultipleGenericParametersOnType ();
 			TestBaseTypeGenericRequirements ();
+			TestDeepNestedTypesWithGenerics ();
 			TestInterfaceTypeGenericRequirements ();
 			TestTypeGenericRequirementsOnMembers ();
 			TestPartialInstantiationTypes ();
@@ -221,6 +222,32 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		class InterfaceImplementationTypeWithOpenGenericOnBaseWithRequirements<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] T>
 			: IGenericInterfaceTypeWithRequirements<T>
 		{
+		}
+
+		[RecognizedReflectionAccessPattern]
+		static void TestDeepNestedTypesWithGenerics ()
+		{
+			RootTypeWithRequirements<TestType>.InnerTypeWithNoAddedGenerics.TestAccess ();
+		}
+
+		class RootTypeWithRequirements<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] TRoot>
+		{
+			public class InnerTypeWithNoAddedGenerics
+			{
+				// The message is not ideal since we report the TRoot to come from RootTypeWithRequirements/InnerTypeWIthNoAddedGenerics
+				// while it originates on RootTypeWithRequirements, but it's correct from IL's point of view.
+				[UnrecognizedReflectionAccessPattern (typeof (GenericParameterDataFlow), nameof (RequiresPublicMethods), new Type[] { typeof (Type) },
+					message: "The generic parameter 'TRoot' from 'Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow/RootTypeWithRequirements`1/InnerTypeWithNoAddedGenerics' " +
+					"with dynamically accessed member kinds 'PublicFields' " +
+					"is passed into the parameter 'type' of method 'System.Void Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow::RequiresPublicMethods(System.Type)' " +
+					"which requires dynamically accessed member kinds 'PublicMethods'. " +
+					"To fix this add DynamicallyAccessedMembersAttribute to it and specify at least these member kinds 'PublicMethods'.")]
+				public static void TestAccess ()
+				{
+					RequiresPublicFields (typeof (TRoot));
+					RequiresPublicMethods (typeof (TRoot));
+				}
+			}
 		}
 
 		[RecognizedReflectionAccessPattern]
@@ -635,7 +662,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		{
 		}
 
-		static void TestMakeGenericType()
+		static void TestMakeGenericType ()
 		{
 			TestMakeGenericTypeNullType ();
 			TestMakeGenericTypeUnknownInput (null);
@@ -660,14 +687,14 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			nullType.MakeGenericType (typeof (TestType));
 		}
 
-		[UnrecognizedReflectionAccessPattern(typeof (Type), nameof (Type.MakeGenericType), new Type[] { typeof (Type[]) })]
-		static void TestMakeGenericTypeUnknownInput(Type inputType)
+		[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.MakeGenericType), new Type[] { typeof (Type[]) })]
+		static void TestMakeGenericTypeUnknownInput (Type inputType)
 		{
 			inputType.MakeGenericType (typeof (TestType));
 		}
 
 		[RecognizedReflectionAccessPattern]
-		static void TestMakeGenericTypeNoArguments()
+		static void TestMakeGenericTypeNoArguments ()
 		{
 			typeof (TypeMakeGenericNoArguments).MakeGenericType ();
 		}
@@ -677,7 +704,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.MakeGenericType), new Type[] { typeof (Type[]) })]
-		static void TestMakeGenericWithRequirements()
+		static void TestMakeGenericWithRequirements ()
 		{
 			// Currently this is not analyzable since we don't track array elements.
 			// Would be really nice to support this kind of code in the future though.
@@ -685,8 +712,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.MakeGenericType), new Type[] { typeof (Type[]) })]
-		static void TestMakeGenericWithRequirementsFromParam(
-			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)] Type type)
+		static void TestMakeGenericWithRequirementsFromParam (
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] Type type)
 		{
 			typeof (TypeMakeGenericWithPublicFieldsArgument<>).MakeGenericType (type);
 		}
@@ -698,12 +725,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			typeof (TypeMakeGenericWithPublicFieldsArgument<>).MakeGenericType (typeof (T));
 		}
 
-		class TypeMakeGenericWithPublicFieldsArgument<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)] T>
+		class TypeMakeGenericWithPublicFieldsArgument<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] T>
 		{
 		}
 
 		[RecognizedReflectionAccessPattern]
-		static void TestMakeGenericWithNoRequirements()
+		static void TestMakeGenericWithNoRequirements ()
 		{
 			typeof (TypeMakeGenericWithNoRequirements<>).MakeGenericType (typeof (TestType));
 		}
@@ -726,7 +753,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		class TypeMakeGenericWithMultipleArgumentsWithRequirements<
 			TOne,
-			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] TTwo>
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] TTwo>
 		{
 		}
 
@@ -736,8 +763,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TestMakeGenericMethodWithNoRequirements ();
 		}
 
-		[UnrecognizedReflectionAccessPattern(typeof (System.Reflection.MethodInfo), nameof (System.Reflection.MethodInfo.MakeGenericMethod), new Type[] { typeof (Type[]) })]
-		static void TestMakeGenericMethodWithRequirements()
+		[UnrecognizedReflectionAccessPattern (typeof (System.Reflection.MethodInfo), nameof (System.Reflection.MethodInfo.MakeGenericMethod), new Type[] { typeof (Type[]) })]
+		static void TestMakeGenericMethodWithRequirements ()
 		{
 			typeof (GenericParameterDataFlow).GetMethod (nameof (MethodMakeGenericWithRequirements), BindingFlags.Static | BindingFlags.NonPublic)
 				.MakeGenericMethod (typeof (TestType));

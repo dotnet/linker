@@ -697,7 +697,9 @@ namespace Mono.Linker.Dataflow
 				StackSlot slot = new StackSlot (new RuntimeTypeHandleForGenericParameterValue (genericParameter));
 				currentStack.Push (slot);
 				return;
-			} else if (operation.Operand is TypeReference typeReference) {
+			}
+
+			if (operation.Operand is TypeReference typeReference) {
 				var resolvedReference = typeReference.Resolve ();
 				if (resolvedReference != null) {
 					StackSlot slot = new StackSlot (new RuntimeTypeHandleValue (resolvedReference));
