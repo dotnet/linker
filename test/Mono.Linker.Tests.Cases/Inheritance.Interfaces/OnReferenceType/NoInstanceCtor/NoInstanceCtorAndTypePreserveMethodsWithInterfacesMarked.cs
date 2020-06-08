@@ -23,7 +23,8 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.OnReferenceType.NoInsta
 	[KeptMemberInAssembly ("library",
 		"Mono.Linker.Tests.Cases.Inheritance.Interfaces.OnReferenceType.NoInstanceCtor.Dependencies.NoInstanceCtorAndAssemblyPreserveAll_Lib/A",
 		"Bar()")]
-	public class NoInstanceCtorAndTypePreserveMethodsWithInterfacesMarked
+	[SetupLinkerDescriptorFile ("NoInstanceCtorAndTypePreserveMetheodsWithInterfacesMarked.xml")]
+	public class NoInstanceCtorAndTypePreserveMetheodsWithInterfacesMarked
 	{
 		public static void Main ()
 		{
