@@ -32,10 +32,8 @@ namespace Mono.Linker
 					yield return customAttribute;
 			}
 
-			// This piece of code is optimized for when _xmlCustomAttributes doesn't contain provider
-			// That's why is using ContainsKey and the get indexer instead of TryGetValue
-			if (_xmlCustomAttributes.ContainsKey (provider)) {
-				foreach (var customAttribute in _xmlCustomAttributes[provider])
+			if(_xmlCustomAttributes.TryGetValue(provider, out var annotations)) {
+				foreach(var customAttribute in annotations)
 					yield return customAttribute;
 			}
 		}

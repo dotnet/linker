@@ -132,10 +132,10 @@ namespace Mono.Linker.Steps
 			if (!nav.MoveToChild ("linker", string.Empty))
 				return;
 
-			if (!string.IsNullOrEmpty (_resourceName) && Context.StripDescriptors)
+			if (!string.IsNullOrEmpty (_resourceName) && Context.StripLinkAttributes)
 				Context.Annotations.AddResourceToRemove (_resourceAssembly, _resourceName);
 
-			if (!string.IsNullOrEmpty (_resourceName) && Context.IgnoreAttributes)
+			if (!string.IsNullOrEmpty (_resourceName) && Context.IgnoreLinkAttributes)
 				return;
 
 			try {

@@ -72,9 +72,9 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			Append (value ? "true" : "false");
 		}
 
-		public virtual void IgnoreAttributes (bool value)
+		public virtual void IgnoreLinkAttributes (bool value)
 		{
-			Append ("--ignore-attributes");
+			Append ("--ignore-link-attributes");
 			Append (value ? "true" : "false");
 		}
 
@@ -129,6 +129,14 @@ namespace Mono.Linker.Tests.TestCasesRunner
 		{
 			if (!stripSubstitutions) {
 				Append ("--strip-substitutions");
+				Append ("false");
+			}
+		}
+
+		public virtual void AddStripLinkAttributes (bool stripLinkAttributes)
+		{
+			if (!stripLinkAttributes) {
+				Append ("--strip-link-attributes");
 				Append ("false");
 			}
 		}
@@ -191,7 +199,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 			IgnoreSubstitutions (options.IgnoreSubstitutions);
 
-			IgnoreAttributes (options.IgnoreAttributes);
+			IgnoreLinkAttributes (options.IgnoreLinkAttributes);
 
 #if !NETCOREAPP
 			if (!string.IsNullOrEmpty (options.Il8n))
@@ -212,6 +220,8 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			AddStripDescriptors (options.StripDescriptors);
 
 			AddStripSubstitutions (options.StripSubstitutions);
+
+			AddStripLinkAttributes (options.StripLinkAttributes);
 
 			foreach (var substitutions in options.Substitutions)
 				AddSubstitutions (substitutions);

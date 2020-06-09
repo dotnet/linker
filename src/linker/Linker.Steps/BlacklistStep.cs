@@ -88,7 +88,7 @@ namespace Mono.Linker.Steps
 				}
 
 				foreach (var rsc in embeddedXml
-									.Where (res => res.Name.Equals ("ILLink.Attributes.xml", StringComparison.OrdinalIgnoreCase))
+									.Where (res => res.Name.Equals ("ILLink.LinkAttributes.xml", StringComparison.OrdinalIgnoreCase))
 									.Cast<EmbeddedResource> ()) {
 					try {
 						Context.LogMessage (MessageContainer.CreateInfoMessage ($"Processing embedded {rsc.Name} from {asm.Name}"));

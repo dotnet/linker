@@ -257,6 +257,12 @@ namespace Mono.Linker
 
 						continue;
 
+					case "--strip-link-attributes":
+						if (!GetBoolParam (token, l => context.StripLinkAttributes = l))
+							return -1;
+
+						continue;
+
 					case "--substitutions":
 						if (arguments.Count < 1) {
 							ErrorMissingArgument (token);
@@ -336,8 +342,8 @@ namespace Mono.Linker
 
 						continue;
 
-					case "--ignore-attributes":
-						if (!GetBoolParam (token, l => context.IgnoreAttributes = l))
+					case "--ignore-link-attributes":
+						if (!GetBoolParam (token, l => context.IgnoreLinkAttributes = l))
 							return -1;
 
 						continue;
@@ -414,7 +420,7 @@ namespace Mono.Linker
 
 						continue;
 
-					case "--attribute-defs":
+					case "--link-attributes":
 						if (arguments.Count < 1) {
 							ErrorMissingArgument (token);
 							return -1;
@@ -1051,8 +1057,9 @@ namespace Mono.Linker
 			Console.WriteLine ("  --ignore-substitutions    Skips reading embedded substitutions. Defaults to false");
 			Console.WriteLine ("  --strip-substitutions     Remove XML substitution resources for linked assemblies. Defaults to true");
 			Console.WriteLine ("  --used-attrs-only         Attribute usage is removed if the attribute type is not used. Defaults to false");
-			Console.WriteLine ("  --attribute-defs FILE     Supplementary custom attribute definitions for attributes controlling the linker behavior.");
-			Console.WriteLine ("  --ignore-attributes       Skips reading embedded attributes. Defaults to false");
+			Console.WriteLine ("  --link-attributes FILE    Supplementary custom attribute definitions for attributes controlling the linker behavior.");
+			Console.WriteLine ("  --ignore-link-attributes  Skips reading embedded attributes. Defaults to false");
+			Console.WriteLine ("  --strip-link-attributes   Remove XML link attributes resources for linker assemblies. Defaults to true");
 
 			Console.WriteLine ();
 			Console.WriteLine ("Analyzer");

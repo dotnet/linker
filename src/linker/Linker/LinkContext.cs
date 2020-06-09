@@ -125,11 +125,13 @@ namespace Mono.Linker
 
 		public bool IgnoreSubstitutions { get; set; }
 
-		public bool IgnoreAttributes { get; set; }
+		public bool IgnoreLinkAttributes { get; set; }
 
 		public bool StripDescriptors { get; set; }
 
 		public bool StripSubstitutions { get; set; }
+
+		public bool StripLinkAttributes { get; set; }
 
 		public Dictionary<string, bool> FeatureSettings { get; private set; }
 
@@ -219,6 +221,7 @@ namespace Mono.Linker
 			MarkedKnownMembers = new KnownMembers ();
 			StripDescriptors = true;
 			StripSubstitutions = true;
+			StripLinkAttributes = true;
 			PInvokes = new List<PInvokeInfo> ();
 			Suppressions = new UnconditionalSuppressMessageAttributeState (this);
 
