@@ -43,10 +43,10 @@ namespace Mono.Linker
 				return;
 
 			var sourceMethod = MemberDefinition as MethodDefinition;
-			var offeset = ILOffset ?? 0;
+			var offset = ILOffset ?? 0;
 			if (sourceMethod.DebugInformation.HasSequencePoints) {
 				SequencePoint correspondingSequencePoint = sourceMethod.DebugInformation.SequencePoints
-					.Where (s => s.Offset <= offeset)?.Last ();
+					.Where (s => s.Offset <= offset)?.Last ();
 				if (correspondingSequencePoint == null)
 					return;
 
