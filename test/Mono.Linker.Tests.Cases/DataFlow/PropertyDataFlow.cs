@@ -157,8 +157,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			// Simple getter is not enough - we do detect the field, but we require the field to be compiler generated for this to work
 			[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), nameof (RequirePublicConstructors), new Type[] { typeof (Type) })]
-			[LogContains("Could not find a unique backing field for property 'System.Type Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow/TestAutomaticPropagationType::PropertyWithSimpleGetter()' " +
-				"to propagate DynamicallyAccessedMembersAttribute. The property getter is either abstract or not a compiler generated getter.")]
+			// Make sure we don't warn about the field in context of property annotation propagation.
+			[LogDoesNotContain("Could not find a unique backing field for property 'System.Type Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow/TestAutomaticPropagationType::PropertyWithSimpleGetter()'")]
 			public void TestPropertyWithSimpleGetter ()
 			{
 				_ = PropertyWithSimpleGetter;
@@ -169,6 +169,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 			static Type PropertyWithSimpleGetter {
+				[UnrecognizedReflectionAccessPattern (typeof (TestAutomaticPropagationType), "get_" + nameof (PropertyWithSimpleGetter), new Type[] { }, returnType: typeof (Type))]
 				get {
 					return PropertyWithSimpleGetter_Field;
 				}
@@ -193,8 +194,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 
 			[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), nameof (RequirePublicConstructors), new Type[] { typeof (Type) })]
-			[LogContains ("Could not find a unique backing field for property 'System.Type Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow/TestAutomaticPropagationType::InstancePropertyWithStaticField()' " +
-				"to propagate DynamicallyAccessedMembersAttribute. The property setter is either abstract or not a compiler generated setter.")]
+			// Make sure we don't warn about the field in context of property annotation propagation.
+			[LogDoesNotContain ("Could not find a unique backing field for property 'System.Type Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow/TestAutomaticPropagationType::InstancePropertyWithStaticField()'")]
 			public void TestInstancePropertyWithStaticField ()
 			{
 				InstancePropertyWithStaticField = null;
@@ -206,6 +207,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 			Type InstancePropertyWithStaticField {
+				// Nothing to warn about - the "value" is annotated with PublicConstructors and we're assigning
+				// it to unannotated field - that's a perfectly valid operation.
+				[RecognizedReflectionAccessPattern]
 				set {
 					InstancePropertyWithStaticField_Field = value;
 				}

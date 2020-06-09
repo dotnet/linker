@@ -208,8 +208,11 @@ namespace Mono.Linker.Dataflow
 
 						// TODO: Handle abstract properties - can't do any propagation on the base property, should rely on validation
 						//  that overrides also correctly annotate.
-						if (!setMethod.HasBody || !ScanMethodBodyForFieldAccess (setMethod.Body, write: true, out backingFieldFromSetter)) {
-							_context.LogWarning ($"Could not find a unique backing field for property '{property.FullName}' to propagate DynamicallyAccessedMembersAttribute. The property setter is either abstract or not a compiler generated setter.", 2042, property);
+						if (setMethod.HasBody) {
+							// Look for the compiler generated backing field. If it doesn't work out simply move on. In such case we would still
+							// propagate the annotation to the setter/getter and later on when analyzing the setter/getter we will warn
+							// that the field (which ever it is) must be annotated as well.
+							ScanMethodBodyForFieldAccess (setMethod.Body, write: true, out backingFieldFromSetter);
 						}
 
 						if (annotatedMethods.Any (a => a.Method == setMethod)) {
@@ -232,8 +235,11 @@ namespace Mono.Linker.Dataflow
 
 						// TODO: Handle abstract properties - can't do any propagation on the base property, should rely on validation
 						//  that overrides also correctly annotate.
-						if (!getMethod.HasBody || !ScanMethodBodyForFieldAccess (getMethod.Body, write: false, out backingFieldFromGetter)) {
-							_context.LogWarning ($"Could not find a unique backing field for property '{property.FullName}' to propagate DynamicallyAccessedMembersAttribute. The property getter is either abstract or not a compiler generated getter.", 2042, property);
+						if (getMethod.HasBody) {
+							// Look for the compiler generated backing field. If it doesn't work out simply move on. In such case we would still
+							// propagate the annotation to the setter/getter and later on when analyzing the setter/getter we will warn
+							// that the field (which ever it is) must be annotated as well.
+							ScanMethodBodyForFieldAccess (getMethod.Body, write: false, out backingFieldFromGetter);
 						}
 
 						if (annotatedMethods.Any (a => a.Method == getMethod)) {
