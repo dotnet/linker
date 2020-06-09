@@ -9,14 +9,15 @@ using System.Text;
 
 namespace Mono.Linker
 {
-	public readonly struct MessageOrigin
+	public struct MessageOrigin
 	{
 #nullable enable
-		public string? FileName { get; }
-		public IMemberDefinition? MemberDefinition { get; }
+		public string? FileName { get; private set; }
+		public IMemberDefinition? MemberDefinition { get; private set; }
 #nullable disable
-		public int SourceLine { get; }
-		public int SourceColumn { get; }
+		public int SourceLine { get; private set; }
+		public int SourceColumn { get; private set; }
+		public readonly int? ILOffset { get; }
 
 		public MessageOrigin (string fileName, int sourceLine = 0, int sourceColumn = 0)
 		{
@@ -24,43 +25,41 @@ namespace Mono.Linker
 			SourceLine = sourceLine;
 			SourceColumn = sourceColumn;
 			MemberDefinition = null;
+			ILOffset = null;
 		}
 
-		public MessageOrigin (IMemberDefinition memberDefinition)
+		public MessageOrigin (IMemberDefinition memberDefinition, int? ilOffset = null)
 		{
 			FileName = null;
 			MemberDefinition = memberDefinition;
 			SourceLine = 0;
 			SourceColumn = 0;
+			ILOffset = ilOffset;
 		}
 
-		private MessageOrigin (string fileName, IMemberDefinition memberDefinition, int sourceLine = 0, int sourceColumn = 0)
+		internal void TryGetSourceInfo ()
 		{
-			FileName = fileName;
-			MemberDefinition = memberDefinition;
-			SourceLine = sourceLine;
-			SourceColumn = sourceColumn;
-		}
+			if (MemberDefinition == null || !(MemberDefinition is MethodDefinition))
+				return;
 
-		public static MessageOrigin TryGetOrigin (IMemberDefinition sourceMember, int ilOffset = 0)
-		{
-			if (!(sourceMember is MethodDefinition sourceMethod))
-				return new MessageOrigin (sourceMember);
-
+			var sourceMethod = MemberDefinition as MethodDefinition;
+			var offeset = ILOffset ?? 0;
 			if (sourceMethod.DebugInformation.HasSequencePoints) {
 				SequencePoint correspondingSequencePoint = sourceMethod.DebugInformation.SequencePoints
-					.Where (s => s.Offset <= ilOffset)?.Last ();
+					.Where (s => s.Offset <= offeset)?.Last ();
 				if (correspondingSequencePoint == null)
-					return new MessageOrigin (correspondingSequencePoint.Document.Url, sourceMethod);
+					return;
 
-				return new MessageOrigin (correspondingSequencePoint.Document.Url, sourceMethod, correspondingSequencePoint.StartLine, correspondingSequencePoint.StartColumn);
+				FileName = correspondingSequencePoint.Document.Url;
+				SourceLine = correspondingSequencePoint.StartLine;
+				SourceColumn = correspondingSequencePoint.StartColumn;
+				MemberDefinition = sourceMethod;
 			}
-
-			return new MessageOrigin (sourceMethod);
 		}
 
 		public override string ToString ()
 		{
+			TryGetSourceInfo ();
 			if (FileName == null)
 				return null;
 

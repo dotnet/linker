@@ -44,14 +44,10 @@ namespace Mono.Linker
 
 		public void UnrecognizedReflectionAccessPattern (IMemberDefinition source, Instruction sourceInstruction, IMetadataTokenProvider accessedItem, string message)
 		{
-			MessageOrigin origin;
 			string location = string.Empty;
 			var method = source as MethodDefinition;
-			if (sourceInstruction != null && method != null)
-				origin = MessageOrigin.TryGetOrigin (method, sourceInstruction.Offset);
-			else
-				origin = new MessageOrigin (source);
-
+			var origin = new MessageOrigin (method, sourceInstruction?.Offset);
+			origin.TryGetSourceInfo ();
 			if (origin.FileName == null) {
 				if (method != null)
 					location = method.DeclaringType.FullName + "::" + GetSignature (method) + ": ";
