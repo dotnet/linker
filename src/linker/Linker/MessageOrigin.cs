@@ -59,7 +59,6 @@ namespace Mono.Linker
 
 		public override string ToString ()
 		{
-			TryGetSourceInfo ();
 			if (FileName == null)
 				return null;
 

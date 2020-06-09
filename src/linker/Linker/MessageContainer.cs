@@ -70,6 +70,12 @@ namespace Mono.Linker
 			if (context.IsWarningSuppressed (code, origin))
 				return Empty;
 
+			origin.TryGetSourceInfo ();
+			if (subcategory == "Unrecognized reflection pattern" && origin.FileName == null) {
+				if (origin.MemberDefinition != null && origin.MemberDefinition is MethodDefinition method)
+					text = string.Format ("{0}: {1}", method.GetDisplayName (), text);
+			}
+
 			return new MessageContainer (MessageCategory.Warning, text, code, subcategory, origin);
 		}
 
