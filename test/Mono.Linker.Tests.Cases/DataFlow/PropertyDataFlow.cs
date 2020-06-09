@@ -141,7 +141,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		class TestAutomaticPropagationType
- 		{
+		{
 			// Fully implicit property should work
 			[UnrecognizedReflectionAccessPattern (typeof (TestAutomaticPropagationType), "set_" + nameof (ImplicitProperty), new Type[] { typeof (Type) })]
 			public void TestImplicitProperty ()
@@ -158,7 +158,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			// Simple getter is not enough - we do detect the field, but we require the field to be compiler generated for this to work
 			[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), nameof (RequirePublicConstructors), new Type[] { typeof (Type) })]
 			// Make sure we don't warn about the field in context of property annotation propagation.
-			[LogDoesNotContain("Could not find a unique backing field for property 'System.Type Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow/TestAutomaticPropagationType::PropertyWithSimpleGetter()'")]
+			[LogDoesNotContain ("Could not find a unique backing field for property 'System.Type Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow/TestAutomaticPropagationType::PropertyWithSimpleGetter()'")]
 			public void TestPropertyWithSimpleGetter ()
 			{
 				_ = PropertyWithSimpleGetter;
