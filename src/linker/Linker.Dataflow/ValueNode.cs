@@ -374,6 +374,9 @@ namespace Mono.Linker.Dataflow
 			case ValueNodeKind.AnnotatedString:
 			case ValueNodeKind.ConstInt:
 			case ValueNodeKind.MethodParameter:
+			case ValueNodeKind.MethodReturn:
+			case ValueNodeKind.SystemTypeForGenericParameter:
+			case ValueNodeKind.RuntimeTypeHandleForGenericParameter:
 			case ValueNodeKind.LoadField:
 				break;
 
