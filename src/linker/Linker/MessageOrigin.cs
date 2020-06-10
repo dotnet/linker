@@ -9,15 +9,15 @@ using System.Text;
 
 namespace Mono.Linker
 {
-	public struct MessageOrigin
+	public readonly struct MessageOrigin
 	{
 #nullable enable
-		public string? FileName { get; private set; }
-		public IMemberDefinition? MemberDefinition { get; private set; }
+		public string? FileName { get; }
+		public IMemberDefinition? MemberDefinition { get; }
 #nullable disable
-		public int SourceLine { get; private set; }
-		public int SourceColumn { get; private set; }
-		public readonly int? ILOffset { get; }
+		public int SourceLine { get; }
+		public int SourceColumn { get; }
+		public int? ILOffset { get; }
 
 		public MessageOrigin (string fileName, int sourceLine = 0, int sourceColumn = 0)
 		{
@@ -37,36 +37,31 @@ namespace Mono.Linker
 			ILOffset = ilOffset;
 		}
 
-		internal void TryGetSourceInfo ()
-		{
-			if (MemberDefinition == null || !(MemberDefinition is MethodDefinition))
-				return;
-
-			var sourceMethod = MemberDefinition as MethodDefinition;
-			var offset = ILOffset ?? 0;
-			if (sourceMethod.DebugInformation.HasSequencePoints) {
-				SequencePoint correspondingSequencePoint = sourceMethod.DebugInformation.SequencePoints
-					.Where (s => s.Offset <= offset)?.Last ();
-				if (correspondingSequencePoint == null)
-					return;
-
-				FileName = correspondingSequencePoint.Document.Url;
-				SourceLine = correspondingSequencePoint.StartLine;
-				SourceColumn = correspondingSequencePoint.StartColumn;
-				MemberDefinition = sourceMethod;
-			}
-		}
-
 		public override string ToString ()
 		{
-			if (FileName == null)
+			int sourceLine = SourceLine, sourceColumn = SourceColumn;
+			string fileName = FileName;
+			if (MemberDefinition != null && MemberDefinition is MethodDefinition method) {
+				if (method.DebugInformation.HasSequencePoints) {
+					var offset = ILOffset ?? 0;
+					SequencePoint correspondingSequencePoint = method.DebugInformation.SequencePoints
+						.Where (s => s.Offset <= offset)?.Last ();
+					if (correspondingSequencePoint != null) {
+						fileName = correspondingSequencePoint.Document.Url;
+						sourceLine = correspondingSequencePoint.StartLine;
+						sourceColumn = correspondingSequencePoint.StartColumn;
+					}
+				}
+			}
+
+			if (fileName == null)
 				return null;
 
-			StringBuilder sb = new StringBuilder (FileName);
-			if (SourceLine != 0) {
-				sb.Append ("(").Append (SourceLine);
-				if (SourceColumn != 0)
-					sb.Append (",").Append (SourceColumn);
+			StringBuilder sb = new StringBuilder (fileName);
+			if (sourceLine != 0) {
+				sb.Append ("(").Append (sourceLine);
+				if (sourceColumn != 0)
+					sb.Append (",").Append (sourceColumn);
 
 				sb.Append (")");
 			}

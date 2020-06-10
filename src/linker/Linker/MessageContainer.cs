@@ -49,7 +49,6 @@ namespace Mono.Linker
 			if (!(code >= 1000 && code <= 2000))
 				throw new ArgumentException ($"The provided code '{code}' does not fall into the error category, which is in the range of 1000 to 2000 (inclusive).");
 
-			origin?.TryGetSourceInfo ();
 			return new MessageContainer (MessageCategory.Error, text, code, subcategory, origin);
 		}
 
@@ -70,14 +69,6 @@ namespace Mono.Linker
 
 			if (context.IsWarningSuppressed (code, origin))
 				return Empty;
-
-			origin.TryGetSourceInfo ();
-			if (origin.FileName == null) {
-				if (origin.MemberDefinition is MethodDefinition method)
-					text = string.Format ("{0}: {1}", method.GetDisplayName (), text);
-				else
-					text = string.Format ("{0}: {1}", origin.MemberDefinition.FullName, text);
-			}
 
 			return new MessageContainer (MessageCategory.Warning, text, code, subcategory, origin);
 		}
@@ -141,15 +132,23 @@ namespace Mono.Linker
 				sb.Append (" ")
 					.Append (cat)
 					.Append (" IL")
-					.Append (Code.Value.ToString ("D4"));
-
-				if (!string.IsNullOrEmpty (Text))
-					sb.Append (": ").Append (Text);
+					.Append (Code.Value.ToString ("D4"))
+					.Append (": ");
 			} else {
-				sb.Append (" ").Append (Text);
+				sb.Append (" ");
 			}
 
-			// Expected output $"{Origin}: {SubCategory}{Category} IL{Code}: {Text}");
+			if (Origin?.MemberDefinition != null) {
+				if (Origin?.MemberDefinition is MethodDefinition method)
+					sb.Append (method.GetDisplayName ());
+				else
+					sb.Append (Origin?.MemberDefinition.FullName);
+
+				sb.Append (": ");
+			}
+
+			// Expected output $"{FileName(SourceLine, SourceColumn)}: {SubCategory}{Category} IL{Code}: ({MemberDisplayName}: ){Text}");
+			sb.Append (Text);
 			return sb.ToString ();
 		}
 
