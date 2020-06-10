@@ -611,7 +611,7 @@ namespace Mono.Linker
 			p.AddStepAfter (typeof (LoadReferencesStep), new LoadI18nAssemblies (assemblies));
 
 			if (assemblies != I18nAssemblies.None)
-				p.AddStepAfter (typeof (PreserveDependencyLookupStep), new PreserveCalendarsStep (assemblies));
+				p.AddStepAfter (typeof (DynamicDependencyLookupStep), new PreserveCalendarsStep (assemblies));
 #endif
 
 			if (_needAddBypassNGenStep)
@@ -653,8 +653,8 @@ namespace Mono.Linker
 			//     BodySubstituterStep [optional, possibly many]
 			//     XmlCustomAttributesStep [optional, possibly many]
 			// XmlCustomAttributesStep [optional, possibly many]
-			// PreserveDependencyLookupStep
-			// [mono only] PreselveCalendarsStep [optional]
+			// DynamicDependencyLookupStep
+			// [mono only] PreserveCalendarsStep [optional]
 			// TypeMapStep
 			// BodySubstituterStep [optional]
 			// RemoveSecurityStep [optional]
@@ -1087,7 +1087,7 @@ namespace Mono.Linker
 			Pipeline p = new Pipeline ();
 			p.AppendStep (new LoadReferencesStep ());
 			p.AppendStep (new BlacklistStep ());
-			p.AppendStep (new PreserveDependencyLookupStep ());
+			p.AppendStep (new DynamicDependencyLookupStep ());
 			p.AppendStep (new TypeMapStep ());
 			p.AppendStep (new MarkStep ());
 			p.AppendStep (new SweepStep ());
