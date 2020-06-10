@@ -41,16 +41,15 @@ namespace Mono.Linker
 		{
 			int sourceLine = SourceLine, sourceColumn = SourceColumn;
 			string fileName = FileName;
-			if (MemberDefinition != null && MemberDefinition is MethodDefinition method) {
-				if (method.DebugInformation.HasSequencePoints) {
-					var offset = ILOffset ?? 0;
-					SequencePoint correspondingSequencePoint = method.DebugInformation.SequencePoints
-						.Where (s => s.Offset <= offset)?.Last ();
-					if (correspondingSequencePoint != null) {
-						fileName = correspondingSequencePoint.Document.Url;
-						sourceLine = correspondingSequencePoint.StartLine;
-						sourceColumn = correspondingSequencePoint.StartColumn;
-					}
+			if (MemberDefinition is MethodDefinition method &&
+				method.DebugInformation.HasSequencePoints) {
+				var offset = ILOffset ?? 0;
+				SequencePoint correspondingSequencePoint = method.DebugInformation.SequencePoints
+					.Where (s => s.Offset <= offset)?.Last ();
+				if (correspondingSequencePoint != null) {
+					fileName = correspondingSequencePoint.Document.Url;
+					sourceLine = correspondingSequencePoint.StartLine;
+					sourceColumn = correspondingSequencePoint.StartColumn;
 				}
 			}
 

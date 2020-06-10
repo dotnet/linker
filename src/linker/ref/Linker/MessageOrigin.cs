@@ -4,7 +4,7 @@
 
 namespace Mono.Linker
 {
-	public struct MessageOrigin
+	public readonly struct MessageOrigin
 	{
 		public MessageOrigin (string fileName, int sourceLine = 0, int sourceColumn = 0)
 		{
