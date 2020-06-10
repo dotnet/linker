@@ -12,5 +12,12 @@ namespace Mono.Linker.Tests.Cases.DynamicDependencies.Dependencies
 		}
 
 		private int privateField;
+
+		public class Nested<T>
+		{
+			public void Method (T t)
+			{
+			}
+		}
 	}
 }

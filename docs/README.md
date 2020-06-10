@@ -6,6 +6,7 @@ This folder includes several documents that explain both high-level and low-leve
 - [MSBuild Integration](illink-tasks.md)
 - [Available Command Line Options](illink-options.md)
 - [Error and Warning Codes](error-codes.md)
+- [Linker attributes](linker-attributes.md)
 - [Data Formats](data-formats.md)
 - [Authoring Custom Steps](custom-steps.md)
 

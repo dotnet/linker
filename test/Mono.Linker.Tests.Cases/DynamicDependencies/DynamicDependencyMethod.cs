@@ -37,6 +37,8 @@ namespace Mono.Linker.Tests.Cases.DynamicDependencies
 			[DynamicDependency ("Dependency1()", typeof (C))]
 			[DynamicDependency ("Dependency2``1(``0[],System.Int32", typeof (C))]
 			[DynamicDependency ("Dependency3", typeof (C))]
+			[DynamicDependency ("Dependency4(Mono.Linker.Tests.Cases.DynamicDependencies.GenericType{Mono.Linker.Tests.Cases.DynamicDependencies.Foo})", typeof (C))]
+			[DynamicDependency ("Dependency5`1")]
 			[DynamicDependency ("RecursiveDependency", typeof (C))]
 			[DynamicDependency ("#ctor()", typeof (C))] // To avoid lazy body marking stubbing
 			[DynamicDependency ("field", typeof (C))]
@@ -66,6 +68,7 @@ namespace Mono.Linker.Tests.Cases.DynamicDependencies
 			[DynamicDependency ("")]
 			[DynamicDependency ("#ctor()", typeof (NestedStruct))]
 			[DynamicDependency ("#cctor()", typeof (C))]
+			[DynamicDependency ("Dependency6")]
 			public static void Broken ()
 			{
 			}
@@ -117,6 +120,16 @@ namespace Mono.Linker.Tests.Cases.DynamicDependencies
 		}
 	}
 
+	[Kept]
+	class GenericType<T>
+	{
+	}
+
+	[Kept]
+	class Foo
+	{
+	}
+
 	[KeptMember (".ctor()")]
 	class C
 	{
@@ -139,6 +152,19 @@ namespace Mono.Linker.Tests.Cases.DynamicDependencies
 
 		[Kept]
 		internal void Dependency3 (string str)
+		{
+		}
+
+		[Kept]
+		internal void Dependency4 (GenericType<Foo> g)
+		{
+		}
+
+		internal void Dependency5<T> (T t)
+		{
+		}
+
+		internal void Dependency6<T> (T t)
 		{
 		}
 
