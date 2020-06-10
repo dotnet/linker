@@ -16,7 +16,7 @@ namespace Mono.Linker.Steps
 	{
 		XPathDocument _document;
 		string _xmlDocumentLocation;
-		readonly string _resourceName;
+		readonly EmbeddedResource _resource;
 		readonly AssemblyDefinition _resourceAssembly;
 
 		public XmlCustomAttributesStep (XPathDocument document, string xmlDocumentLocation)
@@ -25,13 +25,13 @@ namespace Mono.Linker.Steps
 			_xmlDocumentLocation = xmlDocumentLocation;
 		}
 
-		public XmlCustomAttributesStep (XPathDocument document, string resourceName, AssemblyDefinition resourceAssembly, string xmlDocumentLocation = "<unspecified>")
+		public XmlCustomAttributesStep (XPathDocument document, EmbeddedResource resource, AssemblyDefinition resourceAssembly, string xmlDocumentLocation = "<unspecified>")
 			: this (document, xmlDocumentLocation)
 		{
-			if (string.IsNullOrEmpty (resourceName))
-				throw new ArgumentNullException (nameof (resourceName));
+			if (resource == null)
+				throw new ArgumentNullException (nameof (resource));
 
-			_resourceName = resourceName;
+			_resource = resource;
 			_resourceAssembly = resourceAssembly ?? throw new ArgumentNullException (nameof (resourceAssembly));
 		}
 
@@ -127,15 +127,15 @@ namespace Mono.Linker.Steps
 
 		protected override void Process ()
 		{
+			if (_resource != null && Context.StripLinkAttributes)
+				Context.Annotations.AddResourceToRemove (_resourceAssembly, _resource);
+
+			if (_resource != null && Context.IgnoreLinkAttributes)
+				return;
+
 			XPathNavigator nav = _document.CreateNavigator ();
 
 			if (!nav.MoveToChild ("linker", string.Empty))
-				return;
-
-			if (!string.IsNullOrEmpty (_resourceName) && Context.StripLinkAttributes)
-				Context.Annotations.AddResourceToRemove (_resourceAssembly, _resourceName);
-
-			if (!string.IsNullOrEmpty (_resourceName) && Context.IgnoreLinkAttributes)
 				return;
 
 			try {

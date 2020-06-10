@@ -151,7 +151,7 @@ namespace Mono.Linker.Steps
 
 		IStep GetExternalCustomAttributesStep (EmbeddedResource resource, AssemblyDefinition assembly)
 		{
-			return new XmlCustomAttributesStep (GetExternalDescriptor (resource), resource.Name, assembly, "resource " + resource.Name + " in " + assembly.FullName);
+			return new XmlCustomAttributesStep (GetExternalDescriptor (resource), resource, assembly, "resource " + resource.Name + " in " + assembly.FullName);
 		}
 
 		static ResolveFromXmlStep GetResolveStep (string descriptor)
