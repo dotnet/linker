@@ -1059,7 +1059,7 @@ namespace Mono.Linker
 			Console.WriteLine ("  --used-attrs-only         Attribute usage is removed if the attribute type is not used. Defaults to false");
 			Console.WriteLine ("  --link-attributes FILE    Supplementary custom attribute definitions for attributes controlling the linker behavior.");
 			Console.WriteLine ("  --ignore-link-attributes  Skips reading embedded attributes. Defaults to false");
-			Console.WriteLine ("  --strip-link-attributes   Remove XML link attributes resources for linker assemblies. Defaults to true");
+			Console.WriteLine ("  --strip-link-attributes   Remove XML link attributes resources for linked assemblies. Defaults to true");
 
 			Console.WriteLine ();
 			Console.WriteLine ("Analyzer");
