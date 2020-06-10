@@ -32,8 +32,8 @@ namespace Mono.Linker
 					yield return customAttribute;
 			}
 
-			if(_xmlCustomAttributes.TryGetValue(provider, out var annotations)) {
-				foreach(var customAttribute in annotations)
+			if (_xmlCustomAttributes.TryGetValue (provider, out var annotations)) {
+				foreach (var customAttribute in annotations)
 					yield return customAttribute;
 			}
 		}
