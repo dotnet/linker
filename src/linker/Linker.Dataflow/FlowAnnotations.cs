@@ -128,18 +128,26 @@ namespace Mono.Linker.Dataflow
 					// IL space assigns index 0 to the `this` parameter on instance methods.
 
 
+					DynamicallyAccessedMemberTypes methodMemberTypes = GetMemberTypesForDynamicallyAccessedMemberAttribute (method);
+
 					int offset;
 					if (method.HasImplicitThis ()) {
 						offset = 1;
 						if (IsTypeInterestingForDataflow (method.DeclaringType)) {
-							DynamicallyAccessedMemberTypes ta = GetMemberTypesForDynamicallyAccessedMemberAttribute (method);
-							if (ta != DynamicallyAccessedMemberTypes.None) {
+							// If there an annotation on the method itself and it's one of the special types (System.Type for example)
+							// treat that annotation as annotating the "this" parameter.
+							if (methodMemberTypes != DynamicallyAccessedMemberTypes.None) {
 								paramAnnotations = new DynamicallyAccessedMemberTypes[method.Parameters.Count + offset];
-								paramAnnotations[0] = ta;
+								paramAnnotations[0] = methodMemberTypes;
 							}
+						} else if (methodMemberTypes != DynamicallyAccessedMemberTypes.None) {
+							_context.LogWarning ($"DynamicallyAccessedMembersAttribute is specified on method '{method}'. The DynamicallyAccessedMembersAttribute is only allowed on method parameters, return value or generic parameters.", 2041, method);
 						}
 					} else {
 						offset = 0;
+						if (methodMemberTypes != DynamicallyAccessedMemberTypes.None) {
+							_context.LogWarning ($"DynamicallyAccessedMembersAttribute is specified on method '{method}'. The DynamicallyAccessedMembersAttribute is only allowed on method parameters, return value or generic parameters.", 2041, method);
+						}
 					}
 
 					for (int i = 0; i < method.Parameters.Count; i++) {
@@ -198,13 +206,17 @@ namespace Mono.Linker.Dataflow
 					MethodDefinition setMethod = property.SetMethod;
 					if (setMethod != null) {
 
-						// TODO: Handle abstract properties - no way to propagate the annotation to the field
-						if (!setMethod.HasBody || !ScanMethodBodyForFieldAccess (setMethod.Body, write: true, out backingFieldFromSetter)) {
-							// TODO: warn we couldn't find a unique backing field
+						// TODO: Handle abstract properties - can't do any propagation on the base property, should rely on validation
+						//  that overrides also correctly annotate.
+						if (setMethod.HasBody) {
+							// Look for the compiler generated backing field. If it doesn't work out simply move on. In such case we would still
+							// propagate the annotation to the setter/getter and later on when analyzing the setter/getter we will warn
+							// that the field (which ever it is) must be annotated as well.
+							ScanMethodBodyForFieldAccess (setMethod.Body, write: true, out backingFieldFromSetter);
 						}
 
 						if (annotatedMethods.Any (a => a.Method == setMethod)) {
-							// TODO: warn: duplicate annotation. not propagating.
+							_context.LogWarning ($"Trying to propagate DynamicallyAccessedMemberAttribute from property '{property.FullName}' to its setter '{setMethod}', but it already has such attribute on the 'value' parameter.", 2043, setMethod);
 						} else {
 							int offset = setMethod.HasImplicitThis () ? 1 : 0;
 							if (setMethod.Parameters.Count > 0) {
@@ -221,13 +233,17 @@ namespace Mono.Linker.Dataflow
 					MethodDefinition getMethod = property.GetMethod;
 					if (getMethod != null) {
 
-						// TODO: Handle abstract properties - no way to propagate the annotation to the field
-						if (!getMethod.HasBody || !ScanMethodBodyForFieldAccess (getMethod.Body, write: false, out backingFieldFromGetter)) {
-							// TODO: warn we couldn't find a unique backing field
+						// TODO: Handle abstract properties - can't do any propagation on the base property, should rely on validation
+						//  that overrides also correctly annotate.
+						if (getMethod.HasBody) {
+							// Look for the compiler generated backing field. If it doesn't work out simply move on. In such case we would still
+							// propagate the annotation to the setter/getter and later on when analyzing the setter/getter we will warn
+							// that the field (which ever it is) must be annotated as well.
+							ScanMethodBodyForFieldAccess (getMethod.Body, write: false, out backingFieldFromGetter);
 						}
 
 						if (annotatedMethods.Any (a => a.Method == getMethod)) {
-							// TODO: warn: duplicate annotation. not propagating.
+							_context.LogWarning ($"Trying to propagate DynamicallyAccessedMemberAttribute from property '{property.FullName}' to its getter '{getMethod}', but it already has such attribute on the return value.", 2043, getMethod);
 						} else {
 							annotatedMethods.Add (new MethodAnnotations (getMethod, null, annotation));
 						}
@@ -236,7 +252,7 @@ namespace Mono.Linker.Dataflow
 					FieldDefinition backingField;
 					if (backingFieldFromGetter != null && backingFieldFromSetter != null &&
 						backingFieldFromGetter != backingFieldFromSetter) {
-						// TODO: warn we couldn't find a unique backing field
+						_context.LogWarning ($"Could not find a unique backing field for property '{property.FullName}' to propagate DynamicallyAccessedMembersAttribute. The backing fields from getter '{backingFieldFromGetter.FullName}' and setter '{backingFieldFromSetter.FullName}' are not the same.", 2042, property);
 						backingField = null;
 					} else {
 						backingField = backingFieldFromGetter ?? backingFieldFromSetter;
@@ -244,7 +260,7 @@ namespace Mono.Linker.Dataflow
 
 					if (backingField != null) {
 						if (annotatedFields.Any (a => a.Field == backingField)) {
-							// TODO: warn about duplicate annotations
+							_context.LogWarning ($"Trying to propagate DynamicallyAccessedMemberAttribute from property '{property.FullName}' to its field '{backingField}', but it already has such attribute.", 2043, backingField);
 						} else {
 							annotatedFields.Add (new FieldAnnotation (backingField, annotation));
 						}
