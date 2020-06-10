@@ -147,9 +147,9 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			Append (file);
 		}
 
-		public virtual void AddAttributeDefinitions (string file)
+		public virtual void AddLinkAttributes (string file)
 		{
-			Append ("--attribute-defs");
+			Append ("--link-attributes");
 			Append (file);
 		}
 
@@ -226,8 +226,8 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			foreach (var substitutions in options.Substitutions)
 				AddSubstitutions (substitutions);
 
-			foreach (var attributeDefinition in options.AttributeDefinitions)
-				AddAttributeDefinitions (attributeDefinition);
+			foreach (var attributeDefinition in options.LinkAttributes)
+				AddLinkAttributes (attributeDefinition);
 
 			// Unity uses different argument format and needs to be able to translate to their format.  In order to make that easier
 			// we keep the information in flag + values format for as long as we can so that this information doesn't have to be parsed out of a single string

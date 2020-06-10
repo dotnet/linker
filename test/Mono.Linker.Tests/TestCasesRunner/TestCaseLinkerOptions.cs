@@ -25,6 +25,6 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 		public List<string> Substitutions = new List<string> ();
 
-		public List<string> AttributeDefinitions = new List<string> ();
+		public List<string> LinkAttributes = new List<string> ();
 	}
 }
