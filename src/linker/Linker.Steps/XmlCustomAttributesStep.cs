@@ -75,6 +75,10 @@ namespace Mono.Linker.Steps
 				bool recognizedArgument = true;
 
 				CustomAttribute attribute = new CustomAttribute (constructor);
+				if (xmlArguments == null) {
+					attributes.Add (attribute);
+					continue;
+				}
 				for (int i = 0; i < xmlArguments.Length; i++) {
 					object argumentValue = null;
 
