@@ -514,7 +514,7 @@ namespace Mono.Linker
 		/// <param name="subcategory">Optionally, further categorize this warning</param>
 		public void LogWarning (string text, int code, IMemberDefinition origin, int? ilOffset = null, string subcategory = MessageSubCategory.None)
 		{
-			MessageOrigin _origin = new MessageOrigin (origin);
+			MessageOrigin _origin = new MessageOrigin (origin, ilOffset);
 			LogWarning (text, code, _origin, subcategory);
 		}
 

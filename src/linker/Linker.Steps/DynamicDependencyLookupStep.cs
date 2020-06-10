@@ -59,7 +59,7 @@ namespace Mono.Linker.Steps
 				if (!IsPreserveDependencyAttribute (ca.AttributeType))
 					continue;
 #if FEATURE_ILLINK
-				Context.LogWarning ($"Deprecated PreserveDependencyAttribute on '{member}'. Use DynamicDependencyAttribute instead.", 2033, member);
+				Context.LogWarning ($"PreserveDependencyAttribute is deprecated. Use DynamicDependencyAttribute instead.", 2033, member);
 #endif
 				if (ca.ConstructorArguments.Count != 3)
 					continue;

@@ -17,7 +17,7 @@ namespace Mono.Linker
 				builder.Append (method.DeclaringType.Name);
 			else
 				builder.Append (method.Name);
-			
+
 			if (method.HasGenericParameters) {
 				builder.Append ('<');
 

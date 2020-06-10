@@ -49,6 +49,7 @@ namespace Mono.Linker
 			if (!(code >= 1000 && code <= 2000))
 				throw new ArgumentException ($"The provided code '{code}' does not fall into the error category, which is in the range of 1000 to 2000 (inclusive).");
 
+			origin?.TryGetSourceInfo ();
 			return new MessageContainer (MessageCategory.Error, text, code, subcategory, origin);
 		}
 
@@ -71,9 +72,11 @@ namespace Mono.Linker
 				return Empty;
 
 			origin.TryGetSourceInfo ();
-			if (subcategory == "Unrecognized reflection pattern" && origin.FileName == null) {
-				if (origin.MemberDefinition != null && origin.MemberDefinition is MethodDefinition method)
+			if (origin.FileName == null) {
+				if (origin.MemberDefinition is MethodDefinition method)
 					text = string.Format ("{0}: {1}", method.GetDisplayName (), text);
+				else
+					text = string.Format ("{0}: {1}", origin.MemberDefinition.FullName, text);
 			}
 
 			return new MessageContainer (MessageCategory.Warning, text, code, subcategory, origin);

@@ -615,14 +615,14 @@ namespace Mono.Linker.Steps
 			if (dynamicDependency.MemberSignature is string memberSignature) {
 				members = DocumentationSignatureParser.GetMembersByDocumentationSignature (type, memberSignature);
 				if (!members.Any ()) {
-					_context.LogWarning ($"No members were resolved for '{memberSignature}' in DynamicDependencyAttribute on '{context}'", 2037, context.Resolve ());
+					_context.LogWarning ($"No members were resolved for '{memberSignature}'.", 2037, context.Resolve ());
 					return;
 				}
 			} else {
 				var memberTypes = dynamicDependency.MemberTypes;
 				members = DynamicallyAccessedMembersBinder.GetDynamicallyAccessedMembers (type, memberTypes);
 				if (!members.Any ()) {
-					_context.LogWarning ($"No members were resolved for '{memberTypes}' in DynamicDependencyAttribute on '{context}'", 2037, context.Resolve ());
+					_context.LogWarning ($"No members were resolved for '{memberTypes}'.", 2037, context.Resolve ());
 					return;
 				}
 			}
