@@ -23,6 +23,8 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 		public List<KeyValuePair<string, string[]>> AdditionalArguments = new List<KeyValuePair<string, string[]>> ();
 
+		public List<string> Descriptors = new List<string> ();
+
 		public List<string> Substitutions = new List<string> ();
 
 		public List<string> LinkAttributes = new List<string> ();

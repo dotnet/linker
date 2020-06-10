@@ -12,20 +12,20 @@ using Mono.Cecil;
 
 namespace Mono.Linker.Steps
 {
-	class XmlCustomAttributesStep : BaseStep
+	class LinkAttributesStep : BaseStep
 	{
 		XPathDocument _document;
 		string _xmlDocumentLocation;
 		readonly EmbeddedResource _resource;
 		readonly AssemblyDefinition _resourceAssembly;
 
-		public XmlCustomAttributesStep (XPathDocument document, string xmlDocumentLocation)
+		public LinkAttributesStep (XPathDocument document, string xmlDocumentLocation)
 		{
 			_document = document;
 			_xmlDocumentLocation = xmlDocumentLocation;
 		}
 
-		public XmlCustomAttributesStep (XPathDocument document, EmbeddedResource resource, AssemblyDefinition resourceAssembly, string xmlDocumentLocation = "<unspecified>")
+		public LinkAttributesStep (XPathDocument document, EmbeddedResource resource, AssemblyDefinition resourceAssembly, string xmlDocumentLocation = "<unspecified>")
 			: this (document, xmlDocumentLocation)
 		{
 			if (resource == null)

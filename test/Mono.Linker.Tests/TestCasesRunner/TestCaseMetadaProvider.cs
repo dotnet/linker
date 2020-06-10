@@ -50,6 +50,12 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				tclo.AssembliesAction.Add (new KeyValuePair<string, string> ((string) ca[0].Value, (string) ca[1].Value));
 			}
 
+			foreach (var descFile in _testCaseTypeDefinition.CustomAttributes.Where (attr => attr.AttributeType.Name == nameof (SetupLinkerDescriptorFile))) {
+				var ca = descFile.ConstructorArguments;
+				var file = (string) ca[0].Value;
+				tclo.Descriptors.Add (Path.Combine (inputPath, file));
+			}
+
 			foreach (var subsFile in _testCaseTypeDefinition.CustomAttributes.Where (attr => attr.AttributeType.Name == nameof (SetupLinkerSubstitutionFileAttribute))) {
 				var ca = subsFile.ConstructorArguments;
 				var file = (string) ca[0].Value;
@@ -132,7 +138,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 		public static IEnumerable<string> GetTrustedPlatformAssemblies ()
 		{
 			if (AppContext.GetData ("TRUSTED_PLATFORM_ASSEMBLIES") is string tpaPaths) {
-				foreach (var path in tpaPaths.Split(Path.PathSeparator)) {
+				foreach (var path in tpaPaths.Split (Path.PathSeparator)) {
 					if (Path.GetExtension (path) == ".dll")
 						yield return path;
 				}
@@ -201,6 +207,13 @@ namespace Mono.Linker.Tests.TestCasesRunner
 		{
 			return _testCaseTypeDefinition.CustomAttributes
 				.Where (attr => attr.AttributeType.Name == nameof (SetupLinkerResponseFileAttribute))
+				.Select (GetSourceAndRelativeDestinationValue);
+		}
+
+		public virtual IEnumerable<SourceAndDestinationPair> GetDescriptorFiles ()
+		{
+			return _testCaseTypeDefinition.CustomAttributes
+				.Where (attr => attr.AttributeType.Name == nameof (SetupLinkerDescriptorFile))
 				.Select (GetSourceAndRelativeDestinationValue);
 		}
 

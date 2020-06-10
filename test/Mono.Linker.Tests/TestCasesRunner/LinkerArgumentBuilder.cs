@@ -25,10 +25,10 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			Append (directory.ToString ());
 		}
 
-		public virtual void AddLinkXmlFile (NPath path)
+		public virtual void AddLinkXmlFile (string file)
 		{
 			Append ("-x");
-			Append (path.ToString ());
+			Append (file);
 		}
 
 		public virtual void AddResponseFile (NPath path)
@@ -222,6 +222,9 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			AddStripSubstitutions (options.StripSubstitutions);
 
 			AddStripLinkAttributes (options.StripLinkAttributes);
+
+			foreach (var descriptor in options.Descriptors)
+				AddLinkXmlFile (descriptor);
 
 			foreach (var substitutions in options.Substitutions)
 				AddSubstitutions (substitutions);

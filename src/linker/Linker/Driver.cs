@@ -171,7 +171,7 @@ namespace Mono.Linker
 		// -1 => error setting up context
 		protected int SetupContext (ILogger customLogger = null)
 		{
-			Pipeline p = GetStandardPipeline ();
+		Pipeline p = GetStandardPipeline ();
 			context = GetDefaultContext (p);
 
 			if (customLogger != null)
@@ -590,7 +590,7 @@ namespace Mono.Linker
 				p.PrependStep (new ResolveFromXApiStep (new XPathDocument (file)));
 #endif
 			foreach (var file in xml_custom_attribute_steps)
-				AddXmlCustomAttributesStep (p, file);
+				AddLinkAttributesStep (p, file);
 
 			foreach (var file in resolve_from_xml_steps)
 				AddResolveFromXmlStep (p, file);
@@ -651,8 +651,8 @@ namespace Mono.Linker
 			//   dynamically adds steps:
 			//     ResolveFromXmlStep [optional, possibly many]
 			//     BodySubstituterStep [optional, possibly many]
-			//     XmlCustomAttributesStep [optional, possibly many]
-			// XmlCustomAttributesStep [optional, possibly many]
+			//     LinkAttributesStep [optional, possibly many]
+			// LinkAttributesStep [optional, possibly many]
 			// DynamicDependencyLookupStep
 			// [mono only] PreserveCalendarsStep [optional]
 			// TypeMapStep
@@ -729,9 +729,9 @@ namespace Mono.Linker
 			pipeline.PrependStep (new ResolveFromXmlStep (new XPathDocument (file), file));
 		}
 
-		protected virtual void AddXmlCustomAttributesStep (Pipeline pipeline, string file)
+		protected virtual void AddLinkAttributesStep (Pipeline pipeline, string file)
 		{
-			pipeline.AddStepAfter (typeof (BlacklistStep), new XmlCustomAttributesStep (new XPathDocument (file), file));
+			pipeline.AddStepAfter (typeof (BlacklistStep), new LinkAttributesStep (new XPathDocument (file), file));
 		}
 
 		void AddBodySubstituterStep (Pipeline pipeline, string file)

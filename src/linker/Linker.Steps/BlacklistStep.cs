@@ -92,7 +92,7 @@ namespace Mono.Linker.Steps
 									.Cast<EmbeddedResource> ()) {
 					try {
 						Context.LogMessage (MessageContainer.CreateInfoMessage ($"Processing embedded {rsc.Name} from {asm.Name}"));
-						steps_to_add.Push (GetExternalCustomAttributesStep (rsc, asm));
+						steps_to_add.Push (GetExternalLinkAttributesStep (rsc, asm));
 					} catch (XmlException ex) {
 						Context.LogMessage (MessageContainer.CreateErrorMessage ($"Error processing {rsc.Name} from {asm.Name}: {ex}", 1003));
 					}
@@ -149,9 +149,9 @@ namespace Mono.Linker.Steps
 			return new BodySubstituterStep (GetExternalDescriptor (resource), resource, assembly, "resource " + resource.Name + " in " + assembly.FullName);
 		}
 
-		IStep GetExternalCustomAttributesStep (EmbeddedResource resource, AssemblyDefinition assembly)
+		IStep GetExternalLinkAttributesStep (EmbeddedResource resource, AssemblyDefinition assembly)
 		{
-			return new XmlCustomAttributesStep (GetExternalDescriptor (resource), resource, assembly, "resource " + resource.Name + " in " + assembly.FullName);
+			return new LinkAttributesStep (GetExternalDescriptor (resource), resource, assembly, "resource " + resource.Name + " in " + assembly.FullName);
 		}
 
 		static ResolveFromXmlStep GetResolveStep (string descriptor)
