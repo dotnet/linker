@@ -767,10 +767,10 @@ namespace Mono.Linker.Dataflow
 	/// </summary>
 	class AnnotatedStringValue : LeafValueWithDynamicallyAccessedMemberNode
 	{
-		public AnnotatedStringValue (DynamicallyAccessedMemberTypes dynamicallyAccessedMemberKinds)
+		public AnnotatedStringValue (DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 		{
 			Kind = ValueNodeKind.AnnotatedString;
-			DynamicallyAccessedMemberKinds = dynamicallyAccessedMemberKinds;
+			DynamicallyAccessedMemberTypes = dynamicallyAccessedMemberTypes;
 		}
 
 		public override bool Equals (ValueNode other)
@@ -781,17 +781,17 @@ namespace Mono.Linker.Dataflow
 				return false;
 
 			var otherValue = (AnnotatedStringValue) other;
-			return this.DynamicallyAccessedMemberKinds == otherValue.DynamicallyAccessedMemberKinds;
+			return this.DynamicallyAccessedMemberTypes == otherValue.DynamicallyAccessedMemberTypes;
 		}
 
 		public override int GetHashCode ()
 		{
-			return HashCode.Combine (Kind, DynamicallyAccessedMemberKinds);
+			return HashCode.Combine (Kind, DynamicallyAccessedMemberTypes);
 		}
 
 		protected override string NodeToString ()
 		{
-			return ValueNodeDump.ValueNodeToString (this, DynamicallyAccessedMemberKinds);
+			return ValueNodeDump.ValueNodeToString (this, DynamicallyAccessedMemberTypes);
 		}
 	}
 

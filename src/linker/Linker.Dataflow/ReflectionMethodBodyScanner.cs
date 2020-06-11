@@ -938,7 +938,7 @@ namespace Mono.Linker.Dataflow
 						ValueNode transformedResult = null;
 						foreach (var value in methodParams[0].UniqueValues ()) {
 							if (value is LeafValueWithDynamicallyAccessedMemberNode dynamicallyAccessedThing) {
-								var annotatedString = new AnnotatedStringValue (dynamicallyAccessedThing.DynamicallyAccessedMemberKinds);
+								var annotatedString = new AnnotatedStringValue (dynamicallyAccessedThing.DynamicallyAccessedMemberTypes);
 								transformedResult = MergePointValue.MergeValues (transformedResult, annotatedString);
 							} else {
 								transformedResult = null;
