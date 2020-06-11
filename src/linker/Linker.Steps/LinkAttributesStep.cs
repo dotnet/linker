@@ -131,11 +131,12 @@ namespace Mono.Linker.Steps
 
 		protected override void Process ()
 		{
-			if (_resource != null && Context.StripLinkAttributes)
-				Context.Annotations.AddResourceToRemove (_resourceAssembly, _resource);
-
-			if (_resource != null && Context.IgnoreLinkAttributes)
-				return;
+			if (_resource != null) {
+				if (Context.StripLinkAttributes)
+					Context.Annotations.AddResourceToRemove (_resourceAssembly, _resource);
+				if (Context.IgnoreLinkAttributes)
+					return;
+			}
 
 			XPathNavigator nav = _document.CreateNavigator ();
 
