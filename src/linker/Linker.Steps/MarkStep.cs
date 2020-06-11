@@ -1410,7 +1410,7 @@ namespace Mono.Linker.Steps
 
 #if !FEATURE_ILLINK
 				if (_context.IsFeatureExcluded ("deserialization")) {
-					MarkMethodsIf (type.Methods, HasOnSerializeAttribute, new DependencyInfo (DependencyKind.SerializationMethodForType, type));
+					MarkMethodsIf (type.Methods, HasOnSerializeAttribute, new DependencyInfo (DependencyKind.SerializationMethodForType, type), type);
 				} else
 #endif
 				{

@@ -79,13 +79,9 @@ namespace Mono.Linker.Dataflow
 			}
 
 			MethodDefinition declaringMethod = genericParameter.DeclaringMethod?.Resolve ();
-			if (declaringMethod != null) {
-				if (GetAnnotations (declaringMethod.DeclaringType).TryGetAnnotation (declaringMethod, out var methodAnnotations) &&
-					methodAnnotations.TryGetAnnotation (genericParameter, out var annotation))
-					return annotation.Annotation;
-
-				return DynamicallyAccessedMemberTypes.None;
-			}
+			if (declaringMethod != null && GetAnnotations (declaringMethod.DeclaringType).TryGetAnnotation (declaringMethod, out var methodTypeAnnotations) &&
+				methodTypeAnnotations.TryGetAnnotation (genericParameter, out var methodAnnotation))
+				return methodAnnotation.Annotation;
 
 			return DynamicallyAccessedMemberTypes.None;
 		}
