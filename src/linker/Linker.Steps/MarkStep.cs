@@ -964,8 +964,6 @@ namespace Mono.Linker.Steps
 				if (property != null)
 					return property;
 
-				// This would neglect to mark parameters for generic instances.
-				Debug.Assert (!(type.BaseType is GenericInstanceType));
 				type = type.BaseType?.Resolve ();
 			}
 
@@ -1002,8 +1000,6 @@ namespace Mono.Linker.Steps
 				if (field != null)
 					return field;
 
-				// This would neglect to mark parameters for generic instances.
-				Debug.Assert (!(type.BaseType is GenericInstanceType));
 				type = type.BaseType?.Resolve ();
 			}
 
@@ -1017,8 +1013,6 @@ namespace Mono.Linker.Steps
 				if (method != null)
 					return method;
 
-				// This would neglect to mark parameters for generic instances.
-				Debug.Assert (!(type.BaseType is GenericInstanceType));
 				type = type.BaseType.Resolve ();
 			}
 
