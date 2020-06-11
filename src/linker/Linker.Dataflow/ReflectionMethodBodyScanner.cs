@@ -86,7 +86,7 @@ namespace Mono.Linker.Dataflow
 			}
 		}
 
-		public void ProcessAttributeDataflow (MethodDefinition source, MethodDefinition method, IList<CustomAttributeArgument> arguments)
+		public void ProcessAttributeDataflow (IMemberDefinition source, MethodDefinition method, IList<CustomAttributeArgument> arguments)
 		{
 			int paramOffset = method.HasImplicitThis () ? 1 : 0;
 
@@ -790,7 +790,7 @@ namespace Mono.Linker.Dataflow
 									reflectionContext.RecordHandledPattern ();
 								} else {
 									var methodCalling = callingMethodBody.Method;
-									reflectionContext.RecordRecognizedPattern (foundType, () => _markStep.MarkType (foundType, new DependencyInfo (DependencyKind.AccessedViaReflection, methodCalling)));
+									reflectionContext.RecordRecognizedPattern (foundType, () => _markStep.MarkType (foundType, new DependencyInfo (DependencyKind.AccessedViaReflection, methodCalling), methodCalling));
 									methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new SystemTypeValue (foundType));
 								}
 							} else if (typeNameValue == NullValue.Instance) {
@@ -1182,7 +1182,7 @@ namespace Mono.Linker.Dataflow
 						reflectionContext.AnalyzingPattern ();
 						foreach (var typeHandleValue in methodParams[0].UniqueValues ()) {
 							if (typeHandleValue is RuntimeTypeHandleValue runtimeTypeHandleValue) {
-								_markStep.MarkStaticConstructor (runtimeTypeHandleValue.TypeRepresented, new DependencyInfo (DependencyKind.AccessedViaReflection, reflectionContext.Source));
+								_markStep.MarkStaticConstructor (runtimeTypeHandleValue.TypeRepresented, new DependencyInfo (DependencyKind.AccessedViaReflection, reflectionContext.Source), reflectionContext.Source);
 								reflectionContext.RecordHandledPattern ();
 							} else if (typeHandleValue == NullValue.Instance)
 								reflectionContext.RecordHandledPattern ();
@@ -1386,7 +1386,7 @@ namespace Mono.Linker.Dataflow
 					break;
 				case null:
 					var source = reflectionContext.Source;
-					reflectionContext.RecordRecognizedPattern (typeDefinition, () => _markStep.MarkEntireType (typeDefinition, includeBaseTypes: true, new DependencyInfo (DependencyKind.AccessedViaReflection, source)));
+					reflectionContext.RecordRecognizedPattern (typeDefinition, () => _markStep.MarkEntireType (typeDefinition, includeBaseTypes: true, new DependencyInfo (DependencyKind.AccessedViaReflection, source), source));
 					break;
 				}
 			}
@@ -1395,13 +1395,13 @@ namespace Mono.Linker.Dataflow
 		void MarkMethod (ref ReflectionPatternContext reflectionContext, MethodDefinition method)
 		{
 			var source = reflectionContext.Source;
-			reflectionContext.RecordRecognizedPattern (method, () => _markStep.MarkIndirectlyCalledMethod (method, new DependencyInfo (DependencyKind.AccessedViaReflection, source)));
+			reflectionContext.RecordRecognizedPattern (method, () => _markStep.MarkIndirectlyCalledMethod (method, new DependencyInfo (DependencyKind.AccessedViaReflection, source), source));
 		}
 
 		void MarkNestedType (ref ReflectionPatternContext reflectionContext, TypeDefinition nestedType)
 		{
 			var source = reflectionContext.Source;
-			reflectionContext.RecordRecognizedPattern (nestedType, () => _markStep.MarkType (nestedType, new DependencyInfo (DependencyKind.AccessedViaReflection, source)));
+			reflectionContext.RecordRecognizedPattern (nestedType, () => _markStep.MarkType (nestedType, new DependencyInfo (DependencyKind.AccessedViaReflection, source), source));
 		}
 
 		void MarkField (ref ReflectionPatternContext reflectionContext, FieldDefinition field)
@@ -1420,19 +1420,20 @@ namespace Mono.Linker.Dataflow
 				// TODO - this is sort of questionable - when somebody asks for a property they probably want to call either get or set
 				// but linker tracks those separately, and so accessing the getter/setter will raise a warning as it's potentially trimmed.
 				// So including them here doesn't actually remove the warning even if the code is written correctly.
-				_markStep.MarkMethodIfNotNull (property.GetMethod, dependencyInfo);
-				_markStep.MarkMethodIfNotNull (property.SetMethod, dependencyInfo);
-				_markStep.MarkMethodsIf (property.OtherMethods, m => true, dependencyInfo);
+				_markStep.MarkMethodIfNotNull (property.GetMethod, dependencyInfo, source);
+				_markStep.MarkMethodIfNotNull (property.SetMethod, dependencyInfo, source);
+				_markStep.MarkMethodsIf (property.OtherMethods, m => true, dependencyInfo, source);
 			});
 		}
 
 		void MarkEvent (ref ReflectionPatternContext reflectionContext, EventDefinition @event)
 		{
+			var source = reflectionContext.Source;
 			var dependencyInfo = new DependencyInfo (DependencyKind.AccessedViaReflection, reflectionContext.Source);
 			reflectionContext.RecordRecognizedPattern (@event, () => {
 				// MarkEvent actually marks the add/remove/invoke methods as well, so no need to mark those explicitly
 				_markStep.MarkEvent (@event, dependencyInfo);
-				_markStep.MarkMethodsIf (@event.OtherMethods, m => true, dependencyInfo);
+				_markStep.MarkMethodsIf (@event.OtherMethods, m => true, dependencyInfo, source);
 			});
 		}
 
