@@ -177,7 +177,7 @@ namespace Mono.Linker.Steps
 				string value = GetAttribute (iterator.Current, "value");
 				if (value != "") {
 					if (!TryConvertValue (value, method.ReturnType, out object res)) {
-						Context.LogWarning ($"Invalid value for '{method.GetName ()}' stub", 2010, _xmlDocumentLocation);
+						Context.LogWarning ($"Invalid value for '{method.GetDisplayName ()}' stub", 2010, _xmlDocumentLocation);
 						return;
 					}
 
@@ -187,7 +187,7 @@ namespace Mono.Linker.Steps
 				Annotations.SetAction (method, MethodAction.ConvertToStub);
 				return;
 			default:
-				Context.LogWarning ($"Unknown body modification '{action}' for '{method.GetName ()}'", 2011, _xmlDocumentLocation);
+				Context.LogWarning ($"Unknown body modification '{action}' for '{method.GetDisplayName ()}'", 2011, _xmlDocumentLocation);
 				return;
 			}
 		}
