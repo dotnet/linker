@@ -8,43 +8,39 @@ namespace Mono.Linker
 {
 	public static class MethodReferenceExtensions
 	{
-		public static string GetName (this MethodReference method)
+		public static string GetDisplayName (this MethodReference method)
 		{
 			var builder = new System.Text.StringBuilder ();
-			builder.Append (method.DeclaringType.Name);
+			builder.Append ((method as MemberReference).GetNamespaceDisplayName ());
+			builder.Append ('.');
+			builder.Append (method.DeclaringType.GetDisplayName ());
 			builder.Append ("::");
 			if (method.Name == ".ctor")
 				builder.Append (method.DeclaringType.Name);
-			else {
-				if (method.Name.Contains ("set_") ||
-				method.Name.Contains ("get_")) {
-					var semanticsAttributes = method.Resolve ().SemanticsAttributes;
-					if (semanticsAttributes == MethodSemanticsAttributes.Setter ||
-						semanticsAttributes == MethodSemanticsAttributes.Getter)
-						builder.Append (method.Name.Substring (4));
-				} else
-					builder.Append (method.Name);
-			}
+			else
+				builder.Append (method.Name);
 
 			if (method.HasGenericParameters) {
 				builder.Append ('<');
 
 				for (int i = 0; i < method.GenericParameters.Count - 1; i++)
-					builder.Append ($"{method.GenericParameters[i]},");
+					builder.Append ($"{method.GenericParameters[i].GetDisplayName ()},");
 
-				builder.Append ($"{method.GenericParameters[method.GenericParameters.Count - 1]}>");
+				builder.Append ($"{method.GenericParameters[method.GenericParameters.Count - 1].GetDisplayName ()}>");
 			}
 
 			builder.Append ("(");
+
 			if (method.HasParameters) {
 				for (int i = 0; i < method.Parameters.Count - 1; i++) {
-					builder.Append ($"{method.Parameters[i].ParameterType.Name},");
+					builder.Append ($"{method.Parameters[i].ParameterType.GetDisplayName ()},");
 				}
 
-				builder.Append (method.Parameters[method.Parameters.Count - 1].ParameterType.Name);
+				builder.Append (method.Parameters[method.Parameters.Count - 1].ParameterType.GetDisplayName ());
 			}
 
 			builder.Append (")");
+
 			return builder.ToString ();
 		}
 

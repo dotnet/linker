@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Text;
 using Mono.Cecil;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,6 +7,53 @@ namespace Mono.Linker
 {
 	public static class TypeReferenceExtensions
 	{
+		public static string GetDisplayName (this TypeReference type)
+		{
+			if (type == null)
+				return string.Empty;
+
+			var builder = new System.Text.StringBuilder ();
+			if (type.DeclaringType != null)
+				builder.Append (type.DeclaringType.GetDisplayName ()).Append (".");
+
+			if (type.HasGenericParameters) {
+				builder.Append (type.Name.Substring (0, type.Name.IndexOf ('`')));
+				builder.Append ('<');
+				for (int i = 0; i < type.GenericParameters.Count - 1; i++)
+					builder.Append ($"{type.GenericParameters[i]},");
+
+				builder.Append ($"{type.GenericParameters[type.GenericParameters.Count - 1]}>");
+			} else if (type is ArrayType arrayType) {
+				void parseArrayDimensions (ArrayType at)
+				{
+					builder.Append ('[');
+					for (int i = 0; i < at.Dimensions.Count - 1; i++)
+						builder.Append (',');
+
+					builder.Append (']');
+				}
+
+				builder.Append (arrayType.Name.Substring (0, arrayType.Name.IndexOf ('[')));
+				parseArrayDimensions (arrayType);
+				var element = arrayType.ElementType as ArrayType;
+				while (element != null) {
+					parseArrayDimensions (element);
+					element = element.ElementType as ArrayType;
+				}
+			} else if (type is GenericInstanceType genericInstanceType) {
+				builder.Append (genericInstanceType.Name.Substring (0, genericInstanceType.Name.IndexOf ('`')));
+				builder.Append ('<');
+				for (int i = 0; i < genericInstanceType.GenericArguments.Count - 1; i++)
+					builder.Append ($"{genericInstanceType.GenericArguments[i].GetDisplayName ()},");
+
+				builder.Append ($"{genericInstanceType.GenericArguments[genericInstanceType.GenericArguments.Count - 1].GetDisplayName ()}>");
+			} else {
+				builder.Append (type.Name);
+			}
+
+			return builder.ToString ();
+		}
+
 		public static TypeReference GetInflatedBaseType (this TypeReference type)
 		{
 			if (type == null)
@@ -258,6 +304,12 @@ namespace Mono.Linker
 		{
 			return type.Name == name
 				&& type.Namespace == ns;
+		}
+
+		public static bool IsTypeOf<T> (this TypeReference tr)
+		{
+			var type = typeof (T);
+			return tr.Name == type.Name && tr.Namespace == tr.Namespace;
 		}
 	}
 }

@@ -44,22 +44,8 @@ namespace Mono.Linker
 
 		public void UnrecognizedReflectionAccessPattern (IMemberDefinition source, Instruction sourceInstruction, IMetadataTokenProvider accessedItem, string message)
 		{
-			MessageOrigin origin;
-			string location = string.Empty;
-			var method = source as MethodDefinition;
-			if (sourceInstruction != null && method != null)
-				origin = MessageOrigin.TryGetOrigin (method, sourceInstruction.Offset);
-			else
-				origin = new MessageOrigin (source);
-
-			if (origin.FileName == null) {
-				if (method != null)
-					location = method.GetName () + ": ";
-				else
-					location = source.DeclaringType?.FullName + "::" + source.Name;
-			}
-
-			_context.LogMessage (MessageContainer.CreateWarningMessage (_context, location + message, 2006, origin, "Unrecognized reflection pattern"));
+			var origin = new MessageOrigin (source, sourceInstruction?.Offset);
+			_context.LogWarning (message, 2006, origin, "Unrecognized reflection pattern");
 		}
 	}
 }
