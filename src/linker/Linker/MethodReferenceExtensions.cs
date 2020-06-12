@@ -11,7 +11,9 @@ namespace Mono.Linker
 		public static string GetDisplayName (this MethodReference method)
 		{
 			var builder = new System.Text.StringBuilder ();
-			builder.Append (method.DeclaringType.FullName);
+			builder.Append ((method as MemberReference).GetNamespaceDisplayName ());
+			builder.Append ('.');
+			builder.Append (method.DeclaringType.GetDisplayName ());
 			builder.Append ("::");
 			if (method.Name == ".ctor")
 				builder.Append (method.DeclaringType.Name);
@@ -22,19 +24,19 @@ namespace Mono.Linker
 				builder.Append ('<');
 
 				for (int i = 0; i < method.GenericParameters.Count - 1; i++)
-					builder.Append ($"{method.GenericParameters[i]},");
+					builder.Append ($"{method.GenericParameters[i].GetDisplayName ()},");
 
-				builder.Append ($"{method.GenericParameters[method.GenericParameters.Count - 1]}>");
+				builder.Append ($"{method.GenericParameters[method.GenericParameters.Count - 1].GetDisplayName ()}>");
 			}
 
 			builder.Append ("(");
 
 			if (method.HasParameters) {
 				for (int i = 0; i < method.Parameters.Count - 1; i++) {
-					builder.Append ($"{method.Parameters[i].ParameterType},");
+					builder.Append ($"{method.Parameters[i].ParameterType.GetDisplayName ()},");
 				}
 
-				builder.Append (method.Parameters[method.Parameters.Count - 1].ParameterType);
+				builder.Append (method.Parameters[method.Parameters.Count - 1].ParameterType.GetDisplayName ());
 			}
 
 			builder.Append (")");
