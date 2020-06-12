@@ -1,5 +1,5 @@
 ﻿using Mono.Cecil;
-	
+
 namespace Mono.Linker
 {
 	public static class MemberReferenceExtensions

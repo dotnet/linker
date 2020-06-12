@@ -34,7 +34,7 @@ namespace Mono.Linker.Tests
 			default:
 				throw new NotImplementedException ();
 			}
-			
+
 		}
 
 		public static IEnumerable<object[]> GetMemberAssertionsAsArray (Type type)
@@ -148,7 +148,7 @@ namespace Mono.Linker.Tests
 		}
 
 		[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests::MethodWithGenericTypeArguments(Dictionary<Int32,Char>)")]
-		public void MethodWithGenericTypeArguments (Dictionary<int,char> p)
+		public void MethodWithGenericTypeArguments (Dictionary<int, char> p)
 		{
 		}
 	}

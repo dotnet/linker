@@ -444,7 +444,7 @@ namespace Mono.Linker.Steps
 					if (attributes.Count () > 0)
 						Context.CustomAttributes.AddCustomAttributes (method.MethodReturnType, attributes);
 				} else {
-					Context.LogWarning ($"There is more than one return parameter specified for '{method.GetDisplayName()}' in '{_xmlDocumentLocation}'", 2023, _xmlDocumentLocation);
+					Context.LogWarning ($"There is more than one return parameter specified for '{method.GetDisplayName ()}' in '{_xmlDocumentLocation}'", 2023, _xmlDocumentLocation);
 				}
 			}
 		}
