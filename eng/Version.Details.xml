@@ -11,9 +11,9 @@
       <Uri>https://github.com/dotnet/arcade</Uri>
       <Sha>fef373440d604c428950236fbc2b99ce0df368a9</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.NET.Sdk.IL" Version="5.0.0-preview.7.20307.4">
+    <Dependency Name="Microsoft.NET.Sdk.IL" Version="5.0.0-preview.7.20314.1">
       <Uri>https://github.com/dotnet/runtime</Uri>
-      <Sha>b143003882d7fd3e93927363c3f4ac33b340bf65</Sha>
+      <Sha>533e9b7dbb5ab9f63e74f95d8cae78171dafc31f</Sha>
     </Dependency>
   </ToolsetDependencies>
 </Dependencies>
