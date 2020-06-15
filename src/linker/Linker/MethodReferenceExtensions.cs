@@ -22,7 +22,7 @@ namespace Mono.Linker
 			}
 
 			sb.Append (")");
-			
+
 			// Insert generic parameters
 			if (method.HasGenericParameters) {
 				TypeReferenceExtensions.ParseGenericParameters (method.GenericParameters, null, method.GenericParameters.Count, sb);

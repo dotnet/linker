@@ -28,12 +28,12 @@ namespace Mono.Linker
 					break;
 				default:
 					if (type.HasGenericParameters) {
-						if (!int.TryParse (type.Name.Substring (type.Name.IndexOf ('`') + 1), out int genericParameters)) {
+						if (!int.TryParse (type.Name.Substring (type.Name.IndexOf ('`') + 1), out int usedParameters)) {
 							sb.Insert (0, type.Name);
 							break;
 						}
 
-						ParseGenericParameters (type.GenericParameters.TakeLast (genericParameters).ToList (), genericArguments, genericParameters, sb);
+						ParseGenericParameters (type.GenericParameters.Skip (type.GenericParameters.Count - usedParameters).ToList (), genericArguments, usedParameters, sb);
 						sb.Insert (0, type.Name.Substring (0, type.Name.IndexOf ('`')));
 						break;
 					}
