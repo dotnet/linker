@@ -2,6 +2,7 @@
 using Mono.Cecil;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace Mono.Linker
 {
@@ -12,46 +13,94 @@ namespace Mono.Linker
 			if (type == null)
 				return string.Empty;
 
-			var builder = new System.Text.StringBuilder ();
-			if (type.DeclaringType != null)
-				builder.Append (type.DeclaringType.GetDisplayName ()).Append (".");
+			var sb = new StringBuilder ();
+			Stack<TypeReference> genericArguments = null;
+			while (true) {
+				switch (type) {
+				case ArrayType arrayType:
+					ParseArrayType (arrayType, sb);
+					break;
+				case GenericInstanceType genericInstanceType:
+					int arguments = int.Parse (genericInstanceType.Name.Substring (genericInstanceType.Name.IndexOf ('`') + 1));
+					genericArguments = new Stack<TypeReference> (genericInstanceType.GenericArguments);
+					ParseGenericInstanceType (genericArguments, arguments, sb);
+					sb.Insert (0, genericInstanceType.Name.Substring (0, genericInstanceType.Name.IndexOf ('`')));
+					break;
+				default:
+					if (type.HasGenericParameters) {
+						if (!int.TryParse (type.Name.Substring (type.Name.IndexOf ('`') + 1), out int genericParameters)) {
+							sb.Insert (0, type.Name);
+							break;
+						}
 
-			if (type.HasGenericParameters) {
-				builder.Append (type.Name.Substring (0, type.Name.IndexOf ('`')));
-				builder.Append ('<');
-				for (int i = 0; i < type.GenericParameters.Count - 1; i++)
-					builder.Append ($"{type.GenericParameters[i]},");
+						ParseGenericParameters (type.GenericParameters.TakeLast (genericParameters).ToList (), genericArguments, genericParameters, sb);
+						sb.Insert (0, type.Name.Substring (0, type.Name.IndexOf ('`')));
+						break;
+					}
 
-				builder.Append ($"{type.GenericParameters[type.GenericParameters.Count - 1]}>");
-			} else if (type is ArrayType arrayType) {
-				void parseArrayDimensions (ArrayType at)
-				{
-					builder.Append ('[');
-					for (int i = 0; i < at.Dimensions.Count - 1; i++)
-						builder.Append (',');
-
-					builder.Append (']');
+					sb.Insert (0, type.Name);
+					break;
 				}
 
-				builder.Append (arrayType.Name.Substring (0, arrayType.Name.IndexOf ('[')));
-				parseArrayDimensions (arrayType);
-				var element = arrayType.ElementType as ArrayType;
-				while (element != null) {
-					parseArrayDimensions (element);
-					element = element.ElementType as ArrayType;
-				}
-			} else if (type is GenericInstanceType genericInstanceType) {
-				builder.Append (genericInstanceType.Name.Substring (0, genericInstanceType.Name.IndexOf ('`')));
-				builder.Append ('<');
-				for (int i = 0; i < genericInstanceType.GenericArguments.Count - 1; i++)
-					builder.Append ($"{genericInstanceType.GenericArguments[i].GetDisplayName ()},");
+				type = type.DeclaringType;
+				if (type == null)
+					break;
 
-				builder.Append ($"{genericInstanceType.GenericArguments[genericInstanceType.GenericArguments.Count - 1].GetDisplayName ()}>");
-			} else {
-				builder.Append (type.Name);
+				sb.Insert (0, '.');
 			}
 
-			return builder.ToString ();
+			return sb.ToString ();
+		}
+
+		internal static void ParseGenericParameters (IList<GenericParameter> genericParameters, Stack<TypeReference> genericArguments, int arguments, StringBuilder sb)
+		{
+			sb.Insert (0, '>');
+			if (genericArguments != null) {
+				sb.Insert (0, genericArguments.Pop ().GetDisplayName ());
+				arguments--;
+				while (arguments > 0) {
+					sb.Insert (0, ',').Insert (0, genericArguments.Pop ().GetDisplayName ());
+					arguments--;
+				}
+			} else {
+				sb.Insert (0, genericParameters[genericParameters.Count - 1]);
+				for (int i = genericParameters.Count - 2; i >= 0; i--)
+					sb.Insert (0, ',').Insert (0, genericParameters[i]);
+			}
+
+			sb.Insert (0, '<');
+		}
+
+		private static void ParseGenericInstanceType (Stack<TypeReference> genericArguments, int arguments, StringBuilder sb)
+		{
+			sb.Insert (0, '>').Insert (0, genericArguments.Pop ().GetDisplayName ());
+			arguments--;
+			while (arguments > 0) {
+				sb.Insert (0, ',').Insert (0, genericArguments.Pop ().GetDisplayName ());
+				arguments--;
+			}
+
+			sb.Insert (0, '<');
+		}
+
+		private static void ParseArrayType (ArrayType arrayType, StringBuilder sb)
+		{
+			void parseArrayDimensions (ArrayType at)
+			{
+				sb.Append ('[');
+				for (int i = 0; i < at.Dimensions.Count - 1; i++)
+					sb.Append (',');
+
+				sb.Append (']');
+			}
+
+			sb.Append (arrayType.Name.Substring (0, arrayType.Name.IndexOf ('[')));
+			parseArrayDimensions (arrayType);
+			var element = arrayType.ElementType as ArrayType;
+			while (element != null) {
+				parseArrayDimensions (element);
+				element = element.ElementType as ArrayType;
+			}
 		}
 
 		public static TypeReference GetInflatedBaseType (this TypeReference type)
