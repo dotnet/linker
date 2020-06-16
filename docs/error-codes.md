@@ -7,11 +7,11 @@ error and warning codes.
 
 ## Error Codes
 
-#### `IL1001`: Failed to process XML substitution: 'XML document location'. Feature 'feature' does not specify a "featurevalue" attribute
+#### `IL1001`: Failed to process 'XML document location'. Feature 'feature' does not specify a "featurevalue" attribute
 
 - The substitution in 'XML document location' with feature value 'feature' does not use the `featurevalue` attribute. These attributes have to be used together.
 
-#### `IL1002`: Failed to process XML substitution: 'XML document location'. Unsupported non-boolean feature definition 'feature'
+#### `IL1002`: Failed to process 'XML document location'. Unsupported non-boolean feature definition 'feature'
 
 - The substitution in 'XML document location' with feature value 'feature' sets the attribute `featurevalue` to a non-boolean value. Only boolean values are supported for this attribute.
 

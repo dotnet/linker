@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Globalization;
 using System.Xml.XPath;
@@ -41,28 +42,7 @@ namespace Mono.Linker.Steps
 			ReadSubstitutions (_document);
 		}
 
-		bool ShouldProcessSubstitutions (XPathNavigator nav)
-		{
-			var feature = GetAttribute (nav, "feature");
-			if (string.IsNullOrEmpty (feature))
-				return true;
-
-			var value = GetAttribute (nav, "featurevalue");
-			if (string.IsNullOrEmpty (value)) {
-				Context.LogError ($"Failed to process XML substitution: '{_xmlDocumentLocation}'. Feature {feature} does not specify a 'featurevalue' attribute", 1001);
-				return false;
-			}
-
-			if (!bool.TryParse (value, out bool bValue)) {
-				Context.LogError ($"Failed to process XML substitution: '{_xmlDocumentLocation}'. Unsupported non-boolean feature definition {feature}", 1002);
-				return false;
-			}
-
-			if (Context.FeatureSettings == null || !Context.FeatureSettings.TryGetValue (feature, out bool featureSetting))
-				return false;
-
-			return bValue == featureSetting;
-		}
+		bool ShouldProcessSubstitutions (XPathNavigator nav) => ResolveFromXmlStep.ShouldProcessElement (nav, Context, _xmlDocumentLocation);
 
 		void ReadSubstitutions (XPathDocument document)
 		{
@@ -126,10 +106,9 @@ namespace Mono.Linker.Steps
 
 		void ProcessType (TypeDefinition type, XPathNavigator nav)
 		{
-			if (!nav.HasChildren)
-				return;
+			Debug.Assert (ShouldProcessSubstitutions (nav));
 
-			if (!ShouldProcessSubstitutions (nav))
+			if (!nav.HasChildren)
 				return;
 
 			XPathNodeIterator methods = nav.SelectChildren ("method", "");
