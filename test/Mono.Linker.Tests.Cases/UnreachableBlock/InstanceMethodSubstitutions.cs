@@ -37,7 +37,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		}
 
 		[Kept]
-		InstanceMethodSubstitutions GetInstance()
+		InstanceMethodSubstitutions GetInstance ()
 		{
 			return null;
 		}
@@ -46,8 +46,8 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		[ExpectBodyModified]
 		void TestCallOnInstance ()
 		{
-			
-			if (GetInstance().IsEnabled ())
+
+			if (GetInstance ().IsEnabled ())
 				CallOnInstance_NeverReached ();
 			else
 				CallOnInstance_Reached ();
