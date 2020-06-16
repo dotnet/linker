@@ -116,9 +116,6 @@ namespace Mono.Linker.Steps
 						continue;
 					}
 
-					if (method.Name == "NewId")
-						Debug.WriteLine ("");
-
 					RewriteBody (method);
 				}
 
