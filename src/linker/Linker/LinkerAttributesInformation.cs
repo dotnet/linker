@@ -25,8 +25,6 @@ namespace Mono.Linker
 						attributeValue = ProcessRequiresUnreferencedCodeAttribute (context, provider, customAttribute);
 					else if (attributeType.IsTypeOf<DynamicDependencyAttribute> ())
 						attributeValue = DynamicDependency.ProcessAttribute (context, provider, customAttribute);
-					else if (attributeType.IsTypeOf<UnconditionalSuppressMessageAttribute> ())
-						attributeValue = context.Suppressions.AddSuppression (customAttribute, provider);
 					AddAttribute (ref _linkerAttributes, attributeValue);
 				}
 			}

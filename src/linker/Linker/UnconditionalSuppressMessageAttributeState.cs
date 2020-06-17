@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
-
-#nullable enable
 
 namespace Mono.Linker
 {
@@ -21,18 +17,13 @@ namespace Mono.Linker
 			InitializedAssemblies = new HashSet<AssemblyDefinition> ();
 		}
 
-		public Attribute? AddSuppression (CustomAttribute ca, ICustomAttributeProvider provider)
+		public void AddSuppression (CustomAttribute ca, ICustomAttributeProvider provider)
 		{
 			SuppressMessageInfo info;
 			if (!TryDecodeSuppressMessageAttributeData (ca, out info))
-				return null;
+				return;
 
 			AddSuppression (info, provider);
-			return new UnconditionalSuppressMessageAttribute (string.Empty, $"IL{info.Id}") {
-				Scope = info.Scope,
-				Target = info.Target,
-				MessageId = info.MessageId
-			};
 		}
 
 		private void AddSuppression (SuppressMessageInfo info, ICustomAttributeProvider provider)
