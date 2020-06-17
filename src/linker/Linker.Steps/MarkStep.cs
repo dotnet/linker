@@ -1528,8 +1528,6 @@ namespace Mono.Linker.Steps
 					provider,
 					sourceLocationMember);
 				return true;
-			} else if (UnconditionalSuppressMessageAttributeState.TypeRefHasUnconditionalSuppressions (dt)) {
-				_context.Suppressions.AddSuppression (ca, provider);
 			}
 
 			return false;

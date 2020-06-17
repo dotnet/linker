@@ -1,6 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Mono.Cecil;
+
+#nullable enable
 
 namespace Mono.Linker
 {
@@ -17,13 +21,18 @@ namespace Mono.Linker
 			InitializedAssemblies = new HashSet<AssemblyDefinition> ();
 		}
 
-		public void AddSuppression (CustomAttribute ca, ICustomAttributeProvider provider)
+		public Attribute? AddSuppression (CustomAttribute ca, ICustomAttributeProvider provider)
 		{
 			SuppressMessageInfo info;
 			if (!TryDecodeSuppressMessageAttributeData (ca, out info))
-				return;
+				return null;
 
 			AddSuppression (info, provider);
+			return new UnconditionalSuppressMessageAttribute (string.Empty, $"IL{info.Id}") {
+				Scope = info.Scope,
+				Target = info.Target,
+				MessageId = info.MessageId
+			};
 		}
 
 		private void AddSuppression (SuppressMessageInfo info, ICustomAttributeProvider provider)
@@ -46,7 +55,7 @@ namespace Mono.Linker
 				return false;
 
 			IMemberDefinition elementContainingWarning = warningOrigin.MemberDefinition;
-			ModuleDefinition module = GetModuleFromProvider (warningOrigin.MemberDefinition);
+			ModuleDefinition module = GetModuleFromProvider (elementContainingWarning);
 			DecodeModuleLevelAndGlobalSuppressMessageAttributes (module);
 			while (elementContainingWarning != null) {
 				if (IsSuppressed (id, elementContainingWarning, out info))
@@ -138,6 +147,7 @@ namespace Mono.Linker
 		{
 			AssemblyDefinition assembly = module.Assembly;
 			if (!InitializedAssemblies.Contains (assembly)) {
+				InitializedAssemblies.Add (assembly);
 				LookForModuleLevelAndGlobalSuppressions (module, assembly);
 				foreach (var _module in assembly.Modules)
 					LookForModuleLevelAndGlobalSuppressions (_module, _module);
@@ -165,7 +175,7 @@ namespace Mono.Linker
 				case "type":
 				case "member":
 					foreach (var result in DocumentationSignatureParser.GetMembersForDocumentationSignature (info.Target, module))
-						AddSuppression (info, provider);
+						AddSuppression (info, result);
 
 					break;
 				default:
