@@ -9,13 +9,13 @@ namespace Mono.Linker
 	{
 		private readonly LinkContext _context;
 		private readonly string _warningSuppressionFile;
-		private readonly List<(int, IMemberDefinition)> _warnings;
+		private readonly HashSet<(int, IMemberDefinition)> _warnings;
 
 		public WarningSuppressor (LinkContext context, string warningSuppressionFile)
 		{
 			_context = context;
 			_warningSuppressionFile = warningSuppressionFile;
-			_warnings = new List<(int, IMemberDefinition)> ();
+			_warnings = new HashSet<(int, IMemberDefinition)> ();
 		}
 
 		public void AddWarning ((int, IMemberDefinition) warning)
