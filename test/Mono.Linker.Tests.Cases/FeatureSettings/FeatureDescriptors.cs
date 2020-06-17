@@ -4,9 +4,6 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.FeatureSettings
 {
-#if !NETCOREAPP
-	[IgnoreTestCase ("Feature settings in descriptors are not supported on Mono.")]
-#endif
 	[SetupLinkerDescriptorFile ("FeatureDescriptorsGlobalTrue.xml")]
 	[SetupLinkerDescriptorFile ("FeatureDescriptorsGlobalFalse.xml")]
 	[SetupLinkerDescriptorFile ("FeatureDescriptors.xml")]
