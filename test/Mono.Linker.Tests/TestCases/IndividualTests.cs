@@ -9,6 +9,7 @@ using Mono.Linker.Tests.Cases.CommandLine.Mvid;
 using Mono.Linker.Tests.Cases.Interop.PInvoke.Individual;
 using Mono.Linker.Tests.Cases.References.Individual;
 using Mono.Linker.Tests.Cases.Tracing.Individual;
+using Mono.Linker.Tests.Cases.WarningSuppression;
 using Mono.Linker.Tests.Extensions;
 using Mono.Linker.Tests.TestCasesRunner;
 using NUnit.Framework;
@@ -54,6 +55,20 @@ namespace Mono.Linker.Tests.TestCases
 					Assert.That (pinvokePair.Item1.CompareTo (pinvokePair.Item2), Is.EqualTo (0));
 				}
 			}
+		}
+
+		[Test]
+		public void CanGenerateWarningSuppressionFile ()
+		{
+			var testcase = CreateIndividualCase (typeof (CanGenerateWarningSuppressionFile));
+			var result = Run (testcase);
+
+			var outputPath = result.OutputAssemblyPath.Parent.Combine ("WarningSuppressions.cs");
+			if (!outputPath.Exists ())
+				Assert.Fail ($"The cs file with a list of UnconditionalSuppressMessage attributes was expected to exist at {outputPath}.");
+
+			Assert.IsTrue (File.ReadAllLines (outputPath).SequenceEqual (
+				File.ReadAllLines (TestsDirectory.Combine ("TestCases/Dependencies/WarningSuppressionExpectations.cs"))));
 		}
 
 		[Test]

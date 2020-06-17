@@ -172,6 +172,8 @@ namespace Mono.Linker
 
 		public KnownMembers MarkedKnownMembers { get; private set; }
 
+		public WarningSuppressor WarningSuppressor { get; private set; }
+
 		public UnconditionalSuppressMessageAttributeState Suppressions { get; set; }
 
 		public Tracer Tracer { get; private set; }
@@ -233,6 +235,11 @@ namespace Mono.Linker
 				CodeOptimizations.IPConstantPropagation;
 
 			Optimizations = new CodeOptimizationsSettings (defaultOptimizations);
+		}
+
+		public void GenerateWarningSuppressions (string warningSuppressionFile)
+		{
+			WarningSuppressor = new WarningSuppressor (this, warningSuppressionFile);
 		}
 
 		public void SetFeatureValue (string feature, bool value)
