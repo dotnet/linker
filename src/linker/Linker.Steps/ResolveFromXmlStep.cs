@@ -90,8 +90,10 @@ namespace Mono.Linker.Steps
 					return;
 			}
 
+#if FEATURE_ILLINK
 			if (!ShouldProcessElement (nav))
 				return;
+#endif
 
 			try {
 				ProcessAssemblies (nav.SelectChildren ("assembly", _ns));
@@ -105,8 +107,10 @@ namespace Mono.Linker.Steps
 			while (iterator.MoveNext ()) {
 				var name = GetAssemblyName (iterator.Current);
 
+#if FEATURE_ILLINK
 				if (!ShouldProcessElement (iterator.Current))
 					continue;
+#endif
 
 				AssemblyDefinition assembly = GetAssembly (Context, name);
 				if (assembly != null)
@@ -133,8 +137,10 @@ namespace Mono.Linker.Steps
 		void ProcessNamespaces (AssemblyDefinition assembly, XPathNodeIterator iterator)
 		{
 			while (iterator.MoveNext ()) {
+#if FEATURE_ILLINK
 				if (!ShouldProcessElement (iterator.Current))
 					continue;
+#endif
 
 				string fullname = GetFullName (iterator.Current);
 				foreach (TypeDefinition type in assembly.MainModule.Types) {
@@ -163,8 +169,10 @@ namespace Mono.Linker.Steps
 			while (iterator.MoveNext ()) {
 				XPathNavigator nav = iterator.Current;
 
+#if FEATURE_ILLINK
 				if (!ShouldProcessElement (nav))
 					continue;
+#endif
 
 				string fullname = GetFullName (nav);
 
@@ -248,9 +256,9 @@ namespace Mono.Linker.Steps
 
 		protected virtual void ProcessType (TypeDefinition type, XPathNavigator nav)
 		{
+#if FEATURE_ILLINK
 			Debug.Assert (ShouldProcessElement (nav));
-
-#if !FEATURE_ILLINK
+#else
 			if (IsExcluded (nav))
 				return;
 #endif
@@ -342,8 +350,10 @@ namespace Mono.Linker.Steps
 		void ProcessFields (TypeDefinition type, XPathNodeIterator iterator)
 		{
 			while (iterator.MoveNext ()) {
+#if FEATURE_ILLINK
 				if (!ShouldProcessElement (iterator.Current))
 					continue;
+#endif
 				ProcessField (type, iterator.Current);
 			}
 		}
@@ -413,8 +423,10 @@ namespace Mono.Linker.Steps
 		void ProcessMethods (TypeDefinition type, XPathNodeIterator iterator, bool required)
 		{
 			while (iterator.MoveNext ()) {
+#if FEATURE_ILLINK
 				if (!ShouldProcessElement (iterator.Current))
 					continue;
+#endif
 				ProcessMethod (type, iterator.Current, required);
 			}
 		}
@@ -514,8 +526,10 @@ namespace Mono.Linker.Steps
 		void ProcessEvents (TypeDefinition type, XPathNodeIterator iterator, bool required)
 		{
 			while (iterator.MoveNext ()) {
+#if FEATURE_ILLINK
 				if (!ShouldProcessElement (iterator.Current))
 					continue;
+#endif
 				ProcessEvent (type, iterator.Current, required);
 			}
 		}
@@ -589,8 +603,10 @@ namespace Mono.Linker.Steps
 		void ProcessProperties (TypeDefinition type, XPathNodeIterator iterator, bool required)
 		{
 			while (iterator.MoveNext ()) {
+#if FEATURE_ILLINK
 				if (!ShouldProcessElement (iterator.Current))
 					continue;
+#endif
 				ProcessProperty (type, iterator.Current, required);
 			}
 		}
