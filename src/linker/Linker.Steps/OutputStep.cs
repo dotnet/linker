@@ -178,7 +178,7 @@ namespace Mono.Linker.Steps
 
 		public void OutputSuppressions ()
 		{
-			if (Context.WarningSuppressionWriter == null)
+			if (!Context.OutputWarningSuppressions)
 				return;
 
 			Context.WarningSuppressionWriter.OutputSuppressions ();

@@ -172,7 +172,9 @@ namespace Mono.Linker
 
 		public KnownMembers MarkedKnownMembers { get; private set; }
 
-		public WarningSuppressionWriter WarningSuppressionWriter { get; private set; }
+		public WarningSuppressionWriter WarningSuppressionWriter { get; }
+
+		public bool OutputWarningSuppressions { get; set; }
 
 		public UnconditionalSuppressMessageAttributeState Suppressions { get; set; }
 
@@ -226,6 +228,7 @@ namespace Mono.Linker
 			StripLinkAttributes = true;
 			PInvokes = new List<PInvokeInfo> ();
 			Suppressions = new UnconditionalSuppressMessageAttributeState (this);
+			WarningSuppressionWriter = new WarningSuppressionWriter (this);
 
 			// See https://github.com/mono/linker/issues/612
 			const CodeOptimizations defaultOptimizations =
@@ -235,11 +238,6 @@ namespace Mono.Linker
 				CodeOptimizations.IPConstantPropagation;
 
 			Optimizations = new CodeOptimizationsSettings (defaultOptimizations);
-		}
-
-		public void GenerateWarningSuppressions ()
-		{
-			WarningSuppressionWriter = new WarningSuppressionWriter (this);
 		}
 
 		public void SetFeatureValue (string feature, bool value)
@@ -520,6 +518,9 @@ namespace Mono.Linker
 				return;
 
 			var warning = MessageContainer.CreateWarningMessage (this, text, code, origin, subcategory);
+			if (OutputWarningSuppressions && warning != MessageContainer.Empty && origin.MemberDefinition != null)
+				WarningSuppressionWriter.AddWarning ((code, origin.MemberDefinition));
+
 			LogMessage (warning);
 		}
 

@@ -70,9 +70,6 @@ namespace Mono.Linker
 			if (context.IsWarningSuppressed (code, origin))
 				return Empty;
 
-			if (context.WarningSuppressionWriter != null && origin.MemberDefinition != null)
-				context.WarningSuppressionWriter.AddWarning ((code, origin.MemberDefinition));
-
 			return new MessageContainer (MessageCategory.Warning, text, code, subcategory, origin);
 		}
 
