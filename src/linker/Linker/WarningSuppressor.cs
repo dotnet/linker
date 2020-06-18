@@ -34,7 +34,7 @@ namespace Mono.Linker
 				foreach (var warning in _warnings) {
 					int warningCode = warning.Item1;
 					IMemberDefinition warningOrigin = warning.Item2;
-					sb.Append ("[module: UnconditionalSuppressMessage(\"\", \"IL");
+					sb.Append ("[module: UnconditionalSuppressMessage (\"\", \"IL");
 					sb.Append (warningCode).Append ("\", Scope = \"");
 					switch (warningOrigin.MetadataToken.TokenType) {
 					case TokenType.TypeDef:
@@ -51,7 +51,7 @@ namespace Mono.Linker
 					}
 
 					DocumentationSignatureGenerator.Instance.VisitMember (warningOrigin, sb);
-					sb.AppendLine("\")]");
+					sb.AppendLine ("\")]");
 				}
 
 				sw.Write (sb.ToString ());
