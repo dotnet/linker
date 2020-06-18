@@ -178,10 +178,10 @@ namespace Mono.Linker.Steps
 
 		public void OutputSuppressions ()
 		{
-			if (Context.WarningSuppressor == null)
+			if (Context.WarningSuppressionWriter == null)
 				return;
 
-			Context.WarningSuppressor.OutputSuppressions ();
+			Context.WarningSuppressionWriter.OutputSuppressions ();
 		}
 
 		protected virtual void DeleteAssembly (AssemblyDefinition assembly, string directory)

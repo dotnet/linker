@@ -435,9 +435,7 @@ namespace Mono.Linker
 						continue;
 
 					case "--generate-warning-suppressions":
-						if (!GetStringParam (token, l => context.GenerateWarningSuppressions (l)))
-							return -1;
-
+						context.GenerateWarningSuppressions ();
 						continue;
 
 					case "--version":

@@ -62,13 +62,16 @@ namespace Mono.Linker.Tests.TestCases
 		{
 			var testcase = CreateIndividualCase (typeof (CanGenerateWarningSuppressionFile));
 			var result = Run (testcase);
+			string[] expectedAssemblies = new string[] { "test", "library" };
 
-			var outputPath = result.OutputAssemblyPath.Parent.Combine ("WarningSuppressions.cs");
-			if (!outputPath.Exists ())
-				Assert.Fail ($"The cs file with a list of UnconditionalSuppressMessage attributes was expected to exist at {outputPath}.");
+			for (int i = 0; i < expectedAssemblies.Length; i++) {
+				var outputPath = result.OutputAssemblyPath.Parent.Combine ($"{expectedAssemblies[i]}.WarningSuppressions.cs");
+				if (!outputPath.Exists ())
+					Assert.Fail ($"A cs file with a list of UnconditionalSuppressMessage attributes was expected to exist at {outputPath}");
 
-			Assert.IsTrue (File.ReadAllLines (outputPath).SequenceEqual (
-				File.ReadAllLines (TestsDirectory.Combine ("TestCases/Dependencies/WarningSuppressionExpectations.cs"))));
+				Assert.IsTrue (File.ReadAllLines (outputPath).SequenceEqual (
+					File.ReadAllLines (TestsDirectory.Combine ($"TestCases/Dependencies/WarningSuppressionExpectations{i + 1}.cs"))));
+			}
 		}
 
 		[Test]
