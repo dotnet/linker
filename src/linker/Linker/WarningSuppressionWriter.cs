@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Mono.Cecil;
 
@@ -32,7 +33,15 @@ namespace Mono.Linker
 			foreach (var assemblyName in _warnings.Keys) {
 				using (var sw = new StreamWriter (Path.Combine (_context.OutputDirectory, $"{assemblyName.Name}.WarningSuppressions.cs"))) {
 					StringBuilder sb = new StringBuilder ("using System.Diagnostics.CodeAnalysis;").AppendLine ().AppendLine ();
-					foreach (var warning in _warnings[assemblyName]) {
+					List<(int, IMemberDefinition)> listOfWarnings = _warnings[assemblyName].ToList ();
+					listOfWarnings.Sort ((a, b) => {
+						if (a.Item1 == b.Item1)
+							return a.Item2.Name.CompareTo (b.Item2.Name);
+
+						return a.Item1.CompareTo (b.Item1);
+					});
+
+					foreach (var warning in listOfWarnings) {
 						int warningCode = warning.Item1;
 						IMemberDefinition warningOrigin = warning.Item2;
 						sb.Append ("[assembly: UnconditionalSuppressMessage (\"\", \"IL");
