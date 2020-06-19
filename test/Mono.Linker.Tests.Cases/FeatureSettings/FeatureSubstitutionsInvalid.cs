@@ -24,14 +24,14 @@ namespace Mono.Linker.Tests.Cases.FeatureSettings
 			"ldnull",
 			"throw"
 		})]
-		static void NoValueFeatureMethod () => throw null;
+		static bool NoValueFeatureMethod () => throw null;
 
 		[Kept]
 		[ExpectedInstructionSequence (new[] {
 			"ldnull",
 			"throw"
 		})]
-		static void NonBooleanFeatureMethod () => throw null;
+		static bool NonBooleanFeatureMethod () => throw null;
 
 		[Kept]
 		[ExpectedInstructionSequence (new[] {
