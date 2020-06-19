@@ -42,7 +42,7 @@ namespace Mono.Linker.Steps
 			ReadSubstitutions (_document);
 		}
 
-		bool ShouldProcessSubstitutions (XPathNavigator nav) => ResolveFromXmlStep.ShouldProcessElement (nav, Context, _xmlDocumentLocation);
+		bool ShouldProcessSubstitutions (XPathNavigator nav) => FeatureSettings.ShouldProcessElement (nav, Context, _xmlDocumentLocation);
 
 		void ReadSubstitutions (XPathDocument document)
 		{

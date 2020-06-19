@@ -3,10 +3,11 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.FeatureSettings
 {
-	[NoLinkedOutput]
 	[SetupLinkerSubstitutionFile ("FeatureSubstitutionsInvalid.xml")]
 	[SetupLinkerArgument ("--feature", "NoValueFeature", "true")]
-	[LogContains ("Feature NoValueFeature does not specify a 'featurevalue' attribute")]
+	[LogContains ("FeatureSubstitutionsInvalid.xml'. Feature 'NoValueFeature' does not specify a 'featurevalue' attribute")]
+	[LogContains ("FeatureSubstitutionsInvalid.xml'. Unsupported non-boolean feature definition 'NonBooleanFeature'")]
+	[LogContains ("FeatureSubstitutionsInvalid.xml'. Unsupported value for featuredefault attribute")]
 	[LogContains ("warning IL2012: Could not find field 'NonExistentField' in type 'Mono.Linker.Tests.Cases.FeatureSettings.FeatureSubstitutionsInvalid/Foo'")]
 	[LogContains ("warning IL2009: Could not find method 'NonExistentMethod' in type 'Mono.Linker.Tests.Cases.FeatureSettings.FeatureSubstitutionsInvalid/Foo'")]
 	public class FeatureSubstitutionsInvalid
@@ -15,25 +16,30 @@ namespace Mono.Linker.Tests.Cases.FeatureSettings
 		{
 			NoValueFeatureMethod ();
 			NonBooleanFeatureMethod ();
-			BooleanFeatureMethod ();
+			InvalidDefaultFeatureMethod ();
 		}
 
 		[Kept]
-		static void NoValueFeatureMethod ()
-		{
-		}
+		[ExpectedInstructionSequence (new[] {
+			"ldnull",
+			"throw"
+		})]
+		static void NoValueFeatureMethod () => throw null;
 
 		[Kept]
-		static void NonBooleanFeatureMethod ()
-		{
-		}
+		[ExpectedInstructionSequence (new[] {
+			"ldnull",
+			"throw"
+		})]
+		static void NonBooleanFeatureMethod () => throw null;
 
 		[Kept]
-		static void BooleanFeatureMethod ()
-		{
-		}
+		[ExpectedInstructionSequence (new[] {
+			"ldnull",
+			"throw"
+		})]
+		static bool InvalidDefaultFeatureMethod () => throw null;
 
-		[Kept]
 		class Foo
 		{
 			int _field;

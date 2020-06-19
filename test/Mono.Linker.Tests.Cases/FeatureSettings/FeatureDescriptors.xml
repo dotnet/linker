@@ -35,4 +35,16 @@
       <field name="AssemblyConditionTrue" />
     </type>
   </assembly>
+  <!-- Check that a feature condition can be used by default -->
+  <assembly fullname="test, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null" feature="DefaultCondition" featurevalue="true" featuredefault="true">
+    <type fullname="Mono.Linker.Tests.Cases.FeatureSettings.FeatureDescriptors">
+      <field name="DefaultConditionTrue" />
+    </type>
+  </assembly>
+  <!-- Else case for the default condition -->
+  <assembly fullname="test, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null" feature="DefaultCondition" featurevalue="false">
+    <type fullname="Mono.Linker.Tests.Cases.FeatureSettings.FeatureDescriptors">
+      <field name="DefaultConditionFalse" />
+    </type>
+  </assembly>
 </linker>

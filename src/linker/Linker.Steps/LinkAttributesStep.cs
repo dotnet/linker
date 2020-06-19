@@ -600,6 +600,6 @@ namespace Mono.Linker.Steps
 			return null;
 		}
 
-		bool ShouldProcessElement (XPathNavigator nav) => ResolveFromXmlStep.ShouldProcessElement (nav, Context, _xmlDocumentLocation);
+		bool ShouldProcessElement (XPathNavigator nav) => FeatureSettings.ShouldProcessElement (nav, Context, _xmlDocumentLocation);
 	}
 }

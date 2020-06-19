@@ -1,3 +1,4 @@
+using System;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
@@ -20,6 +21,7 @@ namespace Mono.Linker.Tests.Cases.FeatureSettings
 		public static void Main ()
 		{
 			TestOptionalFeature ();
+			_ = IsDefaultFeatureEnabled;
 		}
 
 		[Kept]
@@ -46,6 +48,16 @@ namespace Mono.Linker.Tests.Cases.FeatureSettings
 		[Kept]
 		static void UseFallback ()
 		{
+		}
+
+		[Kept]
+		static bool IsDefaultFeatureEnabled {
+			[Kept]
+			[ExpectedInstructionSequence (new[] {
+				"ldc.i4.1",
+				"ret",
+			})]
+			get => throw new NotImplementedException ();
 		}
 	}
 }

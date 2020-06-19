@@ -72,7 +72,12 @@ namespace Mono.Linker.Steps
 			_resourceAssembly = resourceAssembly ?? throw new ArgumentNullException (nameof (resourceAssembly));
 		}
 
-		bool ShouldProcessElement (XPathNavigator nav) => ShouldProcessElement (nav, Context, _xmlDocumentLocation);
+		bool ShouldProcessElement (XPathNavigator nav) => 
+#if FEATURE_ILLINK
+			FeatureSettings.ShouldProcessElement (nav, Context, _xmlDocumentLocation);
+#else
+			true;
+#endif
 
 		protected override void Process ()
 		{
@@ -751,29 +756,6 @@ namespace Mono.Linker.Steps
 		public override string ToString ()
 		{
 			return "ResolveFromXmlStep: " + _xmlDocumentLocation;
-		}
-
-		public static bool ShouldProcessElement (XPathNavigator nav, LinkContext context, string documentLocation)
-		{
-			var feature = GetAttribute (nav, "feature");
-			if (string.IsNullOrEmpty (feature))
-				return true;
-
-			var value = GetAttribute (nav, "featurevalue");
-			if (string.IsNullOrEmpty (value)) {
-				context.LogError ($"Failed to process '{documentLocation}'. Feature {feature} does not specify a 'featurevalue' attribute", 1001);
-				return false;
-			}
-
-			if (!bool.TryParse (value, out bool bValue)) {
-				context.LogError ($"Failed to process '{documentLocation}'. Unsupported non-boolean feature definition {feature}", 1002);
-				return false;
-			}
-
-			if (context.FeatureSettings == null || !context.FeatureSettings.TryGetValue (feature, out bool featureSetting))
-				return false;
-
-			return bValue == featureSetting;
 		}
 	}
 }
