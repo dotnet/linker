@@ -72,7 +72,7 @@ namespace Mono.Linker.Steps
 			_resourceAssembly = resourceAssembly ?? throw new ArgumentNullException (nameof (resourceAssembly));
 		}
 
-		bool ShouldProcessElement (XPathNavigator nav) => 
+		bool ShouldProcessElement (XPathNavigator nav) =>
 #if FEATURE_ILLINK
 			FeatureSettings.ShouldProcessElement (nav, Context, _xmlDocumentLocation);
 #else
