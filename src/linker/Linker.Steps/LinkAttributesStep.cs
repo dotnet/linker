@@ -154,15 +154,19 @@ namespace Mono.Linker.Steps
 		void ProcessAssemblies (LinkContext context, XPathNodeIterator iterator)
 		{
 			while (iterator.MoveNext ()) {
+				bool processAllAssemblies = GetFullName (iterator.Current) == "*";
+				// Errors for invalid assembly names should show up even if this element will be
+				// skipped due to feature conditions.
+				var name = processAllAssemblies ? null : GetAssemblyName (iterator.Current);
+
 				if (!ShouldProcessElement (iterator.Current))
 					continue;
 
-				if (GetFullName (iterator.Current) == "*") {
-					foreach (AssemblyDefinition assemblyIterator in context.GetAssemblies ()) {
+				if (processAllAssemblies) {
+					foreach (AssemblyDefinition assemblyIterator in context.GetAssemblies ())
 						ProcessTypes (assemblyIterator, iterator, true);
-					}
 				} else {
-					AssemblyDefinition assembly = GetAssembly (context, GetAssemblyName (iterator.Current));
+					AssemblyDefinition assembly = GetAssembly (context, name);
 
 					if (assembly == null) {
 						Context.LogWarning ($"Could not resolve assembly {GetAssemblyName (iterator.Current).Name} specified in {_xmlDocumentLocation}", 2007, _xmlDocumentLocation);

@@ -61,6 +61,8 @@ namespace Mono.Linker.Steps
 		void ProcessAssemblies (XPathNodeIterator iterator)
 		{
 			while (iterator.MoveNext ()) {
+				// Errors for invalid assembly names should show up even if this element will be
+				// skipped due to feature conditions.
 				var name = GetAssemblyName (iterator.Current);
 
 				if (!ShouldProcessSubstitutions (iterator.Current))
