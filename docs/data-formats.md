@@ -237,6 +237,7 @@ are applied, based on feature settings passed via `--feature FeatureName bool`
 
 `featuredefault="true"` can be used to indicate that this `featurevalue` is the default value for `feature`,
 causing the contained substitutions or descriptors to be applied even when the feature setting is not passed to the linker.
+Note that this will only have an effect where it is applied - the default value is not remembered or reused for other elements.
 
 ```xml
 <linker>
@@ -244,6 +245,10 @@ causing the contained substitutions or descriptors to be applied even when the f
     <!-- This method will be preserved if "EnableDefaultFeature" is "true" or unspecified -->
     <type fullname="Assembly.A" feature="EnableDefaultFeature" featurevalue="true" featuredefault="true">
       <method signature="System.String TestMethod()" />
+    </type>
+    <!-- This method will only be preserved if "EnableDefaultFeature" is "true", not if it is unspecified-->
+    <type fullname="Assembly.A" feature="EnableDefaultFeature" featurevalue="true">
+      <method signature="System.String TestMethod2()" />
     </type>
   </assembly>
 </linker>
