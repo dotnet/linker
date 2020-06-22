@@ -484,8 +484,13 @@ namespace Mono.Linker
 
 		public void LogMessage (MessageContainer message)
 		{
-			if (LogMessages && message != MessageContainer.Empty)
-				Logger?.LogMessage (message);
+			if (!LogMessages || message == MessageContainer.Empty)
+				return;
+
+			if (OutputWarningSuppressions && message.Category == MessageCategory.Warning && message.Origin?.MemberDefinition != null)
+				WarningSuppressionWriter.AddWarning (message.Code.Value, message.Origin?.MemberDefinition);
+
+			Logger?.LogMessage (message);
 		}
 
 		public void LogMessage (string message)
@@ -518,9 +523,6 @@ namespace Mono.Linker
 				return;
 
 			var warning = MessageContainer.CreateWarningMessage (this, text, code, origin, subcategory);
-			if (OutputWarningSuppressions && warning != MessageContainer.Empty && origin.MemberDefinition != null)
-				WarningSuppressionWriter.AddWarning ((code, origin.MemberDefinition));
-
 			LogMessage (warning);
 		}
 
