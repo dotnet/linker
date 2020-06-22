@@ -40,13 +40,15 @@ namespace Mono.Linker
 						if (lhs == rhs)
 							return a.Code.CompareTo (b.Code);
 
-						return lhs.CompareTo (rhs);
+						return string.CompareOrdinal (lhs, rhs);
 					});
 
 					foreach (var warning in listOfWarnings) {
 						int warningCode = warning.Code;
 						IMemberDefinition warningOrigin = warning.Member;
-						sb.Append ("[assembly: UnconditionalSuppressMessage (\"\", \"IL");
+						sb.Append ("[assembly: UnconditionalSuppressMessage (\"");
+						sb.Append (Constants.ILLinker);
+						sb.Append ("\", \"IL");
 						sb.Append (warningCode).Append ("\", Scope = \"");
 						switch (warningOrigin.MetadataToken.TokenType) {
 						case TokenType.TypeDef:
