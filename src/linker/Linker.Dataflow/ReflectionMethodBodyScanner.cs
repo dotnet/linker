@@ -1126,7 +1126,7 @@ namespace Mono.Linker.Dataflow
 								break;
 							}
 
-							if ((_flowAnnotations.GetGenericParameterAnnotation(genericParameter) & DynamicallyAccessedMemberTypes.DefaultConstructor) != 0) {
+							if ((_flowAnnotations.GetGenericParameterAnnotation (genericParameter) & DynamicallyAccessedMemberTypes.DefaultConstructor) != 0) {
 								// Also safe, the linker would have marked the default .ctor already
 								reflectionContext.RecordHandledPattern ();
 								break;
