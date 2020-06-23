@@ -53,20 +53,33 @@ The linker can be invoked as an MSBuild task, `ILLink`. We recommend not using t
         ExtraArgs="-t -c link" />
 ```
 
-## Default Linking Behaviour
+## Default Linking Behavior
 
-### .NET 5.0
+The linker default behavior depends on the SDK, because each SDK uses linker settings appropriate for the target form factor.
 
-By default, the linker will operate in a full linking mode for all framework or 
-core managed assemblies. The 3rd party libraries or final app will be analyzed but not linked.
-This setting can be altered by setting `_TrimmerDefaultAction` property to different
-linker action mode.
+### .NET Core SDK
 
-### .NET 3.x
+By default, only framework assemblies are trimmed, and they are trimmed in a conservative
+assembly-level mode (`copyused` action). Third-party libraries and the app will be analyzed but not trimmed.
 
-By default, the linker will operate in a conservative mode that keeps
-all managed assemblies that aren't part of the framework (they are
-kept intact, and the linker simply copies them).
+By default, the linker will operate in assembly-level mode (`copyused` action) for all framework or
+core managed assemblies. The 3rd party libraries or final app will be analyzed but not trimmed.
+
+### Blazor SDK
+
+By default, framework assemblies are trimmed in an aggressive member-level mode (`link` action). ASP.NET assemblies
+use type-level trimming (achieved by custom root descriptors, not `TrimMode`), and third-party libraries are analyzed
+but not trimmed.
+
+## Customizing Linking Behavior
+
+`TrimMode` can be used to set the trimming behavior for framework assemblies. Additional assemblies can be given
+metadata `IsTrimmable` and they will also be trimmed using this mode, or they can have per-assembly `TrimMode` which
+takes precedence over the global `TrimMode`.
+
+## Reflection
+
+Note: this section is out-of-date. New versions of the linker can understand some of these reflection patterns.
 
 Applications or frameworks (including ASP<span />.NET Core and WPF) that use reflection or related dynamic features will often break when trimmed, because the linker does not know about this dynamic behavior, and can not determine in general which framework types will be required for reflection at runtime. To trim such apps, you will need to tell the linker about any types needed by reflection in your code, and in packages or frameworks that you depend on. Be sure to test your apps after trimming.
 
