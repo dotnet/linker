@@ -148,7 +148,7 @@ namespace Mono.Linker.Dataflow
 			}
 
 			if (valueNode != null) {
-				bool enableReflectionPatternReporting = (source is MethodDefinition sourceMethod) ? 
+				bool enableReflectionPatternReporting = (source is MethodDefinition sourceMethod) ?
 					ShouldEnableReflectionPatternReporting (sourceMethod) : true;
 
 				var reflectionContext = new ReflectionPatternContext (_context, enableReflectionPatternReporting, source, genericParameter);

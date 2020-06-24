@@ -74,10 +74,10 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		}
 
 		[Kept]
-		class TypeRequiresPublicFields <
+		class TypeRequiresPublicFields<
 			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
-			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)]
-			T>
+		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)]
+		T>
 		{
 			[Kept]
 			public static void Method () { }
@@ -93,10 +93,10 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		}
 
 		[Kept]
-		static void MethodRequiresPublicFields <
+		static void MethodRequiresPublicFields<
 			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
-			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)]
-			T> ()
+		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)]
+		T> ()
 		{
 		}
 

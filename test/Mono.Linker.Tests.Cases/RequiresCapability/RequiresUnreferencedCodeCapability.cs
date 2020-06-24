@@ -136,7 +136,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			return null;
 		}
 
-		class TypeRequiresPublicFields <[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] T>
+		class TypeRequiresPublicFields<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] T>
 		{
 			public static void Method () { }
 		}
