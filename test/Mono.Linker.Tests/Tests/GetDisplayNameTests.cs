@@ -54,7 +54,6 @@ namespace Mono.Linker.Tests
 				}
 			}
 
-			// ArrayType
 			[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.A.SingleDimensionalArrayTypeParameter(Int32[])")]
 			public void SingleDimensionalArrayTypeParameter (int[] p)
 			{
@@ -128,18 +127,13 @@ namespace Mono.Linker.Tests
 				{
 				}
 
-				[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.GenericClassOneParameter<T>.NestedGenericClassOneParameter<S>.MethodGenericArray<U>(IList<U>)")]
-				public void MethodGenericArray<U> (IList<U> p)
-				{
-				}
+				[DisplayName ("GetDisplayNameTests.GenericClassOneParameter<T>.NestedGenericClassOneParameter<S>.Delegate<U>")]
+				public delegate void Delegate<U> (U p);
 
 				[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.GenericClassOneParameter<T>.NestedGenericClassOneParameter<S>.MethodGenericArray<U,V>(IList<U>,V)")]
 				public void MethodGenericArray<U, V> (IList<U> p, V q)
 				{
 				}
-
-				[DisplayName ("GetDisplayNameTests.GenericClassOneParameter<T>.NestedGenericClassOneParameter<S>.Delegate<U>")]
-				public delegate void Delegate<U> (U p);
 
 				[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.GenericClassOneParameter<T>.NestedGenericClassOneParameter<S>.MethodWithRef(Int32&)")]
 				public void MethodWithRef (ref int p)
@@ -184,35 +178,8 @@ namespace Mono.Linker.Tests
 			}
 		}
 
-		[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.MethodWithGenericTypeArgument(GetDisplayNameTests.GenericClassOneParameter<Int32>)")]
-		public void MethodWithGenericTypeArgument (GenericClassOneParameter<int> p)
-		{
-		}
-
-		[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.MethodWithNestedGenericTypeArgument"
-			+ "(GetDisplayNameTests.GenericClassOneParameter<Int32>.NestedGenericClassOneParameter<Int32>)")]
-		public void MethodWithNestedGenericTypeArgument (GenericClassOneParameter<int>.NestedGenericClassOneParameter<int> p)
-		{
-		}
-
-		[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.MethodWithGenericTypeArgument(GetDisplayNameTests.GenericClassOneParameter<Byte*[]>)")]
-		public void MethodWithGenericTypeArgument (GenericClassOneParameter<byte*[]> p)
-		{
-		}
-
-		[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.MethodWithGenericTypeArgument(IList<GetDisplayNameTests.GenericClassOneParameter<Char>>)")]
-		public void MethodWithGenericTypeArgument (IList<GenericClassOneParameter<char>> p)
-		{
-		}
-
-		[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.MethodWithNestedGenericTypeArgument" +
-			"(GetDisplayNameTests.GenericClassOneParameter<Byte*[]>.NestedGenericClassOneParameter<Byte*[]>)")]
-		public void MethodWithNestedGenericTypeArgument (GenericClassOneParameter<byte*[]>.NestedGenericClassOneParameter<byte*[]> p)
-		{
-		}
-
-		[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.MethodWithGenericTypeArguments(GetDisplayNameTests.GenericClassMultipleParameters<Char,Int32>)")]
-		public void MethodWithGenericTypeArguments (GenericClassMultipleParameters<char, int> p)
+		[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.MethodWithGenericTypeArgument(IList<GetDisplayNameTests.GenericClassOneParameter<Byte*[]>>)")]
+		public void MethodWithGenericTypeArgument (IList<GenericClassOneParameter<byte*[]>> p)
 		{
 		}
 
@@ -222,19 +189,8 @@ namespace Mono.Linker.Tests
 		}
 
 		[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.MethodWithNestedGenericTypeArguments" +
-			"(GetDisplayNameTests.GenericClassMultipleParameters<Char,Int32>.NestedGenericClassMultipleParameters<Char,Int32>)")]
-		public void MethodWithNestedGenericTypeArguments (GenericClassMultipleParameters<char, int>.NestedGenericClassMultipleParameters<char, int> p)
-		{
-		}
-
-		[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.MethodWithNestedGenericTypeArguments" +
 			"(GetDisplayNameTests.GenericClassMultipleParameters<Char*[],Int32[,][]>.NestedGenericClassMultipleParameters<Char*[],Int32[,][]>)")]
 		public void MethodWithNestedGenericTypeArguments (GenericClassMultipleParameters<char*[], int[,][]>.NestedGenericClassMultipleParameters<char*[], int[,][]> p)
-		{
-		}
-
-		[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.MethodWithGenericTypeArguments(Dictionary<Int32,Char>)")]
-		public void MethodWithGenericTypeArguments (Dictionary<int, char> p)
 		{
 		}
 	}
