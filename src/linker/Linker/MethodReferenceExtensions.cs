@@ -25,7 +25,7 @@ namespace Mono.Linker
 
 			// Insert generic parameters
 			if (method.HasGenericParameters) {
-				TypeReferenceExtensions.ParseGenericParameters (method.GenericParameters, null, method.GenericParameters.Count, sb);
+				TypeReferenceExtensions.ParseGenericParameters (method.GenericParameters, sb);
 			}
 
 			// Insert method name

@@ -23,17 +23,21 @@ namespace Mono.Linker
 				case GenericInstanceType genericInstanceType:
 					int arguments = int.Parse (genericInstanceType.Name.Substring (genericInstanceType.Name.IndexOf ('`') + 1));
 					genericArguments = new Stack<TypeReference> (genericInstanceType.GenericArguments);
-					ParseGenericInstanceType (genericArguments, arguments, sb);
+					ParseGenericArguments (genericArguments, arguments, sb);
 					sb.Insert (0, genericInstanceType.Name.Substring (0, genericInstanceType.Name.IndexOf ('`')));
 					break;
 				default:
 					if (type.HasGenericParameters) {
-						if (!int.TryParse (type.Name.Substring (type.Name.IndexOf ('`') + 1), out int usedParameters)) {
+						if (!int.TryParse (type.Name.Substring (type.Name.IndexOf ('`') + 1), out int arity)) {
 							sb.Insert (0, type.Name);
 							break;
 						}
 
-						ParseGenericParameters (type.GenericParameters.Skip (type.GenericParameters.Count - usedParameters).ToList (), genericArguments, usedParameters, sb);
+						if (genericArguments?.Count > 0)
+							ParseGenericArguments (genericArguments, arity, sb);
+						else
+							ParseGenericParameters (type.GenericParameters.Skip (type.GenericParameters.Count - arity).ToList (), sb);
+
 						sb.Insert (0, type.Name.Substring (0, type.Name.IndexOf ('`')));
 						break;
 					}
@@ -52,33 +56,20 @@ namespace Mono.Linker
 			return sb.ToString ();
 		}
 
-		internal static void ParseGenericParameters (IList<GenericParameter> genericParameters, Stack<TypeReference> genericArguments, int arguments, StringBuilder sb)
+		internal static void ParseGenericParameters (IList<GenericParameter> genericParameters, StringBuilder sb)
 		{
-			sb.Insert (0, '>');
-			if (genericArguments != null) {
-				sb.Insert (0, genericArguments.Pop ().GetDisplayName ());
-				arguments--;
-				while (arguments > 0) {
-					sb.Insert (0, ',').Insert (0, genericArguments.Pop ().GetDisplayName ());
-					arguments--;
-				}
-			} else {
-				sb.Insert (0, genericParameters[genericParameters.Count - 1]);
-				for (int i = genericParameters.Count - 2; i >= 0; i--)
-					sb.Insert (0, ',').Insert (0, genericParameters[i]);
-			}
+			sb.Insert (0, '>').Insert (0, genericParameters[genericParameters.Count - 1]);
+			for (int i = genericParameters.Count - 2; i >= 0; i--)
+				sb.Insert (0, ',').Insert (0, genericParameters[i]);
 
 			sb.Insert (0, '<');
 		}
 
-		private static void ParseGenericInstanceType (Stack<TypeReference> genericArguments, int arguments, StringBuilder sb)
+		private static void ParseGenericArguments (Stack<TypeReference> genericArguments, int argumentsToTake, StringBuilder sb)
 		{
 			sb.Insert (0, '>').Insert (0, genericArguments.Pop ().GetDisplayName ());
-			arguments--;
-			while (arguments > 0) {
+			while (--argumentsToTake > 0)
 				sb.Insert (0, ',').Insert (0, genericArguments.Pop ().GetDisplayName ());
-				arguments--;
-			}
 
 			sb.Insert (0, '<');
 		}
