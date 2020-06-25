@@ -20,6 +20,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			TestNullType ();
 			TestIgnoreCaseBindingFlags ();
 			TestFailIgnoreCaseBindingFlags ();
+			TestUnsupportedBindingFlags ();
 		}
 
 		[Kept]
@@ -51,11 +52,6 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 		[Kept]
 		protected static class ProtectedNestedType { }
-
-		[Kept]
-		public static class IgnoreCasePublicNestedType { }
-
-		public static class FailIgnoreCasePublicNestedType { }
 
 		[Kept]
 		[RecognizedReflectionAccessPattern (
@@ -90,16 +86,48 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		[Kept]
 		[RecognizedReflectionAccessPattern (
 			typeof (Type), nameof (Type.GetNestedType), new Type[] { typeof (string), typeof (BindingFlags) },
-			typeof (NestedTypeUsedViaReflection.IgnoreCasePublicNestedType), null, (Type[]) null)]
+			typeof (IgnoreCaseClass.IgnoreCasePublicNestedType), null, (Type[]) null)]
 		static void TestIgnoreCaseBindingFlags ()
 		{
-			_ = typeof (NestedTypeUsedViaReflection).GetNestedType ("ignorecasepublicnestedtype", BindingFlags.IgnoreCase | BindingFlags.Public);
+			_ = typeof (IgnoreCaseClass).GetNestedType ("ignorecasepublicnestedtype", BindingFlags.IgnoreCase | BindingFlags.Public);
 		}
 
 		[Kept]
 		static void TestFailIgnoreCaseBindingFlags ()
 		{
-			_ = typeof (NestedTypeUsedViaReflection).GetNestedType ("failignorecasepublicnestedtype", BindingFlags.Public);
+			_ = typeof (FailIgnoreCaseClass).GetNestedType ("failignorecasepublicnestedtype", BindingFlags.Public);
+		}
+
+		[Kept]
+		static void TestUnsupportedBindingFlags ()
+		{
+			_ = typeof (SuppressChangeTypeClass).GetNestedType ("SuppressChangeTypeNestedType", BindingFlags.SuppressChangeType);
+		}
+
+		[Kept]
+		private class IgnoreCaseClass
+		{
+			[Kept]
+			public static class IgnoreCasePublicNestedType { }
+
+			[Kept]
+			public static class MarkedDueToIgnoreCase { }
+		}
+
+		[Kept]
+		private class FailIgnoreCaseClass
+		{
+			public static class FailIgnoreCasePublicNestedType { }
+		}
+
+		[Kept]
+		private class SuppressChangeTypeClass
+		{
+			[Kept]
+			public static class SuppressChangeTypeNestedType { }
+
+			[Kept]
+			private static class MarkedDueToSuppressChangeType { }
 		}
 	}
 }

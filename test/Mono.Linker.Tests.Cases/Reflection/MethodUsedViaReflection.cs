@@ -31,6 +31,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			TestMethodInBaseType ();
 			TestIgnoreCaseBindingFlags ();
 			TestFailIgnoreCaseBindingFlags ();
+			TestUnsupportedBindingFlags ();
 		}
 
 		[Kept]
@@ -221,6 +222,13 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		static void TestFailIgnoreCaseBindingFlags ()
 		{
 			var method = typeof (FailIgnoreCaseClass).GetMethod ("onlycalledviareflection", BindingFlags.Public);
+			method.Invoke (null, new object[] { });
+		}
+
+		[Kept]
+		static void TestUnsupportedBindingFlags ()
+		{
+			var method = typeof (InvokeMethodClass).GetMethod ("OnlyCalledViaReflection", BindingFlags.InvokeMethod);
 			method.Invoke (null, new object[] { });
 		}
 
@@ -500,6 +508,11 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			{
 				return 52;
 			}
+			[Kept]
+			public string MarkedDueToIgnoreCase ()
+			{
+				return "52";
+			}
 		}
 
 		[Kept]
@@ -508,6 +521,22 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			public int OnlyCalledViaReflection ()
 			{
 				return 53;
+			}
+		}
+
+		[Kept]
+		private class InvokeMethodClass
+		{
+			[Kept]
+			public int OnlyCalledViaReflection ()
+			{
+				return 54;
+			}
+
+			[Kept]
+			private bool MarkedDueToInvokeMethod ()
+			{
+				return true;
 			}
 		}
 	}

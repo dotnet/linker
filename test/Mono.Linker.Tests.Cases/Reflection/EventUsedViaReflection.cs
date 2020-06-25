@@ -25,6 +25,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			TestEventInBaseType ();
 			TestIgnoreCaseBindingFlags ();
 			TestFailIgnoreCaseBindingFlags ();
+			TestUnsupportedBindingFlags ();
 		}
 
 		[Kept]
@@ -157,6 +158,12 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			typeof (FailIgnoreCaseBindingFlagsClass).GetEvent ("publicevent", BindingFlags.Public);
 		}
 
+		[Kept]
+		static void TestUnsupportedBindingFlags ()
+		{
+			typeof (PutRefDispPropertyBindingFlagsClass).GetEvent ("PublicEvent", BindingFlags.PutRefDispProperty);
+		}
+
 		[KeptMember (".ctor()")]
 		class Foo
 		{
@@ -235,12 +242,34 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
 			public event EventHandler<EventArgs> PublicEvent;
+
+			[Kept]
+			[KeptBackingField]
+			[KeptEventAddMethod]
+			[KeptEventRemoveMethod]
+			private event EventHandler<EventArgs> MarkedDueToIgnoreCaseEvent;
 		}
 
 		[Kept]
 		class FailIgnoreCaseBindingFlagsClass
 		{
 			public event EventHandler<EventArgs> PublicEvent;
+		}
+
+		[Kept]
+		class PutRefDispPropertyBindingFlagsClass
+		{
+			[Kept]
+			[KeptBackingField]
+			[KeptEventAddMethod]
+			[KeptEventRemoveMethod]
+			public event EventHandler<EventArgs> PublicEvent;
+
+			[Kept]
+			[KeptBackingField]
+			[KeptEventAddMethod]
+			[KeptEventRemoveMethod]
+			private event EventHandler<EventArgs> MarkedDueToPutRefDispPropertyEvent;
 		}
 	}
 }

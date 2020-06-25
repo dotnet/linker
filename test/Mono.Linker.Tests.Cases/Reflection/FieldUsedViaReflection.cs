@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using System.Security.Policy;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
@@ -23,6 +24,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			TestFieldInBaseType ();
 			TestIgnoreCaseBindingFlags ();
 			TestFailIgnoreCaseBindingFlags ();
+			TestUnsupportedBindingFlags ();
 		}
 
 		[Kept]
@@ -149,6 +151,12 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			var field = typeof (FailIgnoreCaseBindingFlagsClass).GetField ("publicfield", BindingFlags.Public);
 		}
 
+		[Kept]
+		static void TestUnsupportedBindingFlags ()
+		{
+			var field = typeof (PutDispPropertyBindingFlagsClass).GetField ("putDispPropertyField", BindingFlags.PutDispProperty);
+		}
+
 		static int field;
 
 		[Kept]
@@ -202,12 +210,25 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		{
 			[Kept]
 			public static int publicField;
+
+			[Kept]
+			public static int markedDueToIgnoreCaseField;
 		}
 
 		[Kept]
 		private class FailIgnoreCaseBindingFlagsClass
 		{
 			public static int publicField;
+		}
+
+		[Kept]
+		private class PutDispPropertyBindingFlagsClass
+		{
+			[Kept]
+			public static int putDispPropertyField;
+
+			[Kept]
+			private int markedDueToPutDispPropertyField;
 		}
 	}
 }

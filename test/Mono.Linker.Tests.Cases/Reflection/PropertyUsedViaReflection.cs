@@ -23,6 +23,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			TestPropertyInBaseType ();
 			TestIgnoreCaseBindingFlags ();
 			TestFailIgnoreCaseBindingFlags ();
+			TestUnsupportedBindingFlags ();
 		}
 
 		[Kept]
@@ -161,6 +162,12 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
+		static void TestUnsupportedBindingFlags ()
+		{
+			var property = typeof (ExactBindingBindingFlagsClass).GetProperty ("SetterOnly", BindingFlags.ExactBinding);
+		}
+
+		[Kept]
 		static int _field;
 
 		[Kept]
@@ -258,6 +265,12 @@ namespace Mono.Linker.Tests.Cases.Reflection
 				[Kept]
 				set { _field = value; }
 			}
+
+			[Kept]
+			public static int MakedDueToIgnoreCase {
+				[Kept]
+				get { return _field; }
+			}
 		}
 
 		[Kept]
@@ -265,6 +278,22 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		{
 			public static int SetterOnly {
 				set { _field = value; }
+			}
+		}
+
+		[Kept]
+		class ExactBindingBindingFlagsClass
+		{
+			[Kept]
+			public static int SetterOnly {
+				[Kept]
+				set { _field = value; }
+			}
+
+			[Kept]
+			public static int MarkedDueToExactBinding {
+				[Kept]
+				get { return _field; }
 			}
 		}
 	}
