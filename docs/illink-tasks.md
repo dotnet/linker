@@ -55,18 +55,7 @@ The linker can be invoked as an MSBuild task, `ILLink`. We recommend not using t
 
 ## Default Linking Behavior
 
-The linker default behavior depends on the SDK, because each SDK uses linker settings appropriate for the target form factor.
-
-### .NET Core SDK
-
-By default, only framework assemblies are trimmed, and they are trimmed in a conservative
-assembly-level mode (`copyused` action). Third-party libraries and the app will be analyzed but not trimmed.
-
-### Blazor SDK
-
-By default, framework assemblies are trimmed in an aggressive member-level mode (`link` action). ASP.NET assemblies
-use type-level trimming (achieved by using custom root descriptors with the global `TrimMode` `link`), and third-party libraries are analyzed
-but not trimmed.
+The default in the .NET Core SDK is to trim framework assemblies only, in a conservative assembly-level mode (`copyused` action). Third-party libraries and the app will be analyzed but not trimmed. Other SDKs may modify these defaults.
 
 ## Customizing Linking Behavior
 
