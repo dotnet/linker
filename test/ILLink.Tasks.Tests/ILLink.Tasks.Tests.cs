@@ -210,8 +210,8 @@ namespace ILLink.Tasks.Tests
 						{ "BeforeFieldInit", "False" }
 					}),
 					new TaskItem ("path/to/Assembly2.dll", new Dictionary<string, string> {
-						{ "ealer", "False" },
-						{ "Sealer", "True" }
+						{ "Sealer", "False" },
+						{ "BeforeFieldInit", "True" }
 					})
 				}
 			};
