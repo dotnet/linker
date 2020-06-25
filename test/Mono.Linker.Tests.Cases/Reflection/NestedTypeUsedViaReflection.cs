@@ -18,6 +18,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			TestByBindingFlags ();
 			TestNonExistingName ();
 			TestNullType ();
+			TestIgnoreCaseBindingFlags ();
+			TestFailIgnoreCaseBindingFlags ();
 		}
 
 		[Kept]
@@ -51,6 +53,11 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		protected static class ProtectedNestedType { }
 
 		[Kept]
+		public static class IgnoreCasePublicNestedType { }
+
+		public static class FailIgnoreCasePublicNestedType { }
+
+		[Kept]
 		[RecognizedReflectionAccessPattern (
 			typeof (Type), nameof (Type.GetNestedType), new Type[] { typeof (string), typeof (BindingFlags) },
 			typeof (NestedTypeUsedViaReflection.PrivateNestedType), null, (Type[]) null)]
@@ -78,6 +85,21 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		{
 			Type type = null;
 			_ = type.GetNestedType ("NestedType");
+		}
+
+		[Kept]
+		[RecognizedReflectionAccessPattern (
+			typeof (Type), nameof (Type.GetNestedType), new Type[] { typeof (string), typeof (BindingFlags) },
+			typeof (NestedTypeUsedViaReflection.IgnoreCasePublicNestedType), null, (Type[]) null)]
+		static void TestIgnoreCaseBindingFlags ()
+		{
+			_ = typeof (NestedTypeUsedViaReflection).GetNestedType ("ignorecasepublicnestedtype", BindingFlags.IgnoreCase | BindingFlags.Public);
+		}
+
+		[Kept]
+		static void TestFailIgnoreCaseBindingFlags ()
+		{
+			_ = typeof (NestedTypeUsedViaReflection).GetNestedType ("failignorecasepublicnestedtype", BindingFlags.Public);
 		}
 	}
 }

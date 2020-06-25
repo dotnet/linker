@@ -21,6 +21,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			TestDataFlowType ();
 			TestIfElse (1);
 			TestFieldInBaseType ();
+			TestIgnoreCaseBindingFlags ();
+			TestFailIgnoreCaseBindingFlags ();
 		}
 
 		[Kept]
@@ -132,6 +134,21 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			var publicField = typeof (DerivedClass).GetField ("publicFieldOnBase");
 		}
 
+		[Kept]
+		[RecognizedReflectionAccessPattern (
+			typeof (Type), nameof (Type.GetField), new Type[] { typeof (string), typeof (BindingFlags) },
+			typeof (IgnoreCaseBindingFlagsClass), nameof (IgnoreCaseBindingFlagsClass.publicField), (Type[]) null)]
+		static void TestIgnoreCaseBindingFlags ()
+		{
+			var field = typeof (IgnoreCaseBindingFlagsClass).GetField ("publicfield", BindingFlags.IgnoreCase | BindingFlags.Public);
+		}
+
+		[Kept]
+		static void TestFailIgnoreCaseBindingFlags ()
+		{
+			var field = typeof (FailIgnoreCaseBindingFlagsClass).GetField ("publicfield", BindingFlags.Public);
+		}
+
 		static int field;
 
 		[Kept]
@@ -178,6 +195,19 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		[KeptBaseType (typeof (BaseClass))]
 		class DerivedClass : BaseClass
 		{
+		}
+
+		[Kept]
+		private class IgnoreCaseBindingFlagsClass
+		{
+			[Kept]
+			public static int publicField;
+		}
+
+		[Kept]
+		private class FailIgnoreCaseBindingFlagsClass
+		{
+			public static int publicField;
 		}
 	}
 }

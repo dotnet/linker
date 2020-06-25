@@ -1,6 +1,7 @@
 ﻿using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using System;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
+using System.Reflection;
 
 namespace Mono.Linker.Tests.Cases.Reflection
 {
@@ -20,6 +21,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			TestDataFlowType ();
 			TestIfElse (1);
 			TestPropertyInBaseType ();
+			TestIgnoreCaseBindingFlags ();
+			TestFailIgnoreCaseBindingFlags ();
 		}
 
 		[Kept]
@@ -141,6 +144,22 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		{
 			var property = typeof (DerivedClass).GetProperty ("GetterSetterOnBaseClass");
 		}
+
+		[Kept]
+		[RecognizedReflectionAccessPattern (
+			typeof (Type), nameof (Type.GetProperty), new Type[] { typeof (string), typeof (BindingFlags) },
+			typeof (IgnoreCaseBindingFlagsClass), nameof (IgnoreCaseBindingFlagsClass.SetterOnly), (Type[]) null)]
+		static void TestIgnoreCaseBindingFlags ()
+		{
+			var property = typeof (IgnoreCaseBindingFlagsClass).GetProperty ("setteronly", BindingFlags.IgnoreCase | BindingFlags.Public);
+		}
+
+		[Kept]
+		static void TestFailIgnoreCaseBindingFlags ()
+		{
+			var property = typeof (FailIgnoreCaseBindingFlagsClass).GetProperty ("setteronly", BindingFlags.Public);
+		}
+
 		[Kept]
 		static int _field;
 
@@ -229,6 +248,24 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		[KeptBaseType (typeof (BaseClass))]
 		class DerivedClass : BaseClass
 		{
+		}
+
+		[Kept]
+		class IgnoreCaseBindingFlagsClass
+		{
+			[Kept]
+			public static int SetterOnly {
+				[Kept]
+				set { _field = value; }
+			}
+		}
+
+		[Kept]
+		class FailIgnoreCaseBindingFlagsClass
+		{
+			public static int SetterOnly {
+				set { _field = value; }
+			}
 		}
 	}
 }

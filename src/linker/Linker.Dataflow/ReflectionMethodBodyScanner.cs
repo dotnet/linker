@@ -871,13 +871,14 @@ namespace Mono.Linker.Dataflow
 						} else if (calledMethod.Parameters.Count > 2 && calledMethod.Parameters[2].ParameterType.Name == "BindingFlags" && methodParams[3].AsConstInt () != null) {
 							bindingFlags = (BindingFlags) methodParams[3].AsConstInt ();
 						}
+						var caseOption = (bindingFlags & (BindingFlags.IgnoreCase)) == BindingFlags.IgnoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 
 						var requiredMemberKinds = GetDynamicallyAccessedMemberTypesFromBindingFlagsForMethods (bindingFlags);
 						foreach (var value in methodParams[0].UniqueValues ()) {
 							if (value is SystemTypeValue systemTypeValue) {
 								foreach (var stringParam in methodParams[1].UniqueValues ()) {
 									if (stringParam is KnownStringValue stringValue) {
-										MarkMethodsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, m => m.Name == stringValue.Contents, bindingFlags);
+										MarkMethodsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, m => m.Name.Equals (stringValue.Contents, caseOption), bindingFlags);
 										reflectionContext.RecordHandledPattern ();
 									} else {
 										// Otherwise fall back to the bitfield requirements
@@ -903,13 +904,14 @@ namespace Mono.Linker.Dataflow
 						if (calledMethod.Parameters.Count > 1 && calledMethod.Parameters[1].ParameterType.Name == "BindingFlags" && methodParams[2].AsConstInt () != null) {
 							bindingFlags = (BindingFlags) methodParams[2].AsConstInt ();
 						}
+						var caseOption = (bindingFlags & (BindingFlags.IgnoreCase)) == BindingFlags.IgnoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 
 						var requiredMemberKinds = GetDynamicallyAccessedMemberTypesFromBindingFlagsForNestedTypes (bindingFlags);
 						foreach (var value in methodParams[0].UniqueValues ()) {
 							if (value is SystemTypeValue systemTypeValue) {
 								foreach (var stringParam in methodParams[1].UniqueValues ()) {
 									if (stringParam is KnownStringValue stringValue) {
-										TypeDefinition[] matchingNestedTypes = MarkNestedTypesOnType (ref reflectionContext, systemTypeValue.TypeRepresented, m => m.Name == stringValue.Contents, bindingFlags);
+										TypeDefinition[] matchingNestedTypes = MarkNestedTypesOnType (ref reflectionContext, systemTypeValue.TypeRepresented, m => m.Name.Equals (stringValue.Contents, caseOption), bindingFlags);
 
 										if (matchingNestedTypes != null) {
 											for (int i = 0; i < matchingNestedTypes.Length; i++)
@@ -976,6 +978,7 @@ namespace Mono.Linker.Dataflow
 						if (calledMethod.Parameters.Count > 1 && calledMethod.Parameters[1].ParameterType.Name == "BindingFlags" && methodParams[2].AsConstInt () != null) {
 							bindingFlags = (BindingFlags) methodParams[2].AsConstInt ();
 						}
+						var caseOption = (bindingFlags & (BindingFlags.IgnoreCase)) == BindingFlags.IgnoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 
 						DynamicallyAccessedMemberTypes memberKind = fieldPropertyOrEvent switch
 						{
@@ -991,13 +994,13 @@ namespace Mono.Linker.Dataflow
 									if (stringParam is KnownStringValue stringValue) {
 										switch (fieldPropertyOrEvent) {
 										case IntrinsicId.Type_GetEvent:
-											MarkEventsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, filter: e => e.Name == stringValue.Contents, bindingFlags);
+											MarkEventsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, filter: e => e.Name.Equals (stringValue.Contents, caseOption), bindingFlags);
 											break;
 										case IntrinsicId.Type_GetField:
-											MarkFieldsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, filter: f => f.Name == stringValue.Contents, bindingFlags);
+											MarkFieldsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, filter: f => f.Name.Equals (stringValue.Contents, caseOption), bindingFlags);
 											break;
 										case IntrinsicId.Type_GetProperty:
-											MarkPropertiesOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, filter: p => p.Name == stringValue.Contents, bindingFlags);
+											MarkPropertiesOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, filter: p => p.Name.Equals (stringValue.Contents, caseOption), bindingFlags);
 											break;
 										default:
 											Debug.Fail ("Unreachable.");

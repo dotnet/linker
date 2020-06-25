@@ -23,6 +23,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			TestDataFlowType ();
 			TestIfElse (1);
 			TestEventInBaseType ();
+			TestIgnoreCaseBindingFlags ();
+			TestFailIgnoreCaseBindingFlags ();
 		}
 
 		[Kept]
@@ -140,6 +142,21 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			typeof (DerivedClass).GetEvent ("PublicEventOnBase");
 		}
 
+		[Kept]
+		[RecognizedReflectionAccessPattern (
+			typeof (Type), nameof (Type.GetEvent), new Type[] { typeof (string), typeof (BindingFlags) },
+			typeof (IgnoreCaseBindingFlagsClass), nameof (IgnoreCaseBindingFlagsClass.PublicEvent), (Type[]) null)]
+		static void TestIgnoreCaseBindingFlags ()
+		{
+			typeof (IgnoreCaseBindingFlagsClass).GetEvent ("publicevent", BindingFlags.IgnoreCase | BindingFlags.Public);
+		}
+
+		[Kept]
+		static void TestFailIgnoreCaseBindingFlags ()
+		{
+			typeof (FailIgnoreCaseBindingFlagsClass).GetEvent ("publicevent", BindingFlags.Public);
+		}
+
 		[KeptMember (".ctor()")]
 		class Foo
 		{
@@ -209,6 +226,21 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		[KeptBaseType (typeof (BaseClass))]
 		class DerivedClass : BaseClass
 		{
+		}
+
+		class IgnoreCaseBindingFlagsClass
+		{
+			[Kept]
+			[KeptBackingField]
+			[KeptEventAddMethod]
+			[KeptEventRemoveMethod]
+			public event EventHandler<EventArgs> PublicEvent;
+		}
+
+		[Kept]
+		class FailIgnoreCaseBindingFlagsClass
+		{
+			public event EventHandler<EventArgs> PublicEvent;
 		}
 	}
 }

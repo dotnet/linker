@@ -29,6 +29,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			TestDataFlowType ();
 			TestIfElse (1);
 			TestMethodInBaseType ();
+			TestIgnoreCaseBindingFlags ();
+			TestFailIgnoreCaseBindingFlags ();
 		}
 
 		[Kept]
@@ -202,6 +204,23 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		static void TestMethodInBaseType ()
 		{
 			var method = typeof (DerivedClass).GetMethod ("OnlyCalledViaReflection");
+			method.Invoke (null, new object[] { });
+		}
+
+		[Kept]
+		[RecognizedReflectionAccessPattern (
+			typeof (Type), nameof (Type.GetMethod), new Type[] { typeof (string), typeof (BindingFlags) },
+			typeof (IgnoreCaseClass), nameof (IgnoreCaseClass.OnlyCalledViaReflection), new Type[0])]
+		static void TestIgnoreCaseBindingFlags ()
+		{
+			var method = typeof (IgnoreCaseClass).GetMethod ("onlycalledviareflection", BindingFlags.IgnoreCase | BindingFlags.Public);
+			method.Invoke (null, new object[] { });
+		}
+
+		[Kept]
+		static void TestFailIgnoreCaseBindingFlags ()
+		{
+			var method = typeof (FailIgnoreCaseClass).GetMethod ("onlycalledviareflection", BindingFlags.Public);
 			method.Invoke (null, new object[] { });
 		}
 
@@ -472,5 +491,24 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		[KeptBaseType (typeof (BaseClass))]
 		class DerivedClass : BaseClass
 		{ }
+
+		[Kept]
+		private class IgnoreCaseClass
+		{
+			[Kept]
+			public int OnlyCalledViaReflection ()
+			{
+				return 52;
+			}
+		}
+
+		[Kept]
+		private class FailIgnoreCaseClass
+		{
+			public int OnlyCalledViaReflection ()
+			{
+				return 53;
+			}
+		}
 	}
 }
