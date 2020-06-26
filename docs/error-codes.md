@@ -19,10 +19,6 @@ error and warning codes.
 
 - There was an error processing a resource linker descriptor, embedded resource linker descriptor or external substitution XML (`ILLink.Substitutions.xml`). The most likely reason for this is that the descriptor file has syntactical errors.
 
-#### `IL1004`: Failed to process description file 'XML document location': 'XmlException'
-
-- There was an error processing an XML descriptor. The most likely reason for this is that the descriptor file has syntactical errors.
-
 #### `IL1005`: Error processing method 'method' in assembly 'assembly'
 
 - There was an error processing method 'method'. An exception with more details is printed.
