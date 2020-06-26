@@ -13,6 +13,31 @@ namespace Mono.Linker
 			if (type == null)
 				return string.Empty;
 
+			StringBuilder sb = new StringBuilder ();
+			var typeNamespace = type.GetNamespaceDisplayName ();
+			if (typeNamespace != string.Empty)
+				sb.Append (typeNamespace).Append ('.');
+
+			sb.Append (type.GetTypeReferenceDisplayName ());
+			return sb.ToString ();
+		}
+
+		static string GetNamespaceDisplayName (this TypeReference type)
+		{
+			var typeNamespace = string.Empty;
+			while (type != null) {
+				typeNamespace = type.Namespace;
+				type = type.DeclaringType;
+			}
+
+			return typeNamespace;
+		}
+
+		internal static string GetTypeReferenceDisplayName (this TypeReference type)
+		{
+			if (type == null)
+				return string.Empty;
+
 			var sb = new StringBuilder ();
 			Stack<TypeReference> genericArguments = null;
 			while (true) {
@@ -67,9 +92,9 @@ namespace Mono.Linker
 
 		private static void ParseGenericArguments (Stack<TypeReference> genericArguments, int argumentsToTake, StringBuilder sb)
 		{
-			sb.Insert (0, '>').Insert (0, genericArguments.Pop ().GetDisplayName ());
+			sb.Insert (0, '>').Insert (0, genericArguments.Pop ().GetTypeReferenceDisplayName ());
 			while (--argumentsToTake > 0)
-				sb.Insert (0, ',').Insert (0, genericArguments.Pop ().GetDisplayName ());
+				sb.Insert (0, ',').Insert (0, genericArguments.Pop ().GetTypeReferenceDisplayName ());
 
 			sb.Insert (0, '<');
 		}

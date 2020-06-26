@@ -91,7 +91,7 @@ namespace Mono.Linker.Steps
 							}
 						}
 						if (argumentValue == null) {
-							Context.LogWarning ($"Could not parse argument '{xmlArguments[i]}' specified in '{_xmlDocumentLocation}' as a {constructor.Parameters[i].ParameterType.FullName}", 2021, _xmlDocumentLocation);
+							Context.LogWarning ($"Could not parse argument '{xmlArguments[i]}' specified in '{_xmlDocumentLocation}' as a {constructor.Parameters[i].ParameterType.GetDisplayName ()}", 2021, _xmlDocumentLocation);
 							recognizedArgument = false;
 						}
 					} else {
@@ -108,7 +108,7 @@ namespace Mono.Linker.Steps
 							}
 							break;
 						default:
-							Context.LogWarning ($"Argument '{xmlArguments[i]}' specified in '{_xmlDocumentLocation}' is of unsupported type '{constructor.Parameters[i].ParameterType}'", 2020, _xmlDocumentLocation);
+							Context.LogWarning ($"Argument '{xmlArguments[i]}' specified in '{_xmlDocumentLocation}' is of unsupported type '{constructor.Parameters[i].ParameterType.GetDisplayName ()}'", 2020, _xmlDocumentLocation);
 							recognizedArgument = false;
 							break;
 						}
@@ -365,7 +365,7 @@ namespace Mono.Linker.Steps
 		{
 			FieldDefinition field = GetField (type, signature);
 			if (field == null) {
-				Context.LogWarning ($"Could not find field '{signature}' in type '{type.FullName}' specified in { _xmlDocumentLocation}", 2016, _xmlDocumentLocation);
+				Context.LogWarning ($"Could not find field '{signature}' in type '{type.GetDisplayName ()}' specified in { _xmlDocumentLocation}", 2016, _xmlDocumentLocation);
 				return;
 			}
 			IEnumerable<CustomAttribute> attributes = ProcessAttributes (iterator.Current);
@@ -403,7 +403,7 @@ namespace Mono.Linker.Steps
 		{
 			MethodDefinition method = GetMethod (type, signature);
 			if (method == null) {
-				Context.LogWarning ($"Could not find method '{signature}' in type '{type.FullName}' specified in '{_xmlDocumentLocation}'", 2009, _xmlDocumentLocation);
+				Context.LogWarning ($"Could not find method '{signature}' in type '{type.GetDisplayName ()}' specified in '{_xmlDocumentLocation}'", 2009, _xmlDocumentLocation);
 				return;
 			}
 			ProcessMethod (method, iterator);
@@ -531,7 +531,7 @@ namespace Mono.Linker.Steps
 		{
 			EventDefinition @event = GetEvent (type, signature);
 			if (@event == null) {
-				Context.LogWarning ($"Could not find event '{signature}' in type '{type.FullName}' specified in {_xmlDocumentLocation}", 2016, _xmlDocumentLocation);
+				Context.LogWarning ($"Could not find event '{signature}' in type '{type.GetDisplayName ()}' specified in {_xmlDocumentLocation}", 2016, _xmlDocumentLocation);
 				return;
 			}
 			IEnumerable<CustomAttribute> attributes = ProcessAttributes (iterator.Current);

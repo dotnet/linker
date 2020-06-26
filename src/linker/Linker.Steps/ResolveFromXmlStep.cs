@@ -374,7 +374,7 @@ namespace Mono.Linker.Steps
 		{
 			FieldDefinition field = GetField (type, signature);
 			if (field == null) {
-				Context.LogWarning ($"Could not find field '{signature}' in type '{type.FullName}' specified in {_xmlDocumentLocation}", 2012, _xmlDocumentLocation);
+				Context.LogWarning ($"Could not find field '{signature}' in type '{type.GetDisplayName ()}' specified in {_xmlDocumentLocation}", 2012, _xmlDocumentLocation);
 				return;
 			}
 
@@ -445,7 +445,7 @@ namespace Mono.Linker.Steps
 		{
 			MethodDefinition method = GetMethod (type, signature);
 			if (method == null) {
-				Context.LogWarning ($"Could not find method '{signature}' in type '{type.FullName}' specified in {_xmlDocumentLocation}", 2009, _xmlDocumentLocation);
+				Context.LogWarning ($"Could not find method '{signature}' in type '{type.GetDisplayName ()}' specified in {_xmlDocumentLocation}", 2009, _xmlDocumentLocation);
 				return;
 			}
 
@@ -546,7 +546,7 @@ namespace Mono.Linker.Steps
 		{
 			EventDefinition @event = GetEvent (type, signature);
 			if (@event == null) {
-				Context.LogWarning ($"Could not find event '{signature}' in type '{type.FullName}' specified in {_xmlDocumentLocation}", 2016, _xmlDocumentLocation);
+				Context.LogWarning ($"Could not find event '{signature}' in type '{type.GetDisplayName ()}' specified in {_xmlDocumentLocation}", 2016, _xmlDocumentLocation);
 				return;
 			}
 
@@ -621,7 +621,7 @@ namespace Mono.Linker.Steps
 		{
 			PropertyDefinition property = GetProperty (type, signature);
 			if (property == null) {
-				Context.LogWarning ($"Could not find property '{signature}' in type '{type.FullName}' specified in {_xmlDocumentLocation}", 2017, _xmlDocumentLocation);
+				Context.LogWarning ($"Could not find property '{signature}' in type '{type.GetDisplayName ()}' specified in {_xmlDocumentLocation}", 2017, _xmlDocumentLocation);
 				return;
 			}
 
@@ -649,12 +649,12 @@ namespace Mono.Linker.Steps
 			if (property.GetMethod != null && Array.IndexOf (accessors, "get") >= 0)
 				MarkMethod (type, property.GetMethod, required);
 			else if (property.GetMethod == null)
-				Context.LogWarning ($"Could not find the get accessor of property '{property.Name}' in type '{type.FullName}' specified in {_xmlDocumentLocation}", 2018, _xmlDocumentLocation);
+				Context.LogWarning ($"Could not find the get accessor of property '{property.Name}' in type '{type.GetDisplayName ()}' specified in {_xmlDocumentLocation}", 2018, _xmlDocumentLocation);
 
 			if (property.SetMethod != null && Array.IndexOf (accessors, "set") >= 0)
 				MarkMethod (type, property.SetMethod, required);
 			else if (property.SetMethod == null)
-				Context.LogWarning ($"Could not find the set accessor of property '{property.Name}' in type '{type.FullName}' specified in {_xmlDocumentLocation}", 2019, _xmlDocumentLocation);
+				Context.LogWarning ($"Could not find the set accessor of property '{property.Name}' in type '{type.GetDisplayName ()}' specified in {_xmlDocumentLocation}", 2019, _xmlDocumentLocation);
 		}
 
 		void ProcessPropertyName (TypeDefinition type, string name, string[] accessors, bool required)

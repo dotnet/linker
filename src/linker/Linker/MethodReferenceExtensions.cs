@@ -16,9 +16,9 @@ namespace Mono.Linker
 			sb.Append ("(");
 			if (method.HasParameters) {
 				for (int i = 0; i < method.Parameters.Count - 1; i++)
-					sb.Append (method.Parameters[i].ParameterType.GetDisplayName ()).Append (',');
+					sb.Append (method.Parameters[i].ParameterType.GetTypeReferenceDisplayName ()).Append (',');
 
-				sb.Append (method.Parameters[method.Parameters.Count - 1].ParameterType.GetDisplayName ());
+				sb.Append (method.Parameters[method.Parameters.Count - 1].ParameterType.GetTypeReferenceDisplayName ());
 			}
 
 			sb.Append (")");
@@ -34,11 +34,8 @@ namespace Mono.Linker
 			else
 				sb.Insert (0, method.Name);
 
-			// Insert declaring type name
+			// Insert declaring type name and namespace
 			sb.Insert (0, '.').Insert (0, method.DeclaringType.GetDisplayName ());
-
-			// Insert namespace
-			sb.Insert (0, '.').Insert (0, method.GetNamespaceDisplayName ());
 			return sb.ToString ();
 		}
 
