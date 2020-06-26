@@ -192,38 +192,43 @@ namespace Mono.Linker.Steps
 			if (fields.Count == 0)
 				return;
 
-			ProcessFields (type, fields);
-		}
-
-		void ProcessFields (TypeDefinition type, XPathNodeIterator iterator)
-		{
-			while (iterator.MoveNext ()) {
-				if (!ShouldProcessElement (iterator.Current))
+			while (fields.MoveNext ()) {
+				if (!ShouldProcessElement (fields.Current))
 					continue;
-				ProcessField (type, iterator.Current);
+				ProcessField (type, fields.Current);
 			}
 		}
 
 		protected virtual void ProcessField (TypeDefinition type, XPathNavigator nav)
 		{
-			string value = GetSignature (nav);
-			if (!String.IsNullOrEmpty (value))
-				ProcessFieldSignature (type, value, nav);
+			string signature = GetSignature (nav);
+			if (!String.IsNullOrEmpty (signature)) {
+				FieldDefinition field = GetField (type, signature);
+				if (field == null) {
+					Context.LogWarning ($"Could not find field '{signature}' in type '{type.GetDisplayName ()}' specified in {_xmlDocumentLocation}", 2012, _xmlDocumentLocation);
+					return;
+				}
 
-			value = GetAttribute (nav, NameAttributeName);
-			if (!String.IsNullOrEmpty (value))
-				ProcessFieldName (type, value, nav);
-		}
-
-		void ProcessFieldSignature (TypeDefinition type, string signature, XPathNavigator nav)
-		{
-			FieldDefinition field = GetField (type, signature);
-			if (field == null) {
-				Context.LogWarning ($"Could not find field '{signature}' in type '{type.GetDisplayName ()}' specified in {_xmlDocumentLocation}", 2012, _xmlDocumentLocation);
-				return;
+				ProcessField (type, field, nav);
 			}
 
-			ProcessField (type, field, nav);
+			string name = GetAttribute (nav, NameAttributeName);
+			if (!String.IsNullOrEmpty (name)) {
+				if (!type.HasFields)
+					return;
+
+				bool foundMatch = false;
+				foreach (FieldDefinition field in type.Fields) {
+					if (field.Name == name) {
+						foundMatch = true;
+						ProcessField (type, field, nav);
+					}
+				}
+
+				if (!foundMatch) {
+					Context.LogWarning ($"Could not find field '{name}' in type '{type.GetDisplayName ()}' specified in { _xmlDocumentLocation}", 2012, _xmlDocumentLocation);
+				}
+			}
 		}
 
 		protected static FieldDefinition GetField (TypeDefinition type, string signature)
@@ -238,24 +243,6 @@ namespace Mono.Linker.Steps
 			return null;
 		}
 
-		void ProcessFieldName (TypeDefinition type, string name, XPathNavigator nav)
-		{
-			if (!type.HasFields)
-				return;
-
-			bool foundMatch = false;
-			foreach (FieldDefinition field in type.Fields) {
-				if (field.Name == name) {
-					foundMatch = true;
-					ProcessField (type, field, nav);
-				}
-			}
-
-			if (!foundMatch) {
-				Context.LogWarning ($"Could not find field '{name}' in type '{type.GetDisplayName ()}' specified in { _xmlDocumentLocation}", 2012, _xmlDocumentLocation);
-			}
-		}
-
 		protected virtual void ProcessField (TypeDefinition type, FieldDefinition field, XPathNavigator nav) { }
 
 		void ProcessSelectedMethods (XPathNavigator nav, TypeDefinition type, object customData)
@@ -264,55 +251,42 @@ namespace Mono.Linker.Steps
 			if (methods.Count == 0)
 				return;
 
-			ProcessMethods (type, methods, customData);
-		}
-
-		void ProcessMethods (TypeDefinition type, XPathNodeIterator iterator, object customData)
-		{
-			while (iterator.MoveNext ()) {
-				if (!ShouldProcessElement (iterator.Current))
+			while (methods.MoveNext ()) {
+				if (!ShouldProcessElement (methods.Current))
 					continue;
-				ProcessMethod (type, iterator.Current, customData);
+				ProcessMethod (type, methods.Current, customData);
 			}
 		}
 
 		protected virtual void ProcessMethod (TypeDefinition type, XPathNavigator nav, object customData)
 		{
-			string value = GetSignature (nav);
-			if (!String.IsNullOrEmpty (value))
-				ProcessMethodSignature (type, value, nav, customData);
-
-			value = GetAttribute (nav, NameAttributeName);
-			if (!String.IsNullOrEmpty (value))
-				ProcessMethodName (type, value, nav, customData);
-		}
-
-		void ProcessMethodSignature (TypeDefinition type, string signature, XPathNavigator nav, object customData)
-		{
-			MethodDefinition method = GetMethod (type, signature);
-			if (method == null) {
-				Context.LogWarning ($"Could not find method '{signature}' in type '{type.GetDisplayName ()}' specified in {_xmlDocumentLocation}", 2009, _xmlDocumentLocation);
-				return;
-			}
-
-			ProcessMethod (type, method, nav, customData);
-		}
-
-		void ProcessMethodName (TypeDefinition type, string name, XPathNavigator nav, object customData)
-		{
-			if (!type.HasMethods)
-				return;
-
-			bool foundMatch = false;
-			foreach (MethodDefinition method in type.Methods) {
-				if (name == method.Name) {
-					foundMatch = true;
-					ProcessMethod (type, method, nav, customData);
+			string signature = GetSignature (nav);
+			if (!String.IsNullOrEmpty (signature)) {
+				MethodDefinition method = GetMethod (type, signature);
+				if (method == null) {
+					Context.LogWarning ($"Could not find method '{signature}' in type '{type.GetDisplayName ()}' specified in {_xmlDocumentLocation}", 2009, _xmlDocumentLocation);
+					return;
 				}
+
+				ProcessMethod (type, method, nav, customData);
 			}
 
-			if (!foundMatch) {
-				Context.LogWarning ($"Could not find method '{name}' in type '{type.GetDisplayName ()}' specified in {_xmlDocumentLocation}", 2009, _xmlDocumentLocation);
+			string name = GetAttribute (nav, NameAttributeName);
+			if (!String.IsNullOrEmpty (name)) {
+				if (!type.HasMethods)
+					return;
+
+				bool foundMatch = false;
+				foreach (MethodDefinition method in type.Methods) {
+					if (name == method.Name) {
+						foundMatch = true;
+						ProcessMethod (type, method, nav, customData);
+					}
+				}
+
+				if (!foundMatch) {
+					Context.LogWarning ($"Could not find method '{name}' in type '{type.GetDisplayName ()}' specified in {_xmlDocumentLocation}", 2009, _xmlDocumentLocation);
+				}
 			}
 		}
 
@@ -326,55 +300,42 @@ namespace Mono.Linker.Steps
 			if (events.Count == 0)
 				return;
 
-			ProcessEvents (type, events, customData);
-		}
-
-		void ProcessEvents (TypeDefinition type, XPathNodeIterator iterator, object customData)
-		{
-			while (iterator.MoveNext ()) {
-				if (!ShouldProcessElement (iterator.Current))
+			while (events.MoveNext ()) {
+				if (!ShouldProcessElement (events.Current))
 					continue;
-				ProcessEvent (type, iterator.Current, customData);
+				ProcessEvent (type, events.Current, customData);
 			}
 		}
 
 		protected virtual void ProcessEvent (TypeDefinition type, XPathNavigator nav, object customData)
 		{
-			string value = GetSignature (nav);
-			if (!String.IsNullOrEmpty (value))
-				ProcessEventSignature (type, value, nav, customData);
-
-			value = GetAttribute (nav, NameAttributeName);
-			if (!String.IsNullOrEmpty (value))
-				ProcessEventName (type, value, nav, customData);
-		}
-
-		void ProcessEventSignature (TypeDefinition type, string signature, XPathNavigator nav, object customData)
-		{
-			EventDefinition @event = GetEvent (type, signature);
-			if (@event == null) {
-				Context.LogWarning ($"Could not find event '{signature}' in type '{type.GetDisplayName ()}' specified in {_xmlDocumentLocation}", 2016, _xmlDocumentLocation);
-				return;
-			}
-
-			ProcessEvent (type, @event, nav, customData);
-		}
-
-		void ProcessEventName (TypeDefinition type, string name, XPathNavigator nav, object customData)
-		{
-			if (!type.HasEvents)
-				return;
-
-			bool foundMatch = false;
-			foreach (EventDefinition @event in type.Events) {
-				if (@event.Name == name) {
-					foundMatch = true;
-					ProcessEvent (type, @event, nav, customData);
+			string signature = GetSignature (nav);
+			if (!String.IsNullOrEmpty (signature)) {
+				EventDefinition @event = GetEvent (type, signature);
+				if (@event == null) {
+					Context.LogWarning ($"Could not find event '{signature}' in type '{type.GetDisplayName ()}' specified in {_xmlDocumentLocation}", 2016, _xmlDocumentLocation);
+					return;
 				}
+
+				ProcessEvent (type, @event, nav, customData);
 			}
 
-			if (!foundMatch) {
-				Context.LogWarning ($"Could not find event '{name}' in type '{type.GetDisplayName ()}' specified in {_xmlDocumentLocation}", 2016, _xmlDocumentLocation);
+			string name = GetAttribute (nav, NameAttributeName);
+			if (!String.IsNullOrEmpty (name)) {
+				if (!type.HasEvents)
+					return;
+
+				bool foundMatch = false;
+				foreach (EventDefinition @event in type.Events) {
+					if (@event.Name == name) {
+						foundMatch = true;
+						ProcessEvent (type, @event, nav, customData);
+					}
+				}
+
+				if (!foundMatch) {
+					Context.LogWarning ($"Could not find event '{name}' in type '{type.GetDisplayName ()}' specified in {_xmlDocumentLocation}", 2016, _xmlDocumentLocation);
+				}
 			}
 		}
 
@@ -398,55 +359,42 @@ namespace Mono.Linker.Steps
 			if (properties.Count == 0)
 				return;
 
-			ProcessProperties (type, properties, customData);
-		}
-
-		void ProcessProperties (TypeDefinition type, XPathNodeIterator iterator, object customData)
-		{
-			while (iterator.MoveNext ()) {
-				if (!ShouldProcessElement (iterator.Current))
+			while (properties.MoveNext ()) {
+				if (!ShouldProcessElement (properties.Current))
 					continue;
-				ProcessProperty (type, iterator.Current, customData);
+				ProcessProperty (type, properties.Current, customData);
 			}
 		}
 
 		protected virtual void ProcessProperty (TypeDefinition type, XPathNavigator nav, object customData)
 		{
-			string value = GetSignature (nav);
-			if (!String.IsNullOrEmpty (value))
-				ProcessPropertySignature (type, value, nav, customData);
-
-			value = GetAttribute (nav, NameAttributeName);
-			if (!String.IsNullOrEmpty (value))
-				ProcessPropertyName (type, value, nav, customData);
-		}
-
-		void ProcessPropertySignature (TypeDefinition type, string signature, XPathNavigator nav, object customData)
-		{
-			PropertyDefinition property = GetProperty (type, signature);
-			if (property == null) {
-				Context.LogWarning ($"Could not find property '{signature}' in type '{type.GetDisplayName ()}' specified in {_xmlDocumentLocation}", 2017, _xmlDocumentLocation);
-				return;
-			}
-
-			ProcessProperty (type, property, nav, customData, true);
-		}
-
-		void ProcessPropertyName (TypeDefinition type, string name, XPathNavigator nav, object customData)
-		{
-			if (!type.HasProperties)
-				return;
-
-			bool foundMatch = false;
-			foreach (PropertyDefinition property in type.Properties) {
-				if (property.Name == name) {
-					foundMatch = true;
-					ProcessProperty (type, property, nav, customData, false);
+			string signature = GetSignature (nav);
+			if (!String.IsNullOrEmpty (signature)) {
+				PropertyDefinition property = GetProperty (type, signature);
+				if (property == null) {
+					Context.LogWarning ($"Could not find property '{signature}' in type '{type.GetDisplayName ()}' specified in {_xmlDocumentLocation}", 2017, _xmlDocumentLocation);
+					return;
 				}
+
+				ProcessProperty (type, property, nav, customData, true);
 			}
 
-			if (!foundMatch) {
-				Context.LogWarning ($"Could not find property '{name}' in type '{type.GetDisplayName ()}' specified in {_xmlDocumentLocation}", 2017, _xmlDocumentLocation);
+			string name = GetAttribute (nav, NameAttributeName);
+			if (!String.IsNullOrEmpty (name)) {
+				if (!type.HasProperties)
+					return;
+
+				bool foundMatch = false;
+				foreach (PropertyDefinition property in type.Properties) {
+					if (property.Name == name) {
+						foundMatch = true;
+						ProcessProperty (type, property, nav, customData, false);
+					}
+				}
+
+				if (!foundMatch) {
+					Context.LogWarning ($"Could not find property '{name}' in type '{type.GetDisplayName ()}' specified in {_xmlDocumentLocation}", 2017, _xmlDocumentLocation);
+				}
 			}
 		}
 
