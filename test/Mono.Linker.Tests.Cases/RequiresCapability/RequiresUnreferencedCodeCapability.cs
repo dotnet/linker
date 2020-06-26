@@ -19,7 +19,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			TestRequiresWithMessageAndUrlOnMethod ();
 			TestRequiresOnConstructor ();
 			TestRequiresOnPropertyGetterAndSetter ();
-			TestRequiresSuppressesReflectionAnalysis ();
+			TestRequiresSuppressesWarningsFromReflectionAnalysis ();
 		}
 
 		[LogContains (
@@ -100,21 +100,25 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			"Calling 'System.Void Mono.Linker.Tests.Cases.RequiresCapability.RequiresUnreferencedCodeCapability::RequiresAndCallsOtherRequiresMethods()' " +
 			"which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. " +
 			"Message for --RequiresAndCallsOtherRequiresMethods--.")]
-		static void TestRequiresSuppressesReflectionAnalysis ()
+		static void TestRequiresSuppressesWarningsFromReflectionAnalysis ()
 		{
-			RequiresAndCallsOtherRequiresMethods ();
+			RequiresAndCallsOtherRequiresMethods<TestType> ();
 		}
 
 		[RequiresUnreferencedCode ("Message for --RequiresAndCallsOtherRequiresMethods--")]
 		[LogDoesNotContain ("Message for --RequiresUnreferencedCodeMethod--")]
 		[RecognizedReflectionAccessPattern]
-		static void RequiresAndCallsOtherRequiresMethods ()
+		static void RequiresAndCallsOtherRequiresMethods<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] TPublicMethods> ()
 		{
 			// Normally this would warn, but with the attribute on this method it should be auto-suppressed
 			RequiresUnreferencedCodeMethod ();
 
 			// Normally this would warn due to incompatible annotations, but with the attribute on this method it should be auto-suppressed
 			RequiresPublicFields (GetTypeWithPublicMethods ());
+
+			TypeRequiresPublicFields<TPublicMethods>.Method ();
+
+			MethodRequiresPublicFields<TPublicMethods> ();
 		}
 
 		[RequiresUnreferencedCode ("Message for --RequiresUnreferencedCodeMethod--")]
@@ -131,5 +135,14 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		{
 			return null;
 		}
+
+		class TypeRequiresPublicFields<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] T>
+		{
+			public static void Method () { }
+		}
+
+		static void MethodRequiresPublicFields<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] T> () { }
+
+		class TestType { }
 	}
 }
