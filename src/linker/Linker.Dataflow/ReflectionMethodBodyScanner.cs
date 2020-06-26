@@ -600,7 +600,7 @@ namespace Mono.Linker.Dataflow
 							IntrinsicId.RuntimeReflectionExtensions_GetRuntimeField => DynamicallyAccessedMemberTypes.PublicFields,
 							IntrinsicId.RuntimeReflectionExtensions_GetRuntimeMethod => DynamicallyAccessedMemberTypes.PublicMethods,
 							IntrinsicId.RuntimeReflectionExtensions_GetRuntimeProperty => DynamicallyAccessedMemberTypes.PublicProperties,
-							_ => throw new InternalErrorException ($"Reflection call '{calledMethod.GetDisplayName ()}' inside '{callingMethodBody.Method.GetDisplayName ()}' is of unexpected member type."),
+							_ => throw new InternalErrorException ($"Reflection call '{calledMethod.GetDisplayName ()}' inside '{calledMethodDefinition.GetDisplayName ()}' is of unexpected member type."),
 						};
 
 						foreach (var value in methodParams[0].UniqueValues ()) {
@@ -625,7 +625,7 @@ namespace Mono.Linker.Dataflow
 											reflectionContext.RecordHandledPattern ();
 											break;
 										default:
-											throw new InternalErrorException ($"Error processing reflection call '{calledMethod.GetDisplayName ()}' inside {callingMethodBody.Method.GetDisplayName ()}. Unexpected member kind.");
+											throw new InternalErrorException ($"Error processing reflection call '{calledMethod.GetDisplayName ()}' inside {callingMethodDefinition.GetDisplayName ()}. Unexpected member kind.");
 										}
 									} else {
 										RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberTypes, value, calledMethod.Parameters[0]);
@@ -984,7 +984,7 @@ namespace Mono.Linker.Dataflow
 							IntrinsicId.Type_GetEvent => GetDynamicallyAccessedMemberTypesFromBindingFlagsForEvents (bindingFlags),
 							IntrinsicId.Type_GetField => GetDynamicallyAccessedMemberTypesFromBindingFlagsForFields (bindingFlags),
 							IntrinsicId.Type_GetProperty => GetDynamicallyAccessedMemberTypesFromBindingFlagsForProperties (bindingFlags),
-							_ => throw new ArgumentException ($"Reflection call '{calledMethod.GetDisplayName ()}' inside '{callingMethodBody.Method.GetDisplayName ()}' is of unexpected member type."),
+							_ => throw new ArgumentException ($"Reflection call '{calledMethod.GetDisplayName ()}' inside '{callingMethodDefinition.GetDisplayName ()}' is of unexpected member type."),
 						};
 
 						foreach (var value in methodParams[0].UniqueValues ()) {
@@ -1284,12 +1284,12 @@ namespace Mono.Linker.Dataflow
 			if (returnValueDynamicallyAccessedMemberKinds != 0 && methodReturnValue != null) {
 				if (methodReturnValue is LeafValueWithDynamicallyAccessedMemberNode methodReturnValueWithMemberKinds) {
 					if (!methodReturnValueWithMemberKinds.DynamicallyAccessedMemberTypes.HasFlag (returnValueDynamicallyAccessedMemberKinds))
-						throw new InvalidOperationException ($"Internal linker error: processing of call from {callingMethodBody.Method.GetDisplayName ()} to {calledMethod.GetDisplayName ()} returned value which is not correctly annotated with the expected dynamic member access kinds.");
+						throw new InvalidOperationException ($"Internal linker error: processing of call from {callingMethodDefinition.GetDisplayName ()} to {calledMethod.GetDisplayName ()} returned value which is not correctly annotated with the expected dynamic member access kinds.");
 				} else if (methodReturnValue is SystemTypeValue) {
 					// SystemTypeValue can fullfill any requirement, so it's always valid
 					// The requirements will be applied at the point where it's consumed (passed as a method parameter, set as field value, returned from the method)
 				} else {
-					throw new InvalidOperationException ($"Internal linker error: processing of call from {callingMethodBody.Method.GetDisplayName ()} to {calledMethod.GetDisplayName ()} returned value which is not correctly annotated with the expected dynamic member access kinds.");
+					throw new InvalidOperationException ($"Internal linker error: processing of call from {callingMethodDefinition.GetDisplayName ()} to {calledMethod.GetDisplayName ()} returned value which is not correctly annotated with the expected dynamic member access kinds.");
 				}
 			}
 
