@@ -735,7 +735,7 @@ namespace Mono.Linker.Steps
 				return;
 
 			_context.LogWarning (
-				$"Could not resolve dependency member '{member}' declared in type '{td.FullName}' specified in a `PreserveDependency` attribute that targets method '{(context as MethodReference).GetDisplayName ()}'", 2005, td);
+				$"Could not resolve dependency member '{member}' declared in type '{td.GetDisplayName ()}' specified in a `PreserveDependency` attribute that targets method '{(context as MethodReference).GetDisplayName ()}'", 2005, td);
 		}
 
 		bool MarkDependencyMethod (TypeDefinition type, string name, string[] signature, in DependencyInfo reason, IMemberDefinition sourceLocationMember)

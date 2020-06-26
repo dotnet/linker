@@ -69,7 +69,7 @@ namespace Mono.Linker.Steps
 				ArrayBuilder<string> arguments = GetAttributeChildren (iterator.Current.SelectChildren ("argument", string.Empty));
 				MethodDefinition constructor = attributeType.Methods.Where (method => method.IsInstanceConstructor ()).FirstOrDefault (c => c.Parameters.Count == arguments.Count);
 				if (constructor == null) {
-					Context.LogWarning ($"Could not find a constructor for type '{attributeType}' that receives '{arguments.Count}' arguments as parameter", 2022, _xmlDocumentLocation);
+					Context.LogWarning ($"Could not find a constructor for type '{attributeType.GetDisplayName ()}' that receives '{arguments.Count}' arguments as parameter", 2022, _xmlDocumentLocation);
 					continue;
 				}
 				string[] xmlArguments = arguments.ToArray ();
