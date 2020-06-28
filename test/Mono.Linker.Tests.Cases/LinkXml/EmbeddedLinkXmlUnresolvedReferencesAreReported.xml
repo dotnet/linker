@@ -22,5 +22,6 @@
       <property signature="System.Int32 PropertyWithSignature" />
       <property name="UnknownProperty" />
     </type>
+    <namespace fullname="UnknownNamespace" />
   </assembly>
 </linker>

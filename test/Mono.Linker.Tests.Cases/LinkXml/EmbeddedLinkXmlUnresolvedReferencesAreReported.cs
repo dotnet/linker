@@ -16,6 +16,7 @@ namespace Mono.Linker.Tests.Cases.LinkXml
 	[LogContains ("warning IL2016: Could not find event 'UnknownEvent' in type 'Mono.Linker.Tests.Cases.LinkXml.EmbeddedLinkXmlUnresolvedReferencesAreReported.TestType'")]
 	[LogContains ("warning IL2017: Could not find property 'System.String PropertyWithSignature' in type 'Mono.Linker.Tests.Cases.LinkXml.EmbeddedLinkXmlUnresolvedReferencesAreReported.TestType'")]
 	[LogContains ("warning IL2017: Could not find property 'UnknownProperty' in type 'Mono.Linker.Tests.Cases.LinkXml.EmbeddedLinkXmlUnresolvedReferencesAreReported.TestType'")]
+	[LogContains ("warning IL2044: Could not find any type in namespace 'UnknownNamespace'")]
 	class EmbeddedLinkXmlUnresolvedReferencesAreReported
 	{
 		public static void Main ()
