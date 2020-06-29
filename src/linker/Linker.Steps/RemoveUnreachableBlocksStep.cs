@@ -177,16 +177,31 @@ namespace Mono.Linker.Steps
 					if (!constExprMethods.TryGetValue (md, out targetResult))
 						break;
 
+					bool explicitlyAnnotated = Annotations.GetAction (md) == MethodAction.ConvertToStub;
+
 					// Allow inlining results of instance methods which are explicitly annotated
 					// but don't allow inling results of any other instance method.
 					// See https://github.com/mono/linker/issues/1243 for discussion as to why.
 					// Also explicitly prevent inlining results of virtual methods.
 					if (!md.IsStatic &&
-						(md.IsVirtual || Annotations.GetAction (md) != MethodAction.ConvertToStub))
+						(md.IsVirtual || !explicitlyAnnotated))
 						break;
 
-					if (md.HasParameters)
-						break;
+					// Allow inlining results of methods with by-value parameters which are explicitly annotated
+					// but don't allow inlining of results of any other method with parameters.
+					if (md.HasParameters) {
+						if (!explicitlyAnnotated)
+							break;
+
+						bool hasByRefOrOutParameter = false;
+						for (int paramIndex = 0; paramIndex < md.Parameters.Count; paramIndex++) {
+							var param = md.Parameters[paramIndex];
+							hasByRefOrOutParameter |= param.ParameterType.IsByReference || param.IsOut;
+						}
+
+						if (hasByRefOrOutParameter)
+							break;
+					}
 
 					reducer.Rewrite (i, targetResult);
 					changed = true;
