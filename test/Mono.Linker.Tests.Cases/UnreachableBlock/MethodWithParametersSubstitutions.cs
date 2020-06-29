@@ -33,7 +33,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		{
 			return _isEnabledField;
 		}
- 
+
 		[Kept]
 		[ExpectBodyModified]
 		static void TestMethodWithValueParam ()
