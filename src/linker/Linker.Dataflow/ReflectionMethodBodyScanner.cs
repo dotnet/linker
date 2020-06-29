@@ -1248,7 +1248,7 @@ namespace Mono.Linker.Dataflow
 							message += " " + requiresUnreferencedCode.Url;
 						}
 
-						_context.LogWarning (message, 2026, callingMethodDefinition, operation.Offset);
+						_context.LogWarning (message, 2026, callingMethodDefinition, operation.Offset, MessageSubCategory.UnreferencedCode);
 					}
 
 					// To get good reporting of errors we need to track the origin of the value for all method calls

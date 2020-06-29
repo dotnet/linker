@@ -162,12 +162,14 @@ namespace Mono.Linker.Dataflow
 								paramAnnotations[0] = methodMemberTypes;
 							}
 						} else if (methodMemberTypes != DynamicallyAccessedMemberTypes.None) {
-							_context.LogWarning ($"The DynamicallyAccessedMembersAttribute is only allowed on method parameters, return value or generic parameters.", 2041, method);
+							_context.LogWarning ($"The DynamicallyAccessedMembersAttribute is only allowed on method parameters, return value or generic parameters.",
+								2041, method, subcategory: MessageSubCategory.DynamicDependency);
 						}
 					} else {
 						offset = 0;
 						if (methodMemberTypes != DynamicallyAccessedMemberTypes.None) {
-							_context.LogWarning ($"The DynamicallyAccessedMembersAttribute is only allowed on method parameters, return value or generic parameters.", 2041, method);
+							_context.LogWarning ($"The DynamicallyAccessedMembersAttribute is only allowed on method parameters, return value or generic parameters.",
+								2041, method, subcategory: MessageSubCategory.DynamicDependency);
 						}
 					}
 
@@ -247,7 +249,8 @@ namespace Mono.Linker.Dataflow
 						}
 
 						if (annotatedMethods.Any (a => a.Method == setMethod)) {
-							_context.LogWarning ($"Trying to propagate DynamicallyAccessedMemberAttribute from property '{property.FullName}' to its setter '{setMethod}', but it already has such attribute on the 'value' parameter.", 2043, setMethod);
+							_context.LogWarning ($"Trying to propagate DynamicallyAccessedMemberAttribute from property '{property.FullName}' to its setter '{setMethod}', but it already has such attribute on the 'value' parameter.",
+								2043, setMethod, subcategory: MessageSubCategory.DynamicDependency);
 						} else {
 							int offset = setMethod.HasImplicitThis () ? 1 : 0;
 							if (setMethod.Parameters.Count > 0) {
@@ -274,7 +277,8 @@ namespace Mono.Linker.Dataflow
 						}
 
 						if (annotatedMethods.Any (a => a.Method == getMethod)) {
-							_context.LogWarning ($"Trying to propagate DynamicallyAccessedMemberAttribute from property '{property.FullName}' to its getter '{getMethod}', but it already has such attribute on the return value.", 2043, getMethod);
+							_context.LogWarning ($"Trying to propagate DynamicallyAccessedMemberAttribute from property '{property.FullName}' to its getter '{getMethod}', but it already has such attribute on the return value.",
+								2043, getMethod, subcategory: MessageSubCategory.DynamicDependency);
 						} else {
 							annotatedMethods.Add (new MethodAnnotations (getMethod, null, annotation, null));
 						}
@@ -283,7 +287,8 @@ namespace Mono.Linker.Dataflow
 					FieldDefinition backingField;
 					if (backingFieldFromGetter != null && backingFieldFromSetter != null &&
 						backingFieldFromGetter != backingFieldFromSetter) {
-						_context.LogWarning ($"Could not find a unique backing field for property '{property.FullName}' to propagate DynamicallyAccessedMembersAttribute. The backing fields from getter '{backingFieldFromGetter.FullName}' and setter '{backingFieldFromSetter.FullName}' are not the same.", 2042, property);
+						_context.LogWarning ($"Could not find a unique backing field for property '{property.FullName}' to propagate DynamicallyAccessedMembersAttribute. The backing fields from getter '{backingFieldFromGetter.FullName}' and setter '{backingFieldFromSetter.FullName}' are not the same.",
+							2042, property, subcategory: MessageSubCategory.DynamicDependency);
 						backingField = null;
 					} else {
 						backingField = backingFieldFromGetter ?? backingFieldFromSetter;
@@ -291,7 +296,8 @@ namespace Mono.Linker.Dataflow
 
 					if (backingField != null) {
 						if (annotatedFields.Any (a => a.Field == backingField)) {
-							_context.LogWarning ($"Trying to propagate DynamicallyAccessedMemberAttribute from property '{property.FullName}' to its field '{backingField}', but it already has such attribute.", 2043, backingField);
+							_context.LogWarning ($"Trying to propagate DynamicallyAccessedMemberAttribute from property '{property.FullName}' to its field '{backingField}', but it already has such attribute.",
+								2043, backingField, subcategory: MessageSubCategory.DynamicDependency);
 						} else {
 							annotatedFields.Add (new FieldAnnotation (backingField, annotation));
 						}

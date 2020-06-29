@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
+using Mono.Linker.Tests.Cases.Expectations.Metadata;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -13,6 +14,7 @@ using System.Text;
 namespace Mono.Linker.Tests.Cases.DataFlow
 {
 	[SkipKeptItemsValidation]
+	[SetupLinkerArgument ("--verbose")]
 	public class MethodThisDataFlow
 	{
 		public static void Main ()

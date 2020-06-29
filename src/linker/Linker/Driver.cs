@@ -438,6 +438,17 @@ namespace Mono.Linker
 						context.OutputWarningSuppressions = true;
 						continue;
 
+					case "--nowarn":
+						string noWarnArgument = null;
+						if (!GetStringParam (token, l => noWarnArgument = l))
+							return -1;
+
+						if (!Enum.TryParse (typeof (NoWarn), noWarnArgument, true, out var noWarnEnum))
+							return -1;
+
+						context.DontWarn = (NoWarn) noWarnEnum;
+						continue;
+
 					case "--version":
 						Version ();
 						return 1;
@@ -998,6 +1009,9 @@ namespace Mono.Linker
 			Console.WriteLine ("  -out PATH           Specify the output directory. Defaults to 'output'");
 			Console.WriteLine ("  --about             About the {0}", _linker);
 			Console.WriteLine ("  --verbose           Log messages indicating progress and warnings");
+			Console.WriteLine ("  --nowarn OPTION     Turn off all warnings or a predefined subset. Ignored if 'verbose' is used. Defaults to 'analysis'.");
+			Console.WriteLine ("                        all: Disable all warnings");
+			Console.WriteLine ("                        analysis: Disable dataflow analysis warnings");
 			Console.WriteLine ("  --version           Print the version number of the {0}", _linker);
 			Console.WriteLine ("  -help               Lists all linker options");
 			Console.WriteLine ("  @FILE               Read response file for more options");

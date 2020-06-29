@@ -8,6 +8,7 @@ namespace Mono.Linker.Tests.Cases.PreserveDependencies
 	[IgnoreTestCase ("This test checks that PreserveDependency correctly issues a warning on .NET Core where it is deprecated.")]
 #endif
 	[SetupCompileBefore ("FakeSystemAssembly.dll", new[] { "Dependencies/PreserveDependencyAttribute.cs" })]
+	[SetupLinkerArgument ("--verbose")]
 	[LogContains ("IL2033: Mono.Linker.Tests.Cases.PreserveDependencies.PreserveDependencyDeprecated.B.Method(): PreserveDependencyAttribute is deprecated. Use DynamicDependencyAttribute instead.")]
 	[LogContains ("IL2033: Mono.Linker.Tests.Cases.PreserveDependencies.PreserveDependencyDeprecated.B.SameContext(): PreserveDependencyAttribute is deprecated. Use DynamicDependencyAttribute instead.")]
 	[LogContains ("IL2033: Mono.Linker.Tests.Cases.PreserveDependencies.PreserveDependencyDeprecated.B.Broken(): PreserveDependencyAttribute is deprecated. Use DynamicDependencyAttribute instead.")]

@@ -7,6 +7,7 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.RequiresCapability
 {
+	[SetupLinkerArgument ("--verbose")]
 	public class RequiresUnreferencedCodeCapabilityReflectionAnalysisEnabled
 	{
 		[LogContains ("-- DynamicallyAccessedMembersEnabled --")]

@@ -51,10 +51,17 @@ namespace ILLink.Tasks
 
 		/// <summary>
 		///   The directory in which to place linked assemblies.
-		//    Maps to '-out'.
+		///    Maps to '-out'.
 		/// </summary>
 		[Required]
 		public ITaskItem OutputDirectory { get; set; }
+
+		/// <summary>
+		///	The subset of warnings that have to be turned off.
+		///	This has no effect if '--verbose' is used. Defaults to 'Analysis'.
+		///	Maps to '--nowarn'.
+		/// </summary>
+		public ITaskItem NoWarn { get; set; }
 
 		/// <summary>
 		///   A list of XML root descriptor files specifying linker
@@ -302,6 +309,9 @@ namespace ILLink.Tasks
 
 			if (OutputDirectory != null)
 				args.Append ("-out ").AppendLine (Quote (OutputDirectory.ItemSpec));
+
+			if (NoWarn != null)
+				args.Append ("--nowarn ").Append (NoWarn);
 
 			// Add global optimization arguments
 			if (_beforeFieldInit is bool beforeFieldInit)
