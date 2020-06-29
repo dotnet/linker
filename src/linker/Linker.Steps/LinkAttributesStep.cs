@@ -123,7 +123,7 @@ namespace Mono.Linker.Steps
 			ProcessXml (Context.StripLinkAttributes, Context.IgnoreLinkAttributes);
 		}
 
-		protected override bool AllowAllAssembliesSelector () => true;
+		protected override bool AllowAllAssembliesSelector { get => true; }
 
 		protected override void ProcessAssembly (AssemblyDefinition assembly, XPathNodeIterator iterator, bool warnOnUnresolvedTypes)
 		{

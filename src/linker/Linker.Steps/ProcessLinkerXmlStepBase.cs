@@ -66,12 +66,12 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		protected virtual bool AllowAllAssembliesSelector () => false;
+		protected virtual bool AllowAllAssembliesSelector { get => false; }
 
 		protected virtual void ProcessAssemblies (XPathNodeIterator iterator)
 		{
 			while (iterator.MoveNext ()) {
-				bool processAllAssemblies = AllowAllAssembliesSelector () && GetFullName (iterator.Current) == AllAssembliesFullName;
+				bool processAllAssemblies = AllowAllAssembliesSelector && GetFullName (iterator.Current) == AllAssembliesFullName;
 
 				// Errors for invalid assembly names should show up even if this element will be
 				// skipped due to feature conditions.
