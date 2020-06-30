@@ -193,13 +193,11 @@ namespace Mono.Linker.Steps
 						if (!explicitlyAnnotated)
 							break;
 
-						bool hasByRefOrOutParameter = false;
-						for (int paramIndex = 0; paramIndex < md.Parameters.Count; paramIndex++) {
-							var param = md.Parameters[paramIndex];
-							hasByRefOrOutParameter |= param.ParameterType.IsByReference || param.IsOut;
-						}
+						bool hasByRefParameter = false;
+						foreach (var param in md.Parameters)
+							hasByRefParameter |= param.ParameterType.IsByReference;
 
-						if (hasByRefOrOutParameter || md.CallingConvention == MethodCallingConvention.VarArg)
+						if (hasByRefParameter || md.CallingConvention == MethodCallingConvention.VarArg)
 							break;
 					}
 
