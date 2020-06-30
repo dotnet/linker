@@ -600,7 +600,7 @@ namespace Mono.Linker.Dataflow
 							IntrinsicId.RuntimeReflectionExtensions_GetRuntimeField => DynamicallyAccessedMemberTypes.PublicFields,
 							IntrinsicId.RuntimeReflectionExtensions_GetRuntimeMethod => DynamicallyAccessedMemberTypes.PublicMethods,
 							IntrinsicId.RuntimeReflectionExtensions_GetRuntimeProperty => DynamicallyAccessedMemberTypes.PublicProperties,
-							_ => throw new InternalErrorException ($"Reflection call '{calledMethod.GetDisplayName ()}' inside '{calledMethodDefinition.GetDisplayName ()}' is of unexpected member type."),
+							_ => throw new InternalErrorException ($"Reflection call '{calledMethod.GetDisplayName ()}' inside '{callingMethodDefinition.GetDisplayName ()}' is of unexpected member type."),
 						};
 
 						foreach (var value in methodParams[0].UniqueValues ()) {
@@ -1548,7 +1548,8 @@ namespace Mono.Linker.Dataflow
 			if (string.IsNullOrEmpty (parameterDefinition.Name))
 				return $"parameter #{parameterDefinition.Index} of method '{parameterDefinition.Method}'";
 
-			return $"parameter '{parameterDefinition.Name}' of method '{(parameterDefinition.Method as MethodDefinition).GetDisplayName ()}'";
+			return $"parameter '{parameterDefinition.Name}' of method '" +
+				$"{((parameterDefinition.Method is MethodDefinition method) ? method.GetDisplayName () : parameterDefinition.Method.ToString ())}'";
 		}
 
 		static string GetGenericParameterDescriptionForErrorMessage (GenericParameter genericParameter)

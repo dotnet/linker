@@ -16,16 +16,16 @@ namespace Mono.Linker
 			sb.Append ("(");
 			if (method.HasParameters) {
 				for (int i = 0; i < method.Parameters.Count - 1; i++)
-					sb.Append (method.Parameters[i].ParameterType.GetTypeReferenceDisplayName ()).Append (',');
+					sb.Append (method.Parameters[i].ParameterType.GetDisplayNameWithoutNamespace ()).Append (',');
 
-				sb.Append (method.Parameters[method.Parameters.Count - 1].ParameterType.GetTypeReferenceDisplayName ());
+				sb.Append (method.Parameters[method.Parameters.Count - 1].ParameterType.GetDisplayNameWithoutNamespace ());
 			}
 
 			sb.Append (")");
 
 			// Insert generic parameters
 			if (method.HasGenericParameters) {
-				TypeReferenceExtensions.ParseGenericParameters (method.GenericParameters, sb);
+				TypeReferenceExtensions.PrependGenericParameters (method.GenericParameters, sb);
 			}
 
 			// Insert method name
@@ -36,6 +36,7 @@ namespace Mono.Linker
 
 			// Insert declaring type name and namespace
 			sb.Insert (0, '.').Insert (0, method.DeclaringType.GetDisplayName ());
+
 			return sb.ToString ();
 		}
 
