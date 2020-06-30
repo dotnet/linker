@@ -199,7 +199,7 @@ namespace Mono.Linker.Steps
 							hasByRefOrOutParameter |= param.ParameterType.IsByReference || param.IsOut;
 						}
 
-						if (hasByRefOrOutParameter)
+						if (hasByRefOrOutParameter || md.CallingConvention == MethodCallingConvention.VarArg)
 							break;
 					}
 

@@ -8,6 +8,7 @@
       <!--<method signature="System.Boolean IsEnabledWithOutParam(System.Int32&amp;)" body="stub" value="true" />-->
       <method signature="System.Boolean IsEnabledWithRefParam(System.Int32&amp;)" body="stub" value="true" />
       <method signature="System.Boolean IsEnabledWithMultipleRefParams(System.Int32,System.Int32&amp;,Mono.Linker.Tests.Cases.UnreachableBlock.MethodWithParametersSubstitutions/TestStruct&amp;,System.String)" body="stub" value="true" />
+      <method signature="System.Boolean IsEnabledWithVarArgs(System.Int32)" body="stub" value="true" />
     </type>
   </assembly>
 </linker>
