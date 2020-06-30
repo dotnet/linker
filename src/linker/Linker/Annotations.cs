@@ -32,6 +32,7 @@ using System.Diagnostics;
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Linker.Dataflow;
 
 namespace Mono.Linker
 {
@@ -65,7 +66,12 @@ namespace Mono.Linker
 		protected readonly HashSet<MethodDefinition> indirectly_called = new HashSet<MethodDefinition> ();
 		protected readonly HashSet<TypeDefinition> types_relevant_to_variant_casting = new HashSet<TypeDefinition> ();
 
-		public AnnotationStore (LinkContext context) => this.context = context;
+
+		public AnnotationStore (LinkContext context)
+		{
+			this.context = context;
+			FlowAnnotations = new FlowAnnotations (context);
+		}
 
 		public bool ProcessSatelliteAssemblies { get; set; }
 
@@ -74,6 +80,8 @@ namespace Mono.Linker
 				return context.Tracer;
 			}
 		}
+
+		internal FlowAnnotations FlowAnnotations { get; }
 
 		[Obsolete ("Use Tracer in LinkContext directly")]
 		public void PrepareDependenciesDump ()
