@@ -196,7 +196,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		[LogDoesNotContain ("IsEnabledWithVarArgs")]
 		static void TestMethodWithVarArgs ()
 		{
-			if (IsEnabledWithVarArgs (__arglist(1)))
+			if (IsEnabledWithVarArgs (__arglist (1)))
 				MethodWithVarArgs_Reached1 ();
 			else
 				MethodWithVarArgs_Reached2 ();
