@@ -24,6 +24,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 			TestMethodWithMultipleRefParams ();
 			TestMethodWithValueParamAndConstReturn_NoSubstitutions ();
 			TestMethodWithVarArgs ();
+			TestMethodWithParamAndVarArgs ();
 		}
 
 		static bool _isEnabledField;
@@ -186,7 +187,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 
 		[Kept]
 		[ExpectBodyModified]
-		static bool IsEnabledWithVarArgs (int p1, __arglist)
+		static bool IsEnabledWithVarArgs (__arglist)
 		{
 			return _isEnabledWithVarArgsField;
 		}
@@ -195,8 +196,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		[LogDoesNotContain ("IsEnabledWithVarArgs")]
 		static void TestMethodWithVarArgs ()
 		{
-			int p = 0;
-			if (IsEnabledWithVarArgs (1, __arglist(1)))
+			if (IsEnabledWithVarArgs (__arglist(1)))
 				MethodWithVarArgs_Reached1 ();
 			else
 				MethodWithVarArgs_Reached2 ();
@@ -204,6 +204,29 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 
 		[Kept] static void MethodWithVarArgs_Reached1 () { }
 		[Kept] static void MethodWithVarArgs_Reached2 () { }
+
+
+		static bool _isEnabledWithParamAndVarArgsField;
+
+		[Kept]
+		[ExpectBodyModified]
+		static bool IsEnabledWithParamAndVarArgs (int p1, __arglist)
+		{
+			return _isEnabledWithParamAndVarArgsField;
+		}
+
+		[Kept]
+		[LogDoesNotContain ("IsEnabledWithParamAndVarArgs")]
+		static void TestMethodWithParamAndVarArgs ()
+		{
+			if (IsEnabledWithParamAndVarArgs (1, __arglist (1)))
+				MethodWithParamAndVarArgs_Reached1 ();
+			else
+				MethodWithParamAndVarArgs_Reached2 ();
+		}
+
+		[Kept] static void MethodWithParamAndVarArgs_Reached1 () { }
+		[Kept] static void MethodWithParamAndVarArgs_Reached2 () { }
 
 
 		[Kept] [KeptMember (".ctor()")] class TestClass { }

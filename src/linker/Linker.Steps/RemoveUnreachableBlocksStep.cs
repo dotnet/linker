@@ -177,6 +177,9 @@ namespace Mono.Linker.Steps
 					if (!constExprMethods.TryGetValue (md, out targetResult))
 						break;
 
+					if (md.CallingConvention == MethodCallingConvention.VarArg)
+						break;
+
 					bool explicitlyAnnotated = Annotations.GetAction (md) == MethodAction.ConvertToStub;
 
 					// Allow inlining results of instance methods which are explicitly annotated
@@ -201,7 +204,7 @@ namespace Mono.Linker.Steps
 							}
 						}
 
-						if (hasByRefParameter || md.CallingConvention == MethodCallingConvention.VarArg)
+						if (hasByRefParameter)
 							break;
 					}
 
