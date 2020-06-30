@@ -1534,7 +1534,8 @@ namespace Mono.Linker.Dataflow
 			{
 				ParameterDefinition parameterDefinition => GetParameterDescriptionForErrorMessage (parameterDefinition),
 				FieldDefinition fieldDefinition => $"field '{fieldDefinition}'",
-				MethodReturnType methodReturnType => $"return value of method '{(methodReturnType.Method as MethodDefinition).GetDisplayName ()}'",
+				MethodReturnType methodReturnType => $"return value of method '" +
+				$"{((methodReturnType.Method is MethodDefinition method) ? method.GetDisplayName () : methodReturnType.Method.ToString ())}'",
 				// MethodDefinition is used to represent the "this" parameter as we don't support annotations on the method itself.
 				MethodDefinition methodDefinition => $"implicit 'this' parameter of method '{methodDefinition.GetDisplayName ()}'",
 				GenericParameter genericParameter => GetGenericParameterDescriptionForErrorMessage (genericParameter),
