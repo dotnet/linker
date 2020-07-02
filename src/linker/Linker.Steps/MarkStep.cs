@@ -1885,12 +1885,12 @@ namespace Mono.Linker.Steps
 			return MarkMethodIf (type.Methods, MethodDefinitionExtensions.IsDefaultConstructor, reason, sourceLocationMember) != null;
 		}
 
-		protected bool MarkGetInstanceMethod (TypeDefinition type, in DependencyInfo reason, IMemberDefinition sourceLocationMember)
+		void MarkGetInstanceMethod (TypeDefinition type, in DependencyInfo reason, IMemberDefinition sourceLocationMember)
 		{
 			if (type?.HasMethods != true)
 				return false;
 
-			return MarkMethodIf (type.Methods, m =>
+			MarkMethodIf (type.Methods, m =>
 				m.Name == "GetInstance" && m.Parameters.Count == 1 && m.Parameters[0].ParameterType.MetadataType == MetadataType.String,
 				reason, sourceLocationMember) != null;
 		}
