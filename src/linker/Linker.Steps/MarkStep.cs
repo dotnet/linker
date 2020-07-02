@@ -1892,7 +1892,7 @@ namespace Mono.Linker.Steps
 
 			MarkMethodIf (type.Methods, m =>
 				m.Name == "GetInstance" && m.Parameters.Count == 1 && m.Parameters[0].ParameterType.MetadataType == MetadataType.String,
-				reason, sourceLocationMember) != null;
+				reason, sourceLocationMember);
 		}
 
 		static bool IsNonEmptyStaticConstructor (MethodDefinition method)
