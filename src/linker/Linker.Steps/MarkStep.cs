@@ -1288,7 +1288,8 @@ namespace Mono.Linker.Steps
 		internal protected virtual TypeDefinition MarkTypeVisibleToReflection (TypeReference reference, DependencyInfo reason, IMemberDefinition sourceLocationMember)
 		{
 			// If a type is visible to reflection, we need to stop doing optimization that could cause observable difference
-			// in reflection APIs. This includes APIs like IsAssignableFrom.
+			// in reflection APIs. This includes APIs like MakeGenericType (where variant castability of the produced type
+			// could be incorrect) or IsAssignableFrom (where assignability of unconstructed types might change).
 			Annotations.MarkRelevantToVariantCasting (reference.Resolve ());
 
 			return MarkType (reference, reason, sourceLocationMember);
