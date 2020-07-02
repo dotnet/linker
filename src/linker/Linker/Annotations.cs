@@ -219,7 +219,8 @@ namespace Mono.Linker
 
 		public void MarkRelevantToVariantCasting (TypeDefinition type)
 		{
-			types_relevant_to_variant_casting.Add (type);
+			if (type != null)
+				types_relevant_to_variant_casting.Add (type);
 		}
 
 		public bool IsRelevantToVariantCasting (TypeDefinition type)
