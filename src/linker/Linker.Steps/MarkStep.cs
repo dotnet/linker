@@ -1888,7 +1888,7 @@ namespace Mono.Linker.Steps
 		void MarkGetInstanceMethod (TypeDefinition type, in DependencyInfo reason, IMemberDefinition sourceLocationMember)
 		{
 			if (type?.HasMethods != true)
-				return false;
+				return;
 
 			MarkMethodIf (type.Methods, m =>
 				m.Name == "GetInstance" && m.Parameters.Count == 1 && m.Parameters[0].ParameterType.MetadataType == MetadataType.String,
