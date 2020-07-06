@@ -51,10 +51,8 @@ namespace Mono.Linker
 						// Skip validation for cases where both base and override are in the list, we will validate the edge
 						// when validating the override from the list.
 						// This avoids validating the edge twice (it would produce the same warning twice)
-						if (_virtualMethodsWithAnnotationsToValidate.Contains (overrideInformation.Override)) {
-							System.Console.WriteLine (overrideInformation.Override.GetDisplayName ());
+						if (_virtualMethodsWithAnnotationsToValidate.Contains (overrideInformation.Override))
 							continue;
-						}
 
 						_context.Annotations.FlowAnnotations.ValidateMethodAnnotationsAreSame (overrideInformation.Override, method);
 						ValidateMethodRequiresUnreferencedCodeAreSame (overrideInformation.Override, method);

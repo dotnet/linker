@@ -9,8 +9,6 @@ using Mono.Cecil.Cil;
 
 namespace Mono.Linker.Dataflow
 {
-	// TODO: enforce virtual methods have consistent annotations
-
 	class FlowAnnotations
 	{
 		readonly LinkContext _context;
@@ -241,8 +239,8 @@ namespace Mono.Linker.Dataflow
 					MethodDefinition setMethod = property.SetMethod;
 					if (setMethod != null) {
 
-						// TODO: Handle abstract properties - can't do any propagation on the base property, should rely on validation
-						//  that overrides also correctly annotate.
+						// Abstract property backing field propagation doesn't make sense, and any derived property will be validated
+						// to have the exact same annotations on getter/setter, and thus if it has a detectable backing field that will be validated as well.
 						if (setMethod.HasBody) {
 							// Look for the compiler generated backing field. If it doesn't work out simply move on. In such case we would still
 							// propagate the annotation to the setter/getter and later on when analyzing the setter/getter we will warn
@@ -268,8 +266,8 @@ namespace Mono.Linker.Dataflow
 					MethodDefinition getMethod = property.GetMethod;
 					if (getMethod != null) {
 
-						// TODO: Handle abstract properties - can't do any propagation on the base property, should rely on validation
-						//  that overrides also correctly annotate.
+						// Abstract property backing field propagation doesn't make sense, and any derived property will be validated
+						// to have the exact same annotations on getter/setter, and thus if it has a detectable backing field that will be validated as well.
 						if (getMethod.HasBody) {
 							// Look for the compiler generated backing field. If it doesn't work out simply move on. In such case we would still
 							// propagate the annotation to the setter/getter and later on when analyzing the setter/getter we will warn

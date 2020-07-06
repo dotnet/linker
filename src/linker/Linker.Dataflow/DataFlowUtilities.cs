@@ -5,7 +5,7 @@ using Mono.Cecil;
 
 namespace Mono.Linker.Dataflow
 {
-	internal static class DataFlowUtilities
+	static class DataFlowUtilities
 	{
 		internal static string GetDynamicallyAccessedMemberTypesDescription (DynamicallyAccessedMemberTypes memberTypes)
 		{

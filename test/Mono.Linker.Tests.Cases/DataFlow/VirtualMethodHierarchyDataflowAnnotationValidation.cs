@@ -109,6 +109,14 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			public virtual void GenericBaseWithDerivedWith_<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)] T> () { }
 			public virtual void GenericBaseWithoutDerivedWithout<T> () { }
 
+			// === Properties ===
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			public virtual Type PropertyBaseWithDerivedWithout { get; }
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			public virtual Type PropertyBaseWithDerivedWith_ { get; set; }
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			public virtual Type PropertyBaseWithDerivedOnGetterWith { get; }
+
 			// === RequiresUnreferencedCode ===
 			[RequiresUnreferencedCode ("")]
 			public virtual void RequiresUnreferencedCodeBaseWithDerivedWithout () { }
@@ -237,6 +245,25 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			[LogDoesNotContain ("DerivedClass.GenericBaseWithoutDerivedWithout")]
 			public override void GenericBaseWithoutDerivedWithout<T> () { }
+
+
+			// === Properties ===
+			// The warning is reported on the getter (or setter), which is not ideal, but it's probably good enough for now (we don't internally track annotations
+			// on properties themselves, only on methods).
+			[LogContains (
+				"DynamicallyAccessedMemberTypes in DynamicallyAccessedMembersAttribute on return value of method 'System.Type Mono.Linker.Tests.Cases.DataFlow.VirtualMethodHierarchyDataflowAnnotationValidation/DerivedClass::get_PropertyBaseWithDerivedWithout()' " +
+				"don't match overridden return value of method 'System.Type Mono.Linker.Tests.Cases.DataFlow.VirtualMethodHierarchyDataflowAnnotationValidation/BaseClass::get_PropertyBaseWithDerivedWithout()'. " +
+				"All overridden members must have the same DynamicallyAccessedMembersAttribute usage.")]
+			public override Type PropertyBaseWithDerivedWithout { get; }
+
+			[LogDoesNotContain ("DerivedClass.get_PropertyBaseWithDerivedWith_")]
+			[LogDoesNotContain ("DerivedClass.set_PropertyBaseWithDerivedWith_")]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			public override Type PropertyBaseWithDerivedWith_ { get; set; }
+
+			[LogDoesNotContain ("PropertyBaseWithDerivedOnGetterWith")]
+			[field: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			public override Type PropertyBaseWithDerivedOnGetterWith { [return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] get; }
 
 
 			// === RequiresUnreferencedCode ===
@@ -443,6 +470,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			void GenericInterfaceBaseWithImplementationWithout<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)] T> ();
 
+			// === Properties ===
+			Type PropertyInterfaceBaseWithoutImplementationWith { get; set; }
+
 
 			// === RequiresUnreferencedCode ===
 			[RequiresUnreferencedCode ("")]
@@ -504,6 +534,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			[LogContains ("ImplementationClass.GenericInterfaceBaseWithImplementationWithout")]
 			public void GenericInterfaceBaseWithImplementationWithout<T> () { }
+
+			// === Properties ===
+			[LogContains ("ImplementationClass.get_PropertyInterfaceBaseWithoutImplementationWith")]
+			[LogContains ("ImplementationClass.set_PropertyInterfaceBaseWithoutImplementationWith")]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.DefaultConstructor)]
+			public Type PropertyInterfaceBaseWithoutImplementationWith { get; set; }
 
 
 			// === RequiresUnreferencedCode ===
