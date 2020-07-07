@@ -697,15 +697,16 @@ namespace Mono.Linker
 
 			try {
 				p.Process (context);
-			} catch (Exception ex) {
-				if (ex is LinkerFatalErrorException lex) {
-					context.LogMessage (lex.MessageContainer);
-					Console.Error.WriteLine (ex.ToString ());
-				} else {
-					context.LogError ($"IL Linker has encountered an unexpected error. Please report the issue at https://github.com/mono/linker/issues \n{ex}", 1012);
-				}
-
+			} catch (LinkerFatalErrorException lex) {
+				context.LogMessage (lex.MessageContainer);
+				Console.Error.WriteLine (lex.ToString ());
 				return false;
+			} catch (Exception) {
+				// Unhandled exceptions are usually linker bugs. Ask the user to report it.
+				context.LogError ($"IL Linker has encountered an unexpected error. Please report the issue at https://github.com/mono/linker/issues", 1012);
+				// Don't swallow the exception and exit code - rethrow it and let the surrounding tooling decide what to do.
+				// The stack trace will go to stderr, and the MSBuild task will surface it with High importance.
+				throw;
 			} finally {
 				context.Tracer.Finish ();
 			}
