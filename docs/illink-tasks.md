@@ -1,5 +1,13 @@
 # ILLink.Tasks
 
+## Terminology
+
+The capability of the SDK is called "trim". Trimming allows the SDK to reduce the size of the application by removing unused code and other assets. General name for the tool which implements this capability is "trimmer". MSBuild/SDK integration should use these terms (trim/trimmer).
+
+The current implementation of the capability is via the "ILLink" task. The tool which the task uses is called "ILLinker". Actual errors/warnings will come from the tool, so "ILLinker".
+
+*Note: This is similar to Compiler/csc: the capability is "compilation" and the related MSBuild/SDK integration uses "compile" as the term. The actual tool is csc and the errors/warnings coming from it are prefixed with CSC/CS.*
+
 ## Usage
 
 To enable ILLinker set `PublishTrimmed` property to `true` in your project and publish your app as self-contained.
