@@ -782,7 +782,7 @@ namespace Mono.Linker.Dataflow
 				//
 				case IntrinsicId.Type_GetType: {
 						reflectionContext.AnalyzingPattern ();
-						
+
 						foreach (var typeNameValue in methodParams[0].UniqueValues ()) {
 							if (typeNameValue is KnownStringValue knownStringValue) {
 								TypeDefinition foundType = AssemblyUtilities.ResolveFullyQualifiedTypeName (_context, knownStringValue.Contents);
