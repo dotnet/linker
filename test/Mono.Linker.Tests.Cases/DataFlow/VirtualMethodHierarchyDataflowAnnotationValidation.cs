@@ -251,8 +251,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			// The warning is reported on the getter (or setter), which is not ideal, but it's probably good enough for now (we don't internally track annotations
 			// on properties themselves, only on methods).
 			[LogContains (
-				"DynamicallyAccessedMemberTypes in DynamicallyAccessedMembersAttribute on return value of method 'System.Type Mono.Linker.Tests.Cases.DataFlow.VirtualMethodHierarchyDataflowAnnotationValidation/DerivedClass::get_PropertyBaseWithDerivedWithout()' " +
-				"don't match overridden return value of method 'System.Type Mono.Linker.Tests.Cases.DataFlow.VirtualMethodHierarchyDataflowAnnotationValidation/BaseClass::get_PropertyBaseWithDerivedWithout()'. " +
+				"DynamicallyAccessedMemberTypes in DynamicallyAccessedMembersAttribute on return value of method 'Mono.Linker.Tests.Cases.DataFlow.VirtualMethodHierarchyDataflowAnnotationValidation.DerivedClass.get_PropertyBaseWithDerivedWithout()' " +
+				"don't match overridden return value of method 'Mono.Linker.Tests.Cases.DataFlow.VirtualMethodHierarchyDataflowAnnotationValidation.BaseClass.get_PropertyBaseWithDerivedWithout()'. " +
 				"All overridden members must have the same DynamicallyAccessedMembersAttribute usage.")]
 			public override Type PropertyBaseWithDerivedWithout { get; }
 
