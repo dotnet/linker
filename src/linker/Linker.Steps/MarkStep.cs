@@ -431,7 +431,7 @@ namespace Mono.Linker.Steps
 
 		void ProcessVirtualMethod (MethodDefinition method)
 		{
-			_context.VirtualMethodAnnotationValidator.EnqueueVirtualMethod (method);
+			_context.Annotations.EnqueueVirtualMethod (method);
 
 			var overrides = Annotations.GetOverrides (method);
 			if (overrides == null)

@@ -29,6 +29,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -66,11 +67,11 @@ namespace Mono.Linker
 		protected readonly HashSet<MethodDefinition> indirectly_called = new HashSet<MethodDefinition> ();
 		protected readonly HashSet<TypeDefinition> types_relevant_to_variant_casting = new HashSet<TypeDefinition> ();
 
-
 		public AnnotationStore (LinkContext context)
 		{
 			this.context = context;
 			FlowAnnotations = new FlowAnnotations (context);
+			VirtualMethodsWithAnnotationsToValidate = new HashSet<MethodDefinition> ();
 		}
 
 		public bool ProcessSatelliteAssemblies { get; set; }
@@ -82,6 +83,8 @@ namespace Mono.Linker
 		}
 
 		internal FlowAnnotations FlowAnnotations { get; }
+
+		internal HashSet<MethodDefinition> VirtualMethodsWithAnnotationsToValidate { get; }
 
 		[Obsolete ("Use Tracer in LinkContext directly")]
 		public void PrepareDependenciesDump ()
@@ -486,6 +489,16 @@ namespace Mono.Linker
 			Debug.Assert (attributes.Count () <= 1);
 			attribute = attributes.FirstOrDefault ();
 			return attribute != null;
+		}
+
+		public void EnqueueVirtualMethod (MethodDefinition method)
+		{
+			if (!method.IsVirtual)
+				return;
+
+			if (context.Annotations.FlowAnnotations.RequiresDataFlowAnalysis (method) ||
+				context.Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (method))
+				VirtualMethodsWithAnnotationsToValidate.Add (method);
 		}
 	}
 }

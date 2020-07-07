@@ -1208,7 +1208,7 @@ namespace Mono.Linker.Dataflow
 								reflectionContext.RecordHandledPattern ();
 							else {
 								reflectionContext.RecordUnrecognizedPattern ($"A {GetValueDescriptionForErrorMessage (typeHandleValue)} " +
-									$"is passed into the {DataFlowUtilities.GetMetadataTokenDescriptionForErrorMessage ((reflectionContext.MemberWithRequirements as MethodDefinition).Parameters[0])}. " +
+									$"is passed into the {DiagnosticUtilities.GetMetadataTokenDescriptionForErrorMessage ((reflectionContext.MemberWithRequirements as MethodDefinition).Parameters[0])}. " +
 									$"It's not possible to guarantee availability of the target static constructor.");
 							}
 						}
@@ -1356,10 +1356,10 @@ namespace Mono.Linker.Dataflow
 				if (uniqueValue is LeafValueWithDynamicallyAccessedMemberNode valueWithDynamicallyAccessedMember) {
 					if (!valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes.HasFlag (requiredMemberKinds)) {
 						reflectionContext.RecordUnrecognizedPattern ($"The {GetValueDescriptionForErrorMessage (valueWithDynamicallyAccessedMember)} " +
-							$"with dynamically accessed member kinds '{DataFlowUtilities.GetDynamicallyAccessedMemberTypesDescription (valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes)}' " +
-							$"is passed into the {DataFlowUtilities.GetMetadataTokenDescriptionForErrorMessage (targetContext)} " +
-							$"which requires dynamically accessed member kinds '{DataFlowUtilities.GetDynamicallyAccessedMemberTypesDescription (requiredMemberKinds)}'. " +
-							$"To fix this add DynamicallyAccessedMembersAttribute to it and specify at least these member kinds '{DataFlowUtilities.GetDynamicallyAccessedMemberTypesDescription (requiredMemberKinds)}'.");
+							$"with dynamically accessed member kinds '{DiagnosticUtilities.GetDynamicallyAccessedMemberTypesDescription (valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes)}' " +
+							$"is passed into the {DiagnosticUtilities.GetMetadataTokenDescriptionForErrorMessage (targetContext)} " +
+							$"which requires dynamically accessed member kinds '{DiagnosticUtilities.GetDynamicallyAccessedMemberTypesDescription (requiredMemberKinds)}'. " +
+							$"To fix this add DynamicallyAccessedMembersAttribute to it and specify at least these member kinds '{DiagnosticUtilities.GetDynamicallyAccessedMemberTypesDescription (requiredMemberKinds)}'.");
 					} else {
 						reflectionContext.RecordHandledPattern ();
 					}
@@ -1377,8 +1377,8 @@ namespace Mono.Linker.Dataflow
 					// Ignore - probably unreachable path as it would fail at runtime anyway.
 				} else {
 					reflectionContext.RecordUnrecognizedPattern ($"A {GetValueDescriptionForErrorMessage (uniqueValue)} " +
-						$"is passed into the {DataFlowUtilities.GetMetadataTokenDescriptionForErrorMessage (targetContext)} " +
-						$"which requires dynamically accessed member kinds '{DataFlowUtilities.GetDynamicallyAccessedMemberTypesDescription (requiredMemberKinds)}'. " +
+						$"is passed into the {DiagnosticUtilities.GetMetadataTokenDescriptionForErrorMessage (targetContext)} " +
+						$"which requires dynamically accessed member kinds '{DiagnosticUtilities.GetDynamicallyAccessedMemberTypesDescription (requiredMemberKinds)}'. " +
 						$"It's not possible to guarantee that these requirements are met by the application.");
 				}
 			}
@@ -1510,24 +1510,24 @@ namespace Mono.Linker.Dataflow
 			switch (value) {
 			case MethodParameterValue methodParameterValue: {
 					if (methodParameterValue.SourceContext is MethodDefinition method)
-						return DataFlowUtilities.GetMetadataTokenDescriptionForErrorMessage (DataFlowUtilities.GetMethodParameterFromIndex (method, methodParameterValue.ParameterIndex));
+						return DiagnosticUtilities.GetMetadataTokenDescriptionForErrorMessage (DiagnosticUtilities.GetMethodParameterFromIndex (method, methodParameterValue.ParameterIndex));
 
 					return $"parameter #{methodParameterValue.ParameterIndex} of method '{methodParameterValue.SourceContext}'";
 				}
 
 			case MethodReturnValue methodReturnValue: {
 					if (methodReturnValue.SourceContext is MethodDefinition method) {
-						return DataFlowUtilities.GetMetadataTokenDescriptionForErrorMessage (method.MethodReturnType);
+						return DiagnosticUtilities.GetMetadataTokenDescriptionForErrorMessage (method.MethodReturnType);
 					}
 
 					return "method return value";
 				}
 
 			case LoadFieldValue loadFieldValue:
-				return DataFlowUtilities.GetMetadataTokenDescriptionForErrorMessage (loadFieldValue.Field);
+				return DiagnosticUtilities.GetMetadataTokenDescriptionForErrorMessage (loadFieldValue.Field);
 
 			case SystemTypeForGenericParameterValue genericParameterValue:
-				return DataFlowUtilities.GetMetadataTokenDescriptionForErrorMessage (genericParameterValue.GenericParameter);
+				return DiagnosticUtilities.GetMetadataTokenDescriptionForErrorMessage (genericParameterValue.GenericParameter);
 
 			default:
 				return $"value from unknown source";

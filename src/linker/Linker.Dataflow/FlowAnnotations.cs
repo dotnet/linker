@@ -402,8 +402,8 @@ namespace Mono.Linker.Dataflow
 					for (int parameterIndex = 0; parameterIndex < methodAnnotations.ParameterAnnotations.Length; parameterIndex++) {
 						if (methodAnnotations.ParameterAnnotations[parameterIndex] != baseMethodAnnotations.ParameterAnnotations[parameterIndex])
 							LogValidationWarning (
-								DataFlowUtilities.GetMethodParameterFromIndex (method, parameterIndex),
-								DataFlowUtilities.GetMethodParameterFromIndex (baseMethod, parameterIndex),
+								DiagnosticUtilities.GetMethodParameterFromIndex (method, parameterIndex),
+								DiagnosticUtilities.GetMethodParameterFromIndex (baseMethod, parameterIndex),
 								method);
 					}
 				}
@@ -436,8 +436,8 @@ namespace Mono.Linker.Dataflow
 				var annotation = methodAnnotations.ParameterAnnotations[parameterIndex];
 				if (annotation != DynamicallyAccessedMemberTypes.None)
 					LogValidationWarning (
-						DataFlowUtilities.GetMethodParameterFromIndex (method, parameterIndex),
-						DataFlowUtilities.GetMethodParameterFromIndex (baseMethod, parameterIndex),
+						DiagnosticUtilities.GetMethodParameterFromIndex (method, parameterIndex),
+						DiagnosticUtilities.GetMethodParameterFromIndex (baseMethod, parameterIndex),
 						origin);
 			}
 		}
@@ -457,8 +457,8 @@ namespace Mono.Linker.Dataflow
 		void LogValidationWarning (IMetadataTokenProvider provider, IMetadataTokenProvider baseProvider, IMemberDefinition origin)
 		{
 			_context.LogWarning (
-				$"DynamicallyAccessedMemberTypes in DynamicallyAccessedMembersAttribute on {DataFlowUtilities.GetMetadataTokenDescriptionForErrorMessage (provider)} " +
-				$"don't match overridden {DataFlowUtilities.GetMetadataTokenDescriptionForErrorMessage (baseProvider)}. " +
+				$"DynamicallyAccessedMemberTypes in DynamicallyAccessedMembersAttribute on {DiagnosticUtilities.GetMetadataTokenDescriptionForErrorMessage (provider)} " +
+				$"don't match overridden {DiagnosticUtilities.GetMetadataTokenDescriptionForErrorMessage (baseProvider)}. " +
 				$"All overridden members must have the same DynamicallyAccessedMembersAttribute usage.",
 				2047,
 				origin);

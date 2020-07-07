@@ -31,6 +31,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			RequirePublicMethods (typeof (DerivedWithInterfaceImplementedByBase));
 			RequirePublicMethods (typeof (VirtualMethodHierarchyDataflowAnnotationValidationTypeTestBase));
 			RequirePublicMethods (typeof (VirtualMethodHierarchyDataflowAnnotationValidationTypeTestDerived));
+			RequirePublicMethods (typeof (ITwoInterfacesImplementedByOneMethod_One));
+			RequirePublicMethods (typeof (ITwoInterfacesImplementedByOneMethod_Two));
+			RequirePublicMethods (typeof (ImplementationOfTwoInterfacesWithOneMethod));
 		}
 
 		static void RequirePublicMethods ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
@@ -575,6 +578,25 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		class DerivedWithInterfaceImplementedByBase : BaseImplementsInterfaceViaDerived, IBaseImplementedInterface
 		{
+		}
+
+
+		interface ITwoInterfacesImplementedByOneMethod_One
+		{
+			Type ReturnValueInterfaceWithoutImplementationWith ();
+		}
+
+		interface ITwoInterfacesImplementedByOneMethod_Two
+		{
+			Type ReturnValueInterfaceWithoutImplementationWith ();
+		}
+
+		class ImplementationOfTwoInterfacesWithOneMethod : ITwoInterfacesImplementedByOneMethod_One, ITwoInterfacesImplementedByOneMethod_Two
+		{
+			[LogContains ("ITwoInterfacesImplementedByOneMethod_One.ReturnValueInterfaceWithoutImplementationWith")]
+			[LogContains ("ITwoInterfacesImplementedByOneMethod_Two.ReturnValueInterfaceWithoutImplementationWith")]
+			[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			public virtual Type ReturnValueInterfaceWithoutImplementationWith () => null;
 		}
 	}
 }

@@ -191,8 +191,6 @@ namespace Mono.Linker
 
 		public string AssemblyListFile { get; set; }
 
-		public VirtualMethodAnnotationValidator VirtualMethodAnnotationValidator { get; }
-
 		public LinkContext (Pipeline pipeline)
 			: this (pipeline, new AssemblyResolver ())
 		{
@@ -231,7 +229,6 @@ namespace Mono.Linker
 			PInvokes = new List<PInvokeInfo> ();
 			Suppressions = new UnconditionalSuppressMessageAttributeState (this);
 			WarningSuppressionWriter = new WarningSuppressionWriter (this);
-			VirtualMethodAnnotationValidator = new VirtualMethodAnnotationValidator (this);
 
 			// See https://github.com/mono/linker/issues/612
 			const CodeOptimizations defaultOptimizations =

@@ -1,11 +1,15 @@
-﻿using System.Collections.Generic;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Mono.Cecil;
 
 namespace Mono.Linker.Dataflow
 {
-	static class DataFlowUtilities
+	static class DiagnosticUtilities
 	{
 		internal static string GetDynamicallyAccessedMemberTypesDescription (DynamicallyAccessedMemberTypes memberTypes)
 		{
