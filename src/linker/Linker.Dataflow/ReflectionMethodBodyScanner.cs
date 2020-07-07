@@ -781,6 +781,7 @@ namespace Mono.Linker.Dataflow
 				//
 				case IntrinsicId.Type_GetType: {
 						reflectionContext.AnalyzingPattern ();
+						var parameters = calledMethod.Parameters;
 
 						foreach (var typeNameValue in methodParams[0].UniqueValues ()) {
 							if (typeNameValue is KnownStringValue knownStringValue) {
@@ -877,7 +878,7 @@ namespace Mono.Linker.Dataflow
 							if (value is SystemTypeValue systemTypeValue) {
 								foreach (var stringParam in methodParams[1].UniqueValues ()) {
 									if (stringParam is KnownStringValue stringValue) {
-										if ((bindingFlags & BindingFlags.IgnoreCase) == BindingFlags.IgnoreCase || (int) bindingFlags > 255)
+										if (BindingFlagsAreSupported(bindingFlags))
 											RequireDynamicallyAccessedMembers (ref reflectionContext, DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods, value, calledMethodDefinition);
 										else
 											MarkMethodsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, m => m.Name == stringValue.Contents, bindingFlags);
@@ -912,7 +913,8 @@ namespace Mono.Linker.Dataflow
 							if (value is SystemTypeValue systemTypeValue) {
 								foreach (var stringParam in methodParams[1].UniqueValues ()) {
 									if (stringParam is KnownStringValue stringValue) {
-										if ((bindingFlags & BindingFlags.IgnoreCase) == BindingFlags.IgnoreCase || (int) bindingFlags > 255)
+										if (BindingFlagsAreSupported (bindingFlags))
+											// We have chosen not to populate the methodReturnValue for now
 											RequireDynamicallyAccessedMembers (ref reflectionContext, DynamicallyAccessedMemberTypes.PublicNestedTypes | DynamicallyAccessedMemberTypes.NonPublicNestedTypes, value, calledMethodDefinition);
 										else {
 											TypeDefinition[] matchingNestedTypes = MarkNestedTypesOnType (ref reflectionContext, systemTypeValue.TypeRepresented, m => m.Name == stringValue.Contents, bindingFlags);
@@ -997,19 +999,19 @@ namespace Mono.Linker.Dataflow
 									if (stringParam is KnownStringValue stringValue) {
 										switch (fieldPropertyOrEvent) {
 										case IntrinsicId.Type_GetEvent:
-											if ((bindingFlags & BindingFlags.IgnoreCase) == BindingFlags.IgnoreCase || (int) bindingFlags > 255)
+											if (BindingFlagsAreSupported (bindingFlags))
 												RequireDynamicallyAccessedMembers (ref reflectionContext, DynamicallyAccessedMemberTypes.PublicEvents | DynamicallyAccessedMemberTypes.NonPublicEvents, value, calledMethodDefinition);
 											else
 												MarkEventsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, filter: e => e.Name == stringValue.Contents, bindingFlags);
 											break;
 										case IntrinsicId.Type_GetField:
-											if ((bindingFlags & BindingFlags.IgnoreCase) == BindingFlags.IgnoreCase || (int) bindingFlags > 255)
+											if (BindingFlagsAreSupported (bindingFlags))
 												RequireDynamicallyAccessedMembers (ref reflectionContext, DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields, value, calledMethodDefinition);
 											else
 												MarkFieldsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, filter: f => f.Name == stringValue.Contents, bindingFlags);
 											break;
 										case IntrinsicId.Type_GetProperty:
-											if ((bindingFlags & BindingFlags.IgnoreCase) == BindingFlags.IgnoreCase || (int) bindingFlags > 255)
+											if (BindingFlagsAreSupported (bindingFlags))
 												RequireDynamicallyAccessedMembers (ref reflectionContext, DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.NonPublicProperties, value, calledMethodDefinition);
 											else
 												MarkPropertiesOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, filter: p => p.Name == stringValue.Contents, bindingFlags);
@@ -1385,6 +1387,11 @@ namespace Mono.Linker.Dataflow
 
 			reflectionContext.RecordHandledPattern ();
 		}
+
+		bool BindingFlagsAreSupported (BindingFlags bindingFlags)
+		{
+			return (bindingFlags & BindingFlags.IgnoreCase) == BindingFlags.IgnoreCase || (int) bindingFlags > 255;
+		} 
 
 		void MarkTypeForDynamicallyAccessedMembers (ref ReflectionPatternContext reflectionContext, TypeDefinition typeDefinition, DynamicallyAccessedMemberTypes requiredMemberKinds)
 		{
