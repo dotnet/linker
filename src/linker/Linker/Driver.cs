@@ -443,10 +443,7 @@ namespace Mono.Linker
 						if (!GetStringParam (token, l => noWarnArgument = l))
 							return -1;
 
-						if (!Enum.TryParse (typeof (NoWarn), noWarnArgument, true, out var noWarnEnum))
-							return -1;
-
-						context.DontWarn = (NoWarn) noWarnEnum;
+						context.NoWarn = ParseWarnings (noWarnArgument);
 						continue;
 
 					case "--version":
@@ -725,6 +722,29 @@ namespace Mono.Linker
 		}
 
 		partial void PreProcessPipeline (Pipeline pipeline);
+
+		private static HashSet<uint> ParseWarnings (string value)
+		{
+			string Unquote (string arg)
+			{
+				if (arg.Length > 1 && arg[0] == '"' && arg[arg.Length - 1] == '"')
+					return arg.Substring (1, arg.Length - 2);
+
+				return arg;
+			}
+
+			value = Unquote (value);
+			string[] values = value.Split (new char[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+			HashSet<uint> noWarnCodes = new HashSet<uint> ();
+			foreach (string id in values) {
+				var warningCode = id.StartsWith ("IL") ? id.Substring (2) : id;
+				if (ushort.TryParse (warningCode, out ushort code)
+					&& code > 2000 && code <= 6000)
+					noWarnCodes.Add (code);
+			}
+
+			return noWarnCodes;
+		}
 
 		private static Assembly GetCustomAssembly (string arg)
 		{
@@ -1009,9 +1029,7 @@ namespace Mono.Linker
 			Console.WriteLine ("  -out PATH           Specify the output directory. Defaults to 'output'");
 			Console.WriteLine ("  --about             About the {0}", _linker);
 			Console.WriteLine ("  --verbose           Log messages indicating progress and warnings");
-			Console.WriteLine ("  --nowarn OPTION     Turn off all warnings or a predefined subset. Ignored if 'verbose' is used. Defaults to 'analysis'.");
-			Console.WriteLine ("                        all: Disable all warnings");
-			Console.WriteLine ("                        analysis: Disable dataflow analysis warnings");
+			Console.WriteLine ("  --nowarn WARN-LIST  Disable specific warning messages.");
 			Console.WriteLine ("  --version           Print the version number of the {0}", _linker);
 			Console.WriteLine ("  -help               Lists all linker options");
 			Console.WriteLine ("  @FILE               Read response file for more options");

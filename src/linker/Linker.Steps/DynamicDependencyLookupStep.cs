@@ -59,8 +59,7 @@ namespace Mono.Linker.Steps
 				if (!IsPreserveDependencyAttribute (ca.AttributeType))
 					continue;
 #if FEATURE_ILLINK
-				Context.LogWarning ($"PreserveDependencyAttribute is deprecated. Use DynamicDependencyAttribute instead.",
-					2033, member, subcategory: MessageSubCategory.PreserveDependency);
+				Context.LogWarning ($"PreserveDependencyAttribute is deprecated. Use DynamicDependencyAttribute instead.", 2033, member);
 #endif
 				if (ca.ConstructorArguments.Count != 3)
 					continue;
@@ -84,7 +83,7 @@ namespace Mono.Linker.Steps
 				var assembly = Context.Resolve (new AssemblyNameReference (dynamicDependency.AssemblyName, new Version ()));
 				if (assembly == null) {
 					Context.LogWarning ($"Unresolved assembly '{dynamicDependency.AssemblyName}' in DynamicDependencyAttribute on '{member}'",
-						2035, member, subcategory: MessageSubCategory.DynamicDependency);
+						2035, member, subcategory: MessageSubCategory.TrimCorrectness);
 					continue;
 				}
 

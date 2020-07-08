@@ -5,7 +5,6 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.DynamicDependencies
 {
-	[SetupLinkerArgument ("--verbose")]
 	[LogContains ("IL2037: Mono.Linker.Tests.Cases.DynamicDependencies.DynamicDependencyMethod.B.Broken(): No members were resolved for 'MissingMethod'.")]
 	[LogContains ("IL2037: Mono.Linker.Tests.Cases.DynamicDependencies.DynamicDependencyMethod.B.Broken(): No members were resolved for 'Dependency2``1(``0,System.Int32,System.Object)'.")]
 	[LogContains ("IL2037: Mono.Linker.Tests.Cases.DynamicDependencies.DynamicDependencyMethod.B.Broken(): No members were resolved for '#ctor()'.")]

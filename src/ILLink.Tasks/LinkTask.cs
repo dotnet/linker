@@ -57,11 +57,17 @@ namespace ILLink.Tasks
 		public ITaskItem OutputDirectory { get; set; }
 
 		/// <summary>
-		///	The subset of warnings that have to be turned off.
-		///	This has no effect if '--verbose' is used. Defaults to 'Analysis'.
-		///	Maps to '--nowarn'.
+		/// Turns off trim correctness analysis warnings.
+		/// Maps to '--nowarn 2006;2026;2037;2043'.
 		/// </summary>
-		public ITaskItem NoWarn { get; set; }
+		public bool TrimmerAnalysisWarnings { set => _trimmerAnalysisWarnings = value; }
+		bool? _trimmerAnalysisWarnings;
+
+		/// <summary>
+		/// The subset of warnings that have to be turned off. 
+		/// Maps to '--nowarn'.
+		/// </summary>
+		public string NoWarn { get; set; }
 
 		/// <summary>
 		///   A list of XML root descriptor files specifying linker
@@ -311,7 +317,11 @@ namespace ILLink.Tasks
 				args.Append ("-out ").AppendLine (Quote (OutputDirectory.ItemSpec));
 
 			if (NoWarn != null)
-				args.Append ("--nowarn ").Append (NoWarn);
+				args.Append ($"--nowarn \"{NoWarn}\"");
+
+			if (_trimmerAnalysisWarnings is bool trimmerAnalysisWarnings &&
+				trimmerAnalysisWarnings == true)
+				args.Append ("--nowarn 2006;2026;2037;2043");
 
 			// Add global optimization arguments
 			if (_beforeFieldInit is bool beforeFieldInit)

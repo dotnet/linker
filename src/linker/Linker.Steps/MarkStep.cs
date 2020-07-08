@@ -580,7 +580,7 @@ namespace Mono.Linker.Steps
 				assembly = _context.GetLoadedAssembly (dynamicDependency.AssemblyName);
 				if (assembly == null) {
 					_context.LogWarning ($"Unresolved assembly '{dynamicDependency.AssemblyName}' in DynamicDependencyAttribute on '{context}'",
-						2035, context, subcategory: MessageSubCategory.DynamicDependency);
+						2035, context, subcategory: MessageSubCategory.TrimCorrectness);
 					return;
 				}
 			} else {
@@ -593,21 +593,21 @@ namespace Mono.Linker.Steps
 				type = DocumentationSignatureParser.GetTypeByDocumentationSignature (assembly, typeName);
 				if (type == null) {
 					_context.LogWarning ($"Unresolved type '{typeName}' in DynamicDependencyAttribute on '{context}'",
-						2036, context, subcategory: MessageSubCategory.DynamicDependency);
+						2036, context, subcategory: MessageSubCategory.TrimCorrectness);
 					return;
 				}
 			} else if (dynamicDependency.Type is TypeReference typeReference) {
 				type = typeReference.Resolve ();
 				if (type == null) {
 					_context.LogWarning ($"Unresolved type '{typeReference}' in DynamicDependencyAtribute on '{context}'",
-						2036, context, subcategory: MessageSubCategory.DynamicDependency);
+						2036, context, subcategory: MessageSubCategory.TrimCorrectness);
 					return;
 				}
 			} else {
 				type = context.DeclaringType.Resolve ();
 				if (type == null) {
 					_context.LogWarning ($"Unresolved type '{context.DeclaringType}' in DynamicDependencyAttribute on '{context}'",
-						2036, context, subcategory: MessageSubCategory.DynamicDependency);
+						2036, context, subcategory: MessageSubCategory.TrimCorrectness);
 					return;
 				}
 			}
@@ -617,7 +617,7 @@ namespace Mono.Linker.Steps
 				members = DocumentationSignatureParser.GetMembersByDocumentationSignature (type, memberSignature, acceptName: true);
 				if (!members.Any ()) {
 					_context.LogWarning ($"No members were resolved for '{memberSignature}'.",
-						2037, context, subcategory: MessageSubCategory.DynamicDependency);
+						2037, context, subcategory: MessageSubCategory.TrimCorrectness);
 					return;
 				}
 			} else {
@@ -625,7 +625,7 @@ namespace Mono.Linker.Steps
 				members = DynamicallyAccessedMembersBinder.GetDynamicallyAccessedMembers (type, memberTypes);
 				if (!members.Any ()) {
 					_context.LogWarning ($"No members were resolved for '{memberTypes}'.",
-						2037, context, subcategory: MessageSubCategory.DynamicDependency);
+						2037, context, subcategory: MessageSubCategory.TrimCorrectness);
 					return;
 				}
 			}
@@ -694,8 +694,7 @@ namespace Mono.Linker.Steps
 				assembly = _context.GetLoadedAssembly (assemblyName);
 				if (assembly == null) {
 					_context.LogWarning (
-						$"Could not resolve '{assemblyName}' assembly dependency specified in a `PreserveDependency` attribute that targets method '{context.FullName}'",
-						2003, context.Resolve (), subcategory: MessageSubCategory.PreserveDependency);
+						$"Could not resolve '{assemblyName}' assembly dependency specified in a `PreserveDependency` attribute that targets method '{context.FullName}'", 2003, context.Resolve ());
 					return;
 				}
 			} else {
@@ -708,8 +707,7 @@ namespace Mono.Linker.Steps
 
 				if (td == null) {
 					_context.LogWarning (
-						$"Could not resolve '{typeName}' type dependency specified in a `PreserveDependency` attribute that targets method '{context.FullName}'",
-						2004, context.Resolve (), subcategory: MessageSubCategory.PreserveDependency);
+						$"Could not resolve '{typeName}' type dependency specified in a `PreserveDependency` attribute that targets method '{context.FullName}'", 2004, context.Resolve ());
 					return;
 				}
 			} else {
@@ -743,8 +741,7 @@ namespace Mono.Linker.Steps
 				return;
 
 			_context.LogWarning (
-				$"Could not resolve dependency member '{member}' declared in type '{td.FullName}' specified in a `PreserveDependency` attribute that targets method '{context.FullName}'",
-				2005, td, subcategory: MessageSubCategory.PreserveDependency);
+				$"Could not resolve dependency member '{member}' declared in type '{td.FullName}' specified in a `PreserveDependency` attribute that targets method '{context.FullName}'", 2005, td);
 		}
 
 		bool MarkDependencyMethod (TypeDefinition type, string name, string[] signature, in DependencyInfo reason, IMemberDefinition sourceLocationMember)

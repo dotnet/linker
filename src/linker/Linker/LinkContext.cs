@@ -30,7 +30,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
@@ -175,7 +174,7 @@ namespace Mono.Linker
 
 		public WarningSuppressionWriter WarningSuppressionWriter { get; }
 
-		public NoWarn DontWarn { get; set; }
+		public HashSet<uint> NoWarn { get; set; }
 
 		public bool OutputWarningSuppressions { get; set; }
 
@@ -232,7 +231,7 @@ namespace Mono.Linker
 			PInvokes = new List<PInvokeInfo> ();
 			Suppressions = new UnconditionalSuppressMessageAttributeState (this);
 			WarningSuppressionWriter = new WarningSuppressionWriter (this);
-			DontWarn = NoWarn.Analysis;
+			NoWarn = new HashSet<uint> ();
 
 			// See https://github.com/mono/linker/issues/612
 			const CodeOptimizations defaultOptimizations =
@@ -488,20 +487,13 @@ namespace Mono.Linker
 
 		public void LogMessage (MessageContainer message)
 		{
-			if (message == MessageContainer.Empty)
+			if (!LogMessages || message == MessageContainer.Empty)
 				return;
 
-			if (!LogMessages && message.Category == MessageCategory.Warning) {
-				switch (DontWarn) {
-				case NoWarn.All:
-					return;
-
-				case NoWarn.Analysis:
-					if (MessageSubCategory.Analysis.Contains (message.SubCategory))
-						return;
-
-					break;
-				}
+			if (message.Category == MessageCategory.Warning &&
+				NoWarn.Contains ((uint) message.Code)) {
+				// This warning was turned off by --nowarn.
+				return;
 			}
 
 			if (OutputWarningSuppressions && message.Category == MessageCategory.Warning && message.Origin?.MemberDefinition != null)
@@ -536,6 +528,9 @@ namespace Mono.Linker
 		/// <param name="subcategory">Optionally, further categorize this warning</param>
 		public void LogWarning (string text, int code, MessageOrigin origin, string subcategory = MessageSubCategory.None)
 		{
+			if (!LogMessages)
+				return;
+
 			var warning = MessageContainer.CreateWarningMessage (this, text, code, origin, subcategory);
 			LogMessage (warning);
 		}
@@ -576,6 +571,9 @@ namespace Mono.Linker
 		/// <returns>New MessageContainer of 'Error' category</returns>
 		public void LogError (string text, int code, string subcategory = MessageSubCategory.None, MessageOrigin? origin = null)
 		{
+			if (!LogMessages)
+				return;
+
 			var error = MessageContainer.CreateErrorMessage (text, code, subcategory, origin);
 			LogMessage (error);
 		}

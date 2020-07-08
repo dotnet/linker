@@ -84,6 +84,13 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				tclo.AdditionalArguments.Add (new KeyValuePair<string, string[]> ((string) ca[0].Value, values));
 			}
 
+			if (_testCaseTypeDefinition.CustomAttributes.Any (attr =>
+				attr.AttributeType.Name == nameof (LogContainsAttribute) || attr.AttributeType.Name == nameof (LogDoesNotContainAttribute)) ||
+				_testCaseTypeDefinition.AllMembers ().Any (method => method.CustomAttributes.Any (attr =>
+				attr.AttributeType.Name == nameof (LogContainsAttribute) || attr.AttributeType.Name == nameof (LogDoesNotContainAttribute)))) {
+				tclo.AdditionalArguments.Add (new KeyValuePair<string, string[]> ("--verbose", new string[] { }));
+			}
+
 			return tclo;
 		}
 
@@ -102,6 +109,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				customizations.CustomizeContext += context => {
 					customizations.ReflectionPatternRecorder.PreviousRecorder = context.ReflectionPatternRecorder;
 					context.ReflectionPatternRecorder = customizations.ReflectionPatternRecorder;
+					context.LogMessages = true;
 				};
 			}
 		}

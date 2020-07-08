@@ -9,14 +9,12 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
-using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.DataFlow
 {
 	// Note: this test's goal is to validate that the product correctly reports unrecognized patterns
 	//   - so the main validation is done by the UnrecognizedReflectionAccessPattern attributes.
 	[SkipKeptItemsValidation]
-	[SetupLinkerArgument ("--verbose")]
 	public class PropertyDataFlow
 	{
 		public static void Main ()
