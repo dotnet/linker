@@ -2,15 +2,15 @@
 
 ## Terminology
 
-The capability of the SDK is called "trim". Trimming allows the SDK to reduce the size of the application by removing unused code and other assets. MSBuild/SDK integration should use "trim" in all user facing names (property names, item group names, ...).
+Trimming allows a developer to reduce the final size of the application by removing unused managed code (IL) and other assets. Any publicly visible MSBuild property or item group name should use the term "trim" to refer to this capability.
 
-The current implementation of the capability is via the "ILLink" tool/task. Actual errors/warnings will come from the tool, so using the "ILLink" prefix.
+The trimming process exposed to MSBuild via the ILLink.Tasks assembly which calls into ILLink tool to perform the actual trimming. The ILLink tool produces the trimmed output and can issue its own [warnings and errors](error-codes.md). All of them use `ILLink` prefix and unique code for easier identification.
 
 *Note: This is similar to Compiler/csc: the capability is "compilation" and the related MSBuild/SDK integration uses "compile" as the term. The actual tool is csc and the errors/warnings coming from it are prefixed with CSC/CS.*
 
 ## Usage
 
-To enable ILLinker set `PublishTrimmed` property to `true` in your project and publish your app as self-contained.
+To enable ILLink set `PublishTrimmed` property to `true` in your project and publish your app as self-contained.
 
 ```
 dotnet publish -r <rid> -c Release -p:PublishTrimmed=true
@@ -30,7 +30,7 @@ The output will include only necessary code to run your application. The framewo
 
 ### ExtraArgs
 
-Additional [options](illink-options.md) passed to ILLinker.
+Additional [options](illink-options.md) passed to ILLink.
 
 ### OutputDirectory
 
