@@ -23,6 +23,9 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			TestDataFlowType ();
 			TestIfElse (1);
 			TestEventInBaseType ();
+			TestIgnoreCaseBindingFlags ();
+			TestFailIgnoreCaseBindingFlags ();
+			TestUnsupportedBindingFlags ();
 		}
 
 		[Kept]
@@ -94,8 +97,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		[Kept]
 		[UnrecognizedReflectionAccessPattern (
 			typeof (Type), nameof (Type.GetEvent), new Type[] { typeof (string) },
-			"The return value of method 'System.Type Mono.Linker.Tests.Cases.Reflection.EventUsedViaReflection::FindType()' with dynamically accessed member kinds 'None' " +
-			"is passed into the implicit 'this' parameter of method 'System.Reflection.EventInfo System.Type::GetEvent(System.String)' which requires dynamically accessed member kinds 'PublicEvents'. " +
+			"The return value of method 'Mono.Linker.Tests.Cases.Reflection.EventUsedViaReflection.FindType()' with dynamically accessed member kinds 'None' " +
+			"is passed into the implicit 'this' parameter of method 'System.Type.GetEvent(String)' which requires dynamically accessed member kinds 'PublicEvents'. " +
 			"To fix this add DynamicallyAccessedMembersAttribute to it and specify at least these member kinds 'PublicEvents'.")]
 		static void TestDataFlowType ()
 		{
@@ -138,6 +141,27 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		{
 			typeof (DerivedClass).GetEvent ("ProtectedEventOnBase"); // Will not mark anything as it only works on public events
 			typeof (DerivedClass).GetEvent ("PublicEventOnBase");
+		}
+
+		[Kept]
+		[RecognizedReflectionAccessPattern (
+			typeof (Type), nameof (Type.GetEvent), new Type[] { typeof (string), typeof (BindingFlags) },
+			typeof (IgnoreCaseBindingFlagsClass), nameof (IgnoreCaseBindingFlagsClass.PublicEvent), (Type[]) null)]
+		static void TestIgnoreCaseBindingFlags ()
+		{
+			typeof (IgnoreCaseBindingFlagsClass).GetEvent ("publicevent", BindingFlags.IgnoreCase | BindingFlags.Public);
+		}
+
+		[Kept]
+		static void TestFailIgnoreCaseBindingFlags ()
+		{
+			typeof (FailIgnoreCaseBindingFlagsClass).GetEvent ("publicevent", BindingFlags.Public);
+		}
+
+		[Kept]
+		static void TestUnsupportedBindingFlags ()
+		{
+			typeof (PutRefDispPropertyBindingFlagsClass).GetEvent ("PublicEvent", BindingFlags.PutRefDispProperty);
 		}
 
 		[KeptMember (".ctor()")]
@@ -209,6 +233,43 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		[KeptBaseType (typeof (BaseClass))]
 		class DerivedClass : BaseClass
 		{
+		}
+
+		class IgnoreCaseBindingFlagsClass
+		{
+			[Kept]
+			[KeptBackingField]
+			[KeptEventAddMethod]
+			[KeptEventRemoveMethod]
+			public event EventHandler<EventArgs> PublicEvent;
+
+			[Kept]
+			[KeptBackingField]
+			[KeptEventAddMethod]
+			[KeptEventRemoveMethod]
+			private event EventHandler<EventArgs> MarkedDueToIgnoreCaseEvent;
+		}
+
+		[Kept]
+		class FailIgnoreCaseBindingFlagsClass
+		{
+			public event EventHandler<EventArgs> PublicEvent;
+		}
+
+		[Kept]
+		class PutRefDispPropertyBindingFlagsClass
+		{
+			[Kept]
+			[KeptBackingField]
+			[KeptEventAddMethod]
+			[KeptEventRemoveMethod]
+			public event EventHandler<EventArgs> PublicEvent;
+
+			[Kept]
+			[KeptBackingField]
+			[KeptEventAddMethod]
+			[KeptEventRemoveMethod]
+			private event EventHandler<EventArgs> MarkedDueToPutRefDispPropertyEvent;
 		}
 	}
 }

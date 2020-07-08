@@ -108,6 +108,9 @@ namespace Mono.Linker.Steps
 			DependencyKind.ReturnType,
 			DependencyKind.UnreachableBodyRequirement,
 			DependencyKind.VariableType,
+			DependencyKind.ParameterMarshalSpec,
+			DependencyKind.FieldMarshalSpec,
+			DependencyKind.ReturnTypeMarshalSpec,
 		};
 
 		static readonly DependencyKind[] _methodReasons = new DependencyKind[] {
@@ -151,6 +154,9 @@ namespace Mono.Linker.Steps
 			DependencyKind.UnreachableBodyRequirement,
 			DependencyKind.VirtualCall,
 			DependencyKind.VirtualNeededDueToPreservedScope,
+			DependencyKind.ParameterMarshalSpec,
+			DependencyKind.FieldMarshalSpec,
+			DependencyKind.ReturnTypeMarshalSpec,
 		};
 #endif
 
@@ -374,7 +380,7 @@ namespace Mono.Linker.Steps
 					ProcessMethod (method, reason);
 				} catch (Exception e) when (!(e is LinkerFatalErrorException)) {
 					throw new LinkerFatalErrorException (
-						MessageContainer.CreateErrorMessage ($"Error processing method '{method.FullName}' in assembly '{method.Module.Name}'", 1005,
+						MessageContainer.CreateErrorMessage ($"Error processing method '{method.GetDisplayName ()}' in assembly '{method.Module.Name}'", 1005,
 						origin: new MessageOrigin (method)), e);
 				}
 			}
@@ -408,7 +414,7 @@ namespace Mono.Linker.Steps
 			foreach (var type in typesWithInterfaces) {
 				// Exception, types that have not been flagged as instantiated yet.  These types may not need their interfaces even if the
 				// interface type is marked
-				if (!Annotations.IsInstantiated (type))
+				if (!Annotations.IsInstantiated (type) && !Annotations.IsRelevantToVariantCasting (type))
 					continue;
 
 				MarkInterfaceImplementations (type);
@@ -518,8 +524,10 @@ namespace Mono.Linker.Steps
 			if (!spec.HasMarshalInfo)
 				return;
 
-			if (spec.MarshalInfo is CustomMarshalInfo marshaler)
+			if (spec.MarshalInfo is CustomMarshalInfo marshaler) {
 				MarkType (marshaler.ManagedType, reason, sourceLocationMember);
+				MarkGetInstanceMethod (marshaler.ManagedType.Resolve (), in reason, sourceLocationMember);
+			}
 		}
 
 		void MarkCustomAttributes (ICustomAttributeProvider provider, in DependencyInfo reason, IMemberDefinition sourceLocationMember)
@@ -537,6 +545,9 @@ namespace Mono.Linker.Steps
 					_lateMarkedAttributes.Enqueue ((new AttributeProviderPair (ca, provider), reason, sourceLocationMember));
 					continue;
 				}
+
+				if (_context.Annotations.HasLinkerAttribute<RemoveAttributeInstancesAttribute> (ca.AttributeType.Resolve ()))
+					continue;
 
 				MarkCustomAttribute (ca, reason, sourceLocationMember);
 				MarkSpecialCustomAttributeDependencies (ca, provider, sourceLocationMember);
@@ -694,7 +705,7 @@ namespace Mono.Linker.Steps
 				assembly = _context.GetLoadedAssembly (assemblyName);
 				if (assembly == null) {
 					_context.LogWarning (
-						$"Could not resolve '{assemblyName}' assembly dependency specified in a `PreserveDependency` attribute that targets method '{context.FullName}'", 2003, context.Resolve ());
+						$"Could not resolve '{assemblyName}' assembly dependency specified in a `PreserveDependency` attribute that targets method '{context.GetDisplayName ()}'", 2003, context.Resolve ());
 					return;
 				}
 			} else {
@@ -707,7 +718,7 @@ namespace Mono.Linker.Steps
 
 				if (td == null) {
 					_context.LogWarning (
-						$"Could not resolve '{typeName}' type dependency specified in a `PreserveDependency` attribute that targets method '{context.FullName}'", 2004, context.Resolve ());
+						$"Could not resolve '{typeName}' type dependency specified in a `PreserveDependency` attribute that targets method '{context.GetDisplayName ()}'", 2004, context.Resolve ());
 					return;
 				}
 			} else {
@@ -741,7 +752,7 @@ namespace Mono.Linker.Steps
 				return;
 
 			_context.LogWarning (
-				$"Could not resolve dependency member '{member}' declared in type '{td.FullName}' specified in a `PreserveDependency` attribute that targets method '{context.FullName}'", 2005, td);
+				$"Could not resolve dependency member '{member}' declared in type '{td.GetDisplayName ()}' specified in a `PreserveDependency` attribute that targets method '{context.GetDisplayName ()}'", 2005, td);
 		}
 
 		bool MarkDependencyMethod (TypeDefinition type, string name, string[] signature, in DependencyInfo reason, IMemberDefinition sourceLocationMember)
@@ -1291,6 +1302,18 @@ namespace Mono.Linker.Steps
 			MarkMethodsIf (type.Methods, IsSpecialSerializationConstructor, new DependencyInfo (DependencyKind.SerializationMethodForType, type), type);
 		}
 
+		internal protected virtual TypeDefinition MarkTypeVisibleToReflection (TypeReference reference, DependencyInfo reason, IMemberDefinition sourceLocationMember)
+		{
+			// If a type is visible to reflection, we need to stop doing optimization that could cause observable difference
+			// in reflection APIs. This includes APIs like MakeGenericType (where variant castability of the produced type
+			// could be incorrect) or IsAssignableFrom (where assignability of unconstructed types might change).
+			Annotations.MarkRelevantToVariantCasting (reference.Resolve ());
+
+			MarkImplicitlyUsedFields (reference.Resolve ());
+
+			return MarkType (reference, reason, sourceLocationMember);
+		}
+
 		/// <summary>
 		/// Marks the specified <paramref name="reference"/> as referenced.
 		/// </summary>
@@ -1341,6 +1364,13 @@ namespace Mono.Linker.Steps
 			if (type.HasMethods && ShouldMarkTypeStaticConstructor (type) && reason.Kind == DependencyKind.DeclaringTypeOfCalledMethod)
 				MarkStaticConstructor (type, new DependencyInfo (DependencyKind.TriggersCctorForCalledMethod, reason.Source), type);
 
+			// Check type being used was not removed by the LinkerRemovableAttribute
+			if (_context.Annotations.HasLinkerAttribute<RemoveAttributeInstancesAttribute> (type))
+				_context.LogWarning ($"Custom Attribute {type.GetDisplayName ()} is being referenced in code but the linker was " +
+					$"instructed to remove all instances of this attribute. If the attribute instances are necessary make sure to " +
+					$"either remove the linker attribute XML portion which removes the attribute instances, or to override this use " +
+					$"the linker XML descriptor to keep the attribute type (which in turn keeps all of its instances).", 2045, sourceLocationMember);
+
 			if (CheckProcessed (type))
 				return null;
 
@@ -1375,10 +1405,6 @@ namespace Mono.Linker.Steps
 			MarkTypeSpecialCustomAttributes (type);
 
 			MarkGenericParameterProvider (type, sourceLocationMember);
-
-			// keep fields for value-types and for classes with LayoutKind.Sequential or Explicit
-			if (type.IsValueType || !type.IsAutoLayout)
-				MarkFields (type, includeStatic: type.IsEnum, reason: new DependencyInfo (DependencyKind.MemberOfType, type));
 
 			// There are a number of markings we can defer until later when we know it's possible a reference type could be instantiated
 			// For example, if no instance of a type exist, then we don't need to mark the interfaces on that type
@@ -1883,6 +1909,16 @@ namespace Mono.Linker.Steps
 			return MarkMethodIf (type.Methods, MethodDefinitionExtensions.IsDefaultConstructor, reason, sourceLocationMember) != null;
 		}
 
+		void MarkGetInstanceMethod (TypeDefinition type, in DependencyInfo reason, IMemberDefinition sourceLocationMember)
+		{
+			if (type?.HasMethods != true)
+				return;
+
+			MarkMethodIf (type.Methods, m =>
+				m.Name == "GetInstance" && m.Parameters.Count == 1 && m.Parameters[0].ParameterType.MetadataType == MetadataType.String,
+				reason, sourceLocationMember);
+		}
+
 		static bool IsNonEmptyStaticConstructor (MethodDefinition method)
 		{
 			if (!method.IsStaticConstructor ())
@@ -2007,8 +2043,11 @@ namespace Mono.Linker.Steps
 
 		void MarkGenericArguments (IGenericInstance instance, IMemberDefinition sourceLocationMember)
 		{
-			foreach (TypeReference argument in instance.GenericArguments)
+			foreach (TypeReference argument in instance.GenericArguments) {
 				MarkType (argument, new DependencyInfo (DependencyKind.GenericArgumentType, instance), sourceLocationMember);
+
+				Annotations.MarkRelevantToVariantCasting (argument.Resolve ());
+			}
 
 			MarkGenericArgumentConstructors (instance, sourceLocationMember);
 		}
@@ -2073,11 +2112,11 @@ namespace Mono.Linker.Steps
 				break;
 			case TypePreserve.Fields:
 				if (!MarkFields (type, true, new DependencyInfo (DependencyKind.TypePreserve, type), true))
-					_context.LogWarning ($"Type {type.FullName} has no fields to preserve", 2001, type);
+					_context.LogWarning ($"Type {type.GetDisplayName ()} has no fields to preserve", 2001, type);
 				break;
 			case TypePreserve.Methods:
 				if (!MarkMethods (type, new DependencyInfo (DependencyKind.TypePreserve, type), type))
-					_context.LogWarning ($"Type {type.FullName} has no methods to preserve", 2002, type);
+					_context.LogWarning ($"Type {type.GetDisplayName ()} has no methods to preserve", 2002, type);
 				break;
 			}
 		}
@@ -2179,8 +2218,14 @@ namespace Mono.Linker.Steps
 		{
 			(reference, reason) = GetOriginalMethod (reference, reason, sourceLocationMember);
 
-			if (reference.DeclaringType is ArrayType)
+			if (reference.DeclaringType is ArrayType arrayType) {
+				MarkType (reference.DeclaringType, new DependencyInfo (DependencyKind.DeclaringType, reference), sourceLocationMember);
+
+				if (reference.Name == ".ctor") {
+					Annotations.MarkRelevantToVariantCasting (arrayType.Resolve ());
+				}
 				return null;
+			}
 
 			if (reference.DeclaringType is GenericInstanceType) {
 				// Blame the method reference on the original reason without marking it.
@@ -2328,6 +2373,16 @@ namespace Mono.Linker.Steps
 		{
 		}
 
+		void MarkImplicitlyUsedFields (TypeDefinition type)
+		{
+			if (type?.HasFields != true)
+				return;
+
+			// keep fields for types with explicit layout and for enums
+			if (!type.IsAutoLayout || type.IsEnum)
+				MarkFields (type, includeStatic: type.IsEnum, reason: new DependencyInfo (DependencyKind.MemberOfType, type));
+		}
+
 		protected virtual void MarkRequirementsForInstantiatedTypes (TypeDefinition type)
 		{
 			if (Annotations.IsInstantiated (type))
@@ -2339,6 +2394,8 @@ namespace Mono.Linker.Steps
 
 			foreach (var method in GetRequiredMethodsForInstantiatedType (type))
 				MarkMethod (method, new DependencyInfo (DependencyKind.MethodForInstantiatedType, type), type);
+
+			MarkImplicitlyUsedFields (type);
 
 			DoAdditionalInstantiatedTypeProcessing (type);
 		}
@@ -2416,7 +2473,7 @@ namespace Mono.Linker.Steps
 
 			var nseCtor = MarkMethodIf (nse.Methods, KnownMembers.IsNotSupportedExceptionCtorString, reason, sourceLocationMember);
 			_context.MarkedKnownMembers.NotSupportedExceptionCtorString = nseCtor ??
-				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage ($"Could not find constructor on '{nse.FullName}'", 1008));
+				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage ($"Could not find constructor on '{nse.GetDisplayName ()}'", 1008));
 
 			var objectType = BCL.FindPredefinedType ("System", "Object", _context);
 			if (objectType == null)
@@ -2426,7 +2483,7 @@ namespace Mono.Linker.Steps
 
 			var objectCtor = MarkMethodIf (objectType.Methods, MethodDefinitionExtensions.IsDefaultConstructor, reason, sourceLocationMember);
 			_context.MarkedKnownMembers.ObjectCtor = objectCtor ??
-				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage ($"Could not find constructor on '{objectType.FullName}'", 1008));
+				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage ($"Could not find constructor on '{objectType.GetDisplayName ()}'", 1008));
 		}
 
 		bool MarkDisablePrivateReflectionAttribute ()
@@ -2442,7 +2499,7 @@ namespace Mono.Linker.Steps
 
 			var ctor = MarkMethodIf (disablePrivateReflection.Methods, MethodDefinitionExtensions.IsDefaultConstructor, new DependencyInfo (DependencyKind.DisablePrivateReflectionRequirement, disablePrivateReflection), disablePrivateReflection);
 			_context.MarkedKnownMembers.DisablePrivateReflectionAttributeCtor = ctor ??
-				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage ($"Could not find constructor on '{disablePrivateReflection.FullName}'", 1010));
+				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage ($"Could not find constructor on '{disablePrivateReflection.GetDisplayName ()}'", 1010));
 
 			return true;
 		}
@@ -2648,7 +2705,7 @@ namespace Mono.Linker.Steps
 					Debug.Assert (instruction.OpCode.Code == Code.Ldtoken);
 					var reason = new DependencyInfo (DependencyKind.Ldtoken, method);
 					if (token is TypeReference typeReference) {
-						MarkType (typeReference, reason, method);
+						MarkTypeVisibleToReflection (typeReference, reason, method);
 					} else if (token is MethodReference methodReference) {
 						MarkMethod (methodReference, reason, method);
 					} else {
@@ -2658,6 +2715,9 @@ namespace Mono.Linker.Steps
 				}
 
 			case OperandType.InlineType:
+				if (instruction.OpCode.Code == Code.Newarr) {
+					Annotations.MarkRelevantToVariantCasting (((TypeReference) instruction.Operand).Resolve ());
+				}
 				MarkType ((TypeReference) instruction.Operand, new DependencyInfo (DependencyKind.InstructionTypeRef, method), method);
 				break;
 			default:

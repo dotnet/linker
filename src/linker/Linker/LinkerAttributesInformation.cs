@@ -15,7 +15,7 @@ namespace Mono.Linker
 	{
 		readonly Dictionary<Type, List<Attribute>> _linkerAttributes;
 
-		public LinkerAttributesInformation (LinkContext context, ICustomAttributeProvider provider)
+		public LinkerAttributesInformation (LinkContext context, ICustomAttributeProvider provider, bool removable = false)
 		{
 			_linkerAttributes = null;
 			if (context.CustomAttributes.HasCustomAttributes (provider)) {
@@ -28,6 +28,10 @@ namespace Mono.Linker
 						attributeValue = DynamicDependency.ProcessAttribute (context, provider, customAttribute);
 					AddAttribute (ref _linkerAttributes, attributeValue);
 				}
+			}
+			if (context.CustomAttributes.HasInternalAttributes (provider)) {
+				foreach (var internalAttribute in context.CustomAttributes.GetInternalAttributes (provider))
+					AddAttribute (ref _linkerAttributes, internalAttribute);
 			}
 		}
 
@@ -82,7 +86,7 @@ namespace Mono.Linker
 				return new RequiresUnreferencedCodeAttribute (message) { Url = url };
 			}
 
-			context.LogWarning ($"Attribute '{typeof (RequiresUnreferencedCodeAttribute).FullName}' on '{method}' doesn't have a required constructor argument.", 2028, method);
+			context.LogWarning ($"Attribute '{typeof (RequiresUnreferencedCodeAttribute).FullName}' on '{method.GetDisplayName ()}' doesn't have a required constructor argument.", 2028, method);
 			return null;
 		}
 	}
