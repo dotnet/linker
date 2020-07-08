@@ -57,17 +57,10 @@ namespace ILLink.Tasks
 		public ITaskItem OutputDirectory { get; set; }
 
 		/// <summary>
-		/// Turns off trim correctness analysis warnings.
-		/// Maps to '--nowarn 2006;2026;2037;2043'.
-		/// </summary>
-		public bool EnableTrimCorrectnessAnalysis { set => _enableTrimCorrectnessAnalysis = value; }
-		bool? _enableTrimCorrectnessAnalysis;
-
-		/// <summary>
 		/// The subset of warnings that have to be turned off. 
 		/// Maps to '--nowarn'.
 		/// </summary>
-		public string NoWarn { get; set; }
+		public string[] NoWarn { get; set; }
 
 		/// <summary>
 		///   A list of XML root descriptor files specifying linker
@@ -317,11 +310,8 @@ namespace ILLink.Tasks
 				args.Append ("-out ").AppendLine (Quote (OutputDirectory.ItemSpec));
 
 			if (NoWarn != null)
-				args.Append ($"--nowarn \"{NoWarn}\"");
-
-			if (_enableTrimCorrectnessAnalysis is bool enableTrimCorrectnessAnalysis &&
-				enableTrimCorrectnessAnalysis == true)
-				args.Append ("--nowarn IL2006;IL2026;IL2037;IL2043");
+				foreach (var noWarn in NoWarn)
+					args.Append ($"--nowarn \"{noWarn}\"");
 
 			// Add global optimization arguments
 			if (_beforeFieldInit is bool beforeFieldInit)
