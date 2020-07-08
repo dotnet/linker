@@ -310,7 +310,7 @@ namespace ILLink.Tasks
 				args.Append ("-out ").AppendLine (Quote (OutputDirectory.ItemSpec));
 
 			if (NoWarn != null)
-				args.Append ($"--nowarn \"{NoWarn}\"");
+				args.Append ("--nowarn ").AppendLine (Quote (NoWarn));
 
 			// Add global optimization arguments
 			if (_beforeFieldInit is bool beforeFieldInit)
