@@ -737,7 +737,7 @@ namespace Mono.Linker
 			string[] values = value.Split (new char[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries);
 			HashSet<uint> noWarnCodes = new HashSet<uint> ();
 			foreach (string id in values) {
-				if (!id.StartsWith ("IL"))
+				if (!id.StartsWith ("IL", StringComparison.Ordinal))
 					continue;
 
 				var warningCode = id.Substring (2);
