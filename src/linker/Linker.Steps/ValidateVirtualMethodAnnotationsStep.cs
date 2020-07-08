@@ -11,25 +11,26 @@ namespace Mono.Linker.Steps
 	{
 		protected override void Process ()
 		{
-			foreach (var method in Context.Annotations.VirtualMethodsWithAnnotationsToValidate) {
-				var baseMethods = Context.Annotations.GetBaseMethods (method);
+			var annotations = Context.Annotations;
+			foreach (var method in annotations.VirtualMethodsWithAnnotationsToValidate) {
+				var baseMethods = annotations.GetBaseMethods (method);
 				if (baseMethods != null) {
 					foreach (var baseMethod in baseMethods) {
-						Context.Annotations.FlowAnnotations.ValidateMethodAnnotationsAreSame (method, baseMethod);
+						annotations.FlowAnnotations.ValidateMethodAnnotationsAreSame (method, baseMethod);
 						ValidateMethodRequiresUnreferencedCodeAreSame (method, baseMethod);
 					}
 				}
 
-				var overrides = Context.Annotations.GetOverrides (method);
+				var overrides = annotations.GetOverrides (method);
 				if (overrides != null) {
 					foreach (var overrideInformation in overrides) {
 						// Skip validation for cases where both base and override are in the list, we will validate the edge
 						// when validating the override from the list.
 						// This avoids validating the edge twice (it would produce the same warning twice)
-						if (Context.Annotations.VirtualMethodsWithAnnotationsToValidate.Contains (overrideInformation.Override))
+						if (annotations.VirtualMethodsWithAnnotationsToValidate.Contains (overrideInformation.Override))
 							continue;
 
-						Context.Annotations.FlowAnnotations.ValidateMethodAnnotationsAreSame (overrideInformation.Override, method);
+						annotations.FlowAnnotations.ValidateMethodAnnotationsAreSame (overrideInformation.Override, method);
 						ValidateMethodRequiresUnreferencedCodeAreSame (overrideInformation.Override, method);
 					}
 				}
@@ -38,8 +39,9 @@ namespace Mono.Linker.Steps
 
 		void ValidateMethodRequiresUnreferencedCodeAreSame (MethodDefinition method, MethodDefinition baseMethod)
 		{
-			if (Context.Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (method) !=
-				Context.Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (baseMethod))
+			var annotations = Context.Annotations;
+			if (annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (method) !=
+				annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (baseMethod))
 				Context.LogWarning (
 					$"Presence of RequiresUnreferencedCodeAttribute on method '{method.GetDisplayName ()}' doesn't match overridden method '{baseMethod.GetDisplayName ()}'. " +
 					$"All overridden methods must have RequiresUnreferencedCodeAttribute.",
