@@ -28,6 +28,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Text;
@@ -50,11 +51,6 @@ namespace Mono.Linker
 
 		public static int Main (string[] args)
 		{
-			return Execute (args);
-		}
-
-		public static int Execute (string[] args, ILogger customLogger = null)
-		{
 			if (args.Length == 0) {
 				Console.Error.WriteLine ("No parameters specified");
 				return 1;
@@ -64,18 +60,13 @@ namespace Mono.Linker
 				return 1;
 
 			try {
-
 				using (Driver driver = new Driver (arguments)) {
-					if (!driver.Run (customLogger))
-						return 1;
+					return driver.Run ();
 				}
-
 			} catch {
 				Console.Error.WriteLine ("Fatal error in {0}", _linker);
 				throw;
 			}
-
-			return 0;
 		}
 
 		readonly Queue<string> arguments;
@@ -684,13 +675,18 @@ namespace Mono.Linker
 			return 0;
 		}
 
-		public bool Run (ILogger customLogger = null)
+		// Returns the exit code of the process. 0 indicates success.
+		// Known non-recoverable errors (LinkerFatalErrorException) set the exit code
+		// to the error code.
+		// May propagate exceptions, which will result in the process getting an
+		// exit code determined by dotnet.
+		public int Run (ILogger customLogger = null)
 		{
 			int setupStatus = SetupContext (customLogger);
 			if (setupStatus > 0)
-				return true;
+				return 0;
 			if (setupStatus < 0)
-				return false;
+				return 1;
 
 			Pipeline p = context.Pipeline;
 			PreProcessPipeline (p);
@@ -700,7 +696,9 @@ namespace Mono.Linker
 			} catch (LinkerFatalErrorException lex) {
 				context.LogMessage (lex.MessageContainer);
 				Console.Error.WriteLine (lex.ToString ());
-				return false;
+				Debug.Assert (lex.MessageContainer.Category == MessageCategory.Error);
+				Debug.Assert (lex.MessageContainer.Code != null);
+				return lex.MessageContainer.Code ?? 1;
 			} catch (Exception) {
 				// Unhandled exceptions are usually linker bugs. Ask the user to report it.
 				context.LogError ($"IL Linker has encountered an unexpected error. Please report the issue at https://github.com/mono/linker/issues", 1012);
@@ -711,7 +709,7 @@ namespace Mono.Linker
 				context.Tracer.Finish ();
 			}
 
-			return true;
+			return 0;
 		}
 
 		partial void PreProcessPipeline (Pipeline pipeline);
