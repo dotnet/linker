@@ -82,8 +82,7 @@ namespace Mono.Linker.Steps
 
 				var assembly = Context.Resolve (new AssemblyNameReference (dynamicDependency.AssemblyName, new Version ()));
 				if (assembly == null) {
-					Context.LogWarning ($"Unresolved assembly '{dynamicDependency.AssemblyName}' in DynamicDependencyAttribute on '{member}'",
-						2035, member, subcategory: MessageSubCategory.TrimCorrectness);
+					Context.LogWarning ($"Unresolved assembly '{dynamicDependency.AssemblyName}' in DynamicDependencyAttribute on '{member}'", 2035, member);
 					continue;
 				}
 

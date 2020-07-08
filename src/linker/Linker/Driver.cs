@@ -443,7 +443,7 @@ namespace Mono.Linker
 						if (!GetStringParam (token, l => noWarnArgument = l))
 							return -1;
 
-						context.NoWarn = ParseWarnings (noWarnArgument);
+						context.NoWarn.UnionWith (ParseWarnings (noWarnArgument));
 						continue;
 
 					case "--version":
@@ -737,7 +737,10 @@ namespace Mono.Linker
 			string[] values = value.Split (new char[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries);
 			HashSet<uint> noWarnCodes = new HashSet<uint> ();
 			foreach (string id in values) {
-				var warningCode = id.StartsWith ("IL") ? id.Substring (2) : id;
+				if (!id.StartsWith ("IL"))
+					continue;
+
+				var warningCode = id.Substring (2);
 				if (ushort.TryParse (warningCode, out ushort code)
 					&& code > 2000 && code <= 6000)
 					noWarnCodes.Add (code);

@@ -8,7 +8,6 @@ namespace Mono.Linker
 	{
 		public const string None = "";
 		public const string TrimCorrectness = "Trim correctness";
-		public const string UnrecognizedReflectionPattern = "Unrecognized reflection pattern";
 		public const string UnresolvedAssembly = "Unresolved assembly";
 	}
 }

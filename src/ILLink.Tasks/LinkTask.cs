@@ -60,8 +60,8 @@ namespace ILLink.Tasks
 		/// Turns off trim correctness analysis warnings.
 		/// Maps to '--nowarn 2006;2026;2037;2043'.
 		/// </summary>
-		public bool TrimmerAnalysisWarnings { set => _trimmerAnalysisWarnings = value; }
-		bool? _trimmerAnalysisWarnings;
+		public bool EnableTrimCorrectnessAnalysis { set => _enableTrimCorrectnessAnalysis = value; }
+		bool? _enableTrimCorrectnessAnalysis;
 
 		/// <summary>
 		/// The subset of warnings that have to be turned off. 
@@ -319,9 +319,9 @@ namespace ILLink.Tasks
 			if (NoWarn != null)
 				args.Append ($"--nowarn \"{NoWarn}\"");
 
-			if (_trimmerAnalysisWarnings is bool trimmerAnalysisWarnings &&
-				trimmerAnalysisWarnings == true)
-				args.Append ("--nowarn 2006;2026;2037;2043");
+			if (_enableTrimCorrectnessAnalysis is bool enableTrimCorrectnessAnalysis &&
+				enableTrimCorrectnessAnalysis == true)
+				args.Append ("--nowarn IL2006;IL2026;IL2037;IL2043");
 
 			// Add global optimization arguments
 			if (_beforeFieldInit is bool beforeFieldInit)
