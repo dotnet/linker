@@ -7,7 +7,7 @@ namespace Mono.Linker
 	public static class MessageSubCategory
 	{
 		public const string None = "";
-		public const string TrimCorrectness = "Trim correctness";
+		public const string TrimAnalysis = "Trim analysis";
 		public const string UnresolvedAssembly = "Unresolved assembly";
 	}
 }
