@@ -1032,7 +1032,7 @@ namespace Mono.Linker
 			Console.WriteLine ("  -out PATH           Specify the output directory. Defaults to 'output'");
 			Console.WriteLine ("  --about             About the {0}", _linker);
 			Console.WriteLine ("  --verbose           Log messages indicating progress and warnings");
-			Console.WriteLine ("  --nowarn WARN-LIST  Disable specific warning messages.");
+			Console.WriteLine ("  --nowarn WARN-LIST  Disable specific warning messages");
 			Console.WriteLine ("  --version           Print the version number of the {0}", _linker);
 			Console.WriteLine ("  -help               Lists all linker options");
 			Console.WriteLine ("  @FILE               Read response file for more options");
