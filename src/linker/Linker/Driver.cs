@@ -699,6 +699,7 @@ namespace Mono.Linker
 				Console.Error.WriteLine (lex.ToString ());
 				Debug.Assert (lex.MessageContainer.Category == MessageCategory.Error);
 				Debug.Assert (lex.MessageContainer.Code != null);
+				Debug.Assert (lex.MessageContainer.Code.Value != 0);
 				return lex.MessageContainer.Code ?? 1;
 			} catch (Exception) {
 				// Unhandled exceptions are usually linker bugs. Ask the user to report it.

@@ -17,6 +17,9 @@ namespace Mono.Linker
 			if (message.Category != MessageCategory.Error)
 				throw new ArgumentException ($"'{nameof (LinkerFatalErrorException)}' ought to be used for errors only");
 
+			if (message.Code == null || message.Code.Value == 0)
+				throw new ArgumentException ($"'{nameof (LinkerFatalErrorException)}' must have a code that indicates a failure");
+
 			MessageContainer = message;
 		}
 
@@ -27,6 +30,9 @@ namespace Mono.Linker
 		{
 			if (message.Category != MessageCategory.Error)
 				throw new ArgumentException ($"'{nameof (LinkerFatalErrorException)}' ought to be used for errors only");
+
+			if (message.Code == null || message.Code.Value == 0)
+				throw new ArgumentException ($"'{nameof (LinkerFatalErrorException)}' must have a code that indicates failure");
 
 			MessageContainer = message;
 		}
