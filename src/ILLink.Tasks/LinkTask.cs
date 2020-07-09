@@ -150,10 +150,13 @@ namespace ILLink.Tasks
 		public bool DumpDependencies { get; set; }
 
 		/// <summary>
-		///   Output linked debug symbols for linked assemblies.
-		///   Maps to '-b'.
+		///   Remove debug symbols from linked assemblies.
+		///   Maps to '-b' if false.
+		///   Default if not specified is to remove symbols, like
+		///   the command-line. (Target files will likely set their own defaults to keep symbols.)
 		/// </summary>
-		public bool LinkSymbols { get; set; }
+		public bool RemoveSymbols { set => _removeSymbols = value; }
+		bool? _removeSymbols;
 
 		/// <summary>
 		///   Sets the default action for assemblies.
@@ -346,7 +349,7 @@ namespace ILLink.Tasks
 				}
 			}
 
-			if (LinkSymbols)
+			if (_removeSymbols == false)
 				args.AppendLine ("-b");
 
 			if (DefaultAction != null)
