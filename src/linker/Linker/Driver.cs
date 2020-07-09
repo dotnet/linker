@@ -52,7 +52,6 @@ namespace Mono.Linker
 		public static int Main (string[] args)
 		{
 			if (args.Length == 0) {
-				Usage ();
 				Console.Error.WriteLine ("No parameters specified");
 				return 1;
 			}
@@ -199,6 +198,10 @@ namespace Mono.Linker
 				//
 				if (token[0] == '-' && token[1] == '-') {
 					switch (token) {
+					case "--help":
+						Usage ();
+						return 1;
+
 					case "--skip-unresolved":
 						if (!GetBoolParam (token, l => context.IgnoreUnresolved = context.Resolver.IgnoreUnresolved = l))
 							return -1;
@@ -539,6 +542,7 @@ namespace Mono.Linker
 
 						continue;
 					case "?":
+					case "h":
 					case "help":
 						Usage ();
 						return 1;
@@ -1000,7 +1004,7 @@ namespace Mono.Linker
 			Console.WriteLine ("  --about             About the {0}", _linker);
 			Console.WriteLine ("  --verbose           Log messages indicating progress and warnings");
 			Console.WriteLine ("  --version           Print the version number of the {0}", _linker);
-			Console.WriteLine ("  -help               Lists all linker options");
+			Console.WriteLine ("  --help              Lists all linker options");
 			Console.WriteLine ("  @FILE               Read response file for more options");
 
 			Console.WriteLine ();
