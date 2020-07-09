@@ -52,6 +52,7 @@ namespace Mono.Linker
 		public static int Main (string[] args)
 		{
 			if (args.Length == 0) {
+				Usage ();
 				Console.Error.WriteLine ("No parameters specified");
 				return 1;
 			}
