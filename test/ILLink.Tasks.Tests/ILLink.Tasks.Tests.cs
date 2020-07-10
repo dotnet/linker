@@ -420,7 +420,7 @@ namespace ILLink.Tasks.Tests
 		{
 			var task = new MockTask ();
 			using (var driver = task.CreateDriver ()) {
-				Assert.Equal (false, driver.Context.LinkSymbols);
+				Assert.False (driver.Context.LinkSymbols);
 			}
 		}
 
