@@ -57,8 +57,8 @@ namespace Mono.Linker.Steps
 			if (!type.HasInterfaces)
 				return;
 
-			foreach (var interfaceImpl in type.GetInflatedInterfaces()) {
-				foreach (MethodReference interfaceMethod in interfaceImpl.InflatedInterface.GetMethods()) {
+			foreach (var interfaceImpl in type.GetInflatedInterfaces ()) {
+				foreach (MethodReference interfaceMethod in interfaceImpl.InflatedInterface.GetMethods ()) {
 					MethodDefinition resolvedInterfaceMethod = interfaceMethod.Resolve ();
 					if (resolvedInterfaceMethod == null)
 						continue;
