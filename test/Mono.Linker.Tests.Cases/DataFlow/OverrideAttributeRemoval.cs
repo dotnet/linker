@@ -37,7 +37,5 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		{
 			return "this is a return value";
 		}
-
-
 	}
 }
