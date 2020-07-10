@@ -1,4 +1,5 @@
-﻿using Mono.Linker.Tests.Cases.Expectations.Assertions;
+﻿using System;
+using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.LinkXml
@@ -85,6 +86,12 @@ namespace Mono.Linker.Tests.Cases.LinkXml
 			internal static void Method6 ()
 			{
 			}
+
+			[Kept]
+			[KeptBackingField]
+			[KeptEventAddMethod]
+			[KeptEventRemoveMethod]
+			event EventHandler<EventArgs> Event;
 		}
 	}
 }
