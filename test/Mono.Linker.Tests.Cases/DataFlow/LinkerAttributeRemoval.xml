@@ -5,4 +5,19 @@
       <attribute internal="RemoveAttributeInstances"/>
     </type>
   </assembly>
+  <assembly fullname="test, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="Mono.Linker.Tests.Cases.DataFlow.TestRemoveAttribute">
+      <attribute internal="RemoveAttributeInstances"/>
+    </type>
+  </assembly>
+  <assembly fullname="attribute, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="Mono.Linker.Tests.Cases.DataFlow.Dependencies.TestAttributeUsedFromCopyAssemblyAttribute">
+      <attribute internal="RemoveAttributeInstances"/>
+    </type>
+  </assembly>
+  <assembly fullname="System.Private.CoreLib">
+    <type fullname="System.ComponentModel.EditorBrowsableAttribute">
+      <attribute internal="RemoveAttributeInstances"/>
+    </type>
+  </assembly>
 </linker>

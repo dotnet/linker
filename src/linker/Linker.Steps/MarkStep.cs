@@ -531,10 +531,11 @@ namespace Mono.Linker.Steps
 
 		void MarkCustomAttributes (ICustomAttributeProvider provider, in DependencyInfo reason, IMemberDefinition sourceLocationMember)
 		{
-			if (!provider.HasCustomAttributes)
+			if (!_context.CustomAttributes.HasAttributes (provider))
 				return;
 
-			bool markOnUse = _context.KeepUsedAttributeTypesOnly && Annotations.GetAction (GetAssemblyFromCustomAttributeProvider (provider)) == AssemblyAction.Link;
+			bool providerInLinkedAssembly = Annotations.GetAction (GetAssemblyFromCustomAttributeProvider (provider)) == AssemblyAction.Link;
+			bool markOnUse = _context.KeepUsedAttributeTypesOnly && providerInLinkedAssembly;
 
 			foreach (CustomAttribute ca in provider.CustomAttributes) {
 				if (ProcessLinkerSpecialAttribute (ca, provider, reason, sourceLocationMember))
@@ -545,7 +546,7 @@ namespace Mono.Linker.Steps
 					continue;
 				}
 
-				if (_context.Annotations.HasLinkerAttribute<RemoveAttributeInstancesAttribute> (ca.AttributeType.Resolve ()))
+				if (_context.Annotations.HasLinkerAttribute<RemoveAttributeInstancesAttribute> (ca.AttributeType.Resolve ()) && providerInLinkedAssembly)
 					continue;
 
 				MarkCustomAttribute (ca, reason, sourceLocationMember);
@@ -808,11 +809,13 @@ namespace Mono.Linker.Steps
 
 		void LazyMarkCustomAttributes (ICustomAttributeProvider provider)
 		{
-			if (!provider.HasCustomAttributes)
+			if (!_context.CustomAttributes.HasAttributes (provider))
 				return;
 
+			bool providerInLinkedAssembly = Annotations.GetAction (GetAssemblyFromCustomAttributeProvider (provider)) == AssemblyAction.Link;
+
 			foreach (CustomAttribute ca in provider.CustomAttributes) {
-				if (_context.Annotations.HasLinkerAttribute<RemoveAttributeInstancesAttribute> (ca.AttributeType.Resolve ()))
+				if (_context.Annotations.HasLinkerAttribute<RemoveAttributeInstancesAttribute> (ca.AttributeType.Resolve ()) && providerInLinkedAssembly)
 					continue;
 
 				_assemblyLevelAttributes.Enqueue (new AttributeProviderPair (ca, provider));
