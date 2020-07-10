@@ -540,13 +540,13 @@ namespace Mono.Linker.Steps
 				if (ProcessLinkerSpecialAttribute (ca, provider, reason, sourceLocationMember))
 					continue;
 
-				if (_context.Annotations.HasLinkerAttribute<RemoveAttributeInstancesAttribute> (ca.AttributeType.Resolve ()))
-					continue;
-
 				if (markOnUse) {
 					_lateMarkedAttributes.Enqueue ((new AttributeProviderPair (ca, provider), reason, sourceLocationMember));
 					continue;
 				}
+
+				if (_context.Annotations.HasLinkerAttribute<RemoveAttributeInstancesAttribute> (ca.AttributeType.Resolve ()))
+					continue;
 
 				MarkCustomAttribute (ca, reason, sourceLocationMember);
 				MarkSpecialCustomAttributeDependencies (ca, provider, sourceLocationMember);
