@@ -534,7 +534,8 @@ namespace Mono.Linker.Steps
 			if (!provider.HasCustomAttributes)
 				return;
 
-			bool markOnUse = _context.KeepUsedAttributeTypesOnly && Annotations.GetAction (GetAssemblyFromCustomAttributeProvider (provider)) == AssemblyAction.Link;
+			bool linkContext = Annotations.GetAction (GetAssemblyFromCustomAttributeProvider (provider)) == AssemblyAction.Link;
+			bool markOnUse = _context.KeepUsedAttributeTypesOnly && linkContext;
 
 			foreach (CustomAttribute ca in provider.CustomAttributes) {
 				if (ProcessLinkerSpecialAttribute (ca, provider, reason, sourceLocationMember))
@@ -545,7 +546,7 @@ namespace Mono.Linker.Steps
 					continue;
 				}
 
-				if (_context.Annotations.HasLinkerAttribute<RemoveAttributeInstancesAttribute> (ca.AttributeType.Resolve ()))
+				if (_context.Annotations.HasLinkerAttribute<RemoveAttributeInstancesAttribute> (ca.AttributeType.Resolve ()) && linkContext)
 					continue;
 
 				MarkCustomAttribute (ca, reason, sourceLocationMember);
@@ -1525,6 +1526,10 @@ namespace Mono.Linker.Steps
 
 			foreach (CustomAttribute attribute in type.CustomAttributes) {
 				var attrType = attribute.Constructor.DeclaringType;
+
+				if (_context.Annotations.HasLinkerAttribute<RemoveAttributeInstancesAttribute> (attrType.Resolve ()) && Annotations.GetAction (type.Module.Assembly) == AssemblyAction.Link)
+					continue;
+
 				switch (attrType.Name) {
 				case "XmlSchemaProviderAttribute" when attrType.Namespace == "System.Xml.Serialization":
 					MarkXmlSchemaProvider (type, attribute);
