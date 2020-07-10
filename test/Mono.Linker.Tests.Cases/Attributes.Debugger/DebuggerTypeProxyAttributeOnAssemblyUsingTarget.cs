@@ -39,6 +39,9 @@ namespace Mono.Linker.Tests.Cases.Attributes.Debugger
 			[KeptBackingField]
 			public int Property { get; [Kept] set; }
 
+#if !NETCOREAPP
+			[Kept]
+#endif
 			internal class FooDebugView
 			{
 				private Foo _foo;

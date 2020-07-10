@@ -33,6 +33,9 @@ namespace Mono.Linker.Tests.Cases.Attributes.Debugger
 		{
 		}
 
+#if !NETCOREAPP
+		[Kept]
+#endif
 		class FooDebugView
 		{
 			public FooDebugView (Foo foo)
