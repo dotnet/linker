@@ -44,7 +44,7 @@ namespace Mono.Linker.Tests.Cases.Attributes.StructLayout
 
 	[Kept]
 	[StructLayout (LayoutKind.Sequential)]
-	[KeptBaseType(typeof(UnallocatedButWithSingleFieldUsedSequentialClassDataBase))]
+	[KeptBaseType (typeof (UnallocatedButWithSingleFieldUsedSequentialClassDataBase))]
 	class UnallocatedButWithSingleFieldUsedSequentialClassData : UnallocatedButWithSingleFieldUsedSequentialClassDataBase
 	{
 		[Kept]
