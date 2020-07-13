@@ -1263,7 +1263,7 @@ namespace Mono.Linker.Steps
 				TypeDefinition typeWithFields = field.DeclaringType;
 				while (typeWithFields != null) {
 					MarkImplicitlyUsedFields (typeWithFields);
-					typeWithFields = typeWithFields.BaseType.Resolve ();
+					typeWithFields = typeWithFields.BaseType?.Resolve ();
 				}
 			}
 
