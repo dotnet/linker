@@ -2005,9 +2005,12 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		protected virtual void MarkMulticastDelegate (TypeDefinition type)
+		protected virtual void MarkMulticastDelegate (TypeDefinition type, bool markAllMethods = false)
 		{
-			MarkMethodCollection (type.Methods, new DependencyInfo (DependencyKind.MethodForSpecialType, type), type);
+			if (markAllMethods)
+				MarkMethodCollection (type.Methods, new DependencyInfo (DependencyKind.MethodForSpecialType, type), type);
+			else
+				MarkMethodsIf (type.Methods, m => m.Name == ".ctor" || m.Name == "Invoke", new DependencyInfo (DependencyKind.MethodForSpecialType, type), type);
 		}
 
 		protected (TypeReference, DependencyInfo) GetOriginalType (TypeReference type, DependencyInfo reason, IMemberDefinition sourceLocationMember)
@@ -2372,6 +2375,10 @@ namespace Mono.Linker.Steps
 
 			if (ShouldParseMethodBody (method))
 				MarkMethodBody (method.Body);
+
+			if (method.DeclaringType.IsMulticastDelegate() && (method.Name == "BeginInvoke" || method.Name == "EndInvoke")) {
+				MarkMulticastDelegate (method.DeclaringType, markAllMethods: true);
+			}
 
 			DoAdditionalMethodProcessing (method);
 
