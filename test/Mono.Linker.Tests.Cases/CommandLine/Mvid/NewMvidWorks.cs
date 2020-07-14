@@ -4,7 +4,6 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 namespace Mono.Linker.Tests.Cases.CommandLine.Mvid
 {
 	[SetupLinkerArgument ("--new-mvid", "true")]
-	[SetupLinkerArgument ("--deterministic", "false")]
 	public class NewMvidWorks {
 		public static void Main ()
 		{
