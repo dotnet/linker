@@ -369,7 +369,7 @@ namespace Mono.Linker
 
 							continue;
 						}
-								
+
 					case "--feature": {
 							string featureName = null;
 							if (!GetStringParam (token, l => featureName = l))
@@ -579,8 +579,7 @@ namespace Mono.Linker
 			}
 
 			// Default to deterministic output
-			if (!new_mvid_used && !deterministic_used)
-			{
+			if (!new_mvid_used && !deterministic_used) {
 				context.DeterministicOutput = true;
 			}
 			if (dumpDependencies)
