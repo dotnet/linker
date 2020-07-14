@@ -7,7 +7,7 @@ namespace Mono.Linker.Tests.Cases.Basic
 {
 	class DelegateBeginInvokeEndInvokePair
 	{
-		public static void Main()
+		public static void Main ()
 		{
 			SomeDelegate d1 = Method;
 			d1.BeginInvoke (null, null);
@@ -20,7 +20,7 @@ namespace Mono.Linker.Tests.Cases.Basic
 		}
 
 		[Kept]
-		static void Method()
+		static void Method ()
 		{
 		}
 

@@ -2376,7 +2376,7 @@ namespace Mono.Linker.Steps
 			if (ShouldParseMethodBody (method))
 				MarkMethodBody (method.Body);
 
-			if (method.DeclaringType.IsMulticastDelegate() && (method.Name == "BeginInvoke" || method.Name == "EndInvoke")) {
+			if (method.DeclaringType.IsMulticastDelegate () && (method.Name == "BeginInvoke" || method.Name == "EndInvoke")) {
 				MarkMulticastDelegate (method.DeclaringType, markAllMethods: true);
 			}
 
