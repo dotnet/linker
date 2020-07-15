@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if ILLINK
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
@@ -40,3 +41,4 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.DefaultInterfaceMethods
 		}
 	}
 }
+#endif
