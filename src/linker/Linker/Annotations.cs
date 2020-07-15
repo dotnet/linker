@@ -58,7 +58,7 @@ namespace Mono.Linker
 		protected readonly Dictionary<MethodDefinition, List<MethodDefinition>> base_methods = new Dictionary<MethodDefinition, List<MethodDefinition>> ();
 		protected readonly Dictionary<AssemblyDefinition, ISymbolReader> symbol_readers = new Dictionary<AssemblyDefinition, ISymbolReader> ();
 		readonly Dictionary<IMemberDefinition, LinkerAttributesInformation> linker_attributes = new Dictionary<IMemberDefinition, LinkerAttributesInformation> ();
-		protected readonly Dictionary<MethodDefinition, List<(TypeDefinition, InterfaceImplementation)>> default_interface_implementations = new Dictionary<MethodDefinition, List<(TypeDefinition, InterfaceImplementation)>> ();
+		protected readonly Dictionary<MethodDefinition, List<(TypeDefinition InstanceType, InterfaceImplementation ImplementationProvider)>> default_interface_implementations = new Dictionary<MethodDefinition, List<(TypeDefinition, InterfaceImplementation)>> ();
 
 		readonly Dictionary<object, Dictionary<IMetadataTokenProvider, object>> custom_annotations = new Dictionary<object, Dictionary<IMetadataTokenProvider, object>> ();
 		protected readonly Dictionary<AssemblyDefinition, HashSet<EmbeddedResource>> resources_to_remove = new Dictionary<AssemblyDefinition, HashSet<EmbeddedResource>> ();
@@ -359,7 +359,7 @@ namespace Mono.Linker
 			implementations.Add ((implementingType, matchingInterfaceImplementation));
 		}
 
-		public IEnumerable<(TypeDefinition, InterfaceImplementation)> GetDefaultInterfaceImplementations (MethodDefinition method)
+		public IEnumerable<(TypeDefinition InstanceType, InterfaceImplementation ProvidingInterface)> GetDefaultInterfaceImplementations (MethodDefinition method)
 		{
 			default_interface_implementations.TryGetValue (method, out var ret);
 			return ret;

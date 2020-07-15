@@ -442,7 +442,7 @@ namespace Mono.Linker.Steps
 			var defaultImplementations = Annotations.GetDefaultInterfaceImplementations (method);
 			if (defaultImplementations != null) {
 				foreach (var defaultImplementationInfo in defaultImplementations) {
-					ProcessDefaultImplementation (defaultImplementationInfo.Item1, defaultImplementationInfo.Item2);
+					ProcessDefaultImplementation (defaultImplementationInfo.InstanceType, defaultImplementationInfo.ProvidingInterface);
 				}
 			}
 		}
