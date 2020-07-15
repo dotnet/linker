@@ -2379,7 +2379,7 @@ namespace Mono.Linker.Steps
 					methodPair = "EndInvoke";
 				else if (method.Name == "EndInvoke")
 					methodPair = "BeginInvoke";
-				
+
 				if (methodPair != null) {
 					TypeDefinition declaringType = method.DeclaringType;
 					MarkMethodIf (declaringType.Methods, m => m.Name == methodPair, new DependencyInfo (DependencyKind.MethodForSpecialType, declaringType), declaringType);
