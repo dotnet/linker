@@ -24,7 +24,7 @@ namespace Mono.Linker.Steps
 		{
 		}
 
-		IEnumerable<CustomAttribute> ProcessAttributes (XPathNavigator nav, ICustomAttributeProvider provider = null)
+		IEnumerable<CustomAttribute> ProcessAttributes (XPathNavigator nav, ICustomAttributeProvider provider)
 		{
 			XPathNodeIterator iterator = nav.SelectChildren ("attribute", string.Empty);
 			var attributes = new List<CustomAttribute> ();
@@ -38,16 +38,20 @@ namespace Mono.Linker.Steps
 				string internalAttribute = GetAttribute (iterator.Current, "internal");
 				if (internalAttribute != String.Empty) {
 					if (internalAttribute == "RemoveAttributeInstances") {
-						if (provider != null) {
+						if (provider.MetadataToken.TokenType == TokenType.TypeDef) {
 							if (!Annotations.IsMarked (provider)) {
 								IEnumerable<Attribute> removeAttributeInstance = new List<Attribute> { new RemoveAttributeInstancesAttribute () };
 								Context.CustomAttributes.AddInternalAttributes (provider, removeAttributeInstance);
 							}
-						} else
-							Context.LogWarning ($"Internal attribute 'RemoveAttributeInstances' can only be used on a type, but is being used on '<{nav.Name}>'", 2048, _xmlDocumentLocation);
-					} else
+							continue;
+						} else {
+							Context.LogWarning ($"Internal attribute 'RemoveAttributeInstances' can only be used on a type, but is being used on '{nav.Name}' '{provider}'", 2048, _xmlDocumentLocation);
+							continue;
+						}
+					} else {
 						Context.LogWarning ($"Unrecognized internal attribute '{internalAttribute}'", 2049, _xmlDocumentLocation);
-					continue;
+						continue;
+					}
 				}
 
 				string attributeFullName = GetFullName (iterator.Current);
@@ -145,7 +149,7 @@ namespace Mono.Linker.Steps
 
 		protected override void ProcessAssembly (AssemblyDefinition assembly, XPathNodeIterator iterator, bool warnOnUnresolvedTypes)
 		{
-			IEnumerable<CustomAttribute> attributes = ProcessAttributes (iterator.Current);
+			IEnumerable<CustomAttribute> attributes = ProcessAttributes (iterator.Current, assembly);
 			if (attributes.Count () > 0)
 				Context.CustomAttributes.AddCustomAttributes (assembly, attributes);
 			ProcessTypes (assembly, iterator, warnOnUnresolvedTypes);
@@ -174,14 +178,14 @@ namespace Mono.Linker.Steps
 
 		protected override void ProcessField (TypeDefinition type, FieldDefinition field, XPathNavigator nav)
 		{
-			IEnumerable<CustomAttribute> attributes = ProcessAttributes (nav);
+			IEnumerable<CustomAttribute> attributes = ProcessAttributes (nav, field);
 			if (attributes.Count () > 0)
 				Context.CustomAttributes.AddCustomAttributes (field, attributes);
 		}
 
 		protected override void ProcessMethod (TypeDefinition type, MethodDefinition method, XPathNavigator nav, object customData)
 		{
-			IEnumerable<CustomAttribute> attributes = ProcessAttributes (nav);
+			IEnumerable<CustomAttribute> attributes = ProcessAttributes (nav, method);
 			if (attributes.Count () > 0)
 				Context.CustomAttributes.AddCustomAttributes (method, attributes);
 			ProcessReturnParameters (method, nav);
@@ -192,7 +196,7 @@ namespace Mono.Linker.Steps
 		{
 			var iterator = nav.SelectChildren ("parameter", string.Empty);
 			while (iterator.MoveNext ()) {
-				IEnumerable<CustomAttribute> attributes = ProcessAttributes (iterator.Current);
+				IEnumerable<CustomAttribute> attributes = ProcessAttributes (iterator.Current, method);
 				if (attributes.Count () > 0) {
 					string paramName = GetAttribute (iterator.Current, "name");
 					foreach (ParameterDefinition parameter in method.Parameters) {
@@ -214,7 +218,7 @@ namespace Mono.Linker.Steps
 			while (iterator.MoveNext ()) {
 				if (firstAppearance) {
 					firstAppearance = false;
-					IEnumerable<CustomAttribute> attributes = ProcessAttributes (iterator.Current);
+					IEnumerable<CustomAttribute> attributes = ProcessAttributes (iterator.Current, method.MethodReturnType);
 					if (attributes.Count () > 0)
 						Context.CustomAttributes.AddCustomAttributes (method.MethodReturnType, attributes);
 				} else {
@@ -265,14 +269,14 @@ namespace Mono.Linker.Steps
 
 		protected override void ProcessProperty (TypeDefinition type, PropertyDefinition property, XPathNavigator nav, object customData, bool fromSignature)
 		{
-			IEnumerable<CustomAttribute> attributes = ProcessAttributes (nav);
+			IEnumerable<CustomAttribute> attributes = ProcessAttributes (nav, property);
 			if (attributes.Count () > 0)
 				Context.CustomAttributes.AddCustomAttributes (property, attributes);
 		}
 
 		protected override void ProcessEvent (TypeDefinition type, EventDefinition @event, XPathNavigator nav, object customData)
 		{
-			IEnumerable<CustomAttribute> attributes = ProcessAttributes (nav);
+			IEnumerable<CustomAttribute> attributes = ProcessAttributes (nav, @event);
 			if (attributes.Count () > 0)
 				Context.CustomAttributes.AddCustomAttributes (@event, attributes);
 		}
