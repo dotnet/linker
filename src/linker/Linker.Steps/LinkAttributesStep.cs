@@ -37,21 +37,16 @@ namespace Mono.Linker.Steps
 
 				string internalAttribute = GetAttribute (iterator.Current, "internal");
 				if (internalAttribute != String.Empty) {
-					switch (internalAttribute) {
-					case "RemoveAttributeInstances":
+					if (internalAttribute == "RemoveAttributeInstances") {
 						if (provider != null) {
 							if (!Annotations.IsMarked (provider)) {
 								IEnumerable<Attribute> removeAttributeInstance = new List<Attribute> { new RemoveAttributeInstancesAttribute () };
 								Context.CustomAttributes.AddInternalAttributes (provider, removeAttributeInstance);
 							}
-						} else {
-							Context.LogWarning ($"Internal attribute RemoveAttributeInstances is being used on member that is not a type", 2048, _xmlDocumentLocation);
-						}
-						break;
-					default:
-						Context.LogWarning ($"Not recognized internal attribute", 2049, _xmlDocumentLocation);
-						break;
-					}
+						} else
+							Context.LogWarning ($"Internal attribute 'RemoveAttributeInstances' can only be used on a type, but is being used on '<{nav.Name}>'", 2048, _xmlDocumentLocation);
+					} else
+						Context.LogWarning ($"Unrecognized internal attribute '{internalAttribute}'", 2049, _xmlDocumentLocation);
 					continue;
 				}
 

@@ -246,10 +246,10 @@ error and warning codes.
 
 - All overrides of a virtual method including the base method must have the same DynamicallyAccessedMemberAttribute usage on all it's components (return value, parameters and generic parameters).
 
-#### `IL2048`: Internal attribute RemoveAttributeInstances is being used on member that is not a type
+#### `IL2048`: Internal attribute 'RemoveAttributeInstances' can only be used on a type, but is being used on '<member>'
 
-- Internal attribute RemoveAttributeInstances is a special attribute that should only be used on custom attribute types. If referenced in an assembly, module, method, property or event the internal attribute doesn't take any effect
+- Internal attribute 'RemoveAttributeInstances' is a special attribute that should only be used on custom attribute types and is being used on 'member'.
 
-#### `IL2049`: Not recognized internal attribute
+#### `IL2049`: Unrecognized internal attribute 'attribute'
 
-- The internal attribute name being used in the xml is not supported by the linker, check the spelling and the supported internal attributes
+- The internal attribute name 'attribute' being used in the xml is not supported by the linker, check the spelling and the supported internal attributes.
