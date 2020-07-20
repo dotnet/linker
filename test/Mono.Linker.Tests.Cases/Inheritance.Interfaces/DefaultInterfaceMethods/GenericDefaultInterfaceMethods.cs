@@ -1,11 +1,13 @@
-﻿#if ILLINK
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
 namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.DefaultInterfaceMethods
 {
+#if !NETCOREAPP
+	[IgnoreTestCase ("Default interface methods not supported outside Core")]
+#endif
 	class GenericDefaultInterfaceMethods
 	{
 		public static void Main ()
@@ -63,4 +65,3 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.DefaultInterfaceMethods
 		}
 	}
 }
-#endif
