@@ -14,7 +14,7 @@ namespace Mono.Linker
 
 		Dictionary<TypeDefinition, BaseTypeFlags> _cache = new Dictionary<TypeDefinition, BaseTypeFlags> ();
 
-		private BaseTypeFlags GetFlags(TypeReference type)
+		private BaseTypeFlags GetFlags (TypeReference type)
 		{
 			TypeDefinition resolvedType = type.Resolve ();
 			if (resolvedType == null)
@@ -38,7 +38,7 @@ namespace Mono.Linker
 			return flags;
 		}
 
-		public bool IsSystemType(TypeReference type)
+		public bool IsSystemType (TypeReference type)
 		{
 			return (GetFlags (type) & BaseTypeFlags.IsSystemType) != 0;
 		}

@@ -377,7 +377,7 @@ namespace Mono.Linker.Dataflow
 		bool IsTypeInterestingForDataflow (TypeReference typeReference)
 		{
 			return typeReference.MetadataType == MetadataType.String ||
-				_hierarchyInfo.IsSystemType(typeReference) ||
+				_hierarchyInfo.IsSystemType (typeReference) ||
 				(typeReference.Name == "IReflect" && typeReference.Namespace == "System.Reflection");
 		}
 
