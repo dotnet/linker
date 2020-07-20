@@ -6,9 +6,7 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.DefaultInterfaceMethods
 {
-#if !NETCOREAPP
-	[IgnoreTestCase ("Default interface methods not supported outside Core")]
-#endif
+#if NETCOREAPP
 	class DefaultInterfaceMethodCallIntoClass
 	{
 		public static void Main ()
@@ -49,4 +47,5 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.DefaultInterfaceMethods
 			public void Actual () { }
 		}
 	}
+#endif
 }
