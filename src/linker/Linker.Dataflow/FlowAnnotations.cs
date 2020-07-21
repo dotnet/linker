@@ -378,7 +378,7 @@ namespace Mono.Linker.Dataflow
 		{
 			return typeReference.MetadataType == MetadataType.String ||
 				_hierarchyInfo.IsSystemType (typeReference) ||
-				(typeReference.Name == "IReflect" && typeReference.Namespace == "System.Reflection");
+				_hierarchyInfo.IsSystemReflectionIReflect (typeReference);
 		}
 
 		internal void ValidateMethodAnnotationsAreSame (MethodDefinition method, MethodDefinition baseMethod)

@@ -7,14 +7,15 @@ namespace Mono.Linker
 	class TypeHierarchyCache
 	{
 		[Flags]
-		private enum BaseTypeFlags
+		private enum HierarchyFlags
 		{
 			IsSystemType = 0x01,
+			IsSystemReflectionIReflect = 0x02,
 		}
 
-		Dictionary<TypeDefinition, BaseTypeFlags> _cache = new Dictionary<TypeDefinition, BaseTypeFlags> ();
+		Dictionary<TypeDefinition, HierarchyFlags> _cache = new Dictionary<TypeDefinition, HierarchyFlags> ();
 
-		private BaseTypeFlags GetFlags (TypeReference type)
+		private HierarchyFlags GetFlags (TypeReference type)
 		{
 			TypeDefinition resolvedType = type.Resolve ();
 			if (resolvedType == null)
@@ -24,10 +25,22 @@ namespace Mono.Linker
 				return flags;
 			}
 
+			if (resolvedType.Name == "IReflect" && resolvedType.Namespace == "System.Reflection") {
+				flags |= HierarchyFlags.IsSystemReflectionIReflect;
+			}
+
 			TypeDefinition baseType = resolvedType;
 			while (baseType != null) {
 				if (baseType.Name == "Type" && baseType.Namespace == "System") {
-					flags |= BaseTypeFlags.IsSystemType;
+					flags |= HierarchyFlags.IsSystemType;
+				}
+
+				if (baseType.HasInterfaces) {
+					foreach (var iface in baseType.Interfaces) {
+						if (iface.InterfaceType.Name == "IReflect" && iface.InterfaceType.Namespace == "System.Reflection") {
+							flags |= HierarchyFlags.IsSystemReflectionIReflect;
+						}
+					}
 				}
 
 				baseType = baseType.BaseType?.Resolve ();
@@ -40,7 +53,12 @@ namespace Mono.Linker
 
 		public bool IsSystemType (TypeReference type)
 		{
-			return (GetFlags (type) & BaseTypeFlags.IsSystemType) != 0;
+			return (GetFlags (type) & HierarchyFlags.IsSystemType) != 0;
+		}
+
+		public bool IsSystemReflectionIReflect (TypeReference type)
+		{
+			return (GetFlags (type) & HierarchyFlags.IsSystemReflectionIReflect) != 0;
 		}
 	}
 }
