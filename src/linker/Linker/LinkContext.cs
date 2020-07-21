@@ -487,7 +487,11 @@ namespace Mono.Linker
 
 		public void LogMessage (MessageContainer message)
 		{
-			if (!LogMessages || message == MessageContainer.Empty)
+			if (message == MessageContainer.Empty)
+				return;
+
+			if ((message.Category == MessageCategory.Diagnostic ||
+				message.Category == MessageCategory.Info) && !LogMessages)
 				return;
 
 			if (message.Category == MessageCategory.Warning &&
@@ -528,9 +532,6 @@ namespace Mono.Linker
 		/// <param name="subcategory">Optionally, further categorize this warning</param>
 		public void LogWarning (string text, int code, MessageOrigin origin, string subcategory = MessageSubCategory.None)
 		{
-			if (!LogMessages)
-				return;
-
 			var warning = MessageContainer.CreateWarningMessage (this, text, code, origin, subcategory);
 			LogMessage (warning);
 		}
@@ -571,9 +572,6 @@ namespace Mono.Linker
 		/// <returns>New MessageContainer of 'Error' category</returns>
 		public void LogError (string text, int code, string subcategory = MessageSubCategory.None, MessageOrigin? origin = null)
 		{
-			if (!LogMessages)
-				return;
-
 			var error = MessageContainer.CreateErrorMessage (text, code, subcategory, origin);
 			LogMessage (error);
 		}
