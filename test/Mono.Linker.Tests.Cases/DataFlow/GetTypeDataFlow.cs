@@ -113,13 +113,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[UnrecognizedReflectionAccessPattern (typeof (GetTypeDataFlow), nameof (RequireNonPublicConstructors), new Type[] { typeof (Type) },
-			"The method return value with dynamically accessed member kinds 'PublicParameterlessConstructor' is passed into " +
-			"the parameter 'type' of method 'Mono.Linker.Tests.Cases.DataFlow.GetTypeDataFlow.RequireNonPublicConstructors(Type)' " +
-			"which requires dynamically accessed member kinds 'NonPublicConstructors'. " +
-			"To fix this add DynamicallyAccessedMembersAttribute to it and specify at least these member kinds 'NonPublicConstructors'.")]
+			messageCode: "IL2006", message: "GetType")]
 		[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.GetType), new Type[] { typeof (string) },
-			"Reflection call 'System.Type.GetType(String)' inside 'Mono.Linker.Tests.Cases.DataFlow.GetTypeDataFlow.TestMultipleMixedValues()' " +
-			"was detected with unknown value for the type name.")]
+			messageCode: "IL2052", message: "System.Type.GetType(String)")]
 		static void TestMultipleMixedValues ()
 		{
 			string typeName = null;

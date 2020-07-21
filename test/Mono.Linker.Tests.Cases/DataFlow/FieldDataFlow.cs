@@ -39,11 +39,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		static Type _staticTypeWithPublicParameterlessConstructor;
 
 		[UnrecognizedReflectionAccessPattern (typeof (FieldDataFlow), nameof (RequirePublicConstructors), new Type[] { typeof (Type) },
-			"The field 'System.Type Mono.Linker.Tests.Cases.DataFlow.FieldDataFlow::_typeWithPublicParameterlessConstructor' " +
-			"with dynamically accessed member kinds 'PublicParameterlessConstructor' is passed into " +
-			"the parameter 'type' of method 'Mono.Linker.Tests.Cases.DataFlow.FieldDataFlow.RequirePublicConstructors(Type)' " +
-			"which requires dynamically accessed member kinds 'PublicConstructors'. " +
-			"To fix this add DynamicallyAccessedMembersAttribute to it and specify at least these member kinds 'PublicConstructors'.")]
+			messageCode: "IL2006", message: new string[] { "_typeWithPublicParameterlessConstructor", "type", "RequirePublicConstructors(Type)" })]
 		[UnrecognizedReflectionAccessPattern (typeof (FieldDataFlow), nameof (RequireNonPublicConstructors), new Type[] { typeof (Type) })]
 		private void ReadFromInstanceField ()
 		{

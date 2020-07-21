@@ -48,9 +48,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 		[Kept]
 		[UnrecognizedReflectionAccessPattern (typeof (RuntimeHelpers), nameof (RuntimeHelpers.RunClassConstructor), new Type[] { typeof (RuntimeTypeHandle) },
-			"A value from unknown source is passed into the parameter 'type' of method " +
-			"'System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(RuntimeTypeHandle)'. " +
-			"It's not possible to guarantee availability of the target static constructor.")]
+			messageCode: "IL2054", message: "RunClassConstructor")]
 
 		static void TestDataFlowType ()
 		{
@@ -61,9 +59,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		[Kept]
 		[RecognizedReflectionAccessPattern]
 		[UnrecognizedReflectionAccessPattern (typeof (RuntimeHelpers), nameof (RuntimeHelpers.RunClassConstructor), new Type[] { typeof (RuntimeTypeHandle) },
-			"A value from unknown source is passed into the parameter 'type' of method " +
-			"'System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(RuntimeTypeHandle)'. " +
-			"It's not possible to guarantee availability of the target static constructor.")]
+			messageCode: "IL2054")]
 
 		static void TestIfElseUsingRuntimeTypeHandle (int i)
 		{

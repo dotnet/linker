@@ -65,6 +65,10 @@ namespace Mono.Linker.Steps
 				else {
 					try {
 						assembly = GetAssembly (Context, AssemblyNameReference.Parse (assemblyName));
+						if (assembly == null) {
+							Context.LogWarning ($"Could not resolve assembly '{assemblyName}' in attribute '{attributeFullName}' specified in the '{_xmlDocumentLocation}'", 2030, _xmlDocumentLocation);
+							continue;
+						}
 					} catch (Exception) {
 						Context.LogWarning ($"Could not resolve assembly '{assemblyName}' in attribute '{attributeFullName}' specified in the '{_xmlDocumentLocation}'", 2030, _xmlDocumentLocation);
 						continue;

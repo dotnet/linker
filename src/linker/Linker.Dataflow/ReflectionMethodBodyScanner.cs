@@ -130,26 +130,27 @@ namespace Mono.Linker.Dataflow
 			var annotation = _context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameter);
 			Debug.Assert (annotation != DynamicallyAccessedMemberTypes.None);
 
-			ValueNode valueNode;
+			ValueNode valueNode = GetValueNodeFromGenericArgument (genericArgument);
+			bool enableReflectionPatternReporting = !(source is MethodDefinition sourceMethod) || ShouldEnableReflectionPatternReporting (sourceMethod);
+
+			var reflectionContext = new ReflectionPatternContext (_context, enableReflectionPatternReporting, source, genericParameter);
+			reflectionContext.AnalyzingPattern ();
+			RequireDynamicallyAccessedMembers (ref reflectionContext, annotation, valueNode, genericParameter);
+		}
+
+		private ValueNode GetValueNodeFromGenericArgument (TypeReference genericArgument)
+		{
 			if (genericArgument is GenericParameter inputGenericParameter) {
 				// Technically this should be a new value node type as it's not a System.Type instance representation, but just the generic parameter
 				// That said we only use it to perform the dynamically accessed members checks and for that purpose treating it as System.Type is perfectly valid.
-				valueNode = new SystemTypeForGenericParameterValue (inputGenericParameter, _context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (inputGenericParameter));
+				return new SystemTypeForGenericParameterValue (inputGenericParameter, _context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (inputGenericParameter));
 			} else {
 				TypeDefinition genericArgumentTypeDef = genericArgument.Resolve ();
 				if (genericArgumentTypeDef != null) {
-					valueNode = new SystemTypeValue (genericArgumentTypeDef);
+					return new SystemTypeValue (genericArgumentTypeDef);
 				} else {
 					throw new InvalidOperationException ();
 				}
-			}
-
-			if (valueNode != null) {
-				bool enableReflectionPatternReporting = !(source is MethodDefinition sourceMethod) || ShouldEnableReflectionPatternReporting (sourceMethod);
-
-				var reflectionContext = new ReflectionPatternContext (_context, enableReflectionPatternReporting, source, genericParameter);
-				reflectionContext.AnalyzingPattern ();
-				RequireDynamicallyAccessedMembers (ref reflectionContext, annotation, valueNode, genericParameter);
 			}
 		}
 
@@ -430,6 +431,7 @@ namespace Mono.Linker.Dataflow
 				// static T System.Activator.CreateInstance<T> ()
 				"CreateInstance" when calledMethod.IsDeclaredOnType ("System", "Activator")
 					&& calledMethod.ContainsGenericParameter
+					&& calledMethod.GenericParameters.Count == 1
 					&& calledMethod.Parameters.Count == 0
 					=> IntrinsicId.Activator_CreateInstanceOfT,
 
@@ -559,7 +561,7 @@ namespace Mono.Linker.Dataflow
 									if (_context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameter) != DynamicallyAccessedMemberTypes.None) {
 										// There is a generic parameter which has some requirements on the input types.
 										// For now we don't support tracking actual array elements, so we can't validate that the requirements are fulfilled.
-										reflectionContext.RecordUnrecognizedPattern ($"Calling to 'System.Type.MakeGenericType' on type '{typeValue.TypeRepresented.GetDisplayName ()}' is not recognized due to presense of DynamicallyAccessedMembersAttribute on some of the generic parameters.");
+										reflectionContext.RecordUnrecognizedPattern (2050, $"Making a generic type instantiation from '{typeValue.TypeRepresented.GetDisplayName ()}' which has 'DynamicallyAccessedMembersAttribute' on some of its generic parameters. ILLink currently doesn't analyze type values for generic parameters when making a generic type instantiation via 'System.Type.MakeGenericType'");
 									}
 								}
 
@@ -569,7 +571,7 @@ namespace Mono.Linker.Dataflow
 								reflectionContext.RecordHandledPattern ();
 							else {
 								// We have no way to "include more" to fix this if we don't know, so we have to warn
-								reflectionContext.RecordUnrecognizedPattern ($"Calling to 'System.Type.MakeGenericType' on unrecognized value.");
+								reflectionContext.RecordUnrecognizedPattern (2051, $"Unrecognized value passed to the parameter 'typeArguments' of method '{calledMethodDefinition.GetDisplayName ()}'. It's not possible to guarantee the availability of requirements of such type.");
 							}
 						}
 
@@ -797,15 +799,13 @@ namespace Mono.Linker.Dataflow
 								reflectionContext.RecordHandledPattern ();
 							} else if (typeNameValue is LeafValueWithDynamicallyAccessedMemberNode valueWithDynamicallyAccessedMember && valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes != 0) {
 								// Propagate the annotation from the type name to the return value. Annotation on a string value will be fullfilled whenever a value is assigned to the string with annotation.
-								// So while we don't know which type it is, we can guarantee that it will fullfill the annotation.
+								// So while we don't know which type it is, we can guarantee that it will fulfill the annotation.
 								reflectionContext.RecordHandledPattern ();
 								methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new MethodReturnValue (valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes) {
-									SourceContext = calledMethod.Parameters[0]
+									SourceContext = calledMethodDefinition
 								});
 							} else {
-								reflectionContext.RecordUnrecognizedPattern ($"Reflection call '{calledMethod.GetDisplayName ()}' inside " +
-									$"'{((reflectionContext.Source is MethodDefinition method) ? method.GetDisplayName () : reflectionContext.Source.ToString ())}' " +
-									$"was detected with unknown value for the type name.");
+								reflectionContext.RecordUnrecognizedPattern (2052, $"Unrecognized value passed to the parameter 'typeName' of method '{calledMethod.GetDisplayName ()}'. It's not possible to guarantee the availability of the target type.");
 							}
 						}
 
@@ -1133,26 +1133,23 @@ namespace Mono.Linker.Dataflow
 				// 
 				// static T CreateInstance<T> ()
 				//
-				case IntrinsicId.Activator_CreateInstanceOfT: {
+				// Note: If the when condition returns falls it would be an overload which we don't recognize, so just fall through to the default case
+				case IntrinsicId.Activator_CreateInstanceOfT when
+					calledMethod is GenericInstanceMethod genericCalledMethod && genericCalledMethod.GenericArguments.Count == 1: {
 						reflectionContext.AnalyzingPattern ();
 
-						if (calledMethod is GenericInstanceMethod genericCalledMethod && genericCalledMethod.GenericArguments.Count == 1
-							&& genericCalledMethod.GenericArguments[0] is GenericParameter genericParameter) {
-							if (genericParameter.HasDefaultConstructorConstraint) {
-								// This is safe, the linker would have marked the default .ctor already
-								reflectionContext.RecordHandledPattern ();
-								break;
-							}
-
-							if ((_context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameter) & DynamicallyAccessedMemberTypes.PublicParameterlessConstructor) != 0) {
-								// Also safe, the linker would have marked the default .ctor already
-								reflectionContext.RecordHandledPattern ();
-								break;
-							}
+						if (genericCalledMethod.GenericArguments[0] is GenericParameter genericParameter &&
+							genericParameter.HasDefaultConstructorConstraint) {
+							// This is safe, the linker would have marked the default .ctor already
+							reflectionContext.RecordHandledPattern ();
+							break;
 						}
 
-						// Not yet supported in any combination
-						reflectionContext.RecordUnrecognizedPattern ($"Activator call '{reflectionContext.MemberWithRequirements}' inside '{reflectionContext.Source}' is not recognized, the type to instantiate may be missing the necessary constructor.");
+						RequireDynamicallyAccessedMembers (
+							ref reflectionContext,
+							DynamicallyAccessedMemberTypes.PublicParameterlessConstructor,
+							GetValueNodeFromGenericArgument (genericCalledMethod.GenericArguments[0]),
+							calledMethodDefinition.GenericParameters[0]);
 					}
 					break;
 
@@ -1194,7 +1191,7 @@ namespace Mono.Linker.Dataflow
 					// TODO: This could be supported for "this" only calls
 					//
 					reflectionContext.AnalyzingPattern ();
-					reflectionContext.RecordUnrecognizedPattern ($"Activator call '{reflectionContext.MemberWithRequirements}' inside '{reflectionContext.Source}' is not yet supported");
+					reflectionContext.RecordUnrecognizedPattern (2053, $"'{calledMethod.GetDisplayName ()}' is not supported with trimming. Use 'Type.GetType' and `Activator.CreateInstance` instead");
 					break;
 
 				//
@@ -1211,9 +1208,7 @@ namespace Mono.Linker.Dataflow
 							} else if (typeHandleValue == NullValue.Instance)
 								reflectionContext.RecordHandledPattern ();
 							else {
-								reflectionContext.RecordUnrecognizedPattern ($"A {GetValueDescriptionForErrorMessage (typeHandleValue)} " +
-									$"is passed into the {DiagnosticUtilities.GetMetadataTokenDescriptionForErrorMessage ((reflectionContext.MemberWithRequirements as MethodDefinition).Parameters[0])}. " +
-									$"It's not possible to guarantee availability of the target static constructor.");
+								reflectionContext.RecordUnrecognizedPattern (2054, $"Unrecognized value passed to the parameter 'type' of method '{calledMethodDefinition.GetDisplayName ()}'. It's not possible to guarantee the availability of the target static constructor.");
 							}
 						}
 					}
@@ -1229,7 +1224,7 @@ namespace Mono.Linker.Dataflow
 
 						// We don't track MethodInfo values, so we can't determine if the MakeGenericMethod is problematic or not.
 						// Since some of the generic parameters may have annotations, all calls are potentially dangerous.
-						reflectionContext.RecordUnrecognizedPattern ($"Call to 'System.Reflection.MethodInfo.MakeGenericMethod' is not recognized.");
+						reflectionContext.RecordUnrecognizedPattern (2055, $"Call to `{calledMethod.GetDisplayName ()}` can not be statically analyzed. It's not possible to guarantee the availability of requirements of the generic method.");
 					}
 					break;
 
@@ -1332,24 +1327,24 @@ namespace Mono.Linker.Dataflow
 						if (typeNameValue is KnownStringValue typeNameStringValue) {
 							var resolvedAssembly = _context.GetLoadedAssembly (assemblyNameStringValue.Contents);
 							if (resolvedAssembly == null) {
-								reflectionContext.RecordUnrecognizedPattern ($"Activator call '{reflectionContext.MemberWithRequirements}' inside '{reflectionContext.Source}' references assembly '{assemblyNameStringValue.Contents}' which could not be found");
+								reflectionContext.RecordUnrecognizedPattern (2056, $"The assembly '{assemblyNameStringValue.Contents}' can not be found");
 								continue;
 							}
 
 							var resolvedType = resolvedAssembly.FindType (typeNameStringValue.Contents);
 							if (resolvedType == null) {
-								reflectionContext.RecordUnrecognizedPattern ($"Activator call '{reflectionContext.MemberWithRequirements}' inside '{reflectionContext.Source}' references type '{typeNameStringValue}' in assembly '{resolvedAssembly.FullName}' which could not be found");
+								reflectionContext.RecordUnrecognizedPattern (2057, $"The type '{typeNameStringValue.Contents}' can not be found in assembly '{resolvedAssembly.FullName}'");
 								continue;
 							}
 
 							MarkConstructorsOnType (ref reflectionContext, resolvedType,
 								parameterlessConstructor ? m => m.Parameters.Count == 0 : (Func<MethodDefinition, bool>) null, bindingFlags);
 						} else {
-							reflectionContext.RecordUnrecognizedPattern ($"Activator call '{reflectionContext.MemberWithRequirements}' inside '{reflectionContext.Source}' has unrecognized value for the 'typeName' parameter.");
+							reflectionContext.RecordUnrecognizedPattern (2058, $"Unrecognized value passed to the parameter 'typeName' of method '{calledMethod.GetDisplayName ()}'. It's not possible to guarantee the availability of the target type.");
 						}
 					}
 				} else {
-					reflectionContext.RecordUnrecognizedPattern ($"Activator call '{reflectionContext.MemberWithRequirements}' inside '{reflectionContext.Source}' has unrecognized value for the 'assemblyName' parameter.");
+					reflectionContext.RecordUnrecognizedPattern (2059, $"Unrecognized value passed to the parameter 'assemblyName' of method '{calledMethod.GetDisplayName ()}'. It's not possible to guarantee the availability of the target type.");
 				}
 			}
 		}
@@ -1359,11 +1354,11 @@ namespace Mono.Linker.Dataflow
 			foreach (var uniqueValue in value.UniqueValues ()) {
 				if (uniqueValue is LeafValueWithDynamicallyAccessedMemberNode valueWithDynamicallyAccessedMember) {
 					if (!valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes.HasFlag (requiredMemberTypes)) {
-						reflectionContext.RecordUnrecognizedPattern ($"The {GetValueDescriptionForErrorMessage (valueWithDynamicallyAccessedMember)} " +
-							$"with dynamically accessed member kinds '{DiagnosticUtilities.GetDynamicallyAccessedMemberTypesDescription (valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes)}' " +
-							$"is passed into the {DiagnosticUtilities.GetMetadataTokenDescriptionForErrorMessage (targetContext)} " +
-							$"which requires dynamically accessed member kinds '{DiagnosticUtilities.GetDynamicallyAccessedMemberTypesDescription (requiredMemberTypes)}'. " +
-							$"To fix this add DynamicallyAccessedMembersAttribute to it and specify at least these member kinds '{DiagnosticUtilities.GetDynamicallyAccessedMemberTypesDescription (requiredMemberTypes)}'.");
+						reflectionContext.RecordUnrecognizedPattern (
+							2006,
+							$"The requirements declared via the `DynamicallyAccessedMembersAttribute` on {GetValueDescriptionForErrorMessage (valueWithDynamicallyAccessedMember)} " +
+							$"don't match those on {DiagnosticUtilities.GetMetadataTokenDescriptionForErrorMessage (targetContext)}. " +
+							$"The source value must declare at least the same requirements as those declared on the target location it's assigned to");
 					} else {
 						reflectionContext.RecordHandledPattern ();
 					}
@@ -1380,10 +1375,10 @@ namespace Mono.Linker.Dataflow
 				} else if (uniqueValue == NullValue.Instance) {
 					// Ignore - probably unreachable path as it would fail at runtime anyway.
 				} else {
-					reflectionContext.RecordUnrecognizedPattern ($"A {GetValueDescriptionForErrorMessage (uniqueValue)} " +
-						$"is passed into the {DiagnosticUtilities.GetMetadataTokenDescriptionForErrorMessage (targetContext)} " +
-						$"which requires dynamically accessed member kinds '{DiagnosticUtilities.GetDynamicallyAccessedMemberTypesDescription (requiredMemberTypes)}'. " +
-						$"It's not possible to guarantee that these requirements are met by the application.");
+					reflectionContext.RecordUnrecognizedPattern (
+						2060,
+						$"Unrecognized type value passed to {DiagnosticUtilities.GetMetadataTokenDescriptionForErrorMessage (targetContext)}. " +
+						$"It's not possible to guarantee that the requirements declared by the `DynamicallyAccessedMembersAttribute` are met.");
 				}
 			}
 

@@ -25,11 +25,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), nameof (MethodThisDataFlowTypeTest.RequireThisPublicMethods), new Type[] { },
-			"The return value of method 'Mono.Linker.Tests.Cases.DataFlow.MethodThisDataFlow.GetWithNonPublicMethods()' " +
-			"with dynamically accessed member kinds 'NonPublicMethods' " +
-			"is passed into the implicit 'this' parameter of method 'System.MethodThisDataFlowTypeTest.RequireThisPublicMethods()' " +
-			"which requires dynamically accessed member kinds 'PublicMethods'. " +
-			"To fix this add DynamicallyAccessedMembersAttribute to it and specify at least these member kinds 'PublicMethods'.")]
+			messageCode: "IL2006", message: new string[] {
+				"return value of method 'Mono.Linker.Tests.Cases.DataFlow.MethodThisDataFlow.GetWithNonPublicMethods()'",
+				"implicit 'this' parameter of method 'System.MethodThisDataFlowTypeTest.RequireThisPublicMethods()'" })]
 		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), nameof (MethodThisDataFlowTypeTest.RequireThisNonPublicMethods), new Type[] { })]
 		static void PropagateToThis ()
 		{
@@ -41,11 +39,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), "get_" + nameof (MethodThisDataFlowTypeTest.PropertyRequireThisPublicMethods), new Type[] { },
-			"The return value of method 'Mono.Linker.Tests.Cases.DataFlow.MethodThisDataFlow.GetWithNonPublicMethods()' " +
-			"with dynamically accessed member kinds 'NonPublicMethods' " +
-			"is passed into the implicit 'this' parameter of method 'System.MethodThisDataFlowTypeTest.get_PropertyRequireThisPublicMethods()' " +
-			"which requires dynamically accessed member kinds 'PublicMethods'. " +
-			"To fix this add DynamicallyAccessedMembersAttribute to it and specify at least these member kinds 'PublicMethods'.")]
+			messageCode: "IL2006", message: new string[] {
+				"return value of method 'Mono.Linker.Tests.Cases.DataFlow.MethodThisDataFlow.GetWithNonPublicMethods()'",
+				"implicit 'this' parameter of method 'System.MethodThisDataFlowTypeTest.get_PropertyRequireThisPublicMethods()'" })]
 		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), "get_" + nameof (MethodThisDataFlowTypeTest.PropertyRequireThisNonPublicMethods), new Type[] { })]
 		static void PropagateToThisWithGetters ()
 		{
@@ -57,11 +53,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), "set_" + nameof (MethodThisDataFlowTypeTest.PropertyRequireThisPublicMethods), new Type[] { typeof (Object) },
-			"The return value of method 'Mono.Linker.Tests.Cases.DataFlow.MethodThisDataFlow.GetWithNonPublicMethods()' " +
-			"with dynamically accessed member kinds 'NonPublicMethods' " +
-			"is passed into the implicit 'this' parameter of method 'System.MethodThisDataFlowTypeTest.set_PropertyRequireThisPublicMethods(Object)' " +
-			"which requires dynamically accessed member kinds 'PublicMethods'. " +
-			"To fix this add DynamicallyAccessedMembersAttribute to it and specify at least these member kinds 'PublicMethods'.")]
+			messageCode: "IL2006", message: new string[] {
+				"return value of method 'Mono.Linker.Tests.Cases.DataFlow.MethodThisDataFlow.GetWithNonPublicMethods()'",
+				"implicit 'this' parameter of method 'System.MethodThisDataFlowTypeTest.set_PropertyRequireThisPublicMethods(Object)'" })]
 		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), "set_" + nameof (MethodThisDataFlowTypeTest.PropertyRequireThisNonPublicMethods), new Type[] { typeof (Object) })]
 		static void PropagateToThisWithSetters ()
 		{
@@ -116,11 +110,9 @@ namespace System
 	{
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), nameof (RequireNonPublicMethods), new Type[] { typeof (Type) },
-			"The implicit 'this' parameter of method 'System.MethodThisDataFlowTypeTest.RequireThisPublicMethods()' " +
-			"with dynamically accessed member kinds 'PublicMethods' " +
-			"is passed into the parameter 'type' of method 'System.MethodThisDataFlowTypeTest.RequireNonPublicMethods(Type)' " +
-			"which requires dynamically accessed member kinds 'NonPublicMethods'. " +
-			"To fix this add DynamicallyAccessedMembersAttribute to it and specify at least these member kinds 'NonPublicMethods'.")]
+			messageCode: "IL2006", message: new string[] {
+				"implicit 'this' parameter of method 'System.MethodThisDataFlowTypeTest.RequireThisPublicMethods()'",
+				"parameter 'type' of method 'System.MethodThisDataFlowTypeTest.RequireNonPublicMethods(Type)'" })]
 		public void RequireThisPublicMethods ()
 		{
 			RequirePublicMethods (this);

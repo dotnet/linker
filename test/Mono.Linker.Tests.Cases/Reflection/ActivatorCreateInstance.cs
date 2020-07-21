@@ -45,6 +45,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 			UnsupportedCreateInstance ();
 
+			TestCreateInstanceOfTWithConcreteType ();
 			TestCreateInstanceOfTWithNewConstraint<TestCreateInstanceOfTWithNewConstraintType> ();
 			TestCreateInstanceOfTWithNoConstraint<TestCreateInstanceOfTWithNoConstraintType> ();
 
@@ -274,34 +275,38 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[UnrecognizedReflectionAccessPattern (typeof (Activator), nameof (Activator.CreateInstance), new Type[] { typeof (string), typeof (string) })]
+		[UnrecognizedReflectionAccessPattern (typeof (Activator), nameof (Activator.CreateInstance), new Type[] { typeof (string), typeof (string) },
+			messageCode: "IL2059")]
 		private static void WithNullAssemblyName ()
 		{
 			Activator.CreateInstance (null, "Mono.Linker.Tests.Cases.Reflection.ActivatorCreateInstance+WithAssemblyNameParameterless1");
 		}
 
 		[Kept]
-		[UnrecognizedReflectionAccessPattern (typeof (Activator), nameof (Activator.CreateInstance), new Type[] { typeof (string), typeof (string) })]
+		[UnrecognizedReflectionAccessPattern (typeof (Activator), nameof (Activator.CreateInstance), new Type[] { typeof (string), typeof (string) },
+			messageCode: "IL2056", message: "NonExistingAssembly")]
 		private static void WithNonExistingAssemblyName ()
 		{
-			Activator.CreateInstance ("NonExisting", "Mono.Linker.Tests.Cases.Reflection.ActivatorCreateInstance+WithAssemblyNameParameterless1");
+			Activator.CreateInstance ("NonExistingAssembly", "Mono.Linker.Tests.Cases.Reflection.ActivatorCreateInstance+WithAssemblyNameParameterless1");
 		}
 
 		[Kept]
 		private static string _typeNameField;
 
 		[Kept]
-		[UnrecognizedReflectionAccessPattern (typeof (Activator), nameof (Activator.CreateInstance), new Type[] { typeof (string), typeof (string), typeof (object[]) })]
+		[UnrecognizedReflectionAccessPattern (typeof (Activator), nameof (Activator.CreateInstance), new Type[] { typeof (string), typeof (string), typeof (object[]) },
+			messageCode: "IL2058")]
 		private static void WithAssemblyAndUnknownTypeName ()
 		{
 			Activator.CreateInstance ("test", _typeNameField, new object[] { });
 		}
 
 		[Kept]
-		[UnrecognizedReflectionAccessPattern (typeof (Activator), nameof (Activator.CreateInstance), new Type[] { typeof (string), typeof (string), typeof (object[]) })]
+		[UnrecognizedReflectionAccessPattern (typeof (Activator), nameof (Activator.CreateInstance), new Type[] { typeof (string), typeof (string), typeof (object[]) },
+			messageCode: "IL2057", message: "NonExistingType")]
 		private static void WithAssemblyAndNonExistingTypeName ()
 		{
-			Activator.CreateInstance ("test", "NonExisting", new object[] { });
+			Activator.CreateInstance ("test", "NonExistingType", new object[] { });
 		}
 
 		[Kept]
@@ -356,18 +361,34 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[UnrecognizedReflectionAccessPattern (typeof (Activator), nameof (Activator.CreateInstance) + "<T>", new Type[0])]
-		[UnrecognizedReflectionAccessPattern (typeof (Assembly), nameof (Assembly.CreateInstance), new Type[] { typeof (string) })]
-		[UnrecognizedReflectionAccessPattern (typeof (Assembly), nameof (Assembly.CreateInstance), new Type[] { typeof (string), typeof (bool) })]
-		[UnrecognizedReflectionAccessPattern (typeof (Assembly), nameof (Assembly.CreateInstance), new Type[] { typeof (string), typeof (bool), typeof (BindingFlags), typeof (Binder), typeof (object[]), typeof (CultureInfo), typeof (object[]) })]
+		[UnrecognizedReflectionAccessPattern (typeof (Assembly), nameof (Assembly.CreateInstance), new Type[] { typeof (string) }, messageCode: "IL2053")]
+		[UnrecognizedReflectionAccessPattern (typeof (Assembly), nameof (Assembly.CreateInstance), new Type[] { typeof (string), typeof (bool) }, messageCode: "IL2053")]
+		[UnrecognizedReflectionAccessPattern (typeof (Assembly), nameof (Assembly.CreateInstance), new Type[] { typeof (string), typeof (bool), typeof (BindingFlags), typeof (Binder), typeof (object[]), typeof (CultureInfo), typeof (object[]) }, messageCode: "IL2053")]
 		private static void UnsupportedCreateInstance ()
 		{
-			Activator.CreateInstance<Test1> ();
-
 			typeof (ActivatorCreateInstance).Assembly.CreateInstance ("NonExistent");
 			typeof (ActivatorCreateInstance).Assembly.CreateInstance ("NonExistent", ignoreCase: false);
 			typeof (ActivatorCreateInstance).Assembly.CreateInstance ("NonExistent", false, BindingFlags.Public, null, new object[] { }, null, new object[] { });
+		}
 
+		[Kept]
+		class TestCreateInstanceOfTWithConcreteTypeType
+		{
+			[Kept]
+			public TestCreateInstanceOfTWithConcreteTypeType ()
+			{
+			}
+
+			public TestCreateInstanceOfTWithConcreteTypeType (int i)
+			{
+			}
+		}
+
+		[Kept]
+		[RecognizedReflectionAccessPattern]
+		private static void TestCreateInstanceOfTWithConcreteType ()
+		{
+			Activator.CreateInstance<TestCreateInstanceOfTWithConcreteTypeType> ();
 		}
 
 		[Kept]

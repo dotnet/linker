@@ -111,7 +111,7 @@ namespace Mono.Linker.Dataflow
 				if (attribute.ConstructorArguments.Count == 1)
 					return (DynamicallyAccessedMemberTypes) (int) attribute.ConstructorArguments[0].Value;
 				else if (attribute.ConstructorArguments.Count == 0)
-					_context.LogWarning ($"DynamicallyAccessedMembersAttribute was specified but no argument was proportioned", 2020, locationMember ?? (provider as IMemberDefinition));
+					_context.LogWarning ($"DynamicallyAccessedMembersAttribute was specified but no argument was proportioned", 2061, locationMember ?? (provider as IMemberDefinition));
 				else
 					_context.LogWarning ($"DynamicallyAccessedMembersAttribute was specified but there is more than one argument", 2022, locationMember ?? (provider as IMemberDefinition));
 			}
@@ -250,7 +250,8 @@ namespace Mono.Linker.Dataflow
 						}
 
 						if (annotatedMethods.Any (a => a.Method == setMethod)) {
-							_context.LogWarning ($"Trying to propagate DynamicallyAccessedMemberAttribute from property '{property.FullName}' to its setter '{setMethod.GetDisplayName ()}', but it already has such attribute on the 'value' parameter.", 2043, setMethod);
+							_context.LogWarning ($"Trying to propagate DynamicallyAccessedMemberAttribute from property '{property.FullName}' to its setter '{setMethod.GetDisplayName ()}', but it already has such attribute on the 'value' parameter.",
+								2043, setMethod, subcategory: MessageSubCategory.TrimAnalysis);
 						} else {
 							int offset = setMethod.HasImplicitThis () ? 1 : 0;
 							if (setMethod.Parameters.Count > 0) {
@@ -278,7 +279,7 @@ namespace Mono.Linker.Dataflow
 
 						if (annotatedMethods.Any (a => a.Method == getMethod)) {
 							_context.LogWarning ($"Trying to propagate DynamicallyAccessedMemberAttribute from property '{property.FullName}' to its getter '{getMethod.GetDisplayName ()}', but it already has such attribute on the return value.",
-								2043, getMethod, subcategory: MessageSubCategory.TrimAnalysis);
+								2062, getMethod, subcategory: MessageSubCategory.TrimAnalysis);
 						} else {
 							annotatedMethods.Add (new MethodAnnotations (getMethod, null, annotation, null));
 						}
@@ -296,7 +297,7 @@ namespace Mono.Linker.Dataflow
 					if (backingField != null) {
 						if (annotatedFields.Any (a => a.Field == backingField)) {
 							_context.LogWarning ($"Trying to propagate DynamicallyAccessedMemberAttribute from property '{property.FullName}' to its field '{backingField}', but it already has such attribute.",
-								2043, backingField, subcategory: MessageSubCategory.TrimAnalysis);
+								2063, backingField, subcategory: MessageSubCategory.TrimAnalysis);
 						} else {
 							annotatedFields.Add (new FieldAnnotation (backingField, annotation));
 						}

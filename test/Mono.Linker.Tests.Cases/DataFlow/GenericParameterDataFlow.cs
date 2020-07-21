@@ -79,10 +79,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] T>
 		{
 			[UnrecognizedReflectionAccessPattern (typeof (TypeRequiresPublicMethods<>), "T",
-				message: "The generic parameter 'T' from 'Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.TypeRequiresPublicFieldsPassThrough<T>' " +
-				"with dynamically accessed member kinds 'PublicFields' " +
-				"is passed into the generic parameter 'T' from 'Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.TypeRequiresPublicMethods<T>' " +
-				"which requires dynamically accessed member kinds 'PublicMethods'. To fix this add DynamicallyAccessedMembersAttribute to it and specify at least these member kinds 'PublicMethods'.")]
+				messageCode: "IL2006", message: new string[] {
+					"generic parameter 'T' from 'Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.TypeRequiresPublicFieldsPassThrough<T>'",
+					"generic parameter 'T' from 'Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.TypeRequiresPublicMethods<T>'" })]
 			public static void Test ()
 			{
 				TypeRequiresPublicFields<T>.Test ();
@@ -237,11 +236,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				// The message is not ideal since we report the TRoot to come from RootTypeWithRequirements/InnerTypeWIthNoAddedGenerics
 				// while it originates on RootTypeWithRequirements, but it's correct from IL's point of view.
 				[UnrecognizedReflectionAccessPattern (typeof (GenericParameterDataFlow), nameof (RequiresPublicMethods), new Type[] { typeof (Type) },
-					message: "The generic parameter 'TRoot' from 'Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.RootTypeWithRequirements<TRoot>.InnerTypeWithNoAddedGenerics' " +
-					"with dynamically accessed member kinds 'PublicFields' " +
-					"is passed into the parameter 'type' of method 'Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.RequiresPublicMethods(Type)' " +
-					"which requires dynamically accessed member kinds 'PublicMethods'. " +
-					"To fix this add DynamicallyAccessedMembersAttribute to it and specify at least these member kinds 'PublicMethods'.")]
+					messageCode: "IL2006", message: new string[] {
+						"generic parameter 'TRoot' from 'Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.RootTypeWithRequirements<TRoot>.InnerTypeWithNoAddedGenerics'",
+						"parameter 'type' of method 'Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.RequiresPublicMethods(Type)'" })]
 				public static void TestAccess ()
 				{
 					RequiresPublicFields (typeof (TRoot));
@@ -476,10 +473,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			: BaseTypeWithGenericMethod, IInterfaceWithGenericMethod
 		{
 			[UnrecognizedReflectionAccessPattern (typeof (BaseTypeWithGenericMethod), nameof (BaseTypeWithGenericMethod.StaticRequiresPublicMethods) + "<T>()::T",
-				message: "The generic parameter 'TInner' from 'Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.TypeWithInstantiatedGenericMethodViaGenericParameter<TOuter>.StaticRequiresPublicFields<TInner>()' " +
-				"with dynamically accessed member kinds 'PublicFields' " +
-				"is passed into the generic parameter 'T' from 'Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.BaseTypeWithGenericMethod.StaticRequiresPublicMethods<T>()' which requires dynamically accessed member kinds 'PublicMethods'. " +
-				"To fix this add DynamicallyAccessedMembersAttribute to it and specify at least these member kinds 'PublicMethods'.")]
+				messageCode: "IL2006", message: new string[] {
+					"generic parameter 'TInner' from 'Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.TypeWithInstantiatedGenericMethodViaGenericParameter<TOuter>.StaticRequiresPublicFields<TInner>()'",
+					"generic parameter 'T' from 'Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.BaseTypeWithGenericMethod.StaticRequiresPublicMethods<T>()'" })]
 			public static void StaticRequiresPublicFields<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] TInner> ()
 			{
 				StaticRequiresPublicFields<TInner> ();
@@ -487,10 +483,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 
 			[UnrecognizedReflectionAccessPattern (typeof (BaseTypeWithGenericMethod), nameof (BaseTypeWithGenericMethod.StaticRequiresPublicMethods) + "<T>()::T",
-				message: "The generic parameter 'TOuter' from 'Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.TypeWithInstantiatedGenericMethodViaGenericParameter<TOuter>' " +
-				"with dynamically accessed member kinds 'PublicFields' " +
-				"is passed into the generic parameter 'T' from 'Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.BaseTypeWithGenericMethod.StaticRequiresPublicMethods<T>()' which requires dynamically accessed member kinds 'PublicMethods'. " +
-				"To fix this add DynamicallyAccessedMembersAttribute to it and specify at least these member kinds 'PublicMethods'.")]
+				messageCode: "IL2006", message: new string[] {
+					"generic parameter 'TOuter' from 'Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.TypeWithInstantiatedGenericMethodViaGenericParameter<TOuter>'",
+					"generic parameter 'T' from 'Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.BaseTypeWithGenericMethod.StaticRequiresPublicMethods<T>()'" })]
 			public static void StaticRequiresPublicFieldsNonGeneric ()
 			{
 				StaticRequiresPublicFields<TOuter> ();
@@ -504,20 +499,18 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 
 			[UnrecognizedReflectionAccessPattern (typeof (BaseTypeWithGenericMethod), nameof (BaseTypeWithGenericMethod.StaticRequiresMultipleGenericParams) + "<TFields,TMethods>()::TMethods",
-				message: "The generic parameter 'TOuter' from 'Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.TypeWithInstantiatedGenericMethodViaGenericParameter<TOuter>' " +
-				"with dynamically accessed member kinds 'PublicFields' " +
-				"is passed into the generic parameter 'TMethods' from 'Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.BaseTypeWithGenericMethod.StaticRequiresMultipleGenericParams<TFields,TMethods>()' " +
-				"which requires dynamically accessed member kinds 'PublicMethods'. To fix this add DynamicallyAccessedMembersAttribute to it and specify at least these member kinds 'PublicMethods'.")]
+				messageCode: "IL2006", message: new string[] {
+					"generic parameter 'TOuter' from 'Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.TypeWithInstantiatedGenericMethodViaGenericParameter<TOuter>'",
+					"generic parameter 'TMethods' from 'Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.BaseTypeWithGenericMethod.StaticRequiresMultipleGenericParams<TFields,TMethods>()'" })]
 			public static void StaticPartialInstantiationUnrecognized ()
 			{
 				StaticRequiresMultipleGenericParams<TestType, TOuter> ();
 			}
 
 			[UnrecognizedReflectionAccessPattern (typeof (BaseTypeWithGenericMethod), nameof (BaseTypeWithGenericMethod.InstanceRequiresPublicMethods) + "<T>()::T",
-				message: "The generic parameter 'TInner' from 'Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.TypeWithInstantiatedGenericMethodViaGenericParameter<TOuter>.InstanceRequiresPublicFields<TInner>()' " +
-				"with dynamically accessed member kinds 'PublicFields' " +
-				"is passed into the generic parameter 'T' from 'Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.BaseTypeWithGenericMethod.InstanceRequiresPublicMethods<T>()' which requires dynamically accessed member kinds 'PublicMethods'. " +
-				"To fix this add DynamicallyAccessedMembersAttribute to it and specify at least these member kinds 'PublicMethods'.")]
+				messageCode: "IL2006", message: new string[] {
+					"generic parameter 'TInner' from 'Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.TypeWithInstantiatedGenericMethodViaGenericParameter<TOuter>.InstanceRequiresPublicFields<TInner>()'",
+					"generic parameter 'T' from 'Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.BaseTypeWithGenericMethod.InstanceRequiresPublicMethods<T>()'" })]
 			public void InstanceRequiresPublicFields<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] TInner> ()
 			{
 				InstanceRequiresPublicFields<TInner> ();
@@ -525,10 +518,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 
 			[UnrecognizedReflectionAccessPattern (typeof (BaseTypeWithGenericMethod), nameof (BaseTypeWithGenericMethod.InstanceRequiresPublicMethods) + "<T>()::T",
-				message: "The generic parameter 'TOuter' from 'Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.TypeWithInstantiatedGenericMethodViaGenericParameter<TOuter>' " +
-				"with dynamically accessed member kinds 'PublicFields' " +
-				"is passed into the generic parameter 'T' from 'Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.BaseTypeWithGenericMethod.InstanceRequiresPublicMethods<T>()' which requires dynamically accessed member kinds 'PublicMethods'. " +
-				"To fix this add DynamicallyAccessedMembersAttribute to it and specify at least these member kinds 'PublicMethods'.")]
+				messageCode: "IL2006", message: new string[] {
+					"generic parameter 'TOuter' from 'Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.TypeWithInstantiatedGenericMethodViaGenericParameter<TOuter>'",
+					"generic parameter 'T' from 'Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.BaseTypeWithGenericMethod.InstanceRequiresPublicMethods<T>()'" })]
 			public void InstanceRequiresPublicFieldsNonGeneric ()
 			{
 				InstanceRequiresPublicFields<TOuter> ();
@@ -560,10 +552,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 
 			[UnrecognizedReflectionAccessPattern (typeof (IInterfaceWithGenericMethod), nameof (IInterfaceWithGenericMethod.InterfaceRequiresPublicMethods) + "<T>()::T",
-				message: "The generic parameter 'TOuter' from 'Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.TypeWithInstantiatedGenericMethodViaGenericParameter<TOuter>' " +
-				"with dynamically accessed member kinds 'PublicFields' " +
-				"is passed into the generic parameter 'T' from 'Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.IInterfaceWithGenericMethod.InterfaceRequiresPublicMethods<T>()' " +
-				"which requires dynamically accessed member kinds 'PublicMethods'. To fix this add DynamicallyAccessedMembersAttribute to it and specify at least these member kinds 'PublicMethods'.")]
+				messageCode: "IL2006", message: new string[] {
+					"generic parameter 'TOuter' from 'Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.TypeWithInstantiatedGenericMethodViaGenericParameter<TOuter>'",
+					"generic parameter 'T' from 'Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.IInterfaceWithGenericMethod.InterfaceRequiresPublicMethods<T>()'" })]
 			public void CallInterface ()
 			{
 				IInterfaceWithGenericMethod interfaceInstance = (IInterfaceWithGenericMethod) this;
@@ -687,7 +678,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			nullType.MakeGenericType (typeof (TestType));
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.MakeGenericType), new Type[] { typeof (Type[]) })]
+		[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.MakeGenericType), new Type[] { typeof (Type[]) }, messageCode: "IL2051")]
 		static void TestMakeGenericTypeUnknownInput (Type inputType)
 		{
 			inputType.MakeGenericType (typeof (TestType));
@@ -703,7 +694,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		{
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.MakeGenericType), new Type[] { typeof (Type[]) })]
+		[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.MakeGenericType), new Type[] { typeof (Type[]) }, messageCode: "IL2050", message: "TypeMakeGenericWithPublicFieldsArgument")]
 		static void TestMakeGenericWithRequirements ()
 		{
 			// Currently this is not analyzable since we don't track array elements.
@@ -711,14 +702,14 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			typeof (TypeMakeGenericWithPublicFieldsArgument<>).MakeGenericType (typeof (TestType));
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.MakeGenericType), new Type[] { typeof (Type[]) })]
+		[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.MakeGenericType), new Type[] { typeof (Type[]) }, messageCode: "IL2050")]
 		static void TestMakeGenericWithRequirementsFromParam (
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] Type type)
 		{
 			typeof (TypeMakeGenericWithPublicFieldsArgument<>).MakeGenericType (type);
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.MakeGenericType), new Type[] { typeof (Type[]) })]
+		[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.MakeGenericType), new Type[] { typeof (Type[]) }, messageCode: "IL2050")]
 		static void TestMakeGenericWithRequirementsFromGenericParam<
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] T> ()
 		{
@@ -745,7 +736,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		{
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.MakeGenericType), new Type[] { typeof (Type[]) })]
+		[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.MakeGenericType), new Type[] { typeof (Type[]) }, messageCode: "IL2050")]
 		static void TestMakeGenericWithMultipleArgumentsWithRequirements ()
 		{
 			typeof (TypeMakeGenericWithMultipleArgumentsWithRequirements<,>).MakeGenericType (typeof (TestType), typeof (TestType));
@@ -763,7 +754,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TestMakeGenericMethodWithNoRequirements ();
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (System.Reflection.MethodInfo), nameof (System.Reflection.MethodInfo.MakeGenericMethod), new Type[] { typeof (Type[]) })]
+		[UnrecognizedReflectionAccessPattern (typeof (System.Reflection.MethodInfo), nameof (System.Reflection.MethodInfo.MakeGenericMethod), new Type[] { typeof (Type[]) }, messageCode: "IL2055")]
 		static void TestMakeGenericMethodWithRequirements ()
 		{
 			typeof (GenericParameterDataFlow).GetMethod (nameof (MethodMakeGenericWithRequirements), BindingFlags.Static | BindingFlags.NonPublic)
@@ -774,7 +765,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		{
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (System.Reflection.MethodInfo), nameof (System.Reflection.MethodInfo.MakeGenericMethod), new Type[] { typeof (Type[]) })]
+		[UnrecognizedReflectionAccessPattern (typeof (System.Reflection.MethodInfo), nameof (System.Reflection.MethodInfo.MakeGenericMethod), new Type[] { typeof (Type[]) }, messageCode: "IL2055")]
 		static void TestMakeGenericMethodWithNoRequirements ()
 		{
 			typeof (GenericParameterDataFlow).GetMethod (nameof (MethodMakeGenericWithNoRequirements), BindingFlags.Static | BindingFlags.NonPublic)

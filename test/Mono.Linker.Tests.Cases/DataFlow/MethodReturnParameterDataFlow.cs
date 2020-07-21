@@ -88,12 +88,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		// Validate error message when insufficiently annotated value is returned from a method
 		[UnrecognizedReflectionAccessPattern (typeof (MethodReturnParameterDataFlow), nameof (ReturnPublicConstructorsFailure),
-			new Type[] { typeof (Type) },
-			"The parameter 'publicParameterlessConstructorType' of method 'Mono.Linker.Tests.Cases.DataFlow.MethodReturnParameterDataFlow.ReturnPublicConstructorsFailure(Type)' " +
-			"with dynamically accessed member kinds 'PublicParameterlessConstructor' is " +
-			"passed into the return value of method 'Mono.Linker.Tests.Cases.DataFlow.MethodReturnParameterDataFlow.ReturnPublicConstructorsFailure(Type)' " +
-			"which requires dynamically accessed member kinds 'PublicConstructors'. " +
-			"To fix this add DynamicallyAccessedMembersAttribute to it and specify at least these member kinds 'PublicConstructors'.", typeof (Type))]
+			new Type[] { typeof (Type) }, returnType: typeof (Type),
+			messageCode: "IL2006", message: new string[] {
+				"parameter 'publicParameterlessConstructorType' of method 'Mono.Linker.Tests.Cases.DataFlow.MethodReturnParameterDataFlow.ReturnPublicConstructorsFailure(Type)'",
+				"return value of method 'Mono.Linker.Tests.Cases.DataFlow.MethodReturnParameterDataFlow.ReturnPublicConstructorsFailure(Type)'" })]
 		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 		private Type ReturnPublicConstructorsFailure (
 			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]

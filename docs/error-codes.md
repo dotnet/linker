@@ -75,62 +75,268 @@ the error code. For example:
 #### `IL2001`: Type 'type' has no fields to preserve
 
 - The XML descriptor preserves fields on type 'type', but this type has no fields.
+  ```XML
+  <linker>
+    <assembly fullname="test">
+      <type fullname="TestType" preserve="fields" />
+    </assembly>
+  </linker>
+  ```
+  ```C#
+  // IL2001: Type 'TestType' has no fields to preserve
+  class TestType
+  {
+      void OnlyMethod() {}
+  }
+  ```
+
 
 #### `IL2002`: Type 'type' has no methods to preserve
 
 - The XML descriptor preserves methods on type 'type', but this type has no methods.
 
-#### `IL2003`: Could not resolve 'assembly' assembly dependency specified in a 'PreserveDependency' attribute that targets method 'method'
+  ```XML
+  <linker>
+    <assembly fullname="test">
+      <type fullname="TestType" preserve="methods" />
+    </assembly>
+  </linker>
+  ```
+  ```C#
+  // IL2001: Type 'TestType' has no methods to preserve
+  struct TestType
+  {
+      public int Number;
+  }
+  ```
+
+#### `IL2003`: Could not resolve dependency assembly 'assembly name' specified in a 'PreserveDependency' attribute
 
 - The assembly 'assembly' in `PreserveDependency` attribute could not be resolved.
 
-#### `IL2004`: Could not resolve 'type' type dependency specified in a 'PreserveDependency' attribute that targets method 'method'
+  ```C#
+  // IL2003: Could not resolve dependency assembly 'NonExistentAssembly' specified in a 'PreserveDependency' attribute
+  [PreserveDependency("MyMethod", "MyType", "NonExistentAssembly")]
+  void TestMethod()
+  {
+  }
+  ```
+
+#### `IL2004`: Could not resolve dependency type 'type' specified in a 'PreserveDependency' attribute
 
 - The type 'type' in `PreserveDependency` attribute could not be resolved.
 
-#### `IL2005`: Could not resolve dependency member 'member' declared in type 'type' specified in a 'PreserveDependency' attribute that targets method 'method'
+  ```C#
+  // IL2004: Could not resolve dependency type 'NonExistentType' specified in a 'PreserveDependency' attribute
+  [PreserveDependency("MyMethod", "NonExistentType", "MyAssembly")]
+  void TestMethod()
+  {
+  }
+  ```
+
+#### `IL2005`: Could not resolve dependency member 'member' declared in type 'type' specified in a 'PreserveDependency' attribute
 
 - The member 'member' in `PreserveDependency` attribute could not be resolved.
 
-#### `IL2006` (5): Unrecognized reflection pattern
+  ```C#
+  // IL2005: Could not resolve dependency member 'NonExistentMethod' declared on type 'MyType' specified in a 'PreserveDependency' attribute
+  [PreserveDependency("NonExistentMethod", "MyType", "MyAssembly")]
+  void TestMethod()
+  {
+  }
+  ```
 
-- The linker found an unrecognized reflection access pattern. The most likely reason for this is that the linker could not resolve a member that is being accessed dynamicallly. To fix this, use the `DynamicallyAccessedMemberAttribute` and specify the member kinds you're trying to access.
+#### `IL2006` Trim analysis: The requirements declared via the `DynamicallyAccessedMembersAttribute` on <value description> don't match those on <target description>. The source value must declare at least the same requirements as those declared on the target location it's assigned to
 
-#### `IL2007`: Could not resolve assembly 'assembly' specified in the 'XML document location'
+- The target location declares some requirements on the type value via its `DynamicallyAccessedMembersAttribute`. Those requirements must be met by those declared on the source value also via the `DynamicallyAccessedMembersAttribute`. The source value can declare more requirements than the source if necessary.  
+
+  ```C#
+  void NeedsPublicConstructors([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructor)] Type type)
+  {
+      // ...
+  }
+
+  Type _typeField;
+
+  void TestMethod(Type type)
+  {
+      // IL2006 Trim analysis: The requirements declared via the `DynamicallyAccessedMembersAttribute` on the parameter 'type' on method 'TestMethod' 
+      // don't match those on the parameter 'type' on method 'NeedsPublicConstructors'. 
+      // The source value must declare at least the same requirements as those declared on the target location it's assigned to
+      NeedsPublicConstructors(type);
+
+      // IL2006 Trim analysis: The requirements declared via the `DynamicallyAccessedMembersAttribute` on the field '_typeField' 
+      // don't match those on the parameter 'type' on method 'NeedsPublicConstructors'. 
+      // The source value must declare at least the same requirements as those declared on the target location it's assigned to
+      NeedsPublicConstructors(_typeField);
+  }
+
+  [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+  Type TypeWithMethods { get; set; }
+
+  void TestMethodForProperty([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type typeWithConstructors)
+  {
+      // IL2006 Trim analysis: The requirements declared via the `DynamicallyAccessedMembersAttribute` on the parameter 'typeWithConstructors' on method 'TestMethodForProperty'
+      // don't match those on the parameter 'value' on method 'set_TypeWithMethods'. 
+      // The source value must declare at least the same requirements as those declared on the target location it's assigned to
+      TypeWithMethods = typeWithConstructors;
+
+      // IL2006 Trim analysis: The requirements declared via the `DynamicallyAccessedMembersAttribute` on the return value of method 'get_TypeWithMethods'
+      // don't match those on the parameter 'type' on method 'NeedsPublicConstructors'. 
+      // The source value must declare at least the same requirements as those declared on the target location it's assigned to
+      NeedsPublicConstructors(TypeWithMethods);
+  }
+
+  void NeedsMethods<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] T>()
+  {
+      // No warning, the requirements are exactly the same
+      TypeWithMethods = typeof(T);
+  }
+
+  void TestGenericMethod<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TWithConstructors>()
+  {
+      // IL2006 Trim analysis: The requirements declared via the `DynamicallyAccessedMembersAttribute` on the generic parameter 'TWithConstructors' on method 'TestGenericMethod<TWithConstructors>()'
+      // don't match those on the generic parameter 'T' on method 'NeedsMethods<T>'. 
+      // The source value must declare at least the same requirements as those declared on the target location it's assigned to
+      NeedsMethods<TWithConstructors> ();
+  }
+
+  void TestWithMoreRequirements([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type typeWithAll)
+  {
+      // No warning, the source value has more requirements than the target location
+      NeedsPublicConstructors(typeWithAll);
+  }
+
+  ```
+
+#### `IL2007`: Could not resolve assembly 'assembly'
 
 - The assembly 'assembly' in the XML could not be resolved.
 
-#### `IL2008`: Could not resolve type 'type' specified in the 'XML document location'
+  ```XML
+  <!-- IL2007: Could not resolve assembly 'NonExistentAssembly' -->
+  <linker>
+    <assembly fullname="NonExistentAssembly" />
+  </linker>
+  ```
+
+#### `IL2008`: Could not resolve type 'type'
 
 - The type 'type' in the XML could not be resolved.
 
-#### `IL2009`: Could not find method 'method' in type 'type' specified in 'XML document location'
+  ```XML
+  <!-- IL2008: Could not resolve type 'NonExistentType' -->
+  <linker>
+    <assembly fullname="MyAssembly">
+      <type fullname="NonExistentType" />
+    </assembly>
+  </linker>
+  ```
+
+#### `IL2009`: Could not find method 'method' on type 'type'
 
 - The 'XML document location' defined a method 'method' on type 'type', but the method was not found.
 
+  ```XML
+  <!-- IL2009: Could not find method 'NonExistentMethod' on type 'MyType' -->
+  <linker>
+    <assembly fullname="MyAssembly">
+      <type fullname="MyType">
+        <method name="NonExistentMethod" />
+      </type>
+    </assembly>
+  </linker>
+  ```
+
 #### `IL2010`: Invalid value for 'signature' stub
 
-- The value 'value' used in the substitution XML for method 'signature' does not represent a value of a built-in type, or does not match the return type of the method.
+- The value used in the substitution XML for method 'signature' does not represent a value of a built-in type, or does not match the return type of the method.
+
+  ```XML
+  <!-- IL2010: Invalid value for 'MyType.MyMethodReturningInt()' stub -->
+  <linker>
+    <assembly fullname="MyAssembly">
+      <type fullname="MyType">
+        <method name="MyMethodReturningInt" body="stub" value="NonNumber" />
+      </type>
+    </assembly>
+  </linker>
+  ```
 
 #### `IL2011`: Unknown body modification 'action' for 'signature'
 
 - The value 'action' of the body attribute used in the substitution XML is invalid (the only supported options are `remove` and `stub`).
 
-#### `IL2012`: Could not find field 'field' in type 'type' specified in 'XML document location'
+  ```XML
+  <!-- IL2010: Unknown body modification 'nonaction' for 'MyType.MyMethod()' -->
+  <linker>
+    <assembly fullname="MyAssembly">
+      <type fullname="MyType">
+        <method name="MyMethod" body="nonaction" value="NonNumber" />
+      </type>
+    </assembly>
+  </linker>
+  ```
+
+#### `IL2012`: Could not find field 'field' on type 'type'
 
 - The 'XML document location' defined a field 'field' on type 'type', but the field was not found.
+
+  ```XML
+  <!-- IL2012: Could not find field 'NonExistentField' on type 'MyType' -->
+  <linker>
+    <assembly fullname="MyAssembly">
+      <type fullname="MyType">
+        <field name="NonExistentField" />
+      </type>
+    </assembly>
+  </linker>
+  ```
 
 #### `IL2013`: Substituted field 'field' needs to be static field
 
 - The substituted field 'field' was non-static or constant. Only static non-constant fields are supported.
 
+  ```XML
+  <!-- IL2013: Substituted field 'MyType.InstanceField' needs to be static field -->
+  <linker>
+    <assembly fullname="MyAssembly">
+      <type fullname="MyType">
+        <field name="InstanceField" value="5" />
+      </type>
+    </assembly>
+  </linker>
+  ```
+
 #### `IL2014`: Missing 'value' attribute for field 'field'
 
 - A field was specified for substitution but no value to be substituted was given.
 
-#### `IL2015`: Invalid value for 'field': 'value'
+  ```XML
+  <!-- IL2014: Missing 'value' attribute for field 'MyType.MyField' -->
+  <linker>
+    <assembly fullname="MyAssembly">
+      <type fullname="MyType">
+        <field name="MyField" />
+      </type>
+    </assembly>
+  </linker>
+  ```
+
+#### `IL2015`: Invalid value 'value' for 'field'
 
 - The value 'value' used in the substitution XML for field 'field' is not a built-in type, or does not match the type of 'field'.
+
+  ```XML
+  <!-- IL2015: Invalid value 'NonNumber' for 'MyType.IntField' -->
+  <linker>
+    <assembly fullname="MyAssembly">
+      <type fullname="MyType">
+        <field name="IntField" value="NonNumber" />
+      </type>
+    </assembly>
+  </linker>
+  ```
 
 #### `IL2016`: Could not find event 'event' in type 'type' specified in 'XML document location'
 
@@ -240,9 +446,9 @@ the error code. For example:
 
 - The property 'property' has DynamicallyAccessedMembersAttribute on it, but the linker could not determine the backing fields for the property to propagate the attribute to the field.
 
-#### `IL2043`: Trying to propagate DynamicallyAccessedMemberAttribute from property 'property' to its getter 'method', but it already has such attribute.
+#### `IL2043`: Trying to propagate DynamicallyAccessedMemberAttribute from property 'property' to its setter 'method', but it already has such attribute.
 
-- Propagating DynamicallyAccessedMembersAttribute from property 'property' to its getter 'method' found that the getter already has such an attribute. The existing attribute will be used.
+- Propagating DynamicallyAccessedMembersAttribute from property 'property' to its setter 'method' found that the setter already has such an attribute. The existing attribute will be used.
 
 #### `IL2044`: Could not find any type in namespace 'namespace' specified in 'XML document location'
 
@@ -271,3 +477,166 @@ the error code. For example:
 #### `IL2050`: Correctness of COM interop cannot be guaranteed
 
 - P/invoke method 'method' declares a parameter with COM marshalling. Correctness of COM interop cannot be guaranteed after trimming. Interfaces and interface members might be removed.
+- The internal attribute name 'attribute' being used in the xml is not supported by the linker, check the spelling and the supported internal attributes.
+
+#### `IL2050` Trim analysis: Making a generic type instantiation from 'type' which has 'DynamicallyAccessedMembersAttribute' on some of its generic parameters. ILLink currently doesn't analyze type values for generic parameters when making a generic type instantiation via 'System.Type.MakeGenericType'
+
+- Analysis of type parameters for `System.Type.MakeGenericType` is not yet implemented. If the open generic type `type` has `DynamicallyAccessedMembersAttribute` on any of its generic parameters, ILLink currently can't validate that the requirements are fulfilled by the calling method.  
+
+  ``` C#
+  class Lazy<[DynamicallyAccessedMembers(DynamicallyAccessedMemberType.PublicParameterlessConstructor)] T> 
+  {
+      // ...
+  }
+  
+  void TestMethod()
+  {
+      // IL2050 Trim analysis: Making a generic type instantiation from 'Lazy<T>' which has 
+      // 'DynamicallyAccessedMembersAttribute' on some of its generic parameters. ILLink currently doesn't analyze 
+      // type values for generic parameters when making a generic type instantiation via 'System.Type.MakeGenericType'
+      typeof(Lazy<>).MakeGenericType(new Type[] { typeof(TestType) });
+  }
+  ```
+
+  #### `IL2051` Trim analysis: Unrecognized type value used to called the method 'MakeGenericType'. It's not possible to guarantee the availability of requirements of such type.
+
+- If `System.Type.MakeGenericType` is called on an type which is not statically analyzable. If the actual type has generic parameters with `DynamicallyAccessedMembersAttribute` ILLink would be required to fulfill the requirements declared by those attributes, but since the ILLink doesn't know the type, it can't determine if such requirements exist.  
+
+  ``` C#
+  void TestMethod(Type type)
+  {
+      // IL2051 Trim analysis: Unrecognized value passed to the parameter 'typeArguments' of method 'System.Type.MakeGenericType'
+      type.MakeGenericType(new Type[] { typeof(TestType) });
+  }
+  ```
+
+#### `IL2052` Trim analysis: Unrecognized value passed to the parameter 'typeName' of method 'System.Type.GetType(Type typeName)'. It's not possible to guarantee the availability of the target type.
+
+- If the type name passed to the `System.Type.GetType` is statically known ILLink can make sure it's preserved and the application code will work after trimming. But if the type name is unknown, it could point to a type which ILLink will not see being used anywhere else and would remove it from the application, potentially breaking the application.  
+
+  ``` C#
+  void TestMethod()
+  {
+      string typeName = ReadName();
+
+      // IL2052 Trim analysis: Unrecognized value passed to the parameter 'typeName' of method 'System.Type.GetType(Type typeName)'
+      Type.GetType(typeName);
+  }
+  ```
+
+#### `IL2053` Trim analysis: 'Assembly.CreateInstance' is not supported with trimming. Use 'Type.GetType' and `Activator.CreateInstance` instead
+
+- ILLink currently doesn't analyze assembly instances and thus it doesn't know on which assembly the `Assembly.CreateInstance` was called. ILLink has support for `Type.GetType` instead, for cases where the parameter is a string literal. The result of which can be passed to `Activator.CreateInstance` to create an instance of the type.  
+
+  ``` C#
+  void TestMethod()
+  {
+      // IL2053 Trim analysis: 'Assembly.CreateInstance' is not supported with trimming. Use 'Type.GetType' instead
+      AssemblyLoadContext.Default.Assemblies.First(a => a.Name == "MyAssembly").CreateInstance("MyType");
+
+      // This can be replaced by
+      Activator.CreateInstance(Type.GetType("MyType, MyAssembly"));
+  }
+  ```
+  
+#### `IL2054` Trim analysis: Unrecognized value passed to the parameter 'type' of method 'System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor'. It's not possible to guarantee the availability of the target static constructor.
+
+- If the type passed to the `RunClassConstructor` is not statically known, ILLink can't make sure that its static constructor is available.  
+
+  ``` C#
+  void TestMethod(Type type)
+  {
+      // IL2054 Trim analysis: Unrecognized value passed to the parameter 'type' of method 'System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(RuntimeTypeHandle type)'. 
+      // It's not possible to guarantee the availability of the target static constructor.
+      RuntimeHelpers.RunClassConstructor(type.TypeHandle);
+  }
+  ```
+
+#### `IL2055` Trim analysis: Call to `System.Reflection.MethodInfo.MakeGenericMethod` can not be statically analyzed. It's not possible to guarantee the availability of requirements of the generic method.
+
+- ILLink currently doesn't analyze `MethodInfo` values and thus can't statically determine the generic method the `MakeGenericMethod` operates on. If the actual method has generic parameters with `DynamicallyAccessedMembersAttribute` ILLink would be required to fulfill the requirements declared by those attributes, but since the ILLink doesn't know the method, it can't determine if such requirements exist.  
+
+  ``` C#
+  void TestMethod()
+  {
+      // IL2055 Trim analysis: Call to `System.Reflection.MethodInfo.MakeGenericMethod` can not be statically analyzed. It's not possible to guarantee the availability of requirements of the generic method.
+      typeof(MyType).GetMethod("MyMethod").MakeGenericMethod(new Type[] { typeof(MyType) });
+  }
+  ```
+
+#### `IL2056` Trim analysis: The assembly 'assembly name' can not be found
+
+- Calling `CreateInstance` with assembly name 'assembly name' which can't be resolved.  
+
+  ``` C#
+  void TestMethod()
+  {
+      // IL2056 Trim analysis: The assembly 'NonExistentAssembly' can not be found
+      Activator.CreateInstance("NonExistentAssembly", "MyType");
+  }
+  ```
+
+#### `IL2057` Trim analysis: The type 'type name' can not be found in assembly 'assembly'
+
+- Calling `CreateInstance` with a type name which can't be resolved in the target assembly.  
+
+  ``` C#
+  void TestMethod()
+  {
+      // IL2057 Trim analysis: The type 'NonExistentType' can not be found in assembly 'MyAssembly'
+      Activator.CreateInstance("MyAssembly", "NonExistentType");
+  }
+  ```
+
+#### `IL2058` Trim analysis: Unrecognized value passed to the parameter 'typeName' of method 'CreateInstance'. It's not possible to guarantee the availability of the target type.
+
+- The value passed as the type name to the `CreateInstance` method can't be statically analyzed, ILLink can't make sure that the type is available.  
+
+  ``` C#
+  void TestMethod(string typeName)
+  {
+      // IL2058 Trim analysis: Unrecognized value passed to the parameter 'typeName' of method 'CreateInstance'. It's not possible to guarantee the availability of the target type.
+      Activator.CreateInstance("MyAssembly", typeName);
+  }
+  ```
+
+#### `IL2059` Trim analysis: Unrecognized value passed to the parameter 'assemblyName' of method 'CreateInstance'. It's not possible to guarantee the availability of the target type.
+
+- The value passed as the assembly name or path to the `CreateInstance` method can't be statically analyzed, ILLink can't make sure that the type is available.  
+
+  ``` C#
+  void TestMethod(string assemblyName)
+  {
+      // IL2059 Trim analysis: Unrecognized value passed to the parameter 'assemblyName' of method 'CreateInstance'. It's not possible to guarantee the availability of the target type.
+      Activator.CreateInstance(assemblyName, "MyType");
+  }
+  ```
+
+#### `IL2060` Trim analysis: Unrecognized type value passed to <target description>. It's not possible to guarantee that the requirements declared by the `DynamicallyAccessedMembersAttribute` are met.
+
+- The target has a `DynamicallyAccessedMembersAttribute`, but the value passed to it can not be statically analyzed. ILLink can't make sure that the requirements declared by the `DynamicallyAccessedMembersAttribute` are met by the type value.  
+
+  ``` C#
+  void NeedsPublicConstructors([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructor)] Type type)
+  {
+      // ...
+  }
+
+  void TestMethod(Type[] types)
+  {
+      // IL2060 Trim analysis: Unrecognized type value passed to parameter 'type' of method 'NeedsPublicConstructors'. It's not possible to guarantee that the requirements declared by the `DynamicallyAccessedMembersAttribute` are met.
+      NeedsPublicConstructors(types[1]);
+  }
+  ```
+
+#### 'IL2061': DynamicallyAccessedMembersAttribute was specified but no argument was proportioned
+
+- The link attribute XML contained a definition of attribute DynamicallyAccessedMembersAttribute without specifying constructor argument.
+
+#### `IL2062`: Trying to propagate DynamicallyAccessedMemberAttribute from property 'property' to its getter 'method', but it already has such attribute.
+
+- Propagating DynamicallyAccessedMembersAttribute from property 'property' to its getter 'method' found that the getter already has such an attribute. The existing attribute will be used.
+
+#### `IL2063`: Trying to propagate DynamicallyAccessedMemberAttribute from property 'property' to its backing field 'field', but it already has such attribute.
+
+- Propagating DynamicallyAccessedMembersAttribute from property 'property' to its backing field 'field' found that the field already has such an attribute. The existing attribute will be used.

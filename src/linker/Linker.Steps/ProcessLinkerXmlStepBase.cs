@@ -87,7 +87,7 @@ namespace Mono.Linker.Steps
 					AssemblyDefinition assembly = GetAssembly (Context, name);
 
 					if (assembly == null) {
-						Context.LogWarning ($"Could not resolve assembly '{GetAssemblyName (iterator.Current).Name}' specified in {_xmlDocumentLocation}", 2007, _xmlDocumentLocation);
+						Context.LogWarning ($"Could not resolve assembly '{name.Name}'", 2007, _xmlDocumentLocation);
 						continue;
 					}
 
@@ -130,7 +130,7 @@ namespace Mono.Linker.Steps
 
 				if (type == null) {
 					if (warnOnUnresolvedTypes)
-						Context.LogWarning ($"Could not resolve type '{fullname}' specified in {_xmlDocumentLocation}", 2008, _xmlDocumentLocation);
+						Context.LogWarning ($"Could not resolve type '{fullname}'", 2008, _xmlDocumentLocation);
 					continue;
 				}
 
@@ -205,7 +205,7 @@ namespace Mono.Linker.Steps
 			if (!String.IsNullOrEmpty (signature)) {
 				FieldDefinition field = GetField (type, signature);
 				if (field == null) {
-					Context.LogWarning ($"Could not find field '{signature}' in type '{type.GetDisplayName ()}' specified in {_xmlDocumentLocation}", 2012, _xmlDocumentLocation);
+					Context.LogWarning ($"Could not find field '{signature}' on type '{type.GetDisplayName ()}'", 2012, _xmlDocumentLocation);
 					return;
 				}
 
@@ -214,19 +214,18 @@ namespace Mono.Linker.Steps
 
 			string name = GetAttribute (nav, NameAttributeName);
 			if (!String.IsNullOrEmpty (name)) {
-				if (!type.HasFields)
-					return;
-
 				bool foundMatch = false;
-				foreach (FieldDefinition field in type.Fields) {
-					if (field.Name == name) {
-						foundMatch = true;
-						ProcessField (type, field, nav);
+				if (type.HasFields) {
+					foreach (FieldDefinition field in type.Fields) {
+						if (field.Name == name) {
+							foundMatch = true;
+							ProcessField (type, field, nav);
+						}
 					}
 				}
 
 				if (!foundMatch) {
-					Context.LogWarning ($"Could not find field '{name}' in type '{type.GetDisplayName ()}' specified in { _xmlDocumentLocation}", 2012, _xmlDocumentLocation);
+					Context.LogWarning ($"Could not find field '{name}' on type '{type.GetDisplayName ()}'", 2012, _xmlDocumentLocation);
 				}
 			}
 		}
@@ -264,7 +263,7 @@ namespace Mono.Linker.Steps
 			if (!String.IsNullOrEmpty (signature)) {
 				MethodDefinition method = GetMethod (type, signature);
 				if (method == null) {
-					Context.LogWarning ($"Could not find method '{signature}' in type '{type.GetDisplayName ()}' specified in {_xmlDocumentLocation}", 2009, _xmlDocumentLocation);
+					Context.LogWarning ($"Could not find method '{signature}' on type '{type.GetDisplayName ()}'", 2009, _xmlDocumentLocation);
 					return;
 				}
 
@@ -273,19 +272,18 @@ namespace Mono.Linker.Steps
 
 			string name = GetAttribute (nav, NameAttributeName);
 			if (!String.IsNullOrEmpty (name)) {
-				if (!type.HasMethods)
-					return;
-
 				bool foundMatch = false;
-				foreach (MethodDefinition method in type.Methods) {
-					if (name == method.Name) {
-						foundMatch = true;
-						ProcessMethod (type, method, nav, customData);
+				if (type.HasMethods) {
+					foreach (MethodDefinition method in type.Methods) {
+						if (name == method.Name) {
+							foundMatch = true;
+							ProcessMethod (type, method, nav, customData);
+						}
 					}
 				}
 
 				if (!foundMatch) {
-					Context.LogWarning ($"Could not find method '{name}' in type '{type.GetDisplayName ()}' specified in {_xmlDocumentLocation}", 2009, _xmlDocumentLocation);
+					Context.LogWarning ($"Could not find method '{name}' on type '{type.GetDisplayName ()}'", 2009, _xmlDocumentLocation);
 				}
 			}
 		}
@@ -313,7 +311,7 @@ namespace Mono.Linker.Steps
 			if (!String.IsNullOrEmpty (signature)) {
 				EventDefinition @event = GetEvent (type, signature);
 				if (@event == null) {
-					Context.LogWarning ($"Could not find event '{signature}' in type '{type.GetDisplayName ()}' specified in {_xmlDocumentLocation}", 2016, _xmlDocumentLocation);
+					Context.LogWarning ($"Could not find event '{signature}' on type '{type.GetDisplayName ()}' specified in {_xmlDocumentLocation}", 2016, _xmlDocumentLocation);
 					return;
 				}
 
@@ -334,7 +332,7 @@ namespace Mono.Linker.Steps
 				}
 
 				if (!foundMatch) {
-					Context.LogWarning ($"Could not find event '{name}' in type '{type.GetDisplayName ()}' specified in {_xmlDocumentLocation}", 2016, _xmlDocumentLocation);
+					Context.LogWarning ($"Could not find event '{name}' on type '{type.GetDisplayName ()}' specified in {_xmlDocumentLocation}", 2016, _xmlDocumentLocation);
 				}
 			}
 		}
@@ -372,7 +370,7 @@ namespace Mono.Linker.Steps
 			if (!String.IsNullOrEmpty (signature)) {
 				PropertyDefinition property = GetProperty (type, signature);
 				if (property == null) {
-					Context.LogWarning ($"Could not find property '{signature}' in type '{type.GetDisplayName ()}' specified in {_xmlDocumentLocation}", 2017, _xmlDocumentLocation);
+					Context.LogWarning ($"Could not find property '{signature}' on type '{type.GetDisplayName ()}' specified in {_xmlDocumentLocation}", 2017, _xmlDocumentLocation);
 					return;
 				}
 
@@ -393,7 +391,7 @@ namespace Mono.Linker.Steps
 				}
 
 				if (!foundMatch) {
-					Context.LogWarning ($"Could not find property '{name}' in type '{type.GetDisplayName ()}' specified in {_xmlDocumentLocation}", 2017, _xmlDocumentLocation);
+					Context.LogWarning ($"Could not find property '{name}' on type '{type.GetDisplayName ()}' specified in {_xmlDocumentLocation}", 2017, _xmlDocumentLocation);
 				}
 			}
 		}

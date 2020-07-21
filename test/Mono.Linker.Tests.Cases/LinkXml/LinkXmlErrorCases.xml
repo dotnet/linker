@@ -1,0 +1,18 @@
+﻿<linker>
+  <assembly fullname="test, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="Mono.Linker.Tests.Cases.LinkXml.LinkXmlErrorCases/TypeWithNoFields" preserve="fields"/>
+    <type fullname="Mono.Linker.Tests.Cases.LinkXml.LinkXmlErrorCases/TypeWithNoMethods" preserve="methods"/>
+
+    <type fullname="NonExistentType" />
+    
+    <type fullname="Mono.Linker.Tests.Cases.LinkXml.LinkXmlErrorCases/TypeWithNoMethods">
+      <method name="NonExistentMethod"/>
+    </type>
+
+    <type fullname="Mono.Linker.Tests.Cases.LinkXml.LinkXmlErrorCases/TypeWithNoFields">
+      <field name="NonExistentField"/>
+    </type>
+  </assembly>
+
+  <assembly fullname="NonExistentAssembly"/>
+</linker>
