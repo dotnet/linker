@@ -440,7 +440,7 @@ namespace Mono.Linker
 					case "--warnaserror":
 					case "--warnaserror+":
 						var warningList = GetNextStringValue ();
-						if (!string.IsNullOrEmpty(warningList)) {
+						if (!string.IsNullOrEmpty (warningList)) {
 							foreach (var warning in ParseWarnings (warningList))
 								context.WarnAsError.Add ((warning, true));
 
@@ -453,7 +453,7 @@ namespace Mono.Linker
 
 					case "--warnaserror-":
 						warningList = GetNextStringValue ();
-						if (!string.IsNullOrEmpty(warningList)) {
+						if (!string.IsNullOrEmpty (warningList)) {
 							foreach (var warning in ParseWarnings (warningList))
 								context.WarnAsError.Add ((warning, false));
 
