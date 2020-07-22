@@ -5,6 +5,12 @@ identification. The known codes are in the range 1000 to 6000. Custom
 steps should avoid using this range not to collide with existing or future
 error and warning codes.
 
+For versioned warnings, the warning version is indicated in parentheses following
+the error code. For example:
+
+#### `ILXXXX` (version): Message
+- Description of the error code including more details.
+
 ## Error Codes
 
 #### `IL1001`: Failed to process 'XML document location'. Feature 'feature' does not specify a "featurevalue" attribute
@@ -86,7 +92,7 @@ error and warning codes.
 
 - The member 'member' in `PreserveDependency` attribute could not be resolved.
 
-#### `IL2006`: Unrecognized reflection pattern
+#### `IL2006` (5): Unrecognized reflection pattern
 
 - The linker found an unrecognized reflection access pattern. The most likely reason for this is that the linker could not resolve a member that is being accessed dynamicallly. To fix this, use the `DynamicallyAccessedMemberAttribute` and specify the member kinds you're trying to access.
 

@@ -1,4 +1,4 @@
-// Licensed to the .NET Foundation under one or more agreements.
+﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -75,7 +75,7 @@ namespace Mono.Linker
 				throw new ArgumentException ($"The provided code '{code}' does not fall into the warning category, which is in the range of 2001 to 6000 (inclusive).");
 
 			if (version != null && !(version >= WarnVersion.ILLink0 && version <= WarnVersion.Latest))
-				throw new ArgumentException ($"The provided warning version '{version}' is invalid.")
+				throw new ArgumentException ($"The provided warning version '{version}' is invalid.");
 
 			if (context.IsWarningSuppressed (code, origin))
 				return Empty;
