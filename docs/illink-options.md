@@ -151,7 +151,7 @@ control options listed below.
 
 The `--warnasserror` (or `--warnaserror+`) option will make the linker report any warning
 messages as error messages instead. By default, the linker behaves as if the `--warnaserror-`
-option was used, which causes the linker report warnings as usual.
+option was used, which causes the linker to report warnings as usual.
 
 Optionally, you may specify a list of warnings that you'd like to be treated as errors. These
 warnings have to be prepended with `IL` and must be separated by either a comma or semicolon.
