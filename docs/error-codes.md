@@ -59,6 +59,10 @@ error and warning codes.
 
 - The linker was passed a string that was not a linker option.
 
+#### `IL1016`: Invalid warning version 'version'
+
+- The value given for the --warn argument was not a valid warning version. Valid versions include integers in the range 0-9999, though not all of these map to distinct warning waves.
+
 ----
 ## Warning Codes
 

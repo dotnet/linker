@@ -180,6 +180,8 @@ namespace Mono.Linker
 
 		public bool GeneralWarnAsError { get; set; }
 
+		public WarnVersion WarnVersion { get; set; }
+
 		public bool OutputWarningSuppressions { get; set; }
 
 		public UnconditionalSuppressMessageAttributeState Suppressions { get; set; }
@@ -238,6 +240,7 @@ namespace Mono.Linker
 			NoWarn = new HashSet<uint> ();
 			GeneralWarnAsError = false;
 			WarnAsError = new Dictionary<uint, bool> ();
+			WarnVersion = WarnVersion.Latest;
 
 			// See https://github.com/mono/linker/issues/612
 			const CodeOptimizations defaultOptimizations =
@@ -502,6 +505,12 @@ namespace Mono.Linker
 				return;
 			}
 
+			if (message.Category == MessageCategory.Warning &&
+				message.Version > WarnVersion) {
+				// This warning was turned off by --warn.
+				return;
+			}
+
 			if (OutputWarningSuppressions && message.Category == MessageCategory.Warning && message.Origin?.MemberDefinition != null)
 				WarningSuppressionWriter.AddWarning (message.Code.Value, message.Origin?.MemberDefinition);
 
@@ -532,7 +541,7 @@ namespace Mono.Linker
 		/// <param name="code">Unique warning ID. Please see https://github.com/mono/linker/blob/master/doc/error-codes.md for the list of warnings and possibly add a new one</param>
 		/// <param name="origin">Filename or member where the warning is coming from</param>
 		/// <param name="subcategory">Optionally, further categorize this warning</param>
-		public void LogWarning (string text, int code, MessageOrigin origin, string subcategory = MessageSubCategory.None)
+		public void LogWarning (string text, int code, MessageOrigin origin, string subcategory = MessageSubCategory.None, WarnVersion? version = null)
 		{
 			if (!LogMessages)
 				return;
@@ -543,7 +552,7 @@ namespace Mono.Linker
 				return;
 			}
 
-			var warning = MessageContainer.CreateWarningMessage (this, text, code, origin, subcategory);
+			var warning = MessageContainer.CreateWarningMessage (this, text, code, origin, subcategory, version);
 			LogMessage (warning);
 		}
 
@@ -554,10 +563,11 @@ namespace Mono.Linker
 		/// <param name="code">Unique warning ID. Please see https://github.com/mono/linker/blob/master/doc/error-codes.md for the list of warnings and possibly add a new one</param>
 		/// <param name="origin">Type or member where the warning is coming from</param>
 		/// <param name="subcategory">Optionally, further categorize this warning</param>
-		public void LogWarning (string text, int code, IMemberDefinition origin, int? ilOffset = null, string subcategory = MessageSubCategory.None)
+		// TODO
+		public void LogWarning (string text, int code, IMemberDefinition origin, int? ilOffset = null, string subcategory = MessageSubCategory.None, WarnVersion? version = null)
 		{
 			MessageOrigin _origin = new MessageOrigin (origin, ilOffset);
-			LogWarning (text, code, _origin, subcategory);
+			LogWarning (text, code, _origin, subcategory, version);
 		}
 
 		/// <summary>
@@ -567,10 +577,10 @@ namespace Mono.Linker
 		/// <param name="code">Unique warning ID. Please see https://github.com/mono/linker/blob/master/doc/error-codes.md for the list of warnings and possibly add a new one</param>
 		/// <param name="origin">Filename where the warning is coming from</param>
 		/// <param name="subcategory">Optionally, further categorize this warning</param>
-		public void LogWarning (string text, int code, string origin, string subcategory = MessageSubCategory.None)
+		public void LogWarning (string text, int code, string origin, string subcategory = MessageSubCategory.None, WarnVersion? version = null)
 		{
 			MessageOrigin _origin = new MessageOrigin (origin);
-			LogWarning (text, code, _origin, subcategory);
+			LogWarning (text, code, _origin, subcategory, version);
 		}
 
 		/// <summary>

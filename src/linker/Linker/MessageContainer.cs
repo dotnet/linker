@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -29,6 +29,10 @@ namespace Mono.Linker
 		/// Code identifier for errors and warnings reported by the IL linker.
 		/// </summary>
 		public int? Code { get; }
+
+		/// <summary>
+		/// Version number for this warning.
+		public WarnVersion? Version { get; }
 
 		/// <summary>
 		/// User friendly text describing the error or warning.
@@ -63,16 +67,20 @@ namespace Mono.Linker
 		/// for the list of warnings and possibly add a new one</param>
 		/// /// <param name="origin">Filename or member where the warning is coming from</param>
 		/// <param name="subcategory">Optionally, further categorize this warning</param>
+		/// <param name="version">Optional warning version number</param>
 		/// <returns>New MessageContainer of 'Warning' category</returns>
-		public static MessageContainer CreateWarningMessage (LinkContext context, string text, int code, MessageOrigin origin, string subcategory = MessageSubCategory.None)
+		public static MessageContainer CreateWarningMessage (LinkContext context, string text, int code, MessageOrigin origin, string subcategory = MessageSubCategory.None, WarnVersion? version = null)
 		{
 			if (!(code > 2000 && code <= 6000))
 				throw new ArgumentException ($"The provided code '{code}' does not fall into the warning category, which is in the range of 2001 to 6000 (inclusive).");
 
+			if (version != null && !(version >= WarnVersion.ILLink0 && version <= WarnVersion.Latest))
+				throw new ArgumentException ($"The provided warning version '{version}' is invalid.")
+
 			if (context.IsWarningSuppressed (code, origin))
 				return Empty;
 
-			return new MessageContainer (MessageCategory.Warning, text, code, subcategory, origin);
+			return new MessageContainer (MessageCategory.Warning, text, code, subcategory, origin, version);
 		}
 
 		/// <summary>
@@ -95,13 +103,14 @@ namespace Mono.Linker
 			return new MessageContainer (MessageCategory.Diagnostic, text, null);
 		}
 
-		private MessageContainer (MessageCategory category, string text, int? code, string subcategory = MessageSubCategory.None, MessageOrigin? origin = null)
+		private MessageContainer (MessageCategory category, string text, int? code, string subcategory = MessageSubCategory.None, MessageOrigin? origin = null, WarnVersion? version = null)
 		{
 			Code = code;
 			Category = category;
 			Origin = origin;
 			SubCategory = subcategory;
 			Text = text;
+			Version = version;
 		}
 
 		public override string ToString () => ToMSBuildString ();
