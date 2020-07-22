@@ -312,7 +312,7 @@ namespace ILLink.Tasks
 			if (NoWarn != null)
 				args.Append ("--nowarn ").AppendLine (Quote (NoWarn));
 
-			if (NoWarn != null)
+			if (Warn != null)
 				args.Append ("--warn ").AppendLine (Quote (Warn));
 
 			// Add global optimization arguments

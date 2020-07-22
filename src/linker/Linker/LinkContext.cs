@@ -505,6 +505,8 @@ namespace Mono.Linker
 				return;
 			}
 
+			// Note: message.Version is nullable. The comparison is false if it is null.
+			// Unversioned warnings are not controlled by WarnVersion.
 			if (message.Category == MessageCategory.Warning &&
 				message.Version > WarnVersion) {
 				// This warning was turned off by --warn.
