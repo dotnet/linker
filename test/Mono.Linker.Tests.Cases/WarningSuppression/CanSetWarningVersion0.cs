@@ -15,15 +15,15 @@ namespace Mono.Linker.Tests.Cases.WarningSuppression
 	{
 		public static void Main ()
 		{
-			GetMethod();
+			GetMethod ();
 		}
 
-		[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)]
+		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)]
 		static string type;
-	
-		static void GetMethod()
+
+		static void GetMethod ()
 		{
-			_ = Type.GetType(type).GetMethod("Method");
+			_ = Type.GetType (type).GetMethod ("Method");
 		}
 	}
 }

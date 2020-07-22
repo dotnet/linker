@@ -951,8 +951,8 @@ namespace Mono.Linker
 
 		bool GetWarnVersion (string text, out WarnVersion version)
 		{
-			if (int.TryParse(text, out int versionNum)) {
-				version = (WarnVersion)versionNum;
+			if (int.TryParse (text, out int versionNum)) {
+				version = (WarnVersion) versionNum;
 				if (version >= WarnVersion.ILLink0 && version <= WarnVersion.Latest)
 					return true;
 			}

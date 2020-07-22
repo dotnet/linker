@@ -294,7 +294,7 @@ namespace ILLink.Tasks.Tests
 		[Theory]
 		[InlineData ("0", WarnVersion.ILLink0)]
 		[InlineData ("5", WarnVersion.ILLink5)]
-		[InlineData ("6", (WarnVersion)6)]
+		[InlineData ("6", (WarnVersion) 6)]
 		[InlineData ("9999", WarnVersion.Latest)]
 		public void TestWarn (string warnArg, WarnVersion expectedVersion)
 		{
