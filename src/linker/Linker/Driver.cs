@@ -442,11 +442,11 @@ namespace Mono.Linker
 						var warningList = GetNextStringValue ();
 						if (!string.IsNullOrEmpty (warningList)) {
 							foreach (var warning in ParseWarnings (warningList))
-								context.WarnAsError.Add ((warning, true));
+								context.WarnAsError[warning] = true;
 
 						} else {
 							context.GeneralWarnAsError = true;
-							context.WarnAsError = new HashSet<(uint, bool)> ();
+							context.WarnAsError.Clear ();
 						}
 
 						continue;
@@ -455,11 +455,11 @@ namespace Mono.Linker
 						warningList = GetNextStringValue ();
 						if (!string.IsNullOrEmpty (warningList)) {
 							foreach (var warning in ParseWarnings (warningList))
-								context.WarnAsError.Add ((warning, false));
+								context.WarnAsError[warning] = false;
 
 						} else {
 							context.GeneralWarnAsError = false;
-							context.WarnAsError = new HashSet<(uint, bool)> ();
+							context.WarnAsError.Clear ();
 						}
 
 						continue;

@@ -8,9 +8,14 @@ namespace Mono.Linker.Tests.Cases.Warnings
 	[SetupLinkerSubstitutionFile ("CanDisableWarnAsErrorSubstitutions.xml")]
 	[SetupLinkerArgument ("--verbose")]
 	[SetupLinkerArgument ("--warnaserror")]
-	[SetupLinkerArgument ("--warnaserror-", "IL2011,IL2012,IgnoreThis")]
-	[LogContains ("error IL20(07|08|09|10)", true)]
-	[LogContains ("warning IL20(11|12)", true)]
+	[SetupLinkerArgument ("--warnaserror-", "IL2010,IL2011,IL2012,IgnoreThis")]
+	[SetupLinkerArgument ("--warnaserror", "IL2010")]
+	[LogContains ("error IL2007")]
+	[LogContains ("error IL2008")]
+	[LogContains ("error IL2009")]
+	[LogContains ("error IL2010")]
+	[LogContains ("warning IL2011")]
+	[LogContains ("warning IL2012")]
 	public class CanDisableWarnAsError
 	{
 		public static void Main ()

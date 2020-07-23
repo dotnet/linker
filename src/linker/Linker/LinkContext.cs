@@ -176,7 +176,7 @@ namespace Mono.Linker
 
 		public HashSet<uint> NoWarn { get; set; }
 
-		public HashSet<(uint warning, bool warnAsError)> WarnAsError { get; set; }
+		public Dictionary<uint, bool> WarnAsError { get; set; }
 
 		public bool GeneralWarnAsError { get; set; }
 
@@ -237,7 +237,7 @@ namespace Mono.Linker
 			WarningSuppressionWriter = new WarningSuppressionWriter (this);
 			NoWarn = new HashSet<uint> ();
 			GeneralWarnAsError = false;
-			WarnAsError = new HashSet<(uint, bool)> ();
+			WarnAsError = new Dictionary<uint, bool> ();
 
 			// See https://github.com/mono/linker/issues/612
 			const CodeOptimizations defaultOptimizations =
@@ -537,9 +537,9 @@ namespace Mono.Linker
 			if (!LogMessages)
 				return;
 
-			if ((GeneralWarnAsError && !WarnAsError.Contains (((uint) code, false))) ||
-				(!GeneralWarnAsError && WarnAsError.Contains (((uint) code, true)))) {
-				LogError (text, code, subcategory, origin, true);
+			if ((GeneralWarnAsError && (!WarnAsError.TryGetValue((uint) code, out var warnAsError) || warnAsError)) ||
+				(!GeneralWarnAsError && (WarnAsError.TryGetValue((uint) code, out warnAsError) && warnAsError))) {
+				LogError (text, code, subcategory, origin, isWarnAsError: true);
 				return;
 			}
 

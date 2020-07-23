@@ -9,9 +9,15 @@ namespace Mono.Linker.Tests.Cases.Warnings
 	[SetupLinkerArgument ("--verbose")]
 	[SetupLinkerArgument ("--warnaserror-")]
 	[SetupLinkerArgument ("--warnaserror+", "IL2011,IgnoreThis")]
-	[SetupLinkerArgument ("--warnaserror", "IL2010,CS4321,IgnoreThisToo")]
-	[LogContains ("warning IL20(07|08|09|10)", true)]
-	[LogContains ("error IL20(11|12)", true)]
+	[SetupLinkerArgument ("--warnaserror", "IL2012,CS4321,IgnoreThisToo")]
+	[SetupLinkerArgument ("--warnaserror", "IL2010")]
+	[SetupLinkerArgument ("--warnaserror-", "IL2010")]
+	[LogContains ("warning IL2007")]
+	[LogContains ("warning IL2008")]
+	[LogContains ("warning IL2009")]
+	[LogContains ("warning IL2010")]
+	[LogContains ("error IL2011")]
+	[LogContains ("error IL2012")]
 	public class CanWarnAsError
 	{
 		public static void Main ()
