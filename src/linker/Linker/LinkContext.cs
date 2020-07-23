@@ -538,22 +538,24 @@ namespace Mono.Linker
 
 		/// <summary>
 		/// Display a warning message to the end user.
+		/// This API is used for warnings defined in the linker, not by custom steps. Warning
+		/// versions are inferred from the code, and every warning that we define is versioned.
 		/// </summary>
 		/// <param name="text">Humanly readable message describing the warning</param>
 		/// <param name="code">Unique warning ID. Please see https://github.com/mono/linker/blob/master/doc/error-codes.md for the list of warnings and possibly add a new one</param>
 		/// <param name="origin">Filename or member where the warning is coming from</param>
 		/// <param name="subcategory">Optionally, further categorize this warning</param>
-		/// <param name="version">Optional warning version number. Versioned warnings can be controlled with the
-		/// warning wave option --warn VERSION. Unversioned warnings are unaffected by this option. </param>
 		/// <returns>New MessageContainer of 'Warning' category</returns>
-		public void LogWarning (string text, int code, MessageOrigin origin, string subcategory = MessageSubCategory.None, WarnVersion? version = null)
+		public void LogWarning (string text, int code, MessageOrigin origin, string subcategory = MessageSubCategory.None)
 		{
 			if (!LogMessages)
 				return;
 
+			var version = GetWarningVersion (code);
+
 			if ((GeneralWarnAsError && (!WarnAsError.TryGetValue ((uint) code, out var warnAsError) || warnAsError)) ||
 				(!GeneralWarnAsError && (WarnAsError.TryGetValue ((uint) code, out warnAsError) && warnAsError))) {
-				LogError (text, code, subcategory, origin, isWarnAsError: true);
+				LogError (text, code, subcategory, origin, isWarnAsError: true, version: version);
 				return;
 			}
 
@@ -563,34 +565,34 @@ namespace Mono.Linker
 
 		/// <summary>
 		/// Display a warning message to the end user.
+		/// This API is used for warnings defined in the linker, not by custom steps. Warning
+		/// versions are inferred from the code, and every warning that we define is versioned.
 		/// </summary>
 		/// <param name="text">Humanly readable message describing the warning</param>
 		/// <param name="code">Unique warning ID. Please see https://github.com/mono/linker/blob/master/doc/error-codes.md for the list of warnings and possibly add a new one</param>
 		/// <param name="origin">Type or member where the warning is coming from</param>
 		/// <param name="subcategory">Optionally, further categorize this warning</param>
-		/// <param name="version">Optional warning version number. Versioned warnings can be controlled with the
-		/// warning wave option --warn VERSION. Unversioned warnings are unaffected by this option. </param>
 		/// <returns>New MessageContainer of 'Warning' category</returns>
-		public void LogWarning (string text, int code, IMemberDefinition origin, int? ilOffset = null, string subcategory = MessageSubCategory.None, WarnVersion? version = null)
+		public void LogWarning (string text, int code, IMemberDefinition origin, int? ilOffset = null, string subcategory = MessageSubCategory.None)
 		{
 			MessageOrigin _origin = new MessageOrigin (origin, ilOffset);
-			LogWarning (text, code, _origin, subcategory, version);
+			LogWarning (text, code, _origin, subcategory);
 		}
 
 		/// <summary>
 		/// Display a warning message to the end user.
+		/// This API is used for warnings defined in the linker, not by custom steps. Warning
+		/// versions are inferred from the code, and every warning that we define is versioned.
 		/// </summary>
 		/// <param name="text">Humanly readable message describing the warning</param>
 		/// <param name="code">Unique warning ID. Please see https://github.com/mono/linker/blob/master/doc/error-codes.md for the list of warnings and possibly add a new one</param>
 		/// <param name="origin">Filename where the warning is coming from</param>
 		/// <param name="subcategory">Optionally, further categorize this warning</param>
-		/// <param name="version">Optional warning version number. Versioned warnings can be controlled with the
-		/// warning wave option --warn VERSION. Unversioned warnings are unaffected by this option. </param>
 		/// <returns>New MessageContainer of 'Warning' category</returns>
-		public void LogWarning (string text, int code, string origin, string subcategory = MessageSubCategory.None, WarnVersion? version = null)
+		public void LogWarning (string text, int code, string origin, string subcategory = MessageSubCategory.None)
 		{
 			MessageOrigin _origin = new MessageOrigin (origin);
-			LogWarning (text, code, _origin, subcategory, version);
+			LogWarning (text, code, _origin, subcategory);
 		}
 
 		/// <summary>
@@ -601,7 +603,7 @@ namespace Mono.Linker
 		/// <param name="subcategory">Optionally, further categorize this error</param>
 		/// <param name="origin">Filename, line, and column where the error was found</param>
 		/// <returns>New MessageContainer of 'Error' category</returns>
-		public void LogError (string text, int code, string subcategory = MessageSubCategory.None, MessageOrigin? origin = null, bool isWarnAsError = false)
+		public void LogError (string text, int code, string subcategory = MessageSubCategory.None, MessageOrigin? origin = null, bool isWarnAsError = false, WarnVersion? version = null)
 		{
 			if (!LogMessages)
 				return;
@@ -616,6 +618,12 @@ namespace Mono.Linker
 				return false;
 
 			return Suppressions.IsSuppressed (warningCode, origin, out _);
+		}
+
+		public static WarnVersion GetWarningVersion (int code)
+		{
+			// TODO: Once we add warnings beyond .NET5, give them a new WarnVersion
+			return WarnVersion.ILLink5;
 		}
 	}
 
