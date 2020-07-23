@@ -622,7 +622,7 @@ namespace Mono.Linker
 
 		public static WarnVersion GetWarningVersion (int code)
 		{
-			// TODO: Once we add warnings beyond .NET5, give them a new WarnVersion
+			// This should return an increasing WarnVersion for new warning waves.
 			return WarnVersion.ILLink5;
 		}
 	}
