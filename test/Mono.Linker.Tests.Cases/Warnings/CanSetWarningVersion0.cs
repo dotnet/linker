@@ -5,13 +5,13 @@ using System.Diagnostics.CodeAnalysis;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
-namespace Mono.Linker.Tests.Cases.WarningSuppression
+namespace Mono.Linker.Tests.Cases.Warnings
 {
 	[SkipKeptItemsValidation]
 	[SetupLinkerArgument ("--verbose")]
-	[SetupLinkerArgument ("--warn", "9999")]
-	[LogContains ("IL2006")]
-	public class CanSetWarningVersion9999
+	[SetupLinkerArgument ("--warn", "0")]
+	[LogDoesNotContain ("IL2006")]
+	public class CanSetWarningVersion0
 	{
 		public static void Main ()
 		{

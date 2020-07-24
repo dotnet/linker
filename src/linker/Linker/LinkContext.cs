@@ -507,7 +507,8 @@ namespace Mono.Linker
 
 			// Note: message.Version is nullable. The comparison is false if it is null.
 			// Unversioned warnings are not controlled by WarnVersion.
-			if (message.Category == MessageCategory.Warning &&
+			// Error messages are guaranteed to only have a version if they were created for a warning due to warnaserror.
+			if ((message.Category == MessageCategory.Warning || message.Category == MessageCategory.Error) &&
 				message.Version > WarnVersion) {
 				// This warning was turned off by --warn.
 				return;
@@ -608,7 +609,7 @@ namespace Mono.Linker
 			if (!LogMessages)
 				return;
 
-			var error = MessageContainer.CreateErrorMessage (text, code, subcategory, origin, isWarnAsError);
+			var error = MessageContainer.CreateErrorMessage (text, code, subcategory, origin, isWarnAsError, version);
 			LogMessage (error);
 		}
 
