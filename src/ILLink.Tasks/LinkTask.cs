@@ -62,6 +62,12 @@ namespace ILLink.Tasks
 		public string NoWarn { get; set; }
 
 		/// <summary>
+		/// The warning version to use.
+		/// Maps to '--warn'.
+		/// </summary>
+		public string Warn { get; set; }
+
+		/// <summary>
 		/// The list of warnings to report as errors.
 		/// Maps to '--warnaserror'.
 		/// </summary>
@@ -317,6 +323,9 @@ namespace ILLink.Tasks
 
 			if (NoWarn != null)
 				args.Append ("--nowarn ").AppendLine (Quote (NoWarn));
+
+			if (Warn != null)
+				args.Append ("--warn ").AppendLine (Quote (Warn));
 
 			if (WarningsAsErrors != null)
 				args.Append ("--warnaserror ").AppendLine (Quote (WarningsAsErrors));
