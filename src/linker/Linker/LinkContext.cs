@@ -172,7 +172,7 @@ namespace Mono.Linker
 
 		public KnownMembers MarkedKnownMembers { get; private set; }
 
-		public WarningSuppressionWriter WarningSuppressionWriter { get; }
+		public WarningSuppressionWriter WarningSuppressionWriter { get; private set; }
 
 		public HashSet<uint> NoWarn { get; set; }
 
@@ -230,7 +230,6 @@ namespace Mono.Linker
 			StripLinkAttributes = true;
 			PInvokes = new List<PInvokeInfo> ();
 			Suppressions = new UnconditionalSuppressMessageAttributeState (this);
-			WarningSuppressionWriter = new WarningSuppressionWriter (this);
 			NoWarn = new HashSet<uint> ();
 
 			// See https://github.com/mono/linker/issues/612
@@ -584,6 +583,11 @@ namespace Mono.Linker
 				return false;
 
 			return Suppressions.IsSuppressed (warningCode, origin, out _);
+		}
+
+		public void SetWarningSuppressionWriter (WarningSuppressionWriterFileOutputKind fileOutputKind)
+		{
+			WarningSuppressionWriter = new WarningSuppressionWriter (this, fileOutputKind);
 		}
 	}
 

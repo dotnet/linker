@@ -2,19 +2,30 @@
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Xml;
+using System.Xml.Linq;
 using Mono.Cecil;
 
 namespace Mono.Linker
 {
+	public enum WarningSuppressionWriterFileOutputKind
+	{
+		Cs,
+		Xml
+	};
+
 	public class WarningSuppressionWriter
 	{
 		private readonly LinkContext _context;
 		private readonly Dictionary<AssemblyNameDefinition, HashSet<(int, IMemberDefinition)>> _warnings;
+		private readonly WarningSuppressionWriterFileOutputKind _fileOutputKind;
 
-		public WarningSuppressionWriter (LinkContext context)
+		public WarningSuppressionWriter (LinkContext context,
+			WarningSuppressionWriterFileOutputKind fileOutputKind = WarningSuppressionWriterFileOutputKind.Cs)
 		{
 			_context = context;
 			_warnings = new Dictionary<AssemblyNameDefinition, HashSet<(int, IMemberDefinition)>> ();
+			_fileOutputKind = fileOutputKind;
 		}
 
 		public void AddWarning (int code, IMemberDefinition memberDefinition)
@@ -31,46 +42,87 @@ namespace Mono.Linker
 		public void OutputSuppressions ()
 		{
 			foreach (var assemblyName in _warnings.Keys) {
-				using (var sw = new StreamWriter (Path.Combine (_context.OutputDirectory, $"{assemblyName.Name}.WarningSuppressions.cs"))) {
-					StringBuilder sb = new StringBuilder ("using System.Diagnostics.CodeAnalysis;").AppendLine ().AppendLine ();
-					List<(int Code, IMemberDefinition Member)> listOfWarnings = _warnings[assemblyName].ToList ();
-					listOfWarnings.Sort ((a, b) => {
-						string lhs = a.Member is MethodReference lhsMethod ? lhsMethod.GetDisplayName () : a.Member.FullName;
-						string rhs = b.Member is MethodReference rhsMethod ? rhsMethod.GetDisplayName () : b.Member.FullName;
-						if (lhs == rhs)
-							return a.Code.CompareTo (b.Code);
+				if (_fileOutputKind == WarningSuppressionWriterFileOutputKind.Xml)
+					OutputSuppressionsXmlFormat (assemblyName);
 
-						return string.CompareOrdinal (lhs, rhs);
-					});
-
-					foreach (var warning in listOfWarnings) {
-						int warningCode = warning.Code;
-						IMemberDefinition warningOrigin = warning.Member;
-						sb.Append ("[assembly: UnconditionalSuppressMessage (\"");
-						sb.Append (Constants.ILLink);
-						sb.Append ("\", \"IL");
-						sb.Append (warningCode).Append ("\", Scope = \"");
-						switch (warningOrigin.MetadataToken.TokenType) {
-						case TokenType.TypeDef:
-							sb.Append ("type\", Target = \"");
-							break;
-						case TokenType.Method:
-						case TokenType.Property:
-						case TokenType.Field:
-						case TokenType.Event:
-							sb.Append ("member\", Target = \"");
-							break;
-						default:
-							break;
-						}
-
-						DocumentationSignatureGenerator.Instance.VisitMember (warningOrigin, sb);
-						sb.AppendLine ("\")]");
-					}
-
-					sw.Write (sb.ToString ());
-				}
+				OutputSuppressionsCsFormat (assemblyName);
 			}
+		}
+
+		void OutputSuppressionsXmlFormat (AssemblyNameDefinition assemblyName)
+		{
+			var xmlTree =
+				new XElement ("linker",
+					new XElement ("assembly", new XAttribute ("fullname", assemblyName.FullName)));
+
+			StringBuilder sb = new StringBuilder ();
+			foreach (var warning in GetListOfWarnings (assemblyName)) {
+				DocumentationSignatureGenerator.Instance.VisitMember (warning.Member, sb);
+				xmlTree.Element ("assembly").Add (
+					new XElement ("attribute",
+						new XAttribute ("fullname", "System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute"),
+						new XElement ("argument", Constants.ILLink),
+						new XElement ("argument", $"IL{warning.Code}"),
+						new XElement ("argument", GetWarningSuppressionScopeString (warning.Member)),
+						new XElement ("argument", sb.ToString ())));
+
+				sb.Clear ();
+			}
+
+			XDocument xdoc = new XDocument (xmlTree);
+			using (var xw = XmlWriter.Create (Path.Combine (_context.OutputDirectory, $"{assemblyName.Name}.WarningSuppressions.xml"),
+				new XmlWriterSettings { Indent = true })) {
+				xdoc.Save (xw);
+			}
+		}
+
+		void OutputSuppressionsCsFormat (AssemblyNameDefinition assemblyName)
+		{
+			using (var sw = new StreamWriter (Path.Combine (_context.OutputDirectory, $"{assemblyName.Name}.WarningSuppressions.cs"))) {
+				StringBuilder sb = new StringBuilder ("using System.Diagnostics.CodeAnalysis;").AppendLine ().AppendLine ();
+				foreach (var warning in GetListOfWarnings (assemblyName)) {
+					sb.Append ("[assembly: UnconditionalSuppressMessage (\"")
+						.Append (Constants.ILLink)
+						.Append ("\", \"IL").Append (warning.Code)
+						.Append ("\", Scope = \"").Append (GetWarningSuppressionScopeString (warning.Member))
+						.Append ("\", Target = \"");
+
+					DocumentationSignatureGenerator.Instance.VisitMember (warning.Member, sb);
+					sb.AppendLine ("\")]");
+				}
+
+				sw.Write (sb.ToString ());
+			}
+		}
+
+		List<(int Code, IMemberDefinition Member)> GetListOfWarnings (AssemblyNameDefinition assemblyName)
+		{
+			List<(int Code, IMemberDefinition Member)> listOfWarnings = _warnings[assemblyName].ToList ();
+			listOfWarnings.Sort ((a, b) => {
+				string lhs = a.Member is MethodReference lhsMethod ? lhsMethod.GetDisplayName () : a.Member.FullName;
+				string rhs = b.Member is MethodReference rhsMethod ? rhsMethod.GetDisplayName () : b.Member.FullName;
+				if (lhs == rhs)
+					return a.Code.CompareTo (b.Code);
+
+				return string.CompareOrdinal (lhs, rhs);
+			});
+
+			return listOfWarnings;
+		}
+
+		string GetWarningSuppressionScopeString (IMemberDefinition member)
+		{
+			switch (member.MetadataToken.TokenType) {
+			case TokenType.TypeDef:
+				return "type";
+			case TokenType.Method:
+			case TokenType.Property:
+			case TokenType.Field:
+			case TokenType.Event:
+				return "member";
+			}
+
+			return string.Empty;
 		}
 	}
 }

@@ -426,7 +426,15 @@ namespace Mono.Linker
 						continue;
 
 					case "--generate-warning-suppressions":
+						string generateWarningSuppressionsArgument = string.Empty;
+						if (!GetStringParam (token, l => generateWarningSuppressionsArgument = l))
+							return -1;
+
+						if (!GetWarningSuppressionWriterFileOutputKind (generateWarningSuppressionsArgument, out var fileOutputKind))
+							return -1;
+
 						context.OutputWarningSuppressions = true;
+						context.SetWarningSuppressionWriter (fileOutputKind);
 						continue;
 
 					case "--nowarn":
@@ -935,6 +943,22 @@ namespace Mono.Linker
 
 			Console.WriteLine ($"Invalid optimization value '{text}'");
 			optimization = 0;
+			return false;
+		}
+
+		static bool GetWarningSuppressionWriterFileOutputKind (string text, out WarningSuppressionWriterFileOutputKind fileOutputKind)
+		{
+			switch (text.ToLowerInvariant ()) {
+			case "cs":
+				fileOutputKind = WarningSuppressionWriterFileOutputKind.Cs;
+				return true;
+			case "xml":
+				fileOutputKind = WarningSuppressionWriterFileOutputKind.Xml;
+				return true;
+			}
+
+			Console.WriteLine ($"Invalid warning suppressions file format '{text}'");
+			fileOutputKind = WarningSuppressionWriterFileOutputKind.Cs;
 			return false;
 		}
 
