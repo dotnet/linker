@@ -1133,7 +1133,7 @@ namespace Mono.Linker.Dataflow
 				// 
 				// static T CreateInstance<T> ()
 				//
-				// Note: If the when condition returns falls it would be an overload which we don't recognize, so just fall through to the default case
+				// Note: If the when condition returns false it would be an overload which we don't recognize, so just fall through to the default case
 				case IntrinsicId.Activator_CreateInstanceOfT when
 					calledMethod is GenericInstanceMethod genericCalledMethod && genericCalledMethod.GenericArguments.Count == 1: {
 						reflectionContext.AnalyzingPattern ();

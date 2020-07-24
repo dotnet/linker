@@ -629,7 +629,7 @@ the error code. For example:
   }
   ```
 
-#### 'IL2061': DynamicallyAccessedMembersAttribute was specified but no argument was proportioned
+#### 'IL2061': DynamicallyAccessedMembersAttribute was specified but no argument was provided
 
 - The link attribute XML contained a definition of attribute DynamicallyAccessedMembersAttribute without specifying constructor argument.
 
