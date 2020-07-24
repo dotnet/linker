@@ -322,7 +322,7 @@ namespace ILLink.Tasks.Tests
 			using (var driver = task.CreateDriver ()) {
 				var actualWarnAsError = driver.Context.WarnAsError;
 				var actualGeneralWarnAsError = driver.Context.GeneralWarnAsError;
-				Assert.Equal (actualWarnAsError.Count, warnAsError.Distinct().Count() + warnNotAsError.Distinct().Count());
+				Assert.Equal (actualWarnAsError.Count, warnAsError.Distinct ().Count () + warnNotAsError.Distinct ().Count ());
 				Assert.Equal (actualGeneralWarnAsError, generalWarnAsErrorsIsSet);
 				if (warnAsError.Length > 0) {
 					foreach (var warningCode in warnAsError)
