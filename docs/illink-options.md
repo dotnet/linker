@@ -147,11 +147,26 @@ control options listed below.
 | Substition  | ILLink.Substitutions.xml  |  --ignore-substitutions |
 | LinkAttributes  | ILLink.LinkAttributes.xml    |  --ignore-link-attributes |
 
+### Treat warnings as errors
+
+The `--warnasserror` (or `--warnaserror+`) option will make the linker report any warning
+messages as error messages instead. By default, the linker behaves as if the `--warnaserror-`
+option was used, which causes the linker to report warnings as usual.
+
+Optionally, you may specify a list of warnings that you'd like to be treated as errors. These
+warnings have to be prepended with `IL` and must be separated by either a comma or semicolon.
+
 ### Turning off warnings
 
 The `--nowarn` option prevents the linker from displaying one or more linker warnings by
 specifying its warning codes. All warning codes must be prepended with `IL` and multiple
 warnings should be separated with a comma or semicolon.
+
+### Control warning versions
+
+The `--warn VERSION` option prevents the linker from displaying warnings newer than the specified
+version. Valid versions are in the range 0-9999, where 9999 will display all current and future
+warnings.
 
 ### Generating warning suppressions
 

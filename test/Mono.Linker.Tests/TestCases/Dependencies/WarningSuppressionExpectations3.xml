@@ -5,31 +5,31 @@
       <argument>ILLink</argument>
       <argument>IL2006</argument>
       <argument>member</argument>
-      <argument>M:Mono.Linker.Tests.Cases.WarningSuppression.Dependencies.TriggerWarnings_Lib.Main</argument>
+      <argument>M:Mono.Linker.Tests.Cases.Warnings.WarningSuppression.Dependencies.TriggerWarnings_Lib.Main</argument>
     </attribute>
     <attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
       <argument>ILLink</argument>
       <argument>IL2006</argument>
       <argument>member</argument>
-      <argument>M:Mono.Linker.Tests.Cases.WarningSuppression.Dependencies.TriggerWarnings_Lib.NestedType.Warning3</argument>
+      <argument>M:Mono.Linker.Tests.Cases.Warnings.WarningSuppression.Dependencies.TriggerWarnings_Lib.NestedType.Warning3</argument>
     </attribute>
     <attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
       <argument>ILLink</argument>
       <argument>IL2006</argument>
       <argument>member</argument>
-      <argument>M:Mono.Linker.Tests.Cases.WarningSuppression.Dependencies.TriggerWarnings_Lib.NestedType.Warning4``1(System.Collections.Generic.List{``0}@)</argument>
+      <argument>M:Mono.Linker.Tests.Cases.Warnings.WarningSuppression.Dependencies.TriggerWarnings_Lib.NestedType.Warning4``1(System.Collections.Generic.List{``0}@)</argument>
     </attribute>
     <attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
       <argument>ILLink</argument>
       <argument>IL2006</argument>
       <argument>member</argument>
-      <argument>M:Mono.Linker.Tests.Cases.WarningSuppression.Dependencies.TriggerWarnings_Lib.Warning1</argument>
+      <argument>M:Mono.Linker.Tests.Cases.Warnings.WarningSuppression.Dependencies.TriggerWarnings_Lib.Warning1</argument>
     </attribute>
     <attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
       <argument>ILLink</argument>
       <argument>IL2006</argument>
       <argument>member</argument>
-      <argument>M:Mono.Linker.Tests.Cases.WarningSuppression.Dependencies.TriggerWarnings_Lib.get_Warning2</argument>
+      <argument>M:Mono.Linker.Tests.Cases.Warnings.WarningSuppression.Dependencies.TriggerWarnings_Lib.get_Warning2</argument>
     </attribute>
   </assembly>
 </linker>
