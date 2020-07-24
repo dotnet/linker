@@ -4,7 +4,6 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.Warnings
 {
-	[SetupLinkerSubstitutionFile ("NoWarnSubstitutions.xml")]
 	[SetupLinkerArgument ("--verbose")]
 	[SetupLinkerArgument ("--warn", "invalid")]
 	[LogContains ("IL1016")]
