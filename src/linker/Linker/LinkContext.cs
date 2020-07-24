@@ -537,8 +537,8 @@ namespace Mono.Linker
 			if (!LogMessages)
 				return;
 
-			if ((GeneralWarnAsError && (!WarnAsError.TryGetValue((uint) code, out var warnAsError) || warnAsError)) ||
-				(!GeneralWarnAsError && (WarnAsError.TryGetValue((uint) code, out warnAsError) && warnAsError))) {
+			if ((GeneralWarnAsError && (!WarnAsError.TryGetValue ((uint) code, out var warnAsError) || warnAsError)) ||
+				(!GeneralWarnAsError && (WarnAsError.TryGetValue ((uint) code, out warnAsError) && warnAsError))) {
 				LogError (text, code, subcategory, origin, isWarnAsError: true);
 				return;
 			}
