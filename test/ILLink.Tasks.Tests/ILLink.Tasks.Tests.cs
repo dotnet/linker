@@ -302,19 +302,21 @@ namespace ILLink.Tasks.Tests
 			}
 		}
 
+#nullable enable
 		[Theory]
-		[InlineData ("", "blah", true, new uint[] { }, new uint[] { })]
-		[InlineData ("IL1001,IL####,IL2000,IL2021,IL2022", "x", false,
+		[InlineData (true, null, null, new uint[] { }, new uint[] { })]
+		[InlineData (false, "IL1001,IL####,IL2000,IL2021,IL2022", null,
 			new uint[] { 2021, 2022 }, new uint[] { })]
-		[InlineData ("IL2023,IL6000;IL5042 IL2040", "IL4000,IL4001;IL4002 IL4003", false,
+		[InlineData (false, "IL2023,IL6000;IL5042 IL2040", "IL4000,IL4001;IL4002 IL4003",
 			new uint[] { 2023, 2040, 5042, 6000 }, new uint[] { 4000, 4001, 4002, 4003 })]
-		[InlineData ("IL3000;IL3000;ABCD", "IL2005 il3000 IL2005", false,
+		[InlineData (false, "IL3000;IL3000;ABCD", "IL2005 il3000 IL2005",
 			new uint[] { 3000 }, new uint[] { 2005 })]
-		[InlineData ("", "IL2006", true, new uint[] { }, new uint[] { 2006 })]
-		[InlineData ("IL2001", "IL2001", false, new uint[] { }, new uint[] { 2001 })]
-		public void TestWarningsAsErrors (string warningsAsErrors, string warningsNotAsErrors, bool generalWarnAsErrorsIsSet, uint[] warnAsError, uint[] warnNotAsError)
+		[InlineData (true, null, "IL2006", new uint[] { }, new uint[] { 2006 })]
+		[InlineData (true, "IL2001", "IL2001", new uint[] { }, new uint[] { 2001 })]
+		public void TestWarningsAsErrors (bool treatWarningsAsErrors, string? warningsAsErrors, string? warningsNotAsErrors, uint[] warnAsError, uint[] warnNotAsError)
 		{
 			var task = new MockTask () {
+				TreatWarningsAsErrors = treatWarningsAsErrors,
 				WarningsAsErrors = warningsAsErrors,
 				WarningsNotAsErrors = warningsNotAsErrors
 			};
@@ -323,7 +325,7 @@ namespace ILLink.Tasks.Tests
 				var actualWarnAsError = driver.Context.WarnAsError;
 				var actualGeneralWarnAsError = driver.Context.GeneralWarnAsError;
 				Assert.Equal (actualWarnAsError.Count, warnAsError.Distinct ().Count () + warnNotAsError.Distinct ().Count ());
-				Assert.Equal (actualGeneralWarnAsError, generalWarnAsErrorsIsSet);
+				Assert.Equal (actualGeneralWarnAsError, treatWarningsAsErrors);
 				if (warnAsError.Length > 0) {
 					foreach (var warningCode in warnAsError)
 						Assert.True (actualWarnAsError.ContainsKey (warningCode) && actualWarnAsError[warningCode] == true);
@@ -335,6 +337,7 @@ namespace ILLink.Tasks.Tests
 				}
 			}
 		}
+#nullable disable
 
 		public static IEnumerable<object[]> CustomDataCases => new List<object[]> {
 			new object [] {
