@@ -334,7 +334,7 @@ namespace ILLink.Tasks
 				args.Append ("--warn ").AppendLine (Quote (Warn));
 
 			if (TreatWarningsAsErrors)
-				args.AppendLine ("--warnaserror");
+				args.Append ("--warnaserror");
 			else
 				args.AppendLine ("--warnaserror-");
 
