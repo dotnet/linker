@@ -11,6 +11,7 @@ namespace Mono.Linker.Tests.Cases.Substitutions
 	[ExpectedWarning ("IL2013", "SubstitutionsErrorCases::InstanceField", FileName = "SubstitutionsErrorCases.xml")]
 	[ExpectedWarning ("IL2014", "SubstitutionsErrorCases::IntField", FileName = "SubstitutionsErrorCases.xml")]
 	[ExpectedWarning ("IL2015", "SubstitutionsErrorCases::IntField", "NonNumber", FileName = "SubstitutionsErrorCases.xml")]
+	[ExpectedWarning ("IL2007", "NonExistentAssembly", FileName = "SubstitutionsErrorCases.xml")]
 
 	[KeptMember (".ctor()")]
 	class SubstitutionsErrorCases

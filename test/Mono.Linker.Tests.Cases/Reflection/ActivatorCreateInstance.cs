@@ -302,8 +302,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[UnrecognizedReflectionAccessPattern (typeof (Activator), nameof (Activator.CreateInstance), new Type[] { typeof (string), typeof (string), typeof (object[]) },
-			messageCode: "IL2057", message: "NonExistingType")]
+		[RecognizedReflectionAccessPattern]
 		private static void WithAssemblyAndNonExistingTypeName ()
 		{
 			Activator.CreateInstance ("test", "NonExistingType", new object[] { });

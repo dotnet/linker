@@ -10,4 +10,5 @@
       <field name="IntField" value="NonNumber" />
     </type>
   </assembly>
+  <assembly fullname="NonExistentAssembly" />
 </linker>

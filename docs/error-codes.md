@@ -576,18 +576,6 @@ the error code. For example:
   }
   ```
 
-#### `IL2057` Trim analysis: The type 'type name' can not be found in assembly 'assembly'
-
-- Calling `CreateInstance` with a type name which can't be resolved in the target assembly.  
-
-  ``` C#
-  void TestMethod()
-  {
-      // IL2057 Trim analysis: The type 'NonExistentType' can not be found in assembly 'MyAssembly'
-      Activator.CreateInstance("MyAssembly", "NonExistentType");
-  }
-  ```
-
 #### `IL2058` Trim analysis: Unrecognized value passed to the parameter 'typeName' of method 'CreateInstance'. It's not possible to guarantee the availability of the target type.
 
 - The value passed as the type name to the `CreateInstance` method can't be statically analyzed, ILLink can't make sure that the type is available.  

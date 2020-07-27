@@ -652,7 +652,8 @@ namespace Mono.Linker.Tests.TestCasesRunner
 												return false;
 
 										if (fileName != null) {
-											if (mc.Origin?.FileName?.Contains (fileName, StringComparison.OrdinalIgnoreCase) != true)
+											// Note: string.Compare(string, StringComparison) doesn't exist in .NET Framework API set
+											if (mc.Origin?.FileName?.IndexOf (fileName, StringComparison.OrdinalIgnoreCase) < 0)
 												return false;
 
 											if (sourceLine != null && mc.Origin?.SourceLine != sourceLine.Value)
@@ -804,7 +805,8 @@ namespace Mono.Linker.Tests.TestCasesRunner
 							if (actualAccessOperation != expectedReflectionMember)
 								return false;
 
-							if (expectedMessageParts != null && expectedMessageParts.Any (p => !pattern.Message.Contains (p, StringComparison.Ordinal)))
+							// Note: string.Compare(string, StringComparison) doesn't exist in .NET Framework API set
+							if (expectedMessageParts != null && expectedMessageParts.Any (p => pattern.Message.IndexOf (p, StringComparison.Ordinal) < 0))
 								return false;
 
 							if (expectedMessageCode.HasValue && pattern.MessageCode != expectedMessageCode.Value)

@@ -288,7 +288,9 @@ namespace Mono.Linker.Steps
 		protected override AssemblyDefinition GetAssembly (LinkContext context, AssemblyNameReference assemblyName)
 		{
 			var assembly = context.Resolve (assemblyName);
-			ProcessReferences (assembly);
+			if (assembly != null)
+				ProcessReferences (assembly);
+
 			return assembly;
 		}
 	}
