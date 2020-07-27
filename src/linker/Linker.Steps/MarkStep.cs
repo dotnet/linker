@@ -2635,34 +2635,49 @@ namespace Mono.Linker.Steps
 			// This is best effort. One can likely find ways how to get COM without triggering these alarms.
 			// AsAny marshalling of a struct with an object-typed field would be one, for example.
 
+			// This logic roughly corresponds to MarshalInfo::MarshalInfo in CoreCLR,
+			// not trying to handle invalid cases and distinctions that are not interesting wrt
+			// "is this COM?" question.
+
 			NativeType nativeType = NativeType.None;
 			if (marshalInfoProvider.HasMarshalInfo) {
 				nativeType = marshalInfoProvider.MarshalInfo.NativeType;
 			}
 
 			if (nativeType == NativeType.IUnknown || nativeType == NativeType.IDispatch || nativeType == NativeType.IntF) {
+				// This is COM by definition
 				return true;
 			}
 
 			if (nativeType == NativeType.None) {
 				if (parameterType.IsTypeOf ("System", "Array")) {
+					// System.Array marshals as IUnknown by default
 					return true;
 				} else if (parameterType.IsTypeOf ("System", "String") ||
-					parameterType.IsTypeOf ("System", "StringBuilder")) {
+					parameterType.IsTypeOf ("System.Text", "StringBuilder")) {
+					// String and StringBuilder are special cased by interop
 					return false;
 				}
 
 				var parameterTypeDef = parameterType.Resolve ();
 				if (parameterTypeDef != null) {
-					if (parameterTypeDef.IsInterface) {
+					if (parameterTypeDef.IsValueType) {
+						// Value types don't marshal as COM
+						return false;
+					} else if (parameterTypeDef.IsInterface) {
+						// Interface types marshal as COM by default
 						return true;
 					} else if (parameterTypeDef.IsMulticastDelegate ()) {
+						// Delegates are special cased by interop
 						return false;
 					} else if (parameterTypeDef.IsSubclassOf ("System.Runtime.InteropServices", "CriticalHandle")) {
+						// Subclasses of CriticalHandle are special cased by interop
 						return false;
 					} else if (parameterTypeDef.IsSubclassOf ("System.Runtime.InteropServices", "SafeHandle")) {
+						// Subclasses of SafeHandle are special cased by interop
 						return false;
-					} else if (!parameterTypeDef.IsValueType && !parameterTypeDef.IsSequentialLayout && !parameterTypeDef.IsExplicitLayout) {
+					} else if (!parameterTypeDef.IsSequentialLayout && !parameterTypeDef.IsExplicitLayout) {
+						// Rest of classes that don't have layout marshal as COM
 						return true;
 					}
 				}

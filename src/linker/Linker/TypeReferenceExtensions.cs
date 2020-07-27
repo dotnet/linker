@@ -365,7 +365,7 @@ namespace Mono.Linker
 
 		public static bool IsSubclassOf (this TypeReference type, string ns, string name)
 		{
-			TypeDefinition baseType = type.Resolve ()?.BaseType?.Resolve ();
+			TypeDefinition baseType = type.Resolve ();
 			while (baseType != null) {
 				if (baseType.IsTypeOf (ns, name))
 					return true;
