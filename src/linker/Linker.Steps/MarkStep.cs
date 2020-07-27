@@ -2589,7 +2589,7 @@ namespace Mono.Linker.Steps
 				// like a regular managed class/interface, but every method invocation that takes a class/interface implies COM
 				// marshalling. We can't detect that once we have an RCW.
 				if (method.IsPInvokeImpl) {
-					if (IsComInterop(method.MethodReturnType, method.ReturnType) && !didWarnAboutCom) {
+					if (IsComInterop (method.MethodReturnType, method.ReturnType) && !didWarnAboutCom) {
 						_context.LogWarning ($"P/invoke method '{method.GetDisplayName ()}' declares a parameter with COM marshalling. Correctness of COM interop cannot be guaranteed after trimming. Interfaces and interface members might be removed.", 2050, method);
 						didWarnAboutCom = true;
 					}
@@ -2630,7 +2630,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		private bool IsComInterop(IMarshalInfoProvider marshalInfoProvider, TypeReference parameterType)
+		private bool IsComInterop (IMarshalInfoProvider marshalInfoProvider, TypeReference parameterType)
 		{
 			// This is best effort. One can likely find ways how to get COM without triggering these alarms.
 			// AsAny marshalling of a struct with an object-typed field would be one, for example.

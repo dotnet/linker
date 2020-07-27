@@ -6,19 +6,19 @@ using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
 namespace Mono.Linker.Tests.Cases.Interop.PInvoke.Warnings
 {
-	[LogContains("SomeMethodTakingInterface")]
+	[LogContains ("SomeMethodTakingInterface")]
 	[LogContains ("SomeMethodTakingObject")]
-	[KeptModuleReference("Foo")]
+	[KeptModuleReference ("Foo")]
 	class ComPInvokeWarning
 	{
-		static void Main()
+		static void Main ()
 		{
 			SomeMethodTakingInterface (null);
 			SomeMethodTakingObject (null);
 		}
 
 		[Kept]
-		[DllImport("Foo")]
+		[DllImport ("Foo")]
 		static extern void SomeMethodTakingInterface (IFoo foo);
 
 		[Kept]
