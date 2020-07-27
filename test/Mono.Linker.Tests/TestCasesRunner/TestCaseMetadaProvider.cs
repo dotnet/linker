@@ -86,7 +86,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 			foreach (var testType in _fullTestCaseAssemblyDefinition.AllDefinedTypes ()) {
 				if (testType.CustomAttributes.Concat (testType.AllMembers ().SelectMany (m => m.CustomAttributes)).Any (attr =>
-					attr.AttributeType.Resolve ().BaseType.Name == nameof (EnableLoggerAttribute))) {
+					attr.AttributeType.Name == nameof (LogContainsAttribute) || attr.AttributeType.Name == nameof (LogDoesNotContainAttribute) || attr.AttributeType.Name == nameof (ExpectedWarningAttribute))) {
 					tclo.AdditionalArguments.Add (new KeyValuePair<string, string[]> ("--verbose", new string[] { }));
 					break;
 				}
