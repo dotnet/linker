@@ -71,7 +71,8 @@ namespace ILLink.Tasks
 		/// Treat all warnings as errors.
 		/// Maps to '--warnaserror' if true, '--warnaserror-' if false.
 		/// </summary>
-		public bool TreatWarningsAsErrors { get; set; }
+		public bool TreatWarningsAsErrors { set => _treatWarningsAsErrors = value; }
+		bool? _treatWarningsAsErrors;
 
 		/// <summary>
 		/// The list of warnings to report as errors.
@@ -333,10 +334,10 @@ namespace ILLink.Tasks
 			if (Warn != null)
 				args.Append ("--warn ").AppendLine (Quote (Warn));
 
-			if (TreatWarningsAsErrors)
-				args.Append ("--warnaserror");
+			if (_treatWarningsAsErrors is bool treatWarningsAsErrors && treatWarningsAsErrors)
+				args.Append ("--warnaserror ");
 			else
-				args.AppendLine ("--warnaserror-");
+				args.Append ("--warnaserror- ");
 
 			if (WarningsAsErrors != null)
 				args.Append ("--warnaserror ").AppendLine (Quote (WarningsAsErrors));
