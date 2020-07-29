@@ -561,7 +561,12 @@ namespace Mono.Linker.Dataflow
 									if (_context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameter) != DynamicallyAccessedMemberTypes.None) {
 										// There is a generic parameter which has some requirements on the input types.
 										// For now we don't support tracking actual array elements, so we can't validate that the requirements are fulfilled.
-										reflectionContext.RecordUnrecognizedPattern (2050, $"Making a generic type instantiation from '{typeValue.TypeRepresented.GetDisplayName ()}' which has 'DynamicallyAccessedMembersAttribute' on some of its generic parameters. ILLink currently doesn't analyze type values for generic parameters when making a generic type instantiation via 'System.Type.MakeGenericType'");
+										reflectionContext.RecordUnrecognizedPattern (
+											2050, 
+											$"Making a generic type instantiation from '{typeValue.TypeRepresented.GetDisplayName ()}' " +
+											$"which has 'DynamicallyAccessedMembersAttribute' on some of its generic parameters. " +
+											$"ILLink currently doesn't analyze type values for generic parameters " +
+											$"when making a generic type instantiation via '{calledMethodDefinition.GetDisplayName ()}'");
 									}
 								}
 
@@ -571,7 +576,7 @@ namespace Mono.Linker.Dataflow
 								reflectionContext.RecordHandledPattern ();
 							else {
 								// We have no way to "include more" to fix this if we don't know, so we have to warn
-								reflectionContext.RecordUnrecognizedPattern (2051, $"Unrecognized value passed to the parameter 'typeArguments' of method '{calledMethodDefinition.GetDisplayName ()}'. It's not possible to guarantee the availability of requirements of such type.");
+								reflectionContext.RecordUnrecognizedPattern (2051, $"The value of the type on which `{calledMethodDefinition.GetDisplayName ()}` is called cannot be determined. It's not possible to guarantee the availability of requirements of an unknown type.");
 							}
 						}
 
@@ -1191,7 +1196,7 @@ namespace Mono.Linker.Dataflow
 					// TODO: This could be supported for "this" only calls
 					//
 					reflectionContext.AnalyzingPattern ();
-					reflectionContext.RecordUnrecognizedPattern (2053, $"'{calledMethod.GetDisplayName ()}' is not supported with trimming. Use 'Type.GetType' and `Activator.CreateInstance` instead");
+					reflectionContext.RecordUnrecognizedPattern (2053, $"Parameters passed to method '{calledMethodDefinition.GetDisplayName ()}' cannot be analyzed. Consider using methods 'System.Type.GetType' and `System.Activator.CreateInstance` instead.");
 					break;
 
 				//
@@ -1327,7 +1332,7 @@ namespace Mono.Linker.Dataflow
 						if (typeNameValue is KnownStringValue typeNameStringValue) {
 							var resolvedAssembly = _context.GetLoadedAssembly (assemblyNameStringValue.Contents);
 							if (resolvedAssembly == null) {
-								reflectionContext.RecordUnrecognizedPattern (2056, $"The assembly '{assemblyNameStringValue.Contents}' can not be found");
+								reflectionContext.RecordUnrecognizedPattern (2056, $"The assembly name '{assemblyNameStringValue.Contents}' passed to method '{calledMethod.GetDisplayName ()}' references assembly which is not available.");
 								continue;
 							}
 
@@ -1343,11 +1348,11 @@ namespace Mono.Linker.Dataflow
 							MarkConstructorsOnType (ref reflectionContext, resolvedType,
 								parameterlessConstructor ? m => m.Parameters.Count == 0 : (Func<MethodDefinition, bool>) null, bindingFlags);
 						} else {
-							reflectionContext.RecordUnrecognizedPattern (2058, $"Unrecognized value passed to the parameter 'typeName' of method '{calledMethod.GetDisplayName ()}'. It's not possible to guarantee the availability of the target type.");
+							reflectionContext.RecordUnrecognizedPattern (2058, $"Unrecognized value passed to the parameter '{calledMethod.Parameters[1].Name}' of method '{calledMethod.GetDisplayName ()}'. It's not possible to guarantee the availability of the target type.");
 						}
 					}
 				} else {
-					reflectionContext.RecordUnrecognizedPattern (2059, $"Unrecognized value passed to the parameter 'assemblyName' of method '{calledMethod.GetDisplayName ()}'. It's not possible to guarantee the availability of the target type.");
+					reflectionContext.RecordUnrecognizedPattern (2058, $"Unrecognized value passed to the parameter '{calledMethod.Parameters[0].Name}' of method '{calledMethod.GetDisplayName ()}'. It's not possible to guarantee the availability of the target type.");
 				}
 			}
 		}
@@ -1381,7 +1386,7 @@ namespace Mono.Linker.Dataflow
 					reflectionContext.RecordUnrecognizedPattern (
 						2060,
 						$"Unrecognized type value passed to {DiagnosticUtilities.GetMetadataTokenDescriptionForErrorMessage (targetContext)}. " +
-						$"It's not possible to guarantee that the requirements declared by the `DynamicallyAccessedMembersAttribute` are met.");
+						$"It's not possible to guarantee that the requirements declared by the 'DynamicallyAccessedMembersAttribute' are met.");
 				}
 			}
 
