@@ -591,7 +591,7 @@ the error code. For example:
   }
   ```
 
-#### `IL2060` Trim analysis: Unrecognized type value passed to <target description>. It's not possible to guarantee that the requirements declared by the 'DynamicallyAccessedMembersAttribute' are met.
+#### `IL2059` Trim analysis: Unrecognized type value passed to <target description>. It's not possible to guarantee that the requirements declared by the 'DynamicallyAccessedMembersAttribute' are met.
 
 - The target has a `DynamicallyAccessedMembersAttribute`, but the value passed to it can not be statically analyzed. ILLink can't make sure that the requirements declared by the `DynamicallyAccessedMembersAttribute` are met by the type value.  
 
@@ -603,19 +603,19 @@ the error code. For example:
 
   void TestMethod(Type[] types)
   {
-      // IL2060 Trim analysis: Unrecognized type value passed to parameter 'type' of method 'NeedsPublicConstructors'. It's not possible to guarantee that the requirements declared by the 'DynamicallyAccessedMembersAttribute' are met.
+      // IL2059 Trim analysis: Unrecognized type value passed to parameter 'type' of method 'NeedsPublicConstructors'. It's not possible to guarantee that the requirements declared by the 'DynamicallyAccessedMembersAttribute' are met.
       NeedsPublicConstructors(types[1]);
   }
   ```
 
-#### 'IL2061': 'DynamicallyAccessedMembersAttribute' was specified but no argument was provided
+#### `IL2060` Trim analysis: 'DynamicallyAccessedMembersAttribute' was specified but no argument was provided
 
 - The link attribute XML contained a definition of attribute `DynamicallyAccessedMembersAttribute` without specifying constructor argument.
 
-#### `IL2062`: Trying to propagate 'DynamicallyAccessedMemberAttribute' from property 'property' to its getter 'method', but it already has such attribute.
+#### `IL2061` Trim analysis: Trying to propagate 'DynamicallyAccessedMemberAttribute' from property 'property' to its getter 'method', but it already has such attribute.
 
 - Propagating `DynamicallyAccessedMembersAttribute` from property 'property' to its getter 'method' found that the getter already has such an attribute. The existing attribute will be used.
 
-#### `IL2063`: Trying to propagate 'DynamicallyAccessedMemberAttribute' from property 'property' to its backing field 'field', but it already has such attribute.
+#### `IL2062` Trim analysis: Trying to propagate 'DynamicallyAccessedMemberAttribute' from property 'property' to its backing field 'field', but it already has such attribute.
 
 - Propagating `DynamicallyAccessedMembersAttribute` from property 'property' to its backing field 'field' found that the field already has such an attribute. The existing attribute will be used.

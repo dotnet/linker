@@ -1384,7 +1384,7 @@ namespace Mono.Linker.Dataflow
 					// Ignore - probably unreachable path as it would fail at runtime anyway.
 				} else {
 					reflectionContext.RecordUnrecognizedPattern (
-						2060,
+						2059,
 						$"Unrecognized type value passed to {DiagnosticUtilities.GetMetadataTokenDescriptionForErrorMessage (targetContext)}. " +
 						$"It's not possible to guarantee that the requirements declared by the 'DynamicallyAccessedMembersAttribute' are met.");
 				}
