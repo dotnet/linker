@@ -562,7 +562,7 @@ namespace Mono.Linker.Dataflow
 										// There is a generic parameter which has some requirements on the input types.
 										// For now we don't support tracking actual array elements, so we can't validate that the requirements are fulfilled.
 										reflectionContext.RecordUnrecognizedPattern (
-											2051, 
+											2051,
 											$"Making a generic type instantiation from '{typeValue.TypeRepresented.GetDisplayName ()}' " +
 											$"which has 'DynamicallyAccessedMembersAttribute' on some of its generic parameters. " +
 											$"ILLink currently doesn't analyze type values for generic parameters " +
