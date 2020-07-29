@@ -284,7 +284,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 		[Kept]
 		[UnrecognizedReflectionAccessPattern (typeof (Activator), nameof (Activator.CreateInstance), new Type[] { typeof (string), typeof (string) },
-			messageCode: "IL2056", message: "NonExistingAssembly")]
+			messageCode: "IL2057", message: "NonExistingAssembly")]
 		private static void WithNonExistingAssemblyName ()
 		{
 			Activator.CreateInstance ("NonExistingAssembly", "Mono.Linker.Tests.Cases.Reflection.ActivatorCreateInstance+WithAssemblyNameParameterless1");
@@ -360,9 +360,9 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[UnrecognizedReflectionAccessPattern (typeof (Assembly), nameof (Assembly.CreateInstance), new Type[] { typeof (string) }, messageCode: "IL2053")]
-		[UnrecognizedReflectionAccessPattern (typeof (Assembly), nameof (Assembly.CreateInstance), new Type[] { typeof (string), typeof (bool) }, messageCode: "IL2053")]
-		[UnrecognizedReflectionAccessPattern (typeof (Assembly), nameof (Assembly.CreateInstance), new Type[] { typeof (string), typeof (bool), typeof (BindingFlags), typeof (Binder), typeof (object[]), typeof (CultureInfo), typeof (object[]) }, messageCode: "IL2053")]
+		[UnrecognizedReflectionAccessPattern (typeof (Assembly), nameof (Assembly.CreateInstance), new Type[] { typeof (string) }, messageCode: "IL2054")]
+		[UnrecognizedReflectionAccessPattern (typeof (Assembly), nameof (Assembly.CreateInstance), new Type[] { typeof (string), typeof (bool) }, messageCode: "IL2054")]
+		[UnrecognizedReflectionAccessPattern (typeof (Assembly), nameof (Assembly.CreateInstance), new Type[] { typeof (string), typeof (bool), typeof (BindingFlags), typeof (Binder), typeof (object[]), typeof (CultureInfo), typeof (object[]) }, messageCode: "IL2054")]
 		private static void UnsupportedCreateInstance ()
 		{
 			typeof (ActivatorCreateInstance).Assembly.CreateInstance ("NonExistent");

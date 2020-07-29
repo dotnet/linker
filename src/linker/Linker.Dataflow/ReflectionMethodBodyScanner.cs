@@ -562,7 +562,7 @@ namespace Mono.Linker.Dataflow
 										// There is a generic parameter which has some requirements on the input types.
 										// For now we don't support tracking actual array elements, so we can't validate that the requirements are fulfilled.
 										reflectionContext.RecordUnrecognizedPattern (
-											2050, 
+											2051, 
 											$"Making a generic type instantiation from '{typeValue.TypeRepresented.GetDisplayName ()}' " +
 											$"which has 'DynamicallyAccessedMembersAttribute' on some of its generic parameters. " +
 											$"ILLink currently doesn't analyze type values for generic parameters " +
@@ -576,7 +576,7 @@ namespace Mono.Linker.Dataflow
 								reflectionContext.RecordHandledPattern ();
 							else {
 								// We have no way to "include more" to fix this if we don't know, so we have to warn
-								reflectionContext.RecordUnrecognizedPattern (2051, $"The value of the type on which `{calledMethodDefinition.GetDisplayName ()}` is called cannot be determined. It's not possible to guarantee the availability of requirements of an unknown type.");
+								reflectionContext.RecordUnrecognizedPattern (2052, $"The value of the type on which `{calledMethodDefinition.GetDisplayName ()}` is called cannot be determined. It's not possible to guarantee the availability of requirements of an unknown type.");
 							}
 						}
 
@@ -810,7 +810,7 @@ namespace Mono.Linker.Dataflow
 									SourceContext = calledMethodDefinition
 								});
 							} else {
-								reflectionContext.RecordUnrecognizedPattern (2052, $"Unrecognized value passed to the parameter 'typeName' of method '{calledMethod.GetDisplayName ()}'. It's not possible to guarantee the availability of the target type.");
+								reflectionContext.RecordUnrecognizedPattern (2053, $"Unrecognized value passed to the parameter 'typeName' of method '{calledMethod.GetDisplayName ()}'. It's not possible to guarantee the availability of the target type.");
 							}
 						}
 
@@ -1196,7 +1196,7 @@ namespace Mono.Linker.Dataflow
 					// TODO: This could be supported for "this" only calls
 					//
 					reflectionContext.AnalyzingPattern ();
-					reflectionContext.RecordUnrecognizedPattern (2053, $"Parameters passed to method '{calledMethodDefinition.GetDisplayName ()}' cannot be analyzed. Consider using methods 'System.Type.GetType' and `System.Activator.CreateInstance` instead.");
+					reflectionContext.RecordUnrecognizedPattern (2054, $"Parameters passed to method '{calledMethodDefinition.GetDisplayName ()}' cannot be analyzed. Consider using methods 'System.Type.GetType' and `System.Activator.CreateInstance` instead.");
 					break;
 
 				//
@@ -1213,7 +1213,7 @@ namespace Mono.Linker.Dataflow
 							} else if (typeHandleValue == NullValue.Instance)
 								reflectionContext.RecordHandledPattern ();
 							else {
-								reflectionContext.RecordUnrecognizedPattern (2054, $"Unrecognized value passed to the parameter 'type' of method '{calledMethodDefinition.GetDisplayName ()}'. It's not possible to guarantee the availability of the target static constructor.");
+								reflectionContext.RecordUnrecognizedPattern (2055, $"Unrecognized value passed to the parameter 'type' of method '{calledMethodDefinition.GetDisplayName ()}'. It's not possible to guarantee the availability of the target static constructor.");
 							}
 						}
 					}
@@ -1229,7 +1229,7 @@ namespace Mono.Linker.Dataflow
 
 						// We don't track MethodInfo values, so we can't determine if the MakeGenericMethod is problematic or not.
 						// Since some of the generic parameters may have annotations, all calls are potentially dangerous.
-						reflectionContext.RecordUnrecognizedPattern (2055, $"Call to `{calledMethod.GetDisplayName ()}` can not be statically analyzed. It's not possible to guarantee the availability of requirements of the generic method.");
+						reflectionContext.RecordUnrecognizedPattern (2056, $"Call to `{calledMethod.GetDisplayName ()}` can not be statically analyzed. It's not possible to guarantee the availability of requirements of the generic method.");
 					}
 					break;
 
@@ -1332,7 +1332,7 @@ namespace Mono.Linker.Dataflow
 						if (typeNameValue is KnownStringValue typeNameStringValue) {
 							var resolvedAssembly = _context.GetLoadedAssembly (assemblyNameStringValue.Contents);
 							if (resolvedAssembly == null) {
-								reflectionContext.RecordUnrecognizedPattern (2056, $"The assembly name '{assemblyNameStringValue.Contents}' passed to method '{calledMethod.GetDisplayName ()}' references assembly which is not available.");
+								reflectionContext.RecordUnrecognizedPattern (2057, $"The assembly name '{assemblyNameStringValue.Contents}' passed to method '{calledMethod.GetDisplayName ()}' references assembly which is not available.");
 								continue;
 							}
 

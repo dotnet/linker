@@ -479,7 +479,7 @@ the error code. For example:
 - P/invoke method 'method' declares a parameter with COM marshalling. Correctness of COM interop cannot be guaranteed after trimming. Interfaces and interface members might be removed.
 - The internal attribute name 'attribute' being used in the xml is not supported by the linker, check the spelling and the supported internal attributes.
 
-#### `IL2050` Trim analysis: Making a generic type instantiation from 'type' which has 'DynamicallyAccessedMembersAttribute' on some of its generic parameters. ILLink currently doesn't analyze type values for generic parameters when making a generic type instantiation via 'System.Type.MakeGenericType'
+#### `IL2051` Trim analysis: Making a generic type instantiation from 'type' which has 'DynamicallyAccessedMembersAttribute' on some of its generic parameters. ILLink currently doesn't analyze type values for generic parameters when making a generic type instantiation via 'System.Type.MakeGenericType'
 
 - Analysis of type parameters for `System.Type.MakeGenericType` is not yet implemented. If the open generic type `type` has `DynamicallyAccessedMembersAttribute` on any of its generic parameters, ILLink currently can't validate that the requirements are fulfilled by the calling method.  
 
@@ -491,26 +491,26 @@ the error code. For example:
   
   void TestMethod()
   {
-      // IL2050 Trim analysis: Making a generic type instantiation from 'Lazy<T>' which has 
+      // IL2051 Trim analysis: Making a generic type instantiation from 'Lazy<T>' which has 
       // 'DynamicallyAccessedMembersAttribute' on some of its generic parameters. ILLink currently doesn't analyze 
       // type values for generic parameters when making a generic type instantiation via 'System.Type.MakeGenericType'
       typeof(Lazy<>).MakeGenericType(new Type[] { typeof(TestType) });
   }
   ```
 
-  #### `IL2051` Trim analysis: The value of the type on which `MakeGenericType` is called cannot be determined. It's not possible to guarantee the availability of requirements of an unknown type.
+  #### `IL2052` Trim analysis: The value of the type on which `MakeGenericType` is called cannot be determined. It's not possible to guarantee the availability of requirements of an unknown type.
 
 - If `System.Type.MakeGenericType` is called on an type which is not statically analyzable. If the actual type has generic parameters with `DynamicallyAccessedMembersAttribute` ILLink would be required to fulfill the requirements declared by those attributes, but since the ILLink doesn't know the type, it can't determine if such requirements exist.  
 
   ``` C#
   void TestMethod(Type type)
   {
-      // IL2051 Trim analysis: The value of the type on which `MakeGenericType(Type[])` is called cannot be determined. It's not possible to guarantee the availability of requirements of an unknown type.
+      // IL2052 Trim analysis: The value of the type on which `MakeGenericType(Type[])` is called cannot be determined. It's not possible to guarantee the availability of requirements of an unknown type.
       type.MakeGenericType(new Type[] { typeof(TestType) });
   }
   ```
 
-#### `IL2052` Trim analysis: Unrecognized value passed to the parameter 'typeName' of method 'System.Type.GetType(Type typeName)'. It's not possible to guarantee the availability of the target type.
+#### `IL2053` Trim analysis: Unrecognized value passed to the parameter 'typeName' of method 'System.Type.GetType(Type typeName)'. It's not possible to guarantee the availability of the target type.
 
 - If the type name passed to the `System.Type.GetType` is statically known ILLink can make sure it's preserved and the application code will work after trimming. But if the type name is unknown, it could point to a type which ILLink will not see being used anywhere else and would remove it from the application, potentially breaking the application.  
 
@@ -519,19 +519,19 @@ the error code. For example:
   {
       string typeName = ReadName();
 
-      // IL2052 Trim analysis: Unrecognized value passed to the parameter 'typeName' of method 'System.Type.GetType(Type typeName)'
+      // IL2053 Trim analysis: Unrecognized value passed to the parameter 'typeName' of method 'System.Type.GetType(Type typeName)'
       Type.GetType(typeName);
   }
   ```
 
-#### `IL2053` Trim analysis: Parameters passed to method 'Assembly.CreateInstance' cannot be analyzed. Consider using methods 'System.Type.GetType' and `System.Activator.CreateInstance` instead.
+#### `IL2054` Trim analysis: Parameters passed to method 'Assembly.CreateInstance' cannot be analyzed. Consider using methods 'System.Type.GetType' and `System.Activator.CreateInstance` instead.
 
 - ILLink currently doesn't analyze assembly instances and thus it doesn't know on which assembly the `Assembly.CreateInstance` was called. ILLink has support for `Type.GetType` instead, for cases where the parameter is a string literal. The result of which can be passed to `Activator.CreateInstance` to create an instance of the type.  
 
   ``` C#
   void TestMethod()
   {
-      // IL2053 Trim analysis: Parameters passed to method 'Assembly.CreateInstance(string)' cannot be analyzed. Consider using methods 'System.Type.GetType' and `System.Activator.CreateInstance` instead.
+      // IL2054 Trim analysis: Parameters passed to method 'Assembly.CreateInstance(string)' cannot be analyzed. Consider using methods 'System.Type.GetType' and `System.Activator.CreateInstance` instead.
       AssemblyLoadContext.Default.Assemblies.First(a => a.Name == "MyAssembly").CreateInstance("MyType");
 
       // This can be replaced by
@@ -539,39 +539,39 @@ the error code. For example:
   }
   ```
   
-#### `IL2054` Trim analysis: Unrecognized value passed to the parameter 'type' of method 'System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor'. It's not possible to guarantee the availability of the target static constructor.
+#### `IL2055` Trim analysis: Unrecognized value passed to the parameter 'type' of method 'System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor'. It's not possible to guarantee the availability of the target static constructor.
 
 - If the type passed to the `RunClassConstructor` is not statically known, ILLink can't make sure that its static constructor is available.  
 
   ``` C#
   void TestMethod(Type type)
   {
-      // IL2054 Trim analysis: Unrecognized value passed to the parameter 'type' of method 'System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(RuntimeTypeHandle type)'. 
+      // IL2055 Trim analysis: Unrecognized value passed to the parameter 'type' of method 'System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(RuntimeTypeHandle type)'. 
       // It's not possible to guarantee the availability of the target static constructor.
       RuntimeHelpers.RunClassConstructor(type.TypeHandle);
   }
   ```
 
-#### `IL2055` Trim analysis: Call to `System.Reflection.MethodInfo.MakeGenericMethod` can not be statically analyzed. It's not possible to guarantee the availability of requirements of the generic method.
+#### `IL2056` Trim analysis: Call to `System.Reflection.MethodInfo.MakeGenericMethod` can not be statically analyzed. It's not possible to guarantee the availability of requirements of the generic method.
 
 - ILLink currently doesn't analyze `MethodInfo` values and thus can't statically determine the generic method the `MakeGenericMethod` operates on. If the actual method has generic parameters with `DynamicallyAccessedMembersAttribute` ILLink would be required to fulfill the requirements declared by those attributes, but since the ILLink doesn't know the method, it can't determine if such requirements exist.  
 
   ``` C#
   void TestMethod()
   {
-      // IL2055 Trim analysis: Call to `System.Reflection.MethodInfo.MakeGenericMethod` can not be statically analyzed. It's not possible to guarantee the availability of requirements of the generic method.
+      // IL2056 Trim analysis: Call to `System.Reflection.MethodInfo.MakeGenericMethod` can not be statically analyzed. It's not possible to guarantee the availability of requirements of the generic method.
       typeof(MyType).GetMethod("MyMethod").MakeGenericMethod(new Type[] { typeof(MyType) });
   }
   ```
 
-#### `IL2056` Trim analysis: The assembly name 'assembly name' passed to method 'method' references assembly which is not available.
+#### `IL2057` Trim analysis: The assembly name 'assembly name' passed to method 'method' references assembly which is not available.
 
 - Calling `CreateInstance` with assembly name 'assembly name' which can't be resolved.  
 
   ``` C#
   void TestMethod()
   {
-      // IL2056 Trim analysis: The assembly name 'NonExistentAssembly' passed to method 'System.Activator.CreateInstance(string, string)' references assembly which is not available.
+      // IL2057 Trim analysis: The assembly name 'NonExistentAssembly' passed to method 'System.Activator.CreateInstance(string, string)' references assembly which is not available.
       Activator.CreateInstance("NonExistentAssembly", "MyType");
   }
   ```
