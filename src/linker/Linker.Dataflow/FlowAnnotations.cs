@@ -250,7 +250,7 @@ namespace Mono.Linker.Dataflow
 						}
 
 						if (annotatedMethods.Any (a => a.Method == setMethod)) {
-							_context.LogWarning ($"Trying to propagate DynamicallyAccessedMembersAttribute from property '{property.FullName}' to its setter '{setMethod.GetDisplayName ()}', but it already has such attribute on the 'value' parameter.",
+							_context.LogWarning ($"Trying to propagate 'DynamicallyAccessedMembersAttribute' from property '{property.FullName}' to its setter '{setMethod.GetDisplayName ()}', but it already has such attribute on the 'value' parameter.",
 								2043, setMethod, subcategory: MessageSubCategory.TrimAnalysis);
 						} else {
 							int offset = setMethod.HasImplicitThis () ? 1 : 0;

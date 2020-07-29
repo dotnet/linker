@@ -215,10 +215,6 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				}
 			}
 
-			[LogContains ("Could not find a unique backing field for property 'System.Type Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow/TestAutomaticPropagationType::PropertyWithDifferentBackingFields()' " +
-				"to propagate DynamicallyAccessedMembersAttribute. " +
-				"The backing fields from getter 'System.Type Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow/TestAutomaticPropagationType::PropertyWithDifferentBackingFields_GetterField' " +
-				"and setter 'System.Type Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow/TestAutomaticPropagationType::PropertyWithDifferentBackingFields_SetterField' are not the same.")]
 			public void TestPropertyWithDifferentBackingFields ()
 			{
 				_ = PropertyWithDifferentBackingFields;
@@ -230,6 +226,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[CompilerGenerated]
 			private Type PropertyWithDifferentBackingFields_SetterField;
 
+			[ExpectedWarning ("IL2042",
+				"System.Type Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow/TestAutomaticPropagationType::PropertyWithDifferentBackingFields()",
+				"System.Type Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow/TestAutomaticPropagationType::PropertyWithDifferentBackingFields_GetterField",
+				"System.Type Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow/TestAutomaticPropagationType::PropertyWithDifferentBackingFields_SetterField")]
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 			Type PropertyWithDifferentBackingFields {
 				get {
@@ -241,9 +241,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				}
 			}
 
-			[LogContains ("Trying to propagate DynamicallyAccessedMembersAttribute from property 'System.Type Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow/TestAutomaticPropagationType::PropertyWithExistingAttributes()' to its field 'System.Type Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow/TestAutomaticPropagationType::PropertyWithExistingAttributes_Field', but it already has such attribute.")]
-			[LogContains ("Trying to propagate DynamicallyAccessedMembersAttribute from property 'System.Type Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow/TestAutomaticPropagationType::PropertyWithExistingAttributes()' to its setter 'Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow.TestAutomaticPropagationType.set_PropertyWithExistingAttributes(Type)', but it already has such attribute on the 'value' parameter.")]
-			[LogContains ("Trying to propagate DynamicallyAccessedMembersAttribute from property 'System.Type Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow/TestAutomaticPropagationType::PropertyWithExistingAttributes()' to its getter 'Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow.TestAutomaticPropagationType.get_PropertyWithExistingAttributes()', but it already has such attribute on the return value.")]
+			[LogContains ("Trying to propagate 'DynamicallyAccessedMembersAttribute' from property 'System.Type Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow/TestAutomaticPropagationType::PropertyWithExistingAttributes()' to its field 'System.Type Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow/TestAutomaticPropagationType::PropertyWithExistingAttributes_Field', but it already has such attribute.")]
+			[LogContains ("Trying to propagate 'DynamicallyAccessedMembersAttribute' from property 'System.Type Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow/TestAutomaticPropagationType::PropertyWithExistingAttributes()' to its setter 'Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow.TestAutomaticPropagationType.set_PropertyWithExistingAttributes(Type)', but it already has such attribute on the 'value' parameter.")]
+			[LogContains ("Trying to propagate 'DynamicallyAccessedMembersAttribute' from property 'System.Type Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow/TestAutomaticPropagationType::PropertyWithExistingAttributes()' to its getter 'Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow.TestAutomaticPropagationType.get_PropertyWithExistingAttributes()', but it already has such attribute on the return value.")]
 			public void TestPropertyWithExistingAttributes ()
 			{
 				_ = PropertyWithExistingAttributes;

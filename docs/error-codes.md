@@ -446,7 +446,7 @@ the error code. For example:
 
 - The property 'property' has `DynamicallyAccessedMembersAttribute` on it, but the linker could not determine the backing fields for the property to propagate the attribute to the field.
 
-#### `IL2043`: Trying to propagate DynamicallyAccessedMemberAttribute from property 'property' to its setter 'method', but it already has such attribute.
+#### `IL2043`: Trying to propagate 'DynamicallyAccessedMemberAttribute' from property 'property' to its setter 'method', but it already has such attribute.
 
 - Propagating `DynamicallyAccessedMembersAttribute` from property 'property' to its setter 'method' found that the setter already has such an attribute. The existing attribute will be used.
 
