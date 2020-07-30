@@ -110,9 +110,9 @@ namespace Mono.Linker.Dataflow
 					continue;
 				if (attribute.ConstructorArguments.Count == 1)
 					return (DynamicallyAccessedMemberTypes) (int) attribute.ConstructorArguments[0].Value;
-				else 
+				else
 					_context.LogWarning (
-						$"'DynamicallyAccessedMembersAttribute' constructor must only have one paramater specified", 
+						$"'DynamicallyAccessedMembersAttribute' constructor must only have one paramater specified",
 						2032, locationMember ?? (provider as IMemberDefinition), subcategory: MessageSubCategory.TrimAnalysis);
 			}
 			return DynamicallyAccessedMemberTypes.None;

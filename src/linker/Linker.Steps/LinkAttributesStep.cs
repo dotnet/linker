@@ -84,7 +84,7 @@ namespace Mono.Linker.Steps
 				MethodDefinition constructor = attributeType.Methods.Where (method => method.IsInstanceConstructor ()).FirstOrDefault (c => c.Parameters.Count == arguments.Count);
 				if (constructor == null) {
 					Context.LogWarning (
-						$"Could not find a constructor for type '{attributeType}' that has '{arguments.Count}' arguments", 
+						$"Could not find a constructor for type '{attributeType}' that has '{arguments.Count}' arguments",
 						2022, _xmlDocumentLocation);
 					continue;
 				}

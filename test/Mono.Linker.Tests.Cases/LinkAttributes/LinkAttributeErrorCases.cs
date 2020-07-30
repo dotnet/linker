@@ -28,13 +28,13 @@ namespace Mono.Linker.Tests.Cases.LinkAttributes
 
 		public class AttributeWithDoubleNumberParameterAttribute : Attribute
 		{
-			public AttributeWithDoubleNumberParameterAttribute(double doubleParameter)
+			public AttributeWithDoubleNumberParameterAttribute (double doubleParameter)
 			{
 			}
 		}
 
 
-		public enum AttributeEnum 
+		public enum AttributeEnum
 		{
 			None
 		}
@@ -48,14 +48,14 @@ namespace Mono.Linker.Tests.Cases.LinkAttributes
 
 		public class AttributeWithIntParameterAttribute : Attribute
 		{
-			public AttributeWithIntParameterAttribute(int intValue)
+			public AttributeWithIntParameterAttribute (int intValue)
 			{
 			}
 		}
 
 		public class AttributeWithNoParametersAttribute : Attribute
 		{
-			public AttributeWithNoParametersAttribute()
+			public AttributeWithNoParametersAttribute ()
 			{
 			}
 		}
