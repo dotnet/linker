@@ -8,20 +8,14 @@ using Mono.Cecil;
 
 namespace Mono.Linker
 {
-	public enum WarningSuppressionWriterFileOutputKind
-	{
-		Cs,
-		Xml
-	};
-
 	public class WarningSuppressionWriter
 	{
 		private readonly LinkContext _context;
 		private readonly Dictionary<AssemblyNameDefinition, HashSet<(int, IMemberDefinition)>> _warnings;
-		private readonly WarningSuppressionWriterFileOutputKind _fileOutputKind;
+		private readonly FileOutputKind _fileOutputKind;
 
 		public WarningSuppressionWriter (LinkContext context,
-			WarningSuppressionWriterFileOutputKind fileOutputKind = WarningSuppressionWriterFileOutputKind.Cs)
+			FileOutputKind fileOutputKind = FileOutputKind.CSharp)
 		{
 			_context = context;
 			_warnings = new Dictionary<AssemblyNameDefinition, HashSet<(int, IMemberDefinition)>> ();
@@ -42,7 +36,7 @@ namespace Mono.Linker
 		public void OutputSuppressions ()
 		{
 			foreach (var assemblyName in _warnings.Keys) {
-				if (_fileOutputKind == WarningSuppressionWriterFileOutputKind.Xml)
+				if (_fileOutputKind == FileOutputKind.Xml)
 					OutputSuppressionsXmlFormat (assemblyName);
 
 				OutputSuppressionsCsFormat (assemblyName);
@@ -110,7 +104,7 @@ namespace Mono.Linker
 			return listOfWarnings;
 		}
 
-		string GetWarningSuppressionScopeString (IMemberDefinition member)
+		static string GetWarningSuppressionScopeString (IMemberDefinition member)
 		{
 			switch (member.MetadataToken.TokenType) {
 			case TokenType.TypeDef:
@@ -124,5 +118,11 @@ namespace Mono.Linker
 
 			return string.Empty;
 		}
+
+		public enum FileOutputKind
+		{
+			CSharp,
+			Xml
+		};
 	}
 }

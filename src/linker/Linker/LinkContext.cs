@@ -626,7 +626,7 @@ namespace Mono.Linker
 			return WarnVersion.ILLink5;
 		}
 
-		public void SetWarningSuppressionWriter (WarningSuppressionWriterFileOutputKind fileOutputKind)
+		public void SetWarningSuppressionWriter (WarningSuppressionWriter.FileOutputKind fileOutputKind)
 		{
 			WarningSuppressionWriter = new WarningSuppressionWriter (this, fileOutputKind);
 		}

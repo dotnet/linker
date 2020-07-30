@@ -430,8 +430,10 @@ namespace Mono.Linker
 						if (!GetStringParam (token, l => generateWarningSuppressionsArgument = l))
 							return -1;
 
-						if (!GetWarningSuppressionWriterFileOutputKind (generateWarningSuppressionsArgument, out var fileOutputKind))
+						if (!GetWarningSuppressionWriterFileOutputKind (generateWarningSuppressionsArgument, out var fileOutputKind)) {
+							context.LogError ($"Invalid value '{generateWarningSuppressionsArgument}'specified for '--generate-warning-suppressions' option", 2061);
 							return -1;
+						}
 
 						context.OutputWarningSuppressions = true;
 						context.SetWarningSuppressionWriter (fileOutputKind);
@@ -998,20 +1000,21 @@ namespace Mono.Linker
 			return false;
 		}
 
-		static bool GetWarningSuppressionWriterFileOutputKind (string text, out WarningSuppressionWriterFileOutputKind fileOutputKind)
+		static bool GetWarningSuppressionWriterFileOutputKind (string text, out WarningSuppressionWriter.FileOutputKind fileOutputKind)
 		{
 			switch (text.ToLowerInvariant ()) {
 			case "cs":
-				fileOutputKind = WarningSuppressionWriterFileOutputKind.Cs;
+				fileOutputKind = WarningSuppressionWriter.FileOutputKind.CSharp;
 				return true;
-			case "xml":
-				fileOutputKind = WarningSuppressionWriterFileOutputKind.Xml;
-				return true;
-			}
 
-			Console.WriteLine ($"Invalid warning suppressions file format '{text}'");
-			fileOutputKind = WarningSuppressionWriterFileOutputKind.Cs;
-			return false;
+			case "xml":
+				fileOutputKind = WarningSuppressionWriter.FileOutputKind.Xml;
+				return true;
+
+			default:
+				fileOutputKind = WarningSuppressionWriter.FileOutputKind.CSharp;
+				return false;
+			}
 		}
 
 		bool GetBoolParam (string token, Action<bool> action)
