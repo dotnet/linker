@@ -563,10 +563,8 @@ namespace Mono.Linker.Dataflow
 										// For now we don't support tracking actual array elements, so we can't validate that the requirements are fulfilled.
 										reflectionContext.RecordUnrecognizedPattern (
 											2051,
-											$"Making a generic type instantiation from '{typeValue.TypeRepresented.GetDisplayName ()}' " +
-											$"which has 'DynamicallyAccessedMembersAttribute' on some of its generic parameters. " +
-											$"ILLink currently doesn't analyze type values for generic parameters " +
-											$"when making a generic type instantiation via '{calledMethodDefinition.GetDisplayName ()}'");
+											$"Call to `{calledMethodDefinition.GetDisplayName ()}` can not be statically analyzed. " +
+											$"It's not possible to guarantee the availability of requirements of the generic type.");
 									}
 								}
 
@@ -576,7 +574,10 @@ namespace Mono.Linker.Dataflow
 								reflectionContext.RecordHandledPattern ();
 							else {
 								// We have no way to "include more" to fix this if we don't know, so we have to warn
-								reflectionContext.RecordUnrecognizedPattern (2052, $"The value of the type on which `{calledMethodDefinition.GetDisplayName ()}` is called cannot be determined. It's not possible to guarantee the availability of requirements of an unknown type.");
+								reflectionContext.RecordUnrecognizedPattern (
+									2051,
+									$"Call to `{calledMethodDefinition.GetDisplayName ()}` can not be statically analyzed. " +
+									$"It's not possible to guarantee the availability of requirements of the generic type.");
 							}
 						}
 
@@ -1385,8 +1386,7 @@ namespace Mono.Linker.Dataflow
 				} else {
 					reflectionContext.RecordUnrecognizedPattern (
 						2059,
-						$"Unrecognized type value passed to {DiagnosticUtilities.GetMetadataTokenDescriptionForErrorMessage (targetContext)}. " +
-						$"It's not possible to guarantee that the requirements declared by the 'DynamicallyAccessedMembersAttribute' are met.");
+						$"Value passed to {DiagnosticUtilities.GetMetadataTokenDescriptionForErrorMessage (targetContext)} can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.");
 				}
 			}
 

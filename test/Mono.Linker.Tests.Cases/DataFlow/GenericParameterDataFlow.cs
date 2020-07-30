@@ -678,7 +678,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			nullType.MakeGenericType (typeof (TestType));
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.MakeGenericType), new Type[] { typeof (Type[]) }, messageCode: "IL2052")]
+		[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.MakeGenericType), new Type[] { typeof (Type[]) }, messageCode: "IL2051")]
 		static void TestMakeGenericTypeUnknownInput (Type inputType)
 		{
 			inputType.MakeGenericType (typeof (TestType));
@@ -694,7 +694,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		{
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.MakeGenericType), new Type[] { typeof (Type[]) }, messageCode: "IL2051", message: "TypeMakeGenericWithPublicFieldsArgument")]
+		[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.MakeGenericType), new Type[] { typeof (Type[]) }, messageCode: "IL2051")]
 		static void TestMakeGenericWithRequirements ()
 		{
 			// Currently this is not analyzable since we don't track array elements.

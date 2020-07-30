@@ -250,7 +250,8 @@ namespace Mono.Linker.Dataflow
 						}
 
 						if (annotatedMethods.Any (a => a.Method == setMethod)) {
-							_context.LogWarning ($"Trying to propagate 'DynamicallyAccessedMembersAttribute' from property '{property.FullName}' to its setter '{setMethod.GetDisplayName ()}', but it already has such attribute on the 'value' parameter.",
+							_context.LogWarning (
+								$"'DynamicallyAccessedMembersAttribute' on property '{property.GetDisplayName ()}' conflicts with the same attribute on its accessor '{setMethod.GetDisplayName ()}'.",
 								2043, setMethod, subcategory: MessageSubCategory.TrimAnalysis);
 						} else {
 							int offset = setMethod.HasImplicitThis () ? 1 : 0;
@@ -278,8 +279,9 @@ namespace Mono.Linker.Dataflow
 						}
 
 						if (annotatedMethods.Any (a => a.Method == getMethod)) {
-							_context.LogWarning ($"Trying to propagate 'DynamicallyAccessedMembersAttribute' from property '{property.FullName}' to its getter '{getMethod.GetDisplayName ()}', but it already has such attribute on the return value.",
-								2061, getMethod, subcategory: MessageSubCategory.TrimAnalysis);
+							_context.LogWarning (
+								$"'DynamicallyAccessedMembersAttribute' on property '{property.GetDisplayName ()}' conflicts with the same attribute on its accessor '{getMethod.GetDisplayName ()}'.",
+								2043, getMethod, subcategory: MessageSubCategory.TrimAnalysis);
 						} else {
 							annotatedMethods.Add (new MethodAnnotations (getMethod, null, annotation, null));
 						}
@@ -297,7 +299,7 @@ namespace Mono.Linker.Dataflow
 					if (backingField != null) {
 						if (annotatedFields.Any (a => a.Field == backingField)) {
 							_context.LogWarning ($"Trying to propagate 'DynamicallyAccessedMembersAttribute' from property '{property.FullName}' to its field '{backingField}', but it already has such attribute.",
-								2062, backingField, subcategory: MessageSubCategory.TrimAnalysis);
+								2052, backingField, subcategory: MessageSubCategory.TrimAnalysis);
 						} else {
 							annotatedFields.Add (new FieldAnnotation (backingField, annotation));
 						}

@@ -241,23 +241,24 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				}
 			}
 
-			[LogContains ("Trying to propagate 'DynamicallyAccessedMembersAttribute' from property 'System.Type Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow/TestAutomaticPropagationType::PropertyWithExistingAttributes()' to its field 'System.Type Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow/TestAutomaticPropagationType::PropertyWithExistingAttributes_Field', but it already has such attribute.")]
-			[LogContains ("Trying to propagate 'DynamicallyAccessedMembersAttribute' from property 'System.Type Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow/TestAutomaticPropagationType::PropertyWithExistingAttributes()' to its setter 'Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow.TestAutomaticPropagationType.set_PropertyWithExistingAttributes(Type)', but it already has such attribute on the 'value' parameter.")]
-			[LogContains ("Trying to propagate 'DynamicallyAccessedMembersAttribute' from property 'System.Type Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow/TestAutomaticPropagationType::PropertyWithExistingAttributes()' to its getter 'Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow.TestAutomaticPropagationType.get_PropertyWithExistingAttributes()', but it already has such attribute on the return value.")]
 			public void TestPropertyWithExistingAttributes ()
 			{
 				_ = PropertyWithExistingAttributes;
 				PropertyWithExistingAttributes = null;
 			}
 
+			[ExpectedWarning ("IL2052", "PropertyWithExistingAttributes", "PropertyWithExistingAttributes_Field")]
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 			[CompilerGenerated]
 			Type PropertyWithExistingAttributes_Field;
 
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 			Type PropertyWithExistingAttributes {
+				[ExpectedWarning ("IL2043", "PropertyWithExistingAttributes", "get_PropertyWithExistingAttributes")]
 				[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 				get { return PropertyWithExistingAttributes_Field; }
+
+				[ExpectedWarning ("IL2043", "PropertyWithExistingAttributes", "set_PropertyWithExistingAttributes")]
 				[param: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 				set { PropertyWithExistingAttributes_Field = value; }
 			}

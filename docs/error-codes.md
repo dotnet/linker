@@ -446,9 +446,9 @@ the error code. For example:
 
 - The property 'property' has `DynamicallyAccessedMembersAttribute` on it, but the linker could not determine the backing fields for the property to propagate the attribute to the field.
 
-#### `IL2043`: Trying to propagate 'DynamicallyAccessedMemberAttribute' from property 'property' to its setter 'method', but it already has such attribute.
+#### `IL2043`: 'DynamicallyAccessedMembersAttribute' on property 'property' conflicts with the same attribute on its accessor 'method'.
 
-- Propagating `DynamicallyAccessedMembersAttribute` from property 'property' to its setter 'method' found that the setter already has such an attribute. The existing attribute will be used.
+- Propagating `DynamicallyAccessedMembersAttribute` from property 'property' to its accessor 'method' found that the accessor already has such an attribute. The existing attribute will be used.
 
 #### `IL2044`: Could not find any type in namespace 'namespace' specified in 'XML document location'
 
@@ -479,9 +479,9 @@ the error code. For example:
 - P/invoke method 'method' declares a parameter with COM marshalling. Correctness of COM interop cannot be guaranteed after trimming. Interfaces and interface members might be removed.
 - The internal attribute name 'attribute' being used in the xml is not supported by the linker, check the spelling and the supported internal attributes.
 
-#### `IL2051` Trim analysis: Making a generic type instantiation from 'type' which has 'DynamicallyAccessedMembersAttribute' on some of its generic parameters. ILLink currently doesn't analyze type values for generic parameters when making a generic type instantiation via 'System.Type.MakeGenericType'
+#### `IL2051` Trim analysis: Call to `System.Reflection.MethodInfo.MakeGenericType` can not be statically analyzed. It's not possible to guarantee the availability of requirements of the generic type.
 
-- Analysis of type parameters for `System.Type.MakeGenericType` is not yet implemented. If the open generic type `type` has `DynamicallyAccessedMembersAttribute` on any of its generic parameters, ILLink currently can't validate that the requirements are fulfilled by the calling method.  
+- This can be either that the type on which the `MakeGenericType` is called can't be statically determined, or that the type parameters to be used for generic arguments can't be statically determined. If the open generic type has `DynamicallyAccessedMembersAttribute` on any of its generic parameters, ILLink currently can't validate that the requirements are fulfilled by the calling method.  
 
   ``` C#
   class Lazy<[DynamicallyAccessedMembers(DynamicallyAccessedMemberType.PublicParameterlessConstructor)] T> 
@@ -489,26 +489,19 @@ the error code. For example:
       // ...
   }
   
-  void TestMethod()
+  void TestMethod(Type unknownType)
   {
-      // IL2051 Trim analysis: Making a generic type instantiation from 'Lazy<T>' which has 
-      // 'DynamicallyAccessedMembersAttribute' on some of its generic parameters. ILLink currently doesn't analyze 
-      // type values for generic parameters when making a generic type instantiation via 'System.Type.MakeGenericType'
+      // IL2051 Trim analysis: Call to `System.Reflection.MethodInfo.MakeGenericType(Type[])` can not be statically analyzed. It's not possible to guarantee the availability of requirements of the generic type.
       typeof(Lazy<>).MakeGenericType(new Type[] { typeof(TestType) });
+
+      // IL2051 Trim analysis: Call to `System.Reflection.MethodInfo.MakeGenericType(Type[])` can not be statically analyzed. It's not possible to guarantee the availability of requirements of the generic type.
+      unknownType.MakeGenericType(new Type[] { typeof(TestType) });
   }
   ```
 
-  #### `IL2052` Trim analysis: The value of the type on which `MakeGenericType` is called cannot be determined. It's not possible to guarantee the availability of requirements of an unknown type.
+#### `IL2052` Trim analysis: Trying to propagate 'DynamicallyAccessedMemberAttribute' from property 'property' to its backing field 'field', but it already has such attribute.
 
-- If `System.Type.MakeGenericType` is called on an type which is not statically analyzable. If the actual type has generic parameters with `DynamicallyAccessedMembersAttribute` ILLink would be required to fulfill the requirements declared by those attributes, but since the ILLink doesn't know the type, it can't determine if such requirements exist.  
-
-  ``` C#
-  void TestMethod(Type type)
-  {
-      // IL2052 Trim analysis: The value of the type on which `MakeGenericType(Type[])` is called cannot be determined. It's not possible to guarantee the availability of requirements of an unknown type.
-      type.MakeGenericType(new Type[] { typeof(TestType) });
-  }
-  ```
+- Propagating `DynamicallyAccessedMembersAttribute` from property 'property' to its backing field 'field' found that the field already has such an attribute. The existing attribute will be used.
 
 #### `IL2053` Trim analysis: Unrecognized value passed to the parameter 'typeName' of method 'System.Type.GetType(Type typeName)'. It's not possible to guarantee the availability of the target type.
 
@@ -591,7 +584,7 @@ the error code. For example:
   }
   ```
 
-#### `IL2059` Trim analysis: Unrecognized type value passed to <target description>. It's not possible to guarantee that the requirements declared by the 'DynamicallyAccessedMembersAttribute' are met.
+#### `IL2059` Trim analysis: Value passed to <target description> can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.
 
 - The target has a `DynamicallyAccessedMembersAttribute`, but the value passed to it can not be statically analyzed. ILLink can't make sure that the requirements declared by the `DynamicallyAccessedMembersAttribute` are met by the type value.  
 
@@ -611,11 +604,3 @@ the error code. For example:
 #### `IL2060` Trim analysis: 'DynamicallyAccessedMembersAttribute' was specified but no argument was provided
 
 - The link attribute XML contained a definition of attribute `DynamicallyAccessedMembersAttribute` without specifying constructor argument.
-
-#### `IL2061` Trim analysis: Trying to propagate 'DynamicallyAccessedMemberAttribute' from property 'property' to its getter 'method', but it already has such attribute.
-
-- Propagating `DynamicallyAccessedMembersAttribute` from property 'property' to its getter 'method' found that the getter already has such an attribute. The existing attribute will be used.
-
-#### `IL2062` Trim analysis: Trying to propagate 'DynamicallyAccessedMemberAttribute' from property 'property' to its backing field 'field', but it already has such attribute.
-
-- Propagating `DynamicallyAccessedMembersAttribute` from property 'property' to its backing field 'field' found that the field already has such an attribute. The existing attribute will be used.
