@@ -11,6 +11,10 @@ namespace Mono.Linker.Tests.Cases.LinkXml
 	[ExpectedWarning ("IL2008", "NonExistentType", FileName = "LinkXmlErrorCases.xml")]
 	[ExpectedWarning ("IL2009", "NonExistentMethod", "TypeWithNoMethods", FileName = "LinkXmlErrorCases.xml")]
 	[ExpectedWarning ("IL2012", "NonExistentField", "TypeWithNoFields", FileName = "LinkXmlErrorCases.xml")]
+	[ExpectedWarning ("IL2016", "NonExistentEvent", "TypeWithNoEvents", FileName = "LinkXmlErrorCases.xml")]
+	[ExpectedWarning ("IL2017", "NonExistentProperty", "TypeWithNoProperties", FileName = "LinkXmlErrorCases.xml")]
+	[ExpectedWarning ("IL2018", "SetOnlyProperty", "TypeWithProperties", FileName = "LinkXmlErrorCases.xml")]
+	[ExpectedWarning ("IL2019", "GetOnlyProperty", "TypeWithProperties", FileName = "LinkXmlErrorCases.xml")]
 	class LinkXmlErrorCases
 	{
 		public static void Main ()
@@ -28,6 +32,23 @@ namespace Mono.Linker.Tests.Cases.LinkXml
 		[ExpectedWarning ("IL2002", "TypeWithNoMethods")]
 		struct TypeWithNoMethods
 		{
+		}
+
+		[Kept]
+		struct TypeWithNoEvents
+		{
+		}
+
+		[Kept]
+		struct TypeWithNoProperties
+		{
+		}
+
+		[Kept]
+		class TypeWithProperties
+		{
+			public bool SetOnlyProperty { set { _ = value; } }
+			public bool GetOnlyProperty { get { return false; } }
 		}
 	}
 }

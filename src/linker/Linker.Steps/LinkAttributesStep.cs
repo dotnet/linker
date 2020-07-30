@@ -83,7 +83,9 @@ namespace Mono.Linker.Steps
 				ArrayBuilder<string> arguments = GetAttributeChildren (iterator.Current.SelectChildren ("argument", string.Empty));
 				MethodDefinition constructor = attributeType.Methods.Where (method => method.IsInstanceConstructor ()).FirstOrDefault (c => c.Parameters.Count == arguments.Count);
 				if (constructor == null) {
-					Context.LogWarning ($"Could not find a constructor for type '{attributeType}' that receives '{arguments.Count}' arguments as parameter", 2022, _xmlDocumentLocation);
+					Context.LogWarning (
+						$"Could not find a constructor for type '{attributeType}' that has '{arguments.Count}' arguments", 
+						2022, _xmlDocumentLocation);
 					continue;
 				}
 				string[] xmlArguments = arguments.ToArray ();
@@ -105,7 +107,9 @@ namespace Mono.Linker.Steps
 							}
 						}
 						if (argumentValue == null) {
-							Context.LogWarning ($"Could not parse argument '{xmlArguments[i]}' specified in '{_xmlDocumentLocation}' as a {constructor.Parameters[i].ParameterType.FullName}", 2021, _xmlDocumentLocation);
+							Context.LogWarning (
+								$"Could not parse argument value '{xmlArguments[i]}' for attribute '{attributeType.GetDisplayName ()}' as a '{constructor.Parameters[i].ParameterType.GetDisplayName ()}'",
+								2021, _xmlDocumentLocation);
 							recognizedArgument = false;
 						}
 					} else {
@@ -118,11 +122,16 @@ namespace Mono.Linker.Steps
 							if (int.TryParse (xmlArguments[i], out result))
 								argumentValue = result;
 							else {
-								Context.LogWarning ($"Argument '{xmlArguments[i]}' specified in '{_xmlDocumentLocation}' could not be transformed to the constructor parameter type", 2032, _xmlDocumentLocation);
+								Context.LogWarning (
+									$"Could not parse argument value '{xmlArguments[i]}' for attribute '{attributeType.GetDisplayName ()}' as a '{constructor.Parameters[i].ParameterType.GetDisplayName ()}'",
+									2021, _xmlDocumentLocation);
 							}
 							break;
 						default:
-							Context.LogWarning ($"Argument '{xmlArguments[i]}' specified in '{_xmlDocumentLocation}' is of unsupported type '{constructor.Parameters[i].ParameterType}'", 2020, _xmlDocumentLocation);
+							Context.LogWarning (
+								$"Parameter '{constructor.Parameters[i].Name}' of attribute '{attributeType.GetDisplayName ()}' " +
+								$"is of unsupported type '{constructor.Parameters[i].ParameterType.GetDisplayName ()}'",
+								2020, _xmlDocumentLocation);
 							recognizedArgument = false;
 							break;
 						}
@@ -206,7 +215,9 @@ namespace Mono.Linker.Steps
 					foreach (ParameterDefinition parameter in method.Parameters) {
 						if (paramName == parameter.Name) {
 							if (Context.CustomAttributes.HasCustomAttributes (parameter))
-								Context.LogWarning ($"There are duplicate parameter names for '{paramName}' inside '{method.GetDisplayName ()}' in '{_xmlDocumentLocation}'", 2024, _xmlDocumentLocation);
+								Context.LogWarning (
+									$"More than one value specified for parameter '{paramName}' of method '{method.GetDisplayName ()}'",
+									2024, _xmlDocumentLocation);
 							Context.CustomAttributes.AddCustomAttributes (parameter, attributes);
 							break;
 						}
@@ -226,7 +237,9 @@ namespace Mono.Linker.Steps
 					if (attributes.Count () > 0)
 						Context.CustomAttributes.AddCustomAttributes (method.MethodReturnType, attributes);
 				} else {
-					Context.LogWarning ($"There is more than one return parameter specified for '{method.GetDisplayName ()}' in '{_xmlDocumentLocation}'", 2023, _xmlDocumentLocation);
+					Context.LogWarning (
+						$"There is more than one 'return' child element specified for method '{method.GetDisplayName ()}'",
+						2023, _xmlDocumentLocation);
 				}
 			}
 		}

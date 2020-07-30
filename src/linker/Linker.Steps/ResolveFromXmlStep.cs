@@ -308,7 +308,7 @@ namespace Mono.Linker.Steps
 			if (property.GetMethod != null && Array.IndexOf (accessors, "get") >= 0)
 				ProcessMethod (type, property.GetMethod, null, customData);
 			else if (property.GetMethod == null)
-				Context.LogWarning ($"Could not find the get accessor of property '{property.Name}' in type '{type.FullName}' specified in {_xmlDocumentLocation}", 2018, _xmlDocumentLocation);
+				Context.LogWarning ($"Could not find the get accessor of property '{property.Name}' on type '{type.FullName}'", 2018, _xmlDocumentLocation);
 
 			if (property.SetMethod != null && Array.IndexOf (accessors, "set") >= 0)
 				ProcessMethod (type, property.SetMethod, null, customData);

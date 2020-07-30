@@ -12,6 +12,20 @@
     <type fullname="Mono.Linker.Tests.Cases.LinkXml.LinkXmlErrorCases/TypeWithNoFields">
       <field name="NonExistentField"/>
     </type>
+
+    <type fullname="Mono.Linker.Tests.Cases.LinkXml.LinkXmlErrorCases/TypeWithNoEvents">
+      <event name="NonExistentEvent"/>
+    </type>
+
+    <type fullname="Mono.Linker.Tests.Cases.LinkXml.LinkXmlErrorCases/TypeWithNoProperties">
+      <property name="NonExistentProperty"/>
+    </type>
+
+    <type fullname="Mono.Linker.Tests.Cases.LinkXml.LinkXmlErrorCases/TypeWithProperties">
+      <property signature="System.Boolean SetOnlyProperty" accessors="get"/>
+      <property signature="System.Boolean GetOnlyProperty" accessors="set"/>
+    </type>
+
   </assembly>
 
   <assembly fullname="NonExistentAssembly"/>

@@ -14,7 +14,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 	[SkipKeptItemsValidation]
 	[SetupLinkAttributesFile ("XmlAnnotations.xml")]
 	[LogContains ("XmlAnnotations.xml: warning IL2031: Attribute type 'System.DoesNotExistattribute' could not be found")]
-	[LogContains ("XmlAnnotations.xml: warning IL2021: Could not parse argument 'NonValidArgument' specified in *", true)]
+	[ExpectedWarning("IL2021", "NonValidArgument", "DynamicallyAccessedMembersAttribute", "DynamicallyAccessedMemberType", FileName = "XmlAnnotations.xml")]
 	class XmlAnnotations
 	{
 		public static void Main ()

@@ -338,41 +338,160 @@ the error code. For example:
   </linker>
   ```
 
-#### `IL2016`: Could not find event 'event' in type 'type' specified in 'XML document location'
+#### `IL2016`: Could not find event 'event' on type 'type'
 
 - The 'XML document location' defined a event 'event' on type 'type', but the event was not found.
 
-#### `IL2017`: Could not find property 'property' in type 'type' specified in 'XML document location'
+```XML
+  <!-- IL2016: Could not find event 'NonExistentEvent' on type 'MyType' -->
+  <linker>
+    <assembly fullname="MyAssembly">
+      <type fullname="MyType">
+        <event name="NonExistentEvent" />
+      </type>
+    </assembly>
+  </linker>
+```
+
+#### `IL2017`: Could not find property 'property' on type 'type'
 
 - The 'XML document location' defined a property 'property' on type 'type', but the property was not found.
 
-#### `IL2018`: Could not find the get accessor of property 'property' in type 'type' specified in 'XML document location'
+```XML
+  <!-- IL2017: Could not find property 'NonExistentProperty' on type 'MyType' -->
+  <linker>
+    <assembly fullname="MyAssembly">
+      <type fullname="MyType">
+        <property name="NonExistentProperty" />
+      </type>
+    </assembly>
+  </linker>
+```
+
+#### `IL2018`: Could not find the get accessor of property 'property' on type 'type'
 
 - The 'XML document location' defined the get accessor of property 'property' on type 'type', but the accessor was not found.
 
-#### `IL2019`: Could not find the set accessor of property 'property' in type 'type' specified in 'XML document location'
+```XML
+  <!-- IL2018: Could not find the get accessor of property 'SetOnlyProperty' on type 'MyType' -->
+  <linker>
+    <assembly fullname="MyAssembly">
+      <type fullname="MyType">
+        <property signature="System.Boolean SetOnlyProperty" accessors="get" />
+      </type>
+    </assembly>
+  </linker>
+```
+
+#### `IL2019`: Could not find the set accessor of property 'property' on type 'type'
 
 - The 'XML document location' defined the set accessor of property 'property' on type 'type', but the accessor was not found.
 
-#### `IL2020`: Argument 'argument' specified in 'XML document location' is of unsupported type 'type'
+```XML
+  <!-- IL2019: Could not find the set accessor of property 'GetOnlyProperty' on type 'MyType' -->
+  <linker>
+    <assembly fullname="MyAssembly">
+      <type fullname="MyType">
+        <property signature="System.Boolean GetOnlyProperty" accessors="set" />
+      </type>
+    </assembly>
+  </linker>
+```
+
+#### `IL2020`: Parameter 'parameter' of attribute 'attribute type' is of unsupported type 'type'
 
 - The constructor parameter type is not supported in the XML reading code.
 
-#### `IL2021`: Could not parse argument 'argument' specified in 'XML document location' as a 'type'
+```XML
+  <!-- IL2020: Parameter 'doubleParameter' of attribute 'AttributeWithDoubleNumberParameter' is of unsupported type 'System.Double' -->
+  <linker>
+    <assembly fullname="MyAssembly">
+      <type fullname="MyType">
+        <attribute fullname="AttributeWithDoubleNumberParameterAttribute">
+          <argument>3.14</argument>
+        </attribute>
+      </type>
+    </assembly>
+  </linker>
+```
 
-- The XML descriptor has a 'type' attribute but the argument 'argument' does not match any of the existing enum 'type' values
+#### `IL2021`: Could not parse argument value 'argument value' for attribute 'attribute type' as a 'type'
 
-#### `IL2022`: Could not find a constructor for type 'attribute type' that receives 'number of arguments' arguments as parameter
+- The specified attribute constructor has a parameter of type 'type' but the argument value 'argument value' does not match any of the existing enum 'type' values
 
-- The 'attribute type' 'number of arguments' doesnt match with the number of arguments in any of the constructor function described in 'attribute type'
+```XML
+  <!-- IL2021: Could not parse argument value 'NonExistentEnumValue' for attribute 'AttributeWithEnumParameterAttribute' as a 'MyEnumType' -->
+  <linker>
+    <assembly fullname="MyAssembly">
+      <type fullname="MyType">
+        <attribute fullname="AttributeWithEnumParameterAttribute">
+          <argument>NonExistentEnumValue</argument>
+        </attribute>
+      </type>
+    </assembly>
+  </linker>
+```
 
-#### `IL2023`: There is more than one return parameter specified for 'method' in 'XML document location'
+#### `IL2022`: Could not find a constructor for type 'attribute type' that has 'number of arguments' arguments
 
-- The XML descriptor has more than one return parameter for a single method, there can only be one return parameter
+- The XML attribute for attribute type 'attribute type' specifies 'number of arguments' arguments but there's no constructor for 'attribute type' which has that many arguments
 
-#### `IL2024`: There are duplicate parameter names for 'parameter name' inside 'method' in 'XML document location'
+```XML
+  <!-- IL2022: Could not find a constructor for type 'AttributeWithNoParametersAttribute' that has '1' arguments -->
+  <linker>
+    <assembly fullname="MyAssembly">
+      <type fullname="MyType">
+        <attribute fullname="AttributeWithNoParametersAttribute">
+          <argument>ExtraArgumentValue</argument>
+        </attribute>
+      </type>
+    </assembly>
+  </linker>
+```
 
-- The XML descriptor has more than method parameters with the same name, there can only be one return parameter
+#### `IL2023`: There is more than one 'return' child element specified for method 'method'
+
+- Method 'method' has more than one `return` element specified. There can only be one `return` element to specify attribute on the return parameter of the method.
+
+```XML
+  <!-- IL2023: There is more than one 'return' child element specified for method 'method' -->
+  <linker>
+    <assembly fullname="MyAssembly">
+      <type fullname="MyType">
+        <method name="MyMethod">
+          <return>
+            <attribute fullname="FirstAttribute"/>
+          </return>
+          <return>
+            <attribute fullname="SecondAttribute"/>
+          </return>
+        </method>
+      </type>
+    </assembly>
+  </linker>
+```
+
+#### `IL2024`: More than one value specified for parameter 'parameter' of method 'method'
+
+- Method 'method' has more than one `parameter` element for parameter 'parameter'. There can only be one value specified for each parameter.
+
+```XML
+  <!-- IL2024: More than one value specified for parameter 'parameter' of method 'method' -->
+  <linker>
+    <assembly fullname="MyAssembly">
+      <type fullname="MyType">
+        <method name="MyMethod">
+          <parameter name="methodParameter">
+            <attribute fullname="FirstAttribute"/>
+          </parameter>
+          <parameter name="methodParameter">
+            <attribute fullname="SecondAttribute"/>
+          </parameter>
+        </method>
+      </type>
+    </assembly>
+  </linker>
+```
 
 #### `IL2025`: Duplicate preserve of 'member' in 'XML document location'
 
@@ -402,9 +521,10 @@ the error code. For example:
 
 - The described 'attribute type' could not be found in the assemblies
 
-#### `IL2032`: Argument 'argument' specified in 'XML document location' could not be transformed to the constructor parameter type
+#### `IL2032` Trim analysis: 'DynamicallyAccessedMembersAttribute' constructor must only have one parameter specified
 
-- The number of arguments correspond to a certain type constructor, but the type of arguments specified in the xml does not match the type of arguments in the constructor.
+- There's a `DynamicallyAccessedMembersAttribute` which has either no or more than one parameters specified.  
+This is technically possible if a custom assembly defines the `DynamicallyAccessedMembersAttribute` type with parameterless constructor and uses it. ILLink will recognize the attribute since it only does a namespace and type name match, but it expect it to have exactly one parameter in its constructor.
 
 #### `IL2033`: PreserveDependencyAttribute is deprecated. Use DynamicDependencyAttribute instead.
 
@@ -600,7 +720,3 @@ the error code. For example:
       NeedsPublicConstructors(types[1]);
   }
   ```
-
-#### `IL2060` Trim analysis: 'DynamicallyAccessedMembersAttribute' was specified but no argument was provided
-
-- The link attribute XML contained a definition of attribute `DynamicallyAccessedMembersAttribute` without specifying constructor argument.

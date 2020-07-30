@@ -311,7 +311,7 @@ namespace Mono.Linker.Steps
 			if (!String.IsNullOrEmpty (signature)) {
 				EventDefinition @event = GetEvent (type, signature);
 				if (@event == null) {
-					Context.LogWarning ($"Could not find event '{signature}' on type '{type.GetDisplayName ()}' specified in {_xmlDocumentLocation}", 2016, _xmlDocumentLocation);
+					Context.LogWarning ($"Could not find event '{signature}' on type '{type.GetDisplayName ()}'", 2016, _xmlDocumentLocation);
 					return;
 				}
 
@@ -320,9 +320,6 @@ namespace Mono.Linker.Steps
 
 			string name = GetAttribute (nav, NameAttributeName);
 			if (!String.IsNullOrEmpty (name)) {
-				if (!type.HasEvents)
-					return;
-
 				bool foundMatch = false;
 				foreach (EventDefinition @event in type.Events) {
 					if (@event.Name == name) {
@@ -332,7 +329,7 @@ namespace Mono.Linker.Steps
 				}
 
 				if (!foundMatch) {
-					Context.LogWarning ($"Could not find event '{name}' on type '{type.GetDisplayName ()}' specified in {_xmlDocumentLocation}", 2016, _xmlDocumentLocation);
+					Context.LogWarning ($"Could not find event '{name}' on type '{type.GetDisplayName ()}'", 2016, _xmlDocumentLocation);
 				}
 			}
 		}
@@ -370,7 +367,7 @@ namespace Mono.Linker.Steps
 			if (!String.IsNullOrEmpty (signature)) {
 				PropertyDefinition property = GetProperty (type, signature);
 				if (property == null) {
-					Context.LogWarning ($"Could not find property '{signature}' on type '{type.GetDisplayName ()}' specified in {_xmlDocumentLocation}", 2017, _xmlDocumentLocation);
+					Context.LogWarning ($"Could not find property '{signature}' on type '{type.GetDisplayName ()}'", 2017, _xmlDocumentLocation);
 					return;
 				}
 
@@ -379,9 +376,6 @@ namespace Mono.Linker.Steps
 
 			string name = GetAttribute (nav, NameAttributeName);
 			if (!String.IsNullOrEmpty (name)) {
-				if (!type.HasProperties)
-					return;
-
 				bool foundMatch = false;
 				foreach (PropertyDefinition property in type.Properties) {
 					if (property.Name == name) {
@@ -391,7 +385,7 @@ namespace Mono.Linker.Steps
 				}
 
 				if (!foundMatch) {
-					Context.LogWarning ($"Could not find property '{name}' on type '{type.GetDisplayName ()}' specified in {_xmlDocumentLocation}", 2017, _xmlDocumentLocation);
+					Context.LogWarning ($"Could not find property '{name}' on type '{type.GetDisplayName ()}'", 2017, _xmlDocumentLocation);
 				}
 			}
 		}
