@@ -431,7 +431,7 @@ namespace Mono.Linker
 							return -1;
 
 						if (!GetWarningSuppressionWriterFileOutputKind (generateWarningSuppressionsArgument, out var fileOutputKind)) {
-							context.LogError ($"Invalid value '{generateWarningSuppressionsArgument}'specified for '--generate-warning-suppressions' option", 2061);
+							context.LogError ($"Invalid value '{generateWarningSuppressionsArgument}'specified for '--generate-warning-suppressions' option", 1017);
 							return -1;
 						}
 
