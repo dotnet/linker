@@ -62,6 +62,31 @@ namespace ILLink.Tasks
 		public string NoWarn { get; set; }
 
 		/// <summary>
+		/// The warning version to use.
+		/// Maps to '--warn'.
+		/// </summary>
+		public string Warn { get; set; }
+
+		/// <summary>
+		/// Treat all warnings as errors.
+		/// Maps to '--warnaserror' if true, '--warnaserror-' if false.
+		/// </summary>
+		public bool TreatWarningsAsErrors { set => _treatWarningsAsErrors = value; }
+		bool? _treatWarningsAsErrors;
+
+		/// <summary>
+		/// The list of warnings to report as errors.
+		/// Maps to '--warnaserror LIST-OF-WARNINGS'.
+		/// </summary>
+		public string WarningsAsErrors { get; set; }
+
+		/// <summary>
+		/// The list of warnings to report as usual.
+		/// Maps to '--warnaserror- LIST-OF-WARNINGS'.
+		/// </summary>
+		public string WarningsNotAsErrors { get; set; }
+
+		/// <summary>
 		///   A list of XML root descriptor files specifying linker
 		///   roots at a granular level. See the mono/linker
 		///   documentation for details about the format.
@@ -305,6 +330,20 @@ namespace ILLink.Tasks
 
 			if (NoWarn != null)
 				args.Append ("--nowarn ").AppendLine (Quote (NoWarn));
+
+			if (Warn != null)
+				args.Append ("--warn ").AppendLine (Quote (Warn));
+
+			if (_treatWarningsAsErrors is bool treatWarningsAsErrors && treatWarningsAsErrors)
+				args.Append ("--warnaserror ");
+			else
+				args.Append ("--warnaserror- ");
+
+			if (WarningsAsErrors != null)
+				args.Append ("--warnaserror ").AppendLine (Quote (WarningsAsErrors));
+
+			if (WarningsNotAsErrors != null)
+				args.Append ("--warnaserror- ").AppendLine (Quote (WarningsNotAsErrors));
 
 			// Add global optimization arguments
 			if (_beforeFieldInit is bool beforeFieldInit)
