@@ -529,7 +529,8 @@ namespace Mono.Linker.Steps
 			if (!Annotations.IsInstantiated (typeWithDefaultImplementedInterfaceMethod))
 				return;
 
-			MarkInterfaceImplementation (implementation, typeWithDefaultImplementedInterfaceMethod);
+			if (!Annotations.IsMarked (implementation))
+				MarkInterfaceImplementation (implementation, typeWithDefaultImplementedInterfaceMethod);
 		}
 
 		void MarkMarshalSpec (IMarshalInfoProvider spec, in DependencyInfo reason, IMemberDefinition sourceLocationMember)
