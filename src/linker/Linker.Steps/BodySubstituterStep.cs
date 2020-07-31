@@ -153,7 +153,7 @@ namespace Mono.Linker.Steps
 
 				string action = GetAttribute (nav, "action");
 				if (action != "remove") {
-					Context.LogWarning ($"Invalid 'action' attribute for resource '{name}'.", 2039, _xmlDocumentLocation);
+					Context.LogWarning ($"Invalid value '{action}' for attribute 'action' for resource '{name}'.", 2039, _xmlDocumentLocation);
 					continue;
 				}
 

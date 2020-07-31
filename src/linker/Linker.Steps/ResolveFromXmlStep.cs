@@ -101,7 +101,7 @@ namespace Mono.Linker.Steps
 				}
 
 				if (!foundMatch) {
-					Context.LogWarning ($"Could not find any type in namespace '{fullname}' specified in '{_xmlDocumentLocation}'", 2044, _xmlDocumentLocation);
+					Context.LogWarning ($"Could not find any type in namespace '{fullname}'", 2044, _xmlDocumentLocation);
 				}
 			}
 		}

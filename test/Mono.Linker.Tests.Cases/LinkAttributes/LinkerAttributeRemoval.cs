@@ -39,13 +39,8 @@ namespace Mono.Linker.Tests.Cases.LinkAttributes
 	[KeptAssembly ("copyattribute.dll")]
 	[KeptTypeInAssembly ("copyattribute.dll", typeof (AttributeFromCopyAssemblyAttribute))]
 
-	[LogContains ("IL2045: Mono.Linker.Tests.Cases.LinkAttributes.LinkerAttributeRemoval.TestType(): Custom Attribute System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute is " +
-		"being referenced in code but the linker was instructed to remove all instances of this attribute. If the attribute instances are necessary make sure to either remove " +
-		"the linker attribute XML portion which removes the attribute instances, or to override this use the linker XML descriptor to keep the attribute type (which in turn keeps all of its instances).")]
-
-	[LogContains ("IL2045: Mono.Linker.Tests.Cases.LinkAttributes.Dependencies.TypeOnCopyAssemblyWithAttributeUsage.TypeOnCopyAssemblyWithAttributeUsage(): Custom Attribute Mono.Linker.Tests.Cases.LinkAttributes.Dependencies.TestAttributeReferencedAsTypeFromCopyAssemblyAttribute is " +
-		"being referenced in code but the linker was instructed to remove all instances of this attribute. If the attribute instances are necessary make sure to either remove " +
-		"the linker attribute XML portion which removes the attribute instances, or to override this use the linker XML descriptor to keep the attribute type (which in turn keeps all of its instances).")]
+	[LogContains ("IL2045: Mono.Linker.Tests.Cases.LinkAttributes.LinkerAttributeRemoval.TestType(): Attribute 'System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute'")]
+	[LogContains ("IL2045: Mono.Linker.Tests.Cases.LinkAttributes.Dependencies.TypeOnCopyAssemblyWithAttributeUsage.TypeOnCopyAssemblyWithAttributeUsage(): Attribute 'Mono.Linker.Tests.Cases.LinkAttributes.Dependencies.TestAttributeReferencedAsTypeFromCopyAssemblyAttribute'")]
 
 	[LogDoesNotContain ("IL2045")] // No other 2045 messages should be logged
 

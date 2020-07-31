@@ -563,7 +563,7 @@ namespace Mono.Linker.Dataflow
 										// For now we don't support tracking actual array elements, so we can't validate that the requirements are fulfilled.
 										reflectionContext.RecordUnrecognizedPattern (
 											2051,
-											$"Call to `{calledMethodDefinition.GetDisplayName ()}` can not be statically analyzed. " +
+											$"Call to '{calledMethodDefinition.GetDisplayName ()}' can not be statically analyzed. " +
 											$"It's not possible to guarantee the availability of requirements of the generic type.");
 									}
 								}
@@ -576,7 +576,7 @@ namespace Mono.Linker.Dataflow
 								// We have no way to "include more" to fix this if we don't know, so we have to warn
 								reflectionContext.RecordUnrecognizedPattern (
 									2051,
-									$"Call to `{calledMethodDefinition.GetDisplayName ()}` can not be statically analyzed. " +
+									$"Call to '{calledMethodDefinition.GetDisplayName ()}' can not be statically analyzed. " +
 									$"It's not possible to guarantee the availability of requirements of the generic type.");
 							}
 						}

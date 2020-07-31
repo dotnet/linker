@@ -546,7 +546,7 @@ the error code. For example:
 #### `IL2028`: Attribute 'attribute' doesn't have the required number of parameters specified
 
 - The linker found an instance of attribute 'attribute' on 'method' but it lacks a required constructor parameter or it has more parameters than accepted. Linker will ignore this attribute. 
-This is technically possible if a custom assembly defines for example the `RequiresUnreferencedCodeAttribute` type with parameterless constructor and uses it. ILLink will recognize the attribute since it only does a namespace and type name match, but it expect it to have exactly one parameter in its constructor.
+This is technically possible if a custom assembly defines for example the `RequiresUnreferencedCodeAttribute` type with parameterless constructor and uses it. ILLink will recognize the attribute since it only does a namespace and type name match, but it expects it to have exactly one parameter in its constructor.
 
 #### `IL2029`: 'attribute' element does not contain required attribute 'fullname' or it's empty
 
@@ -578,6 +578,15 @@ This is technically possible if a custom assembly defines for example the `Requi
 
 - The described 'attribute type' could not be found in the assemblies
 
+  ```XML
+  <!-- IL2031: Attribute type 'NonExistentTypeAttribute' could not be found -->
+  <linker>
+    <assembly fullname="MyAssembly">
+      <attribute fullname="NonExistentTypeAttribute"/>
+    </assembly>
+  </linker>
+  ```
+
 #### `IL2032` Trim analysis: Value passed to <target description> can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.
 
 - The target has a `DynamicallyAccessedMembersAttribute`, but the value passed to it can not be statically analyzed. ILLink can't make sure that the requirements declared by the `DynamicallyAccessedMembersAttribute` are met by the type value.  
@@ -590,70 +599,232 @@ This is technically possible if a custom assembly defines for example the `Requi
 
   void TestMethod(Type[] types)
   {
-      // IL2032 Trim analysis: Unrecognized type value passed to parameter 'type' of method 'NeedsPublicConstructors'. It's not possible to guarantee that the requirements declared by the 'DynamicallyAccessedMembersAttribute' are met.
+      // IL2032: Unrecognized type value passed to parameter 'type' of method 'NeedsPublicConstructors'. It's not possible to guarantee that the requirements declared by the 'DynamicallyAccessedMembersAttribute' are met.
       NeedsPublicConstructors(types[1]);
   }
   ```
 
-#### `IL2033`: PreserveDependencyAttribute is deprecated. Use DynamicDependencyAttribute instead.
+#### `IL2033`: 'PreserveDependencyAttribute' is deprecated. Use 'DynamicDependencyAttribute' instead.
 
-- PreserveDependencyAttribute was an internal attribute that was never officially supported. Instead, use the similar DynamicDependencyAttribute.
+- `PreserveDependencyAttribute` was an internal attribute that was never officially supported. Instead, use the similar `DynamicDependencyAttribute`.
 
-#### `IL2034`: Invalid DynamicDependencyAttribute on 'member'
+  ```C#
+  // IL2033: 'PreserveDependencyAttribute' is deprecated. Use 'DynamicDependencyAttribute' instead.
+  [PreserveDependency("OtherMethod")]
+  public void TestMethod()
+  {
+  }
+  ```
 
-- The input contains an invalid use of DynamicDependencyAttribute. Ensure that you are using one of the officially supported constructors.
+#### `IL2034`: The 'DynamicDependencyAttribute' could not be analyzed
 
-#### `IL2035`: Unresolved assembly 'assemblyName' in DynamicDependencyAttribute on 'member'
+- The input contains an invalid use of `DynamicDependencyAttribute`. Ensure that you are using one of the officially supported constructors.  
+This is technically possible if a custom assembly defines `DynamicDependencyAttribute` with a different constructor than the one the ILLink recognizes. ILLink will recognize the attribute since it only does a namespace and type name match, but the actual instantiation was not recognized.
 
-- The assembly string given in a DynamicDependencyAttribute constructor could not be resolved. Ensure that the argument specifies a valid asembly name, and that the assembly is available to the linker.
+#### `IL2035`: Unresolved assembly 'assemblyName' in 'DynamicDependencyAttribute'
 
-#### `IL2036`: Unresolved type 'typeName' in DynamicDependencyAttribute on 'member'
+- The assembly string 'assemblyName' given in a `DynamicDependencyAttribute` constructor could not be resolved. Ensure that the argument specifies a valid assembly name, and that the assembly is available to the linker.
 
-- The type in a DynamicDependencyAttribute constructor could not be resolved. Ensure that the argument specifies a valid type name or type reference, that the type exists in the specified assembly, and that the assembly is available to the linker.
+  ```C#
+  // IL2035: Unresolved assembly 'NonExistentAssembly' in 'DynamicDependencyAttribute'
+  [DynamicDependency("Method", "Type", "NonExistentAssembly")]
+  public void TestMethod()
+  {
+  }
+  ```
+
+#### `IL2036`: Unresolved type 'typeName' in 'DynamicDependencyAttribute'
+
+- The type in a `DynamicDependencyAttribute` constructor could not be resolved. Ensure that the argument specifies a valid type name or type reference, that the type exists in the specified assembly, and that the assembly is available to the linker.
+
+  ```C#
+  // IL2036: Unresolved type 'NonExistentType' in 'DynamicDependencyAttribute'
+  [DynamicDependency("Method", "NonExistentType", "MyAssembly")]
+  public void TestMethod()
+  {
+  }
+  ```
 
 #### `IL2037`: No members were resolved for 'memberSignature/memberTypes'.
 
-- The member signature or DynamicallyAccessedMemberTypes in a DynamicDependencyAttribute constructor did not resolve to any members on the type. If you using a signature, ensure that it refers to an existing member, and that it uses the format defined at https://github.com/dotnet/csharplang/blob/master/spec/documentation-comments.md#id-string-format. If using DynamicallyAccessedMemberTypes, ensure that the type contains members of the specified member types.
+- The member signature or `DynamicallyAccessedMemberTypes` in a `DynamicDependencyAttribute` constructor did not resolve to any members on the type. If you are using a signature, ensure that it refers to an existing member, and that it uses the format defined at https://github.com/dotnet/csharplang/blob/master/spec/documentation-comments.md#id-string-format. If using `DynamicallyAccessedMemberTypes`, ensure that the type contains members of the specified member types.
+
+  ```C#
+  // IL2036: No members were resolved for 'NonExistingMethod'.
+  [DynamicDependency("NonExistingMethod", "MyType", "MyAssembly")]
+  public void TestMethod()
+  {
+  }
+  ```
 
 #### `IL2038`: Missing 'name' attribute for resource.
 
-- The resource element in a substitution file did not have a 'name' attribute. Add a 'name' attribute with the name of the resource to remove.
+- The `resource` element in a substitution file did not have a `name` attribute. Add a `name` attribute with the name of the resource to remove.
 
-#### `IL2039`: Invalid 'action' attribute for resource 'resource'.
+  ```XML
+  <!-- IL2038: Missing 'name' attribute for resource. -->
+  <linker>
+    <assembly fullname="MyAssembly">
+      <resource />
+    </assembly>
+  </linker>
+  ```
+
+#### `IL2039`: Invalid value 'value' for attribute 'action' for resource 'resource'.
 
 - The resource element in a substitution file did not have a valid 'action' attribute. Add an 'action' attribute to this element, with value 'remove' to tell the linker to remove this resource.
+
+  ```XML
+  <!-- IL2039: Invalid value 'NonExistentAction' for attribute 'action' for resource 'MyResource'. -->
+  <linker>
+    <assembly fullname="MyAssembly">
+      <resource name="MyResource" action="NonExistentAction"/>
+    </assembly>
+  </linker>
+  ```
 
 #### `IL2040`: Could not find embedded resource 'resource' to remove in assembly 'assembly'.
 
 - The resource name in a substitution file could not be found in the specified assembly. Ensure that the resource name matches the name of an embedded resource in the assembly.
 
-#### `IL2041`: 'DynamicallyAccessedMembersAttribute' is only allowed on method parameters, return value or generic parameters.
+  ```XML
+  <!-- IL2040: Could not find embedded resource 'NonExistentResource' to remove in assembly 'MyAssembly'. -->
+  <linker>
+    <assembly fullname="MyAssembly">
+      <resource name="NonExistentResource" action="remove"/>
+    </assembly>
+  </linker>
+  ```
 
-- `DynamicallyAccessedMembersAttribute` was put directly on the member itself. This is only allowed for instance methods on System.Type and similar classes. Usually this means the attribute should be placed on the return value of the method (or one of its parameters).
+#### `IL2041` Trim analysis: The 'DynamicallyAccessedMembersAttribute' is not allowed on methods. It is allowed on method return value or method parameters though.
 
-#### `IL2042`: Could not find a unique backing field for property 'property' to propagate 'DynamicallyAccessedMembersAttribute'
+- `DynamicallyAccessedMembersAttribute` was put directly on the method itself. This is only allowed for instance methods on System.Type and similar classes. Usually this means the attribute should be placed on the return value of the method or one of the method parameters.
 
-- The property 'property' has `DynamicallyAccessedMembersAttribute` on it, but the linker could not determine the backing fields for the property to propagate the attribute to the field.
+  ```C#
+  // IL2041: The 'DynamicallyAccessedMembersAttribute' is not allowed on methods. It is allowed on method return value or method parameters though.
+  [DynamicallyAccessedMembers(DynamicallyAccessedMemberType.PublicMethods)]
 
-#### `IL2043`: 'DynamicallyAccessedMembersAttribute' on property 'property' conflicts with the same attribute on its accessor 'method'.
+  // Instead if it is meant for the return value it should be done like this:
+  [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberType.PublicMethods)]
+  public Type GetInterestingType()
+  {
+    // ...
+  }
+  ```
+
+#### `IL2042` Trim analysis: Could not find a unique backing field for property 'property' to propagate 'DynamicallyAccessedMembersAttribute'
+
+- The property 'property' has `DynamicallyAccessedMembersAttribute` on it, but the linker could not determine the backing field for the property to propagate the attribute to the field.
+
+  ```C#
+  // IL2042: Could not find a unique backing field for property 'MyProperty' to propagate 'DynamicallyAccessedMembersAttribute'
+  [DynamicallyAccessedMembers(DynamicallyAccessedMemberType.PublicMethods)]
+  public Type MyProperty
+  {
+    get { return GetTheValue(); }
+    set { }
+  }
+
+  // To fix this annotate the accessors manually:
+  public Type MyProperty
+  {
+    [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberType.PublicMethods)] 
+    get { return GetTheValue(); }
+
+    [param: DynamicallyAccessedMembers(DynamicallyAccessedMemberType.PublicMethods)]
+    set { }
+  }
+  ```
+
+#### `IL2043` Trim analysis: 'DynamicallyAccessedMembersAttribute' on property 'property' conflicts with the same attribute on its accessor 'method'.
 
 - Propagating `DynamicallyAccessedMembersAttribute` from property 'property' to its accessor 'method' found that the accessor already has such an attribute. The existing attribute will be used.
 
-#### `IL2044`: Could not find any type in namespace 'namespace' specified in 'XML document location'
+  ```C#
+  // IL2043: 'DynamicallyAccessedMembersAttribute' on property 'MyProperty' conflicts with the same attribute on its accessor 'get_MyProperty'.
+  [DynamicallyAccessedMembers(DynamicallyAccessedMemberType.PublicMethods)]
+  public Type MyProperty
+  {
+    [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberType.PublicFields)]
+    get { return GetTheValue(); }
+  }
+  ```
 
-- The 'XML document location' specifies a namespace 'namespace' but there are no types found in such namespace.
+#### `IL2044`: Could not find any type in namespace 'namespace'
 
-#### `IL2045`: Custom Attribute 'type' is being referenced in code but the linker was instructed to remove all instances of this attribute. If the attribute instances are necessary make sure to either remove the linker attribute XML portion which removes the attribute instances, or to override this use the linker XML descriptor to keep the attribute type (which in turn keeps all of its instances).
+- The XML descriptor specifies a namespace 'namespace' but there are no types found in such namespace. This typically means that the namespace is misspelled.
 
-- CustomAttribute 'type' is being referenced in the code but the 'type' has been removed using the "remove" attribute tag on a type inside the LinkAttributes xml
+  ```XML
+  <!-- IL2044: Could not find any type in namespace 'NonExistentNamespace' -->
+  <linker>
+    <assembly fullname="MyAssembly">
+      <namespace fullname="NonExistentNamespace" />
+    </assembly>
+  </linker>
+  ```
 
-#### `IL2046`: Presence of RequiresUnreferencedCodeAttribute on method '<method>' doesn't match overridden method 'base method'. All overridden methods must have RequiresUnreferencedCodeAttribute.
+#### `IL2045` Trim analysis: Attribute 'type' is being referenced in code but the linker was instructed to remove all instances of this attribute. If the attribute instances are necessary make sure to either remove the linker attribute XML portion which removes the attribute instances, or override the removal by using the linker XML descriptor to keep the attribute type (which in turn keeps all of its instances).
 
-- All overrides of a virtual method including the base method must either have or not have the RequiresUnreferencedCodeAttribute.
+- Attribute 'type' is being referenced in the code but the attribute instances have been removed using the 'RemoveAttributeInstances' internal attribute inside the LinkAttributes XML.
 
-#### `IL2047`: DynamicallyAccessedMemberTypes in 'DynamicallyAccessedMembersAttribute' on <member> don't match overridden <base member>. All overriden members must have the same 'DynamicallyAccessedMembersAttribute' usage.
+  ```XML
+  <linker>
+    <assembly fullname="MyAssembly">
+      <type fullname="MyAttribute">
+        <attribute internal="RemoveAttributeInstances"/>
+      </type>
+    </assembly>
+  </linker>
+  ```
 
-- All overrides of a virtual method including the base method must have the same DynamicallyAccessedMemberAttribute usage on all it's components (return value, parameters and generic parameters).
+  ```C#
+  // This attribute instance will be removed
+  [MyAttribute]
+  class MyType
+  {
+  }
+
+  public void TestMethod()
+  {
+    // IL2045 for 'MyAttribute' reference
+    typeof(MyType).GetCustomAttributes(typeof(MyAttribute), false);
+  }
+  ```
+
+#### `IL2046` Trim analysis: Presence of 'RequiresUnreferencedCodeAttribute' on method '<method>' doesn't match overridden method 'base method'. All overridden methods must have 'RequiresUnreferencedCodeAttribute'.
+
+- All overrides of a virtual method including the base method must either have or not have the `RequiresUnreferencedCodeAttribute`.
+
+  ```C#
+  public class Base
+  {
+    [RequiresUnreferencedCode("Message")]
+    public virtual void TestMethod() {}
+  }
+
+  public class Derived : Base
+  {
+    // IL2046: Presence of 'RequiresUnreferencedCodeAttribute' on method 'Derived.TestMethod()' doesn't match overridden method 'Base.TestMethod'. All overridden methods must have 'RequiresUnreferencedCodeAttribute'.
+    public override void TestMethod() {}
+  }
+  ```
+
+#### `IL2047` Trim analysis: 'DynamicallyAccessedMemberTypes' in 'DynamicallyAccessedMembersAttribute' on <member> don't match overridden <base member>. All overridden members must have the same 'DynamicallyAccessedMembersAttribute' usage.
+
+- All overrides of a virtual method including the base method must have the same `DynamicallyAccessedMemberAttribute` usage on all it's components (return value, parameters and generic parameters).
+
+  ```C#
+  public class Base
+  {
+    public virtual void TestMethod([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] Type type) {}
+  }
+
+  public class Derived : Base
+  {
+    // IL2047: 'DynamicallyAccessedMemberTypes' in 'DynamicallyAccessedMembersAttribute' on parameter 'type' on method 'Derived.TestMethod' don't match overridden parameter 'type' on method 'Base.TestMethod'. All overridden members must have the same 'DynamicallyAccessedMembersAttribute' usage.
+    public override void TestMethod([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)] Type type) {}
+  }
+  ```
 
 #### `IL2048`: Internal attribute 'RemoveAttributeInstances' can only be used on a type, but is being used on 'member type' 'member'
 
@@ -668,7 +839,7 @@ This is technically possible if a custom assembly defines for example the `Requi
 - P/invoke method 'method' declares a parameter with COM marshalling. Correctness of COM interop cannot be guaranteed after trimming. Interfaces and interface members might be removed.
 - The internal attribute name 'attribute' being used in the xml is not supported by the linker, check the spelling and the supported internal attributes.
 
-#### `IL2051` Trim analysis: Call to `System.Reflection.MethodInfo.MakeGenericType` can not be statically analyzed. It's not possible to guarantee the availability of requirements of the generic type.
+#### `IL2051` Trim analysis: Call to 'System.Reflection.MethodInfo.MakeGenericType' can not be statically analyzed. It's not possible to guarantee the availability of requirements of the generic type.
 
 - This can be either that the type on which the `MakeGenericType` is called can't be statically determined, or that the type parameters to be used for generic arguments can't be statically determined. If the open generic type has `DynamicallyAccessedMembersAttribute` on any of its generic parameters, ILLink currently can't validate that the requirements are fulfilled by the calling method.  
 

@@ -13,6 +13,7 @@ namespace Mono.Linker.Tests.Cases.LinkAttributes
 	[ExpectedWarning ("IL2007", "NonExistentAssembly2", FileName = "LinkAttributeErrorCases.xml")]
 	[ExpectedWarning ("IL2030", "NonExistentAssembly1", FileName = "LinkAttributeErrorCases.xml")]
 	[ExpectedWarning ("IL2030", "MalformedAssemblyName, thisiswrong", FileName = "LinkAttributeErrorCases.xml")]
+	[ExpectedWarning ("IL2031", "NonExistentAttribute", FileName = "LinkAttributeErrorCases.xml")]
 	[ExpectedWarning ("IL2020", "doubleParameter", "AttributeWithDoubleNumberParameterAttribute", "System.Double", FileName = "LinkAttributeErrorCases.xml")]
 	[ExpectedWarning ("IL2021", "NonExistentEnumValue", "AttributeWithEnumParameterAttribute", "AttributeEnum", FileName = "LinkAttributeErrorCases.xml")]
 	[ExpectedWarning ("IL2021", "NotANumber", "AttributeWithIntParameterAttribute", "System.Int32", FileName = "LinkAttributeErrorCases.xml")]

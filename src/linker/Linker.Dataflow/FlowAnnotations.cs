@@ -113,7 +113,7 @@ namespace Mono.Linker.Dataflow
 				else
 					_context.LogWarning (
 						$"Attribute 'System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute' doesn't have the required number of parameters specified",
-						2028, locationMember ?? (provider as IMemberDefinition), subcategory: MessageSubCategory.TrimAnalysis);
+						2028, locationMember ?? (provider as IMemberDefinition));
 			}
 			return DynamicallyAccessedMemberTypes.None;
 		}
@@ -161,12 +161,16 @@ namespace Mono.Linker.Dataflow
 								paramAnnotations[0] = methodMemberTypes;
 							}
 						} else if (methodMemberTypes != DynamicallyAccessedMemberTypes.None) {
-							_context.LogWarning ($"The DynamicallyAccessedMembersAttribute is only allowed on method parameters, return value or generic parameters.", 2041, method);
+							_context.LogWarning (
+								$"The 'DynamicallyAccessedMembersAttribute' is not allowed on methods. It is allowed on method return value or method parameters though.", 
+								2041, method, subcategory: MessageSubCategory.TrimAnalysis);
 						}
 					} else {
 						offset = 0;
 						if (methodMemberTypes != DynamicallyAccessedMemberTypes.None) {
-							_context.LogWarning ($"The DynamicallyAccessedMembersAttribute is only allowed on method parameters, return value or generic parameters.", 2041, method);
+							_context.LogWarning (
+								$"The 'DynamicallyAccessedMembersAttribute' is not allowed on methods. It is allowed on method return value or method parameters though.", 
+								2041, method, subcategory: MessageSubCategory.TrimAnalysis);
 						}
 					}
 
@@ -290,7 +294,9 @@ namespace Mono.Linker.Dataflow
 					FieldDefinition backingField;
 					if (backingFieldFromGetter != null && backingFieldFromSetter != null &&
 						backingFieldFromGetter != backingFieldFromSetter) {
-						_context.LogWarning ($"Could not find a unique backing field for property '{property.FullName}' to propagate 'DynamicallyAccessedMembersAttribute'. The backing fields from getter '{backingFieldFromGetter.FullName}' and setter '{backingFieldFromSetter.FullName}' are not the same.", 2042, property);
+						_context.LogWarning (
+							$"Could not find a unique backing field for property '{property.GetDisplayName ()}' to propagate 'DynamicallyAccessedMembersAttribute'.",
+							2042, property, subcategory: MessageSubCategory.TrimAnalysis);
 						backingField = null;
 					} else {
 						backingField = backingFieldFromGetter ?? backingFieldFromSetter;
@@ -459,11 +465,10 @@ namespace Mono.Linker.Dataflow
 		void LogValidationWarning (IMetadataTokenProvider provider, IMetadataTokenProvider baseProvider, IMemberDefinition origin)
 		{
 			_context.LogWarning (
-				$"DynamicallyAccessedMemberTypes in DynamicallyAccessedMembersAttribute on {DiagnosticUtilities.GetMetadataTokenDescriptionForErrorMessage (provider)} " +
+				$"'DynamicallyAccessedMemberTypes' in 'DynamicallyAccessedMembersAttribute' on {DiagnosticUtilities.GetMetadataTokenDescriptionForErrorMessage (provider)} " +
 				$"don't match overridden {DiagnosticUtilities.GetMetadataTokenDescriptionForErrorMessage (baseProvider)}. " +
-				$"All overridden members must have the same DynamicallyAccessedMembersAttribute usage.",
-				2047,
-				origin);
+				$"All overridden members must have the same 'DynamicallyAccessedMembersAttribute' usage.",
+				2047, origin, subcategory: MessageSubCategory.TrimAnalysis);
 		}
 
 		readonly struct TypeAnnotations
