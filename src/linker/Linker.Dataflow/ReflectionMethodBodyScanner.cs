@@ -1385,7 +1385,7 @@ namespace Mono.Linker.Dataflow
 					// Ignore - probably unreachable path as it would fail at runtime anyway.
 				} else {
 					reflectionContext.RecordUnrecognizedPattern (
-						2059,
+						2032,
 						$"Value passed to {DiagnosticUtilities.GetMetadataTokenDescriptionForErrorMessage (targetContext)} can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.");
 				}
 			}

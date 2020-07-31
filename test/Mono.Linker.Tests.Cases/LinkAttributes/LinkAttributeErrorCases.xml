@@ -2,6 +2,7 @@
 <linker>
   <assembly fullname="test, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
     <type fullname="Mono.Linker.Tests.Cases.LinkAttributes.LinkAttributeErrorCases">
+      <!-- IL2030 -->
       <attribute fullname="AttributeTypeName" assembly="NonExistentAssembly1"/>
       <attribute fullname="AttributeTypeName" assembly="MalformedAssemblyName, thisiswrong"/>
 
@@ -45,6 +46,10 @@
         </parameter>
       </method>
     </type>
+
+    <!-- IL2029 -->
+    <attribute/>
+    <attribute fullname=""/>
   </assembly>
   <assembly fullname="NonExistentAssembly2" />
 </linker>

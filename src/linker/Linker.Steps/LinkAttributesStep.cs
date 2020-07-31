@@ -56,7 +56,7 @@ namespace Mono.Linker.Steps
 
 				string attributeFullName = GetFullName (iterator.Current);
 				if (attributeFullName == String.Empty) {
-					Context.LogWarning ($"Attribute element does not contain attribute 'fullname'", 2029, _xmlDocumentLocation);
+					Context.LogWarning ($"'attribute' element does not contain required attribute 'fullname' or it's empty", 2029, _xmlDocumentLocation);
 					continue;
 				}
 				string assemblyName = GetAttribute (iterator.Current, "assembly");
@@ -66,11 +66,11 @@ namespace Mono.Linker.Steps
 					try {
 						assembly = GetAssembly (Context, AssemblyNameReference.Parse (assemblyName));
 						if (assembly == null) {
-							Context.LogWarning ($"Could not resolve assembly '{assemblyName}' in attribute '{attributeFullName}' specified in the '{_xmlDocumentLocation}'", 2030, _xmlDocumentLocation);
+							Context.LogWarning ($"Could not resolve assembly '{assemblyName}' for attribute '{attributeFullName}'", 2030, _xmlDocumentLocation);
 							continue;
 						}
 					} catch (Exception) {
-						Context.LogWarning ($"Could not resolve assembly '{assemblyName}' in attribute '{attributeFullName}' specified in the '{_xmlDocumentLocation}'", 2030, _xmlDocumentLocation);
+						Context.LogWarning ($"Could not resolve assembly '{assemblyName}' for attribute '{attributeFullName}'", 2030, _xmlDocumentLocation);
 						continue;
 					}
 					attributeType = assembly.FindType (attributeFullName);

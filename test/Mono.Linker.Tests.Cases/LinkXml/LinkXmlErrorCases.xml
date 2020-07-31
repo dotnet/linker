@@ -26,6 +26,20 @@
       <property signature="System.Boolean GetOnlyProperty" accessors="set"/>
     </type>
 
+    <type fullname="Mono.Linker.Tests.Cases.LinkXml.LinkXmlErrorCases/TypeWithEverything">
+      <method name="Method"/>
+      <event name="Event"/>
+      <field name="Field"/>
+      <property name="Property"/>
+    </type>
+
+    <type fullname="Mono.Linker.Tests.Cases.LinkXml.LinkXmlErrorCases/TypeWithEverything">
+      <method name="Method"/>
+      <event name="Event"/>
+      <field name="Field"/>
+      <property name="Property"/>
+    </type>
+
   </assembly>
 
   <assembly fullname="NonExistentAssembly"/>

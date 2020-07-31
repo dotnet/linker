@@ -19,6 +19,8 @@ namespace Mono.Linker.Tests.Cases.LinkAttributes
 	[ExpectedWarning ("IL2022", "AttributeWithNoParametersAttribute", "1", FileName = "LinkAttributeErrorCases.xml")]
 	[ExpectedWarning ("IL2023", "GetTypeMethod", FileName = "LinkAttributeErrorCases.xml")]
 	[ExpectedWarning ("IL2024", "methodParameter", "MethodWithParameter", FileName = "LinkAttributeErrorCases.xml")]
+	[ExpectedWarning ("IL2029", FileName = "LinkAttributeErrorCases.xml")]
+	[ExpectedWarning ("IL2029", FileName = "LinkAttributeErrorCases.xml")]
 	class LinkAttributeErrorCases
 	{
 		public static void Main ()

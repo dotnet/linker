@@ -342,7 +342,7 @@ the error code. For example:
 
 - The 'XML document location' defined a event 'event' on type 'type', but the event was not found.
 
-```XML
+  ```XML
   <!-- IL2016: Could not find event 'NonExistentEvent' on type 'MyType' -->
   <linker>
     <assembly fullname="MyAssembly">
@@ -351,13 +351,13 @@ the error code. For example:
       </type>
     </assembly>
   </linker>
-```
+  ```
 
 #### `IL2017`: Could not find property 'property' on type 'type'
 
 - The 'XML document location' defined a property 'property' on type 'type', but the property was not found.
 
-```XML
+  ```XML
   <!-- IL2017: Could not find property 'NonExistentProperty' on type 'MyType' -->
   <linker>
     <assembly fullname="MyAssembly">
@@ -366,13 +366,13 @@ the error code. For example:
       </type>
     </assembly>
   </linker>
-```
+  ```
 
 #### `IL2018`: Could not find the get accessor of property 'property' on type 'type'
 
 - The 'XML document location' defined the get accessor of property 'property' on type 'type', but the accessor was not found.
 
-```XML
+  ```XML
   <!-- IL2018: Could not find the get accessor of property 'SetOnlyProperty' on type 'MyType' -->
   <linker>
     <assembly fullname="MyAssembly">
@@ -381,13 +381,13 @@ the error code. For example:
       </type>
     </assembly>
   </linker>
-```
+  ```
 
 #### `IL2019`: Could not find the set accessor of property 'property' on type 'type'
 
 - The 'XML document location' defined the set accessor of property 'property' on type 'type', but the accessor was not found.
 
-```XML
+  ```XML
   <!-- IL2019: Could not find the set accessor of property 'GetOnlyProperty' on type 'MyType' -->
   <linker>
     <assembly fullname="MyAssembly">
@@ -396,13 +396,13 @@ the error code. For example:
       </type>
     </assembly>
   </linker>
-```
+  ```
 
 #### `IL2020`: Parameter 'parameter' of attribute 'attribute type' is of unsupported type 'type'
 
 - The constructor parameter type is not supported in the XML reading code.
 
-```XML
+  ```XML
   <!-- IL2020: Parameter 'doubleParameter' of attribute 'AttributeWithDoubleNumberParameter' is of unsupported type 'System.Double' -->
   <linker>
     <assembly fullname="MyAssembly">
@@ -413,13 +413,13 @@ the error code. For example:
       </type>
     </assembly>
   </linker>
-```
+  ```
 
 #### `IL2021`: Could not parse argument value 'argument value' for attribute 'attribute type' as a 'type'
 
 - The specified attribute constructor has a parameter of type 'type' but the argument value 'argument value' does not match any of the existing enum 'type' values
 
-```XML
+  ```XML
   <!-- IL2021: Could not parse argument value 'NonExistentEnumValue' for attribute 'AttributeWithEnumParameterAttribute' as a 'MyEnumType' -->
   <linker>
     <assembly fullname="MyAssembly">
@@ -430,13 +430,13 @@ the error code. For example:
       </type>
     </assembly>
   </linker>
-```
+  ```
 
 #### `IL2022`: Could not find a constructor for type 'attribute type' that has 'number of arguments' arguments
 
 - The XML attribute for attribute type 'attribute type' specifies 'number of arguments' arguments but there's no constructor for 'attribute type' which has that many arguments
 
-```XML
+  ```XML
   <!-- IL2022: Could not find a constructor for type 'AttributeWithNoParametersAttribute' that has '1' arguments -->
   <linker>
     <assembly fullname="MyAssembly">
@@ -447,13 +447,13 @@ the error code. For example:
       </type>
     </assembly>
   </linker>
-```
+  ```
 
 #### `IL2023`: There is more than one 'return' child element specified for method 'method'
 
 - Method 'method' has more than one `return` element specified. There can only be one `return` element to specify attribute on the return parameter of the method.
 
-```XML
+  ```XML
   <!-- IL2023: There is more than one 'return' child element specified for method 'method' -->
   <linker>
     <assembly fullname="MyAssembly">
@@ -469,13 +469,13 @@ the error code. For example:
       </type>
     </assembly>
   </linker>
-```
+  ```
 
 #### `IL2024`: More than one value specified for parameter 'parameter' of method 'method'
 
 - Method 'method' has more than one `parameter` element for parameter 'parameter'. There can only be one value specified for each parameter.
 
-```XML
+  ```XML
   <!-- IL2024: More than one value specified for parameter 'parameter' of method 'method' -->
   <linker>
     <assembly fullname="MyAssembly">
@@ -491,40 +491,109 @@ the error code. For example:
       </type>
     </assembly>
   </linker>
-```
+  ```
 
-#### `IL2025`: Duplicate preserve of 'member' in 'XML document location'
+#### `IL2025`: Duplicate preserve of 'member'
 
 - The XML descriptor marks for preservation the member or type 'member' more than once.
 
-#### `IL2026`: Calling method annotated with `RequiresUnreferencedCodeAttribute`
+  ```XML
+  <!-- IL2024: More than one value specified for parameter 'parameter' of method 'method' -->
+  <linker>
+    <assembly fullname="MyAssembly">
+      <type fullname="MyType">
+        <method name="MyMethod"/>
+        <method name="MyMethod"/>
+      </type>
+    </assembly>
+  </linker>
+  ```
 
-- The linker found a call to a method which is annotated with 'RequiresUnreferencedCodeAttribute' which can break functionality of a trimmed application.
+#### `IL2026` Trim analysis: Calling 'method' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. [message]. [url]
+
+- The linker found a call to a method which is annotated with `RequiresUnreferencedCodeAttribute` which can break functionality of a trimmed application.
+
+  ```C#
+  [RequiresUnreferencedCode("Use 'MethodFriendlyToTrimming' instead", Url="http://help/unreferencedcode")]
+  void MethodWithUnreferencedCodeUsage()
+  {
+  }
+
+  void TestMethod()
+  {
+      // IL2026: Calling 'MethodWithUnreferencedCodeUsage' which has 'RequiresUnreferencedCodeAttribute' 
+      // can break functionality when trimming application code. Use 'MethodFriendlyToTrimming' instead. http://help/unreferencedcode
+      MethodWithUnreferencedCodeUsage();
+  }
+  ```
 
 #### `IL2027`: Attribute 'attribute' should only be used once on 'member'.
 
 - The linker found multiple instances of attribute 'attribute' on 'member'. This attribute is only allowed to have one instance, linker will only use the fist instance and ignore the rest.
 
-#### `IL2028`: Attribute 'attribute' on 'method' doesn't have a required constructor argument.
+  ```C#
+  // Note: C# won't allow this because RequiresUnreferencedCodeAttribute only allows one instantiation,
+  // but it's a good demonstration (it's possible to get to this state using LinkAttributes.xml)
 
-- The linker found an instance of attribute 'attribute' on 'method' but it lacks a required constructor argument. Linker will ignore this attribute.
+  // IL2027: Attribute 'RequiresUnreferencedCodeAttribute' should only be used once on 'MethodWithUnreferencedCodeUsage()'.
+  [RequiresUnreferencedCode("Use A instead")]
+  [RequiresUnreferencedCode("Use B instead")]
+  void MethodWithUnreferencedCodeUsage()
+  {
+  }
+  ```
 
-#### `IL2029`: Attribute element does not contain attribute 'fullname'
+#### `IL2028`: Attribute 'attribute' doesn't have the required number of parameters specified
 
-- An attribute element was declared but does not contain the attribute 'fullname' or 'fullname' attribute is empty
+- The linker found an instance of attribute 'attribute' on 'method' but it lacks a required constructor parameter or it has more parameters than accepted. Linker will ignore this attribute. 
+This is technically possible if a custom assembly defines for example the `RequiresUnreferencedCodeAttribute` type with parameterless constructor and uses it. ILLink will recognize the attribute since it only does a namespace and type name match, but it expect it to have exactly one parameter in its constructor.
 
-#### `IL2030`: Could not resolve assembly 'assembly' in attribute 'attribute' specified in the 'XML document location'
+#### `IL2029`: 'attribute' element does not contain required attribute 'fullname' or it's empty
 
-- The assembly 'assembly' described as a attribute property of 'attribute' could not be resolved in 'XML document location'
+- An 'attribute' element must have an attribute 'fullname' with a non-empty value
+
+  ```XML
+  <!-- IL2029: 'attribute' element does not contain required attribute 'fullname' or it's empty -->
+  <linker>
+    <assembly fullname="MyAssembly">
+      <attribute/>
+    </assembly>
+  </linker>
+  ```
+
+#### `IL2030`: Could not resolve assembly 'assembly' for attribute 'attribute'
+
+- The assembly name 'assembly' specified for attribute with full name 'attribute' could not be resolved
+
+  ```XML
+  <!-- IL2030: Could not resolve assembly 'NonExistentAssembly' for attribute 'MyAttribute' -->
+  <linker>
+    <assembly fullname="MyAssembly">
+      <attribute fullname="MyAttribute" assembly="NonExistentAssembly"/>
+    </assembly>
+  </linker>
+  ```
 
 #### `IL2031`: Attribute type 'attribute type' could not be found
 
 - The described 'attribute type' could not be found in the assemblies
 
-#### `IL2032` Trim analysis: 'DynamicallyAccessedMembersAttribute' constructor must only have one parameter specified
+#### `IL2032` Trim analysis: Value passed to <target description> can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.
 
-- There's a `DynamicallyAccessedMembersAttribute` which has either no or more than one parameters specified.  
-This is technically possible if a custom assembly defines the `DynamicallyAccessedMembersAttribute` type with parameterless constructor and uses it. ILLink will recognize the attribute since it only does a namespace and type name match, but it expect it to have exactly one parameter in its constructor.
+- The target has a `DynamicallyAccessedMembersAttribute`, but the value passed to it can not be statically analyzed. ILLink can't make sure that the requirements declared by the `DynamicallyAccessedMembersAttribute` are met by the type value.  
+
+  ``` C#
+  void NeedsPublicConstructors([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructor)] Type type)
+  {
+      // ...
+  }
+
+  void TestMethod(Type[] types)
+  {
+      // IL2032 Trim analysis: Unrecognized type value passed to parameter 'type' of method 'NeedsPublicConstructors'. It's not possible to guarantee that the requirements declared by the 'DynamicallyAccessedMembersAttribute' are met.
+      NeedsPublicConstructors(types[1]);
+  }
+  ```
 
 #### `IL2033`: PreserveDependencyAttribute is deprecated. Use DynamicDependencyAttribute instead.
 
@@ -701,22 +770,5 @@ This is technically possible if a custom assembly defines the `DynamicallyAccess
 
       // IL2058 Trim analysis: Unrecognized value passed to the parameter 'assemblyName' of method 'System.Activator.CreateInstance(string, string)'. It's not possible to guarantee the availability of the target type.
       Activator.CreateInstance(assemblyName, "MyType");
-  }
-  ```
-
-#### `IL2059` Trim analysis: Value passed to <target description> can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.
-
-- The target has a `DynamicallyAccessedMembersAttribute`, but the value passed to it can not be statically analyzed. ILLink can't make sure that the requirements declared by the `DynamicallyAccessedMembersAttribute` are met by the type value.  
-
-  ``` C#
-  void NeedsPublicConstructors([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructor)] Type type)
-  {
-      // ...
-  }
-
-  void TestMethod(Type[] types)
-  {
-      // IL2059 Trim analysis: Unrecognized type value passed to parameter 'type' of method 'NeedsPublicConstructors'. It's not possible to guarantee that the requirements declared by the 'DynamicallyAccessedMembersAttribute' are met.
-      NeedsPublicConstructors(types[1]);
   }
   ```

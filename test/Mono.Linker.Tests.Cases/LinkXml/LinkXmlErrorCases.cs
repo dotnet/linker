@@ -15,6 +15,11 @@ namespace Mono.Linker.Tests.Cases.LinkXml
 	[ExpectedWarning ("IL2017", "NonExistentProperty", "TypeWithNoProperties", FileName = "LinkXmlErrorCases.xml")]
 	[ExpectedWarning ("IL2018", "SetOnlyProperty", "TypeWithProperties", FileName = "LinkXmlErrorCases.xml")]
 	[ExpectedWarning ("IL2019", "GetOnlyProperty", "TypeWithProperties", FileName = "LinkXmlErrorCases.xml")]
+
+	[ExpectedWarning ("IL2025", "Method", FileName = "LinkXmlErrorCases.xml")]
+	[ExpectedWarning ("IL2025", "Event", FileName = "LinkXmlErrorCases.xml")]
+	[ExpectedWarning ("IL2025", "Field", FileName = "LinkXmlErrorCases.xml")]
+	[ExpectedWarning ("IL2025", "Property", FileName = "LinkXmlErrorCases.xml")]
 	class LinkXmlErrorCases
 	{
 		public static void Main ()
@@ -49,6 +54,23 @@ namespace Mono.Linker.Tests.Cases.LinkXml
 		{
 			public bool SetOnlyProperty { set { _ = value; } }
 			public bool GetOnlyProperty { get { return false; } }
+		}
+
+		[Kept]
+		class TypeWithEverything
+		{
+			[Kept]
+			public void Method () { }
+			[Kept]
+			[KeptBackingField]
+			[KeptEventAddMethod]
+			[KeptEventRemoveMethod]
+			public event EventHandler Event;
+			[Kept]
+			public int Field;
+			[Kept]
+			[KeptBackingField]
+			public int Property { [Kept] get; [Kept] set; }
 		}
 	}
 }

@@ -112,8 +112,8 @@ namespace Mono.Linker.Dataflow
 					return (DynamicallyAccessedMemberTypes) (int) attribute.ConstructorArguments[0].Value;
 				else
 					_context.LogWarning (
-						$"'DynamicallyAccessedMembersAttribute' constructor must only have one paramater specified",
-						2032, locationMember ?? (provider as IMemberDefinition), subcategory: MessageSubCategory.TrimAnalysis);
+						$"Attribute 'System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute' doesn't have the required number of parameters specified",
+						2028, locationMember ?? (provider as IMemberDefinition), subcategory: MessageSubCategory.TrimAnalysis);
 			}
 			return DynamicallyAccessedMemberTypes.None;
 		}
