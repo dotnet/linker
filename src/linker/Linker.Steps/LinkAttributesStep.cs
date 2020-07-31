@@ -126,7 +126,7 @@ namespace Mono.Linker.Steps
 
 					argValue = Convert.ToInt32 (paramField.Constant);
 				} else if (!TryConvertValue (arguments[i], parameterType, out argValue)) {
-					Context.LogWarning ($"Invalid argument value '{arguments[i]}' for attribute '{attributeConstructor.DeclaringType.GetDisplayName()}'", 2054, _xmlDocumentLocation);
+					Context.LogWarning ($"Invalid argument value '{arguments[i]}' for attribute '{attributeConstructor.DeclaringType.GetDisplayName ()}'", 2054, _xmlDocumentLocation);
 					return null;
 				}
 
