@@ -47,7 +47,7 @@ namespace Mono.Linker.Steps
 				if (!GetAttributeType (iterator, attributeFullName, out TypeDefinition attributeType))
 					continue;
 
-				CustomAttribute customAttribute = GetCustomAttribute (iterator, attributeType);
+				CustomAttribute customAttribute = CreateCustomAttribute (iterator, attributeType);
 				if (customAttribute != null)
 					attributes.Add (customAttribute);
 			}
@@ -55,7 +55,7 @@ namespace Mono.Linker.Steps
 			return attributes;
 		}
 
-		CustomAttribute GetCustomAttribute (XPathNodeIterator iterator, TypeDefinition attributeType)
+		CustomAttribute CreateCustomAttribute (XPathNodeIterator iterator, TypeDefinition attributeType)
 		{
 			string[] attributeArguments = (GetAttributeChildren (iterator.Current.SelectChildren ("argument", string.Empty))).ToArray ();
 			MethodDefinition constructor = attributeType.Methods.Where (method => method.IsInstanceConstructor ()).FirstOrDefault (c => c.Parameters.Count == attributeArguments.Length);
@@ -66,15 +66,14 @@ namespace Mono.Linker.Steps
 
 			CustomAttribute customAttribute = new CustomAttribute (constructor);
 			var arguments = ProcessAttributeArguments (constructor, attributeArguments);
-			if (arguments == null)
-				return null;
-
-			foreach (var argument in arguments)
-				customAttribute.ConstructorArguments.Add (argument);
+			if (arguments != null)
+				foreach (var argument in arguments)
+					customAttribute.ConstructorArguments.Add (argument);
 
 			var properties = ProcessAttributeProperties (iterator.Current.SelectChildren ("property", string.Empty), attributeType);
-			foreach (var property in properties)
-				customAttribute.Properties.Add (property);
+			if (properties != null)
+				foreach (var property in properties)
+					customAttribute.Properties.Add (property);
 
 			return customAttribute;
 		}
@@ -117,15 +116,7 @@ namespace Mono.Linker.Steps
 			for (int i = 0; i < arguments.Length; i++) {
 				object argValue;
 				TypeDefinition parameterType = attributeConstructor.Parameters[i].ParameterType.Resolve ();
-				if (parameterType.IsEnum) {
-					FieldDefinition paramField = parameterType.Fields.Where (f => f.IsStatic && f.Name == arguments[i]).FirstOrDefault ();
-					if (paramField == null) {
-						Context.LogWarning ($"Could not parse argument '{arguments[i]}' specified in '{_xmlDocumentLocation}' as a {parameterType.FullName}", 2021, _xmlDocumentLocation);
-						return null;
-					}
-
-					argValue = Convert.ToInt32 (paramField.Constant);
-				} else if (!TryConvertValue (arguments[i], parameterType, out argValue)) {
+				if (!TryConvertValue (arguments[i], parameterType, out argValue)) {
 					Context.LogWarning ($"Invalid argument value '{arguments[i]}' for attribute '{attributeConstructor.DeclaringType.GetDisplayName ()}'", 2054, _xmlDocumentLocation);
 					return null;
 				}
@@ -143,13 +134,15 @@ namespace Mono.Linker.Steps
 				return;
 			}
 
-			if (provider.MetadataToken.TokenType != TokenType.TypeDef || Annotations.IsMarked (provider)) {
+			if (provider.MetadataToken.TokenType != TokenType.TypeDef) {
 				Context.LogWarning ($"Internal attribute 'RemoveAttributeInstances' can only be used on a type, but is being used on '{provider}'", 2048, _xmlDocumentLocation);
 				return;
 			}
 
-			IEnumerable<Attribute> removeAttributeInstance = new List<Attribute> { new RemoveAttributeInstancesAttribute () };
-			Context.CustomAttributes.AddInternalAttributes (provider, removeAttributeInstance);
+			if (!Annotations.IsMarked (provider)) {
+				IEnumerable<Attribute> removeAttributeInstance = new List<Attribute> { new RemoveAttributeInstancesAttribute () };
+				Context.CustomAttributes.AddInternalAttributes (provider, removeAttributeInstance);
+			}
 		}
 
 		bool GetAttributeType (XPathNodeIterator iterator, string attributeFullName, out TypeDefinition attributeType)

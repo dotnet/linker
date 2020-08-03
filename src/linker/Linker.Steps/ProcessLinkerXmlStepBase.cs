@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml.XPath;
 using Mono.Cecil;
@@ -534,6 +535,19 @@ namespace Mono.Linker.Steps
 				if (value is string || value == null) {
 					result = value;
 					return true;
+				}
+
+				break;
+
+			case MetadataType.ValueType:
+				if (value is string &&
+					target.Resolve () is var typeDefinition &&
+					typeDefinition.IsEnum) {
+					var enumField = typeDefinition.Fields.Where (f => f.IsStatic && f.Name == value).FirstOrDefault ();
+					if (enumField != null) {
+						result = Convert.ToInt32 (enumField.Constant);
+						return true;
+					}
 				}
 
 				break;
