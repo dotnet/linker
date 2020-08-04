@@ -19,4 +19,4 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.DefaultInterfaceMethods
 		}
 	}
 #endif
-	}
+}
