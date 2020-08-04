@@ -529,8 +529,7 @@ namespace Mono.Linker.Steps
 			if (!Annotations.IsInstantiated (typeWithDefaultImplementedInterfaceMethod))
 				return;
 
-			if (!Annotations.IsMarked (implementation))
-				MarkInterfaceImplementation (implementation, typeWithDefaultImplementedInterfaceMethod);
+			MarkInterfaceImplementation (implementation, typeWithDefaultImplementedInterfaceMethod);
 		}
 
 		void MarkMarshalSpec (IMarshalInfoProvider spec, in DependencyInfo reason, IMemberDefinition sourceLocationMember)
@@ -2898,6 +2897,9 @@ namespace Mono.Linker.Steps
 
 		protected virtual void MarkInterfaceImplementation (InterfaceImplementation iface, TypeDefinition type)
 		{
+			if (Annotations.IsMarked (iface))
+				return;
+
 			// Blame the type that has the interfaceimpl, expecting the type itself to get marked for other reasons.
 			MarkCustomAttributes (iface, new DependencyInfo (DependencyKind.CustomAttribute, iface), type);
 			// Blame the interface type on the interfaceimpl itself.
