@@ -36,10 +36,11 @@ namespace Mono.Linker
 		public void OutputSuppressions ()
 		{
 			foreach (var assemblyName in _warnings.Keys) {
-				if (_fileOutputKind == FileOutputKind.Xml)
+				if (_fileOutputKind == FileOutputKind.Xml) {
 					OutputSuppressionsXmlFormat (assemblyName);
-
-				OutputSuppressionsCsFormat (assemblyName);
+				} else {
+					OutputSuppressionsCSharpFormat (assemblyName);
+				}
 			}
 		}
 
@@ -57,8 +58,10 @@ namespace Mono.Linker
 						new XAttribute ("fullname", "System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute"),
 						new XElement ("argument", Constants.ILLink),
 						new XElement ("argument", $"IL{warning.Code}"),
-						new XElement ("argument", GetWarningSuppressionScopeString (warning.Member)),
-						new XElement ("argument", sb.ToString ())));
+						new XElement ("property", new XAttribute ("name", UnconditionalSuppressMessageAttributeState.ScopeProperty),
+							GetWarningSuppressionScopeString (warning.Member)),
+						new XElement ("property", new XAttribute ("name", UnconditionalSuppressMessageAttributeState.TargetProperty),
+							sb.ToString ())));
 
 				sb.Clear ();
 			}
@@ -70,7 +73,7 @@ namespace Mono.Linker
 			}
 		}
 
-		void OutputSuppressionsCsFormat (AssemblyNameDefinition assemblyName)
+		void OutputSuppressionsCSharpFormat (AssemblyNameDefinition assemblyName)
 		{
 			using (var sw = new StreamWriter (Path.Combine (_context.OutputDirectory, $"{assemblyName.Name}.WarningSuppressions.cs"))) {
 				StringBuilder sb = new StringBuilder ("using System.Diagnostics.CodeAnalysis;").AppendLine ().AppendLine ();
