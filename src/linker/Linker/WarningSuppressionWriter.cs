@@ -11,7 +11,7 @@ namespace Mono.Linker
 	public class WarningSuppressionWriter
 	{
 		private readonly LinkContext _context;
-		private readonly Dictionary<AssemblyNameDefinition, HashSet<(int, IMemberDefinition)>> _warnings;
+		private readonly Dictionary<AssemblyNameDefinition, HashSet<(int Code, IMemberDefinition Member)>> _warnings;
 		private readonly FileOutputKind _fileOutputKind;
 
 		public WarningSuppressionWriter (LinkContext context,
@@ -50,20 +50,16 @@ namespace Mono.Linker
 				new XElement ("linker",
 					new XElement ("assembly", new XAttribute ("fullname", assemblyName.FullName)));
 
-			StringBuilder sb = new StringBuilder ();
 			foreach (var warning in GetListOfWarnings (assemblyName)) {
-				DocumentationSignatureGenerator.Instance.VisitMember (warning.Member, sb);
 				xmlTree.Element ("assembly").Add (
 					new XElement ("attribute",
 						new XAttribute ("fullname", "System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute"),
 						new XElement ("argument", Constants.ILLink),
 						new XElement ("argument", $"IL{warning.Code}"),
 						new XElement ("property", new XAttribute ("name", UnconditionalSuppressMessageAttributeState.ScopeProperty),
-							GetWarningSuppressionScopeString (warning.Member)),
+							GetWarningSuppressionScopeString (warning.MemberDocumentationSignature)),
 						new XElement ("property", new XAttribute ("name", UnconditionalSuppressMessageAttributeState.TargetProperty),
-							sb.ToString ())));
-
-				sb.Clear ();
+							warning.MemberDocumentationSignature)));
 			}
 
 			XDocument xdoc = new XDocument (xmlTree);
@@ -81,45 +77,35 @@ namespace Mono.Linker
 					sb.Append ("[assembly: UnconditionalSuppressMessage (\"")
 						.Append (Constants.ILLink)
 						.Append ("\", \"IL").Append (warning.Code)
-						.Append ("\", Scope = \"").Append (GetWarningSuppressionScopeString (warning.Member))
-						.Append ("\", Target = \"");
-
-					DocumentationSignatureGenerator.Instance.VisitMember (warning.Member, sb);
-					sb.AppendLine ("\")]");
+						.Append ("\", Scope = \"").Append (GetWarningSuppressionScopeString (warning.MemberDocumentationSignature))
+						.Append ("\", Target = \"").Append (warning.MemberDocumentationSignature)
+						.AppendLine ("\")]");
 				}
 
 				sw.Write (sb.ToString ());
 			}
 		}
 
-		List<(int Code, IMemberDefinition Member)> GetListOfWarnings (AssemblyNameDefinition assemblyName)
+		List<(int Code, string MemberDocumentationSignature)> GetListOfWarnings (AssemblyNameDefinition assemblyName)
 		{
-			List<(int Code, IMemberDefinition Member)> listOfWarnings = _warnings[assemblyName].ToList ();
-			listOfWarnings.Sort ((a, b) => {
-				string lhs = a.Member is MethodReference lhsMethod ? lhsMethod.GetDisplayName () : a.Member.FullName;
-				string rhs = b.Member is MethodReference rhsMethod ? rhsMethod.GetDisplayName () : b.Member.FullName;
-				if (lhs == rhs)
-					return a.Code.CompareTo (b.Code);
+			List<(int Code, string MemberDocumentationSignature)> listOfWarnings = new List<(int Code, string MemberDocumentationSignature)> ();
+			StringBuilder sb = new StringBuilder ();
+			foreach (var warning in _warnings[assemblyName].ToList ()) {
+				DocumentationSignatureGenerator.Instance.VisitMember (warning.Member, sb);
+				listOfWarnings.Add ((warning.Code, sb.ToString ()));
+				sb.Clear ();
+			}
 
-				return string.CompareOrdinal (lhs, rhs);
-			});
-
+			listOfWarnings.Sort ();
 			return listOfWarnings;
 		}
 
-		static string GetWarningSuppressionScopeString (IMemberDefinition member)
+		static string GetWarningSuppressionScopeString (string memberDocumentationSignature)
 		{
-			switch (member.MetadataToken.TokenType) {
-			case TokenType.TypeDef:
+			if (memberDocumentationSignature.StartsWith (DocumentationSignatureGenerator.TypePrefix))
 				return "type";
-			case TokenType.Method:
-			case TokenType.Property:
-			case TokenType.Field:
-			case TokenType.Event:
-				return "member";
-			}
 
-			return string.Empty;
+			return "member";
 		}
 
 		public enum FileOutputKind

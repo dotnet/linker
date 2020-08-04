@@ -58,7 +58,7 @@ namespace Mono.Linker.Tests.TestCases
 		}
 
 		[Test]
-		public void CanGenerateWarningSuppressionFileCs ()
+		public void CanGenerateWarningSuppressionFileCSharp ()
 		{
 			var testcase = CreateIndividualCase (typeof (CanGenerateWarningSuppressionFileCs));
 			var result = Run (testcase);

@@ -5,6 +5,12 @@
       <argument>ILLink</argument>
       <argument>IL2006</argument>
       <property name="Scope">member</property>
+      <property name="Target">M:Mono.Linker.Tests.Cases.Warnings.WarningSuppression.Dependencies.TriggerWarnings_Lib.get_Warning2</property>
+    </attribute>
+    <attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
+      <argument>ILLink</argument>
+      <argument>IL2006</argument>
+      <property name="Scope">member</property>
       <property name="Target">M:Mono.Linker.Tests.Cases.Warnings.WarningSuppression.Dependencies.TriggerWarnings_Lib.Main</property>
     </attribute>
     <attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
@@ -24,12 +30,6 @@
       <argument>IL2006</argument>
       <property name="Scope">member</property>
       <property name="Target">M:Mono.Linker.Tests.Cases.Warnings.WarningSuppression.Dependencies.TriggerWarnings_Lib.Warning1</property>
-    </attribute>
-    <attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
-      <argument>ILLink</argument>
-      <argument>IL2006</argument>
-      <property name="Scope">member</property>
-      <property name="Target">M:Mono.Linker.Tests.Cases.Warnings.WarningSuppression.Dependencies.TriggerWarnings_Lib.get_Warning2</property>
     </attribute>
   </assembly>
 </linker>
