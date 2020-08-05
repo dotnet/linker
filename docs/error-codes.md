@@ -287,3 +287,7 @@ the error code. For example:
 #### `IL2054`: Invalid argument value 'argumentValue' for attribute 'attribute'
 
 - The value 'argumentValue' used in a custom attribute annotation does not match the type of one of the attribute's constructor arguments. The arguments used for a custom attribute annotation should be declared in the same order the constructor uses.
+
+#### `IL2055`: Reflection call 'reflection call method' inside 'method name' is trying to make a case insensitive lookup which is not supported by the linker
+
+- Case insensitive lookups are not supported by the linker, the reflection call 'reflection call method' being called inside 'method name' is making use of a case insensitive parameter. Change the parameter to make a case sensitive search.

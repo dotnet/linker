@@ -783,6 +783,15 @@ namespace Mono.Linker.Dataflow
 				case IntrinsicId.Type_GetType: {
 						reflectionContext.AnalyzingPattern ();
 
+						var parameters = calledMethod.Parameters;
+						if ((parameters.Count == 3 && (methodParams[2].AsConstInt () == null || methodParams[2].AsConstInt () != 0)) ||
+									(parameters.Count == 5 && (methodParams[4].AsConstInt () == null || methodParams[4].AsConstInt () != 0))) {
+							_context.LogWarning ($"Reflection call '{calledMethod.GetDisplayName ()}' inside " +
+								$"'{((reflectionContext.Source is MethodDefinition method) ? method.GetDisplayName () : reflectionContext.Source.ToString ())}' " +
+								$"is trying to make a case insensitive lookup which is not supported by the linker", 2055, callingMethodDefinition);
+							reflectionContext.RecordHandledPattern ();
+							break;
+						}
 						foreach (var typeNameValue in methodParams[0].UniqueValues ()) {
 							if (typeNameValue is KnownStringValue knownStringValue) {
 								TypeDefinition foundType = AssemblyUtilities.ResolveFullyQualifiedTypeName (_context, knownStringValue.Contents);

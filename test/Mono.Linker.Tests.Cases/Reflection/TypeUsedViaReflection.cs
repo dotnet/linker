@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.Reflection
 {
+	[LogContains ("IL2055: Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection.TestTypeUsingCaseInsensitiveFlag(): Reflection call 'System.Type.GetType(String,Boolean,Boolean)'" +
+		" inside 'Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection.TestTypeUsingCaseInsensitiveFlag()' is trying to make a case insensitive lookup which is not supported by the linker")]
 	public class TypeUsedViaReflection
 	{
 		public static void Main ()
@@ -25,6 +28,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			TestDeeplyNested ();
 			TestTypeOf ();
 			TestTypeFromBranch (3);
+			TestTypeUsingCaseInsensitiveFlag ();
 		}
 
 		[Kept]
@@ -215,6 +219,15 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			}
 
 			var typeKept = Type.GetType (name);
+		}
+
+		public class CaseInsensitive { }
+
+		[Kept]
+		static void TestTypeUsingCaseInsensitiveFlag ()
+		{
+			const string reflectionTypeKeptString = "mono.linker.tests.cases.reflection.TypeUsedViaReflection+CaseInsensitive, test, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null";
+			var typeKept = Type.GetType (reflectionTypeKeptString, false, true);
 		}
 	}
 }
