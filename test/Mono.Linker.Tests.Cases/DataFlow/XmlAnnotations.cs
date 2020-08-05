@@ -13,8 +13,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 {
 	[SkipKeptItemsValidation]
 	[SetupLinkAttributesFile ("XmlAnnotations.xml")]
-	[ExpectedWarning ("IL2031", "System.DoesNotExistattribute", FileName = "XmlAnnotations.xml")]
-	[ExpectedWarning ("IL2021", "NonValidArgument", "DynamicallyAccessedMembersAttribute", "DynamicallyAccessedMemberType", FileName = "XmlAnnotations.xml")]
+	[ExpectedWarning ("IL2031", "System.DoesNotExistAttribute", FileName = "XmlAnnotations.xml")]
+	[LogDoesNotContain ("IL2006: Mono.Linker.Tests.Cases.DataFlow.XmlAnnotations.ReadFromInstanceField():*", true)]
 	class XmlAnnotations
 	{
 		public static void Main ()

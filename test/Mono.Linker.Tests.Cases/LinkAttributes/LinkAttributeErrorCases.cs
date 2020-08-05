@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
@@ -14,9 +14,8 @@ namespace Mono.Linker.Tests.Cases.LinkAttributes
 	[ExpectedWarning ("IL2030", "NonExistentAssembly1", FileName = "LinkAttributeErrorCases.xml")]
 	[ExpectedWarning ("IL2030", "MalformedAssemblyName, thisiswrong", FileName = "LinkAttributeErrorCases.xml")]
 	[ExpectedWarning ("IL2031", "NonExistentAttribute", FileName = "LinkAttributeErrorCases.xml")]
-	[ExpectedWarning ("IL2020", "doubleParameter", "AttributeWithDoubleNumberParameterAttribute", "System.Double", FileName = "LinkAttributeErrorCases.xml")]
-	[ExpectedWarning ("IL2021", "NonExistentEnumValue", "AttributeWithEnumParameterAttribute", "AttributeEnum", FileName = "LinkAttributeErrorCases.xml")]
-	[ExpectedWarning ("IL2021", "NotANumber", "AttributeWithIntParameterAttribute", "System.Int32", FileName = "LinkAttributeErrorCases.xml")]
+	[ExpectedWarning ("IL2054", "NonExistentEnumValue", "AttributeWithEnumParameterAttribute", "AttributeEnum", FileName = "LinkAttributeErrorCases.xml")]
+	[ExpectedWarning ("IL2054", "NotANumber", "AttributeWithIntParameterAttribute", "System.Int32", FileName = "LinkAttributeErrorCases.xml")]
 	[ExpectedWarning ("IL2022", "AttributeWithNoParametersAttribute", "1", FileName = "LinkAttributeErrorCases.xml")]
 	[ExpectedWarning ("IL2023", "GetTypeMethod", FileName = "LinkAttributeErrorCases.xml")]
 	[ExpectedWarning ("IL2024", "methodParameter", "MethodWithParameter", FileName = "LinkAttributeErrorCases.xml")]

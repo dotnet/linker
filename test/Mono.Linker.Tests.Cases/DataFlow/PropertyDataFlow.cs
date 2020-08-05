@@ -245,7 +245,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				PropertyWithExistingAttributes = null;
 			}
 
-			[ExpectedWarning ("IL2052", "PropertyWithExistingAttributes", "PropertyWithExistingAttributes_Field")]
+			[ExpectedWarning ("IL2056", "PropertyWithExistingAttributes", "PropertyWithExistingAttributes_Field")]
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 			[CompilerGenerated]
 			Type PropertyWithExistingAttributes_Field;

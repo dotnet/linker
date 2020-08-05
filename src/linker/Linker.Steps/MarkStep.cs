@@ -558,6 +558,9 @@ namespace Mono.Linker.Steps
 						continue;
 					}
 
+					if (UnconditionalSuppressMessageAttributeState.TypeRefHasUnconditionalSuppressions (ca.Constructor.DeclaringType))
+						_context.Suppressions.AddSuppression (ca, provider);
+
 					if (_context.Annotations.HasLinkerAttribute<RemoveAttributeInstancesAttribute> (ca.AttributeType.Resolve ()) && providerInLinkedAssembly)
 						continue;
 
@@ -1593,8 +1596,6 @@ namespace Mono.Linker.Steps
 					provider,
 					sourceLocationMember);
 				return true;
-			} else if (UnconditionalSuppressMessageAttributeState.TypeRefHasUnconditionalSuppressions (dt)) {
-				_context.Suppressions.AddSuppression (ca, provider);
 			}
 
 			return false;
@@ -2900,6 +2901,9 @@ namespace Mono.Linker.Steps
 
 		protected virtual void MarkInterfaceImplementation (InterfaceImplementation iface, TypeDefinition type)
 		{
+			if (Annotations.IsMarked (iface))
+				return;
+
 			// Blame the type that has the interfaceimpl, expecting the type itself to get marked for other reasons.
 			MarkCustomAttributes (iface, new DependencyInfo (DependencyKind.CustomAttribute, iface), type);
 			// Blame the interface type on the interfaceimpl itself.

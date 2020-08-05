@@ -48,7 +48,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 		[Kept]
 		[UnrecognizedReflectionAccessPattern (typeof (RuntimeHelpers), nameof (RuntimeHelpers.RunClassConstructor), new Type[] { typeof (RuntimeTypeHandle) },
-			messageCode: "IL2055", message: "RunClassConstructor")]
+			messageCode: "IL2059", message: "RunClassConstructor")]
 
 		static void TestDataFlowType ()
 		{
@@ -59,7 +59,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		[Kept]
 		[RecognizedReflectionAccessPattern]
 		[UnrecognizedReflectionAccessPattern (typeof (RuntimeHelpers), nameof (RuntimeHelpers.RunClassConstructor), new Type[] { typeof (RuntimeTypeHandle) },
-			messageCode: "IL2055")]
+			messageCode: "IL2059")]
 
 		static void TestIfElseUsingRuntimeTypeHandle (int i)
 		{

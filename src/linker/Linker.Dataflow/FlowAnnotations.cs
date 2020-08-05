@@ -162,14 +162,14 @@ namespace Mono.Linker.Dataflow
 							}
 						} else if (methodMemberTypes != DynamicallyAccessedMemberTypes.None) {
 							_context.LogWarning (
-								$"The 'DynamicallyAccessedMembersAttribute' is not allowed on methods. It is allowed on method return value or method parameters though.", 
+								$"The 'DynamicallyAccessedMembersAttribute' is not allowed on methods. It is allowed on method return value or method parameters though.",
 								2041, method, subcategory: MessageSubCategory.TrimAnalysis);
 						}
 					} else {
 						offset = 0;
 						if (methodMemberTypes != DynamicallyAccessedMemberTypes.None) {
 							_context.LogWarning (
-								$"The 'DynamicallyAccessedMembersAttribute' is not allowed on methods. It is allowed on method return value or method parameters though.", 
+								$"The 'DynamicallyAccessedMembersAttribute' is not allowed on methods. It is allowed on method return value or method parameters though.",
 								2041, method, subcategory: MessageSubCategory.TrimAnalysis);
 						}
 					}
@@ -305,7 +305,7 @@ namespace Mono.Linker.Dataflow
 					if (backingField != null) {
 						if (annotatedFields.Any (a => a.Field == backingField)) {
 							_context.LogWarning ($"Trying to propagate 'DynamicallyAccessedMembersAttribute' from property '{property.FullName}' to its field '{backingField}', but it already has such attribute.",
-								2052, backingField, subcategory: MessageSubCategory.TrimAnalysis);
+								2056, backingField, subcategory: MessageSubCategory.TrimAnalysis);
 						} else {
 							annotatedFields.Add (new FieldAnnotation (backingField, annotation));
 						}
