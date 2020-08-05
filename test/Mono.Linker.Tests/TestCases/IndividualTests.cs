@@ -60,7 +60,7 @@ namespace Mono.Linker.Tests.TestCases
 		[Test]
 		public void CanGenerateWarningSuppressionFileCSharp ()
 		{
-			var testcase = CreateIndividualCase (typeof (CanGenerateWarningSuppressionFileCs));
+			var testcase = CreateIndividualCase (typeof (CanGenerateWarningSuppressionFileCSharp));
 			var result = Run (testcase);
 			string[] expectedAssemblies = new string[] { "test", "library" };
 
