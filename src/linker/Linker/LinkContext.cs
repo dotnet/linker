@@ -502,10 +502,14 @@ namespace Mono.Linker
 				message.Category == MessageCategory.Info) && !LogMessages)
 				return;
 
-			if (message.Category == MessageCategory.Warning &&
-				NoWarn.Contains ((uint) message.Code)) {
-				// This warning was turned off by --nowarn.
-				return;
+			if (message.Category == MessageCategory.Warning) {
+				if (NoWarn.Contains ((uint) message.Code))
+					// This warning was turned off by --nowarn.
+					return;
+
+				if ((GeneralWarnAsError && (!WarnAsError.TryGetValue ((uint) message.Code, out var warnAsError) || warnAsError)) ||
+					(!GeneralWarnAsError && (WarnAsError.TryGetValue ((uint) message.Code, out warnAsError) && warnAsError)))
+					message = MessageContainer.CreateErrorMessage (message.Text, message.Code.Value, message.SubCategory, message.Origin, isWarnAsError: true, message.Version);
 			}
 
 			// Note: message.Version is nullable. The comparison is false if it is null.
@@ -553,12 +557,6 @@ namespace Mono.Linker
 		public void LogWarning (string text, int code, MessageOrigin origin, string subcategory = MessageSubCategory.None)
 		{
 			var version = GetWarningVersion (code);
-
-			if ((GeneralWarnAsError && (!WarnAsError.TryGetValue ((uint) code, out var warnAsError) || warnAsError)) ||
-				(!GeneralWarnAsError && (WarnAsError.TryGetValue ((uint) code, out warnAsError) && warnAsError))) {
-				LogError (text, code, subcategory, origin, isWarnAsError: true, version: version);
-				return;
-			}
 
 			var warning = MessageContainer.CreateWarningMessage (this, text, code, origin, subcategory, version);
 			LogMessage (warning);
