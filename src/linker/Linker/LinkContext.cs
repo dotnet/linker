@@ -503,6 +503,9 @@ namespace Mono.Linker
 				return;
 
 			if (message.Category == MessageCategory.Warning) {
+				if (OutputWarningSuppressions && message.Origin?.MemberDefinition != null)
+					WarningSuppressionWriter.AddWarning (message.Code.Value, message.Origin?.MemberDefinition);
+
 				if (NoWarn.Contains ((uint) message.Code))
 					// This warning was turned off by --nowarn.
 					return;
@@ -520,9 +523,6 @@ namespace Mono.Linker
 				// This warning was turned off by --warn.
 				return;
 			}
-
-			if (OutputWarningSuppressions && message.Category == MessageCategory.Warning && message.Origin?.MemberDefinition != null)
-				WarningSuppressionWriter.AddWarning (message.Code.Value, message.Origin?.MemberDefinition);
 
 			Logger?.LogMessage (message);
 		}
