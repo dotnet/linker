@@ -24,6 +24,21 @@
         <argument>NotANumber</argument>
       </attribute>
 
+      <!-- IL2051 -->
+      <attribute fullname="Mono.Linker.Tests.Cases.LinkAttributes.LinkAttributeErrorCases/AttributeWithPropertyAttribute">
+        <property>StringValue</property>
+      </attribute>
+
+      <!-- IL2052 -->
+      <attribute fullname="Mono.Linker.Tests.Cases.LinkAttributes.LinkAttributeErrorCases/AttributeWithPropertyAttribute">
+        <property name="NonExistentPropertyName">StringValue</property>
+      </attribute>
+
+      <!-- IL2052 -->
+      <attribute fullname="Mono.Linker.Tests.Cases.LinkAttributes.LinkAttributeErrorCases/AttributeWithPropertyAttribute">
+        <property name="IntProperty">StringValue</property>
+      </attribute>
+
       <!-- IL2023 -->
       <method name="GetTypeMethod">
         <return>

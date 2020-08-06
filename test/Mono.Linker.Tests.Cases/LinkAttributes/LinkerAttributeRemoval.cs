@@ -44,8 +44,8 @@ namespace Mono.Linker.Tests.Cases.LinkAttributes
 
 	[LogDoesNotContain ("IL2045")] // No other 2045 messages should be logged
 
-	[LogContains ("IL2048: Internal attribute 'RemoveAttributeInstances' can only be used on a type, but is being used on 'System.String Mono.Linker.Tests.Cases.LinkAttributes.LinkerAttributeRemoval::methodWithCustomAttribute(System.String)'")]
-	[LogContains ("IL2049: Unrecognized internal attribute 'InvalidInternal'")]
+	[ExpectedWarning ("IL2048", "RemoveAttributeInstances", "methodWithCustomAttribute", FileName = "LinkerAttributeRemoval.xml")]
+	[ExpectedWarning ("IL2049", "InvalidInternal", FileName = "LinkerAttributeRemoval.xml")]
 
 	[KeptMember (".ctor()")]
 	class LinkerAttributeRemoval

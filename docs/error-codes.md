@@ -398,40 +398,6 @@ the error code. For example:
   </linker>
   ```
 
-#### `IL2020`: Parameter 'parameter' of attribute 'attribute type' is of unsupported type 'type'
-
-- The constructor parameter type is not supported in the XML reading code.
-
-  ```XML
-  <!-- IL2020: Parameter 'doubleParameter' of attribute 'AttributeWithDoubleNumberParameter' is of unsupported type 'System.Double' -->
-  <linker>
-    <assembly fullname="MyAssembly">
-      <type fullname="MyType">
-        <attribute fullname="AttributeWithDoubleNumberParameterAttribute">
-          <argument>3.14</argument>
-        </attribute>
-      </type>
-    </assembly>
-  </linker>
-  ```
-
-#### `IL2021`: Could not parse argument value 'argument value' for attribute 'attribute type' as a 'type'
-
-- The specified attribute constructor has a parameter of type 'type' but the argument value 'argument value' does not match any of the existing enum 'type' values
-
-  ```XML
-  <!-- IL2021: Could not parse argument value 'NonExistentEnumValue' for attribute 'AttributeWithEnumParameterAttribute' as a 'MyEnumType' -->
-  <linker>
-    <assembly fullname="MyAssembly">
-      <type fullname="MyType">
-        <attribute fullname="AttributeWithEnumParameterAttribute">
-          <argument>NonExistentEnumValue</argument>
-        </attribute>
-      </type>
-    </assembly>
-  </linker>
-  ```
-
 #### `IL2022`: Could not find a constructor for type 'attribute type' that has 'number of arguments' arguments
 
 - The XML attribute for attribute type 'attribute type' specifies 'number of arguments' arguments but there's no constructor for 'attribute type' which has that many arguments
@@ -826,13 +792,39 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
   }
   ```
 
-#### `IL2048`: Internal attribute 'RemoveAttributeInstances' can only be used on a type, but is being used on 'member type' 'member'
+#### `IL2048`: Internal attribute 'RemoveAttributeInstances' can only be used on a type, but is being used on 'member'
 
 - Internal attribute 'RemoveAttributeInstances' is a special attribute that should only be used on custom attribute types and is being used on 'member'.
+
+  ```XML
+  <!-- IL2048: Internal attribute 'RemoveAttributeInstances' can only be used on a type, but is being used on 'MyMethod' -->
+  <linker>
+    <assembly fullname="MyAssembly">
+      <type fullname="MyType">
+        <method name="MyMethod">
+          <attribute internal="RemoveAttributeInstances" />
+        </method>
+      </type>
+    </assembly>
+  </linker>
+  ```
 
 #### `IL2049`: Unrecognized internal attribute 'attribute'
 
 - The internal attribute name 'attribute' being used in the xml is not supported by the linker, check the spelling and the supported internal attributes.
+
+  ```XML
+  <!-- IL2049: Unrecognized internal attribute 'InvalidInternalAttributeName' -->
+  <linker>
+    <assembly fullname="MyAssembly">
+      <type fullname="MyType">
+        <method name="MyMethod">
+          <attribute internal="InvalidInternalAttributeName" />
+        </method>
+      </type>
+    </assembly>
+  </linker>
+  ```
 
 #### `IL2050`: Correctness of COM interop cannot be guaranteed
 
@@ -842,18 +834,69 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
 
 - An attribute element declares a property but this does not specify its name or is empty.
 
+  ```XML
+  <!-- IL2051: Property element does not contain attribute 'name' -->
+  <linker>
+    <assembly fullname="MyAssembly">
+      <type fullname="MyType">
+        <attribute fullname="MyAttribute">
+          <property>UnspecifiedPropertyName</property>
+        </attribute>
+      </type>
+    </assembly>
+  </linker>
+  ```
+
 #### `IL2052`: Property 'propertyName' could not be found
 
 - An attribute element has property 'propertyName' but this could not be found.
+
+  ```XML
+  <!-- IL2052: Property 'NonExistentPropertyName' could not be found -->
+  <linker>
+    <assembly fullname="MyAssembly">
+      <type fullname="MyType">
+        <attribute fullname="MyAttribute">
+          <property name="NonExistentPropertyName">SomeValue</property>
+        </attribute>
+      </type>
+    </assembly>
+  </linker>
+  ```
 
 #### `IL2053`: Invalid value 'propertyValue' for property 'propertyName'
 
 - The value 'propertyValue' used in a custom attribute annotation does not match the type of the attribute's property 'propertyName'.
 
-#### `IL2054`: Invalid argument value 'argumentValue' for attribute 'attribute'
+  ```XML
+  <!-- IL2053: Invalid value 'StringValue' for property 'IntProperty' -->
+  <linker>
+    <assembly fullname="MyAssembly">
+      <type fullname="MyType">
+        <attribute fullname="MyAttribute">
+          <property name="IntProperty">StringValue</property>
+        </attribute>
+      </type>
+    </assembly>
+  </linker>
+  ```
+
+#### `IL2054`: Invalid argument value 'argumentValue' for parameter of type 'parameterType' of attribute 'attribute'
 
 - The value 'argumentValue' used in a custom attribute annotation does not match the type of one of the attribute's constructor arguments. The arguments used for a custom attribute annotation should be declared in the same order the constructor uses.
 
+  ```XML
+  <!-- IL2054: Invalid argument value 'NonExistentEnumValue' for parameter of type 'MyEnumType' of attribute 'AttributeWithEnumParameterAttribute' -->
+  <linker>
+    <assembly fullname="MyAssembly">
+      <type fullname="MyType">
+        <attribute fullname="AttributeWithEnumParameterAttribute">
+          <argument>NonExistentEnumValue</argument>
+        </attribute>
+      </type>
+    </assembly>
+  </linker>
+  ```
 
 #### `IL2055` Trim analysis: Call to 'System.Reflection.MethodInfo.MakeGenericType' can not be statically analyzed. It's not possible to guarantee the availability of requirements of the generic type.
 

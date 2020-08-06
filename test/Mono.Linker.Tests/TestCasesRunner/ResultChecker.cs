@@ -644,7 +644,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 								Assert.IsTrue (
 									logger.Messages.Any (mc => {
-										if (mc.Category != MessageCategory.Warning && mc.Code != expectedWarningCodeNumber)
+										if (mc.Category == MessageCategory.Warning && mc.Code != expectedWarningCodeNumber)
 											return false;
 
 										foreach (var expectedMessage in expectedMessageContains)
