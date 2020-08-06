@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.Reflection
 {
-	[LogContains ("IL2055: Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection.TestTypeUsingCaseInsensitiveFlag(): Reflection call 'System.Type.GetType(String,Boolean,Boolean)'" +
-		" inside 'Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection.TestTypeUsingCaseInsensitiveFlag()' is trying to make a case insensitive lookup which is not supported by the linker")]
+	[LogContains ("IL2006: Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection.TestTypeUsingCaseInsensitiveFlag(): Reflection call 'System.Type.GetType(String,Boolean,Boolean)' " +
+		"inside 'Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection.TestTypeUsingCaseInsensitiveFlag()' is trying to make a case insensitive lookup which is not supported by the linker")]
 	public class TypeUsedViaReflection
 	{
 		public static void Main ()
@@ -29,6 +30,13 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			TestTypeOf ();
 			TestTypeFromBranch (3);
 			TestTypeUsingCaseInsensitiveFlag ();
+			TestTypeUsingCaseUnknownByTheLinker ();
+			/*
+			There is a test hole that involves overload Type.GetType(String, Func<AssemblyName,Assembly>, Func<Assembly,String,Boolean,Type>)
+			This couldn't be tested since Func<> create functions that cannot be marked with [Kept] and the test will end up generating an 
+			error message stating: Type `Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection/<>c' should have been removed
+			The test case was validated manually and is commented in this file as function TestTypeOverloadWith3Parameters
+			 */
 		}
 
 		[Kept]
@@ -229,5 +237,33 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			const string reflectionTypeKeptString = "mono.linker.tests.cases.reflection.TypeUsedViaReflection+CaseInsensitive, test, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null";
 			var typeKept = Type.GetType (reflectionTypeKeptString, false, true);
 		}
+
+		public class CaseUnknown { }
+
+		[Kept]
+		static void TestTypeUsingCaseUnknownByTheLinker ()
+		{
+			bool hideCase = GetCase ();
+			const string reflectionTypeKeptString = "mono.linker.tests.cases.reflection.TypeUsedViaReflection+CaseInsensitive, test, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null";
+			var typeKept = Type.GetType (reflectionTypeKeptString, false, hideCase);
+		}
+
+		[Kept]
+		static bool GetCase ()
+		{
+			return false;
+		}
+
+		/*
+		[Kept]
+		public class OverloadWith3Parameters { }
+
+		[Kept]
+		static void TestTypeOverloadWith3Parameters ()
+		{
+			const string reflectionTypeKeptString = "Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection+OverloadWith3Parameters";
+			var typeKept = Type.GetType (reflectionTypeKeptString, (aName) => aName.Name == "test" ? Assembly.Load("test, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null") : null, (assem, name, ignore) => assem == null ? Type.GetType (name, false) : assem.GetType (name, false));
+		}
+		*/
 	}
 }
