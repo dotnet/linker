@@ -9,24 +9,19 @@
       <!-- IL2031 -->
       <attribute fullname="NonExistentAttribute"/>
 
-      <!-- IL2020 -->
-      <attribute fullname="Mono.Linker.Tests.Cases.LinkAttributes.LinkAttributeErrorCases/AttributeWithDoubleNumberParameterAttribute">
-        <argument>3.14</argument>
+      <!-- IL2022 -->
+      <attribute fullname="Mono.Linker.Tests.Cases.LinkAttributes.LinkAttributeErrorCases/AttributeWithNoParametersAttribute">
+        <argument>ExtraArgumentValue</argument>
       </attribute>
 
-      <!-- IL2021 -->
+      <!-- IL2054 -->
       <attribute fullname="Mono.Linker.Tests.Cases.LinkAttributes.LinkAttributeErrorCases/AttributeWithEnumParameterAttribute">
         <argument>NonExistentEnumValue</argument>
       </attribute>
 
-      <!-- IL2021 -->
+      <!-- IL2054 -->
       <attribute fullname="Mono.Linker.Tests.Cases.LinkAttributes.LinkAttributeErrorCases/AttributeWithIntParameterAttribute">
         <argument>NotANumber</argument>
-      </attribute>
-
-      <!-- IL2022 -->
-      <attribute fullname="Mono.Linker.Tests.Cases.LinkAttributes.LinkAttributeErrorCases/AttributeWithNoParametersAttribute">
-        <argument>ExtraArgumentValue</argument>
       </attribute>
 
       <!-- IL2023 -->

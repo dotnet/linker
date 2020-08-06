@@ -121,7 +121,10 @@ namespace Mono.Linker.Steps
 				object argValue;
 				TypeDefinition parameterType = attributeConstructor.Parameters[i].ParameterType.Resolve ();
 				if (!TryConvertValue (arguments[i], parameterType, out argValue)) {
-					Context.LogWarning ($"Invalid argument value '{arguments[i]}' for attribute '{attributeConstructor.DeclaringType.GetDisplayName ()}'", 2054, _xmlDocumentLocation);
+					Context.LogWarning (
+						$"Invalid argument value '{arguments[i]}' for parameter type '{parameterType.GetDisplayName ()}' of attribute '{attributeConstructor.DeclaringType.GetDisplayName ()}'",
+						2054,
+						_xmlDocumentLocation);
 					return null;
 				}
 

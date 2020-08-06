@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
@@ -27,14 +27,6 @@ namespace Mono.Linker.Tests.Cases.LinkAttributes
 		{
 
 		}
-
-		public class AttributeWithDoubleNumberParameterAttribute : Attribute
-		{
-			public AttributeWithDoubleNumberParameterAttribute (double doubleParameter)
-			{
-			}
-		}
-
 
 		public enum AttributeEnum
 		{
