@@ -69,7 +69,7 @@ namespace Mono.Linker
 			if (!(code > 2000 && code <= 6000))
 				throw new ArgumentException ($"The provided code '{code}' does not fall into the warning category, which is in the range of 2001 to 6000 (inclusive).");
 
-			if (version >= WarnVersion.ILLink0 && version <= WarnVersion.Latest)
+			if (!(version >= WarnVersion.ILLink0 && version <= WarnVersion.Latest))
 				throw new ArgumentException ($"The provided warning version '{version}' is invalid.");
 
 			if (context.IsWarningSuppressed (code, origin))
