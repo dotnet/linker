@@ -444,15 +444,15 @@ namespace Mono.Linker
 						if (!GetStringParam (token, l => noWarnArgument = l))
 							return -1;
 
-						context.NoWarn.UnionWith (ParseWarnings (noWarnArgument));
+						context.NoWarn.UnionWith (ProcessWarningsCodes (noWarnArgument));
 						continue;
 
 					case "--warnaserror":
 					case "--warnaserror+":
 						var warningList = GetNextStringValue ();
 						if (!string.IsNullOrEmpty (warningList)) {
-							foreach (var warning in ParseWarnings (warningList))
-								context.WarnAsError[warning] = true;
+							foreach (var warning in ProcessWarningsCodes (warningList))
+								context.WarnAsError.Add (warning);
 
 						} else {
 							context.GeneralWarnAsError = true;
@@ -464,8 +464,8 @@ namespace Mono.Linker
 					case "--warnaserror-":
 						warningList = GetNextStringValue ();
 						if (!string.IsNullOrEmpty (warningList)) {
-							foreach (var warning in ParseWarnings (warningList))
-								context.WarnAsError[warning] = false;
+							foreach (var warning in ProcessWarningsCodes (warningList))
+								context.WarnAsError.Remove (warning);
 
 						} else {
 							context.GeneralWarnAsError = false;
@@ -775,7 +775,7 @@ namespace Mono.Linker
 
 		partial void PreProcessPipeline (Pipeline pipeline);
 
-		private static HashSet<uint> ParseWarnings (string value)
+		private IEnumerable<int> ProcessWarningsCodes (string value)
 		{
 			string Unquote (string arg)
 			{
@@ -787,18 +787,14 @@ namespace Mono.Linker
 
 			value = Unquote (value);
 			string[] values = value.Split (new char[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries);
-			HashSet<uint> warningCodes = new HashSet<uint> ();
 			foreach (string id in values) {
-				if (!id.StartsWith ("IL", StringComparison.Ordinal))
+				if (!id.StartsWith ("IL", StringComparison.Ordinal) || !ushort.TryParse (id.Substring (2), out ushort code)) {
+					context.LogError ($"Invalid value '{id}' was used as warning code", 1018);
 					continue;
+				}
 
-				var warningCode = id.Substring (2);
-				if (ushort.TryParse (warningCode, out ushort code)
-					&& code > 2000 && code <= 6000)
-					warningCodes.Add (code);
+				yield return code;
 			}
-
-			return warningCodes;
 		}
 
 		private static Assembly GetCustomAssembly (string arg)

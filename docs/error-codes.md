@@ -73,6 +73,10 @@ the error code. For example:
 
 - Invalid value 'value' was used for command-line option '--generate-warning-suppressions'; must be 'cs' or 'xml'.
 
+#### `IL1018`: "Invalid value 'value' was used as warning code
+
+- All warning codes must start with `IL` prefix followed by numeric code.
+
 ----
 ## Warning Codes
 
