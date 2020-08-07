@@ -309,8 +309,8 @@ namespace ILLink.Tasks.Tests
 			new int[] { 1001, 2000, 2021, 2022 }, new int[] { })]
 		[InlineData (false, "IL2023,IL6000;IL5042 IL2040", "IL4000,IL4001;IL4002 IL4003",
 			new int[] { 2023, 2040, 5042, 6000 }, new int[] { 4000, 4001, 4002, 4003 })]
-		[InlineData (false, "IL3000;IL3000;", "IL2005 IL3000 IL2005",
-			new int[] { 3000 }, new int[] { 2005, 3000 })]
+		[InlineData (false, "IL3000;IL3000;", "IL2005 IL3005 IL2005",
+			new int[] { 3000 }, new int[] { 2005, 3005 })]
 		[InlineData (true, null, "IL2006", new int[] { }, new int[] { 2006 })]
 		[InlineData (true, "IL2001", "IL2001", new int[] { }, new int[] { 2001 })]
 		public void TestWarningsAsErrors (bool treatWarningsAsErrors, string? warningsAsErrors, string? warningsNotAsErrors, int[] warnAsError, int[] warnNotAsError)
@@ -324,8 +324,8 @@ namespace ILLink.Tasks.Tests
 			using (var driver = task.CreateDriver ()) {
 				var actualWarnAsError = driver.Context.WarnAsError;
 				var actualGeneralWarnAsError = driver.Context.GeneralWarnAsError;
-				Assert.Equal (actualWarnAsError.Count, warnAsError.Distinct ().Count () + warnNotAsError.Distinct ().Count ());
-				Assert.Equal (actualGeneralWarnAsError, treatWarningsAsErrors);
+				Assert.Equal (warnAsError.Count () + warnNotAsError.Count (), actualWarnAsError.Count);
+				Assert.Equal (treatWarningsAsErrors, actualGeneralWarnAsError);
 				if (warnAsError.Length > 0) {
 					foreach (var warningCode in warnAsError)
 						Assert.True (actualWarnAsError.ContainsKey (warningCode) && actualWarnAsError[warningCode] == true);
