@@ -452,7 +452,7 @@ namespace Mono.Linker
 						var warningList = GetNextStringValue ();
 						if (!string.IsNullOrEmpty (warningList)) {
 							foreach (var warning in ProcessWarningsCodes (warningList))
-								context.WarnAsError.Add (warning);
+								context.WarnAsError[warning] = true;
 
 						} else {
 							context.GeneralWarnAsError = true;
@@ -465,7 +465,7 @@ namespace Mono.Linker
 						warningList = GetNextStringValue ();
 						if (!string.IsNullOrEmpty (warningList)) {
 							foreach (var warning in ProcessWarningsCodes (warningList))
-								context.WarnAsError.Remove (warning);
+								context.WarnAsError[warning] = false;
 
 						} else {
 							context.GeneralWarnAsError = false;

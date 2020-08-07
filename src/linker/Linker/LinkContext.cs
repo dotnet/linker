@@ -176,7 +176,7 @@ namespace Mono.Linker
 
 		public HashSet<int> NoWarn { get; set; }
 
-		public HashSet<int> WarnAsError { get; set; }
+		public Dictionary<int, bool> WarnAsError { get; set; }
 
 		public bool GeneralWarnAsError { get; set; }
 
@@ -238,7 +238,7 @@ namespace Mono.Linker
 			Suppressions = new UnconditionalSuppressMessageAttributeState (this);
 			NoWarn = new HashSet<int> ();
 			GeneralWarnAsError = false;
-			WarnAsError = new HashSet<int> ();
+			WarnAsError = new Dictionary<int, bool> ();
 			WarnVersion = WarnVersion.Latest;
 
 			// See https://github.com/mono/linker/issues/612
@@ -602,7 +602,11 @@ namespace Mono.Linker
 
 		public bool IsWarningAsError (int warningCode)
 		{
-			return GeneralWarnAsError || WarnAsError.Contains (warningCode);
+			bool value;
+			if (GeneralWarnAsError)
+				return !WarnAsError.TryGetValue (warningCode, out value) || value;
+
+			return WarnAsError.TryGetValue (warningCode, out value) && value;
 		}
 
 		static WarnVersion GetWarningVersion (int code)
