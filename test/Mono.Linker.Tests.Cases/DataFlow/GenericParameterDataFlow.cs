@@ -797,7 +797,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			RequiresParameterlessConstructor<T> ();
 		}
 
-		static void RequiresParameterlessConstructor<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T> ()
+		static void RequiresParameterlessConstructor<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T> ()
 		{
 		}
 	}
