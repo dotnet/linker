@@ -1363,8 +1363,34 @@ namespace Mono.Linker.Dataflow
 			foreach (var uniqueValue in value.UniqueValues ()) {
 				if (uniqueValue is LeafValueWithDynamicallyAccessedMemberNode valueWithDynamicallyAccessedMember) {
 					if (!valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes.HasFlag (requiredMemberTypes)) {
+						var messageCode = (valueWithDynamicallyAccessedMember, targetContext) switch
+						{
+							(MethodParameterValue _, ParameterDefinition _) => 2006,
+							(MethodParameterValue _, MethodReturnType _) => 2067,
+							(MethodParameterValue _, FieldDefinition _) => 2068,
+							(MethodParameterValue _, MethodDefinition _) => 2069,
+
+							(MethodReturnValue _, ParameterDefinition _) => 2070,
+							(MethodReturnValue _, MethodReturnType _) => 2071,
+							(MethodReturnValue _, FieldDefinition _) => 2072,
+							(MethodReturnValue _, MethodDefinition _) => 2073,
+
+							(LoadFieldValue _, ParameterDefinition _) => 2074,
+							(LoadFieldValue _, MethodReturnType _) => 2075,
+							(LoadFieldValue _, FieldDefinition _) => 2076,
+							(LoadFieldValue _, MethodDefinition _) => 2077,
+
+							(SystemTypeForGenericParameterValue _, ParameterDefinition _) => 2078,
+							(SystemTypeForGenericParameterValue _, MethodReturnType _) => 2079,
+							(SystemTypeForGenericParameterValue _, FieldDefinition _) => 2080,
+							(SystemTypeForGenericParameterValue _, MethodDefinition _) => 2090, // TODO: I don't think this is possible
+							(SystemTypeForGenericParameterValue _, GenericParameter _) => 2091,
+
+							(AnnotatedStringValue _, _) => 3000, // TODO
+							_ => throw new NotImplementedException ($"unsupported value {value} or target context {targetContext}")
+						};
 						reflectionContext.RecordUnrecognizedPattern (
-							2006,
+							messageCode,
 							$"The requirements declared via the `DynamicallyAccessedMembersAttribute` on {GetValueDescriptionForErrorMessage (valueWithDynamicallyAccessedMember)} " +
 							$"don't match those on {DiagnosticUtilities.GetMetadataTokenDescriptionForErrorMessage (targetContext)}. " +
 							$"The source value must declare at least the same requirements as those declared on the target location it's assigned to");
@@ -1384,8 +1410,17 @@ namespace Mono.Linker.Dataflow
 				} else if (uniqueValue == NullValue.Instance) {
 					// Ignore - probably unreachable path as it would fail at runtime anyway.
 				} else {
+					var messageCode = targetContext switch
+					{
+						ParameterDefinition _ => 2032,
+						MethodReturnType _ => 2063,
+						FieldDefinition _ => 2064,
+						MethodDefinition _ => 2065,
+						GenericParameter _ => 2066,
+						_ => throw new NotImplementedException ($"unsupported target context {targetContext.GetType ()}")
+					};
 					reflectionContext.RecordUnrecognizedPattern (
-						2032,
+						messageCode,
 						$"Value passed to {DiagnosticUtilities.GetMetadataTokenDescriptionForErrorMessage (targetContext)} can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.");
 				}
 			}

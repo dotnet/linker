@@ -38,11 +38,11 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) },
-			messageCode: "IL2006", message: new string[] {
+			messageCode: "IL2070", message: new string[] {
 				"return value of method 'Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.GetWithPublicMethods()'",
 				"parameter 'type' of method 'Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.RequirePublicFields(String)'"})]
 		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicMethods), new Type[] { typeof (string) },
-			messageCode: "IL2006", message: new string[] {
+			messageCode: "IL2070", message: new string[] {
 				"return value of method 'Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.GetWithPublicFields()'",
 				"parameter 'type' of method 'Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.RequirePublicMethods(String)'"})]
 		public static void TestBranchMergeGoto ()
@@ -58,11 +58,11 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) },
-			messageCode: "IL2006", message: new string[] {
+			messageCode: "IL2070", message: new string[] {
 				"return value of method 'Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.GetWithPublicMethods()'",
 				"parameter 'type' of method 'Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.RequirePublicFields(String)'" })]
 		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicMethods), new Type[] { typeof (string) },
-			messageCode: "IL2006", message: new string[] {
+			messageCode: "IL2070", message: new string[] {
 				"return value of method 'Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.GetWithPublicFields()'",
 				"parameter 'type' of method 'Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.RequirePublicMethods(String)'" })]
 		public static void TestBranchMergeIf ()
@@ -76,11 +76,11 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) },
-			messageCode: "IL2006", message: new string[] {
+			messageCode: "IL2070", message: new string[] {
 				"return value of method 'Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.GetWithPublicMethods()'",
 				"parameter 'type' of method 'Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.RequirePublicFields(String)'" })]
 		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicMethods), new Type[] { typeof (string) },
-			messageCode: "IL2006", message: new string[] {
+			messageCode: "IL2070", message: new string[] {
 				"return value of method 'Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.GetWithPublicFields()'",
 				"parameter 'type' of method 'Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.RequirePublicMethods(String)'" })]
 		public static void TestBranchMergeIfElse ()
@@ -98,15 +98,15 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		static int _switchOnField;
 
 		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequireNonPublicMethods), new Type[] { typeof (string) },
-			messageCode: "IL2006", message: new string[] {
+			messageCode: "IL2070", message: new string[] {
 				"return value of method 'Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.GetWithPublicFields()'",
 				"parameter 'type' of method 'Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.RequireNonPublicMethods(String)'" })]
 		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequireNonPublicMethods), new Type[] { typeof (string) },
-			messageCode: "IL2006", message: new string[] {
+			messageCode: "IL2070", message: new string[] {
 				"return value of method 'Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.GetWithPublicMethods()'",
 				"parameter 'type' of method 'Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.RequireNonPublicMethods(String)'" })]
 		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequireNonPublicMethods), new Type[] { typeof (string) },
-			messageCode: "IL2006", message: new string[] {
+			messageCode: "IL2070", message: new string[] {
 				"return value of method 'Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.GetWithPublicConstructors()'",
 				"parameter 'type' of method 'Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.RequireNonPublicMethods(String)'" })]
 		public static void TestBranchMergeSwitch ()
@@ -130,11 +130,11 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) },
-			messageCode: "IL2006", message: new string[] {
+			messageCode: "IL2070", message: new string[] {
 				"return value of method 'Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.GetWithPublicMethods()'",
 				"parameter 'type' of method 'Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.RequirePublicFields(String)'" })]
 		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicMethods), new Type[] { typeof (string) },
-			messageCode: "IL2006", message: new string[] {
+			messageCode: "IL2070", message: new string[] {
 				"return value of method 'Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.GetWithPublicFields()'",
 				"parameter 'type' of method 'Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.RequirePublicMethods(String)'" })]
 		public static void TestBranchMergeTry ()
@@ -152,11 +152,11 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) },
-			messageCode: "IL2006", message: new string[] {
+			messageCode: "IL2070", message: new string[] {
 				"return value of method 'Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.GetWithPublicMethods()'",
 				"parameter 'type' of method 'Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.RequirePublicFields(String)'" })]
 		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicMethods), new Type[] { typeof (string) },
-			messageCode: "IL2006", message: new string[] {
+			messageCode: "IL2070", message: new string[] {
 				"return value of method 'Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.GetWithPublicFields()'",
 				"parameter 'type' of method 'Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.RequirePublicMethods(String)'" })]
 		public static void TestBranchMergeCatch ()
@@ -173,11 +173,11 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) },
-			messageCode: "IL2006", message: new string[] {
+			messageCode: "IL2070", message: new string[] {
 				"return value of method 'Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.GetWithPublicMethods()'",
 				"parameter 'type' of method 'Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.RequirePublicFields(String)'" })]
 		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicMethods), new Type[] { typeof (string) },
-			messageCode: "IL2006", message: new string[] {
+			messageCode: "IL2070", message: new string[] {
 				"return value of method 'Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.GetWithPublicFields()'",
 				"parameter 'type' of method 'Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.RequirePublicMethods(String)'" })]
 		public static void TestBranchMergeFinally ()
@@ -194,7 +194,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			RequirePublicMethods (str); // warns for GetWithPublicFields
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) })]
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) }, messageCode: "IL2070")]
 		public static void TestBranchGoto ()
 		{
 			string str = GetWithPublicMethods ();
@@ -206,7 +206,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			return;
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) })]
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) }, messageCode: "IL2070")]
 		public static void TestBranchIf ()
 		{
 			string str = GetWithPublicMethods ();
@@ -216,7 +216,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) })]
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) }, messageCode: "IL2070")]
 		public static void TestBranchIfElse ()
 		{
 			string str;
@@ -231,12 +231,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequireNonPublicMethods), new Type[] { typeof (string) })]
-		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicMethods), new Type[] { typeof (string) })]
-		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicMethods), new Type[] { typeof (string) })]
-		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicConstructors), new Type[] { typeof (string) })]
-		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicConstructors), new Type[] { typeof (string) })]
-		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicConstructors), new Type[] { typeof (string) })]
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequireNonPublicMethods), new Type[] { typeof (string) }, messageCode: "IL2070")]
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicMethods), new Type[] { typeof (string) }, messageCode: "IL2070")]
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicMethods), new Type[] { typeof (string) }, messageCode: "IL2070")]
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicConstructors), new Type[] { typeof (string) }, messageCode: "IL2070")]
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicConstructors), new Type[] { typeof (string) }, messageCode: "IL2070")]
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicConstructors), new Type[] { typeof (string) }, messageCode: "IL2070")]
 		public static void TestBranchSwitch ()
 		{
 			string str = null;
@@ -260,7 +260,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) })]
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) }, messageCode: "IL2070")]
 		public static void TestBranchTry ()
 		{
 			string str = GetWithPublicMethods ();
@@ -274,7 +274,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) })]
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) }, messageCode: "IL2070")]
 		public static void TestBranchCatch ()
 		{
 			string str = GetWithPublicMethods ();
@@ -287,7 +287,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) })]
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) }, messageCode: "IL2070")]
 		public static void TestBranchFinally ()
 		{
 			string str = GetWithPublicMethods ();

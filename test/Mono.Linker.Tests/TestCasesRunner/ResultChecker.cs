@@ -788,8 +788,11 @@ namespace Mono.Linker.Tests.TestCasesRunner
 						int? expectedMessageCode = null;
 						if (attr.ConstructorArguments.Count >= 5) {
 							var codeString = (string) attr.ConstructorArguments[4].Value;
-							if (codeString != null && codeString.StartsWith ("IL"))
+							if (codeString != null) {
+								if (!codeString.StartsWith ("IL"))
+									throw new InvalidOperationException ($"invalid message code {codeString}");
 								expectedMessageCode = int.Parse (codeString.Substring (2));
+							}
 						}
 
 						if (!reflectionPatternRecorder.UnrecognizedPatterns.Any (pattern => {

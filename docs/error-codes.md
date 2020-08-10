@@ -553,7 +553,7 @@ This is technically possible if a custom assembly defines for example the `Requi
   </linker>
   ```
 
-#### `IL2032` Trim analysis: Value passed to <target description> can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.
+#### `IL2032` Trim analysis: Value passed to parameter 'parameter' of method 'method' can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.
 
 - The target has a `DynamicallyAccessedMembersAttribute`, but the value passed to it can not be statically analyzed. ILLink can't make sure that the requirements declared by the `DynamicallyAccessedMembersAttribute` are met by the type value.  
 
@@ -775,7 +775,7 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
   }
   ```
 
-#### `IL2047` Trim analysis: 'DynamicallyAccessedMemberTypes' in 'DynamicallyAccessedMembersAttribute' on <member> don't match overridden <base member>. All overridden members must have the same 'DynamicallyAccessedMembersAttribute' usage.
+#### `IL2047` Trim analysis: 'DynamicallyAccessedMemberTypes' in 'DynamicallyAccessedMembersAttribute' on parameter 'parameter' of method 'method' don't match overridden 'parameter' of method 'base method'. All overridden members must have the same 'DynamicallyAccessedMembersAttribute' usage.
 
 - All overrides of a virtual method including the base method must have the same `DynamicallyAccessedMemberAttribute` usage on all it's components (return value, parameters and generic parameters).
 
@@ -898,7 +898,7 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
   </linker>
   ```
 
-#### `IL2055` Trim analysis: Call to 'System.Reflection.MethodInfo.MakeGenericType' can not be statically analyzed. It's not possible to guarantee the availability of requirements of the generic type.
+#### `IL2055`: Trim analysis: Call to 'System.Reflection.MethodInfo.MakeGenericType' can not be statically analyzed. It's not possible to guarantee the availability of requirements of the generic type.
 
 - This can be either that the type on which the `MakeGenericType` is called can't be statically determined, or that the type parameters to be used for generic arguments can't be statically determined. If the open generic type has `DynamicallyAccessedMembersAttribute` on any of its generic parameters, ILLink currently can't validate that the requirements are fulfilled by the calling method.  
 
@@ -918,11 +918,11 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
   }
   ```
 
-#### `IL2056` Trim analysis: Trying to propagate 'DynamicallyAccessedMemberAttribute' from property 'property' to its backing field 'field', but it already has such attribute.
+#### `IL2056`: Trim analysis: Trying to propagate 'DynamicallyAccessedMemberAttribute' from property 'property' to its backing field 'field', but it already has such attribute.
 
 - Propagating `DynamicallyAccessedMembersAttribute` from property 'property' to its backing field 'field' found that the field already has such an attribute. The existing attribute will be used.
 
-#### `IL2057` Trim analysis: Unrecognized value passed to the parameter 'typeName' of method 'System.Type.GetType(Type typeName)'. It's not possible to guarantee the availability of the target type.
+#### `IL2057`: Trim analysis: Unrecognized value passed to the parameter 'typeName' of method 'System.Type.GetType(Type typeName)'. It's not possible to guarantee the availability of the target type.
 
 - If the type name passed to the `System.Type.GetType` is statically known ILLink can make sure it's preserved and the application code will work after trimming. But if the type name is unknown, it could point to a type which ILLink will not see being used anywhere else and would remove it from the application, potentially breaking the application.  
 
@@ -936,7 +936,7 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
   }
   ```
 
-#### `IL2058` Trim analysis: Parameters passed to method 'Assembly.CreateInstance' cannot be analyzed. Consider using methods 'System.Type.GetType' and `System.Activator.CreateInstance` instead.
+#### `IL2058`: Trim analysis: Parameters passed to method 'Assembly.CreateInstance' cannot be analyzed. Consider using methods 'System.Type.GetType' and `System.Activator.CreateInstance` instead.
 
 - ILLink currently doesn't analyze assembly instances and thus it doesn't know on which assembly the `Assembly.CreateInstance` was called. ILLink has support for `Type.GetType` instead, for cases where the parameter is a string literal. The result of which can be passed to `Activator.CreateInstance` to create an instance of the type.
 
@@ -951,7 +951,7 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
   }
   ```
 
-#### `IL2059` Trim analysis: Unrecognized value passed to the parameter 'type' of method 'System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor'. It's not possible to guarantee the availability of the target static constructor.
+#### `IL2059`: Trim analysis: Unrecognized value passed to the parameter 'type' of method 'System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor'. It's not possible to guarantee the availability of the target static constructor.
 
 - If the type passed to the `RunClassConstructor` is not statically known, ILLink can't make sure that its static constructor is available.  
 
@@ -964,7 +964,7 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
   }
   ```
 
-#### `IL2060` Trim analysis: Call to `System.Reflection.MethodInfo.MakeGenericMethod` can not be statically analyzed. It's not possible to guarantee the availability of requirements of the generic method.
+#### `IL2060`: Trim analysis: Call to `System.Reflection.MethodInfo.MakeGenericMethod` can not be statically analyzed. It's not possible to guarantee the availability of requirements of the generic method.
 
 - ILLink currently doesn't analyze `MethodInfo` values and thus can't statically determine the generic method the `MakeGenericMethod` operates on. If the actual method has generic parameters with `DynamicallyAccessedMembersAttribute` ILLink would be required to fulfill the requirements declared by those attributes, but since the ILLink doesn't know the method, it can't determine if such requirements exist.  
 
@@ -976,7 +976,7 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
   }
   ```
 
-#### `IL2061` Trim analysis: The assembly name 'assembly name' passed to method 'method' references assembly which is not available.
+#### `IL2061`: Trim analysis: The assembly name 'assembly name' passed to method 'method' references assembly which is not available.
 
 - Calling `CreateInstance` with assembly name 'assembly name' which can't be resolved.  
 
@@ -988,7 +988,7 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
   }
   ```
 
-#### `IL2062` Trim analysis: Unrecognized value passed to the parameter 'parameter' of method 'CreateInstance'. It's not possible to guarantee the availability of the target type.
+#### `IL2062`: Trim analysis: Unrecognized value passed to the parameter 'parameter' of method 'CreateInstance'. It's not possible to guarantee the availability of the target type.
 
 - The value passed as the assembly name or type name to the `CreateInstance` method can't be statically analyzed, ILLink can't make sure that the type is available.  
 
@@ -1002,3 +1002,15 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
       Activator.CreateInstance(assemblyName, "MyType");
   }
   ```
+
+#### `IL2063`: Trim analysis: Value passed to return value of method 'method' can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.
+
+#### `IL2064`: Trim analysis: Value passed to field 'field' can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.
+
+#### `IL2065`: Trim analysis: Value passed to implicit 'this' parameter of method 'method' can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.
+
+#### `IL2066`: Trim analysis: Value passed to generic parameter 'parameter' from 'type or method' can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.
+
+#### `IL2067`: Trim analysis: 'DynamicallyAccessedMemberTypes' in 'DynamicallyAccessedMembersAttribute' on generic parameter 'generic parameter' from 'method' don't match overridden generic parameter 'generic parameter' of 'base method'. All overridden members must have the same 'DynamicallyAccessedMembersAttribute' usage.
+
+#### `IL2068`: Trim analysis: 'DynamicallyAccessedMemberTypes' in 'DynamicallyAccessedMembersAttribute' on return value of method 'method' don't match overridden return value of method 'base method'. All overridden members must have the same 'DynamicallyAccessedMembersAttribute' usage.

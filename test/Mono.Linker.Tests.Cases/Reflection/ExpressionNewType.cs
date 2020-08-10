@@ -50,15 +50,15 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		#endregion
 
 		#region UnrecognizedReflectionAccessPatterns
-		[UnrecognizedReflectionAccessPattern (typeof (Expression), nameof (Expression.New), new Type[] { typeof (Type) })]
+		[UnrecognizedReflectionAccessPattern (typeof (Expression), nameof (Expression.New), new Type[] { typeof (Type) }, messageCode: "IL2006")]
 		[Kept]
 		static void Branch_MethodParameterValueNode (Type T)
 		{
 			Expression.New (T);
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (Expression), nameof (Expression.New), new Type[] { typeof (Type) })]
-		[UnrecognizedReflectionAccessPattern (typeof (Expression), nameof (Expression.New), new Type[] { typeof (Type) })]
+		[UnrecognizedReflectionAccessPattern (typeof (Expression), nameof (Expression.New), new Type[] { typeof (Type) }, messageCode: "IL2070")]
+		[UnrecognizedReflectionAccessPattern (typeof (Expression), nameof (Expression.New), new Type[] { typeof (Type) }, messageCode: "IL2070")]
 		[Kept]
 		static void Branch_UnrecognizedPatterns ()
 		{

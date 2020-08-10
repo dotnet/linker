@@ -2,7 +2,9 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -464,11 +466,21 @@ namespace Mono.Linker.Dataflow
 
 		void LogValidationWarning (IMetadataTokenProvider provider, IMetadataTokenProvider baseProvider, IMemberDefinition origin)
 		{
+			Debug.Assert (provider.GetType () == baseProvider.GetType ());
+			Debug.Assert (!(provider is GenericParameter genericParameter) || genericParameter.DeclaringMethod != null);
+			var messageCode = provider switch
+			{
+				ParameterDefinition _ => 2047,
+				GenericParameter _ => 2067,
+				MethodReturnType _ => 2068,
+				MethodDefinition _ => 2092, // implicit this parameter
+				_ => throw new NotImplementedException ($"unsupported provider {provider.GetType ()}")
+			};
 			_context.LogWarning (
 				$"'DynamicallyAccessedMemberTypes' in 'DynamicallyAccessedMembersAttribute' on {DiagnosticUtilities.GetMetadataTokenDescriptionForErrorMessage (provider)} " +
 				$"don't match overridden {DiagnosticUtilities.GetMetadataTokenDescriptionForErrorMessage (baseProvider)}. " +
 				$"All overridden members must have the same 'DynamicallyAccessedMembersAttribute' usage.",
-				2047, origin, subcategory: MessageSubCategory.TrimAnalysis);
+				messageCode, origin, subcategory: MessageSubCategory.TrimAnalysis);
 		}
 
 		readonly struct TypeAnnotations

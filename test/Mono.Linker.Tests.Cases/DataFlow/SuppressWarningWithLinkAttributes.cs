@@ -27,8 +27,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		Type PropertyWithPublicParameterlessConstructor { get; set; }
 
-		[UnrecognizedReflectionAccessPattern (typeof (SuppressWarningWithLinkAttributes), nameof (RequirePublicConstructors), new Type[] { typeof (Type) })]
-		[UnrecognizedReflectionAccessPattern (typeof (SuppressWarningWithLinkAttributes), nameof (RequireNonPublicConstructors), new Type[] { typeof (Type) })]
+		[UnrecognizedReflectionAccessPattern (typeof (SuppressWarningWithLinkAttributes), nameof (RequirePublicConstructors), new Type[] { typeof (Type) }, messageCode: "IL2074")]
+		[UnrecognizedReflectionAccessPattern (typeof (SuppressWarningWithLinkAttributes), nameof (RequireNonPublicConstructors), new Type[] { typeof (Type) }, messageCode: "IL2074")]
 		[RecognizedReflectionAccessPattern]
 		private void ReadFromInstanceField ()
 		{

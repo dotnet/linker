@@ -25,7 +25,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), nameof (MethodThisDataFlowTypeTest.RequireThisPublicMethods), new Type[] { },
-			messageCode: "IL2006", message: new string[] {
+			messageCode: "IL2073", message: new string[] {
 				"return value of method 'Mono.Linker.Tests.Cases.DataFlow.MethodThisDataFlow.GetWithNonPublicMethods()'",
 				"implicit 'this' parameter of method 'System.MethodThisDataFlowTypeTest.RequireThisPublicMethods()'" })]
 		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), nameof (MethodThisDataFlowTypeTest.RequireThisNonPublicMethods), new Type[] { })]
@@ -39,7 +39,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), "get_" + nameof (MethodThisDataFlowTypeTest.PropertyRequireThisPublicMethods), new Type[] { },
-			messageCode: "IL2006", message: new string[] {
+			messageCode: "IL2073", message: new string[] {
 				"return value of method 'Mono.Linker.Tests.Cases.DataFlow.MethodThisDataFlow.GetWithNonPublicMethods()'",
 				"implicit 'this' parameter of method 'System.MethodThisDataFlowTypeTest.get_PropertyRequireThisPublicMethods()'" })]
 		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), "get_" + nameof (MethodThisDataFlowTypeTest.PropertyRequireThisNonPublicMethods), new Type[] { })]
@@ -53,10 +53,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), "set_" + nameof (MethodThisDataFlowTypeTest.PropertyRequireThisPublicMethods), new Type[] { typeof (Object) },
-			messageCode: "IL2006", message: new string[] {
+			messageCode: "IL2073", message: new string[] {
 				"return value of method 'Mono.Linker.Tests.Cases.DataFlow.MethodThisDataFlow.GetWithNonPublicMethods()'",
 				"implicit 'this' parameter of method 'System.MethodThisDataFlowTypeTest.set_PropertyRequireThisPublicMethods(Object)'" })]
-		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), "set_" + nameof (MethodThisDataFlowTypeTest.PropertyRequireThisNonPublicMethods), new Type[] { typeof (Object) })]
+		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), "set_" + nameof (MethodThisDataFlowTypeTest.PropertyRequireThisNonPublicMethods), new Type[] { typeof (Object) }, messageCode: "IL2073")]
 		static void PropagateToThisWithSetters ()
 		{
 			GetWithPublicMethods ().PropertyRequireThisPublicMethods = null;
@@ -119,7 +119,7 @@ namespace System
 		}
 
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicMethods)]
-		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), nameof (RequirePublicMethods), new Type[] { typeof (Type) })]
+		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), nameof (RequirePublicMethods), new Type[] { typeof (Type) }, messageCode: "IL2006")]
 		public void RequireThisNonPublicMethods ()
 		{
 			RequirePublicMethods (this);

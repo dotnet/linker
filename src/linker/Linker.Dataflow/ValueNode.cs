@@ -609,7 +609,7 @@ namespace Mono.Linker.Dataflow
 	}
 
 	/// <summary>
-	/// This is a System.Type value which reprensents generic parameter (basically result of typeof(T))
+	/// This is a System.Type value which represents generic parameter (basically result of typeof(T))
 	/// Its actual type is unknown, but it can have annotations.
 	/// </summary>
 	class SystemTypeForGenericParameterValue : LeafValueWithDynamicallyAccessedMemberNode
