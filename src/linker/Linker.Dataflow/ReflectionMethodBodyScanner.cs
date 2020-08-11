@@ -68,7 +68,7 @@ namespace Mono.Linker.Dataflow
 		{
 			Scan (methodBody);
 
-			if (MethodReturnValue != null) {
+			if (methodBody.Method.ReturnType.MetadataType != MetadataType.Void) {
 				var method = methodBody.Method;
 				var requiredMemberTypes = _context.Annotations.FlowAnnotations.GetReturnParameterAnnotation (method);
 				if (requiredMemberTypes != 0) {
@@ -138,7 +138,7 @@ namespace Mono.Linker.Dataflow
 			RequireDynamicallyAccessedMembers (ref reflectionContext, annotation, valueNode, genericParameter);
 		}
 
-		private ValueNode GetValueNodeFromGenericArgument (TypeReference genericArgument)
+		ValueNode GetValueNodeFromGenericArgument (TypeReference genericArgument)
 		{
 			if (genericArgument is GenericParameter inputGenericParameter) {
 				// Technically this should be a new value node type as it's not a System.Type instance representation, but just the generic parameter
@@ -1349,11 +1349,11 @@ namespace Mono.Linker.Dataflow
 							MarkConstructorsOnType (ref reflectionContext, resolvedType,
 								parameterlessConstructor ? m => m.Parameters.Count == 0 : (Func<MethodDefinition, bool>) null, bindingFlags);
 						} else {
-							reflectionContext.RecordUnrecognizedPattern (2062, $"Unrecognized value passed to the parameter '{calledMethod.Parameters[1].Name}' of method '{calledMethod.GetDisplayName ()}'. It's not possible to guarantee the availability of the target type.");
+							reflectionContext.RecordUnrecognizedPattern (2032, $"Unrecognized value passed to the parameter '{calledMethod.Parameters[1].Name}' of method '{calledMethod.GetDisplayName ()}'. It's not possible to guarantee the availability of the target type.");
 						}
 					}
 				} else {
-					reflectionContext.RecordUnrecognizedPattern (2062, $"Unrecognized value passed to the parameter '{calledMethod.Parameters[0].Name}' of method '{calledMethod.GetDisplayName ()}'. It's not possible to guarantee the availability of the target type.");
+					reflectionContext.RecordUnrecognizedPattern (2032, $"Unrecognized value passed to the parameter '{calledMethod.Parameters[0].Name}' of method '{calledMethod.GetDisplayName ()}'. It's not possible to guarantee the availability of the target type.");
 				}
 			}
 		}
@@ -1410,18 +1410,36 @@ namespace Mono.Linker.Dataflow
 				} else if (uniqueValue == NullValue.Instance) {
 					// Ignore - probably unreachable path as it would fail at runtime anyway.
 				} else {
-					var messageCode = targetContext switch
-					{
-						ParameterDefinition _ => 2032,
-						MethodReturnType _ => 2063,
-						FieldDefinition _ => 2064,
-						MethodDefinition _ => 2065,
-						GenericParameter _ => 2066,
-						_ => throw new NotImplementedException ($"unsupported target context {targetContext.GetType ()}")
+					switch (targetContext) {
+					case ParameterDefinition parameterDefinition:
+						reflectionContext.RecordUnrecognizedPattern (
+							2062,
+							$"Value passed to parameter '{DiagnosticUtilities.GetParameterNameForErrorMessage (parameterDefinition)}' of method '{DiagnosticUtilities.GetMethodSignatureDisplayName (parameterDefinition.Method)}' can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.");
+						break;
+					case MethodReturnType methodReturnType:
+						reflectionContext.RecordUnrecognizedPattern (
+							2063,
+							$"Value returned from method '{DiagnosticUtilities.GetMethodSignatureDisplayName (methodReturnType.Method)}' can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.");
+						break;
+					case FieldDefinition fieldDefinition:
+						reflectionContext.RecordUnrecognizedPattern (
+							2064,
+							$"Value assigned to {fieldDefinition.GetDisplayName ()} can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.");
+						break;
+					case MethodDefinition methodDefinition:
+						reflectionContext.RecordUnrecognizedPattern (
+							2065,
+							$"Value passed to implicit 'this' parameter of method '{methodDefinition.GetDisplayName ()}' can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.");
+						break;
+					case GenericParameter genericParameter:
+						// Note: this is currently unreachable as there's no IL way to pass unknown value to a generic parameter without using reflection.
+						// Once we support analysis of MakeGenericType/MakeGenericMethod arguments this would become reachable though.
+						reflectionContext.RecordUnrecognizedPattern (
+							2066,
+							$"Type passed to generic parameter '{genericParameter.Name}' of '{DiagnosticUtilities.GetGenericParameterDeclaringMemberDisplayName (genericParameter)}' can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.");
+						break;
+					default: throw new NotImplementedException ($"unsupported target context {targetContext.GetType ()}");
 					};
-					reflectionContext.RecordUnrecognizedPattern (
-						messageCode,
-						$"Value passed to {DiagnosticUtilities.GetMetadataTokenDescriptionForErrorMessage (targetContext)} can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.");
 				}
 			}
 

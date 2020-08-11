@@ -31,7 +31,7 @@ the error code. For example:
 
 #### `IL1006`: Cannot stub constructor on 'type' when base type does not have default constructor
 
-- There was an error trying to create a new instance of type 'type'. Its construtor was marked for substitution in a substitution XML, but the base type of 'type' doesn't have a default constructor. Constructors of derived types marked for substitution require to have a default constructor in its base type.
+- There was an error trying to create a new instance of type 'type'. Its constructor was marked for substitution in a substitution XML, but the base type of 'type' doesn't have a default constructor. Constructors of derived types marked for substitution require to have a default constructor in its base type.
 
 #### `IL1007`: Missing predefined 'type' type
 
@@ -553,20 +553,18 @@ This is technically possible if a custom assembly defines for example the `Requi
   </linker>
   ```
 
-#### `IL2032` Trim analysis: Value passed to parameter 'parameter' of method 'method' can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.
+#### `IL2032`: Trim analysis: Unrecognized value passed to the parameter 'parameter' of method 'CreateInstance'. It's not possible to guarantee the availability of the target type.
 
-- The target has a `DynamicallyAccessedMembersAttribute`, but the value passed to it can not be statically analyzed. ILLink can't make sure that the requirements declared by the `DynamicallyAccessedMembersAttribute` are met by the type value.  
+- The value passed as the assembly name or type name to the `CreateInstance` method can't be statically analyzed, ILLink can't make sure that the type is available.  
 
   ``` C#
-  void NeedsPublicConstructors([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructor)] Type type)
+  void TestMethod(string assemblyName, string typeName)
   {
-      // ...
-  }
+      // IL2032 Trim analysis: Unrecognized value passed to the parameter 'typeName' of method 'System.Activator.CreateInstance(string, string)'. It's not possible to guarantee the availability of the target type.
+      Activator.CreateInstance("MyAssembly", typeName);
 
-  void TestMethod(Type[] types)
-  {
-      // IL2032: Unrecognized type value passed to parameter 'type' of method 'NeedsPublicConstructors'. It's not possible to guarantee that the requirements declared by the 'DynamicallyAccessedMembersAttribute' are met.
-      NeedsPublicConstructors(types[1]);
+      // IL2032 Trim analysis: Unrecognized value passed to the parameter 'assemblyName' of method 'System.Activator.CreateInstance(string, string)'. It's not possible to guarantee the availability of the target type.
+      Activator.CreateInstance(assemblyName, "MyType");
   }
   ```
 
@@ -988,28 +986,68 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
   }
   ```
 
-#### `IL2062`: Trim analysis: Unrecognized value passed to the parameter 'parameter' of method 'CreateInstance'. It's not possible to guarantee the availability of the target type.
+#### `IL2062` Trim analysis: Value passed to parameter 'parameter' of method 'method' can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.
 
-- The value passed as the assembly name or type name to the `CreateInstance` method can't be statically analyzed, ILLink can't make sure that the type is available.  
+- The parameter 'parameter' of method 'method' has a `DynamicallyAccessedMembersAttribute`, but the value passed to it can not be statically analyzed. ILLink can't make sure that the requirements declared by the `DynamicallyAccessedMembersAttribute` are met by the argument value.
 
   ``` C#
-  void TestMethod(string assemblyName, string typeName)
+  void NeedsPublicConstructors([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type type)
   {
-      // IL2062 Trim analysis: Unrecognized value passed to the parameter 'typeName' of method 'System.Activator.CreateInstance(string, string)'. It's not possible to guarantee the availability of the target type.
-      Activator.CreateInstance("MyAssembly", typeName);
+      // ...
+  }
 
-      // IL2062 Trim analysis: Unrecognized value passed to the parameter 'assemblyName' of method 'System.Activator.CreateInstance(string, string)'. It's not possible to guarantee the availability of the target type.
-      Activator.CreateInstance(assemblyName, "MyType");
+  void TestMethod(Type[] types)
+  {
+      // IL2062: Value passed to parameter 'type' of method 'NeedsPublicConstructors' can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.
+      NeedsPublicConstructors(types[1]);
   }
   ```
 
-#### `IL2063`: Trim analysis: Value passed to return value of method 'method' can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.
+#### `IL2063`: Trim analysis: Value returned from method 'method' can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.
 
-#### `IL2064`: Trim analysis: Value passed to field 'field' can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.
+- The return value of method 'method' has a `DynamicallyAccessedMembersAttribute`, but the value returned from the method can not be statically analyzed. ILLink can't make sure that the requirements declared by the `DynamicallyAccessedMembersAttribute` are met by the returned value.
+
+  ``` C#
+  [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+  Type TestMethod(Type[] types)
+  {
+      // IL2063 Trim analysis: Value returned from method 'TestMethod' can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.
+      NeedsPublicConstructors(types[1]);
+  }
+  ```
+
+#### `IL2064`: Trim analysis: Value assigned to field 'field' can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.
+
+- The field 'field' has a `DynamicallyAccessedMembersAttribute`, but the value assigned to it can not be statically analyzed. ILLink can't make sure that the requirements declared by the `DynamicallyAccessedMembersAttribute` are met by the assigned value.
+
+  ``` C#
+  [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+  Type _typeField;
+
+  void TestMethod(Type[] types)
+  {
+      // IL2064 Trim analysis: Value assigned to field '_typeField' can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.
+      _typeField = _types[1];
+  }
+  ```
 
 #### `IL2065`: Trim analysis: Value passed to implicit 'this' parameter of method 'method' can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.
 
-#### `IL2066`: Trim analysis: Value passed to generic parameter 'parameter' from 'type or method' can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.
+- The method 'method' has a `DynamicallyAccessedMembersAttribute` (which applies to the implicit 'this' parameter), but the value used for the 'this' parameter can not be statically analyzed. ILLink can't make sure that the requirements declared by the `DynamicallyAccessedMembersAttribute` are met by the 'this' value.
+
+  ``` C#
+  void TestMethod(Type[] types)
+  {
+      // IL2065 Trim analysis: Value passed to implicit 'this' parameter of method 'Type.GetMethods()' can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.
+      _types[1].GetMethods (); // Type.GetMethods has [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] attribute
+  }
+  ```
+
+#### `IL2066`: Trim analysis: Type passed to generic parameter 'parameter' of 'type or method' can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.
+
+- The generic parameter 'parameter' of 'type or method' has a `DynamicallyAccessedMembersAttribute`, but the value used for it can not be statically analyzed. ILLink can't make sure that the requirements declared by the `DynamicallyAccessedMembersAttribute` are met by the value.
+
+*Note: this warning can't be currently produced as there's no pure IL way to pass unknown value to a generic parameter. Once ILLInk supports full analysis of arguments for `MakeGenericType`/`MakeGenericMethod` this warnings would become active.*
 
 #### `IL2067`: Trim analysis: 'DynamicallyAccessedMemberTypes' in 'DynamicallyAccessedMembersAttribute' on generic parameter 'generic parameter' from 'method' don't match overridden generic parameter 'generic parameter' of 'base method'. All overridden members must have the same 'DynamicallyAccessedMembersAttribute' usage.
 

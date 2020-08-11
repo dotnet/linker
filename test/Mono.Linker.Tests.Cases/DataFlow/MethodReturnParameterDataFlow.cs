@@ -28,6 +28,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			instance.ReturnPublicParameterlessConstructorFromNull ();
 			instance.ReturnPublicConstructorsFailure (null);
 			instance.ReturnNonPublicConstructorsFailure (null);
+			instance.ReturnUnknownValue ();
 
 			// Validation that value comming from return value of a method is correctly propagated
 			instance.PropagateReturnPublicParameterlessConstructor ();
@@ -108,6 +109,17 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			Type publicConstructorsType)
 		{
 			return publicConstructorsType;
+		}
+
+		[UnrecognizedReflectionAccessPattern (typeof (MethodReturnParameterDataFlow), nameof (ReturnUnknownValue),
+			new Type[] { }, returnType: typeof (Type),
+			messageCode: "IL2063", message: nameof (ReturnUnknownValue))]
+		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
+		private Type ReturnUnknownValue ()
+		{
+			var array = new object[1];
+			array[0] = this.GetType ();
+			return (Type) array[0];
 		}
 
 		[UnrecognizedReflectionAccessPattern (typeof (MethodReturnParameterDataFlow), nameof (RequirePublicConstructors), new Type[] { typeof (Type) }, messageCode: "IL2070")]

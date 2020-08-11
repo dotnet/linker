@@ -22,6 +22,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			PropagateToThisWithSetters ();
 
 			TestAnnotationOnNonTypeMethod ();
+			TestUnknownThis ();
 		}
 
 		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), nameof (MethodThisDataFlowTypeTest.RequireThisPublicMethods), new Type[] { },
@@ -83,6 +84,15 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			var t = new NonTypeType ();
 			t.GetMethod ("foo");
 			NonTypeType.StaticMethod ();
+		}
+
+		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), nameof (MethodThisDataFlowTypeTest.RequireThisNonPublicMethods), new Type[] { },
+			messageCode: "IL2065", message: nameof (MethodThisDataFlowTypeTest.RequireThisNonPublicMethods))]
+		static void TestUnknownThis ()
+		{
+			var array = new object[1];
+			array[0] = array.GetType ();
+			((MethodThisDataFlowTypeTest) array[0]).RequireThisNonPublicMethods ();
 		}
 
 		class NonTypeType

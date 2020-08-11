@@ -30,6 +30,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			instance.ReadFromStaticFieldOnADifferentClass ();
 			instance.WriteToStaticFieldOnADifferentClass ();
+
+			instance.WriteUnknownValue ();
 		}
 
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
@@ -121,6 +123,14 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TypeStore._staticTypeWithPublicParameterlessConstructor = GetTypeWithPublicConstructors ();
 			TypeStore._staticTypeWithPublicParameterlessConstructor = GetTypeWithNonPublicConstructors ();
 			TypeStore._staticTypeWithPublicParameterlessConstructor = GetUnkownType ();
+		}
+
+		[UnrecognizedReflectionAccessPattern (typeof (TypeStore), nameof (TypeStore._staticTypeWithPublicParameterlessConstructor), messageCode: "IL2064", message: nameof (TypeStore._staticTypeWithPublicParameterlessConstructor))]
+		private void WriteUnknownValue ()
+		{
+			var array = new object[1];
+			array[0] = this.GetType ();
+			TypeStore._staticTypeWithPublicParameterlessConstructor = (Type) array[0];
 		}
 
 		private static void RequirePublicParameterlessConstructor (

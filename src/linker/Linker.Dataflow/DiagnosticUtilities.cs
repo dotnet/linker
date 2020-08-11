@@ -90,23 +90,23 @@ namespace Mono.Linker.Dataflow
 				_ => $"'{targetContext}'",
 			};
 
-		static string GetParameterDescriptionForErrorMessage (ParameterDefinition parameterDefinition)
-		{
-			if (string.IsNullOrEmpty (parameterDefinition.Name))
-				return $"parameter #{parameterDefinition.Index} of method '{GetMethodSignatureDisplayName (parameterDefinition.Method)}'";
-			else
-				return $"parameter '{parameterDefinition.Name}' of method '{GetMethodSignatureDisplayName (parameterDefinition.Method)}'";
-		}
+		static string GetParameterDescriptionForErrorMessage (ParameterDefinition parameterDefinition) =>
+			$"parameter '{GetParameterNameForErrorMessage (parameterDefinition)}' of method '{GetMethodSignatureDisplayName (parameterDefinition.Method)}'";
+
+		internal static string GetParameterNameForErrorMessage (ParameterDefinition parameterDefinition) =>
+			string.IsNullOrEmpty (parameterDefinition.Name) ? $"#{parameterDefinition.Index}" : parameterDefinition.Name;
 
 		static string GetGenericParameterDescriptionForErrorMessage (GenericParameter genericParameter)
 		{
-			var declaringMemberName = genericParameter.DeclaringMethod != null ?
-				genericParameter.DeclaringMethod.GetDisplayName () :
-				genericParameter.DeclaringType.GetDisplayName ();
-			return $"generic parameter '{genericParameter.Name}' from '{declaringMemberName}'";
+			return $"generic parameter '{genericParameter.Name}' from '{GetGenericParameterDeclaringMemberDisplayName (genericParameter)}'";
 		}
 
-		static string GetMethodSignatureDisplayName (IMethodSignature methodSignature) =>
+		internal static string GetGenericParameterDeclaringMemberDisplayName (GenericParameter genericParameter) =>
+			genericParameter.DeclaringMethod != null ?
+				genericParameter.DeclaringMethod.GetDisplayName () :
+				genericParameter.DeclaringType.GetDisplayName ();
+
+		internal static string GetMethodSignatureDisplayName (IMethodSignature methodSignature) =>
 			(methodSignature is MethodDefinition method) ? method.GetDisplayName () : methodSignature.ToString ();
 	}
 }

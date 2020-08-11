@@ -9,11 +9,11 @@ namespace Mono.Linker.Tests.Cases.Logging
 	[SkipKeptItemsValidation]
 	[SetupCompileBefore ("FakeSystemAssembly.dll", new[] { "../PreserveDependencies/Dependencies/PreserveDependencyAttribute.cs" })]
 	[SetupCompileArgument ("/debug:full")]
-	[LogContains ("(37,4): Trim analysis warning IL2006: Mono.Linker.Tests.Cases.Logging.SourceLines.UnrecognizedReflectionPattern(): " +
+	[LogContains ("(37,4): Trim analysis warning IL2072: Mono.Linker.Tests.Cases.Logging.SourceLines.UnrecognizedReflectionPattern(): " +
 		"The requirements declared via the `DynamicallyAccessedMembersAttribute` on return value of method 'Mono.Linker.Tests.Cases.Logging.SourceLines.GetUnknownType()' " +
 		"don't match those on field 'System.Type Mono.Linker.Tests.Cases.Logging.SourceLines::type'. " +
 		"The source value must declare at least the same requirements as those declared on the target location it's assigned to")]
-	[LogContains ("(38,4): Trim analysis warning IL2006: Mono.Linker.Tests.Cases.Logging.SourceLines.UnrecognizedReflectionPattern(): " +
+	[LogContains ("(38,4): Trim analysis warning IL2072: Mono.Linker.Tests.Cases.Logging.SourceLines.UnrecognizedReflectionPattern(): " +
 		"The requirements declared via the `DynamicallyAccessedMembersAttribute` on return value of method 'Mono.Linker.Tests.Cases.Logging.SourceLines.GetUnknownType()' " +
 		"don't match those on field 'System.Type Mono.Linker.Tests.Cases.Logging.SourceLines::type'. " +
 		"The source value must declare at least the same requirements as those declared on the target location it's assigned to")]

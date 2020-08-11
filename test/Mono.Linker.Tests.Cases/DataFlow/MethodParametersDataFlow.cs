@@ -155,7 +155,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		// Validate error message when untracable value is passed to an annotated parameter.
 		[UnrecognizedReflectionAccessPattern (typeof (MethodParametersDataFlow), nameof (RequirePublicParameterlessConstructor), new Type[] { typeof (Type) },
-			messageCode: "IL2032", message: new string[] { "type", "RequirePublicParameterlessConstructor" })]
+			messageCode: "IL2062", message: new string[] { "type", "RequirePublicParameterlessConstructor" })]
 		private void UnknownValue ()
 		{
 			var array = new object[1];

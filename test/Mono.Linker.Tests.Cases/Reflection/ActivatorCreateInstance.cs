@@ -276,7 +276,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 		[Kept]
 		[UnrecognizedReflectionAccessPattern (typeof (Activator), nameof (Activator.CreateInstance), new Type[] { typeof (string), typeof (string) },
-			messageCode: "IL2062", message: "assemblyName")]
+			messageCode: "IL2032", message: "assemblyName")]
 		private static void WithNullAssemblyName ()
 		{
 			Activator.CreateInstance (null, "Mono.Linker.Tests.Cases.Reflection.ActivatorCreateInstance+WithAssemblyNameParameterless1");
@@ -295,7 +295,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 		[Kept]
 		[UnrecognizedReflectionAccessPattern (typeof (Activator), nameof (Activator.CreateInstance), new Type[] { typeof (string), typeof (string), typeof (object[]) },
-			messageCode: "IL2062", message: "typeName")]
+			messageCode: "IL2032", message: "typeName")]
 		private static void WithAssemblyAndUnknownTypeName ()
 		{
 			Activator.CreateInstance ("test", _typeNameField, new object[] { });
