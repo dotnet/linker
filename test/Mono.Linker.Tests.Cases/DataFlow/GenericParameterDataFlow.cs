@@ -29,6 +29,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TestMakeGenericType ();
 			TestMakeGenericMethod ();
 
+			TestNewConstraintSatisfiesParameterlessConstructor<object> ();
+
 			TestGenericParameterFlowsToField ();
 			TestGenericParameterFlowsToReturnValue ();
 		}
@@ -829,6 +831,16 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		public class TestType
+		{
+		}
+
+		[RecognizedReflectionAccessPattern]
+		static void TestNewConstraintSatisfiesParameterlessConstructor<T> () where T : new()
+		{
+			RequiresParameterlessConstructor<T> ();
+		}
+
+		static void RequiresParameterlessConstructor<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T> ()
 		{
 		}
 	}

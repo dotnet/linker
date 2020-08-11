@@ -1361,7 +1361,12 @@ namespace Mono.Linker.Dataflow
 		void RequireDynamicallyAccessedMembers (ref ReflectionPatternContext reflectionContext, DynamicallyAccessedMemberTypes requiredMemberTypes, ValueNode value, IMetadataTokenProvider targetContext)
 		{
 			foreach (var uniqueValue in value.UniqueValues ()) {
-				if (uniqueValue is LeafValueWithDynamicallyAccessedMemberNode valueWithDynamicallyAccessedMember) {
+				if (requiredMemberTypes == DynamicallyAccessedMemberTypes.PublicParameterlessConstructor
+					&& uniqueValue is SystemTypeForGenericParameterValue genericParam
+					&& genericParam.GenericParameter.HasDefaultConstructorConstraint) {
+					// We allow a new() constraint on a generic parameter to satisfy DynamicallyAccessedMemberTypes.PublicParameterlessConstructor
+					reflectionContext.RecordHandledPattern ();
+				} else if (uniqueValue is LeafValueWithDynamicallyAccessedMemberNode valueWithDynamicallyAccessedMember) {
 					if (!valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes.HasFlag (requiredMemberTypes)) {
 						var messageCode = (valueWithDynamicallyAccessedMember, targetContext) switch
 						{
