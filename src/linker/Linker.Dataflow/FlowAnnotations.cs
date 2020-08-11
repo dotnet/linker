@@ -306,7 +306,8 @@ namespace Mono.Linker.Dataflow
 
 					if (backingField != null) {
 						if (annotatedFields.Any (a => a.Field == backingField)) {
-							_context.LogWarning ($"Trying to propagate 'DynamicallyAccessedMembersAttribute' from property '{property.FullName}' to its field '{backingField}', but it already has such attribute.",
+							_context.LogWarning (
+								$"'DynamicallyAccessedMemberAttribute' on property '{property.GetDisplayName ()}' conflicts with the same attribute on its backing field '{backingField.GetDisplayName ()}'.",
 								2056, backingField, subcategory: MessageSubCategory.TrimAnalysis);
 						} else {
 							annotatedFields.Add (new FieldAnnotation (backingField, annotation));

@@ -916,9 +916,10 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
   }
   ```
 
-#### `IL2056`: Trim analysis: Trying to propagate 'DynamicallyAccessedMemberAttribute' from property 'property' to its backing field 'field', but it already has such attribute.
+#### `IL2056`: Trim analysis: 'DynamicallyAccessedMemberAttribute' on property 'property' conflicts with the same attribute on its backing field 'field'.
 
 - Propagating `DynamicallyAccessedMembersAttribute` from property 'property' to its backing field 'field' found that the field already has such an attribute. The existing attribute will be used.
+  Since ILLink will only propagate to a compiler generated backing field this warning should basically never happen. The one known way requires the user code to explicitly specify the `CompilerGeneratedAttribute` on the field to get ILLink to treat it as the compiler generated backing field.
 
 #### `IL2057`: Trim analysis: Unrecognized value passed to the parameter 'typeName' of method 'System.Type.GetType(Type typeName)'. It's not possible to guarantee the availability of the target type.
 
