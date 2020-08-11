@@ -168,9 +168,7 @@ namespace Mono.Linker.Dataflow
 		protected override ValueNode GetMethodParameterValue (MethodDefinition method, int parameterIndex)
 		{
 			DynamicallyAccessedMemberTypes memberTypes = _context.Annotations.FlowAnnotations.GetParameterAnnotation (method, parameterIndex);
-			return new MethodParameterValue (parameterIndex, memberTypes) {
-				SourceContext = method
-			};
+			return new MethodParameterValue (parameterIndex, memberTypes, DiagnosticUtilities.GetMethodParameterFromIndex (method, parameterIndex));
 		}
 
 		protected override ValueNode GetFieldValue (MethodDefinition method, FieldDefinition field)
@@ -182,9 +180,7 @@ namespace Mono.Linker.Dataflow
 
 			default: {
 					DynamicallyAccessedMemberTypes memberTypes = _context.Annotations.FlowAnnotations.GetFieldAnnotation (field);
-					return new LoadFieldValue (field, memberTypes) {
-						SourceContext = method
-					};
+					return new LoadFieldValue (field, memberTypes);
 				}
 			}
 		}
@@ -807,9 +803,7 @@ namespace Mono.Linker.Dataflow
 								// Propagate the annotation from the type name to the return value. Annotation on a string value will be fullfilled whenever a value is assigned to the string with annotation.
 								// So while we don't know which type it is, we can guarantee that it will fulfill the annotation.
 								reflectionContext.RecordHandledPattern ();
-								methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new MethodReturnValue (valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes) {
-									SourceContext = calledMethodDefinition
-								});
+								methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new MethodReturnValue (calledMethodDefinition.MethodReturnType, valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes));
 							} else {
 								reflectionContext.RecordUnrecognizedPattern (2057, $"Unrecognized value passed to the parameter 'typeName' of method '{calledMethod.GetDisplayName ()}'. It's not possible to guarantee the availability of the target type.");
 							}
@@ -953,7 +947,7 @@ namespace Mono.Linker.Dataflow
 						ValueNode transformedResult = null;
 						foreach (var value in methodParams[0].UniqueValues ()) {
 							if (value is LeafValueWithDynamicallyAccessedMemberNode dynamicallyAccessedThing) {
-								var annotatedString = new AnnotatedStringValue (dynamicallyAccessedThing.DynamicallyAccessedMemberTypes);
+								var annotatedString = new AnnotatedStringValue (dynamicallyAccessedThing.SourceContext, dynamicallyAccessedThing.DynamicallyAccessedMemberTypes);
 								transformedResult = MergePointValue.MergeValues (transformedResult, annotatedString);
 							} else {
 								transformedResult = null;
@@ -1273,9 +1267,7 @@ namespace Mono.Linker.Dataflow
 					// To get good reporting of errors we need to track the origin of the value for all method calls
 					// but except Newobj as those are special.
 					if (calledMethodDefinition.ReturnType.MetadataType != MetadataType.Void) {
-						methodReturnValue = new MethodReturnValue (returnValueDynamicallyAccessedMemberTypes) {
-							SourceContext = calledMethodDefinition
-						};
+						methodReturnValue = new MethodReturnValue (calledMethodDefinition.MethodReturnType, returnValueDynamicallyAccessedMemberTypes);
 
 						return true;
 					}
@@ -1291,9 +1283,7 @@ namespace Mono.Linker.Dataflow
 			// unknown value with the return type of the method.
 			if (methodReturnValue == null) {
 				if (calledMethod.ReturnType.MetadataType != MetadataType.Void) {
-					methodReturnValue = new MethodReturnValue (returnValueDynamicallyAccessedMemberTypes) {
-						SourceContext = calledMethodDefinition
-					};
+					methodReturnValue = new MethodReturnValue (calledMethodDefinition.MethodReturnType, returnValueDynamicallyAccessedMemberTypes);
 				}
 			}
 
@@ -1572,31 +1562,10 @@ namespace Mono.Linker.Dataflow
 
 		string GetValueDescriptionForErrorMessage (ValueNode value)
 		{
-			switch (value) {
-			case MethodParameterValue methodParameterValue: {
-					if (methodParameterValue.SourceContext is MethodDefinition method)
-						return DiagnosticUtilities.GetMetadataTokenDescriptionForErrorMessage (DiagnosticUtilities.GetMethodParameterFromIndex (method, methodParameterValue.ParameterIndex));
+			if (value is LeafValueWithDynamicallyAccessedMemberNode annotatedValue && annotatedValue.SourceContext != null)
+				return DiagnosticUtilities.GetMetadataTokenDescriptionForErrorMessage (annotatedValue.SourceContext);
 
-					return $"parameter #{methodParameterValue.ParameterIndex} of method '{methodParameterValue.SourceContext}'";
-				}
-
-			case MethodReturnValue methodReturnValue: {
-					if (methodReturnValue.SourceContext is MethodDefinition method) {
-						return DiagnosticUtilities.GetMetadataTokenDescriptionForErrorMessage (method.MethodReturnType);
-					}
-
-					return "method return value";
-				}
-
-			case LoadFieldValue loadFieldValue:
-				return DiagnosticUtilities.GetMetadataTokenDescriptionForErrorMessage (loadFieldValue.Field);
-
-			case SystemTypeForGenericParameterValue genericParameterValue:
-				return DiagnosticUtilities.GetMetadataTokenDescriptionForErrorMessage (genericParameterValue.GenericParameter);
-
-			default:
-				return $"value from unknown source";
-			}
+			return $"value from unknown source";
 		}
 
 		static DynamicallyAccessedMemberTypes GetDynamicallyAccessedMemberTypesFromBindingFlagsForNestedTypes (BindingFlags bindingFlags) =>
