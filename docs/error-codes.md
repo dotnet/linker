@@ -714,23 +714,6 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
   }
   ```
 
-#### `IL2047` Trim analysis: 'DynamicallyAccessedMemberTypes' in 'DynamicallyAccessedMembersAttribute' on parameter 'parameter' of method 'method' don't match overridden 'parameter' of method 'base method'. All overridden members must have the same 'DynamicallyAccessedMembersAttribute' usage.
-
-- All overrides of a virtual method including the base method must have the same `DynamicallyAccessedMemberAttribute` usage on all it's components (return value, parameters and generic parameters).
-
-  ```C#
-  public class Base
-  {
-    public virtual void TestMethod([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] Type type) {}
-  }
-
-  public class Derived : Base
-  {
-    // IL2047: 'DynamicallyAccessedMemberTypes' in 'DynamicallyAccessedMembersAttribute' on parameter 'type' on method 'Derived.TestMethod' don't match overridden parameter 'type' on method 'Base.TestMethod'. All overridden members must have the same 'DynamicallyAccessedMembersAttribute' usage.
-    public override void TestMethod([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)] Type type) {}
-  }
-  ```
-
 #### `IL2048`: Internal attribute 'RemoveAttributeInstances' can only be used on a type, but is being used on 'member'
 
 - Internal attribute 'RemoveAttributeInstances' is a special attribute that should only be used on custom attribute types and is being used on 'member'.
@@ -1372,8 +1355,75 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
   }
   ```
 
+#### `IL2092` Trim analysis: 'DynamicallyAccessedMemberTypes' in 'DynamicallyAccessedMembersAttribute' on the parameter 'parameter' of method 'method' don't match overridden parameter 'parameter' of method 'base method'. All overridden members must have the same 'DynamicallyAccessedMembersAttribute' usage.
 
+- All overrides of a virtual method including the base method must have the same `DynamicallyAccessedMemberAttribute` usage on all it's components (return value, parameters and generic parameters).
 
-#### `IL2094`: Trim analysis: 'DynamicallyAccessedMemberTypes' in 'DynamicallyAccessedMembersAttribute' on generic parameter 'generic parameter' from 'method' don't match overridden generic parameter 'generic parameter' of 'base method'. All overridden members must have the same 'DynamicallyAccessedMembersAttribute' usage.
+  ```C#
+  public class Base
+  {
+    public virtual void TestMethod([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] Type type) {}
+  }
 
-#### `IL2095`: Trim analysis: 'DynamicallyAccessedMemberTypes' in 'DynamicallyAccessedMembersAttribute' on return value of method 'method' don't match overridden return value of method 'base method'. All overridden members must have the same 'DynamicallyAccessedMembersAttribute' usage.
+  public class Derived : Base
+  {
+    // IL2092: 'DynamicallyAccessedMemberTypes' in 'DynamicallyAccessedMembersAttribute' on the parameter 'type' of method 'Derived.TestMethod' don't match overridden parameter 'type' of method 'Base.TestMethod'. All overridden members must have the same 'DynamicallyAccessedMembersAttribute' usage.
+    public override void TestMethod([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)] Type type) {}
+  }
+  ```
+
+#### `IL2093` Trim analysis: 'DynamicallyAccessedMemberTypes' in 'DynamicallyAccessedMembersAttribute' on the return value of method 'method' don't match overridden return value of method 'base method'. All overridden members must have the same 'DynamicallyAccessedMembersAttribute' usage.
+
+- All overrides of a virtual method including the base method must have the same `DynamicallyAccessedMemberAttribute` usage on all it's components (return value, parameters and generic parameters).
+
+  ```C#
+  public class Base
+  {
+    [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+    public virtual Type TestMethod() {}
+  }
+
+  public class Derived : Base
+  {
+    // IL2093: 'DynamicallyAccessedMemberTypes' in 'DynamicallyAccessedMembersAttribute' on the return value of method 'Derived.TestMethod' don't match overridden return value of method 'Base.TestMethod'. All overridden members must have the same 'DynamicallyAccessedMembersAttribute' usage.
+    [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)]
+    public override Type TestMethod() {}
+  }
+  ```
+
+#### `IL2094`: Trim analysis: 'DynamicallyAccessedMemberTypes' in 'DynamicallyAccessedMembersAttribute' on the implicit 'this' parameter of method 'method' don't match overridden implicit 'this' parameter of method 'base method'. All overridden members must have the same 'DynamicallyAccessedMembersAttribute' usage.
+
+- All overrides of a virtual method including the base method must have the same `DynamicallyAccessedMemberAttribute` usage on all it's components (return value, parameters and generic parameters).
+
+  ```C#
+  // This only works on methods in System.Type and derived classes - this is just an example
+  public class Type
+  {
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+    public virtual void TestMethod() {}
+  }
+
+  public class DerivedType : Type
+  {
+    // IL2094: 'DynamicallyAccessedMemberTypes' in 'DynamicallyAccessedMembersAttribute' on the implicit 'this' parameter of method 'DerivedType.TestMethod' don't match overridden implicit 'this' parameter of method 'Type.TestMethod'. All overridden members must have the same 'DynamicallyAccessedMembersAttribute' usage.
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)]
+    public override void TestMethod() {}
+  }
+  ```
+
+#### `IL2095`: Trim analysis: 'DynamicallyAccessedMemberTypes' in 'DynamicallyAccessedMembersAttribute' on the generic parameter 'generic parameter' of 'method' don't match overridden generic parameter 'generic parameter' of 'base method'. All overridden members must have the same 'DynamicallyAccessedMembersAttribute' usage.
+
+- All overrides of a virtual method including the base method must have the same `DynamicallyAccessedMemberAttribute` usage on all it's components (return value, parameters and generic parameters).
+
+  ```C#
+  public class Base
+  {
+    public virtual void TestMethod<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] T>() {}
+  }
+
+  public class Derived : Base
+  {
+    // IL2095: 'DynamicallyAccessedMemberTypes' in 'DynamicallyAccessedMembersAttribute' on the generic parameter 'T' of method 'Derived.TestMethod<T>' don't match overridden generic parameter 'T' of method 'Base.TestMethod<T>'. All overridden members must have the same 'DynamicallyAccessedMembersAttribute' usage.
+    public override void TestMethod<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)] T>() {}
+  }
+  ```
