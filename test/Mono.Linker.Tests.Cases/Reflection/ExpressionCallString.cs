@@ -56,7 +56,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 			[Kept]
 			[UnrecognizedReflectionAccessPattern (typeof (Expression), nameof (Expression.Call),
-				new Type[] { typeof (Type), typeof (string), typeof (Type[]), typeof (Expression[]) }, messageCode: "IL2070")]
+				new Type[] { typeof (Type), typeof (string), typeof (Type[]), typeof (Expression[]) }, messageCode: "IL2072")]
 			public static void Test ()
 			{
 				// Keep all methods of the type that made the call

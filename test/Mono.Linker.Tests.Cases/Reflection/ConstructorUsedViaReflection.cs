@@ -62,7 +62,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.GetConstructor), new Type[] { typeof (Type[]) },
-			messageCode: "IL2073", message: new string[] { "FindType", "GetConstructor" })]
+			messageCode: "IL2075", message: new string[] { "FindType", "GetConstructor" })]
 		[Kept]
 		static void TestDataFlowType ()
 		{

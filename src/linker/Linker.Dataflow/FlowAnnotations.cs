@@ -472,9 +472,9 @@ namespace Mono.Linker.Dataflow
 			var messageCode = provider switch
 			{
 				ParameterDefinition _ => 2047,
-				GenericParameter _ => 2067,
-				MethodReturnType _ => 2068,
-				MethodDefinition _ => 2092, // implicit this parameter
+				GenericParameter _ => 2093,
+				MethodReturnType _ => 2094,
+				MethodDefinition _ => 2095, // implicit this parameter
 				_ => throw new NotImplementedException ($"unsupported provider {provider.GetType ()}")
 			};
 			_context.LogWarning (

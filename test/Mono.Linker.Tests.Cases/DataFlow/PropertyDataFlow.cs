@@ -43,7 +43,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 		static Type StaticPropertyWithPublicConstructor { get; set; }
 
-		[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), nameof (RequireNonPublicConstructors), new Type[] { typeof (Type) }, messageCode: "IL2070")]
+		[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), nameof (RequireNonPublicConstructors), new Type[] { typeof (Type) }, messageCode: "IL2072")]
 		private void ReadFromInstanceProperty ()
 		{
 			RequirePublicParameterlessConstructor (PropertyWithPublicConstructor);
@@ -52,7 +52,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			RequireNothing (PropertyWithPublicConstructor);
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), nameof (RequireNonPublicConstructors), new Type[] { typeof (Type) }, messageCode: "IL2070")]
+		[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), nameof (RequireNonPublicConstructors), new Type[] { typeof (Type) }, messageCode: "IL2072")]
 		private void ReadFromStaticProperty ()
 		{
 			RequirePublicParameterlessConstructor (StaticPropertyWithPublicConstructor);
@@ -61,9 +61,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			RequireNothing (StaticPropertyWithPublicConstructor);
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), "set_" + nameof (PropertyWithPublicConstructor), new Type[] { typeof (Type) }, messageCode: "IL2070")]
-		[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), "set_" + nameof (PropertyWithPublicConstructor), new Type[] { typeof (Type) }, messageCode: "IL2070")]
-		[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), "set_" + nameof (PropertyWithPublicConstructor), new Type[] { typeof (Type) }, messageCode: "IL2070")]
+		[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), "set_" + nameof (PropertyWithPublicConstructor), new Type[] { typeof (Type) }, messageCode: "IL2072")]
+		[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), "set_" + nameof (PropertyWithPublicConstructor), new Type[] { typeof (Type) }, messageCode: "IL2072")]
+		[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), "set_" + nameof (PropertyWithPublicConstructor), new Type[] { typeof (Type) }, messageCode: "IL2072")]
 		private void WriteToInstanceProperty ()
 		{
 			PropertyWithPublicConstructor = GetTypeWithPublicParameterlessConstructor ();
@@ -72,9 +72,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			PropertyWithPublicConstructor = GetUnkownType ();
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), "set_" + nameof (StaticPropertyWithPublicConstructor), new Type[] { typeof (Type) }, messageCode: "IL2070")]
-		[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), "set_" + nameof (StaticPropertyWithPublicConstructor), new Type[] { typeof (Type) }, messageCode: "IL2070")]
-		[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), "set_" + nameof (StaticPropertyWithPublicConstructor), new Type[] { typeof (Type) }, messageCode: "IL2070")]
+		[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), "set_" + nameof (StaticPropertyWithPublicConstructor), new Type[] { typeof (Type) }, messageCode: "IL2072")]
+		[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), "set_" + nameof (StaticPropertyWithPublicConstructor), new Type[] { typeof (Type) }, messageCode: "IL2072")]
+		[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), "set_" + nameof (StaticPropertyWithPublicConstructor), new Type[] { typeof (Type) }, messageCode: "IL2072")]
 		private void WriteToStaticProperty ()
 		{
 			StaticPropertyWithPublicConstructor = GetTypeWithPublicParameterlessConstructor ();
@@ -107,7 +107,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				return _fieldWithPublicConstructors;
 			}
 
-			[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), nameof (_fieldWithPublicConstructors), messageCode: "IL2068")]
+			[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), nameof (_fieldWithPublicConstructors),
+				messageCode: "IL2069", message: new string[] { "value", "set_" + nameof (PropertyPublicParameterlessConstructorWithExplicitAccessors), nameof (_fieldWithPublicConstructors) })]
 			[param: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
 			set {
 				_fieldWithPublicConstructors = value;
@@ -116,13 +117,16 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		Type PropertyNonPublicConstructorsWithExplicitAccessors {
 			[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), "get_" + nameof (PropertyNonPublicConstructorsWithExplicitAccessors),
-				new Type[] { }, returnType: typeof (Type), messageCode: "IL2075")]
+				new Type[] { }, returnType: typeof (Type), messageCode: "IL2078", message: new string[] {
+					nameof (_fieldWithPublicConstructors),
+					"get_" + nameof (PropertyNonPublicConstructorsWithExplicitAccessors)
+				})]
 			[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicConstructors)]
 			get {
 				return _fieldWithPublicConstructors;
 			}
 
-			[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), nameof (_fieldWithPublicConstructors), messageCode: "IL2068")]
+			[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), nameof (_fieldWithPublicConstructors), messageCode: "IL2069")]
 			[param: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicConstructors)]
 			set {
 				_fieldWithPublicConstructors = value;
@@ -143,7 +147,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		class TestAutomaticPropagationType
 		{
 			// Fully implicit property should work
-			[UnrecognizedReflectionAccessPattern (typeof (TestAutomaticPropagationType), "set_" + nameof (ImplicitProperty), new Type[] { typeof (Type) }, messageCode: "IL2070")]
+			[UnrecognizedReflectionAccessPattern (typeof (TestAutomaticPropagationType), "set_" + nameof (ImplicitProperty), new Type[] { typeof (Type) }, messageCode: "IL2072")]
 			public void TestImplicitProperty ()
 			{
 				RequirePublicConstructors (ImplicitProperty);
@@ -156,7 +160,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 
 			// Simple getter is not enough - we do detect the field, but we require the field to be compiler generated for this to work
-			[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), nameof (RequirePublicConstructors), new Type[] { typeof (Type) }, messageCode: "IL2074")]
+			[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), nameof (RequirePublicConstructors), new Type[] { typeof (Type) }, messageCode: "IL2077")]
 			// Make sure we don't warn about the field in context of property annotation propagation.
 			[LogDoesNotContain ("Could not find a unique backing field for property 'System.Type Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow/TestAutomaticPropagationType::PropertyWithSimpleGetter()'")]
 			public void TestPropertyWithSimpleGetter ()
@@ -169,7 +173,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 			static Type PropertyWithSimpleGetter {
-				[UnrecognizedReflectionAccessPattern (typeof (TestAutomaticPropagationType), "get_" + nameof (PropertyWithSimpleGetter), new Type[] { }, returnType: typeof (Type), messageCode: "IL2075")]
+				[UnrecognizedReflectionAccessPattern (typeof (TestAutomaticPropagationType), "get_" + nameof (PropertyWithSimpleGetter), new Type[] { }, returnType: typeof (Type), messageCode: "IL2078")]
 				get {
 					return PropertyWithSimpleGetter_Field;
 				}
@@ -193,7 +197,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				}
 			}
 
-			[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), nameof (RequirePublicConstructors), new Type[] { typeof (Type) }, messageCode: "IL2074")]
+			[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), nameof (RequirePublicConstructors), new Type[] { typeof (Type) }, messageCode: "IL2077")]
 			// Make sure we don't warn about the field in context of property annotation propagation.
 			[LogDoesNotContain ("Could not find a unique backing field for property 'System.Type Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow/TestAutomaticPropagationType::InstancePropertyWithStaticField()'")]
 			public void TestInstancePropertyWithStaticField ()

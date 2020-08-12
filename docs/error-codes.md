@@ -150,69 +150,6 @@ the error code. For example:
   }
   ```
 
-#### `IL2006` Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on <value description> don't match those on <target description>. The source value must declare at least the same requirements as those declared on the target location it's assigned to
-
-- The target location declares some requirements on the type value via its `DynamicallyAccessedMembersAttribute`. Those requirements must be met by those declared on the source value also via the `DynamicallyAccessedMembersAttribute`. The source value can declare more requirements than the source if necessary.  
-
-  ```C#
-  void NeedsPublicConstructors([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructor)] Type type)
-  {
-      // ...
-  }
-
-  Type _typeField;
-
-  void TestMethod(Type type)
-  {
-      // IL2006 Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the parameter 'type' on method 'TestMethod' 
-      // don't match those on the parameter 'type' on method 'NeedsPublicConstructors'. 
-      // The source value must declare at least the same requirements as those declared on the target location it's assigned to
-      NeedsPublicConstructors(type);
-
-      // IL2006 Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the field '_typeField' 
-      // don't match those on the parameter 'type' on method 'NeedsPublicConstructors'. 
-      // The source value must declare at least the same requirements as those declared on the target location it's assigned to
-      NeedsPublicConstructors(_typeField);
-  }
-
-  [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
-  Type TypeWithMethods { get; set; }
-
-  void TestMethodForProperty([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type typeWithConstructors)
-  {
-      // IL2006 Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the parameter 'typeWithConstructors' on method 'TestMethodForProperty'
-      // don't match those on the parameter 'value' on method 'set_TypeWithMethods'. 
-      // The source value must declare at least the same requirements as those declared on the target location it's assigned to
-      TypeWithMethods = typeWithConstructors;
-
-      // IL2006 Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the return value of method 'get_TypeWithMethods'
-      // don't match those on the parameter 'type' on method 'NeedsPublicConstructors'. 
-      // The source value must declare at least the same requirements as those declared on the target location it's assigned to
-      NeedsPublicConstructors(TypeWithMethods);
-  }
-
-  void NeedsMethods<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] T>()
-  {
-      // No warning, the requirements are exactly the same
-      TypeWithMethods = typeof(T);
-  }
-
-  void TestGenericMethod<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TWithConstructors>()
-  {
-      // IL2006 Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the generic parameter 'TWithConstructors' on method 'TestGenericMethod<TWithConstructors>()'
-      // don't match those on the generic parameter 'T' on method 'NeedsMethods<T>'. 
-      // The source value must declare at least the same requirements as those declared on the target location it's assigned to
-      NeedsMethods<TWithConstructors> ();
-  }
-
-  void TestWithMoreRequirements([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type typeWithAll)
-  {
-      // No warning, the source value has more requirements than the target location
-      NeedsPublicConstructors(typeWithAll);
-  }
-
-  ```
-
 #### `IL2007`: Could not resolve assembly 'assembly'
 
 - The assembly 'assembly' in the XML could not be resolved.
@@ -1054,6 +991,389 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
 
 *Note: this warning can't be currently produced as there's no pure IL way to pass unknown value to a generic parameter. Once ILLInk supports full analysis of arguments for `MakeGenericType`/`MakeGenericMethod` this warnings would become active.*
 
-#### `IL2067`: Trim analysis: 'DynamicallyAccessedMemberTypes' in 'DynamicallyAccessedMembersAttribute' on generic parameter 'generic parameter' from 'method' don't match overridden generic parameter 'generic parameter' of 'base method'. All overridden members must have the same 'DynamicallyAccessedMembersAttribute' usage.
+#### `IL2067`: Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the parameter 'source parameter' of method 'source method' don't match those on the parameter 'target parameter' of method 'target method'. The source value must declare at least the same requirements as those declared on the target location it's assigned to 
 
-#### `IL2068`: Trim analysis: 'DynamicallyAccessedMemberTypes' in 'DynamicallyAccessedMembersAttribute' on return value of method 'method' don't match overridden return value of method 'base method'. All overridden members must have the same 'DynamicallyAccessedMembersAttribute' usage.
+- The target location declares some requirements on the type value via its `DynamicallyAccessedMembersAttribute`. Those requirements must be met by those declared on the source value also via the `DynamicallyAccessedMembersAttribute`. The source value can declare more requirements than the source if necessary.  
+
+  ```C#
+  void NeedsPublicConstructors([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type type)
+  {
+      // ...
+  }
+
+  void TestMethod(Type type)
+  {
+      // IL2006 Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the parameter 'type' of method 'TestMethod' 
+      // don't match those on the parameter 'type' of method 'NeedsPublicConstructors'. 
+      // The source value must declare at least the same requirements as those declared on the target location it's assigned to
+      NeedsPublicConstructors(type);
+  }
+  ```
+
+#### `IL2068`: Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the parameter 'source parameter' of method 'source method' don't match those on the return value of method 'target method'. The source value must declare at least the same requirements as those declared on the target location it's assigned to 
+
+- The target location declares some requirements on the type value via its `DynamicallyAccessedMembersAttribute`. Those requirements must be met by those declared on the source value also via the `DynamicallyAccessedMembersAttribute`. The source value can declare more requirements than the source if necessary.  
+
+  ```C#
+  [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+  Type TestMethod(Type type)
+  {
+      // IL2068 Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on parameter 'type' of method 'TestMethod' 
+      // don't match those on return value of method 'TestMethod'.
+      // The source value must declare at least the same requirements as those declared on the target location it's assigned to
+      return type;
+  }
+  ```
+
+#### `IL2069`: Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the parameter 'source parameter' of method 'source method' don't match those on the field 'field'. The source value must declare at least the same requirements as those declared on the target location it's assigned to 
+
+- The target location declares some requirements on the type value via its `DynamicallyAccessedMembersAttribute`. Those requirements must be met by those declared on the source value also via the `DynamicallyAccessedMembersAttribute`. The source value can declare more requirements than the source if necessary.  
+
+  ```C#
+  [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+  Type _typeField;
+
+  void TestMethod(Type type)
+  {
+      // IL2069 Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on parameter 'type' of method 'TestMethod' 
+      // don't match those on field '_typeField'.
+      // The source value must declare at least the same requirements as those declared on the target location it's assigned to
+      _typeField = type;
+  }
+  ```
+
+#### `IL2070`: Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the parameter 'source parameter' of method 'source method' don't match those on the implicit 'this' parameter of method 'target method'. The source value must declare at least the same requirements as those declared on the target location it's assigned to 
+
+- The target location declares some requirements on the type value via its `DynamicallyAccessedMembersAttribute`. Those requirements must be met by those declared on the source value also via the `DynamicallyAccessedMembersAttribute`. The source value can declare more requirements than the source if necessary.  
+
+  ```C#
+  void TestMethod(Type type)
+  {
+      // IL2070 Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on parameter 'type' of method 'TestMethod' 
+      // don't match those on the implicit 'this' parameter of method 'Type.GetMethods()'.
+      // The source value must declare at least the same requirements as those declared on the target location it's assigned to
+      type.GetMethods(); // Type.GetMethods is annotated with DynamicallyAccessedMemberTypes.PublicMethods
+  }
+  ```
+
+#### `IL2071`: Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the parameter 'source parameter' of method 'source method' don't match those on the generic parameter 'target generic parameter' of 'target method or type'. The source value must declare at least the same requirements as those declared on the target location it's assigned to 
+
+- Currently this is never generated, once ILLink supports full analysis of MakeGenericType/MakeGenericMethod this will be used
+
+#### `IL2072`: Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the return value of method 'source method' don't match those on the parameter 'target parameter' of method 'target method'. The source value must declare at least the same requirements as those declared on the target location it's assigned to 
+
+- The target location declares some requirements on the type value via its `DynamicallyAccessedMembersAttribute`. Those requirements must be met by those declared on the source value also via the `DynamicallyAccessedMembersAttribute`. The source value can declare more requirements than the source if necessary.  
+
+  ```C#
+  Type GetCustomType() { return typeof(CustomType); }
+
+  void NeedsPublicConstructors([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type type)
+  {
+      // ...
+  }
+
+  void TestMethod()
+  {
+      // IL2072 Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the return value of method 'GetCustomType` 
+      // don't match those on the parameter 'type' of method 'NeedsPublicConstructors'.
+      // The source value must declare at least the same requirements as those declared on the target location it's assigned to
+      NeedsPublicConstructors(GetCustomType());
+  }
+  ```
+
+#### `IL2073`: Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the return value of method 'source method' don't match those on the return value of method 'target method'. The source value must declare at least the same requirements as those declared on the target location it's assigned to 
+
+- The target location declares some requirements on the type value via its `DynamicallyAccessedMembersAttribute`. Those requirements must be met by those declared on the source value also via the `DynamicallyAccessedMembersAttribute`. The source value can declare more requirements than the source if necessary.  
+
+  ```C#
+  Type GetCustomType() { return typeof(CustomType); }
+
+  [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+  Type TestMethod()
+  {
+      // IL2073 Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the return value of method 'GetCustomType` 
+      // don't match those on the return value of method 'TestMethod'.
+      // The source value must declare at least the same requirements as those declared on the target location it's assigned to
+      return GetCustomType();
+  }
+  ```
+
+#### `IL2074`: Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the return value of method 'source method' don't match those on the field 'target field'. The source value must declare at least the same requirements as those declared on the target location it's assigned to 
+
+- The target location declares some requirements on the type value via its `DynamicallyAccessedMembersAttribute`. Those requirements must be met by those declared on the source value also via the `DynamicallyAccessedMembersAttribute`. The source value can declare more requirements than the source if necessary.  
+
+  ```C#
+  Type GetCustomType() { return typeof(CustomType); }
+
+  [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+  Type _typeField;
+
+  void TestMethod()
+  {
+      // IL2074 Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the return value of method 'GetCustomType` 
+      // don't match those on the field '_typeField'.
+      // The source value must declare at least the same requirements as those declared on the target location it's assigned to
+      _typeField = GetCustomType();
+  }
+  ```
+
+#### `IL2075`: Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the return value of method 'source method' don't match those on the implicit 'this' parameter of method 'target method'. The source value must declare at least the same requirements as those declared on the target location it's assigned to 
+
+- The target location declares some requirements on the type value via its `DynamicallyAccessedMembersAttribute`. Those requirements must be met by those declared on the source value also via the `DynamicallyAccessedMembersAttribute`. The source value can declare more requirements than the source if necessary.  
+
+  ```C#
+  Type GetCustomType() { return typeof(CustomType); }
+
+  void TestMethod()
+  {
+      // IL2075 Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the return value of method 'GetCustomType` 
+      // don't match those on the implicit 'this' parameter of method 'Type.GetMethods()'.
+      // The source value must declare at least the same requirements as those declared on the target location it's assigned to
+      GetCustomType().GetMethods(); // Type.GetMethods is annotated with DynamicallyAccessedMemberTypes.PublicMethods
+  }
+  ```
+
+#### `IL2076`: Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the return value of method 'source method' don't match those on the generic parameter 'target generic parameter' of 'target method or type'. The source value must declare at least the same requirements as those declared on the target location it's assigned to 
+
+- Currently this is never generated, once ILLink supports full analysis of MakeGenericType/MakeGenericMethod this will be used
+
+#### `IL2077`: Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the field 'source field' don't match those on the parameter 'target parameter' of method 'target method'. The source value must declare at least the same requirements as those declared on the target location it's assigned to 
+
+- The target location declares some requirements on the type value via its `DynamicallyAccessedMembersAttribute`. Those requirements must be met by those declared on the source value also via the `DynamicallyAccessedMembersAttribute`. The source value can declare more requirements than the source if necessary.  
+
+  ```C#
+  void NeedsPublicConstructors([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type type)
+  {
+      // ...
+  }
+
+  Type _typeField;
+
+  void TestMethod()
+  {
+      // IL2075 Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the field '_typeField' 
+      // don't match those on the parameter 'type' of method 'NeedsPublicConstructors'.
+      // The source value must declare at least the same requirements as those declared on the target location it's assigned to
+      NeedsPublicConstructors(_typeField);
+  }
+  ```
+
+#### `IL2078`: Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the field 'source field' don't match those on the return value of method 'target method'. The source value must declare at least the same requirements as those declared on the target location it's assigned to 
+
+- The target location declares some requirements on the type value via its `DynamicallyAccessedMembersAttribute`. Those requirements must be met by those declared on the source value also via the `DynamicallyAccessedMembersAttribute`. The source value can declare more requirements than the source if necessary.  
+
+  ```C#
+  Type _typeField;
+
+  [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+  Type TestMethod()
+  {
+      // IL2076 Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the field '_typeField' 
+      // don't match those on the return value of method 'TestMethod'.
+      // The source value must declare at least the same requirements as those declared on the target location it's assigned to
+      _typeField;
+  }
+  ```
+
+#### `IL2079`: Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the field 'source field' don't match those on the field 'target field'. The source value must declare at least the same requirements as those declared on the target location it's assigned to 
+
+- The target location declares some requirements on the type value via its `DynamicallyAccessedMembersAttribute`. Those requirements must be met by those declared on the source value also via the `DynamicallyAccessedMembersAttribute`. The source value can declare more requirements than the source if necessary.  
+
+  ```C#
+  Type _typeField;
+
+  [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+  Type _typeFieldWithRequirements;
+
+  void TestMethod()
+  {
+      // IL2077 Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the field '_typeField' 
+      // don't match those on the field '_typeFieldWithRequirements'.
+      // The source value must declare at least the same requirements as those declared on the target location it's assigned to
+      _typeFieldWithRequirements = _typeField;
+  }
+  ```
+
+#### `IL2080`: Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the field 'source field' don't match those on the implicit 'this' parameter of method 'target method'. The source value must declare at least the same requirements as those declared on the target location it's assigned to 
+
+- The target location declares some requirements on the type value via its `DynamicallyAccessedMembersAttribute`. Those requirements must be met by those declared on the source value also via the `DynamicallyAccessedMembersAttribute`. The source value can declare more requirements than the source if necessary.  
+
+  ```C#
+  Type _typeField;
+
+  void TestMethod()
+  {
+      // IL2078 Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the field '_typeField' 
+      // don't match those on the implicit 'this' parameter of method 'Type.GetMethods()'.
+      // The source value must declare at least the same requirements as those declared on the target location it's assigned to
+      _typeField.GetMethods(); // Type.GetMethods is annotated with DynamicallyAccessedMemberTypes.PublicMethods
+  }
+  ```
+
+#### `IL2081`: Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the field 'source field' don't match those on the generic parameter 'target generic parameter' of 'target method or type'. The source value must declare at least the same requirements as those declared on the target location it's assigned to 
+
+- Currently this is never generated, once ILLink supports full analysis of MakeGenericType/MakeGenericMethod this will be used
+
+#### `IL2082`: Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the implicit 'this' parameter of method 'source method' don't match those on the parameter 'target parameter' of method 'target method'. The source value must declare at least the same requirements as those declared on the target location it's assigned to 
+
+- The target location declares some requirements on the type value via its `DynamicallyAccessedMembersAttribute`. Those requirements must be met by those declared on the source value also via the `DynamicallyAccessedMembersAttribute`. The source value can declare more requirements than the source if necessary.  
+
+  ```C#
+  void NeedsPublicConstructors([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type type)
+  {
+      // ...
+  }
+
+  // This can only happen within methods of System.Type type (or derived types). Assume the below method is declared on System.Type
+  void TestMethod()
+  {
+      // IL2082 Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the implicit 'this' parameter of method 'System.Type.TestMethod'
+      // don't match those on the parameter 'type' of method 'NeedsPublicConstructors'.
+      // The source value must declare at least the same requirements as those declared on the target location it's assigned to
+      NeedsPublicConstructors(this);
+  }
+  ```
+
+#### `IL2083`: Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the implicit 'this' parameter of method 'source method' don't match those on the return value of method 'target method'. The source value must declare at least the same requirements as those declared on the target location it's assigned to 
+
+- The target location declares some requirements on the type value via its `DynamicallyAccessedMembersAttribute`. Those requirements must be met by those declared on the source value also via the `DynamicallyAccessedMembersAttribute`. The source value can declare more requirements than the source if necessary.  
+
+  ```C#
+  // This can only happen within methods of System.Type type (or derived types). Assume the below method is declared on System.Type
+  [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+  Type TestMethod()
+  {
+      // IL2083 Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the implicit 'this' parameter of method 'System.Type.TestMethod'
+      // don't match those on the return value of method 'TestMethod'.
+      // The source value must declare at least the same requirements as those declared on the target location it's assigned to
+      return this;
+  }
+  ```
+
+#### `IL2084`: Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the implicit 'this' parameter of method 'source method' don't match those on the field 'target field'. The source value must declare at least the same requirements as those declared on the target location it's assigned to 
+
+- The target location declares some requirements on the type value via its `DynamicallyAccessedMembersAttribute`. Those requirements must be met by those declared on the source value also via the `DynamicallyAccessedMembersAttribute`. The source value can declare more requirements than the source if necessary.  
+
+  ```C#
+  [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+  Type _typeFieldWithRequirements;
+
+  // This can only happen within methods of System.Type type (or derived types). Assume the below method is declared on System.Type
+  void TestMethod()
+  {
+      // IL2084 Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the implicit 'this' parameter of method 'System.Type.TestMethod'
+      // don't match those on the field '_typeFieldWithRequirements'.
+      // The source value must declare at least the same requirements as those declared on the target location it's assigned to
+      _typeFieldWithRequirements = this;
+  }
+  ```
+
+#### `IL2085`: Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the implicit 'this' parameter of method 'source method' don't match those on the implicit 'this' parameter of method 'target method'. The source value must declare at least the same requirements as those declared on the target location it's assigned to 
+
+- The target location declares some requirements on the type value via its `DynamicallyAccessedMembersAttribute`. Those requirements must be met by those declared on the source value also via the `DynamicallyAccessedMembersAttribute`. The source value can declare more requirements than the source if necessary.  
+
+  ```C#
+  // This can only happen within methods of System.Type type (or derived types). Assume the below method is declared on System.Type
+  void TestMethod()
+  {
+      // IL2085 Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the implicit 'this' parameter of method 'System.Type.TestMethod'
+      // don't match those on the implicit 'this' parameter of method 'Type.GetMethods()'.
+      // The source value must declare at least the same requirements as those declared on the target location it's assigned to
+      this.GetMethods(); // Type.GetMethods is annotated with DynamicallyAccessedMemberTypes.PublicMethods
+  }
+  ```
+
+#### `IL2086`: Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the implicit 'this' parameter of method 'source method' don't match those on the generic parameter 'target generic parameter' of 'target method or type'. The source value must declare at least the same requirements as those declared on the target location it's assigned to 
+
+- Currently this is never generated, once ILLink supports full analysis of MakeGenericType/MakeGenericMethod this will be used
+
+
+#### `IL2087`: Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the generic parameter 'source generic parameter' of 'source method or type' don't match those on the parameter 'target parameter' of method 'target method'. The source value must declare at least the same requirements as those declared on the target location it's assigned to 
+
+- The target location declares some requirements on the type value via its `DynamicallyAccessedMembersAttribute`. Those requirements must be met by those declared on the source value also via the `DynamicallyAccessedMembersAttribute`. The source value can declare more requirements than the source if necessary.  
+
+  ```C#
+  void NeedsPublicConstructors([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type type)
+  {
+      // ...
+  }
+
+  void TestMethod<TSource>()
+  {
+      // IL2087 Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the generic parameter 'TSource' or 'TestMethod<TSource>()'
+      // don't match those on the parameter 'type' of method 'NeedsPublicConstructors'.
+      // The source value must declare at least the same requirements as those declared on the target location it's assigned to
+      NeedsPublicConstructors(typeof(TSource));
+  }
+  ```
+
+#### `IL2088`: Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the generic parameter 'source generic parameter' of 'source method or type' don't match those on the return value of method 'target method'. The source value must declare at least the same requirements as those declared on the target location it's assigned to 
+
+- The target location declares some requirements on the type value via its `DynamicallyAccessedMembersAttribute`. Those requirements must be met by those declared on the source value also via the `DynamicallyAccessedMembersAttribute`. The source value can declare more requirements than the source if necessary.  
+
+  ```C#
+  [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+  Type TestMethod<TSource>()
+  {
+      // IL2088 Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the generic parameter 'TSource' or 'TestMethod<TSource>()'
+      // don't match those on the return value of method 'TestMethod'.
+      // The source value must declare at least the same requirements as those declared on the target location it's assigned to
+      return typeof(TSource);
+  }
+  ```
+
+#### `IL2089`: Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the generic parameter 'source generic parameter' of 'source method or type' don't match those on the field 'target field'. The source value must declare at least the same requirements as those declared on the target location it's assigned to 
+
+- The target location declares some requirements on the type value via its `DynamicallyAccessedMembersAttribute`. Those requirements must be met by those declared on the source value also via the `DynamicallyAccessedMembersAttribute`. The source value can declare more requirements than the source if necessary.  
+
+  ```C#
+  [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+  Type _typeFieldWithRequirements;
+
+  void TestMethod<TSource>()
+  {
+      // IL2089 Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the generic parameter 'TSource' or 'TestMethod<TSource>()'
+      // don't match those on the field '_typeFieldWithRequirements'.
+      // The source value must declare at least the same requirements as those declared on the target location it's assigned to
+      _typeFieldWithRequirements = typeof(TSource);
+  }
+  ```
+
+#### `IL2090`: Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the generic parameter 'source generic parameter' of 'source method or type' don't match those on the implicit 'this' parameter of method 'target method'. The source value must declare at least the same requirements as those declared on the target location it's assigned to 
+
+- The target location declares some requirements on the type value via its `DynamicallyAccessedMembersAttribute`. Those requirements must be met by those declared on the source value also via the `DynamicallyAccessedMembersAttribute`. The source value can declare more requirements than the source if necessary.  
+
+  ```C#
+  void TestMethod<TSource>()
+  {
+      // IL2090 Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the generic parameter 'TSource' or 'TestMethod<TSource>()'
+      // don't match those on the implicit 'this' parameter of method 'Type.GetMethods()'.
+      // The source value must declare at least the same requirements as those declared on the target location it's assigned to
+      typeof(TSource).GetMethods(); // Type.GetMethods is annotated with DynamicallyAccessedMemberTypes.PublicMethods
+  }
+  ```
+
+#### `IL2091`: Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the generic parameter 'source generic parameter' of 'source method or type' don't match those on the generic parameter 'target generic parameter' of 'target method or type'. The source value must declare at least the same requirements as those declared on the target location it's assigned to 
+
+- The target location declares some requirements on the type value via its `DynamicallyAccessedMembersAttribute`. Those requirements must be met by those declared on the source value also via the `DynamicallyAccessedMembersAttribute`. The source value can declare more requirements than the source if necessary.  
+
+  ```C#
+  void NeedsPublicConstructors<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TTarget>()
+  {
+      // ...
+  }
+
+  void TestMethod<TSource>()
+  {
+      // IL2091 Trim analysis: The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the generic parameter 'TSource' or 'TestMethod<TSource>()'
+      // don't match those on the generic parameter 'TTarget' of 'NeedsPublicConstructors<TTarget>()'.
+      // The source value must declare at least the same requirements as those declared on the target location it's assigned to
+      NeedsPublicConstructors<TSource>();
+  }
+  ```
+
+
+
+#### `IL2094`: Trim analysis: 'DynamicallyAccessedMemberTypes' in 'DynamicallyAccessedMembersAttribute' on generic parameter 'generic parameter' from 'method' don't match overridden generic parameter 'generic parameter' of 'base method'. All overridden members must have the same 'DynamicallyAccessedMembersAttribute' usage.
+
+#### `IL2095`: Trim analysis: 'DynamicallyAccessedMemberTypes' in 'DynamicallyAccessedMembersAttribute' on return value of method 'method' don't match overridden return value of method 'base method'. All overridden members must have the same 'DynamicallyAccessedMembersAttribute' usage.

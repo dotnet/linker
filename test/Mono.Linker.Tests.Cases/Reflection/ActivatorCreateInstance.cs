@@ -133,8 +133,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			public FromParameterOnStaticMethodTypeB (int arg) { }
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (Activator), nameof (Activator.CreateInstance), new Type[] { typeof (Type), typeof (object[]) }, messageCode: "IL2006")]
-		[UnrecognizedReflectionAccessPattern (typeof (Activator), nameof (Activator.CreateInstance), new Type[] { typeof (Type), typeof (BindingFlags), typeof (Binder), typeof (object[]), typeof (CultureInfo) }, messageCode: "IL2006")]
+		[UnrecognizedReflectionAccessPattern (typeof (Activator), nameof (Activator.CreateInstance), new Type[] { typeof (Type), typeof (object[]) }, messageCode: "IL2067")]
+		[UnrecognizedReflectionAccessPattern (typeof (Activator), nameof (Activator.CreateInstance), new Type[] { typeof (Type), typeof (BindingFlags), typeof (Binder), typeof (object[]), typeof (CultureInfo) }, messageCode: "IL2067")]
 		[Kept]
 		private void FromParameterOnInstanceMethod (
 			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
@@ -156,8 +156,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			public FromParameterOnInstanceMethodType (int arg, int arg2) { }
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (Activator), nameof (Activator.CreateInstance), new Type[] { typeof (Type) }, messageCode: "IL2006")]
-		[UnrecognizedReflectionAccessPattern (typeof (Activator), nameof (Activator.CreateInstance), new Type[] { typeof (Type), typeof (object[]) }, messageCode: "IL2006")]
+		[UnrecognizedReflectionAccessPattern (typeof (Activator), nameof (Activator.CreateInstance), new Type[] { typeof (Type) }, messageCode: "IL2067")]
+		[UnrecognizedReflectionAccessPattern (typeof (Activator), nameof (Activator.CreateInstance), new Type[] { typeof (Type), typeof (object[]) }, messageCode: "IL2067")]
 		[Kept]
 		private static void FromParameterWithNonPublicConstructors (
 			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.NonPublicConstructors)]
@@ -180,7 +180,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			private FromParameterWithNonPublicConstructorsType (int arg, int arg2) { }
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (Activator), nameof (Activator.CreateInstance), new Type[] { typeof (Type), typeof (BindingFlags), typeof (Binder), typeof (object[]), typeof (CultureInfo) }, messageCode: "IL2006")]
+		[UnrecognizedReflectionAccessPattern (typeof (Activator), nameof (Activator.CreateInstance), new Type[] { typeof (Type), typeof (BindingFlags), typeof (Binder), typeof (object[]), typeof (CultureInfo) }, messageCode: "IL2067")]
 		[Kept]
 		private static void FromParameterWithPublicConstructors (
 			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
