@@ -1435,7 +1435,7 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
   ``` C#
   void TestMethod()
   {
-      // IL2096 Trim analysis: Reflection call 'System.Type.GetType(String,Boolean,Boolean)' is trying to make a case insensitive lookup which is not supported by ILLink
+      // IL2096 Trim analysis: Call to 'System.Type.GetType(String,Boolean,Boolean)' can perform case insensitive lookup of the type, currently ILLink can not guarantee presence of all the matching types
       Type.GetType ("typeName", false, true);
   }
   ```
