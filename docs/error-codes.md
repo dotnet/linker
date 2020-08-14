@@ -1427,3 +1427,15 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
     public override void TestMethod<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)] T>() {}
   }
   ```
+
+#### `IL2096`: Trim analysis: Reflection call 'reflection call' inside 'calling method' is trying to make a case insensitive lookup which is not supported by ILLink"
+
+- Specifying a case-insensitive search on an overload of `System.Type.GetType` is not supported by ILLink. Specify false to perform a case-sensitive search or use an overload that does not use a ignoreCase bolean.
+
+  ``` C#
+  void TestMethod()
+  {
+      // IL2096 Trim analysis: Reflection call 'System.Type.GetType(String,Boolean,Boolean)' inside 'TestMethod()' is trying to make a case insensitive lookup which is not supported by ILLink
+      Type.GetType ("typeName", false, true);
+  }
+  ```

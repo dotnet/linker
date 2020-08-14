@@ -6,8 +6,7 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.Reflection
 {
-	[LogContains ("IL2006: Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection.TestTypeUsingCaseInsensitiveFlag(): Reflection call 'System.Type.GetType(String,Boolean,Boolean)' " +
-		"inside 'Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection.TestTypeUsingCaseInsensitiveFlag()' is trying to make a case insensitive lookup which is not supported by the linker")]
+	[KeptMember (".cctor()")]
 	public class TypeUsedViaReflection
 	{
 		public static void Main ()
@@ -31,12 +30,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			TestTypeFromBranch (3);
 			TestTypeUsingCaseInsensitiveFlag ();
 			TestTypeUsingCaseUnknownByTheLinker ();
-			/*
-			There is a test hole that involves overload Type.GetType(String, Func<AssemblyName,Assembly>, Func<Assembly,String,Boolean,Type>)
-			This couldn't be tested since Func<> create functions that cannot be marked with [Kept] and the test will end up generating an 
-			error message stating: Type `Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection/<>c' should have been removed
-			The test case was validated manually and is commented in this file as function TestTypeOverloadWith3Parameters
-			 */
+			TestTypeUsingCaseUnknownByTheLinker2 ();
+			TestTypeOverloadWith3Parameters ();
 		}
 
 		[Kept]
@@ -232,6 +227,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		public class CaseInsensitive { }
 
 		[Kept]
+		[ExpectedWarning ("IL2096", "Reflection call 'System.Type.GetType(String,Boolean,Boolean)' inside 'Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection.TestTypeUsingCaseInsensitiveFlag()'" +
+			" is trying to make a case insensitive lookup which is not supported by ILLink")]
 		static void TestTypeUsingCaseInsensitiveFlag ()
 		{
 			const string reflectionTypeKeptString = "mono.linker.tests.cases.reflection.TypeUsedViaReflection+CaseInsensitive, test, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null";
@@ -241,10 +238,12 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		public class CaseUnknown { }
 
 		[Kept]
+		[ExpectedWarning ("IL2096", "Reflection call 'System.Type.GetType(String,Boolean,Boolean)' inside 'Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection.TestTypeUsingCaseUnknownByTheLinker()'" +
+			" is trying to make a case insensitive lookup which is not supported by ILLink")]
 		static void TestTypeUsingCaseUnknownByTheLinker ()
 		{
 			bool hideCase = GetCase ();
-			const string reflectionTypeKeptString = "mono.linker.tests.cases.reflection.TypeUsedViaReflection+CaseInsensitive, test, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null";
+			const string reflectionTypeKeptString = "mono.linker.tests.cases.reflection.TypeUsedViaReflection+CaseUnknown, test, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null";
 			var typeKept = Type.GetType (reflectionTypeKeptString, false, hideCase);
 		}
 
@@ -254,7 +253,20 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			return false;
 		}
 
-		/*
+		[Kept]
+		static bool fieldHideCase = true;
+
+		public class CaseUnknown2 { }
+
+		[Kept]
+		[ExpectedWarning ("IL2096", "Reflection call 'System.Type.GetType(String,Boolean,Boolean)' inside 'Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection.TestTypeUsingCaseUnknownByTheLinker2()'" +
+			" is trying to make a case insensitive lookup which is not supported by ILLink")]
+		static void TestTypeUsingCaseUnknownByTheLinker2 ()
+		{
+			const string reflectionTypeKeptString = "mono.linker.tests.cases.reflection.TypeUsedViaReflection+CaseUnknown2, test, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null";
+			var typeKept = Type.GetType (reflectionTypeKeptString, false, fieldHideCase);
+		}
+
 		[Kept]
 		public class OverloadWith3Parameters { }
 
@@ -262,8 +274,19 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		static void TestTypeOverloadWith3Parameters ()
 		{
 			const string reflectionTypeKeptString = "Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection+OverloadWith3Parameters";
-			var typeKept = Type.GetType (reflectionTypeKeptString, (aName) => aName.Name == "test" ? Assembly.Load("test, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null") : null, (assem, name, ignore) => assem == null ? Type.GetType (name, false) : assem.GetType (name, false));
+			var typeKept = Type.GetType (reflectionTypeKeptString, AssemblyResolver, GetTypeFromAssembly);
 		}
-		*/
+
+		[Kept]
+		static Assembly AssemblyResolver (AssemblyName assemblyName)
+		{
+			return Assembly.Load (assemblyName);
+		}
+
+		[Kept]
+		static Type GetTypeFromAssembly (Assembly assembly, string name, bool caseSensitive)
+		{
+			return assembly == null ? Type.GetType (name, caseSensitive) : assembly.GetType (name, caseSensitive);
+		}
 	}
 }
