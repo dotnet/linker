@@ -136,7 +136,7 @@ namespace Mono.Linker.Dataflow
 						// Already know that there's a non-empty annotation on a field which is not System.Type/String and we're about to ignore it
 						_context.LogWarning (
 							$"Field '{field.GetDisplayName ()}' has 'DynamicallyAccessedMembersAttribute', but that attribute can only be applied to fields of type 'System.Type' or 'System.String'",
-							2096, field, subcategory: MessageSubCategory.TrimAnalysis);
+							2097, field, subcategory: MessageSubCategory.TrimAnalysis);
 						continue;
 					}
 
@@ -190,7 +190,7 @@ namespace Mono.Linker.Dataflow
 						if (!IsTypeInterestingForDataflow (methodParameter.ParameterType)) {
 							_context.LogWarning (
 								$"Parameter '{DiagnosticUtilities.GetParameterNameForErrorMessage (methodParameter)}' of method '{DiagnosticUtilities.GetMethodSignatureDisplayName (methodParameter.Method)}' has 'DynamicallyAccessedMembersAttribute', but that attribute can only be applied to fields of type 'System.Type' or 'System.String'",
-								2097, method, subcategory: MessageSubCategory.TrimAnalysis);
+								2098, method, subcategory: MessageSubCategory.TrimAnalysis);
 							continue;
 						}
 
@@ -245,7 +245,7 @@ namespace Mono.Linker.Dataflow
 					if (!IsTypeInterestingForDataflow (property.PropertyType)) {
 						_context.LogWarning (
 							$"Property '{property.GetDisplayName ()}' has 'DynamicallyAccessedMembersAttribute', but that attribute can only be applied to fields of type 'System.Type' or 'System.String'",
-							2098, property, subcategory: MessageSubCategory.TrimAnalysis);
+							2099, property, subcategory: MessageSubCategory.TrimAnalysis);
 						continue;
 					}
 
