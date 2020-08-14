@@ -1427,3 +1427,41 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
     public override void TestMethod<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)] T>() {}
   }
   ```
+
+#### 'IL2096': Trim analysis: Field 'field' has 'DynamicallyAccessedMembersAttribute', but that attribute can only be applied to fields of type 'System.Type' or 'System.String'
+
+- `DynamicallyAccessedMembersAttribute` is only applicable to items of type `System.Type` or `System.String` (or derived), on all other types the attribute will be ignored. Using the attribute on any other type is likely incorrect and unintentional.
+
+  ```C#
+  // IL2096: Field '_valueField' has 'DynamicallyAccessedMembersAttribute', but that attribute can only be applied to fields of type 'System.Type' or 'System.String'
+  [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+  object _valueField;
+
+  // IL2096: 
+  void TestMethod([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] object param)
+  {
+    // param.GetType()....
+  }
+  ```
+
+#### 'IL2097': Trim analysis: Parameter 'parameter' of method 'method' has 'DynamicallyAccessedMembersAttribute', but that attribute can only be applied to fields of type 'System.Type' or 'System.String'
+
+- `DynamicallyAccessedMembersAttribute` is only applicable to items of type `System.Type` or `System.String` (or derived), on all other types the attribute will be ignored. Using the attribute on any other type is likely incorrect and unintentional.
+
+  ```C#
+  // IL2097: Parameter 'param' of method 'TestMethod' has 'DynamicallyAccessedMembersAttribute', but that attribute can only be applied to fields of type 'System.Type' or 'System.String'
+  void TestMethod([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] object param)
+  {
+    // param.GetType()....
+  }
+  ```
+
+#### 'IL2098': Trim analysis: Property 'property' has 'DynamicallyAccessedMembersAttribute', but that attribute can only be applied to fields of type 'System.Type' or 'System.String'
+
+- `DynamicallyAccessedMembersAttribute` is only applicable to items of type `System.Type` or `System.String` (or derived), on all other types the attribute will be ignored. Using the attribute on any other type is likely incorrect and unintentional.
+
+  ```C#
+  // IL2098: Parameter 'param' of method 'TestMethod' has 'DynamicallyAccessedMembersAttribute', but that attribute can only be applied to fields of type 'System.Type' or 'System.String'
+  [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+  object TestProperty { get; set; }
+  ```
