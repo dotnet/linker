@@ -43,7 +43,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 		static Type StaticPropertyWithPublicConstructor { get; set; }
 
-		[ExpectedWarning ("IL2098", nameof(PropertyWithUnsupportedType))]
+		[ExpectedWarning ("IL2098", nameof (PropertyWithUnsupportedType))]
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)]
 		static object PropertyWithUnsupportedType { get; set; }
 

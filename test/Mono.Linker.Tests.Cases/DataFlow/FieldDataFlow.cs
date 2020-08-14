@@ -44,7 +44,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		static Type _staticTypeWithoutRequirements;
 
-		[ExpectedWarning ("IL2096", nameof(_annotationOnWrongType))]
+		[ExpectedWarning ("IL2096", nameof (_annotationOnWrongType))]
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)]
 		static object _annotationOnWrongType;
 

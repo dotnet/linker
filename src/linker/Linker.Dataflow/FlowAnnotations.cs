@@ -139,7 +139,7 @@ namespace Mono.Linker.Dataflow
 							2096, field, subcategory: MessageSubCategory.TrimAnalysis);
 						continue;
 					}
-					
+
 					annotatedFields.Add (new FieldAnnotation (field, annotation));
 				}
 			}
