@@ -1428,14 +1428,14 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
   }
   ```
 
-#### `IL2096`: Trim analysis: Reflection call 'reflection call' inside 'calling method' is trying to make a case insensitive lookup which is not supported by ILLink"
+#### `IL2096`: Trim analysis: Call to 'Type.GetType method' can perform case insensitive lookup of the type, currently ILLink can not guarantee presence of all the matching types"
 
 - Specifying a case-insensitive search on an overload of `System.Type.GetType` is not supported by ILLink. Specify false to perform a case-sensitive search or use an overload that does not use a ignoreCase bolean.
 
   ``` C#
   void TestMethod()
   {
-      // IL2096 Trim analysis: Reflection call 'System.Type.GetType(String,Boolean,Boolean)' inside 'TestMethod()' is trying to make a case insensitive lookup which is not supported by ILLink
+      // IL2096 Trim analysis: Reflection call 'System.Type.GetType(String,Boolean,Boolean)' is trying to make a case insensitive lookup which is not supported by ILLink
       Type.GetType ("typeName", false, true);
   }
   ```

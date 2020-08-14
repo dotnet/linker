@@ -791,8 +791,7 @@ namespace Mono.Linker.Dataflow
 						if ((parameters.Count == 3 && (methodParams[2].Kind == ValueNodeKind.MethodReturn || methodParams[2].Kind == ValueNodeKind.ConstInt || methodParams[2].Kind == ValueNodeKind.LoadField)
 							&& (methodParams[2].AsConstInt () == null || methodParams[2].AsConstInt () != 0)) ||
 							(parameters.Count == 5 && (methodParams[4].AsConstInt () == null || methodParams[4].AsConstInt () != 0))) {
-							reflectionContext.RecordUnrecognizedPattern (2096, $"Reflection call '{calledMethod.GetDisplayName ()}' inside " +
-								$"'{callingMethodDefinition.GetDisplayName ()}' is trying to make a case insensitive lookup which is not supported by ILLink");
+							reflectionContext.RecordUnrecognizedPattern (2096, $"Call to '{calledMethod.GetDisplayName ()}' can perform case insensitive lookup of the type, currently ILLink can not guarantee presence of all the matching types");
 							break;
 						}
 						foreach (var typeNameValue in methodParams[0].UniqueValues ()) {
