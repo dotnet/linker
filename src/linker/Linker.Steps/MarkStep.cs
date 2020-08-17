@@ -500,23 +500,34 @@ namespace Mono.Linker.Steps
 			return false;
 		}
 
-		bool IsInterfaceImplementationMarked (TypeDefinition type, TypeDefinition interfaceType)
-		{
-			return type.HasInterface (@interfaceType, out InterfaceImplementation implementation) && Annotations.IsMarked (implementation);
-		}
-
 		bool IsInterfaceImplementationMarkedRecursively (TypeDefinition type, TypeDefinition interfaceType)
 		{
-			if (IsInterfaceImplementationMarked (type, interfaceType))
+			if (type.HasInterfaces) {
+				foreach (var intf in type.Interfaces) {
+					TypeDefinition resolvedInterface = intf.InterfaceType.Resolve ();
+					if (resolvedInterface == null)
+						continue;
+
+					if (Annotations.IsMarked (intf) && RequiresInterfaceRecursively (resolvedInterface, interfaceType))
+						return true;
+				}
+			}
+
+			return false;
+		}
+
+		bool RequiresInterfaceRecursively (TypeDefinition typeToExamine, TypeDefinition interfaceType)
+		{
+			if (typeToExamine == interfaceType)
 				return true;
 
-			if (type.HasInterfaces) {
-				foreach (var iface in type.Interfaces) {
+			if (typeToExamine.HasInterfaces) {
+				foreach (var iface in typeToExamine.Interfaces) {
 					var resolved = iface.InterfaceType.Resolve ();
 					if (resolved == null)
 						continue;
 
-					if (IsInterfaceImplementationMarkedRecursively (resolved, interfaceType))
+					if (RequiresInterfaceRecursively (resolved, interfaceType))
 						return true;
 				}
 			}
@@ -604,7 +615,7 @@ namespace Mono.Linker.Steps
 			if (dynamicDependency.AssemblyName != null) {
 				assembly = _context.GetLoadedAssembly (dynamicDependency.AssemblyName);
 				if (assembly == null) {
-					_context.LogWarning ($"Unresolved assembly '{dynamicDependency.AssemblyName}' in DynamicDependencyAttribute on '{context}'", 2035, context);
+					_context.LogWarning ($"Unresolved assembly '{dynamicDependency.AssemblyName}' in 'DynamicDependencyAttribute'", 2035, context);
 					return;
 				}
 			} else {
@@ -616,19 +627,19 @@ namespace Mono.Linker.Steps
 			if (dynamicDependency.TypeName is string typeName) {
 				type = DocumentationSignatureParser.GetTypeByDocumentationSignature (assembly, typeName);
 				if (type == null) {
-					_context.LogWarning ($"Unresolved type '{typeName}' in DynamicDependencyAttribute on '{context}'", 2036, context);
+					_context.LogWarning ($"Unresolved type '{typeName}' in DynamicDependencyAttribute", 2036, context);
 					return;
 				}
 			} else if (dynamicDependency.Type is TypeReference typeReference) {
 				type = typeReference.Resolve ();
 				if (type == null) {
-					_context.LogWarning ($"Unresolved type '{typeReference}' in DynamicDependencyAtribute on '{context}'", 2036, context);
+					_context.LogWarning ($"Unresolved type '{typeReference}' in DynamicDependencyAtribute", 2036, context);
 					return;
 				}
 			} else {
 				type = context.DeclaringType.Resolve ();
 				if (type == null) {
-					_context.LogWarning ($"Unresolved type '{context.DeclaringType}' in DynamicDependencyAttribute on '{context}'", 2036, context);
+					_context.LogWarning ($"Unresolved type '{context.DeclaringType}' in DynamicDependencyAttribute", 2036, context);
 					return;
 				}
 			}
@@ -713,7 +724,7 @@ namespace Mono.Linker.Steps
 				assembly = _context.GetLoadedAssembly (assemblyName);
 				if (assembly == null) {
 					_context.LogWarning (
-						$"Could not resolve '{assemblyName}' assembly dependency specified in a `PreserveDependency` attribute that targets method '{context.GetDisplayName ()}'", 2003, context.Resolve ());
+						$"Could not resolve dependency assembly '{assemblyName}' specified in a 'PreserveDependency' attribute", 2003, context.Resolve ());
 					return;
 				}
 			} else {
@@ -726,7 +737,7 @@ namespace Mono.Linker.Steps
 
 				if (td == null) {
 					_context.LogWarning (
-						$"Could not resolve '{typeName}' type dependency specified in a `PreserveDependency` attribute that targets method '{context.GetDisplayName ()}'", 2004, context.Resolve ());
+						$"Could not resolve dependency type '{typeName}' specified in a `PreserveDependency` attribute", 2004, context.Resolve ());
 					return;
 				}
 			} else {
@@ -760,7 +771,7 @@ namespace Mono.Linker.Steps
 				return;
 
 			_context.LogWarning (
-				$"Could not resolve dependency member '{member}' declared in type '{td.GetDisplayName ()}' specified in a `PreserveDependency` attribute that targets method '{context.GetDisplayName ()}'", 2005, td);
+				$"Could not resolve dependency member '{member}' declared in type '{td.GetDisplayName ()}' specified in a `PreserveDependency` attribute", 2005, context.Resolve ());
 		}
 
 		bool MarkDependencyMethod (TypeDefinition type, string name, string[] signature, in DependencyInfo reason, IMemberDefinition sourceLocationMember)
@@ -829,7 +840,14 @@ namespace Mono.Linker.Steps
 			bool providerInLinkedAssembly = Annotations.GetAction (GetAssemblyFromCustomAttributeProvider (provider)) == AssemblyAction.Link;
 
 			foreach (CustomAttribute ca in provider.CustomAttributes) {
-				if (_context.Annotations.HasLinkerAttribute<RemoveAttributeInstancesAttribute> (ca.AttributeType.Resolve ()) && providerInLinkedAssembly)
+				TypeDefinition type = ca.AttributeType.Resolve ();
+
+				if (type == null) {
+					HandleUnresolvedType (ca.AttributeType);
+					continue;
+				}
+
+				if (_context.Annotations.HasLinkerAttribute<RemoveAttributeInstancesAttribute> (type) && providerInLinkedAssembly)
 					continue;
 
 				_assemblyLevelAttributes.Enqueue (new AttributeProviderPair (ca, provider));
@@ -1400,13 +1418,16 @@ namespace Mono.Linker.Steps
 			if (_context.Annotations.HasLinkerAttribute<RemoveAttributeInstancesAttribute> (type)) {
 				// Don't warn about references from the removed attribute itself (for example the .ctor on the attribute
 				// will call MarkType on the attribute type itself). 
-				// If for some reason we do keep the attribute type (could be because of previous reference which would cause 2045
+				// If for some reason we do keep the attribute type (could be because of previous reference which would cause IL2045
 				// or because of a copy assembly with a reference and so on) then we should not spam the warnings due to the type itself.
 				if (sourceLocationMember.DeclaringType != type)
-					_context.LogWarning ($"Custom Attribute {type.GetDisplayName ()} is being referenced in code but the linker was " +
+					_context.LogWarning (
+						$"Attribute '{type.GetDisplayName ()}' is being referenced in code but the linker was " +
 						$"instructed to remove all instances of this attribute. If the attribute instances are necessary make sure to " +
-						$"either remove the linker attribute XML portion which removes the attribute instances, or to override this use " +
-						$"the linker XML descriptor to keep the attribute type (which in turn keeps all of its instances).", 2045, sourceLocationMember);
+						$"either remove the linker attribute XML portion which removes the attribute instances, " +
+						$"or override the removal by using the linker XML descriptor to keep the attribute type " +
+						$"(which in turn keeps all of its instances).",
+						2045, sourceLocationMember, subcategory: MessageSubCategory.TrimAnalysis);
 			}
 
 			if (CheckProcessed (type))
@@ -2597,7 +2618,9 @@ namespace Mono.Linker.Steps
 				// marshalling. We can't detect that once we have an RCW.
 				if (method.IsPInvokeImpl) {
 					if (IsComInterop (method.MethodReturnType, method.ReturnType) && !didWarnAboutCom) {
-						_context.LogWarning ($"P/invoke method '{method.GetDisplayName ()}' declares a parameter with COM marshalling. Correctness of COM interop cannot be guaranteed after trimming. Interfaces and interface members might be removed.", 2050, method);
+						_context.LogWarning (
+							$"P/invoke method '{method.GetDisplayName ()}' declares a parameter with COM marshalling. Correctness of COM interop cannot be guaranteed after trimming. Interfaces and interface members might be removed.",
+							2050, method, subcategory: MessageSubCategory.TrimAnalysis);
 						didWarnAboutCom = true;
 					}
 				}

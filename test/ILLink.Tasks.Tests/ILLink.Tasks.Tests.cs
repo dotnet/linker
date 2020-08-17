@@ -172,8 +172,8 @@ namespace ILLink.Tasks.Tests
 			var task = new MockTask ();
 			task.SetOptimization (optimization, enabled);
 			// get the corresponding CodeOptimizations value
-			Assert.True (MockDriver.GetOptimizationName (optimization, out CodeOptimizations codeOptimizations));
 			using (var driver = task.CreateDriver ()) {
+				Assert.True (driver.GetOptimizationName (optimization, out CodeOptimizations codeOptimizations));
 				var actualValue = driver.Context.Optimizations.IsEnabled (codeOptimizations, assemblyName: null);
 				Assert.Equal (enabled, actualValue);
 			}
@@ -224,7 +224,7 @@ namespace ILLink.Tasks.Tests
 				foreach (var item in assemblyPaths) {
 					var assemblyName = Path.GetFileNameWithoutExtension (item.ItemSpec);
 					foreach (var optimization in MockTask.OptimizationNames) {
-						Assert.True (MockDriver.GetOptimizationName (optimization, out CodeOptimizations codeOptimizations));
+						Assert.True (driver.GetOptimizationName (optimization, out CodeOptimizations codeOptimizations));
 						var optimizationValue = item.GetMetadata (optimization);
 						if (String.IsNullOrEmpty (optimizationValue))
 							continue;
@@ -305,13 +305,13 @@ namespace ILLink.Tasks.Tests
 #nullable enable
 		[Theory]
 		[InlineData (true, null, null, new int[] { }, new int[] { })]
-		[InlineData (false, "IL1001,IL2000,IL2021,IL2022", null,
-			new int[] { 1001, 2000, 2021, 2022 }, new int[] { })]
+		[InlineData (false, "IL1001,IL2000,IL2054,IL2022", null,
+			new int[] { 1001, 2000, 2054, 2022 }, new int[] { })]
 		[InlineData (false, "IL2023,IL6000;IL5042 IL2040", "IL4000,IL4001;IL4002 IL4003",
 			new int[] { 2023, 2040, 5042, 6000 }, new int[] { 4000, 4001, 4002, 4003 })]
-		[InlineData (false, "IL3000;IL3000;", "IL2005 IL3005 IL2005",
+		[InlineData (false, "IL3000;IL3000;ABCD", "IL2005 IL3005 IL2005",
 			new int[] { 3000 }, new int[] { 2005, 3005 })]
-		[InlineData (true, null, "IL2006", new int[] { }, new int[] { 2006 })]
+		[InlineData (true, null, "IL2067", new int[] { }, new int[] { 2067 })]
 		[InlineData (true, "IL2001", "IL2001", new int[] { }, new int[] { 2001 })]
 		public void TestWarningsAsErrors (bool treatWarningsAsErrors, string? warningsAsErrors, string? warningsNotAsErrors, int[] warnAsError, int[] warnNotAsError)
 		{
