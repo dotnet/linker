@@ -502,7 +502,9 @@ namespace Mono.Linker
 				message.Category == MessageCategory.Info) && !LogMessages)
 				return;
 
-			if (OutputWarningSuppressions && message.Category == MessageCategory.Warning && message.Origin?.MemberDefinition != null)
+			if (OutputWarningSuppressions && 
+				(message.Category == MessageCategory.Warning || message.Category == MessageCategory.WarningAsError) && 
+				message.Origin?.MemberDefinition != null)
 				WarningSuppressionWriter.AddWarning (message.Code.Value, message.Origin?.MemberDefinition);
 
 			Logger?.LogMessage (message);

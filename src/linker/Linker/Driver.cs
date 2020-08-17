@@ -444,14 +444,14 @@ namespace Mono.Linker
 						if (!GetStringParam (token, l => noWarnArgument = l))
 							return -1;
 
-						context.NoWarn.UnionWith (ProcessWarningsCodes (noWarnArgument));
+						context.NoWarn.UnionWith (ProcessWarningCodes (noWarnArgument));
 						continue;
 
 					case "--warnaserror":
 					case "--warnaserror+":
 						var warningList = GetNextStringValue ();
 						if (!string.IsNullOrEmpty (warningList)) {
-							foreach (var warning in ProcessWarningsCodes (warningList))
+							foreach (var warning in ProcessWarningCodes (warningList))
 								context.WarnAsError[warning] = true;
 
 						} else {
@@ -464,7 +464,7 @@ namespace Mono.Linker
 					case "--warnaserror-":
 						warningList = GetNextStringValue ();
 						if (!string.IsNullOrEmpty (warningList)) {
-							foreach (var warning in ProcessWarningsCodes (warningList))
+							foreach (var warning in ProcessWarningCodes (warningList))
 								context.WarnAsError[warning] = false;
 
 						} else {
@@ -775,7 +775,7 @@ namespace Mono.Linker
 
 		partial void PreProcessPipeline (Pipeline pipeline);
 
-		private IEnumerable<int> ProcessWarningsCodes (string value)
+		private IEnumerable<int> ProcessWarningCodes (string value)
 		{
 			string Unquote (string arg)
 			{
