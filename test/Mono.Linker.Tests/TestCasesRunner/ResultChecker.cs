@@ -164,7 +164,8 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 		protected virtual void AdditionalChecking (LinkedTestCaseResult linkResult, AssemblyDefinition original)
 		{
-			VerifyLoggedMessages (original, linkResult.Logger);
+			bool checkRemainingErrors = !HasAttribute (original.MainModule.GetType (linkResult.TestCase.ReconstructedFullTypeName), nameof (SkipRemainingErrorsValidationAttribute));
+			VerifyLoggedMessages (original, linkResult.Logger, checkRemainingErrors);
 			VerifyRecordedDependencies (original, linkResult.Customizations.DependencyRecorder);
 			VerifyRecordedReflectionPatterns (original, linkResult.Customizations.ReflectionPatternRecorder);
 		}
@@ -592,7 +593,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			}
 		}
 
-		void VerifyLoggedMessages (AssemblyDefinition original, LinkerTestLogger logger)
+		void VerifyLoggedMessages (AssemblyDefinition original, LinkerTestLogger logger, bool checkRemainingErrors)
 		{
 			foreach (var testType in original.AllDefinedTypes ()) {
 				foreach (var attrProvider in testType.AllMembers ().Append (testType)) {
@@ -677,8 +678,10 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				}
 			}
 
-			var remainingErrors = logger.Messages.Where (mc => mc.Category == MessageCategory.Error || mc.Category == MessageCategory.WarningAsError);
-			Assert.IsEmpty (remainingErrors, $"Found unexpected errors:{Environment.NewLine}{FormatMessages (remainingErrors)}");
+			if (checkRemainingErrors) {
+				var remainingErrors = logger.Messages.Where (mc => mc.Category == MessageCategory.Error || mc.Category == MessageCategory.WarningAsError);
+				Assert.IsEmpty (remainingErrors, $"Found unexpected errors:{Environment.NewLine}{FormatMessages (remainingErrors)}");
+			}
 
 			string FormatMessages (IEnumerable<LinkerTestLogger.MessageRecord> messages)
 			{
