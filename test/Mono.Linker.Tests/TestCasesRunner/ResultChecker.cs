@@ -609,7 +609,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 									matchedMessages = logger.Messages.Where (mc => mc.Message.Contains (expectedMessage)).ToList (); ;
 								Assert.IsTrue (
 									matchedMessages.Count > 0,
-									$"Expected to find logged message matching `{expectedMessage}`, but no such message was found.{Environment.NewLine}Logged messages:{Environment.NewLine}{FormatAllMessages ()}");
+									$"Expected to find logged message matching `{expectedMessage}`, but no such message was found.{Environment.NewLine}Logged messages:{Environment.NewLine}{FormatMessages (logger.Messages)}");
 
 								foreach (var matchedMessage in matchedMessages)
 									logger.Messages.Remove (matchedMessage);
@@ -624,7 +624,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 											return !Regex.IsMatch (loggedMessage.Message, unexpectedMessage);
 										return !loggedMessage.Message.Contains (unexpectedMessage);
 									},
-									$"Expected to not find logged message matching `{unexpectedMessage}`, but found:{Environment.NewLine}{loggedMessage.Message}{Environment.NewLine}Logged messages:{Environment.NewLine}{FormatAllMessages ()}");
+									$"Expected to not find logged message matching `{unexpectedMessage}`, but found:{Environment.NewLine}{loggedMessage.Message}{Environment.NewLine}Logged messages:{Environment.NewLine}{FormatMessages (logger.Messages)}");
 								}
 							}
 							break;
@@ -669,7 +669,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 									$"Expected to find warning: {(fileName != null ? (fileName + (sourceLine != null ? $"({sourceLine},{sourceColumn})" : "")) + ": " : "")}" +
 									$"warning {expectedWarningCode}: {(fileName == null ? (actualMethod?.GetDisplayName () ?? attrProvider.FullName) + ": " : "")}" +
 									$"and message containing {string.Join (" ", expectedMessageContains.Select (m => "'" + m + "'"))}, " +
-									$"but no such message was found.{Environment.NewLine}Logged messages:{Environment.NewLine}{FormatAllMessages ()}");
+									$"but no such message was found.{Environment.NewLine}Logged messages:{Environment.NewLine}{FormatMessages (logger.Messages)}");
 							}
 							break;
 						}
@@ -677,9 +677,12 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				}
 			}
 
-			string FormatAllMessages ()
+			var remainingErrors = logger.Messages.Where (mc => mc.Category == MessageCategory.Error || mc.Category == MessageCategory.WarningAsError);
+			Assert.IsEmpty (remainingErrors, $"Found unexpected errors:{Environment.NewLine}{FormatMessages (remainingErrors)}");
+
+			string FormatMessages (IEnumerable<LinkerTestLogger.MessageRecord> messages)
 			{
-				return string.Join (Environment.NewLine, logger.Messages.Select (mc => mc.Message));
+				return string.Join (Environment.NewLine, messages.Select (mc => mc.Message));
 			}
 		}
 
