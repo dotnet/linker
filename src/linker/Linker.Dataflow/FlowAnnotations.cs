@@ -189,7 +189,7 @@ namespace Mono.Linker.Dataflow
 
 						if (!IsTypeInterestingForDataflow (methodParameter.ParameterType)) {
 							_context.LogWarning (
-								$"Parameter '{DiagnosticUtilities.GetParameterNameForErrorMessage (methodParameter)}' of method '{DiagnosticUtilities.GetMethodSignatureDisplayName (methodParameter.Method)}' has 'DynamicallyAccessedMembersAttribute', but that attribute can only be applied to fields of type 'System.Type' or 'System.String'",
+								$"Parameter '{DiagnosticUtilities.GetParameterNameForErrorMessage (methodParameter)}' of method '{DiagnosticUtilities.GetMethodSignatureDisplayName (methodParameter.Method)}' has 'DynamicallyAccessedMembersAttribute', but that attribute can only be applied to parameters of type 'System.Type' or 'System.String'",
 								2098, method, subcategory: MessageSubCategory.TrimAnalysis);
 							continue;
 						}
@@ -244,7 +244,7 @@ namespace Mono.Linker.Dataflow
 
 					if (!IsTypeInterestingForDataflow (property.PropertyType)) {
 						_context.LogWarning (
-							$"Property '{property.GetDisplayName ()}' has 'DynamicallyAccessedMembersAttribute', but that attribute can only be applied to fields of type 'System.Type' or 'System.String'",
+							$"Property '{property.GetDisplayName ()}' has 'DynamicallyAccessedMembersAttribute', but that attribute can only be applied to properties of type 'System.Type' or 'System.String'",
 							2099, property, subcategory: MessageSubCategory.TrimAnalysis);
 						continue;
 					}
