@@ -7,7 +7,7 @@
     <IsReferenceAssembly Condition="'$(IsReferenceAssembly)' == '' and '$([System.IO.Path]::GetFileName($(MSBuildProjectDirectory)))' == 'ref'">true</IsReferenceAssembly>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(IsReferenceAssembly)' == 'true' ">
-    <!-- Since .NET file reference assemblies are always produced -->
+    <!-- Since .NET 5 reference assemblies are always produced -->
     <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
     <ProduceOnlyReferenceAssembly>true</ProduceOnlyReferenceAssembly>
     <!-- Used by Arcade to compute OutputPath, IntermediateOutputPath, etc. early in the import chain. -->
