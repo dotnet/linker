@@ -251,12 +251,14 @@ namespace Mono.Linker.Tests.TestCases
 			var configDirectoryName = "Release";
 #endif
 
-#if NETCOREAPP3_0
+#if NET5_0
+			var tfm = "net5.0";
+#elif NETCOREAPP3_0
 			var tfm = "netcoreapp3.0";
 #elif NET471
 			var tfm = "net471";
 #else
-			var tfm = "";
+#error "Unknown TFM"
 #endif
 
 #if ILLINK
