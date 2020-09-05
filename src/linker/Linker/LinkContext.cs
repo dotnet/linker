@@ -57,6 +57,7 @@ namespace Mono.Linker
 		bool _ignoreUnresolved;
 
 		readonly AssemblyResolver _resolver;
+		readonly ReflectionTypeNameResolver _typeNameResolver;
 
 		readonly ReaderParameters _readerParameters;
 		ISymbolReaderProvider _symbolReaderProvider;
@@ -150,6 +151,10 @@ namespace Mono.Linker
 			get { return _resolver; }
 		}
 
+		internal ReflectionTypeNameResolver TypeNameResolver {
+			get { return _typeNameResolver; }
+		}
+
 		public ReaderParameters ReaderParameters {
 			get { return _readerParameters; }
 		}
@@ -216,6 +221,7 @@ namespace Mono.Linker
 			_pipeline = pipeline;
 			_resolver = resolver;
 			_resolver.Context = this;
+			_typeNameResolver = new ReflectionTypeNameResolver (this);
 			_actions = new Dictionary<string, AssemblyAction> ();
 			_parameters = new Dictionary<string, string> (StringComparer.Ordinal);
 			_readerParameters = readerParameters;
