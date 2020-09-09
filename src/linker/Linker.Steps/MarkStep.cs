@@ -270,11 +270,11 @@ namespace Mono.Linker.Steps
 
 		internal void MarkEntireType (TypeDefinition type, bool includeBaseTypes, in DependencyInfo reason, IMemberDefinition sourceLocationMember)
 		{
-			MarkEntireTypeInternal (type, includeBaseTypes, reason, sourceLocationMember, new HashSet<TypeDefinition>());
+			MarkEntireTypeInternal (type, includeBaseTypes, reason, sourceLocationMember, new HashSet<TypeDefinition> ());
 		}
 
 		private void MarkEntireTypeInternal (TypeDefinition type, bool includeBaseTypes, in DependencyInfo reason, IMemberDefinition sourceLocationMember, HashSet<TypeDefinition> typesAlreadyVisited)
-		{ 
+		{
 #if DEBUG
 			if (!_entireTypeReasons.Contains (reason.Kind))
 				throw new ArgumentOutOfRangeException ($"Internal error: unsupported type dependency {reason.Kind}");

@@ -1852,7 +1852,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		class RequireAllWithRecursiveTypeReferences
 		{
 			[Kept]
-			RequireAllWithRecursiveTypeReferences()
+			RequireAllWithRecursiveTypeReferences ()
 			{
 			}
 
@@ -1860,7 +1860,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			class NestedType
 			{
 				[Kept]
-				NestedType()
+				NestedType ()
 				{
 				}
 
@@ -1869,15 +1869,15 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 
 			[Kept]
-			[KeptMember(".ctor()")]
-			[KeptBaseType(typeof(RequireAllWithRecursiveTypeReferences))]
+			[KeptMember (".ctor()")]
+			[KeptBaseType (typeof (RequireAllWithRecursiveTypeReferences))]
 			class NestedTypeWithRecursiveBase : RequireAllWithRecursiveTypeReferences
 			{
 			}
 
 			[Kept]
-			[KeptInterface(typeof(IEquatable<RequireAllWithRecursiveTypeReferences>))]
-			[KeptMember(".ctor()")]
+			[KeptInterface (typeof (IEquatable<RequireAllWithRecursiveTypeReferences>))]
+			[KeptMember (".ctor()")]
 			class NestedTypeWithRecursiveGenericInterface : IEquatable<RequireAllWithRecursiveTypeReferences>
 			{
 				[Kept]
@@ -1889,7 +1889,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			[Kept]
 			[KeptMember (".ctor()")]
-			[KeptBaseType (typeof(List<RequireAllWithRecursiveTypeReferences>))]
+			[KeptBaseType (typeof (List<RequireAllWithRecursiveTypeReferences>))]
 			class NestedTypeWithRecursiveGenericBaseClass : List<RequireAllWithRecursiveTypeReferences>
 			{
 			}
