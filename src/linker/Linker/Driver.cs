@@ -647,8 +647,8 @@ namespace Mono.Linker
 				p.PrependStep (new ResolveFromXApiStep (new XPathDocument (file)));
 #endif
 			foreach (var file in xml_custom_attribute_steps)
-				AddLinkAttributesStep (p, file); 
-			
+				AddLinkAttributesStep (p, file);
+
 			foreach (var file in resolve_from_xml_steps)
 				AddResolveFromXmlStep (p, file);
 
