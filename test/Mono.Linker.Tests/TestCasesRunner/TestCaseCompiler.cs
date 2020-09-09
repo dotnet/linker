@@ -169,18 +169,19 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			if (Path.IsPathRooted (referenceFileName))
 				return referenceFileName.ToNPath ();
 
+#if NETCOREAPP
 			if (referenceFileName.StartsWith ("System.", StringComparison.Ordinal) ||
 				referenceFileName.StartsWith ("Mono.", StringComparison.Ordinal) ||
 				referenceFileName.StartsWith ("Microsoft.", StringComparison.Ordinal) ||
 				referenceFileName == "netstandard.dll") {
-#if NETCOREAPP
+
 				var frameworkDir = Path.GetFullPath (Path.GetDirectoryName (typeof (object).Assembly.Location));
 				var filePath = Path.Combine (frameworkDir, referenceFileName);
 
 				if (File.Exists (filePath))
 					return filePath.ToNPath ();
-#endif
 			}
+#endif
 
 			var possiblePath = outputDirectory.Combine (referenceFileName);
 			if (possiblePath.FileExists ())
