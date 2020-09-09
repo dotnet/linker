@@ -646,11 +646,11 @@ namespace Mono.Linker
 			foreach (var file in resolve_from_xapi_steps)
 				p.PrependStep (new ResolveFromXApiStep (new XPathDocument (file)));
 #endif
+			foreach (var file in xml_custom_attribute_steps)
+				AddLinkAttributesStep (p, file); 
+			
 			foreach (var file in resolve_from_xml_steps)
 				AddResolveFromXmlStep (p, file);
-
-			foreach (var file in xml_custom_attribute_steps)
-				AddXmlCustomAttributesStep (p, file);
 
 			foreach (var (file, rootVisibility) in resolve_from_assembly_steps)
 				p.PrependStep (new ResolveFromAssemblyStep (file, rootVisibility));
