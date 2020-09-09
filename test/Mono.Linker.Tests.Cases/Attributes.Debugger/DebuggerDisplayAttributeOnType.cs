@@ -4,6 +4,10 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.Attributes.Debugger
 {
+#if NETCOREAPP
+	[SetupLinkAttributesFile ("DebuggerAttributesRemoved.xml")]
+	[SetupLinkerCoreAction ("copy")]
+#else
 	[SetupLinkerCoreAction ("link")]
 	[SetupLinkerKeepDebugMembers ("false")]
 
@@ -11,6 +15,7 @@ namespace Mono.Linker.Tests.Cases.Attributes.Debugger
 	[SkipPeVerify (SkipPeVerifyForToolchian.Pedump)]
 
 	[KeptMemberInAssembly (PlatformAssemblies.CoreLib, typeof (DebuggerDisplayAttribute), ".ctor(System.String)")]
+#endif
 	public class DebuggerDisplayAttributeOnType
 	{
 		public static void Main ()
@@ -21,7 +26,9 @@ namespace Mono.Linker.Tests.Cases.Attributes.Debugger
 
 		[Kept]
 		[KeptMember (".ctor()")]
+#if !NETCOREAPP
 		[KeptAttributeAttribute (typeof (DebuggerDisplayAttribute))]
+#endif
 		[DebuggerDisplay ("{Property}")]
 		class Foo
 		{
@@ -30,7 +37,9 @@ namespace Mono.Linker.Tests.Cases.Attributes.Debugger
 
 		[Kept]
 		[KeptMember (".ctor()")]
+#if !NETCOREAPP
 		[KeptAttributeAttribute (typeof (DebuggerDisplayAttribute))]
+#endif
 		[DebuggerDisplay ("{Method()}")]
 		class Bar
 		{

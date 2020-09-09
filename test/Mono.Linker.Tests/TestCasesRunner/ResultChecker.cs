@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -163,7 +164,8 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 		protected virtual void AdditionalChecking (LinkedTestCaseResult linkResult, AssemblyDefinition original)
 		{
-			VerifyLoggedMessages (original, linkResult.Logger);
+			bool checkRemainingErrors = !HasAttribute (original.MainModule.GetType (linkResult.TestCase.ReconstructedFullTypeName), nameof (SkipRemainingErrorsValidationAttribute));
+			VerifyLoggedMessages (original, linkResult.Logger, checkRemainingErrors);
 			VerifyRecordedDependencies (original, linkResult.Customizations.DependencyRecorder);
 			VerifyRecordedReflectionPatterns (original, linkResult.Customizations.ReflectionPatternRecorder);
 		}
@@ -591,31 +593,99 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			}
 		}
 
-		void VerifyLoggedMessages (AssemblyDefinition original, LinkerTestLogger logger)
+		void VerifyLoggedMessages (AssemblyDefinition original, LinkerTestLogger logger, bool checkRemainingErrors)
 		{
-			string allMessages = string.Join (Environment.NewLine, logger.Messages.Select (mc => mc.Message));
-
 			foreach (var testType in original.AllDefinedTypes ()) {
-				foreach (var attr in testType.CustomAttributes.Concat (testType.AllMembers ().SelectMany (m => m.CustomAttributes))) {
-					if (attr.AttributeType.Resolve ().Name == nameof (LogContainsAttribute)) {
-						var expectedMessage = (string) attr.ConstructorArguments[0].Value;
+				foreach (var attrProvider in testType.AllMembers ().Append (testType)) {
+					foreach (var attr in attrProvider.CustomAttributes) {
+						switch (attr.AttributeType.Name) {
 
-						Assert.That (new Func<bool> (() => {
-							if ((bool) attr.ConstructorArguments[1].Value)
-								return logger.Messages.Any (mc => Regex.IsMatch (mc.Message, expectedMessage));
-							return logger.Messages.Any (mc => mc.Message.Contains (expectedMessage));
-						}), $"Expected to find logged message matching `{expectedMessage}`, but no such message was found.{Environment.NewLine}Logged messages:{Environment.NewLine}{allMessages}");
-					}
+						case nameof (LogContainsAttribute): {
+								var expectedMessage = (string) attr.ConstructorArguments[0].Value;
 
-					if (attr.AttributeType.Resolve ().Name == nameof (LogDoesNotContainAttribute)) {
-						var unexpectedMessagePattern = (string) attr.ConstructorArguments[0].Value;
-						foreach (var loggedMessage in logger.Messages) {
-							Assert.That (
-								!Regex.IsMatch (loggedMessage.Message, unexpectedMessagePattern),
-								$"Expected to not find logged message matching `{unexpectedMessagePattern}`, but found:{Environment.NewLine}{loggedMessage.Message}{Environment.NewLine}Logged messages:{Environment.NewLine}{allMessages}");
+								List<LinkerTestLogger.MessageRecord> matchedMessages;
+								if ((bool) attr.ConstructorArguments[1].Value)
+									matchedMessages = logger.Messages.Where (mc => Regex.IsMatch (mc.Message, expectedMessage)).ToList ();
+								else
+									matchedMessages = logger.Messages.Where (mc => mc.Message.Contains (expectedMessage)).ToList (); ;
+								Assert.IsTrue (
+									matchedMessages.Count > 0,
+									$"Expected to find logged message matching `{expectedMessage}`, but no such message was found.{Environment.NewLine}Logged messages:{Environment.NewLine}{FormatMessages (logger.Messages)}");
+
+								foreach (var matchedMessage in matchedMessages)
+									logger.Messages.Remove (matchedMessage);
+							}
+							break;
+
+						case nameof (LogDoesNotContainAttribute): {
+								var unexpectedMessage = (string) attr.ConstructorArguments[0].Value;
+								foreach (var loggedMessage in logger.Messages) {
+									Assert.That (() => {
+										if ((bool) attr.ConstructorArguments[1].Value)
+											return !Regex.IsMatch (loggedMessage.Message, unexpectedMessage);
+										return !loggedMessage.Message.Contains (unexpectedMessage);
+									},
+									$"Expected to not find logged message matching `{unexpectedMessage}`, but found:{Environment.NewLine}{loggedMessage.Message}{Environment.NewLine}Logged messages:{Environment.NewLine}{FormatMessages (logger.Messages)}");
+								}
+							}
+							break;
+
+						case nameof (ExpectedWarningAttribute): {
+								var expectedWarningCode = (string) attr.GetConstructorArgumentValue (0);
+								if (!expectedWarningCode.StartsWith ("IL"))
+									break;
+								int expectedWarningCodeNumber = int.Parse (expectedWarningCode.Substring (2));
+								var expectedMessageContains = ((CustomAttributeArgument[]) attr.GetConstructorArgumentValue (1)).Select (a => (string) a.Value).ToArray ();
+
+								string fileName = (string) attr.GetPropertyValue ("FileName");
+								int? sourceLine = (int?) attr.GetPropertyValue ("SourceLine");
+								int? sourceColumn = (int?) attr.GetPropertyValue ("SourceColumn");
+
+								var actualMethod = attrProvider as MethodDefinition;
+
+								Assert.IsTrue (
+									logger.Messages.Any (mc => {
+										if (mc.Category != MessageCategory.Warning || mc.Code != expectedWarningCodeNumber)
+											return false;
+
+										foreach (var expectedMessage in expectedMessageContains)
+											if (!mc.Text.Contains (expectedMessage))
+												return false;
+
+										if (fileName != null) {
+											// Note: string.Compare(string, StringComparison) doesn't exist in .NET Framework API set
+											if (mc.Origin?.FileName?.IndexOf (fileName, StringComparison.OrdinalIgnoreCase) < 0)
+												return false;
+
+											if (sourceLine != null && mc.Origin?.SourceLine != sourceLine.Value)
+												return false;
+
+											if (sourceColumn != null && mc.Origin?.SourceColumn != sourceColumn.Value)
+												return false;
+										} else if (mc.OriginMemberDefinitionFullName != attrProvider.FullName)
+											return false;
+
+										return true;
+									}),
+									$"Expected to find warning: {(fileName != null ? (fileName + (sourceLine != null ? $"({sourceLine},{sourceColumn})" : "")) + ": " : "")}" +
+									$"warning {expectedWarningCode}: {(fileName == null ? (actualMethod?.GetDisplayName () ?? attrProvider.FullName) + ": " : "")}" +
+									$"and message containing {string.Join (" ", expectedMessageContains.Select (m => "'" + m + "'"))}, " +
+									$"but no such message was found.{Environment.NewLine}Logged messages:{Environment.NewLine}{FormatMessages (logger.Messages)}");
+							}
+							break;
 						}
 					}
 				}
+			}
+
+			if (checkRemainingErrors) {
+				var remainingErrors = logger.Messages.Where (mc => mc.Category == MessageCategory.Error || mc.Category == MessageCategory.WarningAsError);
+				Assert.IsEmpty (remainingErrors, $"Found unexpected errors:{Environment.NewLine}{FormatMessages (remainingErrors)}");
+			}
+
+			string FormatMessages (IEnumerable<LinkerTestLogger.MessageRecord> messages)
+			{
+				return string.Join (Environment.NewLine, messages.Select (mc => mc.Message));
 			}
 		}
 
@@ -661,11 +731,18 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			}
 		}
 
+		static void RemoveFromList<T> (List<T> list, IEnumerable<T> itemsToRemove)
+		{
+			foreach (var item in itemsToRemove.ToList ()) {
+				list.Remove (item);
+			}
+		}
+
 		void VerifyRecordedReflectionPatterns (AssemblyDefinition original, TestReflectionPatternRecorder reflectionPatternRecorder)
 		{
-			foreach (var expectedSourceMethodDefinition in original.MainModule.AllDefinedTypes ().SelectMany (t => t.AllMethods ()).Distinct ()) {
+			foreach (var expectedSourceMemberDefinition in original.MainModule.AllDefinedTypes ().SelectMany (t => t.AllMembers ().Append (t)).Distinct ()) {
 				bool foundAttributesToVerify = false;
-				foreach (var attr in expectedSourceMethodDefinition.CustomAttributes) {
+				foreach (var attr in expectedSourceMemberDefinition.CustomAttributes) {
 					if (attr.AttributeType.Resolve ().Name == nameof (RecognizedReflectionAccessPatternAttribute)) {
 						foundAttributesToVerify = true;
 
@@ -674,19 +751,19 @@ namespace Mono.Linker.Tests.TestCasesRunner
 						if (attr.ConstructorArguments.Count == 0)
 							continue;
 
-						string expectedSourceMethod = GetFullMemberNameFromDefinition (expectedSourceMethodDefinition);
-						string expectedReflectionMethod = GetFullMemberNameFromReflectionAccessPatternAttribute (attr, constructorArgumentsOffset: 0);
+						string expectedSourceMember = GetFullMemberNameFromDefinition (expectedSourceMemberDefinition);
+						string expectedReflectionMember = GetFullMemberNameFromReflectionAccessPatternAttribute (attr, constructorArgumentsOffset: 0);
 						string expectedAccessedItem = GetFullMemberNameFromReflectionAccessPatternAttribute (attr, constructorArgumentsOffset: 3);
 
 						if (!reflectionPatternRecorder.RecognizedPatterns.Any (pattern => {
-							if (GetFullMemberNameFromDefinition (pattern.Source) != expectedSourceMethod)
+							if (GetFullMemberNameFromDefinition (pattern.Source) != expectedSourceMember)
 								return false;
 
 							string actualAccessOperation = null;
 							if (pattern.SourceInstruction?.Operand is IMetadataTokenProvider sourceOperand)
 								actualAccessOperation = GetFullMemberNameFromDefinition (sourceOperand);
 
-							if (actualAccessOperation != expectedReflectionMethod)
+							if (actualAccessOperation != expectedReflectionMember)
 								return false;
 
 							if (GetFullMemberNameFromDefinition (pattern.AccessedItem) != expectedAccessedItem)
@@ -695,27 +772,37 @@ namespace Mono.Linker.Tests.TestCasesRunner
 							reflectionPatternRecorder.RecognizedPatterns.Remove (pattern);
 							return true;
 						})) {
-							string sourceMethodCandidates = string.Join (Environment.NewLine, reflectionPatternRecorder.RecognizedPatterns
-								.Where (p => GetFullMemberNameFromDefinition (p.Source)?.ToLowerInvariant ()?.Contains (expectedSourceMethod.ToLowerInvariant ()) == true)
+							string sourceMemberCandidates = string.Join (Environment.NewLine, reflectionPatternRecorder.RecognizedPatterns
+								.Where (p => GetFullMemberNameFromDefinition (p.Source)?.ToLowerInvariant ()?.Contains (expectedReflectionMember.ToLowerInvariant ()) == true)
 								.Select (p => "\t" + RecognizedReflectionAccessPatternToString (p)));
-							string reflectionMethodCandidates = string.Join (Environment.NewLine, reflectionPatternRecorder.RecognizedPatterns
-								.Where (p => GetFullMemberNameFromDefinition (p.SourceInstruction?.Operand as IMetadataTokenProvider)?.ToLowerInvariant ()?.Contains (expectedReflectionMethod.ToLowerInvariant ()) == true)
+							string reflectionMemberCandidates = string.Join (Environment.NewLine, reflectionPatternRecorder.RecognizedPatterns
+								.Where (p => GetFullMemberNameFromDefinition (p.SourceInstruction?.Operand as IMetadataTokenProvider)?.ToLowerInvariant ()?.Contains (expectedReflectionMember.ToLowerInvariant ()) == true)
 								.Select (p => "\t" + RecognizedReflectionAccessPatternToString (p)));
 
 							Assert.Fail (
-								$"Expected to find recognized reflection access pattern '{expectedSourceMethod}: Call to {expectedReflectionMethod} accessed {expectedAccessedItem}'{Environment.NewLine}" +
-								$"Potential patterns matching the source method: {Environment.NewLine}{sourceMethodCandidates}{Environment.NewLine}" +
-								$"Potential patterns matching the reflection method: {Environment.NewLine}{reflectionMethodCandidates}{Environment.NewLine}" +
-								$"If there's no matches, try to specify just a part of the source method or reflection method name and rerun the test to get potential matches.");
+								$"Expected to find recognized reflection access pattern '{expectedSourceMember}: Usage of {expectedReflectionMember} accessed {expectedAccessedItem}'{Environment.NewLine}" +
+								$"Potential patterns matching the source member: {Environment.NewLine}{sourceMemberCandidates}{Environment.NewLine}" +
+								$"Potential patterns matching the reflection member: {Environment.NewLine}{reflectionMemberCandidates}{Environment.NewLine}" +
+								$"If there's no matches, try to specify just a part of the source member or reflection member name and rerun the test to get potential matches.");
 						}
-					} else if (attr.AttributeType.Resolve ().Name == nameof (UnrecognizedReflectionAccessPatternAttribute)) {
+					} else if (attr.AttributeType.Resolve ().Name == nameof (UnrecognizedReflectionAccessPatternAttribute) &&
+						attr.ConstructorArguments[0].Type.MetadataType != MetadataType.String) {
 						foundAttributesToVerify = true;
-						string expectedSourceMethod = GetFullMemberNameFromDefinition (expectedSourceMethodDefinition);
-						string expectedReflectionMethod = GetFullMemberNameFromReflectionAccessPatternAttribute (attr, constructorArgumentsOffset: 0);
-						string expectedMessage = (string) attr.ConstructorArguments[3].Value;
+						string expectedSourceMember = GetFullMemberNameFromDefinition (expectedSourceMemberDefinition);
+						string expectedReflectionMember = GetFullMemberNameFromReflectionAccessPatternAttribute (attr, constructorArgumentsOffset: 0);
+						string[] expectedMessageParts = GetMessagePartsFromReflectionAccessPatternAttribute (attr, 3);
+						int? expectedMessageCode = null;
+						if (attr.ConstructorArguments.Count >= 5) {
+							var codeString = (string) attr.ConstructorArguments[4].Value;
+							if (codeString != null) {
+								if (!codeString.StartsWith ("IL"))
+									throw new InvalidOperationException ($"invalid message code {codeString}");
+								expectedMessageCode = int.Parse (codeString.Substring (2));
+							}
+						}
 
 						if (!reflectionPatternRecorder.UnrecognizedPatterns.Any (pattern => {
-							if (GetFullMemberNameFromDefinition (pattern.Source) != expectedSourceMethod)
+							if (GetFullMemberNameFromDefinition (pattern.Source) != expectedSourceMember)
 								return false;
 
 							string actualAccessOperation = null;
@@ -724,47 +811,53 @@ namespace Mono.Linker.Tests.TestCasesRunner
 							else
 								actualAccessOperation = GetFullMemberNameFromDefinition (pattern.AccessedItem);
 
-							if (actualAccessOperation != expectedReflectionMethod)
+							if (actualAccessOperation != expectedReflectionMember)
 								return false;
 
-							if (expectedMessage != null && pattern.Message != expectedMessage)
+							// Note: string.Compare(string, StringComparison) doesn't exist in .NET Framework API set
+							if (expectedMessageParts != null && expectedMessageParts.Any (p => pattern.Message.IndexOf (p, StringComparison.Ordinal) < 0))
+								return false;
+
+							if (expectedMessageCode.HasValue && pattern.MessageCode != expectedMessageCode.Value)
 								return false;
 
 							reflectionPatternRecorder.UnrecognizedPatterns.Remove (pattern);
 							return true;
 						})) {
-							string sourceMethodCandidates = string.Join (Environment.NewLine, reflectionPatternRecorder.UnrecognizedPatterns
-								.Where (p => GetFullMemberNameFromDefinition (p.Source)?.ToLowerInvariant ()?.Contains (expectedSourceMethod.ToLowerInvariant ()) == true)
+							string sourceMemberCandidates = string.Join (Environment.NewLine, reflectionPatternRecorder.UnrecognizedPatterns
+								.Where (p => GetFullMemberNameFromDefinition (p.Source)?.ToLowerInvariant ()?.Contains (expectedSourceMember.ToLowerInvariant ()) == true)
 								.Select (p => "\t" + UnrecognizedReflectionAccessPatternToString (p)));
-							string reflectionMethodCandidates = string.Join (Environment.NewLine, reflectionPatternRecorder.UnrecognizedPatterns
-								.Where (p => GetFullMemberNameFromDefinition (p.SourceInstruction != null ? p.SourceInstruction.Operand as IMetadataTokenProvider : p.AccessedItem)?.ToLowerInvariant ()?.Contains (expectedReflectionMethod.ToLowerInvariant ()) == true)
+							string reflectionMemberCandidates = string.Join (Environment.NewLine, reflectionPatternRecorder.UnrecognizedPatterns
+								.Where (p => GetFullMemberNameFromDefinition (p.SourceInstruction != null ? p.SourceInstruction.Operand as IMetadataTokenProvider : p.AccessedItem)?.ToLowerInvariant ()?.Contains (expectedReflectionMember.ToLowerInvariant ()) == true)
 								.Select (p => "\t" + UnrecognizedReflectionAccessPatternToString (p)));
 
 							Assert.Fail (
-								$"Expected to find unrecognized reflection access pattern '{expectedSourceMethod}: Call to {expectedReflectionMethod} unrecognized '{expectedMessage ?? string.Empty}''{Environment.NewLine}" +
-								$"Potential patterns matching the source method: {Environment.NewLine}{sourceMethodCandidates}{Environment.NewLine}" +
-								$"Potential patterns matching the reflection method: {Environment.NewLine}{reflectionMethodCandidates}{Environment.NewLine}" +
-								$"If there's no matches, try to specify just a part of the source method or reflection method name and rerun the test to get potential matches.");
+								$"Expected to find unrecognized reflection access pattern '{(expectedMessageCode == null ? "" : ("IL" + expectedMessageCode + " "))}" +
+								$"{expectedSourceMember}: Usage of {expectedReflectionMember} unrecognized " +
+								$"{(expectedMessageParts == null ? string.Empty : "and message contains " + string.Join (" ", expectedMessageParts.Select (p => "'" + p + "'")))}'{Environment.NewLine}" +
+								$"Potential patterns matching the source member: {Environment.NewLine}{sourceMemberCandidates}{Environment.NewLine}" +
+								$"Potential patterns matching the reflection member: {Environment.NewLine}{reflectionMemberCandidates}{Environment.NewLine}" +
+								$"If there's no matches, try to specify just a part of the source member or reflection member name and rerun the test to get potential matches.");
 						}
 					}
 				}
 
 				if (foundAttributesToVerify) {
-					// Validate that there are no other reported unrecognized patterns on the method
-					string expectedSourceMethod = GetFullMemberNameFromDefinition (expectedSourceMethodDefinition);
-					var unrecognizedPatternsForSourceMethod = reflectionPatternRecorder.UnrecognizedPatterns.Where (pattern => {
-						if (GetFullMemberNameFromDefinition (pattern.Source) != expectedSourceMethod)
+					// Validate that there are no other reported unrecognized patterns on the member
+					string expectedSourceMember = GetFullMemberNameFromDefinition (expectedSourceMemberDefinition);
+					var unrecognizedPatternsForSourceMember = reflectionPatternRecorder.UnrecognizedPatterns.Where (pattern => {
+						if (GetFullMemberNameFromDefinition (pattern.Source) != expectedSourceMember)
 							return false;
 
 						return true;
 					});
 
-					if (unrecognizedPatternsForSourceMethod.Any ()) {
-						string unrecognizedPatterns = string.Join (Environment.NewLine, unrecognizedPatternsForSourceMethod
+					if (unrecognizedPatternsForSourceMember.Any ()) {
+						string unrecognizedPatterns = string.Join (Environment.NewLine, unrecognizedPatternsForSourceMember
 							.Select (p => "\t" + UnrecognizedReflectionAccessPatternToString (p)));
 
 						Assert.Fail (
-							$"Method {expectedSourceMethod} has either {nameof (RecognizedReflectionAccessPatternAttribute)} or {nameof (UnrecognizedReflectionAccessPatternAttribute)} attributes.{Environment.NewLine}" +
+							$"Member {expectedSourceMember} has either {nameof (RecognizedReflectionAccessPatternAttribute)} or {nameof (UnrecognizedReflectionAccessPatternAttribute)} attributes.{Environment.NewLine}" +
 							$"Some reported unrecognized patterns are not expected by the test (there's no matching attribute for them):{Environment.NewLine}" +
 							$"{unrecognizedPatterns}");
 					}
@@ -777,9 +870,9 @@ namespace Mono.Linker.Tests.TestCasesRunner
 						// By now all verified recorded patterns were removed from the test recorder lists, so validate
 						// that there are no remaining patterns for this type.
 						var recognizedPatternsForType = reflectionPatternRecorder.RecognizedPatterns
-							.Where (pattern => (pattern.Source as IMemberDefinition)?.DeclaringType.FullName == typeToVerify.FullName);
+							.Where (pattern => pattern.Source.DeclaringType.FullName == typeToVerify.FullName);
 						var unrecognizedPatternsForType = reflectionPatternRecorder.UnrecognizedPatterns
-							.Where (pattern => (pattern.Source as IMemberDefinition)?.DeclaringType.FullName == typeToVerify.FullName);
+							.Where (pattern => pattern.Source.DeclaringType.FullName == typeToVerify.FullName);
 
 						if (recognizedPatternsForType.Any () || unrecognizedPatternsForType.Any ()) {
 							string recognizedPatterns = string.Join (Environment.NewLine, recognizedPatternsForType
@@ -805,7 +898,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 			string fullName = type.ToString ();
 			if (attr.AttributeType.Name == "UnrecognizedReflectionAccessPatternAttribute") {
-				var returnType = attr.ConstructorArguments[constructorArgumentsOffset + 4].Value;
+				var returnType = attr.ConstructorArguments[constructorArgumentsOffset + 5].Value;
 				if (returnType != null) {
 					fullName = fullName.Insert (0, returnType.ToString () + " ");
 				}
@@ -823,18 +916,47 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			return fullName;
 		}
 
+		static string[] GetMessagePartsFromReflectionAccessPatternAttribute (CustomAttribute attr, int messageParameterIndex)
+		{
+			var messageParameter = attr.ConstructorArguments[messageParameterIndex].Value;
+			if (messageParameter is CustomAttributeArgument messageAttributeArgument)
+				messageParameter = messageAttributeArgument.Value;
+
+			if (messageParameter is null)
+				return null;
+			else if (messageParameter is string messagePartString)
+				return new string[] { messagePartString };
+			else
+				return ((CustomAttributeArgument[]) messageParameter).Select (p => (string) p.Value).ToArray ();
+		}
+
 		static string GetFullMemberNameFromDefinition (IMetadataTokenProvider member)
 		{
 			// Method which basically returns the same as member.ToString() but without the return type
 			// of a method (if it's a method).
 			// We need this as the GetFullMemberNameFromReflectionAccessPatternAttribute can't guess the return type
-			// as it would have to actually resolve the referenced method, which is very expensive and no necessary
+			// as it would have to actually resolve the referenced method, which is very expensive and unnecessary
 			// for the tests to work (the return types are redundant piece of information anyway).
 
 			if (member == null)
 				return null;
+			else if (member is TypeSpecification typeSpecification)
+				return typeSpecification.FullName;
+			else if (member is MethodSpecification methodSpecification)
+				member = methodSpecification.ElementMethod.Resolve ();
+			else if (member is GenericParameter genericParameter) {
+				var declaringType = genericParameter.DeclaringType?.Resolve ();
+				if (declaringType != null) {
+					return declaringType.FullName + "::" + genericParameter.FullName;
+				}
 
-			if (member is MemberReference memberReference)
+				var declaringMethod = genericParameter.DeclaringMethod?.Resolve ();
+				if (declaringMethod != null) {
+					return GetFullMemberNameFromDefinition (declaringMethod) + "::" + genericParameter.FullName;
+				}
+
+				return genericParameter.FullName;
+			} else if (member is MemberReference memberReference)
 				member = memberReference.Resolve ();
 
 			if (member is IMemberDefinition memberDefinition) {
@@ -876,8 +998,8 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			if (pattern.SourceInstruction?.Operand is IMetadataTokenProvider instructionOperand) {
 				operationDescription = "Usage of " + GetFullMemberNameFromDefinition (instructionOperand) + " unrecognized";
 			} else
-				operationDescription = "Usage of " + pattern.AccessedItem + " unrecognized";
-			return $"{GetFullMemberNameFromDefinition (pattern.Source)}: {operationDescription} '{pattern.Message}'";
+				operationDescription = "Usage of " + GetFullMemberNameFromDefinition (pattern.AccessedItem) + " unrecognized";
+			return $"IL{pattern.MessageCode} {GetFullMemberNameFromDefinition (pattern.Source)}: {operationDescription} '{pattern.Message}'";
 		}
 
 		protected TypeDefinition GetOriginalTypeFromInAssemblyAttribute (CustomAttribute inAssemblyAttribute)

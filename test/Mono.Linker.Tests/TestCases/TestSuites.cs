@@ -109,6 +109,12 @@ namespace Mono.Linker.Tests.TestCases
 			Run (testCase);
 		}
 
+		[TestCaseSource (typeof (TestDatabase), nameof (TestDatabase.DynamicDependenciesTests))]
+		public void DynamicDependenciesTests (TestCase testCase)
+		{
+			Run (testCase);
+		}
+
 		[TestCaseSource (typeof (TestDatabase), nameof (TestDatabase.SymbolsTests))]
 		public void SymbolsTests (TestCase testCase)
 		{
@@ -175,8 +181,8 @@ namespace Mono.Linker.Tests.TestCases
 			Run (testCase);
 		}
 
-		[TestCaseSource (typeof (TestDatabase), nameof (TestDatabase.WarningSuppressionTests))]
-		public void WarningSuppressionTests (TestCase testCase)
+		[TestCaseSource (typeof (TestDatabase), nameof (TestDatabase.WarningsTests))]
+		public void WarningsTests (TestCase testCase)
 		{
 			Run (testCase);
 		}
@@ -212,6 +218,12 @@ namespace Mono.Linker.Tests.TestCases
 			Run (testCase);
 		}
 
+		[TestCaseSource (typeof (TestDatabase), nameof (TestDatabase.FeatureSettingsTests))]
+		public void FeatureSettingsTests (TestCase testCase)
+		{
+			Run (testCase);
+		}
+
 		[TestCaseSource (typeof (TestDatabase), nameof (TestDatabase.DataFlowTests))]
 		public void DataFlowTests (TestCase testCase)
 		{
@@ -220,6 +232,12 @@ namespace Mono.Linker.Tests.TestCases
 
 		[TestCaseSource (typeof (TestDatabase), nameof (TestDatabase.RequiresCapabilityTests))]
 		public void RequiresCapabilityTests (TestCase testCase)
+		{
+			Run (testCase);
+		}
+
+		[TestCaseSource (typeof (TestDatabase), nameof (TestDatabase.LinkAttributesTests))]
+		public void LinkAttributesTests (TestCase testCase)
 		{
 			Run (testCase);
 		}

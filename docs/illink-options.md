@@ -2,7 +2,7 @@
 
 ## `illink` tool
 
-The `illink` is ILLinker version shipping with .NET Core or .NET 5 platforms. It's bundled with
+The `illink` is IL linker version shipping with .NET Core or .NET 5 platforms. It's bundled with
 the .NET SDK and most of the options are accessible using msbuild properties but any option
 can also be passed using `_ExtraTrimmerArgs` property.
 
@@ -63,7 +63,7 @@ assemblies. You can change the output directory with the option:
 
 `-out PATH`
 
-If you specify the ouput directory `.`, please ensure that you won't write over
+If you specify the output directory `.`, please ensure that you won't write over
 important assemblies of yours.
 
 ### Specifying assembly lookup paths
@@ -130,7 +130,10 @@ values and pass them as one key-value pair.
 
 Much of the linker behaviour is controlled by the custom attributes but they are not always
 present in the input assemblies. The attributes can be applied to any existing metadata using
-`--attribute-defs FILE` option.
+`--link-attributes FILE` option.
+
+Alternatively, the linker recognizes the embedded XML resource 'ILLink.LinkAttributes.xml' as a
+special resource to alter the custom attributes applied.
 
 ### Ignoring embedded XML control files
 
@@ -140,9 +143,41 @@ control options listed below.
 
 | File Format | Resource Name  |  Control Option  |
 |---|---|---|
-| Descriptor  | assemblyname.xml  |   --ignore-descriptors |
-| Substition  | ILLink.Substitution.xml  |  --ignore-substitutions |
+| Descriptor  | ILLink.Descriptors.xml  |   --ignore-descriptors |
+| Substition  | ILLink.Substitutions.xml  |  --ignore-substitutions |
+| LinkAttributes  | ILLink.LinkAttributes.xml    |  --ignore-link-attributes |
 
+### Treat warnings as errors
+
+The `--warnasserror` (or `--warnaserror+`) option will make the linker report any warning
+messages as error messages instead. By default, the linker behaves as if the `--warnaserror-`
+option was used, which causes the linker to report warnings as usual.
+
+Optionally, you may specify a list of warnings that you'd like to be treated as errors. These
+warnings have to be prepended with `IL` and must be separated by either a comma or semicolon.
+
+### Turning off warnings
+
+The `--nowarn` option prevents the linker from displaying one or more linker warnings by
+specifying its warning codes. All warning codes must be prepended with `IL` and multiple
+warnings should be separated with a comma or semicolon.
+
+### Control warning versions
+
+The `--warn VERSION` option prevents the linker from displaying warnings newer than the specified
+version. Valid versions are in the range 0-9999, where 9999 will display all current and future
+warnings.
+
+### Generating warning suppressions
+
+For each of the linked assemblies that triggered any warnings during linking, the
+`--generate-warning-suppressions [cs | xml]` option will generate a file containing a list
+with the necessary attributes to suppress these. The generated files can either be C# source
+files or XML files in a [format](data-formats.md#custom-attributes-annotations-format) that is supported by the linker,
+the emitted format depends upon the argument that is passed to this option (`cs` or `xml`.)
+The attributes contained in these files are assembly-level attributes of type `UnconditionalSuppressMessage`
+specifying the required `Scope` and `Target` properties for each of the warnings seen. The
+generated files are saved in the output directory and named `<AssemblyName>.WarningSuppressions.<extension>`.
 
 ## monolinker specific options
 

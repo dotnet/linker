@@ -54,7 +54,6 @@ namespace Mono.Linker
 		readonly Dictionary<string, string> _parameters;
 		bool _linkSymbols;
 		bool _keepTypeForwarderOnlyAssemblies;
-		bool _keepMembersForDebugger;
 		bool _ignoreUnresolved;
 
 		readonly AssemblyResolver _resolver;
@@ -65,7 +64,11 @@ namespace Mono.Linker
 
 		readonly AnnotationStore _annotations;
 		readonly CustomAttributeSource _customAttributes;
+<<<<<<< HEAD
 		
+=======
+
+>>>>>>> upstream/master
 		public Pipeline Pipeline {
 			get { return _pipeline; }
 		}
@@ -105,10 +108,11 @@ namespace Mono.Linker
 			set { _keepTypeForwarderOnlyAssemblies = value; }
 		}
 
-		public bool KeepMembersForDebugger {
-			get { return _keepMembersForDebugger; }
-			set { _keepMembersForDebugger = value; }
-		}
+#if FEATURE_ILLINK
+		public readonly bool KeepMembersForDebugger = true;
+#else
+		public bool KeepMembersForDebugger { get; set; }
+#endif
 
 		public bool IgnoreUnresolved {
 			get { return _ignoreUnresolved; }
@@ -125,9 +129,13 @@ namespace Mono.Linker
 
 		public bool IgnoreSubstitutions { get; set; }
 
+		public bool IgnoreLinkAttributes { get; set; }
+
 		public bool StripDescriptors { get; set; }
 
 		public bool StripSubstitutions { get; set; }
+
+		public bool StripLinkAttributes { get; set; }
 
 		public Dictionary<string, bool> FeatureSettings { get; private set; }
 
@@ -167,6 +175,18 @@ namespace Mono.Linker
 		public MarkingHelpers MarkingHelpers { get; private set; }
 
 		public KnownMembers MarkedKnownMembers { get; private set; }
+
+		public WarningSuppressionWriter WarningSuppressionWriter { get; private set; }
+
+		public HashSet<int> NoWarn { get; set; }
+
+		public Dictionary<int, bool> WarnAsError { get; set; }
+
+		public bool GeneralWarnAsError { get; set; }
+
+		public WarnVersion WarnVersion { get; set; }
+
+		public bool OutputWarningSuppressions { get; set; }
 
 		public UnconditionalSuppressMessageAttributeState Suppressions { get; set; }
 
@@ -217,8 +237,13 @@ namespace Mono.Linker
 			MarkedKnownMembers = new KnownMembers ();
 			StripDescriptors = true;
 			StripSubstitutions = true;
+			StripLinkAttributes = true;
 			PInvokes = new List<PInvokeInfo> ();
 			Suppressions = new UnconditionalSuppressMessageAttributeState (this);
+			NoWarn = new HashSet<int> ();
+			GeneralWarnAsError = false;
+			WarnAsError = new Dictionary<int, bool> ();
+			WarnVersion = WarnVersion.Latest;
 
 			// See https://github.com/mono/linker/issues/612
 			const CodeOptimizations defaultOptimizations =
@@ -474,8 +499,19 @@ namespace Mono.Linker
 
 		public void LogMessage (MessageContainer message)
 		{
-			if (LogMessages && message != MessageContainer.Empty)
-				Logger?.LogMessage (message);
+			if (message == MessageContainer.Empty)
+				return;
+
+			if ((message.Category == MessageCategory.Diagnostic ||
+				message.Category == MessageCategory.Info) && !LogMessages)
+				return;
+
+			if (OutputWarningSuppressions &&
+				(message.Category == MessageCategory.Warning || message.Category == MessageCategory.WarningAsError) &&
+				message.Origin?.MemberDefinition != null)
+				WarningSuppressionWriter.AddWarning (message.Code.Value, message.Origin?.MemberDefinition);
+
+			Logger?.LogMessage (message);
 		}
 
 		public void LogMessage (string message)
@@ -497,40 +533,47 @@ namespace Mono.Linker
 
 		/// <summary>
 		/// Display a warning message to the end user.
+		/// This API is used for warnings defined in the linker, not by custom steps. Warning
+		/// versions are inferred from the code, and every warning that we define is versioned.
 		/// </summary>
 		/// <param name="text">Humanly readable message describing the warning</param>
 		/// <param name="code">Unique warning ID. Please see https://github.com/mono/linker/blob/master/doc/error-codes.md for the list of warnings and possibly add a new one</param>
 		/// <param name="origin">Filename or member where the warning is coming from</param>
 		/// <param name="subcategory">Optionally, further categorize this warning</param>
+		/// <returns>New MessageContainer of 'Warning' category</returns>
 		public void LogWarning (string text, int code, MessageOrigin origin, string subcategory = MessageSubCategory.None)
 		{
-			if (!LogMessages)
-				return;
-
-			var warning = MessageContainer.CreateWarningMessage (this, text, code, origin, subcategory);
+			WarnVersion version = GetWarningVersion (code);
+			MessageContainer warning = MessageContainer.CreateWarningMessage (this, text, code, origin, version, subcategory);
 			LogMessage (warning);
 		}
 
 		/// <summary>
 		/// Display a warning message to the end user.
+		/// This API is used for warnings defined in the linker, not by custom steps. Warning
+		/// versions are inferred from the code, and every warning that we define is versioned.
 		/// </summary>
 		/// <param name="text">Humanly readable message describing the warning</param>
 		/// <param name="code">Unique warning ID. Please see https://github.com/mono/linker/blob/master/doc/error-codes.md for the list of warnings and possibly add a new one</param>
 		/// <param name="origin">Type or member where the warning is coming from</param>
 		/// <param name="subcategory">Optionally, further categorize this warning</param>
-		public void LogWarning (string text, int code, IMemberDefinition origin, string subcategory = MessageSubCategory.None)
+		/// <returns>New MessageContainer of 'Warning' category</returns>
+		public void LogWarning (string text, int code, IMemberDefinition origin, int? ilOffset = null, string subcategory = MessageSubCategory.None)
 		{
-			MessageOrigin _origin = new MessageOrigin (origin);
+			MessageOrigin _origin = new MessageOrigin (origin, ilOffset);
 			LogWarning (text, code, _origin, subcategory);
 		}
 
 		/// <summary>
 		/// Display a warning message to the end user.
+		/// This API is used for warnings defined in the linker, not by custom steps. Warning
+		/// versions are inferred from the code, and every warning that we define is versioned.
 		/// </summary>
 		/// <param name="text">Humanly readable message describing the warning</param>
 		/// <param name="code">Unique warning ID. Please see https://github.com/mono/linker/blob/master/doc/error-codes.md for the list of warnings and possibly add a new one</param>
 		/// <param name="origin">Filename where the warning is coming from</param>
 		/// <param name="subcategory">Optionally, further categorize this warning</param>
+		/// <returns>New MessageContainer of 'Warning' category</returns>
 		public void LogWarning (string text, int code, string origin, string subcategory = MessageSubCategory.None)
 		{
 			MessageOrigin _origin = new MessageOrigin (origin);
@@ -547,19 +590,40 @@ namespace Mono.Linker
 		/// <returns>New MessageContainer of 'Error' category</returns>
 		public void LogError (string text, int code, string subcategory = MessageSubCategory.None, MessageOrigin? origin = null)
 		{
-			if (!LogMessages)
-				return;
-
 			var error = MessageContainer.CreateErrorMessage (text, code, subcategory, origin);
 			LogMessage (error);
 		}
 
 		public bool IsWarningSuppressed (int warningCode, MessageOrigin origin)
 		{
+			// This warning was turned off by --nowarn.
+			if (NoWarn.Contains (warningCode))
+				return true;
+
 			if (Suppressions == null)
 				return false;
 
 			return Suppressions.IsSuppressed (warningCode, origin, out _);
+		}
+
+		public bool IsWarningAsError (int warningCode)
+		{
+			bool value;
+			if (GeneralWarnAsError)
+				return !WarnAsError.TryGetValue (warningCode, out value) || value;
+
+			return WarnAsError.TryGetValue (warningCode, out value) && value;
+		}
+
+		static WarnVersion GetWarningVersion (int code)
+		{
+			// This should return an increasing WarnVersion for new warning waves.
+			return WarnVersion.ILLink5;
+		}
+
+		public void SetWarningSuppressionWriter (WarningSuppressionWriter.FileOutputKind fileOutputKind)
+		{
+			WarningSuppressionWriter = new WarningSuppressionWriter (this, fileOutputKind);
 		}
 	}
 
@@ -642,23 +706,18 @@ namespace Mono.Linker
 		UnreachableBodies = 1 << 2,
 
 		/// <summary>
-		/// Option to clear the initlocals flag on methods
-		/// </summary>
-		ClearInitLocals = 1 << 3,
-
-		/// <summary>
 		/// Option to remove .interfaceimpl for interface types that are not used
 		/// </summary>
-		UnusedInterfaces = 1 << 4,
+		UnusedInterfaces = 1 << 3,
 
 		/// <summary>
 		/// Option to do interprocedural constant propagation on return values
 		/// </summary>
-		IPConstantPropagation = 1 << 5,
+		IPConstantPropagation = 1 << 4,
 
 		/// <summary>
 		/// Devirtualizes methods and seals types
 		/// </summary>
-		Sealer = 1 << 6
+		Sealer = 1 << 5
 	}
 }

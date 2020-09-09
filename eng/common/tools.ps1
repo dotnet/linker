@@ -57,6 +57,11 @@ set-strictmode -version 2.0
 $ErrorActionPreference = 'Stop'
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
+# If specifies, provides an alternate path for getting .NET Core SDKs and Runtimes. This script will still try public sources first.
+[string]$runtimeSourceFeed = if (Test-Path variable:runtimeSourceFeed) { $runtimeSourceFeed } else { $null }
+# Base-64 encoded SAS token that has permission to storage container described by $runtimeSourceFeed
+[string]$runtimeSourceFeedKey = if (Test-Path variable:runtimeSourceFeedKey) { $runtimeSourceFeedKey } else { $null }
+
 function Create-Directory ([string[]] $path) {
     New-Item -Path $path -Force -ItemType 'Directory' | Out-Null
 }
@@ -223,7 +228,7 @@ function GetDotNetInstallScript([string] $dotnetRoot) {
 }
 
 function InstallDotNetSdk([string] $dotnetRoot, [string] $version, [string] $architecture = '') {
-  InstallDotNet $dotnetRoot $version $architecture
+  InstallDotNet $dotnetRoot $version $architecture '' $false $runtimeSourceFeed $runtimeSourceFeedKey
 }
 
 function InstallDotNet([string] $dotnetRoot,
@@ -248,10 +253,8 @@ function InstallDotNet([string] $dotnetRoot,
     & $installScript @installParameters
   }
   catch {
-    Write-PipelineTelemetryError -Category 'InitializeToolset' -Message "Failed to install dotnet runtime '$runtime' from public location."
-
-    # Only the runtime can be installed from a custom [private] location.
-    if ($runtime -and ($runtimeSourceFeed -or $runtimeSourceFeedKey)) {
+    if ($runtimeSourceFeed -or $runtimeSourceFeedKey) {
+      Write-Host "Failed to install dotnet from public location. Trying from '$runtimeSourceFeed'"
       if ($runtimeSourceFeed) { $installParameters.AzureFeed = $runtimeSourceFeed }
 
       if ($runtimeSourceFeedKey) {
@@ -264,10 +267,11 @@ function InstallDotNet([string] $dotnetRoot,
         & $installScript @installParameters
       }
       catch {
-        Write-PipelineTelemetryError -Category 'InitializeToolset' -Message "Failed to install dotnet runtime '$runtime' from custom location '$runtimeSourceFeed'."
+        Write-PipelineTelemetryError -Category 'InitializeToolset' -Message "Failed to install dotnet from custom location '$runtimeSourceFeed'."
         ExitWithExitCode 1
       }
     } else {
+      Write-PipelineTelemetryError -Category 'InitializeToolset' -Message "Failed to install dotnet from public location."
       ExitWithExitCode 1
     }
   }
@@ -293,8 +297,11 @@ function InitializeVisualStudioMSBuild([bool]$install, [object]$vsRequirements =
     return $global:_MSBuildExe
   }
 
+  $vsMinVersionReqdStr = '16.5'
+  $vsMinVersionReqd = [Version]::new($vsMinVersionReqdStr)
+
   if (!$vsRequirements) { $vsRequirements = $GlobalJson.tools.vs }
-  $vsMinVersionStr = if ($vsRequirements.version) { $vsRequirements.version } else { '15.9' }
+  $vsMinVersionStr = if ($vsRequirements.version) { $vsRequirements.version } else { $vsMinVersionReqdStr }
   $vsMinVersion = [Version]::new($vsMinVersionStr)
 
   # Try msbuild command available in the environment.
@@ -327,8 +334,18 @@ function InitializeVisualStudioMSBuild([bool]$install, [object]$vsRequirements =
       $xcopyMSBuildVersion = $GlobalJson.tools.'xcopy-msbuild'
       $vsMajorVersion = $xcopyMSBuildVersion.Split('.')[0]
     } else {
-      $vsMajorVersion = $vsMinVersion.Major
-      $xcopyMSBuildVersion = "$vsMajorVersion.$($vsMinVersion.Minor).0-alpha"
+      #if vs version provided in global.json is incompatible then use the default version for xcopy msbuild download
+      if($vsMinVersion -lt $vsMinVersionReqd){
+        Write-Host "Using xcopy-msbuild version of $vsMinVersionReqdStr.0-alpha since VS version $vsMinVersionStr provided in global.json is not compatible"
+        $vsMajorVersion = $vsMinVersionReqd.Major
+        $vsMinorVersion = $vsMinVersionReqd.Minor
+      }
+      else{
+        $vsMajorVersion = $vsMinVersion.Major
+        $vsMinorVersion = $vsMinVersion.Minor
+      }
+
+      $xcopyMSBuildVersion = "$vsMajorVersion.$vsMinorVersion.0-alpha"
     }
 
     $vsInstallDir = $null
@@ -372,7 +389,7 @@ function InitializeXCopyMSBuild([string]$packageVersion, [bool]$install) {
     Create-Directory $packageDir
     Write-Host "Downloading $packageName $packageVersion"
     $ProgressPreference = 'SilentlyContinue' # Don't display the console progress UI - it's a huge perf hit
-    Invoke-WebRequest "https://dotnet.myget.org/F/roslyn-tools/api/v2/package/$packageName/$packageVersion/" -OutFile $packagePath
+    Invoke-WebRequest "https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-eng/nuget/v3/flat2/$packageName/$packageVersion/$packageName.$packageVersion.nupkg" -OutFile $packagePath
     Unzip $packagePath $packageDir
   }
 
@@ -589,11 +606,7 @@ function MSBuild() {
   if ($pipelinesLog) {
     $buildTool = InitializeBuildTool
 
-    # Work around issues with Azure Artifacts credential provider
-    # https://github.com/dotnet/arcade/issues/3932
     if ($ci -and $buildTool.Tool -eq 'dotnet') {
-      dotnet nuget locals http-cache -c
-
       $env:NUGET_PLUGIN_HANDSHAKE_TIMEOUT_IN_SECONDS = 20
       $env:NUGET_PLUGIN_REQUEST_TIMEOUT_IN_SECONDS = 20
       Write-PipelineSetVariable -Name 'NUGET_PLUGIN_HANDSHAKE_TIMEOUT_IN_SECONDS' -Value '20'

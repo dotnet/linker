@@ -92,6 +92,11 @@ namespace Mono.Linker.Tests.TestCases
 			return NUnitCasesBySuiteName ("PreserveDependencies");
 		}
 
+		public static IEnumerable<TestCaseData> DynamicDependenciesTests ()
+		{
+			return NUnitCasesBySuiteName ("DynamicDependencies");
+		}
+
 		public static IEnumerable<TestCaseData> LibrariesTests ()
 		{
 			return NUnitCasesBySuiteName ("Libraries");
@@ -137,9 +142,9 @@ namespace Mono.Linker.Tests.TestCases
 			return NUnitCasesBySuiteName ("UnreachableBody");
 		}
 
-		public static IEnumerable<TestCaseData> WarningSuppressionTests ()
+		public static IEnumerable<TestCaseData> WarningsTests ()
 		{
-			return NUnitCasesBySuiteName ("WarningSuppression");
+			return NUnitCasesBySuiteName ("Warnings");
 		}
 
 		public static IEnumerable<TestCaseData> CodegenAnnotationTests ()
@@ -186,6 +191,16 @@ namespace Mono.Linker.Tests.TestCases
 		public static IEnumerable<TestCaseData> ExtensibilityTests ()
 		{
 			return NUnitCasesBySuiteName ("Extensibility");
+		}
+
+		public static IEnumerable<TestCaseData> FeatureSettingsTests ()
+		{
+			return NUnitCasesBySuiteName ("FeatureSettings");
+		}
+
+		public static IEnumerable<TestCaseData> LinkAttributesTests ()
+		{
+			return NUnitCasesBySuiteName ("LinkAttributes");
 		}
 
 		public static TestCaseCollector CreateCollector ()

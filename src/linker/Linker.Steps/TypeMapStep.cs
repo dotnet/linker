@@ -58,49 +58,43 @@ namespace Mono.Linker.Steps
 			if (!type.HasInterfaces)
 				return;
 
-			foreach (var @interface in type.Interfaces) {
-				var interfaceType = @interface.InterfaceType;
-				var iface = interfaceType.Resolve ();
-				if (iface == null || !iface.HasMethods)
-					continue;
-
-				foreach (MethodDefinition interfaceMethod in iface.Methods) {
-					if (TryMatchMethod (type, interfaceMethod) != null)
+			// Foreach interface and for each newslot virtual method on the interface, try
+			// to find the method implementation and record it.
+			foreach (var interfaceImpl in type.GetInflatedInterfaces ()) {
+				foreach (MethodReference interfaceMethod in interfaceImpl.InflatedInterface.GetMethods ()) {
+					MethodDefinition resolvedInterfaceMethod = interfaceMethod.Resolve ();
+					if (resolvedInterfaceMethod == null)
 						continue;
 
-					var @base = GetBaseMethodInTypeHierarchy (type, interfaceMethod);
-					if (@base != null)
-						AnnotateMethods (interfaceMethod, @base, @interface);
+					// TODO-NICE: if the interface method is implemented explicitly (with an override),
+					// we shouldn't need to run the below logic. This results in linker potentially
+					// keeping more methods than needed.
 
-					if (interfaceType is GenericInstanceType genericInterfaceInstance) {
-						var genericContext = new Inflater.GenericContext (genericInterfaceInstance, null);
-						var baseInflated = GetBaseInflatedInterfaceMethodInTypeHierarchy (genericContext, type, interfaceMethod);
-						if (baseInflated != null)
-							Annotations.AddOverride (interfaceMethod, baseInflated, @interface);
+					if (!resolvedInterfaceMethod.IsVirtual
+						|| resolvedInterfaceMethod.IsFinal
+						|| !resolvedInterfaceMethod.IsNewSlot)
+						continue;
+
+					// Try to find an implementation with a name/sig match on the current type
+					MethodDefinition exactMatchOnType = TryMatchMethod (type, interfaceMethod);
+					if (exactMatchOnType != null) {
+						AnnotateMethods (resolvedInterfaceMethod, exactMatchOnType);
+						continue;
+					}
+
+					// Next try to find an implementation with a name/sig match in the base hierarchy
+					var @base = GetBaseMethodInTypeHierarchy (type, interfaceMethod);
+					if (@base != null) {
+						AnnotateMethods (resolvedInterfaceMethod, @base, interfaceImpl.OriginalImpl);
+						continue;
+					}
+
+					// Look for a default implementation last.
+					foreach (var defaultImpl in GetDefaultInterfaceImplementations (type, resolvedInterfaceMethod)) {
+						Annotations.AddDefaultInterfaceImplementation (resolvedInterfaceMethod, type, defaultImpl);
 					}
 				}
 			}
-		}
-
-		static MethodReference CreateGenericInstanceCandidate (Inflater.GenericContext context, TypeDefinition candidateType, MethodDefinition interfaceMethod)
-		{
-			var methodReference = new MethodReference (interfaceMethod.Name, interfaceMethod.ReturnType, candidateType) { HasThis = interfaceMethod.HasThis };
-
-			foreach (var genericMethodParameter in interfaceMethod.GenericParameters)
-				methodReference.GenericParameters.Add (new GenericParameter (genericMethodParameter.Name, methodReference));
-
-			if (interfaceMethod.ReturnType.IsGenericParameter || interfaceMethod.ReturnType.IsGenericInstance)
-				methodReference.ReturnType = Inflater.InflateType (context, interfaceMethod.ReturnType);
-
-			foreach (var p in interfaceMethod.Parameters) {
-				var parameterType = p.ParameterType;
-				if (parameterType.IsGenericParameter || parameterType.IsGenericInstance)
-					parameterType = Inflater.InflateType (context, parameterType);
-
-				methodReference.Parameters.Add (new ParameterDefinition (p.Name, p.Attributes, parameterType));
-			}
-
-			return methodReference;
 		}
 
 		void MapVirtualMethods (TypeDefinition type)
@@ -121,23 +115,11 @@ namespace Mono.Linker.Steps
 
 		void MapVirtualMethod (MethodDefinition method)
 		{
-			MapVirtualBaseMethod (method);
-			MapVirtualInterfaceMethod (method);
-		}
-
-		void MapVirtualBaseMethod (MethodDefinition method)
-		{
 			MethodDefinition @base = GetBaseMethodInTypeHierarchy (method);
 			if (@base == null)
 				return;
 
 			AnnotateMethods (@base, method);
-		}
-
-		void MapVirtualInterfaceMethod (MethodDefinition method)
-		{
-			foreach (MethodDefinition @base in GetBaseMethodsInInterfaceHierarchy (method))
-				AnnotateMethods (@base, method);
 		}
 
 		void MapOverrides (MethodDefinition method)
@@ -162,7 +144,7 @@ namespace Mono.Linker.Steps
 			return GetBaseMethodInTypeHierarchy (method.DeclaringType, method);
 		}
 
-		static MethodDefinition GetBaseMethodInTypeHierarchy (TypeDefinition type, MethodDefinition method)
+		static MethodDefinition GetBaseMethodInTypeHierarchy (TypeDefinition type, MethodReference method)
 		{
 			TypeReference @base = type.GetInflatedBaseType ();
 			while (@base != null) {
@@ -176,36 +158,50 @@ namespace Mono.Linker.Steps
 			return null;
 		}
 
-		static MethodDefinition GetBaseInflatedInterfaceMethodInTypeHierarchy (Inflater.GenericContext context, TypeDefinition type, MethodDefinition interfaceMethod)
+		// Returns a list of default implementations of the given interface method on this type.
+		// Note that this returns a list to potentially cover the diamond case (more than one
+		// most specific implementation of the given interface methods). Linker needs to preserve
+		// all the implementations so that the proper exception can be thrown at runtime.
+		static IEnumerable<InterfaceImplementation> GetDefaultInterfaceImplementations (TypeDefinition type, MethodDefinition interfaceMethod)
 		{
-			TypeReference @base = type.GetInflatedBaseType ();
-			while (@base != null) {
-				var candidate = CreateGenericInstanceCandidate (context, @base.Resolve (), interfaceMethod);
+			// Go over all interfaces, trying to find a method that is an explicit MethodImpl of the
+			// interface method in question.
+			foreach (var interfaceImpl in type.Interfaces) {
+				var potentialImplInterface = interfaceImpl.InterfaceType.Resolve ();
+				if (potentialImplInterface == null)
+					continue;
 
-				MethodDefinition base_method = TryMatchMethod (@base, candidate);
-				if (base_method != null)
-					return base_method;
+				bool foundImpl = false;
 
-				@base = @base.GetInflatedBaseType ();
-			}
+				foreach (var potentialImplMethod in potentialImplInterface.Methods) {
+					if (potentialImplMethod == interfaceMethod &&
+						!potentialImplMethod.IsAbstract) {
+						yield return interfaceImpl;
+					}
 
-			return null;
-		}
+					if (!potentialImplMethod.HasOverrides)
+						continue;
 
-		static IEnumerable<MethodDefinition> GetBaseMethodsInInterfaceHierarchy (MethodDefinition method)
-		{
-			return GetBaseMethodsInInterfaceHierarchy (method.DeclaringType, method);
-		}
+					// This method is an override of something. Let's see if it's the method we are looking for.
+					foreach (var @override in potentialImplMethod.Overrides) {
+						if (@override.Resolve () == interfaceMethod) {
+							yield return interfaceImpl;
+							foundImpl = true;
+							break;
+						}
+					}
 
-		static IEnumerable<MethodDefinition> GetBaseMethodsInInterfaceHierarchy (TypeReference type, MethodDefinition method)
-		{
-			foreach (TypeReference @interface in type.GetInflatedInterfaces ()) {
-				MethodDefinition base_method = TryMatchMethod (@interface, method);
-				if (base_method != null)
-					yield return base_method;
+					if (foundImpl) {
+						break;
+					}
+				}
 
-				foreach (MethodDefinition @base in GetBaseMethodsInInterfaceHierarchy (@interface, method))
-					yield return @base;
+				// We haven't found a MethodImpl on the current interface, but one of the interfaces
+				// this interface requires could still provide it.
+				if (!foundImpl) {
+					foreach (var impl in GetDefaultInterfaceImplementations (potentialImplInterface, interfaceMethod))
+						yield return impl;
+				}
 			}
 		}
 

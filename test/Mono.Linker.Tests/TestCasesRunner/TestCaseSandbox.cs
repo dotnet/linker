@@ -53,10 +53,6 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			get { return _directory.Files ("*.cs"); }
 		}
 
-		public IEnumerable<NPath> LinkXmlFiles {
-			get { return InputDirectory.Files ("*.xml"); }
-		}
-
 		public IEnumerable<NPath> ResponseFiles {
 			get { return InputDirectory.Files ("*.rsp"); }
 		}
@@ -100,11 +96,15 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				res.Source.FileMustExist ().Copy (InputDirectory.Combine (res.DestinationFileName));
 			}
 
+			foreach (var res in metadataProvider.GetDescriptorFiles ()) {
+				res.Source.FileMustExist ().Copy (InputDirectory.Combine (res.DestinationFileName));
+			}
+
 			foreach (var res in metadataProvider.GetSubstitutionFiles ()) {
 				res.Source.FileMustExist ().Copy (InputDirectory.Combine (res.DestinationFileName));
 			}
 
-			foreach (var res in metadataProvider.GetAttributeDefinitionFiles ()) {
+			foreach (var res in metadataProvider.GetLinkAttributesFiles ()) {
 				res.Source.FileMustExist ().Copy (InputDirectory.Combine (res.DestinationFileName));
 			}
 

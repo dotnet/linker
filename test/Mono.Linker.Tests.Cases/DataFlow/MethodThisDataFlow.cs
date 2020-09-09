@@ -2,13 +2,13 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Reflection;
 using System.Text;
+using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
 namespace Mono.Linker.Tests.Cases.DataFlow
 {
@@ -20,15 +20,20 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			PropagateToThis ();
 			PropagateToThisWithGetters ();
 			PropagateToThisWithSetters ();
+
+			TestAnnotationOnNonTypeMethod ();
+			TestUnknownThis ();
+			TestFromParameterToThis (null);
+			TestFromFieldToThis ();
+			TestFromThisToOthers ();
+			TestFromGenericParameterToThis<MethodThisDataFlow> ();
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (TypeTest), nameof (TypeTest.RequireThisPublicMethods), new Type[] { },
-			"The return value of method 'System.TypeTest Mono.Linker.Tests.Cases.DataFlow.MethodThisDataFlow::GetWithNonPublicMethods()' " +
-			"with dynamically accessed member kinds 'NonPublicMethods' " +
-			"is passed into the implicit 'this' parameter of method 'System.Void System.TypeTest::RequireThisPublicMethods()' " +
-			"which requires dynamically accessed member kinds 'PublicMethods'. " +
-			"To fix this add DynamicallyAccessedMembersAttribute to it and specify at least these member kinds 'PublicMethods'.")]
-		[UnrecognizedReflectionAccessPattern (typeof (TypeTest), nameof (TypeTest.RequireThisNonPublicMethods), new Type[] { })]
+		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), nameof (MethodThisDataFlowTypeTest.RequireThisPublicMethods), new Type[] { },
+			messageCode: "IL2075", message: new string[] {
+				"Mono.Linker.Tests.Cases.DataFlow.MethodThisDataFlow.GetWithNonPublicMethods()",
+				"System.MethodThisDataFlowTypeTest.RequireThisPublicMethods()" })]
+		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), nameof (MethodThisDataFlowTypeTest.RequireThisNonPublicMethods), new Type[] { }, messageCode: "IL2075")]
 		static void PropagateToThis ()
 		{
 			GetWithPublicMethods ().RequireThisPublicMethods ();
@@ -38,13 +43,11 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			GetWithNonPublicMethods ().RequireThisNonPublicMethods ();
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (TypeTest), "get_" + nameof (TypeTest.PropertyRequireThisPublicMethods), new Type[] { },
-			"The return value of method 'System.TypeTest Mono.Linker.Tests.Cases.DataFlow.MethodThisDataFlow::GetWithNonPublicMethods()' " +
-			"with dynamically accessed member kinds 'NonPublicMethods' " +
-			"is passed into the implicit 'this' parameter of method 'System.Object System.TypeTest::get_PropertyRequireThisPublicMethods()' " +
-			"which requires dynamically accessed member kinds 'PublicMethods'. " +
-			"To fix this add DynamicallyAccessedMembersAttribute to it and specify at least these member kinds 'PublicMethods'.")]
-		[UnrecognizedReflectionAccessPattern (typeof (TypeTest), "get_" + nameof (TypeTest.PropertyRequireThisNonPublicMethods), new Type[] { })]
+		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), "get_" + nameof (MethodThisDataFlowTypeTest.PropertyRequireThisPublicMethods), new Type[] { },
+			messageCode: "IL2075", message: new string[] {
+				"Mono.Linker.Tests.Cases.DataFlow.MethodThisDataFlow.GetWithNonPublicMethods()",
+				"System.MethodThisDataFlowTypeTest.get_PropertyRequireThisPublicMethods()" })]
+		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), "get_" + nameof (MethodThisDataFlowTypeTest.PropertyRequireThisNonPublicMethods), new Type[] { }, messageCode: "IL2075")]
 		static void PropagateToThisWithGetters ()
 		{
 			_ = GetWithPublicMethods ().PropertyRequireThisPublicMethods;
@@ -54,13 +57,11 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			_ = GetWithNonPublicMethods ().PropertyRequireThisNonPublicMethods;
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (TypeTest), "set_" + nameof (TypeTest.PropertyRequireThisPublicMethods), new Type[] { typeof (Object) },
-			"The return value of method 'System.TypeTest Mono.Linker.Tests.Cases.DataFlow.MethodThisDataFlow::GetWithNonPublicMethods()' " +
-			"with dynamically accessed member kinds 'NonPublicMethods' " +
-			"is passed into the implicit 'this' parameter of method 'System.Void System.TypeTest::set_PropertyRequireThisPublicMethods(System.Object)' " +
-			"which requires dynamically accessed member kinds 'PublicMethods'. " +
-			"To fix this add DynamicallyAccessedMembersAttribute to it and specify at least these member kinds 'PublicMethods'.")]
-		[UnrecognizedReflectionAccessPattern (typeof (TypeTest), "set_" + nameof (TypeTest.PropertyRequireThisNonPublicMethods), new Type[] { typeof (Object) })]
+		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), "set_" + nameof (MethodThisDataFlowTypeTest.PropertyRequireThisPublicMethods), new Type[] { typeof (Object) },
+			messageCode: "IL2075", message: new string[] {
+				"Mono.Linker.Tests.Cases.DataFlow.MethodThisDataFlow.GetWithNonPublicMethods()",
+				"System.MethodThisDataFlowTypeTest.set_PropertyRequireThisPublicMethods(Object)" })]
+		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), "set_" + nameof (MethodThisDataFlowTypeTest.PropertyRequireThisNonPublicMethods), new Type[] { typeof (Object) }, messageCode: "IL2075")]
 		static void PropagateToThisWithSetters ()
 		{
 			GetWithPublicMethods ().PropertyRequireThisPublicMethods = null;
@@ -70,30 +71,95 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
-		static TypeTest GetWithPublicMethods ()
+		static MethodThisDataFlowTypeTest GetWithPublicMethods ()
 		{
 			return null;
 		}
 
 		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicMethods)]
-		static TypeTest GetWithNonPublicMethods ()
+		static MethodThisDataFlowTypeTest GetWithNonPublicMethods ()
 		{
 			return null;
+		}
+
+		[RecognizedReflectionAccessPattern]
+		static void TestAnnotationOnNonTypeMethod ()
+		{
+			var t = new NonTypeType ();
+			t.GetMethod ("foo");
+			NonTypeType.StaticMethod ();
+		}
+
+		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), nameof (MethodThisDataFlowTypeTest.RequireThisNonPublicMethods), new Type[] { },
+			messageCode: "IL2065", message: nameof (MethodThisDataFlowTypeTest.RequireThisNonPublicMethods))]
+		static void TestUnknownThis ()
+		{
+			var array = new object[1];
+			array[0] = array.GetType ();
+			((MethodThisDataFlowTypeTest) array[0]).RequireThisNonPublicMethods ();
+		}
+
+		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), nameof (MethodThisDataFlowTypeTest.RequireThisPublicMethods), new Type[] { },
+			messageCode: "IL2070", message: new string[] { "sourceType", nameof (TestFromParameterToThis), nameof (MethodThisDataFlowTypeTest.RequireThisPublicMethods) })]
+		static void TestFromParameterToThis (MethodThisDataFlowTypeTest sourceType)
+		{
+			sourceType.RequireThisPublicMethods ();
+		}
+
+		static MethodThisDataFlowTypeTest _typeField;
+
+		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), nameof (MethodThisDataFlowTypeTest.RequireThisPublicMethods), new Type[] { },
+			messageCode: "IL2080", message: new string[] { nameof (_typeField), nameof (MethodThisDataFlowTypeTest.RequireThisPublicMethods) })]
+		static void TestFromFieldToThis ()
+		{
+			_typeField.RequireThisPublicMethods ();
+		}
+
+		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), nameof (MethodThisDataFlowTypeTest.RequireThisPublicMethods), new Type[] { },
+			messageCode: "IL2090", message: new string[] {
+				"TSource",
+				"TestFromGenericParameterToThis<TSource>",
+				nameof (MethodThisDataFlowTypeTest.RequireThisPublicMethods)
+			})]
+		static void TestFromGenericParameterToThis<TSource> ()
+		{
+			((MethodThisDataFlowTypeTest) typeof (TSource)).RequireThisPublicMethods ();
+		}
+
+		static void TestFromThisToOthers ()
+		{
+			GetWithPublicMethods ().PropagateToReturn ();
+			GetWithPublicMethods ().PropagateToField ();
+			GetWithPublicMethods ().PropagateToThis ();
+		}
+
+		class NonTypeType
+		{
+			[ExpectedWarning ("IL2041")]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			public MethodInfo GetMethod (string name)
+			{
+				return null;
+			}
+
+			[ExpectedWarning ("IL2041")]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			public static void StaticMethod ()
+			{
+			}
 		}
 	}
 }
 
 namespace System
 {
-	class TypeTest : Type
+	class MethodThisDataFlowTypeTest : TestSystemTypeBase
 	{
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
-		[UnrecognizedReflectionAccessPattern (typeof (TypeTest), nameof (RequireNonPublicMethods), new Type[] { typeof (Type) },
-			"The implicit 'this' parameter of method 'System.Void System.TypeTest::RequireThisPublicMethods()' " +
-			"with dynamically accessed member kinds 'PublicMethods' " +
-			"is passed into the parameter 'type' of method 'System.Void System.TypeTest::RequireNonPublicMethods(System.Type)' " +
-			"which requires dynamically accessed member kinds 'NonPublicMethods'. " +
-			"To fix this add DynamicallyAccessedMembersAttribute to it and specify at least these member kinds 'NonPublicMethods'.")]
+		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), nameof (RequireNonPublicMethods), new Type[] { typeof (Type) },
+			messageCode: "IL2082", message: new string[] {
+				"implicit 'this' parameter of method 'System.MethodThisDataFlowTypeTest.RequireThisPublicMethods()'",
+				"parameter 'type' of method 'System.MethodThisDataFlowTypeTest.RequireNonPublicMethods(Type)'" })]
 		public void RequireThisPublicMethods ()
 		{
 			RequirePublicMethods (this);
@@ -101,11 +167,49 @@ namespace System
 		}
 
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicMethods)]
-		[UnrecognizedReflectionAccessPattern (typeof (TypeTest), nameof (RequirePublicMethods), new Type[] { typeof (Type) })]
+		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), nameof (RequirePublicMethods), new Type[] { typeof (Type) },
+			messageCode: "IL2082")]
 		public void RequireThisNonPublicMethods ()
 		{
 			RequirePublicMethods (this);
 			RequireNonPublicMethods (this);
+		}
+
+		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), nameof (PropagateToReturn), new Type[] { }, returnType: typeof (Type),
+			messageCode: "IL2083", message: new string[] {
+				nameof(PropagateToReturn),
+				nameof(PropagateToReturn)
+			})]
+		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
+		public Type PropagateToReturn ()
+		{
+			return this;
+		}
+
+		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
+		Type _requiresPublicConstructors;
+
+		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), nameof (_requiresPublicConstructors),
+			messageCode: "IL2084", message: new string[] {
+				nameof (PropagateToField),
+				nameof (_requiresPublicConstructors)
+			})]
+		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+		public void PropagateToField ()
+		{
+			_requiresPublicConstructors = this;
+		}
+
+		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), nameof (RequireThisNonPublicMethods), new Type[] { },
+			messageCode: "IL2085", message: new string[] {
+				nameof (PropagateToThis),
+				nameof (RequireThisNonPublicMethods)
+			})]
+		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+		public void PropagateToThis ()
+		{
+			this.RequireThisNonPublicMethods ();
 		}
 
 		public object PropertyRequireThisPublicMethods {
@@ -141,160 +245,5 @@ namespace System
 			Type type)
 		{
 		}
-
-		#region Required memebers for Type
-		public override Assembly Assembly => throw new NotImplementedException ();
-
-		public override string AssemblyQualifiedName => throw new NotImplementedException ();
-
-		public override Type BaseType => throw new NotImplementedException ();
-
-		public override string FullName => throw new NotImplementedException ();
-
-		public override Guid GUID => throw new NotImplementedException ();
-
-		public override Module Module => throw new NotImplementedException ();
-
-		public override string Namespace => throw new NotImplementedException ();
-
-		public override Type UnderlyingSystemType => throw new NotImplementedException ();
-
-		public override string Name => throw new NotImplementedException ();
-
-		public override ConstructorInfo[] GetConstructors (BindingFlags bindingAttr)
-		{
-			throw new NotImplementedException ();
-		}
-
-		public override object[] GetCustomAttributes (bool inherit)
-		{
-			throw new NotImplementedException ();
-		}
-
-		public override object[] GetCustomAttributes (Type attributeType, bool inherit)
-		{
-			throw new NotImplementedException ();
-		}
-
-		public override Type GetElementType ()
-		{
-			throw new NotImplementedException ();
-		}
-
-		public override EventInfo GetEvent (string name, BindingFlags bindingAttr)
-		{
-			throw new NotImplementedException ();
-		}
-
-		public override EventInfo[] GetEvents (BindingFlags bindingAttr)
-		{
-			throw new NotImplementedException ();
-		}
-
-		public override FieldInfo GetField (string name, BindingFlags bindingAttr)
-		{
-			throw new NotImplementedException ();
-		}
-
-		public override FieldInfo[] GetFields (BindingFlags bindingAttr)
-		{
-			throw new NotImplementedException ();
-		}
-
-		public override Type GetInterface (string name, bool ignoreCase)
-		{
-			throw new NotImplementedException ();
-		}
-
-		public override Type[] GetInterfaces ()
-		{
-			throw new NotImplementedException ();
-		}
-
-		public override MemberInfo[] GetMembers (BindingFlags bindingAttr)
-		{
-			throw new NotImplementedException ();
-		}
-
-		public override MethodInfo[] GetMethods (BindingFlags bindingAttr)
-		{
-			throw new NotImplementedException ();
-		}
-
-		public override Type GetNestedType (string name, BindingFlags bindingAttr)
-		{
-			throw new NotImplementedException ();
-		}
-
-		public override Type[] GetNestedTypes (BindingFlags bindingAttr)
-		{
-			throw new NotImplementedException ();
-		}
-
-		public override PropertyInfo[] GetProperties (BindingFlags bindingAttr)
-		{
-			throw new NotImplementedException ();
-		}
-
-		public override object InvokeMember (string name, BindingFlags invokeAttr, Binder binder, object target, object[] args, ParameterModifier[] modifiers, CultureInfo culture, string[] namedParameters)
-		{
-			throw new NotImplementedException ();
-		}
-
-		public override bool IsDefined (Type attributeType, bool inherit)
-		{
-			throw new NotImplementedException ();
-		}
-
-		protected override TypeAttributes GetAttributeFlagsImpl ()
-		{
-			throw new NotImplementedException ();
-		}
-
-		protected override ConstructorInfo GetConstructorImpl (BindingFlags bindingAttr, Binder binder, CallingConventions callConvention, Type[] types, ParameterModifier[] modifiers)
-		{
-			throw new NotImplementedException ();
-		}
-
-		protected override MethodInfo GetMethodImpl (string name, BindingFlags bindingAttr, Binder binder, CallingConventions callConvention, Type[] types, ParameterModifier[] modifiers)
-		{
-			throw new NotImplementedException ();
-		}
-
-		protected override PropertyInfo GetPropertyImpl (string name, BindingFlags bindingAttr, Binder binder, Type returnType, Type[] types, ParameterModifier[] modifiers)
-		{
-			throw new NotImplementedException ();
-		}
-
-		protected override bool HasElementTypeImpl ()
-		{
-			throw new NotImplementedException ();
-		}
-
-		protected override bool IsArrayImpl ()
-		{
-			throw new NotImplementedException ();
-		}
-
-		protected override bool IsByRefImpl ()
-		{
-			throw new NotImplementedException ();
-		}
-
-		protected override bool IsCOMObjectImpl ()
-		{
-			throw new NotImplementedException ();
-		}
-
-		protected override bool IsPointerImpl ()
-		{
-			throw new NotImplementedException ();
-		}
-
-		protected override bool IsPrimitiveImpl ()
-		{
-			throw new NotImplementedException ();
-		}
-		#endregion
 	}
 }

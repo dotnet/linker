@@ -33,6 +33,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				Il8n = GetOptionAttributeValue (nameof (Il8nAttribute), "none"),
 				IgnoreDescriptors = GetOptionAttributeValue (nameof (IgnoreDescriptorsAttribute), true),
 				IgnoreSubstitutions = GetOptionAttributeValue (nameof (IgnoreSubstitutionsAttribute), true),
+				IgnoreLinkAttributes = GetOptionAttributeValue (nameof (IgnoreLinkAttributesAttribute), true),
 				KeepTypeForwarderOnlyAssemblies = GetOptionAttributeValue (nameof (KeepTypeForwarderOnlyAssembliesAttribute), string.Empty),
 				KeepDebugMembers = GetOptionAttributeValue (nameof (SetupLinkerKeepDebugMembersAttribute), string.Empty),
 				LinkSymbols = GetOptionAttributeValue (nameof (SetupLinkerLinkSymbolsAttribute), string.Empty),
@@ -41,11 +42,18 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				SkipUnresolved = GetOptionAttributeValue (nameof (SkipUnresolvedAttribute), false),
 				StripDescriptors = GetOptionAttributeValue (nameof (StripDescriptorsAttribute), true),
 				StripSubstitutions = GetOptionAttributeValue (nameof (StripSubstitutionsAttribute), true),
+				StripLinkAttributes = GetOptionAttributeValue (nameof (StripLinkAttributesAttribute), true),
 			};
 
 			foreach (var assemblyAction in _testCaseTypeDefinition.CustomAttributes.Where (attr => attr.AttributeType.Name == nameof (SetupLinkerActionAttribute))) {
 				var ca = assemblyAction.ConstructorArguments;
 				tclo.AssembliesAction.Add (new KeyValuePair<string, string> ((string) ca[0].Value, (string) ca[1].Value));
+			}
+
+			foreach (var descFile in _testCaseTypeDefinition.CustomAttributes.Where (attr => attr.AttributeType.Name == nameof (SetupLinkerDescriptorFile))) {
+				var ca = descFile.ConstructorArguments;
+				var file = (string) ca[0].Value;
+				tclo.Descriptors.Add (Path.Combine (inputPath, file));
 			}
 
 			foreach (var subsFile in _testCaseTypeDefinition.CustomAttributes.Where (attr => attr.AttributeType.Name == nameof (SetupLinkerSubstitutionFileAttribute))) {
@@ -54,10 +62,10 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				tclo.Substitutions.Add (Path.Combine (inputPath, file));
 			}
 
-			foreach (var subsFile in _testCaseTypeDefinition.CustomAttributes.Where (attr => attr.AttributeType.Name == nameof (SetupLinkerAttributeDefinitionsFile))) {
-				var ca = subsFile.ConstructorArguments;
+			foreach (var linkAttrFile in _testCaseTypeDefinition.CustomAttributes.Where (attr => attr.AttributeType.Name == nameof (SetupLinkAttributesFile))) {
+				var ca = linkAttrFile.ConstructorArguments;
 				var file = (string) ca[0].Value;
-				tclo.AttributeDefinitions.Add (Path.Combine (inputPath, file));
+				tclo.LinkAttributes.Add (Path.Combine (inputPath, file));
 			}
 
 			foreach (var additionalArgumentAttr in _testCaseTypeDefinition.CustomAttributes.Where (attr => attr.AttributeType.Name == nameof (SetupLinkerArgumentAttribute))) {
@@ -74,13 +82,6 @@ namespace Mono.Linker.Tests.TestCasesRunner
 					}
 				}
 				tclo.AdditionalArguments.Add (new KeyValuePair<string, string[]> ((string) ca[0].Value, values));
-			}
-
-			if (_testCaseTypeDefinition.CustomAttributes.Any (attr =>
-				attr.AttributeType.Name == nameof (LogContainsAttribute) || attr.AttributeType.Name == nameof (LogDoesNotContainAttribute)) ||
-				_testCaseTypeDefinition.AllMembers ().Any (method => method.CustomAttributes.Any (attr =>
-				attr.AttributeType.Name == nameof (LogContainsAttribute) || attr.AttributeType.Name == nameof (LogDoesNotContainAttribute)))) {
-				tclo.AdditionalArguments.Add (new KeyValuePair<string, string[]> ("--verbose", new string[] { }));
 			}
 
 			return tclo;
@@ -118,9 +119,9 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 			if (testCaseTypeDefinition.CustomAttributes.Any (attr =>
 					attr.AttributeType.Name == nameof (VerifyAllReflectionAccessPatternsAreValidatedAttribute))
-				|| testCaseTypeDefinition.AllMethods ().Any (method => method.CustomAttributes.Any (attr =>
-					attr.AttributeType.Name == nameof (RecognizedReflectionAccessPatternAttribute) ||
-					attr.AttributeType.Name == nameof (UnrecognizedReflectionAccessPatternAttribute))))
+				|| testCaseTypeDefinition.AllMembers ().Concat (testCaseTypeDefinition.AllDefinedTypes ()).Any (m => m.CustomAttributes.Any (attr =>
+					  attr.AttributeType.Name == nameof (RecognizedReflectionAccessPatternAttribute) ||
+					  attr.AttributeType.Name == nameof (UnrecognizedReflectionAccessPatternAttribute))))
 				return true;
 
 			return false;
@@ -130,7 +131,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 		public static IEnumerable<string> GetTrustedPlatformAssemblies ()
 		{
 			if (AppContext.GetData ("TRUSTED_PLATFORM_ASSEMBLIES") is string tpaPaths) {
-				foreach (var path in tpaPaths.Split(Path.PathSeparator)) {
+				foreach (var path in tpaPaths.Split (Path.PathSeparator)) {
 					if (Path.GetExtension (path) == ".dll")
 						yield return path;
 				}
@@ -202,6 +203,13 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				.Select (GetSourceAndRelativeDestinationValue);
 		}
 
+		public virtual IEnumerable<SourceAndDestinationPair> GetDescriptorFiles ()
+		{
+			return _testCaseTypeDefinition.CustomAttributes
+				.Where (attr => attr.AttributeType.Name == nameof (SetupLinkerDescriptorFile))
+				.Select (GetSourceAndRelativeDestinationValue);
+		}
+
 		public virtual IEnumerable<SourceAndDestinationPair> GetSubstitutionFiles ()
 		{
 			return _testCaseTypeDefinition.CustomAttributes
@@ -209,10 +217,10 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				.Select (GetSourceAndRelativeDestinationValue);
 		}
 
-		public virtual IEnumerable<SourceAndDestinationPair> GetAttributeDefinitionFiles ()
+		public virtual IEnumerable<SourceAndDestinationPair> GetLinkAttributesFiles ()
 		{
 			return _testCaseTypeDefinition.CustomAttributes
-				.Where (attr => attr.AttributeType.Name == nameof (SetupLinkerAttributeDefinitionsFile))
+				.Where (attr => attr.AttributeType.Name == nameof (SetupLinkAttributesFile))
 				.Select (GetSourceAndRelativeDestinationValue);
 		}
 

@@ -1,6 +1,6 @@
 # Data Formats
 
-ILLinker uses several data formats to control or influnce the linking process. The data formats are not versioned but are backward compatible.
+IL linker uses several data formats to control or influence the linking process. The data formats are not versioned but are backward compatible.
 
 ## Descriptor Format
 
@@ -55,6 +55,7 @@ The `required` attribute specifies that if the type is not marked, during the ma
 
     <!-- Type with generics in the signature -->
     <type fullname="Assembly.G`1" />
+  </assembly>
 </linker>
 ```
 
@@ -87,6 +88,7 @@ The `required` attribute specifies that if the type is not marked, during the ma
       <!-- Field with generics in the signature -->
       <field signature="System.Collections.Generic.List`1&lt;System.Int32&gt; field3" />
       <field signature="System.Collections.Generic.List`1&lt;T&gt; field4" />
+    </type>
   </assembly>
 </linker>
 ```
@@ -108,6 +110,7 @@ The `required` attribute specifies that if the type is not marked, during the ma
 
        <!-- Preserve the method if the type is used. If the type is not used it will be removed -->
       <method signature="System.Void Method4()" required="false" />
+    </type>
   </assembly>
 </linker>
 ```
@@ -134,6 +137,7 @@ The `required` attribute specifies that if the type is not marked, during the ma
 
        <!-- Preserve the property if the type is used. If the type is not used it will be removed -->
       <property signature="System.Int32 Property6" required="false" />
+    </type>
   </assembly>
 </linker>
 ```
@@ -190,9 +194,9 @@ Entire method body is replaces with `throw` instruction when method is reference
 </linker>
 ```
 
-### Override field value with a constant
+### Override static field value with a constant
 
-The `initialize` attribute is optional and when not specified the code to set the field to the value will not be generated.
+The `initialize` attribute is optional and when not specified the code to set the static field to the value will not be generated.
 
 ```xml
 <linker>
@@ -204,19 +208,47 @@ The `initialize` attribute is optional and when not specified the code to set th
 </linker>
 ```
 
-### Conditional substitutions
-
-The `feature` and `featurevalue` attributes are optional, but must be used together when used.
-They can be applied to any element to specify conditions under which the contained substitutions
-are applied.
+### Remove embedded resources
 
 ```xml
 <linker>
   <assembly fullname="Assembly">
-    <!-- The substitution will apply only if "--feature EnableOptionalFeature false" are also used -->
+    <resource name="Resource" action="remove" />
+  </assembly>
+</linker>
+```
+
+### Conditional substitutions and descriptors
+
+The `feature` and `featurevalue` attributes are optional, but must be used together when used.
+They can be applied to any element to specify conditions under which the contained substitutions or descriptors
+are applied, based on feature settings passed via `--feature FeatureName bool`
+
+```xml
+<linker>
+  <assembly fullname="Assembly">
+    <!-- This substitution will apply only if "EnableOptionalFeature" is set to "false" -->
     <type fullname="Assembly.A" feature="EnableOptionalFeature" featurevalue="false">
-      <method signature="System.String TestMethod()" body="stub">
-      </method>
+      <method signature="System.String TestMethod()" body="stub" />
+    </type>
+  </assembly>
+</linker>
+```
+
+`featuredefault="true"` can be used to indicate that this `featurevalue` is the default value for `feature`,
+causing the contained substitutions or descriptors to be applied even when the feature setting is not passed to the linker.
+Note that this will only have an effect where it is applied - the default value is not remembered or reused for other elements.
+
+```xml
+<linker>
+  <assembly fullname="Assembly">
+    <!-- This method will be preserved if "EnableDefaultFeature" is "true" or unspecified -->
+    <type fullname="Assembly.A" feature="EnableDefaultFeature" featurevalue="true" featuredefault="true">
+      <method signature="System.String TestMethod()" />
+    </type>
+    <!-- This method will only be preserved if "EnableDefaultFeature" is "true", not if it is unspecified-->
+    <type fullname="Assembly.A" feature="EnableDefaultFeature" featurevalue="true">
+      <method signature="System.String TestMethod2()" />
     </type>
   </assembly>
 </linker>
@@ -236,7 +268,7 @@ are applied.
 </linker>
 ```
 
-###Custom attribute on type
+### Custom attribute on type
 
 This allows to add a custom attribute to a class, interface, delegate, struct or enum 
 
@@ -436,3 +468,26 @@ For fields and properties, you need to include the name since they are not order
   <property name="propertyName">SomeValue</property>
 </attribute>
 ```
+
+Additionally the attribute element also supports the usage of the feature switch
+```xml
+<attribute fullname="SomecustomAttribute" feature="EnableOptionalFeature" featurevalue="false"/>
+```
+
+Also if the attribute is used in a type, a special property can be used to specify that the type
+is a Custom Attribute an it's instances should be removed by the linker. To do this the word "internal" 
+and value "RemoveAttributeInstances" should be included in the attribute as described in the following
+example:
+
+```xml
+<linker>
+  <assembly fullname="*"> 
+    <type fullname="System.Runtime.CompilerServices.NullableAttribute">
+      <attribute internal="RemoveAttributeInstances" feature="EnableOptionalFeature" featurevalue="false" />
+    </type>
+  </assembly>
+</linker>
+```
+Notice that a descriptor file containing the custom attribute type overrides this behavior. In case the
+custom attribute type is being referenced in a descriptor xml file and in the linkattributes xml file
+for removal, the custom attribute will not be removed

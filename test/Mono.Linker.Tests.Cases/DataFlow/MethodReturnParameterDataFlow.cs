@@ -22,16 +22,18 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			// Validation that assigning value to the return value is verified
 			NoRequirements ();
-			instance.ReturnDefaultConstructor (typeof (TestType), typeof (TestType), typeof (TestType));
-			instance.ReturnDefaultConstructorFromUnknownType (null);
-			instance.ReturnDefaultConstructorFromConstant ();
-			instance.ReturnDefaultConstructorFromNull ();
+			instance.ReturnPublicParameterlessConstructor (typeof (TestType), typeof (TestType), typeof (TestType));
+			instance.ReturnPublicParameterlessConstructorFromUnknownType (null);
+			instance.ReturnPublicParameterlessConstructorFromConstant ();
+			instance.ReturnPublicParameterlessConstructorFromNull ();
 			instance.ReturnPublicConstructorsFailure (null);
 			instance.ReturnNonPublicConstructorsFailure (null);
+			instance.ReturnUnknownValue ();
 
 			// Validation that value comming from return value of a method is correctly propagated
-			instance.PropagateReturnDefaultConstructor ();
-			instance.PropagateReturnDefaultConstructorFromConstant ();
+			instance.PropagateReturnPublicParameterlessConstructor ();
+			instance.PropagateReturnPublicParameterlessConstructorFromConstant ();
+			instance.PropagateReturnToReturn (0);
 		}
 
 		private static Type NoRequirements ()
@@ -39,12 +41,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			return typeof (TestType);
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (MethodReturnParameterDataFlow), nameof (ReturnDefaultConstructor),
-			new Type[] { typeof (Type), typeof (Type), typeof (Type) }, returnType: typeof (Type))]
-		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.DefaultConstructor)]
-		private Type ReturnDefaultConstructor (
-			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.DefaultConstructor)]
-			Type defaultConstructorType,
+		[UnrecognizedReflectionAccessPattern (typeof (MethodReturnParameterDataFlow), nameof (ReturnPublicParameterlessConstructor),
+			new Type[] { typeof (Type), typeof (Type), typeof (Type) }, returnType: typeof (Type), messageCode: "IL2068")]
+		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+		private Type ReturnPublicParameterlessConstructor (
+			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+			Type publicParameterlessConstructorType,
 			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
 			Type publicConstructorsType,
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicConstructors)]
@@ -52,7 +54,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		{
 			switch (GetHashCode ()) {
 			case 1:
-				return defaultConstructorType;
+				return publicParameterlessConstructorType;
 			case 2:
 				return publicConstructorsType;
 			case 3:
@@ -64,46 +66,50 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (MethodReturnParameterDataFlow), nameof (ReturnDefaultConstructorFromUnknownType),
-			new Type[] { typeof (Type) }, returnType: typeof (Type))]
-		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.DefaultConstructor)]
-		private Type ReturnDefaultConstructorFromUnknownType (Type unknownType)
+		[UnrecognizedReflectionAccessPattern (typeof (MethodReturnParameterDataFlow), nameof (ReturnPublicParameterlessConstructorFromUnknownType),
+			new Type[] { typeof (Type) }, returnType: typeof (Type), messageCode: "IL2068")]
+		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+		private Type ReturnPublicParameterlessConstructorFromUnknownType (Type unknownType)
 		{
 			return unknownType;
 		}
 
 		[RecognizedReflectionAccessPattern]
-		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.DefaultConstructor)]
-		private Type ReturnDefaultConstructorFromConstant ()
+		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+		private Type ReturnPublicParameterlessConstructorFromConstant ()
 		{
 			return typeof (TestType);
 		}
 
 		[RecognizedReflectionAccessPattern]
-		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.DefaultConstructor)]
-		private Type ReturnDefaultConstructorFromNull ()
+		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+		private Type ReturnPublicParameterlessConstructorFromNull ()
+		{
+			return null;
+		}
+
+		private Type ReturnTypeWithNoRequirements ()
 		{
 			return null;
 		}
 
 		// Validate error message when insufficiently annotated value is returned from a method
 		[UnrecognizedReflectionAccessPattern (typeof (MethodReturnParameterDataFlow), nameof (ReturnPublicConstructorsFailure),
-			new Type[] { typeof (Type) },
-			"The parameter 'defaultConstructorType' of method 'System.Type Mono.Linker.Tests.Cases.DataFlow.MethodReturnParameterDataFlow::ReturnPublicConstructorsFailure(System.Type)' " +
-			"with dynamically accessed member kinds 'DefaultConstructor' is " +
-			"passed into the return value of method 'System.Type Mono.Linker.Tests.Cases.DataFlow.MethodReturnParameterDataFlow::ReturnPublicConstructorsFailure(System.Type)' " +
-			"which requires dynamically accessed member kinds 'PublicConstructors'. " +
-			"To fix this add DynamicallyAccessedMembersAttribute to it and specify at least these member kinds 'PublicConstructors'.", typeof (Type))]
+			new Type[] { typeof (Type) }, returnType: typeof (Type),
+			messageCode: "IL2068", message: new string[] {
+				"publicParameterlessConstructorType",
+				"MethodReturnParameterDataFlow.ReturnPublicConstructorsFailure",
+				"MethodReturnParameterDataFlow.ReturnPublicConstructorsFailure" })]
 		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 		private Type ReturnPublicConstructorsFailure (
-			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.DefaultConstructor)]
-			Type defaultConstructorType)
+			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+			Type publicParameterlessConstructorType)
 		{
-			return defaultConstructorType;
+			return publicParameterlessConstructorType;
 		}
 
 		[UnrecognizedReflectionAccessPattern (typeof (MethodReturnParameterDataFlow), nameof (ReturnNonPublicConstructorsFailure),
-			new Type[] { typeof (Type) }, returnType: typeof (Type))]
+			new Type[] { typeof (Type) }, returnType: typeof (Type), messageCode: "IL2068")]
 		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicConstructors)]
 		private Type ReturnNonPublicConstructorsFailure (
 			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
@@ -112,30 +118,59 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			return publicConstructorsType;
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (MethodReturnParameterDataFlow), nameof (RequirePublicConstructors), new Type[] { typeof (Type) })]
-		[UnrecognizedReflectionAccessPattern (typeof (MethodReturnParameterDataFlow), nameof (RequireNonPublicConstructors), new Type[] { typeof (Type) })]
-		private void PropagateReturnDefaultConstructor ()
+		[UnrecognizedReflectionAccessPattern (typeof (MethodReturnParameterDataFlow), nameof (ReturnUnknownValue),
+			new Type[] { }, returnType: typeof (Type),
+			messageCode: "IL2063", message: nameof (ReturnUnknownValue))]
+		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
+		private Type ReturnUnknownValue ()
 		{
-			Type t = ReturnDefaultConstructor (typeof (TestType), typeof (TestType), typeof (TestType));
-			RequireDefaultConstructor (t);
+			var array = new object[1];
+			array[0] = this.GetType ();
+			return (Type) array[0];
+		}
+
+		[UnrecognizedReflectionAccessPattern (typeof (MethodReturnParameterDataFlow), nameof (RequirePublicConstructors), new Type[] { typeof (Type) }, messageCode: "IL2072")]
+		[UnrecognizedReflectionAccessPattern (typeof (MethodReturnParameterDataFlow), nameof (RequireNonPublicConstructors), new Type[] { typeof (Type) }, messageCode: "IL2072")]
+		private void PropagateReturnPublicParameterlessConstructor ()
+		{
+			Type t = ReturnPublicParameterlessConstructor (typeof (TestType), typeof (TestType), typeof (TestType));
+			PublicParameterlessConstructorConstructor (t);
 			RequirePublicConstructors (t);
 			RequireNonPublicConstructors (t);
 			RequireNothing (t);
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (MethodReturnParameterDataFlow), nameof (RequirePublicConstructors), new Type[] { typeof (Type) })]
-		[UnrecognizedReflectionAccessPattern (typeof (MethodReturnParameterDataFlow), nameof (RequireNonPublicConstructors), new Type[] { typeof (Type) })]
-		private void PropagateReturnDefaultConstructorFromConstant ()
+		[UnrecognizedReflectionAccessPattern (typeof (MethodReturnParameterDataFlow), nameof (RequirePublicConstructors), new Type[] { typeof (Type) }, messageCode: "IL2072")]
+		[UnrecognizedReflectionAccessPattern (typeof (MethodReturnParameterDataFlow), nameof (RequireNonPublicConstructors), new Type[] { typeof (Type) }, messageCode: "IL2072")]
+		private void PropagateReturnPublicParameterlessConstructorFromConstant ()
 		{
-			Type t = ReturnDefaultConstructorFromConstant ();
-			RequireDefaultConstructor (t);
+			Type t = ReturnPublicParameterlessConstructorFromConstant ();
+			PublicParameterlessConstructorConstructor (t);
 			RequirePublicConstructors (t);
 			RequireNonPublicConstructors (t);
 			RequireNothing (t);
 		}
 
-		private static void RequireDefaultConstructor (
-			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.DefaultConstructor)]
+		[UnrecognizedReflectionAccessPattern (typeof (MethodReturnParameterDataFlow), nameof (PropagateReturnToReturn), new Type[] { typeof (int) }, returnType: typeof (Type),
+			messageCode: "IL2073", message: new string[] {
+				nameof (ReturnTypeWithNoRequirements),
+				nameof (PropagateReturnToReturn)
+			})]
+		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+		private Type PropagateReturnToReturn (int n)
+		{
+			switch (n) {
+			case 0:
+				return ReturnPublicParameterlessConstructorFromConstant ();
+			case 1:
+				return ReturnTypeWithNoRequirements ();
+			}
+
+			return null;
+		}
+
+		private static void PublicParameterlessConstructorConstructor (
+			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
 			Type type)
 		{
 		}

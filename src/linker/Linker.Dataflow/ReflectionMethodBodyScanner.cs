@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Linker.Steps;
@@ -19,15 +18,14 @@ namespace Mono.Linker.Dataflow
 	{
 		readonly LinkContext _context;
 		readonly MarkStep _markStep;
-		readonly FlowAnnotations _flowAnnotations;
 
-		public static bool RequiresReflectionMethodBodyScannerForCallSite (LinkContext context, FlowAnnotations flowAnnotations, MethodReference calledMethod)
+		public static bool RequiresReflectionMethodBodyScannerForCallSite (LinkContext context, MethodReference calledMethod)
 		{
 			MethodDefinition methodDefinition = calledMethod.Resolve ();
 			if (methodDefinition != null) {
 				return
 					GetIntrinsicIdForMethod (methodDefinition) > IntrinsicId.RequiresReflectionBodyScanner_Sentinel ||
-					flowAnnotations.RequiresDataFlowAnalysis (methodDefinition) ||
+					context.Annotations.FlowAnnotations.RequiresDataFlowAnalysis (methodDefinition) ||
 					context.Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (methodDefinition);
 			}
 
@@ -55,49 +53,44 @@ namespace Mono.Linker.Dataflow
 			return false;
 		}
 
-		public static bool AutomaticallySuppressReflectionMethodBodyScannerForMethod (LinkContext context, MethodReference method)
+		bool ShouldEnableReflectionPatternReporting (MethodDefinition method)
 		{
-			MethodDefinition methodDefinition = method.Resolve ();
-			if (methodDefinition != null) {
-				return context.Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (methodDefinition);
-			}
-
-			return false;
+			return !_context.Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (method);
 		}
 
-		public ReflectionMethodBodyScanner (LinkContext context, MarkStep parent, FlowAnnotations flowAnnotations)
+		public ReflectionMethodBodyScanner (LinkContext context, MarkStep parent)
 		{
 			_context = context;
 			_markStep = parent;
-			_flowAnnotations = flowAnnotations;
 		}
 
 		public void ScanAndProcessReturnValue (MethodBody methodBody)
 		{
 			Scan (methodBody);
 
-			if (MethodReturnValue != null) {
-				var requiredMemberKinds = _flowAnnotations.GetReturnParameterAnnotation (methodBody.Method);
-				if (requiredMemberKinds != 0) {
-					var reflectionContext = new ReflectionPatternContext (_context, methodBody.Method, methodBody.Method.MethodReturnType);
+			if (methodBody.Method.ReturnType.MetadataType != MetadataType.Void) {
+				var method = methodBody.Method;
+				var requiredMemberTypes = _context.Annotations.FlowAnnotations.GetReturnParameterAnnotation (method);
+				if (requiredMemberTypes != 0) {
+					var reflectionContext = new ReflectionPatternContext (_context, ShouldEnableReflectionPatternReporting (method), method, method.MethodReturnType);
 					reflectionContext.AnalyzingPattern ();
-					RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberKinds, MethodReturnValue, methodBody.Method.MethodReturnType);
+					RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberTypes, MethodReturnValue, method.MethodReturnType);
 				}
 			}
 		}
 
-		public void ProcessAttributeDataflow (MethodDefinition source, MethodDefinition method, IList<CustomAttributeArgument> arguments)
+		public void ProcessAttributeDataflow (IMemberDefinition source, MethodDefinition method, IList<CustomAttributeArgument> arguments)
 		{
 			int paramOffset = method.HasImplicitThis () ? 1 : 0;
 
 			for (int i = 0; i < method.Parameters.Count; i++) {
-				var annotation = _flowAnnotations.GetParameterAnnotation (method, i + paramOffset);
-				if (annotation != 0) {
+				var annotation = _context.Annotations.FlowAnnotations.GetParameterAnnotation (method, i + paramOffset);
+				if (annotation != DynamicallyAccessedMemberTypes.None) {
 					ValueNode valueNode = GetValueNodeForCustomAttributeArgument (arguments[i]);
 					if (valueNode != null) {
-						ReflectionPatternContext context = new ReflectionPatternContext (_context, source, method.Parameters[i]);
-						context.AnalyzingPattern ();
-						RequireDynamicallyAccessedMembers (ref context, annotation, valueNode, method);
+						var reflectionContext = new ReflectionPatternContext (_context, true, source, method.Parameters[i]);
+						reflectionContext.AnalyzingPattern ();
+						RequireDynamicallyAccessedMembers (ref reflectionContext, annotation, valueNode, method);
 					}
 				}
 			}
@@ -105,12 +98,12 @@ namespace Mono.Linker.Dataflow
 
 		public void ProcessAttributeDataflow (FieldDefinition field, CustomAttributeArgument value)
 		{
-			var annotation = _flowAnnotations.GetFieldAnnotation (field);
-			Debug.Assert (annotation != 0);
+			var annotation = _context.Annotations.FlowAnnotations.GetFieldAnnotation (field);
+			Debug.Assert (annotation != DynamicallyAccessedMemberTypes.None);
 
 			ValueNode valueNode = GetValueNodeForCustomAttributeArgument (value);
 			if (valueNode != null) {
-				var reflectionContext = new ReflectionPatternContext (_context, field.DeclaringType.Methods[0], field);
+				var reflectionContext = new ReflectionPatternContext (_context, true, field.DeclaringType.Methods[0], field);
 				reflectionContext.AnalyzingPattern ();
 				RequireDynamicallyAccessedMembers (ref reflectionContext, annotation, valueNode, field);
 			}
@@ -132,19 +125,50 @@ namespace Mono.Linker.Dataflow
 			return valueNode;
 		}
 
+		public void ProcessGenericArgumentDataFlow (GenericParameter genericParameter, TypeReference genericArgument, IMemberDefinition source)
+		{
+			var annotation = _context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameter);
+			Debug.Assert (annotation != DynamicallyAccessedMemberTypes.None);
+
+			ValueNode valueNode = GetValueNodeFromGenericArgument (genericArgument);
+			bool enableReflectionPatternReporting = !(source is MethodDefinition sourceMethod) || ShouldEnableReflectionPatternReporting (sourceMethod);
+
+			var reflectionContext = new ReflectionPatternContext (_context, enableReflectionPatternReporting, source, genericParameter);
+			reflectionContext.AnalyzingPattern ();
+			RequireDynamicallyAccessedMembers (ref reflectionContext, annotation, valueNode, genericParameter);
+		}
+
+		ValueNode GetValueNodeFromGenericArgument (TypeReference genericArgument)
+		{
+			if (genericArgument is GenericParameter inputGenericParameter) {
+				// Technically this should be a new value node type as it's not a System.Type instance representation, but just the generic parameter
+				// That said we only use it to perform the dynamically accessed members checks and for that purpose treating it as System.Type is perfectly valid.
+				return new SystemTypeForGenericParameterValue (inputGenericParameter, _context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (inputGenericParameter));
+			} else {
+				TypeDefinition genericArgumentTypeDef = genericArgument.Resolve ();
+				if (genericArgumentTypeDef != null) {
+					return new SystemTypeValue (genericArgumentTypeDef);
+				} else {
+					throw new InvalidOperationException ();
+				}
+			}
+		}
+
 		protected override void WarnAboutInvalidILInMethod (MethodBody method, int ilOffset)
 		{
-			// TODO: remove once we're ready to scan actual invalid IL
-			// Serves as a debug helper for now to make sure valid IL is not considered invalid.
-			throw new Exception ();
+			// Serves as a debug helper to make sure valid IL is not considered invalid.
+			//
+			// The .NET Native compiler used to warn if it detected invalid IL during treeshaking,
+			// but the warnings were often triggered in autogenerated dead code of a major game engine
+			// and resulted in support calls. No point in warning. If the code gets exercised at runtime,
+			// an InvalidProgramException will likely be raised.
+			Debug.Fail ("Invalid IL or a bug in the scanner");
 		}
 
 		protected override ValueNode GetMethodParameterValue (MethodDefinition method, int parameterIndex)
 		{
-			DynamicallyAccessedMemberTypes memberKinds = _flowAnnotations.GetParameterAnnotation (method, parameterIndex);
-			return new MethodParameterValue (parameterIndex, memberKinds) {
-				SourceContext = method
-			};
+			DynamicallyAccessedMemberTypes memberTypes = _context.Annotations.FlowAnnotations.GetParameterAnnotation (method, parameterIndex);
+			return new MethodParameterValue (parameterIndex, memberTypes, DiagnosticUtilities.GetMethodParameterFromIndex (method, parameterIndex));
 		}
 
 		protected override ValueNode GetFieldValue (MethodDefinition method, FieldDefinition field)
@@ -155,32 +179,30 @@ namespace Mono.Linker.Dataflow
 				}
 
 			default: {
-					DynamicallyAccessedMemberTypes memberKinds = _flowAnnotations.GetFieldAnnotation (field);
-					return new LoadFieldValue (field, memberKinds) {
-						SourceContext = method
-					};
+					DynamicallyAccessedMemberTypes memberTypes = _context.Annotations.FlowAnnotations.GetFieldAnnotation (field);
+					return new LoadFieldValue (field, memberTypes);
 				}
 			}
 		}
 
 		protected override void HandleStoreField (MethodDefinition method, FieldDefinition field, Instruction operation, ValueNode valueToStore)
 		{
-			var requiredMemberKinds = _flowAnnotations.GetFieldAnnotation (field);
-			if (requiredMemberKinds != 0) {
-				var reflectionContext = new ReflectionPatternContext (_context, method, field, operation);
+			var requiredMemberTypes = _context.Annotations.FlowAnnotations.GetFieldAnnotation (field);
+			if (requiredMemberTypes != 0) {
+				var reflectionContext = new ReflectionPatternContext (_context, ShouldEnableReflectionPatternReporting (method), method, field, operation);
 				reflectionContext.AnalyzingPattern ();
-				RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberKinds, valueToStore, field);
+				RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberTypes, valueToStore, field);
 			}
 		}
 
 		protected override void HandleStoreParameter (MethodDefinition method, int index, Instruction operation, ValueNode valueToStore)
 		{
-			var requiredMemberKinds = _flowAnnotations.GetParameterAnnotation (method, index);
-			if (requiredMemberKinds != 0) {
+			var requiredMemberTypes = _context.Annotations.FlowAnnotations.GetParameterAnnotation (method, index);
+			if (requiredMemberTypes != 0) {
 				ParameterDefinition parameter = method.Parameters[index - (method.HasImplicitThis () ? 1 : 0)];
-				var reflectionContext = new ReflectionPatternContext (_context, method, parameter, operation);
+				var reflectionContext = new ReflectionPatternContext (_context, ShouldEnableReflectionPatternReporting (method), method, parameter, operation);
 				reflectionContext.AnalyzingPattern ();
-				RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberKinds, valueToStore, parameter);
+				RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberTypes, valueToStore, parameter);
 			}
 		}
 
@@ -205,6 +227,7 @@ namespace Mono.Linker.Dataflow
 			Type_GetProperty,
 			Type_GetEvent,
 			Type_GetNestedType,
+			Type_get_AssemblyQualifiedName,
 			Expression_Call,
 			Expression_Field,
 			Expression_Property,
@@ -222,7 +245,8 @@ namespace Mono.Linker.Dataflow
 			RuntimeReflectionExtensions_GetRuntimeField,
 			RuntimeReflectionExtensions_GetRuntimeMethod,
 			RuntimeReflectionExtensions_GetRuntimeProperty,
-			RuntimeHelpers_RunClassConstructor
+			RuntimeHelpers_RunClassConstructor,
+			MethodInfo_MakeGenericMethod,
 		}
 
 		static IntrinsicId GetIntrinsicIdForMethod (MethodDefinition calledMethod)
@@ -342,6 +366,12 @@ namespace Mono.Linker.Dataflow
 					&& calledMethod.HasThis
 					=> IntrinsicId.Type_GetNestedType,
 
+				// System.Type.AssemblyQualifiedName
+				"get_AssemblyQualifiedName" when calledMethod.IsDeclaredOnType ("System", "Type")
+					&& !calledMethod.HasParameters
+					&& calledMethod.HasThis
+					=> IntrinsicId.Type_get_AssemblyQualifiedName,
+
 				// System.Type.GetProperty (string)
 				// System.Type.GetProperty (string, BindingFlags)
 				// System.Type.GetProperty (string, Type)
@@ -397,6 +427,7 @@ namespace Mono.Linker.Dataflow
 				// static T System.Activator.CreateInstance<T> ()
 				"CreateInstance" when calledMethod.IsDeclaredOnType ("System", "Activator")
 					&& calledMethod.ContainsGenericParameter
+					&& calledMethod.GenericParameters.Count == 1
 					&& calledMethod.Parameters.Count == 0
 					=> IntrinsicId.Activator_CreateInstanceOfT,
 
@@ -444,15 +475,23 @@ namespace Mono.Linker.Dataflow
 					&& calledMethod.HasParameterOfType (0, "System", "RuntimeTypeHandle")
 					=> IntrinsicId.RuntimeHelpers_RunClassConstructor,
 
+				// System.Reflection.MethodInfo.MakeGenericMethod (Type[] typeArguments)
+				"MakeGenericMethod" when calledMethod.IsDeclaredOnType ("System.Reflection", "MethodInfo")
+					&& calledMethod.HasThis
+					&& calledMethod.Parameters.Count == 1
+					=> IntrinsicId.MethodInfo_MakeGenericMethod,
+
 				_ => IntrinsicId.None,
 			};
 		}
 
 		public override bool HandleCall (MethodBody callingMethodBody, MethodReference calledMethod, Instruction operation, ValueNodeList methodParams, out ValueNode methodReturnValue)
 		{
-			var reflectionContext = new ReflectionPatternContext (_context, callingMethodBody.Method, calledMethod.Resolve (), operation);
+			var callingMethodDefinition = callingMethodBody.Method;
+			bool shouldEnableReflectionWarnings = ShouldEnableReflectionPatternReporting (callingMethodDefinition);
+			var reflectionContext = new ReflectionPatternContext (_context, shouldEnableReflectionWarnings, callingMethodDefinition, calledMethod.Resolve (), operation);
 
-			DynamicallyAccessedMemberTypes returnValueDynamicallyAccessedMemberKinds = 0;
+			DynamicallyAccessedMemberTypes returnValueDynamicallyAccessedMemberTypes = 0;
 
 			methodReturnValue = null;
 
@@ -462,9 +501,9 @@ namespace Mono.Linker.Dataflow
 
 			try {
 
-				bool requiresDataFlowAnalysis = _flowAnnotations.RequiresDataFlowAnalysis (calledMethodDefinition);
-				returnValueDynamicallyAccessedMemberKinds = requiresDataFlowAnalysis ?
-					_flowAnnotations.GetReturnParameterAnnotation (calledMethodDefinition) : 0;
+				bool requiresDataFlowAnalysis = _context.Annotations.FlowAnnotations.RequiresDataFlowAnalysis (calledMethodDefinition);
+				returnValueDynamicallyAccessedMemberTypes = requiresDataFlowAnalysis ?
+					_context.Annotations.FlowAnnotations.GetReturnParameterAnnotation (calledMethodDefinition) : 0;
 
 				switch (GetIntrinsicIdForMethod (calledMethodDefinition)) {
 				case IntrinsicId.IntrospectionExtensions_GetTypeInfo: {
@@ -477,7 +516,8 @@ namespace Mono.Linker.Dataflow
 
 				case IntrinsicId.TypeDelegator_Ctor: {
 						// This is an identity function for analysis purposes
-						methodReturnValue = methodParams[1];
+						if (operation.OpCode == OpCodes.Newobj)
+							methodReturnValue = methodParams[1];
 					}
 					break;
 
@@ -490,6 +530,11 @@ namespace Mono.Linker.Dataflow
 						// Infrastructure piece to support "typeof(Foo)"
 						if (methodParams[0] is RuntimeTypeHandleValue typeHandle)
 							methodReturnValue = new SystemTypeValue (typeHandle.TypeRepresented);
+						else if (methodParams[0] is RuntimeTypeHandleForGenericParameterValue typeHandleForGenericParameter) {
+							methodReturnValue = new SystemTypeForGenericParameterValue (
+								typeHandleForGenericParameter.GenericParameter,
+								_context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (typeHandleForGenericParameter.GenericParameter));
+						}
 					}
 					break;
 
@@ -506,7 +551,34 @@ namespace Mono.Linker.Dataflow
 					break;
 
 				case IntrinsicId.Type_MakeGenericType: {
-						// Don't care about the actual arguments, but we don't want to lose track of the type
+						reflectionContext.AnalyzingPattern ();
+						foreach (var value in methodParams[0].UniqueValues ()) {
+							if (value is SystemTypeValue typeValue) {
+								foreach (var genericParameter in typeValue.TypeRepresented.GenericParameters) {
+									if (_context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameter) != DynamicallyAccessedMemberTypes.None) {
+										// There is a generic parameter which has some requirements on the input types.
+										// For now we don't support tracking actual array elements, so we can't validate that the requirements are fulfilled.
+										reflectionContext.RecordUnrecognizedPattern (
+											2055,
+											$"Call to '{calledMethodDefinition.GetDisplayName ()}' can not be statically analyzed. " +
+											$"It's not possible to guarantee the availability of requirements of the generic type.");
+									}
+								}
+
+								// We haven't found any generic parameters with annotations, so there's nothing to validate.
+								reflectionContext.RecordHandledPattern ();
+							} else if (value == NullValue.Instance)
+								reflectionContext.RecordHandledPattern ();
+							else {
+								// We have no way to "include more" to fix this if we don't know, so we have to warn
+								reflectionContext.RecordUnrecognizedPattern (
+									2055,
+									$"Call to '{calledMethodDefinition.GetDisplayName ()}' can not be statically analyzed. " +
+									$"It's not possible to guarantee the availability of requirements of the generic type.");
+							}
+						}
+
+						// We don't want to lose track of the type
 						// in case this is e.g. Activator.CreateInstance(typeof(Foo<>).MakeGenericType(...));
 						methodReturnValue = methodParams[0];
 					}
@@ -533,7 +605,7 @@ namespace Mono.Linker.Dataflow
 							IntrinsicId.RuntimeReflectionExtensions_GetRuntimeField => DynamicallyAccessedMemberTypes.PublicFields,
 							IntrinsicId.RuntimeReflectionExtensions_GetRuntimeMethod => DynamicallyAccessedMemberTypes.PublicMethods,
 							IntrinsicId.RuntimeReflectionExtensions_GetRuntimeProperty => DynamicallyAccessedMemberTypes.PublicProperties,
-							_ => throw new InternalErrorException ($"Reflection call '{calledMethod.FullName}' inside '{callingMethodBody.Method.FullName}' is of unexpected member type."),
+							_ => throw new InternalErrorException ($"Reflection call '{calledMethod.GetDisplayName ()}' inside '{callingMethodDefinition.GetDisplayName ()}' is of unexpected member type."),
 						};
 
 						foreach (var value in methodParams[0].UniqueValues ()) {
@@ -558,7 +630,7 @@ namespace Mono.Linker.Dataflow
 											reflectionContext.RecordHandledPattern ();
 											break;
 										default:
-											throw new InternalErrorException ($"Error processing reflection call '{calledMethod.FullName}' inside {callingMethodBody.Method.FullName}. Unexpected member kind.");
+											throw new InternalErrorException ($"Error processing reflection call '{calledMethod.GetDisplayName ()}' inside {callingMethodDefinition.GetDisplayName ()}. Unexpected member kind.");
 										}
 									} else {
 										RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberTypes, value, calledMethod.Parameters[0]);
@@ -614,7 +686,7 @@ namespace Mono.Linker.Dataflow
 				//
 				case var fieldOrPropertyInstrinsic when fieldOrPropertyInstrinsic == IntrinsicId.Expression_Field || fieldOrPropertyInstrinsic == IntrinsicId.Expression_Property: {
 						reflectionContext.AnalyzingPattern ();
-						DynamicallyAccessedMemberTypes memberKind = fieldOrPropertyInstrinsic == IntrinsicId.Expression_Property
+						DynamicallyAccessedMemberTypes memberTypes = fieldOrPropertyInstrinsic == IntrinsicId.Expression_Property
 							? DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.NonPublicProperties
 							: DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields;
 
@@ -633,11 +705,11 @@ namespace Mono.Linker.Dataflow
 
 										reflectionContext.RecordHandledPattern ();
 									} else {
-										RequireDynamicallyAccessedMembers (ref reflectionContext, memberKind, value, calledMethod.Parameters[2]);
+										RequireDynamicallyAccessedMembers (ref reflectionContext, memberTypes, value, calledMethod.Parameters[2]);
 									}
 								}
 							} else {
-								RequireDynamicallyAccessedMembers (ref reflectionContext, memberKind, value, calledMethod.Parameters[1]);
+								RequireDynamicallyAccessedMembers (ref reflectionContext, memberTypes, value, calledMethod.Parameters[1]);
 							}
 						}
 					}
@@ -656,7 +728,7 @@ namespace Mono.Linker.Dataflow
 								MarkConstructorsOnType (ref reflectionContext, systemTypeValue.TypeRepresented, null, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 								reflectionContext.RecordHandledPattern ();
 							} else {
-								RequireDynamicallyAccessedMembers (ref reflectionContext, DynamicallyAccessedMemberTypes.DefaultConstructor, value, calledMethod.Parameters[0]);
+								RequireDynamicallyAccessedMembers (ref reflectionContext, DynamicallyAccessedMemberTypes.PublicParameterlessConstructor, value, calledMethod.Parameters[0]);
 							}
 						}
 					}
@@ -672,14 +744,14 @@ namespace Mono.Linker.Dataflow
 						// Right now, this can only analyze a couple cases for which we have static information for.
 						TypeDefinition staticType = null;
 						if (methodParams[0] is MethodParameterValue methodParam) {
-							if (callingMethodBody.Method.HasThis) {
+							if (callingMethodDefinition.HasThis) {
 								if (methodParam.ParameterIndex == 0) {
-									staticType = callingMethodBody.Method.DeclaringType;
+									staticType = callingMethodDefinition.DeclaringType;
 								} else {
-									staticType = callingMethodBody.Method.Parameters[methodParam.ParameterIndex - 1].ParameterType.Resolve ();
+									staticType = callingMethodDefinition.Parameters[methodParam.ParameterIndex - 1].ParameterType.Resolve ();
 								}
 							} else {
-								staticType = callingMethodBody.Method.Parameters[methodParam.ParameterIndex].ParameterType.Resolve ();
+								staticType = callingMethodDefinition.Parameters[methodParam.ParameterIndex].ParameterType.Resolve ();
 							}
 						} else if (methodParams[0] is LoadFieldValue loadedField) {
 							staticType = loadedField.Field.FieldType.Resolve ();
@@ -716,6 +788,13 @@ namespace Mono.Linker.Dataflow
 				case IntrinsicId.Type_GetType: {
 						reflectionContext.AnalyzingPattern ();
 
+						var parameters = calledMethod.Parameters;
+						if ((parameters.Count == 3 && (methodParams[2].Kind == ValueNodeKind.MethodReturn || methodParams[2].Kind == ValueNodeKind.ConstInt || methodParams[2].Kind == ValueNodeKind.LoadField)
+							&& (methodParams[2].AsConstInt () == null || methodParams[2].AsConstInt () != 0)) ||
+							(parameters.Count == 5 && (methodParams[4].AsConstInt () == null || methodParams[4].AsConstInt () != 0))) {
+							reflectionContext.RecordUnrecognizedPattern (2096, $"Call to '{calledMethod.GetDisplayName ()}' can perform case insensitive lookup of the type, currently ILLink can not guarantee presence of all the matching types");
+							break;
+						}
 						foreach (var typeNameValue in methodParams[0].UniqueValues ()) {
 							if (typeNameValue is KnownStringValue knownStringValue) {
 								TypeDefinition foundType = AssemblyUtilities.ResolveFullyQualifiedTypeName (_context, knownStringValue.Contents);
@@ -723,21 +802,18 @@ namespace Mono.Linker.Dataflow
 									// Intentionally ignore - it's not wrong for code to call Type.GetType on non-existing name, the code might expect null/exception back.
 									reflectionContext.RecordHandledPattern ();
 								} else {
-									var methodCalling = callingMethodBody.Method;
-									reflectionContext.RecordRecognizedPattern (foundType, () => _markStep.MarkType (foundType, new DependencyInfo (DependencyKind.AccessedViaReflection, methodCalling)));
+									reflectionContext.RecordRecognizedPattern (foundType, () => _markStep.MarkTypeVisibleToReflection (foundType, new DependencyInfo (DependencyKind.AccessedViaReflection, callingMethodDefinition), callingMethodDefinition));
 									methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new SystemTypeValue (foundType));
 								}
 							} else if (typeNameValue == NullValue.Instance) {
 								reflectionContext.RecordHandledPattern ();
-							} else if (typeNameValue is LeafValueWithDynamicallyAccessedMemberNode valueWithDynamicallyAccessedMember && valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberKinds != 0) {
+							} else if (typeNameValue is LeafValueWithDynamicallyAccessedMemberNode valueWithDynamicallyAccessedMember && valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes != 0) {
 								// Propagate the annotation from the type name to the return value. Annotation on a string value will be fullfilled whenever a value is assigned to the string with annotation.
-								// So while we don't know which type it is, we can guarantee that it will fullfill the annotation.
+								// So while we don't know which type it is, we can guarantee that it will fulfill the annotation.
 								reflectionContext.RecordHandledPattern ();
-								methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new MethodReturnValue (valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberKinds) {
-									SourceContext = calledMethod.Parameters[0]
-								});
+								methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new MethodReturnValue (calledMethodDefinition.MethodReturnType, valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes));
 							} else {
-								reflectionContext.RecordUnrecognizedPattern ($"Reflection call '{calledMethod.FullName}' inside '{reflectionContext.Source}' was detected with unknown value for the type name.");
+								reflectionContext.RecordUnrecognizedPattern (2057, $"Unrecognized value passed to the parameter 'typeName' of method '{calledMethod.GetDisplayName ()}'. It's not possible to guarantee the availability of the target type.");
 							}
 						}
 
@@ -773,12 +849,12 @@ namespace Mono.Linker.Dataflow
 								reflectionContext.RecordHandledPattern ();
 							} else {
 								// Otherwise fall back to the bitfield requirements
-								var requiredMemberKinds = bindingFlags.HasFlag (BindingFlags.Public) ? DynamicallyAccessedMemberTypes.PublicConstructors : DynamicallyAccessedMemberTypes.None;
-								requiredMemberKinds |= bindingFlags.HasFlag (BindingFlags.NonPublic) ? DynamicallyAccessedMemberTypes.NonPublicConstructors : DynamicallyAccessedMemberTypes.None;
+								var requiredMemberTypes = bindingFlags.HasFlag (BindingFlags.Public) ? DynamicallyAccessedMemberTypes.PublicConstructors : DynamicallyAccessedMemberTypes.None;
+								requiredMemberTypes |= bindingFlags.HasFlag (BindingFlags.NonPublic) ? DynamicallyAccessedMemberTypes.NonPublicConstructors : DynamicallyAccessedMemberTypes.None;
 								// We can scope down the public constructors requirement if we know the number of parameters is 0
-								if (requiredMemberKinds == DynamicallyAccessedMemberTypes.PublicConstructors && ctorParameterCount == 0)
-									requiredMemberKinds = DynamicallyAccessedMemberTypes.DefaultConstructor;
-								RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberKinds, value, calledMethodDefinition);
+								if (requiredMemberTypes == DynamicallyAccessedMemberTypes.PublicConstructors && ctorParameterCount == 0)
+									requiredMemberTypes = DynamicallyAccessedMemberTypes.PublicParameterlessConstructor;
+								RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberTypes, value, calledMethodDefinition);
 							}
 						}
 					}
@@ -806,21 +882,24 @@ namespace Mono.Linker.Dataflow
 							bindingFlags = (BindingFlags) methodParams[3].AsConstInt ();
 						}
 
-						var requiredMemberKinds = GetDynamicallyAccessedMemberTypesFromBindingFlagsForMethods (bindingFlags);
+						var requiredMemberTypes = GetDynamicallyAccessedMemberTypesFromBindingFlagsForMethods (bindingFlags);
 						foreach (var value in methodParams[0].UniqueValues ()) {
 							if (value is SystemTypeValue systemTypeValue) {
 								foreach (var stringParam in methodParams[1].UniqueValues ()) {
 									if (stringParam is KnownStringValue stringValue) {
-										MarkMethodsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, m => m.Name == stringValue.Contents, bindingFlags);
+										if (BindingFlagsAreSupported (bindingFlags))
+											RequireDynamicallyAccessedMembers (ref reflectionContext, DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods, value, calledMethodDefinition);
+										else
+											MarkMethodsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, m => m.Name == stringValue.Contents, bindingFlags);
 										reflectionContext.RecordHandledPattern ();
 									} else {
 										// Otherwise fall back to the bitfield requirements
-										RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberKinds, value, calledMethodDefinition);
+										RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberTypes, value, calledMethodDefinition);
 									}
 								}
 							} else {
 								// Otherwise fall back to the bitfield requirements
-								RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberKinds, value, calledMethodDefinition);
+								RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberTypes, value, calledMethodDefinition);
 							}
 						}
 					}
@@ -838,28 +917,54 @@ namespace Mono.Linker.Dataflow
 							bindingFlags = (BindingFlags) methodParams[2].AsConstInt ();
 						}
 
-						var requiredMemberKinds = GetDynamicallyAccessedMemberTypesFromBindingFlagsForNestedTypes (bindingFlags);
+						var requiredMemberTypes = GetDynamicallyAccessedMemberTypesFromBindingFlagsForNestedTypes (bindingFlags);
 						foreach (var value in methodParams[0].UniqueValues ()) {
 							if (value is SystemTypeValue systemTypeValue) {
 								foreach (var stringParam in methodParams[1].UniqueValues ()) {
 									if (stringParam is KnownStringValue stringValue) {
-										TypeDefinition[] matchingNestedTypes = MarkNestedTypesOnType (ref reflectionContext, systemTypeValue.TypeRepresented, m => m.Name == stringValue.Contents, bindingFlags);
+										if (BindingFlagsAreSupported (bindingFlags))
+											// We have chosen not to populate the methodReturnValue for now
+											RequireDynamicallyAccessedMembers (ref reflectionContext, DynamicallyAccessedMemberTypes.PublicNestedTypes | DynamicallyAccessedMemberTypes.NonPublicNestedTypes, value, calledMethodDefinition);
+										else {
+											TypeDefinition[] matchingNestedTypes = MarkNestedTypesOnType (ref reflectionContext, systemTypeValue.TypeRepresented, m => m.Name == stringValue.Contents, bindingFlags);
 
-										if (matchingNestedTypes != null) {
-											for (int i = 0; i < matchingNestedTypes.Length; i++)
-												methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new SystemTypeValue (matchingNestedTypes[i]));
+											if (matchingNestedTypes != null) {
+												for (int i = 0; i < matchingNestedTypes.Length; i++)
+													methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new SystemTypeValue (matchingNestedTypes[i]));
+											}
 										}
-
 										reflectionContext.RecordHandledPattern ();
 									} else {
 										// Otherwise fall back to the bitfield requirements
-										RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberKinds, value, calledMethodDefinition);
+										RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberTypes, value, calledMethodDefinition);
 									}
 								}
 							} else {
 								// Otherwise fall back to the bitfield requirements
-								RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberKinds, value, calledMethodDefinition);
+								RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberTypes, value, calledMethodDefinition);
 							}
+						}
+					}
+					break;
+
+				//
+				// AssemblyQualifiedName
+				//
+				case IntrinsicId.Type_get_AssemblyQualifiedName: {
+
+						ValueNode transformedResult = null;
+						foreach (var value in methodParams[0].UniqueValues ()) {
+							if (value is LeafValueWithDynamicallyAccessedMemberNode dynamicallyAccessedThing) {
+								var annotatedString = new AnnotatedStringValue (dynamicallyAccessedThing.SourceContext, dynamicallyAccessedThing.DynamicallyAccessedMemberTypes);
+								transformedResult = MergePointValue.MergeValues (transformedResult, annotatedString);
+							} else {
+								transformedResult = null;
+								break;
+							}
+						}
+
+						if (transformedResult != null) {
+							methodReturnValue = transformedResult;
 						}
 					}
 					break;
@@ -889,12 +994,12 @@ namespace Mono.Linker.Dataflow
 							bindingFlags = (BindingFlags) methodParams[2].AsConstInt ();
 						}
 
-						DynamicallyAccessedMemberTypes memberKind = fieldPropertyOrEvent switch
+						DynamicallyAccessedMemberTypes memberTypes = fieldPropertyOrEvent switch
 						{
 							IntrinsicId.Type_GetEvent => GetDynamicallyAccessedMemberTypesFromBindingFlagsForEvents (bindingFlags),
 							IntrinsicId.Type_GetField => GetDynamicallyAccessedMemberTypesFromBindingFlagsForFields (bindingFlags),
 							IntrinsicId.Type_GetProperty => GetDynamicallyAccessedMemberTypesFromBindingFlagsForProperties (bindingFlags),
-							_ => throw new ArgumentException ($"Reflection call '{calledMethod.FullName}' inside '{callingMethodBody.Method.FullName}' is of unexpected member type."),
+							_ => throw new ArgumentException ($"Reflection call '{calledMethod.GetDisplayName ()}' inside '{callingMethodDefinition.GetDisplayName ()}' is of unexpected member type."),
 						};
 
 						foreach (var value in methodParams[0].UniqueValues ()) {
@@ -903,13 +1008,22 @@ namespace Mono.Linker.Dataflow
 									if (stringParam is KnownStringValue stringValue) {
 										switch (fieldPropertyOrEvent) {
 										case IntrinsicId.Type_GetEvent:
-											MarkEventsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, filter: e => e.Name == stringValue.Contents, bindingFlags);
+											if (BindingFlagsAreSupported (bindingFlags))
+												RequireDynamicallyAccessedMembers (ref reflectionContext, DynamicallyAccessedMemberTypes.PublicEvents | DynamicallyAccessedMemberTypes.NonPublicEvents, value, calledMethodDefinition);
+											else
+												MarkEventsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, filter: e => e.Name == stringValue.Contents, bindingFlags);
 											break;
 										case IntrinsicId.Type_GetField:
-											MarkFieldsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, filter: f => f.Name == stringValue.Contents, bindingFlags);
+											if (BindingFlagsAreSupported (bindingFlags))
+												RequireDynamicallyAccessedMembers (ref reflectionContext, DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields, value, calledMethodDefinition);
+											else
+												MarkFieldsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, filter: f => f.Name == stringValue.Contents, bindingFlags);
 											break;
 										case IntrinsicId.Type_GetProperty:
-											MarkPropertiesOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, filter: p => p.Name == stringValue.Contents, bindingFlags);
+											if (BindingFlagsAreSupported (bindingFlags))
+												RequireDynamicallyAccessedMembers (ref reflectionContext, DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.NonPublicProperties, value, calledMethodDefinition);
+											else
+												MarkPropertiesOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, filter: p => p.Name == stringValue.Contents, bindingFlags);
 											break;
 										default:
 											Debug.Fail ("Unreachable.");
@@ -917,11 +1031,11 @@ namespace Mono.Linker.Dataflow
 										}
 										reflectionContext.RecordHandledPattern ();
 									} else {
-										RequireDynamicallyAccessedMembers (ref reflectionContext, memberKind, value, calledMethodDefinition);
+										RequireDynamicallyAccessedMembers (ref reflectionContext, memberTypes, value, calledMethodDefinition);
 									}
 								}
 							} else {
-								RequireDynamicallyAccessedMembers (ref reflectionContext, memberKind, value, calledMethodDefinition);
+								RequireDynamicallyAccessedMembers (ref reflectionContext, memberTypes, value, calledMethodDefinition);
 							}
 						}
 					}
@@ -991,10 +1105,10 @@ namespace Mono.Linker.Dataflow
 								reflectionContext.RecordHandledPattern ();
 							} else {
 								// Otherwise fall back to the bitfield requirements
-								var requiredMemberKinds = ctorParameterCount == 0
-									? DynamicallyAccessedMemberTypes.DefaultConstructor
+								var requiredMemberTypes = ctorParameterCount == 0
+									? DynamicallyAccessedMemberTypes.PublicParameterlessConstructor
 									: GetDynamicallyAccessedMemberTypesFromBindingFlagsForConstructors (bindingFlags);
-								RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberKinds, value, calledMethod.Parameters[0]);
+								RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberTypes, value, calledMethod.Parameters[0]);
 							}
 						}
 					}
@@ -1027,20 +1141,23 @@ namespace Mono.Linker.Dataflow
 				// 
 				// static T CreateInstance<T> ()
 				//
-				case IntrinsicId.Activator_CreateInstanceOfT: {
+				// Note: If the when condition returns false it would be an overload which we don't recognize, so just fall through to the default case
+				case IntrinsicId.Activator_CreateInstanceOfT when
+					calledMethod is GenericInstanceMethod genericCalledMethod && genericCalledMethod.GenericArguments.Count == 1: {
 						reflectionContext.AnalyzingPattern ();
 
-						if (calledMethod is GenericInstanceMethod genericCalledMethod && genericCalledMethod.GenericArguments.Count == 1
-							&& genericCalledMethod.GenericArguments[0] is GenericParameter genericParameter) {
-							if (genericParameter.HasDefaultConstructorConstraint) {
-								// This is safe, the linker would have marked the default .ctor already
-								reflectionContext.RecordHandledPattern ();
-								break;
-							}
+						if (genericCalledMethod.GenericArguments[0] is GenericParameter genericParameter &&
+							genericParameter.HasDefaultConstructorConstraint) {
+							// This is safe, the linker would have marked the default .ctor already
+							reflectionContext.RecordHandledPattern ();
+							break;
 						}
 
-						// Not yet supported in any combination
-						reflectionContext.RecordUnrecognizedPattern ($"Activator call '{reflectionContext.MemberWithRequirements}' inside '{reflectionContext.Source}' is not recognized, the type to instantiate may be missing the necessary constructor.");
+						RequireDynamicallyAccessedMembers (
+							ref reflectionContext,
+							DynamicallyAccessedMemberTypes.PublicParameterlessConstructor,
+							GetValueNodeFromGenericArgument (genericCalledMethod.GenericArguments[0]),
+							calledMethodDefinition.GenericParameters[0]);
 					}
 					break;
 
@@ -1082,7 +1199,7 @@ namespace Mono.Linker.Dataflow
 					// TODO: This could be supported for "this" only calls
 					//
 					reflectionContext.AnalyzingPattern ();
-					reflectionContext.RecordUnrecognizedPattern ($"Activator call '{reflectionContext.MemberWithRequirements}' inside '{reflectionContext.Source}' is not yet supported");
+					reflectionContext.RecordUnrecognizedPattern (2058, $"Parameters passed to method '{calledMethodDefinition.GetDisplayName ()}' cannot be analyzed. Consider using methods 'System.Type.GetType' and `System.Activator.CreateInstance` instead.");
 					break;
 
 				//
@@ -1094,16 +1211,28 @@ namespace Mono.Linker.Dataflow
 						reflectionContext.AnalyzingPattern ();
 						foreach (var typeHandleValue in methodParams[0].UniqueValues ()) {
 							if (typeHandleValue is RuntimeTypeHandleValue runtimeTypeHandleValue) {
-								_markStep.MarkStaticConstructor (runtimeTypeHandleValue.TypeRepresented, new DependencyInfo (DependencyKind.AccessedViaReflection, reflectionContext.Source));
+								_markStep.MarkStaticConstructor (runtimeTypeHandleValue.TypeRepresented, new DependencyInfo (DependencyKind.AccessedViaReflection, reflectionContext.Source), reflectionContext.Source);
 								reflectionContext.RecordHandledPattern ();
 							} else if (typeHandleValue == NullValue.Instance)
 								reflectionContext.RecordHandledPattern ();
 							else {
-								reflectionContext.RecordUnrecognizedPattern ($"A {GetValueDescriptionForErrorMessage (typeHandleValue)} " +
-									$"is passed into the {GetMetadataTokenDescriptionForErrorMessage ((reflectionContext.MemberWithRequirements as MethodDefinition).Parameters[0])}. " +
-									$"It's not possible to guarantee availability of the target static constructor.");
+								reflectionContext.RecordUnrecognizedPattern (2059, $"Unrecognized value passed to the parameter 'type' of method '{calledMethodDefinition.GetDisplayName ()}'. It's not possible to guarantee the availability of the target static constructor.");
 							}
 						}
+					}
+					break;
+
+				//
+				// System.Reflection.MethodInfo
+				//
+				// MakeGenericMethod (Type[] typeArguments)
+				//
+				case IntrinsicId.MethodInfo_MakeGenericMethod: {
+						reflectionContext.AnalyzingPattern ();
+
+						// We don't track MethodInfo values, so we can't determine if the MakeGenericMethod is problematic or not.
+						// Since some of the generic parameters may have annotations, all calls are potentially dangerous.
+						reflectionContext.RecordUnrecognizedPattern (2060, $"Call to `{calledMethod.GetDisplayName ()}` can not be statically analyzed. It's not possible to guarantee the availability of requirements of the generic method.");
 					}
 					break;
 
@@ -1111,8 +1240,8 @@ namespace Mono.Linker.Dataflow
 					if (requiresDataFlowAnalysis) {
 						reflectionContext.AnalyzingPattern ();
 						for (int parameterIndex = 0; parameterIndex < methodParams.Count; parameterIndex++) {
-							var requiredMemberKinds = _flowAnnotations.GetParameterAnnotation (calledMethodDefinition, parameterIndex);
-							if (requiredMemberKinds != 0) {
+							var requiredMemberTypes = _context.Annotations.FlowAnnotations.GetParameterAnnotation (calledMethodDefinition, parameterIndex);
+							if (requiredMemberTypes != 0) {
 								IMetadataTokenProvider targetContext;
 								if (calledMethodDefinition.HasImplicitThis ()) {
 									if (parameterIndex == 0)
@@ -1123,31 +1252,30 @@ namespace Mono.Linker.Dataflow
 									targetContext = calledMethodDefinition.Parameters[parameterIndex];
 								}
 
-								RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberKinds, methodParams[parameterIndex], targetContext);
+								RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberTypes, methodParams[parameterIndex], targetContext);
 							}
 						}
 
 						reflectionContext.RecordHandledPattern ();
 					}
 
-					if (_context.Annotations.TryGetLinkerAttribute (calledMethodDefinition, out RequiresUnreferencedCodeAttribute requiresUnreferencedCode)) {
+					if (shouldEnableReflectionWarnings &&
+						_context.Annotations.TryGetLinkerAttribute (calledMethodDefinition, out RequiresUnreferencedCodeAttribute requiresUnreferencedCode)) {
 						string message =
-							$"Calling '{calledMethodDefinition}' which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. " +
+							$"Calling '{calledMethodDefinition.GetDisplayName ()}' which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. " +
 							$"{requiresUnreferencedCode.Message}.";
 
 						if (requiresUnreferencedCode.Url != null) {
 							message += " " + requiresUnreferencedCode.Url;
 						}
 
-						_context.LogWarning (message, 2026, MessageOrigin.TryGetOrigin (callingMethodBody.Method, operation.Offset));
+						_context.LogWarning (message, 2026, callingMethodDefinition, operation.Offset, MessageSubCategory.TrimAnalysis);
 					}
 
 					// To get good reporting of errors we need to track the origin of the value for all method calls
 					// but except Newobj as those are special.
 					if (calledMethodDefinition.ReturnType.MetadataType != MetadataType.Void) {
-						methodReturnValue = new MethodReturnValue (returnValueDynamicallyAccessedMemberKinds) {
-							SourceContext = calledMethodDefinition
-						};
+						methodReturnValue = new MethodReturnValue (calledMethodDefinition.MethodReturnType, returnValueDynamicallyAccessedMemberTypes);
 
 						return true;
 					}
@@ -1163,22 +1291,20 @@ namespace Mono.Linker.Dataflow
 			// unknown value with the return type of the method.
 			if (methodReturnValue == null) {
 				if (calledMethod.ReturnType.MetadataType != MetadataType.Void) {
-					methodReturnValue = new MethodReturnValue (returnValueDynamicallyAccessedMemberKinds) {
-						SourceContext = calledMethodDefinition
-					};
+					methodReturnValue = new MethodReturnValue (calledMethodDefinition.MethodReturnType, returnValueDynamicallyAccessedMemberTypes);
 				}
 			}
 
 			// Validate that the return value has the correct annotations as per the method return value annotations
-			if (returnValueDynamicallyAccessedMemberKinds != 0 && methodReturnValue != null) {
-				if (methodReturnValue is LeafValueWithDynamicallyAccessedMemberNode methodReturnValueWithMemberKinds) {
-					if (!methodReturnValueWithMemberKinds.DynamicallyAccessedMemberKinds.HasFlag (returnValueDynamicallyAccessedMemberKinds))
-						throw new InvalidOperationException ($"Internal linker error: processing of call from {callingMethodBody.Method} to {calledMethod} returned value which is not correctly annotated with the expected dynamic member access kinds.");
+			if (returnValueDynamicallyAccessedMemberTypes != 0 && methodReturnValue != null) {
+				if (methodReturnValue is LeafValueWithDynamicallyAccessedMemberNode methodReturnValueWithMemberTypes) {
+					if (!methodReturnValueWithMemberTypes.DynamicallyAccessedMemberTypes.HasFlag (returnValueDynamicallyAccessedMemberTypes))
+						throw new InvalidOperationException ($"Internal linker error: processing of call from {callingMethodDefinition.GetDisplayName ()} to {calledMethod.GetDisplayName ()} returned value which is not correctly annotated with the expected dynamic member access kinds.");
 				} else if (methodReturnValue is SystemTypeValue) {
 					// SystemTypeValue can fullfill any requirement, so it's always valid
 					// The requirements will be applied at the point where it's consumed (passed as a method parameter, set as field value, returned from the method)
 				} else {
-					throw new InvalidOperationException ($"Internal linker error: processing of call from {callingMethodBody.Method} to {calledMethod} returned value which is not correctly annotated with the expected dynamic member access kinds.");
+					throw new InvalidOperationException ($"Internal linker error: processing of call from {callingMethodDefinition.GetDisplayName ()} to {calledMethod.GetDisplayName ()} returned value which is not correctly annotated with the expected dynamic member access kinds.");
 				}
 			}
 
@@ -1205,110 +1331,339 @@ namespace Mono.Linker.Dataflow
 						if (typeNameValue is KnownStringValue typeNameStringValue) {
 							var resolvedAssembly = _context.GetLoadedAssembly (assemblyNameStringValue.Contents);
 							if (resolvedAssembly == null) {
-								reflectionContext.RecordUnrecognizedPattern ($"Activator call '{reflectionContext.MemberWithRequirements}' inside '{reflectionContext.Source}' references assembly '{assemblyNameStringValue.Contents}' which could not be found");
+								reflectionContext.RecordUnrecognizedPattern (2061, $"The assembly name '{assemblyNameStringValue.Contents}' passed to method '{calledMethod.GetDisplayName ()}' references assembly which is not available.");
 								continue;
 							}
 
 							var resolvedType = resolvedAssembly.FindType (typeNameStringValue.Contents);
 							if (resolvedType == null) {
-								reflectionContext.RecordUnrecognizedPattern ($"Activator call '{reflectionContext.MemberWithRequirements}' inside '{reflectionContext.Source}' references type '{typeNameStringValue}' in assembly '{resolvedAssembly.FullName}' which could not be found");
+								// It's not wrong to have a reference to non-existing type - the code may well expect to get an exception in this case
+								// Note that we did find the assembly, so it's not a linker config problem, it's either intentional, or wrong versions of assemblies
+								// but linker can't know that.
+								reflectionContext.RecordHandledPattern ();
 								continue;
 							}
 
 							MarkConstructorsOnType (ref reflectionContext, resolvedType,
 								parameterlessConstructor ? m => m.Parameters.Count == 0 : (Func<MethodDefinition, bool>) null, bindingFlags);
 						} else {
-							reflectionContext.RecordUnrecognizedPattern ($"Activator call '{reflectionContext.MemberWithRequirements}' inside '{reflectionContext.Source}' has unrecognized value for the 'typeName' parameter.");
+							reflectionContext.RecordUnrecognizedPattern (2032, $"Unrecognized value passed to the parameter '{calledMethod.Parameters[1].Name}' of method '{calledMethod.GetDisplayName ()}'. It's not possible to guarantee the availability of the target type.");
 						}
 					}
 				} else {
-					reflectionContext.RecordUnrecognizedPattern ($"Activator call '{reflectionContext.MemberWithRequirements}' inside '{reflectionContext.Source}' has unrecognized value for the 'assemblyName' parameter.");
+					reflectionContext.RecordUnrecognizedPattern (2032, $"Unrecognized value passed to the parameter '{calledMethod.Parameters[0].Name}' of method '{calledMethod.GetDisplayName ()}'. It's not possible to guarantee the availability of the target type.");
 				}
 			}
 		}
 
-		void RequireDynamicallyAccessedMembers (ref ReflectionPatternContext reflectionContext, DynamicallyAccessedMemberTypes requiredMemberKinds, ValueNode value, IMetadataTokenProvider targetContext)
+		void RequireDynamicallyAccessedMembers (ref ReflectionPatternContext reflectionContext, DynamicallyAccessedMemberTypes requiredMemberTypes, ValueNode value, IMetadataTokenProvider targetContext)
 		{
 			foreach (var uniqueValue in value.UniqueValues ()) {
-				if (uniqueValue is LeafValueWithDynamicallyAccessedMemberNode valueWithDynamicallyAccessedMember) {
-					if (!valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberKinds.HasFlag (requiredMemberKinds)) {
-						reflectionContext.RecordUnrecognizedPattern ($"The {GetValueDescriptionForErrorMessage (valueWithDynamicallyAccessedMember)} " +
-							$"with dynamically accessed member kinds '{GetDynamicallyAccessedMemberKindsDescription (valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberKinds)}' " +
-							$"is passed into the {GetMetadataTokenDescriptionForErrorMessage (targetContext)} " +
-							$"which requires dynamically accessed member kinds '{GetDynamicallyAccessedMemberKindsDescription (requiredMemberKinds)}'. " +
-							$"To fix this add DynamicallyAccessedMembersAttribute to it and specify at least these member kinds '{GetDynamicallyAccessedMemberKindsDescription (requiredMemberKinds)}'.");
+				if (requiredMemberTypes == DynamicallyAccessedMemberTypes.PublicParameterlessConstructor
+					&& uniqueValue is SystemTypeForGenericParameterValue genericParam
+					&& genericParam.GenericParameter.HasDefaultConstructorConstraint) {
+					// We allow a new() constraint on a generic parameter to satisfy DynamicallyAccessedMemberTypes.PublicParameterlessConstructor
+					reflectionContext.RecordHandledPattern ();
+				} else if (uniqueValue is LeafValueWithDynamicallyAccessedMemberNode valueWithDynamicallyAccessedMember) {
+					if (!valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes.HasFlag (requiredMemberTypes)) {
+						switch ((valueWithDynamicallyAccessedMember.SourceContext, targetContext)) {
+						case (ParameterDefinition sourceParameter, ParameterDefinition targetParameter):
+							reflectionContext.RecordUnrecognizedPattern (
+								2067,
+								$"The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the parameter '{DiagnosticUtilities.GetParameterNameForErrorMessage (sourceParameter)}' of method '{DiagnosticUtilities.GetMethodSignatureDisplayName (sourceParameter.Method)}' " +
+								$"don't match those on the parameter '{DiagnosticUtilities.GetParameterNameForErrorMessage (targetParameter)}' of method '{DiagnosticUtilities.GetMethodSignatureDisplayName (targetParameter.Method)}'. " +
+								$"The source value must declare at least the same requirements as those declared on the target location it's assigned to ");
+							break;
+						case (ParameterDefinition sourceParameter, MethodReturnType targetMethodReturnType):
+							reflectionContext.RecordUnrecognizedPattern (
+								2068,
+								$"The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the parameter '{DiagnosticUtilities.GetParameterNameForErrorMessage (sourceParameter)}' of method '{DiagnosticUtilities.GetMethodSignatureDisplayName (sourceParameter.Method)}' " +
+								$"don't match those on the return value of method '{DiagnosticUtilities.GetMethodSignatureDisplayName (targetMethodReturnType.Method)}'. " +
+								$"The source value must declare at least the same requirements as those declared on the target location it's assigned to ");
+							break;
+						case (ParameterDefinition sourceParameter, FieldDefinition targetField):
+							reflectionContext.RecordUnrecognizedPattern (
+								2069,
+								$"The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the parameter '{DiagnosticUtilities.GetParameterNameForErrorMessage (sourceParameter)}' of method '{DiagnosticUtilities.GetMethodSignatureDisplayName (sourceParameter.Method)}' " +
+								$"don't match those on the field '{targetField.GetDisplayName ()}'. " +
+								$"The source value must declare at least the same requirements as those declared on the target location it's assigned to ");
+							break;
+						case (ParameterDefinition sourceParameter, MethodDefinition targetMethod):
+							reflectionContext.RecordUnrecognizedPattern (
+								2070,
+								$"The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the parameter '{DiagnosticUtilities.GetParameterNameForErrorMessage (sourceParameter)}' of method '{DiagnosticUtilities.GetMethodSignatureDisplayName (sourceParameter.Method)}' " +
+								$"don't match those on the implicit 'this' parameter of method '{targetMethod.GetDisplayName ()}'. " +
+								$"The source value must declare at least the same requirements as those declared on the target location it's assigned to ");
+							break;
+						case (ParameterDefinition sourceParameter, GenericParameter targetGenericParameter):
+							// Currently this is never generated, once ILLink supports full analysis of MakeGenericType/MakeGenericMethod this will be used
+							reflectionContext.RecordUnrecognizedPattern (
+								2071,
+								$"The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the parameter '{DiagnosticUtilities.GetParameterNameForErrorMessage (sourceParameter)}' of method '{DiagnosticUtilities.GetMethodSignatureDisplayName (sourceParameter.Method)}' " +
+								$"don't match those on the generic parameter '{targetGenericParameter.Name}' of '{DiagnosticUtilities.GetGenericParameterDeclaringMemberDisplayName (targetGenericParameter)}'. " +
+								$"The source value must declare at least the same requirements as those declared on the target location it's assigned to ");
+							break;
+
+						case (MethodReturnType sourceMethodReturnType, ParameterDefinition targetParameter):
+							reflectionContext.RecordUnrecognizedPattern (
+								2072,
+								$"The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the return value of method '{DiagnosticUtilities.GetMethodSignatureDisplayName (sourceMethodReturnType.Method)}' " +
+								$"don't match those on the parameter '{DiagnosticUtilities.GetParameterNameForErrorMessage (targetParameter)}' of method '{DiagnosticUtilities.GetMethodSignatureDisplayName (targetParameter.Method)}'. " +
+								$"The source value must declare at least the same requirements as those declared on the target location it's assigned to ");
+							break;
+						case (MethodReturnType sourceMethodReturnType, MethodReturnType targetMethodReturnType):
+							reflectionContext.RecordUnrecognizedPattern (
+								2073,
+								$"The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the return value of method '{DiagnosticUtilities.GetMethodSignatureDisplayName (sourceMethodReturnType.Method)}' " +
+								$"don't match those on the return value of method '{DiagnosticUtilities.GetMethodSignatureDisplayName (targetMethodReturnType.Method)}'. " +
+								$"The source value must declare at least the same requirements as those declared on the target location it's assigned to ");
+							break;
+						case (MethodReturnType sourceMethodReturnType, FieldDefinition targetField):
+							reflectionContext.RecordUnrecognizedPattern (
+								2074,
+								$"The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the return value of method '{DiagnosticUtilities.GetMethodSignatureDisplayName (sourceMethodReturnType.Method)}' " +
+								$"don't match those on the field '{targetField.GetDisplayName ()}'. " +
+								$"The source value must declare at least the same requirements as those declared on the target location it's assigned to ");
+							break;
+						case (MethodReturnType sourceMethodReturnType, MethodDefinition targetMethod):
+							reflectionContext.RecordUnrecognizedPattern (
+								2075,
+								$"The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the return value of method '{DiagnosticUtilities.GetMethodSignatureDisplayName (sourceMethodReturnType.Method)}' " +
+								$"don't match those on the implicit 'this' parameter of method '{targetMethod.GetDisplayName ()}'. " +
+								$"The source value must declare at least the same requirements as those declared on the target location it's assigned to ");
+							break;
+						case (MethodReturnType sourceMethodReturnType, GenericParameter targetGenericParameter):
+							// Currently this is never generated, once ILLink supports full analysis of MakeGenericType/MakeGenericMethod this will be used
+							reflectionContext.RecordUnrecognizedPattern (
+								2076,
+								$"The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the return value of method '{DiagnosticUtilities.GetMethodSignatureDisplayName (sourceMethodReturnType.Method)}' " +
+								$"don't match those on the generic parameter '{targetGenericParameter.Name}' of '{DiagnosticUtilities.GetGenericParameterDeclaringMemberDisplayName (targetGenericParameter)}'. " +
+								$"The source value must declare at least the same requirements as those declared on the target location it's assigned to ");
+							break;
+
+						case (FieldDefinition sourceField, ParameterDefinition targetParameter):
+							reflectionContext.RecordUnrecognizedPattern (
+								2077,
+								$"The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the field '{sourceField.GetDisplayName ()}' " +
+								$"don't match those on the parameter '{DiagnosticUtilities.GetParameterNameForErrorMessage (targetParameter)}' of method '{DiagnosticUtilities.GetMethodSignatureDisplayName (targetParameter.Method)}'. " +
+								$"The source value must declare at least the same requirements as those declared on the target location it's assigned to ");
+							break;
+						case (FieldDefinition sourceField, MethodReturnType targetMethodReturnType):
+							reflectionContext.RecordUnrecognizedPattern (
+								2078,
+								$"The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the field '{sourceField.GetDisplayName ()}' " +
+								$"don't match those on the return value of method '{DiagnosticUtilities.GetMethodSignatureDisplayName (targetMethodReturnType.Method)}'. " +
+								$"The source value must declare at least the same requirements as those declared on the target location it's assigned to ");
+							break;
+						case (FieldDefinition sourceField, FieldDefinition targetField):
+							reflectionContext.RecordUnrecognizedPattern (
+								2079,
+								$"The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the field '{sourceField.GetDisplayName ()}' " +
+								$"don't match those on the field '{targetField.GetDisplayName ()}'. " +
+								$"The source value must declare at least the same requirements as those declared on the target location it's assigned to ");
+							break;
+						case (FieldDefinition sourceField, MethodDefinition targetMethod):
+							reflectionContext.RecordUnrecognizedPattern (
+								2080,
+								$"The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the field '{sourceField.GetDisplayName ()}' " +
+								$"don't match those on the implicit 'this' parameter of method '{targetMethod.GetDisplayName ()}'. " +
+								$"The source value must declare at least the same requirements as those declared on the target location it's assigned to ");
+							break;
+						case (FieldDefinition sourceField, GenericParameter targetGenericParameter):
+							// Currently this is never generated, once ILLink supports full analysis of MakeGenericType/MakeGenericMethod this will be used
+							reflectionContext.RecordUnrecognizedPattern (
+								2081,
+								$"The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the field '{sourceField.GetDisplayName ()}' " +
+								$"don't match those on the generic parameter '{targetGenericParameter.Name}' of '{DiagnosticUtilities.GetGenericParameterDeclaringMemberDisplayName (targetGenericParameter)}'. " +
+								$"The source value must declare at least the same requirements as those declared on the target location it's assigned to ");
+							break;
+
+						case (MethodDefinition sourceMethod, ParameterDefinition targetParameter):
+							reflectionContext.RecordUnrecognizedPattern (
+								2082,
+								$"The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the implicit 'this' parameter of method '{sourceMethod.GetDisplayName ()}' " +
+								$"don't match those on the parameter '{DiagnosticUtilities.GetParameterNameForErrorMessage (targetParameter)}' of method '{DiagnosticUtilities.GetMethodSignatureDisplayName (targetParameter.Method)}'. " +
+								$"The source value must declare at least the same requirements as those declared on the target location it's assigned to ");
+							break;
+						case (MethodDefinition sourceMethod, MethodReturnType targetMethodReturnType):
+							reflectionContext.RecordUnrecognizedPattern (
+								2083,
+								$"The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the implicit 'this' parameter of method '{sourceMethod.GetDisplayName ()}' " +
+								$"don't match those on the return value of method '{DiagnosticUtilities.GetMethodSignatureDisplayName (targetMethodReturnType.Method)}'. " +
+								$"The source value must declare at least the same requirements as those declared on the target location it's assigned to ");
+							break;
+						case (MethodDefinition sourceMethod, FieldDefinition targetField):
+							reflectionContext.RecordUnrecognizedPattern (
+								2084,
+								$"The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the implicit 'this' parameter of method '{sourceMethod.GetDisplayName ()}' " +
+								$"don't match those on the field '{targetField.GetDisplayName ()}'. " +
+								$"The source value must declare at least the same requirements as those declared on the target location it's assigned to ");
+							break;
+						case (MethodDefinition sourceMethod, MethodDefinition targetMethod):
+							reflectionContext.RecordUnrecognizedPattern (
+								2085,
+								$"The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the implicit 'this' parameter of method '{sourceMethod.GetDisplayName ()}' " +
+								$"don't match those on the implicit 'this' parameter of method '{targetMethod.GetDisplayName ()}'. " +
+								$"The source value must declare at least the same requirements as those declared on the target location it's assigned to ");
+							break;
+						case (MethodDefinition sourceMethod, GenericParameter targetGenericParameter):
+							// Currently this is never generated, once ILLink supports full analysis of MakeGenericType/MakeGenericMethod this will be used
+							reflectionContext.RecordUnrecognizedPattern (
+								2086,
+								$"The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the implicit 'this' parameter of method '{sourceMethod.GetDisplayName ()}' " +
+								$"don't match those on the generic parameter '{targetGenericParameter.Name}' of '{DiagnosticUtilities.GetGenericParameterDeclaringMemberDisplayName (targetGenericParameter)}'. " +
+								$"The source value must declare at least the same requirements as those declared on the target location it's assigned to ");
+							break;
+
+						case (GenericParameter sourceGenericParameter, ParameterDefinition targetParameter):
+							reflectionContext.RecordUnrecognizedPattern (
+								2087,
+								$"The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the generic parameter '{sourceGenericParameter.Name}' of '{DiagnosticUtilities.GetGenericParameterDeclaringMemberDisplayName (sourceGenericParameter)}' " +
+								$"don't match those on the parameter '{DiagnosticUtilities.GetParameterNameForErrorMessage (targetParameter)}' of method '{DiagnosticUtilities.GetMethodSignatureDisplayName (targetParameter.Method)}'. " +
+								$"The source value must declare at least the same requirements as those declared on the target location it's assigned to ");
+							break;
+						case (GenericParameter sourceGenericParameter, MethodReturnType targetMethodReturnType):
+							reflectionContext.RecordUnrecognizedPattern (
+								2088,
+								$"The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the generic parameter '{sourceGenericParameter.Name}' of '{DiagnosticUtilities.GetGenericParameterDeclaringMemberDisplayName (sourceGenericParameter)}' " +
+								$"don't match those on the return value of method '{DiagnosticUtilities.GetMethodSignatureDisplayName (targetMethodReturnType.Method)}'. " +
+								$"The source value must declare at least the same requirements as those declared on the target location it's assigned to ");
+							break;
+						case (GenericParameter sourceGenericParameter, FieldDefinition targetField):
+							reflectionContext.RecordUnrecognizedPattern (
+								2089,
+								$"The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the generic parameter '{sourceGenericParameter.Name}' of '{DiagnosticUtilities.GetGenericParameterDeclaringMemberDisplayName (sourceGenericParameter)}' " +
+								$"don't match those on the field '{targetField.GetDisplayName ()}'. " +
+								$"The source value must declare at least the same requirements as those declared on the target location it's assigned to ");
+							break;
+						case (GenericParameter sourceGenericParameter, MethodDefinition targetMethod):
+							// Currently this is never generated, it might be possible one day if we try to validate annotations on results of reflection
+							// For example code like this should ideally one day generate the warning
+							// void TestMethod<T>()
+							// {
+							//    // This passes the T as the "this" parameter to Type.GetMethods()
+							//    typeof(Type).GetMethod("GetMethods").Invoke(typeof(T), new object[] {});
+							// }
+							reflectionContext.RecordUnrecognizedPattern (
+								2090,
+								$"The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the generic parameter '{sourceGenericParameter.Name}' of '{DiagnosticUtilities.GetGenericParameterDeclaringMemberDisplayName (sourceGenericParameter)}' " +
+								$"don't match those on the implicit 'this' parameter of method '{targetMethod.GetDisplayName ()}'. " +
+								$"The source value must declare at least the same requirements as those declared on the target location it's assigned to ");
+							break;
+						case (GenericParameter sourceGenericParameter, GenericParameter targetGenericParameter):
+							reflectionContext.RecordUnrecognizedPattern (
+								2091,
+								$"The requirements declared via the 'DynamicallyAccessedMembersAttribute' on the generic parameter '{sourceGenericParameter.Name}' of '{DiagnosticUtilities.GetGenericParameterDeclaringMemberDisplayName (sourceGenericParameter)}' " +
+								$"don't match those on the generic parameter '{targetGenericParameter.Name}' of '{DiagnosticUtilities.GetGenericParameterDeclaringMemberDisplayName (targetGenericParameter)}'. " +
+								$"The source value must declare at least the same requirements as those declared on the target location it's assigned to ");
+							break;
+
+						default:
+							throw new NotImplementedException ($"unsupported source context {valueWithDynamicallyAccessedMember.SourceContext} or target context {targetContext}");
+						};
 					} else {
 						reflectionContext.RecordHandledPattern ();
 					}
 				} else if (uniqueValue is SystemTypeValue systemTypeValue) {
-					MarkTypeForDynamicallyAccessedMembers (ref reflectionContext, systemTypeValue.TypeRepresented, requiredMemberKinds);
+					MarkTypeForDynamicallyAccessedMembers (ref reflectionContext, systemTypeValue.TypeRepresented, requiredMemberTypes);
 				} else if (uniqueValue is KnownStringValue knownStringValue) {
 					TypeDefinition foundType = AssemblyUtilities.ResolveFullyQualifiedTypeName (_context, knownStringValue.Contents);
 					if (foundType == null) {
 						// Intentionally ignore - it's not wrong for code to call Type.GetType on non-existing name, the code might expect null/exception back.
 						reflectionContext.RecordHandledPattern ();
 					} else {
-						MarkTypeForDynamicallyAccessedMembers (ref reflectionContext, foundType, requiredMemberKinds);
+						MarkTypeForDynamicallyAccessedMembers (ref reflectionContext, foundType, requiredMemberTypes);
 					}
 				} else if (uniqueValue == NullValue.Instance) {
 					// Ignore - probably unreachable path as it would fail at runtime anyway.
 				} else {
-					reflectionContext.RecordUnrecognizedPattern ($"A {GetValueDescriptionForErrorMessage (uniqueValue)} " +
-						$"is passed into the {GetMetadataTokenDescriptionForErrorMessage (targetContext)} " +
-						$"which requires dynamically accessed member kinds '{GetDynamicallyAccessedMemberKindsDescription (requiredMemberKinds)}'. " +
-						$"It's not possible to guarantee that these requirements are met by the application.");
+					switch (targetContext) {
+					case ParameterDefinition parameterDefinition:
+						reflectionContext.RecordUnrecognizedPattern (
+							2062,
+							$"Value passed to parameter '{DiagnosticUtilities.GetParameterNameForErrorMessage (parameterDefinition)}' of method '{DiagnosticUtilities.GetMethodSignatureDisplayName (parameterDefinition.Method)}' can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.");
+						break;
+					case MethodReturnType methodReturnType:
+						reflectionContext.RecordUnrecognizedPattern (
+							2063,
+							$"Value returned from method '{DiagnosticUtilities.GetMethodSignatureDisplayName (methodReturnType.Method)}' can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.");
+						break;
+					case FieldDefinition fieldDefinition:
+						reflectionContext.RecordUnrecognizedPattern (
+							2064,
+							$"Value assigned to {fieldDefinition.GetDisplayName ()} can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.");
+						break;
+					case MethodDefinition methodDefinition:
+						reflectionContext.RecordUnrecognizedPattern (
+							2065,
+							$"Value passed to implicit 'this' parameter of method '{methodDefinition.GetDisplayName ()}' can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.");
+						break;
+					case GenericParameter genericParameter:
+						// Note: this is currently unreachable as there's no IL way to pass unknown value to a generic parameter without using reflection.
+						// Once we support analysis of MakeGenericType/MakeGenericMethod arguments this would become reachable though.
+						reflectionContext.RecordUnrecognizedPattern (
+							2066,
+							$"Type passed to generic parameter '{genericParameter.Name}' of '{DiagnosticUtilities.GetGenericParameterDeclaringMemberDisplayName (genericParameter)}' can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.");
+						break;
+					default: throw new NotImplementedException ($"unsupported target context {targetContext.GetType ()}");
+					};
 				}
 			}
 
 			reflectionContext.RecordHandledPattern ();
 		}
 
-		void MarkTypeForDynamicallyAccessedMembers (ref ReflectionPatternContext reflectionContext, TypeDefinition typeDefinition, DynamicallyAccessedMemberTypes requiredMemberKinds)
+		bool BindingFlagsAreSupported (BindingFlags bindingFlags)
 		{
-			foreach (var member in typeDefinition.GetDynamicallyAccessedMembers (requiredMemberKinds)) {
+			return (bindingFlags & BindingFlags.IgnoreCase) == BindingFlags.IgnoreCase || (int) bindingFlags > 255;
+		}
+
+		void MarkTypeForDynamicallyAccessedMembers (ref ReflectionPatternContext reflectionContext, TypeDefinition typeDefinition, DynamicallyAccessedMemberTypes requiredMemberTypes)
+		{
+			foreach (var member in typeDefinition.GetDynamicallyAccessedMembers (requiredMemberTypes)) {
 				switch (member) {
 				case MethodDefinition method:
-					MarkMethod (ref reflectionContext, typeDefinition, method);
+					MarkMethod (ref reflectionContext, method);
 					break;
 				case FieldDefinition field:
-					MarkField (ref reflectionContext, typeDefinition, field);
+					MarkField (ref reflectionContext, field);
 					break;
 				case TypeDefinition nestedType:
-					MarkNestedType (ref reflectionContext, typeDefinition, nestedType);
+					MarkNestedType (ref reflectionContext, nestedType);
 					break;
 				case PropertyDefinition property:
-					MarkProperty (ref reflectionContext, typeDefinition, property);
+					MarkProperty (ref reflectionContext, property);
 					break;
 				case EventDefinition @event:
-					MarkEvent (ref reflectionContext, typeDefinition, @event);
+					MarkEvent (ref reflectionContext, @event);
 					break;
 				case null:
 					var source = reflectionContext.Source;
-					reflectionContext.RecordRecognizedPattern (typeDefinition, () => _markStep.MarkEntireType (typeDefinition, includeBaseTypes: true, new DependencyInfo (DependencyKind.AccessedViaReflection, source)));
+					reflectionContext.RecordRecognizedPattern (typeDefinition, () => _markStep.MarkEntireType (typeDefinition, includeBaseTypes: true, new DependencyInfo (DependencyKind.AccessedViaReflection, source), source));
 					break;
 				}
 			}
 		}
 
-		void MarkMethod (ref ReflectionPatternContext reflectionContext, TypeDefinition typeDefinition, MethodDefinition method)
+		void MarkMethod (ref ReflectionPatternContext reflectionContext, MethodDefinition method)
 		{
 			var source = reflectionContext.Source;
-			reflectionContext.RecordRecognizedPattern (method, () => _markStep.MarkIndirectlyCalledMethod (method, new DependencyInfo (DependencyKind.AccessedViaReflection, source)));
+			reflectionContext.RecordRecognizedPattern (method, () => _markStep.MarkIndirectlyCalledMethod (method, new DependencyInfo (DependencyKind.AccessedViaReflection, source), source));
 		}
 
-		void MarkNestedType (ref ReflectionPatternContext reflectionContext, TypeDefinition typeDefinition, TypeDefinition nestedType)
+		void MarkNestedType (ref ReflectionPatternContext reflectionContext, TypeDefinition nestedType)
 		{
 			var source = reflectionContext.Source;
-			reflectionContext.RecordRecognizedPattern (nestedType, () => _markStep.MarkType (nestedType, new DependencyInfo (DependencyKind.AccessedViaReflection, source)));
+			reflectionContext.RecordRecognizedPattern (nestedType, () => _markStep.MarkTypeVisibleToReflection (nestedType, new DependencyInfo (DependencyKind.AccessedViaReflection, source), source));
 		}
 
-		void MarkField (ref ReflectionPatternContext reflectionContext, TypeDefinition typeDefinition, FieldDefinition field)
+		void MarkField (ref ReflectionPatternContext reflectionContext, FieldDefinition field)
 		{
 			var source = reflectionContext.Source;
 			reflectionContext.RecordRecognizedPattern (field, () => _markStep.MarkField (field, new DependencyInfo (DependencyKind.AccessedViaReflection, source)));
 		}
 
-		void MarkProperty (ref ReflectionPatternContext reflectionContext, TypeDefinition typeDefinition, PropertyDefinition property)
+		void MarkProperty (ref ReflectionPatternContext reflectionContext, PropertyDefinition property)
 		{
 			var source = reflectionContext.Source;
 			var dependencyInfo = new DependencyInfo (DependencyKind.AccessedViaReflection, source);
@@ -1318,38 +1673,39 @@ namespace Mono.Linker.Dataflow
 				// TODO - this is sort of questionable - when somebody asks for a property they probably want to call either get or set
 				// but linker tracks those separately, and so accessing the getter/setter will raise a warning as it's potentially trimmed.
 				// So including them here doesn't actually remove the warning even if the code is written correctly.
-				_markStep.MarkMethodIfNotNull (property.GetMethod, dependencyInfo);
-				_markStep.MarkMethodIfNotNull (property.SetMethod, dependencyInfo);
-				_markStep.MarkMethodsIf (property.OtherMethods, m => true, dependencyInfo);
+				_markStep.MarkMethodIfNotNull (property.GetMethod, dependencyInfo, source);
+				_markStep.MarkMethodIfNotNull (property.SetMethod, dependencyInfo, source);
+				_markStep.MarkMethodsIf (property.OtherMethods, m => true, dependencyInfo, source);
 			});
 		}
 
-		void MarkEvent (ref ReflectionPatternContext reflectionContext, TypeDefinition typeDefinition, EventDefinition @event)
+		void MarkEvent (ref ReflectionPatternContext reflectionContext, EventDefinition @event)
 		{
+			var source = reflectionContext.Source;
 			var dependencyInfo = new DependencyInfo (DependencyKind.AccessedViaReflection, reflectionContext.Source);
 			reflectionContext.RecordRecognizedPattern (@event, () => {
 				// MarkEvent actually marks the add/remove/invoke methods as well, so no need to mark those explicitly
 				_markStep.MarkEvent (@event, dependencyInfo);
-				_markStep.MarkMethodsIf (@event.OtherMethods, m => true, dependencyInfo);
+				_markStep.MarkMethodsIf (@event.OtherMethods, m => true, dependencyInfo, source);
 			});
 		}
 
 		void MarkConstructorsOnType (ref ReflectionPatternContext reflectionContext, TypeDefinition type, Func<MethodDefinition, bool> filter, BindingFlags? bindingFlags = null)
 		{
 			foreach (var ctor in type.GetConstructorsOnType (filter, bindingFlags))
-				MarkMethod (ref reflectionContext, type, ctor);
+				MarkMethod (ref reflectionContext, ctor);
 		}
 
 		void MarkMethodsOnTypeHierarchy (ref ReflectionPatternContext reflectionContext, TypeDefinition type, Func<MethodDefinition, bool> filter, BindingFlags? bindingFlags = null)
 		{
 			foreach (var method in type.GetMethodsOnTypeHierarchy (filter, bindingFlags))
-				MarkMethod (ref reflectionContext, type, method);
+				MarkMethod (ref reflectionContext, method);
 		}
 
 		void MarkFieldsOnTypeHierarchy (ref ReflectionPatternContext reflectionContext, TypeDefinition type, Func<FieldDefinition, bool> filter, BindingFlags bindingFlags = BindingFlags.Default)
 		{
 			foreach (var field in type.GetFieldsOnTypeHierarchy (filter, bindingFlags))
-				MarkField (ref reflectionContext, type, field);
+				MarkField (ref reflectionContext, field);
 		}
 
 		TypeDefinition[] MarkNestedTypesOnType (ref ReflectionPatternContext reflectionContext, TypeDefinition type, Func<TypeDefinition, bool> filter, BindingFlags bindingFlags = BindingFlags.Default)
@@ -1358,7 +1714,7 @@ namespace Mono.Linker.Dataflow
 
 			foreach (var nestedType in type.GetNestedTypesOnType (filter, bindingFlags)) {
 				result.Add (nestedType);
-				MarkNestedType (ref reflectionContext, type, nestedType);
+				MarkNestedType (ref reflectionContext, nestedType);
 			}
 
 			return result.ToArray ();
@@ -1367,122 +1723,13 @@ namespace Mono.Linker.Dataflow
 		void MarkPropertiesOnTypeHierarchy (ref ReflectionPatternContext reflectionContext, TypeDefinition type, Func<PropertyDefinition, bool> filter, BindingFlags bindingFlags = BindingFlags.Default)
 		{
 			foreach (var property in type.GetPropertiesOnTypeHierarchy (filter, bindingFlags))
-				MarkProperty (ref reflectionContext, type, property);
+				MarkProperty (ref reflectionContext, property);
 		}
 
 		void MarkEventsOnTypeHierarchy (ref ReflectionPatternContext reflectionContext, TypeDefinition type, Func<EventDefinition, bool> filter, BindingFlags bindingFlags = BindingFlags.Default)
 		{
 			foreach (var @event in type.GetEventsOnTypeHierarchy (filter, bindingFlags))
-				MarkEvent (ref reflectionContext, type, @event);
-		}
-
-		string GetValueDescriptionForErrorMessage (ValueNode value)
-		{
-			switch (value) {
-			case MethodParameterValue methodParameterValue: {
-					if (methodParameterValue.SourceContext is MethodDefinition method) {
-						int declaredParameterIndex;
-						if (method.HasImplicitThis ()) {
-							if (methodParameterValue.ParameterIndex == 0)
-								return GetMetadataTokenDescriptionForErrorMessage (method);
-
-							declaredParameterIndex = methodParameterValue.ParameterIndex - 1;
-						} else
-							declaredParameterIndex = methodParameterValue.ParameterIndex;
-
-						if (declaredParameterIndex >= 0 && declaredParameterIndex < method.Parameters.Count)
-							return GetParameterDescriptionForErrorMessage (method.Parameters[declaredParameterIndex]);
-					}
-
-					return $"parameter #{methodParameterValue.ParameterIndex} of method '{methodParameterValue.SourceContext}'";
-				}
-
-			case MethodReturnValue methodReturnValue: {
-					if (methodReturnValue.SourceContext is MethodDefinition method) {
-						return GetMetadataTokenDescriptionForErrorMessage (method.MethodReturnType);
-					}
-
-					return "method return value";
-				}
-
-			case LoadFieldValue loadFieldValue:
-				return GetMetadataTokenDescriptionForErrorMessage (loadFieldValue.Field);
-
-			default:
-				return $"value from unknown source";
-			}
-		}
-
-		string GetMetadataTokenDescriptionForErrorMessage (IMetadataTokenProvider targetContext)
-		{
-			return targetContext switch
-			{
-				ParameterDefinition parameterDefinition => GetParameterDescriptionForErrorMessage (parameterDefinition),
-				MethodReturnType methodReturnType => $"return value of method '{methodReturnType.Method}'",
-				FieldDefinition fieldDefinition => $"field '{fieldDefinition}'",
-				// MethodDefinition is used to represent the "this" parameter as we don't support annotations on the method itself.
-				MethodDefinition methodDefinition => $"implicit 'this' parameter of method '{methodDefinition}'",
-				_ => $"'{targetContext}'",
-			};
-			;
-		}
-
-		string GetParameterDescriptionForErrorMessage (ParameterDefinition parameterDefinition)
-		{
-			if (string.IsNullOrEmpty (parameterDefinition.Name))
-				return $"parameter #{parameterDefinition.Index} of method '{parameterDefinition.Method}'";
-
-			return $"parameter '{parameterDefinition.Name}' of method '{parameterDefinition.Method}'";
-		}
-
-		string GetDynamicallyAccessedMemberKindsDescription (DynamicallyAccessedMemberTypes memberKinds)
-		{
-			if (memberKinds == DynamicallyAccessedMemberTypes.All)
-				return DynamicallyAccessedMemberTypes.All.ToString ();
-
-			var results = new List<DynamicallyAccessedMemberTypes> ();
-			if (memberKinds.HasFlag (DynamicallyAccessedMemberTypes.NonPublicConstructors))
-				results.Add (DynamicallyAccessedMemberTypes.NonPublicConstructors);
-
-			if (memberKinds.HasFlag (DynamicallyAccessedMemberTypes.PublicConstructors))
-				results.Add (DynamicallyAccessedMemberTypes.PublicConstructors);
-			else if (memberKinds.HasFlag (DynamicallyAccessedMemberTypes.DefaultConstructor))
-				results.Add (DynamicallyAccessedMemberTypes.DefaultConstructor);
-
-			if (memberKinds.HasFlag (DynamicallyAccessedMemberTypes.NonPublicMethods))
-				results.Add (DynamicallyAccessedMemberTypes.NonPublicMethods);
-
-			if (memberKinds.HasFlag (DynamicallyAccessedMemberTypes.PublicMethods))
-				results.Add (DynamicallyAccessedMemberTypes.PublicMethods);
-
-			if (memberKinds.HasFlag (DynamicallyAccessedMemberTypes.NonPublicProperties))
-				results.Add (DynamicallyAccessedMemberTypes.NonPublicProperties);
-
-			if (memberKinds.HasFlag (DynamicallyAccessedMemberTypes.PublicProperties))
-				results.Add (DynamicallyAccessedMemberTypes.PublicProperties);
-
-			if (memberKinds.HasFlag (DynamicallyAccessedMemberTypes.NonPublicFields))
-				results.Add (DynamicallyAccessedMemberTypes.NonPublicFields);
-
-			if (memberKinds.HasFlag (DynamicallyAccessedMemberTypes.PublicFields))
-				results.Add (DynamicallyAccessedMemberTypes.PublicFields);
-
-			if (memberKinds.HasFlag (DynamicallyAccessedMemberTypes.NonPublicEvents))
-				results.Add (DynamicallyAccessedMemberTypes.NonPublicEvents);
-
-			if (memberKinds.HasFlag (DynamicallyAccessedMemberTypes.PublicEvents))
-				results.Add (DynamicallyAccessedMemberTypes.PublicEvents);
-
-			if (memberKinds.HasFlag (DynamicallyAccessedMemberTypes.NonPublicNestedTypes))
-				results.Add (DynamicallyAccessedMemberTypes.NonPublicNestedTypes);
-
-			if (memberKinds.HasFlag (DynamicallyAccessedMemberTypes.PublicNestedTypes))
-				results.Add (DynamicallyAccessedMemberTypes.PublicNestedTypes);
-
-			if (results.Count == 0)
-				return DynamicallyAccessedMemberTypes.None.ToString ();
-
-			return string.Join (" | ", results.Select (r => r.ToString ()));
+				MarkEvent (ref reflectionContext, @event);
 		}
 
 		static DynamicallyAccessedMemberTypes GetDynamicallyAccessedMemberTypesFromBindingFlagsForNestedTypes (BindingFlags bindingFlags) =>

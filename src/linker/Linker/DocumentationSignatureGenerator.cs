@@ -16,39 +16,68 @@ namespace Mono.Linker
 	/// </summary>
 	public sealed partial class DocumentationSignatureGenerator
 	{
+		internal const string MethodPrefix = "M:";
+		internal const string FieldPrefix = "F:";
+		internal const string EventPrefix = "E:";
+		internal const string PropertyPrefix = "P:";
+		internal const string TypePrefix = "T:";
+
 		public static readonly DocumentationSignatureGenerator Instance = new DocumentationSignatureGenerator ();
 
 		private DocumentationSignatureGenerator ()
 		{
 		}
 
-		public void VisitMethod (MethodDefinition method, StringBuilder builder)
+		public void VisitMember (IMemberDefinition member, StringBuilder builder)
 		{
-			builder.Append ("M:");
+			switch (member.MetadataToken.TokenType) {
+			case TokenType.TypeDef:
+				VisitTypeDefinition (member as TypeDefinition, builder);
+				break;
+			case TokenType.Method:
+				VisitMethod (member as MethodDefinition, builder);
+				break;
+			case TokenType.Property:
+				VisitProperty (member as PropertyDefinition, builder);
+				break;
+			case TokenType.Field:
+				VisitField (member as FieldDefinition, builder);
+				break;
+			case TokenType.Event:
+				VisitEvent (member as EventDefinition, builder);
+				break;
+			default:
+				break;
+			}
+		}
+
+		private void VisitMethod (MethodDefinition method, StringBuilder builder)
+		{
+			builder.Append (MethodPrefix);
 			PartVisitor.Instance.VisitMethodDefinition (method, builder);
 		}
 
-		public void VisitField (FieldDefinition field, StringBuilder builder)
+		private void VisitField (FieldDefinition field, StringBuilder builder)
 		{
-			builder.Append ("F:");
+			builder.Append (FieldPrefix);
 			PartVisitor.Instance.VisitField (field, builder);
 		}
 
-		public void VisitEvent (EventDefinition evt, StringBuilder builder)
+		private void VisitEvent (EventDefinition evt, StringBuilder builder)
 		{
-			builder.Append ("E:");
+			builder.Append (EventPrefix);
 			PartVisitor.Instance.VisitEvent (evt, builder);
 		}
 
-		public void VisitProperty (PropertyDefinition property, StringBuilder builder)
+		private void VisitProperty (PropertyDefinition property, StringBuilder builder)
 		{
-			builder.Append ("P:");
+			builder.Append (PropertyPrefix);
 			PartVisitor.Instance.VisitProperty (property, builder);
 		}
 
-		public void VisitTypeDefinition (TypeDefinition type, StringBuilder builder)
+		private void VisitTypeDefinition (TypeDefinition type, StringBuilder builder)
 		{
-			builder.Append ("T:");
+			builder.Append (TypePrefix);
 			PartVisitor.Instance.VisitTypeReference (type, builder);
 		}
 	}

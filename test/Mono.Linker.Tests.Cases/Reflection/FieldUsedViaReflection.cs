@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using System.Security.Policy;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
@@ -21,6 +22,9 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			TestDataFlowType ();
 			TestIfElse (1);
 			TestFieldInBaseType ();
+			TestIgnoreCaseBindingFlags ();
+			TestFailIgnoreCaseBindingFlags ();
+			TestUnsupportedBindingFlags ();
 		}
 
 		[Kept]
@@ -87,11 +91,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[UnrecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetField), new Type[] { typeof (string) },
-			"The return value of method 'System.Type Mono.Linker.Tests.Cases.Reflection.FieldUsedViaReflection::FindType()' with dynamically accessed member kinds 'None' " +
-			"is passed into the implicit 'this' parameter of method 'System.Reflection.FieldInfo System.Type::GetField(System.String)' which requires dynamically accessed member kinds 'PublicFields'. " +
-			"To fix this add DynamicallyAccessedMembersAttribute to it and specify at least these member kinds 'PublicFields'.")]
+		[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.GetField), new Type[] { typeof (string) },
+			messageCode: "IL2075", message: new string[] { "FindType", "GetField" })]
 		static void TestDataFlowType ()
 		{
 			Type type = FindType ();
@@ -130,6 +131,27 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		{
 			var protectedField = typeof (DerivedClass).GetField ("protectedFieldOnBase"); // Will not be marked - only public fields work this way
 			var publicField = typeof (DerivedClass).GetField ("publicFieldOnBase");
+		}
+
+		[Kept]
+		[RecognizedReflectionAccessPattern (
+			typeof (Type), nameof (Type.GetField), new Type[] { typeof (string), typeof (BindingFlags) },
+			typeof (IgnoreCaseBindingFlagsClass), nameof (IgnoreCaseBindingFlagsClass.publicField), (Type[]) null)]
+		static void TestIgnoreCaseBindingFlags ()
+		{
+			var field = typeof (IgnoreCaseBindingFlagsClass).GetField ("publicfield", BindingFlags.IgnoreCase | BindingFlags.Public);
+		}
+
+		[Kept]
+		static void TestFailIgnoreCaseBindingFlags ()
+		{
+			var field = typeof (FailIgnoreCaseBindingFlagsClass).GetField ("publicfield", BindingFlags.Public);
+		}
+
+		[Kept]
+		static void TestUnsupportedBindingFlags ()
+		{
+			var field = typeof (PutDispPropertyBindingFlagsClass).GetField ("putDispPropertyField", BindingFlags.PutDispProperty);
 		}
 
 		static int field;
@@ -178,6 +200,32 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		[KeptBaseType (typeof (BaseClass))]
 		class DerivedClass : BaseClass
 		{
+		}
+
+		[Kept]
+		private class IgnoreCaseBindingFlagsClass
+		{
+			[Kept]
+			public static int publicField;
+
+			[Kept]
+			public static int markedDueToIgnoreCaseField;
+		}
+
+		[Kept]
+		private class FailIgnoreCaseBindingFlagsClass
+		{
+			public static int publicField;
+		}
+
+		[Kept]
+		private class PutDispPropertyBindingFlagsClass
+		{
+			[Kept]
+			public static int putDispPropertyField;
+
+			[Kept]
+			private int markedDueToPutDispPropertyField;
 		}
 	}
 }

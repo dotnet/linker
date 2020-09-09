@@ -1,13 +1,111 @@
 ﻿using System;
-using System.Text;
 using Mono.Cecil;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace Mono.Linker
 {
 	public static class TypeReferenceExtensions
 	{
+		public static string GetDisplayName (this TypeReference type)
+		{
+			var builder = GetDisplayNameWithoutNamespace (type);
+			builder.Insert (0, ".");
+			builder.Insert (0, type.GetNamespaceDisplayName ());
+
+			return builder.ToString ();
+		}
+
+		public static StringBuilder GetDisplayNameWithoutNamespace (this TypeReference type)
+		{
+			var sb = new StringBuilder ();
+			if (type == null)
+				return sb;
+
+			Stack<TypeReference> genericArguments = null;
+			while (true) {
+				switch (type) {
+				case ArrayType arrayType:
+					AppendArrayType (arrayType, sb);
+					break;
+				case GenericInstanceType genericInstanceType:
+					genericArguments = new Stack<TypeReference> (genericInstanceType.GenericArguments);
+					type = genericInstanceType.ElementType;
+					continue;
+				default:
+					if (type.HasGenericParameters) {
+						int genericParametersCount = type.GenericParameters.Count;
+						int declaringTypeGenericParametersCount = type.DeclaringType?.GenericParameters?.Count ?? 0;
+
+						string simpleName;
+						if (genericParametersCount > declaringTypeGenericParametersCount) {
+							if (genericArguments?.Count > 0)
+								PrependGenericArguments (genericArguments, genericParametersCount - declaringTypeGenericParametersCount, sb);
+							else
+								PrependGenericParameters (type.GenericParameters.Skip (declaringTypeGenericParametersCount).ToList (), sb);
+
+							int explicitArityIndex = type.Name.IndexOf ('`');
+							simpleName = explicitArityIndex != -1 ? type.Name.Substring (0, explicitArityIndex) : type.Name;
+						} else
+							simpleName = type.Name;
+
+						sb.Insert (0, simpleName);
+						break;
+					}
+
+					sb.Insert (0, type.Name);
+					break;
+				}
+
+				type = type.DeclaringType;
+				if (type == null)
+					break;
+
+				sb.Insert (0, '.');
+			}
+
+			return sb;
+		}
+
+		internal static void PrependGenericParameters (IList<GenericParameter> genericParameters, StringBuilder sb)
+		{
+			sb.Insert (0, '>').Insert (0, genericParameters[genericParameters.Count - 1]);
+			for (int i = genericParameters.Count - 2; i >= 0; i--)
+				sb.Insert (0, ',').Insert (0, genericParameters[i]);
+
+			sb.Insert (0, '<');
+		}
+
+		static void PrependGenericArguments (Stack<TypeReference> genericArguments, int argumentsToTake, StringBuilder sb)
+		{
+			sb.Insert (0, '>').Insert (0, genericArguments.Pop ().GetDisplayNameWithoutNamespace ().ToString ());
+			while (--argumentsToTake > 0)
+				sb.Insert (0, ',').Insert (0, genericArguments.Pop ().GetDisplayNameWithoutNamespace ().ToString ());
+
+			sb.Insert (0, '<');
+		}
+
+		static void AppendArrayType (ArrayType arrayType, StringBuilder sb)
+		{
+			void parseArrayDimensions (ArrayType at)
+			{
+				sb.Append ('[');
+				for (int i = 0; i < at.Dimensions.Count - 1; i++)
+					sb.Append (',');
+
+				sb.Append (']');
+			}
+
+			sb.Append (arrayType.Name.Substring (0, arrayType.Name.IndexOf ('[')));
+			parseArrayDimensions (arrayType);
+			var element = arrayType.ElementType as ArrayType;
+			while (element != null) {
+				parseArrayDimensions (element);
+				element = element.ElementType as ArrayType;
+			}
+		}
+
 		public static TypeReference GetInflatedBaseType (this TypeReference type)
 		{
 			if (type == null)
@@ -73,7 +171,7 @@ namespace Mono.Linker
 			return resolved?.DeclaringType;
 		}
 
-		public static IEnumerable<TypeReference> GetInflatedInterfaces (this TypeReference typeRef)
+		public static IEnumerable<(TypeReference InflatedInterface, InterfaceImplementation OriginalImpl)> GetInflatedInterfaces (this TypeReference typeRef)
 		{
 			var typeDef = typeRef.Resolve ();
 
@@ -82,10 +180,10 @@ namespace Mono.Linker
 
 			if (typeRef is GenericInstanceType genericInstance) {
 				foreach (var interfaceImpl in typeDef.Interfaces)
-					yield return InflateGenericType (genericInstance, interfaceImpl.InterfaceType);
+					yield return (InflateGenericType (genericInstance, interfaceImpl.InterfaceType), interfaceImpl);
 			} else {
 				foreach (var interfaceImpl in typeDef.Interfaces)
-					yield return interfaceImpl.InterfaceType;
+					yield return (interfaceImpl.InterfaceType, interfaceImpl);
 			}
 		}
 
@@ -258,6 +356,24 @@ namespace Mono.Linker
 		{
 			return type.Name == name
 				&& type.Namespace == ns;
+		}
+
+		public static bool IsTypeOf<T> (this TypeReference tr)
+		{
+			var type = typeof (T);
+			return tr.Name == type.Name && tr.Namespace == tr.Namespace;
+		}
+
+		public static bool IsSubclassOf (this TypeReference type, string ns, string name)
+		{
+			TypeDefinition baseType = type.Resolve ();
+			while (baseType != null) {
+				if (baseType.IsTypeOf (ns, name))
+					return true;
+				baseType = baseType.BaseType?.Resolve ();
+			}
+
+			return false;
 		}
 	}
 }

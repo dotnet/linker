@@ -2,12 +2,12 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.Collections.Generic;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using Mono.Collections.Generic;
 
 namespace Mono.Linker.Dataflow
 {
@@ -506,8 +506,22 @@ namespace Mono.Linker.Dataflow
 					NewKnownStack (knownStacks, ((Instruction) operation.Operand).Offset, currentStack, methodBody);
 					break;
 
-				case Code.Calli:
-					// TODO: currently not emitted by any mainstream compilers but we should implement
+				case Code.Calli: {
+						var signature = (CallSite) operation.Operand;
+						if (signature.HasThis && !signature.ExplicitThis) {
+							PopUnknown (currentStack, 1, methodBody, operation.Offset);
+						}
+
+						// Pop arguments
+						PopUnknown (currentStack, signature.Parameters.Count, methodBody, operation.Offset);
+
+						// Pop function pointer
+						PopUnknown (currentStack, 1, methodBody, operation.Offset);
+
+						// Push return value
+						if (signature.ReturnType.MetadataType != MetadataType.Void)
+							PushUnknown (currentStack);
+					}
 					break;
 
 				case Code.Call:
@@ -693,6 +707,12 @@ namespace Mono.Linker.Dataflow
 			MethodDefinition thisMethod,
 			MethodBody methodBody)
 		{
+			if (operation.Operand is GenericParameter genericParameter) {
+				StackSlot slot = new StackSlot (new RuntimeTypeHandleForGenericParameterValue (genericParameter));
+				currentStack.Push (slot);
+				return;
+			}
+
 			if (operation.Operand is TypeReference typeReference) {
 				var resolvedReference = typeReference.Resolve ();
 				if (resolvedReference != null) {
@@ -838,7 +858,7 @@ namespace Mono.Linker.Dataflow
 
 			ValueNode newObjValue = null;
 			ValueNodeList methodParams = PopCallArguments (currentStack, calledMethod, callingMethodBody, isNewObj,
-														  operation.Offset, out newObjValue);
+														   operation.Offset, out newObjValue);
 
 			ValueNode methodReturnValue = null;
 			bool handledFunction = HandleCall (

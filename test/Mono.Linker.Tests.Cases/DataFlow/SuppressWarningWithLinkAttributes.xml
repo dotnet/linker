@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<linker>
+  <assembly fullname="Test">
+    <attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
+      <argument>Test</argument>
+      <argument>IL2067</argument>
+    </attribute>
+    <type fullname="Mono.Linker.Tests.Cases.DataFlow.SuppressWarningWithLinkAttributes">
+      <field name="_typeWithPublicParameterlessConstructor">
+        <attribute fullname="System.DoesNotExistattribute" assembly="Mono.Linker.Tests.Cases.Expectations">
+          <argument>0</argument>
+        </attribute>
+        <attribute fullname="System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute">
+          <argument>PublicParameterlessConstructor</argument>
+        </attribute>
+      </field>
+    </type>
+  </assembly>
+</linker>

@@ -29,9 +29,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Linker.Dataflow;
 
 namespace Mono.Linker
 {
@@ -55,17 +57,23 @@ namespace Mono.Linker
 		protected readonly Dictionary<MethodDefinition, List<OverrideInformation>> override_methods = new Dictionary<MethodDefinition, List<OverrideInformation>> ();
 		protected readonly Dictionary<MethodDefinition, List<MethodDefinition>> base_methods = new Dictionary<MethodDefinition, List<MethodDefinition>> ();
 		protected readonly Dictionary<AssemblyDefinition, ISymbolReader> symbol_readers = new Dictionary<AssemblyDefinition, ISymbolReader> ();
-		readonly Dictionary<MethodDefinition, LinkerAttributesInformation> method_linker_attributes = new Dictionary<MethodDefinition, LinkerAttributesInformation> ();
+		readonly Dictionary<IMemberDefinition, LinkerAttributesInformation> linker_attributes = new Dictionary<IMemberDefinition, LinkerAttributesInformation> ();
+		protected readonly Dictionary<MethodDefinition, List<(TypeDefinition InstanceType, InterfaceImplementation ImplementationProvider)>> default_interface_implementations = new Dictionary<MethodDefinition, List<(TypeDefinition, InterfaceImplementation)>> ();
 
 		readonly Dictionary<object, Dictionary<IMetadataTokenProvider, object>> custom_annotations = new Dictionary<object, Dictionary<IMetadataTokenProvider, object>> ();
-		protected readonly Dictionary<AssemblyDefinition, HashSet<string>> resources_to_remove = new Dictionary<AssemblyDefinition, HashSet<string>> ();
+		protected readonly Dictionary<AssemblyDefinition, HashSet<EmbeddedResource>> resources_to_remove = new Dictionary<AssemblyDefinition, HashSet<EmbeddedResource>> ();
 		protected readonly HashSet<CustomAttribute> marked_attributes = new HashSet<CustomAttribute> ();
 		readonly HashSet<TypeDefinition> marked_types_with_cctor = new HashSet<TypeDefinition> ();
 		protected readonly HashSet<TypeDefinition> marked_instantiated = new HashSet<TypeDefinition> ();
 		protected readonly HashSet<MethodDefinition> indirectly_called = new HashSet<MethodDefinition> ();
+		protected readonly HashSet<TypeDefinition> types_relevant_to_variant_casting = new HashSet<TypeDefinition> ();
 
-
-		public AnnotationStore (LinkContext context) => this.context = context;
+		public AnnotationStore (LinkContext context)
+		{
+			this.context = context;
+			FlowAnnotations = new FlowAnnotations (context);
+			VirtualMethodsWithAnnotationsToValidate = new HashSet<MethodDefinition> ();
+		}
 
 		public bool ProcessSatelliteAssemblies { get; set; }
 
@@ -74,6 +82,10 @@ namespace Mono.Linker
 				return context.Tracer;
 			}
 		}
+
+		internal FlowAnnotations FlowAnnotations { get; }
+
+		internal HashSet<MethodDefinition> VirtualMethodsWithAnnotationsToValidate { get; }
 
 		[Obsolete ("Use Tracer in LinkContext directly")]
 		public void PrepareDependenciesDump ()
@@ -217,6 +229,17 @@ namespace Mono.Linker
 			return marked_instantiated.Contains (type);
 		}
 
+		public void MarkRelevantToVariantCasting (TypeDefinition type)
+		{
+			if (type != null)
+				types_relevant_to_variant_casting.Add (type);
+		}
+
+		public bool IsRelevantToVariantCasting (TypeDefinition type)
+		{
+			return types_relevant_to_variant_casting.Contains (type);
+		}
+
 		public void Processed (IMetadataTokenProvider provider)
 		{
 			processed.Add (provider);
@@ -284,20 +307,20 @@ namespace Mono.Linker
 			return field_values.TryGetValue (field, out value);
 		}
 
-		public HashSet<string> GetResourcesToRemove (AssemblyDefinition assembly)
+		public HashSet<EmbeddedResource> GetResourcesToRemove (AssemblyDefinition assembly)
 		{
-			if (resources_to_remove.TryGetValue (assembly, out HashSet<string> resources))
+			if (resources_to_remove.TryGetValue (assembly, out HashSet<EmbeddedResource> resources))
 				return resources;
 
 			return null;
 		}
 
-		public void AddResourceToRemove (AssemblyDefinition assembly, string name)
+		public void AddResourceToRemove (AssemblyDefinition assembly, EmbeddedResource resource)
 		{
-			if (!resources_to_remove.TryGetValue (assembly, out HashSet<string> resources))
-				resources = resources_to_remove[assembly] = new HashSet<string> ();
+			if (!resources_to_remove.TryGetValue (assembly, out HashSet<EmbeddedResource> resources))
+				resources = resources_to_remove[assembly] = new HashSet<EmbeddedResource> ();
 
-			resources.Add (name);
+			resources.Add (resource);
 		}
 
 		public void SetPublic (IMetadataTokenProvider provider)
@@ -324,6 +347,22 @@ namespace Mono.Linker
 		{
 			override_methods.TryGetValue (method, out List<OverrideInformation> overrides);
 			return overrides;
+		}
+
+		public void AddDefaultInterfaceImplementation (MethodDefinition @base, TypeDefinition implementingType, InterfaceImplementation matchingInterfaceImplementation)
+		{
+			if (!default_interface_implementations.TryGetValue (@base, out var implementations)) {
+				implementations = new List<(TypeDefinition, InterfaceImplementation)> ();
+				default_interface_implementations.Add (@base, implementations);
+			}
+
+			implementations.Add ((implementingType, matchingInterfaceImplementation));
+		}
+
+		public IEnumerable<(TypeDefinition InstanceType, InterfaceImplementation ProvidingInterface)> GetDefaultInterfaceImplementations (MethodDefinition method)
+		{
+			default_interface_implementations.TryGetValue (method, out var ret);
+			return ret;
 		}
 
 		public void AddBaseMethod (MethodDefinition method, MethodDefinition @base)
@@ -429,36 +468,52 @@ namespace Mono.Linker
 			return marked_types_with_cctor.Add (type);
 		}
 
-		public bool HasLinkerAttribute<T> (MethodDefinition method) where T : Attribute
+		public bool HasLinkerAttribute<T> (IMemberDefinition member) where T : Attribute
 		{
-			if (!method_linker_attributes.TryGetValue (method, out var linkerAttributeInformation)) {
-				linkerAttributeInformation = new LinkerAttributesInformation (context, method);
-				method_linker_attributes.Add (method, linkerAttributeInformation);
+			// Avoid setting up and inserting LinkerAttributesInformation for members without attributes.
+			if (!context.CustomAttributes.HasAttributes (member))
+				return false;
+
+			if (!linker_attributes.TryGetValue (member, out var linkerAttributeInformation)) {
+				linkerAttributeInformation = new LinkerAttributesInformation (context, member);
+				linker_attributes.Add (member, linkerAttributeInformation);
 			}
 
 			return linkerAttributeInformation.HasAttribute<T> ();
 		}
 
-		public IEnumerable<T> GetLinkerAttributes<T> (MethodDefinition method) where T : Attribute
+		public IEnumerable<T> GetLinkerAttributes<T> (IMemberDefinition member) where T : Attribute
 		{
-			if (!method_linker_attributes.TryGetValue (method, out var linkerAttributeInformation)) {
-				linkerAttributeInformation = new LinkerAttributesInformation (context, method);
-				method_linker_attributes.Add (method, linkerAttributeInformation);
+			// Avoid setting up and inserting LinkerAttributesInformation for members without attributes.
+			if (!context.CustomAttributes.HasAttributes (member))
+				return Enumerable.Empty<T> ();
+
+			if (!linker_attributes.TryGetValue (member, out var linkerAttributeInformation)) {
+				linkerAttributeInformation = new LinkerAttributesInformation (context, member);
+				linker_attributes.Add (member, linkerAttributeInformation);
 			}
 
 			return linkerAttributeInformation.GetAttributes<T> ();
 		}
 
-		public bool TryGetLinkerAttribute<T> (MethodDefinition method, out T attribute) where T : Attribute
+		public bool TryGetLinkerAttribute<T> (IMemberDefinition member, out T attribute) where T : Attribute
 		{
-			var attributes = GetLinkerAttributes<T> (method);
+			var attributes = GetLinkerAttributes<T> (member);
 			if (attributes.Count () > 1) {
-				context.LogWarning ($"Attribute '{typeof (T).FullName}' should only be used once on '{method}'.",
-					2027, MessageOrigin.TryGetOrigin (method, 0));
+				context.LogWarning ($"Attribute '{typeof (T).FullName}' should only be used once on '{((member is MemberReference memberRef) ? memberRef.GetDisplayName () : member.FullName)}'.", 2027, member);
 			}
 
 			attribute = attributes.FirstOrDefault ();
 			return attribute != null;
+		}
+
+		public void EnqueueVirtualMethod (MethodDefinition method)
+		{
+			if (!method.IsVirtual)
+				return;
+
+			if (FlowAnnotations.RequiresDataFlowAnalysis (method) || HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (method))
+				VirtualMethodsWithAnnotationsToValidate.Add (method);
 		}
 	}
 }

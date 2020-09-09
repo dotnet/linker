@@ -37,18 +37,18 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		[Kept]
 		[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
-		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.DefaultConstructor)]
-		static Type s_typeWithDefaultConstructor;
+		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+		static Type s_typeWithPublicParameterlessConstructor;
 
 		[Kept]
-		[UnrecognizedReflectionAccessPattern (typeof (ByRefDataflow), nameof (MethodWithRefParameter), new string[] { "System.Type&" })]
+		[UnrecognizedReflectionAccessPattern (typeof (ByRefDataflow), nameof (MethodWithRefParameter), new string[] { "System.Type&" }, messageCode: "IL2077")]
 		public static void PassRefToField ()
 		{
-			MethodWithRefParameter (ref s_typeWithDefaultConstructor);
+			MethodWithRefParameter (ref s_typeWithPublicParameterlessConstructor);
 		}
 
 		[Kept]
-		[UnrecognizedReflectionAccessPattern (typeof (ByRefDataflow), nameof (MethodWithRefParameter), new string[] { "System.Type&" })]
+		[UnrecognizedReflectionAccessPattern (typeof (ByRefDataflow), nameof (MethodWithRefParameter), new string[] { "System.Type&" }, messageCode: "IL2067")]
 		public static void PassRefToParameter (Type parameter)
 		{
 			MethodWithRefParameter (ref parameter);

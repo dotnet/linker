@@ -139,10 +139,11 @@ namespace Mono.Linker.Steps
 			// produce folded branches. When it finds them the unreachable
 			// branch is replaced with nops.
 			//
-			if (!reducer.RewriteBody ())
-				return;
+			if (reducer.RewriteBody ())
+				Context.LogMessage ($"Reduced '{reducer.InstructionsReplaced}' instructions in conditional branches for [{method.DeclaringType.Module.Assembly.Name}] method {method.GetDisplayName ()}");
 
-			Context.LogMessage ($"Reduced '{reducer.InstructionsReplaced}' instructions in conditional branches for [{method.DeclaringType.Module.Assembly.Name}] method {method.FullName}");
+			// Even if the rewriter doesn't find any branches to fold the inlining above may have changed the method enough
+			// such that we can now deduce its return value.
 
 			if (method.ReturnType.MetadataType == MetadataType.Void)
 				return;
@@ -167,19 +168,45 @@ namespace Mono.Linker.Steps
 				switch (instr.OpCode.Code) {
 
 				case Code.Call:
+				case Code.Callvirt:
 					var target = (MethodReference) instr.Operand;
 					var md = target.Resolve ();
 					if (md == null)
 						break;
 
-					if (!md.IsStatic)
-						break;
-
 					if (!constExprMethods.TryGetValue (md, out targetResult))
 						break;
 
-					if (md.HasParameters)
+					if (md.CallingConvention == MethodCallingConvention.VarArg)
 						break;
+
+					bool explicitlyAnnotated = Annotations.GetAction (md) == MethodAction.ConvertToStub;
+
+					// Allow inlining results of instance methods which are explicitly annotated
+					// but don't allow inling results of any other instance method.
+					// See https://github.com/mono/linker/issues/1243 for discussion as to why.
+					// Also explicitly prevent inlining results of virtual methods.
+					if (!md.IsStatic &&
+						(md.IsVirtual || !explicitlyAnnotated))
+						break;
+
+					// Allow inlining results of methods with by-value parameters which are explicitly annotated
+					// but don't allow inlining of results of any other method with parameters.
+					if (md.HasParameters) {
+						if (!explicitlyAnnotated)
+							break;
+
+						bool hasByRefParameter = false;
+						foreach (var param in md.Parameters) {
+							if (param.ParameterType.IsByReference) {
+								hasByRefParameter = true;
+								break;
+							}
+						}
+
+						if (hasByRefParameter)
+							break;
+					}
 
 					reducer.Rewrite (i, targetResult);
 					changed = true;
@@ -307,7 +334,7 @@ namespace Mono.Linker.Steps
 
 				var bodySweeper = new BodySweeper (Body, reachableInstrs, unreachableEH, context);
 				if (!bodySweeper.Initialize ()) {
-					context.LogMessage ($"Unreachable IL reduction is not supported for method '{Body.Method.FullName}'");
+					context.LogMessage ($"Unreachable IL reduction is not supported for method '{Body.Method.GetDisplayName ()}'");
 					return false;
 				}
 

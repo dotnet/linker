@@ -195,17 +195,12 @@ namespace Mono.Linker.Steps
 		void SweepResources (AssemblyDefinition assembly)
 		{
 			var resourcesToRemove = Annotations.GetResourcesToRemove (assembly);
-			if (resourcesToRemove != null) {
-				var resources = assembly.MainModule.Resources;
+			if (resourcesToRemove == null)
+				return;
 
-				for (int i = 0; i < resources.Count; i++) {
-					if (!(resources[i] is EmbeddedResource resource))
-						continue;
-
-					if (resourcesToRemove.Contains (resource.Name))
-						resources.RemoveAt (i--);
-				}
-			}
+			var resources = assembly.MainModule.Resources;
+			foreach (var resource in resourcesToRemove)
+				resources.Remove (resource);
 		}
 
 		void SweepReferences (AssemblyDefinition assembly, AssemblyDefinition referenceToRemove)
@@ -371,6 +366,23 @@ namespace Mono.Linker.Steps
 		{
 			foreach (var provider in providers)
 				UpdateCustomAttributesTypesScopes (provider);
+		}
+
+		static void UpdateCustomAttributesTypesScopes (Collection<MethodDefinition> methods)
+		{
+			foreach (var method in methods) {
+				UpdateCustomAttributesTypesScopes (method);
+
+				UpdateCustomAttributesTypesScopes (method.MethodReturnType);
+
+				if (method.HasGenericParameters)
+					UpdateCustomAttributesTypesScopes (method.GenericParameters);
+
+				if (method.HasParameters) {
+					foreach (var parameter in method.Parameters)
+						UpdateCustomAttributesTypesScopes (parameter);
+				}
+			}
 		}
 
 		static void UpdateCustomAttributesTypesScopes (Collection<GenericParameter> genericParameters)

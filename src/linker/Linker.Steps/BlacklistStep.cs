@@ -65,10 +65,10 @@ namespace Mono.Linker.Steps
 					.Where (res => res.ResourceType == ResourceType.Embedded)
 					.Where (res => res.Name.EndsWith (".xml", StringComparison.OrdinalIgnoreCase));
 				foreach (var rsc in embeddedXml
-									.Where (res => ShouldProcessRootDescriptorResource (GetAssemblyName (res.Name)))
+									.Where (res => ShouldProcessRootDescriptorResource (res.Name))
 									.Cast<EmbeddedResource> ()) {
 					try {
-						Context.LogMessage ($"Processing embedded resource linker descriptor: {rsc.Name}");
+						Context.LogMessage ($"Processing embedded linker descriptor {rsc.Name} from {asm.Name}");
 						steps_to_add.Push (GetExternalResolveStep (rsc, asm));
 					} catch (XmlException ex) {
 						/* This could happen if some broken XML file is embedded. */
@@ -80,7 +80,7 @@ namespace Mono.Linker.Steps
 									.Where (res => res.Name.Equals ("ILLink.Substitutions.xml", StringComparison.OrdinalIgnoreCase))
 									.Cast<EmbeddedResource> ()) {
 					try {
-						Context.LogMessage ($"Processing embedded {rsc.Name} from {asm.Name}");
+						Context.LogMessage ($"Processing embedded substitution descriptor {rsc.Name} from {asm.Name}");
 						steps_to_add.Push (GetExternalSubstitutionStep (rsc, asm));
 					} catch (XmlException ex) {
 						Context.LogError ($"Error processing {rsc.Name}: {ex}", 1003);
@@ -88,6 +88,7 @@ namespace Mono.Linker.Steps
 				}
 
 				foreach (var rsc in embeddedXml
+<<<<<<< HEAD
 									.Where (res => res.Name.Equals ("ILLink.Annotations.xml", StringComparison.OrdinalIgnoreCase))
 									.Cast<EmbeddedResource> ()) {
 					try {
@@ -95,6 +96,15 @@ namespace Mono.Linker.Steps
 						steps_to_add.Push (GetExternalCustomAttributesStep (rsc, asm));
 					} catch (XmlException ex) {
 						Context.LogMessage (MessageContainer.CreateErrorMessage ($"Error processing {rsc.Name}: {ex}", 1003));
+=======
+									.Where (res => res.Name.Equals ("ILLink.LinkAttributes.xml", StringComparison.OrdinalIgnoreCase))
+									.Cast<EmbeddedResource> ()) {
+					try {
+						Context.LogMessage ($"Processing embedded {rsc.Name} from {asm.Name}");
+						steps_to_add.Push (GetExternalLinkAttributesStep (rsc, asm));
+					} catch (XmlException ex) {
+						Context.LogError ($"Error processing {rsc.Name} from {asm.Name}: {ex}", 1003);
+>>>>>>> upstream/master
 					}
 				}
 			}
@@ -112,9 +122,13 @@ namespace Mono.Linker.Steps
 			return descriptor.Substring (0, pos);
 		}
 
-		bool ShouldProcessRootDescriptorResource (string name)
+		bool ShouldProcessRootDescriptorResource (string resourceName)
 		{
-			AssemblyDefinition assembly = Context.GetLoadedAssembly (name);
+			if (resourceName.Equals ("ILLink.Descriptors.xml", StringComparison.OrdinalIgnoreCase))
+				return true;
+
+			var assemblyName = GetAssemblyName (resourceName);
+			AssemblyDefinition assembly = Context.GetLoadedAssembly (assemblyName);
 
 			if (assembly == null)
 				return false;
@@ -137,12 +151,17 @@ namespace Mono.Linker.Steps
 
 		protected virtual IStep GetExternalResolveStep (EmbeddedResource resource, AssemblyDefinition assembly)
 		{
-			return new ResolveFromXmlStep (GetExternalDescriptor (resource), resource.Name, assembly, "resource " + resource.Name + " in " + assembly.FullName);
+			return new ResolveFromXmlStep (GetExternalDescriptor (resource), resource, assembly, "resource " + resource.Name + " in " + assembly.FullName);
 		}
 
 		IStep GetExternalSubstitutionStep (EmbeddedResource resource, AssemblyDefinition assembly)
 		{
-			return new BodySubstituterStep (GetExternalDescriptor (resource), resource.Name, assembly, "resource " + resource.Name + " in " + assembly.FullName);
+			return new BodySubstituterStep (GetExternalDescriptor (resource), resource, assembly, "resource " + resource.Name + " in " + assembly.FullName);
+		}
+
+		IStep GetExternalLinkAttributesStep (EmbeddedResource resource, AssemblyDefinition assembly)
+		{
+			return new LinkAttributesStep (GetExternalDescriptor (resource), resource, assembly, "resource " + resource.Name + " in " + assembly.FullName);
 		}
 
 		IStep GetExternalCustomAttributesStep (EmbeddedResource resource, AssemblyDefinition assembly)

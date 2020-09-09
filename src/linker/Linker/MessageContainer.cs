@@ -61,14 +61,25 @@ namespace Mono.Linker
 		/// for the list of warnings and possibly add a new one</param>
 		/// /// <param name="origin">Filename or member where the warning is coming from</param>
 		/// <param name="subcategory">Optionally, further categorize this warning</param>
+		/// <param name="version">Optional warning version number. Versioned warnings can be controlled with the
+		/// warning wave option --warn VERSION. Unversioned warnings are unaffected by this option. </param>
 		/// <returns>New MessageContainer of 'Warning' category</returns>
-		public static MessageContainer CreateWarningMessage (LinkContext context, string text, int code, MessageOrigin origin, string subcategory = MessageSubCategory.None)
+		public static MessageContainer CreateWarningMessage (LinkContext context, string text, int code, MessageOrigin origin, WarnVersion version, string subcategory = MessageSubCategory.None)
 		{
 			if (!(code > 2000 && code <= 6000))
 				throw new ArgumentException ($"The provided code '{code}' does not fall into the warning category, which is in the range of 2001 to 6000 (inclusive).");
 
+			if (!(version >= WarnVersion.ILLink0 && version <= WarnVersion.Latest))
+				throw new ArgumentException ($"The provided warning version '{version}' is invalid.");
+
 			if (context.IsWarningSuppressed (code, origin))
 				return Empty;
+
+			if (version > context.WarnVersion)
+				return Empty;
+
+			if (context.IsWarningAsError (code))
+				return new MessageContainer (MessageCategory.WarningAsError, text, code, subcategory, origin);
 
 			return new MessageContainer (MessageCategory.Warning, text, code, subcategory, origin);
 		}
@@ -106,7 +117,7 @@ namespace Mono.Linker
 
 		public string ToMSBuildString ()
 		{
-			const string originApp = "ILlinker";
+			const string originApp = Constants.ILLink;
 			string origin = Origin?.ToString () ?? originApp;
 
 			StringBuilder sb = new StringBuilder ();
@@ -118,6 +129,7 @@ namespace Mono.Linker
 			string cat;
 			switch (Category) {
 			case MessageCategory.Error:
+			case MessageCategory.WarningAsError:
 				cat = "error";
 				break;
 			case MessageCategory.Warning:
@@ -132,15 +144,23 @@ namespace Mono.Linker
 				sb.Append (" ")
 					.Append (cat)
 					.Append (" IL")
-					.Append (Code.Value.ToString ("D4"));
-
-				if (!string.IsNullOrEmpty (Text))
-					sb.Append (": ").Append (Text);
+					.Append (Code.Value.ToString ("D4"))
+					.Append (": ");
 			} else {
-				sb.Append (" ").Append (Text);
+				sb.Append (" ");
 			}
 
-			// Expected output $"{Origin}: {SubCategory}{Category} IL{Code}: {Text}");
+			if (Origin?.MemberDefinition != null) {
+				if (Origin?.MemberDefinition is MethodDefinition method)
+					sb.Append (method.GetDisplayName ());
+				else
+					sb.Append (Origin?.MemberDefinition.FullName);
+
+				sb.Append (": ");
+			}
+
+			// Expected output $"{FileName(SourceLine, SourceColumn)}: {SubCategory}{Category} IL{Code}: ({MemberDisplayName}: ){Text}");
+			sb.Append (Text);
 			return sb.ToString ();
 		}
 
