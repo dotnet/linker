@@ -646,9 +646,6 @@ namespace Mono.Linker
 			foreach (var file in resolve_from_xapi_steps)
 				p.PrependStep (new ResolveFromXApiStep (new XPathDocument (file)));
 #endif
-			foreach (var file in xml_custom_attribute_steps)
-				AddLinkAttributesStep (p, file);
-
 			foreach (var file in resolve_from_xml_steps)
 				AddResolveFromXmlStep (p, file);
 
@@ -816,15 +813,9 @@ namespace Mono.Linker
 			pipeline.PrependStep (new ResolveFromXmlStep (new XPathDocument (file), file));
 		}
 
-<<<<<<< HEAD
-		protected virtual void AddXmlCustomAttributesStep (Pipeline pipeline, string file)
-		{
-			pipeline.PrependStep (new XmlCustomAttributesStep (new XPathDocument (file), file));
-=======
 		protected virtual void AddLinkAttributesStep (Pipeline pipeline, string file)
 		{
 			pipeline.AddStepAfter (typeof (BlacklistStep), new LinkAttributesStep (new XPathDocument (file), file));
->>>>>>> upstream/master
 		}
 
 		void AddBodySubstituterStep (Pipeline pipeline, string file)
