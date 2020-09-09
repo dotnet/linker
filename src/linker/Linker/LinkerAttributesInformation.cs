@@ -17,13 +17,8 @@ namespace Mono.Linker
 		public LinkerAttributesInformation (LinkContext context, ICustomAttributeProvider provider)
 		{
 			_linkerAttributes = null;
-<<<<<<< HEAD
-			if (context.CustomAttributes.HasCustomAttributes (method)) {
-				foreach (var customAttribute in context.CustomAttributes.GetCustomAttributes (method)) {
-=======
 			if (context.CustomAttributes.HasCustomAttributes (provider)) {
 				foreach (var customAttribute in context.CustomAttributes.GetCustomAttributes (provider)) {
->>>>>>> upstream/master
 					var attributeType = customAttribute.AttributeType;
 					Attribute attributeValue = null;
 					if (attributeType.IsTypeOf<RequiresUnreferencedCodeAttribute> ())

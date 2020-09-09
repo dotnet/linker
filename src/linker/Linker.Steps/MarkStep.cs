@@ -33,7 +33,6 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Xml.XPath;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Collections.Generic;
@@ -177,10 +176,6 @@ namespace Mono.Linker.Steps
 		public virtual void Process (LinkContext context)
 		{
 			_context = context;
-<<<<<<< HEAD
-			_flowAnnotations = new FlowAnnotations (_context);
-=======
->>>>>>> upstream/master
 
 			Initialize ();
 			Process ();
