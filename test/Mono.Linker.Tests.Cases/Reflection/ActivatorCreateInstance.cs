@@ -424,6 +424,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 		[Kept]
 		[UnrecognizedReflectionAccessPattern (typeof (Activator), nameof (Activator.CreateInstance) + "<T>", new Type[0], messageCode: "IL2091")]
+		[UnrecognizedReflectionAccessPattern (typeof (Activator), nameof (Activator.CreateInstance) + "<T>()::T", messageCode: "IL2091")]
 		private static void TestCreateInstanceOfTWithNoConstraint<T> ()
 		{
 			Activator.CreateInstance<T> ();
