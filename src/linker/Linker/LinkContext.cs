@@ -57,7 +57,7 @@ namespace Mono.Linker
 		bool _ignoreUnresolved;
 
 		readonly AssemblyResolver _resolver;
-		readonly ReflectionTypeNameResolver _typeNameResolver;
+		readonly TypeNameResolver _typeNameResolver;
 
 		readonly ReaderParameters _readerParameters;
 		ISymbolReaderProvider _symbolReaderProvider;
@@ -151,7 +151,7 @@ namespace Mono.Linker
 			get { return _resolver; }
 		}
 
-		internal ReflectionTypeNameResolver TypeNameResolver {
+		internal TypeNameResolver TypeNameResolver {
 			get { return _typeNameResolver; }
 		}
 
@@ -221,7 +221,7 @@ namespace Mono.Linker
 			_pipeline = pipeline;
 			_resolver = resolver;
 			_resolver.Context = this;
-			_typeNameResolver = new ReflectionTypeNameResolver (this);
+			_typeNameResolver = new TypeNameResolver (this);
 			_actions = new Dictionary<string, AssemblyAction> ();
 			_parameters = new Dictionary<string, string> (StringComparer.Ordinal);
 			_readerParameters = readerParameters;
@@ -456,7 +456,7 @@ namespace Mono.Linker
 
 		public AssemblyDefinition GetLoadedAssembly (string name)
 		{
-			if (_resolver.AssemblyCache.TryGetValue (name, out var ad))
+			if (!string.IsNullOrEmpty(name) && _resolver.AssemblyCache.TryGetValue (name, out var ad))
 				return ad;
 
 			return null;

@@ -12,7 +12,7 @@ namespace System.Reflection.Runtime.TypeParsing
 	// The TypeName class is the base class for a family of types that represent the nodes in a parse tree for 
 	// assembly-qualified type names.
 	//
-	internal abstract class TypeName
+	public abstract class TypeName
 	{
 		public abstract override string ToString ();
 	}
@@ -22,7 +22,7 @@ namespace System.Reflection.Runtime.TypeParsing
 	// Represents a parse of a type name optionally qualified by an assembly name. If present, the assembly name follows
 	// a comma following the type name.
 	//
-	internal sealed class AssemblyQualifiedTypeName : TypeName
+	public sealed class AssemblyQualifiedTypeName : TypeName
 	{
 		public AssemblyQualifiedTypeName (NonQualifiedTypeName typeName, RuntimeAssemblyName assemblyName)
 		{
@@ -43,7 +43,7 @@ namespace System.Reflection.Runtime.TypeParsing
 	//
 	// Base class for all non-assembly-qualified type names.
 	//
-	internal abstract class NonQualifiedTypeName : TypeName
+	public abstract class NonQualifiedTypeName : TypeName
 	{
 	}
 

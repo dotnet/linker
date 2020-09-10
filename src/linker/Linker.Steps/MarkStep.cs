@@ -32,6 +32,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Reflection.Runtime.TypeParsing;
 using System.Text.RegularExpressions;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -733,7 +734,7 @@ namespace Mono.Linker.Steps
 
 			TypeDefinition td;
 			if (args.Count >= 2 && args[1].Value is string typeName) {
-				td = _context.TypeNameResolver.ResolveTypeName (typeName + "," + (assembly ?? context.Module.Assembly));
+				td = TypeNameResolver.ResolveTypeName (assembly ?? context.Module.Assembly, typeName)?.Resolve ();
 				if (td == null) {
 					_context.LogWarning (
 						$"Could not resolve dependency type '{typeName}' specified in a `PreserveDependency` attribute", 2004, context.Resolve ());
@@ -1551,8 +1552,16 @@ namespace Mono.Linker.Steps
 				if (property.Name == "Target")
 					return ((TypeReference) property.Argument.Value)?.Resolve ();
 
-				if (property.Name == "TargetTypeName")
-					return _context.TypeNameResolver.ResolveTypeName ((string) property.Argument.Value);
+				if (property.Name == "TargetTypeName") {
+					string targetTypeName = (string) property.Argument.Value;
+					TypeName typeName = TypeParser.ParseTypeName (targetTypeName);
+					if (typeName is AssemblyQualifiedTypeName assemblyQualifiedTypeName) {
+						AssemblyDefinition assembly = _context.GetLoadedAssembly (assemblyQualifiedTypeName.AssemblyName.Name);
+						return TypeNameResolver.ResolveTypeName (assembly, targetTypeName)?.Resolve ();
+					}
+
+					return TypeNameResolver.ResolveTypeName (asm, targetTypeName)?.Resolve ();
+				}
 			}
 
 			return null;
@@ -1639,7 +1648,7 @@ namespace Mono.Linker.Steps
 			TypeDefinition tdef = null;
 			switch (attribute.ConstructorArguments[0].Value) {
 			case string s:
-				tdef = _context.TypeNameResolver.ResolveTypeName (s);
+				tdef = _context.TypeNameResolver.ResolveTypeName (s)?.Resolve ();
 				break;
 			case TypeReference type:
 				tdef = type.Resolve ();

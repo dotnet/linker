@@ -10,28 +10,31 @@ namespace System.Reflection.Runtime.TypeParsing
 	//
 	// Parser for type names passed to GetType() apis. 
 	//
-	internal sealed class TypeParser
+	public sealed class TypeParser
 	{
 		//
 		// Parses a typename. The typename may be optionally postpended with a "," followed by a legal assembly name.
 		//
-		public static AssemblyQualifiedTypeName ParseAssemblyQualifiedTypeName (string s)
+		public static TypeName ParseTypeName (string s)
 		{
-			// Desktop compat: a whitespace-only "typename" qualified by an assembly name throws an ArgumentException rather than
-			// a TypeLoadException.
+			if (string.IsNullOrEmpty (s))
+				return null;
+
+			// Linker specific: to keep the existing behavior, we return null whenever we have a whitespace type name, insteead
+			// of throwing any exception.
 			int idx = 0;
-			while (idx < s.Length && Char.IsWhiteSpace (s[idx])) {
+			while (idx < s.Length && char.IsWhiteSpace (s[idx])) {
 				idx++;
 			}
 			if (idx < s.Length && s[idx] == ',')
-				throw new ArgumentException ();
+				return null;
 
 			try {
 				TypeParser parser = new TypeParser (s);
 				NonQualifiedTypeName typeName = parser.ParseNonQualifiedTypeName ();
 				TokenType token = parser._lexer.GetNextToken ();
 				if (token == TokenType.End)
-					return new AssemblyQualifiedTypeName (typeName, null);
+					return typeName;
 				if (token == TokenType.Comma) {
 					RuntimeAssemblyName assemblyName = parser._lexer.GetNextAssemblyName ();
 					token = parser._lexer.Peek;
@@ -42,7 +45,7 @@ namespace System.Reflection.Runtime.TypeParsing
 				throw new ArgumentException ();
 			} catch (TypeLexer.IllegalEscapeSequenceException) {
 				// Emulates a CLR4.5 bug that causes any string that contains an illegal escape sequence to be parsed as the empty string.
-				return ParseAssemblyQualifiedTypeName (string.Empty);
+				return ParseTypeName (string.Empty);
 			}
 		}
 

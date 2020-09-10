@@ -14,7 +14,7 @@ namespace System.Reflection.Runtime.Assemblies
 	//
 	// We use this as our internal interchange type and only convert to and from the public AssemblyName class at public boundaries.
 	//
-	internal sealed class RuntimeAssemblyName : IEquatable<RuntimeAssemblyName>
+	public sealed class RuntimeAssemblyName : IEquatable<RuntimeAssemblyName>
 	{
 		public RuntimeAssemblyName (string name, Version version, string cultureName, AssemblyNameFlags flags, byte[] publicKeyOrToken)
 		{
