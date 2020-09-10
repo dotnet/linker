@@ -103,7 +103,7 @@ namespace System.Reflection.Runtime.Assemblies
 						continue;
 					if ((s.Length - i) < escapeReplacement.Length)
 						continue;
-					if (s.AsSpan (i, escapeReplacement.Length).SequenceEqual (escapeReplacement)) {
+					if (s.Substring (i, escapeReplacement.Length).Equals (escapeReplacement)) {
 						sb.Append ('\\');
 						sb.Append (kv.Key);
 						addedEscape = true;

@@ -456,7 +456,7 @@ namespace Mono.Linker
 
 		public AssemblyDefinition GetLoadedAssembly (string name)
 		{
-			if (!string.IsNullOrEmpty(name) && _resolver.AssemblyCache.TryGetValue (name, out var ad))
+			if (!string.IsNullOrEmpty (name) && _resolver.AssemblyCache.TryGetValue (name, out var ad))
 				return ad;
 
 			return null;
