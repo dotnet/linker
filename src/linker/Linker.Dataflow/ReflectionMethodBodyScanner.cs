@@ -797,14 +797,14 @@ namespace Mono.Linker.Dataflow
 						}
 						foreach (var typeNameValue in methodParams[0].UniqueValues ()) {
 							if (typeNameValue is KnownStringValue knownStringValue) {
-								TypeReference foundType = _context.TypeNameResolver.ResolveTypeName (knownStringValue.Contents);
+								TypeReference foundTypeRef = _context.TypeNameResolver.ResolveTypeName (knownStringValue.Contents);
+								TypeDefinition foundType = foundTypeRef?.Resolve ();
 								if (foundType == null) {
 									// Intentionally ignore - it's not wrong for code to call Type.GetType on non-existing name, the code might expect null/exception back.
 									reflectionContext.RecordHandledPattern ();
 								} else {
-									var typeDef = foundType?.Resolve ();
-									reflectionContext.RecordRecognizedPattern (typeDef, () => _markStep.MarkTypeVisibleToReflection (foundType, new DependencyInfo (DependencyKind.AccessedViaReflection, callingMethodDefinition), callingMethodDefinition));
-									methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new SystemTypeValue (typeDef));
+									reflectionContext.RecordRecognizedPattern (foundType, () => _markStep.MarkTypeVisibleToReflection (foundTypeRef, new DependencyInfo (DependencyKind.AccessedViaReflection, callingMethodDefinition), callingMethodDefinition));
+									methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new SystemTypeValue (foundType));
 								}
 							} else if (typeNameValue == NullValue.Instance) {
 								reflectionContext.RecordHandledPattern ();
@@ -1336,7 +1336,7 @@ namespace Mono.Linker.Dataflow
 								continue;
 							}
 
-							var resolvedType = TypeNameResolver.ResolveTypeName (resolvedAssembly, typeNameStringValue.Contents);
+							var resolvedType = (TypeNameResolver.ResolveTypeName (resolvedAssembly, typeNameStringValue.Contents))?.Resolve ();
 							if (resolvedType == null) {
 								// It's not wrong to have a reference to non-existing type - the code may well expect to get an exception in this case
 								// Note that we did find the assembly, so it's not a linker config problem, it's either intentional, or wrong versions of assemblies
@@ -1345,8 +1345,7 @@ namespace Mono.Linker.Dataflow
 								continue;
 							}
 
-							MarkConstructorsOnType (ref reflectionContext, resolvedType?.Resolve (),
-								parameterlessConstructor ? m => m.Parameters.Count == 0 : (Func<MethodDefinition, bool>) null, bindingFlags);
+							MarkConstructorsOnType (ref reflectionContext, resolvedType, parameterlessConstructor ? m => m.Parameters.Count == 0 : (Func<MethodDefinition, bool>) null, bindingFlags);
 						} else {
 							reflectionContext.RecordUnrecognizedPattern (2032, $"Unrecognized value passed to the parameter '{calledMethod.Parameters[1].Name}' of method '{calledMethod.GetDisplayName ()}'. It's not possible to guarantee the availability of the target type.");
 						}

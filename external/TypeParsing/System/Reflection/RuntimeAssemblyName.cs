@@ -1,10 +1,9 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 
 using System.Diagnostics;
 
-namespace System.Reflection.Runtime.Assemblies
+namespace System.Reflection
 {
 	//
 	// This is a private assembly name abstraction that's more suitable for use as keys in our caches.
@@ -16,9 +15,9 @@ namespace System.Reflection.Runtime.Assemblies
 	//
 	public sealed class RuntimeAssemblyName : IEquatable<RuntimeAssemblyName>
 	{
-		public RuntimeAssemblyName (string name, Version version, string cultureName, AssemblyNameFlags flags, byte[] publicKeyOrToken)
+		public RuntimeAssemblyName(string name, Version version, string cultureName, AssemblyNameFlags flags, byte[] publicKeyOrToken)
 		{
-			Debug.Assert (name != null);
+			Debug.Assert(name != null);
 			this.Name = name;
 
 			// Optional version.
@@ -35,52 +34,63 @@ namespace System.Reflection.Runtime.Assemblies
 		}
 
 		// Simple name.
-		public string Name { get; private set; }
+		public string Name { get; }
 
 		// Optional version.
-		public Version Version { get; private set; }
+		public Version Version { get; }
 
 		// Optional culture name.
-		public string CultureName { get; private set; }
+		public string CultureName { get; }
 
 		// Optional flags (this is actually an OR of the classic flags and the ContentType.)
-		public AssemblyNameFlags Flags { get; private set; }
+		public AssemblyNameFlags Flags { get; }
 
 		// Optional public key (if Flags.PublicKey == true) or public key token.
-		public byte[] PublicKeyOrToken { get; private set; }
+		public byte[] PublicKeyOrToken { get; }
 
 		// Equality - this compares every bit of data in the RuntimeAssemblyName which is acceptable for use as keys in a cache
 		// where semantic duplication is permissible. This method is *not* meant to define ref->def binding rules or
 		// assembly binding unification rules.
-		public bool Equals (RuntimeAssemblyName other)
+		public bool Equals(RuntimeAssemblyName other)
 		{
 			if (other == null)
 				return false;
-			if (!this.Name.Equals (other.Name))
+			if (!this.Name.Equals(other.Name))
 				return false;
-			if (this.Version == null) {
+			if (this.Version == null)
+			{
 				if (other.Version != null)
 					return false;
-			} else {
-				if (!this.Version.Equals (other.Version))
+			}
+			else
+			{
+				if (!this.Version.Equals(other.Version))
 					return false;
 			}
-			if (!string.Equals (this.CultureName, other.CultureName))
+			if (!string.Equals(this.CultureName, other.CultureName))
 				return false;
 			if (this.Flags != other.Flags)
 				return false;
 
 			byte[] thisPK = this.PublicKeyOrToken;
 			byte[] otherPK = other.PublicKeyOrToken;
-			if (thisPK == null) {
+			if (thisPK == null)
+			{
 				if (otherPK != null)
 					return false;
-			} else if (otherPK == null) {
+			}
+			else if (otherPK == null)
+			{
 				return false;
-			} else if (thisPK.Length != otherPK.Length) {
+			}
+			else if (thisPK.Length != otherPK.Length)
+			{
 				return false;
-			} else {
-				for (int i = 0; i < thisPK.Length; i++) {
+			}
+			else
+			{
+				for (int i = 0; i < thisPK.Length; i++)
+				{
 					if (thisPK[i] != otherPK[i])
 						return false;
 				}
@@ -89,23 +99,24 @@ namespace System.Reflection.Runtime.Assemblies
 			return true;
 		}
 
-		public sealed override bool Equals (Object obj)
+		public sealed override bool Equals(object obj)
 		{
 			RuntimeAssemblyName other = obj as RuntimeAssemblyName;
 			if (other == null)
 				return false;
-
-			return Equals (other);
+			return Equals(other);
 		}
 
-		public sealed override int GetHashCode ()
+		public sealed override int GetHashCode()
 		{
-			return this.Name.GetHashCode ();
+			return this.Name.GetHashCode();
 		}
 
-		public string FullName {
-			get {
-				return AssemblyNameHelpers.ComputeDisplayName (this);
+		public string FullName
+		{
+			get
+			{
+				return AssemblyNameFormatter.ComputeDisplayName(this);
 			}
 		}
 	}

@@ -54,15 +54,27 @@ namespace Mono.Linker
 			if (typeName is AssemblyQualifiedTypeName assemblyQualifiedTypeName) {
 				return ResolveTypeName (assembly, assemblyQualifiedTypeName.TypeName);
 			} else if (typeName is ConstructedGenericTypeName constructedGenericTypeName) {
-				var genericTypeDef = ResolveTypeName (assembly, constructedGenericTypeName.GenericType)?.Resolve ();
-				var genericInstanceType = new GenericInstanceType (genericTypeDef);
+				var genericTypeRef = ResolveTypeName (assembly, constructedGenericTypeName.GenericType);
+				if (genericTypeRef == null)
+					return null;
+
+				TypeDefinition genericType = genericTypeRef.Resolve ();
+				var genericInstanceType = new GenericInstanceType (genericType);
 				foreach (var arg in constructedGenericTypeName.GenericArguments) {
-					genericInstanceType.GenericArguments.Add (ResolveTypeName (assembly, arg));
+					var genericArgument = ResolveTypeName (assembly, arg);
+					if (genericArgument == null)
+						return null;
+
+					genericInstanceType.GenericArguments.Add (genericArgument);
 				}
 
 				return genericInstanceType;
 			} else if (typeName is HasElementTypeName elementTypeName) {
-				return ResolveTypeName (assembly, elementTypeName.ElementTypeName);
+				var elementType = ResolveTypeName (assembly, elementTypeName.ElementTypeName);
+				if (elementType == null)
+					return null;
+
+				return elementType;
 			}
 
 			return assembly.MainModule.GetType (typeName.ToString ());

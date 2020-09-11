@@ -1,10 +1,7 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 
 using System.Diagnostics;
-using System.Reflection.Runtime.Assemblies;
-
 
 namespace System.Reflection.Runtime.TypeParsing
 {
@@ -13,50 +10,54 @@ namespace System.Reflection.Runtime.TypeParsing
 	//
 	internal sealed class TypeLexer
 	{
-		public TypeLexer (string s)
+		public TypeLexer(String s)
 		{
 			// Turn the string into a char array with a NUL terminator.
 			char[] chars = new char[s.Length + 1];
-			s.CopyTo (0, chars, 0, s.Length);
+			s.CopyTo(0, chars, 0, s.Length);
 			_chars = chars;
 			_index = 0;
 		}
 
-		public TokenType Peek {
-			get {
-				SkipWhiteSpace ();
+		public TokenType Peek
+		{
+			get
+			{
+				SkipWhiteSpace();
 				char c = _chars[_index];
-				return CharToToken (c);
+				return CharToToken(c);
 			}
 		}
 
-		public TokenType PeekSecond {
-			get {
-				SkipWhiteSpace ();
+		public TokenType PeekSecond
+		{
+			get
+			{
+				SkipWhiteSpace();
 				int index = _index + 1;
-				while (Char.IsWhiteSpace (_chars[index]))
+				while (Char.IsWhiteSpace(_chars[index]))
 					index++;
 				char c = _chars[index];
-				return CharToToken (c);
+				return CharToToken(c);
 			}
 		}
 
 
-		public void Skip ()
+		public void Skip()
 		{
-			Debug.Assert (_index != _chars.Length);
-			SkipWhiteSpace ();
+			Debug.Assert(_index != _chars.Length);
+			SkipWhiteSpace();
 			_index++;
 		}
 
 		// Return the next token and skip index past it unless already at end of string
 		// or the token is not a reserved token.
-		public TokenType GetNextToken ()
+		public TokenType GetNextToken()
 		{
 			TokenType tokenType = Peek;
 			if (tokenType == TokenType.End || tokenType == TokenType.Other)
 				return tokenType;
-			Skip ();
+			Skip();
 			return tokenType;
 		}
 
@@ -67,9 +68,9 @@ namespace System.Reflection.Runtime.TypeParsing
 		//
 		// Terminated by the first non-escaped reserved character ('[', ']', '+', '&', '*' or ',')
 		//
-		public string GetNextIdentifier ()
+		public String GetNextIdentifier()
 		{
-			SkipWhiteSpace ();
+			SkipWhiteSpace();
 
 			int src = _index;
 			char[] buffer = new char[_chars.Length];
@@ -77,15 +78,17 @@ namespace System.Reflection.Runtime.TypeParsing
 			for (; ; )
 			{
 				char c = _chars[src];
-				TokenType token = CharToToken (c);
+				TokenType token = CharToToken(c);
 				if (token != TokenType.Other)
 					break;
 				src++;
-				if (c == '\\') {
+				if (c == '\\')
+				{
 					c = _chars[src];
 					if (c != NUL)
 						src++;
-					if (c == NUL || CharToToken (c) == TokenType.Other) {
+					if (c == NUL || CharToToken(c) == TokenType.Other)
+					{
 						// If we got here, a backslash was used to escape a character that is not legal to escape inside a type name.
 						//
 						// Common sense would dictate throwing an ArgumentException but that's not what the desktop CLR does.
@@ -97,15 +100,14 @@ namespace System.Reflection.Runtime.TypeParsing
 						//
 						// To emulate this accidental behavior, we'll throw a special exception that's caught by the TypeParser.
 						// 
-						throw new IllegalEscapeSequenceException ();
+						throw new IllegalEscapeSequenceException();
 					}
-
 				}
 				buffer[dst++] = c;
 			}
 
 			_index = src;
-			return new string (buffer, 0, dst);
+			return new String(buffer, 0, dst);
 		}
 
 		//
@@ -115,9 +117,9 @@ namespace System.Reflection.Runtime.TypeParsing
 		// Terminated by NUL. There are no escape characters defined by the typename lexer (however, AssemblyName
 		// does have its own escape rules.)
 		//
-		public RuntimeAssemblyName GetNextAssemblyName ()
+		public RuntimeAssemblyName GetNextAssemblyName()
 		{
-			SkipWhiteSpace ();
+			SkipWhiteSpace();
 
 			int src = _index;
 			char[] buffer = new char[_chars.Length];
@@ -131,8 +133,8 @@ namespace System.Reflection.Runtime.TypeParsing
 				buffer[dst++] = c;
 			}
 			_index = src;
-			string fullName = new string (buffer, 0, dst);
-			return AssemblyNameParser.Parse (fullName);
+			String fullName = new String(buffer, 0, dst);
+			return AssemblyNameParser.Parse(fullName);
 		}
 
 		//
@@ -140,9 +142,9 @@ namespace System.Reflection.Runtime.TypeParsing
 		//
 		// Terminated by an unescaped ']'. 
 		//
-		public RuntimeAssemblyName GetNextEmbeddedAssemblyName ()
+		public RuntimeAssemblyName GetNextEmbeddedAssemblyName()
 		{
-			SkipWhiteSpace ();
+			SkipWhiteSpace();
 
 			int src = _index;
 			char[] buffer = new char[_chars.Length];
@@ -151,45 +153,47 @@ namespace System.Reflection.Runtime.TypeParsing
 			{
 				char c = _chars[src];
 				if (c == NUL)
-					throw new ArgumentException ();
+					throw new ArgumentException();
 				if (c == ']')
 					break;
 				src++;
 
 				// Backslash can be used to escape a ']' - any other backslash character is left alone (along with the backslash)
 				// for the AssemblyName parser to handle.
-				if (c == '\\' && _chars[src] == ']') {
+				if (c == '\\' && _chars[src] == ']')
+				{
 					c = _chars[src++];
 				}
 				buffer[dst++] = c;
 			}
 			_index = src;
-			string fullName = new string (buffer, 0, dst);
-			return AssemblyNameParser.Parse (fullName);
+			String fullName = new String(buffer, 0, dst);
+			return AssemblyNameParser.Parse(fullName);
 		}
 
 		//
 		// Classify a character as a TokenType. (Fortunately, all tokens in typename strings other than identifiers are single-character tokens.)
 		//
-		private static TokenType CharToToken (char c)
+		private static TokenType CharToToken(char c)
 		{
-			switch (c) {
-			case NUL:
-				return TokenType.End;
-			case '[':
-				return TokenType.OpenSqBracket;
-			case ']':
-				return TokenType.CloseSqBracket;
-			case ',':
-				return TokenType.Comma;
-			case '+':
-				return TokenType.Plus;
-			case '*':
-				return TokenType.Asterisk;
-			case '&':
-				return TokenType.Ampersand;
-			default:
-				return TokenType.Other;
+			switch (c)
+			{
+				case NUL:
+					return TokenType.End;
+				case '[':
+					return TokenType.OpenSqBracket;
+				case ']':
+					return TokenType.CloseSqBracket;
+				case ',':
+					return TokenType.Comma;
+				case '+':
+					return TokenType.Plus;
+				case '*':
+					return TokenType.Asterisk;
+				case '&':
+					return TokenType.Ampersand;
+				default:
+					return TokenType.Other;
 			}
 		}
 
@@ -203,16 +207,16 @@ namespace System.Reflection.Runtime.TypeParsing
 		// Whitespace between the end of an assembly name and the punction mark that ends it is also not ignored by this parser,
 		// but this is irrelevant since the assembly name is then turned over to AssemblyName for parsing, which *does* ignore trailing whitespace.
 		//
-		private void SkipWhiteSpace ()
+		private void SkipWhiteSpace()
 		{
-			while (Char.IsWhiteSpace (_chars[_index]))
+			while (Char.IsWhiteSpace(_chars[_index]))
 				_index++;
 		}
 
 
 		private int _index;
 		private readonly char[] _chars;
-		private const char NUL = (char) 0;
+		private const char NUL = (char)0;
 
 
 		public sealed class IllegalEscapeSequenceException : Exception

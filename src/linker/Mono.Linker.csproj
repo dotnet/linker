@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <Compile Remove="ref\**\*.cs" />
+    <Compile Include="..\..\external\TypeParsing\**\*.cs" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(MonoBuild)' == ''">

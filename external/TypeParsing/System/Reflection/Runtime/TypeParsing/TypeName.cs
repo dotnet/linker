@@ -1,10 +1,8 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 
 using System.Diagnostics;
 using System.Collections.Generic;
-using System.Reflection.Runtime.Assemblies;
 
 namespace System.Reflection.Runtime.TypeParsing
 {
@@ -14,9 +12,8 @@ namespace System.Reflection.Runtime.TypeParsing
 	//
 	public abstract class TypeName
 	{
-		public abstract override string ToString ();
+		public abstract override string ToString();
 	}
-
 
 	//
 	// Represents a parse of a type name optionally qualified by an assembly name. If present, the assembly name follows
@@ -24,20 +21,20 @@ namespace System.Reflection.Runtime.TypeParsing
 	//
 	public sealed class AssemblyQualifiedTypeName : TypeName
 	{
-		public AssemblyQualifiedTypeName (NonQualifiedTypeName typeName, RuntimeAssemblyName assemblyName)
+		public AssemblyQualifiedTypeName(NonQualifiedTypeName typeName, RuntimeAssemblyName assemblyName)
 		{
-			Debug.Assert (typeName != null);
+			Debug.Assert(typeName != null);
 			TypeName = typeName;
 			AssemblyName = assemblyName;
 		}
 
-		public NonQualifiedTypeName TypeName { get; private set; }
-		public RuntimeAssemblyName AssemblyName { get; private set; }
-
-		public sealed override string ToString ()
+		public sealed override string ToString()
 		{
-			return TypeName.ToString () + ((AssemblyName == null) ? "" : ", " + AssemblyName.FullName);
+			return TypeName.ToString() + ((AssemblyName == null) ? "" : ", " + AssemblyName.FullName);
 		}
+
+		public RuntimeAssemblyName AssemblyName { get; }
+		public NonQualifiedTypeName TypeName { get; }
 	}
 
 	//
@@ -60,19 +57,20 @@ namespace System.Reflection.Runtime.TypeParsing
 	//
 	internal sealed partial class NamespaceTypeName : NamedTypeName
 	{
-		public NamespaceTypeName (string[] namespaceParts, string name)
+		public NamespaceTypeName(string[] namespaceParts, string name)
 		{
-			Debug.Assert (namespaceParts != null);
-			Debug.Assert (name != null);
+			Debug.Assert(namespaceParts != null);
+			Debug.Assert(name != null);
 
 			_name = name;
 			_namespaceParts = namespaceParts;
 		}
 
-		public sealed override string ToString ()
+		public sealed override string ToString()
 		{
 			string fullName = "";
-			for (int i = 0; i < _namespaceParts.Length; i++) {
+			for (int i = 0; i < _namespaceParts.Length; i++)
+			{
 				fullName += _namespaceParts[_namespaceParts.Length - i - 1];
 				fullName += ".";
 			}
@@ -89,7 +87,7 @@ namespace System.Reflection.Runtime.TypeParsing
 	//
 	internal sealed class NestedTypeName : NamedTypeName
 	{
-		public NestedTypeName (string name, NamedTypeName declaringType)
+		public NestedTypeName(string name, NamedTypeName declaringType)
 		{
 			Name = name;
 			DeclaringType = declaringType;
@@ -98,7 +96,7 @@ namespace System.Reflection.Runtime.TypeParsing
 		public string Name { get; private set; }
 		public NamedTypeName DeclaringType { get; private set; }
 
-		public sealed override string ToString ()
+		public sealed override string ToString()
 		{
 			// Cecil's format uses '/' instead of '+' for nested types.
 			return DeclaringType + "/" + Name;
@@ -110,12 +108,12 @@ namespace System.Reflection.Runtime.TypeParsing
 	//
 	internal abstract class HasElementTypeName : NonQualifiedTypeName
 	{
-		public HasElementTypeName (TypeName elementTypeName)
+		public HasElementTypeName(TypeName elementTypeName)
 		{
 			ElementTypeName = elementTypeName;
 		}
 
-		public TypeName ElementTypeName { get; private set; }
+		public TypeName ElementTypeName { get; }
 	}
 
 	//
@@ -123,12 +121,12 @@ namespace System.Reflection.Runtime.TypeParsing
 	//
 	internal sealed class ArrayTypeName : HasElementTypeName
 	{
-		public ArrayTypeName (TypeName elementTypeName)
-			: base (elementTypeName)
+		public ArrayTypeName(TypeName elementTypeName)
+			: base(elementTypeName)
 		{
 		}
 
-		public sealed override string ToString ()
+		public sealed override string ToString()
 		{
 			return ElementTypeName + "[]";
 		}
@@ -139,15 +137,15 @@ namespace System.Reflection.Runtime.TypeParsing
 	//
 	internal sealed class MultiDimArrayTypeName : HasElementTypeName
 	{
-		public MultiDimArrayTypeName (TypeName elementTypeName, int rank)
-			: base (elementTypeName)
+		public MultiDimArrayTypeName(TypeName elementTypeName, int rank)
+			: base(elementTypeName)
 		{
 			_rank = rank;
 		}
 
-		public sealed override string ToString ()
+		public sealed override string ToString()
 		{
-			return ElementTypeName + "[" + (_rank == 1 ? "*" : new string (',', _rank - 1)) + "]";
+			return ElementTypeName + "[" + (_rank == 1 ? "*" : new string(',', _rank - 1)) + "]";
 		}
 
 		private int _rank;
@@ -158,12 +156,12 @@ namespace System.Reflection.Runtime.TypeParsing
 	//
 	internal sealed class ByRefTypeName : HasElementTypeName
 	{
-		public ByRefTypeName (TypeName elementTypeName)
-			: base (elementTypeName)
+		public ByRefTypeName(TypeName elementTypeName)
+			: base(elementTypeName)
 		{
 		}
 
-		public sealed override string ToString ()
+		public sealed override string ToString()
 		{
 			return ElementTypeName + "&";
 		}
@@ -174,12 +172,12 @@ namespace System.Reflection.Runtime.TypeParsing
 	//
 	internal sealed class PointerTypeName : HasElementTypeName
 	{
-		public PointerTypeName (TypeName elementTypeName)
-			: base (elementTypeName)
+		public PointerTypeName(TypeName elementTypeName)
+			: base(elementTypeName)
 		{
 		}
 
-		public sealed override string ToString ()
+		public sealed override string ToString()
 		{
 			return ElementTypeName + "*";
 		}
@@ -190,28 +188,29 @@ namespace System.Reflection.Runtime.TypeParsing
 	//
 	internal sealed class ConstructedGenericTypeName : NonQualifiedTypeName
 	{
-		public ConstructedGenericTypeName (NamedTypeName genericType, IEnumerable<TypeName> genericArguments)
+		public ConstructedGenericTypeName(NamedTypeName genericType, IEnumerable<TypeName> genericArguments)
 		{
 			GenericType = genericType;
 			GenericArguments = genericArguments;
 		}
 
-		public NamedTypeName GenericType { get; private set; }
-		public IEnumerable<TypeName> GenericArguments { get; private set; }
+		public NamedTypeName GenericType { get; }
+		public IEnumerable<TypeName> GenericArguments { get; }
 
-		public sealed override string ToString ()
+		public sealed override string ToString()
 		{
-			string s = GenericType.ToString ();
+			string s = GenericType.ToString();
 			s += "[";
 			string sep = "";
-			foreach (TypeName genericTypeArgument in GenericArguments) {
+			foreach (TypeName genericTypeArgument in GenericArguments)
+			{
 				s += sep;
 				sep = ",";
 				AssemblyQualifiedTypeName assemblyQualifiedTypeArgument = genericTypeArgument as AssemblyQualifiedTypeName;
 				if (assemblyQualifiedTypeArgument == null || assemblyQualifiedTypeArgument.AssemblyName == null)
-					s += genericTypeArgument.ToString ();
+					s += genericTypeArgument.ToString();
 				else
-					s += "[" + genericTypeArgument.ToString () + "]";
+					s += "[" + genericTypeArgument.ToString() + "]";
 			}
 			s += "]";
 			return s;
