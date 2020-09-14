@@ -1,5 +1,4 @@
-<Project>
-  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <LangVersion>latest</LangVersion>
@@ -70,14 +69,6 @@
 
   <Target Name="RunTestsOnMono" Condition="'$(MonoBuild)' != ''">
     <Exec Command="mono $(PkgNUnit_ConsoleRunner)/tools/nunit3-console.exe --result=TestResults.xml $(OutputPath)Mono.Linker.Tests.dll" />
-  </Target>
-
-  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
-
-  <!-- Arcade's custom test imports assume that we are using xunit. -->
-  <!-- Map the Arcade "Test" target to the "VSTest" target used by "dotnet test" -->
-  <Target Name="Test" Condition="'$(MonoBuild)' == ''">
-    <MSBuild Projects="$(MSBuildProjectFile)" Targets="VSTest" />
   </Target>
 
 </Project>
