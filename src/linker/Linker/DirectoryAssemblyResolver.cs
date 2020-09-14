@@ -30,6 +30,7 @@ namespace Mono.Linker {
 		protected DirectoryAssemblyResolver ()
 		{
 			defaultReaderParameters = new ReaderParameters ();
+			defaultReaderParameters.AssemblyResolver = this;
 			directories = new Collection<string> (2) { "." };
 		}
 
@@ -64,7 +65,6 @@ namespace Mono.Linker {
 
 		public virtual AssemblyDefinition Resolve (AssemblyNameReference name)
 		{
-			defaultReaderParameters.AssemblyResolver = this;
 			return Resolve (name, defaultReaderParameters);
 		}
 
