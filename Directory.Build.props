@@ -19,8 +19,8 @@
 
   <Import Project="Sdk.props" Sdk="Microsoft.DotNet.Arcade.Sdk" Condition="'$(MonoBuild)' == ''" />
   <!-- Still use global versions even if not using arcade. -->
-  <Import Project="$(RepositoryEngineeringDir)Versions.props" Condition="'$(MonoBuild)' != ''" />
-  <Import Project="$(RepositoryEngineeringDir)Analyzers.props" />
+  <Import Project="eng/Versions.props" Condition="'$(MonoBuild)' != ''" />
+  <Import Project="eng/Analyzers.props" />
   <PropertyGroup>
     <IsPackable>false</IsPackable>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
