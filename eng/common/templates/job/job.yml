@@ -206,10 +206,10 @@ jobs:
     - task: PublishTestResults@2
       displayName: Publish Test Results
       inputs:
-        testResultsFormat: 'xUnit'
+        testResultsFormat: 'VSTest'
         testResultsFiles: '*.xml' 
         searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
-        testRunTitle: ${{ coalesce(parameters.testRunTitle, parameters.name, '$(System.JobName)') }}-xunit
+        testRunTitle: ${{ coalesce(parameters.testRunTitle, parameters.name, '$(System.JobName)') }}-vstest
         mergeTestResults: ${{ parameters.mergeTestResults }}
       continueOnError: true
       condition: always()
