@@ -68,7 +68,7 @@ namespace Mono.Linker
 			return recorders != null;
 		}
 
-		public void AddDirectDependency (object target, in DependencyInfo reason, bool marked)
+		public virtual void AddDirectDependency (object target, in DependencyInfo reason, bool marked)
 		{
 			if (IsRecordingEnabled ()) {
 				foreach (IDependencyRecorder recorder in recorders)
