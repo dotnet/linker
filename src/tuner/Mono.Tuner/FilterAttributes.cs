@@ -42,7 +42,7 @@ namespace Mono.Tuner {
 
 		static FilterAttributes ()
 		{
-			FilterAttribute ("System.Runtime.InteropServices.ComVisibleAttribute");
+			FilterAttribute ("System.Runtime.InteropServices.ComVisibleAttribute"); 
 		}
 
 		static void FilterAttribute (string fullname)
