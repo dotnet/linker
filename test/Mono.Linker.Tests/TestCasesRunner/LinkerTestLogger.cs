@@ -1,31 +1,16 @@
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 namespace Mono.Linker.Tests.TestCasesRunner
 {
-	public class LinkerTestLogger : ILogger
+	public class LinkerTestLogger : ConsoleLogger
 	{
-		public struct MessageRecord
+		public LinkerTestLogger (MessageCategory categoriesToCache) :
+			base (null, categoriesToCache)
 		{
-			public string Message;
-			public MessageCategory Category;
-			public MessageOrigin? Origin;
-			public int? Code;
-			public string Text;
-			public string OriginMemberDefinitionFullName;
 		}
 
-		public List<MessageRecord> Messages { get; private set; } = new List<MessageRecord> ();
-
-		public void LogMessage (MessageContainer msBuildMessage)
-		{
-			Messages.Add (new MessageRecord () {
-				Message = msBuildMessage.ToString (),
-				Category = msBuildMessage.Category,
-				Origin = msBuildMessage.Origin,
-				Code = msBuildMessage.Code,
-				Text = msBuildMessage.Text,
-				OriginMemberDefinitionFullName = msBuildMessage.Origin?.MemberDefinition?.FullName
-			});
-		}
+		public IEnumerable<MessageContainer> Messages => GetCachedMessages ();
 	}
 }

@@ -767,6 +767,9 @@ namespace Mono.Linker
 				// The stack trace will go to stderr, and the MSBuild task will surface it with High importance.
 				throw;
 			} finally {
+				if (context.Logger is ConsoleLogger consoleLogger)
+					consoleLogger.Flush ();
+
 				context.Tracer.Finish ();
 			}
 

@@ -171,7 +171,7 @@ namespace Mono.Linker
 
 		public bool LogMessages { get; set; }
 
-		public ILogger Logger { private get; set; } = new ConsoleLogger ();
+		public ILogger Logger { internal get; set; }
 
 		public MarkingHelpers MarkingHelpers { get; private set; }
 
@@ -228,6 +228,7 @@ namespace Mono.Linker
 			_customAttributes = new CustomAttributeSource ();
 
 			SymbolReaderProvider = new DefaultSymbolReaderProvider (false);
+			Logger = new ConsoleLogger (new StreamWriter(Console.OpenStandardOutput ()), MessageCategory.Warning);
 
 			if (factory == null)
 				throw new ArgumentNullException (nameof (factory));
