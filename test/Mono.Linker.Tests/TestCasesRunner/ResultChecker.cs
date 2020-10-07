@@ -616,9 +616,9 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 								List<MessageContainer> matchedMessages;
 								if ((bool) attr.ConstructorArguments[1].Value)
-									matchedMessages = logger.Messages.Where (mc => Regex.IsMatch (mc.ToString (), expectedMessage)).ToList ();
+									matchedMessages = loggedMessages.Where (mc => Regex.IsMatch (mc.ToString (), expectedMessage)).ToList ();
 								else
-									matchedMessages = logger.Messages.Where (mc => mc.ToString ().Contains (expectedMessage)).ToList (); ;
+									matchedMessages = loggedMessages.Where (mc => mc.ToString ().Contains (expectedMessage)).ToList (); ;
 								Assert.IsTrue (
 									matchedMessages.Count > 0,
 									$"Expected to find logged message matching `{expectedMessage}`, but no such message was found.{Environment.NewLine}Logged messages:{Environment.NewLine}{FormatMessages (loggedMessages)}");
@@ -655,7 +655,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 								var actualMethod = attrProvider as MethodDefinition;
 
 								Assert.IsTrue (
-									logger.Messages.Any (mc => {
+									loggedMessages.Any (mc => {
 										if (mc.Category != MessageCategory.Warning || mc.Code != expectedWarningCodeNumber)
 											return false;
 
@@ -673,8 +673,17 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 											if (sourceColumn != null && mc.Origin?.SourceColumn != sourceColumn.Value)
 												return false;
-										} else if (mc.Origin?.MemberDefinition?.FullName != attrProvider.FullName)
+										} else {
+											if (mc.Origin?.MemberDefinition?.FullName == attrProvider.FullName)
+												return true;
+
+											if (mc.Origin?.MemberDefinition is MemberReference mr &&
+												logger.ComputedStrings.TryGetValue (mr, out string computedString) &&
+												computedString.Contains (attrProvider.FullName))
+												return true;
+
 											return false;
+										}
 
 										return true;
 									}),

@@ -718,6 +718,7 @@ namespace Mono.Linker
 			// RemoveUnreachableBlocksStep [optional]
 			// MarkStep
 			// ReflectionBlockedStep [optional]
+			// ProcessWarnings
 			// SweepStep
 			// AddBypassNGenStep [optional]
 			// CodeRewriterStep
@@ -1209,6 +1210,7 @@ namespace Mono.Linker
 			p.AppendStep (new TypeMapStep ());
 			p.AppendStep (new MarkStep ());
 			p.AppendStep (new ValidateVirtualMethodAnnotationsStep ());
+			p.AppendStep (new ProcessWarnings ());
 			p.AppendStep (new SweepStep ());
 			p.AppendStep (new CodeRewriterStep ());
 			p.AppendStep (new CleanStep ());

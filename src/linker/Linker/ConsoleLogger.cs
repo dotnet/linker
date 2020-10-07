@@ -4,17 +4,21 @@
 
 using System.Collections.Generic;
 using System.IO;
+using Mono.Cecil;
 
 namespace Mono.Linker
 {
 	public class ConsoleLogger : ILogger
 	{
+		public Dictionary<MemberReference, string> ComputedStrings;
+
 		readonly List<MessageContainer> _messageContainers;
 		readonly MessageCategory _categoriesToCache;
 		readonly StreamWriter _streamWriter;
 
 		public ConsoleLogger (StreamWriter streamWriter, MessageCategory categoriesToCache = MessageCategory.None)
 		{
+			ComputedStrings = new Dictionary<MemberReference, string> ();
 			_messageContainers = new List<MessageContainer> ();
 			_categoriesToCache = categoriesToCache;
 			_streamWriter = streamWriter;
@@ -23,7 +27,7 @@ namespace Mono.Linker
 		public void LogMessage (MessageContainer messageContainer)
 		{
 			if (_categoriesToCache.HasFlag (messageContainer.Category)) {
-				_messageContainers.Add (messageContainer.Copy ());
+				_messageContainers.Add (messageContainer);
 				return;
 			}
 
@@ -36,11 +40,19 @@ namespace Mono.Linker
 				return;
 
 			_messageContainers.Sort ();
-			foreach (var messageContainer in _messageContainers)
-				_streamWriter?.WriteLine (messageContainer.ToString ());
+			foreach (var messageContainer in _messageContainers) {
+				_messageContainers.Remove (messageContainer);
+				if (messageContainer.Origin?.MemberDefinition is MemberReference memberReference &&
+					ComputedStrings.TryGetValue (memberReference, out string computedString)) {
+					_streamWriter.WriteLine (computedString);
+					continue;
+				}
+
+				_streamWriter.WriteLine (messageContainer.ToString ());
+			}
 		}
 
-		protected IEnumerable<MessageContainer> GetCachedMessages ()
+		public IEnumerable<MessageContainer> GetCachedMessages ()
 		{
 			return _messageContainers;
 		}

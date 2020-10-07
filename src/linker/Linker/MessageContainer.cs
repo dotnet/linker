@@ -181,15 +181,6 @@ namespace Mono.Linker
 			return (Origin == null) ? 1 : -1;
 		}
 
-		public MessageContainer Copy ()
-		{
-			var memberDefinition = Origin?.MemberDefinition;
-			if (memberDefinition == null)
-				return (MessageContainer) MemberwiseClone ();
-
-			return new MessageContainer (Category, Text, Code, SubCategory, new MessageOrigin (Origin.Value.MemberDefinition, Origin.Value.ILOffset));
-		}
-
 		public static bool operator == (MessageContainer lhs, MessageContainer rhs) => lhs.Equals (rhs);
 		public static bool operator != (MessageContainer lhs, MessageContainer rhs) => !lhs.Equals (rhs);
 	}
