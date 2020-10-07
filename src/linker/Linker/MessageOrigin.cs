@@ -80,8 +80,8 @@ namespace Mono.Linker
 		public int CompareTo (MessageOrigin other)
 		{
 			if (MemberDefinition != null && other.MemberDefinition != null) {
-				return (MemberDefinition.DeclaringType.Module.Assembly.Name.FullName, MemberDefinition.DeclaringType.Name, MemberDefinition.Name).CompareTo
-					((other.MemberDefinition.DeclaringType.Module.Assembly.Name.FullName, other.MemberDefinition.DeclaringType.Name, MemberDefinition.Name));
+				return (MemberDefinition.DeclaringType.Module.Assembly.Name.Name, MemberDefinition.DeclaringType.Name, MemberDefinition.Name).CompareTo
+					((other.MemberDefinition.DeclaringType.Module.Assembly.Name.Name, other.MemberDefinition.DeclaringType.Name, other.MemberDefinition.Name));
 			} else if (MemberDefinition == null && other.MemberDefinition == null) {
 				if (FileName != null && other.FileName != null) {
 					return string.Compare (FileName, other.FileName);

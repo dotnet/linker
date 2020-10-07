@@ -92,10 +92,12 @@ namespace Mono.Linker.Tests.TestCases
 		{
 			var testcase = CreateIndividualCase (typeof (WarningsAreSorted));
 			var result = Run (testcase);
-			var loggedMessages = result.Logger.GetCachedMessages ().ToList ();
+			var loggedMessages = result.Logger.GetCachedMessages ()
+				.Where (lm => lm.Category != MessageCategory.Info && lm.Category != MessageCategory.Diagnostic).ToList ();
 			loggedMessages.Sort ();
-			var x = string.Join (Environment.NewLine, loggedMessages);
 
+			Assert.IsTrue (string.Join (Environment.NewLine, loggedMessages).SequenceEqual (
+				File.ReadAllText (TestsDirectory.Combine ($"TestCases/Dependencies/SortedWarnings.txt"))));
 		}
 
 		[Test]

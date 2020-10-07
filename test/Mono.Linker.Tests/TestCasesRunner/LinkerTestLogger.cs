@@ -10,7 +10,5 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			base (null, categoriesToCache)
 		{
 		}
-
-		public IEnumerable<MessageContainer> Messages => GetCachedMessages ();
 	}
 }

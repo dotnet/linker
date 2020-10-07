@@ -10,10 +10,9 @@ namespace Mono.Linker.Steps
 	{
 		protected override void Process ()
 		{
-			// Compute the output strings for all cached messages that are tied to
-			// a MemberDefinition in its origin. We do this before the sweep and
-			// clean steps are run to be confident that we have all the information
-			// needed to gracefully generate the string.
+			// Compute the output strings for all cached messages that have a MemberDefinition.
+			// We do this before the sweep and clean steps are run to be confident that we have
+			// all the information needed to gracefully generate the string.
 			if (Context.Logger is not ConsoleLogger consoleLogger)
 				return;
 
