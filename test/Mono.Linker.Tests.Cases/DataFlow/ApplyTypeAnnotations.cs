@@ -19,6 +19,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TestFromStringContantWithAnnotation ();
 			TestFromStringConstantWithGeneric ();
 			TestFromStringConstantWithGenericAndAssemblyQualified ();
+			TestFromStringConstantWithGenericAndAssemblyQualifiedInvalidAssembly ();
+			TestFromStringConstantWithGenericAndAssemblyQualifiedNonExistingAssembly ();
 		}
 
 		[Kept]
@@ -164,6 +166,26 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		static void TestFromStringConstantWithGenericAndAssemblyQualified()
 		{
 			RequireCombinationOnString ("Mono.Linker.Tests.Cases.DataFlow.ApplyTypeAnnotations+FromStringConstantWithGenericAndAssemblyQualified`1[[Mono.Linker.Tests.Cases.Expectations.Assertions.KeptAttribute,Mono.Linker.Tests.Cases.Expectations]]");
+		}
+
+		class InvalidAssemblyNameType
+		{
+		}
+
+		[Kept]
+		static void TestFromStringConstantWithGenericAndAssemblyQualifiedInvalidAssembly ()
+		{
+			RequireCombinationOnString ("Mono.Linker.Tests.Cases.DataFlow.ApplyTypeAnnotations+InvalidAssemblyNameType,Invalid/Assembly/Name");
+		}
+
+		class NonExistingAssemblyType
+		{
+		}
+
+		[Kept]
+		static void TestFromStringConstantWithGenericAndAssemblyQualifiedNonExistingAssembly ()
+		{
+			RequireCombinationOnString ("Mono.Linker.Tests.Cases.DataFlow.ApplyTypeAnnotations+InvalidAssemblyNameType,NonExistingAssembly");
 		}
 	}
 }
