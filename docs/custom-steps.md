@@ -2,7 +2,7 @@
 
 The IL linker behaviour can be altered not only using existing options but also by
 adding custom steps to the processing pipeline. This advanced technique is not necessary
-for most scenarious but can be used by additional framework or SDKs which need very
+for most scenarios but can be used by additional framework or SDKs which need very
 custom behaviour or have other special needs for the processing.
 
 ## Building
