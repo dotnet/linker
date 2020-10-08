@@ -228,7 +228,7 @@ namespace Mono.Linker
 			_customAttributes = new CustomAttributeSource ();
 
 			SymbolReaderProvider = new DefaultSymbolReaderProvider (false);
-			Logger = new ConsoleLogger (new StreamWriter(Console.OpenStandardOutput ()), MessageCategory.Warning);
+			Logger = new ConsoleLogger ();
 
 			if (factory == null)
 				throw new ArgumentNullException (nameof (factory));
