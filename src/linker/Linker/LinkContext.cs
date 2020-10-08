@@ -65,6 +65,7 @@ namespace Mono.Linker
 
 		readonly AnnotationStore _annotations;
 		readonly CustomAttributeSource _customAttributes;
+		readonly List<MessageContainer> _cachedWarningMessageContainers;
 
 		public Pipeline Pipeline {
 			get { return _pipeline; }
@@ -226,6 +227,7 @@ namespace Mono.Linker
 			_parameters = new Dictionary<string, string> (StringComparer.Ordinal);
 			_readerParameters = readerParameters;
 			_customAttributes = new CustomAttributeSource ();
+			_cachedWarningMessageContainers = new List<MessageContainer> ();
 
 			SymbolReaderProvider = new DefaultSymbolReaderProvider (false);
 			Logger = new ConsoleLogger ();
@@ -548,7 +550,7 @@ namespace Mono.Linker
 		{
 			WarnVersion version = GetWarningVersion ();
 			MessageContainer warning = MessageContainer.CreateWarningMessage (this, text, code, origin, version, subcategory);
-			LogMessage (warning);
+			_cachedWarningMessageContainers.Add (warning);
 		}
 
 		/// <summary>
@@ -595,6 +597,15 @@ namespace Mono.Linker
 		{
 			var error = MessageContainer.CreateErrorMessage (text, code, subcategory, origin);
 			LogMessage (error);
+		}
+
+		public void FlushCachedWarnings ()
+		{
+			_cachedWarningMessageContainers.Sort ();
+			foreach (var warning in _cachedWarningMessageContainers)
+				LogMessage (warning);
+
+			_cachedWarningMessageContainers.Clear ();
 		}
 
 		public bool IsWarningSuppressed (int warningCode, MessageOrigin origin)

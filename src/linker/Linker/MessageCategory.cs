@@ -6,11 +6,11 @@ namespace Mono.Linker
 {
 	public enum MessageCategory
 	{
-		Error = 1,
-		Warning = 2,
-		Info = 4,
-		Diagnostic = 8,
-		WarningAsError = 16,
-		All = 0xFF
+		Error = 0,
+		Warning,
+		Info,
+		Diagnostic,
+
+		WarningAsError = 0xFF
 	}
 }

@@ -655,7 +655,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 								var actualMethod = attrProvider as MethodDefinition;
 
 								Assert.IsTrue (
-									logger.CachedMessages.Any (mc => {
+									logger.MessageContainers.Any (mc => {
 										if (mc.Category != MessageCategory.Warning || mc.Code != expectedWarningCodeNumber)
 											return false;
 

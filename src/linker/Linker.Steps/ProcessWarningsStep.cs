@@ -10,10 +10,7 @@ namespace Mono.Linker.Steps
 		{
 			// Flush all cached messages before the sweep and clean steps are run to be confident 
 			// that we have all the information needed to gracefully generate the string.
-			if (Context.Logger is not ConsoleLogger consoleLogger)
-				return;
-
-			consoleLogger.Flush ();
+			Context.FlushCachedWarnings ();
 		}
 	}
 }

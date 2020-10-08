@@ -6,9 +6,9 @@ namespace Mono.Linker
 {
 	public enum MessageCategory
 	{
-		Error = 1,
-		Warning = 2,
-		Info = 4,
-		Diagnostic = 8
+		Error = 0,
+		Warning,
+		Info,
+		Diagnostic
 	}
 }
