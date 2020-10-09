@@ -22,7 +22,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 		public List<string> GetLoggedMessages ()
 		{
 			string allWarningsAsOneString = _stringWriter.GetStringBuilder ().ToString ();
-			return allWarningsAsOneString.Split (Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).ToList ();
+			return allWarningsAsOneString.Split (Environment.NewLine.ToCharArray (), StringSplitOptions.RemoveEmptyEntries).ToList ();
 		}
 
 		public void LogMessage (MessageContainer message)

@@ -172,7 +172,7 @@ namespace Mono.Linker
 
 		public bool LogMessages { get; set; }
 
-		public ILogger Logger { internal get; set; }
+		public ILogger Logger { get; set; }
 
 		public MarkingHelpers MarkingHelpers { get; private set; }
 
