@@ -2942,7 +2942,7 @@ namespace Mono.Linker.Steps
 		//
 		// Extension point for reflection logic handling customization
 		//
-		internal protected virtual bool ProcessReflectionDependency (MethodBody body, Instruction instruction)
+		protected internal virtual bool ProcessReflectionDependency (MethodBody body, Instruction instruction)
 		{
 			return false;
 		}
