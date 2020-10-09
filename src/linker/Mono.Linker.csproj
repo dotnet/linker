@@ -7,6 +7,7 @@
   <PropertyGroup Condition="'$(MonoBuild)' == ''">
     <DefineConstants>$(DefineConstants);FEATURE_ILLINK</DefineConstants>
     <IsPackable>true</IsPackable>
+    <IsShippingPackage>false</IsShippingPackage>
     <!-- Nuget issues a warning about missing <reference> items in the generated nuspec,
          used for packages.config which we do not support. -->
     <NoWarn>$(NoWarn);NU5131</NoWarn>
