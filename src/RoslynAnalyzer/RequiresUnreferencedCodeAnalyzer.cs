@@ -11,7 +11,7 @@ using System.Collections.Immutable;
 
 namespace ILTrimmingAnalyzer
 {
-    [DiagnosticAnalyzer(LanguageNames.CSharp, LanguageNames.VisualBasic)]
+    [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class RequiresUnreferencedCodeAnalyzer : DiagnosticAnalyzer
     {
         public const string DiagnosticId = "IL2026";
@@ -62,7 +62,7 @@ namespace ILTrimmingAnalyzer
 
                     foreach (var attr in attributes)
                     {
-                        if (attr.AttributeClass is { } attrClass && 
+                        if (attr.AttributeClass is { } attrClass &&
 							IsNamedType(attrClass, "System.Diagnostics.CodeAnalysis.RequiresUnreferencedCodeAttribute") &&
 							attr.ConstructorArguments.Length == 1 &&
 							attr.ConstructorArguments[0] is { Type: { SpecialType: SpecialType.System_String } } ctorArg)

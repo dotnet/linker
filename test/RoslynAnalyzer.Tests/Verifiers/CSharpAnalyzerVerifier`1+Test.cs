@@ -12,7 +12,7 @@ namespace Analyzer1.Test
     {
         public class Test : CSharpAnalyzerTest<TAnalyzer, XUnitVerifier>
         {
-			public string? AnalyzerConfigDocument { get; init; }
+			public string? AnalyzerConfigDocument { get; set; }
 
             public Test()
             {
