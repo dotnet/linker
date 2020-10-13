@@ -12,10 +12,10 @@ using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
 namespace Mono.Linker.Tests.Cases.DataFlow
 {
-	[IgnoreTestCase("Active issue https://github.com/mono/linker/issues/1559")]
+	[IgnoreTestCase ("Active issue https://github.com/mono/linker/issues/1559")]
 	public class ComplexTypeHandling
 	{
-		public static void Main()
+		public static void Main ()
 		{
 			TestArray ();
 			TestArrayOnGeneric ();
@@ -35,12 +35,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[Kept]
-		static void TestArray()
+		static void TestArray ()
 		{
 			RequirePublicMethods (typeof (ArrayElementType[]));
 		}
 
-		static void TestGenericArray()
+		static void TestGenericArray ()
 		{
 			RequirePublicMethodsOnArrayOfGeneric<ArrayElementType> ();
 		}
@@ -70,16 +70,16 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[Kept]
-		[KeptMember(".ctor()")]
+		[KeptMember (".ctor()")]
 		class RequirePublicMethodsGeneric<
-			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
-			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
-			T>
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+		[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+		T>
 		{
 		}
 
 		[Kept]
-		static void TestArrayOnGeneric()
+		static void TestArrayOnGeneric ()
 		{
 			_ = new RequirePublicMethodsGeneric<ArrayElementInGenericType[]> ();
 		}
