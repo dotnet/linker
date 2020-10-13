@@ -40,11 +40,13 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			RequirePublicMethods (typeof (ArrayElementType[]));
 		}
 
+		[Kept]
 		static void TestGenericArray ()
 		{
 			RequirePublicMethodsOnArrayOfGeneric<ArrayElementType> ();
 		}
 
+		[Kept]
 		static void RequirePublicMethodsOnArrayOfGeneric<T> ()
 		{
 			RequirePublicMethods (typeof (T[]));
