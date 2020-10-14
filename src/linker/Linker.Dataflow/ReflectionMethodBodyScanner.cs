@@ -1571,13 +1571,8 @@ namespace Mono.Linker.Dataflow
 				} else if (uniqueValue is SystemTypeValue systemTypeValue) {
 					MarkTypeForDynamicallyAccessedMembers (ref reflectionContext, systemTypeValue.TypeRepresented, requiredMemberTypes);
 				} else if (uniqueValue is KnownStringValue knownStringValue) {
-					TypeDefinition foundType = _context.TypeNameResolver.ResolveTypeName (knownStringValue.Contents)?.Resolve ();
-					if (foundType == null) {
-						// Intentionally ignore - it's not wrong for code to call Type.GetType on non-existing name, the code might expect null/exception back.
-						reflectionContext.RecordHandledPattern ();
-					} else {
-						MarkTypeForDynamicallyAccessedMembers (ref reflectionContext, foundType, requiredMemberTypes);
-					}
+					TypeReference foundType = _context.TypeNameResolver.ResolveTypeName (knownStringValue.Contents);
+					MarkTypeForDynamicallyAccessedMembers (ref reflectionContext, foundType, requiredMemberTypes);
 				} else if (uniqueValue == NullValue.Instance) {
 					// Ignore - probably unreachable path as it would fail at runtime anyway.
 				} else {
@@ -1622,29 +1617,43 @@ namespace Mono.Linker.Dataflow
 			return (bindingFlags & BindingFlags.IgnoreCase) == BindingFlags.IgnoreCase || (int) bindingFlags > 255;
 		}
 
-		void MarkTypeForDynamicallyAccessedMembers (ref ReflectionPatternContext reflectionContext, TypeDefinition typeDefinition, DynamicallyAccessedMemberTypes requiredMemberTypes)
+		void MarkTypeForDynamicallyAccessedMembers (ref ReflectionPatternContext reflectionContext, TypeReference typeReference, DynamicallyAccessedMemberTypes requiredMemberTypes)
 		{
-			foreach (var member in typeDefinition.GetDynamicallyAccessedMembers (requiredMemberTypes)) {
-				switch (member) {
-				case MethodDefinition method:
-					MarkMethod (ref reflectionContext, method);
-					break;
-				case FieldDefinition field:
-					MarkField (ref reflectionContext, field);
-					break;
-				case TypeDefinition nestedType:
-					MarkNestedType (ref reflectionContext, nestedType);
-					break;
-				case PropertyDefinition property:
-					MarkProperty (ref reflectionContext, property);
-					break;
-				case EventDefinition @event:
-					MarkEvent (ref reflectionContext, @event);
-					break;
-				case null:
-					var source = reflectionContext.Source;
-					reflectionContext.RecordRecognizedPattern (typeDefinition, () => _markStep.MarkEntireType (typeDefinition, includeBaseTypes: true, new DependencyInfo (DependencyKind.AccessedViaReflection, source), source));
-					break;
+			var foundType = typeReference?.Resolve ();
+			if (foundType == null) {
+				// Intentionally ignore - it's not wrong for code to call Type.GetType on non-existing name, the code might expect null/exception back.
+				reflectionContext.RecordHandledPattern ();
+				return;
+			} else {
+				foreach (var member in foundType.GetDynamicallyAccessedMembers (requiredMemberTypes)) {
+					switch (member) {
+					case MethodDefinition method:
+						MarkMethod (ref reflectionContext, method);
+						break;
+					case FieldDefinition field:
+						MarkField (ref reflectionContext, field);
+						break;
+					case TypeDefinition nestedType:
+						MarkNestedType (ref reflectionContext, nestedType);
+						break;
+					case PropertyDefinition property:
+						MarkProperty (ref reflectionContext, property);
+						break;
+					case EventDefinition @event:
+						MarkEvent (ref reflectionContext, @event);
+						break;
+					case null:
+						var source = reflectionContext.Source;
+						reflectionContext.RecordRecognizedPattern (foundType, () => _markStep.MarkEntireType (foundType, includeBaseTypes: true, new DependencyInfo (DependencyKind.AccessedViaReflection, source), source));
+						break;
+					}
+				}
+			}
+
+			// If this is a generic type, mark all its arguments.
+			if (typeReference is GenericInstanceType genericType) {
+				foreach (var arg in genericType.GenericArguments) {
+					MarkTypeForDynamicallyAccessedMembers (ref reflectionContext, arg, requiredMemberTypes);
 				}
 			}
 		}
