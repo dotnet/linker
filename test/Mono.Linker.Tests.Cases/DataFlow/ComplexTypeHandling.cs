@@ -80,7 +80,6 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		static void TestArrayOnGeneric ()
 		{
 			_ = new RequirePublicMethodsGeneric<ArrayElementInGenericType[]> ();
-			_ = new RequirePublicMethodsGeneric<int[]> ();
 		}
 
 		[Kept]

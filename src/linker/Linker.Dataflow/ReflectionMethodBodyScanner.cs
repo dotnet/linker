@@ -1657,7 +1657,7 @@ namespace Mono.Linker.Dataflow
 		void MarkType (ref ReflectionPatternContext reflectionContext, TypeReference typeReference)
 		{
 			var source = reflectionContext.Source;
-			reflectionContext.RecordRecognizedPattern (typeReference?.Resolve (), () => _markStep.MarkType (typeReference, new DependencyInfo (DependencyKind.AccessedViaReflection, source), source));
+			reflectionContext.RecordRecognizedPattern (typeReference?.Resolve (), () => _markStep.MarkTypeVisibleToReflection (typeReference, new DependencyInfo (DependencyKind.AccessedViaReflection, source), source));
 		}
 
 		void MarkMethod (ref ReflectionPatternContext reflectionContext, MethodDefinition method)
