@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
@@ -129,7 +130,6 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[Kept]
-		[KeptMember (".ctor()")]
 		class FromStringConstantWithGenericInner
 		{
 		}
@@ -143,21 +143,30 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[Kept]
-		[KeptMember (".ctor()")]
 		class FromStringConstantWithGenericInnerInner
 		{
+			[Kept]
+			public void Method ()
+			{
+			}
+
+			int unusedField;
 		}
 
 		[Kept]
-		[KeptMember (".ctor()")]
-		class FromStringConstantWithGenericInnerOne<T>
+		class FromStringConstantWithGenericInnerOne<
+		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+		[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+		T>
 		{
 		}
 
 		[Kept]
-		[KeptMember (".ctor()")]
 		class FromStringConstantWithGenericInnerTwo
 		{
+			void UnusedMethod ()
+			{
+			}
 		}
 
 		[Kept]

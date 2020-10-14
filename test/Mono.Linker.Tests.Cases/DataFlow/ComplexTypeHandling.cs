@@ -12,7 +12,6 @@ using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
 namespace Mono.Linker.Tests.Cases.DataFlow
 {
-	[IgnoreTestCase ("Active issue https://github.com/mono/linker/issues/1559")]
 	public class ComplexTypeHandling
 	{
 		public static void Main ()
@@ -81,6 +80,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		static void TestArrayOnGeneric ()
 		{
 			_ = new RequirePublicMethodsGeneric<ArrayElementInGenericType[]> ();
+			_ = new RequirePublicMethodsGeneric<int[]> ();
 		}
 
 		[Kept]
@@ -89,6 +89,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			RequirePublicMethodsOnArrayOfGenericParameter<ArrayElementInGenericType> ();
 		}
 
+		[Kept]
 		static void RequirePublicMethodsOnArrayOfGenericParameter<T> ()
 		{
 			_ = new RequirePublicMethodsGeneric<T[]> ();
