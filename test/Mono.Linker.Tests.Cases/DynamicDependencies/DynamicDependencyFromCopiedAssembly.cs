@@ -4,7 +4,7 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.DynamicDependencies
 {
-	[SetupLinkerAction ("link", "lib")]
+	[SetupLinkerAction ("copy", "lib")]
 	[SetupCompileBefore ("lib.dll", new[] { "Dependencies/DynamicDependencyInCopyAssembly.cs" })]
 	[KeptAllTypesAndMembersInAssembly ("lib.dll")]
 	public class DynamicDependencyFromCopiedAssembly
@@ -18,7 +18,6 @@ namespace Mono.Linker.Tests.Cases.DynamicDependencies
 		static void Test ()
 		{
 			var b = new DynamicDependencyInCopyAssembly ();
-			//var x = Foo.GetObject ();
 		}
 	}
 }
