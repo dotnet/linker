@@ -32,7 +32,6 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		{
 			public ArrayElementType () { }
 
-			[Kept]
 			public void PublicMethod () { }
 
 			private int _privateField;
@@ -61,7 +60,6 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		{
 			public ArrayElementInGenericType () { }
 
-			[Kept]
 			public void PublicMethod () { }
 
 			private int _privateField;
@@ -71,8 +69,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		[KeptMember (".ctor()")]
 		class RequirePublicMethodsGeneric<
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
-		[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
-		T>
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			T>
 		{
 		}
 

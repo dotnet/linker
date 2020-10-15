@@ -708,6 +708,12 @@ namespace Mono.Linker.Dataflow
 				return;
 			}
 
+			if (operation.Operand is ArrayType arrayType) {
+				StackSlot slot = new StackSlot (new ArrayValue (new ConstIntValue (arrayType.Rank)));
+				currentStack.Push (slot);
+				return;
+			}
+
 			if (operation.Operand is TypeReference typeReference) {
 				var resolvedReference = typeReference.Resolve ();
 				if (resolvedReference != null) {

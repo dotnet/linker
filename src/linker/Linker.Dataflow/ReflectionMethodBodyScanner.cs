@@ -130,7 +130,7 @@ namespace Mono.Linker.Dataflow
 			var annotation = _context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameter);
 			Debug.Assert (annotation != DynamicallyAccessedMemberTypes.None);
 
-			ValueNode valueNode = GetValueNodeFromGenericArgument (genericArgument.GetElementType ());
+			ValueNode valueNode = GetValueNodeFromGenericArgument (genericArgument);
 			bool enableReflectionPatternReporting = !(source is MethodDefinition sourceMethod) || ShouldEnableReflectionPatternReporting (sourceMethod);
 
 			var reflectionContext = new ReflectionPatternContext (_context, enableReflectionPatternReporting, source, genericParameter);
@@ -144,6 +144,8 @@ namespace Mono.Linker.Dataflow
 				// Technically this should be a new value node type as it's not a System.Type instance representation, but just the generic parameter
 				// That said we only use it to perform the dynamically accessed members checks and for that purpose treating it as System.Type is perfectly valid.
 				return new SystemTypeForGenericParameterValue (inputGenericParameter, _context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (inputGenericParameter));
+			} else if (genericArgument is ArrayType arrayType) {
+				return new ArrayValue (new ConstIntValue (arrayType.Rank));
 			} else {
 				TypeDefinition genericArgumentTypeDef = genericArgument.Resolve ();
 				if (genericArgumentTypeDef != null) {
@@ -1579,6 +1581,14 @@ namespace Mono.Linker.Dataflow
 					} else {
 						MarkType (ref reflectionContext, typeRef);
 						MarkTypeForDynamicallyAccessedMembers (ref reflectionContext, foundType, requiredMemberTypes);
+					}
+				} else if (uniqueValue is ArrayValue arrayValue) {
+					TypeReference typeReference = _context.TypeNameResolver.ResolveTypeName ("System.Array");
+					TypeDefinition systemArrayType = typeReference?.Resolve ();
+					if (systemArrayType == null) {
+						reflectionContext.RecordHandledPattern ();
+					} else {
+						MarkTypeForDynamicallyAccessedMembers (ref reflectionContext, systemArrayType, requiredMemberTypes);
 					}
 				} else if (uniqueValue == NullValue.Instance) {
 					// Ignore - probably unreachable path as it would fail at runtime anyway.
