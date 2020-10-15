@@ -1577,11 +1577,8 @@ namespace Mono.Linker.Dataflow
 						// Intentionally ignore - it's not wrong for code to call Type.GetType on non-existing name, the code might expect null/exception back.
 						reflectionContext.RecordHandledPattern ();
 					} else {
+						MarkType (ref reflectionContext, typeRef);
 						MarkTypeForDynamicallyAccessedMembers (ref reflectionContext, foundType, requiredMemberTypes);
-						if (typeRef is GenericInstanceType genericType) {
-							foreach (var arg in genericType.GenericArguments)
-								MarkType (ref reflectionContext, arg);
-						}
 					}
 				} else if (uniqueValue == NullValue.Instance) {
 					// Ignore - probably unreachable path as it would fail at runtime anyway.
