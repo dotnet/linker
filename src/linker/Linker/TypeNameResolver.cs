@@ -77,6 +77,9 @@ namespace Mono.Linker
 				if (elementType == null)
 					return null;
 
+				if (typeName is ArrayTypeName)
+					return new ArrayType (elementType);
+
 				return elementType;
 			}
 
