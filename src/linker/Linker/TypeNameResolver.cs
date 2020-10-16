@@ -77,10 +77,22 @@ namespace Mono.Linker
 				if (elementType == null)
 					return null;
 
-				if (typeName is ArrayTypeName)
+				switch (typeName) {
+				case ArrayTypeName:
 					return new ArrayType (elementType);
 
-				return elementType;
+				case MultiDimArrayTypeName multiDimArrayTypeName:
+					return new ArrayType (elementType, multiDimArrayTypeName.Rank);
+
+				case ByRefTypeName:
+					return new ByReferenceType (elementType);
+
+				case PointerTypeName:
+					return new PointerType (elementType);
+
+				default:
+					return elementType;
+				}
 			}
 
 			return assembly.MainModule.GetType (typeName.ToString ());

@@ -169,6 +169,11 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[Kept]
+		class FromStringConstantWitGenericInnerMultiDimArray
+		{
+		}
+
+		[Kept]
 		[KeptMember (".ctor()")]
 		class FromStringConstantWithGenericTwoParameters<T, S>
 		{
@@ -179,6 +184,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		{
 			RequireCombinationOnString ("Mono.Linker.Tests.Cases.DataFlow.ApplyTypeAnnotations+FromStringConstantWithGeneric`1[[Mono.Linker.Tests.Cases.DataFlow.ApplyTypeAnnotations+FromStringConstantWithGenericInner]]");
 			RequireCombinationOnString ("Mono.Linker.Tests.Cases.DataFlow.ApplyTypeAnnotations+FromStringConstantWithGenericTwoParameters`2[Mono.Linker.Tests.Cases.DataFlow.ApplyTypeAnnotations+FromStringConstantWithGenericInnerOne`1[Mono.Linker.Tests.Cases.DataFlow.ApplyTypeAnnotations+FromStringConstantWithGenericInnerInner],Mono.Linker.Tests.Cases.DataFlow.ApplyTypeAnnotations+FromStringConstantWithGenericInnerTwo]");
+			RequireCombinationOnString ("Mono.Linker.Tests.Cases.DataFlow.ApplyTypeAnnotations+FromStringConstantWithGeneric`1[[Mono.Linker.Tests.Cases.DataFlow.ApplyTypeAnnotations+FromStringConstantWitGenericInnerMultiDimArray[,]]]");
 		}
 
 		[Kept]
