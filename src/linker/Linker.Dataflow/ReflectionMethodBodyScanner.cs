@@ -146,7 +146,7 @@ namespace Mono.Linker.Dataflow
 				return new SystemTypeForGenericParameterValue (inputGenericParameter, _context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (inputGenericParameter));
 			} else {
 				TypeDefinition genericArgumentTypeDef = genericArgument is ArrayType ?
-					genericArgument.Module.ImportReference (typeof(Array))?.Resolve () : genericArgument.Resolve ();
+					genericArgument.Module.ImportReference (typeof (Array))?.Resolve () : genericArgument.Resolve ();
 				if (genericArgumentTypeDef != null) {
 					return new SystemTypeValue (genericArgumentTypeDef);
 				} else {
