@@ -1573,7 +1573,7 @@ namespace Mono.Linker.Dataflow
 					MarkTypeForDynamicallyAccessedMembers (ref reflectionContext, systemTypeValue.TypeRepresented, requiredMemberTypes);
 				} else if (uniqueValue is KnownStringValue knownStringValue) {
 					TypeReference typeRef = _context.TypeNameResolver.ResolveTypeName (knownStringValue.Contents);
-					TypeDefinition foundType = typeRef?.Resolve ();
+					TypeDefinition foundType = typeRef?.ResolveToMainTypeDefinition ();
 					if (foundType == null) {
 						// Intentionally ignore - it's not wrong for code to call Type.GetType on non-existing name, the code might expect null/exception back.
 						reflectionContext.RecordHandledPattern ();

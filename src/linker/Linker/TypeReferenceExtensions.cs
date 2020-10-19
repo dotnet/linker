@@ -375,5 +375,14 @@ namespace Mono.Linker
 
 			return false;
 		}
+
+		public static TypeDefinition ResolveToMainTypeDefinition (this TypeReference type)
+		{
+			return type switch
+			{
+				ArrayType _ => type.Module.ImportReference (typeof (Array))?.Resolve (),
+				_ => type?.Resolve ()
+			};
+		}
 	}
 }
