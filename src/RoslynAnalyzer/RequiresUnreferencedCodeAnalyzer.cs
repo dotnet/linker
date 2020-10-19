@@ -1,4 +1,4 @@
-// Licensed to the .NET Foundation under one or more agreements.
+﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -8,6 +8,8 @@ using Microsoft.CodeAnalysis.Operations;
 using RoslynAnalyzer;
 using System;
 using System.Collections.Immutable;
+using System.Diagnostics;
+using System.Linq;
 
 namespace ILTrimmingAnalyzer
 {
@@ -47,7 +49,7 @@ namespace ILTrimmingAnalyzer
             {
                 var compilation = context.Compilation;
                 var isTrimmingEnabled = context.Options.GetMSBuildPropertyValue(
-                    s_trimmingEnabledString, compilation, context.CancellationToken);
+					s_trimmingEnabledString, compilation, context.CancellationToken);
 
                 if (!string.Equals(isTrimmingEnabled?.Trim(), "true", StringComparison.OrdinalIgnoreCase))
                 {
@@ -56,27 +58,78 @@ namespace ILTrimmingAnalyzer
 
                 context.RegisterOperationAction(operationContext =>
                 {
-                    var invocation = (IInvocationOperation)operationContext.Operation;
-                    var method = invocation.TargetMethod;
+                    var call = (IInvocationOperation) operationContext.Operation;
+					CheckMethodOrCtorCall (operationContext, call.TargetMethod, call.Syntax.GetLocation());
+                }, OperationKind.Invocation);
+
+				context.RegisterOperationAction (operationContext => {
+                    var call = (IObjectCreationOperation) operationContext.Operation;
+					CheckMethodOrCtorCall (operationContext, call.Constructor, call.Syntax.GetLocation());
+				}, OperationKind.ObjectCreation);
+
+				context.RegisterOperationAction (operationContext => {
+					var propAccess = (IPropertyReferenceOperation) operationContext.Operation;
+					var prop = propAccess.Property;
+					var usageInfo = propAccess.GetValueUsageInfo (prop);
+					if (usageInfo.HasFlag (ValueUsageInfo.Read) && prop.GetMethod != null) {
+						CheckMethodOrCtorCall (
+							operationContext,
+							prop.GetMethod,
+							propAccess.Syntax.GetLocation ());
+					}
+					if (usageInfo.HasFlag (ValueUsageInfo.Write) && prop.SetMethod != null) {
+						CheckMethodOrCtorCall (
+							operationContext,
+							prop.SetMethod,
+							propAccess.Syntax.GetLocation ());
+					}
+				}, OperationKind.PropertyReference);
+
+				static void CheckMethodOrCtorCall(
+					OperationAnalysisContext operationContext,
+					IMethodSymbol method,
+					Location location) {
                     var attributes = method.GetAttributes();
 
                     foreach (var attr in attributes)
                     {
                         if (attr.AttributeClass is { } attrClass &&
-							IsNamedType(attrClass, "System.Diagnostics.CodeAnalysis.RequiresUnreferencedCodeAttribute") &&
+							IsNamedType (attrClass, "System.Diagnostics.CodeAnalysis.RequiresUnreferencedCodeAttribute") &&
 							attr.ConstructorArguments.Length == 1 &&
 							attr.ConstructorArguments[0] is { Type: { SpecialType: SpecialType.System_String } } ctorArg)
                         {
 							operationContext.ReportDiagnostic (Diagnostic.Create (
 								s_rule,
-								invocation.Syntax.GetLocation (),
-								method.ToDisplayString(),
+								location,
+								ToCecilDisplayString (method),
 								(string) ctorArg.Value!));
 						}
 					}
-                }, OperationKind.Invocation);
+				}
             });
         }
+
+		private static SymbolDisplayFormat s_fqnFormat = new SymbolDisplayFormat (
+			typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces);
+
+		/// <summary>
+		///  Format a method like cecil does.
+		/// </summary>
+		private static string ToCecilDisplayString (IMethodSymbol m)
+		{
+			var methodName = m.MethodKind == MethodKind.Constructor ? ".ctor" : m.Name;
+			var ns = m.ContainingNamespace.IsGlobalNamespace
+				? "" 
+				: m.ContainingNamespace.ToDisplayString () + ".";
+			ITypeSymbol? containingType = m.ContainingType;
+			string typeName = containingType.Name;
+			while ((containingType = containingType.ContainingType) != null) {
+				typeName = $"{containingType.Name}/{typeName}";
+			}
+			var paramTypes = string.Join (",", m.Parameters.Select (p => p.Type.ToDisplayString (s_fqnFormat)));
+			return $"{m.ReturnType.ToDisplayString (s_fqnFormat)} {ns}{typeName}::{methodName}({paramTypes})";
+		}
+
 
         /// <summary>
         /// Returns true if <see paramref="type" /> has the same name as <see paramref="typename" />

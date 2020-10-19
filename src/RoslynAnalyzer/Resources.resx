@@ -121,6 +121,6 @@
     <value>RequiresUnreferencedCodeAnalyzer</value>
   </data>
   <data name="RequiresUnreferencedCodeAnalyzerMessage" xml:space="preserve">
-    <value>Calling '{0}' which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. '{1}'</value>
+    <value>Calling '{0}' which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. {1}.</value>
   </data>
 </root>
