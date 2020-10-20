@@ -1162,7 +1162,7 @@ namespace Mono.Linker.Steps
 		void ProcessModuleType (AssemblyDefinition assembly)
 		{
 			// The <Modue> type may have an initializer, in which case we want to keep it.
-			TypeDefinition moduleType = assembly.MainModule.Types.Where (t => t.MetadataToken.RID == 1).FirstOrDefault ();
+			TypeDefinition moduleType = assembly.MainModule.Types.FirstOrDefault (t => t.MetadataToken.RID == 1);
 			if (moduleType != null && moduleType.HasMethods) {
 				MarkType (moduleType, new DependencyInfo (DependencyKind.TypeInAssembly, assembly), null);
 			}
