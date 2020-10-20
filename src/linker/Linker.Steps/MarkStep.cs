@@ -1135,7 +1135,7 @@ namespace Mono.Linker.Steps
 			if (CheckProcessed (assembly))
 				return;
 
-			ProcessModule (assembly);
+			ProcessModuleType (assembly);
 
 			LazyMarkCustomAttributes (assembly);
 
@@ -1158,15 +1158,12 @@ namespace Mono.Linker.Steps
 				MarkEntireType (type, includeBaseTypes: false, new DependencyInfo (DependencyKind.TypeInAssembly, assembly), null);
 		}
 
-		void ProcessModule (AssemblyDefinition assembly)
+		void ProcessModuleType (AssemblyDefinition assembly)
 		{
-			// Pre-mark <Module> if there is any methods as they need to be executed 
-			// at assembly load time
-			foreach (TypeDefinition type in assembly.MainModule.Types) {
-				if (type.Name == "<Module>" && type.HasMethods) {
-					MarkType (type, new DependencyInfo (DependencyKind.TypeInAssembly, assembly), null);
-					break;
-				}
+			// The <Modue> type may have an initializer, in which case we want to keep it.
+			TypeDefinition moduleType = assembly.MainModule.Types.Where (t => t.MetadataToken.RID == 1).Single ();
+			if (moduleType.HasMethods) {
+				MarkType (moduleType, new DependencyInfo (DependencyKind.Custom, assembly), null);
 			}
 		}
 
