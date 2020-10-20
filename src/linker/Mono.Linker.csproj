@@ -1,10 +1,13 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+    <RunAnalyzers>true</RunAnalyzers>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(MonoBuild)' == ''">
+    <TargetFramework>net5.0</TargetFramework>
     <DefineConstants>$(DefineConstants);FEATURE_ILLINK</DefineConstants>
     <IsPackable>true</IsPackable>
     <!-- Nuget issues a warning about missing <reference> items in the generated nuspec,
@@ -22,6 +25,7 @@
 
   <ItemGroup>
     <Compile Remove="ref\**\*.cs" />
+    <Compile Include="..\..\external\corert\**\*.cs" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(MonoBuild)' == ''">
@@ -31,11 +35,11 @@
     <Compile Remove="Linker.Steps\PreserveCalendarsStep.cs" />
     <Compile Remove="Linker.Steps\RemoveFeaturesStep.cs" />
     <Compile Remove="Linker.Steps\ResolveFromXApiStep.cs" />
+    <Compile Remove="System.Diagnostics.CodeAnalysis\*.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Condition="'$(UseCecilPackage)' == 'true'" Include="Mono.Cecil" Version="$(MonoCecilVersion)" />
-    <PackageReference Include="System.Text.Json" Version="4.7.1" />
     <ProjectReference Condition="'$(UseCecilPackage)' != 'true'" Include="..\..\external\cecil\Mono.Cecil.csproj" />
     <ProjectReference Condition="'$(UseCecilPackage)' != 'true'" Include="..\..\external\cecil\symbols\pdb\Mono.Cecil.Pdb.csproj" />
   </ItemGroup>

@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
-using Mono.Linker.Tests.TestCases;
-using Mono.Linker.Tests.Extensions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
+using Mono.Linker.Tests.Extensions;
+using Mono.Linker.Tests.TestCases;
 
 namespace Mono.Linker.Tests.TestCasesRunner
 {
@@ -31,7 +31,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 		public TestCase Collect (NPath sourceFile)
 		{
-			return Collect (new[] { sourceFile }).First ();
+			return Collect (new[] { sourceFile }).FirstOrDefault ();
 		}
 
 		public IEnumerable<TestCase> Collect (IEnumerable<NPath> sourceFiles)

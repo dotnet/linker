@@ -1,8 +1,16 @@
 # ILLink.Tasks
 
+## Terminology
+
+Trimming allows a developer to reduce the final size of the application by removing unused managed code (IL) and other assets. Any publicly visible MSBuild property or item group name should use the term "trim" to refer to this capability.
+
+The trimming process exposed to MSBuild via the ILLink.Tasks assembly which calls into ILLink tool to perform the actual trimming. The ILLink tool produces the trimmed output and can issue its own [warnings and errors](error-codes.md). All of them use `ILLink` prefix and unique code for easier identification.
+
+*Note: This is similar to Compiler/csc: the capability is "compilation" and the related MSBuild/SDK integration uses "compile" as the term. The actual tool is csc and the errors/warnings coming from it are prefixed with CSC/CS.*
+
 ## Usage
 
-To enable ILLinker set `PublishTrimmed` property to `true` in your project and publish your app as self-contained.
+To enable ILLink set `PublishTrimmed` property to `true` in your project and publish your app as self-contained.
 
 ```
 dotnet publish -r <rid> -c Release -p:PublishTrimmed=true
@@ -22,7 +30,7 @@ The output will include only necessary code to run your application. The framewo
 
 ### ExtraArgs
 
-Additional [options](illink-options.md) passed to ILLinker.
+Additional [options](illink-options.md) passed to ILLink.
 
 ### OutputDirectory
 
@@ -53,20 +61,19 @@ The linker can be invoked as an MSBuild task, `ILLink`. We recommend not using t
         ExtraArgs="-t -c link" />
 ```
 
-## Default Linking Behaviour
+## Default Linking Behavior
 
-### .NET 5.0
+The default in the .NET Core SDK is to trim framework assemblies only, in a conservative assembly-level mode (`copyused` action). Third-party libraries and the app will be analyzed but not trimmed. Other SDKs may modify these defaults.
 
-By default, the linker will operate in a full linking mode for all framework or 
-core managed assemblies. The 3rd party libraries or final app will be analyzed but not linked.
-This setting can be altered by setting `_TrimmerDefaultAction` property to different
-linker action mode.
+## Customizing Linking Behavior
 
-### .NET 3.x
+`TrimMode` can be used to set the trimming behavior for framework assemblies. Additional assemblies can be given
+metadata `IsTrimmable` and they will also be trimmed using this mode, or they can have per-assembly `TrimMode` which
+takes precedence over the global `TrimMode`.
 
-By default, the linker will operate in a conservative mode that keeps
-all managed assemblies that aren't part of the framework (they are
-kept intact, and the linker simply copies them).
+## Reflection
+
+Note: this section is out-of-date. New versions of the linker can understand some of these reflection patterns.
 
 Applications or frameworks (including ASP<span />.NET Core and WPF) that use reflection or related dynamic features will often break when trimmed, because the linker does not know about this dynamic behavior, and can not determine in general which framework types will be required for reflection at runtime. To trim such apps, you will need to tell the linker about any types needed by reflection in your code, and in packages or frameworks that you depend on. Be sure to test your apps after trimming.
 

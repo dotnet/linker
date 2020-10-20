@@ -4,7 +4,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Mono.Cecil;
@@ -28,6 +27,10 @@ namespace Mono.Linker
 						attributeValue = DynamicDependency.ProcessAttribute (context, provider, customAttribute);
 					AddAttribute (ref _linkerAttributes, attributeValue);
 				}
+			}
+			if (context.CustomAttributes.HasInternalAttributes (provider)) {
+				foreach (var internalAttribute in context.CustomAttributes.GetInternalAttributes (provider))
+					AddAttribute (ref _linkerAttributes, internalAttribute);
 			}
 		}
 
@@ -58,9 +61,8 @@ namespace Mono.Linker
 			if (_linkerAttributes == null || !_linkerAttributes.TryGetValue (typeof (T), out var attributeList))
 				return Enumerable.Empty<T> ();
 
-			if (attributeList == null || attributeList.Count == 0) {
-				throw new LinkerFatalErrorException ("Unexpected list of attributes.");
-			}
+			if (attributeList == null || attributeList.Count == 0)
+				throw new InvalidOperationException ("Unexpected list of attributes.");
 
 			return attributeList.Cast<T> ();
 		}
@@ -70,19 +72,23 @@ namespace Mono.Linker
 			if (!(provider is MethodDefinition method))
 				return null;
 
-			if (customAttribute.HasConstructorArguments) {
-				string message = (string) customAttribute.ConstructorArguments[0].Value;
-				string url = null;
-				foreach (var prop in customAttribute.Properties) {
-					if (prop.Name == "Url") {
-						url = (string) prop.Argument.Value;
+			if (customAttribute.HasConstructorArguments && customAttribute.ConstructorArguments[0].Value is string message) {
+				var ruca = new RequiresUnreferencedCodeAttribute (message);
+				if (customAttribute.HasProperties) {
+					foreach (var prop in customAttribute.Properties) {
+						if (prop.Name == "Url") {
+							ruca.Url = prop.Argument.Value as string;
+							break;
+						}
 					}
 				}
 
-				return new RequiresUnreferencedCodeAttribute (message) { Url = url };
+				return ruca;
 			}
 
-			context.LogWarning ($"Attribute '{typeof (RequiresUnreferencedCodeAttribute).FullName}' on '{method}' doesn't have a required constructor argument.", 2028, method);
+			context.LogWarning (
+				$"Attribute '{typeof (RequiresUnreferencedCodeAttribute).FullName}' doesn't have the required number of parameters specified",
+				2028, method);
 			return null;
 		}
 	}

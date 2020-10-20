@@ -28,6 +28,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Text;
@@ -42,18 +43,13 @@ namespace Mono.Linker
 
 #if FEATURE_ILLINK
 		const string resolvers = "-a|-r|-x";
-		static readonly string _linker = "IL Linker";
+		const string _linker = "IL Linker";
 #else
 		const string resolvers = "-a|-i|-r|-x";
-		static readonly string _linker = "Mono IL Linker";
+		const string _linker = "Mono IL Linker";
 #endif
 
 		public static int Main (string[] args)
-		{
-			return Execute (args);
-		}
-
-		public static int Execute (string[] args, ILogger customLogger = null)
 		{
 			if (args.Length == 0) {
 				Console.Error.WriteLine ("No parameters specified");
@@ -64,18 +60,13 @@ namespace Mono.Linker
 				return 1;
 
 			try {
-
 				using (Driver driver = new Driver (arguments)) {
-					if (!driver.Run (customLogger))
-						return 1;
+					return driver.Run ();
 				}
-
 			} catch {
 				Console.Error.WriteLine ("Fatal error in {0}", _linker);
 				throw;
 			}
-
-			return 0;
 		}
 
 		readonly Queue<string> arguments;
@@ -154,14 +145,9 @@ namespace Mono.Linker
 			}
 		}
 
-		static void ErrorUnrecognizedOption (string optionName)
+		void ErrorMissingArgument (string optionName)
 		{
-			Console.WriteLine ($"Unrecognized command-line option: '{optionName}'");
-		}
-
-		static void ErrorMissingArgument (string optionName)
-		{
-			Console.WriteLine ($"Missing argument for '{optionName}' option");
+			context.LogError ($"Missing argument for '{optionName}' option", 1018);
 		}
 
 		// Perform setup of the LinkContext and parse the arguments.
@@ -198,7 +184,7 @@ namespace Mono.Linker
 			while (arguments.Count > 0) {
 				string token = arguments.Dequeue ();
 				if (token.Length < 2) {
-					ErrorUnrecognizedOption (token);
+					context.LogError ($"Unrecognized command-line option: '{token}'", 1015);
 					return -1;
 				}
 
@@ -207,6 +193,10 @@ namespace Mono.Linker
 				//
 				if (token[0] == '-' && token[1] == '-') {
 					switch (token) {
+					case "--help":
+						Usage ();
+						return 1;
+
 					case "--skip-unresolved":
 						if (!GetBoolParam (token, l => context.IgnoreUnresolved = context.Resolver.IgnoreUnresolved = l))
 							return -1;
@@ -311,7 +301,7 @@ namespace Mono.Linker
 						var arg = arguments.Dequeue ();
 						string[] values = arg.Split ('=');
 						if (values?.Length != 2) {
-							Console.WriteLine ($"Value used with '--custom-data' has to be in the KEY=VALUE format");
+							context.LogError ($"Value used with '--custom-data' has to be in the KEY=VALUE format", 1019);
 							return -1;
 						}
 
@@ -374,6 +364,7 @@ namespace Mono.Linker
 
 							continue;
 						}
+
 					case "--feature": {
 							string featureName = null;
 							if (!GetStringParam (token, l => featureName = l))
@@ -435,7 +426,64 @@ namespace Mono.Linker
 						continue;
 
 					case "--generate-warning-suppressions":
+						string generateWarningSuppressionsArgument = string.Empty;
+						if (!GetStringParam (token, l => generateWarningSuppressionsArgument = l))
+							return -1;
+
+						if (!GetWarningSuppressionWriterFileOutputKind (generateWarningSuppressionsArgument, out var fileOutputKind)) {
+							context.LogError ($"Invalid value '{generateWarningSuppressionsArgument}' for '--generate-warning-suppressions' option", 1017);
+							return -1;
+						}
+
 						context.OutputWarningSuppressions = true;
+						context.SetWarningSuppressionWriter (fileOutputKind);
+						continue;
+
+					case "--nowarn":
+						string noWarnArgument = null;
+						if (!GetStringParam (token, l => noWarnArgument = l))
+							return -1;
+
+						context.NoWarn.UnionWith (ProcessWarningCodes (noWarnArgument));
+						continue;
+
+					case "--warnaserror":
+					case "--warnaserror+":
+						var warningList = GetNextStringValue ();
+						if (!string.IsNullOrEmpty (warningList)) {
+							foreach (var warning in ProcessWarningCodes (warningList))
+								context.WarnAsError[warning] = true;
+
+						} else {
+							context.GeneralWarnAsError = true;
+							context.WarnAsError.Clear ();
+						}
+
+						continue;
+
+					case "--warnaserror-":
+						warningList = GetNextStringValue ();
+						if (!string.IsNullOrEmpty (warningList)) {
+							foreach (var warning in ProcessWarningCodes (warningList))
+								context.WarnAsError[warning] = false;
+
+						} else {
+							context.GeneralWarnAsError = false;
+							context.WarnAsError.Clear ();
+						}
+
+						continue;
+
+					case "--warn":
+						string warnVersionArgument = null;
+						if (!GetStringParam (token, l => warnVersionArgument = l))
+							return -1;
+
+						if (!GetWarnVersion (warnVersionArgument, out WarnVersion version))
+							return -1;
+
+						context.WarnVersion = version;
+
 						continue;
 
 					case "--version":
@@ -525,6 +573,11 @@ namespace Mono.Linker
 							return -1;
 
 						continue;
+					case "v":
+						if (!GetBoolParam (token, l => context.KeepMembersForDebugger = l))
+							return -1;
+
+						continue;
 #endif
 					case "b":
 						if (!GetBoolParam (token, l => context.LinkSymbols = l))
@@ -541,12 +594,8 @@ namespace Mono.Linker
 							return -1;
 
 						continue;
-					case "v":
-						if (!GetBoolParam (token, l => context.KeepMembersForDebugger = l))
-							return -1;
-
-						continue;
 					case "?":
+					case "h":
 					case "help":
 						Usage ();
 						return 1;
@@ -559,20 +608,24 @@ namespace Mono.Linker
 					}
 				}
 
-				ErrorUnrecognizedOption (token);
+				context.LogError ($"Unrecognized command-line option: '{token}'", 1015);
 				return -1;
 			}
 
 			if (!resolver) {
-				Console.WriteLine ($"No files to link were specified. Use one of '{resolvers}' options");
+				context.LogError ($"No files to link were specified. Use one of '{resolvers}' options", 1020);
 				return -1;
 			}
 
 			if (new_mvid_used && deterministic_used) {
-				Console.WriteLine ($"Options '--new-mvid' and '--deterministic' cannot be used at the same time");
+				context.LogError ($"Options '--new-mvid' and '--deterministic' cannot be used at the same time", 1021);
 				return -1;
 			}
 
+			// Default to deterministic output
+			if (!new_mvid_used && !deterministic_used) {
+				context.DeterministicOutput = true;
+			}
 			if (dumpDependencies)
 				AddXmlDependencyRecorder (context, dependenciesFileName);
 
@@ -640,7 +693,6 @@ namespace Mono.Linker
 #endif
 
 			p.AddStepBefore (typeof (MarkStep), new RemoveUnreachableBlocksStep ());
-			p.AddStepBefore (typeof (OutputStep), new ClearInitLocalsStep ());
 			p.AddStepBefore (typeof (OutputStep), new SealerStep ());
 
 			//
@@ -666,12 +718,12 @@ namespace Mono.Linker
 			// RemoveUnreachableBlocksStep [optional]
 			// MarkStep
 			// ReflectionBlockedStep [optional]
+			// ProcessWarningsStep
 			// SweepStep
 			// AddBypassNGenStep [optional]
 			// CodeRewriterStep
 			// CleanStep
 			// RegenerateGuidStep [optional]
-			// ClearInitLocalsStep
 			// SealerStep
 			// OutputStep
 			//
@@ -684,46 +736,76 @@ namespace Mono.Linker
 			return 0;
 		}
 
-		public bool Run (ILogger customLogger = null)
+		// Returns the exit code of the process. 0 indicates success.
+		// Known non-recoverable errors (LinkerFatalErrorException) set the exit code
+		// to the error code.
+		// May propagate exceptions, which will result in the process getting an
+		// exit code determined by dotnet.
+		public int Run (ILogger customLogger = null)
 		{
 			int setupStatus = SetupContext (customLogger);
 			if (setupStatus > 0)
-				return true;
+				return 0;
 			if (setupStatus < 0)
-				return false;
+				return 1;
 
 			Pipeline p = context.Pipeline;
 			PreProcessPipeline (p);
 
 			try {
 				p.Process (context);
-			} catch (Exception ex) {
-				if (ex is LinkerFatalErrorException lex) {
-					context.LogMessage (lex.MessageContainer);
-					Console.Error.WriteLine (ex.ToString ());
-				} else {
-					context.LogError ($"IL Linker has encountered an unexpected error. Please report the issue at https://github.com/mono/linker/issues \n{ex}", 1012);
-				}
-
-				return false;
+			} catch (LinkerFatalErrorException lex) {
+				context.LogMessage (lex.MessageContainer);
+				Console.Error.WriteLine (lex.ToString ());
+				Debug.Assert (lex.MessageContainer.Category == MessageCategory.Error);
+				Debug.Assert (lex.MessageContainer.Code != null);
+				Debug.Assert (lex.MessageContainer.Code.Value != 0);
+				return lex.MessageContainer.Code ?? 1;
+			} catch (Exception) {
+				// Unhandled exceptions are usually linker bugs. Ask the user to report it.
+				context.LogError ($"IL Linker has encountered an unexpected error. Please report the issue at https://github.com/mono/linker/issues", 1012);
+				// Don't swallow the exception and exit code - rethrow it and let the surrounding tooling decide what to do.
+				// The stack trace will go to stderr, and the MSBuild task will surface it with High importance.
+				throw;
 			} finally {
+				context.FlushCachedWarnings ();
 				context.Tracer.Finish ();
 			}
 
-			return true;
+			return 0;
 		}
 
 		partial void PreProcessPipeline (Pipeline pipeline);
 
-		private static Assembly GetCustomAssembly (string arg)
+		private static IEnumerable<int> ProcessWarningCodes (string value)
+		{
+			string Unquote (string arg)
+			{
+				if (arg.Length > 1 && arg[0] == '"' && arg[arg.Length - 1] == '"')
+					return arg.Substring (1, arg.Length - 2);
+
+				return arg;
+			}
+
+			value = Unquote (value);
+			string[] values = value.Split (new char[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+			foreach (string id in values) {
+				if (!id.StartsWith ("IL", StringComparison.Ordinal) || !ushort.TryParse (id.Substring (2), out ushort code))
+					continue;
+
+				yield return code;
+			}
+		}
+
+		Assembly GetCustomAssembly (string arg)
 		{
 			if (Path.IsPathRooted (arg)) {
 				var assemblyPath = Path.GetFullPath (arg);
 				if (File.Exists (assemblyPath))
 					return Assembly.Load (File.ReadAllBytes (assemblyPath));
-				Console.WriteLine ($"The assembly '{arg}' specified for '--custom-step' option could not be found");
+				context.LogError ($"The assembly '{arg}' specified for '--custom-step' option could not be found", 1022);
 			} else
-				Console.WriteLine ($"The path to the assembly '{arg}' specified for '--custom-step' must be fully qualified");
+				context.LogError ($"The path to the assembly '{arg}' specified for '--custom-step' must be fully qualified", 1023);
 
 			return null;
 		}
@@ -738,7 +820,7 @@ namespace Mono.Linker
 			pipeline.AddStepAfter (typeof (BlacklistStep), new LinkAttributesStep (new XPathDocument (file), file));
 		}
 
-		void AddBodySubstituterStep (Pipeline pipeline, string file)
+		static void AddBodySubstituterStep (Pipeline pipeline, string file)
 		{
 			pipeline.AddStepBefore (typeof (MarkStep), new BodySubstituterStep (new XPathDocument (file), file));
 		}
@@ -748,7 +830,7 @@ namespace Mono.Linker
 			context.Tracer.AddRecorder (new XmlDependencyRecorder (context, fileName));
 		}
 
-		protected static bool AddCustomStep (Pipeline pipeline, string arg)
+		protected bool AddCustomStep (Pipeline pipeline, string arg)
 		{
 			Assembly custom_assembly = null;
 			int pos = arg.IndexOf (",");
@@ -771,12 +853,12 @@ namespace Mono.Linker
 
 			string[] parts = arg.Split (':');
 			if (parts.Length != 2) {
-				Console.WriteLine ($"Invalid value '{arg}' specified for '--custom-step' option");
+				context.LogError ($"Invalid value '{arg}' specified for '--custom-step' option", 1024);
 				return false;
 			}
 
 			if (!parts[0].StartsWith ("-") && !parts[0].StartsWith ("+")) {
-				Console.WriteLine ($"Expected '+' or '-' to control new step insertion");
+				context.LogError ($"Expected '+' or '-' to control new step insertion", 1025);
 				return false;
 			}
 
@@ -785,7 +867,7 @@ namespace Mono.Linker
 
 			IStep target = FindStep (pipeline, name);
 			if (target == null) {
-				Console.WriteLine ($"Pipeline step '{name}' could not be found");
+				context.LogError ($"Pipeline step '{name}' could not be found", 1026);
 				return false;
 			}
 
@@ -812,17 +894,17 @@ namespace Mono.Linker
 			return null;
 		}
 
-		static IStep ResolveStep (string type, Assembly assembly)
+		IStep ResolveStep (string type, Assembly assembly)
 		{
 			Type step = assembly != null ? assembly.GetType (type) : Type.GetType (type, false);
 
 			if (step == null) {
-				Console.WriteLine ($"Custom step '{type}' could not be found");
+				context.LogError ($"Custom step '{type}' could not be found", 1027);
 				return null;
 			}
 
 			if (!typeof (IStep).IsAssignableFrom (step)) {
-				Console.WriteLine ($"Custom step '{type}' is incompatible with this linker version");
+				context.LogError ($"Custom step '{type}' is incompatible with this linker version", 1028);
 				return null;
 			}
 
@@ -873,7 +955,20 @@ namespace Mono.Linker
 			return assemblyAction;
 		}
 
-		static bool GetOptimizationName (string text, out CodeOptimizations optimization)
+		bool GetWarnVersion (string text, out WarnVersion version)
+		{
+			if (int.TryParse (text, out int versionNum)) {
+				version = (WarnVersion) versionNum;
+				if (version >= WarnVersion.ILLink0 && version <= WarnVersion.Latest)
+					return true;
+			}
+
+			context.LogError ($"Invalid warning version '{text}'", 1016);
+			version = 0;
+			return false;
+		}
+
+		protected bool GetOptimizationName (string text, out CodeOptimizations optimization)
 		{
 			switch (text.ToLowerInvariant ()) {
 			case "beforefieldinit":
@@ -884,9 +979,6 @@ namespace Mono.Linker
 				return true;
 			case "unreachablebodies":
 				optimization = CodeOptimizations.UnreachableBodies;
-				return true;
-			case "clearinitlocals":
-				optimization = CodeOptimizations.ClearInitLocals;
 				return true;
 			case "unusedinterfaces":
 				optimization = CodeOptimizations.UnusedInterfaces;
@@ -899,9 +991,26 @@ namespace Mono.Linker
 				return true;
 			}
 
-			Console.WriteLine ($"Invalid optimization value '{text}'");
+			context.LogError ($"Invalid optimization value '{text}'", 1029);
 			optimization = 0;
 			return false;
+		}
+
+		protected static bool GetWarningSuppressionWriterFileOutputKind (string text, out WarningSuppressionWriter.FileOutputKind fileOutputKind)
+		{
+			switch (text.ToLowerInvariant ()) {
+			case "cs":
+				fileOutputKind = WarningSuppressionWriter.FileOutputKind.CSharp;
+				return true;
+
+			case "xml":
+				fileOutputKind = WarningSuppressionWriter.FileOutputKind.Xml;
+				return true;
+
+			default:
+				fileOutputKind = WarningSuppressionWriter.FileOutputKind.CSharp;
+				return false;
+			}
 		}
 
 		bool GetBoolParam (string token, Action<bool> action)
@@ -923,7 +1032,7 @@ namespace Mono.Linker
 				return true;
 			}
 
-			Console.WriteLine ($"Invalid argument for '{token}' option");
+			context.LogError ($"Invalid argument for '{token}' option", 1030);
 			return false;
 		}
 
@@ -990,17 +1099,22 @@ namespace Mono.Linker
 			Console.WriteLine ("  -d PATH             Specify additional directories to search in for references");
 			Console.WriteLine ("  -reference FILE     Specify additional assemblies to use as references");
 			Console.WriteLine ("  -b                  Update debug symbols for each linked module. Defaults to false");
-			Console.WriteLine ("  -v                  Keep members and types used by debugger. Defaults to false");
 #if !FEATURE_ILLINK
+			Console.WriteLine ("  -v                  Keep members and types used by debugger. Defaults to false");
 			Console.WriteLine ("  -l <name>,<name>    List of i18n assemblies to copy to the output directory. Defaults to 'all'");
 			Console.WriteLine ("                        Valid names are 'none', 'all', 'cjk', 'mideast', 'other', 'rare', 'west'");
 #endif
-			Console.WriteLine ("  -out PATH           Specify the output directory. Defaults to 'output'");
-			Console.WriteLine ("  --about             About the {0}", _linker);
-			Console.WriteLine ("  --verbose           Log messages indicating progress and warnings");
-			Console.WriteLine ("  --version           Print the version number of the {0}", _linker);
-			Console.WriteLine ("  -help               Lists all linker options");
-			Console.WriteLine ("  @FILE               Read response file for more options");
+			Console.WriteLine ("  -out PATH                     Specify the output directory. Defaults to 'output'");
+			Console.WriteLine ("  --about                       About the {0}", _linker);
+			Console.WriteLine ("  --verbose                     Log messages indicating progress and warnings");
+			Console.WriteLine ("  --warn VERSION                Only print out warnings with version <= VERSION. Defaults to '9999'");
+			Console.WriteLine ("                                  VERSION is an integer in the range 0-9999.");
+			Console.WriteLine ("  --warnaserror[+|-]            Report all warnings as errors");
+			Console.WriteLine ("  --warnaserror[+|-] WARN-LIST  Report specific warnings as errors");
+			Console.WriteLine ("  --nowarn WARN-LIST            Disable specific warning messages");
+			Console.WriteLine ("  --version                     Print the version number of the {0}", _linker);
+			Console.WriteLine ("  --help                        Lists all linker options");
+			Console.WriteLine ("  @FILE                         Read response file for more options");
 
 			Console.WriteLine ();
 			Console.WriteLine ("Actions");
@@ -1041,7 +1155,6 @@ namespace Mono.Linker
 			Console.WriteLine ("                              unreachablebodies: Instance methods that are marked but not executed are converted to throws");
 			Console.WriteLine ("                              unusedinterfaces: Removes interface types from declaration when not used");
 			Console.WriteLine ("  --enable-opt NAME [ASM]   Enable one of the additional optimizations globaly or for a specific assembly name");
-			Console.WriteLine ("                              clearinitlocals: Remove initlocals");
 			Console.WriteLine ("                              sealer: Any method or type which does not have override is marked as sealed");
 #if !FEATURE_ILLINK
 			Console.WriteLine ("  --exclude-feature NAME    Any code which has a feature <name> in linked assemblies will be removed");
@@ -1094,6 +1207,8 @@ namespace Mono.Linker
 			p.AppendStep (new DynamicDependencyLookupStep ());
 			p.AppendStep (new TypeMapStep ());
 			p.AppendStep (new MarkStep ());
+			p.AppendStep (new ValidateVirtualMethodAnnotationsStep ());
+			p.AppendStep (new ProcessWarningsStep ());
 			p.AppendStep (new SweepStep ());
 			p.AppendStep (new CodeRewriterStep ());
 			p.AppendStep (new CleanStep ());

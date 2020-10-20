@@ -29,9 +29,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Linker.Dataflow;
 
 namespace Mono.Linker
 {
@@ -56,6 +58,7 @@ namespace Mono.Linker
 		protected readonly Dictionary<MethodDefinition, List<MethodDefinition>> base_methods = new Dictionary<MethodDefinition, List<MethodDefinition>> ();
 		protected readonly Dictionary<AssemblyDefinition, ISymbolReader> symbol_readers = new Dictionary<AssemblyDefinition, ISymbolReader> ();
 		readonly Dictionary<IMemberDefinition, LinkerAttributesInformation> linker_attributes = new Dictionary<IMemberDefinition, LinkerAttributesInformation> ();
+		protected readonly Dictionary<MethodDefinition, List<(TypeDefinition InstanceType, InterfaceImplementation ImplementationProvider)>> default_interface_implementations = new Dictionary<MethodDefinition, List<(TypeDefinition, InterfaceImplementation)>> ();
 
 		readonly Dictionary<object, Dictionary<IMetadataTokenProvider, object>> custom_annotations = new Dictionary<object, Dictionary<IMetadataTokenProvider, object>> ();
 		protected readonly Dictionary<AssemblyDefinition, HashSet<EmbeddedResource>> resources_to_remove = new Dictionary<AssemblyDefinition, HashSet<EmbeddedResource>> ();
@@ -63,8 +66,14 @@ namespace Mono.Linker
 		readonly HashSet<TypeDefinition> marked_types_with_cctor = new HashSet<TypeDefinition> ();
 		protected readonly HashSet<TypeDefinition> marked_instantiated = new HashSet<TypeDefinition> ();
 		protected readonly HashSet<MethodDefinition> indirectly_called = new HashSet<MethodDefinition> ();
+		protected readonly HashSet<TypeDefinition> types_relevant_to_variant_casting = new HashSet<TypeDefinition> ();
 
-		public AnnotationStore (LinkContext context) => this.context = context;
+		public AnnotationStore (LinkContext context)
+		{
+			this.context = context;
+			FlowAnnotations = new FlowAnnotations (context);
+			VirtualMethodsWithAnnotationsToValidate = new HashSet<MethodDefinition> ();
+		}
 
 		public bool ProcessSatelliteAssemblies { get; set; }
 
@@ -73,6 +82,10 @@ namespace Mono.Linker
 				return context.Tracer;
 			}
 		}
+
+		internal FlowAnnotations FlowAnnotations { get; }
+
+		internal HashSet<MethodDefinition> VirtualMethodsWithAnnotationsToValidate { get; }
 
 		[Obsolete ("Use Tracer in LinkContext directly")]
 		public void PrepareDependenciesDump ()
@@ -216,6 +229,17 @@ namespace Mono.Linker
 			return marked_instantiated.Contains (type);
 		}
 
+		public void MarkRelevantToVariantCasting (TypeDefinition type)
+		{
+			if (type != null)
+				types_relevant_to_variant_casting.Add (type);
+		}
+
+		public bool IsRelevantToVariantCasting (TypeDefinition type)
+		{
+			return types_relevant_to_variant_casting.Contains (type);
+		}
+
 		public void Processed (IMetadataTokenProvider provider)
 		{
 			processed.Add (provider);
@@ -325,6 +349,22 @@ namespace Mono.Linker
 			return overrides;
 		}
 
+		public void AddDefaultInterfaceImplementation (MethodDefinition @base, TypeDefinition implementingType, InterfaceImplementation matchingInterfaceImplementation)
+		{
+			if (!default_interface_implementations.TryGetValue (@base, out var implementations)) {
+				implementations = new List<(TypeDefinition, InterfaceImplementation)> ();
+				default_interface_implementations.Add (@base, implementations);
+			}
+
+			implementations.Add ((implementingType, matchingInterfaceImplementation));
+		}
+
+		public IEnumerable<(TypeDefinition InstanceType, InterfaceImplementation ProvidingInterface)> GetDefaultInterfaceImplementations (MethodDefinition method)
+		{
+			default_interface_implementations.TryGetValue (method, out var ret);
+			return ret;
+		}
+
 		public void AddBaseMethod (MethodDefinition method, MethodDefinition @base)
 		{
 			var methods = GetBaseMethods (method);
@@ -431,7 +471,7 @@ namespace Mono.Linker
 		public bool HasLinkerAttribute<T> (IMemberDefinition member) where T : Attribute
 		{
 			// Avoid setting up and inserting LinkerAttributesInformation for members without attributes.
-			if (!member.HasCustomAttributes)
+			if (!context.CustomAttributes.HasAttributes (member))
 				return false;
 
 			if (!linker_attributes.TryGetValue (member, out var linkerAttributeInformation)) {
@@ -445,7 +485,7 @@ namespace Mono.Linker
 		public IEnumerable<T> GetLinkerAttributes<T> (IMemberDefinition member) where T : Attribute
 		{
 			// Avoid setting up and inserting LinkerAttributesInformation for members without attributes.
-			if (!member.HasCustomAttributes)
+			if (!context.CustomAttributes.HasAttributes (member))
 				return Enumerable.Empty<T> ();
 
 			if (!linker_attributes.TryGetValue (member, out var linkerAttributeInformation)) {
@@ -460,12 +500,20 @@ namespace Mono.Linker
 		{
 			var attributes = GetLinkerAttributes<T> (member);
 			if (attributes.Count () > 1) {
-				context.LogWarning ($"Attribute '{typeof (T).FullName}' should only be used once on '{member}'.", 2027, member);
+				context.LogWarning ($"Attribute '{typeof (T).FullName}' should only be used once on '{((member is MemberReference memberRef) ? memberRef.GetDisplayName () : member.FullName)}'.", 2027, member);
 			}
 
-			Debug.Assert (attributes.Count () <= 1);
 			attribute = attributes.FirstOrDefault ();
 			return attribute != null;
+		}
+
+		public void EnqueueVirtualMethod (MethodDefinition method)
+		{
+			if (!method.IsVirtual)
+				return;
+
+			if (FlowAnnotations.RequiresDataFlowAnalysis (method) || HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (method))
+				VirtualMethodsWithAnnotationsToValidate.Add (method);
 		}
 	}
 }

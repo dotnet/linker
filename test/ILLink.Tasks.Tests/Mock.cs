@@ -1,7 +1,8 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Linq;
+using System.Reflection;
 using Microsoft.Build.Framework;
 using Mono.Linker;
 using Mono.Linker.Steps;
@@ -11,6 +12,9 @@ namespace ILLink.Tasks.Tests
 {
 	public class MockTask : ILLink
 	{
+
+		public List<(MessageImportance Importance, string Line)> Messages { get; } = new List<(MessageImportance Importance, string Line)> ();
+
 		public MockTask ()
 		{
 			// Ensure that [Required] members are non-null
@@ -41,7 +45,8 @@ namespace ILLink.Tasks.Tests
 
 		static readonly string[] nonOptimizationBooleanProperties = new string[] {
 			"DumpDependencies",
-			"LinkSymbols"
+			"RemoveSymbols",
+			"TreatWarningsAsErrors"
 		};
 
 		public static IEnumerable<string> GetOptimizationPropertyNames ()
@@ -54,6 +59,21 @@ namespace ILLink.Tasks.Tests
 				yield return property.Name;
 			}
 		}
+
+		protected override void LogEventsFromTextOutput (string singleLine, MessageImportance messageImportance) => Messages.Add ((messageImportance, singleLine));
+	}
+
+	public class MockBuildEngine : IBuildEngine
+	{
+		public void LogErrorEvent (BuildErrorEventArgs e) { }
+		public void LogWarningEvent (BuildWarningEventArgs e) { }
+		public void LogMessageEvent (BuildMessageEventArgs e) { }
+		public void LogCustomEvent (CustomBuildEventArgs e) { }
+		public bool BuildProjectFile (string projectFileName, string[] targetNames, IDictionary globalProperties, IDictionary targetOutputs) => false;
+		public bool ContinueOnError => false;
+		public int LineNumberOfTaskNode => 0;
+		public int ColumnNumberOfTaskNode => 0;
+		public string ProjectFileOfTaskNode => null;
 	}
 
 	public class MockDriver : Driver
@@ -117,13 +137,9 @@ namespace ILLink.Tasks.Tests
 			return (IEnumerable<IDependencyRecorder>) (typeof (Tracer).GetField ("recorders", BindingFlags.NonPublic | BindingFlags.Instance).GetValue (context.Tracer));
 		}
 
-		public static bool GetOptimizationName (string optimization, out CodeOptimizations codeOptimizations)
+		public new bool GetOptimizationName (string optimization, out CodeOptimizations codeOptimizations)
 		{
-			var method = typeof (Driver).GetMethod ("GetOptimizationName", BindingFlags.NonPublic | BindingFlags.Static);
-			var parameters = new object[] { optimization, null };
-			var ret = (bool) (method.Invoke (null, parameters));
-			codeOptimizations = (CodeOptimizations) (parameters[1]);
-			return ret;
+			return base.GetOptimizationName (optimization, out codeOptimizations);
 		}
 
 		public CodeOptimizations GetDefaultOptimizations ()

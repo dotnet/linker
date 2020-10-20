@@ -1,8 +1,8 @@
 ﻿using System;
-using Mono.Cecil;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Mono.Cecil;
 
 namespace Mono.Linker
 {
@@ -10,35 +10,47 @@ namespace Mono.Linker
 	{
 		public static string GetDisplayName (this TypeReference type)
 		{
-			if (type == null)
-				return string.Empty;
+			var builder = GetDisplayNameWithoutNamespace (type);
+			builder.Insert (0, ".");
+			builder.Insert (0, type.GetNamespaceDisplayName ());
 
+			return builder.ToString ();
+		}
+
+		public static StringBuilder GetDisplayNameWithoutNamespace (this TypeReference type)
+		{
 			var sb = new StringBuilder ();
+			if (type == null)
+				return sb;
+
 			Stack<TypeReference> genericArguments = null;
 			while (true) {
 				switch (type) {
 				case ArrayType arrayType:
-					ParseArrayType (arrayType, sb);
+					AppendArrayType (arrayType, sb);
 					break;
 				case GenericInstanceType genericInstanceType:
-					int arguments = int.Parse (genericInstanceType.Name.Substring (genericInstanceType.Name.IndexOf ('`') + 1));
 					genericArguments = new Stack<TypeReference> (genericInstanceType.GenericArguments);
-					ParseGenericArguments (genericArguments, arguments, sb);
-					sb.Insert (0, genericInstanceType.Name.Substring (0, genericInstanceType.Name.IndexOf ('`')));
-					break;
+					type = genericInstanceType.ElementType;
+					continue;
 				default:
 					if (type.HasGenericParameters) {
-						if (!int.TryParse (type.Name.Substring (type.Name.IndexOf ('`') + 1), out int arity)) {
-							sb.Insert (0, type.Name);
-							break;
-						}
+						int genericParametersCount = type.GenericParameters.Count;
+						int declaringTypeGenericParametersCount = type.DeclaringType?.GenericParameters?.Count ?? 0;
 
-						if (genericArguments?.Count > 0)
-							ParseGenericArguments (genericArguments, arity, sb);
-						else
-							ParseGenericParameters (type.GenericParameters.Skip (type.GenericParameters.Count - arity).ToList (), sb);
+						string simpleName;
+						if (genericParametersCount > declaringTypeGenericParametersCount) {
+							if (genericArguments?.Count > 0)
+								PrependGenericArguments (genericArguments, genericParametersCount - declaringTypeGenericParametersCount, sb);
+							else
+								PrependGenericParameters (type.GenericParameters.Skip (declaringTypeGenericParametersCount).ToList (), sb);
 
-						sb.Insert (0, type.Name.Substring (0, type.Name.IndexOf ('`')));
+							int explicitArityIndex = type.Name.IndexOf ('`');
+							simpleName = explicitArityIndex != -1 ? type.Name.Substring (0, explicitArityIndex) : type.Name;
+						} else
+							simpleName = type.Name;
+
+						sb.Insert (0, simpleName);
 						break;
 					}
 
@@ -53,10 +65,10 @@ namespace Mono.Linker
 				sb.Insert (0, '.');
 			}
 
-			return sb.ToString ();
+			return sb;
 		}
 
-		internal static void ParseGenericParameters (IList<GenericParameter> genericParameters, StringBuilder sb)
+		internal static void PrependGenericParameters (IList<GenericParameter> genericParameters, StringBuilder sb)
 		{
 			sb.Insert (0, '>').Insert (0, genericParameters[genericParameters.Count - 1]);
 			for (int i = genericParameters.Count - 2; i >= 0; i--)
@@ -65,16 +77,16 @@ namespace Mono.Linker
 			sb.Insert (0, '<');
 		}
 
-		private static void ParseGenericArguments (Stack<TypeReference> genericArguments, int argumentsToTake, StringBuilder sb)
+		static void PrependGenericArguments (Stack<TypeReference> genericArguments, int argumentsToTake, StringBuilder sb)
 		{
-			sb.Insert (0, '>').Insert (0, genericArguments.Pop ().GetDisplayName ());
+			sb.Insert (0, '>').Insert (0, genericArguments.Pop ().GetDisplayNameWithoutNamespace ().ToString ());
 			while (--argumentsToTake > 0)
-				sb.Insert (0, ',').Insert (0, genericArguments.Pop ().GetDisplayName ());
+				sb.Insert (0, ',').Insert (0, genericArguments.Pop ().GetDisplayNameWithoutNamespace ().ToString ());
 
 			sb.Insert (0, '<');
 		}
 
-		private static void ParseArrayType (ArrayType arrayType, StringBuilder sb)
+		static void AppendArrayType (ArrayType arrayType, StringBuilder sb)
 		{
 			void parseArrayDimensions (ArrayType at)
 			{
@@ -159,7 +171,7 @@ namespace Mono.Linker
 			return resolved?.DeclaringType;
 		}
 
-		public static IEnumerable<TypeReference> GetInflatedInterfaces (this TypeReference typeRef)
+		public static IEnumerable<(TypeReference InflatedInterface, InterfaceImplementation OriginalImpl)> GetInflatedInterfaces (this TypeReference typeRef)
 		{
 			var typeDef = typeRef.Resolve ();
 
@@ -168,10 +180,10 @@ namespace Mono.Linker
 
 			if (typeRef is GenericInstanceType genericInstance) {
 				foreach (var interfaceImpl in typeDef.Interfaces)
-					yield return InflateGenericType (genericInstance, interfaceImpl.InterfaceType);
+					yield return (InflateGenericType (genericInstance, interfaceImpl.InterfaceType), interfaceImpl);
 			} else {
 				foreach (var interfaceImpl in typeDef.Interfaces)
-					yield return interfaceImpl.InterfaceType;
+					yield return (interfaceImpl.InterfaceType, interfaceImpl);
 			}
 		}
 
@@ -350,6 +362,18 @@ namespace Mono.Linker
 		{
 			var type = typeof (T);
 			return tr.Name == type.Name && tr.Namespace == tr.Namespace;
+		}
+
+		public static bool IsSubclassOf (this TypeReference type, string ns, string name)
+		{
+			TypeDefinition baseType = type.Resolve ();
+			while (baseType != null) {
+				if (baseType.IsTypeOf (ns, name))
+					return true;
+				baseType = baseType.BaseType?.Resolve ();
+			}
+
+			return false;
 		}
 	}
 }

@@ -3,14 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Xunit;
-using Xunit.Abstractions;
-using Xunit.Sdk;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
-using ILLink.Tasks;
 using Mono.Linker;
-using Mono.Linker.Steps;
+using Xunit;
 
 namespace ILLink.Tasks.Tests
 {
@@ -21,12 +17,12 @@ namespace ILLink.Tasks.Tests
 		public static IEnumerable<object[]> AssemblyPathsCases => new List<object[]> {
 			new object [] {
 				new ITaskItem [] {
-					new TaskItem ("Assembly.dll", new Dictionary<string, string> { { "action", "copy" } })
+					new TaskItem ("Assembly.dll", new Dictionary<string, string> { { "trimmode", "copy" } })
 				}
 			},
 			new object [] {
 				new ITaskItem [] {
-					new TaskItem ("Assembly.dll", new Dictionary<string, string> { { "Action", "Copy" } })
+					new TaskItem ("Assembly.dll", new Dictionary<string, string> { { "TrimMode", "Copy" } })
 				}
 			},
 			new object [] {
@@ -75,10 +71,10 @@ namespace ILLink.Tasks.Tests
 
 				foreach (var item in assemblyPaths) {
 					var assemblyPath = item.ItemSpec;
-					var action = item.GetMetadata ("action");
-					if (String.IsNullOrEmpty (action))
+					var trimMode = item.GetMetadata ("TrimMode");
+					if (String.IsNullOrEmpty (trimMode))
 						continue;
-					AssemblyAction expectedAction = (AssemblyAction) Enum.Parse (typeof (AssemblyAction), action, ignoreCase: true);
+					AssemblyAction expectedAction = (AssemblyAction) Enum.Parse (typeof (AssemblyAction), trimMode, ignoreCase: true);
 					AssemblyAction actualAction = (AssemblyAction) context.Actions[Path.GetFileNameWithoutExtension (assemblyPath)];
 					Assert.Equal (expectedAction, actualAction);
 				}
@@ -89,7 +85,7 @@ namespace ILLink.Tasks.Tests
 		public void TestAssemblyPathsWithInvalidAction ()
 		{
 			var task = new MockTask () {
-				AssemblyPaths = new ITaskItem[] { new TaskItem ("Assembly.dll", new Dictionary<string, string> { { "action", "invalid" } }) }
+				AssemblyPaths = new ITaskItem[] { new TaskItem ("Assembly.dll", new Dictionary<string, string> { { "TrimMode", "invalid" } }) }
 			};
 			Assert.Throws<ArgumentException> (() => task.CreateDriver ());
 		}
@@ -176,8 +172,8 @@ namespace ILLink.Tasks.Tests
 			var task = new MockTask ();
 			task.SetOptimization (optimization, enabled);
 			// get the corresponding CodeOptimizations value
-			Assert.True (MockDriver.GetOptimizationName (optimization, out CodeOptimizations codeOptimizations));
 			using (var driver = task.CreateDriver ()) {
+				Assert.True (driver.GetOptimizationName (optimization, out CodeOptimizations codeOptimizations));
 				var actualValue = driver.Context.Optimizations.IsEnabled (codeOptimizations, assemblyName: null);
 				Assert.Equal (enabled, actualValue);
 			}
@@ -206,12 +202,12 @@ namespace ILLink.Tasks.Tests
 			yield return new object[] {
 				new ITaskItem [] {
 					new TaskItem ("path/to/Assembly1.dll", new Dictionary<string, string> {
-						{ "ClearInitLocals", "True" },
+						{ "Sealer", "True" },
 						{ "BeforeFieldInit", "False" }
 					}),
 					new TaskItem ("path/to/Assembly2.dll", new Dictionary<string, string> {
-						{ "ClearInitLocals", "False" },
-						{ "Sealer", "True" }
+						{ "Sealer", "False" },
+						{ "BeforeFieldInit", "True" }
 					})
 				}
 			};
@@ -228,7 +224,7 @@ namespace ILLink.Tasks.Tests
 				foreach (var item in assemblyPaths) {
 					var assemblyName = Path.GetFileNameWithoutExtension (item.ItemSpec);
 					foreach (var optimization in MockTask.OptimizationNames) {
-						Assert.True (MockDriver.GetOptimizationName (optimization, out CodeOptimizations codeOptimizations));
+						Assert.True (driver.GetOptimizationName (optimization, out CodeOptimizations codeOptimizations));
 						var optimizationValue = item.GetMetadata (optimization);
 						if (String.IsNullOrEmpty (optimizationValue))
 							continue;
@@ -246,7 +242,7 @@ namespace ILLink.Tasks.Tests
 			var task = new MockTask () {
 				AssemblyPaths = new ITaskItem[] {
 					new TaskItem ("path/to/Assembly.dll", new Dictionary<string, string> {
-						{ "ClearInitLocals", "invalid" }
+						{ "Sealer", "invalid" }
 					})
 				}
 			};
@@ -274,18 +270,74 @@ namespace ILLink.Tasks.Tests
 		}
 
 		[Theory]
-		[InlineData (true)]
-		[InlineData (false)]
-		public void TestClearInitLocals (bool clearInitLocals)
+		[InlineData ("IL2001;IL2002;IL2003;IL2004", 4)]
+		[InlineData ("IL2001 IL2002 IL2003 IL2004", 4)]
+		[InlineData ("IL2001,IL2002,IL2003,IL2004", 4)]
+		[InlineData ("IL2001,IL2002;IL2003 IL2004", 4)]
+		[InlineData ("IL2001,IL2002,IL8000,IL1003", 4)]
+		[InlineData ("IL20000,IL02000", 2)]
+		public void TestValidNoWarn (string noWarn, int validNoWarns)
 		{
 			var task = new MockTask () {
-				ClearInitLocals = clearInitLocals
+				NoWarn = noWarn
 			};
 			using (var driver = task.CreateDriver ()) {
-				var actualClearInitLocals = driver.Context.Optimizations.IsEnabled (CodeOptimizations.ClearInitLocals, assemblyName: null);
-				Assert.Equal (clearInitLocals, actualClearInitLocals);
+				var actualUsedNoWarns = driver.Context.NoWarn;
+				Assert.Equal (validNoWarns, actualUsedNoWarns.Count);
 			}
 		}
+
+		[Theory]
+		[InlineData ("0", WarnVersion.ILLink0)]
+		[InlineData ("5", WarnVersion.ILLink5)]
+		[InlineData ("6", (WarnVersion) 6)]
+		[InlineData ("9999", WarnVersion.Latest)]
+		public void TestWarn (string warnArg, WarnVersion expectedVersion)
+		{
+			var task = new MockTask () {
+				Warn = warnArg
+			};
+			using (var driver = task.CreateDriver ()) {
+				Assert.Equal (expectedVersion, driver.Context.WarnVersion);
+			}
+		}
+
+#nullable enable
+		[Theory]
+		[InlineData (true, null, null, new int[] { }, new int[] { })]
+		[InlineData (false, "IL1001,IL2000,IL2054,IL2022", null,
+			new int[] { 1001, 2000, 2054, 2022 }, new int[] { })]
+		[InlineData (false, "IL2023,IL6000;IL5042 IL2040", "IL4000,IL4001;IL4002 IL4003",
+			new int[] { 2023, 2040, 5042, 6000 }, new int[] { 4000, 4001, 4002, 4003 })]
+		[InlineData (false, "IL3000;IL3000;ABCD", "IL2005 IL3005 IL2005",
+			new int[] { 3000 }, new int[] { 2005, 3005 })]
+		[InlineData (true, null, "IL2067", new int[] { }, new int[] { 2067 })]
+		[InlineData (true, "IL2001", "IL2001", new int[] { }, new int[] { 2001 })]
+		public void TestWarningsAsErrors (bool treatWarningsAsErrors, string? warningsAsErrors, string? warningsNotAsErrors, int[] warnAsError, int[] warnNotAsError)
+		{
+			var task = new MockTask () {
+				TreatWarningsAsErrors = treatWarningsAsErrors,
+				WarningsAsErrors = warningsAsErrors,
+				WarningsNotAsErrors = warningsNotAsErrors
+			};
+
+			using (var driver = task.CreateDriver ()) {
+				var actualWarnAsError = driver.Context.WarnAsError;
+				var actualGeneralWarnAsError = driver.Context.GeneralWarnAsError;
+				Assert.Equal (warnAsError.Count () + warnNotAsError.Count (), actualWarnAsError.Count);
+				Assert.Equal (treatWarningsAsErrors, actualGeneralWarnAsError);
+				if (warnAsError.Length > 0) {
+					foreach (var warningCode in warnAsError)
+						Assert.True (actualWarnAsError.ContainsKey (warningCode) && actualWarnAsError[warningCode] == true);
+				}
+
+				if (warnNotAsError.Length > 0) {
+					foreach (var warningCode in warnNotAsError)
+						Assert.True (actualWarnAsError.ContainsKey (warningCode) && actualWarnAsError[warningCode] == false);
+				}
+			}
+		}
+#nullable disable
 
 		public static IEnumerable<object[]> CustomDataCases => new List<object[]> {
 			new object [] {
@@ -379,12 +431,12 @@ namespace ILLink.Tasks.Tests
 		public void TestExtraArgs ()
 		{
 			var task = new MockTask () {
-				DefaultAction = "copy",
+				TrimMode = "copy",
 				ExtraArgs = "-c link"
 			};
 			using (var driver = task.CreateDriver ()) {
 				Assert.Equal (AssemblyAction.Copy, driver.Context.UserAction);
-				// Check that ExtraArgs can override DefaultAction
+				// Check that ExtraArgs can override TrimMode
 				Assert.Equal (AssemblyAction.Link, driver.Context.CoreAction);
 			}
 		}
@@ -405,13 +457,22 @@ namespace ILLink.Tasks.Tests
 		[Theory]
 		[InlineData (true)]
 		[InlineData (false)]
-		public void TestLinkSymbols (bool linkSymbols)
+		public void TestRemoveSymbols (bool removeSymbols)
 		{
 			var task = new MockTask () {
-				LinkSymbols = linkSymbols
+				RemoveSymbols = removeSymbols
 			};
 			using (var driver = task.CreateDriver ()) {
-				Assert.Equal (linkSymbols, driver.Context.LinkSymbols);
+				Assert.NotEqual (removeSymbols, driver.Context.LinkSymbols);
+			}
+		}
+
+		[Fact]
+		public void TestRemoveSymbolsDefault ()
+		{
+			var task = new MockTask ();
+			using (var driver = task.CreateDriver ()) {
+				Assert.False (driver.Context.LinkSymbols);
 			}
 		}
 
@@ -419,13 +480,13 @@ namespace ILLink.Tasks.Tests
 		[InlineData ("copy")]
 		[InlineData ("link")]
 		[InlineData ("copyused")]
-		public void TestDefaultAction (string defaultAction)
+		public void TestGlobalTrimMode (string trimMode)
 		{
 			var task = new MockTask () {
-				DefaultAction = defaultAction
+				TrimMode = trimMode
 			};
 			using (var driver = task.CreateDriver ()) {
-				var expectedAction = (AssemblyAction) Enum.Parse (typeof (AssemblyAction), defaultAction, ignoreCase: true);
+				var expectedAction = (AssemblyAction) Enum.Parse (typeof (AssemblyAction), trimMode, ignoreCase: true);
 				Assert.Equal (expectedAction, driver.Context.CoreAction);
 				Assert.Equal (expectedAction, driver.Context.UserAction);
 			}
@@ -435,7 +496,7 @@ namespace ILLink.Tasks.Tests
 		public void TestInvalidDefaultAction ()
 		{
 			var task = new MockTask () {
-				DefaultAction = "invalid"
+				TrimMode = "invalid"
 			};
 			Assert.Throws<ArgumentException> (() => task.CreateDriver ());
 		}
@@ -541,6 +602,19 @@ namespace ILLink.Tasks.Tests
 				CustomSteps = customSteps
 			};
 			Assert.Throws<ArgumentException> (() => task.CreateDriver ());
+		}
+
+		[Fact]
+		public void TestUnhandledException ()
+		{
+			var task = new MockTask () {
+				RootAssemblyNames = new ITaskItem[] { new TaskItem ("MissingAssembly.dll") }
+			};
+			task.BuildEngine = new MockBuildEngine ();
+			task.Execute ();
+			Assert.Contains (task.Messages, message =>
+				message.Importance == MessageImportance.High &&
+				message.Line.Contains ("Unable to find 'MissingAssembly.dll.dll'"));
 		}
 	}
 }

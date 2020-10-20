@@ -6,6 +6,10 @@ namespace Mono.Linker
 {
 	public class UnconditionalSuppressMessageAttributeState
 	{
+		internal const string ScopeProperty = "Scope";
+		internal const string TargetProperty = "Target";
+		internal const string MessageIdProperty = "MessageId";
+
 		private readonly LinkContext _context;
 		private readonly Dictionary<ICustomAttributeProvider, Dictionary<int, SuppressMessageInfo>> _suppressions;
 		private HashSet<AssemblyDefinition> InitializedAssemblies { get; }
@@ -69,8 +73,8 @@ namespace Mono.Linker
 			if (provider == null)
 				return false;
 
-			return (_suppressions.TryGetValue (provider, out var suppressions) &&
-				suppressions.TryGetValue (id, out info));
+			return _suppressions.TryGetValue (provider, out var suppressions) &&
+				suppressions.TryGetValue (id, out info);
 		}
 
 		private static bool TryDecodeSuppressMessageAttributeData (CustomAttribute attribute, out SuppressMessageInfo info)
@@ -99,13 +103,13 @@ namespace Mono.Linker
 			if (attribute.HasProperties) {
 				foreach (var p in attribute.Properties) {
 					switch (p.Name) {
-					case "Scope":
+					case ScopeProperty:
 						info.Scope = (p.Argument.Value as string)?.ToLower ();
 						break;
-					case "Target":
+					case TargetProperty:
 						info.Target = p.Argument.Value as string;
 						break;
-					case "MessageId":
+					case MessageIdProperty:
 						info.MessageId = p.Argument.Value as string;
 						break;
 					}
@@ -115,7 +119,7 @@ namespace Mono.Linker
 			return true;
 		}
 
-		public ModuleDefinition GetModuleFromProvider (ICustomAttributeProvider provider)
+		public static ModuleDefinition GetModuleFromProvider (ICustomAttributeProvider provider)
 		{
 			switch (provider.MetadataToken.TokenType) {
 			case TokenType.Module:

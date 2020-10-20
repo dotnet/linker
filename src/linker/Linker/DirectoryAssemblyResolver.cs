@@ -6,8 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.MemoryMappedFiles;
-using Mono.Collections.Generic;
 using Mono.Cecil;
+using Mono.Collections.Generic;
 
 #if FEATURE_ILLINK
 namespace Mono.Linker {
@@ -20,23 +20,17 @@ namespace Mono.Linker {
 
 		readonly List<MemoryMappedViewStream> viewStreams = new List<MemoryMappedViewStream> ();
 
+		readonly ReaderParameters defaultReaderParameters;
+
 		public void AddSearchDirectory (string directory)
 		{
 			directories.Add (directory);
 		}
 
-		public void RemoveSearchDirectory (string directory)
-		{
-			directories.Remove (directory);
-		}
-
-		public string [] GetSearchDirectories ()
-		{
-			return this.directories.ToArray ();
-		}
-
 		protected DirectoryAssemblyResolver ()
 		{
+			defaultReaderParameters = new ReaderParameters ();
+			defaultReaderParameters.AssemblyResolver = this;
 			directories = new Collection<string> (2) { "." };
 		}
 
@@ -71,15 +65,15 @@ namespace Mono.Linker {
 
 		public virtual AssemblyDefinition Resolve (AssemblyNameReference name)
 		{
-			return Resolve (name, new ReaderParameters ());
+			return Resolve (name, defaultReaderParameters);
 		}
 
 		public virtual AssemblyDefinition Resolve (AssemblyNameReference name, ReaderParameters parameters)
 		{
 			if (name == null)
-				throw new ArgumentNullException ("name");
+				throw new ArgumentNullException (nameof (name));
 			if (parameters == null)
-				throw new ArgumentNullException ("parameters");
+				throw new ArgumentNullException (nameof (parameters));
 
 			var assembly = SearchDirectory (name, directories, parameters);
 			if (assembly != null)
@@ -98,7 +92,7 @@ namespace Mono.Linker {
 						continue;
 					try {
 						return GetAssembly (file, parameters);
-					} catch (System.BadImageFormatException) {
+					} catch (BadImageFormatException) {
 						continue;
 					}
 				}

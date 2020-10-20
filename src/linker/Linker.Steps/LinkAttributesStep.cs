@@ -7,121 +7,183 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Xml.XPath;
 using Mono.Cecil;
 
 namespace Mono.Linker.Steps
 {
-	class LinkAttributesStep : BaseStep
+	public class LinkAttributesStep : ProcessLinkerXmlStepBase
 	{
-		XPathDocument _document;
-		string _xmlDocumentLocation;
-		readonly EmbeddedResource _resource;
-		readonly AssemblyDefinition _resourceAssembly;
-
 		public LinkAttributesStep (XPathDocument document, string xmlDocumentLocation)
+			: base (document, xmlDocumentLocation)
 		{
-			_document = document;
-			_xmlDocumentLocation = xmlDocumentLocation;
 		}
 
 		public LinkAttributesStep (XPathDocument document, EmbeddedResource resource, AssemblyDefinition resourceAssembly, string xmlDocumentLocation = "<unspecified>")
-			: this (document, xmlDocumentLocation)
+			: base (document, resource, resourceAssembly, xmlDocumentLocation)
 		{
-			if (resource == null)
-				throw new ArgumentNullException (nameof (resource));
-
-			_resource = resource;
-			_resourceAssembly = resourceAssembly ?? throw new ArgumentNullException (nameof (resourceAssembly));
 		}
 
-		IEnumerable<CustomAttribute> ProcessAttributes (XPathNavigator nav)
+		IEnumerable<CustomAttribute> ProcessAttributes (XPathNavigator nav, ICustomAttributeProvider provider)
 		{
 			XPathNodeIterator iterator = nav.SelectChildren ("attribute", string.Empty);
 			var attributes = new List<CustomAttribute> ();
 			while (iterator.MoveNext ()) {
-				AssemblyDefinition assembly;
-				TypeDefinition attributeType;
+				if (!ShouldProcessElement (iterator.Current))
+					continue;
+
+				string internalAttribute = GetAttribute (iterator.Current, "internal");
+				if (!string.IsNullOrEmpty (internalAttribute)) {
+					ProcessInternalAttribute (provider, internalAttribute);
+					continue;
+				}
 
 				string attributeFullName = GetFullName (iterator.Current);
-				if (attributeFullName == String.Empty) {
-					Context.LogWarning ($"Attribute element does not contain attribute 'fullname'", 2029, _xmlDocumentLocation);
-					continue;
-				}
-				string assemblyName = GetAttribute (iterator.Current, "assembly");
-				if (assemblyName == String.Empty)
-					attributeType = Context.GetType (attributeFullName);
-				else {
-					try {
-						assembly = GetAssembly (Context, AssemblyNameReference.Parse (assemblyName));
-					} catch (Exception) {
-						Context.LogWarning ($"Could not resolve assembly '{assemblyName}' in attribute '{attributeFullName}' specified in the '{_xmlDocumentLocation}'", 2030, _xmlDocumentLocation);
-						continue;
-					}
-					attributeType = assembly.FindType (attributeFullName);
-				}
-				if (attributeType == null) {
-					Context.LogWarning ($"Attribute type '{attributeFullName}' could not be found", 2031, _xmlDocumentLocation);
+				if (string.IsNullOrEmpty (attributeFullName)) {
+					Context.LogWarning ($"'attribute' element does not contain attribute 'fullname' or it's empty", 2029, _xmlDocumentLocation);
 					continue;
 				}
 
-				ArrayBuilder<string> arguments = GetAttributeChildren (iterator.Current.SelectChildren ("argument", string.Empty));
-				MethodDefinition constructor = attributeType.Methods.Where (method => method.IsInstanceConstructor ()).FirstOrDefault (c => c.Parameters.Count == arguments.Count);
-				if (constructor == null) {
-					Context.LogWarning ($"Could not find a constructor for type '{attributeType}' that receives '{arguments.Count}' arguments as parameter", 2022, _xmlDocumentLocation);
+				if (!GetAttributeType (iterator, attributeFullName, out TypeDefinition attributeType))
 					continue;
-				}
-				string[] xmlArguments = arguments.ToArray ();
-				bool recognizedArgument = true;
 
-				CustomAttribute attribute = new CustomAttribute (constructor);
-				if (xmlArguments == null) {
-					attributes.Add (attribute);
-					continue;
-				}
-				for (int i = 0; i < xmlArguments.Length; i++) {
-					object argumentValue = null;
-
-					if (constructor.Parameters[i].ParameterType.Resolve ().IsEnum) {
-						foreach (var field in constructor.Parameters[i].ParameterType.Resolve ().Fields) {
-							if (field.IsStatic && field.Name == xmlArguments[i]) {
-								argumentValue = Convert.ToInt32 (field.Constant);
-								break;
-							}
-						}
-						if (argumentValue == null) {
-							Context.LogWarning ($"Could not parse argument '{xmlArguments[i]}' specified in '{_xmlDocumentLocation}' as a {constructor.Parameters[i].ParameterType.FullName}", 2021, _xmlDocumentLocation);
-							recognizedArgument = false;
-						}
-					} else {
-						switch (constructor.Parameters[i].ParameterType.MetadataType) {
-						case MetadataType.String:
-							argumentValue = xmlArguments[i];
-							break;
-						case MetadataType.Int32:
-							int result;
-							if (int.TryParse (xmlArguments[i], out result))
-								argumentValue = result;
-							else {
-								Context.LogWarning ($"Argument '{xmlArguments[i]}' specified in '{_xmlDocumentLocation}' could not be transformed to the constructor parameter type", 2032, _xmlDocumentLocation);
-							}
-							break;
-						default:
-							Context.LogWarning ($"Argument '{xmlArguments[i]}' specified in '{_xmlDocumentLocation}' is of unsupported type '{constructor.Parameters[i].ParameterType}'", 2020, _xmlDocumentLocation);
-							recognizedArgument = false;
-							break;
-						}
-					}
-					attribute.ConstructorArguments.Add (new CustomAttributeArgument (constructor.Parameters[i].ParameterType, argumentValue));
-				}
-				if (recognizedArgument)
-					attributes.Add (attribute);
+				CustomAttribute customAttribute = CreateCustomAttribute (iterator, attributeType);
+				if (customAttribute != null)
+					attributes.Add (customAttribute);
 			}
+
 			return attributes;
 		}
 
-		ArrayBuilder<string> GetAttributeChildren (XPathNodeIterator iterator)
+		CustomAttribute CreateCustomAttribute (XPathNodeIterator iterator, TypeDefinition attributeType)
+		{
+			string[] attributeArguments = GetAttributeChildren (iterator.Current.SelectChildren ("argument", string.Empty)).ToArray ();
+			var attributeArgumentCount = attributeArguments == null ? 0 : attributeArguments.Length;
+			MethodDefinition constructor = attributeType.Methods.Where (method => method.IsInstanceConstructor ()).FirstOrDefault (c => c.Parameters.Count == attributeArgumentCount);
+			if (constructor == null) {
+				Context.LogWarning (
+					$"Could not find a constructor for type '{attributeType}' that has '{attributeArgumentCount}' arguments",
+					2022,
+					_xmlDocumentLocation);
+				return null;
+			}
+
+			CustomAttribute customAttribute = new CustomAttribute (constructor);
+			var arguments = ProcessAttributeArguments (constructor, attributeArguments);
+			if (arguments != null)
+				foreach (var argument in arguments)
+					customAttribute.ConstructorArguments.Add (argument);
+
+			var properties = ProcessAttributeProperties (iterator.Current.SelectChildren ("property", string.Empty), attributeType);
+			if (properties != null)
+				foreach (var property in properties)
+					customAttribute.Properties.Add (property);
+
+			return customAttribute;
+		}
+
+		List<CustomAttributeNamedArgument> ProcessAttributeProperties (XPathNodeIterator iterator, TypeDefinition attributeType)
+		{
+			List<CustomAttributeNamedArgument> attributeProperties = new List<CustomAttributeNamedArgument> ();
+			while (iterator.MoveNext ()) {
+				string propertyName = GetName (iterator.Current);
+				if (string.IsNullOrEmpty (propertyName)) {
+					Context.LogWarning ($"Property element does not contain attribute 'name'", 2051, _xmlDocumentLocation);
+					continue;
+				}
+
+				PropertyDefinition property = attributeType.Properties.Where (prop => prop.Name == propertyName).FirstOrDefault ();
+				if (property == null) {
+					Context.LogWarning ($"Property '{propertyName}' could not be found", 2052, _xmlDocumentLocation);
+					continue;
+				}
+
+				var propertyValue = iterator.Current.Value;
+				if (!TryConvertValue (propertyValue, property.PropertyType, out object value)) {
+					Context.LogWarning ($"Invalid value '{propertyValue}' for property '{propertyName}'", 2053, _xmlDocumentLocation);
+					continue;
+				}
+
+				attributeProperties.Add (new CustomAttributeNamedArgument (property.Name,
+					new CustomAttributeArgument (property.PropertyType, value)));
+			}
+
+			return attributeProperties;
+		}
+
+		List<CustomAttributeArgument> ProcessAttributeArguments (MethodDefinition attributeConstructor, string[] arguments)
+		{
+			if (arguments == null)
+				return null;
+
+			List<CustomAttributeArgument> attributeArguments = new List<CustomAttributeArgument> ();
+			for (int i = 0; i < arguments.Length; i++) {
+				object argValue;
+				TypeDefinition parameterType = attributeConstructor.Parameters[i].ParameterType.Resolve ();
+				if (!TryConvertValue (arguments[i], parameterType, out argValue)) {
+					Context.LogWarning (
+						$"Invalid argument value '{arguments[i]}' for parameter type '{parameterType.GetDisplayName ()}' of attribute '{attributeConstructor.DeclaringType.GetDisplayName ()}'",
+						2054,
+						_xmlDocumentLocation);
+					return null;
+				}
+
+				attributeArguments.Add (new CustomAttributeArgument (parameterType, argValue));
+			}
+
+			return attributeArguments;
+		}
+
+		void ProcessInternalAttribute (ICustomAttributeProvider provider, string internalAttribute)
+		{
+			if (internalAttribute != "RemoveAttributeInstances") {
+				Context.LogWarning ($"Unrecognized internal attribute '{internalAttribute}'", 2049, _xmlDocumentLocation);
+				return;
+			}
+
+			if (provider.MetadataToken.TokenType != TokenType.TypeDef) {
+				Context.LogWarning ($"Internal attribute 'RemoveAttributeInstances' can only be used on a type, but is being used on '{provider}'", 2048, _xmlDocumentLocation);
+				return;
+			}
+
+			if (!Annotations.IsMarked (provider)) {
+				IEnumerable<Attribute> removeAttributeInstance = new List<Attribute> { new RemoveAttributeInstancesAttribute () };
+				Context.CustomAttributes.AddInternalAttributes (provider, removeAttributeInstance);
+			}
+		}
+
+		bool GetAttributeType (XPathNodeIterator iterator, string attributeFullName, out TypeDefinition attributeType)
+		{
+			string assemblyName = GetAttribute (iterator.Current, "assembly");
+			if (string.IsNullOrEmpty (assemblyName)) {
+				attributeType = Context.GetType (attributeFullName);
+			} else {
+				AssemblyDefinition assembly;
+				try {
+					assembly = GetAssembly (Context, AssemblyNameReference.Parse (assemblyName));
+					if (assembly == null) {
+						Context.LogWarning ($"Could not resolve assembly '{assemblyName}' for attribute '{attributeFullName}'", 2030, _xmlDocumentLocation);
+						attributeType = default;
+						return false;
+					}
+				} catch (Exception) {
+					Context.LogWarning ($"Could not resolve assembly '{assemblyName}' for attribute '{attributeFullName}'", 2030, _xmlDocumentLocation);
+					attributeType = default;
+					return false;
+				}
+
+				attributeType = Context.TypeNameResolver.ResolveTypeName (assembly, attributeFullName)?.Resolve ();
+			}
+
+			if (attributeType == null) {
+				Context.LogWarning ($"Attribute type '{attributeFullName}' could not be found", 2031, _xmlDocumentLocation);
+				return false;
+			}
+
+			return true;
+		}
+
+		static ArrayBuilder<string> GetAttributeChildren (XPathNodeIterator iterator)
 		{
 			ArrayBuilder<string> children = new ArrayBuilder<string> ();
 			while (iterator.MoveNext ()) {
@@ -132,132 +194,25 @@ namespace Mono.Linker.Steps
 
 		protected override void Process ()
 		{
-			if (_resource != null) {
-				if (Context.StripLinkAttributes)
-					Context.Annotations.AddResourceToRemove (_resourceAssembly, _resource);
-				if (Context.IgnoreLinkAttributes)
-					return;
-			}
-
-			XPathNavigator nav = _document.CreateNavigator ();
-
-			if (!nav.MoveToChild ("linker", string.Empty))
-				return;
-
-			try {
-				ProcessAssemblies (Context, nav.SelectChildren ("assembly", string.Empty));
-			} catch (Exception ex) when (!(ex is LinkerFatalErrorException)) {
-				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage ($"Error processing '{_xmlDocumentLocation}'", 1013), ex);
-			}
+			ProcessXml (Context.StripLinkAttributes, Context.IgnoreLinkAttributes);
 		}
 
-		void ProcessAssemblies (LinkContext context, XPathNodeIterator iterator)
+		protected override bool AllowAllAssembliesSelector { get => true; }
+
+		protected override void ProcessAssembly (AssemblyDefinition assembly, XPathNodeIterator iterator, bool warnOnUnresolvedTypes)
 		{
-			while (iterator.MoveNext ()) {
-				bool processAllAssemblies = GetFullName (iterator.Current) == "*";
-				// Errors for invalid assembly names should show up even if this element will be
-				// skipped due to feature conditions.
-				var name = processAllAssemblies ? null : GetAssemblyName (iterator.Current);
-
-				if (!ShouldProcessElement (iterator.Current))
-					continue;
-
-				if (processAllAssemblies) {
-					foreach (AssemblyDefinition assemblyIterator in context.GetAssemblies ())
-						ProcessTypes (assemblyIterator, iterator, true);
-				} else {
-					AssemblyDefinition assembly = GetAssembly (context, name);
-
-					if (assembly == null) {
-						Context.LogWarning ($"Could not resolve assembly {GetAssemblyName (iterator.Current).Name} specified in {_xmlDocumentLocation}", 2007, _xmlDocumentLocation);
-						continue;
-					}
-					IEnumerable<CustomAttribute> attributes = ProcessAttributes (iterator.Current);
-					if (attributes.Count () > 0)
-						Context.CustomAttributes.AddCustomAttributes (assembly, attributes);
-					ProcessTypes (assembly, iterator);
-				}
-			}
+			IEnumerable<CustomAttribute> attributes = ProcessAttributes (iterator.Current, assembly);
+			if (attributes.Any ())
+				Context.CustomAttributes.AddCustomAttributes (assembly, attributes);
+			ProcessTypes (assembly, iterator, warnOnUnresolvedTypes);
 		}
 
-		void ProcessTypes (AssemblyDefinition assembly, XPathNodeIterator iterator, bool searchOnAllAssemblies = false)
-		{
-			iterator = iterator.Current.SelectChildren ("type", string.Empty);
-			while (iterator.MoveNext ()) {
-				XPathNavigator nav = iterator.Current;
-
-				if (!ShouldProcessElement (nav))
-					continue;
-
-				string fullname = GetFullName (nav);
-
-				if (fullname.IndexOf ("*") != -1) {
-					ProcessTypePattern (fullname, assembly, nav);
-					continue;
-				}
-
-				TypeDefinition type = assembly.MainModule.GetType (fullname);
-
-				if (type == null && assembly.MainModule.HasExportedTypes) {
-					foreach (var exported in assembly.MainModule.ExportedTypes) {
-						if (fullname == exported.FullName) {
-							var resolvedExternal = exported.Resolve ();
-							if (resolvedExternal != null) {
-								type = resolvedExternal;
-								break;
-							}
-						}
-					}
-				}
-
-				if (type == null) {
-					if (!searchOnAllAssemblies)
-						Context.LogWarning ($"Could not resolve type '{fullname}' specified in {_xmlDocumentLocation}", 2008, _xmlDocumentLocation);
-					continue;
-				}
-
-				ProcessType (type, nav);
-			}
-		}
-
-		void MatchType (TypeDefinition type, Regex regex, XPathNavigator nav)
-		{
-			if (regex.Match (type.FullName).Success)
-				ProcessType (type, nav);
-
-			if (!type.HasNestedTypes)
-				return;
-
-			foreach (var nt in type.NestedTypes)
-				MatchType (nt, regex, nav);
-		}
-
-		void ProcessTypePattern (string fullname, AssemblyDefinition assembly, XPathNavigator nav)
-		{
-			Regex regex = new Regex (fullname.Replace (".", @"\.").Replace ("*", "(.*)"));
-
-			foreach (TypeDefinition type in assembly.MainModule.Types) {
-				MatchType (type, regex, nav);
-			}
-
-			if (assembly.MainModule.HasExportedTypes) {
-				foreach (var exported in assembly.MainModule.ExportedTypes) {
-					if (regex.Match (exported.FullName).Success) {
-						TypeDefinition type = exported.Resolve ();
-						if (type != null) {
-							ProcessType (type, nav);
-						}
-					}
-				}
-			}
-		}
-
-		void ProcessType (TypeDefinition type, XPathNavigator nav)
+		protected override void ProcessType (TypeDefinition type, XPathNavigator nav)
 		{
 			Debug.Assert (ShouldProcessElement (nav));
 
-			IEnumerable<CustomAttribute> attributes = ProcessAttributes (nav);
-			if (attributes.Count () > 0)
+			IEnumerable<CustomAttribute> attributes = ProcessAttributes (nav, type);
+			if (attributes.Any ())
 				Context.CustomAttributes.AddCustomAttributes (type, attributes);
 			ProcessTypeChildren (type, nav);
 
@@ -273,162 +228,35 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void ProcessTypeChildren (TypeDefinition type, XPathNavigator nav)
+		protected override void ProcessField (TypeDefinition type, FieldDefinition field, XPathNavigator nav)
 		{
-			if (nav.HasChildren) {
-				ProcessSelectedFields (nav, type);
-				ProcessSelectedMethods (nav, type);
-				ProcessSelectedProperties (nav, type);
-				ProcessSelectedEvents (nav, type);
-			}
-		}
-
-		void ProcessSelectedFields (XPathNavigator nav, TypeDefinition type)
-		{
-			XPathNodeIterator fields = nav.SelectChildren ("field", string.Empty);
-			if (fields.Count == 0)
-				return;
-
-			while (fields.MoveNext ()) {
-				if (!ShouldProcessElement (fields.Current))
-					continue;
-
-				string value = GetSignature (fields.Current);
-				if (!String.IsNullOrEmpty (value))
-					ProcessFieldSignature (type, value, fields);
-
-				value = GetAttribute (fields.Current, "name");
-				if (!String.IsNullOrEmpty (value))
-					ProcessFieldName (type, value, fields);
-			}
-		}
-
-		void ProcessSelectedMethods (XPathNavigator nav, TypeDefinition type)
-		{
-			XPathNodeIterator methods = nav.SelectChildren ("method", string.Empty);
-			if (methods.Count == 0)
-				return;
-
-			while (methods.MoveNext ()) {
-				if (!ShouldProcessElement (methods.Current))
-					continue;
-
-				string value = GetSignature (methods.Current);
-				if (!String.IsNullOrEmpty (value))
-					ProcessMethodSignature (type, value, methods);
-
-				value = GetAttribute (methods.Current, "name");
-				if (!String.IsNullOrEmpty (value))
-					ProcessMethodName (type, value, methods);
-			}
-		}
-
-		void ProcessSelectedProperties (XPathNavigator nav, TypeDefinition type)
-		{
-			XPathNodeIterator properties = nav.SelectChildren ("property", string.Empty);
-			if (properties.Count == 0)
-				return;
-			while (properties.MoveNext ()) {
-				if (!ShouldProcessElement (properties.Current))
-					continue;
-
-				string value = GetSignature (properties.Current);
-				if (!String.IsNullOrEmpty (value))
-					ProcessPropertySignature (type, value, properties);
-
-				value = GetAttribute (properties.Current, "name");
-				if (!String.IsNullOrEmpty (value))
-					ProcessPropertyName (type, value, properties);
-			}
-		}
-
-		void ProcessSelectedEvents (XPathNavigator nav, TypeDefinition type)
-		{
-			XPathNodeIterator events = nav.SelectChildren ("event", string.Empty);
-			if (events.Count == 0)
-				return;
-			while (events.MoveNext ()) {
-				if (!ShouldProcessElement (events.Current))
-					continue;
-
-				string value = GetSignature (events.Current);
-				if (!String.IsNullOrEmpty (value))
-					ProcessEventSignature (type, value, events);
-
-				value = GetAttribute (events.Current, "name");
-				if (!String.IsNullOrEmpty (value))
-					ProcessEventName (type, value, events);
-			}
-		}
-
-		void ProcessFieldSignature (TypeDefinition type, string signature, XPathNodeIterator iterator)
-		{
-			FieldDefinition field = GetField (type, signature);
-			if (field == null) {
-				Context.LogWarning ($"Could not find field '{signature}' in type '{type.FullName}' specified in { _xmlDocumentLocation}", 2016, _xmlDocumentLocation);
-				return;
-			}
-			IEnumerable<CustomAttribute> attributes = ProcessAttributes (iterator.Current);
-			if (attributes.Count () > 0)
+			IEnumerable<CustomAttribute> attributes = ProcessAttributes (nav, field);
+			if (attributes.Any ())
 				Context.CustomAttributes.AddCustomAttributes (field, attributes);
 		}
 
-		void ProcessFieldName (TypeDefinition type, string name, XPathNodeIterator iterator)
+		protected override void ProcessMethod (TypeDefinition type, MethodDefinition method, XPathNavigator nav, object customData)
 		{
-			if (!type.HasFields)
-				return;
-
-			foreach (FieldDefinition field in type.Fields) {
-				if (field.Name == name) {
-					IEnumerable<CustomAttribute> attributes = ProcessAttributes (iterator.Current);
-					if (attributes.Count () > 0)
-						Context.CustomAttributes.AddCustomAttributes (field, attributes);
-				}
-			}
-		}
-
-		static FieldDefinition GetField (TypeDefinition type, string signature)
-		{
-			if (!type.HasFields)
-				return null;
-
-			foreach (FieldDefinition field in type.Fields)
-				if (signature == field.FieldType.FullName + " " + field.Name)
-					return field;
-
-			return null;
-		}
-
-		void ProcessMethodSignature (TypeDefinition type, string signature, XPathNodeIterator iterator)
-		{
-			MethodDefinition method = GetMethod (type, signature);
-			if (method == null) {
-				Context.LogWarning ($"Could not find method '{signature}' in type '{type.FullName}' specified in '{_xmlDocumentLocation}'", 2009, _xmlDocumentLocation);
-				return;
-			}
-			ProcessMethod (method, iterator);
-		}
-
-		void ProcessMethod (MethodDefinition method, XPathNodeIterator iterator)
-		{
-			IEnumerable<CustomAttribute> attributes = ProcessAttributes (iterator.Current);
-			if (attributes.Count () > 0)
+			IEnumerable<CustomAttribute> attributes = ProcessAttributes (nav, method);
+			if (attributes.Any ())
 				Context.CustomAttributes.AddCustomAttributes (method, attributes);
-			ProcessReturnParameters (method, iterator);
-			ProcessParameters (method, iterator);
+			ProcessReturnParameters (method, nav);
+			ProcessParameters (method, nav);
 		}
 
-		void ProcessParameters (MethodDefinition method, XPathNodeIterator iterator)
+		void ProcessParameters (MethodDefinition method, XPathNavigator nav)
 		{
-			iterator = iterator.Current.SelectChildren ("parameter", string.Empty);
+			var iterator = nav.SelectChildren ("parameter", string.Empty);
 			while (iterator.MoveNext ()) {
-				IEnumerable<CustomAttribute> attributes = ProcessAttributes (iterator.Current);
-				if (attributes.Count () > 0) {
+				IEnumerable<CustomAttribute> attributes = ProcessAttributes (iterator.Current, method);
+				if (attributes.Any ()) {
 					string paramName = GetAttribute (iterator.Current, "name");
 					foreach (ParameterDefinition parameter in method.Parameters) {
 						if (paramName == parameter.Name) {
 							if (Context.CustomAttributes.HasCustomAttributes (parameter))
-								Context.LogWarning ($"There are duplicate parameter names for '{paramName}' inside '{method.GetDisplayName ()}' in '{_xmlDocumentLocation}'", 2024, _xmlDocumentLocation);
+								Context.LogWarning (
+									$"More than one value specified for parameter '{paramName}' of method '{method.GetDisplayName ()}'",
+									2024, _xmlDocumentLocation);
 							Context.CustomAttributes.AddCustomAttributes (parameter, attributes);
 							break;
 						}
@@ -437,33 +265,25 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void ProcessReturnParameters (MethodDefinition method, XPathNodeIterator iterator)
+		void ProcessReturnParameters (MethodDefinition method, XPathNavigator nav)
 		{
-			iterator = iterator.Current.SelectChildren ("return", string.Empty);
+			var iterator = nav.SelectChildren ("return", string.Empty);
 			bool firstAppearance = true;
 			while (iterator.MoveNext ()) {
 				if (firstAppearance) {
 					firstAppearance = false;
-					IEnumerable<CustomAttribute> attributes = ProcessAttributes (iterator.Current);
-					if (attributes.Count () > 0)
+					IEnumerable<CustomAttribute> attributes = ProcessAttributes (iterator.Current, method.MethodReturnType);
+					if (attributes.Any ())
 						Context.CustomAttributes.AddCustomAttributes (method.MethodReturnType, attributes);
 				} else {
-					Context.LogWarning ($"There is more than one return parameter specified for '{method.GetDisplayName ()}' in '{_xmlDocumentLocation}'", 2023, _xmlDocumentLocation);
+					Context.LogWarning (
+						$"There is more than one 'return' child element specified for method '{method.GetDisplayName ()}'",
+						2023, _xmlDocumentLocation);
 				}
 			}
 		}
 
-		void ProcessMethodName (TypeDefinition type, string name, XPathNodeIterator iterator)
-		{
-			if (!type.HasMethods)
-				return;
-
-			foreach (MethodDefinition method in type.Methods)
-				if (name == method.Name)
-					ProcessMethod (method, iterator);
-		}
-
-		static MethodDefinition GetMethod (TypeDefinition type, string signature)
+		protected override MethodDefinition GetMethod (TypeDefinition type, string signature)
 		{
 			if (type.HasMethods)
 				foreach (MethodDefinition method in type.Methods)
@@ -503,107 +323,27 @@ namespace Mono.Linker.Steps
 			return sb.ToString ();
 		}
 
-		void ProcessPropertySignature (TypeDefinition type, string signature, XPathNodeIterator iterator)
+		protected override void ProcessProperty (TypeDefinition type, PropertyDefinition property, XPathNavigator nav, object customData, bool fromSignature)
 		{
-			PropertyDefinition property = GetProperty (type, signature);
-			if (property != null) {
-				IEnumerable<CustomAttribute> attributes = ProcessAttributes (iterator.Current);
-				if (attributes.Count () > 0)
-					Context.CustomAttributes.AddCustomAttributes (property, attributes);
-			}
+			IEnumerable<CustomAttribute> attributes = ProcessAttributes (nav, property);
+			if (attributes.Any ())
+				Context.CustomAttributes.AddCustomAttributes (property, attributes);
 		}
 
-		void ProcessPropertyName (TypeDefinition type, string name, XPathNodeIterator iterator)
+		protected override void ProcessEvent (TypeDefinition type, EventDefinition @event, XPathNavigator nav, object customData)
 		{
-			if (!type.HasProperties)
-				return;
-
-			foreach (PropertyDefinition property in type.Properties) {
-				if (property.Name == name) {
-					IEnumerable<CustomAttribute> attributes = ProcessAttributes (iterator.Current);
-					if (attributes.Count () > 0)
-						Context.CustomAttributes.AddCustomAttributes (property, attributes);
-				}
-			}
-		}
-
-		void ProcessEventSignature (TypeDefinition type, string signature, XPathNodeIterator iterator)
-		{
-			EventDefinition @event = GetEvent (type, signature);
-			if (@event == null) {
-				Context.LogWarning ($"Could not find event '{signature}' in type '{type.FullName}' specified in {_xmlDocumentLocation}", 2016, _xmlDocumentLocation);
-				return;
-			}
-			IEnumerable<CustomAttribute> attributes = ProcessAttributes (iterator.Current);
-			if (attributes.Count () > 0)
+			IEnumerable<CustomAttribute> attributes = ProcessAttributes (nav, @event);
+			if (attributes.Any ())
 				Context.CustomAttributes.AddCustomAttributes (@event, attributes);
 		}
 
-		void ProcessEventName (TypeDefinition type, string name, XPathNodeIterator iterator)
-		{
-			if (!type.HasEvents)
-				return;
-
-			foreach (EventDefinition @event in type.Events) {
-				if (@event.Name == name) {
-					IEnumerable<CustomAttribute> attributes = ProcessAttributes (iterator.Current);
-					if (attributes.Count () > 0)
-						Context.CustomAttributes.AddCustomAttributes (@event, attributes);
-				}
-			}
-		}
-
-		AssemblyDefinition GetAssembly (LinkContext context, AssemblyNameReference assemblyName)
+		protected override AssemblyDefinition GetAssembly (LinkContext context, AssemblyNameReference assemblyName)
 		{
 			var assembly = context.Resolve (assemblyName);
-			context.ResolveReferences (assembly);
+			if (assembly != null)
+				ProcessReferences (assembly);
+
 			return assembly;
 		}
-
-		AssemblyNameReference GetAssemblyName (XPathNavigator nav)
-		{
-			return AssemblyNameReference.Parse (GetFullName (nav));
-		}
-
-		static string GetSignature (XPathNavigator nav)
-		{
-			return GetAttribute (nav, "signature");
-		}
-
-		static string GetFullName (XPathNavigator nav)
-		{
-			return GetAttribute (nav, "fullname");
-		}
-
-		static string GetAttribute (XPathNavigator nav, string attribute)
-		{
-			return nav.GetAttribute (attribute, string.Empty);
-		}
-
-		protected static EventDefinition GetEvent (TypeDefinition type, string signature)
-		{
-			if (!type.HasEvents)
-				return null;
-
-			foreach (EventDefinition @event in type.Events)
-				if (signature == @event.EventType.FullName + " " + @event.Name)
-					return @event;
-
-			return null;
-		}
-
-		static PropertyDefinition GetProperty (TypeDefinition type, string signature)
-		{
-			if (!type.HasProperties)
-				return null;
-
-			foreach (PropertyDefinition property in type.Properties)
-				if (signature == property.PropertyType.FullName + " " + property.Name)
-					return property;
-
-			return null;
-		}
-
-		bool ShouldProcessElement (XPathNavigator nav) => FeatureSettings.ShouldProcessElement (nav, Context, _xmlDocumentLocation);
 	}
 }

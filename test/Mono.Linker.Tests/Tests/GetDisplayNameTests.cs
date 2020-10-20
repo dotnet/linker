@@ -1,14 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using NUnit.Framework;
 using Mono.Cecil;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.TestCasesRunner;
+using NUnit.Framework;
 
 namespace Mono.Linker.Tests
 {
 	[TestFixture]
+	[Parallelizable]
 	public class GetDisplayNameTests
 	{
 		[TestCaseSource (nameof (GetMemberAssertionsAsArray), new object[] { typeof (GetDisplayNameTests) })]
@@ -42,13 +43,13 @@ namespace Mono.Linker.Tests
 			return MemberAssertionsCollector.GetMemberAssertions (type).Select (v => new object[] { v.member, v.ca });
 		}
 
-		[DisplayName ("GetDisplayNameTests.A")]
+		[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.A")]
 		public class A
 		{
-			[DisplayName ("GetDisplayNameTests.A.B")]
+			[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.A.B")]
 			public class B
 			{
-				[DisplayName ("GetDisplayNameTests.A.B.C")]
+				[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.A.B.C")]
 				public class C
 				{
 				}
@@ -106,28 +107,28 @@ namespace Mono.Linker.Tests
 			}
 		}
 
-		[DisplayName ("GetDisplayNameTests.PartialClass")]
+		[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.PartialClass")]
 		public partial class PartialClass
 		{
 		}
 
-		[DisplayName ("GetDisplayNameTests.StaticClass")]
+		[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.StaticClass")]
 		public static class StaticClass
 		{
 		}
 
-		[DisplayName ("GetDisplayNameTests.GenericClassOneParameter<T>")]
+		[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.GenericClassOneParameter<T>")]
 		public class GenericClassOneParameter<T>
 		{
-			[DisplayName ("GetDisplayNameTests.GenericClassOneParameter<T>.NestedGenericClassOneParameter<S>")]
+			[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.GenericClassOneParameter<T>.NestedGenericClassOneParameter<S>")]
 			public class NestedGenericClassOneParameter<S>
 			{
-				[DisplayName ("GetDisplayNameTests.GenericClassOneParameter<T>.NestedGenericClassOneParameter<S>.A<U>")]
+				[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.GenericClassOneParameter<T>.NestedGenericClassOneParameter<S>.A<U>")]
 				public class A<U>
 				{
 				}
 
-				[DisplayName ("GetDisplayNameTests.GenericClassOneParameter<T>.NestedGenericClassOneParameter<S>.Delegate<U>")]
+				[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.GenericClassOneParameter<T>.NestedGenericClassOneParameter<S>.Delegate<U>")]
 				public delegate void Delegate<U> (U p);
 
 				[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.GenericClassOneParameter<T>.NestedGenericClassOneParameter<S>.MethodGenericArray<U,V>(IList<U>,V)")]
@@ -153,7 +154,7 @@ namespace Mono.Linker.Tests
 				}
 			}
 
-			[DisplayName ("GetDisplayNameTests.GenericClassOneParameter<T>.B")]
+			[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.GenericClassOneParameter<T>.B")]
 			public class B
 			{
 				[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.GenericClassOneParameter<T>.B.MethodWithGenericTypeArguments" +
@@ -169,10 +170,13 @@ namespace Mono.Linker.Tests
 			}
 		}
 
-		[DisplayName ("GetDisplayNameTests.GenericClassMultipleParameters<T,S>")]
+		[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.MethodWithNestedGenericTypeArgumentsNoArgumentsOnLeaf(GetDisplayNameTests.GenericClassOneParameter<Int32>.B)")]
+		public void MethodWithNestedGenericTypeArgumentsNoArgumentsOnLeaf (GenericClassOneParameter<int>.B p) { }
+
+		[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.GenericClassMultipleParameters<T,S>")]
 		public class GenericClassMultipleParameters<T, S>
 		{
-			[DisplayName ("GetDisplayNameTests.GenericClassMultipleParameters<T,S>.NestedGenericClassMultipleParameters<U,V>")]
+			[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.GenericClassMultipleParameters<T,S>.NestedGenericClassMultipleParameters<U,V>")]
 			public class NestedGenericClassMultipleParameters<U, V>
 			{
 			}
@@ -191,6 +195,13 @@ namespace Mono.Linker.Tests
 		[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.MethodWithNestedGenericTypeArguments" +
 			"(GetDisplayNameTests.GenericClassMultipleParameters<Char*[],Int32[,][]>.NestedGenericClassMultipleParameters<Char*[],Int32[,][]>)")]
 		public void MethodWithNestedGenericTypeArguments (GenericClassMultipleParameters<char*[], int[,][]>.NestedGenericClassMultipleParameters<char*[], int[,][]> p)
+		{
+		}
+
+		[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.MethodWithPartiallyInstantiatedNestedGenericTypeArguments<MethodT,MethodV>" +
+			"(GetDisplayNameTests.GenericClassMultipleParameters<MethodT,String>.NestedGenericClassMultipleParameters<Int32,MethodV>)")]
+		public void MethodWithPartiallyInstantiatedNestedGenericTypeArguments<MethodT, MethodV> (
+			GenericClassMultipleParameters<MethodT, string>.NestedGenericClassMultipleParameters<int, MethodV> p)
 		{
 		}
 	}

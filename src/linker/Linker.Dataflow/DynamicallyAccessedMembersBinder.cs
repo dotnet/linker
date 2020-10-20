@@ -1,3 +1,7 @@
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -28,7 +32,7 @@ namespace Mono.Linker
 					yield return c;
 			}
 
-			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.DefaultConstructor)) {
+			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)) {
 				foreach (var c in typeDefinition.GetConstructorsOnType (filter: m => m.IsPublic && m.Parameters.Count == 0))
 					yield return c;
 			}

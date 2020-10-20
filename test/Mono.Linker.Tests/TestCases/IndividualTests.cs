@@ -9,11 +9,10 @@ using Mono.Linker.Tests.Cases.CommandLine.Mvid;
 using Mono.Linker.Tests.Cases.Interop.PInvoke.Individual;
 using Mono.Linker.Tests.Cases.References.Individual;
 using Mono.Linker.Tests.Cases.Tracing.Individual;
-using Mono.Linker.Tests.Cases.WarningSuppression;
+using Mono.Linker.Tests.Cases.Warnings.Individual;
 using Mono.Linker.Tests.Extensions;
 using Mono.Linker.Tests.TestCasesRunner;
 using NUnit.Framework;
-using NUnit.Framework.Internal;
 
 namespace Mono.Linker.Tests.TestCases
 {
@@ -58,9 +57,9 @@ namespace Mono.Linker.Tests.TestCases
 		}
 
 		[Test]
-		public void CanGenerateWarningSuppressionFile ()
+		public void CanGenerateWarningSuppressionFileCSharp ()
 		{
-			var testcase = CreateIndividualCase (typeof (CanGenerateWarningSuppressionFile));
+			var testcase = CreateIndividualCase (typeof (CanGenerateWarningSuppressionFileCSharp));
 			var result = Run (testcase);
 			string[] expectedAssemblies = new string[] { "test", "library" };
 
@@ -69,9 +68,35 @@ namespace Mono.Linker.Tests.TestCases
 				if (!outputPath.Exists ())
 					Assert.Fail ($"A cs file with a list of UnconditionalSuppressMessage attributes was expected to exist at {outputPath}");
 
-				Assert.IsTrue (File.ReadAllLines (outputPath).SequenceEqual (
+				Assert.That (File.ReadAllLines (outputPath), Is.EquivalentTo (
 					File.ReadAllLines (TestsDirectory.Combine ($"TestCases/Dependencies/WarningSuppressionExpectations{i + 1}.cs"))));
 			}
+		}
+
+		[Test]
+		public void CanGenerateWarningSuppressionFileXml ()
+		{
+			var testcase = CreateIndividualCase (typeof (CanGenerateWarningSuppressionFileXml));
+			var result = Run (testcase);
+			var outputPath = result.OutputAssemblyPath.Parent.Combine ("library.WarningSuppressions.xml");
+			if (!outputPath.Exists ())
+				Assert.Fail ($"An XML file with a list of UnconditionalSuppressMessage attributes was expected to exist at {outputPath}");
+
+			Assert.That (File.ReadAllLines (outputPath), Is.EquivalentTo (
+				File.ReadAllLines (TestsDirectory.Combine ($"TestCases/Dependencies/WarningSuppressionExpectations3.xml"))));
+		}
+
+		[Test]
+		public void WarningsAreSorted ()
+		{
+			var testcase = CreateIndividualCase (typeof (WarningsAreSorted));
+			var result = Run (testcase);
+			var loggedMessages = result.Logger.MessageContainers
+				.Where (lm => lm.Category != MessageCategory.Info && lm.Category != MessageCategory.Diagnostic).ToList ();
+			loggedMessages.Sort ();
+
+			Assert.That (loggedMessages.Select (m => m.ToString ()), Is.EquivalentTo (
+				File.ReadAllLines (TestsDirectory.Combine ($"TestCases/Dependencies/SortedWarnings.txt"))));
 		}
 
 		[Test]

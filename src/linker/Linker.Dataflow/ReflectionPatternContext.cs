@@ -2,10 +2,10 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using Mono.Cecil;
-using Mono.Cecil.Cil;
 using System;
 using System.Diagnostics;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
 
 namespace Mono.Linker.Dataflow
 {
@@ -49,6 +49,7 @@ namespace Mono.Linker.Dataflow
 #endif
 		}
 
+#pragma warning disable CA1822
 		[Conditional ("DEBUG")]
 		public void AnalyzingPattern ()
 		{
@@ -64,9 +65,9 @@ namespace Mono.Linker.Dataflow
 			_patternReported = true;
 #endif
 		}
+#pragma warning restore CA1822
 
-		public void RecordRecognizedPattern<T> (T accessedItem, Action mark)
-			where T : IMemberDefinition
+		public void RecordRecognizedPattern (IMemberDefinition accessedItem, Action mark)
 		{
 #if DEBUG
 			if (!_patternAnalysisAttempted)
@@ -81,7 +82,7 @@ namespace Mono.Linker.Dataflow
 				_context.ReflectionPatternRecorder.RecognizedReflectionAccessPattern (Source, Instruction, accessedItem);
 		}
 
-		public void RecordUnrecognizedPattern (string message)
+		public void RecordUnrecognizedPattern (int messageCode, string message)
 		{
 #if DEBUG
 			if (!_patternAnalysisAttempted)
@@ -91,7 +92,7 @@ namespace Mono.Linker.Dataflow
 #endif
 
 			if (ReportingEnabled)
-				_context.ReflectionPatternRecorder.UnrecognizedReflectionAccessPattern (Source, Instruction, MemberWithRequirements, message);
+				_context.ReflectionPatternRecorder.UnrecognizedReflectionAccessPattern (Source, Instruction, MemberWithRequirements, message, messageCode);
 		}
 
 		public void Dispose ()

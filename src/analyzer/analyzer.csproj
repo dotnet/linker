@@ -9,12 +9,16 @@
 
   <PropertyGroup Condition="'$(MonoBuild)' == ''">
     <DefineConstants>$(DefineConstants);FEATURE_ILLINK</DefineConstants>
-    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(MonoBuild)' != ''">
     <TargetFrameworks>net471</TargetFrameworks>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\external\Mono.Options\*.cs" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Condition="'$(UseCecilPackage)' == 'true'" Include="Mono.Cecil" Version="$(MonoCecilVersion)" />

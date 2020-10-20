@@ -2,14 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using NUnit.Framework;
 using Mono.Cecil;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.TestCasesRunner;
+using NUnit.Framework;
 
 namespace Mono.Linker.Tests
 {
 	[TestFixture]
+	[Parallelizable]
 	public class DocumentationSignatureParserTests
 	{
 		[TestCaseSource (nameof (GetMemberAssertionsAsArray), new object[] { typeof (DocumentationSignatureParserTests) })]
@@ -50,9 +51,8 @@ namespace Mono.Linker.Tests
 
 		public static void CheckGeneratedString (IMemberDefinition member, string expected)
 		{
-			var generator = DocumentationSignatureGenerator.Instance;
 			var builder = new StringBuilder ();
-			generator.VisitMember (member, builder);
+			DocumentationSignatureGenerator.VisitMember (member, builder);
 			Assert.AreEqual (expected, builder.ToString ());
 		}
 

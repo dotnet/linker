@@ -51,7 +51,7 @@ namespace Mono.Linker
 			return true;
 		}
 
-		public static IEnumerable<(InterfaceImplementation, TypeDefinition)> GetReferencedInterfaces (AnnotationStore annotations, MethodBody body)
+		public static IEnumerable<(InterfaceImplementation, TypeDefinition)> GetReferencedInterfaces (MethodBody body)
 		{
 			var possibleStackTypes = AllPossibleStackTypes (body.Method);
 			if (possibleStackTypes.Count == 0)
@@ -85,7 +85,7 @@ namespace Mono.Linker
 		static HashSet<TypeDefinition> AllPossibleStackTypes (MethodDefinition method)
 		{
 			if (!method.HasBody)
-				throw new ArgumentException ();
+				throw new ArgumentException ("Method does not have body", nameof (method));
 
 			var body = method.Body;
 			var types = new HashSet<TypeDefinition> ();

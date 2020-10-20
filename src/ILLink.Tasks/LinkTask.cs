@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using System.Reflection;
+using System.Text;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 
@@ -14,13 +14,12 @@ namespace ILLink.Tasks
 		///   Paths to the assembly files that should be considered as
 		///   input to the linker.
 		///   Optional metadata:
-		///       Action ("copy", "link", etc...): sets the illink action to take for this assembly.
+		///       TrimMode ("copy", "link", etc...): sets the illink action to take for this assembly.
 		///   There is an optional metadata for each optimization that can be set to "True" or "False" to
 		///   enable or disable it per-assembly:
 		///       BeforeFieldInit
 		///       OverrideRemoval
 		///       UnreachableBodies
-		///       ClearInitLocals
 		///       UnusedInterfaces
 		///       IPConstProp
 		///       Sealer
@@ -51,10 +50,41 @@ namespace ILLink.Tasks
 
 		/// <summary>
 		///   The directory in which to place linked assemblies.
-		//    Maps to '-out'.
+		///    Maps to '-out'.
 		/// </summary>
 		[Required]
 		public ITaskItem OutputDirectory { get; set; }
+
+		/// <summary>
+		/// The subset of warnings that have to be turned off. 
+		/// Maps to '--nowarn'.
+		/// </summary>
+		public string NoWarn { get; set; }
+
+		/// <summary>
+		/// The warning version to use.
+		/// Maps to '--warn'.
+		/// </summary>
+		public string Warn { get; set; }
+
+		/// <summary>
+		/// Treat all warnings as errors.
+		/// Maps to '--warnaserror' if true, '--warnaserror-' if false.
+		/// </summary>
+		public bool TreatWarningsAsErrors { set => _treatWarningsAsErrors = value; }
+		bool? _treatWarningsAsErrors;
+
+		/// <summary>
+		/// The list of warnings to report as errors.
+		/// Maps to '--warnaserror LIST-OF-WARNINGS'.
+		/// </summary>
+		public string WarningsAsErrors { get; set; }
+
+		/// <summary>
+		/// The list of warnings to report as usual.
+		/// Maps to '--warnaserror- LIST-OF-WARNINGS'.
+		/// </summary>
+		public string WarningsNotAsErrors { get; set; }
 
 		/// <summary>
 		///   A list of XML root descriptor files specifying linker
@@ -84,13 +114,6 @@ namespace ILLink.Tasks
 		/// </summary>
 		public bool UnreachableBodies { set => _unreachableBodies = value; }
 		bool? _unreachableBodies;
-
-		/// <summary>
-		///   Boolean specifying whether to enable clearinitlocals optimization globally.
-		///   Maps to '--enable-opt clearinitlocals' or '--disable-opt clearinitlocals'.
-		/// </summary>
-		public bool ClearInitLocals { set => _clearInitLocals = value; }
-		bool? _clearInitLocals;
 
 		/// <summary>
 		///   Boolean specifying whether to enable unusedinterfaces optimization globally.
@@ -125,7 +148,6 @@ namespace ILLink.Tasks
 			"BeforeFieldInit",
 			"OverrideRemoval",
 			"UnreachableBodies",
-			"ClearInitLocals",
 			"UnusedInterfaces",
 			"IPConstProp",
 			"Sealer"
@@ -150,16 +172,19 @@ namespace ILLink.Tasks
 		public bool DumpDependencies { get; set; }
 
 		/// <summary>
-		///   Output linked debug symbols for linked assemblies.
-		///   Maps to '-b'.
+		///   Remove debug symbols from linked assemblies.
+		///   Maps to '-b' if false.
+		///   Default if not specified is to remove symbols, like
+		///   the command-line. (Target files will likely set their own defaults to keep symbols.)
 		/// </summary>
-		public bool LinkSymbols { get; set; }
+		public bool RemoveSymbols { set => _removeSymbols = value; }
+		bool? _removeSymbols;
 
 		/// <summary>
 		///   Sets the default action for assemblies.
 		///   Maps to '-c' and '-u'.
 		/// </summary>
-		public string DefaultAction { get; set; }
+		public string TrimMode { get; set; }
 
 		/// <summary>
 		///   A list of custom steps to insert into the linker pipeline.
@@ -175,7 +200,7 @@ namespace ILLink.Tasks
 		/// </summary>
 		public ITaskItem[] CustomSteps { get; set; }
 
-		private readonly static string DotNetHostPathEnvironmentName = "DOTNET_HOST_PATH";
+		private const string DotNetHostPathEnvironmentName = "DOTNET_HOST_PATH";
 
 		private string _dotnetPath;
 
@@ -210,7 +235,7 @@ namespace ILLink.Tasks
 
 				var taskDirectory = Path.GetDirectoryName (Assembly.GetExecutingAssembly ().Location);
 				// The linker always runs on .NET Core, even when using desktop MSBuild to host ILLink.Tasks.
-				_illinkPath = Path.Combine (Path.GetDirectoryName (taskDirectory), "netcoreapp3.0", "illink.dll");
+				_illinkPath = Path.Combine (Path.GetDirectoryName (taskDirectory), "net5.0", "illink.dll");
 				return _illinkPath;
 			}
 			set => _illinkPath = value;
@@ -228,14 +253,14 @@ namespace ILLink.Tasks
 			return args.ToString ();
 		}
 
-		private void SetOpt (StringBuilder args, string opt, bool enabled)
+		private static void SetOpt (StringBuilder args, string opt, bool enabled)
 		{
 			args.Append (enabled ? "--enable-opt " : "--disable-opt ").AppendLine (opt);
 		}
 
-		private void SetOpt (StringBuilder args, string opt, string assembly, bool enabled)
+		private static void SetOpt (StringBuilder args, string opt, string assembly, bool enabled)
 		{
-			args.Append (enabled ? "--enable-opt " : "--disable-opt ").Append (opt).Append (" ").AppendLine (assembly);
+			args.Append (enabled ? "--enable-opt " : "--disable-opt ").Append (opt).Append (' ').AppendLine (assembly);
 		}
 
 		protected override string GenerateResponseFileCommands ()
@@ -261,11 +286,11 @@ namespace ILLink.Tasks
 
 				args.Append ("-reference ").AppendLine (Quote (assemblyPath));
 
-				string action = assembly.GetMetadata ("Action");
-				if (!String.IsNullOrEmpty (action)) {
+				string trimMode = assembly.GetMetadata ("TrimMode");
+				if (!String.IsNullOrEmpty (trimMode)) {
 					args.Append ("-p ");
-					args.Append (action);
-					args.Append (" ").AppendLine (Quote (assemblyName));
+					args.Append (trimMode);
+					args.Append (' ').AppendLine (Quote (assemblyName));
 				}
 
 				// Add per-assembly optimization arguments
@@ -303,6 +328,23 @@ namespace ILLink.Tasks
 			if (OutputDirectory != null)
 				args.Append ("-out ").AppendLine (Quote (OutputDirectory.ItemSpec));
 
+			if (NoWarn != null)
+				args.Append ("--nowarn ").AppendLine (Quote (NoWarn));
+
+			if (Warn != null)
+				args.Append ("--warn ").AppendLine (Quote (Warn));
+
+			if (_treatWarningsAsErrors is bool treatWarningsAsErrors && treatWarningsAsErrors)
+				args.Append ("--warnaserror ");
+			else
+				args.Append ("--warnaserror- ");
+
+			if (WarningsAsErrors != null)
+				args.Append ("--warnaserror ").AppendLine (Quote (WarningsAsErrors));
+
+			if (WarningsNotAsErrors != null)
+				args.Append ("--warnaserror- ").AppendLine (Quote (WarningsNotAsErrors));
+
 			// Add global optimization arguments
 			if (_beforeFieldInit is bool beforeFieldInit)
 				SetOpt (args, "beforefieldinit", beforeFieldInit);
@@ -312,10 +354,6 @@ namespace ILLink.Tasks
 
 			if (_unreachableBodies is bool unreachableBodies)
 				SetOpt (args, "unreachablebodies", unreachableBodies);
-
-			if (_clearInitLocals is bool clearInitLocals) {
-				SetOpt (args, "clearinitlocals", clearInitLocals);
-			}
 
 			if (_unusedInterfaces is bool unusedInterfaces)
 				SetOpt (args, "unusedinterfaces", unusedInterfaces);
@@ -332,7 +370,7 @@ namespace ILLink.Tasks
 					var value = customData.GetMetadata ("Value");
 					if (String.IsNullOrEmpty (value))
 						throw new ArgumentException ("custom data requires \"Value\" metadata");
-					args.Append ("--custom-data ").Append (" ").Append (key).Append ("=").AppendLine (Quote (value));
+					args.Append ("--custom-data ").Append (' ').Append (key).Append ('=').AppendLine (Quote (value));
 				}
 			}
 
@@ -342,15 +380,15 @@ namespace ILLink.Tasks
 					var featureValue = featureSetting.GetMetadata ("Value");
 					if (String.IsNullOrEmpty (featureValue))
 						throw new ArgumentException ("feature settings require \"Value\" metadata");
-					args.Append ("--feature ").Append (feature).Append (" ").AppendLine (featureValue);
+					args.Append ("--feature ").Append (feature).Append (' ').AppendLine (featureValue);
 				}
 			}
 
-			if (LinkSymbols)
+			if (_removeSymbols == false)
 				args.AppendLine ("-b");
 
-			if (DefaultAction != null)
-				args.Append ("-c ").Append (DefaultAction).Append (" -u ").AppendLine (DefaultAction);
+			if (TrimMode != null)
+				args.Append ("-c ").Append (TrimMode).Append (" -u ").AppendLine (TrimMode);
 
 			if (CustomSteps != null) {
 				foreach (var customStep in CustomSteps) {

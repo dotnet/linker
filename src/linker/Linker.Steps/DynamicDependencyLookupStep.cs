@@ -4,8 +4,8 @@
 
 using System;
 using System.Diagnostics;
-using Mono.Cecil;
 using System.Diagnostics.CodeAnalysis;
+using Mono.Cecil;
 
 #nullable enable
 
@@ -15,6 +15,9 @@ namespace Mono.Linker.Steps
 	{
 		protected override void ProcessAssembly (AssemblyDefinition assembly)
 		{
+			if (Annotations.GetAction (assembly) == AssemblyAction.Skip)
+				return;
+
 			var module = assembly.MainModule;
 
 			foreach (var type in module.Types) {
@@ -27,7 +30,7 @@ namespace Mono.Linker.Steps
 			if (type.HasMethods) {
 				foreach (var method in type.GetMethods ()) {
 					var methodDefinition = method.Resolve ();
-					if (methodDefinition?.HasCustomAttributes != true)
+					if (methodDefinition == null)
 						continue;
 
 					ProcessDynamicDependencyAttributes (methodDefinition);
@@ -37,7 +40,7 @@ namespace Mono.Linker.Steps
 			if (type.HasFields) {
 				foreach (var field in type.Fields) {
 					var fieldDefinition = field.Resolve ();
-					if (fieldDefinition?.HasCustomAttributes != true)
+					if (fieldDefinition == null)
 						continue;
 
 					ProcessDynamicDependencyAttributes (fieldDefinition);
@@ -55,22 +58,24 @@ namespace Mono.Linker.Steps
 		{
 			Debug.Assert (member is MethodDefinition || member is FieldDefinition);
 
-			foreach (var ca in member.CustomAttributes) {
-				if (!IsPreserveDependencyAttribute (ca.AttributeType))
-					continue;
+			if (member.HasCustomAttributes) {
+				foreach (var ca in member.CustomAttributes) {
+					if (!IsPreserveDependencyAttribute (ca.AttributeType))
+						continue;
 #if FEATURE_ILLINK
-				Context.LogWarning ($"PreserveDependencyAttribute is deprecated. Use DynamicDependencyAttribute instead.", 2033, member);
+					Context.LogWarning ($"'PreserveDependencyAttribute' is deprecated. Use 'DynamicDependencyAttribute' instead.", 2033, member);
 #endif
-				if (ca.ConstructorArguments.Count != 3)
-					continue;
+					if (ca.ConstructorArguments.Count != 3)
+						continue;
 
-				if (!(ca.ConstructorArguments[2].Value is string assemblyName))
-					continue;
+					if (!(ca.ConstructorArguments[2].Value is string assemblyName))
+						continue;
 
-				var assembly = Context.Resolve (new AssemblyNameReference (assemblyName, new Version ()));
-				if (assembly == null)
-					continue;
-				ProcessReferences (assembly);
+					var assembly = Context.Resolve (new AssemblyNameReference (assemblyName, new Version ()));
+					if (assembly == null)
+						continue;
+					ProcessReferences (assembly);
+				}
 			}
 
 			var dynamicDependencies = Context.Annotations.GetLinkerAttributes<DynamicDependency> (member);
@@ -82,7 +87,7 @@ namespace Mono.Linker.Steps
 
 				var assembly = Context.Resolve (new AssemblyNameReference (dynamicDependency.AssemblyName, new Version ()));
 				if (assembly == null) {
-					Context.LogWarning ($"Unresolved assembly '{dynamicDependency.AssemblyName}' in DynamicDependencyAttribute on '{member}'", 2035, member);
+					Context.LogWarning ($"Unresolved assembly '{dynamicDependency.AssemblyName}' in 'DynamicDependencyAttribute'", 2035, member);
 					continue;
 				}
 

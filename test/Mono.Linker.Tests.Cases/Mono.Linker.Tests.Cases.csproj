@@ -3,13 +3,15 @@
   <PropertyGroup>
     <DefineConstants>$(DefineConstants);INCLUDE_EXPECTATIONS</DefineConstants>
     <WarningLevel>0</WarningLevel>
+    <AnalysisLevel>0</AnalysisLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <LangVersion>8.0</LangVersion>
+    <LangVersion>Latest</LangVersion>
+    <RunAnalyzers>false</RunAnalyzers>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(MonoBuild)' == ''">
-    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <DefineConstants>$(DefineConstants);ILLINK</DefineConstants>
   </PropertyGroup>
 
@@ -54,11 +56,10 @@
     <None Include="TestFramework\Dependencies\ILAssemblySample.il" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Attributes.StructLayout\" />
     <Folder Include="Reflection\Dependencies\" />
     <Folder Include="BCLFeatures\" />
     <Folder Include="BCLFeatures\ETW\" />
-    <Folder Include="WarningSuppression\Dependencies\" />
+    <Folder Include="Warnings\Dependencies\" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="LinkXml\CanPreserveExcludedFeatureCom.xml" />

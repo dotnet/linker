@@ -149,7 +149,7 @@ namespace Mono.Linker.Steps
 			var body = new MethodBody (method);
 
 			if (method.HasParameters && method.Parameters.Any (l => l.IsOut))
-				throw new NotImplementedException ();
+				throw new NotSupportedException ($"Cannot replace body of method '{method.GetDisplayName ()}' because it has an out parameter.");
 
 			var il = body.GetILProcessor ();
 			if (method.IsInstanceConstructor () && !method.DeclaringType.IsValueType) {
@@ -248,12 +248,14 @@ namespace Mono.Linker.Steps
 				if (value is double dvalue)
 					return Instruction.Create (OpCodes.Ldc_R8, dvalue);
 
+				Debug.Assert (value == null);
 				return Instruction.Create (OpCodes.Ldc_R8, 0.0);
 
 			case MetadataType.Single:
 				if (value is float fvalue)
 					return Instruction.Create (OpCodes.Ldc_R4, fvalue);
 
+				Debug.Assert (value == null);
 				return Instruction.Create (OpCodes.Ldc_R4, 0.0f);
 
 			case MetadataType.Char:
@@ -266,10 +268,15 @@ namespace Mono.Linker.Steps
 				if (value is int intValue)
 					return Instruction.Create (OpCodes.Ldc_I4, intValue);
 
+				Debug.Assert (value == null);
 				return Instruction.Create (OpCodes.Ldc_I4_0);
 
 			case MetadataType.UInt64:
 			case MetadataType.Int64:
+				if (value is long longValue)
+					return Instruction.Create (OpCodes.Ldc_I8, longValue);
+
+				Debug.Assert (value == null);
 				return Instruction.Create (OpCodes.Ldc_I8, 0L);
 			}
 

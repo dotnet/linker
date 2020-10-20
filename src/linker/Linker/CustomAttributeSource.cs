@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
@@ -10,11 +11,13 @@ namespace Mono.Linker
 {
 	public class CustomAttributeSource
 	{
-		private Dictionary<ICustomAttributeProvider, IEnumerable<CustomAttribute>> _xmlCustomAttributes;
+		private readonly Dictionary<ICustomAttributeProvider, IEnumerable<CustomAttribute>> _xmlCustomAttributes;
+		private readonly Dictionary<ICustomAttributeProvider, IEnumerable<Attribute>> _internalAttributes;
 
 		public CustomAttributeSource ()
 		{
 			_xmlCustomAttributes = new Dictionary<ICustomAttributeProvider, IEnumerable<CustomAttribute>> ();
+			_internalAttributes = new Dictionary<ICustomAttributeProvider, IEnumerable<Attribute>> ();
 		}
 
 		public void AddCustomAttributes (ICustomAttributeProvider provider, IEnumerable<CustomAttribute> customAttributes)
@@ -48,5 +51,29 @@ namespace Mono.Linker
 
 			return false;
 		}
+
+		public void AddInternalAttributes (ICustomAttributeProvider provider, IEnumerable<Attribute> attributes)
+		{
+			if (!_internalAttributes.ContainsKey (provider))
+				_internalAttributes[provider] = attributes;
+			else
+				_internalAttributes[provider] = _internalAttributes[provider].Concat (attributes);
+		}
+
+		public IEnumerable<Attribute> GetInternalAttributes (ICustomAttributeProvider provider)
+		{
+			if (_internalAttributes.TryGetValue (provider, out var annotations)) {
+				foreach (var attribute in annotations)
+					yield return attribute;
+			}
+		}
+
+		public bool HasInternalAttributes (ICustomAttributeProvider provider)
+		{
+			return _internalAttributes.ContainsKey (provider) ? true : false;
+		}
+
+		public bool HasAttributes (ICustomAttributeProvider provider) =>
+			HasCustomAttributes (provider) || HasInternalAttributes (provider);
 	}
 }

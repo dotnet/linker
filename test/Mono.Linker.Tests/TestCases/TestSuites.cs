@@ -1,6 +1,6 @@
-﻿using Mono.Linker.Tests.TestCasesRunner;
+﻿using System;
+using Mono.Linker.Tests.TestCasesRunner;
 using NUnit.Framework;
-using System;
 
 namespace Mono.Linker.Tests.TestCases
 {
@@ -33,6 +33,12 @@ namespace Mono.Linker.Tests.TestCases
 
 		[TestCaseSource (typeof (TestDatabase), nameof (TestDatabase.AttributeDebuggerTests))]
 		public void AttributesDebuggerTests (TestCase testCase)
+		{
+			Run (testCase);
+		}
+
+		[TestCaseSource (typeof (TestDatabase), nameof (TestDatabase.AttributesStructLayoutTests))]
+		public void AttributesStructLayoutTests (TestCase testCase)
 		{
 			Run (testCase);
 		}
@@ -181,8 +187,8 @@ namespace Mono.Linker.Tests.TestCases
 			Run (testCase);
 		}
 
-		[TestCaseSource (typeof (TestDatabase), nameof (TestDatabase.WarningSuppressionTests))]
-		public void WarningSuppressionTests (TestCase testCase)
+		[TestCaseSource (typeof (TestDatabase), nameof (TestDatabase.WarningsTests))]
+		public void WarningsTests (TestCase testCase)
 		{
 			Run (testCase);
 		}
@@ -232,6 +238,12 @@ namespace Mono.Linker.Tests.TestCases
 
 		[TestCaseSource (typeof (TestDatabase), nameof (TestDatabase.RequiresCapabilityTests))]
 		public void RequiresCapabilityTests (TestCase testCase)
+		{
+			Run (testCase);
+		}
+
+		[TestCaseSource (typeof (TestDatabase), nameof (TestDatabase.LinkAttributesTests))]
+		public void LinkAttributesTests (TestCase testCase)
 		{
 			Run (testCase);
 		}

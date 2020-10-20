@@ -1,3 +1,4 @@
+
 using System;
 using System.Runtime.Serialization;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
@@ -5,6 +6,9 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.CoreLink
 {
+#if !NETCOREAPP
+	[IgnoreTestCase ("Only for .NET Core for some reason")]
+#endif
 	/// <summary>
 	/// Delegate and is created from 
 	/// </summary>
@@ -18,11 +22,7 @@ namespace Mono.Linker.Tests.Cases.CoreLink
 	[KeptMemberInAssembly (PlatformAssemblies.CoreLib, typeof (Delegate), "GetHashCode()")]
 	[KeptMemberInAssembly (PlatformAssemblies.CoreLib, typeof (Delegate), "Equals(System.Object)")]
 	[KeptInterfaceOnTypeInAssembly (PlatformAssemblies.CoreLib, typeof (Delegate), PlatformAssemblies.CoreLib, typeof (ICloneable))]
-#if NETCOREAPP
-	[KeptInterfaceOnTypeInAssembly(PlatformAssemblies.CoreLib, typeof (Delegate), "System.Runtime.dll", typeof (ISerializable))]
-#else
 	[KeptInterfaceOnTypeInAssembly (PlatformAssemblies.CoreLib, typeof (Delegate), PlatformAssemblies.CoreLib, typeof (ISerializable))]
-#endif
 
 	// Fails due to Runtime critical type System.Reflection.CustomAttributeData not found.
 	[SkipPeVerify (SkipPeVerifyForToolchian.Pedump)]
