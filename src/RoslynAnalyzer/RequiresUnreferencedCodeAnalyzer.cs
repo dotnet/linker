@@ -18,7 +18,11 @@ namespace ILTrimmingAnalyzer
     {
         public const string DiagnosticId = "IL2026";
 
-        private const string s_trimmingEnabledString = "PublishTrimmed";
+		/// <summary>
+		/// Configuration only for Mono.Linker.Tests.Cases to specially format types
+		/// to match the Cecil representation.
+		/// </summary>
+        private const string s_cecilCompatPropertyName = "use_cecil_compat_format";
 
         private static readonly LocalizableString s_title = new LocalizableResourceString(
             nameof(RequiresUnreferencedCodeAnalyzer) + "Title",
@@ -48,13 +52,14 @@ namespace ILTrimmingAnalyzer
             context.RegisterCompilationStartAction(context =>
             {
                 var compilation = context.Compilation;
-                var isTrimmingEnabled = context.Options.GetMSBuildPropertyValue(
-					s_trimmingEnabledString, compilation, context.CancellationToken);
+				var useCecilCompatFormat = false;
 
-                if (!string.Equals(isTrimmingEnabled?.Trim(), "true", StringComparison.OrdinalIgnoreCase))
-                {
-                    return;
-                }
+                if (context.Options.AnalyzerConfigOptionsProvider.GlobalOptions.TryGetValue(
+						s_cecilCompatPropertyName,
+						out var useCecilCompatFormatString) &&
+					useCecilCompatFormatString.Equals("true", StringComparison.OrdinalIgnoreCase)) {
+					useCecilCompatFormat = true;
+				}
 
                 context.RegisterOperationAction(operationContext =>
                 {
@@ -85,7 +90,7 @@ namespace ILTrimmingAnalyzer
 					}
 				}, OperationKind.PropertyReference);
 
-				static void CheckMethodOrCtorCall(
+				void CheckMethodOrCtorCall(
 					OperationAnalysisContext operationContext,
 					IMethodSymbol method,
 					Location location) {
@@ -101,7 +106,7 @@ namespace ILTrimmingAnalyzer
 							operationContext.ReportDiagnostic (Diagnostic.Create (
 								s_rule,
 								location,
-								ToCecilDisplayString (method),
+								useCecilCompatFormat ? (object)ToCecilDisplayString (method) : method,
 								(string) ctorArg.Value!));
 						}
 					}

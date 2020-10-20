@@ -36,7 +36,9 @@ namespace ILTrimmingAnalyzer.Test
         public static DiagnosticResult Diagnostic(DiagnosticDescriptor descriptor)
             => CSharpAnalyzerVerifier<TAnalyzer, XUnitVerifier>.Diagnostic(descriptor);
 
-		public static async Task<CompilationWithAnalyzers> CreateCompilation(string src)
+		public static async Task<CompilationWithAnalyzers> CreateCompilation(
+			string src,
+			(string, string)[]? globalAnalyzerOptions = null)
 		{
 			TestCaseUtils.GetDirectoryPaths (out _, out string testAssemblyPath);
 			var expectationsPath = Path.Combine (Path.GetDirectoryName (testAssemblyPath)!, "Mono.Linker.Tests.Cases.Expectations.dll");
@@ -49,8 +51,10 @@ namespace ILTrimmingAnalyzer.Test
 				references: (await ReferenceAssemblies.NetCore.NetCoreApp30.ResolveAsync (null, default)).Add(mdRef),
 				new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
-			var analyzerOptions = new AnalyzerOptions (ImmutableArray<AdditionalText>.Empty,
-				new SimpleAnalyzerOptions(new[] { ("build_property.PublishTrimmed", "true") }));
+			var analyzerOptions = new AnalyzerOptions (
+				ImmutableArray<AdditionalText>.Empty,
+				new SimpleAnalyzerOptions(globalAnalyzerOptions));
+
             var compWithAnalyzerOptions = new CompilationWithAnalyzersOptions(
 				analyzerOptions,
 				(_1, _2, _3) => { },
@@ -76,21 +80,9 @@ namespace ILTrimmingAnalyzer.Test
 		private static IVerifier DefaultVerifier = new DefaultVerifier ();
 
 		/// <summary>
-		/// Gets the prefix to apply to source files added without an explicit name.
+		/// Gets the default full name of the first source file added for a test.
 		/// </summary>
-		private static string DefaultFilePathPrefix { get; } = "/0/Test";
-
-        /// <summary>
-        /// Gets the name of the default project created for testing.
-        /// </summary>
-        private static string DefaultTestProjectName { get; } = "TestProject";
-
-        /// <summary>
-        /// Gets the default full name of the first source file added for a test.
-        /// </summary>
-        private static string DefaultFilePath => DefaultFilePathPrefix + 0 + "." + DefaultFileExt;
-
-		public static string DefaultFileExt => ".cs";
+		private static string DefaultFilePath => "";
 
 		/// <summary>
 		/// Gets or sets the timeout to use when matching expected and actual diagnostics. The default value is 2
@@ -735,8 +727,9 @@ namespace ILTrimmingAnalyzer.Test
 
 		class SimpleAnalyzerOptions : AnalyzerConfigOptionsProvider
 		{
-			public SimpleAnalyzerOptions((string, string)[] globalOptions)
+			public SimpleAnalyzerOptions((string, string)[]? globalOptions)
 			{
+				globalOptions ??= Array.Empty<(string, string)> ();
 				GlobalOptions = new SimpleAnalyzerConfigOptions (ImmutableDictionary.CreateRange (
 					StringComparer.OrdinalIgnoreCase, 
 					globalOptions.Select(x => new KeyValuePair<string, string>(x.Item1, x.Item2))));

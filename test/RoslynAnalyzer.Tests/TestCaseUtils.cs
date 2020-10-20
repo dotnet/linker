@@ -38,7 +38,9 @@ namespace RoslynAnalyzer.Tests
 				.Distinct ()
 				.ToList ();
 
-			var comp = CSharpAnalyzerVerifier<RequiresUnreferencedCodeAnalyzer>.CreateCompilation (testFile).Result;
+			var comp = CSharpAnalyzerVerifier<RequiresUnreferencedCodeAnalyzer>.CreateCompilation (
+				testFile, 
+				globalAnalyzerOptions: new[] { ("use_cecil_compat_format", "true") }).Result;
 			var diags = comp.GetAnalyzerDiagnosticsAsync ().Result;
 
 			foreach (var (m, attrs) in methodsXattributes) {

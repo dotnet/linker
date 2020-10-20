@@ -25,7 +25,7 @@ class C
 }";
 			return VerifyCS.VerifyAnalyzerAsync(src,
 				// (8,17): warning IL2026: Calling 'System.Int32 C::M1()' which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. message.
-				VerifyCS.Diagnostic().WithSpan("", 8, 17, 8, 21).WithArguments("System.Int32 C::M1()", "message")
+				VerifyCS.Diagnostic().WithSpan(8, 17, 8, 21).WithArguments("C.M1()", "message")
 				);
         }
     }
