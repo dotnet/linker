@@ -110,6 +110,7 @@ namespace Mono.Linker.Steps
 			DependencyKind.ParameterType,
 			DependencyKind.ReferencedBySpecialAttribute,
 			DependencyKind.ReturnType,
+			DependencyKind.TypeInAssembly,
 			DependencyKind.UnreachableBodyRequirement,
 			DependencyKind.VariableType,
 			DependencyKind.ParameterMarshalSpec,
@@ -1163,7 +1164,7 @@ namespace Mono.Linker.Steps
 			// The <Modue> type may have an initializer, in which case we want to keep it.
 			TypeDefinition moduleType = assembly.MainModule.Types.Where (t => t.MetadataToken.RID == 1).Single ();
 			if (moduleType.HasMethods) {
-				MarkType (moduleType, new DependencyInfo (DependencyKind.Custom, assembly), null);
+				MarkType (moduleType, new DependencyInfo (DependencyKind.TypeInAssembly, assembly), null);
 			}
 		}
 
