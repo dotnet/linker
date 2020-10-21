@@ -41,14 +41,14 @@ namespace ILTrimmingAnalyzer.Test
 			(string, string)[]? globalAnalyzerOptions = null)
 		{
 			TestCaseUtils.GetDirectoryPaths (out _, out string testAssemblyPath);
-			var expectationsPath = Path.Combine (Path.GetDirectoryName (testAssemblyPath)!, "Mono.Linker.Tests.Cases.Expectations.dll");
+			var expectationsPath = Path.Combine (testAssemblyPath, "Mono.Linker.Tests.Cases.Expectations.dll");
 
 			var mdRef = MetadataReference.CreateFromFile (expectationsPath);
 
 			var comp = CSharpCompilation.Create (
 				assemblyName: Guid.NewGuid ().ToString ("N"),
 				syntaxTrees: new SyntaxTree[] { CSharpSyntaxTree.ParseText (src) },
-				references: (await ReferenceAssemblies.NetCore.NetCoreApp30.ResolveAsync (null, default)).Add(mdRef),
+				references: (await ReferenceAssemblies.Net.Net50.ResolveAsync (null, default)).Add(mdRef),
 				new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
 			var analyzerOptions = new AnalyzerOptions (

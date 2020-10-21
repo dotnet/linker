@@ -167,7 +167,7 @@ In diagnostics:
 			}
 		}
 
-		internal static void GetDirectoryPaths (out string rootSourceDirectory, out string testCaseAssemblyPath, [CallerFilePath] string thisFile = null)
+		internal static void GetDirectoryPaths (out string rootSourceDirectory, out string testAssemblyPath, [CallerFilePath] string thisFile = null)
 		{
 
 #if DEBUG
@@ -176,8 +176,8 @@ In diagnostics:
 			var configDirectoryName = "Release";
 #endif
 
-#if NETCOREAPP3_0
-			var tfm = "netcoreapp3.0";
+#if NET5_0
+			var tfm = "net5.0";
 #elif NET471
 			var tfm = "net471";
 #else
@@ -191,11 +191,11 @@ In diagnostics:
 			// working directory is artifacts/bin/Mono.Linker.Tests/<config>/<tfm>
 			var artifactsBinDir = Path.Combine (Directory.GetCurrentDirectory (), "..", "..", "..");
 			rootSourceDirectory = Path.GetFullPath (Path.Combine (artifactsBinDir, "..", "..", "test", "Mono.Linker.Tests.Cases"));
-			testCaseAssemblyPath = Path.GetFullPath (Path.Combine (artifactsBinDir, "Mono.Linker.Tests.Cases", configDirectoryName, tfm, "Mono.Linker.Tests.Cases.dll"));
+			testAssemblyPath = Path.GetFullPath (Path.Combine (artifactsBinDir, "RoslynAnalyzer.Tests", configDirectoryName, tfm));
 #else
 			var thisDirectory = Path.GetDirectoryName (thisFile);
 			rootSourceDirectory = Path.GetFullPath (Path.Combine (thisDirectory, "..", "..", "Mono.Linker.Tests.Cases"));
-			testCaseAssemblyPath = Path.GetFullPath (Path.Combine (rootSourceDirectory, "bin", configDirectoryName, tfm, "Mono.Linker.Tests.Cases.dll"));
+			testCaseAssemblyPath = Path.GetFullPath (Path.Combine (rootSourceDirectory, "bin", configDirectoryName, tfm));
 #endif // ILLINK
 		}
 	}

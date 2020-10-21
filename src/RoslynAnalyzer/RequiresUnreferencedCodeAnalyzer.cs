@@ -34,7 +34,7 @@ namespace ILTrimmingAnalyzer
             typeof(Resources));
         private const string s_category = "Trimming";
 
-        private static DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor(
             DiagnosticId,
             s_title,
             s_messageFormat,
@@ -52,14 +52,6 @@ namespace ILTrimmingAnalyzer
             context.RegisterCompilationStartAction(context =>
             {
                 var compilation = context.Compilation;
-				var useCecilCompatFormat = false;
-
-                if (context.Options.AnalyzerConfigOptionsProvider.GlobalOptions.TryGetValue(
-						s_cecilCompatPropertyName,
-						out var useCecilCompatFormatString) &&
-					useCecilCompatFormatString.Equals("true", StringComparison.OrdinalIgnoreCase)) {
-					useCecilCompatFormat = true;
-				}
 
                 context.RegisterOperationAction(operationContext =>
                 {
@@ -106,35 +98,13 @@ namespace ILTrimmingAnalyzer
 							operationContext.ReportDiagnostic (Diagnostic.Create (
 								s_rule,
 								location,
-								useCecilCompatFormat ? (object)ToCecilDisplayString (method) : method,
+								method,
 								(string) ctorArg.Value!));
 						}
 					}
 				}
             });
         }
-
-		private static SymbolDisplayFormat s_fqnFormat = new SymbolDisplayFormat (
-			typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces);
-
-		/// <summary>
-		///  Format a method like cecil does.
-		/// </summary>
-		private static string ToCecilDisplayString (IMethodSymbol m)
-		{
-			var methodName = m.MethodKind == MethodKind.Constructor ? ".ctor" : m.Name;
-			var ns = m.ContainingNamespace.IsGlobalNamespace
-				? "" 
-				: m.ContainingNamespace.ToDisplayString () + ".";
-			ITypeSymbol? containingType = m.ContainingType;
-			string typeName = containingType.Name;
-			while ((containingType = containingType.ContainingType) != null) {
-				typeName = $"{containingType.Name}/{typeName}";
-			}
-			var paramTypes = string.Join (",", m.Parameters.Select (p => p.Type.ToDisplayString (s_fqnFormat)));
-			return $"{m.ReturnType.ToDisplayString (s_fqnFormat)} {ns}{typeName}::{methodName}({paramTypes})";
-		}
-
 
         /// <summary>
         /// Returns true if <see paramref="type" /> has the same name as <see paramref="typename" />
