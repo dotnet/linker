@@ -722,7 +722,7 @@ namespace ILTrimmingAnalyzer.Test
 		internal static IReadOnlyList<object?> GetArguments (Diagnostic diagnostic)
 		{
 			return (IReadOnlyList<object?>?)diagnostic.GetType().GetProperty("Arguments", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(diagnostic)
-                ?? new object[0];
+                ?? Array.Empty<object> ();
         }
 
 		class SimpleAnalyzerOptions : AnalyzerConfigOptionsProvider

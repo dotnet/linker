@@ -215,7 +215,7 @@ namespace RoslynAnalyzer
             return containingMethod?.RefKind ?? RefKind.None;
         }
  
-        public static IMethodSymbol TryGetContainingAnonymousFunctionOrLocalFunction(this IOperation operation)
+        public static IMethodSymbol? TryGetContainingAnonymousFunctionOrLocalFunction(this IOperation? operation)
         {
             operation = operation?.Parent;
             while (operation != null)
@@ -235,7 +235,7 @@ namespace RoslynAnalyzer
             return null;
         }
  
-        public static bool IsInLeftOfDeconstructionAssignment(this IOperation operation, out IDeconstructionAssignmentOperation deconstructionAssignment)
+        public static bool IsInLeftOfDeconstructionAssignment(this IOperation operation, out IDeconstructionAssignmentOperation? deconstructionAssignment)
         {
             deconstructionAssignment = null;
  
