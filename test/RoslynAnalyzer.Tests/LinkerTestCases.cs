@@ -16,7 +16,7 @@ namespace RoslynAnalyzer.Tests
 	public class LinkerTestCases : TestCaseUtils
 	{
 		[Theory]
-		[MemberData (nameof(GetTestData), parameters: nameof (RequiresCapability))]
+		[MemberData (nameof (GetTestData), parameters: nameof (RequiresCapability))]
 		public void RequiresCapability (MethodDeclarationSyntax m, List<AttributeSyntax> attrs, ImmutableArray<Diagnostic> diags)
 		{
 			switch (m.Identifier.ValueText) {

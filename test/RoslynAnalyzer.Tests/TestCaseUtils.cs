@@ -39,7 +39,7 @@ namespace RoslynAnalyzer.Tests
 				.ToList ();
 
 			var comp = CSharpAnalyzerVerifier<RequiresUnreferencedCodeAnalyzer>.CreateCompilation (
-				testFile, 
+				testFile,
 				globalAnalyzerOptions: new[] { ("use_cecil_compat_format", "true") }).Result;
 			var diags = comp.GetAnalyzerDiagnosticsAsync ().Result;
 
@@ -58,9 +58,10 @@ namespace RoslynAnalyzer.Tests
 			}
 		}
 
-		internal static void RunTest(MethodDeclarationSyntax m, List<AttributeSyntax> attrs, ImmutableArray<Diagnostic> diags) {
+		internal static void RunTest (MethodDeclarationSyntax m, List<AttributeSyntax> attrs, ImmutableArray<Diagnostic> diags)
+		{
 			var filtered = diags.Where (d => d.Location.SourceSpan.IntersectsWith (m.Span))
-								.Select (d => d.GetMessage());
+								.Select (d => d.GetMessage ());
 			foreach (var attr in attrs) {
 				switch (attr.Name.ToString ()) {
 				case "LogContains": {
@@ -128,16 +129,15 @@ In diagnostics:
 
 		private static readonly ImmutableDictionary<string, List<string>> s_testFiles = GetTestFilesByDirName ();
 
-		private static ImmutableDictionary<string, List<string>> GetTestFilesByDirName()
+		private static ImmutableDictionary<string, List<string>> GetTestFilesByDirName ()
 		{
 			var builder = ImmutableDictionary.CreateBuilder<string, List<string>> ();
 
-			foreach (var file in GetTestFiles()) {
-				var dirName = Path.GetFileName(Path.GetDirectoryName (file))!;
-				if (builder.TryGetValue(dirName, out var sources)) {
+			foreach (var file in GetTestFiles ()) {
+				var dirName = Path.GetFileName (Path.GetDirectoryName (file))!;
+				if (builder.TryGetValue (dirName, out var sources)) {
 					sources.Add (file);
-				}
-				else {
+				} else {
 					sources = new List<string> () { file };
 					builder[dirName] = sources;
 				}

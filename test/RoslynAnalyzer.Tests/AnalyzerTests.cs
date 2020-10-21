@@ -5,16 +5,16 @@
 using System.Threading.Tasks;
 using Xunit;
 using VerifyCS = ILTrimmingAnalyzer.Test.CSharpAnalyzerVerifier<
-    ILTrimmingAnalyzer.RequiresUnreferencedCodeAnalyzer>;
+	ILTrimmingAnalyzer.RequiresUnreferencedCodeAnalyzer>;
 
 namespace ILTrimmingAnalyzer.Test
 {
-    public class AnalyzerTests
-    {
-        [Fact]
-        public Task SimpleDiagnostic()
-        {
-            var src = @"
+	public class AnalyzerTests
+	{
+		[Fact]
+		public Task SimpleDiagnostic ()
+		{
+			var src = @"
 using System.Diagnostics.CodeAnalysis;
 
 class C
@@ -23,10 +23,10 @@ class C
     int M1() => 0;
     int M2() => M1();
 }";
-			return VerifyCS.VerifyAnalyzerAsync(src,
+			return VerifyCS.VerifyAnalyzerAsync (src,
 				// (8,17): warning IL2026: Calling 'System.Int32 C::M1()' which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. message.
-				VerifyCS.Diagnostic().WithSpan(8, 17, 8, 21).WithArguments("C.M1()", "message")
+				VerifyCS.Diagnostic ().WithSpan (8, 17, 8, 21).WithArguments ("C.M1()", "message")
 				);
-        }
-    }
+		}
+	}
 }

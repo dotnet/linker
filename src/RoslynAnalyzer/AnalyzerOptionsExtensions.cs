@@ -9,7 +9,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace ILTrimmingAnalyzer
 {
-    internal static class AnalyzerOptionsExtensions
-    {
-    }
+	internal static class AnalyzerOptionsExtensions
+	{
+	}
 }
