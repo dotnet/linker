@@ -189,7 +189,7 @@ In diagnostics:
 			// working directory is artifacts/bin/Mono.Linker.Tests/<config>/<tfm>
 			var artifactsBinDir = Path.Combine (Directory.GetCurrentDirectory (), "..", "..", "..");
 			rootSourceDirectory = Path.GetFullPath (Path.Combine (artifactsBinDir, "..", "..", "test", "Mono.Linker.Tests.Cases"));
-			testAssemblyPath = Path.GetFullPath (Path.Combine (artifactsBinDir, "RoslynAnalyzer.Tests", configDirectoryName, tfm));
+			testAssemblyPath = Path.GetFullPath (Path.Combine (artifactsBinDir, "ILLink.RoslynAnalyzer.Tests", configDirectoryName, tfm));
 #else
 			var thisDirectory = Path.GetDirectoryName (thisFile);
 			rootSourceDirectory = Path.GetFullPath (Path.Combine (thisDirectory, "..", "..", "Mono.Linker.Tests.Cases"));
