@@ -9,7 +9,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.FlowAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 
-namespace RoslynAnalyzer
+namespace ILLink.RoslynAnalyzer
 {
 	// Copied from Roslyn
 	internal static partial class OperationExtensions

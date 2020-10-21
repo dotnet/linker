@@ -9,9 +9,8 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
-using RoslynAnalyzer;
 
-namespace ILTrimmingAnalyzer
+namespace ILLink.RoslynAnalyzer
 {
 	[DiagnosticAnalyzer (LanguageNames.CSharp)]
 	public class RequiresUnreferencedCodeAnalyzer : DiagnosticAnalyzer

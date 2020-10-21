@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Xunit;
 
-namespace RoslynAnalyzer.Tests
+namespace ILLink.RoslynAnalyzer.Tests
 {
 	/// <summary>
 	/// Test cases stored in files

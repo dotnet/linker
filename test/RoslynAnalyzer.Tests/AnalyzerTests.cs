@@ -4,10 +4,10 @@
 
 using System.Threading.Tasks;
 using Xunit;
-using VerifyCS = ILTrimmingAnalyzer.Test.CSharpAnalyzerVerifier<
-	ILTrimmingAnalyzer.RequiresUnreferencedCodeAnalyzer>;
+using VerifyCS = ILLink.RoslynAnalyzer.Tests.CSharpAnalyzerVerifier<
+	ILLink.RoslynAnalyzer.RequiresUnreferencedCodeAnalyzer>;
 
-namespace ILTrimmingAnalyzer.Test
+namespace ILLink.RoslynAnalyzer.Tests
 {
 	public class AnalyzerTests
 	{

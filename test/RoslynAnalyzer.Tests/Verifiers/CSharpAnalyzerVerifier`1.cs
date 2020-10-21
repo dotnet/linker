@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -16,10 +15,8 @@ using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Testing;
 using Microsoft.CodeAnalysis.Testing.Verifiers;
 using Microsoft.CodeAnalysis.Text;
-using RoslynAnalyzer.Tests;
-using Xunit;
 
-namespace ILTrimmingAnalyzer.Test
+namespace ILLink.RoslynAnalyzer.Tests
 {
 	public static partial class CSharpAnalyzerVerifier<TAnalyzer>
 		where TAnalyzer : DiagnosticAnalyzer, new()

@@ -25,9 +25,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ref", "ref", "{03EB085F-3E2
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mono.Linker", "src\linker\ref\Mono.Linker.csproj", "{57BE47DF-DCDF-44EE-B77F-F8E8AD069076}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RoslynAnalyzer.Tests", "test\RoslynAnalyzer.Tests\RoslynAnalyzer.Tests.csproj", "{51BE55C4-FA11-4FD2-BC65-F27885A1BF0B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ILLink.RoslynAnalyzer.Tests", "test\RoslynAnalyzer.Tests\ILLink.RoslynAnalyzer.Tests.csproj", "{51BE55C4-FA11-4FD2-BC65-F27885A1BF0B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RoslynAnalyzer", "src\RoslynAnalyzer\RoslynAnalyzer.csproj", "{63562853-477E-4F98-82C9-BC0A45639868}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ILLink.RoslynAnalyzer", "src\RoslynAnalyzer\ILLink.RoslynAnalyzer.csproj", "{63562853-477E-4F98-82C9-BC0A45639868}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

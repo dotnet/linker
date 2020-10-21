@@ -8,14 +8,12 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using ILTrimmingAnalyzer;
-using ILTrimmingAnalyzer.Test;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Xunit;
 
-namespace RoslynAnalyzer.Tests
+namespace ILLink.RoslynAnalyzer.Tests
 {
 	public class TestCaseUtils
 	{

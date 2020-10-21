@@ -18,7 +18,7 @@
   <ItemGroup>
      <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing.XUnit" Version="1.0.1-beta1.*" />
      <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="3.7.0" />
-    <ProjectReference Include="../../src/RoslynAnalyzer/RoslynAnalyzer.csproj" />
+    <ProjectReference Include="..\..\src\RoslynAnalyzer\ILLink.RoslynAnalyzer.csproj" />
     <ProjectReference Include="../Mono.Linker.Tests.Cases\Mono.Linker.Tests.Cases.csproj" />
   </ItemGroup>
 

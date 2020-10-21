@@ -5,7 +5,7 @@
 using System;
 
 // Copied from Roslyn
-namespace RoslynAnalyzer
+namespace ILLink.RoslynAnalyzer
 {
 	[Flags]
 	internal enum ValueUsageInfo
