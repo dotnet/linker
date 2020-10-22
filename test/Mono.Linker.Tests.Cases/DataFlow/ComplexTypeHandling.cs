@@ -102,7 +102,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[Kept]
-		static void TestArrayGetTypeFromMethodParamHelper(ArrayGetTypeFromMethodParamElement[] p)
+		static void TestArrayGetTypeFromMethodParamHelper (ArrayGetTypeFromMethodParamElement[] p)
 		{
 			RequirePublicMethods (p.GetType ());
 		}
@@ -146,13 +146,13 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		class ArrayCreateInstanceByNameElement
 		{
 			[Kept] // This is a bug - the .ctor should not be marked - in fact in this case nothing should be marked as CreateInstance doesn't work on arrays
-			public ArrayCreateInstanceByNameElement()
+			public ArrayCreateInstanceByNameElement ()
 			{
 			}
 		}
 
 		[Kept]
-		static void TestArrayCreateInstanceByName()
+		static void TestArrayCreateInstanceByName ()
 		{
 			Activator.CreateInstance ("test", "Mono.Linker.Tests.Cases.DataFlow.ComplexTypeHandling+ArrayCreateInstanceByNameElement[]");
 		}
@@ -165,9 +165,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[Kept]
-		[KeptAttributeAttribute(typeof(RequiresPublicMethodAttribute))]
-		[RequiresPublicMethod(typeof(ArrayInAttributeParamElement[]))]
-		static void TestArrayInAttributeParameter()
+		[KeptAttributeAttribute (typeof (RequiresPublicMethodAttribute))]
+		[RequiresPublicMethod (typeof (ArrayInAttributeParamElement[]))]
+		static void TestArrayInAttributeParameter ()
 		{
 		}
 
@@ -181,11 +181,11 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[Kept]
-		[KeptBaseType(typeof(Attribute))]
+		[KeptBaseType (typeof (Attribute))]
 		class RequiresPublicMethodAttribute : Attribute
 		{
 			[Kept]
-			public RequiresPublicMethodAttribute(
+			public RequiresPublicMethodAttribute (
 				[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
 				[KeptAttributeAttribute(typeof(DynamicallyAccessedMembersAttribute))]
 				Type t)
