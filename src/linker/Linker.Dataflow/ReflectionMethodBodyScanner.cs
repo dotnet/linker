@@ -113,7 +113,7 @@ namespace Mono.Linker.Dataflow
 		{
 			ValueNode valueNode;
 			if (argument.Type.Name == "Type") {
-				TypeDefinition referencedType = ((TypeReference) argument.Value).Resolve ();
+				TypeDefinition referencedType = ((TypeReference) argument.Value).ResolveToMainTypeDefinition ();
 				valueNode = referencedType == null ? null : new SystemTypeValue (referencedType);
 			} else if (argument.Type.MetadataType == MetadataType.String) {
 				valueNode = new KnownStringValue ((string) argument.Value);
@@ -145,8 +145,7 @@ namespace Mono.Linker.Dataflow
 				// That said we only use it to perform the dynamically accessed members checks and for that purpose treating it as System.Type is perfectly valid.
 				return new SystemTypeForGenericParameterValue (inputGenericParameter, _context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (inputGenericParameter));
 			} else {
-				TypeDefinition genericArgumentTypeDef = genericArgument is ArrayType ?
-					genericArgument.Module.ImportReference (typeof (Array))?.Resolve () : genericArgument.Resolve ();
+				TypeDefinition genericArgumentTypeDef = genericArgument.ResolveToMainTypeDefinition ();
 				if (genericArgumentTypeDef != null) {
 					return new SystemTypeValue (genericArgumentTypeDef);
 				} else {
@@ -753,13 +752,13 @@ namespace Mono.Linker.Dataflow
 								if (methodParam.ParameterIndex == 0) {
 									staticType = callingMethodDefinition.DeclaringType;
 								} else {
-									staticType = callingMethodDefinition.Parameters[methodParam.ParameterIndex - 1].ParameterType.Resolve ();
+									staticType = callingMethodDefinition.Parameters[methodParam.ParameterIndex - 1].ParameterType.ResolveToMainTypeDefinition ();
 								}
 							} else {
-								staticType = callingMethodDefinition.Parameters[methodParam.ParameterIndex].ParameterType.Resolve ();
+								staticType = callingMethodDefinition.Parameters[methodParam.ParameterIndex].ParameterType.ResolveToMainTypeDefinition ();
 							}
 						} else if (methodParams[0] is LoadFieldValue loadedField) {
-							staticType = loadedField.Field.FieldType.Resolve ();
+							staticType = loadedField.Field.FieldType.ResolveToMainTypeDefinition ();
 						}
 
 						if (staticType != null) {
@@ -803,7 +802,7 @@ namespace Mono.Linker.Dataflow
 						foreach (var typeNameValue in methodParams[0].UniqueValues ()) {
 							if (typeNameValue is KnownStringValue knownStringValue) {
 								TypeReference foundTypeRef = _context.TypeNameResolver.ResolveTypeName (knownStringValue.Contents);
-								TypeDefinition foundType = foundTypeRef?.Resolve ();
+								TypeDefinition foundType = foundTypeRef?.ResolveToMainTypeDefinition ();
 								if (foundType == null) {
 									// Intentionally ignore - it's not wrong for code to call Type.GetType on non-existing name, the code might expect null/exception back.
 									reflectionContext.RecordHandledPattern ();
@@ -1341,11 +1340,13 @@ namespace Mono.Linker.Dataflow
 								continue;
 							}
 
-							var resolvedType = _context.TypeNameResolver.ResolveTypeName (resolvedAssembly, typeNameStringValue.Contents)?.Resolve ();
-							if (resolvedType == null) {
+							var typeRef = _context.TypeNameResolver.ResolveTypeName (resolvedAssembly, typeNameStringValue.Contents);
+							var resolvedType = typeRef?.Resolve ();
+							if (resolvedType == null || typeRef is ArrayType) {
 								// It's not wrong to have a reference to non-existing type - the code may well expect to get an exception in this case
 								// Note that we did find the assembly, so it's not a linker config problem, it's either intentional, or wrong versions of assemblies
-								// but linker can't know that.
+								// but linker can't know that. In case a user tries to create an array using System.Activator we should simply ignore it, the user
+								// might expect an exception to be thrown.
 								reflectionContext.RecordHandledPattern ();
 								continue;
 							}
