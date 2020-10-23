@@ -17,12 +17,6 @@ namespace ILLink.RoslynAnalyzer
 	{
 		public const string DiagnosticId = "IL2026";
 
-		/// <summary>
-		/// Configuration only for Mono.Linker.Tests.Cases to specially format types
-		/// to match the Cecil representation.
-		/// </summary>
-		private const string s_cecilCompatPropertyName = "use_cecil_compat_format";
-
 		private static readonly LocalizableString s_title = new LocalizableResourceString (
 			nameof (RequiresUnreferencedCodeAnalyzer) + "Title",
 			Resources.ResourceManager,
