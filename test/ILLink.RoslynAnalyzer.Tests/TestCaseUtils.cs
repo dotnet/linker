@@ -36,13 +36,8 @@ namespace ILLink.RoslynAnalyzer.Tests
 				.Distinct ()
 				.ToList ();
 
-			var comp = CSharpAnalyzerVerifier<RequiresUnreferencedCodeAnalyzer>.CreateCompilation (
-				testFile,
-				globalAnalyzerOptions: new[] { ("use_cecil_compat_format", "true") }).Result;
-			var diags = comp.GetAnalyzerDiagnosticsAsync ().Result;
-
 			foreach (var (m, attrs) in methodsXattributes) {
-				yield return new object[] { m, attrs, diags };
+				yield return new object[] { m, attrs };
 			}
 
 			static bool IsWellKnown (AttributeSyntax attr)
@@ -56,8 +51,11 @@ namespace ILLink.RoslynAnalyzer.Tests
 			}
 		}
 
-		internal static void RunTest (MethodDeclarationSyntax m, List<AttributeSyntax> attrs, ImmutableArray<Diagnostic> diags)
+		internal static void RunTest (MethodDeclarationSyntax m, List<AttributeSyntax> attrs)
 		{
+			var comp = CSharpAnalyzerVerifier<RequiresUnreferencedCodeAnalyzer>.CreateCompilation (m.SyntaxTree).Result;
+			var diags = comp.GetAnalyzerDiagnosticsAsync ().Result;
+
 			var filtered = diags.Where (d => d.Location.SourceSpan.IntersectsWith (m.Span))
 								.Select (d => d.GetMessage ());
 			foreach (var attr in attrs) {

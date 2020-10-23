@@ -17,7 +17,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 	{
 		[Theory]
 		[MemberData (nameof (GetTestData), parameters: nameof (RequiresCapability))]
-		public void RequiresCapability (MethodDeclarationSyntax m, List<AttributeSyntax> attrs, ImmutableArray<Diagnostic> diags)
+		public void RequiresCapability (MethodDeclarationSyntax m, List<AttributeSyntax> attrs)
 		{
 			switch (m.Identifier.ValueText) {
 			case "RequiresAndCallsOtherRequiresMethods":
@@ -27,7 +27,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 				return;
 			}
 
-			RunTest (m, attrs, diags);
+			RunTest (m, attrs);
 		}
 	}
 }

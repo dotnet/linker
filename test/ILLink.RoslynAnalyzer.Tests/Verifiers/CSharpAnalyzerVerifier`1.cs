@@ -33,8 +33,13 @@ namespace ILLink.RoslynAnalyzer.Tests
 		public static DiagnosticResult Diagnostic (DiagnosticDescriptor descriptor)
 			=> CSharpAnalyzerVerifier<TAnalyzer, XUnitVerifier>.Diagnostic (descriptor);
 
-		public static async Task<CompilationWithAnalyzers> CreateCompilation (
+		public static Task<CompilationWithAnalyzers> CreateCompilation (
 			string src,
+			(string, string)[]? globalAnalyzerOptions = null)
+			=> CreateCompilation(CSharpSyntaxTree.ParseText (src), globalAnalyzerOptions);
+
+		public static async Task<CompilationWithAnalyzers> CreateCompilation (
+			SyntaxTree src,
 			(string, string)[]? globalAnalyzerOptions = null)
 		{
 			TestCaseUtils.GetDirectoryPaths (out _, out string testAssemblyPath);
@@ -44,7 +49,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 
 			var comp = CSharpCompilation.Create (
 				assemblyName: Guid.NewGuid ().ToString ("N"),
-				syntaxTrees: new SyntaxTree[] { CSharpSyntaxTree.ParseText (src) },
+				syntaxTrees: new SyntaxTree[] { src },
 				references: (await ReferenceAssemblies.Net.Net50.ResolveAsync (null, default)).Add (mdRef),
 				new CSharpCompilationOptions (OutputKind.DynamicallyLinkedLibrary));
 
