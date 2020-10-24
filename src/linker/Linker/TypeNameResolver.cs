@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Reflection.Runtime.TypeParsing;
 using Mono.Cecil;
 
@@ -87,7 +88,8 @@ namespace Mono.Linker
 				};
 			}
 
-			return assembly.MainModule.GetType (typeName.ToString ());
+			return assembly.MainModule.GetType (typeName.ToString ()) ??
+				assembly.MainModule.ExportedTypes?.FirstOrDefault (et => et.FullName == typeName.ToString ())?.Resolve ();
 		}
 	}
 }
