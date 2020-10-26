@@ -11,7 +11,7 @@ using Microsoft.CodeAnalysis.Operations;
 
 namespace ILLink.RoslynAnalyzer
 {
-	// Copied from Roslyn
+	// Copied from https://github.com/dotnet/roslyn/blob/9c6d864baca08d7572871701ab583cec18279426/src/Compilers/Core/Portable/Operations/OperationExtensions.cs
 	internal static partial class OperationExtensions
 	{
 		/// <summary>
@@ -38,7 +38,7 @@ namespace ILLink.RoslynAnalyzer
             | obj is X x               |      |  ✔️   |             |             |                 |
             | ref var x =              |      |       |     ✔️      |     ✔️      |                 |
             | ref readonly var x =     |      |       |     ✔️      |             |                 |
- 
+
             */
 			if (operation is ILocalReferenceOperation localReference &&
 				localReference.IsDeclaration &&

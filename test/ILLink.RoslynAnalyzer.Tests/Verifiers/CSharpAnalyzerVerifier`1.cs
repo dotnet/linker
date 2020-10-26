@@ -36,7 +36,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 		public static Task<CompilationWithAnalyzers> CreateCompilation (
 			string src,
 			(string, string)[]? globalAnalyzerOptions = null)
-			=> CreateCompilation(CSharpSyntaxTree.ParseText (src), globalAnalyzerOptions);
+			=> CreateCompilation (CSharpSyntaxTree.ParseText (src), globalAnalyzerOptions);
 
 		public static async Task<CompilationWithAnalyzers> CreateCompilation (
 			SyntaxTree src,
