@@ -53,6 +53,8 @@ namespace Mono.Linker.Steps
 		protected List<TypeDefinition> _typesWithInterfaces;
 		protected List<MethodBody> _unreachableBodies;
 
+		readonly List<(TypeDefinition Type, MethodBody Body, Instruction Instr)> pending_isinst_instr;
+
 #if DEBUG
 		static readonly DependencyKind[] _entireTypeReasons = new DependencyKind[] {
 			DependencyKind.Unspecified,
@@ -174,6 +176,7 @@ namespace Mono.Linker.Steps
 			_lateMarkedAttributes = new Queue<(AttributeProviderPair, DependencyInfo, IMemberDefinition)> ();
 			_typesWithInterfaces = new List<TypeDefinition> ();
 			_unreachableBodies = new List<MethodBody> ();
+			pending_isinst_instr = new List<(TypeDefinition, MethodBody, Instruction)> ();
 		}
 
 		public AnnotationStore Annotations => _context.Annotations;
@@ -340,7 +343,7 @@ namespace Mono.Linker.Steps
 
 		void Process ()
 		{
-			while (ProcessPrimaryQueue () || ProcessLazyAttributes () || ProcessLateMarkedAttributes ())
+			while (ProcessPrimaryQueue () || ProcessLazyAttributes () || ProcessLateMarkedAttributes ()) {
 
 				// deal with [TypeForwardedTo] pseudo-attributes
 				foreach (AssemblyDefinition assembly in _context.GetAssemblies ()) {
@@ -365,6 +368,9 @@ namespace Mono.Linker.Steps
 						_context.MarkingHelpers.MarkExportedType (exported, assembly.MainModule, new DependencyInfo (DependencyKind.ExportedType, type));
 					}
 				}
+			}
+
+			ProcessPendingTypeChecks ();
 		}
 
 		bool ProcessPrimaryQueue ()
@@ -381,6 +387,28 @@ namespace Mono.Linker.Steps
 			}
 
 			return true;
+		}
+
+		void ProcessPendingTypeChecks ()
+		{
+			for (int i = 0; i < pending_isinst_instr.Count; ++i) {
+				var item = pending_isinst_instr[i];
+				TypeDefinition type = item.Type;
+				if (Annotations.IsInstantiated (type))
+					continue;
+
+				Instruction instr = item.Instr;
+				Instruction prev_instr = instr.Previous;
+				ILProcessor ilProcessor = item.Body.GetILProcessor ();
+
+				if (prev_instr.OpCode.StackBehaviourPop == StackBehaviour.Pop0 && prev_instr.OpCode.StackBehaviourPush == StackBehaviour.Push1) {
+					ilProcessor.Replace (instr, Instruction.Create (OpCodes.Ldnull));
+					ilProcessor.Remove (prev_instr);
+				} else {
+					ilProcessor.InsertAfter (instr, Instruction.Create (OpCodes.Ldnull));
+					ilProcessor.Replace (instr, Instruction.Create (OpCodes.Pop));
+				}
+			}
 		}
 
 		void ProcessQueue ()
@@ -2883,12 +2911,40 @@ namespace Mono.Linker.Steps
 				}
 
 			case OperandType.InlineType:
-				if (instruction.OpCode.Code == Code.Newarr) {
-					Annotations.MarkRelevantToVariantCasting (((TypeReference) instruction.Operand).Resolve ());
+				var operand = (TypeReference) instruction.Operand;
+				switch (instruction.OpCode.Code) {
+				case Code.Newarr:
+					Annotations.MarkRelevantToVariantCasting (operand.Resolve ());
+					break;
+				case Code.Isinst:
+					if (Annotations.GetAction (method.DeclaringType.Module.Assembly) != AssemblyAction.Link)
+						break;
+
+					while (operand is ArrayType arrayType) {
+						operand = arrayType.ElementType;
+					};
+
+					if (operand is TypeSpecification || operand is GenericParameter)
+						break;
+
+					TypeDefinition type = operand.Resolve ();
+					if (type == null) {
+						HandleUnresolvedType (operand);
+						return;
+					}
+
+					if (type.IsInterface)
+						break;
+
+					if (!Annotations.IsInstantiated (type)) {
+						pending_isinst_instr.Add ((type, method.Body, instruction));
+						return;
+					}
+
+					break;
 				}
-				MarkType ((TypeReference) instruction.Operand, new DependencyInfo (DependencyKind.InstructionTypeRef, method), method);
-				break;
-			default:
+
+				MarkType (operand, new DependencyInfo (DependencyKind.InstructionTypeRef, method), method);
 				break;
 			}
 		}
