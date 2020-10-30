@@ -11,18 +11,18 @@ namespace Mono.Linker.Tests.Cases.Advanced
 		{
 			TestTypeCheckRemoved_1 (null);
 			TestTypeCheckRemoved_2<string> (null);
+			TestTypeCheckRemoved_3 (null, null);
 
 			TestTypeCheckKept_1 ();
 			TestTypeCheckKept_2<string> (null);
-			TestTypeCheckRemoved_3 (null);
+			TestTypeCheckKept_3 ();
+			TestTypeCheckKept_4 (null);
 		}
 
 		[Kept]
 		[ExpectedInstructionSequence (new[] {
-			"ldnull",
-			"ldnull",
-			"cgt.un",
-			"call",
+			"ldarg.0",
+			"pop",
 			"ldnull",
 			"ldnull",
 			"cgt.un",
@@ -32,7 +32,6 @@ namespace Mono.Linker.Tests.Cases.Advanced
 		static void TestTypeCheckRemoved_1 (object o)
 		{
 			Console.WriteLine (o is T1);
-			Console.WriteLine (o is T1[]);
 		}
 
 		[Kept]
@@ -53,6 +52,24 @@ namespace Mono.Linker.Tests.Cases.Advanced
 		}
 
 		[Kept]
+		[ExpectedInstructionSequence (new[] {
+			"ldarg.0",
+			"dup",
+			"brtrue.s",
+			"pop",
+			"ldarg.1",
+			"pop",
+			"ldnull",
+			"ldnull",
+			"cgt.un",
+			"ret"
+		})]
+		static bool TestTypeCheckRemoved_3 (object o1, object o2)
+		{
+			return (o1 ?? o2) is T4;
+		}
+
+		[Kept]
 		static void TestTypeCheckKept_1 ()
 		{
 			object[] o = new object[] { new T2 () };
@@ -70,17 +87,20 @@ namespace Mono.Linker.Tests.Cases.Advanced
 		}
 
 		[Kept]
-		static void TestTypeCheckRemoved_3 (object o)
+		static bool TestTypeCheckKept_3 ()
+		{
+			object array = new T5[0];
+			return array is T5[]; // Has to be true
+		}
+
+		[Kept]
+		static void TestTypeCheckKept_4 (object o)
 		{
 			Console.WriteLine (o is I2);
-			Console.WriteLine (o is I2[]);
 		}
 
 		class T1
 		{
-			public T1 ()
-			{
-			}
 		}
 
 		[Kept]
@@ -110,6 +130,18 @@ namespace Mono.Linker.Tests.Cases.Advanced
 		[Kept]
 		interface I2
 		{
+		}
+
+		class T4
+		{
+		}
+
+		[Kept]
+		class T5
+		{
+			public T5 ()
+			{
+			}
 		}
 	}
 }

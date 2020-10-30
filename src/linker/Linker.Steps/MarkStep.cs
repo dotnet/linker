@@ -398,16 +398,10 @@ namespace Mono.Linker.Steps
 					continue;
 
 				Instruction instr = item.Instr;
-				Instruction prev_instr = instr.Previous;
 				ILProcessor ilProcessor = item.Body.GetILProcessor ();
 
-				if (prev_instr.OpCode.StackBehaviourPop == StackBehaviour.Pop0 && prev_instr.OpCode.StackBehaviourPush == StackBehaviour.Push1) {
-					ilProcessor.Replace (instr, Instruction.Create (OpCodes.Ldnull));
-					ilProcessor.Remove (prev_instr);
-				} else {
-					ilProcessor.InsertAfter (instr, Instruction.Create (OpCodes.Ldnull));
-					ilProcessor.Replace (instr, Instruction.Create (OpCodes.Pop));
-				}
+				ilProcessor.InsertAfter (instr, Instruction.Create (OpCodes.Ldnull));
+				ilProcessor.Replace (instr, Instruction.Create (OpCodes.Pop));
 			}
 		}
 
@@ -2919,10 +2913,6 @@ namespace Mono.Linker.Steps
 				case Code.Isinst:
 					if (Annotations.GetAction (method.DeclaringType.Module.Assembly) != AssemblyAction.Link)
 						break;
-
-					while (operand is ArrayType arrayType) {
-						operand = arrayType.ElementType;
-					};
 
 					if (operand is TypeSpecification || operand is GenericParameter)
 						break;

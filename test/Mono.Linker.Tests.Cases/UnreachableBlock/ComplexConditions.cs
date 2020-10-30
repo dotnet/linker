@@ -26,6 +26,8 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 			"brtrue.s",
 			"call",
 			"pop",
+			"ldarg.0",
+			"pop",
 			"ldnull",
 			"ldnull",
 			"cgt.un",
