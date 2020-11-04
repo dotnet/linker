@@ -25,6 +25,10 @@ namespace ILLink.RoslynAnalyzer
 			nameof (RequiresUnreferencedCodeAnalyzer) + "Message",
 			Resources.ResourceManager,
 			typeof (Resources));
+		private static readonly LocalizableString s_messageFormatWithUrl = new LocalizableResourceString (
+			nameof (RequiresUnreferencedCodeAnalyzer) + "MessageWithUrl",
+			Resources.ResourceManager,
+			typeof (Resources));
 		private const string s_category = "Trimming";
 
 		private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor (
@@ -35,7 +39,15 @@ namespace ILLink.RoslynAnalyzer
 			DiagnosticSeverity.Warning,
 			isEnabledByDefault: true);
 
-		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create (s_rule);
+		private static readonly DiagnosticDescriptor s_ruleWithUrl = new DiagnosticDescriptor (
+			DiagnosticId,
+			s_title,
+			s_messageFormatWithUrl,
+			s_category,
+			DiagnosticSeverity.Warning,
+			isEnabledByDefault: true);
+
+		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create (s_rule, s_ruleWithUrl);
 
 		public override void Initialize (AnalysisContext context)
 		{
@@ -85,11 +97,19 @@ namespace ILLink.RoslynAnalyzer
 							IsNamedType (attrClass, "System.Diagnostics.CodeAnalysis.RequiresUnreferencedCodeAttribute") &&
 							attr.ConstructorArguments.Length == 1 &&
 							attr.ConstructorArguments[0] is { Type: { SpecialType: SpecialType.System_String } } ctorArg) {
-							operationContext.ReportDiagnostic (Diagnostic.Create (
-								s_rule,
-								location,
-								method,
-								(string) ctorArg.Value!));
+							if(attr.NamedArguments.Length > 0)
+								operationContext.ReportDiagnostic (Diagnostic.Create (
+									s_ruleWithUrl,
+									location,
+									method,
+									(string) ctorArg.Value!,
+									attr.NamedArguments.FirstOrDefault(na => na.Key == "Url").Value.Value));
+							else
+								operationContext.ReportDiagnostic (Diagnostic.Create (
+									s_rule,
+									location,
+									method,
+									(string) ctorArg.Value!));
 						}
 					}
 				}

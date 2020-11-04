@@ -11,6 +11,7 @@ using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Xunit;
 
 namespace ILLink.RoslynAnalyzer.Tests
@@ -43,6 +44,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			static bool IsWellKnown (AttributeSyntax attr)
 			{
 				switch (attr.Name.ToString ()) {
+				case "ExpectedWarning":
 				case "LogContains":
 				case "LogDoesNotContain":
 					return true;
@@ -60,6 +62,20 @@ namespace ILLink.RoslynAnalyzer.Tests
 								.Select (d => d.GetMessage ());
 			foreach (var attr in attrs) {
 				switch (attr.Name.ToString ()) {
+				case "ExpectedWarning":
+					Assert.True (
+						filtered.Any (mc => {
+							foreach (var attributeArgument in attr.ArgumentList!.Arguments) {
+								if (GetStringFromExpr (attributeArgument.Expression).StartsWith ("IL"))
+									continue;
+								if (!mc.Contains (GetStringFromExpr (attributeArgument.Expression)))
+									return false;
+							}
+							return true;
+						}),
+					$"Expected to find warning containing:{string.Join (" ", attr.ArgumentList!.Arguments.Select (m => GetStringFromExpr (m.Expression).StartsWith ("IL") ? "" : "'" + GetStringFromExpr (m.Expression) + "'"))}" +
+					$", but no such message was found.{ Environment.NewLine}In diagnostics: {filtered}");
+					break;
 				case "LogContains": {
 						var arg = Assert.Single (attr.ArgumentList!.Arguments);
 						var text = GetStringFromExpr (arg.Expression);

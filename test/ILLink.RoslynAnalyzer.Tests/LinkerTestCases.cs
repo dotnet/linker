@@ -19,14 +19,6 @@ namespace ILLink.RoslynAnalyzer.Tests
 		[MemberData (nameof (GetTestData), parameters: nameof (RequiresCapability))]
 		public void RequiresCapability (MethodDeclarationSyntax m, List<AttributeSyntax> attrs)
 		{
-			switch (m.Identifier.ValueText) {
-			case "RequiresAndCallsOtherRequiresMethods":
-			case "TestRequiresWithMessageAndUrlOnMethod":
-				// Test failures because analyzer support is not complete
-				// Skip for now
-				return;
-			}
-
 			RunTest (m, attrs);
 		}
 	}
