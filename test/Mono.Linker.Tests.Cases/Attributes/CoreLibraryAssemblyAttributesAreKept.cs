@@ -7,6 +7,9 @@ namespace Mono.Linker.Tests.Cases.Attributes
 {
 	[Reference ("System.dll")]
 	[SetupLinkerCoreAction ("link")]
+	// IComponent has TypeConverterAttribute referencing System.dll, which has
+	// unresolved references to Win32 assemblies.
+	[SetupLinkerArgument ("--skip-unresolved", "true")]
 	[KeptAttributeInAssembly (PlatformAssemblies.CoreLib, typeof (AssemblyDescriptionAttribute))]
 	[KeptAttributeInAssembly (PlatformAssemblies.CoreLib, typeof (AssemblyCompanyAttribute))]
 #if !NETCOREAPP

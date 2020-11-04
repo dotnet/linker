@@ -701,7 +701,6 @@ namespace Mono.Linker
 			// ResolveFromAssemblyStep [optional, possibly many]
 			// ResolveFromXmlStep [optional, possibly many]
 			// [mono only] ResolveFromXApiStep [optional, possibly many]
-			// LoadReferencesStep
 			// [mono only] LoadI18nAssemblies
 			// BlacklistStep
 			//   dynamically adds steps:
@@ -711,7 +710,6 @@ namespace Mono.Linker
 			// LinkAttributesStep [optional, possibly many]
 			// DynamicDependencyLookupStep
 			// [mono only] PreserveCalendarsStep [optional]
-			// TypeMapStep
 			// BodySubstituterStep [optional]
 			// RemoveSecurityStep [optional]
 			// [mono only] RemoveFeaturesStep [optional]
@@ -726,6 +724,12 @@ namespace Mono.Linker
 			// RegenerateGuidStep [optional]
 			// SealerStep
 			// OutputStep
+
+			//
+			// Pipeline Steps which run when new assemblies are processed
+			//
+			// LoadReferencesStep
+			// TypeMapStep
 			//
 
 			foreach (string custom_step in custom_steps) {
@@ -1202,10 +1206,8 @@ namespace Mono.Linker
 		static Pipeline GetStandardPipeline ()
 		{
 			Pipeline p = new Pipeline ();
-			p.AppendStep (new LoadReferencesStep ());
 			p.AppendStep (new BlacklistStep ());
 			p.AppendStep (new DynamicDependencyLookupStep ());
-			p.AppendStep (new TypeMapStep ());
 			p.AppendStep (new MarkStep ());
 			p.AppendStep (new ValidateVirtualMethodAnnotationsStep ());
 			p.AppendStep (new ProcessWarningsStep ());
@@ -1214,6 +1216,8 @@ namespace Mono.Linker
 			p.AppendStep (new CleanStep ());
 			p.AppendStep (new RegenerateGuidStep ());
 			p.AppendStep (new OutputStep ());
+			p.AppendAssemblyStep (new LoadReferencesStep ());
+			p.AppendAssemblyStep (new TypeMapStep ());
 			return p;
 		}
 

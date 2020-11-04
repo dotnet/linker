@@ -1,4 +1,4 @@
-﻿//
+//
 // LoadReferencesStep.cs
 //
 // Author:
@@ -32,19 +32,41 @@ using Mono.Cecil;
 
 namespace Mono.Linker.Steps
 {
-	public class LoadReferencesStep : BaseStep
+	public class LoadReferencesStep : IAssemblyStep
 	{
+		LinkContext _context;
+
+		LinkContext Context => _context;
+
 		readonly HashSet<AssemblyNameDefinition> references = new HashSet<AssemblyNameDefinition> ();
 
-		protected override void ProcessAssembly (AssemblyDefinition assembly)
+		readonly HashSet<AssemblyDefinition> newReferences = new HashSet<AssemblyDefinition> ();
+
+		public void Initialize (LinkContext context)
 		{
-			ProcessReferences (assembly);
+			_context = context;
+		}
+
+		public virtual void ProcessAssemblies (HashSet<AssemblyDefinition> assemblies)
+		{
+			newReferences.Clear ();
+
+			foreach (var assembly in assemblies)
+				ProcessReferences (assembly);
+
+			// Ensure that subsequent IAssemblySteps only process assemblies
+			// which have not already been processed.
+			assemblies.Clear ();
+			foreach (var assembly in newReferences)
+				assemblies.Add (assembly);
 		}
 
 		protected void ProcessReferences (AssemblyDefinition assembly)
 		{
 			if (!references.Add (assembly.Name))
 				return;
+
+			newReferences.Add (assembly);
 
 			Context.RegisterAssembly (assembly);
 

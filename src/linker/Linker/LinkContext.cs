@@ -304,6 +304,15 @@ namespace Mono.Linker
 			return assembly.MainModule.GetType (fullName);
 		}
 
+		// Run the per-assembly logic on a new assembly.
+		// Each step may modify the context of assemblies passed to the next.
+		public void ProcessReferenceClosure (AssemblyDefinition assembly)
+		{
+			var assemblies = new HashSet<AssemblyDefinition> { assembly };
+			foreach (var step in Pipeline.GetAssemblySteps ())
+				step.ProcessAssemblies (assemblies);
+		}
+
 		public AssemblyDefinition Resolve (string name)
 		{
 			if (File.Exists (name)) {

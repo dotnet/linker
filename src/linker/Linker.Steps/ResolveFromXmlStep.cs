@@ -320,8 +320,7 @@ namespace Mono.Linker.Steps
 		{
 			var assembly = context.Resolve (assemblyName);
 			if (assembly != null)
-				ProcessReferences (assembly);
-
+				context.ProcessReferenceClosure (assembly);
 			return assembly;
 		}
 

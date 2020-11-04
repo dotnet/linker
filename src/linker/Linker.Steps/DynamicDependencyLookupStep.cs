@@ -4,14 +4,13 @@
 
 using System;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using Mono.Cecil;
 
 #nullable enable
 
 namespace Mono.Linker.Steps
 {
-	public class DynamicDependencyLookupStep : LoadReferencesStep
+	public class DynamicDependencyLookupStep : BaseStep
 	{
 		protected override void ProcessAssembly (AssemblyDefinition assembly)
 		{
@@ -74,7 +73,7 @@ namespace Mono.Linker.Steps
 					var assembly = Context.Resolve (new AssemblyNameReference (assemblyName, new Version ()));
 					if (assembly == null)
 						continue;
-					ProcessReferences (assembly);
+					Context.ProcessReferenceClosure (assembly);
 				}
 			}
 
@@ -90,8 +89,7 @@ namespace Mono.Linker.Steps
 					Context.LogWarning ($"Unresolved assembly '{dynamicDependency.AssemblyName}' in 'DynamicDependencyAttribute'", 2035, member);
 					continue;
 				}
-
-				ProcessReferences (assembly);
+				Context.ProcessReferenceClosure (assembly);
 			}
 		}
 

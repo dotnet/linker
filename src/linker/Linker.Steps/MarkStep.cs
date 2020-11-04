@@ -347,6 +347,9 @@ namespace Mono.Linker.Steps
 					if (!assembly.MainModule.HasExportedTypes)
 						continue;
 
+					// We may have resolved new type forwarder assemblies which have not been processed.
+					_context.ProcessReferenceClosure (assembly);
+
 					foreach (var exported in assembly.MainModule.ExportedTypes) {
 						bool isForwarder = exported.IsForwarder;
 						var declaringType = exported.DeclaringType;
@@ -633,11 +636,12 @@ namespace Mono.Linker.Steps
 			Debug.Assert (context is MethodDefinition || context is FieldDefinition);
 			AssemblyDefinition assembly;
 			if (dynamicDependency.AssemblyName != null) {
-				assembly = _context.GetLoadedAssembly (dynamicDependency.AssemblyName);
+				assembly = _context.Resolve (dynamicDependency.AssemblyName);
 				if (assembly == null) {
 					_context.LogWarning ($"Unresolved assembly '{dynamicDependency.AssemblyName}' in 'DynamicDependencyAttribute'", 2035, context);
 					return;
 				}
+				_context.ProcessReferenceClosure (assembly);
 			} else {
 				assembly = context.DeclaringType.Module.Assembly;
 				Debug.Assert (assembly != null);
@@ -741,12 +745,13 @@ namespace Mono.Linker.Steps
 			AssemblyDefinition assembly;
 			var args = ca.ConstructorArguments;
 			if (args.Count >= 3 && args[2].Value is string assemblyName) {
-				assembly = _context.GetLoadedAssembly (assemblyName);
+				assembly = _context.Resolve (assemblyName);
 				if (assembly == null) {
 					_context.LogWarning (
 						$"Could not resolve dependency assembly '{assemblyName}' specified in a 'PreserveDependency' attribute", 2003, context.Resolve ());
 					return;
 				}
+				_context.ProcessReferenceClosure (assembly);
 			} else {
 				assembly = null;
 			}
@@ -1567,12 +1572,19 @@ namespace Mono.Linker.Steps
 				if (property.Name == "TargetTypeName") {
 					string targetTypeName = (string) property.Argument.Value;
 					TypeName typeName = TypeParser.ParseTypeName (targetTypeName);
+					TypeDefinition typeDef;
 					if (typeName is AssemblyQualifiedTypeName assemblyQualifiedTypeName) {
 						AssemblyDefinition assembly = _context.GetLoadedAssembly (assemblyQualifiedTypeName.AssemblyName.Name);
-						return _context.TypeNameResolver.ResolveTypeName (assembly, targetTypeName)?.Resolve ();
+						typeDef = _context.TypeNameResolver.ResolveTypeName (assembly, targetTypeName)?.Resolve ();
+						if (typeDef != null)
+							_context.ProcessReferenceClosure (typeDef.Module.Assembly);
+						return typeDef;
 					}
 
-					return _context.TypeNameResolver.ResolveTypeName (asm, targetTypeName)?.Resolve ();
+					typeDef = _context.TypeNameResolver.ResolveTypeName (asm, targetTypeName)?.Resolve ();
+					if (typeDef != null)
+						_context.ProcessReferenceClosure (typeDef.Module.Assembly);
+					return typeDef;
 				}
 			}
 
@@ -1666,6 +1678,9 @@ namespace Mono.Linker.Steps
 			switch (attribute.ConstructorArguments[0].Value) {
 			case string s:
 				tdef = _context.TypeNameResolver.ResolveTypeName (s)?.Resolve ();
+				if (tdef != null)
+					_context.ProcessReferenceClosure (tdef.Module.Assembly);
+				// ResolveTypeName might resolve an assembly (or multiple assemblies for generic arguments...)
 				break;
 			case TypeReference type:
 				tdef = type.Resolve ();

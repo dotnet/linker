@@ -67,6 +67,7 @@ namespace Mono.Linker.Steps
 			Context.Resolver.IgnoreUnresolved = false;
 			AssemblyDefinition assembly = _assembly ?? Context.Resolve (_file);
 			Context.Resolver.IgnoreUnresolved = ignoreUnresolved;
+			Context.ProcessReferenceClosure (assembly);
 
 			if (_rootVisibility != RootVisibility.Any && HasInternalsVisibleTo (assembly))
 				_rootVisibility = RootVisibility.PublicAndFamilyAndAssembly;

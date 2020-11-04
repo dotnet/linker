@@ -32,13 +32,22 @@ using Mono.Cecil;
 namespace Mono.Linker.Steps
 {
 
-	public class TypeMapStep : BaseStep
+	public class TypeMapStep : IAssemblyStep
 	{
+		LinkContext _context;
+		AnnotationStore Annotations => _context.Annotations;
 
-		protected override void ProcessAssembly (AssemblyDefinition assembly)
+		public void Initialize (LinkContext context)
 		{
-			foreach (TypeDefinition type in assembly.MainModule.Types)
-				MapType (type);
+			_context = context;
+		}
+
+		public void ProcessAssemblies (HashSet<AssemblyDefinition> assemblies)
+		{
+			foreach (var assembly in assemblies) {
+				foreach (TypeDefinition type in assembly.MainModule.Types)
+					MapType (type);
+			}
 		}
 
 		protected virtual void MapType (TypeDefinition type)

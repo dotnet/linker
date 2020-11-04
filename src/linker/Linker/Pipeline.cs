@@ -38,10 +38,12 @@ namespace Mono.Linker
 	{
 
 		readonly List<IStep> _steps;
+		readonly List<IAssemblyStep> _assemblySteps;
 
 		public Pipeline ()
 		{
 			_steps = new List<IStep> ();
+			_assemblySteps = new List<IAssemblyStep> ();
 		}
 
 		public void PrependStep (IStep step)
@@ -52,6 +54,11 @@ namespace Mono.Linker
 		public void AppendStep (IStep step)
 		{
 			_steps.Add (step);
+		}
+
+		public void AppendAssemblyStep (IAssemblyStep step)
+		{
+			_assemblySteps.Add (step);
 		}
 
 		public void AddStepBefore (Type target, IStep step)
@@ -123,6 +130,9 @@ namespace Mono.Linker
 
 		public void Process (LinkContext context)
 		{
+			foreach (var step in _assemblySteps)
+				step.Initialize (context);
+
 			while (_steps.Count > 0) {
 				IStep step = _steps[0];
 				ProcessStep (context, step);
@@ -138,6 +148,11 @@ namespace Mono.Linker
 		public IStep[] GetSteps ()
 		{
 			return _steps.ToArray ();
+		}
+
+		public IAssemblyStep[] GetAssemblySteps ()
+		{
+			return _assemblySteps.ToArray ();
 		}
 
 		public bool ContainsStep (Type type)

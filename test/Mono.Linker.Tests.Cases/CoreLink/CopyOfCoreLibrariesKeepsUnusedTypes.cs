@@ -5,6 +5,9 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 namespace Mono.Linker.Tests.Cases.CoreLink
 {
 	[SetupLinkerCoreAction ("copy")]
+	// Color has TypeConverterAttribute referencing System.Drawing.dll, which has
+	// unresolved reference to System.Drawing.Common.
+	[SetupLinkerArgument ("--skip-unresolved")]
 
 	[KeptAssembly (PlatformAssemblies.CoreLib)]
 	[KeptAllTypesAndMembersInAssembly (PlatformAssemblies.CoreLib)]
