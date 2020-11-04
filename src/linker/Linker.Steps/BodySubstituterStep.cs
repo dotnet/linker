@@ -181,7 +181,7 @@ namespace Mono.Linker.Steps
 
 		protected override AssemblyDefinition GetAssembly (LinkContext context, AssemblyNameReference assemblyName)
 		{
-			return context.GetLoadedAssembly (assemblyName.Name);
+			return context.TryResolve (assemblyName.Name);
 		}
 	}
 }

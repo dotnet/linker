@@ -15,7 +15,7 @@ namespace Mono.Linker.Steps
 		AllAssemblies = 0x4 | AnyAssembly
 	}
 
-	public abstract class ProcessLinkerXmlStepBase : LoadReferencesStep
+	public abstract class ProcessLinkerXmlStepBase : BaseStep
 	{
 		const string FullNameAttributeName = "fullname";
 		const string LinkerElementName = "linker";

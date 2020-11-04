@@ -305,6 +305,15 @@ namespace Mono.Linker
 		}
 #endif
 
+		public AssemblyDefinition TryResolve (string name)
+		{
+			try {
+				return Resolve (name);
+			} catch (AssemblyResolutionException) {
+				return null;
+			}
+		}
+
 		public AssemblyDefinition Resolve (IMetadataScope scope)
 		{
 			AssemblyNameReference reference = GetReference (scope);

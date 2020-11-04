@@ -660,7 +660,6 @@ namespace Mono.Linker
 			// Pipeline setup with all steps enabled
 			//
 			// RootAssemblyInputStep or ResolveFromXmlStep [at least one of them]
-			// LoadReferencesStep
 			// BlacklistStep
 			//   dynamically adds steps:
 			//     ResolveFromXmlStep [optional, possibly many]
@@ -683,7 +682,6 @@ namespace Mono.Linker
 			// RegenerateGuidStep [optional]
 			// SealerStep
 			// OutputStep
-			//
 
 			foreach (string custom_step in custom_steps) {
 				if (!AddCustomStep (p, custom_step))
@@ -1168,7 +1166,6 @@ namespace Mono.Linker
 		static Pipeline GetStandardPipeline ()
 		{
 			Pipeline p = new Pipeline ();
-			p.AppendStep (new LoadReferencesStep ());
 			p.AppendStep (new BlacklistStep ());
 			p.AppendStep (new DynamicDependencyLookupStep ());
 			p.AppendStep (new MarkStep ());

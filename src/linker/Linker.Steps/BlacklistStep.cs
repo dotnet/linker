@@ -124,7 +124,7 @@ namespace Mono.Linker.Steps
 				return true;
 
 			var assemblyName = GetAssemblyName (resourceName);
-			AssemblyDefinition assembly = Context.GetLoadedAssembly (assemblyName);
+			AssemblyDefinition assembly = Context.TryResolve (assemblyName);
 
 			if (assembly == null)
 				return false;
