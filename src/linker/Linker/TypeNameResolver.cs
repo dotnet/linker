@@ -13,26 +13,32 @@ namespace Mono.Linker
 			_context = context;
 		}
 
-		public TypeReference ResolveTypeName (string typeNameString)
+		static TypeName TryParseTypeName (string typeNameString)
 		{
-			if (string.IsNullOrEmpty (typeNameString))
-				return null;
-
-			TypeName parsedTypeName;
 			try {
-				parsedTypeName = TypeParser.ParseTypeName (typeNameString);
+				return TypeParser.ParseTypeName (typeNameString);
 			} catch (ArgumentException) {
 				return null;
 			} catch (System.IO.FileLoadException) {
 				return null;
 			}
+		}
 
-			if (parsedTypeName is AssemblyQualifiedTypeName assemblyQualifiedTypeName) {
+		public TypeReference ResolveTypeName (string typeNameString)
+		{
+			if (string.IsNullOrEmpty (typeNameString))
+				return null;
+
+			TypeName parsedTypeName = TryParseTypeName (typeNameString);
+			if (parsedTypeName == null)
+				return null;
+
+			if (parsedTypeName is AssemblyQualifiedTypeName assemblyQualifiedTypeName)
 				return ResolveTypeName (null, assemblyQualifiedTypeName);
-			}
 
+			var nonQualifiedTypeName = parsedTypeName as NonQualifiedTypeName;
 			foreach (var assemblyDefiniton in _context.GetAssemblies ()) {
-				var foundType = ResolveTypeName (assemblyDefiniton, parsedTypeName);
+				var foundType = ResolveTypeNameInAssembly (assemblyDefiniton, nonQualifiedTypeName);
 				if (foundType != null)
 					return foundType;
 			}
@@ -40,24 +46,21 @@ namespace Mono.Linker
 			return null;
 		}
 
-		public TypeReference ResolveTypeName (AssemblyDefinition assembly, string typeNameString)
+		public TypeReference ResolveTypeNameInAssembly (AssemblyDefinition assembly, string typeNameString)
 		{
-			return ResolveTypeName (assembly, TypeParser.ParseTypeName (typeNameString));
+			var typeName = TryParseTypeName (typeNameString);
+			if (typeName == null || typeName is AssemblyQualifiedTypeName)
+				return null;
+			return ResolveTypeNameInAssembly (assembly, typeName as NonQualifiedTypeName);
 		}
 
-		TypeReference ResolveTypeName (AssemblyDefinition assembly, TypeName typeName)
+		public TypeReference ResolveTypeNameInAssembly (AssemblyDefinition assembly, NonQualifiedTypeName typeName)
 		{
-			if (typeName is AssemblyQualifiedTypeName assemblyQualifiedTypeName) {
-				// In this case we ignore the assembly parameter since the type name has assembly in it
-				var assemblyFromName = _context.Resolve (assemblyQualifiedTypeName.AssemblyName.Name);
-				return ResolveTypeName (assemblyFromName, assemblyQualifiedTypeName.TypeName);
-			}
-
 			if (assembly == null || typeName == null)
 				return null;
 
 			if (typeName is ConstructedGenericTypeName constructedGenericTypeName) {
-				var genericTypeRef = ResolveTypeName (assembly, constructedGenericTypeName.GenericType);
+				var genericTypeRef = ResolveTypeNameInAssembly (assembly, constructedGenericTypeName.GenericType);
 				if (genericTypeRef == null)
 					return null;
 
@@ -88,6 +91,23 @@ namespace Mono.Linker
 			}
 
 			return assembly.MainModule.GetType (typeName.ToString ());
+		}
+
+		TypeReference ResolveTypeName (AssemblyDefinition assembly, TypeName typeName)
+		{
+			if (typeName is AssemblyQualifiedTypeName assemblyQualifiedTypeName) {
+				// In this case we ignore the assembly parameter since the type name has assembly in it
+				// Resolving a type name should never throw.
+				AssemblyDefinition assemblyFromName;
+				try {
+					assemblyFromName = _context.Resolve (assemblyQualifiedTypeName.AssemblyName.Name);
+				} catch (AssemblyResolutionException) {
+					return null;
+				}
+				return ResolveTypeName (assemblyFromName, assemblyQualifiedTypeName.TypeName);
+			}
+
+			return ResolveTypeNameInAssembly (assembly, typeName as NonQualifiedTypeName);
 		}
 	}
 }

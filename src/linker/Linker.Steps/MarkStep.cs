@@ -636,7 +636,11 @@ namespace Mono.Linker.Steps
 			Debug.Assert (context is MethodDefinition || context is FieldDefinition);
 			AssemblyDefinition assembly;
 			if (dynamicDependency.AssemblyName != null) {
-				assembly = _context.Resolve (dynamicDependency.AssemblyName);
+				try {
+					assembly = _context.Resolve (dynamicDependency.AssemblyName);
+				} catch (AssemblyResolutionException) {
+					assembly = null;
+				}
 				if (assembly == null) {
 					_context.LogWarning ($"Unresolved assembly '{dynamicDependency.AssemblyName}' in 'DynamicDependencyAttribute'", 2035, context);
 					return;
@@ -745,7 +749,11 @@ namespace Mono.Linker.Steps
 			AssemblyDefinition assembly;
 			var args = ca.ConstructorArguments;
 			if (args.Count >= 3 && args[2].Value is string assemblyName) {
-				assembly = _context.Resolve (assemblyName);
+				try {
+					assembly = _context.Resolve (assemblyName);
+				} catch (AssemblyResolutionException) {
+					assembly = null;
+				}
 				if (assembly == null) {
 					_context.LogWarning (
 						$"Could not resolve dependency assembly '{assemblyName}' specified in a 'PreserveDependency' attribute", 2003, context.Resolve ());
@@ -758,7 +766,7 @@ namespace Mono.Linker.Steps
 
 			TypeDefinition td;
 			if (args.Count >= 2 && args[1].Value is string typeName) {
-				td = _context.TypeNameResolver.ResolveTypeName (assembly ?? context.Module.Assembly, typeName)?.Resolve ();
+				td = _context.TypeNameResolver.ResolveTypeNameInAssembly (assembly ?? context.Module.Assembly, typeName)?.Resolve ();
 				if (td == null) {
 					_context.LogWarning (
 						$"Could not resolve dependency type '{typeName}' specified in a `PreserveDependency` attribute", 2004, context.Resolve ());
@@ -1574,16 +1582,19 @@ namespace Mono.Linker.Steps
 					TypeName typeName = TypeParser.ParseTypeName (targetTypeName);
 					TypeDefinition typeDef;
 					if (typeName is AssemblyQualifiedTypeName assemblyQualifiedTypeName) {
-						AssemblyDefinition assembly = _context.GetLoadedAssembly (assemblyQualifiedTypeName.AssemblyName.Name);
-						typeDef = _context.TypeNameResolver.ResolveTypeName (assembly, targetTypeName)?.Resolve ();
-						if (typeDef != null)
-							_context.ProcessReferenceClosure (typeDef.Module.Assembly);
+						AssemblyDefinition assembly;
+						try {
+							assembly = _context.Resolve (assemblyQualifiedTypeName.AssemblyName.Name);
+						} catch (AssemblyResolutionException) {
+							assembly = null;
+						}
+						if (assembly != null)
+							_context.ProcessReferenceClosure (assembly);
+						typeDef = _context.TypeNameResolver.ResolveTypeNameInAssembly (assembly, assemblyQualifiedTypeName.TypeName)?.Resolve ();
 						return typeDef;
 					}
 
-					typeDef = _context.TypeNameResolver.ResolveTypeName (asm, targetTypeName)?.Resolve ();
-					if (typeDef != null)
-						_context.ProcessReferenceClosure (typeDef.Module.Assembly);
+					typeDef = _context.TypeNameResolver.ResolveTypeNameInAssembly (asm, targetTypeName)?.Resolve ();
 					return typeDef;
 				}
 			}

@@ -1335,14 +1335,17 @@ namespace Mono.Linker.Dataflow
 				if (assemblyNameValue is KnownStringValue assemblyNameStringValue) {
 					foreach (var typeNameValue in methodParams[methodParamsOffset + 1].UniqueValues ()) {
 						if (typeNameValue is KnownStringValue typeNameStringValue) {
-							var resolvedAssembly = _context.GetLoadedAssembly (assemblyNameStringValue.Contents);
+							AssemblyDefinition resolvedAssembly = null;
+							try {
+								resolvedAssembly = _context.Resolve (assemblyNameStringValue.Contents);
+							} catch (AssemblyResolutionException) { }
 							if (resolvedAssembly == null) {
 								reflectionContext.RecordUnrecognizedPattern (2061, $"The assembly name '{assemblyNameStringValue.Contents}' passed to method '{calledMethod.GetDisplayName ()}' references assembly which is not available.");
 								continue;
 							}
 							_context.ProcessReferenceClosure (resolvedAssembly);
 
-							var typeRef = _context.TypeNameResolver.ResolveTypeName (resolvedAssembly, typeNameStringValue.Contents);
+							var typeRef = _context.TypeNameResolver.ResolveTypeNameInAssembly (resolvedAssembly, typeNameStringValue.Contents);
 							var resolvedType = typeRef?.Resolve ();
 							if (resolvedType == null || typeRef is ArrayType) {
 								// It's not wrong to have a reference to non-existing type - the code may well expect to get an exception in this case
