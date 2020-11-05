@@ -108,7 +108,7 @@ namespace Mono.Linker.Tests.TestCases
 			} catch (ArgumentException ex) {
 				Assert.AreEqual ("The provided code '2500' does not fall into the permitted range for external warnings. To avoid possible " +
 					"collisions with existing and future ILLink warnings, external messages should use codes starting from 6001.", ex.Message);
-				
+
 			}
 		}
 
