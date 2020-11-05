@@ -158,15 +158,15 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		{
 		}
 
-		[RequiresUnreferencedCode("Message for --RequiresUnreferencedCodeOnlyThroughReflection--")]
-		static void RequiresUnreferencedCodeOnlyThroughReflection()
+		[RequiresUnreferencedCode ("Message for --RequiresUnreferencedCodeOnlyThroughReflection--")]
+		static void RequiresUnreferencedCodeOnlyThroughReflection ()
 		{
 		}
 
 		// issue: https://github.com/mono/linker/issues/1607
 		// Linker currently doesn't report a warning in this case
 		// [ExpectedWarning ("IL2026", "--RequiresUnreferencedCodeOnlyThroughReflection--")]
-		static void TestRequiresUnreferencedCodeOnlyThroughReflection()
+		static void TestRequiresUnreferencedCodeOnlyThroughReflection ()
 		{
 			typeof (RequiresUnreferencedCodeAttribute)
 				.GetMethod (nameof (RequiresUnreferencedCodeOnlyThroughReflection), System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)
