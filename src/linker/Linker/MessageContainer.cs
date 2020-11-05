@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
+using System.Reflection;
 using System.Text;
 using Mono.Cecil;
 
@@ -46,8 +47,12 @@ namespace Mono.Linker
 		/// <returns>New MessageContainer of 'Error' category</returns>
 		public static MessageContainer CreateErrorMessage (string text, int code, string subcategory = MessageSubCategory.None, MessageOrigin? origin = null)
 		{
-			if (!(code >= 1000 && code <= 2000))
+			if ((Assembly.GetExecutingAssembly () == Assembly.GetCallingAssembly ()) &&
+				!(code >= 1000 && code <= 2000))
 				throw new ArgumentException ($"The provided code '{code}' does not fall into the error category, which is in the range of 1000 to 2000 (inclusive).");
+			else if ((Assembly.GetExecutingAssembly () != Assembly.GetCallingAssembly ()) && code <= 6000)
+				throw new ArgumentException ($"The provided code '{code}' does not fall into the permitted range for external errors. To avoid possible collisions " +
+					"with existing and future {Constants.ILLink} errors, external messages should use codes starting from 6001.");
 
 			return new MessageContainer (MessageCategory.Error, text, code, subcategory, origin);
 		}
@@ -66,8 +71,12 @@ namespace Mono.Linker
 		/// <returns>New MessageContainer of 'Warning' category</returns>
 		public static MessageContainer CreateWarningMessage (LinkContext context, string text, int code, MessageOrigin origin, WarnVersion version, string subcategory = MessageSubCategory.None)
 		{
-			if (!(code > 2000 && code <= 6000))
+			if ((Assembly.GetExecutingAssembly () == Assembly.GetCallingAssembly ()) &&
+				!(code > 2000 && code <= 6000))
 				throw new ArgumentException ($"The provided code '{code}' does not fall into the warning category, which is in the range of 2001 to 6000 (inclusive).");
+			else if ((Assembly.GetExecutingAssembly () != Assembly.GetCallingAssembly ()) && code <= 6000)
+				throw new ArgumentException ($"The provided code '{code}' does not fall into the permitted range for external warnings. To avoid possible collisions " +
+					$"with existing and future {Constants.ILLink} warnings, external messages should use codes starting from 6001.");
 
 			if (!(version >= WarnVersion.ILLink0 && version <= WarnVersion.Latest))
 				throw new ArgumentException ($"The provided warning version '{version}' is invalid.");
