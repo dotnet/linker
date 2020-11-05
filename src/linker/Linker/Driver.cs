@@ -665,7 +665,7 @@ namespace Mono.Linker
 				p.AddStepAfter (typeof (MarkStep), new ReflectionBlockedStep ());
 
 #if !FEATURE_ILLINK
-			p.AddStepAfter (typeof (LoadReferencesStep), new LoadI18nAssemblies (assemblies));
+			p.AddStepBefore (typeof (BlacklistStep), new LoadI18nAssemblies (assemblies));
 
 			if (assemblies != I18nAssemblies.None)
 				p.AddStepAfter (typeof (DynamicDependencyLookupStep), new PreserveCalendarsStep (assemblies));
