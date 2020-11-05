@@ -272,6 +272,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			WithNonExistingAssemblyName ();
 			WithAssemblyAndUnknownTypeName ();
 			WithAssemblyAndNonExistingTypeName ();
+			WithAssemblyAndAssemblyQualifiedTypeName ();
 		}
 
 		[Kept]
@@ -306,6 +307,18 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		private static void WithAssemblyAndNonExistingTypeName ()
 		{
 			Activator.CreateInstance ("test", "NonExistingType", new object[] { });
+		}
+
+		class WithAssemblyQualifiedTypeName
+		{
+		}
+
+		[Kept]
+		[RecognizedReflectionAccessPattern]
+		private static void WithAssemblyAndAssemblyQualifiedTypeName ()
+		{
+			// CreateInstance with assembly and assembly-qualified type name will throw.
+			Activator.CreateInstance ("test", "Mono.Linker.Tests.Cases.Reflection.ActivatorCreateInstance+WithAssemblyQualifiedTypeName, test");
 		}
 
 		[Kept]

@@ -98,12 +98,9 @@ namespace Mono.Linker
 			if (typeName is AssemblyQualifiedTypeName assemblyQualifiedTypeName) {
 				// In this case we ignore the assembly parameter since the type name has assembly in it
 				// Resolving a type name should never throw.
-				AssemblyDefinition assemblyFromName;
-				try {
-					assemblyFromName = _context.Resolve (assemblyQualifiedTypeName.AssemblyName.Name);
-				} catch (AssemblyResolutionException) {
+				AssemblyDefinition assemblyFromName = _context.TryResolve (assemblyQualifiedTypeName.AssemblyName.Name);
+				if (assemblyFromName == null)
 					return null;
-				}
 				return ResolveTypeName (assemblyFromName, assemblyQualifiedTypeName.TypeName);
 			}
 

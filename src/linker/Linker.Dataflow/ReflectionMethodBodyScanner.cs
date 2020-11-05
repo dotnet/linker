@@ -1335,10 +1335,7 @@ namespace Mono.Linker.Dataflow
 				if (assemblyNameValue is KnownStringValue assemblyNameStringValue) {
 					foreach (var typeNameValue in methodParams[methodParamsOffset + 1].UniqueValues ()) {
 						if (typeNameValue is KnownStringValue typeNameStringValue) {
-							AssemblyDefinition resolvedAssembly = null;
-							try {
-								resolvedAssembly = _context.Resolve (assemblyNameStringValue.Contents);
-							} catch (AssemblyResolutionException) { }
+							var resolvedAssembly = _context.TryResolve (assemblyNameStringValue.Contents);
 							if (resolvedAssembly == null) {
 								reflectionContext.RecordUnrecognizedPattern (2061, $"The assembly name '{assemblyNameStringValue.Contents}' passed to method '{calledMethod.GetDisplayName ()}' references assembly which is not available.");
 								continue;
