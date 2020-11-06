@@ -12,7 +12,7 @@ namespace CustomStep
 	{
 		public void Process(LinkContext context)
 		{
-			var warningMessage = MessageContainer.CreateWarningMessage(
+			var warningMessage = MessageContainer.CreateCustomWarningMessage(
 				context: context,
 				text: "Warning",
 				code: 6001,
@@ -29,7 +29,7 @@ namespace CustomStep
 		{
 			// All codes in the range [1000-6000] are reserved for the linker
 			// and should not be used by external parties.
-			var invalidWarningMessage = MessageContainer.CreateWarningMessage(
+			var invalidWarningMessage = MessageContainer.CreateCustomWarningMessage(
 				context: context,
 				text: "Warning",
 				code: 2500,
