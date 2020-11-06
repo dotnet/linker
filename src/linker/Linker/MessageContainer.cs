@@ -49,7 +49,7 @@ namespace Mono.Linker
 		internal static MessageContainer CreateErrorMessage (string text, int code, string subcategory = MessageSubCategory.None, MessageOrigin? origin = null)
 		{
 			if (!(code >= 1000 && code <= 2000))
-				throw new ArgumentOutOfRangeException (nameof(code), $"The provided code '{code}' does not fall into the error category, which is in the range of 1000 to 2000 (inclusive).");
+				throw new ArgumentOutOfRangeException (nameof (code), $"The provided code '{code}' does not fall into the error category, which is in the range of 1000 to 2000 (inclusive).");
 
 			return new MessageContainer (MessageCategory.Error, text, code, subcategory, origin);
 		}
@@ -70,7 +70,7 @@ namespace Mono.Linker
 				"'CreateCustomErrorMessage' is intended to be used by external assemblies only. Use 'CreateErrorMessage' instead.");
 #endif
 			if (code <= 6000)
-				throw new ArgumentOutOfRangeException (nameof(code), $"The provided code '{code}' does not fall into the permitted range for external errors. To avoid possible collisions " +
+				throw new ArgumentOutOfRangeException (nameof (code), $"The provided code '{code}' does not fall into the permitted range for external errors. To avoid possible collisions " +
 					"with existing and future {Constants.ILLink} errors, external messages should use codes starting from 6001.");
 
 			return new MessageContainer (MessageCategory.Error, text, code, subcategory, origin);
