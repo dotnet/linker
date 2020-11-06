@@ -49,7 +49,7 @@ namespace Mono.Linker
 		internal static MessageContainer CreateErrorMessage (string text, int code, string subcategory = MessageSubCategory.None, MessageOrigin? origin = null)
 		{
 			if (!(code >= 1000 && code <= 2000))
-				throw new ArgumentOutOfRangeException ($"The provided code '{code}' does not fall into the error category, which is in the range of 1000 to 2000 (inclusive).");
+				throw new ArgumentOutOfRangeException (nameof(code), $"The provided code '{code}' does not fall into the error category, which is in the range of 1000 to 2000 (inclusive).");
 
 			return new MessageContainer (MessageCategory.Error, text, code, subcategory, origin);
 		}
@@ -70,7 +70,7 @@ namespace Mono.Linker
 				"'CreateCustomErrorMessage' is intended to be used by external assemblies only. Use 'CreateErrorMessage' instead.");
 #endif
 			if (code <= 6000)
-				throw new ArgumentOutOfRangeException ($"The provided code '{code}' does not fall into the permitted range for external errors. To avoid possible collisions " +
+				throw new ArgumentOutOfRangeException (nameof(code), $"The provided code '{code}' does not fall into the permitted range for external errors. To avoid possible collisions " +
 					"with existing and future {Constants.ILLink} errors, external messages should use codes starting from 6001.");
 
 			return new MessageContainer (MessageCategory.Error, text, code, subcategory, origin);
@@ -91,7 +91,7 @@ namespace Mono.Linker
 		internal static MessageContainer CreateWarningMessage (LinkContext context, string text, int code, MessageOrigin origin, WarnVersion version, string subcategory = MessageSubCategory.None)
 		{
 			if (!(code > 2000 && code <= 6000))
-				throw new ArgumentOutOfRangeException ($"The provided code '{code}' does not fall into the warning category, which is in the range of 2001 to 6000 (inclusive).");
+				throw new ArgumentOutOfRangeException (nameof (code), $"The provided code '{code}' does not fall into the warning category, which is in the range of 2001 to 6000 (inclusive).");
 
 			return CreateWarningMessageContainer (context, text, code, origin, version, subcategory);
 		}
@@ -115,7 +115,7 @@ namespace Mono.Linker
 				"'CreateCustomWarningMessage' is intended to be used by external assemblies only. Use 'CreateWarningMessage' instead.");
 #endif
 			if (code <= 6000)
-				throw new ArgumentOutOfRangeException ($"The provided code '{code}' does not fall into the permitted range for external warnings. To avoid possible collisions " +
+				throw new ArgumentOutOfRangeException (nameof (code), $"The provided code '{code}' does not fall into the permitted range for external warnings. To avoid possible collisions " +
 					$"with existing and future {Constants.ILLink} warnings, external messages should use codes starting from 6001.");
 
 			return CreateWarningMessageContainer (context, text, code, origin, version, subcategory);
