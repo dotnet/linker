@@ -88,8 +88,7 @@ namespace Mono.Linker
 				};
 			}
 
-			return assembly.MainModule.GetType (typeName.ToString ()) ??
-				assembly.MainModule.ExportedTypes?.FirstOrDefault (et => et.FullName == typeName.ToString ())?.Resolve ();
+			return assembly.MainModule.ResolveType (typeName.ToString ());
 		}
 	}
 }

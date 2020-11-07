@@ -9,13 +9,18 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
+using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.DynamicDependencies
 {
+	[SetupCSharpCompilerToUse ("csc")]
+	[SetupCompileBefore ("FacadeAssembly.dll", new[] { "Dependencies/ReferenceImplementationLibrary.cs" })]
+	[SetupCompileAfter ("ImplementationLibrary.dll", new[] { "Dependencies/ImplementationLibrary.cs" })]
+	[SetupCompileAfter ("FacadeAssembly.dll", new[] { "Dependencies/FacadeAssembly.cs" }, new[] { "ImplementationLibrary.dll" })]
 	[LogDoesNotContain ("IL2036")]
-	class DynamicDependencyOnForwardedType
+	public class DynamicDependencyOnForwardedType
 	{
-		[DynamicDependency (".ctor", "System.Xml.Linq.XElement", "System.Xml.Linq")]
+		[DynamicDependency (".ctor", "Mono.Linker.Tests.Cases.DynamicDependencies.Dependencies.ImplementationLibrary", "FacadeAssembly")]
 		static void Main ()
 		{
 		}
