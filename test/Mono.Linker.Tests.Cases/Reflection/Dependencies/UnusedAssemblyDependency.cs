@@ -1,16 +1,12 @@
 ﻿namespace Mono.Linker.Tests.Cases.Reflection.Dependencies
 {
-	public class AssemblyDependency
+	public class UnusedAssemblyDependency
 	{
-		public AssemblyDependency ()
+		public UnusedAssemblyDependency ()
 		{
 		}
 
 		public static void UsedToKeepReferenceAtCompileTime ()
-		{
-		}
-
-		class TypeThatIsUsedViaReflection
 		{
 		}
 	}
