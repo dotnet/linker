@@ -3,8 +3,4 @@
 	public class AssemblyDependencyWithReference : AssemblyDependency
 	{
 	}
-
-	public class UsedToReferenceUnusedAssembly : UnusedAssemblyDependency
-	{
-	}
 }
