@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
+using Mono.Linker.Tests.Cases.DynamicDependencies.Dependencies;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
-using Mono.Linker.Tests.Cases.DynamicDependencies.Dependencies;
 
 namespace Mono.Linker.Tests.Cases.DynamicDependencies
 {
@@ -26,7 +26,7 @@ namespace Mono.Linker.Tests.Cases.DynamicDependencies
 
 		static void ReferenceUnusedAssemblyDependency ()
 		{
-			UnusedAssemblyDependency.UsedToKeepReferenceAtCompileTime();
+			UnusedAssemblyDependency.UsedToKeepReferenceAtCompileTime ();
 		}
 	}
 }

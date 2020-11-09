@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 using Mono.Linker.Tests.Cases.Reflection.Dependencies;
@@ -30,7 +30,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 		static void ReferenceUnusedAssemblyDependency ()
 		{
-			UnusedAssemblyDependency.UsedToKeepReferenceAtCompileTime();
+			UnusedAssemblyDependency.UsedToKeepReferenceAtCompileTime ();
 		}
 	}
 }
