@@ -36,8 +36,6 @@ namespace Mono.Linker.Steps
 	{
 		LinkContext _context;
 
-		LinkContext Context => _context;
-
 		readonly HashSet<AssemblyNameDefinition> references = new HashSet<AssemblyNameDefinition> ();
 
 		readonly HashSet<AssemblyDefinition> newReferences = new HashSet<AssemblyDefinition> ();
@@ -68,9 +66,9 @@ namespace Mono.Linker.Steps
 
 			newReferences.Add (assembly);
 
-			Context.RegisterAssembly (assembly);
+			_context.RegisterAssembly (assembly);
 
-			foreach (AssemblyDefinition referenceDefinition in Context.ResolveReferences (assembly)) {
+			foreach (AssemblyDefinition referenceDefinition in _context.ResolveReferences (assembly)) {
 				try {
 					ProcessReferences (referenceDefinition);
 				} catch (Exception ex) {

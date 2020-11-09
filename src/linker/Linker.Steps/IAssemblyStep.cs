@@ -10,6 +10,6 @@ namespace Mono.Linker.Steps
 	public interface IAssemblyStep
 	{
 		void Initialize (LinkContext context);
-		void ProcessAssemblies (HashSet<AssemblyDefinition> assembly);
+		void ProcessAssemblies (HashSet<AssemblyDefinition> assemblies);
 	}
 }

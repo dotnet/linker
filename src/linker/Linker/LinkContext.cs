@@ -309,7 +309,7 @@ namespace Mono.Linker
 		public void ProcessReferenceClosure (AssemblyDefinition assembly)
 		{
 			var assemblies = new HashSet<AssemblyDefinition> { assembly };
-			foreach (var step in Pipeline.GetAssemblySteps ())
+			foreach (var step in Pipeline.AssemblySteps)
 				step.ProcessAssemblies (assemblies);
 		}
 

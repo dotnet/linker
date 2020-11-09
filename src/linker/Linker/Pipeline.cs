@@ -1,4 +1,4 @@
-﻿//
+//
 // Pipeline.cs
 //
 // Author:
@@ -39,6 +39,8 @@ namespace Mono.Linker
 
 		readonly List<IStep> _steps;
 		readonly List<IAssemblyStep> _assemblySteps;
+
+		public IEnumerable<IAssemblyStep> AssemblySteps => _assemblySteps;
 
 		public Pipeline ()
 		{
@@ -148,11 +150,6 @@ namespace Mono.Linker
 		public IStep[] GetSteps ()
 		{
 			return _steps.ToArray ();
-		}
-
-		public IAssemblyStep[] GetAssemblySteps ()
-		{
-			return _assemblySteps.ToArray ();
 		}
 
 		public bool ContainsStep (Type type)
