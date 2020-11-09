@@ -1675,9 +1675,9 @@ namespace Mono.Linker.Steps
 			TypeDefinition tdef = null;
 			switch (attribute.ConstructorArguments[0].Value) {
 			case string s:
-				tdef = _context.TypeNameResolver.ResolveTypeName (s)?.Resolve ();
-				if (tdef != null)
-					_context.ProcessReferenceClosure (tdef.Module.Assembly);
+				tdef = _context.TypeNameResolver.ResolveTypeName (s, out AssemblyDefinition foundAssembly)?.Resolve ();
+				if (foundAssembly != null)
+					_context.ProcessReferenceClosure (foundAssembly);
 				// ResolveTypeName might resolve an assembly (or multiple assemblies for generic arguments...)
 				break;
 			case TypeReference type:
