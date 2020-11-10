@@ -6,8 +6,9 @@ namespace Mono.Linker.Tests.Cases.DynamicDependencies.Dependencies
 {
 	public class ImplementationLibrary
 	{
-		public ImplementationLibrary()
-		{
-		}
+	}
+
+	public class ImplementationLibraryGenericType<T, S>
+	{
 	}
 }

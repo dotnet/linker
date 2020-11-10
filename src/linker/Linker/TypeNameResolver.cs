@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Reflection.Runtime.TypeParsing;
 using Mono.Cecil;
 

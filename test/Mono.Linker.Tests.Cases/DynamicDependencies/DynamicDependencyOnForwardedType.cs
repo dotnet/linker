@@ -21,6 +21,7 @@ namespace Mono.Linker.Tests.Cases.DynamicDependencies
 	public class DynamicDependencyOnForwardedType
 	{
 		[DynamicDependency (".ctor", "Mono.Linker.Tests.Cases.DynamicDependencies.Dependencies.ImplementationLibrary", "FacadeAssembly")]
+		[DynamicDependency (".ctor", "Mono.Linker.Tests.Cases.DynamicDependencies.Dependencies.ImplementationLibraryGenericType`2", "FacadeAssembly")]
 		static void Main ()
 		{
 		}

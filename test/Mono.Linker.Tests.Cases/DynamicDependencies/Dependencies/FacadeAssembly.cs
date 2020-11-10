@@ -4,4 +4,5 @@
 
 using System.Runtime.CompilerServices;
 
-[assembly: TypeForwardedTo (typeof(Mono.Linker.Tests.Cases.DynamicDependencies.Dependencies.ImplementationLibrary))]
+[assembly: TypeForwardedTo (typeof (Mono.Linker.Tests.Cases.DynamicDependencies.Dependencies.ImplementationLibrary))]
+[assembly: TypeForwardedTo (typeof (Mono.Linker.Tests.Cases.DynamicDependencies.Dependencies.ImplementationLibraryGenericType<,>))]
