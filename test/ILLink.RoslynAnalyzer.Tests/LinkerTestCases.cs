@@ -19,6 +19,11 @@ namespace ILLink.RoslynAnalyzer.Tests
 		[MemberData (nameof (GetTestData), parameters: nameof (RequiresCapability))]
 		public void RequiresCapability (MethodDeclarationSyntax m, List<AttributeSyntax> attrs)
 		{
+			switch (m.Identifier.ValueText) {
+			case "RequiresAndCallsOtherRequiresMethods":
+			case "MethodWithDuplicateRequiresAttribute":
+				return;
+			}
 			RunTest (m, attrs);
 		}
 	}

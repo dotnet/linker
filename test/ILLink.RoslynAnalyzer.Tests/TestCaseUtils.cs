@@ -74,7 +74,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 							return true;
 						}),
 					$"Expected to find warning containing:{string.Join (" ", attr.ArgumentList!.Arguments.Select (m => GetStringFromExpr (m.Expression).StartsWith ("IL") ? "" : "'" + GetStringFromExpr (m.Expression) + "'"))}" +
-					$", but no such message was found.{ Environment.NewLine}In diagnostics: {filtered}");
+					$", but no such message was found.{ Environment.NewLine}In diagnostics: {string.Join (Environment.NewLine, filtered)}");
 					break;
 				case "LogContains": {
 						var arg = Assert.Single (attr.ArgumentList!.Arguments);
