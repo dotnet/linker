@@ -96,7 +96,7 @@ namespace ILLink.RoslynAnalyzer
 								location,
 								methodName,
 								(string) ctorArg.Value!,
-								attr.NamedArguments.FirstOrDefault(na => na.Key == "Url").Value.Value));
+								attr.NamedArguments.FirstOrDefault (na => na.Key == "Url").Value.Value));
 						}
 					}
 				}
