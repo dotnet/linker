@@ -22,6 +22,7 @@ namespace Mono.Linker.Tests.Cases.DynamicDependencies
 	{
 		[DynamicDependency (".ctor", "Mono.Linker.Tests.Cases.DynamicDependencies.Dependencies.ImplementationLibrary", "FacadeAssembly")]
 		[DynamicDependency (".ctor", "Mono.Linker.Tests.Cases.DynamicDependencies.Dependencies.ImplementationLibraryGenericType`2", "FacadeAssembly")]
+		[DynamicDependency (".ctor", "Mono.Linker.Tests.Cases.DynamicDependencies.Dependencies.ImplementationLibrary.NestedType", "FacadeAssembly")]
 		static void Main ()
 		{
 		}
