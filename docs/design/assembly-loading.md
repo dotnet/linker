@@ -1,6 +1,8 @@
 # ILLink Assembly Loading
 
-We would like to support loading and processing assemblies later in the pipeline, so that dynamically referenced assemblies can be correctly processed. A secondary goal is to avoid unnecessary processing of unused assemblies.
+Current versions of the linker do not support loading and processing assemblies that are only referenced dynamically (via reflection, strings in special attributes, or embedded XML), which leads to incorrect outputs that are missing code required by these dependencies. We need a way to load and process assemblies during later steps of the pipeline, to solve these correctness issues.
+
+The linker also does a lot of unnecessary processing because it loads static references of root assemblies up-front. Pipeline steps process all assemblies in the static reference closure, reading embedded XML, propagating constants, and doing branch elimination, whether or not they contain any code that is used at runtime. A secondary goal is to avoid unnecessary processing of such unused assemblies to improve the linker's performance.
 
 ## Assembly processing
 
@@ -12,7 +14,7 @@ Assemblies loaded into the context usually need to have the following processing
 - process the assembly IL for constant methods
 - remove unused branches after propagating constants (possibly from another assembly)
 
-## .NET5 behavior
+## Current behavior
 
 ### Assembly references loaded up-front
 
@@ -26,12 +28,11 @@ XML descriptors from the static reference closure are processed whether or not t
 
 Later steps do not load additional assemblies, with rare exceptions. Dynamic references (from reflection, or from special attributes) are only looked up in already-loaded assemblies, so the linker is unable to find assemblies only referenced dynamically, producing incorrect outputs which are missing the code required by such references. This problem is partially mitigated for `DynamicDependencyAttribute` by a step that pre-scans for assemblies referenced from instances of this attribute, but it does not recursively handle `DynamicDependencyAttribute` instances in these referenced assemblies.
 
-
 ## .NET6 behavior
 
 ### Assembly references loaded lazily
 
-Assemblies will be resolved and loaded lazily, whether by name or from a metadata reference. Unused references will typically not be loaded at all, removing the need to process potentially large amounts of unused code. The result of calling `Resolve` will stay predictable (it will either find a cached result, or look for and possibly load a new assembly). Just resolving an assembly will not trigger any additional processing or recursive assembly resolution.
+Assemblies will be resolved and loaded lazily, whether by name or from a metadata reference. We will avoid loading referenced assemblies up-front, instead relying on various APIs that all ultimately call `IAssemblyResolver.Resolve` to load assemblies as needed. Trying to `Resolve` an assembly name (using `IAssemblyResolver` or a `LinkContext` helper) or a Cecil member reference (`MethodReference`, `ExportedType`, etc...) will continue to have predictable assembly loading behavior - it will either find a cached result, or look for and possibly load a new assembly. Unused references will typically not be loaded at all, removing the need to process potentially large amounts of unused code. Just resolving an assembly will not trigger any additional processing or recursive assembly resolution.
 
 ### Additional processing done lazily
 
@@ -43,23 +44,25 @@ Additional processing will be done lazily (not triggered by `Resolve`), running 
 
 - XML from an assembly will be processed only if the assembly is marked
 
-  Embedded XML from statically referenced assemblies may no longer be processed if the embedding assembly is not marked.
+  Embedded XML descriptors will logically be considered dependencies of the assembly, not global dependencies.
 
-- Constant propagation and branch elimination will will run per marked assembly
+- Constant propagation and branch elimination will run per marked assembly
 
-  Unmarked assemblies will not be processed for constants and will not have unused branches removed. This will not inline constants across assemblies, and leaves room to optimize constant propagation to run at a more granular level inline with the marking logic.
+  This leaves room to optimize constant propagation to run at a more granular level inline with the marking logic.
 
-### Restrictions
+### Breaking changes
 
-We will restrict the embedded XML so that it may only modify the containing assembly. This is to prevent cases where a (possibly lazily loaded) assembly modifies code in another assembly that we have already processed, breaking assumptions and creating logical inconsistencies.
+We will restrict the embedded XML so that it may only modify the containing assembly. This is to prevent cases where a (possibly lazily loaded) assembly modifies code in another assembly that we have already processed, breaking assumptions and creating logical inconsistencies. XML passed on the command-line will continue to work as they do today.
 
 Embedded XML from assemblies which are not marked may not be processed, to avoid the need to load all referenced assemblies in case they have embedded XML.
+
+Unmarked assemblies will not be processed for constants and will not have unused branches removed.
 
 To support on-demand processing one assembly at a time, we will temporarily remove support for constant propagation across assembly boundaries. Note that to remove unused branches based on constant callees, we need to know whether callees - possibly in other assemblies - are constant. This would require loading and processing direct assembly references for constants before doing branch elimination. In general case, this could require recursive processing of assembly references for new constants introduced by branch elimination. There are plans to move constant propagation to `MarkStep`, which will add back cross-assembly constant propagation. 
 
 ### Exceptions to lazy loading
 
-When the linker default action is `copy`, we will preserve the .NET5 behavior that keeps all statically referenced assemblies (that don't override the default action). For consistency with this behavior, static references of dynamically loaded assemblies will be kept as well. This will be done by pre-loading the reference closure of assemblies if the linker's default action is `copy`.
+When the linker default action specified via `-c` or `-u` is `copy`, we will preserve the .NET5 behavior that keeps all statically referenced assemblies (that don't override the default action). For consistency with this behavior, static references of dynamically loaded assemblies will be kept as well. This will be done by pre-loading the reference closure of assemblies if the linker's default action is `copy`.
 
 However, embedded XML, constant propagation, and branch elimination still obey the rules above, and may not be processed even when the default action is `copy`.
 
