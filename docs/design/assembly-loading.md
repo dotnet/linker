@@ -80,7 +80,7 @@ The main downside of this approach is that it requires a lot of unnecessary proc
 
 Doing the additional processing on `Resolve` (which would still be called lazily) would not require the mark logic to call extra processing explicitly. Simply calling `Resolve` would ensure that prerequisites of marking have been met, making the results of constant propagation and branch elimination available. This has the same challenges with constant propagation across assemblies as the suggested approach, so we would impose similar restrictions.
 
-This approach also has the challenge that steps calling `Resolve` don't directly control which processing is done for the loaded assembly. Just resolving a reference could lead to a lot of undesired processing, so this would require the behavior of `Resolve` to depend on where it is called from - for example, by allowing different steps to register temporary `Resolve` handles, or similar.
+This approach also has the challenge that steps calling `Resolve` don't directly control which processing is done for the loaded assembly. Just resolving a reference could lead to a lot of undesired processing, so this would require the behavior of `Resolve` to depend on where it is called from - for example, by allowing different steps to register temporary `Resolve` handlers, or similar.
 
-Recursion is another potential issue with this approach. For example, processing XML descriptors on `Resolve` could lead to the processing of more descriptors for newly resolved assemblies. The suggested approach mitigates this by deferring processing of XML would end up looking similar to the suggested approach.
+Recursion is another potential issue with this approach. For example, processing XML descriptors on `Resolve` could lead to the processing of more descriptors for newly resolved assemblies. Mitigating this by deferring processing of XML would end up looking similar to the suggested approach.
 
