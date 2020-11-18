@@ -494,8 +494,7 @@ namespace Mono.Linker.Dataflow
 				return false;
 
 			var callingMethodDefinition = callingMethodBody.Method;
-			bool shouldEnableReflectionWarnings = ShouldEnableReflectionPatternReporting (callingMethodDefinition);
-			var reflectionContext = new ReflectionPatternContext (_context, shouldEnableReflectionWarnings, callingMethodDefinition, calledMethod.Resolve (), operation);
+			var reflectionContext = new ReflectionPatternContext (_context, ShouldEnableReflectionPatternReporting (callingMethodDefinition), callingMethodDefinition, calledMethod.Resolve (), operation);
 
 			DynamicallyAccessedMemberTypes returnValueDynamicallyAccessedMemberTypes = 0;
 
@@ -1262,19 +1261,6 @@ namespace Mono.Linker.Dataflow
 						}
 
 						reflectionContext.RecordHandledPattern ();
-					}
-
-					if (shouldEnableReflectionWarnings &&
-						_context.Annotations.TryGetLinkerAttribute (calledMethodDefinition, out RequiresUnreferencedCodeAttribute requiresUnreferencedCode)) {
-						string message =
-							$"Calling '{calledMethodDefinition.GetDisplayName ()}' which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. " +
-							$"{requiresUnreferencedCode.Message}.";
-
-						if (requiresUnreferencedCode.Url != null) {
-							message += " " + requiresUnreferencedCode.Url;
-						}
-
-						_context.LogWarning (message, 2026, callingMethodDefinition, operation.Offset, MessageSubCategory.TrimAnalysis);
 					}
 
 					// To get good reporting of errors we need to track the origin of the value for all method calls

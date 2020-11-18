@@ -511,11 +511,11 @@ namespace Mono.Linker.Steps
 			// Only track instantiations if override removal is enabled and the type is instantiated.
 			// If it's disabled, all overrides are kept, so there's no instantiation site to blame.
 			if (_context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, method) && isInstantiated) {
-				MarkMethod (method, new DependencyInfo (DependencyKind.OverrideOnInstantiatedType, method.DeclaringType), method.DeclaringType);
+				MarkMethod (method, new DependencyInfo (DependencyKind.OverrideOnInstantiatedType, method.DeclaringType), new MessageOrigin (method.DeclaringType));
 			} else {
 				// If the optimization is disabled or it's an abstract type, we just mark it as a normal override.
 				Debug.Assert (!_context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, method) || @base.IsAbstract);
-				MarkMethod (method, new DependencyInfo (DependencyKind.Override, @base), @base);
+				MarkMethod (method, new DependencyInfo (DependencyKind.Override, @base), new MessageOrigin (@base));
 			}
 
 			ProcessVirtualMethod (method);
@@ -715,7 +715,7 @@ namespace Mono.Linker.Steps
 					MarkType (type, reason, sourceLocationMember);
 					break;
 				case MethodDefinition method:
-					MarkMethod (method, reason, sourceLocationMember);
+					MarkMethod (method, reason, new MessageOrigin (sourceLocationMember));
 					break;
 				case FieldDefinition field:
 					MarkField (field, reason);
@@ -888,7 +888,7 @@ namespace Mono.Linker.Steps
 		protected virtual void MarkCustomAttribute (CustomAttribute ca, in DependencyInfo reason, IMemberDefinition source)
 		{
 			Annotations.Mark (ca, reason);
-			MarkMethod (ca.Constructor, new DependencyInfo (DependencyKind.AttributeConstructor, ca), source);
+			MarkMethod (ca.Constructor, new DependencyInfo (DependencyKind.AttributeConstructor, ca), new MessageOrigin (source));
 
 			MarkCustomAttributeArguments (source, ca);
 
@@ -1023,7 +1023,7 @@ namespace Mono.Linker.Steps
 		{
 			PropertyDefinition property = GetProperty (attribute, namedArgument.Name);
 			if (property != null)
-				MarkMethod (property.SetMethod, reason, sourceLocationMember);
+				MarkMethod (property.SetMethod, reason, new MessageOrigin (sourceLocationMember));
 
 			MarkCustomAttributeArgument (namedArgument.Argument, ca, sourceLocationMember);
 
@@ -1737,7 +1737,7 @@ namespace Mono.Linker.Steps
 
 						MethodDefinition method = GetMethodWithNoParameters (type, methodName);
 						if (method != null) {
-							MarkMethod (method, new DependencyInfo (DependencyKind.ReferencedBySpecialAttribute, attribute), type);
+							MarkMethod (method, new DependencyInfo (DependencyKind.ReferencedBySpecialAttribute, attribute), new MessageOrigin (type));
 							continue;
 						}
 					} else {
@@ -1750,10 +1750,10 @@ namespace Mono.Linker.Steps
 						PropertyDefinition property = GetProperty (type, realMatch);
 						if (property != null) {
 							if (property.GetMethod != null) {
-								MarkMethod (property.GetMethod, new DependencyInfo (DependencyKind.ReferencedBySpecialAttribute, attribute), type);
+								MarkMethod (property.GetMethod, new DependencyInfo (DependencyKind.ReferencedBySpecialAttribute, attribute), new MessageOrigin (type));
 							}
 							if (property.SetMethod != null) {
-								MarkMethod (property.SetMethod, new DependencyInfo (DependencyKind.ReferencedBySpecialAttribute, attribute), type);
+								MarkMethod (property.SetMethod, new DependencyInfo (DependencyKind.ReferencedBySpecialAttribute, attribute), new MessageOrigin (type));
 							}
 							continue;
 						}
@@ -1818,7 +1818,7 @@ namespace Mono.Linker.Steps
 				if (method.Name != method_name)
 					continue;
 
-				MarkMethod (method, reason, sourceLocationMember);
+				MarkMethod (method, reason, new MessageOrigin (sourceLocationMember));
 				count++;
 			}
 
@@ -1858,8 +1858,8 @@ namespace Mono.Linker.Steps
 					continue;
 
 				// This marks methods directly without reporting the property.
-				MarkMethod (property.GetMethod, reason, property);
-				MarkMethod (property.SetMethod, reason, property);
+				MarkMethod (property.GetMethod, reason, new MessageOrigin (property));
+				MarkMethod (property.SetMethod, reason, new MessageOrigin (property));
 			}
 		}
 
@@ -1972,7 +1972,7 @@ namespace Mono.Linker.Steps
 			bool marked = false;
 			foreach (MethodDefinition method in methods) {
 				if (predicate (method)) {
-					MarkMethod (method, reason, sourceLocationMember);
+					MarkMethod (method, reason, new MessageOrigin (sourceLocationMember));
 					marked = true;
 				}
 			}
@@ -1983,7 +1983,7 @@ namespace Mono.Linker.Steps
 		{
 			foreach (MethodDefinition method in methods) {
 				if (predicate (method)) {
-					return MarkMethod (method, reason, sourceLocationMember);
+					return MarkMethod (method, reason, new MessageOrigin (sourceLocationMember));
 				}
 			}
 
@@ -2294,21 +2294,21 @@ namespace Mono.Linker.Steps
 		void MarkMethodCollection (IList<MethodDefinition> methods, in DependencyInfo reason, IMemberDefinition sourceLocationMember)
 		{
 			foreach (MethodDefinition method in methods)
-				MarkMethod (method, reason, sourceLocationMember);
+				MarkMethod (method, reason, new MessageOrigin (sourceLocationMember));
 		}
 
 		protected internal void MarkIndirectlyCalledMethod (MethodDefinition method, in DependencyInfo reason, IMemberDefinition sourceLocationMember)
 		{
-			MarkMethod (method, reason, sourceLocationMember);
+			MarkMethod (method, reason, new MessageOrigin (sourceLocationMember));
 			Annotations.MarkIndirectlyCalledMethod (method);
 		}
 
-		protected virtual MethodDefinition MarkMethod (MethodReference reference, DependencyInfo reason, IMemberDefinition sourceLocationMember)
+		protected virtual MethodDefinition MarkMethod (MethodReference reference, DependencyInfo reason, MessageOrigin sourceLocationMember)
 		{
-			(reference, reason) = GetOriginalMethod (reference, reason, sourceLocationMember);
+			(reference, reason) = GetOriginalMethod (reference, reason, sourceLocationMember.MemberDefinition);
 
 			if (reference.DeclaringType is ArrayType arrayType) {
-				MarkType (reference.DeclaringType, new DependencyInfo (DependencyKind.DeclaringType, reference), sourceLocationMember);
+				MarkType (reference.DeclaringType, new DependencyInfo (DependencyKind.DeclaringType, reference), sourceLocationMember.MemberDefinition);
 
 				if (reference.Name == ".ctor") {
 					Annotations.MarkRelevantToVariantCasting (arrayType.Resolve ());
@@ -2319,13 +2319,10 @@ namespace Mono.Linker.Steps
 			if (reference.DeclaringType is GenericInstanceType) {
 				// Blame the method reference on the original reason without marking it.
 				Tracer.AddDirectDependency (reference, reason, marked: false);
-				MarkType (reference.DeclaringType, new DependencyInfo (DependencyKind.DeclaringType, reference), sourceLocationMember);
+				MarkType (reference.DeclaringType, new DependencyInfo (DependencyKind.DeclaringType, reference), sourceLocationMember.MemberDefinition);
 				// Mark the resolved method definition as a dependency of the reference.
 				reason = new DependencyInfo (DependencyKind.MethodOnGenericInstance, reference);
 			}
-
-			//			if (IgnoreScope (reference.DeclaringType.Scope))
-			//				return;
 
 			MethodDefinition method = reference.Resolve ();
 
@@ -2337,9 +2334,29 @@ namespace Mono.Linker.Steps
 			if (Annotations.GetAction (method) == MethodAction.Nothing)
 				Annotations.SetAction (method, MethodAction.Parse);
 
+			ProcessRequiresUnreferencedCode (method, sourceLocationMember);
 			EnqueueMethod (method, reason);
 
 			return method;
+		}
+
+		protected internal void ProcessRequiresUnreferencedCode (MethodDefinition method, MessageOrigin sourceLocationMember)
+		{
+			if (sourceLocationMember.MemberDefinition != null &&
+				Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (sourceLocationMember.MemberDefinition))
+				return;
+
+			if (Annotations.TryGetLinkerAttribute (method, out RequiresUnreferencedCodeAttribute requiresUnreferencedCode)) {
+				string message =
+					$"Calling '{method.GetDisplayName ()}' which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. " +
+					$"{requiresUnreferencedCode.Message}.";
+
+				if (requiresUnreferencedCode.Url != null) {
+					message += " " + requiresUnreferencedCode.Url;
+				}
+
+				_context.LogWarning (message, 2026, sourceLocationMember, MessageSubCategory.TrimAnalysis);
+			}
 		}
 
 		AssemblyDefinition ResolveAssembly (IMetadataScope scope)
@@ -2426,7 +2443,7 @@ namespace Mono.Linker.Steps
 
 			if (method.HasOverrides) {
 				foreach (MethodReference ov in method.Overrides) {
-					MarkMethod (ov, new DependencyInfo (DependencyKind.MethodImplOverride, method), method);
+					MarkMethod (ov, new DependencyInfo (DependencyKind.MethodImplOverride, method), new MessageOrigin (method));
 					MarkExplicitInterfaceImplementation (method, ov);
 				}
 			}
@@ -2447,7 +2464,7 @@ namespace Mono.Linker.Steps
 			if (method.IsPInvokeImpl || method.IsInternalCall) {
 				ProcessInteropMethod (method);
 			}
-
+			
 			if (ShouldParseMethodBody (method))
 				MarkMethodBody (method.Body);
 
@@ -2494,7 +2511,7 @@ namespace Mono.Linker.Steps
 			MarkInterfaceImplementations (type);
 
 			foreach (var method in GetRequiredMethodsForInstantiatedType (type))
-				MarkMethod (method, new DependencyInfo (DependencyKind.MethodForInstantiatedType, type), type);
+				MarkMethod (method, new DependencyInfo (DependencyKind.MethodForInstantiatedType, type), new MessageOrigin (type));
 
 			MarkImplicitlyUsedFields (type);
 
@@ -2615,7 +2632,7 @@ namespace Mono.Linker.Steps
 				if (base_method.DeclaringType.IsInterface && !method.DeclaringType.IsInterface)
 					continue;
 
-				MarkMethod (base_method, new DependencyInfo (DependencyKind.BaseMethod, method), method);
+				MarkMethod (base_method, new DependencyInfo (DependencyKind.BaseMethod, method), new MessageOrigin (method));
 				MarkBaseMethods (base_method);
 			}
 		}
@@ -2801,7 +2818,7 @@ namespace Mono.Linker.Steps
 			if (method == null)
 				return;
 
-			MarkMethod (method, reason, sourceLocationMember);
+			MarkMethod (method, reason, new MessageOrigin (sourceLocationMember));
 		}
 
 		protected virtual void MarkMethodBody (MethodBody body)
@@ -2886,7 +2903,7 @@ namespace Mono.Linker.Steps
 					};
 					requiresReflectionMethodBodyScanner |=
 						ReflectionMethodBodyScanner.RequiresReflectionMethodBodyScannerForCallSite (_context, (MethodReference) instruction.Operand);
-					MarkMethod ((MethodReference) instruction.Operand, new DependencyInfo (dependencyKind, method), method);
+					MarkMethod ((MethodReference) instruction.Operand, new DependencyInfo (dependencyKind, method), new MessageOrigin (method, instruction.Offset));
 					break;
 				}
 
@@ -2897,7 +2914,7 @@ namespace Mono.Linker.Steps
 					if (token is TypeReference typeReference) {
 						MarkTypeVisibleToReflection (typeReference, reason, method);
 					} else if (token is MethodReference methodReference) {
-						MarkMethod (methodReference, reason, method);
+						MarkMethod (methodReference, reason, new MessageOrigin (method, instruction.Offset));
 					} else {
 						MarkField ((FieldReference) token, reason);
 					}

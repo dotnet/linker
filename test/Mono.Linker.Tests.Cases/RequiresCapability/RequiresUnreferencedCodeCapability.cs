@@ -15,6 +15,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 	[SkipKeptItemsValidation]
 	public class RequiresUnreferencedCodeCapability
 	{
+		[ExpectedWarning ("IL2026", "Calling 'Mono.Linker.Tests.Cases.RequiresCapability.RequiresUnreferencedCodeCapability.BaseType.VirtualMethodRequiresUnreferencedCode()' " +
+			"which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. Message for --VirtualMethodRequiresUnreferencedCode--.")]
 		public static void Main ()
 		{
 			TestRequiresWithMessageOnlyOnMethod ();
@@ -24,6 +26,10 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			TestRequiresSuppressesWarningsFromReflectionAnalysis ();
 			TestDuplicateRequiresAttribute ();
 			TestRequiresUnreferencedCodeOnlyThroughReflection ();
+			TestVirtualMethodRequiresUnreferencedCode ();
+			TestStaticCctorRequiresUnreferencedCode ();
+			TestNestedRequiresUnreferencedCode ();
+			TestDynamicallyAccessedMembersWithRequiresUnreferencedCode (typeof (BaseType));
 		}
 
 		[ExpectedWarning ("IL2026",
@@ -163,14 +169,78 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		{
 		}
 
-		// issue: https://github.com/mono/linker/issues/1607
-		// Linker currently doesn't report a warning in this case
-		// [ExpectedWarning ("IL2026", "--RequiresUnreferencedCodeOnlyThroughReflection--")]
+		[ExpectedWarning ("IL2026", "--RequiresUnreferencedCodeOnlyThroughReflection--")]
 		static void TestRequiresUnreferencedCodeOnlyThroughReflection ()
 		{
-			typeof (RequiresUnreferencedCodeAttribute)
+			typeof (RequiresUnreferencedCodeCapability)
 				.GetMethod (nameof (RequiresUnreferencedCodeOnlyThroughReflection), System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)
 				.Invoke (null, new object[0]);
+		}
+
+		class BaseType
+		{
+			[RequiresUnreferencedCode ("Message for --VirtualMethodRequiresUnreferencedCode--")]
+			public virtual void VirtualMethodRequiresUnreferencedCode ()
+			{
+			}
+		}
+
+		class TypeWhichOverridesMethod : BaseType
+		{
+			public override void VirtualMethodRequiresUnreferencedCode ()
+			{
+			}
+		}
+
+		[ExpectedWarning ("IL2026", "--VirtualMethodRequiresUnreferencedCode--")]
+		static void TestVirtualMethodRequiresUnreferencedCode ()
+		{
+			var tmp = new TypeWhichOverridesMethod ();
+			tmp.VirtualMethodRequiresUnreferencedCode ();
+		}
+
+		[ExpectedWarning ("IL2026", "--TestStaticCtor--")]
+		class StaticCtor
+		{
+			[RequiresUnreferencedCode ("Message for --TestStaticCtor--")]
+			static StaticCtor ()
+			{
+			}
+		}
+
+		static void TestStaticCctorRequiresUnreferencedCode ()
+		{
+			_ = new StaticCtor ();
+		}
+
+		//[LogDoesNotContain ("Message for --NestedRequiresUnreferencedCode--")]
+		[RequiresUnreferencedCode ("")]
+		static void TestNestedRequiresUnreferencedCode ()
+		{
+			CallNestedRequiresUnreferencedCode ();
+		}
+
+		static void CallNestedRequiresUnreferencedCode ()
+		{
+			NestedRequiresUnreferencedCode ();
+		}
+
+		[RequiresUnreferencedCode ("Message for --NestedRequiresUnreferencedCode--")]
+		static void NestedRequiresUnreferencedCode ()
+		{
+		}
+
+		public class DynamicallyAccessedTypeWithRequiresUnreferencedCode
+		{
+			[RequiresUnreferencedCode ("Message for --RequiresUnreferencedCode--")]
+			public void RequiresUnreferencedCode ()
+			{
+			}
+		}
+
+		static void TestDynamicallyAccessedMembersWithRequiresUnreferencedCode (
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
+		{
 		}
 	}
 }
