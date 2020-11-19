@@ -28,7 +28,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			TestRequiresUnreferencedCodeOnlyThroughReflection ();
 			TestVirtualMethodRequiresUnreferencedCode ();
 			TestStaticCctorRequiresUnreferencedCode ();
-			TestNestedRequiresUnreferencedCode ();
 			TestDynamicallyAccessedMembersWithRequiresUnreferencedCode (typeof (BaseType));
 		}
 
@@ -211,23 +210,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		static void TestStaticCctorRequiresUnreferencedCode ()
 		{
 			_ = new StaticCtor ();
-		}
-
-		//[LogDoesNotContain ("Message for --NestedRequiresUnreferencedCode--")]
-		[RequiresUnreferencedCode ("")]
-		static void TestNestedRequiresUnreferencedCode ()
-		{
-			CallNestedRequiresUnreferencedCode ();
-		}
-
-		static void CallNestedRequiresUnreferencedCode ()
-		{
-			NestedRequiresUnreferencedCode ();
-		}
-
-		[RequiresUnreferencedCode ("Message for --NestedRequiresUnreferencedCode--")]
-		static void NestedRequiresUnreferencedCode ()
-		{
 		}
 
 		public class DynamicallyAccessedTypeWithRequiresUnreferencedCode

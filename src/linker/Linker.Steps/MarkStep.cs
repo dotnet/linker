@@ -2342,8 +2342,13 @@ namespace Mono.Linker.Steps
 
 		protected internal void ProcessRequiresUnreferencedCode (MethodDefinition method, MessageOrigin sourceLocationMember)
 		{
+			// If the caller of a method is already marked with `RequiresUnreferencedCodeAttribute` a new warning should not
+			// be produced for the callee.
+			// Overrides of methods annotated with `RequiresUnreferencedCodeAttribute` should not produce a warning here,
+			// the warning should be put in the virtual method instead.
 			if (sourceLocationMember.MemberDefinition != null &&
-				Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (sourceLocationMember.MemberDefinition))
+				Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (sourceLocationMember.MemberDefinition) ||
+				Annotations.GetBaseMethods (method) != null)
 				return;
 
 			if (Annotations.TryGetLinkerAttribute (method, out RequiresUnreferencedCodeAttribute requiresUnreferencedCode)) {

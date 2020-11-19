@@ -278,6 +278,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				"All overridden methods must have 'RequiresUnreferencedCodeAttribute'.")]
 			[RequiresUnreferencedCode ("")]
 			public override void RequiresUnreferencedCodeBaseWithoutDerivedWith_ () { }
+			[LogDoesNotContain ("DerivedClass.RequiresUnreferencedCodeBaseWithDerivedWith_")]
 			[RequiresUnreferencedCode ("")]
 			public override void RequiresUnreferencedCodeBaseWithDerivedWith_ () { }
 			[LogDoesNotContain ("DerivedClass.RequiresUnreferencedCodeBaseWithoutDerivedWithout")]
@@ -430,6 +431,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 
 			// === RequiresUnreferencedCode ===
+			[LogDoesNotContain ("DerivedWithNoAnnotations.RequiresUnreferencedCodeBaseWithDerivedWith_")]
 			[RequiresUnreferencedCode ("")]
 			public override void RequiresUnreferencedCodeBaseWithDerivedWith_ () { }
 			[LogContains ("DerivedWithNoAnnotations.RequiresUnreferencedCodeBaseWithDerivedWithout")]
@@ -541,6 +543,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 
 			// === RequiresUnreferencedCode ===
+			[LogDoesNotContain ("ImplementationClass.RequiresUnreferencedCodeInterfaceBaseWithImplementationWith_")]
 			[RequiresUnreferencedCode ("")]
 			public void RequiresUnreferencedCodeInterfaceBaseWithImplementationWith_ () { }
 			[LogContains ("ImplementationClass.RequiresUnreferencedCodeInterfaceBaseWithoutImplementationWith_")]
