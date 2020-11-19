@@ -797,8 +797,7 @@ namespace Mono.Linker.Dataflow
 						}
 						foreach (var typeNameValue in methodParams[0].UniqueValues ()) {
 							if (typeNameValue is KnownStringValue knownStringValue) {
-								TypeReference typeRef = AssemblyUtilities.ResolveFullyQualifiedTypeName (_context, knownStringValue.Contents);
-								TypeDefinition foundType = typeRef.ResolveToMainTypeDefinition ();
+								TypeDefinition foundType = AssemblyUtilities.ResolveFullyQualifiedTypeName (_context, knownStringValue.Contents);
 								if (foundType == null) {
 									// Intentionally ignore - it's not wrong for code to call Type.GetType on non-existing name, the code might expect null/exception back.
 									reflectionContext.RecordHandledPattern ();
@@ -1336,9 +1335,8 @@ namespace Mono.Linker.Dataflow
 								continue;
 							}
 
-							TypeReference typeRef = resolvedAssembly.MainModule.GetType (typeNameStringValue.Contents.ToCecilName ());
-							var resolvedType = typeRef?.Resolve ();
-							if (resolvedType == null || typeRef is ArrayType) {
+							var resolvedType = resolvedAssembly.FindType (typeNameStringValue.Contents);
+							if (resolvedType == null) {
 								// It's not wrong to have a reference to non-existing type - the code may well expect to get an exception in this case
 								// Note that we did find the assembly, so it's not a linker config problem, it's either intentional, or wrong versions of assemblies
 								// but linker can't know that.
@@ -1569,13 +1567,12 @@ namespace Mono.Linker.Dataflow
 				} else if (uniqueValue is SystemTypeValue systemTypeValue) {
 					MarkTypeForDynamicallyAccessedMembers (ref reflectionContext, systemTypeValue.TypeRepresented, requiredMemberTypes);
 				} else if (uniqueValue is KnownStringValue knownStringValue) {
-					TypeReference typeRef = AssemblyUtilities.ResolveFullyQualifiedTypeName (_context, knownStringValue.Contents);
-					TypeDefinition foundType = typeRef?.ResolveToMainTypeDefinition ();
+					TypeDefinition foundType = AssemblyUtilities.ResolveFullyQualifiedTypeName (_context, knownStringValue.Contents);
 					if (foundType == null) {
 						// Intentionally ignore - it's not wrong for code to call Type.GetType on non-existing name, the code might expect null/exception back.
 						reflectionContext.RecordHandledPattern ();
 					} else {
-						MarkType (ref reflectionContext, typeRef);
+						MarkType (ref reflectionContext, foundType);
 						MarkTypeForDynamicallyAccessedMembers (ref reflectionContext, foundType, requiredMemberTypes);
 					}
 				} else if (uniqueValue == NullValue.Instance) {
