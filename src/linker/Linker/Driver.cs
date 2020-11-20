@@ -793,8 +793,9 @@ namespace Mono.Linker
 			}
 
 			value = Unquote (value);
-			string[] values = value.Split (new char[] { ',', ';', ' ', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-			foreach (string id in values) {
+			string[] values = value.Split (new char[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+			foreach (string v in values) {
+				var id = v.Trim ();
 				if (!id.StartsWith ("IL", StringComparison.Ordinal) || !ushort.TryParse (id.Substring (2), out ushort code))
 					continue;
 
