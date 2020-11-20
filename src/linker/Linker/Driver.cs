@@ -139,7 +139,8 @@ namespace Mono.Linker
 						// treat backslashes before " as escapes
 						numBackslash /= 2;
 					}
-					argBuilder.Append (new String ('\\', numBackslash));
+					if (numBackslash > 0)
+						argBuilder.Append (new String ('\\', numBackslash));
 					if (cur < 0 || (!inquote && char.IsWhiteSpace ((char) cur)))
 						break;
 					if (copyChar)
