@@ -90,10 +90,10 @@ namespace ILLink.RoslynAnalyzer
 							if (method.MethodKind == MethodKind.PropertyGet || method.MethodKind == MethodKind.PropertySet) {
 								methodName.Append (method.ContainingType + "." + method.Name + "(");
 								bool shouldPrependComma = false;
-								foreach (var parameter in method.Parameters) { 
+								foreach (var parameter in method.Parameters) {
 									if (shouldPrependComma)
 										methodName.Append (",");
-									methodName.Append(parameter.Type.ToDisplayString (new SymbolDisplayFormat ()));
+									methodName.Append (parameter.Type.ToDisplayString (new SymbolDisplayFormat ()));
 									shouldPrependComma = true;
 								}
 								methodName.Append (")");
