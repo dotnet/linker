@@ -102,7 +102,7 @@ namespace Mono.Linker
 		public static void ParseResponseFile (TextReader reader, Queue<string> result)
 		{
 			int cur;
-			while ((cur = reader.Read ()) > 0) {
+			while ((cur = reader.Read ()) >= 0) {
 				// skip whitespace
 				while (char.IsWhiteSpace ((char) cur)) {
 					if ((cur = reader.Read ()) < 0)
