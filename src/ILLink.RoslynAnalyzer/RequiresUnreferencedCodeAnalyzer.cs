@@ -5,7 +5,7 @@
 using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
-using System.Linq;
+using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -79,24 +79,39 @@ namespace ILLink.RoslynAnalyzer
 					Location location)
 				{
 					var attributes = method.GetAttributes ();
-					string methodName;
-					if (method.MethodKind == MethodKind.PropertyGet || method.MethodKind == MethodKind.PropertySet)
-						methodName = method.ContainingType + "." + method.Name + "(" + string.Join (",", method.Parameters.Select (m => m.Type.ToDisplayString (new SymbolDisplayFormat (
-							miscellaneousOptions: 0)))) + ")";
-					else
-						methodName = method.OriginalDefinition.ToString ();
 
 					foreach (var attr in attributes) {
 						if (attr.AttributeClass is { } attrClass &&
 							IsNamedType (attrClass, "System.Diagnostics.CodeAnalysis.RequiresUnreferencedCodeAttribute") &&
 							attr.ConstructorArguments.Length == 1 &&
 							attr.ConstructorArguments[0] is { Type: { SpecialType: SpecialType.System_String } } ctorArg) {
+
+							StringBuilder methodName = new StringBuilder ();
+							if (method.MethodKind == MethodKind.PropertyGet || method.MethodKind == MethodKind.PropertySet) {
+								methodName.Append (method.ContainingType + "." + method.Name + "(");
+								bool shouldPrependComma = false;
+								foreach (var parameter in method.Parameters) { 
+									if (shouldPrependComma)
+										methodName.Append (",");
+									methodName.Append(parameter.Type.ToDisplayString (new SymbolDisplayFormat ()));
+									shouldPrependComma = true;
+								}
+								methodName.Append (")");
+
+							} else
+								methodName.Append (method.OriginalDefinition.ToString ());
+
+							string urlArgument = "";
+							foreach (var namedArgument in attr.NamedArguments) {
+								if (namedArgument.Key == "Url")
+									urlArgument = namedArgument.Value.Value?.ToString () ?? "";
+							}
 							operationContext.ReportDiagnostic (Diagnostic.Create (
 								s_rule,
 								location,
 								methodName,
 								(string) ctorArg.Value!,
-								attr.NamedArguments.FirstOrDefault (na => na.Key == "Url").Value.Value));
+								urlArgument));
 						}
 					}
 				}

@@ -63,17 +63,19 @@ namespace ILLink.RoslynAnalyzer.Tests
 			foreach (var attr in attrs) {
 				switch (attr.Name.ToString ()) {
 				case "ExpectedWarning":
+					var expectedMessageContains = attr.ArgumentList!.Arguments.Select (m => GetStringFromExpr (m.Expression)).ToList ();
+					if (!expectedMessageContains[0].StartsWith ("IL"))
+						break;
+					expectedMessageContains.RemoveAt (0);
 					Assert.True (
 						filtered.Any (mc => {
-							foreach (var attributeArgument in attr.ArgumentList!.Arguments) {
-								if (GetStringFromExpr (attributeArgument.Expression).StartsWith ("IL"))
-									continue;
-								if (!mc.Contains (GetStringFromExpr (attributeArgument.Expression)))
+							foreach (var expectedMessage in expectedMessageContains) {
+								if (!mc.Contains (expectedMessage))
 									return false;
 							}
 							return true;
 						}),
-					$"Expected to find warning containing:{string.Join (" ", attr.ArgumentList!.Arguments.Select (m => GetStringFromExpr (m.Expression).StartsWith ("IL") ? "" : "'" + GetStringFromExpr (m.Expression) + "'"))}" +
+					$"Expected to find warning containing:{string.Join (" ", expectedMessageContains.Select (m => "'" + m + "'"))}" +
 					$", but no such message was found.{ Environment.NewLine}In diagnostics: {string.Join (Environment.NewLine, filtered)}");
 					break;
 				case "LogContains": {
