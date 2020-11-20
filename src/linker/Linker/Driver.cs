@@ -104,7 +104,7 @@ namespace Mono.Linker
 			int cur;
 			while ((cur = reader.Read ()) > 0) {
 				// skip whitespace
-				while (char.IsWhiteSpace ((char)cur)) {
+				while (char.IsWhiteSpace ((char) cur)) {
 					if ((cur = reader.Read ()) < 0)
 						break;
 				}
@@ -143,7 +143,7 @@ namespace Mono.Linker
 					if (cur < 0 || (!inquote && char.IsWhiteSpace ((char) cur)))
 						break;
 					if (copyChar)
-						argBuilder.Append ((char)cur);
+						argBuilder.Append ((char) cur);
 					cur = reader.Read ();
 				}
 				result.Enqueue (argBuilder.ToString ());
