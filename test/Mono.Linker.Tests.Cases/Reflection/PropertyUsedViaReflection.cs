@@ -1,7 +1,7 @@
-﻿using Mono.Linker.Tests.Cases.Expectations.Assertions;
-using System;
-using Mono.Linker.Tests.Cases.Expectations.Metadata;
+﻿using System;
 using System.Reflection;
+using Mono.Linker.Tests.Cases.Expectations.Assertions;
+using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.Reflection
 {
@@ -17,6 +17,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			TestNullName ();
 			TestEmptyName ();
 			TestNonExistingName ();
+			TestPropertyOfArray ();
 			TestNullType ();
 			TestDataFlowType ();
 			TestIfElse (1);
@@ -80,6 +81,16 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		static void TestNonExistingName ()
 		{
 			var property = typeof (PropertyUsedViaReflection).GetProperty ("NonExisting");
+		}
+
+		[Kept]
+		[RecognizedReflectionAccessPattern (
+			typeof (Type), nameof (Type.GetProperty), new Type[] { typeof (string) },
+			typeof (Array), nameof (Array.LongLength))]
+		static void TestPropertyOfArray ()
+		{
+			var property = typeof (int[]).GetProperty ("LongLength");
+			property.GetValue (null);
 		}
 
 		[Kept]

@@ -113,7 +113,7 @@ namespace Mono.Linker.Dataflow
 		{
 			ValueNode valueNode;
 			if (argument.Type.Name == "Type") {
-				TypeDefinition referencedType = ((TypeReference) argument.Value).Resolve ();
+				TypeDefinition referencedType = ((TypeReference) argument.Value).ResolveToMainTypeDefinition ();
 				valueNode = referencedType == null ? null : new SystemTypeValue (referencedType);
 			} else if (argument.Type.MetadataType == MetadataType.String) {
 				valueNode = new KnownStringValue ((string) argument.Value);
@@ -130,7 +130,7 @@ namespace Mono.Linker.Dataflow
 			var annotation = _context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameter);
 			Debug.Assert (annotation != DynamicallyAccessedMemberTypes.None);
 
-			ValueNode valueNode = GetValueNodeFromGenericArgument (genericArgument);
+			ValueNode valueNode = GetTypeValueNodeFromGenericArgument (genericArgument);
 			bool enableReflectionPatternReporting = !(source is MethodDefinition sourceMethod) || ShouldEnableReflectionPatternReporting (sourceMethod);
 
 			var reflectionContext = new ReflectionPatternContext (_context, enableReflectionPatternReporting, source, genericParameter);
@@ -138,14 +138,14 @@ namespace Mono.Linker.Dataflow
 			RequireDynamicallyAccessedMembers (ref reflectionContext, annotation, valueNode, genericParameter);
 		}
 
-		ValueNode GetValueNodeFromGenericArgument (TypeReference genericArgument)
+		ValueNode GetTypeValueNodeFromGenericArgument (TypeReference genericArgument)
 		{
 			if (genericArgument is GenericParameter inputGenericParameter) {
 				// Technically this should be a new value node type as it's not a System.Type instance representation, but just the generic parameter
 				// That said we only use it to perform the dynamically accessed members checks and for that purpose treating it as System.Type is perfectly valid.
 				return new SystemTypeForGenericParameterValue (inputGenericParameter, _context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (inputGenericParameter));
 			} else {
-				TypeDefinition genericArgumentTypeDef = genericArgument.Resolve ();
+				TypeDefinition genericArgumentTypeDef = genericArgument.ResolveToMainTypeDefinition ();
 				if (genericArgumentTypeDef != null) {
 					return new SystemTypeValue (genericArgumentTypeDef);
 				} else {
@@ -748,13 +748,13 @@ namespace Mono.Linker.Dataflow
 								if (methodParam.ParameterIndex == 0) {
 									staticType = callingMethodDefinition.DeclaringType;
 								} else {
-									staticType = callingMethodDefinition.Parameters[methodParam.ParameterIndex - 1].ParameterType.Resolve ();
+									staticType = callingMethodDefinition.Parameters[methodParam.ParameterIndex - 1].ParameterType.ResolveToMainTypeDefinition ();
 								}
 							} else {
-								staticType = callingMethodDefinition.Parameters[methodParam.ParameterIndex].ParameterType.Resolve ();
+								staticType = callingMethodDefinition.Parameters[methodParam.ParameterIndex].ParameterType.ResolveToMainTypeDefinition ();
 							}
 						} else if (methodParams[0] is LoadFieldValue loadedField) {
-							staticType = loadedField.Field.FieldType.Resolve ();
+							staticType = loadedField.Field.FieldType.ResolveToMainTypeDefinition ();
 						}
 
 						if (staticType != null) {
@@ -1156,7 +1156,7 @@ namespace Mono.Linker.Dataflow
 						RequireDynamicallyAccessedMembers (
 							ref reflectionContext,
 							DynamicallyAccessedMemberTypes.PublicParameterlessConstructor,
-							GetValueNodeFromGenericArgument (genericCalledMethod.GenericArguments[0]),
+							GetTypeValueNodeFromGenericArgument (genericCalledMethod.GenericArguments[0]),
 							calledMethodDefinition.GenericParameters[0]);
 					}
 					break;
@@ -1572,6 +1572,7 @@ namespace Mono.Linker.Dataflow
 						// Intentionally ignore - it's not wrong for code to call Type.GetType on non-existing name, the code might expect null/exception back.
 						reflectionContext.RecordHandledPattern ();
 					} else {
+						MarkType (ref reflectionContext, foundType);
 						MarkTypeForDynamicallyAccessedMembers (ref reflectionContext, foundType, requiredMemberTypes);
 					}
 				} else if (uniqueValue == NullValue.Instance) {
@@ -1643,6 +1644,12 @@ namespace Mono.Linker.Dataflow
 					break;
 				}
 			}
+		}
+
+		void MarkType (ref ReflectionPatternContext reflectionContext, TypeReference typeReference)
+		{
+			var source = reflectionContext.Source;
+			reflectionContext.RecordRecognizedPattern (typeReference?.Resolve (), () => _markStep.MarkTypeVisibleToReflection (typeReference, new DependencyInfo (DependencyKind.AccessedViaReflection, source), source));
 		}
 
 		void MarkMethod (ref ReflectionPatternContext reflectionContext, MethodDefinition method)
