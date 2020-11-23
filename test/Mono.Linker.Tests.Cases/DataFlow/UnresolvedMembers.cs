@@ -108,7 +108,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		[Kept]
 		[ExpectedWarning ("IL2072", nameof (Object.GetType))]
-		static void UnresolvedMethodParameter()
+		static void UnresolvedMethodParameter ()
 		{
 			RequirePublicMethods (typeof (Dependencies.UnresolvedType));
 		}

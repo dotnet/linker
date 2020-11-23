@@ -111,7 +111,10 @@ namespace Mono.Linker.Dataflow
 			ValueNode valueNode;
 			if (argument.Type.Name == "Type") {
 				TypeDefinition referencedType = ((TypeReference) argument.Value).ResolveToMainTypeDefinition ();
-				valueNode = referencedType == null ? UnknownValue.Instance : new SystemTypeValue (referencedType);
+				if (referencedType == null)
+					valueNode = UnknownValue.Instance;
+				else
+					valueNode = new SystemTypeValue (referencedType);
 			} else if (argument.Type.MetadataType == MetadataType.String) {
 				valueNode = new KnownStringValue ((string) argument.Value);
 			} else {
