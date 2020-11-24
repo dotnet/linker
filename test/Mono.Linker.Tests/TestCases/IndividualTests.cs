@@ -95,8 +95,13 @@ namespace Mono.Linker.Tests.TestCases
 				.Where (lm => lm.Category != MessageCategory.Info && lm.Category != MessageCategory.Diagnostic).ToList ();
 			loggedMessages.Sort ();
 
+			var sortedWarnings = "SortedWarnings.txt";
+#if !ILLINK
+			sortedWarnings = "SortedWarnings_Mono.txt";
+#endif
+
 			Assert.That (loggedMessages.Select (m => m.ToString ()), Is.EquivalentTo (
-				File.ReadAllLines (TestsDirectory.Combine ($"TestCases/Dependencies/SortedWarnings.txt"))));
+				File.ReadAllLines (TestsDirectory.Combine ($"TestCases/Dependencies/{sortedWarnings}"))));
 		}
 
 		[Test]

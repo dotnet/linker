@@ -456,7 +456,7 @@ the error code. For example:
   </linker>
   ```
 
-#### `IL2026` Trim analysis: Calling 'method' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. [message]. [url]
+#### `IL2026` Trim analysis: 'method' method has 'RequiresUnreferencedCodeAttribute' which can break functionality when trimming application code. [message]. [url]
 
 - The linker found a call to a method which is annotated with `RequiresUnreferencedCodeAttribute` which can break functionality of a trimmed application.
 
@@ -468,7 +468,7 @@ the error code. For example:
 
   void TestMethod()
   {
-      // IL2026: Calling 'MethodWithUnreferencedCodeUsage' which has 'RequiresUnreferencedCodeAttribute' 
+      // IL2026: method 'MethodWithUnreferencedCodeUsage' has 'RequiresUnreferencedCodeAttribute' which
       // can break functionality when trimming application code. Use 'MethodFriendlyToTrimming' instead. http://help/unreferencedcode
       MethodWithUnreferencedCodeUsage();
   }
@@ -1480,7 +1480,7 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
   }
   ```
 
-#### 'IL2097': Trim analysis: Field 'field' has 'DynamicallyAccessedMembersAttribute', but that attribute can only be applied to fields of type 'System.Type' or 'System.String'
+#### `IL2097`: Trim analysis: Field 'field' has 'DynamicallyAccessedMembersAttribute', but that attribute can only be applied to fields of type 'System.Type' or 'System.String'
 
 - `DynamicallyAccessedMembersAttribute` is only applicable to items of type `System.Type` or `System.String` (or derived), on all other types the attribute will be ignored. Using the attribute on any other type is likely incorrect and unintentional.
 
@@ -1490,7 +1490,7 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
   object _valueField;
   ```
 
-#### 'IL2098': Trim analysis: Parameter 'parameter' of method 'method' has 'DynamicallyAccessedMembersAttribute', but that attribute can only be applied to parameters of type 'System.Type' or 'System.String'
+#### `IL2098`: Trim analysis: Parameter 'parameter' of method 'method' has 'DynamicallyAccessedMembersAttribute', but that attribute can only be applied to parameters of type 'System.Type' or 'System.String'
 
 - `DynamicallyAccessedMembersAttribute` is only applicable to items of type `System.Type` or `System.String` (or derived), on all other types the attribute will be ignored. Using the attribute on any other type is likely incorrect and unintentional.
 
@@ -1502,7 +1502,7 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
   }
   ```
 
-#### 'IL2099': Trim analysis: Property 'property' has 'DynamicallyAccessedMembersAttribute', but that attribute can only be applied to properties of type 'System.Type' or 'System.String'
+#### `IL2099`: Trim analysis: Property 'property' has 'DynamicallyAccessedMembersAttribute', but that attribute can only be applied to properties of type 'System.Type' or 'System.String'
 
 - `DynamicallyAccessedMembersAttribute` is only applicable to items of type `System.Type` or `System.String` (or derived), on all other types the attribute will be ignored. Using the attribute on any other type is likely incorrect and unintentional.
 

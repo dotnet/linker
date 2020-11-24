@@ -15,8 +15,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 	[SkipKeptItemsValidation]
 	public class RequiresUnreferencedCodeCapability
 	{
-		[ExpectedWarning ("IL2026", "Calling 'Mono.Linker.Tests.Cases.RequiresCapability.RequiresUnreferencedCodeCapability.BaseType.VirtualMethodRequiresUnreferencedCode()' " +
-			"which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. Message for --VirtualMethodRequiresUnreferencedCode--.")]
 		public static void Main ()
 		{
 			TestRequiresWithMessageOnlyOnMethod ();
@@ -28,12 +26,13 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			TestRequiresUnreferencedCodeOnlyThroughReflection ();
 			TestVirtualMethodRequiresUnreferencedCode ();
 			TestStaticCctorRequiresUnreferencedCode ();
-			TestDynamicallyAccessedMembersWithRequiresUnreferencedCode (typeof (BaseType));
+			TestDynamicallyAccessedMembersWithRequiresUnreferencedCode (typeof (DynamicallyAccessedTypeWithRequiresUnreferencedCode));
+			TestInterfaceMethodWithRequiresUnreferencedCode ();
 		}
 
 		[ExpectedWarning ("IL2026",
-			"Calling 'Mono.Linker.Tests.Cases.RequiresCapability.RequiresUnreferencedCodeCapability.RequiresWithMessageOnly()' " +
-			"which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. " +
+			"'Mono.Linker.Tests.Cases.RequiresCapability.RequiresUnreferencedCodeCapability.RequiresWithMessageOnly()' method " +
+			"has 'RequiresUnreferencedCodeAttribute' which can break functionality when trimming application code. " +
 			"Message for --RequiresWithMessageOnly--.")]
 		static void TestRequiresWithMessageOnlyOnMethod ()
 		{
@@ -46,8 +45,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		}
 
 		[ExpectedWarning ("IL2026",
-			"Calling 'Mono.Linker.Tests.Cases.RequiresCapability.RequiresUnreferencedCodeCapability.RequiresWithMessageAndUrl()' " +
-			"which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. " +
+			"'Mono.Linker.Tests.Cases.RequiresCapability.RequiresUnreferencedCodeCapability.RequiresWithMessageAndUrl()' method " +
+			"has 'RequiresUnreferencedCodeAttribute' which can break functionality when trimming application code. " +
 			"Message for --RequiresWithMessageAndUrl--. " +
 			"https://helpurl")]
 		static void TestRequiresWithMessageAndUrlOnMethod ()
@@ -60,10 +59,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		{
 		}
 
-		[LogContains (
-			"warning IL2026: Mono.Linker.Tests.Cases.RequiresCapability.RequiresUnreferencedCodeCapability.TestRequiresOnConstructor(): " +
-			"Calling 'Mono.Linker.Tests.Cases.RequiresCapability.RequiresUnreferencedCodeCapability.ConstructorRequires.ConstructorRequires()' " +
-			"which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. " +
+		[ExpectedWarning ("IL2026", "'Mono.Linker.Tests.Cases.RequiresCapability.RequiresUnreferencedCodeCapability.ConstructorRequires.ConstructorRequires()' method " +
+			"has 'RequiresUnreferencedCodeAttribute' which can break functionality when trimming application code. " +
 			"Message for --ConstructorRequires--.")]
 		static void TestRequiresOnConstructor ()
 		{
@@ -79,12 +76,12 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		}
 
 		[ExpectedWarning ("IL2026",
-			"Calling 'Mono.Linker.Tests.Cases.RequiresCapability.RequiresUnreferencedCodeCapability.get_PropertyRequires()' " +
-			"which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. " +
+			"'Mono.Linker.Tests.Cases.RequiresCapability.RequiresUnreferencedCodeCapability.get_PropertyRequires()' method " +
+			"has 'RequiresUnreferencedCodeAttribute' which can break functionality when trimming application code. " +
 			"Message for --getter PropertyRequires--.")]
 		[ExpectedWarning ("IL2026",
-			"Calling 'Mono.Linker.Tests.Cases.RequiresCapability.RequiresUnreferencedCodeCapability.set_PropertyRequires(Int32)' " +
-			"which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. " +
+			"'Mono.Linker.Tests.Cases.RequiresCapability.RequiresUnreferencedCodeCapability.set_PropertyRequires(Int32)' method " +
+			"has 'RequiresUnreferencedCodeAttribute' which can break functionality when trimming application code. " +
 			"Message for --setter PropertyRequires--.")]
 		static void TestRequiresOnPropertyGetterAndSetter ()
 		{
@@ -101,8 +98,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		}
 
 		[ExpectedWarning ("IL2026",
-			"Calling 'Mono.Linker.Tests.Cases.RequiresCapability.RequiresUnreferencedCodeCapability.RequiresAndCallsOtherRequiresMethods<TPublicMethods>()' " +
-			"which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. " +
+			"'Mono.Linker.Tests.Cases.RequiresCapability.RequiresUnreferencedCodeCapability.RequiresAndCallsOtherRequiresMethods<TPublicMethods>()' method " +
+			"has 'RequiresUnreferencedCodeAttribute' which can break functionality when trimming application code. " +
 			"Message for --RequiresAndCallsOtherRequiresMethods--.")]
 		static void TestRequiresSuppressesWarningsFromReflectionAnalysis ()
 		{
@@ -186,6 +183,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		class TypeWhichOverridesMethod : BaseType
 		{
+			[ExpectedWarning ("IL2046", "All overridden methods must have 'RequiresUnreferencedCodeAttribute'.")]
 			public override void VirtualMethodRequiresUnreferencedCode ()
 			{
 			}
@@ -212,6 +210,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			_ = new StaticCtor ();
 		}
 
+		[ExpectedWarning ("IL2026", "'Mono.Linker.Tests.Cases.RequiresCapability.RequiresUnreferencedCodeCapability.DynamicallyAccessedTypeWithRequiresUnreferencedCode.RequiresUnreferencedCode()' method " +
+			"has 'RequiresUnreferencedCodeAttribute' which can break functionality when trimming application code. Message for --RequiresUnreferencedCode--.")]
 		public class DynamicallyAccessedTypeWithRequiresUnreferencedCode
 		{
 			[RequiresUnreferencedCode ("Message for --RequiresUnreferencedCode--")]
@@ -223,6 +223,28 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		static void TestDynamicallyAccessedMembersWithRequiresUnreferencedCode (
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
 		{
+		}
+
+		public interface IRequiresUnreferencedCode
+		{
+			[RequiresUnreferencedCode ("Message for --IRequiresUnreferencedCode.RequiresUnreferencedCodeMethod--")]
+			public void RequiresUnreferencedCodeMethod ();
+		}
+
+		public class ImplementationClass : IRequiresUnreferencedCode
+		{
+			[RequiresUnreferencedCode ("Message for --ImplementationClass.RequiresUnreferencedCodeMethod--")]
+			public void RequiresUnreferencedCodeMethod ()
+			{
+			}
+		}
+
+		[LogDoesNotContain ("ImplementationClass.RequiresUnreferencedCodeMethod")]
+		[ExpectedWarning ("IL2026", "--IRequiresUnreferencedCode.RequiresUnreferencedCodeMethod--")]
+		static void TestInterfaceMethodWithRequiresUnreferencedCode ()
+		{
+			IRequiresUnreferencedCode inst = new ImplementationClass ();
+			inst.RequiresUnreferencedCodeMethod ();
 		}
 	}
 }

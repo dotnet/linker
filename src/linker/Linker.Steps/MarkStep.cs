@@ -74,6 +74,7 @@ namespace Mono.Linker.Steps
 			DependencyKind.AlreadyMarked,
 			DependencyKind.Custom,
 			DependencyKind.CustomAttributeField,
+			DependencyKind.DynamicallyAccessed,
 			DependencyKind.EventSourceProviderField,
 			DependencyKind.FieldAccess,
 			DependencyKind.FieldOnGenericInstance,
@@ -100,6 +101,7 @@ namespace Mono.Linker.Steps
 			DependencyKind.CustomAttributeArgumentValue,
 			DependencyKind.DeclaringType,
 			DependencyKind.DeclaringTypeOfCalledMethod,
+			DependencyKind.DynamicallyAccessed,
 			DependencyKind.DynamicDependency,
 			DependencyKind.ElementType,
 			DependencyKind.FieldType,
@@ -133,6 +135,7 @@ namespace Mono.Linker.Steps
 			DependencyKind.Custom,
 			DependencyKind.DefaultCtorForNewConstrainedGenericArgument,
 			DependencyKind.DirectCall,
+			DependencyKind.DynamicallyAccessed,
 			DependencyKind.ElementMethod,
 			DependencyKind.EventMethod,
 			DependencyKind.EventOfEventMethod,
@@ -2301,12 +2304,12 @@ namespace Mono.Linker.Steps
 			Annotations.MarkIndirectlyCalledMethod (method);
 		}
 
-		protected virtual MethodDefinition MarkMethod (MethodReference reference, DependencyInfo reason, MessageOrigin sourceLocationMember)
+		protected virtual MethodDefinition MarkMethod (MethodReference reference, DependencyInfo reason, MessageOrigin origin)
 		{
-			(reference, reason) = GetOriginalMethod (reference, reason, sourceLocationMember.MemberDefinition);
+			(reference, reason) = GetOriginalMethod (reference, reason, origin.MemberDefinition);
 
 			if (reference.DeclaringType is ArrayType arrayType) {
-				MarkType (reference.DeclaringType, new DependencyInfo (DependencyKind.DeclaringType, reference), sourceLocationMember.MemberDefinition);
+				MarkType (reference.DeclaringType, new DependencyInfo (DependencyKind.DeclaringType, reference), origin.MemberDefinition);
 
 				if (reference.Name == ".ctor") {
 					Annotations.MarkRelevantToVariantCasting (arrayType.Resolve ());
@@ -2317,7 +2320,7 @@ namespace Mono.Linker.Steps
 			if (reference.DeclaringType is GenericInstanceType) {
 				// Blame the method reference on the original reason without marking it.
 				Tracer.AddDirectDependency (reference, reason, marked: false);
-				MarkType (reference.DeclaringType, new DependencyInfo (DependencyKind.DeclaringType, reference), sourceLocationMember.MemberDefinition);
+				MarkType (reference.DeclaringType, new DependencyInfo (DependencyKind.DeclaringType, reference), origin.MemberDefinition);
 				// Mark the resolved method definition as a dependency of the reference.
 				reason = new DependencyInfo (DependencyKind.MethodOnGenericInstance, reference);
 			}
@@ -2332,33 +2335,36 @@ namespace Mono.Linker.Steps
 			if (Annotations.GetAction (method) == MethodAction.Nothing)
 				Annotations.SetAction (method, MethodAction.Parse);
 
-			ProcessRequiresUnreferencedCode (method, sourceLocationMember);
+			ProcessRequiresUnreferencedCode (method, reason, origin);
 			EnqueueMethod (method, reason);
 
 			return method;
 		}
 
-		protected internal void ProcessRequiresUnreferencedCode (MethodDefinition method, MessageOrigin sourceLocationMember)
+		protected internal void ProcessRequiresUnreferencedCode (MethodDefinition method, DependencyInfo reason, MessageOrigin origin)
 		{
 			// If the caller of a method is already marked with `RequiresUnreferencedCodeAttribute` a new warning should not
 			// be produced for the callee.
 			// Overrides of methods annotated with `RequiresUnreferencedCodeAttribute` should not produce a warning here,
 			// the warning should be put in the virtual method instead.
-			if (sourceLocationMember.MemberDefinition != null &&
-				Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (sourceLocationMember.MemberDefinition) ||
+			if (origin.MemberDefinition != null &&
+				Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (origin.MemberDefinition) ||
 				Annotations.GetBaseMethods (method) != null)
 				return;
 
 			if (Annotations.TryGetLinkerAttribute (method, out RequiresUnreferencedCodeAttribute requiresUnreferencedCode)) {
-				string message =
-					$"Calling '{method.GetDisplayName ()}' which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. " +
-					$"{requiresUnreferencedCode.Message}.";
+				// If the method was preserved as a result of a type annotated with `DynamicallyAccessedMember`, produce warning on the type.
+				if (reason.Kind == DependencyKind.DynamicallyAccessed)
+					origin = new MessageOrigin (method.DeclaringType);
 
-				if (requiresUnreferencedCode.Url != null) {
+				string message = $"'{method.GetDisplayName ()}' method has 'RequiresUnreferencedCodeAttribute' which can break functionality when trimming application code.";
+				if (!string.IsNullOrEmpty (requiresUnreferencedCode.Message))
+					message += $" {requiresUnreferencedCode.Message}.";
+
+				if (!string.IsNullOrEmpty(requiresUnreferencedCode.Url))
 					message += " " + requiresUnreferencedCode.Url;
-				}
 
-				_context.LogWarning (message, 2026, sourceLocationMember, MessageSubCategory.TrimAnalysis);
+				_context.LogWarning (message, 2026, origin, MessageSubCategory.TrimAnalysis);
 			}
 		}
 
