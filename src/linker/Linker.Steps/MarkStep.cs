@@ -74,7 +74,6 @@ namespace Mono.Linker.Steps
 			DependencyKind.AlreadyMarked,
 			DependencyKind.Custom,
 			DependencyKind.CustomAttributeField,
-			DependencyKind.DynamicallyAccessed,
 			DependencyKind.EventSourceProviderField,
 			DependencyKind.FieldAccess,
 			DependencyKind.FieldOnGenericInstance,
@@ -101,7 +100,6 @@ namespace Mono.Linker.Steps
 			DependencyKind.CustomAttributeArgumentValue,
 			DependencyKind.DeclaringType,
 			DependencyKind.DeclaringTypeOfCalledMethod,
-			DependencyKind.DynamicallyAccessed,
 			DependencyKind.DynamicDependency,
 			DependencyKind.ElementType,
 			DependencyKind.FieldType,
@@ -135,7 +133,6 @@ namespace Mono.Linker.Steps
 			DependencyKind.Custom,
 			DependencyKind.DefaultCtorForNewConstrainedGenericArgument,
 			DependencyKind.DirectCall,
-			DependencyKind.DynamicallyAccessed,
 			DependencyKind.ElementMethod,
 			DependencyKind.EventMethod,
 			DependencyKind.EventOfEventMethod,
@@ -2353,15 +2350,11 @@ namespace Mono.Linker.Steps
 				return;
 
 			if (Annotations.TryGetLinkerAttribute (method, out RequiresUnreferencedCodeAttribute requiresUnreferencedCode)) {
-				// If the method was preserved as a result of a type annotated with `DynamicallyAccessedMember`, produce warning on the type.
-				if (reason.Kind == DependencyKind.DynamicallyAccessed)
-					origin = new MessageOrigin (method.DeclaringType);
-
 				string message = $"'{method.GetDisplayName ()}' method has 'RequiresUnreferencedCodeAttribute' which can break functionality when trimming application code.";
 				if (!string.IsNullOrEmpty (requiresUnreferencedCode.Message))
 					message += $" {requiresUnreferencedCode.Message}.";
 
-				if (!string.IsNullOrEmpty(requiresUnreferencedCode.Url))
+				if (!string.IsNullOrEmpty (requiresUnreferencedCode.Url))
 					message += " " + requiresUnreferencedCode.Url;
 
 				_context.LogWarning (message, 2026, origin, MessageSubCategory.TrimAnalysis);

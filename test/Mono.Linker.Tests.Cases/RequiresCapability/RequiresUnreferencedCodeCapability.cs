@@ -15,6 +15,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 	[SkipKeptItemsValidation]
 	public class RequiresUnreferencedCodeCapability
 	{
+		[ExpectedWarning ("IL2026", "'Mono.Linker.Tests.Cases.RequiresCapability.RequiresUnreferencedCodeCapability.DynamicallyAccessedTypeWithRequiresUnreferencedCode.RequiresUnreferencedCode()' method " +
+			"has 'RequiresUnreferencedCodeAttribute' which can break functionality when trimming application code. Message for --RequiresUnreferencedCode--.")]
 		public static void Main ()
 		{
 			TestRequiresWithMessageOnlyOnMethod ();
@@ -210,8 +212,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			_ = new StaticCtor ();
 		}
 
-		[ExpectedWarning ("IL2026", "'Mono.Linker.Tests.Cases.RequiresCapability.RequiresUnreferencedCodeCapability.DynamicallyAccessedTypeWithRequiresUnreferencedCode.RequiresUnreferencedCode()' method " +
-			"has 'RequiresUnreferencedCodeAttribute' which can break functionality when trimming application code. Message for --RequiresUnreferencedCode--.")]
 		public class DynamicallyAccessedTypeWithRequiresUnreferencedCode
 		{
 			[RequiresUnreferencedCode ("Message for --RequiresUnreferencedCode--")]
