@@ -23,6 +23,7 @@ namespace Mono.Linker
 			if (!module.HasExportedTypes)
 				return null;
 
+			// When resolving a forwarded type from a string, typeFullName should be a simple type name.
 			int idx = typeFullName.LastIndexOf ('.');
 			(string typeNamespace, string typeName) = idx > 0 ? (typeFullName.Substring (0, idx), typeFullName.Substring (idx + 1)) :
 				(string.Empty, typeFullName);
