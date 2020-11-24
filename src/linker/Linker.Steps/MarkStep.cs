@@ -2332,13 +2332,13 @@ namespace Mono.Linker.Steps
 			if (Annotations.GetAction (method) == MethodAction.Nothing)
 				Annotations.SetAction (method, MethodAction.Parse);
 
-			ProcessRequiresUnreferencedCode (method, reason, origin);
+			ProcessRequiresUnreferencedCode (method, origin);
 			EnqueueMethod (method, reason);
 
 			return method;
 		}
 
-		protected internal void ProcessRequiresUnreferencedCode (MethodDefinition method, DependencyInfo reason, MessageOrigin origin)
+		protected internal void ProcessRequiresUnreferencedCode (MethodDefinition method, MessageOrigin origin)
 		{
 			// If the caller of a method is already marked with `RequiresUnreferencedCodeAttribute` a new warning should not
 			// be produced for the callee.
