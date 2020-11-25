@@ -33,4 +33,3 @@ bin/
 artifacts
 
 test/Mono.Linker.Tests/TestResults.xml
-/src/linker/Resources/xlf
