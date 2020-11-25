@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="IL2067" xml:space="preserve">
-    <value>'{0}' parameter does not satisfy 'DynamicallyAccessedMembersAttribute' in call to '{1}'. The parameter '{2}' of method '{3}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+    <value>'{0}' argument does not satisfy 'DynamicallyAccessedMembersAttribute' in call to '{1}'. The parameter '{2}' of method '{3}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
   </data>
   <data name="IL2068" xml:space="preserve">
     <value>'{0}' method return value does not satisfy 'DynamicallyAccessedMembersAttribute' requirements. The parameter '{1}' of method '{2}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
@@ -130,10 +130,10 @@
     <value>'this' argument does not satisfy 'DynamicallyAccessedMembersAttribute' in call to '{0}'. The parameter '{1}' of method '{2}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
   </data>
   <data name="IL2071" xml:space="preserve">
-    <value>'{0}' generic parameter does not satisfy 'DynamicallyAccessedMembersAttribute' in '{1}'. The parameter '{2}' of method '{3}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+    <value>'{0}' generic argument does not satisfy 'DynamicallyAccessedMembersAttribute' in '{1}'. The parameter '{2}' of method '{3}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
   </data>
   <data name="IL2072" xml:space="preserve">
-    <value>'{0}' parameter does not satisfy 'DynamicallyAccessedMembersAttribute' in call to '{1}'. The return value of method '{2}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+    <value>'{0}' argument does not satisfy 'DynamicallyAccessedMembersAttribute' in call to '{1}'. The return value of method '{2}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
   </data>
   <data name="IL2073" xml:space="preserve">
     <value>'{0}' method return value does not satisfy 'DynamicallyAccessedMembersAttribute' requirements. The return value of method '{1}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
@@ -145,10 +145,10 @@
     <value>'this' argument does not satisfy 'DynamicallyAccessedMembersAttribute' in call to '{0}'. The return value of method '{1}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
   </data>
   <data name="IL2076" xml:space="preserve">
-    <value>'{0}' generic parameter does not satisfy 'DynamicallyAccessedMembersAttribute' in '{1}'. The return value of method '{2}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+    <value>'{0}' generic argument does not satisfy 'DynamicallyAccessedMembersAttribute' in '{1}'. The return value of method '{2}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
   </data>
   <data name="IL2077" xml:space="preserve">
-    <value>'{0}' parameter does not satisfy 'DynamicallyAccessedMembersAttribute' in call to '{1}'. The field '{2}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+    <value>'{0}' argument does not satisfy 'DynamicallyAccessedMembersAttribute' in call to '{1}'. The field '{2}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
   </data>
   <data name="IL2078" xml:space="preserve">
     <value>'{0}' method return value does not satisfy 'DynamicallyAccessedMembersAttribute' requirements. The field '{1}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
@@ -160,10 +160,10 @@
     <value>'this' argument does not satisfy 'DynamicallyAccessedMembersAttribute' in call to '{0}'. The field '{1}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
   </data>
   <data name="IL2081" xml:space="preserve">
-    <value>'{0}' generic parameter does not satisfy 'DynamicallyAccessedMembersAttribute' in '{1}'. The field '{2}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+    <value>'{0}' generic argument does not satisfy 'DynamicallyAccessedMembersAttribute' in '{1}'. The field '{2}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
   </data>
   <data name="IL2082" xml:space="preserve">
-    <value>'{0}' parameter does not satisfy 'DynamicallyAccessedMembersAttribute' in call to '{1}'. The implicit 'this' argument of method '{2}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+    <value>'{0}' argument does not satisfy 'DynamicallyAccessedMembersAttribute' in call to '{1}'. The implicit 'this' argument of method '{2}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
   </data>
   <data name="IL2083" xml:space="preserve">
     <value>'{0}' method return value does not satisfy 'DynamicallyAccessedMembersAttribute' requirements. The implicit 'this' argument of method '{1}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
@@ -175,10 +175,10 @@
     <value>'this' argument does not satisfy 'DynamicallyAccessedMembersAttribute' in call to '{0}'. The implicit 'this' argument of method '{1}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
   </data>
   <data name="IL2086" xml:space="preserve">
-    <value>'{0}' generic parameter does not satisfy 'DynamicallyAccessedMembersAttribute' in '{1}'. The implicit 'this' argument of method '{2}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+    <value>'{0}' generic argument does not satisfy 'DynamicallyAccessedMembersAttribute' in '{1}'. The implicit 'this' argument of method '{2}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
   </data>
   <data name="IL2087" xml:space="preserve">
-    <value>'{0}' parameter does not satisfy 'DynamicallyAccessedMembersAttribute' in call to '{1}'. The generic parameter '{2}' of '{3}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+    <value>'{0}' argument does not satisfy 'DynamicallyAccessedMembersAttribute' in call to '{1}'. The generic parameter '{2}' of '{3}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
   </data>
   <data name="IL2088" xml:space="preserve">
     <value>'{0}' method return value does not satisfy 'DynamicallyAccessedMembersAttribute' requirements. The generic parameter '{1}' of '{2}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
@@ -190,6 +190,6 @@
     <value>'this' argument does not satisfy 'DynamicallyAccessedMembersAttribute' in call to '{0}'. The generic parameter '{1}' of '{2}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
   </data>
   <data name="IL2091" xml:space="preserve">
-    <value>'{0}' generic parameter does not satisfy 'DynamicallyAccessedMembersAttribute' in '{1}'. The generic parameter '{2}' of '{3}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+    <value>'{0}' generic argument does not satisfy 'DynamicallyAccessedMembersAttribute' in '{1}'. The generic parameter '{2}' of '{3}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
   </data>
 </root>

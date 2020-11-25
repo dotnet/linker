@@ -1395,81 +1395,144 @@ namespace Mono.Linker.Dataflow
 					if (!valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes.HasFlag (requiredMemberTypes)) {
 						switch ((valueWithDynamicallyAccessedMember.SourceContext, targetContext)) {
 						case (ParameterDefinition sourceParameter, ParameterDefinition targetParameter):
-							reflectionContext.RecordUnrecognizedPattern (2067, string.Format (Resources.Strings.IL2067, GetDidNotMatchRequirementsWarningMessageArgs (sourceParameter, targetParameter)));
+							reflectionContext.RecordUnrecognizedPattern (2067, string.Format (Resources.Strings.IL2067,
+								DiagnosticUtilities.GetParameterNameForErrorMessage (targetParameter),
+								DiagnosticUtilities.GetMethodSignatureDisplayName (targetParameter.Method),
+								DiagnosticUtilities.GetParameterNameForErrorMessage (sourceParameter),
+								DiagnosticUtilities.GetMethodSignatureDisplayName (sourceParameter.Method)));
 							break;
 						case (ParameterDefinition sourceParameter, MethodReturnType targetMethodReturnType):
-							reflectionContext.RecordUnrecognizedPattern (2068, string.Format (Resources.Strings.IL2068, GetDidNotMatchRequirementsWarningMessageArgs (sourceParameter, targetMethodReturnType)));
+							reflectionContext.RecordUnrecognizedPattern (2068, string.Format (Resources.Strings.IL2068,
+								DiagnosticUtilities.GetMethodSignatureDisplayName (targetMethodReturnType.Method),
+								DiagnosticUtilities.GetParameterNameForErrorMessage (sourceParameter),
+								DiagnosticUtilities.GetMethodSignatureDisplayName (sourceParameter.Method)));
 							break;
 						case (ParameterDefinition sourceParameter, FieldDefinition targetField):
-							reflectionContext.RecordUnrecognizedPattern (2069, string.Format (Resources.Strings.IL2069, GetDidNotMatchRequirementsWarningMessageArgs (sourceParameter, targetField)));
+							reflectionContext.RecordUnrecognizedPattern (2069, string.Format (Resources.Strings.IL2069,
+								targetField.GetDisplayName (),
+								DiagnosticUtilities.GetParameterNameForErrorMessage (sourceParameter),
+								DiagnosticUtilities.GetMethodSignatureDisplayName (sourceParameter.Method)));
 							break;
 						case (ParameterDefinition sourceParameter, MethodDefinition targetMethod):
-							reflectionContext.RecordUnrecognizedPattern (2070, string.Format (Resources.Strings.IL2070, GetDidNotMatchRequirementsWarningMessageArgs (sourceParameter, targetMethod)));
+							reflectionContext.RecordUnrecognizedPattern (2070, string.Format (Resources.Strings.IL2070,
+								targetMethod.GetDisplayName (),
+								DiagnosticUtilities.GetParameterNameForErrorMessage (sourceParameter),
+								DiagnosticUtilities.GetMethodSignatureDisplayName (sourceParameter.Method)));
 							break;
 						case (ParameterDefinition sourceParameter, GenericParameter targetGenericParameter):
 							// Currently this is never generated, once ILLink supports full analysis of MakeGenericType/MakeGenericMethod this will be used
-							reflectionContext.RecordUnrecognizedPattern (2071, string.Format (Resources.Strings.IL2071, GetDidNotMatchRequirementsWarningMessageArgs (sourceParameter, targetGenericParameter)));
+							reflectionContext.RecordUnrecognizedPattern (2071, string.Format (Resources.Strings.IL2071,
+								targetGenericParameter.Name,
+								DiagnosticUtilities.GetGenericParameterDeclaringMemberDisplayName (targetGenericParameter),
+								DiagnosticUtilities.GetParameterNameForErrorMessage (sourceParameter),
+								DiagnosticUtilities.GetMethodSignatureDisplayName (sourceParameter.Method)));
 							break;
 
 						case (MethodReturnType sourceMethodReturnType, ParameterDefinition targetParameter):
-							reflectionContext.RecordUnrecognizedPattern (2072, string.Format (Resources.Strings.IL2072, GetDidNotMatchRequirementsWarningMessageArgs (sourceMethodReturnType, targetParameter)));
+							reflectionContext.RecordUnrecognizedPattern (2072, string.Format (Resources.Strings.IL2072,
+								DiagnosticUtilities.GetParameterNameForErrorMessage (targetParameter),
+								DiagnosticUtilities.GetMethodSignatureDisplayName (targetParameter.Method),
+								DiagnosticUtilities.GetMethodSignatureDisplayName (sourceMethodReturnType.Method)));
 							break;
 						case (MethodReturnType sourceMethodReturnType, MethodReturnType targetMethodReturnType):
-							reflectionContext.RecordUnrecognizedPattern (2073, string.Format (Resources.Strings.IL2073, GetDidNotMatchRequirementsWarningMessageArgs (sourceMethodReturnType, targetMethodReturnType)));
+							reflectionContext.RecordUnrecognizedPattern (2073, string.Format (Resources.Strings.IL2073,
+								DiagnosticUtilities.GetMethodSignatureDisplayName (targetMethodReturnType.Method),
+								DiagnosticUtilities.GetMethodSignatureDisplayName (sourceMethodReturnType.Method)));
 							break;
 						case (MethodReturnType sourceMethodReturnType, FieldDefinition targetField):
-							reflectionContext.RecordUnrecognizedPattern (2074, string.Format (Resources.Strings.IL2074, GetDidNotMatchRequirementsWarningMessageArgs (sourceMethodReturnType, targetField)));
+							reflectionContext.RecordUnrecognizedPattern (2074, string.Format (Resources.Strings.IL2074,
+								targetField.GetDisplayName (),
+								DiagnosticUtilities.GetMethodSignatureDisplayName (sourceMethodReturnType.Method)));
 							break;
 						case (MethodReturnType sourceMethodReturnType, MethodDefinition targetMethod):
-							reflectionContext.RecordUnrecognizedPattern (2075, string.Format (Resources.Strings.IL2075, GetDidNotMatchRequirementsWarningMessageArgs (sourceMethodReturnType, targetMethod)));
+							reflectionContext.RecordUnrecognizedPattern (2075, string.Format (Resources.Strings.IL2075,
+								targetMethod.GetDisplayName (),
+								DiagnosticUtilities.GetMethodSignatureDisplayName (sourceMethodReturnType.Method)));
 							break;
 						case (MethodReturnType sourceMethodReturnType, GenericParameter targetGenericParameter):
 							// Currently this is never generated, once ILLink supports full analysis of MakeGenericType/MakeGenericMethod this will be used
-							reflectionContext.RecordUnrecognizedPattern (2076, string.Format (Resources.Strings.IL2076, GetDidNotMatchRequirementsWarningMessageArgs (sourceMethodReturnType, targetGenericParameter)));
+							reflectionContext.RecordUnrecognizedPattern (2076, string.Format (Resources.Strings.IL2076,
+								targetGenericParameter.Name,
+								DiagnosticUtilities.GetGenericParameterDeclaringMemberDisplayName (targetGenericParameter),
+								DiagnosticUtilities.GetMethodSignatureDisplayName (sourceMethodReturnType.Method)));
 							break;
 
 						case (FieldDefinition sourceField, ParameterDefinition targetParameter):
-							reflectionContext.RecordUnrecognizedPattern (2077, string.Format (Resources.Strings.IL2077, GetDidNotMatchRequirementsWarningMessageArgs (sourceField, targetParameter)));
+							reflectionContext.RecordUnrecognizedPattern (2077, string.Format (Resources.Strings.IL2077,
+								DiagnosticUtilities.GetParameterNameForErrorMessage (targetParameter),
+								DiagnosticUtilities.GetMethodSignatureDisplayName (targetParameter.Method),
+								sourceField.GetDisplayName ()));
 							break;
 						case (FieldDefinition sourceField, MethodReturnType targetMethodReturnType):
-							reflectionContext.RecordUnrecognizedPattern (2078, string.Format (Resources.Strings.IL2078, GetDidNotMatchRequirementsWarningMessageArgs (sourceField, targetMethodReturnType)));
+							reflectionContext.RecordUnrecognizedPattern (2078, string.Format (Resources.Strings.IL2078,
+								DiagnosticUtilities.GetMethodSignatureDisplayName (targetMethodReturnType.Method),
+								sourceField.GetDisplayName ()));
 							break;
 						case (FieldDefinition sourceField, FieldDefinition targetField):
-							reflectionContext.RecordUnrecognizedPattern (2079, string.Format (Resources.Strings.IL2079, GetDidNotMatchRequirementsWarningMessageArgs (sourceField, targetField)));
+							reflectionContext.RecordUnrecognizedPattern (2079, string.Format (Resources.Strings.IL2079,
+								targetField.GetDisplayName (),
+								sourceField.GetDisplayName ()));
 							break;
 						case (FieldDefinition sourceField, MethodDefinition targetMethod):
-							reflectionContext.RecordUnrecognizedPattern (2080, string.Format (Resources.Strings.IL2080, GetDidNotMatchRequirementsWarningMessageArgs (sourceField, targetMethod)));
+							reflectionContext.RecordUnrecognizedPattern (2080, string.Format (Resources.Strings.IL2080,
+								targetMethod.GetDisplayName (),
+								sourceField.GetDisplayName ()));
 							break;
 						case (FieldDefinition sourceField, GenericParameter targetGenericParameter):
 							// Currently this is never generated, once ILLink supports full analysis of MakeGenericType/MakeGenericMethod this will be used
-							reflectionContext.RecordUnrecognizedPattern (2081, string.Format (Resources.Strings.IL2081, GetDidNotMatchRequirementsWarningMessageArgs (sourceField, targetGenericParameter)));
+							reflectionContext.RecordUnrecognizedPattern (2081, string.Format (Resources.Strings.IL2081,
+								targetGenericParameter.Name,
+								DiagnosticUtilities.GetGenericParameterDeclaringMemberDisplayName (targetGenericParameter),
+								sourceField.GetDisplayName ()));
 							break;
 
 						case (MethodDefinition sourceMethod, ParameterDefinition targetParameter):
-							reflectionContext.RecordUnrecognizedPattern (2082, string.Format (Resources.Strings.IL2082, GetDidNotMatchRequirementsWarningMessageArgs (sourceMethod, targetParameter)));
+							reflectionContext.RecordUnrecognizedPattern (2082, string.Format (Resources.Strings.IL2082,
+								DiagnosticUtilities.GetParameterNameForErrorMessage (targetParameter),
+								DiagnosticUtilities.GetMethodSignatureDisplayName (targetParameter.Method),
+								sourceMethod.GetDisplayName ()));
 							break;
 						case (MethodDefinition sourceMethod, MethodReturnType targetMethodReturnType):
-							reflectionContext.RecordUnrecognizedPattern (2083, string.Format (Resources.Strings.IL2083, GetDidNotMatchRequirementsWarningMessageArgs (sourceMethod, targetMethodReturnType)));
+							reflectionContext.RecordUnrecognizedPattern (2083, string.Format (Resources.Strings.IL2083,
+								DiagnosticUtilities.GetMethodSignatureDisplayName (targetMethodReturnType.Method),
+								sourceMethod.GetDisplayName ()));
 							break;
 						case (MethodDefinition sourceMethod, FieldDefinition targetField):
-							reflectionContext.RecordUnrecognizedPattern (2084, string.Format (Resources.Strings.IL2084, GetDidNotMatchRequirementsWarningMessageArgs (sourceMethod, targetField)));
+							reflectionContext.RecordUnrecognizedPattern (2084, string.Format (Resources.Strings.IL2084,
+								targetField.GetDisplayName (),
+								sourceMethod.GetDisplayName ()));
 							break;
 						case (MethodDefinition sourceMethod, MethodDefinition targetMethod):
-							reflectionContext.RecordUnrecognizedPattern (2085, string.Format (Resources.Strings.IL2085, GetDidNotMatchRequirementsWarningMessageArgs (sourceMethod, targetMethod)));
+							reflectionContext.RecordUnrecognizedPattern (2085, string.Format (Resources.Strings.IL2085,
+								targetMethod.GetDisplayName (),
+								sourceMethod.GetDisplayName ()));
 							break;
 						case (MethodDefinition sourceMethod, GenericParameter targetGenericParameter):
 							// Currently this is never generated, once ILLink supports full analysis of MakeGenericType/MakeGenericMethod this will be used
-							reflectionContext.RecordUnrecognizedPattern (2086, string.Format (Resources.Strings.IL2086, GetDidNotMatchRequirementsWarningMessageArgs (sourceMethod, targetGenericParameter)));
+							reflectionContext.RecordUnrecognizedPattern (2086, string.Format (Resources.Strings.IL2086,
+								targetGenericParameter.Name,
+								DiagnosticUtilities.GetGenericParameterDeclaringMemberDisplayName (targetGenericParameter),
+								sourceMethod.GetDisplayName ()));
 							break;
 
 						case (GenericParameter sourceGenericParameter, ParameterDefinition targetParameter):
-							reflectionContext.RecordUnrecognizedPattern (2087, string.Format (Resources.Strings.IL2087, GetDidNotMatchRequirementsWarningMessageArgs (sourceGenericParameter, targetParameter)));
+							reflectionContext.RecordUnrecognizedPattern (2087, string.Format (Resources.Strings.IL2087,
+								DiagnosticUtilities.GetParameterNameForErrorMessage (targetParameter),
+								DiagnosticUtilities.GetMethodSignatureDisplayName (targetParameter.Method),
+								sourceGenericParameter.Name,
+								DiagnosticUtilities.GetGenericParameterDeclaringMemberDisplayName (sourceGenericParameter)));
 							break;
 						case (GenericParameter sourceGenericParameter, MethodReturnType targetMethodReturnType):
-							reflectionContext.RecordUnrecognizedPattern (2088, string.Format (Resources.Strings.IL2088, GetDidNotMatchRequirementsWarningMessageArgs (sourceGenericParameter, targetMethodReturnType)));
+							reflectionContext.RecordUnrecognizedPattern (2088, string.Format (Resources.Strings.IL2088,
+								DiagnosticUtilities.GetMethodSignatureDisplayName (targetMethodReturnType.Method),
+								sourceGenericParameter.Name,
+								DiagnosticUtilities.GetGenericParameterDeclaringMemberDisplayName (sourceGenericParameter)));
 							break;
 						case (GenericParameter sourceGenericParameter, FieldDefinition targetField):
-							reflectionContext.RecordUnrecognizedPattern (2089, string.Format (Resources.Strings.IL2089, GetDidNotMatchRequirementsWarningMessageArgs (sourceGenericParameter, targetField)));
+							reflectionContext.RecordUnrecognizedPattern (2089, string.Format (Resources.Strings.IL2089,
+								targetField.GetDisplayName (),
+								sourceGenericParameter.Name,
+								DiagnosticUtilities.GetGenericParameterDeclaringMemberDisplayName (sourceGenericParameter)));
 							break;
 						case (GenericParameter sourceGenericParameter, MethodDefinition targetMethod):
 							// Currently this is never generated, it might be possible one day if we try to validate annotations on results of reflection
@@ -1479,10 +1542,17 @@ namespace Mono.Linker.Dataflow
 							//    // This passes the T as the "this" parameter to Type.GetMethods()
 							//    typeof(Type).GetMethod("GetMethods").Invoke(typeof(T), new object[] {});
 							// }
-							reflectionContext.RecordUnrecognizedPattern (2090, string.Format (Resources.Strings.IL2090, GetDidNotMatchRequirementsWarningMessageArgs (sourceGenericParameter, targetMethod)));
+							reflectionContext.RecordUnrecognizedPattern (2090, string.Format (Resources.Strings.IL2090,
+								targetMethod.GetDisplayName (),
+								sourceGenericParameter.Name,
+								DiagnosticUtilities.GetGenericParameterDeclaringMemberDisplayName (sourceGenericParameter)));
 							break;
 						case (GenericParameter sourceGenericParameter, GenericParameter targetGenericParameter):
-							reflectionContext.RecordUnrecognizedPattern (2091, string.Format (Resources.Strings.IL2091, GetDidNotMatchRequirementsWarningMessageArgs (sourceGenericParameter, targetGenericParameter)));
+							reflectionContext.RecordUnrecognizedPattern (2091, string.Format (Resources.Strings.IL2091,
+								targetGenericParameter.Name,
+								DiagnosticUtilities.GetGenericParameterDeclaringMemberDisplayName (targetGenericParameter),
+								sourceGenericParameter.Name,
+								DiagnosticUtilities.GetGenericParameterDeclaringMemberDisplayName (sourceGenericParameter)));
 							break;
 
 						default:
@@ -1539,31 +1609,6 @@ namespace Mono.Linker.Dataflow
 			}
 
 			reflectionContext.RecordHandledPattern ();
-		}
-
-		static string[] GetDidNotMatchRequirementsWarningMessageArgs (IMetadataTokenProvider source, IMetadataTokenProvider target)
-		{
-			List<string> args = new List<string> ();
-            args.AddRange (target switch
-			{
-                ParameterDefinition targetParameter => new string[] { DiagnosticUtilities.GetParameterNameForErrorMessage (targetParameter), DiagnosticUtilities.GetMethodSignatureDisplayName (targetParameter.Method) },
-                MethodReturnType targetReturnType => new string[] { DiagnosticUtilities.GetMethodSignatureDisplayName (targetReturnType.Method) },
-                FieldDefinition targetField => new string[] { targetField.GetDisplayName () },
-                MethodDefinition targetMethod => new string[] { targetMethod.GetDisplayName () },
-                GenericParameter targetGenericParameter => new string[] { targetGenericParameter.Name, DiagnosticUtilities.GetGenericParameterDeclaringMemberDisplayName (targetGenericParameter) },
-                _ => throw new NotImplementedException ($"Unsuported target {target}")
-            });
-
-			args.AddRange (source switch {
-				ParameterDefinition sourceParameter => new string[] { DiagnosticUtilities.GetParameterNameForErrorMessage (sourceParameter), DiagnosticUtilities.GetMethodSignatureDisplayName (sourceParameter.Method) },
-				MethodReturnType sourceReturnType => new string[] { DiagnosticUtilities.GetMethodSignatureDisplayName (sourceReturnType.Method) },
-				FieldDefinition sourceField => new string[] { sourceField.GetDisplayName () },
-				MethodDefinition sourceMethod => new string[] { sourceMethod.GetDisplayName () },
-				GenericParameter sourceGenericParameter => new string[] { sourceGenericParameter.Name, DiagnosticUtilities.GetGenericParameterDeclaringMemberDisplayName (sourceGenericParameter) },
-				_ => throw new NotImplementedException ($"Unsuported source {source}")
-			});
-
-			return args.ToArray ();
 		}
 
 		static bool BindingFlagsAreSupported (BindingFlags bindingFlags)
