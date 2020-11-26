@@ -114,7 +114,10 @@ namespace Mono.Linker.Dataflow
 			ValueNode valueNode;
 			if (argument.Type.Name == "Type") {
 				TypeDefinition referencedType = ((TypeReference) argument.Value).ResolveToMainTypeDefinition ();
-				valueNode = referencedType == null ? null : new SystemTypeValue (referencedType);
+				if (referencedType == null)
+					valueNode = UnknownValue.Instance;
+				else
+					valueNode = new SystemTypeValue (referencedType);
 			} else if (argument.Type.MetadataType == MetadataType.String) {
 				valueNode = new KnownStringValue ((string) argument.Value);
 			} else {
@@ -149,7 +152,10 @@ namespace Mono.Linker.Dataflow
 				if (genericArgumentTypeDef != null) {
 					return new SystemTypeValue (genericArgumentTypeDef);
 				} else {
-					throw new InvalidOperationException ();
+					// If we can't resolve the generic argument, it means we can't apply potential requirements on it
+					// so track it as unknown value. If we later on hit this unknown value as being used somewhere
+					// where we need to apply requirements on it, it will generate a warning.
+					return UnknownValue.Instance;
 				}
 			}
 		}
