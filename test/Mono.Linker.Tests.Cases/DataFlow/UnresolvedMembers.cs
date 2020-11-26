@@ -12,7 +12,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 	[SetupLinkerArgument ("--skip-unresolved", "true")]
 	public class UnresolvedMembers
 	{
-		static void Main()
+		static void Main ()
 		{
 			UnresolvedGenericArgument ();
 			UnresolvedAttributeArgument ();
@@ -26,14 +26,14 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		[KeptMember (".ctor()")]
 		class TypeWithUnresolvedGenericArgument<
 			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
-			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] T>
+		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] T>
 		{
 		}
 
 		[Kept]
 		static void MethodWithUnresolvedGenericArgument<
 			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
-			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] T> ()
+		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] T> ()
 		{ }
 
 		[Kept]
