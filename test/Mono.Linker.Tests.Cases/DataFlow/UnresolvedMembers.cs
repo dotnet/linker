@@ -10,6 +10,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 	[SetupCompileBefore ("UnresolvedLibrary.dll", new[] { "Dependencies/UnresolvedLibrary.cs" })]
 	[SetupCompileAfter ("UnresolvedLibrary.dll", new[] { "Dependencies/UnresolvedLibrary.cs" }, defines: new[] { "EXCLUDE_STUFF" })]
 	[SetupLinkerArgument ("--skip-unresolved", "true")]
+	[SkipPeVerify (SkipPeVerifyForToolchian.Pedump)]
 	public class UnresolvedMembers
 	{
 		static void Main ()
