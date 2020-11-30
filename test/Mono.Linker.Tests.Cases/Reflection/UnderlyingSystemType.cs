@@ -13,7 +13,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 {
 	class UnderlyingSystemType
 	{
-		public static void Main()
+		public static void Main ()
 		{
 			_ = typeof (TypeUsedWithUnderlyingSystemType).UnderlyingSystemType.GetMethod (nameof (TypeUsedWithUnderlyingSystemType.Method));
 		}
@@ -23,8 +23,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		{
 			[Kept]
 			public static void Method () { }
-			
-			public static void OtherMethod() { }
+
+			public static void OtherMethod () { }
 		}
 	}
 }
