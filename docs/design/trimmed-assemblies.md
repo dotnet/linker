@@ -75,7 +75,7 @@ This shows how Blazor (or a developer) could hook into the build to opt assembli
 An assembly-level `AssemblyMetadataAttribute` may be placed on an assembly to indicate that it should be trimmed:
 
 ```csharp
-[AssemblyMetadataAttribute("IsTrimmable", "true")]
+[assembly: AssemblyMetadata("IsTrimmable", "True")]
 ```
 
 The behavior is the same as the `IsTrimmable` MSBuild metadata, so that:
@@ -148,7 +148,15 @@ If there is a use case for specifying trimmable assemblies on the command-line, 
 
 ### `AssemblyMetadataAttribute` vs `IsTrimmableAttribute`
 
-We will use `AssemblyMetadataAttribute` to specify `IsTrimmable` on an assembly, instead of introducing a new attribute. The existing attribute seems well-suited for this use case, as it is already used for the similar . This way there is no need to define a new attribute in the framework, and library authors targeting previous versions of .NET will not need to inject the attribute definition into their own assemblies.
+We will use `AssemblyMetadataAttribute` to specify `IsTrimmable` on an assembly, instead of introducing a new attribute. The existing attribute seems well-suited for this use case, as it is already similarly used to control servicing for framework assemblies, for example via:
+
+```csharp
+[assembly: AssemblyMetadata(".NETFrameworkAssembly", "")]
+[assembly: AssemblyMetadata("Serviceable", "True")]
+[assembly: AssemblyMetadata("PreferInbox", "True")]
+```
+
+This way there is no need to define a new attribute in the framework, and library authors targeting previous versions of .NET will not need to inject the attribute definition into their own assemblies.
 
 ### `IsTrimmable` attribute vs `DefaultTrimMode` attribute
 
