@@ -70,9 +70,9 @@ This shows how Blazor (or a developer) could hook into the build to opt assembli
 
 ## .NET 6
 
-### `IsTrimmable` `AssemblyMetadataAttribute`
+### `AssemblyMetadata("IsTrimmable", "True")`
 
-An assembly-level `AssemblyMetadataAttribute` may be placed on an assembly to indicate that it should be trimmed:
+An assembly-level `AssemblyMetadataAttribute` may be placed on an assembly to indicate that it can be trimmed:
 
 ```csharp
 [assembly: AssemblyMetadata("IsTrimmable", "True")]
@@ -82,11 +82,13 @@ The behavior is the same as the `IsTrimmable` MSBuild metadata, so that:
 - Assemblies with this attribute are trimmed with the global `TrimMode`
 - Assemblies without this attribute are rooted, and given the `copy` action
 
-The only understood value is `true`. Adding `[AssemblyMetadataAttribute("IsTrimmable", "false")]` will have no effect on the linker's behavior, because unattributed assemblies are assumed not to be trimmable by default. We will issue a warning in this case, to discourage misleading use of the attribute.
+The only understood value is `True` (case-insensitive). Adding `[assembly: AssemblyMetadata("IsTrimmable", "False")]` will have no effect on the linker's behavior, because unattributed assemblies are assumed not to be trimmable by default. We will issue a warning in this case, to discourage misleading use of the attribute.
+
+The attribute will survive trimming like other assembly-level attributes do.
 
 If `IsTrimmable` MSBuild metadata is set for an assembly, this overrides the `IsTrimmable` attribute. This allows a developer to opt an assembly into trimming even if it does not have the attribute, or to disable trimming of an assembly that has the attribute.
 
-Instead of using `IsTrimmable` metadata in the SDK to trim netcoreapp by default, we will ship netcoreapp assemblies and OOB assemblies that are conceptually part of the BCL with `IsTrimmable` `AssemblyMetadataAttribute`, and not set `IsTrimmable` MSBuild metadata in the SDK. The MSBuild metadata will now be used only as a developer opt-in or opt-out.
+Instead of using `IsTrimmable` metadata in the SDK to control trimmable assemblies, we will move to a model where all trimmable SDK assemblies are built with `[assembly: AssemblyMetadata("IsTrimmable", "True")]`.
 
 ### `TrimmableAssembly`
 
@@ -111,9 +113,15 @@ The above will opt `MyAssembly.dll` into trimming. Note that the ItemGroup shoul
 </Target>
 ```
 
-### `TrimAllAssemblies`
+## Future evolution
 
-This property simplifies the process of enabling trimming for all assemblies. It is equivalent to setting `IsTrimmable` to `true` on every assembly that is input to the linker. For example:
+As the .NET ecosystem shifts to support trimming of more libraries, we will be able to rely more on the trim analysis warnings to provide correctness guarantees. Since these guarantees are the same regardless of the `TrimMode`, we expect SDKs to move to more aggressive trimming defaults.
+
+We expect that the .NET SDK will eventually set `TrimMode` to `link` instead of `copyused` as it does today. Long-term, we may even go as far as enabling trimming of all assemblies by default when using ILLink. Existing MSBuild `IsTrimmable` and `TrimMode` metadata will continue to make it possible for the developer to opt in or out of trimming. We could additionally provide further knobs to simplify controlling trimming behavior and opting out of such defaults.
+
+### `TrimAllAssemblies` global opt-in
+
+We could make it it easier to enabling trimming for all assemblies with a simple boolean. This would be equivalent to setting `IsTrimmable` to `true` on every assembly that is input to the linker. For example:
 
 ```xml
 <PropertyGroup>
@@ -121,7 +129,7 @@ This property simplifies the process of enabling trimming for all assemblies. It
 </PropertyGroup>
 ```
 
-Before .NET 6 this would have been done with a target:
+could be used instead of
 
 ```xml
 <Target Name="ConfigureTrimming"
@@ -133,6 +141,20 @@ Before .NET 6 this would have been done with a target:
   </ItemGroup>
 </Target>
 ```
+
+This could be set by default in future SDKs, or it could be set by the developer in SDKs where it is not the default. We prefer not to introduce such a property at the moment, because it makes it too easy to enable this more "dangerous" behavior. We may consider adding this in the future when more  the .NET ecosystem has been made compatible with trimming.
+
+### `AssemblyMetadata("IsTrimmable", "False")`
+
+With more aggressive defaults, it could make sense to support an attribute opt-out via `[assembly: AssemblyMetadata("IsTrimmable", "False")]`. This would provide a way for developers to indicate that their assemblies should not be trimmed.
+
+We should also consider whether such an opt-out should prevent the linker from rewriting the attributed assembly. This could be useful as a way to preserve assemblies that have invariants which would be broken by rewriting, or which contain data that would be removed by the linker even with the `copy` action.
+
+### `NonTrimmableAssembly` opt-out
+
+Similar to `TrimmableAssembly`, we could introduce an ItemGroup to simplify opting out of trimming for an assembly. It would work the same way, setting `IsTrimmable` to `false` on the specified assembly. With the current defaults that don't trim unattributed assemblies, we expect this to be significantly less useful than the `TrimmableAssembly`, but it would be useful to opt out of more aggressive defaults.
+
+We would also need to decide the precedence betwen `TrimmableAssembly` and `NonTrimmableAssembly`, or issue a warning if an assembly is in both ItemGroups.
 
 ## Alternatives considered
 
@@ -170,7 +192,6 @@ We also anticipate that the SDK may in the future move to using `<TrimMode>link<
 ### `IsTrimmable` attribute vs metadata priority
 
 The `IsTrimmable` MSBuild metadata takes precedence over `IsTrimmable` `AssemblyMetadataAttribute`. We also considered allowing the attribute to override the metadata set in MSBuild, so that newer versions of an assembly can override default settings in the SDK. For example, if we ship with SDK defaults that set `IsTrimmable` MSBuild metadata on an assembly, this would allow a future version of the assembly to opt out of trimming. However, we are intending the MSBuild metadata to be used by developers to override defaults, and we will move away from setting this by default in the SDK, using attributes instead.
-
 ## Notes on the .NET 5 options
 
 ### `IsTrimmable` vs `TrimMode`
