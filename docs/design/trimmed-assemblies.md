@@ -142,7 +142,7 @@ could be used instead of
 </Target>
 ```
 
-This could be set by default in future SDKs, or it could be set by the developer in SDKs where it is not the default. We prefer not to introduce such a property at the moment, because it makes it too easy to enable this more "dangerous" behavior. We may consider adding this in the future when more  the .NET ecosystem has been made compatible with trimming.
+This could be set by default in future SDKs, or it could be set by the developer in SDKs where it is not the default. We prefer not to introduce such a property at the moment, because it makes it too easy to enable this more "dangerous" behavior. We may consider adding this in the future when more of the .NET ecosystem has been made compatible with trimming.
 
 ### `AssemblyMetadata("IsTrimmable", "False")`
 
