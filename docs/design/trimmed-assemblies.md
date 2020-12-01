@@ -9,7 +9,7 @@ It is worth reiterating that there are three conditions that influence the behav
 2. `IsTrimmable` controls whether the linker will tree-shake the assembly (if not, it gets rooted, and gets action `copy`)
 3. the action (per-assembly `TrimMode` metadata, or global `TrimMode`) controls the level of tree-shaking
 
-Different SDKs have different defaults for these options. The .NET Core sets `TrimMode` to `copyused`, which does assembly-level trimming, by default, but the Blazor SDK sets it to `link` for more aggressive trimming. Blazor also uses extension points to control which assemblies are trimmed by filtering on the assembly name, to generate custom "type-granularity" roots for some assemblies.
+Different SDKs have different defaults for these options. The .NET Core sets `TrimMode` to `copyused`, which does assembly-level trimming, by default, but the Blazor SDK sets it to `link` for more aggressive trimming. Blazor also uses extension points to control which assemblies are trimmed by filtering on the assembly name, and to generate custom "type-granularity" roots for some assemblies.
 
 ## .NET Core 3 options
 
