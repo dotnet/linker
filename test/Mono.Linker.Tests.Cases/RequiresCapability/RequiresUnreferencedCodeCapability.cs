@@ -26,7 +26,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			TestRequiresSuppressesWarningsFromReflectionAnalysis ();
 			TestDuplicateRequiresAttribute ();
 			TestRequiresUnreferencedCodeOnlyThroughReflection ();
-			TestVirtualMethodRequiresUnreferencedCode ();
+			TestBaseTypeVirtualMethodRequiresUnreferencedCode ();
+			TestTypeWhichOverridesMethodVirtualMethodRequiresUnreferencedCode ();
 			TestStaticCctorRequiresUnreferencedCode ();
 			TestDynamicallyAccessedMembersWithRequiresUnreferencedCode (typeof (DynamicallyAccessedTypeWithRequiresUnreferencedCode));
 			TestInterfaceMethodWithRequiresUnreferencedCode ();
@@ -177,7 +178,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		class BaseType
 		{
-			[RequiresUnreferencedCode ("Message for --VirtualMethodRequiresUnreferencedCode--")]
+			[RequiresUnreferencedCode ("Message for --BaseType.VirtualMethodRequiresUnreferencedCode--")]
 			public virtual void VirtualMethodRequiresUnreferencedCode ()
 			{
 			}
@@ -185,14 +186,22 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		class TypeWhichOverridesMethod : BaseType
 		{
-			[ExpectedWarning ("IL2046", "All overridden methods must have 'RequiresUnreferencedCodeAttribute'.")]
+			[RequiresUnreferencedCode ("Message for --TypeWhichOverridesMethod.VirtualMethodRequiresUnreferencedCode--")]
 			public override void VirtualMethodRequiresUnreferencedCode ()
 			{
 			}
 		}
 
-		[ExpectedWarning ("IL2026", "--VirtualMethodRequiresUnreferencedCode--")]
-		static void TestVirtualMethodRequiresUnreferencedCode ()
+		[ExpectedWarning ("IL2026", "--BaseType.VirtualMethodRequiresUnreferencedCode--")]
+		static void TestBaseTypeVirtualMethodRequiresUnreferencedCode ()
+		{
+			var tmp = new BaseType ();
+			tmp.VirtualMethodRequiresUnreferencedCode ();
+		}
+
+		[LogDoesNotContain ("TypeWhichOverridesMethod.VirtualMethodRequiresUnreferencedCode")]
+		[ExpectedWarning ("IL2026", "--BaseType.VirtualMethodRequiresUnreferencedCode--")]
+		static void TestTypeWhichOverridesMethodVirtualMethodRequiresUnreferencedCode ()
 		{
 			var tmp = new TypeWhichOverridesMethod ();
 			tmp.VirtualMethodRequiresUnreferencedCode ();
