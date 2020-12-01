@@ -160,7 +160,7 @@ namespace System
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), nameof (RequireNonPublicMethods), new Type[] { typeof (Type) },
 			messageCode: "IL2082", message: new string[] {
-				"'type' parameter ", "in call to 'System.MethodThisDataFlowTypeTest.RequireNonPublicMethods(Type)'",
+				"'type' argument ", "in call to 'System.MethodThisDataFlowTypeTest.RequireNonPublicMethods(Type)'",
 				"implicit 'this' argument of method 'System.MethodThisDataFlowTypeTest.RequireThisPublicMethods()'" })]
 		public void RequireThisPublicMethods ()
 		{
