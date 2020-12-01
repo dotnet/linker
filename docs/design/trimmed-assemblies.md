@@ -15,7 +15,7 @@ Different SDKs have different defaults for these options. The .NET Core sets `Tr
 
 ### IsTrimmable metadata
 
-An SDK target runs before the linker to populate an ItemGroup of assemblies passed to the linker. Assemblies in this ItemGroup with metadata `IsTrimmable` set to `true` will be trimmed with the default mode. In 3.x, there are no public extension points for developers to set this metadata, but SDK authors can set `IsTrimmable` on `KnownFrameworkReference` and it will be applied to all of the assemblies that are part of the framework reference. In 3.x, this was used to enable trimming of netcoreapp assemblies.
+An SDK target runs before the linker to populate an ItemGroup of assemblies passed to the linker. Assemblies in this ItemGroup with metadata `IsTrimmable` set to `true` are trimmed with the default mode. In 3.x, there are no public extension points for developers to set this metadata, but SDK authors can set `IsTrimmable` on `KnownFrameworkReference` and it is applied to all of the assemblies that are part of the framework reference. In 3.x, this was used to enable trimming of netcoreapp assemblies.
 
 ## .NET 5 options
 
@@ -23,18 +23,18 @@ An SDK target runs before the linker to populate an ItemGroup of assemblies pass
 To enable aggressive trimming instead of assembly-level trimming, we provide a public property `TrimMode`. Setting this to`link` changes the default behavior from `copyused` to `link` (aggressive trimming) for assemblies that don't have per-assembly `TrimMode`. `TrimMode` can also be set as Item metadata to override the global property per-assembly.
 
 ### `PrepareForILLink`
-There is a new public target `PrepareForILLink` that runs before the `ILLink` target, and provides a convenient place to hook into the pipeline to modify metadata for trimming. SDK components can use this as an extension point via `BeforeTargets` and `AfterTargets`.
+There is a public target `PrepareForILLink` that runs before the `ILLink` target, and provides a convenient place to hook into the pipeline to modify metadata for trimming. SDK components can use this as an extension point via `BeforeTargets` and `AfterTargets`.
 
-The global `TrimMode` may be set any time before `PrepareForILLink` runs, which will set it to a default value if not set previously. 
+The global `TrimMode` may be set any time before `PrepareForILLink` runs, which sets it to a default value if not set previously. 
 
 ### `ManagedAssemblyToLink`
-The `PrepareForILLink` has a dependency that creates the ItemGroup `ManagedAssemblyToLink`, which represents the set of assemblies that will be passed to the linker. Custom targets may modify `IsTrimmable` and `TrimMode` metadata on these assemblies before `PrepareForILLink`, which will set the assembly action based on this metadata, or they may modify the metadata after `PrepareForILLink` has run.
+The `PrepareForILLink` has a dependency that creates the ItemGroup `ManagedAssemblyToLink`, which represents the set of assemblies that will be passed to the linker. Custom targets may modify `IsTrimmable` and `TrimMode` metadata on these assemblies before `PrepareForILLink`, which sets the assembly action based on this metadata, or they may modify the metadata after `PrepareForILLink` has run.
 
 It is not possible to change the items in `ManagedAssemblyToLink`, since this represents the set that needs to be filtered and replaced in the publish output. To change which assemblies are passed to the linker, a different extension point should be used to set `PostProcessAssemblies` metadata.
 
 ### Examples
 
-This shows how a developer could turn on aggressive trimming for framework assemblies (which are defined to be `IsTrimmable` by the SDK):
+This shows how a developer can turn on aggressive trimming for framework assemblies (which are defined to be `IsTrimmable` by the SDK):
 
 ```xml
 <PropertyGroup>
@@ -42,7 +42,7 @@ This shows how a developer could turn on aggressive trimming for framework assem
 </PropertyGroup>
 ```
 
-This shows how Blazor (or a developer) could hook into the build to opt assemblies into different levels of trimming based on the filename:
+This shows how Blazor (or a developer) can hook into the build to opt assemblies into different levels of trimming based on the filename:
 
 ```xml
 <Target Name="PrepareForBlazorILLink"
@@ -84,7 +84,7 @@ The behavior is the same as the `IsTrimmable` MSBuild metadata, so that:
 
 The only understood value is `True` (case-insensitive). Adding `[assembly: AssemblyMetadata("IsTrimmable", "False")]` will have no effect on the linker's behavior, because unattributed assemblies are assumed not to be trimmable by default. We will issue a warning in this case, to discourage misleading use of the attribute.
 
-The attribute will survive trimming like other assembly-level attributes do.
+The attribute survives trimming like other assembly-level attributes do.
 
 If `IsTrimmable` MSBuild metadata is set for an assembly, this overrides the `IsTrimmable` attribute. This allows a developer to opt an assembly into trimming even if it does not have the attribute, or to disable trimming of an assembly that has the attribute.
 
@@ -92,7 +92,7 @@ Instead of using `IsTrimmable` metadata in the SDK to control trimmable assembli
 
 ### `TrimmableAssembly`
 
-This ItemGroup contains assembly names that will be opted into trimming via `IsTrimmable` metadata. For simple cases, this provides an easier way to enable trimming of additional assemblies, without requiring a custom MSBuild target. It exists purely as a convenience because we expect this to be commonly done as .NET transitions to becoming more trim ready.
+This ItemGroup contains assembly names that get opted into trimming via `IsTrimmable` metadata. For simple cases, this provides an easier way to enable trimming of additional assemblies, without requiring a custom MSBuild target. It exists purely as a convenience because we expect this to be commonly done as .NET transitions to becoming more trim ready.
 
 ```xml
 <ItemGroup>
@@ -100,7 +100,7 @@ This ItemGroup contains assembly names that will be opted into trimming via `IsT
 </ItemGroup>
 ```
 
-The above will opt `MyAssembly.dll` into trimming. Note that the ItemGroup should contain assembly names without an extension, similar to [`TrimmerRootAssembly`](https://docs.microsoft.com/en-us/dotnet/core/deploying/trimming-options#root-assemblies). Before .NET 6 this would have been done with a target:
+The above opts `MyAssembly.dll` into trimming. Note that the ItemGroup should contain assembly names without an extension, similar to [`TrimmerRootAssembly`](https://docs.microsoft.com/en-us/dotnet/core/deploying/trimming-options#root-assemblies). Before .NET 6 this would have been done with a target:
 
 ```xml
 <Target Name="ConfigureTrimming"
