@@ -30,7 +30,7 @@ The global `TrimMode` may be set any time before `PrepareForILLink` runs, which 
 ### `ManagedAssemblyToLink`
 The `PrepareForILLink` has a dependency that creates the ItemGroup `ManagedAssemblyToLink`, which represents the set of assemblies that will be passed to the linker. Custom targets may modify `IsTrimmable` and `TrimMode` metadata on these assemblies before `PrepareForILLink`, which will set the assembly action based on this metadata, or they may modify the metadata after `PrepareForILLink` has run.
 
-It will be illegal to change the items in `ManagedAssemblyToLink`, since this represents the set that needs to be filtered and replaced in the publish output. To change which assemblies are passed to the linker, a different extension point should be used to set `PostProcessAssemblies` metadata.
+It is not possible to change the items in `ManagedAssemblyToLink`, since this represents the set that needs to be filtered and replaced in the publish output. To change which assemblies are passed to the linker, a different extension point should be used to set `PostProcessAssemblies` metadata.
 
 ### Examples
 
@@ -160,7 +160,7 @@ We would also need to decide the precedence betwen `TrimmableAssembly` and `NonT
 
 ### `IsTrimmable` MSBuild metadata vs ItemGroup vs Property
 
-It is not always obvious from the project file which assemblies will be included in the published application. Some assemblies are shipped as part of a framework reference, and others as OOB packages. Additionally, the SDK has its own configuration knobs that control whether files are eligible for post-processing. The final list is only "known" until the publish targets run, which is why the most flexible way to control the set of trimmed assemblies is during `PrepareForILLink`. Per-item metadata is a natural way to do this in MSBuild, an can be used for example to filter on the filenames in `ManagedAssemblyToLink`.
+It is not always obvious from the project file which assemblies will be included in the published application. Some assemblies are shipped as part of a framework reference, and others as OOB packages. Additionally, the SDK has its own configuration knobs that control whether files are eligible for post-processing. The final list is only "known" until the publish targets run, which is why the most flexible way to control the set of trimmed assemblies is during `PrepareForILLink`. Per-item metadata is a natural way to do this in MSBuild, and can be used for example to filter on the filenames in `ManagedAssemblyToLink`.
 
 However, sometimes developers know beforehand that a particular assembly will be a part of the published app. In such cases, it doesn't make sense to require them to write a target, hence the proposal for a simplified opt-in via the `TrimmableAssembly` ItemGroup. This option does not replace `IsTrimmable` metadata, but works on top of it.
 
