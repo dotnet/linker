@@ -92,7 +92,7 @@ Instead of using `IsTrimmable` metadata in the SDK to control trimmable assembli
 
 ### `TrimmableAssembly`
 
-This ItemGroup contains assembly names that will be opted into trimming via `IsTrimmable` metadata. For simple cases, this provides an easier way to enable trimming of additional assemblies, without requiring a custom MSBuild target.
+This ItemGroup contains assembly names that will be opted into trimming via `IsTrimmable` metadata. For simple cases, this provides an easier way to enable trimming of additional assemblies, without requiring a custom MSBuild target. It exists purely as a convenience because we expect this to be commonly done as .NET transitions to becoming more trim ready.
 
 ```xml
 <ItemGroup>
@@ -121,7 +121,7 @@ We expect that the .NET SDK will eventually set `TrimMode` to `link` instead of 
 
 ### `TrimAllAssemblies` global opt-in
 
-We could make it it easier to enabling trimming for all assemblies with a simple boolean. This would be equivalent to setting `IsTrimmable` to `true` on every assembly that is input to the linker. For example:
+We could make it it easier to enable trimming for all assemblies with a simple boolean. This would be equivalent to setting `IsTrimmable` to `true` on every assembly that is input to the linker. For example:
 
 ```xml
 <PropertyGroup>
@@ -135,6 +135,7 @@ could be used instead of
 <Target Name="ConfigureTrimming"
         BeforeTargets="PrepareForILLink">
   <ItemGroup>
+    <TrimmerRootAssembly Include="@(IntermediateAssembly)" />
     <ManagedAssemblyToLink>
       <IsTrimmable>true</IsTrimmable>
     </ManagedAssemblyToLink>
@@ -148,7 +149,9 @@ This could be set by default in future SDKs, or it could be set by the developer
 
 With more aggressive defaults, it could make sense to support an attribute opt-out via `[assembly: AssemblyMetadata("IsTrimmable", "False")]`. This would provide a way for developers to indicate that their assemblies should not be trimmed.
 
-We should also consider whether such an opt-out should prevent the linker from rewriting the attributed assembly. This could be useful as a way to preserve assemblies that have invariants which would be broken by rewriting, or which contain data that would be removed by the linker even with the `copy` action.
+Its semantics should be the same as setting `IsTrimmable` MSBuild metadata to `false` for the assembly. These semantics result in the assembly getting rooted and getting the `copy` action, which keeps all members in the assembly but can still rewrite it to fix references to removed type forwarders.
+
+We may also consider whether the opt-out should instead prevent the linker from rewriting the attributed assembly. A developer might reasonably expect that adding this attribute would prevent modification by the linker. This could be useful as a way to preserve assemblies that have invariants which would be broken by rewriting, or which contain data that would be removed by the linker even with the `copy` action. We would need to decide how to handle removed type forwarders - we could preserve referenced type forwarders, or produce an error if the assembly references a removed type forwarder.
 
 ### `NonTrimmableAssembly` opt-out
 
