@@ -149,7 +149,9 @@ This could be set by default in future SDKs, or it could be set by the developer
 
 With more aggressive defaults, it could make sense to support an attribute opt-out via `[assembly: AssemblyMetadata("IsTrimmable", "False")]`. This would provide a way for developers to indicate that their assemblies should not be trimmed.
 
-Its semantics should be the same as setting `IsTrimmable` MSBuild metadata to `false` for the assembly. These semantics result in the assembly getting rooted and getting the `copy` action, which keeps all members in the assembly but can still rewrite it to fix references to removed type forwarders.
+Its semantics should be the same as setting `IsTrimmable` MSBuild metadata to `false` for the assembly. These semantics currently result in the assembly getting rooted and getting the `copy` action, which keeps all members in the assembly but can still rewrite it to fix references to removed type forwarders.
+
+We would like to avoid a situation where developers overuse the attribute, and we end up with many libraries that can't be trimmed because of it. This would be especially counterproductive for developers interested in aggressive linking. Its use should be reserved for cases where a library is intrinsically not trimmable - but it's not obvious when this would be the case. Typically, whether a library is safe to trim depends on the context of the application that uses it.
 
 We may also consider whether the opt-out should instead prevent the linker from rewriting the attributed assembly. A developer might reasonably expect that adding this attribute would prevent modification by the linker. This could be useful as a way to preserve assemblies that have invariants which would be broken by rewriting, or which contain data that would be removed by the linker even with the `copy` action. We would need to decide how to handle removed type forwarders - we could preserve referenced type forwarders, or produce an error if the assembly references a removed type forwarder.
 
@@ -158,6 +160,8 @@ We may also consider whether the opt-out should instead prevent the linker from 
 Similar to `TrimmableAssembly`, we could introduce an ItemGroup to simplify opting out of trimming for an assembly. It would work the same way, setting `IsTrimmable` to `false` on the specified assembly. With the current defaults that don't trim unattributed assemblies, we expect this to be significantly less useful than the `TrimmableAssembly`, but it would be useful to opt out of more aggressive defaults.
 
 We would also need to decide the precedence betwen `TrimmableAssembly` and `NonTrimmableAssembly`, or issue a warning if an assembly is in both ItemGroups.
+
+An alternative to a separate ItemGroup would be to support `IsTrimmable` metadata on the `TrimmableAssembly` ItemGroup, which could be set to `false` to opt out of trimming.
 
 ## Alternatives considered
 
