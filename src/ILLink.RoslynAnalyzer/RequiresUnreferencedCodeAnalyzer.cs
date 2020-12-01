@@ -47,6 +47,9 @@ namespace ILLink.RoslynAnalyzer
 
 				context.RegisterOperationAction (operationContext => {
 					var call = (IInvocationOperation) operationContext.Operation;
+					if (call.IsVirtual && call.TargetMethod.OverriddenMethod != null)
+						return;
+
 					CheckMethodOrCtorCall (operationContext, call.TargetMethod, call.Syntax.GetLocation ());
 				}, OperationKind.Invocation);
 
