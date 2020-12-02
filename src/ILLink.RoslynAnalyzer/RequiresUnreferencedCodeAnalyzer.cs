@@ -86,21 +86,6 @@ namespace ILLink.RoslynAnalyzer
 							attr.ConstructorArguments.Length == 1 &&
 							attr.ConstructorArguments[0] is { Type: { SpecialType: SpecialType.System_String } } ctorArg) {
 
-							StringBuilder methodName = new StringBuilder ();
-							if (method.MethodKind == MethodKind.PropertyGet || method.MethodKind == MethodKind.PropertySet) {
-								methodName.Append (method.ContainingType + "." + method.Name + "(");
-								bool shouldPrependComma = false;
-								foreach (var parameter in method.Parameters) {
-									if (shouldPrependComma)
-										methodName.Append (",");
-									methodName.Append (parameter.Type.ToDisplayString (new SymbolDisplayFormat ()));
-									shouldPrependComma = true;
-								}
-								methodName.Append (")");
-
-							} else
-								methodName.Append (method.OriginalDefinition.ToString ());
-
 							string urlArgument = "";
 							foreach (var namedArgument in attr.NamedArguments) {
 								if (namedArgument.Key == "Url")
@@ -109,7 +94,7 @@ namespace ILLink.RoslynAnalyzer
 							operationContext.ReportDiagnostic (Diagnostic.Create (
 								s_rule,
 								location,
-								methodName,
+								method.OriginalDefinition.ToString (),
 								(string) ctorArg.Value!,
 								urlArgument));
 						}

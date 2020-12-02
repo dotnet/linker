@@ -922,6 +922,8 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			}
 
 			fullName += "::" + memberName;
+			if (memberName.EndsWith (".get") || memberName.EndsWith (".set"))
+				return fullName;
 			if (parameterTypes != null) {
 				fullName += "(" + string.Join (",", parameterTypes.Select (t => t.Value.ToString ())) + ")";
 			}
@@ -979,7 +981,10 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 				string fullName = memberDefinition.DeclaringType.FullName + "::";
 				if (memberDefinition is MethodDefinition method) {
-					fullName += method.GetSignature ();
+					if (method.IsSetter || method.IsGetter)
+						fullName += method.IsSetter ? method.Name.Substring (4) + ".set" : method.Name.Substring (4) + ".get";
+					else
+						fullName += method.GetSignature ();
 				} else {
 					fullName += memberDefinition.Name;
 				}
@@ -989,7 +994,12 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				string type = param.ParameterType.FullName;
 				return $"{type}::{param.Name}";
 			} else if (member is MethodReturnType returnType) {
-				return returnType.Method.ToString ();
+				MethodDefinition method = (MethodDefinition) returnType.Method;
+				if (method.IsSetter || method.IsGetter)
+					return method.IsSetter ? method.ReturnType + " " + method.DeclaringType.FullName + "::" + method.Name.Substring (4) + ".set"
+						: method.ReturnType + " " + method.DeclaringType.FullName + "::" + method.Name.Substring (4) + ".get";
+				else
+					return returnType.Method.ToString ();
 			}
 
 			throw new NotImplementedException ($"Getting the full member name has not been implemented for {member}");
