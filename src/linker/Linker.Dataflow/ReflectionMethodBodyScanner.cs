@@ -1396,9 +1396,11 @@ namespace Mono.Linker.Dataflow
 					if (!valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes.HasFlag (requiredMemberTypes)) {
 						string missingMemberTypes = "''DynamicallyAccessedMembersAttribute''";
 						if (requiredMemberTypes is not DynamicallyAccessedMemberTypes.All) {
-							var missingMemberTypesList = Enum.GetValues<DynamicallyAccessedMemberTypes> ()
+							var missingMemberTypesList = Enum.GetValues (typeof (DynamicallyAccessedMemberTypes))
+								.Cast<DynamicallyAccessedMemberTypes> ()
 								.Where (damt => ((requiredMemberTypes ^ valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes) & damt) == damt && damt != DynamicallyAccessedMemberTypes.None)
 								.Select (damt => damt.ToString ());
+
 							missingMemberTypes = string.Join (", ", missingMemberTypesList.Select (mmt => $"'DynamicallyAccessedMemberTypes.{mmt}'"));
 						}
 
