@@ -71,7 +71,7 @@ class C
 	}
 }";
 			return VerifyCS.VerifyAnalyzerAsync (PropertyRequires,
-				// (8,7): warning IL2026: Calling 'C.get_PropertyRequires()' which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. Message for --getter PropertyRequires--. .
+				// (8,7): warning IL2026: Calling 'C.PropertyRequires.get' which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. Message for --getter PropertyRequires--.
 				VerifyCS.Diagnostic ().WithSpan (8, 7, 8, 23).WithArguments ("C.PropertyRequires.get", "Message for --getter PropertyRequires--", "")
 				);
 		}
@@ -95,7 +95,7 @@ class C
 	}
 }";
 			return VerifyCS.VerifyAnalyzerAsync (PropertyRequires,
-				// (8,3): warning IL2026: Calling 'C.set_PropertyRequires(Int32)' which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. Message for --setter PropertyRequires--. .
+				// (8,3): warning IL2026: Calling 'C.PropertyRequires.set' which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. Message for --setter PropertyRequires--. 
 				VerifyCS.Diagnostic ().WithSpan (8, 3, 8, 19).WithArguments ("C.PropertyRequires.set", "Message for --setter PropertyRequires--", "")
 				);
 		}

@@ -995,11 +995,12 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				return $"{type}::{param.Name}";
 			} else if (member is MethodReturnType returnType) {
 				MethodDefinition method = (MethodDefinition) returnType.Method;
+				string fullName = method.ReturnType + " " + method.DeclaringType.FullName + "::";
 				if (method.IsSetter || method.IsGetter)
-					return method.IsSetter ? method.ReturnType + " " + method.DeclaringType.FullName + "::" + method.Name.Substring (4) + ".set"
-						: method.ReturnType + " " + method.DeclaringType.FullName + "::" + method.Name.Substring (4) + ".get";
+					fullName += method.IsSetter ? method.Name.Substring (4) + ".set" : method.Name.Substring (4) + ".get";
 				else
-					return returnType.Method.ToString ();
+					fullName += method.GetSignature ();
+				return fullName;
 			}
 
 			throw new NotImplementedException ($"Getting the full member name has not been implemented for {member}");
