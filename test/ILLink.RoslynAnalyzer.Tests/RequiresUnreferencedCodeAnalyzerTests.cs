@@ -25,7 +25,7 @@ class C
 }";
 			return VerifyCS.VerifyAnalyzerAsync (TestRequiresWithMessageOnlyOnMethod,
 				// (8,17): warning IL2026: Calling 'System.Int32 C::M1()' which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. message.
-				VerifyCS.Diagnostic ().WithSpan (8, 17, 8, 21).WithArguments ("C.M1()", "message", "")
+				expected: VerifyCS.Diagnostic ().WithSpan (8, 17, 8, 21).WithArguments ("C.M1()", "message", "")
 				);
 		}
 
@@ -48,7 +48,7 @@ class C
 }";
 			return VerifyCS.VerifyAnalyzerAsync (MessageAndUrlOnMethod,
 				// (8,3): warning IL2026: Calling 'C.RequiresWithMessageAndUrl()' which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. Message for --RequiresWithMessageAndUrl--.
-				VerifyCS.Diagnostic ().WithSpan (8, 3, 8, 31).WithArguments ("C.RequiresWithMessageAndUrl()", "Message for --RequiresWithMessageAndUrl--", "https://helpurl")
+				expected: VerifyCS.Diagnostic ().WithSpan (8, 3, 8, 31).WithArguments ("C.RequiresWithMessageAndUrl()", "Message for --RequiresWithMessageAndUrl--", "https://helpurl")
 				);
 		}
 
@@ -72,7 +72,7 @@ class C
 }";
 			return VerifyCS.VerifyAnalyzerAsync (PropertyRequires,
 				// (8,7): warning IL2026: Calling 'C.PropertyRequires.get' which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. Message for --getter PropertyRequires--.
-				VerifyCS.Diagnostic ().WithSpan (8, 7, 8, 23).WithArguments ("C.PropertyRequires.get", "Message for --getter PropertyRequires--", "")
+				expected: VerifyCS.Diagnostic ().WithSpan (8, 7, 8, 23).WithArguments ("C.PropertyRequires.get", "Message for --getter PropertyRequires--", "")
 				);
 		}
 
@@ -96,7 +96,7 @@ class C
 }";
 			return VerifyCS.VerifyAnalyzerAsync (PropertyRequires,
 				// (8,3): warning IL2026: Calling 'C.PropertyRequires.set' which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. Message for --setter PropertyRequires--. 
-				VerifyCS.Diagnostic ().WithSpan (8, 3, 8, 19).WithArguments ("C.PropertyRequires.set", "Message for --setter PropertyRequires--", "")
+				expected: VerifyCS.Diagnostic ().WithSpan (8, 3, 8, 19).WithArguments ("C.PropertyRequires.set", "Message for --setter PropertyRequires--", "")
 				);
 		}
 	}
