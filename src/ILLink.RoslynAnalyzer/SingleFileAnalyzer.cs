@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
@@ -21,20 +22,20 @@ namespace ILLink.RoslynAnalyzer
 
 		private static readonly DiagnosticDescriptor LocationRule = new DiagnosticDescriptor (
 			IL3000,
-			new LocalizableResourceString (nameof (ILLinkRoslynAnalyzerResources.AvoidAssemblyLocationInSingleFileTitle),
-				ILLinkRoslynAnalyzerResources.ResourceManager, typeof (ILLinkRoslynAnalyzerResources)),
-			new LocalizableResourceString (nameof (ILLinkRoslynAnalyzerResources.AvoidAssemblyLocationInSingleFileMessage),
-				ILLinkRoslynAnalyzerResources.ResourceManager, typeof (ILLinkRoslynAnalyzerResources)),
+			new LocalizableResourceString (nameof (Resources.AvoidAssemblyLocationInSingleFileTitle),
+				Resources.ResourceManager, typeof (Resources)),
+			new LocalizableResourceString (nameof (Resources.AvoidAssemblyLocationInSingleFileMessage),
+				Resources.ResourceManager, typeof (Resources)),
 			DiagnosticCategory.Publish,
 			DiagnosticSeverity.Warning,
 			isEnabledByDefault: true);
 
 		private static readonly DiagnosticDescriptor GetFilesRule = new DiagnosticDescriptor (
 			IL3001,
-			new LocalizableResourceString (nameof (ILLinkRoslynAnalyzerResources.AvoidAssemblyGetFilesInSingleFileTitle),
-				ILLinkRoslynAnalyzerResources.ResourceManager, typeof (ILLinkRoslynAnalyzerResources)),
-			new LocalizableResourceString (nameof (ILLinkRoslynAnalyzerResources.AvoidAssemblyGetFilesInSingleFileMessage),
-				ILLinkRoslynAnalyzerResources.ResourceManager, typeof (ILLinkRoslynAnalyzerResources)),
+			new LocalizableResourceString (nameof (Resources.AvoidAssemblyGetFilesInSingleFileTitle),
+				Resources.ResourceManager, typeof (Resources)),
+			new LocalizableResourceString (nameof (Resources.AvoidAssemblyGetFilesInSingleFileMessage),
+				Resources.ResourceManager, typeof (Resources)),
 			DiagnosticCategory.Publish,
 			DiagnosticSeverity.Warning,
 			isEnabledByDefault: true);
@@ -49,13 +50,11 @@ namespace ILLink.RoslynAnalyzer
 			context.RegisterCompilationStartAction (context => {
 				var compilation = context.Compilation;
 
-				var isSingleFilePublish = context.Options.GetMSBuildPropertyValue (
-					MSBuildPropertyOptionNames.PublishSingleFile, compilation, context.CancellationToken);
+				var isSingleFilePublish = context.Options.GetMSBuildPropertyValue (MSBuildPropertyOptionNames.PublishSingleFile, compilation);
 				if (!string.Equals (isSingleFilePublish?.Trim (), "true", StringComparison.OrdinalIgnoreCase)) {
 					return;
 				}
-				var includesAllContent = context.Options.GetMSBuildPropertyValue (
-					MSBuildPropertyOptionNames.IncludeAllContentForSelfExtract, compilation, context.CancellationToken);
+				var includesAllContent = context.Options.GetMSBuildPropertyValue (MSBuildPropertyOptionNames.IncludeAllContentForSelfExtract, compilation);
 				if (string.Equals (includesAllContent?.Trim (), "true", StringComparison.OrdinalIgnoreCase)) {
 					return;
 				}
@@ -63,7 +62,8 @@ namespace ILLink.RoslynAnalyzer
 				var propertiesBuilder = ImmutableArray.CreateBuilder<IPropertySymbol> ();
 				var methodsBuilder = ImmutableArray.CreateBuilder<IMethodSymbol> ();
 
-				if (compilation.TryGetOrCreateTypeByMetadataName (WellKnownTypeNames.SystemReflectionAssembly, out var assemblyType)) {
+				var assemblyType = compilation.GetTypeByMetadataName ("System.Reflection.Assembly");
+				if (assemblyType != null) {
 					// properties
 					AddIfNotNull (propertiesBuilder, TryGetSingleSymbol<IPropertySymbol> (assemblyType.GetMembers ("Location")));
 
@@ -72,7 +72,8 @@ namespace ILLink.RoslynAnalyzer
 					methodsBuilder.AddRange (assemblyType.GetMembers ("GetFiles").OfType<IMethodSymbol> ());
 				}
 
-				if (compilation.TryGetOrCreateTypeByMetadataName (WellKnownTypeNames.SystemReflectionAssemblyName, out var assemblyNameType)) {
+				var assemblyNameType = compilation.GetTypeByMetadataName ("System.Reflection.AssemblyName");
+				if (assemblyNameType != null) {
 					AddIfNotNull (propertiesBuilder, TryGetSingleSymbol<IPropertySymbol> (assemblyNameType.GetMembers ("CodeBase")));
 					AddIfNotNull (propertiesBuilder, TryGetSingleSymbol<IPropertySymbol> (assemblyNameType.GetMembers ("EscapedCodeBase")));
 				}
@@ -87,7 +88,7 @@ namespace ILLink.RoslynAnalyzer
 						return;
 					}
 
-					operationContext.ReportDiagnostic (Diagnostic.Create (LocationRule, access.Syntax.GetLocation ()));
+					operationContext.ReportDiagnostic (Diagnostic.Create (LocationRule, access.Syntax.GetLocation (), property));
 				}, OperationKind.PropertyReference);
 
 				context.RegisterOperationAction (operationContext => {
@@ -97,7 +98,7 @@ namespace ILLink.RoslynAnalyzer
 						return;
 					}
 
-					operationContext.ReportDiagnostic (Diagnostic.Create (GetFilesRule, invocation.Syntax.GetLocation ()));
+					operationContext.ReportDiagnostic (Diagnostic.Create (GetFilesRule, invocation.Syntax.GetLocation (), targetMethod));
 				}, OperationKind.Invocation);
 
 				return;

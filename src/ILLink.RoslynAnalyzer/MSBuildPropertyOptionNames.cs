@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace ILLink.RoslynAnalyzer
 {
-	internal static class MSBuildPropertyOptionNames
+	public static class MSBuildPropertyOptionNames
 	{
 		public const string PublishSingleFile = nameof (PublishSingleFile);
 		public const string IncludeAllContentForSelfExtract = nameof (IncludeAllContentForSelfExtract);
@@ -18,7 +18,7 @@ namespace ILLink.RoslynAnalyzer
 		public static void VerifySupportedPropertyOptionName (string propertyOptionName)
 		{
 #if DEBUG
-            Debug.Assert(typeof(MSBuildPropertyOptionNames).GetFields().Single(f => f.Name == propertyOptionName) != null);
+			Debug.Assert (typeof (MSBuildPropertyOptionNames).GetFields ().Single (f => f.Name == propertyOptionName) != null);
 #endif
 		}
 	}

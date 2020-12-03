@@ -17,10 +17,10 @@ namespace ILLink.RoslynAnalyzer
 
 		private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor (
 			DiagnosticId,
-			new LocalizableResourceString (nameof (ILLinkRoslynAnalyzerResources.RequiresUnreferencedCodeAnalyzerTitle),
-				ILLinkRoslynAnalyzerResources.ResourceManager, typeof (ILLinkRoslynAnalyzerResources)),
-			new LocalizableResourceString (nameof (ILLinkRoslynAnalyzerResources.RequiresUnreferencedCodeAnalyzerMessage),
-				ILLinkRoslynAnalyzerResources.ResourceManager, typeof (ILLinkRoslynAnalyzerResources)),
+			new LocalizableResourceString (nameof (Resources.RequiresUnreferencedCodeAnalyzerTitle),
+			Resources.ResourceManager, typeof (Resources)),
+			new LocalizableResourceString (nameof (Resources.RequiresUnreferencedCodeAnalyzerMessage),
+			Resources.ResourceManager, typeof (Resources)),
 			DiagnosticCategory.Trimming,
 			DiagnosticSeverity.Warning,
 			isEnabledByDefault: true);
@@ -37,6 +37,9 @@ namespace ILLink.RoslynAnalyzer
 
 				context.RegisterOperationAction (operationContext => {
 					var call = (IInvocationOperation) operationContext.Operation;
+					if (call.IsVirtual && call.TargetMethod.OverriddenMethod != null)
+						return;
+
 					CheckMethodOrCtorCall (operationContext, call.TargetMethod, call.Syntax.GetLocation ());
 				}, OperationKind.Invocation);
 

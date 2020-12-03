@@ -9,7 +9,7 @@ using VerifyCS = ILLink.RoslynAnalyzer.Tests.CSharpAnalyzerVerifier<
 
 namespace ILLink.RoslynAnalyzer.Tests
 {
-	public class AnalyzerTests
+	public class RequiresUnreferencedCodeAnalyzerTests
 	{
 		[Fact]
 		public Task SimpleDiagnostic ()
