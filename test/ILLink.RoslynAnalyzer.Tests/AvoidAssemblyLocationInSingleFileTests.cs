@@ -22,7 +22,7 @@ class C
 }";
 
 			return VerifyCS.VerifyAnalyzerAsync (src,
-				new (string, string)[] { ("build_property.PublishSingleFile", "true") },
+				new (string, string)[] { ($"build_property.{MSBuildPropertyOptionNames.PublishSingleFile}", "true") },
 				VerifyCS.Diagnostic (AvoidAssemblyLocationInSingleFile.IL3000).WithSpan (5, 26, 5, 66).WithArguments ("System.Reflection.Assembly.Location"));
 		}
 
@@ -43,7 +43,7 @@ class C
     }
 }";
 			return VerifyCS.VerifyAnalyzerAsync (src,
-				new (string, string)[] { ("build_property.PublishSingleFile", "true") },
+				new (string, string)[] { ($"build_property.{MSBuildPropertyOptionNames.PublishSingleFile}", "true") },
 				// /0/Test0.cs(8,13): warning IL3000: 'System.Reflection.Assembly.Location' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'.
 				VerifyCS.Diagnostic (AvoidAssemblyLocationInSingleFile.IL3000).WithSpan (8, 13, 8, 23).WithArguments ("System.Reflection.Assembly.Location")
 			);
@@ -64,7 +64,7 @@ class C
     }
 }";
 			return VerifyCS.VerifyAnalyzerAsync (src,
-				new (string, string)[] { ("build_property.PublishSingleFile", "true") },
+				new (string, string)[] { ($"build_property.{MSBuildPropertyOptionNames.PublishSingleFile}", "true") },
 				// /0/Test0.cs(8,13): warning IL3001: Assemblies embedded in a single-file app cannot have additional files in the manifest.
 				VerifyCS.Diagnostic (AvoidAssemblyLocationInSingleFile.IL3001).WithSpan (8, 13, 8, 41).WithArguments ("System.Reflection.Assembly.GetFile(string)"),
 				// /0/Test0.cs(9,13): warning IL3001: Assemblies embedded in a single-file app cannot have additional files in the manifest.
@@ -87,7 +87,7 @@ class C
     }
 }";
 			return VerifyCS.VerifyAnalyzerAsync (src,
-				new (string, string)[] { ("build_property.PublishSingleFile", "true") },
+				new (string, string)[] { ($"build_property.{MSBuildPropertyOptionNames.PublishSingleFile}", "true") },
 				// /0/Test0.cs(8,13): warning IL3000: 'System.Reflection.AssemblyName.CodeBase' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'.
 				VerifyCS.Diagnostic (AvoidAssemblyLocationInSingleFile.IL3000).WithSpan (8, 13, 8, 23).WithArguments ("System.Reflection.AssemblyName.CodeBase"),
 				// /0/Test0.cs(9,13): warning IL3000: 'System.Reflection.AssemblyName.EscapedCodeBase' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'.
@@ -112,7 +112,7 @@ class C
     }
 }";
 			return VerifyCS.VerifyAnalyzerAsync (src,
-				new (string, string)[] { ("build_property.PublishSingleFile", "true") },
+				new (string, string)[] { ($"build_property.{MSBuildPropertyOptionNames.PublishSingleFile}", "true") },
 				// /0/Test0.cs(8,13): warning IL3000: 'System.Reflection.Assembly.Location' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'.
 				VerifyCS.Diagnostic (AvoidAssemblyLocationInSingleFile.IL3000).WithSpan (8, 13, 8, 23).WithArguments ("System.Reflection.Assembly.Location"),
 				// /0/Test0.cs(9,13): warning IL3001: Assemblies embedded in a single-file app cannot have additional files in the manifest.
