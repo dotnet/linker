@@ -26,7 +26,7 @@ namespace ILLink.RoslynAnalyzer
 				Resources.ResourceManager, typeof (Resources)),
 			new LocalizableResourceString (nameof (Resources.AvoidAssemblyLocationInSingleFileMessage),
 				Resources.ResourceManager, typeof (Resources)),
-			DiagnosticCategory.Publish,
+			DiagnosticCategory.SingleFile,
 			DiagnosticSeverity.Warning,
 			isEnabledByDefault: true);
 
@@ -36,7 +36,7 @@ namespace ILLink.RoslynAnalyzer
 				Resources.ResourceManager, typeof (Resources)),
 			new LocalizableResourceString (nameof (Resources.AvoidAssemblyGetFilesInSingleFileMessage),
 				Resources.ResourceManager, typeof (Resources)),
-			DiagnosticCategory.Publish,
+			DiagnosticCategory.SingleFile,
 			DiagnosticSeverity.Warning,
 			isEnabledByDefault: true);
 

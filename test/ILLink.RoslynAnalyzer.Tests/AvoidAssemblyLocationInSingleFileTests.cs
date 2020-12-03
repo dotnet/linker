@@ -23,6 +23,7 @@ class C
 
 			return VerifyCS.VerifyAnalyzerAsync (src,
 				new (string, string)[] { ($"build_property.{MSBuildPropertyOptionNames.PublishSingleFile}", "true") },
+				// (5,26): warning IL3000: 'System.Reflection.Assembly.Location' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'.
 				VerifyCS.Diagnostic (AvoidAssemblyLocationInSingleFile.IL3000).WithSpan (5, 26, 5, 66).WithArguments ("System.Reflection.Assembly.Location"));
 		}
 
@@ -44,7 +45,7 @@ class C
 }";
 			return VerifyCS.VerifyAnalyzerAsync (src,
 				new (string, string)[] { ($"build_property.{MSBuildPropertyOptionNames.PublishSingleFile}", "true") },
-				// /0/Test0.cs(8,13): warning IL3000: 'System.Reflection.Assembly.Location' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'.
+				// (8,13): warning IL3000: 'System.Reflection.Assembly.Location' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'.
 				VerifyCS.Diagnostic (AvoidAssemblyLocationInSingleFile.IL3000).WithSpan (8, 13, 8, 23).WithArguments ("System.Reflection.Assembly.Location")
 			);
 		}
