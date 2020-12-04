@@ -16,12 +16,12 @@ can be retrieved by enabling dependencies dumping during linking of a
 Xamarin.Android or a Xamarin.iOS project.
 
 That can be done on the command line by setting
-`LinkerDumpDependencies` property to `true` and building the
+`_TrimmerDumpDependencies` property to `true` and building the
 project. (make sure the LinkAssemblies task is called, it might
 require cleaning the project sometimes) Usually it is enough to build
 the project like this:
 
-```msbuild /p:LinkerDumpDependencies=true /p:Configuration=Release YourAppProject.csproj```
+```msbuild /p:_TrimmerDumpDependencies=true /p:Configuration=Release YourAppProject.csproj```
 
 After a successful build, there will be a linker-dependencies.xml.gz
 file created, containing the information for the analyzer.
