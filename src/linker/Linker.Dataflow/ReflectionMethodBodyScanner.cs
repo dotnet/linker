@@ -1394,7 +1394,7 @@ namespace Mono.Linker.Dataflow
 					reflectionContext.RecordHandledPattern ();
 				} else if (uniqueValue is LeafValueWithDynamicallyAccessedMemberNode valueWithDynamicallyAccessedMember) {
 					if (!valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes.HasFlag (requiredMemberTypes)) {
-						string missingMemberTypes = "''DynamicallyAccessedMembersAttribute''";
+						string missingMemberTypes = "'DynamicallyAccessedMemberTypes.All'";
 						if (requiredMemberTypes != DynamicallyAccessedMemberTypes.All) {
 							var missingMemberTypesList = Enum.GetValues (typeof (DynamicallyAccessedMemberTypes))
 								.Cast<DynamicallyAccessedMemberTypes> ()
