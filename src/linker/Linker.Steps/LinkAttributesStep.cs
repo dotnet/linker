@@ -197,14 +197,14 @@ namespace Mono.Linker.Steps
 			ProcessXml (Context.StripLinkAttributes, Context.IgnoreLinkAttributes);
 		}
 
-		protected override bool AllowAllAssembliesSelector { get => true; }
+		protected override AllowedAssemblies AllowedAssemblySelector { get => _resourceAssembly != null ? AllowedAssemblies.ContainingAssembly : AllowedAssemblies.AllAssemblies; }
 
-		protected override void ProcessAssembly (AssemblyDefinition assembly, XPathNodeIterator iterator, bool warnOnUnresolvedTypes)
+		protected override void ProcessAssembly (AssemblyDefinition assembly, XPathNavigator nav, bool warnOnUnresolvedTypes)
 		{
-			IEnumerable<CustomAttribute> attributes = ProcessAttributes (iterator.Current, assembly);
+			IEnumerable<CustomAttribute> attributes = ProcessAttributes (nav, assembly);
 			if (attributes.Any ())
 				Context.CustomAttributes.AddCustomAttributes (assembly, attributes);
-			ProcessTypes (assembly, iterator, warnOnUnresolvedTypes);
+			ProcessTypes (assembly, nav, warnOnUnresolvedTypes);
 		}
 
 		protected override void ProcessType (TypeDefinition type, XPathNavigator nav)
