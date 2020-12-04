@@ -783,13 +783,13 @@ namespace Mono.Linker.Steps
 			var isPreserveDependency = IsUserDependencyMarker (ca.AttributeType);
 			var isDynamicDependency = ca.AttributeType.IsTypeOf<DynamicDependencyAttribute> ();
 
-			if (!((isPreserveDependency || isDynamicDependency) && provider is MemberReference mr))
+			if (!((isPreserveDependency || isDynamicDependency) && provider is IMemberDefinition member))
 				return false;
 
 			if (isPreserveDependency)
-				MarkUserDependency (mr, ca, sourceLocationMember);
+				MarkUserDependency (member, ca, sourceLocationMember);
 
-			if (_context.KeepDependencyAttributes || Annotations.GetAction (mr.Module.Assembly) != AssemblyAction.Link) {
+			if (_context.KeepDependencyAttributes || Annotations.GetAction ((member as MemberReference).Module.Assembly) != AssemblyAction.Link) {
 				MarkCustomAttribute (ca, reason, sourceLocationMember);
 			} else {
 				// Record the custom attribute so that it has a reason, without actually marking it.
@@ -887,11 +887,13 @@ namespace Mono.Linker.Steps
 
 		protected virtual bool IsUserDependencyMarker (TypeReference type)
 		{
-			return DynamicDependencyLookupStep.IsPreserveDependencyAttribute (type);
+			return type.Name == "PreserveDependencyAttribute" && type.Namespace == "System.Runtime.CompilerServices";
 		}
 
-		protected virtual void MarkUserDependency (MemberReference context, CustomAttribute ca, IMemberDefinition sourceLocationMember)
+		protected virtual void MarkUserDependency (IMemberDefinition context, CustomAttribute ca, IMemberDefinition sourceLocationMember)
 		{
+			_context.LogWarning ($"'PreserveDependencyAttribute' is deprecated. Use 'DynamicDependencyAttribute' instead.", 2033, context);
+
 			if (!DynamicDependency.ShouldProcess (_context, ca))
 				return;
 
@@ -901,7 +903,7 @@ namespace Mono.Linker.Steps
 				assembly = _context.TryResolve (assemblyName);
 				if (assembly == null) {
 					_context.LogWarning (
-						$"Could not resolve dependency assembly '{assemblyName}' specified in a 'PreserveDependency' attribute", 2003, context.Resolve ());
+						$"Could not resolve dependency assembly '{assemblyName}' specified in a 'PreserveDependency' attribute", 2003, context);
 					return;
 				}
 			} else {
@@ -910,10 +912,10 @@ namespace Mono.Linker.Steps
 
 			TypeDefinition td;
 			if (args.Count >= 2 && args[1].Value is string typeName) {
-				td = _context.TypeNameResolver.ResolveTypeName (assembly ?? context.Module.Assembly, typeName)?.Resolve ();
+				td = _context.TypeNameResolver.ResolveTypeName (assembly ?? (context as MemberReference).Module.Assembly, typeName)?.Resolve ();
 				if (td == null) {
 					_context.LogWarning (
-						$"Could not resolve dependency type '{typeName}' specified in a `PreserveDependency` attribute", 2004, context.Resolve ());
+						$"Could not resolve dependency type '{typeName}' specified in a `PreserveDependency` attribute", 2004, context);
 					return;
 				}
 			} else {
@@ -947,7 +949,7 @@ namespace Mono.Linker.Steps
 				return;
 
 			_context.LogWarning (
-				$"Could not resolve dependency member '{member}' declared in type '{td.GetDisplayName ()}' specified in a `PreserveDependency` attribute", 2005, context.Resolve ());
+				$"Could not resolve dependency member '{member}' declared in type '{td.GetDisplayName ()}' specified in a `PreserveDependency` attribute", 2005, context);
 		}
 
 		bool MarkDependencyMethod (TypeDefinition type, string name, string[] signature, in DependencyInfo reason, IMemberDefinition sourceLocationMember)

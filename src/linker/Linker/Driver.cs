@@ -661,7 +661,6 @@ namespace Mono.Linker
 			//
 			// RootAssemblyInputStep or ResolveFromXmlStep [at least one of them]
 			// LinkAttributesStep [optional, possibly many]
-			// DynamicDependencyLookupStep
 			// BodySubstituterStep [optional]
 			// RemoveSecurityStep [optional]
 			// MarkExportedTypesTargetStep
@@ -767,7 +766,7 @@ namespace Mono.Linker
 
 		protected virtual void AddLinkAttributesStep (Pipeline pipeline, string file)
 		{
-			pipeline.AddStepBefore (typeof (DynamicDependencyLookupStep), new LinkAttributesStep (new XPathDocument (file), file));
+			pipeline.AddStepBefore (typeof (MarkStep), new LinkAttributesStep (new XPathDocument (file), file));
 		}
 
 		static void AddBodySubstituterStep (Pipeline pipeline, string file)
@@ -1160,7 +1159,6 @@ namespace Mono.Linker
 		static Pipeline GetStandardPipeline ()
 		{
 			Pipeline p = new Pipeline ();
-			p.AppendStep (new DynamicDependencyLookupStep ());
 			p.AppendStep (new MarkStep ());
 			p.AppendStep (new ValidateVirtualMethodAnnotationsStep ());
 			p.AppendStep (new ProcessWarningsStep ());
