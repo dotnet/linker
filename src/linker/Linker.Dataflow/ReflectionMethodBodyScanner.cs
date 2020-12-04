@@ -1394,12 +1394,17 @@ namespace Mono.Linker.Dataflow
 					reflectionContext.RecordHandledPattern ();
 				} else if (uniqueValue is LeafValueWithDynamicallyAccessedMemberNode valueWithDynamicallyAccessedMember) {
 					if (!valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes.HasFlag (requiredMemberTypes)) {
-						string missingMemberTypes = "'DynamicallyAccessedMemberTypes.All'";
+						string missingMemberTypes = $"'{nameof (DynamicallyAccessedMemberTypes.All)}'";
 						if (requiredMemberTypes != DynamicallyAccessedMemberTypes.All) {
 							var missingMemberTypesList = Enum.GetValues (typeof (DynamicallyAccessedMemberTypes))
 								.Cast<DynamicallyAccessedMemberTypes> ()
 								.Where (damt => ((requiredMemberTypes ^ valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes) & damt) == damt && damt != DynamicallyAccessedMemberTypes.None)
-								.Select (damt => damt.ToString ());
+								.Select (damt => damt.ToString ()).ToList ();
+
+							if (missingMemberTypesList.Contains (nameof (DynamicallyAccessedMemberTypes.PublicConstructors)) &&
+								missingMemberTypesList.SingleOrDefault (x => x == nameof (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)) is var ppc &&
+								ppc != null)
+								missingMemberTypesList.Remove (ppc);
 
 							missingMemberTypes = string.Join (", ", missingMemberTypesList.Select (mmt => $"'DynamicallyAccessedMemberTypes.{mmt}'"));
 						}
