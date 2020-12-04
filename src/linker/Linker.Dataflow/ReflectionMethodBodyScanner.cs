@@ -1398,7 +1398,7 @@ namespace Mono.Linker.Dataflow
 						if (requiredMemberTypes != DynamicallyAccessedMemberTypes.All) {
 							var missingMemberTypesList = Enum.GetValues (typeof (DynamicallyAccessedMemberTypes))
 								.Cast<DynamicallyAccessedMemberTypes> ()
-								.Where (damt => ((requiredMemberTypes ^ valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes) & damt) == damt && damt != DynamicallyAccessedMemberTypes.None)
+								.Where (damt => ((requiredMemberTypes & ~valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes) & damt) == damt && damt != DynamicallyAccessedMemberTypes.None)
 								.Select (damt => damt.ToString ()).ToList ();
 
 							if (missingMemberTypesList.Contains (nameof (DynamicallyAccessedMemberTypes.PublicConstructors)) &&
