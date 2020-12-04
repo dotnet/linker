@@ -1395,7 +1395,7 @@ namespace Mono.Linker.Dataflow
 				} else if (uniqueValue is LeafValueWithDynamicallyAccessedMemberNode valueWithDynamicallyAccessedMember) {
 					if (!valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes.HasFlag (requiredMemberTypes)) {
 						string missingMemberTypes = "''DynamicallyAccessedMembersAttribute''";
-						if (requiredMemberTypes is not DynamicallyAccessedMemberTypes.All) {
+						if (requiredMemberTypes != DynamicallyAccessedMemberTypes.All) {
 							var missingMemberTypesList = Enum.GetValues (typeof (DynamicallyAccessedMemberTypes))
 								.Cast<DynamicallyAccessedMemberTypes> ()
 								.Where (damt => ((requiredMemberTypes ^ valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes) & damt) == damt && damt != DynamicallyAccessedMemberTypes.None)
