@@ -11,6 +11,7 @@ namespace ILLink.RoslynAnalyzer
 	{
 		public const string PublishSingleFile = nameof (PublishSingleFile);
 		public const string IncludeAllContentForSelfExtract = nameof (IncludeAllContentForSelfExtract);
+		public const string PublishTrimmed = nameof (PublishTrimmed);
 	}
 
 	internal static class MSBuildPropertyOptionNamesHelpers

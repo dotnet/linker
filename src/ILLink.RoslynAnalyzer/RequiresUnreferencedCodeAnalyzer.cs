@@ -35,6 +35,11 @@ namespace ILLink.RoslynAnalyzer
 			context.RegisterCompilationStartAction (context => {
 				var compilation = context.Compilation;
 
+				var isPublishTrimmed = context.Options.GetMSBuildPropertyValue (MSBuildPropertyOptionNames.PublishTrimmed, compilation);
+				if (!string.Equals (isPublishTrimmed?.Trim (), "true", StringComparison.OrdinalIgnoreCase)) {
+					return;
+				}
+
 				context.RegisterOperationAction (operationContext => {
 					var call = (IInvocationOperation) operationContext.Operation;
 					if (call.IsVirtual && call.TargetMethod.OverriddenMethod != null)
