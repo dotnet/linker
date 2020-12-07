@@ -1,5 +1,5 @@
 ﻿//
-// TypeMapStep.cs
+// TypeMapInfo.cs
 //
 // Author:
 //   Jb Evain (jbevain@novell.com)
@@ -29,16 +29,77 @@
 using System.Collections.Generic;
 using Mono.Cecil;
 
-namespace Mono.Linker.Steps
+namespace Mono.Linker
 {
 
-	public class TypeMapStep : BaseStep
+	public class TypeMapInfo
 	{
+		readonly LinkContext _context;
+		AnnotationStore Annotations => _context.Annotations;
 
-		protected override void ProcessAssembly (AssemblyDefinition assembly)
+		readonly HashSet<AssemblyDefinition> assemblies = new HashSet<AssemblyDefinition> ();
+		protected readonly Dictionary<MethodDefinition, List<MethodDefinition>> base_methods = new Dictionary<MethodDefinition, List<MethodDefinition>> ();
+		protected readonly Dictionary<MethodDefinition, List<OverrideInformation>> override_methods = new Dictionary<MethodDefinition, List<OverrideInformation>> ();
+
+		public TypeMapInfo (LinkContext context)
 		{
+			_context = context;
+		}
+
+		void EnsureProcessed (AssemblyDefinition assembly)
+		{
+			if (!assemblies.Add (assembly))
+				return;
+
 			foreach (TypeDefinition type in assembly.MainModule.Types)
 				MapType (type);
+		}
+
+		public IEnumerable<OverrideInformation> GetOverrides (MethodDefinition method)
+		{
+			EnsureProcessed (method.Module.Assembly);
+			return GetOverridesHelper (method);
+		}
+
+		public List<MethodDefinition> GetBaseMethods (MethodDefinition method)
+		{
+			EnsureProcessed (method.Module.Assembly);
+			return GetBaseMethodsHelper (method);
+		}
+
+		List<MethodDefinition> GetBaseMethodsHelper (MethodDefinition method)
+		{
+			if (base_methods.TryGetValue (method, out List<MethodDefinition> bases))
+				return bases;
+
+			return null;
+		}
+
+		IEnumerable<OverrideInformation> GetOverridesHelper (MethodDefinition method)
+		{
+			override_methods.TryGetValue (method, out List<OverrideInformation> overrides);
+			return overrides;
+		}
+
+		public void AddBaseMethod (MethodDefinition method, MethodDefinition @base)
+		{
+			var methods = GetBaseMethodsHelper (method);
+			if (methods == null) {
+				methods = new List<MethodDefinition> ();
+				base_methods[method] = methods;
+			}
+
+			methods.Add (@base);
+		}
+
+		public void AddOverride (MethodDefinition @base, MethodDefinition @override, InterfaceImplementation matchingInterfaceImplementation = null)
+		{
+			if (!override_methods.TryGetValue (@base, out List<OverrideInformation> methods)) {
+				methods = new List<OverrideInformation> ();
+				override_methods.Add (@base, methods);
+			}
+
+			methods.Add (new OverrideInformation (@base, @override, matchingInterfaceImplementation));
 		}
 
 		protected virtual void MapType (TypeDefinition type)
@@ -135,8 +196,8 @@ namespace Mono.Linker.Steps
 
 		void AnnotateMethods (MethodDefinition @base, MethodDefinition @override, InterfaceImplementation matchingInterfaceImplementation = null)
 		{
-			Annotations.AddBaseMethod (@override, @base);
-			Annotations.AddOverride (@base, @override, matchingInterfaceImplementation);
+			AddBaseMethod (@override, @base);
+			AddOverride (@base, @override, matchingInterfaceImplementation);
 		}
 
 		static MethodDefinition GetBaseMethodInTypeHierarchy (MethodDefinition method)

@@ -54,8 +54,6 @@ namespace Mono.Linker
 		protected readonly Dictionary<TypeDefinition, TypePreserve> preserved_types = new Dictionary<TypeDefinition, TypePreserve> ();
 		protected readonly Dictionary<IMemberDefinition, List<MethodDefinition>> preserved_methods = new Dictionary<IMemberDefinition, List<MethodDefinition>> ();
 		protected readonly HashSet<IMetadataTokenProvider> public_api = new HashSet<IMetadataTokenProvider> ();
-		protected readonly Dictionary<MethodDefinition, List<OverrideInformation>> override_methods = new Dictionary<MethodDefinition, List<OverrideInformation>> ();
-		protected readonly Dictionary<MethodDefinition, List<MethodDefinition>> base_methods = new Dictionary<MethodDefinition, List<MethodDefinition>> ();
 		protected readonly Dictionary<AssemblyDefinition, ISymbolReader> symbol_readers = new Dictionary<AssemblyDefinition, ISymbolReader> ();
 		readonly Dictionary<IMemberDefinition, LinkerAttributesInformation> linker_attributes = new Dictionary<IMemberDefinition, LinkerAttributesInformation> ();
 		protected readonly Dictionary<MethodDefinition, List<(TypeDefinition InstanceType, InterfaceImplementation ImplementationProvider)>> default_interface_implementations = new Dictionary<MethodDefinition, List<(TypeDefinition, InterfaceImplementation)>> ();
@@ -73,6 +71,7 @@ namespace Mono.Linker
 			this.context = context;
 			FlowAnnotations = new FlowAnnotations (context);
 			VirtualMethodsWithAnnotationsToValidate = new HashSet<MethodDefinition> ();
+			TypeMapInfo = new TypeMapInfo (context);
 		}
 
 		public bool ProcessSatelliteAssemblies { get; set; }
@@ -86,6 +85,8 @@ namespace Mono.Linker
 		internal FlowAnnotations FlowAnnotations { get; }
 
 		internal HashSet<MethodDefinition> VirtualMethodsWithAnnotationsToValidate { get; }
+
+		TypeMapInfo TypeMapInfo { get; }
 
 		[Obsolete ("Use Tracer in LinkContext directly")]
 		public void PrepareDependenciesDump ()
@@ -333,20 +334,9 @@ namespace Mono.Linker
 			return public_api.Contains (provider);
 		}
 
-		public void AddOverride (MethodDefinition @base, MethodDefinition @override, InterfaceImplementation matchingInterfaceImplementation = null)
-		{
-			if (!override_methods.TryGetValue (@base, out List<OverrideInformation> methods)) {
-				methods = new List<OverrideInformation> ();
-				override_methods.Add (@base, methods);
-			}
-
-			methods.Add (new OverrideInformation (@base, @override, matchingInterfaceImplementation));
-		}
-
 		public IEnumerable<OverrideInformation> GetOverrides (MethodDefinition method)
 		{
-			override_methods.TryGetValue (method, out List<OverrideInformation> overrides);
-			return overrides;
+			return TypeMapInfo.GetOverrides (method);
 		}
 
 		public void AddDefaultInterfaceImplementation (MethodDefinition @base, TypeDefinition implementingType, InterfaceImplementation matchingInterfaceImplementation)
@@ -365,23 +355,10 @@ namespace Mono.Linker
 			return ret;
 		}
 
-		public void AddBaseMethod (MethodDefinition method, MethodDefinition @base)
-		{
-			var methods = GetBaseMethods (method);
-			if (methods == null) {
-				methods = new List<MethodDefinition> ();
-				base_methods[method] = methods;
-			}
-
-			methods.Add (@base);
-		}
 
 		public List<MethodDefinition> GetBaseMethods (MethodDefinition method)
 		{
-			if (base_methods.TryGetValue (method, out List<MethodDefinition> bases))
-				return bases;
-
-			return null;
+			return TypeMapInfo.GetBaseMethods (method);
 		}
 
 		public List<MethodDefinition> GetPreservedMethods (TypeDefinition type)
