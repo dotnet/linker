@@ -363,9 +363,9 @@ namespace Mono.Linker.Tests.TestCasesRunner
 						};
 					}
 					var sourceAndDestination = (CustomAttributeArgument[]) referenceArg.Value;
-					return new SourceAndDestinationPair  {	
-						Source = MakeSourceTreeFilePathAbsolute (sourceAndDestination[0].Value.ToString()),
-						DestinationFileName = sourceAndDestination[1].Value.ToString()
+					return new SourceAndDestinationPair {
+						Source = MakeSourceTreeFilePathAbsolute (sourceAndDestination[0].Value.ToString ()),
+						DestinationFileName = sourceAndDestination[1].Value.ToString ()
 					};
 				})
 				?.ToArray ();

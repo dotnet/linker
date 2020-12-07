@@ -24,7 +24,7 @@ namespace Mono.Linker.Tests.Cases.Expectations.Metadata
 						if (stringArray.Length != 2)
 							throw new ArgumentException ("Entry in object[] cannot be a string[] unless it has exactly two elements, for the resource path and name", nameof (resources));
 						continue;
-					} 
+					}
 					throw new ArgumentException ("Each value in the object[] must be a string or a string[], either a resource path, or a path and name", nameof (resources));
 				}
 			}
