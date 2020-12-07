@@ -351,6 +351,8 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 
 		static class ConstantFromNewAssembly
 		{
+			// This method should not be kept. The per-assembly loading logic just happens to work with this case
+			// because the callee is a constant - it would not work if the callee needed to be analyzed.
 			static void NotReached () { }
 			[Kept] static void Reached () { }
 
@@ -367,7 +369,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 
 		static class ConstantSubstitutionsFromNewAssembly
 		{
-			// This is a bug currently - delay loaded assemblies don't process substitutions - yet
+			// This is a bug currently - delay loading doesn't work with cross-assembly constant propagation.
 			// The method should not be kept ideally
 			[Kept]
 			static void NotReached () { }

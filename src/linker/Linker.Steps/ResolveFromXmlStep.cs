@@ -159,7 +159,7 @@ namespace Mono.Linker.Steps
 			if (Annotations.IsMarked (field))
 				Context.LogWarning ($"Duplicate preserve of '{field.FullName}'", 2025, _xmlDocumentLocation);
 
-			Context.Annotations.Mark (field, new DependencyInfo (DependencyKind.XmlDescriptor, _xmlDocumentLocation));
+			Annotations.Mark (field, new DependencyInfo (DependencyKind.XmlDescriptor, _xmlDocumentLocation));
 		}
 
 		protected override void ProcessMethod (TypeDefinition type, MethodDefinition method, XPathNavigator nav, object customData)

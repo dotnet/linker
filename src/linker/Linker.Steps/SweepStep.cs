@@ -1,4 +1,4 @@
-﻿//
+//
 // SweepStep.cs
 //
 // Author:
@@ -49,7 +49,7 @@ namespace Mono.Linker.Steps
 
 		protected override void Process ()
 		{
-			assemblies = Context.Annotations.GetAssemblies ().ToArray ();
+			assemblies = Context.GetReferencedAssemblies ().ToArray ();
 
 			foreach (var assembly in assemblies) {
 				RemoveUnmarkedAssembly (assembly);

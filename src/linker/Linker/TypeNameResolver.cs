@@ -31,7 +31,7 @@ namespace Mono.Linker
 				return ResolveTypeName (null, assemblyQualifiedTypeName);
 			}
 
-			foreach (var assemblyDefinition in _context.GetAssemblies ()) {
+			foreach (var assemblyDefinition in _context.GetReferencedAssemblies ()) {
 				var foundType = ResolveTypeName (assemblyDefinition, parsedTypeName);
 				if (foundType != null)
 					return foundType;

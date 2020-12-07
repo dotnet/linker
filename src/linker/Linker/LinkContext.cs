@@ -150,6 +150,10 @@ namespace Mono.Linker
 
 		public string PInvokesListFile;
 
+		public System.Collections.IDictionary Actions {
+			get { return _actions; }
+		}
+
 		public AssemblyResolver Resolver {
 			get { return _resolver; }
 		}
@@ -214,7 +218,7 @@ namespace Mono.Linker
 			_readerParameters = new ReaderParameters {
 				AssemblyResolver = _resolver
 			};
-			_customAttributes = new CustomAttributeSource ();
+			_customAttributes = new CustomAttributeSource (this);
 			_cachedWarningMessageContainers = new List<MessageContainer> ();
 
 			SymbolReaderProvider = new DefaultSymbolReaderProvider (false);
@@ -275,7 +279,7 @@ namespace Mono.Linker
 			int pos = fullName.IndexOf (",");
 			fullName = TypeReferenceExtensions.ToCecilName (fullName);
 			if (pos == -1) {
-				foreach (AssemblyDefinition asm in GetAssemblies ()) {
+				foreach (AssemblyDefinition asm in GetReferencedAssemblies ()) {
 					var type = asm.MainModule.GetType (fullName);
 					if (type != null)
 						return type;
@@ -319,10 +323,6 @@ namespace Mono.Linker
 			AssemblyNameReference reference = GetReference (scope);
 			try {
 				AssemblyDefinition assembly = _resolver.Resolve (reference, _readerParameters);
-
-				if (assembly != null)
-					RegisterAssembly (assembly);
-
 				return assembly;
 			} catch (Exception e) when (!(e is AssemblyResolutionException)) {
 				throw new AssemblyResolutionException (reference, e);
@@ -408,8 +408,6 @@ namespace Mono.Linker
 #if !FEATURE_ILLINK
 		public void SetAction (AssemblyDefinition assembly, AssemblyAction defaultAction)
 		{
-			RegisterAssembly (assembly);
-
 			if (!_actions.TryGetValue (assembly.Name.Name, out AssemblyAction action))
 				action = defaultAction;
 
@@ -463,6 +461,27 @@ namespace Mono.Linker
 				return ad;
 
 			return null;
+		}
+
+		public IEnumerable<AssemblyDefinition> GetReferencedAssemblies ()
+		{
+			var assemblies = GetAssemblies ();
+
+			foreach (var assembly in assemblies)
+				yield return assembly;
+
+			var loaded = new HashSet<AssemblyDefinition> (assemblies);
+			var toProcess = new Queue<AssemblyDefinition> (assemblies);
+
+			while (toProcess.Count > 0) {
+				var assembly = toProcess.Dequeue ();
+				foreach (var reference in ResolveReferences (assembly)) {
+					if (!loaded.Add (reference))
+						continue;
+					yield return reference;
+					toProcess.Enqueue (reference);
+				}
+			}
 		}
 
 		public void SetCustomData (string key, string value)

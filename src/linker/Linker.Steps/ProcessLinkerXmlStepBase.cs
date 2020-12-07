@@ -111,7 +111,7 @@ namespace Mono.Linker.Steps
 					continue;
 
 				if (processAllAssemblies) {
-					foreach (AssemblyDefinition assembly in Context.GetAssemblies ())
+					foreach (AssemblyDefinition assembly in Context.GetReferencedAssemblies ())
 						ProcessAssembly (assembly, iterator.Current, warnOnUnresolvedTypes: false);
 				} else {
 					AssemblyDefinition assembly = assemblyToProcess ?? GetAssembly (Context, name);

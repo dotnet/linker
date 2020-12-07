@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -14,10 +14,41 @@ namespace Mono.Linker
 		private readonly Dictionary<ICustomAttributeProvider, IEnumerable<CustomAttribute>> _xmlCustomAttributes;
 		private readonly Dictionary<ICustomAttributeProvider, IEnumerable<Attribute>> _internalAttributes;
 
-		public CustomAttributeSource ()
+		readonly HashSet<AssemblyDefinition> _processedAttributeXml;
+		readonly LinkContext _context;
+
+		public CustomAttributeSource (LinkContext context)
 		{
 			_xmlCustomAttributes = new Dictionary<ICustomAttributeProvider, IEnumerable<CustomAttribute>> ();
 			_internalAttributes = new Dictionary<ICustomAttributeProvider, IEnumerable<Attribute>> ();
+			_processedAttributeXml = new HashSet<AssemblyDefinition> ();
+			_context = context;
+		}
+
+
+		public static AssemblyDefinition GetAssemblyFromCustomAttributeProvider (ICustomAttributeProvider provider)
+		{
+			return provider switch
+			{
+				MemberReference mr => mr.Module.Assembly,
+				AssemblyDefinition ad => ad,
+				ModuleDefinition md => md.Assembly,
+				InterfaceImplementation ii => ii.InterfaceType.Module.Assembly,
+				GenericParameterConstraint gpc => gpc.ConstraintType.Module.Assembly,
+				ParameterDefinition pd => pd.ParameterType.Module.Assembly,
+				MethodReturnType mrt => mrt.ReturnType.Module.Assembly,
+				_ => throw new NotImplementedException (provider.GetType ().ToString ()),
+			};
+		}
+
+		public void EnsureProcessedAttributeXml (ICustomAttributeProvider provider)
+		{
+			var assembly = GetAssemblyFromCustomAttributeProvider (provider);
+
+			if (!_processedAttributeXml.Add (assembly))
+				return;
+
+			EmbeddedXmlInfo.ProcessAttributes (assembly, _context);
 		}
 
 		public void AddCustomAttributes (ICustomAttributeProvider provider, IEnumerable<CustomAttribute> customAttributes)
@@ -35,6 +66,8 @@ namespace Mono.Linker
 					yield return customAttribute;
 			}
 
+			EnsureProcessedAttributeXml (provider);
+
 			if (_xmlCustomAttributes.TryGetValue (provider, out var annotations)) {
 				foreach (var customAttribute in annotations)
 					yield return customAttribute;
@@ -45,6 +78,8 @@ namespace Mono.Linker
 		{
 			if (provider.HasCustomAttributes)
 				return true;
+
+			EnsureProcessedAttributeXml (provider);
 
 			if (_xmlCustomAttributes.ContainsKey (provider))
 				return true;
@@ -62,6 +97,8 @@ namespace Mono.Linker
 
 		public IEnumerable<Attribute> GetInternalAttributes (ICustomAttributeProvider provider)
 		{
+			EnsureProcessedAttributeXml (provider);
+
 			if (_internalAttributes.TryGetValue (provider, out var annotations)) {
 				foreach (var attribute in annotations)
 					yield return attribute;
@@ -70,6 +107,8 @@ namespace Mono.Linker
 
 		public bool HasInternalAttributes (ICustomAttributeProvider provider)
 		{
+			EnsureProcessedAttributeXml (provider);
+
 			return _internalAttributes.ContainsKey (provider) ? true : false;
 		}
 

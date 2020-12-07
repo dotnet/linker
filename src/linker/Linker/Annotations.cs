@@ -59,6 +59,8 @@ namespace Mono.Linker
 		protected readonly HashSet<TypeDefinition> pending_preserve = new HashSet<TypeDefinition> ();
 		protected readonly Dictionary<TypeDefinition, TypePreserveMembers> preserved_type_members = new ();
 		protected readonly Dictionary<ExportedType, TypePreserveMembers> preserved_exportedtype_members = new ();
+		protected readonly HashSet<AssemblyDefinition> processedSubstitutionXml = new HashSet<AssemblyDefinition> ();
+
 		protected readonly Dictionary<IMemberDefinition, List<MethodDefinition>> preserved_methods = new Dictionary<IMemberDefinition, List<MethodDefinition>> ();
 		protected readonly HashSet<IMetadataTokenProvider> public_api = new HashSet<IMetadataTokenProvider> ();
 		protected readonly Dictionary<AssemblyDefinition, ISymbolReader> symbol_readers = new Dictionary<AssemblyDefinition, ISymbolReader> ();
@@ -286,6 +288,11 @@ namespace Mono.Linker
 		public TypeDefinition[] GetPendingPreserve ()
 		{
 			return pending_preserve.ToArray ();
+		}
+
+		public bool ProcessedSubstitutionXml (AssemblyDefinition assembly)
+		{
+			return !processedSubstitutionXml.Add (assembly);
 		}
 
 		public bool SetAppliedPreserve (TypeDefinition type, TypePreserve preserve)
