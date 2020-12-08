@@ -449,15 +449,13 @@ namespace Mono.Linker.Steps
 			if (type.IsWindowsRuntimeProjection)
 				return;
 
-			if (type is GenericInstanceType git && git.HasGenericArguments) {
-				UpdateTypeScope (git.ElementType, assembly);
-				foreach (var ga in git.GenericArguments)
-					UpdateTypeScope (ga, assembly);
-				return;
-			}
+			if (type is TypeSpecification ts) {
+				UpdateTypeScope (ts.ElementType, assembly);
+				if (type is GenericInstanceType git) {
+					foreach (var ga in git.GenericArguments)
+						UpdateTypeScope (ga, assembly);
+				}
 
-			if (type is ArrayType at) {
-				UpdateTypeScope (at.ElementType, assembly);
 				return;
 			}
 
