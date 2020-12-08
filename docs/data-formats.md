@@ -4,9 +4,9 @@ IL linker uses several data formats to control or influence the linking process.
 
 ## Descriptor Format
 
-Descriptors are used to direct linker to always keep some items in the assembly, regardless if linker can find any references to them.
+Descriptors are used to direct the linker to always keep some items in the assembly, regardless of if the linker can find any references to them.
 
-Descriptor XML can be embedded in an assembly. In that case it must be stored as an embedded resource with logical name `ILLink.Descriptors.xml`. To achieve this when build an assembly use this in the project file to include the XML:
+Descriptor XML can be embedded in an assembly. In that case it must be stored as an embedded resource with logical name `ILLink.Descriptors.xml`. To achieve this when building an assembly use this in the project file to include the XML:
 
 ```xml
   <ItemGroup>
