@@ -20,8 +20,6 @@ Embedded descriptors only take effect if the containing assembly is included in 
 
 Descriptor XML can also be passed to the linker on the command via the [`-x` parameter](illink-options.md#linking-from-an-xml-descriptor).
 
-The `fullname` attribute specifies the full name of the type in the format specified by ECMA-335. This is in certain cases not the same as the one reported by Type.FullName for example for nested types.
-
 ### XML Examples
 
 ### Preserve entire assembly
