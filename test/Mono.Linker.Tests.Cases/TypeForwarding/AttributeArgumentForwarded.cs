@@ -85,6 +85,14 @@ namespace Mono.Linker.Tests.Cases.TypeForwarding
 		public static void Test_Field_ArrayOfPointerTypeRef ()
 		{
 		}
+
+		// This hits Roslyn bug https://github.com/dotnet/roslyn/issues/48765
+		//[Kept]
+		//[KeptAttributeAttribute (typeof (TestTypeAttribute))]
+		//[TestType (TestField = new object[] { typeof (delegate*<int, void>) })]
+		//public static void Test_Field_ArrayOfFunctionPointer ()
+		//{
+		//}
 	}
 
 	[KeptBaseType (typeof (Attribute))]
