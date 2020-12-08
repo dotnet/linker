@@ -18,7 +18,7 @@ Descriptor XML can be embedded in an assembly. In that case it must be stored as
 
 Embedded descriptors only take effect if the containing assembly is included in the linker output, so if something from that assembly is marked to be kept.
 
-Descriptor XML can also be passed to the linker on the command via the [`-x` parameter](https://github.com/mono/linker/blob/master/docs/illink-options.md#linking-from-an-xml-descriptor).
+Descriptor XML can also be passed to the linker on the command via the [`-x` parameter](illink-options.md#linking-from-an-xml-descriptor).
 
 The `fullname` attribute specifies the full name of the type in the format specified by ECMA-335. This is in certain cases not the same as the one reported by Type.FullName for example for nested types.
 
@@ -184,7 +184,7 @@ The `required` attribute specifies that if the type is not marked, during the ma
 
 Substitutions direct the linker to replace specific method's body with either a throw or return constant statements.
 
-Substitutions only work for methods from assemblies which are linked with assembly action `link`, in all other cases substitutions are ignored (no warning or message is issued).
+Substitutions have effect only on assemblies which are linked with assembly action `link`, any other assembly will not be affected. That said it is possible to have a `copy` assembly with the substitution on a method in it, and then a separate `link` assembly which calls such method. The `link` assembly will see the constant value of the method after the substitution and potentially remove unused branches and such.
 
 Substitutions XML can be embedded in an assembly by including it as an embedded resource with logical name `ILLink.Substitutions.xml`. To include an XML file in an assembly this way, use this in the project file:
 
@@ -198,7 +198,7 @@ Substitutions XML can be embedded in an assembly by including it as an embedded 
 
 Embedded substitutions only take effect if the containing assembly is included in the linker output. Embedded substitutions should only address methods from the containing assembly.
 
-Substitutions XML can be specified on the command line via the [`--substitutions` parameter](https://github.com/mono/linker/blob/master/docs/illink-options.md#using-custom-substitutions). Using substitutions with `ipconstprop` optimization (enabled by default) can help reduce output size as any dependencies under conditional logic which will be evaluated as unreachable will be removed.
+Substitutions XML can be specified on the command line via the [`--substitutions` parameter](illink-options.md#using-custom-substitutions). Using substitutions with `ipconstprop` optimization (enabled by default) can help reduce output size as any dependencies under conditional logic which will be evaluated as unreachable will be removed.
 
 ### Substitute method body with a constant
 
@@ -306,7 +306,7 @@ Attribute annotation XML can be embedded in an assembly by including it as an em
 
 Embedded attribute annotations should only address methods from the containing assembly.
 
-Attribute annotations XML can be specified on the command line via the [`--link-attributes` parameter](https://github.com/mono/linker/blob/master/docs/illink-options.md#supplementary-custom-attributes).
+Attribute annotations XML can be specified on the command line via the [`--link-attributes` parameter](illink-options.md#supplementary-custom-attributes).
 
 ### Custom attribute on assembly
 
