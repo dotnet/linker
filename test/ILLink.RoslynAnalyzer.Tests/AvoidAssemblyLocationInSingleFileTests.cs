@@ -123,5 +123,22 @@ class C
 				VerifyCS.Diagnostic (AvoidAssemblyLocationInSingleFile.IL3001).WithSpan (9, 13, 9, 25).WithArguments ("System.Reflection.Assembly.GetFiles()")
 				);
 		}
+
+		[Fact]
+		public Task PublishSingleFileIsNotSet ()
+		{
+			var src = @"
+using System.Reflection;
+class C
+{
+    public void M()
+    {
+        var a = Assembly.GetExecutingAssembly().Location;
+    }
+}";
+			// If 'PublishSingleFile' is not set to true, no diagnostics should be produced by the analyzer. This will
+			// effectively verify that the number of produced diagnostics matches the number of expected ones (zero).
+			return VerifyCS.VerifyAnalyzerAsync (src);
+		}
 	}
 }
