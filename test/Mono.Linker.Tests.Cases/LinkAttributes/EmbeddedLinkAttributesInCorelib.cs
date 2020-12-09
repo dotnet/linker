@@ -20,6 +20,7 @@ namespace Mono.Linker.Tests.Cases.LinkAttributes
 	[SetupCompileBefore (PlatformAssemblies.CoreLib, new string[] { "Dependencies/MockCorelib.cs" },
 		resources: new object[] { new string[] { "Dependencies/MockCorelib.xml", "ILLink.LinkAttributes.xml" } },
 		defines: new[] { "INCLUDE_MOCK_CORELIB" })]
+	[SkipPeVerify]
 #if NETCOREAPP
 	[RemovedAttributeInAssembly ("System.Private.CoreLib", "System.MockCorelibAttributeToRemove")]
 	[RemovedTypeInAssembly ("System.Private.CoreLib", "System.MockCorelibAttributeToRemove")]
