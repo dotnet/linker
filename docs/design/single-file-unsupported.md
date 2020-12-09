@@ -9,7 +9,13 @@ While the existing single-file analyzer can help us emit warnings whenever incom
 For library authors, the new attribute will allow them to easily annotate APIs known to be problematic when used in the context of a single-file application.
 
 ```C#
-
+[SingleFileUnsupported("'Bar' method is not compatible with single-file", "https://help")]
+void Bar()
+{
+    Assembly executingAssembly = Assembly.GetExecutingAssembly();
+    var codeBase = executingAssembly.CodeBase;
+    ...
+}
 ```
 
 Consumers of this library who want to publish their application as a single-file binary will commonly do it through setting the corresponding property in the application’s .csproj:
@@ -22,13 +28,12 @@ Consumers of this library who want to publish their application as a single-file
 
 If the user now makes use of the problematic API, a warning will be produced:
 
-> ILLink: Single-file warning ILXXXX: Foo.Bar(): This method is not compatible with single-file. Url.
+> File.cs(4,4): Single-file warning ILXXXX: Foo.CallBar(): 'Bar' method is not compatible with single-file. Url.
 ```C#
-[SingleFileUnsupported("This method is not compatible with single-file", "https://help")]
-Bar()
+void CallBar()
 {
-    Assembly executingAssembly = Assembly.GetExecutingAssembly();
-    var codeBase = executingAssembly.CodeBase;
+    ...
+    Bar();
     ...
 }
 ```
