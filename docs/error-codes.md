@@ -1512,12 +1512,12 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
   object TestProperty { get; set; }
   ```
 
-### 'IL2100': XML may not contain wildcard for assembly fullname
+### 'IL2100': XML contains unsupported wildcard for assembly "fullname" attribute
 
 - A wildcard "fullname" for an assembly in XML is only valid for link attribute XML on the command-line, not for descriptor or substitution XML or for embedded attribute XML. Specify a specific assembly name instead.
 
   ```XML
-  <!-- IL2100: XML may not contain wildcard for assembly fullname -->
+  <!-- IL2100: XML contains unsupported wildcard for assembly "fullname" attribute -->
   <linker>
     <assembly fullname="*">
       <type fullname="MyType" />
@@ -1525,12 +1525,12 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
   </linker>
   ```
 
-### 'IL2101': Embedded XML in assembly 'assembly' may not modify other assembly 'assembly'.
+### 'IL2101': Embedded XML in assembly 'assembly' contains assembly "fullname" attribute for another assembly 'assembly'
 
-- Embedded attribute or substitution XML may only contain elements that apply to the containing assembly. It is invalid to use these embedded XML files to modify other assemblies.
+- Embedded attribute or substitution XML may only contain elements that apply to the containing assembly. Attempting to modify another assembly will not have any effect.
 
   ```XML
-  <!-- IL2101: Embedded XML in assembly 'ContainingAssembly' may not modify other assembly 'OtherAssembly' -->
+  <!-- IL2101: Embedded XML in assembly 'ContainingAssembly' contains assembly "fullname" attribute for another assembly 'OtherAssembly' -->
   <linker>
     <assembly fullname="OtherAssembly">
       <type fullname="MyType" />

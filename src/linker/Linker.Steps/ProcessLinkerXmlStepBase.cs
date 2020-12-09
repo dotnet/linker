@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -39,8 +39,6 @@ namespace Mono.Linker.Steps
 		{
 			_document = document;
 			_xmlDocumentLocation = xmlDocumentLocation;
-			if (!AllowedAssemblySelector.HasFlag (AllowedAssemblies.AnyAssembly) && _resourceAssembly == null)
-				throw new InvalidOperationException ("The containing assembly must be specified for XML which is restricted to modifying that assembly only.");
 		}
 
 		protected ProcessLinkerXmlStepBase (XPathDocument document, EmbeddedResource resource, AssemblyDefinition resourceAssembly, string xmlDocumentLocation)
@@ -54,6 +52,9 @@ namespace Mono.Linker.Steps
 
 		protected virtual void ProcessXml (bool stripResource, bool ignoreResource)
 		{
+			if (!AllowedAssemblySelector.HasFlag (AllowedAssemblies.AnyAssembly) && _resourceAssembly == null)
+				throw new InvalidOperationException ("The containing assembly must be specified for XML which is restricted to modifying that assembly only.");
+
 			try {
 				XPathNavigator nav = _document.CreateNavigator ();
 
@@ -89,7 +90,7 @@ namespace Mono.Linker.Steps
 			while (iterator.MoveNext ()) {
 				bool processAllAssemblies = GetFullName (iterator.Current) == AllAssembliesFullName;
 				if (processAllAssemblies && AllowedAssemblySelector != AllowedAssemblies.AllAssemblies) {
-					Context.LogWarning ($"XML may not contain wildcard for assembly fullname", 2100, _xmlDocumentLocation);
+					Context.LogWarning ($"XML contains unsupported wildcard for assembly \"fullname\" attribute", 2100, _xmlDocumentLocation);
 					continue;
 				}
 
@@ -100,7 +101,7 @@ namespace Mono.Linker.Steps
 				AssemblyDefinition assemblyToProcess = null;
 				if (!AllowedAssemblySelector.HasFlag (AllowedAssemblies.AnyAssembly)) {
 					if (_resourceAssembly.Name.Name != name.Name) {
-						Context.LogWarning ($"Embedded XML in assembly '{_resourceAssembly.Name.Name}' may not modify other assembly '{name}'", 2101, _xmlDocumentLocation);
+						Context.LogWarning ($"Embedded XML in assembly '{_resourceAssembly.Name.Name}' contains assembly \"fullname\" attribute for another assembly '{name}'", 2101, _xmlDocumentLocation);
 						continue;
 					}
 					assemblyToProcess = _resourceAssembly;

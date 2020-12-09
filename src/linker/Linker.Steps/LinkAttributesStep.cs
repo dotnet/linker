@@ -197,7 +197,19 @@ namespace Mono.Linker.Steps
 			ProcessXml (Context.StripLinkAttributes, Context.IgnoreLinkAttributes);
 		}
 
-		protected override AllowedAssemblies AllowedAssemblySelector { get => _resourceAssembly != null ? AllowedAssemblies.ContainingAssembly : AllowedAssemblies.AllAssemblies; }
+		protected override AllowedAssemblies AllowedAssemblySelector {
+			get {
+				if (_resourceAssembly == null)
+					return AllowedAssemblies.AllAssemblies;
+
+				// Corelib XML may contain assembly wildcard to support compiler-injected attribute types
+				string coreLib = _resourceAssembly.MainModule.TypeSystem.CoreLibrary.Name;
+				if (_resourceAssembly.Name.Name == coreLib)
+					return AllowedAssemblies.AllAssemblies;
+
+				return AllowedAssemblies.ContainingAssembly;
+			}
+		}
 
 		protected override void ProcessAssembly (AssemblyDefinition assembly, XPathNavigator nav, bool warnOnUnresolvedTypes)
 		{
