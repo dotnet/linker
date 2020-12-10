@@ -203,12 +203,7 @@ namespace Mono.Linker.Steps
 					return AllowedAssemblies.AllAssemblies;
 
 				// Corelib XML may contain assembly wildcard to support compiler-injected attribute types
-#if NETCOREAPP
-				const string coreLib = "System.Private.CoreLib";
-#else
-				const string coreLib = "mscorlib";
-#endif
-				if (_resourceAssembly.Name.Name == coreLib)
+				if (_resourceAssembly.Name.Name == PlatformAssemblies.CoreLib)
 					return AllowedAssemblies.AllAssemblies;
 
 				return AllowedAssemblies.ContainingAssembly;

@@ -358,12 +358,53 @@ namespace Mono.Linker.Steps
 						_context.MarkingHelpers.MarkExportedType (exported, assembly.MainModule, di);
 					}
 				}
+
+				MarkFullyPreservedAssemblies ();
 			}
 
 			ProcessPendingTypeChecks ();
 		}
 
 		static bool IsFullyPreservedAction (AssemblyAction action) => action == AssemblyAction.Copy || action == AssemblyAction.Save;
+
+		void MarkFullyPreservedAssemblies ()
+		{
+			// Fully mark any assemblies with copy/save action.
+
+			// Unresolved references could get the copy/save action if this is the default action.
+			bool scanReferences = IsFullyPreservedAction (_context.CoreAction) || IsFullyPreservedAction (_context.UserAction);
+
+			if (!scanReferences) {
+				// Unresolved references could get the copy/save action if it was set explicitly
+				// for some referenced assembly that has not been resolved yet
+				foreach (DictionaryEntry e in _context.Actions) {
+					var assemblyName = (string) e.Key;
+					var action = (AssemblyAction) e.Value;
+					if (!IsFullyPreservedAction (action))
+						continue;
+
+					var assembly = _context.GetLoadedAssembly (assemblyName);
+					if (assembly == null) {
+						scanReferences = true;
+						break;
+					}
+
+					// The action should not change from the explicit command-line action
+					Debug.Assert (_context.Annotations.GetAction (assembly) == action);
+				}
+			}
+
+			// Beware: this works on loaded assemblies, not marked assemblies, so it should not be tied to marking.
+			// We could further optimize this to only iterate through assemblies if the last mark iteration loaded
+			// a new assembly, since this is the only way that the set we need to consider could have changed.
+			var assembliesToCheck = scanReferences ? _context.GetReferencedAssemblies ().ToArray () : _context.GetAssemblies ();
+			foreach (var assembly in assembliesToCheck) {
+				var action = _context.Annotations.GetAction (assembly);
+				if (!IsFullyPreservedAction (action))
+					continue;
+				MarkAssembly (assembly, new DependencyInfo (DependencyKind.AssemblyAction, null));
+			}
+		}
 
 		bool ProcessPrimaryQueue ()
 		{
