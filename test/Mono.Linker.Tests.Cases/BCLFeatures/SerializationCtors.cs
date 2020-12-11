@@ -17,9 +17,9 @@ namespace Mono.Linker.Tests.Cases.BCLFeatures
 	[Serializable]
 	class C
 	{
-#if !NETCOREAPP
+		//#if !NET6_0
 		[Kept]
-#endif
+		//#endif
 		public C ()
 		{
 		}
@@ -29,7 +29,7 @@ namespace Mono.Linker.Tests.Cases.BCLFeatures
 		{
 		}
 
-#if !NETCOREAPP
+#if !NET6_0
 		[Kept]
 #endif
 		protected C (SerializationInfo info, StreamingContext context)
