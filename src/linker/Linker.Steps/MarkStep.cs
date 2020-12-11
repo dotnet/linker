@@ -514,6 +514,10 @@ namespace Mono.Linker.Steps
 			// Only track instantiations if override removal is enabled and the type is instantiated.
 			// If it's disabled, all overrides are kept, so there's no instantiation site to blame.
 			if (_context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, method) && isInstantiated) {
+				// MarkMethod uses the MessageOrigin passed in here to determine the member which causes the method
+				// to be marked. This is important to avoid spurious warnings as virtual overrides can end up being
+				// marked without being referenced directly from user code. It is important to pass the base method
+				// here so that MarkMethod can see that it was marked because of an override.
 				MarkMethod (method, new DependencyInfo (DependencyKind.OverrideOnInstantiatedType, method.DeclaringType), new MessageOrigin (@base));
 			} else {
 				// If the optimization is disabled or it's an abstract type, we just mark it as a normal override.
@@ -1446,7 +1450,7 @@ namespace Mono.Linker.Steps
 
 			// Treat cctors triggered by a called method specially and mark this case up-front.
 			if (type.HasMethods && ShouldMarkTypeStaticConstructor (type) && reason.Kind == DependencyKind.DeclaringTypeOfCalledMethod)
-				MarkStaticConstructor (type, new DependencyInfo (DependencyKind.TriggersCctorForCalledMethod, reason.Source), type);
+				MarkStaticConstructor (type, new DependencyInfo (DependencyKind.TriggersCctorForCalledMethod, reason.Source), sourceLocationMember);
 
 			// Check type being used was not removed by the LinkerRemovableAttribute
 			if (_context.Annotations.HasLinkerAttribute<RemoveAttributeInstancesAttribute> (type)) {
@@ -2337,7 +2341,10 @@ namespace Mono.Linker.Steps
 			if (Annotations.GetAction (method) == MethodAction.Nothing)
 				Annotations.SetAction (method, MethodAction.Parse);
 
-			if (reason.Kind != DependencyKind.DynamicallyAccessedMember)
+			// All override methods should have the same annotations as their base methods (else we will produce warning IL2046.)
+			// When marking override methods with RequiresUnreferencedCode on a type annotated with DynamicallyAccessedMembers,
+			// we should only issue a warning for the base method.
+			if (reason.Kind != DependencyKind.DynamicallyAccessedMember || !method.IsVirtual || Annotations.GetBaseMethods (method) == null)
 				ProcessRequiresUnreferencedCode (method, origin);
 
 			EnqueueMethod (method, reason);
@@ -2349,8 +2356,6 @@ namespace Mono.Linker.Steps
 		{
 			// If the caller of a method is already marked with `RequiresUnreferencedCodeAttribute` a new warning should not
 			// be produced for the callee.
-			// Overrides of methods annotated with `RequiresUnreferencedCodeAttribute` should not produce a warning here,
-			// the warning should be put in the virtual method instead.
 			if (origin.MemberDefinition != null &&
 				Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (origin.MemberDefinition))
 				return;
@@ -2415,7 +2420,7 @@ namespace Mono.Linker.Steps
 			if (markedForCall) {
 				// Record declaring type of a called method up-front as a special case so that we may
 				// track at least some method calls that trigger a cctor.
-				MarkType (method.DeclaringType, new DependencyInfo (DependencyKind.DeclaringTypeOfCalledMethod, method), method);
+				MarkType (method.DeclaringType, new DependencyInfo (DependencyKind.DeclaringTypeOfCalledMethod, method), reason.Source as IMemberDefinition);
 			}
 
 			if (CheckProcessed (method))

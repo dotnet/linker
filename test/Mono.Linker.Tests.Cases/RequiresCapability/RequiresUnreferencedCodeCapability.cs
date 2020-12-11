@@ -15,6 +15,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 	[SkipKeptItemsValidation]
 	public class RequiresUnreferencedCodeCapability
 	{
+		[ExpectedWarning ("IL2026", "DynamicallyAccessedTypeWithRequiresUnreferencedCode.RequiresUnreferencedCode")]
 		public static void Main ()
 		{
 			TestRequiresWithMessageOnlyOnMethod ();
@@ -215,7 +216,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			tmp.VirtualMethodRequiresUnreferencedCode ();
 		}
 
-		[ExpectedWarning ("IL2026", "--TestStaticCtor--")]
 		class StaticCtor
 		{
 			[RequiresUnreferencedCode ("Message for --TestStaticCtor--")]
@@ -224,6 +224,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 		}
 
+		[ExpectedWarning ("IL2026", "--TestStaticCtor--")]
 		static void TestStaticCctorRequiresUnreferencedCode ()
 		{
 			_ = new StaticCtor ();
@@ -231,7 +232,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		public class DynamicallyAccessedTypeWithRequiresUnreferencedCode
 		{
-			[LogDoesNotContain ("DynamicallyAccessedTypeWithRequiresUnreferencedCode.RequiresUnreferencedCode")]
 			[RequiresUnreferencedCode ("Message for --DynamicallyAccessedTypeWithRequiresUnreferencedCode.RequiresUnreferencedCode--")]
 			public void RequiresUnreferencedCode ()
 			{
