@@ -217,23 +217,6 @@ namespace Mono.Linker.Tests.TestCases
 			Assert.That (secondOutputMvid, Is.EqualTo (firstOutputMvid));
 		}
 
-		[Test]
-		public void DefaultMvidBehavior ()
-		{
-			var testCase = CreateIndividualCase (typeof (NewMvidWorks));
-			var result = Run (testCase, out TestRunner runner);
-
-			var originalMvid = GetMvid (result.InputAssemblyPath);
-			var firstOutputMvid = GetMvid (result.OutputAssemblyPath);
-			Assert.That (firstOutputMvid, Is.Not.EqualTo (originalMvid));
-
-			var result2 = runner.Relink (result);
-
-			var secondOutputMvid = GetMvid (result2.OutputAssemblyPath);
-			Assert.That (secondOutputMvid, Is.Not.EqualTo (originalMvid));
-			Assert.That (secondOutputMvid, Is.Not.EqualTo (firstOutputMvid));
-		}
-
 		protected Guid GetMvid (NPath assemblyPath)
 		{
 			using (var assembly = AssemblyDefinition.ReadAssembly (assemblyPath)) {
