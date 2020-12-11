@@ -15,8 +15,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 	[SkipKeptItemsValidation]
 	public class RequiresUnreferencedCodeCapability
 	{
-		[ExpectedWarning ("IL2026", "'Mono.Linker.Tests.Cases.RequiresCapability.RequiresUnreferencedCodeCapability.DynamicallyAccessedTypeWithRequiresUnreferencedCode.RequiresUnreferencedCode()' method " +
-			"has 'RequiresUnreferencedCodeAttribute' which can break functionality when trimming application code. Message for --RequiresUnreferencedCode--.")]
 		public static void Main ()
 		{
 			TestRequiresWithMessageOnlyOnMethod ();
@@ -28,9 +26,11 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			TestRequiresUnreferencedCodeOnlyThroughReflection ();
 			TestBaseTypeVirtualMethodRequiresUnreferencedCode ();
 			TestTypeWhichOverridesMethodVirtualMethodRequiresUnreferencedCode ();
+			TestTypeWhichOverridesMethodVirtualMethodRequiresUnreferencedCodeOnBase ();
 			TestStaticCctorRequiresUnreferencedCode ();
 			TestDynamicallyAccessedMembersWithRequiresUnreferencedCode (typeof (DynamicallyAccessedTypeWithRequiresUnreferencedCode));
 			TestInterfaceMethodWithRequiresUnreferencedCode ();
+			TestCovariantReturnCallOnDerived ();
 		}
 
 		[ExpectedWarning ("IL2026",
@@ -207,6 +207,14 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			tmp.VirtualMethodRequiresUnreferencedCode ();
 		}
 
+		[LogDoesNotContain ("TypeWhichOverridesMethod.VirtualMethodRequiresUnreferencedCode")]
+		[ExpectedWarning ("IL2026", "--BaseType.VirtualMethodRequiresUnreferencedCode--")]
+		static void TestTypeWhichOverridesMethodVirtualMethodRequiresUnreferencedCodeOnBase ()
+		{
+			BaseType tmp = new TypeWhichOverridesMethod ();
+			tmp.VirtualMethodRequiresUnreferencedCode ();
+		}
+
 		[ExpectedWarning ("IL2026", "--TestStaticCtor--")]
 		class StaticCtor
 		{
@@ -223,7 +231,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		public class DynamicallyAccessedTypeWithRequiresUnreferencedCode
 		{
-			[RequiresUnreferencedCode ("Message for --RequiresUnreferencedCode--")]
+			[LogDoesNotContain ("DynamicallyAccessedTypeWithRequiresUnreferencedCode.RequiresUnreferencedCode")]
+			[RequiresUnreferencedCode ("Message for --DynamicallyAccessedTypeWithRequiresUnreferencedCode.RequiresUnreferencedCode--")]
 			public void RequiresUnreferencedCode ()
 			{
 			}
@@ -234,13 +243,24 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		{
 		}
 
-		public interface IRequiresUnreferencedCode
+		[LogDoesNotContain ("ImplementationClass.RequiresUnreferencedCodeMethod")]
+		[ExpectedWarning ("IL2026", "--IRequiresUnreferencedCode.RequiresUnreferencedCodeMethod--")]
+		static void TestInterfaceMethodWithRequiresUnreferencedCode ()
+		{
+			IRequiresUnreferencedCode inst = new ImplementationClass ();
+			inst.RequiresUnreferencedCodeMethod ();
+		}
+
+		class BaseReturnType { }
+		class DerivedReturnType : BaseReturnType { }
+
+		interface IRequiresUnreferencedCode
 		{
 			[RequiresUnreferencedCode ("Message for --IRequiresUnreferencedCode.RequiresUnreferencedCodeMethod--")]
 			public void RequiresUnreferencedCodeMethod ();
 		}
 
-		public class ImplementationClass : IRequiresUnreferencedCode
+		class ImplementationClass : IRequiresUnreferencedCode
 		{
 			[RequiresUnreferencedCode ("Message for --ImplementationClass.RequiresUnreferencedCodeMethod--")]
 			public void RequiresUnreferencedCodeMethod ()
@@ -248,12 +268,27 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 		}
 
-		[LogDoesNotContain ("ImplementationClass.RequiresUnreferencedCodeMethod")]
-		[ExpectedWarning ("IL2026", "--IRequiresUnreferencedCode.RequiresUnreferencedCodeMethod--")]
-		static void TestInterfaceMethodWithRequiresUnreferencedCode ()
+		abstract class CovariantReturnBase
 		{
-			IRequiresUnreferencedCode inst = new ImplementationClass ();
-			inst.RequiresUnreferencedCodeMethod ();
+			[RequiresUnreferencedCode ("Message for --CovariantReturnBase.GetRequiresUnreferencedCode--")]
+			public abstract BaseReturnType GetRequiresUnreferencedCode ();
+		}
+
+		class CovariantReturnDerived : CovariantReturnBase
+		{
+			[RequiresUnreferencedCode ("Message for --CovariantReturnDerived.GetRequiresUnreferencedCode--")]
+			public override DerivedReturnType GetRequiresUnreferencedCode ()
+			{
+				return null;
+			}
+		}
+
+		[LogDoesNotContain ("--CovariantReturnBase.GetRequiresUnreferencedCode--")]
+		[ExpectedWarning ("IL2026", "--CovariantReturnDerived.GetRequiresUnreferencedCode--")]
+		static void TestCovariantReturnCallOnDerived ()
+		{
+			var tmp = new CovariantReturnDerived ();
+			tmp.GetRequiresUnreferencedCode ();
 		}
 	}
 }

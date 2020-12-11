@@ -74,6 +74,7 @@ namespace Mono.Linker.Steps
 			DependencyKind.AlreadyMarked,
 			DependencyKind.Custom,
 			DependencyKind.CustomAttributeField,
+			DependencyKind.DynamicallyAccessedMember,
 			DependencyKind.EventSourceProviderField,
 			DependencyKind.FieldAccess,
 			DependencyKind.FieldOnGenericInstance,
@@ -101,6 +102,7 @@ namespace Mono.Linker.Steps
 			DependencyKind.DeclaringType,
 			DependencyKind.DeclaringTypeOfCalledMethod,
 			DependencyKind.DynamicDependency,
+			DependencyKind.DynamicallyAccessedMember,
 			DependencyKind.ElementType,
 			DependencyKind.FieldType,
 			DependencyKind.GenericArgumentType,
@@ -133,6 +135,7 @@ namespace Mono.Linker.Steps
 			DependencyKind.Custom,
 			DependencyKind.DefaultCtorForNewConstrainedGenericArgument,
 			DependencyKind.DirectCall,
+			DependencyKind.DynamicallyAccessedMember,
 			DependencyKind.ElementMethod,
 			DependencyKind.EventMethod,
 			DependencyKind.EventOfEventMethod,
@@ -511,7 +514,7 @@ namespace Mono.Linker.Steps
 			// Only track instantiations if override removal is enabled and the type is instantiated.
 			// If it's disabled, all overrides are kept, so there's no instantiation site to blame.
 			if (_context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, method) && isInstantiated) {
-				MarkMethod (method, new DependencyInfo (DependencyKind.OverrideOnInstantiatedType, method.DeclaringType), new MessageOrigin (method.DeclaringType));
+				MarkMethod (method, new DependencyInfo (DependencyKind.OverrideOnInstantiatedType, method.DeclaringType), new MessageOrigin (@base));
 			} else {
 				// If the optimization is disabled or it's an abstract type, we just mark it as a normal override.
 				Debug.Assert (!_context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, method) || @base.IsAbstract);
@@ -2334,7 +2337,9 @@ namespace Mono.Linker.Steps
 			if (Annotations.GetAction (method) == MethodAction.Nothing)
 				Annotations.SetAction (method, MethodAction.Parse);
 
-			ProcessRequiresUnreferencedCode (method, origin);
+			if (reason.Kind != DependencyKind.DynamicallyAccessedMember)
+				ProcessRequiresUnreferencedCode (method, origin);
+
 			EnqueueMethod (method, reason);
 
 			return method;
@@ -2347,8 +2352,7 @@ namespace Mono.Linker.Steps
 			// Overrides of methods annotated with `RequiresUnreferencedCodeAttribute` should not produce a warning here,
 			// the warning should be put in the virtual method instead.
 			if (origin.MemberDefinition != null &&
-				Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (origin.MemberDefinition) ||
-				Annotations.GetBaseMethods (method) != null)
+				Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (origin.MemberDefinition))
 				return;
 
 			if (Annotations.TryGetLinkerAttribute (method, out RequiresUnreferencedCodeAttribute requiresUnreferencedCode)) {
@@ -2390,7 +2394,7 @@ namespace Mono.Linker.Steps
 		{
 #if DEBUG
 			if (!_methodReasons.Contains (reason.Kind))
-				throw new ArgumentOutOfRangeException ($"Internal error: unsupported method dependency {reason.Kind}");
+				throw new InternalErrorException ($"Unsupported method dependency {reason.Kind}");
 #endif
 
 			// Record the reason for marking a method on each call. The logic under CheckProcessed happens
