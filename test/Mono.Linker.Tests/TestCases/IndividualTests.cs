@@ -91,7 +91,7 @@ namespace Mono.Linker.Tests.TestCases
 		{
 			var testcase = CreateIndividualCase (typeof (WarningsAreSorted));
 			var result = Run (testcase);
-			var loggedMessages = result.Logger.MessageContainers
+			var loggedMessages = result.Logger.GetLoggedMessages ()
 				.Where (lm => lm.Category != MessageCategory.Info && lm.Category != MessageCategory.Diagnostic).ToList ();
 			loggedMessages.Sort ();
 
