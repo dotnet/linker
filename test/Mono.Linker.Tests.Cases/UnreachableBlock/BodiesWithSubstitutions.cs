@@ -9,8 +9,13 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 	[SetupCSharpCompilerToUse ("csc")]
 	[SetupCompileArgument ("/optimize+")]
 	[SetupLinkerArgument ("--enable-opt", "ipconstprop")]
-	[SetupCompileBefore ("LibReturningConstant.dll", new string[] { "Dependencies/LibReturningConstant.cs" })]
-	[SetupCompileBefore ("LibWithConstantSubstitution.dll", new string[] { "Dependencies/LibWithConstantSubstitution.cs" }, resources: new string[] { "Dependencies/LibWithConstantSubstitution.xml" })]
+	[SetupCompileBefore (
+		"LibReturningConstant.dll", 
+		new string[] { "Dependencies/LibReturningConstant.cs" })]
+	[SetupCompileBefore (
+		"LibWithConstantSubstitution.dll", 
+		new string[] { "Dependencies/LibWithConstantSubstitution.cs" }, 
+		resources: new string[] { "Dependencies/LibWithConstantSubstitution.xml" })]
 	public class BodiesWithSubstitutions
 	{
 		static class ClassWithField
