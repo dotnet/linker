@@ -27,13 +27,13 @@ namespace Mono.Linker.Tests.Cases.SingleFileAnalysis
 		}
 
 		[Kept]
-		[ExpectedWarning ("IL3000", 
+		[ExpectedWarning ("IL3000",
 			"'System.Reflection.Assembly.Location.get' always returns an empty string for assemblies embedded " +
 			"in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'")]
 		static string GetExecutingAssemblyLocation () => Assembly.GetExecutingAssembly ().Location;
 
 		[Kept]
-		[ExpectedWarning ("IL3000", 
+		[ExpectedWarning ("IL3000",
 			"'System.Reflection.Assembly.Location.get' always returns an empty string for assemblies embedded " +
 			"in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'")]
 		static void AssemblyProperties ()
@@ -46,9 +46,9 @@ namespace Mono.Linker.Tests.Cases.SingleFileAnalysis
 		}
 
 		[Kept]
-		[ExpectedWarning ("IL3001", 
+		[ExpectedWarning ("IL3001",
 			"Assemblies embedded in a single-file app cannot have additional files in the manifest.")]
-		[ExpectedWarning ("IL3001", 
+		[ExpectedWarning ("IL3001",
 			"Assemblies embedded in a single-file app cannot have additional files in the manifest.")]
 		static void AssemblyMethods ()
 		{
@@ -58,10 +58,10 @@ namespace Mono.Linker.Tests.Cases.SingleFileAnalysis
 		}
 
 		[Kept]
-		[ExpectedWarning ("IL3000", 
+		[ExpectedWarning ("IL3000",
 			"'System.Reflection.AssemblyName.CodeBase.get' always returns an empty string for assemblies embedded " +
 			"in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'.")]
-		[ExpectedWarning ("IL3000", 
+		[ExpectedWarning ("IL3000",
 			"'System.Reflection.AssemblyName.EscapedCodeBase.get' always returns an empty string for assemblies embedded " +
 			"in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'.")]
 
@@ -75,10 +75,10 @@ namespace Mono.Linker.Tests.Cases.SingleFileAnalysis
 		// This is an OK use of Location and GetFile since these assemblies were loaded from
 		// a file, but the linker is conservative
 		[Kept]
-		[ExpectedWarning ("IL3000", 
+		[ExpectedWarning ("IL3000",
 			"'System.Reflection.Assembly.Location.get' always returns an empty string for assemblies embedded " +
 			"in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'")]
-		[ExpectedWarning ("IL3001", 
+		[ExpectedWarning ("IL3001",
 			"Assemblies embedded in a single-file app cannot have additional files in the manifest.")]
 		static void FalsePositive ()
 		{

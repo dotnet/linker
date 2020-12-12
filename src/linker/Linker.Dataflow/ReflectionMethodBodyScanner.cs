@@ -489,7 +489,7 @@ namespace Mono.Linker.Dataflow
 				// System.Reflection.Assembly.Location ()
 				"get_Location" when calledMethod.IsDeclaredOnType ("System.Reflection", "Assembly")
 					&& calledMethod.Parameters.Count == 0
-				    => IntrinsicId.Assembly_Location,
+					=> IntrinsicId.Assembly_Location,
 
 				// System.Reflection.Assembly.CodeBase ()
 				"get_CodeBase" when calledMethod.IsDeclaredOnType ("System.Reflection", "AssemblyName")
@@ -504,12 +504,12 @@ namespace Mono.Linker.Dataflow
 				// System.Reflection.Assembly.GetFile (string)
 				"GetFile" when calledMethod.IsDeclaredOnType ("System.Reflection", "Assembly")
 					&& calledMethod.HasParameterOfType (0, "System", "String")
-				    => IntrinsicId.Assembly_GetFile,
+					=> IntrinsicId.Assembly_GetFile,
 
-                // System.Reflection.Assembly.GetFiles ()
+				// System.Reflection.Assembly.GetFiles ()
 				"GetFiles" when calledMethod.IsDeclaredOnType ("System.Reflection", "Assembly")
-                    && calledMethod.Parameters.Count == 0
-                    => IntrinsicId.Assembly_GetFiles,
+					&& calledMethod.Parameters.Count == 0
+					=> IntrinsicId.Assembly_GetFiles,
 
 				// System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor (RuntimeTypeHandle type)
 				"RunClassConstructor" when calledMethod.IsDeclaredOnType ("System.Runtime.CompilerServices", "RuntimeHelpers")
@@ -1293,12 +1293,12 @@ namespace Mono.Linker.Dataflow
 					_context.LogWarning ($"Assemblies embedded in a single-file app cannot have additional files in the manifest.", 3001, callingMethodDefinition);
 					break;
 
-                //
-                // System.Reflection.Assembly
-                //
-                // GetFiles ()
-                //
-                case IntrinsicId.Assembly_GetFiles when _context.SingleFileAnalysis == true:
+				//
+				// System.Reflection.Assembly
+				//
+				// GetFiles ()
+				//
+				case IntrinsicId.Assembly_GetFiles when _context.SingleFileAnalysis == true:
 					_context.LogWarning ($"Assemblies embedded in a single-file app cannot have additional files in the manifest.", 3001, callingMethodDefinition);
 					break;
 
