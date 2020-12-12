@@ -453,6 +453,12 @@ namespace Mono.Linker
 						context.NoWarn.UnionWith (ProcessWarningCodes (noWarnArgument));
 						continue;
 
+					case "--single-file-analysis":
+						if (!GetBoolParam (token, l => context.SingleFileAnalysis = l))
+							return -1;
+
+						continue;
+
 					case "--warnaserror":
 					case "--warnaserror+":
 						var warningList = GetNextStringValue ();

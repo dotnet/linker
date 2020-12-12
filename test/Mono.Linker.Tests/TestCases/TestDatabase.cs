@@ -208,6 +208,11 @@ namespace Mono.Linker.Tests.TestCases
 			return NUnitCasesBySuiteName ("LinkAttributes");
 		}
 
+		public static IEnumerable<TestCaseData> SingleFileAnalysisTests ()
+		{
+			return NUnitCasesBySuiteName ("SingleFileAnalysis");
+		}
+
 		public static TestCaseCollector CreateCollector ()
 		{
 			GetDirectoryPaths (out string rootSourceDirectory, out string testCaseAssemblyPath);

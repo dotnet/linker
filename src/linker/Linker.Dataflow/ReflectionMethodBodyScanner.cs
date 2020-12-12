@@ -246,6 +246,11 @@ namespace Mono.Linker.Dataflow
 			AppDomain_CreateInstanceFrom,
 			AppDomain_CreateInstanceFromAndUnwrap,
 			Assembly_CreateInstance,
+			Assembly_Location,
+			Assembly_CodeBase,
+			Assembly_EscapedCodeBase,
+			Assembly_GetFile,
+			Assembly_GetFiles,
 			RuntimeReflectionExtensions_GetRuntimeEvent,
 			RuntimeReflectionExtensions_GetRuntimeField,
 			RuntimeReflectionExtensions_GetRuntimeMethod,
@@ -480,6 +485,31 @@ namespace Mono.Linker.Dataflow
 				"CreateInstance" when calledMethod.IsDeclaredOnType ("System.Reflection", "Assembly")
 					&& calledMethod.HasParameterOfType (0, "System", "String")
 					=> IntrinsicId.Assembly_CreateInstance,
+
+				// System.Reflection.Assembly.Location ()
+				"get_Location" when calledMethod.IsDeclaredOnType ("System.Reflection", "Assembly")
+					&& calledMethod.Parameters.Count == 0
+				    => IntrinsicId.Assembly_Location,
+
+				// System.Reflection.Assembly.CodeBase ()
+				"get_CodeBase" when calledMethod.IsDeclaredOnType ("System.Reflection", "AssemblyName")
+					&& calledMethod.Parameters.Count == 0
+					=> IntrinsicId.Assembly_CodeBase,
+
+				// System.Reflection.Assembly.EscapedCodeBase ()
+				"get_EscapedCodeBase" when calledMethod.IsDeclaredOnType ("System.Reflection", "AssemblyName")
+					&& calledMethod.Parameters.Count == 0
+					=> IntrinsicId.Assembly_EscapedCodeBase,
+
+				// System.Reflection.Assembly.GetFile (string)
+				"GetFile" when calledMethod.IsDeclaredOnType ("System.Reflection", "Assembly")
+					&& calledMethod.HasParameterOfType (0, "System", "String")
+				    => IntrinsicId.Assembly_GetFile,
+
+                // System.Reflection.Assembly.GetFiles ()
+				"GetFiles" when calledMethod.IsDeclaredOnType ("System.Reflection", "Assembly")
+                    && calledMethod.Parameters.Count == 0
+                    => IntrinsicId.Assembly_GetFiles,
 
 				// System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor (RuntimeTypeHandle type)
 				"RunClassConstructor" when calledMethod.IsDeclaredOnType ("System.Runtime.CompilerServices", "RuntimeHelpers")
@@ -1226,6 +1256,52 @@ namespace Mono.Linker.Dataflow
 					reflectionContext.AnalyzingPattern ();
 					reflectionContext.RecordUnrecognizedPattern (2058, $"Parameters passed to method '{calledMethodDefinition.GetDisplayName ()}' cannot be analyzed. Consider using methods 'System.Type.GetType' and `System.Activator.CreateInstance` instead.");
 					break;
+
+				//
+				// System.Reflection.Assembly
+				//
+				// Location ()
+				//
+				case IntrinsicId.Assembly_Location when _context.SingleFileAnalysis == true:
+					_context.LogWarning ($"'{calledMethodDefinition.GetDisplayName ()}' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'.", 3000, callingMethodDefinition);
+					break;
+
+				//
+				// System.Reflection.Assembly
+				//
+				// CodeBase ()
+				//
+				case IntrinsicId.Assembly_CodeBase when _context.SingleFileAnalysis == true:
+					_context.LogWarning ($"'{calledMethodDefinition.GetDisplayName ()}' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'.", 3000, callingMethodDefinition);
+					break;
+
+				//
+				// System.Reflection.Assembly
+				//
+				// EscapedCodeBase ()
+				//
+				case IntrinsicId.Assembly_EscapedCodeBase when _context.SingleFileAnalysis == true:
+					_context.LogWarning ($"'{calledMethodDefinition.GetDisplayName ()}' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'.", 3000, callingMethodDefinition);
+					break;
+
+				//
+				// System.Reflection.Assembly
+				//
+				// GetFile (string fileName)
+				//
+				case IntrinsicId.Assembly_GetFile when _context.SingleFileAnalysis == true:
+					_context.LogWarning ($"Assemblies embedded in a single-file app cannot have additional files in the manifest.", 3001, callingMethodDefinition);
+					break;
+
+                //
+                // System.Reflection.Assembly
+                //
+                // GetFiles ()
+                //
+                case IntrinsicId.Assembly_GetFiles when _context.SingleFileAnalysis == true:
+					_context.LogWarning ($"Assemblies embedded in a single-file app cannot have additional files in the manifest.", 3001, callingMethodDefinition);
+					break;
+
 
 				//
 				// System.Runtime.CompilerServices.RuntimeHelpers

@@ -54,6 +54,7 @@ namespace Mono.Linker
 		readonly Dictionary<string, string> _parameters;
 		bool _linkSymbols;
 		bool _keepTypeForwarderOnlyAssemblies;
+		bool _singleFileAnalysis;
 		bool _ignoreUnresolved;
 
 		readonly AssemblyResolver _resolver;
@@ -104,6 +105,11 @@ namespace Mono.Linker
 		public bool KeepTypeForwarderOnlyAssemblies {
 			get { return _keepTypeForwarderOnlyAssemblies; }
 			set { _keepTypeForwarderOnlyAssemblies = value; }
+		}
+
+		public bool SingleFileAnalysis {
+			get { return _singleFileAnalysis; }
+			set { _singleFileAnalysis = value; }
 		}
 
 #if FEATURE_ILLINK
