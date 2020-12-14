@@ -11,11 +11,11 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 	[SetupLinkerArgument ("--enable-opt", "ipconstprop")]
 	[SetupCompileBefore (
 		"LibReturningConstant.dll", 
-		new string[] { "Dependencies/LibReturningConstant.cs" })]
+		new [] { "Dependencies/LibReturningConstant.cs" })]
 	[SetupCompileBefore (
 		"LibWithConstantSubstitution.dll", 
-		new string[] { "Dependencies/LibWithConstantSubstitution.cs" }, 
-		resources: new string[] { "Dependencies/LibWithConstantSubstitution.xml" })]
+		new [] { "Dependencies/LibWithConstantSubstitution.cs" }, 
+		resources: new [] { "Dependencies/LibWithConstantSubstitution.xml" })]
 	public class BodiesWithSubstitutions
 	{
 		static class ClassWithField
