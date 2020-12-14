@@ -17,12 +17,6 @@ namespace Mono.Linker.Tests.Cases.DynamicDependencies
 		references: new[] { "base.dll" },
 		resources: new object[] { "Dependencies/DynamicDependencyMethodInNonReferencedAssemblyLibrary.xml" },
 		addAsReference: false)]
-	[SetupCompileBefore (
-		"DynamicDependencyMethodInNonReferencedAssemblyLibrary.dll",
-		new[] { "Dependencies/DynamicDependencyMethodInNonReferencedAssemblyLibrary.cs" },
-		references: new[] { "base.dll" },
-		resources: new[] { "Dependencies/DynamicDependencyMethodInNonReferencedAssemblyLibrary.xml" },
-		addAsReference: false)]
 	[KeptAssembly ("base.dll")]
 	[RemovedMemberInAssembly ("DynamicDependencyMethodInNonReferencedAssemblyLibrary.dll", "Mono.Linker.Tests.Cases.DynamicDependencies.Dependencies.DynamicDependencyMethodInNonReferencedAssemblyLibrary", "UnusedMethod()")]
 	public class DynamicDependencyMethodInNonReferencedAssemblyWithEmbeddedXml
