@@ -605,7 +605,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 		void VerifyLoggedMessages (AssemblyDefinition original, LinkerTestLogger logger, bool checkRemainingErrors)
 		{
-			List<string> loggedMessages = logger.GetLoggedMessages ();
+			List<MessageContainer> loggedMessages = logger.GetLoggedMessages ();
 			foreach (var testType in original.AllDefinedTypes ()) {
 				foreach (var attrProvider in testType.AllMembers ().Append (testType)) {
 					foreach (var attr in attrProvider.CustomAttributes) {
@@ -614,11 +614,11 @@ namespace Mono.Linker.Tests.TestCasesRunner
 						case nameof (LogContainsAttribute): {
 								var expectedMessage = (string) attr.ConstructorArguments[0].Value;
 
-								List<string> matchedMessages;
+								List<MessageContainer> matchedMessages;
 								if ((bool) attr.ConstructorArguments[1].Value)
-									matchedMessages = loggedMessages.Where (m => Regex.IsMatch (m, expectedMessage)).ToList ();
+									matchedMessages = loggedMessages.Where (m => Regex.IsMatch (m.ToString (), expectedMessage)).ToList ();
 								else
-									matchedMessages = loggedMessages.Where (m => m.Contains (expectedMessage)).ToList (); ;
+									matchedMessages = loggedMessages.Where (m => m.ToString ().Contains (expectedMessage)).ToList (); ;
 								Assert.IsTrue (
 									matchedMessages.Count > 0,
 									$"Expected to find logged message matching `{expectedMessage}`, but no such message was found.{Environment.NewLine}Logged messages:{Environment.NewLine}{string.Join (Environment.NewLine, loggedMessages)}");
@@ -657,7 +657,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 								var actualMethod = attrProvider as MethodDefinition;
 
 								Assert.IsTrue (
-									logger.MessageContainers.Any (mc => {
+									logger.GetLoggedMessages ().Any (mc => {
 										if (mc.Category != MessageCategory.Warning || mc.Code != expectedWarningCodeNumber)
 											return false;
 
@@ -679,7 +679,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 											if (mc.Origin?.MemberDefinition?.FullName == attrProvider.FullName)
 												return true;
 
-											if (loggedMessages.Any (m => m.Contains (attrProvider.FullName)))
+											if (loggedMessages.Any (m => m.Text.Contains (attrProvider.FullName)))
 												return true;
 
 											return false;
@@ -699,7 +699,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			}
 
 			if (checkRemainingErrors) {
-				var remainingErrors = loggedMessages.Where (m => Regex.IsMatch (m, @".*(error | warning): \d{4}.*"));
+				var remainingErrors = loggedMessages.Where (m => Regex.IsMatch (m.ToString (), @".*(error | warning): \d{4}.*"));
 				Assert.IsEmpty (remainingErrors, $"Found unexpected errors:{Environment.NewLine}{string.Join (Environment.NewLine, remainingErrors)}");
 			}
 		}
@@ -708,7 +708,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 		{
 			foreach (var typeWithRemoveInAssembly in original.AllDefinedTypes ()) {
 				foreach (var attr in typeWithRemoveInAssembly.CustomAttributes) {
-					if (attr.AttributeType.Resolve ().Name == nameof (DependencyRecordedAttribute)) {
+					if (attr.AttributeType.Resolve ()?.Name == nameof (DependencyRecordedAttribute)) {
 						var expectedSource = (string) attr.ConstructorArguments[0].Value;
 						var expectedTarget = (string) attr.ConstructorArguments[1].Value;
 						var expectedMarked = (string) attr.ConstructorArguments[2].Value;
@@ -758,7 +758,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			foreach (var expectedSourceMemberDefinition in original.MainModule.AllDefinedTypes ().SelectMany (t => t.AllMembers ().Append (t)).Distinct ()) {
 				bool foundAttributesToVerify = false;
 				foreach (var attr in expectedSourceMemberDefinition.CustomAttributes) {
-					if (attr.AttributeType.Resolve ().Name == nameof (RecognizedReflectionAccessPatternAttribute)) {
+					if (attr.AttributeType.Resolve ()?.Name == nameof (RecognizedReflectionAccessPatternAttribute)) {
 						foundAttributesToVerify = true;
 
 						// Special case for default .ctor - just trigger the overall verification on the method
@@ -800,7 +800,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 								$"Potential patterns matching the reflection member: {Environment.NewLine}{reflectionMemberCandidates}{Environment.NewLine}" +
 								$"If there's no matches, try to specify just a part of the source member or reflection member name and rerun the test to get potential matches.");
 						}
-					} else if (attr.AttributeType.Resolve ().Name == nameof (UnrecognizedReflectionAccessPatternAttribute) &&
+					} else if (attr.AttributeType.Resolve ()?.Name == nameof (UnrecognizedReflectionAccessPatternAttribute) &&
 						attr.ConstructorArguments[0].Type.MetadataType != MetadataType.String) {
 						foundAttributesToVerify = true;
 						string expectedSourceMember = GetFullMemberNameFromDefinition (expectedSourceMemberDefinition);
@@ -881,7 +881,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 			foreach (var typeToVerify in original.MainModule.AllDefinedTypes ()) {
 				foreach (var attr in typeToVerify.CustomAttributes) {
-					if (attr.AttributeType.Resolve ().Name == nameof (VerifyAllReflectionAccessPatternsAreValidatedAttribute)) {
+					if (attr.AttributeType.Resolve ()?.Name == nameof (VerifyAllReflectionAccessPatternsAreValidatedAttribute)) {
 						// By now all verified recorded patterns were removed from the test recorder lists, so validate
 						// that there are no remaining patterns for this type.
 						var recognizedPatternsForType = reflectionPatternRecorder.RecognizedPatterns
@@ -1071,7 +1071,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 		bool IsTypeInOtherAssemblyAssertion (CustomAttribute attr)
 		{
-			return attr.AttributeType.Resolve ().DerivesFrom (nameof (BaseInAssemblyAttribute));
+			return attr.AttributeType.Resolve ()?.DerivesFrom (nameof (BaseInAssemblyAttribute)) ?? false;
 		}
 
 		bool HasAttribute (ICustomAttributeProvider caProvider, string attributeName)
