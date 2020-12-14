@@ -11,20 +11,14 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 	[SetupCompileArgument ("/optimize+")]
 	[SetupLinkerArgument ("--enable-opt", "ipconstprop")]
 	[SetupCompileBefore (
-		"LibReturningConstant.dll",
-		new[] { "Dependencies/LibReturningConstant.cs" })]
-	[SetupCompileBefore (
-		"DynamicDependencyMethodInNonReferencedAssemblyLibrary.dll",
-		new[] { "Dependencies/DynamicDependencyMethodInNonReferencedAssemblyLibrary.cs" },
-		references: new[] { "base.dll" },
-		resources: new[] { "Dependencies/DynamicDependencyMethodInNonReferencedAssemblyLibrary.xml" },
-		addAsReference: false)]
-	[SetupCompileBefore (
 		"LibWithConstantSubstitution.dll",
 		new[] { "Dependencies/LibWithConstantSubstitution.cs" },
 		references: new[] { "" },
 		resources: new[] { "Dependencies/LibWithConstantSubstitution.xml" },
 		addAsReference: true)]
+	[SetupCompileBefore (
+		"LibReturningConstant.dll",
+		new[] { "Dependencies/LibReturningConstant.cs" })]
 	public class BodiesWithSubstitutions
 	{
 		static class ClassWithField
