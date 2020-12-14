@@ -1216,11 +1216,11 @@ namespace Mono.Linker
 			p.AppendStep (new MarkStep ());
 			p.AppendStep (new ValidateVirtualMethodAnnotationsStep ());
 			p.AppendStep (new ProcessWarningsStep ());
+			p.AppendStep (new OutputWarningSuppressions ());
 			p.AppendStep (new SweepStep ());
 			p.AppendStep (new CodeRewriterStep ());
 			p.AppendStep (new CleanStep ());
 			p.AppendStep (new RegenerateGuidStep ());
-			p.AppendStep (new OutputWarningSuppressions ());
 			p.AppendStep (new OutputStep ());
 			return p;
 		}
