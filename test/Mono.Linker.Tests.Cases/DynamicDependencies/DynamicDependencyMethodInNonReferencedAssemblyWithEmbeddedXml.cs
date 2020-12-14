@@ -20,7 +20,7 @@ namespace Mono.Linker.Tests.Cases.DynamicDependencies
 	[SetupCompileBefore (
 		"LibWithConstantSubstitution.dll",
 		new[] { "Dependencies/LibWithConstantSubstitution.cs" },
-		references: new string[] { },
+		references: new[] { "" },
 		resources: new[] { "Dependencies/LibWithConstantSubstitution.xml" },
 		addAsReference: true)]
 	[KeptAssembly ("base.dll")]

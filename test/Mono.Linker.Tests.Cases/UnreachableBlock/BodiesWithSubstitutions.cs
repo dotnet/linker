@@ -1,8 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
-using Mono.Linker.Tests.Cases.DynamicDependencies.Dependencies;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
+using Mono.Linker.Tests.Cases.UnreachableBlock.Dependencies;
 
 namespace Mono.Linker.Tests.Cases.UnreachableBlock
 {
@@ -11,12 +11,12 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 	[SetupCompileArgument ("/optimize+")]
 	[SetupLinkerArgument ("--enable-opt", "ipconstprop")]
 	[SetupCompileBefore (
-		"LibReturningConstant.dll", 
-		new [] { "Dependencies/LibReturningConstant.cs" })]
+		"LibReturningConstant.dll",
+		new[] { "Dependencies/LibReturningConstant.cs" })]
 	[SetupCompileBefore (
 		"LibWithConstantSubstitution.dll",
 		new[] { "Dependencies/LibWithConstantSubstitution.cs" },
-		references: new string[] { },
+		references: new[] { "" },
 		resources: new[] { "Dependencies/LibWithConstantSubstitution.xml" },
 		addAsReference: true)]
 	public class BodiesWithSubstitutions
