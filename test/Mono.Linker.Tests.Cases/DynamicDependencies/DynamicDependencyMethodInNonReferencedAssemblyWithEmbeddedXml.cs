@@ -17,6 +17,12 @@ namespace Mono.Linker.Tests.Cases.DynamicDependencies
 		references: new[] { "base.dll" },
 		resources: new[] { "Dependencies/DynamicDependencyMethodInNonReferencedAssemblyLibrary.xml" },
 		addAsReference: false)]
+	[SetupCompileBefore (
+		"LibWithConstantSubstitution.dll",
+		new[] { "Dependencies/LibWithConstantSubstitution.cs" },
+		references: new string[] { },
+		resources: new[] { "Dependencies/LibWithConstantSubstitution.xml" },
+		addAsReference: true)]
 	[KeptAssembly ("base.dll")]
 	[RemovedMemberInAssembly ("DynamicDependencyMethodInNonReferencedAssemblyLibrary.dll", "Mono.Linker.Tests.Cases.DynamicDependencies.Dependencies.DynamicDependencyMethodInNonReferencedAssemblyLibrary", "UnusedMethod()")]
 	public class DynamicDependencyMethodInNonReferencedAssemblyWithEmbeddedXml
