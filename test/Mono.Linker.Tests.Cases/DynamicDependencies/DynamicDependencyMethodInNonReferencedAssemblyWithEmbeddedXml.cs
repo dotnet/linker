@@ -12,11 +12,11 @@ namespace Mono.Linker.Tests.Cases.DynamicDependencies
 	[IgnoreDescriptors (false)]
 	[SetupCompileBefore ("base.dll", new[] { "Dependencies/DynamicDependencyMethodInNonReferencedAssemblyBase.cs" })]
 	[SetupCompileBefore (
-		"LibWithConstantSubstitution.dll",
-		new[] { "Dependencies/LibWithConstantSubstitution.cs" },
-		references: new[] { "" },
-		resources: new[] { "Dependencies/LibWithConstantSubstitution.xml" },
-		addAsReference: true)]
+		"DynamicDependencyMethodInNonReferencedAssemblyLibrary.dll",
+		new[] { "Dependencies/DynamicDependencyMethodInNonReferencedAssemblyLibrary.cs" },
+		references: new[] { "base.dll" },
+		resources: new[] { "Dependencies/DynamicDependencyMethodInNonReferencedAssemblyLibrary.xml" },
+		addAsReference: false)]
 	[SetupCompileBefore (
 		"DynamicDependencyMethodInNonReferencedAssemblyLibrary.dll",
 		new[] { "Dependencies/DynamicDependencyMethodInNonReferencedAssemblyLibrary.cs" },
