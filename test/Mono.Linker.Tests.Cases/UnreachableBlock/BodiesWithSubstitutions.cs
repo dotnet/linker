@@ -14,6 +14,12 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		"LibReturningConstant.dll",
 		new[] { "Dependencies/LibReturningConstant.cs" })]
 	[SetupCompileBefore (
+		"DynamicDependencyMethodInNonReferencedAssemblyLibrary.dll",
+		new[] { "Dependencies/DynamicDependencyMethodInNonReferencedAssemblyLibrary.cs" },
+		references: new[] { "base.dll" },
+		resources: new[] { "Dependencies/DynamicDependencyMethodInNonReferencedAssemblyLibrary.xml" },
+		addAsReference: false)]
+	[SetupCompileBefore (
 		"LibWithConstantSubstitution.dll",
 		new[] { "Dependencies/LibWithConstantSubstitution.cs" },
 		references: new[] { "" },
