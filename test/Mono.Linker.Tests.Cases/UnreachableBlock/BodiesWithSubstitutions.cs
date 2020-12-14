@@ -14,8 +14,8 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		"LibReturningConstant.dll",
 		new[] { "Dependencies/LibReturningConstant.cs" })]
 	[SetupCompileBefore (
-		"LibWithConstantSubstitution.dll", 
-		new [] { "Dependencies/LibWithConstantSubstitution.cs" }, 
+		"LibWithConstantSubstitution.dll",
+		new[] { "Dependencies/LibWithConstantSubstitution.cs" },
 		resources: new object[] { "Dependencies/LibWithConstantSubstitution.xml" })]
 	public class BodiesWithSubstitutions
 	{
