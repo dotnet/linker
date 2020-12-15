@@ -16,7 +16,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 	{
 		public static void Main ()
 		{
-			_ = typeof (TypeUsedWithAsType).GetTypeInfo().AsType().GetMethod (nameof (TypeUsedWithAsType.Method));
+			_ = typeof (TypeUsedWithAsType).GetTypeInfo ().AsType ().GetMethod (nameof (TypeUsedWithAsType.Method));
 		}
 
 		[Kept]

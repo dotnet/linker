@@ -115,7 +115,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[RecognizedReflectionAccessPattern]
-		static void TestStringEmpty()
+		static void TestStringEmpty ()
 		{
 			Type.GetType (string.Empty);
 		}
