@@ -848,10 +848,12 @@ namespace Mono.Linker.Dataflow
 
 						var parameters = calledMethod.Parameters;
 						BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.Instance;
-						if (parameters.Count > 1) {
-							if (methodParams[1].AsConstInt () != null)
-								bindingFlags |= (BindingFlags) methodParams[1].AsConstInt ();
-						}
+						bool unknownBindingFlags = false;
+						if (parameters.Count > 1 && calledMethod.Parameters[0].ParameterType.Name == "BindingFlags" && methodParams[1].AsConstInt () != null)
+							bindingFlags |= (BindingFlags) methodParams[1].AsConstInt ();
+						else if (parameters.Count > 1 && calledMethod.Parameters[0].ParameterType.Name == "BindingFlags" && methodParams[1].AsConstInt () == null)
+							unknownBindingFlags = true;
+
 						int? ctorParameterCount = parameters.Count switch
 						{
 							1 => (methodParams[1] as ArrayValue)?.Size.AsConstInt (),
@@ -863,7 +865,10 @@ namespace Mono.Linker.Dataflow
 						// Go over all types we've seen
 						foreach (var value in methodParams[0].UniqueValues ()) {
 							if (value is SystemTypeValue systemTypeValue) {
-								MarkConstructorsOnType (ref reflectionContext, systemTypeValue.TypeRepresented, null, bindingFlags);
+								if (BindingFlagsAreSupported (bindingFlags) || unknownBindingFlags)
+									RequireDynamicallyAccessedMembers (ref reflectionContext, DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors, value, calledMethodDefinition);
+								else
+									MarkConstructorsOnType (ref reflectionContext, systemTypeValue.TypeRepresented, null, bindingFlags);
 								reflectionContext.RecordHandledPattern ();
 							} else {
 								// Otherwise fall back to the bitfield requirements
@@ -894,10 +899,15 @@ namespace Mono.Linker.Dataflow
 						reflectionContext.AnalyzingPattern ();
 
 						BindingFlags bindingFlags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public;
+						bool unknownBindingFlags = false;
 						if (calledMethod.Parameters.Count > 1 && calledMethod.Parameters[1].ParameterType.Name == "BindingFlags" && methodParams[2].AsConstInt () != null) {
 							bindingFlags = (BindingFlags) methodParams[2].AsConstInt ();
+						} else if (calledMethod.Parameters.Count > 1 && calledMethod.Parameters[1].ParameterType.Name == "BindingFlags" && methodParams[2].AsConstInt () == null) {
+							unknownBindingFlags = true;
 						} else if (calledMethod.Parameters.Count > 2 && calledMethod.Parameters[2].ParameterType.Name == "BindingFlags" && methodParams[3].AsConstInt () != null) {
 							bindingFlags = (BindingFlags) methodParams[3].AsConstInt ();
+						} else if (calledMethod.Parameters.Count > 2 && calledMethod.Parameters[2].ParameterType.Name == "BindingFlags" && methodParams[3].AsConstInt () == null) {
+							unknownBindingFlags = true;
 						}
 
 						var requiredMemberTypes = GetDynamicallyAccessedMemberTypesFromBindingFlagsForMethods (bindingFlags);
@@ -905,7 +915,7 @@ namespace Mono.Linker.Dataflow
 							if (value is SystemTypeValue systemTypeValue) {
 								foreach (var stringParam in methodParams[1].UniqueValues ()) {
 									if (stringParam is KnownStringValue stringValue) {
-										if (BindingFlagsAreSupported (bindingFlags))
+										if (BindingFlagsAreSupported (bindingFlags) || unknownBindingFlags)
 											RequireDynamicallyAccessedMembers (ref reflectionContext, DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods, value, calledMethodDefinition);
 										else
 											MarkMethodsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, m => m.Name == stringValue.Contents, bindingFlags);
@@ -931,8 +941,11 @@ namespace Mono.Linker.Dataflow
 						reflectionContext.AnalyzingPattern ();
 
 						BindingFlags bindingFlags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public;
+						bool unknownBindingFlags = false;
 						if (calledMethod.Parameters.Count > 1 && calledMethod.Parameters[1].ParameterType.Name == "BindingFlags" && methodParams[2].AsConstInt () != null) {
 							bindingFlags = (BindingFlags) methodParams[2].AsConstInt ();
+						} else if (calledMethod.Parameters.Count > 1 && calledMethod.Parameters[1].ParameterType.Name == "BindingFlags" && methodParams[2].AsConstInt () == null) {
+							unknownBindingFlags = true;
 						}
 
 						var requiredMemberTypes = GetDynamicallyAccessedMemberTypesFromBindingFlagsForNestedTypes (bindingFlags);
@@ -940,7 +953,7 @@ namespace Mono.Linker.Dataflow
 							if (value is SystemTypeValue systemTypeValue) {
 								foreach (var stringParam in methodParams[1].UniqueValues ()) {
 									if (stringParam is KnownStringValue stringValue) {
-										if (BindingFlagsAreSupported (bindingFlags))
+										if (BindingFlagsAreSupported (bindingFlags) || unknownBindingFlags)
 											// We have chosen not to populate the methodReturnValue for now
 											RequireDynamicallyAccessedMembers (ref reflectionContext, DynamicallyAccessedMemberTypes.PublicNestedTypes | DynamicallyAccessedMemberTypes.NonPublicNestedTypes, value, calledMethodDefinition);
 										else {
@@ -1017,8 +1030,11 @@ namespace Mono.Linker.Dataflow
 
 						reflectionContext.AnalyzingPattern ();
 						BindingFlags bindingFlags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public;
+						bool unknownBindingFlags = false;
 						if (calledMethod.Parameters.Count > 1 && calledMethod.Parameters[1].ParameterType.Name == "BindingFlags" && methodParams[2].AsConstInt () != null) {
 							bindingFlags = (BindingFlags) methodParams[2].AsConstInt ();
+						} else if (calledMethod.Parameters.Count > 1 && calledMethod.Parameters[1].ParameterType.Name == "BindingFlags" && methodParams[2].AsConstInt () == null) {
+							unknownBindingFlags = true;
 						}
 
 						DynamicallyAccessedMemberTypes memberTypes = fieldPropertyOrEvent switch
@@ -1035,19 +1051,19 @@ namespace Mono.Linker.Dataflow
 									if (stringParam is KnownStringValue stringValue) {
 										switch (fieldPropertyOrEvent) {
 										case IntrinsicId.Type_GetEvent:
-											if (BindingFlagsAreSupported (bindingFlags))
+											if (BindingFlagsAreSupported (bindingFlags) || unknownBindingFlags)
 												RequireDynamicallyAccessedMembers (ref reflectionContext, DynamicallyAccessedMemberTypes.PublicEvents | DynamicallyAccessedMemberTypes.NonPublicEvents, value, calledMethodDefinition);
 											else
 												MarkEventsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, filter: e => e.Name == stringValue.Contents, bindingFlags);
 											break;
 										case IntrinsicId.Type_GetField:
-											if (BindingFlagsAreSupported (bindingFlags))
+											if (BindingFlagsAreSupported (bindingFlags) || unknownBindingFlags)
 												RequireDynamicallyAccessedMembers (ref reflectionContext, DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields, value, calledMethodDefinition);
 											else
 												MarkFieldsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, filter: f => f.Name == stringValue.Contents, bindingFlags);
 											break;
 										case IntrinsicId.Type_GetProperty:
-											if (BindingFlagsAreSupported (bindingFlags))
+											if (BindingFlagsAreSupported (bindingFlags) || unknownBindingFlags)
 												RequireDynamicallyAccessedMembers (ref reflectionContext, DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.NonPublicProperties, value, calledMethodDefinition);
 											else
 												MarkPropertiesOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, filter: p => p.Name == stringValue.Contents, bindingFlags);
@@ -1348,6 +1364,10 @@ namespace Mono.Linker.Dataflow
 				methodParams[3].AsConstInt () != null) {
 				parameterlessConstructor = false;
 				bindingFlags = BindingFlags.Instance | (BindingFlags) methodParams[3].AsConstInt ();
+			} else if (calledMethod.Parameters.Count == 8 && calledMethod.Parameters[2].ParameterType.MetadataType == MetadataType.Boolean &&
+				  methodParams[3].AsConstInt () == null) {
+				parameterlessConstructor = false;
+				bindingFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 			}
 
 			int methodParamsOffset = calledMethod.HasImplicitThis () ? 1 : 0;
