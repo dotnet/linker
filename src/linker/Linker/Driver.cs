@@ -166,7 +166,7 @@ namespace Mono.Linker
 			var set_optimizations = new List<(CodeOptimizations, string, bool)> ();
 			bool dumpDependencies = false;
 			string dependenciesFileName = null;
-			bool removeCAS = true;
+			context.StripSecurity = true;
 			bool new_mvid_used = false;
 			bool deterministic_used = false;
 
@@ -221,7 +221,7 @@ namespace Mono.Linker
 						continue;
 
 					case "--strip-security":
-						if (!GetBoolParam (token, l => removeCAS = l))
+						if (!GetBoolParam (token, l => context.StripSecurity = l))
 							return -1;
 
 						continue;
@@ -649,9 +649,6 @@ namespace Mono.Linker
 			if (_needAddBypassNGenStep)
 				p.AddStepAfter (typeof (SweepStep), new AddBypassNGenStep ());
 
-			if (removeCAS)
-				p.AddStepBefore (typeof (MarkStep), new RemoveSecurityStep ());
-
 			p.AddStepBefore (typeof (MarkStep), new MarkExportedTypesTargetStep ());
 
 			p.AddStepBefore (typeof (OutputStep), new SealerStep ());
@@ -662,7 +659,6 @@ namespace Mono.Linker
 			// RootAssemblyInputStep or ResolveFromXmlStep [at least one of them]
 			// LinkAttributesStep [optional, possibly many]
 			// BodySubstituterStep [optional]
-			// RemoveSecurityStep [optional]
 			// MarkExportedTypesTargetStep
 			// MarkStep
 			// ReflectionBlockedStep [optional]

@@ -1328,6 +1328,10 @@ namespace Mono.Linker.Steps
 			Debug.Assert (Annotations.IsProcessed (assembly));
 
 			EmbeddedXmlInfo.ProcessDescriptors (assembly, _context);
+
+			// Security attributes do not respect the attributes XML
+			if (_context.StripSecurity)
+				new RemoveSecurityStep (assembly, _context).Process ();
 		}
 
 		void ProcessModuleType (AssemblyDefinition assembly)

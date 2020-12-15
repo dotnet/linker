@@ -150,6 +150,8 @@ namespace Mono.Linker
 
 		public string PInvokesListFile;
 
+		public bool StripSecurity { get; set; }
+
 		public System.Collections.IDictionary Actions {
 			get { return _actions; }
 		}
