@@ -82,6 +82,7 @@ namespace ILLink.RoslynAnalyzer
 					if (operationContext.ContainingSymbol is IMethodSymbol &&
 						TryGetRequiresUnreferencedCodeAttribute (operationContext.ContainingSymbol.GetAttributes (), out requiresUnreferencedCode))
 						return;
+
 					if (TryGetRequiresUnreferencedCodeAttribute (method.GetAttributes (), out requiresUnreferencedCode)) {
 						operationContext.ReportDiagnostic (Diagnostic.Create (
 							s_rule,
@@ -95,27 +96,6 @@ namespace ILLink.RoslynAnalyzer
 		}
 
 		/// <summary>
-		/// Returns true if <see paramref="type" /> has the same name as <see paramref="typename" />
-		/// </summary>
-		internal static bool IsNamedType (INamedTypeSymbol type, string typeName)
-		{
-			var roSpan = typeName.AsSpan ();
-			INamespaceOrTypeSymbol? currentType = type;
-			while (roSpan.Length > 0) {
-				var dot = roSpan.LastIndexOf ('.');
-				var currentName = dot < 0 ? roSpan : roSpan.Slice (dot + 1);
-				if (currentType is null ||
-					!currentName.Equals (currentType.Name.AsSpan (), StringComparison.Ordinal)) {
-					return false;
-				}
-				currentType = (INamespaceOrTypeSymbol?) currentType.ContainingType ?? currentType.ContainingNamespace;
-				roSpan = roSpan.Slice (0, dot > 0 ? dot : 0);
-			}
-
-			return true;
-		}
-
-		/// <summary>
 		/// Returns a RequiresUnreferencedCodeAttribute if found
 		/// </summary>
 		static bool TryGetRequiresUnreferencedCodeAttribute (ImmutableArray<AttributeData> attributes, out AttributeData? requiresUnreferencedCode)
@@ -123,7 +103,7 @@ namespace ILLink.RoslynAnalyzer
 			requiresUnreferencedCode = null;
 			foreach (var attr in attributes) {
 				if (attr.AttributeClass is { } attrClass &&
-					IsNamedType (attrClass, "System.Diagnostics.CodeAnalysis.RequiresUnreferencedCodeAttribute") &&
+					attrClass.HasName ("System.Diagnostics.CodeAnalysis.RequiresUnreferencedCodeAttribute") &&
 					attr.ConstructorArguments.Length == 1 &&
 					attr.ConstructorArguments[0] is { Type: { SpecialType: SpecialType.System_String } } ctorArg) {
 					requiresUnreferencedCode = attr;
