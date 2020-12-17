@@ -57,7 +57,7 @@ After some time she decides to make her application a single-file app, so that s
 
 Now that she has expressed the intent to deploy the app as single-file binary, the following diagnostic is shown in her code:
 
-> Logger.cs(x,y): Single-file warning ILXXXX: Logger.RecordApplicationRun(): 'System.Reflection.Assembly.Location' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'.
+> Logger.cs(x,y): Single-file warning ILXXXX: 'System.Reflection.Assembly.Location' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'.
 
 She now has the option to either suppress the warning or work around the highlighted method.
 
@@ -133,7 +133,6 @@ namespace System.Diagnostics.CodeAnalysis
 ```
 
 ## Q & A
----
 
 ### How are library authors going to know where to add the attribute?
 
