@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Immutable;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -76,22 +77,18 @@ namespace ILLink.RoslynAnalyzer
 					IMethodSymbol method,
 					Location location)
 				{
-					AttributeData? attribute = GetRequiresUnreferencedCodeAttribute (operationContext.ContainingSymbol.GetAttributes ());
-					if (attribute != null)
+					AttributeData? requiresUnreferencedCode;
+					// If parent method contains RequiresUnreferencedCodeAttribute then we shouldn't report diagnostics for this method
+					if (operationContext.ContainingSymbol is IMethodSymbol &&
+						TryGetRequiresUnreferencedCodeAttribute (operationContext.ContainingSymbol.GetAttributes (), out requiresUnreferencedCode))
 						return;
-					attribute = GetRequiresUnreferencedCodeAttribute (method.GetAttributes ());
-					if (attribute != null) {
-						string urlArgument = "";
-						foreach (var namedArgument in attribute.NamedArguments) {
-							if (namedArgument.Key == "Url")
-								urlArgument = namedArgument.Value.Value?.ToString () ?? "";
-						}
+					if (TryGetRequiresUnreferencedCodeAttribute (method.GetAttributes (), out requiresUnreferencedCode)) {
 						operationContext.ReportDiagnostic (Diagnostic.Create (
 							s_rule,
 							location,
 							method.OriginalDefinition.ToString (),
-							(string) attribute.ConstructorArguments[0].Value!,
-							urlArgument));
+							(string) requiresUnreferencedCode!.ConstructorArguments[0].Value!,
+							requiresUnreferencedCode!.NamedArguments.FirstOrDefault (na => na.Key == "Url").Value.Value?.ToString ()));
 					}
 				}
 			});
@@ -121,17 +118,19 @@ namespace ILLink.RoslynAnalyzer
 		/// <summary>
 		/// Returns a RequiresUnreferencedCodeAttribute if found
 		/// </summary>
-		static AttributeData? GetRequiresUnreferencedCodeAttribute (ImmutableArray<AttributeData> attributes)
+		static bool TryGetRequiresUnreferencedCodeAttribute (ImmutableArray<AttributeData> attributes, out AttributeData? requiresUnreferencedCode)
 		{
+			requiresUnreferencedCode = null;
 			foreach (var attr in attributes) {
 				if (attr.AttributeClass is { } attrClass &&
 					IsNamedType (attrClass, "System.Diagnostics.CodeAnalysis.RequiresUnreferencedCodeAttribute") &&
 					attr.ConstructorArguments.Length == 1 &&
 					attr.ConstructorArguments[0] is { Type: { SpecialType: SpecialType.System_String } } ctorArg) {
-					return attr;
+					requiresUnreferencedCode = attr;
+					return true;
 				}
 			}
-			return null;
+			return false;
 		}
 	}
 }
