@@ -847,9 +847,12 @@ namespace Mono.Linker.Dataflow
 						reflectionContext.AnalyzingPattern ();
 
 						var parameters = calledMethod.Parameters;
-						BindingFlags? bindingFlags = BindingFlags.Public | BindingFlags.Instance;
+						BindingFlags? bindingFlags;
 						if (parameters.Count > 1 && calledMethod.Parameters[0].ParameterType.Name == "BindingFlags")
-							bindingFlags = GetBindingFlags (methodParams[1]);
+							bindingFlags = GetBindingFlagsFromValue (methodParams[1]);
+						else
+							// Assume a default value for BindingFlags for methods that don't use BindingFlags as a parameter
+							bindingFlags = BindingFlags.Public | BindingFlags.Instance;
 
 						int? ctorParameterCount = parameters.Count switch
 						{
@@ -895,11 +898,14 @@ namespace Mono.Linker.Dataflow
 				case IntrinsicId.Type_GetMethod: {
 						reflectionContext.AnalyzingPattern ();
 
-						BindingFlags? bindingFlags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public;
+						BindingFlags? bindingFlags;
 						if (calledMethod.Parameters.Count > 1 && calledMethod.Parameters[1].ParameterType.Name == "BindingFlags")
-							bindingFlags = GetBindingFlags (methodParams[2]);
+							bindingFlags = GetBindingFlagsFromValue (methodParams[2]);
 						else if (calledMethod.Parameters.Count > 2 && calledMethod.Parameters[2].ParameterType.Name == "BindingFlags")
-							bindingFlags = GetBindingFlags (methodParams[3]);
+							bindingFlags = GetBindingFlagsFromValue (methodParams[3]);
+						else
+							// Assume a default value for BindingFlags for methods that don't use BindingFlags as a parameter
+							bindingFlags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public;
 						var requiredMemberTypes = GetDynamicallyAccessedMemberTypesFromBindingFlagsForMethods (bindingFlags);
 						foreach (var value in methodParams[0].UniqueValues ()) {
 							if (value is SystemTypeValue systemTypeValue) {
@@ -930,9 +936,12 @@ namespace Mono.Linker.Dataflow
 				case IntrinsicId.Type_GetNestedType: {
 						reflectionContext.AnalyzingPattern ();
 
-						BindingFlags? bindingFlags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public;
+						BindingFlags? bindingFlags;
 						if (calledMethod.Parameters.Count > 1 && calledMethod.Parameters[1].ParameterType.Name == "BindingFlags")
-							bindingFlags = GetBindingFlags (methodParams[2]);
+							bindingFlags = GetBindingFlagsFromValue (methodParams[2]);
+						else
+							// Assume a default value for BindingFlags for methods that don't use BindingFlags as a parameter
+							bindingFlags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public;
 
 						var requiredMemberTypes = GetDynamicallyAccessedMemberTypesFromBindingFlagsForNestedTypes (bindingFlags);
 						foreach (var value in methodParams[0].UniqueValues ()) {
@@ -1015,9 +1024,12 @@ namespace Mono.Linker.Dataflow
 					&& calledMethod.HasThis: {
 
 						reflectionContext.AnalyzingPattern ();
-						BindingFlags? bindingFlags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public;
+						BindingFlags? bindingFlags;
 						if (calledMethod.Parameters.Count > 1 && calledMethod.Parameters[1].ParameterType.Name == "BindingFlags")
-							bindingFlags = GetBindingFlags (methodParams[2]);
+							bindingFlags = GetBindingFlagsFromValue (methodParams[2]);
+						else
+							// Assume a default value for BindingFlags for methods that don't use BindingFlags as a parameter
+							bindingFlags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public;
 
 						DynamicallyAccessedMemberTypes memberTypes = fieldPropertyOrEvent switch
 						{
@@ -1654,7 +1666,7 @@ namespace Mono.Linker.Dataflow
 			reflectionContext.RecordHandledPattern ();
 		}
 
-		static BindingFlags? GetBindingFlags (ValueNode parameter) => (BindingFlags?) parameter.AsConstInt ();
+		static BindingFlags? GetBindingFlagsFromValue (ValueNode parameter) => (BindingFlags?) parameter.AsConstInt ();
 
 		static bool BindingFlagsAreUnsupported (BindingFlags? bindingFlags) => bindingFlags == null || (bindingFlags & BindingFlags.IgnoreCase) == BindingFlags.IgnoreCase || (int) bindingFlags > 255;
 
