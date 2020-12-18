@@ -6,14 +6,27 @@
     <OutputType>Library</OutputType>
     <Nullable>enable</Nullable>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <AutoGenerateAssemblyVersion>true</AutoGenerateAssemblyVersion>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+  </PropertyGroup>
+
+  <!-- Analyzer package properties -->
+  <PropertyGroup>
     <IsPackable>true</IsPackable>
     <PackageId>Microsoft.NET.ILLink.Analyzers</PackageId>
-    <AutoGenerateAssemblyVersion>true</AutoGenerateAssemblyVersion>
+    <Authors>Microsoft</Authors>
+    <RepositoryUrl>https://github.com/mono/linker</RepositoryUrl>
+    <Description>Description of the package</Description>
+    <NoPackageAnalysis>true</NoPackageAnalysis>
   </PropertyGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="Resources.resx" GenerateSource="true" />
-    <PackageReference Include="microsoft.codeanalysis.csharp" Version="3.7.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.7.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
   </ItemGroup>
 
 </Project>
