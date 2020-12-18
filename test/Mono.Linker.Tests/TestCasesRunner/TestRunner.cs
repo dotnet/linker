@@ -83,10 +83,6 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				throw;
 			}
 
-			foreach (var file in metadataProvider.GetFilesToRemove ()) {
-				System.IO.File.Delete (sandbox.InputDirectory.Combine (file));
-			}
-
 			return new ManagedCompilationResult (inputAssemblyPath, expectationsAssemblyPath);
 		}
 

@@ -97,8 +97,46 @@ namespace Mono.Linker.Steps
 				case AssemblyAction.AddBypassNGenUsed:
 					// Assembly was removed in the output but it's referenced by
 					// other assembly with action which does not update references
-					if (HasReferenceTo (a, assembly))
-						UpdateAssemblyCopyLikeActions (a, action);
+					if (!HasReferenceTo (a, assembly))
+						continue;
+
+					switch (action) {
+					case AssemblyAction.CopyUsed:
+						if (IsUsedAssembly (a)) {
+							goto case AssemblyAction.Copy;
+						}
+						continue;
+
+					case AssemblyAction.Copy:
+						//
+						// Assembly has a reference to another assembly which has been fully removed. This can
+						// happen when for example the reference assembly is 'copy-used' and it's not needed.
+						//
+						// or
+						//
+						// Assembly can contain type references with
+						// type forwarders to deleted assembly (facade) when
+						// facade assemblies are not kept. For that reason we need to
+						// rewrite the copy to save to update the scopes not to point
+						// forwarding assembly (facade).
+						//
+						//		foo.dll -> facade.dll    -> lib.dll
+						//		copy    |  copy (delete) |  link
+						//
+						Annotations.SetAction (a, AssemblyAction.Save);
+						continue;
+
+					case AssemblyAction.AddBypassNGenUsed:
+						if (IsUsedAssembly (a)) {
+							Annotations.SetAction (a, AssemblyAction.AddBypassNGen);
+							goto case AssemblyAction.AddBypassNGen;
+						}
+						continue;
+
+					case AssemblyAction.AddBypassNGen:
+						BypassNGenToSave.Add (a);
+						continue;
+					}
 
 					continue;
 				default:
@@ -253,47 +291,6 @@ namespace Mono.Linker.Steps
 					return true;
 			}
 			return false;
-		}
-
-		void UpdateAssemblyCopyLikeActions (AssemblyDefinition assembly, AssemblyAction action)
-		{
-			switch (action) {
-			case AssemblyAction.CopyUsed:
-				if (IsUsedAssembly (assembly)) {
-					goto case AssemblyAction.Copy;
-				}
-				return;
-
-			case AssemblyAction.Copy:
-				//
-				// Assembly has a reference to another assembly which has been fully removed. This can
-				// happen when for example the reference assembly is 'copy-used' and it's not needed.
-				//
-				// or
-				//
-				// Assembly can contain type references with
-				// type forwarders to deleted assembly (facade) when
-				// facade assemblies are not kept. For that reason we need to
-				// rewrite the copy to save to update the scopes not to point
-				// forwarding assembly (facade).
-				//
-				//		foo.dll -> facade.dll    -> lib.dll
-				//		copy    |  copy (delete) |  link
-				//
-				Annotations.SetAction (assembly, AssemblyAction.Save);
-				return;
-
-			case AssemblyAction.AddBypassNGenUsed:
-				if (IsUsedAssembly (assembly)) {
-					Annotations.SetAction (assembly, AssemblyAction.AddBypassNGen);
-					goto case AssemblyAction.AddBypassNGen;
-				}
-				return;
-
-			case AssemblyAction.AddBypassNGen:
-				BypassNGenToSave.Add (assembly);
-				return;
-			}
 		}
 
 		bool SweepTypeForwarders (AssemblyDefinition assembly)
@@ -603,14 +600,17 @@ namespace Mono.Linker.Steps
 				UpdateCustomAttributesTypesScopes (typeDefinition);
 
 				if (typeDefinition.BaseType != null)
-					UpdateTypeScope (typeDefinition.BaseType);
+					UpdateScopeOfTypeReference (typeDefinition.BaseType);
 
 				if (typeDefinition.HasInterfaces) {
 					foreach (var iface in typeDefinition.Interfaces) {
 						UpdateCustomAttributesTypesScopes (iface);
-						UpdateTypeScope (iface.InterfaceType);
+						UpdateScopeOfTypeReference (iface.InterfaceType);
 					}
 				}
+
+				if (typeDefinition.HasGenericParameters)
+					UpdateTypeScope (typeDefinition.GenericParameters);
 
 				if (typeDefinition.HasEvents) {
 					foreach (var e in typeDefinition.Events) {
@@ -622,7 +622,7 @@ namespace Mono.Linker.Steps
 				if (typeDefinition.HasFields) {
 					foreach (var f in typeDefinition.Fields) {
 						UpdateCustomAttributesTypesScopes (f);
-						UpdateTypeScope (f.FieldType);
+						UpdateScopeOfTypeReference (f.FieldType);
 						UpdateMarshalInfoTypeScope (f);
 					}
 				}
@@ -634,7 +634,7 @@ namespace Mono.Linker.Steps
 							UpdateTypeScope (m.GenericParameters);
 
 						UpdateCustomAttributesTypesScopes (m.MethodReturnType);
-						UpdateTypeScope (m.MethodReturnType.ReturnType);
+						UpdateScopeOfTypeReference (m.MethodReturnType.ReturnType);
 						UpdateMarshalInfoTypeScope (m.MethodReturnType);
 						if (m.HasOverrides) {
 							foreach (var mo in m.Overrides)
@@ -676,7 +676,7 @@ namespace Mono.Linker.Steps
 			{
 				foreach (var gc in constraints) {
 					UpdateCustomAttributesTypesScopes (gc);
-					UpdateTypeScope (gc.ConstraintType);
+					UpdateScopeOfTypeReference (gc.ConstraintType);
 				}
 			}
 
@@ -684,7 +684,7 @@ namespace Mono.Linker.Steps
 			{
 				foreach (var p in parameters) {
 					UpdateCustomAttributesTypesScopes (p);
-					UpdateTypeScope (p.ParameterType);
+					UpdateScopeOfTypeReference (p.ParameterType);
 					UpdateMarshalInfoTypeScope (p);
 				}
 			}
@@ -706,14 +706,14 @@ namespace Mono.Linker.Steps
 			{
 				if (body.HasVariables) {
 					foreach (var v in body.Variables) {
-						UpdateTypeScope (v.VariableType);
+						UpdateScopeOfTypeReference (v.VariableType);
 					}
 				}
 
 				if (body.HasExceptionHandlers) {
 					foreach (var eh in body.ExceptionHandlers) {
 						if (eh.CatchType != null)
-							UpdateTypeScope (eh.CatchType);
+							UpdateScopeOfTypeReference (eh.CatchType);
 					}
 				}
 
@@ -735,7 +735,7 @@ namespace Mono.Linker.Steps
 					case OperandType.InlineTok: {
 							switch (instr.Operand) {
 							case TypeReference tr:
-								UpdateTypeScope (tr);
+								UpdateScopeOfTypeReference (tr);
 								break;
 							case FieldReference fr:
 								UpdateFieldReference (fr);
@@ -750,7 +750,7 @@ namespace Mono.Linker.Steps
 
 					case OperandType.InlineType: {
 							var tr = (TypeReference) instr.Operand;
-							UpdateTypeScope (tr);
+							UpdateScopeOfTypeReference (tr);
 							break;
 						}
 					}
@@ -759,12 +759,12 @@ namespace Mono.Linker.Steps
 
 			void UpdateMethodReference (MethodReference mr)
 			{
-				UpdateTypeScope (mr.ReturnType);
-				UpdateTypeScope (mr.DeclaringType);
+				UpdateScopeOfTypeReference (mr.ReturnType);
+				UpdateScopeOfTypeReference (mr.DeclaringType);
 
 				if (mr is GenericInstanceMethod gim) {
 					foreach (var tr in gim.GenericArguments)
-						UpdateTypeScope (tr);
+						UpdateScopeOfTypeReference (tr);
 				}
 
 				if (mr.HasParameters) {
@@ -774,8 +774,8 @@ namespace Mono.Linker.Steps
 
 			void UpdateFieldReference (FieldReference fr)
 			{
-				UpdateTypeScope (fr.FieldType);
-				UpdateTypeScope (fr.DeclaringType);
+				UpdateScopeOfTypeReference (fr.FieldType);
+				UpdateScopeOfTypeReference (fr.DeclaringType);
 			}
 
 			void UpdateMarshalInfoTypeScope (IMarshalInfoProvider provider)
@@ -784,7 +784,7 @@ namespace Mono.Linker.Steps
 					return;
 
 				if (provider.MarshalInfo is CustomMarshalInfo cmi)
-					UpdateTypeScope (cmi.ManagedType);
+					UpdateScopeOfTypeReference (cmi.ManagedType);
 			}
 
 			void UpdateCustomAttributesTypesScopes (ICustomAttributeProvider customAttributeProvider)
@@ -818,11 +818,11 @@ namespace Mono.Linker.Steps
 
 			void UpdateForwardedTypesScope (CustomAttributeArgument attributeArgument)
 			{
-				UpdateTypeScope (attributeArgument.Type);
+				UpdateScopeOfTypeReference (attributeArgument.Type);
 
 				switch (attributeArgument.Value) {
 				case TypeReference tr:
-					UpdateTypeScope (tr);
+					UpdateScopeOfTypeReference (tr);
 					break;
 				case CustomAttributeArgument caa:
 					UpdateForwardedTypesScope (caa);
@@ -834,7 +834,7 @@ namespace Mono.Linker.Steps
 				}
 			}
 
-			void UpdateTypeScope (TypeReference type)
+			void UpdateScopeOfTypeReference (TypeReference type)
 			{
 				if (type == null)
 					return;
@@ -850,17 +850,17 @@ namespace Mono.Linker.Steps
 
 				switch (type) {
 				case GenericInstanceType git:
-					UpdateTypeScope (git.ElementType);
+					UpdateScopeOfTypeReference (git.ElementType);
 					foreach (var ga in git.GenericArguments)
-						UpdateTypeScope (ga);
+						UpdateScopeOfTypeReference (ga);
 					return;
 				case FunctionPointerType fpt:
-					UpdateTypeScope (fpt.ReturnType);
+					UpdateScopeOfTypeReference (fpt.ReturnType);
 					if (fpt.HasParameters)
 						UpdateTypeScope (fpt.Parameters);
 					return;
 				case TypeSpecification ts:
-					UpdateTypeScope (ts.ElementType);
+					UpdateScopeOfTypeReference (ts.ElementType);
 					return;
 #if FEATURE_ILLINK
 				case TypeDefinition:

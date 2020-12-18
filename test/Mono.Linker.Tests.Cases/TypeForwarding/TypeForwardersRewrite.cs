@@ -37,6 +37,7 @@ namespace Mono.Linker.Tests.Cases.TypeForwarding
 			tc.Test (null);
 			I ti = new TS ();
 			ti.Test (null);
+			var gc = new GC<TC> ();
 		}
 
 		[Kept]
@@ -118,6 +119,12 @@ namespace Mono.Linker.Tests.Cases.TypeForwarding
 			public void Test (C c)
 			{
 			}
+		}
+
+		[Kept]
+		[KeptMember (".ctor()")]
+		class GC<T> where T : I
+		{
 		}
 	}
 }

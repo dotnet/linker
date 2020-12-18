@@ -302,13 +302,6 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				.Select (attr => (string) attr.ConstructorArguments.First ().Value);
 		}
 
-		public virtual IEnumerable<string> GetFilesToRemove ()
-		{
-			return _testCaseTypeDefinition.CustomAttributes
-				.Where (attr => attr.AttributeType.Name == nameof (RemoveFileAfterAttribute))
-				.Select (attr => (string) attr.ConstructorArguments.First ().Value);
-		}
-
 		T GetOptionAttributeValue<T> (string attributeName, T defaultValue)
 		{
 			var attribute = _testCaseTypeDefinition.CustomAttributes.FirstOrDefault (attr => attr.AttributeType.Name == attributeName);

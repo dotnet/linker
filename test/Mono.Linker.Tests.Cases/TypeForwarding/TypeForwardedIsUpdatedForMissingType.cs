@@ -10,9 +10,8 @@ namespace Mono.Linker.Tests.Cases.TypeForwarding
 	[SetupCompileBefore ("AnotherLibrary.dll", new[] { "Dependencies/TypeForwardedIsUpdatedForMissingTypeLib2.cs" })]
 
 	[SetupCompileAfter ("AnotherLibrary.dll", new[] { "Dependencies/TypeForwardedIsUpdatedForMissingTypeLib2.cs" })]
-	[SetupCompileAfter ("Implementation.dll", new[] { "Dependencies/TypeForwardedIsUpdatedForMissingTypeLib.cs" })]
+	[SetupCompileAfter ("Implementation.dll", new[] { "Dependencies/TypeForwardedIsUpdatedForMissingTypeLib.cs" }, removeFromLinkerInput: true)]
 	[SetupCompileAfter ("Lib.dll", new[] { "Dependencies/TypeForwardedIsUpdatedForMissingTypeFwd.cs" }, references: new[] { "Implementation.dll" })]
-	[RemoveFileAfter ("Implementation.dll")]
 
 	public class TypeForwardedIsUpdatedForMissingType
 	{
