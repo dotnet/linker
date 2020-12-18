@@ -16,72 +16,57 @@ namespace Mono.Linker.Steps
 	//
 	public class RemoveUnreachableBlocksStep : BaseStep
 	{
-		Dictionary<MethodDefinition, Instruction> constExprMethods;
-		bool constExprMethodsAdded;
 		MethodDefinition IntPtrSize, UIntPtrSize;
+
+		struct ProcessingNode
+		{
+			public MethodDefinition Method;
+			public int LastAttemptStackVersion;
+		}
+
+		// Stack of method nodes which are currently being processed.
+		// Implemented as linked list to allow easy referal to nodes and efficient moving of nodes within the list.
+		// The top of the stack is the first item in the list.
+		LinkedList<ProcessingNode> processingStack;
+
+		// Each time an item is added or removed from the processing stack this value is incremented.
+		// Moving items in the stack doesn't increment.
+		// This is used to track loops - if there are two methods which have dependencies on each other
+		// the processing needs to detect that and mark at least one of them as nonconst (regardless of the method's body)
+		// to break the loop.
+		// This is done by storing the version of the stack on each method node when that method is processed,
+		// if we get around to process the method again and the version of the stack didn't change, then there's a loop
+		// (nothing changed in the stack - order is unimportant, as such no new information has been added and so
+		// we can't resolve the situation with just the info at hand).
+		int processingStackVersion;
+
+		// Stores results of method processing. This state is kept forever to avoid reprocessing of methods.
+		// If method is not in the dictionary it has not yet been processed and it has not been added processing either.
+		// The value in this dictionary can be
+		//   - Reference to the linked list node in the processingStack if the method is on the stack and not yet processed.
+		//   - ProcessedUnchangedSentinel - which means the method has been fully processed and nothing was changed on it - its value is unknown
+		//   - NonConstSentinel - which means the method has been processed and the return value is not a const
+		//   - Instruction instance - method has been processed and it has a constant return value (the value of the instruction)
+		Dictionary<MethodDefinition, object> processedMethods;
+		readonly object ProcessedUnchangedSentinel = "ProcessedUnchangedSentinel";
+		readonly object NonConstSentinel = "NonConstSentinel";
 
 		protected override void Process ()
 		{
 			var assemblies = Context.Annotations.GetAssemblies ().ToArray ();
 
-			constExprMethods = new Dictionary<MethodDefinition, Instruction> ();
+			processingStack = new LinkedList<ProcessingNode> ();
+			processedMethods = new Dictionary<MethodDefinition, object> ();
 
-			do {
-				//
-				// Body rewriting can produce more methods with constant expression
-				//
-				constExprMethodsAdded = false;
+			foreach (var assembly in assemblies) {
+				if (Annotations.GetAction (assembly) != AssemblyAction.Link)
+					continue;
 
-				foreach (var assembly in assemblies) {
-					if (Annotations.GetAction (assembly) != AssemblyAction.Link)
-						continue;
-
-					RewriteBodies (assembly.MainModule.Types);
-				}
-			} while (constExprMethodsAdded);
-		}
-
-		bool TryGetConstantResultInstructionForMethod (MethodDefinition method, out Instruction constantResultInstruction)
-		{
-			if (constExprMethods.TryGetValue (method, out constantResultInstruction))
-				return constantResultInstruction != null;
-
-			constantResultInstruction = GetConstantResultInstructionForMethod (method, instructions: null);
-			constExprMethods.Add (method, constantResultInstruction);
-
-			return constantResultInstruction != null;
-		}
-
-		Instruction GetConstantResultInstructionForMethod (MethodDefinition method, Collection<Instruction> instructions)
-		{
-			if (!method.HasBody)
-				return null;
-
-			if (method.ReturnType.MetadataType == MetadataType.Void)
-				return null;
-
-			switch (Context.Annotations.GetAction (method)) {
-			case MethodAction.ConvertToThrow:
-				return null;
-			case MethodAction.ConvertToStub:
-				return CodeRewriterStep.CreateConstantResultInstruction (Context, method);
+				ProcessMethods (assembly.MainModule.Types);
 			}
-
-			if (method.IsIntrinsic () || method.NoInlining)
-				return null;
-
-			if (!Context.IsOptimizationEnabled (CodeOptimizations.IPConstantPropagation, method))
-				return null;
-
-			var analyzer = new ConstantExpressionMethodAnalyzer (method, instructions ?? method.Body.Instructions);
-			if (analyzer.Analyze ()) {
-				return analyzer.Result;
-			}
-
-			return null;
 		}
 
-		void RewriteBodies (Collection<TypeDefinition> types)
+		void ProcessMethods (Collection<TypeDefinition> types)
 		{
 			foreach (var type in types) {
 				if (type.IsInterface)
@@ -102,42 +87,231 @@ namespace Mono.Linker.Steps
 					case MetadataType.FunctionPointer:
 						continue;
 					}
-					RewriteBody (method);
+
+					ProcessMethod (method);
 				}
 
 				if (type.HasNestedTypes)
-					RewriteBodies (type.NestedTypes);
+					ProcessMethods (type.NestedTypes);
 			}
 		}
 
-		void RewriteBody (MethodDefinition method)
+		/// <summary>
+		/// Processes the specified and method and perform all branch removal optimizations on it.
+		/// When this returns it's guaranteed that the method has been optimized (if possible).
+		/// It may optimize other methods as well - those are remembered for future reuse.
+		/// </summary>
+		/// <param name="method">The method to process</param>
+		void ProcessMethod (MethodDefinition method)
 		{
-			var reducer = new BodyReducer (method.Body, Context);
+			Debug.Assert (processingStack.Count == 0);
+			processingStackVersion = 0;
 
-			//
-			// Temporary inlines any calls which return contant expression
-			//
-			if (!TryInlineBodyDependencies (ref reducer))
-				return;
+			if (!processedMethods.TryGetValue (method, out object processedState)) {
+				AddMethodForProcessing (method);
 
-			//
-			// This is the main step which evaluates if inlined calls can
-			// produce folded branches. When it finds them the unreachable
-			// branch is replaced with nops.
-			//
-			if (reducer.RewriteBody ())
-				Context.LogMessage ($"Reduced '{reducer.InstructionsReplaced}' instructions in conditional branches for [{method.DeclaringType.Module.Assembly.Name}] method {method.GetDisplayName ()}");
+				ProcessStack ();
 
-			// Even if the rewriter doesn't find any branches to fold the inlining above may have changed the method enough
-			// such that we can now deduce its return value.
+				Debug.Assert (processedMethods.TryGetValue (method, out processedState) && processedState is not LinkedListNode<ProcessingNode>);
+			}
+			else {
+				// If the method is already in the processed dictionary, it must not be in "processing" state
+				// since the queue is currently emtpy.
+				Debug.Assert (processedState is not LinkedListNode<ProcessingNode>);
+			}
+		}
+
+		void AddMethodForProcessing (MethodDefinition method)
+		{
+			Debug.Assert (!processedMethods.ContainsKey (method));
+
+			var processingNode = new ProcessingNode () {
+				Method = method,
+				LastAttemptStackVersion = -1
+			};
+
+			var listNode = processingStack.AddFirst (processingNode);
+			processedMethods.Add (method, listNode);
+			processingStackVersion++;
+		}
+
+		void StoreMethodAsProcessedAndRemoveFromQueue (LinkedListNode<ProcessingNode> stackNode, object methodValue)
+		{
+			Debug.Assert (stackNode.List == processingStack);
+			Debug.Assert (methodValue != null);
+			Debug.Assert (methodValue is not LinkedListNode<ProcessingNode>);
+
+			processedMethods[stackNode.ValueRef.Method] = methodValue;
+			processingStack.Remove (stackNode);
+			processingStackVersion++;
+		}
+
+		void ProcessStack ()
+		{
+			while (processingStack.Count > 0) {
+				var queueNode = processingStack.First;
+				var method = queueNode.ValueRef.Method;
+
+				if (queueNode.ValueRef.LastAttemptStackVersion == processingStackVersion) {
+					// Loop was detected - the stack hasn't changed since the last time we tried to process this method
+					// as such there's no way to resolve the situation (running the code below would produce the exact same result).
+
+					// We can't process all the methods in the loop with the given information, so we'll just "skip" over one of them.
+					// We will skip over it by marking it as processed without any changes. This means that any branch removal
+					// within that method will not be performed - but it migth still allow other methods in the loop to to their optimizations.
+
+					// Note: This has the possibility to bring in code which is otherwise meant to be removed. Especially combined
+					// with feature-switches and trim-incompatible code this may actually lead to producing warnings which are
+					// technically wrong (as the code they point to will never be used by the app). The likelyhood of this happening
+					// is VERY low though. And in the future we may improve this by being more precise in our scanning - ideally merging
+					// the inlining and branch reduction in one pass would probably lead to almost ideal behavior even in presence
+					// of loops.
+
+					StoreMethodAsProcessedAndRemoveFromQueue (queueNode, ProcessedUnchangedSentinel);
+					continue;
+				}
+
+				queueNode.ValueRef.LastAttemptStackVersion = processingStackVersion;
+
+				if (!method.HasBody) {
+					StoreMethodAsProcessedAndRemoveFromQueue (queueNode, ProcessedUnchangedSentinel);
+					continue;
+				}
+
+				var reducer = new BodyReducer (method.Body, Context);
+
+				//
+				// Temporary inlines any calls which return contant expression.
+				// If it needs to know the result of analysis of other methods and those has not been processed yet
+				// it will still scan the entir body, but we will return the full processing one more time.
+				//
+				if (!TryInlineBodyDependencies (ref reducer, out bool changed)) {
+					// Method has unprocessed dependencies - so back off and try again later
+					// Leave it in the stack on its current position (it should not be on the first position anymore)
+					Debug.Assert (processingStack.First != queueNode);
+					continue;
+				}
+
+				if (!changed) {
+					// All dependencies are processed and there where no const values found. There's nothing to optimize.
+					// Mark the method as processed - without computing the const value of it (we don't know if it's going to be needed)
+					StoreMethodAsProcessedAndRemoveFromQueue (queueNode, ProcessedUnchangedSentinel);
+					continue;
+				}
+
+				// The method has been modified due to constant propagation - we will optimize it.
+
+				//
+				// This is the main step which evaluates if inlined calls can
+				// produce folded branches. When it finds them the unreachable
+				// branch is replaced with nops.
+				//
+				if (reducer.RewriteBody ())
+					Context.LogMessage ($"Reduced '{reducer.InstructionsReplaced}' instructions in conditional branches for [{method.DeclaringType.Module.Assembly.Name}] method {method.GetDisplayName ()}");
+
+				// Even if the rewriter doesn't find any branches to fold the inlining above may have changed the method enough
+				// such that we can now deduce its return value.
+
+				if (method.ReturnType.MetadataType == MetadataType.Void) {
+					// Method is fully processed and can't be const (since it doesn't return value) - so mark it as processed without const value
+					StoreMethodAsProcessedAndRemoveFromQueue (queueNode, NonConstSentinel);
+					continue;
+				}
+
+				//
+				// Run the analyzer in case body change rewrote it to constant expression
+				// Note that we have to run it always (even if we may not need the result ever) since it depends on the temporary inlining above
+				// Otherwise we would have to remember the inlined code along with the method.
+				//
+				StoreMethodAsProcessedAndRemoveFromQueue (
+					queueNode,
+					AnalyzeMethodForConstantResult (method, reducer.FoldedInstructions));
+			}
+		}
+
+		object AnalyzeMethodForConstantResult (MethodDefinition method, Collection<Instruction> instructions)
+		{
+			if (!method.HasBody)
+				return NonConstSentinel;
 
 			if (method.ReturnType.MetadataType == MetadataType.Void)
-				return;
+				return NonConstSentinel;
 
-			if (!constExprMethods.TryGetValue (method, out var constInstruction) || constInstruction == null) {
-				//
-				// Re-run the analyzer in case body change rewrote it to constant expression
-				//
+			if (method.IsIntrinsic () || method.NoInlining)
+				return NonConstSentinel;
+
+			if (!Context.IsOptimizationEnabled (CodeOptimizations.IPConstantPropagation, method))
+				return NonConstSentinel;
+
+			switch (Context.Annotations.GetAction (method)) {
+			case MethodAction.ConvertToThrow:
+				return NonConstSentinel;
+			case MethodAction.ConvertToStub:
+				return CodeRewriterStep.CreateConstantResultInstruction (Context, method) ?? NonConstSentinel;
+			}
+
+			var analyzer = new ConstantExpressionMethodAnalyzer (method, instructions ?? method.Body.Instructions);
+			if (analyzer.Analyze ()) {
+				return analyzer.Result;
+			} else {
+				return NonConstSentinel;
+			}
+		}
+
+		/// <summary>
+		/// Determines if a method has constant return value. If the method has not yet been processed it makes sure
+		/// it is on the stack for processing and returns without a result.
+		/// </summary>
+		/// <param name="method">The method to determine result for</param>
+		/// <param name="constantResultInstruction">If successfull and the method returns a constant value this will be set to the
+		/// instruction with the constant value. If successfulll and the method doesn't have a constant value this is set to null.</param>
+		/// <returns>
+		/// true - if the method was analyzed and result is known
+		///   constantResultInstruction is set to an instance if the method returns a constant, otherwise it's set to null
+		/// false - if the method has not yet been analyzed and the caller should retry later
+		/// </returns>
+		bool TryGetConstantResultForMethod (MethodDefinition method, out Instruction constantResultInstruction)
+		{
+			if (!processedMethods.TryGetValue (method, out object processedState)) {
+				// Method is not yet in the stack - add it there
+				AddMethodForProcessing (method);
+				constantResultInstruction = null;
+				return false;
+			}
+
+			switch (processedState) {
+			case LinkedListNode<ProcessingNode> queueNode:
+				// Method is already in the stack - not yet processed
+				// Move it to the top of the stack
+				processingStack.Remove (queueNode);
+				processingStack.AddFirst (queueNode);
+
+				// Note that stack version is not changing - we're just postponing work, not resolving anything.
+
+				constantResultInstruction = null;
+				return false;
+
+			case Instruction instruction:
+				// Method was already processed and found to have a constant value
+				constantResultInstruction = instruction;
+				return true;
+
+			case object processedUnchangedSentinel when processedUnchangedSentinel == ProcessedUnchangedSentinel:
+				// Method has been processed and no changes has been made to it.
+				// Also its value has not been needed yet. Now we need to know if it's constant, so run the analyzer on it
+				object result = AnalyzeMethodForConstantResult (method, instructions: null);
+				Debug.Assert (result is Instruction || result == NonConstSentinel);
+				processedMethods[method] = result;
+				constantResultInstruction = result == NonConstSentinel ? null : (Instruction) result;
+				return true;
+
+			case object nonConstSentinel when nonConstSentinel == NonConstSentinel:
+				// Method was processed and found to not have a constant value
+				constantResultInstruction = null;
+				return true;
+
+			default:
+				throw new InternalErrorException ($"Unexpected value '{processedState}' found in {nameof (processedMethods)} dictionary in {nameof (RemoveUnreachableBlocksStep)}");
 				var constantResultInstruction = GetConstantResultInstructionForMethod (method, reducer.FoldedInstructions);
 				if (constantResultInstruction != null) {
 					constExprMethods[method] = constantResultInstruction;
@@ -146,9 +320,10 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		bool TryInlineBodyDependencies (ref BodyReducer reducer)
+		bool TryInlineBodyDependencies (ref BodyReducer reducer, out bool changed)
 		{
-			bool changed = false;
+			changed = false;
+			bool hasUnprocessedDependencies = false;
 			var instructions = reducer.Body.Instructions;
 			Instruction targetResult;
 
@@ -194,8 +369,18 @@ namespace Mono.Linker.Steps
 							break;
 					}
 
-					if (!TryGetConstantResultInstructionForMethod (md, out targetResult))
+					if (md == reducer.Body.Method) {
+						// Special case for direct recursion - simply assume non-const value
+						// since we can't tell.
 						break;
+					}
+
+					if (!TryGetConstantResultForMethod (md, out targetResult)) {
+						hasUnprocessedDependencies = true;
+						break;
+					} else if (targetResult == null || hasUnprocessedDependencies) {
+						break;
+					}
 
 					reducer.Rewrite (i, targetResult);
 					changed = true;
@@ -234,7 +419,15 @@ namespace Mono.Linker.Steps
 						sizeOfImpl = (IntPtrSize ??= FindSizeMethod (operand.Resolve ()));
 					}
 
-					if (sizeOfImpl != null && TryGetConstantResultInstructionForMethod (sizeOfImpl, out targetResult)) {
+					if (sizeOfImpl != null) {
+						if (!TryGetConstantResultForMethod (sizeOfImpl, out targetResult)) {
+							hasUnprocessedDependencies = true;
+							break;
+						}
+						else if (targetResult == null || hasUnprocessedDependencies) {
+							break;
+						}
+
 						reducer.Rewrite (i, targetResult);
 						changed = true;
 					}
@@ -243,7 +436,7 @@ namespace Mono.Linker.Steps
 				}
 			}
 
-			return changed;
+			return !hasUnprocessedDependencies;
 		}
 
 		static MethodDefinition FindSizeMethod (TypeDefinition type)
