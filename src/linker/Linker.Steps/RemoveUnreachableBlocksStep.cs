@@ -20,8 +20,27 @@ namespace Mono.Linker.Steps
 		int constExprMethodsAdded;
 		MethodDefinition IntPtrSize, UIntPtrSize;
 
+		Statistics.NamedValue MethodsAnalyzedStatistic;
+		Statistics.NamedValue IterationsStatistic;
+		Statistics.NamedValue StubbedMethodsStatistic;
+		Statistics.NamedValue ConstantMethodsUsedStatistic;
+		Statistics.NamedValue ConstantFieldValuesUsedStatistic;
+		Statistics.NamedValue AnalyzedAsConstantStatistic;
+		Statistics.NamedValue AnalyzedAsConstantAfterRewriteStatistic;
+
+		Dictionary<MethodDefinition, int> constMethodDepth;
+
 		protected override void Process ()
 		{
+			MethodsAnalyzedStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (MethodsAnalyzedStatistic));
+			IterationsStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (IterationsStatistic));
+			StubbedMethodsStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (StubbedMethodsStatistic));
+			ConstantMethodsUsedStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (ConstantMethodsUsedStatistic));
+			ConstantFieldValuesUsedStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (ConstantFieldValuesUsedStatistic));
+			AnalyzedAsConstantStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (AnalyzedAsConstantStatistic));
+			AnalyzedAsConstantAfterRewriteStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (AnalyzedAsConstantAfterRewriteStatistic));
+			constMethodDepth = new Dictionary<MethodDefinition, int> ();
+
 			var assemblies = Context.Annotations.GetAssemblies ().ToArray ();
 
 			constExprMethods = new Dictionary<MethodDefinition, Instruction> ();
@@ -44,7 +63,12 @@ namespace Mono.Linker.Steps
 
 					RewriteBodies (assembly.MainModule.Types);
 				}
+
+				IterationsStatistic++;
 			} while (constExprMethodsAdded > 0);
+
+			Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), "ConstExprMethods").Value = constExprMethodsCount;
+			Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), "MaxConstantPropagationDepth").Value = constMethodDepth.Values.Max ();
 		}
 
 		void FindConstantExpressionsMethods (Collection<TypeDefinition> types)
@@ -88,6 +112,8 @@ namespace Mono.Linker.Steps
 			case MethodAction.ConvertToThrow:
 				return null;
 			case MethodAction.ConvertToStub:
+				StubbedMethodsStatistic++;
+				constMethodDepth[method] = 1;
 				return CodeRewriterStep.CreateConstantResultInstruction (Context, method);
 			}
 
@@ -99,6 +125,8 @@ namespace Mono.Linker.Steps
 
 			var analyzer = new ConstantExpressionMethodAnalyzer (method);
 			if (analyzer.Analyze ()) {
+				constMethodDepth[method] = 1;
+				AnalyzedAsConstantStatistic++;
 				return analyzer.Result;
 			}
 
@@ -136,12 +164,14 @@ namespace Mono.Linker.Steps
 
 		void RewriteBody (MethodDefinition method)
 		{
+			MethodsAnalyzedStatistic++;
+
 			var reducer = new BodyReducer (method.Body, Context);
 
 			//
 			// Temporary inlines any calls which return contant expression
 			//
-			if (!TryInlineBodyDependencies (ref reducer))
+			if (!TryInlineBodyDependencies (ref reducer, out var maxConstantDepth))
 				return;
 
 			//
@@ -166,15 +196,17 @@ namespace Mono.Linker.Steps
 				if (analyzer.Analyze ()) {
 					constExprMethods[method] = analyzer.Result;
 					constExprMethodsAdded++;
+					AnalyzedAsConstantAfterRewriteStatistic++;
 				}
 			}
 		}
 
-		bool TryInlineBodyDependencies (ref BodyReducer reducer)
+		bool TryInlineBodyDependencies (ref BodyReducer reducer, out int maxConstantDepth)
 		{
 			bool changed = false;
 			var instructions = reducer.Body.Instructions;
 			Instruction targetResult;
+			maxConstantDepth = 0; ;
 
 			for (int i = 0; i < instructions.Count; ++i) {
 				var instr = instructions[i];
@@ -223,6 +255,14 @@ namespace Mono.Linker.Steps
 
 					reducer.Rewrite (i, targetResult);
 					changed = true;
+					ConstantMethodsUsedStatistic++;
+					if (constMethodDepth.TryGetValue (md, out var calledDepth)) {
+						maxConstantDepth = Math.Max (maxConstantDepth, calledDepth);
+						if (maxConstantDepth > 1) {
+							Console.WriteLine ("###" + reducer.Body.Method.ToString () + " -> " + md.ToString());
+						}
+					}
+
 					break;
 
 				case Code.Ldsfld:
@@ -237,6 +277,7 @@ namespace Mono.Linker.Steps
 							break;
 						reducer.Rewrite (i, targetResult);
 						changed = true;
+						ConstantFieldValuesUsedStatistic++;
 					}
 					break;
 
