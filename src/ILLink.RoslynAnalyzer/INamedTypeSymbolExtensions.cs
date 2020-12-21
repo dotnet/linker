@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis;
 
 namespace ILLink.RoslynAnalyzer
 {
-	internal static class INamedTypeSymbolExtensions
+	static class INamedTypeSymbolExtensions
 	{
 		/// <summary>
 		/// Returns true if <see paramref="type" /> has the same name as <see paramref="typename" />

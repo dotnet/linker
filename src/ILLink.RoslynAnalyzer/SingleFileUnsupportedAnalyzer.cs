@@ -11,9 +11,11 @@ using Microsoft.CodeAnalysis.Operations;
 
 namespace ILLink.RoslynAnalyzer
 {
+	[DiagnosticAnalyzer (LanguageNames.CSharp)]
 	public sealed class SingleFileUnsupportedAnalyzer : DiagnosticAnalyzer
 	{
 		public const string IL3002 = nameof (IL3002);
+		const string SingleFileUnsupportedAttribute = nameof (SingleFileUnsupportedAttribute);
 
 		private static readonly DiagnosticDescriptor SingleFileUnsupportedRule = new DiagnosticDescriptor (
 			IL3002,
@@ -44,12 +46,16 @@ namespace ILLink.RoslynAnalyzer
 					return;
 
 				context.RegisterOperationAction (operationContext => {
+					// Do not emit any diagnostic if caller is annotated with the attribute too.
+					if (operationContext.ContainingSymbol.HasAttribute (SingleFileUnsupportedAttribute))
+						return;
+					
 					var methodInvocation = (IInvocationOperation) operationContext.Operation;
 					var targetMethod = methodInvocation.TargetMethod;
 					var attributes = targetMethod.GetAttributes ();
 
 					if (attributes.FirstOrDefault (attr => attr.AttributeClass is { } attrClass &&
-						attrClass.HasName ("System.Diagnostics.CodeAnalysis.SingleFileUnsupportedAttribute")) is var singleFileUnsupportedAttr &&
+						attrClass.HasName ("System.Diagnostics.CodeAnalysis." + SingleFileUnsupportedAttribute)) is var singleFileUnsupportedAttr &&
 						singleFileUnsupportedAttr != null) {
 						string? messageArgument = singleFileUnsupportedAttr.ConstructorArguments[0].Value as string;
 						string? urlArgument = singleFileUnsupportedAttr.NamedArguments.FirstOrDefault (na => na.Key == "Url").Value.Value?.ToString ();
