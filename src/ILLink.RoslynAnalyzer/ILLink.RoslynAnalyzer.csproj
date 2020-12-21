@@ -16,7 +16,7 @@
     <PackageId>Microsoft.NET.ILLink.Analyzers</PackageId>
     <Authors>Microsoft</Authors>
     <RepositoryUrl>https://github.com/mono/linker</RepositoryUrl>
-    <Description>Description of the package</Description>
+    <Description>Analyzer utilities for ILLink attributes and single-file</Description>
     <NoPackageAnalysis>true</NoPackageAnalysis>
   </PropertyGroup>
 
