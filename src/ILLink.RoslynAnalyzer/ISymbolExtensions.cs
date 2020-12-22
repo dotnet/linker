@@ -9,6 +9,9 @@ namespace ILLink.RoslynAnalyzer
 {
 	static class ISymbolExtensions
 	{
+		/// <summary>
+		/// Returns true if symbol <see paramref="symbol"/> has an attribute with name <see paramref="attributeName"/>.
+		/// </summary>
 		internal static bool HasAttribute (this ISymbol symbol, string attributeName)
 		{
 			return symbol.GetAttributes ().Where (a => a?.AttributeClass?.Name == attributeName).Count () > 0;
