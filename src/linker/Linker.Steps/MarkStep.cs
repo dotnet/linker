@@ -2044,24 +2044,7 @@ namespace Mono.Linker.Steps
 						return;
 					}
 
-					MarkMethodsIf (tdef.Methods, m => {
-						if (m.IsStatic)
-							return false;
-
-						if (m.Parameters.Count == 1) {
-							var ptype = m.Parameters[0].ParameterType.MetadataType;
-							return m.Name switch
-							{
-								"MarshalNativeToManaged" when ptype == MetadataType.IntPtr => true,
-								"MarshalManagedToNative" when ptype == MetadataType.Object => true,
-								"CleanUpNativeData" when ptype == MetadataType.IntPtr => true,
-								"CleanUpManagedData" when ptype == MetadataType.Object => true,
-								_ => false
-							};
-						}
-
-						return m.Name == "GetNativeDataSize" && !m.HasParameters;
-					}, reason, sourceLocationMember);
+					MarkMethodsIf (tdef.Methods, m => !m.IsStatic, reason, sourceLocationMember);
 
 					MarkInterfaceImplementation (iface, type);
 					return;
