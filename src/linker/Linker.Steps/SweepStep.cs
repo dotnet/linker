@@ -102,11 +102,6 @@ namespace Mono.Linker.Steps
 
 					switch (action) {
 					case AssemblyAction.CopyUsed:
-						if (IsUsedAssembly (a)) {
-							goto case AssemblyAction.Copy;
-						}
-						continue;
-
 					case AssemblyAction.Copy:
 						//
 						// Assembly has a reference to another assembly which has been fully removed. This can
@@ -127,11 +122,8 @@ namespace Mono.Linker.Steps
 						continue;
 
 					case AssemblyAction.AddBypassNGenUsed:
-						if (IsUsedAssembly (a)) {
-							Annotations.SetAction (a, AssemblyAction.AddBypassNGen);
-							goto case AssemblyAction.AddBypassNGen;
-						}
-						continue;
+						Annotations.SetAction (a, AssemblyAction.AddBypassNGen);
+						goto case AssemblyAction.AddBypassNGen;
 
 					case AssemblyAction.AddBypassNGen:
 						BypassNGenToSave.Add (a);
