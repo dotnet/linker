@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Text;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Linker.Steps;
@@ -959,6 +958,7 @@ namespace Mono.Linker.Dataflow
 							bindingFlags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public;
 
 						var requiredMemberTypes = GetDynamicallyAccessedMemberTypesFromBindingFlagsForNestedTypes (bindingFlags);
+						bool everyParentTypeHasAll = true;
 						foreach (var value in methodParams[0].UniqueValues ()) {
 							if (value is SystemTypeValue systemTypeValue) {
 								foreach (var stringParam in methodParams[1].UniqueValues ()) {
@@ -984,7 +984,18 @@ namespace Mono.Linker.Dataflow
 								// Otherwise fall back to the bitfield requirements
 								RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberTypes, value, calledMethodDefinition);
 							}
+
+							if (value is not LeafValueWithDynamicallyAccessedMemberNode { DynamicallyAccessedMemberTypes: DynamicallyAccessedMemberTypes.All })
+								everyParentTypeHasAll = false;
 						}
+
+						// If the parent type (all the possible values) has DynamicallyAccessedMemberTypes.All it means its nested types are also fully marked
+						// (see MarkStep.MarkEntireType - it will recursively mark entire type on nested types). In that case we can annotated 
+						// the returned type (the nested type) with DynamicallyAccessedMemberTypes.All as well.
+						// Note it's OK to blindly overwrite any potential annotation on the return value from the method definition
+						// since DynamicallyAccessedMemberTypes.All is a superset of any other annotation.
+						if (everyParentTypeHasAll && methodReturnValue == null)
+							methodReturnValue = new MethodReturnValue (calledMethodDefinition.MethodReturnType, DynamicallyAccessedMemberTypes.All);
 					}
 					break;
 
