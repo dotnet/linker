@@ -985,12 +985,13 @@ namespace Mono.Linker.Dataflow
 								RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberTypes, value, calledMethodDefinition);
 							}
 
-							if (value is not LeafValueWithDynamicallyAccessedMemberNode { DynamicallyAccessedMemberTypes: DynamicallyAccessedMemberTypes.All })
+							var leafValueWithDynamicallyAccessedMemberNode = value is LeafValueWithDynamicallyAccessedMemberNode ? (LeafValueWithDynamicallyAccessedMemberNode) value : null;
+							if (leafValueWithDynamicallyAccessedMemberNode != null && leafValueWithDynamicallyAccessedMemberNode.DynamicallyAccessedMemberTypes != DynamicallyAccessedMemberTypes.All)
 								everyParentTypeHasAll = false;
 						}
 
 						// If the parent type (all the possible values) has DynamicallyAccessedMemberTypes.All it means its nested types are also fully marked
-						// (see MarkStep.MarkEntireType - it will recursively mark entire type on nested types). In that case we can annotated 
+						// (see MarkStep.MarkEntireType - it will recursively mark entire type on nested types). In that case we can annotate 
 						// the returned type (the nested type) with DynamicallyAccessedMemberTypes.All as well.
 						// Note it's OK to blindly overwrite any potential annotation on the return value from the method definition
 						// since DynamicallyAccessedMemberTypes.All is a superset of any other annotation.
