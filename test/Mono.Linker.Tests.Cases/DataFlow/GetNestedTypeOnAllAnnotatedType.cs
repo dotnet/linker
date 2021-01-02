@@ -25,8 +25,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TestWithBindingFlags (typeof (GetNestedTypeOnAllAnnotatedType));
 			TestWithUnknownBindingFlags (BindingFlags.Public, typeof (GetNestedTypeOnAllAnnotatedType));
 			TestUnsupportedBindingFlags (typeof (GetNestedTypeOnAllAnnotatedType));
-			TestWithNull (null);
+			TestWithNull ();
 			TestIfElse (1, typeof (GetNestedTypeOnAllAnnotatedType), typeof (GetNestedTypeOnAllAnnotatedType));
+			TestSwitchAllValid (1, typeof (GetNestedTypeOnAllAnnotatedType));
 		}
 
 		[RecognizedReflectionAccessPattern]
@@ -65,8 +66,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[RecognizedReflectionAccessPattern]
-		static void TestWithNull ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] Type parentType)
+		static void TestWithNull ()
 		{
+			Type parentType = null;
 			var nestedType = parentType.GetNestedType (nameof (NestedType));
 			RequiresAll (nestedType);
 		}
@@ -80,6 +82,19 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			} else {
 				typeOfParent = parentWithoutAll;
 			}
+			var nestedType = typeOfParent.GetNestedType (nameof (NestedType));
+			RequiresAll (nestedType);
+		}
+
+		[RecognizedReflectionAccessPattern]
+		static void TestSwitchAllValid (int number, [DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] Type parentWithAll)
+		{
+			Type typeOfParent = number switch {
+				1 => parentWithAll,
+				2 => null,
+				3 => typeof (GetNestedTypeOnAllAnnotatedType)
+			};
+
 			var nestedType = typeOfParent.GetNestedType (nameof (NestedType));
 			RequiresAll (nestedType);
 		}

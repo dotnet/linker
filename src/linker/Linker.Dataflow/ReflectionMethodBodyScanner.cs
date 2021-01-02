@@ -985,9 +985,17 @@ namespace Mono.Linker.Dataflow
 								RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberTypes, value, calledMethodDefinition);
 							}
 
-							var leafValueWithDynamicallyAccessedMemberNode = value is LeafValueWithDynamicallyAccessedMemberNode ? (LeafValueWithDynamicallyAccessedMemberNode) value : null;
-							if (leafValueWithDynamicallyAccessedMemberNode != null && leafValueWithDynamicallyAccessedMemberNode.DynamicallyAccessedMemberTypes != DynamicallyAccessedMemberTypes.All)
+							if (value is LeafValueWithDynamicallyAccessedMemberNode leafValueWithDynamicallyAccessedMember) {
+								if (leafValueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes != DynamicallyAccessedMemberTypes.All)
+									everyParentTypeHasAll = false;
+							} else if (!(value is NullValue || value is SystemTypeValue)) {
+								// Known Type values are always OK - either they're fully resolved above and thus the return value
+								// is set to the known resolved type, or if they're not resolved, they won't exist at runtime
+								// and will cause exceptions - and thus don't introduce new requirements on marking.
+								// nulls are intentionally ignored as they will lead to exceptions at runtime
+								// and thus don't introduce new requirements on marking.
 								everyParentTypeHasAll = false;
+							}
 						}
 
 						// If the parent type (all the possible values) has DynamicallyAccessedMemberTypes.All it means its nested types are also fully marked
