@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
@@ -19,8 +20,13 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		[RecognizedReflectionAccessPattern]
 		static void Main ()
 		{
-			TestOnAllAnnotatedParameter (typeof(GetNestedTypeOnAllAnnotatedType));
+			TestOnAllAnnotatedParameter (typeof (GetNestedTypeOnAllAnnotatedType));
 			TestOnNonAllAnnotatedParameter (typeof (GetNestedTypeOnAllAnnotatedType));
+			TestWithBindingFlags (typeof (GetNestedTypeOnAllAnnotatedType));
+			TestWithUnknownBindingFlags (BindingFlags.Public, typeof (GetNestedTypeOnAllAnnotatedType));
+			TestUnsupportedBindingFlags (typeof (GetNestedTypeOnAllAnnotatedType));
+			TestWithNull (null);
+			TestIfElse (1, typeof (GetNestedTypeOnAllAnnotatedType), typeof (GetNestedTypeOnAllAnnotatedType));
 		}
 
 		[RecognizedReflectionAccessPattern]
@@ -30,18 +36,59 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			RequiresAll (nestedType);
 		}
 
-		[UnrecognizedReflectionAccessPattern(typeof(GetNestedTypeOnAllAnnotatedType), nameof(RequiresAll), new Type[] { typeof (Type) }, messageCode: "IL2072")]
+		[UnrecognizedReflectionAccessPattern (typeof (GetNestedTypeOnAllAnnotatedType), nameof (RequiresAll), new Type[] { typeof (Type) }, messageCode: "IL2072")]
 		static void TestOnNonAllAnnotatedParameter ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicNestedTypes)] Type parentType)
 		{
 			var nestedType = parentType.GetNestedType (nameof (NestedType));
 			RequiresAll (nestedType);
 		}
 
-		static void RequiresAll([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] Type type)
+		[RecognizedReflectionAccessPattern]
+		static void TestWithBindingFlags ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] Type parentType)
+		{
+			var nestedType = parentType.GetNestedType (nameof (NestedType), BindingFlags.Public);
+			RequiresAll (nestedType);
+		}
+
+		[RecognizedReflectionAccessPattern]
+		static void TestWithUnknownBindingFlags (BindingFlags bindingFlags, [DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] Type parentType)
+		{
+			var nestedType = parentType.GetNestedType (nameof (NestedType), bindingFlags);
+			RequiresAll (nestedType);
+		}
+
+		[RecognizedReflectionAccessPattern]
+		static void TestUnsupportedBindingFlags ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] Type parentType)
+		{
+			var nestedType = parentType.GetNestedType (nameof (NestedType), BindingFlags.IgnoreCase);
+			RequiresAll (nestedType);
+		}
+
+		[RecognizedReflectionAccessPattern]
+		static void TestWithNull ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] Type parentType)
+		{
+			var nestedType = parentType.GetNestedType (nameof (NestedType));
+			RequiresAll (nestedType);
+		}
+
+		[UnrecognizedReflectionAccessPattern (typeof (GetNestedTypeOnAllAnnotatedType), nameof (RequiresAll), new Type[] { typeof (Type) }, messageCode: "IL2072")]
+		static void TestIfElse (int number, [DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] Type parentWithAll, [DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicNestedTypes)] Type parentWithoutAll)
+		{
+			Type typeOfParent;
+			if (number == 1) {
+				typeOfParent = parentWithAll;
+			} else {
+				typeOfParent = parentWithoutAll;
+			}
+			var nestedType = typeOfParent.GetNestedType (nameof (NestedType));
+			RequiresAll (nestedType);
+		}
+
+		static void RequiresAll ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] Type type)
 		{
 		}
 
-		class NestedType
+		private class NestedType
 		{
 			NestedType () { }
 			public static int PublicStaticInt;
