@@ -62,9 +62,21 @@ To support on-demand processing one assembly at a time, we will temporarily remo
 
 ### Exceptions to lazy loading
 
-When the linker default action specified via `-c` or `-u` is `copy`, we will preserve the .NET5 behavior that keeps all statically referenced assemblies (that don't override the default action). For consistency with this behavior, static references of dynamically loaded assemblies will be kept as well. This will be done by pre-loading the reference closure of assemblies if the linker's default action is `copy`.
+The assembly reference closure will still be loaded in a few cases:
 
-However, embedded XML, constant propagation, and branch elimination still obey the rules above, and may not be processed even when the default action is `copy`.
+- `copy`/`save` action
+
+  When the linker input has assemblies with the `copy` or `save` actions (either specific assembly actions via `-p`, or default actions via `-c` or `-u`), we will preserve the .NET5 behavior that keeps such assemblies and their dependencies. For consistency with this behavior, static references of dynamically loaded assemblies will be kept as well. This requires loading the assembly reference closure in cases where some of the references are `copy` or `save`.
+
+  However, embedded XML, constant propagation, and branch elimination still obey the rules above, and may not be processed even when the default action is `copy` or `save`.
+
+- `--keep-facades`
+
+  This option will preserve facades from the entire reference closure, even when the facades are only referenced by unused assemblies. We preserve the existing behavior by loading all assembly references.
+
+- Looking up unqualified type names
+
+  These types are currently looked up in the entire reference closure, so in the worst case we may end up loading all references. In some cases, we might be able to match the `GetType` behavior that only searches the calling assembly and corelib.
 
 ## Approaches considered
 
