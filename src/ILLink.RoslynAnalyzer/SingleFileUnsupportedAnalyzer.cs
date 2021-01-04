@@ -16,6 +16,7 @@ namespace ILLink.RoslynAnalyzer
 	{
 		public const string IL3002 = nameof (IL3002);
 		const string SingleFileUnsupportedAttribute = nameof (SingleFileUnsupportedAttribute);
+		const string FullyQualifiedSingleFileUnsupportedAttribute = "System.Diagnostics.CodeAnalysis." + SingleFileUnsupportedAttribute;
 
 		private static readonly DiagnosticDescriptor SingleFileUnsupportedRule = new DiagnosticDescriptor (
 			IL3002,
@@ -54,18 +55,13 @@ namespace ILLink.RoslynAnalyzer
 					var targetMethod = methodInvocation.TargetMethod;
 					var attributes = targetMethod.GetAttributes ();
 
-					if (attributes.FirstOrDefault (attr => attr.AttributeClass is { } attrClass &&
-						attrClass.HasName ("System.Diagnostics.CodeAnalysis." + SingleFileUnsupportedAttribute)) is var singleFileUnsupportedAttr &&
-						singleFileUnsupportedAttr != null) {
-						string? messageArgument = singleFileUnsupportedAttr.ConstructorArguments[0].Value as string;
-						string? urlArgument = singleFileUnsupportedAttr.NamedArguments.FirstOrDefault (na => na.Key == "Url").Value.Value?.ToString ();
-						
+					if (targetMethod.TryGetAttributeWithMessageOnCtor (FullyQualifiedSingleFileUnsupportedAttribute, out AttributeData? singleFileUnsupportedAttribute)) {
 						operationContext.ReportDiagnostic (Diagnostic.Create (
 							SingleFileUnsupportedRule,
 							methodInvocation.Syntax.GetLocation (),
 							targetMethod.OriginalDefinition.ToString (),
-							messageArgument,
-							urlArgument));
+							(string) singleFileUnsupportedAttribute?.ConstructorArguments[0].Value!,
+							singleFileUnsupportedAttribute?.NamedArguments.FirstOrDefault (na => na.Key == "Url").Value.Value?.ToString ()));
 					}
 				}, OperationKind.Invocation);
 			});

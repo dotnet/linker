@@ -15,8 +15,10 @@ namespace ILLink.RoslynAnalyzer
 	public class RequiresUnreferencedCodeAnalyzer : DiagnosticAnalyzer
 	{
 		public const string DiagnosticId = "IL2026";
+		const string RequiresUnreferencedCodeAttribute = nameof (RequiresUnreferencedCodeAttribute);
+		const string FullyQualifiedRequiresUnreferencedCodeAttribute = "System.Diagnostics.CodeAnalysis." + RequiresUnreferencedCodeAttribute;
 
-		private static readonly DiagnosticDescriptor s_rule = new DiagnosticDescriptor (
+		private static readonly DiagnosticDescriptor RequiresUnreferencedCodeRule = new DiagnosticDescriptor (
 			DiagnosticId,
 			new LocalizableResourceString (nameof (Resources.RequiresUnreferencedCodeAnalyzerTitle),
 			Resources.ResourceManager, typeof (Resources)),
@@ -26,7 +28,7 @@ namespace ILLink.RoslynAnalyzer
 			DiagnosticSeverity.Warning,
 			isEnabledByDefault: true);
 
-		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create (s_rule);
+		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create (RequiresUnreferencedCodeRule);
 
 		public override void Initialize (AnalysisContext context)
 		{
@@ -46,71 +48,44 @@ namespace ILLink.RoslynAnalyzer
 					if (call.IsVirtual && call.TargetMethod.OverriddenMethod != null)
 						return;
 
-					CheckMethodOrCtorCall (operationContext, call.TargetMethod, call.Syntax.GetLocation ());
+					CheckMethodOrCtorCall (operationContext, call.TargetMethod);
 				}, OperationKind.Invocation);
 
 				context.RegisterOperationAction (operationContext => {
 					var call = (IObjectCreationOperation) operationContext.Operation;
-					CheckMethodOrCtorCall (operationContext, call.Constructor, call.Syntax.GetLocation ());
+					CheckMethodOrCtorCall (operationContext, call.Constructor);
 				}, OperationKind.ObjectCreation);
 
 				context.RegisterOperationAction (operationContext => {
 					var propAccess = (IPropertyReferenceOperation) operationContext.Operation;
 					var prop = propAccess.Property;
 					var usageInfo = propAccess.GetValueUsageInfo (prop);
-					if (usageInfo.HasFlag (ValueUsageInfo.Read) && prop.GetMethod != null) {
-						CheckMethodOrCtorCall (
-							operationContext,
-							prop.GetMethod,
-							propAccess.Syntax.GetLocation ());
-					}
-					if (usageInfo.HasFlag (ValueUsageInfo.Write) && prop.SetMethod != null) {
-						CheckMethodOrCtorCall (
-							operationContext,
-							prop.SetMethod,
-							propAccess.Syntax.GetLocation ());
-					}
+					if (usageInfo.HasFlag (ValueUsageInfo.Read) && prop.GetMethod != null)
+						CheckMethodOrCtorCall (operationContext, prop.GetMethod);
+
+					if (usageInfo.HasFlag (ValueUsageInfo.Write) && prop.SetMethod != null)
+						CheckMethodOrCtorCall (operationContext, prop.SetMethod);
 				}, OperationKind.PropertyReference);
 
-				void CheckMethodOrCtorCall (
+				static void CheckMethodOrCtorCall (
 					OperationAnalysisContext operationContext,
-					IMethodSymbol method,
-					Location location)
+					IMethodSymbol method)
 				{
-					AttributeData? requiresUnreferencedCode;
 					// If parent method contains RequiresUnreferencedCodeAttribute then we shouldn't report diagnostics for this method
 					if (operationContext.ContainingSymbol is IMethodSymbol &&
-						TryGetRequiresUnreferencedCodeAttribute (operationContext.ContainingSymbol.GetAttributes (), out requiresUnreferencedCode))
+						operationContext.ContainingSymbol.TryGetAttributeWithMessageOnCtor (FullyQualifiedRequiresUnreferencedCodeAttribute, out AttributeData? requiresUnreferencedCode))
 						return;
 
-					if (TryGetRequiresUnreferencedCodeAttribute (method.GetAttributes (), out requiresUnreferencedCode)) {
+					if (method.TryGetAttributeWithMessageOnCtor (FullyQualifiedRequiresUnreferencedCodeAttribute, out requiresUnreferencedCode)) {
 						operationContext.ReportDiagnostic (Diagnostic.Create (
-							s_rule,
-							location,
+							RequiresUnreferencedCodeRule,
+							operationContext.Operation.Syntax.GetLocation (),
 							method.OriginalDefinition.ToString (),
 							(string) requiresUnreferencedCode!.ConstructorArguments[0].Value!,
 							requiresUnreferencedCode!.NamedArguments.FirstOrDefault (na => na.Key == "Url").Value.Value?.ToString ()));
 					}
 				}
 			});
-		}
-
-		/// <summary>
-		/// Returns a RequiresUnreferencedCodeAttribute if found
-		/// </summary>
-		static bool TryGetRequiresUnreferencedCodeAttribute (ImmutableArray<AttributeData> attributes, out AttributeData? requiresUnreferencedCode)
-		{
-			requiresUnreferencedCode = null;
-			foreach (var attr in attributes) {
-				if (attr.AttributeClass is { } attrClass &&
-					attrClass.HasName ("System.Diagnostics.CodeAnalysis.RequiresUnreferencedCodeAttribute") &&
-					attr.ConstructorArguments.Length == 1 &&
-					attr.ConstructorArguments[0] is { Type: { SpecialType: SpecialType.System_String } } ctorArg) {
-					requiresUnreferencedCode = attr;
-					return true;
-				}
-			}
-			return false;
 		}
 	}
 }

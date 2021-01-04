@@ -16,5 +16,19 @@ namespace ILLink.RoslynAnalyzer
 		{
 			return symbol.GetAttributes ().Where (a => a?.AttributeClass?.Name == attributeName).Count () > 0;
 		}
+
+		internal static bool TryGetAttributeWithMessageOnCtor (this ISymbol symbol, string qualifiedAttributeName, out AttributeData? attribute)
+		{
+			attribute = null;
+			if (symbol.GetAttributes ().FirstOrDefault (attr => attr.AttributeClass is { } attrClass &&
+				attrClass.HasName (qualifiedAttributeName)) is var _attribute &&
+				_attribute != null && _attribute.ConstructorArguments.Length >= 1 &&
+				_attribute.ConstructorArguments[0] is { Type: { SpecialType: SpecialType.System_String } } ctorArg) {
+				attribute = _attribute;
+				return true;
+			}
+
+			return false;
+		}
 	}
 }
