@@ -7,8 +7,8 @@ using VerifyCS = ILLink.RoslynAnalyzer.Tests.CSharpAnalyzerVerifier<
 
 namespace ILLink.RoslynAnalyzer.Tests
 {
-    public class SingleFileUnsupportedAnalyzerTests
-    {
+	public class SingleFileUnsupportedAnalyzerTests
+	{
 		static Task VerifySingleFileUnsupportedAnalyzer (string source, params DiagnosticResult[] expected)
 		{
 			// TODO: Remove this once we have the new attribute in the runtime.
@@ -110,5 +110,5 @@ class C
 			return VerifySingleFileUnsupportedAnalyzer (TestNoDiagnosticIsProducedIfCallerIsAnnotated,
 				VerifyCS.Diagnostic ().WithSpan (22, 3, 22, 7).WithArguments ("C.M2()", "Warn from M2"));
 		}
-    }
+	}
 }

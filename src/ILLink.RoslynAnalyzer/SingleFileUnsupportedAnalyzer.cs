@@ -41,7 +41,7 @@ namespace ILLink.RoslynAnalyzer
 				var isSingleFilePublish = context.Options.GetMSBuildPropertyValue (MSBuildPropertyOptionNames.PublishSingleFile, compilation);
 				if (!string.Equals (isSingleFilePublish?.Trim (), "true", StringComparison.OrdinalIgnoreCase))
 					return;
-				
+
 				var includesAllContent = context.Options.GetMSBuildPropertyValue (MSBuildPropertyOptionNames.IncludeAllContentForSelfExtract, compilation);
 				if (string.Equals (includesAllContent?.Trim (), "true", StringComparison.OrdinalIgnoreCase))
 					return;
@@ -50,7 +50,7 @@ namespace ILLink.RoslynAnalyzer
 					// Do not emit any diagnostic if caller is annotated with the attribute too.
 					if (operationContext.ContainingSymbol.HasAttribute (SingleFileUnsupportedAttribute))
 						return;
-					
+
 					var methodInvocation = (IInvocationOperation) operationContext.Operation;
 					var targetMethod = methodInvocation.TargetMethod;
 					var attributes = targetMethod.GetAttributes ();
