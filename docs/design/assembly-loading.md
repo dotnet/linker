@@ -52,7 +52,7 @@ Additional processing will be done lazily (not triggered by `Resolve`), running 
 
 ### Breaking changes
 
-We will restrict the embedded XML so that it may only modify the containing assembly. This is to prevent cases where a (possibly lazily loaded) assembly modifies code in another assembly that we have already processed, breaking assumptions and creating logical inconsistencies. XML passed on the command-line will continue to work as they do today.
+We will restrict the embedded XML so that it may only modify the containing assembly. This is to prevent cases where a (possibly lazily loaded) assembly modifies code in another assembly that we have already processed, breaking assumptions and creating logical inconsistencies. XML passed on the command-line will continue to work as they do today. Descriptor XML (which may reference other assemblies but is purely additive) will also continue to work as today, whether embedded or passed on the command-line, but this imposes a restriction that the descriptor XML must stay additive. That is, it can cause existing IL in other assemblies to be marked, but may not *modify* other assembly IL.
 
 Embedded XML from assemblies which are not marked may not be processed, to avoid the need to load all referenced assemblies in case they have embedded XML.
 
