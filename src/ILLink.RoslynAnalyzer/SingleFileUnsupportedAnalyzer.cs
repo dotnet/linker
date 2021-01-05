@@ -53,7 +53,6 @@ namespace ILLink.RoslynAnalyzer
 
 					var methodInvocation = (IInvocationOperation) operationContext.Operation;
 					var targetMethod = methodInvocation.TargetMethod;
-					var attributes = targetMethod.GetAttributes ();
 
 					if (targetMethod.TryGetAttributeWithMessageOnCtor (FullyQualifiedSingleFileUnsupportedAttribute, out AttributeData? singleFileUnsupportedAttribute)) {
 						operationContext.ReportDiagnostic (Diagnostic.Create (

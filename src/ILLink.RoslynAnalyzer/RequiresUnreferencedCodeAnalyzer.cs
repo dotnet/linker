@@ -73,10 +73,10 @@ namespace ILLink.RoslynAnalyzer
 				{
 					// If parent method contains RequiresUnreferencedCodeAttribute then we shouldn't report diagnostics for this method
 					if (operationContext.ContainingSymbol is IMethodSymbol &&
-						operationContext.ContainingSymbol.TryGetAttributeWithMessageOnCtor (FullyQualifiedRequiresUnreferencedCodeAttribute, out AttributeData? requiresUnreferencedCode))
+						operationContext.ContainingSymbol.HasAttribute (RequiresUnreferencedCodeAttribute))
 						return;
 
-					if (method.TryGetAttributeWithMessageOnCtor (FullyQualifiedRequiresUnreferencedCodeAttribute, out requiresUnreferencedCode)) {
+					if (method.TryGetAttributeWithMessageOnCtor (FullyQualifiedRequiresUnreferencedCodeAttribute, out AttributeData? requiresUnreferencedCode)) {
 						operationContext.ReportDiagnostic (Diagnostic.Create (
 							RequiresUnreferencedCodeRule,
 							operationContext.Operation.Syntax.GetLocation (),
