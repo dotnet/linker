@@ -4,6 +4,9 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 namespace Mono.Linker.Tests.Cases.Libraries
 {
 	[SetupCompileAsLibrary]
+#if NETCOREAPP
+	[IgnoreTestCase("Requires better testing framework support when no files are produced")]
+#endif
 	[Kept]
 	[KeptMember (".ctor()")]
 	public class DefaultLibraryLinkBehavior

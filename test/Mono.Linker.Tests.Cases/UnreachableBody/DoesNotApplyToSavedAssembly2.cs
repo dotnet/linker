@@ -3,6 +3,7 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.UnreachableBody
 {
+	[IgnoreTestCase ("save action is not supported")]
 	[Define ("OTHER_INCLUDED")]
 	[SetupLinkerAction ("save", "other")]
 	[SetupCompileBefore ("other.dll", new[] { "Dependencies/OtherAssemblyNoInstanceCtor.il" })]

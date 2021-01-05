@@ -113,6 +113,18 @@ the error code. For example:
 
 #### `IL1030`: Invalid argument for '{token}' option
 
+#### `IL1031`: Invalid assembly action '{action}'
+
+#### `IL1032`: Trimming assembly '{assemblyFile}' could not be found
+
+#### `IL1033`: Trimming XML descriptor file '{xmlFile}' could not be found
+
+#### `IL1034`: Trimming assembly '{name}' does not have entry point
+
+#### `IL1035`: Trimming assembly '{name}' cannot use action '{action}'
+
+#### `IL1036`: Invalid assembly name '{assemblyName}'
+
 ----
 ## Warning Codes
 

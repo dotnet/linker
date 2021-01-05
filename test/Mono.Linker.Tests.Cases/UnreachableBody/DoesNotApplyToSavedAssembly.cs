@@ -4,6 +4,7 @@ using Mono.Linker.Tests.Cases.UnreachableBody.Dependencies;
 
 namespace Mono.Linker.Tests.Cases.UnreachableBody
 {
+	[IgnoreTestCase ("save action is not supported")]
 	[SetupLinkerAction ("save", "other2")]
 	[SetupCompileBefore ("other2.dll", new[] { typeof (OtherAssembly) })]
 	[KeptMemberInAssembly ("other2.dll", typeof (OtherAssembly.Foo), "Method()")]

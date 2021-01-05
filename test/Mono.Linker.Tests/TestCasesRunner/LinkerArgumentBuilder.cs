@@ -56,7 +56,11 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 		public virtual void LinkFromPublicAndFamily (string fileName)
 		{
+#if NETCOREAPP
+			Append ("-l");
+#else
 			Append ("-r");
+#endif
 			Append (fileName);
 		}
 

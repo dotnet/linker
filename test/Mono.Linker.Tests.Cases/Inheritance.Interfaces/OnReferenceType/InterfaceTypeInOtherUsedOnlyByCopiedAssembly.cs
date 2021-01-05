@@ -8,7 +8,12 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.OnReferenceType
 	[SetupCompileBefore ("copy.dll", new[] { typeof (InterfaceTypeInOtherUsedOnlyByCopiedAssembly_Copy) }, new[] { "linked.dll" })]
 
 	[SetupLinkerAction ("copy", "copy")]
+
+#if NETCOREAPP
+	[SetupLinkerArgument ("-l", "copy.dll")]
+#else
 	[SetupLinkerArgument ("-a", "copy")]
+#endif
 
 	[KeptTypeInAssembly ("linked.dll", typeof (InterfaceTypeInOtherUsedOnlyByCopiedAssembly_Link.IFoo))]
 	[KeptMemberInAssembly ("copy.dll", typeof (InterfaceTypeInOtherUsedOnlyByCopiedAssembly_Copy.A), "Method()")]

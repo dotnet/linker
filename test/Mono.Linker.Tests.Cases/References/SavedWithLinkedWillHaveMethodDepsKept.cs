@@ -4,6 +4,7 @@ using Mono.Linker.Tests.Cases.References.Dependencies;
 
 namespace Mono.Linker.Tests.Cases.References
 {
+	[IgnoreTestCase ("save action is not supported")]
 	[SetupCSharpCompilerToUse ("csc")]
 	[SetupLinkerAction ("save", "test")]
 	[SetupCompileBefore ("linked.dll", new[] { typeof (WithLinked_Methods) })]

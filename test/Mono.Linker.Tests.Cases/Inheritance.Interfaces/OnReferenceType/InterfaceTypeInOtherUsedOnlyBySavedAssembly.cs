@@ -4,6 +4,8 @@ using Mono.Linker.Tests.Cases.Inheritance.Interfaces.Dependencies;
 
 namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.OnReferenceType
 {
+	[IgnoreTestCase ("save action is not allowed")]
+
 	[SetupCompileBefore ("linked.dll", new[] { typeof (InterfaceTypeInOtherUsedOnlyByCopiedAssembly_Link) })]
 	[SetupCompileBefore ("save.dll", new[] { typeof (InterfaceTypeInOtherUsedOnlyByCopiedAssembly_Copy) }, new[] { "linked.dll" })]
 
