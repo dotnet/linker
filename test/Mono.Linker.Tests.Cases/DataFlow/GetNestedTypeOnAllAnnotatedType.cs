@@ -28,6 +28,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TestWithNull ();
 			TestIfElse (1, typeof (GetNestedTypeOnAllAnnotatedType), typeof (GetNestedTypeOnAllAnnotatedType));
 			TestSwitchAllValid (1, typeof (GetNestedTypeOnAllAnnotatedType));
+			TestOnKnownTypeOnly ();
 		}
 
 		[RecognizedReflectionAccessPattern]
@@ -89,7 +90,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		[RecognizedReflectionAccessPattern]
 		static void TestSwitchAllValid (int number, [DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] Type parentWithAll)
 		{
-			Type typeOfParent = number switch {
+			Type typeOfParent = number switch
+			{
 				1 => parentWithAll,
 				2 => null,
 				3 => typeof (GetNestedTypeOnAllAnnotatedType)
@@ -97,6 +99,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			var nestedType = typeOfParent.GetNestedType (nameof (NestedType));
 			RequiresAll (nestedType);
+		}
+
+		[RecognizedReflectionAccessPattern]
+		static void TestOnKnownTypeOnly ()
+		{
+			RequiresAll (typeof (GetNestedTypeOnAllAnnotatedType).GetNestedType (nameof (NestedType)));
 		}
 
 		static void RequiresAll ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] Type type)
