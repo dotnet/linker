@@ -30,8 +30,6 @@ namespace Mono.Linker.Steps
 		Statistics.NamedValue GetConstantExpressionMethodCallsStatistic;
 		Statistics.NamedValue MethodsAnalyzedForConstantResultStatistic;
 
-		Dictionary<MethodDefinition, int> constMethodDepth;
-
 		protected override void Process ()
 		{
 			MethodsAnalyzedStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (MethodsAnalyzedStatistic));
@@ -43,18 +41,10 @@ namespace Mono.Linker.Steps
 			AnalyzedAsConstantAfterRewriteStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (AnalyzedAsConstantAfterRewriteStatistic));
 			GetConstantExpressionMethodCallsStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (GetConstantExpressionMethodCallsStatistic));
 			MethodsAnalyzedForConstantResultStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (MethodsAnalyzedForConstantResultStatistic));
-			constMethodDepth = new Dictionary<MethodDefinition, int> ();
 
 			var assemblies = Context.Annotations.GetAssemblies ().ToArray ();
 
 			constExprMethods = new Dictionary<MethodDefinition, Instruction> ();
-			foreach (var assembly in assemblies) {
-				FindConstantExpressionsMethods (assembly.MainModule.Types);
-			}
-
-			if (constExprMethods.Count == 0)
-				return;
-
 			do {
 				//
 				// Body rewriting can produce more methods with constant expression
@@ -72,25 +62,6 @@ namespace Mono.Linker.Steps
 			} while (constExprMethodsAdded > 0);
 
 			Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), "ConstExprMethods").Value = constExprMethods.Values.Where (v => v != null).Count ();
-			Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), "MaxConstantPropagationDepth").Value = constMethodDepth.Values.Max ();
-		}
-
-		void FindConstantExpressionsMethods (Collection<TypeDefinition> types)
-		{
-			foreach (var type in types) {
-				if (type.IsInterface)
-					continue;
-
-				if (!type.HasMethods)
-					continue;
-
-				foreach (var method in type.Methods) {
-					TryGetConstantResultInstructionForMethod (method, out _);
-				}
-
-				if (type.HasNestedTypes)
-					FindConstantExpressionsMethods (type.NestedTypes);
-			}
 		}
 
 		bool TryGetConstantResultInstructionForMethod (MethodDefinition method, out Instruction constantResultInstruction)
@@ -119,7 +90,6 @@ namespace Mono.Linker.Steps
 				return null;
 			case MethodAction.ConvertToStub:
 				StubbedMethodsStatistic++;
-				constMethodDepth[method] = 1;
 				return CodeRewriterStep.CreateConstantResultInstruction (Context, method);
 			}
 
@@ -132,7 +102,6 @@ namespace Mono.Linker.Steps
 			var analyzer = new ConstantExpressionMethodAnalyzer (method);
 			MethodsAnalyzedForConstantResultStatistic++;
 			if (analyzer.Analyze ()) {
-				constMethodDepth[method] = 1;
 				AnalyzedAsConstantStatistic++;
 				return analyzer.Result;
 			}
@@ -264,12 +233,6 @@ namespace Mono.Linker.Steps
 					reducer.Rewrite (i, targetResult);
 					changed = true;
 					ConstantMethodsUsedStatistic++;
-					if (constMethodDepth.TryGetValue (md, out var calledDepth)) {
-						maxConstantDepth = Math.Max (maxConstantDepth, calledDepth);
-						if (maxConstantDepth > 1) {
-							Console.WriteLine ("###" + reducer.Body.Method.ToString () + " -> " + md.ToString());
-						}
-					}
 
 					break;
 
