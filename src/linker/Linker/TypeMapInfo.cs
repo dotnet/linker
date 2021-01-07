@@ -34,17 +34,11 @@ namespace Mono.Linker
 
 	public class TypeMapInfo
 	{
-		readonly LinkContext _context;
-		AnnotationStore Annotations => _context.Annotations;
-
 		readonly HashSet<AssemblyDefinition> assemblies = new HashSet<AssemblyDefinition> ();
 		protected readonly Dictionary<MethodDefinition, List<MethodDefinition>> base_methods = new Dictionary<MethodDefinition, List<MethodDefinition>> ();
 		protected readonly Dictionary<MethodDefinition, List<OverrideInformation>> override_methods = new Dictionary<MethodDefinition, List<OverrideInformation>> ();
+		protected readonly Dictionary<MethodDefinition, List<(TypeDefinition InstanceType, InterfaceImplementation ImplementationProvider)>> default_interface_implementations = new Dictionary<MethodDefinition, List<(TypeDefinition, InterfaceImplementation)>> ();
 
-		public TypeMapInfo (LinkContext context)
-		{
-			_context = context;
-		}
 
 		void EnsureProcessed (AssemblyDefinition assembly)
 		{
@@ -58,33 +52,26 @@ namespace Mono.Linker
 		public IEnumerable<OverrideInformation> GetOverrides (MethodDefinition method)
 		{
 			EnsureProcessed (method.Module.Assembly);
-			return GetOverridesHelper (method);
+			override_methods.TryGetValue (method, out List<OverrideInformation> overrides);
+			return overrides;
 		}
 
 		public List<MethodDefinition> GetBaseMethods (MethodDefinition method)
 		{
 			EnsureProcessed (method.Module.Assembly);
-			return GetBaseMethodsHelper (method);
+			base_methods.TryGetValue (method, out List<MethodDefinition> bases);
+			return bases;
 		}
 
-		List<MethodDefinition> GetBaseMethodsHelper (MethodDefinition method)
+		public IEnumerable<(TypeDefinition InstanceType, InterfaceImplementation ProvidingInterface)> GetDefaultInterfaceImplementations (MethodDefinition method)
 		{
-			if (base_methods.TryGetValue (method, out List<MethodDefinition> bases))
-				return bases;
-
-			return null;
-		}
-
-		IEnumerable<OverrideInformation> GetOverridesHelper (MethodDefinition method)
-		{
-			override_methods.TryGetValue (method, out List<OverrideInformation> overrides);
-			return overrides;
+			default_interface_implementations.TryGetValue (method, out var ret);
+			return ret;
 		}
 
 		public void AddBaseMethod (MethodDefinition method, MethodDefinition @base)
 		{
-			var methods = GetBaseMethodsHelper (method);
-			if (methods == null) {
+			if (!base_methods.TryGetValue (method, out List<MethodDefinition> methods)) {
 				methods = new List<MethodDefinition> ();
 				base_methods[method] = methods;
 			}
@@ -100,6 +87,16 @@ namespace Mono.Linker
 			}
 
 			methods.Add (new OverrideInformation (@base, @override, matchingInterfaceImplementation));
+		}
+
+		public void AddDefaultInterfaceImplementation (MethodDefinition @base, TypeDefinition implementingType, InterfaceImplementation matchingInterfaceImplementation)
+		{
+			if (!default_interface_implementations.TryGetValue (@base, out var implementations)) {
+				implementations = new List<(TypeDefinition, InterfaceImplementation)> ();
+				default_interface_implementations.Add (@base, implementations);
+			}
+
+			implementations.Add ((implementingType, matchingInterfaceImplementation));
 		}
 
 		protected virtual void MapType (TypeDefinition type)
@@ -152,7 +149,7 @@ namespace Mono.Linker
 
 					// Look for a default implementation last.
 					foreach (var defaultImpl in GetDefaultInterfaceImplementations (type, resolvedInterfaceMethod)) {
-						Annotations.AddDefaultInterfaceImplementation (resolvedInterfaceMethod, type, defaultImpl);
+						AddDefaultInterfaceImplementation (resolvedInterfaceMethod, type, defaultImpl);
 					}
 				}
 			}

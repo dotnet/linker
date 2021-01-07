@@ -56,8 +56,6 @@ namespace Mono.Linker
 		protected readonly HashSet<IMetadataTokenProvider> public_api = new HashSet<IMetadataTokenProvider> ();
 		protected readonly Dictionary<AssemblyDefinition, ISymbolReader> symbol_readers = new Dictionary<AssemblyDefinition, ISymbolReader> ();
 		readonly Dictionary<IMemberDefinition, LinkerAttributesInformation> linker_attributes = new Dictionary<IMemberDefinition, LinkerAttributesInformation> ();
-		protected readonly Dictionary<MethodDefinition, List<(TypeDefinition InstanceType, InterfaceImplementation ImplementationProvider)>> default_interface_implementations = new Dictionary<MethodDefinition, List<(TypeDefinition, InterfaceImplementation)>> ();
-
 		readonly Dictionary<object, Dictionary<IMetadataTokenProvider, object>> custom_annotations = new Dictionary<object, Dictionary<IMetadataTokenProvider, object>> ();
 		protected readonly Dictionary<AssemblyDefinition, HashSet<EmbeddedResource>> resources_to_remove = new Dictionary<AssemblyDefinition, HashSet<EmbeddedResource>> ();
 		protected readonly HashSet<CustomAttribute> marked_attributes = new HashSet<CustomAttribute> ();
@@ -71,7 +69,7 @@ namespace Mono.Linker
 			this.context = context;
 			FlowAnnotations = new FlowAnnotations (context);
 			VirtualMethodsWithAnnotationsToValidate = new HashSet<MethodDefinition> ();
-			TypeMapInfo = new TypeMapInfo (context);
+			TypeMapInfo = new TypeMapInfo ();
 		}
 
 		public bool ProcessSatelliteAssemblies { get; set; }
@@ -339,22 +337,10 @@ namespace Mono.Linker
 			return TypeMapInfo.GetOverrides (method);
 		}
 
-		public void AddDefaultInterfaceImplementation (MethodDefinition @base, TypeDefinition implementingType, InterfaceImplementation matchingInterfaceImplementation)
-		{
-			if (!default_interface_implementations.TryGetValue (@base, out var implementations)) {
-				implementations = new List<(TypeDefinition, InterfaceImplementation)> ();
-				default_interface_implementations.Add (@base, implementations);
-			}
-
-			implementations.Add ((implementingType, matchingInterfaceImplementation));
-		}
-
 		public IEnumerable<(TypeDefinition InstanceType, InterfaceImplementation ProvidingInterface)> GetDefaultInterfaceImplementations (MethodDefinition method)
 		{
-			default_interface_implementations.TryGetValue (method, out var ret);
-			return ret;
+			return TypeMapInfo.GetDefaultInterfaceImplementations (method);
 		}
-
 
 		public List<MethodDefinition> GetBaseMethods (MethodDefinition method)
 		{
