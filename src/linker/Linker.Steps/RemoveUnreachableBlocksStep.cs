@@ -27,6 +27,8 @@ namespace Mono.Linker.Steps
 		Statistics.NamedValue ConstantFieldValuesUsedStatistic;
 		Statistics.NamedValue AnalyzedAsConstantStatistic;
 		Statistics.NamedValue AnalyzedAsConstantAfterRewriteStatistic;
+		Statistics.NamedValue GetConstantExpressionMethodCallsStatistic;
+		Statistics.NamedValue MethodsAnalyzedForConstantResultStatistic;
 
 		Dictionary<MethodDefinition, int> constMethodDepth;
 
@@ -39,6 +41,8 @@ namespace Mono.Linker.Steps
 			ConstantFieldValuesUsedStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (ConstantFieldValuesUsedStatistic));
 			AnalyzedAsConstantStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (AnalyzedAsConstantStatistic));
 			AnalyzedAsConstantAfterRewriteStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (AnalyzedAsConstantAfterRewriteStatistic));
+			GetConstantExpressionMethodCallsStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (GetConstantExpressionMethodCallsStatistic));
+			MethodsAnalyzedForConstantResultStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (MethodsAnalyzedForConstantResultStatistic));
 			constMethodDepth = new Dictionary<MethodDefinition, int> ();
 
 			var assemblies = Context.Annotations.GetAssemblies ().ToArray ();
@@ -67,7 +71,7 @@ namespace Mono.Linker.Steps
 				IterationsStatistic++;
 			} while (constExprMethodsAdded > 0);
 
-			Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), "ConstExprMethods").Value = constExprMethodsCount;
+			Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), "ConstExprMethods").Value = constExprMethods.Values.Where (v => v != null).Count ();
 			Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), "MaxConstantPropagationDepth").Value = constMethodDepth.Values.Max ();
 		}
 
@@ -91,6 +95,8 @@ namespace Mono.Linker.Steps
 
 		bool IsConstantExpressionMethod (MethodDefinition method)
 		{
+			GetConstantExpressionMethodCallsStatistic++;
+
 			if (constExprMethods.TryGetValue (method, out var constantResultInstruction))
 				return constantResultInstruction != null;
 
@@ -124,6 +130,7 @@ namespace Mono.Linker.Steps
 				return null;
 
 			var analyzer = new ConstantExpressionMethodAnalyzer (method);
+			MethodsAnalyzedForConstantResultStatistic++;
 			if (analyzer.Analyze ()) {
 				constMethodDepth[method] = 1;
 				AnalyzedAsConstantStatistic++;
@@ -193,6 +200,7 @@ namespace Mono.Linker.Steps
 				// Re-run the analyzer in case body change rewrote it to constant expression
 				//
 				var analyzer = new ConstantExpressionMethodAnalyzer (method, reducer.FoldedInstructions);
+				MethodsAnalyzedForConstantResultStatistic++;
 				if (analyzer.Analyze ()) {
 					constExprMethods[method] = analyzer.Result;
 					constExprMethodsAdded++;
