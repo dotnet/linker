@@ -147,7 +147,7 @@ namespace Mono.Linker.Steps
 			//
 			// Temporary inlines any calls which return contant expression
 			//
-			if (!TryInlineBodyDependencies (ref reducer, out _))
+			if (!TryInlineBodyDependencies (ref reducer))
 				return;
 
 			//
@@ -178,12 +178,11 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		bool TryInlineBodyDependencies (ref BodyReducer reducer, out int maxConstantDepth)
+		bool TryInlineBodyDependencies (ref BodyReducer reducer)
 		{
 			bool changed = false;
 			var instructions = reducer.Body.Instructions;
 			Instruction targetResult;
-			maxConstantDepth = 0; ;
 
 			for (int i = 0; i < instructions.Count; ++i) {
 				var instr = instructions[i];
