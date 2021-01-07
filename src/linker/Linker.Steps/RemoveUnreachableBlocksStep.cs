@@ -45,6 +45,7 @@ namespace Mono.Linker.Steps
 			var assemblies = Context.Annotations.GetAssemblies ().ToArray ();
 
 			constExprMethods = new Dictionary<MethodDefinition, Instruction> ();
+
 			do {
 				//
 				// Body rewriting can produce more methods with constant expression
