@@ -85,7 +85,7 @@ namespace Mono.Linker.Steps
 					continue;
 
 				foreach (var method in type.Methods) {
-					IsConstantExpressionMethod (method);
+					TryGetConstantResultInstructionForMethod (method, out _);
 				}
 
 				if (type.HasNestedTypes)
@@ -93,11 +93,11 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		bool IsConstantExpressionMethod (MethodDefinition method)
+		bool TryGetConstantResultInstructionForMethod (MethodDefinition method, out Instruction constantResultInstruction)
 		{
 			GetConstantExpressionMethodCallsStatistic++;
 
-			if (constExprMethods.TryGetValue (method, out var constantResultInstruction))
+			if (constExprMethods.TryGetValue (method, out constantResultInstruction))
 				return constantResultInstruction != null;
 
 			constantResultInstruction = GetConstantResultInstructionForMethod (method);
@@ -178,7 +178,7 @@ namespace Mono.Linker.Steps
 			//
 			// Temporary inlines any calls which return contant expression
 			//
-			if (!TryInlineBodyDependencies (ref reducer, out var maxConstantDepth))
+			if (!TryInlineBodyDependencies (ref reducer, out _))
 				return;
 
 			//
@@ -227,7 +227,7 @@ namespace Mono.Linker.Steps
 					if (md == null)
 						break;
 
-					if (!constExprMethods.TryGetValue (md, out targetResult) || targetResult == null)
+					if (!TryGetConstantResultInstructionForMethod (md, out targetResult))
 						break;
 
 					if (md.CallingConvention == MethodCallingConvention.VarArg)
@@ -306,7 +306,7 @@ namespace Mono.Linker.Steps
 						sizeOfImpl = (IntPtrSize ??= FindSizeMethod (operand.Resolve ()));
 					}
 
-					if (sizeOfImpl != null && constExprMethods.TryGetValue (sizeOfImpl, out targetResult)) {
+					if (sizeOfImpl != null && TryGetConstantResultInstructionForMethod(sizeOfImpl, out targetResult)) {
 						reducer.Rewrite (i, targetResult);
 						changed = true;
 					}
