@@ -234,7 +234,7 @@ namespace Mono.Linker.Steps
 						sizeOfImpl = (IntPtrSize ??= FindSizeMethod (operand.Resolve ()));
 					}
 
-					if (sizeOfImpl != null && TryGetConstantResultInstructionForMethod(sizeOfImpl, out targetResult)) {
+					if (sizeOfImpl != null && TryGetConstantResultInstructionForMethod (sizeOfImpl, out targetResult)) {
 						reducer.Rewrite (i, targetResult);
 						changed = true;
 					}
