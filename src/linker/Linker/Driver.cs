@@ -179,7 +179,6 @@ namespace Mono.Linker
 			var set_optimizations = new List<(CodeOptimizations, string, bool)> ();
 			bool dumpDependencies = false;
 			string dependenciesFileName = null;
-			bool removeCAS = true;
 			bool new_mvid_used = false;
 			bool deterministic_used = false;
 
@@ -233,7 +232,7 @@ namespace Mono.Linker
 						continue;
 
 					case "--strip-security":
-						if (!GetBoolParam (token, l => removeCAS = l))
+						if (!GetBoolParam (token, l => context.StripSecurity = l))
 							return -1;
 
 						continue;
@@ -676,9 +675,6 @@ namespace Mono.Linker
 			if (_needAddBypassNGenStep)
 				p.AddStepAfter (typeof (SweepStep), new AddBypassNGenStep ());
 
-			if (removeCAS)
-				p.AddStepBefore (typeof (MarkStep), new RemoveSecurityStep ());
-
 #if !FEATURE_ILLINK
 			if (excluded_features.Count > 0) {
 				p.AddStepBefore (typeof (MarkStep), new RemoveFeaturesStep () {
@@ -714,7 +710,6 @@ namespace Mono.Linker
 			// DynamicDependencyLookupStep
 			// [mono only] PreserveCalendarsStep [optional]
 			// BodySubstituterStep [optional]
-			// RemoveSecurityStep [optional]
 			// [mono only] RemoveFeaturesStep [optional]
 			// RemoveUnreachableBlocksStep [optional]
 			// MarkStep

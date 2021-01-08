@@ -213,6 +213,7 @@ namespace Mono.Linker.Steps
 
 			SweepResources (assembly);
 			SweepCustomAttributes (assembly);
+			SweepSecurityInfo (assembly);
 
 			foreach (var module in assembly.Modules)
 				SweepCustomAttributes (module);
@@ -308,6 +309,8 @@ namespace Mono.Linker.Steps
 			if (type.HasCustomAttributes)
 				SweepCustomAttributes (type);
 
+			SweepSecurityInfo (type);
+
 			if (type.HasGenericParameters)
 				SweepGenericParameters (type.GenericParameters);
 
@@ -357,30 +360,60 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		protected void SweepCustomAttributes (TypeDefinition type)
+		protected void SweepSecurityInfo (ISecurityDeclarationProvider provider)
 		{
-			bool removed = SweepCustomAttributes (type as ICustomAttributeProvider);
+			if (Context.StripSecurity && provider.HasSecurityDeclarations)
+				provider.SecurityDeclarations.Clear ();
 
-			if (removed && type.HasSecurity && ShouldSetHasSecurityToFalse (type, type))
-				type.HasSecurity = false;
+			switch (provider) {
+			case TypeDefinition type:
+				if (type.HasSecurity)
+					type.HasSecurity = RequiresHasSecurity (provider);
+				break;
+			case MethodDefinition method:
+				if (method.HasSecurity)
+					method.HasSecurity = RequiresHasSecurity (provider);
+				break;
+			}
 		}
 
-		protected void SweepCustomAttributes (MethodDefinition method)
+		static bool RequiresHasSecurity (ISecurityDeclarationProvider provider)
 		{
-			bool removed = SweepCustomAttributes (method as ICustomAttributeProvider);
+			// According to the spec, HasSecurity is set iff
+			// it has security declarations or a SuppressUnmanagedCodeSecurityAttribute
 
-			if (removed && method.HasSecurity && ShouldSetHasSecurityToFalse (method, method))
-				method.HasSecurity = false;
-		}
+			if (provider.HasSecurityDeclarations)
+				return true;
 
-		static bool ShouldSetHasSecurityToFalse (ISecurityDeclarationProvider providerAsSecurity, ICustomAttributeProvider provider)
-		{
-			if (!providerAsSecurity.HasSecurityDeclarations) {
-				// If the method or type had security before and all attributes were removed, or no remaining attributes are security attributes,
-				// then we need to set HasSecurity to false
-				if (provider.CustomAttributes.Count == 0 || provider.CustomAttributes.All (attr => !IsSecurityAttributeType (attr.AttributeType.Resolve ())))
+			foreach (var attr in (provider as ICustomAttributeProvider).CustomAttributes) {
+				var attributeType = attr.AttributeType.Resolve ();
+				if (attributeType == null)
+					continue;
+				if (attributeType.Namespace == "System.Security" && attributeType.FullName == "System.Security.SuppressUnmanagedCodeSecurityAttribute")
 					return true;
 			}
+			return false;
+		}
+
+		protected void SweepCustomAttributes (ICustomAttributeProvider provider)
+		{
+			for (int i = provider.CustomAttributes.Count - 1; i >= 0; i--) {
+				var attribute = provider.CustomAttributes[i];
+				if (ShouldRemoveCustomAttribute (attribute)) {
+					CustomAttributeUsageRemoved (provider, attribute);
+					provider.CustomAttributes.RemoveAt (i);
+				}
+			}
+		}
+
+		bool ShouldRemoveCustomAttribute (CustomAttribute attribute)
+		{
+			if (!Annotations.IsMarked (attribute))
+				return true;
+
+			// StripSecurity removes security custom attributes, even if marked.
+			if (Context.StripSecurity && IsSecurityAttributeType (attribute.AttributeType.Resolve ()))
+				return true;
 
 			return false;
 		}
@@ -390,15 +423,8 @@ namespace Mono.Linker.Steps
 			if (definition == null)
 				return false;
 
-			if (definition.Namespace == "System.Security") {
-				return definition.FullName switch
-				{
-					// This seems to be one attribute in the System.Security namespace that doesn't count
-					// as an attribute that requires HasSecurity to be true
-					"System.Security.SecurityCriticalAttribute" => false,
-					_ => true,
-				};
-			}
+			if (definition.Namespace == "System.Security")
+				return true;
 
 			if (definition.BaseType == null)
 				return false;
@@ -406,21 +432,7 @@ namespace Mono.Linker.Steps
 			return IsSecurityAttributeType (definition.BaseType.Resolve ());
 		}
 
-		protected bool SweepCustomAttributes (ICustomAttributeProvider provider)
-		{
-			bool removed = false;
 
-			for (int i = provider.CustomAttributes.Count - 1; i >= 0; i--) {
-				var attribute = provider.CustomAttributes[i];
-				if (!Annotations.IsMarked (attribute)) {
-					CustomAttributeUsageRemoved (provider, attribute);
-					provider.CustomAttributes.RemoveAt (i);
-					removed = true;
-				}
-			}
-
-			return removed;
-		}
 
 		protected void SweepCustomAttributeCollection<T> (Collection<T> providers) where T : ICustomAttributeProvider
 		{
@@ -435,6 +447,8 @@ namespace Mono.Linker.Steps
 				SweepDebugInfo (methods);
 
 			foreach (var method in methods) {
+				SweepSecurityInfo (method);
+
 				if (method.HasGenericParameters)
 					SweepGenericParameters (method.GenericParameters);
 

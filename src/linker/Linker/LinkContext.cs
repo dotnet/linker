@@ -117,6 +117,8 @@ namespace Mono.Linker
 			set { _keepTypeForwarderOnlyAssemblies = value; }
 		}
 
+		public bool StripSecurity { get; set; }
+
 #if FEATURE_ILLINK
 		public readonly bool KeepMembersForDebugger = true;
 #else
@@ -240,6 +242,7 @@ namespace Mono.Linker
 			StripDescriptors = true;
 			StripSubstitutions = true;
 			StripLinkAttributes = true;
+			StripSecurity = true;
 			PInvokes = new List<PInvokeInfo> ();
 			Suppressions = new UnconditionalSuppressMessageAttributeState (this);
 			NoWarn = new HashSet<int> ();
