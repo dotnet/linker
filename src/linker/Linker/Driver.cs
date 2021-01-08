@@ -1265,7 +1265,7 @@ namespace Mono.Linker
 			Console.WriteLine ("  --roots MODE ASM          Override default roots assemblies marking rules");
 			Console.WriteLine ("                              all: Keep all members in root assembly");
 			Console.WriteLine ("                              default: Use entry point for applications and all members for libraries");
-			Console.WriteLine ("                              entrypoint: Use assembly entry point as only ");
+			Console.WriteLine ("                              entrypoint: Use assembly entry point as only root in the assembly");
 			Console.WriteLine ("                              visible: Keep all members and types visible outside of root assembly");
 #endif
 			Console.WriteLine ("  --verbose                 Log messages indicating progress and warnings");
