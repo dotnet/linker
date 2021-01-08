@@ -196,8 +196,6 @@ namespace Mono.Linker
 
 		public IReflectionPatternRecorder ReflectionPatternRecorder { get; set; }
 
-		public Statistics Statistics { get; private set; }
-
 #if !FEATURE_ILLINK
 		public string[] ExcludedFeatures { get; set; }
 #endif
@@ -240,7 +238,6 @@ namespace Mono.Linker
 			_annotations = factory.CreateAnnotationStore (this);
 			MarkingHelpers = factory.CreateMarkingHelpers (this);
 			Tracer = factory.CreateTracer (this);
-			Statistics = new Statistics ();
 			ReflectionPatternRecorder = new LoggingReflectionPatternRecorder (this);
 			MarkedKnownMembers = new KnownMembers ();
 			StripDescriptors = true;

@@ -20,28 +20,8 @@ namespace Mono.Linker.Steps
 		int constExprMethodsAdded;
 		MethodDefinition IntPtrSize, UIntPtrSize;
 
-		Statistics.NamedValue MethodsAnalyzedStatistic;
-		Statistics.NamedValue IterationsStatistic;
-		Statistics.NamedValue StubbedMethodsStatistic;
-		Statistics.NamedValue ConstantMethodsUsedStatistic;
-		Statistics.NamedValue ConstantFieldValuesUsedStatistic;
-		Statistics.NamedValue AnalyzedAsConstantStatistic;
-		Statistics.NamedValue AnalyzedAsConstantAfterRewriteStatistic;
-		Statistics.NamedValue GetConstantExpressionMethodCallsStatistic;
-		Statistics.NamedValue MethodsAnalyzedForConstantResultStatistic;
-
 		protected override void Process ()
 		{
-			MethodsAnalyzedStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (MethodsAnalyzedStatistic));
-			IterationsStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (IterationsStatistic));
-			StubbedMethodsStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (StubbedMethodsStatistic));
-			ConstantMethodsUsedStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (ConstantMethodsUsedStatistic));
-			ConstantFieldValuesUsedStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (ConstantFieldValuesUsedStatistic));
-			AnalyzedAsConstantStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (AnalyzedAsConstantStatistic));
-			AnalyzedAsConstantAfterRewriteStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (AnalyzedAsConstantAfterRewriteStatistic));
-			GetConstantExpressionMethodCallsStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (GetConstantExpressionMethodCallsStatistic));
-			MethodsAnalyzedForConstantResultStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (MethodsAnalyzedForConstantResultStatistic));
-
 			var assemblies = Context.Annotations.GetAssemblies ().ToArray ();
 
 			constExprMethods = new Dictionary<MethodDefinition, Instruction> ();
@@ -58,18 +38,11 @@ namespace Mono.Linker.Steps
 
 					RewriteBodies (assembly.MainModule.Types);
 				}
-
-				IterationsStatistic++;
 			} while (constExprMethodsAdded > 0);
-
-			Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), "AllAskedMethods").Value = constExprMethods.Count;
-			Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), "ConstExprMethods").Value = constExprMethods.Values.Where (v => v != null).Count ();
 		}
 
 		bool TryGetConstantResultInstructionForMethod (MethodDefinition method, out Instruction constantResultInstruction)
 		{
-			GetConstantExpressionMethodCallsStatistic++;
-
 			if (constExprMethods.TryGetValue (method, out constantResultInstruction))
 				return constantResultInstruction != null;
 
@@ -91,7 +64,6 @@ namespace Mono.Linker.Steps
 			case MethodAction.ConvertToThrow:
 				return null;
 			case MethodAction.ConvertToStub:
-				StubbedMethodsStatistic++;
 				return CodeRewriterStep.CreateConstantResultInstruction (Context, method);
 			}
 
@@ -102,9 +74,7 @@ namespace Mono.Linker.Steps
 				return null;
 
 			var analyzer = new ConstantExpressionMethodAnalyzer (method);
-			MethodsAnalyzedForConstantResultStatistic++;
 			if (analyzer.Analyze ()) {
-				AnalyzedAsConstantStatistic++;
 				return analyzer.Result;
 			}
 
@@ -142,8 +112,6 @@ namespace Mono.Linker.Steps
 
 		void RewriteBody (MethodDefinition method)
 		{
-			MethodsAnalyzedStatistic++;
-
 			var reducer = new BodyReducer (method.Body, Context);
 
 			//
@@ -171,11 +139,9 @@ namespace Mono.Linker.Steps
 				// Re-run the analyzer in case body change rewrote it to constant expression
 				//
 				var analyzer = new ConstantExpressionMethodAnalyzer (method, reducer.FoldedInstructions);
-				MethodsAnalyzedForConstantResultStatistic++;
 				if (analyzer.Analyze ()) {
 					constExprMethods[method] = analyzer.Result;
 					constExprMethodsAdded++;
-					AnalyzedAsConstantAfterRewriteStatistic++;
 				}
 			}
 		}
@@ -233,7 +199,6 @@ namespace Mono.Linker.Steps
 
 					reducer.Rewrite (i, targetResult);
 					changed = true;
-					ConstantMethodsUsedStatistic++;
 
 					break;
 
@@ -249,7 +214,6 @@ namespace Mono.Linker.Steps
 							break;
 						reducer.Rewrite (i, targetResult);
 						changed = true;
-						ConstantFieldValuesUsedStatistic++;
 					}
 					break;
 
