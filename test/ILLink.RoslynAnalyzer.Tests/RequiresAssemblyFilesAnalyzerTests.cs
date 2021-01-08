@@ -3,22 +3,22 @@ using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 using VerifyCS = ILLink.RoslynAnalyzer.Tests.CSharpAnalyzerVerifier<
-	ILLink.RoslynAnalyzer.SingleFileUnsupportedAnalyzer>;
+	ILLink.RoslynAnalyzer.RequiresAssemblyFilesAnalyzer>;
 
 namespace ILLink.RoslynAnalyzer.Tests
 {
-	public class SingleFileUnsupportedAnalyzerTests
+	public class RequiresAssemblyFilesAnalyzerTests
 	{
-		static Task VerifySingleFileUnsupportedAnalyzer (string source, params DiagnosticResult[] expected)
+		static Task VerifyRequiresAssemblyFilesAnalyzer (string source, params DiagnosticResult[] expected)
 		{
 			// TODO: Remove this once we have the new attribute in the runtime.
 			source = @"namespace System.Diagnostics.CodeAnalysis
 {
 #nullable enable
 	[AttributeUsage (AttributeTargets.Method | AttributeTargets.Constructor, Inherited = false, AllowMultiple = false)]
-	public sealed class SingleFileUnsupportedAttribute : Attribute
+	public sealed class RequiresAssemblyFilesAttribute : Attribute
 	{
-		public SingleFileUnsupportedAttribute (string message)
+		public RequiresAssemblyFilesAttribute (string message)
 		{
 			Message = message;
 		}
@@ -36,10 +36,10 @@ namespace ILLink.RoslynAnalyzer.Tests
 		[Fact]
 		public Task SimpleDiagnostic ()
 		{
-			var TestSingleFileUnsupportedOnMethod = @"
+			var TestRequiresAssemblyFilesOnMethod = @"
 class C
 {
-	[System.Diagnostics.CodeAnalysis.SingleFileUnsupported (""Message from attribute"")]
+	[System.Diagnostics.CodeAnalysis.RequiresAssemblyFiles (""Message from attribute"")]
 	void M1()
 	{
 	}
@@ -49,17 +49,17 @@ class C
 		M1();
 	}
 }";
-			return VerifySingleFileUnsupportedAnalyzer (TestSingleFileUnsupportedOnMethod,
+			return VerifyRequiresAssemblyFilesAnalyzer (TestRequiresAssemblyFilesOnMethod,
 				VerifyCS.Diagnostic ().WithSpan (27, 3, 27, 7).WithArguments ("C.M2()", "Message from attribute"));
 		}
 
 		[Fact]
-		public Task SingleFileUnsupportedWithMessageAndUrl ()
+		public Task RequiresAssemblyFilesWithMessageAndUrl ()
 		{
-			var TestSingleFileUnsupportedWithMessageAndUrl = @"
+			var TestRequiresAssemblyFilesWithMessageAndUrl = @"
 class C
 {
-	[System.Diagnostics.CodeAnalysis.SingleFileUnsupported (""Message from attribute"", Url = ""https://helpurl"")]
+	[System.Diagnostics.CodeAnalysis.RequiresAssemblyFiles (""Message from attribute"", Url = ""https://helpurl"")]
 	void M1()
 	{
 	}
@@ -69,7 +69,7 @@ class C
 		M1();
 	}
 }";
-			return VerifySingleFileUnsupportedAnalyzer (TestSingleFileUnsupportedWithMessageAndUrl,
+			return VerifyRequiresAssemblyFilesAnalyzer (TestRequiresAssemblyFilesWithMessageAndUrl,
 				VerifyCS.Diagnostic ().WithSpan (27, 3, 27, 7).WithArguments ("C.M2()", "Message from attribute", "https://helpurl"));
 		}
 
@@ -79,10 +79,10 @@ class C
 			var TestNoDiagnosticIfMethodNotCalled = @"
 class C
 {
-	[System.Diagnostics.CodeAnalysis.SingleFileUnsupported ("""")]
+	[System.Diagnostics.CodeAnalysis.RequiresAssemblyFiles ("""")]
 	void M() { }
 }";
-			return VerifySingleFileUnsupportedAnalyzer (TestNoDiagnosticIfMethodNotCalled);
+			return VerifyRequiresAssemblyFilesAnalyzer (TestNoDiagnosticIfMethodNotCalled);
 		}
 
 		[Fact]
@@ -96,18 +96,18 @@ class C
 		M2();
 	}
 
-	[System.Diagnostics.CodeAnalysis.SingleFileUnsupported (""Warn from M2"")]
+	[System.Diagnostics.CodeAnalysis.RequiresAssemblyFiles (""Warn from M2"")]
 	void M2()
 	{
 		M3();
 	}
 
-	[System.Diagnostics.CodeAnalysis.SingleFileUnsupported (""Warn from M3"")]
+	[System.Diagnostics.CodeAnalysis.RequiresAssemblyFiles (""Warn from M3"")]
 	void M3()
 	{
 	}
 }";
-			return VerifySingleFileUnsupportedAnalyzer (TestNoDiagnosticIsProducedIfCallerIsAnnotated,
+			return VerifyRequiresAssemblyFilesAnalyzer (TestNoDiagnosticIsProducedIfCallerIsAnnotated,
 				VerifyCS.Diagnostic ().WithSpan (22, 3, 22, 7).WithArguments ("C.M2()", "Warn from M2"));
 		}
 	}

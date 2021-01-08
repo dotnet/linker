@@ -12,23 +12,23 @@ using Microsoft.CodeAnalysis.Operations;
 namespace ILLink.RoslynAnalyzer
 {
 	[DiagnosticAnalyzer (LanguageNames.CSharp)]
-	public sealed class SingleFileUnsupportedAnalyzer : DiagnosticAnalyzer
+	public sealed class RequiresAssemblyFilesAnalyzer : DiagnosticAnalyzer
 	{
 		public const string IL3002 = nameof (IL3002);
-		const string SingleFileUnsupportedAttribute = nameof (SingleFileUnsupportedAttribute);
-		const string FullyQualifiedSingleFileUnsupportedAttribute = "System.Diagnostics.CodeAnalysis." + SingleFileUnsupportedAttribute;
+		const string RequiresAssemblyFilesAttribute = nameof (RequiresAssemblyFilesAttribute);
+		const string FullyQualifiedRequiresAssemblyFilesAttribute = "System.Diagnostics.CodeAnalysis." + RequiresAssemblyFilesAttribute;
 
-		private static readonly DiagnosticDescriptor SingleFileUnsupportedRule = new DiagnosticDescriptor (
+		private static readonly DiagnosticDescriptor RequiresAssemblyFilesRule = new DiagnosticDescriptor (
 			IL3002,
-			new LocalizableResourceString (nameof (Resources.SingleFileUnsupportedTitle),
+			new LocalizableResourceString (nameof (Resources.RequiresAssemblyFilesTitle),
 				Resources.ResourceManager, typeof (Resources)),
-			new LocalizableResourceString (nameof (Resources.SingleFileUnsupportedMessage),
+			new LocalizableResourceString (nameof (Resources.RequiresAssemblyFilesMessage),
 				Resources.ResourceManager, typeof (Resources)),
 			DiagnosticCategory.SingleFile,
 			DiagnosticSeverity.Warning,
 			isEnabledByDefault: true);
 
-		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create (SingleFileUnsupportedRule);
+		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create (RequiresAssemblyFilesRule);
 
 		public override void Initialize (AnalysisContext context)
 		{
@@ -48,19 +48,19 @@ namespace ILLink.RoslynAnalyzer
 
 				context.RegisterOperationAction (operationContext => {
 					// Do not emit any diagnostic if caller is annotated with the attribute too.
-					if (operationContext.ContainingSymbol.HasAttribute (SingleFileUnsupportedAttribute))
+					if (operationContext.ContainingSymbol.HasAttribute (RequiresAssemblyFilesAttribute))
 						return;
 
 					var methodInvocation = (IInvocationOperation) operationContext.Operation;
 					var targetMethod = methodInvocation.TargetMethod;
 
-					if (targetMethod.TryGetAttributeWithMessageOnCtor (FullyQualifiedSingleFileUnsupportedAttribute, out AttributeData? singleFileUnsupportedAttribute)) {
+					if (targetMethod.TryGetAttributeWithMessageOnCtor (FullyQualifiedRequiresAssemblyFilesAttribute, out AttributeData? requiresAssemblyFilesAttribute)) {
 						operationContext.ReportDiagnostic (Diagnostic.Create (
-							SingleFileUnsupportedRule,
+							RequiresAssemblyFilesRule,
 							methodInvocation.Syntax.GetLocation (),
 							targetMethod.OriginalDefinition.ToString (),
-							(string) singleFileUnsupportedAttribute?.ConstructorArguments[0].Value!,
-							singleFileUnsupportedAttribute?.NamedArguments.FirstOrDefault (na => na.Key == "Url").Value.Value?.ToString ()));
+							(string) requiresAssemblyFilesAttribute?.ConstructorArguments[0].Value!,
+							requiresAssemblyFilesAttribute?.NamedArguments.FirstOrDefault (na => na.Key == "Url").Value.Value?.ToString ()));
 					}
 				}, OperationKind.Invocation);
 			});

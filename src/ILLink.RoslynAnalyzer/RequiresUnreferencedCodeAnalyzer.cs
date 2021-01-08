@@ -76,6 +76,9 @@ namespace ILLink.RoslynAnalyzer
 						operationContext.ContainingSymbol.HasAttribute (RequiresUnreferencedCodeAttribute))
 						return;
 
+					if (!method.HasAttribute (RequiresUnreferencedCodeAttribute))
+						return;
+
 					if (method.TryGetAttributeWithMessageOnCtor (FullyQualifiedRequiresUnreferencedCodeAttribute, out AttributeData? requiresUnreferencedCode)) {
 						operationContext.ReportDiagnostic (Diagnostic.Create (
 							RequiresUnreferencedCodeRule,

@@ -14,7 +14,11 @@ namespace ILLink.RoslynAnalyzer
 		/// </summary>
 		internal static bool HasAttribute (this ISymbol symbol, string attributeName)
 		{
-			return symbol.GetAttributes ().Where (a => a?.AttributeClass?.Name == attributeName).Count () > 0;
+			foreach (var attr in symbol.GetAttributes ())
+				if (attr.AttributeClass?.Name == attributeName)
+					return true;
+
+			return false;
 		}
 
 		internal static bool TryGetAttributeWithMessageOnCtor (this ISymbol symbol, string qualifiedAttributeName, out AttributeData? attribute)

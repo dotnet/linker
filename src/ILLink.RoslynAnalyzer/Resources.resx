@@ -135,10 +135,10 @@
   <data name="AvoidAssemblyGetFilesInSingleFileMessage" xml:space="preserve">
     <value>'{0}' will throw for assemblies embedded in a single-file app</value>
   </data>
-  <data name="SingleFileUnsupportedMessage" xml:space="preserve">
+  <data name="RequiresAssemblyFilesMessage" xml:space="preserve">
     <value />
   </data>
-  <data name="SingleFileUnsupportedTitle" xml:space="preserve">
+  <data name="RequiresAssemblyFilesTitle" xml:space="preserve">
     <value />
   </data>
 </root>
