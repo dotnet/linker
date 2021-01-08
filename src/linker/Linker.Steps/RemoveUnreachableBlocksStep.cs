@@ -60,20 +60,13 @@ namespace Mono.Linker.Steps
 			if (method.ReturnType.MetadataType == MetadataType.Void)
 				return null;
 
-			switch (Annotations.GetAction (method)) {
-			case MethodAction.ConvertToThrow:
-				return null;
-			case MethodAction.ConvertToStub:
-				return CodeRewriterStep.CreateConstantResultInstruction (Context, method);
-			}
-
 			if (method.IsIntrinsic () || method.NoInlining)
 				return null;
 
 			if (!Context.IsOptimizationEnabled (CodeOptimizations.IPConstantPropagation, method))
 				return null;
 
-			var analyzer = new ConstantExpressionMethodAnalyzer (method);
+			var analyzer = new ConstantExpressionMethodAnalyzer (Context, method);
 			if (analyzer.Analyze ()) {
 				return analyzer.Result;
 			}
@@ -138,7 +131,7 @@ namespace Mono.Linker.Steps
 				//
 				// Re-run the analyzer in case body change rewrote it to constant expression
 				//
-				var analyzer = new ConstantExpressionMethodAnalyzer (method, reducer.FoldedInstructions);
+				var analyzer = new ConstantExpressionMethodAnalyzer (Context, method, reducer.FoldedInstructions);
 				if (analyzer.Analyze ()) {
 					constExprMethods[method] = analyzer.Result;
 					constExprMethodsAdded = true;
@@ -1028,14 +1021,16 @@ namespace Mono.Linker.Steps
 
 		struct ConstantExpressionMethodAnalyzer
 		{
+			readonly LinkContext context;
 			readonly MethodDefinition method;
 			readonly Collection<Instruction> instructions;
 
 			Stack<Instruction> stack_instr;
 			Dictionary<int, Instruction> locals;
 
-			public ConstantExpressionMethodAnalyzer (MethodDefinition method)
+			public ConstantExpressionMethodAnalyzer (LinkContext context, MethodDefinition method)
 			{
+				this.context = context;
 				this.method = method;
 				instructions = method.Body.Instructions;
 				stack_instr = null;
@@ -1043,19 +1038,24 @@ namespace Mono.Linker.Steps
 				Result = null;
 			}
 
-			public ConstantExpressionMethodAnalyzer (MethodDefinition method, Collection<Instruction> instructions)
+			public ConstantExpressionMethodAnalyzer (LinkContext context, MethodDefinition method, Collection<Instruction> instructions)
+				: this (context, method)
 			{
-				this.method = method;
 				this.instructions = instructions;
-				stack_instr = null;
-				locals = null;
-				Result = null;
 			}
 
 			public Instruction Result { get; private set; }
 
 			public bool Analyze ()
 			{
+				switch (context.Annotations.GetAction (method)) {
+				case MethodAction.ConvertToThrow:
+					return false;
+				case MethodAction.ConvertToStub:
+					Result = CodeRewriterStep.CreateConstantResultInstruction (context, method);
+					return Result != null;
+				}
+
 				var body = method.Body;
 				if (body.HasExceptionHandlers)
 					return false;
