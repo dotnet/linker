@@ -1,4 +1,4 @@
-﻿//
+//
 // SweepStep.cs
 //
 // Author:
@@ -377,10 +377,13 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		static bool RequiresHasSecurity (ISecurityDeclarationProvider provider)
+		protected bool RequiresHasSecurity (ISecurityDeclarationProvider provider)
 		{
 			// According to the spec, HasSecurity is set iff
 			// it has security declarations or a SuppressUnmanagedCodeSecurityAttribute
+
+			if (Context.StripSecurity)
+				return false; // We have already removed security declarations/attributes.
 
 			if (provider.HasSecurityDeclarations)
 				return true;
@@ -389,7 +392,7 @@ namespace Mono.Linker.Steps
 				var attributeType = attr.AttributeType.Resolve ();
 				if (attributeType == null)
 					continue;
-				if (attributeType.Namespace == "System.Security" && attributeType.FullName == "System.Security.SuppressUnmanagedCodeSecurityAttribute")
+				if (attributeType.FullName == "System.Security.SuppressUnmanagedCodeSecurityAttribute")
 					return true;
 			}
 			return false;
@@ -412,10 +415,7 @@ namespace Mono.Linker.Steps
 				return true;
 
 			// StripSecurity removes security custom attributes, even if marked.
-			if (Context.StripSecurity && IsSecurityAttributeType (attribute.AttributeType.Resolve ()))
-				return true;
-
-			return false;
+			return Context.StripSecurity && IsSecurityAttributeType (attribute.AttributeType.Resolve ());
 		}
 
 		static bool IsSecurityAttributeType (TypeDefinition definition)
