@@ -17,7 +17,7 @@ namespace Mono.Linker.Steps
 	public class RemoveUnreachableBlocksStep : BaseStep
 	{
 		Dictionary<MethodDefinition, Instruction> constExprMethods;
-		int constExprMethodsAdded;
+		bool constExprMethodsAdded;
 		MethodDefinition IntPtrSize, UIntPtrSize;
 
 		protected override void Process ()
@@ -30,7 +30,7 @@ namespace Mono.Linker.Steps
 				//
 				// Body rewriting can produce more methods with constant expression
 				//
-				constExprMethodsAdded = 0;
+				constExprMethodsAdded = false;
 
 				foreach (var assembly in assemblies) {
 					if (Annotations.GetAction (assembly) != AssemblyAction.Link)
@@ -38,7 +38,7 @@ namespace Mono.Linker.Steps
 
 					RewriteBodies (assembly.MainModule.Types);
 				}
-			} while (constExprMethodsAdded > 0);
+			} while (constExprMethodsAdded);
 		}
 
 		bool TryGetConstantResultInstructionForMethod (MethodDefinition method, out Instruction constantResultInstruction)
@@ -141,7 +141,7 @@ namespace Mono.Linker.Steps
 				var analyzer = new ConstantExpressionMethodAnalyzer (method, reducer.FoldedInstructions);
 				if (analyzer.Analyze ()) {
 					constExprMethods[method] = analyzer.Result;
-					constExprMethodsAdded++;
+					constExprMethodsAdded = true;
 				}
 			}
 		}
