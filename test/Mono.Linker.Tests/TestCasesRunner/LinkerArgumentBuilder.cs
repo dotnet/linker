@@ -57,11 +57,15 @@ namespace Mono.Linker.Tests.TestCasesRunner
 		public virtual void LinkFromPublicAndFamily (string fileName)
 		{
 #if NETCOREAPP
-			Append ("-l");
+			Append ("-a");
+			Append (fileName);
+			Append ("--roots");
+			Append ("visible");
+			Append (System.IO.Path.GetFileNameWithoutExtension (fileName));
 #else
 			Append ("-r");
-#endif
 			Append (fileName);
+#endif
 		}
 
 		public virtual void IgnoreDescriptors (bool value)

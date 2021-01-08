@@ -57,7 +57,7 @@ namespace Mono.Linker
 		protected readonly Dictionary<MethodDefinition, List<OverrideInformation>> override_methods = new Dictionary<MethodDefinition, List<OverrideInformation>> ();
 		protected readonly Dictionary<MethodDefinition, List<MethodDefinition>> base_methods = new Dictionary<MethodDefinition, List<MethodDefinition>> ();
 		protected readonly Dictionary<AssemblyDefinition, ISymbolReader> symbol_readers = new Dictionary<AssemblyDefinition, ISymbolReader> ();
-		readonly Dictionary<ICustomAttributeProvider, LinkerAttributesInformation> linker_attributes = new Dictionary<ICustomAttributeProvider, LinkerAttributesInformation> ();
+		readonly Dictionary<IMemberDefinition, LinkerAttributesInformation> linker_attributes = new Dictionary<IMemberDefinition, LinkerAttributesInformation> ();
 		protected readonly Dictionary<MethodDefinition, List<(TypeDefinition InstanceType, InterfaceImplementation ImplementationProvider)>> default_interface_implementations = new Dictionary<MethodDefinition, List<(TypeDefinition, InterfaceImplementation)>> ();
 
 		readonly Dictionary<object, Dictionary<IMetadataTokenProvider, object>> custom_annotations = new Dictionary<object, Dictionary<IMetadataTokenProvider, object>> ();
@@ -468,7 +468,7 @@ namespace Mono.Linker
 			return marked_types_with_cctor.Add (type);
 		}
 
-		public bool HasLinkerAttribute<T> (ICustomAttributeProvider member) where T : Attribute
+		public bool HasLinkerAttribute<T> (IMemberDefinition member) where T : Attribute
 		{
 			// Avoid setting up and inserting LinkerAttributesInformation for members without attributes.
 			if (!context.CustomAttributes.HasAttributes (member))

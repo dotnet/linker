@@ -115,15 +115,17 @@ the error code. For example:
 
 #### `IL1031`: Invalid assembly action '{action}'
 
-#### `IL1032`: Trimming assembly '{assemblyFile}' could not be found
+#### `IL1032`: Root assembly '{assemblyFile}' could not be found
 
-#### `IL1033`: Trimming XML descriptor file '{xmlFile}' could not be found
+#### `IL1033`: XML descriptor file '{xmlFile}' could not be found
 
-#### `IL1034`: Trimming assembly '{name}' does not have entry point
+#### `IL1034`: Root assembly '{name}' does not have entry point
 
-#### `IL1035`: Trimming assembly '{name}' cannot use action '{action}'
+#### `IL1035`: Root assembly '{name}' cannot use action '{action}'
 
 #### `IL1036`: Invalid assembly name '{assemblyName}'
+
+#### `IL1037`: Invalid assembly roots mode '{mode}'
 
 ----
 ## Warning Codes

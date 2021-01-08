@@ -9,7 +9,7 @@ namespace Mono.Linker.Tests.Cases.Libraries
 	[Kept]
 	[KeptMember (".ctor()")]
 	[SetupLinkerAction ("copyused", "test")]
-	public class CopyAssemblyWithMainEntryRoot
+	public class CopyUsedAssemblyWithMainEntryRoot
 	{
 		[Kept]
 		public static void Main ()

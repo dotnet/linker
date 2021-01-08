@@ -20,6 +20,7 @@ namespace ILLink.Tasks.Tests
 		{
 			// Ensure that [Required] members are non-null
 			AssemblyPaths = new ITaskItem[0];
+			RootAssemblyNames = new ITaskItem[0];
 		}
 
 		public MockDriver CreateDriver ()
@@ -100,27 +101,13 @@ namespace ILLink.Tasks.Tests
 
 		public CustomLogger Logger { get; private set; }
 
-		public IEnumerable<string> GetRootEntryPointAssemblies ()
+		public IEnumerable<string> GetRootAssemblies ()
 		{
 			foreach (var step in context.Pipeline.GetSteps ()) {
-				if (!(step is TrimUsingEntryPoint))
+				if (!(step is RootAssemblyInput))
 					continue;
 
-				var assemblyName = (string) (typeof (TrimUsingEntryPoint).GetField ("fileName", BindingFlags.NonPublic | BindingFlags.Instance).GetValue (step));
-				if (assemblyName == null)
-					continue;
-
-				yield return assemblyName;
-			}
-		}
-
-		public IEnumerable<string> GetRootVisibleAssemblies ()
-		{
-			foreach (var step in context.Pipeline.GetSteps ()) {
-				if (!(step is TrimUsingVisibleMembers))
-					continue;
-
-				var assemblyName = (string) (typeof (TrimUsingVisibleMembers).GetField ("fileName", BindingFlags.NonPublic | BindingFlags.Instance).GetValue (step));
+				var assemblyName = (string) (typeof (RootAssemblyInput).GetField ("fileName", BindingFlags.NonPublic | BindingFlags.Instance).GetValue (step));
 				if (assemblyName == null)
 					continue;
 
@@ -181,7 +168,7 @@ namespace ILLink.Tasks.Tests
 		protected override List<BaseStep> CreateDefaultResolvers ()
 		{
 			return new List<BaseStep> () {
-				new TrimUsingEntryPoint (null)
+				new RootAssemblyInput (null)
 			};
 		}
 	}

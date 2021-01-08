@@ -125,27 +125,12 @@ namespace ILLink.Tasks.Tests
 		public void TestRootEntryPointAssemblyNames (string[] rootAssemblyNames)
 		{
 			var task = new MockTask () {
-				RootAssemblyEntryPoint = rootAssemblyNames.Select (a => new TaskItem (a)).ToArray ()
+				RootAssemblyNames = rootAssemblyNames.Select (a => new TaskItem (a)).ToArray ()
 			};
 
 			using (var driver = task.CreateDriver ()) {
 				var expectedRoots = rootAssemblyNames;
-				var actualRoots = driver.GetRootEntryPointAssemblies ();
-				Assert.Equal (rootAssemblyNames.OrderBy (r => r), actualRoots.OrderBy (r => r));
-			}
-		}
-
-		[Theory]
-		[InlineData (new object[] { new string[] { "illink.dll" } })]
-		public void TestRootVisibleAssemblyNames (string[] rootAssemblyNames)
-		{
-			var task = new MockTask () {
-				RootAssemblyVisible = rootAssemblyNames.Select (a => new TaskItem (a)).ToArray ()
-			};
-
-			using (var driver = task.CreateDriver ()) {
-				var expectedRoots = rootAssemblyNames;
-				var actualRoots = driver.GetRootVisibleAssemblies ();
+				var actualRoots = driver.GetRootAssemblies ();
 				Assert.Equal (rootAssemblyNames.OrderBy (r => r), actualRoots.OrderBy (r => r));
 			}
 		}
@@ -635,7 +620,7 @@ namespace ILLink.Tasks.Tests
 		public void TestErrorHandling ()
 		{
 			var task = new MockTask () {
-				RootAssemblyEntryPoint = new ITaskItem[] { new TaskItem ("MissingAssembly.dll") }
+				RootAssemblyNames = new ITaskItem[] { new TaskItem ("MissingAssembly.dll") }
 			};
 			task.BuildEngine = new MockBuildEngine ();
 			Assert.False (task.Execute ());

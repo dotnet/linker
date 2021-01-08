@@ -36,18 +36,16 @@ namespace ILLink.Tasks
 		public ITaskItem[] ReferenceAssemblyPaths { get; set; }
 
 		/// <summary>
-		///   The names of the assemblies to root using their entry point.
-		///   This value should be full file path.
-		///   Maps to '-a' command line option
+		///   The names of the assemblies to root. This should contain
+		///   assembly names without an extension, not file names or
+		///   paths. Exactly which parts of the assemblies get rooted
+		///   is subject to change. Currently these get passed to
+		///   illink with "-a", which roots the entry point for
+		///   executables, and everything for libraries. To control
+		///   the behaviour explicitly, set RootsMode metadata.
 		/// </summary>
-		public ITaskItem[] RootAssemblyEntryPoint { get; set; }
-
-		/// <summary>
-		///   The names of the assemblies to root using their accessible members
-		///   This value should be full file path.
-		///   Maps to '-l' command line option
-		/// </summary>
-		public ITaskItem[] RootAssemblyVisible { get; set; }
+		[Required]
+		public ITaskItem[] RootAssemblyNames { get; set; }
 
 		/// <summary>
 		///   The directory in which to place linked assemblies.
@@ -273,14 +271,17 @@ namespace ILLink.Tasks
 					args.Append ("-x ").AppendLine (Quote (rootFile.ItemSpec));
 			}
 
-			if (RootAssemblyEntryPoint != null) {
-				foreach (var assemblyItem in RootAssemblyEntryPoint)
-					args.Append ("-a ").AppendLine (Quote (assemblyItem.ItemSpec));
-			}
+			foreach (var assemblyItem in RootAssemblyNames) {
+				args.Append ("-a ").AppendLine (Quote (assemblyItem.ItemSpec));
 
-			if (RootAssemblyVisible != null) {
-				foreach (var assemblyItem in RootAssemblyVisible)
-					args.Append ("-l ").AppendLine (Quote (assemblyItem.ItemSpec));
+				string rootMode = assemblyItem.GetMetadata ("Roots");
+				if (!string.IsNullOrEmpty (rootMode)) {
+					var assemblyName = Path.GetFileNameWithoutExtension (assemblyItem.ItemSpec);
+
+					args.Append ("--roots ");
+					args.AppendLine (rootMode);
+					args.Append (' ').AppendLine (Quote (assemblyName));
+				}
 			}
 
 			HashSet<string> assemblyNames = new HashSet<string> (StringComparer.OrdinalIgnoreCase);

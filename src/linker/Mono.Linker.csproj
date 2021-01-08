@@ -46,8 +46,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(MonoBuild)' != ''">
-    <Compile Remove="Linker.Steps\TrimUsingEntryPoint.cs" />
-    <Compile Remove="Linker.Steps\TrimUsingVisibleMembers.cs" />
+    <Compile Remove="Linker.Steps\RootAssemblyInputStep.cs" />
     <ProjectReference Condition="'$(UseCecilPackage)' != 'true'" Include="..\..\external\cecil\symbols\mdb\Mono.Cecil.Mdb.csproj" />
     <PackageReference Include="Microsoft.Bcl.HashCode" Version="1.1.0" />
   </ItemGroup>

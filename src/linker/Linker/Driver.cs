@@ -42,7 +42,7 @@ namespace Mono.Linker
 	{
 
 #if FEATURE_ILLINK
-		const string resolvers = "-a|-l|-x";
+		const string resolvers = "-a|-x";
 		const string _linker = "IL Linker";
 #else
 		const string resolvers = "-a|-i|-r|-x";
@@ -417,6 +417,25 @@ namespace Mono.Linker
 
 						continue;
 
+					case "--roots": {
+							if (arguments.Count < 2) {
+								ErrorMissingArgument (token);
+								return -1;
+							}
+
+							var rmode = ParseAssemblyRootsMode (arguments.Dequeue ());
+							if (action == null)
+								return -1;
+
+							string assemblyName = arguments.Dequeue ();
+							if (!IsValidAssemblyName (assemblyName)) {
+								context.LogError ($"Invalid assembly name '{assemblyName}'", 1036);
+								return -1;
+							}
+
+							context.RegisterAssemblyRootsMode (assemblyName, rmode.Value);
+							continue;
+						}
 					case "--link-attributes":
 						if (arguments.Count < 1) {
 							ErrorMissingArgument (token);
@@ -536,25 +555,24 @@ namespace Mono.Linker
 
 						context.UserAction = action.Value;
 						continue;
-					case "p": {
-							if (arguments.Count < 2) {
-								ErrorMissingArgument (token);
-								return -1;
-							}
-
-							action = ParseAssemblyAction (arguments.Dequeue ());
-							if (action == null)
-								return -1;
-
-							string assemblyName = arguments.Dequeue ();
-							if (!IsValidAssemblyName (assemblyName)) {
-								context.LogError ($"Invalid assembly name '{assemblyName}'", 1036);
-								return -1;
-							}
-
-							context.RegisterAssemblyAction (assemblyName, action.Value);
-							continue;
+					case "p":
+						if (arguments.Count < 2) {
+							ErrorMissingArgument (token);
+							return -1;
 						}
+
+						action = ParseAssemblyAction (arguments.Dequeue ());
+						if (action == null)
+							return -1;
+
+						string assemblyName = arguments.Dequeue ();
+						if (!IsValidAssemblyName (assemblyName)) {
+							context.LogError ($"Invalid assembly name '{assemblyName}'", 1036);
+							return -1;
+						}
+
+						context.RegisterAssemblyAction (assemblyName, action.Value);
+						continue;
 					case "t":
 						context.KeepTypeForwarderOnlyAssemblies = true;
 						continue;
@@ -565,7 +583,7 @@ namespace Mono.Linker
 								return -1;
 
 							if (!File.Exists (xmlFile)) {
-								context.LogError ($"Trimming XML descriptor file '{xmlFile}' could not be found'", 1033);
+								context.LogError ($"XML descriptor file '{xmlFile}' could not be found'", 1033);
 								return -1;
 							}
 
@@ -582,20 +600,7 @@ namespace Mono.Linker
 								return -1;
 							}
 
-							inputs.Add (new TrimUsingEntryPoint (assemblyFile));
-							continue;
-						}
-					case "l": {
-							string assemblyFile = null;
-							if (!GetStringParam (token, l => assemblyFile = l))
-								return -1;
-
-							if (!File.Exists (assemblyFile)) {
-								context.LogError ($"Trimming assembly '{assemblyFile}' could not be found'", 1032);
-								return -1;
-							}
-
-							inputs.Add (new TrimUsingVisibleMembers (assemblyFile));
+							inputs.Add (new RootAssemblyInput (assemblyFile));
 							continue;
 						}
 #else
@@ -772,7 +777,10 @@ namespace Mono.Linker
 			//
 			// Pipeline setup with all steps enabled
 			//
-			// TrimUsingEntryPoint, TrimUsingVisibleMembers or ResolveFromXmlStep [at least one of them]
+			// RootAssemblyInputStep or ResolveFromXmlStep [at least one of them]
+			// [mono only] ResolveFromAssemblyStep [optional, possibly many]
+			// ResolveFromXmlStep [optional, possibly many]
+			// [mono only] ResolveFromXApiStep [optional, possibly many]
 			// LoadReferencesStep
 			// [mono only] LoadI18nAssemblies
 			// BlacklistStep
@@ -1041,6 +1049,23 @@ namespace Mono.Linker
 			return null;
 		}
 
+		AssemblyRootsMode? ParseAssemblyRootsMode (string s)
+		{
+			switch (s.ToLowerInvariant ()) {
+			case "default":
+				return AssemblyRootsMode.Default;
+			case "all":
+				return AssemblyRootsMode.AllMembers;
+			case "visible":
+				return AssemblyRootsMode.VisibleMembers;
+			case "entrypoint":
+				return AssemblyRootsMode.EntryPoint;
+			}
+
+			context.LogError ($"Invalid assembly roots mode '{s}'", 1037);
+			return null;
+		}
+
 		bool GetWarnVersion (string text, out WarnVersion version)
 		{
 			if (int.TryParse (text, out int versionNum)) {
@@ -1158,6 +1183,12 @@ namespace Mono.Linker
 		protected virtual LinkContext GetDefaultContext (Pipeline pipeline, ILogger logger)
 		{
 			return new LinkContext (pipeline, logger ?? new ConsoleLogger ()) {
+#if FEATURE_ILLINK
+				CoreAction = AssemblyAction.Link,
+#else
+				CoreAction = AssemblyAction.Skip,
+#endif
+				UserAction = AssemblyAction.Link,
 				OutputDirectory = "output",
 			};
 		}
@@ -1178,9 +1209,8 @@ namespace Mono.Linker
 
 #if FEATURE_ILLINK
 			Console.WriteLine ($"illink [options] {resolvers} file");
-			Console.WriteLine ("  -a                  Trim output using assembly file entry point");
-			Console.WriteLine ("  -l                  Trim output using assembly file visible members");
-			Console.WriteLine ("  -x                  Trim output using XML descriptor file");
+			Console.WriteLine ("  -a FILE             Assembly file used as root assembly");
+			Console.WriteLine ("  -x FILE             XML descriptor file with members to be kept");
 #else
 			Console.WriteLine ($"monolinker [options] {resolvers} file");
 			Console.WriteLine ("  -a                  Link from a list of assemblies");
@@ -1211,7 +1241,6 @@ namespace Mono.Linker
 #endif
 			Console.WriteLine ("                        copy: Analyze whole assembly and save it to the output");
 			Console.WriteLine ("                        copyused: Same as copy but only for assemblies which are needed");
-			Console.WriteLine ("                        clean: Optimizes the assembly public API");
 			Console.WriteLine ("                        link: Remove any unused IL or metadata and optimizes the assembly");
 			Console.WriteLine ("                        skip: Do not process the assembly");
 			Console.WriteLine ("                        addbypassngen: Add BypassNGenAttribute to unused methods");
@@ -1233,6 +1262,13 @@ namespace Mono.Linker
 			Console.WriteLine ("  --keep-facades            Keep assemblies with type-forwarders (short -t). Defaults to false");
 			Console.WriteLine ("  --skip-unresolved         Ignore unresolved types, methods, and assemblies. Defaults to false");
 			Console.WriteLine ("  --output-pinvokes PATH    Output a JSON file with all modules and entry points of the P/Invokes found");
+#if FEATURE_ILLINK
+			Console.WriteLine ("  --roots MODE ASM          Override default roots assemblies marking rules");
+			Console.WriteLine ("                              all: Keep all members in root assembly");
+			Console.WriteLine ("                              default: Use entry point for applications and all members for libraries");
+			Console.WriteLine ("                              entrypoint: Use assembly entry point as only ");
+			Console.WriteLine ("                              visible: Keep all members and types visible outside of root assembly");
+#endif
 			Console.WriteLine ("  --verbose                 Log messages indicating progress and warnings");
 			Console.WriteLine ("  --nowarn WARN             Disable specific warning messages");
 			Console.WriteLine ("  --warn VERSION            Only print out warnings with version <= VERSION. Defaults to '9999'");

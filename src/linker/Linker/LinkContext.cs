@@ -57,6 +57,7 @@ namespace Mono.Linker
 		AssemblyAction _coreAction;
 		AssemblyAction _userAction;
 		readonly Dictionary<string, AssemblyAction> _actions;
+		readonly Dictionary<string, AssemblyRootsMode> _roots;
 		string _outputDirectory;
 		readonly Dictionary<string, string> _parameters;
 		bool _linkSymbols;
@@ -217,6 +218,7 @@ namespace Mono.Linker
 			};
 			_typeNameResolver = new TypeNameResolver (this);
 			_actions = new Dictionary<string, AssemblyAction> ();
+			_roots = new Dictionary<string, AssemblyRootsMode> ();
 			_parameters = new Dictionary<string, string> (StringComparer.Ordinal);
 			_readerParameters = new ReaderParameters {
 				AssemblyResolver = _resolver
@@ -251,13 +253,6 @@ namespace Mono.Linker
 				CodeOptimizations.IPConstantPropagation;
 
 			Optimizations = new CodeOptimizationsSettings (defaultOptimizations);
-
-#if FEATURE_ILLINK
-			CoreAction = AssemblyAction.Link;
-#else
-			CoreAction = AssemblyAction.Skip;
-#endif
-			UserAction = AssemblyAction.Link;
 		}
 
 		public void SetFeatureValue (string feature, bool value)
@@ -452,6 +447,19 @@ namespace Mono.Linker
 				return name.Name.StartsWith ("System")
 					|| name.Name.StartsWith ("Microsoft");
 			}
+		}
+
+		public void RegisterAssemblyRootsMode (string assemblyName, AssemblyRootsMode mode)
+		{
+			_roots[assemblyName] = mode;
+		}
+
+		public AssemblyRootsMode GetAssemblyRootsMode (AssemblyNameDefinition name)
+		{
+			if (_roots.TryGetValue (name.Name, out AssemblyRootsMode mode))
+				return mode;
+
+			return AssemblyRootsMode.Default;
 		}
 
 		public virtual AssemblyDefinition[] GetAssemblies ()

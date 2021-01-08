@@ -10,7 +10,7 @@ namespace Mono.Linker.Tests.Cases.Libraries
 	[KeptMember (".ctor()")]
 	[SetupLinkerAction ("copyused", "test")]
 	[SetupLinkerLinkPublicAndFamily]
-	public class CopyAssemblyWithPublicRoots
+	public class CopyUsedAssemblyWithPublicRoots
 	{
 		[Kept]
 		public static void Main ()
