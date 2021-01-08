@@ -249,7 +249,8 @@ namespace Mono.Linker.Steps
 
 		protected bool IsFullyPreserved (TypeDefinition type)
 		{
-			if (Annotations.TryGetPreserve (type, out TypePreserve preserve) && preserve == TypePreserve.All)
+			if (Annotations.TryGetPreserve (type, out TypePreserve preserve) && preserve == TypePreserve.All &&
+				Annotations.TryGetPreserveAccessibility (type, out preserve) && preserve == 0)
 				return true;
 
 			switch (Annotations.GetAction (type.Module.Assembly)) {
@@ -2248,9 +2249,10 @@ namespace Mono.Linker.Steps
 
 			var di = new DependencyInfo (DependencyKind.TypePreserve, type);
 
-			switch (preserve & ~TypePreserve.AccessibilityMask) {
+			switch (preserve) {
 			case TypePreserve.All:
-				switch (preserve & TypePreserve.AccessibilityMask) {
+				Annotations.TryGetPreserveAccessibility (type, out preserve);
+				switch (preserve) {
 				case TypePreserve.AccessibilityVisible:
 					if (type.HasMethods)
 						MarkMethodsIf (type.Methods, IsMethodVisible, di, type);

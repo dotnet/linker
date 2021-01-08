@@ -42,7 +42,7 @@ namespace ILLink.Tasks
 		///   is subject to change. Currently these get passed to
 		///   illink with "-a", which roots the entry point for
 		///   executables, and everything for libraries. To control
-		///   the behaviour explicitly, set RootsMode metadata.
+		///   the behaviour explicitly, set RootMode metadata.
 		/// </summary>
 		[Required]
 		public ITaskItem[] RootAssemblyNames { get; set; }
@@ -274,7 +274,7 @@ namespace ILLink.Tasks
 			foreach (var assemblyItem in RootAssemblyNames) {
 				args.Append ("-a ").AppendLine (Quote (assemblyItem.ItemSpec));
 
-				string rootMode = assemblyItem.GetMetadata ("Roots");
+				string rootMode = assemblyItem.GetMetadata ("RootMode");
 				if (!string.IsNullOrEmpty (rootMode)) {
 					var assemblyName = Path.GetFileNameWithoutExtension (assemblyItem.ItemSpec);
 

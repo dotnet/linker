@@ -293,7 +293,22 @@ namespace Mono.Linker
 
 		public bool TryGetPreserve (TypeDefinition type, out TypePreserve preserve)
 		{
-			return preserved_types.TryGetValue (type, out preserve);
+			if (preserved_types.TryGetValue (type, out preserve)) {
+				preserve &= ~TypePreserve.AccessibilityMask;
+				return true;
+			}
+
+			return false;
+		}
+
+		public bool TryGetPreserveAccessibility (TypeDefinition type, out TypePreserve preserve)
+		{
+			if (preserved_types.TryGetValue (type, out preserve)) {
+				preserve &= TypePreserve.AccessibilityMask;
+				return true;
+			}
+
+			return false;
 		}
 
 		public bool TryGetMethodStubValue (MethodDefinition method, out object value)

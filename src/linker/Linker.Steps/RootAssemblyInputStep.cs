@@ -50,7 +50,6 @@ namespace Mono.Linker.Steps
 					return;
 				}
 
-				Annotations.Mark (ep.DeclaringType.Module, di);
 				Annotations.Mark (ep.DeclaringType, di);
 				Annotations.AddPreservedMethod (ep.DeclaringType, ep);
 				break;
