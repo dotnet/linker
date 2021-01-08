@@ -62,6 +62,7 @@ namespace Mono.Linker.Steps
 				IterationsStatistic++;
 			} while (constExprMethodsAdded > 0);
 
+			Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), "AllAskedMethods").Value = constExprMethods.Count;
 			Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), "ConstExprMethods").Value = constExprMethods.Values.Where (v => v != null).Count ();
 		}
 
@@ -196,9 +197,6 @@ namespace Mono.Linker.Steps
 					if (md == null)
 						break;
 
-					if (!TryGetConstantResultInstructionForMethod (md, out targetResult))
-						break;
-
 					if (md.CallingConvention == MethodCallingConvention.VarArg)
 						break;
 
@@ -229,6 +227,9 @@ namespace Mono.Linker.Steps
 						if (hasByRefParameter)
 							break;
 					}
+
+					if (!TryGetConstantResultInstructionForMethod (md, out targetResult))
+						break;
 
 					reducer.Rewrite (i, targetResult);
 					changed = true;
