@@ -791,7 +791,6 @@ namespace Mono.Linker
 			// LinkAttributesStep [optional, possibly many]
 			// DynamicDependencyLookupStep
 			// [mono only] PreserveCalendarsStep [optional]
-			// TypeMapStep
 			// BodySubstituterStep [optional]
 			// RemoveSecurityStep [optional]
 			// [mono only] RemoveFeaturesStep [optional]
@@ -1337,7 +1336,6 @@ namespace Mono.Linker
 			p.AppendStep (new LoadReferencesStep ());
 			p.AppendStep (new BlacklistStep ());
 			p.AppendStep (new DynamicDependencyLookupStep ());
-			p.AppendStep (new TypeMapStep ());
 			p.AppendStep (new MarkStep ());
 			p.AppendStep (new ValidateVirtualMethodAnnotationsStep ());
 			p.AppendStep (new ProcessWarningsStep ());
