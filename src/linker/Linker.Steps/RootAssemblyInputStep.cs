@@ -28,7 +28,7 @@ namespace Mono.Linker.Steps
 				Annotations.Mark (assembly.MainModule, di);
 				goto case AssemblyAction.Copy;
 			case AssemblyAction.Copy:
-				// Mark Step wil take care of marking whole assembly
+				// Mark Step will take care of marking whole assembly
 				return;
 			case AssemblyAction.Link:
 				break;
