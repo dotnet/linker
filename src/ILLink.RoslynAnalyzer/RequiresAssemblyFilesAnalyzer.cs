@@ -15,8 +15,8 @@ namespace ILLink.RoslynAnalyzer
 	public sealed class RequiresAssemblyFilesAnalyzer : DiagnosticAnalyzer
 	{
 		public const string IL3002 = nameof (IL3002);
-		const string RequiresAssemblyFilesAttribute = nameof (RequiresAssemblyFilesAttribute);
-		const string FullyQualifiedRequiresAssemblyFilesAttribute = "System.Diagnostics.CodeAnalysis." + RequiresAssemblyFilesAttribute;
+		internal const string RequiresAssemblyFilesAttribute = nameof (RequiresAssemblyFilesAttribute);
+		internal const string FullyQualifiedRequiresAssemblyFilesAttribute = "System.Diagnostics.CodeAnalysis." + RequiresAssemblyFilesAttribute;
 
 		private static readonly DiagnosticDescriptor RequiresAssemblyFilesRule = new DiagnosticDescriptor (
 			IL3002,
@@ -47,22 +47,50 @@ namespace ILLink.RoslynAnalyzer
 					return;
 
 				context.RegisterOperationAction (operationContext => {
+					var methodInvocation = (IInvocationOperation) operationContext.Operation;
+					CheckCalledMember (operationContext, methodInvocation.TargetMethod);
+				}, OperationKind.Invocation);
+
+				context.RegisterOperationAction (operationContext => {
+					var objectCreation = (IObjectCreationOperation) operationContext.Operation;
+					CheckCalledMember (operationContext, objectCreation.Constructor);
+				}, OperationKind.ObjectCreation);
+
+				context.RegisterOperationAction (operationContext => {
+					var propAccess = (IPropertyReferenceOperation) operationContext.Operation;
+					var prop = propAccess.Property;
+					var usageInfo = propAccess.GetValueUsageInfo (prop);
+					if (usageInfo.HasFlag (ValueUsageInfo.Read) && prop.GetMethod != null)
+						CheckCalledMember (operationContext, prop.GetMethod);
+
+					if (usageInfo.HasFlag (ValueUsageInfo.Write) && prop.SetMethod != null)
+						CheckCalledMember (operationContext, prop.SetMethod);
+
+					CheckCalledMember (operationContext, prop);
+				}, OperationKind.PropertyReference);
+
+				context.RegisterOperationAction (operationContext => {
+					var eventRef = (IEventReferenceOperation) operationContext.Operation;
+					CheckCalledMember (operationContext, eventRef.Member);
+				}, OperationKind.EventReference);
+
+				static void CheckCalledMember (
+					OperationAnalysisContext operationContext,
+					ISymbol member)
+				{
 					// Do not emit any diagnostic if caller is annotated with the attribute too.
 					if (operationContext.ContainingSymbol.HasAttribute (RequiresAssemblyFilesAttribute))
 						return;
 
-					var methodInvocation = (IInvocationOperation) operationContext.Operation;
-					var targetMethod = methodInvocation.TargetMethod;
-
-					if (targetMethod.TryGetAttributeWithMessageOnCtor (FullyQualifiedRequiresAssemblyFilesAttribute, out AttributeData? requiresAssemblyFilesAttribute)) {
+					if (member.TryGetRequiresAssemblyFileAttribute (out AttributeData? requiresAssemblyFilesAttribute)) {
 						operationContext.ReportDiagnostic (Diagnostic.Create (
 							RequiresAssemblyFilesRule,
-							methodInvocation.Syntax.GetLocation (),
-							targetMethod.OriginalDefinition.ToString (),
-							(string) requiresAssemblyFilesAttribute?.ConstructorArguments[0].Value!,
+							operationContext.Operation.Syntax.GetLocation (),
+							member.OriginalDefinition.ToString (),
+							requiresAssemblyFilesAttribute?.NamedArguments.FirstOrDefault (na => na.Key == "Message").Value.Value?.ToString (),
 							requiresAssemblyFilesAttribute?.NamedArguments.FirstOrDefault (na => na.Key == "Url").Value.Value?.ToString ()));
 					}
-				}, OperationKind.Invocation);
+				}
 			});
 		}
 	}

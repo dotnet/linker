@@ -21,6 +21,19 @@ namespace ILLink.RoslynAnalyzer
 			return false;
 		}
 
+		internal static bool TryGetRequiresAssemblyFileAttribute (this ISymbol symbol, out AttributeData? attribute)
+		{
+			attribute = null;
+			if (symbol.GetAttributes ().FirstOrDefault (attr => attr.AttributeClass is { } attrClass &&
+				attrClass.HasName (RequiresAssemblyFilesAnalyzer.FullyQualifiedRequiresAssemblyFilesAttribute)) is var _attribute &&
+				_attribute != null && _attribute.ConstructorArguments.Length == 0) {
+				attribute = _attribute;
+				return true;
+			}
+
+			return false;
+		}
+
 		internal static bool TryGetAttributeWithMessageOnCtor (this ISymbol symbol, string qualifiedAttributeName, out AttributeData? attribute)
 		{
 			attribute = null;
