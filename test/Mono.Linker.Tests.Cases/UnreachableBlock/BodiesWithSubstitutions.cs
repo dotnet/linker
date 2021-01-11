@@ -255,7 +255,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 			get {
 				// Need to call something with constant value to force processing of this method
 				_ = Property;
-				return true; 
+				return true;
 			} // Substitution will set this to false
 		}
 
