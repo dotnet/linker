@@ -39,7 +39,7 @@ namespace Mono.Linker.Steps
 
 	public class OutputStep : BaseStep
 	{
-		private static Dictionary<UInt16, TargetArchitecture> architectureMap;
+		private Dictionary<UInt16, TargetArchitecture> architectureMap;
 
 		private enum NativeOSOverride
 		{
@@ -57,7 +57,7 @@ namespace Mono.Linker.Steps
 			assembliesWritten = new List<string> ();
 		}
 
-		static TargetArchitecture CalculateArchitecture (TargetArchitecture readyToRunArch)
+		TargetArchitecture CalculateArchitecture (TargetArchitecture readyToRunArch)
 		{
 			if (architectureMap == null) {
 				architectureMap = new Dictionary<UInt16, TargetArchitecture> ();
@@ -76,11 +76,15 @@ namespace Mono.Linker.Steps
 			throw new BadImageFormatException ("unrecognized module attributes");
 		}
 
+		protected override bool ConditionToProcess ()
+		{
+			return Context.ErrorsCount == 0;
+		}
+
 		protected override void Process ()
 		{
 			CheckOutputDirectory ();
 			OutputPInvokes ();
-			OutputSuppressions ();
 			Tracer.Finish ();
 		}
 
@@ -173,14 +177,6 @@ namespace Mono.Linker.Steps
 				var jsonSerializer = new DataContractJsonSerializer (typeof (List<PInvokeInfo>));
 				jsonSerializer.WriteObject (fs, values);
 			}
-		}
-
-		public void OutputSuppressions ()
-		{
-			if (!Context.OutputWarningSuppressions)
-				return;
-
-			Context.WarningSuppressionWriter.OutputSuppressions ();
 		}
 
 		protected virtual void DeleteAssembly (AssemblyDefinition assembly, string directory)
