@@ -2,7 +2,6 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System.Linq;
 using Microsoft.CodeAnalysis;
 
 namespace ILLink.RoslynAnalyzer
@@ -24,11 +23,13 @@ namespace ILLink.RoslynAnalyzer
 		internal static bool TryGetRequiresAssemblyFileAttribute (this ISymbol symbol, out AttributeData? attribute)
 		{
 			attribute = null;
-			if (symbol.GetAttributes ().FirstOrDefault (attr => attr.AttributeClass is { } attrClass &&
-				attrClass.HasName (RequiresAssemblyFilesAnalyzer.FullyQualifiedRequiresAssemblyFilesAttribute)) is var _attribute &&
-				_attribute != null && _attribute.ConstructorArguments.Length == 0) {
-				attribute = _attribute;
-				return true;
+			foreach (var _attribute in symbol.GetAttributes ()) {
+				if (_attribute.AttributeClass is var attrClass && attrClass != null &&
+					attrClass.HasName (RequiresAssemblyFilesAnalyzer.FullyQualifiedRequiresAssemblyFilesAttribute) &&
+					_attribute.ConstructorArguments.Length == 0) {
+					attribute = _attribute;
+					return true;
+				}
 			}
 
 			return false;
@@ -37,12 +38,13 @@ namespace ILLink.RoslynAnalyzer
 		internal static bool TryGetAttributeWithMessageOnCtor (this ISymbol symbol, string qualifiedAttributeName, out AttributeData? attribute)
 		{
 			attribute = null;
-			if (symbol.GetAttributes ().FirstOrDefault (attr => attr.AttributeClass is { } attrClass &&
-				attrClass.HasName (qualifiedAttributeName)) is var _attribute &&
-				_attribute != null && _attribute.ConstructorArguments.Length >= 1 &&
-				_attribute.ConstructorArguments[0] is { Type: { SpecialType: SpecialType.System_String } } ctorArg) {
-				attribute = _attribute;
-				return true;
+			foreach (var _attribute in symbol.GetAttributes ()) {
+				if (_attribute.AttributeClass is var attrClass && attrClass != null &&
+					attrClass.HasName (qualifiedAttributeName) && _attribute.ConstructorArguments.Length >= 1 &&
+					_attribute.ConstructorArguments[0] is { Type: { SpecialType: SpecialType.System_String } } ctorArg) {
+					attribute = _attribute;
+					return true;
+				}
 			}
 
 			return false;

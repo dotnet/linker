@@ -18,7 +18,7 @@ namespace ILLink.RoslynAnalyzer
 		const string RequiresUnreferencedCodeAttribute = nameof (RequiresUnreferencedCodeAttribute);
 		const string FullyQualifiedRequiresUnreferencedCodeAttribute = "System.Diagnostics.CodeAnalysis." + RequiresUnreferencedCodeAttribute;
 
-		private static readonly DiagnosticDescriptor RequiresUnreferencedCodeRule = new DiagnosticDescriptor (
+		static readonly DiagnosticDescriptor s_requiresUnreferencedCodeRule = new DiagnosticDescriptor (
 			DiagnosticId,
 			new LocalizableResourceString (nameof (Resources.RequiresUnreferencedCodeAnalyzerTitle),
 			Resources.ResourceManager, typeof (Resources)),
@@ -28,7 +28,7 @@ namespace ILLink.RoslynAnalyzer
 			DiagnosticSeverity.Warning,
 			isEnabledByDefault: true);
 
-		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create (RequiresUnreferencedCodeRule);
+		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create (s_requiresUnreferencedCodeRule);
 
 		public override void Initialize (AnalysisContext context)
 		{
@@ -81,7 +81,7 @@ namespace ILLink.RoslynAnalyzer
 
 					if (method.TryGetAttributeWithMessageOnCtor (FullyQualifiedRequiresUnreferencedCodeAttribute, out AttributeData? requiresUnreferencedCode)) {
 						operationContext.ReportDiagnostic (Diagnostic.Create (
-							RequiresUnreferencedCodeRule,
+							s_requiresUnreferencedCodeRule,
 							operationContext.Operation.Syntax.GetLocation (),
 							method.OriginalDefinition.ToString (),
 							(string) requiresUnreferencedCode!.ConstructorArguments[0].Value!,

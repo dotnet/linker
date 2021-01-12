@@ -18,7 +18,7 @@ namespace ILLink.RoslynAnalyzer
 		internal const string RequiresAssemblyFilesAttribute = nameof (RequiresAssemblyFilesAttribute);
 		internal const string FullyQualifiedRequiresAssemblyFilesAttribute = "System.Diagnostics.CodeAnalysis." + RequiresAssemblyFilesAttribute;
 
-		private static readonly DiagnosticDescriptor RequiresAssemblyFilesRule = new DiagnosticDescriptor (
+		static readonly DiagnosticDescriptor s_requiresAssemblyFilesRule = new DiagnosticDescriptor (
 			IL3002,
 			new LocalizableResourceString (nameof (Resources.RequiresAssemblyFilesTitle),
 				Resources.ResourceManager, typeof (Resources)),
@@ -28,7 +28,7 @@ namespace ILLink.RoslynAnalyzer
 			DiagnosticSeverity.Warning,
 			isEnabledByDefault: true);
 
-		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create (RequiresAssemblyFilesRule);
+		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create (s_requiresAssemblyFilesRule);
 
 		public override void Initialize (AnalysisContext context)
 		{
@@ -84,7 +84,7 @@ namespace ILLink.RoslynAnalyzer
 
 					if (member.TryGetRequiresAssemblyFileAttribute (out AttributeData? requiresAssemblyFilesAttribute)) {
 						operationContext.ReportDiagnostic (Diagnostic.Create (
-							RequiresAssemblyFilesRule,
+							s_requiresAssemblyFilesRule,
 							operationContext.Operation.Syntax.GetLocation (),
 							member.OriginalDefinition.ToString (),
 							requiresAssemblyFilesAttribute?.NamedArguments.FirstOrDefault (na => na.Key == "Message").Value.Value?.ToString (),
