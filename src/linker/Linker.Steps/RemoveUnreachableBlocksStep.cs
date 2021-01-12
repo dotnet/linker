@@ -22,7 +22,6 @@ namespace Mono.Linker.Steps
 
 		Statistics.NamedValue MethodsAnalyzedStatistic;
 		Statistics.NamedValue IterationsStatistic;
-		Statistics.NamedValue StubbedMethodsStatistic;
 		Statistics.NamedValue ConstantMethodsUsedStatistic;
 		Statistics.NamedValue ConstantFieldValuesUsedStatistic;
 		Statistics.NamedValue AnalyzedAsConstantStatistic;
@@ -34,7 +33,6 @@ namespace Mono.Linker.Steps
 		{
 			MethodsAnalyzedStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (MethodsAnalyzedStatistic));
 			IterationsStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (IterationsStatistic));
-			StubbedMethodsStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (StubbedMethodsStatistic));
 			ConstantMethodsUsedStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (ConstantMethodsUsedStatistic));
 			ConstantFieldValuesUsedStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (ConstantFieldValuesUsedStatistic));
 			AnalyzedAsConstantStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (AnalyzedAsConstantStatistic));
@@ -67,6 +65,8 @@ namespace Mono.Linker.Steps
 
 		bool TryGetConstantResultInstructionForMethod (MethodDefinition method, out Instruction constantResultInstruction)
 		{
+			GetConstantExpressionMethodCallsStatistic++;
+
 			if (constExprMethods.TryGetValue (method, out constantResultInstruction))
 				return constantResultInstruction != null;
 
@@ -1088,7 +1088,7 @@ namespace Mono.Linker.Steps
 				case MethodAction.ConvertToThrow:
 					return false;
 				case MethodAction.ConvertToStub:
-					StubbedMethodsStatistic++;
+					context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), "StubbedMethodsStatistic").Value++;
 					Result = CodeRewriterStep.CreateConstantResultInstruction (context, method);
 					return Result != null;
 				}
