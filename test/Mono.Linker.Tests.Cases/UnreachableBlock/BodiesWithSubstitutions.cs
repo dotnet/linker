@@ -41,6 +41,8 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 			ConstantFromNewAssembly.Test ();
 			ConstantSubstitutionsFromNewAssembly.Test ();
 			TestSubstitutionCollision ();
+			TestSubstitutionOnNoInlining ();
+			TestSubstitutionOnIntrinsic ();
 		}
 
 		[Kept]
@@ -278,5 +280,50 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		[Kept]
 		static void Collision_Reached () { }
 		static void Collision_NeverReached () { }
+
+		[Kept]
+		static bool NoInliningProperty {
+			[Kept]
+			[ExpectBodyModified]
+			[MethodImpl(MethodImplOptions.NoInlining)]
+			get { return true; }
+		}
+
+		[Kept]
+		[ExpectBodyModified]
+		static void TestSubstitutionOnNoInlining ()
+		{
+			if (NoInliningProperty)
+				NoInlining_NeverReached ();
+			else
+				NoInlining_Reached ();
+		}
+
+		[Kept]
+		static void NoInlining_Reached () { }
+		static void NoInlining_NeverReached () { }
+
+		[Kept]
+		static bool IntrinsicProperty {
+			[Kept]
+			[ExpectBodyModified]
+			[Intrinsic]
+			[KeptAttributeAttribute(typeof(IntrinsicAttribute))]
+			get { return true; }
+		}
+
+		[Kept]
+		[ExpectBodyModified]
+		static void TestSubstitutionOnIntrinsic ()
+		{
+			if (IntrinsicProperty)
+				Intrinsic_NeverReached ();
+			else
+				Intrinsic_Reached ();
+		}
+
+		[Kept]
+		static void Intrinsic_Reached () { }
+		static void Intrinsic_NeverReached () { }
 	}
 }
