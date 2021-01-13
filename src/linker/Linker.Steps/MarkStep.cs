@@ -241,7 +241,7 @@ namespace Mono.Linker.Steps
 					InitializeType (nested);
 			}
 
-			if (!Annotations.IsMarked (type))
+			if (!Annotations.IsMarkedPending (type))
 				return;
 
 			// We may get here for a type marked by an earlier step, or by a type
@@ -275,14 +275,14 @@ namespace Mono.Linker.Steps
 		void InitializeFields (TypeDefinition type)
 		{
 			foreach (FieldDefinition field in type.Fields)
-				if (Annotations.IsMarked (field))
+				if (Annotations.IsMarkedPending (field))
 					MarkField (field, DependencyInfo.AlreadyMarked);
 		}
 
 		void InitializeMethods (Collection<MethodDefinition> methods)
 		{
 			foreach (MethodDefinition method in methods)
-				if (Annotations.IsMarked (method))
+				if (Annotations.IsMarkedPending (method))
 					EnqueueMethod (method, DependencyInfo.AlreadyMarked);
 		}
 
@@ -1228,15 +1228,16 @@ namespace Mono.Linker.Steps
 
 		protected bool CheckProcessed (IMetadataTokenProvider provider)
 		{
-			if (Annotations.IsProcessed (provider))
-				return true;
-
-			Annotations.Processed (provider);
-			return false;
+			return !Annotations.SetProcessed (provider);
 		}
 
-		protected void MarkAssembly (AssemblyDefinition assembly)
+		protected void MarkAssembly (AssemblyDefinition assembly, DependencyInfo reason)
 		{
+			// This conceptually marks an assembly (marking the module type and)
+			// attributes) even though it does not mark the AssemblyDefinition itself
+			// in Annotations. Other steps rely on the ModuleDefinition being marked instead.
+
+			Annotations.Mark (assembly, reason);
 			if (CheckProcessed (assembly))
 				return;
 
@@ -1390,6 +1391,12 @@ namespace Mono.Linker.Steps
 				throw new ArgumentOutOfRangeException ($"Internal error: unsupported field dependency {reason.Kind}");
 #endif
 
+			if (reason.Kind == DependencyKind.AlreadyMarked) {
+				Debug.Assert (Annotations.IsMarkedPending (field));
+			} else {
+				Annotations.Mark (field, reason);
+			}
+
 			if (CheckProcessed (field))
 				return;
 
@@ -1432,13 +1439,6 @@ namespace Mono.Linker.Steps
 				Annotations.SetPreservedStaticCtor (parent);
 				Annotations.SetSubstitutedInit (parent);
 			}
-
-			if (reason.Kind == DependencyKind.AlreadyMarked) {
-				Debug.Assert (Annotations.IsMarked (field));
-				return;
-			}
-
-			Annotations.Mark (field, reason);
 		}
 
 		protected virtual bool IgnoreScope (IMetadataScope scope)
@@ -1450,6 +1450,9 @@ namespace Mono.Linker.Steps
 		void MarkScope (IMetadataScope scope, TypeDefinition type)
 		{
 			Annotations.Mark (scope, new DependencyInfo (DependencyKind.ScopeOfType, type));
+			var di = new DependencyInfo (DependencyKind.ScopeOfType, type);
+			Annotations.Mark (scope, di);
+			MarkAssembly (scope.Assembly, di);
 		}
 
 		protected virtual void MarkSerializable (TypeDefinition type)
@@ -1515,7 +1518,7 @@ namespace Mono.Linker.Steps
 			// Track a mark reason for each call to MarkType.
 			switch (reason.Kind) {
 			case DependencyKind.AlreadyMarked:
-				Debug.Assert (Annotations.IsMarked (type));
+				Debug.Assert (Annotations.IsMarkedPending (type));
 				break;
 			default:
 				Annotations.Mark (type, reason);
@@ -2509,7 +2512,7 @@ namespace Mono.Linker.Steps
 			// only once per method.
 			switch (reason.Kind) {
 			case DependencyKind.AlreadyMarked:
-				Debug.Assert (Annotations.IsMarked (method));
+				Debug.Assert (Annotations.IsMarkedPending (method));
 				break;
 			default:
 				Annotations.Mark (method, reason);

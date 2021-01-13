@@ -49,7 +49,9 @@ namespace Mono.Linker
 		protected readonly Dictionary<FieldDefinition, object> field_values = new Dictionary<FieldDefinition, object> ();
 		protected readonly HashSet<FieldDefinition> field_init = new HashSet<FieldDefinition> ();
 		protected readonly HashSet<TypeDefinition> fieldType_init = new HashSet<TypeDefinition> ();
-		protected readonly HashSet<IMetadataTokenProvider> marked = new HashSet<IMetadataTokenProvider> ();
+
+		// TODO: make this a simple hashset, don't count.
+		protected readonly Dictionary<IMetadataTokenProvider, int> marked_pending = new Dictionary<IMetadataTokenProvider, int> ();
 		protected readonly HashSet<IMetadataTokenProvider> processed = new HashSet<IMetadataTokenProvider> ();
 		protected readonly Dictionary<TypeDefinition, TypePreserve> preserved_types = new Dictionary<TypeDefinition, TypePreserve> ();
 		protected readonly Dictionary<TypeDefinition, TypePreserveMembers> preserved_type_members = new ();
@@ -169,13 +171,22 @@ namespace Mono.Linker
 		[Obsolete ("Mark token providers with a reason instead.")]
 		public void Mark (IMetadataTokenProvider provider)
 		{
-			marked.Add (provider);
+			AddMarkPending (provider);
+		}
+
+		void AddMarkPending (IMetadataTokenProvider provider)
+		{
+			if (!marked_pending.TryGetValue (provider, out int count)) {
+				marked_pending.Add (provider, 1);
+			} else {
+				marked_pending[provider] = count + 1;
+			}
 		}
 
 		public void Mark (IMetadataTokenProvider provider, in DependencyInfo reason)
 		{
 			Debug.Assert (!(reason.Kind == DependencyKind.AlreadyMarked));
-			marked.Add (provider);
+			AddMarkPending (provider);
 			Tracer.AddDirectDependency (provider, reason, marked: true);
 		}
 
@@ -192,9 +203,14 @@ namespace Mono.Linker
 			Tracer.AddDirectDependency (attribute, reason, marked: true);
 		}
 
+		public bool IsMarkedPending (IMetadataTokenProvider provider)
+		{
+			return marked_pending.ContainsKey (provider);
+		}
+
 		public bool IsMarked (IMetadataTokenProvider provider)
 		{
-			return marked.Contains (provider);
+			return processed.Contains (provider) || marked_pending.ContainsKey (provider);
 		}
 
 		public bool IsMarked (CustomAttribute attribute)
@@ -241,9 +257,23 @@ namespace Mono.Linker
 			return types_relevant_to_variant_casting.Contains (type);
 		}
 
-		public void Processed (IMetadataTokenProvider provider)
+		void RemoveMarkedPending (IMetadataTokenProvider provider)
 		{
-			processed.Add (provider);
+			if (!marked_pending.TryGetValue (provider, out int count)) {
+				throw new InvalidOperationException ();
+			}
+			if (count == 1) {
+				marked_pending.Remove (provider);
+			} else {
+				marked_pending[provider] = count - 1;
+			}
+		}
+
+		public bool SetProcessed (IMetadataTokenProvider provider)
+		{
+			Debug.Assert (marked_pending.ContainsKey (provider));
+			RemoveMarkedPending (provider);
+			return processed.Add (provider);
 		}
 
 		public bool IsProcessed (IMetadataTokenProvider provider)
