@@ -12,15 +12,21 @@ using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
 namespace Mono.Linker.Tests.Cases.Attributes
 {
+#if !NETCOREAPP
+	[IgnoreTestCase ("Requires support for default interface methods")]
+#endif
 	public class TypeWithDynamicInterfaceCastableImplementationAttributeIsKept
 	{
 		public static void Main ()
 		{
+#if NETCOREAPP
 			Foo foo = new Foo ();
 			GetBar (foo).Bar ();
 			IReferenced baz = GetBaz (foo);
+#endif
 		}
 
+#if NETCOREAPP
 		[Kept]
 		private static IReferencedAndCalled GetBar (object obj)
 		{
@@ -32,8 +38,10 @@ namespace Mono.Linker.Tests.Cases.Attributes
 		{
 			return (IReferenced) obj;
 		}
+#endif
 	}
 
+#if NETCOREAPP
 	[Kept]
 	[KeptMember (".ctor()")]
 	class Foo : IDynamicInterfaceCastable
@@ -111,4 +119,5 @@ namespace Mono.Linker.Tests.Cases.Attributes
 	{
 		void IReferencedInIDynamicInterfaceCastableType.Foo () { }
 	}
+#endif
 }
