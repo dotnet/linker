@@ -17,20 +17,20 @@ namespace Mono.Linker.Tests.Cases.Attributes
 		public static void Main()
 		{
 			Foo foo = new Foo ();
-			GetIBar (foo).Bar ();
-			IBaz baz = GetIBaz (foo);
+			GetBar (foo).Bar ();
+			IReferenced baz = GetBaz (foo);
 		}
 		
 		[Kept]
-		private static IBar GetIBar (object obj)
+		private static IReferencedAndCalled GetBar (object obj)
 		{
-			return (IBar) obj;
+			return (IReferencedAndCalled) obj;
 		}
 
 		[Kept]
-		private static IBaz GetIBaz (object obj)
+		private static IReferenced GetBaz (object obj)
 		{
-			return (IBaz) obj;
+			return (IReferenced) obj;
 		}
 	}
 
@@ -41,18 +41,21 @@ namespace Mono.Linker.Tests.Cases.Attributes
 		[Kept]
 		public RuntimeTypeHandle GetInterfaceImplementation (RuntimeTypeHandle interfaceType)
 		{
-			throw new NotImplementedException ();
+			if (interfaceType.Equals(typeof(IReferencedInIDynamicInterfaceCastableType).TypeHandle)) {
+				return typeof (IReferencedInIDynamicInterfaceCastableTypeImpl).TypeHandle;
+			}
+			return default;
 		}
 
 		[Kept]
 		public bool IsInterfaceImplemented (RuntimeTypeHandle interfaceType, bool throwIfNotImplemented)
 		{
-			throw new NotImplementedException ();
+			return interfaceType.Equals (typeof (IReferencedInIDynamicInterfaceCastableType).TypeHandle);
 		}
 	}
 
 	[Kept]
-	interface IBar
+	interface IReferencedAndCalled
 	{
 		[Kept]
 		void Bar ();
@@ -60,37 +63,52 @@ namespace Mono.Linker.Tests.Cases.Attributes
 
 	[Kept]
 	[KeptAttributeAttribute (typeof(DynamicInterfaceCastableImplementationAttribute))]
-	[KeptInterface(typeof(IBar))]
+	[KeptInterface(typeof(IReferencedAndCalled))]
 	[DynamicInterfaceCastableImplementation]
-	interface IBarImpl : IBar
+	interface IReferencedAndCalledImpl : IReferencedAndCalled
 	{
 		[Kept]
-		void IBar.Bar () { }
+		void IReferencedAndCalled.Bar () { }
 	}
 
 	[Kept]
-	interface IBaz
+	interface IReferenced
 	{
 		void Baz ();
 	}
 
 	[Kept]
 	[KeptAttributeAttribute (typeof (DynamicInterfaceCastableImplementationAttribute))]
-	[KeptInterface (typeof (IBaz))]
+	[KeptInterface (typeof (IReferenced))]
 	[DynamicInterfaceCastableImplementation]
-	interface IBazImpl : IBaz
+	interface IReferencedImpl : IReferenced
 	{
-		void IBaz.Baz () { }
+		void IReferenced.Baz () { }
 	}
 
-	interface IFrob
+	interface IUnreferenced
 	{
 		void Frob () { }
 	}
 
 	[DynamicInterfaceCastableImplementation]
-	interface IFrobImpl : IFrob
+	interface IUnreferencedImpl : IUnreferenced
 	{
-		void IFrob.Frob () { }
+		void IUnreferenced.Frob () { }
+	}
+
+	[Kept]
+	interface IReferencedInIDynamicInterfaceCastableType
+	{
+		void Foo() { }
+	}
+
+	[Kept]
+	[KeptAttributeAttribute (typeof (DynamicInterfaceCastableImplementationAttribute))]
+	[KeptInterface (typeof (IReferencedInIDynamicInterfaceCastableType))]
+	[DynamicInterfaceCastableImplementation]
+	interface IReferencedInIDynamicInterfaceCastableTypeImpl : IReferencedInIDynamicInterfaceCastableType
+	{
+		void IReferencedInIDynamicInterfaceCastableType.Foo () { }
 	}
 }
