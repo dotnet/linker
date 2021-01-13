@@ -46,7 +46,7 @@ namespace Mono.Linker.Steps
 			if (constExprMethods.TryGetValue (method, out constantResultInstruction))
 				return constantResultInstruction != null;
 
-			constantResultInstruction = GetConstantResultInstructionForMethod (method, method.Body.Instructions);
+			constantResultInstruction = GetConstantResultInstructionForMethod (method, instructions: null);
 			constExprMethods.Add (method, constantResultInstruction);
 
 			return constantResultInstruction != null;
@@ -73,7 +73,7 @@ namespace Mono.Linker.Steps
 			if (!Context.IsOptimizationEnabled (CodeOptimizations.IPConstantPropagation, method))
 				return null;
 
-			var analyzer = new ConstantExpressionMethodAnalyzer (method, instructions);
+			var analyzer = new ConstantExpressionMethodAnalyzer (method, instructions ?? method.Body.Instructions);
 			if (analyzer.Analyze ()) {
 				return analyzer.Result;
 			}

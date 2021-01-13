@@ -17,6 +17,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		"LibWithConstantSubstitution.dll",
 		new[] { "Dependencies/LibWithConstantSubstitution.cs" },
 		resources: new object[] { "Dependencies/LibWithConstantSubstitution.xml" })]
+	[KeptModuleReference ("unknown")]
 	public class BodiesWithSubstitutions
 	{
 		static class ClassWithField
@@ -43,6 +44,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 			TestSubstitutionCollision ();
 			TestSubstitutionOnNoInlining ();
 			TestSubstitutionOnIntrinsic ();
+			TestMethodWithoutBody ();
 		}
 
 		[Kept]
@@ -325,5 +327,19 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		[Kept]
 		static void Intrinsic_Reached () { }
 		static void Intrinsic_NeverReached () { }
+
+		[Kept]
+		[System.Runtime.InteropServices.DllImport ("unknown")]
+		static extern int PInvokeMethod ();
+
+		[Kept]
+		static void TestMethodWithoutBody ()
+		{
+			if (PInvokeMethod () == 0)
+				MethodWithoutBody_Reached ();
+		}
+
+		[Kept]
+		static void MethodWithoutBody_Reached () { }
 	}
 }
