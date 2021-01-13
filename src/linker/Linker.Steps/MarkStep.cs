@@ -118,6 +118,7 @@ namespace Mono.Linker.Steps
 			DependencyKind.ParameterMarshalSpec,
 			DependencyKind.FieldMarshalSpec,
 			DependencyKind.ReturnTypeMarshalSpec,
+			DependencyKind.DynamicInterfaceCastableImplementation,
 		};
 
 		static readonly DependencyKind[] _methodReasons = new DependencyKind[] {
@@ -232,7 +233,10 @@ namespace Mono.Linker.Steps
 					InitializeType (nested);
 			}
 
-			if (!Annotations.IsMarked (type))
+			if (type.CustomAttributes.Any(ca => ca.AttributeType.Resolve().Name == "DynamicInterfaceCastableImplementationAttribute")) {
+				MarkType (type, DependencyInfo.DynamicInterfaceCastableImplementation, type);
+			}
+			else if (!Annotations.IsMarked (type))
 				return;
 
 			// We may get here for a type marked by an earlier step, or by a type
