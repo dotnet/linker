@@ -14,13 +14,13 @@ namespace Mono.Linker.Tests.Cases.Attributes
 {
 	public class TypeWithDynamicInterfaceCastableImplementationAttributeIsKept
 	{
-		public static void Main()
+		public static void Main ()
 		{
 			Foo foo = new Foo ();
 			GetBar (foo).Bar ();
 			IReferenced baz = GetBaz (foo);
 		}
-		
+
 		[Kept]
 		private static IReferencedAndCalled GetBar (object obj)
 		{
@@ -41,7 +41,7 @@ namespace Mono.Linker.Tests.Cases.Attributes
 		[Kept]
 		public RuntimeTypeHandle GetInterfaceImplementation (RuntimeTypeHandle interfaceType)
 		{
-			if (interfaceType.Equals(typeof(IReferencedInIDynamicInterfaceCastableType).TypeHandle)) {
+			if (interfaceType.Equals (typeof (IReferencedInIDynamicInterfaceCastableType).TypeHandle)) {
 				return typeof (IReferencedInIDynamicInterfaceCastableTypeImpl).TypeHandle;
 			}
 			return default;
@@ -62,8 +62,8 @@ namespace Mono.Linker.Tests.Cases.Attributes
 	}
 
 	[Kept]
-	[KeptAttributeAttribute (typeof(DynamicInterfaceCastableImplementationAttribute))]
-	[KeptInterface(typeof(IReferencedAndCalled))]
+	[KeptAttributeAttribute (typeof (DynamicInterfaceCastableImplementationAttribute))]
+	[KeptInterface (typeof (IReferencedAndCalled))]
 	[DynamicInterfaceCastableImplementation]
 	interface IReferencedAndCalledImpl : IReferencedAndCalled
 	{
@@ -100,7 +100,7 @@ namespace Mono.Linker.Tests.Cases.Attributes
 	[Kept]
 	interface IReferencedInIDynamicInterfaceCastableType
 	{
-		void Foo() { }
+		void Foo () { }
 	}
 
 	[Kept]
