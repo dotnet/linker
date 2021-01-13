@@ -287,7 +287,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		static bool NoInliningProperty {
 			[Kept]
 			[ExpectBodyModified]
-			[MethodImpl(MethodImplOptions.NoInlining)]
+			[MethodImpl (MethodImplOptions.NoInlining)]
 			get { return true; }
 		}
 
@@ -310,7 +310,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 			[Kept]
 			[ExpectBodyModified]
 			[Intrinsic]
-			[KeptAttributeAttribute(typeof(IntrinsicAttribute))]
+			[KeptAttributeAttribute (typeof (IntrinsicAttribute))]
 			get { return true; }
 		}
 
