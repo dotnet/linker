@@ -127,7 +127,7 @@ namespace Mono.Linker
 		// Linker internals, requirements for certain optimizations
 		UnreachableBodyRequirement = 77, // method -> well-known type required for unreachable bodies optimization
 		DisablePrivateReflectionRequirement = 78, // null -> DisablePrivateReflectionAttribute type/methods (note that no specific source is reported)
-		DynamicInterfaceCastableImplementation = 79, // null -> type is marked with IDynamicInterfaceCastableImplementationAttribute
+		DynamicInterfaceCastableImplementation = 79, // type -> type is marked with IDynamicInterfaceCastableImplementationAttribute and implements the provided interface
 		AlreadyMarked = 80, // null -> member that has already been marked for a particular reason (used to propagate reasons internally, not reported)
 	}
 
@@ -139,7 +139,6 @@ namespace Mono.Linker
 		public static readonly DependencyInfo Unspecified = new DependencyInfo (DependencyKind.Unspecified, null);
 		public static readonly DependencyInfo AlreadyMarked = new DependencyInfo (DependencyKind.AlreadyMarked, null);
 		public static readonly DependencyInfo DisablePrivateReflectionRequirement = new DependencyInfo (DependencyKind.DisablePrivateReflectionRequirement, null);
-		public static readonly DependencyInfo DynamicInterfaceCastableImplementation = new DependencyInfo (DependencyKind.DynamicInterfaceCastableImplementation, null);
 		public bool Equals (DependencyInfo other) => (Kind, Source) == (other.Kind, other.Source);
 		public override bool Equals (Object obj) => obj is DependencyInfo info && this.Equals (info);
 		public override int GetHashCode () => (Kind, Source).GetHashCode ();

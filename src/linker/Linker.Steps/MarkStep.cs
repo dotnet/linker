@@ -51,6 +51,7 @@ namespace Mono.Linker.Steps
 		protected Queue<AttributeProviderPair> _assemblyLevelAttributes;
 		protected Queue<(AttributeProviderPair, DependencyInfo, IMemberDefinition)> _lateMarkedAttributes;
 		protected List<TypeDefinition> _typesWithInterfaces;
+		protected List<TypeDefinition> _dynamicInterfaceCastableImplementationTypes;
 		protected List<MethodBody> _unreachableBodies;
 
 		readonly List<(TypeDefinition Type, MethodBody Body, Instruction Instr)> _pending_isinst_instr;
@@ -176,6 +177,7 @@ namespace Mono.Linker.Steps
 			_assemblyLevelAttributes = new Queue<AttributeProviderPair> ();
 			_lateMarkedAttributes = new Queue<(AttributeProviderPair, DependencyInfo, IMemberDefinition)> ();
 			_typesWithInterfaces = new List<TypeDefinition> ();
+			_dynamicInterfaceCastableImplementationTypes = new List<TypeDefinition> ();
 			_unreachableBodies = new List<MethodBody> ();
 			_pending_isinst_instr = new List<(TypeDefinition, MethodBody, Instruction)> ();
 		}
@@ -226,6 +228,16 @@ namespace Mono.Linker.Steps
 			}
 		}
 
+		static bool TypeHasDynamicInterfaceCastableImplementationAttribute(TypeDefinition type)
+		{
+			foreach (var ca in type.CustomAttributes) {
+				TypeDefinition caType = ca.AttributeType.Resolve ();
+				if (caType.Name == "DynamicInterfaceCastableImplementationAttribute" && caType.Namespace == "System.Runtime.InteropServices")
+					return true;
+			}
+			return false;
+		}
+
 		void InitializeType (TypeDefinition type)
 		{
 			if (type.HasNestedTypes) {
@@ -233,10 +245,11 @@ namespace Mono.Linker.Steps
 					InitializeType (nested);
 			}
 
-			if (type.CustomAttributes.Any(ca => ca.AttributeType.Resolve().Name == "DynamicInterfaceCastableImplementationAttribute")) {
-				MarkType (type, DependencyInfo.DynamicInterfaceCastableImplementation, type);
+			if (TypeHasDynamicInterfaceCastableImplementationAttribute (type)) {
+				_dynamicInterfaceCastableImplementationTypes.Add (type);
 			}
-			else if (!Annotations.IsMarked (type))
+
+			if (!Annotations.IsMarked (type))
 				return;
 
 			// We may get here for a type marked by an earlier step, or by a type
@@ -386,6 +399,7 @@ namespace Mono.Linker.Steps
 				ProcessQueue ();
 				ProcessVirtualMethods ();
 				ProcessMarkedTypesWithInterfaces ();
+				ProcessDynamicCastableImplementationInterfaces ();
 				ProcessPendingBodies ();
 				DoAdditionalProcessing ();
 			}
@@ -457,6 +471,29 @@ namespace Mono.Linker.Steps
 					continue;
 
 				MarkInterfaceImplementations (type);
+			}
+		}
+
+		void ProcessDynamicCastableImplementationInterfaces ()
+		{
+			// We may mark an interface type later on.  Which means we need to reprocess any time with one or more interface implementations that have not been marked
+			// and if an interface type is found to be marked and implementation is not marked, then we need to mark that implementation
+
+			for (int i = 0; i < _dynamicInterfaceCastableImplementationTypes.Count; i++) {
+				var type = _dynamicInterfaceCastableImplementationTypes[i];
+
+				Debug.Assert (TypeHasDynamicInterfaceCastableImplementationAttribute (type));
+
+				if (Annotations.IsMarked (type))
+					continue;
+
+				foreach (var iface in type.Interfaces) {
+					if (Annotations.IsMarked(iface.InterfaceType)) {
+						MarkType (type, new DependencyInfo (DependencyKind.DynamicInterfaceCastableImplementation, iface.InterfaceType), type);
+						_dynamicInterfaceCastableImplementationTypes.RemoveAt (i--);
+						break;
+					}
+				}
 			}
 		}
 
