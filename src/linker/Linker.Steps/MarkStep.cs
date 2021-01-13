@@ -245,7 +245,7 @@ namespace Mono.Linker.Steps
 					InitializeType (nested);
 			}
 
-			if (TypeHasDynamicInterfaceCastableImplementationAttribute (type)) {
+			if (TypeHasDynamicInterfaceCastableImplementationAttribute (type) && type.Interfaces.Count > 0) {
 				_dynamicInterfaceCastableImplementationTypes.Add (type);
 			}
 
