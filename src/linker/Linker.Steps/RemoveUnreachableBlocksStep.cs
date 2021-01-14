@@ -236,18 +236,18 @@ namespace Mono.Linker.Steps
 			if (method.ReturnType.MetadataType == MetadataType.Void)
 				return NonConstSentinel;
 
-			if (method.IsIntrinsic () || method.NoInlining)
-				return NonConstSentinel;
-
-			if (!Context.IsOptimizationEnabled (CodeOptimizations.IPConstantPropagation, method))
-				return NonConstSentinel;
-
 			switch (Context.Annotations.GetAction (method)) {
 			case MethodAction.ConvertToThrow:
 				return NonConstSentinel;
 			case MethodAction.ConvertToStub:
 				return CodeRewriterStep.CreateConstantResultInstruction (Context, method) ?? NonConstSentinel;
 			}
+
+			if (method.IsIntrinsic () || method.NoInlining)
+				return NonConstSentinel;
+
+			if (!Context.IsOptimizationEnabled (CodeOptimizations.IPConstantPropagation, method))
+				return NonConstSentinel;
 
 			var analyzer = new ConstantExpressionMethodAnalyzer (method, instructions ?? method.Body.Instructions);
 			if (analyzer.Analyze ()) {
@@ -311,11 +311,6 @@ namespace Mono.Linker.Steps
 
 			default:
 				throw new InternalErrorException ($"Unexpected value '{processedState}' found in {nameof (processedMethods)} dictionary in {nameof (RemoveUnreachableBlocksStep)}");
-				var constantResultInstruction = GetConstantResultInstructionForMethod (method, reducer.FoldedInstructions);
-				if (constantResultInstruction != null) {
-					constExprMethods[method] = constantResultInstruction;
-					constExprMethodsAdded = true;
-				}
 			}
 		}
 
