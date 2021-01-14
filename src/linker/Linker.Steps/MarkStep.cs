@@ -484,8 +484,11 @@ namespace Mono.Linker.Steps
 
 				Debug.Assert (TypeHasDynamicInterfaceCastableImplementationAttribute (type));
 
-				if (Annotations.IsMarked (type))
+				// If the type has already been marked, we can remove it from this list.
+				if (Annotations.IsMarked (type)) {
+					_dynamicInterfaceCastableImplementationTypes.RemoveAt (i--);
 					continue;
+				}
 
 				foreach (var iface in type.Interfaces) {
 					if (Annotations.IsMarked (iface.InterfaceType)) {
