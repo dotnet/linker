@@ -113,8 +113,7 @@ namespace Mono.Linker.Steps
 				ProcessStack ();
 
 				Debug.Assert (processedMethods.TryGetValue (method, out processedState) && processedState is not LinkedListNode<ProcessingNode>);
-			}
-			else {
+			} else {
 				// If the method is already in the processed dictionary, it must not be in "processing" state
 				// since the queue is currently emtpy.
 				Debug.Assert (processedState is not LinkedListNode<ProcessingNode>);
@@ -423,8 +422,7 @@ namespace Mono.Linker.Steps
 						if (!TryGetConstantResultForMethod (sizeOfImpl, out targetResult)) {
 							hasUnprocessedDependencies = true;
 							break;
-						}
-						else if (targetResult == null || hasUnprocessedDependencies) {
+						} else if (targetResult == null || hasUnprocessedDependencies) {
 							break;
 						}
 
