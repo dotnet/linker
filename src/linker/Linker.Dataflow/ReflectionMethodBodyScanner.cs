@@ -820,7 +820,7 @@ namespace Mono.Linker.Dataflow
 						reflectionContext.AnalyzingPattern ();
 
 						var parameters = calledMethod.Parameters;
-						if ((parameters.Count == 3 && parameters[2].ParameterType.IsTypeOf ("System", "Boolean") && (methodParams[2].AsConstInt () == null || methodParams[2].AsConstInt () != 0)) ||
+						if ((parameters.Count == 3 && parameters[2].ParameterType.MetadataType == MetadataType.Boolean && (methodParams[2].AsConstInt () == null || methodParams[2].AsConstInt () != 0)) ||
 							(parameters.Count == 5 && (methodParams[4].AsConstInt () == null || methodParams[4].AsConstInt () != 0))) {
 							reflectionContext.RecordUnrecognizedPattern (2096, $"Call to '{calledMethod.GetDisplayName ()}' can perform case insensitive lookup of the type, currently ILLink can not guarantee presence of all the matching types");
 							break;
