@@ -228,8 +228,11 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		static bool TypeHasDynamicInterfaceCastableImplementationAttribute (TypeDefinition type)
+		static bool TypeIsDynamicInterfaceCastableImplementation (TypeDefinition type)
 		{
+			if (!type.IsInterface || type.Interfaces.Count == 0 || type.CustomAttributes.Count == 0)
+				return false;
+
 			foreach (var ca in type.CustomAttributes) {
 				TypeDefinition caType = ca.AttributeType.Resolve ();
 				if (caType.Name == "DynamicInterfaceCastableImplementationAttribute" && caType.Namespace == "System.Runtime.InteropServices")
@@ -245,7 +248,7 @@ namespace Mono.Linker.Steps
 					InitializeType (nested);
 			}
 
-			if (TypeHasDynamicInterfaceCastableImplementationAttribute (type) && type.Interfaces.Count > 0) {
+			if (TypeIsDynamicInterfaceCastableImplementation (type)) {
 				_dynamicInterfaceCastableImplementationTypes.Add (type);
 			}
 
@@ -482,7 +485,7 @@ namespace Mono.Linker.Steps
 			for (int i = 0; i < _dynamicInterfaceCastableImplementationTypes.Count; i++) {
 				var type = _dynamicInterfaceCastableImplementationTypes[i];
 
-				Debug.Assert (TypeHasDynamicInterfaceCastableImplementationAttribute (type));
+				Debug.Assert (TypeIsDynamicInterfaceCastableImplementation (type));
 
 				// If the type has already been marked, we can remove it from this list.
 				if (Annotations.IsMarked (type)) {
@@ -492,6 +495,8 @@ namespace Mono.Linker.Steps
 
 				foreach (var iface in type.Interfaces) {
 					if (Annotations.IsMarked (iface.InterfaceType)) {
+						// We only need to mark the type definition because the linker will ensure that all marked implemented interfaces and used method implementations
+						// will be marked on this type as well.
 						MarkType (type, new DependencyInfo (DependencyKind.DynamicInterfaceCastableImplementation, iface.InterfaceType), type);
 						_dynamicInterfaceCastableImplementationTypes.RemoveAt (i--);
 						break;
