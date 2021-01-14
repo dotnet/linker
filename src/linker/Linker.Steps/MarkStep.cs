@@ -352,7 +352,7 @@ namespace Mono.Linker.Steps
 
 		void Process ()
 		{
-			while (ProcessPrimaryQueue () || ProcessLazyAttributes () || ProcessLateMarkedAttributes ()) {
+			while (ProcessPrimaryQueue () || ProcessMarkedPending() || ProcessLazyAttributes () || ProcessLateMarkedAttributes ()) {
 
 				// deal with [TypeForwardedTo] pseudo-attributes
 				foreach (AssemblyDefinition assembly in _context.GetAssemblies ()) {
@@ -374,7 +374,8 @@ namespace Mono.Linker.Steps
 							continue;
 						if (!Annotations.IsMarked (type))
 							continue;
-						_context.MarkingHelpers.MarkExportedType (exported, assembly.MainModule, new DependencyInfo (DependencyKind.ExportedType, type));
+						var di = new DependencyInfo (DependencyKind.ExportedType, type);
+						_context.MarkingHelpers.MarkExportedType (exported, assembly.MainModule, di);
 					}
 				}
 			}
@@ -397,6 +398,47 @@ namespace Mono.Linker.Steps
 			}
 
 			return true;
+		}
+
+		bool ProcessMarkedPending ()
+		{
+			var allPending = Annotations.MarkedPending ();
+			bool marked = false;
+			foreach (var pending in Annotations.MarkedPending ()) {
+				marked = true;
+
+				// Some pending items might be processed by the time we get to them.
+				if (Annotations.IsProcessed (pending))
+					continue;
+
+				switch (pending) {
+				case TypeDefinition type:
+					MarkType (type, DependencyInfo.AlreadyMarked, type);
+					Debug.Assert (!Annotations.IsMarkedPending (type));
+					break;
+				case MethodDefinition method:
+					EnqueueMethod (method, DependencyInfo.AlreadyMarked);
+					break;
+				case FieldDefinition field:
+					MarkField (field, DependencyInfo.AlreadyMarked);
+					Debug.Assert (!Annotations.IsMarkedPending (field));
+					break;
+				case ModuleDefinition module:
+					MarkModule (module, DependencyInfo.AlreadyMarked);
+					Debug.Assert (!Annotations.IsMarkedPending (module));
+					break;
+				default:
+					throw new NotImplementedException (pending.GetType ().ToString ());
+				}
+			}
+
+			foreach (var type in Annotations.PendingPreserve ()) {
+				marked = true;
+				Debug.Assert (Annotations.IsProcessed (type));
+				ApplyPreserveInfo (type);
+			}
+
+			return marked;
 		}
 
 		void ProcessPendingTypeChecks ()
@@ -1231,6 +1273,7 @@ namespace Mono.Linker.Steps
 			return !Annotations.SetProcessed (provider);
 		}
 
+
 		protected void MarkAssembly (AssemblyDefinition assembly, DependencyInfo reason)
 		{
 			// This conceptually marks an assembly (marking the module type and)
@@ -1392,7 +1435,7 @@ namespace Mono.Linker.Steps
 #endif
 
 			if (reason.Kind == DependencyKind.AlreadyMarked) {
-				Debug.Assert (Annotations.IsMarkedPending (field));
+				Debug.Assert (Annotations.IsMarked (field));
 			} else {
 				Annotations.Mark (field, reason);
 			}
@@ -1447,12 +1490,16 @@ namespace Mono.Linker.Steps
 			return Annotations.GetAction (assembly) != AssemblyAction.Link;
 		}
 
-		void MarkScope (IMetadataScope scope, TypeDefinition type)
+		void MarkModule (ModuleDefinition module, DependencyInfo reason)
 		{
-			Annotations.Mark (scope, new DependencyInfo (DependencyKind.ScopeOfType, type));
-			var di = new DependencyInfo (DependencyKind.ScopeOfType, type);
-			Annotations.Mark (scope, di);
-			MarkAssembly (scope.Assembly, di);
+			if (reason.Kind == DependencyKind.AlreadyMarked) {
+				Debug.Assert (Annotations.IsMarked (module));
+			} else {
+				Annotations.Mark (module, reason);
+			}
+			if (CheckProcessed (module))
+				return;
+			MarkAssembly (module.Assembly, new DependencyInfo (DependencyKind.AssemblyOfModule, module));
 		}
 
 		protected virtual void MarkSerializable (TypeDefinition type)
@@ -1518,7 +1565,7 @@ namespace Mono.Linker.Steps
 			// Track a mark reason for each call to MarkType.
 			switch (reason.Kind) {
 			case DependencyKind.AlreadyMarked:
-				Debug.Assert (Annotations.IsMarkedPending (type));
+				Debug.Assert (Annotations.IsMarked (type));
 				break;
 			default:
 				Annotations.Mark (type, reason);
@@ -1548,7 +1595,7 @@ namespace Mono.Linker.Steps
 			if (CheckProcessed (type))
 				return null;
 
-			MarkScope (type.Scope, type);
+			MarkModule (type.Scope as ModuleDefinition, new DependencyInfo (DependencyKind.ScopeOfType, type));
 			MarkType (type.BaseType, new DependencyInfo (DependencyKind.BaseType, type), type);
 			MarkType (type.DeclaringType, new DependencyInfo (DependencyKind.DeclaringType, type), type);
 			MarkCustomAttributes (type, new DependencyInfo (DependencyKind.CustomAttribute, type), type);
@@ -1611,6 +1658,9 @@ namespace Mono.Linker.Steps
 
 				MarkMethodsIf (type.Methods, HasOnSerializeOrDeserializeAttribute, new DependencyInfo (DependencyKind.SerializationMethodForType, type), type);
 			}
+
+			ApplyPreserveInfo (type);
+			ApplyPreserveMethods (type);
 
 			DoAdditionalTypeProcessing (type);
 
@@ -2280,9 +2330,10 @@ namespace Mono.Linker.Steps
 
 		void ApplyPreserveInfo (TypeDefinition type)
 		{
-			ApplyPreserveMethods (type);
-
 			if (Annotations.TryGetPreserve (type, out TypePreserve preserve)) {
+				if (!Annotations.SetAppliedPreserve (type, preserve))
+					throw new InvalidOperationException ();
+
 				var di = new DependencyInfo (DependencyKind.TypePreserve, type);
 
 				switch (preserve) {
@@ -2352,6 +2403,7 @@ namespace Mono.Linker.Steps
 			if (list == null)
 				return;
 
+			Annotations.ClearPreservedMethods (type);
 			MarkMethodCollection (list, new DependencyInfo (DependencyKind.PreservedMethod, type), type);
 		}
 
@@ -2361,6 +2413,7 @@ namespace Mono.Linker.Steps
 			if (list == null)
 				return;
 
+			Annotations.ClearPreservedMethods (method);
 			MarkMethodCollection (list, new DependencyInfo (DependencyKind.PreservedMethod, method), method);
 		}
 
@@ -2512,7 +2565,7 @@ namespace Mono.Linker.Steps
 			// only once per method.
 			switch (reason.Kind) {
 			case DependencyKind.AlreadyMarked:
-				Debug.Assert (Annotations.IsMarkedPending (method));
+				Debug.Assert (Annotations.IsMarked (method));
 				break;
 			default:
 				Annotations.Mark (method, reason);
@@ -2761,7 +2814,7 @@ namespace Mono.Linker.Steps
 			if (method.IsPInvokeImpl) {
 				var pii = method.PInvokeInfo;
 				Annotations.Mark (pii.Module, new DependencyInfo (DependencyKind.InteropMethodDependency, method));
-
+				Annotations.SetProcessed (pii.Module);
 				if (!string.IsNullOrEmpty (_context.PInvokesListFile)) {
 					_context.PInvokes.Add (new PInvokeInfo {
 						AssemblyName = method.DeclaringType.Module.Name,
@@ -3128,6 +3181,7 @@ namespace Mono.Linker.Steps
 			// Blame the interface type on the interfaceimpl itself.
 			MarkType (iface.InterfaceType, new DependencyInfo (DependencyKind.InterfaceImplementationInterfaceType, iface), type);
 			Annotations.Mark (iface, new DependencyInfo (DependencyKind.InterfaceImplementationOnType, type));
+			Annotations.SetProcessed (iface);
 		}
 
 		//

@@ -50,10 +50,10 @@ namespace Mono.Linker
 		protected readonly HashSet<FieldDefinition> field_init = new HashSet<FieldDefinition> ();
 		protected readonly HashSet<TypeDefinition> fieldType_init = new HashSet<TypeDefinition> ();
 
-		// TODO: make this a simple hashset, don't count.
-		protected readonly Dictionary<IMetadataTokenProvider, int> marked_pending = new Dictionary<IMetadataTokenProvider, int> ();
+		protected readonly HashSet<IMetadataTokenProvider> marked_pending = new HashSet<IMetadataTokenProvider> ();
 		protected readonly HashSet<IMetadataTokenProvider> processed = new HashSet<IMetadataTokenProvider> ();
-		protected readonly Dictionary<TypeDefinition, TypePreserve> preserved_types = new Dictionary<TypeDefinition, TypePreserve> ();
+		protected readonly Dictionary<TypeDefinition, (TypePreserve preserve, bool applied)> preserved_types = new Dictionary<TypeDefinition, (TypePreserve, bool)> ();
+		protected readonly HashSet<TypeDefinition> pending_preserve = new HashSet<TypeDefinition> ();
 		protected readonly Dictionary<TypeDefinition, TypePreserveMembers> preserved_type_members = new ();
 		protected readonly Dictionary<ExportedType, TypePreserveMembers> preserved_exportedtype_members = new ();
 		protected readonly Dictionary<IMemberDefinition, List<MethodDefinition>> preserved_methods = new Dictionary<IMemberDefinition, List<MethodDefinition>> ();
@@ -171,22 +171,15 @@ namespace Mono.Linker
 		[Obsolete ("Mark token providers with a reason instead.")]
 		public void Mark (IMetadataTokenProvider provider)
 		{
-			AddMarkPending (provider);
-		}
-
-		void AddMarkPending (IMetadataTokenProvider provider)
-		{
-			if (!marked_pending.TryGetValue (provider, out int count)) {
-				marked_pending.Add (provider, 1);
-			} else {
-				marked_pending[provider] = count + 1;
-			}
+			if (!processed.Contains (provider))
+				marked_pending.Add (provider);
 		}
 
 		public void Mark (IMetadataTokenProvider provider, in DependencyInfo reason)
 		{
 			Debug.Assert (!(reason.Kind == DependencyKind.AlreadyMarked));
-			AddMarkPending (provider);
+			if (!processed.Contains (provider))
+				marked_pending.Add (provider);
 			Tracer.AddDirectDependency (provider, reason, marked: true);
 		}
 
@@ -203,14 +196,20 @@ namespace Mono.Linker
 			Tracer.AddDirectDependency (attribute, reason, marked: true);
 		}
 
+		public IEnumerable<IMetadataTokenProvider> MarkedPending()
+		{
+			foreach (var pending in marked_pending.ToArray ())
+				yield return pending;
+		}
+
 		public bool IsMarkedPending (IMetadataTokenProvider provider)
 		{
-			return marked_pending.ContainsKey (provider);
+			return marked_pending.Contains (provider);
 		}
 
 		public bool IsMarked (IMetadataTokenProvider provider)
 		{
-			return processed.Contains (provider) || marked_pending.ContainsKey (provider);
+			return processed.Contains (provider) || marked_pending.Contains (provider);
 		}
 
 		public bool IsMarked (CustomAttribute attribute)
@@ -257,23 +256,14 @@ namespace Mono.Linker
 			return types_relevant_to_variant_casting.Contains (type);
 		}
 
-		void RemoveMarkedPending (IMetadataTokenProvider provider)
-		{
-			if (!marked_pending.TryGetValue (provider, out int count)) {
-				throw new InvalidOperationException ();
-			}
-			if (count == 1) {
-				marked_pending.Remove (provider);
-			} else {
-				marked_pending[provider] = count - 1;
-			}
-		}
-
 		public bool SetProcessed (IMetadataTokenProvider provider)
 		{
-			Debug.Assert (marked_pending.ContainsKey (provider));
-			RemoveMarkedPending (provider);
-			return processed.Add (provider);
+			if (processed.Add (provider)) {
+				Debug.Assert (marked_pending.Remove (provider));
+				return true;
+			}
+			
+			return false;
 		}
 
 		public bool IsProcessed (IMetadataTokenProvider provider)
@@ -281,12 +271,60 @@ namespace Mono.Linker
 			return processed.Contains (provider);
 		}
 
+		public IEnumerable<TypeDefinition> PendingPreserve ()
+		{
+			foreach (var type in pending_preserve.ToArray ())
+				yield return type;
+		}
+
+		public bool SetAppliedPreserve (TypeDefinition type, TypePreserve preserve)
+		{
+			if (!preserved_types.TryGetValue (type, out (TypePreserve preserve, bool applied) existing)) {
+				throw new InvalidOperationException ();
+			}
+
+			if (preserve != existing.preserve)
+				throw new InvalidOperationException ();
+
+			if (existing.applied) {
+				Debug.Assert (!pending_preserve.Contains (type));
+				return false;
+			}
+
+			preserved_types[type] = (existing.preserve, true);
+			pending_preserve.Remove (type);
+			return true;
+		}
+
+		public bool HasAppliedPreserve (TypeDefinition type, TypePreserve preserve)
+		{
+			if (!preserved_types.TryGetValue (type, out (TypePreserve preserve, bool applied) existing)) {
+				throw new InvalidOperationException ();
+			}
+
+			if (preserve != existing.preserve)
+				throw new InvalidOperationException ();
+
+			return existing.applied;
+		}
+
 		public void SetPreserve (TypeDefinition type, TypePreserve preserve)
 		{
-			if (preserved_types.TryGetValue (type, out TypePreserve existing))
-				preserved_types[type] = ChoosePreserveActionWhichPreservesTheMost (existing, preserve);
-			else
-				preserved_types.Add (type, preserve);
+			Debug.Assert (preserve != TypePreserve.Nothing);
+			if (!preserved_types.TryGetValue (type, out (TypePreserve preserve, bool applied) existing)) {
+				preserved_types.Add (type, (preserve, false));
+				return;
+			}
+
+			Debug.Assert (existing.preserve != TypePreserve.Nothing);
+			var newPreserve = ChoosePreserveActionWhichPreservesTheMost (existing.preserve, preserve);
+			if (newPreserve != existing.preserve) {
+				if (existing.applied) {
+					var addedPending = pending_preserve.Add (type);
+					Debug.Assert (addedPending);
+				}
+				preserved_types[type] = (newPreserve, false);
+			}
 		}
 
 		public static TypePreserve ChoosePreserveActionWhichPreservesTheMost (TypePreserve leftPreserveAction, TypePreserve rightPreserveAction)
@@ -312,7 +350,7 @@ namespace Mono.Linker
 
 		public bool TryGetPreserve (TypeDefinition type, out TypePreserve preserve)
 		{
-			return preserved_types.TryGetValue (type, out preserve);
+			return preserved_types.TryGetValue (type, preserve);
 		}
 
 		public void SetMembersPreserve (TypeDefinition type, TypePreserveMembers preserve)
@@ -411,6 +449,11 @@ namespace Mono.Linker
 			return GetPreservedMethods (type as IMemberDefinition);
 		}
 
+		public bool ClearPreservedMethods (TypeDefinition type)
+		{
+			return preserved_methods.Remove (type);
+		}
+
 		public void AddPreservedMethod (TypeDefinition type, MethodDefinition method)
 		{
 			AddPreservedMethod (type as IMemberDefinition, method);
@@ -419,6 +462,11 @@ namespace Mono.Linker
 		public List<MethodDefinition> GetPreservedMethods (MethodDefinition method)
 		{
 			return GetPreservedMethods (method as IMemberDefinition);
+		}
+
+		public bool ClearPreservedMethods (MethodDefinition key)
+		{
+			return preserved_methods.Remove (key);
 		}
 
 		public void AddPreservedMethod (MethodDefinition key, MethodDefinition method)
@@ -436,6 +484,12 @@ namespace Mono.Linker
 
 		void AddPreservedMethod (IMemberDefinition definition, MethodDefinition method)
 		{
+			if (IsMarked (definition)) {
+				Mark (method, new DependencyInfo (DependencyKind.PreservedMethod, definition));
+				Debug.Assert (GetPreservedMethods (definition) == null);
+				return;
+			}
+
 			var methods = GetPreservedMethods (definition);
 			if (methods == null) {
 				methods = new List<MethodDefinition> ();
