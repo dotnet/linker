@@ -21,96 +21,128 @@ namespace Mono.Linker.Steps
 		struct ProcessingNode
 		{
 			public MethodDefinition Method;
-			public int LastAttemptQueueVersion;
+			public int LastAttemptStackVersion;
 			public int TryCount;
 		}
 
-		LinkedList<ProcessingNode> processingQueue;
+		// Stack of method nodes which are currently being processed.
+		// Implemented as linked list to allow easy referal to nodes and efficient moving of nodes within the list.
+		// The top of the stack is the first item in the list.
+		LinkedList<ProcessingNode> processingStack;
 
-		// Each time an item is added or removed from the queue this value is incremented.
-		// Moving items in the queue doesn't increment.
+		// Each time an item is added or removed from the processing stack this value is incremented.
+		// Moving items in the stack doesn't increment.
 		// This is used to track loops - if there are two methods which have dependencies on each other
 		// the processing needs to detect that and mark at least one of them as nonconst (regardless of the method's body)
 		// to break the loop.
-		// This is done by storing the version of the queue on each method node when that method is processed,
-		// if we get around to process the method again and the version queue didn't change, then there's a loop
-		// (nothing changed in the queue - order is unimportant, as such no new information has been added and so
+		// This is done by storing the version of the stack on each method node when that method is processed,
+		// if we get around to process the method again and the version of the stack didn't change, then there's a loop
+		// (nothing changed in the stack - order is unimportant, as such no new information has been added and so
 		// we can't resolve the situation with just the info at hand).
-		int processingQueueVersion;
+		int processingStackVersion;
 
+		// Stores results of method processing. This state is kept forever to avoid reprocessing of methods.
+		// If method is not in the dictionary it has not yet been processed and it has not been added processing either.
+		// The value in this dictionary can be
+		//   - Reference to the linked list node in the processingStack if the method is on the stack and not yet processed.
+		//   - ProcessedUnchangedSentinel - which means the method has been fully processed and nothing was changed on it - its value is unknown
+		//   - NonConstSentinel - which means the method has been processed and the return value is not a const
+		//   - Instruction instance - method has been processed and it has a constant return value (the value of the instruction)
 		Dictionary<MethodDefinition, object> processedMethods;
 		readonly object ProcessedUnchangedSentinel = "ProcessedUnchangedSentinel";
 		readonly object NonConstSentinel = "NonConstSentinel";
 
-		Statistics.NamedValue MethodsAnalyzedStatistic;
+		Statistics.NamedValue ProcessAttemptsStatistic;
 		Statistics.NamedValue ConstantMethodsUsedStatistic;
 		Statistics.NamedValue ConstantFieldValuesUsedStatistic;
 		Statistics.NamedValue AnalyzedAsConstantStatistic;
-		Statistics.NamedValue AnalyzedAsConstantAfterRewriteStatistic;
-		Statistics.NamedValue GetConstantExpressionMethodCallsStatistic;
+		Statistics.NamedValue AnalyzedAsConstantAfterRewriteStatistics;
 		Statistics.NamedValue MethodsAnalyzedForConstantResultStatistic;
+		Statistics.NamedValue LoopsDetectedStatistics;
+		Statistics.NamedValue MethodsWithRewriteAttemptedStatistics;
+		Statistics.NamedValue MaxNumberOfProcessAttemptsPerMethodStatistics;
+		Statistics.NamedValue TryGetMethodResultStatistics;
+		Statistics.NamedValue TryGetMethodResultWithoutWaitingStatistics;
 
 		protected override void Process ()
 		{
-			MethodsAnalyzedStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (MethodsAnalyzedStatistic));
+			ProcessAttemptsStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (ProcessAttemptsStatistic));
 			ConstantMethodsUsedStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (ConstantMethodsUsedStatistic));
 			ConstantFieldValuesUsedStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (ConstantFieldValuesUsedStatistic));
 			AnalyzedAsConstantStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (AnalyzedAsConstantStatistic));
-			AnalyzedAsConstantAfterRewriteStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (AnalyzedAsConstantAfterRewriteStatistic));
-			GetConstantExpressionMethodCallsStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (GetConstantExpressionMethodCallsStatistic));
+			AnalyzedAsConstantAfterRewriteStatistics = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (AnalyzedAsConstantAfterRewriteStatistics));
 			MethodsAnalyzedForConstantResultStatistic = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (MethodsAnalyzedForConstantResultStatistic));
+			LoopsDetectedStatistics = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (LoopsDetectedStatistics));
+			MethodsWithRewriteAttemptedStatistics = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (MethodsWithRewriteAttemptedStatistics));
+			MaxNumberOfProcessAttemptsPerMethodStatistics = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (MaxNumberOfProcessAttemptsPerMethodStatistics));
+			TryGetMethodResultStatistics = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (TryGetMethodResultStatistics));
+			TryGetMethodResultWithoutWaitingStatistics = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (TryGetMethodResultWithoutWaitingStatistics));
 
 			var assemblies = Context.Annotations.GetAssemblies ().ToArray ();
 
-			processingQueue = new LinkedList<ProcessingNode> ();
+			processingStack = new LinkedList<ProcessingNode> ();
 			processedMethods = new Dictionary<MethodDefinition, object> ();
 
 			foreach (var assembly in assemblies) {
 				if (Annotations.GetAction (assembly) != AssemblyAction.Link)
 					continue;
 
-				RewriteBodies (assembly.MainModule.Types);
+				ProcessMethods (assembly.MainModule.Types);
 			}
 
-			//Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), "AllAskedMethods").Value = constExprMethods.Count;
-			Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), "ConstExprMethods").Value = processedMethods.Values.Where (v => v is Instruction).Count ();
+			Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), "MethodsProcessed").Value = processedMethods.Count;
+			Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), "ProcessedConstMethods").Value = processedMethods.Values.Where (v => v is Instruction).Count ();
+			Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), "ProcessedNonConstMethods").Value = processedMethods.Values.Where (v => v == NonConstSentinel).Count ();
+			Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), "ProcessedUnchangedMethods").Value = processedMethods.Values.Where (v => v == ProcessedUnchangedSentinel).Count ();
 		}
 
-		void EnqueueMethodForProcessing (MethodDefinition method)
+		void ProcessMethods (Collection<TypeDefinition> types)
 		{
-			Debug.Assert (!processedMethods.ContainsKey (method));
+			foreach (var type in types) {
+				if (type.IsInterface)
+					continue;
 
-			var processingNode = new ProcessingNode () {
-				Method = method,
-				LastAttemptQueueVersion = -1,
-				TryCount = 0
-			};
+				if (!type.HasMethods)
+					continue;
 
-			var listNode = processingQueue.AddFirst (processingNode);
-			processedMethods.Add (method, listNode);
-			processingQueueVersion++;
+				foreach (var method in type.Methods) {
+					if (!method.HasBody)
+						continue;
+
+					//
+					// Block methods which rewrite does not support
+					//
+					switch (method.ReturnType.MetadataType) {
+					case MetadataType.ByReference:
+					case MetadataType.FunctionPointer:
+						continue;
+					}
+
+					ProcessMethod (method);
+				}
+
+				if (type.HasNestedTypes)
+					ProcessMethods (type.NestedTypes);
+			}
 		}
 
-		void StoreMethodAsProcessedAndRemoveFromQueue (LinkedListNode<ProcessingNode> queueNode, object methodValue)
-		{
-			Debug.Assert (queueNode.List == processingQueue);
-			Debug.Assert (methodValue != null);
-			Debug.Assert (methodValue is not LinkedListNode<ProcessingNode>);
-
-			processedMethods[queueNode.ValueRef.Method] = methodValue;
-			processingQueue.Remove (queueNode);
-			processingQueueVersion++;
-		}
-
+		/// <summary>
+		/// Processes the specified and method and perform all branch removal optimizations on it.
+		/// When this returns it's guaranteed that the method has been optimized (if possible).
+		/// It may optimize other methods as well - those are remembered for future reuse.
+		/// </summary>
+		/// <param name="method">The method to process</param>
 		void ProcessMethod (MethodDefinition method)
 		{
-			Debug.Assert (processingQueue.Count == 0);
-			processingQueueVersion = 0;
+			Debug.Assert (processingStack.Count == 0);
+			processingStackVersion = 0;
 
 			if (!processedMethods.TryGetValue (method, out object processedState)) {
-				EnqueueMethodForProcessing (method);
+				AddMethodForProcessing (method);
 
-				ProcessQueue ();
+				ProcessStack ();
+
+				Debug.Assert (processedMethods.TryGetValue (method, out processedState) && processedState is not LinkedListNode<ProcessingNode>);
 			}
 			else {
 				// If the method is already in the processed dictionary, it must not be in "processing" state
@@ -119,15 +151,44 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void ProcessQueue ()
+		void AddMethodForProcessing (MethodDefinition method)
 		{
-			while (processingQueue.Count > 0) {
-				var queueNode = processingQueue.First;
+			Debug.Assert (!processedMethods.ContainsKey (method));
+
+			var processingNode = new ProcessingNode () {
+				Method = method,
+				LastAttemptStackVersion = -1,
+				TryCount = 0
+			};
+
+			var listNode = processingStack.AddFirst (processingNode);
+			processedMethods.Add (method, listNode);
+			processingStackVersion++;
+		}
+
+		void StoreMethodAsProcessedAndRemoveFromQueue (LinkedListNode<ProcessingNode> stackNode, object methodValue)
+		{
+			Debug.Assert (stackNode.List == processingStack);
+			Debug.Assert (methodValue != null);
+			Debug.Assert (methodValue is not LinkedListNode<ProcessingNode>);
+
+			processedMethods[stackNode.ValueRef.Method] = methodValue;
+			processingStack.Remove (stackNode);
+			processingStackVersion++;
+		}
+
+		void ProcessStack ()
+		{
+			while (processingStack.Count > 0) {
+				var queueNode = processingStack.First;
 				var method = queueNode.ValueRef.Method;
 				queueNode.ValueRef.TryCount++;
+				MaxNumberOfProcessAttemptsPerMethodStatistics.Value = Math.Max (MaxNumberOfProcessAttemptsPerMethodStatistics.Value, queueNode.ValueRef.TryCount);
 
-				if (queueNode.ValueRef.LastAttemptQueueVersion == processingQueueVersion) {
-					// Loop was detected - the queue hasn't changed since the last time we tried to process this method
+				ProcessAttemptsStatistic++;
+
+				if (queueNode.ValueRef.LastAttemptStackVersion == processingStackVersion) {
+					// Loop was detected - the stack hasn't changed since the last time we tried to process this method
 					// as such there's no way to resolve the situation (running the code below would produce the exact same result).
 
 					// We can't process all the methods in the loop with the given information, so we'll just "skip" over one of them.
@@ -141,11 +202,13 @@ namespace Mono.Linker.Steps
 					// the inlining and branch reduction in one pass would probably lead to almost ideal behavior even in presence
 					// of loops.
 
+					LoopsDetectedStatistics++;
+
 					StoreMethodAsProcessedAndRemoveFromQueue (queueNode, ProcessedUnchangedSentinel);
 					continue;
 				}
 
-				queueNode.ValueRef.LastAttemptQueueVersion = processingQueueVersion;
+				queueNode.ValueRef.LastAttemptStackVersion = processingStackVersion;
 
 				if (!method.HasBody) {
 					StoreMethodAsProcessedAndRemoveFromQueue (queueNode, ProcessedUnchangedSentinel);
@@ -155,12 +218,14 @@ namespace Mono.Linker.Steps
 				var reducer = new BodyReducer (method.Body, Context);
 
 				//
-				// Temporary inlines any calls which return contant expression
+				// Temporary inlines any calls which return contant expression.
+				// If it needs to know the result of analysis of other methods and those has not been processed yet
+				// it will still scan the entir body, but we will return the full processing one more time.
 				//
 				if (!TryInlineBodyDependencies (ref reducer, out bool changed)) {
 					// Method has unprocessed dependencies - so back off and try again later
-					// Leave it in the queue on its current position (it should not be on the first position anymore)
-					Debug.Assert (processingQueue.First != queueNode);
+					// Leave it in the stack on its current position (it should not be on the first position anymore)
+					Debug.Assert (processingStack.First != queueNode);
 					continue;
 				}
 
@@ -172,6 +237,8 @@ namespace Mono.Linker.Steps
 				}
 
 				// The method has been modified due to constant propagation - we will optimize it.
+
+				MethodsWithRewriteAttemptedStatistics++;
 
 				//
 				// This is the main step which evaluates if inlined calls can
@@ -203,6 +270,8 @@ namespace Mono.Linker.Steps
 
 		object AnalyzeMethodForConstantResult (MethodDefinition method, Collection<Instruction> instructions)
 		{
+			MethodsAnalyzedForConstantResultStatistic++;
+
 			if (!method.HasBody)
 				return NonConstSentinel;
 
@@ -224,50 +293,23 @@ namespace Mono.Linker.Steps
 			}
 
 			var analyzer = new ConstantExpressionMethodAnalyzer (method, instructions ?? method.Body.Instructions);
-			MethodsAnalyzedForConstantResultStatistic++;
 			if (analyzer.Analyze ()) {
-				AnalyzedAsConstantAfterRewriteStatistic++;
+				AnalyzedAsConstantStatistic++;
+				if (instructions != null)
+					AnalyzedAsConstantAfterRewriteStatistics++;
 				return analyzer.Result;
 			} else {
 				return NonConstSentinel;
 			}
 		}
 
-		void RewriteBodies (Collection<TypeDefinition> types)
-		{
-			foreach (var type in types) {
-				if (type.IsInterface)
-					continue;
-
-				if (!type.HasMethods)
-					continue;
-
-				foreach (var method in type.Methods) {
-					if (!method.HasBody)
-						continue;
-
-					//
-					// Block methods which rewrite does not support
-					//
-					switch (method.ReturnType.MetadataType) {
-					case MetadataType.ByReference:
-					case MetadataType.FunctionPointer:
-						continue;
-					}
-
-					ProcessMethod (method);
-				}
-
-				if (type.HasNestedTypes)
-					RewriteBodies (type.NestedTypes);
-			}
-		}
-
 		/// <summary>
-		/// 
+		/// Determines if a method has constant return value. If the method has not yet been processed it makes sure
+		/// it is on the stack for processing and returns without a result.
 		/// </summary>
-		/// <param name="method"></param>
-		/// <param name="constantResultInstruction"></param>
+		/// <param name="method">The method to determine result for</param>
+		/// <param name="constantResultInstruction">If successfull and the method returns a constant value this will be set to the
+		/// instruction with the constant value. If successfulll and the method doesn't have a constant value this is set to null.</param>
 		/// <returns>
 		/// true - if the method was analyzed and result is known
 		///   constantResultInstruction is set to an instance if the method returns a constant, otherwise it's set to null
@@ -275,21 +317,23 @@ namespace Mono.Linker.Steps
 		/// </returns>
 		bool TryGetConstantResultForMethod (MethodDefinition method, out Instruction constantResultInstruction)
 		{
+			TryGetMethodResultStatistics++;
+
 			if (!processedMethods.TryGetValue (method, out object processedState)) {
-				// Method is not yet in the queue - add it there at the begining
-				EnqueueMethodForProcessing (method);
+				// Method is not yet in the stack - add it there
+				AddMethodForProcessing (method);
 				constantResultInstruction = null;
 				return false;
 			}
 
 			switch (processedState) {
 			case LinkedListNode<ProcessingNode> queueNode:
-				// Method is already in the queue - not yet processed
-				// Move it to the begining of the queue
-				processingQueue.Remove (queueNode);
-				processingQueue.AddFirst (queueNode);
+				// Method is already in the stack - not yet processed
+				// Move it to the top of the stack
+				processingStack.Remove (queueNode);
+				processingStack.AddFirst (queueNode);
 
-				// Note that queue version is not changing - we're just postponing work, not resolving anything.
+				// Note that stack version is not changing - we're just postponing work, not resolving anything.
 
 				constantResultInstruction = null;
 				return false;
@@ -297,18 +341,23 @@ namespace Mono.Linker.Steps
 			case Instruction instruction:
 				// Method was already processed and found to have a constant value
 				constantResultInstruction = instruction;
+				TryGetMethodResultWithoutWaitingStatistics++;
 				return true;
 
 			case object processedUnchangedSentinel when processedUnchangedSentinel == ProcessedUnchangedSentinel:
 				// Method has been processed and no changes has been made to it.
 				// Also its value has not been needed yet. Now we need to know if it's constant, so run the analyzer on it
 				object result = AnalyzeMethodForConstantResult (method, instructions: null);
+				Debug.Assert (result is Instruction || result == NonConstSentinel);
+				processedMethods[method] = result;
 				constantResultInstruction = result == NonConstSentinel ? null : (Instruction) result;
+				TryGetMethodResultWithoutWaitingStatistics++;
 				return true;
 
 			case object nonConstSentinel when nonConstSentinel == NonConstSentinel:
 				// Method was processed and found to not have a constant value
 				constantResultInstruction = null;
+				TryGetMethodResultWithoutWaitingStatistics++;
 				return true;
 
 			default:
