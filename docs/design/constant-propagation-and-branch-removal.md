@@ -190,3 +190,9 @@ The scan over the stack won't find any methods to move to the top. So it will br
 ### Use actual recursion in the analyzer
 
 The processing of methods is recursive in nature since callers needs to know results of processing callees. To avoid actual recursion in the analyzer, the nodes are stored in the processing stack. If the necessary results are not yet known for a given method, the current method is postponed (moves down on the stack) and it will be retried later on. This is potentially expensive. An optimization would be to allow a limited recursion within the analyzer and only rely on the processing stack in cases a recursion limit is reached.
+
+### Avoid scanning of potentially removed branches
+
+Currently the scanning (step 2 above) goes over all instructions in the method's body and will request processing of all called methods. This means that even if the called method is behind a feature check which is disabled, it will still be processed (and all of its dependencies will be processed as well). In the end that branch will be removed and none of those methods will end up being marked. All the processing of those methods will be effectively thrown away.
+
+To improve this behavior we would need to merge the scanning with the constant condition detection and branch removal. Basically steps 2-5 would have to become one. The idea is that the scanning would only request processing for methods which are on the main path through the method or in branches which can't be removed. This would probably mean that scanning would have to give up sooner (currently it always goes over the whole method body requesting processing of all dependencies) which wold likely lead to more frequent re-scanning of the method (to eventually reach the end). The advantage would be the potential to not process methods which are not needed. An experiment would have to be done to measure the numbers to determine if this is actually a beneficial change.
