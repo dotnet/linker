@@ -140,7 +140,7 @@ namespace Mono.Linker.Steps
 			Debug.Assert (methodValue != null);
 			Debug.Assert (!(methodValue is LinkedListNode<ProcessingNode>));
 
-			processedMethods[stackNode.ValueRef.Method] = methodValue;
+			processedMethods[stackNode.Value.Method] = methodValue;
 			processingStack.Remove (stackNode);
 			processingStackVersion++;
 		}
@@ -149,10 +149,10 @@ namespace Mono.Linker.Steps
 		{
 			while (processingStack.Count > 0) {
 				var stackNode = processingStack.First;
-				var method = stackNode.ValueRef.Method;
+				var method = stackNode.Value.Method;
 
 				bool treatUnprocessedAsNonConst = false;
-				if (stackNode.ValueRef.LastAttemptStackVersion == processingStackVersion) {
+				if (stackNode.Value.LastAttemptStackVersion == processingStackVersion) {
 					// Loop was detected - the stack hasn't changed since the last time we tried to process this method
 					// as such there's no way to resolve the situation (running the code below would produce the exact same result).
 
@@ -168,7 +168,7 @@ namespace Mono.Linker.Steps
 					// is part of the loop:
 					var lastNodeWithCurrentVersion = stackNode;
 					for (var currentNode = stackNode; currentNode != null; currentNode = currentNode.Next) {
-						if (currentNode.ValueRef.LastAttemptStackVersion == processingStackVersion)
+						if (currentNode.Value.LastAttemptStackVersion == processingStackVersion)
 							lastNodeWithCurrentVersion = currentNode;
 					}
 
@@ -181,7 +181,7 @@ namespace Mono.Linker.Steps
 					bool foundNodesWithNonCurrentVersion = false;
 					while (candidateNodeToMoveToTop != stackNode) {
 						var previousNode = candidateNodeToMoveToTop.Previous;
-						if (candidateNodeToMoveToTop.ValueRef.LastAttemptStackVersion != processingStackVersion) {
+						if (candidateNodeToMoveToTop.Value.LastAttemptStackVersion != processingStackVersion) {
 							processingStack.Remove (candidateNodeToMoveToTop);
 							processingStack.AddFirst (candidateNodeToMoveToTop);
 							foundNodesWithNonCurrentVersion = true;
@@ -204,7 +204,10 @@ namespace Mono.Linker.Steps
 					treatUnprocessedAsNonConst = true;
 				}
 
-				stackNode.ValueRef.LastAttemptStackVersion = processingStackVersion;
+				stackNode.Value = new ProcessingNode () {
+					Method = method,
+					LastAttemptStackVersion = processingStackVersion
+				};
 
 				if (!method.HasBody) {
 					StoreMethodAsProcessedAndRemoveFromQueue (stackNode, ProcessedUnchangedSentinel);
