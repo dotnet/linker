@@ -148,32 +148,66 @@ namespace Mono.Linker.Steps
 		void ProcessStack ()
 		{
 			while (processingStack.Count > 0) {
-				var queueNode = processingStack.First;
-				var method = queueNode.ValueRef.Method;
+				var stackNode = processingStack.First;
+				var method = stackNode.ValueRef.Method;
 
-				if (queueNode.ValueRef.LastAttemptStackVersion == processingStackVersion) {
+				bool treatUnprocessedAsNonConst = false;
+				if (stackNode.ValueRef.LastAttemptStackVersion == processingStackVersion) {
 					// Loop was detected - the stack hasn't changed since the last time we tried to process this method
 					// as such there's no way to resolve the situation (running the code below would produce the exact same result).
 
-					// We can't process all the methods in the loop with the given information, so we'll just "skip" over one of them.
-					// We will skip over it by marking it as processed without any changes. This means that any branch removal
-					// within that method will not be performed - but it migth still allow other methods in the loop to to their optimizations.
+					// Observation:
+					//   All nodes on the stack which have `LastAttemptStackVersion` equal to `processingStackVersion` are part of the loop
+					//   meaning removing any of them should break the loop and allow to make progress.
+					//   There might be other methods in between these which don't have the current version but are dependencies of some of the method
+					//   in the loop.
+					//   If we don't process these, then we might miss constants and branches to remove. See the doc
+					//   `constant-propagation-and-branch-removal.md` in this repo for more details and a sample.
 
-					// Note: This has the possibility to bring in code which is otherwise meant to be removed. Especially combined
-					// with feature-switches and trim-incompatible code this may actually lead to producing warnings which are
-					// technically wrong (as the code they point to will never be used by the app). The likelyhood of this happening
-					// is VERY low though. And in the future we may improve this by being more precise in our scanning - ideally merging
-					// the inlining and branch reduction in one pass would probably lead to almost ideal behavior even in presence
-					// of loops.
+					// To fix this go over the stack and find the "oldest" node with the current version - the "oldest" node which
+					// is part of the loop:
+					var lastNodeWithCurrentVersion = stackNode;
+					for (var currentNode = stackNode; currentNode != null; currentNode = currentNode.Next) {
+						if (currentNode.ValueRef.LastAttemptStackVersion == processingStackVersion)
+							lastNodeWithCurrentVersion = currentNode;
+					}
 
-					StoreMethodAsProcessedAndRemoveFromQueue (queueNode, ProcessedUnchangedSentinel);
-					continue;
+					// There should be at least 2 nodes with the latest version to form a loop
+					Debug.Assert (lastNodeWithCurrentVersion != stackNode);
+
+					// Now go back over all nodes from the "oldest" one back to the top and find any nodes which are not of current version.
+					// For all of them, move them to the top of the stack.
+					var candidateNodeToMoveToTop = lastNodeWithCurrentVersion;
+					bool foundNodesWithNonCurrentVersion = false;
+					while (candidateNodeToMoveToTop != stackNode) {
+						var previousNode = candidateNodeToMoveToTop.Previous;
+						if (candidateNodeToMoveToTop.ValueRef.LastAttemptStackVersion != processingStackVersion) {
+							processingStack.Remove (candidateNodeToMoveToTop);
+							processingStack.AddFirst (candidateNodeToMoveToTop);
+							foundNodesWithNonCurrentVersion = true;
+						}
+
+						candidateNodeToMoveToTop = previousNode;
+					}
+
+					// If any node was found which was not of current version (and moved to the top of the stack), move on to processing
+					// the stack - this will give a chance for these methods to be processed. It doesn't break the loop and we should come back here
+					// again due to the same loop as before, but now with more nodes processed (hopefully all of the dependencies of the nodes in the loop).
+					// In the worst case all of those nodes will become part of the loop - in which case we will move on to break the loop anyway.
+					if (foundNodesWithNonCurrentVersion) {
+						continue;
+					}
+
+					// No such node was found -> we only have nodes in the loop now, so we have to break the loop.
+					// We do this by processing it with special flag which will make it ignore any unprocessed dependencies
+					// treating them as non-const. These should only be nodes in the loop.
+					treatUnprocessedAsNonConst = true;
 				}
 
-				queueNode.ValueRef.LastAttemptStackVersion = processingStackVersion;
+				stackNode.ValueRef.LastAttemptStackVersion = processingStackVersion;
 
 				if (!method.HasBody) {
-					StoreMethodAsProcessedAndRemoveFromQueue (queueNode, ProcessedUnchangedSentinel);
+					StoreMethodAsProcessedAndRemoveFromQueue (stackNode, ProcessedUnchangedSentinel);
 					continue;
 				}
 
@@ -184,17 +218,17 @@ namespace Mono.Linker.Steps
 				// If it needs to know the result of analysis of other methods and those has not been processed yet
 				// it will still scan the entir body, but we will return the full processing one more time.
 				//
-				if (!TryInlineBodyDependencies (ref reducer, out bool changed)) {
+				if (!TryInlineBodyDependencies (ref reducer, treatUnprocessedAsNonConst, out bool changed)) {
 					// Method has unprocessed dependencies - so back off and try again later
 					// Leave it in the stack on its current position (it should not be on the first position anymore)
-					Debug.Assert (processingStack.First != queueNode);
+					Debug.Assert (processingStack.First != stackNode);
 					continue;
 				}
 
 				if (!changed) {
 					// All dependencies are processed and there where no const values found. There's nothing to optimize.
 					// Mark the method as processed - without computing the const value of it (we don't know if it's going to be needed)
-					StoreMethodAsProcessedAndRemoveFromQueue (queueNode, ProcessedUnchangedSentinel);
+					StoreMethodAsProcessedAndRemoveFromQueue (stackNode, ProcessedUnchangedSentinel);
 					continue;
 				}
 
@@ -213,7 +247,7 @@ namespace Mono.Linker.Steps
 
 				if (method.ReturnType.MetadataType == MetadataType.Void) {
 					// Method is fully processed and can't be const (since it doesn't return value) - so mark it as processed without const value
-					StoreMethodAsProcessedAndRemoveFromQueue (queueNode, NonConstSentinel);
+					StoreMethodAsProcessedAndRemoveFromQueue (stackNode, NonConstSentinel);
 					continue;
 				}
 
@@ -223,7 +257,7 @@ namespace Mono.Linker.Steps
 				// Otherwise we would have to remember the inlined code along with the method.
 				//
 				StoreMethodAsProcessedAndRemoveFromQueue (
-					queueNode,
+					stackNode,
 					AnalyzeMethodForConstantResult (method, reducer.FoldedInstructions));
 			}
 		}
@@ -314,7 +348,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		bool TryInlineBodyDependencies (ref BodyReducer reducer, out bool changed)
+		bool TryInlineBodyDependencies (ref BodyReducer reducer, bool treatUnprocessedAsNonConst, out bool changed)
 		{
 			changed = false;
 			bool hasUnprocessedDependencies = false;
@@ -370,9 +404,13 @@ namespace Mono.Linker.Steps
 					}
 
 					if (!TryGetConstantResultForMethod (md, out targetResult)) {
-						hasUnprocessedDependencies = true;
+						if (!treatUnprocessedAsNonConst)
+							hasUnprocessedDependencies = true;
 						break;
 					} else if (targetResult == null || hasUnprocessedDependencies) {
+						// Even is const is detected, there's no point in rewriting anything
+						// if we've found unprocessed dependency since the results of this scan will
+						// be thrown away (we back off and wait for the unprocessed dependency to be processed first).
 						break;
 					}
 
@@ -415,7 +453,8 @@ namespace Mono.Linker.Steps
 
 					if (sizeOfImpl != null) {
 						if (!TryGetConstantResultForMethod (sizeOfImpl, out targetResult)) {
-							hasUnprocessedDependencies = true;
+							if (!treatUnprocessedAsNonConst)
+								hasUnprocessedDependencies = true;
 							break;
 						} else if (targetResult == null || hasUnprocessedDependencies) {
 							break;

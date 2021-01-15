@@ -37,6 +37,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 
 			LoopWithoutConstants.Test ();
 			LoopWithConstants.Test ();
+			LoopWithConstantsComplex.Test ();
 			DeepConstant.Test ();
 
 			ConstantFromNewAssembly.Test ();
@@ -169,6 +170,58 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 			[Kept]
 			static bool LoopMethod2 ()
 			{
+				if (depth < 100)
+					LoopMethod1 ();
+
+				return false;
+			}
+
+			[Kept] static void Reached () { }
+			[Kept] static void Reached2 () { }
+
+			[Kept]
+			public static void Test ()
+			{
+				// Currently we don't recognize this pattern as constant
+				// Technically LoopMethod1 will always return false
+				if (LoopMethod1 ())
+					Reached ();
+				else
+					Reached2 ();
+			}
+		}
+
+		static class LoopWithConstantsComplex
+		{
+			[Kept]
+			static int depth = 0;
+
+			[Kept]
+			static bool IsTrue ()
+			{
+				return true;
+			}
+
+			static void ShouldNotBeReached () { }
+
+			[Kept]
+			[ExpectBodyModified]
+			static bool LoopMethod1 ()
+			{
+				depth++;
+				if (!IsTrue ())
+					ShouldNotBeReached ();
+
+				return LoopMethod2 ();
+			}
+
+			[Kept]
+			[ExpectBodyModified]
+			static bool LoopMethod2 ()
+			{
+				if (!IsTrue ())
+					ShouldNotBeReached ();
+
 				if (depth < 100)
 					LoopMethod1 ();
 
