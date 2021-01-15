@@ -829,8 +829,7 @@ namespace Mono.Linker.Steps
 
 		protected static AssemblyDefinition GetAssemblyFromCustomAttributeProvider (ICustomAttributeProvider provider)
 		{
-			return provider switch
-			{
+			return provider switch {
 				MemberReference mr => mr.Module.Assembly,
 				AssemblyDefinition ad => ad,
 				ModuleDefinition md => md.Assembly,
@@ -1428,8 +1427,7 @@ namespace Mono.Linker.Steps
 
 			var parent = field.DeclaringType;
 			if (!Annotations.HasPreservedStaticCtor (parent)) {
-				var cctorReason = reason.Kind switch
-				{
+				var cctorReason = reason.Kind switch {
 					// Report an edge directly from the method accessing the field to the static ctor it triggers
 					DependencyKind.FieldAccess => new DependencyInfo (DependencyKind.TriggersCctorThroughFieldAccess, reason.Source),
 					_ => new DependencyInfo (DependencyKind.CctorForField, field)
@@ -3002,8 +3000,7 @@ namespace Mono.Linker.Steps
 				break;
 
 			case OperandType.InlineMethod: {
-					DependencyKind dependencyKind = instruction.OpCode.Code switch
-					{
+					DependencyKind dependencyKind = instruction.OpCode.Code switch {
 						Code.Jmp => DependencyKind.DirectCall,
 						Code.Call => DependencyKind.DirectCall,
 						Code.Callvirt => DependencyKind.VirtualCall,
