@@ -424,7 +424,7 @@ namespace Mono.Linker
 							}
 
 							var rmode = ParseAssemblyRootsMode (arguments.Dequeue ());
-							if (action == null)
+							if (rmode == null)
 								return -1;
 
 							string assemblyName = arguments.Dequeue ();
