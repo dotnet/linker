@@ -63,6 +63,7 @@ namespace Mono.Linker.Steps
 		Statistics.NamedValue MaxNumberOfProcessAttemptsPerMethodStatistics;
 		Statistics.NamedValue TryGetMethodResultStatistics;
 		Statistics.NamedValue TryGetMethodResultWithoutWaitingStatistics;
+		Statistics.NamedValue MaxStackDepthStatistics;
 
 		protected override void Process ()
 		{
@@ -77,6 +78,7 @@ namespace Mono.Linker.Steps
 			MaxNumberOfProcessAttemptsPerMethodStatistics = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (MaxNumberOfProcessAttemptsPerMethodStatistics));
 			TryGetMethodResultStatistics = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (TryGetMethodResultStatistics));
 			TryGetMethodResultWithoutWaitingStatistics = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (TryGetMethodResultWithoutWaitingStatistics));
+			MaxStackDepthStatistics = Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (MaxStackDepthStatistics));
 
 			var assemblies = Context.Annotations.GetAssemblies ().ToArray ();
 
@@ -180,6 +182,8 @@ namespace Mono.Linker.Steps
 		void ProcessStack ()
 		{
 			while (processingStack.Count > 0) {
+				MaxStackDepthStatistics.Value = Math.Max (MaxStackDepthStatistics.Value, processingStack.Count);
+
 				var queueNode = processingStack.First;
 				var method = queueNode.ValueRef.Method;
 				queueNode.ValueRef.TryCount++;
