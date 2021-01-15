@@ -112,11 +112,11 @@ namespace Mono.Linker.Steps
 
 				ProcessStack ();
 
-				Debug.Assert (processedMethods.TryGetValue (method, out processedState) && processedState is not LinkedListNode<ProcessingNode>);
+				Debug.Assert (processedMethods.TryGetValue (method, out processedState) && !(processedState is LinkedListNode<ProcessingNode>));
 			} else {
 				// If the method is already in the processed dictionary, it must not be in "processing" state
 				// since the queue is currently emtpy.
-				Debug.Assert (processedState is not LinkedListNode<ProcessingNode>);
+				Debug.Assert (!(processedState is LinkedListNode<ProcessingNode>));
 			}
 		}
 
@@ -138,7 +138,7 @@ namespace Mono.Linker.Steps
 		{
 			Debug.Assert (stackNode.List == processingStack);
 			Debug.Assert (methodValue != null);
-			Debug.Assert (methodValue is not LinkedListNode<ProcessingNode>);
+			Debug.Assert (!(methodValue is LinkedListNode<ProcessingNode>));
 
 			processedMethods[stackNode.ValueRef.Method] = methodValue;
 			processingStack.Remove (stackNode);
