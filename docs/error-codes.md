@@ -125,7 +125,9 @@ the error code. For example:
 
 #### `IL1036`: Invalid assembly name '{assemblyName}'
 
-#### `IL1037`: Invalid assembly roots mode '{mode}'
+#### `IL1037`: Invalid assembly root mode '{mode}'
+
+#### `IL1038`: Exported type '{type.Name}' cannot be rooted
 
 ----
 ## Warning Codes

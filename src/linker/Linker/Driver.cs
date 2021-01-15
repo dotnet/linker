@@ -183,7 +183,6 @@ namespace Mono.Linker
 			bool removeCAS = true;
 			bool new_mvid_used = false;
 			bool deterministic_used = false;
-			AssemblyAction? action = null;
 
 			List<BaseStep> inputs = CreateDefaultResolvers ();
 
@@ -417,25 +416,6 @@ namespace Mono.Linker
 
 						continue;
 
-					case "--roots": {
-							if (arguments.Count < 2) {
-								ErrorMissingArgument (token);
-								return -1;
-							}
-
-							var rmode = ParseAssemblyRootsMode (arguments.Dequeue ());
-							if (rmode == null)
-								return -1;
-
-							string assemblyName = arguments.Dequeue ();
-							if (!IsValidAssemblyName (assemblyName)) {
-								context.LogError ($"Invalid assembly name '{assemblyName}'", 1036);
-								return -1;
-							}
-
-							context.RegisterAssemblyRootsMode (assemblyName, rmode.Value);
-							continue;
-						}
 					case "--link-attributes":
 						if (arguments.Count < 1) {
 							ErrorMissingArgument (token);
@@ -537,42 +517,47 @@ namespace Mono.Linker
 							return -1;
 
 						continue;
-					case "c":
-						if (!GetStringParam (token, l => action = ParseAssemblyAction (l)))
-							return -1;
+					case "c": {
+							AssemblyAction? action = null;
+							if (!GetStringParam (token, l => action = ParseAssemblyAction (l)))
+								return -1;
 
-						if (action == null)
-							return -1;
+							if (action == null)
+								return -1;
 
-						context.CoreAction = action.Value;
-						continue;
-					case "u":
-						if (!GetStringParam (token, l => action = ParseAssemblyAction (l)))
-							return -1;
-
-						if (action == null)
-							return -1;
-
-						context.UserAction = action.Value;
-						continue;
-					case "p":
-						if (arguments.Count < 2) {
-							ErrorMissingArgument (token);
-							return -1;
+							context.CoreAction = action.Value;
+							continue;
 						}
+					case "u": {
+							AssemblyAction? action = null;
+							if (!GetStringParam (token, l => action = ParseAssemblyAction (l)))
+								return -1;
 
-						action = ParseAssemblyAction (arguments.Dequeue ());
-						if (action == null)
-							return -1;
+							if (action == null)
+								return -1;
 
-						string assemblyName = arguments.Dequeue ();
-						if (!IsValidAssemblyName (assemblyName)) {
-							context.LogError ($"Invalid assembly name '{assemblyName}'", 1036);
-							return -1;
+							context.UserAction = action.Value;
+							continue;
 						}
+					case "p": {
+							if (arguments.Count < 2) {
+								ErrorMissingArgument (token);
+								return -1;
+							}
 
-						context.RegisterAssemblyAction (assemblyName, action.Value);
-						continue;
+							var action = ParseAssemblyAction (arguments.Dequeue ());
+							if (action == null)
+								return -1;
+
+							string assemblyName = arguments.Dequeue ();
+							if (!IsValidAssemblyName (assemblyName)) {
+								context.LogError ($"Invalid assembly name '{assemblyName}'", 1036);
+								return -1;
+							}
+
+							context.RegisterAssemblyAction (assemblyName, action.Value);
+							continue;
+						}
 					case "t":
 						context.KeepTypeForwarderOnlyAssemblies = true;
 						continue;
@@ -595,12 +580,22 @@ namespace Mono.Linker
 							if (!GetStringParam (token, l => assemblyFile = l))
 								return -1;
 
-							if (!File.Exists (assemblyFile)) {
-								context.LogError ($"Trimming assembly '{assemblyFile}' could not be found'", 1032);
+							if (!File.Exists (assemblyFile) && assemblyFile.EndsWith (".dll", StringComparison.InvariantCultureIgnoreCase)) {
+								context.LogError ($"Root assembly '{assemblyFile}' could not be found'", 1032);
 								return -1;
 							}
 
-							inputs.Add (new RootAssemblyInput (assemblyFile));
+							AssemblyRootsMode rmode = AssemblyRootsMode.Default;
+							var rootMode = GetNextStringValue ();
+							if (rootMode != null) {
+								var parsed_rmode = ParseAssemblyRootsMode (rootMode);
+								if (parsed_rmode is null)
+									return -1;
+
+								rmode = parsed_rmode.Value;
+							}
+
+							inputs.Add (new RootAssemblyInput (assemblyFile, rmode));
 							continue;
 						}
 #else
@@ -1061,7 +1056,7 @@ namespace Mono.Linker
 				return AssemblyRootsMode.EntryPoint;
 			}
 
-			context.LogError ($"Invalid assembly roots mode '{s}'", 1037);
+			context.LogError ($"Invalid assembly root mode '{s}'", 1037);
 			return null;
 		}
 
@@ -1207,8 +1202,14 @@ namespace Mono.Linker
 			Console.WriteLine (_linker);
 
 #if FEATURE_ILLINK
-			Console.WriteLine ($"illink [options] {resolvers} file");
-			Console.WriteLine ("  -a FILE             Assembly file used as root assembly");
+			Console.WriteLine ($"illink [options] {resolvers}");
+			Console.WriteLine ("  -a FILE [MODE]      Assembly file used as root assembly with optional MODE value to alter default root mode");
+			Console.WriteLine ("                      Mode can be one of the following values");
+			Console.WriteLine ("                        all: Keep all members in root assembly");
+			Console.WriteLine ("                        default: Use entry point for applications and all members for libraries");
+			Console.WriteLine ("                        entrypoint: Use assembly entry point as only root in the assembly");
+			Console.WriteLine ("                        visible: Keep all members and types visible outside of root assembly");
+
 			Console.WriteLine ("  -x FILE             XML descriptor file with members to be kept");
 #else
 			Console.WriteLine ($"monolinker [options] {resolvers} file");
@@ -1261,13 +1262,6 @@ namespace Mono.Linker
 			Console.WriteLine ("  --keep-facades            Keep assemblies with type-forwarders (short -t). Defaults to false");
 			Console.WriteLine ("  --skip-unresolved         Ignore unresolved types, methods, and assemblies. Defaults to false");
 			Console.WriteLine ("  --output-pinvokes PATH    Output a JSON file with all modules and entry points of the P/Invokes found");
-#if FEATURE_ILLINK
-			Console.WriteLine ("  --roots MODE ASM          Override default roots assemblies marking rules");
-			Console.WriteLine ("                              all: Keep all members in root assembly");
-			Console.WriteLine ("                              default: Use entry point for applications and all members for libraries");
-			Console.WriteLine ("                              entrypoint: Use assembly entry point as only root in the assembly");
-			Console.WriteLine ("                              visible: Keep all members and types visible outside of root assembly");
-#endif
 			Console.WriteLine ("  --verbose                 Log messages indicating progress and warnings");
 			Console.WriteLine ("  --nowarn WARN             Disable specific warning messages");
 			Console.WriteLine ("  --warn VERSION            Only print out warnings with version <= VERSION. Defaults to '9999'");

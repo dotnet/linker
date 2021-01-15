@@ -5,8 +5,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBody
 {
 	[Define ("OTHER_INCLUDED")]
 #if NETCOREAPP
-	[SetupLinkerArgument ("-a", "other.dll")]
-	[SetupLinkerArgument ("--roots", "visible", "other")]
+	[SetupLinkerArgument ("-a", "other.dll", "visible")]
 #else
 	[SetupLinkerArgument ("-r", "other")]
 #endif

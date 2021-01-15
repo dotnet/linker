@@ -10,10 +10,12 @@ namespace Mono.Linker.Steps
 	public class RootAssemblyInput : BaseStep
 	{
 		readonly string fileName;
+		readonly AssemblyRootsMode rootMode;
 
-		public RootAssemblyInput (string fileName)
+		public RootAssemblyInput (string fileName, AssemblyRootsMode rootMode)
 		{
 			this.fileName = fileName;
+			this.rootMode = rootMode;
 		}
 
 		protected override void Process ()
@@ -37,7 +39,7 @@ namespace Mono.Linker.Steps
 				return;
 			}
 
-			switch (Context.GetAssemblyRootsMode (assembly.Name)) {
+			switch (rootMode) {
 			case AssemblyRootsMode.Default:
 				if (assembly.MainModule.Kind == ModuleKind.Dll)
 					goto case AssemblyRootsMode.AllMembers;
@@ -57,7 +59,12 @@ namespace Mono.Linker.Steps
 				TypePreserve preserve = TypePreserve.All |
 					(HasInternalsVisibleTo (assembly) ? TypePreserve.AccessibilityVisibleOrInternal : TypePreserve.AccessibilityVisible);
 
-				foreach (var type in assembly.MainModule.Types)
+				var module = assembly.MainModule;
+				if (module.HasExportedTypes)
+					foreach (var type in module.ExportedTypes)
+						MarkAndPreserveVisible (assembly, type, preserve);
+
+				foreach (var type in module.Types)
 					MarkAndPreserveVisible (type, preserve);
 				break;
 			case AssemblyRootsMode.AllMembers:
@@ -97,6 +104,20 @@ namespace Mono.Linker.Steps
 
 			foreach (TypeDefinition nested in type.NestedTypes)
 				MarkAndPreserveVisible (nested, preserve);
+		}
+
+		void MarkAndPreserveVisible (AssemblyDefinition assembly, ExportedType type, TypePreserve preserve)
+		{
+			Context.MarkingHelpers.MarkExportedType (type, assembly.MainModule, new DependencyInfo (DependencyKind.ExportedType, type));
+
+			TypeDefinition td = type.Resolve ();
+			if (td != null) {
+				MarkAndPreserveVisible (td, preserve);
+				return;
+			}
+
+			if (!Context.IgnoreUnresolved)
+				Context.LogError ($"Exported type '{type.Name}' cannot be rooted", 1038);
 		}
 
 		static bool IsTypeVisible (TypeDefinition type)

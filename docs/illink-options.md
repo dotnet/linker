@@ -16,19 +16,20 @@ will use the assembly `Program.exe` as root linker input. That means that the li
 start with the main entry point method of `Program.exe` (typically the `Main` method) and
 process all its dependencies to determine what is necessary for this assembly to run.
 
-It's possible to use multiple input files and linker will treat them as multiple sources of
-input. When a library is used instead of executable linker will mark all members instead. This
-behaviour can be further customized using `--root` option which allows the following options.
+It's possible to use multiple input files and linker will use them all as multiple sources.
+When a library is used instead of executable linker will root and mark all members instead of
+assembly entry point. This rooting behaviour can be customized by passing additional option
+which can use one of following values.
 
 - `all` - Keep all members in root assembly
 - `default` - Use entry point for applications and all members for libraries
 - `entrypoint` - Use assembly entry point as only root in the assembly
 - `visible` - Keep all members and types visible outside of root assembly
 
-You can retain all public members of `Program.exe` application by calling
-linker like
+You can retain all public members of `Program.exe` application even if they are not
+referenced by any dependency by calling linker like
 
-`illink -a Program.exe --root visible Program`
+`illink -a Program.exe visible`
 
 ### Linking from an [XML descriptor](data-formats.md#descriptor-format)
 

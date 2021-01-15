@@ -59,9 +59,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 #if NETCOREAPP
 			Append ("-a");
 			Append (fileName);
-			Append ("--roots");
 			Append ("visible");
-			Append (System.IO.Path.GetFileNameWithoutExtension (fileName));
 #else
 			Append ("-r");
 			Append (fileName);

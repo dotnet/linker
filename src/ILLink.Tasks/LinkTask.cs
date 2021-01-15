@@ -272,16 +272,15 @@ namespace ILLink.Tasks
 			}
 
 			foreach (var assemblyItem in RootAssemblyNames) {
-				args.Append ("-a ").AppendLine (Quote (assemblyItem.ItemSpec));
+				args.Append ("-a ").Append (Quote (assemblyItem.ItemSpec));
 
 				string rootMode = assemblyItem.GetMetadata ("RootMode");
 				if (!string.IsNullOrEmpty (rootMode)) {
-					var assemblyName = Path.GetFileNameWithoutExtension (assemblyItem.ItemSpec);
-
-					args.Append ("--roots ");
-					args.AppendLine (rootMode);
-					args.Append (' ').AppendLine (Quote (assemblyName));
+					args.Append (' ');
+					args.Append (rootMode);
 				}
+
+				args.AppendLine ();
 			}
 
 			HashSet<string> assemblyNames = new HashSet<string> (StringComparer.OrdinalIgnoreCase);

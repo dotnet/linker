@@ -122,6 +122,7 @@ namespace ILLink.Tasks.Tests
 
 		[Theory]
 		[InlineData (new object[] { new string[] { "illink.dll" } })]
+		[InlineData (new object[] { new string[] { "illink" } })]
 		public void TestRootEntryPointAssemblyNames (string[] rootAssemblyNames)
 		{
 			var task = new MockTask () {
@@ -625,7 +626,7 @@ namespace ILLink.Tasks.Tests
 			task.BuildEngine = new MockBuildEngine ();
 			Assert.False (task.Execute ());
 			Assert.Contains (task.Messages, message =>
-				message.Line.Contains ("Trimming assembly 'MissingAssembly.dll' could not be found'"));
+				message.Line.Contains ("Root assembly 'MissingAssembly.dll' could not be found'"));
 		}
 	}
 }
