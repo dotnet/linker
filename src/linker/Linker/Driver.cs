@@ -182,6 +182,7 @@ namespace Mono.Linker
 			bool removeCAS = true;
 			bool new_mvid_used = false;
 			bool deterministic_used = false;
+			bool remove_filters = false;
 
 			bool resolver = false;
 			while (arguments.Count > 0) {
@@ -488,6 +489,10 @@ namespace Mono.Linker
 
 						continue;
 
+					case "--remove-filters":
+						remove_filters = true;
+						continue;
+
 					case "--version":
 						Version ();
 						return 1;
@@ -696,6 +701,8 @@ namespace Mono.Linker
 
 			p.AddStepBefore (typeof (MarkStep), new RemoveUnreachableBlocksStep ());
 			p.AddStepBefore (typeof (OutputStep), new SealerStep ());
+			if (remove_filters)
+				p.AddStepBefore (typeof (OutputStep), new RewriteExceptionFiltersStep ());
 
 			//
 			// Pipeline setup with all steps enabled
