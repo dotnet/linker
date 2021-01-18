@@ -1,6 +1,6 @@
 # Trimming Tools
 
-This repository hosts various tools and msbuild tasks which are used when trimming managed applications with the .NET5 and newer.
+This repository hosts various tools and msbuild tasks which are used when trimming managed applications with .NET 5 and newer.
 
 ## IL Linker
 
