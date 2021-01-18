@@ -14,7 +14,7 @@
   </PropertyGroup>
 
   <Import Project="Sdk.props" Sdk="Microsoft.DotNet.Arcade.Sdk" />
-    <Import Project="eng/Analyzers.props" />
+  <Import Project="eng/Analyzers.props" />
   <PropertyGroup>
     <IsPackable>false</IsPackable>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
