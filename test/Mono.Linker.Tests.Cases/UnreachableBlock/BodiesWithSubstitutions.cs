@@ -38,6 +38,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 			LoopWithoutConstants.Test ();
 			LoopWithConstants.Test ();
 			LoopWithConstantsComplex.Test ();
+			MultiLoopWithConstantsComplex.Test ();
 			DeepConstant.Test ();
 
 			ConstantFromNewAssembly.Test ();
@@ -237,6 +238,84 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 				// Currently we don't recognize this pattern as constant
 				// Technically LoopMethod1 will always return false
 				if (LoopMethod1 ())
+					Reached ();
+				else
+					Reached2 ();
+			}
+		}
+
+		static class MultiLoopWithConstantsComplex
+		{
+			[Kept]
+			static int depth = 0;
+
+			[Kept]
+			static bool IsTrue ()
+			{
+				return true;
+			}
+
+			static void ShouldNotBeReached () { }
+
+			[Kept]
+			[ExpectBodyModified]
+			static bool InnerLoopMethod1 ()
+			{
+				depth++;
+				if (!IsTrue ())
+					ShouldNotBeReached ();
+
+				return InnerLoopMethod2 ();
+			}
+
+			[Kept]
+			[ExpectBodyModified]
+			static bool InnerLoopMethod2 ()
+			{
+				if (!IsTrue ())
+					ShouldNotBeReached ();
+
+				if (depth < 100)
+					InnerLoopMethod1 ();
+
+				return false;
+			}
+
+			[Kept]
+			static void InnerReached () { }
+
+			[Kept]
+			[ExpectBodyModified]
+			static bool OuterLoopMethod1 ()
+			{
+				if (!IsTrue ())
+					ShouldNotBeReached ();
+
+				// Currently we don't recognize this pattern as constant
+				if (InnerLoopMethod1 ())
+					InnerReached ();
+
+				return OuterLoopMethod2 ();
+			}
+
+			[Kept]
+			[ExpectBodyModified]
+			static bool OuterLoopMethod2 ()
+			{
+				if (!IsTrue ())
+					ShouldNotBeReached ();
+
+				return OuterLoopMethod1 ();
+			}
+
+			[Kept] static void Reached () { }
+			[Kept] static void Reached2 () { }
+
+			[Kept]
+			public static void Test ()
+			{
+				// Currently we don't recognize this pattern as constant
+				if (OuterLoopMethod1 ())
 					Reached ();
 				else
 					Reached2 ();

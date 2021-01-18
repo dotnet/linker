@@ -18,10 +18,22 @@ namespace Mono.Linker.Steps
 	{
 		MethodDefinition IntPtrSize, UIntPtrSize;
 
-		struct ProcessingNode
+		readonly struct ProcessingNode
 		{
-			public MethodDefinition Method;
-			public int LastAttemptStackVersion;
+			public ProcessingNode (MethodDefinition method, int lastAttemptStackVersion)
+			{
+				Method = method;
+				LastAttemptStackVersion = lastAttemptStackVersion;
+			}
+
+			public ProcessingNode (in ProcessingNode other, int newLastAttempStackVersion)
+			{
+				Method = other.Method;
+				LastAttemptStackVersion = newLastAttempStackVersion;
+			}
+
+			public readonly MethodDefinition Method;
+			public readonly int LastAttemptStackVersion;
 		}
 
 		// Stack of method nodes which are currently being processed.
@@ -48,8 +60,8 @@ namespace Mono.Linker.Steps
 		//   - NonConstSentinel - which means the method has been processed and the return value is not a const
 		//   - Instruction instance - method has been processed and it has a constant return value (the value of the instruction)
 		Dictionary<MethodDefinition, object> processedMethods;
-		readonly object ProcessedUnchangedSentinel = "ProcessedUnchangedSentinel";
-		readonly object NonConstSentinel = "NonConstSentinel";
+		static readonly object ProcessedUnchangedSentinel = "ProcessedUnchangedSentinel";
+		static readonly object NonConstSentinel = "NonConstSentinel";
 
 		protected override void Process ()
 		{
@@ -124,10 +136,7 @@ namespace Mono.Linker.Steps
 		{
 			Debug.Assert (!processedMethods.ContainsKey (method));
 
-			var processingNode = new ProcessingNode () {
-				Method = method,
-				LastAttemptStackVersion = -1
-			};
+			var processingNode = new ProcessingNode (method, -1);
 
 			var listNode = processingStack.AddFirst (processingNode);
 			processedMethods.Add (method, listNode);
@@ -151,7 +160,7 @@ namespace Mono.Linker.Steps
 				var stackNode = processingStack.First;
 				var method = stackNode.Value.Method;
 
-				bool treatUnprocessedAsNonConst = false;
+				bool treatUnprocessedDependenciesAsNonConst = false;
 				if (stackNode.Value.LastAttemptStackVersion == processingStackVersion) {
 					// Loop was detected - the stack hasn't changed since the last time we tried to process this method
 					// as such there's no way to resolve the situation (running the code below would produce the exact same result).
@@ -201,13 +210,10 @@ namespace Mono.Linker.Steps
 					// No such node was found -> we only have nodes in the loop now, so we have to break the loop.
 					// We do this by processing it with special flag which will make it ignore any unprocessed dependencies
 					// treating them as non-const. These should only be nodes in the loop.
-					treatUnprocessedAsNonConst = true;
+					treatUnprocessedDependenciesAsNonConst = true;
 				}
 
-				stackNode.Value = new ProcessingNode () {
-					Method = method,
-					LastAttemptStackVersion = processingStackVersion
-				};
+				stackNode.Value = new ProcessingNode (stackNode.Value, processingStackVersion);
 
 				if (!method.HasBody) {
 					StoreMethodAsProcessedAndRemoveFromQueue (stackNode, ProcessedUnchangedSentinel);
@@ -219,9 +225,9 @@ namespace Mono.Linker.Steps
 				//
 				// Temporary inlines any calls which return contant expression.
 				// If it needs to know the result of analysis of other methods and those has not been processed yet
-				// it will still scan the entir body, but we will return the full processing one more time.
+				// it will still scan the entire body, but we will return the full processing one more time.
 				//
-				if (!TryInlineBodyDependencies (ref reducer, treatUnprocessedAsNonConst, out bool changed)) {
+				if (!TryInlineBodyDependencies (ref reducer, treatUnprocessedDependenciesAsNonConst, out bool changed)) {
 					// Method has unprocessed dependencies - so back off and try again later
 					// Leave it in the stack on its current position (it should not be on the first position anymore)
 					Debug.Assert (processingStack.First != stackNode);
@@ -261,37 +267,37 @@ namespace Mono.Linker.Steps
 				//
 				StoreMethodAsProcessedAndRemoveFromQueue (
 					stackNode,
-					AnalyzeMethodForConstantResult (method, reducer.FoldedInstructions));
+					AnalyzeMethodForConstantResult (method, reducer.FoldedInstructions) ?? NonConstSentinel);
 			}
 		}
 
-		object AnalyzeMethodForConstantResult (MethodDefinition method, Collection<Instruction> instructions)
+		Instruction AnalyzeMethodForConstantResult (MethodDefinition method, Collection<Instruction> instructions)
 		{
 			if (!method.HasBody)
-				return NonConstSentinel;
+				return null;
 
 			if (method.ReturnType.MetadataType == MetadataType.Void)
-				return NonConstSentinel;
+				return null;
 
 			switch (Context.Annotations.GetAction (method)) {
 			case MethodAction.ConvertToThrow:
-				return NonConstSentinel;
+				return null;
 			case MethodAction.ConvertToStub:
-				return CodeRewriterStep.CreateConstantResultInstruction (Context, method) ?? NonConstSentinel;
+				return CodeRewriterStep.CreateConstantResultInstruction (Context, method);
 			}
 
 			if (method.IsIntrinsic () || method.NoInlining)
-				return NonConstSentinel;
+				return null;
 
 			if (!Context.IsOptimizationEnabled (CodeOptimizations.IPConstantPropagation, method))
-				return NonConstSentinel;
+				return null;
 
 			var analyzer = new ConstantExpressionMethodAnalyzer (method, instructions ?? method.Body.Instructions);
 			if (analyzer.Analyze ()) {
 				return analyzer.Result;
-			} else {
-				return NonConstSentinel;
 			}
+
+			return null;
 		}
 
 		/// <summary>
@@ -323,7 +329,7 @@ namespace Mono.Linker.Steps
 				processingStack.AddFirst (queueNode);
 
 				// Note that stack version is not changing - we're just postponing work, not resolving anything.
-
+				// There's no result available for this method, so return false.
 				constantResultInstruction = null;
 				return false;
 
@@ -335,10 +341,10 @@ namespace Mono.Linker.Steps
 			case object processedUnchangedSentinel when processedUnchangedSentinel == ProcessedUnchangedSentinel:
 				// Method has been processed and no changes has been made to it.
 				// Also its value has not been needed yet. Now we need to know if it's constant, so run the analyzer on it
-				object result = AnalyzeMethodForConstantResult (method, instructions: null);
-				Debug.Assert (result is Instruction || result == NonConstSentinel);
-				processedMethods[method] = result;
-				constantResultInstruction = result == NonConstSentinel ? null : (Instruction) result;
+				var result = AnalyzeMethodForConstantResult (method, instructions: null);
+				Debug.Assert (result is Instruction || result == null);
+				processedMethods[method] = result ?? NonConstSentinel;
+				constantResultInstruction = result;
 				return true;
 
 			case object nonConstSentinel when nonConstSentinel == NonConstSentinel:
@@ -351,7 +357,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		bool TryInlineBodyDependencies (ref BodyReducer reducer, bool treatUnprocessedAsNonConst, out bool changed)
+		bool TryInlineBodyDependencies (ref BodyReducer reducer, bool treatUnprocessedDependenciesAsNonConst, out bool changed)
 		{
 			changed = false;
 			bool hasUnprocessedDependencies = false;
@@ -407,7 +413,7 @@ namespace Mono.Linker.Steps
 					}
 
 					if (!TryGetConstantResultForMethod (md, out targetResult)) {
-						if (!treatUnprocessedAsNonConst)
+						if (!treatUnprocessedDependenciesAsNonConst)
 							hasUnprocessedDependencies = true;
 						break;
 					} else if (targetResult == null || hasUnprocessedDependencies) {
@@ -456,7 +462,7 @@ namespace Mono.Linker.Steps
 
 					if (sizeOfImpl != null) {
 						if (!TryGetConstantResultForMethod (sizeOfImpl, out targetResult)) {
-							if (!treatUnprocessedAsNonConst)
+							if (!treatUnprocessedDependenciesAsNonConst)
 								hasUnprocessedDependencies = true;
 							break;
 						} else if (targetResult == null || hasUnprocessedDependencies) {
