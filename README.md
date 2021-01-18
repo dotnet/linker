@@ -19,7 +19,7 @@ The [tlens](src/tlens/README.md) is another tool for developers which can be use
 
 ## Source Code Analyzer
 
-Another tool available for developers is implemented as [Roslyn Analyzer](src/ILLink.RoslynAnalyzer) which runs on source code and warns developers about code patterns and APIs which are problematic when building code which should could be used with trimmed apps.
+Another tool available for developers is implemented as [Roslyn Analyzer](src/ILLink.RoslynAnalyzer) which runs on source code and warns developers about code patterns and APIs which are problematic when building code which could be used with trimmed apps.
 
 # Contributing
 
