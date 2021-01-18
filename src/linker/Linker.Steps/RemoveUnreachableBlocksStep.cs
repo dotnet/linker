@@ -65,8 +65,8 @@ namespace Mono.Linker.Steps
 		// Note: ProcessedUnchangedSentinel is used as an optimization. running constant value analysis on a method is relatively expensive
 		// and so we delay it and only do it for methods where the value is asked for (or in case of changed methods upfront due to implementation detailds)
 		Dictionary<MethodDefinition, Instruction> processedMethods;
-		static readonly Instruction ProcessedUnchangedSentinel = Instruction.Create(OpCodes.Ldstr, "ProcessedUnchangedSentinel");
-		static readonly Instruction NonConstSentinel = Instruction.Create(OpCodes.Ldstr, "NonConstSentinel");
+		static readonly Instruction ProcessedUnchangedSentinel = Instruction.Create (OpCodes.Ldstr, "ProcessedUnchangedSentinel");
+		static readonly Instruction NonConstSentinel = Instruction.Create (OpCodes.Ldstr, "NonConstSentinel");
 
 		protected override void Process ()
 		{
@@ -332,7 +332,7 @@ namespace Mono.Linker.Steps
 					constantResultInstruction = null;
 					return false;
 				}
-				
+
 				// Method is not yet in the stack - add it there
 				AddMethodForProcessing (method);
 				constantResultInstruction = null;
