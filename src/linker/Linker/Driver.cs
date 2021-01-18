@@ -766,7 +766,6 @@ namespace Mono.Linker
 			}
 #endif
 
-			p.AddStepBefore (typeof (MarkStep), new RemoveUnreachableBlocksStep ());
 			p.AddStepBefore (typeof (OutputStep), new SealerStep ());
 
 			//

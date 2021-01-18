@@ -33,7 +33,6 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection.Runtime.TypeParsing;
-using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -55,6 +54,7 @@ namespace Mono.Linker.Steps
 		protected List<MethodBody> _unreachableBodies;
 
 		readonly List<(TypeDefinition Type, MethodBody Body, Instruction Instr)> _pending_isinst_instr;
+		RemoveUnreachableBlocksStep _removeUnreachableBlocksStep;
 
 #if DEBUG
 		static readonly DependencyKind[] _entireTypeReasons = new DependencyKind[] {
@@ -186,6 +186,7 @@ namespace Mono.Linker.Steps
 		public virtual void Process (LinkContext context)
 		{
 			_context = context;
+			_removeUnreachableBlocksStep = new RemoveUnreachableBlocksStep (_context);
 
 			Initialize ();
 			Process ();
@@ -224,6 +225,8 @@ namespace Mono.Linker.Steps
 			foreach (var body in _unreachableBodies) {
 				Annotations.SetAction (body.Method, MethodAction.ConvertToThrow);
 			}
+
+			_removeUnreachableBlocksStep.AllMethodsProcessed ();
 		}
 
 		void InitializeType (TypeDefinition type)
@@ -2468,6 +2471,8 @@ namespace Mono.Linker.Steps
 			if (!_methodReasons.Contains (reason.Kind))
 				throw new ArgumentOutOfRangeException ($"Internal error: unsupported method dependency {reason.Kind}");
 #endif
+
+			_removeUnreachableBlocksStep.ProcessMethod (method);
 
 			// Record the reason for marking a method on each call. The logic under CheckProcessed happens
 			// only once per method.

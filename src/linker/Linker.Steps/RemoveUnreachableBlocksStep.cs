@@ -14,8 +14,9 @@ namespace Mono.Linker.Steps
 	// then uses this information to remove unreachable conditional blocks. It does
 	// not do any inlining-like code changes.
 	//
-	public class RemoveUnreachableBlocksStep : BaseStep
+	public class RemoveUnreachableBlocksStep
 	{
+		readonly LinkContext _context;
 		MethodDefinition IntPtrSize, UIntPtrSize;
 
 		readonly struct ProcessingNode
@@ -42,7 +43,7 @@ namespace Mono.Linker.Steps
 		// Stack of method nodes which are currently being processed.
 		// Implemented as linked list to allow easy referal to nodes and efficient moving of nodes within the list.
 		// The top of the stack is the first item in the list.
-		LinkedList<ProcessingNode> processingStack;
+		readonly LinkedList<ProcessingNode> _processingStack;
 
 		// Each time an item is added or removed from the processing stack this value is incremented.
 		// Moving items in the stack doesn't increment.
@@ -53,11 +54,11 @@ namespace Mono.Linker.Steps
 		// if we get around to process the method again and the version of the stack didn't change, then there's a loop
 		// (nothing changed in the stack - order is unimportant, as such no new information has been added and so
 		// we can't resolve the situation with just the info at hand).
-		int processingStackVersion;
+		int _processingStackVersion;
 
 		// Just a fast lookup from method to the node on the stack. This is needed to be able to quickly
 		// access the node and move it to the top of the stack.
-		Dictionary<MethodDefinition, LinkedListNode<ProcessingNode>> processingMethods;
+		readonly Dictionary<MethodDefinition, LinkedListNode<ProcessingNode>> _processingMethods;
 
 		// Stores results of method processing. This state is kept forever to avoid reprocessing of methods.
 		// If method is not in the dictionary it has not yet been processed.
@@ -67,7 +68,7 @@ namespace Mono.Linker.Steps
 		//   - Instruction instance - method has been processed and it has a constant return value (the value of the instruction)
 		// Note: ProcessedUnchangedSentinel is used as an optimization. running constant value analysis on a method is relatively expensive
 		// and so we delay it and only do it for methods where the value is asked for (or in case of changed methods upfront due to implementation detailds)
-		Dictionary<MethodDefinition, Instruction> processedMethods;
+		readonly Dictionary<MethodDefinition, Instruction> _processedMethods;
 		static readonly Instruction ProcessedUnchangedSentinel = Instruction.Create (OpCodes.Ldstr, "ProcessedUnchangedSentinel");
 		static readonly Instruction NonConstSentinel = Instruction.Create (OpCodes.Ldstr, "NonConstSentinel");
 
@@ -79,73 +80,39 @@ namespace Mono.Linker.Steps
 		Statistics.NamedValue MethodsAnalyzedForConstantResultStatistic;
 		Statistics.NamedValue LoopsDetectedStatistics;
 		Statistics.NamedValue MethodsWithRewriteAttemptedStatistics;
-		Statistics.NamedValue MaxNumberOfProcessAttemptsPerMethodStatistics;
+		readonly Statistics.NamedValue MaxNumberOfProcessAttemptsPerMethodStatistics;
 		Statistics.NamedValue TryGetMethodResultStatistics;
 		Statistics.NamedValue TryGetMethodResultWithoutWaitingStatistics;
-		Statistics.NamedValue MaxStackDepthStatistics;
+		readonly Statistics.NamedValue MaxStackDepthStatistics;
 	
-		protected override void Process ()
+		public RemoveUnreachableBlocksStep (LinkContext context)
 		{
-			ProcessAttemptsStatistic = Context.Statistics.GetValue(nameof(RemoveUnreachableBlocksStep), nameof(ProcessAttemptsStatistic));
-			ConstantMethodsUsedStatistic = Context.Statistics.GetValue(nameof(RemoveUnreachableBlocksStep), nameof(ConstantMethodsUsedStatistic));
-			ConstantFieldValuesUsedStatistic = Context.Statistics.GetValue(nameof(RemoveUnreachableBlocksStep), nameof(ConstantFieldValuesUsedStatistic));
-			AnalyzedAsConstantStatistic = Context.Statistics.GetValue(nameof(RemoveUnreachableBlocksStep), nameof(AnalyzedAsConstantStatistic));
-			AnalyzedAsConstantAfterRewriteStatistics = Context.Statistics.GetValue(nameof(RemoveUnreachableBlocksStep), nameof(AnalyzedAsConstantAfterRewriteStatistics));
-			MethodsAnalyzedForConstantResultStatistic = Context.Statistics.GetValue(nameof(RemoveUnreachableBlocksStep), nameof(MethodsAnalyzedForConstantResultStatistic));
-			LoopsDetectedStatistics = Context.Statistics.GetValue(nameof(RemoveUnreachableBlocksStep), nameof(LoopsDetectedStatistics));
-			MethodsWithRewriteAttemptedStatistics = Context.Statistics.GetValue(nameof(RemoveUnreachableBlocksStep), nameof(MethodsWithRewriteAttemptedStatistics));
-			MaxNumberOfProcessAttemptsPerMethodStatistics = Context.Statistics.GetValue(nameof(RemoveUnreachableBlocksStep), nameof(MaxNumberOfProcessAttemptsPerMethodStatistics));
-			TryGetMethodResultStatistics = Context.Statistics.GetValue(nameof(RemoveUnreachableBlocksStep), nameof(TryGetMethodResultStatistics));
-			TryGetMethodResultWithoutWaitingStatistics = Context.Statistics.GetValue(nameof(RemoveUnreachableBlocksStep), nameof(TryGetMethodResultWithoutWaitingStatistics));
-			MaxStackDepthStatistics = Context.Statistics.GetValue(nameof(RemoveUnreachableBlocksStep), nameof(MaxStackDepthStatistics));
+			_context = context;
 
-			var assemblies = Context.Annotations.GetAssemblies ().ToArray ();
+			ProcessAttemptsStatistic = _context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (ProcessAttemptsStatistic));
+			ConstantMethodsUsedStatistic = _context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (ConstantMethodsUsedStatistic));
+			ConstantFieldValuesUsedStatistic = _context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (ConstantFieldValuesUsedStatistic));
+			AnalyzedAsConstantStatistic = _context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (AnalyzedAsConstantStatistic));
+			AnalyzedAsConstantAfterRewriteStatistics = _context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (AnalyzedAsConstantAfterRewriteStatistics));
+			MethodsAnalyzedForConstantResultStatistic = _context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (MethodsAnalyzedForConstantResultStatistic));
+			LoopsDetectedStatistics = _context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (LoopsDetectedStatistics));
+			MethodsWithRewriteAttemptedStatistics = _context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (MethodsWithRewriteAttemptedStatistics));
+			MaxNumberOfProcessAttemptsPerMethodStatistics = _context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (MaxNumberOfProcessAttemptsPerMethodStatistics));
+			TryGetMethodResultStatistics = _context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (TryGetMethodResultStatistics));
+			TryGetMethodResultWithoutWaitingStatistics = _context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (TryGetMethodResultWithoutWaitingStatistics));
+			MaxStackDepthStatistics = _context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (MaxStackDepthStatistics));
 
-			processingStack = new LinkedList<ProcessingNode> ();
-			processingMethods = new Dictionary<MethodDefinition, LinkedListNode<ProcessingNode>> ();
-			processedMethods = new Dictionary<MethodDefinition, Instruction> ();
-
-			foreach (var assembly in assemblies) {
-				if (Annotations.GetAction (assembly) != AssemblyAction.Link)
-					continue;
-
-				ProcessMethods (assembly.MainModule.Types);
-			}
-
-			Context.Statistics.GetValue(nameof(RemoveUnreachableBlocksStep), "MethodsProcessed").Value = processedMethods.Count;
-			Context.Statistics.GetValue(nameof(RemoveUnreachableBlocksStep), "ProcessedConstMethods").Value = processedMethods.Values.Where(v => v != NonConstSentinel && v != ProcessedUnchangedSentinel).Count();
-			Context.Statistics.GetValue(nameof(RemoveUnreachableBlocksStep), "ProcessedNonConstMethods").Value = processedMethods.Values.Where(v => v == NonConstSentinel).Count();
-			Context.Statistics.GetValue(nameof(RemoveUnreachableBlocksStep), "ProcessedUnchangedMethods").Value = processedMethods.Values.Where(v => v == ProcessedUnchangedSentinel).Count();
+			_processingStack = new LinkedList<ProcessingNode> ();
+			_processingMethods = new Dictionary<MethodDefinition, LinkedListNode<ProcessingNode>> ();
+			_processedMethods = new Dictionary<MethodDefinition, Instruction> ();
 		}
 
-		void ProcessMethods (Collection<TypeDefinition> types)
+		public void AllMethodsProcessed ()
 		{
-			foreach (var type in types) {
-				if (type.IsInterface)
-					continue;
-
-				if (!type.HasMethods)
-					continue;
-
-				foreach (var method in type.Methods) {
-					if (!method.HasBody)
-						continue;
-
-					//
-					// Block methods which rewrite does not support
-					//
-					switch (method.ReturnType.MetadataType) {
-					case MetadataType.ByReference:
-					case MetadataType.FunctionPointer:
-						continue;
-					}
-
-					ProcessMethod (method);
-				}
-
-				if (type.HasNestedTypes)
-					ProcessMethods (type.NestedTypes);
-			}
+			_context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), "MethodsProcessed").Value = _processedMethods.Count;
+			_context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), "ProcessedConstMethods").Value = _processedMethods.Values.Where (v => v != NonConstSentinel && v != ProcessedUnchangedSentinel).Count ();
+			_context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), "ProcessedNonConstMethods").Value = _processedMethods.Values.Where (v => v == NonConstSentinel).Count ();
+			_context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), "ProcessedUnchangedMethods").Value = _processedMethods.Values.Where (v => v == ProcessedUnchangedSentinel).Count ();
 		}
 
 		/// <summary>
@@ -154,49 +121,72 @@ namespace Mono.Linker.Steps
 		/// It may optimize other methods as well - those are remembered for future reuse.
 		/// </summary>
 		/// <param name="method">The method to process</param>
-		void ProcessMethod (MethodDefinition method)
+		public void ProcessMethod (MethodDefinition method)
 		{
-			Debug.Assert (processingStack.Count == 0 && processingMethods.Count == 0);
-			processingStackVersion = 0;
+			if (!IsMethodSupported (method))
+				return;
 
-			if (!processedMethods.ContainsKey (method)) {
+			if (_context.Annotations.GetAction (method.Module.Assembly) != AssemblyAction.Link)
+				return;
+
+			Debug.Assert (_processingStack.Count == 0 && _processingMethods.Count == 0);
+			_processingStackVersion = 0;
+
+			if (!_processedMethods.ContainsKey (method)) {
 				AddMethodForProcessing (method);
 
 				ProcessStack ();
 			}
 
-			Debug.Assert (processedMethods.ContainsKey (method));
+			Debug.Assert (_processedMethods.ContainsKey (method));
+		}
+
+		static bool IsMethodSupported (MethodDefinition method)
+		{
+			if (!method.HasBody)
+				return false;
+
+			//
+			// Block methods which rewrite does not support
+			//
+			switch (method.ReturnType.MetadataType) {
+			case MetadataType.ByReference:
+			case MetadataType.FunctionPointer:
+				return false;
+			}
+
+			return true;
 		}
 
 		void AddMethodForProcessing (MethodDefinition method)
 		{
-			Debug.Assert (!processedMethods.ContainsKey (method));
+			Debug.Assert (!_processedMethods.ContainsKey (method));
 
 			var processingNode = new ProcessingNode (method, -1);
 
-			var stackNode = processingStack.AddFirst (processingNode);
-			processingMethods.Add (method, stackNode);
-			processingStackVersion++;
+			var stackNode = _processingStack.AddFirst (processingNode);
+			_processingMethods.Add (method, stackNode);
+			_processingStackVersion++;
 		}
 
 		void StoreMethodAsProcessedAndRemoveFromQueue (LinkedListNode<ProcessingNode> stackNode, Instruction methodValue)
 		{
-			Debug.Assert (stackNode.List == processingStack);
+			Debug.Assert (stackNode.List == _processingStack);
 			Debug.Assert (methodValue != null);
 
 			var method = stackNode.Value.Method;
-			processingMethods.Remove (method);
-			processingStack.Remove (stackNode);
-			processingStackVersion++;
+			_processingMethods.Remove (method);
+			_processingStack.Remove (stackNode);
+			_processingStackVersion++;
 
-			processedMethods[method] = methodValue;
+			_processedMethods[method] = methodValue;
 		}
 
 		void ProcessStack ()
 		{
-			while (processingStack.Count > 0) {
-				MaxStackDepthStatistics.Value = Math.Max(MaxStackDepthStatistics.Value, processingStack.Count);
-				var stackNode = processingStack.First;
+			while (_processingStack.Count > 0) {
+				MaxStackDepthStatistics.Value = Math.Max(MaxStackDepthStatistics.Value, _processingStack.Count);
+				var stackNode = _processingStack.First;
 				var method = stackNode.Value.Method;
 
 				stackNode.Value = new ProcessingNode (stackNode.Value, stackNode.Value.LastAttemptStackVersion, stackNode.Value.TryCount + 1);
@@ -205,7 +195,7 @@ namespace Mono.Linker.Steps
 				ProcessAttemptsStatistic++;
 
 				bool treatUnprocessedDependenciesAsNonConst = false;
-				if (stackNode.Value.LastAttemptStackVersion == processingStackVersion) {
+				if (stackNode.Value.LastAttemptStackVersion == _processingStackVersion) {
 					// Loop was detected - the stack hasn't changed since the last time we tried to process this method
 					// as such there's no way to resolve the situation (running the code below would produce the exact same result).
 
@@ -221,7 +211,7 @@ namespace Mono.Linker.Steps
 					// is part of the loop:
 					var lastNodeWithCurrentVersion = stackNode;
 					for (var currentNode = stackNode; currentNode != null; currentNode = currentNode.Next) {
-						if (currentNode.Value.LastAttemptStackVersion == processingStackVersion)
+						if (currentNode.Value.LastAttemptStackVersion == _processingStackVersion)
 							lastNodeWithCurrentVersion = currentNode;
 					}
 
@@ -234,9 +224,9 @@ namespace Mono.Linker.Steps
 					bool foundNodesWithNonCurrentVersion = false;
 					while (candidateNodeToMoveToTop != stackNode) {
 						var previousNode = candidateNodeToMoveToTop.Previous;
-						if (candidateNodeToMoveToTop.Value.LastAttemptStackVersion != processingStackVersion) {
-							processingStack.Remove (candidateNodeToMoveToTop);
-							processingStack.AddFirst (candidateNodeToMoveToTop);
+						if (candidateNodeToMoveToTop.Value.LastAttemptStackVersion != _processingStackVersion) {
+							_processingStack.Remove (candidateNodeToMoveToTop);
+							_processingStack.AddFirst (candidateNodeToMoveToTop);
 							foundNodesWithNonCurrentVersion = true;
 						}
 
@@ -259,14 +249,14 @@ namespace Mono.Linker.Steps
 					treatUnprocessedDependenciesAsNonConst = true;
 				}
 
-				stackNode.Value = new ProcessingNode (stackNode.Value, processingStackVersion, stackNode.Value.TryCount);
+				stackNode.Value = new ProcessingNode (stackNode.Value, _processingStackVersion, stackNode.Value.TryCount);
 
-				if (!method.HasBody) {
+				if (!IsMethodSupported (method)) {
 					StoreMethodAsProcessedAndRemoveFromQueue (stackNode, ProcessedUnchangedSentinel);
 					continue;
 				}
 
-				var reducer = new BodyReducer (method.Body, Context);
+				var reducer = new BodyReducer (method.Body, _context);
 
 				//
 				// Temporary inlines any calls which return contant expression.
@@ -276,7 +266,7 @@ namespace Mono.Linker.Steps
 				if (!TryInlineBodyDependencies (ref reducer, treatUnprocessedDependenciesAsNonConst, out bool changed)) {
 					// Method has unprocessed dependencies - so back off and try again later
 					// Leave it in the stack on its current position (it should not be on the first position anymore)
-					Debug.Assert (processingStack.First != stackNode);
+					Debug.Assert (_processingStack.First != stackNode);
 					continue;
 				}
 
@@ -296,7 +286,7 @@ namespace Mono.Linker.Steps
 				// branch is replaced with nops.
 				//
 				if (reducer.RewriteBody ())
-					Context.LogMessage ($"Reduced '{reducer.InstructionsReplaced}' instructions in conditional branches for [{method.DeclaringType.Module.Assembly.Name}] method {method.GetDisplayName ()}");
+					_context.LogMessage ($"Reduced '{reducer.InstructionsReplaced}' instructions in conditional branches for [{method.DeclaringType.Module.Assembly.Name}] method {method.GetDisplayName ()}");
 
 				// Even if the rewriter doesn't find any branches to fold the inlining above may have changed the method enough
 				// such that we can now deduce its return value.
@@ -317,7 +307,7 @@ namespace Mono.Linker.Steps
 					AnalyzeMethodForConstantResult (method, reducer.FoldedInstructions) ?? NonConstSentinel);
 			}
 
-			Debug.Assert (processingMethods.Count == 0);
+			Debug.Assert (_processingMethods.Count == 0);
 		}
 
 		Instruction AnalyzeMethodForConstantResult (MethodDefinition method, Collection<Instruction> instructions)
@@ -330,18 +320,18 @@ namespace Mono.Linker.Steps
 			if (method.ReturnType.MetadataType == MetadataType.Void)
 				return null;
 
-			switch (Context.Annotations.GetAction (method)) {
+			switch (_context.Annotations.GetAction (method)) {
 			case MethodAction.ConvertToThrow:
 				return null;
 			case MethodAction.ConvertToStub:
-				Context.Statistics.GetValue(nameof(RemoveUnreachableBlocksStep), "StubbedMethodsStatistic").Value++;
-				return CodeRewriterStep.CreateConstantResultInstruction (Context, method);
+				_context.Statistics.GetValue(nameof(RemoveUnreachableBlocksStep), "StubbedMethodsStatistic").Value++;
+				return CodeRewriterStep.CreateConstantResultInstruction (_context, method);
 			}
 
 			if (method.IsIntrinsic () || method.NoInlining)
 				return null;
 
-			if (!Context.IsOptimizationEnabled (CodeOptimizations.IPConstantPropagation, method))
+			if (!_context.IsOptimizationEnabled (CodeOptimizations.IPConstantPropagation, method))
 				return null;
 
 			var analyzer = new ConstantExpressionMethodAnalyzer (method, instructions ?? method.Body.Instructions);
@@ -371,12 +361,12 @@ namespace Mono.Linker.Steps
 		{
 			TryGetMethodResultStatistics++;
 
-			if (!processedMethods.TryGetValue (method, out Instruction methodValue)) {
-				if (processingMethods.TryGetValue (method, out var stackNode)) {
+			if (!_processedMethods.TryGetValue (method, out Instruction methodValue)) {
+				if (_processingMethods.TryGetValue (method, out var stackNode)) {
 					// Method is already in the stack - not yet processed
 					// Move it to the top of the stack
-					processingStack.Remove (stackNode);
-					processingStack.AddFirst (stackNode);
+					_processingStack.Remove (stackNode);
+					_processingStack.AddFirst (stackNode);
 
 					// Note that stack version is not changing - we're just postponing work, not resolving anything.
 					// There's no result available for this method, so return false.
@@ -395,7 +385,7 @@ namespace Mono.Linker.Steps
 				// Also its value has not been needed yet. Now we need to know if it's constant, so run the analyzer on it
 				var result = AnalyzeMethodForConstantResult (method, instructions: null);
 				Debug.Assert (result is Instruction || result == null);
-				processedMethods[method] = result ?? NonConstSentinel;
+				_processedMethods[method] = result ?? NonConstSentinel;
 				constantResultInstruction = result;
 				TryGetMethodResultWithoutWaitingStatistics++;
 			}
@@ -434,7 +424,7 @@ namespace Mono.Linker.Steps
 					if (md.CallingConvention == MethodCallingConvention.VarArg)
 						break;
 
-					bool explicitlyAnnotated = Annotations.GetAction (md) == MethodAction.ConvertToStub;
+					bool explicitlyAnnotated = _context.Annotations.GetAction (md) == MethodAction.ConvertToStub;
 
 					// Allow inlining results of instance methods which are explicitly annotated
 					// but don't allow inling results of any other instance method.
@@ -491,7 +481,7 @@ namespace Mono.Linker.Steps
 					if (field == null)
 						break;
 
-					if (Context.Annotations.TryGetFieldUserValue (field, out object value)) {
+					if (_context.Annotations.TryGetFieldUserValue (field, out object value)) {
 						targetResult = CodeRewriterStep.CreateConstantResultInstruction (field.FieldType, value);
 						if (targetResult == null)
 							break;
