@@ -282,12 +282,6 @@ namespace Mono.Linker.Steps
 			if (method.ReturnType.MetadataType == MetadataType.Void)
 				return NonConstSentinel;
 
-			if (method.IsIntrinsic () || method.NoInlining)
-				return NonConstSentinel;
-
-			if (!Context.IsOptimizationEnabled (CodeOptimizations.IPConstantPropagation, method))
-				return NonConstSentinel;
-
 			switch (Context.Annotations.GetAction (method)) {
 			case MethodAction.ConvertToThrow:
 				return NonConstSentinel;
@@ -295,6 +289,12 @@ namespace Mono.Linker.Steps
 				Context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), "StubbedMethodsStatistic").Value++;
 				return CodeRewriterStep.CreateConstantResultInstruction (Context, method) ?? NonConstSentinel;
 			}
+
+			if (method.IsIntrinsic () || method.NoInlining)
+				return NonConstSentinel;
+
+			if (!Context.IsOptimizationEnabled (CodeOptimizations.IPConstantPropagation, method))
+				return NonConstSentinel;
 
 			var analyzer = new ConstantExpressionMethodAnalyzer (method, instructions ?? method.Body.Instructions);
 			if (analyzer.Analyze ()) {
