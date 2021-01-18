@@ -23,7 +23,7 @@ Another tool available for developers is implemented as [Roslyn Analyzer](src/IL
 
 # Contributing
 
-We welcome contributions! Many developers have helped make this project better by reporting [issues](issues) or contributing [pull requests](linker/pulls).
+We welcome contributions! Many developers have helped make this project better by reporting [issues](https://github.com/mono/linker/issues) or contributing [pull requests](https://github.com/mono/linker/pulls).
 
 ## How to build all projects
 
