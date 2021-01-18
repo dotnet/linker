@@ -186,7 +186,7 @@ In diagnostics:
 			return MSBuildProperties.Select (msbp => ($"build_property.{msbp}", "true")).ToArray ();
 		}
 
-		internal static void GetDirectoryPaths (out string rootSourceDirectory, out string testAssemblyPath, [CallerFilePath] string thisFile = null)
+		internal static void GetDirectoryPaths (out string rootSourceDirectory, out string testAssemblyPath)
 		{
 
 #if DEBUG
