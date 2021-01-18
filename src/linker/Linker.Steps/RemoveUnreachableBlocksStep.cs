@@ -113,7 +113,7 @@ namespace Mono.Linker.Steps
 			}
 
 			Context.Statistics.GetValue(nameof(RemoveUnreachableBlocksStep), "MethodsProcessed").Value = processedMethods.Count;
-			Context.Statistics.GetValue(nameof(RemoveUnreachableBlocksStep), "ProcessedConstMethods").Value = processedMethods.Values.Where(v => v is Instruction).Count();
+			Context.Statistics.GetValue(nameof(RemoveUnreachableBlocksStep), "ProcessedConstMethods").Value = processedMethods.Values.Where(v => v != NonConstSentinel && v != ProcessedUnchangedSentinel).Count();
 			Context.Statistics.GetValue(nameof(RemoveUnreachableBlocksStep), "ProcessedNonConstMethods").Value = processedMethods.Values.Where(v => v == NonConstSentinel).Count();
 			Context.Statistics.GetValue(nameof(RemoveUnreachableBlocksStep), "ProcessedUnchangedMethods").Value = processedMethods.Values.Where(v => v == ProcessedUnchangedSentinel).Count();
 		}
@@ -288,6 +288,7 @@ namespace Mono.Linker.Steps
 				}
 
 				// The method has been modified due to constant propagation - we will optimize it.
+				MethodsWithRewriteAttemptedStatistics++;
 
 				//
 				// This is the main step which evaluates if inlined calls can
