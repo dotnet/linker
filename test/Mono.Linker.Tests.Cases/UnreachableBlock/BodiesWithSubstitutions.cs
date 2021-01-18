@@ -17,6 +17,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		"LibWithConstantSubstitution.dll",
 		new[] { "Dependencies/LibWithConstantSubstitution.cs" },
 		resources: new object[] { "Dependencies/LibWithConstantSubstitution.xml" })]
+	[KeptModuleReference ("unknown")]
 	public class BodiesWithSubstitutions
 	{
 		static class ClassWithField
@@ -40,6 +41,10 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 
 			ConstantFromNewAssembly.Test ();
 			ConstantSubstitutionsFromNewAssembly.Test ();
+			TestSubstitutionCollision ();
+			TestSubstitutionOnNoInlining ();
+			TestSubstitutionOnIntrinsic ();
+			TestMethodWithoutBody ();
 		}
 
 		[Kept]
@@ -246,5 +251,95 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 					Reached ();
 			}
 		}
+
+		[Kept]
+		static bool CollisionProperty {
+			[Kept]
+			[ExpectBodyModified]
+			get {
+				// Need to call something with constant value to force processing of this method
+				_ = Property;
+				return true;
+			} // Substitution will set this to false
+		}
+
+		// This tests that if there's a method (get_CollisionProperty) which itself is constant
+		// and substitution changes its return value, the branch removal reacts to the substituted value
+		// and not the value from the method's body.
+		// This should ideally never happen, but still.
+		// In the original code this test would be order dependent. Depending if TestSubstitutionsCollision
+		// was processed before CollisionProperty, it would either propagate true or false.
+		[Kept]
+		[ExpectBodyModified]
+		static void TestSubstitutionCollision ()
+		{
+			if (CollisionProperty)
+				Collision_NeverReached ();
+			else
+				Collision_Reached ();
+		}
+
+		[Kept]
+		static void Collision_Reached () { }
+		static void Collision_NeverReached () { }
+
+		[Kept]
+		static bool NoInliningProperty {
+			[Kept]
+			[ExpectBodyModified]
+			[MethodImpl (MethodImplOptions.NoInlining)]
+			get { return true; }
+		}
+
+		[Kept]
+		[ExpectBodyModified]
+		static void TestSubstitutionOnNoInlining ()
+		{
+			if (NoInliningProperty)
+				NoInlining_NeverReached ();
+			else
+				NoInlining_Reached ();
+		}
+
+		[Kept]
+		static void NoInlining_Reached () { }
+		static void NoInlining_NeverReached () { }
+
+		[Kept]
+		static bool IntrinsicProperty {
+			[Kept]
+			[ExpectBodyModified]
+			[Intrinsic]
+			[KeptAttributeAttribute (typeof (IntrinsicAttribute))]
+			get { return true; }
+		}
+
+		[Kept]
+		[ExpectBodyModified]
+		static void TestSubstitutionOnIntrinsic ()
+		{
+			if (IntrinsicProperty)
+				Intrinsic_NeverReached ();
+			else
+				Intrinsic_Reached ();
+		}
+
+		[Kept]
+		static void Intrinsic_Reached () { }
+		static void Intrinsic_NeverReached () { }
+
+		[Kept]
+		[System.Runtime.InteropServices.DllImport ("unknown")]
+		static extern int PInvokeMethod ();
+
+		[Kept]
+		static void TestMethodWithoutBody ()
+		{
+			if (PInvokeMethod () == 0)
+				MethodWithoutBody_Reached ();
+		}
+
+		[Kept]
+		static void MethodWithoutBody_Reached () { }
 	}
 }
