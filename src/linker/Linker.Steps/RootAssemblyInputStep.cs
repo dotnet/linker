@@ -10,9 +10,9 @@ namespace Mono.Linker.Steps
 	public class RootAssemblyInput : BaseStep
 	{
 		readonly string fileName;
-		readonly AssemblyRootsMode rootMode;
+		readonly AssemblyRootMode rootMode;
 
-		public RootAssemblyInput (string fileName, AssemblyRootsMode rootMode)
+		public RootAssemblyInput (string fileName, AssemblyRootMode rootMode)
 		{
 			this.fileName = fileName;
 			this.rootMode = rootMode;
@@ -40,12 +40,12 @@ namespace Mono.Linker.Steps
 			}
 
 			switch (rootMode) {
-			case AssemblyRootsMode.Default:
+			case AssemblyRootMode.Default:
 				if (assembly.MainModule.Kind == ModuleKind.Dll)
-					goto case AssemblyRootsMode.AllMembers;
+					goto case AssemblyRootMode.AllMembers;
 				else
-					goto case AssemblyRootsMode.EntryPoint;
-			case AssemblyRootsMode.EntryPoint:
+					goto case AssemblyRootMode.EntryPoint;
+			case AssemblyRootMode.EntryPoint:
 				var ep = assembly.MainModule.EntryPoint;
 				if (ep == null) {
 					Context.LogError ($"Root assembly '{assembly.Name}' does not have entry point", 1034);
@@ -55,7 +55,7 @@ namespace Mono.Linker.Steps
 				Annotations.Mark (ep.DeclaringType, di);
 				Annotations.AddPreservedMethod (ep.DeclaringType, ep);
 				break;
-			case AssemblyRootsMode.VisibleMembers:
+			case AssemblyRootMode.VisibleMembers:
 				TypePreserve preserve = TypePreserve.All |
 					(HasInternalsVisibleTo (assembly) ? TypePreserve.AccessibilityVisibleOrInternal : TypePreserve.AccessibilityVisible);
 
@@ -67,7 +67,7 @@ namespace Mono.Linker.Steps
 				foreach (var type in module.Types)
 					MarkAndPreserveVisible (type, preserve);
 				break;
-			case AssemblyRootsMode.AllMembers:
+			case AssemblyRootMode.AllMembers:
 				Context.Annotations.SetAction (assembly, AssemblyAction.Copy);
 				return;
 			}

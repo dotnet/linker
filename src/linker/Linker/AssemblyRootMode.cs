@@ -4,7 +4,7 @@
 
 namespace Mono.Linker
 {
-	public enum AssemblyRootsMode
+	public enum AssemblyRootMode
 	{
 		Default = 0,
 		EntryPoint,

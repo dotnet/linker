@@ -585,7 +585,7 @@ namespace Mono.Linker
 								return -1;
 							}
 
-							AssemblyRootsMode rmode = AssemblyRootsMode.Default;
+							AssemblyRootMode rmode = AssemblyRootMode.Default;
 							var rootMode = GetNextStringValue ();
 							if (rootMode != null) {
 								var parsed_rmode = ParseAssemblyRootsMode (rootMode);
@@ -1043,17 +1043,17 @@ namespace Mono.Linker
 			return null;
 		}
 
-		AssemblyRootsMode? ParseAssemblyRootsMode (string s)
+		AssemblyRootMode? ParseAssemblyRootsMode (string s)
 		{
 			switch (s.ToLowerInvariant ()) {
 			case "default":
-				return AssemblyRootsMode.Default;
+				return AssemblyRootMode.Default;
 			case "all":
-				return AssemblyRootsMode.AllMembers;
+				return AssemblyRootMode.AllMembers;
 			case "visible":
-				return AssemblyRootsMode.VisibleMembers;
+				return AssemblyRootMode.VisibleMembers;
 			case "entrypoint":
-				return AssemblyRootsMode.EntryPoint;
+				return AssemblyRootMode.EntryPoint;
 			}
 
 			context.LogError ($"Invalid assembly root mode '{s}'", 1037);
