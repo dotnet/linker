@@ -59,13 +59,14 @@ The implementation of this optimization is relatively complex since it's solving
 
 ### Used data structures
 
-* Dictionary of method -> value for all visited methods. The value of a method can be several things depending on the state of processing and the result of the analysis:
-  * Pointer to the enqueued processing node if the method is still being processed
+* Dictionary of method -> value for all processed methods. The value of a method can be several things depending on the result of processing it:
   * Sentinel value "Processed but not changed" which means the method has been processed and no optimization was done on it. It's unknown if the method returns a constant value or not (yet, analysis hasn't occurred). If nothing needs to know the return value of the method then this can be a final state.
   * Sentinel value "Processed and is not constant" which means the method has been processed and its return value was not detected as constant. This is a final state.
   * Instruction which represents the constant return value of the method if it was detected as returning constant value. This is a final state.
 
-* Processing stack which stores ordered list of processing node, each node representing a method and addition data about it. The stack is processed by always taking the top of the stack and attempting to process that node. Nodes are always added to the top of the stack and are always removed from the top of the stack. In some cases nodes are "moved", that is a node which is not on the top of the stack is moved to the top of the stack. For this reason the stack is implemented as a linked list (so that it's easy to point to nodes in it as well as moves nodes around).
+* Processing stack which stores ordered list of processing node, each node representing a method and additional data about it. The stack is processed by always taking the top of the stack and attempting to process that node. Nodes are always added to the top of the stack and are always removed from the top of the stack. In some cases nodes are "moved", that is a node which is not on the top of the stack is moved to the top of the stack. For this reason the stack is implemented as a linked list (so that it's easy to point to nodes in it as well as moves nodes around).
+
+* Helper structure for method -> stack node fast lookups.
 
 ### Processing methods
 

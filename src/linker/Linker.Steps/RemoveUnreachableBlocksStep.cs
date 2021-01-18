@@ -52,23 +52,29 @@ namespace Mono.Linker.Steps
 		// we can't resolve the situation with just the info at hand).
 		int processingStackVersion;
 
+		// Just a fast lookup from method to the node on the stack. This is needed to be able to quickly
+		// access the node and move it to the top of the stack.
+		Dictionary<MethodDefinition, LinkedListNode<ProcessingNode>> processingMethods;
+
 		// Stores results of method processing. This state is kept forever to avoid reprocessing of methods.
-		// If method is not in the dictionary it has not yet been processed and it has not been added processing either.
+		// If method is not in the dictionary it has not yet been processed.
 		// The value in this dictionary can be
-		//   - Reference to the linked list node in the processingStack if the method is on the stack and not yet processed.
-		//   - ProcessedUnchangedSentinel - which means the method has been fully processed and nothing was changed on it - its value is unknown
-		//   - NonConstSentinel - which means the method has been processed and the return value is not a const
+		//   - ProcessedUnchangedSentinel - method has been processed and nothing was changed on it - its value is unknown
+		//   - NonConstSentinel - method has been processed and the return value is not a const
 		//   - Instruction instance - method has been processed and it has a constant return value (the value of the instruction)
-		Dictionary<MethodDefinition, object> processedMethods;
-		static readonly object ProcessedUnchangedSentinel = "ProcessedUnchangedSentinel";
-		static readonly object NonConstSentinel = "NonConstSentinel";
+		// Note: ProcessedUnchangedSentinel is used as an optimization. running constant value analysis on a method is relatively expensive
+		// and so we delay it and only do it for methods where the value is asked for (or in case of changed methods upfront due to implementation detailds)
+		Dictionary<MethodDefinition, Instruction> processedMethods;
+		static readonly Instruction ProcessedUnchangedSentinel = Instruction.Create(OpCodes.Ldstr, "ProcessedUnchangedSentinel");
+		static readonly Instruction NonConstSentinel = Instruction.Create(OpCodes.Ldstr, "NonConstSentinel");
 
 		protected override void Process ()
 		{
 			var assemblies = Context.Annotations.GetAssemblies ().ToArray ();
 
 			processingStack = new LinkedList<ProcessingNode> ();
-			processedMethods = new Dictionary<MethodDefinition, object> ();
+			processingMethods = new Dictionary<MethodDefinition, LinkedListNode<ProcessingNode>> ();
+			processedMethods = new Dictionary<MethodDefinition, Instruction> ();
 
 			foreach (var assembly in assemblies) {
 				if (Annotations.GetAction (assembly) != AssemblyAction.Link)
@@ -116,20 +122,16 @@ namespace Mono.Linker.Steps
 		/// <param name="method">The method to process</param>
 		void ProcessMethod (MethodDefinition method)
 		{
-			Debug.Assert (processingStack.Count == 0);
+			Debug.Assert (processingStack.Count == 0 && processingMethods.Count == 0);
 			processingStackVersion = 0;
 
-			if (!processedMethods.TryGetValue (method, out object processedState)) {
+			if (!processedMethods.ContainsKey (method)) {
 				AddMethodForProcessing (method);
 
 				ProcessStack ();
-
-				Debug.Assert (processedMethods.TryGetValue (method, out processedState) && !(processedState is LinkedListNode<ProcessingNode>));
-			} else {
-				// If the method is already in the processed dictionary, it must not be in "processing" state
-				// since the queue is currently emtpy.
-				Debug.Assert (!(processedState is LinkedListNode<ProcessingNode>));
 			}
+
+			Debug.Assert (processedMethods.ContainsKey (method));
 		}
 
 		void AddMethodForProcessing (MethodDefinition method)
@@ -138,20 +140,22 @@ namespace Mono.Linker.Steps
 
 			var processingNode = new ProcessingNode (method, -1);
 
-			var listNode = processingStack.AddFirst (processingNode);
-			processedMethods.Add (method, listNode);
+			var stackNode = processingStack.AddFirst (processingNode);
+			processingMethods.Add (method, stackNode);
 			processingStackVersion++;
 		}
 
-		void StoreMethodAsProcessedAndRemoveFromQueue (LinkedListNode<ProcessingNode> stackNode, object methodValue)
+		void StoreMethodAsProcessedAndRemoveFromQueue (LinkedListNode<ProcessingNode> stackNode, Instruction methodValue)
 		{
 			Debug.Assert (stackNode.List == processingStack);
 			Debug.Assert (methodValue != null);
-			Debug.Assert (!(methodValue is LinkedListNode<ProcessingNode>));
 
-			processedMethods[stackNode.Value.Method] = methodValue;
+			var method = stackNode.Value.Method;
+			processingMethods.Remove (method);
 			processingStack.Remove (stackNode);
 			processingStackVersion++;
+
+			processedMethods[method] = methodValue;
 		}
 
 		void ProcessStack ()
@@ -269,6 +273,8 @@ namespace Mono.Linker.Steps
 					stackNode,
 					AnalyzeMethodForConstantResult (method, reducer.FoldedInstructions) ?? NonConstSentinel);
 			}
+
+			Debug.Assert (processingMethods.Count == 0);
 		}
 
 		Instruction AnalyzeMethodForConstantResult (MethodDefinition method, Collection<Instruction> instructions)
@@ -314,47 +320,41 @@ namespace Mono.Linker.Steps
 		/// </returns>
 		bool TryGetConstantResultForMethod (MethodDefinition method, out Instruction constantResultInstruction)
 		{
-			if (!processedMethods.TryGetValue (method, out object processedState)) {
+			if (!processedMethods.TryGetValue (method, out Instruction methodValue)) {
+				if (processingMethods.TryGetValue (method, out var stackNode)) {
+					// Method is already in the stack - not yet processed
+					// Move it to the top of the stack
+					processingStack.Remove (stackNode);
+					processingStack.AddFirst (stackNode);
+
+					// Note that stack version is not changing - we're just postponing work, not resolving anything.
+					// There's no result available for this method, so return false.
+					constantResultInstruction = null;
+					return false;
+				}
+				
 				// Method is not yet in the stack - add it there
 				AddMethodForProcessing (method);
 				constantResultInstruction = null;
 				return false;
 			}
 
-			switch (processedState) {
-			case LinkedListNode<ProcessingNode> queueNode:
-				// Method is already in the stack - not yet processed
-				// Move it to the top of the stack
-				processingStack.Remove (queueNode);
-				processingStack.AddFirst (queueNode);
-
-				// Note that stack version is not changing - we're just postponing work, not resolving anything.
-				// There's no result available for this method, so return false.
-				constantResultInstruction = null;
-				return false;
-
-			case Instruction instruction:
-				// Method was already processed and found to have a constant value
-				constantResultInstruction = instruction;
-				return true;
-
-			case object processedUnchangedSentinel when processedUnchangedSentinel == ProcessedUnchangedSentinel:
+			if (methodValue == ProcessedUnchangedSentinel) {
 				// Method has been processed and no changes has been made to it.
 				// Also its value has not been needed yet. Now we need to know if it's constant, so run the analyzer on it
 				var result = AnalyzeMethodForConstantResult (method, instructions: null);
 				Debug.Assert (result is Instruction || result == null);
 				processedMethods[method] = result ?? NonConstSentinel;
 				constantResultInstruction = result;
-				return true;
-
-			case object nonConstSentinel when nonConstSentinel == NonConstSentinel:
+			} else if (methodValue == NonConstSentinel) {
 				// Method was processed and found to not have a constant value
 				constantResultInstruction = null;
-				return true;
-
-			default:
-				throw new InternalErrorException ($"Unexpected value '{processedState}' found in {nameof (processedMethods)} dictionary in {nameof (RemoveUnreachableBlocksStep)}");
+			} else {
+				// Method was already processed and found to have a constant value
+				constantResultInstruction = methodValue;
 			}
+
+			return true;
 		}
 
 		bool TryInlineBodyDependencies (ref BodyReducer reducer, bool treatUnprocessedDependenciesAsNonConst, out bool changed)
