@@ -5,7 +5,7 @@ This repository hosts various tools and msbuild tasks which are used when trimmi
 ## IL Linker
 
 The [IL Linker](src/linker/README.md) is the developer's tool that can be used to produce apps that contain only code and assembly dependencies which are necessary to run the app. It's fully integrated into
-.NET SDKs via [ILLink.Tasks](src/ILLink.Tasks/README.md) build task. and exposed via `dotnet publish` trimming [settings](https://docs.microsoft.com/en-us/dotnet/core/deploying/trim-self-contained#trim-your-app---cli).
+.NET SDKs via [ILLink.Tasks](src/ILLink.Tasks/README.md) build task and exposed via `dotnet publish` trimming [settings](https://docs.microsoft.com/en-us/dotnet/core/deploying/trim-self-contained#trim-your-app---cli).
 
 The linker is always enabled for all size sensitive .NET workloads like Blazor WebAssembly, Xamarin or .NET mobile and can manually enabled for other project types. The default apps trimming setting can be further customized by using range set of [msbuild properties](https://docs.microsoft.com/en-us/dotnet/core/deploying/trimming-options).
 
