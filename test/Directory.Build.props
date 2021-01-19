@@ -1,0 +1,10 @@
+<Project>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <RunAnalyzers>false</RunAnalyzers>
+    <TargetFramework>net5.0</TargetFramework>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+</Project>
