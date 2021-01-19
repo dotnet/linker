@@ -196,7 +196,7 @@ namespace Mono.Linker
 			Tracer.AddDirectDependency (attribute, reason, marked: true);
 		}
 
-		public IEnumerable<IMetadataTokenProvider> MarkedPending()
+		public IEnumerable<IMetadataTokenProvider> MarkedPending ()
 		{
 			foreach (var pending in marked_pending.ToArray ())
 				yield return pending;
@@ -262,7 +262,7 @@ namespace Mono.Linker
 				Debug.Assert (marked_pending.Remove (provider));
 				return true;
 			}
-			
+
 			return false;
 		}
 
@@ -282,7 +282,6 @@ namespace Mono.Linker
 			if (!preserved_types.TryGetValue (type, out (TypePreserve preserve, bool applied) existing)) {
 				throw new InvalidOperationException ();
 			}
-
 			if (preserve != existing.preserve)
 				throw new InvalidOperationException ();
 
@@ -301,7 +300,6 @@ namespace Mono.Linker
 			if (!preserved_types.TryGetValue (type, out (TypePreserve preserve, bool applied) existing)) {
 				throw new InvalidOperationException ();
 			}
-
 			if (preserve != existing.preserve)
 				throw new InvalidOperationException ();
 
@@ -315,7 +313,6 @@ namespace Mono.Linker
 				preserved_types.Add (type, (preserve, false));
 				return;
 			}
-
 			Debug.Assert (existing.preserve != TypePreserve.Nothing);
 			var newPreserve = ChoosePreserveActionWhichPreservesTheMost (existing.preserve, preserve);
 			if (newPreserve != existing.preserve) {
@@ -350,7 +347,13 @@ namespace Mono.Linker
 
 		public bool TryGetPreserve (TypeDefinition type, out TypePreserve preserve)
 		{
-			return preserved_types.TryGetValue (type, preserve);
+			if (preserved_types.TryGetValue (type, out (TypePreserve preserve, bool _applied) existing)) {
+				preserve = existing.preserve;
+				return true;
+			}
+
+			preserve = default (TypePreserve);
+			return false;
 		}
 
 		public void SetMembersPreserve (TypeDefinition type, TypePreserveMembers preserve)
@@ -375,17 +378,17 @@ namespace Mono.Linker
 			return TypePreserveMembers.AllVisibleOrInternal;
 		}
 
-		public bool TryGetPreservedMembers (TypeDefinition type, out TypePreserveMembers preserve)
-		{
-			return preserved_type_members.TryGetValue (type, out preserve);
-		}
-
 		public void SetMembersPreserve (ExportedType type, TypePreserveMembers preserve)
 		{
 			if (preserved_exportedtype_members.TryGetValue (type, out TypePreserveMembers existing))
 				preserved_exportedtype_members[type] = CombineMembers (existing, preserve);
 			else
 				preserved_exportedtype_members.Add (type, preserve);
+		}
+
+		public bool TryGetPreservedMembers (TypeDefinition type, out TypePreserveMembers preserve)
+		{
+			return preserved_type_members.TryGetValue (type, out preserve);
 		}
 
 		public bool TryGetPreservedMembers (ExportedType type, out TypePreserveMembers preserve)

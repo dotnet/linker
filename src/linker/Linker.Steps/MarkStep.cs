@@ -283,7 +283,7 @@ namespace Mono.Linker.Steps
 		{
 			foreach (MethodDefinition method in methods)
 				if (Annotations.IsMarkedPending (method))
-					EnqueueMethod (method, DependencyInfo.AlreadyMarked);
+					MarkMethod (method, DependencyInfo.AlreadyMarked, null);
 		}
 
 		internal void MarkEntireType (TypeDefinition type, bool includeBaseTypes, in DependencyInfo reason, IMemberDefinition sourceLocationMember)
@@ -352,7 +352,7 @@ namespace Mono.Linker.Steps
 
 		void Process ()
 		{
-			while (ProcessPrimaryQueue () || ProcessMarkedPending() || ProcessLazyAttributes () || ProcessLateMarkedAttributes ()) {
+			while (ProcessPrimaryQueue () || ProcessMarkedPending () || ProcessLazyAttributes () || ProcessLateMarkedAttributes ()) {
 
 				// deal with [TypeForwardedTo] pseudo-attributes
 				foreach (AssemblyDefinition assembly in _context.GetAssemblies ()) {
@@ -402,7 +402,6 @@ namespace Mono.Linker.Steps
 
 		bool ProcessMarkedPending ()
 		{
-			var allPending = Annotations.MarkedPending ();
 			bool marked = false;
 			foreach (var pending in Annotations.MarkedPending ()) {
 				marked = true;
@@ -417,7 +416,7 @@ namespace Mono.Linker.Steps
 					Debug.Assert (!Annotations.IsMarkedPending (type));
 					break;
 				case MethodDefinition method:
-					EnqueueMethod (method, DependencyInfo.AlreadyMarked);
+					MarkMethod (method, DependencyInfo.AlreadyMarked, null);
 					break;
 				case FieldDefinition field:
 					MarkField (field, DependencyInfo.AlreadyMarked);

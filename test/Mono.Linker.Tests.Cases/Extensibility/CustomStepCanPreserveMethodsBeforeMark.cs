@@ -16,7 +16,8 @@ namespace Mono.Linker.Tests.Cases.Extensibility
 		}
 
 		[Kept]
-		static class UsedType {
+		static class UsedType
+		{
 			[Kept]
 			public static void UsedMethod () { }
 

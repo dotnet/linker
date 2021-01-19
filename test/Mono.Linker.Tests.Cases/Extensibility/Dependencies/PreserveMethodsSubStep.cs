@@ -5,7 +5,8 @@ using Mono.Linker.Steps;
 class PreserveMethodsSubStep : BaseStep
 {
 
-	protected override void Process () {
+	protected override void Process ()
+	{
 		foreach (var assembly in Context.GetAssemblies ()) {
 			foreach (var type in assembly.MainModule.Types)
 				ProcessType (type);
