@@ -53,7 +53,7 @@ namespace Mono.Linker
 		protected readonly HashSet<IMetadataTokenProvider> processed = new HashSet<IMetadataTokenProvider> ();
 		protected readonly Dictionary<TypeDefinition, TypePreserve> preserved_types = new Dictionary<TypeDefinition, TypePreserve> ();
 		protected readonly Dictionary<TypeDefinition, TypePreserveMembers> preserved_type_members = new ();
-		protected readonly Dictionary<ExportedType, TypePreserveMembers> preserved_etype_members = new ();
+		protected readonly Dictionary<ExportedType, TypePreserveMembers> preserved_exportedtype_members = new ();
 		protected readonly Dictionary<IMemberDefinition, List<MethodDefinition>> preserved_methods = new Dictionary<IMemberDefinition, List<MethodDefinition>> ();
 		protected readonly HashSet<IMetadataTokenProvider> public_api = new HashSet<IMetadataTokenProvider> ();
 		protected readonly Dictionary<AssemblyDefinition, ISymbolReader> symbol_readers = new Dictionary<AssemblyDefinition, ISymbolReader> ();
