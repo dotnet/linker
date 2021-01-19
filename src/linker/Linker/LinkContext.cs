@@ -117,11 +117,7 @@ namespace Mono.Linker
 			set { _keepTypeForwarderOnlyAssemblies = value; }
 		}
 
-#if FEATURE_ILLINK
 		public readonly bool KeepMembersForDebugger = true;
-#else
-		public bool KeepMembersForDebugger { get; set; }
-#endif
 
 		public bool IgnoreUnresolved {
 			get { return _ignoreUnresolved; }
@@ -153,11 +149,6 @@ namespace Mono.Linker
 		public List<PInvokeInfo> PInvokes { get; private set; }
 
 		public string PInvokesListFile;
-
-
-		public System.Collections.IDictionary Actions {
-			get { return _actions; }
-		}
 
 		public AssemblyResolver Resolver {
 			get { return _resolver; }
@@ -203,9 +194,6 @@ namespace Mono.Linker
 
 		public IReflectionPatternRecorder ReflectionPatternRecorder { get; set; }
 
-#if !FEATURE_ILLINK
-		public string[] ExcludedFeatures { get; set; }
-#endif
 		public CodeOptimizationsSettings Optimizations { get; set; }
 
 		public bool AddReflectionAnnotations { get; set; }
@@ -302,6 +290,7 @@ namespace Mono.Linker
 			return assembly.MainModule.GetType (fullName);
 		}
 
+#if !FEATURE_ILLINK
 		public AssemblyDefinition Resolve (string name)
 		{
 			if (File.Exists (name)) {
@@ -314,6 +303,7 @@ namespace Mono.Linker
 
 			return Resolve (new AssemblyNameReference (name, new Version ()));
 		}
+#endif
 
 		public AssemblyDefinition Resolve (IMetadataScope scope)
 		{
@@ -334,7 +324,7 @@ namespace Mono.Linker
 		{
 			if (SeenFirstTime (assembly)) {
 				SafeReadSymbols (assembly);
-				SetDefaultAction (assembly);
+				Annotations.SetAction (assembly, CalculateAssemblyAction (assembly.Name));
 			}
 		}
 
@@ -401,6 +391,12 @@ namespace Mono.Linker
 			return reference;
 		}
 
+		public void RegisterAssemblyAction (string assemblyName, AssemblyAction action)
+		{
+			_actions[assemblyName] = action;
+		}
+
+#if !FEATURE_ILLINK
 		public void SetAction (AssemblyDefinition assembly, AssemblyAction defaultAction)
 		{
 			RegisterAssembly (assembly);
@@ -410,19 +406,16 @@ namespace Mono.Linker
 
 			Annotations.SetAction (assembly, action);
 		}
-
-		protected void SetDefaultAction (AssemblyDefinition assembly)
+#endif
+		public AssemblyAction CalculateAssemblyAction (AssemblyNameDefinition name)
 		{
-			AssemblyNameDefinition name = assembly.Name;
+			if (_actions.TryGetValue (name.Name, out AssemblyAction action))
+				return action;
 
-			if (_actions.TryGetValue (name.Name, out AssemblyAction action)) {
-			} else if (IsCore (name)) {
-				action = _coreAction;
-			} else {
-				action = _userAction;
-			}
+			if (IsCore (name))
+				return CoreAction;
 
-			_annotations.SetAction (assembly, action);
+			return UserAction;
 		}
 
 		public static bool IsCore (AssemblyNameReference name)
@@ -482,13 +475,6 @@ namespace Mono.Linker
 		{
 			_resolver.Dispose ();
 		}
-
-#if !FEATURE_ILLINK
-		public bool IsFeatureExcluded (string featureName)
-		{
-			return ExcludedFeatures != null && Array.IndexOf (ExcludedFeatures, featureName) >= 0;
-		}
-#endif
 
 		public bool IsOptimizationEnabled (CodeOptimizations optimization, MemberReference context)
 		{

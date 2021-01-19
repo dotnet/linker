@@ -33,6 +33,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection.Runtime.TypeParsing;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -51,6 +52,8 @@ namespace Mono.Linker.Steps
 		protected Queue<AttributeProviderPair> _assemblyLevelAttributes;
 		protected Queue<(AttributeProviderPair, DependencyInfo, IMemberDefinition)> _lateMarkedAttributes;
 		protected List<TypeDefinition> _typesWithInterfaces;
+		protected bool _dynamicInterfaceCastableImplementationTypesDiscovered;
+		protected List<TypeDefinition> _dynamicInterfaceCastableImplementationTypes;
 		protected List<MethodBody> _unreachableBodies;
 
 		readonly List<(TypeDefinition Type, MethodBody Body, Instruction Instr)> _pending_isinst_instr;
@@ -59,9 +62,6 @@ namespace Mono.Linker.Steps
 		static readonly DependencyKind[] _entireTypeReasons = new DependencyKind[] {
 			DependencyKind.Unspecified,
 			DependencyKind.NestedType,
-#if !FEATURE_ILLINK
-			DependencyKind.PreservedDependency,
-#endif
 			DependencyKind.DynamicDependency,
 			DependencyKind.TypeInAssembly,
 			DependencyKind.AccessedViaReflection,
@@ -80,9 +80,6 @@ namespace Mono.Linker.Steps
 			DependencyKind.InteropMethodDependency,
 			DependencyKind.Ldtoken,
 			DependencyKind.MemberOfType,
-#if !FEATURE_ILLINK
-			DependencyKind.PreservedDependency,
-#endif
 			DependencyKind.DynamicDependency,
 			DependencyKind.ReferencedBySpecialAttribute,
 			DependencyKind.TypePreserve,
@@ -118,6 +115,7 @@ namespace Mono.Linker.Steps
 			DependencyKind.ParameterMarshalSpec,
 			DependencyKind.FieldMarshalSpec,
 			DependencyKind.ReturnTypeMarshalSpec,
+			DependencyKind.DynamicInterfaceCastableImplementation,
 		};
 
 		static readonly DependencyKind[] _methodReasons = new DependencyKind[] {
@@ -149,9 +147,6 @@ namespace Mono.Linker.Steps
 			DependencyKind.Newobj,
 			DependencyKind.Override,
 			DependencyKind.OverrideOnInstantiatedType,
-#if !FEATURE_ILLINK
-			DependencyKind.PreservedDependency,
-#endif
 			DependencyKind.DynamicDependency,
 			DependencyKind.PreservedMethod,
 			DependencyKind.ReferencedBySpecialAttribute,
@@ -175,6 +170,8 @@ namespace Mono.Linker.Steps
 			_assemblyLevelAttributes = new Queue<AttributeProviderPair> ();
 			_lateMarkedAttributes = new Queue<(AttributeProviderPair, DependencyInfo, IMemberDefinition)> ();
 			_typesWithInterfaces = new List<TypeDefinition> ();
+			_dynamicInterfaceCastableImplementationTypesDiscovered = false;
+			_dynamicInterfaceCastableImplementationTypes = new List<TypeDefinition> ();
 			_unreachableBodies = new List<MethodBody> ();
 			_pending_isinst_instr = new List<(TypeDefinition, MethodBody, Instruction)> ();
 		}
@@ -225,6 +222,19 @@ namespace Mono.Linker.Steps
 			}
 		}
 
+		static bool TypeIsDynamicInterfaceCastableImplementation (TypeDefinition type)
+		{
+			if (!type.IsInterface || !type.HasInterfaces || !type.HasCustomAttributes)
+				return false;
+
+			foreach (var ca in type.CustomAttributes) {
+				TypeDefinition caType = ca.AttributeType.Resolve ();
+				if (caType.Name == "DynamicInterfaceCastableImplementationAttribute" && caType.Namespace == "System.Runtime.InteropServices")
+					return true;
+			}
+			return false;
+		}
+
 		void InitializeType (TypeDefinition type)
 		{
 			if (type.HasNestedTypes) {
@@ -248,7 +258,8 @@ namespace Mono.Linker.Steps
 
 		protected bool IsFullyPreserved (TypeDefinition type)
 		{
-			if (Annotations.TryGetPreserve (type, out TypePreserve preserve) && preserve == TypePreserve.All)
+			if (Annotations.TryGetPreserve (type, out TypePreserve preserve) && preserve == TypePreserve.All &&
+				Annotations.TryGetPreserveAccessibility (type, out preserve) && preserve == 0)
 				return true;
 
 			switch (Annotations.GetAction (type.Module.Assembly)) {
@@ -382,6 +393,7 @@ namespace Mono.Linker.Steps
 				ProcessQueue ();
 				ProcessVirtualMethods ();
 				ProcessMarkedTypesWithInterfaces ();
+				ProcessDynamicCastableImplementationInterfaces ();
 				ProcessPendingBodies ();
 				DoAdditionalProcessing ();
 			}
@@ -453,6 +465,71 @@ namespace Mono.Linker.Steps
 					continue;
 
 				MarkInterfaceImplementations (type);
+			}
+		}
+
+		void DiscoverDynamicCastableImplementationInterfaces ()
+		{
+			Debug.Assert (!_dynamicInterfaceCastableImplementationTypesDiscovered);
+
+			foreach (var assembly in _context.GetAssemblies ()) {
+				switch (Annotations.GetAction (assembly)) {
+				// We only need to search assemblies where we don't mark everything
+				// Assemblies that are fully marked already mark these types.
+				case AssemblyAction.Link:
+				case AssemblyAction.AddBypassNGen:
+				case AssemblyAction.AddBypassNGenUsed:
+
+					foreach (TypeDefinition type in assembly.MainModule.Types)
+						CheckIfTypeOrNestedTypesIsDynamicCastableImplementation (type);
+
+					break;
+				}
+			}
+
+			_dynamicInterfaceCastableImplementationTypesDiscovered = true;
+
+			void CheckIfTypeOrNestedTypesIsDynamicCastableImplementation (TypeDefinition type)
+			{
+				if (!Annotations.IsMarked (type) && TypeIsDynamicInterfaceCastableImplementation (type))
+					_dynamicInterfaceCastableImplementationTypes.Add (type);
+
+				if (type.HasNestedTypes) {
+					foreach (var nestedType in type.NestedTypes)
+						CheckIfTypeOrNestedTypesIsDynamicCastableImplementation (nestedType);
+				}
+			}
+		}
+
+		void ProcessDynamicCastableImplementationInterfaces ()
+		{
+			if (!_dynamicInterfaceCastableImplementationTypesDiscovered) {
+				DiscoverDynamicCastableImplementationInterfaces ();
+			}
+
+			// We may mark an interface type later on.  Which means we need to reprocess any time with one or more interface implementations that have not been marked
+			// and if an interface type is found to be marked and implementation is not marked, then we need to mark that implementation
+
+			for (int i = 0; i < _dynamicInterfaceCastableImplementationTypes.Count; i++) {
+				var type = _dynamicInterfaceCastableImplementationTypes[i];
+
+				Debug.Assert (TypeIsDynamicInterfaceCastableImplementation (type));
+
+				// If the type has already been marked, we can remove it from this list.
+				if (Annotations.IsMarked (type)) {
+					_dynamicInterfaceCastableImplementationTypes.RemoveAt (i--);
+					continue;
+				}
+
+				foreach (var iface in type.Interfaces) {
+					if (Annotations.IsMarked (iface.InterfaceType)) {
+						// We only need to mark the type definition because the linker will ensure that all marked implemented interfaces and used method implementations
+						// will be marked on this type as well.
+						MarkType (type, new DependencyInfo (DependencyKind.DynamicInterfaceCastableImplementation, iface.InterfaceType), type);
+						_dynamicInterfaceCastableImplementationTypes.RemoveAt (i--);
+						break;
+					}
+				}
 			}
 		}
 
@@ -1379,20 +1456,13 @@ namespace Mono.Linker.Steps
 
 		protected virtual void MarkSerializable (TypeDefinition type)
 		{
-#if !FEATURE_ILLINK
-			// Keep default ctor for XmlSerializer support. See https://github.com/mono/linker/issues/957
-			MarkDefaultConstructor (type, new DependencyInfo (DependencyKind.SerializationMethodForType, type), type);
-
-			if (_context.IsFeatureExcluded ("deserialization"))
-				return;
-#else
 			// TODO: move after the check once SPC is correctly annotated
 			MarkDefaultConstructor (type, new DependencyInfo (DependencyKind.SerializationMethodForType, type), type);
 
 			// TODO: blocked for now by libraries build issue explained at https://github.com/mono/linker/issues/1603
 			//if (_context.GetTargetRuntimeVersion () > TargetRuntimeVersion.NET5)
 			//	return;
-#endif
+
 			MarkMethodsIf (type.Methods, IsSpecialSerializationConstructor, new DependencyInfo (DependencyKind.SerializationMethodForType, type), type);
 		}
 
@@ -1495,12 +1565,7 @@ namespace Mono.Linker.Steps
 
 			// TODO: This needs work to ensure we handle EventSource appropriately.
 			// This marks static fields of KeyWords/OpCodes/Tasks subclasses of an EventSource type.
-			if (
-#if !FEATURE_ILLINK
-					!_context.IsFeatureExcluded ("etw") &&
-#endif
-					BCL.EventTracingForWindows.IsEventSourceImplementation (type, _context)
-				) {
+			if (BCL.EventTracingForWindows.IsEventSourceImplementation (type, _context)) {
 				MarkEventSourceProviders (type);
 			}
 
@@ -1543,14 +1608,7 @@ namespace Mono.Linker.Steps
 				if (ShouldMarkTypeStaticConstructor (type) && reason.Kind != DependencyKind.TriggersCctorForCalledMethod)
 					MarkStaticConstructor (type, new DependencyInfo (DependencyKind.CctorForType, type), type);
 
-#if !FEATURE_ILLINK
-				if (_context.IsFeatureExcluded ("deserialization")) {
-					MarkMethodsIf (type.Methods, HasOnSerializeAttribute, new DependencyInfo (DependencyKind.SerializationMethodForType, type), type);
-				} else
-#endif
-				{
-					MarkMethodsIf (type.Methods, HasOnSerializeOrDeserializeAttribute, new DependencyInfo (DependencyKind.SerializationMethodForType, type), type);
-				}
+				MarkMethodsIf (type.Methods, HasOnSerializeOrDeserializeAttribute, new DependencyInfo (DependencyKind.SerializationMethodForType, type), type);
 			}
 
 			DoAdditionalTypeProcessing (type);
@@ -2005,6 +2063,15 @@ namespace Mono.Linker.Steps
 			return null;
 		}
 
+		void MarkFieldsIf (Collection<FieldDefinition> fields, Func<FieldDefinition, bool> predicate, in DependencyInfo reason)
+		{
+			foreach (FieldDefinition field in fields) {
+				if (predicate (field)) {
+					MarkField (field, reason);
+				}
+			}
+		}
+
 		protected bool MarkDefaultConstructor (TypeDefinition type, in DependencyInfo reason, IMemberDefinition sourceLocationMember)
 		{
 			if (type?.HasMethods != true)
@@ -2065,25 +2132,6 @@ namespace Mono.Linker.Steps
 
 			return method.Body.Instructions[0].OpCode.Code != Code.Ret;
 		}
-
-#if !FEATURE_ILLINK
-		static bool HasOnSerializeAttribute (MethodDefinition method)
-		{
-			if (!method.HasCustomAttributes)
-				return false;
-			foreach (var ca in method.CustomAttributes) {
-				var cat = ca.AttributeType;
-				if (cat.Namespace != "System.Runtime.Serialization")
-					continue;
-				switch (cat.Name) {
-				case "OnSerializedAttribute":
-				case "OnSerializingAttribute":
-					return true;
-				}
-			}
-			return false;
-		}
-#endif
 
 		static bool HasOnSerializeOrDeserializeAttribute (MethodDefinition method)
 		{
@@ -2236,22 +2284,64 @@ namespace Mono.Linker.Steps
 			if (!Annotations.TryGetPreserve (type, out TypePreserve preserve))
 				return;
 
+			var di = new DependencyInfo (DependencyKind.TypePreserve, type);
+
 			switch (preserve) {
 			case TypePreserve.All:
-				// TODO: it seems like PreserveAll on a type won't necessarily keep nested types,
-				// but PreserveAll on an assembly will. Is this correct?
-				MarkFields (type, true, new DependencyInfo (DependencyKind.TypePreserve, type));
-				MarkMethods (type, new DependencyInfo (DependencyKind.TypePreserve, type), type);
+				Annotations.TryGetPreserveAccessibility (type, out preserve);
+				switch (preserve) {
+				case TypePreserve.AccessibilityVisible:
+					if (type.HasMethods)
+						MarkMethodsIf (type.Methods, IsMethodVisible, di, type);
+
+					if (type.HasFields)
+						MarkFieldsIf (type.Fields, IsFieldVisible, di);
+
+					break;
+				case TypePreserve.AccessibilityVisibleOrInternal:
+					if (type.HasMethods)
+						MarkMethodsIf (type.Methods, IsMethodVisibleOrInternal, di, type);
+
+					if (type.HasFields)
+						MarkFieldsIf (type.Fields, IsFieldVisibleOrInternal, di);
+
+					break;
+				default:
+					MarkFields (type, true, di);
+					MarkMethods (type, di, type);
+					break;
+				}
 				break;
+
 			case TypePreserve.Fields:
-				if (!MarkFields (type, true, new DependencyInfo (DependencyKind.TypePreserve, type), true))
+				if (!MarkFields (type, true, di, true))
 					_context.LogWarning ($"Type {type.GetDisplayName ()} has no fields to preserve", 2001, type);
 				break;
 			case TypePreserve.Methods:
-				if (!MarkMethods (type, new DependencyInfo (DependencyKind.TypePreserve, type), type))
+				if (!MarkMethods (type, di, type))
 					_context.LogWarning ($"Type {type.GetDisplayName ()} has no methods to preserve", 2002, type);
 				break;
 			}
+		}
+
+		static bool IsMethodVisible (MethodDefinition method)
+		{
+			return method.IsPublic || method.IsFamily || method.IsFamilyOrAssembly;
+		}
+
+		static bool IsMethodVisibleOrInternal (MethodDefinition method)
+		{
+			return method.IsPublic || method.IsFamily || method.IsFamilyOrAssembly || method.IsAssembly || method.IsFamilyAndAssembly;
+		}
+
+		static bool IsFieldVisible (FieldDefinition field)
+		{
+			return field.IsPublic || field.IsFamily || field.IsFamilyOrAssembly;
+		}
+
+		static bool IsFieldVisibleOrInternal (FieldDefinition field)
+		{
+			return field.IsPublic || field.IsFamily || field.IsFamilyOrAssembly || field.IsAssembly || field.IsFamilyAndAssembly;
 		}
 
 		void ApplyPreserveMethods (TypeDefinition type)

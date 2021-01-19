@@ -223,6 +223,10 @@ namespace Mono.Linker.Steps
 			if (main.HasModuleReferences)
 				SweepCollectionMetadata (main.ModuleReferences);
 
+			if (main.EntryPoint != null && !Annotations.IsMarked (main.EntryPoint)) {
+				main.EntryPoint = null;
+			}
+
 			SweepTypeForwarders (assembly);
 
 			SweepAssemblyReferences (assembly);
@@ -858,13 +862,8 @@ namespace Mono.Linker.Steps
 				case TypeSpecification ts:
 					UpdateScopeOfTypeReference (ts.ElementType);
 					return;
-#if FEATURE_ILLINK
 				case TypeDefinition:
 				case GenericParameter:
-#else
-				case TypeDefinition _:
-				case GenericParameter _:
-#endif
 					// Nothing to update
 					return;
 				}

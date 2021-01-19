@@ -40,14 +40,8 @@ namespace Mono.Linker
 
 	public partial class Driver : IDisposable
 	{
-
-#if FEATURE_ILLINK
-		const string resolvers = "-a|-r|-x";
+		const string resolvers = "-a|-x";
 		const string _linker = "IL Linker";
-#else
-		const string resolvers = "-a|-i|-r|-x";
-		const string _linker = "Mono IL Linker";
-#endif
 
 		public static int Main (string[] args)
 		{
@@ -166,13 +160,6 @@ namespace Mono.Linker
 			Pipeline p = GetStandardPipeline ();
 			context = GetDefaultContext (p, customLogger);
 
-#if !FEATURE_ILLINK
-			I18nAssemblies assemblies = I18nAssemblies.All;
-			var excluded_features = new HashSet<string> (StringComparer.Ordinal);
-			var resolve_from_xapi_steps = new Stack<string> ();
-#endif
-			var resolve_from_assembly_steps = new Stack<(string, ResolveFromAssemblyStep.RootVisibility)> ();
-			var resolve_from_xml_steps = new Stack<string> ();
 			var body_substituter_steps = new Stack<string> ();
 			var xml_custom_attribute_steps = new Stack<string> ();
 			var custom_steps = new Stack<string> ();
@@ -183,7 +170,8 @@ namespace Mono.Linker
 			bool new_mvid_used = false;
 			bool deterministic_used = false;
 
-			bool resolver = false;
+			List<BaseStep> inputs = CreateDefaultResolvers ();
+
 			while (arguments.Count > 0) {
 				string token = arguments.Dequeue ();
 				if (token.Length < 2) {
@@ -266,23 +254,6 @@ namespace Mono.Linker
 							return -1;
 
 						continue;
-#if !FEATURE_ILLINK
-					case "--exclude-feature":
-						if (arguments.Count < 1) {
-							ErrorMissingArgument (token);
-							return -1;
-						}
-
-						if (!GetStringParam (token, l => {
-							foreach (var feature in l.Split (',')) {
-								if (!excluded_features.Contains (feature))
-									excluded_features.Add (feature);
-							}
-						}))
-							return -1;
-
-						continue;
-#endif
 					case "--explicit-reflection":
 						if (!GetBoolParam (token, l => context.AddReflectionAnnotations = l))
 							return -1;
@@ -515,72 +486,86 @@ namespace Mono.Linker
 							return -1;
 
 						continue;
-					case "c":
-						if (!GetStringParam (token, l => context.CoreAction = ParseAssemblyAction (l)))
-							return -1;
+					case "c": {
+							AssemblyAction? action = null;
+							if (!GetStringParam (token, l => action = ParseAssemblyAction (l)))
+								return -1;
 
-						continue;
-					case "u":
-						if (!GetStringParam (token, l => context.UserAction = ParseAssemblyAction (l)))
-							return -1;
+							if (action == null)
+								return -1;
 
-						continue;
-					case "p":
-						if (arguments.Count < 2) {
-							ErrorMissingArgument (token);
-							return -1;
+							context.CoreAction = action.Value;
+							continue;
 						}
+					case "u": {
+							AssemblyAction? action = null;
+							if (!GetStringParam (token, l => action = ParseAssemblyAction (l)))
+								return -1;
 
-						AssemblyAction action = ParseAssemblyAction (arguments.Dequeue ());
-						context.Actions[arguments.Dequeue ()] = action;
-						continue;
+							if (action == null)
+								return -1;
+
+							context.UserAction = action.Value;
+							continue;
+						}
+					case "p": {
+							if (arguments.Count < 2) {
+								ErrorMissingArgument (token);
+								return -1;
+							}
+
+							var action = ParseAssemblyAction (arguments.Dequeue ());
+							if (action == null)
+								return -1;
+
+							string assemblyName = arguments.Dequeue ();
+							if (!IsValidAssemblyName (assemblyName)) {
+								context.LogError ($"Invalid assembly name '{assemblyName}'", 1036);
+								return -1;
+							}
+
+							context.RegisterAssemblyAction (assemblyName, action.Value);
+							continue;
+						}
 					case "t":
 						context.KeepTypeForwarderOnlyAssemblies = true;
 						continue;
-					case "x":
-						if (!GetStringParam (token, l => {
-							foreach (string file in GetFiles (l))
-								resolve_from_xml_steps.Push (file);
-						}))
-							return -1;
+					case "x": {
+							string xmlFile = null;
+							if (!GetStringParam (token, l => xmlFile = l))
+								return -1;
 
-						resolver = true;
-						continue;
-					case "r":
-					case "a":
-						if (!GetStringParam (token, l => {
+							if (!File.Exists (xmlFile)) {
+								context.LogError ($"XML descriptor file '{xmlFile}' could not be found'", 1033);
+								return -1;
+							}
 
-							var rootVisibility = (token[1] == 'r')
-								? ResolveFromAssemblyStep.RootVisibility.PublicAndFamily
-								: ResolveFromAssemblyStep.RootVisibility.Any;
-							foreach (string file in GetFiles (l))
-								resolve_from_assembly_steps.Push ((file, rootVisibility));
-						}))
-							return -1;
+							inputs.Add (new ResolveFromXmlStep (new XPathDocument (xmlFile), xmlFile));
+							continue;
+						}
+					case "a": {
+							string assemblyFile = null;
+							if (!GetStringParam (token, l => assemblyFile = l))
+								return -1;
 
-						resolver = true;
-						continue;
-#if !FEATURE_ILLINK
-					case "i":
-						if (!GetStringParam (token, l => {
-							foreach (string file in GetFiles (l))
-								resolve_from_xapi_steps.Push (file);
-						}))
-							return -1;
+							if (!File.Exists (assemblyFile) && assemblyFile.EndsWith (".dll", StringComparison.InvariantCultureIgnoreCase)) {
+								context.LogError ($"Root assembly '{assemblyFile}' could not be found'", 1032);
+								return -1;
+							}
 
-						resolver = true;
-						continue;
-					case "l":
-						if (!GetStringParam (token, l => assemblies = ParseI18n (l)))
-							return -1;
+							AssemblyRootMode rmode = AssemblyRootMode.Default;
+							var rootMode = GetNextStringValue ();
+							if (rootMode != null) {
+								var parsed_rmode = ParseAssemblyRootsMode (rootMode);
+								if (parsed_rmode is null)
+									return -1;
 
-						continue;
-					case "v":
-						if (!GetBoolParam (token, l => context.KeepMembersForDebugger = l))
-							return -1;
+								rmode = parsed_rmode.Value;
+							}
 
-						continue;
-#endif
+							inputs.Add (new RootAssemblyInput (assemblyFile, rmode));
+							continue;
+						}
 					case "b":
 						if (!GetBoolParam (token, l => context.LinkSymbols = l))
 							return -1;
@@ -614,8 +599,8 @@ namespace Mono.Linker
 				return -1;
 			}
 
-			if (!resolver) {
-				context.LogError ($"No files to link were specified. Use one of '{resolvers}' options", 1020);
+			if (inputs.Count == 0) {
+				context.LogError ($"No input files were specified. Use one of '{resolvers}' options", 1020);
 				return -1;
 			}
 
@@ -623,6 +608,8 @@ namespace Mono.Linker
 				context.LogError ($"Options '--new-mvid' and '--deterministic' cannot be used at the same time", 1021);
 				return -1;
 			}
+
+
 
 			// Default to deterministic output
 			if (!new_mvid_used && !deterministic_used) {
@@ -644,18 +631,11 @@ namespace Mono.Linker
 			// Modify the default pipeline
 			//
 
-#if !FEATURE_ILLINK
-			foreach (var file in resolve_from_xapi_steps)
-				p.PrependStep (new ResolveFromXApiStep (new XPathDocument (file)));
-#endif
+			for (int i = inputs.Count; i != 0; --i)
+				p.PrependStep (inputs[i - 1]);
+
 			foreach (var file in xml_custom_attribute_steps)
 				AddLinkAttributesStep (p, file);
-
-			foreach (var file in resolve_from_xml_steps)
-				AddResolveFromXmlStep (p, file);
-
-			foreach (var (file, rootVisibility) in resolve_from_assembly_steps)
-				p.PrependStep (new ResolveFromAssemblyStep (file, rootVisibility));
 
 			foreach (var file in body_substituter_steps)
 				AddBodySubstituterStep (p, file);
@@ -666,33 +646,11 @@ namespace Mono.Linker
 			if (context.AddReflectionAnnotations)
 				p.AddStepAfter (typeof (MarkStep), new ReflectionBlockedStep ());
 
-#if !FEATURE_ILLINK
-			p.AddStepAfter (typeof (LoadReferencesStep), new LoadI18nAssemblies (assemblies));
-
-			if (assemblies != I18nAssemblies.None)
-				p.AddStepAfter (typeof (DynamicDependencyLookupStep), new PreserveCalendarsStep (assemblies));
-#endif
-
 			if (_needAddBypassNGenStep)
 				p.AddStepAfter (typeof (SweepStep), new AddBypassNGenStep ());
 
 			if (removeCAS)
 				p.AddStepBefore (typeof (MarkStep), new RemoveSecurityStep ());
-
-#if !FEATURE_ILLINK
-			if (excluded_features.Count > 0) {
-				p.AddStepBefore (typeof (MarkStep), new RemoveFeaturesStep () {
-					FeatureCOM = excluded_features.Contains ("com"),
-					FeatureETW = excluded_features.Contains ("etw"),
-					FeatureSRE = excluded_features.Contains ("sre"),
-					FeatureGlobalization = excluded_features.Contains ("globalization")
-				});
-
-				var excluded = new string[excluded_features.Count];
-				excluded_features.CopyTo (excluded);
-				context.ExcludedFeatures = excluded;
-			}
-#endif
 
 			p.AddStepBefore (typeof (MarkStep), new RemoveUnreachableBlocksStep ());
 			p.AddStepBefore (typeof (OutputStep), new SealerStep ());
@@ -700,11 +658,8 @@ namespace Mono.Linker
 			//
 			// Pipeline setup with all steps enabled
 			//
-			// ResolveFromAssemblyStep [optional, possibly many]
-			// ResolveFromXmlStep [optional, possibly many]
-			// [mono only] ResolveFromXApiStep [optional, possibly many]
+			// RootAssemblyInputStep or ResolveFromXmlStep [at least one of them]
 			// LoadReferencesStep
-			// [mono only] LoadI18nAssemblies
 			// BlacklistStep
 			//   dynamically adds steps:
 			//     ResolveFromXmlStep [optional, possibly many]
@@ -712,11 +667,8 @@ namespace Mono.Linker
 			//     LinkAttributesStep [optional, possibly many]
 			// LinkAttributesStep [optional, possibly many]
 			// DynamicDependencyLookupStep
-			// [mono only] PreserveCalendarsStep [optional]
-			// TypeMapStep
 			// BodySubstituterStep [optional]
 			// RemoveSecurityStep [optional]
-			// [mono only] RemoveFeaturesStep [optional]
 			// RemoveUnreachableBlocksStep [optional]
 			// MarkStep
 			// ReflectionBlockedStep [optional]
@@ -935,28 +887,45 @@ namespace Mono.Linker
 			return lines.ToArray ();
 		}
 
-#if !FEATURE_ILLINK
-		protected static I18nAssemblies ParseI18n (string str)
+		AssemblyAction? ParseAssemblyAction (string s)
 		{
-			I18nAssemblies assemblies = I18nAssemblies.None;
-			string[] parts = str.Split (',');
-			foreach (string part in parts)
-				assemblies |= (I18nAssemblies) Enum.Parse (typeof (I18nAssemblies), part.Trim (), true);
+			switch (s.ToLowerInvariant ()) {
+			case "copy":
+				return AssemblyAction.Copy;
+			case "copyused":
+				return AssemblyAction.CopyUsed;
+			case "link":
+				return AssemblyAction.Link;
+			case "skip":
+				return AssemblyAction.Skip;
 
-			return assemblies;
-		}
-#endif
-
-		AssemblyAction ParseAssemblyAction (string s)
-		{
-			var assemblyAction = (AssemblyAction) Enum.Parse (typeof (AssemblyAction), s, true);
-			// The AddBypassNGenStep is necessary if any actions (default or per-assembly) are AddBypassNGen(Used).
-			// We enable this step as soon as we see such an action. Even if subsequent parameters change an action we have
-			// already seen, the step will only operate on assemblies with a final action AddBypassNGen(Used).
-			if ((assemblyAction == AssemblyAction.AddBypassNGen) || (assemblyAction == AssemblyAction.AddBypassNGenUsed)) {
+			case "addbypassngen":
 				_needAddBypassNGenStep = true;
+				return AssemblyAction.AddBypassNGen;
+			case "addbypassngenused":
+				_needAddBypassNGenStep = true;
+				return AssemblyAction.AddBypassNGenUsed;
 			}
-			return assemblyAction;
+
+			context.LogError ($"Invalid assembly action '{s}'", 1031);
+			return null;
+		}
+
+		AssemblyRootMode? ParseAssemblyRootsMode (string s)
+		{
+			switch (s.ToLowerInvariant ()) {
+			case "default":
+				return AssemblyRootMode.Default;
+			case "all":
+				return AssemblyRootMode.AllMembers;
+			case "visible":
+				return AssemblyRootMode.VisibleMembers;
+			case "entrypoint":
+				return AssemblyRootMode.EntryPoint;
+			}
+
+			context.LogError ($"Invalid assembly root mode '{s}'", 1037);
+			return null;
 		}
 
 		bool GetWarnVersion (string text, out WarnVersion version)
@@ -1076,84 +1045,80 @@ namespace Mono.Linker
 		protected virtual LinkContext GetDefaultContext (Pipeline pipeline, ILogger logger)
 		{
 			return new LinkContext (pipeline, logger ?? new ConsoleLogger ()) {
-#if FEATURE_ILLINK
 				CoreAction = AssemblyAction.Link,
-#else
-				CoreAction = AssemblyAction.Skip,
-#endif
 				UserAction = AssemblyAction.Link,
 				OutputDirectory = "output",
 			};
+		}
+
+		protected virtual List<BaseStep> CreateDefaultResolvers ()
+		{
+			return new List<BaseStep> ();
+		}
+
+		static bool IsValidAssemblyName (string value)
+		{
+			return !string.IsNullOrEmpty (value);
 		}
 
 		static void Usage ()
 		{
 			Console.WriteLine (_linker);
 
-#if FEATURE_ILLINK
-			Console.WriteLine ($"illink [options] {resolvers} file");
-#else
-			Console.WriteLine ($"monolinker [options] {resolvers} file");
-#endif
+			Console.WriteLine ($"illink [options] {resolvers}");
+			Console.WriteLine ("  -a FILE [MODE]      Assembly file used as root assembly with optional MODE value to alter default root mode");
+			Console.WriteLine ("                      Mode can be one of the following values");
+			Console.WriteLine ("                        all: Keep all members in root assembly");
+			Console.WriteLine ("                        default: Use entry point for applications and all members for libraries");
+			Console.WriteLine ("                        entrypoint: Use assembly entry point as only root in the assembly");
+			Console.WriteLine ("                        visible: Keep all members and types visible outside of root assembly");
+			Console.WriteLine ("  -x FILE             XML descriptor file with members to be kept");
 
-			Console.WriteLine ("  -a                  Link from a list of assemblies");
-#if !FEATURE_ILLINK
-			Console.WriteLine ("  -i                  Link from an mono-api-info descriptor");
-#endif
-			Console.WriteLine ("  -r                  Link from a list of assemblies using roots visible outside of the assembly");
-			Console.WriteLine ("  -x                  Link from XML descriptor");
-			Console.WriteLine ("  -d PATH             Specify additional directories to search in for references");
-			Console.WriteLine ("  -reference FILE     Specify additional assemblies to use as references");
-			Console.WriteLine ("  -b                  Update debug symbols for each linked module. Defaults to false");
-#if !FEATURE_ILLINK
-			Console.WriteLine ("  -v                  Keep members and types used by debugger. Defaults to false");
-			Console.WriteLine ("  -l <name>,<name>    List of i18n assemblies to copy to the output directory. Defaults to 'all'");
-			Console.WriteLine ("                        Valid names are 'none', 'all', 'cjk', 'mideast', 'other', 'rare', 'west'");
-#endif
-			Console.WriteLine ("  -out PATH                     Specify the output directory. Defaults to 'output'");
-			Console.WriteLine ("  --about                       About the {0}", _linker);
-			Console.WriteLine ("  --verbose                     Log messages indicating progress and warnings");
-			Console.WriteLine ("  --warn VERSION                Only print out warnings with version <= VERSION. Defaults to '9999'");
-			Console.WriteLine ("                                  VERSION is an integer in the range 0-9999.");
-			Console.WriteLine ("  --warnaserror[+|-]            Report all warnings as errors");
-			Console.WriteLine ("  --warnaserror[+|-] WARN-LIST  Report specific warnings as errors");
-			Console.WriteLine ("  --nowarn WARN-LIST            Disable specific warning messages");
-			Console.WriteLine ("  --version                     Print the version number of the {0}", _linker);
-			Console.WriteLine ("  --help                        Lists all linker options");
-			Console.WriteLine ("  @FILE                         Read response file for more options");
+			Console.WriteLine ();
+			Console.WriteLine ("Options");
+			Console.WriteLine ("  -d PATH             Specify additional directory to search in for assembly references");
+			Console.WriteLine ("  -reference FILE     Specify additional file location used to resolve assembly references");
+			Console.WriteLine ("  -b                  Update debug symbols for all modified files. Defaults to false");
+			Console.WriteLine ("  -out PATH           Specify the output directory. Defaults to 'output'");
+			Console.WriteLine ("  -h                  Lists all {0} options", _linker);
+			Console.WriteLine ("  @FILE               Read response file for more options");
 
 			Console.WriteLine ();
 			Console.WriteLine ("Actions");
-#if FEATURE_ILLINK
-			Console.WriteLine ("  -c ACTION           Action on the framework assemblies. Defaults to 'link'");
-#else
-			Console.WriteLine ("  -c ACTION           Action on the framework assemblies. Defaults to 'skip'");
-#endif
-			Console.WriteLine ("                        copy: Copy the assembly into the output (it can be updated when any of its dependencies is removed)");
+			Console.WriteLine ("  -c ACTION           Sets action for all framework assemblies. Defaults to 'link'");
+			Console.WriteLine ("                        copy: Analyze whole assembly and save it to the output");
 			Console.WriteLine ("                        copyused: Same as copy but only for assemblies which are needed");
-			Console.WriteLine ("                        link: Remove any ununsed code or metadata from the assembly");
+			Console.WriteLine ("                        link: Remove any unused IL or metadata and optimizes the assembly");
 			Console.WriteLine ("                        skip: Do not process the assembly");
 			Console.WriteLine ("                        addbypassngen: Add BypassNGenAttribute to unused methods");
 			Console.WriteLine ("                        addbypassngenused: Same as addbypassngen but unused assemblies are removed");
-			Console.WriteLine ("  -u ACTION           Action on the user assemblies. Defaults to 'link'");
-			Console.WriteLine ("  -p ACTION ASM       Overrides the default action for an assembly");
+			Console.WriteLine ("  -u ACTION           Sets action for any user assembly. Defaults to 'link'");
+			Console.WriteLine ("  -p ACTION ASM       Overrides the default action for specific assembly name");
 
 			Console.WriteLine ();
-			Console.WriteLine ("Advanced");
+			Console.WriteLine ("Advanced Options");
+			Console.WriteLine ("  --about                   About the {0}", _linker);
 			Console.WriteLine ("  --custom-step CFG         Add a custom step <config> to the existing pipeline");
 			Console.WriteLine ("                            Step can use one of following configurations");
 			Console.WriteLine ("                            TYPE,PATH_TO_ASSEMBLY: Add user defined type as last step to the pipeline");
 			Console.WriteLine ("                            -NAME:TYPE,PATH_TO_ASSEMBLY: Inserts step type before existing step with name");
 			Console.WriteLine ("                            +NAME:TYPE,PATH_TO_ASSEMBLY: Add step type after existing step");
 			Console.WriteLine ("  --custom-data KEY=VALUE   Populates context data set with user specified key-value pair");
+			Console.WriteLine ("  --deterministic           Produce a deterministic output for modified assemblies");
 			Console.WriteLine ("  --ignore-descriptors      Skips reading embedded descriptors (short -z). Defaults to false");
 			Console.WriteLine ("  --keep-facades            Keep assemblies with type-forwarders (short -t). Defaults to false");
 			Console.WriteLine ("  --skip-unresolved         Ignore unresolved types, methods, and assemblies. Defaults to false");
 			Console.WriteLine ("  --output-pinvokes PATH    Output a JSON file with all modules and entry points of the P/Invokes found");
+			Console.WriteLine ("  --verbose                 Log messages indicating progress and warnings");
+			Console.WriteLine ("  --nowarn WARN             Disable specific warning messages");
+			Console.WriteLine ("  --warn VERSION            Only print out warnings with version <= VERSION. Defaults to '9999'");
+			Console.WriteLine ("                              VERSION is an integer in the range 0-9999.");
+			Console.WriteLine ("  --warnaserror[+|-]        Report all warnings as errors");
+			Console.WriteLine ("  --warnaserror[+|-] WARN   Report specific warnings as errors");
+			Console.WriteLine ("  --version                 Print the version number of the {0}", _linker);
 
 			Console.WriteLine ();
 			Console.WriteLine ("Linking");
-			Console.WriteLine ("  --deterministic           Produce a deterministic output for linked assemblies");
 			Console.WriteLine ("  --disable-opt NAME [ASM]  Disable one of the default optimizations globaly or for a specific assembly name");
 			Console.WriteLine ("                              beforefieldinit: Unused static fields are removed if there is no static ctor");
 			Console.WriteLine ("                              ipconstprop: Interprocedural constant propagation on return values");
@@ -1163,14 +1128,6 @@ namespace Mono.Linker
 			Console.WriteLine ("                              unusedtypechecks: Inlines never successful type checks");
 			Console.WriteLine ("  --enable-opt NAME [ASM]   Enable one of the additional optimizations globaly or for a specific assembly name");
 			Console.WriteLine ("                              sealer: Any method or type which does not have override is marked as sealed");
-#if !FEATURE_ILLINK
-			Console.WriteLine ("  --exclude-feature NAME    Any code which has a feature <name> in linked assemblies will be removed");
-			Console.WriteLine ("                              com: Support for COM Interop");
-			Console.WriteLine ("                              etw: Event Tracing for Windows");
-			Console.WriteLine ("                              remoting: .NET Remoting dependencies");
-			Console.WriteLine ("                              sre: System.Reflection.Emit namespace");
-			Console.WriteLine ("                              globalization: Globalization data and globalization behavior");
-#endif
 			Console.WriteLine ("  --explicit-reflection     Adds to members never used through reflection DisablePrivateReflection attribute. Defaults to false");
 			Console.WriteLine ("  --keep-dep-attributes     Keep attributes used for manual dependency tracking. Defaults to false");
 			Console.WriteLine ("  --feature FEATURE VALUE   Apply any optimizations defined when this feature setting is a constant known at link time");
@@ -1203,7 +1160,7 @@ namespace Mono.Linker
 		static void About ()
 		{
 			Console.WriteLine ("For more information, visit the project Web site");
-			Console.WriteLine ("   http://www.mono-project.com/");
+			Console.WriteLine ("   https://github.com/mono/linker");
 		}
 
 		static Pipeline GetStandardPipeline ()
@@ -1212,7 +1169,6 @@ namespace Mono.Linker
 			p.AppendStep (new LoadReferencesStep ());
 			p.AppendStep (new BlacklistStep ());
 			p.AppendStep (new DynamicDependencyLookupStep ());
-			p.AppendStep (new TypeMapStep ());
 			p.AppendStep (new MarkStep ());
 			p.AppendStep (new ValidateVirtualMethodAnnotationsStep ());
 			p.AppendStep (new ProcessWarningsStep ());

@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Text;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Linker.Steps;
@@ -821,9 +820,8 @@ namespace Mono.Linker.Dataflow
 						reflectionContext.AnalyzingPattern ();
 
 						var parameters = calledMethod.Parameters;
-						if ((parameters.Count == 3 && (methodParams[2].Kind == ValueNodeKind.MethodReturn || methodParams[2].Kind == ValueNodeKind.ConstInt || methodParams[2].Kind == ValueNodeKind.LoadField)
-							&& (methodParams[2].AsConstInt () == null || methodParams[2].AsConstInt () != 0)) ||
-							(parameters.Count == 5 && (methodParams[4].AsConstInt () == null || methodParams[4].AsConstInt () != 0))) {
+						if ((parameters.Count == 3 && parameters[2].ParameterType.MetadataType == MetadataType.Boolean && methodParams[2].AsConstInt () != 0) ||
+							(parameters.Count == 5 && methodParams[4].AsConstInt () != 0)) {
 							reflectionContext.RecordUnrecognizedPattern (2096, $"Call to '{calledMethod.GetDisplayName ()}' can perform case insensitive lookup of the type, currently ILLink can not guarantee presence of all the matching types");
 							break;
 						}
@@ -959,6 +957,7 @@ namespace Mono.Linker.Dataflow
 							bindingFlags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public;
 
 						var requiredMemberTypes = GetDynamicallyAccessedMemberTypesFromBindingFlagsForNestedTypes (bindingFlags);
+						bool everyParentTypeHasAll = true;
 						foreach (var value in methodParams[0].UniqueValues ()) {
 							if (value is SystemTypeValue systemTypeValue) {
 								foreach (var stringParam in methodParams[1].UniqueValues ()) {
@@ -984,7 +983,27 @@ namespace Mono.Linker.Dataflow
 								// Otherwise fall back to the bitfield requirements
 								RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberTypes, value, calledMethodDefinition);
 							}
+
+							if (value is LeafValueWithDynamicallyAccessedMemberNode leafValueWithDynamicallyAccessedMember) {
+								if (leafValueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes != DynamicallyAccessedMemberTypes.All)
+									everyParentTypeHasAll = false;
+							} else if (!(value is NullValue || value is SystemTypeValue)) {
+								// Known Type values are always OK - either they're fully resolved above and thus the return value
+								// is set to the known resolved type, or if they're not resolved, they won't exist at runtime
+								// and will cause exceptions - and thus don't introduce new requirements on marking.
+								// nulls are intentionally ignored as they will lead to exceptions at runtime
+								// and thus don't introduce new requirements on marking.
+								everyParentTypeHasAll = false;
+							}
 						}
+
+						// If the parent type (all the possible values) has DynamicallyAccessedMemberTypes.All it means its nested types are also fully marked
+						// (see MarkStep.MarkEntireType - it will recursively mark entire type on nested types). In that case we can annotate 
+						// the returned type (the nested type) with DynamicallyAccessedMemberTypes.All as well.
+						// Note it's OK to blindly overwrite any potential annotation on the return value from the method definition
+						// since DynamicallyAccessedMemberTypes.All is a superset of any other annotation.
+						if (everyParentTypeHasAll && methodReturnValue == null)
+							methodReturnValue = new MethodReturnValue (calledMethodDefinition.MethodReturnType, DynamicallyAccessedMemberTypes.All);
 					}
 					break;
 
