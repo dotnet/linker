@@ -314,15 +314,15 @@ namespace Mono.Linker
 
 		public void SetMembersPreserve (ExportedType type, TypePreserveMembers preserve)
 		{
-			if (preserved_etype_members.TryGetValue (type, out TypePreserveMembers existing))
-				preserved_etype_members[type] = CombineMembers (existing, preserve);
+			if (preserved_exportedtype_members.TryGetValue (type, out TypePreserveMembers existing))
+				preserved_exportedtype_members[type] = CombineMembers (existing, preserve);
 			else
-				preserved_etype_members.Add (type, preserve);
+				preserved_exportedtype_members.Add (type, preserve);
 		}
 
 		public bool TryGetPreservedMembers (ExportedType type, out TypePreserveMembers preserve)
 		{
-			return preserved_etype_members.TryGetValue (type, out preserve);
+			return preserved_exportedtype_members.TryGetValue (type, out preserve);
 		}
 
 		public bool TryGetMethodStubValue (MethodDefinition method, out object value)
