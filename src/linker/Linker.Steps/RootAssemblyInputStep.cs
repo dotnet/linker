@@ -107,16 +107,10 @@ namespace Mono.Linker.Steps
 
 		void MarkAndPreserveVisible (AssemblyDefinition assembly, ExportedType type, TypePreserveMembers preserve)
 		{
-			Context.MarkingHelpers.MarkExportedType (type, assembly.MainModule, new DependencyInfo (DependencyKind.ExportedType, type));
-
-			TypeDefinition td = type.Resolve ();
-			if (td != null) {
-				MarkAndPreserveVisible (td, preserve);
-				return;
-			}
-
-			if (!Context.IgnoreUnresolved)
-				Context.LogError ($"Exported type '{type.Name}' cannot be rooted", 1038);
+			var di = new DependencyInfo (DependencyKind.RootAssembly, assembly);
+			Context.Annotations.Mark (type, di);
+			Context.Annotations.Mark (assembly.MainModule, di);
+			Annotations.SetMembersPreserve (type, preserve);
 		}
 
 		static bool IsTypeVisible (TypeDefinition type)

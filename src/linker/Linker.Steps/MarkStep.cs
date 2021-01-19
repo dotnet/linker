@@ -210,7 +210,6 @@ namespace Mono.Linker.Steps
 
 				foreach (TypeDefinition type in assembly.MainModule.Types)
 					InitializeType (type);
-
 				break;
 			}
 		}
@@ -2287,7 +2286,7 @@ namespace Mono.Linker.Steps
 				case TypePreserve.All:
 					MarkFields (type, true, di);
 					MarkMethods (type, di, type);
-					break;
+					return;
 
 				case TypePreserve.Fields:
 					if (!MarkFields (type, true, di, true))
