@@ -179,22 +179,18 @@ namespace Mono.Linker.Steps
 
 					// To fix this go over the stack and find the "oldest" node with the current version - the "oldest" node which
 					// is part of the loop:
-					var lastNodeWithCurrentVersion = stackNode;
-					for (var currentNode = stackNode; currentNode != null; currentNode = currentNode.Next) {
-						if (currentNode.Value.LastAttemptStackVersion == processingStackVersion)
-							lastNodeWithCurrentVersion = currentNode;
-					}
-
-					// There should be at least 2 nodes with the latest version to form a loop
-					Debug.Assert (lastNodeWithCurrentVersion != stackNode);
-
-					// Now go back over all nodes from the "oldest" one back to the top and find any nodes which are not of current version.
-					// For all of them, move them to the top of the stack.
-					var candidateNodeToMoveToTop = lastNodeWithCurrentVersion;
+					LinkedListNode <ProcessingNode> lastNodeWithCurrentVersion = null;
+					var candidateNodeToMoveToTop = processingStack.Last;
 					bool foundNodesWithNonCurrentVersion = false;
 					while (candidateNodeToMoveToTop != stackNode) {
 						var previousNode = candidateNodeToMoveToTop.Previous;
-						if (candidateNodeToMoveToTop.Value.LastAttemptStackVersion != processingStackVersion) {
+
+						if (candidateNodeToMoveToTop.Value.LastAttemptStackVersion == processingStackVersion) {
+							lastNodeWithCurrentVersion = candidateNodeToMoveToTop;
+						}
+						else if (lastNodeWithCurrentVersion != null) {
+							// We've found the "oldest" node with current version and the current node is not of that version
+							// so it's older version. Move this node to the top of the stack.
 							processingStack.Remove (candidateNodeToMoveToTop);
 							processingStack.AddFirst (candidateNodeToMoveToTop);
 							foundNodesWithNonCurrentVersion = true;
@@ -202,6 +198,9 @@ namespace Mono.Linker.Steps
 
 						candidateNodeToMoveToTop = previousNode;
 					}
+
+					// There should be at least 2 nodes with the latest version to form a loop
+					Debug.Assert (lastNodeWithCurrentVersion != stackNode);
 
 					// If any node was found which was not of current version (and moved to the top of the stack), move on to processing
 					// the stack - this will give a chance for these methods to be processed. It doesn't break the loop and we should come back here
@@ -239,7 +238,7 @@ namespace Mono.Linker.Steps
 				}
 
 				if (!changed) {
-					// All dependencies are processed and there where no const values found. There's nothing to optimize.
+					// All dependencies are processed and there were no const values found. There's nothing to optimize.
 					// Mark the method as processed - without computing the const value of it (we don't know if it's going to be needed)
 					StoreMethodAsProcessedAndRemoveFromQueue (stackNode, ProcessedUnchangedSentinel);
 					continue;
