@@ -179,7 +179,7 @@ namespace Mono.Linker.Steps
 
 					// To fix this go over the stack and find the "oldest" node with the current version - the "oldest" node which
 					// is part of the loop:
-					LinkedListNode <ProcessingNode> lastNodeWithCurrentVersion = null;
+					LinkedListNode<ProcessingNode> lastNodeWithCurrentVersion = null;
 					var candidateNodeToMoveToTop = processingStack.Last;
 					bool foundNodesWithNonCurrentVersion = false;
 					while (candidateNodeToMoveToTop != stackNode) {
@@ -187,8 +187,7 @@ namespace Mono.Linker.Steps
 
 						if (candidateNodeToMoveToTop.Value.LastAttemptStackVersion == processingStackVersion) {
 							lastNodeWithCurrentVersion = candidateNodeToMoveToTop;
-						}
-						else if (lastNodeWithCurrentVersion != null) {
+						} else if (lastNodeWithCurrentVersion != null) {
 							// We've found the "oldest" node with current version and the current node is not of that version
 							// so it's older version. Move this node to the top of the stack.
 							processingStack.Remove (candidateNodeToMoveToTop);
