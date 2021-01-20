@@ -306,7 +306,7 @@ namespace Mono.Linker.Steps
 
 		void Process ()
 		{
-			while (ProcessPrimaryQueue () || ProcessMarkedPending () || ProcessLazyAttributes () || ProcessLateMarkedAttributes ()) {
+			while (ProcessPrimaryQueue () || ProcessLazyAttributes () || ProcessLateMarkedAttributes ()) {
 
 				// deal with [TypeForwardedTo] pseudo-attributes
 				foreach (AssemblyDefinition assembly in _context.GetAssemblies ()) {
