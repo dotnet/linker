@@ -117,11 +117,7 @@ namespace Mono.Linker
 			set { _keepTypeForwarderOnlyAssemblies = value; }
 		}
 
-#if FEATURE_ILLINK
 		public readonly bool KeepMembersForDebugger = true;
-#else
-		public bool KeepMembersForDebugger { get; set; }
-#endif
 
 		public bool IgnoreUnresolved {
 			get { return _ignoreUnresolved; }
@@ -200,9 +196,6 @@ namespace Mono.Linker
 
 		public Statistics Statistics { get; private set; }
 
-#if !FEATURE_ILLINK
-		public string[] ExcludedFeatures { get; set; }
-#endif
 		public CodeOptimizationsSettings Optimizations { get; set; }
 
 		public bool AddReflectionAnnotations { get; set; }
@@ -485,13 +478,6 @@ namespace Mono.Linker
 		{
 			_resolver.Dispose ();
 		}
-
-#if !FEATURE_ILLINK
-		public bool IsFeatureExcluded (string featureName)
-		{
-			return ExcludedFeatures != null && Array.IndexOf (ExcludedFeatures, featureName) >= 0;
-		}
-#endif
 
 		public bool IsOptimizationEnabled (CodeOptimizations optimization, MemberReference context)
 		{

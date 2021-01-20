@@ -689,8 +689,11 @@ namespace Mono.Linker.Steps
 			{
 				foreach (var f in forwarders) {
 					TypeDefinition td = f.Resolve ();
-					if (td == null)
-						throw new InternalErrorException ("Unresolved exported type is never marked");
+					if (td == null) {
+						// Forwarded type cannot be resolved but it was marked
+						// linker is running in --skip-unresolved true mode
+						return;
+					}
 
 					var tr = assembly.MainModule.ImportReference (td);
 					if (f.Scope != tr.Scope)
@@ -862,13 +865,8 @@ namespace Mono.Linker.Steps
 				case TypeSpecification ts:
 					UpdateScopeOfTypeReference (ts.ElementType);
 					return;
-#if FEATURE_ILLINK
 				case TypeDefinition:
 				case GenericParameter:
-#else
-				case TypeDefinition _:
-				case GenericParameter _:
-#endif
 					// Nothing to update
 					return;
 				}

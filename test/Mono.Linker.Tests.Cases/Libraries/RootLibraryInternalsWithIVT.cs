@@ -30,7 +30,21 @@ namespace Mono.Linker.Tests.Cases.Libraries
 		}
 
 		[Kept]
-		internal void UnusedPrivateMethod ()
+		protected void UnusedProtectedMethod ()
+		{
+		}
+
+		[Kept]
+		protected internal void UnusedProtectedInternalMethod ()
+		{
+		}
+
+		[Kept]
+		internal void UnunsedInternalMethod ()
+		{
+		}
+
+		private void UnusedPrivateMethod ()
 		{
 		}
 	}

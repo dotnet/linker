@@ -2,18 +2,8 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <RootNamespace>LinkerAnalyzer</RootNamespace>
     <AssemblyName>illinkanalyzer</AssemblyName>
-    <LangVersion>latest</LangVersion>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(MonoBuild)' == ''">
-    <DefineConstants>$(DefineConstants);FEATURE_ILLINK</DefineConstants>
-    <TargetFramework>net5.0</TargetFramework>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(MonoBuild)' != ''">
-    <TargetFrameworks>net471</TargetFrameworks>
+    <Nullable>disable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,7 +15,7 @@
     <ProjectReference Condition="'$(UseCecilPackage)' != 'true'" Include="../../external/cecil/Mono.Cecil.csproj" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(MonoBuild)' == ''">
+  <ItemGroup>
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="All" Version="1.0.0" />
   </ItemGroup>
 

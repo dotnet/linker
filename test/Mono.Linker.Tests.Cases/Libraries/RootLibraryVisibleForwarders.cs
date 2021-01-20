@@ -18,6 +18,7 @@ namespace Mono.Linker.Tests.Cases.Libraries
 	[Kept]
 	[KeptMember (".ctor()")]
 	[KeptExportedType (typeof (ExternalPublic))]
+	[KeptMemberInAssembly ("library.dll", typeof (ExternalPublic), "ProtectedMethod()")]
 	public class RootLibraryVisibleForwarders
 	{
 		[Kept]
