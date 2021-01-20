@@ -190,28 +190,7 @@ namespace Mono.Linker.Steps
 
 		void Initialize ()
 		{
-			foreach (AssemblyDefinition assembly in _context.GetAssemblies ())
-				InitializeAssembly (assembly);
-		}
-
-		protected virtual void InitializeAssembly (AssemblyDefinition assembly)
-		{
-			var action = _context.Annotations.GetAction (assembly);
-			switch (action) {
-			case AssemblyAction.Copy:
-			case AssemblyAction.Save:
-				Tracer.AddDirectDependency (assembly, new DependencyInfo (DependencyKind.AssemblyAction, action), marked: false);
-				MarkEntireAssembly (assembly);
-				break;
-			case AssemblyAction.Link:
-			case AssemblyAction.AddBypassNGen:
-			case AssemblyAction.AddBypassNGenUsed:
-				MarkAssembly (assembly);
-
-				foreach (TypeDefinition type in assembly.MainModule.Types)
-					InitializeType (type);
-				break;
-			}
+			ProcessMarkedPending ();
 		}
 
 		void Complete ()
@@ -234,27 +213,6 @@ namespace Mono.Linker.Steps
 			return false;
 		}
 
-		void InitializeType (TypeDefinition type)
-		{
-			if (type.HasNestedTypes) {
-				foreach (var nested in type.NestedTypes)
-					InitializeType (nested);
-			}
-
-			if (!Annotations.IsMarkedPending (type))
-				return;
-
-			// We may get here for a type marked by an earlier step, or by a type
-			// marked indirectly as the result of some other InitializeType call.
-			// Just track this as already marked, and don't include a new source.
-			MarkType (type, DependencyInfo.AlreadyMarked, type);
-
-			if (type.HasFields)
-				InitializeFields (type);
-			if (type.HasMethods)
-				InitializeMethods (type.Methods);
-		}
-
 		protected bool IsFullyPreserved (TypeDefinition type)
 		{
 			if (Annotations.TryGetPreserve (type, out TypePreserve preserve) && preserve == TypePreserve.All)
@@ -270,20 +228,6 @@ namespace Mono.Linker.Steps
 			}
 
 			return false;
-		}
-
-		void InitializeFields (TypeDefinition type)
-		{
-			foreach (FieldDefinition field in type.Fields)
-				if (Annotations.IsMarkedPending (field))
-					MarkField (field, DependencyInfo.AlreadyMarked);
-		}
-
-		void InitializeMethods (Collection<MethodDefinition> methods)
-		{
-			foreach (MethodDefinition method in methods)
-				if (Annotations.IsMarkedPending (method))
-					MarkMethod (method, DependencyInfo.AlreadyMarked, null);
 		}
 
 		internal void MarkEntireType (TypeDefinition type, bool includeBaseTypes, in DependencyInfo reason, IMemberDefinition sourceLocationMember)
@@ -404,6 +348,10 @@ namespace Mono.Linker.Steps
 		{
 			bool marked = false;
 			foreach (var pending in Annotations.MarkedPending ()) {
+				var assemblyAction = Annotations.GetAction (GetAssemblyFromMetadataTokenProvider (pending));
+				if (assemblyAction == AssemblyAction.Skip)
+					continue;
+
 				marked = true;
 
 				// Some pending items might be processed by the time we get to them.
@@ -417,6 +365,7 @@ namespace Mono.Linker.Steps
 					break;
 				case MethodDefinition method:
 					MarkMethod (method, DependencyInfo.AlreadyMarked, null);
+					// Methods will not actually be processed until we drain the method queue.
 					break;
 				case FieldDefinition field:
 					MarkField (field, DependencyInfo.AlreadyMarked);
@@ -717,7 +666,7 @@ namespace Mono.Linker.Steps
 		void MarkCustomAttributes (ICustomAttributeProvider provider, in DependencyInfo reason, IMemberDefinition sourceLocationMember)
 		{
 			if (provider.HasCustomAttributes) {
-				bool providerInLinkedAssembly = Annotations.GetAction (GetAssemblyFromCustomAttributeProvider (provider)) == AssemblyAction.Link;
+				bool providerInLinkedAssembly = Annotations.GetAction (GetAssemblyFromMetadataTokenProvider (provider)) == AssemblyAction.Link;
 				bool markOnUse = _context.KeepUsedAttributeTypesOnly && providerInLinkedAssembly;
 
 				foreach (CustomAttribute ca in provider.CustomAttributes) {
@@ -859,7 +808,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		protected static AssemblyDefinition GetAssemblyFromCustomAttributeProvider (ICustomAttributeProvider provider)
+		protected static AssemblyDefinition GetAssemblyFromMetadataTokenProvider (IMetadataTokenProvider provider)
 		{
 			return provider switch
 			{
@@ -1337,7 +1286,7 @@ namespace Mono.Linker.Steps
 					continue;
 				}
 
-				if (_context.Annotations.HasLinkerAttribute<RemoveAttributeInstancesAttribute> (resolved.DeclaringType) && Annotations.GetAction (GetAssemblyFromCustomAttributeProvider (assemblyLevelAttribute.Provider)) == AssemblyAction.Link)
+				if (_context.Annotations.HasLinkerAttribute<RemoveAttributeInstancesAttribute> (resolved.DeclaringType) && Annotations.GetAction (GetAssemblyFromMetadataTokenProvider (assemblyLevelAttribute.Provider)) == AssemblyAction.Link)
 					continue;
 
 				if (!ShouldMarkTopLevelCustomAttribute (assemblyLevelAttribute, resolved)) {
