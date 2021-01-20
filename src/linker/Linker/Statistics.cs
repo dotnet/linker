@@ -14,12 +14,12 @@ namespace Mono.Linker
 		const string StatisticSuffix = "Statistic";
 		readonly Dictionary<string, List<NamedValue>> _trackedValues = new Dictionary<string, List<NamedValue>> (StringComparer.Ordinal);
 
-		public NamedValue GetValue(string category, string name)
+		public NamedValue GetValue (string category, string name)
 		{
 			if (name.EndsWith (StatisticSuffix))
 				name = name.Substring (0, name.Length - StatisticSuffix.Length);
 
-			if (!_trackedValues.TryGetValue(category, out var values)) {
+			if (!_trackedValues.TryGetValue (category, out var values)) {
 				values = new List<NamedValue> ();
 				_trackedValues.Add (category, values);
 			}
@@ -33,7 +33,7 @@ namespace Mono.Linker
 			return value;
 		}
 
-		public void Log(LinkContext context)
+		public void Log (LinkContext context)
 		{
 			using var writer = new StringWriter ();
 			writer.WriteLine ("Statistics:");
@@ -53,20 +53,20 @@ namespace Mono.Linker
 			public string Name { get; private set; }
 			public int Value { get; set; }
 
-			public NamedValue(string category, string name)
+			public NamedValue (string category, string name)
 			{
 				Category = category;
 				Name = name;
 				Value = 0;
 			}
 
-			public static NamedValue operator+(NamedValue value, int increment)
+			public static NamedValue operator + (NamedValue value, int increment)
 			{
 				value.Value += increment;
 				return value;
 			}
 
-			public static NamedValue operator++(NamedValue value)
+			public static NamedValue operator ++ (NamedValue value)
 			{
 				value.Value++;
 				return value;

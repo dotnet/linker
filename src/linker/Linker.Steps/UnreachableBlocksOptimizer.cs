@@ -10,11 +10,11 @@ using Mono.Collections.Generic;
 namespace Mono.Linker.Steps
 {
 	//
-	// This steps evaluates simple properties or methods for constant expressions and
+	// Evaluates simple properties or methods for constant expressions and
 	// then uses this information to remove unreachable conditional blocks. It does
 	// not do any inlining-like code changes.
 	//
-	public class RemoveUnreachableBlocksStep
+	public class UnreachableBlocksOptimizer
 	{
 		readonly LinkContext _context;
 		MethodDefinition IntPtrSize, UIntPtrSize;
@@ -84,23 +84,23 @@ namespace Mono.Linker.Steps
 		Statistics.NamedValue TryGetMethodResultStatistics;
 		Statistics.NamedValue TryGetMethodResultWithoutWaitingStatistics;
 		readonly Statistics.NamedValue MaxStackDepthStatistics;
-	
-		public RemoveUnreachableBlocksStep (LinkContext context)
+
+		public UnreachableBlocksOptimizer (LinkContext context)
 		{
 			_context = context;
 
-			ProcessAttemptsStatistic = _context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (ProcessAttemptsStatistic));
-			ConstantMethodsUsedStatistic = _context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (ConstantMethodsUsedStatistic));
-			ConstantFieldValuesUsedStatistic = _context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (ConstantFieldValuesUsedStatistic));
-			AnalyzedAsConstantStatistic = _context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (AnalyzedAsConstantStatistic));
-			AnalyzedAsConstantAfterRewriteStatistics = _context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (AnalyzedAsConstantAfterRewriteStatistics));
-			MethodsAnalyzedForConstantResultStatistic = _context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (MethodsAnalyzedForConstantResultStatistic));
-			LoopsDetectedStatistics = _context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (LoopsDetectedStatistics));
-			MethodsWithRewriteAttemptedStatistics = _context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (MethodsWithRewriteAttemptedStatistics));
-			MaxNumberOfProcessAttemptsPerMethodStatistics = _context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (MaxNumberOfProcessAttemptsPerMethodStatistics));
-			TryGetMethodResultStatistics = _context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (TryGetMethodResultStatistics));
-			TryGetMethodResultWithoutWaitingStatistics = _context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (TryGetMethodResultWithoutWaitingStatistics));
-			MaxStackDepthStatistics = _context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), nameof (MaxStackDepthStatistics));
+			ProcessAttemptsStatistic = _context.Statistics.GetValue (nameof (UnreachableBlocksOptimizer), nameof (ProcessAttemptsStatistic));
+			ConstantMethodsUsedStatistic = _context.Statistics.GetValue (nameof (UnreachableBlocksOptimizer), nameof (ConstantMethodsUsedStatistic));
+			ConstantFieldValuesUsedStatistic = _context.Statistics.GetValue (nameof (UnreachableBlocksOptimizer), nameof (ConstantFieldValuesUsedStatistic));
+			AnalyzedAsConstantStatistic = _context.Statistics.GetValue (nameof (UnreachableBlocksOptimizer), nameof (AnalyzedAsConstantStatistic));
+			AnalyzedAsConstantAfterRewriteStatistics = _context.Statistics.GetValue (nameof (UnreachableBlocksOptimizer), nameof (AnalyzedAsConstantAfterRewriteStatistics));
+			MethodsAnalyzedForConstantResultStatistic = _context.Statistics.GetValue (nameof (UnreachableBlocksOptimizer), nameof (MethodsAnalyzedForConstantResultStatistic));
+			LoopsDetectedStatistics = _context.Statistics.GetValue (nameof (UnreachableBlocksOptimizer), nameof (LoopsDetectedStatistics));
+			MethodsWithRewriteAttemptedStatistics = _context.Statistics.GetValue (nameof (UnreachableBlocksOptimizer), nameof (MethodsWithRewriteAttemptedStatistics));
+			MaxNumberOfProcessAttemptsPerMethodStatistics = _context.Statistics.GetValue (nameof (UnreachableBlocksOptimizer), nameof (MaxNumberOfProcessAttemptsPerMethodStatistics));
+			TryGetMethodResultStatistics = _context.Statistics.GetValue (nameof (UnreachableBlocksOptimizer), nameof (TryGetMethodResultStatistics));
+			TryGetMethodResultWithoutWaitingStatistics = _context.Statistics.GetValue (nameof (UnreachableBlocksOptimizer), nameof (TryGetMethodResultWithoutWaitingStatistics));
+			MaxStackDepthStatistics = _context.Statistics.GetValue (nameof (UnreachableBlocksOptimizer), nameof (MaxStackDepthStatistics));
 
 			_processingStack = new LinkedList<ProcessingNode> ();
 			_processingMethods = new Dictionary<MethodDefinition, LinkedListNode<ProcessingNode>> ();
@@ -109,10 +109,10 @@ namespace Mono.Linker.Steps
 
 		public void AllMethodsProcessed ()
 		{
-			_context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), "MethodsProcessed").Value = _processedMethods.Count;
-			_context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), "ProcessedConstMethods").Value = _processedMethods.Values.Where (v => v != NonConstSentinel && v != ProcessedUnchangedSentinel).Count ();
-			_context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), "ProcessedNonConstMethods").Value = _processedMethods.Values.Where (v => v == NonConstSentinel).Count ();
-			_context.Statistics.GetValue (nameof (RemoveUnreachableBlocksStep), "ProcessedUnchangedMethods").Value = _processedMethods.Values.Where (v => v == ProcessedUnchangedSentinel).Count ();
+			_context.Statistics.GetValue (nameof (UnreachableBlocksOptimizer), "MethodsProcessed").Value = _processedMethods.Count;
+			_context.Statistics.GetValue (nameof (UnreachableBlocksOptimizer), "ProcessedConstMethods").Value = _processedMethods.Values.Where (v => v != NonConstSentinel && v != ProcessedUnchangedSentinel).Count ();
+			_context.Statistics.GetValue (nameof (UnreachableBlocksOptimizer), "ProcessedNonConstMethods").Value = _processedMethods.Values.Where (v => v == NonConstSentinel).Count ();
+			_context.Statistics.GetValue (nameof (UnreachableBlocksOptimizer), "ProcessedUnchangedMethods").Value = _processedMethods.Values.Where (v => v == ProcessedUnchangedSentinel).Count ();
 		}
 
 		/// <summary>
@@ -185,12 +185,12 @@ namespace Mono.Linker.Steps
 		void ProcessStack ()
 		{
 			while (_processingStack.Count > 0) {
-				MaxStackDepthStatistics.Value = Math.Max(MaxStackDepthStatistics.Value, _processingStack.Count);
+				MaxStackDepthStatistics.Value = Math.Max (MaxStackDepthStatistics.Value, _processingStack.Count);
 				var stackNode = _processingStack.First;
 				var method = stackNode.Value.Method;
 
 				stackNode.Value = new ProcessingNode (stackNode.Value, stackNode.Value.LastAttemptStackVersion, stackNode.Value.TryCount + 1);
-				MaxNumberOfProcessAttemptsPerMethodStatistics.Value = Math.Max(MaxNumberOfProcessAttemptsPerMethodStatistics.Value, stackNode.Value.TryCount);
+				MaxNumberOfProcessAttemptsPerMethodStatistics.Value = Math.Max (MaxNumberOfProcessAttemptsPerMethodStatistics.Value, stackNode.Value.TryCount);
 
 				ProcessAttemptsStatistic++;
 
@@ -212,20 +212,16 @@ namespace Mono.Linker.Steps
 					LinkedListNode<ProcessingNode> lastNodeWithCurrentVersion = null;
 					var candidateNodeToMoveToTop = _processingStack.Last;
 					bool foundNodesWithNonCurrentVersion = false;
-					while (candidateNodeToMoveToTop != stackNode)
-					{
+					while (candidateNodeToMoveToTop != stackNode) {
 						var previousNode = candidateNodeToMoveToTop.Previous;
 
-						if (candidateNodeToMoveToTop.Value.LastAttemptStackVersion == _processingStackVersion)
-						{
+						if (candidateNodeToMoveToTop.Value.LastAttemptStackVersion == _processingStackVersion) {
 							lastNodeWithCurrentVersion = candidateNodeToMoveToTop;
-						}
-						else if (lastNodeWithCurrentVersion != null)
-						{
+						} else if (lastNodeWithCurrentVersion != null) {
 							// We've found the "oldest" node with current version and the current node is not of that version
 							// so it's older version. Move this node to the top of the stack.
-							_processingStack.Remove(candidateNodeToMoveToTop);
-							_processingStack.AddFirst(candidateNodeToMoveToTop);
+							_processingStack.Remove (candidateNodeToMoveToTop);
+							_processingStack.AddFirst (candidateNodeToMoveToTop);
 							foundNodesWithNonCurrentVersion = true;
 						}
 
@@ -233,7 +229,7 @@ namespace Mono.Linker.Steps
 					}
 
 					// There should be at least 2 nodes with the latest version to form a loop
-					Debug.Assert(lastNodeWithCurrentVersion != stackNode);
+					Debug.Assert (lastNodeWithCurrentVersion != stackNode);
 
 					// If any node was found which was not of current version (and moved to the top of the stack), move on to processing
 					// the stack - this will give a chance for these methods to be processed. It doesn't break the loop and we should come back here
@@ -314,7 +310,7 @@ namespace Mono.Linker.Steps
 
 		Instruction AnalyzeMethodForConstantResult (MethodDefinition method, Collection<Instruction> instructions)
 		{
-			MethodsAnalyzedForConstantResultStatistic++; 
+			MethodsAnalyzedForConstantResultStatistic++;
 
 			if (!method.HasBody)
 				return null;
@@ -326,7 +322,7 @@ namespace Mono.Linker.Steps
 			case MethodAction.ConvertToThrow:
 				return null;
 			case MethodAction.ConvertToStub:
-				_context.Statistics.GetValue(nameof(RemoveUnreachableBlocksStep), "StubbedMethodsStatistic").Value++;
+				_context.Statistics.GetValue (nameof (UnreachableBlocksOptimizer), "StubbedMethodsStatistic").Value++;
 				return CodeRewriterStep.CreateConstantResultInstruction (_context, method);
 			}
 
@@ -390,13 +386,11 @@ namespace Mono.Linker.Steps
 				_processedMethods[method] = result ?? NonConstSentinel;
 				constantResultInstruction = result;
 				TryGetMethodResultWithoutWaitingStatistics++;
-			}
-			else if (methodValue == NonConstSentinel) {
+			} else if (methodValue == NonConstSentinel) {
 				// Method was processed and found to not have a constant value
 				constantResultInstruction = null;
 				TryGetMethodResultWithoutWaitingStatistics++;
-			}
-			else {
+			} else {
 				// Method was already processed and found to have a constant value
 				constantResultInstruction = methodValue;
 				TryGetMethodResultWithoutWaitingStatistics++;

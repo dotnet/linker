@@ -56,7 +56,7 @@ namespace Mono.Linker.Steps
 		protected List<MethodBody> _unreachableBodies;
 
 		readonly List<(TypeDefinition Type, MethodBody Body, Instruction Instr)> _pending_isinst_instr;
-		RemoveUnreachableBlocksStep _removeUnreachableBlocksStep;
+		UnreachableBlocksOptimizer _removeUnreachableBlocksStep;
 
 #if DEBUG
 		static readonly DependencyKind[] _entireTypeReasons = new DependencyKind[] {
@@ -182,7 +182,7 @@ namespace Mono.Linker.Steps
 		public virtual void Process (LinkContext context)
 		{
 			_context = context;
-			_removeUnreachableBlocksStep = new RemoveUnreachableBlocksStep (_context);
+			_removeUnreachableBlocksStep = new UnreachableBlocksOptimizer (_context);
 
 			Initialize ();
 			Process ();
