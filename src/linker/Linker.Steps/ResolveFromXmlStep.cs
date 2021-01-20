@@ -167,7 +167,6 @@ namespace Mono.Linker.Steps
 			if (Annotations.IsMarked (method))
 				Context.LogWarning ($"Duplicate preserve of '{method.GetDisplayName ()}'", 2025, _xmlDocumentLocation);
 
-			Annotations.Mark (method, new DependencyInfo (DependencyKind.XmlDescriptor, _xmlDocumentLocation));
 			Annotations.MarkIndirectlyCalledMethod (method);
 			Annotations.SetAction (method, MethodAction.Parse);
 

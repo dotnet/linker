@@ -190,7 +190,17 @@ namespace Mono.Linker.Steps
 
 		void Initialize ()
 		{
+			foreach (AssemblyDefinition assembly in _context.GetAssemblies ())
+				InitializeAssembly (assembly);
+
 			ProcessMarkedPending ();
+		}
+
+		protected virtual void InitializeAssembly (AssemblyDefinition assembly)
+		{
+			var action = _context.Annotations.GetAction (assembly);
+			if (action == AssemblyAction.Copy || action == AssemblyAction.Save)
+				MarkAssembly (assembly, new DependencyInfo (DependencyKind.AssemblyAction, action));
 		}
 
 		void Complete ()
@@ -348,7 +358,8 @@ namespace Mono.Linker.Steps
 		{
 			bool marked = false;
 			foreach (var pending in Annotations.MarkedPending ()) {
-				var assemblyAction = Annotations.GetAction (GetAssemblyFromMetadataTokenProvider (pending));
+				var assembly = GetAssemblyFromMetadataTokenProvider (pending);
+				var assemblyAction = Annotations.GetAction (assembly);
 				if (assemblyAction == AssemblyAction.Skip)
 					continue;
 
@@ -1224,13 +1235,15 @@ namespace Mono.Linker.Steps
 
 		protected void MarkAssembly (AssemblyDefinition assembly, DependencyInfo reason)
 		{
-			// This conceptually marks an assembly (marking the module type and)
-			// attributes) even though it does not mark the AssemblyDefinition itself
-			// in Annotations. Other steps rely on the ModuleDefinition being marked instead.
-
 			Annotations.Mark (assembly, reason);
 			if (CheckProcessed (assembly))
 				return;
+
+			var action = _context.Annotations.GetAction (assembly);
+			if (action == AssemblyAction.Copy || action == AssemblyAction.Save) {
+				MarkEntireAssembly (assembly);
+				return;
+			}
 
 			ProcessModuleType (assembly);
 
@@ -1244,6 +1257,8 @@ namespace Mono.Linker.Steps
 
 		void MarkEntireAssembly (AssemblyDefinition assembly)
 		{
+			Debug.Assert (Annotations.IsProcessed (assembly));
+
 			MarkCustomAttributes (assembly, new DependencyInfo (DependencyKind.AssemblyOrModuleAttribute, assembly), null);
 			MarkCustomAttributes (assembly.MainModule, new DependencyInfo (DependencyKind.AssemblyOrModuleAttribute, assembly.MainModule), null);
 
@@ -1530,7 +1545,7 @@ namespace Mono.Linker.Steps
 				// will call MarkType on the attribute type itself). 
 				// If for some reason we do keep the attribute type (could be because of previous reference which would cause IL2045
 				// or because of a copy assembly with a reference and so on) then we should not spam the warnings due to the type itself.
-				if (sourceLocationMember.DeclaringType != type)
+				if (sourceLocationMember != type && sourceLocationMember.DeclaringType != type)
 					_context.LogWarning (
 						$"Attribute '{type.GetDisplayName ()}' is being referenced in code but the linker was " +
 						$"instructed to remove all instances of this attribute. If the attribute instances are necessary make sure to " +
@@ -1607,12 +1622,10 @@ namespace Mono.Linker.Steps
 				MarkMethodsIf (type.Methods, HasOnSerializeOrDeserializeAttribute, new DependencyInfo (DependencyKind.SerializationMethodForType, type), type);
 			}
 
-			ApplyPreserveInfo (type);
-			ApplyPreserveMethods (type);
-
 			DoAdditionalTypeProcessing (type);
 
 			ApplyPreserveInfo (type);
+			ApplyPreserveMethods (type);
 
 			return type;
 		}
@@ -2482,7 +2495,6 @@ namespace Mono.Linker.Steps
 		AssemblyDefinition ResolveAssembly (IMetadataScope scope)
 		{
 			AssemblyDefinition assembly = _context.Resolve (scope);
-			MarkAssembly (assembly);
 			return assembly;
 		}
 
