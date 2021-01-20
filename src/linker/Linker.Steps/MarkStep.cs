@@ -378,6 +378,10 @@ namespace Mono.Linker.Steps
 				case ModuleDefinition module:
 					MarkModule (module, DependencyInfo.AlreadyMarked);
 					break;
+				case ExportedType exportedType:
+					Annotations.SetProcessed (exportedType);
+					// No additional processing is done for exported types.
+					break;
 				default:
 					throw new NotImplementedException (pending.GetType ().ToString ());
 				}
