@@ -25,19 +25,16 @@ namespace Mono.Linker.Steps
 			{
 				Method = method;
 				LastAttemptStackVersion = lastAttemptStackVersion;
-				TryCount = 0;
 			}
 
-			public ProcessingNode (in ProcessingNode other, int newLastAttempStackVersion, int tryCount)
+			public ProcessingNode (in ProcessingNode other, int newLastAttempStackVersion)
 			{
 				Method = other.Method;
 				LastAttemptStackVersion = newLastAttempStackVersion;
-				TryCount = tryCount;
 			}
 
 			public readonly MethodDefinition Method;
 			public readonly int LastAttemptStackVersion;
-			public readonly int TryCount;
 		}
 
 		// Stack of method nodes which are currently being processed.
@@ -205,7 +202,7 @@ namespace Mono.Linker.Steps
 					treatUnprocessedDependenciesAsNonConst = true;
 				}
 
-				stackNode.Value = new ProcessingNode (stackNode.Value, _processingStackVersion, stackNode.Value.TryCount);
+				stackNode.Value = new ProcessingNode (stackNode.Value, _processingStackVersion);
 
 				if (!IsMethodSupported (method)) {
 					StoreMethodAsProcessedAndRemoveFromQueue (stackNode, ProcessedUnchangedSentinel);
