@@ -2289,7 +2289,7 @@ namespace Mono.Linker.Steps
 		{
 			if (Annotations.TryGetPreserve (type, out TypePreserve preserve)) {
 				if (!Annotations.SetAppliedPreserve (type, preserve))
-					throw new InvalidOperationException ($"Type {type} already has applied {preserve}.");
+					throw new InternalErrorException ($"Type {type} already has applied {preserve}.");
 
 				var di = new DependencyInfo (DependencyKind.TypePreserve, type);
 

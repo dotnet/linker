@@ -262,7 +262,7 @@ namespace Mono.Linker
 		{
 			if (processed.Add (provider)) {
 				if (!marked_pending.Remove (provider))
-					throw new InvalidOperationException ($"{provider} must be marked before it can be processed.");
+					throw new InternalErrorException ($"{provider} must be marked before it can be processed.");
 				return true;
 			}
 
@@ -282,10 +282,10 @@ namespace Mono.Linker
 		public bool SetAppliedPreserve (TypeDefinition type, TypePreserve preserve)
 		{
 			if (!preserved_types.TryGetValue (type, out (TypePreserve preserve, bool applied) existing))
-				throw new InvalidOperationException ($"Type {type} must have a TypePreserve before it can be applied.");
+				throw new InternalErrorException ($"Type {type} must have a TypePreserve before it can be applied.");
 
 			if (preserve != existing.preserve)
-				throw new InvalidOperationException ($"Type {type} does not have {preserve}. The TypePreserve may have changed before the call to {nameof (SetAppliedPreserve)}.");
+				throw new InternalErrorException ($"Type {type} does not have {preserve}. The TypePreserve may have changed before the call to {nameof (SetAppliedPreserve)}.");
 
 			if (existing.applied) {
 				Debug.Assert (!pending_preserve.Contains (type));
@@ -300,10 +300,10 @@ namespace Mono.Linker
 		public bool HasAppliedPreserve (TypeDefinition type, TypePreserve preserve)
 		{
 			if (!preserved_types.TryGetValue (type, out (TypePreserve preserve, bool applied) existing))
-				throw new InvalidOperationException ($"Type {type} must have a TypePreserve before it can be applied.");
+				throw new InternalErrorException ($"Type {type} must have a TypePreserve before it can be applied.");
 
 			if (preserve != existing.preserve)
-				throw new InvalidOperationException ($"Type {type} does not have {preserve}. The TypePreserve may have changed before the call to {nameof (HasAppliedPreserve)}.");
+				throw new InternalErrorException ($"Type {type} does not have {preserve}. The TypePreserve may have changed before the call to {nameof (HasAppliedPreserve)}.");
 
 			return existing.applied;
 		}
