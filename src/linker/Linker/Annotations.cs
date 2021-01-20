@@ -50,6 +50,9 @@ namespace Mono.Linker
 		protected readonly HashSet<FieldDefinition> field_init = new HashSet<FieldDefinition> ();
 		protected readonly HashSet<TypeDefinition> fieldType_init = new HashSet<TypeDefinition> ();
 
+		// Annotations.Mark will add unmarked items to marked_pending, to be fully marked later ("processed") by MarkStep.
+		// Items go through state changes from "unmarked" -> "pending" -> "processed". "pending" items are only tracked
+		// once, and once "processed", an item never becomes "pending" again.
 		protected readonly HashSet<IMetadataTokenProvider> marked_pending = new HashSet<IMetadataTokenProvider> ();
 		protected readonly HashSet<IMetadataTokenProvider> processed = new HashSet<IMetadataTokenProvider> ();
 		protected readonly Dictionary<TypeDefinition, (TypePreserve preserve, bool applied)> preserved_types = new Dictionary<TypeDefinition, (TypePreserve, bool)> ();
@@ -196,10 +199,9 @@ namespace Mono.Linker
 			Tracer.AddDirectDependency (attribute, reason, marked: true);
 		}
 
-		public IEnumerable<IMetadataTokenProvider> MarkedPending ()
+		public IMetadataTokenProvider[] GetMarkedPending ()
 		{
-			foreach (var pending in marked_pending.ToArray ())
-				yield return pending;
+			return marked_pending.ToArray ();
 		}
 
 		public bool IsMarkedPending (IMetadataTokenProvider provider)
@@ -259,7 +261,8 @@ namespace Mono.Linker
 		public bool SetProcessed (IMetadataTokenProvider provider)
 		{
 			if (processed.Add (provider)) {
-				Debug.Assert (marked_pending.Remove (provider));
+				if (!marked_pending.Remove (provider))
+					throw new InvalidOperationException ($"{provider} must be marked before it can be processed.");
 				return true;
 			}
 
@@ -271,19 +274,18 @@ namespace Mono.Linker
 			return processed.Contains (provider);
 		}
 
-		public IEnumerable<TypeDefinition> PendingPreserve ()
+		public TypeDefinition[] GetPendingPreserve ()
 		{
-			foreach (var type in pending_preserve.ToArray ())
-				yield return type;
+			return pending_preserve.ToArray ();
 		}
 
 		public bool SetAppliedPreserve (TypeDefinition type, TypePreserve preserve)
 		{
-			if (!preserved_types.TryGetValue (type, out (TypePreserve preserve, bool applied) existing)) {
-				throw new InvalidOperationException ();
-			}
+			if (!preserved_types.TryGetValue (type, out (TypePreserve preserve, bool applied) existing))
+				throw new InvalidOperationException ($"Type {type} must have a TypePreserve before it can be applied.");
+
 			if (preserve != existing.preserve)
-				throw new InvalidOperationException ();
+				throw new InvalidOperationException ($"Type {type} does not have {preserve}. The TypePreserve may have changed before the call to {nameof (SetAppliedPreserve)}.");
 
 			if (existing.applied) {
 				Debug.Assert (!pending_preserve.Contains (type));
@@ -297,11 +299,11 @@ namespace Mono.Linker
 
 		public bool HasAppliedPreserve (TypeDefinition type, TypePreserve preserve)
 		{
-			if (!preserved_types.TryGetValue (type, out (TypePreserve preserve, bool applied) existing)) {
-				throw new InvalidOperationException ();
-			}
+			if (!preserved_types.TryGetValue (type, out (TypePreserve preserve, bool applied) existing))
+				throw new InvalidOperationException ($"Type {type} must have a TypePreserve before it can be applied.");
+
 			if (preserve != existing.preserve)
-				throw new InvalidOperationException ();
+				throw new InvalidOperationException ($"Type {type} does not have {preserve}. The TypePreserve may have changed before the call to {nameof (HasAppliedPreserve)}.");
 
 			return existing.applied;
 		}
