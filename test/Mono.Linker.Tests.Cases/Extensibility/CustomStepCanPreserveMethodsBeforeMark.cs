@@ -28,5 +28,14 @@ namespace Mono.Linker.Tests.Cases.Extensibility
 			public static void PreservedForMethod_UsedMethod () { }
 		}
 
+		// Annotations.Mark in a CustomStep before MarkStep will keep a method,
+		// even if it belongs to an otherwise unmarked type.
+		[Kept]
+		static class UnusedType
+		{
+			[Kept]
+			public static void MarkedMethod () { }
+		}
+
 	}
 }

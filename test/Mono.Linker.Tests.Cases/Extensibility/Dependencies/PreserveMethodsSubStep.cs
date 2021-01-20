@@ -31,6 +31,9 @@ class PreserveMethodsSubStep : BaseStep
 
 	public void ProcessMethod (MethodDefinition method)
 	{
+		if (method.Name == "MarkedMethod")
+			Annotations.Mark (method);
+
 		foreach (var m in method.DeclaringType.Methods) {
 			if (m.Name == $"PreservedForMethod_{method.Name}")
 				Annotations.AddPreservedMethod (method, m);
