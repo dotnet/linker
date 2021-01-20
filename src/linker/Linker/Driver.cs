@@ -726,7 +726,6 @@ namespace Mono.Linker
 				throw;
 			} finally {
 				context.FlushCachedWarnings ();
-				context.Statistics.Log (context);
 				context.Tracer.Finish ();
 			}
 

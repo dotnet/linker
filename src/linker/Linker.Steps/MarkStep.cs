@@ -220,8 +220,6 @@ namespace Mono.Linker.Steps
 			foreach (var body in _unreachableBodies) {
 				Annotations.SetAction (body.Method, MethodAction.ConvertToThrow);
 			}
-
-			_removeUnreachableBlocksStep.AllMethodsProcessed ();
 		}
 
 		static bool TypeIsDynamicInterfaceCastableImplementation (TypeDefinition type)

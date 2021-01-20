@@ -72,47 +72,13 @@ namespace Mono.Linker.Steps
 		static readonly Instruction ProcessedUnchangedSentinel = Instruction.Create (OpCodes.Ldstr, "ProcessedUnchangedSentinel");
 		static readonly Instruction NonConstSentinel = Instruction.Create (OpCodes.Ldstr, "NonConstSentinel");
 
-		Statistics.NamedValue ProcessAttemptsStatistic;
-		Statistics.NamedValue ConstantMethodsUsedStatistic;
-		Statistics.NamedValue ConstantFieldValuesUsedStatistic;
-		Statistics.NamedValue AnalyzedAsConstantStatistic;
-		Statistics.NamedValue AnalyzedAsConstantAfterRewriteStatistics;
-		Statistics.NamedValue MethodsAnalyzedForConstantResultStatistic;
-		Statistics.NamedValue LoopsDetectedStatistics;
-		Statistics.NamedValue MethodsWithRewriteAttemptedStatistics;
-		readonly Statistics.NamedValue MaxNumberOfProcessAttemptsPerMethodStatistics;
-		Statistics.NamedValue TryGetMethodResultStatistics;
-		Statistics.NamedValue TryGetMethodResultWithoutWaitingStatistics;
-		readonly Statistics.NamedValue MaxStackDepthStatistics;
-
 		public UnreachableBlocksOptimizer (LinkContext context)
 		{
 			_context = context;
 
-			ProcessAttemptsStatistic = _context.Statistics.GetValue (nameof (UnreachableBlocksOptimizer), nameof (ProcessAttemptsStatistic));
-			ConstantMethodsUsedStatistic = _context.Statistics.GetValue (nameof (UnreachableBlocksOptimizer), nameof (ConstantMethodsUsedStatistic));
-			ConstantFieldValuesUsedStatistic = _context.Statistics.GetValue (nameof (UnreachableBlocksOptimizer), nameof (ConstantFieldValuesUsedStatistic));
-			AnalyzedAsConstantStatistic = _context.Statistics.GetValue (nameof (UnreachableBlocksOptimizer), nameof (AnalyzedAsConstantStatistic));
-			AnalyzedAsConstantAfterRewriteStatistics = _context.Statistics.GetValue (nameof (UnreachableBlocksOptimizer), nameof (AnalyzedAsConstantAfterRewriteStatistics));
-			MethodsAnalyzedForConstantResultStatistic = _context.Statistics.GetValue (nameof (UnreachableBlocksOptimizer), nameof (MethodsAnalyzedForConstantResultStatistic));
-			LoopsDetectedStatistics = _context.Statistics.GetValue (nameof (UnreachableBlocksOptimizer), nameof (LoopsDetectedStatistics));
-			MethodsWithRewriteAttemptedStatistics = _context.Statistics.GetValue (nameof (UnreachableBlocksOptimizer), nameof (MethodsWithRewriteAttemptedStatistics));
-			MaxNumberOfProcessAttemptsPerMethodStatistics = _context.Statistics.GetValue (nameof (UnreachableBlocksOptimizer), nameof (MaxNumberOfProcessAttemptsPerMethodStatistics));
-			TryGetMethodResultStatistics = _context.Statistics.GetValue (nameof (UnreachableBlocksOptimizer), nameof (TryGetMethodResultStatistics));
-			TryGetMethodResultWithoutWaitingStatistics = _context.Statistics.GetValue (nameof (UnreachableBlocksOptimizer), nameof (TryGetMethodResultWithoutWaitingStatistics));
-			MaxStackDepthStatistics = _context.Statistics.GetValue (nameof (UnreachableBlocksOptimizer), nameof (MaxStackDepthStatistics));
-
 			_processingStack = new LinkedList<ProcessingNode> ();
 			_processingMethods = new Dictionary<MethodDefinition, LinkedListNode<ProcessingNode>> ();
 			_processedMethods = new Dictionary<MethodDefinition, Instruction> ();
-		}
-
-		public void AllMethodsProcessed ()
-		{
-			_context.Statistics.GetValue (nameof (UnreachableBlocksOptimizer), "MethodsProcessed").Value = _processedMethods.Count;
-			_context.Statistics.GetValue (nameof (UnreachableBlocksOptimizer), "ProcessedConstMethods").Value = _processedMethods.Values.Where (v => v != NonConstSentinel && v != ProcessedUnchangedSentinel).Count ();
-			_context.Statistics.GetValue (nameof (UnreachableBlocksOptimizer), "ProcessedNonConstMethods").Value = _processedMethods.Values.Where (v => v == NonConstSentinel).Count ();
-			_context.Statistics.GetValue (nameof (UnreachableBlocksOptimizer), "ProcessedUnchangedMethods").Value = _processedMethods.Values.Where (v => v == ProcessedUnchangedSentinel).Count ();
 		}
 
 		/// <summary>
@@ -185,14 +151,8 @@ namespace Mono.Linker.Steps
 		void ProcessStack ()
 		{
 			while (_processingStack.Count > 0) {
-				MaxStackDepthStatistics.Value = Math.Max (MaxStackDepthStatistics.Value, _processingStack.Count);
 				var stackNode = _processingStack.First;
 				var method = stackNode.Value.Method;
-
-				stackNode.Value = new ProcessingNode (stackNode.Value, stackNode.Value.LastAttemptStackVersion, stackNode.Value.TryCount + 1);
-				MaxNumberOfProcessAttemptsPerMethodStatistics.Value = Math.Max (MaxNumberOfProcessAttemptsPerMethodStatistics.Value, stackNode.Value.TryCount);
-
-				ProcessAttemptsStatistic++;
 
 				bool treatUnprocessedDependenciesAsNonConst = false;
 				if (stackNode.Value.LastAttemptStackVersion == _processingStackVersion) {
@@ -239,8 +199,6 @@ namespace Mono.Linker.Steps
 						continue;
 					}
 
-					LoopsDetectedStatistics++;
-
 					// No such node was found -> we only have nodes in the loop now, so we have to break the loop.
 					// We do this by processing it with special flag which will make it ignore any unprocessed dependencies
 					// treating them as non-const. These should only be nodes in the loop.
@@ -276,7 +234,6 @@ namespace Mono.Linker.Steps
 				}
 
 				// The method has been modified due to constant propagation - we will optimize it.
-				MethodsWithRewriteAttemptedStatistics++;
 
 				//
 				// This is the main step which evaluates if inlined calls can
@@ -310,8 +267,6 @@ namespace Mono.Linker.Steps
 
 		Instruction AnalyzeMethodForConstantResult (MethodDefinition method, Collection<Instruction> instructions)
 		{
-			MethodsAnalyzedForConstantResultStatistic++;
-
 			if (!method.HasBody)
 				return null;
 
@@ -322,7 +277,6 @@ namespace Mono.Linker.Steps
 			case MethodAction.ConvertToThrow:
 				return null;
 			case MethodAction.ConvertToStub:
-				_context.Statistics.GetValue (nameof (UnreachableBlocksOptimizer), "StubbedMethodsStatistic").Value++;
 				return CodeRewriterStep.CreateConstantResultInstruction (_context, method);
 			}
 
@@ -334,9 +288,6 @@ namespace Mono.Linker.Steps
 
 			var analyzer = new ConstantExpressionMethodAnalyzer (method, instructions ?? method.Body.Instructions);
 			if (analyzer.Analyze ()) {
-				AnalyzedAsConstantStatistic++;
-				if (instructions != null)
-					AnalyzedAsConstantAfterRewriteStatistics++;
 				return analyzer.Result;
 			}
 
@@ -357,8 +308,6 @@ namespace Mono.Linker.Steps
 		/// </returns>
 		bool TryGetConstantResultForMethod (MethodDefinition method, out Instruction constantResultInstruction)
 		{
-			TryGetMethodResultStatistics++;
-
 			if (!_processedMethods.TryGetValue (method, out Instruction methodValue)) {
 				if (_processingMethods.TryGetValue (method, out var stackNode)) {
 					// Method is already in the stack - not yet processed
@@ -385,15 +334,12 @@ namespace Mono.Linker.Steps
 				Debug.Assert (result is Instruction || result == null);
 				_processedMethods[method] = result ?? NonConstSentinel;
 				constantResultInstruction = result;
-				TryGetMethodResultWithoutWaitingStatistics++;
 			} else if (methodValue == NonConstSentinel) {
 				// Method was processed and found to not have a constant value
 				constantResultInstruction = null;
-				TryGetMethodResultWithoutWaitingStatistics++;
 			} else {
 				// Method was already processed and found to have a constant value
 				constantResultInstruction = methodValue;
-				TryGetMethodResultWithoutWaitingStatistics++;
 			}
 
 			return true;
@@ -467,7 +413,6 @@ namespace Mono.Linker.Steps
 
 					reducer.Rewrite (i, targetResult);
 					changed = true;
-					ConstantMethodsUsedStatistic++;
 
 					break;
 
@@ -483,7 +428,6 @@ namespace Mono.Linker.Steps
 							break;
 						reducer.Rewrite (i, targetResult);
 						changed = true;
-						ConstantFieldValuesUsedStatistic++;
 					}
 					break;
 

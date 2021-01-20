@@ -194,8 +194,6 @@ namespace Mono.Linker
 
 		public IReflectionPatternRecorder ReflectionPatternRecorder { get; set; }
 
-		public Statistics Statistics { get; private set; }
-
 		public CodeOptimizationsSettings Optimizations { get; set; }
 
 		public bool AddReflectionAnnotations { get; set; }
@@ -225,7 +223,6 @@ namespace Mono.Linker
 			_annotations = factory.CreateAnnotationStore (this);
 			MarkingHelpers = factory.CreateMarkingHelpers (this);
 			Tracer = factory.CreateTracer (this);
-			Statistics = new Statistics ();
 			ReflectionPatternRecorder = new LoggingReflectionPatternRecorder (this);
 			MarkedKnownMembers = new KnownMembers ();
 			StripDescriptors = true;
