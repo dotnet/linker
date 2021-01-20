@@ -358,11 +358,6 @@ namespace Mono.Linker.Steps
 		{
 			bool marked = false;
 			foreach (var pending in Annotations.MarkedPending ()) {
-				var assembly = GetAssemblyFromMetadataTokenProvider (pending);
-				var assemblyAction = Annotations.GetAction (assembly);
-				if (assemblyAction == AssemblyAction.Skip)
-					continue;
-
 				marked = true;
 
 				// Some pending items might be processed by the time we get to them.
@@ -372,7 +367,6 @@ namespace Mono.Linker.Steps
 				switch (pending) {
 				case TypeDefinition type:
 					MarkType (type, DependencyInfo.AlreadyMarked, type);
-					Debug.Assert (!Annotations.IsMarkedPending (type));
 					break;
 				case MethodDefinition method:
 					MarkMethod (method, DependencyInfo.AlreadyMarked, null);
@@ -380,11 +374,9 @@ namespace Mono.Linker.Steps
 					break;
 				case FieldDefinition field:
 					MarkField (field, DependencyInfo.AlreadyMarked);
-					Debug.Assert (!Annotations.IsMarkedPending (field));
 					break;
 				case ModuleDefinition module:
 					MarkModule (module, DependencyInfo.AlreadyMarked);
-					Debug.Assert (!Annotations.IsMarkedPending (module));
 					break;
 				default:
 					throw new NotImplementedException (pending.GetType ().ToString ());
@@ -677,7 +669,7 @@ namespace Mono.Linker.Steps
 		void MarkCustomAttributes (ICustomAttributeProvider provider, in DependencyInfo reason, IMemberDefinition sourceLocationMember)
 		{
 			if (provider.HasCustomAttributes) {
-				bool providerInLinkedAssembly = Annotations.GetAction (GetAssemblyFromMetadataTokenProvider (provider)) == AssemblyAction.Link;
+				bool providerInLinkedAssembly = Annotations.GetAction (GetAssemblyFromCustomAttributeProvider (provider)) == AssemblyAction.Link;
 				bool markOnUse = _context.KeepUsedAttributeTypesOnly && providerInLinkedAssembly;
 
 				foreach (CustomAttribute ca in provider.CustomAttributes) {
@@ -819,7 +811,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		protected static AssemblyDefinition GetAssemblyFromMetadataTokenProvider (IMetadataTokenProvider provider)
+		protected static AssemblyDefinition GetAssemblyFromCustomAttributeProvider (ICustomAttributeProvider provider)
 		{
 			return provider switch
 			{
@@ -1301,7 +1293,7 @@ namespace Mono.Linker.Steps
 					continue;
 				}
 
-				if (_context.Annotations.HasLinkerAttribute<RemoveAttributeInstancesAttribute> (resolved.DeclaringType) && Annotations.GetAction (GetAssemblyFromMetadataTokenProvider (assemblyLevelAttribute.Provider)) == AssemblyAction.Link)
+				if (_context.Annotations.HasLinkerAttribute<RemoveAttributeInstancesAttribute> (resolved.DeclaringType) && Annotations.GetAction (GetAssemblyFromCustomAttributeProvider (assemblyLevelAttribute.Provider)) == AssemblyAction.Link)
 					continue;
 
 				if (!ShouldMarkTopLevelCustomAttribute (assemblyLevelAttribute, resolved)) {
