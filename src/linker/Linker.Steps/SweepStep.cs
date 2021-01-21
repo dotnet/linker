@@ -73,7 +73,7 @@ namespace Mono.Linker.Steps
 			case AssemblyAction.AddBypassNGenUsed:
 			case AssemblyAction.CopyUsed:
 			case AssemblyAction.Link:
-				if (!IsUsedAssembly (assembly))
+				if (!IsMarkedAssembly (assembly))
 					RemoveAssembly (assembly);
 
 				break;
@@ -147,11 +147,7 @@ namespace Mono.Linker.Steps
 			case AssemblyAction.AddBypassNGen:
 				// FIXME: AddBypassNGen is just wrong, it should not be action as we need to
 				// turn it to Action.Save here to e.g. correctly update debug symbols
-				if (!Context.KeepTypeForwarderOnlyAssemblies || BypassNGenToSave.Contains (assembly)) {
-					goto case AssemblyAction.Save;
-				}
-
-				break;
+				goto case AssemblyAction.Save;
 
 			case AssemblyAction.CopyUsed:
 				Annotations.SetAction (assembly, AssemblyAction.Copy);
@@ -244,17 +240,6 @@ namespace Mono.Linker.Steps
 
 			var ars = new AssemblyReferencesCorrector (assembly);
 			ars.Process ();
-		}
-
-		bool IsUsedAssembly (AssemblyDefinition assembly)
-		{
-			if (IsMarkedAssembly (assembly))
-				return true;
-
-			if (assembly.MainModule.HasExportedTypes && Context.KeepTypeForwarderOnlyAssemblies)
-				return true;
-
-			return false;
 		}
 
 		bool IsMarkedAssembly (AssemblyDefinition assembly)

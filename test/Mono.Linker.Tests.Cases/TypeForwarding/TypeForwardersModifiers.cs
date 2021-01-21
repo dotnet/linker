@@ -7,7 +7,6 @@ namespace Mono.Linker.Tests.Cases.TypeForwarding
 	// Actions:
 	// link - This assembly, TypeForwarderModifiersLibDef.dll and TypeForwardersModifiersLib.dll
 	[SetupLinkerUserAction ("link")]
-	[KeepTypeForwarderOnlyAssemblies ("false")]
 
 	[Define ("IL_ASSEMBLY_AVAILABLE")]
 

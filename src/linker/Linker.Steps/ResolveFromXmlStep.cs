@@ -68,6 +68,10 @@ namespace Mono.Linker.Steps
 		protected override void ProcessAssembly (AssemblyDefinition assembly, XPathNavigator nav, bool warnOnUnresolvedTypes)
 		{
 			if (GetTypePreserve (nav) == TypePreserve.All) {
+				if (assembly.MainModule.HasExportedTypes)
+					foreach (var etype in assembly.MainModule.ExportedTypes)
+						MarkAndPreserveAll (etype);
+
 				foreach (var type in assembly.MainModule.Types)
 					MarkAndPreserveAll (type);
 			} else {
@@ -99,6 +103,12 @@ namespace Mono.Linker.Steps
 			}
 		}
 
+		void MarkAndPreserveAll (ExportedType type)
+		{
+			Annotations.Mark (type, new DependencyInfo (DependencyKind.XmlDescriptor, _xmlDocumentLocation));
+			Annotations.SetMembersPreserve (type, TypePreserveMembers.All);
+		}
+
 		void MarkAndPreserveAll (TypeDefinition type)
 		{
 			Annotations.Mark (type, new DependencyInfo (DependencyKind.XmlDescriptor, _xmlDocumentLocation));
@@ -113,7 +123,7 @@ namespace Mono.Linker.Steps
 
 		protected override TypeDefinition ProcessExportedType (ExportedType exported, AssemblyDefinition assembly)
 		{
-			MarkingHelpers.MarkExportedType (exported, assembly.MainModule, new DependencyInfo (DependencyKind.XmlDescriptor, _xmlDocumentLocation));
+			Context.Annotations.Mark (exported, new DependencyInfo (DependencyKind.XmlDescriptor, _xmlDocumentLocation));
 			return base.ProcessExportedType (exported, assembly);
 		}
 

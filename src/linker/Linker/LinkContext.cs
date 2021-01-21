@@ -39,7 +39,6 @@ namespace Mono.Linker
 	public class UnintializedContextFactory
 	{
 		public virtual AnnotationStore CreateAnnotationStore (LinkContext context) => new AnnotationStore (context);
-		public virtual MarkingHelpers CreateMarkingHelpers (LinkContext context) => new MarkingHelpers (context);
 		public virtual Tracer CreateTracer (LinkContext context) => new Tracer (context);
 	}
 
@@ -60,7 +59,6 @@ namespace Mono.Linker
 		string _outputDirectory;
 		readonly Dictionary<string, string> _parameters;
 		bool _linkSymbols;
-		bool _keepTypeForwarderOnlyAssemblies;
 		bool _ignoreUnresolved;
 		TargetRuntimeVersion? _targetRuntime;
 
@@ -110,11 +108,6 @@ namespace Mono.Linker
 		public bool LinkSymbols {
 			get { return _linkSymbols; }
 			set { _linkSymbols = value; }
-		}
-
-		public bool KeepTypeForwarderOnlyAssemblies {
-			get { return _keepTypeForwarderOnlyAssemblies; }
-			set { _keepTypeForwarderOnlyAssemblies = value; }
 		}
 
 		public readonly bool KeepMembersForDebugger = true;
@@ -174,8 +167,6 @@ namespace Mono.Linker
 
 		public bool LogMessages { get; set; }
 
-		public MarkingHelpers MarkingHelpers { get; private set; }
-
 		public KnownMembers MarkedKnownMembers { get; private set; }
 
 		public WarningSuppressionWriter WarningSuppressionWriter { get; set; }
@@ -221,7 +212,6 @@ namespace Mono.Linker
 
 			var factory = new UnintializedContextFactory ();
 			_annotations = factory.CreateAnnotationStore (this);
-			MarkingHelpers = factory.CreateMarkingHelpers (this);
 			Tracer = factory.CreateTracer (this);
 			ReflectionPatternRecorder = new LoggingReflectionPatternRecorder (this);
 			MarkedKnownMembers = new KnownMembers ();

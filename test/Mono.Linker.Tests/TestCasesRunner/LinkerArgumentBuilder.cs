@@ -214,9 +214,6 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				AddIl8n (options.Il8n);
 #endif
 
-			if (!string.IsNullOrEmpty (options.KeepTypeForwarderOnlyAssemblies))
-				AddKeepTypeForwarderOnlyAssemblies (options.KeepTypeForwarderOnlyAssemblies);
-
 			if (!string.IsNullOrEmpty (options.LinkSymbols))
 				AddLinkSymbols (options.LinkSymbols);
 

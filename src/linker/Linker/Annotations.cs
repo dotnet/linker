@@ -380,6 +380,12 @@ namespace Mono.Linker
 			Debug.Assert (left != 0);
 			Debug.Assert (right != 0);
 
+			if (left == TypePreserveMembers.All)
+				return right;
+
+			if (right == TypePreserveMembers.All)
+				return left;
+
 			if (left == TypePreserveMembers.AllVisible)
 				return right;
 

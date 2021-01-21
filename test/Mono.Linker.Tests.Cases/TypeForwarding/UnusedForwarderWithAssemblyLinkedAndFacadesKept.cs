@@ -5,10 +5,10 @@ using Mono.Linker.Tests.Cases.TypeForwarding.Dependencies;
 namespace Mono.Linker.Tests.Cases.TypeForwarding
 {
 	// Actions:
-	// link - This assembly, Forwarder.dll and Implementation.dll
-	// --keep-facades
+	// link - This assembly and Implementation.dll
+	// copy - Forwarder.dll
 	[SetupLinkerUserAction ("link")]
-	[KeepTypeForwarderOnlyAssemblies ("true")]
+	[SetupLinkerAction ("copy", "Forwarder")]
 
 	[SetupCompileBefore ("Forwarder.dll", new[] { "Dependencies/ReferenceImplementationLibrary.cs" }, defines: new[] { "INCLUDE_REFERENCE_IMPL" })]
 
@@ -17,8 +17,7 @@ namespace Mono.Linker.Tests.Cases.TypeForwarding
 	[SetupCompileAfter ("Forwarder.dll", new[] { "Dependencies/ForwarderLibrary.cs" }, references: new[] { "Implementation.dll" })]
 
 	[KeptAssembly ("Forwarder.dll")]
-	[RemovedForwarder ("Forwarder.dll", "ImplementationLibrary")]
-	[RemovedAssembly ("Implementation.dll")]
+	[KeptAssembly ("Implementation.dll")]
 	class UnusedForwarderWithAssemblyLinkedAndFacadesKept
 	{
 		static void Main ()

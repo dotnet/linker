@@ -10,8 +10,6 @@ namespace Mono.Linker.Tests.Cases.References
 	/// </summary>
 	[SetupLinkerAction ("copy", "copied")]
 
-	// --keep-facades sends the sweep step down a different code path that caused problems for this corner case
-	[SetupLinkerArgument ("--keep-facades", "true")]
 	[SetupCompileBefore ("library.dll", new[] { "Dependencies/AssemblyOnlyUsedByUsing_Lib.cs" })]
 
 	// When csc is used, `copied.dll` will have a reference to `library.dll`

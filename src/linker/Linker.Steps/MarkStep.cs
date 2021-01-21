@@ -309,30 +309,6 @@ namespace Mono.Linker.Steps
 		{
 			while (ProcessPrimaryQueue () || ProcessLazyAttributes () || ProcessLateMarkedAttributes ()) {
 
-				// deal with [TypeForwardedTo] pseudo-attributes
-				foreach (AssemblyDefinition assembly in _context.GetAssemblies ()) {
-					if (!assembly.MainModule.HasExportedTypes)
-						continue;
-
-					foreach (var exported in assembly.MainModule.ExportedTypes) {
-						bool isForwarder = exported.IsForwarder;
-						var declaringType = exported.DeclaringType;
-						while (!isForwarder && (declaringType != null)) {
-							isForwarder = declaringType.IsForwarder;
-							declaringType = declaringType.DeclaringType;
-						}
-
-						if (!isForwarder)
-							continue;
-						TypeDefinition type = exported.Resolve ();
-						if (type == null)
-							continue;
-						if (!Annotations.IsMarked (type))
-							continue;
-						var di = new DependencyInfo (DependencyKind.ExportedType, type);
-						_context.MarkingHelpers.MarkExportedType (exported, assembly.MainModule, di);
-					}
-				}
 			}
 
 			ProcessPendingTypeChecks ();
@@ -1260,7 +1236,19 @@ namespace Mono.Linker.Steps
 			MarkCustomAttributes (assembly.MainModule, new DependencyInfo (DependencyKind.AssemblyOrModuleAttribute, assembly.MainModule), null);
 
 			if (assembly.MainModule.HasExportedTypes) {
-				// TODO: This needs more work accross all steps
+				foreach (var exportedType in assembly.MainModule.ExportedTypes) {
+					_context.Annotations.Mark (exportedType, new DependencyInfo (DependencyKind.ExportedType, exportedType));
+
+					TypeDefinition type = exportedType.Resolve ();
+					if (type == null) {
+						if (!_context.IgnoreUnresolved)
+							_context.LogError ($"Exported type '{type.Name}' cannot be resolved", 1038);
+
+						return;
+					}
+
+					_context.Annotations.Mark (type, new DependencyInfo (DependencyKind.ExportedType, exportedType));
+				}
 			}
 
 			foreach (TypeDefinition type in assembly.MainModule.Types)
@@ -2315,6 +2303,11 @@ namespace Mono.Linker.Steps
 				var di = new DependencyInfo (DependencyKind.TypePreserve, type);
 
 				switch (members) {
+				case TypePreserveMembers.All:
+					MarkFields (type, true, di);
+					MarkMethods (type, di, type);
+					break;
+
 				case TypePreserveMembers.AllVisible:
 					if (type.HasMethods)
 						MarkMethodsIf (type.Methods, IsMethodVisible, di, type);
