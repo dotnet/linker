@@ -271,7 +271,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		{
 			[Kept]
 			public void NonDefault ();
-			
+
 			[Kept]
 			[ExpectBodyModified]
 			public void Default ()
