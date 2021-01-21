@@ -56,7 +56,7 @@ namespace Mono.Linker.Steps
 		protected List<MethodBody> _unreachableBodies;
 
 		readonly List<(TypeDefinition Type, MethodBody Body, Instruction Instr)> _pending_isinst_instr;
-		UnreachableBlocksOptimizer _removeUnreachableBlocksStep;
+		UnreachableBlocksOptimizer _unreachableBlocksOptimizer;
 
 #if DEBUG
 		static readonly DependencyKind[] _entireTypeReasons = new DependencyKind[] {
@@ -182,7 +182,7 @@ namespace Mono.Linker.Steps
 		public virtual void Process (LinkContext context)
 		{
 			_context = context;
-			_removeUnreachableBlocksStep = new UnreachableBlocksOptimizer (_context);
+			_unreachableBlocksOptimizer = new UnreachableBlocksOptimizer (_context);
 
 			Initialize ();
 			Process ();
@@ -2506,8 +2506,6 @@ namespace Mono.Linker.Steps
 				throw new ArgumentOutOfRangeException ($"Internal error: unsupported method dependency {reason.Kind}");
 #endif
 
-			_removeUnreachableBlocksStep.ProcessMethod (method);
-
 			// Record the reason for marking a method on each call. The logic under CheckProcessed happens
 			// only once per method.
 			switch (reason.Kind) {
@@ -2531,6 +2529,8 @@ namespace Mono.Linker.Steps
 
 			if (CheckProcessed (method))
 				return;
+
+			_unreachableBlocksOptimizer.ProcessMethod (method);
 
 			if (!markedForCall)
 				MarkType (method.DeclaringType, new DependencyInfo (DependencyKind.DeclaringType, method), method);
