@@ -274,6 +274,15 @@ namespace Mono.Linker
 			return processed.Contains (provider);
 		}
 
+		public bool MarkProcessed (IMetadataTokenProvider provider, in DependencyInfo reason)
+		{
+			Debug.Assert (!(reason.Kind == DependencyKind.AlreadyMarked));
+			Tracer.AddDirectDependency (provider, reason, marked: true);
+			// The item may or may not be pending.
+			marked_pending.Remove (provider);
+			return processed.Add (provider);
+		}
+
 		public TypeDefinition[] GetPendingPreserve ()
 		{
 			return pending_preserve.ToArray ();

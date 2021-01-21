@@ -2769,8 +2769,7 @@ namespace Mono.Linker.Steps
 		{
 			if (method.IsPInvokeImpl) {
 				var pii = method.PInvokeInfo;
-				Annotations.Mark (pii.Module, new DependencyInfo (DependencyKind.InteropMethodDependency, method));
-				Annotations.SetProcessed (pii.Module);
+				Annotations.MarkProcessed (pii.Module, new DependencyInfo (DependencyKind.InteropMethodDependency, method));
 				if (!string.IsNullOrEmpty (_context.PInvokesListFile)) {
 					_context.PInvokes.Add (new PInvokeInfo {
 						AssemblyName = method.DeclaringType.Module.Name,
@@ -3136,8 +3135,7 @@ namespace Mono.Linker.Steps
 			MarkCustomAttributes (iface, new DependencyInfo (DependencyKind.CustomAttribute, iface), type);
 			// Blame the interface type on the interfaceimpl itself.
 			MarkType (iface.InterfaceType, new DependencyInfo (DependencyKind.InterfaceImplementationInterfaceType, iface), type);
-			Annotations.Mark (iface, new DependencyInfo (DependencyKind.InterfaceImplementationOnType, type));
-			Annotations.SetProcessed (iface);
+			Annotations.MarkProcessed (iface, new DependencyInfo (DependencyKind.InterfaceImplementationOnType, type));
 		}
 
 		//
