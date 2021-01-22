@@ -14,7 +14,7 @@ namespace Mono.Linker.Steps
 	// consist of multiple steps. It simplifies their implementation as well as the
 	// way how to hook them into the pipeline of existing steps.
 	//
-	public abstract class SubStepsDispatcher : IStep
+	public abstract class SubStepsDispatcher : IPerAssemblyStep
 	{
 		readonly List<ISubStep> substeps;
 
@@ -40,28 +40,29 @@ namespace Mono.Linker.Steps
 			substeps.Add (substep);
 		}
 
-		void IStep.Process (LinkContext context)
+		void IPerAssemblyStep.Initialize (LinkContext context)
 		{
 			InitializeSubSteps (context);
+		}
 
-			BrowseAssemblies (context.GetAssemblies ());
+		void IPerAssemblyStep.ProcessAssembly (AssemblyDefinition assembly)
+		{
+			BrowseAssembly (assembly);
 		}
 
 		static bool HasSubSteps (List<ISubStep> substeps) => substeps?.Count > 0;
 
-		void BrowseAssemblies (IEnumerable<AssemblyDefinition> assemblies)
+		void BrowseAssembly (AssemblyDefinition assembly)
 		{
-			foreach (var assembly in assemblies) {
-				CategorizeSubSteps (assembly);
+			CategorizeSubSteps (assembly);
 
-				if (HasSubSteps (on_assemblies))
-					DispatchAssembly (assembly);
+			if (HasSubSteps (on_assemblies))
+				DispatchAssembly (assembly);
 
-				if (!ShouldDispatchTypes ())
-					continue;
+			if (!ShouldDispatchTypes ())
+				return;
 
-				BrowseTypes (assembly.MainModule.Types);
-			}
+			BrowseTypes (assembly.MainModule.Types);
 		}
 
 		bool ShouldDispatchTypes ()

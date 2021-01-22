@@ -28,7 +28,7 @@
 
 using System;
 using System.Collections.Generic;
-
+using Mono.Cecil;
 using Mono.Linker.Steps;
 
 namespace Mono.Linker
@@ -38,10 +38,12 @@ namespace Mono.Linker
 	{
 
 		readonly List<IStep> _steps;
+		readonly List<IPerAssemblyStep> _perAssemblySteps;
 
 		public Pipeline ()
 		{
 			_steps = new List<IStep> ();
+			_perAssemblySteps = new List<IPerAssemblyStep> ();
 		}
 
 		public void PrependStep (IStep step)
@@ -52,6 +54,11 @@ namespace Mono.Linker
 		public void AppendStep (IStep step)
 		{
 			_steps.Add (step);
+		}
+
+		public void AppendPerAssemblyStep (IPerAssemblyStep step)
+		{
+			_perAssemblySteps.Add (step);
 		}
 
 		public void AddStepBefore (Type target, IStep step)
@@ -123,10 +130,21 @@ namespace Mono.Linker
 
 		public void Process (LinkContext context)
 		{
+			foreach (var step in _perAssemblySteps) {
+				step.Initialize (context);
+			}
+
 			while (_steps.Count > 0) {
 				IStep step = _steps[0];
 				ProcessStep (context, step);
 				_steps.Remove (step);
+			}
+		}
+
+		public void ProcessAssembly (AssemblyDefinition assembly)
+		{
+			foreach (var step in _perAssemblySteps) {
+				step.ProcessAssembly (assembly);
 			}
 		}
 

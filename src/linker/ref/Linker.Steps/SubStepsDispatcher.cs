@@ -3,10 +3,11 @@
 // See the LICENSE file in the project root for more information.
 
 using System.Collections.Generic;
+using Mono.Cecil;
 
 namespace Mono.Linker.Steps
 {
-	public abstract class SubStepsDispatcher : IStep
+	public abstract class SubStepsDispatcher : IPerAssemblyStep
 	{
 		protected SubStepsDispatcher () => throw null;
 
@@ -14,6 +15,7 @@ namespace Mono.Linker.Steps
 
 		public void Add (ISubStep substep) => throw null;
 
-		void IStep.Process (LinkContext context) => throw null;
+		void IPerAssemblyStep.Initialize (LinkContext context) => throw null;
+		void IPerAssemblyStep.ProcessAssembly (AssemblyDefinition assembly) => throw null;
 	}
 }

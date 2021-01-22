@@ -163,6 +163,7 @@ namespace Mono.Linker
 			var body_substituter_steps = new Stack<string> ();
 			var xml_custom_attribute_steps = new Stack<string> ();
 			var custom_steps = new Stack<string> ();
+			var per_assembly_steps = new Stack<string> ();
 			var set_optimizations = new List<(CodeOptimizations, string, bool)> ();
 			bool dumpDependencies = false;
 			string dependenciesFileName = null;
@@ -296,6 +297,12 @@ namespace Mono.Linker
 						}
 					case "--custom-step":
 						if (!GetStringParam (token, l => custom_steps.Push (l)))
+							return -1;
+
+						continue;
+
+					case "--per-assembly-step":
+						if (!GetStringParam (token, l => per_assembly_steps.Push (l)))
 							return -1;
 
 						continue;
@@ -678,6 +685,11 @@ namespace Mono.Linker
 					return -1;
 			}
 
+			foreach (string per_assembly_step in per_assembly_steps) {
+				if (!AddPerAssemblyStep (p, per_assembly_step))
+					return -1;
+			}
+
 			return 0;
 		}
 
@@ -776,20 +788,42 @@ namespace Mono.Linker
 			context.Tracer.AddRecorder (new XmlDependencyRecorder (context, fileName));
 		}
 
+		protected bool AddPerAssemblyStep (Pipeline pipeline, string arg)
+		{
+			if (!TryGetCustomAssembly (ref arg, out Assembly custom_assembly))
+				return false;
+
+			var step = ResolveStep<IPerAssemblyStep> (arg, custom_assembly);
+			if (step == null)
+				return false;
+
+			pipeline.AppendPerAssemblyStep (step);
+			return true;
+		}
+
+		bool TryGetCustomAssembly (ref string arg, out Assembly assembly)
+		{
+			assembly = null;
+			int pos = arg.IndexOf (",");
+			if (pos == -1)
+				return true;
+
+			assembly = GetCustomAssembly (arg.Substring (pos + 1));
+			if (assembly == null)
+				return false;
+
+			arg = arg.Substring (0, pos);
+			return true;
+		}
+
 		protected bool AddCustomStep (Pipeline pipeline, string arg)
 		{
-			Assembly custom_assembly = null;
-			int pos = arg.IndexOf (",");
-			if (pos != -1) {
-				custom_assembly = GetCustomAssembly (arg.Substring (pos + 1));
-				if (custom_assembly == null)
-					return false;
-				arg = arg.Substring (0, pos);
-			}
+			if (!TryGetCustomAssembly (ref arg, out Assembly custom_assembly))
+				return false;
 
-			pos = arg.IndexOf (":");
+			int pos = arg.IndexOf (":");
 			if (pos == -1) {
-				var step = ResolveStep (arg, custom_assembly);
+				var step = ResolveStep<IStep> (arg, custom_assembly);
 				if (step == null)
 					return false;
 
@@ -817,7 +851,7 @@ namespace Mono.Linker
 				return false;
 			}
 
-			IStep newStep = ResolveStep (parts[1], custom_assembly);
+			IStep newStep = ResolveStep<IStep> (parts[1], custom_assembly);
 			if (newStep == null)
 				return false;
 
@@ -840,7 +874,7 @@ namespace Mono.Linker
 			return null;
 		}
 
-		IStep ResolveStep (string type, Assembly assembly)
+		TStep ResolveStep<TStep> (string type, Assembly assembly) where TStep : class
 		{
 			Type step = assembly != null ? assembly.GetType (type) : Type.GetType (type, false);
 
@@ -849,12 +883,12 @@ namespace Mono.Linker
 				return null;
 			}
 
-			if (!typeof (IStep).IsAssignableFrom (step)) {
+			if (!typeof (TStep).IsAssignableFrom (step)) {
 				context.LogError ($"Custom step '{type}' is incompatible with this linker version", 1028);
 				return null;
 			}
 
-			return (IStep) Activator.CreateInstance (step);
+			return (TStep) Activator.CreateInstance (step);
 		}
 
 		static string[] GetFiles (string param)
@@ -1096,6 +1130,9 @@ namespace Mono.Linker
 			Console.WriteLine ("                            TYPE,PATH_TO_ASSEMBLY: Add user defined type as last step to the pipeline");
 			Console.WriteLine ("                            -NAME:TYPE,PATH_TO_ASSEMBLY: Inserts step type before existing step with name");
 			Console.WriteLine ("                            +NAME:TYPE,PATH_TO_ASSEMBLY: Add step type after existing step");
+			Console.WriteLine ("  --per-assembly-step CFG   Add a custom per-assembly step <config> to the existing pipeline");
+			Console.WriteLine ("                            Step can use one of following configurations");
+			Console.WriteLine ("                            TYPE,PATH_TO_ASSEMBLY: Add user defined type as last step to the per-assembly pipeline");
 			Console.WriteLine ("  --custom-data KEY=VALUE   Populates context data set with user specified key-value pair");
 			Console.WriteLine ("  --deterministic           Produce a deterministic output for modified assemblies");
 			Console.WriteLine ("  --ignore-descriptors      Skips reading embedded descriptors (short -z). Defaults to false");

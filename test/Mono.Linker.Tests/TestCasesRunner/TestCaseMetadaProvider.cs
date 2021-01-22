@@ -75,6 +75,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				// the path to the temp directory (where the custom assembly is located) here.
 				switch ((string) ca[0].Value) {
 				case "--custom-step":
+				case "--per-assembly-step":
 					int pos = values[0].IndexOf (",");
 					if (pos != -1) {
 						string custom_assembly_path = values[0].Substring (pos + 1);
