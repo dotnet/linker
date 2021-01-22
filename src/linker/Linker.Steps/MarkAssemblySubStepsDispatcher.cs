@@ -10,11 +10,12 @@ using Mono.Collections.Generic;
 namespace Mono.Linker.Steps
 {
 	//
-	// Generic steps dispatcher is intended to by used by custom linker step which
-	// consist of multiple steps. It simplifies their implementation as well as the
-	// way how to hook them into the pipeline of existing steps.
+	// Dispatcher for SubSteps which only need to run on marked assemblies.
+	// This simplifies the implementation of linker custom steps, in the same
+	// way that SubStepsDispatcher does, but it implements IMarkAssemblyStep
+	// and is invoked during MarkStep when an assembly gets marked.
 	//
-	public abstract class SubStepsDispatcher : IStep
+	public abstract class MarkAssemblySubStepsDispatcher : IMarkAssemblyStep
 	{
 		readonly List<ISubStep> substeps;
 
@@ -25,12 +26,12 @@ namespace Mono.Linker.Steps
 		List<ISubStep> on_properties;
 		List<ISubStep> on_events;
 
-		protected SubStepsDispatcher ()
+		protected MarkAssemblySubStepsDispatcher ()
 		{
 			substeps = new List<ISubStep> ();
 		}
 
-		protected SubStepsDispatcher (IEnumerable<ISubStep> subSteps)
+		protected MarkAssemblySubStepsDispatcher (IEnumerable<ISubStep> subSteps)
 		{
 			substeps = new List<ISubStep> (subSteps);
 		}
@@ -40,28 +41,29 @@ namespace Mono.Linker.Steps
 			substeps.Add (substep);
 		}
 
-		void IStep.Process (LinkContext context)
+		void IMarkAssemblyStep.Initialize (LinkContext context)
 		{
 			InitializeSubSteps (context);
+		}
 
-			BrowseAssemblies (context.GetAssemblies ());
+		void IMarkAssemblyStep.ProcessAssembly (AssemblyDefinition assembly)
+		{
+			BrowseAssembly (assembly);
 		}
 
 		static bool HasSubSteps (List<ISubStep> substeps) => substeps?.Count > 0;
 
-		void BrowseAssemblies (IEnumerable<AssemblyDefinition> assemblies)
+		void BrowseAssembly (AssemblyDefinition assembly)
 		{
-			foreach (var assembly in assemblies) {
-				CategorizeSubSteps (assembly);
+			CategorizeSubSteps (assembly);
 
-				if (HasSubSteps (on_assemblies))
-					DispatchAssembly (assembly);
+			if (HasSubSteps (on_assemblies))
+				DispatchAssembly (assembly);
 
-				if (!ShouldDispatchTypes ())
-					continue;
+			if (!ShouldDispatchTypes ())
+				return;
 
-				BrowseTypes (assembly.MainModule.Types);
-			}
+			BrowseTypes (assembly.MainModule.Types);
 		}
 
 		bool ShouldDispatchTypes ()

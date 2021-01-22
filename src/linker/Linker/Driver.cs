@@ -301,7 +301,7 @@ namespace Mono.Linker
 
 						continue;
 
-					case "--per-assembly-step":
+					case "--mark-assembly-step":
 						if (!GetStringParam (token, l => per_assembly_steps.Push (l)))
 							return -1;
 
@@ -686,7 +686,7 @@ namespace Mono.Linker
 			}
 
 			foreach (string per_assembly_step in per_assembly_steps) {
-				if (!AddPerAssemblyStep (p, per_assembly_step))
+				if (!AddMarkAssemblyStep (p, per_assembly_step))
 					return -1;
 			}
 
@@ -788,16 +788,16 @@ namespace Mono.Linker
 			context.Tracer.AddRecorder (new XmlDependencyRecorder (context, fileName));
 		}
 
-		protected bool AddPerAssemblyStep (Pipeline pipeline, string arg)
+		protected bool AddMarkAssemblyStep (Pipeline pipeline, string arg)
 		{
 			if (!TryGetCustomAssembly (ref arg, out Assembly custom_assembly))
 				return false;
 
-			var step = ResolveStep<IPerAssemblyStep> (arg, custom_assembly);
+			var step = ResolveStep<IMarkAssemblyStep> (arg, custom_assembly);
 			if (step == null)
 				return false;
 
-			pipeline.AppendPerAssemblyStep (step);
+			pipeline.AppendMarkAssemblyStep (step);
 			return true;
 		}
 
@@ -1130,7 +1130,7 @@ namespace Mono.Linker
 			Console.WriteLine ("                            TYPE,PATH_TO_ASSEMBLY: Add user defined type as last step to the pipeline");
 			Console.WriteLine ("                            -NAME:TYPE,PATH_TO_ASSEMBLY: Inserts step type before existing step with name");
 			Console.WriteLine ("                            +NAME:TYPE,PATH_TO_ASSEMBLY: Add step type after existing step");
-			Console.WriteLine ("  --per-assembly-step CFG   Add a custom per-assembly step <config> to the existing pipeline");
+			Console.WriteLine ("  --mark-assembly-step CFG  Add a custom per-assembly step <config> to the existing pipeline");
 			Console.WriteLine ("                            Step can use one of following configurations");
 			Console.WriteLine ("                            TYPE,PATH_TO_ASSEMBLY: Add user defined type as last step to the per-assembly pipeline");
 			Console.WriteLine ("  --custom-data KEY=VALUE   Populates context data set with user specified key-value pair");
