@@ -24,7 +24,7 @@ namespace Mono.Linker.Steps
 		/// <summary>
 		/// Process an assembly. This should perform the main logic of the step,
 		/// including any modifications to the assembly or to the global Annotations
-		/// state. ProcessAssembly is called exactly once, when an assembly is marked.
+		/// state. ProcessAssembly is called exactly once for each marked assembly.
 		/// It is called before the main MarkStep processing happens for the assembly,
 		/// but other steps may already have marked parts of the assembly through Annotations.
 		/// </summary>

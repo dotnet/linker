@@ -7,7 +7,7 @@ namespace Mono.Linker.Tests.Cases.Extensibility
 	[IgnoreTestCase ("Specific to the illink build")]
 #endif
 	[SetupCompileBefore ("MyMarkAssemblyDispatcher.dll", new[] { "Dependencies/MyMarkAssemblyDispatcher.cs", "Dependencies/CustomSubStep.cs" }, new[] { "illink.dll", "Mono.Cecil.dll", "netstandard.dll" })]
-	[SetupLinkerArgument ("--mark-assembly-step", "MyMarkAssemblyDispatcher,MyMarkAssemblyDispatcher.dll")]
+	[SetupLinkerArgument ("--custom-step", "MyMarkAssemblyDispatcher,MyMarkAssemblyDispatcher.dll")]
 	public class MarkAssemblySubStepDispatcherUsage
 	{
 		public static void Main ()

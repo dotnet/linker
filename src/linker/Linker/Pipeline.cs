@@ -69,8 +69,7 @@ namespace Mono.Linker
 					return;
 				}
 			}
-			string msg = String.Format ("Step {0} could not be inserted before (not found) {1}", step, target);
-			throw new InvalidOperationException (msg);
+			throw new InternalErrorException ($"Step {step} could not be inserted before (not found) {target}");
 		}
 
 		public void AddStepBefore (IStep target, IStep step)
@@ -81,6 +80,18 @@ namespace Mono.Linker
 					return;
 				}
 			}
+			throw new InternalErrorException ($"Step {step} could not be inserted before (not found) {target}");
+		}
+
+		public void AddMarkAssemblyStepBefore (IMarkAssemblyStep target, IMarkAssemblyStep step)
+		{
+			for (int i = 0; i < _markAssemblySteps.Count; i++) {
+				if (_markAssemblySteps[i] == target) {
+					_markAssemblySteps.Insert (i, step);
+					return;
+				}
+			}
+			throw new InternalErrorException ($"Step {step} could not be inserted before (not found) {target}");
 		}
 
 		public void ReplaceStep (Type target, IStep step)
@@ -100,8 +111,7 @@ namespace Mono.Linker
 					return;
 				}
 			}
-			string msg = String.Format ("Step {0} could not be inserted after (not found) {1}", step, target);
-			throw new InvalidOperationException (msg);
+			throw new InternalErrorException ($"Step {step} could not be inserted after (not found) {target}");
 		}
 
 		public void AddStepAfter (IStep target, IStep step)
@@ -115,6 +125,21 @@ namespace Mono.Linker
 					return;
 				}
 			}
+			throw new InternalErrorException ($"Step {step} could not be inserted after (not found) {target}");
+		}
+
+		public void AddMarkAssemblyStepAfter (IMarkAssemblyStep target, IMarkAssemblyStep step)
+		{
+			for (int i = 0; i < _markAssemblySteps.Count; i++) {
+				if (_markAssemblySteps[i] == target) {
+					if (i == _markAssemblySteps.Count - 1)
+						_markAssemblySteps.Add (step);
+					else
+						_markAssemblySteps.Insert (i + 1, step);
+					return;
+				}
+			}
+			throw new InternalErrorException ($"Step {step} could not be inserted after (not found) {target}");
 		}
 
 		public void RemoveStep (Type target)
@@ -156,6 +181,11 @@ namespace Mono.Linker
 		public IStep[] GetSteps ()
 		{
 			return _steps.ToArray ();
+		}
+
+		public IMarkAssemblyStep[] GetMarkAssemblySteps ()
+		{
+			return _markAssemblySteps.ToArray ();
 		}
 
 		public bool ContainsStep (Type type)

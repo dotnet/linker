@@ -163,7 +163,6 @@ namespace Mono.Linker
 			var body_substituter_steps = new Stack<string> ();
 			var xml_custom_attribute_steps = new Stack<string> ();
 			var custom_steps = new Stack<string> ();
-			var per_assembly_steps = new Stack<string> ();
 			var set_optimizations = new List<(CodeOptimizations, string, bool)> ();
 			bool dumpDependencies = false;
 			string dependenciesFileName = null;
@@ -297,12 +296,6 @@ namespace Mono.Linker
 						}
 					case "--custom-step":
 						if (!GetStringParam (token, l => custom_steps.Push (l)))
-							return -1;
-
-						continue;
-
-					case "--mark-assembly-step":
-						if (!GetStringParam (token, l => per_assembly_steps.Push (l)))
 							return -1;
 
 						continue;
@@ -685,11 +678,6 @@ namespace Mono.Linker
 					return -1;
 			}
 
-			foreach (string per_assembly_step in per_assembly_steps) {
-				if (!AddMarkAssemblyStep (p, per_assembly_step))
-					return -1;
-			}
-
 			return 0;
 		}
 
@@ -822,43 +810,74 @@ namespace Mono.Linker
 				return false;
 
 			int pos = arg.IndexOf (":");
+			string customStepName;
+			string targetName = null;
+			bool before = false;
 			if (pos == -1) {
-				var step = ResolveStep<IStep> (arg, custom_assembly);
-				if (step == null)
+				customStepName = arg;
+			} else {
+				string[] parts = arg.Split (':');
+				if (parts.Length != 2) {
+					context.LogError ($"Invalid value '{arg}' specified for '--custom-step' option", 1024);
 					return false;
+				}
+				customStepName = parts[1];
 
-				pipeline.AppendStep (step);
-				return true;
+				if (!parts[0].StartsWith ("-") && !parts[0].StartsWith ("+")) {
+					context.LogError ($"Expected '+' or '-' to control new step insertion", 1025);
+					return false;
+				}
+
+				before = parts[0][0] == '-';
+				targetName = parts[0].Substring (1);
 			}
 
-			string[] parts = arg.Split (':');
-			if (parts.Length != 2) {
-				context.LogError ($"Invalid value '{arg}' specified for '--custom-step' option", 1024);
+			var stepType = ResolveStepType (customStepName, custom_assembly);
+			if (stepType == null)
+				return false;
+
+			if (typeof (IStep).IsAssignableFrom (stepType)) {
+
+				var customStep = (IStep) Activator.CreateInstance (stepType);
+				if (targetName == null) {
+					pipeline.AppendStep (customStep);
+					return true;
+				}
+			
+				IStep target = FindStep (pipeline, targetName);
+				if (target == null) {
+					context.LogError ($"Pipeline step '{targetName}' could not be found", 1026);
+					return false;
+				}
+
+				if (before)
+					pipeline.AddStepBefore (target, customStep);
+				else
+					pipeline.AddStepAfter (target, customStep);
+
+			} else if (typeof (IMarkAssemblyStep).IsAssignableFrom (stepType)) {
+
+				var customStep = (IMarkAssemblyStep) Activator.CreateInstance (stepType);
+				if (targetName == null) {
+					pipeline.AppendMarkAssemblyStep (customStep);
+					return true;
+				}
+
+				IMarkAssemblyStep target = FindMarkAssemblyStep (pipeline, targetName);
+				if (target == null) {
+					context.LogError ($"Pipeline step '{targetName}' could not be found", 1026);
+					return false;
+				}
+
+				if (before)
+					pipeline.AddMarkAssemblyStepBefore (target, customStep);
+				else
+					pipeline.AddMarkAssemblyStepAfter (target, customStep);
+
+			} else {
+				context.LogError ($"Custom step '{stepType}' is incompatible with this linker version", 1028);
 				return false;
 			}
-
-			if (!parts[0].StartsWith ("-") && !parts[0].StartsWith ("+")) {
-				context.LogError ($"Expected '+' or '-' to control new step insertion", 1025);
-				return false;
-			}
-
-			bool before = parts[0][0] == '-';
-			string name = parts[0].Substring (1);
-
-			IStep target = FindStep (pipeline, name);
-			if (target == null) {
-				context.LogError ($"Pipeline step '{name}' could not be found", 1026);
-				return false;
-			}
-
-			IStep newStep = ResolveStep<IStep> (parts[1], custom_assembly);
-			if (newStep == null)
-				return false;
-
-			if (before)
-				pipeline.AddStepBefore (target, newStep);
-			else
-				pipeline.AddStepAfter (target, newStep);
 
 			return true;
 		}
@@ -872,6 +891,29 @@ namespace Mono.Linker
 			}
 
 			return null;
+		}
+
+		static IMarkAssemblyStep FindMarkAssemblyStep (Pipeline pipeline, string name)
+		{
+			foreach (IMarkAssemblyStep step in pipeline.GetMarkAssemblySteps ()) {
+				Type t = step.GetType ();
+				if (t.Name == name)
+					return step;
+			}
+
+			return null;
+		}
+
+		Type ResolveStepType (string type, Assembly assembly)
+		{
+			Type step = assembly != null ? assembly.GetType (type) : Type.GetType (type, false);
+
+			if (step == null) {
+				context.LogError ($"Custom step '{type}' could not be found", 1027);
+				return null;
+			}
+
+			return step;
 		}
 
 		TStep ResolveStep<TStep> (string type, Assembly assembly) where TStep : class
@@ -1130,9 +1172,6 @@ namespace Mono.Linker
 			Console.WriteLine ("                            TYPE,PATH_TO_ASSEMBLY: Add user defined type as last step to the pipeline");
 			Console.WriteLine ("                            -NAME:TYPE,PATH_TO_ASSEMBLY: Inserts step type before existing step with name");
 			Console.WriteLine ("                            +NAME:TYPE,PATH_TO_ASSEMBLY: Add step type after existing step");
-			Console.WriteLine ("  --mark-assembly-step CFG  Add a custom per-assembly step <config> to the existing pipeline");
-			Console.WriteLine ("                            Step can use one of following configurations");
-			Console.WriteLine ("                            TYPE,PATH_TO_ASSEMBLY: Add user defined type as last step to the per-assembly pipeline");
 			Console.WriteLine ("  --custom-data KEY=VALUE   Populates context data set with user specified key-value pair");
 			Console.WriteLine ("  --deterministic           Produce a deterministic output for modified assemblies");
 			Console.WriteLine ("  --ignore-descriptors      Skips reading embedded descriptors (short -z). Defaults to false");
