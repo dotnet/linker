@@ -12,6 +12,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 	[SetupCompileBefore ("lib.dll", new[] { "Dependencies/RequiresUnreferencedCodeInCopyAssembly.cs" })]
 	[KeptAllTypesAndMembersInAssembly ("lib.dll")]
 	[LogDoesNotContain ("IL2026")]
+	[LogDoesNotContain ("IL2027")]
 	public class RequiresUnreferencedCodeCapabilityFromCopiedAssembly
 	{
 		public static void Main ()

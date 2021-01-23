@@ -23,6 +23,8 @@ namespace ILLink.RoslynAnalyzer.Tests
 			case "TestRequiresUnreferencedCodeOnlyThroughReflection":
 			case "TestStaticCctorRequiresUnreferencedCode":
 			case "TestTypeWhichOverridesMethodVirtualMethodRequiresUnreferencedCode":
+			case "TestRequiresInMethodFromCopiedAssembly":
+			case "TestRequiresThroughReflectionInMethodFromCopiedAssembly":
 				return;
 			}
 

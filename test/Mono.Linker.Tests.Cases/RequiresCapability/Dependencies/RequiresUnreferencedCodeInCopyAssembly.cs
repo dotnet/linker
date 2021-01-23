@@ -14,13 +14,18 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability.Dependencies
 		{
 		}
 
+		[RequiresUnreferencedCode ("Message for --Method--")]
+		public void Method ()
+		{
+		}
+
 		[RequiresUnreferencedCode ("Message for --UncalledMethod--")]
 		public void UncalledMethod ()
 		{
 		}
 
 		[RequiresUnreferencedCode ("Message for --MethodCalledThroughReflection--")]
-		public void MethodCalledThroughReflection ()
+		static void MethodCalledThroughReflection ()
 		{
 		}
 
@@ -57,7 +62,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability.Dependencies
 			{
 			}
 
-			// This should warn when linking this, but copying?
+			// Should not warn when this is part of a copied assembly.
 			public override void UnusedVirtualMethod2 ()
 			{
 			}

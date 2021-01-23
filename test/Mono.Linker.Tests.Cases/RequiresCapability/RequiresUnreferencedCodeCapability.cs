@@ -8,9 +8,13 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
+using Mono.Linker.Tests.Cases.RequiresCapability.Dependencies;
 
 namespace Mono.Linker.Tests.Cases.RequiresCapability
 {
+	[SetupLinkerAction ("copyused", "lib")]
+	[SetupCompileBefore ("lib.dll", new[] { "Dependencies/RequiresUnreferencedCodeInCopyAssembly.cs" })]
+	[KeptAllTypesAndMembersInAssembly ("lib.dll")]
 	[SetupLinkAttributesFile ("RequiresUnreferencedCodeCapability.attributes.xml")]
 	[SkipKeptItemsValidation]
 	public class RequiresUnreferencedCodeCapability
@@ -31,6 +35,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			TestDynamicallyAccessedMembersWithRequiresUnreferencedCode (typeof (DynamicallyAccessedTypeWithRequiresUnreferencedCode));
 			TestInterfaceMethodWithRequiresUnreferencedCode ();
 			TestCovariantReturnCallOnDerived ();
+			TestRequiresInMethodFromCopiedAssembly ();
+			TestRequiresThroughReflectionInMethodFromCopiedAssembly ();
 		}
 
 		[ExpectedWarning ("IL2026",
@@ -289,6 +295,27 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		{
 			var tmp = new CovariantReturnDerived ();
 			tmp.GetRequiresUnreferencedCode ();
+		}
+
+		[ExpectedWarning ("IL2026",
+			"'Mono.Linker.Tests.Cases.RequiresCapability.Dependencies.RequiresUnreferencedCodeInCopyAssembly.Method()' method " +
+			"has 'RequiresUnreferencedCodeAttribute' which can break functionality when trimming application code. " +
+			"Message for --Method--.")]
+		static void TestRequiresInMethodFromCopiedAssembly ()
+		{
+			var tmp = new RequiresUnreferencedCodeInCopyAssembly ();
+			tmp.Method ();
+		}
+
+		[ExpectedWarning ("IL2026",
+			"'Mono.Linker.Tests.Cases.RequiresCapability.Dependencies.RequiresUnreferencedCodeInCopyAssembly.MethodCalledThroughReflection()' method " +
+			"has 'RequiresUnreferencedCodeAttribute' which can break functionality when trimming application code. " +
+			"Message for --MethodCalledThroughReflection--.")]
+		static void TestRequiresThroughReflectionInMethodFromCopiedAssembly ()
+		{
+			typeof (RequiresUnreferencedCodeInCopyAssembly)
+				.GetMethod ("MethodCalledThroughReflection", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)
+				.Invoke (null, new object[0]);
 		}
 	}
 }
