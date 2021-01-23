@@ -16,7 +16,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 	{
 		public static void Main ()
 		{
-			var x = 0;
 			Test ();
 		}
 
