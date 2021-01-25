@@ -2454,12 +2454,12 @@ namespace Mono.Linker.Steps
 			Annotations.MarkIndirectlyCalledMethod (method);
 		}
 
-		protected virtual MethodDefinition MarkMethod (MethodReference reference, DependencyInfo reason, MessageOrigin origin)
+		protected virtual MethodDefinition MarkMethod (MethodReference reference, DependencyInfo reason, MessageOrigin? origin)
 		{
-			(reference, reason) = GetOriginalMethod (reference, reason, origin.MemberDefinition);
+			(reference, reason) = GetOriginalMethod (reference, reason, origin?.MemberDefinition);
 
 			if (reference.DeclaringType is ArrayType arrayType) {
-				MarkType (reference.DeclaringType, new DependencyInfo (DependencyKind.DeclaringType, reference), origin.MemberDefinition);
+				MarkType (reference.DeclaringType, new DependencyInfo (DependencyKind.DeclaringType, reference), origin?.MemberDefinition);
 
 				if (reference.Name == ".ctor") {
 					Annotations.MarkRelevantToVariantCasting (arrayType.Resolve ());
@@ -2470,7 +2470,7 @@ namespace Mono.Linker.Steps
 			if (reference.DeclaringType is GenericInstanceType) {
 				// Blame the method reference on the original reason without marking it.
 				Tracer.AddDirectDependency (reference, reason, marked: false);
-				MarkType (reference.DeclaringType, new DependencyInfo (DependencyKind.DeclaringType, reference), origin.MemberDefinition);
+				MarkType (reference.DeclaringType, new DependencyInfo (DependencyKind.DeclaringType, reference), origin?.MemberDefinition);
 				// Mark the resolved method definition as a dependency of the reference.
 				reason = new DependencyInfo (DependencyKind.MethodOnGenericInstance, reference);
 			}
@@ -2490,8 +2490,8 @@ namespace Mono.Linker.Steps
 			// All override methods should have the same annotations as their base methods (else we will produce warning IL2046.)
 			// When marking override methods with RequiresUnreferencedCode on a type annotated with DynamicallyAccessedMembers,
 			// we should only issue a warning for the base method.
-			if (reason.Kind != DependencyKind.DynamicallyAccessedMember || !method.IsVirtual || Annotations.GetBaseMethods (method) == null)
-				ProcessRequiresUnreferencedCode (method, origin, reason.Kind);
+			if (origin != null && (reason.Kind != DependencyKind.DynamicallyAccessedMember || !method.IsVirtual || Annotations.GetBaseMethods (method) == null))
+				ProcessRequiresUnreferencedCode (method, (MessageOrigin) origin, reason.Kind);
 
 			return method;
 		}
