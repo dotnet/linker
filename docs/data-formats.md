@@ -2,7 +2,7 @@
 
 ## Input Data Formats
 
-ILLinker uses several data formats to control or influnce the linking process. The data formats are not versioned but are backward compatible.
+ILLink uses several data formats to control or influence the linking process. The data formats are not versioned but are backward compatible.
 
 - [Descriptors](#descriptor-format)
 - [Substitutions](#substitution-format)
