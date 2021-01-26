@@ -559,5 +559,5 @@ for removal, the custom attribute will not be removed.
 
 This is the format of data used to capture linker logic about why
 members, types, and other metadata elements were marked by the linker
-as required and persisted in the linked output. The format output edges
+as required and persisted in the linked output. The format includes edges
 of the graph for every dependency which was tracked by the linker.
