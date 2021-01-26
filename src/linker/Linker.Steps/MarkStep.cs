@@ -2501,6 +2501,7 @@ namespace Mono.Linker.Steps
 			switch (dependencyKind) {
 			case DependencyKind.AccessedViaReflection:
 			case DependencyKind.DirectCall:
+			case DependencyKind.DynamicallyAccessedMember:
 			case DependencyKind.ElementMethod:
 			case DependencyKind.Ldftn:
 			case DependencyKind.Ldvirtftn:

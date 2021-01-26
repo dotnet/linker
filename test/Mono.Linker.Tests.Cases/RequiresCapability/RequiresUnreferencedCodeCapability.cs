@@ -17,6 +17,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 	[KeptAllTypesAndMembersInAssembly ("lib.dll")]
 	[SetupLinkAttributesFile ("RequiresUnreferencedCodeCapability.attributes.xml")]
 	[SkipKeptItemsValidation]
+	[ExpectedWarning ("IL2026", "--DynamicallyAccessedTypeWithRequiresUnreferencedCode.RequiresUnreferencedCode--")]
 	public class RequiresUnreferencedCodeCapability
 	{
 		public static void Main ()
@@ -39,10 +40,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			TestRequiresThroughReflectionInMethodFromCopiedAssembly ();
 		}
 
-		[ExpectedWarning ("IL2026",
-			"'Mono.Linker.Tests.Cases.RequiresCapability.RequiresUnreferencedCodeCapability.RequiresWithMessageOnly()' method " +
-			"has 'RequiresUnreferencedCodeAttribute' which can break functionality when trimming application code. " +
-			"Message for --RequiresWithMessageOnly--.")]
+		[ExpectedWarning ("IL2026", "--RequiresWithMessageOnly--")]
 		static void TestRequiresWithMessageOnlyOnMethod ()
 		{
 			RequiresWithMessageOnly ();
@@ -53,11 +51,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		{
 		}
 
-		[ExpectedWarning ("IL2026",
-			"'Mono.Linker.Tests.Cases.RequiresCapability.RequiresUnreferencedCodeCapability.RequiresWithMessageAndUrl()' method " +
-			"has 'RequiresUnreferencedCodeAttribute' which can break functionality when trimming application code. " +
-			"Message for --RequiresWithMessageAndUrl--. " +
-			"https://helpurl")]
+		[ExpectedWarning ("IL2026", "--RequiresWithMessageAndUrl--. https://helpurl")]
 		static void TestRequiresWithMessageAndUrlOnMethod ()
 		{
 			RequiresWithMessageAndUrl ();
@@ -68,10 +62,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		{
 		}
 
-		[LogContains (
-			"'Mono.Linker.Tests.Cases.RequiresCapability.RequiresUnreferencedCodeCapability.ConstructorRequires.ConstructorRequires()' method " +
-			"has 'RequiresUnreferencedCodeAttribute' which can break functionality when trimming application code. " +
-			"Message for --ConstructorRequires--.")]
+		[ExpectedWarning ("IL2026", "--ConstructorRequires--")]
 		static void TestRequiresOnConstructor ()
 		{
 			new ConstructorRequires ();
@@ -85,14 +76,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 		}
 
-		[ExpectedWarning ("IL2026",
-			"'Mono.Linker.Tests.Cases.RequiresCapability.RequiresUnreferencedCodeCapability.PropertyRequires.get' method " +
-			"has 'RequiresUnreferencedCodeAttribute' which can break functionality when trimming application code. " +
-			"Message for --getter PropertyRequires--.")]
-		[ExpectedWarning ("IL2026",
-			"'Mono.Linker.Tests.Cases.RequiresCapability.RequiresUnreferencedCodeCapability.PropertyRequires.set' method " +
-			"has 'RequiresUnreferencedCodeAttribute' which can break functionality when trimming application code. " +
-			"Message for --setter PropertyRequires--.")]
+		[ExpectedWarning ("IL2026", "--getter PropertyRequires--")]
+		[ExpectedWarning ("IL2026", "--setter PropertyRequires--")]
 		static void TestRequiresOnPropertyGetterAndSetter ()
 		{
 			_ = PropertyRequires;
@@ -107,10 +92,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			set { }
 		}
 
-		[ExpectedWarning ("IL2026",
-			"'Mono.Linker.Tests.Cases.RequiresCapability.RequiresUnreferencedCodeCapability.RequiresAndCallsOtherRequiresMethods<TPublicMethods>()' method " +
-			"has 'RequiresUnreferencedCodeAttribute' which can break functionality when trimming application code. " +
-			"Message for --RequiresAndCallsOtherRequiresMethods--.")]
+		[ExpectedWarning ("IL2026", "--RequiresAndCallsOtherRequiresMethods--")]
 		static void TestRequiresSuppressesWarningsFromReflectionAnalysis ()
 		{
 			RequiresAndCallsOtherRequiresMethods<TestType> ();
@@ -297,20 +279,14 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			tmp.GetRequiresUnreferencedCode ();
 		}
 
-		[ExpectedWarning ("IL2026",
-			"'Mono.Linker.Tests.Cases.RequiresCapability.Dependencies.RequiresUnreferencedCodeInCopyAssembly.Method()' method " +
-			"has 'RequiresUnreferencedCodeAttribute' which can break functionality when trimming application code. " +
-			"Message for --Method--.")]
+		[ExpectedWarning ("IL2026", "--Method--")]
 		static void TestRequiresInMethodFromCopiedAssembly ()
 		{
 			var tmp = new RequiresUnreferencedCodeInCopyAssembly ();
 			tmp.Method ();
 		}
 
-		[ExpectedWarning ("IL2026",
-			"'Mono.Linker.Tests.Cases.RequiresCapability.Dependencies.RequiresUnreferencedCodeInCopyAssembly.MethodCalledThroughReflection()' method " +
-			"has 'RequiresUnreferencedCodeAttribute' which can break functionality when trimming application code. " +
-			"Message for --MethodCalledThroughReflection--.")]
+		[ExpectedWarning ("IL2026", "--MethodCalledThroughReflection--")]
 		static void TestRequiresThroughReflectionInMethodFromCopiedAssembly ()
 		{
 			typeof (RequiresUnreferencedCodeInCopyAssembly)
