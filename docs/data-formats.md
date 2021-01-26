@@ -558,6 +558,6 @@ for removal, the custom attribute will not be removed.
 ## Dependencies Trace Format
 
 This is the format of data used to capture linker logic about why
-members, type and other metadata elements were marked by the linker
+members, types, and other metadata elements were marked by the linker
 as required and persisted in the linked output. The format output edges
 of the graph for every dependency which was tracked by the linker.
