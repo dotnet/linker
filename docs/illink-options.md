@@ -202,7 +202,7 @@ which by default writes detailed information into a compressed file called `link
 inside output directory. The default output filename can be changed with `--dependencies-file`
 option.
 
-The format of the data is out XML and it's intentionally human-readable but due
+The format of the data is XML and it's intentionally human-readable but due
 to a large amount of data, it's recommended to use tools which can analyze the data.
 
 ## monolinker specific options
