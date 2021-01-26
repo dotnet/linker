@@ -12,10 +12,11 @@ namespace Mono.Linker.Steps
 	//
 	// Dispatcher for SubSteps which only need to run on marked assemblies.
 	// This simplifies the implementation of linker custom steps, in the same
-	// way that SubStepsDispatcher does, but it implements IMarkAssemblyStep
-	// and is invoked during MarkStep when an assembly gets marked.
+	// way that SubStepsDispatcher does, but it implements IMarkHandler
+	// and registers a callback that gets invoked during MarkStep when an
+	// assembly gets marked.
 	//
-	public abstract class MarkAssemblySubStepsDispatcher : IMarkAssemblyStep
+	public abstract class MarkHandlerDispatcher : IMarkHandler
 	{
 		readonly List<ISubStep> substeps;
 
@@ -26,12 +27,12 @@ namespace Mono.Linker.Steps
 		List<ISubStep> on_properties;
 		List<ISubStep> on_events;
 
-		protected MarkAssemblySubStepsDispatcher ()
+		protected MarkHandlerDispatcher ()
 		{
 			substeps = new List<ISubStep> ();
 		}
 
-		protected MarkAssemblySubStepsDispatcher (IEnumerable<ISubStep> subSteps)
+		protected MarkHandlerDispatcher (IEnumerable<ISubStep> subSteps)
 		{
 			substeps = new List<ISubStep> (subSteps);
 		}
@@ -41,14 +42,10 @@ namespace Mono.Linker.Steps
 			substeps.Add (substep);
 		}
 
-		void IMarkAssemblyStep.Initialize (LinkContext context)
+		void IMarkHandler.Initialize (LinkContext context, MarkContext markContext)
 		{
 			InitializeSubSteps (context);
-		}
-
-		void IMarkAssemblyStep.ProcessAssembly (AssemblyDefinition assembly)
-		{
-			BrowseAssembly (assembly);
+			markContext.RegisterMarkAssemblyAction (assembly => BrowseAssembly (assembly));
 		}
 
 		static bool HasSubSteps (List<ISubStep> substeps) => substeps?.Count > 0;

@@ -776,16 +776,16 @@ namespace Mono.Linker
 			context.Tracer.AddRecorder (new XmlDependencyRecorder (context, fileName));
 		}
 
-		protected bool AddMarkAssemblyStep (Pipeline pipeline, string arg)
+		protected bool AddMarkHandler (Pipeline pipeline, string arg)
 		{
 			if (!TryGetCustomAssembly (ref arg, out Assembly custom_assembly))
 				return false;
 
-			var step = ResolveStep<IMarkAssemblyStep> (arg, custom_assembly);
+			var step = ResolveStep<IMarkHandler> (arg, custom_assembly);
 			if (step == null)
 				return false;
 
-			pipeline.AppendMarkAssemblyStep (step);
+			pipeline.AppendMarkHandler (step);
 			return true;
 		}
 
@@ -843,7 +843,7 @@ namespace Mono.Linker
 					pipeline.AppendStep (customStep);
 					return true;
 				}
-			
+
 				IStep target = FindStep (pipeline, targetName);
 				if (target == null) {
 					context.LogError ($"Pipeline step '{targetName}' could not be found", 1026);
@@ -855,24 +855,24 @@ namespace Mono.Linker
 				else
 					pipeline.AddStepAfter (target, customStep);
 
-			} else if (typeof (IMarkAssemblyStep).IsAssignableFrom (stepType)) {
+			} else if (typeof (IMarkHandler).IsAssignableFrom (stepType)) {
 
-				var customStep = (IMarkAssemblyStep) Activator.CreateInstance (stepType);
+				var customStep = (IMarkHandler) Activator.CreateInstance (stepType);
 				if (targetName == null) {
-					pipeline.AppendMarkAssemblyStep (customStep);
+					pipeline.AppendMarkHandler (customStep);
 					return true;
 				}
 
-				IMarkAssemblyStep target = FindMarkAssemblyStep (pipeline, targetName);
+				IMarkHandler target = FindMarkHandler (pipeline, targetName);
 				if (target == null) {
 					context.LogError ($"Pipeline step '{targetName}' could not be found", 1026);
 					return false;
 				}
 
 				if (before)
-					pipeline.AddMarkAssemblyStepBefore (target, customStep);
+					pipeline.AddMarkHandlerBefore (target, customStep);
 				else
-					pipeline.AddMarkAssemblyStepAfter (target, customStep);
+					pipeline.AddMarkHandlerAfter (target, customStep);
 
 			} else {
 				context.LogError ($"Custom step '{stepType}' is incompatible with this linker version", 1028);
@@ -893,9 +893,9 @@ namespace Mono.Linker
 			return null;
 		}
 
-		static IMarkAssemblyStep FindMarkAssemblyStep (Pipeline pipeline, string name)
+		static IMarkHandler FindMarkHandler (Pipeline pipeline, string name)
 		{
-			foreach (IMarkAssemblyStep step in pipeline.GetMarkAssemblySteps ()) {
+			foreach (IMarkHandler step in pipeline.MarkHandlers) {
 				Type t = step.GetType ();
 				if (t.Name == name)
 					return step;

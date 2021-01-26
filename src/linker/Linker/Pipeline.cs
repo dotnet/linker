@@ -28,7 +28,6 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
 using Mono.Linker.Steps;
 
 namespace Mono.Linker
@@ -38,12 +37,12 @@ namespace Mono.Linker
 	{
 
 		readonly List<IStep> _steps;
-		readonly List<IMarkAssemblyStep> _markAssemblySteps;
+		public List<IMarkHandler> MarkHandlers { get; }
 
 		public Pipeline ()
 		{
 			_steps = new List<IStep> ();
-			_markAssemblySteps = new List<IMarkAssemblyStep> ();
+			MarkHandlers = new List<IMarkHandler> ();
 		}
 
 		public void PrependStep (IStep step)
@@ -56,9 +55,9 @@ namespace Mono.Linker
 			_steps.Add (step);
 		}
 
-		public void AppendMarkAssemblyStep (IMarkAssemblyStep step)
+		public void AppendMarkHandler (IMarkHandler step)
 		{
-			_markAssemblySteps.Add (step);
+			MarkHandlers.Add (step);
 		}
 
 		public void AddStepBefore (Type target, IStep step)
@@ -83,11 +82,11 @@ namespace Mono.Linker
 			throw new InternalErrorException ($"Step {step} could not be inserted before (not found) {target}");
 		}
 
-		public void AddMarkAssemblyStepBefore (IMarkAssemblyStep target, IMarkAssemblyStep step)
+		public void AddMarkHandlerBefore (IMarkHandler target, IMarkHandler step)
 		{
-			for (int i = 0; i < _markAssemblySteps.Count; i++) {
-				if (_markAssemblySteps[i] == target) {
-					_markAssemblySteps.Insert (i, step);
+			for (int i = 0; i < MarkHandlers.Count; i++) {
+				if (MarkHandlers[i] == target) {
+					MarkHandlers.Insert (i, step);
 					return;
 				}
 			}
@@ -128,14 +127,14 @@ namespace Mono.Linker
 			throw new InternalErrorException ($"Step {step} could not be inserted after (not found) {target}");
 		}
 
-		public void AddMarkAssemblyStepAfter (IMarkAssemblyStep target, IMarkAssemblyStep step)
+		public void AddMarkHandlerAfter (IMarkHandler target, IMarkHandler step)
 		{
-			for (int i = 0; i < _markAssemblySteps.Count; i++) {
-				if (_markAssemblySteps[i] == target) {
-					if (i == _markAssemblySteps.Count - 1)
-						_markAssemblySteps.Add (step);
+			for (int i = 0; i < MarkHandlers.Count; i++) {
+				if (MarkHandlers[i] == target) {
+					if (i == MarkHandlers.Count - 1)
+						MarkHandlers.Add (step);
 					else
-						_markAssemblySteps.Insert (i + 1, step);
+						MarkHandlers.Insert (i + 1, step);
 					return;
 				}
 			}
@@ -155,21 +154,10 @@ namespace Mono.Linker
 
 		public void Process (LinkContext context)
 		{
-			foreach (var step in _markAssemblySteps) {
-				step.Initialize (context);
-			}
-
 			while (_steps.Count > 0) {
 				IStep step = _steps[0];
 				ProcessStep (context, step);
 				_steps.Remove (step);
-			}
-		}
-
-		public void ProcessAssembly (AssemblyDefinition assembly)
-		{
-			foreach (var step in _markAssemblySteps) {
-				step.ProcessAssembly (assembly);
 			}
 		}
 
@@ -183,9 +171,13 @@ namespace Mono.Linker
 			return _steps.ToArray ();
 		}
 
-		public IMarkAssemblyStep[] GetMarkAssemblySteps ()
+		public void InitializeMarkHandlers (LinkContext context, MarkContext markContext)
 		{
-			return _markAssemblySteps.ToArray ();
+			while (MarkHandlers.Count > 0) {
+				IMarkHandler markHandler = MarkHandlers[0];
+				markHandler.Initialize (context, markContext);
+				MarkHandlers.Remove (markHandler);
+			}
 		}
 
 		public bool ContainsStep (Type type)
