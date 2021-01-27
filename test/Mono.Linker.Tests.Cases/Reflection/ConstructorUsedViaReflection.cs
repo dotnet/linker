@@ -10,54 +10,178 @@ namespace Mono.Linker.Tests.Cases.Reflection
 	{
 		public static void Main ()
 		{
-			TestWithIntegerParameter ();
-			TestWithBindingFlags ();
-			TestWithUnknownBindingFlags (BindingFlags.Public);
-			TestWithCallingConvention ();
+			GetConstructor_Types.TestConstructorWithTypes ();
+			GetConstructor_BindingAttr_Binder_Types_Modifiers.TestWithBindingFlags ();
+			GetConstructor_BindingAttr_Binder_Types_Modifiers.TestWithUnknownBindingFlags (BindingFlags.Public);
+			GetConstructor_BindingAttr_Binder_CallConvention_Types_Modifiers.TestWithCallingConvention ();
+#if NETCOREAPP
+			GetConstructor_BindingAttr_Types.TestWithBindingFlagsAndTypes ();
+#endif
 			TestNullType ();
 			TestDataFlowType ();
-			TestIfElse (true);
+			IfElse.TestIfElse (true);
 		}
 
-		[RecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetConstructor), new Type[] { typeof (Type[]) },
-			typeof (IntegerParameterConstructor), ".ctor", new Type[0])]
 		[Kept]
-		static void TestWithIntegerParameter ()
+		private class GetConstructor_Types
 		{
-			var constructor = typeof (IntegerParameterConstructor).GetConstructor (new Type[] { typeof (int) });
-			constructor.Invoke (null, new object[] { });
+			[Kept]
+			public GetConstructor_Types ()
+			{ }
+
+			[Kept]
+			public GetConstructor_Types (int i)
+			{ }
+
+			private GetConstructor_Types (string foo)
+			{ }
+
+			protected GetConstructor_Types (string foo, string bar)
+			{ }
+
+			[Kept]
+			[RecognizedReflectionAccessPattern (
+				typeof (Type), nameof (Type.GetConstructor), new Type[] { typeof (Type[]) },
+				typeof (GetConstructor_Types), ".ctor", new Type[0])]
+			public static void TestConstructorWithTypes ()
+			{
+				var constructor = typeof (GetConstructor_Types).GetConstructor (new Type[] { typeof (int) });
+				constructor.Invoke (null, new object[] { });
+			}
 		}
 
-		[RecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetConstructor), new Type[] { typeof (BindingFlags), typeof (Binder), typeof (Type[]), typeof (ParameterModifier[]) },
-			typeof (OnlyUsedViaReflection), ".ctor", new Type[0])]
 		[Kept]
-		static void TestWithBindingFlags ()
+		class GetConstructor_BindingAttr_Binder_Types_Modifiers
 		{
-			var constructor = typeof (OnlyUsedViaReflection).GetConstructor (BindingFlags.Public, GetNullValue ("some argument", 2, 3), new Type[] { }, new ParameterModifier[] { });
-			constructor.Invoke (null, new object[] { });
+			[Kept]
+			class KnownBindingFlags
+			{
+				[Kept]
+				public KnownBindingFlags ()
+				{ }
+
+				[Kept]
+				public KnownBindingFlags (string bar)
+				{ }
+
+				private KnownBindingFlags (int foo)
+				{ }
+
+				protected KnownBindingFlags (int foo, int bar)
+				{ }
+
+				internal KnownBindingFlags (int foo, int bar, int baz)
+				{ }
+			}
+
+			[Kept]
+			[RecognizedReflectionAccessPattern (
+				typeof (Type), nameof (Type.GetConstructor), new Type[] { typeof (BindingFlags), typeof (Binder), typeof (Type[]), typeof (ParameterModifier[]) },
+				typeof (KnownBindingFlags), ".ctor", new Type[0])]
+			public static void TestWithBindingFlags ()
+			{
+				var constructor = typeof (KnownBindingFlags).GetConstructor (BindingFlags.Public, GetNullValue ("some argument", 2, 3), new Type[] { }, new ParameterModifier[] { });
+				constructor.Invoke (null, new object[] { });
+			}
+
+			[Kept]
+			class UnknownBindingFlags
+			{
+				[Kept]
+				public UnknownBindingFlags ()
+				{ }
+
+				[Kept]
+				public UnknownBindingFlags (string bar)
+				{ }
+
+				[Kept]
+				private UnknownBindingFlags (int foo)
+				{ }
+
+				[Kept]
+				protected UnknownBindingFlags (int foo, int bar)
+				{ }
+
+				[Kept]
+				internal UnknownBindingFlags (int foo, int bar, int baz)
+				{ }
+			}
+
+			[Kept]
+			[RecognizedReflectionAccessPattern (typeof (Type), nameof (Type.GetConstructor), new Type[] { typeof (BindingFlags), typeof (Binder), typeof (Type[]), typeof (ParameterModifier[]) },
+					typeof (UnknownBindingFlags), ".ctor", new Type[0])]
+			public static void TestWithUnknownBindingFlags (BindingFlags bindingFlags)
+			{
+				// Since the binding flags are not known linker should mark all constructors on the type
+				var constructor = typeof (UnknownBindingFlags).GetConstructor (bindingFlags, GetNullValue ("some argument", 2, 3), new Type[] { }, new ParameterModifier[] { });
+				constructor.Invoke (null, new object[] { });
+			}
 		}
 
-		[RecognizedReflectionAccessPattern (typeof (Type), nameof (Type.GetConstructor), new Type[] { typeof (BindingFlags), typeof (Binder), typeof (Type[]), typeof (ParameterModifier[]) },
-			typeof (UnknownBindingFlags), ".ctor", new Type[0])]
 		[Kept]
-		static void TestWithUnknownBindingFlags (BindingFlags bindingFlags)
+		class GetConstructor_BindingAttr_Binder_CallConvention_Types_Modifiers
 		{
-			// Since the binding flags are not known linker should mark all constructors on the type
-			var constructor = typeof (UnknownBindingFlags).GetConstructor (bindingFlags, GetNullValue ("some argument", 2, 3), new Type[] { }, new ParameterModifier[] { });
-			constructor.Invoke (null, new object[] { });
+			[Kept]
+			public GetConstructor_BindingAttr_Binder_CallConvention_Types_Modifiers ()
+			{ }
+
+			[Kept]
+			public GetConstructor_BindingAttr_Binder_CallConvention_Types_Modifiers (string bar)
+			{ }
+
+			private GetConstructor_BindingAttr_Binder_CallConvention_Types_Modifiers (int foo)
+			{ }
+
+			protected GetConstructor_BindingAttr_Binder_CallConvention_Types_Modifiers (int foo, int bar)
+			{ }
+
+			internal GetConstructor_BindingAttr_Binder_CallConvention_Types_Modifiers (int foo, int bar, int baz)
+			{ }
+
+			[Kept]
+			[RecognizedReflectionAccessPattern (
+				typeof (Type), nameof (Type.GetConstructor), new Type[] { typeof (BindingFlags), typeof (Binder), typeof (CallingConventions), typeof (Type[]), typeof (ParameterModifier[]) },
+				typeof (GetConstructor_BindingAttr_Binder_CallConvention_Types_Modifiers), ".ctor", new Type[0])]
+			public static void TestWithCallingConvention ()
+			{
+				var constructor = typeof (GetConstructor_BindingAttr_Binder_CallConvention_Types_Modifiers).GetConstructor (BindingFlags.Public, GetNullValue ("some argument", 2, 3), CallingConventions.HasThis, new Type[] { }, new ParameterModifier[] { });
+				constructor.Invoke (null, new object[] { });
+			}
 		}
 
-		[RecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetConstructor), new Type[] { typeof (BindingFlags), typeof (Binder), typeof (CallingConventions), typeof (Type[]), typeof (ParameterModifier[]) },
-			typeof (CallingConventionConstructor), ".ctor", new Type[0])]
+#if NETCOREAPP
 		[Kept]
-		static void TestWithCallingConvention ()
+		class GetConstructor_BindingAttr_Types
 		{
-			var constructor = typeof (CallingConventionConstructor).GetConstructor (BindingFlags.Public, GetNullValue ("some argument", 2, 3), CallingConventions.HasThis, new Type[] { }, new ParameterModifier[] { });
-			constructor.Invoke (null, new object[] { });
+			[Kept]
+			public GetConstructor_BindingAttr_Types ()
+			{ }
+
+			[Kept]
+			public GetConstructor_BindingAttr_Types (string bar)
+			{ }
+
+			private GetConstructor_BindingAttr_Types (int foo)
+			{ }
+
+			protected GetConstructor_BindingAttr_Types (int foo, int bar)
+			{ }
+
+			internal GetConstructor_BindingAttr_Types (int foo, int bar, int baz)
+			{ }
+
+			[Kept]
+			[RecognizedReflectionAccessPattern (
+				typeof (Type), nameof (Type.GetConstructor), new Type[] { typeof (BindingFlags), typeof (Type[]) },
+				typeof (GetConstructor_BindingAttr_Types), ".ctor", new Type[0])]
+			public static void TestWithBindingFlagsAndTypes ()
+			{
+				var constructor = typeof (GetConstructor_BindingAttr_Types).GetConstructor (BindingFlags.Public, new Type[] { });
+				constructor.Invoke (null, new object[] { });
+			}
 		}
+#endif
 
 		[Kept]
 		static void TestNullType ()
@@ -82,154 +206,74 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[RecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetConstructor), new Type[] { typeof (BindingFlags), typeof (Binder), typeof (Type[]), typeof (ParameterModifier[]) },
-			typeof (IfConstructor), ".ctor", new Type[0])]
-		[RecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetConstructor), new Type[] { typeof (BindingFlags), typeof (Binder), typeof (Type[]), typeof (ParameterModifier[]) },
-			typeof (ElseConstructor), ".ctor", new Type[0])]
-		static void TestIfElse (bool decision)
+		class IfElse
 		{
-			Type myType;
-			if (decision) {
-				myType = typeof (IfConstructor);
-			} else {
-				myType = typeof (ElseConstructor);
+			[Kept]
+			private class IfConstructor
+			{
+				[Kept]
+				public IfConstructor ()
+				{ }
+
+				[Kept]
+				public IfConstructor (int foo)
+				{ }
+
+				private IfConstructor (string foo)
+				{ }
+
+				protected IfConstructor (int foo, int bar)
+				{ }
+
+				internal IfConstructor (int foo, string bar)
+				{ }
 			}
-			var constructor = myType.GetConstructor (BindingFlags.Public, null, new Type[] { }, null);
-			constructor.Invoke (null, new object[] { });
+
+			[Kept]
+			private class ElseConstructor
+			{
+				[Kept]
+				public ElseConstructor ()
+				{ }
+
+				[Kept]
+				public ElseConstructor (int foo)
+				{ }
+
+				private ElseConstructor (string foo)
+				{ }
+
+				protected ElseConstructor (int foo, int bar)
+				{ }
+
+				internal ElseConstructor (int foo, string bar)
+				{ }
+			}
+
+			[Kept]
+			[RecognizedReflectionAccessPattern (
+				typeof (Type), nameof (Type.GetConstructor), new Type[] { typeof (BindingFlags), typeof (Binder), typeof (Type[]), typeof (ParameterModifier[]) },
+				typeof (IfConstructor), ".ctor", new Type[0])]
+			[RecognizedReflectionAccessPattern (
+				typeof (Type), nameof (Type.GetConstructor), new Type[] { typeof (BindingFlags), typeof (Binder), typeof (Type[]), typeof (ParameterModifier[]) },
+				typeof (ElseConstructor), ".ctor", new Type[0])]
+			public static void TestIfElse (bool decision)
+			{
+				Type myType;
+				if (decision) {
+					myType = typeof (IfConstructor);
+				} else {
+					myType = typeof (ElseConstructor);
+				}
+				var constructor = myType.GetConstructor (BindingFlags.Public, null, new Type[] { }, null);
+				constructor.Invoke (null, new object[] { });
+			}
 		}
 
 		[Kept]
 		static Binder GetNullValue (string str, int i, long g)
 		{
 			return null;
-		}
-
-		[Kept]
-		private class IntegerParameterConstructor
-		{
-			[Kept]
-			public IntegerParameterConstructor ()
-			{ }
-
-			[Kept]
-			public IntegerParameterConstructor (int i)
-			{ }
-
-			private IntegerParameterConstructor (string foo)
-			{ }
-
-			protected IntegerParameterConstructor (string foo, string bar)
-			{ }
-		}
-
-		[Kept]
-		private class OnlyUsedViaReflection
-		{
-			[Kept]
-			public OnlyUsedViaReflection ()
-			{ }
-
-			[Kept]
-			public OnlyUsedViaReflection (string bar)
-			{ }
-
-			private OnlyUsedViaReflection (int foo)
-			{ }
-
-			protected OnlyUsedViaReflection (int foo, int bar)
-			{ }
-
-			internal OnlyUsedViaReflection (int foo, int bar, int baz)
-			{ }
-		}
-
-		[Kept]
-		private class UnknownBindingFlags
-		{
-			[Kept]
-			public UnknownBindingFlags ()
-			{ }
-
-			[Kept]
-			public UnknownBindingFlags (string bar)
-			{ }
-
-			[Kept]
-			private UnknownBindingFlags (int foo)
-			{ }
-
-			[Kept]
-			protected UnknownBindingFlags (int foo, int bar)
-			{ }
-
-			[Kept]
-			internal UnknownBindingFlags (int foo, int bar, int baz)
-			{ }
-		}
-
-		[Kept]
-		private class CallingConventionConstructor
-		{
-			[Kept]
-			public CallingConventionConstructor ()
-			{ }
-
-			[Kept]
-			public CallingConventionConstructor (string bar)
-			{ }
-
-			private CallingConventionConstructor (int foo)
-			{ }
-
-			protected CallingConventionConstructor (int foo, int bar)
-			{ }
-
-			internal CallingConventionConstructor (int foo, int bar, int baz)
-			{ }
-		}
-
-		[Kept]
-		private class IfConstructor
-		{
-			[Kept]
-			public IfConstructor ()
-			{ }
-
-			[Kept]
-			public IfConstructor (int foo)
-			{ }
-
-			private IfConstructor (string foo)
-			{ }
-
-			protected IfConstructor (int foo, int bar)
-			{ }
-
-			internal IfConstructor (int foo, string bar)
-			{ }
-		}
-
-		[Kept]
-		private class ElseConstructor
-		{
-			[Kept]
-			public ElseConstructor ()
-			{ }
-
-			[Kept]
-			public ElseConstructor (int foo)
-			{ }
-
-			private ElseConstructor (string foo)
-			{ }
-
-			protected ElseConstructor (int foo, int bar)
-			{ }
-
-			internal ElseConstructor (int foo, string bar)
-			{ }
 		}
 	}
 }

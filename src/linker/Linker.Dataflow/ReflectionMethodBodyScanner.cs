@@ -353,6 +353,7 @@ namespace Mono.Linker.Dataflow
 					=> IntrinsicId.Type_GetType,
 
 				// System.Type.GetConstructor (Type[])
+				// System.Type.GetConstructor (BindingFlags, Type[])
 				// System.Type.GetConstructor (BindingFlags, Binder, Type[], ParameterModifier [])
 				// System.Type.GetConstructor (BindingFlags, Binder, CallingConventions, Type[], ParameterModifier [])
 				"GetConstructor" when calledMethod.IsDeclaredOnType ("System", "Type")
@@ -370,8 +371,9 @@ namespace Mono.Linker.Dataflow
 				// System.Type.GetMethod (string, BindingFlags)
 				// System.Type.GetMethod (string, Type[])
 				// System.Type.GetMethod (string, Type[], ParameterModifier[])
-				// System.Type.GetMethod (string, BindingFlags, Binder, Type[], ParameterModifier[]) 6
-				// System.Type.GetMethod (string, BindingFlags, Binder, CallingConventions, Type[], ParameterModifier[]) 7
+				// System.Type.GetMethod (string, BindingFlags, Binder, Type[])
+				// System.Type.GetMethod (string, BindingFlags, Binder, Type[], ParameterModifier[])
+				// System.Type.GetMethod (string, BindingFlags, Binder, CallingConventions, Type[], ParameterModifier[])
 				// System.Type.GetMethod (string, int, Type[])
 				// System.Type.GetMethod (string, int, Type[], ParameterModifier[]?)
 				// System.Type.GetMethod (string, int, BindingFlags, Binder?, Type[], ParameterModifier[]?)
@@ -983,6 +985,7 @@ namespace Mono.Linker.Dataflow
 
 				//
 				// GetConstructor (Type[])
+				// GetConstructor (BindingFlags, Type[])
 				// GetConstructor (BindingFlags, Binder, Type[], ParameterModifier [])
 				// GetConstructor (BindingFlags, Binder, CallingConventions, Type[], ParameterModifier [])
 				//
@@ -1030,6 +1033,7 @@ namespace Mono.Linker.Dataflow
 				// GetMethod (string, BindingFlags)
 				// GetMethod (string, Type[])
 				// GetMethod (string, Type[], ParameterModifier[])
+				// GetMethod (string, BindingFlags, Binder, Type[])
 				// GetMethod (string, BindingFlags, Binder, Type[], ParameterModifier[])
 				// GetMethod (string, BindingFlags, Binder, CallingConventions, Type[], ParameterModifier[])
 				// GetMethod (string, int, Type[])
