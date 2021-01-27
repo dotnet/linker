@@ -19,6 +19,8 @@ namespace Mono.Linker.Steps
 		{
 		}
 
+		MemberActionStore MemberActions => Annotations.MemberActions;
+
 		protected override void Process ()
 		{
 			ProcessXml (Context.StripSubstitutions, Context.IgnoreSubstitutions);
@@ -81,7 +83,7 @@ namespace Mono.Linker.Steps
 			string action = GetAttribute (iterator.Current, "body");
 			switch (action) {
 			case "remove":
-				Annotations.SetAction (method, MethodAction.ConvertToThrow);
+				MemberActions.SetAction (method, MethodAction.ConvertToThrow);
 				return;
 			case "stub":
 				string value = GetAttribute (iterator.Current, "value");
@@ -91,10 +93,10 @@ namespace Mono.Linker.Steps
 						return;
 					}
 
-					Annotations.SetMethodStubValue (method, res);
+					MemberActions.SetMethodStubValue (method, res);
 				}
 
-				Annotations.SetAction (method, MethodAction.ConvertToStub);
+				MemberActions.SetAction (method, MethodAction.ConvertToStub);
 				return;
 			default:
 				Context.LogWarning ($"Unknown body modification '{action}' for '{method.GetDisplayName ()}'", 2011, _xmlDocumentLocation);
@@ -129,11 +131,11 @@ namespace Mono.Linker.Steps
 				return;
 			}
 
-			Annotations.SetFieldValue (field, res);
+			MemberActions.SetFieldValue (field, res);
 
 			string init = GetAttribute (iterator.Current, "initialize");
 			if (init?.ToLowerInvariant () == "true") {
-				Annotations.SetSubstitutedInit (field);
+				MemberActions.SetSubstitutedInit (field);
 			}
 		}
 

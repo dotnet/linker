@@ -2544,7 +2544,7 @@ namespace Mono.Linker.Steps
 				return null;
 			}
 
-			if (GetMethodAction (method) == MethodAction.Nothing)
+			if (Annotations.GetAction (method) == MethodAction.Nothing)
 				Annotations.SetAction (method, MethodAction.Parse);
 
 			EnqueueMethod (method, reason);
@@ -2593,15 +2593,6 @@ namespace Mono.Linker.Steps
 
 				_context.LogWarning (message, 2026, origin, MessageSubCategory.TrimAnalysis);
 			}
-		}
-
-		MethodAction GetMethodAction (MethodDefinition method)
-		{
-			var assembly = method.DeclaringType.Module.Assembly;
-			if (!Annotations.ProcessedSubstitutionXml (assembly))
-				EmbeddedXmlInfo.ProcessSubstitutions (assembly, _context);
-
-			return Annotations.GetAction (method);
 		}
 
 		protected (MethodReference, DependencyInfo) GetOriginalMethod (MethodReference method, DependencyInfo reason, IMemberDefinition sourceLocationMember)
@@ -2799,7 +2790,7 @@ namespace Mono.Linker.Steps
 
 		void MarkNewCodeDependencies (MethodDefinition method)
 		{
-			switch (GetMethodAction (method)) {
+			switch (Annotations.GetAction (method)) {
 			case MethodAction.ConvertToStub:
 				if (!method.IsInstanceConstructor ())
 					return;
@@ -3012,7 +3003,7 @@ namespace Mono.Linker.Steps
 			if (!method.HasBody)
 				return false;
 
-			switch (GetMethodAction (method)) {
+			switch (Annotations.GetAction (method)) {
 			case MethodAction.ForceParse:
 				return true;
 			case MethodAction.Parse:
