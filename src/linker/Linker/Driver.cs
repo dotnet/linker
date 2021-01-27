@@ -649,8 +649,6 @@ namespace Mono.Linker
 			if (_needAddBypassNGenStep)
 				p.AddStepAfter (typeof (SweepStep), new AddBypassNGenStep ());
 
-			p.AddStepBefore (typeof (MarkStep), new MarkExportedTypesTargetStep ());
-
 			p.AddStepBefore (typeof (OutputStep), new SealerStep ());
 
 			//
@@ -659,7 +657,6 @@ namespace Mono.Linker
 			// RootAssemblyInputStep or ResolveFromXmlStep [at least one of them]
 			// LinkAttributesStep [optional, possibly many]
 			// BodySubstituterStep [optional]
-			// MarkExportedTypesTargetStep
 			// MarkStep
 			// ReflectionBlockedStep [optional]
 			// ProcessWarningsStep

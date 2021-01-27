@@ -6,14 +6,18 @@ using Mono.Cecil;
 
 namespace Mono.Linker.Steps
 {
-	public class MarkExportedTypesTargetStep : BaseStep
+	public class MarkExportedTypesTargetStep : BasePerAssemblyStep
 	{
-		protected override void ProcessAssembly (AssemblyDefinition assembly)
+		public MarkExportedTypesTargetStep (AssemblyDefinition assembly, LinkContext context) : base (assembly, context)
 		{
-			if (!assembly.MainModule.HasExportedTypes)
+		}
+
+		public override void Process ()
+		{
+			if (!_assembly.MainModule.HasExportedTypes)
 				return;
 
-			foreach (var type in assembly.MainModule.ExportedTypes)
+			foreach (var type in _assembly.MainModule.ExportedTypes)
 				InitializeExportedType (type);
 		}
 

@@ -1332,6 +1332,8 @@ namespace Mono.Linker.Steps
 			// Security attributes do not respect the attributes XML
 			if (_context.StripSecurity)
 				new RemoveSecurityStep (assembly, _context).Process ();
+
+			new MarkExportedTypesTargetStep (assembly, _context).Process ();
 		}
 
 		void ProcessModuleType (AssemblyDefinition assembly)
