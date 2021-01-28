@@ -292,6 +292,7 @@ namespace Mono.Linker.Steps
 
 			if (type.HasMethods) {
 				foreach (MethodDefinition method in type.Methods) {
+					Annotations.SetAction (method, MethodAction.ForceParse);
 					MarkMethod (method, new DependencyInfo (reason.Kind == DependencyKind.AccessedViaReflection ? reason.Kind : DependencyKind.MemberOfType, type), new MessageOrigin (reason.Source as IMemberDefinition));
 				}
 			}
