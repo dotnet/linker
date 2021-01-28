@@ -244,12 +244,12 @@ namespace Mono.Linker.Steps
 			return false;
 		}
 
-		internal void MarkEntireType (TypeDefinition type, bool includeBaseTypes, in DependencyInfo reason, IMemberDefinition sourceLocationMember)
+		internal void MarkEntireType (TypeDefinition type, bool includeBaseTypes, bool includeInterfaceTypes, in DependencyInfo reason, IMemberDefinition sourceLocationMember)
 		{
-			MarkEntireTypeInternal (type, includeBaseTypes, reason, sourceLocationMember, new HashSet<TypeDefinition> ());
+			MarkEntireTypeInternal (type, includeBaseTypes, includeInterfaceTypes, reason, sourceLocationMember, new HashSet<TypeDefinition> ());
 		}
 
-		private void MarkEntireTypeInternal (TypeDefinition type, bool includeBaseTypes, in DependencyInfo reason, IMemberDefinition sourceLocationMember, HashSet<TypeDefinition> typesAlreadyVisited)
+		private void MarkEntireTypeInternal (TypeDefinition type, bool includeBaseTypes, bool includeInterfaceTypes, in DependencyInfo reason, IMemberDefinition sourceLocationMember, HashSet<TypeDefinition> typesAlreadyVisited)
 		{
 #if DEBUG
 			if (!_entireTypeReasons.Contains (reason.Kind))
@@ -261,23 +261,24 @@ namespace Mono.Linker.Steps
 
 			if (type.HasNestedTypes) {
 				foreach (TypeDefinition nested in type.NestedTypes)
-					MarkEntireTypeInternal (nested, includeBaseTypes, GetDependencyInfo (nested, reason), type, typesAlreadyVisited);
+					MarkEntireTypeInternal (nested, includeBaseTypes, includeInterfaceTypes, new DependencyInfo (DependencyKind.NestedType, type), type, typesAlreadyVisited);
 			}
 
 			Annotations.Mark (type, reason);
 			var baseTypeDefinition = type.BaseType?.Resolve ();
 			if (includeBaseTypes && baseTypeDefinition != null) {
-				MarkEntireTypeInternal (baseTypeDefinition, includeBaseTypes: true, GetDependencyInfo (baseTypeDefinition, reason), type, typesAlreadyVisited);
+				MarkEntireTypeInternal (baseTypeDefinition, includeBaseTypes: true, includeInterfaceTypes, new DependencyInfo (DependencyKind.BaseType, type), type, typesAlreadyVisited);
 			}
-			MarkCustomAttributes (type, new DependencyInfo (reason.Kind == DependencyKind.AccessedViaReflection ? reason.Kind : DependencyKind.CustomAttribute, type), type);
+			MarkCustomAttributes (type, new DependencyInfo (DependencyKind.CustomAttribute, type), type);
 			MarkTypeSpecialCustomAttributes (type);
 
 			if (type.HasInterfaces) {
 				foreach (InterfaceImplementation iface in type.Interfaces) {
-					if (reason.Kind == DependencyKind.AccessedViaReflection)
-						MarkEntireTypeInternal (iface.InterfaceType.Resolve (), includeBaseTypes: true, reason, type, typesAlreadyVisited);
-					else
-						MarkInterfaceImplementation (iface, type);
+					var interfaceTypeDefinition = iface.InterfaceType.Resolve ();
+					if (includeInterfaceTypes && interfaceTypeDefinition != null)
+						MarkEntireTypeInternal (interfaceTypeDefinition, includeBaseTypes, includeInterfaceTypes: true, new DependencyInfo (reason.Kind, type), type, typesAlreadyVisited);
+
+					MarkInterfaceImplementation (iface, type);
 				}
 			}
 
@@ -285,52 +286,26 @@ namespace Mono.Linker.Steps
 
 			if (type.HasFields) {
 				foreach (FieldDefinition field in type.Fields) {
-					MarkField (field, GetDependencyInfo (field, reason));
+					MarkField (field, new DependencyInfo (DependencyKind.MemberOfType, type));
 				}
 			}
 
 			if (type.HasMethods) {
 				foreach (MethodDefinition method in type.Methods) {
-					// Probably redundant since we EnqueueMethod below anyway.
-					Annotations.Mark (method, GetDependencyInfo (method, reason));
-					Annotations.SetAction (method, MethodAction.ForceParse);
-					EnqueueMethod (method, GetDependencyInfo (method, reason));
+					MarkMethod (method, new DependencyInfo (reason.Kind == DependencyKind.AccessedViaReflection ? reason.Kind : DependencyKind.MemberOfType, type), new MessageOrigin (reason.Source as IMemberDefinition));
 				}
 			}
 
 			if (type.HasProperties) {
 				foreach (var property in type.Properties) {
-					MarkProperty (property, GetDependencyInfo (property, reason));
+					MarkProperty (property, new DependencyInfo (DependencyKind.MemberOfType, type));
 				}
 			}
 
 			if (type.HasEvents) {
 				foreach (var ev in type.Events) {
-					MarkEvent (ev, GetDependencyInfo (ev, reason));
+					MarkEvent (ev, new DependencyInfo (DependencyKind.MemberOfType, type));
 				}
-			}
-
-			DependencyInfo GetDependencyInfo (IMemberDefinition member, DependencyInfo reason)
-			{
-				if (reason.Kind == DependencyKind.AccessedViaReflection)
-					return reason;
-
-				switch (member.MetadataToken.TokenType) {
-				case Cecil.TokenType.TypeDef:
-					var typeDef = member as TypeDefinition;
-					if (typeDef.BaseType == type)
-						return new DependencyInfo (DependencyKind.NestedType, type);
-
-					return new DependencyInfo (DependencyKind.BaseType, type);
-
-				case Cecil.TokenType.Event:
-				case Cecil.TokenType.Property:
-				case Cecil.TokenType.Method:
-				case Cecil.TokenType.Field:
-					return new DependencyInfo (DependencyKind.MemberOfType, type);
-				}
-
-				throw new InternalErrorException ($"Unsupported member token type '{member.MetadataToken.TokenType}'.");
 			}
 		}
 
@@ -843,7 +818,7 @@ namespace Mono.Linker.Steps
 					MarkMethodsIf (@event.OtherMethods, m => true, reason, sourceLocationMember);
 					break;
 				case null:
-					MarkEntireType (typeDefinition, includeBaseTypes: true, reason, sourceLocationMember);
+					MarkEntireType (typeDefinition, includeBaseTypes: true, includeInterfaceTypes: true, reason, sourceLocationMember);
 					break;
 				}
 			}
@@ -914,7 +889,7 @@ namespace Mono.Linker.Steps
 			}
 
 			if (member == "*") {
-				MarkEntireType (td, includeBaseTypes: false, new DependencyInfo (DependencyKind.PreservedDependency, ca), sourceLocationMember);
+				MarkEntireType (td, includeBaseTypes: false, includeInterfaceTypes: false, new DependencyInfo (DependencyKind.PreservedDependency, ca), sourceLocationMember);
 				return;
 			}
 
@@ -1296,7 +1271,7 @@ namespace Mono.Linker.Steps
 			}
 
 			foreach (TypeDefinition type in assembly.MainModule.Types)
-				MarkEntireType (type, includeBaseTypes: false, new DependencyInfo (DependencyKind.TypeInAssembly, assembly), null);
+				MarkEntireType (type, includeBaseTypes: false, includeInterfaceTypes: false, new DependencyInfo (DependencyKind.TypeInAssembly, assembly), null);
 		}
 
 		void ProcessModuleType (AssemblyDefinition assembly)
@@ -2650,8 +2625,6 @@ namespace Mono.Linker.Steps
 
 			if (method.IsVirtual) {
 				_virtual_methods.Add (method);
-				if (reason.Kind == DependencyKind.AccessedViaReflection)
-					ProcessRequiresUnreferencedCode (method, new MessageOrigin (reason.Source as IMemberDefinition), reason.Kind);
 			}
 
 			MarkNewCodeDependencies (method);
