@@ -51,7 +51,7 @@ namespace Mono.Linker.Steps
 		protected Queue<AttributeProviderPair> _assemblyLevelAttributes;
 		protected Queue<(AttributeProviderPair, DependencyInfo, IMemberDefinition)> _lateMarkedAttributes;
 		protected List<TypeDefinition> _typesWithInterfaces;
-		protected bool _dynamicInterfaceCastableImplementationTypesDiscovered;
+		protected HashSet<AssemblyDefinition> _dynamicInterfaceCastableImplementationTypesDiscovered;
 		protected List<TypeDefinition> _dynamicInterfaceCastableImplementationTypes;
 		protected List<MethodBody> _unreachableBodies;
 
@@ -178,7 +178,7 @@ namespace Mono.Linker.Steps
 			_assemblyLevelAttributes = new Queue<AttributeProviderPair> ();
 			_lateMarkedAttributes = new Queue<(AttributeProviderPair, DependencyInfo, IMemberDefinition)> ();
 			_typesWithInterfaces = new List<TypeDefinition> ();
-			_dynamicInterfaceCastableImplementationTypesDiscovered = false;
+			_dynamicInterfaceCastableImplementationTypesDiscovered = new HashSet<AssemblyDefinition> ();
 			_dynamicInterfaceCastableImplementationTypes = new List<TypeDefinition> ();
 			_unreachableBodies = new List<MethodBody> ();
 			_pending_isinst_instr = new List<(TypeDefinition, MethodBody, Instruction)> ();
@@ -534,15 +534,15 @@ namespace Mono.Linker.Steps
 
 		void DiscoverDynamicCastableImplementationInterfaces ()
 		{
-			Debug.Assert (!_dynamicInterfaceCastableImplementationTypesDiscovered);
-
-			foreach (var assembly in _context.GetAssemblies ()) {
+			foreach (var assembly in _context.GetReferencedAssemblies ().ToArray ()) {
 				switch (Annotations.GetAction (assembly)) {
 				// We only need to search assemblies where we don't mark everything
 				// Assemblies that are fully marked already mark these types.
 				case AssemblyAction.Link:
 				case AssemblyAction.AddBypassNGen:
 				case AssemblyAction.AddBypassNGenUsed:
+					if (!_dynamicInterfaceCastableImplementationTypesDiscovered.Add (assembly))
+						continue;
 
 					foreach (TypeDefinition type in assembly.MainModule.Types)
 						CheckIfTypeOrNestedTypesIsDynamicCastableImplementation (type);
@@ -550,8 +550,6 @@ namespace Mono.Linker.Steps
 					break;
 				}
 			}
-
-			_dynamicInterfaceCastableImplementationTypesDiscovered = true;
 
 			void CheckIfTypeOrNestedTypesIsDynamicCastableImplementation (TypeDefinition type)
 			{
@@ -567,9 +565,7 @@ namespace Mono.Linker.Steps
 
 		void ProcessDynamicCastableImplementationInterfaces ()
 		{
-			if (!_dynamicInterfaceCastableImplementationTypesDiscovered) {
-				DiscoverDynamicCastableImplementationInterfaces ();
-			}
+			DiscoverDynamicCastableImplementationInterfaces ();
 
 			// We may mark an interface type later on.  Which means we need to reprocess any time with one or more interface implementations that have not been marked
 			// and if an interface type is found to be marked and implementation is not marked, then we need to mark that implementation
