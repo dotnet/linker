@@ -81,5 +81,17 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability.Dependencies
 			{
 			}
 		}
+
+		public interface IBaseInterface
+		{
+			[RequiresUnreferencedCode ("Message for --IBaseInterface.MethodInBaseInterface--")]
+			void MethodInBaseInterface ();
+		}
+
+		public interface IDerivedInterface : IBaseInterface
+		{
+			[RequiresUnreferencedCode ("Message for --IDerivedInterface.MethodInDerivedInterface--")]
+			void MethodInDerivedInterface ();
+		}
 	}
 }

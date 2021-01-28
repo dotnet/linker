@@ -17,7 +17,19 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 	[KeptAllTypesAndMembersInAssembly ("lib.dll")]
 	[SetupLinkAttributesFile ("RequiresUnreferencedCodeCapability.attributes.xml")]
 	[SkipKeptItemsValidation]
+	// Annotated members on a copied assembly should not produce any warnings
+	// unless directly called or referenced through reflection.
+	[LogDoesNotContain ("--UncalledMethod--")]
+	[LogDoesNotContain ("--getter UnusedProperty--")]
+	[LogDoesNotContain ("--setter UnusedProperty--")]
+	[LogDoesNotContain ("--UnusedBaseTypeCctor--")]
+	[LogDoesNotContain ("--UnusedVirtualMethod1--")]
+	[LogDoesNotContain ("--UnusedVirtualMethod2--")]
+	[LogDoesNotContain ("--IUnusedInterface.UnusedMethod--")]
+	[LogDoesNotContain ("--UnusedImplementationClass.UnusedMethod--")]
 	[ExpectedWarning ("IL2026", "--DynamicallyAccessedTypeWithRequiresUnreferencedCode.RequiresUnreferencedCode--")]
+	[ExpectedWarning ("IL2026", "--IDerivedInterface.MethodInDerivedInterface--")]
+	[ExpectedWarning ("IL2026", "--IBaseInterface.MethodInBaseInterface--")]
 	public class RequiresUnreferencedCodeCapability
 	{
 		public static void Main ()
@@ -38,6 +50,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			TestCovariantReturnCallOnDerived ();
 			TestRequiresInMethodFromCopiedAssembly ();
 			TestRequiresThroughReflectionInMethodFromCopiedAssembly ();
+			TestRequiresInDynamicallyAccessedMethodFromCopiedAssembly (typeof (RequiresUnreferencedCodeInCopyAssembly.IDerivedInterface));
 		}
 
 		[ExpectedWarning ("IL2026", "--RequiresWithMessageOnly--")]
@@ -292,6 +305,11 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			typeof (RequiresUnreferencedCodeInCopyAssembly)
 				.GetMethod ("MethodCalledThroughReflection", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)
 				.Invoke (null, new object[0]);
+		}
+
+		static void TestRequiresInDynamicallyAccessedMethodFromCopiedAssembly (
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] Type type)
+		{
 		}
 	}
 }

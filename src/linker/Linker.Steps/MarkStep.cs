@@ -253,7 +253,7 @@ namespace Mono.Linker.Steps
 		{
 #if DEBUG
 			if (!_entireTypeReasons.Contains (reason.Kind))
-				throw new ArgumentOutOfRangeException ($"Internal error: unsupported type dependency {reason.Kind}");
+				throw new InternalErrorException ($"Unsupported type dependency '{reason.Kind}'.");
 #endif
 
 			if (!typesAlreadyVisited.Add (type))
@@ -261,20 +261,23 @@ namespace Mono.Linker.Steps
 
 			if (type.HasNestedTypes) {
 				foreach (TypeDefinition nested in type.NestedTypes)
-					MarkEntireTypeInternal (nested, includeBaseTypes, new DependencyInfo (DependencyKind.NestedType, type), type, typesAlreadyVisited);
+					MarkEntireTypeInternal (nested, includeBaseTypes, GetDependencyInfo (nested, reason), type, typesAlreadyVisited);
 			}
 
 			Annotations.Mark (type, reason);
 			var baseTypeDefinition = type.BaseType?.Resolve ();
 			if (includeBaseTypes && baseTypeDefinition != null) {
-				MarkEntireTypeInternal (baseTypeDefinition, includeBaseTypes: true, new DependencyInfo (DependencyKind.BaseType, type), type, typesAlreadyVisited);
+				MarkEntireTypeInternal (baseTypeDefinition, includeBaseTypes: true, GetDependencyInfo (baseTypeDefinition, reason), type, typesAlreadyVisited);
 			}
-			MarkCustomAttributes (type, new DependencyInfo (DependencyKind.CustomAttribute, type), type);
+			MarkCustomAttributes (type, new DependencyInfo (reason.Kind == DependencyKind.AccessedViaReflection ? reason.Kind : DependencyKind.CustomAttribute, type), type);
 			MarkTypeSpecialCustomAttributes (type);
 
 			if (type.HasInterfaces) {
 				foreach (InterfaceImplementation iface in type.Interfaces) {
-					MarkInterfaceImplementation (iface, type);
+					if (reason.Kind == DependencyKind.AccessedViaReflection)
+						MarkEntireTypeInternal (iface.InterfaceType.Resolve(), includeBaseTypes: true, reason, type, typesAlreadyVisited);
+					else
+						MarkInterfaceImplementation (iface, type);
 				}
 			}
 
@@ -282,29 +285,52 @@ namespace Mono.Linker.Steps
 
 			if (type.HasFields) {
 				foreach (FieldDefinition field in type.Fields) {
-					MarkField (field, new DependencyInfo (DependencyKind.MemberOfType, type));
+					MarkField (field, GetDependencyInfo (field, reason));
 				}
 			}
 
 			if (type.HasMethods) {
 				foreach (MethodDefinition method in type.Methods) {
 					// Probably redundant since we EnqueueMethod below anyway.
-					Annotations.Mark (method, new DependencyInfo (DependencyKind.MemberOfType, type));
+					Annotations.Mark (method, GetDependencyInfo (method, reason));
 					Annotations.SetAction (method, MethodAction.ForceParse);
-					EnqueueMethod (method, new DependencyInfo (DependencyKind.MemberOfType, type));
+					EnqueueMethod (method, GetDependencyInfo (method, reason));
 				}
 			}
 
 			if (type.HasProperties) {
 				foreach (var property in type.Properties) {
-					MarkProperty (property, new DependencyInfo (DependencyKind.MemberOfType, type));
+					MarkProperty (property, GetDependencyInfo (property, reason));
 				}
 			}
 
 			if (type.HasEvents) {
 				foreach (var ev in type.Events) {
-					MarkEvent (ev, new DependencyInfo (DependencyKind.MemberOfType, type));
+					MarkEvent (ev, GetDependencyInfo (ev, reason));
 				}
+			}
+
+			DependencyInfo GetDependencyInfo (IMemberDefinition member, DependencyInfo reason)
+			{
+				if (reason.Kind == DependencyKind.AccessedViaReflection)
+					return reason;
+
+				switch (member.MetadataToken.TokenType) {
+				case Cecil.TokenType.TypeDef:
+					var typeDef = member as TypeDefinition;
+					if (typeDef.BaseType == type)
+						return new DependencyInfo (DependencyKind.NestedType, type);
+
+					return new DependencyInfo (DependencyKind.BaseType, type);
+
+				case Cecil.TokenType.Event:
+				case Cecil.TokenType.Property:
+				case Cecil.TokenType.Method:
+				case Cecil.TokenType.Field:
+					return new DependencyInfo (DependencyKind.MemberOfType, type);
+				}
+
+				throw new InternalErrorException ($"Unsupported member token type '{member.MetadataToken.TokenType}'.");
 			}
 		}
 
@@ -2624,8 +2650,11 @@ namespace Mono.Linker.Steps
 
 			MarkMethodSpecialCustomAttributes (method);
 
-			if (method.IsVirtual)
+			if (method.IsVirtual) {
 				_virtual_methods.Add (method);
+				if (reason.Kind == DependencyKind.AccessedViaReflection)
+					ProcessRequiresUnreferencedCode (method, new MessageOrigin (reason.Source as IMemberDefinition), reason.Kind);
+			}
 
 			MarkNewCodeDependencies (method);
 
