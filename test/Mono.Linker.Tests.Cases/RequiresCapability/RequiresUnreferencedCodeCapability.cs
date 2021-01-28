@@ -51,6 +51,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			TestRequiresInMethodFromCopiedAssembly ();
 			TestRequiresThroughReflectionInMethodFromCopiedAssembly ();
 			TestRequiresInDynamicallyAccessedMethodFromCopiedAssembly (typeof (RequiresUnreferencedCodeInCopyAssembly.IDerivedInterface));
+			TestRequiresInDynamicDependency ();
 		}
 
 		[ExpectedWarning ("IL2026", "--RequiresWithMessageOnly--")]
@@ -310,6 +311,18 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		static void TestRequiresInDynamicallyAccessedMethodFromCopiedAssembly (
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] Type type)
 		{
+		}
+
+		[RequiresUnreferencedCode ("Message for --RequiresUnreferencedCodeInDynamicDependency--")]
+		static void RequiresUnreferencedCodeInDynamicDependency ()
+		{
+		}
+
+		[ExpectedWarning ("IL2026", "--RequiresUnreferencedCodeInDynamicDependency--")]
+		[DynamicDependency ("RequiresUnreferencedCodeInDynamicDependency")]
+		static void TestRequiresInDynamicDependency ()
+		{
+			RequiresUnreferencedCodeInDynamicDependency ();
 		}
 	}
 }
