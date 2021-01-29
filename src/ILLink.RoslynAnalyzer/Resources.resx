@@ -135,10 +135,10 @@
   <data name="AvoidAssemblyGetFilesInSingleFileMessage" xml:space="preserve">
     <value>'{0}' will throw for assemblies embedded in a single-file app</value>
   </data>
-  <data name="RequiresAssemblyFilesMessage" xml:space="preserve">
-    <value />
-  </data>
   <data name="RequiresAssemblyFilesTitle" xml:space="preserve">
-    <value />
+    <value>RequiresAssemblyFilesAnalyzer</value>
+  </data>
+  <data name="RequiresAssemblyFilesMessage" xml:space="preserve">
+    <value>Calling '{0}' which has `RequiresAssemblyFilesAttribute` can break functionality when bundling the application code. {1}. {2}</value>
   </data>
 </root>
