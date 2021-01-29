@@ -30,6 +30,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 	[ExpectedWarning ("IL2026", "--DynamicallyAccessedTypeWithRequiresUnreferencedCode.RequiresUnreferencedCode--")]
 	[ExpectedWarning ("IL2026", "--IDerivedInterface.MethodInDerivedInterface--")]
 	[ExpectedWarning ("IL2026", "--IBaseInterface.MethodInBaseInterface--")]
+	[ExpectedWarning ("IL2026", "--BaseType.VirtualMethodRequiresUnreferencedCode--")]
 	public class RequiresUnreferencedCodeCapability
 	{
 		public static void Main ()
@@ -46,6 +47,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			TestTypeWhichOverridesMethodVirtualMethodRequiresUnreferencedCodeOnBase ();
 			TestStaticCctorRequiresUnreferencedCode ();
 			TestDynamicallyAccessedMembersWithRequiresUnreferencedCode (typeof (DynamicallyAccessedTypeWithRequiresUnreferencedCode));
+			TestDynamicallyAccessedMembersWithRequiresUnreferencedCode (typeof (TypeWhichOverridesMethod));
 			TestInterfaceMethodWithRequiresUnreferencedCode ();
 			TestCovariantReturnCallOnDerived ();
 			TestRequiresInMethodFromCopiedAssembly ();

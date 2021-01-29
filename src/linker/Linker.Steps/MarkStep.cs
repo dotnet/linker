@@ -60,12 +60,13 @@ namespace Mono.Linker.Steps
 
 #if DEBUG
 		static readonly DependencyKind[] _entireTypeReasons = new DependencyKind[] {
-			DependencyKind.Unspecified,
-			DependencyKind.NestedType,
-			DependencyKind.DynamicDependency,
-			DependencyKind.TypeInAssembly,
 			DependencyKind.AccessedViaReflection,
 			DependencyKind.BaseType,
+			DependencyKind.DynamicallyAccessedMember,
+			DependencyKind.DynamicDependency,
+			DependencyKind.NestedType,
+			DependencyKind.TypeInAssembly,
+			DependencyKind.Unspecified,
 		};
 
 		static readonly DependencyKind[] _fieldReasons = new DependencyKind[] {
@@ -134,6 +135,7 @@ namespace Mono.Linker.Steps
 			DependencyKind.DefaultCtorForNewConstrainedGenericArgument,
 			DependencyKind.DirectCall,
 			DependencyKind.DynamicallyAccessedMember,
+			DependencyKind.DynamicDependency,
 			DependencyKind.ElementMethod,
 			DependencyKind.EventMethod,
 			DependencyKind.EventOfEventMethod,
@@ -293,7 +295,8 @@ namespace Mono.Linker.Steps
 			if (type.HasMethods) {
 				foreach (MethodDefinition method in type.Methods) {
 					Annotations.SetAction (method, MethodAction.ForceParse);
-					MarkMethod (method, new DependencyInfo (reason.Kind == DependencyKind.AccessedViaReflection ? reason.Kind : DependencyKind.MemberOfType, type), new MessageOrigin (reason.Source as IMemberDefinition));
+					DependencyKind dependencyKind = (reason.Kind == DependencyKind.DynamicallyAccessedMember || reason.Kind == DependencyKind.DynamicDependency) ? reason.Kind : DependencyKind.MemberOfType;
+					MarkMethod (method, new DependencyInfo (dependencyKind, type), new MessageOrigin (reason.Source as IMemberDefinition));
 				}
 			}
 
@@ -589,11 +592,7 @@ namespace Mono.Linker.Steps
 			// Only track instantiations if override removal is enabled and the type is instantiated.
 			// If it's disabled, all overrides are kept, so there's no instantiation site to blame.
 			if (_context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, method) && isInstantiated) {
-				// MarkMethod uses the MessageOrigin passed in here to determine the member which causes the method
-				// to be marked. This is important to avoid spurious warnings as virtual overrides can end up being
-				// marked without being referenced directly from user code. It is important to pass the base method
-				// here so that MarkMethod can see that it was marked because of an override.
-				MarkMethod (method, new DependencyInfo (DependencyKind.OverrideOnInstantiatedType, method.DeclaringType), new MessageOrigin (@base));
+				MarkMethod (method, new DependencyInfo (DependencyKind.OverrideOnInstantiatedType, method.DeclaringType), null);
 			} else {
 				// If the optimization is disabled or it's an abstract type, we just mark it as a normal override.
 				Debug.Assert (!_context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, method) || @base.IsAbstract);
@@ -2502,6 +2501,7 @@ namespace Mono.Linker.Steps
 			case DependencyKind.AccessedViaReflection:
 			case DependencyKind.DirectCall:
 			case DependencyKind.DynamicallyAccessedMember:
+			case DependencyKind.DynamicDependency:
 			case DependencyKind.ElementMethod:
 			case DependencyKind.Ldftn:
 			case DependencyKind.Ldvirtftn:
