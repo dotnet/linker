@@ -62,19 +62,19 @@ namespace ILLink.RoslynAnalyzer.Tests
 			foreach (var attr in attrs) {
 				switch (attr.Name.ToString ()) {
 				case "ExpectedWarning":
-					var expectedMessageContains = attr.ArgumentList!.Arguments.Select (m => GetStringFromExpr (m.Expression)).ToList ();
-					if (!expectedMessageContains[0].StartsWith ("IL"))
+					var expectedMessagesContains = attr.ArgumentList!.Arguments.Select (m => GetStringsFromExpr (m.Expression)).ToList ();
+					var expectedWarningCode = expectedMessagesContains[0];
+					if (!expectedWarningCode[0].Contains ("IL"))
 						break;
-					expectedMessageContains.RemoveAt (0);
+					var expectedMessages = expectedMessagesContains[1];
 					Assert.True (
 						filtered.Any (mc => {
-							foreach (var expectedMessage in expectedMessageContains) {
+							foreach (var expectedMessage in expectedMessages)
 								if (!mc.Contains (expectedMessage))
 									return false;
-							}
 							return true;
 						}),
-					$"Expected to find warning containing:{string.Join (" ", expectedMessageContains.Select (m => "'" + m + "'"))}" +
+					$"Expected to find warning containing:{string.Join (" ", expectedMessages.Select (m => "'" + m + "'"))}" +
 					$", but no such message was found.{ Environment.NewLine}In diagnostics: {string.Join (Environment.NewLine, filtered)}");
 					break;
 				case "LogContains": {
@@ -133,6 +133,32 @@ In diagnostics:
 				case SyntaxKind.AddExpression:
 					var addExpr = (BinaryExpressionSyntax) expr;
 					return GetStringFromExpr (addExpr.Left) + GetStringFromExpr (addExpr.Right);
+				default:
+					Assert.True (false, "Unsupported expr kind " + expr.Kind ());
+					return null!;
+				}
+			}
+
+			static List<string> GetStringsFromExpr (ExpressionSyntax expr)
+			{
+				List<string> returnedStrings = new List<string> ();
+				switch (expr.Kind ()) {
+				case SyntaxKind.StringLiteralExpression:
+					returnedStrings.Add (GetStringFromExpr (expr));
+					return returnedStrings;
+				case SyntaxKind.AddExpression:
+					returnedStrings.Add (GetStringFromExpr (expr));
+					return returnedStrings;
+				case SyntaxKind.ArrayCreationExpression:
+					var array = (ArrayCreationExpressionSyntax) expr;
+					foreach (var node in array.ChildNodes ()) {
+						if (node is InitializerExpressionSyntax) {
+							var initializer = (InitializerExpressionSyntax) node;
+							foreach (var expression in initializer.Expressions)
+								returnedStrings.Add (GetStringFromExpr (expression));
+						}
+					}
+					return returnedStrings;
 				default:
 					Assert.True (false, "Unsupported expr kind " + expr.Kind ());
 					return null!;
