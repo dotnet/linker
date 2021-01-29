@@ -31,6 +31,7 @@ class C
     int M1() => 0;
     int M2() => M1();
 }";
+			// (8,17): warning IL2026: Calling 'C.M1()' which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. message.
 			return VerifyRequiresUnreferencedCodeAnalyzer (TestRequiresWithMessageOnlyOnMethod,
 				VerifyCS.Diagnostic ().WithSpan (8, 17, 8, 21).WithArguments ("C.M1()", "message", ""));
 		}
@@ -52,6 +53,7 @@ class C
 	{
 	}
 }";
+			// (8,3): warning IL2026: Calling 'C.RequiresWithMessageAndUrl()' which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. Message for --RequiresWithMessageAndUrl--. https://helpurl
 			return VerifyRequiresUnreferencedCodeAnalyzer (MessageAndUrlOnMethod,
 				VerifyCS.Diagnostic ().WithSpan (8, 3, 8, 31).WithArguments ("C.RequiresWithMessageAndUrl()", "Message for --RequiresWithMessageAndUrl--", "https://helpurl")
 				);
@@ -75,6 +77,7 @@ class C
 		get { return 42; }
 	}
 }";
+			// (8,7): warning IL2026: Calling 'C.PropertyRequires.get' which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. Message for --getter PropertyRequires--. 
 			return VerifyRequiresUnreferencedCodeAnalyzer (PropertyRequires,
 				VerifyCS.Diagnostic ().WithSpan (8, 7, 8, 23).WithArguments ("C.PropertyRequires.get", "Message for --getter PropertyRequires--", "")
 				);
@@ -98,6 +101,7 @@ class C
 		set { }
 	}
 }";
+			// (8,3): warning IL2026: Calling 'C.PropertyRequires.set' which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. Message for --setter PropertyRequires--.
 			return VerifyRequiresUnreferencedCodeAnalyzer (PropertyRequires,
 				VerifyCS.Diagnostic ().WithSpan (8, 3, 8, 19).WithArguments ("C.PropertyRequires.set", "Message for --setter PropertyRequires--", "")
 				);
