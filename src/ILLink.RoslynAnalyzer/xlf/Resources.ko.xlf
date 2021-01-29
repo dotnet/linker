@@ -23,8 +23,8 @@
         <note />
       </trans-unit>
       <trans-unit id="RequiresAssemblyFilesMessage">
-        <source>'{0}' member has 'RequiresAssemblyFilesAttribute' which can break functionality when embedded in a single-file app. {1}. {2}</source>
-        <target state="new">'{0}' member has 'RequiresAssemblyFilesAttribute' which can break functionality when embedded in a single-file app. {1}. {2}</target>
+        <source>'{0}' member has 'RequiresAssemblyFilesAttribute' which can break functionality when embedded in a single-file app.{1}{2}</source>
+        <target state="new">'{0}' member has 'RequiresAssemblyFilesAttribute' which can break functionality when embedded in a single-file app.{1}{2}</target>
         <note />
       </trans-unit>
       <trans-unit id="RequiresAssemblyFilesTitle">

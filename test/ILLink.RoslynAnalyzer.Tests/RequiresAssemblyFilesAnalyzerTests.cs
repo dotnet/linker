@@ -48,7 +48,7 @@ class C
 	}
 }";
 			return VerifyRequiresAssemblyFilesAnalyzer (TestRequiresAssemblyFieldsOnEvent,
-				// (25,17): warning IL3002: 'C.E' member has 'RequiresAssemblyFilesAttribute' which can break functionality when embedded in a single-file app. .
+				// (25,17): warning IL3002: 'C.E' member has 'RequiresAssemblyFilesAttribute' which can break functionality when embedded in a single-file app.
 				VerifyCS.Diagnostic ().WithSpan (25, 17, 25, 18).WithArguments ("C.E", "", ""));
 		}
 
@@ -69,7 +69,7 @@ class C
 	}
 }";
 			return VerifyRequiresAssemblyFilesAnalyzer (TestRequiresAssemblyFilesOnMethod,
-				// (27,3): warning IL3002: 'C.M1()' member has 'RequiresAssemblyFilesAttribute' which can break functionality when embedded in a single-file app. .
+				// (27,3): warning IL3002: 'C.M1()' member has 'RequiresAssemblyFilesAttribute' which can break functionality when embedded in a single-file app.
 				VerifyCS.Diagnostic ().WithSpan (27, 3, 27, 7).WithArguments ("C.M1()", "", ""));
 		}
 
@@ -89,9 +89,9 @@ class C
 	}
 }";
 			return VerifyRequiresAssemblyFilesAnalyzer (TestRequiresAssemblyFilesOnProperty,
-				// (25,3): warning IL3002: 'C.P' member has 'RequiresAssemblyFilesAttribute' which can break functionality when embedded in a single-file app. .
+				// (25,3): warning IL3002: 'C.P' member has 'RequiresAssemblyFilesAttribute' which can break functionality when embedded in a single-file app.
 				VerifyCS.Diagnostic ().WithSpan (25, 3, 25, 4).WithArguments ("C.P", "", ""),
-				// (26,12): warning IL3002: 'C.P' member has 'RequiresAssemblyFilesAttribute' which can break functionality when embedded in a single-file app. .
+				// (26,12): warning IL3002: 'C.P' member has 'RequiresAssemblyFilesAttribute' which can break functionality when embedded in a single-file app.
 				VerifyCS.Diagnostic ().WithSpan (26, 12, 26, 13).WithArguments ("C.P", "", ""));
 		}
 
@@ -113,7 +113,7 @@ class C
 }";
 			return VerifyRequiresAssemblyFilesAnalyzer (TestRequiresAssemblyFilesWithMessageAndUrl,
 				// (27,3): warning IL3002: 'C.M1()' member has 'RequiresAssemblyFilesAttribute' which can break functionality when embedded in a single-file app. Message from attribute. https://helpurl
-				VerifyCS.Diagnostic ().WithSpan (27, 3, 27, 7).WithArguments ("C.M1()", "Message from attribute", "https://helpurl"));
+				VerifyCS.Diagnostic ().WithSpan (27, 3, 27, 7).WithArguments ("C.M1()", " Message from attribute.", " https://helpurl"));
 		}
 
 		[Fact]
@@ -133,8 +133,8 @@ class C
 	}
 }";
 			return VerifyRequiresAssemblyFilesAnalyzer (TestRequiresAssemblyFilesWithMessageAndUrl,
-				// (27,3): warning IL3002: 'C.M1()' member has 'RequiresAssemblyFilesAttribute' which can break functionality when embedded in a single-file app. . https://helpurl
-				VerifyCS.Diagnostic ().WithSpan (27, 3, 27, 7).WithArguments ("C.M1()", "", "https://helpurl"));
+				// (27,3): warning IL3002: 'C.M1()' member has 'RequiresAssemblyFilesAttribute' which can break functionality when embedded in a single-file app. https://helpurl
+				VerifyCS.Diagnostic ().WithSpan (27, 3, 27, 7).WithArguments ("C.M1()", "", " https://helpurl"));
 		}
 
 		[Fact]
@@ -173,7 +173,7 @@ class C
 }";
 			return VerifyRequiresAssemblyFilesAnalyzer (TestNoDiagnosticIsProducedIfCallerIsAnnotated,
 				// (22,3): warning IL3002: 'C.M2()' member has 'RequiresAssemblyFilesAttribute' which can break functionality when embedded in a single-file app. Warn from M2.
-				VerifyCS.Diagnostic ().WithSpan (22, 3, 22, 7).WithArguments ("C.M2()", "Warn from M2", ""));
+				VerifyCS.Diagnostic ().WithSpan (22, 3, 22, 7).WithArguments ("C.M2()", " Warn from M2.", ""));
 		}
 	}
 }

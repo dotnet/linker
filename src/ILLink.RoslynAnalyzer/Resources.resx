@@ -139,6 +139,6 @@
     <value>Avoid calling members marked with 'RequiresAssemblyFilesAttribute' when publishing as a single-file</value>
   </data>
   <data name="RequiresAssemblyFilesMessage" xml:space="preserve">
-    <value>'{0}' member has 'RequiresAssemblyFilesAttribute' which can break functionality when embedded in a single-file app. {1}. {2}</value>
+    <value>'{0}' member has 'RequiresAssemblyFilesAttribute' which can break functionality when embedded in a single-file app.{1}{2}</value>
   </data>
 </root>
