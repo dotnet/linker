@@ -3,21 +3,17 @@ using Mono.Cecil;
 
 namespace Mono.Linker.Steps
 {
-	public class RemoveSecurityStep : BasePerAssemblyStep
+	public static class RemoveSecurity
 	{
-		public RemoveSecurityStep (AssemblyDefinition assembly, LinkContext context) : base (assembly, context)
+		public static void ProcessAssembly (AssemblyDefinition assembly, LinkContext context)
 		{
-		}
+			if (context.Annotations.GetAction (assembly) == AssemblyAction.Link) {
+				ClearSecurityDeclarations (assembly);
+				RemoveCustomAttributesThatAreForSecurity (assembly);
 
-		public override void Process ()
-		{
-			if (Annotations.GetAction (_assembly) == AssemblyAction.Link) {
-				ClearSecurityDeclarations (_assembly);
-				RemoveCustomAttributesThatAreForSecurity (_assembly);
+				RemoveCustomAttributesThatAreForSecurity (assembly.MainModule);
 
-				RemoveCustomAttributesThatAreForSecurity (_assembly.MainModule);
-
-				foreach (var type in _assembly.MainModule.Types)
+				foreach (var type in assembly.MainModule.Types)
 					ProcessType (type);
 			}
 		}

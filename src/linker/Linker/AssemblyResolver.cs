@@ -96,13 +96,6 @@ namespace Mono.Linker
 			return null;
 		}
 
-#if !FEATURE_ILLINK
-		public AssemblyDefinition ResolveFromPath (string path, ReaderParameters parameters)
-		{
-			return CacheAssemblyWithPath (GetAssembly (path, parameters));
-		}
-#endif
-
 		public override AssemblyDefinition Resolve (AssemblyNameReference name, ReaderParameters parameters)
 		{
 			// Validate arguments, similarly to how the base class does it.

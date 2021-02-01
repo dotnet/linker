@@ -152,7 +152,7 @@ namespace Mono.Linker
 
 		public bool StripSecurity { get; set; }
 
-		public System.Collections.IDictionary Actions {
+		public Dictionary<string, AssemblyAction> Actions {
 			get { return _actions; }
 		}
 
@@ -296,25 +296,10 @@ namespace Mono.Linker
 			return assembly.MainModule.GetType (fullName);
 		}
 
-#if !FEATURE_ILLINK
-		public AssemblyDefinition Resolve (string name)
-		{
-			if (File.Exists (name)) {
-				try {
-					return _resolver.ResolveFromPath (name, _readerParameters);
-				} catch (Exception e) {
-					throw new AssemblyResolutionException (new AssemblyNameReference (name, new Version ()), e);
-				}
-			}
-
-			return Resolve (new AssemblyNameReference (name, new Version ()));
-		}
-#endif
-
 		public AssemblyDefinition TryResolve (string name)
 		{
 			try {
-				return Resolve (name);
+				return Resolve (new AssemblyNameReference (name, new Version ()));
 			} catch (AssemblyResolutionException) {
 				return null;
 			}

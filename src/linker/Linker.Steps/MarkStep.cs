@@ -28,7 +28,6 @@
 //
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -203,7 +202,7 @@ namespace Mono.Linker.Steps
 			// corelib attribute XML can contain modifications to other assemblies.
 			// We could just mark it here, but the attribute processing isn't necessarily tied to marking,
 			// so this would rely on implementation details of corelib.
-			var coreLib = _context.Resolve (PlatformAssemblies.CoreLib);
+			var coreLib = _context.TryResolve (PlatformAssemblies.CoreLib);
 			if (coreLib != null)
 				_context.CustomAttributes.EnsureProcessedAttributeXml (coreLib);
 
@@ -216,7 +215,7 @@ namespace Mono.Linker.Steps
 		protected virtual void InitializeAssembly (AssemblyDefinition assembly)
 		{
 			var action = _context.Annotations.GetAction (assembly);
-			if (IsFullyPreservedAction (_context.Annotations.GetAction (assembly)))
+			if (IsFullyPreservedAction (action))
 				MarkAssembly (assembly, new DependencyInfo (DependencyKind.AssemblyAction, action));
 		}
 
@@ -326,7 +325,7 @@ namespace Mono.Linker.Steps
 
 		void Process ()
 		{
-			while (ProcessPrimaryQueue () || ProcessMarkedPending () || ProcessLazyAttributes () || ProcessLateMarkedAttributes ()) {
+			while (ProcessPrimaryQueue () || ProcessMarkedPending () || ProcessLazyAttributes () || ProcessLateMarkedAttributes () || MarkFullyPreservedAssemblies ()) {
 
 				// deal with [TypeForwardedTo] pseudo-attributes
 
@@ -335,6 +334,7 @@ namespace Mono.Linker.Steps
 				// marked from a different reference. This seems incorrect.
 				// Note also that we may still remove type forwarder assemblies with marked exports in SweepStep,
 				// if they don't contain other used code.
+				// https://github.com/mono/linker/issues/1740
 				foreach (AssemblyDefinition assembly in _context.GetAssemblies ()) {
 					if (!assembly.MainModule.HasExportedTypes)
 						continue;
@@ -358,8 +358,6 @@ namespace Mono.Linker.Steps
 						_context.MarkingHelpers.MarkExportedType (exported, assembly.MainModule, di);
 					}
 				}
-
-				MarkFullyPreservedAssemblies ();
 			}
 
 			ProcessPendingTypeChecks ();
@@ -367,7 +365,7 @@ namespace Mono.Linker.Steps
 
 		static bool IsFullyPreservedAction (AssemblyAction action) => action == AssemblyAction.Copy || action == AssemblyAction.Save;
 
-		void MarkFullyPreservedAssemblies ()
+		bool MarkFullyPreservedAssemblies ()
 		{
 			// Fully mark any assemblies with copy/save action.
 
@@ -377,9 +375,7 @@ namespace Mono.Linker.Steps
 			if (!scanReferences) {
 				// Unresolved references could get the copy/save action if it was set explicitly
 				// for some referenced assembly that has not been resolved yet
-				foreach (DictionaryEntry e in _context.Actions) {
-					var assemblyName = (string) e.Key;
-					var action = (AssemblyAction) e.Value;
+				foreach (var (assemblyName, action) in _context.Actions) {
 					if (!IsFullyPreservedAction (action))
 						continue;
 
@@ -398,12 +394,16 @@ namespace Mono.Linker.Steps
 			// We could further optimize this to only iterate through assemblies if the last mark iteration loaded
 			// a new assembly, since this is the only way that the set we need to consider could have changed.
 			var assembliesToCheck = scanReferences ? _context.GetReferencedAssemblies ().ToArray () : _context.GetAssemblies ();
+			bool markedNewAssembly = false;
 			foreach (var assembly in assembliesToCheck) {
 				var action = _context.Annotations.GetAction (assembly);
 				if (!IsFullyPreservedAction (action))
 					continue;
+				if (!Annotations.IsProcessed (assembly))
+					markedNewAssembly = true;
 				MarkAssembly (assembly, new DependencyInfo (DependencyKind.AssemblyAction, null));
 			}
+			return markedNewAssembly;
 		}
 
 		bool ProcessPrimaryQueue ()
@@ -534,6 +534,7 @@ namespace Mono.Linker.Steps
 
 		void DiscoverDynamicCastableImplementationInterfaces ()
 		{
+			// We could potentially avoid loading all references here: https://github.com/mono/linker/issues/1788
 			foreach (var assembly in _context.GetReferencedAssemblies ().ToArray ()) {
 				switch (Annotations.GetAction (assembly)) {
 				// We only need to search assemblies where we don't mark everything
@@ -1287,7 +1288,13 @@ namespace Mono.Linker.Steps
 			if (CheckProcessed (assembly))
 				return;
 
-			ProcessPerAssemblySteps (assembly);
+			EmbeddedXmlInfo.ProcessDescriptors (assembly, _context);
+
+			// Security attributes do not respect the attributes XML
+			if (_context.StripSecurity)
+				RemoveSecurity.ProcessAssembly (assembly, _context);
+
+			MarkExportedTypesTarget.ProcessAssembly (assembly, _context);
 
 			if (IsFullyPreservedAction (_context.Annotations.GetAction (assembly))) {
 				MarkEntireAssembly (assembly);
@@ -1317,19 +1324,6 @@ namespace Mono.Linker.Steps
 
 			foreach (TypeDefinition type in assembly.MainModule.Types)
 				MarkEntireType (type, includeBaseTypes: false, includeInterfaceTypes: false, new DependencyInfo (DependencyKind.TypeInAssembly, assembly), null);
-		}
-
-		void ProcessPerAssemblySteps (AssemblyDefinition assembly)
-		{
-			Debug.Assert (Annotations.IsProcessed (assembly));
-
-			EmbeddedXmlInfo.ProcessDescriptors (assembly, _context);
-
-			// Security attributes do not respect the attributes XML
-			if (_context.StripSecurity)
-				new RemoveSecurityStep (assembly, _context).Process ();
-
-			new MarkExportedTypesTargetStep (assembly, _context).Process ();
 		}
 
 		void ProcessModuleType (AssemblyDefinition assembly)
