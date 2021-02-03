@@ -22,7 +22,7 @@ namespace Mono.Linker
 			FieldInit = new HashSet<FieldDefinition> ();
 		}
 
-		public void SetAction (MethodDefinition method, MethodAction action)
+		public void SetMethodAction (MethodDefinition method, MethodAction action)
 		{
 			MethodActions[method] = action;
 		}
@@ -37,7 +37,7 @@ namespace Mono.Linker
 			FieldValues[field] = value;
 		}
 
-		public void SetSubstitutedInit (FieldDefinition field)
+		public void SetFieldInit (FieldDefinition field)
 		{
 			FieldInit.Add (field);
 		}

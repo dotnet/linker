@@ -6,7 +6,7 @@ using Mono.Cecil;
 
 namespace Mono.Linker.Steps
 {
-	public class BodySubstitutionParser : ProcessLinkerXmlStepBase
+	public class BodySubstitutionParser : ProcessLinkerXmlBase
 	{
 		SubstitutionInfo _substitutionInfo;
 
@@ -95,7 +95,7 @@ namespace Mono.Linker.Steps
 			string action = GetAttribute (iterator.Current, "body");
 			switch (action) {
 			case "remove":
-				_substitutionInfo.SetAction (method, MethodAction.ConvertToThrow);
+				_substitutionInfo.SetMethodAction (method, MethodAction.ConvertToThrow);
 				return;
 			case "stub":
 				string value = GetAttribute (iterator.Current, "value");
@@ -108,7 +108,7 @@ namespace Mono.Linker.Steps
 					_substitutionInfo.SetMethodStubValue (method, res);
 				}
 
-				_substitutionInfo.SetAction (method, MethodAction.ConvertToStub);
+				_substitutionInfo.SetMethodAction (method, MethodAction.ConvertToStub);
 				return;
 			default:
 				Context.LogWarning ($"Unknown body modification '{action}' for '{method.GetDisplayName ()}'", 2011, _xmlDocumentLocation);
@@ -147,7 +147,7 @@ namespace Mono.Linker.Steps
 
 			string init = GetAttribute (iterator.Current, "initialize");
 			if (init?.ToLowerInvariant () == "true") {
-				_substitutionInfo.SetSubstitutedInit (field);
+				_substitutionInfo.SetFieldInit (field);
 			}
 		}
 

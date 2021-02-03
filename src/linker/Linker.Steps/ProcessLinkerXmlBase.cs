@@ -15,7 +15,7 @@ namespace Mono.Linker.Steps
 		AllAssemblies = 0x4 | AnyAssembly
 	}
 
-	public abstract class ProcessLinkerXmlStepBase : BaseStep
+	public abstract class ProcessLinkerXmlBase : BaseStep
 	{
 		const string FullNameAttributeName = "fullname";
 		const string LinkerElementName = "linker";
@@ -35,13 +35,13 @@ namespace Mono.Linker.Steps
 		readonly EmbeddedResource _resource;
 		protected readonly AssemblyDefinition _resourceAssembly;
 
-		protected ProcessLinkerXmlStepBase (XPathDocument document, string xmlDocumentLocation)
+		protected ProcessLinkerXmlBase (XPathDocument document, string xmlDocumentLocation)
 		{
 			_document = document;
 			_xmlDocumentLocation = xmlDocumentLocation;
 		}
 
-		protected ProcessLinkerXmlStepBase (XPathDocument document, EmbeddedResource resource, AssemblyDefinition resourceAssembly, string xmlDocumentLocation)
+		protected ProcessLinkerXmlBase (XPathDocument document, EmbeddedResource resource, AssemblyDefinition resourceAssembly, string xmlDocumentLocation)
 			: this (document, xmlDocumentLocation)
 		{
 			_resource = resource ?? throw new ArgumentNullException (nameof (resource));

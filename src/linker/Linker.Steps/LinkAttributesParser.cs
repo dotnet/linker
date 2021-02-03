@@ -12,7 +12,7 @@ using Mono.Cecil;
 
 namespace Mono.Linker.Steps
 {
-	public class LinkAttributesParser : ProcessLinkerXmlStepBase
+	public class LinkAttributesParser : ProcessLinkerXmlBase
 	{
 		AttributeInfo _attributeInfo;
 

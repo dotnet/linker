@@ -37,7 +37,7 @@ using Mono.Cecil;
 
 namespace Mono.Linker.Steps
 {
-	public class ResolveFromXmlStep : ProcessLinkerXmlStepBase
+	public class ResolveFromXmlStep : ProcessLinkerXmlBase
 	{
 		const string NamespaceElementName = "namespace";
 
