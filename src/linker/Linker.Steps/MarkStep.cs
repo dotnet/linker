@@ -223,9 +223,9 @@ namespace Mono.Linker.Steps
 			// Because the attribute XML can reference other assemblies, they must go in the global store,
 			// instead of the per-assembly stores.
 			foreach (var (provider, annotations) in xmlInfo.CustomAttributes)
-				_context.CustomAttributes.GlobalXmlInfo.AddCustomAttributes (provider, annotations);
+				_context.CustomAttributes.GlobalAttributeInfo.AddCustomAttributes (provider, annotations);
 			foreach (var (provider, annotations) in xmlInfo.InternalAttributes)
-				_context.CustomAttributes.GlobalXmlInfo.AddInternalAttributes (provider, annotations);
+				_context.CustomAttributes.GlobalAttributeInfo.AddInternalAttributes (provider, annotations);
 		}
 
 		protected virtual void InitializeAssembly (AssemblyDefinition assembly)

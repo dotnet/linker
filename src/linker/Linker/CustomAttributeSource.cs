@@ -10,13 +10,13 @@ namespace Mono.Linker
 {
 	public class CustomAttributeSource
 	{
-		public AttributeInfo GlobalXmlInfo { get; }
+		public AttributeInfo GlobalAttributeInfo { get; }
 		private readonly Dictionary<AssemblyDefinition, AttributeInfo> _embeddedXmlInfos;
 		readonly LinkContext _context;
 
 		public CustomAttributeSource (LinkContext context)
 		{
-			GlobalXmlInfo = new AttributeInfo ();
+			GlobalAttributeInfo = new AttributeInfo ();
 			_embeddedXmlInfos = new Dictionary<AssemblyDefinition, AttributeInfo> ();
 			_context = context;
 		}
@@ -55,7 +55,7 @@ namespace Mono.Linker
 					yield return customAttribute;
 			}
 
-			if (GlobalXmlInfo.CustomAttributes.TryGetValue (provider, out var annotations)) {
+			if (GlobalAttributeInfo.CustomAttributes.TryGetValue (provider, out var annotations)) {
 				foreach (var customAttribute in annotations)
 					yield return customAttribute;
 			}
@@ -74,7 +74,7 @@ namespace Mono.Linker
 			if (provider.HasCustomAttributes)
 				return true;
 
-			if (GlobalXmlInfo.CustomAttributes.ContainsKey (provider))
+			if (GlobalAttributeInfo.CustomAttributes.ContainsKey (provider))
 				return true;
 
 			if (!TryGetEmbeddedXmlInfo (provider, out var embeddedXml))
@@ -85,7 +85,7 @@ namespace Mono.Linker
 
 		public IEnumerable<Attribute> GetInternalAttributes (ICustomAttributeProvider provider)
 		{
-			if (GlobalXmlInfo.InternalAttributes.TryGetValue (provider, out var annotations)) {
+			if (GlobalAttributeInfo.InternalAttributes.TryGetValue (provider, out var annotations)) {
 				foreach (var attribute in annotations)
 					yield return attribute;
 			}
@@ -101,7 +101,7 @@ namespace Mono.Linker
 
 		public bool HasInternalAttributes (ICustomAttributeProvider provider)
 		{
-			if (GlobalXmlInfo.InternalAttributes.ContainsKey (provider))
+			if (GlobalAttributeInfo.InternalAttributes.ContainsKey (provider))
 				return true;
 
 			if (!TryGetEmbeddedXmlInfo (provider, out var embeddedXml))

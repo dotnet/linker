@@ -14,7 +14,7 @@ namespace Mono.Linker.Steps
 {
 	public class LinkAttributesParser : ProcessLinkerXmlStepBase
 	{
-		AttributeInfo _xmlInfo;
+		AttributeInfo _attributeInfo;
 
 		public LinkAttributesParser (XPathDocument document, string xmlDocumentLocation)
 			: base (document, xmlDocumentLocation)
@@ -28,14 +28,14 @@ namespace Mono.Linker.Steps
 
 		public AttributeInfo Parse (LinkContext context)
 		{
-			_xmlInfo = new AttributeInfo ();
+			_attributeInfo = new AttributeInfo ();
 			Process (context);
-			return _xmlInfo;
+			return _attributeInfo;
 		}
 
 		public void Parse (LinkContext context, AttributeInfo xmlInfo)
 		{
-			_xmlInfo = xmlInfo;
+			_attributeInfo = xmlInfo;
 			Process (context);
 		}
 
@@ -163,7 +163,7 @@ namespace Mono.Linker.Steps
 
 			if (!Annotations.IsMarked (provider)) {
 				IEnumerable<Attribute> removeAttributeInstance = new List<Attribute> { new RemoveAttributeInstancesAttribute () };
-				_xmlInfo.AddInternalAttributes (provider, removeAttributeInstance);
+				_attributeInfo.AddInternalAttributes (provider, removeAttributeInstance);
 			}
 		}
 
@@ -229,7 +229,7 @@ namespace Mono.Linker.Steps
 		{
 			IEnumerable<CustomAttribute> attributes = ProcessAttributes (nav, assembly);
 			if (attributes.Any ())
-				_xmlInfo.AddCustomAttributes (assembly, attributes);
+				_attributeInfo.AddCustomAttributes (assembly, attributes);
 			ProcessTypes (assembly, nav, warnOnUnresolvedTypes);
 		}
 
@@ -239,7 +239,7 @@ namespace Mono.Linker.Steps
 
 			IEnumerable<CustomAttribute> attributes = ProcessAttributes (nav, type);
 			if (attributes.Any ())
-				_xmlInfo.AddCustomAttributes (type, attributes);
+				_attributeInfo.AddCustomAttributes (type, attributes);
 			ProcessTypeChildren (type, nav);
 
 			if (!type.HasNestedTypes)
@@ -258,14 +258,14 @@ namespace Mono.Linker.Steps
 		{
 			IEnumerable<CustomAttribute> attributes = ProcessAttributes (nav, field);
 			if (attributes.Any ())
-				_xmlInfo.AddCustomAttributes (field, attributes);
+				_attributeInfo.AddCustomAttributes (field, attributes);
 		}
 
 		protected override void ProcessMethod (TypeDefinition type, MethodDefinition method, XPathNavigator nav, object customData)
 		{
 			IEnumerable<CustomAttribute> attributes = ProcessAttributes (nav, method);
 			if (attributes.Any ())
-				_xmlInfo.AddCustomAttributes (method, attributes);
+				_attributeInfo.AddCustomAttributes (method, attributes);
 			ProcessReturnParameters (method, nav);
 			ProcessParameters (method, nav);
 		}
@@ -279,11 +279,11 @@ namespace Mono.Linker.Steps
 					string paramName = GetAttribute (iterator.Current, "name");
 					foreach (ParameterDefinition parameter in method.Parameters) {
 						if (paramName == parameter.Name) {
-							if (parameter.HasCustomAttributes || _xmlInfo.CustomAttributes.ContainsKey (parameter))
+							if (parameter.HasCustomAttributes || _attributeInfo.CustomAttributes.ContainsKey (parameter))
 								Context.LogWarning (
 									$"More than one value specified for parameter '{paramName}' of method '{method.GetDisplayName ()}'",
 									2024, _xmlDocumentLocation);
-							_xmlInfo.AddCustomAttributes (parameter, attributes);
+							_attributeInfo.AddCustomAttributes (parameter, attributes);
 							break;
 						}
 					}
@@ -300,7 +300,7 @@ namespace Mono.Linker.Steps
 					firstAppearance = false;
 					IEnumerable<CustomAttribute> attributes = ProcessAttributes (iterator.Current, method.MethodReturnType);
 					if (attributes.Any ())
-						_xmlInfo.AddCustomAttributes (method.MethodReturnType, attributes);
+						_attributeInfo.AddCustomAttributes (method.MethodReturnType, attributes);
 				} else {
 					Context.LogWarning (
 						$"There is more than one 'return' child element specified for method '{method.GetDisplayName ()}'",
@@ -353,14 +353,14 @@ namespace Mono.Linker.Steps
 		{
 			IEnumerable<CustomAttribute> attributes = ProcessAttributes (nav, property);
 			if (attributes.Any ())
-				_xmlInfo.AddCustomAttributes (property, attributes);
+				_attributeInfo.AddCustomAttributes (property, attributes);
 		}
 
 		protected override void ProcessEvent (TypeDefinition type, EventDefinition @event, XPathNavigator nav, object customData)
 		{
 			IEnumerable<CustomAttribute> attributes = ProcessAttributes (nav, @event);
 			if (attributes.Any ())
-				_xmlInfo.AddCustomAttributes (@event, attributes);
+				_attributeInfo.AddCustomAttributes (@event, attributes);
 		}
 
 		protected override AssemblyDefinition GetAssembly (LinkContext context, AssemblyNameReference assemblyName)

@@ -17,7 +17,7 @@ namespace Mono.Linker.Steps
 
 		protected override void Process ()
 		{
-			_parser.Parse (Context, Context.CustomAttributes.GlobalXmlInfo);
+			_parser.Parse (Context, Context.CustomAttributes.GlobalAttributeInfo);
 		}
 	}
 }
