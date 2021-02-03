@@ -9,10 +9,10 @@ namespace Mono.Linker
 {
 	public class SubstitutionInfo
 	{
-		public Dictionary<MethodDefinition, MethodAction> MethodActions;
-		public Dictionary<MethodDefinition, object> MethodStubValues;
-		public Dictionary<FieldDefinition, object> FieldValues;
-		public HashSet<FieldDefinition> FieldInit;
+		public Dictionary<MethodDefinition, MethodAction> MethodActions { get; }
+		public Dictionary<MethodDefinition, object> MethodStubValues { get; }
+		public Dictionary<FieldDefinition, object> FieldValues { get; }
+		public HashSet<FieldDefinition> FieldInit { get; }
 
 		public SubstitutionInfo ()
 		{

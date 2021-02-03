@@ -13,7 +13,7 @@ namespace Mono.Linker.Steps
 
 		protected override void Process ()
 		{
-			_parser.Parse (Context, Context.Annotations.MemberActions.GlobalSubstitutionInfo);
+			_parser.Parse (Context, Context.Annotations.MemberActions.PrimarySubstitutionInfo);
 		}
 	}
 }

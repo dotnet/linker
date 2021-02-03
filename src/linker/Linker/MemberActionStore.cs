@@ -9,13 +9,13 @@ namespace Mono.Linker
 {
 	public class MemberActionStore
 	{
-		public SubstitutionInfo GlobalSubstitutionInfo { get; }
+		public SubstitutionInfo PrimarySubstitutionInfo { get; }
 		private readonly Dictionary<AssemblyDefinition, SubstitutionInfo> _embeddedXmlInfos;
 		readonly LinkContext _context;
 
 		public MemberActionStore (LinkContext context)
 		{
-			GlobalSubstitutionInfo = new SubstitutionInfo ();
+			PrimarySubstitutionInfo = new SubstitutionInfo ();
 			_embeddedXmlInfos = new Dictionary<AssemblyDefinition, SubstitutionInfo> ();
 			_context = context;
 		}
@@ -33,7 +33,7 @@ namespace Mono.Linker
 
 		public MethodAction GetAction (MethodDefinition method)
 		{
-			if (GlobalSubstitutionInfo.MethodActions.TryGetValue (method, out MethodAction action))
+			if (PrimarySubstitutionInfo.MethodActions.TryGetValue (method, out MethodAction action))
 				return action;
 
 			if (TryGetSubstitutionInfo (method, out var embeddedXml)) {
@@ -46,7 +46,7 @@ namespace Mono.Linker
 
 		public bool TryGetMethodStubValue (MethodDefinition method, out object value)
 		{
-			if (GlobalSubstitutionInfo.MethodStubValues.TryGetValue (method, out value))
+			if (PrimarySubstitutionInfo.MethodStubValues.TryGetValue (method, out value))
 				return true;
 
 			if (!TryGetSubstitutionInfo (method, out var embeddedXml))
@@ -57,7 +57,7 @@ namespace Mono.Linker
 
 		public bool TryGetFieldUserValue (FieldDefinition field, out object value)
 		{
-			if (GlobalSubstitutionInfo.FieldValues.TryGetValue (field, out value))
+			if (PrimarySubstitutionInfo.FieldValues.TryGetValue (field, out value))
 				return true;
 
 			if (!TryGetSubstitutionInfo (field, out var embeddedXml))
@@ -68,7 +68,7 @@ namespace Mono.Linker
 
 		public bool HasSubstitutedInit (FieldDefinition field)
 		{
-			if (GlobalSubstitutionInfo.FieldInit.Contains (field))
+			if (PrimarySubstitutionInfo.FieldInit.Contains (field))
 				return true;
 
 			if (!TryGetSubstitutionInfo (field, out var embeddedXml))
