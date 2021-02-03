@@ -4,27 +4,22 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Mono.Cecil;
 
 namespace Mono.Linker
 {
 	public class CustomAttributeSource
 	{
-		private readonly Dictionary<ICustomAttributeProvider, IEnumerable<CustomAttribute>> _xmlCustomAttributes;
-		private readonly Dictionary<ICustomAttributeProvider, IEnumerable<Attribute>> _internalAttributes;
-
-		readonly HashSet<AssemblyDefinition> _processedAttributeXml;
+		public AttributeInfo GlobalXmlInfo { get; }
+		private readonly Dictionary<AssemblyDefinition, AttributeInfo> _embeddedXmlInfos;
 		readonly LinkContext _context;
 
 		public CustomAttributeSource (LinkContext context)
 		{
-			_xmlCustomAttributes = new Dictionary<ICustomAttributeProvider, IEnumerable<CustomAttribute>> ();
-			_internalAttributes = new Dictionary<ICustomAttributeProvider, IEnumerable<Attribute>> ();
-			_processedAttributeXml = new HashSet<AssemblyDefinition> ();
+			GlobalXmlInfo = new AttributeInfo ();
+			_embeddedXmlInfos = new Dictionary<AssemblyDefinition, AttributeInfo> ();
 			_context = context;
 		}
-
 
 		public static AssemblyDefinition GetAssemblyFromCustomAttributeProvider (ICustomAttributeProvider provider)
 		{
@@ -41,22 +36,16 @@ namespace Mono.Linker
 			};
 		}
 
-		public void EnsureProcessedAttributeXml (ICustomAttributeProvider provider)
+		public bool TryGetEmbeddedXmlInfo (ICustomAttributeProvider provider, out AttributeInfo xmlInfo)
 		{
 			var assembly = GetAssemblyFromCustomAttributeProvider (provider);
 
-			if (!_processedAttributeXml.Add (assembly))
-				return;
+			if (!_embeddedXmlInfos.TryGetValue (assembly, out xmlInfo)) {
+				xmlInfo = EmbeddedXmlInfo.ProcessAttributes (assembly, _context);
+				_embeddedXmlInfos.Add (assembly, xmlInfo);
+			}
 
-			EmbeddedXmlInfo.ProcessAttributes (assembly, _context);
-		}
-
-		public void AddCustomAttributes (ICustomAttributeProvider provider, IEnumerable<CustomAttribute> customAttributes)
-		{
-			if (!_xmlCustomAttributes.ContainsKey (provider))
-				_xmlCustomAttributes[provider] = customAttributes;
-			else
-				_xmlCustomAttributes[provider] = _xmlCustomAttributes[provider].Concat (customAttributes);
+			return xmlInfo != null;
 		}
 
 		public IEnumerable<CustomAttribute> GetCustomAttributes (ICustomAttributeProvider provider)
@@ -66,9 +55,15 @@ namespace Mono.Linker
 					yield return customAttribute;
 			}
 
-			EnsureProcessedAttributeXml (provider);
+			if (GlobalXmlInfo.CustomAttributes.TryGetValue (provider, out var annotations)) {
+				foreach (var customAttribute in annotations)
+					yield return customAttribute;
+			}
 
-			if (_xmlCustomAttributes.TryGetValue (provider, out var annotations)) {
+			if (!TryGetEmbeddedXmlInfo (provider, out var embeddedXml))
+				yield break;
+
+			if (embeddedXml.CustomAttributes.TryGetValue (provider, out annotations)) {
 				foreach (var customAttribute in annotations)
 					yield return customAttribute;
 			}
@@ -79,27 +74,26 @@ namespace Mono.Linker
 			if (provider.HasCustomAttributes)
 				return true;
 
-			EnsureProcessedAttributeXml (provider);
-
-			if (_xmlCustomAttributes.ContainsKey (provider))
+			if (GlobalXmlInfo.CustomAttributes.ContainsKey (provider))
 				return true;
 
-			return false;
-		}
+			if (!TryGetEmbeddedXmlInfo (provider, out var embeddedXml))
+				return false;
 
-		public void AddInternalAttributes (ICustomAttributeProvider provider, IEnumerable<Attribute> attributes)
-		{
-			if (!_internalAttributes.ContainsKey (provider))
-				_internalAttributes[provider] = attributes;
-			else
-				_internalAttributes[provider] = _internalAttributes[provider].Concat (attributes);
+			return embeddedXml.CustomAttributes.ContainsKey (provider);
 		}
 
 		public IEnumerable<Attribute> GetInternalAttributes (ICustomAttributeProvider provider)
 		{
-			EnsureProcessedAttributeXml (provider);
+			if (GlobalXmlInfo.InternalAttributes.TryGetValue (provider, out var annotations)) {
+				foreach (var attribute in annotations)
+					yield return attribute;
+			}
 
-			if (_internalAttributes.TryGetValue (provider, out var annotations)) {
+			if (!TryGetEmbeddedXmlInfo (provider, out var embeddedXml))
+				yield break;
+
+			if (embeddedXml.InternalAttributes.TryGetValue (provider, out annotations)) {
 				foreach (var attribute in annotations)
 					yield return attribute;
 			}
@@ -107,9 +101,13 @@ namespace Mono.Linker
 
 		public bool HasInternalAttributes (ICustomAttributeProvider provider)
 		{
-			EnsureProcessedAttributeXml (provider);
+			if (GlobalXmlInfo.InternalAttributes.ContainsKey (provider))
+				return true;
 
-			return _internalAttributes.ContainsKey (provider) ? true : false;
+			if (!TryGetEmbeddedXmlInfo (provider, out var embeddedXml))
+				return false;
+
+			return embeddedXml.InternalAttributes.ContainsKey (provider);
 		}
 
 		public bool HasAttributes (ICustomAttributeProvider provider) =>

@@ -134,7 +134,7 @@ namespace Mono.Linker
 
 		public void SetAction (MethodDefinition method, MethodAction action)
 		{
-			MemberActions.SetAction (method, action);
+			MemberActions.GlobalSubstitutionInfo.SetAction (method, action);
 		}
 
 		public bool HasSubstitutedInit (FieldDefinition field)

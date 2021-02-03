@@ -46,46 +46,50 @@ namespace Mono.Linker
 				step.Process (context);
 		}
 
-		public static void ProcessSubstitutions (AssemblyDefinition assembly, LinkContext context)
+		public static SubstitutionInfo ProcessSubstitutions (AssemblyDefinition assembly, LinkContext context)
 		{
 			if (context.Annotations.GetAction (assembly) == AssemblyAction.Skip)
-				return;
+				return null;
 
 			var rsc = GetEmbeddedXml (assembly, res => res.Name.Equals ("ILLink.Substitutions.xml", StringComparison.OrdinalIgnoreCase));
 			if (rsc == null)
-				return;
+				return null;
 
-			BodySubstituterStep step = null;
+			BodySubstitutionParser parser = null;
 			try {
 				context.LogMessage ($"Processing embedded substitution descriptor {rsc.Name} from {assembly.Name}");
-				step = GetExternalSubstitutionStep (rsc, assembly);
+				parser = GetExternalSubstitutionParser (rsc, assembly);
 			} catch (XmlException ex) {
 				context.LogError ($"Error processing {rsc.Name}: {ex}", 1003);
 			}
 
-			if (step != null)
-				step.Process (context);
+			if (parser == null)
+				return null;
+
+			return parser.Parse (context);
 		}
 
-		public static void ProcessAttributes (AssemblyDefinition assembly, LinkContext context)
+		public static AttributeInfo ProcessAttributes (AssemblyDefinition assembly, LinkContext context)
 		{
 			if (context.Annotations.GetAction (assembly) == AssemblyAction.Skip)
-				return;
+				return null;
 
 			var rsc = GetEmbeddedXml (assembly, res => res.Name.Equals ("ILLink.LinkAttributes.xml", StringComparison.OrdinalIgnoreCase));
 			if (rsc == null)
-				return;
+				return null;
 
-			LinkAttributesStep step = null;
+			LinkAttributesParser parser = null;
 			try {
 				context.LogMessage ($"Processing embedded {rsc.Name} from {assembly.Name}");
-				step = GetExternalLinkAttributesStep (rsc, assembly);
+				parser = GetExternalLinkAttributesParser (rsc, assembly);
 			} catch (XmlException ex) {
 				context.LogError ($"Error processing {rsc.Name} from {assembly.Name}: {ex}", 1003);
 			}
 
-			if (step != null)
-				step.Process (context);
+			if (parser == null)
+				return null;
+
+			return parser.Parse (context);
 		}
 
 		static string GetAssemblyName (string descriptor)
@@ -121,14 +125,14 @@ namespace Mono.Linker
 			return new ResolveFromXmlStep (GetExternalDescriptor (resource), resource, assembly, "resource " + resource.Name + " in " + assembly.FullName);
 		}
 
-		static BodySubstituterStep GetExternalSubstitutionStep (EmbeddedResource resource, AssemblyDefinition assembly)
+		static BodySubstitutionParser GetExternalSubstitutionParser (EmbeddedResource resource, AssemblyDefinition assembly)
 		{
-			return new BodySubstituterStep (GetExternalDescriptor (resource), resource, assembly, "resource " + resource.Name + " in " + assembly.FullName);
+			return new BodySubstitutionParser (GetExternalDescriptor (resource), resource, assembly, "resource " + resource.Name + " in " + assembly.FullName);
 		}
 
-		static LinkAttributesStep GetExternalLinkAttributesStep (EmbeddedResource resource, AssemblyDefinition assembly)
+		static LinkAttributesParser GetExternalLinkAttributesParser (EmbeddedResource resource, AssemblyDefinition assembly)
 		{
-			return new LinkAttributesStep (GetExternalDescriptor (resource), resource, assembly, "resource " + resource.Name + " in " + assembly.FullName);
+			return new LinkAttributesParser (GetExternalDescriptor (resource), resource, assembly, "resource " + resource.Name + " in " + assembly.FullName);
 		}
 
 		static XPathDocument GetExternalDescriptor (EmbeddedResource resource)

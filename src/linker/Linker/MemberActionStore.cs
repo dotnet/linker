@@ -9,79 +9,72 @@ namespace Mono.Linker
 {
 	public class MemberActionStore
 	{
-		readonly Dictionary<MethodDefinition, MethodAction> _methodActions;
-		readonly Dictionary<MethodDefinition, object> _methodStubValues;
-
-		readonly Dictionary<FieldDefinition, object> _fieldValues;
-		readonly HashSet<FieldDefinition> _fieldInit;
-		readonly HashSet<AssemblyDefinition> _processedSubstitutionXml;
+		public SubstitutionInfo GlobalSubstitutionInfo { get; }
+		private readonly Dictionary<AssemblyDefinition, SubstitutionInfo> _embeddedXmlInfos;
 		readonly LinkContext _context;
 
 		public MemberActionStore (LinkContext context)
 		{
-			_methodActions = new Dictionary<MethodDefinition, MethodAction> ();
-			_methodStubValues = new Dictionary<MethodDefinition, object> ();
-			_fieldValues = new Dictionary<FieldDefinition, object> ();
-			_fieldInit = new HashSet<FieldDefinition> ();
-			_processedSubstitutionXml = new HashSet<AssemblyDefinition> ();
+			GlobalSubstitutionInfo = new SubstitutionInfo ();
+			_embeddedXmlInfos = new Dictionary<AssemblyDefinition, SubstitutionInfo> ();
 			_context = context;
 		}
 
-		void EnsureProcessedSubstitutionXml (AssemblyDefinition assembly)
+		public bool TryGetSubstitutionInfo (MemberReference member, out SubstitutionInfo xmlInfo)
 		{
-			if (_processedSubstitutionXml.Add (assembly))
-				EmbeddedXmlInfo.ProcessSubstitutions (assembly, _context);
-		}
+			var assembly = member.Module.Assembly;
+			if (!_embeddedXmlInfos.TryGetValue (assembly, out xmlInfo)) {
+				xmlInfo = EmbeddedXmlInfo.ProcessSubstitutions (assembly, _context);
+				_embeddedXmlInfos.Add (assembly, xmlInfo);
+			}
 
-		public void SetAction (MethodDefinition method, MethodAction action)
-		{
-			_methodActions[method] = action;
+			return xmlInfo != null;
 		}
 
 		public MethodAction GetAction (MethodDefinition method)
 		{
-			EnsureProcessedSubstitutionXml (method.Module.Assembly);
-
-			if (_methodActions.TryGetValue (method, out MethodAction action))
+			if (GlobalSubstitutionInfo.MethodActions.TryGetValue (method, out MethodAction action))
 				return action;
+
+			if (TryGetSubstitutionInfo (method, out var embeddedXml)) {
+				if (embeddedXml.MethodActions.TryGetValue (method, out action))
+					return action;
+			}
 
 			return MethodAction.Nothing;
 		}
 
-		public void SetMethodStubValue (MethodDefinition method, object value)
-		{
-			_methodStubValues[method] = value;
-		}
-
 		public bool TryGetMethodStubValue (MethodDefinition method, out object value)
 		{
-			EnsureProcessedSubstitutionXml (method.Module.Assembly);
+			if (GlobalSubstitutionInfo.MethodStubValues.TryGetValue (method, out value))
+				return true;
 
-			return _methodStubValues.TryGetValue (method, out value);
-		}
+			if (!TryGetSubstitutionInfo (method, out var embeddedXml))
+				return false;
 
-		public void SetFieldValue (FieldDefinition field, object value)
-		{
-			_fieldValues[field] = value;
+			return embeddedXml.MethodStubValues.TryGetValue (method, out value);
 		}
 
 		public bool TryGetFieldUserValue (FieldDefinition field, out object value)
 		{
-			EnsureProcessedSubstitutionXml (field.Module.Assembly);
+			if (GlobalSubstitutionInfo.FieldValues.TryGetValue (field, out value))
+				return true;
 
-			return _fieldValues.TryGetValue (field, out value);
-		}
+			if (!TryGetSubstitutionInfo (field, out var embeddedXml))
+				return false;
 
-		public void SetSubstitutedInit (FieldDefinition field)
-		{
-			_fieldInit.Add (field);
+			return embeddedXml.FieldValues.TryGetValue (field, out value);
 		}
 
 		public bool HasSubstitutedInit (FieldDefinition field)
 		{
-			EnsureProcessedSubstitutionXml (field.Module.Assembly);
+			if (GlobalSubstitutionInfo.FieldInit.Contains (field))
+				return true;
 
-			return _fieldInit.Contains (field);
+			if (!TryGetSubstitutionInfo (field, out var embeddedXml))
+				return false;
+
+			return embeddedXml.FieldInit.Contains (field);
 		}
 	}
 }

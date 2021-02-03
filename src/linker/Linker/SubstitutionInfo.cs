@@ -1,0 +1,45 @@
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
+using System.Collections.Generic;
+using Mono.Cecil;
+
+namespace Mono.Linker
+{
+	public class SubstitutionInfo
+	{
+		public Dictionary<MethodDefinition, MethodAction> MethodActions;
+		public Dictionary<MethodDefinition, object> MethodStubValues;
+		public Dictionary<FieldDefinition, object> FieldValues;
+		public HashSet<FieldDefinition> FieldInit;
+
+		public SubstitutionInfo ()
+		{
+			MethodActions = new Dictionary<MethodDefinition, MethodAction> ();
+			MethodStubValues = new Dictionary<MethodDefinition, object> ();
+			FieldValues = new Dictionary<FieldDefinition, object> ();
+			FieldInit = new HashSet<FieldDefinition> ();
+		}
+
+		public void SetAction (MethodDefinition method, MethodAction action)
+		{
+			MethodActions[method] = action;
+		}
+
+		public void SetMethodStubValue (MethodDefinition method, object value)
+		{
+			MethodStubValues[method] = value;
+		}
+
+		public void SetFieldValue (FieldDefinition field, object value)
+		{
+			FieldValues[field] = value;
+		}
+
+		public void SetSubstitutedInit (FieldDefinition field)
+		{
+			FieldInit.Add (field);
+		}
+	}
+}

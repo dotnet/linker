@@ -198,18 +198,34 @@ namespace Mono.Linker.Steps
 
 		void Initialize ()
 		{
-			// Pre-load corelib and process its attribute XML first. This is necessary because the
-			// corelib attribute XML can contain modifications to other assemblies.
-			// We could just mark it here, but the attribute processing isn't necessarily tied to marking,
-			// so this would rely on implementation details of corelib.
-			var coreLib = _context.TryResolve (PlatformAssemblies.CoreLib);
-			if (coreLib != null)
-				_context.CustomAttributes.EnsureProcessedAttributeXml (coreLib);
+			InitializeCorelibAttributeXml ();
 
 			foreach (AssemblyDefinition assembly in _context.GetAssemblies ())
 				InitializeAssembly (assembly);
 
 			ProcessMarkedPending ();
+		}
+
+		void InitializeCorelibAttributeXml ()
+		{
+			// Pre-load corelib and process its attribute XML first. This is necessary because the
+			// corelib attribute XML can contain modifications to other assemblies.
+			// We could just mark it here, but the attribute processing isn't necessarily tied to marking,
+			// so this would rely on implementation details of corelib.
+			var coreLib = _context.TryResolve (PlatformAssemblies.CoreLib);
+			if (coreLib == null)
+				return;
+
+			var xmlInfo = EmbeddedXmlInfo.ProcessAttributes (coreLib, _context);
+			if (xmlInfo == null)
+				return;
+
+			// Because the attribute XML can reference other assemblies, they must go in the global store,
+			// instead of the per-assembly stores.
+			foreach (var (provider, annotations) in xmlInfo.CustomAttributes)
+				_context.CustomAttributes.GlobalXmlInfo.AddCustomAttributes (provider, annotations);
+			foreach (var (provider, annotations) in xmlInfo.InternalAttributes)
+				_context.CustomAttributes.GlobalXmlInfo.AddInternalAttributes (provider, annotations);
 		}
 
 		protected virtual void InitializeAssembly (AssemblyDefinition assembly)
