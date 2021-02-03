@@ -923,7 +923,7 @@ namespace Mono.Linker.Steps
 					continue;
 
 				if (signature == null) {
-					MarkIndirectlyCalledMethod (m, reason, new MessageOrigin(sourceLocationMember));
+					MarkIndirectlyCalledMethod (m, reason, new MessageOrigin (sourceLocationMember));
 					marked = true;
 					continue;
 				}
@@ -943,7 +943,7 @@ namespace Mono.Linker.Steps
 				if (i < 0)
 					continue;
 
-				MarkIndirectlyCalledMethod (m, reason, new MessageOrigin(sourceLocationMember));
+				MarkIndirectlyCalledMethod (m, reason, new MessageOrigin (sourceLocationMember));
 				marked = true;
 			}
 

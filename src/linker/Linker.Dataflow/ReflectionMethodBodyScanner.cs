@@ -1736,7 +1736,7 @@ namespace Mono.Linker.Dataflow
 		{
 			var source = reflectionContext.Source;
 			var offset = reflectionContext.Instruction?.Offset;
-			reflectionContext.RecordRecognizedPattern (method, () => _markStep.MarkIndirectlyCalledMethod (method, new DependencyInfo (dependencyKind, source), new MessageOrigin(source, offset)));
+			reflectionContext.RecordRecognizedPattern (method, () => _markStep.MarkIndirectlyCalledMethod (method, new DependencyInfo (dependencyKind, source), new MessageOrigin (source, offset)));
 		}
 
 		void MarkNestedType (ref ReflectionPatternContext reflectionContext, TypeDefinition nestedType, DependencyKind dependencyKind = DependencyKind.AccessedViaReflection)
