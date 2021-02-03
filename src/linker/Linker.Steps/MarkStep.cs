@@ -2497,25 +2497,33 @@ namespace Mono.Linker.Steps
 			return method;
 		}
 
-		protected internal void ProcessRequiresUnreferencedCode (MethodDefinition method, MessageOrigin origin, DependencyKind dependencyKind)
+		void ProcessRequiresUnreferencedCode (MethodDefinition method, MessageOrigin origin, DependencyKind dependencyKind)
 		{
 			switch (dependencyKind) {
 			case DependencyKind.AccessedViaReflection:
-			case DependencyKind.DirectCall:
 			case DependencyKind.DynamicallyAccessedMember:
 			case DependencyKind.DynamicDependency:
 			case DependencyKind.ElementMethod:
 			case DependencyKind.Ldftn:
 			case DependencyKind.Ldvirtftn:
-			case DependencyKind.Newobj:
 			case DependencyKind.TriggersCctorForCalledMethod:
-			case DependencyKind.VirtualCall:
 				break;
+
+			// DirectCall, VirtualCall and NewObj are handled by ReflectionMethodBodyScanner
+			// This is necessary since the ReflectionMethodBodyScanner has intrinsic handling for some
+			// of the methods annotated with the attribute (for example Type.GetType)
+			// and it know when it's OK and when it needs a warning. In this place we don't know
+			// and would have to warn every time.
 
 			default:
 				return;
 			}
 
+			CheckAndReportRequiresUnreferencedCode (method, origin);
+		}
+
+		internal void CheckAndReportRequiresUnreferencedCode (MethodDefinition method, MessageOrigin origin)
+		{
 			// If the caller of a method is already marked with `RequiresUnreferencedCodeAttribute` a new warning should not
 			// be produced for the callee.
 			if (origin.MemberDefinition != null &&
@@ -2523,7 +2531,7 @@ namespace Mono.Linker.Steps
 				return;
 
 			if (Annotations.TryGetLinkerAttribute (method, out RequiresUnreferencedCodeAttribute requiresUnreferencedCode)) {
-				string message = $"'{method.GetDisplayName ()}' method has 'RequiresUnreferencedCodeAttribute' which can break functionality when trimming application code.";
+				string message = $"Using method '{method.GetDisplayName ()}' which has 'RequiresUnreferencedCodeAttribute' which can break functionality when trimming application code.";
 				if (!string.IsNullOrEmpty (requiresUnreferencedCode.Message))
 					message += $" {requiresUnreferencedCode.Message}.";
 

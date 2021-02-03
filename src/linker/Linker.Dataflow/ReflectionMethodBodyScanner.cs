@@ -513,8 +513,12 @@ namespace Mono.Linker.Dataflow
 				return false;
 
 			var callingMethodDefinition = callingMethodBody.Method;
-			var reflectionContext = new ReflectionPatternContext (_context,
-				ShouldEnableReflectionPatternReporting (callingMethodDefinition), callingMethodDefinition, calledMethod.Resolve (), operation);
+			var reflectionContext = new ReflectionPatternContext (
+				_context,
+				ShouldEnableReflectionPatternReporting (callingMethodDefinition),
+				callingMethodDefinition,
+				calledMethod.Resolve (),
+				operation);
 
 			DynamicallyAccessedMemberTypes returnValueDynamicallyAccessedMemberTypes = 0;
 
@@ -1329,6 +1333,8 @@ namespace Mono.Linker.Dataflow
 
 						reflectionContext.RecordHandledPattern ();
 					}
+
+					_markStep.CheckAndReportRequiresUnreferencedCode (calledMethodDefinition, new MessageOrigin (callingMethodDefinition, operation.Offset));
 
 					// To get good reporting of errors we need to track the origin of the value for all method calls
 					// but except Newobj as those are special.
