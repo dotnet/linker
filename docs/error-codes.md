@@ -472,7 +472,7 @@ the error code. For example:
   </linker>
   ```
 
-#### `IL2026` Trim analysis: Calling 'method' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. [message]. [url]
+#### `IL2026` Trim analysis: Using method 'method' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. [message]. [url]
 
 - The linker found a call to a method which is annotated with `RequiresUnreferencedCodeAttribute` which can break functionality of a trimmed application.
 
@@ -484,7 +484,7 @@ the error code. For example:
 
   void TestMethod()
   {
-      // IL2026: Calling 'MethodWithUnreferencedCodeUsage' which has 'RequiresUnreferencedCodeAttribute' 
+      // IL2026: Using method 'MethodWithUnreferencedCodeUsage' which has 'RequiresUnreferencedCodeAttribute' 
       // can break functionality when trimming application code. Use 'MethodFriendlyToTrimming' instead. http://help/unreferencedcode
       MethodWithUnreferencedCodeUsage();
   }
@@ -1538,9 +1538,9 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
   }
   ```
 
-#### `IL3002`: 'member' member has 'RequiresAssemblyFilesAttribute' which can break functionality when embedded in a single-file app. [message]. [url]
+#### `IL3002`: Using member 'member' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app. [message]. [url]
 
-- The linker found a call to a member which is annotated with 'RequiresAssemblyFilesAttribute' which can break functionality of a single-file application.
+- The linker found a call to a member annotated with 'RequiresAssemblyFilesAttribute' which can break functionality of a single-file application.
 
   ```C#
   [RequiresAssemblyFiles(Message="Use 'MethodFriendlyToSingleFile' instead", Url="http://help/assemblyfiles")]
@@ -1550,7 +1550,7 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
 
   void TestMethod()
   {
-      // IL3002: 'MethodWithAssemblyFilesUsage' member has 'RequiresAssemblyFilesAttribute' which
+      // IL3002: Using member 'MethodWithAssemblyFilesUsage' which has 'RequiresAssemblyFilesAttribute'
       // can break functionality when embedded in a single-file app. Use 'MethodFriendlyToSingleFile' instead. http://help/assemblyfiles
       MethodWithAssemblyFilesUsage();
   }

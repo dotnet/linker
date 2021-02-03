@@ -120,8 +120,8 @@
   <data name="RequiresUnreferencedCodeTitle" xml:space="preserve">
     <value>Methods marked with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code</value>
   </data>
-  <data name="RequiresUnreferencedCodeMessage" xml:space="preserve">
-    <value>'{0}' method has 'RequiresUnreferencedCodeAttribute' which can break functionality when trimming application code. {1}. {2}</value>
+  <data name="RequiresUnreferencedCodeAnalyzerMessage" xml:space="preserve">
+    <value>Using method '{0}' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. {1}. {2}</value>
   </data>
   <data name="AvoidAssemblyLocationInSingleFileTitle" xml:space="preserve">
     <value>Avoid accessing Assembly file path when publishing as a single file</value>
@@ -139,6 +139,6 @@
     <value>Avoid calling members marked with 'RequiresAssemblyFilesAttribute' when publishing as a single-file</value>
   </data>
   <data name="RequiresAssemblyFilesMessage" xml:space="preserve">
-    <value>'{0}' member has 'RequiresAssemblyFilesAttribute' which can break functionality when embedded in a single-file app.{1}{2}</value>
+    <value>Using member '{0}' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.{1}{2}</value>
   </data>
 </root>
