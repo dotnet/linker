@@ -2449,7 +2449,7 @@ namespace Mono.Linker.Steps
 				MarkMethod (method, reason, new MessageOrigin (sourceLocationMember));
 		}
 
-		protected internal void MarkIndirectlyCalledMethod (MethodDefinition method, in DependencyInfo reason, MessageOrigin origin)
+		protected internal void MarkIndirectlyCalledMethod (MethodDefinition method, in DependencyInfo reason, in MessageOrigin origin)
 		{
 			MarkMethod (method, reason, origin);
 			Annotations.MarkIndirectlyCalledMethod (method);
@@ -2497,7 +2497,7 @@ namespace Mono.Linker.Steps
 			return method;
 		}
 
-		void ProcessRequiresUnreferencedCode (MethodDefinition method, MessageOrigin origin, DependencyKind dependencyKind)
+		void ProcessRequiresUnreferencedCode (MethodDefinition method, in MessageOrigin origin, DependencyKind dependencyKind)
 		{
 			switch (dependencyKind) {
 			case DependencyKind.AccessedViaReflection:
@@ -2522,7 +2522,7 @@ namespace Mono.Linker.Steps
 			CheckAndReportRequiresUnreferencedCode (method, origin);
 		}
 
-		internal void CheckAndReportRequiresUnreferencedCode (MethodDefinition method, MessageOrigin origin)
+		internal void CheckAndReportRequiresUnreferencedCode (MethodDefinition method, in MessageOrigin origin)
 		{
 			// If the caller of a method is already marked with `RequiresUnreferencedCodeAttribute` a new warning should not
 			// be produced for the callee.
@@ -2531,7 +2531,7 @@ namespace Mono.Linker.Steps
 				return;
 
 			if (Annotations.TryGetLinkerAttribute (method, out RequiresUnreferencedCodeAttribute requiresUnreferencedCode)) {
-				string message = $"Using method '{method.GetDisplayName ()}' which has 'RequiresUnreferencedCodeAttribute' which can break functionality when trimming application code.";
+				string message = $"Using method '{method.GetDisplayName ()}' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code.";
 				if (!string.IsNullOrEmpty (requiresUnreferencedCode.Message))
 					message += $" {requiresUnreferencedCode.Message}.";
 
