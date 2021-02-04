@@ -38,8 +38,8 @@
         <note />
       </trans-unit>
       <trans-unit id="RequiresUnreferencedCodeTitle">
-        <source>Methods marked with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code</source>
-        <target state="new">Methods marked with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code</target>
+        <source>Methods annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code</source>
+        <target state="new">Methods annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code</target>
         <note />
       </trans-unit>
     </body>
