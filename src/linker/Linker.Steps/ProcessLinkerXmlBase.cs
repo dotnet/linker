@@ -1,3 +1,7 @@
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
 using System;
 using System.Globalization;
 using System.Linq;
@@ -15,7 +19,7 @@ namespace Mono.Linker.Steps
 		AllAssemblies = 0x4 | AnyAssembly
 	}
 
-	public abstract class ProcessLinkerXmlBase : BaseStep
+	public abstract class ProcessLinkerXmlBase
 	{
 		const string FullNameAttributeName = "fullname";
 		const string LinkerElementName = "linker";
@@ -34,21 +38,23 @@ namespace Mono.Linker.Steps
 		readonly XPathDocument _document;
 		readonly EmbeddedResource _resource;
 		protected readonly AssemblyDefinition _resourceAssembly;
+		protected readonly LinkContext _context;
 
-		protected ProcessLinkerXmlBase (XPathDocument document, string xmlDocumentLocation)
+		protected ProcessLinkerXmlBase (LinkContext context, XPathDocument document, string xmlDocumentLocation)
 		{
+			_context = context;
 			_document = document;
 			_xmlDocumentLocation = xmlDocumentLocation;
 		}
 
-		protected ProcessLinkerXmlBase (XPathDocument document, EmbeddedResource resource, AssemblyDefinition resourceAssembly, string xmlDocumentLocation)
-			: this (document, xmlDocumentLocation)
+		protected ProcessLinkerXmlBase (LinkContext context, XPathDocument document, EmbeddedResource resource, AssemblyDefinition resourceAssembly, string xmlDocumentLocation)
+			: this (context, document, xmlDocumentLocation)
 		{
 			_resource = resource ?? throw new ArgumentNullException (nameof (resource));
 			_resourceAssembly = resourceAssembly ?? throw new ArgumentNullException (nameof (resourceAssembly));
 		}
 
-		protected virtual bool ShouldProcessElement (XPathNavigator nav) => FeatureSettings.ShouldProcessElement (nav, Context, _xmlDocumentLocation);
+		protected virtual bool ShouldProcessElement (XPathNavigator nav) => FeatureSettings.ShouldProcessElement (nav, _context, _xmlDocumentLocation);
 
 		protected virtual void ProcessXml (bool stripResource, bool ignoreResource)
 		{
@@ -64,7 +70,7 @@ namespace Mono.Linker.Steps
 
 				if (_resource != null) {
 					if (stripResource)
-						Context.Annotations.AddResourceToRemove (_resourceAssembly, _resource);
+						_context.Annotations.AddResourceToRemove (_resourceAssembly, _resource);
 					if (ignoreResource)
 						return;
 				}
@@ -90,7 +96,7 @@ namespace Mono.Linker.Steps
 			while (iterator.MoveNext ()) {
 				bool processAllAssemblies = GetFullName (iterator.Current) == AllAssembliesFullName;
 				if (processAllAssemblies && AllowedAssemblySelector != AllowedAssemblies.AllAssemblies) {
-					Context.LogWarning ($"XML contains unsupported wildcard for assembly \"fullname\" attribute", 2100, _xmlDocumentLocation);
+					_context.LogWarning ($"XML contains unsupported wildcard for assembly \"fullname\" attribute", 2100, _xmlDocumentLocation);
 					continue;
 				}
 
@@ -101,7 +107,7 @@ namespace Mono.Linker.Steps
 				AssemblyDefinition assemblyToProcess = null;
 				if (!AllowedAssemblySelector.HasFlag (AllowedAssemblies.AnyAssembly)) {
 					if (_resourceAssembly.Name.Name != name.Name) {
-						Context.LogWarning ($"Embedded XML in assembly '{_resourceAssembly.Name.Name}' contains assembly \"fullname\" attribute for another assembly '{name}'", 2101, _xmlDocumentLocation);
+						_context.LogWarning ($"Embedded XML in assembly '{_resourceAssembly.Name.Name}' contains assembly \"fullname\" attribute for another assembly '{name}'", 2101, _xmlDocumentLocation);
 						continue;
 					}
 					assemblyToProcess = _resourceAssembly;
@@ -112,13 +118,13 @@ namespace Mono.Linker.Steps
 
 				if (processAllAssemblies) {
 					// We could avoid loading all references in this case: https://github.com/mono/linker/issues/1708
-					foreach (AssemblyDefinition assembly in Context.GetReferencedAssemblies ())
+					foreach (AssemblyDefinition assembly in _context.GetReferencedAssemblies ())
 						ProcessAssembly (assembly, iterator.Current, warnOnUnresolvedTypes: false);
 				} else {
-					AssemblyDefinition assembly = assemblyToProcess ?? GetAssembly (Context, name);
+					AssemblyDefinition assembly = assemblyToProcess ?? GetAssembly (_context, name);
 
 					if (assembly == null) {
-						Context.LogWarning ($"Could not resolve assembly '{name.Name}'", 2007, _xmlDocumentLocation);
+						_context.LogWarning ($"Could not resolve assembly '{name.Name}'", 2007, _xmlDocumentLocation);
 						continue;
 					}
 
@@ -161,7 +167,7 @@ namespace Mono.Linker.Steps
 
 				if (type == null) {
 					if (warnOnUnresolvedTypes)
-						Context.LogWarning ($"Could not resolve type '{fullname}'", 2008, _xmlDocumentLocation);
+						_context.LogWarning ($"Could not resolve type '{fullname}'", 2008, _xmlDocumentLocation);
 					continue;
 				}
 
@@ -236,7 +242,7 @@ namespace Mono.Linker.Steps
 			if (!String.IsNullOrEmpty (signature)) {
 				FieldDefinition field = GetField (type, signature);
 				if (field == null) {
-					Context.LogWarning ($"Could not find field '{signature}' on type '{type.GetDisplayName ()}'", 2012, _xmlDocumentLocation);
+					_context.LogWarning ($"Could not find field '{signature}' on type '{type.GetDisplayName ()}'", 2012, _xmlDocumentLocation);
 					return;
 				}
 
@@ -256,7 +262,7 @@ namespace Mono.Linker.Steps
 				}
 
 				if (!foundMatch) {
-					Context.LogWarning ($"Could not find field '{name}' on type '{type.GetDisplayName ()}'", 2012, _xmlDocumentLocation);
+					_context.LogWarning ($"Could not find field '{name}' on type '{type.GetDisplayName ()}'", 2012, _xmlDocumentLocation);
 				}
 			}
 		}
@@ -294,7 +300,7 @@ namespace Mono.Linker.Steps
 			if (!String.IsNullOrEmpty (signature)) {
 				MethodDefinition method = GetMethod (type, signature);
 				if (method == null) {
-					Context.LogWarning ($"Could not find method '{signature}' on type '{type.GetDisplayName ()}'", 2009, _xmlDocumentLocation);
+					_context.LogWarning ($"Could not find method '{signature}' on type '{type.GetDisplayName ()}'", 2009, _xmlDocumentLocation);
 					return;
 				}
 
@@ -314,7 +320,7 @@ namespace Mono.Linker.Steps
 				}
 
 				if (!foundMatch) {
-					Context.LogWarning ($"Could not find method '{name}' on type '{type.GetDisplayName ()}'", 2009, _xmlDocumentLocation);
+					_context.LogWarning ($"Could not find method '{name}' on type '{type.GetDisplayName ()}'", 2009, _xmlDocumentLocation);
 				}
 			}
 		}
@@ -342,7 +348,7 @@ namespace Mono.Linker.Steps
 			if (!String.IsNullOrEmpty (signature)) {
 				EventDefinition @event = GetEvent (type, signature);
 				if (@event == null) {
-					Context.LogWarning ($"Could not find event '{signature}' on type '{type.GetDisplayName ()}'", 2016, _xmlDocumentLocation);
+					_context.LogWarning ($"Could not find event '{signature}' on type '{type.GetDisplayName ()}'", 2016, _xmlDocumentLocation);
 					return;
 				}
 
@@ -360,7 +366,7 @@ namespace Mono.Linker.Steps
 				}
 
 				if (!foundMatch) {
-					Context.LogWarning ($"Could not find event '{name}' on type '{type.GetDisplayName ()}'", 2016, _xmlDocumentLocation);
+					_context.LogWarning ($"Could not find event '{name}' on type '{type.GetDisplayName ()}'", 2016, _xmlDocumentLocation);
 				}
 			}
 		}
@@ -398,7 +404,7 @@ namespace Mono.Linker.Steps
 			if (!String.IsNullOrEmpty (signature)) {
 				PropertyDefinition property = GetProperty (type, signature);
 				if (property == null) {
-					Context.LogWarning ($"Could not find property '{signature}' on type '{type.GetDisplayName ()}'", 2017, _xmlDocumentLocation);
+					_context.LogWarning ($"Could not find property '{signature}' on type '{type.GetDisplayName ()}'", 2017, _xmlDocumentLocation);
 					return;
 				}
 
@@ -416,7 +422,7 @@ namespace Mono.Linker.Steps
 				}
 
 				if (!foundMatch) {
-					Context.LogWarning ($"Could not find property '{name}' on type '{type.GetDisplayName ()}'", 2017, _xmlDocumentLocation);
+					_context.LogWarning ($"Could not find property '{name}' on type '{type.GetDisplayName ()}'", 2017, _xmlDocumentLocation);
 				}
 			}
 		}

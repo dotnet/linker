@@ -33,17 +33,17 @@ namespace Mono.Linker
 			if (rsc == null)
 				return;
 
-			ResolveFromXmlStep step = null;
+			DescriptorMarker marker = null;
 			try {
 				context.LogMessage ($"Processing embedded linker descriptor {rsc.Name} from {assembly.Name}");
-				step = GetExternalResolveStep (rsc, assembly);
+				marker = GetExternalResolveStep (context, rsc, assembly);
 			} catch (XmlException ex) {
 				/* This could happen if some broken XML file is embedded. */
 				context.LogError ($"Error processing {rsc.Name}: {ex}", 1003);
 			}
 
-			if (step != null)
-				step.Process (context);
+			if (marker != null)
+				marker.Mark ();
 		}
 
 		public static SubstitutionInfo ProcessSubstitutions (AssemblyDefinition assembly, LinkContext context)
@@ -58,7 +58,7 @@ namespace Mono.Linker
 			BodySubstitutionParser parser = null;
 			try {
 				context.LogMessage ($"Processing embedded substitution descriptor {rsc.Name} from {assembly.Name}");
-				parser = GetExternalSubstitutionParser (rsc, assembly);
+				parser = GetExternalSubstitutionParser (context, rsc, assembly);
 			} catch (XmlException ex) {
 				context.LogError ($"Error processing {rsc.Name}: {ex}", 1003);
 			}
@@ -66,7 +66,9 @@ namespace Mono.Linker
 			if (parser == null)
 				return null;
 
-			return parser.Parse (context);
+			var substitutionInfo = new SubstitutionInfo ();
+			parser.Parse (substitutionInfo);
+			return substitutionInfo;
 		}
 
 		public static AttributeInfo ProcessAttributes (AssemblyDefinition assembly, LinkContext context)
@@ -81,7 +83,7 @@ namespace Mono.Linker
 			LinkAttributesParser parser = null;
 			try {
 				context.LogMessage ($"Processing embedded {rsc.Name} from {assembly.Name}");
-				parser = GetExternalLinkAttributesParser (rsc, assembly);
+				parser = GetExternalLinkAttributesParser (context, rsc, assembly);
 			} catch (XmlException ex) {
 				context.LogError ($"Error processing {rsc.Name} from {assembly.Name}: {ex}", 1003);
 			}
@@ -89,7 +91,9 @@ namespace Mono.Linker
 			if (parser == null)
 				return null;
 
-			return parser.Parse (context);
+			var attributeInfo = new AttributeInfo ();
+			parser.Parse (attributeInfo);
+			return attributeInfo;
 		}
 
 		static string GetAssemblyName (string descriptor)
@@ -120,19 +124,19 @@ namespace Mono.Linker
 			}
 		}
 
-		static ResolveFromXmlStep GetExternalResolveStep (EmbeddedResource resource, AssemblyDefinition assembly)
+		static DescriptorMarker GetExternalResolveStep (LinkContext context, EmbeddedResource resource, AssemblyDefinition assembly)
 		{
-			return new ResolveFromXmlStep (GetExternalDescriptor (resource), resource, assembly, "resource " + resource.Name + " in " + assembly.FullName);
+			return new DescriptorMarker (context, GetExternalDescriptor (resource), resource, assembly, "resource " + resource.Name + " in " + assembly.FullName);
 		}
 
-		static BodySubstitutionParser GetExternalSubstitutionParser (EmbeddedResource resource, AssemblyDefinition assembly)
+		static BodySubstitutionParser GetExternalSubstitutionParser (LinkContext context, EmbeddedResource resource, AssemblyDefinition assembly)
 		{
-			return new BodySubstitutionParser (GetExternalDescriptor (resource), resource, assembly, "resource " + resource.Name + " in " + assembly.FullName);
+			return new BodySubstitutionParser (context, GetExternalDescriptor (resource), resource, assembly, "resource " + resource.Name + " in " + assembly.FullName);
 		}
 
-		static LinkAttributesParser GetExternalLinkAttributesParser (EmbeddedResource resource, AssemblyDefinition assembly)
+		static LinkAttributesParser GetExternalLinkAttributesParser (LinkContext context, EmbeddedResource resource, AssemblyDefinition assembly)
 		{
-			return new LinkAttributesParser (GetExternalDescriptor (resource), resource, assembly, "resource " + resource.Name + " in " + assembly.FullName);
+			return new LinkAttributesParser (context, GetExternalDescriptor (resource), resource, assembly, "resource " + resource.Name + " in " + assembly.FullName);
 		}
 
 		static XPathDocument GetExternalDescriptor (EmbeddedResource resource)

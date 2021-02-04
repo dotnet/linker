@@ -6,18 +6,16 @@ using System.Xml.XPath;
 
 namespace Mono.Linker.Steps
 {
-	public class LinkAttributesStep : BaseStep
+	public class LinkAttributesStep : ProcessLinkerXmlStepBase
 	{
-		readonly LinkAttributesParser _parser;
-
 		public LinkAttributesStep (XPathDocument document, string xmlDocumentLocation)
+			: base (document, xmlDocumentLocation)
 		{
-			_parser = new LinkAttributesParser (document, xmlDocumentLocation);
 		}
 
 		protected override void Process ()
 		{
-			_parser.Parse (Context, Context.CustomAttributes.PrimaryAttributeInfo);
+			new LinkAttributesParser (Context, _document, _xmlDocumentLocation).Parse (Context.CustomAttributes.PrimaryAttributeInfo);
 		}
 	}
 }

@@ -10,32 +10,20 @@ namespace Mono.Linker.Steps
 	{
 		SubstitutionInfo _substitutionInfo;
 
-		public BodySubstitutionParser (XPathDocument document, string xmlDocumentLocation)
-			: base (document, xmlDocumentLocation)
+		public BodySubstitutionParser (LinkContext context, XPathDocument document, string xmlDocumentLocation)
+			: base (context, document, xmlDocumentLocation)
 		{
 		}
 
-		public BodySubstitutionParser (XPathDocument document, EmbeddedResource resource, AssemblyDefinition resourceAssembly, string xmlDocumentLocation = "")
-			: base (document, resource, resourceAssembly, xmlDocumentLocation)
+		public BodySubstitutionParser (LinkContext context, XPathDocument document, EmbeddedResource resource, AssemblyDefinition resourceAssembly, string xmlDocumentLocation = "")
+			: base (context, document, resource, resourceAssembly, xmlDocumentLocation)
 		{
 		}
 
-		public SubstitutionInfo Parse (LinkContext context)
-		{
-			_substitutionInfo = new SubstitutionInfo ();
-			Process (context);
-			return _substitutionInfo;
-		}
-
-		public void Parse (LinkContext context, SubstitutionInfo xmlInfo)
+		public void Parse (SubstitutionInfo xmlInfo)
 		{
 			_substitutionInfo = xmlInfo;
-			Process (context);
-		}
-
-		protected override void Process ()
-		{
-			ProcessXml (Context.StripSubstitutions, Context.IgnoreSubstitutions);
+			ProcessXml (_context.StripSubstitutions, _context.IgnoreSubstitutions);
 		}
 
 		protected override void ProcessAssembly (AssemblyDefinition assembly, XPathNavigator nav, bool warnOnUnresolvedTypes)
@@ -88,7 +76,7 @@ namespace Mono.Linker.Steps
 
 			MethodDefinition method = FindMethod (type, signature);
 			if (method == null) {
-				Context.LogWarning ($"Could not find method '{signature}' on type '{type.GetDisplayName ()}'", 2009, _xmlDocumentLocation);
+				_context.LogWarning ($"Could not find method '{signature}' on type '{type.GetDisplayName ()}'", 2009, _xmlDocumentLocation);
 				return;
 			}
 
@@ -101,7 +89,7 @@ namespace Mono.Linker.Steps
 				string value = GetAttribute (iterator.Current, "value");
 				if (!string.IsNullOrEmpty (value)) {
 					if (!TryConvertValue (value, method.ReturnType, out object res)) {
-						Context.LogWarning ($"Invalid value for '{method.GetDisplayName ()}' stub", 2010, _xmlDocumentLocation);
+						_context.LogWarning ($"Invalid value for '{method.GetDisplayName ()}' stub", 2010, _xmlDocumentLocation);
 						return;
 					}
 
@@ -111,7 +99,7 @@ namespace Mono.Linker.Steps
 				_substitutionInfo.SetMethodAction (method, MethodAction.ConvertToStub);
 				return;
 			default:
-				Context.LogWarning ($"Unknown body modification '{action}' for '{method.GetDisplayName ()}'", 2011, _xmlDocumentLocation);
+				_context.LogWarning ($"Unknown body modification '{action}' for '{method.GetDisplayName ()}'", 2011, _xmlDocumentLocation);
 				return;
 			}
 		}
@@ -124,22 +112,22 @@ namespace Mono.Linker.Steps
 
 			var field = type.Fields.FirstOrDefault (f => f.Name == name);
 			if (field == null) {
-				Context.LogWarning ($"Could not find field '{name}' on type '{type.GetDisplayName ()}'", 2012, _xmlDocumentLocation);
+				_context.LogWarning ($"Could not find field '{name}' on type '{type.GetDisplayName ()}'", 2012, _xmlDocumentLocation);
 				return;
 			}
 
 			if (!field.IsStatic || field.IsLiteral) {
-				Context.LogWarning ($"Substituted field '{field.GetDisplayName ()}' needs to be static field.", 2013, _xmlDocumentLocation);
+				_context.LogWarning ($"Substituted field '{field.GetDisplayName ()}' needs to be static field.", 2013, _xmlDocumentLocation);
 				return;
 			}
 
 			string value = GetAttribute (iterator.Current, "value");
 			if (string.IsNullOrEmpty (value)) {
-				Context.LogWarning ($"Missing 'value' attribute for field '{field.GetDisplayName ()}'.", 2014, _xmlDocumentLocation);
+				_context.LogWarning ($"Missing 'value' attribute for field '{field.GetDisplayName ()}'.", 2014, _xmlDocumentLocation);
 				return;
 			}
 			if (!TryConvertValue (value, field.FieldType, out object res)) {
-				Context.LogWarning ($"Invalid value '{value}' for '{field.GetDisplayName ()}'.", 2015, _xmlDocumentLocation);
+				_context.LogWarning ($"Invalid value '{value}' for '{field.GetDisplayName ()}'.", 2015, _xmlDocumentLocation);
 				return;
 			}
 
@@ -161,23 +149,23 @@ namespace Mono.Linker.Steps
 
 				string name = GetAttribute (nav, "name");
 				if (String.IsNullOrEmpty (name)) {
-					Context.LogWarning ($"Missing 'name' attribute for resource.", 2038, _xmlDocumentLocation);
+					_context.LogWarning ($"Missing 'name' attribute for resource.", 2038, _xmlDocumentLocation);
 					continue;
 				}
 
 				string action = GetAttribute (nav, "action");
 				if (action != "remove") {
-					Context.LogWarning ($"Invalid value '{action}' for attribute 'action' for resource '{name}'.", 2039, _xmlDocumentLocation);
+					_context.LogWarning ($"Invalid value '{action}' for attribute 'action' for resource '{name}'.", 2039, _xmlDocumentLocation);
 					continue;
 				}
 
 				EmbeddedResource resource = assembly.FindEmbeddedResource (name);
 				if (resource == null) {
-					Context.LogWarning ($"Could not find embedded resource '{name}' to remove in assembly '{assembly.Name.Name}'.", 2040, _xmlDocumentLocation);
+					_context.LogWarning ($"Could not find embedded resource '{name}' to remove in assembly '{assembly.Name.Name}'.", 2040, _xmlDocumentLocation);
 					continue;
 				}
 
-				Context.Annotations.AddResourceToRemove (assembly, resource);
+				_context.Annotations.AddResourceToRemove (assembly, resource);
 			}
 		}
 
@@ -187,7 +175,7 @@ namespace Mono.Linker.Steps
 				return null;
 
 			foreach (MethodDefinition meth in type.Methods)
-				if (signature == ResolveFromXmlStep.GetMethodSignature (meth, includeGenericParameters: true))
+				if (signature == DescriptorMarker.GetMethodSignature (meth, includeGenericParameters: true))
 					return meth;
 
 			return null;

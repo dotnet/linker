@@ -16,27 +16,20 @@ namespace Mono.Linker.Steps
 	{
 		AttributeInfo _attributeInfo;
 
-		public LinkAttributesParser (XPathDocument document, string xmlDocumentLocation)
-			: base (document, xmlDocumentLocation)
+		public LinkAttributesParser (LinkContext context, XPathDocument document, string xmlDocumentLocation)
+			: base (context, document, xmlDocumentLocation)
 		{
 		}
 
-		public LinkAttributesParser (XPathDocument document, EmbeddedResource resource, AssemblyDefinition resourceAssembly, string xmlDocumentLocation = "<unspecified>")
-			: base (document, resource, resourceAssembly, xmlDocumentLocation)
+		public LinkAttributesParser (LinkContext context, XPathDocument document, EmbeddedResource resource, AssemblyDefinition resourceAssembly, string xmlDocumentLocation = "<unspecified>")
+			: base (context, document, resource, resourceAssembly, xmlDocumentLocation)
 		{
 		}
 
-		public AttributeInfo Parse (LinkContext context)
-		{
-			_attributeInfo = new AttributeInfo ();
-			Process (context);
-			return _attributeInfo;
-		}
-
-		public void Parse (LinkContext context, AttributeInfo xmlInfo)
+		public void Parse (AttributeInfo xmlInfo)
 		{
 			_attributeInfo = xmlInfo;
-			Process (context);
+			ProcessXml (_context.StripLinkAttributes, _context.IgnoreLinkAttributes);
 		}
 
 		IEnumerable<CustomAttribute> ProcessAttributes (XPathNavigator nav, ICustomAttributeProvider provider)
@@ -55,7 +48,7 @@ namespace Mono.Linker.Steps
 
 				string attributeFullName = GetFullName (iterator.Current);
 				if (string.IsNullOrEmpty (attributeFullName)) {
-					Context.LogWarning ($"'attribute' element does not contain attribute 'fullname' or it's empty", 2029, _xmlDocumentLocation);
+					_context.LogWarning ($"'attribute' element does not contain attribute 'fullname' or it's empty", 2029, _xmlDocumentLocation);
 					continue;
 				}
 
@@ -76,7 +69,7 @@ namespace Mono.Linker.Steps
 			var attributeArgumentCount = attributeArguments == null ? 0 : attributeArguments.Length;
 			MethodDefinition constructor = attributeType.Methods.Where (method => method.IsInstanceConstructor ()).FirstOrDefault (c => c.Parameters.Count == attributeArgumentCount);
 			if (constructor == null) {
-				Context.LogWarning (
+				_context.LogWarning (
 					$"Could not find a constructor for type '{attributeType}' that has '{attributeArgumentCount}' arguments",
 					2022,
 					_xmlDocumentLocation);
@@ -103,19 +96,19 @@ namespace Mono.Linker.Steps
 			while (iterator.MoveNext ()) {
 				string propertyName = GetName (iterator.Current);
 				if (string.IsNullOrEmpty (propertyName)) {
-					Context.LogWarning ($"Property element does not contain attribute 'name'", 2051, _xmlDocumentLocation);
+					_context.LogWarning ($"Property element does not contain attribute 'name'", 2051, _xmlDocumentLocation);
 					continue;
 				}
 
 				PropertyDefinition property = attributeType.Properties.Where (prop => prop.Name == propertyName).FirstOrDefault ();
 				if (property == null) {
-					Context.LogWarning ($"Property '{propertyName}' could not be found", 2052, _xmlDocumentLocation);
+					_context.LogWarning ($"Property '{propertyName}' could not be found", 2052, _xmlDocumentLocation);
 					continue;
 				}
 
 				var propertyValue = iterator.Current.Value;
 				if (!TryConvertValue (propertyValue, property.PropertyType, out object value)) {
-					Context.LogWarning ($"Invalid value '{propertyValue}' for property '{propertyName}'", 2053, _xmlDocumentLocation);
+					_context.LogWarning ($"Invalid value '{propertyValue}' for property '{propertyName}'", 2053, _xmlDocumentLocation);
 					continue;
 				}
 
@@ -136,7 +129,7 @@ namespace Mono.Linker.Steps
 				object argValue;
 				TypeDefinition parameterType = attributeConstructor.Parameters[i].ParameterType.Resolve ();
 				if (!TryConvertValue (arguments[i], parameterType, out argValue)) {
-					Context.LogWarning (
+					_context.LogWarning (
 						$"Invalid argument value '{arguments[i]}' for parameter type '{parameterType.GetDisplayName ()}' of attribute '{attributeConstructor.DeclaringType.GetDisplayName ()}'",
 						2054,
 						_xmlDocumentLocation);
@@ -152,16 +145,16 @@ namespace Mono.Linker.Steps
 		void ProcessInternalAttribute (ICustomAttributeProvider provider, string internalAttribute)
 		{
 			if (internalAttribute != "RemoveAttributeInstances") {
-				Context.LogWarning ($"Unrecognized internal attribute '{internalAttribute}'", 2049, _xmlDocumentLocation);
+				_context.LogWarning ($"Unrecognized internal attribute '{internalAttribute}'", 2049, _xmlDocumentLocation);
 				return;
 			}
 
 			if (provider.MetadataToken.TokenType != TokenType.TypeDef) {
-				Context.LogWarning ($"Internal attribute 'RemoveAttributeInstances' can only be used on a type, but is being used on '{provider}'", 2048, _xmlDocumentLocation);
+				_context.LogWarning ($"Internal attribute 'RemoveAttributeInstances' can only be used on a type, but is being used on '{provider}'", 2048, _xmlDocumentLocation);
 				return;
 			}
 
-			if (!Annotations.IsMarked (provider)) {
+			if (!_context.Annotations.IsMarked (provider)) {
 				IEnumerable<Attribute> removeAttributeInstance = new List<Attribute> { new RemoveAttributeInstancesAttribute () };
 				_attributeInfo.AddInternalAttributes (provider, removeAttributeInstance);
 			}
@@ -171,27 +164,27 @@ namespace Mono.Linker.Steps
 		{
 			string assemblyName = GetAttribute (iterator.Current, "assembly");
 			if (string.IsNullOrEmpty (assemblyName)) {
-				attributeType = Context.GetType (attributeFullName);
+				attributeType = _context.GetType (attributeFullName);
 			} else {
 				AssemblyDefinition assembly;
 				try {
-					assembly = GetAssembly (Context, AssemblyNameReference.Parse (assemblyName));
+					assembly = GetAssembly (_context, AssemblyNameReference.Parse (assemblyName));
 					if (assembly == null) {
-						Context.LogWarning ($"Could not resolve assembly '{assemblyName}' for attribute '{attributeFullName}'", 2030, _xmlDocumentLocation);
+						_context.LogWarning ($"Could not resolve assembly '{assemblyName}' for attribute '{attributeFullName}'", 2030, _xmlDocumentLocation);
 						attributeType = default;
 						return false;
 					}
 				} catch (Exception) {
-					Context.LogWarning ($"Could not resolve assembly '{assemblyName}' for attribute '{attributeFullName}'", 2030, _xmlDocumentLocation);
+					_context.LogWarning ($"Could not resolve assembly '{assemblyName}' for attribute '{attributeFullName}'", 2030, _xmlDocumentLocation);
 					attributeType = default;
 					return false;
 				}
 
-				attributeType = Context.TypeNameResolver.ResolveTypeName (assembly, attributeFullName)?.Resolve ();
+				attributeType = _context.TypeNameResolver.ResolveTypeName (assembly, attributeFullName)?.Resolve ();
 			}
 
 			if (attributeType == null) {
-				Context.LogWarning ($"Attribute type '{attributeFullName}' could not be found", 2031, _xmlDocumentLocation);
+				_context.LogWarning ($"Attribute type '{attributeFullName}' could not be found", 2031, _xmlDocumentLocation);
 				return false;
 			}
 
@@ -205,11 +198,6 @@ namespace Mono.Linker.Steps
 				children.Add (iterator.Current.Value);
 			}
 			return children;
-		}
-
-		protected override void Process ()
-		{
-			ProcessXml (Context.StripLinkAttributes, Context.IgnoreLinkAttributes);
 		}
 
 		protected override AllowedAssemblies AllowedAssemblySelector {
@@ -280,7 +268,7 @@ namespace Mono.Linker.Steps
 					foreach (ParameterDefinition parameter in method.Parameters) {
 						if (paramName == parameter.Name) {
 							if (parameter.HasCustomAttributes || _attributeInfo.CustomAttributes.ContainsKey (parameter))
-								Context.LogWarning (
+								_context.LogWarning (
 									$"More than one value specified for parameter '{paramName}' of method '{method.GetDisplayName ()}'",
 									2024, _xmlDocumentLocation);
 							_attributeInfo.AddCustomAttributes (parameter, attributes);
@@ -302,7 +290,7 @@ namespace Mono.Linker.Steps
 					if (attributes.Any ())
 						_attributeInfo.AddCustomAttributes (method.MethodReturnType, attributes);
 				} else {
-					Context.LogWarning (
+					_context.LogWarning (
 						$"There is more than one 'return' child element specified for method '{method.GetDisplayName ()}'",
 						2023, _xmlDocumentLocation);
 				}

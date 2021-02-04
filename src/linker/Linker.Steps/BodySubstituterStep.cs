@@ -2,18 +2,16 @@ using System.Xml.XPath;
 
 namespace Mono.Linker.Steps
 {
-	public class BodySubstituterStep : BaseStep
+	public class BodySubstituterStep : ProcessLinkerXmlStepBase
 	{
-		readonly BodySubstitutionParser _parser;
-
 		public BodySubstituterStep (XPathDocument document, string xmlDocumentLocation)
+			: base (document, xmlDocumentLocation)
 		{
-			_parser = new BodySubstitutionParser (document, xmlDocumentLocation);
 		}
 
 		protected override void Process ()
 		{
-			_parser.Parse (Context, Context.Annotations.MemberActions.PrimarySubstitutionInfo);
+			new BodySubstitutionParser (Context, _document, _xmlDocumentLocation).Parse (Context.Annotations.MemberActions.PrimarySubstitutionInfo);
 		}
 	}
 }
