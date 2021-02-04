@@ -22,15 +22,9 @@
         <target state="new">Avoid accessing Assembly file path when publishing as a single file</target>
         <note />
       </trans-unit>
-<<<<<<< HEAD
       <trans-unit id="RequiresAssemblyFilesMessage">
-        <source>'{0}' member has 'RequiresAssemblyFilesAttribute' which can break functionality when embedded in a single-file app.{1}{2}</source>
-        <target state="new">'{0}' member has 'RequiresAssemblyFilesAttribute' which can break functionality when embedded in a single-file app.{1}{2}</target>
-=======
-      <trans-unit id="RequiresUnreferencedCodeAnalyzerMessage">
-        <source>Using method '{0}' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. {1}. {2}</source>
-        <target state="new">Using method '{0}' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. {1}. {2}</target>
->>>>>>> faf9cc056e4c6481ba3c061521477185e37a1fce
+        <source>Using member '{0}' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.{1}{2}</source>
+        <target state="new">Using member '{0}' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.{1}{2}</target>
         <note />
       </trans-unit>
       <trans-unit id="RequiresAssemblyFilesTitle">
@@ -39,8 +33,8 @@
         <note />
       </trans-unit>
       <trans-unit id="RequiresUnreferencedCodeMessage">
-        <source>'{0}' method has 'RequiresUnreferencedCodeAttribute' which can break functionality when trimming application code. {1}. {2}</source>
-        <target state="new">'{0}' method has 'RequiresUnreferencedCodeAttribute' which can break functionality when trimming application code. {1}. {2}</target>
+        <source>Using method '{0}' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. {1}. {2}</source>
+        <target state="new">Using method '{0}' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. {1}. {2}</target>
         <note />
       </trans-unit>
       <trans-unit id="RequiresUnreferencedCodeTitle">

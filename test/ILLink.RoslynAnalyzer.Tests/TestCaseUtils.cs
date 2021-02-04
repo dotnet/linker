@@ -62,11 +62,21 @@ namespace ILLink.RoslynAnalyzer.Tests
 			foreach (var attr in attrs) {
 				switch (attr.Name.ToString ()) {
 				case "ExpectedWarning":
-					var expectedMessagesContains = attr.ArgumentList!.Arguments.Select (m => GetStringsFromExpr (m.Expression)).ToList ();
-					var expectedWarningCode = expectedMessagesContains[0];
-					if (!expectedWarningCode[0].Contains ("IL"))
+					var expectedWarningCode = attr.ArgumentList!.Arguments[0];
+					if (!GetStringFromExpr (expectedWarningCode.Expression).Contains ("IL"))
 						break;
-					var expectedMessages = expectedMessagesContains[1];
+					List<string> expectedMessages;
+					if (attr.ArgumentList!.Arguments[1].Expression.Kind () == SyntaxKind.ArrayCreationExpression) {
+						expectedMessages = GetStringsFromExpr (attr.ArgumentList!.Arguments[1].Expression);
+					} else {
+						expectedMessages = new List<string> ();
+						foreach (var argument in attr.ArgumentList!.Arguments) {
+							if (argument.NameEquals != null)
+								Assert.True (false, $"Analyzer does not support named arguments at this moment: {argument.NameEquals} {argument.Expression}");
+							expectedMessages.Add (GetStringFromExpr (argument.Expression));
+						}
+						expectedMessages.RemoveAt (0);
+					}
 					Assert.True (
 						filtered.Any (mc => {
 							foreach (var expectedMessage in expectedMessages)
@@ -142,27 +152,15 @@ In diagnostics:
 			static List<string> GetStringsFromExpr (ExpressionSyntax expr)
 			{
 				List<string> returnedStrings = new List<string> ();
-				switch (expr.Kind ()) {
-				case SyntaxKind.StringLiteralExpression:
-					returnedStrings.Add (GetStringFromExpr (expr));
-					return returnedStrings;
-				case SyntaxKind.AddExpression:
-					returnedStrings.Add (GetStringFromExpr (expr));
-					return returnedStrings;
-				case SyntaxKind.ArrayCreationExpression:
-					var array = (ArrayCreationExpressionSyntax) expr;
-					foreach (var node in array.ChildNodes ()) {
-						if (node is InitializerExpressionSyntax) {
-							var initializer = (InitializerExpressionSyntax) node;
-							foreach (var expression in initializer.Expressions)
-								returnedStrings.Add (GetStringFromExpr (expression));
-						}
+				var array = (ArrayCreationExpressionSyntax) expr;
+				foreach (var node in array.ChildNodes ()) {
+					if (node is InitializerExpressionSyntax) {
+						var initializer = (InitializerExpressionSyntax) node;
+						foreach (var expression in initializer.Expressions)
+							returnedStrings.Add (GetStringFromExpr (expression));
 					}
-					return returnedStrings;
-				default:
-					Assert.True (false, "Unsupported expr kind " + expr.Kind ());
-					return null!;
 				}
+				return returnedStrings;
 			}
 		}
 
