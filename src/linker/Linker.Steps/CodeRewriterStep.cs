@@ -137,7 +137,7 @@ namespace Mono.Linker.Steps
 			ctor = Context.MarkedKnownMembers.NotSupportedExceptionCtorString;
 			ctor = assembly.MainModule.ImportReference (ctor);
 
-			il.Emit (OpCodes.Ldstr, "Linked away");
+			il.Emit (OpCodes.Ldstr, "Linked away: " + method.FullName);
 			il.Emit (OpCodes.Newobj, ctor);
 			il.Emit (OpCodes.Throw);
 
