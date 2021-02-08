@@ -24,7 +24,8 @@ which can use one of following values.
 - `all` - Keep all members in root assembly
 - `default` - Use entry point for applications and all members for libraries
 - `entrypoint` - Use assembly entry point as only root in the assembly
-- `visible` - Keep all members and types visible outside of root assembly
+- `library` - All assembly members and data needed for secondary trimming are retained
+- `visible` - Keep all members and types visible outside of the assembly
 
 You can retain all public members of `Program.exe` application even if they are not
 referenced by any dependency by calling linker like
