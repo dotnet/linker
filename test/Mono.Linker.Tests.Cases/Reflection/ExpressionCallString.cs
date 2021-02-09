@@ -46,7 +46,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			private void PrivateInstanceMethod () { }
 
 			[Kept]
-			public static void Test()
+			public static void Test ()
 			{
 				Expression.Call (typeof (PublicMethods), nameof (PublicStaticMethod), Type.EmptyTypes);
 
@@ -226,14 +226,14 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 			[Kept]
 			public static void GenericMethodWithRequirements<
-				[KeptAttributeAttribute(typeof(DynamicallyAccessedMembersAttribute))]
-				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicProperties)] T> ()
+				[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicProperties)] T> ()
 			{ }
 
 			[Kept]
 			// BUG:https://github.com/mono/linker/issues/1819
 			// [ExpectedWarning("IL9999", nameof(GenericMethodWithRequirements))]
-			public static void Test()
+			public static void Test ()
 			{
 				// Linker doesn't check if it's valid to call a generic method without generic parameters, it looks like a non-generic call
 				// so it will preserve the target method.
@@ -247,7 +247,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			}
 
 			[Kept]
-			static Type GetUnknownType() { return null; }
+			static Type GetUnknownType () { return null; }
 		}
 	}
 }
