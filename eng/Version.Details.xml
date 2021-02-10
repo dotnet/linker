@@ -6,6 +6,7 @@
     <Dependency Name="Microsoft.DotNet.Arcade.Sdk" Version="6.0.0-beta.21105.5">
       <Uri>https://github.com/dotnet/arcade</Uri>
       <Sha>fc83e59329203724d4a63c4f6c843be62983a35e</Sha>
+      <SourceBuild RepoName="arcade" ManagedOnly="true" />
     </Dependency>
     <Dependency Name="Microsoft.DotNet.ApiCompat" Version="6.0.0-beta.21105.5">
       <Uri>https://github.com/dotnet/arcade</Uri>
@@ -14,6 +15,10 @@
     <Dependency Name="Microsoft.NET.Sdk.IL" Version="6.0.0-preview.2.21108.2">
       <Uri>https://github.com/dotnet/runtime</Uri>
       <Sha>a66b4e3bf5e3c5ecb2e9fba771f69b177bd3844e</Sha>
+      <!--
+      This would introduce a cyclic dependency, so it's explictly not enabled for now
+      <SourceBuild RepoName="runtime" />
+      -->
     </Dependency>
   </ToolsetDependencies>
 </Dependencies>
