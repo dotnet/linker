@@ -236,7 +236,7 @@ namespace Mono.Linker
 				CodeOptimizations.UnusedInterfaces |
 				CodeOptimizations.UnusedTypeChecks |
 				CodeOptimizations.IPConstantPropagation |
-				CodeOptimizations.UnreachableBodies	|
+				CodeOptimizations.UnreachableBodies |
 				CodeOptimizations.RemoveDescriptors |
 				CodeOptimizations.RemoveLinkAttributes |
 				CodeOptimizations.RemoveSubstitutions |
