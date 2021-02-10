@@ -802,23 +802,14 @@ namespace Mono.Linker.Steps
 			if (isPreserveDependency)
 				MarkUserDependency (member, ca, sourceLocationMember);
 
-			if (RetainDynamicDependencyAttribute (member)) {
-				MarkCustomAttribute (ca, reason, sourceLocationMember);
-			} else {
+			if (_context.CanApplyOptimization (CodeOptimizations.RemoveDynamicDependencyAttribute, member.DeclaringType.Module.Assembly)) {
 				// Record the custom attribute so that it has a reason, without actually marking it.
 				Tracer.AddDirectDependency (ca, reason, marked: false);
+			} else {
+				MarkCustomAttribute (ca, reason, sourceLocationMember);
 			}
 
 			return true;
-		}
-
-		bool RetainDynamicDependencyAttribute (IMemberDefinition member)
-		{
-			AssemblyDefinition assembly = member.DeclaringType.Module.Assembly;
-			if (Annotations.GetAction (assembly) != AssemblyAction.Link)
-				return true;
-
-			return !_context.IsOptimizationEnabled (CodeOptimizations.RemoveDynamicDependencyAttribute, assembly);
 		}
 
 		void MarkDynamicDependency (DynamicDependency dynamicDependency, IMemberDefinition context)
@@ -3191,10 +3182,7 @@ namespace Mono.Linker.Steps
 					if (operand is TypeSpecification || operand is GenericParameter)
 						break;
 
-					if (Annotations.GetAction (method.DeclaringType.Module.Assembly) != AssemblyAction.Link)
-						break;
-
-					if (!_context.IsOptimizationEnabled (CodeOptimizations.UnusedTypeChecks, method.DeclaringType))
+					if (!_context.CanApplyOptimization (CodeOptimizations.UnusedTypeChecks, method.DeclaringType.Module.Assembly))
 						break;
 
 					TypeDefinition type = operand.Resolve ();

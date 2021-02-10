@@ -113,8 +113,11 @@ namespace Mono.Linker.Steps
 			if ((preserve & TypePreserveMembers.Visible) != 0 && !IsTypeVisible (type))
 				preserve &= ~TypePreserveMembers.Visible;
 
-			if ((preserve & TypePreserveMembers.Internal) != 0 && !IsTypeVisibleOrInternal (type))
+			if ((preserve & TypePreserveMembers.Internal) != 0 && IsTypePrivate (type))
 				preserve &= ~TypePreserveMembers.Internal;
+
+			if (preserve == 0)
+				return;
 
 			Annotations.Mark (type, new DependencyInfo (DependencyKind.RootAssembly, type.Module.Assembly));
 			Annotations.SetMembersPreserve (type, preserve);
@@ -139,9 +142,9 @@ namespace Mono.Linker.Steps
 			return type.IsPublic || type.IsNestedPublic || type.IsNestedFamily || type.IsNestedFamilyOrAssembly;
 		}
 
-		static bool IsTypeVisibleOrInternal (TypeDefinition type)
+		static bool IsTypePrivate (TypeDefinition type)
 		{
-			return !type.IsNestedPrivate;
+			return type.IsNestedPrivate;
 		}
 
 		static bool HasInternalsVisibleTo (AssemblyDefinition assembly)

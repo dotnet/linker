@@ -494,6 +494,12 @@ namespace Mono.Linker
 			return Optimizations.IsEnabled (optimization, context);
 		}
 
+		public bool CanApplyOptimization (CodeOptimizations optimization, AssemblyDefinition context)
+		{
+			return Annotations.GetAction (context) == AssemblyAction.Link &&
+				IsOptimizationEnabled (optimization, context);
+		}
+
 		public void LogMessage (MessageContainer message)
 		{
 			if (message == MessageContainer.Empty)
