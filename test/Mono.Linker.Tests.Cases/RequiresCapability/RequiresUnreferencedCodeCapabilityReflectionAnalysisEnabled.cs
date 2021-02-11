@@ -115,8 +115,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		class TestRequiresUnreferencedCodeAndDynamicallyAccessedMembers
 		{
 			[Kept]
-			[KeptAttributeAttribute(typeof(RequiresUnreferencedCodeAttribute))]
-			[RequiresUnreferencedCode("--- RequiresUnreferencedCodeAndPublicMethods ---")]
+			[KeptAttributeAttribute (typeof (RequiresUnreferencedCodeAttribute))]
+			[RequiresUnreferencedCode ("--- RequiresUnreferencedCodeAndPublicMethods ---")]
 			[RecognizedReflectionAccessPattern]
 			static void RequiresUnreferencedCodeAndPublicMethods (
 				[KeptAttributeAttribute(typeof(DynamicallyAccessedMembersAttribute))]
@@ -152,8 +152,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			static int PrivateStaticField;
 
 			[Kept]
-			[ExpectedWarning("IL2026", "--- RequiresUnreferencedCodeAndPublicMethods ---")]
-			public static void Test()
+			[ExpectedWarning ("IL2026", "--- RequiresUnreferencedCodeAndPublicMethods ---")]
+			public static void Test ()
 			{
 				RequiresUnreferencedCodeAndPublicMethods (typeof (TestRequiresUnreferencedCodeAndDynamicallyAccessedMembers));
 			}
