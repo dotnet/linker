@@ -144,8 +144,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			typeof (BaseClass), nameof (BaseClass.PublicEventOnBase), (Type[]) null)]
 		static void TestEventInBaseType ()
 		{
-			typeof (DerivedClass).GetEvent ("ProtectedEventOnBase"); // Will not mark anything as it only works on public events
-			typeof (DerivedClass).GetEvent ("PublicEventOnBase");
+			var eventInfo = typeof (DerivedClass).GetEvent ("ProtectedEventOnBase"); // Will not mark anything as it only works on public events
+			eventInfo = typeof (DerivedClass).GetEvent ("PublicEventOnBase");
 		}
 
 		[Kept]
@@ -154,19 +154,19 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			typeof (IgnoreCaseBindingFlagsClass), nameof (IgnoreCaseBindingFlagsClass.PublicEvent), (Type[]) null)]
 		static void TestIgnoreCaseBindingFlags ()
 		{
-			typeof (IgnoreCaseBindingFlagsClass).GetEvent ("publicevent", BindingFlags.IgnoreCase | BindingFlags.Public);
+			var eventInfo = typeof (IgnoreCaseBindingFlagsClass).GetEvent ("publicevent", BindingFlags.IgnoreCase | BindingFlags.Public);
 		}
 
 		[Kept]
 		static void TestFailIgnoreCaseBindingFlags ()
 		{
-			typeof (FailIgnoreCaseBindingFlagsClass).GetEvent ("publicevent", BindingFlags.Public);
+			var eventInfo = typeof (FailIgnoreCaseBindingFlagsClass).GetEvent ("publicevent", BindingFlags.Public);
 		}
 
 		[Kept]
 		static void TestUnsupportedBindingFlags ()
 		{
-			typeof (PutRefDispPropertyBindingFlagsClass).GetEvent ("PublicEvent", BindingFlags.PutRefDispProperty);
+			var eventInfo = typeof (PutRefDispPropertyBindingFlagsClass).GetEvent ("PublicEvent", BindingFlags.PutRefDispProperty);
 		}
 
 		[KeptMember (".ctor()")]

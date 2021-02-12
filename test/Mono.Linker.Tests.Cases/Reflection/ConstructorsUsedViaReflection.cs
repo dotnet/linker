@@ -31,7 +31,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		[Kept]
 		static void TestWithBindingFlags ()
 		{
-			var constructors = typeof (ConstructorsBindingFlags).GetConstructors (BindingFlags.Public);
+			var constructors = typeof (ConstructorsBindingFlags).GetConstructors (BindingFlags.Public | BindingFlags.Static);
 		}
 
 		[RecognizedReflectionAccessPattern]

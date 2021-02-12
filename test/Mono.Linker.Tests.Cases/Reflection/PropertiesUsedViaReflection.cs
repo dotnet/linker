@@ -9,6 +9,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 {
 	[SetupCSharpCompilerToUse ("csc")]
 	[ExpectedNoWarnings]
+	[SetupLinkerArgument ("--disable-opt", "unreachablebodies")]
 	public class PropertiesUsedViaReflection
 	{
 		public static void Main ()

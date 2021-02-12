@@ -8,6 +8,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 {
 	[SetupCSharpCompilerToUse ("csc")]
 	[ExpectedNoWarnings]
+	[SetupLinkerArgument ("--disable-opt", "unreachablebodies")]
 	public class EventsUsedViaReflection
 	{
 		public static void Main ()

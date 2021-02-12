@@ -9,6 +9,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 	[SetupCSharpCompilerToUse ("csc")]
 	[ExpectedNoWarnings]
+	[SetupLinkerArgument ("--disable-opt", "unreachablebodies")]
 	public class MethodsUsedViaReflection
 	{
 		public static void Main ()
@@ -28,14 +29,14 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		[RecognizedReflectionAccessPattern]
 		static void TestGetMethods ()
 		{
-			var method = typeof (MethodsUsedViaReflection).GetMethods ();
+			var methods = typeof (MethodsUsedViaReflection).GetMethods ();
 		}
 
 		[Kept]
 		[RecognizedReflectionAccessPattern]
 		static void TestBindingFlags ()
 		{
-			var method = typeof (TestNameAndExplicitBindingClass).GetMethods (BindingFlags.Static | BindingFlags.Public);
+			var methods = typeof (TestBindingClass).GetMethods (BindingFlags.Static | BindingFlags.Public);
 		}
 
 		[Kept]
@@ -43,7 +44,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		static void TestUnknownBindingFlags (BindingFlags bindingFlags)
 		{
 			// Since the binding flags are not known linker should mark all methods on the type
-			var methods = typeof (TestNameAndUnknownBindingClass).GetMethods (bindingFlags);
+			var methods = typeof (TestUnknownBindingClass).GetMethods (bindingFlags);
 		}
 
 		[Kept]
@@ -95,13 +96,13 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		[RecognizedReflectionAccessPattern]
 		static void TestIgnoreCaseBindingFlags ()
 		{
-			var method = typeof (IgnoreCaseClass).GetMethods (BindingFlags.IgnoreCase | BindingFlags.Public);
+			var methods = typeof (IgnoreCaseClass).GetMethods (BindingFlags.IgnoreCase | BindingFlags.Public);
 		}
 
 		[Kept]
 		static void TestUnsupportedBindingFlags ()
 		{
-			var method = typeof (InvokeMethodClass).GetMethods (BindingFlags.InvokeMethod);
+			var methods = typeof (InvokeMethodClass).GetMethods (BindingFlags.InvokeMethod);
 		}
 
 		[Kept]
@@ -129,7 +130,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		private class TestNameAndExplicitBindingClass
+		private class TestBindingClass
 		{
 			[Kept]
 			public static int OnlyCalledViaReflection ()
@@ -156,7 +157,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		private class TestNameAndUnknownBindingClass
+		private class TestUnknownBindingClass
 		{
 			[Kept]
 			private static int OnlyCalledViaReflection ()
