@@ -681,13 +681,6 @@ namespace Mono.Linker
 			// SealerStep
 			// OutputStep
 
-			p.AppendStep (new MarkStep ());
-			p.AppendStep (new RemoveResourcesStep ());
-			p.AppendStep (new ValidateVirtualMethodAnnotationsStep ());
-			p.AppendStep (new ProcessWarningsStep ());
-			p.AppendStep (new OutputWarningSuppressions ());
-			p.AppendStep (new SweepStep ());
-			p.AppendStep (new CodeRewriterStep ());
 			foreach (string custom_step in custom_steps) {
 				if (!AddCustomStep (p, custom_step))
 					return -1;
