@@ -4,18 +4,22 @@ using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 [assembly: KeptAttributeAttribute (typeof (DebuggerTypeProxyAttribute))]
-[assembly: DebuggerTypeProxy (typeof(DebuggerTypeProxyAttributeOnAssemblyUsingTarget.Foo.FooDebugView), Target = typeof (DebuggerTypeProxyAttributeOnAssemblyUsingTarget.Foo))]
+[assembly: DebuggerTypeProxy (typeof (DebuggerTypeProxyAttributeOnAssemblyUsingTarget.Foo.FooDebugView), Target = typeof (DebuggerTypeProxyAttributeOnAssemblyUsingTarget.Foo))]
 
-namespace Mono.Linker.Tests.Cases.Attributes.Debugger.KeepDebugMembers {
+namespace Mono.Linker.Tests.Cases.Attributes.Debugger.KeepDebugMembers
+{
 	[SetupLinkerCoreAction ("link")]
+#if !NETCOREAPP
 	[SetupLinkerKeepDebugMembers ("true")]
-	
+#endif
+
 	// Can be removed once this bug is fixed https://bugzilla.xamarin.com/show_bug.cgi?id=58168
 	[SkipPeVerify (SkipPeVerifyForToolchian.Pedump)]
-	
+
 	[KeptMemberInAssembly (PlatformAssemblies.CoreLib, typeof (DebuggerTypeProxyAttribute), ".ctor(System.Type)")]
 	[KeptMemberInAssembly (PlatformAssemblies.CoreLib, typeof (DebuggerTypeProxyAttribute), "set_Target(System.Type)")]
-	public class DebuggerTypeProxyAttributeOnAssemblyUsingTarget {
+	public class DebuggerTypeProxyAttributeOnAssemblyUsingTarget
+	{
 		public static void Main ()
 		{
 			var foo = new Foo ();
@@ -24,7 +28,8 @@ namespace Mono.Linker.Tests.Cases.Attributes.Debugger.KeepDebugMembers {
 
 		[Kept]
 		[KeptMember (".ctor()")]
-		public class Foo {
+		public class Foo
+		{
 			[Kept]
 			[KeptBackingField]
 			public int Property { get; [Kept] set; }
@@ -36,7 +41,7 @@ namespace Mono.Linker.Tests.Cases.Attributes.Debugger.KeepDebugMembers {
 				private Foo _foo;
 
 				[Kept]
-				public FooDebugView(Foo foo)
+				public FooDebugView (Foo foo)
 				{
 					_foo = foo;
 				}

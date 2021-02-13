@@ -6,9 +6,9 @@ namespace CustomStep
 {
 	public class CustomStepDummy : IStep
 	{
-		public void Process(LinkContext context)
+		public void Process (LinkContext context)
 		{
-			context.LogMessage ("Custom step added.");
+			context.LogMessage (MessageContainer.CreateInfoMessage ("Custom step added."));
 		}
 	}
 }

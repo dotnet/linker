@@ -1,14 +1,2 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <Configurations>Debug;Release</Configurations>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(MonoBuild)' == ''">
-    <TargetFramework>netcoreapp3.0</TargetFramework>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(MonoBuild)' != ''">
-    <TargetFramework>net471</TargetFramework>
-  </PropertyGroup>
-
 </Project>

@@ -1,9 +1,10 @@
-
 using System;
 using Mono.Cecil;
 
-namespace Mono.Linker {
-	public static class TypeDefinitionExtensions {
+namespace Mono.Linker
+{
+	public static class TypeDefinitionExtensions
+	{
 		public static bool HasInterface (this TypeDefinition type, TypeDefinition interfaceType, out InterfaceImplementation implementation)
 		{
 			implementation = null;
@@ -23,14 +24,14 @@ namespace Mono.Linker {
 		public static TypeReference GetEnumUnderlyingType (this TypeDefinition enumType)
 		{
 			foreach (var field in enumType.Fields) {
-				if (!field.IsStatic && field.Name == "value__") {
+				if (!field.IsStatic) {
 					return field.FieldType;
 				}
 			}
 
-			throw new MissingFieldException ($"Enum type '{enumType.FullName}' is missing 'value__' field");
-    }
-    
+			throw new MissingFieldException ($"Enum type '{enumType.FullName}' is missing instance field");
+		}
+
 		public static bool IsMulticastDelegate (this TypeDefinition td)
 		{
 			return td.BaseType?.Name == "MulticastDelegate" && td.BaseType.Namespace == "System";

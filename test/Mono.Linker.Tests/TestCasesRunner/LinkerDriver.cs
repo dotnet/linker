@@ -1,28 +1,32 @@
 ﻿using System.Collections.Generic;
 
-﻿namespace Mono.Linker.Tests.TestCasesRunner {
-	public class LinkerDriver {
+namespace Mono.Linker.Tests.TestCasesRunner
+{
+	public class LinkerDriver
+	{
 		protected class TestDriver : Driver
 		{
 			readonly LinkerCustomizations _customization;
 
-			public TestDriver(Queue<string> args, LinkerCustomizations customizations) : base(args)
+			public TestDriver (Queue<string> args, LinkerCustomizations customizations) : base (args)
 			{
 				_customization = customizations;
 			}
 
-			protected override LinkContext GetDefaultContext (Pipeline pipeline)
+			protected override LinkContext GetDefaultContext (Pipeline pipeline, ILogger logger)
 			{
-				LinkContext context = base.GetDefaultContext (pipeline);
+				LinkContext context = base.GetDefaultContext (pipeline, logger);
 				_customization.CustomizeLinkContext (context);
 				return context;
 			}
 		}
 
-		public virtual void Link (string [] args, LinkerCustomizations customizations, ILogger logger)
+		public virtual void Link (string[] args, LinkerCustomizations customizations, ILogger logger)
 		{
 			Driver.ProcessResponseFile (args, out var queue);
-			new TestDriver (queue, customizations).Run (logger);
+			using (var driver = new TestDriver (queue, customizations)) {
+				driver.Run (logger);
+			}
 		}
 	}
 }

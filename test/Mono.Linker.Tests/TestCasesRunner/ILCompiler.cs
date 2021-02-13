@@ -8,8 +8,10 @@ using System.Text;
 using Mono.Linker.Tests.Extensions;
 using NUnit.Framework;
 
-namespace Mono.Linker.Tests.TestCasesRunner {
-	public class ILCompiler {
+namespace Mono.Linker.Tests.TestCasesRunner
+{
+	public class ILCompiler
+	{
 		private readonly string _ilasmExecutable;
 
 		public ILCompiler ()
@@ -33,9 +35,8 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 			process.BeginOutputReadLine ();
 			process.WaitForExit ();
 
-			if (process.ExitCode != 0)
-			{
-				Assert.Fail($"Failed to compile IL assembly : {options.OutputPath}\n{capturedOutput.Aggregate ((buff, s) => buff + Environment.NewLine + s)}");
+			if (process.ExitCode != 0) {
+				Assert.Fail ($"Failed to compile IL assembly : {options.OutputPath}\n{capturedOutput.Aggregate ((buff, s) => buff + Environment.NewLine + s)}");
 			}
 
 			return options.OutputPath;
@@ -52,21 +53,21 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 
 		private string BuildArguments (CompilerOptions options)
 		{
-			var args = new StringBuilder();
-#if ILLINK
+			var args = new StringBuilder ();
+#if NETCOREAPP
 			args.Append(options.OutputPath.ExtensionWithDot == ".dll" ? "-dll" : "-exe");
 			args.Append($" -out:{options.OutputPath.InQuotes ()}");
 #else
-			args.Append(options.OutputPath.ExtensionWithDot == ".dll" ? "/dll" : "/exe");
-			args.Append($" /out:{options.OutputPath.InQuotes ()}");
+			args.Append (options.OutputPath.ExtensionWithDot == ".dll" ? "/dll" : "/exe");
+			args.Append ($" /out:{options.OutputPath.InQuotes ()}");
 #endif
-			args.Append($" {options.SourceFiles.Aggregate (string.Empty, (buff, file) => $"{buff} {file.InQuotes ()}")}");
+			args.Append ($" {options.SourceFiles.Aggregate (string.Empty, (buff, file) => $"{buff} {file.InQuotes ()}")}");
 			return args.ToString ();
 		}
 
 		public static NPath LocateIlasm ()
 		{
-#if ILLINK
+#if NETCOREAPP
 			var extension = RuntimeInformation.IsOSPlatform (OSPlatform.Windows) ? ".exe" : "";
 
 			// working directory is artifacts/bin/Mono.Linker.Tests/<config>/<tfm>

@@ -1,13 +1,11 @@
 using System.Diagnostics;
 using Mono.Cecil;
 
-namespace Mono.Linker {
+namespace Mono.Linker
+{
 	[DebuggerDisplay ("{Override}")]
-	public class OverrideInformation {
-		public readonly MethodDefinition Base;
-		public readonly MethodDefinition Override;
-		public readonly InterfaceImplementation MatchingInterfaceImplementation;
-
+	public class OverrideInformation
+	{
 		public OverrideInformation (MethodDefinition @base, MethodDefinition @override, InterfaceImplementation matchingInterfaceImplementation = null)
 		{
 			Base = @base;
@@ -15,10 +13,12 @@ namespace Mono.Linker {
 			MatchingInterfaceImplementation = matchingInterfaceImplementation;
 		}
 
-		public bool IsOverrideOfInterfaceMember
-		{
-			get
-			{
+		public MethodDefinition Base { get; }
+		public MethodDefinition Override { get; }
+		public InterfaceImplementation MatchingInterfaceImplementation { get; }
+
+		public bool IsOverrideOfInterfaceMember {
+			get {
 				if (MatchingInterfaceImplementation != null)
 					return true;
 
@@ -26,10 +26,8 @@ namespace Mono.Linker {
 			}
 		}
 
-		public TypeDefinition InterfaceType
-		{
-			get
-			{
+		public TypeDefinition InterfaceType {
+			get {
 				if (!IsOverrideOfInterfaceMember)
 					return null;
 

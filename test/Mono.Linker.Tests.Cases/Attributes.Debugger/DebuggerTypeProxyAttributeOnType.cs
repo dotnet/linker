@@ -2,15 +2,21 @@
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
-namespace Mono.Linker.Tests.Cases.Attributes.Debugger {
+namespace Mono.Linker.Tests.Cases.Attributes.Debugger
+{
+#if NETCOREAPP
+	[SetupLinkAttributesFile ("DebuggerAttributesRemoved.xml")]
+#else
 	[SetupLinkerCoreAction ("link")]
 	[SetupLinkerKeepDebugMembers ("false")]
-	
+
 	// Can be removed once this bug is fixed https://bugzilla.xamarin.com/show_bug.cgi?id=58168
 	[SkipPeVerify (SkipPeVerifyForToolchian.Pedump)]
-	
+
 	[KeptMemberInAssembly (PlatformAssemblies.CoreLib, typeof (DebuggerTypeProxyAttribute), ".ctor(System.Type)")]
-	public class DebuggerTypeProxyAttributeOnType {
+#endif
+	public class DebuggerTypeProxyAttributeOnType
+	{
 		public static void Main ()
 		{
 			var foo = new Foo ();
@@ -18,13 +24,19 @@ namespace Mono.Linker.Tests.Cases.Attributes.Debugger {
 
 		[Kept]
 		[KeptMember (".ctor()")]
+#if !NETCOREAPP
 		[KeptAttributeAttribute (typeof (DebuggerTypeProxyAttribute))]
+#endif
 		[DebuggerTypeProxy (typeof (FooDebugView))]
-		class Foo {
+		class Foo
+		{
 		}
-		
+
+#if !NETCOREAPP
 		[Kept]
-		class FooDebugView {
+#endif
+		class FooDebugView
+		{
 			public FooDebugView (Foo foo)
 			{
 			}

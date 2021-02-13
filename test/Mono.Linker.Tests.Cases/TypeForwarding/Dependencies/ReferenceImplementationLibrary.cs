@@ -1,9 +1,11 @@
 ﻿using System;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
-namespace Mono.Linker.Tests.Cases.TypeForwarding.Dependencies {
+namespace Mono.Linker.Tests.Cases.TypeForwarding.Dependencies
+{
 	[NotATestCase]
-	public class ReferenceImplementationLibrary {
+	public class ReferenceImplementationLibrary
+	{
 	}
 
 #if INCLUDE_REFERENCE_IMPL
@@ -12,6 +14,11 @@ namespace Mono.Linker.Tests.Cases.TypeForwarding.Dependencies {
 		{
 			return null;
 		}
+	}
+
+	public struct ImplementationStruct
+	{
+		public int Field;
 	}
 #endif
 }

@@ -1,10 +1,10 @@
-#if !ILLINK
 #nullable enable
 
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
-namespace Mono.Linker.Tests.Cases.Attributes.OnlyKeepUsed {
+namespace Mono.Linker.Tests.Cases.Attributes.OnlyKeepUsed
+{
 	[SetupCSharpCompilerToUse ("csc")]
 	[SetupCompileArgument ("/langversion:8.0")]
 	[SetupLinkerArgument ("--used-attrs-only", "true")]
@@ -43,6 +43,5 @@ namespace Mono.Linker.Tests.Cases.Attributes.OnlyKeepUsed {
 	[KeptMember (".ctor()")]
 	class C<T> where T : I?
 	{
-	}	
+	}
 }
-#endif

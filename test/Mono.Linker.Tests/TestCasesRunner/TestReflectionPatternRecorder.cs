@@ -1,36 +1,44 @@
-﻿using Mono.Cecil;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
 
 namespace Mono.Linker.Tests.TestCasesRunner
 {
 	public class TestReflectionPatternRecorder : IReflectionPatternRecorder
 	{
+		public IReflectionPatternRecorder PreviousRecorder = null;
+
 		public struct ReflectionAccessPattern
 		{
-			public MethodDefinition SourceMethod;
-			public MethodDefinition ReflectionMethod;
-			public IMemberDefinition AccessedItem;
+			public IMemberDefinition Source;
+			public Instruction SourceInstruction;
+			public IMetadataTokenProvider AccessedItem;
 			public string Message;
+			public int MessageCode;
 		}
 
 		public List<ReflectionAccessPattern> RecognizedPatterns = new List<ReflectionAccessPattern> ();
 		public List<ReflectionAccessPattern> UnrecognizedPatterns = new List<ReflectionAccessPattern> ();
 
-		public void RecognizedReflectionAccessPattern (MethodDefinition sourceMethod, MethodDefinition reflectionMethod, IMemberDefinition accessedItem)
+		public void RecognizedReflectionAccessPattern (IMemberDefinition source, Instruction sourceInstruction, IMetadataTokenProvider accessedItem)
 		{
+			PreviousRecorder?.RecognizedReflectionAccessPattern (source, sourceInstruction, accessedItem);
 			RecognizedPatterns.Add (new ReflectionAccessPattern {
-				SourceMethod = sourceMethod,
-				ReflectionMethod = reflectionMethod,
+				Source = source,
+				SourceInstruction = sourceInstruction,
 				AccessedItem = accessedItem
 			});
 		}
 
-		public void UnrecognizedReflectionAccessPattern (MethodDefinition sourceMethod, MethodDefinition reflectionMethod, string message)
+		public void UnrecognizedReflectionAccessPattern (IMemberDefinition source, Instruction sourceInstruction, IMetadataTokenProvider accessedItem, string message, int messageCode)
 		{
+			PreviousRecorder?.UnrecognizedReflectionAccessPattern (source, sourceInstruction, accessedItem, message, messageCode);
 			UnrecognizedPatterns.Add (new ReflectionAccessPattern {
-				SourceMethod = sourceMethod,
-				ReflectionMethod = reflectionMethod,
-				Message = message
+				Source = source,
+				SourceInstruction = sourceInstruction,
+				AccessedItem = accessedItem,
+				Message = message,
+				MessageCode = messageCode
 			});
 		}
 	}

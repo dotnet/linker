@@ -4,21 +4,21 @@ namespace Mono.Linker.Tests.TestCasesRunner
 {
 	public class LinkerTestLogger : ILogger
 	{
-		public struct MessageRecord
+		readonly List<MessageContainer> MessageContainers;
+
+		public LinkerTestLogger ()
 		{
-			public MessageImportance Importance;
-			public string Message;
+			MessageContainers = new List<MessageContainer> ();
 		}
 
-		public List<MessageRecord> Messages { get; private set; } = new List<MessageRecord>();
-
-		public void LogMessage(MessageImportance importance, string message, params object[] values)
+		public List<MessageContainer> GetLoggedMessages ()
 		{
-			Messages.Add(new MessageRecord
-			{
-				Importance = importance,
-				Message = string.Format(message, values)
-			});
+			return MessageContainers;
+		}
+
+		public void LogMessage (MessageContainer message)
+		{
+			MessageContainers.Add (message);
 		}
 	}
 }

@@ -1,4 +1,4 @@
-﻿using Mono.Cecil;
+using Mono.Cecil;
 
 namespace Mono.Linker
 {
@@ -60,19 +60,18 @@ namespace Mono.Linker
 			return true;
 		}
 
-		static readonly string[] corlibNames = new [] {
+		static readonly string[] corlibNames = new[] {
+			"System.Private.CoreLib",
 			"mscorlib",
 			"System.Runtime",
-			"System.Private.CoreLib",
 			"netstandard"
 		};
 
 		public static TypeDefinition FindPredefinedType (string ns, string name, LinkContext context)
 		{
-			var cache = context.Resolver.AssemblyCache;
-
 			foreach (var corlibName in corlibNames) {
-				if (!cache.TryGetValue (corlibName, out AssemblyDefinition corlib))
+				AssemblyDefinition corlib = context.TryResolve (corlibName);
+				if (corlib == null)
 					continue;
 
 				TypeDefinition type = corlib.MainModule.GetType (ns, name);

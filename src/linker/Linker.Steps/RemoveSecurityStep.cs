@@ -1,11 +1,13 @@
 using System.Linq;
 using Mono.Cecil;
 
-namespace Mono.Linker.Steps {
-	public class RemoveSecurityStep : BaseStep {
-		protected override void ProcessAssembly (AssemblyDefinition assembly)
+namespace Mono.Linker.Steps
+{
+	public static class RemoveSecurity
+	{
+		public static void ProcessAssembly (AssemblyDefinition assembly, LinkContext context)
 		{
-			if (Annotations.GetAction (assembly) == AssemblyAction.Link) {
+			if (context.Annotations.GetAction (assembly) == AssemblyAction.Link) {
 				ClearSecurityDeclarations (assembly);
 				RemoveCustomAttributesThatAreForSecurity (assembly);
 

@@ -1,9 +1,13 @@
 ﻿using System;
 
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
+using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
-namespace Mono.Linker.Tests.Cases.LinkXml {
-	class UnusedEventPreservedByLinkXmlIsKept {
+namespace Mono.Linker.Tests.Cases.LinkXml
+{
+	[SetupLinkerDescriptorFile ("UnusedEventPreservedByLinkXmlIsKept.xml")]
+	class UnusedEventPreservedByLinkXmlIsKept
+	{
 		public static void Main ()
 		{
 			new Unused (); // Used to avoid lazy body marking
@@ -11,7 +15,8 @@ namespace Mono.Linker.Tests.Cases.LinkXml {
 
 		[Kept]
 		[KeptMember (".ctor()")]
-		class Unused {
+		class Unused
+		{
 			[Kept]
 			[KeptBackingField]
 			[KeptEventAddMethod]

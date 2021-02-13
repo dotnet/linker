@@ -2,7 +2,11 @@
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
-namespace Mono.Linker.Tests.Cases.Attributes.Debugger {
+namespace Mono.Linker.Tests.Cases.Attributes.Debugger
+{
+#if NETCOREAPP
+	[SetupLinkAttributesFile ("DebuggerAttributesRemoved.xml")]
+#else
 	[SetupLinkerCoreAction ("link")]
 	[SetupLinkerKeepDebugMembers ("false")]
 
@@ -10,30 +14,49 @@ namespace Mono.Linker.Tests.Cases.Attributes.Debugger {
 	[SkipPeVerify (SkipPeVerifyForToolchian.Pedump)]
 
 	[KeptMemberInAssembly (PlatformAssemblies.CoreLib, typeof (DebuggerDisplayAttribute), ".ctor(System.String)")]
-	public class DebuggerDisplayAttributeOnType {
+#endif
+	public class DebuggerDisplayAttributeOnType
+	{
 		public static void Main ()
 		{
 			var foo = new Foo ();
-			var bar = new Bar();
+			var bar = new Bar ();
+			var baz = new Baz ();
 		}
 
 		[Kept]
 		[KeptMember (".ctor()")]
+#if !NETCOREAPP
 		[KeptAttributeAttribute (typeof (DebuggerDisplayAttribute))]
+#endif
 		[DebuggerDisplay ("{Property}")]
-		class Foo {
+		class Foo
+		{
 			public int Property { get; set; }
 		}
 
 		[Kept]
 		[KeptMember (".ctor()")]
+#if !NETCOREAPP
 		[KeptAttributeAttribute (typeof (DebuggerDisplayAttribute))]
+#endif
 		[DebuggerDisplay ("{Method()}")]
-		class Bar {
+		class Bar
+		{
 			public int Method ()
 			{
 				return 1;
 			}
+		}
+
+		[Kept]
+		[KeptMember (".ctor()")]
+#if !NETCOREAPP
+		[KeptAttributeAttribute (typeof (DebuggerDisplayAttribute))]
+#endif
+		[DebuggerDisplay (null)]
+		class Baz
+		{
 		}
 	}
 }

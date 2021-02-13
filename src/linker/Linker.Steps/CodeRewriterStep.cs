@@ -4,7 +4,8 @@ using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
-namespace Mono.Linker.Steps {
+namespace Mono.Linker.Steps
+{
 	public class CodeRewriterStep : BaseStep
 	{
 		AssemblyDefinition assembly;
@@ -59,11 +60,11 @@ namespace Mono.Linker.Steps {
 				processor = cctor.Body.GetILProcessor ();
 
 				for (int i = 0; i < body.Instructions.Count; ++i) {
-					var instr = body.Instructions [i];
+					var instr = body.Instructions[i];
 					if (instr.OpCode.Code != Code.Stsfld)
 						continue;
 
-					var field = (FieldReference)instr.Operand;
+					var field = (FieldReference) instr.Operand;
 					if (!Annotations.HasSubstitutedInit (field.Resolve ()))
 						continue;
 
@@ -105,7 +106,7 @@ namespace Mono.Linker.Steps {
 
 			method.Body = CreateThrowLinkedAwayBody (method);
 
-			method.ClearDebugInformation();
+			method.ClearDebugInformation ();
 		}
 
 		protected virtual void RewriteBodyToStub (MethodDefinition method)
@@ -115,7 +116,7 @@ namespace Mono.Linker.Steps {
 
 			method.Body = CreateStubBody (method);
 
-			method.ClearDebugInformation();
+			method.ClearDebugInformation ();
 		}
 
 		MethodBody CreateThrowLinkedAwayBody (MethodDefinition method)
@@ -148,11 +149,11 @@ namespace Mono.Linker.Steps {
 			var body = new MethodBody (method);
 
 			if (method.HasParameters && method.Parameters.Any (l => l.IsOut))
-				throw new NotImplementedException ();
+				throw new NotSupportedException ($"Cannot replace body of method '{method.GetDisplayName ()}' because it has an out parameter.");
 
 			var il = body.GetILProcessor ();
 			if (method.IsInstanceConstructor () && !method.DeclaringType.IsValueType) {
-				var base_ctor = method.DeclaringType.BaseType.GetDefaultInstanceConstructor();
+				var base_ctor = method.DeclaringType.BaseType.GetDefaultInstanceConstructor ();
 				if (base_ctor == null)
 					throw new NotSupportedException ($"Cannot replace constructor for '{method.DeclaringType}' when no base default constructor exists");
 
@@ -247,12 +248,14 @@ namespace Mono.Linker.Steps {
 				if (value is double dvalue)
 					return Instruction.Create (OpCodes.Ldc_R8, dvalue);
 
+				Debug.Assert (value == null);
 				return Instruction.Create (OpCodes.Ldc_R8, 0.0);
 
 			case MetadataType.Single:
 				if (value is float fvalue)
 					return Instruction.Create (OpCodes.Ldc_R4, fvalue);
 
+				Debug.Assert (value == null);
 				return Instruction.Create (OpCodes.Ldc_R4, 0.0f);
 
 			case MetadataType.Char:
@@ -265,10 +268,15 @@ namespace Mono.Linker.Steps {
 				if (value is int intValue)
 					return Instruction.Create (OpCodes.Ldc_I4, intValue);
 
+				Debug.Assert (value == null);
 				return Instruction.Create (OpCodes.Ldc_I4_0);
 
 			case MetadataType.UInt64:
 			case MetadataType.Int64:
+				if (value is long longValue)
+					return Instruction.Create (OpCodes.Ldc_I8, longValue);
+
+				Debug.Assert (value == null);
 				return Instruction.Create (OpCodes.Ldc_I8, 0L);
 			}
 

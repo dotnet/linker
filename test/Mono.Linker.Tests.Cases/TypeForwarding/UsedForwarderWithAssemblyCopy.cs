@@ -7,6 +7,7 @@ namespace Mono.Linker.Tests.Cases.TypeForwarding
 	// Actions:
 	// link - This assembly
 	// copy - Forwarder.dll and Implementation.dll
+	[SetupLinkerAction ("link", "test")]
 	[SetupLinkerUserAction ("copy")]
 	[KeepTypeForwarderOnlyAssemblies ("false")]
 
@@ -21,7 +22,7 @@ namespace Mono.Linker.Tests.Cases.TypeForwarding
 	[KeptMemberInAssembly ("Forwarder.dll", typeof (ImplementationLibrary))]
 	class UsedForwarderWithAssemblyCopy
 	{
-		static void Main()
+		static void Main ()
 		{
 			new ImplementationLibrary ().GetSomeValue ();
 		}

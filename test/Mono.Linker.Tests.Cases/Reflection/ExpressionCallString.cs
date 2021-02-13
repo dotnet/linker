@@ -1,7 +1,8 @@
-﻿using Mono.Linker.Tests.Cases.Expectations.Assertions;
-using System.Linq.Expressions;
-using System;
+﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Linq.Expressions;
+using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.Reflection
@@ -12,88 +13,241 @@ namespace Mono.Linker.Tests.Cases.Reflection
 	{
 		public static void Main ()
 		{
-			TestByName ();
-			TestByNameWithParameters ();
-			TestNullName ();
-			TestNonExistingName ();
-			TestNullType ();
-			TestDataFlowType ();
-		}
+			PublicMethods.Test ();
+			ProtectedMethods.Test ();
+			PrivateMethods.Test ();
 
-		[RecognizedReflectionAccessPattern (
-			typeof (Expression), nameof (Expression.Call), new Type [] { typeof (Type), typeof (string), typeof (Type[]), typeof (Expression []) },
-			typeof (ExpressionCallString), nameof (OnlyCalledViaExpression), new Type [0])]
-		[Kept]
-		static void TestByName ()
-		{
-			var expr = Expression.Call (typeof (ExpressionCallString), "OnlyCalledViaExpression", Type.EmptyTypes);
-			Console.WriteLine (expr.Method);
-		}
+			Expression.Call (typeof (Derived), "PublicOnBase", Type.EmptyTypes);
+			Expression.Call (typeof (Derived), "ProtectedOnBase", Type.EmptyTypes);
+			Expression.Call (typeof (Derived), "PrivateOnBase", Type.EmptyTypes);
 
-		[RecognizedReflectionAccessPattern (
-			typeof (Expression), nameof (Expression.Call), new Type [] { typeof (Type), typeof (string), typeof (Type []), typeof (Expression []) },
-			typeof (ExpressionCallString), nameof (Count) + "<T>", new string [] { "T" } )]
-		[Kept]
-		static void TestByNameWithParameters ()
-		{
-			IQueryable source = null;
-			var e2 = Expression.Call (typeof (ExpressionCallString), "Count", new Type [] { source.ElementType }, source.Expression);
-		}
+			// Keep all methods on type UnknownNameMethodClass
+			Expression.Call (typeof (UnknownNameMethodClass), GetUnknownString (), Type.EmptyTypes);
 
-		[UnrecognizedReflectionAccessPattern (
-			typeof (Expression), nameof (Expression.Call), new Type [] { typeof (Type), typeof (string), typeof (Type []), typeof (Expression []) })]
-		[Kept]
-		static void TestNullName ()
-		{
-			var expr = Expression.Call (typeof (ExpressionCallString), null, Type.EmptyTypes);
-		}
+			TestUnknownType.Test ();
 
-		[UnrecognizedReflectionAccessPattern (
-			typeof (Expression), nameof (Expression.Call), new Type [] { typeof (Type), typeof (string), typeof (Type []), typeof (Expression []) })]
-		[Kept]
-		static void TestNonExistingName ()
-		{
-			var expr = Expression.Call (typeof (ExpressionCallString), "NonExisting", Type.EmptyTypes);
-		}
-
-		[UnrecognizedReflectionAccessPattern (
-			typeof (Expression), nameof (Expression.Call), new Type [] { typeof (Type), typeof (string), typeof (Type []), typeof (Expression []) })]
-		[Kept]
-		static void TestNullType ()
-		{
-			var expr = Expression.Call ((Type)null, "OnlyCalledViaExpression", Type.EmptyTypes);
+			TestGenericMethods.Test ();
 		}
 
 		[Kept]
-		static Type FindType ()
+		class PublicMethods
 		{
-			return typeof (ExpressionCallString);
+			[Kept]
+			public static void PublicStaticMethod () { }
+
+			public void PublicInstanceMethod () { }
+
+			protected static void ProtectedStaticMethod () { }
+
+			protected void ProtectedInstanceMethod () { }
+
+			private static void PrivateStaticMethod () { }
+
+			private void PrivateInstanceMethod () { }
+
+			[Kept]
+			public static void Test ()
+			{
+				Expression.Call (typeof (PublicMethods), nameof (PublicStaticMethod), Type.EmptyTypes);
+
+				// This should not mark anything, but it should also not warn (it should fail at runtime to find the method as well)
+				Expression.Call (typeof (PublicMethods), nameof (PublicInstanceMethod), Type.EmptyTypes);
+			}
 		}
 
-		[UnrecognizedReflectionAccessPattern (
-			typeof (Expression), nameof (Expression.Call), new Type [] { typeof (Type), typeof (string), typeof (Type []), typeof (Expression []) })]
 		[Kept]
-		static void TestDataFlowType ()
+		class ProtectedMethods
 		{
-			var expr = Expression.Call (FindType (), "OnlyCalledViaExpression", Type.EmptyTypes);
+			public static void PublicStaticMethod () { }
+
+			public void PublicInstanceMethod () { }
+
+			[Kept]
+			protected static void ProtectedStaticMethod () { }
+
+			protected void ProtectedInstanceMethod () { }
+
+			private static void PrivateStaticMethod () { }
+
+			private void PrivateInstanceMethod () { }
+
+			[Kept]
+			public static void Test ()
+			{
+				Expression.Call (typeof (ProtectedMethods), nameof (ProtectedStaticMethod), Type.EmptyTypes);
+
+				// This should not mark anything, but it should also not warn (it should fail at runtime to find the method as well)
+				Expression.Call (typeof (ProtectedMethods), nameof (ProtectedInstanceMethod), Type.EmptyTypes);
+			}
 		}
 
 		[Kept]
-		private static int OnlyCalledViaExpression ()
+		class PrivateMethods
 		{
-			return 42;
+			public static void PublicStaticMethod () { }
+
+			public void PublicInstanceMethod () { }
+
+			protected static void ProtectedStaticMethod () { }
+
+			protected void ProtectedInstanceMethod () { }
+
+			[Kept]
+			private static void PrivateStaticMethod () { }
+
+			private void PrivateInstanceMethod () { }
+
+			[Kept]
+			public static void Test ()
+			{
+				Expression.Call (typeof (PrivateMethods), nameof (PrivateStaticMethod), Type.EmptyTypes);
+
+				// This should not mark anything, but it should also not warn (it should fail at runtime to find the method as well)
+				Expression.Call (typeof (PrivateMethods), nameof (PrivateInstanceMethod), Type.EmptyTypes);
+			}
 		}
 
 		[Kept]
-		private static int OnlyCalledViaExpression<T> (T arg)
+		static string GetUnknownString ()
 		{
-			return 2;
+			return "unknownstring";
 		}
 
 		[Kept]
-		protected static T Count<T> (T t)
+		class TestUnknownType
 		{
-			return default (T);
+			[Kept]
+			public static void PublicMethod ()
+			{
+			}
+
+			[Kept]
+			protected static void ProtectedMethod ()
+			{
+			}
+
+			[Kept]
+			private static void PrivateMethod ()
+			{
+			}
+
+			[Kept]
+			[UnrecognizedReflectionAccessPattern (typeof (Expression), nameof (Expression.Call),
+				new Type[] { typeof (Type), typeof (string), typeof (Type[]), typeof (Expression[]) }, messageCode: "IL2072")]
+			public static void Test ()
+			{
+				// Keep all methods of the type that made the call
+				Expression.Call (GetUnknownType (), "This string will not be reached", Type.EmptyTypes);
+				// UnrecognizedReflectionAccessPattern
+				Expression.Call (TriggerUnrecognizedPattern (), "This string will not be reached", Type.EmptyTypes);
+			}
+
+			[Kept]
+			[return: KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
+			static Type GetUnknownType ()
+			{
+				return typeof (TestUnknownType);
+			}
+
+			[Kept]
+			static Type TriggerUnrecognizedPattern ()
+			{
+				return typeof (TestUnknownType);
+			}
+		}
+
+		[Kept]
+		class UnknownNameMethodClass
+		{
+			[Kept]
+			public static void PublicStaticMethod ()
+			{
+			}
+
+			[Kept]
+			public void PublicNonStaticMethod ()
+			{
+			}
+
+			[Kept]
+			protected static void ProtectedStaticMethod ()
+			{
+			}
+
+			[Kept]
+			protected void ProtectedNonStaticMethod ()
+			{
+			}
+
+			[Kept]
+			private static void PrivateStaticMethod ()
+			{
+			}
+
+			[Kept]
+			private void PrivateNonStaticMethod ()
+			{
+			}
+		}
+
+		[Kept]
+		class Base
+		{
+			[Kept]
+			public static void PublicOnBase ()
+			{
+			}
+
+			[Kept]
+			protected static void ProtectedOnBase ()
+			{
+			}
+
+			private static void PrivateOnBase ()
+			{
+			}
+		}
+
+		[Kept]
+		[KeptBaseType (typeof (Base))]
+		class Derived : Base
+		{
+		}
+
+		[Kept]
+		class TestGenericMethods
+		{
+			[Kept]
+			public static void GenericMethodCalledAsNonGeneric<T> () { }
+
+			[Kept]
+			public static void GenericMethodWithNoRequirements<T> () { }
+
+			[Kept]
+			public static void GenericMethodWithRequirements<
+				[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicProperties)] T> ()
+			{ }
+
+			[Kept]
+			// BUG:https://github.com/mono/linker/issues/1819
+			// [ExpectedWarning("IL9999", nameof(GenericMethodWithRequirements))]
+			public static void Test ()
+			{
+				// Linker doesn't check if it's valid to call a generic method without generic parameters, it looks like a non-generic call
+				// so it will preserve the target method.
+				Expression.Call (typeof (TestGenericMethods), nameof (GenericMethodCalledAsNonGeneric), Type.EmptyTypes);
+
+				// This may not warn - as it's safe
+				Expression.Call (typeof (TestGenericMethods), nameof (GenericMethodWithNoRequirements), new Type[] { GetUnknownType () });
+
+				// This must warn - as this is dangerous
+				Expression.Call (typeof (TestGenericMethods), nameof (GenericMethodWithRequirements), new Type[] { GetUnknownType () });
+			}
+
+			[Kept]
+			static Type GetUnknownType () { return null; }
 		}
 	}
 }

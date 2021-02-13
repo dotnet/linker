@@ -1,14 +1,19 @@
 ﻿using System.Collections.Generic;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
+using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
-namespace Mono.Linker.Tests.Cases.LinkXml {
-	class UnusedFieldPreservedByLinkXmlIsKept {
+namespace Mono.Linker.Tests.Cases.LinkXml
+{
+	[SetupLinkerDescriptorFile ("UnusedFieldPreservedByLinkXmlIsKept.xml")]
+	class UnusedFieldPreservedByLinkXmlIsKept
+	{
 		public static void Main ()
 		{
 		}
 
 		[Kept]
-		class Unused {
+		class Unused
+		{
 			[Kept]
 			private int _preserved;
 
@@ -22,7 +27,8 @@ namespace Mono.Linker.Tests.Cases.LinkXml {
 		}
 
 		[Kept]
-		class UnusedWithGenerics<T> {
+		class UnusedWithGenerics<T>
+		{
 			[Kept]
 			private List<T> _preserved1;
 		}

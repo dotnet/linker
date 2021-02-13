@@ -1,8 +1,11 @@
 ﻿using System.Runtime.InteropServices;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
-namespace Mono.Linker.Tests.Cases.Interop.PInvoke {
-	class UnusedFieldsOfTypesAreNotRemoved {
+namespace Mono.Linker.Tests.Cases.Interop.PInvoke
+{
+	[KeptModuleReference ("Unused")]
+	class UnusedFieldsOfTypesAreNotRemoved
+	{
 		public static void Main ()
 		{
 			var a = new A ();
@@ -10,7 +13,8 @@ namespace Mono.Linker.Tests.Cases.Interop.PInvoke {
 		}
 
 		[KeptMember (".ctor()")]
-		class A {
+		class A
+		{
 			[Kept] private int field1;
 
 			[Kept] private int field2;

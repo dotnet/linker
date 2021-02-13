@@ -1,17 +1,31 @@
-﻿﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Extensions;
 using Mono.Linker.Tests.TestCases;
 
-namespace Mono.Linker.Tests.TestCasesRunner {
-	public class TestCaseSandbox {
+namespace Mono.Linker.Tests.TestCasesRunner
+{
+	public class TestCaseSandbox
+	{
 		protected readonly TestCase _testCase;
 		protected readonly NPath _directory;
 
+		static readonly string _linkerAssemblyPath = typeof (Driver).Assembly.Location;
+
+		static NPath GetArtifactsTestPath ()
+		{
+			// Converts paths like /root-folder/linker/artifacts/bin/Mono.Linker.Tests/Debug/net5.0/illink.dll
+			// to /root-folder/linker/artifacts/testcases/
+			string artifacts = Path.GetFullPath (Path.Combine (Path.GetDirectoryName (_linkerAssemblyPath), "..", "..", "..", ".."));
+			string tests = Path.Combine (artifacts, "testcases");
+			return new NPath (tests);
+		}
+
 		public TestCaseSandbox (TestCase testCase)
-			: this (testCase, NPath.SystemTemp)
+			: this (testCase, GetArtifactsTestPath (), Path.GetFileNameWithoutExtension (_linkerAssemblyPath))
 		{
 		}
 
@@ -28,8 +42,17 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 		public TestCaseSandbox (TestCase testCase, NPath rootTemporaryDirectory, string namePrefix)
 		{
 			_testCase = testCase;
-			var name = string.IsNullOrEmpty (namePrefix) ? "linker_tests" : $"{namePrefix}_linker_tests";
-			_directory = rootTemporaryDirectory.Combine (name);
+
+			_directory = rootTemporaryDirectory.Combine (string.IsNullOrEmpty (namePrefix) ? "linker_tests" : namePrefix);
+
+			const string tcases_name = "Mono.Linker.Tests.Cases";
+			var location = testCase.SourceFile.Parent.ToString ();
+			int idx = location.IndexOf (tcases_name + Path.DirectorySeparatorChar);
+			if (idx < 0)
+				throw new ArgumentException ("Unknown test cases location");
+
+			_directory = _directory.Combine (location.Substring (idx + tcases_name.Length + 1));
+			_directory = _directory.Combine (testCase.SourceFile.FileNameWithoutExtension);
 
 			_directory.DeleteContents ();
 
@@ -49,10 +72,6 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 
 		public IEnumerable<NPath> SourceFiles {
 			get { return _directory.Files ("*.cs"); }
-		}
-
-		public IEnumerable<NPath> LinkXmlFiles {
-			get { return InputDirectory.Files ("*.xml"); }
 		}
 
 		public IEnumerable<NPath> ResponseFiles {
@@ -80,21 +99,25 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 				if (destination.Parent == InputDirectory)
 					dep.Source.Copy (ExpectationsDirectory.Combine (destination.RelativeTo (InputDirectory)));
 			}
-			
+
 			// Copy non class library dependencies to the sandbox
 			foreach (var fileName in metadataProvider.GetReferenceValues ()) {
 				if (!fileName.StartsWith ("System.", StringComparison.Ordinal) && !fileName.StartsWith ("Mono.", StringComparison.Ordinal) && !fileName.StartsWith ("Microsoft.", StringComparison.Ordinal))
 					CopyToInputAndExpectations (_testCase.SourceFile.Parent.Combine (fileName.ToNPath ()));
 			}
-			
+
 			foreach (var referenceDependency in metadataProvider.GetReferenceDependencies ())
-				CopyToInputAndExpectations (_testCase.SourceFile.Parent.Combine (referenceDependency.ToNPath()));
+				CopyToInputAndExpectations (_testCase.SourceFile.Parent.Combine (referenceDependency.ToNPath ()));
 
 			foreach (var res in metadataProvider.GetResources ()) {
 				res.Source.FileMustExist ().Copy (ResourcesDirectory.Combine (res.DestinationFileName));
 			}
 
-			foreach (var res in metadataProvider.GetResponseFiles()) {
+			foreach (var res in metadataProvider.GetResponseFiles ()) {
+				res.Source.FileMustExist ().Copy (InputDirectory.Combine (res.DestinationFileName));
+			}
+
+			foreach (var res in metadataProvider.GetDescriptorFiles ()) {
 				res.Source.FileMustExist ().Copy (InputDirectory.Combine (res.DestinationFileName));
 			}
 
@@ -102,28 +125,40 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 				res.Source.FileMustExist ().Copy (InputDirectory.Combine (res.DestinationFileName));
 			}
 
-			foreach (var compileRefInfo in metadataProvider.GetSetupCompileAssembliesBefore ())
-			{
-				var destination = BeforeReferenceSourceDirectoryFor (compileRefInfo.OutputName).EnsureDirectoryExists ();
-				compileRefInfo.SourceFiles.Copy (destination);
-				
-				destination = BeforeReferenceResourceDirectoryFor (compileRefInfo.OutputName).EnsureDirectoryExists ();
-				compileRefInfo.Resources?.Copy (destination);
+			foreach (var res in metadataProvider.GetLinkAttributesFiles ()) {
+				res.Source.FileMustExist ().Copy (InputDirectory.Combine (res.DestinationFileName));
 			}
 
-			foreach (var compileRefInfo in metadataProvider.GetSetupCompileAssembliesAfter ())
-			{
+			foreach (var compileRefInfo in metadataProvider.GetSetupCompileAssembliesBefore ()) {
+				var destination = BeforeReferenceSourceDirectoryFor (compileRefInfo.OutputName).EnsureDirectoryExists ();
+				compileRefInfo.SourceFiles.Copy (destination);
+
+				destination = BeforeReferenceResourceDirectoryFor (compileRefInfo.OutputName).EnsureDirectoryExists ();
+
+				if (compileRefInfo.Resources == null)
+					continue;
+
+				foreach (var res in compileRefInfo.Resources)
+					res.Source.FileMustExist ().Copy (destination.Combine (res.DestinationFileName));
+			}
+
+			foreach (var compileRefInfo in metadataProvider.GetSetupCompileAssembliesAfter ()) {
 				var destination = AfterReferenceSourceDirectoryFor (compileRefInfo.OutputName).EnsureDirectoryExists ();
 				compileRefInfo.SourceFiles.Copy (destination);
-				
+
 				destination = AfterReferenceResourceDirectoryFor (compileRefInfo.OutputName).EnsureDirectoryExists ();
-				compileRefInfo.Resources?.Copy (destination);
+
+				if (compileRefInfo.Resources == null)
+					continue;
+
+				foreach (var res in compileRefInfo.Resources)
+					res.Source.FileMustExist ().Copy (destination.Combine (res.DestinationFileName));
 			}
 		}
 
 		private static NPath GetExpectationsAssemblyPath ()
 		{
-			return new Uri (typeof (KeptAttribute).Assembly.CodeBase).LocalPath.ToNPath ();
+			return new Uri (typeof (KeptAttribute).Assembly.Location).LocalPath.ToNPath ();
 		}
 
 		protected void CopyToInputAndExpectations (NPath source)
@@ -141,7 +176,7 @@ namespace Mono.Linker.Tests.TestCasesRunner {
 		{
 			return _directory.Combine ($"ref_source_after_{Path.GetFileNameWithoutExtension (outputName)}");
 		}
-		
+
 		public NPath BeforeReferenceResourceDirectoryFor (string outputName)
 		{
 			return _directory.Combine ($"ref_resource_before_{Path.GetFileNameWithoutExtension (outputName)}");

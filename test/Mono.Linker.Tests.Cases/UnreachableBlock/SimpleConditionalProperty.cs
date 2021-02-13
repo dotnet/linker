@@ -9,7 +9,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 	[SetupLinkerArgument ("--enable-opt", "ipconstprop")]
 	public class SimpleConditionalProperty
 	{
-		public static void Main()
+		public static void Main ()
 		{
 			TestProperty_int_1 ();
 			TestProperty_int_2 ();
@@ -20,10 +20,13 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 			TestProperty_bool_3 ();
 			TestProperty_enum_1 ();
 			TestProperty_null_1 ();
+			TestProperty_SignedComparisons ();
+			TestProperty_UnsignedComparisons ();
+			TestDefaultInterface ();
 		}
 
 		[Kept]
-		[ExpectedInstructionSequence (new [] {
+		[ExpectedInstructionSequence (new[] {
 			"call",
 			"ldc.i4.3",
 			"beq.s",
@@ -36,7 +39,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		}
 
 		[Kept]
-		[ExpectedInstructionSequence (new [] {
+		[ExpectedInstructionSequence (new[] {
 			"ldc.i4.3",
 			"call",
 			"beq.s",
@@ -52,7 +55,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		}
 
 		[Kept]
-		[ExpectedInstructionSequence (new [] {
+		[ExpectedInstructionSequence (new[] {
 			"call",
 			"ldc.i4.5",
 			"ble.s",
@@ -69,10 +72,9 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		}
 
 		[Kept]
-		[ExpectedInstructionSequence (new [] {
+		[ExpectedInstructionSequence (new[] {
 			"call",
 			"pop",
-			"nop",
 			"ldloca.s",
 			"initobj",
 			"ldloc.0",
@@ -87,7 +89,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		}
 
 		[Kept]
-		[ExpectedInstructionSequence (new [] {
+		[ExpectedInstructionSequence (new[] {
 			"call",
 			"brfalse.s",
 			"ret"
@@ -102,7 +104,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		}
 
 		[Kept]
-		[ExpectedInstructionSequence (new [] {
+		[ExpectedInstructionSequence (new[] {
 			"call",
 			"brfalse.s",
 			"ret"
@@ -115,7 +117,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		}
 
 		[Kept]
-		[ExpectedInstructionSequence (new [] {
+		[ExpectedInstructionSequence (new[] {
 			"call",
 			"call",
 			"beq.s",
@@ -129,11 +131,10 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		}
 
 		[Kept]
-		[ExpectedInstructionSequence (new [] {
+		[ExpectedInstructionSequence (new[] {
 			"br.s",
 			"call",
 			"pop",
-			"nop",
 			"ret"
 			})]
 		static void TestProperty_enum_1 ()
@@ -144,7 +145,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		}
 
 		[Kept]
-		[ExpectedInstructionSequence (new [] {
+		[ExpectedInstructionSequence (new[] {
 			"call",
 			"brfalse.s",
 			"ret"
@@ -152,6 +153,54 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		static void TestProperty_null_1 ()
 		{
 			if (PropNull != null)
+				NeverReached_1 ();
+		}
+
+		[Kept]
+		[ExpectBodyModified]
+		static void TestProperty_SignedComparisons ()
+		{
+			if (PropInt == -10)
+				NeverReached_1 ();
+
+			if (PropInt != 10)
+				NeverReached_1 ();
+
+			if (PropInt < -10)
+				NeverReached_1 ();
+
+			if (PropInt <= -10)
+				NeverReached_1 ();
+
+			if (-10 > PropInt)
+				NeverReached_1 ();
+
+			if (-10 >= PropInt)
+				NeverReached_1 ();
+		}
+
+		[Kept]
+		[ExpectBodyModified]
+		static void TestProperty_UnsignedComparisons ()
+		{
+			// This is effectively comparing 10 and 4294967286
+
+			if (PropUInt == unchecked((uint) -10))
+				NeverReached_1 ();
+
+			if (PropUInt != (uint) 10)
+				NeverReached_1 ();
+
+			if (PropUInt > unchecked((uint) -10))
+				NeverReached_1 ();
+
+			if (PropUInt >= unchecked((uint) -10))
+				NeverReached_1 ();
+
+			if (unchecked((uint) -10) < PropUInt)
+				NeverReached_1 ();
+
+			if (unchecked((uint) -10) <= PropUInt)
 				NeverReached_1 ();
 		}
 
@@ -188,20 +237,70 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 			}
 		}
 
+		[Kept]
+		static int PropInt {
+			[Kept]
+			get => 10;
+		}
+
+		[Kept]
+		static uint PropUInt {
+			[Kept]
+			get => 10;
+		}
+
 		static void NeverReached_1 ()
-		{			
+		{
 		}
 
 		[Kept]
 		[KeptMember ("value__")]
 		[KeptBaseType (typeof (Enum))]
-		enum TestEnum {
+		enum TestEnum
+		{
 			[Kept]
 			A = 0,
 			[Kept]
 			B = 1,
 			[Kept]
 			C = 2
+		}
+
+		[Kept]
+		interface IDefaultInterface
+		{
+			[Kept]
+			public void NonDefault ();
+
+			[Kept]
+			[ExpectBodyModified]
+			public void Default ()
+			{
+				if (SimpleConditionalProperty.PropBool)
+					SimpleConditionalProperty.NeverReached_1 ();
+			}
+		}
+
+		[Kept]
+		[KeptMember (".ctor()")]
+		[KeptInterface (typeof (IDefaultInterface))]
+		class ImplementsDefaultInterface : IDefaultInterface
+		{
+			[Kept]
+			[ExpectBodyModified]
+			public void NonDefault ()
+			{
+				if (PropBool)
+					NeverReached_1 ();
+			}
+		}
+
+		[Kept]
+		static void TestDefaultInterface ()
+		{
+			IDefaultInterface i = new ImplementsDefaultInterface ();
+			i.NonDefault ();
+			i.Default ();
 		}
 	}
 }

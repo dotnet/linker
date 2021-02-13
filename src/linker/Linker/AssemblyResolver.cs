@@ -32,13 +32,11 @@ using System.IO;
 using Mono.Cecil;
 using Mono.Collections.Generic;
 
-namespace Mono.Linker {
+namespace Mono.Linker
+{
 
-#if FEATURE_ILLINK
-	public class AssemblyResolver : DirectoryAssemblyResolver {
-#else
-	public class AssemblyResolver : BaseAssemblyResolver {
-#endif
+	public class AssemblyResolver : DirectoryAssemblyResolver
+	{
 
 		readonly Dictionary<string, AssemblyDefinition> _assemblies;
 		HashSet<string> _unresolvedAssemblies;
@@ -72,16 +70,15 @@ namespace Mono.Linker {
 			set { _context = value; }
 		}
 
-#if !FEATURE_ILLINK
-		// The base class's definition of GetAssembly is visible when using DirectoryAssemblyResolver.
-		AssemblyDefinition GetAssembly (string file, ReaderParameters parameters)
+		public string GetAssemblyFileName (AssemblyDefinition assembly)
 		{
-			if (parameters.AssemblyResolver == null)
-				parameters.AssemblyResolver = this;
+			if (assemblyToPath.TryGetValue (assembly, out string path)) {
+				return path;
+			}
 
-			return ModuleDefinition.ReadModule (file, parameters).Assembly;
+			// Must be an assembly that we didn't open through the resolver
+			return assembly.MainModule.FileName;
 		}
-#endif
 
 		AssemblyDefinition ResolveFromReferences (AssemblyNameReference name, Collection<string> references, ReaderParameters parameters)
 		{
@@ -103,9 +100,9 @@ namespace Mono.Linker {
 		{
 			// Validate arguments, similarly to how the base class does it.
 			if (name == null)
-				throw new ArgumentNullException ("name");
+				throw new ArgumentNullException (nameof (name));
 			if (parameters == null)
-				throw new ArgumentNullException ("parameters");
+				throw new ArgumentNullException (nameof (parameters));
 
 			if (!_assemblies.TryGetValue (name.Name, out AssemblyDefinition asm) && (_unresolvedAssemblies == null || !_unresolvedAssemblies.Contains (name.Name))) {
 				try {
@@ -116,11 +113,11 @@ namespace Mono.Linker {
 					if (asm == null)
 						asm = base.Resolve (name, parameters);
 
-					_assemblies [name.Name] = asm;
+					CacheAssembly (asm);
 				} catch (AssemblyResolutionException) {
 					if (!_ignoreUnresolved)
 						throw;
-					_context.LogMessage ($"warning: Ignoring unresolved assembly '{name.Name}'.");
+					_context.LogMessage ($"Ignoring unresolved assembly '{name.Name}'.");
 					if (_unresolvedAssemblies == null)
 						_unresolvedAssemblies = new HashSet<string> ();
 					_unresolvedAssemblies.Add (name.Name);
@@ -130,10 +127,17 @@ namespace Mono.Linker {
 			return asm;
 		}
 
-		public virtual AssemblyDefinition CacheAssembly (AssemblyDefinition assembly)
+		void CacheAssembly (AssemblyDefinition assembly)
 		{
-			_assemblies [assembly.Name.Name] = assembly;
-			base.AddSearchDirectory (Path.GetDirectoryName (assembly.MainModule.FileName));
+			_assemblies[assembly.Name.Name] = assembly;
+			if (assembly != null)
+				_context.RegisterAssembly (assembly);
+		}
+
+		public virtual AssemblyDefinition CacheAssemblyWithPath (AssemblyDefinition assembly)
+		{
+			CacheAssembly (assembly);
+			base.AddSearchDirectory (Path.GetDirectoryName (GetAssemblyFileName (assembly)));
 			return assembly;
 		}
 
@@ -151,6 +155,8 @@ namespace Mono.Linker {
 			_assemblies.Clear ();
 			if (_unresolvedAssemblies != null)
 				_unresolvedAssemblies.Clear ();
+
+			base.Dispose (disposing);
 		}
 	}
 }

@@ -1,14 +1,19 @@
 ﻿using Mono.Linker.Tests.Cases.Expectations.Assertions;
+using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
-namespace Mono.Linker.Tests.Cases.LinkXml {
-	class UnusedTypeWithPreserveMethodsHasFieldsRemoved {
+namespace Mono.Linker.Tests.Cases.LinkXml
+{
+	[SetupLinkerDescriptorFile ("UnusedTypeWithPreserveMethodsHasFieldsRemoved.xml")]
+	class UnusedTypeWithPreserveMethodsHasFieldsRemoved
+	{
 		public static void Main ()
 		{
 		}
 
 		[Kept]
 		[KeptMember (".ctor()")]
-		class Unused {
+		class Unused
+		{
 			public int Field1;
 			private int Field2;
 			internal int Field3;

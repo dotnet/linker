@@ -1,4 +1,4 @@
-﻿//
+//
 // Driver.cs
 //
 // Author:
@@ -28,31 +28,22 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Text;
 using System.Xml.XPath;
-
 using Mono.Linker.Steps;
 
-namespace Mono.Linker {
+namespace Mono.Linker
+{
 
-	public partial class Driver {
+	public partial class Driver : IDisposable
+	{
+		const string resolvers = "-a|-x";
+		const string _linker = "IL Linker";
 
-#if FEATURE_ILLINK
-		const string resolvers = "-a|-r|-x";
-		static readonly string _linker = "IL Linker";
-#else
-		const string resolvers = "-a|-i|-r|-x";
-		static readonly string _linker = "Mono IL Linker";
-#endif
-
-		public static int Main (string [] args)
-		{
-			return Execute (args);
-		}
-
-		public static int Execute (string[] args, ILogger customLogger = null)
+		public static int Main (string[] args)
 		{
 			if (args.Length == 0) {
 				Console.Error.WriteLine ("No parameters specified");
@@ -63,21 +54,18 @@ namespace Mono.Linker {
 				return 1;
 
 			try {
-
-				Driver driver = new Driver (arguments);
-				if (!driver.Run (customLogger))
-					return 1;
-
+				using (Driver driver = new Driver (arguments)) {
+					return driver.Run ();
+				}
 			} catch {
 				Console.Error.WriteLine ("Fatal error in {0}", _linker);
 				throw;
 			}
-
-			return 0;
 		}
 
 		readonly Queue<string> arguments;
 		bool _needAddBypassNGenStep;
+		protected LinkContext context;
 
 		public Driver (Queue<string> arguments)
 		{
@@ -91,8 +79,8 @@ namespace Mono.Linker {
 				if (arg.StartsWith ("@")) {
 					try {
 						string responseFileName = arg.Substring (1);
-						IEnumerable<string> responseFileLines = File.ReadLines (responseFileName);
-						ParseResponseFileLines (responseFileLines, result);
+						using (var responseFileText = new StreamReader (responseFileName))
+							ParseResponseFile (responseFileText, result);
 					} catch (Exception e) {
 						Console.Error.WriteLine ("Cannot read response file due to '{0}'", e.Message);
 						return false;
@@ -105,522 +93,705 @@ namespace Mono.Linker {
 			return true;
 		}
 
-		public static void ParseResponseFileLines (IEnumerable<string> responseFileLines, Queue<string> result)
+		public static void ParseResponseFile (TextReader reader, Queue<string> result)
 		{
-			foreach (var rawResponseFileText in responseFileLines) {
-				var responseFileText = rawResponseFileText.Trim ();
-				int idx = 0;
-				while (idx < responseFileText.Length) {
-					while (idx < responseFileText.Length && char.IsWhiteSpace (responseFileText [idx])) {
-						idx++;
-					}
-					if (idx == responseFileText.Length) {
+			int cur;
+			while ((cur = reader.Read ()) >= 0) {
+				// skip whitespace
+				while (char.IsWhiteSpace ((char) cur)) {
+					if ((cur = reader.Read ()) < 0)
 						break;
-					}
-					StringBuilder argBuilder = new StringBuilder ();
-					bool inquote = false;
-					while (true) {
-						bool copyChar = true;
-						int numBackslash = 0;
-						while (idx < responseFileText.Length && responseFileText [idx] == '\\') {
-							numBackslash++;
-							idx++;
-						}
-						if (idx < responseFileText.Length && responseFileText [idx] == '"') {
-							if ( (numBackslash % 2) == 0) {
-								if (inquote && (idx + 1) < responseFileText.Length && responseFileText [idx + 1] == '"') {
-									idx++;
-								} else {
-									copyChar = false;
-									inquote = !inquote;
-								}
-							}
-							numBackslash /= 2;
-						}
-						argBuilder.Append (new String ('\\', numBackslash));
-						if (idx == responseFileText.Length || (!inquote && Char.IsWhiteSpace (responseFileText [idx]))) {
-							break;
-						}
-						if (copyChar) {
-							argBuilder.Append (responseFileText [idx]);
-						}
-						idx++;
-					}
-					result.Enqueue (argBuilder.ToString ());
 				}
+				if (cur < 0) // EOF
+					break;
+
+				StringBuilder argBuilder = new StringBuilder ();
+				bool inquote = false;
+
+				// build up an argument one character at a time
+				while (true) {
+					bool copyChar = true;
+					int numBackslash = 0;
+
+					// count backslashes
+					while (cur == '\\') {
+						numBackslash++;
+						if ((cur = reader.Read ()) < 0)
+							break;
+					}
+					if (cur == '"') {
+						if ((numBackslash % 2) == 0) {
+							if (inquote && (reader.Peek () == '"')) {
+								// handle "" escape sequence in a quote
+								cur = reader.Read ();
+							} else {
+								// unescaped " begins/ends a quote
+								copyChar = false;
+								inquote = !inquote;
+							}
+						}
+						// treat backslashes before " as escapes
+						numBackslash /= 2;
+					}
+					if (numBackslash > 0)
+						argBuilder.Append (new String ('\\', numBackslash));
+					if (cur < 0 || (!inquote && char.IsWhiteSpace ((char) cur)))
+						break;
+					if (copyChar)
+						argBuilder.Append ((char) cur);
+					cur = reader.Read ();
+				}
+				result.Enqueue (argBuilder.ToString ());
 			}
 		}
 
-		static void ErrorUnrecognizedOption (string optionName)
+		void ErrorMissingArgument (string optionName)
 		{
-			Console.WriteLine ($"Unrecognized command-line option: '{optionName}'");
+			context.LogError ($"Missing argument for '{optionName}' option", 1018);
 		}
 
-		static void ErrorMissingArgument (string optionName)
-		{
-			Console.WriteLine ($"Missing argument for '{optionName}' option");
-		}
-
-		public bool Run (ILogger customLogger = null)
+		// Perform setup of the LinkContext and parse the arguments.
+		// Return values:
+		// 0 => successfully set up context with all arguments
+		// 1 => argument processing stopped early without errors
+		// -1 => error setting up context
+		protected int SetupContext (ILogger customLogger = null)
 		{
 			Pipeline p = GetStandardPipeline ();
-			using (LinkContext context = GetDefaultContext (p)) {
-				if (customLogger != null)
-					context.Logger = customLogger;
+			context = GetDefaultContext (p, customLogger);
 
-#if !FEATURE_ILLINK
-				I18nAssemblies assemblies = I18nAssemblies.All;
-#endif
-				var custom_steps = new List<string> ();
-				var excluded_features = new HashSet<string> (StringComparer.Ordinal);
-				var set_optimizations = new List<(CodeOptimizations, string, bool)> ();
-				bool dumpDependencies = false;
-				string dependenciesFileName = null;
-				bool ignoreDescriptors = false;
-				bool removeCAS = true;
-				bool new_mvid_used = false;
-				bool deterministic_used = false;
-				bool keepCompilersResources = false;
+			var body_substituter_steps = new Stack<string> ();
+			var xml_custom_attribute_steps = new Stack<string> ();
+			var custom_steps = new Stack<string> ();
+			var set_optimizations = new List<(CodeOptimizations, string, bool)> ();
+			bool dumpDependencies = false;
+			string dependenciesFileName = null;
+			context.StripSecurity = true;
+			bool new_mvid_used = false;
+			bool deterministic_used = false;
+			bool keepCompilersResources = false;
 
-				bool resolver = false;
-				while (arguments.Count > 0) {
-					string token = arguments.Dequeue ();
-					if (token.Length < 2) {
-						ErrorUnrecognizedOption (token);
-						return false;
-					}
+			List<BaseStep> inputs = CreateDefaultResolvers ();
 
-					//
-					// Handling of --value like options
-					//
-					if (token [0] == '-' && token [1] == '-') {
-						switch (token) {
-						case "--skip-unresolved":
-							if (!GetBoolParam (token, l => context.IgnoreUnresolved = context.Resolver.IgnoreUnresolved = l))
-								return false;
+			while (arguments.Count > 0) {
+				string token = arguments.Dequeue ();
+				if (token.Length < 2) {
+					context.LogError ($"Unrecognized command-line option: '{token}'", 1015);
+					return -1;
+				}
 
-							continue;
+				//
+				// Handling of --value like options
+				//
+				if (token[0] == '-' && token[1] == '-') {
+					switch (token) {
+					case "--help":
+						Usage ();
+						return 1;
 
-						case "--verbose":
-							context.LogMessages = true;
-							continue;
+					case "--skip-unresolved":
+						if (!GetBoolParam (token, l => context.IgnoreUnresolved = context.Resolver.IgnoreUnresolved = l))
+							return -1;
 
-						case "--dependencies-file":
-							if (!GetStringParam (token, l => dependenciesFileName = l))
-								return false;
+						continue;
 
-							continue;
+					case "--verbose":
+						context.LogMessages = true;
+						continue;
 
-						case "--dump-dependencies":
-							dumpDependencies = true;
-							continue;
+					case "--dependencies-file":
+						if (!GetStringParam (token, l => dependenciesFileName = l))
+							return -1;
 
-						case "--reduced-tracing":
-							if (!GetBoolParam (token, l => context.EnableReducedTracing = l))
-								return false;
+						continue;
 
-							continue;
+					case "--dump-dependencies":
+						dumpDependencies = true;
+						continue;
 
-						case "--used-attrs-only":
-							if (!GetBoolParam (token, l => context.KeepUsedAttributeTypesOnly = l))
-								return false;
+					case "--reduced-tracing":
+						if (!GetBoolParam (token, l => context.EnableReducedTracing = l))
+							return -1;
 
-							continue;
+						continue;
 
-						case "--strip-security":
-							if (!GetBoolParam (token, l => removeCAS = l))
-								return false;
+					case "--used-attrs-only":
+						if (!GetBoolParam (token, l => context.KeepUsedAttributeTypesOnly = l))
+							return -1;
 
-							continue;
+						continue;
 
-						case "--strip-resources":
-							if (!GetBoolParam (token, l => context.StripResources = l))
-								return false;
+					case "--strip-security":
+						if (!GetBoolParam (token, l => context.StripSecurity = l))
+							return -1;
 
-							continue;
+						continue;
 
-						case "--substitutions":
-							if (arguments.Count < 1) {
-								ErrorMissingArgument (token);
-								return false;
-							}
+					case "--strip-descriptors":
+						if (!GetBoolParam (token, l => set_optimizations.Add ((CodeOptimizations.RemoveDescriptors, null, l))))
+							return -1;
 
-							if (!GetStringParam (token, l => context.AddSubstitutionFile (l)))
-								return false;
+						continue;
 
-							continue;
+					case "--strip-substitutions":
+						if (!GetBoolParam (token, l => set_optimizations.Add ((CodeOptimizations.RemoveSubstitutions, null, l))))
+							return -1;
 
-						case "--exclude-feature":
-							if (arguments.Count < 1) {
-								ErrorMissingArgument (token);
-								return false;
-							}
+						continue;
 
-							if (!GetStringParam (token, l => {
-								foreach (var feature in l.Split (',')) {
-									if (!excluded_features.Contains (feature))
-										excluded_features.Add (feature);
-								}
-							}))
-								return false;
+					case "--strip-link-attributes":
+						if (!GetBoolParam (token, l => set_optimizations.Add ((CodeOptimizations.RemoveLinkAttributes, null, l))))
+							return -1;
 
-							continue;
+						continue;
 
-						case "--explicit-reflection":
-							if (!GetBoolParam (token, l => context.AddReflectionAnnotations = l))
-								return false;
-
-							continue;
-
-						case "--custom-step":
-							if (!GetStringParam (token, l => custom_steps.Add (l)))
-								return false;
-
-							continue;
-
-						case "--keep-facades":
-							if (!GetBoolParam (token, l => context.KeepTypeForwarderOnlyAssemblies = l))
-								return false;
-
-							continue;
-
-						case "--keep-dep-attributes":
-							if (!GetBoolParam (token, l => context.KeepDependencyAttributes = l))
-								return false;
-
-							continue;
-
-						case "--keep-compilers-resources":
-							if (!GetBoolParam (token, l => keepCompilersResources = l))
-								return false;
-
-							continue;
-
-						case "--ignore-descriptors":
-							if (!GetBoolParam (token, l => ignoreDescriptors = l))
-								return false;
-
-							continue;
-
-						case "--disable-opt":
-							if (!GetStringParam (token, l => {
-								if (!GetOptimizationName (l, out var opt))
-									return;
-
-								string assemblyName = GetNextStringValue ();
-								set_optimizations.Add ((opt, assemblyName, false));
-							}))
-								return false;
-
-							continue;
-
-						case "--enable-opt":
-							if (!GetStringParam (token, l => {
-								if (!GetOptimizationName (l, out var opt))
-									return;
-
-								string assemblyName = GetNextStringValue ();
-								set_optimizations.Add ((opt, assemblyName, true));
-							}))
-								return false;
-
-							continue;
-
-						case "--new-mvid":
-							//
-							// This is not same as --deterministic which calculates MVID
-							// from stable assembly content. This option creates a new random
-							// mvid or uses mvid of the source assembly.
-							//
-							if (!GetBoolParam (token, l => {
-								if (!l)
-									p.RemoveStep (typeof (RegenerateGuidStep));
-							}))
-								return false;
-
-							new_mvid_used = true;
-							continue;
-
-						case "--deterministic":
-							if (!GetBoolParam (token, l => context.DeterministicOutput = l))
-								return false;
-
-							deterministic_used = true;
-							continue;
-
-						case "--output-assemblylist":
-							if (!GetStringParam (token, l => context.AssemblyListFile = l))
-								return false;
-
-							continue;
-
-						case "--output-pinvokes":
-							if (!GetStringParam (token, l => context.PInvokesListFile = l))
-								return false;
-
-							continue;
-
-						case "--version":
-							Version ();
-							return true;
-
-						case "--about":
-							About ();
-							return true;
+					case "--substitutions":
+						if (arguments.Count < 1) {
+							ErrorMissingArgument (token);
+							return -1;
 						}
-					}
 
-					if (token [0] == '-' || token [1] == '/') {
+						if (!GetStringParam (token, l => body_substituter_steps.Push (l)))
+							return -1;
 
-						switch (token.Substring (1)) {
-						case "d":
-							if (!GetStringParam (token, l => {
-								DirectoryInfo info = new DirectoryInfo (l);
-								context.Resolver.AddSearchDirectory (info.FullName);
-							}))
-								return false;
+						continue;
+					case "--explicit-reflection":
+						if (!GetBoolParam (token, l => context.AddReflectionAnnotations = l))
+							return -1;
 
-							continue;
-						case "o":
-						case "out":
-							if (!GetStringParam (token, l => context.OutputDirectory = l))
-								return false;
+						continue;
 
-							continue;
-						case "c":
-							if (!GetStringParam (token, l => context.CoreAction = ParseAssemblyAction (l)))
-								return false;
+					case "--custom-step":
+						if (!GetStringParam (token, l => custom_steps.Push (l)))
+							return -1;
 
-							continue;
-						case "u":
-							if (!GetStringParam (token, l => context.UserAction = ParseAssemblyAction (l)))
-								return false;
+						continue;
 
-							continue;
-						case "p":
-							if (arguments.Count < 2) {
-								ErrorMissingArgument (token);
-								return false;
-							}
+					case "--custom-data":
+						if (arguments.Count < 1) {
+							ErrorMissingArgument (token);
+							return -1;
+						}
 
-							AssemblyAction action = ParseAssemblyAction (arguments.Dequeue ());
-							context.Actions [arguments.Dequeue ()] = action;
-							continue;
-						case "t":
-							context.KeepTypeForwarderOnlyAssemblies = true;
-							continue;
-						case "x":
-							if (!GetStringParam (token, l => {
-								foreach (string file in GetFiles (l))
-									p.PrependStep (new ResolveFromXmlStep (new XPathDocument (file), file));
+						var arg = arguments.Dequeue ();
+						string[] values = arg.Split ('=');
+						if (values?.Length != 2) {
+							context.LogError ($"Value used with '--custom-data' has to be in the KEY=VALUE format", 1019);
+							return -1;
+						}
 
-								}))
-								return false;
+						context.SetCustomData (values[0], values[1]);
+						continue;
 
-							resolver = true;
-							continue;
-						case "r":
-						case "a":
-							if (!GetStringParam (token, l => {
+					case "--keep-compilers-resources":
+						if (!GetBoolParam (token, l => keepCompilersResources = l))
+							return false;
 
-								var rootVisibility = (token [1] == 'r')
-									? ResolveFromAssemblyStep.RootVisibility.PublicAndFamily
-									: ResolveFromAssemblyStep.RootVisibility.Any;
-								foreach (string file in GetFiles (l))
-									p.PrependStep (new ResolveFromAssemblyStep (file, rootVisibility));
-							}))
-								return false;
+						continue;
 
-							resolver = true;
-							continue;
-#if !FEATURE_ILLINK
-						case "i":
-							if (!GetStringParam (token, l => {
-								foreach (string file in GetFiles (l))
-									p.PrependStep (new ResolveFromXApiStep (new XPathDocument (file)));
-								}))
-								return false;
+					case "--keep-facades":
+						if (!GetBoolParam (token, l => context.KeepTypeForwarderOnlyAssemblies = l))
+							return -1;
 
-							resolver = true;
-							continue;
-						case "l":
-							if (!GetStringParam (token, l => assemblies = ParseI18n (l)))
-								return false;
+						continue;
 
-							continue;
-#endif
-						case "m":
-							if (arguments.Count < 2) {
-								ErrorMissingArgument (token);
-								return false;
-							}
+					case "--keep-dep-attributes":
+						if (!GetBoolParam (token, l => set_optimizations.Add ((CodeOptimizations.RemoveDynamicDependencyAttribute, null, !l))))
+							return -1;
 
-							context.SetParameter (arguments.Dequeue (), arguments.Dequeue ());
-							continue;
-						case "b":
-							if (!GetBoolParam (token, l => context.LinkSymbols = l))
-								return false;
+						continue;
 
-							continue;
-						case "g":
-							if (!GetBoolParam (token, l => context.DeterministicOutput = !l))
-								return false;
+					case "--ignore-descriptors":
+						if (!GetBoolParam (token, l => context.IgnoreDescriptors = l))
+							return -1;
 
-							continue;
-						case "z":
-							if (!GetBoolParam (token, l => ignoreDescriptors = !l))
-								return false;
+						continue;
 
-							continue;
-						case "v":
-							if (!GetBoolParam (token, l => context.KeepMembersForDebugger = l))
-								return false;
+					case "--ignore-substitutions":
+						if (!GetBoolParam (token, l => context.IgnoreSubstitutions = l))
+							return -1;
 
-							continue;
-						case "?":
-						case "help":
-							Usage ();
-							return true;
+						continue;
 
-						case "reference":
-							if (!GetStringParam (token, l => context.Resolver.AddReferenceAssembly (l)))
-								return false;
+					case "--ignore-link-attributes":
+						if (!GetBoolParam (token, l => context.IgnoreLinkAttributes = l))
+							return -1;
+
+						continue;
+
+					case "--disable-opt": {
+							string optName = null;
+							if (!GetStringParam (token, l => optName = l))
+								return -1;
+
+							if (!GetOptimizationName (optName, out var opt))
+								return -1;
+
+							string assemblyName = GetNextStringValue ();
+							set_optimizations.Add ((opt, assemblyName, false));
 
 							continue;
 						}
+					case "--enable-opt": {
+							string optName = null;
+							if (!GetStringParam (token, l => optName = l))
+								return -1;
+
+							if (!GetOptimizationName (optName, out var opt))
+								return -1;
+
+							string assemblyName = GetNextStringValue ();
+							set_optimizations.Add ((opt, assemblyName, true));
+
+							continue;
+						}
+
+					case "--feature": {
+							string featureName = null;
+							if (!GetStringParam (token, l => featureName = l))
+								return -1;
+
+							if (!GetBoolParam (token, value => {
+								context.SetFeatureValue (featureName, value);
+							}))
+								return -1;
+
+							continue;
+						}
+					case "--new-mvid":
+						//
+						// This is not same as --deterministic which calculates MVID
+						// from stable assembly content. This option creates a new random
+						// mvid or uses mvid of the source assembly.
+						//
+						if (!GetBoolParam (token, l => {
+							if (!l)
+								p.RemoveStep (typeof (RegenerateGuidStep));
+						}))
+							return -1;
+
+						new_mvid_used = true;
+						continue;
+
+					case "--deterministic":
+						if (!GetBoolParam (token, l => context.DeterministicOutput = l))
+							return -1;
+
+						deterministic_used = true;
+						continue;
+
+					case "--output-assemblylist":
+						if (!GetStringParam (token, l => context.AssemblyListFile = l))
+							return -1;
+
+						continue;
+
+					case "--output-pinvokes":
+						if (!GetStringParam (token, l => context.PInvokesListFile = l))
+							return -1;
+
+						continue;
+
+					case "--link-attributes":
+						if (arguments.Count < 1) {
+							ErrorMissingArgument (token);
+							return -1;
+						}
+
+						if (!GetStringParam (token, l => {
+							foreach (string file in GetFiles (l))
+								xml_custom_attribute_steps.Push (file);
+						}))
+							return -1;
+
+						continue;
+
+					case "--generate-warning-suppressions":
+						string generateWarningSuppressionsArgument = string.Empty;
+						if (!GetStringParam (token, l => generateWarningSuppressionsArgument = l))
+							return -1;
+
+						if (!GetWarningSuppressionWriterFileOutputKind (generateWarningSuppressionsArgument, out var fileOutputKind)) {
+							context.LogError ($"Invalid value '{generateWarningSuppressionsArgument}' for '--generate-warning-suppressions' option", 1017);
+							return -1;
+						}
+
+						context.WarningSuppressionWriter = new WarningSuppressionWriter (fileOutputKind);
+						continue;
+
+					case "--nowarn":
+						string noWarnArgument = null;
+						if (!GetStringParam (token, l => noWarnArgument = l))
+							return -1;
+
+						context.NoWarn.UnionWith (ProcessWarningCodes (noWarnArgument));
+						continue;
+
+					case "--warnaserror":
+					case "--warnaserror+":
+						var warningList = GetNextStringValue ();
+						if (!string.IsNullOrEmpty (warningList)) {
+							foreach (var warning in ProcessWarningCodes (warningList))
+								context.WarnAsError[warning] = true;
+
+						} else {
+							context.GeneralWarnAsError = true;
+							context.WarnAsError.Clear ();
+						}
+
+						continue;
+
+					case "--warnaserror-":
+						warningList = GetNextStringValue ();
+						if (!string.IsNullOrEmpty (warningList)) {
+							foreach (var warning in ProcessWarningCodes (warningList))
+								context.WarnAsError[warning] = false;
+
+						} else {
+							context.GeneralWarnAsError = false;
+							context.WarnAsError.Clear ();
+						}
+
+						continue;
+
+					case "--warn":
+						string warnVersionArgument = null;
+						if (!GetStringParam (token, l => warnVersionArgument = l))
+							return -1;
+
+						if (!GetWarnVersion (warnVersionArgument, out WarnVersion version))
+							return -1;
+
+						context.WarnVersion = version;
+
+						continue;
+
+					case "--version":
+						Version ();
+						return 1;
+
+					case "--about":
+						About ();
+						return 1;
 					}
-
-					ErrorUnrecognizedOption (token);
-					return false;
 				}
 
-				if (!resolver) {
-					Console.WriteLine ($"No files to link were specified. Use one of '{resolvers}' options");
-					return false;
-				}
+				if (token[0] == '-' || token[1] == '/') {
 
-				if (new_mvid_used && deterministic_used) {
-					Console.WriteLine ($"Options '--new-mvid' and '--deterministic' cannot be used at the same time");
-					return false;
-				}
+					switch (token.Substring (1)) {
+					case "d":
+						if (!GetStringParam (token, l => {
+							DirectoryInfo info = new DirectoryInfo (l);
+							context.Resolver.AddSearchDirectory (info.FullName);
+						}))
+							return -1;
 
-				if (dumpDependencies)
-					context.Tracer.AddRecorder (new XmlDependencyRecorder (context, dependenciesFileName));
+						continue;
+					case "o":
+					case "out":
+						if (!GetStringParam (token, l => context.OutputDirectory = l))
+							return -1;
 
-				if (set_optimizations.Count > 0) {
-					foreach (var item in set_optimizations) {
-						if (item.Item3)
-							context.Optimizations.Enable (item.Item1, item.Item2);
-						else
-							context.Optimizations.Disable (item.Item1, item.Item2);
+						continue;
+					case "c": {
+							AssemblyAction? action = null;
+							if (!GetStringParam (token, l => action = ParseAssemblyAction (l)))
+								return -1;
+
+							if (action == null)
+								return -1;
+
+							context.CoreAction = action.Value;
+							continue;
+						}
+					case "u": {
+							AssemblyAction? action = null;
+							if (!GetStringParam (token, l => action = ParseAssemblyAction (l)))
+								return -1;
+
+							if (action == null)
+								return -1;
+
+							context.UserAction = action.Value;
+							continue;
+						}
+					case "p": {
+							if (arguments.Count < 2) {
+								ErrorMissingArgument (token);
+								return -1;
+							}
+
+							var action = ParseAssemblyAction (arguments.Dequeue ());
+							if (action == null)
+								return -1;
+
+							string assemblyName = arguments.Dequeue ();
+							if (!IsValidAssemblyName (assemblyName)) {
+								context.LogError ($"Invalid assembly name '{assemblyName}'", 1036);
+								return -1;
+							}
+
+							context.RegisterAssemblyAction (assemblyName, action.Value);
+							continue;
+						}
+					case "t":
+						context.KeepTypeForwarderOnlyAssemblies = true;
+						continue;
+					case "x": {
+							string xmlFile = null;
+							if (!GetStringParam (token, l => xmlFile = l))
+								return -1;
+
+							if (!File.Exists (xmlFile)) {
+								context.LogError ($"XML descriptor file '{xmlFile}' could not be found'", 1033);
+								return -1;
+							}
+
+							inputs.Add (new ResolveFromXmlStep (new XPathDocument (xmlFile), xmlFile));
+							continue;
+						}
+					case "a": {
+							string assemblyFile = null;
+							if (!GetStringParam (token, l => assemblyFile = l))
+								return -1;
+
+							if (!File.Exists (assemblyFile) && assemblyFile.EndsWith (".dll", StringComparison.InvariantCultureIgnoreCase)) {
+								context.LogError ($"Root assembly '{assemblyFile}' could not be found'", 1032);
+								return -1;
+							}
+
+							AssemblyRootMode rmode = AssemblyRootMode.Default;
+							var rootMode = GetNextStringValue ();
+							if (rootMode != null) {
+								var parsed_rmode = ParseAssemblyRootsMode (rootMode);
+								if (parsed_rmode is null)
+									return -1;
+
+								rmode = parsed_rmode.Value;
+							}
+
+							inputs.Add (new RootAssemblyInput (assemblyFile, rmode));
+							continue;
+						}
+					case "b":
+						if (!GetBoolParam (token, l => context.LinkSymbols = l))
+							return -1;
+
+						continue;
+					case "g":
+						if (!GetBoolParam (token, l => context.DeterministicOutput = !l))
+							return -1;
+
+						continue;
+					case "z":
+						if (!GetBoolParam (token, l => context.IgnoreDescriptors = !l))
+							return -1;
+
+						continue;
+					case "?":
+					case "h":
+					case "help":
+						Usage ();
+						return 1;
+
+					case "reference":
+						if (!GetStringParam (token, l => context.Resolver.AddReferenceAssembly (l)))
+							return -1;
+
+						continue;
 					}
 				}
 
-				//
-				// Modify the default pipeline
-				//
-				if (ignoreDescriptors)
-					p.RemoveStep (typeof (BlacklistStep));
-
-				if (context.DeterministicOutput)
-					p.RemoveStep (typeof (RegenerateGuidStep));
-
-				if (context.AddReflectionAnnotations)
-					p.AddStepAfter (typeof (MarkStep), new ReflectionBlockedStep ());
-
-#if !FEATURE_ILLINK
-				p.AddStepAfter (typeof (LoadReferencesStep), new LoadI18nAssemblies (assemblies));
-
-				if (assemblies != I18nAssemblies.None) {
-					p.AddStepAfter (typeof (PreserveDependencyLookupStep), new PreserveCalendarsStep (assemblies));
-				}
-#endif
-
-				if (_needAddBypassNGenStep) {
-					p.AddStepAfter (typeof (SweepStep), new AddBypassNGenStep ());
-				}
-
-				p.AddStepBefore (typeof (MarkStep), new BodySubstituterStep ());
-
-				if (removeCAS)
-					p.AddStepBefore (typeof (MarkStep), new RemoveSecurityStep ());
-
-				if (excluded_features.Count > 0) {
-					p.AddStepBefore (typeof (MarkStep), new RemoveFeaturesStep () {
-						FeatureCOM = excluded_features.Contains ("com"),
-						FeatureETW = excluded_features.Contains ("etw"),
-						FeatureSRE = excluded_features.Contains ("sre"),
-						FeatureGlobalization = excluded_features.Contains ("globalization")
-					});
-
-					var excluded = new string [excluded_features.Count];
-					excluded_features.CopyTo (excluded);
-					context.ExcludedFeatures = excluded;
-				}
-
-				if (keepCompilersResources) {
-					p.RemoveStep (typeof (RemoveResourcesStep));
-				}
-
-				p.AddStepBefore (typeof (MarkStep), new RemoveUnreachableBlocksStep ());
-				p.AddStepBefore (typeof (OutputStep), new ClearInitLocalsStep ());
-				p.AddStepBefore (typeof (OutputStep), new SealerStep ());
-
-				//
-				// Pipeline setup with all steps enabled
-				//
-				// LoadReferencesStep
-				// BlacklistStep [optional]
-				// PreserveDependencyLookupStep
-				// TypeMapStep
-				// BodySubstituterStep [optional]
-				// RemoveSecurityStep [optional]
-				// RemoveFeaturesStep [optional]
-				// RemoveUnreachableBlocksStep [optional]
-				// MarkStep
-				// ReflectionBlockedStep [optional]
-				// SweepStep
-				// AddBypassNGenStep [optional]
-				// CodeRewriterStep
-				// CleanStep
-				// RegenerateGuidStep [optional]
-				// ClearInitLocalsStep
-				// OutputStep
-				//
-
-				foreach (string custom_step in custom_steps) {
-					if (!AddCustomStep (p, custom_step))
-						return false;
-				}
-
-				PreProcessPipeline (p);
-
-				try {
-					p.Process (context);
-				} finally {
-					context.Tracer.Finish ();
-				}
-
-				return true;
+				context.LogError ($"Unrecognized command-line option: '{token}'", 1015);
+				return -1;
 			}
+
+			if (inputs.Count == 0) {
+				context.LogError ($"No input files were specified. Use one of '{resolvers}' options", 1020);
+				return -1;
+			}
+
+			if (new_mvid_used && deterministic_used) {
+				context.LogError ($"Options '--new-mvid' and '--deterministic' cannot be used at the same time", 1021);
+				return -1;
+			}
+
+
+
+			// Default to deterministic output
+			if (!new_mvid_used && !deterministic_used) {
+				context.DeterministicOutput = true;
+			}
+			if (dumpDependencies)
+				AddXmlDependencyRecorder (context, dependenciesFileName);
+
+			if (set_optimizations.Count > 0) {
+				foreach (var (opt, assemblyName, enable) in set_optimizations) {
+					if (enable)
+						context.Optimizations.Enable (opt, assemblyName);
+					else
+						context.Optimizations.Disable (opt, assemblyName);
+				}
+			}
+
+			//
+			// Modify the default pipeline
+			//
+
+			for (int i = inputs.Count; i != 0; --i)
+				p.PrependStep (inputs[i - 1]);
+
+			foreach (var file in xml_custom_attribute_steps)
+				AddLinkAttributesStep (p, file);
+
+			foreach (var file in body_substituter_steps)
+				AddBodySubstituterStep (p, file);
+
+			if (context.DeterministicOutput)
+				p.RemoveStep (typeof (RegenerateGuidStep));
+
+			if (context.AddReflectionAnnotations)
+				p.AddStepAfter (typeof (MarkStep), new ReflectionBlockedStep ());
+
+			if (_needAddBypassNGenStep)
+				p.AddStepAfter (typeof (SweepStep), new AddBypassNGenStep ());
+
+			if (keepCompilersResources) {
+				p.RemoveStep (typeof (RemoveResourcesStep));
+			}
+
+			p.AddStepBefore (typeof (OutputStep), new SealerStep ());
+
+			//
+			// Pipeline setup with all steps enabled
+			//
+			// RootAssemblyInputStep or ResolveFromXmlStep [at least one of them]
+			// LinkAttributesStep [optional, possibly many]
+			// BodySubstituterStep [optional]
+			// MarkStep
+			// ReflectionBlockedStep [optional]
+			// RemoveResourcesStep
+			// ProcessWarningsStep
+			// OutputWarningSuppressions
+			// SweepStep
+			// AddBypassNGenStep [optional]
+			// CodeRewriterStep
+			// CleanStep
+			// RegenerateGuidStep [optional]
+			// SealerStep
+			// OutputStep
+
+			p.AppendStep (new MarkStep ());
+			p.AppendStep (new RemoveResourcesStep());
+			p.AppendStep (new ValidateVirtualMethodAnnotationsStep ());
+			p.AppendStep (new ProcessWarningsStep ());
+			p.AppendStep (new OutputWarningSuppressions ());
+			p.AppendStep (new SweepStep ());
+			p.AppendStep (new CodeRewriterStep ());
+			foreach (string custom_step in custom_steps) {
+				if (!AddCustomStep (p, custom_step))
+					return -1;
+			}
+
+			return 0;
+		}
+
+		// Returns the exit code of the process. 0 indicates success.
+		// Known non-recoverable errors (LinkerFatalErrorException) set the exit code
+		// to the error code.
+		// May propagate exceptions, which will result in the process getting an
+		// exit code determined by dotnet.
+		public int Run (ILogger customLogger = null)
+		{
+			int setupStatus = SetupContext (customLogger);
+			if (setupStatus > 0)
+				return 0;
+			if (setupStatus < 0)
+				return 1;
+
+			Pipeline p = context.Pipeline;
+			PreProcessPipeline (p);
+
+			try {
+				p.Process (context);
+			} catch (LinkerFatalErrorException lex) {
+				context.LogMessage (lex.MessageContainer);
+				Console.Error.WriteLine (lex.ToString ());
+				Debug.Assert (lex.MessageContainer.Category == MessageCategory.Error);
+				Debug.Assert (lex.MessageContainer.Code != null);
+				Debug.Assert (lex.MessageContainer.Code.Value != 0);
+				return lex.MessageContainer.Code ?? 1;
+			} catch (Exception) {
+				// Unhandled exceptions are usually linker bugs. Ask the user to report it.
+				context.LogError ($"IL Linker has encountered an unexpected error. Please report the issue at https://github.com/mono/linker/issues", 1012);
+				// Don't swallow the exception and exit code - rethrow it and let the surrounding tooling decide what to do.
+				// The stack trace will go to stderr, and the MSBuild task will surface it with High importance.
+				throw;
+			} finally {
+				context.FlushCachedWarnings ();
+				context.Tracer.Finish ();
+			}
+
+			return context.ErrorsCount > 0 ? 1 : 0;
 		}
 
 		partial void PreProcessPipeline (Pipeline pipeline);
 
-		private static Assembly GetCustomAssembly (string arg) {
+		private static IEnumerable<int> ProcessWarningCodes (string value)
+		{
+			string Unquote (string arg)
+			{
+				if (arg.Length > 1 && arg[0] == '"' && arg[arg.Length - 1] == '"')
+					return arg.Substring (1, arg.Length - 2);
+
+				return arg;
+			}
+
+			value = Unquote (value);
+			string[] values = value.Split (new char[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+			foreach (string v in values) {
+				var id = v.Trim ();
+				if (!id.StartsWith ("IL", StringComparison.Ordinal) || !ushort.TryParse (id.Substring (2), out ushort code))
+					continue;
+
+				yield return code;
+			}
+		}
+
+		Assembly GetCustomAssembly (string arg)
+		{
 			if (Path.IsPathRooted (arg)) {
 				var assemblyPath = Path.GetFullPath (arg);
 				if (File.Exists (assemblyPath))
 					return Assembly.Load (File.ReadAllBytes (assemblyPath));
-				Console.WriteLine ($"The assembly '{arg}' specified for '--custom-step' option could not be found");
-			}
-			else
-				Console.WriteLine ($"The path to the assembly '{arg}' specified for '--custom-step' must be fully qualified");
+				context.LogError ($"The assembly '{arg}' specified for '--custom-step' option could not be found", 1022);
+			} else
+				context.LogError ($"The path to the assembly '{arg}' specified for '--custom-step' must be fully qualified", 1023);
 
 			return null;
 		}
 
-		protected static bool AddCustomStep (Pipeline pipeline, string arg)
+		protected virtual void AddResolveFromXmlStep (Pipeline pipeline, string file)
+		{
+			pipeline.PrependStep (new ResolveFromXmlStep (new XPathDocument (file), file));
+		}
+
+		protected virtual void AddLinkAttributesStep (Pipeline pipeline, string file)
+		{
+			pipeline.AddStepBefore (typeof (MarkStep), new LinkAttributesStep (new XPathDocument (file), file));
+		}
+
+		static void AddBodySubstituterStep (Pipeline pipeline, string file)
+		{
+			pipeline.AddStepBefore (typeof (MarkStep), new BodySubstituterStep (new XPathDocument (file), file));
+		}
+
+		protected virtual void AddXmlDependencyRecorder (LinkContext context, string fileName)
+		{
+			context.Tracer.AddRecorder (new XmlDependencyRecorder (context, fileName));
+		}
+
+		protected bool AddCustomStep (Pipeline pipeline, string arg)
 		{
 			Assembly custom_assembly = null;
 			int pos = arg.IndexOf (",");
@@ -643,25 +814,25 @@ namespace Mono.Linker {
 
 			string[] parts = arg.Split (':');
 			if (parts.Length != 2) {
-				Console.WriteLine ($"Invalid value '{arg}' specified for '--custom-step' option");
+				context.LogError ($"Invalid value '{arg}' specified for '--custom-step' option", 1024);
 				return false;
 			}
 
-			if (!parts[0].StartsWith ("-") && !parts [0].StartsWith ("+")) {
-				Console.WriteLine ($"Expected '+' or '-' to control new step insertion");
+			if (!parts[0].StartsWith ("-") && !parts[0].StartsWith ("+")) {
+				context.LogError ($"Expected '+' or '-' to control new step insertion", 1025);
 				return false;
 			}
 
-			bool before = parts [0][0] == '-';
-			string name = parts [0].Substring (1);
+			bool before = parts[0][0] == '-';
+			string name = parts[0].Substring (1);
 
 			IStep target = FindStep (pipeline, name);
 			if (target == null) {
-				Console.WriteLine ($"Pipeline step '{name}' could not be found");
+				context.LogError ($"Pipeline step '{name}' could not be found", 1026);
 				return false;
 			}
 
-			IStep newStep = ResolveStep (parts [1], custom_assembly);
+			IStep newStep = ResolveStep (parts[1], custom_assembly);
 			if (newStep == null)
 				return false;
 
@@ -684,33 +855,33 @@ namespace Mono.Linker {
 			return null;
 		}
 
-		static IStep ResolveStep (string type, Assembly assembly)
+		IStep ResolveStep (string type, Assembly assembly)
 		{
-			Type step = assembly != null ? assembly.GetType(type) : Type.GetType (type, false);
+			Type step = assembly != null ? assembly.GetType (type) : Type.GetType (type, false);
 
 			if (step == null) {
-				Console.WriteLine ($"Custom step '{type}' could not be found");
+				context.LogError ($"Custom step '{type}' could not be found", 1027);
 				return null;
 			}
 
 			if (!typeof (IStep).IsAssignableFrom (step)) {
-				Console.WriteLine ($"Custom step '{type}' is incompatible with this linker version");
+				context.LogError ($"Custom step '{type}' is incompatible with this linker version", 1028);
 				return null;
 			}
 
 			return (IStep) Activator.CreateInstance (step);
 		}
 
-		static string [] GetFiles (string param)
+		static string[] GetFiles (string param)
 		{
-			if (param.Length < 1 || param [0] != '@')
-				return new string [] {param};
+			if (param.Length < 1 || param[0] != '@')
+				return new string[] { param };
 
 			string file = param.Substring (1);
 			return ReadLines (file);
 		}
 
-		static string [] ReadLines (string file)
+		static string[] ReadLines (string file)
 		{
 			var lines = new List<string> ();
 			using (StreamReader reader = new StreamReader (file)) {
@@ -721,31 +892,63 @@ namespace Mono.Linker {
 			return lines.ToArray ();
 		}
 
-#if !FEATURE_ILLINK
-		protected static I18nAssemblies ParseI18n (string str)
+		AssemblyAction? ParseAssemblyAction (string s)
 		{
-			I18nAssemblies assemblies = I18nAssemblies.None;
-			string [] parts = str.Split (',');
-			foreach (string part in parts)
-				assemblies |= (I18nAssemblies) Enum.Parse (typeof (I18nAssemblies), part.Trim (), true);
+			switch (s.ToLowerInvariant ()) {
+			case "copy":
+				return AssemblyAction.Copy;
+			case "copyused":
+				return AssemblyAction.CopyUsed;
+			case "link":
+				return AssemblyAction.Link;
+			case "skip":
+				return AssemblyAction.Skip;
 
-			return assemblies;
-		}
-#endif
-
-		AssemblyAction ParseAssemblyAction (string s)
-		{
-			var assemblyAction = (AssemblyAction)Enum.Parse(typeof(AssemblyAction), s, true);
-			// The AddBypassNGenStep is necessary if any actions (default or per-assembly) are AddBypassNGen(Used).
-			// We enable this step as soon as we see such an action. Even if subsequent parameters change an action we have
-			// already seen, the step will only operate on assemblies with a final action AddBypassNGen(Used).
-			if ((assemblyAction == AssemblyAction.AddBypassNGen) || (assemblyAction == AssemblyAction.AddBypassNGenUsed)) {
+			case "addbypassngen":
 				_needAddBypassNGenStep = true;
+				return AssemblyAction.AddBypassNGen;
+			case "addbypassngenused":
+				_needAddBypassNGenStep = true;
+				return AssemblyAction.AddBypassNGenUsed;
 			}
-			return assemblyAction;
+
+			context.LogError ($"Invalid assembly action '{s}'", 1031);
+			return null;
 		}
 
-		static bool GetOptimizationName (string text, out CodeOptimizations optimization)
+		AssemblyRootMode? ParseAssemblyRootsMode (string s)
+		{
+			switch (s.ToLowerInvariant ()) {
+			case "default":
+				return AssemblyRootMode.Default;
+			case "all":
+				return AssemblyRootMode.AllMembers;
+			case "visible":
+				return AssemblyRootMode.VisibleMembers;
+			case "entrypoint":
+				return AssemblyRootMode.EntryPoint;
+			case "library":
+				return AssemblyRootMode.Library;
+			}
+
+			context.LogError ($"Invalid assembly root mode '{s}'", 1037);
+			return null;
+		}
+
+		bool GetWarnVersion (string text, out WarnVersion version)
+		{
+			if (int.TryParse (text, out int versionNum)) {
+				version = (WarnVersion) versionNum;
+				if (version >= WarnVersion.ILLink0 && version <= WarnVersion.Latest)
+					return true;
+			}
+
+			context.LogError ($"Invalid warning version '{text}'", 1016);
+			version = 0;
+			return false;
+		}
+
+		protected bool GetOptimizationName (string text, out CodeOptimizations optimization)
 		{
 			switch (text.ToLowerInvariant ()) {
 			case "beforefieldinit":
@@ -757,11 +960,11 @@ namespace Mono.Linker {
 			case "unreachablebodies":
 				optimization = CodeOptimizations.UnreachableBodies;
 				return true;
-			case "clearinitlocals":
-				optimization = CodeOptimizations.ClearInitLocals;
-				return true;
 			case "unusedinterfaces":
 				optimization = CodeOptimizations.UnusedInterfaces;
+				return true;
+			case "unusedtypechecks":
+				optimization = CodeOptimizations.UnusedTypeChecks;
 				return true;
 			case "ipconstprop":
 				optimization = CodeOptimizations.IPConstantPropagation;
@@ -771,9 +974,26 @@ namespace Mono.Linker {
 				return true;
 			}
 
-			Console.WriteLine ($"Invalid optimization value '{text}'");
+			context.LogError ($"Invalid optimization value '{text}'", 1029);
 			optimization = 0;
 			return false;
+		}
+
+		protected static bool GetWarningSuppressionWriterFileOutputKind (string text, out WarningSuppressionWriter.FileOutputKind fileOutputKind)
+		{
+			switch (text.ToLowerInvariant ()) {
+			case "cs":
+				fileOutputKind = WarningSuppressionWriter.FileOutputKind.CSharp;
+				return true;
+
+			case "xml":
+				fileOutputKind = WarningSuppressionWriter.FileOutputKind.Xml;
+				return true;
+
+			default:
+				fileOutputKind = WarningSuppressionWriter.FileOutputKind.CSharp;
+				return false;
+			}
 		}
 
 		bool GetBoolParam (string token, Action<bool> action)
@@ -795,7 +1015,7 @@ namespace Mono.Linker {
 				return true;
 			}
 
-			Console.WriteLine ($"Invalid argument for '{token}' option");
+			context.LogError ($"Invalid argument for '{token}' option", 1030);
 			return false;
 		}
 
@@ -829,103 +1049,110 @@ namespace Mono.Linker {
 			return arg;
 		}
 
-		protected virtual LinkContext GetDefaultContext (Pipeline pipeline)
+		protected virtual LinkContext GetDefaultContext (Pipeline pipeline, ILogger logger)
 		{
-			LinkContext context = new LinkContext (pipeline) {
-				CoreAction = AssemblyAction.Skip,
+			return new LinkContext (pipeline, logger ?? new ConsoleLogger ()) {
+				CoreAction = AssemblyAction.Link,
 				UserAction = AssemblyAction.Link,
 				OutputDirectory = "output",
-				StripResources = true
 			};
-			return context;
+		}
+
+		protected virtual List<BaseStep> CreateDefaultResolvers ()
+		{
+			return new List<BaseStep> ();
+		}
+
+		static bool IsValidAssemblyName (string value)
+		{
+			return !string.IsNullOrEmpty (value);
 		}
 
 		static void Usage ()
 		{
 			Console.WriteLine (_linker);
 
-#if FEATURE_ILLINK
-			Console.WriteLine ($"illink [options] {resolvers} file");
-#else
-			Console.WriteLine ($"monolinker [options] {resolvers} file");
-#endif
+			Console.WriteLine ($"illink [options] {resolvers}");
+			Console.WriteLine ("  -a FILE [MODE]      Assembly file used as root assembly with optional MODE value to alter default root mode");
+			Console.WriteLine ("                      Mode can be one of the following values");
+			Console.WriteLine ("                        all: Keep all members in root assembly");
+			Console.WriteLine ("                        default: Use entry point for applications and all members for libraries");
+			Console.WriteLine ("                        entrypoint: Use assembly entry point as only root in the assembly");
+			Console.WriteLine ("                        library: All assembly members and data needed for secondary trimming are retained");
+			Console.WriteLine ("                        visible: Keep all members and types visible outside of the assembly");
+			Console.WriteLine ("  -x FILE             XML descriptor file with members to be kept");
 
-			Console.WriteLine ("  -a                  Link from a list of assemblies");
-#if !FEATURE_ILLINK
-			Console.WriteLine ("  -i                  Link from an mono-api-info descriptor");
-#endif
-			Console.WriteLine ("  -r                  Link from a list of assemblies using roots visible outside of the assembly");
-			Console.WriteLine ("  -x                  Link from XML descriptor");
-			Console.WriteLine ("  -d PATH             Specify additional directories to search in for references");
-			Console.WriteLine ("  -reference FILE     Specify additional assemblies to use as references");
-			Console.WriteLine ("  -b                  Update debug symbols for each linked module. Defaults to false");
-			Console.WriteLine ("  -v                  Keep members and types used by debugger. Defaults to false");
-#if !FEATURE_ILLINK
-			Console.WriteLine ("  -l <name>,<name>    List of i18n assemblies to copy to the output directory. Defaults to 'all'");
-			Console.WriteLine ("                        Valid names are 'none', 'all', 'cjk', 'mideast', 'other', 'rare', 'west'");
-#endif
+			Console.WriteLine ();
+			Console.WriteLine ("Options");
+			Console.WriteLine ("  -d PATH             Specify additional directory to search in for assembly references");
+			Console.WriteLine ("  -reference FILE     Specify additional file location used to resolve assembly references");
+			Console.WriteLine ("  -b                  Update debug symbols for all modified files. Defaults to false");
 			Console.WriteLine ("  -out PATH           Specify the output directory. Defaults to 'output'");
-			Console.WriteLine ("  --about             About the {0}", _linker);
-			Console.WriteLine ("  --verbose           Log messages indicating progress and warnings");
-			Console.WriteLine ("  --version           Print the version number of the {0}", _linker);
-			Console.WriteLine ("  -help               Lists all linker options");
+			Console.WriteLine ("  -h                  Lists all {0} options", _linker);
 			Console.WriteLine ("  @FILE               Read response file for more options");
 
 			Console.WriteLine ();
 			Console.WriteLine ("Actions");
-			Console.WriteLine ("  -c ACTION           Action on the framework assemblies. Defaults to 'skip'");
-			Console.WriteLine ("                        copy: Copy the assembly into the output (it can be updated when any of its dependencies is removed)");
+			Console.WriteLine ("  -c ACTION           Sets action for all framework assemblies. Defaults to 'link'");
+			Console.WriteLine ("                        copy: Analyze whole assembly and save it to the output");
 			Console.WriteLine ("                        copyused: Same as copy but only for assemblies which are needed");
-			Console.WriteLine ("                        link: Remove any ununsed code or metadata from the assembly");
+			Console.WriteLine ("                        link: Remove any unused IL or metadata and optimizes the assembly");
 			Console.WriteLine ("                        skip: Do not process the assembly");
 			Console.WriteLine ("                        addbypassngen: Add BypassNGenAttribute to unused methods");
 			Console.WriteLine ("                        addbypassngenused: Same as addbypassngen but unused assemblies are removed");
-			Console.WriteLine ("  -u ACTION           Action on the user assemblies. Defaults to 'link'");
-			Console.WriteLine ("  -p ACTION ASM       Overrides the default action for an assembly");
+			Console.WriteLine ("  -u ACTION           Sets action for any user assembly. Defaults to 'link'");
+			Console.WriteLine ("  -p ACTION ASM       Overrides the default action for specific assembly name");
 
 			Console.WriteLine ();
-			Console.WriteLine ("Advanced");
+			Console.WriteLine ("Advanced Options");
+			Console.WriteLine ("  --about                   About the {0}", _linker);
 			Console.WriteLine ("  --custom-step CFG         Add a custom step <config> to the existing pipeline");
 			Console.WriteLine ("                            Step can use one of following configurations");
 			Console.WriteLine ("                            TYPE,PATH_TO_ASSEMBLY: Add user defined type as last step to the pipeline");
-			Console.WriteLine ("                            +NAME:TYPE,PATH_TO_ASSEMBLY: Inserts step type before existing step with name");
-			Console.WriteLine ("                            -NAME:TYPE,PATH_TO_ASSEMBLY: Add step type after existing step");
+			Console.WriteLine ("                            -NAME:TYPE,PATH_TO_ASSEMBLY: Inserts step type before existing step with name");
+			Console.WriteLine ("                            +NAME:TYPE,PATH_TO_ASSEMBLY: Add step type after existing step");
+			Console.WriteLine ("  --custom-data KEY=VALUE   Populates context data set with user specified key-value pair");
+			Console.WriteLine ("  --deterministic           Produce a deterministic output for modified assemblies");
 			Console.WriteLine ("  --ignore-descriptors      Skips reading embedded descriptors (short -z). Defaults to false");
 			Console.WriteLine ("  --keep-facades            Keep assemblies with type-forwarders (short -t). Defaults to false");
 			Console.WriteLine ("  --skip-unresolved         Ignore unresolved types, methods, and assemblies. Defaults to false");
 			Console.WriteLine ("  --output-pinvokes PATH    Output a JSON file with all modules and entry points of the P/Invokes found");
+			Console.WriteLine ("  --verbose                 Log messages indicating progress and warnings");
+			Console.WriteLine ("  --nowarn WARN             Disable specific warning messages");
+			Console.WriteLine ("  --warn VERSION            Only print out warnings with version <= VERSION. Defaults to '9999'");
+			Console.WriteLine ("                              VERSION is an integer in the range 0-9999.");
+			Console.WriteLine ("  --warnaserror[+|-]        Report all warnings as errors");
+			Console.WriteLine ("  --warnaserror[+|-] WARN   Report specific warnings as errors");
+			Console.WriteLine ("  --version                 Print the version number of the {0}", _linker);
 
 			Console.WriteLine ();
 			Console.WriteLine ("Linking");
-			Console.WriteLine ("  --deterministic           Produce a deterministic output for linked assemblies");
-			Console.WriteLine ("  --disable-opt NAME [ASM]  Disable one of the default optimizations globaly or for a specific assembly name");
-			Console.WriteLine ("                              beforefieldinit: Unused static fields are removed if there is no static ctor");
-			Console.WriteLine ("                              ipconstprop: Interprocedural constant propagation on return values");
-			Console.WriteLine ("                              overrideremoval: Overrides of virtual methods on types that are never instantiated are removed");
-			Console.WriteLine ("                              unreachablebodies: Instance methods that are marked but not executed are converted to throws");
-			Console.WriteLine ("                              unusedinterfaces: Removes interface types from declaration when not used");
-			Console.WriteLine ("  --enable-opt NAME [ASM]   Enable one of the additional optimizations globaly or for a specific assembly name");
-			Console.WriteLine ("                              clearinitlocals: Remove initlocals");
-			Console.WriteLine ("                              sealer: Any method or type which does not have override is marked as sealed");
-			Console.WriteLine ("  --exclude-feature NAME    Any code which has a feature <name> in linked assemblies will be removed");
-			Console.WriteLine ("                              com: Support for COM Interop");
-			Console.WriteLine ("                              etw: Event Tracing for Windows");
-#if !FEATURE_ILLINK
-			Console.WriteLine ("                              remoting: .NET Remoting dependencies");
-#endif
-			Console.WriteLine ("                              sre: System.Reflection.Emit namespace");
-			Console.WriteLine ("                              globalization: Globalization data and globalization behavior");
-			Console.WriteLine ("  --explicit-reflection     Adds to members never used through reflection DisablePrivateReflection attribute. Defaults to false");
-			Console.WriteLine ("  --keep-dep-attributes     Keep attributes used for manual dependency tracking. Defaults to false");
-			Console.WriteLine ("  --new-mvid                Generate a new guid for each linked assembly (short -g). Defaults to true");
-			Console.WriteLine ("  --strip-resources         Remove XML descriptor resources for linked assemblies. Defaults to true");
-			Console.WriteLine ("  --strip-security          Remove metadata and code related to Code Access Security. Defaults to true");
-			Console.WriteLine ("  --substitutions FILE      Configuration file with field or methods substitution rules");
-			Console.WriteLine ("  --used-attrs-only         Attribute usage is removed if the attribute type is not used. Defaults to false");
+			Console.WriteLine ("  --disable-opt NAME [ASM]   Disable one of the default optimizations globaly or for a specific assembly name");
+			Console.WriteLine ("                               beforefieldinit: Unused static fields are removed if there is no static ctor");
+			Console.WriteLine ("                               ipconstprop: Interprocedural constant propagation on return values");
+			Console.WriteLine ("                               overrideremoval: Overrides of virtual methods on types that are never instantiated are removed");
+			Console.WriteLine ("                               unreachablebodies: Instance methods that are marked but not executed are converted to throws");
+			Console.WriteLine ("                               unusedinterfaces: Removes interface types from declaration when not used");
+			Console.WriteLine ("                               unusedtypechecks: Inlines never successful type checks");
+			Console.WriteLine ("  --enable-opt NAME [ASM]    Enable one of the additional optimizations globaly or for a specific assembly name");
+			Console.WriteLine ("                               sealer: Any method or type which does not have override is marked as sealed");
+			Console.WriteLine ("  --explicit-reflection      Adds to members never used through reflection DisablePrivateReflection attribute. Defaults to false");
+			Console.WriteLine ("  --keep-dep-attributes      Keep attributes used for manual dependency tracking. Defaults to false");
+			Console.WriteLine ("  --feature FEATURE VALUE    Apply any optimizations defined when this feature setting is a constant known at link time");
+			Console.WriteLine ("  --new-mvid                 Generate a new guid for each linked assembly (short -g). Defaults to true");
+			Console.WriteLine ("  --strip-descriptors        Remove XML descriptor resources for linked assemblies. Defaults to true");
+			Console.WriteLine ("  --strip-security           Remove metadata and code related to Code Access Security. Defaults to true");
+			Console.WriteLine ("  --substitutions FILE       Configuration file with field or methods substitution rules");
+			Console.WriteLine ("  --ignore-substitutions     Skips reading embedded substitutions. Defaults to false");
+			Console.WriteLine ("  --strip-substitutions      Remove XML substitution resources for linked assemblies. Defaults to true");
+			Console.WriteLine ("  --used-attrs-only          Attribute usage is removed if the attribute type is not used. Defaults to false");
+			Console.WriteLine ("  --link-attributes FILE     Supplementary custom attribute definitions for attributes controlling the linker behavior.");
+			Console.WriteLine ("  --ignore-link-attributes   Skips reading embedded attributes. Defaults to false");
+			Console.WriteLine ("  --strip-link-attributes    Remove XML link attributes resources for linked assemblies. Defaults to true");
 
 			Console.WriteLine ();
 			Console.WriteLine ("Analyzer");
-			Console.WriteLine ("  --dependencies-file PATH   Specify the dependencies output. Defaults to 'output/linker-dependencies.xml.gz'");
+			Console.WriteLine ("  --dependencies-file FILE   Specify the dependencies output. Defaults to 'output/linker-dependencies.xml.gz'");
 			Console.WriteLine ("  --dump-dependencies        Dump dependencies for the linker analyzer tool");
 			Console.WriteLine ("  --reduced-tracing          Reduces dependency output related to assemblies that will not be modified");
 			Console.WriteLine ("");
@@ -941,24 +1168,29 @@ namespace Mono.Linker {
 		static void About ()
 		{
 			Console.WriteLine ("For more information, visit the project Web site");
-			Console.WriteLine ("   http://www.mono-project.com/");
+			Console.WriteLine ("   https://github.com/mono/linker");
 		}
 
 		static Pipeline GetStandardPipeline ()
 		{
 			Pipeline p = new Pipeline ();
-			p.AppendStep (new LoadReferencesStep ());
-			p.AppendStep (new BlacklistStep ());
-			p.AppendStep (new PreserveDependencyLookupStep ());
-			p.AppendStep (new TypeMapStep ());
 			p.AppendStep (new MarkStep ());
 			p.AppendStep (new RemoveResourcesStep());
+			p.AppendStep (new ValidateVirtualMethodAnnotationsStep ());
+			p.AppendStep (new ProcessWarningsStep ());
+			p.AppendStep (new OutputWarningSuppressions ());
 			p.AppendStep (new SweepStep ());
 			p.AppendStep (new CodeRewriterStep ());
 			p.AppendStep (new CleanStep ());
 			p.AppendStep (new RegenerateGuidStep ());
 			p.AppendStep (new OutputStep ());
 			return p;
+		}
+
+		public void Dispose ()
+		{
+			if (context != null)
+				context.Dispose ();
 		}
 	}
 }

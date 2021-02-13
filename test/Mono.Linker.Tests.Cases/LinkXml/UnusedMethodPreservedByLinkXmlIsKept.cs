@@ -1,14 +1,19 @@
 ﻿using System.Collections.Generic;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
+using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
-namespace Mono.Linker.Tests.Cases.LinkXml {
-	class UnusedMethodPreservedByLinkXmlIsKept {
+namespace Mono.Linker.Tests.Cases.LinkXml
+{
+	[SetupLinkerDescriptorFile ("UnusedMethodPreservedByLinkXmlIsKept.xml")]
+	class UnusedMethodPreservedByLinkXmlIsKept
+	{
 		public static void Main ()
 		{
 		}
 
 		[Kept]
-		class Unused {
+		class Unused
+		{
 			[Kept]
 			private void PreservedMethod ()
 			{
@@ -34,7 +39,7 @@ namespace Mono.Linker.Tests.Cases.LinkXml {
 			}
 
 			[Kept]
-			private void PreservedMethod5<T>(T arg)
+			private void PreservedMethod5<T> (T arg)
 			{
 			}
 		}

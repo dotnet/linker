@@ -24,6 +24,7 @@
 //
 
 using Mono.Cecil;
+using Mono.Cecil.Cil;
 
 namespace Mono.Linker
 {
@@ -43,20 +44,25 @@ namespace Mono.Linker
 		/// <summary>
 		/// Called when the linker recognized a reflection access pattern (and thus was able to correctly apply marking to the accessed item).
 		/// </summary>
-		/// <param name="sourceMethod">The method which contains the reflection access pattern.</param>
-		/// <param name="reflectionMethod">The reflection method which is at the heart of the access pattern.</param>
+		/// <param name="source">The item which is the source of the reflection pattern. Typically this is the method in which the pattern is detected, but it can also be other things..</param>
+		/// <param name="sourceInstruction">The il instruction which is at the heart of the reflection access pattern. For example the call to the reflection API.
+		/// This can be null if there's no logical instruction to assign to the pattern.</param>
 		/// <param name="accessedItem">The item accessed through reflection. This can be one of:
-		///   TypeDefinition, MethodDefinition, PropertyDefinition, FieldDefinition, EventDefinition.</param>
-		void RecognizedReflectionAccessPattern (MethodDefinition sourceMethod, MethodDefinition reflectionMethod, IMemberDefinition accessedItem);
+		///   TypeDefinition, MethodDefinition, PropertyDefinition, FieldDefinition, EventDefinition, InterfaceImplementation.</param>
+		void RecognizedReflectionAccessPattern (IMemberDefinition source, Instruction sourceInstruction, IMetadataTokenProvider accessedItem);
 
 		/// <summary>
 		/// Called when the linker detected a reflection access but was not able to recognize the entire pattern.
 		/// </summary>
-		/// <param name="sourceMethod">The method which contains the reflection access code.</param>
-		/// <param name="reflectionMethod">The reflection method which is at the heart of the access code.</param>
+		/// <param name="source">The item which is the source of the reflection pattern. Typically this is the method in which the pattern is detected, but it can also be other things..</param>
+		/// <param name="instruction">The il instruction which is at the heart of the reflection access pattern. For example the call to the reflection API.
+		/// This can be null if there's no logical instruction to assign to the pattern.</param>
+		/// <param name="accessedItem">The item accessed through reflection. This can be one of:
+		///   TypeDefinition, MethodDefinition, PropertyDefinition, FieldDefinition, EventDefinition, InterfaceImplementation.</param>
 		/// <param name="message">Humanly readable message describing what failed during the pattern recognition.</param>
+		/// <param name="messageCode">Message code to use when reporting the unrecognized pattern as a warning.</param>
 		/// <remarks>This effectively means that there's a potential hole in the linker marking - some items which are accessed only through
 		/// reflection may not be marked correctly and thus may fail at runtime.</remarks>
-		void UnrecognizedReflectionAccessPattern (MethodDefinition sourceMethod, MethodDefinition reflectionMethod, string message);
+		void UnrecognizedReflectionAccessPattern (IMemberDefinition source, Instruction sourceInstruction, IMetadataTokenProvider accessedItem, string message, int messageCode);
 	}
 }

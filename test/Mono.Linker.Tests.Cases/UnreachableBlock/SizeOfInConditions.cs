@@ -2,15 +2,17 @@ using System;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
-namespace Mono.Linker.Tests.Cases.UnreachableBlock {
-#if ILLINK
+namespace Mono.Linker.Tests.Cases.UnreachableBlock
+{
+#if NETCOREAPP
 	[SetupLinkerSubstitutionFile ("SizeOfInConditions.netcore.xml")]
 #else
 	[SetupLinkerSubstitutionFile ("SizeOfInConditions.net_4_x.xml")]
 #endif
 	[SetupCompileArgument ("/unsafe")]
 	[SetupLinkerArgument ("--enable-opt", "ipconstprop")]
-	public unsafe class SizeOfInConditions {
+	public unsafe class SizeOfInConditions
+	{
 		public static void Main ()
 		{
 			TestIntPtr ();

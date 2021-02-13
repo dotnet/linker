@@ -1,7 +1,11 @@
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
+using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
-namespace Mono.Linker.Tests.Cases.Inheritance.AbstractClasses.NoKeptCtor.OverrideRemoval {
-	public class PreservesOverriddenMethodOverrideOfUsedVirtualStillRemoved {
+namespace Mono.Linker.Tests.Cases.Inheritance.AbstractClasses.NoKeptCtor.OverrideRemoval
+{
+	[SetupLinkerDescriptorFile ("PreservesOverriddenMethodOverrideOfUsedVirtualStillRemoved.xml")]
+	public class PreservesOverriddenMethodOverrideOfUsedVirtualStillRemoved
+	{
 		public static void Main ()
 		{
 			Base j = new Jar ();
@@ -10,7 +14,8 @@ namespace Mono.Linker.Tests.Cases.Inheritance.AbstractClasses.NoKeptCtor.Overrid
 
 		[Kept]
 		[KeptMember (".ctor()")]
-		abstract class Base {
+		abstract class Base
+		{
 			[Kept]
 			public abstract void Foo ();
 
@@ -22,7 +27,8 @@ namespace Mono.Linker.Tests.Cases.Inheritance.AbstractClasses.NoKeptCtor.Overrid
 
 		[Kept]
 		[KeptBaseType (typeof (Base))]
-		class Bar : Base {
+		class Bar : Base
+		{
 			[Kept]
 			public override void Foo ()
 			{
@@ -36,7 +42,8 @@ namespace Mono.Linker.Tests.Cases.Inheritance.AbstractClasses.NoKeptCtor.Overrid
 		[Kept]
 		[KeptMember (".ctor()")]
 		[KeptBaseType (typeof (Base))]
-		class Jar : Base {
+		class Jar : Base
+		{
 			[Kept]
 			public override void Foo ()
 			{

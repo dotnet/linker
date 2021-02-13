@@ -1,15 +1,21 @@
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
-namespace Mono.Linker.Tests.Cases.UnreachableBody  {
+namespace Mono.Linker.Tests.Cases.UnreachableBody
+{
 	[Define ("OTHER_INCLUDED")]
+#if NETCOREAPP
+	[SetupLinkerArgument ("-a", "other.dll", "visible")]
+#else
 	[SetupLinkerArgument ("-r", "other")]
-	[SetupCompileBefore ("other.dll", new [] { "Dependencies/OtherAssemblyNoInstanceCtor.il" })]
+#endif
+	[SetupCompileBefore ("other.dll", new[] { "Dependencies/OtherAssemblyNoInstanceCtor.il" })]
 	[KeptMemberInAssembly ("other.dll", "Mono.Linker.Tests.Cases.UnreachableBody.Dependencies.OtherAssemblyNoInstanceCtor/Foo", "Method()")]
 	[RemovedMemberInAssembly ("other.dll", "Mono.Linker.Tests.Cases.UnreachableBody.Dependencies.OtherAssemblyNoInstanceCtor/Foo", "UsedByMethod()")]
 	[KeptMemberInAssembly ("other.dll", "Mono.Linker.Tests.Cases.UnreachableBody.Dependencies.OtherAssemblyNoInstanceCtor", "UnusedSanityCheck()")]
 	[SetupLinkerArgument ("--enable-opt", "unreachablebodies")]
-	public class LinkedOtherIncludedLibraryNoInstanceCtor {
+	public class LinkedOtherIncludedLibraryNoInstanceCtor
+	{
 		public static void Main ()
 		{
 #if OTHER_INCLUDED

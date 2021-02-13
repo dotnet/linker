@@ -1,60 +1,65 @@
-using System.Linq;
 using System.Collections.Generic;
-using NUnit.Framework;
-using System.Runtime.CompilerServices;
 using System.IO;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using Mono.Linker.Tests.Extensions;
 using Mono.Linker.Tests.TestCasesRunner;
+using NUnit.Framework;
 
 namespace Mono.Linker.Tests.TestCases
 {
 	public static class TestDatabase
 	{
 		private static TestCase[] _cachedAllCases;
-		
-		public static IEnumerable<TestCaseData> XmlTests()
+
+		public static IEnumerable<TestCaseData> XmlTests ()
 		{
-			return NUnitCasesBySuiteName("LinkXml");
+			return NUnitCasesBySuiteName ("LinkXml");
 		}
 
-		public static IEnumerable<TestCaseData> BasicTests()
+		public static IEnumerable<TestCaseData> BasicTests ()
 		{
-			return NUnitCasesBySuiteName("Basic");
+			return NUnitCasesBySuiteName ("Basic");
 		}
 
-		public static IEnumerable<TestCaseData> AttributeTests()
+		public static IEnumerable<TestCaseData> AttributeTests ()
 		{
-			return NUnitCasesBySuiteName("Attributes");
+			return NUnitCasesBySuiteName ("Attributes");
 		}
-		
+
 		public static IEnumerable<TestCaseData> AttributeDebuggerTests ()
 		{
 			return NUnitCasesBySuiteName ("Attributes.Debugger");
 		}
 
-		public static IEnumerable<TestCaseData> GenericsTests()
+		public static IEnumerable<TestCaseData> AttributesStructLayoutTests ()
 		{
-			return NUnitCasesBySuiteName("Generics");
+			return NUnitCasesBySuiteName ("Attributes.StructLayout");
 		}
 
-		public static IEnumerable<TestCaseData> CoreLinkTests()
+		public static IEnumerable<TestCaseData> GenericsTests ()
 		{
-			return NUnitCasesBySuiteName("CoreLink");
+			return NUnitCasesBySuiteName ("Generics");
 		}
 
-		public static IEnumerable<TestCaseData> StaticsTests()
+		public static IEnumerable<TestCaseData> CoreLinkTests ()
 		{
-			return NUnitCasesBySuiteName("Statics");
+			return NUnitCasesBySuiteName ("CoreLink");
 		}
 
-		public static IEnumerable<TestCaseData> InteropTests()
+		public static IEnumerable<TestCaseData> StaticsTests ()
 		{
-			return NUnitCasesBySuiteName("Interop");
+			return NUnitCasesBySuiteName ("Statics");
 		}
 
-		public static IEnumerable<TestCaseData> ReferencesTests()
+		public static IEnumerable<TestCaseData> InteropTests ()
 		{
-			return NUnitCasesBySuiteName("References");
+			return NUnitCasesBySuiteName ("Interop");
+		}
+
+		public static IEnumerable<TestCaseData> ReferencesTests ()
+		{
+			return NUnitCasesBySuiteName ("References");
 		}
 
 		public static IEnumerable<TestCaseData> ResourcesTests ()
@@ -86,12 +91,17 @@ namespace Mono.Linker.Tests.TestCases
 		{
 			return NUnitCasesBySuiteName ("Symbols");
 		}
-		
+
 		public static IEnumerable<TestCaseData> PreserveDependenciesTests ()
 		{
 			return NUnitCasesBySuiteName ("PreserveDependencies");
 		}
-		
+
+		public static IEnumerable<TestCaseData> DynamicDependenciesTests ()
+		{
+			return NUnitCasesBySuiteName ("DynamicDependencies");
+		}
+
 		public static IEnumerable<TestCaseData> LibrariesTests ()
 		{
 			return NUnitCasesBySuiteName ("Libraries");
@@ -101,22 +111,22 @@ namespace Mono.Linker.Tests.TestCases
 		{
 			return NUnitCasesBySuiteName ("Advanced");
 		}
-		
+
 		public static IEnumerable<TestCaseData> InheritanceInterfaceTests ()
 		{
 			return NUnitCasesBySuiteName ("Inheritance.Interfaces");
 		}
-		
+
 		public static IEnumerable<TestCaseData> InheritanceAbstractClassTests ()
 		{
 			return NUnitCasesBySuiteName ("Inheritance.AbstractClasses");
 		}
-		
+
 		public static IEnumerable<TestCaseData> InheritanceVirtualMethodsTests ()
 		{
 			return NUnitCasesBySuiteName ("Inheritance.VirtualMethods");
 		}
-		
+
 		public static IEnumerable<TestCaseData> InheritanceComplexTests ()
 		{
 			return NUnitCasesBySuiteName ("Inheritance.Complex");
@@ -131,10 +141,15 @@ namespace Mono.Linker.Tests.TestCases
 		{
 			return NUnitCasesBySuiteName ("CommandLine");
 		}
-		
+
 		public static IEnumerable<TestCaseData> UnreachableBodyTests ()
 		{
 			return NUnitCasesBySuiteName ("UnreachableBody");
+		}
+
+		public static IEnumerable<TestCaseData> WarningsTests ()
+		{
+			return NUnitCasesBySuiteName ("Warnings");
 		}
 
 		public static IEnumerable<TestCaseData> CodegenAnnotationTests ()
@@ -162,6 +177,37 @@ namespace Mono.Linker.Tests.TestCases
 			return NUnitCasesBySuiteName ("Tracing");
 		}
 
+
+		public static IEnumerable<TestCaseData> DataFlowTests ()
+		{
+			return NUnitCasesBySuiteName ("DataFlow");
+		}
+
+		public static IEnumerable<TestCaseData> RequiresCapabilityTests ()
+		{
+			return NUnitCasesBySuiteName ("RequiresCapability");
+		}
+
+		public static IEnumerable<TestCaseData> LoggingTests ()
+		{
+			return NUnitCasesBySuiteName ("Logging");
+		}
+
+		public static IEnumerable<TestCaseData> ExtensibilityTests ()
+		{
+			return NUnitCasesBySuiteName ("Extensibility");
+		}
+
+		public static IEnumerable<TestCaseData> FeatureSettingsTests ()
+		{
+			return NUnitCasesBySuiteName ("FeatureSettings");
+		}
+
+		public static IEnumerable<TestCaseData> LinkAttributesTests ()
+		{
+			return NUnitCasesBySuiteName ("LinkAttributes");
+		}
+
 		public static TestCaseCollector CreateCollector ()
 		{
 			GetDirectoryPaths (out string rootSourceDirectory, out string testCaseAssemblyPath);
@@ -186,51 +232,25 @@ namespace Mono.Linker.Tests.TestCases
 			return _cachedAllCases;
 		}
 
-		static IEnumerable<TestCaseData> NUnitCasesBySuiteName(string suiteName)
+		static IEnumerable<TestCaseData> NUnitCasesBySuiteName (string suiteName)
 		{
-			return AllCases()
-				.Where(c => c.TestSuiteDirectory.FileName == suiteName)
-				.Select(c => CreateNUnitTestCase(c, c.DisplayName.Substring(suiteName.Length + 1)))
-				.OrderBy(c => c.TestName);
+			return AllCases ()
+				.Where (c => c.TestSuiteDirectory.FileName == suiteName)
+				.Select (c => CreateNUnitTestCase (c, c.DisplayName.Substring (suiteName.Length + 1)))
+				.OrderBy (c => c.TestName);
 		}
 
-		static TestCaseData CreateNUnitTestCase(TestCase testCase, string displayName)
+		static TestCaseData CreateNUnitTestCase (TestCase testCase, string displayName)
 		{
-			var data = new TestCaseData(testCase);
-			data.SetName(displayName);
+			var data = new TestCaseData (testCase);
+			data.SetName (displayName);
 			return data;
 		}
 
-		static void GetDirectoryPaths(out string rootSourceDirectory, out string testCaseAssemblyPath, [CallerFilePath] string thisFile = null)
+		static void GetDirectoryPaths (out string rootSourceDirectory, out string testCaseAssemblyPath)
 		{
-
-#if DEBUG
-			var configDirectoryName = "Debug";
-#else
-			var configDirectoryName = "Release";
-#endif
-
-#if NETCOREAPP3_0
-			var tfm = "netcoreapp3.0";
-#elif NET471
-			var tfm = "net471";
-#else
-			var tfm = "";
-#endif
-
-#if ILLINK
-			// Deterministic builds sanitize source paths, so CallerFilePathAttribute gives an incorrect path.
-			// Instead, get the testcase dll based on the working directory of the test runner.
-
-			// working directory is artifacts/bin/Mono.Linker.Tests/<config>/<tfm>
-			var artifactsBinDir = Path.Combine (Directory.GetCurrentDirectory (), "..", "..", "..");
-			rootSourceDirectory = Path.GetFullPath (Path.Combine (artifactsBinDir, "..", "..", "test", "Mono.Linker.Tests.Cases"));
-			testCaseAssemblyPath = Path.GetFullPath (Path.Combine (artifactsBinDir, "Mono.Linker.Tests.Cases", configDirectoryName, tfm, "Mono.Linker.Tests.Cases.dll"));
-#else
-			var thisDirectory = Path.GetDirectoryName (thisFile);
-			rootSourceDirectory = Path.GetFullPath (Path.Combine (thisDirectory, "..", "..", "Mono.Linker.Tests.Cases"));
-			testCaseAssemblyPath = Path.GetFullPath (Path.Combine (rootSourceDirectory, "bin", configDirectoryName, tfm, "Mono.Linker.Tests.Cases.dll"));
-#endif // ILLINK
+			rootSourceDirectory = Path.GetFullPath (Path.Combine (PathUtilities.GetTestsSourceRootDirectory (), "Mono.Linker.Tests.Cases"));
+			testCaseAssemblyPath = PathUtilities.GetTestAssemblyPath ("Mono.Linker.Tests.Cases");
 		}
 	}
 }

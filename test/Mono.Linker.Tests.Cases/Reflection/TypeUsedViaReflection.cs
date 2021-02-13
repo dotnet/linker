@@ -1,10 +1,15 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
-namespace Mono.Linker.Tests.Cases.Reflection {
-	[SetupCSharpCompilerToUse ("csc")]
-	public class TypeUsedViaReflection {
+namespace Mono.Linker.Tests.Cases.Reflection
+{
+	[KeptMember (".cctor()")]
+	[ExpectedNoWarnings ()]
+	public class TypeUsedViaReflection
+	{
 		public static void Main ()
 		{
 			TestNull ();
@@ -18,16 +23,28 @@ namespace Mono.Linker.Tests.Cases.Reflection {
 			TestReference ();
 			TestArray ();
 			TestArrayOfArray ();
+			TestGenericArray ();
+			TestGenericArrayFullString ();
 			TestMultiDimensionalArray ();
 			TestMultiDimensionalArrayFullString ();
 			TestMultiDimensionalArrayAsmName ();
 			TestDeeplyNested ();
 			TestTypeOf ();
+			TestTypeFromBranch (3);
+			TestTypeUsingCaseInsensitiveFlag ();
+			TestTypeUsingCaseUnknownByTheLinker ();
+			TestTypeUsingCaseUnknownByTheLinker2 ();
+			TestTypeOverloadWith3Parameters ();
+			TestTypeOverloadWith4Parameters ();
+			TestTypeOverloadWith5ParametersWithIgnoreCase ();
+			TestTypeOverloadWith5ParametersWithoutIgnoreCase ();
+			TestInvalidTypeName ();
+			TestUnkownIgnoreCase3Params (1);
+			TestUnkownIgnoreCase5Params (1);
 		}
 
 		[Kept]
-		[UnrecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetType), new Type [] { typeof (string), typeof (bool) })]
+		[RecognizedReflectionAccessPattern]
 		public static void TestNull ()
 		{
 			const string reflectionTypeKeptString = null;
@@ -35,8 +52,6 @@ namespace Mono.Linker.Tests.Cases.Reflection {
 		}
 
 		[Kept]
-		[UnrecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetType), new Type [] { typeof (string), typeof (bool) })]
 		public static void TestEmptyString ()
 		{
 			const string reflectionTypeKeptString = "";
@@ -60,6 +75,34 @@ namespace Mono.Linker.Tests.Cases.Reflection {
 		public static void TestGenericString ()
 		{
 			const string reflectionTypeKeptString = "Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection+Generic`1, test, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null";
+			var typeKept = Type.GetType (reflectionTypeKeptString, false);
+		}
+
+		[Kept]
+		public class GenericArray<T> { }
+
+		[Kept]
+		public class GenericArgument { }
+
+		[Kept]
+		public static void TestGenericArray ()
+		{
+			const string reflectionTypeKeptString = "Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection+GenericArray`1[[Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection+GenericArgument]]";
+			var typeKept = Type.GetType (reflectionTypeKeptString, false);
+		}
+
+		[Kept]
+		public class GenericArrayFullString<T> { }
+
+		[Kept]
+		public class GenericArgumentFullString { }
+
+		[Kept]
+		public static void TestGenericArrayFullString ()
+		{
+			const string reflectionTypeKeptString = "Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection+GenericArrayFullString`1" +
+				"[[Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection+GenericArgumentFullString, test, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]," +
+				" test, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null";
 			var typeKept = Type.GetType (reflectionTypeKeptString, false);
 		}
 
@@ -89,7 +132,7 @@ namespace Mono.Linker.Tests.Cases.Reflection {
 		[Kept]
 		[RecognizedReflectionAccessPattern (
 			typeof (Type), nameof (Type.GetType), new Type[] { typeof (string), typeof (bool) },
-			typeof (AType), null, (Type []) null)]
+			typeof (AType), null, (Type[]) null)]
 		public static void TestType ()
 		{
 			const string reflectionTypeKeptString = "Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection+AType";
@@ -168,11 +211,14 @@ namespace Mono.Linker.Tests.Cases.Reflection {
 		}
 
 		[Kept]
-		class Nested1 {
+		class Nested1
+		{
 			[Kept]
-			class N2 {
+			class N2
+			{
 				[Kept]
-				class N3 {
+				class N3
+				{
 				}
 			}
 		}
@@ -187,9 +233,154 @@ namespace Mono.Linker.Tests.Cases.Reflection {
 		class TypeOfToKeep { }
 
 		[Kept]
-		static void TestTypeOf()
+		static void TestTypeOf ()
 		{
-			var typeKept = typeof(TypeOfToKeep);
+			var typeKept = typeof (TypeOfToKeep);
+		}
+
+		[Kept]
+		class TypeFromBranchA { }
+		[Kept]
+		class TypeFromBranchB { }
+
+		[Kept]
+		static void TestTypeFromBranch (int b)
+		{
+			string name = null;
+			switch (b) {
+			case 0:
+				name = "Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection+TypeFromBranchA";
+				break;
+			case 1:
+				name = "Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection+TypeFromBranchB";
+				break;
+			default:
+				break;
+			}
+
+			var typeKept = Type.GetType (name);
+		}
+
+		public class CaseInsensitive { }
+
+		[Kept]
+		[ExpectedWarning ("IL2096", "'System.Type.GetType(String,Boolean,Boolean)'")]
+		static void TestTypeUsingCaseInsensitiveFlag ()
+		{
+			const string reflectionTypeKeptString = "mono.linker.tests.cases.reflection.TypeUsedViaReflection+CaseInsensitive, test, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null";
+			var typeKept = Type.GetType (reflectionTypeKeptString, false, true);
+		}
+
+		public class CaseUnknown { }
+
+		[Kept]
+		[ExpectedWarning ("IL2096", "'System.Type.GetType(String,Boolean,Boolean)'")]
+		static void TestTypeUsingCaseUnknownByTheLinker ()
+		{
+			bool hideCase = GetCase ();
+			const string reflectionTypeKeptString = "mono.linker.tests.cases.reflection.TypeUsedViaReflection+CaseUnknown, test, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null";
+			var typeKept = Type.GetType (reflectionTypeKeptString, false, hideCase);
+		}
+
+		[Kept]
+		static bool GetCase ()
+		{
+			return false;
+		}
+
+		[Kept]
+		static bool fieldHideCase = true;
+
+		public class CaseUnknown2 { }
+
+		[Kept]
+		[ExpectedWarning ("IL2096", "'System.Type.GetType(String,Boolean,Boolean)'")]
+		static void TestTypeUsingCaseUnknownByTheLinker2 ()
+		{
+			const string reflectionTypeKeptString = "mono.linker.tests.cases.reflection.TypeUsedViaReflection+CaseUnknown2, test, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null";
+			var typeKept = Type.GetType (reflectionTypeKeptString, false, fieldHideCase);
+		}
+
+		[Kept]
+		public class OverloadWith3Parameters { }
+
+		[Kept]
+		static void TestTypeOverloadWith3Parameters ()
+		{
+			const string reflectionTypeKeptString = "Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection+OverloadWith3Parameters";
+			var typeKept = Type.GetType (reflectionTypeKeptString, AssemblyResolver, GetTypeFromAssembly);
+		}
+
+
+		[Kept]
+		public class OverloadWith4Parameters { }
+
+		[Kept]
+		static void TestTypeOverloadWith4Parameters ()
+		{
+			const string reflectionTypeKeptString = "Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection+OverloadWith4Parameters";
+			var typeKept = Type.GetType (reflectionTypeKeptString, AssemblyResolver, GetTypeFromAssembly, false);
+		}
+
+		public class OverloadWith5ParametersWithIgnoreCase { }
+
+		[Kept]
+		[ExpectedWarning ("IL2096", "'System.Type.GetType(String,Func<AssemblyName,Assembly>,Func<Assembly,String,Boolean,Type>,Boolean,Boolean)'")]
+		static void TestTypeOverloadWith5ParametersWithIgnoreCase ()
+		{
+			const string reflectionTypeKeptString = "Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection+OverloadWith5ParametersWithIgnoreCase";
+			var typeKept = Type.GetType (reflectionTypeKeptString, AssemblyResolver, GetTypeFromAssembly, false, true);
+		}
+
+		[Kept]
+		public class OverloadWith5ParametersWithoutIgnoreCase { }
+
+		[Kept]
+		static void TestTypeOverloadWith5ParametersWithoutIgnoreCase ()
+		{
+			const string reflectionTypeKeptString = "Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection+OverloadWith5ParametersWithoutIgnoreCase";
+			var typeKept = Type.GetType (reflectionTypeKeptString, AssemblyResolver, GetTypeFromAssembly, false, false);
+		}
+
+		/// <summary>
+		/// This test verifies that if `TypeParser.ParseTypeName` hits an exception and returns null that the linker doesn't fail
+		/// </summary>
+		[Kept]
+		static void TestInvalidTypeName ()
+		{
+			var type = Type.GetType ("System.Collections.Generic.List`1[GenericClass`1[System.String]+Nested]");
+		}
+
+		[Kept]
+		static Assembly AssemblyResolver (AssemblyName assemblyName)
+		{
+			return Assembly.Load (assemblyName);
+		}
+
+		[Kept]
+		[ExpectedWarning ("IL2026", "'System.Reflection.Assembly.GetType(String,Boolean)'")]
+		[ExpectedWarning ("IL2057", "'System.Type.GetType(String,Boolean)'")]
+		static Type GetTypeFromAssembly (Assembly assembly, string name, bool caseSensitive)
+		{
+			return assembly == null ? Type.GetType (name, caseSensitive) : assembly.GetType (name, caseSensitive);
+		}
+
+		[Kept]
+		[ExpectedWarning ("IL2096", "'System.Type.GetType(String,Boolean,Boolean)'")]
+		static void TestUnkownIgnoreCase3Params (int num)
+		{
+			const string reflectionTypeKeptString = "mono.linker.tests.cases.reflection.TypeUsedViaReflection+CaseUnknown2, test, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null";
+			bool unknownValue = num + 1 == 1;
+			var typeKept = Type.GetType (reflectionTypeKeptString, false, unknownValue);
+		}
+
+		[Kept]
+		[ExpectedWarning ("IL2096", "'System.Type.GetType(String,Func<AssemblyName,Assembly>,Func<Assembly,String,Boolean,Type>,Boolean,Boolean)'")]
+		static void TestUnkownIgnoreCase5Params (int num)
+		{
+			const string reflectionTypeKeptString = "mono.linker.tests.cases.reflection.TypeUsedViaReflection+CaseUnknown2, test, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null";
+			bool unknownValue = num + 1 == 1;
+			var typeKept = Type.GetType (reflectionTypeKeptString, AssemblyResolver, GetTypeFromAssembly, false, unknownValue);
 		}
 	}
 }

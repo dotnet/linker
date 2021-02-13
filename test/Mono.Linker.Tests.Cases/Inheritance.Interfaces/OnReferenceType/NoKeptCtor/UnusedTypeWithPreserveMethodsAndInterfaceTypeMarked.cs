@@ -1,7 +1,11 @@
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
+using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
-namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.OnReferenceType.NoKeptCtor {
-	public class UnusedTypeWithPreserveMethodsAndInterfaceTypeMarked {
+namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.OnReferenceType.NoKeptCtor
+{
+	[SetupLinkerDescriptorFile ("UnusedTypeWithPreserveMethodsAndInterfaceTypeMarked.xml")]
+	public class UnusedTypeWithPreserveMethodsAndInterfaceTypeMarked
+	{
 		public static void Main ()
 		{
 			// We'll mark one interface in code and one via xml, the end result should be the same
@@ -9,12 +13,14 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.OnReferenceType.NoKeptC
 		}
 
 		[Kept]
-		interface IFoo {
+		interface IFoo
+		{
 			void Foo ();
 		}
 
 		[Kept]
-		interface IBar {
+		interface IBar
+		{
 			void Bar ();
 		}
 
@@ -22,7 +28,8 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.OnReferenceType.NoKeptC
 		[KeptMember (".ctor()")]
 		[KeptInterface (typeof (IFoo))]
 		[KeptInterface (typeof (IBar))]
-		class A : IBar, IFoo {
+		class A : IBar, IFoo
+		{
 			[Kept]
 			public void Foo ()
 			{

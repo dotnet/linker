@@ -1,11 +1,12 @@
 ﻿using System;
 
 
-namespace Mono.Linker.Tests.Cases.Expectations.Assertions {
+namespace Mono.Linker.Tests.Cases.Expectations.Assertions
+{
 	[AttributeUsage (AttributeTargets.Class | AttributeTargets.Delegate, AllowMultiple = true, Inherited = false)]
-	public class KeptMemberInAssemblyAttribute : BaseInAssemblyAttribute {
-
-		public KeptMemberInAssemblyAttribute (string assemblyFileName, Type type, params string [] memberNames)
+	public class KeptMemberInAssemblyAttribute : BaseInAssemblyAttribute
+	{
+		public KeptMemberInAssemblyAttribute (string assemblyFileName, Type type, params string[] memberNames)
 		{
 			if (string.IsNullOrEmpty (assemblyFileName))
 				throw new ArgumentNullException (nameof (assemblyFileName));
@@ -15,7 +16,7 @@ namespace Mono.Linker.Tests.Cases.Expectations.Assertions {
 				throw new ArgumentNullException (nameof (memberNames));
 		}
 
-		public KeptMemberInAssemblyAttribute (string assemblyFileName, string typeName, params string [] memberNames)
+		public KeptMemberInAssemblyAttribute (string assemblyFileName, string typeName, params string[] memberNames)
 		{
 			if (string.IsNullOrEmpty (assemblyFileName))
 				throw new ArgumentNullException (nameof (assemblyFileName));
@@ -24,5 +25,7 @@ namespace Mono.Linker.Tests.Cases.Expectations.Assertions {
 			if (memberNames == null)
 				throw new ArgumentNullException (nameof (memberNames));
 		}
+
+		public string ExpectationAssemblyName { get; set; }
 	}
 }

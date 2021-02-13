@@ -1,7 +1,11 @@
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
+using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
-namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.OnReferenceType {
-	public class UnusedExplicitInterfaceHasMethodPreservedViaXml {
+namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.OnReferenceType
+{
+	[SetupLinkerDescriptorFile ("UnusedExplicitInterfaceHasMethodPreservedViaXml.xml")]
+	public class UnusedExplicitInterfaceHasMethodPreservedViaXml
+	{
 		public static void Main ()
 		{
 			IFoo i = new A ();
@@ -9,13 +13,15 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.OnReferenceType {
 		}
 
 		[Kept]
-		interface IFoo {
+		interface IFoo
+		{
 			[Kept]
 			void Foo ();
 		}
 
 		[Kept]
-		interface IBar {
+		interface IBar
+		{
 			[Kept]
 			void Bar ();
 		}
@@ -24,7 +30,8 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.OnReferenceType {
 		[KeptMember (".ctor()")]
 		[KeptInterface (typeof (IFoo))]
 		[KeptInterface (typeof (IBar))]
-		class A : IBar, IFoo {
+		class A : IBar, IFoo
+		{
 			[Kept]
 			void IFoo.Foo ()
 			{
