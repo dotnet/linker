@@ -670,7 +670,7 @@ namespace Mono.Linker
 			// BodySubstituterStep [optional]
 			// MarkStep
 			// ReflectionBlockedStep [optional]
-			// RemoveResourcesStep
+			// RemoveResourcesStep [optional]
 			// ProcessWarningsStep
 			// OutputWarningSuppressions
 			// SweepStep
@@ -1149,6 +1149,7 @@ namespace Mono.Linker
 			Console.WriteLine ("  --link-attributes FILE     Supplementary custom attribute definitions for attributes controlling the linker behavior.");
 			Console.WriteLine ("  --ignore-link-attributes   Skips reading embedded attributes. Defaults to false");
 			Console.WriteLine ("  --strip-link-attributes    Remove XML link attributes resources for linked assemblies. Defaults to true");
+			Console.WriteLine ("  --keep-compilers-resources Keep assembly resources used for F# compilation resources. Defaults to false");
 
 			Console.WriteLine ();
 			Console.WriteLine ("Analyzer");

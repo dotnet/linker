@@ -8,8 +8,18 @@ namespace Mono.Linker.Steps
 	{
 		protected override void ProcessAssembly (AssemblyDefinition assembly)
 		{
-			if (!assembly.MainModule.HasResources) return;
+			if (!ShouldProcess (assembly)) return;
+
 			RemoveFSharpCompilationResources (assembly);
+		}
+
+		private bool ShouldProcess (AssemblyDefinition assembly)
+		{
+			if (!assembly.MainModule.HasResources)
+				return false;
+
+			var action = Annotations.GetAction (assembly);
+			return action == AssemblyAction.Link || action == AssemblyAction.Save;
 		}
 
 		private void RemoveFSharpCompilationResources (AssemblyDefinition assembly)
