@@ -285,7 +285,7 @@ namespace Mono.Linker
 
 					case "--keep-compilers-resources":
 						if (!GetBoolParam (token, l => keepCompilersResources = l))
-							return false;
+							return -1;
 
 						continue;
 
