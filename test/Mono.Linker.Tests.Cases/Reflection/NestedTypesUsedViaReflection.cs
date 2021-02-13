@@ -28,12 +28,10 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		public static class NestedType { }
 
 		[Kept]
-		[RecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetNestedType), new Type[] { typeof (string) },
-			typeof (NestedTypeUsedViaReflection.NestedType), null, (Type[]) null)]
+		[RecognizedReflectionAccessPattern]
 		static void TestGetNestedTypes ()
 		{
-			_ = typeof (NestedTypeUsedViaReflection).GetNestedType (nameof (NestedType));
+			_ = typeof (NestedTypesUsedViaReflection).GetNestedType (nameof (NestedType));
 		}
 
 		static class PrivateUnreferencedNestedType { }
@@ -41,17 +39,15 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		[Kept]
 		public static class PublicNestedType { }
 
-		[Kept]
 		private static class PrivateNestedType { }
 
-		[Kept]
 		protected static class ProtectedNestedType { }
 
 		[Kept]
 		[RecognizedReflectionAccessPattern]
 		static void TestByBindingFlags ()
 		{
-			_ = typeof (NestedTypeUsedViaReflection).GetNestedTypes (BindingFlags.Public);
+			_ = typeof (NestedTypesUsedViaReflection).GetNestedTypes (BindingFlags.Public);
 		}
 
 		[Kept]
@@ -130,7 +126,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			public static class IgnoreCasePublicNestedType { }
 
 			[Kept]
-			public static class MarkedDueToIgnoreCase { }
+			private static class MarkedDueToIgnoreCase { }
 		}
 
 		[Kept]

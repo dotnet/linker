@@ -17,6 +17,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			TestWithUnknownBindingFlags (BindingFlags.Public);
 			TestNullType ();
 			TestDataFlowType ();
+			TestDataFlowWithAnnotation (typeof (MyType));
 			TestIfElse (true);
 		}
 
@@ -144,6 +145,27 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 			[Kept]
 			internal UnknownBindingFlags (int foo, int bar, int baz)
+			{ }
+		}
+
+		[Kept]
+		private class MyType
+		{
+			[Kept]
+			public MyType ()
+			{ }
+
+			[Kept]
+			public MyType (string bar)
+			{ }
+
+			private MyType (int foo)
+			{ }
+
+			protected MyType (int foo, int bar)
+			{ }
+
+			internal MyType (int foo, int bar, int baz)
 			{ }
 		}
 
