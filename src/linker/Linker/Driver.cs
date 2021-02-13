@@ -682,7 +682,7 @@ namespace Mono.Linker
 			// OutputStep
 
 			p.AppendStep (new MarkStep ());
-			p.AppendStep (new RemoveResourcesStep());
+			p.AppendStep (new RemoveResourcesStep ());
 			p.AppendStep (new ValidateVirtualMethodAnnotationsStep ());
 			p.AppendStep (new ProcessWarningsStep ());
 			p.AppendStep (new OutputWarningSuppressions ());
@@ -1176,7 +1176,7 @@ namespace Mono.Linker
 		{
 			Pipeline p = new Pipeline ();
 			p.AppendStep (new MarkStep ());
-			p.AppendStep (new RemoveResourcesStep());
+			p.AppendStep (new RemoveResourcesStep ());
 			p.AppendStep (new ValidateVirtualMethodAnnotationsStep ());
 			p.AppendStep (new ProcessWarningsStep ());
 			p.AppendStep (new OutputWarningSuppressions ());

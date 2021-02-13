@@ -4,7 +4,7 @@ using Mono.Cecil;
 
 namespace Mono.Linker.Steps
 {
-	public class RemoveResourcesStep : BaseStep 
+	public class RemoveResourcesStep : BaseStep
 	{
 		protected override void ProcessAssembly (AssemblyDefinition assembly)
 		{
@@ -24,7 +24,7 @@ namespace Mono.Linker.Steps
 
 		private void RemoveFSharpCompilationResources (AssemblyDefinition assembly)
 		{
-			var resourcesInAssembly = assembly.MainModule.Resources.OfType<EmbeddedResource>();
+			var resourcesInAssembly = assembly.MainModule.Resources.OfType<EmbeddedResource> ();
 			foreach (var resource in resourcesInAssembly.Where (IsFSharpCompilationResource)) {
 				Annotations.AddResourceToRemove (assembly, resource);
 			}
