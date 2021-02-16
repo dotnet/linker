@@ -35,24 +35,26 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		// The event will not be kept as it's internal and the behavior of Type.GetEvent(string) is to only return public events
+		[RecognizedReflectionAccessPattern]
+		// The event will not be kept as it's internal and the behavior of Type.GetEvents() is to only return public events
 		// But we don't mark it as unrecognized access pattern - we did recognize it fully, just didn't find the event being asked for
 		// The behavior of the code will not change by linking it:
-		//   - Without linking the GetEvent will return null
-		//   - After linking the GetEvent will still return null
-		// We also don't mark it as recognized pattern since we didn't mark anything
+		//   - Without linking the GetEvents will return null
+		//   - After linking the GetEvents will still return null
 		static void TestInternal ()
 		{
 			var events = typeof (InternalEventType).GetEvents ();
 		}
 
 		[Kept]
+		[RecognizedReflectionAccessPattern]
 		static void TestBindingFlags ()
 		{
 			var events = typeof (Bar).GetEvents (BindingFlags.NonPublic);
 		}
 
 		[Kept]
+		[RecognizedReflectionAccessPattern]
 		static void TestUnknownBindingFlags (BindingFlags bindingFlags)
 		{
 			// Since the binding flags are not known linker should mark all events on the type
@@ -60,6 +62,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
+		[RecognizedReflectionAccessPattern]
 		static void TestNullType ()
 		{
 			Type type = null;
@@ -97,12 +100,6 @@ namespace Mono.Linker.Tests.Cases.Reflection
 				myType = typeof (IfClass);
 			} else {
 				myType = typeof (ElseClass);
-			}
-			String myString;
-			if (i == 1) {
-				myString = "IfEvent";
-			} else {
-				myString = "ElseEvent";
 			}
 			var events = myType.GetEvents (BindingFlags.Public);
 		}

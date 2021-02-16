@@ -11,10 +11,10 @@ namespace Mono.Linker.Tests.Cases.Reflection
 	{
 		public static void Main ()
 		{
-			// Normally calls to GetMember use regex to find values, we took a conservative approach
+			// Normally calls to GetMember use prefix lookup to match multiple values, we took a conservative approach
 			// and preserve not based on the string passed but on the binding flags requirements
 			TestWithName ();
-			TestWithRegex ();
+			TestWithPrefixLookup ();
 			TestWithBindingFlags ();
 			TestWithUnknownBindingFlags (BindingFlags.Public);
 			TestWithMemberTypes ();
@@ -34,16 +34,16 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 		[RecognizedReflectionAccessPattern]
 		[Kept]
-		static void TestWithRegex ()
+		static void TestWithPrefixLookup ()
 		{
-			var members = typeof (RegexType).GetMember ("*FoundViaRegex");
+			var members = typeof (PrefixLookupType).GetMember ("PrefixLookup*");
 		}
 
 		[RecognizedReflectionAccessPattern]
 		[Kept]
 		static void TestWithBindingFlags ()
 		{
-			var members = typeof (BindingFlagsType).GetMember ("*FoundViaRegex", BindingFlags.Public | BindingFlags.NonPublic);
+			var members = typeof (BindingFlagsType).GetMember ("PrefixLookup*", BindingFlags.Public | BindingFlags.NonPublic);
 		}
 
 		[RecognizedReflectionAccessPattern]
@@ -51,7 +51,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		static void TestWithUnknownBindingFlags (BindingFlags bindingFlags)
 		{
 			// Since the binding flags are not known linker should mark all members on the type
-			var members = typeof (UnknownBindingFlags).GetMember ("*FoundViaRegex", bindingFlags);
+			var members = typeof (UnknownBindingFlags).GetMember ("PrefixLookup*", bindingFlags);
 		}
 
 		[RecognizedReflectionAccessPattern]
@@ -60,14 +60,15 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		{
 			// Here we took the same conservative approach, instead of understanding MemberTypes we only use
 			// the information in the binding flags requirements and keep all the MemberTypes
-			var members = typeof (TestMemberTypes).GetMember ("*FoundViaRegex", MemberTypes.Method, BindingFlags.Public);
+			var members = typeof (TestMemberTypes).GetMember ("PrefixLookup*", MemberTypes.Method, BindingFlags.Public);
 		}
 
+		[RecognizedReflectionAccessPattern]
 		[Kept]
 		static void TestNullType ()
 		{
 			Type type = null;
-			var constructor = type.GetMember ("*FoundViaRegex");
+			var constructor = type.GetMember ("PrefixLookup*");
 		}
 
 		[Kept]
@@ -82,7 +83,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		static void TestDataFlowType ()
 		{
 			Type type = FindType ();
-			var members = type.GetMember ("*FoundViaRegex");
+			var members = type.GetMember ("PrefixLookup*");
 		}
 
 		[Kept]
@@ -95,7 +96,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 										 DynamicallyAccessedMemberTypes.PublicProperties |
 										 DynamicallyAccessedMemberTypes.PublicNestedTypes)] Type type)
 		{
-			var members = type.GetMember ("*FoundViaRegex", BindingFlags.Public | BindingFlags.Static);
+			var members = type.GetMember ("PrefixLookup*", BindingFlags.Public | BindingFlags.Static);
 		}
 
 		[Kept]
@@ -108,7 +109,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			} else {
 				myType = typeof (ElseMember);
 			}
-			var members = myType.GetMember ("*FoundViaRegex", BindingFlags.Public);
+			var members = myType.GetMember ("PrefixLookup*", BindingFlags.Public);
 		}
 
 		[Kept]
@@ -134,50 +135,50 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		private class RegexType
+		private class PrefixLookupType
 		{
 			[Kept]
-			public RegexType ()
+			public PrefixLookupType ()
 			{ }
 
-			private RegexType (int i)
+			private PrefixLookupType (int i)
 			{ }
 
 			[Kept]
-			public static int _fieldFoundViaRegex;
+			public static int PrefixLookup_field;
 
-			private static int _privatefieldFoundViaRegex;
-
-			[Kept]
-			public int PropertyFoundViaRegex {
-				[Kept]
-				get { return _fieldFoundViaRegex; }
-				[Kept]
-				set { _fieldFoundViaRegex = value; }
-			}
-
-			private int PrivatePropertyFoundViaRegex {
-				get { return _privatefieldFoundViaRegex; }
-				set { _privatefieldFoundViaRegex = value; }
-			}
+			private static int PrefixLookup_privatefield;
 
 			[Kept]
-			public void MethodFoundViaRegex () { }
+			public int PrefixLookupProperty {
+				[Kept]
+				get { return PrefixLookup_field; }
+				[Kept]
+				set { PrefixLookup_field = value; }
+			}
 
-			private void PrivateMethodFoundViaRegex () { }
+			private int PrefixLookupPrivateProperty {
+				get { return PrefixLookup_privatefield; }
+				set { PrefixLookup_privatefield = value; }
+			}
+
+			[Kept]
+			public void PrefixLookupMethod () { }
+
+			private void PrefixLookupPrivateMethod () { }
 
 			[Kept]
 			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
-			public event EventHandler<EventArgs> EventFoundViaRegex;
+			public event EventHandler<EventArgs> PrefixLookupEvent;
 
-			private event EventHandler<EventArgs> PrivateEventFoundViaRegex;
+			private event EventHandler<EventArgs> PrefixLookupPrivateEvent;
 
 			[Kept]
-			public static class NestedTypeFoundViaRegex { }
+			public static class PrefixLookupNestedType { }
 
-			private static class PrivateNestedTypeFoundViaRegex { }
+			private static class PrefixLookupPrivateNestedType { }
 		}
 
 		[Kept]
@@ -192,50 +193,50 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			{ }
 
 			[Kept]
-			public static int _fieldFoundViaRegex;
+			public static int PrefixLookup_field;
 
 			[Kept]
-			private static int _privatefieldFoundViaRegex;
+			private static int PrefixLookup_privatefield;
 
 			[Kept]
-			public int PropertyFoundViaRegex {
+			public int PrefixLookupProperty {
 				[Kept]
-				get { return _fieldFoundViaRegex; }
+				get { return PrefixLookup_field; }
 				[Kept]
-				set { _fieldFoundViaRegex = value; }
+				set { PrefixLookup_field = value; }
 			}
 
 			[Kept]
-			private int PrivatePropertyFoundViaRegex {
+			private int PrefixLookupPrivateProperty {
 				[Kept]
-				get { return _privatefieldFoundViaRegex; }
+				get { return PrefixLookup_privatefield; }
 				[Kept]
-				set { _privatefieldFoundViaRegex = value; }
+				set { PrefixLookup_privatefield = value; }
 			}
 
 			[Kept]
-			public void MethodFoundViaRegex () { }
+			public void PrefixLookupMethod () { }
 
 			[Kept]
-			private void PrivateMethodFoundViaRegex () { }
+			private void PrefixLookupPrivateMethod () { }
 
 			[Kept]
 			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
-			public event EventHandler<EventArgs> EventFoundViaRegex;
+			public event EventHandler<EventArgs> PrefixLookupEvent;
 
 			[Kept]
 			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
-			private event EventHandler<EventArgs> PrivateEventFoundViaRegex;
+			private event EventHandler<EventArgs> PrefixLookupPrivateEvent;
 
 			[Kept]
-			public static class NestedTypeFoundViaRegex { }
+			public static class PrefixLookupNestedType { }
 
 			[Kept]
-			private static class PrivateNestedTypeFoundViaRegex { }
+			private static class PrefixLookupPrivateNestedType { }
 		}
 
 		[Kept]
@@ -250,50 +251,50 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			{ }
 
 			[Kept]
-			public static int _fieldFoundViaRegex;
+			public static int PrefixLookup_field;
 
 			[Kept]
-			private static int _privatefieldFoundViaRegex;
+			private static int PrefixLookup_privatefield;
 
 			[Kept]
-			public int PropertyFoundViaRegex {
+			public int PrefixLookupProperty {
 				[Kept]
-				get { return _fieldFoundViaRegex; }
+				get { return PrefixLookup_field; }
 				[Kept]
-				set { _fieldFoundViaRegex = value; }
+				set { PrefixLookup_field = value; }
 			}
 
 			[Kept]
-			private int PrivatePropertyFoundViaRegex {
+			private int PrefixLookupPrivateProperty {
 				[Kept]
-				get { return _privatefieldFoundViaRegex; }
+				get { return PrefixLookup_privatefield; }
 				[Kept]
-				set { _privatefieldFoundViaRegex = value; }
+				set { PrefixLookup_privatefield = value; }
 			}
 
 			[Kept]
-			public void MethodFoundViaRegex () { }
+			public void PrefixLookupMethod () { }
 
 			[Kept]
-			private void PrivateMethodFoundViaRegex () { }
+			private void PrefixLookupPrivateMethod () { }
 
 			[Kept]
 			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
-			public event EventHandler<EventArgs> EventFoundViaRegex;
+			public event EventHandler<EventArgs> PrefixLookupEvent;
 
 			[Kept]
 			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
-			private event EventHandler<EventArgs> PrivateEventFoundViaRegex;
+			private event EventHandler<EventArgs> PrefixLookupPrivateEvent;
 
 			[Kept]
-			public static class NestedTypeFoundViaRegex { }
+			public static class PrefixLookupNestedType { }
 
 			[Kept]
-			private static class PrivateNestedTypeFoundViaRegex { }
+			private static class PrefixLookupPrivateNestedType { }
 		}
 
 		[Kept]
@@ -307,40 +308,40 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			{ }
 
 			[Kept]
-			public static int _fieldFoundViaRegex;
+			public static int PrefixLookup_field;
 
-			private static int _privatefieldFoundViaRegex;
-
-			[Kept]
-			public int PropertyFoundViaRegex {
-				[Kept]
-				get { return _fieldFoundViaRegex; }
-				[Kept]
-				set { _fieldFoundViaRegex = value; }
-			}
-
-			private int PrivatePropertyFoundViaRegex {
-				get { return _privatefieldFoundViaRegex; }
-				set { _privatefieldFoundViaRegex = value; }
-			}
+			private static int PrefixLookup_privatefield;
 
 			[Kept]
-			public void MethodFoundViaRegex () { }
+			public int PrefixLookupProperty {
+				[Kept]
+				get { return PrefixLookup_field; }
+				[Kept]
+				set { PrefixLookup_field = value; }
+			}
 
-			private void PrivateMethodFoundViaRegex () { }
+			private int PrefixLookupPrivateProperty {
+				get { return PrefixLookup_privatefield; }
+				set { PrefixLookup_privatefield = value; }
+			}
+
+			[Kept]
+			public void PrefixLookupMethod () { }
+
+			private void PrefixLookupPrivateMethod () { }
 
 			[Kept]
 			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
-			public event EventHandler<EventArgs> EventFoundViaRegex;
+			public event EventHandler<EventArgs> PrefixLookupEvent;
 
-			private event EventHandler<EventArgs> PrivateEventFoundViaRegex;
+			private event EventHandler<EventArgs> PrefixLookupPrivateEvent;
 
 			[Kept]
-			public static class NestedTypeFoundViaRegex { }
+			public static class PrefixLookupNestedType { }
 
-			private static class PrivateNestedTypeFoundViaRegex { }
+			private static class PrefixLookupPrivateNestedType { }
 		}
 
 		[Kept]
@@ -354,40 +355,40 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			{ }
 
 			[Kept]
-			public static int _fieldFoundViaRegex;
+			public static int PrefixLookup_field;
 
-			private static int _privatefieldFoundViaRegex;
-
-			[Kept]
-			public int PropertyFoundViaRegex {
-				[Kept]
-				get { return _fieldFoundViaRegex; }
-				[Kept]
-				set { _fieldFoundViaRegex = value; }
-			}
-
-			private int PrivatePropertyFoundViaRegex {
-				get { return _privatefieldFoundViaRegex; }
-				set { _privatefieldFoundViaRegex = value; }
-			}
+			private static int PrefixLookup_privatefield;
 
 			[Kept]
-			public void MethodFoundViaRegex () { }
+			public int PrefixLookupProperty {
+				[Kept]
+				get { return PrefixLookup_field; }
+				[Kept]
+				set { PrefixLookup_field = value; }
+			}
 
-			private void PrivateMethodFoundViaRegex () { }
+			private int PrefixLookupPrivateProperty {
+				get { return PrefixLookup_privatefield; }
+				set { PrefixLookup_privatefield = value; }
+			}
+
+			[Kept]
+			public void PrefixLookupMethod () { }
+
+			private void PrefixLookupPrivateMethod () { }
 
 			[Kept]
 			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
-			public event EventHandler<EventArgs> EventFoundViaRegex;
+			public event EventHandler<EventArgs> PrefixLookupEvent;
 
-			private event EventHandler<EventArgs> PrivateEventFoundViaRegex;
+			private event EventHandler<EventArgs> PrefixLookupPrivateEvent;
 
 			[Kept]
-			public static class NestedTypeFoundViaRegex { }
+			public static class PrefixLookupNestedType { }
 
-			private static class PrivateNestedTypeFoundViaRegex { }
+			private static class PrefixLookupPrivateNestedType { }
 		}
 
 		[Kept]
@@ -401,40 +402,40 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			{ }
 
 			[Kept]
-			public static int _fieldFoundViaRegex;
+			public static int PrefixLookup_field;
 
-			private static int _privatefieldFoundViaRegex;
-
-			[Kept]
-			public int PropertyFoundViaRegex {
-				[Kept]
-				get { return _fieldFoundViaRegex; }
-				[Kept]
-				set { _fieldFoundViaRegex = value; }
-			}
-
-			private int PrivatePropertyFoundViaRegex {
-				get { return _privatefieldFoundViaRegex; }
-				set { _privatefieldFoundViaRegex = value; }
-			}
+			private static int PrefixLookup_privatefield;
 
 			[Kept]
-			public void MethodFoundViaRegex () { }
+			public int PrefixLookupProperty {
+				[Kept]
+				get { return PrefixLookup_field; }
+				[Kept]
+				set { PrefixLookup_field = value; }
+			}
 
-			private void PrivateMethodFoundViaRegex () { }
+			private int PrefixLookupPrivateProperty {
+				get { return PrefixLookup_privatefield; }
+				set { PrefixLookup_privatefield = value; }
+			}
+
+			[Kept]
+			public void PrefixLookupMethod () { }
+
+			private void PrefixLookupPrivateMethod () { }
 
 			[Kept]
 			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
-			public event EventHandler<EventArgs> EventFoundViaRegex;
+			public event EventHandler<EventArgs> PrefixLookupEvent;
 
-			private event EventHandler<EventArgs> PrivateEventFoundViaRegex;
+			private event EventHandler<EventArgs> PrefixLookupPrivateEvent;
 
 			[Kept]
-			public static class NestedTypeFoundViaRegex { }
+			public static class PrefixLookupNestedType { }
 
-			private static class PrivateNestedTypeFoundViaRegex { }
+			private static class PrefixLookupPrivateNestedType { }
 		}
 
 		[Kept]
@@ -448,40 +449,40 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			{ }
 
 			[Kept]
-			public static int _fieldFoundViaRegex;
+			public static int PrefixLookup_field;
 
-			private static int _privatefieldFoundViaRegex;
-
-			[Kept]
-			public int PropertyFoundViaRegex {
-				[Kept]
-				get { return _fieldFoundViaRegex; }
-				[Kept]
-				set { _fieldFoundViaRegex = value; }
-			}
-
-			private int PrivatePropertyFoundViaRegex {
-				get { return _privatefieldFoundViaRegex; }
-				set { _privatefieldFoundViaRegex = value; }
-			}
+			private static int PrefixLookup_privatefield;
 
 			[Kept]
-			public void MethodFoundViaRegex () { }
+			public int PrefixLookupProperty {
+				[Kept]
+				get { return PrefixLookup_field; }
+				[Kept]
+				set { PrefixLookup_field = value; }
+			}
 
-			private void PrivateMethodFoundViaRegex () { }
+			private int PrefixLookupPrivateProperty {
+				get { return PrefixLookup_privatefield; }
+				set { PrefixLookup_privatefield = value; }
+			}
+
+			[Kept]
+			public void PrefixLookupMethod () { }
+
+			private void PrefixLookupPrivateMethod () { }
 
 			[Kept]
 			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
-			public event EventHandler<EventArgs> EventFoundViaRegex;
+			public event EventHandler<EventArgs> PrefixLookupEvent;
 
-			private event EventHandler<EventArgs> PrivateEventFoundViaRegex;
+			private event EventHandler<EventArgs> PrefixLookupPrivateEvent;
 
 			[Kept]
-			public static class NestedTypeFoundViaRegex { }
+			public static class PrefixLookupNestedType { }
 
-			private static class PrivateNestedTypeFoundViaRegex { }
+			private static class PrefixLookupPrivateNestedType { }
 		}
 	}
 }

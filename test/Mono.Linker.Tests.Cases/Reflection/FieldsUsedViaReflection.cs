@@ -47,6 +47,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
+		[RecognizedReflectionAccessPattern]
 		static void TestNullType ()
 		{
 			Type type = null;
@@ -84,12 +85,6 @@ namespace Mono.Linker.Tests.Cases.Reflection
 				myType = typeof (IfClass);
 			} else {
 				myType = typeof (ElseClass);
-			}
-			String myString;
-			if (i == 1) {
-				myString = "ifField";
-			} else {
-				myString = "elseField";
 			}
 			var fields = myType.GetFields (BindingFlags.Public);
 		}

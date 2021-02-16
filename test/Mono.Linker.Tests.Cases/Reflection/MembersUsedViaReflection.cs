@@ -39,11 +39,12 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		[Kept]
 		static void TestWithUnknownBindingFlags (BindingFlags bindingFlags)
 		{
-			// Since the binding flags are not known linker should mark all constructors on the type
+			// Since the binding flags are not known linker should mark all members on the type
 			var members = typeof (UnknownBindingFlags).GetMembers (bindingFlags);
 		}
 
 		[Kept]
+		[RecognizedReflectionAccessPattern]
 		static void TestNullType ()
 		{
 			Type type = null;
@@ -147,8 +148,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			[Kept]
 			public static class PublicNestedType
 			{
-				// When binding flags are not used the DynamicallyAccessedMemberTypes is set to All
-				// which keeps the following members
+				// Due to annotations in runtime the GetMembers call keeps the following members
+				// See issue https://github.com/dotnet/runtime/issues/36708
 				[Kept]
 				public static int _nestedPublicField;
 				[Kept]

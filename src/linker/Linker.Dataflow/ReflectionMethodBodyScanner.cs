@@ -1244,7 +1244,9 @@ namespace Mono.Linker.Dataflow
 				// GetMember (String, BindingFlags)
 				// GetMember (String, MemberTypes, BindingFlags)
 				//
-				case IntrinsicId.Type_GetMember: {
+				case IntrinsicId.Type_GetMember when calledMethod.DeclaringType.Namespace == "System"
+					&& calledMethod.DeclaringType.Name == "Type"
+					&& calledMethod.HasParameterOfType (0, "System", "String"): {
 						reflectionContext.AnalyzingPattern ();
 
 						var parameters = calledMethod.Parameters;
