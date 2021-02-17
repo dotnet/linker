@@ -495,7 +495,23 @@ namespace ILLink.Tasks.Tests
 			using (var driver = task.CreateDriver ()) {
 				var expectedAction = (AssemblyAction) Enum.Parse (typeof (AssemblyAction), trimMode, ignoreCase: true);
 				Assert.Equal (expectedAction, driver.Context.TrimAction);
-				Assert.Equal (AssemblyAction.Copy, driver.Context.DefaultAction);
+				Assert.Equal (AssemblyAction.Link, driver.Context.DefaultAction);
+			}
+		}
+
+		[Theory]
+		[InlineData ("copy")]
+		[InlineData ("link")]
+		[InlineData ("copyused")]
+		public void TestDefaultAction (string defaultAction)
+		{
+			var task = new MockTask () {
+				DefaultAction = defaultAction
+			};
+			using (var driver = task.CreateDriver ()) {
+				var expectedAction = (AssemblyAction) Enum.Parse (typeof (AssemblyAction), defaultAction, ignoreCase: true);
+				Assert.Equal (expectedAction, driver.Context.DefaultAction);
+				Assert.Equal (AssemblyAction.Link, driver.Context.TrimAction);
 			}
 		}
 
