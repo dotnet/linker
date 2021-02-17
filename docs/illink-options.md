@@ -72,11 +72,11 @@ A trimmable assembly is any assembly that includes the attribute `System.Reflect
 
 You can specify what action to do on the trimmed assemblies with the option:
 
-`--trim-action skip|copy|copyused|link`
+`--trim-mode skip|copy|copyused|link`
 
 You can specify what action to do on assemblies without such an attribute with the option:
 
-`--default-action copy|link`
+`--action copy|link`
 
 ### The output directory
 

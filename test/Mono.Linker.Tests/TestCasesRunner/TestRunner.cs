@@ -119,7 +119,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				if (ext == ".dll" || ext == ".exe")
 					builder.AddReference (inputReference);
 			}
-			var coreAction = caseDefinedOptions.TrimAssembliesAction ?? "skip";
+			var coreAction = caseDefinedOptions.TrimMode ?? "skip";
 			foreach (var extraReference in metadataProvider.GetExtraLinkerReferences ()) {
 				builder.AddReference (extraReference);
 				builder.AddAssemblyAction (coreAction, extraReference.FileNameWithoutExtension);

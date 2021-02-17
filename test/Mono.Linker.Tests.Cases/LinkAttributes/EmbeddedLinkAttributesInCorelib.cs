@@ -15,7 +15,7 @@ namespace System
 namespace Mono.Linker.Tests.Cases.LinkAttributes
 {
 	[IgnoreLinkAttributes (false)]
-	[SetupLinkerTrimAction ("link")] // Ensure that corelib gets linked so that its attribtues are processed
+	[SetupLinkerTrimMode ("link")] // Ensure that corelib gets linked so that its attribtues are processed
 	[SetupLinkerArgument ("--skip-unresolved", "true")] // Allow unresolved references to types missing from mock corelib
 	[SetupCompileBefore (PlatformAssemblies.CoreLib, new string[] { "Dependencies/MockCorelib.cs" },
 		resources: new object[] { new string[] { "Dependencies/MockCorelib.xml", "ILLink.LinkAttributes.xml" } },

@@ -4,7 +4,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 {
 	public class TestCaseLinkerOptions
 	{
-		public string TrimAssembliesAction;
+		public string TrimMode;
 		public string DefaultAssembliesAction;
 		public List<KeyValuePair<string, string>> AssembliesAction = new List<KeyValuePair<string, string>> ();
 

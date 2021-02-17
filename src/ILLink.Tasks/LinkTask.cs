@@ -181,13 +181,13 @@ namespace ILLink.Tasks
 
 		/// <summary>
 		///   Sets the default action for trimmable assemblies.
-		///   Maps to '--trim-action'
+		///   Maps to '--trim-mode'
 		/// </summary>
 		public string TrimMode { get; set; }
 
 		/// <summary>
 		///   Sets the default action for assemblies which have not opted into trimming.
-		///   Maps to '--default-action'
+		///   Maps to '--action'
 		public string DefaultAction { get; set; }
 
 		/// <summary>
@@ -401,10 +401,10 @@ namespace ILLink.Tasks
 				args.AppendLine ("-b");
 
 			if (TrimMode != null)
-				args.Append ("--trim-action ").AppendLine (TrimMode);
+				args.Append ("--trim-mode ").AppendLine (TrimMode);
 
 			if (DefaultAction != null)
-				args.Append ("--default-action ").AppendLine (DefaultAction);
+				args.Append ("--action ").AppendLine (DefaultAction);
 
 			if (CustomSteps != null) {
 				foreach (var customStep in CustomSteps) {

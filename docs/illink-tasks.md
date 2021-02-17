@@ -58,7 +58,7 @@ The linker can be invoked as an MSBuild task, `ILLink`. We recommend not using t
         RootAssemblyNames="@(LinkerRootAssemblies)"
         RootDescriptorFiles="@(LinkerRootDescriptors)"
         OutputDirectory="output"
-        ExtraArgs="-t --trim-action link" />
+        ExtraArgs="-t --trim-mode link" />
 ```
 
 ## Default Linking Behavior

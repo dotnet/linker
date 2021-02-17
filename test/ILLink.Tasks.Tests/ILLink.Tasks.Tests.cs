@@ -439,7 +439,7 @@ namespace ILLink.Tasks.Tests
 		{
 			var task = new MockTask () {
 				TrimMode = "copy",
-				ExtraArgs = "--trim-action link"
+				ExtraArgs = "--trim-mode link"
 			};
 			using (var driver = task.CreateDriver ()) {
 				Assert.Equal (AssemblyAction.Copy, driver.Context.DefaultAction);

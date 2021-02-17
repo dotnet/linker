@@ -10,7 +10,7 @@ namespace Mono.Linker.Tests.Cases.BCLFeatures.ETW
 #endif
 	[SetupLinkerArgument ("--exclude-feature", "etw")]
 	// Keep framework code that calls EventSource methods like OnEventCommand
-	[SetupLinkerTrimAction ("skip")]
+	[SetupLinkerTrimMode ("skip")]
 	public class BaseRemovedEventSource
 	{
 		public static void Main ()

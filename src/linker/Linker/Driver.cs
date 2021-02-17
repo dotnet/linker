@@ -262,16 +262,19 @@ namespace Mono.Linker
 						continue;
 
 					case "--action": {
-							if (arguments.Count < 2) {
-								ErrorMissingArgument (token);
+							AssemblyAction? action = null;
+							if (!GetStringParam (token, l => action = ParseAssemblyAction (l)))
 								return -1;
-							}
 
-							var action = ParseAssemblyAction (arguments.Dequeue ());
 							if (action == null)
 								return -1;
 
-							string assemblyName = arguments.Dequeue ();
+							string assemblyName = GetNextStringValue ();
+							if (assemblyName == null) {
+								context.DefaultAction = action.Value;
+								continue;
+							}
+
 							if (!IsValidAssemblyName (assemblyName)) {
 								context.LogError ($"Invalid assembly name '{assemblyName}'", 1036);
 								return -1;
@@ -280,7 +283,7 @@ namespace Mono.Linker
 							context.RegisterAssemblyAction (assemblyName, action.Value);
 							continue;
 						}
-					case "--trim-action": {
+					case "--trim-mode": {
 							AssemblyAction? action = null;
 							if (!GetStringParam (token, l => action = ParseAssemblyAction (l)))
 								return -1;
@@ -289,17 +292,6 @@ namespace Mono.Linker
 								return -1;
 
 							context.TrimAction = action.Value;
-							continue;
-						}
-					case "--default-action": {
-							AssemblyAction? action = null;
-							if (!GetStringParam (token, l => action = ParseAssemblyAction (l)))
-								return -1;
-
-							if (action == null)
-								return -1;
-
-							context.DefaultAction = action.Value;
 							continue;
 						}
 					case "--custom-step":
@@ -1086,15 +1078,15 @@ namespace Mono.Linker
 
 			Console.WriteLine ();
 			Console.WriteLine ("Actions");
-			Console.WriteLine ("  --trim-action ACTION      Sets action for assemblies annotated as trimmable. Defaults to 'link'");
-			Console.WriteLine ("                              copy: Analyze whole assembly and save it to the output");
-			Console.WriteLine ("                              copyused: Same as copy but only for assemblies which are needed");
-			Console.WriteLine ("                              link: Remove any unused IL or metadata and optimizes the assembly");
-			Console.WriteLine ("                              skip: Do not process the assembly");
-			Console.WriteLine ("                              addbypassngen: Add BypassNGenAttribute to unused methods");
-			Console.WriteLine ("                              addbypassngenused: Same as addbypassngen but unused assemblies are removed");
-			Console.WriteLine ("  --default-action ACTION   Sets action for assemblies that have no trimmability annotation. Defaults to 'link'");
-			Console.WriteLine ("  --action ACTION ASM       Overrides the default action for specific assembly name");
+			Console.WriteLine ("  --trim-mode ACTION  Sets action for assemblies annotated with IsTrimmable attribute. Defaults to 'link'");
+			Console.WriteLine ("                          copy: Analyze whole assembly and save it to the output");
+			Console.WriteLine ("                          copyused: Same as copy but only for assemblies which are needed");
+			Console.WriteLine ("                          link: Remove any unused IL or metadata and optimizes the assembly");
+			Console.WriteLine ("                          skip: Do not process the assembly");
+			Console.WriteLine ("                          addbypassngen: Add BypassNGenAttribute to unused methods");
+			Console.WriteLine ("                          addbypassngenused: Same as addbypassngen but unused assemblies are removed");
+			Console.WriteLine ("  --action ACTION       Sets action for assemblies that have no IsTrimmable attribute. Defaults to 'link'");
+			Console.WriteLine ("  --action ACTION ASM   Overrides the default action for specific assembly name");
 
 			Console.WriteLine ();
 			Console.WriteLine ("Advanced Options");

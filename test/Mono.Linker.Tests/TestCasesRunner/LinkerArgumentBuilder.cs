@@ -42,15 +42,15 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			Append ($"@{path}");
 		}
 
-		public virtual void AddTrimAction (string value)
+		public virtual void AddTrimMode (string value)
 		{
-			Append ("--trim-action");
+			Append ("--trim-mode");
 			Append (value);
 		}
 
 		public virtual void AddDefaultAction (string value)
 		{
-			Append ("--default-action");
+			Append ("--action");
 			Append (value);
 		}
 
@@ -194,8 +194,8 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 		public virtual void ProcessOptions (TestCaseLinkerOptions options)
 		{
-			if (options.TrimAssembliesAction != null)
-				AddTrimAction (options.TrimAssembliesAction);
+			if (options.TrimMode != null)
+				AddTrimMode (options.TrimMode);
 
 			if (options.DefaultAssembliesAction != null)
 				AddDefaultAction (options.DefaultAssembliesAction);

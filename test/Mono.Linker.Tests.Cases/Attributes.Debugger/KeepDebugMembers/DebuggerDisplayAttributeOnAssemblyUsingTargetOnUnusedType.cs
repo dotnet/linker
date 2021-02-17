@@ -7,7 +7,7 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.Attributes.Debugger.KeepDebugMembers
 {
-	[SetupLinkerTrimAction ("link")]
+	[SetupLinkerTrimMode ("link")]
 #if !NETCOREAPP
 	[SetupLinkerKeepDebugMembers ("true")]
 #endif
