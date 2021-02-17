@@ -392,19 +392,18 @@ namespace Mono.Linker
 			if (_actions.TryGetValue (assembly.Name.Name, out AssemblyAction action))
 				return action;
 
-			if (CheckIsTrimmable (assembly))
+			if (IsTrimmable (assembly))
 				return TrimAction;
 
 			return DefaultAction;
 		}
 
-		bool CheckIsTrimmable (AssemblyDefinition assembly)
+		bool IsTrimmable (AssemblyDefinition assembly)
 		{
 			if (!assembly.HasCustomAttributes)
 				return false;
 
 			bool isTrimmable = false;
-			var assemblyFileName = Resolver.GetAssemblyFileName (assembly);
 
 			foreach (var ca in assembly.CustomAttributes) {
 				if (!ca.AttributeType.IsTypeOf<AssemblyMetadataAttribute> ())
@@ -418,13 +417,9 @@ namespace Mono.Linker
 					continue;
 
 				if (args[1].Value is not string value || !value.Equals ("True", StringComparison.OrdinalIgnoreCase)) {
+					var assemblyFileName = Resolver.GetAssemblyFileName (assembly);
 					LogWarning ($"Invalid AssemblyMetadata(\"IsTrimmable\", \"{args[1].Value}\") attribute in assembly '{assembly.Name.Name}'. Value must be \"True\"", 2102, assemblyFileName);
 					continue;
-				}
-
-				if (isTrimmable) {
-					LogWarning ($"Duplicate AssemblyMetadata(\"IsTrimmable\", \"True\") attributes in assembly '{assembly.Name.Name}'", 2103, assemblyFileName);
-					break;
 				}
 
 				isTrimmable = true;

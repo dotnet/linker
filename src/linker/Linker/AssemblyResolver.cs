@@ -82,9 +82,8 @@ namespace Mono.Linker
 
 		AssemblyDefinition ResolveFromReferences (AssemblyNameReference name, HashSet<string> references, ReaderParameters parameters)
 		{
-			var extensions = new[] { ".dll", ".exe" };
 			foreach (var reference in references) {
-				foreach (var extension in extensions) {
+				foreach (var extension in DirectoryAssemblyResolver.Extensions) {
 					var fileName = name.Name + extension;
 					if (Path.GetFileName (reference) != fileName)
 						continue;

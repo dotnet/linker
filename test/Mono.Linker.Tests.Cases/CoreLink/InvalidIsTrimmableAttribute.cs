@@ -10,7 +10,6 @@ namespace Mono.Linker.Tests.Cases.CoreLink
 	[KeptMemberInAssembly ("trimmable.dll", typeof (InvalidIsTrimmableAssembly), "Used()")]
 	[RemovedMemberInAssembly ("trimmable.dll", typeof (InvalidIsTrimmableAssembly), "Unused()")]
 	[ExpectedWarning ("IL2102", "Invalid AssemblyMetadata(\"IsTrimmable\", \"False\") attribute in assembly 'trimmable'. Value must be \"True\"", FileName = "trimmable.dll")]
-	[ExpectedWarning ("IL2103", "Duplicate AssemblyMetadata(\"IsTrimmable\", \"True\") attributes in assembly 'trimmable'", FileName = "trimmable.dll")]
 	[KeptMember (".ctor()")]
 	public class InvalidIsTrimmableAttribute
 	{

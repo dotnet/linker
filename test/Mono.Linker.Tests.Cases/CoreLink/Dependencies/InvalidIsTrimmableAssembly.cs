@@ -1,9 +1,7 @@
 using System.Reflection;
 
-[assembly: AssemblyMetadata ("IsTrimmable", "True")]
-[assembly: AssemblyMetadata ("IsTrimmable", "False")]
-[assembly: AssemblyMetadata ("IsTrimmable", "True")]
 [assembly: AssemblyMetadata ("IsTrimmable", "true")]
+[assembly: AssemblyMetadata ("IsTrimmable", "False")]
 
 namespace Mono.Linker.Tests.Cases.CoreLink.Dependencies
 {

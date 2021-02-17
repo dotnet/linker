@@ -68,7 +68,7 @@ or
 
 Or you can specify what to do for the trimmed assemblies.
 
-Trimmed assemblies are the assemblies that have `AssemblyMetadata("IsTrimmable", "True")`.
+A trimmable assembly is any assembly that includes the attribute `System.Reflection.AssemblyMetadata("IsTrimmable", "True")`.
 
 You can specify what action to do on the trimmed assemblies with the option:
 

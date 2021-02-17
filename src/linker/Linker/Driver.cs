@@ -1093,9 +1093,6 @@ namespace Mono.Linker
 			Console.WriteLine ("                              skip: Do not process the assembly");
 			Console.WriteLine ("                              addbypassngen: Add BypassNGenAttribute to unused methods");
 			Console.WriteLine ("                              addbypassngenused: Same as addbypassngen but unused assemblies are removed");
-			// https://github.com/mono/linker/blob/main/docs/design/trimmed-assemblies.md#assemblymetadataistrimmable-false
-			// If we add support for opting out by setting "IsTrimmable" to "False", we should add an option to control behavior for such assemblies.
-			// Console.WriteLine ("  --no-trim-action ACTION   Sets action for assemblies annotated as non-trimmable. Defaults to 'copy'");
 			Console.WriteLine ("  --default-action ACTION   Sets action for assemblies that have no trimmability annotation. Defaults to 'link'");
 			Console.WriteLine ("  --action ACTION ASM       Overrides the default action for specific assembly name");
 

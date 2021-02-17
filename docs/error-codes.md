@@ -1519,18 +1519,8 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
 - AssemblyMetadataAttribute may be used at the assembly level to turn on trimming for the assembly. The only supported value is "True", but the attribute contained an unsupported value.
 
   ``` C#
-  // IL2102: Invalid AssemblyMetadata("IsTrimmable", "False") attribute in assembl 'fullname'. Value must be "True"
+  // IL2102: Invalid AssemblyMetadata("IsTrimmable", "False") attribute in assembly 'assembly'. Value must be "True"
   [assembly: AssemblyMetadata("IsTrimmable", "False")] 
-  ```
-
-#### `IL2103`: Duplicate AssemblyMetadata("IsTrimmable", "True") attributes in assembly 'assembly'
-
-- AssemblyMetadata("IsTrimmable", "True") should only be used once at the assembly level.
-
-  ``` C#
-  // IL2103: Duplicate AssemblyMetadata("IsTrimmable", "True") attribute in assembly 'assembly'.
-  [assembly: AssemblyMetadata("IsTrimmable", "True")]
-  [assembly: AssemblyMetadata("IsTrimmable", "True")]
   ```
 
 ## Single-File Warning Codes
