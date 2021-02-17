@@ -227,13 +227,14 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				.Select (GetSourceAndRelativeDestinationValue);
 		}
 
-		public virtual IEnumerable<NPath> GetExtraLinkerSearchDirectories ()
+		public virtual IEnumerable<NPath> GetExtraLinkerReferences ()
 		{
-#if NETCOREAPP
-			yield return Path.GetDirectoryName (typeof (object).Assembly.Location).ToNPath ();
-#else
-			yield break;
-#endif
+			var netcoreappDir = Path.GetDirectoryName (typeof (object).Assembly.Location);
+			foreach (var assembly in Directory.EnumerateFiles (netcoreappDir)) {
+				if (Path.GetExtension (assembly) != ".dll")
+					continue;
+				yield return assembly.ToNPath ();
+			}
 		}
 
 		public virtual bool IsIgnored (out string reason)

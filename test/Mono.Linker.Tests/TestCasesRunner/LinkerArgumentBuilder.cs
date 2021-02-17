@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Mono.Linker.Tests.Extensions;
 
 namespace Mono.Linker.Tests.TestCasesRunner
@@ -17,6 +17,12 @@ namespace Mono.Linker.Tests.TestCasesRunner
 		{
 			Append ("-d");
 			Append (directory.ToString ());
+		}
+
+		public virtual void AddReference (NPath path)
+		{
+			Append ("-reference");
+			Append (path.ToString ());
 		}
 
 		public virtual void AddOutputDirectory (NPath directory)
@@ -38,13 +44,13 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 		public virtual void AddCoreLink (string value)
 		{
-			Append ("-c");
+			Append ("--trim-action");
 			Append (value);
 		}
 
 		public virtual void AddUserLink (string value)
 		{
-			Append ("-u");
+			Append ("--default-action");
 			Append (value);
 		}
 
@@ -110,7 +116,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 		public virtual void AddAssemblyAction (string action, string assembly)
 		{
-			Append ("-p");
+			Append ("--action");
 			Append (action);
 			Append (assembly);
 		}
@@ -190,8 +196,6 @@ namespace Mono.Linker.Tests.TestCasesRunner
 		{
 			if (options.CoreAssembliesAction != null)
 				AddCoreLink (options.CoreAssembliesAction);
-			else
-				AddCoreLink ("skip");
 
 			if (options.UserAssembliesAction != null)
 				AddUserLink (options.UserAssembliesAction);

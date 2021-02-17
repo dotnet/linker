@@ -42,7 +42,7 @@ namespace Mono.Linker
 		HashSet<string> _unresolvedAssemblies;
 		bool _ignoreUnresolved;
 		LinkContext _context;
-		readonly Collection<string> _references;
+		readonly HashSet<string> _references;
 
 
 		public IDictionary<string, AssemblyDefinition> AssemblyCache {
@@ -57,7 +57,7 @@ namespace Mono.Linker
 		public AssemblyResolver (Dictionary<string, AssemblyDefinition> assembly_cache)
 		{
 			_assemblies = assembly_cache;
-			_references = new Collection<string> () { };
+			_references = new HashSet<string> () { };
 		}
 
 		public bool IgnoreUnresolved {
@@ -80,16 +80,19 @@ namespace Mono.Linker
 			return assembly.MainModule.FileName;
 		}
 
-		AssemblyDefinition ResolveFromReferences (AssemblyNameReference name, Collection<string> references, ReaderParameters parameters)
+		AssemblyDefinition ResolveFromReferences (AssemblyNameReference name, HashSet<string> references, ReaderParameters parameters)
 		{
-			var fileName = name.Name + ".dll";
+			var extensions = new[] { ".dll", ".exe" };
 			foreach (var reference in references) {
-				if (Path.GetFileName (reference) != fileName)
-					continue;
-				try {
-					return GetAssembly (reference, parameters);
-				} catch (BadImageFormatException) {
-					continue;
+				foreach (var extension in extensions) {
+					var fileName = name.Name + extension;
+					if (Path.GetFileName (reference) != fileName)
+						continue;
+					try {
+						return GetAssembly (reference, parameters);
+					} catch (BadImageFormatException) {
+						continue;
+					}
 				}
 			}
 
@@ -137,6 +140,11 @@ namespace Mono.Linker
 		public void AddReferenceAssembly (string referencePath)
 		{
 			_references.Add (referencePath);
+		}
+
+		public HashSet<string> GetReferencePaths ()
+		{
+			return _references;
 		}
 
 		protected override void Dispose (bool disposing)

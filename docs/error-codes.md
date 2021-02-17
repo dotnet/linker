@@ -129,6 +129,10 @@ the error code. For example:
 
 #### `IL1038`: Exported type '{type.Name}' cannot be resolved
 
+#### `IL1039`: Reference assembly '{assemblyPath}' could not be loaded
+
+- A reference assembly input passed via -reference could not be loaded.
+
 ----
 ## Warning Codes
 
@@ -1508,6 +1512,25 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
       <type fullname="MyType" />
     </assembly>
   </linker>
+  ```
+
+#### `IL2102`: Invalid AssemblyMetadata("IsTrimmable", ...) attribute in assembly 'assembly'. Value must be "True"
+
+- AssemblyMetadataAttribute may be used at the assembly level to turn on trimming for the assembly. The only supported value is "True", but the attribute contained an unsupported value.
+
+  ``` C#
+  // IL2102: Invalid AssemblyMetadata("IsTrimmable", "False") attribute in assembl 'fullname'. Value must be "True"
+  [assembly: AssemblyMetadata("IsTrimmable", "False")] 
+  ```
+
+#### `IL2103`: Duplicate AssemblyMetadata("IsTrimmable", "True") attributes in assembly 'assembly'
+
+- AssemblyMetadata("IsTrimmable", "True") should only be used once at the assembly level.
+
+  ``` C#
+  // IL2103: Duplicate AssemblyMetadata("IsTrimmable", "True") attribute in assembly 'assembly'.
+  [assembly: AssemblyMetadata("IsTrimmable", "True")]
+  [assembly: AssemblyMetadata("IsTrimmable", "True")]
   ```
 
 ## Single-File Warning Codes
