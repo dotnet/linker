@@ -233,7 +233,13 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			foreach (var assembly in Directory.EnumerateFiles (netcoreappDir)) {
 				if (Path.GetExtension (assembly) != ".dll")
 					continue;
-				yield return assembly.ToNPath ();
+				var assemblyName = Path.GetFileNameWithoutExtension (assembly);
+				if (assemblyName.Contains ("Native"))
+					continue;
+				if (assemblyName.StartsWith ("Microsoft") ||
+					assemblyName.StartsWith ("System") ||
+					assemblyName == "mscorlib" || assemblyName == "netstandard")
+					yield return assembly.ToNPath ();
 			}
 		}
 
