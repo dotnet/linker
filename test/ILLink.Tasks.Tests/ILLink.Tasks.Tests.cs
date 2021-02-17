@@ -111,7 +111,7 @@ namespace ILLink.Tasks.Tests
 				var actualReferences = driver.GetReferenceAssemblies ();
 				Assert.Equal (expectedReferences.OrderBy (a => a), actualReferences.OrderBy (a => a));
 				foreach (var reference in expectedReferences) {
-					var referenceName = Path.GetFileName (reference);
+					var referenceName = Path.GetFileNameWithoutExtension (reference);
 					var actualAction = driver.Context.Actions[referenceName];
 					Assert.Equal (AssemblyAction.Skip, actualAction);
 				}
@@ -439,12 +439,12 @@ namespace ILLink.Tasks.Tests
 		{
 			var task = new MockTask () {
 				TrimMode = "copy",
-				ExtraArgs = "--trim-mode link"
+				ExtraArgs = "--trim-mode copyused"
 			};
 			using (var driver = task.CreateDriver ()) {
-				Assert.Equal (AssemblyAction.Copy, driver.Context.DefaultAction);
+				Assert.Equal (AssemblyAction.Link, driver.Context.DefaultAction);
 				// Check that ExtraArgs can override TrimMode
-				Assert.Equal (AssemblyAction.Link, driver.Context.TrimAction);
+				Assert.Equal (AssemblyAction.CopyUsed, driver.Context.TrimAction);
 			}
 		}
 
