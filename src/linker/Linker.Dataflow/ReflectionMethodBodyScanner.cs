@@ -428,6 +428,9 @@ namespace Mono.Linker.Dataflow
 				"GetMember" when calledMethod.IsDeclaredOnType ("System", "Type")
 					&& calledMethod.HasParameterOfType (0, "System", "String")
 					&& calledMethod.HasThis
+					&& (calledMethod.Parameters.Count == 1 ||
+					(calledMethod.Parameters.Count == 2 && calledMethod.HasParameterOfType (1, "System.Reflection", "BindingFlags")) ||
+					(calledMethod.Parameters.Count == 3 && calledMethod.HasParameterOfType (2, "System.Reflection", "BindingFlags")))
 					=> IntrinsicId.Type_GetMember,
 
 				// System.Type.GetMembers (BindingFlags)
@@ -1244,9 +1247,7 @@ namespace Mono.Linker.Dataflow
 				// GetMember (String, BindingFlags)
 				// GetMember (String, MemberTypes, BindingFlags)
 				//
-				case IntrinsicId.Type_GetMember when calledMethod.DeclaringType.Namespace == "System"
-					&& calledMethod.DeclaringType.Name == "Type"
-					&& calledMethod.HasParameterOfType (0, "System", "String"): {
+				case IntrinsicId.Type_GetMember: {
 						reflectionContext.AnalyzingPattern ();
 
 						var parameters = calledMethod.Parameters;
