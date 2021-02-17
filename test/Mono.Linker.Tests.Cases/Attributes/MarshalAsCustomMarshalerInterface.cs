@@ -6,7 +6,7 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.Attributes
 {
-	[SetupLinkerCoreAction ("link")]
+	[SetupLinkerTrimAction ("link")]
 	[SkipPeVerify]
 
 	[KeptInterface (typeof (IUserData))]

@@ -6,7 +6,7 @@ using Mono.Linker.Tests.Cases.References.Dependencies;
 namespace Mono.Linker.Tests.Cases.References
 {
 	[SetupLinkerAction ("link", "test")]
-	[SetupLinkerUserAction ("copy")]
+	[SetupLinkerDefaultAction ("copy")]
 
 	// Used assembly references are kept
 	[SetupCompileBefore ("usedlibrary.dll", new[] { "Dependencies/UsedReferencedAssembly.cs" })]

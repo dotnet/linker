@@ -4,7 +4,7 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.CoreLink
 {
-	[SetupLinkerUserActionAttribute ("copy")]
+	[SetupLinkerDefaultActionAttribute ("copy")]
 	[SetupCompileBefore ("trimmable.dll", new[] { "Dependencies/TrimmableAssembly.cs" })]
 	[SetupCompileBefore ("nontrimmable.dll", new[] { "Dependencies/NonTrimmableAssembly.cs" })]
 

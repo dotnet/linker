@@ -1,11 +1,11 @@
-using System;
+﻿using System;
 
 namespace Mono.Linker.Tests.Cases.Expectations.Metadata
 {
 	[AttributeUsage (AttributeTargets.Class, AllowMultiple = false)]
-	public class SetupLinkerUserActionAttribute : BaseMetadataAttribute
+	public class SetupLinkerTrimActionAttribute : BaseMetadataAttribute
 	{
-		public SetupLinkerUserActionAttribute (string action)
+		public SetupLinkerTrimActionAttribute (string action)
 		{
 			if (string.IsNullOrEmpty (action))
 				throw new ArgumentNullException (nameof (action));

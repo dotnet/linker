@@ -4,7 +4,7 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.CoreLink
 {
-	[SetupLinkerUserActionAttribute ("copy")]
+	[SetupLinkerDefaultActionAttribute ("copy")]
 	[SetupLinkerAction ("link", "test")]
 	[SetupLinkerAction ("copy", "trimmable")]
 	[SetupLinkerAction ("link", "nontrimmable")]

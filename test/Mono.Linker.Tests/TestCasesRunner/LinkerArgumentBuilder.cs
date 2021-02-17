@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Mono.Linker.Tests.Extensions;
 
 namespace Mono.Linker.Tests.TestCasesRunner
@@ -42,13 +42,13 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			Append ($"@{path}");
 		}
 
-		public virtual void AddCoreLink (string value)
+		public virtual void AddTrimAction (string value)
 		{
 			Append ("--trim-action");
 			Append (value);
 		}
 
-		public virtual void AddUserLink (string value)
+		public virtual void AddDefaultAction (string value)
 		{
 			Append ("--default-action");
 			Append (value);
@@ -194,11 +194,11 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 		public virtual void ProcessOptions (TestCaseLinkerOptions options)
 		{
-			if (options.CoreAssembliesAction != null)
-				AddCoreLink (options.CoreAssembliesAction);
+			if (options.TrimAssembliesAction != null)
+				AddTrimAction (options.TrimAssembliesAction);
 
-			if (options.UserAssembliesAction != null)
-				AddUserLink (options.UserAssembliesAction);
+			if (options.DefaultAssembliesAction != null)
+				AddDefaultAction (options.DefaultAssembliesAction);
 
 			if (options.AssembliesAction != null) {
 				foreach (var entry in options.AssembliesAction)
