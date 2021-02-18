@@ -1252,7 +1252,6 @@ namespace Mono.Linker.Dataflow
 
 						var parameters = calledMethod.Parameters;
 						BindingFlags? bindingFlags;
-						//var memberTypes = MemberTypes.All;
 						if (parameters.Count == 1) {
 							// Assume a default value for BindingFlags for methods that don't use BindingFlags as a parameter
 							bindingFlags = BindingFlags.Public | BindingFlags.Instance;
