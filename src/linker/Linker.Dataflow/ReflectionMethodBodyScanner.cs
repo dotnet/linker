@@ -1201,8 +1201,7 @@ namespace Mono.Linker.Dataflow
 						bindingFlags = GetBindingFlagsFromValue (methodParams[1]);
 						DynamicallyAccessedMemberTypes memberTypes = DynamicallyAccessedMemberTypes.None;
 						if (BindingFlagsAreUnsupported (bindingFlags)) {
-							memberTypes = callType switch
-							{
+							memberTypes = callType switch {
 								IntrinsicId.Type_GetConstructors => DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors,
 								IntrinsicId.Type_GetMethods => DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods,
 								IntrinsicId.Type_GetEvents => DynamicallyAccessedMemberTypes.PublicEvents | DynamicallyAccessedMemberTypes.NonPublicEvents,
@@ -1218,8 +1217,7 @@ namespace Mono.Linker.Dataflow
 								_ => throw new ArgumentException ($"Reflection call '{calledMethod.GetDisplayName ()}' inside '{callingMethodDefinition.GetDisplayName ()}' is of unexpected member type."),
 							};
 						} else {
-							memberTypes = callType switch
-							{
+							memberTypes = callType switch {
 								IntrinsicId.Type_GetConstructors => GetDynamicallyAccessedMemberTypesFromBindingFlagsForConstructors (bindingFlags),
 								IntrinsicId.Type_GetMethods => GetDynamicallyAccessedMemberTypesFromBindingFlagsForMethods (bindingFlags),
 								IntrinsicId.Type_GetEvents => GetDynamicallyAccessedMemberTypesFromBindingFlagsForEvents (bindingFlags),
