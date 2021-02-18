@@ -1160,7 +1160,7 @@ namespace Mono.Linker
 		static Pipeline GetStandardPipeline ()
 		{
 			Pipeline p = new Pipeline ();
-			p.AppendStep (new RootNonTrimmableAssemblies ());
+			p.AppendStep (new ProcessReferencesStep ());
 			p.AppendStep (new MarkStep ());
 			p.AppendStep (new RemoveResourcesStep ());
 			p.AppendStep (new ValidateVirtualMethodAnnotationsStep ());

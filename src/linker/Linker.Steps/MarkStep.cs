@@ -1302,7 +1302,7 @@ namespace Mono.Linker.Steps
 
 			MarkExportedTypesTarget.ProcessAssembly (assembly, _context);
 
-			if (RootNonTrimmableAssemblies.IsFullyPreservedAction (_context.Annotations.GetAction (assembly))) {
+			if (ProcessReferencesStep.IsFullyPreservedAction (_context.Annotations.GetAction (assembly))) {
 				MarkEntireAssembly (assembly);
 				return;
 			}

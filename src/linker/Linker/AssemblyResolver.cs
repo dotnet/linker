@@ -30,7 +30,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Mono.Cecil;
-using Mono.Collections.Generic;
 
 namespace Mono.Linker
 {
@@ -42,7 +41,7 @@ namespace Mono.Linker
 		HashSet<string> _unresolvedAssemblies;
 		bool _ignoreUnresolved;
 		LinkContext _context;
-		readonly HashSet<string> _references;
+		readonly List<string> _references;
 
 
 		public IDictionary<string, AssemblyDefinition> AssemblyCache {
@@ -57,7 +56,7 @@ namespace Mono.Linker
 		public AssemblyResolver (Dictionary<string, AssemblyDefinition> assembly_cache)
 		{
 			_assemblies = assembly_cache;
-			_references = new HashSet<string> () { };
+			_references = new List<string> () { };
 		}
 
 		public bool IgnoreUnresolved {
@@ -80,9 +79,9 @@ namespace Mono.Linker
 			return assembly.MainModule.FileName;
 		}
 
-		AssemblyDefinition ResolveFromReferences (AssemblyNameReference name, HashSet<string> references, ReaderParameters parameters)
+		AssemblyDefinition ResolveFromReferences (AssemblyNameReference name, ReaderParameters parameters)
 		{
-			foreach (var reference in references) {
+			foreach (var reference in _references) {
 				foreach (var extension in DirectoryAssemblyResolver.Extensions) {
 					var fileName = name.Name + extension;
 					if (Path.GetFileName (reference) != fileName)
@@ -109,7 +108,7 @@ namespace Mono.Linker
 			if (!_assemblies.TryGetValue (name.Name, out AssemblyDefinition asm) && (_unresolvedAssemblies == null || !_unresolvedAssemblies.Contains (name.Name))) {
 				try {
 					// Any full path explicit reference takes precedence over other look up logic
-					asm = ResolveFromReferences (name, _references, parameters);
+					asm = ResolveFromReferences (name, parameters);
 
 					// Fall back to the base class resolution logic
 					if (asm == null)
@@ -141,7 +140,7 @@ namespace Mono.Linker
 			_references.Add (referencePath);
 		}
 
-		public HashSet<string> GetReferencePaths ()
+		public List<string> GetReferencePaths ()
 		{
 			return _references;
 		}
