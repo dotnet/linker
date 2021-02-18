@@ -75,7 +75,11 @@ namespace Mono.Linker.Steps
 					CodeOptimizations.Sealer |
 					CodeOptimizations.UnusedTypeChecks |
 					CodeOptimizations.UnreachableBodies |
-					CodeOptimizations.UnusedInterfaces, assembly.Name.Name);
+					CodeOptimizations.UnusedInterfaces |
+					CodeOptimizations.RemoveDescriptors |
+					CodeOptimizations.RemoveLinkAttributes |
+					CodeOptimizations.RemoveSubstitutions |
+					CodeOptimizations.RemoveDynamicDependencyAttribute, assembly.Name.Name);
 				break;
 			case AssemblyRootMode.AllMembers:
 				Context.Annotations.SetAction (assembly, AssemblyAction.Copy);
@@ -92,8 +96,7 @@ namespace Mono.Linker.Steps
 			if (loaded != null)
 				return loaded;
 
-			Context.Resolver.CacheAssemblyWithPath (assembly);
-			Context.RegisterAssembly (assembly);
+			Context.Resolver.CacheAssembly (assembly);
 			return assembly;
 		}
 
@@ -117,7 +120,9 @@ namespace Mono.Linker.Steps
 			if ((preserve & TypePreserveMembers.Internal) != 0 && IsTypePrivate (type))
 				preserve_anything &= ~TypePreserveMembers.Internal;
 
-			if (preserve_anything == 0)
+			// For now there are no cases where library mode for non-visible type would need
+			// to mark anything
+			if ((preserve_anything & ~TypePreserveMembers.Library) == 0)
 				return;
 
 			Annotations.Mark (type, new DependencyInfo (DependencyKind.RootAssembly, type.Module.Assembly));
