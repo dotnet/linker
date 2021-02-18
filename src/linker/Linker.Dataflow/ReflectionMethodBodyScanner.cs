@@ -1249,7 +1249,6 @@ namespace Mono.Linker.Dataflow
 				//
 				case IntrinsicId.Type_GetMember: {
 						reflectionContext.AnalyzingPattern ();
-
 						var parameters = calledMethod.Parameters;
 						BindingFlags? bindingFlags;
 						if (parameters.Count == 1) {
