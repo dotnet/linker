@@ -49,7 +49,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		public IEnumerable<string> GetInputAssemblyPaths ()
+		IEnumerable<string> GetInputAssemblyPaths ()
 		{
 			var assemblies = new HashSet<string> ();
 			foreach (var referencePath in Context.Resolver.GetReferencePaths ()) {
