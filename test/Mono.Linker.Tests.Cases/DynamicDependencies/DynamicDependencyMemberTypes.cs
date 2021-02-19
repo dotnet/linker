@@ -1,6 +1,6 @@
 using System;
-using System.Runtime.CompilerServices;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
@@ -134,6 +134,14 @@ namespace Mono.Linker.Tests.Cases.DynamicDependencies
 			class NonPublicNestedType
 			{
 			}
+
+			[Kept]
+			[KeptBaseType (typeof (MulticastDelegate))]
+			[KeptMember (".ctor(System.Object,System.IntPtr)")]
+			[KeptMember ("Invoke()")]
+			public delegate int PublicDelegate ();
+
+			private delegate int PrivateDelegate ();
 		}
 
 		[Kept]
@@ -156,13 +164,20 @@ namespace Mono.Linker.Tests.Cases.DynamicDependencies
 			public class PublicNestedType
 			{
 			}
+
+			public delegate int PublicDelegate ();
+
+			[Kept]
+			[KeptBaseType (typeof (MulticastDelegate))]
+			[KeptMember (".ctor(System.Object,System.IntPtr)")]
+			[KeptMember ("Invoke()")]
+			private delegate int PrivateDelegate ();
 		}
 
 		class TypeWithPublicProperty
 		{
 			[Kept]
-			[KeptBackingField]
-			public int Property { [Kept] get; [Kept] set; }
+			public int Property { [Kept][ExpectBodyModified] get; [Kept][ExpectBodyModified] set; }
 
 			int NonPublicProperty { get; set; }
 
@@ -172,8 +187,7 @@ namespace Mono.Linker.Tests.Cases.DynamicDependencies
 		class TypeWithNonPublicProperty
 		{
 			[Kept]
-			[KeptBackingField]
-			int NonPublicProperty { [Kept] get; [Kept] set; }
+			int NonPublicProperty { [Kept][ExpectBodyModified] get; [Kept][ExpectBodyModified] set; }
 
 			public int PublicProperty { get; set; }
 
@@ -183,9 +197,9 @@ namespace Mono.Linker.Tests.Cases.DynamicDependencies
 		class TypeWithPublicEvent
 		{
 			[Kept]
-			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
+			[method: ExpectBodyModified, ExpectLocalsModified]
 			public event EventHandler PublicEvent;
 
 			event EventHandler NonPublicEvent;
@@ -196,9 +210,9 @@ namespace Mono.Linker.Tests.Cases.DynamicDependencies
 		class TypeWithNonPublicEvent
 		{
 			[Kept]
-			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
+			[method: ExpectBodyModified, ExpectLocalsModified]
 			event EventHandler NonPublicEvent;
 
 			public event EventHandler PublicEven;
@@ -266,6 +280,14 @@ namespace Mono.Linker.Tests.Cases.DynamicDependencies
 					void Method () { }
 				}
 			}
+
+			[Kept]
+			[KeptBaseType (typeof (MulticastDelegate))]
+			[KeptMember (".ctor(System.Object,System.IntPtr)")]
+			[KeptMember ("Invoke()")]
+			[KeptMember ("BeginInvoke(System.AsyncCallback,System.Object)")]
+			[KeptMember ("EndInvoke(System.IAsyncResult)")]
+			public delegate int PublicDelegate ();
 		}
 
 		public class TypeWithNone

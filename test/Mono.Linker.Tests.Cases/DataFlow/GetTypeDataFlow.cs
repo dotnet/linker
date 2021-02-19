@@ -2,11 +2,11 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
+using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
 namespace Mono.Linker.Tests.Cases.DataFlow
 {
@@ -27,6 +27,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			TestMultipleConstantValues ();
 			TestMultipleMixedValues ();
+
+			TestStringEmpty ();
 
 			// TODO:
 			// Test multi-value returns
@@ -110,6 +112,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 
 			Type.GetType (typeName);
+		}
+
+		[RecognizedReflectionAccessPattern]
+		static void TestStringEmpty ()
+		{
+			Type.GetType (string.Empty);
 		}
 
 		[UnrecognizedReflectionAccessPattern (typeof (GetTypeDataFlow), nameof (RequireNonPublicConstructors), new Type[] { typeof (Type) },

@@ -1,5 +1,5 @@
-﻿using System.Runtime.CompilerServices;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 
 namespace Mono.Linker.Tests.Cases.DynamicDependencies.Dependencies
 {
@@ -11,7 +11,7 @@ namespace Mono.Linker.Tests.Cases.DynamicDependencies.Dependencies
 			return "Dependency";
 		}
 
-		[DynamicDependency (".ctor()", "Mono.Linker.Tests.Cases.Advanced.Dependencies.DynamicDependencyMethodInNonReferencedAssemblyBase2", "base2")]
+		[DynamicDependency ("#ctor()", "Mono.Linker.Tests.Cases.DynamicDependencies.Dependencies.DynamicDependencyMethodInNonReferencedAssemblyBase2", "base2")]
 		public static void Dependency ()
 		{
 		}

@@ -3,6 +3,7 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.UnreachableBlock
 {
+	[SetupLinkerArgument ("--skip-unresolved", "true")]
 	[Define ("IL_ASSEMBLY_AVAILABLE")]
 	[SetupCompileBefore ("library.dll", new[] { "Dependencies/LocalsWithoutStore.il" })]
 	[SetupLinkerArgument ("--enable-opt", "ipconstprop")]
@@ -13,6 +14,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		{
 #if IL_ASSEMBLY_AVAILABLE
 			Mono.Linker.Tests.Cases.UnreachableBlock.Dependencies.ClassA.Method_1 ();
+			Mono.Linker.Tests.Cases.UnreachableBlock.Dependencies.ClassA.Method_2 ();
 #endif
 		}
 	}

@@ -2,10 +2,9 @@
   <PropertyGroup>
     <!-- Keep these in sync with _ILLinkTasksTFM in Sdk.props. -->
     <!-- Keep the netcoreapp TFM in sync with the Mono.Linker.csproj condition below. -->
-    <TargetFrameworks>netcoreapp3.0;net472</TargetFrameworks>
+    <TargetFrameworks>net5.0;net472</TargetFrameworks>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <Description>MSBuild tasks for running the IL Linker</Description>
-    <LangVersion>latest</LangVersion>
     <IsPackable>true</IsPackable>
     <PackageId>Microsoft.NET.ILLink.Tasks</PackageId>
     <!-- We want to package the tasks package together with its
@@ -19,6 +18,7 @@
     <AutoGenerateAssemblyVersion>true</AutoGenerateAssemblyVersion>
     <!-- Place linker and cecil alongside ILLink.Tasks in the output, for integration tests. -->
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <Nullable>disable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
@@ -30,15 +30,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Sdk/Sdk.props">
-      <PackagePath>Sdk</PackagePath>
-    </Content>
+    <Content Include="sdk/Sdk.props" PackagePath="sdk" />
+    <Content Include="build/$(PackageId).props" PackagePath="build" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../linker/Mono.Linker.csproj" PrivateAssets="All" Condition=" '$(TargetFramework)' == 'netcoreapp3.0' " />
+    <ProjectReference Include="../linker/Mono.Linker.csproj" PrivateAssets="All" Condition=" '$(TargetFramework)' == 'net5.0' " />
     <PackageReference Condition="'$(UseCecilPackage)' == 'true'" Include="Mono.Cecil" Version="$(MonoCecilVersion)" PrivateAssets="All" Publish="True" />
     <ProjectReference Condition="'$(UseCecilPackage)' != 'true'" Include="../../external/cecil/Mono.Cecil.csproj" PrivateAssets="All" />
+    <ProjectReference Condition="('$(UseCecilPackage)' != 'true') And ('$(TargetFramework)' != 'net472')" Include="../../external/cecil/symbols/pdb/Mono.Cecil.Pdb.csproj" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>

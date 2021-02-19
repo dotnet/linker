@@ -4,28 +4,21 @@ namespace Mono.Linker.Tests.TestCasesRunner
 {
 	public class LinkerTestLogger : ILogger
 	{
-		public struct MessageRecord
+		readonly List<MessageContainer> MessageContainers;
+
+		public LinkerTestLogger ()
 		{
-			public string Message;
-			public MessageCategory Category;
-			public MessageOrigin? Origin;
-			public int? Code;
-			public string Text;
-			public string OriginMemberDefinitionFullName;
+			MessageContainers = new List<MessageContainer> ();
 		}
 
-		public List<MessageRecord> Messages { get; private set; } = new List<MessageRecord> ();
-
-		public void LogMessage (MessageContainer msBuildMessage)
+		public List<MessageContainer> GetLoggedMessages ()
 		{
-			Messages.Add (new MessageRecord () {
-				Message = msBuildMessage.ToString (),
-				Category = msBuildMessage.Category,
-				Origin = msBuildMessage.Origin,
-				Code = msBuildMessage.Code,
-				Text = msBuildMessage.Text,
-				OriginMemberDefinitionFullName = msBuildMessage.Origin?.MemberDefinition?.FullName
-			});
+			return MessageContainers;
+		}
+
+		public void LogMessage (MessageContainer message)
+		{
+			MessageContainers.Add (message);
 		}
 	}
 }

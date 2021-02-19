@@ -1,4 +1,3 @@
-#if !ILLINK
 #nullable enable
 
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
@@ -46,4 +45,3 @@ namespace Mono.Linker.Tests.Cases.Attributes.OnlyKeepUsed
 	{
 	}
 }
-#endif

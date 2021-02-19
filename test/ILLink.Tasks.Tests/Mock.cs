@@ -1,8 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using Microsoft.Build.Framework;
 using Mono.Linker;
 using Mono.Linker.Steps;
@@ -24,10 +25,11 @@ namespace ILLink.Tasks.Tests
 
 		public MockDriver CreateDriver ()
 		{
-			string[] responseFileLines = GenerateResponseFileCommands ().Split (Environment.NewLine);
-			var arguments = new Queue<string> ();
-			Driver.ParseResponseFileLines (responseFileLines, arguments);
-			return new MockDriver (arguments);
+			using (var responseFileText = new StringReader (GenerateResponseFileCommands ())) {
+				var arguments = new Queue<string> ();
+				Driver.ParseResponseFile (responseFileText, arguments);
+				return new MockDriver (arguments);
+			}
 		}
 
 		public static string[] OptimizationNames {
@@ -78,25 +80,35 @@ namespace ILLink.Tasks.Tests
 
 	public class MockDriver : Driver
 	{
+		public class CustomLogger : Mono.Linker.ILogger
+		{
+			public List<MessageContainer> Messages = new List<MessageContainer> ();
+
+			public void LogMessage (MessageContainer message)
+			{
+				Messages.Add (message);
+			}
+		}
+
 		public MockDriver (Queue<string> arguments) : base (arguments)
 		{
-			// Always add a dummy root assembly for testing purposes (otherwise Driver fails without roots).
-			arguments.Enqueue ("-a");
-			arguments.Enqueue ("DummyRootAssembly");
 			// Always set up the context early on.
-			Assert.Equal (0, SetupContext ());
+			Logger = new CustomLogger ();
+			SetupContext (Logger);
 		}
 
 		public LinkContext Context => context;
 
+		public CustomLogger Logger { get; private set; }
+
 		public IEnumerable<string> GetRootAssemblies ()
 		{
 			foreach (var step in context.Pipeline.GetSteps ()) {
-				if (!(step is ResolveFromAssemblyStep))
+				if (!(step is RootAssemblyInput))
 					continue;
 
-				var assemblyName = (string) (typeof (ResolveFromAssemblyStep).GetField ("_file", BindingFlags.NonPublic | BindingFlags.Instance).GetValue (step));
-				if (assemblyName == "DummyRootAssembly")
+				var assemblyName = (string) (typeof (RootAssemblyInput).GetField ("fileName", BindingFlags.NonPublic | BindingFlags.Instance).GetValue (step));
+				if (assemblyName == null)
 					continue;
 
 				yield return assemblyName;
@@ -144,7 +156,6 @@ namespace ILLink.Tasks.Tests
 
 		public CodeOptimizations GetDefaultOptimizations ()
 		{
-			var context = base.GetDefaultContext (null);
 			return context.Optimizations.Global;
 		}
 
@@ -152,6 +163,13 @@ namespace ILLink.Tasks.Tests
 		{
 			var field = typeof (LinkContext).GetField ("_parameters", BindingFlags.NonPublic | BindingFlags.Instance);
 			return (Dictionary<string, string>) field.GetValue (this.context);
+		}
+
+		protected override List<BaseStep> CreateDefaultResolvers ()
+		{
+			return new List<BaseStep> () {
+				new RootAssemblyInput (null, AssemblyRootMode.Default)
+			};
 		}
 	}
 

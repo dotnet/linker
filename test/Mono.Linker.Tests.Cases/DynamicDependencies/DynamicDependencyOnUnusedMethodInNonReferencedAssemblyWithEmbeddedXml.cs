@@ -1,5 +1,5 @@
-﻿using System.Runtime.CompilerServices;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using Mono.Linker.Tests.Cases.DynamicDependencies.Dependencies;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
@@ -15,7 +15,7 @@ namespace Mono.Linker.Tests.Cases.DynamicDependencies
 		"DynamicDependencyMethodInNonReferencedAssemblyLibrary.dll",
 		new[] { "Dependencies/DynamicDependencyMethodInNonReferencedAssemblyLibrary.cs" },
 		references: new[] { "base.dll" },
-		resources: new[] { "Dependencies/DynamicDependencyMethodInNonReferencedAssemblyLibrary.xml" },
+		resources: new object[] { "Dependencies/DynamicDependencyMethodInNonReferencedAssemblyLibrary.xml" },
 		addAsReference: false)]
 	[KeptAssembly ("base.dll")]
 	[RemovedAssembly ("DynamicDependencyMethodInNonReferencedAssemblyLibrary.dll")]

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -18,10 +18,15 @@ namespace Mono.Linker.Tests.TestCasesRunner
 		readonly BaseAssemblyResolver _linkedResolver;
 		readonly ReaderParameters _originalReaderParameters;
 		readonly ReaderParameters _linkedReaderParameters;
+#if !NETCOREAPP
 		readonly PeVerifier _peVerifier;
+#endif
 
 		public ResultChecker ()
-			: this (new TestCaseAssemblyResolver (), new TestCaseAssemblyResolver (), new PeVerifier (),
+			: this (new TestCaseAssemblyResolver (), new TestCaseAssemblyResolver (),
+#if !NETCOREAPP
+					new PeVerifier (),
+#endif
 					new ReaderParameters {
 						SymbolReaderProvider = new DefaultSymbolReaderProvider (false)
 					},
@@ -31,12 +36,17 @@ namespace Mono.Linker.Tests.TestCasesRunner
 		{
 		}
 
-		public ResultChecker (BaseAssemblyResolver originalsResolver, BaseAssemblyResolver linkedResolver, PeVerifier peVerifier,
+		public ResultChecker (BaseAssemblyResolver originalsResolver, BaseAssemblyResolver linkedResolver,
+#if !NETCOREAPP
+			PeVerifier peVerifier,
+#endif
 			ReaderParameters originalReaderParameters, ReaderParameters linkedReaderParameters)
 		{
 			_originalsResolver = originalsResolver;
 			_linkedResolver = linkedResolver;
+#if !NETCOREAPP
 			_peVerifier = peVerifier;
+#endif
 			_originalReaderParameters = originalReaderParameters;
 			_linkedReaderParameters = linkedReaderParameters;
 		}
@@ -267,6 +277,11 @@ namespace Mono.Linker.Tests.TestCasesRunner
 								break;
 							case nameof (KeptReferencesInAssemblyAttribute):
 								VerifyKeptReferencesInAssembly (checkAttrInAssembly);
+								break;
+							case nameof (ExpectedInstructionSequenceOnMemberInAssemblyAttribute):
+								if (linkedType == null)
+									Assert.Fail ($"Type `{expectedTypeName}` should have been kept");
+								VerifyExpectedInstructionSequenceOnMemberInAssembly (checkAttrInAssembly, linkedType);
 								break;
 							default:
 								UnhandledOtherAssemblyAssertion (expectedTypeName, checkAttrInAssembly, linkedType);
@@ -532,15 +547,21 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 		protected virtual bool TryVerifyKeptMemberInAssemblyAsMethod (string memberName, TypeDefinition originalType, TypeDefinition linkedType)
 		{
-			var originalMethodMember = originalType.Methods.FirstOrDefault (m => m.GetSignature () == memberName);
-			if (originalMethodMember != null) {
-				var linkedMethod = linkedType.Methods.FirstOrDefault (m => m.GetSignature () == memberName);
+			return TryVerifyKeptMemberInAssemblyAsMethod (memberName, originalType, linkedType, out MethodDefinition _originalMethod, out MethodDefinition _linkedMethod);
+		}
+
+		protected virtual bool TryVerifyKeptMemberInAssemblyAsMethod (string memberName, TypeDefinition originalType, TypeDefinition linkedType, out MethodDefinition originalMethod, out MethodDefinition linkedMethod)
+		{
+			originalMethod = originalType.Methods.FirstOrDefault (m => m.GetSignature () == memberName);
+			if (originalMethod != null) {
+				linkedMethod = linkedType.Methods.FirstOrDefault (m => m.GetSignature () == memberName);
 				if (linkedMethod == null)
 					Assert.Fail ($"Method `{memberName}` on Type `{originalType}` should have been kept");
 
 				return true;
 			}
 
+			linkedMethod = null;
 			return false;
 		}
 
@@ -595,6 +616,8 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 		void VerifyLoggedMessages (AssemblyDefinition original, LinkerTestLogger logger, bool checkRemainingErrors)
 		{
+			List<MessageContainer> loggedMessages = logger.GetLoggedMessages ();
+			List<(IMemberDefinition, CustomAttribute)> expectedNoWarningsAttributes = new List<(IMemberDefinition, CustomAttribute)> ();
 			foreach (var testType in original.AllDefinedTypes ()) {
 				foreach (var attrProvider in testType.AllMembers ().Append (testType)) {
 					foreach (var attr in attrProvider.CustomAttributes) {
@@ -603,89 +626,150 @@ namespace Mono.Linker.Tests.TestCasesRunner
 						case nameof (LogContainsAttribute): {
 								var expectedMessage = (string) attr.ConstructorArguments[0].Value;
 
-								List<LinkerTestLogger.MessageRecord> matchedMessages;
+								List<MessageContainer> matchedMessages;
 								if ((bool) attr.ConstructorArguments[1].Value)
-									matchedMessages = logger.Messages.Where (mc => Regex.IsMatch (mc.Message, expectedMessage)).ToList ();
+									matchedMessages = loggedMessages.Where (m => Regex.IsMatch (m.ToString (), expectedMessage)).ToList ();
 								else
-									matchedMessages = logger.Messages.Where (mc => mc.Message.Contains (expectedMessage)).ToList (); ;
+									matchedMessages = loggedMessages.Where (m => m.ToString ().Contains (expectedMessage)).ToList (); ;
 								Assert.IsTrue (
 									matchedMessages.Count > 0,
-									$"Expected to find logged message matching `{expectedMessage}`, but no such message was found.{Environment.NewLine}Logged messages:{Environment.NewLine}{FormatMessages (logger.Messages)}");
+									$"Expected to find logged message matching `{expectedMessage}`, but no such message was found.{Environment.NewLine}Logged messages:{Environment.NewLine}{string.Join (Environment.NewLine, loggedMessages)}");
 
 								foreach (var matchedMessage in matchedMessages)
-									logger.Messages.Remove (matchedMessage);
+									loggedMessages.Remove (matchedMessage);
 							}
 							break;
 
 						case nameof (LogDoesNotContainAttribute): {
 								var unexpectedMessage = (string) attr.ConstructorArguments[0].Value;
-								foreach (var loggedMessage in logger.Messages) {
+								foreach (var loggedMessage in loggedMessages) {
 									Assert.That (() => {
 										if ((bool) attr.ConstructorArguments[1].Value)
-											return !Regex.IsMatch (loggedMessage.Message, unexpectedMessage);
-										return !loggedMessage.Message.Contains (unexpectedMessage);
+											return !Regex.IsMatch (loggedMessage.ToString (), unexpectedMessage);
+										return !loggedMessage.ToString ().Contains (unexpectedMessage);
 									},
-									$"Expected to not find logged message matching `{unexpectedMessage}`, but found:{Environment.NewLine}{loggedMessage.Message}{Environment.NewLine}Logged messages:{Environment.NewLine}{FormatMessages (logger.Messages)}");
+									$"Expected to not find logged message matching `{unexpectedMessage}`, but found:{Environment.NewLine}{loggedMessage.ToString ()}{Environment.NewLine}Logged messages:{Environment.NewLine}{string.Join (Environment.NewLine, loggedMessages)}");
 								}
 							}
 							break;
 
 						case nameof (ExpectedWarningAttribute): {
 								var expectedWarningCode = (string) attr.GetConstructorArgumentValue (0);
-								if (!expectedWarningCode.StartsWith ("IL"))
-									break;
-								int expectedWarningCodeNumber = int.Parse (expectedWarningCode.Substring (2));
+								if (!expectedWarningCode.StartsWith ("IL")) {
+									Assert.Fail ($"The warning code specified in {nameof (ExpectedWarningAttribute)} must start with the 'IL' prefix. Specified value: '{expectedWarningCode}'.");
+								}
 								var expectedMessageContains = ((CustomAttributeArgument[]) attr.GetConstructorArgumentValue (1)).Select (a => (string) a.Value).ToArray ();
-
 								string fileName = (string) attr.GetPropertyValue ("FileName");
 								int? sourceLine = (int?) attr.GetPropertyValue ("SourceLine");
 								int? sourceColumn = (int?) attr.GetPropertyValue ("SourceColumn");
 
+								int expectedWarningCodeNumber = int.Parse (expectedWarningCode.Substring (2));
 								var actualMethod = attrProvider as MethodDefinition;
 
+								var matchedMessages = loggedMessages.Where (mc => {
+									if (mc.Category != MessageCategory.Warning || mc.Code != expectedWarningCodeNumber)
+										return false;
+
+									foreach (var expectedMessage in expectedMessageContains)
+										if (!mc.Text.Contains (expectedMessage))
+											return false;
+
+									if (fileName != null) {
+										// Note: string.Compare(string, StringComparison) doesn't exist in .NET Framework API set
+										if (mc.Origin?.FileName?.IndexOf (fileName, StringComparison.OrdinalIgnoreCase) < 0)
+											return false;
+
+										if (sourceLine != null && mc.Origin?.SourceLine != sourceLine.Value)
+											return false;
+
+										if (sourceColumn != null && mc.Origin?.SourceColumn != sourceColumn.Value)
+											return false;
+									} else {
+										if (mc.Origin?.MemberDefinition?.FullName == attrProvider.FullName)
+											return true;
+
+										if (loggedMessages.Any (m => m.Text.Contains (attrProvider.FullName)))
+											return true;
+
+										return false;
+									}
+
+									return true;
+								}).ToList ();
+
 								Assert.IsTrue (
-									logger.Messages.Any (mc => {
-										if (mc.Category != MessageCategory.Warning || mc.Code != expectedWarningCodeNumber)
-											return false;
-
-										foreach (var expectedMessage in expectedMessageContains)
-											if (!mc.Text.Contains (expectedMessage))
-												return false;
-
-										if (fileName != null) {
-											// Note: string.Compare(string, StringComparison) doesn't exist in .NET Framework API set
-											if (mc.Origin?.FileName?.IndexOf (fileName, StringComparison.OrdinalIgnoreCase) < 0)
-												return false;
-
-											if (sourceLine != null && mc.Origin?.SourceLine != sourceLine.Value)
-												return false;
-
-											if (sourceColumn != null && mc.Origin?.SourceColumn != sourceColumn.Value)
-												return false;
-										} else if (mc.OriginMemberDefinitionFullName != attrProvider.FullName)
-											return false;
-
-										return true;
-									}),
+									matchedMessages.Count > 0,
 									$"Expected to find warning: {(fileName != null ? (fileName + (sourceLine != null ? $"({sourceLine},{sourceColumn})" : "")) + ": " : "")}" +
 									$"warning {expectedWarningCode}: {(fileName == null ? (actualMethod?.GetDisplayName () ?? attrProvider.FullName) + ": " : "")}" +
 									$"and message containing {string.Join (" ", expectedMessageContains.Select (m => "'" + m + "'"))}, " +
-									$"but no such message was found.{Environment.NewLine}Logged messages:{Environment.NewLine}{FormatMessages (logger.Messages)}");
+									$"but no such message was found.{Environment.NewLine}Logged messages:{Environment.NewLine}{string.Join (Environment.NewLine, loggedMessages)}");
+
+								foreach (var matchedMessage in matchedMessages)
+									loggedMessages.Remove (matchedMessage);
 							}
+							break;
+
+						// These are validated in VerifyRecordedReflectionPatterns as well, but we need to remove any warnings these might refer to from the list
+						// so that we can correctly validate presense of warnings
+						case nameof (UnrecognizedReflectionAccessPatternAttribute): {
+								string expectedWarningCode = null;
+								if (attr.ConstructorArguments.Count >= 5) {
+									expectedWarningCode = (string) attr.ConstructorArguments[4].Value;
+									if (expectedWarningCode != null && !expectedWarningCode.StartsWith ("IL"))
+										Assert.Fail ($"The warning code specified in {nameof (UnrecognizedReflectionAccessPatternAttribute)} must start with the 'IL' prefix. Specified value: '{expectedWarningCode}'");
+								}
+
+								if (expectedWarningCode != null) {
+									int expectedWarningCodeNumber = int.Parse (expectedWarningCode.Substring (2));
+
+									var matchedMessages = loggedMessages.Where (mc => mc.Category == MessageCategory.Warning && mc.Code == expectedWarningCodeNumber).ToList ();
+									foreach (var matchedMessage in matchedMessages)
+										loggedMessages.Remove (matchedMessage);
+								}
+							}
+							break;
+
+						case nameof (ExpectedNoWarningsAttribute):
+							// Postpone processing of negative checks, to make it possible to mark some warnings as expected (will be removed from the list above)
+							// and then do the negative check on the rest.
+							expectedNoWarningsAttributes.Add ((attrProvider, attr));
 							break;
 						}
 					}
 				}
 			}
 
-			if (checkRemainingErrors) {
-				var remainingErrors = logger.Messages.Where (mc => mc.Category == MessageCategory.Error || mc.Category == MessageCategory.WarningAsError);
-				Assert.IsEmpty (remainingErrors, $"Found unexpected errors:{Environment.NewLine}{FormatMessages (remainingErrors)}");
+			foreach ((var attrProvider, var attr) in expectedNoWarningsAttributes) {
+				var unexpectedWarningCode = attr.ConstructorArguments.Count == 0 ? (string) null : (string) attr.GetConstructorArgumentValue (0);
+				if (unexpectedWarningCode != null && !unexpectedWarningCode.StartsWith ("IL")) {
+					Assert.Fail ($"The warning code specified in ExpectedWarning attribute must start with the 'IL' prefix. Specified value: '{unexpectedWarningCode}'.");
+				}
+
+				int? unexpectedWarningCodeNumber = unexpectedWarningCode == null ? null : int.Parse (unexpectedWarningCode.Substring (2));
+
+				MessageContainer? unexpectedWarningMessage = null;
+				foreach (var mc in logger.GetLoggedMessages ()) {
+					if (mc.Category != MessageCategory.Warning)
+						continue;
+
+					if (unexpectedWarningCodeNumber != null && unexpectedWarningCodeNumber.Value != mc.Code)
+						continue;
+
+					// This is a hacky way to say anything in the "subtree" of the attrProvider
+					if (mc.Origin?.MemberDefinition?.FullName.Contains (attrProvider.FullName) != true)
+						continue;
+
+					unexpectedWarningMessage = mc;
+					break;
+				}
+
+				Assert.IsNull (unexpectedWarningMessage,
+					$"Unexpected warning found: {unexpectedWarningMessage}");
 			}
 
-			string FormatMessages (IEnumerable<LinkerTestLogger.MessageRecord> messages)
-			{
-				return string.Join (Environment.NewLine, messages.Select (mc => mc.Message));
+			if (checkRemainingErrors) {
+				var remainingErrors = loggedMessages.Where (m => Regex.IsMatch (m.ToString (), @".*(error | warning): \d{4}.*"));
+				Assert.IsEmpty (remainingErrors, $"Found unexpected errors:{Environment.NewLine}{string.Join (Environment.NewLine, remainingErrors)}");
 			}
 		}
 
@@ -693,7 +777,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 		{
 			foreach (var typeWithRemoveInAssembly in original.AllDefinedTypes ()) {
 				foreach (var attr in typeWithRemoveInAssembly.CustomAttributes) {
-					if (attr.AttributeType.Resolve ().Name == nameof (DependencyRecordedAttribute)) {
+					if (attr.AttributeType.Resolve ()?.Name == nameof (DependencyRecordedAttribute)) {
 						var expectedSource = (string) attr.ConstructorArguments[0].Value;
 						var expectedTarget = (string) attr.ConstructorArguments[1].Value;
 						var expectedMarked = (string) attr.ConstructorArguments[2].Value;
@@ -743,7 +827,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			foreach (var expectedSourceMemberDefinition in original.MainModule.AllDefinedTypes ().SelectMany (t => t.AllMembers ().Append (t)).Distinct ()) {
 				bool foundAttributesToVerify = false;
 				foreach (var attr in expectedSourceMemberDefinition.CustomAttributes) {
-					if (attr.AttributeType.Resolve ().Name == nameof (RecognizedReflectionAccessPatternAttribute)) {
+					if (attr.AttributeType.Resolve ()?.Name == nameof (RecognizedReflectionAccessPatternAttribute)) {
 						foundAttributesToVerify = true;
 
 						// Special case for default .ctor - just trigger the overall verification on the method
@@ -785,7 +869,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 								$"Potential patterns matching the reflection member: {Environment.NewLine}{reflectionMemberCandidates}{Environment.NewLine}" +
 								$"If there's no matches, try to specify just a part of the source member or reflection member name and rerun the test to get potential matches.");
 						}
-					} else if (attr.AttributeType.Resolve ().Name == nameof (UnrecognizedReflectionAccessPatternAttribute) &&
+					} else if (attr.AttributeType.Resolve ()?.Name == nameof (UnrecognizedReflectionAccessPatternAttribute) &&
 						attr.ConstructorArguments[0].Type.MetadataType != MetadataType.String) {
 						foundAttributesToVerify = true;
 						string expectedSourceMember = GetFullMemberNameFromDefinition (expectedSourceMemberDefinition);
@@ -796,7 +880,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 							var codeString = (string) attr.ConstructorArguments[4].Value;
 							if (codeString != null) {
 								if (!codeString.StartsWith ("IL"))
-									throw new InvalidOperationException ($"invalid message code {codeString}");
+									Assert.Fail ($"The warning code specified in {nameof (UnrecognizedReflectionAccessPatternAttribute)} must start with the 'IL' prefix. Specified value: '{codeString}'");
 								expectedMessageCode = int.Parse (codeString.Substring (2));
 							}
 						}
@@ -866,13 +950,13 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 			foreach (var typeToVerify in original.MainModule.AllDefinedTypes ()) {
 				foreach (var attr in typeToVerify.CustomAttributes) {
-					if (attr.AttributeType.Resolve ().Name == nameof (VerifyAllReflectionAccessPatternsAreValidatedAttribute)) {
+					if (attr.AttributeType.Resolve ()?.Name == nameof (VerifyAllReflectionAccessPatternsAreValidatedAttribute)) {
 						// By now all verified recorded patterns were removed from the test recorder lists, so validate
 						// that there are no remaining patterns for this type.
 						var recognizedPatternsForType = reflectionPatternRecorder.RecognizedPatterns
-							.Where (pattern => pattern.Source.DeclaringType.FullName == typeToVerify.FullName);
+							.Where (pattern => pattern.Source.DeclaringType?.FullName == typeToVerify.FullName);
 						var unrecognizedPatternsForType = reflectionPatternRecorder.UnrecognizedPatterns
-							.Where (pattern => pattern.Source.DeclaringType.FullName == typeToVerify.FullName);
+							.Where (pattern => pattern.Source.DeclaringType?.FullName == typeToVerify.FullName);
 
 						if (recognizedPatternsForType.Any () || unrecognizedPatternsForType.Any ()) {
 							string recognizedPatterns = string.Join (Environment.NewLine, recognizedPatternsForType
@@ -888,6 +972,28 @@ namespace Mono.Linker.Tests.TestCasesRunner
 					}
 				}
 			}
+		}
+
+		void VerifyExpectedInstructionSequenceOnMemberInAssembly (CustomAttribute inAssemblyAttribute, TypeDefinition linkedType)
+		{
+			var originalType = GetOriginalTypeFromInAssemblyAttribute (inAssemblyAttribute);
+			var memberName = (string) inAssemblyAttribute.ConstructorArguments[2].Value;
+
+			if (TryVerifyKeptMemberInAssemblyAsMethod (memberName, originalType, linkedType, out MethodDefinition originalMethod, out MethodDefinition linkedMethod)) {
+				Func<MethodDefinition, string[]> valueCollector = m => m.Body.Instructions.Select (ins => AssemblyChecker.FormatInstruction (ins).ToLower ()).ToArray ();
+				var linkedValues = valueCollector (linkedMethod);
+				var srcValues = valueCollector (originalMethod);
+
+				var expected = ((CustomAttributeArgument[]) inAssemblyAttribute.ConstructorArguments[3].Value)?.Select (arg => arg.Value.ToString ()).ToArray ();
+				Assert.That (
+					linkedValues,
+					Is.EquivalentTo (expected),
+					$"Expected method `{originalMethod} to have its {nameof (ExpectedInstructionSequenceOnMemberInAssemblyAttribute)} modified, however, the sequence does not match the expected value\n{FormattingUtils.FormatSequenceCompareFailureMessage2 (linkedValues, expected, srcValues)}");
+
+				return;
+			}
+
+			Assert.Fail ($"Invalid test assertion.  No method named `{memberName}` exists on the original type `{originalType}`");
 		}
 
 		static string GetFullMemberNameFromReflectionAccessPatternAttribute (CustomAttribute attr, int constructorArgumentsOffset)
@@ -909,6 +1015,8 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			}
 
 			fullName += "::" + memberName;
+			if (memberName.EndsWith (".get") || memberName.EndsWith (".set"))
+				return fullName;
 			if (parameterTypes != null) {
 				fullName += "(" + string.Join (",", parameterTypes.Select (t => t.Value.ToString ())) + ")";
 			}
@@ -966,7 +1074,10 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 				string fullName = memberDefinition.DeclaringType.FullName + "::";
 				if (memberDefinition is MethodDefinition method) {
-					fullName += method.GetSignature ();
+					if (method.IsSetter || method.IsGetter)
+						fullName += method.IsSetter ? method.Name.Substring (4) + ".set" : method.Name.Substring (4) + ".get";
+					else
+						fullName += method.GetSignature ();
 				} else {
 					fullName += memberDefinition.Name;
 				}
@@ -976,7 +1087,13 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				string type = param.ParameterType.FullName;
 				return $"{type}::{param.Name}";
 			} else if (member is MethodReturnType returnType) {
-				return returnType.Method.ToString ();
+				MethodDefinition method = (MethodDefinition) returnType.Method;
+				string fullName = method.ReturnType + " " + method.DeclaringType.FullName + "::";
+				if (method.IsSetter || method.IsGetter)
+					fullName += method.IsSetter ? method.Name.Substring (4) + ".set" : method.Name.Substring (4) + ".get";
+				else
+					fullName += method.GetSignature ();
+				return fullName;
 			}
 
 			throw new NotImplementedException ($"Getting the full member name has not been implemented for {member}");
@@ -1004,7 +1121,13 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 		protected TypeDefinition GetOriginalTypeFromInAssemblyAttribute (CustomAttribute inAssemblyAttribute)
 		{
-			return GetOriginalTypeFromInAssemblyAttribute (inAssemblyAttribute.ConstructorArguments[0].Value.ToString (), inAssemblyAttribute.ConstructorArguments[1].Value);
+			string assemblyName;
+			if (inAssemblyAttribute.HasProperties && inAssemblyAttribute.Properties[0].Name == "ExpectationAssemblyName")
+				assemblyName = inAssemblyAttribute.Properties[0].Argument.Value.ToString ();
+			else
+				assemblyName = inAssemblyAttribute.ConstructorArguments[0].Value.ToString ();
+
+			return GetOriginalTypeFromInAssemblyAttribute (assemblyName, inAssemblyAttribute.ConstructorArguments[1].Value);
 		}
 
 		protected TypeDefinition GetOriginalTypeFromInAssemblyAttribute (string assemblyName, object typeOrTypeName)
@@ -1045,7 +1168,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 		bool IsTypeInOtherAssemblyAssertion (CustomAttribute attr)
 		{
-			return attr.AttributeType.Resolve ().DerivesFrom (nameof (BaseInAssemblyAttribute));
+			return attr.AttributeType.Resolve ()?.DerivesFrom (nameof (BaseInAssemblyAttribute)) ?? false;
 		}
 
 		bool HasAttribute (ICustomAttributeProvider caProvider, string attributeName)

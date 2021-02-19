@@ -35,12 +35,8 @@ using Mono.Collections.Generic;
 namespace Mono.Linker
 {
 
-#if FEATURE_ILLINK
-	public class AssemblyResolver : DirectoryAssemblyResolver {
-#else
-	public class AssemblyResolver : BaseAssemblyResolver
+	public class AssemblyResolver : DirectoryAssemblyResolver
 	{
-#endif
 
 		readonly Dictionary<string, AssemblyDefinition> _assemblies;
 		HashSet<string> _unresolvedAssemblies;
@@ -74,29 +70,14 @@ namespace Mono.Linker
 			set { _context = value; }
 		}
 
-#if !FEATURE_ILLINK
-		// The base class's definition of GetAssembly is visible when using DirectoryAssemblyResolver.
-		AssemblyDefinition GetAssembly (string file, ReaderParameters parameters)
-		{
-			if (parameters.AssemblyResolver == null)
-				parameters.AssemblyResolver = this;
-
-			return ModuleDefinition.ReadModule (file, parameters).Assembly;
-		}
-#endif
-
 		public string GetAssemblyFileName (AssemblyDefinition assembly)
 		{
-#if FEATURE_ILLINK
-			if (assemblyToPath.TryGetValue(assembly, out string path)) {
+			if (assemblyToPath.TryGetValue (assembly, out string path)) {
 				return path;
 			}
-			else
-#endif
-			{
-				// Must be an assembly that we didn't open through the resolver
-				return assembly.MainModule.FileName;
-			}
+
+			// Must be an assembly that we didn't open through the resolver
+			return assembly.MainModule.FileName;
 		}
 
 		AssemblyDefinition ResolveFromReferences (AssemblyNameReference name, Collection<string> references, ReaderParameters parameters)
@@ -115,18 +96,13 @@ namespace Mono.Linker
 			return null;
 		}
 
-		public AssemblyDefinition ResolveFromPath (string path, ReaderParameters parameters)
-		{
-			return CacheAssembly (GetAssembly (path, parameters));
-		}
-
 		public override AssemblyDefinition Resolve (AssemblyNameReference name, ReaderParameters parameters)
 		{
 			// Validate arguments, similarly to how the base class does it.
 			if (name == null)
-				throw new ArgumentNullException ("name");
+				throw new ArgumentNullException (nameof (name));
 			if (parameters == null)
-				throw new ArgumentNullException ("parameters");
+				throw new ArgumentNullException (nameof (parameters));
 
 			if (!_assemblies.TryGetValue (name.Name, out AssemblyDefinition asm) && (_unresolvedAssemblies == null || !_unresolvedAssemblies.Contains (name.Name))) {
 				try {
@@ -137,7 +113,7 @@ namespace Mono.Linker
 					if (asm == null)
 						asm = base.Resolve (name, parameters);
 
-					_assemblies[name.Name] = asm;
+					CacheAssembly (asm);
 				} catch (AssemblyResolutionException) {
 					if (!_ignoreUnresolved)
 						throw;
@@ -151,11 +127,11 @@ namespace Mono.Linker
 			return asm;
 		}
 
-		public virtual AssemblyDefinition CacheAssembly (AssemblyDefinition assembly)
+		public void CacheAssembly (AssemblyDefinition assembly)
 		{
 			_assemblies[assembly.Name.Name] = assembly;
-			base.AddSearchDirectory (Path.GetDirectoryName (GetAssemblyFileName (assembly)));
-			return assembly;
+			if (assembly != null)
+				_context.RegisterAssembly (assembly);
 		}
 
 		public void AddReferenceAssembly (string referencePath)

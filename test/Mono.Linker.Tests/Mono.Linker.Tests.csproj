@@ -1,21 +1,11 @@
-<Project>
-  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <LangVersion>latest</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(MonoBuild)' == ''">
-    <TargetFramework>netcoreapp3.0</TargetFramework>
-    <DefineConstants>$(DefineConstants);ILLINK</DefineConstants>
+  <PropertyGroup>
     <DefineConstants Condition="'$(Configuration)' == 'Debug'">$(DefineConstants);DEBUG</DefineConstants>
-    <!-- Simulate https://github.com/dotnet/sdk/pull/2073 until it ships. -->
-    <DefineConstants Condition="'$(TargetFramework)' == 'netcoreapp3.0'">$(DefineConstants);NETCOREAPP</DefineConstants>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(MonoBuild)' != ''">
-    <TargetFramework>net471</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
@@ -32,19 +22,17 @@
     <ProjectReference Include="..\Mono.Linker.Tests.Cases.Expectations\Mono.Linker.Tests.Cases.Expectations.csproj" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(MonoBuild)' == ''">
-    <PackageReference Include="System.CodeDom" Version="4.5.0" />
-    <PackageReference Include="Microsoft.Win32.Registry" Version="4.5.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.6.0" />
-    <PackageReference Include="nunit" Version="3.10.0" />
-    <PackageReference Include="NUnit3TestAdapter" Version="3.10.0" />
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.8.0" />
+    <PackageReference Include="nunit" Version="3.12.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="3.17.0" />
     <!-- This reference is purely so that the linker can resolve this
          dependency of mscorlib. It is not actually required to build
          the tests. -->
-    <PackageReference Include="System.Threading.AccessControl" Version="4.5.0" />
+    <PackageReference Include="System.Threading.AccessControl" Version="5.0.0" />
   </ItemGroup>
 
-  <Target Name="PrepareTools" BeforeTargets="Build" Condition="'$(MonoBuild)' == ''">
+  <Target Name="PrepareTools" BeforeTargets="Build">
     <!-- Restore ilasm using ilasm.ilproj. Restore must be done
          separately from copy with a different set of input
          properties, to force MSBuild to re-evaluate using new props
@@ -57,29 +45,10 @@
     <MSBuild Projects="$(IlasmProject)" Targets="CopyILAsmTool" />
   </Target>
 
-  <ItemGroup Condition="'$(MonoBuild)' != ''">
-    <ProjectReference Condition="'$(UseCecilPackage)' != 'true'" Include="..\..\external\cecil\symbols\mdb\Mono.Cecil.Mdb.csproj" />
-    <PackageReference Include="NUnit" Version="3.10.0" />
-    <PackageReference Include="NUnit.ConsoleRunner" Version="3.10.0" />
-    <PackageReference Include="NUnit3TestAdapter" Version="3.10.0" />
-  </ItemGroup>
-
   <ItemGroup>
     <None Update="TestCases\Dependencies\PInvokesExpectations.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
-  <Target Name="RunTestsOnMono" Condition="'$(MonoBuild)' != ''">
-    <Exec Command="mono $(PkgNUnit_ConsoleRunner)/tools/nunit3-console.exe --result=TestResults.xml $(OutputPath)Mono.Linker.Tests.dll" />
-  </Target>
-
-  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
-
-  <!-- Arcade's custom test imports assume that we are using xunit. -->
-  <!-- Map the Arcade "Test" target to the "VSTest" target used by "dotnet test" -->
-  <Target Name="Test" Condition="'$(MonoBuild)' == ''">
-    <MSBuild Projects="$(MSBuildProjectFile)" Targets="VSTest" />
-  </Target>
 
 </Project>

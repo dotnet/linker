@@ -20,6 +20,9 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 			TestProperty_bool_3 ();
 			TestProperty_enum_1 ();
 			TestProperty_null_1 ();
+			TestProperty_SignedComparisons ();
+			TestProperty_UnsignedComparisons ();
+			TestDefaultInterface ();
 		}
 
 		[Kept]
@@ -154,6 +157,54 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		}
 
 		[Kept]
+		[ExpectBodyModified]
+		static void TestProperty_SignedComparisons ()
+		{
+			if (PropInt == -10)
+				NeverReached_1 ();
+
+			if (PropInt != 10)
+				NeverReached_1 ();
+
+			if (PropInt < -10)
+				NeverReached_1 ();
+
+			if (PropInt <= -10)
+				NeverReached_1 ();
+
+			if (-10 > PropInt)
+				NeverReached_1 ();
+
+			if (-10 >= PropInt)
+				NeverReached_1 ();
+		}
+
+		[Kept]
+		[ExpectBodyModified]
+		static void TestProperty_UnsignedComparisons ()
+		{
+			// This is effectively comparing 10 and 4294967286
+
+			if (PropUInt == unchecked((uint) -10))
+				NeverReached_1 ();
+
+			if (PropUInt != (uint) 10)
+				NeverReached_1 ();
+
+			if (PropUInt > unchecked((uint) -10))
+				NeverReached_1 ();
+
+			if (PropUInt >= unchecked((uint) -10))
+				NeverReached_1 ();
+
+			if (unchecked((uint) -10) < PropUInt)
+				NeverReached_1 ();
+
+			if (unchecked((uint) -10) <= PropUInt)
+				NeverReached_1 ();
+		}
+
+		[Kept]
 		static int Prop {
 			[Kept]
 			get {
@@ -186,6 +237,18 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 			}
 		}
 
+		[Kept]
+		static int PropInt {
+			[Kept]
+			get => 10;
+		}
+
+		[Kept]
+		static uint PropUInt {
+			[Kept]
+			get => 10;
+		}
+
 		static void NeverReached_1 ()
 		{
 		}
@@ -201,6 +264,43 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 			B = 1,
 			[Kept]
 			C = 2
+		}
+
+		[Kept]
+		interface IDefaultInterface
+		{
+			[Kept]
+			public void NonDefault ();
+
+			[Kept]
+			[ExpectBodyModified]
+			public void Default ()
+			{
+				if (SimpleConditionalProperty.PropBool)
+					SimpleConditionalProperty.NeverReached_1 ();
+			}
+		}
+
+		[Kept]
+		[KeptMember (".ctor()")]
+		[KeptInterface (typeof (IDefaultInterface))]
+		class ImplementsDefaultInterface : IDefaultInterface
+		{
+			[Kept]
+			[ExpectBodyModified]
+			public void NonDefault ()
+			{
+				if (PropBool)
+					NeverReached_1 ();
+			}
+		}
+
+		[Kept]
+		static void TestDefaultInterface ()
+		{
+			IDefaultInterface i = new ImplementsDefaultInterface ();
+			i.NonDefault ();
+			i.Default ();
 		}
 	}
 }

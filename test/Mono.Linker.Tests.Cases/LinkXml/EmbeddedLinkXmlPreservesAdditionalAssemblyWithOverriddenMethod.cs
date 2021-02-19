@@ -9,7 +9,7 @@ namespace Mono.Linker.Tests.Cases.LinkXml
 	[SetupCompileBefore ("Library1.dll",
 		new[] { "Dependencies/EmbeddedLinkXmlPreservesAdditionalAssemblyWithOverriddenMethod/Library1.cs" },
 		new[] { "Base.dll" },
-		resources: new[] { "Dependencies/EmbeddedLinkXmlPreservesAdditionalAssemblyWithOverriddenMethod/Library1.xml" })]
+		resources: new object[] { "Dependencies/EmbeddedLinkXmlPreservesAdditionalAssemblyWithOverriddenMethod/Library1.xml" })]
 	[SetupCompileBefore ("Library2.dll",
 		new[] { "Dependencies/EmbeddedLinkXmlPreservesAdditionalAssemblyWithOverriddenMethod/Library2.cs" },
 		new[] { "Base.dll" },

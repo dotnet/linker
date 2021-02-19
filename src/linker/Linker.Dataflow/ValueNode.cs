@@ -7,11 +7,10 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
-
-using TypeDefinition = Mono.Cecil.TypeDefinition;
+using Mono.Cecil;
 using FieldDefinition = Mono.Cecil.FieldDefinition;
 using GenericParameter = Mono.Cecil.GenericParameter;
-using Mono.Cecil;
+using TypeDefinition = Mono.Cecil.TypeDefinition;
 
 namespace Mono.Linker.Dataflow
 {
@@ -154,7 +153,7 @@ namespace Mono.Linker.Dataflow
 			public struct Enumerator : IEnumerator<ValueNode>
 			{
 				int _index;
-				ValueNode _parent;
+				readonly ValueNode _parent;
 
 				public Enumerator (ValueNode parent)
 				{
@@ -162,7 +161,7 @@ namespace Mono.Linker.Dataflow
 					_index = -1;
 				}
 
-				public ValueNode Current { get { return (_parent != null) ? _parent.ChildAt (_index) : null; } }
+				public ValueNode Current { get { return _parent?.ChildAt (_index); } }
 
 				object System.Collections.IEnumerator.Current { get { return Current; } }
 
@@ -182,7 +181,7 @@ namespace Mono.Linker.Dataflow
 				}
 			}
 
-			ValueNode _parentNode;
+			readonly ValueNode _parentNode;
 
 			public ChildCollection (ValueNode parentNode) { _parentNode = parentNode; }
 
@@ -195,12 +194,12 @@ namespace Mono.Linker.Dataflow
 			IEnumerator<ValueNode> IEnumerable<ValueNode>.GetEnumerator ()
 			{
 				// note the boxing!
-				return (IEnumerator<ValueNode>) new Enumerator (_parentNode);
+				return new Enumerator (_parentNode);
 			}
 			System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator ()
 			{
 				// note the boxing!
-				return (System.Collections.IEnumerator) new Enumerator (_parentNode);
+				return new Enumerator (_parentNode);
 			}
 
 			public int Count { get { return (_parentNode != null) ? _parentNode.NumChildren : 0; } }
@@ -216,8 +215,8 @@ namespace Mono.Linker.Dataflow
 		/// </summary>
 		public struct UniqueValueCollection : IEnumerable<ValueNode>
 		{
-			IEnumerable<ValueNode> _multiValueEnumerable;
-			ValueNode _treeNode;
+			readonly IEnumerable<ValueNode> _multiValueEnumerable;
+			readonly ValueNode _treeNode;
 
 			public UniqueValueCollection (ValueNode node)
 			{
@@ -242,7 +241,7 @@ namespace Mono.Linker.Dataflow
 				}
 
 				// note the boxing!
-				return (IEnumerator<ValueNode>) GetEnumerator ();
+				return GetEnumerator ();
 			}
 
 			System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator ()
@@ -252,20 +251,20 @@ namespace Mono.Linker.Dataflow
 				}
 
 				// note the boxing!
-				return (System.Collections.IEnumerator) GetEnumerator ();
+				return GetEnumerator ();
 			}
 
 
 			public struct Enumerator : IEnumerator<ValueNode>
 			{
-				IEnumerator<ValueNode> _multiValueEnumerator;
-				ValueNode _singleValueNode;
+				readonly IEnumerator<ValueNode> _multiValueEnumerator;
+				readonly ValueNode _singleValueNode;
 				int _index;
 
 				public Enumerator (ValueNode treeNode, IEnumerable<ValueNode> mulitValueEnumerable)
 				{
-					_singleValueNode = (treeNode != null) ? treeNode.GetSingleUniqueValue () : null;
-					_multiValueEnumerator = (mulitValueEnumerable != null) ? mulitValueEnumerable.GetEnumerator () : null;
+					_singleValueNode = treeNode?.GetSingleUniqueValue ();
+					_multiValueEnumerator = mulitValueEnumerable?.GetEnumerator ();
 					_index = -1;
 				}
 
@@ -285,7 +284,7 @@ namespace Mono.Linker.Dataflow
 						return _multiValueEnumerator.MoveNext ();
 
 					_index++;
-					return (_index == 0);
+					return _index == 0;
 				}
 
 				public ValueNode Current {
@@ -427,7 +426,7 @@ namespace Mono.Linker.Dataflow
 		}
 	}
 
-	static internal class ValueNodeDump
+	internal static class ValueNodeDump
 	{
 		internal static string ValueNodeToString (ValueNode node, params object[] args)
 		{
@@ -886,7 +885,7 @@ namespace Mono.Linker.Dataflow
 #endif
 		}
 
-		ValueNodeHashSet m_values;
+		readonly ValueNodeHashSet m_values;
 
 		public ValueNodeHashSet Values { get { return m_values; } }
 
@@ -898,7 +897,7 @@ namespace Mono.Linker.Dataflow
 			throw new InvalidOperationException ();
 		}
 
-		static public ValueNode MergeValues (ValueNode one, ValueNode two)
+		public static ValueNode MergeValues (ValueNode one, ValueNode two)
 		{
 			if (one == null)
 				return two;
@@ -954,6 +953,8 @@ namespace Mono.Linker.Dataflow
 	/// The result of a Type.GetType.
 	/// AssemblyIdentity is the scope in which to resolve if the type name string is not assembly-qualified.
 	/// </summary>
+
+#pragma warning disable CA1812 // GetTypeFromStringValue is never instantiated
 	class GetTypeFromStringValue : ValueNode
 	{
 		private readonly TypeResolver _resolver;
@@ -1188,8 +1189,7 @@ namespace Mono.Linker.Dataflow
 
 		public override bool Equals (object other)
 		{
-			ValueNodeList otherList = other as ValueNodeList;
-			if (otherList == null)
+			if (!(other is ValueNodeList otherList))
 				return false;
 
 			if (otherList.Count != Count)
@@ -1212,8 +1212,7 @@ namespace Mono.Linker.Dataflow
 
 		public override bool Equals (object other)
 		{
-			ValueNodeHashSet otherSet = other as ValueNodeHashSet;
-			if (otherSet == null)
+			if (!(other is ValueNodeHashSet otherSet))
 				return false;
 
 			if (otherSet.Count != Count)

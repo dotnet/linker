@@ -2,10 +2,10 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using Mono.Cecil;
-using Mono.Cecil.Cil;
 using System;
 using System.Diagnostics;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
 
 namespace Mono.Linker.Dataflow
 {
@@ -49,6 +49,7 @@ namespace Mono.Linker.Dataflow
 #endif
 		}
 
+#pragma warning disable CA1822
 		[Conditional ("DEBUG")]
 		public void AnalyzingPattern ()
 		{
@@ -64,6 +65,7 @@ namespace Mono.Linker.Dataflow
 			_patternReported = true;
 #endif
 		}
+#pragma warning restore CA1822
 
 		public void RecordRecognizedPattern (IMemberDefinition accessedItem, Action mark)
 		{

@@ -23,12 +23,12 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-using Mono.Cecil;
-using Mono.Linker.Steps;
 using System;
 using System.IO;
 using System.IO.Compression;
 using System.Xml;
+using Mono.Cecil;
+using Mono.Linker.Steps;
 
 namespace Mono.Linker
 {
@@ -91,6 +91,9 @@ namespace Mono.Linker
 
 		public void RecordDependency (object target, in DependencyInfo reason, bool marked)
 		{
+			if (reason.Kind == DependencyKind.Unspecified)
+				return;
+
 			// For now, just report a dependency from source to target without noting the DependencyKind.
 			RecordDependency (reason.Source, target, marked);
 		}
@@ -134,7 +137,7 @@ namespace Mono.Linker
 			return false;
 		}
 
-		string TokenString (object o)
+		static string TokenString (object o)
 		{
 			if (o == null)
 				return "N:null";

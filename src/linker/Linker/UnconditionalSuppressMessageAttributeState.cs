@@ -73,8 +73,8 @@ namespace Mono.Linker
 			if (provider == null)
 				return false;
 
-			return (_suppressions.TryGetValue (provider, out var suppressions) &&
-				suppressions.TryGetValue (id, out info));
+			return _suppressions.TryGetValue (provider, out var suppressions) &&
+				suppressions.TryGetValue (id, out info);
 		}
 
 		private static bool TryDecodeSuppressMessageAttributeData (CustomAttribute attribute, out SuppressMessageInfo info)
@@ -119,7 +119,7 @@ namespace Mono.Linker
 			return true;
 		}
 
-		public ModuleDefinition GetModuleFromProvider (ICustomAttributeProvider provider)
+		public static ModuleDefinition GetModuleFromProvider (ICustomAttributeProvider provider)
 		{
 			switch (provider.MetadataToken.TokenType) {
 			case TokenType.Module:

@@ -9,11 +9,10 @@ using Mono.Linker.Tests.Cases.CommandLine.Mvid;
 using Mono.Linker.Tests.Cases.Interop.PInvoke.Individual;
 using Mono.Linker.Tests.Cases.References.Individual;
 using Mono.Linker.Tests.Cases.Tracing.Individual;
-using Mono.Linker.Tests.Cases.Warnings.WarningSuppression;
+using Mono.Linker.Tests.Cases.Warnings.Individual;
 using Mono.Linker.Tests.Extensions;
 using Mono.Linker.Tests.TestCasesRunner;
 using NUnit.Framework;
-using NUnit.Framework.Internal;
 
 namespace Mono.Linker.Tests.TestCases
 {
@@ -69,7 +68,7 @@ namespace Mono.Linker.Tests.TestCases
 				if (!outputPath.Exists ())
 					Assert.Fail ($"A cs file with a list of UnconditionalSuppressMessage attributes was expected to exist at {outputPath}");
 
-				Assert.IsTrue (File.ReadAllLines (outputPath).SequenceEqual (
+				Assert.That (File.ReadAllLines (outputPath), Is.EquivalentTo (
 					File.ReadAllLines (TestsDirectory.Combine ($"TestCases/Dependencies/WarningSuppressionExpectations{i + 1}.cs"))));
 			}
 		}
@@ -83,8 +82,33 @@ namespace Mono.Linker.Tests.TestCases
 			if (!outputPath.Exists ())
 				Assert.Fail ($"An XML file with a list of UnconditionalSuppressMessage attributes was expected to exist at {outputPath}");
 
-			Assert.IsTrue (File.ReadAllLines (outputPath).SequenceEqual (
+			Assert.That (File.ReadAllLines (outputPath), Is.EquivalentTo (
 				File.ReadAllLines (TestsDirectory.Combine ($"TestCases/Dependencies/WarningSuppressionExpectations3.xml"))));
+		}
+
+		[Test]
+		public void WarningsAreSorted ()
+		{
+			var testcase = CreateIndividualCase (typeof (WarningsAreSorted));
+			var result = Run (testcase);
+			var loggedMessages = result.Logger.GetLoggedMessages ()
+				.Where (lm => lm.Category != MessageCategory.Info && lm.Category != MessageCategory.Diagnostic).ToList ();
+			loggedMessages.Sort ();
+
+			Assert.That (loggedMessages.Select (m => m.ToString ()), Is.EquivalentTo (
+				File.ReadAllLines (TestsDirectory.Combine ($"TestCases/Dependencies/SortedWarnings.txt"))));
+		}
+
+		[Test]
+		public void InvalidWarningCodeThrows ()
+		{
+			var testcase = CreateIndividualCase (typeof (CustomStepWithWarnings));
+			try {
+				var result = Run (testcase);
+			} catch (ArgumentException ex) {
+				Assert.AreEqual ("The provided code '2500' does not fall into the permitted range for external warnings. To avoid possible " +
+					"collisions with existing and future ILLink warnings, external messages should use codes starting from 6001. (Parameter 'code')", ex.Message);
+			}
 		}
 
 		[Test]
@@ -191,23 +215,6 @@ namespace Mono.Linker.Tests.TestCases
 			var secondOutputMvid = GetMvid (result2.OutputAssemblyPath);
 			Assert.That (secondOutputMvid, Is.EqualTo (originalMvid));
 			Assert.That (secondOutputMvid, Is.EqualTo (firstOutputMvid));
-		}
-
-		[Test]
-		public void DefaultMvidBehavior ()
-		{
-			var testCase = CreateIndividualCase (typeof (NewMvidWorks));
-			var result = Run (testCase, out TestRunner runner);
-
-			var originalMvid = GetMvid (result.InputAssemblyPath);
-			var firstOutputMvid = GetMvid (result.OutputAssemblyPath);
-			Assert.That (firstOutputMvid, Is.Not.EqualTo (originalMvid));
-
-			var result2 = runner.Relink (result);
-
-			var secondOutputMvid = GetMvid (result2.OutputAssemblyPath);
-			Assert.That (secondOutputMvid, Is.Not.EqualTo (originalMvid));
-			Assert.That (secondOutputMvid, Is.Not.EqualTo (firstOutputMvid));
 		}
 
 		protected Guid GetMvid (NPath assemblyPath)

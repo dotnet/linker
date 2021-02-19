@@ -6,13 +6,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.MemoryMappedFiles;
-using Mono.Collections.Generic;
 using Mono.Cecil;
+using Mono.Collections.Generic;
 
-#if FEATURE_ILLINK
-namespace Mono.Linker {
+namespace Mono.Linker
+{
 
-	public abstract class DirectoryAssemblyResolver : IAssemblyResolver {
+	public abstract class DirectoryAssemblyResolver : IAssemblyResolver
+	{
 
 		readonly Collection<string> directories;
 
@@ -20,27 +21,21 @@ namespace Mono.Linker {
 
 		readonly List<MemoryMappedViewStream> viewStreams = new List<MemoryMappedViewStream> ();
 
+		readonly ReaderParameters defaultReaderParameters;
+
 		public void AddSearchDirectory (string directory)
 		{
 			directories.Add (directory);
 		}
 
-		public void RemoveSearchDirectory (string directory)
-		{
-			directories.Remove (directory);
-		}
-
-		public string [] GetSearchDirectories ()
-		{
-			return this.directories.ToArray ();
-		}
-
 		protected DirectoryAssemblyResolver ()
 		{
-			directories = new Collection<string> (2) { "." };
+			defaultReaderParameters = new ReaderParameters ();
+			defaultReaderParameters.AssemblyResolver = this;
+			directories = new Collection<string> ();
 		}
 
-		protected AssemblyDefinition GetAssembly (string file, ReaderParameters parameters)
+		public AssemblyDefinition GetAssembly (string file, ReaderParameters parameters)
 		{
 			if (parameters.AssemblyResolver == null)
 				parameters.AssemblyResolver = this;
@@ -71,15 +66,15 @@ namespace Mono.Linker {
 
 		public virtual AssemblyDefinition Resolve (AssemblyNameReference name)
 		{
-			return Resolve (name, new ReaderParameters ());
+			return Resolve (name, defaultReaderParameters);
 		}
 
 		public virtual AssemblyDefinition Resolve (AssemblyNameReference name, ReaderParameters parameters)
 		{
 			if (name == null)
-				throw new ArgumentNullException ("name");
+				throw new ArgumentNullException (nameof (name));
 			if (parameters == null)
-				throw new ArgumentNullException ("parameters");
+				throw new ArgumentNullException (nameof (parameters));
 
 			var assembly = SearchDirectory (name, directories, parameters);
 			if (assembly != null)
@@ -90,7 +85,7 @@ namespace Mono.Linker {
 
 		AssemblyDefinition SearchDirectory (AssemblyNameReference name, IEnumerable<string> directories, ReaderParameters parameters)
 		{
-			var extensions = new [] { ".dll", ".exe" };
+			var extensions = new[] { ".dll", ".exe" };
 			foreach (var directory in directories) {
 				foreach (var extension in extensions) {
 					string file = Path.Combine (directory, name.Name + extension);
@@ -98,7 +93,7 @@ namespace Mono.Linker {
 						continue;
 					try {
 						return GetAssembly (file, parameters);
-					} catch (System.BadImageFormatException) {
+					} catch (BadImageFormatException) {
 						continue;
 					}
 				}
@@ -125,4 +120,3 @@ namespace Mono.Linker {
 		}
 	}
 }
-#endif

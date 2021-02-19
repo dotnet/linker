@@ -110,9 +110,9 @@ namespace Mono.Linker
 				builder.Append ('.').Append (GetEscapedMetadataName (evt));
 			}
 
-			public void VisitGenericParameter (GenericParameter genericParameter, StringBuilder builder)
+			public static void VisitGenericParameter (GenericParameter genericParameter, StringBuilder builder)
 			{
-				Debug.Assert ((genericParameter.DeclaringMethod == null) != (genericParameter.DeclaringType == null));
+				Debug.Assert (genericParameter.DeclaringMethod == null ^ genericParameter.DeclaringType == null);
 				// Is this a type parameter on a type?
 				if (genericParameter.DeclaringMethod != null) {
 					builder.Append ("``");

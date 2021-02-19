@@ -1,17 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using NUnit.Framework;
 using Mono.Cecil;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.TestCasesRunner;
+using NUnit.Framework;
 
 namespace Mono.Linker.Tests
 {
 	[TestFixture]
 	public class GetDisplayNameTests
 	{
-		[TestCaseSource (nameof (GetMemberAssertionsAsArray), new object[] { typeof (GetDisplayNameTests) })]
+		[TestCaseSource (nameof (GetMemberAssertions), new object[] { typeof (GetDisplayNameTests) })]
 		public void TestGetDisplayName (IMemberDefinition member, CustomAttribute customAttribute)
 		{
 			// The only intention with these tests is to check that the language elements that could
@@ -37,10 +37,7 @@ namespace Mono.Linker.Tests
 
 		}
 
-		public static IEnumerable<object[]> GetMemberAssertionsAsArray (Type type)
-		{
-			return MemberAssertionsCollector.GetMemberAssertions (type).Select (v => new object[] { v.member, v.ca });
-		}
+		public static IEnumerable<TestCaseData> GetMemberAssertions (Type type) => MemberAssertionsCollector.GetMemberAssertionsData (type);
 
 		[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.A")]
 		public class A

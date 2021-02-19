@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using System.Reflection;
+using System.Text;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 
@@ -42,8 +42,7 @@ namespace ILLink.Tasks
 		///   is subject to change. Currently these get passed to
 		///   illink with "-a", which roots the entry point for
 		///   executables, and everything for libraries. To control
-		///   the linker more explicitly, either pass descriptor
-		///   files, or pass extra arguments for illink.
+		///   the behaviour explicitly, set RootMode metadata.
 		/// </summary>
 		[Required]
 		public ITaskItem[] RootAssemblyNames { get; set; }
@@ -200,7 +199,7 @@ namespace ILLink.Tasks
 		/// </summary>
 		public ITaskItem[] CustomSteps { get; set; }
 
-		private readonly static string DotNetHostPathEnvironmentName = "DOTNET_HOST_PATH";
+		private const string DotNetHostPathEnvironmentName = "DOTNET_HOST_PATH";
 
 		private string _dotnetPath;
 
@@ -235,7 +234,7 @@ namespace ILLink.Tasks
 
 				var taskDirectory = Path.GetDirectoryName (Assembly.GetExecutingAssembly ().Location);
 				// The linker always runs on .NET Core, even when using desktop MSBuild to host ILLink.Tasks.
-				_illinkPath = Path.Combine (Path.GetDirectoryName (taskDirectory), "netcoreapp3.0", "illink.dll");
+				_illinkPath = Path.Combine (Path.GetDirectoryName (taskDirectory), "net5.0", "illink.dll");
 				return _illinkPath;
 			}
 			set => _illinkPath = value;
@@ -253,14 +252,14 @@ namespace ILLink.Tasks
 			return args.ToString ();
 		}
 
-		private void SetOpt (StringBuilder args, string opt, bool enabled)
+		private static void SetOpt (StringBuilder args, string opt, bool enabled)
 		{
 			args.Append (enabled ? "--enable-opt " : "--disable-opt ").AppendLine (opt);
 		}
 
-		private void SetOpt (StringBuilder args, string opt, string assembly, bool enabled)
+		private static void SetOpt (StringBuilder args, string opt, string assembly, bool enabled)
 		{
-			args.Append (enabled ? "--enable-opt " : "--disable-opt ").Append (opt).Append (" ").AppendLine (assembly);
+			args.Append (enabled ? "--enable-opt " : "--disable-opt ").Append (opt).Append (' ').AppendLine (assembly);
 		}
 
 		protected override string GenerateResponseFileCommands ()
@@ -272,8 +271,17 @@ namespace ILLink.Tasks
 					args.Append ("-x ").AppendLine (Quote (rootFile.ItemSpec));
 			}
 
-			foreach (var assemblyItem in RootAssemblyNames)
-				args.Append ("-a ").AppendLine (Quote (assemblyItem.ItemSpec));
+			foreach (var assemblyItem in RootAssemblyNames) {
+				args.Append ("-a ").Append (Quote (assemblyItem.ItemSpec));
+
+				string rootMode = assemblyItem.GetMetadata ("RootMode");
+				if (!string.IsNullOrEmpty (rootMode)) {
+					args.Append (' ');
+					args.Append (rootMode);
+				}
+
+				args.AppendLine ();
+			}
 
 			HashSet<string> assemblyNames = new HashSet<string> (StringComparer.OrdinalIgnoreCase);
 			foreach (var assembly in AssemblyPaths) {
@@ -290,7 +298,7 @@ namespace ILLink.Tasks
 				if (!String.IsNullOrEmpty (trimMode)) {
 					args.Append ("-p ");
 					args.Append (trimMode);
-					args.Append (" ").AppendLine (Quote (assemblyName));
+					args.Append (' ').AppendLine (Quote (assemblyName));
 				}
 
 				// Add per-assembly optimization arguments
@@ -370,7 +378,7 @@ namespace ILLink.Tasks
 					var value = customData.GetMetadata ("Value");
 					if (String.IsNullOrEmpty (value))
 						throw new ArgumentException ("custom data requires \"Value\" metadata");
-					args.Append ("--custom-data ").Append (" ").Append (key).Append ("=").AppendLine (Quote (value));
+					args.Append ("--custom-data ").Append (' ').Append (key).Append ('=').AppendLine (Quote (value));
 				}
 			}
 
@@ -380,7 +388,7 @@ namespace ILLink.Tasks
 					var featureValue = featureSetting.GetMetadata ("Value");
 					if (String.IsNullOrEmpty (featureValue))
 						throw new ArgumentException ("feature settings require \"Value\" metadata");
-					args.Append ("--feature ").Append (feature).Append (" ").AppendLine (featureValue);
+					args.Append ("--feature ").Append (feature).Append (' ').AppendLine (featureValue);
 				}
 			}
 

@@ -5,6 +5,9 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.CoreLink
 {
+#if NETCOREAPP
+	[IgnoreTestCase("Not important for .NET Core build")]
+#endif
 	[SetupLinkerCoreAction ("link")]
 	[Reference ("System.dll")]
 
@@ -13,16 +16,9 @@ namespace Mono.Linker.Tests.Cases.CoreLink
 	// we know should be removed which will at least verify that the core library was processed
 	[KeptTypeInAssembly (PlatformAssemblies.CoreLib, typeof (System.Collections.Generic.IEnumerable<>))]
 	[RemovedTypeInAssembly (PlatformAssemblies.CoreLib, typeof (System.Resources.ResourceWriter))]
-#if NETCOREAPP
-	// SortedList<,> and SortedDictionary<,> live in System.Collections on .NET Core.
-	[KeptAssembly("System.Collections.dll")]
-	[KeptTypeInAssembly ("System.Collections.dll", typeof (System.Collections.Generic.SortedList<,>))]
-	[RemovedTypeInAssembly ("System.Collections.dll", typeof (System.Collections.Generic.SortedDictionary<,>))]
-#else
 	[KeptAssembly ("System.dll")]
 	[KeptTypeInAssembly ("System.dll", typeof (System.Collections.Generic.SortedList<,>))]
 	[RemovedTypeInAssembly ("System.dll", typeof (System.Collections.Generic.SortedDictionary<,>))]
-#endif
 
 	// Can be removed once this bug is fixed https://bugzilla.xamarin.com/show_bug.cgi?id=58168
 	[SkipPeVerify (SkipPeVerifyForToolchian.Pedump)]

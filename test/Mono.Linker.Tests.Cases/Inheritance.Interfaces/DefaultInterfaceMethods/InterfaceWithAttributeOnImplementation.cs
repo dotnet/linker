@@ -6,7 +6,10 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.DefaultInterfaceMethods
 {
-#if NETCOREAPP
+	[SetupLinkerArgument ("--skip-unresolved", "true")]
+#if !NETCOREAPP
+	[IgnoreTestCase ("Only for .NET Core for some reason")]
+#endif
 	[Define ("IL_ASSEMBLY_AVAILABLE")]
 	[SetupCompileBefore ("library.dll", new[] { "Dependencies/InterfaceWithAttributeOnImpl.il" })]
 	class InterfaceWithAttributeOnImplementation
@@ -18,5 +21,4 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.DefaultInterfaceMethods
 #endif
 		}
 	}
-#endif
 }

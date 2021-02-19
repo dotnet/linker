@@ -8,10 +8,10 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 namespace Mono.Linker.Tests.Cases.Warnings
 {
 	[SkipKeptItemsValidation]
-	[SkipRemainingErrorsValidation]
 	[SetupLinkerArgument ("--warnaserror")]
-	[SetupLinkerArgument ("--nowarn", "IL2006")]
-	[LogDoesNotContain ("IL2006")]
+	[SetupLinkerArgument ("--nowarn", "IL2026,IL2075")]
+	[LogDoesNotContain ("IL2026")]
+	[LogDoesNotContain ("IL2075")]
 	public class NoWarnRegardlessOfWarnAsError
 	{
 		public static void Main ()

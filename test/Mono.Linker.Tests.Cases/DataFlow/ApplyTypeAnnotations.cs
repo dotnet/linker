@@ -2,11 +2,11 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
+using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
 namespace Mono.Linker.Tests.Cases.DataFlow
 {
@@ -17,6 +17,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TestFromTypeOf ();
 			TestFromTypeGetTypeOverConstant ();
 			TestFromStringContantWithAnnotation ();
+			TestFromStringConstantWithGeneric ();
+			TestFromStringConstantWithGenericAndAssemblyQualified ();
+			TestFromStringConstantWithGenericAndAssemblyQualifiedInvalidAssembly ();
+			TestFromStringConstantWithGenericAndAssemblyQualifiedNonExistingAssembly ();
 		}
 
 		[Kept]
@@ -122,6 +126,106 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				DynamicallyAccessedMemberTypes.PublicProperties)]
 			string typeName)
 		{
+		}
+
+		[Kept]
+		class FromStringConstantWithGenericInner
+		{
+		}
+
+		[Kept]
+		[KeptMember (".ctor()")]
+		class FromStringConstantWithGeneric<T>
+		{
+			[Kept]
+			public T GetValue () { return default (T); }
+		}
+
+		[Kept]
+		class FromStringConstantWithGenericInnerInner
+		{
+			[Kept]
+			public void Method ()
+			{
+			}
+
+			int unusedField;
+		}
+
+		[Kept]
+		class FromStringConstantWithGenericInnerOne<
+		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+		[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+		T>
+		{
+		}
+
+		[Kept]
+		class FromStringConstantWithGenericInnerTwo
+		{
+			void UnusedMethod ()
+			{
+			}
+		}
+
+		[Kept]
+		class FromStringConstantWitGenericInnerMultiDimArray
+		{
+		}
+
+		[Kept]
+		class FromStringConstantWithMultiDimArray
+		{
+			public void UnusedMethod () { }
+		}
+
+		[Kept]
+		[KeptMember (".ctor()")]
+		class FromStringConstantWithGenericTwoParameters<T, S>
+		{
+		}
+
+		[Kept]
+		static void TestFromStringConstantWithGeneric ()
+		{
+			RequireCombinationOnString ("Mono.Linker.Tests.Cases.DataFlow.ApplyTypeAnnotations+FromStringConstantWithGeneric`1[[Mono.Linker.Tests.Cases.DataFlow.ApplyTypeAnnotations+FromStringConstantWithGenericInner]]");
+			RequireCombinationOnString ("Mono.Linker.Tests.Cases.DataFlow.ApplyTypeAnnotations+FromStringConstantWithGenericTwoParameters`2[Mono.Linker.Tests.Cases.DataFlow.ApplyTypeAnnotations+FromStringConstantWithGenericInnerOne`1[Mono.Linker.Tests.Cases.DataFlow.ApplyTypeAnnotations+FromStringConstantWithGenericInnerInner],Mono.Linker.Tests.Cases.DataFlow.ApplyTypeAnnotations+FromStringConstantWithGenericInnerTwo]");
+			RequireCombinationOnString ("Mono.Linker.Tests.Cases.DataFlow.ApplyTypeAnnotations+FromStringConstantWithGeneric`1[[Mono.Linker.Tests.Cases.DataFlow.ApplyTypeAnnotations+FromStringConstantWitGenericInnerMultiDimArray[,]]]");
+			RequireCombinationOnString ("Mono.Linker.Tests.Cases.DataFlow.ApplyTypeAnnotations+FromStringConstantWithMultiDimArray[,]");
+		}
+
+		[Kept]
+		[KeptMember (".ctor()")]
+		class FromStringConstantWithGenericAndAssemblyQualified<T>
+		{
+			[Kept]
+			public T GetValue () { return default (T); }
+		}
+
+		[Kept]
+		static void TestFromStringConstantWithGenericAndAssemblyQualified ()
+		{
+			RequireCombinationOnString ("Mono.Linker.Tests.Cases.DataFlow.ApplyTypeAnnotations+FromStringConstantWithGenericAndAssemblyQualified`1[[Mono.Linker.Tests.Cases.Expectations.Assertions.KeptAttribute,Mono.Linker.Tests.Cases.Expectations]]");
+		}
+
+		class InvalidAssemblyNameType
+		{
+		}
+
+		[Kept]
+		static void TestFromStringConstantWithGenericAndAssemblyQualifiedInvalidAssembly ()
+		{
+			RequireCombinationOnString ("Mono.Linker.Tests.Cases.DataFlow.ApplyTypeAnnotations+InvalidAssemblyNameType,Invalid/Assembly/Name");
+		}
+
+		class NonExistingAssemblyType
+		{
+		}
+
+		[Kept]
+		static void TestFromStringConstantWithGenericAndAssemblyQualifiedNonExistingAssembly ()
+		{
+			RequireCombinationOnString ("Mono.Linker.Tests.Cases.DataFlow.ApplyTypeAnnotations+InvalidAssemblyNameType,NonExistingAssembly");
 		}
 	}
 }

@@ -6,7 +6,6 @@ namespace Mono.Linker.Tests.Cases.Attributes.Debugger
 {
 #if NETCOREAPP
 	[SetupLinkAttributesFile ("DebuggerAttributesRemoved.xml")]
-	[SetupLinkerCoreAction ("copy")]
 #else
 	[SetupLinkerCoreAction ("link")]
 	[SetupLinkerKeepDebugMembers ("false")]
@@ -22,6 +21,7 @@ namespace Mono.Linker.Tests.Cases.Attributes.Debugger
 		{
 			var foo = new Foo ();
 			var bar = new Bar ();
+			var baz = new Baz ();
 		}
 
 		[Kept]
@@ -47,6 +47,16 @@ namespace Mono.Linker.Tests.Cases.Attributes.Debugger
 			{
 				return 1;
 			}
+		}
+
+		[Kept]
+		[KeptMember (".ctor()")]
+#if !NETCOREAPP
+		[KeptAttributeAttribute (typeof (DebuggerDisplayAttribute))]
+#endif
+		[DebuggerDisplay (null)]
+		class Baz
+		{
 		}
 	}
 }

@@ -4,7 +4,6 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.Resources
 {
-	[SetupLinkerCoreAction ("link")]
 	[IgnoreDescriptors (false)]
 
 	[SetupCompileResource ("Dependencies/EmbeddedLinkXmlFileIsProcessed.xml", "ILLink.Descriptors.xml")]
@@ -18,6 +17,12 @@ namespace Mono.Linker.Tests.Cases.Resources
 		[Kept]
 		[KeptMember (".ctor()")]
 		public class Unused
+		{
+		}
+
+		[Kept]
+		[KeptMember (".ctor()")]
+		public class Unused2
 		{
 		}
 	}

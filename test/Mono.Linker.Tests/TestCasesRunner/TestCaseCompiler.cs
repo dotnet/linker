@@ -42,7 +42,8 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 			Prepare (outputDirectory);
 
-			var compiledReferences = CompileBeforeTestCaseAssemblies (outputDirectory, originalCommonReferences, originalDefines).ToArray ();
+			var removeFromLinkerInputAssemblies = new List<NPath> ();
+			var compiledReferences = CompileBeforeTestCaseAssemblies (outputDirectory, originalCommonReferences, originalDefines, removeFromLinkerInputAssemblies).ToArray ();
 			var allTestCaseReferences = originalCommonReferences
 				.Concat (compiledReferences)
 				.Concat (mainAssemblyReferences.Select (r => r.ToNPath ()))
@@ -61,8 +62,12 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			// The compile after step is used by tests to mess around with the input to the linker.  Generally speaking, it doesn't seem like we would ever want to mess with the
 			// expectations assemblies because this would undermine our ability to inspect them for expected results during ResultChecking.  The UnityLinker UnresolvedHandling tests depend on this
 			// behavior of skipping the after test compile
-			if (outputDirectory != _sandbox.ExpectationsDirectory)
-				CompileAfterTestCaseAssemblies (outputDirectory, originalCommonReferences, originalDefines);
+			if (outputDirectory != _sandbox.ExpectationsDirectory) {
+				CompileAfterTestCaseAssemblies (outputDirectory, originalCommonReferences, originalDefines, removeFromLinkerInputAssemblies);
+
+				foreach (var assemblyToRemove in removeFromLinkerInputAssemblies)
+					assemblyToRemove.DeleteIfExists ();
+			}
 
 			return testAssembly;
 		}
@@ -100,23 +105,35 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			};
 		}
 
-		private IEnumerable<NPath> CompileBeforeTestCaseAssemblies (NPath outputDirectory, NPath[] references, string[] defines)
+		private IEnumerable<NPath> CompileBeforeTestCaseAssemblies (NPath outputDirectory, NPath[] references, string[] defines, IList<NPath> removeFromLinkerInputAssemblies)
 		{
 			foreach (var setupCompileInfo in _metadataProvider.GetSetupCompileAssembliesBefore ()) {
+				NPath outputFolder;
+				if (setupCompileInfo.OutputSubFolder == null) {
+					outputFolder = outputDirectory;
+				} else {
+					outputFolder = outputDirectory.Combine (setupCompileInfo.OutputSubFolder);
+					Directory.CreateDirectory (outputFolder.ToString ());
+				}
+
 				var options = CreateOptionsForSupportingAssembly (
 					setupCompileInfo,
-					outputDirectory,
+					outputFolder,
 					CollectSetupBeforeSourcesFiles (setupCompileInfo),
 					references,
 					defines,
 					CollectSetupBeforeResourcesFiles (setupCompileInfo));
 				var output = CompileAssembly (options);
+
+				if (setupCompileInfo.RemoveFromLinkerInput)
+					removeFromLinkerInputAssemblies.Add (output);
+
 				if (setupCompileInfo.AddAsReference)
 					yield return output;
 			}
 		}
 
-		private void CompileAfterTestCaseAssemblies (NPath outputDirectory, NPath[] references, string[] defines)
+		private void CompileAfterTestCaseAssemblies (NPath outputDirectory, NPath[] references, string[] defines, IList<NPath> removeFromLinkerInputAssemblies)
 		{
 			foreach (var setupCompileInfo in _metadataProvider.GetSetupCompileAssembliesAfter ()) {
 				var options = CreateOptionsForSupportingAssembly (
@@ -126,7 +143,10 @@ namespace Mono.Linker.Tests.TestCasesRunner
 					references,
 					defines,
 					CollectSetupAfterResourcesFiles (setupCompileInfo));
-				CompileAssembly (options);
+				var output = CompileAssembly (options);
+
+				if (setupCompileInfo.RemoveFromLinkerInput)
+					removeFromLinkerInputAssemblies.Add (output);
 			}
 		}
 
@@ -168,6 +188,20 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			// Not a good idea to use a full path in a test, but maybe someone is trying to quickly test something locally
 			if (Path.IsPathRooted (referenceFileName))
 				return referenceFileName.ToNPath ();
+
+#if NETCOREAPP
+			if (referenceFileName.StartsWith ("System.", StringComparison.Ordinal) ||
+				referenceFileName.StartsWith ("Mono.", StringComparison.Ordinal) ||
+				referenceFileName.StartsWith ("Microsoft.", StringComparison.Ordinal) ||
+				referenceFileName == "netstandard.dll") {
+
+				var frameworkDir = Path.GetFullPath (Path.GetDirectoryName (typeof (object).Assembly.Location));
+				var filePath = Path.Combine (frameworkDir, referenceFileName);
+
+				if (File.Exists (filePath))
+					return filePath.ToNPath ();
+			}
+#endif
 
 			var possiblePath = outputDirectory.Combine (referenceFileName);
 			if (possiblePath.FileExists ())

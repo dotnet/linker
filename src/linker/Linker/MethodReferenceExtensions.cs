@@ -12,6 +12,17 @@ namespace Mono.Linker
 		{
 			var sb = new System.Text.StringBuilder ();
 
+			// Match C# syntaxis name if setter or getter
+			var methodDefinition = method.Resolve ();
+			if (methodDefinition != null && (methodDefinition.IsSetter || methodDefinition.IsGetter)) {
+				// Append property name
+				string name = methodDefinition.IsSetter ? methodDefinition.Name.Substring (4) + ".set" : methodDefinition.Name.Substring (4) + ".get";
+				sb.Append (name);
+				// Insert declaring type name and namespace
+				sb.Insert (0, '.').Insert (0, method.DeclaringType.GetDisplayName ());
+				return sb.ToString ();
+			}
+
 			// Append parameters
 			sb.Append ("(");
 			if (method.HasParameters) {
@@ -35,7 +46,8 @@ namespace Mono.Linker
 				sb.Insert (0, method.Name);
 
 			// Insert declaring type name and namespace
-			sb.Insert (0, '.').Insert (0, method.DeclaringType.GetDisplayName ());
+			if (method.DeclaringType != null)
+				sb.Insert (0, '.').Insert (0, method.DeclaringType.GetDisplayName ());
 
 			return sb.ToString ();
 		}

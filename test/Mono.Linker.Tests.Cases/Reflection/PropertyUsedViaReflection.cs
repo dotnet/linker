@@ -1,11 +1,12 @@
-﻿using Mono.Linker.Tests.Cases.Expectations.Assertions;
-using System;
-using Mono.Linker.Tests.Cases.Expectations.Metadata;
+﻿using System;
 using System.Reflection;
+using Mono.Linker.Tests.Cases.Expectations.Assertions;
+using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.Reflection
 {
 	[SetupCSharpCompilerToUse ("csc")]
+	[SetupLinkerArgument ("--disable-opt", "unreachablebodies")]
 	public class PropertyUsedViaReflection
 	{
 		public static void Main ()
@@ -14,9 +15,12 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			TestGetterAndSetterInternal ();
 			TestSetterOnly ();
 			TestGetterOnly ();
+			TestBindingFlags ();
+			TestUnknownBindingFlags (BindingFlags.Public);
 			TestNullName ();
 			TestEmptyName ();
 			TestNonExistingName ();
+			TestPropertyOfArray ();
 			TestNullType ();
 			TestDataFlowType ();
 			TestIfElse (1);
@@ -65,6 +69,27 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
+		[RecognizedReflectionAccessPattern (
+			typeof (Type), nameof (Type.GetProperty), new Type[] { typeof (string), typeof (BindingFlags) },
+			typeof (BindingFlagsTest), nameof (BindingFlagsTest.PublicProperty), (Type[]) null)]
+		static void TestBindingFlags ()
+		{
+			var property = typeof (BindingFlagsTest).GetProperty ("PublicProperty", BindingFlags.Public);
+			property.GetValue (null, new object[] { });
+		}
+
+		[Kept]
+		[RecognizedReflectionAccessPattern (
+			typeof (Type), nameof (Type.GetProperty), new Type[] { typeof (string), typeof (BindingFlags) },
+			typeof (UnknownBindingFlags), nameof (UnknownBindingFlags.SomeProperty), (Type[]) null)]
+		static void TestUnknownBindingFlags (BindingFlags bindingFlags)
+		{
+			// Since the binding flags are not known linker should mark all properties on the type
+			var property = typeof (UnknownBindingFlags).GetProperty ("SomeProperty", bindingFlags);
+			property.GetValue (null, new object[] { });
+		}
+
+		[Kept]
 		static void TestNullName ()
 		{
 			var property = typeof (PropertyUsedViaReflection).GetProperty (null);
@@ -80,6 +105,16 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		static void TestNonExistingName ()
 		{
 			var property = typeof (PropertyUsedViaReflection).GetProperty ("NonExisting");
+		}
+
+		[Kept]
+		[RecognizedReflectionAccessPattern (
+			typeof (Type), nameof (Type.GetProperty), new Type[] { typeof (string) },
+			typeof (Array), nameof (Array.LongLength))]
+		static void TestPropertyOfArray ()
+		{
+			var property = typeof (int[]).GetProperty ("LongLength");
+			property.GetValue (null);
 		}
 
 		[Kept]
@@ -252,6 +287,30 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		[KeptBaseType (typeof (BaseClass))]
 		class DerivedClass : BaseClass
 		{
+		}
+
+		[Kept]
+		class BindingFlagsTest
+		{
+			[Kept]
+			public int PublicProperty {
+				[Kept]
+				get { return _field; }
+				[Kept]
+				set { _field = value; }
+			}
+		}
+
+		[Kept]
+		class UnknownBindingFlags
+		{
+			[Kept]
+			internal static int SomeProperty {
+				[Kept]
+				private get { return _field; }
+				[Kept]
+				set { _field = value; }
+			}
 		}
 
 		[Kept]

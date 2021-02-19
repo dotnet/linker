@@ -1,14 +1,2 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <LangVersion>latest</LangVersion>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(MonoBuild)' == ''">
-    <TargetFramework>netcoreapp3.0</TargetFramework>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(MonoBuild)' != ''">
-    <TargetFramework>net471</TargetFramework>
-  </PropertyGroup>
-
 </Project>

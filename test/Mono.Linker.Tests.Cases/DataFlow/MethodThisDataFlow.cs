@@ -9,14 +9,18 @@ using System.Globalization;
 using System.Reflection;
 using System.Text;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
+using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.DataFlow
 {
 	[SkipKeptItemsValidation]
+	[SandboxDependency ("Dependencies/TestSystemTypeBase.cs")]
 	public class MethodThisDataFlow
 	{
 		public static void Main ()
 		{
+			new MethodThisDataFlowTypeTest ();
+
 			PropagateToThis ();
 			PropagateToThisWithGetters ();
 			PropagateToThisWithSetters ();
@@ -43,11 +47,11 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			GetWithNonPublicMethods ().RequireThisNonPublicMethods ();
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), "get_" + nameof (MethodThisDataFlowTypeTest.PropertyRequireThisPublicMethods), new Type[] { },
+		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), nameof (MethodThisDataFlowTypeTest.PropertyRequireThisPublicMethods) + ".get", new Type[] { },
 			messageCode: "IL2075", message: new string[] {
 				"Mono.Linker.Tests.Cases.DataFlow.MethodThisDataFlow.GetWithNonPublicMethods()",
-				"System.MethodThisDataFlowTypeTest.get_PropertyRequireThisPublicMethods()" })]
-		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), "get_" + nameof (MethodThisDataFlowTypeTest.PropertyRequireThisNonPublicMethods), new Type[] { }, messageCode: "IL2075")]
+				"System.MethodThisDataFlowTypeTest.PropertyRequireThisPublicMethods.get" })]
+		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), nameof (MethodThisDataFlowTypeTest.PropertyRequireThisNonPublicMethods) + ".get", new Type[] { }, messageCode: "IL2075")]
 		static void PropagateToThisWithGetters ()
 		{
 			_ = GetWithPublicMethods ().PropertyRequireThisPublicMethods;
@@ -57,11 +61,11 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			_ = GetWithNonPublicMethods ().PropertyRequireThisNonPublicMethods;
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), "set_" + nameof (MethodThisDataFlowTypeTest.PropertyRequireThisPublicMethods), new Type[] { typeof (Object) },
+		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), nameof (MethodThisDataFlowTypeTest.PropertyRequireThisPublicMethods) + ".set", new Type[] { typeof (Object) },
 			messageCode: "IL2075", message: new string[] {
 				"Mono.Linker.Tests.Cases.DataFlow.MethodThisDataFlow.GetWithNonPublicMethods()",
-				"System.MethodThisDataFlowTypeTest.set_PropertyRequireThisPublicMethods(Object)" })]
-		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), "set_" + nameof (MethodThisDataFlowTypeTest.PropertyRequireThisNonPublicMethods), new Type[] { typeof (Object) }, messageCode: "IL2075")]
+				"System.MethodThisDataFlowTypeTest.PropertyRequireThisPublicMethods.set" })]
+		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), nameof (MethodThisDataFlowTypeTest.PropertyRequireThisNonPublicMethods) + ".set", new Type[] { typeof (Object) }, messageCode: "IL2075")]
 		static void PropagateToThisWithSetters ()
 		{
 			GetWithPublicMethods ().PropertyRequireThisPublicMethods = null;
@@ -158,8 +162,8 @@ namespace System
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 		[UnrecognizedReflectionAccessPattern (typeof (MethodThisDataFlowTypeTest), nameof (RequireNonPublicMethods), new Type[] { typeof (Type) },
 			messageCode: "IL2082", message: new string[] {
-				"implicit 'this' parameter of method 'System.MethodThisDataFlowTypeTest.RequireThisPublicMethods()'",
-				"parameter 'type' of method 'System.MethodThisDataFlowTypeTest.RequireNonPublicMethods(Type)'" })]
+				"'type' argument ", "in call to 'System.MethodThisDataFlowTypeTest.RequireNonPublicMethods(Type)'",
+				"implicit 'this' argument of method 'System.MethodThisDataFlowTypeTest.RequireThisPublicMethods()'" })]
 		public void RequireThisPublicMethods ()
 		{
 			RequirePublicMethods (this);

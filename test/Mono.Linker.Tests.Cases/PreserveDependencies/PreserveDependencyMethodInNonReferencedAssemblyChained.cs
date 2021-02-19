@@ -1,15 +1,14 @@
 ﻿using System.Runtime.CompilerServices;
-using Mono.Linker.Tests.Cases.PreserveDependencies.Dependencies;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
+using Mono.Linker.Tests.Cases.PreserveDependencies.Dependencies;
 
 namespace Mono.Linker.Tests.Cases.PreserveDependencies
 {
-	[IgnoreTestCase ("Currently failing")]
 	[SetupCompileBefore ("FakeSystemAssembly.dll", new[] { "Dependencies/PreserveDependencyAttribute.cs" })]
 	[SetupCompileBefore ("base.dll", new[] { "Dependencies/PreserveDependencyMethodInNonReferencedAssemblyBase.cs" })]
 	[SetupCompileBefore ("base2.dll", new[] { "Dependencies/PreserveDependencyMethodInNonReferencedAssemblyBase2.cs" }, references: new[] { "base.dll" }, addAsReference: false)]
-	[SetupCompileBefore ("library.dll", new[] { "Dependencies/PreserveDependencyMethodInNonReferencedAssemblyChainedLibrary.cs" }, references: new[] { "base.dll" }, addAsReference: false)]
+	[SetupCompileBefore ("library.dll", new[] { "Dependencies/PreserveDependencyMethodInNonReferencedAssemblyChainedLibrary.cs" }, references: new[] { "base.dll", "FakeSystemAssembly.dll" }, addAsReference: false)]
 	[KeptAssembly ("base.dll")]
 	[KeptAssembly ("base2.dll")]
 	[KeptAssembly ("library.dll")]

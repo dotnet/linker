@@ -6,14 +6,34 @@ The `illink` is IL linker version shipping with .NET Core or .NET 5 platforms. I
 the .NET SDK and most of the options are accessible using msbuild properties but any option
 can also be passed using `_ExtraTrimmerArgs` property.
 
-### Linking from the main assembly
+### Linking from the root assembly
 
 The command:
 
 `illink -a Program.exe`
 
-will use the assembly `Program.exe` as a source. That means that the linker will
-start with the main entry point method of `Program.exe` (typically the `Main` method) and process all its dependencies to determine what is necessary for this assembly to run.
+will use the assembly `Program.exe` as root linker input. That means that the linker will
+start with the main entry point method of `Program.exe` (typically the `Main` method) and
+process all its dependencies to determine what is necessary for this assembly to run.
+
+It's possible to use multiple input files and linker will use them all as multiple sources.
+When a library is used instead of executable linker will root and mark all members instead of
+assembly entry point. This rooting behaviour can be customized by passing additional option
+which can use one of following values.
+
+- `all` - Keep all members in root assembly. This is equivalent to using `copy` link action
+for the assembly.
+- `default` - Use entry point for applications and all members for libraries
+- `entrypoint` - Use assembly entry point as the only root in the assembly. This option is useful
+for multi entry-point libraries bundles.
+- `library` - All visible members and metadata are retained. This useful mode for trimming a library before publishing.
+- `visible` - Keep all members and types visible outside of the assembly. All internals members
+are also rooted when assembly contains InternalsVisibleToAttribute.
+
+You can retain all public members of `Program.exe` application even if they are not
+referenced by any dependency by calling linker like
+
+`illink -a Program.exe visible`
 
 ### Linking from an [XML descriptor](data-formats.md#descriptor-format)
 
@@ -23,7 +43,7 @@ The command:
 
 will use the XML descriptor as a source. That means that the linker will
 use this file to decide what to link in a set of assemblies. The format of the
-descriptors is described in [data-formats document](../data-formats.md).
+descriptors is described in [data-formats document](data-formats.md).
 
 ### Actions on the assemblies
 
@@ -100,7 +120,7 @@ unreachable will be removed.
 
 ### Adding custom linker steps
 
-You can write [custom steps](/doc/custom-steps.md) for the linker and instruct
+You can write [custom steps](/docs/custom-steps.md) for the linker and instruct
 the linker to add them into its existing pipeline. To tell the linker where this assembly is
 located, you have to append its full path after a comma which separates the custom
  step's name from the custom assembly's path
@@ -178,6 +198,16 @@ the emitted format depends upon the argument that is passed to this option (`cs`
 The attributes contained in these files are assembly-level attributes of type `UnconditionalSuppressMessage`
 specifying the required `Scope` and `Target` properties for each of the warnings seen. The
 generated files are saved in the output directory and named `<AssemblyName>.WarningSuppressions.<extension>`.
+
+### Detailed dependencies tracing
+
+For tracking why linker kept specific metadata you can use `--dump-dependencies` option
+which by default writes detailed information into a compressed file called `linker-dependencies.xml.gz`
+inside output directory. The default output filename can be changed with `--dependencies-file`
+option.
+
+The format of the data is XML and it's intentionally human-readable but due
+to a large amount of data, it's recommended to use tools which can analyze the data.
 
 ## monolinker specific options
 

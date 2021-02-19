@@ -2,26 +2,20 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <RootNamespace>LinkerAnalyzer</RootNamespace>
     <AssemblyName>illinkanalyzer</AssemblyName>
-    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(MonoBuild)' == ''">
-    <DefineConstants>$(DefineConstants);FEATURE_ILLINK</DefineConstants>
-    <TargetFramework>netcoreapp3.0</TargetFramework>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(MonoBuild)' != ''">
-    <TargetFrameworks>net471</TargetFrameworks>
-  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\external\Mono.Options\*.cs" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Condition="'$(UseCecilPackage)' == 'true'" Include="Mono.Cecil" Version="$(MonoCecilVersion)" />
     <ProjectReference Condition="'$(UseCecilPackage)' != 'true'" Include="../../external/cecil/Mono.Cecil.csproj" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(MonoBuild)' == ''">
+  <ItemGroup>
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="All" Version="1.0.0" />
   </ItemGroup>
 

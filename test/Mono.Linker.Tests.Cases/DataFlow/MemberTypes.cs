@@ -8,9 +8,11 @@ using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
+using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.DataFlow
 {
+	[SetupCompileArgument ("/optimize+")]
 	public class MemberTypes
 	{
 		public static void Main ()
@@ -41,6 +43,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			RequireNonPublicEvents (typeof (NonPublicEventsType));
 			RequireAllEvents (typeof (AllEventsType));
 			RequireAll (typeof (AllType));
+			RequireAll (typeof (RequireAllWithRecursiveTypeReferences));
 		}
 
 
@@ -287,25 +290,23 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			public void HideMethod () { }
 
 			[Kept]
-			[KeptBackingField]
-			public bool PublicPropertyOnBase { [Kept] get; [Kept] set; }
+			public bool PublicPropertyOnBase { [Kept][ExpectBodyModified] get; [Kept][ExpectBodyModified] set; }
 			protected bool ProtectedPropertyOnBase { get; set; }
 			private bool PrivatePropertyOnBase { get; set; }
 			[Kept]
-			[KeptBackingField]
-			public bool HideProperty { [Kept] get; [Kept] set; }
+			public bool HideProperty { [Kept][ExpectBodyModified] get; [Kept][ExpectBodyModified] set; }
 
 			[Kept]
-			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
+			[method: ExpectBodyModified, ExpectLocalsModified]
 			public event EventHandler<EventArgs> PublicEventOnBase;
 			protected event EventHandler<EventArgs> ProtectedEventOnBase;
 			private event EventHandler<EventArgs> PrivateEventOnBase;
 			[Kept]
-			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
+			[method: ExpectBodyModified, ExpectLocalsModified]
 			public event EventHandler<EventArgs> HideEvent;
 
 			[Kept]
@@ -356,25 +357,23 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			public void HideMethod () { }
 
 			[Kept]
-			[KeptBackingField]
-			public bool PublicProperty { [Kept] get; [Kept] set; }
+			public bool PublicProperty { [Kept][ExpectBodyModified] get; [Kept][ExpectBodyModified] set; }
 			protected bool ProtectedProperty { get; set; }
 			private bool PrivateProperty { get; set; }
 			[Kept]
-			[KeptBackingField]
-			public bool HideProperty { [Kept] get; [Kept] set; }
+			public bool HideProperty { [Kept][ExpectBodyModified] get; [Kept][ExpectBodyModified] set; }
 
 			[Kept]
-			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
+			[method: ExpectBodyModified, ExpectLocalsModified]
 			public event EventHandler<EventArgs> PublicEvent;
 			protected event EventHandler<EventArgs> ProtectedEvent;
 			private event EventHandler<EventArgs> PrivateEvent;
 			[Kept]
-			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
+			[method: ExpectBodyModified, ExpectLocalsModified]
 			public event EventHandler<EventArgs> HideEvent;
 
 			[Kept]
@@ -427,16 +426,15 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			public bool PublicPropertyOnBase { get; set; }
 			[Kept]
-			[KeptBackingField]
-			protected bool ProtectedPropertyOnBase { [Kept] get; [Kept] set; }
+			protected bool ProtectedPropertyOnBase { [Kept][ExpectBodyModified] get; [Kept][ExpectBodyModified] set; }
 			private bool PrivatePropertyOnBase { get; set; }
 			public bool HideProperty { get; set; }
 
 			public event EventHandler<EventArgs> PublicEventOnBase;
 			[Kept]
-			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
+			[method: ExpectBodyModified, ExpectLocalsModified]
 			protected event EventHandler<EventArgs> ProtectedEventOnBase;
 			private event EventHandler<EventArgs> PrivateEventOnBase;
 			public event EventHandler<EventArgs> HideEvent;
@@ -483,23 +481,21 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			public bool PublicProperty { get; set; }
 			[Kept]
-			[KeptBackingField]
-			protected bool ProtectedProperty { [Kept] get; [Kept] set; }
+			protected bool ProtectedProperty { [Kept][ExpectBodyModified] get; [Kept][ExpectBodyModified] set; }
 			[Kept]
-			[KeptBackingField]
-			private bool PrivateProperty { [Kept] get; [Kept] set; }
+			private bool PrivateProperty { [Kept][ExpectBodyModified] get; [Kept][ExpectBodyModified] set; }
 			public bool HideProperty { get; set; }
 
 			public event EventHandler<EventArgs> PublicEvent;
 			[Kept]
-			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
+			[method: ExpectBodyModified, ExpectLocalsModified]
 			protected event EventHandler<EventArgs> ProtectedEvent;
 			[Kept]
-			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
+			[method: ExpectBodyModified, ExpectLocalsModified]
 			private event EventHandler<EventArgs> PrivateEvent;
 			public event EventHandler<EventArgs> HideEvent;
 
@@ -556,31 +552,28 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			public void HideMethod () { }
 
 			[Kept]
-			[KeptBackingField]
-			public bool PublicPropertyOnBase { [Kept] get; [Kept] set; }
+			public bool PublicPropertyOnBase { [Kept][ExpectBodyModified] get; [Kept][ExpectBodyModified] set; }
 			[Kept]
-			[KeptBackingField]
-			protected bool ProtectedPropertyOnBase { [Kept] get; [Kept] set; }
+			protected bool ProtectedPropertyOnBase { [Kept][ExpectBodyModified] get; [Kept][ExpectBodyModified] set; }
 			private bool PrivatePropertyOnBase { get; set; }
 			[Kept]
-			[KeptBackingField]
-			public bool HideProperty { [Kept] get; [Kept] set; }
+			public bool HideProperty { [Kept][ExpectBodyModified] get; [Kept][ExpectBodyModified] set; }
 
 			[Kept]
-			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
+			[method: ExpectBodyModified, ExpectLocalsModified]
 			public event EventHandler<EventArgs> PublicEventOnBase;
 			[Kept]
-			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
+			[method: ExpectBodyModified, ExpectLocalsModified]
 			protected event EventHandler<EventArgs> ProtectedEventOnBase;
 			private event EventHandler<EventArgs> PrivateEventOnBase;
 			[Kept]
-			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
+			[method: ExpectBodyModified, ExpectLocalsModified]
 			public event EventHandler<EventArgs> HideEvent;
 
 			[Kept]
@@ -641,37 +634,33 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			public void HideMethod () { }
 
 			[Kept]
-			[KeptBackingField]
-			public bool PublicProperty { [Kept] get; [Kept] set; }
+			public bool PublicProperty { [Kept][ExpectBodyModified] get; [Kept][ExpectBodyModified] set; }
 			[Kept]
-			[KeptBackingField]
-			protected bool ProtectedProperty { [Kept] get; [Kept] set; }
+			protected bool ProtectedProperty { [Kept][ExpectBodyModified] get; [Kept][ExpectBodyModified] set; }
 			[Kept]
-			[KeptBackingField]
-			private bool PrivateProperty { [Kept] get; [Kept] set; }
+			private bool PrivateProperty { [Kept][ExpectBodyModified] get; [Kept][ExpectBodyModified] set; }
 			[Kept]
-			[KeptBackingField]
-			public bool HideProperty { [Kept] get; [Kept] set; }
+			public bool HideProperty { [Kept][ExpectBodyModified] get; [Kept][ExpectBodyModified] set; }
 
 			[Kept]
-			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
+			[method: ExpectBodyModified, ExpectLocalsModified]
 			public event EventHandler<EventArgs> PublicEvent;
 			[Kept]
-			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
+			[method: ExpectBodyModified, ExpectLocalsModified]
 			protected event EventHandler<EventArgs> ProtectedEvent;
 			[Kept]
-			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
+			[method: ExpectBodyModified, ExpectLocalsModified]
 			private event EventHandler<EventArgs> PrivateEvent;
 			[Kept]
-			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
+			[method: ExpectBodyModified, ExpectLocalsModified]
 			public event EventHandler<EventArgs> HideEvent;
 
 			[Kept]
@@ -1044,6 +1033,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			protected class ProtectedBaseNestedType { }
 			private class PrivateBaseNestedType { }
 			public class HideBaseNestedType { }
+			public delegate int PublicDelegate ();
+			private delegate int PrivateDelegate ();
 		}
 
 		[Kept]
@@ -1056,6 +1047,14 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			private class PrivateNestedType { }
 			[Kept]
 			public class HideNestedType { }
+
+			[Kept]
+			[KeptBaseType (typeof (MulticastDelegate))]
+			[KeptMember (".ctor(System.Object,System.IntPtr)")]
+			[KeptMember ("Invoke()")]
+			public delegate int PublicDelegate ();
+
+			private delegate int PrivateDelegate ();
 		}
 
 
@@ -1075,6 +1074,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			protected class ProtectedBaseNestedType { }
 			private class PrivateBaseNestedType { }
 			public class HideBaseNestedType { }
+			public delegate int PublicDelegate ();
+			private delegate int PrivateDelegate ();
 		}
 
 		[Kept]
@@ -1087,6 +1088,14 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[Kept]
 			private class PrivateNestedType { }
 			public class HideNestedType { }
+
+			public delegate int PublicDelegate ();
+
+			[Kept]
+			[KeptBaseType (typeof (MulticastDelegate))]
+			[KeptMember (".ctor(System.Object,System.IntPtr)")]
+			[KeptMember ("Invoke()")]
+			private delegate int PrivateDelegate ();
 		}
 
 
@@ -1106,6 +1115,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			protected class ProtectedBaseNestedType { }
 			private class PrivateBaseNestedType { }
 			public class HideBaseNestedType { }
+			public delegate int PublicBaseDelegate ();
+			private delegate int PrivateBaseDelegate ();
 		}
 
 		[Kept]
@@ -1120,6 +1131,18 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			private class PrivateNestedType { }
 			[Kept]
 			public class HideNestedType { }
+
+			[Kept]
+			[KeptBaseType (typeof (MulticastDelegate))]
+			[KeptMember (".ctor(System.Object,System.IntPtr)")]
+			[KeptMember ("Invoke()")]
+			public delegate int PublicDelegate ();
+
+			[Kept]
+			[KeptBaseType (typeof (MulticastDelegate))]
+			[KeptMember (".ctor(System.Object,System.IntPtr)")]
+			[KeptMember ("Invoke()")]
+			private delegate int PrivateDelegate ();
 		}
 
 
@@ -1135,8 +1158,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		class PublicPropertiesBaseType
 		{
 			[Kept]
-			[KeptBackingField]
-			public bool PublicPropertyOnBase { [Kept] get; [Kept] set; }
+			public bool PublicPropertyOnBase { [Kept][ExpectBodyModified] get; [Kept][ExpectBodyModified] set; }
 			[Kept]
 			public bool PublicPropertyGetterOnBase { [Kept] get { return false; } [Kept] private set { } }
 			[Kept]
@@ -1148,8 +1170,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			protected bool ProtectedPropertyOnBase { get; set; }
 			private bool PrivatePropertyOnBase { get; set; }
 			[Kept]
-			[KeptBackingField]
-			public bool HideProperty { [Kept] get; [Kept] set; }
+			public bool HideProperty { [Kept][ExpectBodyModified] get; [Kept][ExpectBodyModified] set; }
 
 			[Kept]
 			[KeptBackingField]
@@ -1166,8 +1187,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		class PublicPropertiesType : PublicPropertiesBaseType
 		{
 			[Kept]
-			[KeptBackingField]
-			public bool PublicProperty { [Kept] get; [Kept] set; }
+			public bool PublicProperty { [Kept][ExpectBodyModified] get; [Kept][ExpectBodyModified] set; }
 			[Kept]
 			public bool PublicPropertyGetter { [Kept] get { return false; } [Kept] private set { } }
 			[Kept]
@@ -1179,8 +1199,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			protected bool ProtectedProperty { get; set; }
 			private bool PrivateProperty { get; set; }
 			[Kept]
-			[KeptBackingField]
-			public bool HideProperty { [Kept] get; [Kept] set; }
+			public bool HideProperty { [Kept][ExpectBodyModified] get; [Kept][ExpectBodyModified] set; }
 
 			[Kept]
 			[KeptBackingField]
@@ -1210,8 +1229,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			public bool PublicPropertyOnlyGetterOnBase { get { return false; } }
 			public bool PublicPropertyOnlySetterOnBase { set { } }
 			[Kept]
-			[KeptBackingField]
-			protected bool ProtectedPropertyOnBase { [Kept] get; [Kept] set; }
+			protected bool ProtectedPropertyOnBase { [Kept][ExpectBodyModified] get; [Kept][ExpectBodyModified] set; }
 			private bool PrivatePropertyOnBase { get; set; }
 			public bool HideProperty { get; set; }
 
@@ -1233,11 +1251,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			public bool PublicPropertyOnlyGetter { get { return false; } }
 			public bool PublicPropertyOnlySetter { set { } }
 			[Kept]
-			[KeptBackingField]
-			protected bool ProtectedProperty { [Kept] get; [Kept] set; }
+			protected bool ProtectedProperty { [Kept][ExpectBodyModified] get; [Kept][ExpectBodyModified] set; }
 			[Kept]
-			[KeptBackingField]
-			private bool PrivateProperty { [Kept] get; [Kept] set; }
+			private bool PrivateProperty { [Kept][ExpectBodyModified] get; [Kept][ExpectBodyModified] set; }
 			public bool HideProperty { get; set; }
 
 			static public bool PublicStaticProperty { get; set; }
@@ -1262,8 +1278,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		class AllPropertiesBaseType
 		{
 			[Kept]
-			[KeptBackingField]
-			public bool PublicPropertyOnBase { [Kept] get; [Kept] set; }
+			public bool PublicPropertyOnBase { [Kept][ExpectBodyModified] get; [Kept][ExpectBodyModified] set; }
 			[Kept]
 			public bool PublicPropertyGetterOnBase { [Kept] get { return false; } [Kept] private set { } }
 			[Kept]
@@ -1273,12 +1288,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[Kept]
 			public bool PublicPropertyOnlySetterOnBase { [Kept] set { } }
 			[Kept]
-			[KeptBackingField]
-			protected bool ProtectedPropertyOnBase { [Kept] get; [Kept] set; }
+			protected bool ProtectedPropertyOnBase { [Kept][ExpectBodyModified] get; [Kept][ExpectBodyModified] set; }
 			private bool PrivatePropertyOnBase { get; set; }
 			[Kept]
-			[KeptBackingField]
-			public bool HideProperty { [Kept] get; [Kept] set; }
+			public bool HideProperty { [Kept][ExpectBodyModified] get; [Kept][ExpectBodyModified] set; }
 
 			[Kept]
 			[KeptBackingField]
@@ -1297,8 +1310,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		class AllPropertiesType : AllPropertiesBaseType
 		{
 			[Kept]
-			[KeptBackingField]
-			public bool PublicProperty { [Kept] get; [Kept] set; }
+			public bool PublicProperty { [Kept][ExpectBodyModified] get; [Kept][ExpectBodyModified] set; }
 			[Kept]
 			public bool PublicPropertyGetter { [Kept] get { return false; } [Kept] private set { } }
 			[Kept]
@@ -1308,14 +1320,11 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[Kept]
 			public bool PublicPropertyOnlySetter { [Kept] set { } }
 			[Kept]
-			[KeptBackingField]
-			protected bool ProtectedProperty { [Kept] get; [Kept] set; }
+			protected bool ProtectedProperty { [Kept][ExpectBodyModified] get; [Kept][ExpectBodyModified] set; }
 			[Kept]
-			[KeptBackingField]
-			private bool PrivateProperty { [Kept] get; [Kept] set; }
+			private bool PrivateProperty { [Kept][ExpectBodyModified] get; [Kept][ExpectBodyModified] set; }
 			[Kept]
-			[KeptBackingField]
-			public bool HideProperty { [Kept] get; [Kept] set; }
+			public bool HideProperty { [Kept][ExpectBodyModified] get; [Kept][ExpectBodyModified] set; }
 
 			[Kept]
 			[KeptBackingField]
@@ -1344,16 +1353,16 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		class PublicEventsBaseType
 		{
 			[Kept]
-			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
+			[method: ExpectBodyModified, ExpectLocalsModified]
 			public event EventHandler<EventArgs> PublicEventOnBase;
 			protected event EventHandler<EventArgs> ProtectedEventOnBase;
 			private event EventHandler<EventArgs> PrivateEventOnBase;
 			[Kept]
-			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
+			[method: ExpectBodyModified, ExpectLocalsModified]
 			public event EventHandler<EventArgs> HideEvent;
 
 			[Kept]
@@ -1375,16 +1384,16 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		class PublicEventsType : PublicEventsBaseType
 		{
 			[Kept]
-			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
+			[method: ExpectBodyModified, ExpectLocalsModified]
 			public event EventHandler<EventArgs> PublicEvent;
 			protected event EventHandler<EventArgs> ProtectedEvent;
 			private event EventHandler<EventArgs> PrivateEvent;
 			[Kept]
-			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
+			[method: ExpectBodyModified, ExpectLocalsModified]
 			public event EventHandler<EventArgs> HideEvent;
 
 			[Kept]
@@ -1415,9 +1424,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		{
 			public event EventHandler<EventArgs> PublicEventOnBase;
 			[Kept]
-			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
+			[method: ExpectBodyModified, ExpectLocalsModified]
 			protected event EventHandler<EventArgs> ProtectedEventOnBase;
 			private event EventHandler<EventArgs> PrivateEventOnBase;
 			public event EventHandler<EventArgs> HideEvent;
@@ -1438,14 +1447,14 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		{
 			public event EventHandler<EventArgs> PublicEvent;
 			[Kept]
-			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
+			[method: ExpectBodyModified, ExpectLocalsModified]
 			protected event EventHandler<EventArgs> ProtectedEvent;
 			[Kept]
-			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
+			[method: ExpectBodyModified, ExpectLocalsModified]
 			private event EventHandler<EventArgs> PrivateEvent;
 			public event EventHandler<EventArgs> HideEvent;
 
@@ -1475,20 +1484,20 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		class AllEventsBaseType
 		{
 			[Kept]
-			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
+			[method: ExpectBodyModified, ExpectLocalsModified]
 			public event EventHandler<EventArgs> PublicEventOnBase;
 			[Kept]
-			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
+			[method: ExpectBodyModified, ExpectLocalsModified]
 			protected event EventHandler<EventArgs> ProtectedEventOnBase;
 			private event EventHandler<EventArgs> PrivateEventOnBase;
 			[Kept]
-			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
+			[method: ExpectBodyModified, ExpectLocalsModified]
 			public event EventHandler<EventArgs> HideEvent;
 
 			[Kept]
@@ -1514,24 +1523,24 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		class AllEventsType : AllEventsBaseType
 		{
 			[Kept]
-			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
+			[method: ExpectBodyModified, ExpectLocalsModified]
 			public event EventHandler<EventArgs> PublicEvent;
 			[Kept]
-			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
+			[method: ExpectBodyModified, ExpectLocalsModified]
 			protected event EventHandler<EventArgs> ProtectedEvent;
 			[Kept]
-			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
+			[method: ExpectBodyModified, ExpectLocalsModified]
 			private event EventHandler<EventArgs> PrivateEvent;
 			[Kept]
-			[KeptBackingField]
 			[KeptEventAddMethod]
 			[KeptEventRemoveMethod]
+			[method: ExpectBodyModified, ExpectLocalsModified]
 			public event EventHandler<EventArgs> HideEvent;
 
 			[Kept]
@@ -1693,10 +1702,27 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[Kept]
 			[KeptMember (".ctor()")]
 			public class HideBaseNestedType { }
+
+			[Kept]
+			[KeptBaseType (typeof (MulticastDelegate))]
+			[KeptMember (".ctor(System.Object,System.IntPtr)")]
+			[KeptMember ("Invoke()")]
+			[KeptMember ("BeginInvoke(System.AsyncCallback,System.Object)")]
+			[KeptMember ("EndInvoke(System.IAsyncResult)")]
+			public delegate int PublicBaseDelegate ();
+
+			[Kept]
+			[KeptBaseType (typeof (MulticastDelegate))]
+			[KeptMember (".ctor(System.Object,System.IntPtr)")]
+			[KeptMember ("Invoke()")]
+			[KeptMember ("BeginInvoke(System.AsyncCallback,System.Object)")]
+			[KeptMember ("EndInvoke(System.IAsyncResult)")]
+			private delegate int PrivateBaseDelegate ();
 		}
 
 		[Kept]
 		[KeptBaseType (typeof (AllBaseType))]
+		[AddedPseudoAttributeAttribute ((uint) TypeAttributes.BeforeFieldInit)]
 		class AllType : AllBaseType
 		{
 			[Kept]
@@ -1845,6 +1871,69 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[Kept]
 			[KeptMember (".ctor()")]
 			public class HideNestedType { }
+
+			[Kept]
+			[KeptBaseType (typeof (MulticastDelegate))]
+			[KeptMember (".ctor(System.Object,System.IntPtr)")]
+			[KeptMember ("Invoke()")]
+			[KeptMember ("BeginInvoke(System.AsyncCallback,System.Object)")]
+			[KeptMember ("EndInvoke(System.IAsyncResult)")]
+			public delegate int PublicDelegate ();
+
+			[Kept]
+			[KeptBaseType (typeof (MulticastDelegate))]
+			[KeptMember (".ctor(System.Object,System.IntPtr)")]
+			[KeptMember ("Invoke()")]
+			[KeptMember ("BeginInvoke(System.AsyncCallback,System.Object)")]
+			[KeptMember ("EndInvoke(System.IAsyncResult)")]
+			private delegate int PrivateDelegate ();
+		}
+
+		[Kept]
+		class RequireAllWithRecursiveTypeReferences
+		{
+			[Kept]
+			RequireAllWithRecursiveTypeReferences ()
+			{
+			}
+
+			[Kept]
+			class NestedType
+			{
+				[Kept]
+				NestedType ()
+				{
+				}
+
+				[Kept]
+				RequireAllWithRecursiveTypeReferences parent;
+			}
+
+			[Kept]
+			[KeptMember (".ctor()")]
+			[KeptBaseType (typeof (RequireAllWithRecursiveTypeReferences))]
+			class NestedTypeWithRecursiveBase : RequireAllWithRecursiveTypeReferences
+			{
+			}
+
+			[Kept]
+			[KeptInterface (typeof (IEquatable<RequireAllWithRecursiveTypeReferences>))]
+			[KeptMember (".ctor()")]
+			class NestedTypeWithRecursiveGenericInterface : IEquatable<RequireAllWithRecursiveTypeReferences>
+			{
+				[Kept]
+				public bool Equals (RequireAllWithRecursiveTypeReferences other)
+				{
+					throw new NotImplementedException ();
+				}
+			}
+
+			[Kept]
+			[KeptMember (".ctor()")]
+			[KeptBaseType (typeof (List<RequireAllWithRecursiveTypeReferences>))]
+			class NestedTypeWithRecursiveGenericBaseClass : List<RequireAllWithRecursiveTypeReferences>
+			{
+			}
 		}
 	}
 }

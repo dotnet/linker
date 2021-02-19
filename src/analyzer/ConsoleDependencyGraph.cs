@@ -80,15 +80,37 @@ namespace LinkerAnalyzer
 				Console.WriteLine ("Root dependency");
 			} else {
 				int i = 0;
+				var visited = new HashSet<int> ();
+
 				foreach (int index in vertex.parentIndexes) {
 					Console.WriteLine ("Dependency #{0}", ++i);
 					Console.WriteLine ($"\t{vertex.value}{SizeString (vertex)}");
+
 					var childVertex = Vertex (index);
 					Console.WriteLine ("\t| {0}{1}", childVertex.value, childVertex.DepsCount);
+
+					visited.Clear ();
+					visited.Add (index);
+
 					while (childVertex.parentIndexes != null) {
-						childVertex = Vertex (childVertex.parentIndexes [0]);
+						int pi = 0, childIdx;
+
+						do {
+							childIdx = childVertex.parentIndexes [pi];
+							pi++;
+						} while (visited.Contains (childIdx) && pi < childVertex.parentIndexes.Count);
+
+						childVertex = Vertex (childIdx);
+
+						if (visited.Contains (childIdx)) {
+							Console.WriteLine ($"\twarning: loop to {childVertex.value}");
+							break;
+						}
+
+						visited.Add (childIdx);
 						Console.WriteLine ("\t| {0}{1}", childVertex.value, childVertex.DepsCount);
 					}
+
 					if (Tree)
 						break;
 				}
@@ -111,7 +133,7 @@ namespace LinkerAnalyzer
 				ShowDependencies (type);
 		}
 
-		string Tabs (string key)
+		static string Tabs (string key)
 		{
 			int count = Math.Max (1, 2 - key.Length / 8);
 
@@ -169,13 +191,13 @@ namespace LinkerAnalyzer
 
 		static readonly string line = new string ('-', 72);
 
-		void Line ()
+		static void Line ()
 		{
 			Console.Write (line);
 			Console.WriteLine ();
 		}
 
-		static public void Header (string header, params object[] values)
+		public static void Header (string header, params object[] values)
 		{
 			string formatted = string.Format (header, values);
 			Console.WriteLine ();

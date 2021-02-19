@@ -27,8 +27,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 		public void Verify ()
 		{
-			// TODO: Implement fully, probably via custom Kept attribute
-			Assert.IsFalse (linkedAssembly.MainModule.HasExportedTypes);
+			VerifyExportedTypes (originalAssembly, linkedAssembly);
 
 			VerifyCustomAttributes (originalAssembly, linkedAssembly);
 			VerifySecurityAttributes (originalAssembly, linkedAssembly);
@@ -381,8 +380,43 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				nameof (ExpectedInstructionSequenceAttribute),
 				nameof (ExpectBodyModifiedAttribute),
 				"instructions",
-				m => m.Body.Instructions.Select (ins => ins.OpCode.ToString ().ToLower ()).ToArray (),
+				m => m.Body.Instructions.Select (ins => FormatInstruction (ins).ToLower ()).ToArray (),
 				attr => GetStringArrayAttributeValue (attr).Select (v => v.ToLower ()).ToArray ());
+		}
+
+		public static string FormatInstruction (Instruction instr)
+		{
+			switch (instr.OpCode.Code) {
+			case Code.Ldc_I4:
+				if (instr.Operand is int ivalue)
+					return $"{instr.OpCode.ToString ()} 0x{ivalue.ToString ("x")}";
+
+				throw new NotImplementedException (instr.Operand.GetType ().ToString ());
+			case Code.Ldc_I4_S:
+				if (instr.Operand is sbyte bvalue)
+					return $"{instr.OpCode.ToString ()} 0x{bvalue.ToString ("x")}";
+
+				throw new NotImplementedException (instr.Operand.GetType ().ToString ());
+			case Code.Ldc_I8:
+				if (instr.Operand is long lvalue)
+					return $"{instr.OpCode.ToString ()} 0x{lvalue.ToString ("x")}";
+
+				throw new NotImplementedException (instr.Operand.GetType ().ToString ());
+
+			case Code.Ldc_R4:
+				if (instr.Operand is float fvalue)
+					return $"{instr.OpCode.ToString ()} {fvalue.ToString ()}";
+
+				throw new NotImplementedException (instr.Operand.GetType ().ToString ());
+
+			case Code.Ldc_R8:
+				if (instr.Operand is double dvalue)
+					return $"{instr.OpCode.ToString ()} {dvalue.ToString ()}";
+
+				throw new NotImplementedException (instr.Operand.GetType ().ToString ());
+			default:
+				return instr.OpCode.ToString ();
+			}
 		}
 
 		static void VerifyExceptionHandlers (MethodDefinition src, MethodDefinition linked)
@@ -409,7 +443,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				attr => GetStringOrTypeArrayAttributeValue (attr).ToArray ());
 		}
 
-		protected static void VerifyBodyProperties (MethodDefinition src, MethodDefinition linked, string sequenceAttributeName, string expectModifiedAttributeName,
+		public static void VerifyBodyProperties (MethodDefinition src, MethodDefinition linked, string sequenceAttributeName, string expectModifiedAttributeName,
 			string propertyDescription,
 			Func<MethodDefinition, string[]> valueCollector,
 			Func<CustomAttribute, string[]> getExpectFromSequenceAttribute)
@@ -478,6 +512,14 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				.SelectMany (t => GetCustomAttributeCtorValues<string> (t, nameof (KeptResourceAttribute)));
 
 			Assert.That (linked.MainModule.Resources.Select (r => r.Name), Is.EquivalentTo (expectedResources));
+		}
+
+		void VerifyExportedTypes (AssemblyDefinition original, AssemblyDefinition linked)
+		{
+			var expectedTypes = original.MainModule.AllDefinedTypes ()
+				.SelectMany (t => GetCustomAttributeCtorValues<TypeReference> (t, nameof (KeptExportedTypeAttribute)).Select (l => l.FullName)).ToArray ();
+
+			Assert.That (linked.MainModule.ExportedTypes.Select (l => l.FullName), Is.EquivalentTo (expectedTypes));
 		}
 
 		protected virtual void VerifyPseudoAttributes (MethodDefinition src, MethodDefinition linked)

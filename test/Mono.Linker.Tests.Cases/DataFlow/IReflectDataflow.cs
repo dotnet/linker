@@ -1,19 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Reflection;
-using System.Text;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
 namespace Mono.Linker.Tests.Cases.DataFlow
 {
 	// Hits what appears to be a bug in the tool
 	// Could not initialize vtable of class(0x02000007) .MyReflect due to VTable setup of type Mono.Linker.Tests.Cases.DataFlow.IReflectDataflow+MyReflect failed assembly:/tmp/linker_tests/output/test.exe type:MyReflect member:(null)
-	[SkipPeVerify (SkipPeVerifyForToolchian.Pedump)]
+	[SkipPeVerify]
 	class IReflectDataflow
 	{
+		[ExpectBodyModified]
 		public static void Main ()
 		{
 			// The cast here fails at runtime, but that's okay, we just want something to flow here.

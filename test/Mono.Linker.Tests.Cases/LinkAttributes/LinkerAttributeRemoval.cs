@@ -5,7 +5,6 @@
 using System;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 using Mono.Linker.Tests.Cases.LinkAttributes.Dependencies;
@@ -18,8 +17,17 @@ namespace Mono.Linker.Tests.Cases.LinkAttributes
 	[SetupCompileBefore ("attribute.dll", new[] { "Dependencies/LinkerAttributeRemovalAttributeToRemove.cs" })]
 	[SetupCompileBefore ("copyattribute.dll", new[] { "Dependencies/LinkerAttributeRemovalAttributeFromCopyAssembly.cs" })]
 	[SetupLinkerAction ("copy", "copyattribute")]
+#if !NETCOREAPP
+	[Reference ("System.dll")]
+	[SetupCompileBefore ("copyassembly.dll", new[] { "Dependencies/LinkerAttributeRemovalCopyAssembly.cs" }, references: new[] { "System.dll", "attribute.dll" })]
+#else
 	[SetupCompileBefore ("copyassembly.dll", new[] { "Dependencies/LinkerAttributeRemovalCopyAssembly.cs" }, references: new[] { "attribute.dll" })]
+#endif
 	[SetupLinkerAction ("copy", "copyassembly")]
+
+	[SetupCompileBefore (
+		"LinkerAttributeRemovalEmbeddedAndLazyLoad.dll",
+		new[] { "Dependencies/LinkerAttributeRemovalEmbeddedAndLazyLoad.cs" })]
 
 	// The test here is that the TypeOnCopyAssemblyWithAttributeUsage has an attribute TestAttributeUsedFromCopyAssemblyAttribute
 	// which is marked for removal by the LinkerAttributeRemoval.xml. Normally that would mean that the attribute usage
@@ -38,6 +46,13 @@ namespace Mono.Linker.Tests.Cases.LinkAttributes
 
 	[KeptAssembly ("copyattribute.dll")]
 	[KeptTypeInAssembly ("copyattribute.dll", typeof (AttributeFromCopyAssemblyAttribute))]
+
+	[KeptAssembly ("LinkerAttributeRemovalEmbeddedAndLazyLoad.dll")]
+	[KeptTypeInAssembly ("LinkerAttributeRemovalEmbeddedAndLazyLoad.dll", typeof (TypeWithEmbeddedAttributeToBeRemoved))]
+	// This needs to fixed with lazy loading assembly refactoring - currently the assembly="*" only applies to assemblies in initial closure
+	// The attribute should be removed and not kept as it is now
+	// [RemovedAttributeInAssembly ("LinkerAttributeRemovalEmbeddedAndLazyLoad.dll", typeof (EmbeddedAttributeToBeRemoved), typeof (TypeWithEmbeddedAttributeToBeRemoved))]
+	[KeptAttributeInAssembly ("LinkerAttributeRemovalEmbeddedAndLazyLoad", typeof (EmbeddedAttributeToBeRemoved), typeof (TypeWithEmbeddedAttributeToBeRemoved))]
 
 	[LogContains ("IL2045: Mono.Linker.Tests.Cases.LinkAttributes.LinkerAttributeRemoval.TestType(): Attribute 'System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute'")]
 	[LogContains ("IL2045: Mono.Linker.Tests.Cases.LinkAttributes.Dependencies.TypeOnCopyAssemblyWithAttributeUsage.TypeOnCopyAssemblyWithAttributeUsage(): Attribute 'Mono.Linker.Tests.Cases.LinkAttributes.Dependencies.TestAttributeReferencedAsTypeFromCopyAssemblyAttribute'")]
@@ -61,11 +76,15 @@ namespace Mono.Linker.Tests.Cases.LinkAttributes
 			TestAttributeUsageRemovedEvenIfAttributeIsKeptForOtherReasons ();
 
 			TestAttributeFromCopyAssembly ();
+
+			TestEmbeddedAttributeLazyLoadRemoved ();
 		}
 
+#pragma warning disable CS0414
 		[Kept]
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
 		Type _fieldWithCustomAttribute;
+#pragma warning restore CS0414
 
 		[Kept]
 		[KeptAttributeAttribute (typeof (TestDontRemoveAttribute))]
@@ -94,6 +113,18 @@ namespace Mono.Linker.Tests.Cases.LinkAttributes
 		[AttributeFromCopyAssembly]
 		static void TestAttributeFromCopyAssembly ()
 		{
+		}
+
+		[Kept]
+		// This attribute should be removed once the assembly lazy loading is implemented
+		[DynamicDependency (
+			DynamicallyAccessedMemberTypes.PublicConstructors,
+			"Mono.Linker.Tests.Cases.LinkAttributes.Dependencies.TypeWithEmbeddedAttributeToBeRemoved",
+			"LinkerAttributeRemovalEmbeddedAndLazyLoad")]
+		static void TestEmbeddedAttributeLazyLoadRemoved ()
+		{
+			// This needs the DynamicDependency above otherwise linker will not load the assembly at all
+			Activator.CreateInstance (Type.GetType ("Mono.Linker.Tests.Cases.LinkAttributes.Dependencies.TypeWithEmbeddedAttributeToBeRemoved, LinkerAttributeRemovalEmbeddedAndLazyLoad"));
 		}
 	}
 
