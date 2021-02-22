@@ -18,5 +18,10 @@ namespace Mono.Linker.Steps
 		/// Register a callback that will be invoked once for each marked type.
 		/// </summary>
 		public abstract void RegisterMarkTypeAction (Action<TypeDefinition> action);
+
+		/// <summary>
+		/// Register a callback that will be invoked once for each marked method.
+		/// </summary>
+		public abstract void RegisterMarkMethodAction (Action<MethodDefinition> action);
 	}
 }

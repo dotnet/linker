@@ -2665,6 +2665,9 @@ namespace Mono.Linker.Steps
 
 			_unreachableBlocksOptimizer.ProcessMethod (method);
 
+			foreach (Action<MethodDefinition> handleMarkMethod in _markContext.MarkMethodActions)
+				handleMarkMethod (method);
+
 			if (!markedForCall)
 				MarkType (method.DeclaringType, new DependencyInfo (DependencyKind.DeclaringType, method), method);
 			MarkCustomAttributes (method, new DependencyInfo (DependencyKind.CustomAttribute, method), method);
