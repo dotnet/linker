@@ -402,8 +402,7 @@ namespace Mono.Linker.Steps
 				return false;
 
 			if (definition.Namespace == "System.Security") {
-				return definition.FullName switch
-				{
+				return definition.FullName switch {
 					// This seems to be one attribute in the System.Security namespace that doesn't count
 					// as an attribute that requires HasSecurity to be true
 					"System.Security.SecurityCriticalAttribute" => false,
@@ -567,6 +566,7 @@ namespace Mono.Linker.Steps
 				updated = new HashSet<TypeReference> ();
 
 				UpdateCustomAttributesTypesScopes (assembly);
+				UpdateSecurityAttributesTypesScopes (assembly);
 
 				foreach (var module in assembly.Modules)
 					UpdateCustomAttributesTypesScopes (module);
@@ -587,6 +587,7 @@ namespace Mono.Linker.Steps
 			void UpdateScopes (TypeDefinition typeDefinition)
 			{
 				UpdateCustomAttributesTypesScopes (typeDefinition);
+				UpdateSecurityAttributesTypesScopes (typeDefinition);
 
 				if (typeDefinition.BaseType != null)
 					UpdateScopeOfTypeReference (typeDefinition.BaseType);
@@ -619,6 +620,7 @@ namespace Mono.Linker.Steps
 				if (typeDefinition.HasMethods) {
 					foreach (var m in typeDefinition.Methods) {
 						UpdateCustomAttributesTypesScopes (m);
+						UpdateSecurityAttributesTypesScopes (m);
 						if (m.HasGenericParameters)
 							UpdateTypeScope (m.GenericParameters);
 
@@ -788,6 +790,20 @@ namespace Mono.Linker.Steps
 					UpdateForwardedTypesScope (ca);
 			}
 
+			void UpdateSecurityAttributesTypesScopes (ISecurityDeclarationProvider securityAttributeProvider)
+			{
+				if (!securityAttributeProvider.HasSecurityDeclarations)
+					return;
+
+				foreach (var ca in securityAttributeProvider.SecurityDeclarations) {
+					if (!ca.HasSecurityAttributes)
+						continue;
+
+					foreach (var securityAttribute in ca.SecurityAttributes)
+						UpdateForwardedTypesScope (securityAttribute);
+				}
+			}
+
 			void UpdateForwardedTypesScope (CustomAttribute attribute)
 			{
 				UpdateMethodReference (attribute.Constructor);
@@ -797,6 +813,19 @@ namespace Mono.Linker.Steps
 						UpdateForwardedTypesScope (ca);
 				}
 
+				if (attribute.HasFields) {
+					foreach (var field in attribute.Fields)
+						UpdateForwardedTypesScope (field.Argument);
+				}
+
+				if (attribute.HasProperties) {
+					foreach (var property in attribute.Properties)
+						UpdateForwardedTypesScope (property.Argument);
+				}
+			}
+
+			void UpdateForwardedTypesScope (SecurityAttribute attribute)
+			{
 				if (attribute.HasFields) {
 					foreach (var field in attribute.Fields)
 						UpdateForwardedTypesScope (field.Argument);

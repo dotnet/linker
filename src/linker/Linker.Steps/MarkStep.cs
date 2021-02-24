@@ -802,11 +802,11 @@ namespace Mono.Linker.Steps
 			if (isPreserveDependency)
 				MarkUserDependency (member, ca, sourceLocationMember);
 
-			if (_context.KeepDependencyAttributes || Annotations.GetAction ((member as MemberReference).Module.Assembly) != AssemblyAction.Link) {
-				MarkCustomAttribute (ca, reason, sourceLocationMember);
-			} else {
+			if (_context.CanApplyOptimization (CodeOptimizations.RemoveDynamicDependencyAttribute, member.DeclaringType.Module.Assembly)) {
 				// Record the custom attribute so that it has a reason, without actually marking it.
 				Tracer.AddDirectDependency (ca, reason, marked: false);
+			} else {
+				MarkCustomAttribute (ca, reason, sourceLocationMember);
 			}
 
 			return true;
@@ -1504,8 +1504,7 @@ namespace Mono.Linker.Steps
 
 			var parent = field.DeclaringType;
 			if (!Annotations.HasPreservedStaticCtor (parent)) {
-				var cctorReason = reason.Kind switch
-				{
+				var cctorReason = reason.Kind switch {
 					// Report an edge directly from the method accessing the field to the static ctor it triggers
 					DependencyKind.FieldAccess => new DependencyInfo (DependencyKind.TriggersCctorThroughFieldAccess, reason.Source),
 					_ => new DependencyInfo (DependencyKind.CctorForField, field)
@@ -2144,15 +2143,6 @@ namespace Mono.Linker.Steps
 			return null;
 		}
 
-		void MarkFieldsIf (Collection<FieldDefinition> fields, Func<FieldDefinition, bool> predicate, in DependencyInfo reason)
-		{
-			foreach (FieldDefinition field in fields) {
-				if (predicate (field)) {
-					MarkField (field, reason);
-				}
-			}
-		}
-
 		protected bool MarkDefaultConstructor (TypeDefinition type, in DependencyInfo reason, IMemberDefinition sourceLocationMember)
 		{
 			if (type?.HasMethods != true)
@@ -2385,24 +2375,41 @@ namespace Mono.Linker.Steps
 
 			if (Annotations.TryGetPreservedMembers (type, out TypePreserveMembers members)) {
 				var di = new DependencyInfo (DependencyKind.TypePreserve, type);
+				var mo = new MessageOrigin (type);
 
-				switch (members) {
-				case TypePreserveMembers.AllVisible:
-					if (type.HasMethods)
-						MarkMethodsIf (type.Methods, IsMethodVisible, di, type);
+				if (type.HasMethods) {
+					foreach (var m in type.Methods) {
+						if ((members & TypePreserveMembers.Visible) != 0 && IsMethodVisible (m)) {
+							MarkMethod (m, di, mo);
+							continue;
+						}
 
-					if (type.HasFields)
-						MarkFieldsIf (type.Fields, IsFieldVisible, di);
+						if ((members & TypePreserveMembers.Internal) != 0 && IsMethodInternal (m)) {
+							MarkMethod (m, di, mo);
+							continue;
+						}
 
-					break;
-				case TypePreserveMembers.AllVisibleOrInternal:
-					if (type.HasMethods)
-						MarkMethodsIf (type.Methods, IsMethodVisibleOrInternal, di, type);
+						if ((members & TypePreserveMembers.Library) != 0) {
+							if (IsSpecialSerializationConstructor (m)) {
+								MarkMethod (m, di, mo);
+								continue;
+							}
+						}
+					}
+				}
 
-					if (type.HasFields)
-						MarkFieldsIf (type.Fields, IsFieldVisibleOrInternal, di);
+				if (type.HasFields) {
+					foreach (var f in type.Fields) {
+						if ((members & TypePreserveMembers.Visible) != 0 && IsFieldVisible (f)) {
+							MarkField (f, di);
+							continue;
+						}
 
-					break;
+						if ((members & TypePreserveMembers.Internal) != 0 && IsFieldInternal (f)) {
+							MarkField (f, di);
+							continue;
+						}
+					}
 				}
 			}
 		}
@@ -2412,9 +2419,9 @@ namespace Mono.Linker.Steps
 			return method.IsPublic || method.IsFamily || method.IsFamilyOrAssembly;
 		}
 
-		static bool IsMethodVisibleOrInternal (MethodDefinition method)
+		static bool IsMethodInternal (MethodDefinition method)
 		{
-			return method.IsPublic || method.IsFamily || method.IsFamilyOrAssembly || method.IsAssembly || method.IsFamilyAndAssembly;
+			return method.IsAssembly || method.IsFamilyAndAssembly;
 		}
 
 		static bool IsFieldVisible (FieldDefinition field)
@@ -2422,9 +2429,9 @@ namespace Mono.Linker.Steps
 			return field.IsPublic || field.IsFamily || field.IsFamilyOrAssembly;
 		}
 
-		static bool IsFieldVisibleOrInternal (FieldDefinition field)
+		static bool IsFieldInternal (FieldDefinition field)
 		{
-			return field.IsPublic || field.IsFamily || field.IsFamilyOrAssembly || field.IsAssembly || field.IsFamilyAndAssembly;
+			return field.IsAssembly || field.IsFamilyAndAssembly;
 		}
 
 		void ApplyPreserveMethods (TypeDefinition type)
@@ -3134,8 +3141,7 @@ namespace Mono.Linker.Steps
 				break;
 
 			case OperandType.InlineMethod: {
-					DependencyKind dependencyKind = instruction.OpCode.Code switch
-					{
+					DependencyKind dependencyKind = instruction.OpCode.Code switch {
 						Code.Jmp => DependencyKind.DirectCall,
 						Code.Call => DependencyKind.DirectCall,
 						Code.Callvirt => DependencyKind.VirtualCall,
@@ -3171,10 +3177,10 @@ namespace Mono.Linker.Steps
 					Annotations.MarkRelevantToVariantCasting (operand.Resolve ());
 					break;
 				case Code.Isinst:
-					if (Annotations.GetAction (method.DeclaringType.Module.Assembly) != AssemblyAction.Link)
+					if (operand is TypeSpecification || operand is GenericParameter)
 						break;
 
-					if (operand is TypeSpecification || operand is GenericParameter)
+					if (!_context.CanApplyOptimization (CodeOptimizations.UnusedTypeChecks, method.DeclaringType.Module.Assembly))
 						break;
 
 					TypeDefinition type = operand.Resolve ();
@@ -3184,9 +3190,6 @@ namespace Mono.Linker.Steps
 					}
 
 					if (type.IsInterface)
-						break;
-
-					if (!_context.IsOptimizationEnabled (CodeOptimizations.UnusedTypeChecks, method.DeclaringType))
 						break;
 
 					if (!Annotations.IsInstantiated (type)) {
