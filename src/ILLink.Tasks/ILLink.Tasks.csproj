@@ -19,6 +19,7 @@
     <!-- Place linker and cecil alongside ILLink.Tasks in the output, for integration tests. -->
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <Nullable>disable</Nullable>
+    <PackageType>MSBuildSdk</PackageType>
   </PropertyGroup>
 
   <ItemGroup>
@@ -30,8 +31,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="sdk/Sdk.props" PackagePath="sdk" />
-    <Content Include="build/$(PackageId).props" PackagePath="build" />
+    <Content Include="sdk/Sdk.props" PackagePath="Sdk/" />
+    <Content Include="build/$(PackageId).props" PackagePath="build/" />
   </ItemGroup>
 
   <ItemGroup>
