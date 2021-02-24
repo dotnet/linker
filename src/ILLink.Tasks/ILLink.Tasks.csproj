@@ -19,7 +19,6 @@
     <!-- Place linker and cecil alongside ILLink.Tasks in the output, for integration tests. -->
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <Nullable>disable</Nullable>
-    <PackageType>MSBuildSdk</PackageType>
   </PropertyGroup>
 
   <ItemGroup>
