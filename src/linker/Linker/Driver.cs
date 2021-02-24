@@ -855,7 +855,10 @@ namespace Mono.Linker
 				else
 					pipeline.AddStepAfter (target, customStep);
 
-			} else if (typeof (IMarkHandler).IsAssignableFrom (stepType)) {
+				return true;
+			}
+
+			if (typeof (IMarkHandler).IsAssignableFrom (stepType)) {
 
 				var customStep = (IMarkHandler) Activator.CreateInstance (stepType);
 				if (targetName == null) {
@@ -874,12 +877,11 @@ namespace Mono.Linker
 				else
 					pipeline.AddMarkHandlerAfter (target, customStep);
 
-			} else {
-				context.LogError ($"Custom step '{stepType}' is incompatible with this linker version", 1028);
-				return false;
+				return true;
 			}
 
-			return true;
+			context.LogError ($"Custom step '{stepType}' is incompatible with this linker version", 1028);
+			return false;
 		}
 
 		static IStep FindStep (Pipeline pipeline, string name)
