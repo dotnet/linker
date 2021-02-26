@@ -824,6 +824,11 @@ namespace Mono.Linker.Steps
 					_context.LogWarning ($"Unresolved type '{typeName}' in DynamicDependencyAttribute", 2036, context);
 					return;
 				}
+
+				var module = assembly.MainModule;
+				if (module.GetMatchingExportedType (type, out var exportedType)) {
+					_context.MarkingHelpers.MarkExportedType (exportedType, module, new DependencyInfo (DependencyKind.ModuleOfExportedType, module));
+				}
 			} else if (dynamicDependency.Type is TypeReference typeReference) {
 				type = typeReference.Resolve ();
 				if (type == null) {

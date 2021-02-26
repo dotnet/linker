@@ -86,7 +86,13 @@ namespace Mono.Linker
 				};
 			}
 
-			return assembly.MainModule.ResolveType (typeName.ToString ());
+			ModuleDefinition module = assembly.MainModule;
+			TypeDefinition typeDefinition = module.ResolveType (typeName.ToString ());
+			if (module.GetMatchingExportedType (typeDefinition, out var exportedType)) {
+				_context.MarkingHelpers.MarkExportedType (exportedType, module, new DependencyInfo (DependencyKind.ModuleOfExportedType, module));
+			}
+
+			return typeDefinition;
 		}
 	}
 }
