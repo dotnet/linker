@@ -242,29 +242,29 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			if (options.AdditionalArguments != null) {
 				foreach (var option in options.AdditionalArguments) {
 					switch (option) {
-						case "/unsafe":
-							compilationOptions = compilationOptions.WithAllowUnsafe(true);
-							break;
-						case "/optimize+":
-							compilationOptions = compilationOptions.WithOptimizationLevel(OptimizationLevel.Release);
-							break;
-						case "/debug:full":
-						case "/debug:pdbonly":
-							// Use platform's default debug info. This behavior is the same as csc.
-							emitPdb = true;
-							break;
-						case "/debug:portable":
-							emitPdb = true;
-							debugType = DebugInformationFormat.PortablePdb;
-							break;
-						case "/debug:embedded":
-							emitPdb = true;
-							debugType = DebugInformationFormat.Embedded;
-							break;
-						case "/langversion:7.3":
-							languageVersion = LanguageVersion.CSharp7_3;
-							break;
-							
+					case "/unsafe":
+						compilationOptions = compilationOptions.WithAllowUnsafe (true);
+						break;
+					case "/optimize+":
+						compilationOptions = compilationOptions.WithOptimizationLevel (OptimizationLevel.Release);
+						break;
+					case "/debug:full":
+					case "/debug:pdbonly":
+						// Use platform's default debug info. This behavior is the same as csc.
+						emitPdb = true;
+						break;
+					case "/debug:portable":
+						emitPdb = true;
+						debugType = DebugInformationFormat.PortablePdb;
+						break;
+					case "/debug:embedded":
+						emitPdb = true;
+						debugType = DebugInformationFormat.Embedded;
+						break;
+					case "/langversion:7.3":
+						languageVersion = LanguageVersion.CSharp7_3;
+						break;
+
 					}
 				}
 			}
@@ -298,7 +298,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			EmitResult result;
 			using (var outputStream = File.Create (options.OutputPath.ToString ()))
 			using (var pdbStream = pdbPath == null ? null : File.Create (pdbPath)) {
-				result = compilation.Emit(
+				result = compilation.Emit (
 					peStream: outputStream,
 					pdbStream: pdbStream,
 					manifestResources: manifestResources,
