@@ -809,11 +809,10 @@ namespace Mono.Linker
 			if (!TryGetCustomAssembly (ref arg, out Assembly custom_assembly))
 				return false;
 
-			int pos = arg.IndexOf (":");
 			string customStepName;
 			string targetName = null;
 			bool before = false;
-			if (pos == -1) {
+			if (!arg.Contains (":")) {
 				customStepName = arg;
 			} else {
 				string[] parts = arg.Split (':');
