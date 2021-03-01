@@ -119,6 +119,8 @@ dotnet_diagnostic.IDE0082.severity = warning
 dotnet_analyzer_diagnostic.category-performance.severity = warning
 dotnet_analyzer_diagnostic.category-maintainability.severity = warning
 dotnet_analyzer_diagnostic.category-reliability.severity = warning
+dotnet_analyzer_diagnostic.category-usage.severity = warning
+#dotnet_analyzer_diagnostic.category-style.severity = warning
 
 # CA1834: Use 'StringBuilder.Append(char)'
 dotnet_diagnostic.CA1834.severity = none

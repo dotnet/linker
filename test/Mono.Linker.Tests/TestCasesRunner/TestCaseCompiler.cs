@@ -17,7 +17,6 @@ namespace Mono.Linker.Tests.TestCasesRunner
 {
 	public class TestCaseCompiler
 	{
-		static string _cachedWindowsCscPath = null;
 		protected readonly TestCaseMetadaProvider _metadataProvider;
 		protected readonly TestCaseSandbox _sandbox;
 		protected readonly ILCompiler _ilCompiler;
