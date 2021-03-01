@@ -16,7 +16,7 @@ namespace Mono.Linker.Steps
 	// and registers a callback that gets invoked during MarkStep when an
 	// assembly gets marked.
 	//
-	public abstract class MarkHandlerDispatcher : IMarkHandler
+	public abstract class MarkSubStepsDispatcher : IMarkHandler
 	{
 		readonly List<ISubStep> substeps;
 
@@ -27,12 +27,12 @@ namespace Mono.Linker.Steps
 		List<ISubStep> on_properties;
 		List<ISubStep> on_events;
 
-		protected MarkHandlerDispatcher ()
+		protected MarkSubStepsDispatcher ()
 		{
 			substeps = new List<ISubStep> ();
 		}
 
-		protected MarkHandlerDispatcher (IEnumerable<ISubStep> subSteps)
+		protected MarkSubStepsDispatcher (IEnumerable<ISubStep> subSteps)
 		{
 			substeps = new List<ISubStep> (subSteps);
 		}
@@ -42,7 +42,7 @@ namespace Mono.Linker.Steps
 			substeps.Add (substep);
 		}
 
-		void IMarkHandler.Initialize (LinkContext context, MarkContext markContext)
+		public void Initialize (LinkContext context, MarkContext markContext)
 		{
 			InitializeSubSteps (context);
 			markContext.RegisterMarkAssemblyAction (assembly => BrowseAssembly (assembly));

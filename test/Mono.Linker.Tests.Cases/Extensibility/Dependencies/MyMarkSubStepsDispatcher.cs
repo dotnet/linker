@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using Mono.Linker.Steps;
 
-public class MyMarkHandlerDispatcher : MarkHandlerDispatcher
+public class MyMarkSubStepsDispatcher : MarkSubStepsDispatcher
 {
-	public MyMarkHandlerDispatcher ()
+	public MyMarkSubStepsDispatcher ()
 		: base (GetSubSteps ())
 	{
 	}

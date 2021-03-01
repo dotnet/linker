@@ -6,14 +6,14 @@ using System.Collections.Generic;
 
 namespace Mono.Linker.Steps
 {
-	public abstract class MarkHandlerDispatcher : IMarkHandler
+	public abstract class MarkSubStepsDispatcher : IMarkHandler
 	{
-		protected MarkHandlerDispatcher () => throw null;
+		protected MarkSubStepsDispatcher () => throw null;
 
-		protected MarkHandlerDispatcher (IEnumerable<ISubStep> subSteps) => throw null;
+		protected MarkSubStepsDispatcher (IEnumerable<ISubStep> subSteps) => throw null;
 
 		public void Add (ISubStep substep) => throw null;
 
-		void IMarkHandler.Initialize (LinkContext context, MarkContext markContext) => throw null;
+		public void Initialize (LinkContext context, MarkContext markContext) => throw null;
 	}
 }
