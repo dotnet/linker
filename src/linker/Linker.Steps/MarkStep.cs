@@ -807,7 +807,7 @@ namespace Mono.Linker.Steps
 			ModuleDefinition module = assembly.MainModule;
 			if (module.HasExportedTypes) {
 				foreach (var exportedType in module.ExportedTypes)
-					if (exportedType.Resolve() == type) {
+					if (exportedType.Resolve () == type) {
 						_context.MarkingHelpers.MarkExportedType (exportedType, module, new DependencyInfo (DependencyKind.DynamicDependency, type));
 						break;
 					}
