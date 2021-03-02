@@ -13,7 +13,6 @@ namespace Mono.Linker.Tests.Cases.LinkXml
 	[KeptMemberInAssembly ("libfwd.dll", typeof (UsedNonRequiredExportedTypeIsKept_Used1), "field", ExpectationAssemblyName = "lib.dll")]
 	[KeptMemberInAssembly ("libfwd.dll", typeof (UsedNonRequiredExportedTypeIsKept_Used2), "Method()", ExpectationAssemblyName = "lib.dll")]
 	[KeptMemberInAssembly ("libfwd.dll", typeof (UsedNonRequiredExportedTypeIsKept_Used3), "Method()", ExpectationAssemblyName = "lib.dll")]
-	[RemovedAssembly ("lib.dll")]
 	public class UsedNonRequiredExportedTypeIsKept
 	{
 		public static void Main ()

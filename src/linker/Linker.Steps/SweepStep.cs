@@ -531,6 +531,14 @@ namespace Mono.Linker.Steps
 
 		protected virtual bool ShouldRemove<T> (T element) where T : IMetadataTokenProvider
 		{
+			if (typeof (T) == typeof (ExportedType)) {
+				var typeDef = (element as ExportedType).Resolve ();
+				if (Context.KeepTypeForwarderOnlyAssemblies)
+					return !Annotations.IsMarked (typeDef);
+
+				return !Annotations.IsMarked (typeDef) || !Annotations.IsMarked (element);
+			}
+
 			return !Annotations.IsMarked (element);
 		}
 

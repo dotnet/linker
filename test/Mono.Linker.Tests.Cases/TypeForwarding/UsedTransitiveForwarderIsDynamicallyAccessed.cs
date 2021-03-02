@@ -21,10 +21,9 @@ namespace Mono.Linker.Tests.Cases.TypeForwarding
 	[SetupCompileAfter ("SecondForwarder.dll", new[] { "Dependencies/ForwarderLibrary.cs" }, references: new[] { "Implementation.dll" })]
 
 	[KeptAssembly ("FirstForwarder.dll")]
-	[KeptAssembly ("SecondForwarder.dll")]
 	[KeptMemberInAssembly ("Implementation.dll", typeof (ImplementationLibrary), "GetSomeValue()")]
+	[RemovedAssembly ("SecondForwarder.dll")]
 	[RemovedForwarder ("FirstForwarder.dll", nameof (ImplementationStruct))]
-	[RemovedForwarder ("SecondForwarder.dll", nameof (ImplementationStruct))]
 	class UsedTransitiveForwarderIsDynamicallyAccessed
 	{
 		static void Main ()

@@ -13,31 +13,35 @@ namespace Mono.Linker
 			_context = context;
 		}
 
-		public TypeReference ResolveTypeName (string typeNameString)
+		public (AssemblyDefinition Assembly, TypeReference Type) ResolveTypeName (string typeNameString)
 		{
 			if (string.IsNullOrEmpty (typeNameString))
-				return null;
+				return (null, null);
 
 			TypeName parsedTypeName;
 			try {
 				parsedTypeName = TypeParser.ParseTypeName (typeNameString);
 			} catch (ArgumentException) {
-				return null;
+				return (null, null);
 			} catch (System.IO.FileLoadException) {
-				return null;
+				return (null, null);
 			}
 
 			if (parsedTypeName is AssemblyQualifiedTypeName assemblyQualifiedTypeName) {
-				return ResolveTypeName (null, assemblyQualifiedTypeName);
+				AssemblyDefinition assemblyDef = _context.TryResolve (assemblyQualifiedTypeName.AssemblyName.Name);
+				if (assemblyDef == null)
+					return (null, null);
+
+				return (assemblyDef, ResolveTypeName (assemblyDef, assemblyQualifiedTypeName.TypeName));
 			}
 
 			foreach (var assemblyDefinition in _context.GetReferencedAssemblies ()) {
 				var foundType = ResolveTypeName (assemblyDefinition, parsedTypeName);
 				if (foundType != null)
-					return foundType;
+					return (assemblyDefinition, foundType);
 			}
 
-			return null;
+			return (null, null);
 		}
 
 		public TypeReference ResolveTypeName (AssemblyDefinition assembly, string typeNameString)

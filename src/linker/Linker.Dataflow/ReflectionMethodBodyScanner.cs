@@ -897,7 +897,7 @@ namespace Mono.Linker.Dataflow
 						}
 						foreach (var typeNameValue in methodParams[0].UniqueValues ()) {
 							if (typeNameValue is KnownStringValue knownStringValue) {
-								TypeReference foundTypeRef = _context.TypeNameResolver.ResolveTypeName (knownStringValue.Contents);
+								TypeReference foundTypeRef = _context.TypeNameResolver.ResolveTypeName (knownStringValue.Contents).Type;
 								TypeDefinition foundType = foundTypeRef?.ResolveToMainTypeDefinition ();
 								if (foundType == null) {
 									// Intentionally ignore - it's not wrong for code to call Type.GetType on non-existing name, the code might expect null/exception back.
@@ -1804,7 +1804,7 @@ namespace Mono.Linker.Dataflow
 				} else if (uniqueValue is SystemTypeValue systemTypeValue) {
 					MarkTypeForDynamicallyAccessedMembers (ref reflectionContext, systemTypeValue.TypeRepresented, requiredMemberTypes);
 				} else if (uniqueValue is KnownStringValue knownStringValue) {
-					TypeReference typeRef = _context.TypeNameResolver.ResolveTypeName (knownStringValue.Contents);
+					(AssemblyDefinition assembly, TypeReference typeRef) = _context.TypeNameResolver.ResolveTypeName (knownStringValue.Contents);
 					TypeDefinition foundType = typeRef?.ResolveToMainTypeDefinition ();
 					if (foundType == null) {
 						// Intentionally ignore - it's not wrong for code to call Type.GetType on non-existing name, the code might expect null/exception back.
@@ -1812,6 +1812,8 @@ namespace Mono.Linker.Dataflow
 					} else {
 						MarkType (ref reflectionContext, typeRef);
 						MarkTypeForDynamicallyAccessedMembers (ref reflectionContext, foundType, requiredMemberTypes);
+						if (assembly.MainModule.GetMatchingExportedType (foundType, out var exportedType))
+							_context.MarkingHelpers.MarkExportedType (exportedType, typeRef.Module, new DependencyInfo (DependencyKind.DynamicallyAccessedMember, foundType));
 					}
 				} else if (uniqueValue == NullValue.Instance) {
 					// Ignore - probably unreachable path as it would fail at runtime anyway.
