@@ -52,8 +52,8 @@ namespace ILLink.RoslynAnalyzer
 			context.RegisterCompilationStartAction (context => {
 				var compilation = context.Compilation;
 
-				var isSingleFilePublish = context.Options.GetMSBuildPropertyValue (MSBuildPropertyOptionNames.PublishSingleFile, compilation);
-				if (!string.Equals (isSingleFilePublish?.Trim (), "true", StringComparison.OrdinalIgnoreCase)) {
+				var isAnalyzeSingleFile = context.Options.GetMSBuildPropertyValue (MSBuildPropertyOptionNames.AnalyzeSingleFile, compilation);
+				if (!string.Equals (isAnalyzeSingleFile?.Trim (), "true", StringComparison.OrdinalIgnoreCase)) {
 					return;
 				}
 				var includesAllContent = context.Options.GetMSBuildPropertyValue (MSBuildPropertyOptionNames.IncludeAllContentForSelfExtract, compilation);
