@@ -13,35 +13,39 @@ namespace Mono.Linker
 			_context = context;
 		}
 
-		public (AssemblyDefinition Assembly, TypeReference Type) ResolveTypeName (string typeNameString)
+		public TypeReference ResolveTypeName (string typeNameString, out AssemblyDefinition typeAssembly)
 		{
+			typeAssembly = null;
 			if (string.IsNullOrEmpty (typeNameString))
-				return (null, null);
+				return null;
 
 			TypeName parsedTypeName;
 			try {
 				parsedTypeName = TypeParser.ParseTypeName (typeNameString);
 			} catch (ArgumentException) {
-				return (null, null);
+				return null;
 			} catch (System.IO.FileLoadException) {
-				return (null, null);
+				return null;
 			}
 
 			if (parsedTypeName is AssemblyQualifiedTypeName assemblyQualifiedTypeName) {
-				AssemblyDefinition assemblyDef = _context.TryResolve (assemblyQualifiedTypeName.AssemblyName.Name);
-				if (assemblyDef == null)
-					return (null, null);
+				typeAssembly = _context.TryResolve (assemblyQualifiedTypeName.AssemblyName.Name);
+				if (typeAssembly == null)
+					return null;
 
-				return (assemblyDef, ResolveTypeName (assemblyDef, assemblyQualifiedTypeName.TypeName));
+
+				return ResolveTypeName (typeAssembly, assemblyQualifiedTypeName.TypeName);
 			}
 
 			foreach (var assemblyDefinition in _context.GetReferencedAssemblies ()) {
 				var foundType = ResolveTypeName (assemblyDefinition, parsedTypeName);
-				if (foundType != null)
-					return (assemblyDefinition, foundType);
+				if (foundType != null) {
+					typeAssembly = assemblyDefinition;
+					return foundType;
+				}
 			}
 
-			return (null, null);
+			return null;
 		}
 
 		public TypeReference ResolveTypeName (AssemblyDefinition assembly, string typeNameString)
@@ -90,12 +94,7 @@ namespace Mono.Linker
 				};
 			}
 
-			ModuleDefinition module = assembly.MainModule;
-			TypeDefinition typeDefinition = module.ResolveType (typeName.ToString ());
-			if (module.GetMatchingExportedType (typeDefinition, out var exportedType)) {
-				_context.MarkingHelpers.MarkExportedType (exportedType, module, new DependencyInfo (DependencyKind.ModuleOfExportedType, module));
-			}
-
+			TypeDefinition typeDefinition = assembly.MainModule.ResolveType (typeName.ToString ());
 			return typeDefinition;
 		}
 	}

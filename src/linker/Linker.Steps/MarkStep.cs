@@ -807,8 +807,10 @@ namespace Mono.Linker.Steps
 			ModuleDefinition module = assembly.MainModule;
 			if (module.HasExportedTypes) {
 				foreach (var exportedType in module.ExportedTypes)
-					if (exportedType.FullName == type.FullName)
+					if (exportedType.Resolve() == type) {
 						_context.MarkingHelpers.MarkExportedType (exportedType, module, new DependencyInfo (DependencyKind.DynamicDependency, type));
+						break;
+					}
 			}
 
 			IEnumerable<IMemberDefinition> members;
@@ -1804,7 +1806,7 @@ namespace Mono.Linker.Steps
 			TypeDefinition tdef = null;
 			switch (attribute.ConstructorArguments[0].Value) {
 			case string s:
-				tdef = _context.TypeNameResolver.ResolveTypeName (s).Type?.Resolve ();
+				tdef = _context.TypeNameResolver.ResolveTypeName (s, out _)?.Resolve ();
 				break;
 			case TypeReference type:
 				tdef = type.Resolve ();

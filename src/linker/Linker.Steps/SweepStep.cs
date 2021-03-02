@@ -299,7 +299,7 @@ namespace Mono.Linker.Steps
 		bool SweepTypeForwarders (AssemblyDefinition assembly)
 		{
 			return assembly.MainModule.HasExportedTypes &&
-				SweepCollectionMetadata (assembly.MainModule.ExportedTypes);
+				SweepCollectionExportedTypes (assembly.MainModule.ExportedTypes);
 		}
 
 		protected virtual void SweepType (TypeDefinition type)
@@ -529,16 +529,27 @@ namespace Mono.Linker.Steps
 			return removed;
 		}
 
-		protected virtual bool ShouldRemove<T> (T element) where T : IMetadataTokenProvider
+		protected bool SweepCollectionExportedTypes (IList<ExportedType> exportedTypes)
 		{
-			if (typeof (T) == typeof (ExportedType)) {
-				var typeDef = (element as ExportedType).Resolve ();
-				if (Context.KeepTypeForwarderOnlyAssemblies)
-					return !Annotations.IsMarked (typeDef);
+			bool removed = false;
+			for (int i = 0; i < exportedTypes.Count; i++) {
+				var typeDef = exportedTypes[i].Resolve ();
+				if (Context.KeepTypeForwarderOnlyAssemblies) {
+					if (!ShouldRemove (typeDef))
+						continue;
+				} else if (!ShouldRemove (typeDef) && !ShouldRemove (exportedTypes[i]))
+					continue;
 
-				return !Annotations.IsMarked (typeDef) || !Annotations.IsMarked (element);
+				ElementRemoved (exportedTypes[i]);
+				exportedTypes.RemoveAt (i--);
+				removed = true;
 			}
 
+			return removed;
+		}
+
+		protected virtual bool ShouldRemove<T> (T element) where T : IMetadataTokenProvider
+		{
 			return !Annotations.IsMarked (element);
 		}
 
