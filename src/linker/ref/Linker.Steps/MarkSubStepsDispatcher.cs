@@ -8,12 +8,8 @@ namespace Mono.Linker.Steps
 {
 	public abstract class MarkSubStepsDispatcher : IMarkHandler
 	{
-		protected MarkSubStepsDispatcher () => throw null;
-
 		protected MarkSubStepsDispatcher (IEnumerable<ISubStep> subSteps) => throw null;
 
-		public void Add (ISubStep substep) => throw null;
-
-		public void Initialize (LinkContext context, MarkContext markContext) => throw null;
+		public virtual void Initialize (LinkContext context, MarkContext markContext) => throw null;
 	}
 }
