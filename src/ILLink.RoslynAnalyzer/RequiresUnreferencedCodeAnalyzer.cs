@@ -16,7 +16,7 @@ namespace ILLink.RoslynAnalyzer
 	{
 		public const string DiagnosticId = "IL2026";
 		const string RequiresUnreferencedCodeAttribute = nameof (RequiresUnreferencedCodeAttribute);
-		const string FullyQualifiedRequiresUnreferencedCodeAttribute = "System.Diagnostics.CodeAnalysis." + RequiresUnreferencedCodeAttribute;
+		public const string FullyQualifiedRequiresUnreferencedCodeAttribute = "System.Diagnostics.CodeAnalysis." + RequiresUnreferencedCodeAttribute;
 
 		static readonly DiagnosticDescriptor s_requiresUnreferencedCodeRule = new DiagnosticDescriptor (
 			DiagnosticId,

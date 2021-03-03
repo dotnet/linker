@@ -2,11 +2,14 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.Testing;
+using Microsoft.CodeAnalysis.Text;
 using Xunit;
-using VerifyCS = ILLink.RoslynAnalyzer.Tests.CSharpAnalyzerVerifier<
-	ILLink.RoslynAnalyzer.RequiresUnreferencedCodeAnalyzer>;
+using VerifyCS = ILLink.RoslynAnalyzer.Tests.CSharpCodeFixVerifier<
+	ILLink.RoslynAnalyzer.RequiresUnreferencedCodeAnalyzer,
+	ILLink.RoslynAnalyzer.RequiresUnreferencedCodeCodeFixProvider>;
 
 namespace ILLink.RoslynAnalyzer.Tests
 {
@@ -17,6 +20,33 @@ namespace ILLink.RoslynAnalyzer.Tests
 			return VerifyCS.VerifyAnalyzerAsync (source,
 				TestCaseUtils.UseMSBuildProperties (MSBuildPropertyOptionNames.PublishTrimmed),
 				expected);
+		}
+
+		static Task VerifyRequiresUnreferencedCodeCodeFix (string source, string fixedSource, params DiagnosticResult[] expected)
+		{
+			const string rucDef = @"
+#nullable enable
+namespace System.Diagnostics.CodeAnalysis
+{
+    [AttributeUsage(AttributeTargets.Constructor | AttributeTargets.Method, Inherited = false)]
+    public sealed class RequiresUnreferencedCodeAttribute : Attribute
+    {
+        public RequiresUnreferencedCodeAttribute(string message) { Message = message; }
+        public string Message { get; }
+        public string? Url { get; set; }
+    }
+}
+";
+			var test = new VerifyCS.Test {
+				TestCode = source + rucDef,
+				FixedCode = fixedSource + rucDef,
+			};
+			test.ExpectedDiagnostics.AddRange (expected);
+			test.TestState.AnalyzerConfigFiles.Add (
+						("/.editorconfig", SourceText.From (@"
+is_global = true
+build_property.PublishTrimmed = true")));
+			return test.RunAsync ();
 		}
 
 		[Fact]
@@ -34,6 +64,37 @@ class C
 			return VerifyRequiresUnreferencedCodeAnalyzer (TestRequiresWithMessageOnlyOnMethod,
 				// (8,17): warning IL2026: Using method 'C.M1()' which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. message.
 				VerifyCS.Diagnostic ().WithSpan (8, 17, 8, 21).WithArguments ("C.M1()", "message", ""));
+		}
+
+		[Fact]
+		public async Task SimpleDiagnosticFix ()
+		{
+            var test = @"
+using System.Diagnostics.CodeAnalysis;
+
+class C
+{
+    [RequiresUnreferencedCodeAttribute(""message"")]
+    int M1() => 0;
+
+    int M2() => M1();
+}";
+
+            var fixtest = @"
+using System.Diagnostics.CodeAnalysis;
+
+class C
+{
+    [RequiresUnreferencedCodeAttribute(""message"")]
+    int M1() => 0;
+
+    [RequiresUnreferencedCode("""")]
+    int M2() => M1();
+}";
+
+			await VerifyRequiresUnreferencedCodeCodeFix (test, fixtest,
+        // /0/Test0.cs(9,17): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. message. 
+    VerifyCS.Diagnostic().WithSpan(9, 17, 9, 21).WithArguments("C.M1()", "message", ""));
 		}
 
 		[Fact]
