@@ -15,29 +15,29 @@ using Microsoft.CodeAnalysis.Simplification;
 
 namespace ILLink.RoslynAnalyzer
 {
-	[ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(RequiresUnreferencedCodeCodeFixProvider)), Shared]
-    public class RequiresUnreferencedCodeCodeFixProvider : CodeFixProvider
-    {
+	[ExportCodeFixProvider (LanguageNames.CSharp, Name = nameof (RequiresUnreferencedCodeCodeFixProvider)), Shared]
+	public class RequiresUnreferencedCodeCodeFixProvider : CodeFixProvider
+	{
 		private const string s_title = "Add RequiresUnreferencedCode attribute to parent method";
 
 		public sealed override ImmutableArray<string> FixableDiagnosticIds
-			=> ImmutableArray.Create(RequiresUnreferencedCodeAnalyzer.DiagnosticId);
+			=> ImmutableArray.Create (RequiresUnreferencedCodeAnalyzer.DiagnosticId);
 
-        public sealed override FixAllProvider GetFixAllProvider()
-        {
-            // See https://github.com/dotnet/roslyn/blob/master/docs/analyzers/FixAllProvider.md for more information on Fix All Providers
-            return WellKnownFixAllProviders.BatchFixer;
-        }
+		public sealed override FixAllProvider GetFixAllProvider ()
+		{
+			// See https://github.com/dotnet/roslyn/blob/master/docs/analyzers/FixAllProvider.md for more information on Fix All Providers
+			return WellKnownFixAllProviders.BatchFixer;
+		}
 
-        public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
-        {
-            var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
+		public sealed override async Task RegisterCodeFixesAsync (CodeFixContext context)
+		{
+			var root = await context.Document.GetSyntaxRootAsync (context.CancellationToken).ConfigureAwait (false);
 
-            var diagnostic = context.Diagnostics.First();
-            var diagnosticSpan = diagnostic.Location.SourceSpan;
+			var diagnostic = context.Diagnostics.First ();
+			var diagnosticSpan = diagnostic.Location.SourceSpan;
 
-            // Find the containing method
-            var declaration = root!.FindToken(diagnosticSpan.Start).Parent?.AncestorsAndSelf().OfType<MethodDeclarationSyntax>().FirstOrDefault();
+			// Find the containing method
+			var declaration = root!.FindToken (diagnosticSpan.Start).Parent?.AncestorsAndSelf ().OfType<MethodDeclarationSyntax> ().FirstOrDefault ();
 
 
 			if (declaration is not null) {
@@ -47,22 +47,22 @@ namespace ILLink.RoslynAnalyzer
 					RequiresUnreferencedCodeAnalyzer.FullyQualifiedRequiresUnreferencedCodeAttribute);
 
 				// Register a code action that will invoke the fix.
-				context.RegisterCodeFix(
-					CodeAction.Create(
+				context.RegisterCodeFix (
+					CodeAction.Create (
 						title: s_title,
-						createChangedDocument: c => AddRequiresUnreferencedCode(context.Document, root, declaration, symbol!),
+						createChangedDocument: c => AddRequiresUnreferencedCode (context.Document, root, declaration, symbol!),
 						equivalenceKey: s_title),
 					diagnostic);
 
 			}
-        }
+		}
 
-        private Task<Document> AddRequiresUnreferencedCode(
+		private Task<Document> AddRequiresUnreferencedCode (
 			Document document,
 			SyntaxNode root,
 			MethodDeclarationSyntax methodDecl,
 			ITypeSymbol requiresUnreferencedCodeSymbol)
-        {
+		{
 			var editor = new SyntaxEditor (root, document.Project.Solution.Workspace);
 			var generator = editor.Generator;
 
@@ -74,7 +74,7 @@ namespace ILLink.RoslynAnalyzer
 
 			editor.AddAttribute (methodDecl, newAttribute);
 
-			return Task.FromResult(document.WithSyntaxRoot (editor.GetChangedRoot ()));
-        }
-    }
+			return Task.FromResult (document.WithSyntaxRoot (editor.GetChangedRoot ()));
+		}
+	}
 }

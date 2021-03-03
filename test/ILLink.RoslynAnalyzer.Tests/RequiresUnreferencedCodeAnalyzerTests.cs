@@ -69,7 +69,7 @@ class C
 		[Fact]
 		public async Task SimpleDiagnosticFix ()
 		{
-            var test = @"
+			var test = @"
 using System.Diagnostics.CodeAnalysis;
 
 class C
@@ -80,7 +80,7 @@ class C
     int M2() => M1();
 }";
 
-            var fixtest = @"
+			var fixtest = @"
 using System.Diagnostics.CodeAnalysis;
 
 class C
@@ -93,8 +93,8 @@ class C
 }";
 
 			await VerifyRequiresUnreferencedCodeCodeFix (test, fixtest,
-        // /0/Test0.cs(9,17): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. message.
-    VerifyCS.Diagnostic().WithSpan(9, 17, 9, 21).WithArguments("C.M1()", "message", ""));
+	// /0/Test0.cs(9,17): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. message.
+	VerifyCS.Diagnostic ().WithSpan (9, 17, 9, 21).WithArguments ("C.M1()", "message", ""));
 		}
 
 		[Fact]
