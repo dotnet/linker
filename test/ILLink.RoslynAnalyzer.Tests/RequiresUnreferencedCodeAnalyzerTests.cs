@@ -93,7 +93,7 @@ class C
 }";
 
 			await VerifyRequiresUnreferencedCodeCodeFix (test, fixtest,
-        // /0/Test0.cs(9,17): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. message. 
+        // /0/Test0.cs(9,17): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. message.
     VerifyCS.Diagnostic().WithSpan(9, 17, 9, 21).WithArguments("C.M1()", "message", ""));
 		}
 
@@ -139,7 +139,7 @@ class C
 	}
 }";
 			return VerifyRequiresUnreferencedCodeAnalyzer (PropertyRequires,
-				// (8,7): warning IL2026: Using method 'C.PropertyRequires.get' which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. Message for --getter PropertyRequires--. 
+				// (8,7): warning IL2026: Using method 'C.PropertyRequires.get' which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. Message for --getter PropertyRequires--.
 				VerifyCS.Diagnostic ().WithSpan (8, 7, 8, 23).WithArguments ("C.PropertyRequires.get", "Message for --getter PropertyRequires--", "")
 				);
 		}
