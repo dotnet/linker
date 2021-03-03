@@ -88,8 +88,8 @@ class C
     [RequiresUnreferencedCodeAttribute(""message"")]
     int M1() => 0;
 
-    [RequiresUnreferencedCode("""")]
-    int M2() => M1();
+    [RequiresUnreferencedCode("""")]" + Environment.NewLine +
+@"    int M2() => M1();
 }";
 
 			await VerifyRequiresUnreferencedCodeCodeFix (test, fixtest,
