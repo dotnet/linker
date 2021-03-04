@@ -185,8 +185,7 @@ namespace Mono.Linker.Steps
 				//
 				// when main.exe has unused reference to type in lib.dll
 				//
-				if (SweepTypeForwarders (assembly))
-					Annotations.SetAction (assembly, AssemblyAction.Save);
+				Annotations.SetAction (assembly, SweepTypeForwarders (assembly) ?? AssemblyAction.Copy);
 
 				break;
 
@@ -195,8 +194,8 @@ namespace Mono.Linker.Steps
 				break;
 
 			case AssemblyAction.Save:
-				SweepTypeForwarders (assembly);
-
+				Annotations.SetAction (assembly, SweepTypeForwarders (assembly) ?? AssemblyAction.Save);
+				
 				//
 				// Save means we need to rewrite the assembly due to removed assembly
 				// references
@@ -296,10 +295,18 @@ namespace Mono.Linker.Steps
 				resources.Remove (resource);
 		}
 
-		bool SweepTypeForwarders (AssemblyDefinition assembly)
+		AssemblyAction? SweepTypeForwarders (AssemblyDefinition assembly)
 		{
-			return assembly.MainModule.HasExportedTypes &&
-				SweepCollectionExportedTypes (assembly.MainModule.ExportedTypes);
+			if (!assembly.MainModule.HasExportedTypes)
+				return null;
+			
+			// If this is a pure facade and none of the exported types were removed,
+			// the assembly will be deleted.
+			var exportedTypes = assembly.MainModule.ExportedTypes;
+			if (SweepCollectionExportedTypes (exportedTypes) && (exportedTypes.Count == 0) && assembly.MainModule.Types.Count <= 1)
+				return AssemblyAction.Delete;
+
+			return AssemblyAction.Save;
 		}
 
 		protected virtual void SweepType (TypeDefinition type)

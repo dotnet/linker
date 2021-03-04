@@ -18,7 +18,7 @@ namespace Mono.Linker
 				return false;
 
 			foreach (var et in module.ExportedTypes)
-				if (et.FullName == typeDefinition.FullName) {
+				if (et.Resolve () == typeDefinition) {
 					exportedType = et;
 					return true;
 				}
