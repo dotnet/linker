@@ -243,12 +243,14 @@ namespace Mono.Linker.Steps
 
 			bool IsInternalsVisibleAttributeAssemblyMarked (CustomAttribute ca)
 			{
-				var assemblyName = (string) ca.ConstructorArguments[0].Value;
-				int comma = assemblyName.IndexOf (',');
-				if (comma != -1)
-					assemblyName = assemblyName.Substring (0, comma);
+				System.Reflection.AssemblyName an;
+				try {
+					an = new System.Reflection.AssemblyName ((string) ca.ConstructorArguments[0].Value);
+				} catch {
+					return false;
+				}
 
-				var assembly = _context.GetLoadedAssembly (assemblyName);
+				var assembly = _context.GetLoadedAssembly (an.Name);
 				if (assembly == null)
 					return false;
 
