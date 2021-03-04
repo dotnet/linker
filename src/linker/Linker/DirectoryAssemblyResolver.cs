@@ -76,16 +76,12 @@ namespace Mono.Linker
 			if (parameters == null)
 				throw new ArgumentNullException (nameof (parameters));
 
-			var assembly = SearchDirectory (name, directories, parameters);
-			if (assembly != null)
-				return assembly;
-
-			throw new AssemblyResolutionException (name, new FileNotFoundException ($"Unable to find '{name.Name}.dll' or '{name.Name}.exe' file"));
+			return SearchDirectory (name, parameters);
 		}
 
 		protected static readonly string[] Extensions = new[] { ".dll", ".exe" };
 
-		AssemblyDefinition SearchDirectory (AssemblyNameReference name, IEnumerable<string> directories, ReaderParameters parameters)
+		AssemblyDefinition SearchDirectory (AssemblyNameReference name, ReaderParameters parameters)
 		{
 			foreach (var directory in directories) {
 				foreach (var extension in Extensions) {

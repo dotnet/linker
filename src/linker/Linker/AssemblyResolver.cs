@@ -106,23 +106,21 @@ namespace Mono.Linker
 				throw new ArgumentNullException (nameof (parameters));
 
 			if (!_assemblies.TryGetValue (name.Name, out AssemblyDefinition asm) && (_unresolvedAssemblies == null || !_unresolvedAssemblies.Contains (name.Name))) {
-				try {
-					// Any full path explicit reference takes precedence over other look up logic
-					asm = ResolveFromReferences (name, parameters);
+				// Any full path explicit reference takes precedence over other look up logic
+				asm = ResolveFromReferences (name, parameters);
 
-					// Fall back to the base class resolution logic
-					if (asm == null)
-						asm = base.Resolve (name, parameters);
+				// Fall back to the base class resolution logic
+				if (asm == null)
+					asm = base.Resolve (name, parameters);
 
-					CacheAssembly (asm);
-				} catch (AssemblyResolutionException) {
-					if (!_ignoreUnresolved)
-						throw;
-					_context.LogMessage ($"Ignoring unresolved assembly '{name.Name}'.");
+				if (asm == null) {
 					if (_unresolvedAssemblies == null)
 						_unresolvedAssemblies = new HashSet<string> ();
 					_unresolvedAssemblies.Add (name.Name);
+					return null;
 				}
+
+				CacheAssembly (asm);
 			}
 
 			return asm;
@@ -131,8 +129,7 @@ namespace Mono.Linker
 		public void CacheAssembly (AssemblyDefinition assembly)
 		{
 			_assemblies[assembly.Name.Name] = assembly;
-			if (assembly != null)
-				_context.RegisterAssembly (assembly);
+			_context.RegisterAssembly (assembly);
 		}
 
 		public void AddReferenceAssembly (string referencePath)

@@ -286,22 +286,21 @@ namespace Mono.Linker
 
 		public AssemblyDefinition TryResolve (string name)
 		{
-			try {
-				return Resolve (new AssemblyNameReference (name, new Version ()));
-			} catch (AssemblyResolutionException) {
-				return null;
-			}
+			return _resolver.Resolve (new AssemblyNameReference (name, new Version ()), _readerParameters);
 		}
 
 		public AssemblyDefinition Resolve (IMetadataScope scope)
 		{
 			AssemblyNameReference reference = GetReference (scope);
-			try {
-				AssemblyDefinition assembly = _resolver.Resolve (reference, _readerParameters);
-				return assembly;
-			} catch (Exception e) when (!(e is AssemblyResolutionException)) {
-				throw new AssemblyResolutionException (reference, e);
+			AssemblyDefinition assembly = _resolver.Resolve (reference, _readerParameters);
+			if (assembly == null) {
+				if (_ignoreUnresolved)
+					LogMessage ($"Ignoring unresolved assembly '{reference.Name}' reference");
+				else
+					LogError ($"Assembly reference '{reference.Name}' could not be resolved", 1009);
 			}
+
+			return assembly;
 		}
 
 		public void RegisterAssembly (AssemblyDefinition assembly)
@@ -352,14 +351,11 @@ namespace Mono.Linker
 				return references;
 
 			foreach (AssemblyNameReference reference in assembly.MainModule.AssemblyReferences) {
-				try {
-					AssemblyDefinition definition = Resolve (reference);
-					if (definition != null)
-						references.Add (definition);
-				} catch (Exception e) {
-					throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage ($"Assembly '{assembly.FullName}' reference '{reference.FullName}' could not be resolved", 1009), e);
-				}
+				AssemblyDefinition definition = Resolve (reference);
+				if (definition != null)
+					references.Add (definition);
 			}
+
 			return references;
 		}
 
