@@ -38,7 +38,7 @@ namespace ILLink.RoslynAnalyzer
 			context.RegisterCompilationStartAction (context => {
 				var compilation = context.Compilation;
 
-				var isPublishTrimmed = context.Options.GetMSBuildPropertyValue (MSBuildPropertyOptionNames.AnalyzeTrimming, compilation);
+				var isPublishTrimmed = context.Options.GetMSBuildPropertyValue (MSBuildPropertyOptionNames.EnableTrimAnalyzer, compilation);
 				if (!string.Equals (isPublishTrimmed?.Trim (), "true", StringComparison.OrdinalIgnoreCase)) {
 					return;
 				}

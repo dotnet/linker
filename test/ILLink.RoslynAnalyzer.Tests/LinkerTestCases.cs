@@ -28,7 +28,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 				return;
 			}
 
-			RunTest (m, attrs, UseMSBuildProperties (MSBuildPropertyOptionNames.AnalyzeTrimming));
+			RunTest (m, attrs, UseMSBuildProperties (MSBuildPropertyOptionNames.EnableTrimAnalyzer));
 		}
 	}
 }

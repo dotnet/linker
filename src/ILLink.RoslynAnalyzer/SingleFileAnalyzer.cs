@@ -52,7 +52,7 @@ namespace ILLink.RoslynAnalyzer
 			context.RegisterCompilationStartAction (context => {
 				var compilation = context.Compilation;
 
-				var isAnalyzeSingleFile = context.Options.GetMSBuildPropertyValue (MSBuildPropertyOptionNames.AnalyzeSingleFile, compilation);
+				var isAnalyzeSingleFile = context.Options.GetMSBuildPropertyValue (MSBuildPropertyOptionNames.EnableSingleFileAnalyzer, compilation);
 				if (!string.Equals (isAnalyzeSingleFile?.Trim (), "true", StringComparison.OrdinalIgnoreCase)) {
 					return;
 				}

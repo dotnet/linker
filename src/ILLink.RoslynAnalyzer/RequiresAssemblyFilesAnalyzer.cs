@@ -38,7 +38,7 @@ namespace ILLink.RoslynAnalyzer
 			context.RegisterCompilationStartAction (context => {
 				var compilation = context.Compilation;
 
-				var isSingleFilePublish = context.Options.GetMSBuildPropertyValue (MSBuildPropertyOptionNames.AnalyzeSingleFile, compilation);
+				var isSingleFilePublish = context.Options.GetMSBuildPropertyValue (MSBuildPropertyOptionNames.EnableSingleFileAnalyzer, compilation);
 				if (!string.Equals (isSingleFilePublish?.Trim (), "true", StringComparison.OrdinalIgnoreCase))
 					return;
 

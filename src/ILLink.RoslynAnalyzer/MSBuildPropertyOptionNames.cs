@@ -6,8 +6,8 @@ namespace ILLink.RoslynAnalyzer
 {
 	public static class MSBuildPropertyOptionNames
 	{
-		public const string AnalyzeSingleFile = nameof (AnalyzeSingleFile);
+		public const string EnableSingleFileAnalyzer = nameof (EnableSingleFileAnalyzer);
 		public const string IncludeAllContentForSelfExtract = nameof (IncludeAllContentForSelfExtract);
-		public const string AnalyzeTrimming = nameof (AnalyzeTrimming);
+		public const string EnableTrimAnalyzer = nameof (EnableTrimAnalyzer);
 	}
 }
