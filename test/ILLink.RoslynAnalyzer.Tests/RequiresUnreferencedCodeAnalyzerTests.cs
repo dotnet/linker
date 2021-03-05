@@ -9,7 +9,7 @@ using Microsoft.CodeAnalysis.Text;
 using Xunit;
 using VerifyCS = ILLink.RoslynAnalyzer.Tests.CSharpCodeFixVerifier<
 	ILLink.RoslynAnalyzer.RequiresUnreferencedCodeAnalyzer,
-	ILLink.RoslynAnalyzer.RequiresUnreferencedCodeCodeFixProvider>;
+	ILLink.CodeFix.RequiresUnreferencedCodeCodeFixProvider>;
 
 namespace ILLink.RoslynAnalyzer.Tests
 {
