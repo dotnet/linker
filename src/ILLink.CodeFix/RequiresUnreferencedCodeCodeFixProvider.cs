@@ -2,9 +2,11 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using ILLink.RoslynAnalyzer;
 using Microsoft.CodeAnalysis;
@@ -13,6 +15,7 @@ using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.Simplification;
+using Microsoft.CodeAnalysis.Text;
 
 namespace ILLink.CodeFix
 {
@@ -38,8 +41,9 @@ namespace ILLink.CodeFix
 			var diagnosticSpan = diagnostic.Location.SourceSpan;
 
 			// Find the containing method
-			var declaration = root!.FindToken (diagnosticSpan.Start).Parent?.AncestorsAndSelf ().OfType<MethodDeclarationSyntax> ().FirstOrDefault ();
-
+			SyntaxNode targetNode = root!.FindNode (diagnosticSpan);
+			var declaration = targetNode.Parent?.AncestorsAndSelf ()
+				.OfType<MethodDeclarationSyntax> ().FirstOrDefault ();
 
 			if (declaration is not null) {
 				var semanticModel = await context.Document
@@ -51,31 +55,60 @@ namespace ILLink.CodeFix
 				context.RegisterCodeFix (
 					CodeAction.Create (
 						title: s_title,
-						createChangedDocument: c => AddRequiresUnreferencedCode (context.Document, root, declaration, symbol!),
+						createChangedDocument: c => AddRequiresUnreferencedCode (
+							context.Document, root, targetNode, declaration, symbol!, c),
 						equivalenceKey: s_title),
 					diagnostic);
 
 			}
 		}
 
-		private Task<Document> AddRequiresUnreferencedCode (
+		private static async Task<Document> AddRequiresUnreferencedCode (
 			Document document,
 			SyntaxNode root,
+			SyntaxNode targetNode,
 			MethodDeclarationSyntax methodDecl,
-			ITypeSymbol requiresUnreferencedCodeSymbol)
+			ITypeSymbol requiresUnreferencedCodeSymbol,
+			CancellationToken cancellationToken)
 		{
 			var editor = new SyntaxEditor (root, document.Project.Solution.Workspace);
 			var generator = editor.Generator;
 
+			var semanticModel = await document.GetSemanticModelAsync (cancellationToken).ConfigureAwait(false);
+			if (semanticModel is null) {
+				return document;
+			}
+			var methodSymbol = (IMethodSymbol)semanticModel.GetDeclaredSymbol (methodDecl);
+			var name = semanticModel.GetSymbolInfo (targetNode).Symbol?.Name;
+			SyntaxNode[] attrArgs;
+			if (string.IsNullOrEmpty(name) || HasPublicAccessibility(methodSymbol)) {
+				attrArgs = Array.Empty<SyntaxNode> ();
+			}
+			else {
+				attrArgs = new[] { generator.LiteralExpression ($"calls {name}") };
+			}
+
 			var newAttribute = generator
-				.Attribute (generator.TypeExpression (requiresUnreferencedCodeSymbol), new[] { generator.LiteralExpression ("") })
+				.Attribute (generator.TypeExpression (requiresUnreferencedCodeSymbol), attrArgs)
 				.WithAdditionalAnnotations (
 					Simplifier.Annotation,
 					Simplifier.AddImportsAnnotation);
 
 			editor.AddAttribute (methodDecl, newAttribute);
 
-			return Task.FromResult (document.WithSyntaxRoot (editor.GetChangedRoot ()));
+			return document.WithSyntaxRoot (editor.GetChangedRoot ());
+		}
+
+		private static bool HasPublicAccessibility(IMethodSymbol m) {
+			if (m is not { DeclaredAccessibility: Accessibility.Public or Accessibility.Protected }) {
+				return false;
+			}
+			for (var t = m.ContainingType; t is not null; t = t.ContainingType) {
+				if (t.DeclaredAccessibility != Accessibility.Public) {
+					return false;
+				}
+			}
+			return true;
 		}
 	}
 }
