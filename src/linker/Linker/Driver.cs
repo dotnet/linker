@@ -261,6 +261,39 @@ namespace Mono.Linker
 
 						continue;
 
+					case "--action": {
+							AssemblyAction? action = null;
+							if (!GetStringParam (token, l => action = ParseAssemblyAction (l)))
+								return -1;
+
+							if (action == null)
+								return -1;
+
+							string assemblyName = GetNextStringValue ();
+							if (assemblyName == null) {
+								context.DefaultAction = action.Value;
+								continue;
+							}
+
+							if (!IsValidAssemblyName (assemblyName)) {
+								context.LogError ($"Invalid assembly name '{assemblyName}'", 1036);
+								return -1;
+							}
+
+							context.RegisterAssemblyAction (assemblyName, action.Value);
+							continue;
+						}
+					case "--trim-mode": {
+							AssemblyAction? action = null;
+							if (!GetStringParam (token, l => action = ParseAssemblyAction (l)))
+								return -1;
+
+							if (action == null)
+								return -1;
+
+							context.TrimAction = action.Value;
+							continue;
+						}
 					case "--custom-step":
 						if (!GetStringParam (token, l => custom_steps.Push (l)))
 							return -1;
@@ -493,47 +526,6 @@ namespace Mono.Linker
 							return -1;
 
 						continue;
-					case "c": {
-							AssemblyAction? action = null;
-							if (!GetStringParam (token, l => action = ParseAssemblyAction (l)))
-								return -1;
-
-							if (action == null)
-								return -1;
-
-							context.CoreAction = action.Value;
-							continue;
-						}
-					case "u": {
-							AssemblyAction? action = null;
-							if (!GetStringParam (token, l => action = ParseAssemblyAction (l)))
-								return -1;
-
-							if (action == null)
-								return -1;
-
-							context.UserAction = action.Value;
-							continue;
-						}
-					case "p": {
-							if (arguments.Count < 2) {
-								ErrorMissingArgument (token);
-								return -1;
-							}
-
-							var action = ParseAssemblyAction (arguments.Dequeue ());
-							if (action == null)
-								return -1;
-
-							string assemblyName = arguments.Dequeue ();
-							if (!IsValidAssemblyName (assemblyName)) {
-								context.LogError ($"Invalid assembly name '{assemblyName}'", 1036);
-								return -1;
-							}
-
-							context.RegisterAssemblyAction (assemblyName, action.Value);
-							continue;
-						}
 					case "t":
 						context.KeepTypeForwarderOnlyAssemblies = true;
 						continue;
@@ -784,57 +776,111 @@ namespace Mono.Linker
 			context.Tracer.AddRecorder (new XmlDependencyRecorder (context, fileName));
 		}
 
+		protected bool AddMarkHandler (Pipeline pipeline, string arg)
+		{
+			if (!TryGetCustomAssembly (ref arg, out Assembly custom_assembly))
+				return false;
+
+			var step = ResolveStep<IMarkHandler> (arg, custom_assembly);
+			if (step == null)
+				return false;
+
+			pipeline.AppendMarkHandler (step);
+			return true;
+		}
+
+		bool TryGetCustomAssembly (ref string arg, out Assembly assembly)
+		{
+			assembly = null;
+			int pos = arg.IndexOf (",");
+			if (pos == -1)
+				return true;
+
+			assembly = GetCustomAssembly (arg.Substring (pos + 1));
+			if (assembly == null)
+				return false;
+
+			arg = arg.Substring (0, pos);
+			return true;
+		}
+
 		protected bool AddCustomStep (Pipeline pipeline, string arg)
 		{
-			Assembly custom_assembly = null;
-			int pos = arg.IndexOf (",");
-			if (pos != -1) {
-				custom_assembly = GetCustomAssembly (arg.Substring (pos + 1));
-				if (custom_assembly == null)
+			if (!TryGetCustomAssembly (ref arg, out Assembly custom_assembly))
+				return false;
+
+			string customStepName;
+			string targetName = null;
+			bool before = false;
+			if (!arg.Contains (":")) {
+				customStepName = arg;
+			} else {
+				string[] parts = arg.Split (':');
+				if (parts.Length != 2) {
+					context.LogError ($"Invalid value '{arg}' specified for '--custom-step' option", 1024);
 					return false;
-				arg = arg.Substring (0, pos);
+				}
+				customStepName = parts[1];
+
+				if (!parts[0].StartsWith ("-") && !parts[0].StartsWith ("+")) {
+					context.LogError ($"Expected '+' or '-' to control new step insertion", 1025);
+					return false;
+				}
+
+				before = parts[0][0] == '-';
+				targetName = parts[0].Substring (1);
 			}
 
-			pos = arg.IndexOf (":");
-			if (pos == -1) {
-				var step = ResolveStep (arg, custom_assembly);
-				if (step == null)
-					return false;
+			var stepType = ResolveStepType (customStepName, custom_assembly);
+			if (stepType == null)
+				return false;
 
-				pipeline.AppendStep (step);
+			if (typeof (IStep).IsAssignableFrom (stepType)) {
+
+				var customStep = (IStep) Activator.CreateInstance (stepType);
+				if (targetName == null) {
+					pipeline.AppendStep (customStep);
+					return true;
+				}
+
+				IStep target = FindStep (pipeline, targetName);
+				if (target == null) {
+					context.LogError ($"Pipeline step '{targetName}' could not be found", 1026);
+					return false;
+				}
+
+				if (before)
+					pipeline.AddStepBefore (target, customStep);
+				else
+					pipeline.AddStepAfter (target, customStep);
+
 				return true;
 			}
 
-			string[] parts = arg.Split (':');
-			if (parts.Length != 2) {
-				context.LogError ($"Invalid value '{arg}' specified for '--custom-step' option", 1024);
-				return false;
+			if (typeof (IMarkHandler).IsAssignableFrom (stepType)) {
+
+				var customStep = (IMarkHandler) Activator.CreateInstance (stepType);
+				if (targetName == null) {
+					pipeline.AppendMarkHandler (customStep);
+					return true;
+				}
+
+				IMarkHandler target = FindMarkHandler (pipeline, targetName);
+				if (target == null) {
+					context.LogError ($"Pipeline step '{targetName}' could not be found", 1026);
+					return false;
+				}
+
+				if (before)
+					pipeline.AddMarkHandlerBefore (target, customStep);
+				else
+					pipeline.AddMarkHandlerAfter (target, customStep);
+
+				return true;
 			}
 
-			if (!parts[0].StartsWith ("-") && !parts[0].StartsWith ("+")) {
-				context.LogError ($"Expected '+' or '-' to control new step insertion", 1025);
-				return false;
-			}
-
-			bool before = parts[0][0] == '-';
-			string name = parts[0].Substring (1);
-
-			IStep target = FindStep (pipeline, name);
-			if (target == null) {
-				context.LogError ($"Pipeline step '{name}' could not be found", 1026);
-				return false;
-			}
-
-			IStep newStep = ResolveStep (parts[1], custom_assembly);
-			if (newStep == null)
-				return false;
-
-			if (before)
-				pipeline.AddStepBefore (target, newStep);
-			else
-				pipeline.AddStepAfter (target, newStep);
-
-			return true;
+			context.LogError ($"Custom step '{stepType}' is incompatible with this linker version", 1028);
+			return false;
 		}
 
 		static IStep FindStep (Pipeline pipeline, string name)
@@ -848,7 +894,18 @@ namespace Mono.Linker
 			return null;
 		}
 
-		IStep ResolveStep (string type, Assembly assembly)
+		static IMarkHandler FindMarkHandler (Pipeline pipeline, string name)
+		{
+			foreach (IMarkHandler step in pipeline.MarkHandlers) {
+				Type t = step.GetType ();
+				if (t.Name == name)
+					return step;
+			}
+
+			return null;
+		}
+
+		Type ResolveStepType (string type, Assembly assembly)
 		{
 			Type step = assembly != null ? assembly.GetType (type) : Type.GetType (type, false);
 
@@ -857,12 +914,24 @@ namespace Mono.Linker
 				return null;
 			}
 
-			if (!typeof (IStep).IsAssignableFrom (step)) {
+			return step;
+		}
+
+		TStep ResolveStep<TStep> (string type, Assembly assembly) where TStep : class
+		{
+			Type step = assembly != null ? assembly.GetType (type) : Type.GetType (type, false);
+
+			if (step == null) {
+				context.LogError ($"Custom step '{type}' could not be found", 1027);
+				return null;
+			}
+
+			if (!typeof (TStep).IsAssignableFrom (step)) {
 				context.LogError ($"Custom step '{type}' is incompatible with this linker version", 1028);
 				return null;
 			}
 
-			return (IStep) Activator.CreateInstance (step);
+			return (TStep) Activator.CreateInstance (step);
 		}
 
 		static string[] GetFiles (string param)
@@ -1045,8 +1114,8 @@ namespace Mono.Linker
 		protected virtual LinkContext GetDefaultContext (Pipeline pipeline, ILogger logger)
 		{
 			return new LinkContext (pipeline, logger ?? new ConsoleLogger ()) {
-				CoreAction = AssemblyAction.Link,
-				UserAction = AssemblyAction.Link,
+				TrimAction = AssemblyAction.Link,
+				DefaultAction = AssemblyAction.Link,
 				OutputDirectory = "output",
 			};
 		}
@@ -1086,15 +1155,15 @@ namespace Mono.Linker
 
 			Console.WriteLine ();
 			Console.WriteLine ("Actions");
-			Console.WriteLine ("  -c ACTION           Sets action for all framework assemblies. Defaults to 'link'");
-			Console.WriteLine ("                        copy: Analyze whole assembly and save it to the output");
-			Console.WriteLine ("                        copyused: Same as copy but only for assemblies which are needed");
-			Console.WriteLine ("                        link: Remove any unused IL or metadata and optimizes the assembly");
-			Console.WriteLine ("                        skip: Do not process the assembly");
-			Console.WriteLine ("                        addbypassngen: Add BypassNGenAttribute to unused methods");
-			Console.WriteLine ("                        addbypassngenused: Same as addbypassngen but unused assemblies are removed");
-			Console.WriteLine ("  -u ACTION           Sets action for any user assembly. Defaults to 'link'");
-			Console.WriteLine ("  -p ACTION ASM       Overrides the default action for specific assembly name");
+			Console.WriteLine ("  --trim-mode ACTION  Sets action for assemblies annotated with IsTrimmable attribute. Defaults to 'link'");
+			Console.WriteLine ("                          copy: Analyze whole assembly and save it to the output");
+			Console.WriteLine ("                          copyused: Same as copy but only for assemblies which are needed");
+			Console.WriteLine ("                          link: Remove any unused IL or metadata and optimizes the assembly");
+			Console.WriteLine ("                          skip: Do not process the assembly");
+			Console.WriteLine ("                          addbypassngen: Add BypassNGenAttribute to unused methods");
+			Console.WriteLine ("                          addbypassngenused: Same as addbypassngen but unused assemblies are removed");
+			Console.WriteLine ("  --action ACTION       Sets action for assemblies that have no IsTrimmable attribute. Defaults to 'link'");
+			Console.WriteLine ("  --action ACTION ASM   Overrides the default action for specific assembly name");
 
 			Console.WriteLine ();
 			Console.WriteLine ("Advanced Options");
@@ -1168,6 +1237,7 @@ namespace Mono.Linker
 		static Pipeline GetStandardPipeline ()
 		{
 			Pipeline p = new Pipeline ();
+			p.AppendStep (new ProcessReferencesStep ());
 			p.AppendStep (new MarkStep ());
 			p.AppendStep (new RemoveResourcesStep ());
 			p.AppendStep (new ValidateVirtualMethodAnnotationsStep ());

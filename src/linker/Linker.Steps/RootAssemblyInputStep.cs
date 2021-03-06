@@ -2,7 +2,6 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System.IO;
 using Mono.Cecil;
 
 namespace Mono.Linker.Steps
@@ -56,7 +55,7 @@ namespace Mono.Linker.Steps
 				break;
 			case AssemblyRootMode.VisibleMembers:
 				var preserve_visible = TypePreserveMembers.Visible;
-				if (HasInternalsVisibleTo (assembly))
+				if (MarkInternalsVisibleTo (assembly))
 					preserve_visible |= TypePreserveMembers.Internal;
 
 				MarkAndPreserve (assembly, preserve_visible);
@@ -64,7 +63,7 @@ namespace Mono.Linker.Steps
 
 			case AssemblyRootMode.Library:
 				var preserve_library = TypePreserveMembers.Visible | TypePreserveMembers.Library;
-				if (HasInternalsVisibleTo (assembly))
+				if (MarkInternalsVisibleTo (assembly))
 					preserve_library |= TypePreserveMembers.Internal;
 
 				MarkAndPreserve (assembly, preserve_library);
@@ -153,11 +152,13 @@ namespace Mono.Linker.Steps
 			return type.IsNestedPrivate;
 		}
 
-		static bool HasInternalsVisibleTo (AssemblyDefinition assembly)
+		bool MarkInternalsVisibleTo (AssemblyDefinition assembly)
 		{
 			foreach (CustomAttribute attribute in assembly.CustomAttributes) {
-				if (attribute.Constructor.DeclaringType.IsTypeOf ("System.Runtime.CompilerServices", "InternalsVisibleToAttribute"))
+				if (attribute.Constructor.DeclaringType.IsTypeOf ("System.Runtime.CompilerServices", "InternalsVisibleToAttribute")) {
+					Context.Annotations.Mark (attribute, new DependencyInfo (DependencyKind.RootAssembly, assembly));
 					return true;
+				}
 			}
 
 			return false;

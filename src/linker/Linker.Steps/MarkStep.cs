@@ -48,6 +48,7 @@ namespace Mono.Linker.Steps
 		protected Queue<(MethodDefinition, DependencyInfo)> _methods;
 		protected List<MethodDefinition> _virtual_methods;
 		protected Queue<AttributeProviderPair> _assemblyLevelAttributes;
+		readonly List<AttributeProviderPair> _ivt_attributes;
 		protected Queue<(AttributeProviderPair, DependencyInfo, IMemberDefinition)> _lateMarkedAttributes;
 		protected List<TypeDefinition> _typesWithInterfaces;
 		protected HashSet<AssemblyDefinition> _dynamicInterfaceCastableImplementationTypesDiscovered;
@@ -56,6 +57,7 @@ namespace Mono.Linker.Steps
 
 		readonly List<(TypeDefinition Type, MethodBody Body, Instruction Instr)> _pending_isinst_instr;
 		UnreachableBlocksOptimizer _unreachableBlocksOptimizer;
+		MarkStepContext _markContext;
 
 #if DEBUG
 		static readonly DependencyKind[] _entireTypeReasons = new DependencyKind[] {
@@ -175,6 +177,7 @@ namespace Mono.Linker.Steps
 			_methods = new Queue<(MethodDefinition, DependencyInfo)> ();
 			_virtual_methods = new List<MethodDefinition> ();
 			_assemblyLevelAttributes = new Queue<AttributeProviderPair> ();
+			_ivt_attributes = new List<AttributeProviderPair> ();
 			_lateMarkedAttributes = new Queue<(AttributeProviderPair, DependencyInfo, IMemberDefinition)> ();
 			_typesWithInterfaces = new List<TypeDefinition> ();
 			_dynamicInterfaceCastableImplementationTypesDiscovered = new HashSet<AssemblyDefinition> ();
@@ -190,6 +193,7 @@ namespace Mono.Linker.Steps
 		{
 			_context = context;
 			_unreachableBlocksOptimizer = new UnreachableBlocksOptimizer (_context);
+			_markContext = new MarkStepContext ();
 
 			Initialize ();
 			Process ();
@@ -199,9 +203,7 @@ namespace Mono.Linker.Steps
 		void Initialize ()
 		{
 			InitializeCorelibAttributeXml ();
-
-			foreach (AssemblyDefinition assembly in _context.GetAssemblies ())
-				InitializeAssembly (assembly);
+			_context.Pipeline.InitializeMarkHandlers (_context, _markContext);
 
 			ProcessMarkedPending ();
 		}
@@ -228,17 +230,31 @@ namespace Mono.Linker.Steps
 				_context.CustomAttributes.PrimaryAttributeInfo.AddInternalAttributes (provider, annotations);
 		}
 
-		protected virtual void InitializeAssembly (AssemblyDefinition assembly)
-		{
-			var action = _context.Annotations.GetAction (assembly);
-			if (IsFullyPreservedAction (action))
-				MarkAssembly (assembly, new DependencyInfo (DependencyKind.AssemblyAction, action));
-		}
-
 		void Complete ()
 		{
 			foreach (var body in _unreachableBodies) {
 				Annotations.SetAction (body.Method, MethodAction.ConvertToThrow);
+			}
+
+			foreach (var attr in _ivt_attributes) {
+				if (IsInternalsVisibleAttributeAssemblyMarked (attr.Attribute))
+					MarkCustomAttribute (attr.Attribute, new DependencyInfo (DependencyKind.AssemblyOrModuleAttribute, attr.Provider), null);
+			}
+
+			bool IsInternalsVisibleAttributeAssemblyMarked (CustomAttribute ca)
+			{
+				System.Reflection.AssemblyName an;
+				try {
+					an = new System.Reflection.AssemblyName ((string) ca.ConstructorArguments[0].Value);
+				} catch {
+					return false;
+				}
+
+				var assembly = _context.GetLoadedAssembly (an.Name);
+				if (assembly == null)
+					return false;
+
+				return Annotations.IsMarked (assembly.MainModule);
 			}
 		}
 
@@ -386,7 +402,7 @@ namespace Mono.Linker.Steps
 			// Fully mark any assemblies with copy/save action.
 
 			// Unresolved references could get the copy/save action if this is the default action.
-			bool scanReferences = IsFullyPreservedAction (_context.CoreAction) || IsFullyPreservedAction (_context.UserAction);
+			bool scanReferences = IsFullyPreservedAction (_context.TrimAction) || IsFullyPreservedAction (_context.DefaultAction);
 
 			if (!scanReferences) {
 				// Unresolved references could get the copy/save action if it was set explicitly
@@ -1068,7 +1084,6 @@ namespace Mono.Linker.Steps
 					return true;
 				case "System.Runtime.InteropServices.InterfaceTypeAttribute":
 				case "System.Runtime.InteropServices.GuidAttribute":
-				case "System.Runtime.CompilerServices.InternalsVisibleToAttribute":
 					return true;
 				}
 
@@ -1306,13 +1321,16 @@ namespace Mono.Linker.Steps
 
 			EmbeddedXmlInfo.ProcessDescriptors (assembly, _context);
 
+			foreach (Action<AssemblyDefinition> handleMarkAssembly in _markContext.MarkAssemblyActions)
+				handleMarkAssembly (assembly);
+
 			// Security attributes do not respect the attributes XML
 			if (_context.StripSecurity)
 				RemoveSecurity.ProcessAssembly (assembly, _context);
 
 			MarkExportedTypesTarget.ProcessAssembly (assembly, _context);
 
-			if (IsFullyPreservedAction (_context.Annotations.GetAction (assembly))) {
+			if (ProcessReferencesStep.IsFullyPreservedAction (_context.Annotations.GetAction (assembly))) {
 				MarkEntireAssembly (assembly);
 				return;
 			}
@@ -1376,11 +1394,13 @@ namespace Mono.Linker.Steps
 				if (_context.Annotations.HasLinkerAttribute<RemoveAttributeInstancesAttribute> (resolved.DeclaringType) && Annotations.GetAction (CustomAttributeSource.GetAssemblyFromCustomAttributeProvider (assemblyLevelAttribute.Provider)) == AssemblyAction.Link)
 					continue;
 
-				if (!ShouldMarkTopLevelCustomAttribute (assemblyLevelAttribute, resolved)) {
+				if (customAttribute.AttributeType.IsTypeOf ("System.Runtime.CompilerServices", "InternalsVisibleToAttribute") && !Annotations.IsMarked (customAttribute)) {
+					_ivt_attributes.Add (assemblyLevelAttribute);
+					continue;
+				} else if (!ShouldMarkTopLevelCustomAttribute (assemblyLevelAttribute, resolved)) {
 					skippedItems.Add (assemblyLevelAttribute);
 					continue;
 				}
-
 
 				markOccurred = true;
 				MarkCustomAttribute (customAttribute, new DependencyInfo (DependencyKind.AssemblyOrModuleAttribute, assemblyLevelAttribute.Provider), null);
@@ -1626,6 +1646,10 @@ namespace Mono.Linker.Steps
 				return null;
 
 			MarkModule (type.Scope as ModuleDefinition, new DependencyInfo (DependencyKind.ScopeOfType, type));
+
+			foreach (Action<TypeDefinition> handleMarkType in _markContext.MarkTypeActions)
+				handleMarkType (type);
+
 			MarkType (type.BaseType, new DependencyInfo (DependencyKind.BaseType, type), type);
 			if (type.DeclaringType != null)
 				MarkType (type.DeclaringType, new DependencyInfo (DependencyKind.DeclaringType, type), type);
@@ -2665,6 +2689,9 @@ namespace Mono.Linker.Steps
 
 			_unreachableBlocksOptimizer.ProcessMethod (method);
 
+			foreach (Action<MethodDefinition> handleMarkMethod in _markContext.MarkMethodActions)
+				handleMarkMethod (method);
+
 			if (!markedForCall)
 				MarkType (method.DeclaringType, new DependencyInfo (DependencyKind.DeclaringType, method), method);
 			MarkCustomAttributes (method, new DependencyInfo (DependencyKind.CustomAttribute, method), method);
@@ -3148,7 +3175,7 @@ namespace Mono.Linker.Steps
 						Code.Newobj => DependencyKind.Newobj,
 						Code.Ldvirtftn => DependencyKind.Ldvirtftn,
 						Code.Ldftn => DependencyKind.Ldftn,
-						_ => throw new Exception ($"unexpected opcode {instruction.OpCode}")
+						_ => throw new InvalidOperationException ($"unexpected opcode {instruction.OpCode}")
 					};
 					requiresReflectionMethodBodyScanner |=
 						ReflectionMethodBodyScanner.RequiresReflectionMethodBodyScannerForCallSite (_context, (MethodReference) instruction.Operand);
