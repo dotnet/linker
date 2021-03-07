@@ -74,17 +74,16 @@ namespace ILLink.CodeFix
 			var editor = new SyntaxEditor (root, document.Project.Solution.Workspace);
 			var generator = editor.Generator;
 
-			var semanticModel = await document.GetSemanticModelAsync (cancellationToken).ConfigureAwait(false);
+			var semanticModel = await document.GetSemanticModelAsync (cancellationToken).ConfigureAwait (false);
 			if (semanticModel is null) {
 				return document;
 			}
-			var methodSymbol = (IMethodSymbol)semanticModel.GetDeclaredSymbol (methodDecl);
+			var methodSymbol = (IMethodSymbol) semanticModel.GetDeclaredSymbol (methodDecl);
 			var name = semanticModel.GetSymbolInfo (targetNode).Symbol?.Name;
 			SyntaxNode[] attrArgs;
-			if (string.IsNullOrEmpty(name) || HasPublicAccessibility(methodSymbol)) {
+			if (string.IsNullOrEmpty (name) || HasPublicAccessibility (methodSymbol)) {
 				attrArgs = Array.Empty<SyntaxNode> ();
-			}
-			else {
+			} else {
 				attrArgs = new[] { generator.LiteralExpression ($"calls {name}") };
 			}
 
@@ -99,7 +98,8 @@ namespace ILLink.CodeFix
 			return document.WithSyntaxRoot (editor.GetChangedRoot ());
 		}
 
-		private static bool HasPublicAccessibility(IMethodSymbol m) {
+		private static bool HasPublicAccessibility (IMethodSymbol m)
+		{
 			if (m is not { DeclaredAccessibility: Accessibility.Public or Accessibility.Protected }) {
 				return false;
 			}
