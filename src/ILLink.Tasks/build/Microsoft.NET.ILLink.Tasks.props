@@ -17,4 +17,10 @@ Copyright (c) .NET Foundation. All rights reserved.
     <ILLinkTasksAssembly Condition="'$(MSBuildRuntimeType)' != 'Core'">$(MSBuildThisFileDirectory)..\tools\net472\ILLink.Tasks.dll</ILLinkTasksAssembly>
   </PropertyGroup>
 
+  <ItemGroup>
+    <CompilerVisibleProperty Include="EnableSingleFileAnalyzer"/>
+    <CompilerVisibleProperty Include="EnableTrimAnalyzer"/>
+    <CompilerVisibleProperty Include="IncludeAllContentForSelfExtract"/>
+  </ItemGroup>
+
 </Project>

@@ -42,7 +42,22 @@
       <SetTargetFramework>TargetFramework=netstandard2.0</SetTargetFramework>
     </ProjectReference>
     <ProjectReference Condition="('$(UseCecilPackage)' != 'true') And ('$(TargetFramework)' != 'net472')" Include="../../external/cecil/symbols/pdb/Mono.Cecil.Pdb.csproj" PrivateAssets="All" />
+    <ProjectReference Include="../ILLink.RoslynAnalyzer/ILLink.RoslynAnalyzer.csproj">
+      <PrivateAssets>all</PrivateAssets>
+      <DestinationSubDirectory>analyzers/dotnet/cs/</DestinationSubDirectory>
+    </ProjectReference>
+    <ProjectReference Include="../ILLink.CodeFix/ILLink.CodeFixProvider.csproj">
+      <PrivateAssets>all</PrivateAssets>
+      <DestinationSubDirectory>analyzers/dotnet/cs/</DestinationSubDirectory>
+    </ProjectReference>
   </ItemGroup>
+
+  <Target Name="IncludeAnalyzerAssembliesInPkg"
+          AfterTargets="AfterBuild">
+    <ItemGroup>
+      <None Include="$(OutputPath)/analyzers/dotnet/cs/*" Pack="true" PackagePath="analyzers/dotnet/cs/" />
+    </ItemGroup>
+  </Target>
 
   <ItemGroup>
     <!-- We use private assets for the Microsoft.Build packages to

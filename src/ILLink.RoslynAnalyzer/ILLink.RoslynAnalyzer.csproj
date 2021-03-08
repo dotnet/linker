@@ -10,7 +10,6 @@
 
   <!-- Analyzer package properties -->
   <PropertyGroup>
-    <IsPackable>true</IsPackable>
     <PackageId>Microsoft.NET.ILLink.Analyzers</PackageId>
     <Authors>Microsoft</Authors>
     <Description>Analyzer utilities for ILLink attributes and single-file</Description>
@@ -20,17 +19,6 @@
   <ItemGroup>
     <EmbeddedResource Include="Resources.resx" GenerateSource="true" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.7.0" PrivateAssets="all" />
-  </ItemGroup>
-
-  <Target Name="IncludeAnalyzerAssembliesInPkg"
-          DependsOnTargets="InitializeStandardNuspecProperties"
-          AfterTargets="AfterBuild">
-    <ItemGroup>
-      <None Include="$(OutputPath)\**\*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-    </ItemGroup>
-  </Target>
-  <ItemGroup>
-    <Content Include="Microsoft.NET.ILLink.Analyzers.props" Pack="true" PackagePath="build"/>
   </ItemGroup>
 
 </Project>
