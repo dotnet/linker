@@ -19,12 +19,12 @@ namespace Mono.Linker.Tests.Cases.TypeForwarding
 	[SetupCompileAfter ("Unused.dll", new[] { "Dependencies/AnotherLibrary.cs" })]
 	[SetupCompileAfter ("Forwarder.dll", new[] { "Dependencies/ForwarderLibrary_2.cs" }, references: new[] { "Implementation.dll", "Unused.dll" })]
 
+	[RemovedAssembly ("Unused.dll")]
 	[KeptAssembly ("Forwarder.dll")]
 	[KeptMemberInAssembly ("Implementation.dll", typeof (ImplementationLibrary), "GetSomeValue()")]
 	[KeptMemberInAssembly ("Forwarder.dll", typeof (ImplementationLibrary))]
-	[RemovedAssembly ("Unused.dll")]
-	[RemovedForwarder ("Forwarder.dll", "Mono.Linker.Tests.Cases.TypeForwarding.Dependencies.AnotherLibrary`1")]
-	[RemovedAssemblyReference ("Forwarder.dll", "Unused")]
+	[KeptMemberInAssembly ("Forwarder.dll", "Mono.Linker.Tests.Cases.TypeForwarding.Dependencies.AnotherLibrary`1")]
+	[KeptReferencesInAssembly ("Forwarder.dll", new[] { "System.Private.CoreLib", "Implementation", "Unused" })]
 	class UsedAndUnusedForwarderWithAssemblyCopy
 	{
 		static void Main ()
