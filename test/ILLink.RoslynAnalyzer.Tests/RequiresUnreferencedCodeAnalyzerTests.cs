@@ -18,7 +18,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 		static Task VerifyRequiresUnreferencedCodeAnalyzer (string source, params DiagnosticResult[] expected)
 		{
 			return VerifyCS.VerifyAnalyzerAsync (source,
-				TestCaseUtils.UseMSBuildProperties (MSBuildPropertyOptionNames.PublishTrimmed),
+				TestCaseUtils.UseMSBuildProperties (MSBuildPropertyOptionNames.EnableTrimAnalyzer),
 				expected);
 		}
 
