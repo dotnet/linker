@@ -47,9 +47,9 @@ namespace System.Diagnostics.CodeAnalysis
 			};
 			test.ExpectedDiagnostics.AddRange (baselineExpected);
 			test.TestState.AnalyzerConfigFiles.Add (
-						("/.editorconfig", SourceText.From (@"
+						("/.editorconfig", SourceText.From (@$"
 is_global = true
-build_property.PublishTrimmed = true")));
+build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 			test.FixedState.ExpectedDiagnostics.AddRange (fixedExpected);
 			return test.RunAsync ();
 		}
