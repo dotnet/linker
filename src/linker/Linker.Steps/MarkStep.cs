@@ -359,41 +359,7 @@ namespace Mono.Linker.Steps
 
 		void Process ()
 		{
-			while (ProcessPrimaryQueue () || ProcessMarkedPending () || ProcessLazyAttributes () || ProcessLateMarkedAttributes () || MarkFullyPreservedAssemblies ()) {
-
-				// deal with [TypeForwardedTo] pseudo-attributes
-
-				// This marks all exported types that resolve to a marked type. Note that it
-				// may mark unused exported types that happen to resolve to a type which was
-				// marked from a different reference. This seems incorrect.
-				// Note also that we may still remove type forwarder assemblies with marked exports in SweepStep,
-				// if they don't contain other used code.
-				// https://github.com/mono/linker/issues/1740
-				foreach (AssemblyDefinition assembly in _context.GetAssemblies ()) {
-					if (!assembly.MainModule.HasExportedTypes)
-						continue;
-
-					foreach (var exported in assembly.MainModule.ExportedTypes) {
-						bool isForwarder = exported.IsForwarder;
-						var declaringType = exported.DeclaringType;
-						while (!isForwarder && (declaringType != null)) {
-							isForwarder = declaringType.IsForwarder;
-							declaringType = declaringType.DeclaringType;
-						}
-
-						if (!isForwarder)
-							continue;
-						TypeDefinition type = exported.Resolve ();
-						if (type == null)
-							continue;
-						if (!Annotations.IsMarked (type))
-							continue;
-						var di = new DependencyInfo (DependencyKind.ExportedType, type);
-						_context.MarkingHelpers.MarkExportedType (exported, assembly.MainModule, di);
-					}
-				}
-			}
-
+			while (ProcessPrimaryQueue () || ProcessMarkedPending () || ProcessLazyAttributes () || ProcessLateMarkedAttributes () || MarkFullyPreservedAssemblies ()) ;
 			ProcessPendingTypeChecks ();
 		}
 
@@ -864,6 +830,15 @@ namespace Mono.Linker.Steps
 					_context.LogWarning ($"Unresolved type '{context.DeclaringType}' in DynamicDependencyAttribute", 2036, context);
 					return;
 				}
+			}
+
+			ModuleDefinition module = assembly.MainModule;
+			if (module.HasExportedTypes) {
+				foreach (var exportedType in module.ExportedTypes)
+					if (exportedType.Resolve () == type) {
+						_context.MarkingHelpers.MarkExportedType (exportedType, module, new DependencyInfo (DependencyKind.DynamicDependency, type));
+						break;
+					}
 			}
 
 			IEnumerable<IMemberDefinition> members;
@@ -1355,7 +1330,8 @@ namespace Mono.Linker.Steps
 			MarkCustomAttributes (assembly.MainModule, new DependencyInfo (DependencyKind.AssemblyOrModuleAttribute, assembly.MainModule), null);
 
 			if (assembly.MainModule.HasExportedTypes) {
-				// TODO: This needs more work accross all steps
+				foreach (var exportedType in assembly.MainModule.ExportedTypes)
+					_context.MarkingHelpers.MarkExportedType (exportedType, assembly.MainModule, new DependencyInfo (DependencyKind.ModuleOfExportedType, assembly.MainModule));
 			}
 
 			foreach (TypeDefinition type in assembly.MainModule.Types)
@@ -1866,7 +1842,7 @@ namespace Mono.Linker.Steps
 			TypeDefinition tdef = null;
 			switch (attribute.ConstructorArguments[0].Value) {
 			case string s:
-				tdef = _context.TypeNameResolver.ResolveTypeName (s)?.Resolve ();
+				tdef = _context.TypeNameResolver.ResolveTypeName (s, out _)?.Resolve ();
 				break;
 			case TypeReference type:
 				tdef = type.Resolve ();
