@@ -67,9 +67,6 @@ namespace Mono.Linker.Dataflow
 
 		public void ScanAndProcessReturnValue (MethodBody methodBody)
 		{
-			if (methodBody.Method.Name == "GetCSharpThunk")
-				Debug.WriteLine ("");
-
 			Scan (methodBody);
 
 			if (methodBody.Method.ReturnType.MetadataType != MetadataType.Void) {
