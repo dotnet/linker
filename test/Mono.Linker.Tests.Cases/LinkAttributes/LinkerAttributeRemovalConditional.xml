@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<linker>
+  <assembly fullname="test">
+    <type fullname="Mono.Linker.Tests.Cases.LinkAttributes.TestConditionalRemoveAttribute">
+      <attribute internal="RemoveAttributeInstances">
+        <argument type="System.Object">
+          <argument>remove</argument>
+        </argument>
+      </attribute>
+    </type>
+    <type fullname="Mono.Linker.Tests.Cases.LinkAttributes.TestConditionalRemoveAttribute">
+      <attribute internal="RemoveAttributeInstances">
+        <argument type="System.Object">
+          <argument type="System.Int32">100</argument>
+        </argument>
+      </attribute>
+    </type>
+  </assembly>
+</linker>
