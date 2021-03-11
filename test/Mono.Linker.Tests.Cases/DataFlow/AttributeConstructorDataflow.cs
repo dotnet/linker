@@ -93,10 +93,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				}
 			}
 
-			[KeepsAll(typeof(KeepAllOnSelf))]
+			[KeepsAll (typeof (KeepAllOnSelf))]
 			[Kept]
-			[KeptAttributeAttribute(typeof(KeepsAllAttribute))]
-			[KeptMember(".ctor()")]
+			[KeptAttributeAttribute (typeof (KeepsAllAttribute))]
+			[KeptMember (".ctor()")]
 			class KeepAllOnSelf
 			{
 				[Kept]
