@@ -1665,7 +1665,7 @@ namespace Mono.Linker.Dataflow
 			}
 		}
 
-		void ProcessGetMethodByName(
+		void ProcessGetMethodByName (
 			ref ReflectionPatternContext reflectionContext,
 			TypeDefinition typeDefinition,
 			string methodName,
