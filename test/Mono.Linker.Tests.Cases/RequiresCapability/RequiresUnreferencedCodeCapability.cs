@@ -46,6 +46,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			TestTypeWhichOverridesMethodVirtualMethodRequiresUnreferencedCode ();
 			TestTypeWhichOverridesMethodVirtualMethodRequiresUnreferencedCodeOnBase ();
 			TestStaticCctorRequiresUnreferencedCode ();
+			TestStaticCtorMarkingIsTriggeredByFieldAccess ();
 			TestDynamicallyAccessedMembersWithRequiresUnreferencedCode (typeof (DynamicallyAccessedTypeWithRequiresUnreferencedCode));
 			TestDynamicallyAccessedMembersWithRequiresUnreferencedCode (typeof (TypeWhichOverridesMethod));
 			TestInterfaceMethodWithRequiresUnreferencedCode ();
@@ -232,6 +233,22 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		static void TestStaticCctorRequiresUnreferencedCode ()
 		{
 			_ = new StaticCtor ();
+		}
+
+		class StaticCtorTriggeredByFieldAccess
+		{
+			[RequiresUnreferencedCode ("Message for --StaticCtorTriggeredByFieldAccess.Cctor--")]
+			static StaticCtorTriggeredByFieldAccess ()
+			{
+			}
+
+			public static int field = 0;
+		}
+
+		[ExpectedWarning ("IL2026", "--StaticCtorTriggeredByFieldAccess.Cctor--")]
+		static void TestStaticCtorMarkingIsTriggeredByFieldAccess ()
+		{
+			var x = StaticCtorTriggeredByFieldAccess.field + 1;
 		}
 
 		public class DynamicallyAccessedTypeWithRequiresUnreferencedCode
