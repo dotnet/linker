@@ -32,6 +32,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			MakeGenericMethod.Test ();
 
 			TestNewConstraintSatisfiesParameterlessConstructor<object> ();
+			TestStructConstraintSatisfiesParameterlessConstructor<TestStruct> ();
+			TestUnmanagedConstraintSatisfiesParameterlessConstructor<byte> ();
 
 			TestGenericParameterFlowsToField ();
 			TestGenericParameterFlowsToReturnValue ();
@@ -759,6 +761,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				TestWithMultipleArgumentsWithRequirements ();
 
 				TestWithNewConstraint ();
+				TestWithStructConstraint ();
+				TestWithUnmanagedConstraint ();
 			}
 
 			// This is OK since we know it's null, so MakeGenericType is effectively a no-op (will throw)
@@ -855,6 +859,26 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			class GenericWithNewConstraint<T> where T : new()
 			{
 			}
+
+			[RecognizedReflectionAccessPattern]
+			static void TestWithStructConstraint ()
+			{
+				typeof (GenericWithStructConstraint<>).MakeGenericType (typeof (TestType));
+			}
+
+			class GenericWithStructConstraint<T> where T : struct
+			{
+			}
+
+			[RecognizedReflectionAccessPattern]
+			static void TestWithUnmanagedConstraint ()
+			{
+				typeof (GenericWithUnmanagedConstraint<>).MakeGenericType (typeof (TestType));
+			}
+
+			class GenericWithUnmanagedConstraint<T> where T : unmanaged
+			{
+			}
 		}
 
 		class MakeGenericMethod
@@ -877,6 +901,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				TestWithMultipleArgumentsWithRequirements ();
 
 				TestWithNewConstraint ();
+				TestWithStructConstraint ();
+				TestWithUnmanagedConstraint ();
 			}
 
 			[RecognizedReflectionAccessPattern]
@@ -991,10 +1017,46 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 				var t = new T ();
 			}
+
+			[RecognizedReflectionAccessPattern]
+			static void TestWithStructConstraint ()
+			{
+				typeof (MakeGenericMethod).GetMethod (nameof (GenericWithStructConstraint), BindingFlags.Static | BindingFlags.NonPublic)
+					.MakeGenericMethod (typeof (TestType));
+			}
+
+			static void GenericWithStructConstraint<T> () where T : struct
+			{
+				var t = new T ();
+			}
+
+			[RecognizedReflectionAccessPattern]
+			static void TestWithUnmanagedConstraint ()
+			{
+				typeof (MakeGenericMethod).GetMethod (nameof (GenericWithUnmanagedConstraint), BindingFlags.Static | BindingFlags.NonPublic)
+					.MakeGenericMethod (typeof (TestType));
+			}
+
+			static void GenericWithUnmanagedConstraint<T> () where T : unmanaged
+			{
+				var t = new T ();
+			}
 		}
 
 		[RecognizedReflectionAccessPattern]
 		static void TestNewConstraintSatisfiesParameterlessConstructor<T> () where T : new()
+		{
+			RequiresParameterlessConstructor<T> ();
+		}
+
+		[RecognizedReflectionAccessPattern]
+		static void TestStructConstraintSatisfiesParameterlessConstructor<T> () where T : struct
+		{
+			RequiresParameterlessConstructor<T> ();
+		}
+
+		[RecognizedReflectionAccessPattern]
+		static void TestUnmanagedConstraintSatisfiesParameterlessConstructor<T> () where T : unmanaged
 		{
 			RequiresParameterlessConstructor<T> ();
 		}
@@ -1004,6 +1066,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		public class TestType
+		{
+		}
+
+		public struct TestStruct
 		{
 		}
 	}

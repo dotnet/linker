@@ -681,7 +681,7 @@ namespace Mono.Linker.Dataflow
 							if (value is SystemTypeValue typeValue) {
 								foreach (var genericParameter in typeValue.TypeRepresented.GenericParameters) {
 									if (_context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameter) != DynamicallyAccessedMemberTypes.None ||
-										genericParameter.HasDefaultConstructorConstraint) {
+										(genericParameter.HasDefaultConstructorConstraint && !genericParameter.HasNotNullableValueTypeConstraint)) {
 										// There is a generic parameter which has some requirements on the input types.
 										// For now we don't support tracking actual array elements, so we can't validate that the requirements are fulfilled.
 										reflectionContext.RecordUnrecognizedPattern (
@@ -1524,7 +1524,7 @@ namespace Mono.Linker.Dataflow
 							if (methodValue is SystemReflectionMethodBaseValue methodBaseValue) {
 								foreach (var genericParameter in methodBaseValue.MethodRepresented.GenericParameters) {
 									if (_context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameter) != DynamicallyAccessedMemberTypes.None ||
-										genericParameter.HasDefaultConstructorConstraint) {
+										(genericParameter.HasDefaultConstructorConstraint && !genericParameter.HasNotNullableValueTypeConstraint)) {
 										// There is a generic parameter which has some requirements on input types.
 										// For now we don't support tracking actual array elements, so we can't validate that the requirements are fulfilled.
 										reflectionContext.RecordUnrecognizedPattern (
