@@ -868,9 +868,11 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				TestWithRequirements ();
 				TestWithRequirementsFromParam (null);
 				TestWithRequirementsFromGenericParam<TestType> ();
+				TestWithRequirementsViaRuntimeMethod ();
 
 				TestWithNoRequirements ();
 				TestWithNoRequirementsFromParam (null);
+				TestWithNoRequirementsViaRuntimeMethod ();
 
 				TestWithMultipleArgumentsWithRequirements ();
 
@@ -906,7 +908,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				messageCode: "IL2060")]
 			static void TestWithRequirements ()
 			{
-				typeof (MakeGenericMethod).GetMethod (nameof (GenericWithRequirements), BindingFlags.Static | BindingFlags.NonPublic)
+				typeof (MakeGenericMethod).GetMethod (nameof (GenericWithRequirements), BindingFlags.Static)
 					.MakeGenericMethod (typeof (TestType));
 			}
 
@@ -915,36 +917,51 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			static void TestWithRequirementsFromParam (
 				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] Type type)
 			{
-				typeof (MakeGenericMethod).GetMethod (nameof (GenericWithRequirements), BindingFlags.Static | BindingFlags.NonPublic)
+				typeof (MakeGenericMethod).GetMethod (nameof (GenericWithRequirements), BindingFlags.Static)
 					.MakeGenericMethod (type);
 			}
 
 			static void TestWithRequirementsFromGenericParam<
 				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] T> ()
 			{
-				typeof (MakeGenericMethod).GetMethod (nameof (GenericWithRequirements), BindingFlags.Static | BindingFlags.NonPublic)
+				typeof (MakeGenericMethod).GetMethod (nameof (GenericWithRequirements), BindingFlags.Static)
 					.MakeGenericMethod (typeof (T));
 			}
 
-			static void GenericWithRequirements<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] T> ()
+			[UnrecognizedReflectionAccessPattern (typeof (MethodInfo), nameof (MethodInfo.MakeGenericMethod), new Type[] { typeof (Type[]) },
+				messageCode: "IL2060")]
+			static void TestWithRequirementsViaRuntimeMethod ()
+			{
+				typeof (MakeGenericMethod).GetRuntimeMethod (nameof (GenericWithRequirements), Type.EmptyTypes)
+					.MakeGenericMethod (typeof (TestType));
+			}
+
+			public static void GenericWithRequirements<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] T> ()
 			{
 			}
 
 			[RecognizedReflectionAccessPattern]
 			static void TestWithNoRequirements ()
 			{
-				typeof (MakeGenericMethod).GetMethod (nameof (GenericWithNoRequirements), BindingFlags.Static | BindingFlags.NonPublic)
+				typeof (MakeGenericMethod).GetMethod (nameof (GenericWithNoRequirements), BindingFlags.Static)
 					.MakeGenericMethod (typeof (TestType));
 			}
 
 			[RecognizedReflectionAccessPattern]
 			static void TestWithNoRequirementsFromParam (Type type)
 			{
-				typeof (MakeGenericMethod).GetMethod (nameof (GenericWithNoRequirements), BindingFlags.Static | BindingFlags.NonPublic)
+				typeof (MakeGenericMethod).GetMethod (nameof (GenericWithNoRequirements), BindingFlags.Static)
 					.MakeGenericMethod (type);
 			}
 
-			static void GenericWithNoRequirements<T> ()
+			[RecognizedReflectionAccessPattern]
+			static void TestWithNoRequirementsViaRuntimeMethod ()
+			{
+				typeof (MakeGenericMethod).GetRuntimeMethod (nameof (GenericWithNoRequirements), Type.EmptyTypes)
+					.MakeGenericMethod (typeof (TestType));
+			}
+
+			public static void GenericWithNoRequirements<T> ()
 			{
 			}
 

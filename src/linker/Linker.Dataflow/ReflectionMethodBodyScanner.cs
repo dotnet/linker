@@ -747,7 +747,7 @@ namespace Mono.Linker.Dataflow
 											reflectionContext.RecordHandledPattern ();
 											break;
 										case IntrinsicId.RuntimeReflectionExtensions_GetRuntimeMethod:
-											MarkMethodsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, m => m.Name == stringValue.Contents, bindingFlags);
+											ProcessGetMethodByName (ref reflectionContext, systemTypeValue.TypeRepresented, stringValue.Contents, bindingFlags, ref methodReturnValue);
 											reflectionContext.RecordHandledPattern ();
 											break;
 										case IntrinsicId.RuntimeReflectionExtensions_GetRuntimeProperty:
@@ -813,7 +813,7 @@ namespace Mono.Linker.Dataflow
 
 						foreach (var value in methodParams[1].UniqueValues ()) {
 							if (value is SystemReflectionMethodBaseValue methodBaseValue) {
-								// We have one of the accessor for the property. The Expression.Property will in this case search
+								// We have one of the accessors for the property. The Expression.Property will in this case search
 								// for the matching PropertyInfo and store that. So to be perfectly correct we need to mark the
 								// respective PropertyInfo as "accessed via reflection".
 								var propertyDefinition = methodBaseValue.MethodRepresented.GetProperty ();
@@ -1051,19 +1051,7 @@ namespace Mono.Linker.Dataflow
 										if (BindingFlagsAreUnsupported (bindingFlags)) {
 											RequireDynamicallyAccessedMembers (ref reflectionContext, DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods, value, calledMethodDefinition);
 										} else {
-											bool foundAny = false;
-											foreach (var method in systemTypeValue.TypeRepresented.GetMethodsOnTypeHierarchy (m => m.Name == stringValue.Contents, bindingFlags)) {
-												MarkMethod (ref reflectionContext, method);
-												methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new SystemReflectionMethodBaseValue (method));
-												foundAny = true;
-											}
-
-											// If there were no methods found the API will return null at runtime, so we should
-											// track the null as a return value as well.
-											// This also prevents warnings in such case, since if we don't set the return value it will be
-											// "unknown" and consumers may warn.
-											if (!foundAny)
-												methodReturnValue = MergePointValue.MergeValues (methodReturnValue, NullValue.Instance);
+											ProcessGetMethodByName (ref reflectionContext, systemTypeValue.TypeRepresented, stringValue.Contents, bindingFlags, ref methodReturnValue);
 										}
 
 										reflectionContext.RecordHandledPattern ();
@@ -1675,6 +1663,28 @@ namespace Mono.Linker.Dataflow
 					reflectionContext.RecordUnrecognizedPattern (2032, $"Unrecognized value passed to the parameter '{calledMethod.Parameters[0].Name}' of method '{calledMethod.GetDisplayName ()}'. It's not possible to guarantee the availability of the target type.");
 				}
 			}
+		}
+
+		void ProcessGetMethodByName(
+			ref ReflectionPatternContext reflectionContext,
+			TypeDefinition typeDefinition,
+			string methodName,
+			BindingFlags? bindingFlags,
+			ref ValueNode methodReturnValue)
+		{
+			bool foundAny = false;
+			foreach (var method in typeDefinition.GetMethodsOnTypeHierarchy (m => m.Name == methodName, bindingFlags)) {
+				MarkMethod (ref reflectionContext, method);
+				methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new SystemReflectionMethodBaseValue (method));
+				foundAny = true;
+			}
+
+			// If there were no methods found the API will return null at runtime, so we should
+			// track the null as a return value as well.
+			// This also prevents warnings in such case, since if we don't set the return value it will be
+			// "unknown" and consumers may warn.
+			if (!foundAny)
+				methodReturnValue = MergePointValue.MergeValues (methodReturnValue, NullValue.Instance);
 		}
 
 		void RequireDynamicallyAccessedMembers (ref ReflectionPatternContext reflectionContext, DynamicallyAccessedMemberTypes requiredMemberTypes, ValueNode value, IMetadataTokenProvider targetContext)

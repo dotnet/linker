@@ -380,6 +380,8 @@ namespace Mono.Linker.Dataflow
 			case ValueNodeKind.MethodReturn:
 			case ValueNodeKind.SystemTypeForGenericParameter:
 			case ValueNodeKind.RuntimeTypeHandleForGenericParameter:
+			case ValueNodeKind.SystemReflectionMethodBase:
+			case ValueNodeKind.RuntimeMethodHandle:
 			case ValueNodeKind.LoadField:
 				break;
 

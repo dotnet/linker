@@ -51,6 +51,15 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 			[Kept]
 			[KeptBackingField]
+			public static int StaticPropertyViaRuntimeMethod {
+				[Kept]
+				get;
+				[Kept]
+				set;
+			}
+
+			[Kept]
+			[KeptBackingField]
 			public int InstanceProperty {
 				[Kept]
 				get;
@@ -79,6 +88,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 				Expression<Func<PropertyGetter, int>> instanceGetter = i => i.InstanceProperty;
 
 				Expression.Property (Expression.New (typeof (PropertyGetter)), typeof (PropertyGetter).GetMethod ("get_InstancePropertyViaReflection"));
+
+				Expression.Property (null, typeof (PropertyGetter).GetRuntimeMethod ("get_StaticPropertyViaRuntimeMethod", Type.EmptyTypes));
 			}
 		}
 
@@ -89,6 +100,15 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			[Kept]
 			[KeptBackingField]
 			public static int StaticProperty {
+				[Kept]
+				get;
+				[Kept]
+				set;
+			}
+
+			[Kept]
+			[KeptBackingField]
+			public static int StaticPropertyViaRuntimeMethod {
 				[Kept]
 				get;
 				[Kept]
@@ -109,6 +129,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			public static void Test ()
 			{
 				Expression.Property (null, typeof (PropertySetter).GetMethod ("set_StaticProperty"));
+
+				Expression.Property (null, typeof (PropertySetter).GetRuntimeMethod ("set_StaticPropertyViaRuntimeMethod", Type.EmptyTypes));
 
 				Expression.Property (Expression.New (typeof (PropertySetter)), typeof (PropertySetter).GetMethod ("set_InstanceProperty"));
 			}
