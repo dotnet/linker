@@ -763,6 +763,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				TestWithNewConstraint ();
 				TestWithStructConstraint ();
 				TestWithUnmanagedConstraint ();
+				TestWithNullable ();
 			}
 
 			// This is OK since we know it's null, so MakeGenericType is effectively a no-op (will throw)
