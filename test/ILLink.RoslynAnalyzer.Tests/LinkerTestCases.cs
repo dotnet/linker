@@ -22,6 +22,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			case "TestCovariantReturnCallOnDerived":
 			case "TestRequiresUnreferencedCodeOnlyThroughReflection":
 			case "TestStaticCctorRequiresUnreferencedCode":
+			case "TestStaticCtorMarkingIsTriggeredByFieldAccess":
 			case "TestTypeWhichOverridesMethodVirtualMethodRequiresUnreferencedCode":
 			case "TestRequiresInMethodFromCopiedAssembly":
 			case "TestRequiresThroughReflectionInMethodFromCopiedAssembly":
