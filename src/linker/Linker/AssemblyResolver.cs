@@ -36,7 +36,6 @@ namespace Mono.Linker
 {
 	public class AssemblyResolver : IAssemblyResolver
 	{
-		readonly Dictionary<string, AssemblyDefinition> _assemblies = new Dictionary<string, AssemblyDefinition> (StringComparer.OrdinalIgnoreCase);
 		readonly List<string> _references = new ();
 		readonly LinkContext _context;
 		readonly List<string> _directories = new ();
@@ -55,18 +54,14 @@ namespace Mono.Linker
 			};
 		}
 
-		public IDictionary<string, AssemblyDefinition> AssemblyCache {
-			get { return _assemblies; }
-		}
+		public IDictionary<string, AssemblyDefinition> AssemblyCache { get; } = new Dictionary<string, AssemblyDefinition> (StringComparer.OrdinalIgnoreCase);
 
-		public string GetAssemblyFileName (AssemblyDefinition assembly)
+		public string GetAssemblyLocation (AssemblyDefinition assembly)
 		{
-			if (_assemblyToPath.TryGetValue (assembly, out string path)) {
+			if (_assemblyToPath.TryGetValue (assembly, out string path))
 				return path;
-			}
 
-			// Must be an assembly that we didn't open through the resolver
-			return assembly.MainModule.FileName;
+			throw new InternalErrorException ($"Assembly '{assembly}' was not loaded using linker resolver");
 		}
 
 		AssemblyDefinition ResolveFromReferences (AssemblyNameReference name)
@@ -89,7 +84,7 @@ namespace Mono.Linker
 
 		public AssemblyDefinition Resolve (AssemblyNameReference name, bool probing)
 		{
-			if (_assemblies.TryGetValue (name.Name, out AssemblyDefinition asm))
+			if (AssemblyCache.TryGetValue (name.Name, out AssemblyDefinition asm))
 				return asm;
 
 			if (_unresolvedAssemblies?.Contains (name.Name) == true) {
@@ -197,7 +192,7 @@ namespace Mono.Linker
 
 		public void CacheAssembly (AssemblyDefinition assembly)
 		{
-			_assemblies[assembly.Name.Name] = assembly;
+			AssemblyCache[assembly.Name.Name] = assembly;
 			_context.RegisterAssembly (assembly);
 		}
 
@@ -221,11 +216,11 @@ namespace Mono.Linker
 			if (!disposing)
 				return;
 
-			foreach (var asm in _assemblies.Values) {
+			foreach (var asm in AssemblyCache.Values) {
 				asm.Dispose ();
 			}
 
-			_assemblies.Clear ();
+			AssemblyCache.Clear ();
 			if (_unresolvedAssemblies != null)
 				_unresolvedAssemblies.Clear ();
 

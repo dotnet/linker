@@ -314,7 +314,7 @@ namespace Mono.Linker
 			try {
 				var symbolReader = _symbolReaderProvider.GetSymbolReader (
 					assembly.MainModule,
-					_resolver.GetAssemblyFileName (assembly));
+					GetAssemblyLocation (assembly));
 
 				if (symbolReader == null)
 					return;
@@ -402,8 +402,7 @@ namespace Mono.Linker
 					continue;
 
 				if (args[1].Value is not string value || !value.Equals ("True", StringComparison.OrdinalIgnoreCase)) {
-					var assemblyFileName = Resolver.GetAssemblyFileName (assembly);
-					LogWarning ($"Invalid AssemblyMetadata(\"IsTrimmable\", \"{args[1].Value}\") attribute in assembly '{assembly.Name.Name}'. Value must be \"True\"", 2102, assemblyFileName);
+					LogWarning ($"Invalid AssemblyMetadata(\"IsTrimmable\", \"{args[1].Value}\") attribute in assembly '{assembly.Name.Name}'. Value must be \"True\"", 2102, GetAssemblyLocation (assembly));
 					continue;
 				}
 
@@ -427,6 +426,11 @@ namespace Mono.Linker
 				return ad;
 
 			return null;
+		}
+
+		public string GetAssemblyLocation (AssemblyDefinition assembly)
+		{
+			return Resolver.GetAssemblyLocation (assembly);
 		}
 
 		public IEnumerable<AssemblyDefinition> GetReferencedAssemblies ()
