@@ -47,7 +47,7 @@ namespace Mono.Linker.Steps
 					MarkAndPreserveAll (type);
 
 				foreach (var exportedType in assembly.MainModule.ExportedTypes)
-					_context.MarkingHelpers.MarkExportedType (exportedType, assembly.MainModule, new DependencyInfo (DependencyKind.ModuleOfExportedType, assembly.MainModule));
+					_context.MarkingHelpers.MarkExportedType (exportedType, assembly.MainModule, new DependencyInfo (DependencyKind.XmlDescriptor, assembly.MainModule));
 			} else {
 				ProcessTypes (assembly, nav, warnOnUnresolvedTypes);
 				ProcessNamespaces (assembly, nav);
