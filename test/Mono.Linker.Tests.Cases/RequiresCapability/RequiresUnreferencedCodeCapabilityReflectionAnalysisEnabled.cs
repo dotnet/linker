@@ -70,8 +70,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		[Kept]
 		class TypeRequiresPublicFields<
 			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
-			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)]
-			T>
+		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)]
+		T>
 		{
 			[Kept]
 			public static void Method () { }
