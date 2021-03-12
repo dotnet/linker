@@ -314,7 +314,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 						nameof(TRoot),
 						"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.RootTypeWithRequirements<TRoot>.InnerTypeWithNoAddedGenerics",
 						"type",
-						"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.RequiresPublicMethods(Type)" })]
+						"DataFlowTypeExtensions.RequiresPublicMethods(Type)" })]
 				public static void TestAccess ()
 				{
 					typeof (TRoot).RequiresPublicFields ();
