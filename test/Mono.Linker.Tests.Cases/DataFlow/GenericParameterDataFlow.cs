@@ -860,7 +860,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 			}
 
-			[RecognizedReflectionAccessPattern]
+			[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.MakeGenericType), new Type[] { typeof (Type[]) },
+				messageCode: "IL2055")]
 			static void TestWithStructConstraint ()
 			{
 				typeof (GenericWithStructConstraint<>).MakeGenericType (typeof (TestType));
@@ -870,7 +871,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 			}
 
-			[RecognizedReflectionAccessPattern]
+			[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.MakeGenericType), new Type[] { typeof (Type[]) },
+				messageCode: "IL2055")]
 			static void TestWithUnmanagedConstraint ()
 			{
 				typeof (GenericWithUnmanagedConstraint<>).MakeGenericType (typeof (TestType));
@@ -878,6 +880,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			class GenericWithUnmanagedConstraint<T> where T : unmanaged
 			{
+			}
+
+			[RecognizedReflectionAccessPattern]
+			static void TestWithNullable ()
+			{
+				typeof (Nullable<>).MakeGenericType (typeof (TestType));
 			}
 		}
 
@@ -1018,7 +1026,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				var t = new T ();
 			}
 
-			[RecognizedReflectionAccessPattern]
+			[UnrecognizedReflectionAccessPattern (typeof (MethodInfo), nameof (MethodInfo.MakeGenericMethod), new Type[] { typeof (Type[]) },
+				messageCode: "IL2060")]
 			static void TestWithStructConstraint ()
 			{
 				typeof (MakeGenericMethod).GetMethod (nameof (GenericWithStructConstraint), BindingFlags.Static | BindingFlags.NonPublic)
@@ -1030,7 +1039,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				var t = new T ();
 			}
 
-			[RecognizedReflectionAccessPattern]
+			[UnrecognizedReflectionAccessPattern (typeof (MethodInfo), nameof (MethodInfo.MakeGenericMethod), new Type[] { typeof (Type[]) },
+				messageCode: "IL2060")]
 			static void TestWithUnmanagedConstraint ()
 			{
 				typeof (MakeGenericMethod).GetMethod (nameof (GenericWithUnmanagedConstraint), BindingFlags.Static | BindingFlags.NonPublic)
