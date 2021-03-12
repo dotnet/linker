@@ -27,6 +27,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			case "TestRequiresInMethodFromCopiedAssembly":
 			case "TestRequiresThroughReflectionInMethodFromCopiedAssembly":
 			case "TestStaticCctorTriggeredByMethodCall":
+			case "TestTypeIsBeforeFieldInit":
 				return;
 			}
 
