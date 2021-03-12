@@ -40,7 +40,7 @@ namespace Mono.Linker
 		readonly LinkContext _context;
 		readonly List<string> _directories = new ();
 		readonly Dictionary<AssemblyDefinition, string> _assemblyToPath = new ();
-		readonly List<MemoryMappedViewStream> viewStreams = new ();
+		readonly List<MemoryMappedViewStream> _viewStreams = new ();
 		readonly ReaderParameters _defaultReaderParameters;
 
 		HashSet<string> _unresolvedAssemblies;
@@ -147,7 +147,7 @@ namespace Mono.Linker
 
 				_assemblyToPath.Add (result, file);
 
-				viewStreams.Add (viewStream);
+				_viewStreams.Add (viewStream);
 
 				// We transferred the ownership of the viewStream to the collection.
 				viewStream = null;
@@ -227,11 +227,11 @@ namespace Mono.Linker
 			if (_reportedUnresolvedAssemblies != null)
 				_reportedUnresolvedAssemblies.Clear ();
 
-			foreach (var viewStream in viewStreams) {
+			foreach (var viewStream in _viewStreams) {
 				viewStream.Dispose ();
 			}
 
-			viewStreams.Clear ();
+			_viewStreams.Clear ();
 		}
 	}
 }
