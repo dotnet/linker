@@ -47,6 +47,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			TestTypeWhichOverridesMethodVirtualMethodRequiresUnreferencedCodeOnBase ();
 			TestStaticCctorRequiresUnreferencedCode ();
 			TestStaticCtorMarkingIsTriggeredByFieldAccess ();
+			TestStaticCtorTriggeredByMethodCall ();
+			TestTypeIsBeforeFieldInit ();
 			TestDynamicallyAccessedMembersWithRequiresUnreferencedCode (typeof (DynamicallyAccessedTypeWithRequiresUnreferencedCode));
 			TestDynamicallyAccessedMembersWithRequiresUnreferencedCode (typeof (TypeWhichOverridesMethod));
 			TestInterfaceMethodWithRequiresUnreferencedCode ();
@@ -240,15 +242,53 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			[RequiresUnreferencedCode ("Message for --StaticCtorTriggeredByFieldAccess.Cctor--")]
 			static StaticCtorTriggeredByFieldAccess ()
 			{
+				field = 0;
 			}
 
-			public static int field = 0;
+			public static int field;
 		}
 
 		[ExpectedWarning ("IL2026", "--StaticCtorTriggeredByFieldAccess.Cctor--")]
 		static void TestStaticCtorMarkingIsTriggeredByFieldAccess ()
 		{
 			var x = StaticCtorTriggeredByFieldAccess.field + 1;
+		}
+
+		class TypeIsBeforeFieldInit
+		{
+			public static int field = AnnotatedMethod ();
+
+			[RequiresUnreferencedCode ("Message from --TypeIsBeforeFieldInit.AnnotatedMethod--")]
+			public static int AnnotatedMethod () => 42;
+		}
+
+		[LogContains ("IL2026: Mono.Linker.Tests.Cases.RequiresCapability.RequiresUnreferencedCodeCapability.TypeIsBeforeFieldInit..cctor():" +
+			" Using method 'Mono.Linker.Tests.Cases.RequiresCapability.RequiresUnreferencedCodeCapability.TypeIsBeforeFieldInit.AnnotatedMethod()'" +
+			" which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code." +
+			" Message from --TypeIsBeforeFieldInit.AnnotatedMethod--.")]
+		static void TestTypeIsBeforeFieldInit ()
+		{
+			var x = TypeIsBeforeFieldInit.field + 42;
+		}
+
+		class StaticCtorTriggeredByMethodCall
+		{
+			[RequiresUnreferencedCode ("Message for --StaticCtorTriggeredByMethodCall.Cctor--")]
+			static StaticCtorTriggeredByMethodCall ()
+			{
+			}
+
+			[RequiresUnreferencedCode ("Message for --StaticCtorTriggeredByMethodCall.TriggerStaticCtorMarking--")]
+			public void TriggerStaticCtorMarking ()
+			{
+			}
+		}
+
+		[ExpectedWarning ("IL2026", "--StaticCtorTriggeredByMethodCall.Cctor--")]
+		[ExpectedWarning ("IL2026", "--StaticCtorTriggeredByMethodCall.TriggerStaticCtorMarking--")]
+		static void TestStaticCtorTriggeredByMethodCall ()
+		{
+			new StaticCtorTriggeredByMethodCall ().TriggerStaticCtorMarking ();
 		}
 
 		public class DynamicallyAccessedTypeWithRequiresUnreferencedCode
