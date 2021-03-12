@@ -65,7 +65,6 @@ namespace Mono.Linker
 		readonly AssemblyResolver _resolver;
 		readonly TypeNameResolver _typeNameResolver;
 
-		readonly ReaderParameters _readerParameters;
 		ISymbolReaderProvider _symbolReaderProvider;
 		ISymbolWriterProvider _symbolWriterProvider;
 
@@ -148,10 +147,6 @@ namespace Mono.Linker
 			get { return _typeNameResolver; }
 		}
 
-		public ReaderParameters ReaderParameters {
-			get { return _readerParameters; }
-		}
-
 		public ISymbolReaderProvider SymbolReaderProvider {
 			get { return _symbolReaderProvider; }
 			set { _symbolReaderProvider = value; }
@@ -197,15 +192,10 @@ namespace Mono.Linker
 			_pipeline = pipeline;
 			_logger = logger ?? throw new ArgumentNullException (nameof (logger));
 
-			_resolver = new AssemblyResolver () {
-				Context = this
-			};
+			_resolver = new AssemblyResolver (this);
 			_typeNameResolver = new TypeNameResolver (this);
 			_actions = new Dictionary<string, AssemblyAction> ();
 			_parameters = new Dictionary<string, string> (StringComparer.Ordinal);
-			_readerParameters = new ReaderParameters {
-				AssemblyResolver = _resolver
-			};
 			_customAttributes = new CustomAttributeSource (this);
 			_cachedWarningMessageContainers = new List<MessageContainer> ();
 
@@ -286,21 +276,18 @@ namespace Mono.Linker
 
 		public AssemblyDefinition TryResolve (string name)
 		{
-			return _resolver.Resolve (new AssemblyNameReference (name, new Version ()), _readerParameters);
+			return TryResolve (new AssemblyNameReference (name, new Version ()));
+		}
+
+		public AssemblyDefinition TryResolve (AssemblyNameReference name)
+		{
+			return _resolver.Resolve (name, probing: true);
 		}
 
 		public AssemblyDefinition Resolve (IMetadataScope scope)
 		{
 			AssemblyNameReference reference = GetReference (scope);
-			AssemblyDefinition assembly = _resolver.Resolve (reference, _readerParameters);
-			if (assembly == null) {
-				if (_ignoreUnresolved)
-					LogMessage ($"Ignoring unresolved assembly '{reference.Name}' reference");
-				else
-					LogError ($"Assembly reference '{reference.Name}' could not be resolved", 1009);
-			}
-
-			return assembly;
+			return _resolver.Resolve (reference);
 		}
 
 		public void RegisterAssembly (AssemblyDefinition assembly)

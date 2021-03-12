@@ -94,7 +94,7 @@ namespace Mono.Linker.Steps
 			AssemblyDefinition assembly;
 
 			if (File.Exists (fileName)) {
-				assembly = Context.Resolver.GetAssembly (fileName, Context.ReaderParameters);
+				assembly = Context.Resolver.GetAssembly (fileName);
 				AssemblyDefinition loaded = Context.GetLoadedAssembly (assembly.Name.Name);
 
 				// The same assembly could be already loaded if there are multiple inputs pointing to same file

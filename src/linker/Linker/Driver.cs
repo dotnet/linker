@@ -191,7 +191,7 @@ namespace Mono.Linker
 						return 1;
 
 					case "--skip-unresolved":
-						if (!GetBoolParam (token, l => context.IgnoreUnresolved = context.Resolver.IgnoreUnresolved = l))
+						if (!GetBoolParam (token, l => context.IgnoreUnresolved = l))
 							return -1;
 
 						continue;
