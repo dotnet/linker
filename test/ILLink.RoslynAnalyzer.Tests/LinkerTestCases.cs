@@ -19,14 +19,10 @@ namespace ILLink.RoslynAnalyzer.Tests
 		{
 			switch (m.Identifier.ValueText) {
 			case "MethodWithDuplicateRequiresAttribute":
-			case "TestCovariantReturnCallOnDerived":
 			case "TestRequiresUnreferencedCodeOnlyThroughReflection":
-			case "TestStaticCctorRequiresUnreferencedCode":
-			case "TestStaticCtorMarkingIsTriggeredByFieldAccess":
-			case "TestTypeWhichOverridesMethodVirtualMethodRequiresUnreferencedCode":
 			case "TestRequiresInMethodFromCopiedAssembly":
 			case "TestRequiresThroughReflectionInMethodFromCopiedAssembly":
-			case "TestStaticCtorTriggeredByMethodCall":
+			// The way roslyn and linker name the source location is different for BeforeFieldInit
 			case "TestTypeIsBeforeFieldInit":
 				return;
 			}
