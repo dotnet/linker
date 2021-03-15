@@ -19,11 +19,7 @@ namespace Mono.Linker.Tests.Cases.References
 	[KeptReferencesInAssembly ("copied.dll", new[] { "System.Private.CoreLib", "library" })]
 
 	[RemovedAssembly ("library.dll")]
-#if NETCOREAPP
 	[KeptReferencesInAssembly ("copied.dll", new[] { "System.Private.CoreLib", "library" })]
-#else
-	[KeptReferencesInAssembly ("copied.dll", new[] { "mscorlib" })]
-#endif
 	public class AssemblyOnlyUsedByUsingWithCsc
 	{
 		public static void Main ()

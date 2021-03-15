@@ -9,20 +9,18 @@ using Mono.Linker.Tests.Cases.TypeForwarding.Dependencies;
 
 namespace Mono.Linker.Tests.Cases.TypeForwarding
 {
-	[KeepTypeForwarderOnlyAssemblies ("false")]
-
 	[SetupCompileBefore ("SecondForwarder.dll", new[] { "Dependencies/ReferenceImplementationLibrary.cs" }, defines: new[] { "INCLUDE_REFERENCE_IMPL" })]
 	[SetupCompileBefore ("FirstForwarder.dll", new[] { "Dependencies/ForwarderLibrary.cs" }, references: new[] { "SecondForwarder.dll" })]
 
 	// After compiling the test case we then replace the reference impl with implementation + type forwarder
 	[SetupCompileAfter ("Implementation.dll", new[] { "Dependencies/ImplementationLibrary.cs" })]
 	[SetupCompileAfter ("SecondForwarder.dll", new[] { "Dependencies/ForwarderLibrary.cs" }, references: new[] { "Implementation.dll" })]
+	[SetupLinkerAction ("copy", "FirstForwarder")]
 
-	[KeptMemberInAssembly ("FirstForwarder.dll", typeof (ImplementationLibrary), "GetSomeValue()")]
+	[KeptMemberInAssembly ("FirstForwarder.dll", typeof (ImplementationLibrary))]
 	[KeptMemberInAssembly ("Implementation.dll", typeof (ImplementationLibrary), "GetSomeValue()")]
 	[RemovedAssembly ("SecondForwarder.dll")]
-	[RemovedForwarder ("FirstForwarder.dll", nameof (ImplementationStruct))]
-	class UsedTransitiveForwarderIsDynamicallyAccessed
+	class UsedTransitiveForwarderInCopyAssemblyIsDynamicallyAccessed
 	{
 		static void Main ()
 		{

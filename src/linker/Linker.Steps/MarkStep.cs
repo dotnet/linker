@@ -833,13 +833,8 @@ namespace Mono.Linker.Steps
 			}
 
 			ModuleDefinition module = assembly.MainModule;
-			if (module.HasExportedTypes) {
-				foreach (var exportedType in module.ExportedTypes)
-					if (exportedType.Resolve () == type) {
-						_context.MarkingHelpers.MarkExportedType (exportedType, module, new DependencyInfo (DependencyKind.DynamicDependency, type));
-						break;
-					}
-			}
+			if (module.GetMatchingExportedType (type, out var exportedType))
+				_context.MarkingHelpers.MarkExportedType (exportedType, module, new DependencyInfo (DependencyKind.DynamicDependency, type));
 
 			IEnumerable<IMemberDefinition> members;
 			if (dynamicDependency.MemberSignature is string memberSignature) {
@@ -1331,7 +1326,7 @@ namespace Mono.Linker.Steps
 
 			if (assembly.MainModule.HasExportedTypes) {
 				foreach (var exportedType in assembly.MainModule.ExportedTypes)
-					_context.MarkingHelpers.MarkExportedType (exportedType, assembly.MainModule, new DependencyInfo (DependencyKind.ModuleOfExportedType, assembly.MainModule));
+					_context.MarkingHelpers.MarkExportedType (exportedType, assembly.MainModule, new DependencyInfo (DependencyKind.TypeInAssembly, assembly.MainModule));
 			}
 
 			foreach (TypeDefinition type in assembly.MainModule.Types)
@@ -1839,25 +1834,26 @@ namespace Mono.Linker.Steps
 			if (args.Count < 1)
 				return;
 
-			TypeDefinition tdef = null;
+			TypeDefinition typeDefinition = null;
+			AssemblyDefinition assemblyDefinition = null;
 			switch (attribute.ConstructorArguments[0].Value) {
 			case string s:
-				tdef = _context.TypeNameResolver.ResolveTypeName (s, out _)?.Resolve ();
+				typeDefinition = _context.TypeNameResolver.ResolveTypeName (s, out assemblyDefinition)?.Resolve ();
 				break;
 			case TypeReference type:
-				tdef = type.Resolve ();
+				typeDefinition = type.Resolve ();
 				break;
 			}
 
-			if (tdef == null)
+			if (typeDefinition == null)
 				return;
 
 			Tracer.AddDirectDependency (attribute, new DependencyInfo (DependencyKind.CustomAttribute, provider), marked: false);
-			if (MarkMethodsIf (tdef.Methods, predicate, new DependencyInfo (DependencyKind.ReferencedBySpecialAttribute, attribute), sourceLocationMember) &&
-				tdef.Module.HasExportedTypes) {
-				foreach (var exportedType in tdef.Module.ExportedTypes) {
-					if (exportedType.Resolve () == tdef)
-						_context.MarkingHelpers.MarkExportedType (exportedType, tdef.Module, new DependencyInfo (DependencyKind.ReferencedBySpecialAttribute, attribute));
+			if (MarkMethodsIf (typeDefinition.Methods, predicate, new DependencyInfo (DependencyKind.ReferencedBySpecialAttribute, attribute), sourceLocationMember) &&
+				assemblyDefinition != null && assemblyDefinition.MainModule.HasExportedTypes) {
+				foreach (var exportedType in assemblyDefinition.MainModule.ExportedTypes) {
+					if (exportedType.Resolve () == typeDefinition)
+						_context.MarkingHelpers.MarkExportedType (exportedType, assemblyDefinition.MainModule, new DependencyInfo (DependencyKind.ReferencedBySpecialAttribute, attribute));
 				}
 			}
 		}

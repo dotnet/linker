@@ -16,7 +16,7 @@ namespace Mono.Linker.Tests.Cases.TypeForwarding
 
 	[SetupLinkerAction ("copy", "Forwarder")]
 
-	[KeptAssembly ("Forwarder.dll")]
+	[KeptMemberInAssembly ("Forwarder.dll", typeof (ImplementationLibrary))]
 	[RemovedAssembly ("Implementation.dll")]
 
 	public class UnusedForwarderWithAssemblyCopyIsKept
