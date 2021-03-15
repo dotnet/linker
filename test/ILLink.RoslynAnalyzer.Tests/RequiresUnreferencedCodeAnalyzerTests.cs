@@ -78,7 +78,7 @@ class C
 	}
 }";
 			return VerifyRequiresUnreferencedCodeAnalyzer (PropertyRequires,
-				// (8,7): warning IL2026: Using method 'C.PropertyRequires.get' which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. Message for --getter PropertyRequires--. 
+				// (8,7): warning IL2026: Using method 'C.PropertyRequires.get' which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. Message for --getter PropertyRequires--.
 				VerifyCS.Diagnostic ().WithSpan (8, 7, 8, 23).WithArguments ("C.PropertyRequires.get", "Message for --getter PropertyRequires--", "")
 				);
 		}
@@ -105,6 +105,57 @@ class C
 				// (8,3): warning IL2026: Using method 'C.PropertyRequires.set' which has `RequiresUnreferencedCodeAttribute` can break functionality when trimming application code. Message for --setter PropertyRequires--.
 				VerifyCS.Diagnostic ().WithSpan (8, 3, 8, 19).WithArguments ("C.PropertyRequires.set", "Message for --setter PropertyRequires--", "")
 				);
+		}
+
+		[Fact]
+		public Task UnconditionalSuppress ()
+		{
+			var src = @"
+using System;
+using System.Diagnostics.CodeAnalysis;
+
+namespace MyNamespace
+{
+	[AttributeUsage(System.AttributeTargets.All, AllowMultiple=true, Inherited=false)]
+	public sealed class UnconditionalSuppressMessageAttribute : Attribute
+	{
+		public UnconditionalSuppressMessageAttribute (string category, string checkId)
+		{ }
+	}
+}
+
+class C
+{
+    [RequiresUnreferencedCode(""unconditional"")]
+    public void M1() {}
+
+    public void M2() => M1(); // warn
+
+    [UnconditionalSuppressMessage(""category"", ""IL2026"")]
+    public void M3() => M1(); // no warn
+
+    [UnconditionalSuppressMessage(""category"", ""IL2026:suffix"")]
+    public void M4() => M1(); // no warn
+
+    [UnconditionalSuppressMessage(""category"", ""IL2027"")]
+    public void M5() => M1(); // warn
+
+    [UnconditionalSuppressMessage(""category"", ""prefixIL2026"")]
+    public void M6() => M1(); // warn
+
+	[MyNamespace.UnconditionalSuppressMessage(""category"", ""IL2026"")]
+    public void M7() => M1(); // warn
+}";
+			return VerifyRequiresUnreferencedCodeAnalyzer(src,
+	// (20,25): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. unconditional. 
+	VerifyCS.Diagnostic().WithSpan(20, 25, 20, 29).WithArguments("C.M1()", "unconditional", ""),
+    // (29,25): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. unconditional. 
+    VerifyCS.Diagnostic().WithSpan(29, 25, 29, 29).WithArguments("C.M1()", "unconditional", ""),
+    // (32,25): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. unconditional. 
+    VerifyCS.Diagnostic().WithSpan(32, 25, 32, 29).WithArguments("C.M1()", "unconditional", ""),
+    // (35,25): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. unconditional. 
+    VerifyCS.Diagnostic().WithSpan(35, 25, 35, 29).WithArguments("C.M1()", "unconditional", "")
+    );
 		}
 	}
 }

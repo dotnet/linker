@@ -16,7 +16,7 @@ namespace ILLink.RoslynAnalyzer
 	{
 		public const string DiagnosticId = "IL2026";
 		const string RequiresUnreferencedCodeAttribute = nameof (RequiresUnreferencedCodeAttribute);
-		const string FullyQualifiedRequiresUnreferencedCodeAttribute = "System.Diagnostics.CodeAnalysis." + RequiresUnreferencedCodeAttribute;
+		internal const string RequiresUnreferencedCodeFqn = "System.Diagnostics.CodeAnalysis." + RequiresUnreferencedCodeAttribute;
 
 		static readonly DiagnosticDescriptor s_requiresUnreferencedCodeRule = new DiagnosticDescriptor (
 			DiagnosticId,
@@ -71,15 +71,14 @@ namespace ILLink.RoslynAnalyzer
 					OperationAnalysisContext operationContext,
 					IMethodSymbol method)
 				{
-					// If parent method contains RequiresUnreferencedCodeAttribute then we shouldn't report diagnostics for this method
-					if (operationContext.ContainingSymbol is IMethodSymbol &&
-						operationContext.ContainingSymbol.HasAttribute (RequiresUnreferencedCodeAttribute))
+					if (AnalyzerUtils.IsDiagnosticSuppressed(operationContext, DiagnosticId)) {
 						return;
+					}
 
 					if (!method.HasAttribute (RequiresUnreferencedCodeAttribute))
 						return;
 
-					if (method.TryGetAttributeWithMessageOnCtor (FullyQualifiedRequiresUnreferencedCodeAttribute, out AttributeData? requiresUnreferencedCode)) {
+					if (method.TryGetAttributeWithMessageOnCtor (RequiresUnreferencedCodeFqn, out AttributeData? requiresUnreferencedCode)) {
 						operationContext.ReportDiagnostic (Diagnostic.Create (
 							s_requiresUnreferencedCodeRule,
 							operationContext.Operation.Syntax.GetLocation (),
