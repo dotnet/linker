@@ -1853,7 +1853,13 @@ namespace Mono.Linker.Steps
 				return;
 
 			Tracer.AddDirectDependency (attribute, new DependencyInfo (DependencyKind.CustomAttribute, provider), marked: false);
-			MarkMethodsIf (tdef.Methods, predicate, new DependencyInfo (DependencyKind.ReferencedBySpecialAttribute, attribute), sourceLocationMember);
+			if (MarkMethodsIf (tdef.Methods, predicate, new DependencyInfo (DependencyKind.ReferencedBySpecialAttribute, attribute), sourceLocationMember) &&
+				tdef.Module.HasExportedTypes) {
+				foreach (var exportedType in tdef.Module.ExportedTypes) {
+					if (exportedType.Resolve () == tdef)
+						_context.MarkingHelpers.MarkExportedType (exportedType, tdef.Module, new DependencyInfo (DependencyKind.ReferencedBySpecialAttribute, attribute));
+				}
+			}
 		}
 
 		void MarkTypeWithDebuggerDisplayAttribute (TypeDefinition type, CustomAttribute attribute)
