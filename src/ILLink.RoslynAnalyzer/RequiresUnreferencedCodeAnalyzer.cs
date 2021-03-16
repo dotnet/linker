@@ -71,7 +71,7 @@ namespace ILLink.RoslynAnalyzer
 					OperationAnalysisContext operationContext,
 					IMethodSymbol method)
 				{
-					if (AnalyzerUtils.IsDiagnosticSuppressed(operationContext, DiagnosticId)) {
+					if (AnalyzerUtils.IsDiagnosticSuppressed (operationContext, DiagnosticId)) {
 						return;
 					}
 

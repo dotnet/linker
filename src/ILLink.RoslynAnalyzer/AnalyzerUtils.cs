@@ -34,17 +34,17 @@ namespace ILLink.RoslynAnalyzer
 
 		const string SuppressMessageFqn = "System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute";
 
-		internal static bool IsDiagnosticSuppressed(OperationAnalysisContext operationContext, string diagnosticId)
+		internal static bool IsDiagnosticSuppressed (OperationAnalysisContext operationContext, string diagnosticId)
 		{
-			var attributes = operationContext.ContainingSymbol.GetAttributes();
+			var attributes = operationContext.ContainingSymbol.GetAttributes ();
 			foreach (var attr in attributes) {
 				if (attr.AttributeClass?.HasName (RequiresUnreferencedCodeFqn) == true) {
 					return true;
 				}
 
 				if (attr.AttributeClass?.HasName (SuppressMessageFqn) == true
-				    && TryDecodeSuppressMessageId(attr, out var id)
-					&& string.Equals(id, diagnosticId, StringComparison.OrdinalIgnoreCase)) {
+					&& TryDecodeSuppressMessageId (attr, out var id)
+					&& string.Equals (id, diagnosticId, StringComparison.OrdinalIgnoreCase)) {
 					return true;
 				}
 			}
@@ -56,26 +56,23 @@ namespace ILLink.RoslynAnalyzer
 		{
 			id = null;
 
-            // We need at least the Category and Id to decode the diagnostic to suppress.
-            // The only SuppressMessageAttribute constructor requires those two parameters.
-            if (attribute.ConstructorArguments.Length != 2)
-            {
-                return false;
-            }
+			// We need at least the Category and Id to decode the diagnostic to suppress.
+			// The only SuppressMessageAttribute constructor requires those two parameters.
+			if (attribute.ConstructorArguments.Length != 2) {
+				return false;
+			}
 
-            id = attribute.ConstructorArguments[1].Value as string;
-            if (id == null)
-            {
-                return false;
-            }
+			id = attribute.ConstructorArguments[1].Value as string;
+			if (id == null) {
+				return false;
+			}
 
-            var separatorIndex = id.IndexOf(':');
-            if (separatorIndex != -1)
-            {
-                id = id.Remove(separatorIndex);
-            }
+			var separatorIndex = id.IndexOf (':');
+			if (separatorIndex != -1) {
+				id = id.Remove (separatorIndex);
+			}
 
-            return true;
-        }
+			return true;
+		}
 	}
 }

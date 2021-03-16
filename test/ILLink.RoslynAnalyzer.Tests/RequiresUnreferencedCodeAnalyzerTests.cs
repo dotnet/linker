@@ -146,16 +146,16 @@ class C
 	[MyNamespace.UnconditionalSuppressMessage(""category"", ""IL2026"")]
     public void M7() => M1(); // warn
 }";
-			return VerifyRequiresUnreferencedCodeAnalyzer(src,
-	// (20,25): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. unconditional. 
-	VerifyCS.Diagnostic().WithSpan(20, 25, 20, 29).WithArguments("C.M1()", "unconditional", ""),
-    // (29,25): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. unconditional. 
-    VerifyCS.Diagnostic().WithSpan(29, 25, 29, 29).WithArguments("C.M1()", "unconditional", ""),
-    // (32,25): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. unconditional. 
-    VerifyCS.Diagnostic().WithSpan(32, 25, 32, 29).WithArguments("C.M1()", "unconditional", ""),
-    // (35,25): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. unconditional. 
-    VerifyCS.Diagnostic().WithSpan(35, 25, 35, 29).WithArguments("C.M1()", "unconditional", "")
-    );
+			return VerifyRequiresUnreferencedCodeAnalyzer (src,
+	// (20,25): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. unconditional.
+	VerifyCS.Diagnostic ().WithSpan (20, 25, 20, 29).WithArguments ("C.M1()", "unconditional", ""),
+	// (29,25): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. unconditional.
+	VerifyCS.Diagnostic ().WithSpan (29, 25, 29, 29).WithArguments ("C.M1()", "unconditional", ""),
+	// (32,25): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. unconditional.
+	VerifyCS.Diagnostic ().WithSpan (32, 25, 32, 29).WithArguments ("C.M1()", "unconditional", ""),
+	// (35,25): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. unconditional.
+	VerifyCS.Diagnostic ().WithSpan (35, 25, 35, 29).WithArguments ("C.M1()", "unconditional", "")
+	);
 		}
 	}
 }
