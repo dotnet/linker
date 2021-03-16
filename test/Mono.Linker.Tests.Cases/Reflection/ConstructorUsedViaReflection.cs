@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
@@ -10,12 +11,12 @@ namespace Mono.Linker.Tests.Cases.Reflection
 	{
 		public static void Main ()
 		{
-			GetConstructor_Types.TestConstructorWithTypes ();
+			GetConstructor_Types.Test ();
 			GetConstructor_BindingAttr_Binder_Types_Modifiers.TestWithBindingFlags ();
 			GetConstructor_BindingAttr_Binder_Types_Modifiers.TestWithUnknownBindingFlags (BindingFlags.Public);
 			GetConstructor_BindingAttr_Binder_CallConvention_Types_Modifiers.TestWithCallingConvention ();
 #if NETCOREAPP
-			GetConstructor_BindingAttr_Types.TestWithBindingFlagsAndTypes ();
+			GetConstructor_BindingAttr_Types.Test ();
 #endif
 			TestNullType ();
 			TestDataFlowType ();
@@ -40,13 +41,61 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			{ }
 
 			[Kept]
+			class EmptyTypes
+			{
+				[Kept]
+				public EmptyTypes () { }
+				public EmptyTypes (int i) { }
+			}
+
+			[Kept]
+			public static void Test ()
+			{
+				TestConstructorWithTypes_EmptyTypes ();
+				TestConstructorWithTypes_NonEmptyTypes ();
+				TestConstructorWithTypes_EmptyTypes_DataFlow (null);
+				TestConstructorWithTypes_NonEmptyTypes_DataFlow (null);
+			}
+
+			[Kept]
 			[RecognizedReflectionAccessPattern (
 				typeof (Type), nameof (Type.GetConstructor), new Type[] { typeof (Type[]) },
-				typeof (GetConstructor_Types), ".ctor", new Type[0])]
-			public static void TestConstructorWithTypes ()
+				typeof (EmptyTypes), ".ctor", new Type[0])]
+			static void TestConstructorWithTypes_EmptyTypes ()
+			{
+				var constructor = typeof (EmptyTypes).GetConstructor (new Type[] { });
+				constructor.Invoke (null, new object[] { });
+			}
+
+			[Kept]
+			[RecognizedReflectionAccessPattern]
+			static void TestConstructorWithTypes_NonEmptyTypes ()
 			{
 				var constructor = typeof (GetConstructor_Types).GetConstructor (new Type[] { typeof (int) });
+				constructor.Invoke (null, new object[] { null });
+			}
+
+			[Kept]
+			[RecognizedReflectionAccessPattern]
+			static void TestConstructorWithTypes_EmptyTypes_DataFlow (
+				[KeptAttributeAttribute(typeof(DynamicallyAccessedMembersAttribute))]
+				[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+				Type type)
+			{
+				var constructor = type.GetConstructor (new Type[] { });
 				constructor.Invoke (null, new object[] { });
+			}
+
+			[Kept]
+			[UnrecognizedReflectionAccessPattern (
+				typeof (Type), nameof (Type.GetConstructor), new Type[] { typeof (Type[]) }, messageCode: "IL2070")]
+			static void TestConstructorWithTypes_NonEmptyTypes_DataFlow (
+				[KeptAttributeAttribute(typeof(DynamicallyAccessedMembersAttribute))]
+				[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+				Type type)
+			{
+				var constructor = type.GetConstructor (new Type[] { typeof (int) });
+				constructor.Invoke (null, new object[] { null });
 			}
 		}
 
@@ -60,7 +109,6 @@ namespace Mono.Linker.Tests.Cases.Reflection
 				public KnownBindingFlags ()
 				{ }
 
-				[Kept]
 				public KnownBindingFlags (string bar)
 				{ }
 
@@ -126,7 +174,6 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			public GetConstructor_BindingAttr_Binder_CallConvention_Types_Modifiers ()
 			{ }
 
-			[Kept]
 			public GetConstructor_BindingAttr_Binder_CallConvention_Types_Modifiers (string bar)
 			{ }
 
@@ -158,7 +205,6 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			public GetConstructor_BindingAttr_Types ()
 			{ }
 
-			[Kept]
 			public GetConstructor_BindingAttr_Types (string bar)
 			{ }
 
@@ -172,13 +218,60 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			{ }
 
 			[Kept]
+			class NonEmptyTypes
+			{
+				[Kept]
+				public NonEmptyTypes () { }
+				[Kept]
+				public NonEmptyTypes (int i) { }
+			}
+
+			[Kept]
+			public static void Test ()
+			{
+				TestWithBindingFlagsAndTypes_EmptyTypes ();
+				TestWithBindingFlagsAndTypes_NonEmptyTypes ();
+				TestWithBindingFlagsAndTypes_EmptyTypes_DataFlow (null);
+				TestWithBindingFlagsAndTypes_NonEmptyTypes_DataFlow (null);
+			}
+
+			[Kept]
 			[RecognizedReflectionAccessPattern (
 				typeof (Type), nameof (Type.GetConstructor), new Type[] { typeof (BindingFlags), typeof (Type[]) },
 				typeof (GetConstructor_BindingAttr_Types), ".ctor", new Type[0])]
-			public static void TestWithBindingFlagsAndTypes ()
+			static void TestWithBindingFlagsAndTypes_EmptyTypes ()
 			{
 				var constructor = typeof (GetConstructor_BindingAttr_Types).GetConstructor (BindingFlags.Public, new Type[] { });
 				constructor.Invoke (null, new object[] { });
+			}
+
+			[Kept]
+			[RecognizedReflectionAccessPattern]
+			static void TestWithBindingFlagsAndTypes_NonEmptyTypes ()
+			{
+				var constructor = typeof (NonEmptyTypes).GetConstructor (BindingFlags.Public, new Type[] { typeof (TestType) });
+				constructor.Invoke (null, new object[] { null });
+			}
+
+			[Kept]
+			[RecognizedReflectionAccessPattern]
+			static void TestWithBindingFlagsAndTypes_EmptyTypes_DataFlow (
+				[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+				[KeptAttributeAttribute(typeof(DynamicallyAccessedMembersAttribute))]
+				Type type)
+			{
+				var constructor = type.GetConstructor (BindingFlags.Public, new Type[] { });
+			}
+
+			[Kept]
+			[UnrecognizedReflectionAccessPattern (
+				typeof (Type), nameof (Type.GetConstructor), new Type[] { typeof (BindingFlags), typeof (Type[]) }, messageCode: "IL2070")]
+			static void TestWithBindingFlagsAndTypes_NonEmptyTypes_DataFlow (
+				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+				[KeptAttributeAttribute(typeof(DynamicallyAccessedMembersAttribute))]
+				Type type)
+			{
+				var constructor = type.GetConstructor (BindingFlags.Public, new Type[] { typeof (TestType) });
 			}
 		}
 #endif
@@ -215,7 +308,6 @@ namespace Mono.Linker.Tests.Cases.Reflection
 				public IfConstructor ()
 				{ }
 
-				[Kept]
 				public IfConstructor (int foo)
 				{ }
 
@@ -236,7 +328,6 @@ namespace Mono.Linker.Tests.Cases.Reflection
 				public ElseConstructor ()
 				{ }
 
-				[Kept]
 				public ElseConstructor (int foo)
 				{ }
 
@@ -274,6 +365,11 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		static Binder GetNullValue (string str, int i, long g)
 		{
 			return null;
+		}
+
+		[Kept]
+		class TestType
+		{
 		}
 	}
 }

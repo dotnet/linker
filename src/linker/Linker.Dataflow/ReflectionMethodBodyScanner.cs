@@ -1002,6 +1002,7 @@ namespace Mono.Linker.Dataflow
 
 						int? ctorParameterCount = parameters.Count switch {
 							1 => (methodParams[1] as ArrayValue)?.Size.AsConstInt (),
+							2 => (methodParams[2] as ArrayValue)?.Size.AsConstInt (),
 							4 => (methodParams[3] as ArrayValue)?.Size.AsConstInt (),
 							5 => (methodParams[4] as ArrayValue)?.Size.AsConstInt (),
 							_ => null,
@@ -1010,10 +1011,16 @@ namespace Mono.Linker.Dataflow
 						// Go over all types we've seen
 						foreach (var value in methodParams[0].UniqueValues ()) {
 							if (value is SystemTypeValue systemTypeValue) {
-								if (BindingFlagsAreUnsupported (bindingFlags))
+								if (BindingFlagsAreUnsupported (bindingFlags)) {
 									RequireDynamicallyAccessedMembers (ref reflectionContext, DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors, value, calledMethodDefinition);
-								else
-									MarkConstructorsOnType (ref reflectionContext, systemTypeValue.TypeRepresented, null, bindingFlags);
+								} else {
+									if (HasBindingFlag (bindingFlags, BindingFlags.Public) && !HasBindingFlag (bindingFlags, BindingFlags.NonPublic)
+										&& ctorParameterCount == 0) {
+										MarkConstructorsOnType (ref reflectionContext, systemTypeValue.TypeRepresented, m => m.IsPublic && m.Parameters.Count == 0, bindingFlags);
+									} else {
+										MarkConstructorsOnType (ref reflectionContext, systemTypeValue.TypeRepresented, null, bindingFlags);
+									}
+								}
 								reflectionContext.RecordHandledPattern ();
 							} else {
 								// Otherwise fall back to the bitfield requirements

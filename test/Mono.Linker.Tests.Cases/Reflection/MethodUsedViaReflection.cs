@@ -7,6 +7,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 {
 
 	[SetupCSharpCompilerToUse ("csc")]
+	[SetupLinkerArgument ("--disable-opt", "unreachablebodies")]
 	public class MethodUsedViaReflection
 	{
 		public static void Main ()
@@ -229,7 +230,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			[RecognizedReflectionAccessPattern]
 			public static void TestUnknownNullBindingFlags (BindingFlags bindingFlags)
 			{
-				// The case here is a pattern which linker doesn't not recognize (unlike the test case above, which passes a recognized
+				// The case here is a pattern which linker doesn't recognize (unlike the test case above, which passes a recognized
 				// method parameter with unknown value). Unrecognized patterns are internally represented as unknown values which are passed
 				// around as nulls in some cases. So there's a potential risk of hitting a nullref. The test here is to validate that
 				// linker can accept such value for binding flags.
@@ -404,7 +405,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 			[Kept]
 			[RecognizedReflectionAccessPattern (
-				typeof (Type), nameof (Type.GetMethod), new Type[] { typeof (string), typeof (int), typeof (Type[]), typeof(ParameterModifier[]) },
+				typeof (Type), nameof (Type.GetMethod), new Type[] { typeof (string), typeof (int), typeof (Type[]), typeof (ParameterModifier[]) },
 				typeof (GetMethod_Name_GenericParameterCount_Types_Modifiers), nameof (GetMethod_Name_GenericParameterCount_Types_Modifiers.OnlyCalledViaReflection), new Type[] { typeof (int), typeof (int) })]
 			public static void TestNameWithIntAndTypeAndModifiers ()
 			{
