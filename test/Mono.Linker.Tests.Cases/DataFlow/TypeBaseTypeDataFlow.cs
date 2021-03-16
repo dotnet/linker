@@ -16,7 +16,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 	[SkipKeptItemsValidation]
 	public class TypeBaseTypeDataFlow
 	{
-		public static void Main()
+		public static void Main ()
 		{
 			TestAllPropagated (typeof (TestType));
 
@@ -224,7 +224,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		[UnrecognizedReflectionAccessPattern (typeof (DataFlowTypeExtensions), nameof (DataFlowTypeExtensions.RequiresPublicMethods), new Type[] { typeof (Type) })]
 		static void TestAnnotatedAndUnannotated (
 			Type derivedTypeOne,
-			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] Type derivedTypeTwo,
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type derivedTypeTwo,
 			int number)
 		{
 			Type type = number > 0 ? derivedTypeOne : derivedTypeTwo;

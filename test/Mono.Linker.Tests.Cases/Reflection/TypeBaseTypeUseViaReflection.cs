@@ -29,7 +29,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[KeptBaseType(typeof(KnownType_Base))]
+		[KeptBaseType (typeof (KnownType_Base))]
 		class KnownType_Derived : KnownType_Base
 		{
 			[Kept]
