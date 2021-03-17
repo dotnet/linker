@@ -122,6 +122,9 @@ namespace Mono.Linker.Dataflow
 
 		TypeAnnotations BuildTypeAnnotations (TypeDefinition type)
 		{
+			//class, interface, struct can have annotations
+			DynamicallyAccessedMemberTypes annotatedType = GetMemberTypesForDynamicallyAccessedMembersAttribute (type);
+
 			var annotatedFields = new ArrayBuilder<FieldAnnotation> ();
 
 			// First go over all fields with an explicit annotation
@@ -338,7 +341,7 @@ namespace Mono.Linker.Dataflow
 				}
 			}
 
-			return new TypeAnnotations (type, annotatedMethods.ToArray (), annotatedFields.ToArray (), typeGenericParameterAnnotations);
+			return new TypeAnnotations (type, annotatedType, annotatedMethods.ToArray (), annotatedFields.ToArray (), typeGenericParameterAnnotations);
 		}
 
 		static bool ScanMethodBodyForFieldAccess (MethodBody body, bool write, out FieldDefinition found)
@@ -518,17 +521,34 @@ namespace Mono.Linker.Dataflow
 		readonly struct TypeAnnotations
 		{
 			readonly TypeDefinition _type;
+			readonly DynamicallyAccessedMemberTypes _typeAnnotation;
 			readonly MethodAnnotations[] _annotatedMethods;
 			readonly FieldAnnotation[] _annotatedFields;
 			readonly DynamicallyAccessedMemberTypes[] _genericParameterAnnotations;
 
 			public TypeAnnotations (
 				TypeDefinition type,
+				DynamicallyAccessedMemberTypes typeAnnotation,
 				MethodAnnotations[] annotatedMethods,
 				FieldAnnotation[] annotatedFields,
 				DynamicallyAccessedMemberTypes[] genericParameterAnnotations)
-				=> (_type, _annotatedMethods, _annotatedFields, _genericParameterAnnotations)
-				 = (type, annotatedMethods, annotatedFields, genericParameterAnnotations);
+				=> (_type, _typeAnnotation, _annotatedMethods, _annotatedFields, _genericParameterAnnotations)
+				 = (type, typeAnnotation, annotatedMethods, annotatedFields, genericParameterAnnotations);
+
+
+			public bool TryGetAnnotation (TypeDefinition type, out DynamicallyAccessedMemberTypes annotation)
+			{
+				annotation = default;
+
+				//@TODO - using type parameter to keep up with the usage pattern
+				if (type ==null || _typeAnnotation == DynamicallyAccessedMemberTypes.None)
+					return false;
+
+				annotation = _typeAnnotation;
+
+				return true;
+			}
+
 
 			public bool TryGetAnnotation (MethodDefinition method, out MethodAnnotations annotations)
 			{
