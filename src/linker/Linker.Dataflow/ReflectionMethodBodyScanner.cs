@@ -1207,10 +1207,7 @@ namespace Mono.Linker.Dataflow
 										propagatedMemberTypes |= DynamicallyAccessedMemberTypes.PublicProperties;
 								}
 
-								if (propagatedMemberTypes != DynamicallyAccessedMemberTypes.None)
-									methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new MethodReturnValue (calledMethod.MethodReturnType, propagatedMemberTypes));
-								else
-									methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new MethodReturnValue (calledMethod.MethodReturnType, DynamicallyAccessedMemberTypes.None));
+								methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new MethodReturnValue (calledMethod.MethodReturnType, propagatedMemberTypes));
 							} else if (value is SystemTypeValue systemTypeValue) {
 								TypeDefinition baseTypeDefinition = systemTypeValue.TypeRepresented.BaseType.Resolve ();
 								if (baseTypeDefinition != null)
