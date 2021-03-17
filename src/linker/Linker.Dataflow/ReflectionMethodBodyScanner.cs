@@ -1196,8 +1196,7 @@ namespace Mono.Linker.Dataflow
 								if (dynamicallyAccessedMemberNode.DynamicallyAccessedMemberTypes == DynamicallyAccessedMemberTypes.All)
 									propagatedMemberTypes = DynamicallyAccessedMemberTypes.All;
 								else {
-									if (dynamicallyAccessedMemberNode.DynamicallyAccessedMemberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicConstructors))
-										propagatedMemberTypes |= DynamicallyAccessedMemberTypes.PublicConstructors;
+									// PublicConstructors are not propagated to base type
 
 									if (dynamicallyAccessedMemberNode.DynamicallyAccessedMemberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicEvents))
 										propagatedMemberTypes |= DynamicallyAccessedMemberTypes.PublicEvents;
@@ -1208,11 +1207,9 @@ namespace Mono.Linker.Dataflow
 									if (dynamicallyAccessedMemberNode.DynamicallyAccessedMemberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicMethods))
 										propagatedMemberTypes |= DynamicallyAccessedMemberTypes.PublicMethods;
 
-									if (dynamicallyAccessedMemberNode.DynamicallyAccessedMemberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicNestedTypes))
-										propagatedMemberTypes |= DynamicallyAccessedMemberTypes.PublicNestedTypes;
+									// PublicNestedTypes are not propagated to base type
 
-									if (dynamicallyAccessedMemberNode.DynamicallyAccessedMemberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor))
-										propagatedMemberTypes |= DynamicallyAccessedMemberTypes.PublicParameterlessConstructor;
+									// PublicParameterlessConstructor is not propagated to base type
 
 									if (dynamicallyAccessedMemberNode.DynamicallyAccessedMemberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicProperties))
 										propagatedMemberTypes |= DynamicallyAccessedMemberTypes.PublicProperties;

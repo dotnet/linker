@@ -20,12 +20,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		{
 			TestAllPropagated (typeof (TestType));
 
-			TestPublicConstructorsPropagated (typeof (TestType));
+			TestPublicConstructorsAreNotPropagated (typeof (TestType));
 			TestPublicEventsPropagated (typeof (TestType));
 			TestPublicFieldsPropagated (typeof (TestType));
 			TestPublicMethodsPropagated (typeof (TestType));
-			TestPublicNestedTypesPropagated (typeof (TestType));
-			TestPublicParameterlessConstructorPropagated (typeof (TestType));
+			TestPublicNestedTypesAreNotPropagated (typeof (TestType));
+			TestPublicParameterlessConstructorIsNotPropagated (typeof (TestType));
 			TestPublicPropertiesPropagated (typeof (TestType));
 
 			TestNonPublicConstructorsAreNotPropagated (typeof (TestType));
@@ -53,17 +53,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[RecognizedReflectionAccessPattern]
-		[UnrecognizedReflectionAccessPattern (typeof (DataFlowTypeExtensions), nameof (DataFlowTypeExtensions.RequiresPublicMethods), new Type[] { typeof (Type) })]
-		[UnrecognizedReflectionAccessPattern (typeof (DataFlowTypeExtensions), nameof (DataFlowTypeExtensions.RequiresNonPublicConstructors), new Type[] { typeof (Type) })]
-		static void TestPublicConstructorsPropagated ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)] Type derivedType)
+		[UnrecognizedReflectionAccessPattern (typeof (DataFlowTypeExtensions), nameof (DataFlowTypeExtensions.RequiresPublicConstructors), new Type[] { typeof (Type) })]
+		static void TestPublicConstructorsAreNotPropagated ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)] Type derivedType)
 		{
 			derivedType.BaseType.RequiresPublicConstructors ();
-
-			// Should warn
-			derivedType.BaseType.RequiresPublicMethods ();
-
-			// Should warn
-			derivedType.BaseType.RequiresNonPublicConstructors ();
 		}
 
 		[RecognizedReflectionAccessPattern]
@@ -109,35 +102,17 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[RecognizedReflectionAccessPattern]
-		[UnrecognizedReflectionAccessPattern (typeof (DataFlowTypeExtensions), nameof (DataFlowTypeExtensions.RequiresPublicProperties), new Type[] { typeof (Type) })]
-		[UnrecognizedReflectionAccessPattern (typeof (DataFlowTypeExtensions), nameof (DataFlowTypeExtensions.RequiresNonPublicNestedTypes), new Type[] { typeof (Type) })]
-		static void TestPublicNestedTypesPropagated ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicNestedTypes)] Type derivedType)
+		[UnrecognizedReflectionAccessPattern (typeof (DataFlowTypeExtensions), nameof (DataFlowTypeExtensions.RequiresPublicNestedTypes), new Type[] { typeof (Type) })]
+		static void TestPublicNestedTypesAreNotPropagated ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicNestedTypes)] Type derivedType)
 		{
 			derivedType.BaseType.RequiresPublicNestedTypes ();
-
-			// Should warn
-			derivedType.BaseType.RequiresPublicProperties ();
-
-			// Should warn
-			derivedType.BaseType.RequiresNonPublicNestedTypes ();
 		}
 
 		[RecognizedReflectionAccessPattern]
-		[UnrecognizedReflectionAccessPattern (typeof (DataFlowTypeExtensions), nameof (DataFlowTypeExtensions.RequiresPublicProperties), new Type[] { typeof (Type) })]
-		[UnrecognizedReflectionAccessPattern (typeof (DataFlowTypeExtensions), nameof (DataFlowTypeExtensions.RequiresNonPublicConstructors), new Type[] { typeof (Type) })]
-		[UnrecognizedReflectionAccessPattern (typeof (DataFlowTypeExtensions), nameof (DataFlowTypeExtensions.RequiresPublicConstructors), new Type[] { typeof (Type) })]
-		static void TestPublicParameterlessConstructorPropagated ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] Type derivedType)
+		[UnrecognizedReflectionAccessPattern (typeof (DataFlowTypeExtensions), nameof (DataFlowTypeExtensions.RequiresPublicParameterlessConstructor), new Type[] { typeof (Type) })]
+		static void TestPublicParameterlessConstructorIsNotPropagated ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] Type derivedType)
 		{
 			derivedType.BaseType.RequiresPublicParameterlessConstructor ();
-
-			// Should warn
-			derivedType.BaseType.RequiresPublicProperties ();
-
-			// Should warn
-			derivedType.BaseType.RequiresNonPublicConstructors ();
-
-			// Should warn
-			derivedType.BaseType.RequiresPublicConstructors ();
 		}
 
 		[RecognizedReflectionAccessPattern]

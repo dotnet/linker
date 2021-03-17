@@ -23,6 +23,9 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		class KnownType_Base
 		{
 			[Kept]
+			public KnownType_Base () { }
+
+			[Kept]
 			private static void UsedViaReflection () { }
 
 			private static void Unused () { }
@@ -36,6 +39,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			public static void Test ()
 			{
 				typeof (KnownType_Derived).BaseType.GetMethod ("UsedViaReflection", BindingFlags.NonPublic | BindingFlags.Static);
+				typeof (KnownType_Derived).BaseType.GetConstructor (Type.EmptyTypes);
 			}
 		}
 	}
