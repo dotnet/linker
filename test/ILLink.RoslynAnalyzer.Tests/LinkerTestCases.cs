@@ -22,7 +22,10 @@ namespace ILLink.RoslynAnalyzer.Tests
 			case "TestRequiresUnreferencedCodeOnlyThroughReflection":
 			case "TestRequiresInMethodFromCopiedAssembly":
 			case "TestRequiresThroughReflectionInMethodFromCopiedAssembly":
-			// The way roslyn and linker name the source location is different for BeforeFieldInit
+			// There is a discrepancy between the way linker and the analyzer represent the location of the error,
+			// linker will point to the method caller and the analyzer will point to a line of code.
+			// The TestTypeIsBeforeFieldInit scenario is supported by the analyzer, just the diagnostic message is different
+			// We verify the analyzer generating the right diagnostic in RequiresUnreferencedCodeAnalyzerTests.cs
 			case "TestTypeIsBeforeFieldInit":
 				return;
 			}

@@ -76,7 +76,7 @@ namespace ILLink.RoslynAnalyzer
 					ImmutableArray<IMethodSymbol> constructors)
 				{
 					foreach (var constructor in constructors) {
-						if (constructor.Parameters.Length == 0 && constructor.HasAttribute (RequiresUnreferencedCodeAttribute)) {
+						if (constructor.Parameters.Length == 0 && constructor.HasAttribute (RequiresUnreferencedCodeAttribute) && constructor.MethodKind == MethodKind.StaticConstructor) {
 							if (constructor.TryGetAttributeWithMessageOnCtor (FullyQualifiedRequiresUnreferencedCodeAttribute, out AttributeData? requiresUnreferencedCode)) {
 								operationContext.ReportDiagnostic (Diagnostic.Create (
 									s_requiresUnreferencedCodeRule,
@@ -98,17 +98,16 @@ namespace ILLink.RoslynAnalyzer
 						operationContext.ContainingSymbol.HasAttribute (RequiresUnreferencedCodeAttribute))
 						return;
 
+					// If calling an instance constructor, check first for any static constructor since it will be called implicitly
 					if (method.ContainingType is { } containingType && operationContext.Operation is IObjectCreationOperation)
 						CheckStaticConstructors (operationContext, containingType.StaticConstructors);
 
 					if (!method.HasAttribute (RequiresUnreferencedCodeAttribute))
 						return;
 
-					if (method.OverriddenMethod != null) {
-						for (var t = method.OverriddenMethod; t is not null && SymbolEqualityComparer.Default.Equals (method.ReturnType, t.ReturnType); t = t.OverriddenMethod) {
-							method = t;
-						}
-					}
+					// Warn on the most derived base method taking into account covariant returns
+					while (method.OverriddenMethod != null && SymbolEqualityComparer.Default.Equals (method.ReturnType, method.OverriddenMethod.ReturnType))
+						method = method.OverriddenMethod;
 
 					if (method.TryGetAttributeWithMessageOnCtor (FullyQualifiedRequiresUnreferencedCodeAttribute, out AttributeData? requiresUnreferencedCode)) {
 						operationContext.ReportDiagnostic (Diagnostic.Create (
