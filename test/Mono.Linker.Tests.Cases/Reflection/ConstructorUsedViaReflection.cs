@@ -53,8 +53,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			{
 				TestConstructorWithTypes_EmptyTypes ();
 				TestConstructorWithTypes_NonEmptyTypes ();
-				TestConstructorWithTypes_EmptyTypes_DataFlow (null);
-				TestConstructorWithTypes_NonEmptyTypes_DataFlow (null);
+				TestConstructorWithTypes_EmptyTypes_DataFlow (typeof (TestType));
+				TestConstructorWithTypes_NonEmptyTypes_DataFlow (typeof (TestType));
 			}
 
 			[Kept]
@@ -368,6 +368,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
+		[KeptMember (".ctor()")]
 		class TestType
 		{
 		}

@@ -25,6 +25,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			GetMethod_Name_GenericParameterCount_Types.TestNameWithIntAndType ();
 			GetMethod_Name_GenericParameterCount_Types_Modifiers.TestNameWithIntAndTypeAndModifiers ();
 			GetMethod_Name_GenericParameterCount_BindingAttr_Binder_Types_Modifiers.TestNameWithIntAndBindingFlags ();
+			GetMethod_Name_GenericParameterCount_BindingAttr_Binder_Types_Modifiers_PrivateBinding.TestNameWithIntAndPrivateBindingFlags ();
 			GetMethod_Name_GenericParameterCount_BindingAttr_Binder_CallConvention_Types_Modifiers.TestNameWithIntBindingFlagsCallingConventionParameter ();
 #endif
 			TestNullName ();
@@ -441,8 +442,43 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			[RecognizedReflectionAccessPattern]
 			public static void TestNameWithIntAndBindingFlags ()
 			{
-				var method = typeof (GetMethod_Name_GenericParameterCount_BindingAttr_Binder_Types_Modifiers).GetMethod ("OnlyCalledViaReflection", 1, BindingFlags.Public, null, new Type[] { }, null);
+				var method = typeof (GetMethod_Name_GenericParameterCount_BindingAttr_Binder_Types_Modifiers)
+					.GetMethod ("OnlyCalledViaReflection", 1, BindingFlags.Public, null, new Type[] { }, null);
 				method.Invoke (null, new object[] { });
+			}
+		}
+
+		[Kept]
+		class GetMethod_Name_GenericParameterCount_BindingAttr_Binder_Types_Modifiers_PrivateBinding
+		{
+			[Kept]
+			private static int OnlyCalledViaReflection ()
+			{
+				return 42;
+			}
+
+			[Kept]
+			private int OnlyCalledViaReflection (int foo)
+			{
+				return 43;
+			}
+
+			public int OnlyCalledViaReflection (int foo, int bar)
+			{
+				return 44;
+			}
+			public static int OnlyCalledViaReflection (int foo, int bar, int baz)
+			{
+				return 45;
+			}
+
+			[Kept]
+			[RecognizedReflectionAccessPattern]
+			public static void TestNameWithIntAndPrivateBindingFlags ()
+			{
+				var method = typeof (GetMethod_Name_GenericParameterCount_BindingAttr_Binder_Types_Modifiers_PrivateBinding)
+					.GetMethod ("OnlyCalledViaReflection", 1, BindingFlags.NonPublic, null, new Type[] { typeof (int) }, null);
+				method.Invoke (null, new object[] { 42 });
 			}
 		}
 
