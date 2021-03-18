@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<linker>
+  <assembly fullname="Test">
+    <type fullname="Mono.Linker.Tests.Cases.DataFlow.TypeDataflow">
+      <type name="AnnotationsOnThisTypeViaXml">
+        <attribute fullname="System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute">
+          <argument>PublicConstructors</argument>
+        </attribute>
+      </type>
+    </type>
+  </assembly>
+</linker>
