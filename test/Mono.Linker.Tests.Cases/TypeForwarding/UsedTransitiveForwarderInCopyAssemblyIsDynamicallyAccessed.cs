@@ -18,12 +18,17 @@ namespace Mono.Linker.Tests.Cases.TypeForwarding
 	[SetupLinkerAction ("copy", "FirstForwarder")]
 
 	[KeptMemberInAssembly ("FirstForwarder.dll", typeof (ImplementationLibrary))]
+	// Dynamically accessing a type forwarder T in a copy assembly will cause the linker
+	// to keep the whole chain of forwarders from T to the type S it resolves to, since we
+	// cannot rewrite assembly references in the facade, and droping anything between T
+	// and S would break functionality.
+	[KeptMemberInAssembly ("SecondForwarder.dll", typeof (ImplementationLibrary))]
 	[KeptMemberInAssembly ("Implementation.dll", typeof (ImplementationLibrary), "GetSomeValue()")]
-	[RemovedAssembly ("SecondForwarder.dll")]
 	class UsedTransitiveForwarderInCopyAssemblyIsDynamicallyAccessed
 	{
 		static void Main ()
 		{
+			// [copy]            [link]             [link]
 			// FirstForwarder -> SecondForwarder -> Implementation
 			PointToTypeInFacade ("Mono.Linker.Tests.Cases.TypeForwarding.Dependencies.ImplementationLibrary, FirstForwarder");
 		}

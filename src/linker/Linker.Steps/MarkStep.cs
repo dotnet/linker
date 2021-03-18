@@ -1324,11 +1324,6 @@ namespace Mono.Linker.Steps
 			MarkCustomAttributes (assembly, new DependencyInfo (DependencyKind.AssemblyOrModuleAttribute, assembly), null);
 			MarkCustomAttributes (assembly.MainModule, new DependencyInfo (DependencyKind.AssemblyOrModuleAttribute, assembly.MainModule), null);
 
-			if (assembly.MainModule.HasExportedTypes) {
-				foreach (var exportedType in assembly.MainModule.ExportedTypes)
-					_context.MarkingHelpers.MarkExportedType (exportedType, assembly.MainModule, new DependencyInfo (DependencyKind.TypeInAssembly, assembly.MainModule));
-			}
-
 			foreach (TypeDefinition type in assembly.MainModule.Types)
 				MarkEntireType (type, includeBaseTypes: false, includeInterfaceTypes: false, new DependencyInfo (DependencyKind.TypeInAssembly, assembly), null);
 		}
@@ -1687,6 +1682,14 @@ namespace Mono.Linker.Steps
 				MarkMethodsIf (type.Methods, HasOnSerializeOrDeserializeAttribute, new DependencyInfo (DependencyKind.SerializationMethodForType, type), type);
 			}
 
+			if (reference.Scope.MetadataToken != type.Scope.MetadataToken) {
+				AssemblyDefinition assemblyDef = type.Module.AssemblyResolver.Resolve (reference.Scope as AssemblyNameReference);
+				AssemblyAction assemblyDefAction = _context.Annotations.GetAction (assemblyDef);
+				if ((assemblyDefAction == AssemblyAction.Copy || assemblyDefAction == AssemblyAction.CopyUsed) &&
+					assemblyDef.MainModule.GetMatchingExportedType (type, out var exportedType))
+					_context.MarkingHelpers.MarkExportedType (exportedType, assemblyDef.MainModule, new DependencyInfo (DependencyKind.DynamicDependency, type));
+			}
+
 			DoAdditionalTypeProcessing (type);
 
 			ApplyPreserveInfo (type);
@@ -1849,12 +1852,9 @@ namespace Mono.Linker.Steps
 				return;
 
 			Tracer.AddDirectDependency (attribute, new DependencyInfo (DependencyKind.CustomAttribute, provider), marked: false);
-			if (MarkMethodsIf (typeDefinition.Methods, predicate, new DependencyInfo (DependencyKind.ReferencedBySpecialAttribute, attribute), sourceLocationMember) &&
-				assemblyDefinition != null && assemblyDefinition.MainModule.HasExportedTypes) {
-				foreach (var exportedType in assemblyDefinition.MainModule.ExportedTypes) {
-					if (exportedType.Resolve () == typeDefinition)
-						_context.MarkingHelpers.MarkExportedType (exportedType, assemblyDefinition.MainModule, new DependencyInfo (DependencyKind.ReferencedBySpecialAttribute, attribute));
-				}
+			if (MarkMethodsIf (typeDefinition.Methods, predicate, new DependencyInfo (DependencyKind.ReferencedBySpecialAttribute, attribute), sourceLocationMember)
+				&& assemblyDefinition != null && assemblyDefinition.MainModule.GetMatchingExportedType (typeDefinition, out var exportedType)) {
+				_context.MarkingHelpers.MarkExportedType (exportedType, assemblyDefinition.MainModule, new DependencyInfo (DependencyKind.ReferencedBySpecialAttribute, attribute));
 			}
 		}
 

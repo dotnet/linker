@@ -20,12 +20,13 @@ namespace Mono.Linker.Tests.Cases.TypeForwarding
 
 	[KeptMemberInAssembly ("FirstForwarder.dll", typeof (ImplementationLibrary), "GetSomeValue()")]
 	[KeptMemberInAssembly ("Implementation.dll", typeof (ImplementationLibrary), "GetSomeValue()")]
-	[RemovedAssembly ("SecondForwarder.dll")]
 	[RemovedForwarder ("FirstForwarder.dll", nameof (ImplementationStruct))]
+	[RemovedAssembly ("SecondForwarder.dll")]
 	class UsedTransitiveForwarderIsDynamicallyAccessed
 	{
 		static void Main ()
 		{
+			// [link]            [link]             [link]
 			// FirstForwarder -> SecondForwarder -> Implementation
 			PointToTypeInFacade ("Mono.Linker.Tests.Cases.TypeForwarding.Dependencies.ImplementationLibrary, FirstForwarder");
 		}
