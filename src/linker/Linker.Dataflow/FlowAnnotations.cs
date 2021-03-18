@@ -21,6 +21,10 @@ namespace Mono.Linker.Dataflow
 		{
 			_context = context;
 		}
+		public bool RequiresDataFlowAnalysis (TypeDefinition type)
+		{
+			return GetAnnotations (type).TryGetAnnotation (type, out _);
+		}
 
 		public bool RequiresDataFlowAnalysis (MethodDefinition method)
 		{
