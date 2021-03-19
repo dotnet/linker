@@ -144,7 +144,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			instance.TestInstancePropertyWithStaticField ();
 			instance.TestPropertyWithDifferentBackingFields ();
 			instance.TestPropertyWithExistingAttributes ();
-			instance.TestPropertyWithIndexer (null);
+			instance.TestPropertyWithIndexerWithMatchingAnnotations (null);
+			instance.TestPropertyWithIndexerWithoutMatchingAnnotations (null);
 		}
 
 		class TestAutomaticPropagationType
@@ -268,22 +269,31 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				set { PropertyWithExistingAttributes_Field = value; }
 			}
 
-			[UnrecognizedReflectionAccessPattern (typeof (PropertyWithIndexer), "Item.set", new Type[] { typeof (Type) }, messageCode: "IL2067")]
-			[LogDoesNotContain ("'Value passed to parameter 'index' of method 'Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow.TestAutomaticPropagationType.PropertyWithIndexer.Item.set'")]
-			public void TestPropertyWithIndexer (Type myType)
+			public void TestPropertyWithIndexerWithMatchingAnnotations ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)] Type myType)
 			{
 				var propclass = new PropertyWithIndexer ();
 				propclass[1] = myType;
 				propclass[1].RequiresPublicConstructors ();
 			}
 
+			[UnrecognizedReflectionAccessPattern (typeof (PropertyWithIndexer), "Item.set", new Type[] { typeof (Type) }, messageCode: "IL2067")]
+			[UnrecognizedReflectionAccessPattern (typeof (DataFlowTypeExtensions), "RequiresNonPublicConstructors", new Type[] { typeof (Type) }, messageCode: "IL2072")]
+			[LogDoesNotContain ("'Value passed to parameter 'index' of method 'Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow.TestAutomaticPropagationType.PropertyWithIndexer.Item.set'")]
+			public void TestPropertyWithIndexerWithoutMatchingAnnotations (Type myType)
+			{
+				var propclass = new PropertyWithIndexer ();
+				propclass[1] = myType;
+				propclass[1].RequiresNonPublicConstructors ();
+			}
+
+
 			public class PropertyWithIndexer
 			{
-				[CompilerGenerated]
 				Type[] Property_Field;
 
 				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 				public Type this[int index] {
+					[ExpectedWarning ("IL2063", "PropertyWithIndexer.Item.get")]
 					get => Property_Field[index];
 					set => Property_Field[index] = value;
 				}
