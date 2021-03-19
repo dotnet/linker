@@ -910,37 +910,19 @@ namespace Mono.Linker.Dataflow
 				// GetType()
 				//
 				case IntrinsicId.Object_GetType: {
-						// We could do better here if we start tracking the static types of values within the method body.
-						// Right now, this can only analyze a couple cases for which we have static information for.
-						TypeDefinition staticType = null;
-						if (methodParams[0] is MethodParameterValue methodParam) {
-							if (callingMethodDefinition.HasThis) {
-								if (methodParam.ParameterIndex == 0) {
-									staticType = callingMethodDefinition.DeclaringType;
-								} else {
-									staticType = callingMethodDefinition.Parameters[methodParam.ParameterIndex - 1].ParameterType.ResolveToMainTypeDefinition ();
-								}
-							} else {
-								staticType = callingMethodDefinition.Parameters[methodParam.ParameterIndex].ParameterType.ResolveToMainTypeDefinition ();
-							}
-						} else if (methodParams[0] is LoadFieldValue loadedField) {
-							staticType = loadedField.Field.FieldType.ResolveToMainTypeDefinition ();
-						}
+						if (methodParams[0].StaticType is null) {
+							// We don’t know anything about the type GetType was called on. Track this as a usual “result of a method call without any annotations”
+							methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new MethodReturnValue (calledMethod.MethodReturnType, DynamicallyAccessedMemberTypes.None));
+						} else if (methodParams[0].StaticType.IsSealed) {
+							// We can treat this one the same as if it was a typeof() expression
+							methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new SystemTypeValue (methodParams[0].StaticType));
+						} else {
+							// Now we fall back to the new annotations
+							var annotations = GetMemberTypesForDynamicallyAccessedMembersAttribute (methodParams[0].StaticType);
+							// Find out the expected DynamicallyAccessedMembersTypes enumeration value of this type – we calculate it by looking at[DynamicallyAccessedMembers] annotations of this type, all of its base types and all of its interfaces. We might want to cache that somewhere.The value of this is the aggregate of all annotations seen.
+							methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new MethodReturnValue (calledMethod.MethodReturnType, annotations));
+							//Remember that we need to the appropriate marking (mark all members that match theAggregatedAnnotationWeComputedAbove) on all types that have the same bases/ interfaces that triggered the marking
 
-						if (staticType != null) {
-							// We can only analyze the Object.GetType call with the precise type if the type is sealed.
-							// The type could be a descendant of the type in question, making us miss reflection.
-							bool canUse = staticType.IsSealed;
-
-							if (!canUse) {
-								// We can allow Object.GetType to be modeled as System.Delegate because we keep all methods
-								// on delegates anyway so reflection on something this approximation would miss is actually safe.
-								canUse = staticType.IsTypeOf ("System", "Delegate");
-							}
-
-							if (canUse) {
-								methodReturnValue = new SystemTypeValue (staticType);
-							}
 						}
 					}
 					break;
@@ -1754,6 +1736,39 @@ namespace Mono.Linker.Dataflow
 			// "unknown" and consumers may warn.
 			if (!foundAny)
 				methodReturnValue = MergePointValue.MergeValues (methodReturnValue, NullValue.Instance);
+		}
+
+		DynamicallyAccessedMemberTypes GetMemberTypesForDynamicallyAccessedMembersAttribute (TypeDefinition type)
+		{
+			DynamicallyAccessedMemberTypes AggregatedAnnotation = DynamicallyAccessedMemberTypes.None;
+			var baseTypeDefinition = type.BaseType?.Resolve ();
+			if (baseTypeDefinition != null)
+				AggregatedAnnotation = GetMemberTypesForDynamicallyAccessedMembersAttribute (baseTypeDefinition);
+			if (type.HasInterfaces) {
+				foreach (InterfaceImplementation iface in type.Interfaces) {
+					var interfaceTypeDefinition = iface.InterfaceType.Resolve ();
+					if (interfaceTypeDefinition != null)
+						AggregatedAnnotation |= GetMemberTypesForDynamicallyAccessedMembersAttribute (interfaceTypeDefinition);
+				}
+			}
+			if (!_context.CustomAttributes.HasCustomAttributes (type))
+				return AggregatedAnnotation;
+			foreach (var attribute in _context.CustomAttributes.GetCustomAttributes (type)) {
+				if (!IsDynamicallyAccessedMembersAttribute (attribute))
+					continue;
+				if (attribute.ConstructorArguments.Count == 1)
+					return AggregatedAnnotation | (DynamicallyAccessedMemberTypes) (int) attribute.ConstructorArguments[0].Value;
+				else
+					_context.LogWarning (
+						$"Attribute 'System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute' doesn't have the required number of parameters specified", 2028, type);
+			}
+			return AggregatedAnnotation;
+		}
+
+		static bool IsDynamicallyAccessedMembersAttribute (CustomAttribute attribute)
+		{
+			var attributeType = attribute.AttributeType;
+			return attributeType.Name == "DynamicallyAccessedMembersAttribute" && attributeType.Namespace == "System.Diagnostics.CodeAnalysis";
 		}
 
 		void RequireDynamicallyAccessedMembers (ref ReflectionPatternContext reflectionContext, DynamicallyAccessedMemberTypes requiredMemberTypes, ValueNode value, IMetadataTokenProvider targetContext)

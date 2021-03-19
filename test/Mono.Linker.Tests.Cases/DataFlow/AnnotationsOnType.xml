@@ -2,7 +2,7 @@
 <linker>
   <assembly fullname="Test">
     <type fullname="Mono.Linker.Tests.Cases.DataFlow.TypeDataflow">
-      <type name="AnnotationsOnThisTypeViaXml">
+      <type name="AnnotatedViaXmlTypeInstance">
         <attribute fullname="System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute">
           <argument>PublicConstructors</argument>
         </attribute>

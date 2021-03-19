@@ -69,6 +69,12 @@ namespace Mono.Linker.Dataflow
 		public ValueNodeKind Kind { get; protected set; }
 
 		/// <summary>
+		/// The IL type of the value, represented as closely as possible, but not always exact.  It can be null, for
+		/// example, when the analysis is imprecise or operating on malformed IL.
+		/// </summary>
+		public TypeDefinition StaticType { get; protected set; }
+
+		/// <summary>
 		/// Allows the enumeration of the direct children of this node.  The ChildCollection struct returned here
 		/// supports 'foreach' without allocation.
 		/// </summary>
@@ -486,6 +492,7 @@ namespace Mono.Linker.Dataflow
 		private UnknownValue ()
 		{
 			Kind = ValueNodeKind.Unknown;
+			StaticType = null;
 		}
 
 		public static UnknownValue Instance { get; } = new UnknownValue ();
@@ -518,6 +525,7 @@ namespace Mono.Linker.Dataflow
 		private NullValue ()
 		{
 			Kind = ValueNodeKind.Null;
+			StaticType = null;
 		}
 
 		public override bool Equals (ValueNode other)
@@ -553,6 +561,7 @@ namespace Mono.Linker.Dataflow
 		public SystemTypeValue (TypeDefinition typeRepresented)
 		{
 			Kind = ValueNodeKind.SystemType;
+			StaticType = typeRepresented;
 			TypeRepresented = typeRepresented;
 		}
 
@@ -587,6 +596,7 @@ namespace Mono.Linker.Dataflow
 		public RuntimeTypeHandleValue (TypeDefinition typeRepresented)
 		{
 			Kind = ValueNodeKind.RuntimeTypeHandle;
+			StaticType = typeRepresented;
 			TypeRepresented = typeRepresented;
 		}
 
@@ -622,6 +632,7 @@ namespace Mono.Linker.Dataflow
 		public SystemTypeForGenericParameterValue (GenericParameter genericParameter, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 		{
 			Kind = ValueNodeKind.SystemTypeForGenericParameter;
+			StaticType = null;
 			GenericParameter = genericParameter;
 			DynamicallyAccessedMemberTypes = dynamicallyAccessedMemberTypes;
 			SourceContext = genericParameter;
@@ -659,6 +670,7 @@ namespace Mono.Linker.Dataflow
 		public RuntimeTypeHandleForGenericParameterValue (GenericParameter genericParameter)
 		{
 			Kind = ValueNodeKind.RuntimeTypeHandleForGenericParameter;
+			StaticType = null;
 			GenericParameter = genericParameter;
 		}
 
@@ -693,6 +705,7 @@ namespace Mono.Linker.Dataflow
 		public RuntimeMethodHandleValue (MethodDefinition methodRepresented)
 		{
 			Kind = ValueNodeKind.RuntimeMethodHandle;
+			StaticType = null;
 			MethodRepresented = methodRepresented;
 		}
 
@@ -727,6 +740,7 @@ namespace Mono.Linker.Dataflow
 		public SystemReflectionMethodBaseValue (MethodDefinition methodRepresented)
 		{
 			Kind = ValueNodeKind.SystemReflectionMethodBase;
+			StaticType = null;
 			MethodRepresented = methodRepresented;
 		}
 
@@ -761,6 +775,7 @@ namespace Mono.Linker.Dataflow
 		public KnownStringValue (string contents)
 		{
 			Kind = ValueNodeKind.KnownString;
+			StaticType = null;
 			Contents = contents;
 		}
 
@@ -808,6 +823,13 @@ namespace Mono.Linker.Dataflow
 		public MethodParameterValue (int parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes, IMetadataTokenProvider sourceContext)
 		{
 			Kind = ValueNodeKind.MethodParameter;
+			if (parameterIndex == 0) {
+				var method = (MethodDefinition) sourceContext;
+				StaticType = method.DeclaringType.ResolveToMainTypeDefinition ();
+			} else {
+				var parameter = (ParameterDefinition) sourceContext;
+				StaticType = parameter.ParameterType.ResolveToMainTypeDefinition ();
+			}
 			ParameterIndex = parameterIndex;
 			DynamicallyAccessedMemberTypes = dynamicallyAccessedMemberTypes;
 			SourceContext = sourceContext;
@@ -845,6 +867,7 @@ namespace Mono.Linker.Dataflow
 		public AnnotatedStringValue (IMetadataTokenProvider sourceContext, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 		{
 			Kind = ValueNodeKind.AnnotatedString;
+			StaticType = null;
 			DynamicallyAccessedMemberTypes = dynamicallyAccessedMemberTypes;
 			SourceContext = sourceContext;
 		}
@@ -879,6 +902,7 @@ namespace Mono.Linker.Dataflow
 		public MethodReturnValue (MethodReturnType methodReturnType, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 		{
 			Kind = ValueNodeKind.MethodReturn;
+			StaticType = methodReturnType.ReturnType.ResolveToMainTypeDefinition ();
 			DynamicallyAccessedMemberTypes = dynamicallyAccessedMemberTypes;
 			SourceContext = methodReturnType;
 		}
@@ -916,6 +940,7 @@ namespace Mono.Linker.Dataflow
 		private MergePointValue (ValueNode one, ValueNode two)
 		{
 			Kind = ValueNodeKind.MergePoint;
+			StaticType = null;
 			m_values = new ValueNodeHashSet ();
 
 			if (one.Kind == ValueNodeKind.MergePoint) {
@@ -1036,6 +1061,7 @@ namespace Mono.Linker.Dataflow
 		{
 			_resolver = resolver;
 			Kind = ValueNodeKind.GetTypeFromString;
+			StaticType = null;
 			AssemblyIdentity = assemblyIdentity;
 			NameString = nameString;
 		}
@@ -1122,6 +1148,7 @@ namespace Mono.Linker.Dataflow
 		public LoadFieldValue (FieldDefinition fieldToLoad, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 		{
 			Kind = ValueNodeKind.LoadField;
+			StaticType = fieldToLoad.FieldType.ResolveToMainTypeDefinition ();
 			Field = fieldToLoad;
 			DynamicallyAccessedMemberTypes = dynamicallyAccessedMemberTypes;
 			SourceContext = fieldToLoad;
@@ -1199,6 +1226,7 @@ namespace Mono.Linker.Dataflow
 		public ArrayValue (ValueNode size)
 		{
 			Kind = ValueNodeKind.Array;
+			StaticType = null;
 			Size = size ?? UnknownValue.Instance;
 		}
 
