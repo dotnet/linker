@@ -917,12 +917,9 @@ namespace Mono.Linker.Dataflow
 							// We can treat this one the same as if it was a typeof() expression
 							methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new SystemTypeValue (methodParams[0].StaticType));
 						} else {
-							// Now we fall back to the new annotations
+							// Now we fall back to the annotations enumeration value of this type
 							var annotations = GetMemberTypesForDynamicallyAccessedMembersAttribute (methodParams[0].StaticType);
-							// Find out the expected DynamicallyAccessedMembersTypes enumeration value of this type – we calculate it by looking at[DynamicallyAccessedMembers] annotations of this type, all of its base types and all of its interfaces. We might want to cache that somewhere.The value of this is the aggregate of all annotations seen.
 							methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new MethodReturnValue (calledMethod.MethodReturnType, annotations));
-							//Remember that we need to the appropriate marking (mark all members that match theAggregatedAnnotationWeComputedAbove) on all types that have the same bases/ interfaces that triggered the marking
-
 						}
 					}
 					break;
