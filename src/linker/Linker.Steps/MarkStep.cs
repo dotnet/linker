@@ -228,8 +228,6 @@ namespace Mono.Linker.Steps
 			// instead of the per-assembly stores.
 			foreach (var (provider, annotations) in xmlInfo.CustomAttributes)
 				_context.CustomAttributes.PrimaryAttributeInfo.AddCustomAttributes (provider, annotations);
-			foreach (var (provider, annotations) in xmlInfo.InternalAttributes)
-				_context.CustomAttributes.PrimaryAttributeInfo.AddInternalAttributes (provider, annotations);
 		}
 
 		void Complete ()

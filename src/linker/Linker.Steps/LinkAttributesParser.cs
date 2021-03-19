@@ -33,35 +33,44 @@ namespace Mono.Linker.Steps
 			ProcessXml (stripLinkAttributes, _context.IgnoreLinkAttributes);
 		}
 
-		IEnumerable<CustomAttribute> ProcessAttributes (XPathNavigator nav, ICustomAttributeProvider provider)
+		CustomAttribute[] ProcessAttributes (XPathNavigator nav, ICustomAttributeProvider provider)
 		{
 			XPathNodeIterator iterator = nav.SelectChildren ("attribute", string.Empty);
-			var attributes = new List<CustomAttribute> ();
+			var builder = new ArrayBuilder<CustomAttribute> ();
 			while (iterator.MoveNext ()) {
 				if (!ShouldProcessElement (iterator.Current))
 					continue;
 
+				TypeDefinition attributeType;
 				string internalAttribute = GetAttribute (iterator.Current, "internal");
 				if (!string.IsNullOrEmpty (internalAttribute)) {
-					ProcessInternalAttribute (provider, internalAttribute);
-					continue;
+					var removeAttributeType = typeof (RemoveAttributeInstancesAttribute);
+					var removeAttributeTypeAssembly = AssemblyDefinition.ReadAssembly (removeAttributeType.Assembly.Location);
+					var tr = removeAttributeTypeAssembly.MainModule.ImportReference (removeAttributeType);
+					attributeType = tr.Resolve ();
+
+					// TODO: Replace with IsAttributeType check once we have it
+					if (provider is not TypeDefinition) {
+						_context.LogWarning ($"Internal attribute '{removeAttributeType.Name}' can only be used on attribute types", 2048, _xmlDocumentLocation);
+						continue;
+					}
+				} else {
+					string attributeFullName = GetFullName (iterator.Current);
+					if (string.IsNullOrEmpty (attributeFullName)) {
+						_context.LogWarning ($"'attribute' element does not contain attribute 'fullname' or it's empty", 2029, _xmlDocumentLocation);
+						continue;
+					}
+
+					if (!GetAttributeType (iterator, attributeFullName, out attributeType))
+						continue;
 				}
 
-				string attributeFullName = GetFullName (iterator.Current);
-				if (string.IsNullOrEmpty (attributeFullName)) {
-					_context.LogWarning ($"'attribute' element does not contain attribute 'fullname' or it's empty", 2029, _xmlDocumentLocation);
-					continue;
-				}
-
-				if (!GetAttributeType (iterator, attributeFullName, out TypeDefinition attributeType))
-					continue;
-
-				CustomAttribute customAttribute = CreateCustomAttribute (iterator, attributeType);
-				if (customAttribute != null)
-					attributes.Add (customAttribute);
+				CustomAttribute ca = CreateCustomAttribute (iterator, attributeType);
+				if (ca != null)
+					builder.Add (ca);
 			}
 
-			return attributes;
+			return builder.ToArray ();
 		}
 
 		CustomAttribute CreateCustomAttribute (XPathNodeIterator iterator, TypeDefinition attributeType)
@@ -84,9 +93,8 @@ namespace Mono.Linker.Steps
 					customAttribute.ConstructorArguments.Add (argument);
 
 			var properties = ProcessAttributeProperties (iterator.Current.SelectChildren ("property", string.Empty), attributeType);
-			if (properties != null)
-				foreach (var property in properties)
-					customAttribute.Properties.Add (property);
+			foreach (var property in properties)
+				customAttribute.Properties.Add (property);
 
 			return customAttribute;
 		}
@@ -141,24 +149,6 @@ namespace Mono.Linker.Steps
 			}
 
 			return attributeArguments;
-		}
-
-		void ProcessInternalAttribute (ICustomAttributeProvider provider, string internalAttribute)
-		{
-			if (internalAttribute != "RemoveAttributeInstances") {
-				_context.LogWarning ($"Unrecognized internal attribute '{internalAttribute}'", 2049, _xmlDocumentLocation);
-				return;
-			}
-
-			if (provider.MetadataToken.TokenType != TokenType.TypeDef) {
-				_context.LogWarning ($"Internal attribute 'RemoveAttributeInstances' can only be used on a type, but is being used on '{provider}'", 2048, _xmlDocumentLocation);
-				return;
-			}
-
-			if (!_context.Annotations.IsMarked (provider)) {
-				IEnumerable<Attribute> removeAttributeInstance = new List<Attribute> { new RemoveAttributeInstancesAttribute () };
-				_attributeInfo.AddInternalAttributes (provider, removeAttributeInstance);
-			}
 		}
 
 		bool GetAttributeType (XPathNodeIterator iterator, string attributeFullName, out TypeDefinition attributeType)
@@ -216,9 +206,7 @@ namespace Mono.Linker.Steps
 
 		protected override void ProcessAssembly (AssemblyDefinition assembly, XPathNavigator nav, bool warnOnUnresolvedTypes)
 		{
-			IEnumerable<CustomAttribute> attributes = ProcessAttributes (nav, assembly);
-			if (attributes.Any ())
-				_attributeInfo.AddCustomAttributes (assembly, attributes);
+			PopulateAttributeInfo (assembly, nav);
 			ProcessTypes (assembly, nav, warnOnUnresolvedTypes);
 		}
 
@@ -226,9 +214,7 @@ namespace Mono.Linker.Steps
 		{
 			Debug.Assert (ShouldProcessElement (nav));
 
-			IEnumerable<CustomAttribute> attributes = ProcessAttributes (nav, type);
-			if (attributes.Any ())
-				_attributeInfo.AddCustomAttributes (type, attributes);
+			PopulateAttributeInfo (type, nav);
 			ProcessTypeChildren (type, nav);
 
 			if (!type.HasNestedTypes)
@@ -245,16 +231,12 @@ namespace Mono.Linker.Steps
 
 		protected override void ProcessField (TypeDefinition type, FieldDefinition field, XPathNavigator nav)
 		{
-			IEnumerable<CustomAttribute> attributes = ProcessAttributes (nav, field);
-			if (attributes.Any ())
-				_attributeInfo.AddCustomAttributes (field, attributes);
+			PopulateAttributeInfo (field, nav);
 		}
 
 		protected override void ProcessMethod (TypeDefinition type, MethodDefinition method, XPathNavigator nav, object customData)
 		{
-			IEnumerable<CustomAttribute> attributes = ProcessAttributes (nav, method);
-			if (attributes.Any ())
-				_attributeInfo.AddCustomAttributes (method, attributes);
+			PopulateAttributeInfo (method, nav);
 			ProcessReturnParameters (method, nav);
 			ProcessParameters (method, nav);
 		}
@@ -263,8 +245,8 @@ namespace Mono.Linker.Steps
 		{
 			var iterator = nav.SelectChildren ("parameter", string.Empty);
 			while (iterator.MoveNext ()) {
-				IEnumerable<CustomAttribute> attributes = ProcessAttributes (iterator.Current, method);
-				if (attributes.Any ()) {
+				var attributes = ProcessAttributes (iterator.Current, method);
+				if (attributes != null) {
 					string paramName = GetAttribute (iterator.Current, "name");
 					foreach (ParameterDefinition parameter in method.Parameters) {
 						if (paramName == parameter.Name) {
@@ -287,9 +269,7 @@ namespace Mono.Linker.Steps
 			while (iterator.MoveNext ()) {
 				if (firstAppearance) {
 					firstAppearance = false;
-					IEnumerable<CustomAttribute> attributes = ProcessAttributes (iterator.Current, method.MethodReturnType);
-					if (attributes.Any ())
-						_attributeInfo.AddCustomAttributes (method.MethodReturnType, attributes);
+					PopulateAttributeInfo (method.MethodReturnType, iterator.Current);
 				} else {
 					_context.LogWarning (
 						$"There is more than one 'return' child element specified for method '{method.GetDisplayName ()}'",
@@ -340,16 +320,19 @@ namespace Mono.Linker.Steps
 
 		protected override void ProcessProperty (TypeDefinition type, PropertyDefinition property, XPathNavigator nav, object customData, bool fromSignature)
 		{
-			IEnumerable<CustomAttribute> attributes = ProcessAttributes (nav, property);
-			if (attributes.Any ())
-				_attributeInfo.AddCustomAttributes (property, attributes);
+			PopulateAttributeInfo (property, nav);
 		}
 
 		protected override void ProcessEvent (TypeDefinition type, EventDefinition @event, XPathNavigator nav, object customData)
 		{
-			IEnumerable<CustomAttribute> attributes = ProcessAttributes (nav, @event);
-			if (attributes.Any ())
-				_attributeInfo.AddCustomAttributes (@event, attributes);
+			PopulateAttributeInfo (@event, nav);
+		}
+
+		void PopulateAttributeInfo (ICustomAttributeProvider provider, XPathNavigator nav)
+		{
+			var attributes = ProcessAttributes (nav, provider);
+			if (attributes != null)
+				_attributeInfo.AddCustomAttributes (provider, attributes);
 		}
 	}
 }
