@@ -1682,14 +1682,6 @@ namespace Mono.Linker.Steps
 				MarkMethodsIf (type.Methods, HasOnSerializeOrDeserializeAttribute, new DependencyInfo (DependencyKind.SerializationMethodForType, type), type);
 			}
 
-			if (reference.Scope.MetadataToken != type.Scope.MetadataToken) {
-				AssemblyDefinition assemblyDef = type.Module.AssemblyResolver.Resolve (reference.Scope as AssemblyNameReference);
-				AssemblyAction assemblyDefAction = _context.Annotations.GetAction (assemblyDef);
-				if ((assemblyDefAction == AssemblyAction.Copy || assemblyDefAction == AssemblyAction.CopyUsed) &&
-					assemblyDef.MainModule.GetMatchingExportedType (type, out var exportedType))
-					_context.MarkingHelpers.MarkExportedType (exportedType, assemblyDef.MainModule, new DependencyInfo (DependencyKind.DynamicDependency, type));
-			}
-
 			DoAdditionalTypeProcessing (type);
 
 			ApplyPreserveInfo (type);

@@ -171,7 +171,11 @@ namespace Mono.Linker.Steps
 				break;
 
 			case AssemblyAction.CopyUsed:
-				Annotations.SetAction (assembly, SweepTypeForwarders (assembly) ?? AssemblyAction.Copy);
+				AssemblyAction assemblyAction = AssemblyAction.Copy;
+				if (!Context.KeepTypeForwarderOnlyAssemblies && SweepTypeForwarders (assembly))
+					assemblyAction = AssemblyAction.Save;
+
+				Annotations.SetAction (assembly, assemblyAction);
 				break;
 
 			case AssemblyAction.Copy:
@@ -283,18 +287,10 @@ namespace Mono.Linker.Steps
 				resources.Remove (resource);
 		}
 
-		AssemblyAction? SweepTypeForwarders (AssemblyDefinition assembly)
+		bool SweepTypeForwarders (AssemblyDefinition assembly)
 		{
-			if (!assembly.MainModule.HasExportedTypes)
-				return null;
-
-			// If this is a pure facade and none of the exported types were removed,
-			// the assembly will be deleted.
-			var exportedTypes = assembly.MainModule.ExportedTypes;
-			if (SweepCollectionExportedTypes (exportedTypes) && (exportedTypes.Count == 0) && assembly.MainModule.Types.Count <= 1)
-				return AssemblyAction.Delete;
-
-			return AssemblyAction.Save;
+			return assembly.MainModule.HasExportedTypes &&
+				SweepCollectionMetadata (assembly.MainModule.ExportedTypes);
 		}
 
 		protected virtual void SweepType (TypeDefinition type)
@@ -524,21 +520,6 @@ namespace Mono.Linker.Steps
 			return removed;
 		}
 
-		protected bool SweepCollectionExportedTypes (IList<ExportedType> exportedTypes)
-		{
-			bool removed = false;
-			for (int i = 0; i < exportedTypes.Count; i++) {
-				var typeDef = exportedTypes[i].Resolve ();
-				if (!ShouldRemove (typeDef))
-					continue;
-
-				ElementRemoved (exportedTypes[i]);
-				exportedTypes.RemoveAt (i--);
-				removed = true;
-			}
-
-			return removed;
-		}
 
 		protected virtual bool ShouldRemove<T> (T element) where T : IMetadataTokenProvider
 		{
