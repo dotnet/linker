@@ -107,6 +107,16 @@ namespace Mono.Linker.Dataflow
 			RequireDynamicallyAccessedMembers (ref reflectionContext, annotation, valueNode, field);
 		}
 
+		public void ProcessAttributeDataflow (IMemberDefinition source, TypeDefinition type, CustomAttributeArgument value)
+		{
+			var annotation = _context.Annotations.FlowAnnotations.GetTypeAnnotation (type);
+			Debug.Assert (annotation != DynamicallyAccessedMemberTypes.None);
+			ValueNode valueNode = GetValueNodeForCustomAttributeArgument (value);
+			var reflectionContext = new ReflectionPatternContext (_context, true, source, type);
+			reflectionContext.AnalyzingPattern ();
+			RequireDynamicallyAccessedMembers (ref reflectionContext, annotation, valueNode, type);
+		}
+
 		static ValueNode GetValueNodeForCustomAttributeArgument (CustomAttributeArgument argument)
 		{
 			ValueNode valueNode;
