@@ -71,7 +71,7 @@ namespace Mono.Linker.Dataflow
 
 		public DynamicallyAccessedMemberTypes GetTypeAnnotation (TypeDefinition type)
 		{
-			if(GetAnnotations (type).TryGetAnnotation (type, out var annotation)) {
+			if (GetAnnotations (type).TryGetAnnotation (type, out var annotation)) {
 				return annotation;
 			}
 			return DynamicallyAccessedMemberTypes.None;
