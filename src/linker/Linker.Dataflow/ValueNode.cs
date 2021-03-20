@@ -823,13 +823,8 @@ namespace Mono.Linker.Dataflow
 		public MethodParameterValue (int parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes, IMetadataTokenProvider sourceContext)
 		{
 			Kind = ValueNodeKind.MethodParameter;
-			if (parameterIndex == 0) {
-				var method = (MethodDefinition) sourceContext;
-				StaticType = method.DeclaringType.ResolveToMainTypeDefinition ();
-			} else {
-				var parameter = (ParameterDefinition) sourceContext;
-				StaticType = parameter.ParameterType.ResolveToMainTypeDefinition ();
-			}
+			var parameter = (ParameterDefinition) sourceContext;
+			StaticType = parameter.ParameterType.ResolveToMainTypeDefinition ();
 			ParameterIndex = parameterIndex;
 			DynamicallyAccessedMemberTypes = dynamicallyAccessedMemberTypes;
 			SourceContext = sourceContext;

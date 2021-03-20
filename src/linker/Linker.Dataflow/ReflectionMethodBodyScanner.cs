@@ -1764,7 +1764,7 @@ namespace Mono.Linker.Dataflow
 				if (!IsDynamicallyAccessedMembersAttribute (attribute))
 					continue;
 				if (attribute.ConstructorArguments.Count == 1)
-					return AggregatedAnnotation | (DynamicallyAccessedMemberTypes) (int) attribute.ConstructorArguments[0].Value;
+					return AggregatedAnnotation |= (DynamicallyAccessedMemberTypes) (int) attribute.ConstructorArguments[0].Value;
 				else
 					_context.LogWarning (
 						$"Attribute 'System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute' doesn't have the required number of parameters specified", 2028, type);

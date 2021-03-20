@@ -16,34 +16,44 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		[Kept]
 		public static void Main ()
 		{
-			CallUnannotatedSealedTypeInstance ();
-			CallUnannotatedTypeInstance ();
-			CallAnnotatedTypeInstance ();
+			CallUnannotatedSealedTypeInstance (new UnannotatedSealedTypeInstance ());
+			CallUnannotatedTypeInstance (new UnannotatedTypeInstance ());
+			CallAnnotatedTypeInstance (new AnnotatedViaXmlTypeInstance ());
+			CallAnnotatedTypeInstanceThatImplementsInterfaceWithDifferentAnnotations (new ImplementsInterfaceWithAnnotationAndHasDifferentAnnotation ());
 			TestIfElse (true);
 		}
 
 		[Kept]
-		public static void CallUnannotatedSealedTypeInstance ()
+		[RecognizedReflectionAccessPattern]
+		public static void CallUnannotatedSealedTypeInstance (UnannotatedSealedTypeInstance instance)
 		{
-			UnannotatedSealedTypeInstance instance = new UnannotatedSealedTypeInstance ();
 			instance.GetType ().GetMethod ("Foo");
 		}
 
 		[Kept]
-		public static void CallUnannotatedTypeInstance ()
+		[UnrecognizedReflectionAccessPattern (typeof (Type), "GetMethod", new Type[] { typeof (string) }, messageCode: "IL2075")]
+		public static void CallUnannotatedTypeInstance (UnannotatedTypeInstance instance)
 		{
-			UnannotatedTypeInstance instance = new UnannotatedTypeInstance ();
-			instance.GetType ().GetField ("field");
-		}
-
-		[Kept]
-		public static void CallAnnotatedTypeInstance ()
-		{
-			AnnotatedViaXmlTypeInstance instance = new AnnotatedViaXmlTypeInstance ();
 			instance.GetType ().GetMethod ("Foo");
 		}
 
 		[Kept]
+		[RecognizedReflectionAccessPattern]
+		public static void CallAnnotatedTypeInstance (AnnotatedViaXmlTypeInstance instance)
+		{
+			instance.GetType ().GetMethod ("Foo");
+		}
+
+		[Kept]
+		[RecognizedReflectionAccessPattern]
+		public static void CallAnnotatedTypeInstanceThatImplementsInterfaceWithDifferentAnnotations (ImplementsInterfaceWithAnnotationAndHasDifferentAnnotation instance)
+		{
+			instance.GetType ().GetMethod ("Foo");
+		}
+
+		[Kept]
+		[RecognizedReflectionAccessPattern]
+		[UnrecognizedReflectionAccessPattern (typeof (Type), "GetMethod", new Type[] { typeof (string) }, messageCode: "IL2075")]
 		public static void TestIfElse (bool decision)
 		{
 			Type t;
@@ -58,22 +68,39 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[Kept]
+		[KeptMember (".ctor()")]
 		public sealed class UnannotatedSealedTypeInstance
 		{
-			private void Foo () { }
+			[Kept]
+			public void Foo () { }
 		}
 
 		[Kept]
+		[KeptMember (".ctor()")]
 		public class UnannotatedTypeInstance
 		{
-			protected int field;
+			public void Foo () { }
 		}
 
 		[Kept]
+		[KeptMember (".ctor()")]
 		public class AnnotatedViaXmlTypeInstance
 		{
-			private void Foo () { }
+			public void Foo () { }
 			protected int field;
 		}
+
+		public interface InterfaceWithAnnotation
+		{
+			public void Foo () { }
+		}
+
+		[Kept]
+		[KeptMember (".ctor()")]
+		public class ImplementsInterfaceWithAnnotationAndHasDifferentAnnotation : InterfaceWithAnnotation
+		{
+			public void Foo () { }
+		}
+
 	}
 }
