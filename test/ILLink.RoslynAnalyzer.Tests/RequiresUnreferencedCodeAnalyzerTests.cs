@@ -151,6 +151,172 @@ public class E
 		}
 
 		[Fact]
+		public Task FixInLambda ()
+		{
+			var src = @"
+using System;
+using System.Diagnostics.CodeAnalysis;
+
+public class C
+{
+    [RequiresUnreferencedCodeAttribute(""message"")]
+    public int M1() => 0;
+
+    Action M2()
+    {
+        return () => M1();
+    }
+}";
+			var fix = @"
+using System;
+using System.Diagnostics.CodeAnalysis;
+
+public class C
+{
+    [RequiresUnreferencedCodeAttribute(""message"")]
+    public int M1() => 0;
+
+    Action M2()
+    {
+        return () => M1();
+    }
+}";
+			// No fix available inside a lambda, requries manual code change since attribute cannot
+			// be applied
+			return VerifyRequiresUnreferencedCodeCodeFix(
+				src,
+				fix,
+				baselineExpected: new[] {
+					// /0/Test0.cs(12,22): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. message.
+					VerifyCS.Diagnostic().WithSpan(12, 22, 12, 26).WithArguments("C.M1()", "message", "")
+				},
+				fixedExpected: Array.Empty<DiagnosticResult>());
+		}
+
+		[Fact]
+		public Task FixInLocalFunc ()
+		{
+			var src = @"
+using System;
+using System.Diagnostics.CodeAnalysis;
+
+public class C
+{
+    [RequiresUnreferencedCodeAttribute(""message"")]
+    public int M1() => 0;
+
+    Action M2()
+    {
+        void Wrapper () => M1();
+        return Wrapper;
+    }
+}";
+			var fix = @"
+using System;
+using System.Diagnostics.CodeAnalysis;
+
+public class C
+{
+    [RequiresUnreferencedCodeAttribute(""message"")]
+    public int M1() => 0;
+
+    Action M2()
+    {
+        [global::System.Diagnostics.CodeAnalysis.RequiresUnreferencedCodeAttribute(""calls M1"")] void Wrapper () => M1();
+        return Wrapper;
+    }
+}";
+			// Roslyn currently doesn't simplify the attribute name properly, see https://github.com/dotnet/roslyn/issues/52039
+			return VerifyRequiresUnreferencedCodeCodeFix(
+				src,
+				fix,
+				baselineExpected: new[] {
+					// /0/Test0.cs(12,28): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. message.
+					VerifyCS.Diagnostic().WithSpan(12, 28, 12, 32).WithArguments("C.M1()", "message", "")
+				},
+				fixedExpected: Array.Empty<DiagnosticResult>());
+		}
+
+		[Fact]
+		public Task FixInCtor ()
+		{
+			var src = @"
+using System;
+using System.Diagnostics.CodeAnalysis;
+
+public class C
+{
+    [RequiresUnreferencedCodeAttribute(""message"")]
+    public static int M1() => 0;
+
+    public C() => M1();
+}";
+			var fix = @"
+using System;
+using System.Diagnostics.CodeAnalysis;
+
+public class C
+{
+    [RequiresUnreferencedCodeAttribute(""message"")]
+    public static int M1() => 0;
+
+    [RequiresUnreferencedCode()]
+    public C() => M1();
+}";
+			// Roslyn currently doesn't simplify the attribute name properly, see https://github.com/dotnet/roslyn/issues/52039
+			return VerifyRequiresUnreferencedCodeCodeFix(
+				src,
+				fix,
+				baselineExpected: new[] {
+					// /0/Test0.cs(10,19): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. message.
+					VerifyCS.Diagnostic().WithSpan(10, 19, 10, 23).WithArguments("C.M1()", "message", "")
+				},
+				fixedExpected: new[] {
+					// /0/Test0.cs(10,6): error CS7036: There is no argument given that corresponds to the required formal parameter 'message' of 'RequiresUnreferencedCodeAttribute.RequiresUnreferencedCodeAttribute(string)'
+					DiagnosticResult.CompilerError("CS7036").WithSpan(10, 6, 10, 32).WithArguments("message", "System.Diagnostics.CodeAnalysis.RequiresUnreferencedCodeAttribute.RequiresUnreferencedCodeAttribute(string)"),
+				});
+		}
+
+		[Fact]
+		public Task FixInPropertyDecl ()
+		{
+			var src = @"
+using System;
+using System.Diagnostics.CodeAnalysis;
+
+public class C
+{
+    [RequiresUnreferencedCodeAttribute(""message"")]
+    public int M1() => 0;
+
+    int M2 => M1();
+}";
+			var fix = @"
+using System;
+using System.Diagnostics.CodeAnalysis;
+
+public class C
+{
+    [RequiresUnreferencedCodeAttribute(""message"")]
+    public int M1() => 0;
+
+    int M2 => M1();
+}";
+			// Can't apply RUC on properties at the moment
+			return VerifyRequiresUnreferencedCodeCodeFix(
+				src,
+				fix,
+				baselineExpected: new[] {
+					// /0/Test0.cs(10,15): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. message.
+					VerifyCS.Diagnostic().WithSpan(10, 15, 10, 19).WithArguments("C.M1()", "message", "")
+				},
+				fixedExpected: new[] {
+					// /0/Test0.cs(10,15): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. message.
+					VerifyCS.Diagnostic().WithSpan(10, 15, 10, 19).WithArguments("C.M1()", "message", "")
+				});
+		}
+
+		[Fact]
 		public Task TestRequiresWithMessageAndUrlOnMethod ()
 		{
 			var MessageAndUrlOnMethod = @"

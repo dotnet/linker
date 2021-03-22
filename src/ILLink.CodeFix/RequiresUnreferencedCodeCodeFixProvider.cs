@@ -12,6 +12,7 @@ using ILLink.RoslynAnalyzer;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.Simplification;
@@ -42,10 +43,21 @@ namespace ILLink.CodeFix
 
 			// Find the containing method
 			SyntaxNode targetNode = root!.FindNode (diagnosticSpan);
-			var declaration = targetNode.Parent?.AncestorsAndSelf ()
-				.OfType<MethodDeclarationSyntax> ().FirstOrDefault ();
+			CSharpSyntaxNode? declarationSyntax = null;
+			for (SyntaxNode? current = targetNode.Parent;
+				 current is not null;
+				 current = current.Parent) {
+				if (current is LambdaExpressionSyntax) {
+					return;
+				}
+				else if (current.IsKind(SyntaxKind.LocalFunctionStatement)
+					|| current is BaseMethodDeclarationSyntax) {
+					declarationSyntax = (CSharpSyntaxNode)current;
+					break;
+				}
+			}
 
-			if (declaration is not null) {
+			if (declarationSyntax is not null) {
 				var semanticModel = await context.Document
 					.GetSemanticModelAsync (context.CancellationToken).ConfigureAwait (false);
 				var symbol = semanticModel!.Compilation.GetTypeByMetadataName (
@@ -56,7 +68,7 @@ namespace ILLink.CodeFix
 					CodeAction.Create (
 						title: s_title,
 						createChangedDocument: c => AddRequiresUnreferencedCode (
-							context.Document, root, targetNode, declaration, symbol!, c),
+							context.Document, root, targetNode, declarationSyntax, symbol!, c),
 						equivalenceKey: s_title),
 					diagnostic);
 
@@ -67,7 +79,7 @@ namespace ILLink.CodeFix
 			Document document,
 			SyntaxNode root,
 			SyntaxNode targetNode,
-			MethodDeclarationSyntax methodDecl,
+			CSharpSyntaxNode methodDecl,
 			ITypeSymbol requiresUnreferencedCodeSymbol,
 			CancellationToken cancellationToken)
 		{
@@ -78,7 +90,7 @@ namespace ILLink.CodeFix
 			if (semanticModel is null) {
 				return document;
 			}
-			var methodSymbol = (IMethodSymbol) semanticModel.GetDeclaredSymbol (methodDecl);
+			var methodSymbol = (IMethodSymbol?) semanticModel.GetDeclaredSymbol (methodDecl);
 			var name = semanticModel.GetSymbolInfo (targetNode).Symbol?.Name;
 			SyntaxNode[] attrArgs;
 			if (string.IsNullOrEmpty (name) || HasPublicAccessibility (methodSymbol)) {
@@ -98,7 +110,7 @@ namespace ILLink.CodeFix
 			return document.WithSyntaxRoot (editor.GetChangedRoot ());
 		}
 
-		private static bool HasPublicAccessibility (IMethodSymbol m)
+		private static bool HasPublicAccessibility (IMethodSymbol? m)
 		{
 			if (m is not { DeclaredAccessibility: Accessibility.Public or Accessibility.Protected }) {
 				return false;
