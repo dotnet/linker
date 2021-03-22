@@ -21,7 +21,7 @@ namespace Mono.Linker.Tests.Cases.TypeForwarding
 
 	[Kept]
 	[KeptMember (".ctor()")]
-	public class UsedForwarderReferencedFromCopyAssembly
+	public class UsedForwarderInCopyAssemblyKeptByUsedMethod
     {
         public static void Main ()
         {

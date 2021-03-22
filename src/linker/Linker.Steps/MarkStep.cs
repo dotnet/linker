@@ -1448,6 +1448,8 @@ namespace Mono.Linker.Steps
 				return;
 			}
 
+			MarkForwardersInCopyAssembly (reference, field, reason);
+
 			MarkField (field, reason);
 		}
 
@@ -1682,6 +1684,8 @@ namespace Mono.Linker.Steps
 
 				MarkMethodsIf (type.Methods, HasOnSerializeOrDeserializeAttribute, new DependencyInfo (DependencyKind.SerializationMethodForType, type), type);
 			}
+
+			MarkForwardersInCopyAssembly (reference, type, reason);
 
 			DoAdditionalTypeProcessing (type);
 
@@ -2548,19 +2552,7 @@ namespace Mono.Linker.Steps
 			if (Annotations.GetAction (method) == MethodAction.Nothing)
 				Annotations.SetAction (method, MethodAction.Parse);
 
-			// If method comes from a type which was resolved from a forwarder in a copy assembly,
-			// mark the transitive chain of forwarders.
-			if (Annotations.GetAction (reference.Module.Assembly) == AssemblyAction.Copy) {
-				foreach (var assembly in reference.Module.AssemblyReferences) {
-					if (assembly.MetadataToken == reference.DeclaringType.Scope.MetadataToken) {
-						ModuleDefinition refModule = reference.Module.AssemblyResolver.Resolve (assembly).MainModule;
-						if (refModule.GetMatchingExportedType (method.DeclaringType, out var exportedType))
-							MarkingHelpers.MarkExportedType (exportedType, reference.Module, reason);
-
-						break;
-					}
-				}
-			}
+			MarkForwardersInCopyAssembly (reference, method, reason);
 
 			EnqueueMethod (method, reason);
 
@@ -2571,6 +2563,30 @@ namespace Mono.Linker.Steps
 				ProcessRequiresUnreferencedCode (method, (MessageOrigin) origin, reason.Kind);
 
 			return method;
+		}
+
+		void MarkForwardersInCopyAssembly (MemberReference memberReference, IMemberDefinition resolvedMember, DependencyInfo reason)
+		{
+			if (Annotations.GetAction (memberReference.Module.Assembly) != AssemblyAction.Copy)
+				return;
+
+			// If member comes from a type which was resolved from a forwarder in a copy assembly,
+			// mark the transitive chain of forwarders.
+			TypeReference typeRef = memberReference is TypeReference ? memberReference as TypeReference : memberReference.DeclaringType;
+			TypeDefinition resolvedTypeDef = resolvedMember is TypeDefinition ? resolvedMember as TypeDefinition : resolvedMember.DeclaringType;
+			foreach (var assembly in memberReference.Module.AssemblyReferences) {
+				if (assembly.MetadataToken == typeRef.Scope.MetadataToken) {
+					ModuleDefinition refModule = typeRef.Module.AssemblyResolver.Resolve (assembly).MainModule;
+					if (refModule.GetMatchingExportedType (resolvedTypeDef, out var exportedType)) {
+						MarkingHelpers.MarkExportedType (exportedType, refModule, reason);
+
+						if (resolvedTypeDef.IsNested)
+							MarkForwardersInCopyAssembly (typeRef.DeclaringType, resolvedTypeDef.DeclaringType, reason);
+					}
+
+					break;
+				}
+			}
 		}
 
 		void ProcessRequiresUnreferencedCode (MethodDefinition method, in MessageOrigin origin, DependencyKind dependencyKind)

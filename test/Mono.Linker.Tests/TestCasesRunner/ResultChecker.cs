@@ -216,7 +216,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 							if (linkedType == null && linkedAssembly.MainModule.HasExportedTypes) {
 								ExportedType exportedType = linkedAssembly.MainModule.ExportedTypes
-									.FirstOrDefault (exported => exported.FullName == expectedTypeName);
+										.FirstOrDefault (exported => exported.FullName == expectedTypeName);
 
 								// Note that copied assemblies could have dangling references.
 								if (exportedType != null && original.EntryPoint.DeclaringType.CustomAttributes.FirstOrDefault (

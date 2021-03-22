@@ -8,6 +8,12 @@ namespace Mono.Linker.Tests.Cases.TypeForwarding.Dependencies
 {
 	public class ImplementationLibrary
 	{
+		public class ImplementationLibraryNestedType
+		{
+		}
+
+		public static int someField = 42;
+
 		public string GetSomeValue ()
 		{
 			return "Hello";

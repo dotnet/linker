@@ -10,6 +10,12 @@ namespace Mono.Linker.Tests.Cases.TypeForwarding.Dependencies
 
 #if INCLUDE_REFERENCE_IMPL
 	public class ImplementationLibrary {
+		public class ImplementationLibraryNestedType
+		{
+		}
+
+		public static int someField = 0;
+
 		public string GetSomeValue ()
 		{
 			return null;
