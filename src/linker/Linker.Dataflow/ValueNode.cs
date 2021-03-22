@@ -841,11 +841,14 @@ namespace Mono.Linker.Dataflow
 	/// </summary>
 	class MethodParameterValue : LeafValueWithDynamicallyAccessedMemberNode
 	{
-		public MethodParameterValue (int parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes, IMetadataTokenProvider sourceContext)
+		public MethodParameterValue (MethodDefinition method, int parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes, IMetadataTokenProvider sourceContext)
 		{
 			Kind = ValueNodeKind.MethodParameter;
-			var parameter = (ParameterDefinition) sourceContext;
-			StaticType = parameter.ParameterType.ResolveToMainTypeDefinition ();
+			StaticType = method.HasImplicitThis ()
+				? (parameterIndex == 0
+					? method.DeclaringType
+					: method.Parameters[parameterIndex - 1].ParameterType.ResolveToMainTypeDefinition ())
+				: method.Parameters[parameterIndex].ParameterType.ResolveToMainTypeDefinition ();
 			ParameterIndex = parameterIndex;
 			DynamicallyAccessedMemberTypes = dynamicallyAccessedMemberTypes;
 			SourceContext = sourceContext;
