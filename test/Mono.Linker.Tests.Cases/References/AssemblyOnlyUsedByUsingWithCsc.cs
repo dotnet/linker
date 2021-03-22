@@ -1,4 +1,5 @@
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
+using Mono.Linker.Tests.Cases.Expectations.Helpers;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 using Mono.Linker.Tests.Cases.References.Dependencies;
 
@@ -19,7 +20,7 @@ namespace Mono.Linker.Tests.Cases.References
 	[KeptReferencesInAssembly ("copied.dll", new[] { "System.Private.CoreLib", "library" })]
 
 	[RemovedAssembly ("library.dll")]
-	[KeptReferencesInAssembly ("copied.dll", new[] { "System.Private.CoreLib", "library" })]
+	[KeptReferencesInAssembly ("copied.dll", new[] { PlatformAssemblies.CoreLib, "library" })]
 	public class AssemblyOnlyUsedByUsingWithCsc
 	{
 		public static void Main ()

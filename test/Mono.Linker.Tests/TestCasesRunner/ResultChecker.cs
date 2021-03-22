@@ -574,7 +574,11 @@ namespace Mono.Linker.Tests.TestCasesRunner
 		void VerifyKeptReferencesInAssembly (CustomAttribute inAssemblyAttribute)
 		{
 			var assembly = ResolveLinkedAssembly (inAssemblyAttribute.ConstructorArguments[0].Value.ToString ());
-			var expectedReferenceNames = ((CustomAttributeArgument[]) inAssemblyAttribute.ConstructorArguments[1].Value).Select (attr => (string) attr.Value);
+			var expectedReferenceNames = ((CustomAttributeArgument[]) inAssemblyAttribute.ConstructorArguments[1].Value).Select (attr => (string) attr.Value).ToList ();
+			for (int i = 0; i < expectedReferenceNames.Count (); i++)
+				if (expectedReferenceNames[i].EndsWith (".dll"))
+					expectedReferenceNames[i] = expectedReferenceNames[i].Substring (0, expectedReferenceNames[i].LastIndexOf ("."));
+
 			Assert.That (assembly.MainModule.AssemblyReferences.Select (asm => asm.Name), Is.EquivalentTo (expectedReferenceNames));
 		}
 
