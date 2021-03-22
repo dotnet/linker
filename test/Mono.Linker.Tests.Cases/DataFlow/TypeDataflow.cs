@@ -16,14 +16,91 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		[Kept]
 		public static void Main ()
 		{
-			_ = new AnnotationsOnThisTypeViaXml ();
+			CallUnannotatedSealedTypeInstance (new UnannotatedSealedTypeInstance ());
+			CallUnannotatedTypeInstance (new UnannotatedTypeInstance ());
+			CallAnnotatedTypeInstance (new AnnotatedViaXmlTypeInstance ());
+			CallAnnotatedTypeInstanceThatImplementsInterfaceWithDifferentAnnotations (new ImplementsInterfaceWithAnnotationAndHasDifferentAnnotation ());
+			TestIfElse (true);
 		}
 
-		// We are inserting [DynamicallyAccessedMembers(DynamicallyAccessedMembersTypes.PublicConstructors)] via xml
-		class AnnotationsOnThisTypeViaXml
+		[Kept]
+		[RecognizedReflectionAccessPattern]
+		public static void CallUnannotatedSealedTypeInstance (UnannotatedSealedTypeInstance instance)
 		{
-			public AnnotationsOnThisTypeViaXml () { }
-			private AnnotationsOnThisTypeViaXml (int i) { }
+			instance.GetType ().GetMethod ("Foo");
 		}
+
+		[Kept]
+		[UnrecognizedReflectionAccessPattern (typeof (Type), "GetMethod", new Type[] { typeof (string) }, messageCode: "IL2075")]
+		public static void CallUnannotatedTypeInstance (UnannotatedTypeInstance instance)
+		{
+			instance.GetType ().GetMethod ("Foo");
+		}
+
+		[Kept]
+		[RecognizedReflectionAccessPattern]
+		public static void CallAnnotatedTypeInstance (AnnotatedViaXmlTypeInstance instance)
+		{
+			instance.GetType ().GetMethod ("Foo");
+		}
+
+		[Kept]
+		[RecognizedReflectionAccessPattern]
+		public static void CallAnnotatedTypeInstanceThatImplementsInterfaceWithDifferentAnnotations (ImplementsInterfaceWithAnnotationAndHasDifferentAnnotation instance)
+		{
+			instance.GetType ().GetMethod ("Foo");
+		}
+
+		[Kept]
+		[RecognizedReflectionAccessPattern]
+		[UnrecognizedReflectionAccessPattern (typeof (Type), "GetMethod", new Type[] { typeof (string) }, messageCode: "IL2075")]
+		public static void TestIfElse (bool decision)
+		{
+			Type t;
+			if (decision) {
+				UnannotatedTypeInstance instance = new UnannotatedTypeInstance ();
+				t = instance.GetType ();
+			} else {
+				AnnotatedViaXmlTypeInstance instance = new AnnotatedViaXmlTypeInstance ();
+				t = instance.GetType ();
+			}
+			t.GetMethod ("Foo");
+		}
+
+		[Kept]
+		[KeptMember (".ctor()")]
+		public sealed class UnannotatedSealedTypeInstance
+		{
+			[Kept]
+			public void Foo () { }
+		}
+
+		[Kept]
+		[KeptMember (".ctor()")]
+		public class UnannotatedTypeInstance
+		{
+			public void Foo () { }
+		}
+
+		[Kept]
+		[KeptMember (".ctor()")]
+		public class AnnotatedViaXmlTypeInstance
+		{
+			public void Foo () { }
+			protected int field;
+		}
+
+		public interface InterfaceWithAnnotation
+		{
+			public void Foo () { }
+		}
+
+		[Kept]
+		[KeptMember (".ctor()")]
+		public class ImplementsInterfaceWithAnnotationAndHasDifferentAnnotation : InterfaceWithAnnotation
+		{
+			public void Foo () { }
+		}
+
 	}
 }

@@ -73,6 +73,14 @@ namespace Mono.Linker.Dataflow
 			return DynamicallyAccessedMemberTypes.None;
 		}
 
+		public DynamicallyAccessedMemberTypes GetTypeAnnotation (TypeDefinition type)
+		{
+			if (GetAnnotations (type).TryGetAnnotation (type, out var annotation)) {
+				return annotation;
+			}
+			return DynamicallyAccessedMemberTypes.None;
+		}
+
 		public DynamicallyAccessedMemberTypes GetGenericParameterAnnotation (GenericParameter genericParameter)
 		{
 			TypeDefinition declaringType = genericParameter.DeclaringType?.Resolve ();
@@ -545,7 +553,7 @@ namespace Mono.Linker.Dataflow
 				annotation = default;
 
 				//@TODO - using type parameter to keep up with the usage pattern
-				if (type ==null || _typeAnnotation == DynamicallyAccessedMemberTypes.None)
+				if (type == null || _typeAnnotation == DynamicallyAccessedMemberTypes.None)
 					return false;
 
 				annotation = _typeAnnotation;
