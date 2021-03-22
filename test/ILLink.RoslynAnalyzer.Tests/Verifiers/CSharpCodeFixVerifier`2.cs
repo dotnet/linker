@@ -6,8 +6,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeFixes;
+using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Testing;
+using Microsoft.CodeAnalysis.Testing.Verifiers;
 
 namespace ILLink.RoslynAnalyzer.Tests
 {
@@ -21,6 +23,21 @@ namespace ILLink.RoslynAnalyzer.Tests
 		   where TAnalyzer : DiagnosticAnalyzer, new()
 		   where TCodeFix : CodeFixProvider, new()
 	{
+		public class Test : CSharpCodeFixTest<TAnalyzer, TCodeFix, XUnitVerifier>
+		{
+			public Test ()
+			{
+				SolutionTransforms.Add ((solution, projectId) => {
+					var compilationOptions = solution.GetProject (projectId)!.CompilationOptions;
+					compilationOptions = compilationOptions!.WithSpecificDiagnosticOptions (
+						compilationOptions.SpecificDiagnosticOptions.SetItems (CSharpVerifierHelper.NullableWarnings));
+					solution = solution.WithProjectCompilationOptions (projectId, compilationOptions);
+
+					return solution;
+				});
+			}
+		}
+
 		/// <inheritdoc cref="AnalyzerVerifier{TAnalyzer}.Diagnostic()"/>
 		public static DiagnosticResult Diagnostic ()
 			=> CSharpAnalyzerVerifier<TAnalyzer>.Diagnostic ();
