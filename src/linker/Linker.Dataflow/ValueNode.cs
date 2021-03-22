@@ -561,7 +561,10 @@ namespace Mono.Linker.Dataflow
 		public SystemTypeValue (TypeDefinition typeRepresented)
 		{
 			Kind = ValueNodeKind.SystemType;
-			StaticType = typeRepresented;
+
+			// Should be System.Type - but we don't have any use case where tracking it like that would matter
+			StaticType = null;
+
 			TypeRepresented = typeRepresented;
 		}
 
@@ -596,7 +599,10 @@ namespace Mono.Linker.Dataflow
 		public RuntimeTypeHandleValue (TypeDefinition typeRepresented)
 		{
 			Kind = ValueNodeKind.RuntimeTypeHandle;
-			StaticType = typeRepresented;
+
+			// Should be System.RuntimeTypeHandle, but we don't have a use case for it like that
+			StaticType = null;
+
 			TypeRepresented = typeRepresented;
 		}
 
@@ -632,7 +638,10 @@ namespace Mono.Linker.Dataflow
 		public SystemTypeForGenericParameterValue (GenericParameter genericParameter, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 		{
 			Kind = ValueNodeKind.SystemTypeForGenericParameter;
+
+			// Should be System.Type, but we don't have a use case for it
 			StaticType = null;
+
 			GenericParameter = genericParameter;
 			DynamicallyAccessedMemberTypes = dynamicallyAccessedMemberTypes;
 			SourceContext = genericParameter;
@@ -670,7 +679,10 @@ namespace Mono.Linker.Dataflow
 		public RuntimeTypeHandleForGenericParameterValue (GenericParameter genericParameter)
 		{
 			Kind = ValueNodeKind.RuntimeTypeHandleForGenericParameter;
+
+			// Should be System.RuntimeTypeHandle, but we don't have a use case for it
 			StaticType = null;
+
 			GenericParameter = genericParameter;
 		}
 
@@ -705,7 +717,10 @@ namespace Mono.Linker.Dataflow
 		public RuntimeMethodHandleValue (MethodDefinition methodRepresented)
 		{
 			Kind = ValueNodeKind.RuntimeMethodHandle;
+
+			// Should be System.RuntimeMethodHandle, but we don't have a use case for it
 			StaticType = null;
+
 			MethodRepresented = methodRepresented;
 		}
 
@@ -740,7 +755,10 @@ namespace Mono.Linker.Dataflow
 		public SystemReflectionMethodBaseValue (MethodDefinition methodRepresented)
 		{
 			Kind = ValueNodeKind.SystemReflectionMethodBase;
+
+			// Should be System.Reflection.MethodBase, but we don't have a use case for it
 			StaticType = null;
+
 			MethodRepresented = methodRepresented;
 		}
 
@@ -775,7 +793,10 @@ namespace Mono.Linker.Dataflow
 		public KnownStringValue (string contents)
 		{
 			Kind = ValueNodeKind.KnownString;
+
+			// Should be System.String, but we don't have a use case for it
 			StaticType = null;
+
 			Contents = contents;
 		}
 
@@ -820,11 +841,14 @@ namespace Mono.Linker.Dataflow
 	/// </summary>
 	class MethodParameterValue : LeafValueWithDynamicallyAccessedMemberNode
 	{
-		public MethodParameterValue (int parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes, IMetadataTokenProvider sourceContext)
+		public MethodParameterValue (MethodDefinition method, int parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes, IMetadataTokenProvider sourceContext)
 		{
 			Kind = ValueNodeKind.MethodParameter;
-			var parameter = (ParameterDefinition) sourceContext;
-			StaticType = parameter.ParameterType.ResolveToMainTypeDefinition ();
+			StaticType = method.HasImplicitThis ()
+				? (parameterIndex == 0
+					? method.DeclaringType
+					: method.Parameters[parameterIndex - 1].ParameterType.ResolveToMainTypeDefinition ())
+				: method.Parameters[parameterIndex].ParameterType.ResolveToMainTypeDefinition ();
 			ParameterIndex = parameterIndex;
 			DynamicallyAccessedMemberTypes = dynamicallyAccessedMemberTypes;
 			SourceContext = sourceContext;
@@ -862,7 +886,10 @@ namespace Mono.Linker.Dataflow
 		public AnnotatedStringValue (IMetadataTokenProvider sourceContext, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 		{
 			Kind = ValueNodeKind.AnnotatedString;
+
+			// Should be System.String, but we don't have a use case for it
 			StaticType = null;
+
 			DynamicallyAccessedMemberTypes = dynamicallyAccessedMemberTypes;
 			SourceContext = sourceContext;
 		}
@@ -1056,7 +1083,10 @@ namespace Mono.Linker.Dataflow
 		{
 			_resolver = resolver;
 			Kind = ValueNodeKind.GetTypeFromString;
+
+			// Should be System.Type, but we don't have a use case for it
 			StaticType = null;
+
 			AssemblyIdentity = assemblyIdentity;
 			NameString = nameString;
 		}
@@ -1221,7 +1251,10 @@ namespace Mono.Linker.Dataflow
 		public ArrayValue (ValueNode size)
 		{
 			Kind = ValueNodeKind.Array;
+
+			// Should be System.Array (or similar), but we don't have a use case for it
 			StaticType = null;
+
 			Size = size ?? UnknownValue.Instance;
 		}
 
