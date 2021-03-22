@@ -975,7 +975,7 @@ namespace Mono.Linker.Dataflow
 									reflectionContext.RecordRecognizedPattern (foundType, () => _markStep.MarkTypeVisibleToReflection (foundTypeRef, new DependencyInfo (DependencyKind.AccessedViaReflection, callingMethodDefinition), callingMethodDefinition));
 									methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new SystemTypeValue (foundType));
 									if (typeAssembly.MainModule.GetMatchingExportedType (foundType, out var exportedType)) {
-										_context.MarkingHelpers.MarkExportedType (exportedType, typeAssembly.MainModule, new DependencyInfo (DependencyKind.DynamicallyAccessedMember, foundType));
+										_context.MarkingHelpers.MarkExportedType (exportedType, typeAssembly.MainModule, new DependencyInfo (DependencyKind.AccessedViaReflection, foundType));
 									}
 								}
 							} else if (typeNameValue == NullValue.Instance) {
