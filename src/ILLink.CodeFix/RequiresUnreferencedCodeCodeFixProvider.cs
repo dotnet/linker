@@ -78,7 +78,7 @@ namespace ILLink.CodeFix
 			Document document,
 			SyntaxNode root,
 			SyntaxNode targetNode,
-			CSharpSyntaxNode methodDecl,
+			CSharpSyntaxNode containingDecl,
 			ITypeSymbol requiresUnreferencedCodeSymbol,
 			CancellationToken cancellationToken)
 		{
@@ -89,10 +89,10 @@ namespace ILLink.CodeFix
 			if (semanticModel is null) {
 				return document;
 			}
-			var methodSymbol = (IMethodSymbol?) semanticModel.GetDeclaredSymbol (methodDecl);
+			var containingSymbol = (IMethodSymbol?) semanticModel.GetDeclaredSymbol (containingDecl);
 			var name = semanticModel.GetSymbolInfo (targetNode).Symbol?.Name;
 			SyntaxNode[] attrArgs;
-			if (string.IsNullOrEmpty (name) || HasPublicAccessibility (methodSymbol)) {
+			if (string.IsNullOrEmpty (name) || HasPublicAccessibility (containingSymbol)) {
 				attrArgs = Array.Empty<SyntaxNode> ();
 			} else {
 				attrArgs = new[] { generator.LiteralExpression ($"calls {name}") };
@@ -104,7 +104,7 @@ namespace ILLink.CodeFix
 					Simplifier.Annotation,
 					Simplifier.AddImportsAnnotation);
 
-			editor.AddAttribute (methodDecl, newAttribute);
+			editor.AddAttribute (containingDecl, newAttribute);
 
 			return document.WithSyntaxRoot (editor.GetChangedRoot ());
 		}
