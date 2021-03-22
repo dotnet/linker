@@ -8,7 +8,6 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Testing;
-using Microsoft.CodeAnalysis.Testing.Verifiers;
 
 namespace ILLink.RoslynAnalyzer.Tests
 {
@@ -18,24 +17,23 @@ namespace ILLink.RoslynAnalyzer.Tests
 	/// <typeparam name="TAnalyzer">The <see cref="DiagnosticAnalyzer"/> to test.</typeparam>
 	/// <typeparam name="TCodeFix">The <see cref="CodeFixProvider"/> to test.</typeparam>
 	/// <typeparam name="TTest">The test implementation to use.</typeparam>
-	/// <typeparam name="XUnitVerifier">The type of verifier to use.</typeparam>
 	public partial class CSharpCodeFixVerifier<TAnalyzer, TCodeFix>
 		   where TAnalyzer : DiagnosticAnalyzer, new()
 		   where TCodeFix : CodeFixProvider, new()
 	{
-		/// <inheritdoc cref="AnalyzerVerifier{TAnalyzer, XUnitVerifier}.Diagnostic()"/>
+		/// <inheritdoc cref="AnalyzerVerifier{TAnalyzer}.Diagnostic()"/>
 		public static DiagnosticResult Diagnostic ()
 			=> CSharpAnalyzerVerifier<TAnalyzer>.Diagnostic ();
 
-		/// <inheritdoc cref="AnalyzerVerifier{TAnalyzer, TTest, XUnitVerifier}.Diagnostic(string)"/>
+		/// <inheritdoc cref="AnalyzerVerifier{TAnalyzer, TTest}.Diagnostic(string)"/>
 		public static DiagnosticResult Diagnostic (string diagnosticId)
 			=> CSharpAnalyzerVerifier<TAnalyzer>.Diagnostic (diagnosticId);
 
-		/// <inheritdoc cref="AnalyzerVerifier{TAnalyzer, TTest, XUnitVerifier}.Diagnostic(DiagnosticDescriptor)"/>
+		/// <inheritdoc cref="AnalyzerVerifier{TAnalyzer, TTest}.Diagnostic(DiagnosticDescriptor)"/>
 		public static DiagnosticResult Diagnostic (DiagnosticDescriptor descriptor)
 			=> CSharpAnalyzerVerifier<TAnalyzer>.Diagnostic (descriptor);
 
-		/// <inheritdoc cref="AnalyzerVerifier{TAnalyzer, TTest, XUnitVerifier}.VerifyAnalyzerAsync(string, DiagnosticResult[])"/>
+		/// <inheritdoc cref="AnalyzerVerifier{TAnalyzer, TTest}.VerifyAnalyzerAsync(string, DiagnosticResult[])"/>
 		public static Task VerifyAnalyzerAsync (string source, (string, string)[]? analyzerOptions = null, params DiagnosticResult[] expected)
 			=> CSharpAnalyzerVerifier<TAnalyzer>.VerifyAnalyzerAsync (source, analyzerOptions, expected);
 
