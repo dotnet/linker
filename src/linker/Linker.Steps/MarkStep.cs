@@ -189,6 +189,7 @@ namespace Mono.Linker.Steps
 		}
 
 		public AnnotationStore Annotations => _context.Annotations;
+		public MarkingHelpers MarkingHelpers => _context.MarkingHelpers;
 		public Tracer Tracer => _context.Tracer;
 
 		public virtual void Process (LinkContext context)
@@ -834,7 +835,7 @@ namespace Mono.Linker.Steps
 
 			ModuleDefinition module = assembly.MainModule;
 			if (module.GetMatchingExportedType (type, out var exportedType))
-				_context.MarkingHelpers.MarkExportedType (exportedType, module, new DependencyInfo (DependencyKind.DynamicDependency, type));
+				MarkingHelpers.MarkExportedType (exportedType, module, new DependencyInfo (DependencyKind.DynamicDependency, type));
 
 			IEnumerable<IMemberDefinition> members;
 			if (dynamicDependency.MemberSignature is string memberSignature) {
@@ -1846,7 +1847,7 @@ namespace Mono.Linker.Steps
 			Tracer.AddDirectDependency (attribute, new DependencyInfo (DependencyKind.CustomAttribute, provider), marked: false);
 			if (MarkMethodsIf (typeDefinition.Methods, predicate, new DependencyInfo (DependencyKind.ReferencedBySpecialAttribute, attribute), sourceLocationMember)
 				&& assemblyDefinition != null && assemblyDefinition.MainModule.GetMatchingExportedType (typeDefinition, out var exportedType)) {
-				_context.MarkingHelpers.MarkExportedType (exportedType, assemblyDefinition.MainModule, new DependencyInfo (DependencyKind.ReferencedBySpecialAttribute, attribute));
+				MarkingHelpers.MarkExportedType (exportedType, assemblyDefinition.MainModule, new DependencyInfo (DependencyKind.ReferencedBySpecialAttribute, attribute));
 			}
 		}
 
@@ -2546,6 +2547,20 @@ namespace Mono.Linker.Steps
 
 			if (Annotations.GetAction (method) == MethodAction.Nothing)
 				Annotations.SetAction (method, MethodAction.Parse);
+
+			// If method comes from a type which was resolved from a forwarder in a copy assembly,
+			// mark the transitive chain of forwarders.
+			if (Annotations.GetAction (reference.Module.Assembly) == AssemblyAction.Copy) {
+				foreach (var assembly in reference.Module.AssemblyReferences) {
+					if (assembly.MetadataToken == reference.DeclaringType.Scope.MetadataToken) {
+						ModuleDefinition refModule = reference.Module.AssemblyResolver.Resolve (assembly).MainModule;
+						if (refModule.GetMatchingExportedType (method.DeclaringType, out var exportedType))
+							MarkingHelpers.MarkExportedType (exportedType, reference.Module, reason);
+
+						break;
+					}
+				}
+			}
 
 			EnqueueMethod (method, reason);
 
