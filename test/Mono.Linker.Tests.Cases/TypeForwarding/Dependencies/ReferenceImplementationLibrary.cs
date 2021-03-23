@@ -9,6 +9,18 @@ namespace Mono.Linker.Tests.Cases.TypeForwarding.Dependencies
 	}
 
 #if INCLUDE_REFERENCE_IMPL
+	public interface ImplementationLibraryInterface
+	{
+		public int GetDefaultImplementation ()
+		{
+			return 42;
+		}
+	}
+
+	public class ImplementationLibraryImp : ImplementationLibraryInterface
+	{
+	}
+
 	public class ImplementationLibrary {
 		public class ImplementationLibraryNestedType
 		{

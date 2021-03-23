@@ -3281,6 +3281,7 @@ namespace Mono.Linker.Steps
 			if (Annotations.IsMarked (iface))
 				return;
 
+			MarkForwardersInCopyAssembly (iface.InterfaceType, type, new DependencyInfo (DependencyKind.CustomAttribute, iface));
 			// Blame the type that has the interfaceimpl, expecting the type itself to get marked for other reasons.
 			MarkCustomAttributes (iface, new DependencyInfo (DependencyKind.CustomAttribute, iface), type);
 			// Blame the interface type on the interfaceimpl itself.
