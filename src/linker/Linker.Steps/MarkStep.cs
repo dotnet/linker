@@ -239,12 +239,17 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void ProcessInternalsVisibleAttributes ()
+		bool ProcessInternalsVisibleAttributes ()
 		{
+			bool marked_any = false;
 			foreach (var attr in _ivt_attributes) {
-				if (IsInternalsVisibleAttributeAssemblyMarked (attr.Attribute))
+				if (!Annotations.IsMarked (attr.Attribute) && IsInternalsVisibleAttributeAssemblyMarked (attr.Attribute)) {
 					MarkCustomAttribute (attr.Attribute, new DependencyInfo (DependencyKind.AssemblyOrModuleAttribute, attr.Provider), null);
+					marked_any = true;
+				}
 			}
+
+			return marked_any;
 
 			bool IsInternalsVisibleAttributeAssemblyMarked (CustomAttribute ca)
 			{
@@ -362,7 +367,7 @@ namespace Mono.Linker.Steps
 
 		void Process ()
 		{
-			while (ProcessPrimaryQueue () || ProcessMarkedPending () || ProcessLazyAttributes () || ProcessLateMarkedAttributes () || MarkFullyPreservedAssemblies ()) {
+			while (ProcessPrimaryQueue () || ProcessMarkedPending () || ProcessLazyAttributes () || ProcessLateMarkedAttributes () || MarkFullyPreservedAssemblies () || ProcessInternalsVisibleAttributes ()) {
 
 				// deal with [TypeForwardedTo] pseudo-attributes
 
@@ -396,11 +401,6 @@ namespace Mono.Linker.Steps
 					}
 				}
 			}
-
-			// Process IVT attribute after all queues are empty. The process can
-			// repopulate the method queue if the IVT attribute is marked for the first time
-			ProcessInternalsVisibleAttributes ();
-			ProcessPrimaryQueue ();
 
 			ProcessPendingTypeChecks ();
 		}
