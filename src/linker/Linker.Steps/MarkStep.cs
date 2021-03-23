@@ -237,7 +237,10 @@ namespace Mono.Linker.Steps
 			foreach (var body in _unreachableBodies) {
 				Annotations.SetAction (body.Method, MethodAction.ConvertToThrow);
 			}
+		}
 
+		void ProcessInternalsVisibleAttributes ()
+		{
 			foreach (var attr in _ivt_attributes) {
 				if (IsInternalsVisibleAttributeAssemblyMarked (attr.Attribute))
 					MarkCustomAttribute (attr.Attribute, new DependencyInfo (DependencyKind.AssemblyOrModuleAttribute, attr.Provider), null);
@@ -393,6 +396,11 @@ namespace Mono.Linker.Steps
 					}
 				}
 			}
+
+			// Process IVT attribute after all queues are empty. The process can
+			// repopulate the method queue if the IVT attribute is marked for the first time
+			ProcessInternalsVisibleAttributes ();
+			ProcessPrimaryQueue ();
 
 			ProcessPendingTypeChecks ();
 		}

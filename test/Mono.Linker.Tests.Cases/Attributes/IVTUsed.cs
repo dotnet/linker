@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using Mono.Linker.Tests.Cases.Attributes.Dependencies;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
+using Mono.Linker.Tests.Cases.Expectations.Helpers;
 
 namespace Mono.Linker.Tests.Cases.Attributes
 {
@@ -9,6 +10,11 @@ namespace Mono.Linker.Tests.Cases.Attributes
 	[KeptAssembly ("lib.dll")]
 	[KeptMemberInAssembly ("lib.dll", typeof (External), "InternalMethod()")]
 	[KeptAttributeInAssembly ("lib.dll", typeof (InternalsVisibleToAttribute))]
+
+	// This is a bit fragile but it's used to test that ITV attribute is marked correctly
+	[SetupLinkerTrimMode ("link")]
+	[SetupLinkerArgument ("--skip-unresolved", "true")]
+	[KeptTypeInAssembly (PlatformAssemblies.CoreLib, typeof (InternalsVisibleToAttribute))]
 	class IVTUsed
 	{
 		static void Main ()
