@@ -912,14 +912,21 @@ namespace Mono.Linker.Steps
 				assembly = null;
 			}
 
-			TypeDefinition td;
+			TypeDefinition td = null;
 			if (args.Count >= 2 && args[1].Value is string typeName) {
-				td = _context.TypeNameResolver.ResolveTypeName (assembly ?? (context as MemberReference).Module.Assembly, typeName)?.Resolve ();
+				TypeReference tr = _context.TypeNameResolver.ResolveTypeName (assembly ?? (context as MemberReference).Module.Assembly, typeName);
+				if (tr != null)
+					td = tr.Resolve ();
+				
 				if (td == null) {
 					_context.LogWarning (
 						$"Could not resolve dependency type '{typeName}' specified in a `PreserveDependency` attribute", 2004, context);
 					return;
 				}
+
+				ModuleDefinition module = assembly != null ? assembly.MainModule : tr.Module;
+				if (module.GetMatchingExportedType (td, out var exportedType))
+					MarkingHelpers.MarkExportedType (exportedType, module, new DependencyInfo (DependencyKind.PreservedDependency, ca));
 			} else {
 				td = context.DeclaringType.Resolve ();
 			}
@@ -1037,6 +1044,7 @@ namespace Mono.Linker.Steps
 				return;
 			}
 
+			MarkForwardersInCopyAssembly (constructor_type, type, reason);
 			MarkCustomAttributeProperties (ca, type, source);
 			MarkCustomAttributeFields (ca, type, source);
 		}
@@ -1141,6 +1149,7 @@ namespace Mono.Linker.Steps
 
 			// Security attributes participate in inference logic without being marked.
 			Tracer.AddDirectDependency (sa, reason, marked: false);
+			MarkForwardersInCopyAssembly (security_type, type, new DependencyInfo (DependencyKind.AttributeType, sa));
 			MarkType (security_type, new DependencyInfo (DependencyKind.AttributeType, sa), sourceLocationMember);
 			MarkCustomAttributeProperties (sa, type, sourceLocationMember);
 			MarkCustomAttributeFields (sa, type, sourceLocationMember);

@@ -22,6 +22,11 @@ namespace Mono.Linker.Tests.Cases.TypeForwarding.Dependencies
 		}
 	}
 
+	[AttributeUsage (AttributeTargets.All)]
+	public class ImplementationLibraryAttribute : Attribute
+	{
+	}
+
 	public struct ImplementationStruct
 	{
 		public int Field;
