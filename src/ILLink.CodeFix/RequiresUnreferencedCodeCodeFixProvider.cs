@@ -95,7 +95,7 @@ namespace ILLink.CodeFix
 			if (string.IsNullOrEmpty (name) || HasPublicAccessibility (containingSymbol)) {
 				attrArgs = Array.Empty<SyntaxNode> ();
 			} else {
-				attrArgs = new[] { generator.LiteralExpression ($"calls {name}") };
+				attrArgs = new[] { generator.LiteralExpression ($"Calls {name}") };
 			}
 
 			var newAttribute = generator
