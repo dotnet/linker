@@ -107,6 +107,14 @@ namespace Mono.Linker.Dataflow
 			RequireDynamicallyAccessedMembers (ref reflectionContext, annotation, valueNode, field);
 		}
 
+		public void ApplyDynamicallyAccessedMembersToType (ref ReflectionPatternContext reflectionPatternContext, TypeDefinition type, DynamicallyAccessedMemberTypes annotation)
+		{
+			Debug.Assert (annotation != DynamicallyAccessedMemberTypes.None);
+
+			reflectionPatternContext.AnalyzingPattern ();
+			MarkTypeForDynamicallyAccessedMembers (ref reflectionPatternContext, type, annotation);
+		}
+
 		static ValueNode GetValueNodeForCustomAttributeArgument (CustomAttributeArgument argument)
 		{
 			ValueNode valueNode;
@@ -929,11 +937,16 @@ namespace Mono.Linker.Dataflow
 								//  - On the other hand this sort of "violates" the annotation on the type
 								methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new SystemTypeValue (staticType));
 							} else {
-								DynamicallyAccessedMemberTypes annotation = GetMemberTypesForTypeHierarchy (staticType);
+								reflectionContext.AnalyzingPattern ();
 
-								if (annotation != DynamicallyAccessedMemberTypes.None) {
-									// TODO: Apply the annotation to staticType and all its derived types
-								}
+								// Make sure the type is marked (this will mark it as used via reflection, which is sort of true)
+								// This should already be true for most cases (method params, fields, ...), but just in case
+								MarkType (ref reflectionContext, staticType);
+
+								var annotation = _markStep.DynamicallyAccessedMembersTypeHierarchy
+									.ApplyDynamicallyAccessedMembersToTypeHierarchy (this, ref reflectionContext, staticType);
+
+								reflectionContext.RecordHandledPattern ();
 
 								// Return a value which is "unknown type" with annotation. For now we'll use the return value node
 								// for the method, which means we're loosing the information about which staticType this
@@ -1753,34 +1766,6 @@ namespace Mono.Linker.Dataflow
 			// "unknown" and consumers may warn.
 			if (!foundAny)
 				methodReturnValue = MergePointValue.MergeValues (methodReturnValue, NullValue.Instance);
-		}
-
-		DynamicallyAccessedMemberTypes GetMemberTypesForTypeHierarchy (TypeDefinition targetType)
-		{
-			HashSet<TypeDefinition> visitedTypes = new HashSet<TypeDefinition> ();
-			return GetMemberTypesForTypeHierarchyInternal (targetType, visitedTypes);
-		}
-
-		DynamicallyAccessedMemberTypes GetMemberTypesForTypeHierarchyInternal (TypeDefinition targetType, HashSet<TypeDefinition> visitedTypes)
-		{
-			DynamicallyAccessedMemberTypes memberTypes = _context.Annotations.FlowAnnotations.GetTypeAnnotation (targetType);
-
-			if (!visitedTypes.Add (targetType))
-				return memberTypes;
-
-			TypeDefinition baseType = targetType.BaseType?.Resolve ();
-			if (baseType != null)
-				memberTypes |= GetMemberTypesForTypeHierarchyInternal (baseType, visitedTypes);
-
-			if (targetType.HasInterfaces) {
-				foreach (InterfaceImplementation iface in targetType.Interfaces) {
-					var interfaceType = iface.InterfaceType.Resolve ();
-					if (interfaceType != null)
-						memberTypes |= GetMemberTypesForTypeHierarchyInternal (interfaceType, visitedTypes);
-				}
-			}
-
-			return memberTypes;
 		}
 
 		void RequireDynamicallyAccessedMembers (ref ReflectionPatternContext reflectionContext, DynamicallyAccessedMemberTypes requiredMemberTypes, ValueNode value, IMetadataTokenProvider targetContext)
