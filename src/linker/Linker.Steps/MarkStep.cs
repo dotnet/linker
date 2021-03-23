@@ -58,6 +58,7 @@ namespace Mono.Linker.Steps
 		readonly List<(TypeDefinition Type, MethodBody Body, Instruction Instr)> _pending_isinst_instr;
 		UnreachableBlocksOptimizer _unreachableBlocksOptimizer;
 		MarkStepContext _markContext;
+		readonly HashSet<TypeDefinition> _entireTypesMarked;
 
 #if DEBUG
 		static readonly DependencyKind[] _entireTypeReasons = new DependencyKind[] {
@@ -184,6 +185,7 @@ namespace Mono.Linker.Steps
 			_dynamicInterfaceCastableImplementationTypes = new List<TypeDefinition> ();
 			_unreachableBodies = new List<MethodBody> ();
 			_pending_isinst_instr = new List<(TypeDefinition, MethodBody, Instruction)> ();
+			_entireTypesMarked = new HashSet<TypeDefinition> (); ;
 		}
 
 		public AnnotationStore Annotations => _context.Annotations;
@@ -290,28 +292,28 @@ namespace Mono.Linker.Steps
 
 		internal void MarkEntireType (TypeDefinition type, bool includeBaseTypes, bool includeInterfaceTypes, in DependencyInfo reason, IMemberDefinition sourceLocationMember)
 		{
-			MarkEntireTypeInternal (type, includeBaseTypes, includeInterfaceTypes, reason, sourceLocationMember, new HashSet<TypeDefinition> ());
+			MarkEntireTypeInternal (type, includeBaseTypes, includeInterfaceTypes, reason, sourceLocationMember);
 		}
 
-		private void MarkEntireTypeInternal (TypeDefinition type, bool includeBaseTypes, bool includeInterfaceTypes, in DependencyInfo reason, IMemberDefinition sourceLocationMember, HashSet<TypeDefinition> typesAlreadyVisited)
+		private void MarkEntireTypeInternal (TypeDefinition type, bool includeBaseTypes, bool includeInterfaceTypes, in DependencyInfo reason, IMemberDefinition sourceLocationMember)
 		{
 #if DEBUG
 			if (!_entireTypeReasons.Contains (reason.Kind))
 				throw new InternalErrorException ($"Unsupported type dependency '{reason.Kind}'.");
 #endif
 
-			if (!typesAlreadyVisited.Add (type))
+			if (!_entireTypesMarked.Add (type))
 				return;
 
 			if (type.HasNestedTypes) {
 				foreach (TypeDefinition nested in type.NestedTypes)
-					MarkEntireTypeInternal (nested, includeBaseTypes, includeInterfaceTypes, new DependencyInfo (DependencyKind.NestedType, type), type, typesAlreadyVisited);
+					MarkEntireTypeInternal (nested, includeBaseTypes, includeInterfaceTypes, new DependencyInfo (DependencyKind.NestedType, type), type);
 			}
 
 			Annotations.Mark (type, reason);
 			var baseTypeDefinition = type.BaseType?.Resolve ();
 			if (includeBaseTypes && baseTypeDefinition != null) {
-				MarkEntireTypeInternal (baseTypeDefinition, includeBaseTypes: true, includeInterfaceTypes, new DependencyInfo (DependencyKind.BaseType, type), type, typesAlreadyVisited);
+				MarkEntireTypeInternal (baseTypeDefinition, includeBaseTypes: true, includeInterfaceTypes, new DependencyInfo (DependencyKind.BaseType, type), type);
 			}
 			MarkCustomAttributes (type, new DependencyInfo (DependencyKind.CustomAttribute, type), type);
 			MarkTypeSpecialCustomAttributes (type);
@@ -320,7 +322,7 @@ namespace Mono.Linker.Steps
 				foreach (InterfaceImplementation iface in type.Interfaces) {
 					var interfaceTypeDefinition = iface.InterfaceType.Resolve ();
 					if (includeInterfaceTypes && interfaceTypeDefinition != null)
-						MarkEntireTypeInternal (interfaceTypeDefinition, includeBaseTypes, includeInterfaceTypes: true, new DependencyInfo (reason.Kind, type), type, typesAlreadyVisited);
+						MarkEntireTypeInternal (interfaceTypeDefinition, includeBaseTypes, includeInterfaceTypes: true, new DependencyInfo (reason.Kind, type), type);
 
 					MarkInterfaceImplementation (iface, type);
 				}
@@ -1498,7 +1500,7 @@ namespace Mono.Linker.Steps
 			if (CheckProcessed (field))
 				return;
 
-			MarkType (field.DeclaringType, new DependencyInfo (DependencyKind.DeclaringType, field), field);
+			MarkType (field.DeclaringType, new DependencyInfo (DependencyKind.DeclaringType, field), reason.Source as IMemberDefinition ?? field);
 			MarkType (field.FieldType, new DependencyInfo (DependencyKind.FieldType, field), field);
 			MarkCustomAttributes (field, new DependencyInfo (DependencyKind.CustomAttribute, field), field);
 			MarkMarshalSpec (field, new DependencyInfo (DependencyKind.FieldMarshalSpec, field), field);
@@ -1561,9 +1563,8 @@ namespace Mono.Linker.Steps
 			// TODO: move after the check once SPC is correctly annotated
 			MarkDefaultConstructor (type, new DependencyInfo (DependencyKind.SerializationMethodForType, type), type);
 
-			// TODO: blocked for now by libraries build issue explained at https://github.com/mono/linker/issues/1603
-			//if (_context.GetTargetRuntimeVersion () > TargetRuntimeVersion.NET5)
-			//	return;
+			if (_context.GetTargetRuntimeVersion () > TargetRuntimeVersion.NET5)
+				return;
 
 			MarkMethodsIf (type.Methods, IsSpecialSerializationConstructor, new DependencyInfo (DependencyKind.SerializationMethodForType, type), type);
 		}
@@ -1709,7 +1710,7 @@ namespace Mono.Linker.Steps
 				// For virtuals that must be preserved, blame the declaring type.
 				MarkMethodsIf (type.Methods, IsVirtualNeededByTypeDueToPreservedScope, new DependencyInfo (DependencyKind.VirtualNeededDueToPreservedScope, type), type);
 				if (ShouldMarkTypeStaticConstructor (type) && reason.Kind != DependencyKind.TriggersCctorForCalledMethod)
-					MarkStaticConstructor (type, new DependencyInfo (DependencyKind.CctorForType, type), type);
+					MarkStaticConstructor (type, new DependencyInfo (DependencyKind.CctorForType, type), sourceLocationMember);
 
 				MarkMethodsIf (type.Methods, HasOnSerializeOrDeserializeAttribute, new DependencyInfo (DependencyKind.SerializationMethodForType, type), type);
 			}
@@ -2319,17 +2320,6 @@ namespace Mono.Linker.Steps
 
 		void MarkGenericArguments (IGenericInstance instance, IMemberDefinition sourceLocationMember)
 		{
-			foreach (TypeReference argument in instance.GenericArguments) {
-				MarkType (argument, new DependencyInfo (DependencyKind.GenericArgumentType, instance), sourceLocationMember);
-
-				Annotations.MarkRelevantToVariantCasting (argument.Resolve ());
-			}
-
-			MarkGenericArgumentConstructors (instance, sourceLocationMember);
-		}
-
-		void MarkGenericArgumentConstructors (IGenericInstance instance, IMemberDefinition sourceLocationMember)
-		{
 			var arguments = instance.GenericArguments;
 
 			var generic_element = GetGenericProviderFromInstance (instance);
@@ -2345,6 +2335,8 @@ namespace Mono.Linker.Steps
 				var argument = arguments[i];
 				var parameter = parameters[i];
 
+				MarkType (argument, new DependencyInfo (DependencyKind.GenericArgumentType, instance), sourceLocationMember);
+
 				if (_context.Annotations.FlowAnnotations.RequiresDataFlowAnalysis (parameter)) {
 					// The only two implementations of IGenericInstance both derive from MemberReference
 					Debug.Assert (instance is MemberReference);
@@ -2353,11 +2345,11 @@ namespace Mono.Linker.Steps
 					scanner.ProcessGenericArgumentDataFlow (parameter, argument, sourceLocationMember ?? (instance as MemberReference).Resolve ());
 				}
 
-				if (!parameter.HasDefaultConstructorConstraint)
-					continue;
-
 				var argument_definition = argument.Resolve ();
-				MarkDefaultConstructor (argument_definition, new DependencyInfo (DependencyKind.DefaultCtorForNewConstrainedGenericArgument, instance), sourceLocationMember);
+				Annotations.MarkRelevantToVariantCasting (argument_definition);
+
+				if (parameter.HasDefaultConstructorConstraint)
+					MarkDefaultConstructor (argument_definition, new DependencyInfo (DependencyKind.DefaultCtorForNewConstrainedGenericArgument, instance), sourceLocationMember);
 			}
 		}
 
@@ -2599,6 +2591,7 @@ namespace Mono.Linker.Steps
 		{
 			switch (dependencyKind) {
 			case DependencyKind.AccessedViaReflection:
+			case DependencyKind.CctorForType:
 			case DependencyKind.DynamicallyAccessedMember:
 			case DependencyKind.DynamicDependency:
 			case DependencyKind.ElementMethod:
