@@ -64,8 +64,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		static void TestBasicAnnotation ()
 		{
 			new BasicAAnnotatedClassFromInterface ().GetType ().GetMethod ("UsedMethod");
-			new BasicAAnnotatedClass ().GetType ().GetMethod ("UsedMethod");
-			new BasicAAnnotatedStruct ().GetType ().GetMethod ("UsedMethod");
+			new BasicAnnotatedClass ().GetType ().GetMethod ("UsedMethod");
+			new BasicAnnotatedStruct ().GetType ().GetMethod ("UsedMethod");
 		}
 
 
@@ -137,7 +137,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 		[Kept]
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
-		class BasicAAnnotatedClass
+		class BasicAnnotatedClass
 		{
 			[Kept]
 			public void UsedMethod () { }
@@ -146,16 +146,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 		[Kept]
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
-		class BasicAAnnotatedClass
-		{
-			[Kept]
-			public void UsedMethod () { }
-			public void UnsedMethod () { }
-		}
-
-		[Kept]
-		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
-		struct BasicAAnnotatedStruct
+		struct BasicAnnotatedStruct
 		{
 			[Kept]
 			public void UsedMethod () { }
