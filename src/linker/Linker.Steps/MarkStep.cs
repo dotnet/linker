@@ -238,11 +238,19 @@ namespace Mono.Linker.Steps
 			foreach (var body in _unreachableBodies) {
 				Annotations.SetAction (body.Method, MethodAction.ConvertToThrow);
 			}
+		}
 
+		bool ProcessInternalsVisibleAttributes ()
+		{
+			bool marked_any = false;
 			foreach (var attr in _ivt_attributes) {
-				if (IsInternalsVisibleAttributeAssemblyMarked (attr.Attribute))
+				if (!Annotations.IsMarked (attr.Attribute) && IsInternalsVisibleAttributeAssemblyMarked (attr.Attribute)) {
 					MarkCustomAttribute (attr.Attribute, new DependencyInfo (DependencyKind.AssemblyOrModuleAttribute, attr.Provider), null);
+					marked_any = true;
+				}
 			}
+
+			return marked_any;
 
 			bool IsInternalsVisibleAttributeAssemblyMarked (CustomAttribute ca)
 			{
@@ -1543,9 +1551,8 @@ namespace Mono.Linker.Steps
 			// TODO: move after the check once SPC is correctly annotated
 			MarkDefaultConstructor (type, new DependencyInfo (DependencyKind.SerializationMethodForType, type), type);
 
-			// TODO: blocked for now by libraries build issue explained at https://github.com/mono/linker/issues/1603
-			//if (_context.GetTargetRuntimeVersion () > TargetRuntimeVersion.NET5)
-			//	return;
+			if (_context.GetTargetRuntimeVersion () > TargetRuntimeVersion.NET5)
+				return;
 
 			MarkMethodsIf (type.Methods, IsSpecialSerializationConstructor, new DependencyInfo (DependencyKind.SerializationMethodForType, type), type);
 		}
