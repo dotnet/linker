@@ -6,7 +6,8 @@ using Mono.Linker.Tests.Cases.References.Dependencies;
 namespace Mono.Linker.Tests.Cases.References
 {
 	/// <summary>
-	/// We can't detect the using usage in the assembly.  As a result, nothing in `library` is going to be marked and that assembly will be deleted.
+	/// Although we can't detect the using usage, there is a typeref pointing to `library` in the `copied` assembly (that has `copy` action), 
+	/// causing the linker to keep `library`.
 	/// Because of that, `copied` needs to have it's reference to `library` removed even though we specified an assembly action of `copy`
 	/// </summary>
 	[SetupLinkerAction ("copy", "copied")]
@@ -21,9 +22,9 @@ namespace Mono.Linker.Tests.Cases.References
 	// Here to assert that the test is setup correctly to copy the copied assembly.  This is an important aspect of the bug
 	[KeptMemberInAssembly ("copied.dll", typeof (AssemblyOnlyUsedByUsing_Copied), "Unused()")]
 
-	// We library should be gone.  The `using` statement leaves no traces in the IL so nothing in `library` will be marked
-	[RemovedAssembly ("library.dll")]
-	[KeptReferencesInAssembly ("copied.dll", new [] { PlatformAssemblies.CoreLib })]
+	// There is a type reference coming from a copy assembly, so `library` is kept.
+	[KeptAssembly ("library.dll")]
+	[KeptReferencesInAssembly ("copied.dll", new [] { PlatformAssemblies.CoreLib, "library" })]
 	public class AssemblyOnlyUsedByUsingWithCscWithKeepFacades
 	{
 		public static void Main ()

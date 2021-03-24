@@ -974,11 +974,7 @@ namespace Mono.Linker.Dataflow
 								} else {
 									reflectionContext.RecordRecognizedPattern (foundType, () => _markStep.MarkTypeVisibleToReflection (foundTypeRef, new DependencyInfo (DependencyKind.AccessedViaReflection, callingMethodDefinition), callingMethodDefinition));
 									methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new SystemTypeValue (foundType));
-									if (typeAssembly.MainModule.GetMatchingExportedType (foundType, out var exportedType)) {
-										_context.MarkingHelpers.MarkExportedType (exportedType, typeAssembly.MainModule, new DependencyInfo (DependencyKind.AccessedViaReflection, foundType));
-										if (_context.Annotations.GetAction (typeAssembly) == AssemblyAction.Copy)
-											_context.MarkingHelpers.MarkForwardedScope (exportedType.AsTypeReference (typeAssembly.MainModule));
-									}
+									_context.MarkingHelpers.MarkMatchingExportedType (foundType, typeAssembly, new DependencyInfo (DependencyKind.AccessedViaReflection, foundType));
 								}
 							} else if (typeNameValue == NullValue.Instance) {
 								reflectionContext.RecordHandledPattern ();
@@ -1990,11 +1986,7 @@ namespace Mono.Linker.Dataflow
 					} else {
 						MarkType (ref reflectionContext, typeRef);
 						MarkTypeForDynamicallyAccessedMembers (ref reflectionContext, foundType, requiredMemberTypes);
-						if (typeAssembly.MainModule.GetMatchingExportedType (foundType, out var exportedType)) {
-							_context.MarkingHelpers.MarkExportedType (exportedType, typeAssembly.MainModule, new DependencyInfo (DependencyKind.DynamicallyAccessedMember, foundType));
-							if (_context.Annotations.GetAction (typeAssembly) == AssemblyAction.Copy)
-								_context.MarkingHelpers.MarkForwardedScope (exportedType.AsTypeReference (typeAssembly.MainModule));
-						}
+						_context.MarkingHelpers.MarkMatchingExportedType (foundType, typeAssembly, new DependencyInfo (DependencyKind.DynamicallyAccessedMember, foundType));
 					}
 				} else if (uniqueValue == NullValue.Instance) {
 					// Ignore - probably unreachable path as it would fail at runtime anyway.

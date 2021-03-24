@@ -833,12 +833,7 @@ namespace Mono.Linker.Steps
 				}
 			}
 
-			ModuleDefinition module = assembly.MainModule;
-			if (module.GetMatchingExportedType (type, out var exportedType)) {
-				MarkingHelpers.MarkExportedType (exportedType, module, new DependencyInfo (DependencyKind.DynamicDependency, type));
-				if (_context.Annotations.GetAction (assembly) == AssemblyAction.Copy)
-					MarkingHelpers.MarkForwardedScope (exportedType.AsTypeReference (module));
-			}
+			MarkingHelpers.MarkMatchingExportedType (type, assembly, new DependencyInfo (DependencyKind.DynamicDependency, type));
 
 			IEnumerable<IMemberDefinition> members;
 			if (dynamicDependency.MemberSignature is string memberSignature) {
@@ -917,7 +912,8 @@ namespace Mono.Linker.Steps
 
 			TypeDefinition td = null;
 			if (args.Count >= 2 && args[1].Value is string typeName) {
-				TypeReference tr = _context.TypeNameResolver.ResolveTypeName (assembly ?? (context as MemberReference).Module.Assembly, typeName);
+				AssemblyDefinition assemblyDef = assembly ?? (context as MemberReference).Module.Assembly;
+				TypeReference tr = _context.TypeNameResolver.ResolveTypeName (assemblyDef, typeName);
 				if (tr != null)
 					td = tr.Resolve ();
 				
@@ -927,12 +923,7 @@ namespace Mono.Linker.Steps
 					return;
 				}
 
-				ModuleDefinition module = assembly != null ? assembly.MainModule : tr.Module;
-				if (module.GetMatchingExportedType (td, out var exportedType)) {
-					MarkingHelpers.MarkExportedType (exportedType, module, new DependencyInfo (DependencyKind.PreservedDependency, ca));
-					if (_context.Annotations.GetAction (assembly) == AssemblyAction.Copy)
-						MarkingHelpers.MarkForwardedScope (exportedType.AsTypeReference (module));
-				}
+				MarkingHelpers.MarkMatchingExportedType (td, assemblyDef, new DependencyInfo (DependencyKind.PreservedDependency, ca));
 			} else {
 				td = context.DeclaringType.Resolve ();
 			}
@@ -1853,10 +1844,9 @@ namespace Mono.Linker.Steps
 				return;
 
 			TypeDefinition typeDefinition = null;
-			AssemblyDefinition assemblyDefinition = null;
 			switch (attribute.ConstructorArguments[0].Value) {
 			case string s:
-				typeDefinition = _context.TypeNameResolver.ResolveTypeName (s, out assemblyDefinition)?.Resolve ();
+				typeDefinition = _context.TypeNameResolver.ResolveTypeName (s, out _)?.Resolve ();
 				break;
 			case TypeReference type:
 				typeDefinition = type.Resolve ();

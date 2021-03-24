@@ -271,43 +271,23 @@ namespace Mono.Linker.Steps
 
 		protected virtual void CopyAssembly (AssemblyDefinition assembly, string directory, bool removeReadOnly = false)
 		{
-			// Special case.  When an assembly has embedded pdbs, link symbols is not enabled, and the assembly's action is copy,
-			// we want to match the behavior of assemblies with the other symbol types and end up with an assembly that does not have symbols.
-			// In order to do that, we can't simply copy files.  We need to write the assembly without symbols
-			if (assembly.MainModule.HasSymbols && !Context.LinkSymbols && assembly.MainModule.SymbolReader is EmbeddedPortablePdbReader) {
-				WriteAssembly (assembly, directory, new WriterParameters ());
-				return;
-			}
-
 			FileInfo fi = GetOriginalAssemblyFileInfo (assembly);
 			string target = Path.GetFullPath (Path.Combine (directory, fi.Name));
 			string source = fi.FullName;
 			if (source == target)
 				return;
 
-			CopyFile (source, target, true);
+			File.Copy (source, target, true);
 			if (!Context.LinkSymbols)
 				return;
 
 			var mdb = source + ".mdb";
 			if (File.Exists (mdb))
-				CopyFile (mdb, target + ".mdb", removeReadOnly);
+				File.Copy (mdb, target + ".mdb", true);
 
 			var pdb = Path.ChangeExtension (source, "pdb");
 			if (File.Exists (pdb))
-				CopyFile (pdb, Path.ChangeExtension (target, "pdb"), removeReadOnly);
-		}
-
-		static void CopyFile (string src, string dest, bool removeReadOnly)
-		{
-			File.Copy (src, dest, true);
-			if (!removeReadOnly)
-				return;
-
-			System.IO.FileAttributes attrs = File.GetAttributes (dest);
-
-			if ((attrs & System.IO.FileAttributes.ReadOnly) == System.IO.FileAttributes.ReadOnly)
-				File.SetAttributes (dest, attrs & ~System.IO.FileAttributes.ReadOnly);
+				File.Copy (pdb, Path.ChangeExtension (target, "pdb"), true);
 		}
 
 		protected virtual string GetAssemblyFileName (AssemblyDefinition assembly, string directory)

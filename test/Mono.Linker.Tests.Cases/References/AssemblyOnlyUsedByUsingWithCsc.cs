@@ -6,7 +6,8 @@ using Mono.Linker.Tests.Cases.References.Dependencies;
 namespace Mono.Linker.Tests.Cases.References
 {
 	/// <summary>
-	/// We can't detect the using usage in the assembly.  As a result, nothing in `library` is going to be marked and that assembly will be deleted.
+	/// /// Although we can't detect the using usage, there is a typeref pointing to `library` in the `copied` assembly (that has `copy` action), 
+	/// causing the linker to keep `library`.
 	/// Previously, we used to rewrite copied assemblies that had any references removed -- now copy action should leave the assembly untouched in
 	/// the output directory, even if that means having dangling references.
 	/// </summary>
@@ -19,7 +20,7 @@ namespace Mono.Linker.Tests.Cases.References
 	[KeptMemberInAssembly ("copied.dll", typeof (AssemblyOnlyUsedByUsing_Copied), "Unused()")]
 	[KeptReferencesInAssembly ("copied.dll", new[] { "System.Private.CoreLib", "library" })]
 
-	[RemovedAssembly ("library.dll")]
+	[KeptAssembly ("library.dll")]
 	[KeptReferencesInAssembly ("copied.dll", new[] { PlatformAssemblies.CoreLib, "library" })]
 	public class AssemblyOnlyUsedByUsingWithCsc
 	{

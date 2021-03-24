@@ -93,8 +93,7 @@ namespace Mono.Linker
 				};
 			}
 
-			TypeDefinition typeDefinition = assembly.MainModule.ResolveType (typeName.ToString ());
-			return typeDefinition;
+			return assembly.MainModule.ResolveType (typeName.ToString ());
 		}
 	}
 }

@@ -520,7 +520,6 @@ namespace Mono.Linker.Steps
 			return removed;
 		}
 
-
 		protected virtual bool ShouldRemove<T> (T element) where T : IMetadataTokenProvider
 		{
 			return !Annotations.IsMarked (element);
