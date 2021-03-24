@@ -16,48 +16,20 @@ namespace Mono.Linker
 			if (!_context.Annotations.MarkProcessed (exportedType, reason))
 				return;
 
-			_context.Annotations.Mark (exportedType, reason);
 			_context.Annotations.Mark (module, reason);
+		}
 
-			AssemblyDefinition facadeAssembly = module.Assembly;
-			TypeDefinition resolvedType = exportedType.Resolve ();
-			ExportedType forwarder = exportedType.IsForwarder ? exportedType : null;
+		public void MarkForwardedScope (TypeReference typeReference)
+		{
+			ModuleDefinition module = typeReference.Module;
+			foreach (var assemblyRef in module.AssemblyReferences)
+				if (assemblyRef.MetadataToken == typeReference.Scope.MetadataToken) {
+					AssemblyDefinition typeRefAssembly = module.AssemblyResolver.Resolve (assemblyRef);
+					if (typeRefAssembly.MainModule.GetMatchingExportedType (typeReference.Resolve (), out var exportedType))
+						MarkExportedType (exportedType, typeRefAssembly.MainModule, new DependencyInfo (DependencyKind.ExportedType, typeReference));
 
-			if (facadeAssembly != null && forwarder != null) {
-				AssemblyAction facadeAction = _context.Annotations.GetAction (facadeAssembly);
-				while ((facadeAssembly != resolvedType.Module.Assembly) &&
-					facadeAction == AssemblyAction.Copy || _context.KeepTypeForwarderOnlyAssemblies) {
-					_context.Annotations.Mark (forwarder, new DependencyInfo (DependencyKind.ExportedType, exportedType));
-					_context.Annotations.Mark (module, new DependencyInfo (DependencyKind.ExportedType, exportedType));
-					foreach (var assemblyReference in module.AssemblyReferences) {
-						if (assemblyReference.MetadataToken == exportedType.Scope.MetadataToken) {
-							facadeAssembly = module.AssemblyResolver.Resolve (assemblyReference);
-							facadeAction = _context.Annotations.GetAction (facadeAssembly);
-							break;
-						}
-					}
-
-					if (module == facadeAssembly.MainModule)
-						break;
-
-					module = facadeAssembly.MainModule;
-					// Get the type the current forwarder `forwarder` points to. Note that we cannot simply call resolve on
-					// `forwarder` since that would give us the final type T in the (possibly non-empty) chain of forwarders,
-					// thus failing to mark any forwarders in copy assemblies between `forwarder` and T. This logic is needed
-					// for the following scenario:
-					//
-					// [copy]          [copy]  [non-copy]
-					// `forwarder` --> S ----> U --------> ... ---> T
-					if (!module.GetMatchingExportedType (resolvedType, out forwarder) || !forwarder.IsForwarder)
-						break;
+					break;
 				}
-
-				// Mark the last type that a forwarder in a copy assembly pointed to (U in the above example.)
-				if (forwarder != null)
-					_context.Annotations.Mark (forwarder, new DependencyInfo (DependencyKind.ExportedType, resolvedType));
-				
-				_context.Annotations.Mark (module, new DependencyInfo (DependencyKind.ExportedType, resolvedType));
-			}
 		}
 	}
 }

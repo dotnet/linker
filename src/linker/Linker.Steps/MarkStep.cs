@@ -834,8 +834,11 @@ namespace Mono.Linker.Steps
 			}
 
 			ModuleDefinition module = assembly.MainModule;
-			if (module.GetMatchingExportedType (type, out var exportedType))
+			if (module.GetMatchingExportedType (type, out var exportedType)) {
 				MarkingHelpers.MarkExportedType (exportedType, module, new DependencyInfo (DependencyKind.DynamicDependency, type));
+				if (_context.Annotations.GetAction (assembly) == AssemblyAction.Copy)
+					MarkingHelpers.MarkForwardedScope (exportedType.AsTypeReference (module));
+			}
 
 			IEnumerable<IMemberDefinition> members;
 			if (dynamicDependency.MemberSignature is string memberSignature) {
@@ -925,8 +928,11 @@ namespace Mono.Linker.Steps
 				}
 
 				ModuleDefinition module = assembly != null ? assembly.MainModule : tr.Module;
-				if (module.GetMatchingExportedType (td, out var exportedType))
+				if (module.GetMatchingExportedType (td, out var exportedType)) {
 					MarkingHelpers.MarkExportedType (exportedType, module, new DependencyInfo (DependencyKind.PreservedDependency, ca));
+					if (_context.Annotations.GetAction (assembly) == AssemblyAction.Copy)
+						MarkingHelpers.MarkForwardedScope (exportedType.AsTypeReference (module));
+				}
 			} else {
 				td = context.DeclaringType.Resolve ();
 			}
@@ -1044,7 +1050,6 @@ namespace Mono.Linker.Steps
 				return;
 			}
 
-			MarkForwardersInCopyAssembly (constructor_type, type, reason);
 			MarkCustomAttributeProperties (ca, type, source);
 			MarkCustomAttributeFields (ca, type, source);
 		}
@@ -1149,7 +1154,6 @@ namespace Mono.Linker.Steps
 
 			// Security attributes participate in inference logic without being marked.
 			Tracer.AddDirectDependency (sa, reason, marked: false);
-			MarkForwardersInCopyAssembly (security_type, type, new DependencyInfo (DependencyKind.AttributeType, sa));
 			MarkType (security_type, new DependencyInfo (DependencyKind.AttributeType, sa), sourceLocationMember);
 			MarkCustomAttributeProperties (sa, type, sourceLocationMember);
 			MarkCustomAttributeFields (sa, type, sourceLocationMember);
@@ -1331,11 +1335,20 @@ namespace Mono.Linker.Steps
 		{
 			Debug.Assert (Annotations.IsProcessed (assembly));
 
+			ModuleDefinition module = assembly.MainModule;
 			MarkCustomAttributes (assembly, new DependencyInfo (DependencyKind.AssemblyOrModuleAttribute, assembly), null);
-			MarkCustomAttributes (assembly.MainModule, new DependencyInfo (DependencyKind.AssemblyOrModuleAttribute, assembly.MainModule), null);
+			MarkCustomAttributes (module, new DependencyInfo (DependencyKind.AssemblyOrModuleAttribute, module), null);
 
-			foreach (TypeDefinition type in assembly.MainModule.Types)
+			foreach (TypeDefinition type in module.Types)
 				MarkEntireType (type, includeBaseTypes: false, includeInterfaceTypes: false, new DependencyInfo (DependencyKind.TypeInAssembly, assembly), null);
+
+			foreach (ExportedType exportedType in module.ExportedTypes)
+				MarkingHelpers.MarkExportedType (exportedType, module, new DependencyInfo (DependencyKind.ExportedType, assembly));
+
+			foreach (TypeReference typeReference in module.GetTypeReferences ()) {
+				MarkType (typeReference, new DependencyInfo (DependencyKind.TypeInAssembly, assembly), null);
+				MarkingHelpers.MarkForwardedScope (typeReference);
+			}
 		}
 
 		void ProcessModuleType (AssemblyDefinition assembly)
@@ -1456,8 +1469,6 @@ namespace Mono.Linker.Steps
 				HandleUnresolvedField (reference);
 				return;
 			}
-
-			MarkForwardersInCopyAssembly (reference, field, reason);
 
 			MarkField (field, reason);
 		}
@@ -1694,8 +1705,6 @@ namespace Mono.Linker.Steps
 				MarkMethodsIf (type.Methods, HasOnSerializeOrDeserializeAttribute, new DependencyInfo (DependencyKind.SerializationMethodForType, type), type);
 			}
 
-			MarkForwardersInCopyAssembly (reference, type, reason);
-
 			DoAdditionalTypeProcessing (type);
 
 			ApplyPreserveInfo (type);
@@ -1858,10 +1867,7 @@ namespace Mono.Linker.Steps
 				return;
 
 			Tracer.AddDirectDependency (attribute, new DependencyInfo (DependencyKind.CustomAttribute, provider), marked: false);
-			if (MarkMethodsIf (typeDefinition.Methods, predicate, new DependencyInfo (DependencyKind.ReferencedBySpecialAttribute, attribute), sourceLocationMember)
-				&& assemblyDefinition != null && assemblyDefinition.MainModule.GetMatchingExportedType (typeDefinition, out var exportedType)) {
-				MarkingHelpers.MarkExportedType (exportedType, assemblyDefinition.MainModule, new DependencyInfo (DependencyKind.ReferencedBySpecialAttribute, attribute));
-			}
+			MarkMethodsIf (typeDefinition.Methods, predicate, new DependencyInfo (DependencyKind.ReferencedBySpecialAttribute, attribute), sourceLocationMember);
 		}
 
 		void MarkTypeWithDebuggerDisplayAttribute (TypeDefinition type, CustomAttribute attribute)
@@ -2561,8 +2567,6 @@ namespace Mono.Linker.Steps
 			if (Annotations.GetAction (method) == MethodAction.Nothing)
 				Annotations.SetAction (method, MethodAction.Parse);
 
-			MarkForwardersInCopyAssembly (reference, method, reason);
-
 			EnqueueMethod (method, reason);
 
 			// All override methods should have the same annotations as their base methods (else we will produce warning IL2046.)
@@ -2572,30 +2576,6 @@ namespace Mono.Linker.Steps
 				ProcessRequiresUnreferencedCode (method, (MessageOrigin) origin, reason.Kind);
 
 			return method;
-		}
-
-		void MarkForwardersInCopyAssembly (MemberReference memberReference, IMemberDefinition resolvedMember, DependencyInfo reason)
-		{
-			if (Annotations.GetAction (memberReference.Module.Assembly) != AssemblyAction.Copy)
-				return;
-
-			// If member comes from a type which was resolved from a forwarder in a copy assembly,
-			// mark the transitive chain of forwarders.
-			TypeReference typeRef = memberReference is TypeReference ? memberReference as TypeReference : memberReference.DeclaringType;
-			TypeDefinition resolvedTypeDef = resolvedMember is TypeDefinition ? resolvedMember as TypeDefinition : resolvedMember.DeclaringType;
-			foreach (var assembly in memberReference.Module.AssemblyReferences) {
-				if (assembly.MetadataToken == typeRef.Scope.MetadataToken) {
-					ModuleDefinition refModule = typeRef.Module.AssemblyResolver.Resolve (assembly).MainModule;
-					if (refModule.GetMatchingExportedType (resolvedTypeDef, out var exportedType)) {
-						MarkingHelpers.MarkExportedType (exportedType, refModule, reason);
-
-						if (resolvedTypeDef.IsNested)
-							MarkForwardersInCopyAssembly (typeRef.DeclaringType, resolvedTypeDef.DeclaringType, reason);
-					}
-
-					break;
-				}
-			}
 		}
 
 		void ProcessRequiresUnreferencedCode (MethodDefinition method, in MessageOrigin origin, DependencyKind dependencyKind)
@@ -3281,7 +3261,6 @@ namespace Mono.Linker.Steps
 			if (Annotations.IsMarked (iface))
 				return;
 
-			MarkForwardersInCopyAssembly (iface.InterfaceType, type, new DependencyInfo (DependencyKind.CustomAttribute, iface));
 			// Blame the type that has the interfaceimpl, expecting the type itself to get marked for other reasons.
 			MarkCustomAttributes (iface, new DependencyInfo (DependencyKind.CustomAttribute, iface), type);
 			// Blame the interface type on the interfaceimpl itself.

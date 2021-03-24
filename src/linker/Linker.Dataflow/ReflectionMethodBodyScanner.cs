@@ -976,6 +976,8 @@ namespace Mono.Linker.Dataflow
 									methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new SystemTypeValue (foundType));
 									if (typeAssembly.MainModule.GetMatchingExportedType (foundType, out var exportedType)) {
 										_context.MarkingHelpers.MarkExportedType (exportedType, typeAssembly.MainModule, new DependencyInfo (DependencyKind.AccessedViaReflection, foundType));
+										if (_context.Annotations.GetAction (typeAssembly) == AssemblyAction.Copy)
+											_context.MarkingHelpers.MarkForwardedScope (exportedType.AsTypeReference (typeAssembly.MainModule));
 									}
 								}
 							} else if (typeNameValue == NullValue.Instance) {
@@ -1990,6 +1992,8 @@ namespace Mono.Linker.Dataflow
 						MarkTypeForDynamicallyAccessedMembers (ref reflectionContext, foundType, requiredMemberTypes);
 						if (typeAssembly.MainModule.GetMatchingExportedType (foundType, out var exportedType)) {
 							_context.MarkingHelpers.MarkExportedType (exportedType, typeAssembly.MainModule, new DependencyInfo (DependencyKind.DynamicallyAccessedMember, foundType));
+							if (_context.Annotations.GetAction (typeAssembly) == AssemblyAction.Copy)
+								_context.MarkingHelpers.MarkForwardedScope (exportedType.AsTypeReference (typeAssembly.MainModule));
 						}
 					}
 				} else if (uniqueValue == NullValue.Instance) {

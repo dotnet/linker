@@ -22,6 +22,7 @@ namespace Mono.Linker.Tests.Cases.TypeForwarding.Dependencies
 	{
 		public class ImplementationLibraryNestedType
 		{
+			public static int PropertyOnNestedType { get; set; }
 		}
 
 		public static int someField = 42;
