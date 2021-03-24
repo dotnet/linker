@@ -924,7 +924,7 @@ namespace Mono.Linker.Steps
 				TypeReference tr = _context.TypeNameResolver.ResolveTypeName (assemblyDef, typeName);
 				if (tr != null)
 					td = tr.Resolve ();
-				
+
 				if (td == null) {
 					_context.LogWarning (
 						$"Could not resolve dependency type '{typeName}' specified in a `PreserveDependency` attribute", 2004, context);

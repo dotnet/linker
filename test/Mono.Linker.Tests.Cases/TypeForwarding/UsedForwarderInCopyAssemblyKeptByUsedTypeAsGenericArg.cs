@@ -25,7 +25,7 @@ namespace Mono.Linker.Tests.Cases.TypeForwarding
 	{
 		public static void Main ()
 		{
-			_ = new List<ImplementationLibrary>();
+			_ = new List<ImplementationLibrary> ();
 		}
 	}
 }

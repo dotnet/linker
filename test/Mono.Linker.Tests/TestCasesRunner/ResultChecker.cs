@@ -110,7 +110,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 		{
 			var assembliesToCheck = original.MainModule.Types.SelectMany (t => t.CustomAttributes).Where (attr => ExpectationsProvider.IsAssemblyAssertion (attr));
 			var actionAssemblies = new HashSet<string> ();
-			bool trimModeIsCopy = false; 
+			bool trimModeIsCopy = false;
 
 			foreach (var assemblyAttr in assembliesToCheck) {
 				var name = (string) assemblyAttr.ConstructorArguments.First ().Value;
@@ -407,7 +407,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 		void VerifyCopyAssemblyIsKeptUnmodified (NPath outputDirectory, string assemblyName)
 		{
 			string inputAssemblyPath = Path.Combine (Directory.GetParent (outputDirectory).ToString (), "input", assemblyName);
-			string outputAssemblyPath = Path.Combine(outputDirectory, assemblyName);
+			string outputAssemblyPath = Path.Combine (outputDirectory, assemblyName);
 			Assert.IsTrue (File.ReadAllBytes (inputAssemblyPath).SequenceEqual (File.ReadAllBytes (outputAssemblyPath)),
 				$"Expected assemblies\n" +
 				$"\t{inputAssemblyPath}\n" +

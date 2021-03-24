@@ -24,7 +24,7 @@ namespace Mono.Linker.Tests.Cases.References
 
 	// There is a type reference coming from a copy assembly, so `library` is kept.
 	[KeptAssembly ("library.dll")]
-	[KeptReferencesInAssembly ("copied.dll", new [] { PlatformAssemblies.CoreLib, "library" })]
+	[KeptReferencesInAssembly ("copied.dll", new[] { PlatformAssemblies.CoreLib, "library" })]
 	public class AssemblyOnlyUsedByUsingWithCscWithKeepFacades
 	{
 		public static void Main ()
