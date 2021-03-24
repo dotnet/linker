@@ -368,7 +368,7 @@ namespace Mono.Linker.Steps
 
 		void Process ()
 		{
-			while (ProcessPrimaryQueue () || ProcessMarkedPending () || ProcessLazyAttributes () || ProcessLateMarkedAttributes () || MarkFullyPreservedAssemblies ()) ;
+			while (ProcessPrimaryQueue () || ProcessMarkedPending () || ProcessLazyAttributes () || ProcessLateMarkedAttributes () || MarkFullyPreservedAssemblies () || ProcessInternalsVisibleAttributes ()) ;
 			ProcessPendingTypeChecks ();
 		}
 
