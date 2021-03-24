@@ -269,7 +269,7 @@ namespace Mono.Linker.Steps
 			return new FileInfo (Context.GetAssemblyLocation (assembly));
 		}
 
-		protected virtual void CopyAssembly (AssemblyDefinition assembly, string directory, bool removeReadOnly = false)
+		protected virtual void CopyAssembly (AssemblyDefinition assembly, string directory)
 		{
 			FileInfo fi = GetOriginalAssemblyFileInfo (assembly);
 			string target = Path.GetFullPath (Path.Combine (directory, fi.Name));
