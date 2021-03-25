@@ -6,6 +6,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
+using Mono.Linker.Tests.Cases.Expectations.Helpers;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.DataFlow
@@ -41,6 +42,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		[RecognizedReflectionAccessPattern]
 		public static void CallAnnotatedTypeInstance (AnnotatedViaXmlTypeInstance instance)
 		{
+			// Just add a direct dependency on the derived type, so that it's kept
+			// its methods should be kept as a result of the derived type marking
+			typeof (DerivedFromAnnotated).RequiresNone ();
+
 			instance.GetType ().GetMethod ("Foo");
 		}
 
@@ -84,12 +89,24 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		[Kept]
 		[KeptMember (".ctor()")]
+		// [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
 		public class AnnotatedViaXmlTypeInstance
 		{
+			[Kept]
 			public void Foo () { }
+
 			protected int field;
 		}
 
+		[Kept]
+		[KeptBaseType (typeof (AnnotatedViaXmlTypeInstance))]
+		public class DerivedFromAnnotated : AnnotatedViaXmlTypeInstance
+		{
+			[Kept]
+			public void DerivedPublicMethod () { }
+		}
+
+		// [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
 		public interface InterfaceWithAnnotation
 		{
 			public void Foo () { }
@@ -97,8 +114,11 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		[Kept]
 		[KeptMember (".ctor()")]
+		// [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
 		public class ImplementsInterfaceWithAnnotationAndHasDifferentAnnotation : InterfaceWithAnnotation
 		{
+			// In this case the interfac will be removed, but its annotation still applies
+			[Kept]
 			public void Foo () { }
 		}
 
