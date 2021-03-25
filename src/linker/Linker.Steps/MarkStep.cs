@@ -1856,7 +1856,7 @@ namespace Mono.Linker.Steps
 				typeDefinition = _context.TypeNameResolver.ResolveTypeName (s, out AssemblyDefinition assemblyDefinition)?.Resolve ();
 				if (typeDefinition != null)
 					MarkingHelpers.MarkMatchingExportedType (typeDefinition, assemblyDefinition, new DependencyInfo (DependencyKind.CustomAttribute, provider));
-				
+
 				break;
 			case TypeReference type:
 				typeDefinition = type.Resolve ();

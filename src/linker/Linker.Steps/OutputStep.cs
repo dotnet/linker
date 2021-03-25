@@ -274,7 +274,7 @@ namespace Mono.Linker.Steps
 			FileInfo fi = GetOriginalAssemblyFileInfo (assembly);
 			string target = Path.GetFullPath (Path.Combine (directory, fi.Name));
 			string source = fi.FullName;
-			
+
 			if (assembly.MainModule.HasSymbols && !Context.LinkSymbols && assembly.MainModule.SymbolReader is EmbeddedPortablePdbReader)
 				Context.LogWarning ("Debug symbols cannot be modified in a copied assembly.", 2026, new MessageOrigin (source));
 
