@@ -9,7 +9,6 @@ namespace Mono.Linker.Tests.Cases.TypeForwarding
 	// copy - This assembly
 	// link - Forwarder.dll and Implementation.dll
 	[SetupLinkerAction ("copy", "test")]
-	[SetupCompileBefore ("FakeSystemAssembly.dll", new[] { "../PreserveDependencies/Dependencies/PreserveDependencyAttribute.cs" })]
 	[SetupCompileBefore ("Forwarder.dll", new[] { "Dependencies/ReferenceImplementationLibrary.cs" }, defines: new[] { "INCLUDE_REFERENCE_IMPL" })]
 
 	// After compiling the test case we then replace the reference impl with implementation + type forwarder
