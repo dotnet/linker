@@ -1549,6 +1549,11 @@ void TestMethod(MethodInfo methodInfo)
 }
 ```
 
+#### `IL2104`: Debug symbols cannot be modified in a copied assembly.`
+
+Assemblies using the copy action will be copied over to the output directory. For this reason, it is not possible for the linker to rewrite the assembly without symbols.
+
+
 ## Single-File Warning Codes
 
 #### `IL3000`: 'member' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'
