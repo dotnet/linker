@@ -16,14 +16,8 @@ namespace Mono.Linker
 			if (typeToMatch == null || assembly == null)
 				return;
 
-			ModuleDefinition module = assembly.MainModule;
-			if (module.GetMatchingExportedType (typeToMatch, out var exportedType)) {
-				MarkExportedType (exportedType, module, reason);
-				if (_context.Annotations.GetAction (assembly) == AssemblyAction.Copy) {
-					TypeReference typeRef = exportedType.AsTypeReference (module);
-					MarkForwardedScope (typeRef);
-				}
-			}
+			if (assembly.MainModule.GetMatchingExportedType (typeToMatch, out var exportedType))
+				MarkExportedType (exportedType, assembly.MainModule, reason);
 		}
 
 		public void MarkExportedType (ExportedType exportedType, ModuleDefinition module, in DependencyInfo reason)
