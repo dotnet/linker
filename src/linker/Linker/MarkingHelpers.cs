@@ -13,6 +13,9 @@ namespace Mono.Linker
 
 		public void MarkMatchingExportedType (TypeDefinition typeToMatch, AssemblyDefinition assembly, in DependencyInfo reason)
 		{
+			if (typeToMatch == null || assembly == null)
+				return;
+
 			ModuleDefinition module = assembly.MainModule;
 			if (module.GetMatchingExportedType (typeToMatch, out var exportedType)) {
 				MarkExportedType (exportedType, module, reason);
@@ -33,15 +36,14 @@ namespace Mono.Linker
 
 		public void MarkForwardedScope (TypeReference typeReference)
 		{
-			ModuleDefinition module = typeReference.Module;
-			foreach (var assemblyRef in module.AssemblyReferences)
-				if (assemblyRef.MetadataToken == typeReference.Scope.MetadataToken) {
-					AssemblyDefinition typeRefAssembly = module.AssemblyResolver.Resolve (assemblyRef);
-					if (typeRefAssembly.MainModule.GetMatchingExportedType (typeReference.Resolve (), out var exportedType))
-						MarkExportedType (exportedType, typeRefAssembly.MainModule, new DependencyInfo (DependencyKind.ExportedType, typeReference));
+			if (typeReference == null)
+				return;
 
-					break;
-				}
+			if (typeReference.Scope is AssemblyNameReference) {
+				var assembly = _context.Resolve (typeReference.Scope);
+				if (assembly != null && assembly.MainModule.GetMatchingExportedType (typeReference.Resolve (), out var exportedType))
+					MarkExportedType (exportedType, assembly.MainModule, new DependencyInfo (DependencyKind.ExportedType, typeReference));
+			}
 		}
 	}
 }

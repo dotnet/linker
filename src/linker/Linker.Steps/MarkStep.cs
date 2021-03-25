@@ -827,6 +827,8 @@ namespace Mono.Linker.Steps
 					_context.LogWarning ($"Unresolved type '{typeName}' in DynamicDependencyAttribute", 2036, context);
 					return;
 				}
+
+				MarkingHelpers.MarkMatchingExportedType (type, assembly, new DependencyInfo (DependencyKind.DynamicDependency, type));
 			} else if (dynamicDependency.Type is TypeReference typeReference) {
 				type = typeReference.Resolve ();
 				if (type == null) {
@@ -840,8 +842,6 @@ namespace Mono.Linker.Steps
 					return;
 				}
 			}
-
-			MarkingHelpers.MarkMatchingExportedType (type, assembly, new DependencyInfo (DependencyKind.DynamicDependency, type));
 
 			IEnumerable<IMemberDefinition> members;
 			if (dynamicDependency.MemberSignature is string memberSignature) {
@@ -1341,13 +1341,13 @@ namespace Mono.Linker.Steps
 			foreach (TypeDefinition type in module.Types)
 				MarkEntireType (type, includeBaseTypes: false, includeInterfaceTypes: false, new DependencyInfo (DependencyKind.TypeInAssembly, assembly), null);
 
-			foreach (ExportedType exportedType in module.ExportedTypes)
+			foreach (ExportedType exportedType in module.ExportedTypes) {
 				MarkingHelpers.MarkExportedType (exportedType, module, new DependencyInfo (DependencyKind.ExportedType, assembly));
-
-			foreach (TypeReference typeReference in module.GetTypeReferences ()) {
-				MarkType (typeReference, new DependencyInfo (DependencyKind.TypeInAssembly, assembly), null);
-				MarkingHelpers.MarkForwardedScope (typeReference);
+				MarkingHelpers.MarkForwardedScope (exportedType.AsTypeReference (module));
 			}
+
+			foreach (TypeReference typeReference in module.GetTypeReferences ())
+				MarkingHelpers.MarkForwardedScope (typeReference);
 		}
 
 		void ProcessModuleType (AssemblyDefinition assembly)
@@ -1853,7 +1853,10 @@ namespace Mono.Linker.Steps
 			TypeDefinition typeDefinition = null;
 			switch (attribute.ConstructorArguments[0].Value) {
 			case string s:
-				typeDefinition = _context.TypeNameResolver.ResolveTypeName (s, out _)?.Resolve ();
+				typeDefinition = _context.TypeNameResolver.ResolveTypeName (s, out AssemblyDefinition assemblyDefinition)?.Resolve ();
+				if (typeDefinition != null)
+					MarkingHelpers.MarkMatchingExportedType (typeDefinition, assemblyDefinition, new DependencyInfo (DependencyKind.CustomAttribute, provider));
+				
 				break;
 			case TypeReference type:
 				typeDefinition = type.Resolve ();

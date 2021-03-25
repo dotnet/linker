@@ -6,21 +6,21 @@ using Mono.Linker.Tests.Cases.References.Dependencies;
 namespace Mono.Linker.Tests.Cases.References
 {
 	/// <summary>
-	/// /// Although we can't detect the using usage, there is a typeref pointing to `library` in the `copied` assembly (that has `copy` action), 
-	/// causing the linker to keep `library`.
-	/// Previously, we used to rewrite copied assemblies that had any references removed -- now copy action should leave the assembly untouched in
-	/// the output directory, even if that means having dangling references.
+	/// We can't detect the using usage in the assembly.  As a result, nothing in `library` is going to be marked and that assembly will be deleted.
+	/// Because of that, `copied` needs to have it's reference to `library` removed even though we specified an assembly action of `copy`
 	/// </summary>
 	[SetupLinkerAction ("copy", "copied")]
+	[SetupLinkerArgument ("--keep-facades", "false")]
 	[SetupCompileBefore ("library.dll", new[] { "Dependencies/AssemblyOnlyUsedByUsing_Lib.cs" })]
 
 	// When csc is used, `copied.dll` will have a reference to `library.dll`
 	[SetupCompileBefore ("copied.dll", new[] { "Dependencies/AssemblyOnlyUsedByUsing_Copied.cs" }, new[] { "library.dll" }, compilerToUse: "csc")]
 
+	// Here to assert that the test is setup correctly to copy the copied assembly.  This is an important aspect of the bug
 	[KeptMemberInAssembly ("copied.dll", typeof (AssemblyOnlyUsedByUsing_Copied), "Unused()")]
-	[KeptReferencesInAssembly ("copied.dll", new[] { "System.Private.CoreLib", "library" })]
 
-	[KeptAssembly ("library.dll")]
+	// We library should be gone.  The `using` statement leaves no traces in the IL so nothing in `library` will be marked
+	[RemovedAssembly ("library.dll")]
 	[KeptReferencesInAssembly ("copied.dll", new[] { PlatformAssemblies.CoreLib, "library" })]
 	public class AssemblyOnlyUsedByUsingWithCsc
 	{
