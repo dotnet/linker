@@ -65,6 +65,7 @@ class C
 		public Task SimpleDiagnosticOnProperty ()
 		{
 			var TestRequiresAssemblyFilesOnProperty = @"
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 class C
@@ -75,14 +76,14 @@ class C
 	void M()
 	{
 		P = false;
-		bool b = P;
+		List<bool> b = new List<bool> { P };
 	}
 }";
 			return VerifyRequiresAssemblyFilesAnalyzer (TestRequiresAssemblyFilesOnProperty,
 				// (11,3): warning IL3002: Using member 'C.P' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
-				VerifyCS.Diagnostic ().WithSpan (11, 3, 11, 4).WithArguments ("C.P", "", ""),
-				// (26,12): warning IL3002: Using member 'C.P' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
-				VerifyCS.Diagnostic ().WithSpan (12, 12, 12, 13).WithArguments ("C.P", "", ""));
+				VerifyCS.Diagnostic ().WithSpan (12, 3, 12, 4).WithArguments ("C.P", "", ""),
+				// (13,12): warning IL3002: Using member 'C.P' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
+				VerifyCS.Diagnostic ().WithSpan (13, 35, 13, 36).WithArguments ("C.P", "", ""));
 		}
 
 		[Fact]

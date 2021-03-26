@@ -39,26 +39,13 @@ namespace ILLink.RoslynAnalyzer.Tests
 			(string, string)[]? globalAnalyzerOptions = null)
 			=> CreateCompilation (CSharpSyntaxTree.ParseText (src), globalAnalyzerOptions);
 
-		static List<MetadataReference> GetLatestNETCoreReferenceAssemblies ()
+		static List<MetadataReference> GetSystemPrivateCoreLibMetadataReference ()
 		{
 			FileInfo fiSPCL = new FileInfo (typeof (int).Assembly.Location);
-			if (fiSPCL == null || fiSPCL.DirectoryName == null)
-				throw new FileNotFoundException ("Could not find directory containing System.Private.CoreLib.dll.");
+			if (fiSPCL == null)
+				throw new FileNotFoundException ("Could not find System.Private.CoreLib.dll.");
 
-			DirectoryInfo netCoreAppDirectory = new DirectoryInfo (fiSPCL.DirectoryName);
-			string[] assemblies = Directory.GetFiles (netCoreAppDirectory.FullName, "System.*.dll");
-
-			List<MetadataReference> metadataReferences = new List<MetadataReference> ();
-			foreach (var assemblyLocation in assemblies) {
-				try {
-					var assemblyName = AssemblyName.GetAssemblyName (assemblyLocation);
-					metadataReferences.Add (MetadataReference.CreateFromFile (assemblyLocation));
-				} catch (BadImageFormatException) {
-					// Although we filter out assemblies not starting with 'System.', there can be assemblies
-					// under this namespace which are not managed, such as 'System.IO.Compression.Native.dll'
-				};
-			}
-
+			List<MetadataReference> metadataReferences = new List<MetadataReference> { MetadataReference.CreateFromFile (fiSPCL.FullName) };
 			return metadataReferences;
 		}
 
@@ -66,7 +53,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			SyntaxTree src,
 			(string, string)[]? globalAnalyzerOptions = null)
 		{
-			var metadataReferences = Task.Run (() => GetLatestNETCoreReferenceAssemblies ());
+			var metadataReferences = Task.Run (() => GetSystemPrivateCoreLibMetadataReference ());
 			var comp = CSharpCompilation.Create (
 				assemblyName: Guid.NewGuid ().ToString ("N"),
 				syntaxTrees: new SyntaxTree[] { src },
