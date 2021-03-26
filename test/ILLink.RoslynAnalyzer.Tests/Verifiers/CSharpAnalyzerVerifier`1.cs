@@ -48,11 +48,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			DirectoryInfo netCoreAppDirectory = new DirectoryInfo (fiSPCL.DirectoryName);
 			string[] assemblies = Directory.GetFiles (netCoreAppDirectory.FullName, "System.*.dll");
 
-			TestCaseUtils.GetDirectoryPaths (out _, out string testAssemblyPath);
-			var expectationsPath = Path.Combine (testAssemblyPath, "Mono.Linker.Tests.Cases.Expectations.dll");
-
-			List<MetadataReference> metadataReferences = new List<MetadataReference> {
-				MetadataReference.CreateFromFile (expectationsPath) };
+			List<MetadataReference> metadataReferences = new List<MetadataReference> ();
 			foreach (var assemblyLocation in assemblies) {
 				try {
 					var assemblyName = AssemblyName.GetAssemblyName (assemblyLocation);
@@ -70,7 +66,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			SyntaxTree src,
 			(string, string)[]? globalAnalyzerOptions = null)
 		{
-			var metadataReferences = Task.Run (() => GetLatestNETCoreReferenceAssemblies());
+			var metadataReferences = Task.Run (() => GetLatestNETCoreReferenceAssemblies ());
 			var comp = CSharpCompilation.Create (
 				assemblyName: Guid.NewGuid ().ToString ("N"),
 				syntaxTrees: new SyntaxTree[] { src },
