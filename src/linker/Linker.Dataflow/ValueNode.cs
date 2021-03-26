@@ -122,7 +122,10 @@ namespace Mono.Linker.Dataflow
 		protected abstract int NumChildren { get; }
 		protected abstract ValueNode ChildAt (int index);
 
-		public abstract bool Equals (ValueNode other);
+		public virtual bool Equals (ValueNode other)
+		{
+			return other != null && this.Kind == other.Kind && this.StaticType == other.StaticType;
+		}
 
 		public abstract override int GetHashCode ();
 
@@ -499,12 +502,7 @@ namespace Mono.Linker.Dataflow
 
 		public override bool Equals (ValueNode other)
 		{
-			if (other == null)
-				return false;
-			if (this.Kind != other.Kind)
-				return false;
-
-			return true;
+			return base.Equals (other);
 		}
 
 		public override int GetHashCode ()
@@ -530,12 +528,7 @@ namespace Mono.Linker.Dataflow
 
 		public override bool Equals (ValueNode other)
 		{
-			if (other == null)
-				return false;
-			if (this.Kind != other.Kind)
-				return false;
-
-			return true;
+			return base.Equals (other);
 		}
 
 		public static NullValue Instance { get; } = new NullValue ();
@@ -572,9 +565,7 @@ namespace Mono.Linker.Dataflow
 
 		public override bool Equals (ValueNode other)
 		{
-			if (other == null)
-				return false;
-			if (this.Kind != other.Kind)
+			if (!base.Equals (other))
 				return false;
 
 			return Equals (this.TypeRepresented, ((SystemTypeValue) other).TypeRepresented);
@@ -610,9 +601,7 @@ namespace Mono.Linker.Dataflow
 
 		public override bool Equals (ValueNode other)
 		{
-			if (other == null)
-				return false;
-			if (this.Kind != other.Kind)
+			if (!base.Equals (other))
 				return false;
 
 			return Equals (this.TypeRepresented, ((RuntimeTypeHandleValue) other).TypeRepresented);
@@ -651,9 +640,7 @@ namespace Mono.Linker.Dataflow
 
 		public override bool Equals (ValueNode other)
 		{
-			if (other == null)
-				return false;
-			if (this.Kind != other.Kind)
+			if (!base.Equals (other))
 				return false;
 
 			var otherValue = (SystemTypeForGenericParameterValue) other;
@@ -690,9 +677,7 @@ namespace Mono.Linker.Dataflow
 
 		public override bool Equals (ValueNode other)
 		{
-			if (other == null)
-				return false;
-			if (this.Kind != other.Kind)
+			if (!base.Equals (other))
 				return false;
 
 			return Equals (this.GenericParameter, ((RuntimeTypeHandleForGenericParameterValue) other).GenericParameter);
@@ -728,9 +713,7 @@ namespace Mono.Linker.Dataflow
 
 		public override bool Equals (ValueNode other)
 		{
-			if (other == null)
-				return false;
-			if (this.Kind != other.Kind)
+			if (!base.Equals (other))
 				return false;
 
 			return Equals (this.MethodRepresented, ((RuntimeMethodHandleValue) other).MethodRepresented);
@@ -766,9 +749,7 @@ namespace Mono.Linker.Dataflow
 
 		public override bool Equals (ValueNode other)
 		{
-			if (other == null)
-				return false;
-			if (this.Kind != other.Kind)
+			if (!base.Equals (other))
 				return false;
 
 			return Equals (this.MethodRepresented, ((SystemReflectionMethodBaseValue) other).MethodRepresented);
@@ -804,9 +785,7 @@ namespace Mono.Linker.Dataflow
 
 		public override bool Equals (ValueNode other)
 		{
-			if (other == null)
-				return false;
-			if (this.Kind != other.Kind)
+			if (!base.Equals (other))
 				return false;
 
 			return this.Contents == ((KnownStringValue) other).Contents;
@@ -834,6 +813,16 @@ namespace Mono.Linker.Dataflow
 		/// The bitfield of dynamically accessed member types the node guarantees
 		/// </summary>
 		public DynamicallyAccessedMemberTypes DynamicallyAccessedMemberTypes { get; protected set; }
+
+		public override bool Equals (ValueNode other)
+		{
+			if (!base.Equals (other))
+				return false;
+
+			var otherValue = (LeafValueWithDynamicallyAccessedMemberNode) other;
+			return SourceContext == otherValue.SourceContext 
+				&& DynamicallyAccessedMemberTypes == otherValue.DynamicallyAccessedMemberTypes;
+		}
 	}
 
 	/// <summary>
@@ -858,13 +847,11 @@ namespace Mono.Linker.Dataflow
 
 		public override bool Equals (ValueNode other)
 		{
-			if (other == null)
-				return false;
-			if (this.Kind != other.Kind)
+			if (!base.Equals (other))
 				return false;
 
 			var otherValue = (MethodParameterValue) other;
-			return this.ParameterIndex == otherValue.ParameterIndex && this.DynamicallyAccessedMemberTypes == otherValue.DynamicallyAccessedMemberTypes;
+			return this.ParameterIndex == otherValue.ParameterIndex;
 		}
 
 		public override int GetHashCode ()
@@ -896,13 +883,7 @@ namespace Mono.Linker.Dataflow
 
 		public override bool Equals (ValueNode other)
 		{
-			if (other == null)
-				return false;
-			if (this.Kind != other.Kind)
-				return false;
-
-			var otherValue = (AnnotatedStringValue) other;
-			return this.DynamicallyAccessedMemberTypes == otherValue.DynamicallyAccessedMemberTypes;
+			return base.Equals (other);
 		}
 
 		public override int GetHashCode ()
@@ -931,13 +912,7 @@ namespace Mono.Linker.Dataflow
 
 		public override bool Equals (ValueNode other)
 		{
-			if (other == null)
-				return false;
-			if (this.Kind != other.Kind)
-				return false;
-
-			var otherValue = (MethodReturnValue) other;
-			return this.DynamicallyAccessedMemberTypes == otherValue.DynamicallyAccessedMemberTypes;
+			return base.Equals (other);
 		}
 
 		public override int GetHashCode ()
@@ -1040,9 +1015,7 @@ namespace Mono.Linker.Dataflow
 
 		public override bool Equals (ValueNode other)
 		{
-			if (other == null)
-				return false;
-			if (this.Kind != other.Kind)
+			if (!base.Equals (other))
 				return false;
 
 			MergePointValue otherMpv = (MergePointValue) other;
@@ -1142,9 +1115,7 @@ namespace Mono.Linker.Dataflow
 
 		public override bool Equals (ValueNode other)
 		{
-			if (other == null)
-				return false;
-			if (this.Kind != other.Kind)
+			if (!base.Equals (other))
 				return false;
 
 			GetTypeFromStringValue otherGtfs = (GetTypeFromStringValue) other;
@@ -1183,16 +1154,11 @@ namespace Mono.Linker.Dataflow
 
 		public override bool Equals (ValueNode other)
 		{
-			if (other == null)
-				return false;
-			if (this.Kind != other.Kind)
+			if (!base.Equals (other))
 				return false;
 
 			LoadFieldValue otherLfv = (LoadFieldValue) other;
-			if (!Equals (this.Field, otherLfv.Field))
-				return false;
-
-			return this.DynamicallyAccessedMemberTypes == otherLfv.DynamicallyAccessedMemberTypes;
+			return Equals (this.Field, otherLfv.Field);
 		}
 
 		public override int GetHashCode ()
@@ -1214,6 +1180,10 @@ namespace Mono.Linker.Dataflow
 		public ConstIntValue (int value)
 		{
 			Kind = ValueNodeKind.ConstInt;
+
+			// Should be System.Int32, but we don't have a usecase for it right now
+			StaticType = null;
+
 			Value = value;
 		}
 
@@ -1226,9 +1196,7 @@ namespace Mono.Linker.Dataflow
 
 		public override bool Equals (ValueNode other)
 		{
-			if (other == null)
-				return false;
-			if (this.Kind != other.Kind)
+			if (!base.Equals (other))
 				return false;
 
 			ConstIntValue otherCiv = (ConstIntValue) other;
@@ -1267,9 +1235,7 @@ namespace Mono.Linker.Dataflow
 
 		public override bool Equals (ValueNode other)
 		{
-			if (other == null)
-				return false;
-			if (this.Kind != other.Kind)
+			if (!base.Equals (other))
 				return false;
 
 			ArrayValue otherArr = (ArrayValue) other;

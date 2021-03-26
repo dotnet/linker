@@ -11,7 +11,7 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.DataFlow
 {
-	[SetupLinkAttributesFile ("AnnotationsOnType.xml")]
+	[SetupLinkAttributesFile ("TypeDataFlowAnnotations.xml")]
 	public class TypeDataflow
 	{
 		[Kept]

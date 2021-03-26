@@ -7,15 +7,17 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
+using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.Reflection
 {
+	[SetupLinkAttributesFile ("ObjectGetTypeAnnotations.xml")]
 	public class ObjectGetType
 	{
 		public static void Main ()
 		{
-			TestSealed ();
-			TestUnsealed ();
+			SealedType.Test ();
+			UnsealedType.Test ();
 
 			//Tests to cover the expanded attribute usage (class, interface, struct) for DynamicallyAccessedMembersAttrbute
 			// Basic
@@ -35,253 +37,407 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			//			- What happens to parent types
 			//			- What happens to children types
 
-			TestBasicAnnotation ();
-			TestBasicConditionBothPathsSafe (false);
-			TestBasicConditionBothPathsSafe (true);
+			BasicAnnotationWithNoDerivedClasses.Test ();
+			MultipleValuesWithAndWithoutAnnotations.Test (0);
+			MultipleValuesWithAndWithoutAnnotations.Test (1);
+			MultipleValuesWithAndWithoutAnnotations.Test (2);
 
-			TestHierarchyAnnotation ();
+			SingleDerivedWithAnnotatedParent.Test ();
+			DerivedWithBaseAndAnnotatedInterface.Test ();
+			DeepHierarchy.Test ();
+			DeepInterfaceHierarchy.Test ();
 
+			ConstructorAsSource.Test ();
 		}
 
 		[Kept]
-		static void TestSealed ()
+		class SealedType
 		{
-			s_sealedClassField = new SealedClass ();
-			s_sealedClassField.GetType ().GetMethod ("Method");
-		}
+			[Kept]
+			static SealedClass s_sealedClassField;
 
-		[Kept]
-		[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.GetMethod), new Type[] { typeof (string) }, messageCode: "IL2075")]
-		static void TestUnsealed ()
-		{
-			s_unsealedClassField = new UnsealedClass ();
-
-			// GetType call on an unsealed type is not recognized and produces a warning
-			s_unsealedClassField.GetType ().GetMethod ("Method");
-		}
-
-		[Kept]
-		static void TestBasicAnnotation ()
-		{
-			new BasicAAnnotatedClassFromInterface ().GetType ().GetMethod ("UsedMethod");
-			new BasicAnnotatedClass ().GetType ().GetMethod ("UsedMethod");
-			new BasicAnnotatedStruct ().GetType ().GetMethod ("UsedMethod");
-		}
-
-
-		[Kept]
-		static void TestBasicConditionBothPathsSafe (bool sealedClass)
-		{
-			Type t;
-			if (sealedClass) {
-				t = new SealedConditionalClass().GetType ();
-			}
-			else
+			[Kept]
+			sealed class SealedClass
 			{
-				t = new ProperlyAnnotatedConditionalClass().GetType ();
-				t = new NotProperlyAnnotatedConditionalClass ().GetType ();
+				[Kept]
+				public SealedClass () { }
+
+				[Kept]
+				public static void Method () { }
+
+				public static void UnusedMethod () { }
 			}
-			t.GetMethod ("UsedMethod");
-		}
-
-		[Kept]
-		static void TestHierarchyAnnotation()
-		{
-			new HierarchyAnnotatedParentClassChild ().GetType ().GetMethod ("UsedMethod");
-			new HierarchyAnnotatedParentInterfaceChild ().GetType ().GetMethod ("UsedMethod");
-			new HierarchyAnnotatedAncestorClassDescendent3 ().GetType ().GetMethod ("UsedMethod");
-			new HierarchyAnnotatedAncestorInterfaceDescendent3 ().GetType ().GetMethod ("UsedMethod");
-		}
-
-
-		[Kept]
-		static SealedClass s_sealedClassField;
-
-		[Kept]
-		sealed class SealedClass
-		{
-			[Kept]
-			public SealedClass () { }
 
 			[Kept]
-			public static void Method () { }
-
-			public static void UnusedMethod () { }
+			public static void Test ()
+			{
+				s_sealedClassField = new SealedClass ();
+				s_sealedClassField.GetType ().GetMethod ("Method");
+			}
 		}
 
 		[Kept]
-		static UnsealedClass s_unsealedClassField;
-
-		[Kept]
-		class UnsealedClass
+		class UnsealedType
 		{
 			[Kept]
-			public UnsealedClass () { }
-
-			public static void Method () { }
-		}
-
-		[Kept]
-		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods| DynamicallyAccessedMemberTypes.NonPublicMethods)]
-		public interface IBasicAnnotationInterface
-		{
-		}
-
-		[Kept]
-		class BasicAAnnotatedClassFromInterface : IBasicAnnotationInterface
-		{
-			[Kept]
-			public void UsedMethod () { }
-			public void UnsedMethod () { }
-		}
-
-		[Kept]
-		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
-		class BasicAnnotatedClass
-		{
-			[Kept]
-			public void UsedMethod () { }
-			public void UnsedMethod () { }
-		}
-
-		[Kept]
-		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
-		struct BasicAnnotatedStruct
-		{
-			[Kept]
-			public void UsedMethod () { }
-			public void UnsedMethod () { }
-		}
-
-
-		[Kept]
-		sealed class SealedConditionalClass
-		{
-			[Kept]
-			public SealedConditionalClass () { }
+			static UnsealedClass s_unsealedClassField;
 
 			[Kept]
-			public void UsedMethod () { }
+			class UnsealedClass
+			{
+				[Kept]
+				public UnsealedClass () { }
 
-			public static void UnusedMethod () { }
-		}
-
-		[Kept]
-		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
-		class ProperlyAnnotatedConditionalClass
-		{
-			[Kept]
-			public ProperlyAnnotatedConditionalClass () { }
+				public static void Method () { }
+			}
 
 			[Kept]
-			public void UsedMethod () { }
+			[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.GetMethod), new Type[] { typeof (string) }, messageCode: "IL2075")]
+			public static void Test ()
+			{
+				s_unsealedClassField = new UnsealedClass ();
 
-			public static void UnusedMethod () { }
+				// GetType call on an unsealed type is not recognized and produces a warning
+				s_unsealedClassField.GetType ().GetMethod ("Method");
+			}
 		}
 
-		[Kept]
-		class NotProperlyAnnotatedConditionalClass
+		class BasicAnnotationWithNoDerivedClasses
 		{
-			[Kept]
-			public NotProperlyAnnotatedConditionalClass () { }
-
-			public void UsedMethod () { }
-
-			public static void UnusedMethod () { }
-		}
-
-		[Kept]
-		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
-		class HierarchyAnnotatedParentClass
-		{
-		}
-
-		[Kept]
-		class HierarchyAnnotatedParentClassChild: HierarchyAnnotatedParentClass
-		{
-			[Kept]
-			public HierarchyAnnotatedParentClassChild () { }
+			// [DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			public interface IBasicAnnotatedInterface
+			{
+			}
 
 			[Kept]
-			public void UsedMethod () { }
-
-			public static void UnusedMethod () { }
-		}
-
-		[Kept]
-		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
-		public interface IHierarchyAnnotatedParentInterface
-		{
-		}
-
-		[Kept]
-		class HierarchyAnnotatedParentInterfaceParent : IHierarchyAnnotatedParentInterface
-		{
-		}
-
-		[Kept]
-		class HierarchyAnnotatedParentInterfaceChild : HierarchyAnnotatedParentInterfaceParent
-		{
+			[KeptMember (".ctor()")]
+			class ClassImplementingAnnotatedInterface : IBasicAnnotatedInterface
+			{
+				[Kept]
+				public void UsedMethod () { }
+				[Kept] // The type is not sealed, so trimmer will apply the annotation from the interface
+				public void UnsedMethod () { }
+			}
 
 			[Kept]
-			public void UsedMethod () { }
+			static void TestInterface (ClassImplementingAnnotatedInterface classImplementingInterface)
+			{
+				// The interface is not referred to anywhere, so it will be trimmed
+				// but its annotation still applies
+				classImplementingInterface.GetType ().GetMethod ("UsedMethod");
+			}
 
-			public static void UnusedMethod () { }
+			[Kept]
+			[KeptMember (".ctor()")]
+			//[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			class BasicAnnotatedClass
+			{
+				[Kept]
+				public void UsedMethod () { }
+				[Kept] // The type is not sealed, so trimmer will apply the annotation from the interface
+				public void UnsedMethod () { }
+			}
+
+			[Kept]
+			static void TestClass (BasicAnnotatedClass instance)
+			{
+				instance.GetType ().GetMethod ("UsedMethod");
+			}
+
+			[Kept]
+			[KeptMember (".ctor()")]
+			//[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			struct BasicAnnotatedStruct
+			{
+				// TODO: Handle boxing and unboxing operations
+				// [Kept]
+				public void UsedMethod () { }
+				public void UnsedMethod () { }
+			}
+
+			[Kept]
+			// TODO: This requires boxing/unboxing to correctly propagate static type
+			[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.GetMethod), new Type[] { typeof (string) }, messageCode: "IL2075")]
+			static void TestStruct (BasicAnnotatedStruct instance)
+			{
+				instance.GetType ().GetMethod ("UsedMethod");
+			}
+
+			[Kept]
+			public static void Test()
+			{
+				TestInterface (new ClassImplementingAnnotatedInterface());
+				TestClass (new BasicAnnotatedClass ());
+				TestStruct (new BasicAnnotatedStruct ());
+			}
 		}
 
 		[Kept]
-		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
-		class HierarchyAnnotatedAncestorClass
-		{
-		}
-
-		[Kept]
-		class HierarchyAnnotatedAncestorClassDescendent1 : HierarchyAnnotatedAncestorClass
-		{
-		}
-
-		[Kept]
-		class HierarchyAnnotatedAncestorClassDescendent2 : HierarchyAnnotatedAncestorClassDescendent1
-		{
-		}
-
-		[Kept]
-		class HierarchyAnnotatedAncestorClassDescendent3 : HierarchyAnnotatedAncestorClassDescendent2
+		class MultipleValuesWithAndWithoutAnnotations
 		{
 			[Kept]
-			void UsedMethod () { }
-			void UnusedMethod () { }
+			sealed class SealedClass
+			{
+				[Kept]
+				public SealedClass () { }
+
+				[Kept]
+				public void UsedMethod () { }
+
+				public static void UnusedMethod () { }
+
+				[Kept]
+				public static SealedClass Instance () => new SealedClass ();
+			}
+
+			[Kept]
+			//[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			class AnnotatedClass
+			{
+				[Kept]
+				public AnnotatedClass () { }
+
+				[Kept]
+				public void UsedMethod () { }
+
+				[Kept] // Type is not sealed, so the annotation is applied instead
+				public static void UnusedMethod () { }
+
+				[Kept]
+				public static AnnotatedClass Instance () => new AnnotatedClass ();
+			}
+
+			[Kept]
+			class UnannotatedClass
+			{
+				[Kept]
+				public UnannotatedClass () { }
+
+				public void UsedMethod () { }
+
+				public static void UnusedMethod () { }
+
+				[Kept]
+				public static UnannotatedClass Instance () => new UnannotatedClass ();
+			}
+
+			[Kept]
+			public static void Test (int param)
+			{
+				object instance;
+				switch (param) {
+				case 0:
+					instance = SealedClass.Instance ();
+					break;
+				case 1:
+					instance = AnnotatedClass.Instance ();
+					break;
+				default:
+					instance = UnannotatedClass.Instance ();
+					break;
+				}
+
+				instance.GetType ().GetMethod ("UsedMethod");
+			}
 		}
 
-		[Kept]
-		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
-		public interface IHierarchyAnnotatedAncestorInterface
-		{
-		}
-
-		[Kept]
-		class HierarchyAnnotatedAncestorInterfaceParent : IHierarchyAnnotatedAncestorInterface
-		{
-		}
-
-		[Kept]
-		class HierarchyAnnotatedAncestorInterfaceDescendent1 : HierarchyAnnotatedAncestorInterfaceParent
-		{
-		}
-
-		[Kept]
-		class HierarchyAnnotatedAncestorInterfaceDescendent2 : HierarchyAnnotatedAncestorInterfaceDescendent1
-		{
-		}
-
-		[Kept]
-		class HierarchyAnnotatedAncestorInterfaceDescendent3 : HierarchyAnnotatedAncestorInterfaceDescendent2
+		class SingleDerivedWithAnnotatedParent
 		{
 			[Kept]
-			void UsedMethod () { }
+			[KeptMember (".ctor()")]
+			//[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			class HierarchyAnnotatedParentClass
+			{
+			}
 
-			void UnusedMethod () { }
+			[Kept]
+			[KeptBaseType (typeof(HierarchyAnnotatedParentClass))]
+			class HierarchyAnnotatedParentClassChild : HierarchyAnnotatedParentClass
+			{
+				[Kept]
+				public HierarchyAnnotatedParentClassChild () { }
+
+				[Kept]
+				public void UsedMethod () { }
+
+				[Kept] // Marked through annotations
+				public static void UnusedMethod () { }
+
+				[Kept]
+				public static HierarchyAnnotatedParentClassChild Instance () => new HierarchyAnnotatedParentClassChild ();
+			}
+
+			[Kept]
+			public static void Test ()
+			{
+				HierarchyAnnotatedParentClassChild.Instance ().GetType ().GetMethod ("UsedMethod");
+			}
 		}
 
+		[Kept]
+		class DerivedWithBaseAndAnnotatedInterface
+		{
+			[Kept]
+			//[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			public interface IHierarchyAnnotatedParentInterface
+			{
+			}
+
+			[Kept]
+			[KeptInterface (typeof(IHierarchyAnnotatedParentInterface))]
+			[KeptMember (".ctor()")]
+			class HierarchyAnnotatedParentInterfaceParent : IHierarchyAnnotatedParentInterface
+			{
+			}
+
+			[Kept]
+			[KeptBaseType (typeof(HierarchyAnnotatedParentInterfaceParent))]
+			[KeptMember (".ctor()")]
+			class HierarchyAnnotatedParentInterfaceChild : HierarchyAnnotatedParentInterfaceParent
+			{
+				[Kept]
+				public void UsedMethod () { }
+
+				[Kept] // Marked through annotations
+				public static void UnusedMethod () { }
+
+				[Kept]
+				public static HierarchyAnnotatedParentInterfaceChild Instance () => new HierarchyAnnotatedParentInterfaceChild ();
+			}
+
+			[Kept]
+			public static void Test ()
+			{
+				// Reference the interface directly so that it's preserved
+				var a = typeof (IHierarchyAnnotatedParentInterface);
+				HierarchyAnnotatedParentInterfaceChild.Instance ().GetType ().GetMethod ("UsedMethod");
+			}
+		}
+
+		[Kept]
+		class DeepHierarchy
+		{
+			[Kept]
+			[KeptMember(".ctor()")]
+			//[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			class BaseClass
+			{
+			}
+
+			[Kept]
+			[KeptMember (".ctor()")]
+			[KeptBaseType (typeof(BaseClass))]
+			class DerivedClass1 : BaseClass
+			{
+			}
+
+			[Kept]
+			[KeptMember (".ctor()")]
+			[KeptBaseType (typeof (DerivedClass1))]
+			class DerivedClass2 : DerivedClass1
+			{
+			}
+
+			[Kept]
+			[KeptMember (".ctor()")]
+			[KeptBaseType (typeof (DerivedClass2))]
+			class DerivedClass3 : DerivedClass2
+			{
+				[Kept]
+				public void UsedMethod () { }
+				[Kept]
+				public void UnusedMethod () { }
+			}
+
+			[Kept]
+			static DerivedClass1 GetInstance () => new DerivedClass3 ();
+
+			[Kept]
+			public static void Test ()
+			{
+				GetInstance ().GetType ().GetMethod ("UsedMethod");
+			}
+		}
+
+		[Kept]
+		class DeepInterfaceHierarchy
+		{
+			[Kept]
+			//[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			public interface IAnnotatedInterface
+			{
+			}
+
+			[Kept]
+			[KeptMember (".ctor()")]
+			[KeptInterface(typeof(IAnnotatedInterface))]
+			class BaseImplementingInterface : IAnnotatedInterface
+			{
+			}
+
+			[Kept]
+			[KeptMember (".ctor()")]
+			[KeptBaseType (typeof (BaseImplementingInterface))]
+			class Derived1 : BaseImplementingInterface
+			{
+			}
+
+			[Kept]
+			[KeptMember (".ctor()")]
+			[KeptBaseType (typeof (Derived1))]
+			class Derived2 : Derived1
+			{
+			}
+
+			[Kept]
+			[KeptMember (".ctor()")]
+			[KeptBaseType (typeof (Derived2))]
+			class Derived3 : Derived2
+			{
+				[Kept]
+				public void UsedMethod () { }
+
+				[Kept]
+				public void UnusedMethod () { }
+			}
+
+			[Kept]
+			static Derived1 GetInstance () => new Derived3 ();
+
+			[Kept]
+			public static void Test ()
+			{
+				var a = typeof (IAnnotatedInterface); // Preserve the interface
+				GetInstance ().GetType ().GetMethod ("UsedMethod");
+			}
+		}
+
+		[Kept]
+		class ConstructorAsSource
+		{
+			[Kept]
+			[KeptMember(".ctor()")]
+			public class Base
+			{
+
+			}
+
+			[Kept]
+			[KeptMember (".ctor()")]
+			[KeptBaseType (typeof(Base))]
+			public class Derived : Base
+			{
+				// TODO: new() doesn't propagate static type
+				// [Kept]
+				public void Method () { }
+			}
+
+			[Kept]
+			[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.GetMethod), new Type[] { typeof (string) }, messageCode: "IL2075")]
+			public static void Test ()
+			{
+				new Derived ().GetType ().GetMethod ("Method");
+			}
+		}
 	}
 }
