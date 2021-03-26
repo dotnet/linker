@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Loader;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -38,19 +39,42 @@ namespace ILLink.RoslynAnalyzer.Tests
 			(string, string)[]? globalAnalyzerOptions = null)
 			=> CreateCompilation (CSharpSyntaxTree.ParseText (src), globalAnalyzerOptions);
 
+		static List<MetadataReference> GetLatestNETCoreReferenceAssemblies ()
+		{
+			FileInfo fiSPCL = new FileInfo (typeof (int).Assembly.Location);
+			if (fiSPCL == null || fiSPCL.DirectoryName == null)
+				throw new FileNotFoundException ("Could not find directory containing System.Private.CoreLib.dll.");
+
+			DirectoryInfo netCoreAppDirectory = new DirectoryInfo (fiSPCL.DirectoryName);
+			string[] assemblies = Directory.GetFiles (netCoreAppDirectory.FullName, "System.*.dll");
+
+			TestCaseUtils.GetDirectoryPaths (out _, out string testAssemblyPath);
+			var expectationsPath = Path.Combine (testAssemblyPath, "Mono.Linker.Tests.Cases.Expectations.dll");
+
+			List<MetadataReference> metadataReferences = new List<MetadataReference> {
+				MetadataReference.CreateFromFile (expectationsPath) };
+			foreach (var assemblyLocation in assemblies) {
+				try {
+					var assemblyName = AssemblyName.GetAssemblyName (assemblyLocation);
+					metadataReferences.Add (MetadataReference.CreateFromFile (assemblyLocation));
+				} catch (BadImageFormatException) {
+					// Although we filter out assemblies not starting with 'System.', there can be assemblies
+					// under this namespace which are not managed, such as 'System.IO.Compression.Native.dll'
+				};
+			}
+
+			return metadataReferences;
+		}
+
 		public static async Task<CompilationWithAnalyzers> CreateCompilation (
 			SyntaxTree src,
 			(string, string)[]? globalAnalyzerOptions = null)
 		{
-			TestCaseUtils.GetDirectoryPaths (out _, out string testAssemblyPath);
-			var expectationsPath = Path.Combine (testAssemblyPath, "Mono.Linker.Tests.Cases.Expectations.dll");
-
-			var mdRef = MetadataReference.CreateFromFile (expectationsPath);
-
+			var metadataReferences = Task.Run (() => GetLatestNETCoreReferenceAssemblies());
 			var comp = CSharpCompilation.Create (
 				assemblyName: Guid.NewGuid ().ToString ("N"),
 				syntaxTrees: new SyntaxTree[] { src },
-				references: (await ReferenceAssemblies.Net.Net50.ResolveAsync (null, default)).Add (mdRef),
+				references: await metadataReferences,
 				new CSharpCompilationOptions (OutputKind.DynamicallyLinkedLibrary));
 
 			var analyzerOptions = new AnalyzerOptions (
