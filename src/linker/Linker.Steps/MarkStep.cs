@@ -368,7 +368,13 @@ namespace Mono.Linker.Steps
 
 		void Process ()
 		{
-			while (ProcessPrimaryQueue () || ProcessMarkedPending () || ProcessLazyAttributes () || ProcessLateMarkedAttributes () || MarkFullyPreservedAssemblies () || ProcessInternalsVisibleAttributes ()) ;
+			while (ProcessPrimaryQueue () ||
+				ProcessMarkedPending () ||
+				ProcessLazyAttributes () ||
+				ProcessLateMarkedAttributes () ||
+				MarkFullyPreservedAssemblies () ||
+				ProcessInternalsVisibleAttributes ()) ;
+
 			ProcessPendingTypeChecks ();
 		}
 
@@ -1343,7 +1349,7 @@ namespace Mono.Linker.Steps
 
 			foreach (ExportedType exportedType in module.ExportedTypes) {
 				MarkingHelpers.MarkExportedType (exportedType, module, new DependencyInfo (DependencyKind.ExportedType, assembly));
-				MarkingHelpers.MarkForwardedScope (exportedType.AsTypeReference (module));
+				MarkingHelpers.MarkForwardedScope (new TypeReference (exportedType.Namespace, exportedType.Name, module, exportedType.Scope));
 			}
 
 			foreach (TypeReference typeReference in module.GetTypeReferences ())
