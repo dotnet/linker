@@ -820,7 +820,7 @@ namespace Mono.Linker.Dataflow
 				return false;
 
 			var otherValue = (LeafValueWithDynamicallyAccessedMemberNode) other;
-			return SourceContext == otherValue.SourceContext 
+			return SourceContext == otherValue.SourceContext
 				&& DynamicallyAccessedMemberTypes == otherValue.DynamicallyAccessedMemberTypes;
 		}
 	}

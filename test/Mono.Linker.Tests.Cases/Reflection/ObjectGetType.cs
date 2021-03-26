@@ -164,9 +164,9 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			}
 
 			[Kept]
-			public static void Test()
+			public static void Test ()
 			{
-				TestInterface (new ClassImplementingAnnotatedInterface());
+				TestInterface (new ClassImplementingAnnotatedInterface ());
 				TestClass (new BasicAnnotatedClass ());
 				TestStruct (new BasicAnnotatedStruct ());
 			}
@@ -251,7 +251,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			}
 
 			[Kept]
-			[KeptBaseType (typeof(HierarchyAnnotatedParentClass))]
+			[KeptBaseType (typeof (HierarchyAnnotatedParentClass))]
 			class HierarchyAnnotatedParentClassChild : HierarchyAnnotatedParentClass
 			{
 				[Kept]
@@ -284,14 +284,14 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			}
 
 			[Kept]
-			[KeptInterface (typeof(IHierarchyAnnotatedParentInterface))]
+			[KeptInterface (typeof (IHierarchyAnnotatedParentInterface))]
 			[KeptMember (".ctor()")]
 			class HierarchyAnnotatedParentInterfaceParent : IHierarchyAnnotatedParentInterface
 			{
 			}
 
 			[Kept]
-			[KeptBaseType (typeof(HierarchyAnnotatedParentInterfaceParent))]
+			[KeptBaseType (typeof (HierarchyAnnotatedParentInterfaceParent))]
 			[KeptMember (".ctor()")]
 			class HierarchyAnnotatedParentInterfaceChild : HierarchyAnnotatedParentInterfaceParent
 			{
@@ -318,7 +318,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		class DeepHierarchy
 		{
 			[Kept]
-			[KeptMember(".ctor()")]
+			[KeptMember (".ctor()")]
 			//[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 			class BaseClass
 			{
@@ -326,7 +326,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 			[Kept]
 			[KeptMember (".ctor()")]
-			[KeptBaseType (typeof(BaseClass))]
+			[KeptBaseType (typeof (BaseClass))]
 			class DerivedClass1 : BaseClass
 			{
 			}
@@ -370,7 +370,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 			[Kept]
 			[KeptMember (".ctor()")]
-			[KeptInterface(typeof(IAnnotatedInterface))]
+			[KeptInterface (typeof (IAnnotatedInterface))]
 			class BaseImplementingInterface : IAnnotatedInterface
 			{
 			}
@@ -416,7 +416,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		class ConstructorAsSource
 		{
 			[Kept]
-			[KeptMember(".ctor()")]
+			[KeptMember (".ctor()")]
 			public class Base
 			{
 
@@ -424,7 +424,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 			[Kept]
 			[KeptMember (".ctor()")]
-			[KeptBaseType (typeof(Base))]
+			[KeptBaseType (typeof (Base))]
 			public class Derived : Base
 			{
 				// TODO: new() doesn't propagate static type
