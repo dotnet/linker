@@ -17,6 +17,8 @@ namespace ILLink.RoslynAnalyzer
 	[DiagnosticAnalyzer (LanguageNames.CSharp, LanguageNames.VisualBasic)]
 	public sealed class AvoidAssemblyLocationInSingleFile : DiagnosticAnalyzer
 	{
+		const string RequiresAssemblyFilesAttribute = nameof (RequiresAssemblyFilesAttribute);
+
 		public const string IL3000 = nameof (IL3000);
 		public const string IL3001 = nameof (IL3001);
 
@@ -84,6 +86,8 @@ namespace ILLink.RoslynAnalyzer
 				var methods = methodsBuilder.ToImmutable ();
 
 				context.RegisterOperationAction (operationContext => {
+					if (operationContext.ContainingSymbol.HasAttribute (RequiresAssemblyFilesAttribute))
+						return;
 					var access = (IPropertyReferenceOperation) operationContext.Operation;
 					var property = access.Property;
 					if (!Contains (properties, property, SymbolEqualityComparer.Default)) {
@@ -94,6 +98,8 @@ namespace ILLink.RoslynAnalyzer
 				}, OperationKind.PropertyReference);
 
 				context.RegisterOperationAction (operationContext => {
+					if (operationContext.ContainingSymbol.HasAttribute (RequiresAssemblyFilesAttribute))
+						return;
 					var invocation = (IInvocationOperation) operationContext.Operation;
 					var targetMethod = invocation.TargetMethod;
 					if (!Contains (methods, targetMethod, SymbolEqualityComparer.Default)) {

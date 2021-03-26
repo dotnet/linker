@@ -19,6 +19,33 @@ namespace ILLink.RoslynAnalyzer.Tests
 				expected);
 		}
 
+		// TODO: Remove this once we have the new attribute available for linker testing.
+		static Task VerifySingleFileAnalyzerWithRequiresAssemblyFilesAttribute (string source, params DiagnosticResult[] expected)
+		{
+			source = @"
+using System.Reflection;
+namespace System.Diagnostics.CodeAnalysis
+{
+#nullable enable
+    [AttributeUsage(AttributeTargets.Constructor |
+                    AttributeTargets.Event |
+                    AttributeTargets.Method |
+                    AttributeTargets.Property,
+                    Inherited = false,
+                    AllowMultiple = false)]
+    public sealed class RequiresAssemblyFilesAttribute : Attribute
+    {
+			public RequiresAssemblyFilesAttribute() { }
+			public string? Message { get; set; }
+			public string? Url { get; set; }
+	}
+}
+" + source;
+			return VerifyCS.VerifyAnalyzerAsync (source,
+				TestCaseUtils.UseMSBuildProperties (MSBuildPropertyOptionNames.EnableSingleFileAnalyzer),
+				expected);
+		}
+
 		[Fact]
 		public Task GetExecutingAssemblyLocation ()
 		{
@@ -139,6 +166,26 @@ class C
 			// If 'PublishSingleFile' is not set to true, no diagnostics should be produced by the analyzer. This will
 			// effectively verify that the number of produced diagnostics matches the number of expected ones (zero).
 			return VerifyCS.VerifyAnalyzerAsync (src);
+		}
+
+		[Fact]
+		public Task SupressWarningsWithRequiresAssemblyFiles ()
+		{
+			const string src = @"
+class C
+{
+    [System.Diagnostics.CodeAnalysis.RequiresAssemblyFiles]
+    public void M()
+    {
+        var a = Assembly.GetExecutingAssembly();
+        _ = a.Location;
+        var b = Assembly.GetExecutingAssembly();
+        _ = b.GetFile(""/some/file/path"");
+        _ = b.GetFiles();
+    }
+}";
+
+			return VerifySingleFileAnalyzerWithRequiresAssemblyFilesAttribute (src);
 		}
 	}
 }
