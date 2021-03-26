@@ -39,25 +39,16 @@ namespace ILLink.RoslynAnalyzer.Tests
 			(string, string)[]? globalAnalyzerOptions = null)
 			=> CreateCompilation (CSharpSyntaxTree.ParseText (src), globalAnalyzerOptions);
 
-		static List<MetadataReference> GetSystemPrivateCoreLibMetadataReference ()
-		{
-			FileInfo fiSPCL = new FileInfo (typeof (int).Assembly.Location);
-			if (fiSPCL == null)
-				throw new FileNotFoundException ("Could not find System.Private.CoreLib.dll.");
-
-			List<MetadataReference> metadataReferences = new List<MetadataReference> { MetadataReference.CreateFromFile (fiSPCL.FullName) };
-			return metadataReferences;
-		}
-
 		public static async Task<CompilationWithAnalyzers> CreateCompilation (
 			SyntaxTree src,
 			(string, string)[]? globalAnalyzerOptions = null)
 		{
-			var metadataReferences = Task.Run (() => GetSystemPrivateCoreLibMetadataReference ());
 			var comp = CSharpCompilation.Create (
 				assemblyName: Guid.NewGuid ().ToString ("N"),
 				syntaxTrees: new SyntaxTree[] { src },
-				references: await metadataReferences,
+				references: await Task.Run (() => new List<MetadataReference> {
+					MetadataReference.CreateFromFile (typeof (int).Assembly.Location)
+				}),
 				new CSharpCompilationOptions (OutputKind.DynamicallyLinkedLibrary));
 
 			var analyzerOptions = new AnalyzerOptions (
