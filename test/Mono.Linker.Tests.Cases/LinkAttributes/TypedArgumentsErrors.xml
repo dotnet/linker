@@ -16,6 +16,16 @@
           <argument type="System.Object">str</argument>
         </attribute>
       </field>
+      <field name="field">
+        <attribute fullname="Mono.Linker.Tests.Cases.LinkAttributes.TypedArgumentsErrors/ObjectAttribute">
+          <argument type="System.Bar">str4</argument>
+        </attribute>
+      </field>
+      <field name="field">
+        <attribute fullname="Mono.Linker.Tests.Cases.LinkAttributes.TypedArgumentsErrors/ObjectAttribute">
+          <argument type="System.Type">str5</argument>
+        </attribute>
+      </field>
     </type>
   </assembly>
 </linker>

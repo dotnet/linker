@@ -13,6 +13,7 @@ namespace Mono.Linker.Tests.Cases.LinkAttributes
 	[LogContains ("Assigning external custom attribute 'Mono.Linker.Tests.Cases.LinkAttributes.TypedArguments.EnumAttribute.EnumAttribute(TypedArgumentsEnumA) { args: Mono.Linker.Tests.Cases.LinkAttributes.TypedArgumentsEnumA 3 }' instance to 'System.Object Mono.Linker.Tests.Cases.LinkAttributes.TypedArguments::field3'")]
 	[LogContains ("Assigning external custom attribute 'Mono.Linker.Tests.Cases.LinkAttributes.TypedArguments.ByteAttribute.ByteAttribute(Byte) { args: System.Byte 6 }' instance to 'System.Object Mono.Linker.Tests.Cases.LinkAttributes.TypedArguments::field4'")]
 	[LogContains ("Assigning external custom attribute 'Mono.Linker.Tests.Cases.LinkAttributes.TypedArguments.StringAttribute.StringAttribute(String) { args: System.String str }' instance to 'System.Object Mono.Linker.Tests.Cases.LinkAttributes.TypedArguments::field5'")]
+	[LogContains ("Assigning external custom attribute 'Mono.Linker.Tests.Cases.LinkAttributes.TypedArguments.TypeAttribute.TypeAttribute(Type) { args: System.Type System.DateTime }' instance to 'System.Object Mono.Linker.Tests.Cases.LinkAttributes.TypedArguments::field6'")]
 	class TypedArguments
 	{
 		[Kept]
@@ -30,6 +31,9 @@ namespace Mono.Linker.Tests.Cases.LinkAttributes
 		[Kept]
 		static object field5;
 
+		[Kept]
+		static object field6;
+
 		public static void Main ()
 		{
 			field1 = null;
@@ -37,9 +41,9 @@ namespace Mono.Linker.Tests.Cases.LinkAttributes
 			field3 = null;
 			field4 = null;
 			field5 = null;
+			field6 = null;
 		}
 
-		[EnumAttribute (TypedArgumentsEnumA.Value)]
 		public class ObjectAttribute : Attribute
 		{
 			public ObjectAttribute (object objectValue)
@@ -92,6 +96,17 @@ namespace Mono.Linker.Tests.Cases.LinkAttributes
 			}
 
 			public StringAttribute (object objectValue)
+			{
+			}
+		}
+
+		public class TypeAttribute : Attribute
+		{
+			public TypeAttribute (string stringValue)
+			{
+			}
+
+			public TypeAttribute (Type typeValue)
 			{
 			}
 		}

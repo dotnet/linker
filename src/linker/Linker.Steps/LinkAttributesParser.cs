@@ -172,10 +172,10 @@ namespace Mono.Linker.Steps
 		CustomAttributeArgument? ReadCustomAttributeArgument (XPathNodeIterator iterator)
 		{
 			TypeReference typeref = ResolveArgumentType (iterator);
-			if (typeref == null)
+			if (typeref is null)
 				return null;
 
-			object svalue = iterator.Current.Value;
+			string svalue = iterator.Current.Value;
 
 			//
 			// Builds CustomAttributeArgument in the same way as it would be
@@ -186,15 +186,16 @@ namespace Mono.Linker.Steps
 			switch (typeref.MetadataType) {
 			case MetadataType.Object:
 				iterator = iterator.Current.SelectChildren ("argument", string.Empty);
-				if (iterator?.MoveNext () != true)
+				if (iterator?.MoveNext () != true) {
 					_context.LogError ($"Custom attribute argument for 'System.Object' requires nested 'argument' node", 1043);
+					return null;
+				}
 
-				var boxedType = ResolveArgumentType (iterator);
-				if (boxedType == null)
+				var boxedValue = ReadCustomAttributeArgument (iterator);
+				if (boxedValue is null)
 					return null;
 
-				svalue = iterator.Current.Value;
-				return new CustomAttributeArgument (typeref, new CustomAttributeArgument (boxedType, ConvertStringValue (svalue, boxedType)));
+				return new CustomAttributeArgument (typeref, boxedValue);
 
 			case MetadataType.Char:
 			case MetadataType.Byte:
@@ -213,17 +214,27 @@ namespace Mono.Linker.Steps
 				if (enumType?.IsEnum != true)
 					goto default;
 
-				var enumField = enumType.Fields.Where (f => f.IsStatic && f.Name == (string) svalue).FirstOrDefault ();
-				if (enumField != null)
-					svalue = enumField.Constant;
+				var enumField = enumType.Fields.Where (f => f.IsStatic && f.Name == svalue).FirstOrDefault ();
+				object evalue = enumField?.Constant ?? svalue;
 
 				typeref = enumType.GetEnumUnderlyingType ();
-				return new CustomAttributeArgument (enumType, ConvertStringValue (svalue, typeref));
+				return new CustomAttributeArgument (enumType, ConvertStringValue (evalue, typeref));
+
+			case MetadataType.Class:
+				if (!typeref.IsTypeOf ("System", "Type"))
+					goto default;
+
+				TypeReference type = _context.TypeNameResolver.ResolveTypeName (svalue);
+				if (type == null) {
+					_context.LogError ($"Could not resolve custom attribute type value '{svalue}'", 1044, _xmlDocumentLocation);
+					return null;
+				}
+
+				return new CustomAttributeArgument (typeref, type);
 			default:
 				// TODO: Add support for null values
 				// TODO: Add suppport for arrays
-				// TODO: Add support for System.Type
-				_context.LogError ($"Unexpected attribute argument type '{typeref.GetDisplayName ()}'", 9999);
+				_context.LogError ($"Unexpected attribute argument type '{typeref.GetDisplayName ()}'", 1045);
 				return null;
 			}
 

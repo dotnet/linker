@@ -149,6 +149,14 @@ the error code. For example:
 
 - The syntax for custom attribute value for 'type' requires to also specify the underlying attribute type.
 
+#### `IL1044`: Could not resolve custom attribute type value '{value}'
+
+- The 'value' specified for the custom attribute of `System.Type` type could not be resolved.
+
+#### `IL1045`: Unexpected attribute argument type 'type'
+
+- The type name used with attribute type is not one of the supported types.
+
 ----
 ## Warning Codes
 

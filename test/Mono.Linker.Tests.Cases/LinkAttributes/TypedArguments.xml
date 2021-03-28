@@ -19,7 +19,7 @@
         <attribute fullname="Mono.Linker.Tests.Cases.LinkAttributes.TypedArguments/EnumAttribute">
           <argument type="Mono.Linker.Tests.Cases.LinkAttributes.TypedArgumentsEnumA">3</argument>
         </attribute>
-      </field>      
+      </field>
       <field name="field4">
         <attribute fullname="Mono.Linker.Tests.Cases.LinkAttributes.TypedArguments/ByteAttribute">
           <argument type="System.Byte">6</argument>
@@ -29,7 +29,12 @@
         <attribute fullname="Mono.Linker.Tests.Cases.LinkAttributes.TypedArguments/StringAttribute">
           <argument type="System.String">str</argument>
         </attribute>
-      </field>      
+      </field>
+      <field name="field6">
+        <attribute fullname="Mono.Linker.Tests.Cases.LinkAttributes.TypedArguments/TypeAttribute">
+          <argument type="System.Type">System.DateTime</argument>
+        </attribute>
+      </field>
     </type>
   </assembly>
 </linker>
