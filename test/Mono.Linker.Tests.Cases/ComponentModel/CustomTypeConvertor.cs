@@ -10,7 +10,7 @@ namespace Mono.Linker.Tests.Cases.ComponentModel
 
 	[Kept]
 	[KeptAttributeAttribute (typeof (TypeConverterAttribute))]
-	[KeptMember(".ctor()")]
+	[KeptMember (".ctor()")]
 	class CustomDataType
 	{
 		[Kept]
