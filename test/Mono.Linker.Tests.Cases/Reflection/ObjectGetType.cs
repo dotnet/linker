@@ -11,7 +11,6 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.Reflection
 {
-	[SetupLinkAttributesFile ("ObjectGetTypeAnnotations.xml")]
 	public class ObjectGetType
 	{
 		public static void Main ()
@@ -104,7 +103,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 		class BasicAnnotationWithNoDerivedClasses
 		{
-			// [DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 			public interface IBasicAnnotatedInterface
 			{
 			}
@@ -129,7 +128,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 			[Kept]
 			[KeptMember (".ctor()")]
-			//[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 			class BasicAnnotatedClass
 			{
 				[Kept]
@@ -146,7 +146,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 			[Kept]
 			[KeptMember (".ctor()")]
-			//[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 			struct BasicAnnotatedStruct
 			{
 				// TODO: Handle boxing and unboxing operations
@@ -191,7 +192,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			}
 
 			[Kept]
-			//[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 			class AnnotatedClass
 			{
 				[Kept]
@@ -245,7 +247,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		{
 			[Kept]
 			[KeptMember (".ctor()")]
-			//[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 			class HierarchyAnnotatedParentClass
 			{
 			}
@@ -278,7 +281,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		class DerivedWithBaseAndAnnotatedInterface
 		{
 			[Kept]
-			//[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 			public interface IHierarchyAnnotatedParentInterface
 			{
 			}
@@ -319,7 +323,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		{
 			[Kept]
 			[KeptMember (".ctor()")]
-			//[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			[KeptAttributeAttribute(typeof(DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 			class BaseClass
 			{
 			}
@@ -363,7 +368,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		class DeepInterfaceHierarchy
 		{
 			[Kept]
-			//[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 			public interface IAnnotatedInterface
 			{
 			}

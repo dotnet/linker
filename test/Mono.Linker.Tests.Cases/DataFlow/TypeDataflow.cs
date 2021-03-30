@@ -11,7 +11,6 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.DataFlow
 {
-	[SetupLinkAttributesFile ("TypeDataFlowAnnotations.xml")]
 	public class TypeDataflow
 	{
 		[Kept]
@@ -89,7 +88,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		[Kept]
 		[KeptMember (".ctor()")]
-		// [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+		[KeptAttributeAttribute(typeof(DynamicallyAccessedMembersAttribute))]
+		[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
 		public class AnnotatedViaXmlTypeInstance
 		{
 			[Kept]
@@ -106,7 +106,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			public void DerivedPublicMethod () { }
 		}
 
-		// [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 		public interface InterfaceWithAnnotation
 		{
 			public void Foo () { }
@@ -114,7 +114,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		[Kept]
 		[KeptMember (".ctor()")]
-		// [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+		[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 		public class ImplementsInterfaceWithAnnotationAndHasDifferentAnnotation : InterfaceWithAnnotation
 		{
 			// In this case the interfac will be removed, but its annotation still applies
