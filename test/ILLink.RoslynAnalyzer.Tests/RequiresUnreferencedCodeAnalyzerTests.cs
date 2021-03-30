@@ -183,14 +183,14 @@ public class C
 }";
 			// No fix available inside a lambda, requries manual code change since attribute cannot
 			// be applied
-			return VerifyRequiresUnreferencedCodeCodeFix(
+			return VerifyRequiresUnreferencedCodeCodeFix (
 				src,
 				fix,
 				baselineExpected: new[] {
 					// /0/Test0.cs(12,22): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. message.
 					VerifyCS.Diagnostic().WithSpan(12, 22, 12, 26).WithArguments("C.M1()", "message", "")
 				},
-				fixedExpected: Array.Empty<DiagnosticResult>());
+				fixedExpected: Array.Empty<DiagnosticResult> ());
 		}
 
 		[Fact]
@@ -227,14 +227,14 @@ public class C
     }
 }";
 			// Roslyn currently doesn't simplify the attribute name properly, see https://github.com/dotnet/roslyn/issues/52039
-			return VerifyRequiresUnreferencedCodeCodeFix(
+			return VerifyRequiresUnreferencedCodeCodeFix (
 				src,
 				fix,
 				baselineExpected: new[] {
 					// /0/Test0.cs(12,28): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. message.
 					VerifyCS.Diagnostic().WithSpan(12, 28, 12, 32).WithArguments("C.M1()", "message", "")
 				},
-				fixedExpected: Array.Empty<DiagnosticResult>());
+				fixedExpected: Array.Empty<DiagnosticResult> ());
 		}
 
 		[Fact]
@@ -264,7 +264,7 @@ public class C
     public C() => M1();
 }";
 			// Roslyn currently doesn't simplify the attribute name properly, see https://github.com/dotnet/roslyn/issues/52039
-			return VerifyRequiresUnreferencedCodeCodeFix(
+			return VerifyRequiresUnreferencedCodeCodeFix (
 				src,
 				fix,
 				baselineExpected: new[] {
@@ -303,7 +303,7 @@ public class C
     int M2 => M1();
 }";
 			// Can't apply RUC on properties at the moment
-			return VerifyRequiresUnreferencedCodeCodeFix(
+			return VerifyRequiresUnreferencedCodeCodeFix (
 				src,
 				fix,
 				baselineExpected: new[] {

@@ -98,17 +98,15 @@ namespace ILLink.RoslynAnalyzer
 					for (var current = operationContext.Operation;
 						 current is not null;
 						 current = current.Parent) {
-							if (current is ILocalFunctionOperation local) {
-								containingSymbol = local.Symbol;
-								break;
-							} else if (current is IAnonymousFunctionOperation lambda) {
-								containingSymbol = lambda.Symbol;
-								break;
-							}
-							else if (current is IMethodBodyBaseOperation)
-							{
-								break;
-							}
+						if (current is ILocalFunctionOperation local) {
+							containingSymbol = local.Symbol;
+							break;
+						} else if (current is IAnonymousFunctionOperation lambda) {
+							containingSymbol = lambda.Symbol;
+							break;
+						} else if (current is IMethodBodyBaseOperation) {
+							break;
+						}
 					}
 					containingSymbol ??= operationContext.ContainingSymbol;
 

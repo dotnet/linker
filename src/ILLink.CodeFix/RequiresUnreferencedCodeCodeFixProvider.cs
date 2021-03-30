@@ -48,10 +48,9 @@ namespace ILLink.CodeFix
 				 current = current.Parent) {
 				if (current is LambdaExpressionSyntax) {
 					return;
-				}
-				else if (current.IsKind(SyntaxKind.LocalFunctionStatement)
-					|| current is BaseMethodDeclarationSyntax) {
-					declarationSyntax = (CSharpSyntaxNode)current;
+				} else if (current.IsKind (SyntaxKind.LocalFunctionStatement)
+					  || current is BaseMethodDeclarationSyntax) {
+					declarationSyntax = (CSharpSyntaxNode) current;
 					break;
 				}
 			}
