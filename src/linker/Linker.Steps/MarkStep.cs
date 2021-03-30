@@ -265,7 +265,7 @@ namespace Mono.Linker.Steps
 
 			foreach (var ca in type.CustomAttributes) {
 				TypeDefinition caType = ca.AttributeType.Resolve ();
-				if (caType.Name == "DynamicInterfaceCastableImplementationAttribute" && caType.Namespace == "System.Runtime.InteropServices")
+				if (caType?.Name == "DynamicInterfaceCastableImplementationAttribute" && caType.Namespace == "System.Runtime.InteropServices")
 					return true;
 			}
 			return false;

@@ -57,21 +57,16 @@ namespace Mono.Linker
 				if (cache == null)
 					cache = new Dictionary<Type, List<Attribute>> ();
 
-				AddAttribute (ref cache, attributeValue);
+				Type attributeValueType = attributeValue.GetType ();
+				if (!cache.TryGetValue (attributeValueType, out var attributeList)) {
+					attributeList = new List<Attribute> ();
+					cache.Add (attributeValueType, attributeList);
+				}
+
+				attributeList.Add (attributeValue);
 			}
 
 			return new LinkerAttributesInformation (cache);
-		}
-
-		static void AddAttribute (ref Dictionary<Type, List<Attribute>> attributes, Attribute attributeValue)
-		{
-			Type attributeValueType = attributeValue.GetType ();
-			if (!attributes.TryGetValue (attributeValueType, out var attributeList)) {
-				attributeList = new List<Attribute> ();
-				attributes.Add (attributeValueType, attributeList);
-			}
-
-			attributeList.Add (attributeValue);
 		}
 
 		public bool HasAttribute<T> () where T : Attribute

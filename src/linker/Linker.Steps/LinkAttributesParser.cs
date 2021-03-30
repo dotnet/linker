@@ -44,14 +44,13 @@ namespace Mono.Linker.Steps
 				TypeDefinition attributeType;
 				string internalAttribute = GetAttribute (iterator.Current, "internal");
 				if (!string.IsNullOrEmpty (internalAttribute)) {
-					var removeAttributeType = typeof (RemoveAttributeInstancesAttribute);
-					var removeAttributeTypeAssembly = AssemblyDefinition.ReadAssembly (removeAttributeType.Assembly.Location);
-					var tr = removeAttributeTypeAssembly.MainModule.ImportReference (removeAttributeType);
-					attributeType = tr.Resolve ();
+					attributeType = GenerateRemoveAttributeInstancesAttribute ();
+					if (attributeType == null)
+						continue;
 
 					// TODO: Replace with IsAttributeType check once we have it
 					if (provider is not TypeDefinition) {
-						_context.LogWarning ($"Internal attribute '{removeAttributeType.Name}' can only be used on attribute types", 2048, _xmlDocumentLocation);
+						_context.LogWarning ($"Internal attribute '{attributeType.Name}' can only be used on attribute types", 2048, _xmlDocumentLocation);
 						continue;
 					}
 				} else {
@@ -71,6 +70,37 @@ namespace Mono.Linker.Steps
 			}
 
 			return builder.ToArray ();
+		}
+
+		TypeDefinition GenerateRemoveAttributeInstancesAttribute ()
+		{
+			if (_context.MarkedKnownMembers.RemoveAttributeInstancesAttributeDefinition != null)
+				return _context.MarkedKnownMembers.RemoveAttributeInstancesAttributeDefinition;
+
+			var voidType = BCL.FindPredefinedType ("System", "Void", _context);
+			if (voidType == null)
+				return null;
+
+			var attributeType = BCL.FindPredefinedType ("System", "Attribute", _context);
+			if (attributeType == null)
+				return null;
+
+			//
+			// Generates metadata information for internal type
+			//
+			// public sealed class RemoveAttributeInstancesAttribute : Attribute
+			// {
+			//		public RemoveAttributeInstancesAttribute () {}
+			// }
+			//
+			var td = new TypeDefinition ("", "RemoveAttributeInstancesAttribute", TypeAttributes.Public);
+			td.BaseType = attributeType;
+
+			const MethodAttributes ctorAttributes = MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName | MethodAttributes.Final;
+			var ctor = new MethodDefinition (".ctor", ctorAttributes, voidType);
+			td.Methods.Add (ctor);
+
+			return _context.MarkedKnownMembers.RemoveAttributeInstancesAttributeDefinition = td;
 		}
 
 		CustomAttribute CreateCustomAttribute (XPathNodeIterator iterator, TypeDefinition attributeType)
