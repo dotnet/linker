@@ -71,10 +71,11 @@ namespace Mono.Linker.Steps
 				sb.Append (ca.Constructor.GetDisplayName ());
 				sb.Append (" { args: ");
 				for (int i = 0; i < ca.ConstructorArguments.Count; ++i) {
-					var caa = ca.ConstructorArguments[i];
-					sb.Append ($"{caa.Type.GetDisplayName ()} {caa.Value}");
 					if (i > 0)
 						sb.Append (", ");
+
+					var caa = ca.ConstructorArguments[i];
+					sb.Append ($"{caa.Type.GetDisplayName ()} {caa.Value}");
 				}
 				sb.Append (" }");
 
