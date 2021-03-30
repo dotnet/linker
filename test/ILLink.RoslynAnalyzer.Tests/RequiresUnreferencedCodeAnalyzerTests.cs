@@ -110,17 +110,17 @@ public class C
     [RequiresUnreferencedCodeAttribute(""message"")]
     public int M1() => 0;
 
-    [RequiresUnreferencedCode(""calls M1"")]
+    [RequiresUnreferencedCode(""Calls M1"")]
     int M2() => M1();
 }
 class D
 {
-    [RequiresUnreferencedCode(""calls M1"")]
+    [RequiresUnreferencedCode(""Calls M1"")]
     public int M3(C c) => c.M1();
 
     public class E
     {
-        [RequiresUnreferencedCode(""calls M1"")]
+        [RequiresUnreferencedCode(""Calls M1"")]
         public int M4(C c) => c.M1();
     }
 }
@@ -222,7 +222,7 @@ public class C
 
     Action M2()
     {
-        [global::System.Diagnostics.CodeAnalysis.RequiresUnreferencedCodeAttribute(""calls M1"")] void Wrapper () => M1();
+        [global::System.Diagnostics.CodeAnalysis.RequiresUnreferencedCodeAttribute(""Calls M1"")] void Wrapper () => M1();
         return Wrapper;
     }
 }";
