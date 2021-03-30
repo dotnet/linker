@@ -882,12 +882,14 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 				TestNullMethod ();
 				TestUnknownInput (null);
+				TestUnknownMethodByNoTypeArguments (null);
 				TestWithNoArguments ();
 
 				TestWithRequirements ();
 				TestWithRequirementsFromParam (null);
 				TestWithRequirementsFromGenericParam<TestType> ();
 				TestWithRequirementsViaRuntimeMethod ();
+				TestWithRequirementsButNoTypeArguments ();
 
 				TestWithNoRequirements ();
 				TestWithNoRequirementsFromParam (null);
@@ -912,6 +914,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			static void TestUnknownInput (MethodInfo mi)
 			{
 				mi.MakeGenericMethod (typeof (TestType));
+			}
+
+			[RecognizedReflectionAccessPattern]
+			static void TestUnknownMethodByNoTypeArguments (MethodInfo mi)
+			{
+				mi.MakeGenericMethod (Type.EmptyTypes);
 			}
 
 			[RecognizedReflectionAccessPattern]
@@ -955,6 +963,13 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 				typeof (MakeGenericMethod).GetRuntimeMethod (nameof (GenericWithRequirements), Type.EmptyTypes)
 					.MakeGenericMethod (typeof (TestType));
+			}
+
+			[RecognizedReflectionAccessPattern]
+			static void TestWithRequirementsButNoTypeArguments ()
+			{
+				typeof (MakeGenericMethod).GetMethod (nameof (GenericWithRequirements), BindingFlags.Static)
+					.MakeGenericMethod (Type.EmptyTypes);
 			}
 
 			public static void GenericWithRequirements<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] T> ()
