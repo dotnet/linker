@@ -11,7 +11,7 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.Reflection
 {
-	[SetupLinkAttributesFile ("ObjectGetTypeAnnotations.xml")]
+	[ExpectedNoWarnings]
 	public class ObjectGetType
 	{
 		public static void Main ()
@@ -19,28 +19,12 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			SealedType.Test ();
 			UnsealedType.Test ();
 
-			//Tests to cover the expanded attribute usage (class, interface, struct) for DynamicallyAccessedMembersAttrbute
-			// Basic
-			// - Annotated works: interface, class, struct
-			// - Unannotated warns: class, interface 
-			// - Condition (if-else)
-			//		- Works: sealed and properly annotated
-			//		- Warns: Properly annotated and nonannotated
-			// Hierarchy
-			//		- Parent
-			//		- Ancestor
-			//		- Siblings have different annotations
-			// Conflict
-			//		- Sealed have annotations that conflict with what the linker can find
-			//		- Ancestor tree has types with different annotations
-			//		- Annotation is applied mid - way in the tree
-			//			- What happens to parent types
-			//			- What happens to children types
-
 			BasicAnnotationWithNoDerivedClasses.Test ();
-			MultipleValuesWithAndWithoutAnnotations.Test (0);
-			MultipleValuesWithAndWithoutAnnotations.Test (1);
-			MultipleValuesWithAndWithoutAnnotations.Test (2);
+			MultipleValuesWithAnnotations.Test (0);
+			MultipleValuesWithAnnotations.Test (1);
+			MultipleValuesWithAndWithoutAnnotationsWarns.Test (0);
+			MultipleValuesWithAndWithoutAnnotationsWarns.Test (1);
+			MultipleValuesWithAndWithoutAnnotationsWarns.Test (2);
 
 			SingleDerivedWithAnnotatedParent.Test ();
 			DerivedWithBaseAndAnnotatedInterface.Test ();
@@ -48,6 +32,13 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			DeepInterfaceHierarchy.Test ();
 
 			ConstructorAsSource.Test ();
+
+			InterfaceSeenFirst.Test ();
+			AnnotationsRequestedOnImplementation.Test ();
+			AnnotationsRequestedOnInterface.Test ();
+
+			AllAnnotationsAreApplied.Test ();
+			SealedWithAnnotation.Test ();
 		}
 
 		[Kept]
@@ -92,7 +83,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			}
 
 			[Kept]
-			[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.GetMethod), new Type[] { typeof (string) }, messageCode: "IL2075")]
+			[ExpectedWarning ("IL2075", "GetMethod")]
 			public static void Test ()
 			{
 				s_unsealedClassField = new UnsealedClass ();
@@ -102,9 +93,10 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			}
 		}
 
+		[Kept]
 		class BasicAnnotationWithNoDerivedClasses
 		{
-			// [DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 			public interface IBasicAnnotatedInterface
 			{
 			}
@@ -129,7 +121,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 			[Kept]
 			[KeptMember (".ctor()")]
-			//[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 			class BasicAnnotatedClass
 			{
 				[Kept]
@@ -146,7 +139,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 			[Kept]
 			[KeptMember (".ctor()")]
-			//[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 			struct BasicAnnotatedStruct
 			{
 				// TODO: Handle boxing and unboxing operations
@@ -157,7 +151,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 			[Kept]
 			// TODO: This requires boxing/unboxing to correctly propagate static type
-			[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.GetMethod), new Type[] { typeof (string) }, messageCode: "IL2075")]
+			[ExpectedWarning ("IL2075", "GetMethod")]
 			static void TestStruct (BasicAnnotatedStruct instance)
 			{
 				instance.GetType ().GetMethod ("UsedMethod");
@@ -173,7 +167,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		class MultipleValuesWithAndWithoutAnnotations
+		class MultipleValuesWithAnnotations
 		{
 			[Kept]
 			sealed class SealedClass
@@ -191,7 +185,61 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			}
 
 			[Kept]
-			//[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			class AnnotatedClass
+			{
+				[Kept]
+				public AnnotatedClass () { }
+
+				[Kept]
+				public void UsedMethod () { }
+
+				[Kept] // Type is not sealed, so the annotation is applied instead
+				public static void UnusedMethod () { }
+
+				[Kept]
+				public static AnnotatedClass Instance () => new AnnotatedClass ();
+			}
+
+			[Kept]
+			public static void Test (int param)
+			{
+				object instance;
+				switch (param) {
+				case 0:
+					instance = SealedClass.Instance ();
+					break;
+				default:
+					instance = AnnotatedClass.Instance ();
+					break;
+				}
+
+				instance.GetType ().GetMethod ("UsedMethod");
+			}
+		}
+
+		[Kept]
+		class MultipleValuesWithAndWithoutAnnotationsWarns
+		{
+			[Kept]
+			sealed class SealedClass
+			{
+				[Kept]
+				public SealedClass () { }
+
+				[Kept]
+				public void UsedMethod () { }
+
+				public static void UnusedMethod () { }
+
+				[Kept]
+				public static SealedClass Instance () => new SealedClass ();
+			}
+
+			[Kept]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 			class AnnotatedClass
 			{
 				[Kept]
@@ -222,6 +270,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			}
 
 			[Kept]
+			[ExpectedWarning ("IL2075", "GetMethod")]
 			public static void Test (int param)
 			{
 				object instance;
@@ -241,11 +290,13 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			}
 		}
 
+		[Kept]
 		class SingleDerivedWithAnnotatedParent
 		{
 			[Kept]
 			[KeptMember (".ctor()")]
-			//[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 			class HierarchyAnnotatedParentClass
 			{
 			}
@@ -278,7 +329,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		class DerivedWithBaseAndAnnotatedInterface
 		{
 			[Kept]
-			//[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 			public interface IHierarchyAnnotatedParentInterface
 			{
 			}
@@ -319,7 +371,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		{
 			[Kept]
 			[KeptMember (".ctor()")]
-			//[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 			class BaseClass
 			{
 			}
@@ -363,7 +416,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		class DeepInterfaceHierarchy
 		{
 			[Kept]
-			//[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 			public interface IAnnotatedInterface
 			{
 			}
@@ -433,10 +487,308 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			}
 
 			[Kept]
-			[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.GetMethod), new Type[] { typeof (string) }, messageCode: "IL2075")]
+			[ExpectedWarning ("IL2075", "GetMethod")]
 			public static void Test ()
 			{
 				new Derived ().GetType ().GetMethod ("Method");
+			}
+		}
+
+		[Kept]
+		class InterfaceSeenFirst
+		{
+			[Kept]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
+			interface IAnnotatedInterface
+			{
+				[Kept]
+				void InterfaceMethod ();
+			}
+
+			[Kept]
+			class FirstImplementationClass : IAnnotatedInterface
+			{
+				public void InterfaceMethod () { }
+
+				[Kept]
+				public static void Do () { }
+			}
+
+			[Kept]
+			[KeptMember (".ctor()")]
+			[KeptInterface (typeof (IAnnotatedInterface))]
+			class ImplementationClass : IAnnotatedInterface
+			{
+				[Kept]
+				void IAnnotatedInterface.InterfaceMethod ()
+				{
+				}
+			}
+
+			[Kept]
+			static ImplementationClass GetInstance () => new ImplementationClass ();
+
+			[Kept]
+			public static void Test ()
+			{
+				// This is to force marking of a type which implements the interface in question
+				FirstImplementationClass.Do ();
+				// Make sure the interface is kept
+				var i = typeof (IAnnotatedInterface);
+
+				// Now force walk of the annotations for the ImplementationClass
+				// At this point the interface should already have been processed - which is the point of this test
+				// that it reuses the already processed info correctly.
+				GetInstance ().GetType ().GetMethod ("InterfaceMethod");
+			}
+		}
+
+		[Kept]
+		class AnnotationsRequestedOnImplementation
+		{
+			[Kept]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
+			interface IAnnotatedInterface
+			{
+				[Kept] // Kept because it's implemented on the class
+				void InterfaceMethod ();
+
+				// Annotation will not be applied to the interface, since nothing
+				// asked for it via reflection.
+				static void DoSomething () { }
+
+				void DefaultInterfaceMethod () { }
+			}
+
+			[Kept]
+			[KeptMember (".ctor()")]
+			[KeptInterface (typeof (IAnnotatedInterface))]
+			class ImplementationClass : IAnnotatedInterface
+			{
+				// Annotation will be applied to the implementation type which the reflection
+				// asked for
+				[Kept]
+				void IAnnotatedInterface.InterfaceMethod ()
+				{
+				}
+			}
+
+			[Kept]
+			[KeptMember (".ctor()")]
+			[KeptBaseType (typeof (ImplementationClass))]
+			class Derived : ImplementationClass
+			{
+				// Annotation will be applied to a derived type as well
+				[Kept]
+				public void NewMethod () { }
+			}
+
+			[Kept]
+			static ImplementationClass GetInstance () => new Derived ();
+
+			[Kept]
+			public static void Test ()
+			{
+				// Make sure the interface is kept
+				var i = typeof (IAnnotatedInterface);
+				GetInstance ().GetType ().GetMethod ("InterfaceMethod");
+			}
+		}
+
+		[Kept]
+		class AnnotationsRequestedOnInterface
+		{
+			[Kept]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
+			interface IAnnotatedInterface
+			{
+				[Kept] // Kept because it's implemented on the class
+				void InterfaceMethod ();
+
+				// Annotation applied to the interface since that's what reflection asked about
+				[Kept]
+				static void DoSomething () { }
+
+				[Kept]
+				void DefaultInterfaceMethod () { }
+			}
+
+			[Kept]
+			[KeptMember (".ctor()")]
+			[KeptInterface (typeof (IAnnotatedInterface))]
+			class ImplementationClass : IAnnotatedInterface
+			{
+				[Kept]
+				void IAnnotatedInterface.InterfaceMethod ()
+				{
+				}
+			}
+
+			[Kept]
+			[KeptMember (".ctor()")]
+			[KeptBaseType (typeof (ImplementationClass))]
+			class Derived : ImplementationClass
+			{
+				[Kept]
+				public void NewMethod () { }
+			}
+
+			[Kept]
+			static IAnnotatedInterface GetInstance () => new Derived ();
+
+			[Kept]
+			public static void Test ()
+			{
+				// Make sure the interface is kept
+				var i = typeof (IAnnotatedInterface);
+				GetInstance ().GetType ().GetMethod ("InterfaceMethod");
+			}
+		}
+
+		[Kept]
+		class AllAnnotationsAreApplied
+		{
+			[Kept]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			interface IMethodsAnnotatedInterface
+			{
+				[Kept]
+				void InterfaceMethod ();
+			}
+
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicProperties)]
+			interface IPropertiesAnnotatedInterface
+			{
+				bool Property { get; }
+			}
+
+			[Kept]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicEvents)]
+			interface IEventsAnnotatedInterface
+			{
+				[Kept]
+				[KeptEventAddMethod]
+				[KeptEventRemoveMethod]
+				event EventHandler MyEvent;
+			}
+
+			[Kept]
+			[KeptMember (".ctor()")]
+			[KeptInterface (typeof (IMethodsAnnotatedInterface))]
+			[KeptInterface (typeof (IEventsAnnotatedInterface))]
+			class ImplementationClass : IMethodsAnnotatedInterface, IPropertiesAnnotatedInterface, IEventsAnnotatedInterface
+			{
+				[Kept]
+				public bool Property { [Kept] get => false; }
+
+				[Kept]
+				[KeptBackingField]
+				public int AnotherProperty { [Kept] get; }
+
+				[Kept]
+				[KeptEventAddMethod]
+				[KeptEventRemoveMethod]
+				[KeptBackingField]
+				public event EventHandler MyEvent;
+
+				[Kept]
+				public void InterfaceMethod () { }
+
+				[Kept]
+				public void AnotherMethod () { }
+			}
+
+			[Kept]
+			[KeptBaseType (typeof (ImplementationClass))]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
+			class DerivedClassWithCtors : ImplementationClass
+			{
+				[Kept]
+				public DerivedClassWithCtors () { }
+
+				[Kept] // Annotation is applied even if reflection didn't ask for it explicitly
+				public DerivedClassWithCtors (int i) { }
+
+				private DerivedClassWithCtors (string s) { }
+			}
+
+			[Kept]
+			[KeptBaseType (typeof (ImplementationClass))]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicMethods)]
+			[KeptMember (".ctor()")]
+			class DerivedClassWithPrivateMethods : ImplementationClass
+			{
+				[Kept] // Kept due to annotation on the interface
+				public void PublicMethod () { }
+
+				[Kept] // Kept due to annotation on this class
+				private void PrivateMethod () { }
+			}
+
+			[Kept]
+			static IMethodsAnnotatedInterface GetMethodsInstance () => new ImplementationClass ();
+
+			[Kept]
+			static IEventsAnnotatedInterface GetEventsInstance () => new ImplementationClass ();
+
+			[Kept]
+			public static void Test ()
+			{
+				// Instantiate the derived classes so that they're preserved - this should not do anything with annotations
+				var withCtors = new DerivedClassWithCtors ();
+				var withPrivateMethods = new DerivedClassWithPrivateMethods ();
+
+				// The reflection is only asking about IMethodsAnnotatedInterface
+				// and only needs methods, but for now we will apply annotations
+				// from the entire hierarchy - so even properties should be marked
+				// Note that the IPropertiesAnnotatedInterface is not actually going to be kept
+				// but its annotations still apply
+				GetMethodsInstance ().GetType ().GetMethod ("InterfaceMethod");
+
+				// Ask again on a different interface - same type impacted
+				GetEventsInstance ().GetType ().GetEvent ("MyEvent");
+			}
+		}
+
+		[Kept]
+		class SealedWithAnnotation
+		{
+			[Kept]
+			[KeptMember (".ctor()")]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			class AnnotatedBase
+			{
+			}
+
+			[Kept]
+			[KeptBaseType (typeof (AnnotatedBase))]
+			[KeptMember (".ctor()")]
+			sealed class SealedDerived : AnnotatedBase
+			{
+				// This is preserved because the exact type is used and the method is directly found on it
+				[Kept]
+				private void PrivateMethod () { }
+
+				// Annotation is not applied, because the reflection can be solved without using it
+				public void PublicMethod () { }
+			}
+
+			[Kept]
+			static SealedDerived GetInstance () => new SealedDerived ();
+
+			[Kept]
+			public static void Test ()
+			{
+				// Explicitly ask for the private method
+				GetInstance ().GetType ().GetMethod ("PrivateMethod", System.Reflection.BindingFlags.NonPublic);
 			}
 		}
 	}

@@ -13,13 +13,9 @@ namespace Mono.Linker.Tests.Cases.BCLFeatures
 	}
 
 	[Kept]
-
 	[Serializable]
 	class C
 	{
-		//#if !NET6_0
-		[Kept]
-		//#endif
 		public C ()
 		{
 		}
@@ -29,9 +25,6 @@ namespace Mono.Linker.Tests.Cases.BCLFeatures
 		{
 		}
 
-		//#if !NET6_0
-		[Kept]
-		//#endif
 		protected C (SerializationInfo info, StreamingContext context)
 		{
 		}

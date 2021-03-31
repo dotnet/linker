@@ -929,12 +929,14 @@ namespace Mono.Linker.Dataflow
 								// We can allow Object.GetType to be modeled as System.Delegate because we keep all methods
 								// on delegates anyway so reflection on something this approximation would miss is actually safe.
 
-								// TODO: If we return this node, and the type is annotated (See below)
-								// we're losing that information here. Which means if the type is annotated with PublicMethods
-								// but something later on calls GetProperties on the return type, we would still
-								// preserve properties and not warn.
-								//  - The will work, there's nothing "unsafe" with this
-								//  - On the other hand this sort of "violates" the annotation on the type
+								// We ignore the fact that the type can be annotated (see below for hanling of annotated types)
+								// This means the annotations (if any) won't be applied - instead we rely on the exact knowledge
+								// of the type. So for example even if the type is annotated with PublicMethods
+								// but the code calls GetProperties on it - it will work - mark properties, don't mark methods
+								// since we ignored the fact that it's annotated.
+								// This can be seen a little bit as a violation of the annotation, but we already have similar cases
+								// where a parameter is annotated and if something in the method sets a specific known type to it
+								// we will also make it just work, even if the annotation doesn't match he usage.
 								methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new SystemTypeValue (staticType));
 							} else {
 								reflectionContext.AnalyzingPattern ();

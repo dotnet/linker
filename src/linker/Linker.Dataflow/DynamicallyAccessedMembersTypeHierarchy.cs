@@ -10,7 +10,7 @@ using Mono.Linker.Steps;
 
 namespace Mono.Linker.Dataflow
 {
-	internal class DynamicallyAccessedMembersTypeHierarchy
+	class DynamicallyAccessedMembersTypeHierarchy
 	{
 		readonly LinkContext _context;
 		readonly MarkStep _markStep;
