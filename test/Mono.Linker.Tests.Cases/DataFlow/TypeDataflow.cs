@@ -88,8 +88,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		[Kept]
 		[KeptMember (".ctor()")]
-		[KeptAttributeAttribute(typeof(DynamicallyAccessedMembersAttribute))]
-		[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+		[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 		public class AnnotatedViaXmlTypeInstance
 		{
 			[Kept]
