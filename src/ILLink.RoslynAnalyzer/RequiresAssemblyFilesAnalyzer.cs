@@ -3,7 +3,6 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -78,7 +77,7 @@ namespace ILLink.RoslynAnalyzer
 				var assemblyType = compilation.GetTypeByMetadataName ("System.Reflection.Assembly");
 				if (assemblyType != null) {
 					// properties
-					AddIfNotNull (propertiesBuilder, TryGetSingleSymbol<IPropertySymbol> (assemblyType.GetMembers ("Location")));
+					ISymbolExtensions.AddIfNotNull (propertiesBuilder, ISymbolExtensions.TryGetSingleSymbol<IPropertySymbol> (assemblyType.GetMembers ("Location")));
 
 					// methods
 					methodsBuilder.AddRange (assemblyType.GetMembers ("GetFile").OfType<IMethodSymbol> ());
@@ -87,8 +86,8 @@ namespace ILLink.RoslynAnalyzer
 
 				var assemblyNameType = compilation.GetTypeByMetadataName ("System.Reflection.AssemblyName");
 				if (assemblyNameType != null) {
-					AddIfNotNull (propertiesBuilder, TryGetSingleSymbol<IPropertySymbol> (assemblyNameType.GetMembers ("CodeBase")));
-					AddIfNotNull (propertiesBuilder, TryGetSingleSymbol<IPropertySymbol> (assemblyNameType.GetMembers ("EscapedCodeBase")));
+					ISymbolExtensions.AddIfNotNull (propertiesBuilder, ISymbolExtensions.TryGetSingleSymbol<IPropertySymbol> (assemblyNameType.GetMembers ("CodeBase")));
+					ISymbolExtensions.AddIfNotNull (propertiesBuilder, ISymbolExtensions.TryGetSingleSymbol<IPropertySymbol> (assemblyNameType.GetMembers ("EscapedCodeBase")));
 				}
 
 				var properties = propertiesBuilder.ToImmutable ();
@@ -96,48 +95,54 @@ namespace ILLink.RoslynAnalyzer
 
 				context.RegisterOperationAction (operationContext => {
 					var methodInvocation = (IInvocationOperation) operationContext.Operation;
-					var targetMethod = methodInvocation.TargetMethod;
-					if (!operationContext.ContainingSymbol.HasAttribute (RequiresAssemblyFilesAttribute) && Contains (methods, targetMethod, SymbolEqualityComparer.Default)) {
-						operationContext.ReportDiagnostic (Diagnostic.Create (s_getFilesRule, methodInvocation.Syntax.GetLocation (), targetMethod));
-						return;
-					}
-					CheckCalledMember (operationContext, targetMethod);
+					CheckCalledMember (operationContext, methodInvocation.TargetMethod, properties, methods);
 				}, OperationKind.Invocation);
 
 				context.RegisterOperationAction (operationContext => {
 					var objectCreation = (IObjectCreationOperation) operationContext.Operation;
-					CheckCalledMember (operationContext, objectCreation.Constructor);
+					CheckCalledMember (operationContext, objectCreation.Constructor, properties, methods);
 				}, OperationKind.ObjectCreation);
 
 				context.RegisterOperationAction (operationContext => {
 					var propAccess = (IPropertyReferenceOperation) operationContext.Operation;
 					var prop = propAccess.Property;
-					if (!operationContext.ContainingSymbol.HasAttribute (RequiresAssemblyFilesAttribute) && Contains (properties, prop, SymbolEqualityComparer.Default)) {
-						operationContext.ReportDiagnostic (Diagnostic.Create (s_locationRule, propAccess.Syntax.GetLocation (), prop));
-						return;
-					}
 					var usageInfo = propAccess.GetValueUsageInfo (prop);
 					if (usageInfo.HasFlag (ValueUsageInfo.Read) && prop.GetMethod != null)
-						CheckCalledMember (operationContext, prop.GetMethod);
+						CheckCalledMember (operationContext, prop.GetMethod, properties, methods);
 
 					if (usageInfo.HasFlag (ValueUsageInfo.Write) && prop.SetMethod != null)
-						CheckCalledMember (operationContext, prop.SetMethod);
+						CheckCalledMember (operationContext, prop.SetMethod, properties, methods);
 
-					CheckCalledMember (operationContext, prop);
+					CheckCalledMember (operationContext, prop, properties, methods);
 				}, OperationKind.PropertyReference);
 
 				context.RegisterOperationAction (operationContext => {
 					var eventRef = (IEventReferenceOperation) operationContext.Operation;
-					CheckCalledMember (operationContext, eventRef.Member);
+					CheckCalledMember (operationContext, eventRef.Member, properties, methods);
 				}, OperationKind.EventReference);
 
 				static void CheckCalledMember (
 					OperationAnalysisContext operationContext,
-					ISymbol member)
+					ISymbol member,
+					ImmutableArray<IPropertySymbol> dangerousProperties,
+					ImmutableArray<IMethodSymbol> dangerousMethods)
 				{
 					// Do not emit any diagnostic if caller is annotated with the attribute too.
 					if (operationContext.ContainingSymbol.HasAttribute (RequiresAssemblyFilesAttribute))
 						return;
+					// In case ContainingSymbol is a property accesor check also for RequiresAssemblyFilesAttribute in the associated property
+					if (operationContext.ContainingSymbol is IMethodSymbol containingSymbol && (containingSymbol.MethodKind == MethodKind.PropertyGet || containingSymbol.MethodKind == MethodKind.PropertySet)
+						&& containingSymbol.AssociatedSymbol!.HasAttribute (RequiresAssemblyFilesAttribute)) {
+						return;
+					}
+
+					if (member is IMethodSymbol && ISymbolExtensions.Contains (dangerousMethods, (IMethodSymbol) member, SymbolEqualityComparer.Default)) {
+						operationContext.ReportDiagnostic (Diagnostic.Create (s_getFilesRule, operationContext.Operation.Syntax.GetLocation (), member));
+						return;
+					} else if (member is IPropertySymbol && ISymbolExtensions.Contains (dangerousProperties, (IPropertySymbol) member, SymbolEqualityComparer.Default)) {
+						operationContext.ReportDiagnostic (Diagnostic.Create (s_locationRule, operationContext.Operation.Syntax.GetLocation (), member));
+						return;
+					}
 
 					if (member.TryGetRequiresAssemblyFileAttribute (out AttributeData? requiresAssemblyFilesAttribute)) {
 						var message = requiresAssemblyFilesAttribute?.NamedArguments.FirstOrDefault (na => na.Key == "Message").Value.Value?.ToString ();
@@ -150,39 +155,6 @@ namespace ILLink.RoslynAnalyzer
 							member.OriginalDefinition.ToString (),
 							message,
 							url));
-					}
-				}
-
-				static bool Contains<T, TComp> (ImmutableArray<T> list, T elem, TComp comparer)
-					where TComp : IEqualityComparer<T>
-				{
-					foreach (var e in list) {
-						if (comparer.Equals (e, elem)) {
-							return true;
-						}
-					}
-					return false;
-				}
-
-				static TSymbol? TryGetSingleSymbol<TSymbol> (ImmutableArray<ISymbol> members) where TSymbol : class, ISymbol
-				{
-					TSymbol? candidate = null;
-					foreach (var m in members) {
-						if (m is TSymbol tsym) {
-							if (candidate is null) {
-								candidate = tsym;
-							} else {
-								return null;
-							}
-						}
-					}
-					return candidate;
-				}
-
-				static void AddIfNotNull<TSymbol> (ImmutableArray<TSymbol>.Builder properties, TSymbol? p) where TSymbol : class, ISymbol
-				{
-					if (p != null) {
-						properties.Add (p);
 					}
 				}
 			});

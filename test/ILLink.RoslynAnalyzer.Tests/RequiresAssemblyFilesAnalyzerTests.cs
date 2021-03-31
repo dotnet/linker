@@ -87,6 +87,40 @@ class C
 		}
 
 		[Fact]
+		public Task CallDangerousMethodInsideProperty ()
+		{
+			var TestRequiresAssemblyFilesOnMethodInsideProperty = @"
+using System.Diagnostics.CodeAnalysis;
+
+class C
+{
+	bool field;
+
+	[RequiresAssemblyFiles]
+	bool P { 
+		get {
+			return field;
+		}
+		set {
+			CallDangerousMethod ();
+			field = value;
+		} 
+	}
+
+	[RequiresAssemblyFiles]
+	void CallDangerousMethod () {}
+
+	void M ()
+	{
+		P = false;
+	}
+}";
+			return VerifyRequiresAssemblyFilesAnalyzer (TestRequiresAssemblyFilesOnMethodInsideProperty,
+				// (24,3): warning IL3002: Using member 'C.P' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
+				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (24, 3, 24, 4).WithArguments ("C.P", "", ""));
+		}
+
+		[Fact]
 		public Task RequiresAssemblyFilesWithMessageAndUrl ()
 		{
 			var TestRequiresAssemblyFilesWithMessageAndUrl = @"
