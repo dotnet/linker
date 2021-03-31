@@ -131,6 +131,9 @@ namespace Mono.Linker
 		DisablePrivateReflectionRequirement = 79, // null -> DisablePrivateReflectionAttribute type/methods (note that no specific source is reported)
 		DynamicInterfaceCastableImplementation = 80, // type -> type is marked with IDynamicInterfaceCastableImplementationAttribute and implements the provided interface
 		AlreadyMarked = 82, // null -> member that has already been marked for a particular reason (used to propagate reasons internally, not reported)
+
+		XmlSerialized = 84, // entry type for XML serialization
+		RecursiveType = 83, // recursive type kept dup to serialization handling
 	}
 
 	public readonly struct DependencyInfo : IEquatable<DependencyInfo>

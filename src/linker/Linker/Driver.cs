@@ -335,6 +335,12 @@ namespace Mono.Linker
 
 						continue;
 
+					case "--keep-serialization":
+						if (!GetBoolParam (token, l => context.KeepSerialization = l))
+							return -1;
+
+						continue;
+
 					case "--ignore-descriptors":
 						if (!GetBoolParam (token, l => context.IgnoreDescriptors = l))
 							return -1;
@@ -712,6 +718,12 @@ namespace Mono.Linker
 			foreach (string custom_step in custom_steps) {
 				if (!AddCustomStep (p, custom_step))
 					return -1;
+			}
+
+			if (context.KeepSerialization) {
+				p.MarkHandlers.Add (new InternalSubStepsDispatcher (new List<ISubStep> () {
+					new PreserveSerialization ()
+				}));
 			}
 
 			return 0;
