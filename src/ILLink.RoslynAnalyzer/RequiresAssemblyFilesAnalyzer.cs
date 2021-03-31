@@ -71,36 +71,33 @@ namespace ILLink.RoslynAnalyzer
 				if (string.Equals (includesAllContent?.Trim (), "true", StringComparison.OrdinalIgnoreCase))
 					return;
 
-				var propertiesBuilder = ImmutableArray.CreateBuilder<IPropertySymbol> ();
-				var methodsBuilder = ImmutableArray.CreateBuilder<IMethodSymbol> ();
+				var dangerousPatternsBuilder = ImmutableArray.CreateBuilder<ISymbol> ();
 
 				var assemblyType = compilation.GetTypeByMetadataName ("System.Reflection.Assembly");
 				if (assemblyType != null) {
 					// properties
-					ISymbolExtensions.AddIfNotNull (propertiesBuilder, ISymbolExtensions.TryGetSingleSymbol<IPropertySymbol> (assemblyType.GetMembers ("Location")));
+					ImmutableArrayOperations.AddIfNotNull (dangerousPatternsBuilder, ImmutableArrayOperations.TryGetSingleSymbol<IPropertySymbol> (assemblyType.GetMembers ("Location")));
 
 					// methods
-					methodsBuilder.AddRange (assemblyType.GetMembers ("GetFile").OfType<IMethodSymbol> ());
-					methodsBuilder.AddRange (assemblyType.GetMembers ("GetFiles").OfType<IMethodSymbol> ());
+					dangerousPatternsBuilder.AddRange (assemblyType.GetMembers ("GetFile").OfType<IMethodSymbol> ());
+					dangerousPatternsBuilder.AddRange (assemblyType.GetMembers ("GetFiles").OfType<IMethodSymbol> ());
 				}
 
 				var assemblyNameType = compilation.GetTypeByMetadataName ("System.Reflection.AssemblyName");
 				if (assemblyNameType != null) {
-					ISymbolExtensions.AddIfNotNull (propertiesBuilder, ISymbolExtensions.TryGetSingleSymbol<IPropertySymbol> (assemblyNameType.GetMembers ("CodeBase")));
-					ISymbolExtensions.AddIfNotNull (propertiesBuilder, ISymbolExtensions.TryGetSingleSymbol<IPropertySymbol> (assemblyNameType.GetMembers ("EscapedCodeBase")));
+					ImmutableArrayOperations.AddIfNotNull (dangerousPatternsBuilder, ImmutableArrayOperations.TryGetSingleSymbol<IPropertySymbol> (assemblyNameType.GetMembers ("CodeBase")));
+					ImmutableArrayOperations.AddIfNotNull (dangerousPatternsBuilder, ImmutableArrayOperations.TryGetSingleSymbol<IPropertySymbol> (assemblyNameType.GetMembers ("EscapedCodeBase")));
 				}
-
-				var properties = propertiesBuilder.ToImmutable ();
-				var methods = methodsBuilder.ToImmutable ();
+				var dangerousPatterns = dangerousPatternsBuilder.ToImmutable ();
 
 				context.RegisterOperationAction (operationContext => {
 					var methodInvocation = (IInvocationOperation) operationContext.Operation;
-					CheckCalledMember (operationContext, methodInvocation.TargetMethod, properties, methods);
+					CheckCalledMember (operationContext, methodInvocation.TargetMethod, dangerousPatterns);
 				}, OperationKind.Invocation);
 
 				context.RegisterOperationAction (operationContext => {
 					var objectCreation = (IObjectCreationOperation) operationContext.Operation;
-					CheckCalledMember (operationContext, objectCreation.Constructor, properties, methods);
+					CheckCalledMember (operationContext, objectCreation.Constructor, dangerousPatterns);
 				}, OperationKind.ObjectCreation);
 
 				context.RegisterOperationAction (operationContext => {
@@ -108,24 +105,23 @@ namespace ILLink.RoslynAnalyzer
 					var prop = propAccess.Property;
 					var usageInfo = propAccess.GetValueUsageInfo (prop);
 					if (usageInfo.HasFlag (ValueUsageInfo.Read) && prop.GetMethod != null)
-						CheckCalledMember (operationContext, prop.GetMethod, properties, methods);
+						CheckCalledMember (operationContext, prop.GetMethod, dangerousPatterns);
 
 					if (usageInfo.HasFlag (ValueUsageInfo.Write) && prop.SetMethod != null)
-						CheckCalledMember (operationContext, prop.SetMethod, properties, methods);
+						CheckCalledMember (operationContext, prop.SetMethod, dangerousPatterns);
 
-					CheckCalledMember (operationContext, prop, properties, methods);
+					CheckCalledMember (operationContext, prop, dangerousPatterns);
 				}, OperationKind.PropertyReference);
 
 				context.RegisterOperationAction (operationContext => {
 					var eventRef = (IEventReferenceOperation) operationContext.Operation;
-					CheckCalledMember (operationContext, eventRef.Member, properties, methods);
+					CheckCalledMember (operationContext, eventRef.Member, dangerousPatterns);
 				}, OperationKind.EventReference);
 
 				static void CheckCalledMember (
 					OperationAnalysisContext operationContext,
 					ISymbol member,
-					ImmutableArray<IPropertySymbol> dangerousProperties,
-					ImmutableArray<IMethodSymbol> dangerousMethods)
+					ImmutableArray<ISymbol> dangerousPatterns)
 				{
 					// Do not emit any diagnostic if caller is annotated with the attribute too.
 					if (operationContext.ContainingSymbol.HasAttribute (RequiresAssemblyFilesAttribute))
@@ -136,10 +132,10 @@ namespace ILLink.RoslynAnalyzer
 						return;
 					}
 
-					if (member is IMethodSymbol && ISymbolExtensions.Contains (dangerousMethods, (IMethodSymbol) member, SymbolEqualityComparer.Default)) {
+					if (member is IMethodSymbol && ImmutableArrayOperations.Contains (dangerousPatterns, member, SymbolEqualityComparer.Default)) {
 						operationContext.ReportDiagnostic (Diagnostic.Create (s_getFilesRule, operationContext.Operation.Syntax.GetLocation (), member));
 						return;
-					} else if (member is IPropertySymbol && ISymbolExtensions.Contains (dangerousProperties, (IPropertySymbol) member, SymbolEqualityComparer.Default)) {
+					} else if (member is IPropertySymbol && ImmutableArrayOperations.Contains (dangerousPatterns, member, SymbolEqualityComparer.Default)) {
 						operationContext.ReportDiagnostic (Diagnostic.Create (s_locationRule, operationContext.Operation.Syntax.GetLocation (), member));
 						return;
 					}
