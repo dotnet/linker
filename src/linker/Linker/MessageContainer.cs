@@ -132,6 +132,16 @@ namespace Mono.Linker
 			if (version > context.WarnVersion)
 				return Empty;
 
+			if (origin.MemberDefinition != null) {
+				var assembly = origin.MemberDefinition.DeclaringType.Module.Assembly;
+				var assemblyName = assembly.Name.Name;
+				if (context.AreWarningsCollapsed (assemblyName)) {
+					if (context.WarningAssemblies.Add (assemblyName))
+						context.LogWarning ($"Assembly '{assemblyName}' produced trim warnings", 2104, context.GetAssemblyLocation (assembly));
+					return Empty;
+				}
+			}
+
 			if (context.IsWarningAsError (code))
 				return new MessageContainer (MessageCategory.WarningAsError, text, code, subcategory, origin);
 

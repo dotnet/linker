@@ -187,6 +187,12 @@ namespace Mono.Linker
 
 		public List<IMarkHandler> MarkHandlers { get; }
 
+		public Dictionary<string, bool> CollapseWarnings { get; set; }
+
+		public bool GeneralCollapseWarnings { get; set; }
+
+		public HashSet<string> WarningAssemblies { get; set; }
+
 		public LinkContext (Pipeline pipeline, ILogger logger)
 		{
 			_pipeline = pipeline;
@@ -214,6 +220,9 @@ namespace Mono.Linker
 			WarnAsError = new Dictionary<int, bool> ();
 			WarnVersion = WarnVersion.Latest;
 			MarkHandlers = new List<IMarkHandler> ();
+			GeneralCollapseWarnings = false;
+			CollapseWarnings = new Dictionary<string, bool> ();
+			WarningAssemblies = new HashSet<string> ();
 
 			const CodeOptimizations defaultOptimizations =
 				CodeOptimizations.BeforeFieldInit |
@@ -618,6 +627,15 @@ namespace Mono.Linker
 				return !WarnAsError.TryGetValue (warningCode, out value) || value;
 
 			return WarnAsError.TryGetValue (warningCode, out value) && value;
+		}
+
+		public bool AreWarningsCollapsed (string assemblyName)
+		{
+			bool value;
+			if (GeneralCollapseWarnings)
+				return !CollapseWarnings.TryGetValue (assemblyName, out value) || value;
+
+			return CollapseWarnings.TryGetValue (assemblyName, out value) && value;
 		}
 
 		static WarnVersion GetWarningVersion ()

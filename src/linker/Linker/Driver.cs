@@ -500,6 +500,41 @@ namespace Mono.Linker
 
 						continue;
 
+					case "--collapse":
+					case "--collapse+": {
+							string assemblyName = GetNextStringValue ();
+							if (!string.IsNullOrEmpty (assemblyName)) {
+								if (!IsValidAssemblyName (assemblyName)) {
+									context.LogError ($"Invalid assembly name '{assemblyName}'", 1036);
+									return -1;
+								}
+
+								context.CollapseWarnings[assemblyName] = true;
+							} else {
+								context.GeneralCollapseWarnings = true;
+								context.CollapseWarnings.Clear ();
+							}
+
+							continue;
+						}
+
+					case "--collapse-": {
+							string assemblyName = GetNextStringValue ();
+							if (!string.IsNullOrEmpty (assemblyName)) {
+								if (!IsValidAssemblyName (assemblyName)) {
+									context.LogError ($"Invalid assembly name '{assemblyName}'", 1036);
+									return -1;
+								}
+
+								context.CollapseWarnings[assemblyName] = false;
+							} else {
+								context.GeneralCollapseWarnings = false;
+								context.CollapseWarnings.Clear ();
+							}
+
+							continue;
+						}
+
 					case "--version":
 						Version ();
 						return 1;
@@ -1188,6 +1223,7 @@ namespace Mono.Linker
 			Console.WriteLine ("                              VERSION is an integer in the range 0-9999.");
 			Console.WriteLine ("  --warnaserror[+|-]        Report all warnings as errors");
 			Console.WriteLine ("  --warnaserror[+|-] WARN   Report specific warnings as errors");
+			Console.WriteLine ("  --verbose ASM             Display detailed warnings for the specific assembly name");
 			Console.WriteLine ("  --version                 Print the version number of the {0}", _linker);
 
 			Console.WriteLine ();

@@ -23,7 +23,9 @@ namespace ILLink.Tasks
 		///       UnusedInterfaces
 		///       IPConstProp
 		///       Sealer
-		///   Maps to '-reference', and possibly '--action', '--enable-opt', '--disable-opt'
+		///   Optional metadata "CollapseWarnings" may also be set to "True"/"False" to control whether
+		///   whether the linker produces granular warnings for this assembly.
+		///   Maps to '-reference', and possibly '--action', '--enable-opt', '--disable-opt', '--verbose'
 		/// </summary>
 		[Required]
 		public ITaskItem[] AssemblyPaths { get; set; }
@@ -72,6 +74,13 @@ namespace ILLink.Tasks
 		/// </summary>
 		public bool TreatWarningsAsErrors { set => _treatWarningsAsErrors = value; }
 		bool? _treatWarningsAsErrors;
+
+		/// <summary>
+		/// Collapse all warnings to produce one per assembly.
+		/// Maps to '--collapse' if true, '--collapse-' if false.
+		/// </summary>
+		public bool CollapseWarnings { set => _collapseWarnings = value; }
+		bool? _collapseWarnings;
 
 		/// <summary>
 		/// The list of warnings to report as errors.
@@ -288,6 +297,13 @@ namespace ILLink.Tasks
 				args.AppendLine ();
 			}
 
+			if (_collapseWarnings is bool collapse) {
+				if (collapse)
+					args.AppendLine ("--collapse");
+				else
+					args.AppendLine ("--collapse-");
+			}
+
 			HashSet<string> assemblyNames = new HashSet<string> (StringComparer.OrdinalIgnoreCase);
 			foreach (var assembly in AssemblyPaths) {
 				var assemblyPath = assembly.ItemSpec;
@@ -316,6 +332,18 @@ namespace ILLink.Tasks
 						throw new ArgumentException ($"optimization metadata {optimization} must be True or False");
 
 					SetOpt (args, optimization, assemblyName, enabled);
+				}
+
+				// Add per-assembly verbosity arguments
+				string collapseWarnings = assembly.GetMetadata ("CollapseWarnings");
+				if (!String.IsNullOrEmpty (collapseWarnings)) {
+					if (!Boolean.TryParse (collapseWarnings, out bool value))
+						throw new ArgumentException ($"collapse warnings metadata {value} must be True or False");
+
+					if (value)
+						args.Append ("--collapse ").AppendLine (Quote (assemblyName));
+					else
+						args.Append ("--collapse- ").AppendLine (Quote (assemblyName));
 				}
 			}
 
