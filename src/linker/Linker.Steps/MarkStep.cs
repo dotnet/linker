@@ -229,8 +229,6 @@ namespace Mono.Linker.Steps
 			// instead of the per-assembly stores.
 			foreach (var (provider, annotations) in xmlInfo.CustomAttributes)
 				_context.CustomAttributes.PrimaryAttributeInfo.AddCustomAttributes (provider, annotations);
-			foreach (var (provider, annotations) in xmlInfo.InternalAttributes)
-				_context.CustomAttributes.PrimaryAttributeInfo.AddInternalAttributes (provider, annotations);
 		}
 
 		void Complete ()
@@ -276,7 +274,7 @@ namespace Mono.Linker.Steps
 
 			foreach (var ca in type.CustomAttributes) {
 				TypeDefinition caType = ca.AttributeType.Resolve ();
-				if (caType.Name == "DynamicInterfaceCastableImplementationAttribute" && caType.Namespace == "System.Runtime.InteropServices")
+				if (caType?.Name == "DynamicInterfaceCastableImplementationAttribute" && caType.Namespace == "System.Runtime.InteropServices")
 					return true;
 			}
 			return false;
@@ -1554,11 +1552,10 @@ namespace Mono.Linker.Steps
 
 		protected virtual void MarkSerializable (TypeDefinition type)
 		{
-			// TODO: move after the check once SPC is correctly annotated
-			MarkDefaultConstructor (type, new DependencyInfo (DependencyKind.SerializationMethodForType, type), type);
-
 			if (_context.GetTargetRuntimeVersion () > TargetRuntimeVersion.NET5)
 				return;
+
+			MarkDefaultConstructor (type, new DependencyInfo (DependencyKind.SerializationMethodForType, type), type);
 
 			MarkMethodsIf (type.Methods, IsSpecialSerializationConstructor, new DependencyInfo (DependencyKind.SerializationMethodForType, type), type);
 		}
