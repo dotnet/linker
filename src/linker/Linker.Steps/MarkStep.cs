@@ -243,11 +243,19 @@ namespace Mono.Linker.Steps
 			foreach (var body in _unreachableBodies) {
 				Annotations.SetAction (body.Method, MethodAction.ConvertToThrow);
 			}
+		}
 
+		bool ProcessInternalsVisibleAttributes ()
+		{
+			bool marked_any = false;
 			foreach (var attr in _ivt_attributes) {
-				if (IsInternalsVisibleAttributeAssemblyMarked (attr.Attribute))
+				if (!Annotations.IsMarked (attr.Attribute) && IsInternalsVisibleAttributeAssemblyMarked (attr.Attribute)) {
 					MarkCustomAttribute (attr.Attribute, new DependencyInfo (DependencyKind.AssemblyOrModuleAttribute, attr.Provider), null);
+					marked_any = true;
+				}
 			}
+
+			return marked_any;
 
 			bool IsInternalsVisibleAttributeAssemblyMarked (CustomAttribute ca)
 			{
@@ -365,7 +373,7 @@ namespace Mono.Linker.Steps
 
 		void Process ()
 		{
-			while (ProcessPrimaryQueue () || ProcessMarkedPending () || ProcessLazyAttributes () || ProcessLateMarkedAttributes () || MarkFullyPreservedAssemblies ()) {
+			while (ProcessPrimaryQueue () || ProcessMarkedPending () || ProcessLazyAttributes () || ProcessLateMarkedAttributes () || MarkFullyPreservedAssemblies () || ProcessInternalsVisibleAttributes ()) {
 
 				// deal with [TypeForwardedTo] pseudo-attributes
 
@@ -1566,11 +1574,10 @@ namespace Mono.Linker.Steps
 
 		protected virtual void MarkSerializable (TypeDefinition type)
 		{
-			// TODO: move after the check once SPC is correctly annotated
-			MarkDefaultConstructor (type, new DependencyInfo (DependencyKind.SerializationMethodForType, type), type);
-
 			if (_context.GetTargetRuntimeVersion () > TargetRuntimeVersion.NET5)
 				return;
+
+			MarkDefaultConstructor (type, new DependencyInfo (DependencyKind.SerializationMethodForType, type), type);
 
 			MarkMethodsIf (type.Methods, IsSpecialSerializationConstructor, new DependencyInfo (DependencyKind.SerializationMethodForType, type), type);
 		}
