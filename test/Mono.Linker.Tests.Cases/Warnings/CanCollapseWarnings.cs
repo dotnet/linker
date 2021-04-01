@@ -8,25 +8,26 @@ namespace Mono.Linker.Tests.Cases.Warnings
 {
 	[SkipKeptItemsValidation]
 	[SetupCompileBefore ("library.dll", new[] { typeof (TriggerWarnings_Lib) })]
-    [SetupLinkerArgument ("--collapse")]
-    [LogDoesNotContain ("IL2026")]
-    [LogContains ("warning IL2104: Assembly 'test' produced trim warnings")]
-    [LogContains ("warning IL2104: Assembly 'library' produced trim warnings")]
+	[SetupLinkerArgument ("--collapse")]
+	[LogDoesNotContain ("IL2026")]
+	[LogContains ("warning IL2104: Assembly 'test' produced trim warnings")]
+	[LogContains ("warning IL2104: Assembly 'library' produced trim warnings")]
 	public class CanCollapseWarnings
 	{
 		public static void Main ()
 		{
-            CreateWarnings();
-            TriggerWarnings_Lib.Main ();
+			CreateWarnings ();
+			TriggerWarnings_Lib.Main ();
 		}
 
-        public static void CreateWarnings (){
-            RequireUnreferencedCode ();
-        }
+		public static void CreateWarnings ()
+		{
+			RequireUnreferencedCode ();
+		}
 
-        [RequiresUnreferencedCode ("Requires unreferenced code.")]
-        public static void RequireUnreferencedCode()
-        {
-        }
-    }
+		[RequiresUnreferencedCode ("Requires unreferenced code.")]
+		public static void RequireUnreferencedCode ()
+		{
+		}
+	}
 }

@@ -243,7 +243,7 @@ namespace ILLink.Tasks.Tests
 		public static IEnumerable<object[]> CollapseWarningsCases => new List<object[]> {
 			new object[] {
 				true,
-				new ITaskItem [] { 
+				new ITaskItem [] {
 					new TaskItem ("AssemblyTrue.dll", new Dictionary<string, string> { { "CollapseWarnings", "true" } } ),
 					new TaskItem ("AssemblyFalse.dll", new Dictionary<string, string> { { "CollapseWarnings", "false" } } )
 				},
@@ -267,7 +267,7 @@ namespace ILLink.Tasks.Tests
 			};
 			using (var driver = task.CreateDriver ()) {
 				Assert.Equal (collapseWarnings, driver.Context.GeneralCollapseWarnings);
-				var expectedCollapseWarnings = assemblyPaths.ToDictionary(
+				var expectedCollapseWarnings = assemblyPaths.ToDictionary (
 					p => Path.GetFileNameWithoutExtension (p.ItemSpec),
 					p => bool.Parse (p.GetMetadata ("CollapseWarnings"))
 				);
