@@ -240,6 +240,41 @@ namespace ILLink.Tasks.Tests
 			}
 		}
 
+		public static IEnumerable<object[]> CollapseWarningsCases => new List<object[]> {
+			new object[] {
+				true,
+				new ITaskItem [] { 
+					new TaskItem ("AssemblyTrue.dll", new Dictionary<string, string> { { "CollapseWarnings", "true" } } ),
+					new TaskItem ("AssemblyFalse.dll", new Dictionary<string, string> { { "CollapseWarnings", "false" } } )
+				},
+			},
+			new object [] {
+				false,
+				new ITaskItem [] {
+					new TaskItem ("AssemblyTrue.dll", new Dictionary<string, string> { { "CollapseWarnings", "true" } } ),
+					new TaskItem ("AssemblyFalse.dll", new Dictionary<string, string> { { "CollapseWarnings", "false" } } )
+				}
+			}
+		};
+
+		[Theory]
+		[MemberData (nameof (CollapseWarningsCases))]
+		public void TestCollapseWarnings (bool collapseWarnings, ITaskItem[] assemblyPaths)
+		{
+			var task = new MockTask () {
+				AssemblyPaths = assemblyPaths,
+				CollapseWarnings = collapseWarnings
+			};
+			using (var driver = task.CreateDriver ()) {
+				Assert.Equal (collapseWarnings, driver.Context.GeneralCollapseWarnings);
+				var expectedCollapseWarnings = assemblyPaths.ToDictionary(
+					p => Path.GetFileNameWithoutExtension (p.ItemSpec),
+					p => bool.Parse (p.GetMetadata ("CollapseWarnings"))
+				);
+				Assert.Equal (expectedCollapseWarnings, driver.Context.CollapseWarnings);
+			}
+		}
+
 		[Fact]
 		public void TestInvalidPerAssemblyOptimizations ()
 		{

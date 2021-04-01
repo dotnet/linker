@@ -1569,6 +1569,10 @@ void TestMethod(MethodInfo methodInfo)
 }
 ```
 
+#### `IL2104`: Assembly 'assembly' produced trim warnings
+
+The assembly 'assembly' produced trim analysis warnings in the context of the app. This means the assembly has not been fully annotated for trimming. Consider contacting the library author to request they add trim annotations to the library. To see detailed warnings for this assembly, turn off warning collapsing by passing either `--collapse-` to show detailed warnings for all assemblies, or `--collapse- "assembly"` to show detailed warnings for that assembly.
+
 ## Single-File Warning Codes
 
 #### `IL3000`: 'member' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'
