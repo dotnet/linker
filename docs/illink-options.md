@@ -191,6 +191,12 @@ The `--warn VERSION` option prevents the linker from displaying warnings newer t
 version. Valid versions are in the range 0-9999, where 9999 will display all current and future
 warnings.
 
+### Collapse warnings
+
+The `--collapse` (or `--collapse+`) option will collapse trim analysis warnings to show at most one per assembly. The default is not to collapse warnings.
+
+You may also pass `--collapse Assembly` (or `--collapse- Assembly`) to control this behavior for a particular assembly.
+
 ### Generating warning suppressions
 
 For each of the linked assemblies that triggered any warnings during linking, the
