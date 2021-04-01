@@ -1225,7 +1225,6 @@ namespace Mono.Linker
 			Console.WriteLine ("  --warnaserror[+|-] WARN   Report specific warnings as errors");
 			Console.WriteLine ("  --collapse[+|-]           Collapse analysis warnings to one per assembly");
 			Console.WriteLine ("  --collapse[+|-] ASM       Collapse warnings for specific assembly");
-			Console.WriteLine ("  --verbose ASM             Display detailed warnings for the specific assembly name");
 			Console.WriteLine ("  --version                 Print the version number of the {0}", _linker);
 
 			Console.WriteLine ();
