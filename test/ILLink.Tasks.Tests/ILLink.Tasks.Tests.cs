@@ -244,15 +244,15 @@ namespace ILLink.Tasks.Tests
 			new object[] {
 				true,
 				new ITaskItem [] {
-					new TaskItem ("AssemblyTrue.dll", new Dictionary<string, string> { { "CollapseWarnings", "true" } } ),
-					new TaskItem ("AssemblyFalse.dll", new Dictionary<string, string> { { "CollapseWarnings", "false" } } )
+					new TaskItem ("AssemblyTrue.dll", new Dictionary<string, string> { { "CollapseTrimWarnings", "true" } } ),
+					new TaskItem ("AssemblyFalse.dll", new Dictionary<string, string> { { "CollapseTrimWarnings", "false" } } )
 				},
 			},
 			new object [] {
 				false,
 				new ITaskItem [] {
-					new TaskItem ("AssemblyTrue.dll", new Dictionary<string, string> { { "CollapseWarnings", "true" } } ),
-					new TaskItem ("AssemblyFalse.dll", new Dictionary<string, string> { { "CollapseWarnings", "false" } } )
+					new TaskItem ("AssemblyTrue.dll", new Dictionary<string, string> { { "CollapseTrimWarnings", "true" } } ),
+					new TaskItem ("AssemblyFalse.dll", new Dictionary<string, string> { { "CollapseTrimWarnings", "false" } } )
 				}
 			}
 		};
@@ -269,7 +269,7 @@ namespace ILLink.Tasks.Tests
 				Assert.Equal (collapseWarnings, driver.Context.GeneralCollapseWarnings);
 				var expectedCollapseWarnings = assemblyPaths.ToDictionary (
 					p => Path.GetFileNameWithoutExtension (p.ItemSpec),
-					p => bool.Parse (p.GetMetadata ("CollapseWarnings"))
+					p => bool.Parse (p.GetMetadata ("CollapseTrimWarnings"))
 				);
 				Assert.Equal (expectedCollapseWarnings, driver.Context.CollapseWarnings);
 			}

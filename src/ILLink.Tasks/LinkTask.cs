@@ -23,7 +23,7 @@ namespace ILLink.Tasks
 		///       UnusedInterfaces
 		///       IPConstProp
 		///       Sealer
-		///   Optional metadata "CollapseWarnings" may also be set to "True"/"False" to control whether
+		///   Optional metadata "CollapseTrimWarnings" may also be set to "True"/"False" to control whether
 		///   whether the linker produces granular warnings for this assembly.
 		///   Maps to '-reference', and possibly '--action', '--enable-opt', '--disable-opt', '--verbose'
 		/// </summary>
@@ -335,7 +335,7 @@ namespace ILLink.Tasks
 				}
 
 				// Add per-assembly verbosity arguments
-				string collapseWarnings = assembly.GetMetadata ("CollapseWarnings");
+				string collapseWarnings = assembly.GetMetadata ("CollapseTrimWarnings");
 				if (!String.IsNullOrEmpty (collapseWarnings)) {
 					if (!Boolean.TryParse (collapseWarnings, out bool value))
 						throw new ArgumentException ($"collapse warnings metadata {value} must be True or False");
