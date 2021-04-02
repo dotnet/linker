@@ -136,7 +136,7 @@ namespace Mono.Linker
 				var assembly = origin.MemberDefinition.DeclaringType.Module.Assembly;
 				var assemblyName = assembly.Name.Name;
 				if (context.AreWarningsCollapsed (assemblyName)) {
-					if (context.WarningAssemblies.Add (assemblyName))
+					if (context.AssembliesWithGeneratedCollapsedWarnings.Add (assemblyName))
 						context.LogWarning ($"Assembly '{assemblyName}' produced trim warnings. For more information see https://aka.ms/dotnet-illink/libraries", 2104, context.GetAssemblyLocation (assembly));
 					return Empty;
 				}

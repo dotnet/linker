@@ -191,7 +191,7 @@ namespace Mono.Linker
 
 		public bool GeneralCollapseWarnings { get; set; }
 
-		public HashSet<string> WarningAssemblies { get; set; }
+		public HashSet<string> AssembliesWithGeneratedCollapsedWarnings { get; set; }
 
 		public LinkContext (Pipeline pipeline, ILogger logger)
 		{
@@ -222,7 +222,7 @@ namespace Mono.Linker
 			MarkHandlers = new List<IMarkHandler> ();
 			GeneralCollapseWarnings = false;
 			CollapseWarnings = new Dictionary<string, bool> ();
-			WarningAssemblies = new HashSet<string> ();
+			AssembliesWithGeneratedCollapsedWarnings = new HashSet<string> ();
 
 			const CodeOptimizations defaultOptimizations =
 				CodeOptimizations.BeforeFieldInit |
