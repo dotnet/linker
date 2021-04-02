@@ -23,7 +23,7 @@ namespace ILLink.Tasks
 		///       UnusedInterfaces
 		///       IPConstProp
 		///       Sealer
-		///   Optional metadata "CollapseTrimWarnings" may also be set to "True"/"False" to control whether
+		///   Optional metadata "CollapseTrimWarnings" may also be set to "True"/"False" to control
 		///   whether the linker produces granular warnings for this assembly.
 		///   Maps to '-reference', and possibly '--action', '--enable-opt', '--disable-opt', '--verbose'
 		/// </summary>

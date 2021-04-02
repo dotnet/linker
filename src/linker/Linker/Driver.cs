@@ -503,7 +503,7 @@ namespace Mono.Linker
 					case "--collapse":
 					case "--collapse+": {
 							string assemblyName = GetNextStringValue ();
-							if (!string.IsNullOrEmpty (assemblyName)) {
+							if (assemblyName != null) {
 								if (!IsValidAssemblyName (assemblyName)) {
 									context.LogError ($"Invalid assembly name '{assemblyName}'", 1036);
 									return -1;
@@ -520,7 +520,7 @@ namespace Mono.Linker
 
 					case "--collapse-": {
 							string assemblyName = GetNextStringValue ();
-							if (!string.IsNullOrEmpty (assemblyName)) {
+							if (assemblyName != null) {
 								if (!IsValidAssemblyName (assemblyName)) {
 									context.LogError ($"Invalid assembly name '{assemblyName}'", 1036);
 									return -1;
