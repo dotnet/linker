@@ -1608,10 +1608,7 @@ namespace Mono.Linker.Dataflow
 				//
 				case IntrinsicId.MethodInfo_MakeGenericMethod: {
 						reflectionContext.AnalyzingPattern ();
-						if (callingMethodDefinition.Name == "TestWithRequirementsButNoTypeArguments")
-							Debug.WriteLine ("");
 
-						bool hasTypeArguments = (methodParams[1] as ArrayValue)?.Size.AsConstInt () != 0;
 						foreach (var methodValue in methodParams[0].UniqueValues ()) {
 							if (methodValue is SystemReflectionMethodBaseValue methodBaseValue) {
 								ValidateGenericMethodInstantiation (ref reflectionContext, methodBaseValue.MethodRepresented, methodParams[1], calledMethod);
@@ -1619,20 +1616,11 @@ namespace Mono.Linker.Dataflow
 							} else if (methodValue == NullValue.Instance) {
 								reflectionContext.RecordHandledPattern ();
 							} else {
-								if (hasTypeArguments) {
-									// We don't know what method the `MakeGenericMethod` was called on, so we have to assume
-									// that the method may have requirements which we can't fullfil -> warn.
-									reflectionContext.RecordUnrecognizedPattern (
-										2060, string.Format (Resources.Strings.IL2060,
-											DiagnosticUtilities.GetMethodSignatureDisplayName (calledMethod)));
-								} else {
-									// Even if we can't figure out which method, if there are no type arguments
-									// there's nothing to validate. This case will typically fail at runtime
-									// since the call requires that all generic parameters have arguments to them.
-									// But it's not the job of the linker to detect possible runtime error cases
-									// the code may well expect to get an exception in this case.
-									reflectionContext.RecordHandledPattern ();
-								}
+								// We don't know what method the `MakeGenericMethod` was called on, so we have to assume
+								// that the method may have requirements which we can't fullfil -> warn.
+								reflectionContext.RecordUnrecognizedPattern (
+									2060, string.Format (Resources.Strings.IL2060,
+										DiagnosticUtilities.GetMethodSignatureDisplayName (calledMethod)));
 							}
 						}
 

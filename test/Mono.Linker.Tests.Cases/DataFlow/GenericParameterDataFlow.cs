@@ -882,7 +882,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 				TestNullMethod ();
 				TestUnknownInput (null);
-				TestUnknownMethodByNoTypeArguments (null);
+				TestUnknownMethodButNoTypeArguments (null);
 				TestWithNoArguments ();
 
 				TestWithRequirements ();
@@ -916,9 +916,11 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				mi.MakeGenericMethod (typeof (TestType));
 			}
 
-			[RecognizedReflectionAccessPattern]
-			static void TestUnknownMethodByNoTypeArguments (MethodInfo mi)
+			[UnrecognizedReflectionAccessPattern (typeof (MethodInfo), nameof (MethodInfo.MakeGenericMethod), new Type[] { typeof (Type[]) },
+				messageCode: "IL2060")]
+			static void TestUnknownMethodButNoTypeArguments (MethodInfo mi)
 			{
+				// Thechnically linker could figure this out, but it's not worth the complexity - such call will always fail at runtime.
 				mi.MakeGenericMethod (Type.EmptyTypes);
 			}
 
