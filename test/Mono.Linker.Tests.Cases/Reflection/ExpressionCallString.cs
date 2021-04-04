@@ -261,9 +261,10 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			}
 
 			[Kept]
+			[ExpectedWarning ("IL2060", "Expression::Call")]
 			static void TestMethodWithRequirementsButNoTypeArguments ()
 			{
-				// This will not warn - no type arguments -> nothing to validate
+				// Linker could figure out that this is not a problem, but it's not worth the complexity, since this will always throw at runtime
 				Expression.Call (typeof (TestGenericMethods), nameof (GenericMethodWithRequirementsNoArguments), Type.EmptyTypes);
 			}
 

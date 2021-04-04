@@ -967,9 +967,11 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 					.MakeGenericMethod (typeof (TestType));
 			}
 
-			[RecognizedReflectionAccessPattern]
+			[UnrecognizedReflectionAccessPattern (typeof (MethodInfo), nameof (MethodInfo.MakeGenericMethod), new Type[] { typeof (Type[]) },
+				messageCode: "IL2060")]
 			static void TestWithRequirementsButNoTypeArguments ()
 			{
+				// Linker could figure out that this is not a problem, but it's not worth the complexity, since this will always throw at runtime
 				typeof (MakeGenericMethod).GetMethod (nameof (GenericWithRequirements), BindingFlags.Static)
 					.MakeGenericMethod (Type.EmptyTypes);
 			}

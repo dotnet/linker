@@ -797,7 +797,7 @@ namespace Mono.Linker.Dataflow
 								foreach (var stringParam in methodParams[1].UniqueValues ()) {
 									if (stringParam is KnownStringValue stringValue) {
 										foreach (var method in systemTypeValue.TypeRepresented.GetMethodsOnTypeHierarchy (m => m.Name == stringValue.Contents, bindingFlags)) {
-											ValidateGenericMethodInstantiation (ref reflectionContext, method, methodParams[2], calledMethod);
+											ValidateGenericMethodInstantiation (ref reflectionContext, method, calledMethod);
 											MarkMethod (ref reflectionContext, method);
 										}
 
@@ -1611,7 +1611,7 @@ namespace Mono.Linker.Dataflow
 
 						foreach (var methodValue in methodParams[0].UniqueValues ()) {
 							if (methodValue is SystemReflectionMethodBaseValue methodBaseValue) {
-								ValidateGenericMethodInstantiation (ref reflectionContext, methodBaseValue.MethodRepresented, methodParams[1], calledMethod);
+								ValidateGenericMethodInstantiation (ref reflectionContext, methodBaseValue.MethodRepresented, calledMethod);
 								reflectionContext.RecordHandledPattern ();
 							} else if (methodValue == NullValue.Instance) {
 								reflectionContext.RecordHandledPattern ();
@@ -2157,18 +2157,9 @@ namespace Mono.Linker.Dataflow
 		void ValidateGenericMethodInstantiation (
 			ref ReflectionPatternContext reflectionContext,
 			MethodDefinition genericMethod,
-			ValueNode typeArgumentsValue,
 			MethodReference reflectionMethod)
 		{
 			if (!genericMethod.HasGenericParameters)
-				return;
-
-			// If there are no type arguments there's nothing to validate.
-			// This case will typically fail at runtime
-			// since the call requires that all generic parameters have arguments to them.
-			// But it's not the job of the linker to detect possible runtime error cases
-			// the code may well expect to get an exception in this case.
-			if ((typeArgumentsValue as ArrayValue)?.Size.AsConstInt () == 0)
 				return;
 
 			foreach (var genericParameter in genericMethod.GenericParameters) {
