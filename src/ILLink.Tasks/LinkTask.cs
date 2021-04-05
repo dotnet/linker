@@ -23,7 +23,7 @@ namespace ILLink.Tasks
 		///       UnusedInterfaces
 		///       IPConstProp
 		///       Sealer
-		///   Optional metadata "CollapseTrimWarnings" may also be set to "True"/"False" to control
+		///   Optional metadata "TrimmerSingleWarn" may also be set to "True"/"False" to control
 		///   whether the linker produces granular warnings for this assembly.
 		///   Maps to '-reference', and possibly '--action', '--enable-opt', '--disable-opt', '--verbose'
 		/// </summary>
@@ -76,11 +76,11 @@ namespace ILLink.Tasks
 		bool? _treatWarningsAsErrors;
 
 		/// <summary>
-		/// Collapse all warnings to produce one per assembly.
-		/// Maps to '--collapse' if true, '--collapse-' if false.
+		/// Produce at most one trim analysis warning per assembly.
+		/// Maps to '--singlewarn' if true, '--singlewarn-' if false.
 		/// </summary>
-		public bool CollapseWarnings { set => _collapseWarnings = value; }
-		bool? _collapseWarnings;
+		public bool SingleWarn { set => _singleWarn = value; }
+		bool? _singleWarn;
 
 		/// <summary>
 		/// The list of warnings to report as errors.
@@ -297,11 +297,11 @@ namespace ILLink.Tasks
 				args.AppendLine ();
 			}
 
-			if (_collapseWarnings is bool collapse) {
-				if (collapse)
-					args.AppendLine ("--collapse");
+			if (_singleWarn is bool generalSingleWarn) {
+				if (generalSingleWarn)
+					args.AppendLine ("--singlewarn");
 				else
-					args.AppendLine ("--collapse-");
+					args.AppendLine ("--singlewarn-");
 			}
 
 			HashSet<string> assemblyNames = new HashSet<string> (StringComparer.OrdinalIgnoreCase);
@@ -335,15 +335,15 @@ namespace ILLink.Tasks
 				}
 
 				// Add per-assembly verbosity arguments
-				string collapseWarnings = assembly.GetMetadata ("CollapseTrimWarnings");
-				if (!String.IsNullOrEmpty (collapseWarnings)) {
-					if (!Boolean.TryParse (collapseWarnings, out bool value))
-						throw new ArgumentException ($"collapse warnings metadata {value} must be True or False");
+				string singleWarn = assembly.GetMetadata ("TrimmerSingleWarn");
+				if (!String.IsNullOrEmpty (singleWarn)) {
+					if (!Boolean.TryParse (singleWarn, out bool value))
+						throw new ArgumentException ($"TrimmerSingleWarn metadata must be True or False");
 
 					if (value)
-						args.Append ("--collapse ").AppendLine (Quote (assemblyName));
+						args.Append ("--singlewarn ").AppendLine (Quote (assemblyName));
 					else
-						args.Append ("--collapse- ").AppendLine (Quote (assemblyName));
+						args.Append ("--singlewarn- ").AppendLine (Quote (assemblyName));
 				}
 			}
 

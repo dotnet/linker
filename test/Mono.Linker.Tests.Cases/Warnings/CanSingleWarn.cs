@@ -8,13 +8,11 @@ namespace Mono.Linker.Tests.Cases.Warnings
 {
 	[SkipKeptItemsValidation]
 	[SetupCompileBefore ("library.dll", new[] { typeof (TriggerWarnings_Lib) })]
-	[SetupLinkerArgument ("--collapse")]
-	[SetupLinkerArgument ("--warnaserror", "IL2026")]
-	// warnaserror does not make individual warnings visible or raise the importance of the grouped warning
+	[SetupLinkerArgument ("--singlewarn")]
 	[LogDoesNotContain ("IL2026")]
 	[LogContains ("warning IL2104: Assembly 'test' produced trim warnings")]
 	[LogContains ("warning IL2104: Assembly 'library' produced trim warnings")]
-	public class CanCollapseWarningsWithIndividualWarnAsError
+	public class CanSingleWarn
 	{
 		public static void Main ()
 		{

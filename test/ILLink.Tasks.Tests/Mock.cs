@@ -49,7 +49,7 @@ namespace ILLink.Tasks.Tests
 			"DumpDependencies",
 			"RemoveSymbols",
 			"TreatWarningsAsErrors",
-			"CollapseWarnings"
+			"SingleWarn"
 		};
 
 		public static IEnumerable<string> GetOptimizationPropertyNames ()

@@ -191,11 +191,12 @@ The `--warn VERSION` option prevents the linker from displaying warnings newer t
 version. Valid versions are in the range 0-9999, where 9999 will display all current and future
 warnings.
 
-### Collapse warnings
+### Emit single warnings per assembly
 
-The `--collapse` (or `--collapse+`) option will collapse trim analysis warnings to show at most one per assembly. The default is not to collapse warnings.
+The `--singlewarn` (or `--singlewarn+`) option will show at most one trim analysis warning per
+assembly which represents all of the warnings produced by code in the assembly. The default is to show all trim analysis warnings.
 
-You may also pass `--collapse Assembly` (or `--collapse- Assembly`) to control this behavior for a particular assembly.
+You may also pass `--singlewarn Assembly` (or `--singlewarn- Assembly`) to control this behavior for a particular assembly.
 
 ### Generating warning suppressions
 

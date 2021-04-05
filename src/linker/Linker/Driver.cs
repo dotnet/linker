@@ -500,8 +500,8 @@ namespace Mono.Linker
 
 						continue;
 
-					case "--collapse":
-					case "--collapse+": {
+					case "--singlewarn":
+					case "--singlewarn+": {
 							string assemblyName = GetNextStringValue ();
 							if (assemblyName != null) {
 								if (!IsValidAssemblyName (assemblyName)) {
@@ -509,16 +509,16 @@ namespace Mono.Linker
 									return -1;
 								}
 
-								context.CollapseWarnings[assemblyName] = true;
+								context.SingleWarn[assemblyName] = true;
 							} else {
-								context.GeneralCollapseWarnings = true;
-								context.CollapseWarnings.Clear ();
+								context.GeneralSingleWarn = true;
+								context.SingleWarn.Clear ();
 							}
 
 							continue;
 						}
 
-					case "--collapse-": {
+					case "--singlewarn-": {
 							string assemblyName = GetNextStringValue ();
 							if (assemblyName != null) {
 								if (!IsValidAssemblyName (assemblyName)) {
@@ -526,10 +526,10 @@ namespace Mono.Linker
 									return -1;
 								}
 
-								context.CollapseWarnings[assemblyName] = false;
+								context.SingleWarn[assemblyName] = false;
 							} else {
-								context.GeneralCollapseWarnings = false;
-								context.CollapseWarnings.Clear ();
+								context.GeneralSingleWarn = false;
+								context.SingleWarn.Clear ();
 							}
 
 							continue;
@@ -1223,8 +1223,8 @@ namespace Mono.Linker
 			Console.WriteLine ("                              VERSION is an integer in the range 0-9999.");
 			Console.WriteLine ("  --warnaserror[+|-]        Report all warnings as errors");
 			Console.WriteLine ("  --warnaserror[+|-] WARN   Report specific warnings as errors");
-			Console.WriteLine ("  --collapse[+|-]           Collapse analysis warnings to one per assembly");
-			Console.WriteLine ("  --collapse[+|-] ASM       Collapse warnings for specific assembly");
+			Console.WriteLine ("  --singlewarn[+|-]         Show at most one analysis warning per assembly");
+			Console.WriteLine ("  --singlewarn[+|-] ASM     Show at most one analysis warning for a specific assembly");
 			Console.WriteLine ("  --version                 Print the version number of the {0}", _linker);
 
 			Console.WriteLine ();
