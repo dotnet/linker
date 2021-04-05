@@ -22,11 +22,11 @@ namespace Mono.Linker.Tests.Cases.TypeForwarding
 	{
 		static void Main ()
 		{
-            // For the issue to repro, the forwarder assembly must be processed by SweepStep before
-            // the attribute. Referencing it first in the test does this, even though it's not really
-            // a guarantee, since the assembly action dictionary doesn't guarantee order.
-            var _ = typeof (UsedToReferenceForwarderAssembly);
-            var _2 = typeof (AttributedType);
+			// For the issue to repro, the forwarder assembly must be processed by SweepStep before
+			// the attribute. Referencing it first in the test does this, even though it's not really
+			// a guarantee, since the assembly action dictionary doesn't guarantee order.
+			var _ = typeof (UsedToReferenceForwarderAssembly);
+			var _2 = typeof (AttributedType);
 		}
 	}
 }
