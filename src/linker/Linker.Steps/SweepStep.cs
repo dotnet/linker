@@ -63,6 +63,17 @@ namespace Mono.Linker.Steps
 			foreach (var assembly in assemblies)
 				UpdateAssemblyReferencesToRemovedAssemblies (assembly);
 
+			// Update scopes before removing any type forwarder.
+			foreach (var assembly in assemblies) {
+				switch (Annotations.GetAction (assembly)) {
+				case AssemblyAction.CopyUsed:
+				case AssemblyAction.Link:
+				case AssemblyAction.Save:
+					SweepAssemblyReferences (assembly);
+					break;
+				}
+			}
+
 			foreach (var assembly in assemblies)
 				ProcessAssemblyAction (assembly);
 
@@ -187,12 +198,6 @@ namespace Mono.Linker.Steps
 
 			case AssemblyAction.Save:
 				SweepTypeForwarders (assembly);
-
-				//
-				// Save means we need to rewrite the assembly due to removed assembly
-				// references
-				//
-				SweepAssemblyReferences (assembly);
 				break;
 			}
 		}
@@ -201,11 +206,13 @@ namespace Mono.Linker.Steps
 		{
 			var types = new List<TypeDefinition> ();
 			ModuleDefinition main = assembly.MainModule;
+			bool updateScopes = false;
 
 			foreach (TypeDefinition type in main.Types) {
 				if (!ShouldRemove (type)) {
 					SweepType (type);
 					types.Add (type);
+					updateScopes = true;
 					continue;
 				}
 
@@ -221,24 +228,23 @@ namespace Mono.Linker.Steps
 				main.Types.Add (type);
 
 			SweepResources (assembly);
-			SweepCustomAttributes (assembly);
+			updateScopes |= SweepCustomAttributes (assembly);
 
 			foreach (var module in assembly.Modules)
-				SweepCustomAttributes (module);
+				updateScopes |= SweepCustomAttributes (module);
 
 			//
 			// MainModule module references are used by pinvoke
 			//
 			if (main.HasModuleReferences)
-				SweepCollectionMetadata (main.ModuleReferences);
+				updateScopes |= SweepCollectionMetadata (main.ModuleReferences);
 
 			if (main.EntryPoint != null && !Annotations.IsMarked (main.EntryPoint)) {
 				main.EntryPoint = null;
 			}
 
-			SweepTypeForwarders (assembly);
-
-			SweepAssemblyReferences (assembly);
+			if (SweepTypeForwarders (assembly) || updateScopes)
+				SweepAssemblyReferences (assembly);
 		}
 
 		static void SweepAssemblyReferences (AssemblyDefinition assembly)
