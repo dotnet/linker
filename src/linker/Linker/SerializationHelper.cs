@@ -25,8 +25,8 @@ namespace Mono.Linker
 	//    recursively scan types of properties and fields (including generic arguments)
 	//      for each recursive type, conditionally preserve the default ctor
 	//
-	// We want to match the above behavior in a more consistent way (it is ok to be more conservative because we
-	// don't know about the xamarin-android serializer implementation.) 
+	// We want to match the above behavior in a more consistent way (erring on the side of being more conservative).
+
 	// Instead of conditionally preserving things, we will just mark them, and we will do so consistently for every
 	// type discovered as part of the type graph reachable from the discovered roots. We also do not distinguish between
 	// SDK and non-SDK assemblies.
@@ -103,7 +103,7 @@ namespace Mono.Linker
 
 			if (type.HasFields) {
 				foreach (var field in type.Fields) {
-					// Static fields are kept, matching xamarin-android behavior
+					// Static field types are discovered, matching xamarin-android behavior
 					MarkRecursiveMembersInternal (field.FieldType, new DependencyInfo (DependencyKind.RecursiveType, type));
 					// marking the field is handled by TypePreserve.All
 				}
@@ -111,7 +111,7 @@ namespace Mono.Linker
 
 			if (type.HasProperties) {
 				foreach (var property in type.Properties) {
-					// Static properties are kept, matching xamarin-android behavior
+					// Static property types are discovered, matching xamarin-android behavior
 					MarkRecursiveMembersInternal (property.PropertyType, new DependencyInfo (DependencyKind.RecursiveType, type));
 					// getter/setter are handled by TypePreserve.All
 				}
