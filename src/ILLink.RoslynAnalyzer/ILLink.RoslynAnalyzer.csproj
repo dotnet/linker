@@ -8,14 +8,6 @@
     <IncludeBuildOutput>false</IncludeBuildOutput>
   </PropertyGroup>
 
-  <!-- Analyzer package properties -->
-  <PropertyGroup>
-    <PackageId>Microsoft.NET.ILLink.Analyzers</PackageId>
-    <Authors>Microsoft</Authors>
-    <Description>Analyzer utilities for ILLink attributes and single-file</Description>
-    <NoPackageAnalysis>true</NoPackageAnalysis>
-  </PropertyGroup>
-
   <ItemGroup>
     <EmbeddedResource Include="Resources.resx" GenerateSource="true" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.7.0" PrivateAssets="all" />
