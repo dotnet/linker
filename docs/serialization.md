@@ -65,7 +65,7 @@ Starting from the discovered root types, the heuristics will recursively discove
 
 ## Preservation logic
 
-For each discovered type (including root types and the recursive type graph), the linker conditionally preserves all members. This does not on its own mark the types. Rather, it says that _if_ a type is marked, then the following will also be marked:
+For each discovered type (including root types and the recursive type graph), the linker marks the type and its members:
 - Properties of the type
 - Fields of the type
 - Methods of the type, including constructors
@@ -84,8 +84,8 @@ Most features of reflection-based serializers will not work even with these heur
   - [`DataContractSerializer.KnownTypes`](https://docs.microsoft.com/dotnet/api/system.runtime.serialization.datacontractserializer.knowntypes?view=net-5.0)
   - `extraTypes` argument of the [`XmlSerializer ctor`](https://docs.microsoft.com/dotnet/api/system.xml.serialization.xmlserializer.-ctor?view=net-5.0#System_Xml_Serialization_XmlSerializer__ctor_System_Type_System_Type___)
 - Serializing types which implement special interfaces
-  - [`ISerializable`](https://docs.microsoft.com/en-us/dotnet/api/system.runtime.serialization.iserializable?view=net-5.0)
-  - [`IXmlSerializable`](https://docs.microsoft.com/en-us/dotnet/api/system.xml.serialization.ixmlserializable?view=net-5.0)
+  - [`ISerializable`](https://docs.microsoft.com/dotnet/api/system.runtime.serialization.iserializable?view=net-5.0)
+  - [`IXmlSerializable`](https://docs.microsoft.com/dotnet/api/system.xml.serialization.ixmlserializable?view=net-5.0)
 - Serializer-specific handling of collection types
-  - Types which implement [`ICollection`](https://docs.microsoft.com/en-us/dotnet/standard/serialization/examples-of-xml-serialization#serializing-a-class-that-implements-the-icollection-interface)
-  - Deserializing [`collection interfaces`](https://docs.microsoft.com/en-us/dotnet/framework/wcf/feature-details/collection-types-in-data-contracts#using-collection-interface-types-and-read-only-collections) into serializer-specific default types
+  - Types which implement [`ICollection`](https://docs.microsoft.com/dotnet/standard/serialization/examples-of-xml-serialization#serializing-a-class-that-implements-the-icollection-interface)
+  - Deserializing [`collection interfaces`](https://docs.microsoft.com/dotnet/framework/wcf/feature-details/collection-types-in-data-contracts#using-collection-interface-types-and-read-only-collections) into serializer-specific default types
