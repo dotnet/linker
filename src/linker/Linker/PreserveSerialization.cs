@@ -18,13 +18,6 @@ namespace Mono.Linker
 	// - this will discover types in non-"link" assemblies as well
 	public class PreserveSerialization : BaseSubStep
 	{
-
-		public override bool IsActiveFor (AssemblyDefinition assembly)
-		{
-			// TODO: check for referenced assembly?
-			return true;
-		}
-
 		public override SubStepTargets Targets =>
 			SubStepTargets.Type
 			| SubStepTargets.Field
