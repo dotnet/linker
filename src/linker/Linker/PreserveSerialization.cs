@@ -62,35 +62,71 @@ namespace Mono.Linker
 			if (!provider.HasCustomAttributes)
 				return;
 
-			var xml = false;
+			var serializedFor = SerializerKind.None;
+
 			foreach (var attribute in provider.CustomAttributes) {
-				if (!xml && IsPreservedXmlSerializationAttribute (attribute))
-					xml = true;
-				// TODO: other serializers
+				if (IsPreservedSerializationAttribute (provider, attribute, out SerializerKind serializerKind))
+					serializedFor |= serializerKind;
 			}
-			if (!xml)
-				return;
 
 			TypeDefinition type = provider switch {
 				TypeDefinition td => td,
 				FieldDefinition field => field.DeclaringType,
 				PropertyDefinition property => property.DeclaringType,
 				EventDefinition @event => @event.DeclaringType,
+				MethodDefinition method => method.DeclaringType,
 				_ => throw new ArgumentException ($"{nameof (provider)} has invalid provider type {provider.GetType ()}")
 			};
 
-			if (xml)
+			if (serializedFor.HasFlag (SerializerKind.DataContractSerializer))
+				Context.SerializationHelper.MarkRecursiveMembers (type, new DependencyInfo (DependencyKind.DataContractSerialized, provider));
+			if (serializedFor.HasFlag (SerializerKind.XmlSerializer))
 				Context.SerializationHelper.MarkRecursiveMembers (type, new DependencyInfo (DependencyKind.XmlSerialized, provider));
 		}
 
-		static bool IsPreservedXmlSerializationAttribute (CustomAttribute attribute)
+		enum SerializerKind
 		{
-			var type = attribute.Constructor.DeclaringType;
-			var name = type.Name;
-			return type.Namespace == "System.Xml.Serialization"
-				&& name.StartsWith ("Xml", StringComparison.Ordinal)
-				&& name.EndsWith ("Attribute", StringComparison.Ordinal)
-				&& name != "XmlIgnoreAttribute";
+			None,
+			XmlSerializer,
+			DataContractSerializer,
+		}
+
+		static bool IsPreservedSerializationAttribute (ICustomAttributeProvider provider, CustomAttribute attribute, out SerializerKind serializerKind)
+		{
+			TypeReference attributeType = attribute.Constructor.DeclaringType;
+			serializerKind = SerializerKind.None;
+
+			switch (attributeType.Namespace) {
+
+			// http://bugzilla.xamarin.com/show_bug.cgi?id=1415
+			// http://msdn.microsoft.com/en-us/library/system.runtime.serialization.datamemberattribute.aspx
+			case "System.Runtime.Serialization":
+				var serialized = false;
+				if (provider is PropertyDefinition or FieldDefinition or EventDefinition)
+					serialized = attributeType.Name == "DataMemberAttribute";
+				else if (provider is TypeDefinition)
+					serialized = attributeType.Name == "DataContractAttribute";
+
+				if (serialized) {
+					serializerKind = SerializerKind.DataContractSerializer;
+					return true;
+				}
+				break;
+
+			// http://msdn.microsoft.com/en-us/library/83y7df3e.aspx
+			case "System.Xml.Serialization":
+				var attributeName = attributeType.Name;
+				if (attributeName.StartsWith ("Xml", StringComparison.Ordinal)
+					&& attributeName.EndsWith ("Attribute", StringComparison.Ordinal)
+					&& attributeName != "XmlIgnoreAttribute") {
+					serializerKind = SerializerKind.XmlSerializer;
+					return true;
+				}
+				break;
+
+			};
+
+			return false;
 		}
 	}
 }

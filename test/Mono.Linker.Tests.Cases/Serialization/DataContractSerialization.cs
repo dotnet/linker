@@ -1,50 +1,51 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Xml.Serialization;
+using System.Runtime.Serialization;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.Serialization
 {
-	[Reference ("System.Xml.XmlSerializer.dll")]
-	[Reference ("System.Private.Xml.dll")]
+	[Reference ("System.Runtime.Serialization.dll")]
+	[Reference ("System.Runtime.Serialization.Xml.dll")]
+	[Reference ("System.Private.DataContractSerialization.dll")]
+	[Reference ("System.Runtime.Serialization.Primitives.dll")]
 	[SetupLinkerArgument ("--keep-serialization", "true")]
-	public class XmlSerialization
+	public class DataContractSerialization
 	{
 		public static void Main ()
 		{
 			// We don't discover roots passed to the ctor
-			new XmlSerializer (typeof (RootType));
+			new DataContractSerializer (typeof (RootType));
 
 			// We don't model type arrays, so the extra type will not be discovered for serialization.
-			new XmlSerializer (typeof (RootType), new Type[] { typeof (ExtraType) });
+			new DataContractSerializer (typeof (RootType), new Type[] { typeof (ExtraType) });
 
 			// We don't track generic instance typerefs in dataflow, so generic parameters in root types will not be discovered.
-			new XmlSerializer (typeof (GenericRootType<GenericRootParameter>));
+			new DataContractSerializer (typeof (GenericRootType<GenericRootParameter>));
 
 			// There are no annotations for serialized types, so we can only discover types statically referenced by the direct caller of the serializer ctor.
-			XmlSerializerHelper (typeof (RootType));
-			GenericXmlSerializerHelper<RootType> ();
+			DataContractSerializerHelper (typeof (RootType));
+			GenericDataContractSerializerHelper<RootType> ();
 
 			// Instantiating types for serialized collection interfaces doesn't keep members of those types.
 			var collectionMembersType = new CollectionMembersType {
-				collection = new Collection (),
 				enumerable = new Enumerable (),
 				genericEnumerable = new GenericEnumerable<ItemType> ()
 			};
 		}
 
 		[Kept]
-		public static XmlSerializer XmlSerializerHelper (Type t)
+		public static DataContractSerializer DataContractSerializerHelper (Type t)
 		{
-			return new XmlSerializer (t);
+			return new DataContractSerializer (t);
 		}
 
 		[Kept]
-		public static XmlSerializer GenericXmlSerializerHelper<T> ()
+		public static DataContractSerializer GenericDataContractSerializerHelper<T> ()
 		{
-			return new XmlSerializer (typeof (T));
+			return new DataContractSerializer (typeof (T));
 		}
 
 		[Kept]
@@ -53,6 +54,7 @@ namespace Mono.Linker.Tests.Cases.Serialization
 			// removed
 			int f1;
 		}
+
 		[Kept]
 		class ExtraType
 		{
@@ -78,36 +80,12 @@ namespace Mono.Linker.Tests.Cases.Serialization
 
 		[Kept]
 		[KeptMember (".ctor()")]
-		[KeptAttributeAttribute (typeof (XmlRootAttribute))]
-		[XmlRoot]
+		[KeptAttributeAttribute (typeof (DataContractAttribute))]
+		[DataContract]
 		class AttributedType
 		{
 			[Kept]
 			int f1;
-		}
-
-		// removed
-		class XmlIgnoreMember
-		{
-			// removed
-			[XmlIgnore]
-			int f1;
-		}
-
-		[Kept]
-		[KeptMember (".ctor()")]
-		[KeptAttributeAttribute (typeof (XmlRootAttribute))]
-		[XmlRoot]
-		class AttributedTypeWithIgnoreField
-		{
-			// Kept due to outer attribute
-			[Kept]
-			[KeptAttributeAttribute (typeof (XmlIgnoreAttribute))]
-			[XmlIgnore]
-			int f1;
-
-			[Kept]
-			int f2;
 		}
 
 		[Kept]
@@ -115,8 +93,8 @@ namespace Mono.Linker.Tests.Cases.Serialization
 		class AttributedFieldType
 		{
 			[Kept]
-			[KeptAttributeAttribute (typeof (XmlElementAttribute))]
-			[XmlElement]
+			[KeptAttributeAttribute (typeof (DataMemberAttribute))]
+			[DataMember]
 			int f1;
 
 			[Kept]
@@ -129,8 +107,8 @@ namespace Mono.Linker.Tests.Cases.Serialization
 		{
 			[Kept]
 			[KeptBackingField]
-			[KeptAttributeAttribute (typeof (XmlElementAttribute))]
-			[XmlElement]
+			[KeptAttributeAttribute (typeof (DataMemberAttribute))]
+			[DataMember]
 			static int P { [Kept] get; }
 
 			[Kept]
@@ -139,44 +117,15 @@ namespace Mono.Linker.Tests.Cases.Serialization
 
 		[Kept]
 		[KeptMember (".ctor()")]
-		[KeptAttributeAttribute (typeof (XmlRootAttribute))]
-		[XmlRoot]
+		[KeptAttributeAttribute (typeof (DataContractAttribute))]
+		[DataContract]
 		class CollectionMembersType
 		{
-
-			[Kept]
-			public ICollection collection;
-
 			[Kept]
 			public IEnumerable enumerable;
 
 			[Kept]
 			public IEnumerable<ItemType> genericEnumerable;
-		}
-
-		[Kept]
-		[KeptMember (".ctor()")]
-		[KeptInterface (typeof (ICollection))]
-		[KeptInterface (typeof (IEnumerable))]
-		[KeptMember ("get_Count()")]
-		[KeptMember ("get_IsSynchronized()")]
-		[KeptMember ("get_SyncRoot()")]
-		class Collection : ICollection
-		{
-			// removed
-			int f1;
-
-			// ICollection implementation
-			[Kept]
-			public void CopyTo (Array a, int i) { }
-			[Kept]
-			public int Count => 0;
-			[Kept]
-			public bool IsSynchronized => true;
-			[Kept]
-			public object SyncRoot => null;
-			[Kept]
-			public IEnumerator GetEnumerator () => null;
 		}
 
 		[Kept]

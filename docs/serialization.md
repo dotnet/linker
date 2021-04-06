@@ -69,7 +69,6 @@ For each discovered type (including root types and the recursive type graph), th
 - Properties of the type
 - Fields of the type
 - Methods of the type, including constructors
-- Properties of the type
 - Events of the type
 
 Like above, this does not include members of the base type (or members defined on interfaces implemented by the type). Note that this includes static members. Method parameters or return types are marked as part of marking a method, but this does _not_ consider these types part of the type graph for the serializer heuristics.
