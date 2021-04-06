@@ -88,7 +88,6 @@ namespace Mono.Linker
 			if (type == null)
 				return;
 
-
 			_context.Annotations.Mark (type, typeReason);
 
 			if (!RecursiveTypes.Add (type))

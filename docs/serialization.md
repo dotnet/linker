@@ -58,12 +58,10 @@ Starting from the discovered root types, the heuristics will recursively discove
 - Types of properties defined on the type
   - _not_ including properties defined on the base type
   - (virtuals overridden by the type are discovered)
+  - including types of generic arguments
 - Types of fields defined on the type
   - _not_ including fields of the base type
-- Types of generic arguments in property/field types
-  - limited generically instantiated classes/structs
-  - _not_ including generic arrays (`T[]`)
-  - _not_ including generic pointer or function pointer types
+  - including types of generic arguments
 
 ## Preservation logic
 
@@ -90,6 +88,5 @@ Most features of reflection-based serializers will not work even with these heur
   - [`ISerializable`](https://docs.microsoft.com/en-us/dotnet/api/system.runtime.serialization.iserializable?view=net-5.0)
   - [`IXmlSerializable`](https://docs.microsoft.com/en-us/dotnet/api/system.xml.serialization.ixmlserializable?view=net-5.0)
 - Serializer-specific handling of collection types
-  - Serializing [`DataSet`](https://docs.microsoft.com/en-us/dotnet/standard/serialization/examples-of-xml-serialization#serializing-a-dataset)
   - Types which implement [`ICollection`](https://docs.microsoft.com/en-us/dotnet/standard/serialization/examples-of-xml-serialization#serializing-a-class-that-implements-the-icollection-interface)
   - Deserializing [`collection interfaces`](https://docs.microsoft.com/en-us/dotnet/framework/wcf/feature-details/collection-types-in-data-contracts#using-collection-interface-types-and-read-only-collections) into serializer-specific default types

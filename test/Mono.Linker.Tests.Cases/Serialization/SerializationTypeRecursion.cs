@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using System.Xml.Serialization;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
@@ -6,6 +7,7 @@ namespace Mono.Linker.Tests.Cases.Serialization
 {
 	[Reference ("System.Xml.XmlSerializer.dll")]
 	[Reference ("System.Private.Xml.dll")]
+	[SetupCompileArgument ("/unsafe")]
 	[SetupLinkerArgument ("--keep-serialization", "true")]
 	public class SerializationTypeRecursion
 	{
@@ -288,6 +290,46 @@ namespace Mono.Linker.Tests.Cases.Serialization
 
 		[Kept]
 		DerivedFromGenericType<GenericParameter5> f3;
+
+		[Kept]
+		[KeptMember (".ctor()")]
+		class ArrayItemType
+		{
+			[Kept]
+			int f1;
+		}
+
+		[Kept]
+		ArrayItemType[] f4;
+
+		[Kept]
+		struct PointerType
+		{
+			[Kept]
+			int f1;
+		}
+
+		[Kept]
+		unsafe PointerType* f5;
+
+		[Kept]
+		[StructLayout (LayoutKind.Auto)]
+		struct FunctionPointerParameterType
+		{
+			// removed
+			int f1;
+		}
+
+		[Kept]
+		[StructLayout (LayoutKind.Auto)]
+		struct FunctionPointerReturnType
+		{
+			// removed
+			int f2;
+		}
+
+		[Kept]
+		unsafe delegate*<FunctionPointerParameterType, FunctionPointerReturnType> f6;
 	}
 
 	[Kept]
