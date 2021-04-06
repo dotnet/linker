@@ -89,7 +89,6 @@ namespace Mono.Linker
 				return;
 
 
-			_context.Annotations.SetPreserve (type, TypePreserve.All);
 			_context.Annotations.Mark (type, typeReason);
 
 			if (!RecursiveTypes.Add (type))
@@ -98,6 +97,7 @@ namespace Mono.Linker
 			// Quirk to match xamarin-android behavior, which would set TypePreserve.All
 			// for discovered root types in "link" SDK assemblies. We do it for all recursive
 			// types for consistency.
+			_context.Annotations.SetPreserve (type, TypePreserve.All);
 
 			MarkRecursiveMembersInternal (type.BaseType, new DependencyInfo (DependencyKind.BaseType, type));
 
