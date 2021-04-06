@@ -76,6 +76,7 @@ namespace Mono.Linker.Dataflow
 					var reflectionContext = new ReflectionPatternContext (_context, ShouldEnableReflectionPatternReporting (method), method, method.MethodReturnType);
 					reflectionContext.AnalyzingPattern ();
 					RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberTypes, MethodReturnValue, method.MethodReturnType);
+					reflectionContext.Dispose ();
 				}
 			}
 		}
@@ -92,6 +93,7 @@ namespace Mono.Linker.Dataflow
 					var reflectionContext = new ReflectionPatternContext (_context, true, source, methodParameter);
 					reflectionContext.AnalyzingPattern ();
 					RequireDynamicallyAccessedMembers (ref reflectionContext, annotation, valueNode, methodParameter);
+					reflectionContext.Dispose ();
 				}
 			}
 		}
@@ -105,6 +107,7 @@ namespace Mono.Linker.Dataflow
 			var reflectionContext = new ReflectionPatternContext (_context, true, source, field);
 			reflectionContext.AnalyzingPattern ();
 			RequireDynamicallyAccessedMembers (ref reflectionContext, annotation, valueNode, field);
+			reflectionContext.Dispose ();
 		}
 
 		public void ApplyDynamicallyAccessedMembersToType (ref ReflectionPatternContext reflectionPatternContext, TypeDefinition type, DynamicallyAccessedMemberTypes annotation)
@@ -146,6 +149,7 @@ namespace Mono.Linker.Dataflow
 			var reflectionContext = new ReflectionPatternContext (_context, enableReflectionPatternReporting, source, genericParameter);
 			reflectionContext.AnalyzingPattern ();
 			RequireDynamicallyAccessedMembers (ref reflectionContext, annotation, valueNode, genericParameter);
+			reflectionContext.Dispose ();
 		}
 
 		ValueNode GetTypeValueNodeFromGenericArgument (TypeReference genericArgument)
@@ -208,6 +212,7 @@ namespace Mono.Linker.Dataflow
 				var reflectionContext = new ReflectionPatternContext (_context, ShouldEnableReflectionPatternReporting (method), method, field, operation);
 				reflectionContext.AnalyzingPattern ();
 				RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberTypes, valueToStore, field);
+				reflectionContext.Dispose ();
 			}
 		}
 
@@ -219,6 +224,7 @@ namespace Mono.Linker.Dataflow
 				var reflectionContext = new ReflectionPatternContext (_context, ShouldEnableReflectionPatternReporting (method), method, parameter, operation);
 				reflectionContext.AnalyzingPattern ();
 				RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberTypes, valueToStore, parameter);
+				reflectionContext.Dispose ();
 			}
 		}
 
@@ -929,14 +935,14 @@ namespace Mono.Linker.Dataflow
 								// We can allow Object.GetType to be modeled as System.Delegate because we keep all methods
 								// on delegates anyway so reflection on something this approximation would miss is actually safe.
 
-								// We ignore the fact that the type can be annotated (see below for hanling of annotated types)
+								// We ignore the fact that the type can be annotated (see below for handling of annotated types)
 								// This means the annotations (if any) won't be applied - instead we rely on the exact knowledge
 								// of the type. So for example even if the type is annotated with PublicMethods
 								// but the code calls GetProperties on it - it will work - mark properties, don't mark methods
 								// since we ignored the fact that it's annotated.
 								// This can be seen a little bit as a violation of the annotation, but we already have similar cases
 								// where a parameter is annotated and if something in the method sets a specific known type to it
-								// we will also make it just work, even if the annotation doesn't match he usage.
+								// we will also make it just work, even if the annotation doesn't match the usage.
 								methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new SystemTypeValue (staticType));
 							} else {
 								reflectionContext.AnalyzingPattern ();

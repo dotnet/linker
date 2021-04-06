@@ -27,6 +27,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			MultipleValuesWithAndWithoutAnnotationsWarns.Test (2);
 
 			SingleDerivedWithAnnotatedParent.Test ();
+			DerivedWithAnnotationOnDerived.Test ();
 			DerivedWithBaseAndAnnotatedInterface.Test ();
 			DeepHierarchy.Test ();
 			DeepInterfaceHierarchy.Test ();
@@ -39,6 +40,9 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 			AllAnnotationsAreApplied.Test ();
 			SealedWithAnnotation.Test ();
+
+			DiamondShapeWithUnannotatedInterface.Test ();
+			DiamondShapeWithAnnotatedInterface.Test ();
 		}
 
 		[Kept]
@@ -108,7 +112,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 				[Kept]
 				public void UsedMethod () { }
 				[Kept] // The type is not sealed, so trimmer will apply the annotation from the interface
-				public void UnsedMethod () { }
+				public void UnusedMethod () { }
 			}
 
 			[Kept]
@@ -322,6 +326,54 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			public static void Test ()
 			{
 				HierarchyAnnotatedParentClassChild.Instance ().GetType ().GetMethod ("UsedMethod");
+			}
+		}
+
+		[Kept]
+		class DerivedWithAnnotationOnDerived
+		{
+			[Kept]
+			[KeptMember (".ctor()")]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.None)]
+			class Base
+			{
+				[Kept]
+				public virtual void Method () { }
+			}
+
+			[Kept]
+			[KeptMember (".ctor()")]
+			[KeptBaseType (typeof (Base))]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			class Derived : Base
+			{
+				[Kept]
+				public override void Method () { }
+			}
+
+			[Kept]
+			[KeptMember (".ctor()")]
+			[KeptBaseType (typeof (Derived))]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicMethods)]
+			class MostDerived : Derived
+			{
+				[Kept]
+				public override void Method () { }
+
+				[Kept]
+				private void PrivateMethod () { }
+			}
+
+			[Kept]
+			static MostDerived GetInstance () => new MostDerived ();
+
+			[Kept]
+			public static void Test ()
+			{
+				GetInstance ().GetType ().GetMethod ("Method");
 			}
 		}
 
@@ -789,6 +841,104 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			{
 				// Explicitly ask for the private method
 				GetInstance ().GetType ().GetMethod ("PrivateMethod", System.Reflection.BindingFlags.NonPublic);
+			}
+		}
+
+		[Kept]
+		class DiamondShapeWithUnannotatedInterface
+		{
+			[Kept]
+			interface ICommon
+			{
+				// Not kept as there's no reference to the interface method
+				// Only the implementations are marked, but there's no reason to mark the method on the interface
+				void InterfaceMethod ();
+			}
+
+			[Kept]
+			[KeptInterface (typeof (ICommon))]
+			[KeptMember (".ctor()")]
+			class ImplementsCommonInterface : ICommon
+			{
+				[Kept]
+				public virtual void InterfaceMethod () { }
+			}
+
+			[Kept]
+			[KeptBaseType (typeof (ImplementsCommonInterface))]
+			[KeptInterface (typeof (ICommon))]
+			[KeptMember (".ctor()")]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			class DerivedAndImplementsSameInterface : ImplementsCommonInterface, ICommon
+			{
+			}
+
+			[Kept]
+			[KeptBaseType (typeof (DerivedAndImplementsSameInterface))]
+			[KeptMember (".ctor()")]
+			class MostDerived : DerivedAndImplementsSameInterface
+			{
+				[Kept]
+				public override void InterfaceMethod () { }
+			}
+
+			[Kept]
+			static DerivedAndImplementsSameInterface GetInstance () => new MostDerived ();
+
+			[Kept]
+			public static void Test ()
+			{
+				var i = typeof (ICommon); // Explicitely keep the interface (otherwise linker would remove it as it's not used)
+				GetInstance ().GetType ().GetMethod ("InterfaceMethod");
+			}
+		}
+
+		[Kept]
+		class DiamondShapeWithAnnotatedInterface
+		{
+			[Kept]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			interface IAnnotatedCommon
+			{
+				[Kept] // Due to the annotation
+				void InterfaceMethod ();
+			}
+
+			[Kept]
+			[KeptInterface (typeof (IAnnotatedCommon))]
+			[KeptMember (".ctor()")]
+			class ImplementsCommonInterface : IAnnotatedCommon
+			{
+				[Kept]
+				public virtual void InterfaceMethod () { }
+			}
+
+			[Kept]
+			[KeptBaseType (typeof (ImplementsCommonInterface))]
+			[KeptInterface (typeof (IAnnotatedCommon))]
+			[KeptMember (".ctor()")]
+			class DerivedAndImplementsSameInterface : ImplementsCommonInterface, IAnnotatedCommon
+			{
+			}
+
+			[Kept]
+			[KeptBaseType (typeof (DerivedAndImplementsSameInterface))]
+			[KeptMember (".ctor()")]
+			class MostDerived : DerivedAndImplementsSameInterface
+			{
+				[Kept]
+				public override void InterfaceMethod () { }
+			}
+
+			[Kept]
+			static IAnnotatedCommon GetInstance () => new MostDerived ();
+
+			[Kept]
+			public static void Test ()
+			{
+				GetInstance ().GetType ().GetMethod ("InterfaceMethod");
 			}
 		}
 	}
