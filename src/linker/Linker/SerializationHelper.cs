@@ -15,7 +15,9 @@ namespace Mono.Linker
 	//
 	// The xamarin-android behavior was as follows:
 	//
-	// Discover members in the "link" assemblies with certain attributes (Xml*Attribute, except XmlIgnoreAttribute).
+	// Discover members in the "link" assemblies with certain attributes:
+	//   for XMLSerializer: Xml*Attribute, except XmlIgnoreAttribute
+	//   for DataContractSerializer: DataContractAttribute or DataMemberAttribute
 	// These members are considered "roots" for serialization.
 	//
 	// For each "root":
@@ -33,8 +35,7 @@ namespace Mono.Linker
 	//
 	// The behavior is as follows:
 	//
-	// Discover attributed "roots" the same way. Additionally, consider root types from method-local
-	// dataflow where a known type flows into the XmlSerializer constructor.
+	// Discover attributed "roots" the same way.
 	//
 	// For each "root":
 	//   recursively scan types of properties and fields (including generic arguments)
@@ -82,7 +83,7 @@ namespace Mono.Linker
 				typeReason = new DependencyInfo (DependencyKind.ElementType, typeRef);
 				typeRef = (typeRef as TypeSpecification).ElementType;
 			}
-			// This doesn't correctly handle other TypeSpecs. We are only matching what xamarin-android used to do.
+			// This doesn't handle other TypeSpecs. We are only matching what xamarin-android used to do.
 
 			TypeDefinition type = typeRef.Resolve ();
 			if (type == null)
