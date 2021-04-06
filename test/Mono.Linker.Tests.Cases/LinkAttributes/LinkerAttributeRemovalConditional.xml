@@ -4,7 +4,7 @@
     <type fullname="Mono.Linker.Tests.Cases.LinkAttributes.TestConditionalRemoveAttribute">
       <attribute internal="RemoveAttributeInstances">
         <argument type="System.Object">
-          <argument>remove</argument>
+          <argument>remove1</argument>
         </argument>
       </attribute>
     </type>
@@ -12,6 +12,13 @@
       <attribute internal="RemoveAttributeInstances">
         <argument type="System.Object">
           <argument type="System.Int32">100</argument>
+        </argument>
+      </attribute>
+    </type>
+    <type fullname="Mono.Linker.Tests.Cases.LinkAttributes.TestConditionalRemoveAttribute">
+      <attribute internal="RemoveAttributeInstances">
+        <argument type="System.Object">
+          <argument>remove0</argument>
         </argument>
       </attribute>
     </type>

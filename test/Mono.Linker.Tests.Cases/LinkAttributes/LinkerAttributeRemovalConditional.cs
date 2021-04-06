@@ -18,9 +18,9 @@ namespace Mono.Linker.Tests.Cases.LinkAttributes
 			Kept_1 ();
 			Kept_2 ();
 			Kept_3 ();
-			Kept_4 ();
 			Removed_1 ();
 			Removed_2 ();
+			Removed_3 ();
 		}
 
 		[Kept]
@@ -45,27 +45,29 @@ namespace Mono.Linker.Tests.Cases.LinkAttributes
 		}
 
 		[Kept]
-		[KeptAttributeAttribute (typeof (TestConditionalRemoveAttribute))]
-		[TestConditionalRemove ("remove", 1)]
-		static void Kept_4 ()
-		{
-		}
-
-		[Kept]
-		[TestConditionalRemove ("remove", "string value")]
+		[TestConditionalRemove ("remove0", "string value")]
 		static void Removed_1 ()
 		{
 		}
 
 		[Kept]
-		[TestConditionalRemove (100, "1")]
+		[TestConditionalRemove (100, '1')]
+		[TestConditionalRemove ("remove1", '1', 3)]
 		static void Removed_2 ()
+		{
+		}
+
+		[Kept]
+		[TestConditionalRemove ("remove0", 'k', 0)] // It's removed because the converted string value matches
+		static void Removed_3 ()
 		{
 		}
 	}
 
 	[Kept]
 	[KeptBaseType (typeof (System.Attribute))]
+	[KeptAttributeAttribute (typeof (AttributeUsageAttribute))]
+	[AttributeUsage (AttributeTargets.All, AllowMultiple = true)]
 	class TestConditionalRemoveAttribute : Attribute
 	{
 		[Kept]
@@ -74,12 +76,14 @@ namespace Mono.Linker.Tests.Cases.LinkAttributes
 		}
 
 		[Kept]
+		// Any usage with "remove0" key is removed
 		public TestConditionalRemoveAttribute (string key, string value)
 		{
 		}
 
-		[Kept]
-		public TestConditionalRemoveAttribute (object key, int value)
+		// Any usage with 100 key is removed	
+		// Any usage with "remove1" key is removed
+		public TestConditionalRemoveAttribute (object key, char value, int ivalue)
 		{
 		}
 

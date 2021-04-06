@@ -544,7 +544,9 @@ instead of specifying `fullname` in the attribute as described in the following 
 </linker>
 ```
 
-In some cases it's useful to remove only specific instances of same attribute. This can be achieved by specifying values of the arguments to match
+In some cases, it's useful to remove only specific usage of the attribute. This can be achieved by specifying the value
+or values of the arguments to match. In the example below only `System.Reflection.AssemblyMetadataAttribute` custom attributes
+with the first argument equal to `RemovableValue` will be removed.
 
 ```xml
 <linker>

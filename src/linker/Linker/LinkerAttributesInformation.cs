@@ -45,7 +45,7 @@ namespace Mono.Linker
 					if (context.Annotations.TryGetPreserve (td, out TypePreserve preserve) && preserve != TypePreserve.Nothing)
 						continue;
 
-					attributeValue = BuildRemoveAttributeInstancesAttribute (context, provider, customAttribute);
+					attributeValue = BuildRemoveAttributeInstancesAttribute (context, td, customAttribute);
 					break;
 				default:
 					continue;
@@ -110,7 +110,7 @@ namespace Mono.Linker
 			return null;
 		}
 
-		static RemoveAttributeInstancesAttribute BuildRemoveAttributeInstancesAttribute (LinkContext context, ICustomAttributeProvider provider, CustomAttribute ca)
+		static RemoveAttributeInstancesAttribute BuildRemoveAttributeInstancesAttribute (LinkContext context, TypeDefinition attributeContext, CustomAttribute ca)
 		{
 			switch (ca.ConstructorArguments.Count) {
 			case 0:
@@ -121,7 +121,7 @@ namespace Mono.Linker
 			default:
 				context.LogWarning (
 					$"Attribute '{ca.AttributeType.GetDisplayName ()}' doesn't have the required number of arguments specified",
-					2028, provider as IMemberDefinition);
+					2028, attributeContext);
 				return null;
 			};
 		}
