@@ -12,18 +12,18 @@ namespace Mono.Linker.Tests.Cases.Serialization
 	{
 		public static void Main ()
 		{
-			// RootType1 is discovered as a serialization root
-			new XmlSerializer (typeof (RootType1));
+			// We don't discover roots passed to the ctor
+			new XmlSerializer (typeof (RootType));
 
 			// We don't model type arrays, so ExtraType1 will not be discovered for serialization.
-			new XmlSerializer (typeof (RootType2), new Type[] { typeof (ExtraType1) });
+			new XmlSerializer (typeof (RootType), new Type[] { typeof (ExtraType) });
 
 			// We don't track generic instance typerefs in dataflow, so generic parameters in root types will not be discovered.
 			new XmlSerializer (typeof (GenericRootType<GenericRootParameter>));
 
 			// There are no annotations for serialized types, so we can only discover types statically referenced by the direct caller of the XmlSerializer ctor.
-			XmlSerializerHelper (typeof (RootType3));
-			GenericXmlSerializerHelper<RootType4> ();
+			XmlSerializerHelper (typeof (RootType));
+			GenericXmlSerializerHelper<RootType> ();
 		}
 
 		[Kept]
@@ -40,88 +40,32 @@ namespace Mono.Linker.Tests.Cases.Serialization
 	}
 
 	[Kept]
-	[KeptMember (".ctor()")]
-	class RootType1
+	class RootType
 	{
-		[Kept]
-		[KeptMember (".ctor()")]
-		class RecursiveType
-		{
-		}
-		[Kept]
-		RecursiveType f1;
+		// removed
+		int f1;
+	}
+	[Kept]
+	class ExtraType
+	{
+		// removed
+		int f1;
 	}
 
 	[Kept]
-	[KeptMember (".ctor()")]
-	class RootType2
-	{
-		[Kept]
-		[KeptMember (".ctor()")]
-		class RecursiveType
-		{
-		}
-		[Kept]
-		RecursiveType f1;
-	}
-
-	[Kept] // removed ctor
-	class RootType3
-	{
-		// removed
-		class RecursiveType
-		{
-		}
-		// removed
-		RecursiveType f1;
-	}
-
-	[Kept] // removed ctor
-	class RootType4
-	{
-		// removed
-		class RecursiveType
-		{
-		}
-		// removed
-		RecursiveType f1;
-	}
-
-	[Kept]
-	class ExtraType1
-	{
-		// removed
-		class RecursiveType
-		{
-		}
-		RecursiveType f1;
-	}
-
-	[Kept] // removed ctor
 	class GenericRootParameter
 	{
-		// removed
-		class RecursiveType
-		{
-		}
-		// removed
-		RecursiveType f1;
 		// removed
 		int f2;
 	}
 
 	[Kept]
-	[KeptMember (".ctor()")]
 	class GenericRootType<T>
 	{
-		[Kept]
+		// removed
 		T f1;
-
-		[Kept]
-		[KeptMember (".ctor()")]
-		class RecursiveType { }
-		[Kept]
-		RecursiveType f2;
+		// removed
+		int f2;
 	}
 
 	[Kept]

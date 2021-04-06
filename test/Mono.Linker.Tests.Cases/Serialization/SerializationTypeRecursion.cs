@@ -11,12 +11,13 @@ namespace Mono.Linker.Tests.Cases.Serialization
 	{
 		public static void Main ()
 		{
-			new XmlSerializer (typeof (RootTypeRecursive));
 		}
 	}
 
 	[Kept]
 	[KeptMember (".ctor()")]
+	[KeptAttributeAttribute (typeof (XmlRootAttribute))]
+	[XmlRoot]
 	public class RootTypeRecursive
 	{
 		// removed

@@ -267,7 +267,6 @@ namespace Mono.Linker.Dataflow
 			RuntimeReflectionExtensions_GetRuntimeProperty,
 			RuntimeHelpers_RunClassConstructor,
 			MethodInfo_MakeGenericMethod,
-			XmlSerializer_Ctor,
 		}
 
 		static IntrinsicId GetIntrinsicIdForMethod (MethodDefinition calledMethod)
@@ -585,17 +584,6 @@ namespace Mono.Linker.Dataflow
 					&& calledMethod.HasThis
 					&& calledMethod.Parameters.Count == 1
 					=> IntrinsicId.MethodInfo_MakeGenericMethod,
-
-				// System.Xml.Serialization.XmlSerializer (System.Type type)
-				// System.Xml.Serialization.XmlSerializer (System.Type type, string defaultNamespace)
-				// System.Xml.Serialization.XmlSerializer (System.Type type, Type[] extraTypes)
-				// System.Xml.Serialization.XmlSerializer (System.Type type, XmlAttributeOverrides overrides)
-				// System.Xml.Serialization.XmlSerializer (System.Type type, XmlRootAttribute root)
-				// System.Xml.Serialization.XmlSerializer (System.Type type, XmlAttributeOverrides overrides, Type[] extraTypes, XmlRootAttribute root, string defaultNamespace)
-				// System.Xml.Serialization.XmlSerializer (System.Type type, XmlAttributeOverrides overrides, Type[] extraTypes, XmlRootAttribute root, string defaultNamespace, string location)
-				".ctor" when calledMethod.IsDeclaredOnType ("System.Xml.Serialization", "XmlSerializer")
-					&& calledMethod.HasParameterOfType (0, "System", "Type")
-					=> IntrinsicId.XmlSerializer_Ctor,
 
 				_ => IntrinsicId.None,
 			};
@@ -1632,19 +1620,6 @@ namespace Mono.Linker.Dataflow
 						methodReturnValue = methodParams[0];
 					}
 					break;
-
-				// System.Xml.Serialization.XmlSerializer constructors with Type argument
-				case IntrinsicId.XmlSerializer_Ctor: {
-						if (!_context.KeepSerialization)
-							goto default;
-
-						foreach (var value in methodParams[1].UniqueValues ()) {
-							if (value is SystemTypeValue systemTypeValue)
-								_context.SerializationHelper.MarkRecursiveMembers (systemTypeValue.TypeRepresented, new DependencyInfo (DependencyKind.XmlSerialized, callingMethodDefinition));
-						}
-
-						goto default;
-					}
 
 				default:
 					if (requiresDataFlowAnalysis) {
