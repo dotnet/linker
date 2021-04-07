@@ -195,7 +195,7 @@ namespace Mono.Linker
 
 		public HashSet<string> AssembliesWithGeneratedSingleWarning { get; set; }
 
-		public SerializationHelper SerializationHelper { get; }
+		public SerializationMarker SerializationMarker { get; }
 
 		public LinkContext (Pipeline pipeline, ILogger logger)
 		{
@@ -214,7 +214,7 @@ namespace Mono.Linker
 			var factory = new UnintializedContextFactory ();
 			_annotations = factory.CreateAnnotationStore (this);
 			MarkingHelpers = factory.CreateMarkingHelpers (this);
-			SerializationHelper = new SerializationHelper (this);
+			SerializationMarker = new SerializationMarker (this);
 			Tracer = factory.CreateTracer (this);
 			ReflectionPatternRecorder = new LoggingReflectionPatternRecorder (this);
 			MarkedKnownMembers = new KnownMembers ();

@@ -9,14 +9,14 @@ using Mono.Cecil;
 using Mono.Linker.Dataflow;
 using Mono.Linker.Steps;
 
-namespace Mono.Linker
+namespace Mono.Linker.Steps
 {
 
 	// This discovers types attributed with certain serialization attributes, to match the old behavior
 	// of xamarin-android. It is not meant to be complete. Unlike xamarin-andorid:
 	// - this will only discover attributed types in marked assemblies
 	// - this will discover types in non-"link" assemblies as well
-	public class PreserveSerialization : BaseSubStep
+	public class PreserveSerializationSubStep : BaseSubStep
 	{
 		public override SubStepTargets Targets =>
 			SubStepTargets.Type
@@ -72,9 +72,9 @@ namespace Mono.Linker
 			};
 
 			if (serializedFor.HasFlag (SerializerKind.DataContractSerializer))
-				Context.SerializationHelper.MarkRecursiveMembers (type, new DependencyInfo (DependencyKind.DataContractSerialized, provider));
+				Context.SerializationMarker.MarkRecursiveMembers (type, new DependencyInfo (DependencyKind.DataContractSerialized, provider));
 			if (serializedFor.HasFlag (SerializerKind.XmlSerializer))
-				Context.SerializationHelper.MarkRecursiveMembers (type, new DependencyInfo (DependencyKind.XmlSerialized, provider));
+				Context.SerializationMarker.MarkRecursiveMembers (type, new DependencyInfo (DependencyKind.XmlSerialized, provider));
 		}
 
 		enum SerializerKind

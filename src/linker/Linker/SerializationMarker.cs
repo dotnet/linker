@@ -43,12 +43,12 @@ namespace Mono.Linker
 	//       mark the type, and set TypePreserve.All
 	//         this handles the cases where XA used to set TypePreserve.All, preserve default ctors, and mark or conditionally preserve fields/methods (including property and event methods)
 
-	public class SerializationHelper
+	public class SerializationMarker
 	{
 
 		readonly LinkContext _context;
 
-		public SerializationHelper (LinkContext context)
+		public SerializationMarker (LinkContext context)
 		{
 			_context = context;
 		}
