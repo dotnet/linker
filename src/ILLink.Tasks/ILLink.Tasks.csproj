@@ -42,11 +42,11 @@
       <SetTargetFramework>TargetFramework=netstandard2.0</SetTargetFramework>
     </ProjectReference>
     <ProjectReference Condition="('$(UseCecilPackage)' != 'true') And ('$(TargetFramework)' != 'net472')" Include="../../external/cecil/symbols/pdb/Mono.Cecil.Pdb.csproj" PrivateAssets="All" />
-    <ProjectReference Include="../ILLink.RoslynAnalyzer/ILLink.RoslynAnalyzer.csproj">
+    <ProjectReference Condition="'$(TargetFramework)' != 'net472'" Include="../ILLink.RoslynAnalyzer/ILLink.RoslynAnalyzer.csproj">
       <PrivateAssets>all</PrivateAssets>
       <DestinationSubDirectory>analyzers/dotnet/cs/</DestinationSubDirectory>
     </ProjectReference>
-    <ProjectReference Include="../ILLink.CodeFix/ILLink.CodeFixProvider.csproj">
+    <ProjectReference Condition="'$(TargetFramework)' != 'net472'" Include="../ILLink.CodeFix/ILLink.CodeFixProvider.csproj">
       <PrivateAssets>all</PrivateAssets>
       <DestinationSubDirectory>analyzers/dotnet/cs/</DestinationSubDirectory>
     </ProjectReference>
