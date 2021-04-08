@@ -50,7 +50,11 @@ namespace ILLink.RoslynAnalyzer
 
 				context.RegisterOperationAction (operationContext => {
 					var call = (IObjectCreationOperation) operationContext.Operation;
-					CheckMethodOrCtorCall (operationContext, call.Constructor);
+					var ctor = call.Constructor;
+					if (ctor is not null)
+					{
+						CheckMethodOrCtorCall (operationContext, ctor);
+					}
 				}, OperationKind.ObjectCreation);
 
 				context.RegisterOperationAction (operationContext => {
