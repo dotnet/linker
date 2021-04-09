@@ -95,6 +95,7 @@ namespace Mono.Linker.Dataflow
 				var reflectionMethodBodyScanner = new ReflectionMethodBodyScanner (_context, _markStep);
 				var reflectionPatternContext = new ReflectionPatternContext (_context, true, type, type);
 				reflectionMethodBodyScanner.ApplyDynamicallyAccessedMembersToType (ref reflectionPatternContext, type, annotation);
+				reflectionPatternContext.Dispose ();
 			}
 
 			// Store the results in the cache
