@@ -54,7 +54,7 @@ There are two big categories of warnings which you will likely see:
 that the method is not trim-safe, meaning that it might use reflection or some other mechanism
 to access code that may be trimmed away. This attribute is used when it's not possible for the
 trimmer to understand what's necessary, and a blanket warning is needed. This would often
-be true for methods which use `dynamic`, RefEmit, or other runtime code generation technologies.
+be true for methods which use the C# `dynamic` keyword, `Assembly.LoadFrom`, or other runtime code generation technologies.
 An example would be:
 
 ```C#
