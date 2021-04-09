@@ -793,8 +793,6 @@ namespace Mono.Linker.Dataflow
 						foreach (var value in methodParams[0].UniqueValues ()) {
 							if (value is SystemTypeValue systemTypeValue) {
 								foreach (var stringParam in methodParams[1].UniqueValues ()) {
-									// TODO: Change this as needed after deciding whether or not we are to keep
-									// all methods on a type that was accessed via reflection.
 									if (stringParam is KnownStringValue stringValue) {
 										MarkMethodsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, m => m.Name == stringValue.Contents, bindingFlags);
 										reflectionContext.RecordHandledPattern ();
@@ -1555,9 +1553,7 @@ namespace Mono.Linker.Dataflow
 				// CreateInstance (string typeName, bool ignoreCase, BindingFlags bindingAttr, Binder? binder, object []? args, CultureInfo? culture, object []? activationAttributes)
 				//
 				case IntrinsicId.Assembly_CreateInstance:
-					//
-					// TODO: This could be supported for "this" only calls
-					//
+					// For now always fail since we don't track assemblies (mono/linker/issues/1947)
 					reflectionContext.AnalyzingPattern ();
 					reflectionContext.RecordUnrecognizedPattern (2058, $"Parameters passed to method '{calledMethodDefinition.GetDisplayName ()}' cannot be analyzed. Consider using methods 'System.Type.GetType' and `System.Activator.CreateInstance` instead.");
 					break;
@@ -2091,9 +2087,8 @@ namespace Mono.Linker.Dataflow
 			reflectionContext.RecordRecognizedPattern (property, () => {
 				// Marking the property itself actually doesn't keep it (it only marks its attributes and records the dependency), we have to mark the methods on it
 				_markStep.MarkProperty (property, dependencyInfo);
-				// TODO - this is sort of questionable - when somebody asks for a property they probably want to call either get or set
-				// but linker tracks those separately, and so accessing the getter/setter will raise a warning as it's potentially trimmed.
-				// So including them here doesn't actually remove the warning even if the code is written correctly.
+				// We don't track PropertyInfo, so we can't tell if any accessor is needed by the app, so include them both.
+				// With better tracking it might be possible to be more precise here: mono/linker/issues/1948
 				_markStep.MarkMethodIfNotNull (property.GetMethod, dependencyInfo, source);
 				_markStep.MarkMethodIfNotNull (property.SetMethod, dependencyInfo, source);
 				_markStep.MarkMethodsIf (property.OtherMethods, m => true, dependencyInfo, source);
