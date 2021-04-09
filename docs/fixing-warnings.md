@@ -59,13 +59,13 @@ An example would be:
 
 ```C#
 [RequiresUnreferencedCode("Use 'MethodFriendlyToTrimming' instead")]
-void MethodWithRefEmit() { ... }
+void MethodWithAssemblyLoad() { ... }
 
 void TestMethod()
 {
     // IL2026: Using method 'MethodWithUnreferencedCodeUsage' which has 'RequiresUnreferencedCodeAttribute'
     // can break functionality when trimming application code. Use 'MethodFriendlyToTrimming' instead.
-    MethodWithRefEmit();
+    MethodWithAssemblyLoad();
 }
 ```
 
@@ -83,13 +83,13 @@ For example:
 
 ```C#
 [RequiresUnreferencedCode("Use 'MethodFriendlyToTrimming' instead")]
-void MethodWithRefEmit() { ... }
+void MethodWithAssemblyLoad() { ... }
 
-[UnconditionalSuppressMessage("RefEmitTrimming", "IL2026:RequiresUnreferencedCode",
-    Justification = "I've verified the RefEmit code only adds integers, so it's safe")]
+[UnconditionalSuppressMessage("AssemblyLoadTrimming", "IL2026:RequiresUnreferencedCode",
+    Justification = "I've verified the loaded assembly only adds integers, so it's safe")]
 void TestMethod()
 {
-    MethodWithRefEmit(); // Warning suppressed
+    MethodWithAssemblyLoad(); // Warning suppressed
 }
 ```
 
