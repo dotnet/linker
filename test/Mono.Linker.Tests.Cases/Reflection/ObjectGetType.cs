@@ -147,14 +147,16 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 			struct BasicAnnotatedStruct
 			{
-				// TODO: Handle boxing and unboxing operations
+				// Handle boxing and unboxing operations
+				// https://github.com/mono/linker/issues/1951
 				// [Kept]
 				public void UsedMethod () { }
 				public void UnusedMethod () { }
 			}
 
 			[Kept]
-			// TODO: This requires boxing/unboxing to correctly propagate static type
+			// https://github.com/mono/linker/issues/1951
+			// This should not warn
 			[ExpectedWarning ("IL2075", "GetMethod")]
 			static void TestStruct (BasicAnnotatedStruct instance)
 			{
@@ -533,7 +535,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			[KeptBaseType (typeof (Base))]
 			public class Derived : Base
 			{
-				// TODO: new() doesn't propagate static type
+				// new() doesn't propagate static type
+				// https://github.com/mono/linker/issues/1952
 				// [Kept]
 				public void Method () { }
 			}
