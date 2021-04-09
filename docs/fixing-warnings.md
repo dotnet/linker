@@ -23,7 +23,7 @@ foreach (var m in type.GetMethods())
 ```
 
 In this example, `Type.GetType` dynamically requests a type with an unknown name, and then prints
-the names of all of its members. Because there's no way to know at publish time what type name is
+the names of all of its methods. Because there's no way to know at publish time what type name is
 going to be used, there's no way for the trimmer to know which type to preserve in the output.
 It's very likely that this code could have worked before trimming (as long as the input is
 something known to exist in the target framework), but would probably produce a null reference
@@ -51,10 +51,11 @@ There are two big categories of warnings which you will likely see:
 ### RequiresUnreferencedCode
 
 `RequiresUnreferencedCode` is simple: it's an attribute that can be placed on methods to indicate
-that the method is not trim-safe, meaning that it might use reflection or some other mechanism
-to access code that may be trimmed away. This attribute is used when it's not possible for the
-trimmer to understand what's necessary, and a blanket warning is needed. This would often
-be true for methods which use the C# `dynamic` keyword, `Assembly.LoadFrom`, or other runtime code generation technologies.
+that the method is not trim-compatible, meaning that it might use reflection or some other
+mechanism to access code that may be trimmed away. This attribute is used when it's not possible
+for the trimmer to understand what's necessary, and a blanket warning is needed. This would often
+be true for methods which use the C# `dynamic` keyword, `Assembly.LoadFrom`, or other runtime
+code generation technologies.
 An example would be:
 
 ```C#
@@ -63,18 +64,18 @@ void MethodWithAssemblyLoad() { ... }
 
 void TestMethod()
 {
-    // IL2026: Using method 'MethodWithUnreferencedCodeUsage' which has 'RequiresUnreferencedCodeAttribute'
+    // IL2026: Using method 'MethodWithAssemblyLoad' which has 'RequiresUnreferencedCodeAttribute'
     // can break functionality when trimming application code. Use 'MethodFriendlyToTrimming' instead.
     MethodWithAssemblyLoad();
 }
 ```
 
 There aren't many workarounds for `RequiresUnreferencedCode`. The best way is to avoid calling
-the method at all when trimming and use something else which is trim-safe. If you're writing a
-library and it's not in your control whether or not to call the method and you just want to
-communicate to *your* caller, you can also add `RequiresUnreferencedCode` to your own method.
-This silences all trimming warnings in *your* code, but will produce a warning whenever someone
-calls your method.
+the method at all when trimming and use something else which is trim-compatible. If you're
+writing a library and it's not in your control whether or not to call the method and you just
+want to communicate to *your* caller, you can also add `RequiresUnreferencedCode` to your own
+method. This silences all trimming warnings in your code, but will produce a warning whenever
+someone calls your method.
 
 If you can somehow determine that the call is safe, and all the code that's needed won't be
 trimmed away, you can also suppress the warning using
@@ -86,22 +87,24 @@ For example:
 void MethodWithAssemblyLoad() { ... }
 
 [UnconditionalSuppressMessage("AssemblyLoadTrimming", "IL2026:RequiresUnreferencedCode",
-    Justification = "I've verified the loaded assembly only adds integers, so it's safe")]
+    Justification = "Everything referenced in the loaded assembly is manually preserved, so it's safe")]
 void TestMethod()
 {
     MethodWithAssemblyLoad(); // Warning suppressed
 }
 ```
 
-`UnconditionalSuppressMessage` is preserved into IL, so the trimmer can see the suppression even
-after build and publish. Be very careful when suppressing trim warnings: it's possible that the
-call may be trim-safe now, but as you change your code that may change and you may forget to
-review all the suppressions.
+`UnconditionalSuppressMessage` is like `SuppressMessage` but it is preserved into IL, so the
+trimmer can see the suppression even after build and publish. `SuppressMessage` and `#pragma`
+directives are only present in source, so they can't be used to silence warnings from the
+trimmer. Be very careful when suppressing trim warnings: it's possible that the call may be
+trim-compatible now, but as you change your code that may change and you may forget to review all
+the suppressions.
 
 ### DynamicallyAccessedMembers
 
 `DynamicallyAccessedMembers` is usually about reflection. Unlike `RequiresUnreferencedCode`,
-reflection can sometimes be understood by the trimmer, as long as it's annotated correctly.
+reflection can sometimes be understood by the trimmer as long as it's annotated correctly.
 Let's take another look at the original example:
 
 ```C#
@@ -114,7 +117,7 @@ foreach (var m in type.GetMethods())
 ```
 
 In the example above, the real problem is `Console.ReadLine()`. Because *any* type could
-be read, the trimmer has no way to know if you need members on `System.Tuple` or `System.Guid`
+be read, the trimmer has no way to know if you need methods on `System.Tuple` or `System.Guid`
 or any other type. On the other hand, if your code looked like,
 
 ```C#
@@ -141,7 +144,7 @@ void M2(Type type)
     // parameter 'type' of method 'net6.Program.M2(Type)' does not have matching annotations. The
     // source value must declare at least the same requirements as those declared on the target
     // location it is assigned to.
-    var members = type.GetMethods();
+    var methods = type.GetMethods();
     ...
 }
 ```
@@ -161,24 +164,24 @@ void M1()
 void M2(
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
 {
-    var members = type.GetMethods();
+    var methods = type.GetMethods();
     ...
 }
 ```
 
-Now the warning disappears, because the trimmer knows exactly which members to preserve, and on
-which type to preserve them on. In general, this is the best way to deal with
+Now the warning disappears, because the trimmer knows exactly which members to preserve, and
+which type(s) to preserve them on. In general, this is the best way to deal with
 `DynamicallyAccessedMembers` warnings: add annotations so the trimmer knows what to preserve.
 
 As with `RequiresUnreferencedCode`, adding `RequiresUnreferencedCode` or
 `UnconditionalSuppressMessage` attributes also works, but none of these options make the code
-safe to trim, while adding `DynamicallyAccessedMembers` does.
+compatible with trimming, while adding `DynamicallyAccessedMembers` does.
 
 ## Conclusion
 
 This description should cover the most common situations you end up in while trimming your
 application. Over time we'll continue to improve the diagnostic experience and provide more streamlined
-ways to make your code trim-safe.
+ways to make your code trim-compatible.
 
 As we continue developing trimming we hope to see more code that's fully annotated, so users can
 trim with confidence. Because trimming involves the whole application, trimming is as much a
