@@ -73,7 +73,7 @@ There aren't many workarounds for `RequiresUnreferencedCode`. The best way is to
 the method at all when trimming and use something else which is trim-safe. If you're writing a
 library and it's not in your control whether or not to call the method and you just want to
 communicate to *your* caller, you can also add `RequiresUnreferencedCode` to your own method.
-This silences all linker warnings in *your* code, but will produce a warning whenever someone
+This silences all trimming warnings in *your* code, but will produce a warning whenever someone
 calls your method.
 
 If you can somehow determine that the call is safe, and all the code that's needed won't be
