@@ -2,10 +2,10 @@
 # Trim warnings in .NET 6
 
 In .NET Core 3.1 and 5.0 we introduced trimming as a new preview feature for self-contained .NET
-core applications. Conceptually, the feature is very simple: when publishing the application, the
+core applications. Conceptually the feature is very simple: when publishing the application the
 .NET SDK analyzes the entire application, including the .NET framework, and removes all unused
 code. In the time trimming has been in preview, we've learned that trimming is very powerful --
-it can reduce application size by half, or more. However, we've also learned about the
+it can reduce application size by half or more. However, we've also learned about the
 difficulties in safely trimming applications.
 
 The most difficult question in trimming is what is unused, or more precisely, what is used. For
@@ -29,11 +29,11 @@ It's very likely that this code could have worked before trimming (as long as th
 something known to exist in the target framework), but would probably produce a null reference
 exception after trimming (due to `Type.GetType` returning null).
 
-This is a frustrating situation. Trimming often works just fine, but occasionally it can produce
+This is a frustrating situation. Trimming often works just fine but occasionally it can produce
 breaking behavior, sometimes in rare code paths, and it can be very hard to trace down the cause.
 
 For .NET 6 we want to bring a new feature to trimming: trim warnings. Trim warnings happen
-because the trimmer sees a call which may access other code in the app, but the trimmer can't
+because the trimmer sees a call which may access other code in the app but the trimmer can't
 determine which code. This could mean that the trimmer would trim away code which is used at
 runtime.
 
@@ -96,7 +96,7 @@ void TestMethod()
 
 `UnconditionalSuppressMessage` is like `SuppressMessage` but it is preserved into IL, so the
 trimmer can see the suppression even after build and publish. `SuppressMessage` and `#pragma`
-directives are only present in source, so they can't be used to silence warnings from the
+directives are only present in source so they can't be used to silence warnings from the
 trimmer. Be very careful when suppressing trim warnings: it's possible that the call may be
 trim-compatible now, but as you change your code that may change and you may forget to review all
 the suppressions.
@@ -117,7 +117,7 @@ foreach (var m in type.GetMethods())
 ```
 
 In the example above, the real problem is `Console.ReadLine()`. Because *any* type could
-be read, the trimmer has no way to know if you need methods on `System.Tuple` or `System.Guid`
+be read the trimmer has no way to know if you need methods on `System.Tuple` or `System.Guid`
 or any other type. On the other hand, if your code looked like,
 
 ```C#
@@ -154,7 +154,7 @@ methods, so annotation is needed to pass information upward, from the reflection
 (`GetMethods`) to the source of the `Type` (`typeof`). In the above example, the trimmer warning
 is stating that `GetMethods` requires the `PublicMethods` annotation on types, but the `type`
 variable doesn't have the same requirement. In other words, we need to pass the requirements from
-`GetMethods` up to the caller i.e.,
+`GetMethods` up to the caller:
 
 ```C#
 void M1()
