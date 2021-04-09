@@ -132,7 +132,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 				[Kept]
 				public void UsedMethod () { }
 				[Kept] // The type is not sealed, so trimmer will apply the annotation from the interface
-				public void UnsedMethod () { }
+				public void UnusedMethod () { }
 			}
 
 			[Kept]
@@ -150,7 +150,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 				// TODO: Handle boxing and unboxing operations
 				// [Kept]
 				public void UsedMethod () { }
-				public void UnsedMethod () { }
+				public void UnusedMethod () { }
 			}
 
 			[Kept]
