@@ -702,6 +702,14 @@ namespace Mono.Linker.Dataflow
 						reflectionContext.AnalyzingPattern ();
 						foreach (var value in methodParams[0].UniqueValues ()) {
 							if (value is SystemTypeValue typeValue) {
+								if (AnalyzeGenericInstatiationTypeArray(methodParams[1], ref reflectionContext, calledMethodDefinition, typeValue.TypeRepresented.GenericParameters)) {
+									reflectionContext.RecordHandledPattern ();
+								} else {
+									reflectionContext.RecordUnrecognizedPattern (
+											2055,
+											$"Call to '{calledMethodDefinition.GetDisplayName ()}' can not be statically analyzed. " +
+											$"It's not possible to guarantee the availability of requirements of the generic type.");
+								}
 								foreach (var genericParameter in typeValue.TypeRepresented.GenericParameters) {
 									if (_context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameter) != DynamicallyAccessedMemberTypes.None ||
 										(genericParameter.HasDefaultConstructorConstraint && !typeValue.TypeRepresented.IsTypeOf ("System", "Nullable`1"))) {
@@ -712,10 +720,7 @@ namespace Mono.Linker.Dataflow
 										//  The struct constraint in C# implies new() constraints, but Nullable doesn't make a use of that part.
 										//  There are several places even in the framework where typeof(Nullable<>).MakeGenericType would warn
 										//  without any good reason to do so.
-										reflectionContext.RecordUnrecognizedPattern (
-											2055,
-											$"Call to '{calledMethodDefinition.GetDisplayName ()}' can not be statically analyzed. " +
-											$"It's not possible to guarantee the availability of requirements of the generic type.");
+										
 									}
 								}
 
