@@ -948,7 +948,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			[UnrecognizedReflectionAccessPattern (typeof (MethodInfo), nameof (MethodInfo.MakeGenericMethod), new Type[] { typeof (Type[]) },
 				messageCode: "IL2060")]
-			static void TestWithArrayUnknownIndexSet(int indexToSet)
+			static void TestWithArrayUnknownIndexSet (int indexToSet)
 			{
 				Type[] types = new Type[1];
 				types[indexToSet] = typeof (TestType);

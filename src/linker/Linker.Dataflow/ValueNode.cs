@@ -1232,7 +1232,7 @@ namespace Mono.Linker.Dataflow
 		}
 
 		private ArrayValue (ValueNode size, TypeReference elementType, Dictionary<int, ValueBasicBlockPair> indexValues)
-			: this(size, elementType)
+			: this (size, elementType)
 		{
 			IndexValues = indexValues;
 		}
@@ -1267,7 +1267,7 @@ namespace Mono.Linker.Dataflow
 		protected override string NodeToString ()
 		{
 			// TODO: Use StringBuilder and remove Linq usage.
-			return $"(Array Size:{ValueNodeDump.ValueNodeToString (this, Size)}, Values:({string.Join(',', IndexValues.Select(v => $"({v.Key},{ValueNodeDump.ValueNodeToString(v.Value.Value)})"))})";
+			return $"(Array Size:{ValueNodeDump.ValueNodeToString (this, Size)}, Values:({string.Join (',', IndexValues.Select (v => $"({v.Key},{ValueNodeDump.ValueNodeToString (v.Value.Value)})"))})";
 		}
 
 		protected override IEnumerable<ValueNode> EvaluateUniqueValues ()

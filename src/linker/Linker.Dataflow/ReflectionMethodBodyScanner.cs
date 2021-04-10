@@ -656,7 +656,7 @@ namespace Mono.Linker.Dataflow
 					break;
 
 				case IntrinsicId.Array_Empty: {
-						methodReturnValue = new ArrayValue (new ConstIntValue (0), ((GenericInstanceMethod)calledMethod).GenericArguments[0]);
+						methodReturnValue = new ArrayValue (new ConstIntValue (0), ((GenericInstanceMethod) calledMethod).GenericArguments[0]);
 					}
 					break;
 
@@ -702,7 +702,7 @@ namespace Mono.Linker.Dataflow
 						reflectionContext.AnalyzingPattern ();
 						foreach (var value in methodParams[0].UniqueValues ()) {
 							if (value is SystemTypeValue typeValue) {
-								if (AnalyzeGenericInstatiationTypeArray(methodParams[1], ref reflectionContext, calledMethodDefinition, typeValue.TypeRepresented.GenericParameters)) {
+								if (AnalyzeGenericInstatiationTypeArray (methodParams[1], ref reflectionContext, calledMethodDefinition, typeValue.TypeRepresented.GenericParameters)) {
 									reflectionContext.RecordHandledPattern ();
 								} else {
 									reflectionContext.RecordUnrecognizedPattern (
@@ -720,7 +720,7 @@ namespace Mono.Linker.Dataflow
 										//  The struct constraint in C# implies new() constraints, but Nullable doesn't make a use of that part.
 										//  There are several places even in the framework where typeof(Nullable<>).MakeGenericType would warn
 										//  without any good reason to do so.
-										
+
 									}
 								}
 

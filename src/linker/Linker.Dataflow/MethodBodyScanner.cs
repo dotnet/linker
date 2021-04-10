@@ -413,7 +413,7 @@ namespace Mono.Linker.Dataflow
 
 				case Code.Newarr: {
 						StackSlot count = PopUnknown (currentStack, 1, methodBody, operation.Offset);
-						currentStack.Push (new StackSlot (new ArrayValue (count.Value, (TypeReference)operation.Operand)));
+						currentStack.Push (new StackSlot (new ArrayValue (count.Value, (TypeReference) operation.Operand)));
 					}
 					break;
 
@@ -933,7 +933,7 @@ namespace Mono.Linker.Dataflow
 				PushUnknown (currentStack);
 				return;
 			}
-			int? index = indexToLoadFrom.Value.AsConstInt();
+			int? index = indexToLoadFrom.Value.AsConstInt ();
 			if (index == null) {
 				PushUnknown (currentStack);
 				return;
