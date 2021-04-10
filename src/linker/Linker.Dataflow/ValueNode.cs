@@ -414,6 +414,9 @@ namespace Mono.Linker.Dataflow
 			case ValueNodeKind.Array:
 				ArrayValue av = (ArrayValue) node;
 				foundCycle = av.Size.DetectCycle (seenNodes, allNodesSeen);
+				foreach (ValueBasicBlockPair pair in av.IndexValues.Values) {
+					foundCycle |= pair.Value.DetectCycle (seenNodes, allNodesSeen);
+				}
 				break;
 
 			default:

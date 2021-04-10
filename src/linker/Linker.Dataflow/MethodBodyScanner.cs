@@ -240,22 +240,9 @@ namespace Mono.Linker.Dataflow
 				case Code.Cgt_Un:
 				case Code.Clt:
 				case Code.Clt_Un:
-				case Code.Ldelem_I:
-				case Code.Ldelem_I1:
-				case Code.Ldelem_I2:
-				case Code.Ldelem_I4:
-				case Code.Ldelem_I8:
-				case Code.Ldelem_R4:
-				case Code.Ldelem_R8:
-				case Code.Ldelem_U1:
-				case Code.Ldelem_U2:
-				case Code.Ldelem_U4:
 				case Code.Shl:
 				case Code.Shr:
 				case Code.Shr_Un:
-				case Code.Ldelem_Any:
-				case Code.Ldelem_Ref:
-				case Code.Ldelema:
 				case Code.Ceq:
 					PopUnknown (currentStack, 2, methodBody, operation.Offset);
 					PushUnknown (currentStack);
@@ -441,6 +428,23 @@ namespace Mono.Linker.Dataflow
 				case Code.Stelem_Ref:
 					ScanStelem (operation, currentStack, methodBody, curBasicBlock);
 					break;
+
+				case Code.Ldelem_I:
+				case Code.Ldelem_I1:
+				case Code.Ldelem_I2:
+				case Code.Ldelem_I4:
+				case Code.Ldelem_I8:
+				case Code.Ldelem_R4:
+				case Code.Ldelem_R8:
+				case Code.Ldelem_U1:
+				case Code.Ldelem_U2:
+				case Code.Ldelem_U4:
+				case Code.Ldelem_Any:
+				case Code.Ldelem_Ref:
+				case Code.Ldelema:
+					ScanLdelem (operation, currentStack, methodBody);
+					break;
+
 				case Code.Cpblk:
 				case Code.Initblk:
 					PopUnknown (currentStack, 3, methodBody, operation.Offset);
@@ -914,6 +918,36 @@ namespace Mono.Linker.Dataflow
 						StoreMethodLocalValue (arrValue.IndexValues, valueToStore.Value, indexToStoreAtInt.Value, curBasicBlock);
 					}
 				}
+			}
+		}
+
+
+		private void ScanLdelem (
+			Instruction operation,
+			Stack<StackSlot> currentStack,
+			MethodBody methodBody)
+		{
+			StackSlot indexToLoadFrom = PopUnknown (currentStack, 1, methodBody, operation.Offset);
+			StackSlot arrayToLoadFrom = PopUnknown (currentStack, 1, methodBody, operation.Offset);
+			if (arrayToLoadFrom.Value is not ArrayValue arr) {
+				PushUnknown (currentStack);
+				return;
+			}
+			int? index = indexToLoadFrom.Value.AsConstInt();
+			if (index == null) {
+				PushUnknown (currentStack);
+				return;
+			}
+
+			bool isByRef = operation.OpCode.Code == Code.Ldelema;
+
+			ValueBasicBlockPair arrayIndexValue;
+			arr.IndexValues.TryGetValue (index.Value, out arrayIndexValue);
+			if (arrayIndexValue.Value != null) {
+				ValueNode valueToPush = arrayIndexValue.Value;
+				currentStack.Push (new StackSlot (valueToPush, isByRef));
+			} else {
+				currentStack.Push (new StackSlot (null, isByRef));
 			}
 		}
 	}
