@@ -166,12 +166,6 @@ namespace Mono.Linker.Dataflow
 			}
 		}
 
-		public struct ValueBasicBlockPair
-		{
-			public ValueNode Value;
-			public int BasicBlockIndex;
-		}
-
 		private static void StoreMethodLocalValue<KeyType> (
 			Dictionary<KeyType, ValueBasicBlockPair> valueCollection,
 			ValueNode valueToStore,
@@ -432,12 +426,10 @@ namespace Mono.Linker.Dataflow
 
 				case Code.Newarr: {
 						StackSlot count = PopUnknown (currentStack, 1, methodBody, operation.Offset);
-						currentStack.Push (new StackSlot (new ArrayValue (count.Value)));
+						currentStack.Push (new StackSlot (new ArrayValue (count.Value, (TypeReference)operation.Operand)));
 					}
 					break;
 
-				case Code.Cpblk:
-				case Code.Initblk:
 				case Code.Stelem_I:
 				case Code.Stelem_I1:
 				case Code.Stelem_I2:
@@ -447,6 +439,10 @@ namespace Mono.Linker.Dataflow
 				case Code.Stelem_R8:
 				case Code.Stelem_Any:
 				case Code.Stelem_Ref:
+					ScanStelem (operation, currentStack, methodBody, curBasicBlock);
+					break;
+				case Code.Cpblk:
+				case Code.Initblk:
 					PopUnknown (currentStack, 3, methodBody, operation.Offset);
 					break;
 
@@ -894,5 +890,31 @@ namespace Mono.Linker.Dataflow
 			Instruction operation,
 			ValueNodeList methodParams,
 			out ValueNode methodReturnValue);
+
+		private void ScanStelem (
+			Instruction operation,
+			Stack<StackSlot> currentStack,
+			MethodBody methodBody,
+			int curBasicBlock)
+		{
+			StackSlot valueToStore = PopUnknown (currentStack, 1, methodBody, operation.Offset);
+			StackSlot indexToStoreAt = PopUnknown (currentStack, 1, methodBody, operation.Offset);
+			StackSlot arrayToStoreIn = PopUnknown (currentStack, 1, methodBody, operation.Offset);
+			int? indexToStoreAtInt = indexToStoreAt.Value.AsConstInt ();
+			foreach (var array in arrayToStoreIn.Value.UniqueValues ()) {
+				if (array is ArrayValue arrValue) {
+					if (indexToStoreAtInt == null) {
+						// Since we can't know the current index we're storing the value at, clear all indices.
+						// That way we won't accidentally think we know the value at a given index when we cannot.
+						foreach (var knownIndex in arrValue.IndexValues.Keys) {
+							StoreMethodLocalValue (arrValue.IndexValues, UnknownValue.Instance, knownIndex, curBasicBlock);
+						}
+					} else {
+						// When we know the index, we can record the value at that index.
+						StoreMethodLocalValue (arrValue.IndexValues, valueToStore.Value, indexToStoreAtInt.Value, curBasicBlock);
+					}
+				}
+			}
+		}
 	}
 }

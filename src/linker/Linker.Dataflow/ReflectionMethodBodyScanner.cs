@@ -192,7 +192,7 @@ namespace Mono.Linker.Dataflow
 		{
 			switch (field.Name) {
 			case "EmptyTypes" when field.DeclaringType.IsTypeOf ("System", "Type"): {
-					return new ArrayValue (new ConstIntValue (0));
+					return new ArrayValue (new ConstIntValue (0), field.DeclaringType);
 				}
 			case "Empty" when field.DeclaringType.IsTypeOf ("System", "String"): {
 					return new KnownStringValue (string.Empty);
@@ -656,7 +656,7 @@ namespace Mono.Linker.Dataflow
 					break;
 
 				case IntrinsicId.Array_Empty: {
-						methodReturnValue = new ArrayValue (new ConstIntValue (0));
+						methodReturnValue = new ArrayValue (new ConstIntValue (0), ((GenericInstanceMethod)calledMethod).GenericArguments[0]);
 					}
 					break;
 
@@ -1612,19 +1612,15 @@ namespace Mono.Linker.Dataflow
 
 						foreach (var methodValue in methodParams[0].UniqueValues ()) {
 							if (methodValue is SystemReflectionMethodBaseValue methodBaseValue) {
-								foreach (var genericParameter in methodBaseValue.MethodRepresented.GenericParameters) {
-									if (_context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameter) != DynamicallyAccessedMemberTypes.None ||
-										genericParameter.HasDefaultConstructorConstraint) {
-										// There is a generic parameter which has some requirements on input types.
-										// For now we don't support tracking actual array elements, so we can't validate that the requirements are fulfilled.
-										reflectionContext.RecordUnrecognizedPattern (
-											2060, string.Format (Resources.Strings.IL2060,
-												DiagnosticUtilities.GetMethodSignatureDisplayName (calledMethod)));
-									}
-								}
 
-								// We haven't found any generic parameters with annotations, so there's nothing to validate
-								reflectionContext.RecordHandledPattern ();
+								if (AnalyzeGenericInstatiationTypeArray (methodParams[1], ref reflectionContext, calledMethodDefinition, methodBaseValue.MethodRepresented.GenericParameters)) {
+									reflectionContext.RecordHandledPattern ();
+								} else {
+									// We were unable to analyze all of the array elements for correctness for the given instantiation, so report the pattern as unrecognized.
+									reflectionContext.RecordUnrecognizedPattern (
+										2060, string.Format (Resources.Strings.IL2060,
+											DiagnosticUtilities.GetMethodSignatureDisplayName (calledMethod)));
+								}
 							} else if (methodValue == NullValue.Instance) {
 								reflectionContext.RecordHandledPattern ();
 							} else {
@@ -1702,6 +1698,42 @@ namespace Mono.Linker.Dataflow
 				}
 			}
 
+			return true;
+		}
+
+		private bool AnalyzeGenericInstatiationTypeArray (ValueNode arrayParam, ref ReflectionPatternContext reflectionContext, MethodDefinition calledMethodDefinition, IList<GenericParameter> genericParameters)
+		{
+			foreach (var typesValue in arrayParam.UniqueValues ()) {
+				if (typesValue.Kind != ValueNodeKind.Array) {
+					return false;
+				}
+				ArrayValue array = (ArrayValue) typesValue;
+				int? size = array.Size.AsConstInt ();
+				if (size == null || size != genericParameters.Count) {
+					return false;
+				}
+				bool allIndicesKnown = true;
+				for (int i = 0; i < size.Value; i++) {
+					if (!array.IndexValues.TryGetValue (i, out ValueBasicBlockPair value) || value.Value.Kind == ValueNodeKind.Unknown) {
+						allIndicesKnown = false;
+						break;
+					}
+				}
+
+				if (!allIndicesKnown) {
+					return false;
+				}
+
+				for (int i = 0; i < size.Value; i++) {
+					if (array.IndexValues.TryGetValue (i, out ValueBasicBlockPair value)) {
+						RequireDynamicallyAccessedMembers (
+							ref reflectionContext,
+							_context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameters[i]),
+							value.Value,
+							calledMethodDefinition);
+					}
+				}
+			}
 			return true;
 		}
 
