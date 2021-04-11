@@ -1723,7 +1723,7 @@ namespace Mono.Linker.Dataflow
 				}
 				bool allIndicesKnown = true;
 				for (int i = 0; i < size.Value; i++) {
-					if (!array.IndexValues.TryGetValue (i, out ValueBasicBlockPair value) || value.Value.Kind == ValueNodeKind.Unknown) {
+					if (!array.IndexValues.TryGetValue (i, out ValueBasicBlockPair value) || value.Value is null or { Kind: ValueNodeKind.Unknown }) {
 						allIndicesKnown = false;
 						break;
 					}
