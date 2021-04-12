@@ -68,7 +68,7 @@ namespace Mono.Linker.Steps
 				switch (Annotations.GetAction (assembly)) {
 				case AssemblyAction.Link:
 				case AssemblyAction.Save:
-					SweepAssemblyReferences (assembly);
+					SweepAssemblyReferences (assembly, Annotations);
 					break;
 				}
 			}
@@ -246,7 +246,7 @@ namespace Mono.Linker.Steps
 				SweepAssemblyReferences (assembly);
 		}
 
-		static void SweepAssemblyReferences (AssemblyDefinition assembly)
+		static void SweepAssemblyReferences (AssemblyDefinition assembly, AnnotationStore annotations = null)
 		{
 			//
 			// We used to run over list returned by GetTypeReferences but
@@ -256,7 +256,7 @@ namespace Mono.Linker.Steps
 			//
 			assembly.MainModule.AssemblyReferences.Clear ();
 
-			var ars = new AssemblyReferencesCorrector (assembly);
+			var ars = new AssemblyReferencesCorrector (assembly, annotations);
 			ars.Process ();
 		}
 
@@ -546,12 +546,14 @@ namespace Mono.Linker.Steps
 		{
 			readonly AssemblyDefinition assembly;
 			readonly DefaultMetadataImporter importer;
+			readonly AnnotationStore annotations;
 
 			HashSet<TypeReference> updated;
 
-			public AssemblyReferencesCorrector (AssemblyDefinition assembly)
+			public AssemblyReferencesCorrector (AssemblyDefinition assembly, AnnotationStore annotations = null)
 			{
 				this.assembly = assembly;
+				this.annotations = annotations;
 				this.importer = new DefaultMetadataImporter (assembly.MainModule);
 
 				updated = null;
@@ -680,7 +682,9 @@ namespace Mono.Linker.Steps
 			{
 				foreach (var f in forwarders) {
 					TypeDefinition td = f.Resolve ();
-					if (td == null) {
+					if (td == null ||
+						// Do not update the scope of kept forwarders.
+						(annotations != null && !annotations.IsMarked (td))) {
 						// Forwarded type cannot be resolved but it was marked
 						// linker is running in --skip-unresolved true mode
 						return;
