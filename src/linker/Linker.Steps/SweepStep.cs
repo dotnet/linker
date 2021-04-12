@@ -68,7 +68,7 @@ namespace Mono.Linker.Steps
 				switch (Annotations.GetAction (assembly)) {
 				case AssemblyAction.Link:
 				case AssemblyAction.Save:
-					SweepAssemblyReferences (assembly, Annotations);
+					SweepAssemblyReferences (assembly);
 					break;
 				}
 			}
@@ -246,7 +246,7 @@ namespace Mono.Linker.Steps
 				SweepAssemblyReferences (assembly);
 		}
 
-		static void SweepAssemblyReferences (AssemblyDefinition assembly, AnnotationStore annotations = null)
+		static void SweepAssemblyReferences (AssemblyDefinition assembly)
 		{
 			//
 			// We used to run over list returned by GetTypeReferences but
@@ -256,7 +256,7 @@ namespace Mono.Linker.Steps
 			//
 			assembly.MainModule.AssemblyReferences.Clear ();
 
-			var ars = new AssemblyReferencesCorrector (assembly, annotations);
+			var ars = new AssemblyReferencesCorrector (assembly);
 			ars.Process ();
 		}
 
@@ -546,14 +546,12 @@ namespace Mono.Linker.Steps
 		{
 			readonly AssemblyDefinition assembly;
 			readonly DefaultMetadataImporter importer;
-			readonly AnnotationStore annotations;
 
 			HashSet<TypeReference> updated;
 
-			public AssemblyReferencesCorrector (AssemblyDefinition assembly, AnnotationStore annotations = null)
+			public AssemblyReferencesCorrector (AssemblyDefinition assembly)
 			{
 				this.assembly = assembly;
-				this.annotations = annotations;
 				this.importer = new DefaultMetadataImporter (assembly.MainModule);
 
 				updated = null;
@@ -682,15 +680,11 @@ namespace Mono.Linker.Steps
 			{
 				foreach (var f in forwarders) {
 					TypeDefinition td = f.Resolve ();
-
-					// Forwarded type cannot be resolved but it was marked
-					// linker is running in --skip-unresolved true mode
-					if (td == null)
-						return;
-
-					// Do not update the scope of kept forwarders.
-					if (annotations != null && annotations.IsMarked (td))
+					if (td == null) {
+						// Forwarded type cannot be resolved but it was marked
+						// linker is running in --skip-unresolved true mode
 						continue;
+					}
 
 					var tr = assembly.MainModule.ImportReference (td);
 					if (f.Scope != tr.Scope)
