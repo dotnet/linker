@@ -442,7 +442,7 @@ namespace Mono.Linker.Dataflow
 				case Code.Ldelem_Any:
 				case Code.Ldelem_Ref:
 				case Code.Ldelema:
-					ScanLdelem (operation, currentStack, methodBody);
+					ScanLdelem (operation, currentStack, methodBody, curBasicBlock);
 					break;
 
 				case Code.Cpblk:
@@ -895,6 +895,15 @@ namespace Mono.Linker.Dataflow
 			ValueNodeList methodParams,
 			out ValueNode methodReturnValue);
 
+		private static void MarkArrayValuesAsUnknown (int curBasicBlock, ArrayValue arrValue)
+		{
+			// Since we can't know the current index we're storing the value at, clear all indices.
+			// That way we won't accidentally think we know the value at a given index when we cannot.
+			foreach (var knownIndex in arrValue.IndexValues.Keys) {
+				StoreMethodLocalValue (arrValue.IndexValues, UnknownValue.Instance, knownIndex, curBasicBlock);
+			}
+		}
+
 		private void ScanStelem (
 			Instruction operation,
 			Stack<StackSlot> currentStack,
@@ -908,11 +917,7 @@ namespace Mono.Linker.Dataflow
 			foreach (var array in arrayToStoreIn.Value.UniqueValues ()) {
 				if (array is ArrayValue arrValue) {
 					if (indexToStoreAtInt == null) {
-						// Since we can't know the current index we're storing the value at, clear all indices.
-						// That way we won't accidentally think we know the value at a given index when we cannot.
-						foreach (var knownIndex in arrValue.IndexValues.Keys) {
-							StoreMethodLocalValue (arrValue.IndexValues, UnknownValue.Instance, knownIndex, curBasicBlock);
-						}
+						MarkArrayValuesAsUnknown (curBasicBlock, arrValue);
 					} else {
 						// When we know the index, we can record the value at that index.
 						StoreMethodLocalValue (arrValue.IndexValues, valueToStore.Value, indexToStoreAtInt.Value, curBasicBlock);
@@ -921,11 +926,11 @@ namespace Mono.Linker.Dataflow
 			}
 		}
 
-
 		private void ScanLdelem (
 			Instruction operation,
 			Stack<StackSlot> currentStack,
-			MethodBody methodBody)
+			MethodBody methodBody,
+			int curBasicBlock)
 		{
 			StackSlot indexToLoadFrom = PopUnknown (currentStack, 1, methodBody, operation.Offset);
 			StackSlot arrayToLoadFrom = PopUnknown (currentStack, 1, methodBody, operation.Offset);
@@ -933,13 +938,17 @@ namespace Mono.Linker.Dataflow
 				PushUnknown (currentStack);
 				return;
 			}
+			bool isByRef = operation.OpCode.Code == Code.Ldelema;
+
 			int? index = indexToLoadFrom.Value.AsConstInt ();
 			if (index == null) {
 				PushUnknown (currentStack);
+				if (isByRef) {
+					MarkArrayValuesAsUnknown (curBasicBlock, arr);
+				}
 				return;
 			}
 
-			bool isByRef = operation.OpCode.Code == Code.Ldelema;
 
 			ValueBasicBlockPair arrayIndexValue;
 			arr.IndexValues.TryGetValue (index.Value, out arrayIndexValue);
