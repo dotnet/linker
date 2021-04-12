@@ -972,7 +972,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				typeof (MakeGenericMethod).GetMethod (nameof (GenericWithRequirements), BindingFlags.Static)
 					.MakeGenericMethod (types);
 			}
-			
+
 			[UnrecognizedReflectionAccessPattern (typeof (MethodInfo), nameof (MethodInfo.MakeGenericMethod), new Type[] { typeof (Type[]) },
 				messageCode: "IL2060")]
 			static void TestWithArrayUnknownIndexSetByRef (int indexToSet)
@@ -995,7 +995,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 					.MakeGenericMethod (types);
 			}
 
-			static void MethodThatTakesArrayParameter(Type[] types)
+			static void MethodThatTakesArrayParameter (Type[] types)
 			{
 			}
 
@@ -1107,7 +1107,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			public static void GenericMultipleParameters<
 				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] T,
 				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] U,
-				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] V>()
+				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] V> ()
 			{
 			}
 
