@@ -804,6 +804,7 @@ namespace Mono.Linker.Dataflow
 						}
 					}
 					break;
+
 				//
 				// System.Linq.Expressions.Expression
 				// 
@@ -813,15 +814,26 @@ namespace Mono.Linker.Dataflow
 						reflectionContext.AnalyzingPattern ();
 						BindingFlags bindingFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy;
 
+						bool hasTypeArguments = (methodParams[2] as ArrayValue)?.Size.AsConstInt () != 0;
 						foreach (var value in methodParams[0].UniqueValues ()) {
 							if (value is SystemTypeValue systemTypeValue) {
 								foreach (var stringParam in methodParams[1].UniqueValues ()) {
-									// TODO: Change this as needed after deciding whether or not we are to keep
-									// all methods on a type that was accessed via reflection.
 									if (stringParam is KnownStringValue stringValue) {
-										MarkMethodsOnTypeHierarchy (ref reflectionContext, systemTypeValue.TypeRepresented, m => m.Name == stringValue.Contents, bindingFlags);
+										foreach (var method in systemTypeValue.TypeRepresented.GetMethodsOnTypeHierarchy (m => m.Name == stringValue.Contents, bindingFlags)) {
+											ValidateGenericMethodInstantiation (ref reflectionContext, method, methodParams[2], calledMethod);
+											MarkMethod (ref reflectionContext, method);
+										}
+
 										reflectionContext.RecordHandledPattern ();
 									} else {
+										if (hasTypeArguments) {
+											// We don't know what method the `MakeGenericMethod` was called on, so we have to assume
+											// that the method may have requirements which we can't fullfil -> warn.
+											reflectionContext.RecordUnrecognizedPattern (
+												2060, string.Format (Resources.Strings.IL2060,
+													DiagnosticUtilities.GetMethodSignatureDisplayName (calledMethod)));
+										}
+
 										RequireDynamicallyAccessedMembers (
 											ref reflectionContext,
 											GetDynamicallyAccessedMemberTypesFromBindingFlagsForMethods (bindingFlags),
@@ -830,6 +842,14 @@ namespace Mono.Linker.Dataflow
 									}
 								}
 							} else {
+								if (hasTypeArguments) {
+									// We don't know what method the `MakeGenericMethod` was called on, so we have to assume
+									// that the method may have requirements which we can't fullfil -> warn.
+									reflectionContext.RecordUnrecognizedPattern (
+										2060, string.Format (Resources.Strings.IL2060,
+											DiagnosticUtilities.GetMethodSignatureDisplayName (calledMethod)));
+								}
+
 								RequireDynamicallyAccessedMembers (
 									ref reflectionContext,
 									GetDynamicallyAccessedMemberTypesFromBindingFlagsForMethods (bindingFlags),
@@ -1584,9 +1604,7 @@ namespace Mono.Linker.Dataflow
 				// CreateInstance (string typeName, bool ignoreCase, BindingFlags bindingAttr, Binder? binder, object []? args, CultureInfo? culture, object []? activationAttributes)
 				//
 				case IntrinsicId.Assembly_CreateInstance:
-					//
-					// TODO: This could be supported for "this" only calls
-					//
+					// For now always fail since we don't track assemblies (mono/linker/issues/1947)
 					reflectionContext.AnalyzingPattern ();
 					reflectionContext.RecordUnrecognizedPattern (2058, $"Parameters passed to method '{calledMethodDefinition.GetDisplayName ()}' cannot be analyzed. Consider using methods 'System.Type.GetType' and `System.Activator.CreateInstance` instead.");
 					break;
@@ -1621,20 +1639,13 @@ namespace Mono.Linker.Dataflow
 
 						foreach (var methodValue in methodParams[0].UniqueValues ()) {
 							if (methodValue is SystemReflectionMethodBaseValue methodBaseValue) {
-
-								if (AnalyzeGenericInstatiationTypeArray (methodParams[1], ref reflectionContext, calledMethodDefinition, methodBaseValue.MethodRepresented.GenericParameters)) {
-									reflectionContext.RecordHandledPattern ();
-								} else {
-									// We were unable to analyze all of the array elements for correctness for the given instantiation, so report the pattern as unrecognized.
-									reflectionContext.RecordUnrecognizedPattern (
-										2060, string.Format (Resources.Strings.IL2060,
-											DiagnosticUtilities.GetMethodSignatureDisplayName (calledMethod)));
-								}
+								ValidateGenericMethodInstantiation (ref reflectionContext, methodBaseValue.MethodRepresented, methodParams[1], calledMethod);
+								reflectionContext.RecordHandledPattern ();
 							} else if (methodValue == NullValue.Instance) {
 								reflectionContext.RecordHandledPattern ();
 							} else {
-								// There is a generic parameter which has some requirements on input types.
-								// For now we don't support tracking actual array elements, so we can't validate that the requirements are fulfilled.
+								// We don't know what method the `MakeGenericMethod` was called on, so we have to assume
+								// that the method may have requirements which we can't fullfil -> warn.
 								reflectionContext.RecordUnrecognizedPattern (
 									2060, string.Format (Resources.Strings.IL2060,
 										DiagnosticUtilities.GetMethodSignatureDisplayName (calledMethod)));
@@ -1710,7 +1721,7 @@ namespace Mono.Linker.Dataflow
 			return true;
 		}
 
-		private bool AnalyzeGenericInstatiationTypeArray (ValueNode arrayParam, ref ReflectionPatternContext reflectionContext, MethodDefinition calledMethodDefinition, IList<GenericParameter> genericParameters)
+		private bool AnalyzeGenericInstatiationTypeArray (ValueNode arrayParam, ref ReflectionPatternContext reflectionContext, MethodReference calledMethod, IList<GenericParameter> genericParameters)
 		{
 			foreach (var typesValue in arrayParam.UniqueValues ()) {
 				if (typesValue.Kind != ValueNodeKind.Array) {
@@ -1739,7 +1750,7 @@ namespace Mono.Linker.Dataflow
 							ref reflectionContext,
 							_context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameters[i]),
 							value.Value,
-							calledMethodDefinition);
+							calledMethod);
 					}
 				}
 			}
@@ -2152,9 +2163,8 @@ namespace Mono.Linker.Dataflow
 			reflectionContext.RecordRecognizedPattern (property, () => {
 				// Marking the property itself actually doesn't keep it (it only marks its attributes and records the dependency), we have to mark the methods on it
 				_markStep.MarkProperty (property, dependencyInfo);
-				// TODO - this is sort of questionable - when somebody asks for a property they probably want to call either get or set
-				// but linker tracks those separately, and so accessing the getter/setter will raise a warning as it's potentially trimmed.
-				// So including them here doesn't actually remove the warning even if the code is written correctly.
+				// We don't track PropertyInfo, so we can't tell if any accessor is needed by the app, so include them both.
+				// With better tracking it might be possible to be more precise here: mono/linker/issues/1948
 				_markStep.MarkMethodIfNotNull (property.GetMethod, dependencyInfo, source);
 				_markStep.MarkMethodIfNotNull (property.SetMethod, dependencyInfo, source);
 				_markStep.MarkMethodsIf (property.OtherMethods, m => true, dependencyInfo, source);
@@ -2176,12 +2186,6 @@ namespace Mono.Linker.Dataflow
 		{
 			foreach (var ctor in type.GetConstructorsOnType (filter, bindingFlags))
 				MarkMethod (ref reflectionContext, ctor);
-		}
-
-		void MarkMethodsOnTypeHierarchy (ref ReflectionPatternContext reflectionContext, TypeDefinition type, Func<MethodDefinition, bool> filter, BindingFlags? bindingFlags = null)
-		{
-			foreach (var method in type.GetMethodsOnTypeHierarchy (filter, bindingFlags))
-				MarkMethod (ref reflectionContext, method);
 		}
 
 		void MarkFieldsOnTypeHierarchy (ref ReflectionPatternContext reflectionContext, TypeDefinition type, Func<FieldDefinition, bool> filter, BindingFlags? bindingFlags = BindingFlags.Default)
@@ -2212,6 +2216,18 @@ namespace Mono.Linker.Dataflow
 		{
 			foreach (var @event in type.GetEventsOnTypeHierarchy (filter, bindingFlags))
 				MarkEvent (ref reflectionContext, @event);
+		}
+
+		bool ValidateGenericMethodInstantiation (
+			ref ReflectionPatternContext reflectionContext,
+			MethodDefinition genericMethod,
+			ValueNode genericParametersArray,
+			MethodReference reflectionMethod)
+		{
+			if (!genericMethod.HasGenericParameters)
+				return true;
+
+			return AnalyzeGenericInstatiationTypeArray (genericParametersArray, ref reflectionContext, reflectionMethod, genericMethod.GenericParameters);
 		}
 
 		static DynamicallyAccessedMemberTypes GetDynamicallyAccessedMemberTypesFromBindingFlagsForNestedTypes (BindingFlags? bindingFlags) =>
