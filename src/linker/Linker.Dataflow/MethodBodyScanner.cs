@@ -527,7 +527,7 @@ namespace Mono.Linker.Dataflow
 				case Code.Call:
 				case Code.Callvirt:
 				case Code.Newobj:
-					HandleCall (methodBody, operation, currentStack);
+					HandleCall (methodBody, operation, currentStack, curBasicBlock);
 					break;
 
 				case Code.Jmp:
@@ -852,7 +852,8 @@ namespace Mono.Linker.Dataflow
 		private void HandleCall (
 			MethodBody callingMethodBody,
 			Instruction operation,
-			Stack<StackSlot> currentStack)
+			Stack<StackSlot> currentStack,
+			int curBasicBlock)
 		{
 			MethodReference calledMethod = (MethodReference) operation.Operand;
 
@@ -886,6 +887,12 @@ namespace Mono.Linker.Dataflow
 
 			if (methodReturnValue != null)
 				currentStack.Push (new StackSlot (methodReturnValue, calledMethod.ReturnType.IsByRefOrPointer ()));
+
+			foreach (var param in methodParams) {
+				if (param is ArrayValue arr) {
+					MarkArrayValuesAsUnknown (arr, curBasicBlock);
+				}
+			}
 		}
 
 		public abstract bool HandleCall (
@@ -895,7 +902,7 @@ namespace Mono.Linker.Dataflow
 			ValueNodeList methodParams,
 			out ValueNode methodReturnValue);
 
-		private static void MarkArrayValuesAsUnknown (int curBasicBlock, ArrayValue arrValue)
+		private static void MarkArrayValuesAsUnknown (ArrayValue arrValue, int curBasicBlock)
 		{
 			// Since we can't know the current index we're storing the value at, clear all indices.
 			// That way we won't accidentally think we know the value at a given index when we cannot.
@@ -917,7 +924,7 @@ namespace Mono.Linker.Dataflow
 			foreach (var array in arrayToStoreIn.Value.UniqueValues ()) {
 				if (array is ArrayValue arrValue) {
 					if (indexToStoreAtInt == null) {
-						MarkArrayValuesAsUnknown (curBasicBlock, arrValue);
+						MarkArrayValuesAsUnknown (arrValue, curBasicBlock);
 					} else {
 						// When we know the index, we can record the value at that index.
 						StoreMethodLocalValue (arrValue.IndexValues, valueToStore.Value, indexToStoreAtInt.Value, curBasicBlock);
@@ -944,7 +951,7 @@ namespace Mono.Linker.Dataflow
 			if (index == null) {
 				PushUnknown (currentStack);
 				if (isByRef) {
-					MarkArrayValuesAsUnknown (curBasicBlock, arr);
+					MarkArrayValuesAsUnknown (arr, curBasicBlock);
 				}
 				return;
 			}
