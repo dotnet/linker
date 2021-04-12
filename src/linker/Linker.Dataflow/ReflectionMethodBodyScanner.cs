@@ -820,13 +820,7 @@ namespace Mono.Linker.Dataflow
 								foreach (var stringParam in methodParams[1].UniqueValues ()) {
 									if (stringParam is KnownStringValue stringValue) {
 										foreach (var method in systemTypeValue.TypeRepresented.GetMethodsOnTypeHierarchy (m => m.Name == stringValue.Contents, bindingFlags)) {
-											if (!ValidateGenericMethodInstantiation (ref reflectionContext, method, methodParams[2], calledMethod)) {
-												reflectionContext.RecordUnrecognizedPattern (
-												2060, string.Format (Resources.Strings.IL2060,
-													DiagnosticUtilities.GetMethodSignatureDisplayName (calledMethod)));
-											} else {
-												reflectionContext.RecordHandledPattern ();
-											}
+											ValidateGenericMethodInstantiation (ref reflectionContext, method, methodParams[2], calledMethod);
 											MarkMethod (ref reflectionContext, method);
 										}
 
@@ -1645,13 +1639,7 @@ namespace Mono.Linker.Dataflow
 
 						foreach (var methodValue in methodParams[0].UniqueValues ()) {
 							if (methodValue is SystemReflectionMethodBaseValue methodBaseValue) {
-								if (!ValidateGenericMethodInstantiation (ref reflectionContext, methodBaseValue.MethodRepresented, methodParams[1], calledMethod)) {
-									reflectionContext.RecordUnrecognizedPattern (
-												2060, string.Format (Resources.Strings.IL2060,
-													DiagnosticUtilities.GetMethodSignatureDisplayName (calledMethod)));
-								} else {
-									reflectionContext.RecordHandledPattern ();
-								}
+								ValidateGenericMethodInstantiation (ref reflectionContext, methodBaseValue.MethodRepresented, methodParams[1], calledMethod);
 							} else if (methodValue == NullValue.Instance) {
 								reflectionContext.RecordHandledPattern ();
 							} else {
@@ -2229,16 +2217,23 @@ namespace Mono.Linker.Dataflow
 				MarkEvent (ref reflectionContext, @event);
 		}
 
-		bool ValidateGenericMethodInstantiation (
+		void ValidateGenericMethodInstantiation (
 			ref ReflectionPatternContext reflectionContext,
 			MethodDefinition genericMethod,
 			ValueNode genericParametersArray,
 			MethodReference reflectionMethod)
 		{
-			if (!genericMethod.HasGenericParameters)
-				return true;
+			if (!genericMethod.HasGenericParameters) {
+				reflectionContext.RecordHandledPattern ();
+			}
 
-			return AnalyzeGenericInstatiationTypeArray (genericParametersArray, ref reflectionContext, reflectionMethod, genericMethod.GenericParameters);
+			if (!AnalyzeGenericInstatiationTypeArray (genericParametersArray, ref reflectionContext, reflectionMethod, genericMethod.GenericParameters)) {
+				reflectionContext.RecordUnrecognizedPattern (
+2060, string.Format (Resources.Strings.IL2060,
+DiagnosticUtilities.GetMethodSignatureDisplayName (reflectionMethod)));
+			} else {
+				reflectionContext.RecordHandledPattern ();
+			}
 		}
 
 		static DynamicallyAccessedMemberTypes GetDynamicallyAccessedMemberTypesFromBindingFlagsForNestedTypes (BindingFlags? bindingFlags) =>
