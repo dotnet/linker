@@ -1280,7 +1280,7 @@ namespace Mono.Linker.Dataflow
 		{
 			if (index == 0) return Size;
 			if (index - 1 <= IndexValues.Count)
-				return IndexValues.Values.ElementAt(index - 1).Value;
+				return IndexValues.Values.ElementAt (index - 1).Value;
 
 			throw new InvalidOperationException ();
 		}

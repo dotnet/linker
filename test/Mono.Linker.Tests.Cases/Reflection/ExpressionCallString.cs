@@ -344,8 +344,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			static Type GetUnknownType () { return null; }
 
 			[Kept]
-			[return:KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
-			[return:DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicProperties)]
+			[return: KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicProperties)]
 			static Type GetUnknownTypeWithRequrements () { return null; }
 		}
 	}
