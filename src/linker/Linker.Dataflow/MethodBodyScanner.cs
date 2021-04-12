@@ -188,7 +188,7 @@ namespace Mono.Linker.Dataflow
 					newValue.Value = MergePointValue.MergeValues (existingValue.Value, valueToStore);
 				}
 				valueCollection[collectionKey] = newValue;
-			} else if (maxTrackedValues != null && valueCollection.Count < maxTrackedValues) {
+			} else if (maxTrackedValues == null || valueCollection.Count < maxTrackedValues) {
 				// We're not currently tracking a value a this index, so store the value now.
 				newValue.Value = valueToStore;
 				valueCollection[collectionKey] = newValue;

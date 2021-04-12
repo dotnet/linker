@@ -903,7 +903,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 				TestNullMethod ();
 				TestUnknownMethod (null);
-				TestUnknownMethodButNoTypeArguments(null)
+				TestUnknownMethodButNoTypeArguments (null);
 				TestWithUnknownTypeArray (null);
 				TestWithArrayUnknownIndexSet (0);
 				TestWithArrayUnknownLengthSet (1);

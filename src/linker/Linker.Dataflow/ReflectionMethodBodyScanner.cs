@@ -820,7 +820,13 @@ namespace Mono.Linker.Dataflow
 								foreach (var stringParam in methodParams[1].UniqueValues ()) {
 									if (stringParam is KnownStringValue stringValue) {
 										foreach (var method in systemTypeValue.TypeRepresented.GetMethodsOnTypeHierarchy (m => m.Name == stringValue.Contents, bindingFlags)) {
-											ValidateGenericMethodInstantiation (ref reflectionContext, method, methodParams[2], calledMethod);
+											if (!ValidateGenericMethodInstantiation (ref reflectionContext, method, methodParams[2], calledMethod)) {
+												reflectionContext.RecordUnrecognizedPattern (
+												2060, string.Format (Resources.Strings.IL2060,
+													DiagnosticUtilities.GetMethodSignatureDisplayName (calledMethod)));
+											} else {
+												reflectionContext.RecordHandledPattern ();
+											}
 											MarkMethod (ref reflectionContext, method);
 										}
 
@@ -1639,8 +1645,13 @@ namespace Mono.Linker.Dataflow
 
 						foreach (var methodValue in methodParams[0].UniqueValues ()) {
 							if (methodValue is SystemReflectionMethodBaseValue methodBaseValue) {
-								ValidateGenericMethodInstantiation (ref reflectionContext, methodBaseValue.MethodRepresented, methodParams[1], calledMethod);
-								reflectionContext.RecordHandledPattern ();
+								if (!ValidateGenericMethodInstantiation (ref reflectionContext, methodBaseValue.MethodRepresented, methodParams[1], calledMethod)) {
+									reflectionContext.RecordUnrecognizedPattern (
+												2060, string.Format (Resources.Strings.IL2060,
+													DiagnosticUtilities.GetMethodSignatureDisplayName (calledMethod)));
+								} else {
+									reflectionContext.RecordHandledPattern ();
+								}
 							} else if (methodValue == NullValue.Instance) {
 								reflectionContext.RecordHandledPattern ();
 							} else {
