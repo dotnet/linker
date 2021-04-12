@@ -1761,7 +1761,7 @@ namespace Mono.Linker.Dataflow
 							ref reflectionContext,
 							_context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameters[i]),
 							value.Value,
-							calledMethod);
+							calledMethod.Resolve());
 					}
 				}
 			}
