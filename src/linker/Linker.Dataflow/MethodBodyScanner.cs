@@ -170,23 +170,29 @@ namespace Mono.Linker.Dataflow
 			Dictionary<KeyType, ValueBasicBlockPair> valueCollection,
 			ValueNode valueToStore,
 			KeyType collectionKey,
-			int curBasicBlock)
+			int curBasicBlock,
+			int? maxTrackedValues = null)
 		{
 			ValueBasicBlockPair newValue = new ValueBasicBlockPair { BasicBlockIndex = curBasicBlock };
 
 			ValueBasicBlockPair existingValue;
-			if (valueCollection.TryGetValue (collectionKey, out existingValue)
-				&& existingValue.BasicBlockIndex == curBasicBlock) {
-				// If the previous value was stored in the current basic block, then we can safely 
-				// overwrite the previous value with the new one.
+			if (valueCollection.TryGetValue (collectionKey, out existingValue)) {
+				if (existingValue.BasicBlockIndex == curBasicBlock) {
+					// If the previous value was stored in the current basic block, then we can safely 
+					// overwrite the previous value with the new one.
+					newValue.Value = valueToStore;
+				} else {
+					// If the previous value came from a previous basic block, then some other use of 
+					// the local could see the previous value, so we must merge the new value with the 
+					// old value.
+					newValue.Value = MergePointValue.MergeValues (existingValue.Value, valueToStore);
+				}
+				valueCollection[collectionKey] = newValue;
+			} else if (maxTrackedValues != null && valueCollection.Count < maxTrackedValues) {
+				// We're not currently tracking a value a this index, so store the value now.
 				newValue.Value = valueToStore;
-			} else {
-				// If the previous value came from a previous basic block, then some other use of 
-				// the local could see the previous value, so we must merge the new value with the 
-				// old value.
-				newValue.Value = MergePointValue.MergeValues (existingValue.Value, valueToStore);
+				valueCollection[collectionKey] = newValue;
 			}
-			valueCollection[collectionKey] = newValue;
 		}
 
 		public void Scan (MethodBody methodBody)
@@ -902,11 +908,15 @@ namespace Mono.Linker.Dataflow
 			ValueNodeList methodParams,
 			out ValueNode methodReturnValue);
 
+		// Limit tracking array values to 32 values for performance reasons. There are many arrays much longer than 32 elements in .NET, but the interesting ones for the linker are nearly always less than 32 elements.
+		private const int MaxTrackedArrayValues = 32;
+
 		private static void MarkArrayValuesAsUnknown (ArrayValue arrValue, int curBasicBlock)
 		{
 			// Since we can't know the current index we're storing the value at, clear all indices.
 			// That way we won't accidentally think we know the value at a given index when we cannot.
 			foreach (var knownIndex in arrValue.IndexValues.Keys) {
+				// Don't pass MaxTrackedArrayValues since we are only looking at keys we've already seen.
 				StoreMethodLocalValue (arrValue.IndexValues, UnknownValue.Instance, knownIndex, curBasicBlock);
 			}
 		}
@@ -927,7 +937,7 @@ namespace Mono.Linker.Dataflow
 						MarkArrayValuesAsUnknown (arrValue, curBasicBlock);
 					} else {
 						// When we know the index, we can record the value at that index.
-						StoreMethodLocalValue (arrValue.IndexValues, valueToStore.Value, indexToStoreAtInt.Value, curBasicBlock);
+						StoreMethodLocalValue (arrValue.IndexValues, valueToStore.Value, indexToStoreAtInt.Value, curBasicBlock, MaxTrackedArrayValues);
 					}
 				}
 			}
