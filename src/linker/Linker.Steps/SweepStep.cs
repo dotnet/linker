@@ -682,13 +682,15 @@ namespace Mono.Linker.Steps
 			{
 				foreach (var f in forwarders) {
 					TypeDefinition td = f.Resolve ();
-					if (td == null ||
-						// Do not update the scope of kept forwarders.
-						(annotations != null && !annotations.IsMarked (td))) {
-						// Forwarded type cannot be resolved but it was marked
-						// linker is running in --skip-unresolved true mode
+
+					// Forwarded type cannot be resolved but it was marked
+					// linker is running in --skip-unresolved true mode
+					if (td == null)
 						return;
-					}
+
+					// Do not update the scope of kept forwarders.
+					if (annotations != null && annotations.IsMarked (td))
+						continue;
 
 					var tr = assembly.MainModule.ImportReference (td);
 					if (f.Scope != tr.Scope)
