@@ -50,7 +50,7 @@ There are two big categories of warnings which you will likely see:
 
 ### RequiresUnreferencedCode
 
-`RequiresUnreferencedCode` is simple: it's an attribute that can be placed on methods to indicate
+[RequiresUnreferencedCode](https://docs.microsoft.com/en-us/dotnet/api/system.diagnostics.codeanalysis.requiresunreferencedcodeattribute?view=net-5.0) is simple: it's an attribute that can be placed on methods to indicate
 that the method is not trim-compatible, meaning that it might use reflection or some other
 mechanism to access code that may be trimmed away. This attribute is used when it's not possible
 for the trimmer to understand what's necessary, and a blanket warning is needed. This would often
@@ -103,7 +103,7 @@ the suppressions.
 
 ### DynamicallyAccessedMembers
 
-`DynamicallyAccessedMembers` is usually about reflection. Unlike `RequiresUnreferencedCode`,
+[DynamicallyAccessedMembers](https://docs.microsoft.com/en-us/dotnet/api/system.diagnostics.codeanalysis.dynamicallyaccessedmembersattribute?view=net-5.0) is usually about reflection. Unlike `RequiresUnreferencedCode`,
 reflection can sometimes be understood by the trimmer as long as it's annotated correctly.
 Let's take another look at the original example:
 
