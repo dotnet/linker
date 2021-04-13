@@ -1,6 +1,6 @@
 # Serialization
 
-The linker cannot analyze the patterns typically used by reflection-based serializers. Such serializers should be annotated with `RequiresUnreferencedCodeAttribute`, and using them in a trimmed app will likely not work (or will work unpredictably). Set `SuppressTrimAnalysisWarnings` to `false` to see static analysis warnings for these patterns.
+The linker cannot analyze the patterns typically used by reflection-based serializers. Such serializers should be annotated with `RequiresUnreferencedCodeAttribute`, and using them in a trimmed app will likely not work (or will work unpredictably). The linker will produce static analysis [warnings](https://docs.microsoft.com/dotnet/core/deploying/trimming-options#analysis-warnings) for these patterns.
 
 If possible, avoid using reflection-based serializers with trimming, and prefer solutions based on source generators where the serialized types and all required members are statically referenced.
 
