@@ -34,6 +34,18 @@ namespace Mono.Linker.Tests.Cases.Serialization
 				enumerable = new Enumerable (),
 				genericEnumerable = new GenericEnumerable<ItemType> ()
 			};
+
+			// Reference types ensure they are scanned for attributes.
+			Type t;
+			t = typeof (AttributedType);
+			t = typeof (AttributedFieldType);
+			t = typeof (AttributedPropertyType);
+			t = typeof (AttributedPrivateFieldType);
+			t = typeof (AttributedStaticFieldType);
+			t = typeof (CollectionMembersType);
+			t = typeof (Enumerable);
+			t = typeof (ItemType);
+			t = typeof (GenericEnumerable<>);
 		}
 
 		[Kept]
@@ -76,6 +88,19 @@ namespace Mono.Linker.Tests.Cases.Serialization
 			T f1;
 			// removed
 			int f2;
+		}
+
+		[DataContract]
+		class AttributedUnusedType
+		{
+			public int f1;
+		}
+
+		// removed
+		class AttributedFieldUnusedType
+		{
+			[DataMember]
+			public int f1;
 		}
 
 		[Kept]

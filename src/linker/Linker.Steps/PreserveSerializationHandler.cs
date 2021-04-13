@@ -11,43 +11,44 @@ using Mono.Linker.Steps;
 
 namespace Mono.Linker.Steps
 {
-
 	// This discovers types attributed with certain serialization attributes, to match the old behavior
 	// of xamarin-android. It is not meant to be complete. Unlike xamarin-andorid:
-	// - this will only discover attributed types in marked assemblies
+	// - this will only discover attributed types that are marked
 	// - this will discover types in non-"link" assemblies as well
-	public class PreserveSerializationSubStep : BaseSubStep
+	public class PreserveSerializationHandler : IMarkHandler
 	{
-		public override SubStepTargets Targets =>
-			SubStepTargets.Type
-			| SubStepTargets.Field
-			| SubStepTargets.Method
-			| SubStepTargets.Property
-			| SubStepTargets.Event;
+		LinkContext _context;
 
-		public override void ProcessType (TypeDefinition type)
+		public void Initialize (LinkContext context, MarkContext markContext)
+		{
+			_context = context;
+			markContext.RegisterMarkTypeAction (type => ProcessType (type));
+		}
+
+		void ProcessType (TypeDefinition type)
 		{
 			ProcessAttributeProvider (type);
-		}
 
-		public override void ProcessField (FieldDefinition field)
-		{
-			ProcessAttributeProvider (field);
-		}
+			if (type.HasFields) {
+				foreach (var field in type.Fields)
+					ProcessAttributeProvider (field);
+			}
 
-		public override void ProcessProperty (PropertyDefinition property)
-		{
-			ProcessAttributeProvider (property);
-		}
+			if (type.HasProperties) {
+				foreach (var property in type.Properties)
+					ProcessAttributeProvider (property);
+			}
 
-		public override void ProcessMethod (MethodDefinition method)
-		{
-			ProcessAttributeProvider (method);
-		}
+			if (type.HasMethods) {
+				foreach (var method in type.Methods)
+					ProcessAttributeProvider (method);
+			}
 
-		public override void ProcessEvent (EventDefinition @event)
-		{
-			ProcessAttributeProvider (@event);
+			if (type.HasEvents) {
+				foreach (var @event in type.Events) {
+					ProcessAttributeProvider (@event);
+				}
+			}
 		}
 
 		void ProcessAttributeProvider (ICustomAttributeProvider provider)
@@ -72,9 +73,9 @@ namespace Mono.Linker.Steps
 			};
 
 			if (serializedFor.HasFlag (SerializerKind.DataContractSerializer))
-				Context.SerializationMarker.MarkRecursiveMembers (type, new DependencyInfo (DependencyKind.DataContractSerialized, provider));
+				_context.SerializationMarker.MarkRecursiveMembers (type, new DependencyInfo (DependencyKind.DataContractSerialized, provider));
 			if (serializedFor.HasFlag (SerializerKind.XmlSerializer))
-				Context.SerializationMarker.MarkRecursiveMembers (type, new DependencyInfo (DependencyKind.XmlSerialized, provider));
+				_context.SerializationMarker.MarkRecursiveMembers (type, new DependencyInfo (DependencyKind.XmlSerialized, provider));
 		}
 
 		enum SerializerKind

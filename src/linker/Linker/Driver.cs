@@ -721,9 +721,8 @@ namespace Mono.Linker
 			}
 
 			if (context.KeepSerialization) {
-				p.MarkHandlers.Add (new MarkSubStepsDispatcher (new List<ISubStep> () {
-					new PreserveSerializationSubStep ()
-				}));
+				p.MarkHandlers.Add (new PreserveSerializationHandler ());
+
 			}
 
 			return 0;
