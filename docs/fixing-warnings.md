@@ -133,35 +133,40 @@ it can use flow analysis to determine that it needs to keep all public methods. 
 `DynamicallyAccessMembers` come in? What happens if the reflection is split across methods?
 
 ```C#
-void M1()
+void Method1()
 {
-    M2(typeof(System.Tuple));
+    Method2(typeof(System.Tuple));
 }
-void M2(Type type)
+void Method2(Type type)
 {
-    // Trim analysis warning IL2070: net6.Program.M2(Type): 'this' argument does not satisfy
-    // 'DynamicallyAccessedMemberTypes.PublicMethods' in call to 'System.Type.GetMethods()'. The
-    // parameter 'type' of method 'net6.Program.M2(Type)' does not have matching annotations. The
-    // source value must declare at least the same requirements as those declared on the target
-    // location it is assigned to.
     var methods = type.GetMethods();
     ...
 }
 ```
 
-Now you see a warning. For performance and stability flow analysis isn't performed between
+If you compile the above, now you see a warning:
+
+```
+Trim analysis warning IL2070: net6.Program.Method2(Type): 'this' argument does not satisfy
+'DynamicallyAccessedMemberTypes.PublicMethods' in call to 'System.Type.GetMethods()'. The
+parameter 'type' of method 'net6.Program.Method2(Type)' does not have matching annotations. The
+source value must declare at least the same requirements as those declared on the target
+location it is assigned to.
+```
+
+For performance and stability flow analysis isn't performed between
 methods, so annotation is needed to pass information upward, from the reflection call
 (`GetMethods`) to the source of the `Type` (`typeof`). In the above example, the trimmer warning
-is stating that `GetMethods` requires the `PublicMethods` annotation on types, but the `type`
+is saying that `GetMethods` requires the `PublicMethods` annotation on types, but the `type`
 variable doesn't have the same requirement. In other words, we need to pass the requirements from
 `GetMethods` up to the caller:
 
 ```C#
-void M1()
+void Method1()
 {
-    M2(typeof(System.Tuple));
+    Method2(typeof(System.Tuple));
 }
-void M2(
+void Method2(
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
 {
     var methods = type.GetMethods();
@@ -173,15 +178,14 @@ Now the warning disappears, because the trimmer knows exactly which members to p
 which type(s) to preserve them on. In general, this is the best way to deal with
 `DynamicallyAccessedMembers` warnings: add annotations so the trimmer knows what to preserve.
 
-As with `RequiresUnreferencedCode`, adding `RequiresUnreferencedCode` or
+As with `RequiresUnreferencedCode` warnings, adding `RequiresUnreferencedCode` or
 `UnconditionalSuppressMessage` attributes also works, but none of these options make the code
 compatible with trimming, while adding `DynamicallyAccessedMembers` does.
 
 ## Conclusion
 
 This description should cover the most common situations you end up in while trimming your
-application. Over time we'll continue to improve the diagnostic experience and provide more streamlined
-ways to make your code trim-compatible.
+application. Over time we'll continue to improve the diagnostic experience and tooling.
 
 As we continue developing trimming we hope to see more code that's fully annotated, so users can
 trim with confidence. Because trimming involves the whole application, trimming is as much a
