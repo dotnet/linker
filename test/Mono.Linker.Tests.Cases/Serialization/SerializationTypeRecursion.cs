@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.InteropServices;
 using System.Xml.Serialization;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
@@ -13,6 +14,9 @@ namespace Mono.Linker.Tests.Cases.Serialization
 	{
 		public static void Main ()
 		{
+			// Reference types to ensure they are scanned for attributes.
+			Type t;
+			t = typeof (RootTypeRecursive);
 		}
 	}
 

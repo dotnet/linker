@@ -34,7 +34,7 @@ namespace Mono.Linker.Tests.Cases.Serialization
 				genericEnumerable = new GenericEnumerable<ItemType> ()
 			};
 
-			// Reference types ensure they are scanned for attributes.
+			// Reference types to ensure they are scanned for attributes.
 			Type t;
 			t = typeof (AttributedType);
 			t = typeof (AttributedTypeWithIgnoreField);
