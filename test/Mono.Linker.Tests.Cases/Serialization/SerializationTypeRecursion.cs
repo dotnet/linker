@@ -17,7 +17,17 @@ namespace Mono.Linker.Tests.Cases.Serialization
 			// Reference types to ensure they are scanned for attributes.
 			Type t;
 			t = typeof (RootTypeRecursive);
+
+			// Construct a serializer to activate the logic
+			var ser = new XmlSerializer (typeof (SerializerArgumentType));
 		}
+	}
+
+	[Kept]
+	public class SerializerArgumentType
+	{
+		// removed
+		int f1;
 	}
 
 	[Kept]

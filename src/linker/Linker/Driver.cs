@@ -715,14 +715,12 @@ namespace Mono.Linker
 			// SealerStep
 			// OutputStep
 
+			if (context.KeepSerialization)
+				p.MarkHandlers.Add (new DiscoverSerializationHandler ());
+
 			foreach (string custom_step in custom_steps) {
 				if (!AddCustomStep (p, custom_step))
 					return -1;
-			}
-
-			if (context.KeepSerialization) {
-				p.MarkHandlers.Add (new PreserveSerializationHandler ());
-
 			}
 
 			return 0;

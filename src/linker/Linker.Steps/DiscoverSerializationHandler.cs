@@ -15,7 +15,7 @@ namespace Mono.Linker.Steps
 	// of xamarin-android. It is not meant to be complete. Unlike xamarin-andorid:
 	// - this will only discover attributed types that are marked
 	// - this will discover types in non-"link" assemblies as well
-	public class PreserveSerializationHandler : IMarkHandler
+	public class DiscoverSerializationHandler : IMarkHandler
 	{
 		LinkContext _context;
 
@@ -23,6 +23,28 @@ namespace Mono.Linker.Steps
 		{
 			_context = context;
 			markContext.RegisterMarkTypeAction (type => ProcessType (type));
+			markContext.RegisterMarkMethodAction (method => CheckForSerializerActivation (method));
+		}
+
+		void CheckForSerializerActivation (MethodDefinition method)
+		{
+			var type = method.DeclaringType;
+
+			if (!_context.SerializationMarker.IsActive (SerializerKind.DataContractSerializer) &&
+				method.IsConstructor && !method.IsStatic &&
+				type.Namespace == "System.Runtime.Serialization" &&
+				type.Name == "DataContractSerializer") {
+
+				_context.SerializationMarker.Activate (SerializerKind.DataContractSerializer);
+			}
+
+			if (!_context.SerializationMarker.IsActive (SerializerKind.XmlSerializer) &&
+				method.IsConstructor && !method.IsStatic &&
+				type.Namespace == "System.Xml.Serialization" &&
+				type.Name == "XmlSerializer") {
+
+				_context.SerializationMarker.Activate (SerializerKind.XmlSerializer);
+			}
 		}
 
 		void ProcessType (TypeDefinition type)
@@ -63,6 +85,9 @@ namespace Mono.Linker.Steps
 					serializedFor |= serializerKind;
 			}
 
+			if (serializedFor == SerializerKind.None)
+				return;
+
 			TypeDefinition type = provider switch {
 				TypeDefinition td => td,
 				FieldDefinition field => field.DeclaringType,
@@ -73,16 +98,9 @@ namespace Mono.Linker.Steps
 			};
 
 			if (serializedFor.HasFlag (SerializerKind.DataContractSerializer))
-				_context.SerializationMarker.MarkRecursiveMembers (type, new DependencyInfo (DependencyKind.DataContractSerialized, provider));
+				_context.SerializationMarker.TrackForSerialization (type, provider, SerializerKind.DataContractSerializer);
 			if (serializedFor.HasFlag (SerializerKind.XmlSerializer))
-				_context.SerializationMarker.MarkRecursiveMembers (type, new DependencyInfo (DependencyKind.XmlSerialized, provider));
-		}
-
-		enum SerializerKind
-		{
-			None,
-			XmlSerializer,
-			DataContractSerializer,
+				_context.SerializationMarker.TrackForSerialization (type, provider, SerializerKind.XmlSerializer);
 		}
 
 		static bool IsPreservedSerializationAttribute (ICustomAttributeProvider provider, CustomAttribute attribute, out SerializerKind serializerKind)

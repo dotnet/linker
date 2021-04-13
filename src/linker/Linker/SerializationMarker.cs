@@ -2,14 +2,12 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System;
 using System.Collections.Generic;
 using Mono.Cecil;
-using Mono.Linker.Dataflow;
-using Mono.Linker.Steps;
 
 namespace Mono.Linker
 {
-
 	// This recursively marks members of types for serialization. This is not supposed to be complete; it is just
 	// here as a heuristic to enable some serialization scenarios.
 	//
@@ -44,19 +42,28 @@ namespace Mono.Linker
 	// For each recursive type:
 	//   mark the type and its public instance {fields, properties, and parameterless constructors}
 
+	[Flags]
+	public enum SerializerKind
+	{
+		None = 0,
+		XmlSerializer = 1,
+		DataContractSerializer = 2,
+	}
+
 	public class SerializationMarker
 	{
-
 		readonly LinkContext _context;
 
-		public SerializationMarker (LinkContext context)
-		{
-			_context = context;
-		}
+		SerializerKind ActiveSerializers { get; set; }
 
-		public void MarkRecursiveMembers (TypeReference typeRef, in DependencyInfo reason)
-		{
-			MarkRecursiveMembersInternal (typeRef, reason);
+		Dictionary<SerializerKind, HashSet<(TypeDefinition, ICustomAttributeProvider)>> _trackedTypes;
+		Dictionary<SerializerKind, HashSet<(TypeDefinition, ICustomAttributeProvider)>> TrackedTypes {
+			get {
+				if (_trackedTypes == null)
+					_trackedTypes = new Dictionary<SerializerKind, HashSet<(TypeDefinition, ICustomAttributeProvider)>> ();
+
+				return _trackedTypes;
+			}
 		}
 
 		HashSet<TypeDefinition> _recursiveTypes;
@@ -67,6 +74,58 @@ namespace Mono.Linker
 
 				return _recursiveTypes;
 			}
+		}
+
+		public SerializationMarker (LinkContext context)
+		{
+			_context = context;
+		}
+
+		public bool IsActive (SerializerKind serializerKind) => ActiveSerializers.HasFlag (serializerKind);
+
+		static DependencyKind ToDependencyKind (SerializerKind serializerKind) => serializerKind switch {
+			SerializerKind.DataContractSerializer => DependencyKind.DataContractSerialized,
+			SerializerKind.XmlSerializer => DependencyKind.XmlSerialized,
+			_ => throw new ArgumentException (nameof (SerializerKind))
+		};
+
+		public void TrackForSerialization (TypeDefinition type, ICustomAttributeProvider provider, SerializerKind serializerKind)
+		{
+			if (ActiveSerializers.HasFlag (serializerKind)) {
+				MarkRecursiveMembers (type, new DependencyInfo (ToDependencyKind (serializerKind), provider));
+				return;
+			}
+
+			if (!TrackedTypes.TryGetValue (serializerKind, out var types)) {
+				types = new HashSet<(TypeDefinition, ICustomAttributeProvider)> ();
+				TrackedTypes.Add (serializerKind, types);
+			}
+
+			types.Add ((type, provider));
+		}
+
+		public void Activate (SerializerKind serializerKind)
+		{
+			if (!Enum.IsDefined<SerializerKind> (serializerKind) || serializerKind == SerializerKind.None)
+				throw new ArgumentException ($"Unexpected serializer kind {nameof (serializerKind)}");
+
+			if (ActiveSerializers.HasFlag (serializerKind))
+				return;
+
+			ActiveSerializers |= serializerKind;
+
+			if (!TrackedTypes.TryGetValue (serializerKind, out var types))
+				return;
+
+			foreach (var (type, provider) in types)
+				MarkRecursiveMembers (type, new DependencyInfo (ToDependencyKind (serializerKind), provider));
+
+			TrackedTypes.Remove (serializerKind);
+		}
+
+		public void MarkRecursiveMembers (TypeReference typeRef, in DependencyInfo reason)
+		{
+			MarkRecursiveMembersInternal (typeRef, reason);
 		}
 
 		void MarkRecursiveMembersInternal (TypeReference typeRef, in DependencyInfo reason)
