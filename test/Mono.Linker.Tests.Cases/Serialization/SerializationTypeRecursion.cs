@@ -28,134 +28,194 @@ namespace Mono.Linker.Tests.Cases.Serialization
 		}
 
 		[Kept]
-		FieldType f1;
+		public FieldType f1;
+
+		// removed
+		PrivateFieldType f2;
 
 		[Kept]
-		FieldValueType f2;
+		public FieldValueType f3;
 
 		[Kept]
 		[KeptBackingField]
-		PropertyType p1 { [Kept] get; }
+		public GetPropertyType p1 { [Kept] get; }
 
 		[Kept]
 		[KeptBackingField]
-		PropertyType p2 { [Kept]get; [Kept]set; }
+		public GetSetPropertyType p2 { [Kept]get; [Kept]set; }
+
+		// removed
+		PrivatePropertyType p3 { get; set; }
 
 		[Kept]
-		RecursiveType f3;
+		[KeptBackingField]
+		public PublicGetPrivateSetPropertyType p4 { [Kept]get; [Kept]private set; }
 
 		[Kept]
-		DerivedType f4;
+		[KeptBackingField]
+		public PrivateGetPublicSetPropertyType p5 { [Kept]private get; [Kept]set; }
 
 		[Kept]
-		InterfaceImplementingType f5;
+		public RecursiveType f4;
 
 		[Kept]
-		NonDefaultCtorType f6;
+		public DerivedType f5;
 
 		[Kept]
-		CctorType f7;
+		public InterfaceImplementingType f6;
 
 		[Kept]
-		BeforeFieldInitCctorType f8;
+		public NonDefaultCtorType f7;
 
 		[Kept]
-		MethodType f9;
+		public PrivateCtorType f8;
 
 		[Kept]
-		GenericMembersType f10;
+		public CctorType f9;
 
 		[Kept]
-		StaticMembersType f11;
+		public BeforeFieldInitCctorType f10;
 
 		[Kept]
-		MethodsType f12;
+		public MethodType f11;
+
+		[Kept]
+		public GenericMembersType f12;
+
+		[Kept]
+		public StaticMembersType f13;
+
+		[Kept]
+		public MethodsType f14;
 	}
 
 	[Kept]
 	[KeptMember (".ctor()")]
-	class FieldType
+	public class FieldType
+	{
+	}
+
+	// removed
+	public class PrivateFieldType
 	{
 	}
 
 	[Kept]
 	[KeptMember (".ctor()")]
-	struct FieldValueType
+	public struct FieldValueType
 	{
 	}
 
 	[Kept]
 	[KeptMember (".ctor()")]
-	class PropertyType
+	public class GetPropertyType
 	{
 	}
 
 	[Kept]
 	[KeptMember (".ctor()")]
-	class RecursiveType
+	public class GetSetPropertyType
+	{
+	}
+
+	// removed
+	class PrivatePropertyType
+	{
+	}
+
+	[Kept]
+	[KeptMember (".ctor()")]
+	public class PublicGetPrivateSetPropertyType
+	{
+	}
+
+	[Kept]
+	[KeptMember (".ctor()")]
+	public class PrivateGetPublicSetPropertyType
+	{
+	}
+
+	[Kept]
+	[KeptMember (".ctor()")]
+	public class RecursiveType
 	{
 
 		[Kept]
 		[KeptMember (".ctor()")]
-		class RecursiveFieldType
+		public class RecursiveFieldType
 		{
 			[Kept]
-			int f1;
+			public int f1;
+
+			// removed
+			int f2;
 		}
 
 		[Kept]
-		RecursiveFieldType f1;
+		public RecursiveFieldType f1;
+
+		// removed
+		int f2;
 	}
 
 	[Kept]
 	[KeptMember (".ctor()")]
-	class BaseType
+	public class BaseType
 	{
 		[Kept]
-		int f1;
+		public int f1;
 	}
 
 	[Kept]
 	[KeptMember (".ctor()")]
 	[KeptBaseType (typeof (BaseType))]
-	class DerivedType : BaseType
+	public class DerivedType : BaseType
 	{
 		[Kept]
-		int f1;
+		public int f1;
 	}
 
-	[Kept]
+	// removed
 	interface InterfaceType
 	{
 		// removed
-		int P1 { get; }
+		public int P1 { get; }
 	}
 
 	[Kept]
 	[KeptMember (".ctor()")]
-	[KeptInterface (typeof (InterfaceType))]
-	class InterfaceImplementingType : InterfaceType
+	// removed interface implementation
+	public class InterfaceImplementingType : InterfaceType
 	{
 		[Kept]
 		[KeptBackingField]
 		public int P1 { [Kept] get; }
 
 		[Kept]
-		int f1;
+		public int f1;
 	}
 
 	[Kept]
-	class NonDefaultCtorType
+	public class NonDefaultCtorType
 	{
-		[Kept]
-		NonDefaultCtorType (int i)
+		// removed
+		public NonDefaultCtorType (int i)
+		{
+		}
+	}
+
+	[Kept]
+	public class PrivateCtorType
+	{
+		// removed
+		PrivateCtorType ()
 		{
 		}
 	}
 
 	[Kept]
 	[KeptMember (".ctor()")]
-	class CctorType
+	public class CctorType
 	{
 		// Explicit cctors are kept for every marked type,
 		// regardless of whether serializers require it.
@@ -167,233 +227,224 @@ namespace Mono.Linker.Tests.Cases.Serialization
 
 	[Kept]
 	[KeptMember (".ctor()")]
-	[KeptMember (".cctor()")]
-	class BeforeFieldInitCctorType
+	// removed cctor
+	public class BeforeFieldInitCctorType
 	{
-		[Kept]
-		static int i = 1;
+		// removed
+		public static int i = 1;
 	}
 
 	[Kept]
 	[KeptMember (".ctor()")]
-	class MethodType
+	public class MethodType
 	{
-		[Kept]
+		// removed
 		class StaticMethodParameterType
 		{
-			// removed
-			int f1;
+			public int f1;
 		}
-		[Kept]
+		// removed
 		static void StaticMethod (StaticMethodParameterType p1) { }
-		[Kept]
+		// removed
 		class InstanceMethodParameterType
 		{
-			// removed
-			int f1;
+			public int f1;
 		}
-		[Kept]
+		// removed
 		void InstanceMethod1 (InstanceMethodParameterType p1) { }
-		[Kept]
+		// removed
 		class ReturnType
 		{
-			// removed
-			int f1;
+			public int f1;
 		}
-		[Kept]
+		// removed
 		ReturnType InstanceMethod2 () => null;
 	}
 
 	[Kept]
 	[KeptMember (".ctor()")]
-	class GenericMembersType
+	public class GenericMembersType
 	{
 		[Kept]
 		[KeptMember (".ctor()")]
-		class GenericFieldType<T> { }
+		public class GenericFieldType<T> { }
 
 		[Kept]
 		[KeptMember (".ctor()")]
-		class GenericFieldParameterType { }
+		public class GenericFieldParameterType { }
 
 		[Kept]
-		GenericFieldType<GenericFieldParameterType> f1;
-
-		[Kept]
-		[KeptMember (".ctor()")]
-		class GenericPropertyType<T> { }
+		public GenericFieldType<GenericFieldParameterType> f1;
 
 		[Kept]
 		[KeptMember (".ctor()")]
-		class GenericPropertyParameterType { }
+		public class GenericPropertyType<T> { }
+
+		[Kept]
+		[KeptMember (".ctor()")]
+		public class GenericPropertyParameterType { }
 
 		[Kept]
 		[KeptBackingField]
-		GenericPropertyType<GenericPropertyParameterType> p1 { [Kept] get; }
+		public GenericPropertyType<GenericPropertyParameterType> p1 { [Kept] get; }
 
 		[Kept]
 		[KeptMember (".ctor()")]
-		class GenericTypeWithMembers<T, U>
+		public class GenericTypeWithMembers<T, U>
 		{
 			[Kept]
-			T f1;
+			public T f1;
 			[Kept]
 			[KeptBackingField]
-			U p1 { [Kept] get; }
+			public U p1 { [Kept] get; }
 		}
 
 		[Kept]
 		[KeptMember (".ctor()")]
-		class GenericParameter1 { }
+		public class GenericParameter1 { }
 
 		[Kept]
 		[KeptMember (".ctor()")]
-		class GenericParameter2 { }
+		public class GenericParameter2 { }
 
 		[Kept]
-		GenericTypeWithMembers<GenericParameter1, GenericParameter2> f2;
+		public GenericTypeWithMembers<GenericParameter1, GenericParameter2> f2;
 
 		[Kept]
 		[KeptMember (".ctor()")]
-		class GenericBaseType<T, U, V>
+		public class GenericBaseType<T, U, V>
 		{
 			[Kept]
-			T f1;
+			public T f1;
 
 			[Kept]
 			[KeptBackingField]
-			U p1 { [Kept] get; }
+			public U p1 { [Kept] get; }
 
 			[Kept]
-			V f2;
+			public V f2;
 		}
 
 		[Kept]
 		[KeptMember (".ctor()")]
-		class GenericParameter3 { }
+		public class GenericParameter3 { }
 		[Kept]
 		[KeptMember (".ctor()")]
-		class GenericParameter4 { }
+		public class GenericParameter4 { }
 
 		[Kept]
 		[KeptMember (".ctor()")]
 		[KeptBaseType (typeof (GenericBaseType<,,>), typeof (GenericParameter3), typeof (GenericParameter4), "T")]
-		class DerivedFromGenericType<T> : GenericBaseType<GenericParameter3, GenericParameter4, T>
+		public class DerivedFromGenericType<T> : GenericBaseType<GenericParameter3, GenericParameter4, T>
 		{
 			[Kept]
-			T f1;
+			public T f1;
 		}
 
 		[Kept]
 		[KeptMember (".ctor()")]
-		class GenericParameter5 { }
+		public class GenericParameter5 { }
 
 		[Kept]
-		DerivedFromGenericType<GenericParameter5> f3;
+		public DerivedFromGenericType<GenericParameter5> f3;
 
 		[Kept]
 		[KeptMember (".ctor()")]
-		class ArrayItemType
+		public class ArrayItemType
 		{
 			[Kept]
-			int f1;
+			public int f1;
 		}
 
 		[Kept]
-		ArrayItemType[] f4;
+		public ArrayItemType[] f4;
 
 		[Kept]
-		struct PointerType
+		public struct PointerType
 		{
 			[Kept]
-			int f1;
+			public int f1;
 		}
 
 		[Kept]
-		unsafe PointerType* f5;
+		public unsafe PointerType* f5;
 
 		[Kept]
 		[StructLayout (LayoutKind.Auto)]
-		struct FunctionPointerParameterType
+		public struct FunctionPointerParameterType
 		{
 			// removed
-			int f1;
+			public int f1;
 		}
 
 		[Kept]
 		[StructLayout (LayoutKind.Auto)]
-		struct FunctionPointerReturnType
+		// Use auto layout to prevent automatic marking of field types,
+		// to demonstrate an edge case where function pointers aren't
+		// kept recursively.
+		public struct FunctionPointerReturnType
 		{
 			// removed
-			int f2;
+			public int f2;
 		}
 
 		[Kept]
-		unsafe delegate*<FunctionPointerParameterType, FunctionPointerReturnType> f6;
+		public unsafe delegate*<FunctionPointerParameterType, FunctionPointerReturnType> f6;
 	}
 
 	[Kept]
 	[KeptMember (".ctor()")]
-	class StaticMembersType
+	public class StaticMembersType
 	{
-		[Kept]
-		[KeptMember (".ctor()")]
-		class StaticFieldType
+		// removed
+		public class StaticFieldType
 		{
-			[Kept]
-			int f1;
+			public int f1;
 		}
-		[Kept]
-		static StaticFieldType sf1;
-		[Kept]
-		[KeptMember (".ctor()")]
-		class StaticPropertyType
+		// removed
+		public static StaticFieldType sf1;
+		// removed
+		public class StaticPropertyType
 		{
-			[Kept]
-			int f1;
+			public int f1;
 		}
-		[Kept]
-		[KeptBackingField]
-		static StaticPropertyType sp1 { [Kept] get; }
+		// removed
+		public static StaticPropertyType sp1 { get; }
 	}
 
 	[Kept]
 	[KeptMember (".ctor()")]
-	class MethodsType
+	public class MethodsType
 	{
-		[Kept]
-		class ParameterType
+		// removed
+		public class ParameterType
 		{
-			// removed
-			int f1;
+			public int f1;
 		}
-		[Kept]
-		void MethodWithParameter (ParameterType p1) { }
-		[Kept]
-		class ReturnType
+		// removed
+		public void MethodWithParameter (ParameterType p1) { }
+		// removed
+		public class ReturnType
 		{
-			// removed;
-			int f1;
+			public int f1;
 		}
-		[Kept]
-		ReturnType MethodWithReturnType () => null;
+		// removed
+		public ReturnType MethodWithReturnType () => null;
 
-		[Kept]
-		class StaticParameterType
+		// removed
+		public class StaticParameterType
 		{
-			// removed
-			int f1;
+			public int f1;
 		}
 
-		[Kept]
-		static void StaticMethodWithParameter (StaticParameterType p1) { }
-		[Kept]
-		class StaticReturnType
+		// removed
+		public static void StaticMethodWithParameter (StaticParameterType p1) { }
+		// removed
+		public class StaticReturnType
 		{
-			// removed
-			int f1;
+			public int f1;
 		}
-		[Kept]
-		static StaticReturnType StaticMethodWithReturnType () => null;
+		// removed
+		public static StaticReturnType StaticMethodWithReturnType () => null;
 	}
 }

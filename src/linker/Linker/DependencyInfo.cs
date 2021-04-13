@@ -135,6 +135,7 @@ namespace Mono.Linker
 		DataContractSerialized = 83, // entry type for DataContract serialization
 		XmlSerialized = 84, // entry type for XML serialization
 		RecursiveType = 85, // recursive type kept dup to serialization handling
+		SerializedMember = 86, // field or property kept on a type for serialization
 	}
 
 	public readonly struct DependencyInfo : IEquatable<DependencyInfo>

@@ -85,7 +85,7 @@ namespace Mono.Linker.Tests.Cases.Serialization
 		class AttributedType
 		{
 			[Kept]
-			int f1;
+			public int f1;
 		}
 
 		[Kept]
@@ -95,10 +95,10 @@ namespace Mono.Linker.Tests.Cases.Serialization
 			[Kept]
 			[KeptAttributeAttribute (typeof (DataMemberAttribute))]
 			[DataMember]
-			int f1;
+			public int f1;
 
 			[Kept]
-			int f2;
+			public int f2;
 		}
 
 		[Kept]
@@ -109,10 +109,36 @@ namespace Mono.Linker.Tests.Cases.Serialization
 			[KeptBackingField]
 			[KeptAttributeAttribute (typeof (DataMemberAttribute))]
 			[DataMember]
-			static int P { [Kept] get; }
+			public int P { [Kept] get; }
 
 			[Kept]
+			public int f1;
+		}
+
+		[Kept]
+		[KeptMember (".ctor()")]
+		class AttributedPrivateFieldType
+		{
+			// Private member is removed even if its attribute
+			// makes the type a serialization root.
+			[DataMember]
 			int f1;
+
+			[Kept]
+			public int f2;
+		}
+
+		[Kept]
+		[KeptMember (".ctor()")]
+		class AttributedStaticFieldType
+		{
+			// Static member is removed even if its attribute
+			// makes the type a serialization root.
+			[DataMember]
+			public static int f1;
+
+			[Kept]
+			public int f2;
 		}
 
 		[Kept]
@@ -134,7 +160,7 @@ namespace Mono.Linker.Tests.Cases.Serialization
 		class Enumerable : IEnumerable
 		{
 			// removed
-			int f1;
+			public int f1;
 
 			// IEnumerable implementation
 			[Kept]
@@ -146,7 +172,7 @@ namespace Mono.Linker.Tests.Cases.Serialization
 		class ItemType
 		{
 			[Kept]
-			int f1;
+			public int f1;
 		}
 
 		[Kept]
@@ -156,9 +182,9 @@ namespace Mono.Linker.Tests.Cases.Serialization
 		class GenericEnumerable<T> : IEnumerable<T>
 		{
 			// removed
-			T f1;
+			public T f1;
 			// removed
-			int f2;
+			public int f2;
 
 			// IEnumerable<T> implementation
 			[Kept]

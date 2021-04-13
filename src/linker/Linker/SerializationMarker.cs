@@ -11,9 +11,9 @@ namespace Mono.Linker
 {
 
 	// This recursively marks members of types for serialization. This is not supposed to be complete; it is just
-	// here for back-compat with the old behavior of xamarin-android.
+	// here as a heuristic to enable some serialization scenarios.
 	//
-	// The xamarin-android behavior was as follows:
+	// Xamarin-android had some heuristics for serialization which behaved as follows:
 	//
 	// Discover members in the "link" assemblies with certain attributes:
 	//   for XMLSerializer: Xml*Attribute, except XmlIgnoreAttribute
@@ -25,23 +25,24 @@ namespace Mono.Linker
 	//      event methods were not preserved.
 	//    in a non-SDK assembly, mark types, fields, methods, property methods, and event methods
 	//    recursively scan types of properties and fields (including generic arguments)
-	//      for each recursive type, conditionally preserve the default ctor
+	// For each recursive type:
+	//   conditionally preserve the default ctor
 	//
-	// We want to match the above behavior in a more consistent way (erring on the side of being more conservative).
-
+	// We want to match the above behavior in a more correct way, even if this means not marking some members
+	// which used to be marked. We also would like to avoid serializer-specific logic in the recursive marking.
+	//
 	// Instead of conditionally preserving things, we will just mark them, and we will do so consistently for every
 	// type discovered as part of the type graph reachable from the discovered roots. We also do not distinguish between
 	// SDK and non-SDK assemblies.
 	//
 	// The behavior is as follows:
 	//
-	// Discover attributed "roots" the same way.
+	// Discover attributed "roots" by looking for the same attributes, but only on marked types.
 	//
 	// For each "root":
-	//   recursively scan types of properties and fields (including generic arguments)
-	//     for each recursive type:
-	//       mark the type, and set TypePreserve.All
-	//         this handles the cases where XA used to set TypePreserve.All, preserve default ctors, and mark or conditionally preserve fields/methods (including property and event methods)
+	//   recursively scan types of public properties and fields, and the base type (including generic arguments)
+	// For each recursive type:
+	//   mark the type and its public instance {fields, properties, and parameterless constructors}
 
 	public class SerializationMarker
 	{
@@ -94,30 +95,49 @@ namespace Mono.Linker
 			if (!RecursiveTypes.Add (type))
 				return;
 
-			// Quirk to match xamarin-android behavior, which would set TypePreserve.All
-			// for discovered root types in "link" SDK assemblies. We do it for all recursive
-			// types for consistency.
-			_context.Annotations.SetPreserve (type, TypePreserve.All);
+			// Unlike xamarin-android, don't preserve all members.
 
+			// Unlike xamarin-android, we preserve base type members recursively.
 			MarkRecursiveMembersInternal (type.BaseType, new DependencyInfo (DependencyKind.BaseType, type));
 
 			if (type.HasFields) {
 				foreach (var field in type.Fields) {
-					// Static field types are discovered, matching xamarin-android behavior
+					// Unlike xamarin-android, don't preserve non-public or static fields.
+					if (!field.IsPublic || field.IsStatic)
+						continue;
+
 					MarkRecursiveMembersInternal (field.FieldType, new DependencyInfo (DependencyKind.RecursiveType, type));
-					// marking the field is handled by TypePreserve.All
+					_context.Annotations.Mark (field, new DependencyInfo (DependencyKind.SerializedMember, type));
 				}
 			}
 
 			if (type.HasProperties) {
 				foreach (var property in type.Properties) {
-					// Static property types are discovered, matching xamarin-android behavior
+					// Unlike xamarin-android, don't preserve non-public or static properties.
+					var get = property.GetMethod;
+					var set = property.SetMethod;
+					if ((get == null || !get.IsPublic || get.IsStatic) &&
+						(set == null || !set.IsPublic || set.IsStatic))
+						continue;
+
 					MarkRecursiveMembersInternal (property.PropertyType, new DependencyInfo (DependencyKind.RecursiveType, type));
-					// getter/setter are handled by TypePreserve.All
+					if (get != null)
+						_context.Annotations.Mark (get, new DependencyInfo (DependencyKind.SerializedMember, type));
+					if (set != null)
+						_context.Annotations.Mark (set, new DependencyInfo (DependencyKind.SerializedMember, type));
+					// The property will be marked as a consequence of marking the getter/setter.
 				}
 			}
 
-			// Default ctors and other methods are handled by TypePreserve.All
+			if (type.HasMethods) {
+				foreach (var method in type.Methods) {
+					// Unlike xamarin-android, don't preserve non-public, static, or parameterless constructors.
+					if (!method.IsPublic || !method.IsDefaultConstructor ())
+						continue;
+
+					_context.Annotations.Mark (method, new DependencyInfo (DependencyKind.SerializedMember, type));
+				}
+			}
 		}
 	}
 }

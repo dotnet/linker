@@ -22,13 +22,14 @@ To turn on the serializer heuristics, pass "--keep-serialization". There are thr
 ## Root type discovery
 
 The heuristics will discover types that satisfy _all_ of the following criteria:
-- The type is defined in a used assembly
 
-  There must be a statically discoverable reference to the assembly that defines the type. In other words, if running the linker without the serialization heuristics removes a given assembly, then the heuristics will not keep it or any types in it either.
+- The type is used
+
+  There must be a statically discoverable reference to the type. In other words, if running the linker without the serialization heuristics removes a given type, then the heuristics will not keep it either.
 
 - The type or one of its members must be attributed with a serializer-specific attribute.
 
-  See the sections below about the attributes you can use for each serializer. The attribute must be present on the type, or one of its defined members, including fields/properties/methods/events, though the serializers may not define attributes that can be placed on all member kinds. It is not enough to place an attribute on a base type or on a member defined by a base type.s
+  See the sections below about the attributes you can use for each serializer. The attribute must be present on the type, or one of its defined members, including fields/properties/methods/events, public or private, though the serializers may not define attributes that can be placed on all member kinds. It is not enough to place an attribute on a base type or on a member defined by a base type.
 
 Note that passing a type directly to a serializer constructor is _not_ enough to keep it. We do not use dataflow to discover types. For example:
 
@@ -54,24 +55,30 @@ On properties, fields, or events:
 
 ## Type graph
 
-Starting from the discovered root types, the heuristics will recursively discover the following:
-- Types of properties defined on the type
-  - _not_ including properties defined on the base type
-  - (virtuals overridden by the type are discovered)
-  - including types of generic arguments
-- Types of fields defined on the type
-  - _not_ including fields of the base type
-  - including types of generic arguments
+Starting from the discovered root types, the heuristics will recursively discover the following types:
+
+- Base types
+  - including generic argument types
+- Types of public instance properties defined on the type
+  - a property is considered public if it has a public getter or setter
+  - including public properties of the base type
+  - including generic argument types
+- Types of public instance fields defined on the type
+  - including public fields of the base type
+  - including generic argument types
+
+Note that the types of implemented interfaces are not necessarily discovered.
 
 ## Preservation logic
 
-For each discovered type (including root types and the recursive type graph), the linker marks the type and its members:
-- Properties of the type
-- Fields of the type
-- Methods of the type, including constructors
-- Events of the type
+For each discovered type (including root types and the recursive type graph), the linker marks the type and the following members:
 
-Like above, this does not include members of the base type (or members defined on interfaces implemented by the type). Note that this includes static members. Method parameters or return types are marked as part of marking a method, but this does _not_ consider these types part of the type graph for the serializer heuristics.
+- Public instance properties
+  - including public or private getters and setters for such properties
+- Public instance fields
+- Public parameterless instance constructors
+
+Note that in general, private members and static members are not preserved, nor are methods or events (other than the mentioned constructor).
 
 ## What doesn't work
 
