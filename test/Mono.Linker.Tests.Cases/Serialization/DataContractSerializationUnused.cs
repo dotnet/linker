@@ -11,7 +11,6 @@ namespace Mono.Linker.Tests.Cases.Serialization
 	[Reference ("System.Runtime.Serialization.Primitives.dll")]
 	[Reference ("System.Xml.XmlSerializer.dll")]
 	[Reference ("System.Private.Xml.dll")]
-	[SetupLinkerArgument ("--keep-serialization", "true")]
 	public class DataContractSerializationUnused
 	{
 		public static void Main ()

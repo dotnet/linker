@@ -8,13 +8,13 @@ As a last resort, the linker does have limited heuristics that can be enabled to
 
 ## History
 
-The linker has historically been used for Xamarin scenarios that use reflection-based serializers like XmlSerializer, since before the introduction of the trim analysis warnings. There were limited heuristics to satisfy some simple uses of serializers. To provide backwards compatibility for such scenarios, the linker has an optional flag that makes some simple cases "just work", albeit in an opaque and unpredictable way.
+The linker has historically been used for Xamarin scenarios that use reflection-based serializers like XmlSerializer, since before the introduction of the trim analysis warnings. There were limited heuristics to satisfy some simple uses of serializers. To provide backwards compatibility for such scenarios, the linker has built-in heuristics that makes some simple cases "just work", albeit in an opaque and unpredictable way.
 
-This flag should be avoided if possible, but it may be necessary when using legacy serializers that don't provide source generators or a similar solution that is statically analyzable. The following is a description of the heuristics for anyone who is unfortunate enough to have to rely on this behavior.
+Consider disabling this behavior by passing `--disable-serialization-discovery` if possible, but it may be necessary when using legacy serializers that don't provide source generators or a similar solution that is statically analyzable. The following is a description of the heuristics for anyone who is unfortunate enough to have to rely on this behavior.
 
 ## Heuristics
 
-To turn on the serializer heuristics, pass "--keep-serialization". There are three parts to the heuristics:
+Serialization discovery is enabled by default, and can be disabled by passing `--disable-serialization-discovery`. There are three parts to the heuristics:
 - Root type discovery: logic to discover types which are considered for serialization
 - Type graph: recursive logic to build a set of types to consider for serialization, starting from the roots
 - Preservation logic: what the linker does with the discovered types

@@ -9,7 +9,6 @@ namespace Mono.Linker.Tests.Cases.Serialization
 {
 	[Reference ("System.Xml.XmlSerializer.dll")]
 	[Reference ("System.Private.Xml.dll")]
-	[SetupLinkerArgument ("--keep-serialization", "true")]
 	public class XmlSerialization
 	{
 		public static void Main ()

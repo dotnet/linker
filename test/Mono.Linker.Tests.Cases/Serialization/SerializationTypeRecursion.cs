@@ -9,14 +9,12 @@ namespace Mono.Linker.Tests.Cases.Serialization
 	[Reference ("System.Xml.XmlSerializer.dll")]
 	[Reference ("System.Private.Xml.dll")]
 	[SetupCompileArgument ("/unsafe")]
-	[SetupLinkerArgument ("--keep-serialization", "true")]
 	public class SerializationTypeRecursion
 	{
 		public static void Main ()
 		{
-			// Reference types to ensure they are scanned for attributes.
-			Type t;
-			t = typeof (RootTypeRecursive);
+			// Reference the root type to ensure it is scanned for attributes.
+			Type t = typeof (RootTypeRecursive);
 
 			// Construct a serializer to activate the logic
 			var ser = new XmlSerializer (typeof (SerializerArgumentType));
