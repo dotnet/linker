@@ -335,8 +335,8 @@ namespace Mono.Linker
 
 						continue;
 
-					case "--keep-serialization":
-						if (!GetBoolParam (token, l => context.KeepSerialization = l))
+					case "--disable-serialization-discovery":
+						if (!GetBoolParam (token, l => context.DisableSerializationDiscovery = l))
 							return -1;
 
 						continue;
@@ -715,7 +715,7 @@ namespace Mono.Linker
 			// SealerStep
 			// OutputStep
 
-			if (context.KeepSerialization)
+			if (!context.DisableSerializationDiscovery)
 				p.MarkHandlers.Add (new DiscoverSerializationHandler ());
 
 			foreach (string custom_step in custom_steps) {

@@ -119,7 +119,7 @@ namespace Mono.Linker
 
 		public bool KeepUsedAttributeTypesOnly { get; set; }
 
-		public bool KeepSerialization { get; set; }
+		public bool DisableSerializationDiscovery { get; set; }
 
 		public bool IgnoreDescriptors { get; set; }
 
