@@ -76,7 +76,6 @@ namespace ILLink.RoslynAnalyzer
 				var assemblyType = compilation.GetTypeByMetadataName ("System.Reflection.Assembly");
 				if (assemblyType != null) {
 					// properties
-					var property = ImmutableArrayOperations.TryGetSingleSymbol<IPropertySymbol> (assemblyType.GetMembers ("Location"));
 					ImmutableArrayOperations.AddIfNotNull (dangerousPatternsBuilder, ImmutableArrayOperations.TryGetSingleSymbol<IPropertySymbol> (assemblyType.GetMembers ("Location")));
 
 					// methods
