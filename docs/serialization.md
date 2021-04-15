@@ -14,22 +14,50 @@ Consider disabling this behavior by passing `--disable-serialization-discovery` 
 
 ## Heuristics
 
-Serialization discovery is enabled by default, and can be disabled by passing `--disable-serialization-discovery`. There are three parts to the heuristics:
-- Root type discovery: logic to discover types which are considered for serialization
+Serialization discovery is enabled by default, and can be disabled by passing `--disable-serialization-discovery`. There are four parts to the heuristics:
+- Activation: which conditions cause the discovered roots and their recursive types to be kept
+- Root discovery: logic to discover types and members are entry points to serialization
 - Type graph: recursive logic to build a set of types to consider for serialization, starting from the roots
 - Preservation logic: what the linker does with the discovered types
 
-## Root type discovery
+## Activation
 
-The heuristics will discover types that satisfy _all_ of the following criteria:
+The heuristics will keep detected serialized types only when it sees that the app has a call to a serializer constructor:
 
-- The type is used
+- `DataContractSerializer` ctor will cause types attributed with DataContractSerializer attributes and their type graph to be preserved
+- `XmlSerializer` ctor will cause types attributed with XmlSerializer attributes and their type graph to be preserved
 
-  There must be a statically discoverable reference to the type. In other words, if running the linker without the serialization heuristics removes a given type, then the heuristics will not keep it either.
+Even if the app contains attributed types for serialization, they will not be kept unless the serializer-specific construcrtor is called. Note that the preservation logic for a given serializer will be activated for all discovered types for that serializer, even if the constructor call doesn't actually serialize those types. For example:
 
-- The type or one of its members must be attributed with a serializer-specific attribute.
+```csharp
+new XmlSerializer (typeof (Foo));
+var t = typeof (Bar);
 
-  See the sections below about the attributes you can use for each serializer. The attribute must be present on the type, or one of its defined members, including fields/properties/methods/events, public or private, though the serializers may not define attributes that can be placed on all member kinds. It is not enough to place an attribute on a base type or on a member defined by a base type.
+class Foo
+{
+    int removedField;
+}
+
+[XmlRoot]
+class Bar
+{
+    int keptField;
+}
+```
+
+Here, the call to the `XmlSerializer` ctor activates the serialization logic, causing `Bar` to be considered a root even though it is not the type being serialized (and `Foo` will not be considered a serializer root).
+
+## Root discovery
+
+The heuristics will discover types and members that satisfy _all_ of the following criteria:
+
+- The type, or the declaring type of the member, is used
+
+  There must be a statically discoverable reference to the type. In other words, if running the linker without the serialization heuristics removes a given type, then the heuristics will not discover it or any of its members as a serialization root.
+
+- The type or member is attributed with a serializer-specific attribute.
+
+  See the sections below about the attributes you can use for each serializer. The attribute must be present on the root type or member, including fields/properties/methods/events, public or private, though the serializers may not define attributes that can be placed on all member kinds.   
 
 Note that passing a type directly to a serializer constructor is _not_ enough to keep it. We do not use dataflow to discover types. For example:
 
@@ -55,7 +83,13 @@ On properties, fields, or events:
 
 ## Type graph
 
-Starting from the discovered root types, the heuristics will recursively discover the following types:
+The heuristics will consider the following types based on the discovered roots:
+
+- The root type itself
+- The declaring type of a root member
+- The property or field type of a root property or field
+
+Starting with these types, the heuristics will recursively discover a set of types considered for serialization:
 
 - Base types
   - including generic argument types
@@ -71,7 +105,7 @@ Note that the types of implemented interfaces are not necessarily discovered.
 
 ## Preservation logic
 
-For each discovered type (including root types and the recursive type graph), the linker marks the type and the following members:
+For each discovered type (including root types and the recursive type graph), if the corresponding serializer is active, the linker marks the type and the following members:
 
 - Public instance properties
   - including public or private getters and setters for such properties
@@ -79,6 +113,12 @@ For each discovered type (including root types and the recursive type graph), th
 - Public parameterless instance constructors
 
 Note that in general, private members and static members are not preserved, nor are methods or events (other than the mentioned constructor).
+
+In addition, the linker marks:
+- Any discovered root members (from the attribute-based root discovery)
+  - including private members
+  - including static members
+  - including fields/properties/methods/events
 
 ## What doesn't work
 

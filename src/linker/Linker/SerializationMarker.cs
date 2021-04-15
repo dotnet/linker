@@ -56,13 +56,13 @@ namespace Mono.Linker
 
 		SerializerKind ActiveSerializers { get; set; }
 
-		Dictionary<SerializerKind, HashSet<(TypeDefinition, ICustomAttributeProvider)>> _trackedTypes;
-		Dictionary<SerializerKind, HashSet<(TypeDefinition, ICustomAttributeProvider)>> TrackedTypes {
+		Dictionary<SerializerKind, HashSet<ICustomAttributeProvider>> _trackedRoots;
+		Dictionary<SerializerKind, HashSet<ICustomAttributeProvider>> TrackedRoots {
 			get {
-				if (_trackedTypes == null)
-					_trackedTypes = new Dictionary<SerializerKind, HashSet<(TypeDefinition, ICustomAttributeProvider)>> ();
+				if (_trackedRoots == null)
+					_trackedRoots = new Dictionary<SerializerKind, HashSet<ICustomAttributeProvider>> ();
 
-				return _trackedTypes;
+				return _trackedRoots;
 			}
 		}
 
@@ -89,19 +89,19 @@ namespace Mono.Linker
 			_ => throw new ArgumentException (nameof (SerializerKind))
 		};
 
-		public void TrackForSerialization (TypeDefinition type, ICustomAttributeProvider provider, SerializerKind serializerKind)
+		public void TrackForSerialization (ICustomAttributeProvider provider, SerializerKind serializerKind)
 		{
 			if (ActiveSerializers.HasFlag (serializerKind)) {
-				MarkRecursiveMembers (type, new DependencyInfo (ToDependencyKind (serializerKind), provider));
+				MarkRecursiveMembers (provider, serializerKind);
 				return;
 			}
 
-			if (!TrackedTypes.TryGetValue (serializerKind, out var types)) {
-				types = new HashSet<(TypeDefinition, ICustomAttributeProvider)> ();
-				TrackedTypes.Add (serializerKind, types);
+			if (!TrackedRoots.TryGetValue (serializerKind, out var roots)) {
+				roots = new HashSet<ICustomAttributeProvider> ();
+				TrackedRoots.Add (serializerKind, roots);
 			}
 
-			types.Add ((type, provider));
+			roots.Add (provider);
 		}
 
 		public void Activate (SerializerKind serializerKind)
@@ -114,18 +114,58 @@ namespace Mono.Linker
 
 			ActiveSerializers |= serializerKind;
 
-			if (!TrackedTypes.TryGetValue (serializerKind, out var types))
+			if (!TrackedRoots.TryGetValue (serializerKind, out var roots))
 				return;
 
-			foreach (var (type, provider) in types)
-				MarkRecursiveMembers (type, new DependencyInfo (ToDependencyKind (serializerKind), provider));
+			foreach (var provider in roots)
+				MarkRecursiveMembers (provider, serializerKind);
 
-			TrackedTypes.Remove (serializerKind);
+			TrackedRoots.Remove (serializerKind);
 		}
 
-		public void MarkRecursiveMembers (TypeReference typeRef, in DependencyInfo reason)
+		public void MarkRecursiveMembers (ICustomAttributeProvider provider, SerializerKind serializerKind)
 		{
-			MarkRecursiveMembersInternal (typeRef, reason);
+			TypeDefinition type;
+			var reason = new DependencyInfo (ToDependencyKind (serializerKind), provider);
+
+			// Mark field and property types up-front in case the root field/property is
+			// not discovered recursively from the declaring type (for example, it may be private).
+			// Also mark the root members because the recursive logic doesn't mark all member types.
+			switch (provider) {
+			case TypeDefinition td:
+				type = td;
+				break;
+			case FieldDefinition field:
+				type = field.DeclaringType;
+				MarkRecursiveMembersInternal (field.FieldType, reason);
+				_context.Annotations.Mark (field, reason);
+				break;
+			case PropertyDefinition property:
+				type = property.DeclaringType;
+				MarkRecursiveMembersInternal (property.PropertyType, reason);
+				if (property.GetMethod != null)
+					_context.Annotations.Mark (property.GetMethod, reason);
+				if (property.SetMethod != null)
+					_context.Annotations.Mark (property.SetMethod, reason);
+				break;
+			case MethodDefinition method:
+				type = method.DeclaringType;
+				_context.Annotations.Mark (method, reason);
+				break;
+			case EventDefinition @event:
+				type = @event.DeclaringType;
+				if (@event.AddMethod != null)
+					_context.Annotations.Mark (@event.AddMethod, reason);
+				if (@event.InvokeMethod != null)
+					_context.Annotations.Mark (@event.InvokeMethod, reason);
+				if (@event.RemoveMethod != null)
+					_context.Annotations.Mark (@event.RemoveMethod, reason);
+				break;
+			default:
+				throw new ArgumentException ($"{nameof (provider)} has invalid provider type {provider.GetType ()}");
+			}
+
+			MarkRecursiveMembersInternal (type, reason);
 		}
 
 		void MarkRecursiveMembersInternal (TypeReference typeRef, in DependencyInfo reason)
@@ -144,6 +184,7 @@ namespace Mono.Linker
 				typeRef = (typeRef as TypeSpecification).ElementType;
 			}
 			// This doesn't handle other TypeSpecs. We are only matching what xamarin-android used to do.
+			// Arrays will still work because Resolve returns the array element type.
 
 			TypeDefinition type = typeRef.Resolve ();
 			if (type == null)
@@ -157,7 +198,7 @@ namespace Mono.Linker
 			// Unlike xamarin-android, don't preserve all members.
 
 			// Unlike xamarin-android, we preserve base type members recursively.
-			MarkRecursiveMembersInternal (type.BaseType, new DependencyInfo (DependencyKind.BaseType, type));
+			MarkRecursiveMembersInternal (type.BaseType, new DependencyInfo (DependencyKind.SerializedRecursiveType, type));
 
 			if (type.HasFields) {
 				foreach (var field in type.Fields) {
@@ -165,7 +206,7 @@ namespace Mono.Linker
 					if (!field.IsPublic || field.IsStatic)
 						continue;
 
-					MarkRecursiveMembersInternal (field.FieldType, new DependencyInfo (DependencyKind.RecursiveType, type));
+					MarkRecursiveMembersInternal (field.FieldType, new DependencyInfo (DependencyKind.SerializedRecursiveType, type));
 					_context.Annotations.Mark (field, new DependencyInfo (DependencyKind.SerializedMember, type));
 				}
 			}
@@ -179,7 +220,7 @@ namespace Mono.Linker
 						(set == null || !set.IsPublic || set.IsStatic))
 						continue;
 
-					MarkRecursiveMembersInternal (property.PropertyType, new DependencyInfo (DependencyKind.RecursiveType, type));
+					MarkRecursiveMembersInternal (property.PropertyType, new DependencyInfo (DependencyKind.SerializedRecursiveType, type));
 					if (get != null)
 						_context.Annotations.Mark (get, new DependencyInfo (DependencyKind.SerializedMember, type));
 					if (set != null)

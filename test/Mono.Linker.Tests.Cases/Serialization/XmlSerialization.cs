@@ -168,26 +168,52 @@ namespace Mono.Linker.Tests.Cases.Serialization
 		[KeptMember (".ctor()")]
 		class AttributedPrivateFieldType
 		{
-			// Private member is removed even if its attribute
-			// makes the type a serialization root.
+			[Kept]
+			[KeptMember (".ctor()")]
+			class PrivateFieldType
+			{
+				[Kept]
+				public int f1;
+			}
+
+			// Attributed private member is kept even though the recursive
+			// type discovery doesn't consider private members.
+			[Kept]
+			[KeptAttributeAttribute (typeof (XmlElementAttribute))]
 			[XmlElement]
-			int f1;
+			PrivateFieldType f1;
 
 			[Kept]
 			public int f2;
+
+			// removed
+			int f3;
 		}
 
 		[Kept]
 		[KeptMember (".ctor()")]
 		class AttributedStaticFieldType
 		{
-			// Static member is removed even if its attribute
-			// makes the type a serialization root.
+			[Kept]
+			[KeptMember (".ctor()")]
+			public class StaticFieldType
+			{
+				[Kept]
+				public int f1;
+			}
+
+			// Attributed static member is kept even though the recursive
+			// type discovery doesn't consider static members.
+			[Kept]
+			[KeptAttributeAttribute (typeof (XmlElementAttribute))]
 			[XmlElement]
-			public static int f1;
+			public static StaticFieldType f1;
 
 			[Kept]
 			public int f2;
+
+			// removed
+			int f3;
 		}
 
 		[Kept]

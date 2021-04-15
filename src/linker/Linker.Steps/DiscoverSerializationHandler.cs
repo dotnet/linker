@@ -88,19 +88,10 @@ namespace Mono.Linker.Steps
 			if (serializedFor == SerializerKind.None)
 				return;
 
-			TypeDefinition type = provider switch {
-				TypeDefinition td => td,
-				FieldDefinition field => field.DeclaringType,
-				PropertyDefinition property => property.DeclaringType,
-				EventDefinition @event => @event.DeclaringType,
-				MethodDefinition method => method.DeclaringType,
-				_ => throw new ArgumentException ($"{nameof (provider)} has invalid provider type {provider.GetType ()}")
-			};
-
 			if (serializedFor.HasFlag (SerializerKind.DataContractSerializer))
-				_context.SerializationMarker.TrackForSerialization (type, provider, SerializerKind.DataContractSerializer);
+				_context.SerializationMarker.TrackForSerialization (provider, SerializerKind.DataContractSerializer);
 			if (serializedFor.HasFlag (SerializerKind.XmlSerializer))
-				_context.SerializationMarker.TrackForSerialization (type, provider, SerializerKind.XmlSerializer);
+				_context.SerializationMarker.TrackForSerialization (provider, SerializerKind.XmlSerializer);
 		}
 
 		static bool IsPreservedSerializationAttribute (ICustomAttributeProvider provider, CustomAttribute attribute, out SerializerKind serializerKind)
