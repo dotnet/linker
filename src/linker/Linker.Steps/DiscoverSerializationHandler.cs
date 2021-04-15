@@ -22,7 +22,7 @@ namespace Mono.Linker.Steps
 		public void Initialize (LinkContext context, MarkContext markContext)
 		{
 			_context = context;
-			markContext.RegisterMarkTypeAction (type => ProcessType (type));
+			markContext.RegisterMarkTypeAction (ProcessType);
 			markContext.RegisterMarkMethodAction (method => CheckForSerializerActivation (method));
 		}
 
