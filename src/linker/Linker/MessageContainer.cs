@@ -135,8 +135,8 @@ namespace Mono.Linker
 			if (subcategory == MessageSubCategory.TrimAnalysis) {
 				Debug.Assert (origin.MemberDefinition != null);
 				var declaringType = origin.MemberDefinition?.DeclaringType ?? (origin.MemberDefinition as TypeDefinition);
-				var assembly = declaringType?.Module?.Assembly;
-				var assemblyName = assembly?.Name?.Name;
+				var assembly = declaringType.Module.Assembly;
+				var assemblyName = assembly?.Name.Name;
 				if (assemblyName != null && context.IsSingleWarn (assemblyName)) {
 					if (context.AssembliesWithGeneratedSingleWarning.Add (assemblyName))
 						context.LogWarning ($"Assembly '{assemblyName}' produced trim warnings. For more information see https://aka.ms/dotnet-illink/libraries", 2104, context.GetAssemblyLocation (assembly));
