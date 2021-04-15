@@ -58,7 +58,7 @@ namespace Mono.Linker
 			if (needsAssemblyName && origin != null) {
 				_context.LogWarning ($"Type '{typeNameString}' was not found in the caller assembly nor in the base library. " +
 					$"Type name strings used for dynamically accessing a type should be assembly qualified.",
-				2104, new MessageOrigin (origin));
+				2105, new MessageOrigin (origin));
 			}
 
 			typeAssembly = null;
