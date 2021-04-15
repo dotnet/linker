@@ -76,17 +76,12 @@ namespace ILLink.RoslynAnalyzer
 				var assemblyType = compilation.GetTypeByMetadataName ("System.Reflection.Assembly");
 				if (assemblyType != null) {
 					// properties
+					var property = ImmutableArrayOperations.TryGetSingleSymbol<IPropertySymbol> (assemblyType.GetMembers ("Location"));
 					ImmutableArrayOperations.AddIfNotNull (dangerousPatternsBuilder, ImmutableArrayOperations.TryGetSingleSymbol<IPropertySymbol> (assemblyType.GetMembers ("Location")));
 
 					// methods
 					dangerousPatternsBuilder.AddRange (assemblyType.GetMembers ("GetFile").OfType<IMethodSymbol> ());
 					dangerousPatternsBuilder.AddRange (assemblyType.GetMembers ("GetFiles").OfType<IMethodSymbol> ());
-				}
-
-				var assemblyNameType = compilation.GetTypeByMetadataName ("System.Reflection.AssemblyName");
-				if (assemblyNameType != null) {
-					ImmutableArrayOperations.AddIfNotNull (dangerousPatternsBuilder, ImmutableArrayOperations.TryGetSingleSymbol<IPropertySymbol> (assemblyNameType.GetMembers ("CodeBase")));
-					ImmutableArrayOperations.AddIfNotNull (dangerousPatternsBuilder, ImmutableArrayOperations.TryGetSingleSymbol<IPropertySymbol> (assemblyNameType.GetMembers ("EscapedCodeBase")));
 				}
 				var dangerousPatterns = dangerousPatternsBuilder.ToImmutable ();
 
@@ -135,6 +130,7 @@ namespace ILLink.RoslynAnalyzer
 						return;
 					}
 
+					// Check for special single-file incompatible patterns that won't use IL3002
 					if (member is IMethodSymbol && ImmutableArrayOperations.Contains (dangerousPatterns, member, SymbolEqualityComparer.Default)) {
 						operationContext.ReportDiagnostic (Diagnostic.Create (s_getFilesRule, operationContext.Operation.Syntax.GetLocation (), member));
 						return;

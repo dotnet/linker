@@ -269,28 +269,6 @@ class C
 		}
 
 		[Fact]
-		public Task CallKnownDangerousAssemblyNameAttributes ()
-		{
-			var src = @"
-using System.Reflection;
-class C
-{
-    public void M()
-    {
-        var a = Assembly.GetExecutingAssembly().GetName();
-        _ = a.CodeBase;
-        _ = a.EscapedCodeBase;
-    }
-}";
-			return VerifyRequiresAssemblyFilesAnalyzer (src,
-				// (8,13): warning IL3000: 'System.Reflection.AssemblyName.CodeBase' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3000).WithSpan (8, 13, 8, 23).WithArguments ("System.Reflection.AssemblyName.CodeBase"),
-				// (9,13): warning IL3000: 'System.Reflection.AssemblyName.EscapedCodeBase' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3000).WithSpan (9, 13, 9, 30).WithArguments ("System.Reflection.AssemblyName.EscapedCodeBase")
-				);
-		}
-
-		[Fact]
 		public Task GetAssemblyLocationFalsePositive ()
 		{
 			// This is an OK use of Location and GetFile since these assemblies were loaded from
