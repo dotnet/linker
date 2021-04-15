@@ -37,7 +37,7 @@ Note that passing a type directly to a serializer constructor is _not_ enough to
 new XmlSerializer (typeof (RootType)); // Will not consider RootType as one of the root types
 ```
 
-This pattern will not necessarily keep the type passed into the constructor, even though it is statically analyzable in theory.
+This pattern will not consider the type passed into the constructor as a root type, even though it is statically analyzable in theory.
 
 ### XMLSerializer attributes
 
