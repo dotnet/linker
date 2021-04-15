@@ -709,9 +709,8 @@ namespace Mono.Linker.Dataflow
 									foreach (var genericParameter in typeValue.TypeRepresented.GenericParameters) {
 										if (_context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameter) != DynamicallyAccessedMemberTypes.None ||
 											(genericParameter.HasDefaultConstructorConstraint && !typeValue.TypeRepresented.IsTypeOf ("System", "Nullable`1"))) {
-											// There is a generic parameter which has some requirements on the input types.
-											// For now we don't support tracking actual array elements, so we can't validate that the requirements are fulfilled.
-
+											// If we failed to analyze the array, we go through the analyses again
+											// and intentionally ignore one particular annotation:
 											// Special case: Nullable<T> where T : struct
 											//  The struct constraint in C# implies new() constraints, but Nullable doesn't make a use of that part.
 											//  There are several places even in the framework where typeof(Nullable<>).MakeGenericType would warn
@@ -2229,8 +2228,8 @@ namespace Mono.Linker.Dataflow
 
 			if (!AnalyzeGenericInstatiationTypeArray (genericParametersArray, ref reflectionContext, reflectionMethod, genericMethod.GenericParameters)) {
 				reflectionContext.RecordUnrecognizedPattern (
-2060, string.Format (Resources.Strings.IL2060,
-DiagnosticUtilities.GetMethodSignatureDisplayName (reflectionMethod)));
+					2060,
+					string.Format (Resources.Strings.IL2060, DiagnosticUtilities.GetMethodSignatureDisplayName (reflectionMethod)));
 			} else {
 				reflectionContext.RecordHandledPattern ();
 			}
