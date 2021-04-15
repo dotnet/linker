@@ -34,7 +34,7 @@ The heuristics will discover types that satisfy _all_ of the following criteria:
 Note that passing a type directly to a serializer constructor is _not_ enough to keep it. We do not use dataflow to discover types. For example:
 
 ```csharp
-new XmlSerializer (typeof (RootType)); // Will not keep RootType
+new XmlSerializer (typeof (RootType)); // Will not consider RootType as one of the root types
 ```
 
 This pattern will not necessarily keep the type passed into the constructor, even though it is statically analyzable in theory.
