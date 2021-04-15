@@ -413,5 +413,52 @@ class C
 				VerifyCS.Diagnostic ().WithSpan (8, 29, 8, 47).WithArguments ("C.TypeIsBeforeFieldInit.AnnotatedMethod()", "Message from --TypeIsBeforeFieldInit.AnnotatedMethod--", "")
 				);
 		}
+
+		[Fact]
+		public Task LazyDelegateWithRequiresUnreferencedCode ()
+		{
+			const string src = @"
+using System;
+using System.Diagnostics.CodeAnalysis;
+class C
+{
+    public static Lazy<C> _default = new Lazy<C>(InitC);
+    public static C Default => _default.Value;
+
+    [RequiresUnreferencedCode (""Message from --C.InitC--"")]
+    public static C InitC() {
+        C cObject = new C();
+        return cObject;
+    }
+}";
+
+			return VerifyRequiresUnreferencedCodeAnalyzer (src,
+				// (6,50): warning IL2026: Using method 'C.InitC()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. Message from --C.InitC--.
+				VerifyCS.Diagnostic ().WithSpan (6, 50, 6, 55).WithArguments ("C.InitC()", "Message from --C.InitC--", ""));
+		}
+
+		[Fact]
+		public Task ActionDelegateWithRequiresAssemblyFiles ()
+		{
+			const string src = @"
+using System;
+using System.Diagnostics.CodeAnalysis;
+class C
+{
+    [RequiresUnreferencedCode (""Message from --C.M1--"")]
+    public static void M1() { }
+    public static void M2()
+    {
+        Action a = M1;
+        Action b = () => M1();
+    }
+}";
+
+			return VerifyRequiresUnreferencedCodeAnalyzer (src,
+				// (10,20): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. Message from --C.M1--.
+				VerifyCS.Diagnostic ().WithSpan (10, 20, 10, 22).WithArguments ("C.M1()", "Message from --C.M1--", ""),
+				// (11,26): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. Message from --C.M1--.
+				VerifyCS.Diagnostic ().WithSpan (11, 26, 11, 30).WithArguments ("C.M1()", "Message from --C.M1--", ""));
+		}
 	}
 }

@@ -72,6 +72,12 @@ namespace ILLink.RoslynAnalyzer
 						CheckMethodOrCtorCall (operationContext, prop.SetMethod);
 				}, OperationKind.PropertyReference);
 
+				context.RegisterOperationAction (operationContext => {
+					var delegateCreation = (IDelegateCreationOperation) operationContext.Operation;
+					var target = (IMethodReferenceOperation) delegateCreation.Target;
+					CheckMethodOrCtorCall (operationContext, target.Method);
+				}, OperationKind.DelegateCreation);
+
 				static void CheckStaticConstructors (OperationAnalysisContext operationContext,
 					ImmutableArray<IMethodSymbol> constructors)
 				{
