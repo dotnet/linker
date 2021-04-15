@@ -32,8 +32,8 @@ namespace Mono.Linker.Steps
 
 			if (!_context.SerializationMarker.IsActive (SerializerKind.DataContractSerializer) &&
 				method.IsConstructor && !method.IsStatic &&
-				type.Namespace == "System.Runtime.Serialization" &&
-				type.Name == "DataContractSerializer") {
+				((type.Namespace == "System.Runtime.Serialization" && type.Name == "DataContractSerializer") ||
+				(type.Namespace == "System.Runtime.Serialization.Json" && type.Name == "DataContractJsonSerializer"))) {
 
 				_context.SerializationMarker.Activate (SerializerKind.DataContractSerializer);
 			}
