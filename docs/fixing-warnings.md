@@ -1,9 +1,10 @@
 
 # Trim warnings in .NET 6
 
-In .NET Core 3.1 and 5.0 we introduced trimming as a new preview feature for self-contained .NET
-core applications. Conceptually the feature is very simple: when publishing the application the
-.NET SDK analyzes the entire application and removes all unused
+[In .NET Core 3.1 and 5.0 we introduced
+trimming](https://devblogs.microsoft.com/dotnet/app-trimming-in-net-5/) as a new preview feature
+for self-contained .NET core applications. Conceptually the feature is very simple: when
+publishing the application the .NET SDK analyzes the entire application and removes all unused
 code. In the time trimming has been in preview, we've learned that trimming is very powerful --
 it can reduce application size by half or more. However, we've also learned about the
 difficulties in safely trimming applications.
