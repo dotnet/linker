@@ -6,7 +6,7 @@ namespace ILLink.RoslynAnalyzer
 {
 	internal static class DiagnosticCategory
 	{
-		public const string SingleFile = nameof (SingleFile);
+		public const string Publish = nameof (Publish);
 		public const string Trimming = nameof (Trimming);
 	}
 }
