@@ -24,7 +24,7 @@ Serialization discovery is enabled by default, and can be disabled by passing `-
 
 The heuristics will keep detected serialized types only when it sees that the app has a call to a serializer constructor:
 
-- `DataContractSerializer` ctor will cause types attributed with DataContractSerializer attributes and their type graph to be preserved
+- `DataContractSerializer` or `DataContractJsonSerializer` ctors will cause types attributed with DataContractSerializer attributes and their type graph to be preserved
 - `XmlSerializer` ctor will cause types attributed with XmlSerializer attributes and their type graph to be preserved
 
 Even if the app contains attributed types for serialization, they will not be kept unless the serializer-specific construcrtor is called. Note that the preservation logic for a given serializer will be activated for all discovered types for that serializer, even if the constructor call doesn't actually serialize those types. For example:
