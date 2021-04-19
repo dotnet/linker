@@ -59,6 +59,11 @@ namespace Mono.Linker.Steps
 		UnreachableBlocksOptimizer _unreachableBlocksOptimizer;
 		MarkStepContext _markContext;
 		readonly HashSet<TypeDefinition> _entireTypesMarked;
+		DynamicallyAccessedMembersTypeHierarchy _dynamicallyAccessedMembersTypeHierarchy;
+
+		internal DynamicallyAccessedMembersTypeHierarchy DynamicallyAccessedMembersTypeHierarchy {
+			get => _dynamicallyAccessedMembersTypeHierarchy;
+		}
 
 #if DEBUG
 		static readonly DependencyKind[] _entireTypeReasons = new DependencyKind[] {
@@ -185,7 +190,7 @@ namespace Mono.Linker.Steps
 			_dynamicInterfaceCastableImplementationTypes = new List<TypeDefinition> ();
 			_unreachableBodies = new List<MethodBody> ();
 			_pending_isinst_instr = new List<(TypeDefinition, MethodBody, Instruction)> ();
-			_entireTypesMarked = new HashSet<TypeDefinition> (); ;
+			_entireTypesMarked = new HashSet<TypeDefinition> ();
 		}
 
 		public AnnotationStore Annotations => _context.Annotations;
@@ -197,6 +202,7 @@ namespace Mono.Linker.Steps
 			_context = context;
 			_unreachableBlocksOptimizer = new UnreachableBlocksOptimizer (_context);
 			_markContext = new MarkStepContext ();
+			_dynamicallyAccessedMembersTypeHierarchy = new DynamicallyAccessedMembersTypeHierarchy (_context, this);
 
 			Initialize ();
 			Process ();
@@ -998,7 +1004,7 @@ namespace Mono.Linker.Steps
 			if (MarkDependencyMethod (td, member, signature, new DependencyInfo (DependencyKind.PreservedDependency, ca), sourceLocationMember))
 				return;
 
-			if (MarkDependencyField (td, member, new DependencyInfo (DependencyKind.PreservedDependency, ca)))
+			if (MarkNamedField (td, member, new DependencyInfo (DependencyKind.PreservedDependency, ca)))
 				return;
 
 			_context.LogWarning (
@@ -1049,18 +1055,6 @@ namespace Mono.Linker.Steps
 			}
 
 			return marked;
-		}
-
-		bool MarkDependencyField (TypeDefinition type, string name, in DependencyInfo reason)
-		{
-			foreach (var f in type.Fields) {
-				if (f.Name == name) {
-					MarkField (f, reason);
-					return true;
-				}
-			}
-
-			return false;
 		}
 
 		void LazyMarkCustomAttributes (ICustomAttributeProvider provider)
@@ -1665,7 +1659,7 @@ namespace Mono.Linker.Steps
 				// will call MarkType on the attribute type itself). 
 				// If for some reason we do keep the attribute type (could be because of previous reference which would cause IL2045
 				// or because of a copy assembly with a reference and so on) then we should not spam the warnings due to the type itself.
-				if (sourceLocationMember != null && sourceLocationMember.DeclaringType != type)
+				if (!(reason.Source is IMemberDefinition sourceMemberDefinition && sourceMemberDefinition.DeclaringType == type))
 					_context.LogWarning (
 						$"Attribute '{type.GetDisplayName ()}' is being referenced in code but the linker was " +
 						$"instructed to remove all instances of this attribute. If the attribute instances are necessary make sure to " +
@@ -1684,6 +1678,12 @@ namespace Mono.Linker.Steps
 				handleMarkType (type);
 
 			MarkType (type.BaseType, new DependencyInfo (DependencyKind.BaseType, type), type);
+
+			// The DynamicallyAccessedMembers hiearchy processing must be done after the base type was marked
+			// (to avoid inconsistencies in the cache), but before anything else as work done below
+			// might need the results of the processing here.
+			_dynamicallyAccessedMembersTypeHierarchy.ProcessMarkedTypeForDynamicallyAccessedMembersHierarchy (type);
+
 			if (type.DeclaringType != null)
 				MarkType (type.DeclaringType, new DependencyInfo (DependencyKind.DeclaringType, type), type);
 			MarkCustomAttributes (type, new DependencyInfo (DependencyKind.CustomAttribute, type), type);
@@ -1698,7 +1698,6 @@ namespace Mono.Linker.Steps
 
 			MarkSerializable (type);
 
-			// TODO: This needs work to ensure we handle EventSource appropriately.
 			// This marks static fields of KeyWords/OpCodes/Tasks subclasses of an EventSource type.
 			if (BCL.EventTracingForWindows.IsEventSourceImplementation (type, _context)) {
 				MarkEventSourceProviders (type);
@@ -1894,7 +1893,7 @@ namespace Mono.Linker.Steps
 			TypeDefinition typeDefinition = null;
 			switch (attribute.ConstructorArguments[0].Value) {
 			case string s:
-				typeDefinition = _context.TypeNameResolver.ResolveTypeName (s, out AssemblyDefinition assemblyDefinition)?.Resolve ();
+				typeDefinition = _context.TypeNameResolver.ResolveTypeName (s, sourceLocationMember, out AssemblyDefinition assemblyDefinition)?.Resolve ();
 				if (typeDefinition != null)
 					MarkingHelpers.MarkMatchingExportedType (typeDefinition, assemblyDefinition, new DependencyInfo (DependencyKind.CustomAttribute, provider));
 
@@ -1970,7 +1969,8 @@ namespace Mono.Linker.Steps
 					}
 
 					while (type != null) {
-						// TODO: Non-understood DebuggerDisplayAttribute causes us to keep everything. Should this be a warning?
+						// Currently if we don't understand the DebuggerDisplayAttribute we mark everything on the type
+						// This can be improved: mono/linker/issues/1873
 						MarkMethods (type, new DependencyInfo (DependencyKind.KeptForSpecialAttribute, attribute), type);
 						MarkFields (type, includeStatic: true, new DependencyInfo (DependencyKind.ReferencedBySpecialAttribute, attribute));
 						type = type.BaseType?.Resolve ();
@@ -2044,18 +2044,20 @@ namespace Mono.Linker.Steps
 			MarkNamedProperty (method.DeclaringType, member_name, new DependencyInfo (DependencyKind.ReferencedBySpecialAttribute, attribute));
 		}
 
-		// TODO: combine with MarkDependencyField?
-		void MarkNamedField (TypeDefinition type, string field_name, in DependencyInfo reason)
+		bool MarkNamedField (TypeDefinition type, string field_name, in DependencyInfo reason)
 		{
 			if (!type.HasFields)
-				return;
+				return false;
 
 			foreach (FieldDefinition field in type.Fields) {
 				if (field.Name != field_name)
 					continue;
 
 				MarkField (field, reason);
+				return true;
 			}
+
+			return false;
 		}
 
 		void MarkNamedProperty (TypeDefinition type, string property_name, in DependencyInfo reason)

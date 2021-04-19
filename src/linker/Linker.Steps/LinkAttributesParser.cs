@@ -3,7 +3,6 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -133,7 +132,7 @@ namespace Mono.Linker.Steps
 
 		CustomAttribute CreateCustomAttribute (XPathNodeIterator iterator, TypeDefinition attributeType)
 		{
-			CustomAttributeArgument[] arguments = ReadCustomAttributeArguments (iterator);
+			CustomAttributeArgument[] arguments = ReadCustomAttributeArguments (iterator, attributeType);
 
 			MethodDefinition constructor = FindBestMatchingConstructor (attributeType, arguments);
 			if (constructor == null) {
@@ -196,7 +195,7 @@ namespace Mono.Linker.Steps
 					continue;
 				}
 
-				var caa = ReadCustomAttributeArgument (iterator);
+				var caa = ReadCustomAttributeArgument (iterator, property);
 				if (caa is null)
 					continue;
 
@@ -204,13 +203,13 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		CustomAttributeArgument[] ReadCustomAttributeArguments (XPathNodeIterator iterator)
+		CustomAttributeArgument[] ReadCustomAttributeArguments (XPathNodeIterator iterator, TypeDefinition attributeType)
 		{
 			var args = new ArrayBuilder<CustomAttributeArgument> ();
 
 			iterator = iterator.Current.SelectChildren ("argument", string.Empty);
 			while (iterator.MoveNext ()) {
-				CustomAttributeArgument? caa = ReadCustomAttributeArgument (iterator);
+				CustomAttributeArgument? caa = ReadCustomAttributeArgument (iterator, attributeType);
 				if (caa is not null)
 					args.Add (caa.Value);
 			}
@@ -218,9 +217,9 @@ namespace Mono.Linker.Steps
 			return args.ToArray () ?? Array.Empty<CustomAttributeArgument> ();
 		}
 
-		CustomAttributeArgument? ReadCustomAttributeArgument (XPathNodeIterator iterator)
+		CustomAttributeArgument? ReadCustomAttributeArgument (XPathNodeIterator iterator, IMemberDefinition memberWithAttribute)
 		{
-			TypeReference typeref = ResolveArgumentType (iterator);
+			TypeReference typeref = ResolveArgumentType (iterator, memberWithAttribute);
 			if (typeref is null)
 				return null;
 
@@ -240,7 +239,7 @@ namespace Mono.Linker.Steps
 					return null;
 				}
 
-				var boxedValue = ReadCustomAttributeArgument (iterator);
+				var boxedValue = ReadCustomAttributeArgument (iterator, typeref.Resolve ());
 				if (boxedValue is null)
 					return null;
 
@@ -273,7 +272,7 @@ namespace Mono.Linker.Steps
 				if (!typeref.IsTypeOf ("System", "Type"))
 					goto default;
 
-				TypeReference type = _context.TypeNameResolver.ResolveTypeName (svalue, out _);
+				TypeReference type = _context.TypeNameResolver.ResolveTypeName (svalue, memberWithAttribute, out _);
 				if (type == null) {
 					_context.LogError ($"Could not resolve custom attribute type value '{svalue}'", 1044, _xmlDocumentLocation);
 					return null;
@@ -281,19 +280,18 @@ namespace Mono.Linker.Steps
 
 				return new CustomAttributeArgument (typeref, type);
 			default:
-				// TODO: Add support for null values
-				// TODO: Add suppport for arrays
+				// No support for null and arrays, consider adding - mono/linker/issues/1957
 				_context.LogError ($"Unexpected attribute argument type '{typeref.GetDisplayName ()}'", 1045);
 				return null;
 			}
 
-			TypeReference ResolveArgumentType (XPathNodeIterator iterator)
+			TypeReference ResolveArgumentType (XPathNodeIterator iterator, IMemberDefinition memberWithAttribute)
 			{
 				string typeName = GetAttribute (iterator.Current, "type");
 				if (string.IsNullOrEmpty (typeName))
 					typeName = "System.String";
 
-				TypeReference typeref = _context.TypeNameResolver.ResolveTypeName (typeName, out _);
+				TypeReference typeref = _context.TypeNameResolver.ResolveTypeName (typeName, memberWithAttribute, out _);
 				if (typeref == null) {
 					_context.LogError ($"The type '{typeName}' used with attribute value '{iterator.Current.Value}' could not be found", 1041, _xmlDocumentLocation);
 					return null;
