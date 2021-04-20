@@ -175,6 +175,11 @@ namespace Mono.Linker.Dataflow
 			Debug.Fail ("Invalid IL or a bug in the scanner");
 		}
 
+		MethodReturnValue CreateMethodReturnValue (MethodReference method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes = DynamicallyAccessedMemberTypes.None)
+		{
+			return new MethodReturnValue (ResolveToTypeDefinition (method.ReturnType), dynamicallyAccessedMemberTypes, method.MethodReturnType);
+		}
+
 		protected override ValueNode GetMethodParameterValue (MethodDefinition method, int parameterIndex)
 		{
 			DynamicallyAccessedMemberTypes memberTypes = _context.Annotations.FlowAnnotations.GetParameterAnnotation (method, parameterIndex);
@@ -955,7 +960,7 @@ namespace Mono.Linker.Dataflow
 							TypeDefinition staticType = valueNode.StaticType;
 							if (staticType is null) {
 								// We don't know anything about the type GetType was called on. Track this as a usual result of a method call without any annotations
-								methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new MethodReturnValue (this, calledMethod.MethodReturnType, DynamicallyAccessedMemberTypes.None));
+								methodReturnValue = MergePointValue.MergeValues (methodReturnValue, CreateMethodReturnValue (calledMethod));
 							} else if (staticType.IsSealed || staticType.IsTypeOf ("System", "Delegate")) {
 								// We can treat this one the same as if it was a typeof() expression
 
@@ -986,7 +991,7 @@ namespace Mono.Linker.Dataflow
 								// Return a value which is "unknown type" with annotation. For now we'll use the return value node
 								// for the method, which means we're loosing the information about which staticType this
 								// started with. For now we don't need it, but we can add it later on.
-								methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new MethodReturnValue (this, calledMethod.MethodReturnType, annotation));
+								methodReturnValue = MergePointValue.MergeValues (methodReturnValue, CreateMethodReturnValue (calledMethod, annotation));
 							}
 						}
 					}
@@ -1029,7 +1034,7 @@ namespace Mono.Linker.Dataflow
 								// Propagate the annotation from the type name to the return value. Annotation on a string value will be fullfilled whenever a value is assigned to the string with annotation.
 								// So while we don't know which type it is, we can guarantee that it will fulfill the annotation.
 								reflectionContext.RecordHandledPattern ();
-								methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new MethodReturnValue (this, calledMethodDefinition.MethodReturnType, valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes));
+								methodReturnValue = MergePointValue.MergeValues (methodReturnValue, CreateMethodReturnValue (calledMethodDefinition, valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes));
 							} else {
 								reflectionContext.RecordUnrecognizedPattern (2057, $"Unrecognized value passed to the parameter 'typeName' of method '{calledMethod.GetDisplayName ()}'. It's not possible to guarantee the availability of the target type.");
 							}
@@ -1200,7 +1205,7 @@ namespace Mono.Linker.Dataflow
 						// Note it's OK to blindly overwrite any potential annotation on the return value from the method definition
 						// since DynamicallyAccessedMemberTypes.All is a superset of any other annotation.
 						if (everyParentTypeHasAll && methodReturnValue == null)
-							methodReturnValue = new MethodReturnValue (this, calledMethodDefinition.MethodReturnType, DynamicallyAccessedMemberTypes.All);
+							methodReturnValue = CreateMethodReturnValue (calledMethodDefinition, DynamicallyAccessedMemberTypes.All);
 					}
 					break;
 
@@ -1263,19 +1268,19 @@ namespace Mono.Linker.Dataflow
 										propagatedMemberTypes |= DynamicallyAccessedMemberTypes.PublicProperties;
 								}
 
-								methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new MethodReturnValue (this, calledMethod.MethodReturnType, propagatedMemberTypes));
+								methodReturnValue = MergePointValue.MergeValues (methodReturnValue, CreateMethodReturnValue (calledMethod, propagatedMemberTypes));
 							} else if (value is SystemTypeValue systemTypeValue) {
 								TypeDefinition baseTypeDefinition = _context.TryResolveTypeDefinition (systemTypeValue.TypeRepresented.BaseType);
 								if (baseTypeDefinition != null)
 									methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new SystemTypeValue (baseTypeDefinition));
 								else
-									methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new MethodReturnValue (this, calledMethod.MethodReturnType, DynamicallyAccessedMemberTypes.None));
+									methodReturnValue = MergePointValue.MergeValues (methodReturnValue, CreateMethodReturnValue (calledMethod));
 							} else if (value == NullValue.Instance) {
 								// Ignore nulls - null.BaseType will fail at runtime, but it has no effect on static analysis
 								continue;
 							} else {
 								// Unknown input - propagate a return value without any annotation - we know it's a Type but we know nothing about it
-								methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new MethodReturnValue (this, calledMethod.MethodReturnType, DynamicallyAccessedMemberTypes.None));
+								methodReturnValue = MergePointValue.MergeValues (methodReturnValue, CreateMethodReturnValue (calledMethod));
 							}
 						}
 					}
@@ -1682,7 +1687,7 @@ namespace Mono.Linker.Dataflow
 					// To get good reporting of errors we need to track the origin of the value for all method calls
 					// but except Newobj as those are special.
 					if (calledMethodDefinition.ReturnType.MetadataType != MetadataType.Void) {
-						methodReturnValue = new MethodReturnValue (this, calledMethodDefinition.MethodReturnType, returnValueDynamicallyAccessedMemberTypes);
+						methodReturnValue = CreateMethodReturnValue (calledMethodDefinition, returnValueDynamicallyAccessedMemberTypes);
 
 						return true;
 					}
@@ -1698,7 +1703,7 @@ namespace Mono.Linker.Dataflow
 			// unknown value with the return type of the method.
 			if (methodReturnValue == null) {
 				if (calledMethod.ReturnType.MetadataType != MetadataType.Void) {
-					methodReturnValue = new MethodReturnValue (this, calledMethodDefinition.MethodReturnType, returnValueDynamicallyAccessedMemberTypes);
+					methodReturnValue = CreateMethodReturnValue (calledMethodDefinition, returnValueDynamicallyAccessedMemberTypes);
 				}
 			}
 

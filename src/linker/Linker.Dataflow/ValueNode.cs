@@ -901,12 +901,12 @@ namespace Mono.Linker.Dataflow
 	/// </summary>
 	class MethodReturnValue : LeafValueWithDynamicallyAccessedMemberNode
 	{
-		public MethodReturnValue (MethodBodyScanner scanner, MethodReturnType methodReturnType, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
+		public MethodReturnValue (TypeDefinition staticType, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes, IMetadataTokenProvider sourceContext)
 		{
 			Kind = ValueNodeKind.MethodReturn;
-			StaticType = scanner.ResolveToTypeDefinition (methodReturnType.ReturnType);
+			StaticType = staticType;
 			DynamicallyAccessedMemberTypes = dynamicallyAccessedMemberTypes;
-			SourceContext = methodReturnType;
+			SourceContext = sourceContext;
 		}
 
 		public override bool Equals (ValueNode other)
