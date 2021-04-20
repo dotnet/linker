@@ -39,6 +39,8 @@ namespace ILLink.Tasks
 		[Required]
 		public ITaskItem ILLinkTrimXmlFilePath { get; set; }
 
+		public ITaskItem[] DefineConstants { get; set; }
+
 		/// <summary>
 		///   The path to the file to generate.
 		/// </summary>
@@ -55,6 +57,7 @@ namespace ILLink.Tasks
 		readonly Dictionary<string, string> namespaceDictionary = new Dictionary<string, string> ();
 		readonly Dictionary<string, string> classIdsToClassNames = new Dictionary<string, string> ();
 		readonly Dictionary<string, ClassMembers> classNamesToClassMembers = new Dictionary<string, ClassMembers> ();
+		readonly HashSet<string> defineConstants = new HashSet<string> ();
 
 		public override bool Execute ()
 		{
@@ -81,6 +84,8 @@ namespace ILLink.Tasks
 				Log.LogError ("File " + rexcepFilePath + " doesn't exist.");
 				return false;
 			}
+
+			ParseDefineConstants ();
 
 			var iLLinkTrimXmlFilePath = ILLinkTrimXmlFilePath.ItemSpec;
 			if (!File.Exists (iLLinkTrimXmlFilePath)) {
@@ -132,9 +137,64 @@ namespace ILLink.Tasks
 		void ProcessMscorlib (string typeFile)
 		{
 			string[] types = File.ReadAllLines (typeFile);
+			int linenum = 0;
 			string classId;
 
+			Stack<bool?> activeSections = new Stack<bool?> ();
 			foreach (string def in types) {
+				linenum++;
+				{
+					int ifdefLength = 0;
+					bool negativeIfDef = false;
+					if (def.StartsWith ("#ifdef ")) {
+						ifdefLength = 7;
+					} else if (def.StartsWith ("#ifndef ")) {
+						ifdefLength = 8;
+						negativeIfDef = true;
+					} else if (def.StartsWith ("#if ")) {
+						ifdefLength = 4;
+					}
+
+					if (ifdefLength > 0) {
+						if (activeSections.Count > 0 && activeSections.Peek () != true) {
+							activeSections.Push (null);
+						} else {
+							string defineName = def.Substring (ifdefLength);
+							int commentIndex = defineName.IndexOf ('/');
+							if (commentIndex >= 0)
+								defineName = defineName.Substring (0, commentIndex);
+
+							defineName = defineName.Trim ();
+							if (defineConstants.Contains (defineName))
+								activeSections.Push (!negativeIfDef);
+							else
+								activeSections.Push (negativeIfDef);
+						}
+					}
+				}
+
+				if (def.StartsWith ("#else")) {
+					if (activeSections.Count == 0) {
+						Log.LogError ($"Could not figure out ifdefs in '{typeFile}' around line {linenum}");
+					} else {
+						bool? activeSection = activeSections.Pop ();
+						if (activeSection == null)
+							activeSections.Push (null);
+						else
+							activeSections.Push (!activeSection.Value);
+					}
+				}
+
+				if (def.StartsWith ("#endif")) {
+					if (activeSections.Count == 0)
+						Log.LogError ($"Could not figure out ifdefs in '{typeFile}' around line {linenum}");
+					else
+						activeSections.Pop ();
+				}
+
+				if (activeSections.Count > 0 && activeSections.Peek () != true)
+					continue;
+
 				string[] defElements = null;
 				if (def.StartsWith ("DEFINE_") || def.StartsWith ("// DEFINE_")) {
 					char[] separators = { ',', '(', ')', ' ', '\t', '/' };
@@ -335,6 +395,16 @@ namespace ILLink.Tasks
 			}
 
 			return namespaceDictionary[classNamespace] + "." + className;
+		}
+
+		void ParseDefineConstants ()
+		{
+			if (DefineConstants is not null) {
+				foreach (var item in DefineConstants)
+					defineConstants.Add (item.ItemSpec.Trim ());
+			}
+
+			defineConstants.Add ("FOR_ILLINK");
 		}
 	}
 }
