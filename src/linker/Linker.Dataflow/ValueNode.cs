@@ -833,14 +833,14 @@ namespace Mono.Linker.Dataflow
 	/// </summary>
 	class MethodParameterValue : LeafValueWithDynamicallyAccessedMemberNode
 	{
-		public MethodParameterValue (MethodDefinition method, int parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes, IMetadataTokenProvider sourceContext)
+		public MethodParameterValue (MethodBodyScanner scanner, MethodDefinition method, int parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes, IMetadataTokenProvider sourceContext)
 		{
 			Kind = ValueNodeKind.MethodParameter;
 			StaticType = method.HasImplicitThis ()
 				? (parameterIndex == 0
 					? method.DeclaringType
-					: method.Parameters[parameterIndex - 1].ParameterType.ResolveToMainTypeDefinition ())
-				: method.Parameters[parameterIndex].ParameterType.ResolveToMainTypeDefinition ();
+					: scanner.ResolveToTypeDefinition (method.Parameters[parameterIndex - 1].ParameterType))
+				: scanner.ResolveToTypeDefinition (method.Parameters[parameterIndex].ParameterType);
 			ParameterIndex = parameterIndex;
 			DynamicallyAccessedMemberTypes = dynamicallyAccessedMemberTypes;
 			SourceContext = sourceContext;
@@ -905,10 +905,10 @@ namespace Mono.Linker.Dataflow
 	/// </summary>
 	class MethodReturnValue : LeafValueWithDynamicallyAccessedMemberNode
 	{
-		public MethodReturnValue (MethodReturnType methodReturnType, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
+		public MethodReturnValue (MethodBodyScanner scanner, MethodReturnType methodReturnType, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 		{
 			Kind = ValueNodeKind.MethodReturn;
-			StaticType = methodReturnType.ReturnType.ResolveToMainTypeDefinition ();
+			StaticType = scanner.ResolveToTypeDefinition (methodReturnType.ReturnType);
 			DynamicallyAccessedMemberTypes = dynamicallyAccessedMemberTypes;
 			SourceContext = methodReturnType;
 		}
@@ -1144,10 +1144,10 @@ namespace Mono.Linker.Dataflow
 	/// </summary>
 	class LoadFieldValue : LeafValueWithDynamicallyAccessedMemberNode
 	{
-		public LoadFieldValue (FieldDefinition fieldToLoad, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
+		public LoadFieldValue (MethodBodyScanner scanner, FieldDefinition fieldToLoad, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 		{
 			Kind = ValueNodeKind.LoadField;
-			StaticType = fieldToLoad.FieldType.ResolveToMainTypeDefinition ();
+			StaticType = scanner.ResolveToTypeDefinition (fieldToLoad.FieldType);
 			Field = fieldToLoad;
 			DynamicallyAccessedMemberTypes = dynamicallyAccessedMemberTypes;
 			SourceContext = fieldToLoad;
@@ -1227,7 +1227,7 @@ namespace Mono.Linker.Dataflow
 			StaticType = null;
 
 			Size = size ?? UnknownValue.Instance;
-			ElementType = elementType.ResolveToMainTypeDefinition ();
+			ElementType = elementType;
 			IndexValues = new Dictionary<int, ValueBasicBlockPair> ();
 		}
 
