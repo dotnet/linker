@@ -833,14 +833,10 @@ namespace Mono.Linker.Dataflow
 	/// </summary>
 	class MethodParameterValue : LeafValueWithDynamicallyAccessedMemberNode
 	{
-		public MethodParameterValue (MethodBodyScanner scanner, MethodDefinition method, int parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes, IMetadataTokenProvider sourceContext)
+		public MethodParameterValue (TypeDefinition staticType, int parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes, IMetadataTokenProvider sourceContext)
 		{
 			Kind = ValueNodeKind.MethodParameter;
-			StaticType = method.HasImplicitThis ()
-				? (parameterIndex == 0
-					? method.DeclaringType
-					: scanner.ResolveToTypeDefinition (method.Parameters[parameterIndex - 1].ParameterType))
-				: scanner.ResolveToTypeDefinition (method.Parameters[parameterIndex].ParameterType);
+			StaticType = staticType;
 			ParameterIndex = parameterIndex;
 			DynamicallyAccessedMemberTypes = dynamicallyAccessedMemberTypes;
 			SourceContext = sourceContext;
@@ -1144,10 +1140,10 @@ namespace Mono.Linker.Dataflow
 	/// </summary>
 	class LoadFieldValue : LeafValueWithDynamicallyAccessedMemberNode
 	{
-		public LoadFieldValue (MethodBodyScanner scanner, FieldDefinition fieldToLoad, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
+		public LoadFieldValue (TypeDefinition staticType, FieldDefinition fieldToLoad, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 		{
 			Kind = ValueNodeKind.LoadField;
-			StaticType = scanner.ResolveToTypeDefinition (fieldToLoad.FieldType);
+			StaticType = staticType;
 			Field = fieldToLoad;
 			DynamicallyAccessedMemberTypes = dynamicallyAccessedMemberTypes;
 			SourceContext = fieldToLoad;

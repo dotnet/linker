@@ -178,7 +178,13 @@ namespace Mono.Linker.Dataflow
 		protected override ValueNode GetMethodParameterValue (MethodDefinition method, int parameterIndex)
 		{
 			DynamicallyAccessedMemberTypes memberTypes = _context.Annotations.FlowAnnotations.GetParameterAnnotation (method, parameterIndex);
-			return new MethodParameterValue (this, method, parameterIndex, memberTypes, DiagnosticUtilities.GetMethodParameterFromIndex (method, parameterIndex));
+
+			var staticType =
+				!method.HasImplicitThis () ? ResolveToTypeDefinition (method.Parameters[parameterIndex].ParameterType) :
+				parameterIndex == 0 ? method.DeclaringType :
+				ResolveToTypeDefinition (method.Parameters[parameterIndex - 1].ParameterType);
+
+			return new MethodParameterValue (staticType, parameterIndex, memberTypes, DiagnosticUtilities.GetMethodParameterFromIndex (method, parameterIndex));
 		}
 
 		protected override ValueNode GetFieldValue (MethodDefinition method, FieldDefinition field)
@@ -193,7 +199,7 @@ namespace Mono.Linker.Dataflow
 
 			default: {
 					DynamicallyAccessedMemberTypes memberTypes = _context.Annotations.FlowAnnotations.GetFieldAnnotation (field);
-					return new LoadFieldValue (this, field, memberTypes);
+					return new LoadFieldValue (ResolveToTypeDefinition (field.FieldType), field, memberTypes);
 				}
 			}
 		}
@@ -948,7 +954,7 @@ namespace Mono.Linker.Dataflow
 						foreach (var valueNode in methodParams[0].UniqueValues ()) {
 							TypeDefinition staticType = valueNode.StaticType;
 							if (staticType is null) {
-								// We don�t know anything about the type GetType was called on. Track this as a usual �result of a method call without any annotations�
+								// We don't know anything about the type GetType was called on. Track this as a usual result of a method call without any annotations
 								methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new MethodReturnValue (this, calledMethod.MethodReturnType, DynamicallyAccessedMemberTypes.None));
 							} else if (staticType.IsSealed || staticType.IsTypeOf ("System", "Delegate")) {
 								// We can treat this one the same as if it was a typeof() expression

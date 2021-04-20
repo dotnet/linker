@@ -812,19 +812,24 @@ namespace Mono.Linker
 			return TryResolveTypeDefinition (_typeNameResolver.ResolveTypeName (assembly, typeNameString));
 		}
 
+		readonly HashSet<MemberReference> unresolved_reported = new ();
+
 		protected virtual void ReportUnresolved (FieldReference fieldReference)
 		{
-			LogError ($"Field '{fieldReference.FullName}' reference could not be resolved", 1040);
+			if (unresolved_reported.Add (fieldReference))
+				LogError ($"Field '{fieldReference.FullName}' reference could not be resolved", 1040);
 		}
 
 		protected virtual void ReportUnresolved (MethodReference methodReference)
 		{
-			LogError ($"Method '{methodReference.GetDisplayName ()}' reference could not be resolved", 1040);
+			if (unresolved_reported.Add (methodReference))
+				LogError ($"Method '{methodReference.GetDisplayName ()}' reference could not be resolved", 1040);
 		}
 
 		protected virtual void ReportUnresolved (TypeReference typeReference)
 		{
-			LogError ($"Type '{typeReference.GetDisplayName ()}' reference could not be resolved", 1040);
+			if (unresolved_reported.Add (typeReference))
+				LogError ($"Type '{typeReference.GetDisplayName ()}' reference could not be resolved", 1040);
 		}
 	}
 

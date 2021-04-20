@@ -1777,7 +1777,7 @@ namespace Mono.Linker.Steps
 		{
 			foreach (var property in ca.Properties) {
 				if (property.Name == "Target")
-					return _context.ResolveTypeDefinition ((TypeReference) property.Argument.Value);
+					return _context.TryResolveTypeDefinition ((TypeReference) property.Argument.Value);
 
 				if (property.Name == "TargetTypeName") {
 					string targetTypeName = (string) property.Argument.Value;
