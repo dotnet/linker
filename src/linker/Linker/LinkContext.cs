@@ -808,7 +808,7 @@ namespace Mono.Linker
 
 		public TypeDefinition TryResolveTypeDefinition (AssemblyDefinition assembly, string typeNameString)
 		{
-			// It could be cached if shows up on fast path
+			// It could be cached if it shows up on fast path
 			return TryResolveTypeDefinition (_typeNameResolver.ResolveTypeName (assembly, typeNameString));
 		}
 
