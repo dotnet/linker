@@ -1723,8 +1723,10 @@ namespace Mono.Linker.Dataflow
 		{
 			bool hasRequirements = false;
 			foreach (var genericParameter in genericParameters) {
-				if (_context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameter) != DynamicallyAccessedMemberTypes.None)
+				if (_context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameter) != DynamicallyAccessedMemberTypes.None) {
 					hasRequirements = true;
+					break;
+				}
 			}
 
 			// If there are no requirements, then there's no point in warning
