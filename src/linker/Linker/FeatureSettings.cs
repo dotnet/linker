@@ -9,6 +9,8 @@ namespace Mono.Linker
 {
 	public static class FeatureSettings
 	{
+		public const string DebuggerIsSupported = "System.Diagnostics.Debugger.IsSupported";
+
 		public static bool ShouldProcessElement (XPathNavigator nav, LinkContext context, string documentLocation)
 		{
 			var feature = GetAttribute (nav, "feature");
@@ -33,7 +35,7 @@ namespace Mono.Linker
 				return false;
 			}
 
-			if (context.FeatureSettings == null || !context.FeatureSettings.TryGetValue (feature, out bool featureSetting))
+			if (!context.FeatureSettings.TryGetValue (feature, out bool featureSetting))
 				return bIsDefault;
 
 			return bValue == featureSetting;

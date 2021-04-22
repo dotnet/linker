@@ -41,6 +41,7 @@ namespace Mono.Linker.Steps
 	{
 		AssemblyDefinition[] assemblies;
 		readonly bool sweepSymbols;
+		bool sweep_debug_support;
 		readonly HashSet<AssemblyDefinition> BypassNGenToSave = new HashSet<AssemblyDefinition> ();
 
 		public SweepStep (bool sweepSymbols = true)
@@ -50,6 +51,8 @@ namespace Mono.Linker.Steps
 
 		protected override void Process ()
 		{
+			sweep_debug_support = Context.HasFeatureValue (FeatureSettings.DebuggerIsSupported, false);
+
 			// To keep facades, scan all references so that even unused facades are kept
 			assemblies = Context.KeepTypeForwarderOnlyAssemblies ?
 				Context.GetReferencedAssemblies ().ToArray () : Annotations.GetAssemblies ().ToArray ();
@@ -276,6 +279,11 @@ namespace Mono.Linker.Steps
 			return Annotations.IsMarked (assembly.MainModule);
 		}
 
+		bool CanSweepNamesForMember (IMemberDefinition member)
+		{
+			return sweep_debug_support && !Annotations.IsReflectionUsed (member);
+		}
+
 		protected virtual void RemoveAssembly (AssemblyDefinition assembly)
 		{
 			Annotations.SetAction (assembly, AssemblyAction.Delete);
@@ -316,7 +324,7 @@ namespace Mono.Linker.Steps
 				SweepCustomAttributes (type);
 
 			if (type.HasGenericParameters)
-				SweepGenericParameters (type.GenericParameters);
+				SweepGenericParameters (type.GenericParameters, CanSweepNamesForMember (type));
 
 			if (type.HasProperties)
 				SweepCustomAttributeCollection (type.Properties);
@@ -354,10 +362,12 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		protected void SweepGenericParameters (Collection<GenericParameter> genericParameters)
+		protected void SweepGenericParameters (Collection<GenericParameter> genericParameters, bool sweepNames)
 		{
 			foreach (var gp in genericParameters) {
 				SweepCustomAttributes (gp);
+				if (sweepNames)
+					gp.Name = null;
 
 				if (gp.HasConstraints)
 					SweepCustomAttributeCollection (gp.Constraints);
@@ -442,16 +452,22 @@ namespace Mono.Linker.Steps
 				SweepDebugInfo (methods);
 
 			foreach (var method in methods) {
+				bool sweepNames = CanSweepNamesForMember (method);
+
 				if (method.HasGenericParameters)
-					SweepGenericParameters (method.GenericParameters);
+					SweepGenericParameters (method.GenericParameters, sweepNames);
 
 				SweepCustomAttributes (method.MethodReturnType);
 
 				if (!method.HasParameters)
 					continue;
 
-				foreach (var parameter in method.Parameters)
+				foreach (var parameter in method.Parameters) {
+					if (sweepNames)
+						parameter.Name = null;
+
 					SweepCustomAttributes (parameter);
+				}
 			}
 		}
 
