@@ -123,8 +123,14 @@ namespace ILLink.RoslynAnalyzer
 
 				context.RegisterOperationAction (operationContext => {
 					var delegateCreation = (IDelegateCreationOperation) operationContext.Operation;
-					var target = (IMethodReferenceOperation) delegateCreation.Target;
-					CheckCalledMember (operationContext, target.Member, dangerousPatterns);
+					IMethodSymbol methodSymbol;
+					if (delegateCreation.Target is IMethodReferenceOperation methodRef)
+						methodSymbol = methodRef.Method;
+					else if (delegateCreation.Target is IAnonymousFunctionOperation lambda)
+						methodSymbol = lambda.Symbol;
+					else
+						return;
+					CheckCalledMember (operationContext, methodSymbol, dangerousPatterns);
 				}, OperationKind.DelegateCreation);
 
 				static void CheckCalledMember (

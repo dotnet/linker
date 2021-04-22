@@ -26,7 +26,8 @@ namespace ILLink.RoslynAnalyzer.Tests
 			string source,
 			string fixedSource,
 			DiagnosticResult[] baselineExpected,
-			DiagnosticResult[] fixedExpected)
+			DiagnosticResult[] fixedExpected,
+			int? numberOfIterations = null)
 		{
 			const string rucDef = @"
 #nullable enable
@@ -50,6 +51,10 @@ namespace System.Diagnostics.CodeAnalysis
 						("/.editorconfig", SourceText.From (@$"
 is_global = true
 build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
+			if (numberOfIterations != null) {
+				test.NumberOfIncrementalIterations = numberOfIterations;
+				test.NumberOfFixAllIterations = numberOfIterations;
+			}
 			test.FixedState.ExpectedDiagnostics.AddRange (fixedExpected);
 			return test.RunAsync ();
 		}
@@ -220,6 +225,7 @@ public class C
     [RequiresUnreferencedCodeAttribute(""message"")]
     public int M1() => 0;
 
+    [RequiresUnreferencedCode(""Calls Wrapper"")]
     Action M2()
     {
         [global::System.Diagnostics.CodeAnalysis.RequiresUnreferencedCodeAttribute(""Calls M1"")] void Wrapper () => M1();
@@ -234,7 +240,12 @@ public class C
 					// /0/Test0.cs(12,28): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. message.
 					VerifyCS.Diagnostic().WithSpan(12, 28, 12, 32).WithArguments("C.M1()", "message", "")
 				},
-				fixedExpected: Array.Empty<DiagnosticResult> ());
+				fixedExpected: Array.Empty<DiagnosticResult> (),
+				// This test needs to declare the number of iterations it will run, by default the number of iterations is calculated counting the number of DiagnosticResults
+				// in the baseline. In this case by adding RUC into the local function (Wrapper calling M1) we will generate another diagnostic (M2 calling Wrapper).
+				// Since FixAll is set it will iterate a second time adding RequiresUnreferencedCode to M2, but there would be a mismatch in iterations there was only one warning
+				// in baseline and we run 2 iterations, this will make the test to fail. Therefore, the number of iterations needs to be stablished manually.
+				numberOfIterations: 2);
 		}
 
 		[Fact]
