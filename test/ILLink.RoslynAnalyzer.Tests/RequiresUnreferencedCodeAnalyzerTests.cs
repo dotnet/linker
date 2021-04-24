@@ -241,10 +241,9 @@ public class C
 					VerifyCS.Diagnostic().WithSpan(12, 28, 12, 32).WithArguments("C.M1()", "message", "")
 				},
 				fixedExpected: Array.Empty<DiagnosticResult> (),
-				// This test needs to declare the number of iterations it will run, by default the number of iterations is calculated counting the number of DiagnosticResults
-				// in the baseline. In this case by adding RUC into the local function (Wrapper calling M1) we will generate another diagnostic (M2 calling Wrapper).
-				// Since FixAll is set it will iterate a second time adding RequiresUnreferencedCode to M2, but there would be a mismatch in iterations there was only one warning
-				// in baseline and we run 2 iterations, this will make the test to fail. Therefore, the number of iterations needs to be stablished manually.
+				// The default iterations for the codefix is the number of diagnostics (1 in this case)
+				// but since the codefixer introduces a new diagnostic in the first iteration, it needs
+				// to run twice, so we need to set the number of iterations to 2.
 				numberOfIterations: 2);
 		}
 
