@@ -956,7 +956,7 @@ namespace Mono.Linker.Dataflow
 							// Note that valueNode can be statically typed in IL as some generic argument type.
 							// For example:
 							//   void Method<T>(T instance) { instance.GetType().... }
-							// Currently this case will end up with StaticType - since there's no typedef for the generic argument type.
+							// Currently this case will end up with null StaticType - since there's no typedef for the generic argument type.
 							// But it could be that T is annotated with for example PublicMethods:
 							//   void Method<[DAM(PublicMethods)] T>(T instance) { instance.GetType().GetMethod("Test"); }
 							// In this case it's in theory possible to handle it, by treating the T basically as a base class
@@ -970,7 +970,7 @@ namespace Mono.Linker.Dataflow
 
 							TypeDefinition staticType = valueNode.StaticType;
 							if (staticType is null) {
-								// We don’t know anything about the type GetType was called on. Track this as a usual “result of a method call without any annotations”
+								// We donÂ’t know anything about the type GetType was called on. Track this as a usual Â“result of a method call without any annotationsÂ”
 								methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new MethodReturnValue (calledMethod.MethodReturnType, DynamicallyAccessedMemberTypes.None));
 							} else if (staticType.IsSealed || staticType.IsTypeOf ("System", "Delegate")) {
 								// We can treat this one the same as if it was a typeof() expression
