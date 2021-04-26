@@ -66,6 +66,7 @@ namespace Mono.Linker.Steps
 			// Update scopes before removing any type forwarder.
 			foreach (var assembly in assemblies) {
 				switch (Annotations.GetAction (assembly)) {
+				case AssemblyAction.CopyUsed:
 				case AssemblyAction.Link:
 				case AssemblyAction.Save:
 					SweepAssemblyReferences (assembly);
@@ -380,19 +381,19 @@ namespace Mono.Linker.Steps
 				method.HasSecurity = false;
 		}
 
-		static bool ShouldSetHasSecurityToFalse (ISecurityDeclarationProvider providerAsSecurity, ICustomAttributeProvider provider)
+		bool ShouldSetHasSecurityToFalse (ISecurityDeclarationProvider providerAsSecurity, ICustomAttributeProvider provider)
 		{
 			if (!providerAsSecurity.HasSecurityDeclarations) {
 				// If the method or type had security before and all attributes were removed, or no remaining attributes are security attributes,
 				// then we need to set HasSecurity to false
-				if (provider.CustomAttributes.Count == 0 || provider.CustomAttributes.All (attr => !IsSecurityAttributeType (attr.AttributeType.Resolve ())))
+				if (!provider.HasCustomAttributes || provider.CustomAttributes.All (attr => !IsSecurityAttributeType (Context.TryResolveTypeDefinition (attr.AttributeType))))
 					return true;
 			}
 
 			return false;
 		}
 
-		static bool IsSecurityAttributeType (TypeDefinition definition)
+		bool IsSecurityAttributeType (TypeDefinition definition)
 		{
 			if (definition == null)
 				return false;
@@ -406,10 +407,11 @@ namespace Mono.Linker.Steps
 				};
 			}
 
-			if (definition.BaseType == null)
+			definition = Context.TryResolveTypeDefinition (definition.BaseType);
+			if (definition == null)
 				return false;
 
-			return IsSecurityAttributeType (definition.BaseType.Resolve ());
+			return IsSecurityAttributeType (definition);
 		}
 
 		protected bool SweepCustomAttributes (ICustomAttributeProvider provider)
