@@ -18,17 +18,10 @@ namespace ILLink.CodeFix
 		[Flags]
 		public enum MemberTargets
 		{
-			Class = 0x0001,
-			Struct = 0x0002,
-			Enum = 0x0004,
-			Constructor = 0x0008,
-			Method = 0x0010,
-			Property = 0x0020,
-			Field = 0x0040,
-			Event = 0x0200,
-			Interface = 0x0400,
-			All = Class | Struct | Enum | Constructor |
-						Method | Property | Field | Event | Interface
+			Method = 0x0001,
+			Property = 0x0002,
+			Field = 0x0004,
+			All = Method | Property | Field
 		}
 
 		internal static async Task<Document> AddRequiresAttribute (
@@ -86,13 +79,15 @@ namespace ILLink.CodeFix
 			while (parentNode is not null) {
 				if (parentNode is LambdaExpressionSyntax) {
 					return null;
-				} else if (targets.HasFlag(MemberTargets.Method)
+				} else if (targets.HasFlag (MemberTargets.Method)
 					&& (parentNode.IsKind (SyntaxKind.LocalFunctionStatement)
 					|| parentNode is BaseMethodDeclarationSyntax)) {
 					return (CSharpSyntaxNode) parentNode;
-				} else if (targets.HasFlag(MemberTargets.Property)
-					&& (parentNode.IsKind (SyntaxKind.PropertyDeclaration)
-					|| parentNode is PropertyDeclarationSyntax)) {
+				} else if (targets.HasFlag (MemberTargets.Property)
+					&& parentNode is PropertyDeclarationSyntax) {
+					return (CSharpSyntaxNode) parentNode;
+				} else if (targets.HasFlag (MemberTargets.Field)
+					&& parentNode is FieldDeclarationSyntax) {
 					return (CSharpSyntaxNode) parentNode;
 				} else {
 					parentNode = parentNode.Parent;

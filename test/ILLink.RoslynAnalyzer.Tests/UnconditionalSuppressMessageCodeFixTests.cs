@@ -326,5 +326,83 @@ public class C
 				},
 				fixedExpected: Array.Empty<DiagnosticResult> ());
 		}
+
+		[Fact]
+		public async Task FixInField ()
+		{
+			const string src = @"
+using System;
+using System.Diagnostics.CodeAnalysis;
+class C
+{
+    public static Lazy<C> _default = new Lazy<C>(InitC);
+    public static C Default => _default.Value;
+
+    [RequiresAssemblyFiles]
+    public static C InitC() {
+        C cObject = new C();
+        return cObject;
+    }
+}";
+			var fixtest = @"
+using System;
+using System.Diagnostics.CodeAnalysis;
+class C
+{
+    [UnconditionalSuppressMessage(""SingleFile"", ""IL3002:Avoid calling members marked with 'RequiresAssemblyFilesAttribute' when publishing as a single-file"", Justification = ""<Pending>"")]
+    public static Lazy<C> _default = new Lazy<C>(InitC);
+    public static C Default => _default.Value;
+
+    [RequiresAssemblyFiles]
+    public static C InitC() {
+        C cObject = new C();
+        return cObject;
+    }
+}";
+			await VerifyUnconditionalSuppressMessageCodeFixWithRAF (
+				src,
+				fixtest,
+				baselineExpected: new[] {
+				// /0/Test0.cs(6,50): warning IL3002: Using member 'C.InitC()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
+				VerifyCSUSMwithRAF.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (6, 50, 6, 55).WithArguments ("C.InitC()", "", ""),
+				},
+				fixedExpected: Array.Empty<DiagnosticResult> ());
+		}
+
+		[Fact]
+		public async Task FixInConstructor ()
+		{
+			var src = @"
+using System;
+using System.Diagnostics.CodeAnalysis;
+
+public class C
+{
+    [RequiresUnreferencedCodeAttribute(""message"")]
+    public int M1() => 0;
+
+    public C () => M1();
+}";
+			var fix = @"
+using System;
+using System.Diagnostics.CodeAnalysis;
+
+public class C
+{
+    [RequiresUnreferencedCodeAttribute(""message"")]
+    public int M1() => 0;
+
+    [UnconditionalSuppressMessage(""Trimming"", ""IL2026:Methods annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code"", Justification = ""<Pending>"")]
+    public C () => M1();
+}";
+			await VerifyUnconditionalSuppressMessageCodeFixWithRUC (
+				src,
+				fix,
+				baselineExpected: new[] {
+					// /0/Test0.cs(10,15): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. message.
+					VerifyCSUSMwithRUC.Diagnostic().WithSpan(10, 20, 10, 24).WithArguments("C.M1()", "message", "")
+				},
+				fixedExpected: Array.Empty<DiagnosticResult> ());
+		}
 	}
 }
