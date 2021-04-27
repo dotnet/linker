@@ -124,7 +124,15 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		}
 
 		[Kept]
-		[LogDoesNotContain ("IsEnabledWithRefParam")]
+		[ExpectedInstructionSequence (new[] {
+			"ldc.i4.0",
+			"stloc.0",
+			"ldloca.s",
+			"call",
+			"pop",
+			"call",
+			"ret",
+		})]
 		static void TestMethodWithRefParam ()
 		{
 			int p = 0;
@@ -135,7 +143,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		}
 
 		[Kept] static void MethodWithRefParam_Reached1 () { }
-		[Kept] static void MethodWithRefParam_Reached2 () { }
+		static void MethodWithRefParam_Reached2 () { }
 
 		static bool _isEnabledWithMultipleRefParamsField;
 
@@ -148,7 +156,20 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		}
 
 		[Kept]
-		[LogDoesNotContain ("IsEnabledWithMultipleRefParams")]
+		[ExpectedInstructionSequence (new[] {
+			"ldc.i4.0",
+			"stloc.0",
+			"ldloca.s",
+			"initobj",
+			"ldc.i4.0",
+			"ldloca.s",
+			"ldloca.s",
+			"ldstr",
+			"call",
+			"pop",
+			"call",
+			"ret",
+		})]
 		static void TestMethodWithMultipleRefParams ()
 		{
 			int p = 0;
@@ -160,7 +181,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		}
 
 		[Kept] static void MethodWithMultipleRefParams_Reached1 () { }
-		[Kept] static void MethodWithMultipleRefParams_Reached2 () { }
+		static void MethodWithMultipleRefParams_Reached2 () { }
 
 		[Kept]
 		static bool IsEnabledWithValueParamAndConstReturn_NoSubstitutions (int param)
@@ -169,10 +190,15 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		}
 
 		[Kept]
+		[ExpectedInstructionSequence (new[] {
+			"ldc.i4.0",
+			"call",
+			"pop",
+			"call",
+			"ret",
+		})]
 		static void TestMethodWithValueParamAndConstReturn_NoSubstitutions ()
 		{
-			// The return value inlining for methods with params only works on explicitly substituted methods.
-			// Linker will not do this implicitly.
 			if (IsEnabledWithValueParamAndConstReturn_NoSubstitutions (0))
 				MethodWithValueParamAndConstReturn_NoSubstitutions_Reached1 ();
 			else
@@ -180,7 +206,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		}
 
 		[Kept] static void MethodWithValueParamAndConstReturn_NoSubstitutions_Reached1 () { }
-		[Kept] static void MethodWithValueParamAndConstReturn_NoSubstitutions_Reached2 () { }
+		static void MethodWithValueParamAndConstReturn_NoSubstitutions_Reached2 () { }
 
 
 		static bool _isEnabledWithVarArgsField;

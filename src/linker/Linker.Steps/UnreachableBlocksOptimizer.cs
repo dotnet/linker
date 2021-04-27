@@ -264,10 +264,10 @@ namespace Mono.Linker.Steps
 
 		Instruction AnalyzeMethodForConstantResult (MethodDefinition method, Collection<Instruction> instructions)
 		{
-			if (!method.HasBody)
+			if (method.ReturnType.MetadataType == MetadataType.Void)
 				return null;
 
-			if (method.ReturnType.MetadataType == MetadataType.Void)
+			if (!method.HasBody)
 				return null;
 
 			switch (_context.Annotations.GetAction (method)) {
@@ -372,24 +372,6 @@ namespace Mono.Linker.Steps
 						(md.IsVirtual || !explicitlyAnnotated))
 						break;
 
-					// Allow inlining results of methods with by-value parameters which are explicitly annotated
-					// but don't allow inlining of results of any other method with parameters.
-					if (md.HasParameters) {
-						if (!explicitlyAnnotated)
-							break;
-
-						bool hasByRefParameter = false;
-						foreach (var param in md.Parameters) {
-							if (param.ParameterType.IsByReference) {
-								hasByRefParameter = true;
-								break;
-							}
-						}
-
-						if (hasByRefParameter)
-							break;
-					}
-
 					if (md == reducer.Body.Method) {
 						// Special case for direct recursion - simply assume non-const value
 						// since we can't tell.
@@ -400,16 +382,25 @@ namespace Mono.Linker.Steps
 						if (!treatUnprocessedDependenciesAsNonConst)
 							hasUnprocessedDependencies = true;
 						break;
-					} else if (targetResult == null || hasUnprocessedDependencies) {
-						// Even is const is detected, there's no point in rewriting anything
+					}
+
+					if (targetResult == null || hasUnprocessedDependencies) {
+						// Even if const is detected, there's no point in rewriting anything
 						// if we've found unprocessed dependency since the results of this scan will
 						// be thrown away (we back off and wait for the unprocessed dependency to be processed first).
 						break;
 					}
 
+					// Rewrite any arguments pushed to stack to nop to allow possible body reduction into constant result
+					int depth = md.Parameters.Count;
+					if (!md.IsStatic)
+						++depth;
+
+					if (depth != 0)
+						reducer.RewriteToNop (i - 1, depth);
+
 					reducer.Rewrite (i, targetResult);
 					changed = true;
-
 					break;
 
 				case Code.Ldsfld:
@@ -519,6 +510,107 @@ namespace Mono.Linker.Steps
 
 				conditionInstrsToRemove.Add (index);
 				RewriteToNop (index);
+			}
+
+			public void RewriteToNop (int index, int stackDepth)
+			{
+				if (FoldedInstructions == null) {
+					FoldedInstructions = new Collection<Instruction> (Body.Instructions);
+					mapping = new Dictionary<Instruction, int> ();
+				}
+
+				int start_index;
+				for (start_index = index; start_index >= 0 && stackDepth > 0; --start_index) {
+					stackDepth -= GetStackBehaviourDelta (FoldedInstructions[start_index], out bool undefined);
+					if (undefined)
+						return;
+				}
+
+				if (stackDepth != 0) {
+					Debug.Fail ("Invalid IL?");
+					return;
+				}
+
+				while (start_index != index)
+					RewriteToNop (++start_index);
+			}
+
+			static int GetStackBehaviourDelta (Instruction instruction, out bool unknown)
+			{
+				int delta = 0;
+				unknown = false;
+				switch (instruction.OpCode.StackBehaviourPop) {
+				case StackBehaviour.Pop0:
+					break;
+				case StackBehaviour.Pop1:
+				case StackBehaviour.Popref:
+				case StackBehaviour.Popi:
+					--delta;
+					break;
+				case StackBehaviour.Pop1_pop1:
+				case StackBehaviour.Popi_pop1:
+				case StackBehaviour.Popi_popi:
+				case StackBehaviour.Popi_popi8:
+				case StackBehaviour.Popi_popr4:
+				case StackBehaviour.Popi_popr8:
+				case StackBehaviour.Popref_pop1:
+				case StackBehaviour.Popref_popi:
+					delta -= 2;
+					break;
+				case StackBehaviour.Popi_popi_popi:
+				case StackBehaviour.Popref_popi_popi:
+				case StackBehaviour.Popref_popi_popi8:
+				case StackBehaviour.Popref_popi_popr4:
+				case StackBehaviour.Popref_popi_popr8:
+				case StackBehaviour.Popref_popi_popref:
+					delta -= 3;
+					break;
+				case StackBehaviour.Varpop:
+					if (instruction.Operand is IMethodSignature ms) {
+						if (ms.HasThis && instruction.OpCode != OpCodes.Newobj)
+							--delta;
+
+						delta -= ms.Parameters.Count;
+						break;
+					}
+
+					Debug.Fail (instruction.Operand?.ToString ());
+					unknown = true;
+					return 0;
+				default:
+					throw new NotImplementedException (instruction.OpCode.StackBehaviourPop.ToString ());
+				}
+
+				switch (instruction.OpCode.StackBehaviourPush) {
+				case StackBehaviour.Push0:
+					break;
+				case StackBehaviour.Push1:
+				case StackBehaviour.Pushi:
+				case StackBehaviour.Pushi8:
+				case StackBehaviour.Pushr4:
+				case StackBehaviour.Pushr8:
+				case StackBehaviour.Pushref:
+					++delta;
+					break;
+				case StackBehaviour.Push1_push1:
+					delta += 2;
+					break;
+				case StackBehaviour.Varpush:
+					if (instruction.Operand is IMethodSignature ms) {
+						if (ms.ReturnType.MetadataType != MetadataType.Void)
+							++delta;
+
+						break;
+					}
+
+					Debug.Fail (instruction.Operand?.ToString ());
+					unknown = true;
+					return 0;
+				default:
+					throw new NotImplementedException (instruction.OpCode.StackBehaviourPop.ToString ());
+				}
+
+				return delta;
 			}
 
 			void RewriteToNop (int index)
