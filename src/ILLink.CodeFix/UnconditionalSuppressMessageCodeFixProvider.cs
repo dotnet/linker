@@ -2,9 +2,9 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System;
 using System.Collections.Immutable;
 using System.Composition;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,13 +18,15 @@ using Microsoft.CodeAnalysis.Simplification;
 
 namespace ILLink.CodeFix
 {
-	[ExportCodeFixProvider (LanguageNames.CSharp, Name = nameof (RequiresUnreferencedCodeCodeFixProvider)), Shared]
-	public class RequiresUnreferencedCodeCodeFixProvider : CodeFixProvider
+	[ExportCodeFixProvider (LanguageNames.CSharp, Name = nameof (UnconditionalSuppressMessageCodeFixProvider)), Shared]
+	public class UnconditionalSuppressMessageCodeFixProvider : CodeFixProvider
 	{
-		private const string s_title = "Add RequiresUnreferencedCode attribute to parent method";
+		private const string s_title = "Add UnconditionalSuppressMessage attribute to parent method";
+		const string UnconditionalSuppressMessageAttribute = nameof (UnconditionalSuppressMessageAttribute);
+		public const string FullyQualifiedUnconditionalSuppressMessageAttribute = "System.Diagnostics.CodeAnalysis." + UnconditionalSuppressMessageAttribute;
 
 		public sealed override ImmutableArray<string> FixableDiagnosticIds
-			=> ImmutableArray.Create (RequiresUnreferencedCodeAnalyzer.DiagnosticId);
+			=> ImmutableArray.Create (RequiresUnreferencedCodeAnalyzer.DiagnosticId, RequiresAssemblyFilesAnalyzer.IL3000, RequiresAssemblyFilesAnalyzer.IL3001, RequiresAssemblyFilesAnalyzer.IL3002);
 
 		public sealed override FixAllProvider GetFixAllProvider ()
 		{
@@ -40,33 +42,29 @@ namespace ILLink.CodeFix
 			var diagnosticSpan = diagnostic.Location.SourceSpan;
 
 			SyntaxNode targetNode = root!.FindNode (diagnosticSpan);
-
-			CSharpSyntaxNode? declarationSyntax = CodeFixProviderOperations.FindContainingMember (targetNode, CodeFixProviderOperations.MemberTargets.Method);
+			CSharpSyntaxNode? declarationSyntax = CodeFixProviderOperations.FindContainingMember (targetNode, CodeFixProviderOperations.MemberTargets.All);
 
 			if (declarationSyntax is not null) {
 				var semanticModel = await context.Document
 					.GetSemanticModelAsync (context.CancellationToken).ConfigureAwait (false);
-				var symbol = semanticModel!.Compilation.GetTypeByMetadataName (
-					RequiresUnreferencedCodeAnalyzer.FullyQualifiedRequiresUnreferencedCodeAttribute);
+				var symbol = semanticModel!.Compilation.GetTypeByMetadataName (FullyQualifiedUnconditionalSuppressMessageAttribute);
 
 				// Register a code action that will invoke the fix.
 				context.RegisterCodeFix (
 					CodeAction.Create (
 						title: s_title,
-						createChangedDocument: c => AddRequiresUnreferencedCode (
-							context.Document, root, targetNode, declarationSyntax, symbol!, c),
+						createChangedDocument: c => AddUnconditionalSuppressMessage (
+							context.Document, root, declarationSyntax, diagnostic, symbol!, c),
 						equivalenceKey: s_title),
 					diagnostic);
-
 			}
 		}
-
-		private static async Task<Document> AddRequiresUnreferencedCode (
+		private static async Task<Document> AddUnconditionalSuppressMessage (
 			Document document,
 			SyntaxNode root,
-			SyntaxNode targetNode,
 			CSharpSyntaxNode containingDecl,
-			ITypeSymbol requiresUnreferencedCodeSymbol,
+			Diagnostic diagnostic,
+			ITypeSymbol UnconditionalSuppressMessageSymbol,
 			CancellationToken cancellationToken)
 		{
 			var editor = new SyntaxEditor (root, document.Project.Solution.Workspace);
@@ -76,17 +74,23 @@ namespace ILLink.CodeFix
 			if (semanticModel is null) {
 				return document;
 			}
-			var containingSymbol = (IMethodSymbol?) semanticModel.GetDeclaredSymbol (containingDecl);
-			var name = semanticModel.GetSymbolInfo (targetNode).Symbol?.Name;
-			SyntaxNode[] attrArgs;
-			if (string.IsNullOrEmpty (name) || HasPublicAccessibility (containingSymbol)) {
-				attrArgs = Array.Empty<SyntaxNode> ();
-			} else {
-				attrArgs = new[] { generator.LiteralExpression ($"Calls {name}") };
-			}
+
+			// UnconditionalSuppressMessage("Rule Category", "Rule Id", Justification = "<Pending>")
+			var category = generator.LiteralExpression (diagnostic.Descriptor.Category);
+			var categoryArgument = generator.AttributeArgument (category);
+
+			var title = diagnostic.Descriptor.Title.ToString (CultureInfo.CurrentUICulture);
+			var ruleIdText = string.IsNullOrWhiteSpace (title) ? diagnostic.Id : string.Format ("{0}:{1}", diagnostic.Id, title);
+			var ruleId = generator.LiteralExpression (ruleIdText);
+			var ruleIdArgument = generator.AttributeArgument (ruleId);
+
+			var justificationExpr = generator.LiteralExpression ("<Pending>");
+			var justificationArgument = generator.AttributeArgument ("Justification", justificationExpr);
+
+			SyntaxNode[] attrArgs = new[] { categoryArgument, ruleIdArgument, justificationArgument };
 
 			var newAttribute = generator
-				.Attribute (generator.TypeExpression (requiresUnreferencedCodeSymbol), attrArgs)
+				.Attribute (generator.TypeExpression (UnconditionalSuppressMessageSymbol), attrArgs)
 				.WithAdditionalAnnotations (
 					Simplifier.Annotation,
 					Simplifier.AddImportsAnnotation);
@@ -94,19 +98,6 @@ namespace ILLink.CodeFix
 			editor.AddAttribute (containingDecl, newAttribute);
 
 			return document.WithSyntaxRoot (editor.GetChangedRoot ());
-		}
-
-		private static bool HasPublicAccessibility (IMethodSymbol? m)
-		{
-			if (m is not { DeclaredAccessibility: Accessibility.Public or Accessibility.Protected }) {
-				return false;
-			}
-			for (var t = m.ContainingType; t is not null; t = t.ContainingType) {
-				if (t.DeclaredAccessibility != Accessibility.Public) {
-					return false;
-				}
-			}
-			return true;
 		}
 	}
 }
