@@ -53,60 +53,11 @@ namespace ILLink.CodeFix
 				context.RegisterCodeFix (
 					CodeAction.Create (
 						title: s_title,
-						createChangedDocument: c => AddRequiresUnreferencedCode (
-							context.Document, root, targetNode, declarationSyntax, symbol!, c),
+						createChangedDocument: c => CodeFixProviderOperations.AddRequiresAttribute (
+							context.Document, root, targetNode, declarationSyntax, symbol!, false, c),
 						equivalenceKey: s_title),
 					diagnostic);
-
 			}
-		}
-
-		private static async Task<Document> AddRequiresUnreferencedCode (
-			Document document,
-			SyntaxNode root,
-			SyntaxNode targetNode,
-			CSharpSyntaxNode containingDecl,
-			ITypeSymbol requiresUnreferencedCodeSymbol,
-			CancellationToken cancellationToken)
-		{
-			var editor = new SyntaxEditor (root, document.Project.Solution.Workspace);
-			var generator = editor.Generator;
-
-			var semanticModel = await document.GetSemanticModelAsync (cancellationToken).ConfigureAwait (false);
-			if (semanticModel is null) {
-				return document;
-			}
-			var containingSymbol = (IMethodSymbol?) semanticModel.GetDeclaredSymbol (containingDecl);
-			var name = semanticModel.GetSymbolInfo (targetNode).Symbol?.Name;
-			SyntaxNode[] attrArgs;
-			if (string.IsNullOrEmpty (name) || HasPublicAccessibility (containingSymbol)) {
-				attrArgs = Array.Empty<SyntaxNode> ();
-			} else {
-				attrArgs = new[] { generator.LiteralExpression ($"Calls {name}") };
-			}
-
-			var newAttribute = generator
-				.Attribute (generator.TypeExpression (requiresUnreferencedCodeSymbol), attrArgs)
-				.WithAdditionalAnnotations (
-					Simplifier.Annotation,
-					Simplifier.AddImportsAnnotation);
-
-			editor.AddAttribute (containingDecl, newAttribute);
-
-			return document.WithSyntaxRoot (editor.GetChangedRoot ());
-		}
-
-		private static bool HasPublicAccessibility (IMethodSymbol? m)
-		{
-			if (m is not { DeclaredAccessibility: Accessibility.Public or Accessibility.Protected }) {
-				return false;
-			}
-			for (var t = m.ContainingType; t is not null; t = t.ContainingType) {
-				if (t.DeclaredAccessibility != Accessibility.Public) {
-					return false;
-				}
-			}
-			return true;
 		}
 	}
 }
