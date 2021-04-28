@@ -17,41 +17,34 @@ namespace Mono.Linker.Dataflow
 {
 	class ReflectionMethodBodyScanner : MethodBodyScanner
 	{
-		readonly LinkContext _context;
 		readonly MarkStep _markStep;
 
 		public static bool RequiresReflectionMethodBodyScannerForCallSite (LinkContext context, MethodReference calledMethod)
 		{
-			MethodDefinition methodDefinition = calledMethod.Resolve ();
-			if (methodDefinition != null) {
-				return
-					GetIntrinsicIdForMethod (methodDefinition) > IntrinsicId.RequiresReflectionBodyScanner_Sentinel ||
-					context.Annotations.FlowAnnotations.RequiresDataFlowAnalysis (methodDefinition) ||
-					context.Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (methodDefinition);
-			}
+			MethodDefinition methodDefinition = context.TryResolveMethodDefinition (calledMethod);
+			if (methodDefinition == null)
+				return false;
 
-			return false;
+			return
+				GetIntrinsicIdForMethod (methodDefinition) > IntrinsicId.RequiresReflectionBodyScanner_Sentinel ||
+				context.Annotations.FlowAnnotations.RequiresDataFlowAnalysis (methodDefinition) ||
+				context.Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (methodDefinition);
 		}
 
-		public static bool RequiresReflectionMethodBodyScannerForMethodBody (FlowAnnotations flowAnnotations, MethodReference method)
+		public static bool RequiresReflectionMethodBodyScannerForMethodBody (FlowAnnotations flowAnnotations, MethodDefinition methodDefinition)
 		{
-			MethodDefinition methodDefinition = method.Resolve ();
-			if (methodDefinition != null) {
-				return
-					GetIntrinsicIdForMethod (methodDefinition) > IntrinsicId.RequiresReflectionBodyScanner_Sentinel ||
-					flowAnnotations.RequiresDataFlowAnalysis (methodDefinition);
-			}
-
-			return false;
+			return
+				GetIntrinsicIdForMethod (methodDefinition) > IntrinsicId.RequiresReflectionBodyScanner_Sentinel ||
+				flowAnnotations.RequiresDataFlowAnalysis (methodDefinition);
 		}
 
-		public static bool RequiresReflectionMethodBodyScannerForAccess (FlowAnnotations flowAnnotations, FieldReference field)
+		public static bool RequiresReflectionMethodBodyScannerForAccess (LinkContext context, FieldReference field)
 		{
-			FieldDefinition fieldDefinition = field.Resolve ();
-			if (fieldDefinition != null)
-				return flowAnnotations.RequiresDataFlowAnalysis (fieldDefinition);
+			FieldDefinition fieldDefinition = context.TryResolveFieldDefinition (field);
+			if (fieldDefinition == null)
+				return false;
 
-			return false;
+			return context.Annotations.FlowAnnotations.RequiresDataFlowAnalysis (fieldDefinition);
 		}
 
 		bool ShouldEnableReflectionPatternReporting (MethodDefinition method)
@@ -60,8 +53,8 @@ namespace Mono.Linker.Dataflow
 		}
 
 		public ReflectionMethodBodyScanner (LinkContext context, MarkStep parent)
+			: base (context)
 		{
-			_context = context;
 			_markStep = parent;
 		}
 
@@ -118,11 +111,11 @@ namespace Mono.Linker.Dataflow
 			MarkTypeForDynamicallyAccessedMembers (ref reflectionPatternContext, type, annotation);
 		}
 
-		static ValueNode GetValueNodeForCustomAttributeArgument (CustomAttributeArgument argument)
+		ValueNode GetValueNodeForCustomAttributeArgument (CustomAttributeArgument argument)
 		{
 			ValueNode valueNode;
 			if (argument.Type.Name == "Type") {
-				TypeDefinition referencedType = ((TypeReference) argument.Value).ResolveToMainTypeDefinition ();
+				TypeDefinition referencedType = ResolveToTypeDefinition ((TypeReference) argument.Value);
 				if (referencedType == null)
 					valueNode = UnknownValue.Instance;
 				else
@@ -159,7 +152,7 @@ namespace Mono.Linker.Dataflow
 				// That said we only use it to perform the dynamically accessed members checks and for that purpose treating it as System.Type is perfectly valid.
 				return new SystemTypeForGenericParameterValue (inputGenericParameter, _context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (inputGenericParameter));
 			} else {
-				TypeDefinition genericArgumentTypeDef = genericArgument.ResolveToMainTypeDefinition ();
+				TypeDefinition genericArgumentTypeDef = ResolveToTypeDefinition (genericArgument);
 				if (genericArgumentTypeDef != null) {
 					return new SystemTypeValue (genericArgumentTypeDef);
 				} else {
@@ -182,17 +175,28 @@ namespace Mono.Linker.Dataflow
 			Debug.Fail ("Invalid IL or a bug in the scanner");
 		}
 
+		MethodReturnValue CreateMethodReturnValue (MethodReference method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes = DynamicallyAccessedMemberTypes.None)
+		{
+			return new MethodReturnValue (ResolveToTypeDefinition (method.ReturnType), dynamicallyAccessedMemberTypes, method.MethodReturnType);
+		}
+
 		protected override ValueNode GetMethodParameterValue (MethodDefinition method, int parameterIndex)
 		{
 			DynamicallyAccessedMemberTypes memberTypes = _context.Annotations.FlowAnnotations.GetParameterAnnotation (method, parameterIndex);
-			return new MethodParameterValue (method, parameterIndex, memberTypes, DiagnosticUtilities.GetMethodParameterFromIndex (method, parameterIndex));
+
+			var staticType =
+				!method.HasImplicitThis () ? ResolveToTypeDefinition (method.Parameters[parameterIndex].ParameterType) :
+				parameterIndex == 0 ? method.DeclaringType :
+				ResolveToTypeDefinition (method.Parameters[parameterIndex - 1].ParameterType);
+
+			return new MethodParameterValue (staticType, parameterIndex, memberTypes, DiagnosticUtilities.GetMethodParameterFromIndex (method, parameterIndex));
 		}
 
 		protected override ValueNode GetFieldValue (MethodDefinition method, FieldDefinition field)
 		{
 			switch (field.Name) {
 			case "EmptyTypes" when field.DeclaringType.IsTypeOf ("System", "Type"): {
-					return new ArrayValue (new ConstIntValue (0));
+					return new ArrayValue (new ConstIntValue (0), field.DeclaringType);
 				}
 			case "Empty" when field.DeclaringType.IsTypeOf ("System", "String"): {
 					return new KnownStringValue (string.Empty);
@@ -200,7 +204,7 @@ namespace Mono.Linker.Dataflow
 
 			default: {
 					DynamicallyAccessedMemberTypes memberTypes = _context.Annotations.FlowAnnotations.GetFieldAnnotation (field);
-					return new LoadFieldValue (field, memberTypes);
+					return new LoadFieldValue (ResolveToTypeDefinition (field.FieldType), field, memberTypes);
 				}
 			}
 		}
@@ -612,18 +616,18 @@ namespace Mono.Linker.Dataflow
 				return false;
 
 			var callingMethodDefinition = callingMethodBody.Method;
+			var calledMethodDefinition = _context.TryResolveMethodDefinition (calledMethod);
+			if (calledMethodDefinition == null)
+				return false;
+
 			var reflectionContext = new ReflectionPatternContext (
 				_context,
 				ShouldEnableReflectionPatternReporting (callingMethodDefinition),
 				callingMethodDefinition,
-				calledMethod.Resolve (),
+				calledMethodDefinition,
 				operation);
 
 			DynamicallyAccessedMemberTypes returnValueDynamicallyAccessedMemberTypes = 0;
-
-			var calledMethodDefinition = calledMethod.Resolve ();
-			if (calledMethodDefinition == null)
-				return false;
 
 			try {
 
@@ -656,7 +660,7 @@ namespace Mono.Linker.Dataflow
 					break;
 
 				case IntrinsicId.Array_Empty: {
-						methodReturnValue = new ArrayValue (new ConstIntValue (0));
+						methodReturnValue = new ArrayValue (new ConstIntValue (0), ((GenericInstanceMethod) calledMethod).GenericArguments[0]);
 					}
 					break;
 
@@ -702,20 +706,28 @@ namespace Mono.Linker.Dataflow
 						reflectionContext.AnalyzingPattern ();
 						foreach (var value in methodParams[0].UniqueValues ()) {
 							if (value is SystemTypeValue typeValue) {
-								foreach (var genericParameter in typeValue.TypeRepresented.GenericParameters) {
-									if (_context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameter) != DynamicallyAccessedMemberTypes.None ||
-										(genericParameter.HasDefaultConstructorConstraint && !typeValue.TypeRepresented.IsTypeOf ("System", "Nullable`1"))) {
-										// There is a generic parameter which has some requirements on the input types.
-										// For now we don't support tracking actual array elements, so we can't validate that the requirements are fulfilled.
-
-										// Special case: Nullable<T> where T : struct
-										//  The struct constraint in C# implies new() constraints, but Nullable doesn't make a use of that part.
-										//  There are several places even in the framework where typeof(Nullable<>).MakeGenericType would warn
-										//  without any good reason to do so.
+								if (AnalyzeGenericInstatiationTypeArray (methodParams[1], ref reflectionContext, calledMethodDefinition, typeValue.TypeRepresented.GenericParameters)) {
+									reflectionContext.RecordHandledPattern ();
+								} else {
+									bool hasUncheckedAnnotation = false;
+									foreach (var genericParameter in typeValue.TypeRepresented.GenericParameters) {
+										if (_context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameter) != DynamicallyAccessedMemberTypes.None ||
+											(genericParameter.HasDefaultConstructorConstraint && !typeValue.TypeRepresented.IsTypeOf ("System", "Nullable`1"))) {
+											// If we failed to analyze the array, we go through the analyses again
+											// and intentionally ignore one particular annotation:
+											// Special case: Nullable<T> where T : struct
+											//  The struct constraint in C# implies new() constraints, but Nullable doesn't make a use of that part.
+											//  There are several places even in the framework where typeof(Nullable<>).MakeGenericType would warn
+											//  without any good reason to do so.
+											hasUncheckedAnnotation = true;
+											break;
+										}
+									}
+									if (hasUncheckedAnnotation) {
 										reflectionContext.RecordUnrecognizedPattern (
-											2055,
-											$"Call to '{calledMethodDefinition.GetDisplayName ()}' can not be statically analyzed. " +
-											$"It's not possible to guarantee the availability of requirements of the generic type.");
+												2055,
+												$"Call to '{calledMethodDefinition.GetDisplayName ()}' can not be statically analyzed. " +
+												$"It's not possible to guarantee the availability of requirements of the generic type.");
 									}
 								}
 
@@ -810,8 +822,8 @@ namespace Mono.Linker.Dataflow
 							if (value is SystemTypeValue systemTypeValue) {
 								foreach (var stringParam in methodParams[1].UniqueValues ()) {
 									if (stringParam is KnownStringValue stringValue) {
-										foreach (var method in systemTypeValue.TypeRepresented.GetMethodsOnTypeHierarchy (m => m.Name == stringValue.Contents, bindingFlags)) {
-											ValidateGenericMethodInstantiation (ref reflectionContext, method, calledMethod);
+										foreach (var method in systemTypeValue.TypeRepresented.GetMethodsOnTypeHierarchy (_context, m => m.Name == stringValue.Contents, bindingFlags)) {
+											ValidateGenericMethodInstantiation (ref reflectionContext, method, methodParams[2], calledMethod);
 											MarkMethod (ref reflectionContext, method);
 										}
 
@@ -945,10 +957,25 @@ namespace Mono.Linker.Dataflow
 				//
 				case IntrinsicId.Object_GetType: {
 						foreach (var valueNode in methodParams[0].UniqueValues ()) {
+							// Note that valueNode can be statically typed in IL as some generic argument type.
+							// For example:
+							//   void Method<T>(T instance) { instance.GetType().... }
+							// Currently this case will end up with null StaticType - since there's no typedef for the generic argument type.
+							// But it could be that T is annotated with for example PublicMethods:
+							//   void Method<[DAM(PublicMethods)] T>(T instance) { instance.GetType().GetMethod("Test"); }
+							// In this case it's in theory possible to handle it, by treating the T basically as a base class
+							// for the actual type of "instance". But the analysis for this would be pretty complicated (as the marking
+							// has to happen on the callsite, which doesn't know that GetType() will be used...).
+							// For now we're intentionally ignoring this case - it will produce a warning.
+							// The counter example is:
+							//   Method<Base>(new Derived);
+							// In this case to get correct results, trimmer would have to mark all public methods on Derived. Which
+							// currently it won't do.
+
 							TypeDefinition staticType = valueNode.StaticType;
 							if (staticType is null) {
-								// We don’t know anything about the type GetType was called on. Track this as a usual “result of a method call without any annotations”
-								methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new MethodReturnValue (calledMethod.MethodReturnType, DynamicallyAccessedMemberTypes.None));
+								// We don't know anything about the type GetType was called on. Track this as a usual result of a method call without any annotations
+								methodReturnValue = MergePointValue.MergeValues (methodReturnValue, CreateMethodReturnValue (calledMethod));
 							} else if (staticType.IsSealed || staticType.IsTypeOf ("System", "Delegate")) {
 								// We can treat this one the same as if it was a typeof() expression
 
@@ -979,7 +1006,7 @@ namespace Mono.Linker.Dataflow
 								// Return a value which is "unknown type" with annotation. For now we'll use the return value node
 								// for the method, which means we're loosing the information about which staticType this
 								// started with. For now we don't need it, but we can add it later on.
-								methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new MethodReturnValue (calledMethod.MethodReturnType, annotation));
+								methodReturnValue = MergePointValue.MergeValues (methodReturnValue, CreateMethodReturnValue (calledMethod, annotation));
 							}
 						}
 					}
@@ -1007,12 +1034,12 @@ namespace Mono.Linker.Dataflow
 						foreach (var typeNameValue in methodParams[0].UniqueValues ()) {
 							if (typeNameValue is KnownStringValue knownStringValue) {
 								TypeReference foundTypeRef = _context.TypeNameResolver.ResolveTypeName (knownStringValue.Contents, callingMethodDefinition, out AssemblyDefinition typeAssembly, false);
-								TypeDefinition foundType = foundTypeRef?.ResolveToMainTypeDefinition ();
+								TypeDefinition foundType = ResolveToTypeDefinition (foundTypeRef);
 								if (foundType == null) {
 									// Intentionally ignore - it's not wrong for code to call Type.GetType on non-existing name, the code might expect null/exception back.
 									reflectionContext.RecordHandledPattern ();
 								} else {
-									reflectionContext.RecordRecognizedPattern (foundType, () => _markStep.MarkTypeVisibleToReflection (foundTypeRef, new DependencyInfo (DependencyKind.AccessedViaReflection, callingMethodDefinition), callingMethodDefinition));
+									reflectionContext.RecordRecognizedPattern (foundType, () => _markStep.MarkTypeVisibleToReflection (foundTypeRef, foundType, new DependencyInfo (DependencyKind.AccessedViaReflection, callingMethodDefinition), callingMethodDefinition));
 									methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new SystemTypeValue (foundType));
 									_context.MarkingHelpers.MarkMatchingExportedType (foundType, typeAssembly, new DependencyInfo (DependencyKind.AccessedViaReflection, foundType));
 								}
@@ -1022,7 +1049,7 @@ namespace Mono.Linker.Dataflow
 								// Propagate the annotation from the type name to the return value. Annotation on a string value will be fullfilled whenever a value is assigned to the string with annotation.
 								// So while we don't know which type it is, we can guarantee that it will fulfill the annotation.
 								reflectionContext.RecordHandledPattern ();
-								methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new MethodReturnValue (calledMethodDefinition.MethodReturnType, valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes));
+								methodReturnValue = MergePointValue.MergeValues (methodReturnValue, CreateMethodReturnValue (calledMethodDefinition, valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes));
 							} else {
 								reflectionContext.RecordUnrecognizedPattern (2057, $"Unrecognized value passed to the parameter 'typeName' of method '{calledMethod.GetDisplayName ()}'. It's not possible to guarantee the availability of the target type.");
 							}
@@ -1193,7 +1220,7 @@ namespace Mono.Linker.Dataflow
 						// Note it's OK to blindly overwrite any potential annotation on the return value from the method definition
 						// since DynamicallyAccessedMemberTypes.All is a superset of any other annotation.
 						if (everyParentTypeHasAll && methodReturnValue == null)
-							methodReturnValue = new MethodReturnValue (calledMethodDefinition.MethodReturnType, DynamicallyAccessedMemberTypes.All);
+							methodReturnValue = CreateMethodReturnValue (calledMethodDefinition, DynamicallyAccessedMemberTypes.All);
 					}
 					break;
 
@@ -1256,19 +1283,19 @@ namespace Mono.Linker.Dataflow
 										propagatedMemberTypes |= DynamicallyAccessedMemberTypes.PublicProperties;
 								}
 
-								methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new MethodReturnValue (calledMethod.MethodReturnType, propagatedMemberTypes));
+								methodReturnValue = MergePointValue.MergeValues (methodReturnValue, CreateMethodReturnValue (calledMethod, propagatedMemberTypes));
 							} else if (value is SystemTypeValue systemTypeValue) {
-								TypeDefinition baseTypeDefinition = systemTypeValue.TypeRepresented.BaseType.Resolve ();
+								TypeDefinition baseTypeDefinition = _context.TryResolveTypeDefinition (systemTypeValue.TypeRepresented.BaseType);
 								if (baseTypeDefinition != null)
 									methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new SystemTypeValue (baseTypeDefinition));
 								else
-									methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new MethodReturnValue (calledMethod.MethodReturnType, DynamicallyAccessedMemberTypes.None));
+									methodReturnValue = MergePointValue.MergeValues (methodReturnValue, CreateMethodReturnValue (calledMethod));
 							} else if (value == NullValue.Instance) {
 								// Ignore nulls - null.BaseType will fail at runtime, but it has no effect on static analysis
 								continue;
 							} else {
 								// Unknown input - propagate a return value without any annotation - we know it's a Type but we know nothing about it
-								methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new MethodReturnValue (calledMethod.MethodReturnType, DynamicallyAccessedMemberTypes.None));
+								methodReturnValue = MergePointValue.MergeValues (methodReturnValue, CreateMethodReturnValue (calledMethod));
 							}
 						}
 					}
@@ -1630,8 +1657,7 @@ namespace Mono.Linker.Dataflow
 
 						foreach (var methodValue in methodParams[0].UniqueValues ()) {
 							if (methodValue is SystemReflectionMethodBaseValue methodBaseValue) {
-								ValidateGenericMethodInstantiation (ref reflectionContext, methodBaseValue.MethodRepresented, calledMethod);
-								reflectionContext.RecordHandledPattern ();
+								ValidateGenericMethodInstantiation (ref reflectionContext, methodBaseValue.MethodRepresented, methodParams[1], calledMethod);
 							} else if (methodValue == NullValue.Instance) {
 								reflectionContext.RecordHandledPattern ();
 							} else {
@@ -1676,7 +1702,7 @@ namespace Mono.Linker.Dataflow
 					// To get good reporting of errors we need to track the origin of the value for all method calls
 					// but except Newobj as those are special.
 					if (calledMethodDefinition.ReturnType.MetadataType != MetadataType.Void) {
-						methodReturnValue = new MethodReturnValue (calledMethodDefinition.MethodReturnType, returnValueDynamicallyAccessedMemberTypes);
+						methodReturnValue = CreateMethodReturnValue (calledMethodDefinition, returnValueDynamicallyAccessedMemberTypes);
 
 						return true;
 					}
@@ -1692,7 +1718,7 @@ namespace Mono.Linker.Dataflow
 			// unknown value with the return type of the method.
 			if (methodReturnValue == null) {
 				if (calledMethod.ReturnType.MetadataType != MetadataType.Void) {
-					methodReturnValue = new MethodReturnValue (calledMethodDefinition.MethodReturnType, returnValueDynamicallyAccessedMemberTypes);
+					methodReturnValue = CreateMethodReturnValue (calledMethodDefinition, returnValueDynamicallyAccessedMemberTypes);
 				}
 			}
 
@@ -1709,6 +1735,54 @@ namespace Mono.Linker.Dataflow
 				}
 			}
 
+			return true;
+		}
+
+		private bool AnalyzeGenericInstatiationTypeArray (ValueNode arrayParam, ref ReflectionPatternContext reflectionContext, MethodReference calledMethod, IList<GenericParameter> genericParameters)
+		{
+			bool hasRequirements = false;
+			foreach (var genericParameter in genericParameters) {
+				if (_context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameter) != DynamicallyAccessedMemberTypes.None) {
+					hasRequirements = true;
+					break;
+				}
+			}
+
+			// If there are no requirements, then there's no point in warning
+			if (!hasRequirements)
+				return true;
+
+			foreach (var typesValue in arrayParam.UniqueValues ()) {
+				if (typesValue.Kind != ValueNodeKind.Array) {
+					return false;
+				}
+				ArrayValue array = (ArrayValue) typesValue;
+				int? size = array.Size.AsConstInt ();
+				if (size == null || size != genericParameters.Count) {
+					return false;
+				}
+				bool allIndicesKnown = true;
+				for (int i = 0; i < size.Value; i++) {
+					if (!array.IndexValues.TryGetValue (i, out ValueBasicBlockPair value) || value.Value is null or { Kind: ValueNodeKind.Unknown }) {
+						allIndicesKnown = false;
+						break;
+					}
+				}
+
+				if (!allIndicesKnown) {
+					return false;
+				}
+
+				for (int i = 0; i < size.Value; i++) {
+					if (array.IndexValues.TryGetValue (i, out ValueBasicBlockPair value)) {
+						RequireDynamicallyAccessedMembers (
+							ref reflectionContext,
+							_context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameters[i]),
+							value.Value,
+							calledMethod.Resolve ());
+					}
+				}
+			}
 			return true;
 		}
 
@@ -1741,7 +1815,7 @@ namespace Mono.Linker.Dataflow
 							}
 
 							var typeRef = _context.TypeNameResolver.ResolveTypeName (resolvedAssembly, typeNameStringValue.Contents);
-							var resolvedType = typeRef?.Resolve ();
+							var resolvedType = _context.TryResolveTypeDefinition (typeRef);
 							if (resolvedType == null || typeRef is ArrayType) {
 								// It's not wrong to have a reference to non-existing type - the code may well expect to get an exception in this case
 								// Note that we did find the assembly, so it's not a linker config problem, it's either intentional, or wrong versions of assemblies
@@ -1770,7 +1844,7 @@ namespace Mono.Linker.Dataflow
 			ref ValueNode methodReturnValue)
 		{
 			bool foundAny = false;
-			foreach (var method in typeDefinition.GetMethodsOnTypeHierarchy (m => m.Name == methodName, bindingFlags)) {
+			foreach (var method in typeDefinition.GetMethodsOnTypeHierarchy (_context, m => m.Name == methodName, bindingFlags)) {
 				MarkMethod (ref reflectionContext, method);
 				methodReturnValue = MergePointValue.MergeValues (methodReturnValue, new SystemReflectionMethodBaseValue (method));
 				foundAny = true;
@@ -2006,7 +2080,7 @@ namespace Mono.Linker.Dataflow
 					MarkTypeForDynamicallyAccessedMembers (ref reflectionContext, systemTypeValue.TypeRepresented, requiredMemberTypes);
 				} else if (uniqueValue is KnownStringValue knownStringValue) {
 					TypeReference typeRef = _context.TypeNameResolver.ResolveTypeName (knownStringValue.Contents, reflectionContext.Source, out AssemblyDefinition typeAssembly);
-					TypeDefinition foundType = typeRef?.ResolveToMainTypeDefinition ();
+					TypeDefinition foundType = ResolveToTypeDefinition (typeRef);
 					if (foundType == null) {
 						// Intentionally ignore - it's not wrong for code to call Type.GetType on non-existing name, the code might expect null/exception back.
 						reflectionContext.RecordHandledPattern ();
@@ -2040,7 +2114,7 @@ namespace Mono.Linker.Dataflow
 							$"Value passed to implicit 'this' parameter of method '{methodDefinition.GetDisplayName ()}' can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.");
 						break;
 					case GenericParameter genericParameter:
-						// Unknown value to generic parameter - this is possible if the generic argumnet fails to resolve
+						// Unknown value to generic parameter - this is possible if the generic argument fails to resolve
 						reflectionContext.RecordUnrecognizedPattern (
 							2066,
 							$"Type passed to generic parameter '{genericParameter.Name}' of '{DiagnosticUtilities.GetGenericParameterDeclaringMemberDisplayName (genericParameter)}' can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.");
@@ -2061,7 +2135,7 @@ namespace Mono.Linker.Dataflow
 
 		void MarkTypeForDynamicallyAccessedMembers (ref ReflectionPatternContext reflectionContext, TypeDefinition typeDefinition, DynamicallyAccessedMemberTypes requiredMemberTypes)
 		{
-			foreach (var member in typeDefinition.GetDynamicallyAccessedMembers (requiredMemberTypes)) {
+			foreach (var member in typeDefinition.GetDynamicallyAccessedMembers (_context, requiredMemberTypes)) {
 				switch (member) {
 				case MethodDefinition method:
 					MarkMethod (ref reflectionContext, method, DependencyKind.DynamicallyAccessedMember);
@@ -2089,7 +2163,8 @@ namespace Mono.Linker.Dataflow
 		void MarkType (ref ReflectionPatternContext reflectionContext, TypeReference typeReference)
 		{
 			var source = reflectionContext.Source;
-			reflectionContext.RecordRecognizedPattern (typeReference?.Resolve (), () => _markStep.MarkTypeVisibleToReflection (typeReference, new DependencyInfo (DependencyKind.AccessedViaReflection, source), source));
+			TypeDefinition type = _context.TryResolveTypeDefinition (typeReference);
+			reflectionContext.RecordRecognizedPattern (type, () => _markStep.MarkTypeVisibleToReflection (typeReference, type, new DependencyInfo (DependencyKind.AccessedViaReflection, source), source));
 		}
 
 		void MarkMethod (ref ReflectionPatternContext reflectionContext, MethodDefinition method, DependencyKind dependencyKind = DependencyKind.AccessedViaReflection)
@@ -2102,7 +2177,8 @@ namespace Mono.Linker.Dataflow
 		void MarkNestedType (ref ReflectionPatternContext reflectionContext, TypeDefinition nestedType, DependencyKind dependencyKind = DependencyKind.AccessedViaReflection)
 		{
 			var source = reflectionContext.Source;
-			reflectionContext.RecordRecognizedPattern (nestedType, () => _markStep.MarkTypeVisibleToReflection (nestedType, new DependencyInfo (dependencyKind, source), source));
+			TypeDefinition type = _context.TryResolveTypeDefinition (nestedType);
+			reflectionContext.RecordRecognizedPattern (nestedType, () => _markStep.MarkTypeVisibleToReflection (nestedType, type, new DependencyInfo (dependencyKind, source), source));
 		}
 
 		void MarkField (ref ReflectionPatternContext reflectionContext, FieldDefinition field, DependencyKind dependencyKind = DependencyKind.AccessedViaReflection)
@@ -2145,7 +2221,7 @@ namespace Mono.Linker.Dataflow
 
 		void MarkFieldsOnTypeHierarchy (ref ReflectionPatternContext reflectionContext, TypeDefinition type, Func<FieldDefinition, bool> filter, BindingFlags? bindingFlags = BindingFlags.Default)
 		{
-			foreach (var field in type.GetFieldsOnTypeHierarchy (filter, bindingFlags))
+			foreach (var field in type.GetFieldsOnTypeHierarchy (_context, filter, bindingFlags))
 				MarkField (ref reflectionContext, field);
 		}
 
@@ -2163,33 +2239,33 @@ namespace Mono.Linker.Dataflow
 
 		void MarkPropertiesOnTypeHierarchy (ref ReflectionPatternContext reflectionContext, TypeDefinition type, Func<PropertyDefinition, bool> filter, BindingFlags? bindingFlags = BindingFlags.Default)
 		{
-			foreach (var property in type.GetPropertiesOnTypeHierarchy (filter, bindingFlags))
+			foreach (var property in type.GetPropertiesOnTypeHierarchy (_context, filter, bindingFlags))
 				MarkProperty (ref reflectionContext, property);
 		}
 
 		void MarkEventsOnTypeHierarchy (ref ReflectionPatternContext reflectionContext, TypeDefinition type, Func<EventDefinition, bool> filter, BindingFlags? bindingFlags = BindingFlags.Default)
 		{
-			foreach (var @event in type.GetEventsOnTypeHierarchy (filter, bindingFlags))
+			foreach (var @event in type.GetEventsOnTypeHierarchy (_context, filter, bindingFlags))
 				MarkEvent (ref reflectionContext, @event);
 		}
 
 		void ValidateGenericMethodInstantiation (
 			ref ReflectionPatternContext reflectionContext,
 			MethodDefinition genericMethod,
+			ValueNode genericParametersArray,
 			MethodReference reflectionMethod)
 		{
-			if (!genericMethod.HasGenericParameters)
+			if (!genericMethod.HasGenericParameters) {
+				reflectionContext.RecordHandledPattern ();
 				return;
+			}
 
-			foreach (var genericParameter in genericMethod.GenericParameters) {
-				if (_context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameter) != DynamicallyAccessedMemberTypes.None ||
-					genericParameter.HasDefaultConstructorConstraint) {
-					// There is a generic parameter which has some requirements on input types.
-					// For now we don't support tracking actual array elements, so we can't validate that the requirements are fulfilled.
-					reflectionContext.RecordUnrecognizedPattern (
-						2060, string.Format (Resources.Strings.IL2060,
-							DiagnosticUtilities.GetMethodSignatureDisplayName (reflectionMethod)));
-				}
+			if (!AnalyzeGenericInstatiationTypeArray (genericParametersArray, ref reflectionContext, reflectionMethod, genericMethod.GenericParameters)) {
+				reflectionContext.RecordUnrecognizedPattern (
+					2060,
+					string.Format (Resources.Strings.IL2060, DiagnosticUtilities.GetMethodSignatureDisplayName (reflectionMethod)));
+			} else {
+				reflectionContext.RecordHandledPattern ();
 			}
 		}
 

@@ -51,7 +51,8 @@ namespace ILLink.RoslynAnalyzer
 				Resources.ResourceManager, typeof (Resources)),
 			DiagnosticCategory.SingleFile,
 			DiagnosticSeverity.Warning,
-			isEnabledByDefault: true);
+			isEnabledByDefault: true,
+			helpLinkUri: "https://docs.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/il3002");
 
 		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create (s_locationRule, s_getFilesRule, s_requiresAssemblyFilesRule);
 
@@ -120,6 +121,18 @@ namespace ILLink.RoslynAnalyzer
 					var eventRef = (IEventReferenceOperation) operationContext.Operation;
 					CheckCalledMember (operationContext, eventRef.Member, dangerousPatterns);
 				}, OperationKind.EventReference);
+
+				context.RegisterOperationAction (operationContext => {
+					var delegateCreation = (IDelegateCreationOperation) operationContext.Operation;
+					IMethodSymbol methodSymbol;
+					if (delegateCreation.Target is IMethodReferenceOperation methodRef)
+						methodSymbol = methodRef.Method;
+					else if (delegateCreation.Target is IAnonymousFunctionOperation lambda)
+						methodSymbol = lambda.Symbol;
+					else
+						return;
+					CheckCalledMember (operationContext, methodSymbol, dangerousPatterns);
+				}, OperationKind.DelegateCreation);
 
 				static void CheckCalledMember (
 					OperationAnalysisContext operationContext,
