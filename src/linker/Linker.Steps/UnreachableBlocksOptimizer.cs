@@ -581,7 +581,9 @@ namespace Mono.Linker.Steps
 					unknown = true;
 					return 0;
 				default:
-					throw new NotImplementedException (instruction.OpCode.StackBehaviourPop.ToString ());
+					Debug.Fail (instruction.OpCode.StackBehaviourPop.ToString ());
+					unknown = true;
+					return 0;
 				}
 
 				switch (instruction.OpCode.StackBehaviourPush) {
@@ -610,7 +612,9 @@ namespace Mono.Linker.Steps
 					unknown = true;
 					return 0;
 				default:
-					throw new NotImplementedException (instruction.OpCode.StackBehaviourPop.ToString ());
+					Debug.Fail (instruction.OpCode.StackBehaviourPush.ToString ());
+					unknown = true;
+					return 0;
 				}
 
 				return delta;
