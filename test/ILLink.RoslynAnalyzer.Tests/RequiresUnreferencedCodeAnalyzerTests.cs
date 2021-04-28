@@ -186,7 +186,7 @@ public class C
         return () => M1();
     }
 }";
-			// No fix available inside a lambda, requries manual code change since attribute cannot
+			// No fix available inside a lambda, requires manual code change since attribute cannot
 			// be applied
 			return VerifyRequiresUnreferencedCodeCodeFix (
 				src,

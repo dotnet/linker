@@ -15,14 +15,6 @@ namespace ILLink.CodeFix
 {
 	class CodeFixProviderOperations
 	{
-		[Flags]
-		public enum MemberTargets
-		{
-			Method = 0x0001,
-			Property = 0x0002,
-			Field = 0x0004,
-			All = Method | Property | Field
-		}
 
 		internal static async Task<Document> AddRequiresAttribute (
 			Document document,
@@ -73,24 +65,31 @@ namespace ILLink.CodeFix
 			return true;
 		}
 
-		internal static CSharpSyntaxNode? FindContainingMember (SyntaxNode node, MemberTargets targets)
+		[Flags]
+		public enum AttributeableParentTargets
+		{
+			Method = 0x0001,
+			Property = 0x0002,
+			Field = 0x0004,
+			Event = 0x0008,
+			All = Method | Property | Field | Event
+		}
+
+		internal static CSharpSyntaxNode? FindAttributableParent (SyntaxNode node, AttributeableParentTargets targets)
 		{
 			SyntaxNode? parentNode = node.Parent;
 			while (parentNode is not null) {
-				if (parentNode is LambdaExpressionSyntax) {
+				switch (parentNode) {
+				case LambdaExpressionSyntax:
 					return null;
-				} else if (targets.HasFlag (MemberTargets.Method)
-					&& (parentNode.IsKind (SyntaxKind.LocalFunctionStatement)
-					|| parentNode is BaseMethodDeclarationSyntax)) {
+				case LocalFunctionStatementSyntax or BaseMethodDeclarationSyntax when targets.HasFlag (AttributeableParentTargets.Method):
+				case PropertyDeclarationSyntax when targets.HasFlag (AttributeableParentTargets.Property):
+				case FieldDeclarationSyntax when targets.HasFlag (AttributeableParentTargets.Field):
+				case EventDeclarationSyntax when targets.HasFlag (AttributeableParentTargets.Event):
 					return (CSharpSyntaxNode) parentNode;
-				} else if (targets.HasFlag (MemberTargets.Property)
-					&& parentNode is PropertyDeclarationSyntax) {
-					return (CSharpSyntaxNode) parentNode;
-				} else if (targets.HasFlag (MemberTargets.Field)
-					&& parentNode is FieldDeclarationSyntax) {
-					return (CSharpSyntaxNode) parentNode;
-				} else {
+				default:
 					parentNode = parentNode.Parent;
+					break;
 				}
 			}
 			return null;

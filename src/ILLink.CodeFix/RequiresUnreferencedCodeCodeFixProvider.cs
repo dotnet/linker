@@ -41,7 +41,7 @@ namespace ILLink.CodeFix
 
 			SyntaxNode targetNode = root!.FindNode (diagnosticSpan);
 
-			CSharpSyntaxNode? declarationSyntax = CodeFixProviderOperations.FindContainingMember (targetNode, CodeFixProviderOperations.MemberTargets.Method);
+			CSharpSyntaxNode? declarationSyntax = CodeFixProviderOperations.FindAttributableParent (targetNode, CodeFixProviderOperations.AttributeableParentTargets.Method);
 
 			if (declarationSyntax is not null) {
 				var semanticModel = await context.Document

@@ -71,7 +71,8 @@ namespace System.Diagnostics.CodeAnalysis
 			string source,
 			string fixedSource,
 			DiagnosticResult[] baselineExpected,
-			DiagnosticResult[] fixedExpected)
+			DiagnosticResult[] fixedExpected,
+			int? numberOfIterations = null)
 		{
 			var test = new VerifyCSUSMwithRUC.Test {
 				TestCode = source + rucDef + usmDef,
@@ -82,6 +83,10 @@ namespace System.Diagnostics.CodeAnalysis
 						("/.editorconfig", SourceText.From (@$"
 is_global = true
 build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
+			if (numberOfIterations != null) {
+				test.NumberOfIncrementalIterations = numberOfIterations;
+				test.NumberOfFixAllIterations = numberOfIterations;
+			}
 			test.FixedState.ExpectedDiagnostics.AddRange (fixedExpected);
 			return test.RunAsync ();
 		}
@@ -90,7 +95,8 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 			string source,
 			string fixedSource,
 			DiagnosticResult[] baselineExpected,
-			DiagnosticResult[] fixedExpected)
+			DiagnosticResult[] fixedExpected,
+			int? numberOfIterations = null)
 		{
 			var test = new VerifyCSUSMwithRAF.Test {
 				TestCode = source + rafDef + usmDef,
@@ -101,6 +107,10 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 						("/.editorconfig", SourceText.From (@$"
 is_global = true
 build_property.{MSBuildPropertyOptionNames.EnableSingleFileAnalyzer} = true")));
+			if (numberOfIterations != null) {
+				test.NumberOfIncrementalIterations = numberOfIterations;
+				test.NumberOfFixAllIterations = numberOfIterations;
+			}
 			test.FixedState.ExpectedDiagnostics.AddRange (fixedExpected);
 			return test.RunAsync ();
 		}
@@ -370,7 +380,51 @@ class C
 		}
 
 		[Fact]
-		public async Task FixInConstructor ()
+		public async Task FixInLocalFunc ()
+		{
+			var src = @"
+using System;
+using System.Diagnostics.CodeAnalysis;
+
+public class C
+{
+    [RequiresUnreferencedCodeAttribute(""message"")]
+    public int M1() => 0;
+
+    Action M2()
+    {
+        void Wrapper () => M1();
+        return Wrapper;
+    }
+}";
+			var fix = @"
+using System;
+using System.Diagnostics.CodeAnalysis;
+
+public class C
+{
+    [RequiresUnreferencedCodeAttribute(""message"")]
+    public int M1() => 0;
+
+    Action M2()
+    {
+        [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute(""Trimming"", ""IL2026:Methods annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code"", Justification = ""<Pending>"")] void Wrapper () => M1();
+        return Wrapper;
+    }
+}";
+			// Roslyn currently doesn't simplify the attribute name properly, see https://github.com/dotnet/roslyn/issues/52039
+			await VerifyUnconditionalSuppressMessageCodeFixWithRUC (
+				src,
+				fix,
+				baselineExpected: new[] {
+					// /0/Test0.cs(12,28): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. message.
+					VerifyCSUSMwithRUC.Diagnostic().WithSpan(12, 28, 12, 32).WithArguments("C.M1()", "message", "")
+				},
+				fixedExpected: Array.Empty<DiagnosticResult> ());
+		}
+
+		[Fact]
+		public async Task FixInCtor ()
 		{
 			var src = @"
 using System;
@@ -401,6 +455,56 @@ public class C
 				baselineExpected: new[] {
 					// /0/Test0.cs(10,15): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. message.
 					VerifyCSUSMwithRUC.Diagnostic().WithSpan(10, 20, 10, 24).WithArguments("C.M1()", "message", "")
+				},
+				fixedExpected: Array.Empty<DiagnosticResult> ());
+		}
+
+		[Fact]
+		public async Task FixInEvent ()
+		{
+			var src = @"
+using System;
+using System.Diagnostics.CodeAnalysis;
+
+public class C
+{
+    [RequiresUnreferencedCodeAttribute(""message"")]
+    public int M1() => 0;
+
+    public event EventHandler E1
+    {
+        add
+        {
+            var a = M1();
+        }
+        remove { }
+    }
+}";
+			var fix = @"
+using System;
+using System.Diagnostics.CodeAnalysis;
+
+public class C
+{
+    [RequiresUnreferencedCodeAttribute(""message"")]
+    public int M1() => 0;
+
+    [UnconditionalSuppressMessage(""Trimming"", ""IL2026:Methods annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code"", Justification = ""<Pending>"")]
+    public event EventHandler E1
+    {
+        add
+        {
+            var a = M1();
+        }
+        remove { }
+    }
+}";
+			await VerifyUnconditionalSuppressMessageCodeFixWithRUC (
+				src,
+				fix,
+				baselineExpected: new[] {
+					// /0/Test0.cs(14,21): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. message.
+					VerifyCSUSMwithRUC.Diagnostic().WithSpan(14, 21, 14, 25).WithArguments("C.M1()", "message", "")
 				},
 				fixedExpected: Array.Empty<DiagnosticResult> ());
 		}
