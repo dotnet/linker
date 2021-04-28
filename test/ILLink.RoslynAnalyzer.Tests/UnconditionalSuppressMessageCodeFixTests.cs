@@ -5,17 +5,17 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
+using ILLink.CodeFix;
+using Microsoft.CodeAnalysis.CodeFixes;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Testing;
 using Microsoft.CodeAnalysis.Text;
 using Xunit;
-using ILLink.CodeFix;
-using Microsoft.CodeAnalysis.Diagnostics;
-using Microsoft.CodeAnalysis.CodeFixes;
-using VerifyCSUSMwithRUC = ILLink.RoslynAnalyzer.Tests.CSharpCodeFixVerifier<
-	ILLink.RoslynAnalyzer.RequiresUnreferencedCodeAnalyzer,
-	ILLink.CodeFix.UnconditionalSuppressMessageCodeFixProvider>;
 using VerifyCSUSMwithRAF = ILLink.RoslynAnalyzer.Tests.CSharpCodeFixVerifier<
 	ILLink.RoslynAnalyzer.RequiresAssemblyFilesAnalyzer,
+	ILLink.CodeFix.UnconditionalSuppressMessageCodeFixProvider>;
+using VerifyCSUSMwithRUC = ILLink.RoslynAnalyzer.Tests.CSharpCodeFixVerifier<
+	ILLink.RoslynAnalyzer.RequiresUnreferencedCodeAnalyzer,
 	ILLink.CodeFix.UnconditionalSuppressMessageCodeFixProvider>;
 
 namespace ILLink.RoslynAnalyzer.Tests
@@ -172,7 +172,7 @@ public class E
 }
 ";
 			await VerifyUnconditionalSuppressMessageCodeFixWithRUC (
-				test, 
+				test,
 				fixtest,
 				baselineExpected: new[] {
 				// /0/Test0.cs(7,17): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. message.
