@@ -18,6 +18,9 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 
 			TestMethodWithValueParam ();
 			TestMethodWithReferenceParam ();
+			TestMethodWithComplexParams_1 ();
+			TestMethodWithComplexParams_2 ();
+			TestMethodWithComplexParams_3 (3);
 			instance.TestMethodWithMultipleInParamsInstance ();
 			// TestMethodWithOutParam ();
 			TestMethodWithRefParam ();
@@ -68,6 +71,65 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 
 		[Kept] static void MethodWithReferenceParam_Reached () { }
 		static void MethodWithReferenceParam_NeverReached () { }
+
+		[Kept]
+		[ExpectedInstructionSequence (new[] {
+			"ldnull",
+			"ldnull",
+			"call",
+			"pop",
+			"ldc.i4.1",
+			"ret"
+		})]
+		static int TestMethodWithComplexParams_1 ()
+		{
+			if (StaticMethod (null, null))
+				return 1;
+			else
+				return 2;
+		}
+
+		[Kept]
+		static bool StaticMethod (object o, int[] array)
+		{
+			return true;
+		}
+
+		[Kept]
+		[ExpectedInstructionSequence (new[] {
+			"ldc.i4.1",
+			"newobj",
+			"box",
+			"ldc.i4.0",
+			"newarr",
+			"call",
+			"pop",
+			"ldc.i4.1",
+			"ret"
+		})]
+		static int TestMethodWithComplexParams_2 ()
+		{
+			int? v = 1;
+			if (StaticMethod (v, new int[0]))
+				return 1;
+			else
+				return 2;
+		}
+
+		[Kept]
+		[ExpectBodyModified]
+		static void TestMethodWithComplexParams_3 (int arg)
+		{
+			int value = 1;
+			int? ovalue = arg;
+			if (StaticMethod (arg == 11 ? 'a' : 'b', new int[] { arg, arg++, value = arg, int.Parse (new TestStruct ().ToString ()), ovalue ?? arg }))
+				TestMethodWithComplexParams_3_Used ();
+			else
+				TestMethodWithComplexParams_3_Unused ();
+		}
+
+		[Kept] static void TestMethodWithComplexParams_3_Used () { }
+		static void TestMethodWithComplexParams_3_Unused () { }
 
 		[Kept]
 		[ExpectBodyModified]
