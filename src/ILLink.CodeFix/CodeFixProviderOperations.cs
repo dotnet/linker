@@ -36,8 +36,7 @@ namespace ILLink.CodeFix
 			var name = semanticModel.GetSymbolInfo (targetNode).Symbol?.Name;
 			SyntaxNode[] attrArgs;
 			if (string.IsNullOrEmpty (name) || HasPublicAccessibility (containingSymbol)) {
-
-				attrArgs = new[] { isNamedArgument ? generator.AttributeArgument ("Message", generator.LiteralExpression ("")) : generator.AttributeArgument (generator.LiteralExpression ("")) };
+				attrArgs = Array.Empty<SyntaxNode> ();
 			} else {
 				attrArgs = new[] { isNamedArgument ? generator.AttributeArgument ("Message", generator.LiteralExpression ($"Calls {name}")) : generator.AttributeArgument (generator.LiteralExpression ($"Calls {name}")) };
 			}
