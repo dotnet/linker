@@ -64,6 +64,7 @@ namespace ILLink.Tasks.Tests
 				RexcepFilePath = new TaskItem ("rexcep.h"),
 				ILLinkTrimXmlFilePath = new TaskItem ("Test.ILLink.Descriptors.Combined.xml"),
 				DefineConstants = new TaskItem[] {
+					new TaskItem("FOR_ILLINK"),
 					new TaskItem("_TEST"),
 					new TaskItem("FEATURE_ON"),
 					new TaskItem("FEATURE_BOTH")
