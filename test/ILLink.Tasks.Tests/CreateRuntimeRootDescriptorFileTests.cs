@@ -48,9 +48,17 @@ namespace ILLink.Tasks.Tests
 			File.WriteAllText ("namespace.h",
 				"#define g_TestNS \"TestNS\"" + Environment.NewLine);
 
-			File.WriteAllText ("cortypeinfo.h", "");
+			File.WriteAllLines ("cortypeinfo.h", new string[] { });
 
-			File.WriteAllText ("rexcep.h", "");
+			File.WriteAllLines ("rexcep.h", new string[] {
+				"DEFINE_EXCEPTION(g_TestNS, TestAlwaysException, false, C)",
+				"#ifdef FEATURE_ON",
+				"DEFINE_EXCEPTION(g_TestNS, TestFeatureOnException, false, C)",
+				"#endif",
+				"#ifdef FEATURE_OFF",
+				"DEFINE_EXCEPTION(g_TestNS, TestFeatureOffException, false, C)",
+				"#endif"
+				});
 
 			XElement existingAssembly = new XElement ("assembly", new XAttribute ("fullname", "testassembly"),
 					new XComment ("Existing content"));
@@ -84,7 +92,11 @@ namespace ILLink.Tasks.Tests
 						new XElement ("method", new XAttribute ("name", "TestMethodIfOn")),
 						new XElement ("method", new XAttribute ("name", "TestMethodIfNotBoth")),
 						new XElement ("method", new XAttribute ("name", "TestMethodIfNotBothForILLink")),
-						new XElement ("method", new XAttribute ("name", "TestMethodForILLink")))
+						new XElement ("method", new XAttribute ("name", "TestMethodForILLink"))),
+					new XElement ("type", new XAttribute ("fullname", "TestNS.TestAlwaysException"),
+						new XElement ("method", new XAttribute ("name", ".ctor"))),
+					new XElement ("type", new XAttribute ("fullname", "TestNS.TestFeatureOnException"),
+						new XElement ("method", new XAttribute ("name", ".ctor")))
 					)).ToString ();
 			Assert.Equal (expectedXml, output.Root.ToString ());
 		}
