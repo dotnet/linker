@@ -26,7 +26,7 @@ namespace ILLink.CodeFix
 
 		public sealed override async Task RegisterCodeFixesAsync (CodeFixContext context)
 		{
-			await BaseRegisterCodeFixesAsync (context, CodeFixProviderOperations.AttributeableParentTargets.All, FullyQualifiedUnconditionalSuppressMessageAttribute, s_title);
+			await BaseRegisterCodeFixesAsync (context, AttributeableParentTargets.All, FullyQualifiedUnconditionalSuppressMessageAttribute, s_title);
 		}
 
 		internal override SyntaxNode[] SetAttributeArguments (SemanticModel semanticModel, SyntaxNode targetNode, CSharpSyntaxNode containingDecl, SyntaxGenerator generator, Diagnostic diagnostic)
