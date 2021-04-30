@@ -394,7 +394,11 @@ namespace Mono.Linker.Steps
 						break;
 					}
 
-					// Rewrite any arguments pushed to stack to nop to allow possible body reduction into constant result
+					//
+					// Do simple arguments stack removal by replacing argument expressions with nops to hide
+					// them for the constant evaluator. For cases which require full stack understanding the
+					// logic won't work and will leave more opcodes on the stack and constant won't be propagated
+					//
 					int depth = md.Parameters.Count;
 					if (!md.IsStatic)
 						++depth;

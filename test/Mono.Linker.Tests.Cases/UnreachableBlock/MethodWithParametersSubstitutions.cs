@@ -21,6 +21,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 			TestMethodWithComplexParams_1 ();
 			TestMethodWithComplexParams_2 ();
 			TestMethodWithComplexParams_3 (3);
+			TestMethodWithComplexParams_4 ();
 			instance.TestMethodWithMultipleInParamsInstance ();
 			// TestMethodWithOutParam ();
 			TestMethodWithRefParam ();
@@ -130,6 +131,28 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 
 		[Kept] static void TestMethodWithComplexParams_3_Used () { }
 		static void TestMethodWithComplexParams_3_Unused () { }
+
+		[Kept]
+		static void TestMethodWithComplexParams_4 ()
+		{
+			if (TestMethodWithComplexParams_4_Propagate (3))
+				TestMethodWithComplexParams_4_Used ();
+			else
+				TestMethodWithComplexParams_4_Unused ();
+		}
+
+		[Kept]
+		static bool TestMethodWithComplexParams_4_Propagate (int arg)
+		{
+			//
+			// This body should propagate 'true' return value but
+			// the current implementation does only simple stack backtracking and does not track any jumps
+			// 
+			return StaticMethod (arg == 11 ? new object () : new object (), null);
+		}
+
+		[Kept] static void TestMethodWithComplexParams_4_Used () { }
+		[Kept] static void TestMethodWithComplexParams_4_Unused () { }
 
 		[Kept]
 		[ExpectBodyModified]
