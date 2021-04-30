@@ -5,7 +5,6 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.Reflection
 {
-	[SetupLinkerArgument ("--feature", "System.Diagnostics.Debugger.IsSupported", "false")]
 	public class ParametersUsedViaReflection
 	{
 		public static void Main ()
@@ -53,7 +52,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			}
 
 			[Kept]
-			public static void CalledDirectly2<[RemovedNameValue]LongGenericName> ([RemovedNameValue] int firstArg)
+			public static void CalledDirectly2</*[RemovedNameValue]*/LongGenericName> ([RemovedNameValue] int firstArg)
 			{
 			}
 		}
@@ -64,7 +63,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		public class GenericClass2<[RemovedNameValue]TRKey>
+		public class GenericClass2</*[RemovedNameValue]*/TRKey>
 		{
 			[Kept]
 			public GenericClass2 ()

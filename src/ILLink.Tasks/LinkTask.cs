@@ -415,6 +415,8 @@ namespace ILLink.Tasks
 				}
 			}
 
+			bool debugger_supported = true;
+
 			if (FeatureSettings != null) {
 				foreach (var featureSetting in FeatureSettings) {
 					var feature = featureSetting.ItemSpec;
@@ -422,8 +424,14 @@ namespace ILLink.Tasks
 					if (String.IsNullOrEmpty (featureValue))
 						throw new ArgumentException ("feature settings require \"Value\" metadata");
 					args.Append ("--feature ").Append (feature).Append (' ').AppendLine (featureValue);
+
+					if (feature == "System.Diagnostics.Debugger.IsSupported" && bool.TryParse (featureValue, out bool fValue))
+						debugger_supported = fValue;
 				}
 			}
+
+			if (debugger_supported)
+				args.AppendLine ("--keep-metadata all");
 
 			if (_removeSymbols == false)
 				args.AppendLine ("-b");

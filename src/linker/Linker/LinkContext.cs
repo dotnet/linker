@@ -94,6 +94,8 @@ namespace Mono.Linker
 			set { _outputDirectory = value; }
 		}
 
+		public MetadataTrimming MetadataTrimming { get; set; }
+
 		public AssemblyAction TrimAction { get; set; }
 
 		public AssemblyAction DefaultAction { get; set; }

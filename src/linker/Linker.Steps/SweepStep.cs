@@ -41,7 +41,6 @@ namespace Mono.Linker.Steps
 	{
 		AssemblyDefinition[] assemblies;
 		readonly bool sweepSymbols;
-		bool sweep_debug_support;
 		readonly HashSet<AssemblyDefinition> BypassNGenToSave = new HashSet<AssemblyDefinition> ();
 
 		public SweepStep (bool sweepSymbols = true)
@@ -51,8 +50,6 @@ namespace Mono.Linker.Steps
 
 		protected override void Process ()
 		{
-			sweep_debug_support = Context.HasFeatureValue (FeatureSettings.DebuggerIsSupported, false);
-
 			// To keep facades, scan all references so that even unused facades are kept
 			assemblies = Context.KeepTypeForwarderOnlyAssemblies ?
 				Context.GetReferencedAssemblies ().ToArray () : Annotations.GetAssemblies ().ToArray ();
@@ -279,9 +276,9 @@ namespace Mono.Linker.Steps
 			return Annotations.IsMarked (assembly.MainModule);
 		}
 
-		bool CanSweepNamesForMember (IMemberDefinition member)
+		bool CanSweepNamesForMember (IMemberDefinition member, MetadataTrimming metadataTrimming)
 		{
-			return sweep_debug_support && !Annotations.IsReflectionUsed (member);
+			return (Context.MetadataTrimming & metadataTrimming) != 0 && !Annotations.IsReflectionUsed (member);
 		}
 
 		protected virtual void RemoveAssembly (AssemblyDefinition assembly)
@@ -324,7 +321,7 @@ namespace Mono.Linker.Steps
 				SweepCustomAttributes (type);
 
 			if (type.HasGenericParameters)
-				SweepGenericParameters (type.GenericParameters, CanSweepNamesForMember (type));
+				SweepGenericParameters (type.GenericParameters);
 
 			if (type.HasProperties)
 				SweepCustomAttributeCollection (type.Properties);
@@ -362,12 +359,10 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		protected void SweepGenericParameters (Collection<GenericParameter> genericParameters, bool sweepNames)
+		protected void SweepGenericParameters (Collection<GenericParameter> genericParameters)
 		{
 			foreach (var gp in genericParameters) {
 				SweepCustomAttributes (gp);
-				if (sweepNames)
-					gp.Name = null;
 
 				if (gp.HasConstraints)
 					SweepCustomAttributeCollection (gp.Constraints);
@@ -452,15 +447,15 @@ namespace Mono.Linker.Steps
 				SweepDebugInfo (methods);
 
 			foreach (var method in methods) {
-				bool sweepNames = CanSweepNamesForMember (method);
-
 				if (method.HasGenericParameters)
-					SweepGenericParameters (method.GenericParameters, sweepNames);
+					SweepGenericParameters (method.GenericParameters);
 
 				SweepCustomAttributes (method.MethodReturnType);
 
 				if (!method.HasParameters)
 					continue;
+
+				bool sweepNames = CanSweepNamesForMember (method, MetadataTrimming.ParameterName);
 
 				foreach (var parameter in method.Parameters) {
 					if (sweepNames)
