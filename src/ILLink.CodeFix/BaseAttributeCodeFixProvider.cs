@@ -39,7 +39,7 @@ namespace ILLink.CodeFix
 				var document = context.Document;
 				var editor = new SyntaxEditor (root, document.Project.Solution.Workspace);
 				var generator = editor.Generator;
-				var attrArgs = SetAttributeArguments (semanticModel, targetNode, declarationSyntax, generator, diagnostic);
+				var attrArgs = GetAttributeArguments (semanticModel, targetNode, declarationSyntax, generator, diagnostic);
 
 				// Register a code action that will invoke the fix.
 				context.RegisterCodeFix (
@@ -106,7 +106,7 @@ namespace ILLink.CodeFix
 			return null;
 		}
 
-		internal abstract SyntaxNode[] SetAttributeArguments (SemanticModel semanticModel, SyntaxNode targetNode, CSharpSyntaxNode declarationSyntax, SyntaxGenerator generator, Diagnostic diagnostic);
+		internal abstract SyntaxNode[] GetAttributeArguments (SemanticModel semanticModel, SyntaxNode targetNode, CSharpSyntaxNode declarationSyntax, SyntaxGenerator generator, Diagnostic diagnostic);
 
 		internal static bool HasPublicAccessibility (IMethodSymbol? m)
 		{

@@ -24,12 +24,12 @@ namespace ILLink.CodeFix
 		public sealed override ImmutableArray<string> FixableDiagnosticIds
 			=> ImmutableArray.Create (RequiresUnreferencedCodeAnalyzer.DiagnosticId, RequiresAssemblyFilesAnalyzer.IL3000, RequiresAssemblyFilesAnalyzer.IL3001, RequiresAssemblyFilesAnalyzer.IL3002);
 
-		public sealed override async Task RegisterCodeFixesAsync (CodeFixContext context)
+		public sealed override Task RegisterCodeFixesAsync (CodeFixContext context)
 		{
-			await BaseRegisterCodeFixesAsync (context, AttributeableParentTargets.All, FullyQualifiedUnconditionalSuppressMessageAttribute, s_title);
+			return BaseRegisterCodeFixesAsync (context, AttributeableParentTargets.All, FullyQualifiedUnconditionalSuppressMessageAttribute, s_title);
 		}
 
-		internal override SyntaxNode[] SetAttributeArguments (SemanticModel semanticModel, SyntaxNode targetNode, CSharpSyntaxNode containingDecl, SyntaxGenerator generator, Diagnostic diagnostic)
+		internal override SyntaxNode[] GetAttributeArguments (SemanticModel semanticModel, SyntaxNode targetNode, CSharpSyntaxNode containingDecl, SyntaxGenerator generator, Diagnostic diagnostic)
 		{
 			// UnconditionalSuppressMessage("Rule Category", "Rule Id", Justification = "<Pending>")
 			var category = generator.LiteralExpression (diagnostic.Descriptor.Category);

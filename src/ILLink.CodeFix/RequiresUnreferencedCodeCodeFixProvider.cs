@@ -27,7 +27,7 @@ namespace ILLink.CodeFix
 			await BaseRegisterCodeFixesAsync (context, AttributeableParentTargets.Method, RequiresUnreferencedCodeAnalyzer.FullyQualifiedRequiresUnreferencedCodeAttribute, s_title);
 		}
 
-		internal override SyntaxNode[] SetAttributeArguments (SemanticModel semanticModel, SyntaxNode targetNode, CSharpSyntaxNode containingDecl, SyntaxGenerator generator, Diagnostic diagnostic)
+		internal override SyntaxNode[] GetAttributeArguments (SemanticModel semanticModel, SyntaxNode targetNode, CSharpSyntaxNode containingDecl, SyntaxGenerator generator, Diagnostic diagnostic)
 		{
 			var containingSymbol = (IMethodSymbol?) semanticModel.GetDeclaredSymbol (containingDecl);
 			var name = semanticModel.GetSymbolInfo (targetNode).Symbol?.Name;

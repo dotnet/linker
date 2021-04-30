@@ -2,20 +2,11 @@
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
-using VerifyCS = ILLink.RoslynAnalyzer.Tests.CSharpAnalyzerVerifier<
-	ILLink.RoslynAnalyzer.RequiresAssemblyFilesAnalyzer>;
 
 namespace ILLink.RoslynAnalyzer.Tests
 {
 	public class RequiresAssemblyFilesAnalyzerTests
 	{
-		static Task VerifyRequiresAssemblyFilesAnalyzer (string source, params DiagnosticResult[] expected)
-		{
-			return VerifyCS.VerifyAnalyzerAsync (source,
-				TestCaseUtils.UseMSBuildProperties (MSBuildPropertyOptionNames.EnableSingleFileAnalyzer),
-				expected);
-		}
-
 		[Fact]
 		public Task SimpleDiagnosticOnEvent ()
 		{
@@ -33,9 +24,11 @@ class C
 		var handler = E;
 	}
 }";
-			return VerifyRequiresAssemblyFilesAnalyzer (TestRequiresAssemblyFieldsOnEvent,
-				// (12,17): warning IL3002: Using member 'C.E' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (12, 17, 12, 18).WithArguments ("C.E", "", ""));
+			return TestCaseUtils.VerifyDiagnostic<RequiresAssemblyFilesAnalyzer> (TestRequiresAssemblyFieldsOnEvent,
+				baselineExpected: new[] {
+					// (12,17): warning IL3002: Using member 'C.E' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
+					TestCaseUtils.GetDiagnosticResult<RequiresAssemblyFilesAnalyzer>().WithSpan (12, 17, 12, 18).WithArguments ("C.E", "", "")
+				});
 		}
 
 		[Fact]
@@ -56,9 +49,11 @@ class C
 		M1();
 	}
 }";
-			return VerifyRequiresAssemblyFilesAnalyzer (TestRequiresAssemblyFilesOnMethod,
-				// (13,3): warning IL3002: Using member 'C.M1()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (13, 3, 13, 7).WithArguments ("C.M1()", "", ""));
+			return TestCaseUtils.VerifyDiagnostic<RequiresAssemblyFilesAnalyzer> (TestRequiresAssemblyFilesOnMethod,
+				baselineExpected: new[] {
+					// (13,3): warning IL3002: Using member 'C.M1()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
+					TestCaseUtils.GetDiagnosticResult<RequiresAssemblyFilesAnalyzer>().WithSpan (13, 3, 13, 7).WithArguments ("C.M1()", "", "")
+				});
 		}
 
 		[Fact]
@@ -79,11 +74,13 @@ class C
 		List<bool> b = new List<bool> { P };
 	}
 }";
-			return VerifyRequiresAssemblyFilesAnalyzer (TestRequiresAssemblyFilesOnProperty,
-				// (11,3): warning IL3002: Using member 'C.P' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (12, 3, 12, 4).WithArguments ("C.P", "", ""),
-				// (13,12): warning IL3002: Using member 'C.P' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (13, 35, 13, 36).WithArguments ("C.P", "", ""));
+			return TestCaseUtils.VerifyDiagnostic<RequiresAssemblyFilesAnalyzer> (TestRequiresAssemblyFilesOnProperty,
+				baselineExpected: new[] {
+					// (11,3): warning IL3002: Using member 'C.P' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
+					TestCaseUtils.GetDiagnosticResult<RequiresAssemblyFilesAnalyzer>().WithSpan (12, 3, 12, 4).WithArguments ("C.P", "", ""),
+					// (13,12): warning IL3002: Using member 'C.P' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
+					TestCaseUtils.GetDiagnosticResult<RequiresAssemblyFilesAnalyzer>().WithSpan (13, 35, 13, 36).WithArguments ("C.P", "", "")
+				});
 		}
 
 		[Fact]
@@ -115,9 +112,11 @@ class C
 		P = false;
 	}
 }";
-			return VerifyRequiresAssemblyFilesAnalyzer (TestRequiresAssemblyFilesOnMethodInsideProperty,
-				// (24,3): warning IL3002: Using member 'C.P' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (24, 3, 24, 4).WithArguments ("C.P", "", ""));
+			return TestCaseUtils.VerifyDiagnostic<RequiresAssemblyFilesAnalyzer> (TestRequiresAssemblyFilesOnMethodInsideProperty,
+				baselineExpected: new[] {
+					// (24,3): warning IL3002: Using member 'C.P' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
+					TestCaseUtils.GetDiagnosticResult<RequiresAssemblyFilesAnalyzer>().WithSpan (24, 3, 24, 4).WithArguments ("C.P", "", "")
+				});
 		}
 
 		[Fact]
@@ -138,9 +137,11 @@ class C
 		M1();
 	}
 }";
-			return VerifyRequiresAssemblyFilesAnalyzer (TestRequiresAssemblyFilesWithMessageAndUrl,
-				// (13,3): warning IL3002: Using member 'C.M1()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app. Message from attribute. https://helpurl
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (13, 3, 13, 7).WithArguments ("C.M1()", " Message from attribute.", " https://helpurl"));
+			return TestCaseUtils.VerifyDiagnostic<RequiresAssemblyFilesAnalyzer> (TestRequiresAssemblyFilesWithMessageAndUrl,
+				baselineExpected: new[] {
+					// (13,3): warning IL3002: Using member 'C.M1()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app. Message from attribute. https://helpurl
+					TestCaseUtils.GetDiagnosticResult<RequiresAssemblyFilesAnalyzer>().WithSpan (13, 3, 13, 7).WithArguments ("C.M1()", " Message from attribute.", " https://helpurl")
+				});
 		}
 
 		[Fact]
@@ -161,9 +162,11 @@ class C
 		M1();
 	}
 }";
-			return VerifyRequiresAssemblyFilesAnalyzer (TestRequiresAssemblyFilesWithMessageAndUrl,
-				// (13,3): warning IL3002: Using member 'C.M1()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app. https://helpurl
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (13, 3, 13, 7).WithArguments ("C.M1()", "", " https://helpurl"));
+			return TestCaseUtils.VerifyDiagnostic<RequiresAssemblyFilesAnalyzer> (TestRequiresAssemblyFilesWithMessageAndUrl,
+				baselineExpected: new[] {
+					// (13,3): warning IL3002: Using member 'C.M1()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app. https://helpurl
+					TestCaseUtils.GetDiagnosticResult<RequiresAssemblyFilesAnalyzer>().WithSpan (13, 3, 13, 7).WithArguments ("C.M1()", "", " https://helpurl")
+				});
 		}
 
 		[Fact]
@@ -177,7 +180,7 @@ class C
 	[RequiresAssemblyFiles]
 	void M() { }
 }";
-			return VerifyRequiresAssemblyFilesAnalyzer (TestNoDiagnosticIfMethodNotCalled);
+			return TestCaseUtils.VerifyDiagnostic<RequiresAssemblyFilesAnalyzer> (TestNoDiagnosticIfMethodNotCalled, Array.Empty<DiagnosticResult> ());
 		}
 
 		[Fact]
@@ -204,9 +207,11 @@ class C
 	{
 	}
 }";
-			return VerifyRequiresAssemblyFilesAnalyzer (TestNoDiagnosticIsProducedIfCallerIsAnnotated,
-				// (8,3): warning IL3002: Using member 'C.M2()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app. Warn from M2.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (8, 3, 8, 7).WithArguments ("C.M2()", " Warn from M2.", ""));
+			return TestCaseUtils.VerifyDiagnostic<RequiresAssemblyFilesAnalyzer> (TestNoDiagnosticIsProducedIfCallerIsAnnotated,
+				baselineExpected: new[] {
+					// (8,3): warning IL3002: Using member 'C.M2()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app. Warn from M2.
+					TestCaseUtils.GetDiagnosticResult<RequiresAssemblyFilesAnalyzer>().WithSpan (8, 3, 8, 7).WithArguments ("C.M2()", " Warn from M2.", "")
+				});
 		}
 
 		[Fact]
@@ -219,9 +224,11 @@ class C
     public string M() => Assembly.GetExecutingAssembly().Location;
 }";
 
-			return VerifyRequiresAssemblyFilesAnalyzer (src,
-				// (5,26): warning IL3000: 'System.Reflection.Assembly.Location' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3000).WithSpan (5, 26, 5, 66).WithArguments ("System.Reflection.Assembly.Location"));
+			return TestCaseUtils.VerifyDiagnostic<RequiresAssemblyFilesAnalyzer> (src,
+				baselineExpected: new[] {
+					// (5,26): warning IL3000: 'System.Reflection.Assembly.Location' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'.
+					CSharpAnalyzerVerifier<RequiresAssemblyFilesAnalyzer>.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3000).WithSpan (5, 26, 5, 66).WithArguments ("System.Reflection.Assembly.Location")
+				});
 		}
 
 		[Fact]
@@ -240,9 +247,11 @@ class C
         // _ = a.EscapedCodeBase;
     }
 }";
-			return VerifyRequiresAssemblyFilesAnalyzer (src,
-				// (8,13): warning IL3000: 'System.Reflection.Assembly.Location' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3000).WithSpan (8, 13, 8, 23).WithArguments ("System.Reflection.Assembly.Location")
+			return TestCaseUtils.VerifyDiagnostic<RequiresAssemblyFilesAnalyzer> (src,
+				baselineExpected: new[] {
+					// (8,13): warning IL3000: 'System.Reflection.Assembly.Location' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'.
+					CSharpAnalyzerVerifier<RequiresAssemblyFilesAnalyzer>.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3000).WithSpan (8, 13, 8, 23).WithArguments ("System.Reflection.Assembly.Location")
+				}
 			);
 		}
 
@@ -260,12 +269,13 @@ class C
         _ = a.GetFiles();
     }
 }";
-			return VerifyRequiresAssemblyFilesAnalyzer (src,
-				// (8,13): warning IL3001: Assemblies embedded in a single-file app cannot have additional files in the manifest.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3001).WithSpan (8, 13, 8, 41).WithArguments ("System.Reflection.Assembly.GetFile(string)"),
-				// (9,13): warning IL3001: Assemblies embedded in a single-file app cannot have additional files in the manifest.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3001).WithSpan (9, 13, 9, 25).WithArguments ("System.Reflection.Assembly.GetFiles()")
-				);
+			return TestCaseUtils.VerifyDiagnostic<RequiresAssemblyFilesAnalyzer> (src,
+				baselineExpected: new[] {
+					// (8,13): warning IL3001: Assemblies embedded in a single-file app cannot have additional files in the manifest.
+					CSharpAnalyzerVerifier<RequiresAssemblyFilesAnalyzer>.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3001).WithSpan (8, 13, 8, 41).WithArguments ("System.Reflection.Assembly.GetFile(string)"),
+					// (9,13): warning IL3001: Assemblies embedded in a single-file app cannot have additional files in the manifest.
+					CSharpAnalyzerVerifier<RequiresAssemblyFilesAnalyzer>.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3001).WithSpan (9, 13, 9, 25).WithArguments ("System.Reflection.Assembly.GetFiles()")
+				});
 		}
 
 		[Fact]
@@ -282,12 +292,13 @@ class C
         _ = a.EscapedCodeBase;
     }
 }";
-			return VerifyRequiresAssemblyFilesAnalyzer (src,
-				// (8,13): warning IL3000: 'System.Reflection.AssemblyName.CodeBase' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3000).WithSpan (8, 13, 8, 23).WithArguments ("System.Reflection.AssemblyName.CodeBase"),
-				// (9,13): warning IL3000: 'System.Reflection.AssemblyName.EscapedCodeBase' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3000).WithSpan (9, 13, 9, 30).WithArguments ("System.Reflection.AssemblyName.EscapedCodeBase")
-				);
+			return TestCaseUtils.VerifyDiagnostic<RequiresAssemblyFilesAnalyzer> (src,
+				baselineExpected: new[] {
+					// (8,13): warning IL3000: 'System.Reflection.AssemblyName.CodeBase' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'.
+					CSharpAnalyzerVerifier<RequiresAssemblyFilesAnalyzer>.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3000).WithSpan (8, 13, 8, 23).WithArguments ("System.Reflection.AssemblyName.CodeBase"),
+					// (9,13): warning IL3000: 'System.Reflection.AssemblyName.EscapedCodeBase' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'.
+					CSharpAnalyzerVerifier<RequiresAssemblyFilesAnalyzer>.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3000).WithSpan (9, 13, 9, 30).WithArguments ("System.Reflection.AssemblyName.EscapedCodeBase")
+				});
 		}
 
 		[Fact]
@@ -306,12 +317,13 @@ class C
         _ = a.GetFiles();
     }
 }";
-			return VerifyRequiresAssemblyFilesAnalyzer (src,
-				// (8,13): warning IL3000: 'System.Reflection.Assembly.Location' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3000).WithSpan (8, 13, 8, 23).WithArguments ("System.Reflection.Assembly.Location"),
-				// (9,13): warning IL3001: Assemblies embedded in a single-file app cannot have additional files in the manifest.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3001).WithSpan (9, 13, 9, 25).WithArguments ("System.Reflection.Assembly.GetFiles()")
-				);
+			return TestCaseUtils.VerifyDiagnostic<RequiresAssemblyFilesAnalyzer> (src,
+				baselineExpected: new[] {
+					// (8,13): warning IL3000: 'System.Reflection.Assembly.Location' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'.
+					CSharpAnalyzerVerifier<RequiresAssemblyFilesAnalyzer>.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3000).WithSpan (8, 13, 8, 23).WithArguments ("System.Reflection.Assembly.Location"),
+					// (9,13): warning IL3001: Assemblies embedded in a single-file app cannot have additional files in the manifest.
+					CSharpAnalyzerVerifier<RequiresAssemblyFilesAnalyzer>.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3001).WithSpan (9, 13, 9, 25).WithArguments ("System.Reflection.Assembly.GetFiles()")
+				});
 		}
 
 		[Fact]
@@ -328,7 +340,7 @@ class C
 }";
 			// If 'PublishSingleFile' is not set to true, no diagnostics should be produced by the analyzer. This will
 			// effectively verify that the number of produced diagnostics matches the number of expected ones (zero).
-			return VerifyCS.VerifyAnalyzerAsync (src);
+			return CSharpAnalyzerVerifier<RequiresAssemblyFilesAnalyzer>.VerifyAnalyzerAsync (src);
 		}
 
 		[Fact]
@@ -350,7 +362,7 @@ class C
     }
 }";
 
-			return VerifyRequiresAssemblyFilesAnalyzer (src);
+			return TestCaseUtils.VerifyDiagnostic<RequiresAssemblyFilesAnalyzer> (src, Array.Empty<DiagnosticResult> ());
 		}
 
 		[Fact]
@@ -371,9 +383,11 @@ class C
     }
 }";
 
-			return VerifyRequiresAssemblyFilesAnalyzer (src,
-				// (6,50): warning IL3002: Using member 'C.InitC()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (6, 50, 6, 55).WithArguments ("C.InitC()", "", ""));
+			return TestCaseUtils.VerifyDiagnostic<RequiresAssemblyFilesAnalyzer> (src,
+				baselineExpected: new[] {
+					// (6,50): warning IL3002: Using member 'C.InitC()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
+					TestCaseUtils.GetDiagnosticResult<RequiresAssemblyFilesAnalyzer>().WithSpan (6, 50, 6, 55).WithArguments ("C.InitC()", "", "")
+				});
 		}
 
 		[Fact]
@@ -393,11 +407,13 @@ class C
     }
 }";
 
-			return VerifyRequiresAssemblyFilesAnalyzer (src,
-				// (10,20): warning IL3002: Using member 'C.M1()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (10, 20, 10, 22).WithArguments ("C.M1()", "", ""),
-				// (11,26): warning IL3002: Using member 'C.M1()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (11, 26, 11, 30).WithArguments ("C.M1()", "", ""));
+			return TestCaseUtils.VerifyDiagnostic<RequiresAssemblyFilesAnalyzer> (src,
+				baselineExpected: new[] {
+					// (10,20): warning IL3002: Using member 'C.M1()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
+					TestCaseUtils.GetDiagnosticResult<RequiresAssemblyFilesAnalyzer>().WithSpan (10, 20, 10, 22).WithArguments ("C.M1()", "", ""),
+					// (11,26): warning IL3002: Using member 'C.M1()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
+					TestCaseUtils.GetDiagnosticResult<RequiresAssemblyFilesAnalyzer>().WithSpan (11, 26, 11, 30).WithArguments ("C.M1()", "", "")
+				});
 		}
 	}
 }

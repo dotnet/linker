@@ -7,15 +7,66 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
+using ILLink.CodeFix;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Testing;
+using Microsoft.CodeAnalysis.Text;
 using Xunit;
 
 namespace ILLink.RoslynAnalyzer.Tests
 {
 	public class TestCaseUtils
 	{
+		private const string requiresAssemblyFilesAttributeDefinition = @"
+#nullable enable
+namespace System.Diagnostics.CodeAnalysis
+{
+	[AttributeUsage(AttributeTargets.Constructor | AttributeTargets.Event | AttributeTargets.Method | AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
+	public sealed class RequiresAssemblyFilesAttribute : Attribute
+	{
+		public RequiresAssemblyFilesAttribute () { }
+		public string? Message { get; set; }
+		public string? Url { get; set; }
+	}
+}";
+		private const string requiresUnreferencedCodeAttributeDefinition = @"
+#nullable enable
+namespace System.Diagnostics.CodeAnalysis
+{
+	[AttributeUsage(AttributeTargets.Constructor | AttributeTargets.Method, Inherited = false)]
+	public sealed class RequiresUnreferencedCodeAttribute : Attribute
+	{
+		public RequiresUnreferencedCodeAttribute(string message) { Message = message; }
+		public string Message { get; }
+		public string? Url { get; set; }
+	}
+}";
+		private const string unconditionalSuppressMessageAttributeDefinition = @"
+#nullable enable
+namespace System.Diagnostics.CodeAnalysis
+{
+	[AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = true)]
+    public sealed class UnconditionalSuppressMessageAttribute : Attribute
+    {
+        public UnconditionalSuppressMessageAttribute (string category, string checkId)
+		{
+			Category = category;
+			CheckId = checkId;
+		}
+		public string Category { get; }
+		public string CheckId { get; }
+		public string? Scope { get; set; }
+		public string? Target { get; set; }
+		public string? MessageId { get; set; }
+		public string? Justification { get; set; }
+	}
+}";
+
 		public static IEnumerable<object[]> GetTestData (string testSuiteName)
 		{
 			var testFile = File.ReadAllText (s_testFiles[testSuiteName][0]);
@@ -208,6 +259,103 @@ In diagnostics:
 			var artifactsBinDir = Path.Combine (Directory.GetCurrentDirectory (), "..", "..", "..");
 			rootSourceDirectory = Path.GetFullPath (Path.Combine (artifactsBinDir, "..", "..", "test", "Mono.Linker.Tests.Cases"));
 			testAssemblyPath = Path.GetFullPath (Path.Combine (artifactsBinDir, "ILLink.RoslynAnalyzer.Tests", configDirectoryName, tfm));
+		}
+
+		internal static Task VerifyCodeFix<TAnalyzer, TCodeFix> (
+			string source,
+			string fixedSource,
+			DiagnosticResult[] baselineExpected,
+			DiagnosticResult[] fixedExpected,
+			int? numberOfIterations = null)
+			where TAnalyzer : DiagnosticAnalyzer, new()
+			where TCodeFix : CodeFixProvider, new()
+		{
+			string analyzerAttribute = GetAttributeDefinition<TAnalyzer> ();
+			string codeFixAttribute = GetAttributeDefinition<TCodeFix> ();
+			var attributeDefinitions = analyzerAttribute;
+			if (string.Equals (analyzerAttribute, codeFixAttribute) == false) {
+				attributeDefinitions += codeFixAttribute;
+			}
+
+			var test = new CSharpCodeFixVerifier<TAnalyzer, TCodeFix>.Test {
+				TestCode = source + attributeDefinitions,
+				FixedCode = fixedSource + attributeDefinitions,
+			};
+			test.ExpectedDiagnostics.AddRange (baselineExpected);
+			var analyzerMSBuildPropertyOption = GetAnalyzerMSBuildPropertyOption<TAnalyzer> ();
+			test.TestState.AnalyzerConfigFiles.Add (
+						("/.editorconfig", SourceText.From (@$"
+is_global = true
+build_property.{analyzerMSBuildPropertyOption} = true"
+)));
+			if (numberOfIterations != null) {
+				test.NumberOfIncrementalIterations = numberOfIterations;
+				test.NumberOfFixAllIterations = numberOfIterations;
+			}
+			test.FixedState.ExpectedDiagnostics.AddRange (fixedExpected);
+			return test.RunAsync ();
+		}
+
+		internal static Task VerifyDiagnostic<TAnalyzer> (
+			string source,
+			DiagnosticResult[] baselineExpected)
+			where TAnalyzer : DiagnosticAnalyzer, new() =>
+			CSharpAnalyzerVerifier<TAnalyzer>.VerifyAnalyzerAsync (
+				source,
+				TestCaseUtils.UseMSBuildProperties (GetAnalyzerMSBuildPropertyOption<TAnalyzer> ()),
+				baselineExpected);
+
+		internal static DiagnosticResult GetDiagnosticResult<TAnalyzer> ()
+			where TAnalyzer : DiagnosticAnalyzer, new()
+		{
+			return CSharpAnalyzerVerifier<TAnalyzer>.Diagnostic (GetDiagnosticId<TAnalyzer> ());
+		}
+
+		private static Dictionary<Type, string> diagnosticDict = new Dictionary<Type, string>
+		{
+			{typeof(RequiresUnreferencedCodeAnalyzer), RequiresUnreferencedCodeAnalyzer.DiagnosticId},
+			{typeof(RequiresAssemblyFilesAnalyzer), RequiresAssemblyFilesAnalyzer.IL3002}
+		};
+
+		private static string GetDiagnosticId<TAnalyzer> () where TAnalyzer : DiagnosticAnalyzer
+		{
+			if (diagnosticDict.ContainsKey (typeof (TAnalyzer))) {
+				return diagnosticDict[typeof (TAnalyzer)];
+			} else {
+				throw new ArgumentException ($"Couldn't retrieve diagnostic id data for unrecognized Analyzer {typeof (TAnalyzer).Name}");
+			}
+		}
+
+		private static Dictionary<Type, string> attributeDefinitionDict = new Dictionary<Type, string>
+		{
+			{typeof(RequiresUnreferencedCodeAnalyzer), requiresUnreferencedCodeAttributeDefinition},
+			{typeof(RequiresUnreferencedCodeCodeFixProvider), requiresUnreferencedCodeAttributeDefinition},
+			{typeof(RequiresAssemblyFilesAnalyzer), requiresAssemblyFilesAttributeDefinition},
+			{typeof(UnconditionalSuppressMessageCodeFixProvider), unconditionalSuppressMessageAttributeDefinition}
+		};
+
+		private static string GetAttributeDefinition<T> ()
+		{
+			if (attributeDefinitionDict.ContainsKey (typeof (T))) {
+				return attributeDefinitionDict[typeof (T)];
+			} else {
+				throw new ArgumentException ($"Couldn't retrieve attribute information for unrecognized type {typeof (T).Name}");
+			}
+		}
+
+		private static Dictionary<Type, string> msbuildOptionsDict = new Dictionary<Type, string>
+		{
+			{typeof(RequiresUnreferencedCodeAnalyzer), MSBuildPropertyOptionNames.EnableTrimAnalyzer},
+			{typeof(RequiresAssemblyFilesAnalyzer), MSBuildPropertyOptionNames.EnableSingleFileAnalyzer}
+		};
+
+		private static string GetAnalyzerMSBuildPropertyOption<TAnalyzer> () where TAnalyzer : DiagnosticAnalyzer
+		{
+			if (msbuildOptionsDict.ContainsKey (typeof (TAnalyzer))) {
+				return msbuildOptionsDict[typeof (TAnalyzer)];
+			} else {
+				throw new ArgumentException ($"Couldn't retrieve the msbuild option for unrecognized Analyzer {typeof (TAnalyzer).Name}");
+			}
 		}
 	}
 }
