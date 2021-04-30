@@ -22,7 +22,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 {
 	public class TestCaseUtils
 	{
-		private const string requiresAssemblyFilesAttributeDefinition = @"
+		private const string _requiresAssemblyFilesAttributeDefinition = @"
 #nullable enable
 namespace System.Diagnostics.CodeAnalysis
 {
@@ -34,7 +34,7 @@ namespace System.Diagnostics.CodeAnalysis
 		public string? Url { get; set; }
 	}
 }";
-		private const string requiresUnreferencedCodeAttributeDefinition = @"
+		private const string _requiresUnreferencedCodeAttributeDefinition = @"
 #nullable enable
 namespace System.Diagnostics.CodeAnalysis
 {
@@ -46,7 +46,7 @@ namespace System.Diagnostics.CodeAnalysis
 		public string? Url { get; set; }
 	}
 }";
-		private const string unconditionalSuppressMessageAttributeDefinition = @"
+		private const string _unconditionalSuppressMessageAttributeDefinition = @"
 #nullable enable
 namespace System.Diagnostics.CodeAnalysis
 {
@@ -311,51 +311,36 @@ build_property.{analyzerMSBuildPropertyOption} = true"
 			return CSharpAnalyzerVerifier<TAnalyzer>.Diagnostic (GetDiagnosticId<TAnalyzer> ());
 		}
 
-		private static Dictionary<Type, string> diagnosticDict = new Dictionary<Type, string>
-		{
-			{typeof(RequiresUnreferencedCodeAnalyzer), RequiresUnreferencedCodeAnalyzer.DiagnosticId},
-			{typeof(RequiresAssemblyFilesAnalyzer), RequiresAssemblyFilesAnalyzer.IL3002}
-		};
-
 		private static string GetDiagnosticId<TAnalyzer> () where TAnalyzer : DiagnosticAnalyzer
 		{
-			if (diagnosticDict.ContainsKey (typeof (TAnalyzer))) {
-				return diagnosticDict[typeof (TAnalyzer)];
-			} else {
-				throw new ArgumentException ($"Couldn't retrieve diagnostic id data for unrecognized Analyzer {typeof (TAnalyzer).Name}");
-			}
+			var t = typeof (TAnalyzer);
+			if (t == typeof (RequiresUnreferencedCodeAnalyzer))
+				return RequiresUnreferencedCodeAnalyzer.DiagnosticId;
+			else if (t == typeof (RequiresAssemblyFilesAnalyzer))
+				return RequiresAssemblyFilesAnalyzer.IL3002;
+			throw new ArgumentException ($"Couldn't retrieve the msbuild option for unrecognized Analyzer {typeof (TAnalyzer).Name}");
 		}
-
-		private static Dictionary<Type, string> attributeDefinitionDict = new Dictionary<Type, string>
-		{
-			{typeof(RequiresUnreferencedCodeAnalyzer), requiresUnreferencedCodeAttributeDefinition},
-			{typeof(RequiresUnreferencedCodeCodeFixProvider), requiresUnreferencedCodeAttributeDefinition},
-			{typeof(RequiresAssemblyFilesAnalyzer), requiresAssemblyFilesAttributeDefinition},
-			{typeof(UnconditionalSuppressMessageCodeFixProvider), unconditionalSuppressMessageAttributeDefinition}
-		};
 
 		private static string GetAttributeDefinition<T> ()
 		{
-			if (attributeDefinitionDict.ContainsKey (typeof (T))) {
-				return attributeDefinitionDict[typeof (T)];
-			} else {
-				throw new ArgumentException ($"Couldn't retrieve attribute information for unrecognized type {typeof (T).Name}");
-			}
+			var t = typeof (T);
+			if (t == typeof (RequiresUnreferencedCodeAnalyzer) || t == typeof (RequiresUnreferencedCodeCodeFixProvider))
+				return _requiresUnreferencedCodeAttributeDefinition;
+			else if (t == typeof (RequiresAssemblyFilesAnalyzer))
+				return _requiresAssemblyFilesAttributeDefinition;
+			else if (t == typeof (UnconditionalSuppressMessageCodeFixProvider))
+				return _unconditionalSuppressMessageAttributeDefinition;
+			throw new ArgumentException ($"Couldn't retrieve attribute information for unrecognized type {typeof (T).Name}");
 		}
-
-		private static Dictionary<Type, string> msbuildOptionsDict = new Dictionary<Type, string>
-		{
-			{typeof(RequiresUnreferencedCodeAnalyzer), MSBuildPropertyOptionNames.EnableTrimAnalyzer},
-			{typeof(RequiresAssemblyFilesAnalyzer), MSBuildPropertyOptionNames.EnableSingleFileAnalyzer}
-		};
 
 		private static string GetAnalyzerMSBuildPropertyOption<TAnalyzer> () where TAnalyzer : DiagnosticAnalyzer
 		{
-			if (msbuildOptionsDict.ContainsKey (typeof (TAnalyzer))) {
-				return msbuildOptionsDict[typeof (TAnalyzer)];
-			} else {
-				throw new ArgumentException ($"Couldn't retrieve the msbuild option for unrecognized Analyzer {typeof (TAnalyzer).Name}");
-			}
+			var t = typeof (TAnalyzer);
+			if (t == typeof (RequiresUnreferencedCodeAnalyzer))
+				return MSBuildPropertyOptionNames.EnableTrimAnalyzer;
+			else if (t == typeof (RequiresAssemblyFilesAnalyzer))
+				return MSBuildPropertyOptionNames.EnableSingleFileAnalyzer;
+			throw new ArgumentException ($"Couldn't retrieve the msbuild option for unrecognized Analyzer {typeof (TAnalyzer).Name}");
 		}
 	}
 }
