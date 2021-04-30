@@ -273,7 +273,7 @@ In diagnostics:
 			string analyzerAttribute = GetAttributeDefinition<TAnalyzer> ();
 			string codeFixAttribute = GetAttributeDefinition<TCodeFix> ();
 			var attributeDefinitions = analyzerAttribute;
-			if (string.Equals (analyzerAttribute, codeFixAttribute) == false) {
+			if (!string.Equals (analyzerAttribute, codeFixAttribute)) {
 				attributeDefinitions += codeFixAttribute;
 			}
 
