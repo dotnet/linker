@@ -22,51 +22,6 @@ namespace ILLink.RoslynAnalyzer.Tests
 {
 	public class TestCaseUtils
 	{
-		private const string _requiresAssemblyFilesAttributeDefinition = @"
-#nullable enable
-namespace System.Diagnostics.CodeAnalysis
-{
-	[AttributeUsage(AttributeTargets.Constructor | AttributeTargets.Event | AttributeTargets.Method | AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
-	public sealed class RequiresAssemblyFilesAttribute : Attribute
-	{
-		public RequiresAssemblyFilesAttribute () { }
-		public string? Message { get; set; }
-		public string? Url { get; set; }
-	}
-}";
-		private const string _requiresUnreferencedCodeAttributeDefinition = @"
-#nullable enable
-namespace System.Diagnostics.CodeAnalysis
-{
-	[AttributeUsage(AttributeTargets.Constructor | AttributeTargets.Method, Inherited = false)]
-	public sealed class RequiresUnreferencedCodeAttribute : Attribute
-	{
-		public RequiresUnreferencedCodeAttribute(string message) { Message = message; }
-		public string Message { get; }
-		public string? Url { get; set; }
-	}
-}";
-		private const string _unconditionalSuppressMessageAttributeDefinition = @"
-#nullable enable
-namespace System.Diagnostics.CodeAnalysis
-{
-	[AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = true)]
-    public sealed class UnconditionalSuppressMessageAttribute : Attribute
-    {
-        public UnconditionalSuppressMessageAttribute (string category, string checkId)
-		{
-			Category = category;
-			CheckId = checkId;
-		}
-		public string Category { get; }
-		public string CheckId { get; }
-		public string? Scope { get; set; }
-		public string? Target { get; set; }
-		public string? MessageId { get; set; }
-		public string? Justification { get; set; }
-	}
-}";
-
 		public static IEnumerable<object[]> GetTestData (string testSuiteName)
 		{
 			var testFile = File.ReadAllText (s_testFiles[testSuiteName][0]);
@@ -270,16 +225,10 @@ In diagnostics:
 			where TAnalyzer : DiagnosticAnalyzer, new()
 			where TCodeFix : CodeFixProvider, new()
 		{
-			string analyzerAttribute = GetAttributeDefinition<TAnalyzer> ();
-			string codeFixAttribute = GetAttributeDefinition<TCodeFix> ();
-			var attributeDefinitions = analyzerAttribute;
-			if (!string.Equals (analyzerAttribute, codeFixAttribute)) {
-				attributeDefinitions += codeFixAttribute;
-			}
-
 			var test = new CSharpCodeFixVerifier<TAnalyzer, TCodeFix>.Test {
-				TestCode = source + attributeDefinitions,
-				FixedCode = fixedSource + attributeDefinitions,
+				TestCode = source,
+				FixedCode = fixedSource,
+
 			};
 			test.ExpectedDiagnostics.AddRange (baselineExpected);
 			var analyzerMSBuildPropertyOption = GetAnalyzerMSBuildPropertyOption<TAnalyzer> ();
@@ -304,18 +253,6 @@ build_property.{analyzerMSBuildPropertyOption} = true"
 				source,
 				TestCaseUtils.UseMSBuildProperties (GetAnalyzerMSBuildPropertyOption<TAnalyzer> ()),
 				baselineExpected);
-
-		private static string GetAttributeDefinition<T> ()
-		{
-			var t = typeof (T);
-			if (t == typeof (RequiresUnreferencedCodeAnalyzer) || t == typeof (RequiresUnreferencedCodeCodeFixProvider))
-				return _requiresUnreferencedCodeAttributeDefinition;
-			else if (t == typeof (RequiresAssemblyFilesAnalyzer))
-				return _requiresAssemblyFilesAttributeDefinition;
-			else if (t == typeof (UnconditionalSuppressMessageCodeFixProvider))
-				return _unconditionalSuppressMessageAttributeDefinition;
-			throw new ArgumentException ($"Couldn't retrieve attribute information for unrecognized type {typeof (T).Name}");
-		}
 
 		private static string GetAnalyzerMSBuildPropertyOption<TAnalyzer> () where TAnalyzer : DiagnosticAnalyzer
 		{
