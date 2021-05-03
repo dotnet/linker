@@ -41,7 +41,7 @@ public class C
 				fixtest,
 				baselineExpected: new[] {
 				// /0/Test0.cs(7,17): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. message.
-				TestCaseUtils.GetDiagnosticResult<RequiresUnreferencedCodeAnalyzer>().WithSpan (7, 17, 7, 21).WithArguments ("C.M1()", "message", ""),
+				CSharpAnalyzerVerifier<RequiresUnreferencedCodeAnalyzer>.Diagnostic ().WithSpan (7, 17, 7, 21).WithArguments ("C.M1()", "message", ""),
 				},
 				fixedExpected: Array.Empty<DiagnosticResult> ());
 		}
@@ -71,7 +71,7 @@ public class C
 				fixtest,
 				baselineExpected: new[] {
 				// /0/Test0.cs(7,17): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. message.
-				TestCaseUtils.GetDiagnosticResult<RequiresAssemblyFilesAnalyzer>().WithSpan (7, 17, 7, 21).WithArguments ("C.M1()", " message.", "")
+				CSharpAnalyzerVerifier<RequiresAssemblyFilesAnalyzer>.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (7, 17, 7, 21).WithArguments ("C.M1()", " message.", "")
 				},
 				fixedExpected: Array.Empty<DiagnosticResult> ());
 		}
@@ -150,7 +150,7 @@ public class C
 				fix,
 				baselineExpected: new[] {
 					// /0/Test0.cs(10,15): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. message.
-					TestCaseUtils.GetDiagnosticResult<RequiresUnreferencedCodeAnalyzer>().WithSpan(10, 15, 10, 19).WithArguments("C.M1()", "message", "")
+					CSharpAnalyzerVerifier<RequiresUnreferencedCodeAnalyzer>.Diagnostic ().WithSpan(10, 15, 10, 19).WithArguments("C.M1()", "message", "")
 				},
 				fixedExpected: Array.Empty<DiagnosticResult> ());
 		}
@@ -192,7 +192,7 @@ class C
 				fixtest,
 				baselineExpected: new[] {
 				// /0/Test0.cs(6,50): warning IL3002: Using member 'C.InitC()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
-				TestCaseUtils.GetDiagnosticResult<RequiresAssemblyFilesAnalyzer>().WithSpan (6, 50, 6, 55).WithArguments ("C.InitC()", "", ""),
+				CSharpAnalyzerVerifier<RequiresAssemblyFilesAnalyzer>.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (6, 50, 6, 55).WithArguments ("C.InitC()", "", ""),
 				},
 				fixedExpected: Array.Empty<DiagnosticResult> ());
 		}
@@ -236,7 +236,7 @@ public class C
 				fix,
 				baselineExpected: new[] {
 					// /0/Test0.cs(12,28): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. message.
-					TestCaseUtils.GetDiagnosticResult<RequiresUnreferencedCodeAnalyzer>().WithSpan(12, 28, 12, 32).WithArguments("C.M1()", "message", "")
+					CSharpAnalyzerVerifier<RequiresUnreferencedCodeAnalyzer>.Diagnostic ().WithSpan(12, 28, 12, 32).WithArguments("C.M1()", "message", "")
 				},
 				fixedExpected: Array.Empty<DiagnosticResult> ());
 		}
@@ -272,7 +272,7 @@ public class C
 				fix,
 				baselineExpected: new[] {
 					// /0/Test0.cs(10,15): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. message.
-					TestCaseUtils.GetDiagnosticResult<RequiresUnreferencedCodeAnalyzer>().WithSpan(10, 20, 10, 24).WithArguments("C.M1()", "message", "")
+					CSharpAnalyzerVerifier<RequiresUnreferencedCodeAnalyzer>.Diagnostic ().WithSpan(10, 20, 10, 24).WithArguments("C.M1()", "message", "")
 				},
 				fixedExpected: Array.Empty<DiagnosticResult> ());
 		}
@@ -322,7 +322,7 @@ public class C
 				fix,
 				baselineExpected: new[] {
 					// /0/Test0.cs(14,21): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. message.
-					TestCaseUtils.GetDiagnosticResult<RequiresUnreferencedCodeAnalyzer>().WithSpan(14, 21, 14, 25).WithArguments("C.M1()", "message", "")
+					CSharpAnalyzerVerifier<RequiresUnreferencedCodeAnalyzer>.Diagnostic ().WithSpan(14, 21, 14, 25).WithArguments("C.M1()", "message", "")
 				},
 				fixedExpected: Array.Empty<DiagnosticResult> ());
 		}

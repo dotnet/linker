@@ -27,7 +27,7 @@ class C
 			return TestCaseUtils.VerifyDiagnostic<RequiresAssemblyFilesAnalyzer> (TestRequiresAssemblyFieldsOnEvent,
 				baselineExpected: new[] {
 					// (12,17): warning IL3002: Using member 'C.E' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
-					TestCaseUtils.GetDiagnosticResult<RequiresAssemblyFilesAnalyzer>().WithSpan (12, 17, 12, 18).WithArguments ("C.E", "", "")
+					CSharpAnalyzerVerifier<RequiresAssemblyFilesAnalyzer>.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (12, 17, 12, 18).WithArguments ("C.E", "", "")
 				});
 		}
 
@@ -52,7 +52,7 @@ class C
 			return TestCaseUtils.VerifyDiagnostic<RequiresAssemblyFilesAnalyzer> (TestRequiresAssemblyFilesOnMethod,
 				baselineExpected: new[] {
 					// (13,3): warning IL3002: Using member 'C.M1()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
-					TestCaseUtils.GetDiagnosticResult<RequiresAssemblyFilesAnalyzer>().WithSpan (13, 3, 13, 7).WithArguments ("C.M1()", "", "")
+					CSharpAnalyzerVerifier<RequiresAssemblyFilesAnalyzer>.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (13, 3, 13, 7).WithArguments ("C.M1()", "", "")
 				});
 		}
 
@@ -77,9 +77,9 @@ class C
 			return TestCaseUtils.VerifyDiagnostic<RequiresAssemblyFilesAnalyzer> (TestRequiresAssemblyFilesOnProperty,
 				baselineExpected: new[] {
 					// (11,3): warning IL3002: Using member 'C.P' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
-					TestCaseUtils.GetDiagnosticResult<RequiresAssemblyFilesAnalyzer>().WithSpan (12, 3, 12, 4).WithArguments ("C.P", "", ""),
+					CSharpAnalyzerVerifier<RequiresAssemblyFilesAnalyzer>.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (12, 3, 12, 4).WithArguments ("C.P", "", ""),
 					// (13,12): warning IL3002: Using member 'C.P' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
-					TestCaseUtils.GetDiagnosticResult<RequiresAssemblyFilesAnalyzer>().WithSpan (13, 35, 13, 36).WithArguments ("C.P", "", "")
+					CSharpAnalyzerVerifier<RequiresAssemblyFilesAnalyzer>.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (13, 35, 13, 36).WithArguments ("C.P", "", "")
 				});
 		}
 
@@ -115,7 +115,7 @@ class C
 			return TestCaseUtils.VerifyDiagnostic<RequiresAssemblyFilesAnalyzer> (TestRequiresAssemblyFilesOnMethodInsideProperty,
 				baselineExpected: new[] {
 					// (24,3): warning IL3002: Using member 'C.P' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
-					TestCaseUtils.GetDiagnosticResult<RequiresAssemblyFilesAnalyzer>().WithSpan (24, 3, 24, 4).WithArguments ("C.P", "", "")
+					CSharpAnalyzerVerifier<RequiresAssemblyFilesAnalyzer>.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (24, 3, 24, 4).WithArguments ("C.P", "", "")
 				});
 		}
 
@@ -140,7 +140,7 @@ class C
 			return TestCaseUtils.VerifyDiagnostic<RequiresAssemblyFilesAnalyzer> (TestRequiresAssemblyFilesWithMessageAndUrl,
 				baselineExpected: new[] {
 					// (13,3): warning IL3002: Using member 'C.M1()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app. Message from attribute. https://helpurl
-					TestCaseUtils.GetDiagnosticResult<RequiresAssemblyFilesAnalyzer>().WithSpan (13, 3, 13, 7).WithArguments ("C.M1()", " Message from attribute.", " https://helpurl")
+					CSharpAnalyzerVerifier<RequiresAssemblyFilesAnalyzer>.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (13, 3, 13, 7).WithArguments ("C.M1()", " Message from attribute.", " https://helpurl")
 				});
 		}
 
@@ -165,7 +165,7 @@ class C
 			return TestCaseUtils.VerifyDiagnostic<RequiresAssemblyFilesAnalyzer> (TestRequiresAssemblyFilesWithMessageAndUrl,
 				baselineExpected: new[] {
 					// (13,3): warning IL3002: Using member 'C.M1()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app. https://helpurl
-					TestCaseUtils.GetDiagnosticResult<RequiresAssemblyFilesAnalyzer>().WithSpan (13, 3, 13, 7).WithArguments ("C.M1()", "", " https://helpurl")
+					CSharpAnalyzerVerifier<RequiresAssemblyFilesAnalyzer>.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (13, 3, 13, 7).WithArguments ("C.M1()", "", " https://helpurl")
 				});
 		}
 
@@ -210,7 +210,7 @@ class C
 			return TestCaseUtils.VerifyDiagnostic<RequiresAssemblyFilesAnalyzer> (TestNoDiagnosticIsProducedIfCallerIsAnnotated,
 				baselineExpected: new[] {
 					// (8,3): warning IL3002: Using member 'C.M2()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app. Warn from M2.
-					TestCaseUtils.GetDiagnosticResult<RequiresAssemblyFilesAnalyzer>().WithSpan (8, 3, 8, 7).WithArguments ("C.M2()", " Warn from M2.", "")
+					CSharpAnalyzerVerifier<RequiresAssemblyFilesAnalyzer>.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (8, 3, 8, 7).WithArguments ("C.M2()", " Warn from M2.", "")
 				});
 		}
 
@@ -386,7 +386,7 @@ class C
 			return TestCaseUtils.VerifyDiagnostic<RequiresAssemblyFilesAnalyzer> (src,
 				baselineExpected: new[] {
 					// (6,50): warning IL3002: Using member 'C.InitC()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
-					TestCaseUtils.GetDiagnosticResult<RequiresAssemblyFilesAnalyzer>().WithSpan (6, 50, 6, 55).WithArguments ("C.InitC()", "", "")
+					CSharpAnalyzerVerifier<RequiresAssemblyFilesAnalyzer>.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (6, 50, 6, 55).WithArguments ("C.InitC()", "", "")
 				});
 		}
 
@@ -410,9 +410,9 @@ class C
 			return TestCaseUtils.VerifyDiagnostic<RequiresAssemblyFilesAnalyzer> (src,
 				baselineExpected: new[] {
 					// (10,20): warning IL3002: Using member 'C.M1()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
-					TestCaseUtils.GetDiagnosticResult<RequiresAssemblyFilesAnalyzer>().WithSpan (10, 20, 10, 22).WithArguments ("C.M1()", "", ""),
+					CSharpAnalyzerVerifier<RequiresAssemblyFilesAnalyzer>.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (10, 20, 10, 22).WithArguments ("C.M1()", "", ""),
 					// (11,26): warning IL3002: Using member 'C.M1()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
-					TestCaseUtils.GetDiagnosticResult<RequiresAssemblyFilesAnalyzer>().WithSpan (11, 26, 11, 30).WithArguments ("C.M1()", "", "")
+					CSharpAnalyzerVerifier<RequiresAssemblyFilesAnalyzer>.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (11, 26, 11, 30).WithArguments ("C.M1()", "", "")
 				});
 		}
 	}

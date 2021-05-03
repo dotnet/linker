@@ -305,22 +305,6 @@ build_property.{analyzerMSBuildPropertyOption} = true"
 				TestCaseUtils.UseMSBuildProperties (GetAnalyzerMSBuildPropertyOption<TAnalyzer> ()),
 				baselineExpected);
 
-		internal static DiagnosticResult GetDiagnosticResult<TAnalyzer> ()
-			where TAnalyzer : DiagnosticAnalyzer, new()
-		{
-			return CSharpAnalyzerVerifier<TAnalyzer>.Diagnostic (GetDiagnosticId<TAnalyzer> ());
-		}
-
-		private static string GetDiagnosticId<TAnalyzer> () where TAnalyzer : DiagnosticAnalyzer
-		{
-			var t = typeof (TAnalyzer);
-			if (t == typeof (RequiresUnreferencedCodeAnalyzer))
-				return RequiresUnreferencedCodeAnalyzer.DiagnosticId;
-			else if (t == typeof (RequiresAssemblyFilesAnalyzer))
-				return RequiresAssemblyFilesAnalyzer.IL3002;
-			throw new ArgumentException ($"Couldn't retrieve the msbuild option for unrecognized Analyzer {typeof (TAnalyzer).Name}");
-		}
-
 		private static string GetAttributeDefinition<T> ()
 		{
 			var t = typeof (T);
