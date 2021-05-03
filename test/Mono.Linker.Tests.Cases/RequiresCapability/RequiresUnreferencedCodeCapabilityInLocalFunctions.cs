@@ -41,7 +41,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		{
 			LocalFunction ();
 
-			void LocalFunction()
+			void LocalFunction ()
 			{
 				MethodRequiresUnreferencedCode ();
 			}

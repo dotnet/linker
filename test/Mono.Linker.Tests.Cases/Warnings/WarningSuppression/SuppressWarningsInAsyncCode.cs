@@ -16,14 +16,14 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 	[ExpectedNoWarnings]
 	public class SuppressWarningsInAsyncCode
 	{
-		public static void Main()
+		public static void Main ()
 		{
 			TestBeforeAwait ();
 			TestAfterAwait ();
 		}
 
-		[UnconditionalSuppressMessage("IL2026", "")]
-		static async void TestBeforeAwait()
+		[UnconditionalSuppressMessage ("IL2026", "")]
+		static async void TestBeforeAwait ()
 		{
 			MethodRequiresUnreferencedCode ();
 			await AsyncMethod ();
@@ -36,7 +36,7 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 			MethodRequiresUnreferencedCode ();
 		}
 
-		static async Task<int> AsyncMethod()
+		static async Task<int> AsyncMethod ()
 		{
 			return await Task.FromResult (0);
 		}

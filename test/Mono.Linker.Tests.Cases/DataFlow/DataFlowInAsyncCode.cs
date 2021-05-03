@@ -22,7 +22,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TestLocalVariable ();
 		}
 
-		static async void TestParameter ([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
+		static async void TestParameter ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
 		{
 			type.GetMethod ("BeforeAsyncMethod");
 			await AsyncMethod ();
@@ -31,7 +31,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		static async void TestLocalVariable ()
 		{
-			Type type = typeof  (TestClass);
+			Type type = typeof (TestClass);
 			type.GetMethod ("BeforeAsyncMethod");
 			await AsyncMethod ();
 			type.GetMethod ("AfterAsyncMethod");

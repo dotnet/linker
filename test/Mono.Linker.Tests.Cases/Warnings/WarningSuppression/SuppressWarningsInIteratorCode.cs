@@ -16,7 +16,7 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 	[ExpectedNoWarnings]
 	public class SuppressWarningsInIteratorCode
 	{
-		public static void Main()
+		public static void Main ()
 		{
 			TestBeforeIterator ();
 			TestAfterIterator ();

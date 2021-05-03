@@ -95,13 +95,11 @@ static IEnumerable<int> TestLocalVariable ()
 }
 ```
 
-## Expected behavior
-
-### A - Closure rewrite
+## A - Closure rewrite expected behavior
 
 In order to create a lambda method with captured variables, the compiler will generate a closure class which stores the captured values and the lambda method is then generated as a method on that class. Currently compiler doesn't propagate attributes to the generated methods.
 
-#### A1 - `RequiresUnreferencedCode` with lambda
+### A1 - `RequiresUnreferencedCode` with lambda
 
 ```csharp
 [RequiresUnreferencedCode ("--TestLambdaWithCapture--")]
@@ -114,7 +112,7 @@ static void TestLambdaWithCapture (int p)
 Trimmer should suppress trim analysis warnings due to `RequiresUnreferencedCode` even inside the lambda. In C# 10 it will be possible to add an attribute onto the lambda directly. The attribute should be propagated only if it's not already there.
 **Open question Q1a**: Should method body attributes propagate to lambdas? Maybe we should rely on C# 10 and explicit attributes only.
 
-#### A2 - `UnconditionalSuppressMessage` with lambda
+### A2 - `UnconditionalSuppressMessage` with lambda
 
 ```csharp
 [UnconditionalSuppressMessage ("IL2026", "")]
@@ -127,7 +125,7 @@ static void TestLambdaWithCapture (int p)
 Trimmer should suppress `IL2026` due to the suppression attribute. In C# 10 it will be possible to add an attribute onto the lambda directly. The attribute should be propagated only if it's not already there.
 **Open question Q1a**: Should method body attributes propagate to lambdas? Maybe we should rely on C# 10 and explicit attributes only.
 
-#### A3 - Data flow annotations with lambda
+### A3 - Data flow annotations with lambda
 
 ```csharp
 static void TestParameterInLambda ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
@@ -140,7 +138,7 @@ static void TestParameterInLambda ([DynamicallyAccessedMembers (DynamicallyAcces
 
 Trimmer should be able to flow the annotation from the parameter into the closure for the lambda and thus avoid warning in this case.
 
-#### A4 - Intrinsic data flow with lambda
+### A4 - Intrinsic data flow with lambda
 
 ```csharp
 static void TestLocalVariableInLambda ()
@@ -154,7 +152,7 @@ static void TestLocalVariableInLambda ()
 
 Internal data flow tracking should propagate into lambdas.
 
-#### A5 - `RequiresUnreferencedCode` with local function
+### A5 - `RequiresUnreferencedCode` with local function
 
 ```csharp
 [RequiresUnreferencedCode ("--TestLocalFunctionWithNoCapture--")]
@@ -172,7 +170,7 @@ static void TestLocalFunctionWithNoCapture ()
 The trimmer could propagate the `RequiresUnreferencedCode` to the local function. Unless the function already has that attribute present.
 **Question Q1b**: Should method body attributes propagate to local functions? It's possible to add the attribute manually to the local function, so maybe we should simply rely on that.
 
-#### A6 - `UnconditionalSuppressMessage` with local function
+### A6 - `UnconditionalSuppressMessage` with local function
 
 ```csharp
 [UnconditionalSuppressMessage ("IL2026", "")]
@@ -190,7 +188,7 @@ static void TestLocalFunctionWithNoCapture ()
 Similarly to the A5 case, the trimmer could propagate the warning suppression to the local function. Unless the function already has suppressions.
 **Question Q1b**: Should method body attributes propagate to local functions? It's possible to add the attribute manually to the local function, so maybe we should simply rely on that.
 
-#### A7 - Data flow annotations with local function
+### A7 - Data flow annotations with local function
 
 ```csharp
 static void TestParameterInLocalFunction ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
@@ -206,7 +204,7 @@ static void TestParameterInLocalFunction ([DynamicallyAccessedMembers (Dynamical
 
 Identical to A3, annotations should propagate into local functions.
 
-#### A8 - Intrinsic data flow with local function
+### A8 - Intrinsic data flow with local function
 
 ```csharp
 static void TestLocalVariableInLocalFunction ()
@@ -223,11 +221,11 @@ static void TestLocalVariableInLocalFunction ()
 
 Identical to A4 - Internal data flow tracking should propagate into local functions.
 
-### B Iterator rewrites
+## B Iterator rewrites expected behavior
 
 Specifically the C# compiler will rewrite entire method bodies. Iterators which return enumeration and use `yield return` will rewrite entire method body and move it into a separate class. This has similar problems as closures since it effectively behaves a lot like closure, but has additional challenges due to different syntax.
 
-#### B1 - `RequiresUnreferencedCode` with iterator body
+### B1 - `RequiresUnreferencedCode` with iterator body
 
 ```csharp
 [RequiresUnreferencedCode ("--TestAfterIterator--")]
@@ -240,7 +238,7 @@ static IEnumerable<int> TestAfterIterator ()
 
 The attribute should apply to the entire method body and thus suppress trim analysis warnings. Even if the body is spread by the compiler into different methods.
 
-#### B2 - `UnconditionalSuppressMessage` with iterator body
+### B2 - `UnconditionalSuppressMessage` with iterator body
 
 ```csharp
 [UnconditionalSuppressMessage ("IL2026", "")]
@@ -253,7 +251,7 @@ static IEnumerable<int> TestBeforeIterator ()
 
 The attribute should apply to the entire method body and thus suppress trim analysis warnings. Even if the body is spread by the compiler into different methods.
 
-#### B3 = Data flow annotations in iterator body
+### B3 = Data flow annotations in iterator body
 
 ```csharp
 static IEnumerable<int> TestParameter ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
@@ -266,7 +264,7 @@ static IEnumerable<int> TestParameter ([DynamicallyAccessedMembers (DynamicallyA
 
 The data flow annotation from method parameter should flow through the entire body.
 
-#### B4 - Intrinsic data flow in iterator body
+### B4 - Intrinsic data flow in iterator body
 
 ```csharp
 static IEnumerable<int> TestLocalVariable ()
@@ -280,11 +278,11 @@ static IEnumerable<int> TestLocalVariable ()
 
 The data flow annotation from method parameter should flow through the entire body.
 
-### C async rewrites
+## C Async rewrites expected behavior
 
 Similarly to iterators, C# compiler also rewrites method bodies which use `async`/`await`. This has similar problems as closures since it effectively behaves a lot like closure, but has additional challenges due to different syntax.
 
-#### C1 - `RequiresUnreferencedCode` with async body
+### C1 - `RequiresUnreferencedCode` with async body
 
 ```csharp
 [RequiresUnreferencedCode ("--TestAfterAwait--")]
@@ -297,7 +295,7 @@ static async void TestAfterAwait ()
 
 The attribute should apply to the entire method body and thus suppress trim analysis warnings. Even if the body is spread by the compiler into different methods. Very similar to B1.
 
-#### C2 - `UnconditionalSuppressMessage` with iterator body
+### C2 - `UnconditionalSuppressMessage` with iterator body
 
 ```csharp
 [UnconditionalSuppressMessage("IL2026", "")]
@@ -310,7 +308,7 @@ static async void TestBeforeAwait()
 
 The attribute should apply to the entire method body and thus suppress trim analysis warnings. Even if the body is spread by the compiler into different methods. Very similar to B2.
 
-#### C3 = Data flow annotations in async body
+### C3 = Data flow annotations in async body
 
 ```csharp
 static async void TestParameter ([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
@@ -323,7 +321,7 @@ static async void TestParameter ([DynamicallyAccessedMembers(DynamicallyAccessed
 
 The data flow annotation from method parameter should flow through the entire body. Very similar to B3.
 
-#### C4 - Intrinsic data flow in async body
+### C4 - Intrinsic data flow in async body
 
 ```csharp
 static async void TestLocalVariable ()
