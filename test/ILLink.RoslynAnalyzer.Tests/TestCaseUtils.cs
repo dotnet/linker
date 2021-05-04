@@ -215,53 +215,5 @@ In diagnostics:
 			rootSourceDirectory = Path.GetFullPath (Path.Combine (artifactsBinDir, "..", "..", "test", "Mono.Linker.Tests.Cases"));
 			testAssemblyPath = Path.GetFullPath (Path.Combine (artifactsBinDir, "ILLink.RoslynAnalyzer.Tests", configDirectoryName, tfm));
 		}
-
-		internal static Task VerifyCodeFix<TAnalyzer, TCodeFix> (
-			string source,
-			string fixedSource,
-			DiagnosticResult[] baselineExpected,
-			DiagnosticResult[] fixedExpected,
-			int? numberOfIterations = null)
-			where TAnalyzer : DiagnosticAnalyzer, new()
-			where TCodeFix : CodeFixProvider, new()
-		{
-			var test = new CSharpCodeFixVerifier<TAnalyzer, TCodeFix>.Test {
-				TestCode = source,
-				FixedCode = fixedSource,
-
-			};
-			test.ExpectedDiagnostics.AddRange (baselineExpected);
-			var analyzerMSBuildPropertyOption = GetAnalyzerMSBuildPropertyOption<TAnalyzer> ();
-			test.TestState.AnalyzerConfigFiles.Add (
-						("/.editorconfig", SourceText.From (@$"
-is_global = true
-build_property.{analyzerMSBuildPropertyOption} = true"
-)));
-			if (numberOfIterations != null) {
-				test.NumberOfIncrementalIterations = numberOfIterations;
-				test.NumberOfFixAllIterations = numberOfIterations;
-			}
-			test.FixedState.ExpectedDiagnostics.AddRange (fixedExpected);
-			return test.RunAsync ();
-		}
-
-		internal static Task VerifyDiagnostic<TAnalyzer> (
-			string source,
-			DiagnosticResult[] baselineExpected)
-			where TAnalyzer : DiagnosticAnalyzer, new() =>
-			CSharpAnalyzerVerifier<TAnalyzer>.VerifyAnalyzerAsync (
-				source,
-				TestCaseUtils.UseMSBuildProperties (GetAnalyzerMSBuildPropertyOption<TAnalyzer> ()),
-				baselineExpected);
-
-		private static string GetAnalyzerMSBuildPropertyOption<TAnalyzer> () where TAnalyzer : DiagnosticAnalyzer
-		{
-			var t = typeof (TAnalyzer);
-			if (t == typeof (RequiresUnreferencedCodeAnalyzer))
-				return MSBuildPropertyOptionNames.EnableTrimAnalyzer;
-			else if (t == typeof (RequiresAssemblyFilesAnalyzer))
-				return MSBuildPropertyOptionNames.EnableSingleFileAnalyzer;
-			throw new ArgumentException ($"Couldn't retrieve the msbuild option for unrecognized Analyzer {typeof (TAnalyzer).Name}");
-		}
 	}
 }
