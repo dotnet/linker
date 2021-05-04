@@ -33,8 +33,6 @@ namespace ILLink.RoslynAnalyzer.Tests
 					compilationOptions = compilationOptions!.WithSpecificDiagnosticOptions (
 						compilationOptions.SpecificDiagnosticOptions.SetItems (CSharpVerifierHelper.NullableWarnings));
 					solution = solution.WithProjectCompilationOptions (projectId, compilationOptions);
-					solution = solution.WithProjectMetadataReferences (projectId, new List<MetadataReference> { MetadataReference.CreateFromFile (typeof (object).Assembly.Location) });
-
 					return solution;
 				});
 			}

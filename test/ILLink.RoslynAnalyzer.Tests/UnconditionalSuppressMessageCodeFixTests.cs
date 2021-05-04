@@ -32,6 +32,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			var test = new VerifyCSUSMwithRUC.Test {
 				TestCode = source,
 				FixedCode = fixedSource,
+				ReferenceAssemblies = ReferenceAssemblies.Net.Net50,
 			};
 			test.ExpectedDiagnostics.AddRange (baselineExpected);
 			test.TestState.AnalyzerConfigFiles.Add (
@@ -48,9 +49,27 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 			DiagnosticResult[] baselineExpected,
 			DiagnosticResult[] fixedExpected)
 		{
+			var attributeDefinition = @"
+namespace System.Diagnostics.CodeAnalysis
+{
+#nullable enable
+    [AttributeUsage(AttributeTargets.Constructor |
+                    AttributeTargets.Event |
+                    AttributeTargets.Method |
+                    AttributeTargets.Property,
+                    Inherited = false,
+                    AllowMultiple = false)]
+    public sealed class RequiresAssemblyFilesAttribute : Attribute
+    {
+			public RequiresAssemblyFilesAttribute() { }
+			public string? Message { get; set; }
+			public string? Url { get; set; }
+	}
+}";
 			var test = new VerifyCSUSMwithRAF.Test {
-				TestCode = source,
-				FixedCode = fixedSource,
+				TestCode = source + attributeDefinition,
+				FixedCode = fixedSource + attributeDefinition,
+				ReferenceAssemblies = ReferenceAssemblies.Net.Net50,
 			};
 			test.ExpectedDiagnostics.AddRange (baselineExpected);
 			test.TestState.AnalyzerConfigFiles.Add (
