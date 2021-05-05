@@ -2,7 +2,7 @@
 
 Modern compilers provide language features which require lot of fancy code generation by the compiler. Not just pure IL generation, but producing new types, methods and fields. An example is `async`/`await` in C# which turns the body of the method into a separate class which implements a state machine.
 
-Lot of the trimming logic relies on attributes authored by the developer. These provide hints to the trimmer especially around ares which are otherwise problematic, like reflection. For example see [reflection-flow](reflection-flow.md) for an example of such attribute.
+Lot of the trimming logic relies on attributes authored by the developer. These provide hints to the trimmer especially around areas which are otherwise problematic, like reflection. For example see [reflection-flow](reflection-flow.md) for an example of such attribute.
 
 ## Problem
 
