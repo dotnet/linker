@@ -19,7 +19,7 @@ namespace ILLink.RoslynAnalyzer
 		public const string IL3002 = nameof (IL3002);
 
 		internal const string RequiresAssemblyFilesAttribute = nameof (RequiresAssemblyFilesAttribute);
-		internal const string FullyQualifiedRequiresAssemblyFilesAttribute = "System.Diagnostics.CodeAnalysis." + RequiresAssemblyFilesAttribute;
+		public const string FullyQualifiedRequiresAssemblyFilesAttribute = "System.Diagnostics.CodeAnalysis." + RequiresAssemblyFilesAttribute;
 
 		static readonly DiagnosticDescriptor s_locationRule = new DiagnosticDescriptor (
 			IL3000,
@@ -105,6 +105,14 @@ namespace ILLink.RoslynAnalyzer
 				}, OperationKind.ObjectCreation);
 
 				context.RegisterOperationAction (operationContext => {
+					var fieldAccess = (IFieldReferenceOperation) operationContext.Operation;
+					if (fieldAccess.Field.ContainingType is INamedTypeSymbol { StaticConstructors: var ctors } &&
+						!SymbolEqualityComparer.Default.Equals (operationContext.ContainingSymbol.ContainingType, fieldAccess.Field.ContainingType)) {
+						CheckStaticConstructors (operationContext, ctors);
+					}
+				}, OperationKind.FieldReference);
+
+				context.RegisterOperationAction (operationContext => {
 					var propAccess = (IPropertyReferenceOperation) operationContext.Operation;
 					var prop = propAccess.Property;
 					var usageInfo = propAccess.GetValueUsageInfo (prop);
@@ -134,17 +142,53 @@ namespace ILLink.RoslynAnalyzer
 					CheckCalledMember (operationContext, methodSymbol, dangerousPatterns);
 				}, OperationKind.DelegateCreation);
 
+				static void CheckStaticConstructors (OperationAnalysisContext operationContext,
+					ImmutableArray<IMethodSymbol> constructors)
+				{
+					foreach (var constructor in constructors) {
+						if (constructor.Parameters.Length == 0 && constructor.HasAttribute (RequiresAssemblyFilesAttribute) && constructor.MethodKind == MethodKind.StaticConstructor) {
+							if (constructor.TryGetAttributeWithMessageOnCtor (FullyQualifiedRequiresAssemblyFilesAttribute, out AttributeData? requiresUnreferencedCode)) {
+								operationContext.ReportDiagnostic (Diagnostic.Create (
+									s_requiresAssemblyFilesRule,
+									operationContext.Operation.Syntax.GetLocation (),
+									constructor.ToString (),
+									(string) requiresUnreferencedCode!.ConstructorArguments[0].Value!,
+									requiresUnreferencedCode!.NamedArguments.FirstOrDefault (na => na.Key == "Url").Value.Value?.ToString ()));
+							}
+						}
+					}
+				}
+
 				static void CheckCalledMember (
 					OperationAnalysisContext operationContext,
 					ISymbol member,
 					ImmutableArray<ISymbol> dangerousPatterns)
 				{
+					// Find containing symbol
+					ISymbol? containingSymbol = null;
+					for (var current = operationContext.Operation;
+						 current is not null;
+						 current = current.Parent) {
+						if (current is ILocalFunctionOperation local) {
+							containingSymbol = local.Symbol;
+							break;
+						} else if (current is IAnonymousFunctionOperation lambda) {
+							containingSymbol = lambda.Symbol;
+							break;
+						} else if (current is IMethodBodyBaseOperation) {
+							break;
+						}
+					}
+					containingSymbol ??= operationContext.ContainingSymbol;
+
 					// Do not emit any diagnostic if caller is annotated with the attribute too.
-					if (operationContext.ContainingSymbol.HasAttribute (RequiresAssemblyFilesAttribute))
+					if (containingSymbol.HasAttribute (RequiresAssemblyFilesAttribute))
 						return;
 					// In case ContainingSymbol is a property accesor check also for RequiresAssemblyFilesAttribute in the associated property
-					if (operationContext.ContainingSymbol is IMethodSymbol containingSymbol && (containingSymbol.MethodKind == MethodKind.PropertyGet || containingSymbol.MethodKind == MethodKind.PropertySet)
-						&& containingSymbol.AssociatedSymbol!.HasAttribute (RequiresAssemblyFilesAttribute)) {
+					if (containingSymbol is IMethodSymbol methodSymbol && 
+						(methodSymbol.MethodKind == MethodKind.PropertyGet || methodSymbol.MethodKind == MethodKind.PropertySet ||
+						methodSymbol.MethodKind == MethodKind.EventAdd || methodSymbol.MethodKind == MethodKind.EventRemove)
+						&& methodSymbol.AssociatedSymbol!.HasAttribute (RequiresAssemblyFilesAttribute)) {
 						return;
 					}
 

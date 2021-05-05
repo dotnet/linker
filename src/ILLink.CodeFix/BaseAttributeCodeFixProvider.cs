@@ -108,7 +108,7 @@ namespace ILLink.CodeFix
 
 		internal abstract SyntaxNode[] GetAttributeArguments (SemanticModel semanticModel, SyntaxNode targetNode, CSharpSyntaxNode declarationSyntax, SyntaxGenerator generator, Diagnostic diagnostic);
 
-		internal static bool HasPublicAccessibility (IMethodSymbol? m)
+		internal static bool HasPublicAccessibility (ISymbol? m)
 		{
 			if (m is not { DeclaredAccessibility: Accessibility.Public or Accessibility.Protected }) {
 				return false;

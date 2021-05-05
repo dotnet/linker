@@ -14,17 +14,17 @@ using Microsoft.CodeAnalysis.Editing;
 
 namespace ILLink.CodeFix
 {
-	[ExportCodeFixProvider (LanguageNames.CSharp, Name = nameof (RequiresUnreferencedCodeCodeFixProvider)), Shared]
-	public class RequiresUnreferencedCodeCodeFixProvider : BaseAttributeCodeFixProvider
+	[ExportCodeFixProvider (LanguageNames.CSharp, Name = nameof (RequiresAssemblyFilesCodeFixProvider)), Shared]
+	public class RequiresAssemblyFilesCodeFixProvider : BaseAttributeCodeFixProvider
 	{
-		private const string s_title = "Add RequiresUnreferencedCode attribute to parent method";
+		private const string s_title = "Add RequiresAssemblyFiles attribute to parent method";
 
 		public sealed override ImmutableArray<string> FixableDiagnosticIds
-			=> ImmutableArray.Create (RequiresUnreferencedCodeAnalyzer.DiagnosticId);
+			=> ImmutableArray.Create (RequiresAssemblyFilesAnalyzer.IL3000, RequiresAssemblyFilesAnalyzer.IL3001, RequiresAssemblyFilesAnalyzer.IL3002);
 
 		public sealed override async Task RegisterCodeFixesAsync (CodeFixContext context)
 		{
-			await BaseRegisterCodeFixesAsync (context, AttributeableParentTargets.Method, RequiresUnreferencedCodeAnalyzer.FullyQualifiedRequiresUnreferencedCodeAttribute, s_title);
+			await BaseRegisterCodeFixesAsync (context, AttributeableParentTargets.Method | AttributeableParentTargets.Property | AttributeableParentTargets.Event, RequiresAssemblyFilesAnalyzer.FullyQualifiedRequiresAssemblyFilesAttribute, s_title);
 		}
 
 		internal override SyntaxNode[] GetAttributeArguments (SemanticModel semanticModel, SyntaxNode targetNode, CSharpSyntaxNode containingDecl, SyntaxGenerator generator, Diagnostic diagnostic)
@@ -34,7 +34,7 @@ namespace ILLink.CodeFix
 			if (string.IsNullOrEmpty (name) || HasPublicAccessibility (containingSymbol!)) {
 				return Array.Empty<SyntaxNode> ();
 			} else {
-				return new[] { generator.AttributeArgument (generator.LiteralExpression ($"Calls {name}")) };
+				return new[] { generator.AttributeArgument ("Message", generator.LiteralExpression ($"Calls {name}")) };
 			}
 		}
 	}
