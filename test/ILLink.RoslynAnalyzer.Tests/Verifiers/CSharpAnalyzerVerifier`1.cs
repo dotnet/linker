@@ -42,7 +42,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			SyntaxTree src,
 			(string, string)[]? globalAnalyzerOptions = null)
 		{
-			var mdRef = MetadataReference.CreateFromFile (typeof(Mono.Linker.Tests.Cases.Expectations.Metadata.BaseMetadataAttribute).Assembly.Location);
+			var mdRef = MetadataReference.CreateFromFile (typeof (Mono.Linker.Tests.Cases.Expectations.Metadata.BaseMetadataAttribute).Assembly.Location);
 
 			var comp = CSharpCompilation.Create (
 				assemblyName: Guid.NewGuid ().ToString ("N"),
