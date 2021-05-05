@@ -185,7 +185,7 @@ namespace ILLink.RoslynAnalyzer
 					if (containingSymbol.HasAttribute (RequiresAssemblyFilesAttribute))
 						return;
 					// In case ContainingSymbol is a property accesor check also for RequiresAssemblyFilesAttribute in the associated property
-					if (containingSymbol is IMethodSymbol methodSymbol && 
+					if (containingSymbol is IMethodSymbol methodSymbol &&
 						(methodSymbol.MethodKind == MethodKind.PropertyGet || methodSymbol.MethodKind == MethodKind.PropertySet ||
 						methodSymbol.MethodKind == MethodKind.EventAdd || methodSymbol.MethodKind == MethodKind.EventRemove)
 						&& methodSymbol.AssociatedSymbol!.HasAttribute (RequiresAssemblyFilesAttribute)) {
