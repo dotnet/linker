@@ -40,7 +40,7 @@ namespace Mono.Linker.Tests.Cases.Warnings
 		{
 			LocalFunction ();
 
-			void LocalFunction()
+			void LocalFunction ()
 			{
 				MethodRequiresUnreferencedCode ();
 			}
