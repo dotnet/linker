@@ -20,6 +20,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		{
 			TestParameter (typeof (TestType));
 			TestLocalVariable ();
+			TestGenericParameter<TestType> ();
 		}
 
 		static IEnumerable<int> TestParameter ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
@@ -35,6 +36,13 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			type.GetMethod ("BeforeIteratorMethod");
 			yield return 1;
 			type.GetMethod ("AfterIteratorMethod");
+		}
+
+		static IEnumerable<int> TestGenericParameter<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] T> ()
+		{
+			typeof (T).GetMethod ("BeforeIteratorMethod");
+			yield return 1;
+			typeof (T).GetMethod ("AfterIteratorMethod");
 		}
 
 		class TestType

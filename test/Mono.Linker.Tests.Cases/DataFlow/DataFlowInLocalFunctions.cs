@@ -20,8 +20,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		{
 			TestParameterInLambda (typeof (TestType));
 			TestLocalVariableInLambda ();
+			TestGenericParameterInLambda<TestType> ();
 			TestParameterInLocalFunction (typeof (TestType));
 			TestLocalVariableInLocalFunction ();
+			TestGenericParameterInLocalFunction<TestType> ();
 		}
 
 		static void TestParameterInLambda ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
@@ -36,6 +38,13 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			Type type = typeof (TestType);
 			Action a = () => {
 				type.GetMethod ("InLambdaMethod");
+			};
+		}
+
+		static void TestGenericParameterInLambda<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] T> ()
+		{
+			Action a = () => {
+				typeof (T).GetMethod ("InLocalMethod");
 			};
 		}
 
@@ -57,6 +66,16 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			void LocalFunction ()
 			{
 				type.GetMethod ("InLocalMethod");
+			}
+		}
+
+		static void TestGenericParameterInLocalFunction<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] T> ()
+		{
+			LocalFunction ();
+
+			void LocalFunction ()
+			{
+				typeof (T).GetMethod ("InLocalMethod");
 			}
 		}
 

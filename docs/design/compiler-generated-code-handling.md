@@ -158,7 +158,20 @@ static void TestLocalVariableInLambda ()
 
 Internal data flow tracking should propagate into lambdas.
 
-### A5 - `RequiresUnreferencedCode` with local function
+### A5 - Generic parameter data flow with lambda
+
+```csharp
+static void TestGenericParameterInLambda<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] T> ()
+{
+    Action a = () => {
+        typeof (T).GetMethod ("InLocalMethod");
+    };
+}
+```
+
+Annotations should flow with the generic parameter into lambdas.
+
+### A6 - `RequiresUnreferencedCode` with local function
 
 ```csharp
 [RequiresUnreferencedCode ("--TestLocalFunctionWithNoCapture--")]
@@ -176,7 +189,7 @@ static void TestLocalFunctionWithNoCapture ()
 The trimmer could propagate the `RequiresUnreferencedCode` to the local function. Unless the function already has that attribute present.
 **Question Q1b**: Should method body attributes propagate to local functions? It's possible to add the attribute manually to the local function, so maybe we should simply rely on that.
 
-### A6 - `UnconditionalSuppressMessage` with local function
+### A7 - `UnconditionalSuppressMessage` with local function
 
 ```csharp
 [UnconditionalSuppressMessage ("IL2026", "")]
@@ -194,7 +207,7 @@ static void TestLocalFunctionWithNoCapture ()
 Similarly to the A5 case, the trimmer could propagate the warning suppression to the local function. Unless the function already has suppressions.
 **Question Q1b**: Should method body attributes propagate to local functions? It's possible to add the attribute manually to the local function, so maybe we should simply rely on that.
 
-### A7 - Data flow annotations with local function
+### A8 - Data flow annotations with local function
 
 ```csharp
 static void TestParameterInLocalFunction ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
@@ -210,7 +223,7 @@ static void TestParameterInLocalFunction ([DynamicallyAccessedMembers (Dynamical
 
 Identical to A3, annotations should propagate into local functions.
 
-### A8 - Intrinsic data flow with local function
+### A9 - Intrinsic data flow with local function
 
 ```csharp
 static void TestLocalVariableInLocalFunction ()
@@ -226,6 +239,22 @@ static void TestLocalVariableInLocalFunction ()
 ```
 
 Identical to A4 - Internal data flow tracking should propagate into local functions.
+
+### A10 - Generic parameter data flow with local functions
+
+```csharp
+static void TestGenericParameterInLocalFunction<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] T> ()
+{
+    LocalFunction ();
+
+    void LocalFunction ()
+    {
+        typeof (T).GetMethod ("InLocalMethod");
+    }
+}
+```
+
+Generic parameter annotations should flow into local methods.
 
 ## B Roslyn iterator rewrites expected behavior
 
@@ -282,7 +311,20 @@ static IEnumerable<int> TestLocalVariable ()
 }
 ```
 
-The data flow annotation from method parameter should flow through the entire body.
+The intrinsic annotations should flow through the entire body.
+
+### B5 - Generic parameter data flow in iterator body
+
+```csharp
+static IEnumerable<int> TestGenericParameter<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] T> ()
+{
+    typeof (T).GetMethod ("BeforeIteratorMethod");
+    yield return 1;
+    typeof (T).GetMethod ("AfterIteratorMethod");
+}
+```
+
+Generic parameter annotations should flow through the entire body.
 
 ## C Roslyn async rewrites expected behavior
 
@@ -339,7 +381,20 @@ static async void TestLocalVariable ()
 }
 ```
 
-The data flow annotation from method parameter should flow through the entire body. Very similar to B4.
+The intrinsic annotations should flow through the entire body. Very similar to B4.
+
+### C5 - Generic parameter data flow in async body
+
+```csharp
+static async void TestGenericParameter<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] T> ()
+{
+    typeof (T).GetMethod ("BeforeIteratorMethod");
+    await AsyncMethod ();
+    typeof (T).GetMethod ("AfterIteratorMethod");
+}
+```
+
+Generic parameter annotations should flow through the entire body. Very similar to B5.
 
 ## D Roslyn closure class and method naming behavior
 
