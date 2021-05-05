@@ -6,7 +6,7 @@ Lot of the trimming logic relies on attributes authored by the developer. These 
 
 ## Problem
 
-User authored attributes are not propagated to the compiler generated code. For example:
+User authored attributes are not propagated to the compiler generated code. For example (using C# async feature):
 
 ```csharp
 [RequiresUnreferencedCode ("--MethodRequiresUnreferencedCode--")]
@@ -34,7 +34,7 @@ The trimmer currently recognizes two attributes which effectively apply to entir
 
 #### `RequiresUnreferencedCodeAttribute`
 
-The `RequiresUnreferencedCodeAttribute` marks the method as incompatible with trimming and at the same time it suppressed trim analysis warnings from the entire method's body. So for example:
+The `RequiresUnreferencedCodeAttribute` marks the method as incompatible with trimming and at the same time it suppressed trim analysis warnings from the entire method's body. So for example (using C# iterator feature):
 
 ```csharp
 [RequiresUnreferencedCode ("Incompatible with trimming")]
@@ -95,9 +95,15 @@ static IEnumerable<int> TestLocalVariable ()
 }
 ```
 
-## A - Closure rewrite expected behavior
+### Compiler dependent behavior
 
-In order to create a lambda method with captured variables, the compiler will generate a closure class which stores the captured values and the lambda method is then generated as a method on that class. Currently compiler doesn't propagate attributes to the generated methods.
+Since the problems are all caused by compiler generated code, the behaviors depend on the specific compiler in use. The main focus of this document is the Roslyn C# compiler right now. Mainly since it's by far the most used compiler for .NET code. That said, we would like to design the solution in such a way that other compilers using similar patterns could also benefit from it.
+
+It is expected that other compilers (for example the F# compiler) might have other patterns which are also problematic for trimmers. These should be eventually added to the document as well, but may require new solutions not discussed in here yet.
+
+## A - Roslyn closure rewrite expected behavior
+
+In order to create a lambda method with captured variables, the Roslyn compiler will generate a closure class which stores the captured values and the lambda method is then generated as a method on that class. Currently compiler doesn't propagate attributes to the generated methods.
 
 ### A1 - `RequiresUnreferencedCode` with lambda
 
@@ -221,7 +227,7 @@ static void TestLocalVariableInLocalFunction ()
 
 Identical to A4 - Internal data flow tracking should propagate into local functions.
 
-## B Iterator rewrites expected behavior
+## B Roslyn iterator rewrites expected behavior
 
 Specifically the C# compiler will rewrite entire method bodies. Iterators which return enumeration and use `yield return` will rewrite entire method body and move it into a separate class. This has similar problems as closures since it effectively behaves a lot like closure, but has additional challenges due to different syntax.
 
@@ -251,7 +257,7 @@ static IEnumerable<int> TestBeforeIterator ()
 
 The attribute should apply to the entire method body and thus suppress trim analysis warnings. Even if the body is spread by the compiler into different methods.
 
-### B3 = Data flow annotations in iterator body
+### B3 - Data flow annotations in iterator body
 
 ```csharp
 static IEnumerable<int> TestParameter ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
@@ -278,7 +284,7 @@ static IEnumerable<int> TestLocalVariable ()
 
 The data flow annotation from method parameter should flow through the entire body.
 
-## C Async rewrites expected behavior
+## C Roslyn async rewrites expected behavior
 
 Similarly to iterators, C# compiler also rewrites method bodies which use `async`/`await`. This has similar problems as closures since it effectively behaves a lot like closure, but has additional challenges due to different syntax.
 
@@ -334,3 +340,84 @@ static async void TestLocalVariable ()
 ```
 
 The data flow annotation from method parameter should flow through the entire body. Very similar to B4.
+
+## D Roslyn closure class and method naming behavior
+
+When the Roslyn compiler generates a closure and moves the code in the method into a method on the closure trimming tools should have enough information to provide correct information about the source of a warning (if there's any).
+
+### D1 - Lambda methods
+
+```csharp
+static void TestInLambda ()
+{
+    Action a = () => MethodRequiresUnreferencedCode (); // Warning should point to this line
+}
+```
+
+Given symbols this should produce a warning pointing to the source file, but should not include the method name which looks like `<>c.<TestInLambda>b__1_0()`. This should produce a warning which looks like:
+
+```console
+Source.cs(3,22): Trim analysis warning IL2026: Using method 'MethodRequiresUnreferencedCode()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code.
+```
+
+Similarly for all other warnings originating from trim analysis.
+
+**Open question Q2a:** Should we try to display a better name for lambdas if there are no symbols available for the assembly?
+
+### D2 - Local functions
+
+```csharp
+static void TestInLocalFunction ()
+{
+    LocalFunction ();
+
+    void LocalFunction()
+    {
+        MethodRequiresUnreferencedCode (); // Warning should point to this line
+    }
+}
+```
+
+Just like with lambdas, if there are symbols the warning should point to the source location and not include the compiler generated method name which in this case looks something like `Type.<TestInLocalFunction>g__LocalFunction|2_0()`. The produced warning should look like this:
+
+```console
+Source.cs(7,9): Using method 'MethodRequiresUnreferencedCode()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code.
+```
+
+**Open question Q2b:** Should we try to display a better name for local functions if there are no symbols available for the assembly?
+
+### D3 - Iterators
+
+```csharp
+static IEnumerable<int> TestIterator ()
+{
+    MethodRequiresUnreferencedCode (); // Warning should point to this line
+    yield return 1;
+}
+```
+
+In this case as well, the trimmer should report the warning pointing to the source and avoid including the compiler generated name which looks like `<TestIterator>d__3.MoveNext()`. The warning should look like this:
+
+```console
+Source.cs(3,5): Using method 'MethodRequiresUnreferencedCode()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code.
+```
+
+**Open question Q2c:** Should we try to display a better name for iterator methods if there are no symbols available for the assembly?
+
+### D4 - Async
+
+```csharp
+static async void TestAsync ()
+{
+    MethodRequiresUnreferencedCode ();
+    await AsyncMethod ();
+}
+```
+
+Just like in the above cases the warning should point to source and not include the compiler generated name, which looks like `<TestAsync>d__4.MoveNext()`. The warning should look like:
+
+```console
+Source.cs(3,5): Using method 'MethodRequiresUnreferencedCode()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code.
+```
+
+**Open question Q2d:** Should we try to display a better name for async methods if there are no symbols available for the assembly?
