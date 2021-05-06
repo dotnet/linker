@@ -341,7 +341,7 @@ namespace Mono.Linker
 							if (!GetStringParam (token, l => mname = l))
 								return -1;
 
-							if (!GetMetadataTrimming (mname, out var type))
+							if (!TryGetMetadataTrimming (mname, out var type))
 								return -1;
 
 							metadataTrimming &= ~type;
@@ -1101,11 +1101,14 @@ namespace Mono.Linker
 			return false;
 		}
 
-		bool GetMetadataTrimming (string text, out MetadataTrimming metadataTrimming)
+		bool TryGetMetadataTrimming (string text, out MetadataTrimming metadataTrimming)
 		{
 			switch (text.ToLowerInvariant ()) {
 			case "all":
 				metadataTrimming = MetadataTrimming.Any;
+				return true;
+			case "none":
+				metadataTrimming = MetadataTrimming.None;
 				return true;
 			case "parametername":
 				metadataTrimming = MetadataTrimming.ParameterName;

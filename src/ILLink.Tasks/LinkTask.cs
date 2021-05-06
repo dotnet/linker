@@ -213,6 +213,11 @@ namespace ILLink.Tasks
 		/// </summary>
 		public ITaskItem[] CustomSteps { get; set; }
 
+		/// <summary>
+		///   A list selected metadata which should not be trimmed. It maps to 'keep-metadata' option
+		/// </summary>
+		public ITaskItem[] KeepMetadata { get; set; }
+
 		private const string DotNetHostPathEnvironmentName = "DOTNET_HOST_PATH";
 
 		private string _dotnetPath;
@@ -415,8 +420,6 @@ namespace ILLink.Tasks
 				}
 			}
 
-			bool debugger_supported = true;
-
 			if (FeatureSettings != null) {
 				foreach (var featureSetting in FeatureSettings) {
 					var feature = featureSetting.ItemSpec;
@@ -424,14 +427,13 @@ namespace ILLink.Tasks
 					if (String.IsNullOrEmpty (featureValue))
 						throw new ArgumentException ("feature settings require \"Value\" metadata");
 					args.Append ("--feature ").Append (feature).Append (' ').AppendLine (featureValue);
-
-					if (feature == "System.Diagnostics.Debugger.IsSupported" && bool.TryParse (featureValue, out bool fValue))
-						debugger_supported = fValue;
 				}
 			}
 
-			if (debugger_supported)
-				args.AppendLine ("--keep-metadata all");
+			if (KeepMetadata != null) {
+				foreach (var metadata in KeepMetadata)
+					args.Append ("--keep-metadata ").AppendLine (Quote (metadata.ItemSpec));
+			}
 
 			if (_removeSymbols == false)
 				args.AppendLine ("-b");
