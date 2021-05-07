@@ -6,6 +6,7 @@ using System;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Threading.Tasks;
+using ILLink.CodeFixProvider;
 using ILLink.RoslynAnalyzer;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -17,14 +18,16 @@ namespace ILLink.CodeFix
 	[ExportCodeFixProvider (LanguageNames.CSharp, Name = nameof (RequiresUnreferencedCodeCodeFixProvider)), Shared]
 	public class RequiresUnreferencedCodeCodeFixProvider : BaseAttributeCodeFixProvider
 	{
-		private const string s_title = "Add RequiresUnreferencedCode attribute to parent method";
-
 		public sealed override ImmutableArray<string> FixableDiagnosticIds
-			=> ImmutableArray.Create (RequiresUnreferencedCodeAnalyzer.DiagnosticId);
+			=> ImmutableArray.Create (RequiresUnreferencedCodeAnalyzer.IL2026);
 
 		public sealed override async Task RegisterCodeFixesAsync (CodeFixContext context)
 		{
-			await BaseRegisterCodeFixesAsync (context, AttributeableParentTargets.Method, RequiresUnreferencedCodeAnalyzer.FullyQualifiedRequiresUnreferencedCodeAttribute, s_title);
+			await BaseRegisterCodeFixesAsync (
+				context: context,
+				targets: AttributeableParentTargets.MethodOrConstructor,
+				fullyQualifiedAttributeName: RequiresUnreferencedCodeAnalyzer.FullyQualifiedRequiresUnreferencedCodeAttribute,
+				title: new LocalizableResourceString (nameof (Resources.RequiresUnreferencedCodeCodeFixTittle), Resources.ResourceManager, typeof (Resources)));
 		}
 
 		internal override SyntaxNode[] GetAttributeArguments (SemanticModel semanticModel, SyntaxNode targetNode, CSharpSyntaxNode containingDecl, SyntaxGenerator generator, Diagnostic diagnostic)
@@ -34,7 +37,7 @@ namespace ILLink.CodeFix
 			if (string.IsNullOrEmpty (name) || HasPublicAccessibility (containingSymbol!)) {
 				return Array.Empty<SyntaxNode> ();
 			} else {
-				return new[] { generator.AttributeArgument (generator.LiteralExpression ($"Calls {name}")) };
+				return new[] { generator.AttributeArgument ("Message", generator.LiteralExpression ($"Calls {name}")) };
 			}
 		}
 	}

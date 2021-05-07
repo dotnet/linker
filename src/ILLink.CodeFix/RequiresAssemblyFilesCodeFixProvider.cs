@@ -6,6 +6,7 @@ using System;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Threading.Tasks;
+using ILLink.CodeFixProvider;
 using ILLink.RoslynAnalyzer;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -17,14 +18,17 @@ namespace ILLink.CodeFix
 	[ExportCodeFixProvider (LanguageNames.CSharp, Name = nameof (RequiresAssemblyFilesCodeFixProvider)), Shared]
 	public class RequiresAssemblyFilesCodeFixProvider : BaseAttributeCodeFixProvider
 	{
-		private const string s_title = "Add RequiresAssemblyFiles attribute to parent method";
-
 		public sealed override ImmutableArray<string> FixableDiagnosticIds
 			=> ImmutableArray.Create (RequiresAssemblyFilesAnalyzer.IL3000, RequiresAssemblyFilesAnalyzer.IL3001, RequiresAssemblyFilesAnalyzer.IL3002);
 
 		public sealed override async Task RegisterCodeFixesAsync (CodeFixContext context)
 		{
-			await BaseRegisterCodeFixesAsync (context, AttributeableParentTargets.Method | AttributeableParentTargets.Property | AttributeableParentTargets.Event, RequiresAssemblyFilesAnalyzer.FullyQualifiedRequiresAssemblyFilesAttribute, s_title);
+			await BaseRegisterCodeFixesAsync (
+				context: context,
+				targets: AttributeableParentTargets.MethodOrConstructor | AttributeableParentTargets.Property | AttributeableParentTargets.Event,
+				fullyQualifiedAttributeName: RequiresAssemblyFilesAnalyzer.RequiresAssemblyFilesAttributeFullyQualifiedName,
+				title: new LocalizableResourceString (nameof (Resources.RequiresAssemblyFilesCodeFixTittle),
+				Resources.ResourceManager, typeof (Resources)));
 		}
 
 		internal override SyntaxNode[] GetAttributeArguments (SemanticModel semanticModel, SyntaxNode targetNode, CSharpSyntaxNode containingDecl, SyntaxGenerator generator, Diagnostic diagnostic)

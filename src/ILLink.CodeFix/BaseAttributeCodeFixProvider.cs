@@ -16,7 +16,7 @@ using Microsoft.CodeAnalysis.Simplification;
 
 namespace ILLink.CodeFix
 {
-	public abstract class BaseAttributeCodeFixProvider : CodeFixProvider
+	public abstract class BaseAttributeCodeFixProvider : Microsoft.CodeAnalysis.CodeFixes.CodeFixProvider
 	{
 		public sealed override FixAllProvider GetFixAllProvider ()
 		{
@@ -24,7 +24,7 @@ namespace ILLink.CodeFix
 			return WellKnownFixAllProviders.BatchFixer;
 		}
 
-		internal async Task BaseRegisterCodeFixesAsync (CodeFixContext context, AttributeableParentTargets targets, string fullyQualifiedAttributeName, string s_title)
+		internal async Task BaseRegisterCodeFixesAsync (CodeFixContext context, AttributeableParentTargets targets, string fullyQualifiedAttributeName, LocalizableString title)
 		{
 			var root = await context.Document.GetSyntaxRootAsync (context.CancellationToken).ConfigureAwait (false);
 
@@ -44,10 +44,10 @@ namespace ILLink.CodeFix
 				// Register a code action that will invoke the fix.
 				context.RegisterCodeFix (
 					CodeAction.Create (
-						title: s_title,
+						title: title.ToString (),
 						createChangedDocument: c => AddAttribute (
 							document, editor, generator, declarationSyntax, attrArgs, symbol!, c),
-						equivalenceKey: s_title),
+						equivalenceKey: title.ToString ()),
 					diagnostic);
 			}
 		}
@@ -79,11 +79,11 @@ namespace ILLink.CodeFix
 		[Flags]
 		internal enum AttributeableParentTargets
 		{
-			Method = 0x0001,
+			MethodOrConstructor = 0x0001,
 			Property = 0x0002,
 			Field = 0x0004,
 			Event = 0x0008,
-			All = Method | Property | Field | Event
+			All = MethodOrConstructor | Property | Field | Event
 		}
 
 		private static CSharpSyntaxNode? FindAttributableParent (SyntaxNode node, AttributeableParentTargets targets)
@@ -93,7 +93,7 @@ namespace ILLink.CodeFix
 				switch (parentNode) {
 				case LambdaExpressionSyntax:
 					return null;
-				case LocalFunctionStatementSyntax or BaseMethodDeclarationSyntax when targets.HasFlag (AttributeableParentTargets.Method):
+				case LocalFunctionStatementSyntax or BaseMethodDeclarationSyntax when targets.HasFlag (AttributeableParentTargets.MethodOrConstructor):
 				case PropertyDeclarationSyntax when targets.HasFlag (AttributeableParentTargets.Property):
 				case FieldDeclarationSyntax when targets.HasFlag (AttributeableParentTargets.Field):
 				case EventDeclarationSyntax when targets.HasFlag (AttributeableParentTargets.Event):

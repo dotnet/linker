@@ -4,22 +4,20 @@
 
 using System;
 using System.Collections.Immutable;
-using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
-using Microsoft.CodeAnalysis.Operations;
 
 namespace ILLink.RoslynAnalyzer
 {
 	[DiagnosticAnalyzer (LanguageNames.CSharp)]
-	public class RequiresUnreferencedCodeAnalyzer : DiagnosticAnalyzer
+	public class RequiresUnreferencedCodeAnalyzer : RequiresAnalyzerBase
 	{
-		public const string DiagnosticId = "IL2026";
+		public const string IL2026 = nameof (IL2026);
 		const string RequiresUnreferencedCodeAttribute = nameof (RequiresUnreferencedCodeAttribute);
 		public const string FullyQualifiedRequiresUnreferencedCodeAttribute = "System.Diagnostics.CodeAnalysis." + RequiresUnreferencedCodeAttribute;
 
 		static readonly DiagnosticDescriptor s_requiresUnreferencedCodeRule = new DiagnosticDescriptor (
-			DiagnosticId,
+			IL2026,
 			new LocalizableResourceString (nameof (Resources.RequiresUnreferencedCodeTitle),
 			Resources.ResourceManager, typeof (Resources)),
 			new LocalizableResourceString (nameof (Resources.RequiresUnreferencedCodeMessage),
@@ -30,127 +28,50 @@ namespace ILLink.RoslynAnalyzer
 
 		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create (s_requiresUnreferencedCodeRule);
 
-		public override void Initialize (AnalysisContext context)
+		protected override string RequiresAttributeName => RequiresUnreferencedCodeAttribute;
+
+		protected override string RequiresAttributeFullyQualifiedName => FullyQualifiedRequiresUnreferencedCodeAttribute;
+
+		protected override DiagnosticTargets AnalyzerDiagnosticTargets => DiagnosticTargets.MethodOrConstructor;
+
+		protected override DiagnosticDescriptor RequiresDiagnosticRule => s_requiresUnreferencedCodeRule;
+
+		protected override ImmutableArray<ISymbol> GetDangerousPatterns (Compilation compilation)
 		{
-			context.EnableConcurrentExecution ();
-			context.ConfigureGeneratedCodeAnalysis (GeneratedCodeAnalysisFlags.ReportDiagnostics);
+			return new ImmutableArray<ISymbol> ();
+		}
 
-			context.RegisterCompilationStartAction (context => {
-				var compilation = context.Compilation;
+		protected override bool ReportDangerousPatternDiagnostic (OperationAnalysisContext operationContext, ImmutableArray<ISymbol> dangerousPatterns, ISymbol member)
+		{
+			return false;
+		}
 
-				var isTrimAnalyzerEnabled = context.Options.GetMSBuildPropertyValue (MSBuildPropertyOptionNames.EnableTrimAnalyzer, compilation);
-				if (!string.Equals (isTrimAnalyzerEnabled?.Trim (), "true", StringComparison.OrdinalIgnoreCase)) {
-					return;
+		protected override bool VerifyMSBuildOptions (CompilationStartAnalysisContext context, Compilation compilation)
+		{
+			var isTrimAnalyzerEnabled = context.Options.GetMSBuildPropertyValue (MSBuildPropertyOptionNames.EnableTrimAnalyzer, compilation);
+			if (!string.Equals (isTrimAnalyzerEnabled?.Trim (), "true", StringComparison.OrdinalIgnoreCase))
+				return true;
+			return false;
+		}
+
+		protected override bool TryGetRequiresAttribute (ISymbol member, out AttributeData? requiresAttribute)
+		{
+			requiresAttribute = null;
+			foreach (var _attribute in member.GetAttributes ()) {
+				if (_attribute.AttributeClass is var attrClass && attrClass != null &&
+					attrClass.HasName (RequiresAttributeFullyQualifiedName) && _attribute.ConstructorArguments.Length >= 1 &&
+					_attribute.ConstructorArguments[0] is { Type: { SpecialType: SpecialType.System_String } } ctorArg) {
+					requiresAttribute = _attribute;
+					return true;
 				}
+			}
+			return false;
+		}
 
-				context.RegisterOperationAction (operationContext => {
-					var call = (IInvocationOperation) operationContext.Operation;
-					CheckMethodOrCtorCall (operationContext, call.TargetMethod);
-				}, OperationKind.Invocation);
-
-				context.RegisterOperationAction (operationContext => {
-					var call = (IObjectCreationOperation) operationContext.Operation;
-					var ctor = call.Constructor;
-					if (ctor is not null) {
-						CheckMethodOrCtorCall (operationContext, ctor);
-					}
-				}, OperationKind.ObjectCreation);
-
-				context.RegisterOperationAction (operationContext => {
-					var fieldAccess = (IFieldReferenceOperation) operationContext.Operation;
-					if (fieldAccess.Field.ContainingType is INamedTypeSymbol { StaticConstructors: var ctors } &&
-						!SymbolEqualityComparer.Default.Equals (operationContext.ContainingSymbol.ContainingType, fieldAccess.Field.ContainingType)) {
-						CheckStaticConstructors (operationContext, ctors);
-					}
-				}, OperationKind.FieldReference);
-
-				context.RegisterOperationAction (operationContext => {
-					var propAccess = (IPropertyReferenceOperation) operationContext.Operation;
-					var prop = propAccess.Property;
-					var usageInfo = propAccess.GetValueUsageInfo (prop);
-					if (usageInfo.HasFlag (ValueUsageInfo.Read) && prop.GetMethod != null)
-						CheckMethodOrCtorCall (operationContext, prop.GetMethod);
-
-					if (usageInfo.HasFlag (ValueUsageInfo.Write) && prop.SetMethod != null)
-						CheckMethodOrCtorCall (operationContext, prop.SetMethod);
-				}, OperationKind.PropertyReference);
-
-				context.RegisterOperationAction (operationContext => {
-					var delegateCreation = (IDelegateCreationOperation) operationContext.Operation;
-					IMethodSymbol methodSymbol;
-					if (delegateCreation.Target is IMethodReferenceOperation methodRef)
-						methodSymbol = methodRef.Method;
-					else if (delegateCreation.Target is IAnonymousFunctionOperation lambda)
-						methodSymbol = lambda.Symbol;
-					else
-						return;
-					CheckMethodOrCtorCall (operationContext, methodSymbol);
-				}, OperationKind.DelegateCreation);
-
-				static void CheckStaticConstructors (OperationAnalysisContext operationContext,
-					ImmutableArray<IMethodSymbol> constructors)
-				{
-					foreach (var constructor in constructors) {
-						if (constructor.Parameters.Length == 0 && constructor.HasAttribute (RequiresUnreferencedCodeAttribute) && constructor.MethodKind == MethodKind.StaticConstructor) {
-							if (constructor.TryGetAttributeWithMessageOnCtor (FullyQualifiedRequiresUnreferencedCodeAttribute, out AttributeData? requiresUnreferencedCode)) {
-								operationContext.ReportDiagnostic (Diagnostic.Create (
-									s_requiresUnreferencedCodeRule,
-									operationContext.Operation.Syntax.GetLocation (),
-									constructor.ToString (),
-									(string) requiresUnreferencedCode!.ConstructorArguments[0].Value!,
-									requiresUnreferencedCode!.NamedArguments.FirstOrDefault (na => na.Key == "Url").Value.Value?.ToString ()));
-							}
-						}
-					}
-				}
-
-				static void CheckMethodOrCtorCall (
-					OperationAnalysisContext operationContext,
-					IMethodSymbol method)
-				{
-					// Find containing symbol
-					ISymbol? containingSymbol = null;
-					for (var current = operationContext.Operation;
-						 current is not null;
-						 current = current.Parent) {
-						if (current is ILocalFunctionOperation local) {
-							containingSymbol = local.Symbol;
-							break;
-						} else if (current is IAnonymousFunctionOperation lambda) {
-							containingSymbol = lambda.Symbol;
-							break;
-						} else if (current is IMethodBodyBaseOperation) {
-							break;
-						}
-					}
-					containingSymbol ??= operationContext.ContainingSymbol;
-
-					// If parent method contains RequiresUnreferencedCodeAttribute then we shouldn't report diagnostics for this method
-					if (containingSymbol is IMethodSymbol &&
-						containingSymbol.HasAttribute (RequiresUnreferencedCodeAttribute))
-						return;
-
-					// If calling an instance constructor, check first for any static constructor since it will be called implicitly
-					if (method.ContainingType is { } containingType && operationContext.Operation is IObjectCreationOperation)
-						CheckStaticConstructors (operationContext, containingType.StaticConstructors);
-
-					if (!method.HasAttribute (RequiresUnreferencedCodeAttribute))
-						return;
-
-					// Warn on the most derived base method taking into account covariant returns
-					while (method.OverriddenMethod != null && SymbolEqualityComparer.Default.Equals (method.ReturnType, method.OverriddenMethod.ReturnType))
-						method = method.OverriddenMethod;
-
-					if (method.TryGetAttributeWithMessageOnCtor (FullyQualifiedRequiresUnreferencedCodeAttribute, out AttributeData? requiresUnreferencedCode)) {
-						operationContext.ReportDiagnostic (Diagnostic.Create (
-							s_requiresUnreferencedCodeRule,
-							operationContext.Operation.Syntax.GetLocation (),
-							method.OriginalDefinition.ToString (),
-							(string) requiresUnreferencedCode!.ConstructorArguments[0].Value!,
-							requiresUnreferencedCode!.NamedArguments.FirstOrDefault (na => na.Key == "Url").Value.Value?.ToString ()));
-					}
-				}
-			});
+		protected override string GetMessageFromAttribute (AttributeData? requiresAttribute)
+		{
+			var message = (string) requiresAttribute!.ConstructorArguments[0].Value!;
+			return message != string.Empty ? " " + message + "." : message;
 		}
 	}
 }

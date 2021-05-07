@@ -24,12 +24,17 @@
     <ProjectReference Include="..\ILLink.RoslynAnalyzer\ILLink.RoslynAnalyzer.csproj" />
   </ItemGroup>
 
-  <Target Name="IncludeAnalyzerAssembliesInPkg"
-          DependsOnTargets="InitializeStandardNuspecProperties"
-          AfterTargets="AfterBuild">
+  <ItemGroup>
+    <EmbeddedResource Update="Resources.resx">
+      <GenerateSource>true</GenerateSource>
+      <Generator>MSBuild:_GenerateResxSource</Generator>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <Target Name="IncludeAnalyzerAssembliesInPkg" DependsOnTargets="InitializeStandardNuspecProperties" AfterTargets="AfterBuild">
     <ItemGroup>
       <None Include="$(OutputPath)\**\*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-      <None Include="$(OutputPath)\**\Microsoft.NET.ILLink.Analyzers.props" Pack="true" PackagePath="build"/>
+      <None Include="$(OutputPath)\**\Microsoft.NET.ILLink.Analyzers.props" Pack="true" PackagePath="build" />
     </ItemGroup>
   </Target>
 

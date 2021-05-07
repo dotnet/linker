@@ -6,6 +6,7 @@ using System.Collections.Immutable;
 using System.Composition;
 using System.Globalization;
 using System.Threading.Tasks;
+using ILLink.CodeFixProvider;
 using ILLink.RoslynAnalyzer;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -17,16 +18,19 @@ namespace ILLink.CodeFix
 	[ExportCodeFixProvider (LanguageNames.CSharp, Name = nameof (UnconditionalSuppressMessageCodeFixProvider)), Shared]
 	public class UnconditionalSuppressMessageCodeFixProvider : BaseAttributeCodeFixProvider
 	{
-		private const string s_title = "Add UnconditionalSuppressMessage attribute to parent method";
 		const string UnconditionalSuppressMessageAttribute = nameof (UnconditionalSuppressMessageAttribute);
 		public const string FullyQualifiedUnconditionalSuppressMessageAttribute = "System.Diagnostics.CodeAnalysis." + UnconditionalSuppressMessageAttribute;
 
 		public sealed override ImmutableArray<string> FixableDiagnosticIds
-			=> ImmutableArray.Create (RequiresUnreferencedCodeAnalyzer.DiagnosticId, RequiresAssemblyFilesAnalyzer.IL3000, RequiresAssemblyFilesAnalyzer.IL3001, RequiresAssemblyFilesAnalyzer.IL3002);
+			=> ImmutableArray.Create (RequiresUnreferencedCodeAnalyzer.IL2026, RequiresAssemblyFilesAnalyzer.IL3000, RequiresAssemblyFilesAnalyzer.IL3001, RequiresAssemblyFilesAnalyzer.IL3002);
 
 		public sealed override Task RegisterCodeFixesAsync (CodeFixContext context)
 		{
-			return BaseRegisterCodeFixesAsync (context, AttributeableParentTargets.All, FullyQualifiedUnconditionalSuppressMessageAttribute, s_title);
+			return BaseRegisterCodeFixesAsync (
+				context: context,
+				targets: AttributeableParentTargets.All,
+				fullyQualifiedAttributeName: FullyQualifiedUnconditionalSuppressMessageAttribute,
+				title: new LocalizableResourceString (nameof (Resources.UconditionalSuppressMessageCodeFixTittle), Resources.ResourceManager, typeof (Resources)));
 		}
 
 		internal override SyntaxNode[] GetAttributeArguments (SemanticModel semanticModel, SyntaxNode targetNode, CSharpSyntaxNode containingDecl, SyntaxGenerator generator, Diagnostic diagnostic)
