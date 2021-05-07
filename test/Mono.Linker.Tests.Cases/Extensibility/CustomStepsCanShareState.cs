@@ -3,12 +3,12 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.Extensibility
 {
-	[SetupCompileBefore ("customstep.dll", new[] {
+	[SetupCompileBefore ("SharedCustomSteps.dll", new[] {
 		"Dependencies/CustomStepsWithSharedState.cs",
 		"Dependencies/PreserveMembersSubStep.cs"
 		}, new[] { "illink.dll", "Mono.Cecil.dll", "netstandard.dll" })]
-	[SetupLinkerArgument ("--custom-step", "SharedStateHandler2,customstep.dll")]
-	[SetupLinkerArgument ("--custom-step", "SharedStateHandler1,customstep.dll")]
+	[SetupLinkerArgument ("--custom-step", "SharedStateHandler2,SharedCustomSteps.dll")]
+	[SetupLinkerArgument ("--custom-step", "SharedStateHandler1,SharedCustomSteps.dll")]
 	public class CustomStepsCanShareState
 	{
 		public static void Main ()
