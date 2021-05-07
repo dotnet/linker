@@ -10,7 +10,7 @@ namespace Mono.Linker
 	public enum MetadataTrimming
 	{
 		None = 0,
-		ParameterName = 1 << 1,
+		ParameterName = 1,
 
 		Any = ParameterName
 	}
