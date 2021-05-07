@@ -28,7 +28,7 @@ namespace ILLink.RoslynAnalyzer
 			context.ConfigureGeneratedCodeAnalysis (GeneratedCodeAnalysisFlags.ReportDiagnostics);
 			context.RegisterCompilationStartAction (context => {
 				var compilation = context.Compilation;
-				if (VerifyMSBuildOptions (context, compilation))
+				if (VerifyMSBuildOptions (context.Options, compilation))
 					return;
 				var dangerousPatterns = GetDangerousPatterns (compilation);
 
@@ -149,6 +149,7 @@ namespace ILLink.RoslynAnalyzer
 					return lambda.Symbol;
 				case ILocalFunctionOperation local when targets.HasFlag (DiagnosticTargets.MethodOrConstructor):
 					return local.Symbol;
+				case IMethodBodyBaseOperation when targets.HasFlag (DiagnosticTargets.MethodOrConstructor):
 				case IPropertyReferenceOperation when targets.HasFlag (DiagnosticTargets.Property):
 				case IFieldReferenceOperation when targets.HasFlag (DiagnosticTargets.Field):
 				case IEventReferenceOperation when targets.HasFlag (DiagnosticTargets.Event):
@@ -187,6 +188,6 @@ namespace ILLink.RoslynAnalyzer
 
 		protected abstract ImmutableArray<ISymbol> GetDangerousPatterns (Compilation compilation);
 
-		protected abstract bool VerifyMSBuildOptions (CompilationStartAnalysisContext context, Compilation compilation);
+		protected abstract bool VerifyMSBuildOptions (AnalyzerOptions options, Compilation compilation);
 	}
 }

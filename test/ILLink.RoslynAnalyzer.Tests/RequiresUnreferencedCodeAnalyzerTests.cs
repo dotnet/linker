@@ -103,17 +103,17 @@ public class C
     [RequiresUnreferencedCodeAttribute(""message"")]
     public int M1() => 0;
 
-    [RequiresUnreferencedCode(Message = ""Calls M1"")]
+    [RequiresUnreferencedCode(""Calls M1"")]
     int M2() => M1();
 }
 class D
 {
-    [RequiresUnreferencedCode(Message = ""Calls M1"")]
+    [RequiresUnreferencedCode(""Calls M1"")]
     public int M3(C c) => c.M1();
 
     public class E
     {
-        [RequiresUnreferencedCode(Message = ""Calls M1"")]
+        [RequiresUnreferencedCode(""Calls M1"")]
         public int M4(C c) => c.M1();
     }
 }

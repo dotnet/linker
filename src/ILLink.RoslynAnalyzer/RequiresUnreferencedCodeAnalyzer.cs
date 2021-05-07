@@ -46,9 +46,9 @@ namespace ILLink.RoslynAnalyzer
 			return false;
 		}
 
-		protected override bool VerifyMSBuildOptions (CompilationStartAnalysisContext context, Compilation compilation)
+		protected override bool VerifyMSBuildOptions (AnalyzerOptions options, Compilation compilation)
 		{
-			var isTrimAnalyzerEnabled = context.Options.GetMSBuildPropertyValue (MSBuildPropertyOptionNames.EnableTrimAnalyzer, compilation);
+			var isTrimAnalyzerEnabled = options.GetMSBuildPropertyValue (MSBuildPropertyOptionNames.EnableTrimAnalyzer, compilation);
 			if (!string.Equals (isTrimAnalyzerEnabled?.Trim (), "true", StringComparison.OrdinalIgnoreCase))
 				return true;
 			return false;
