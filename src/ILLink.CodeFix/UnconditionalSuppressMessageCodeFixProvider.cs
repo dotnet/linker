@@ -24,16 +24,15 @@ namespace ILLink.CodeFix
 		public sealed override ImmutableArray<string> FixableDiagnosticIds
 			=> ImmutableArray.Create (RequiresUnreferencedCodeAnalyzer.IL2026, RequiresAssemblyFilesAnalyzer.IL3000, RequiresAssemblyFilesAnalyzer.IL3001, RequiresAssemblyFilesAnalyzer.IL3002);
 
-		public sealed override Task RegisterCodeFixesAsync (CodeFixContext context)
-		{
-			return BaseRegisterCodeFixesAsync (
-				context: context,
-				targets: AttributeableParentTargets.All,
-				fullyQualifiedAttributeName: FullyQualifiedUnconditionalSuppressMessageAttribute,
-				title: new LocalizableResourceString (nameof (Resources.UconditionalSuppressMessageCodeFixTittle), Resources.ResourceManager, typeof (Resources)));
-		}
+		protected override LocalizableString CodeFixTittle => new LocalizableResourceString (nameof (Resources.UconditionalSuppressMessageCodeFixTittle), Resources.ResourceManager, typeof (Resources));
 
-		internal override SyntaxNode[] GetAttributeArguments (SemanticModel semanticModel, SyntaxNode targetNode, CSharpSyntaxNode containingDecl, SyntaxGenerator generator, Diagnostic diagnostic)
+		protected override string FullyQualifiedAttributeName => FullyQualifiedUnconditionalSuppressMessageAttribute;
+
+		protected override AttributeableParentTargets AttributableParentTargets => AttributeableParentTargets.All;
+
+		public sealed override Task RegisterCodeFixesAsync (CodeFixContext context) => BaseRegisterCodeFixesAsync (context);
+
+		protected override SyntaxNode[] GetAttributeArguments (SemanticModel semanticModel, SyntaxNode targetNode, CSharpSyntaxNode containingDecl, SyntaxGenerator generator, Diagnostic diagnostic)
 		{
 			// UnconditionalSuppressMessage("Rule Category", "Rule Id", Justification = "<Pending>")
 			var category = generator.LiteralExpression (diagnostic.Descriptor.Category);

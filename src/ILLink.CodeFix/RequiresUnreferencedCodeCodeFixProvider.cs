@@ -21,16 +21,15 @@ namespace ILLink.CodeFix
 		public sealed override ImmutableArray<string> FixableDiagnosticIds
 			=> ImmutableArray.Create (RequiresUnreferencedCodeAnalyzer.IL2026);
 
-		public sealed override async Task RegisterCodeFixesAsync (CodeFixContext context)
-		{
-			await BaseRegisterCodeFixesAsync (
-				context: context,
-				targets: AttributeableParentTargets.MethodOrConstructor,
-				fullyQualifiedAttributeName: RequiresUnreferencedCodeAnalyzer.FullyQualifiedRequiresUnreferencedCodeAttribute,
-				title: new LocalizableResourceString (nameof (Resources.RequiresUnreferencedCodeCodeFixTittle), Resources.ResourceManager, typeof (Resources)));
-		}
+		protected override LocalizableString CodeFixTittle => new LocalizableResourceString (nameof (Resources.RequiresUnreferencedCodeCodeFixTittle), Resources.ResourceManager, typeof (Resources));
 
-		internal override SyntaxNode[] GetAttributeArguments (SemanticModel semanticModel, SyntaxNode targetNode, CSharpSyntaxNode containingDecl, SyntaxGenerator generator, Diagnostic diagnostic)
+		protected override string FullyQualifiedAttributeName => RequiresUnreferencedCodeAnalyzer.FullyQualifiedRequiresUnreferencedCodeAttribute;
+
+		protected override AttributeableParentTargets AttributableParentTargets => AttributeableParentTargets.MethodOrConstructor;
+
+		public sealed override Task RegisterCodeFixesAsync (CodeFixContext context) => BaseRegisterCodeFixesAsync (context);
+
+		protected override SyntaxNode[] GetAttributeArguments (SemanticModel semanticModel, SyntaxNode targetNode, CSharpSyntaxNode containingDecl, SyntaxGenerator generator, Diagnostic diagnostic)
 		{
 			var containingSymbol = semanticModel.GetDeclaredSymbol (containingDecl);
 			var name = semanticModel.GetSymbolInfo (targetNode).Symbol?.Name;

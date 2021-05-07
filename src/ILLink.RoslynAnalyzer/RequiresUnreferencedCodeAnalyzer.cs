@@ -36,15 +36,9 @@ namespace ILLink.RoslynAnalyzer
 
 		protected override DiagnosticDescriptor RequiresDiagnosticRule => s_requiresUnreferencedCodeRule;
 
-		protected override ImmutableArray<ISymbol> GetDangerousPatterns (Compilation compilation)
-		{
-			return new ImmutableArray<ISymbol> ();
-		}
+		protected override ImmutableArray<ISymbol> GetDangerousPatterns (Compilation compilation) => new ImmutableArray<ISymbol> ();
 
-		protected override bool ReportDangerousPatternDiagnostic (OperationAnalysisContext operationContext, ImmutableArray<ISymbol> dangerousPatterns, ISymbol member)
-		{
-			return false;
-		}
+		protected override bool ReportDangerousPatternDiagnostic (OperationAnalysisContext operationContext, ImmutableArray<ISymbol> dangerousPatterns, ISymbol member) => false;
 
 		protected override bool VerifyMSBuildOptions (AnalyzerOptions options, Compilation compilation)
 		{

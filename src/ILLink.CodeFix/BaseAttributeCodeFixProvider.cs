@@ -18,13 +18,19 @@ namespace ILLink.CodeFix
 {
 	public abstract class BaseAttributeCodeFixProvider : Microsoft.CodeAnalysis.CodeFixes.CodeFixProvider
 	{
+		protected abstract LocalizableString CodeFixTittle { get; }
+
+		protected abstract string FullyQualifiedAttributeName { get; }
+
+		protected abstract AttributeableParentTargets AttributableParentTargets { get; }
+
 		public sealed override FixAllProvider GetFixAllProvider ()
 		{
 			// See https://github.com/dotnet/roslyn/blob/master/docs/analyzers/FixAllProvider.md for more information on Fix All Providers
 			return WellKnownFixAllProviders.BatchFixer;
 		}
 
-		internal async Task BaseRegisterCodeFixesAsync (CodeFixContext context, AttributeableParentTargets targets, string fullyQualifiedAttributeName, LocalizableString title)
+		protected async Task BaseRegisterCodeFixesAsync (CodeFixContext context)
 		{
 			var root = await context.Document.GetSyntaxRootAsync (context.CancellationToken).ConfigureAwait (false);
 
@@ -32,22 +38,23 @@ namespace ILLink.CodeFix
 			var diagnosticSpan = diagnostic.Location.SourceSpan;
 
 			SyntaxNode targetNode = root!.FindNode (diagnosticSpan);
-			CSharpSyntaxNode? declarationSyntax = FindAttributableParent (targetNode, targets);
+			CSharpSyntaxNode? declarationSyntax = FindAttributableParent (targetNode, AttributableParentTargets);
 			if (declarationSyntax is not null) {
 				var semanticModel = await context.Document.GetSemanticModelAsync (context.CancellationToken).ConfigureAwait (false);
-				var symbol = semanticModel!.Compilation.GetTypeByMetadataName (fullyQualifiedAttributeName);
+				var symbol = semanticModel!.Compilation.GetTypeByMetadataName (FullyQualifiedAttributeName);
 				var document = context.Document;
 				var editor = new SyntaxEditor (root, document.Project.Solution.Workspace);
 				var generator = editor.Generator;
 				var attrArgs = GetAttributeArguments (semanticModel, targetNode, declarationSyntax, generator, diagnostic);
+				var codeFixTittle = CodeFixTittle.ToString ();
 
 				// Register a code action that will invoke the fix.
 				context.RegisterCodeFix (
 					CodeAction.Create (
-						title: title.ToString (),
+						title: codeFixTittle,
 						createChangedDocument: c => AddAttribute (
 							document, editor, generator, declarationSyntax, attrArgs, symbol!, c),
-						equivalenceKey: title.ToString ()),
+						equivalenceKey: codeFixTittle),
 					diagnostic);
 			}
 		}
@@ -77,7 +84,7 @@ namespace ILLink.CodeFix
 		}
 
 		[Flags]
-		internal enum AttributeableParentTargets
+		protected enum AttributeableParentTargets
 		{
 			MethodOrConstructor = 0x0001,
 			Property = 0x0002,
@@ -106,9 +113,9 @@ namespace ILLink.CodeFix
 			return null;
 		}
 
-		internal abstract SyntaxNode[] GetAttributeArguments (SemanticModel semanticModel, SyntaxNode targetNode, CSharpSyntaxNode declarationSyntax, SyntaxGenerator generator, Diagnostic diagnostic);
+		protected abstract SyntaxNode[] GetAttributeArguments (SemanticModel semanticModel, SyntaxNode targetNode, CSharpSyntaxNode declarationSyntax, SyntaxGenerator generator, Diagnostic diagnostic);
 
-		internal static bool HasPublicAccessibility (ISymbol? m)
+		protected static bool HasPublicAccessibility (ISymbol? m)
 		{
 			if (m is not { DeclaredAccessibility: Accessibility.Public or Accessibility.Protected }) {
 				return false;

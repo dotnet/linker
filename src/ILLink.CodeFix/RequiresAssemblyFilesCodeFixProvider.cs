@@ -21,17 +21,15 @@ namespace ILLink.CodeFix
 		public sealed override ImmutableArray<string> FixableDiagnosticIds
 			=> ImmutableArray.Create (RequiresAssemblyFilesAnalyzer.IL3000, RequiresAssemblyFilesAnalyzer.IL3001, RequiresAssemblyFilesAnalyzer.IL3002);
 
-		public sealed override async Task RegisterCodeFixesAsync (CodeFixContext context)
-		{
-			await BaseRegisterCodeFixesAsync (
-				context: context,
-				targets: AttributeableParentTargets.MethodOrConstructor | AttributeableParentTargets.Property | AttributeableParentTargets.Event,
-				fullyQualifiedAttributeName: RequiresAssemblyFilesAnalyzer.RequiresAssemblyFilesAttributeFullyQualifiedName,
-				title: new LocalizableResourceString (nameof (Resources.RequiresAssemblyFilesCodeFixTittle),
-				Resources.ResourceManager, typeof (Resources)));
-		}
+		protected override LocalizableString CodeFixTittle => new LocalizableResourceString (nameof (Resources.RequiresAssemblyFilesCodeFixTittle), Resources.ResourceManager, typeof (Resources));
 
-		internal override SyntaxNode[] GetAttributeArguments (SemanticModel semanticModel, SyntaxNode targetNode, CSharpSyntaxNode containingDecl, SyntaxGenerator generator, Diagnostic diagnostic)
+		protected override string FullyQualifiedAttributeName => RequiresAssemblyFilesAnalyzer.RequiresAssemblyFilesAttributeFullyQualifiedName;
+
+		protected override AttributeableParentTargets AttributableParentTargets => AttributeableParentTargets.MethodOrConstructor | AttributeableParentTargets.Property | AttributeableParentTargets.Event;
+
+		public sealed override Task RegisterCodeFixesAsync (CodeFixContext context) => BaseRegisterCodeFixesAsync (context);
+
+		protected override SyntaxNode[] GetAttributeArguments (SemanticModel semanticModel, SyntaxNode targetNode, CSharpSyntaxNode containingDecl, SyntaxGenerator generator, Diagnostic diagnostic)
 		{
 			var containingSymbol = semanticModel.GetDeclaredSymbol (containingDecl);
 			var name = semanticModel.GetSymbolInfo (targetNode).Symbol?.Name;
