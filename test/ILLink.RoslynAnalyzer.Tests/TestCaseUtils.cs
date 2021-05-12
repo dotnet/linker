@@ -14,7 +14,7 @@ using Xunit;
 
 namespace ILLink.RoslynAnalyzer.Tests
 {
-	public class TestCaseUtils
+	public abstract class TestCaseUtils
 	{
 		public static IEnumerable<object[]> GetTestData (string testSuiteName)
 		{
@@ -24,12 +24,12 @@ namespace ILLink.RoslynAnalyzer.Tests
 
 			var attributes = root.DescendantNodes ()
 				.OfType<AttributeSyntax> ()
-				.Where (a => IsWellKnown (a));
+				.Where (IsWellKnown);
 
 			var methodsXattributes = root.DescendantNodes ()
 				.OfType<MethodDeclarationSyntax> ()
 				.Select (m => (m!, m.AttributeLists.SelectMany (
-									 al => al.Attributes.Where (a => IsWellKnown (a)))
+									 al => al.Attributes.Where (IsWellKnown))
 								  .ToList ()))
 				.Where (mXattrs => mXattrs.Item2.Count > 0)
 				.Distinct ()
