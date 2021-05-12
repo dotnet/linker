@@ -55,26 +55,26 @@ namespace ILLink.RoslynAnalyzer
 
 		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create (s_locationRule, s_getFilesRule, s_requiresAssemblyFilesRule);
 
-		protected override string RequiresAttributeName => RequiresAssemblyFilesAttribute;
+		private protected override string RequiresAttributeName => RequiresAssemblyFilesAttribute;
 
-		protected override string RequiresAttributeFullyQualifiedName => RequiresAssemblyFilesAttributeFullyQualifiedName;
+		private protected override string RequiresAttributeFullyQualifiedName => RequiresAssemblyFilesAttributeFullyQualifiedName;
 
-		protected override DiagnosticTargets AnalyzerDiagnosticTargets => DiagnosticTargets.MethodOrConstructor | DiagnosticTargets.Property | DiagnosticTargets.Event;
+		private protected override DiagnosticTargets AnalyzerDiagnosticTargets => DiagnosticTargets.MethodOrConstructor | DiagnosticTargets.Property | DiagnosticTargets.Event;
 
-		protected override DiagnosticDescriptor RequiresDiagnosticRule => s_requiresAssemblyFilesRule;
+		private protected override DiagnosticDescriptor RequiresDiagnosticRule => s_requiresAssemblyFilesRule;
 
 		protected override bool VerifyMSBuildOptions (AnalyzerOptions options, Compilation compilation)
 		{
 			var isSingleFileAnalyzerEnabled = options.GetMSBuildPropertyValue (MSBuildPropertyOptionNames.EnableSingleFileAnalyzer, compilation);
 			if (!string.Equals (isSingleFileAnalyzerEnabled?.Trim (), "true", StringComparison.OrdinalIgnoreCase))
-				return true;
+				return false;
 			var includesAllContent = options.GetMSBuildPropertyValue (MSBuildPropertyOptionNames.IncludeAllContentForSelfExtract, compilation);
 			if (string.Equals (includesAllContent?.Trim (), "true", StringComparison.OrdinalIgnoreCase))
-				return true;
-			return false;
+				return false;
+			return true;
 		}
 
-		protected override ImmutableArray<ISymbol> GetDangerousPatterns (Compilation compilation)
+		protected override ImmutableArray<ISymbol> GetSpecialIncompatibleMembers (Compilation compilation)
 		{
 			var dangerousPatternsBuilder = ImmutableArray.CreateBuilder<ISymbol> ();
 
@@ -96,7 +96,7 @@ namespace ILLink.RoslynAnalyzer
 			return dangerousPatternsBuilder.ToImmutable ();
 		}
 
-		protected override bool ReportDangerousPatternDiagnostic (OperationAnalysisContext operationContext, ImmutableArray<ISymbol> dangerousPatterns, ISymbol member)
+		protected override bool ReportSpecialIncompatibleMembersDiagnostic (OperationAnalysisContext operationContext, ImmutableArray<ISymbol> dangerousPatterns, ISymbol member)
 		{
 			if (member is IMethodSymbol && ImmutableArrayOperations.Contains (dangerousPatterns, member, SymbolEqualityComparer.Default)) {
 				operationContext.ReportDiagnostic (Diagnostic.Create (s_getFilesRule, operationContext.Operation.Syntax.GetLocation (), member));
@@ -108,19 +108,7 @@ namespace ILLink.RoslynAnalyzer
 			return false;
 		}
 
-		protected override bool TryGetRequiresAttribute (ISymbol member, out AttributeData? requiresAttribute)
-		{
-			requiresAttribute = null;
-			foreach (var _attribute in member.GetAttributes ()) {
-				if (_attribute.AttributeClass is var attrClass && attrClass != null &&
-					attrClass.HasName (RequiresAssemblyFilesAttributeFullyQualifiedName) &&
-					_attribute.ConstructorArguments.Length == 0) {
-					requiresAttribute = _attribute;
-					return true;
-				}
-			}
-			return false;
-		}
+		protected override bool VerifyAttributeArguments (AttributeData attribute) => attribute.ConstructorArguments.Length == 0;
 
 		protected override string GetMessageFromAttribute (AttributeData? requiresAttribute)
 		{

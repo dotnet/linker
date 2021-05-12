@@ -10,7 +10,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace ILLink.RoslynAnalyzer
 {
 	[DiagnosticAnalyzer (LanguageNames.CSharp)]
-	public class RequiresUnreferencedCodeAnalyzer : RequiresAnalyzerBase
+	public sealed class RequiresUnreferencedCodeAnalyzer : RequiresAnalyzerBase
 	{
 		public const string IL2026 = nameof (IL2026);
 		const string RequiresUnreferencedCodeAttribute = nameof (RequiresUnreferencedCodeAttribute);
@@ -28,39 +28,28 @@ namespace ILLink.RoslynAnalyzer
 
 		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create (s_requiresUnreferencedCodeRule);
 
-		protected override string RequiresAttributeName => RequiresUnreferencedCodeAttribute;
+		private protected override string RequiresAttributeName => RequiresUnreferencedCodeAttribute;
 
-		protected override string RequiresAttributeFullyQualifiedName => FullyQualifiedRequiresUnreferencedCodeAttribute;
+		private protected override string RequiresAttributeFullyQualifiedName => FullyQualifiedRequiresUnreferencedCodeAttribute;
 
-		protected override DiagnosticTargets AnalyzerDiagnosticTargets => DiagnosticTargets.MethodOrConstructor;
+		private protected override DiagnosticTargets AnalyzerDiagnosticTargets => DiagnosticTargets.MethodOrConstructor;
 
-		protected override DiagnosticDescriptor RequiresDiagnosticRule => s_requiresUnreferencedCodeRule;
+		private protected override DiagnosticDescriptor RequiresDiagnosticRule => s_requiresUnreferencedCodeRule;
 
-		protected override ImmutableArray<ISymbol> GetDangerousPatterns (Compilation compilation) => new ImmutableArray<ISymbol> ();
+		protected override ImmutableArray<ISymbol> GetSpecialIncompatibleMembers (Compilation compilation) => new ImmutableArray<ISymbol> ();
 
-		protected override bool ReportDangerousPatternDiagnostic (OperationAnalysisContext operationContext, ImmutableArray<ISymbol> dangerousPatterns, ISymbol member) => false;
+		protected override bool ReportSpecialIncompatibleMembersDiagnostic (OperationAnalysisContext operationContext, ImmutableArray<ISymbol> dangerousPatterns, ISymbol member) => false;
 
 		protected override bool VerifyMSBuildOptions (AnalyzerOptions options, Compilation compilation)
 		{
 			var isTrimAnalyzerEnabled = options.GetMSBuildPropertyValue (MSBuildPropertyOptionNames.EnableTrimAnalyzer, compilation);
 			if (!string.Equals (isTrimAnalyzerEnabled?.Trim (), "true", StringComparison.OrdinalIgnoreCase))
-				return true;
-			return false;
+				return false;
+			return true;
 		}
 
-		protected override bool TryGetRequiresAttribute (ISymbol member, out AttributeData? requiresAttribute)
-		{
-			requiresAttribute = null;
-			foreach (var _attribute in member.GetAttributes ()) {
-				if (_attribute.AttributeClass is var attrClass && attrClass != null &&
-					attrClass.HasName (RequiresAttributeFullyQualifiedName) && _attribute.ConstructorArguments.Length >= 1 &&
-					_attribute.ConstructorArguments[0] is { Type: { SpecialType: SpecialType.System_String } } ctorArg) {
-					requiresAttribute = _attribute;
-					return true;
-				}
-			}
-			return false;
-		}
+		protected override bool VerifyAttributeArguments (AttributeData attribute) =>
+			attribute.ConstructorArguments.Length >= 1 && attribute.ConstructorArguments[0] is { Type: { SpecialType: SpecialType.System_String } } ctorArg;
 
 		protected override string GetMessageFromAttribute (AttributeData? requiresAttribute)
 		{

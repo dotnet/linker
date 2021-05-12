@@ -14,13 +14,13 @@ namespace ILLink.RoslynAnalyzer
 	[DiagnosticAnalyzer (LanguageNames.CSharp)]
 	public abstract class RequiresAnalyzerBase : DiagnosticAnalyzer
 	{
-		protected abstract string RequiresAttributeName { get; }
+		private protected abstract string RequiresAttributeName { get; }
 
-		protected abstract string RequiresAttributeFullyQualifiedName { get; }
+		private protected abstract string RequiresAttributeFullyQualifiedName { get; }
 
-		protected abstract DiagnosticTargets AnalyzerDiagnosticTargets { get; }
+		private protected abstract DiagnosticTargets AnalyzerDiagnosticTargets { get; }
 
-		protected abstract DiagnosticDescriptor RequiresDiagnosticRule { get; }
+		private protected abstract DiagnosticDescriptor RequiresDiagnosticRule { get; }
 
 		public override void Initialize (AnalysisContext context)
 		{
@@ -28,9 +28,9 @@ namespace ILLink.RoslynAnalyzer
 			context.ConfigureGeneratedCodeAnalysis (GeneratedCodeAnalysisFlags.ReportDiagnostics);
 			context.RegisterCompilationStartAction (context => {
 				var compilation = context.Compilation;
-				if (VerifyMSBuildOptions (context.Options, compilation))
+				if (VerifyMSBuildOptions (context.Options, compilation) == false)
 					return;
-				var dangerousPatterns = GetDangerousPatterns (compilation);
+				var dangerousPatterns = GetSpecialIncompatibleMembers (compilation);
 
 				context.RegisterOperationAction (operationContext => {
 					var methodInvocation = (IInvocationOperation) operationContext.Operation;
@@ -113,7 +113,7 @@ namespace ILLink.RoslynAnalyzer
 					if (member.ContainingType is { } containingType && operationContext.Operation is IObjectCreationOperation)
 						CheckStaticConstructors (operationContext, containingType.StaticConstructors);
 
-					if (ReportDangerousPatternDiagnostic (operationContext, dangerousPatterns, member))
+					if (ReportSpecialIncompatibleMembersDiagnostic (operationContext, dangerousPatterns, member))
 						return;
 
 					if (!member.HasAttribute (RequiresAttributeName))
@@ -182,11 +182,25 @@ namespace ILLink.RoslynAnalyzer
 			return string.IsNullOrEmpty (url) ? "" : " " + url;
 		}
 
-		protected abstract bool TryGetRequiresAttribute (ISymbol member, out AttributeData? requiresAttribute);
+		private bool TryGetRequiresAttribute (ISymbol member, out AttributeData? requiresAttribute)
+		{
+			requiresAttribute = null;
+			foreach (var _attribute in member.GetAttributes ()) {
+				if (_attribute.AttributeClass is { } attrClass &&
+					attrClass.HasName (RequiresAttributeFullyQualifiedName) &&
+					VerifyAttributeArguments(_attribute)) {
+					requiresAttribute = _attribute;
+					return true;
+				}
+			}
+			return false;
+		}
 
-		protected abstract bool ReportDangerousPatternDiagnostic (OperationAnalysisContext operationContext, ImmutableArray<ISymbol> dangerousPatterns, ISymbol member);
+		protected abstract bool VerifyAttributeArguments (AttributeData attribute);
 
-		protected abstract ImmutableArray<ISymbol> GetDangerousPatterns (Compilation compilation);
+		protected abstract bool ReportSpecialIncompatibleMembersDiagnostic (OperationAnalysisContext operationContext, ImmutableArray<ISymbol> specialIncompatibleMembers, ISymbol member);
+
+		protected abstract ImmutableArray<ISymbol> GetSpecialIncompatibleMembers (Compilation compilation);
 
 		protected abstract bool VerifyMSBuildOptions (AnalyzerOptions options, Compilation compilation);
 	}

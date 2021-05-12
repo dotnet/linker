@@ -24,11 +24,11 @@ namespace ILLink.CodeFix
 		public sealed override ImmutableArray<string> FixableDiagnosticIds
 			=> ImmutableArray.Create (RequiresUnreferencedCodeAnalyzer.IL2026, RequiresAssemblyFilesAnalyzer.IL3000, RequiresAssemblyFilesAnalyzer.IL3001, RequiresAssemblyFilesAnalyzer.IL3002);
 
-		protected override LocalizableString CodeFixTittle => new LocalizableResourceString (nameof (Resources.UconditionalSuppressMessageCodeFixTittle), Resources.ResourceManager, typeof (Resources));
+		private protected override LocalizableString CodeFixTitle => new LocalizableResourceString (nameof (Resources.UconditionalSuppressMessageCodeFixTittle), Resources.ResourceManager, typeof (Resources));
 
-		protected override string FullyQualifiedAttributeName => FullyQualifiedUnconditionalSuppressMessageAttribute;
+		private protected override string FullyQualifiedAttributeName => FullyQualifiedUnconditionalSuppressMessageAttribute;
 
-		protected override AttributeableParentTargets AttributableParentTargets => AttributeableParentTargets.All;
+		private protected override AttributeableParentTargets AttributableParentTargets => AttributeableParentTargets.All;
 
 		public sealed override Task RegisterCodeFixesAsync (CodeFixContext context) => BaseRegisterCodeFixesAsync (context);
 

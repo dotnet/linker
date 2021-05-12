@@ -18,11 +18,11 @@ namespace ILLink.CodeFix
 {
 	public abstract class BaseAttributeCodeFixProvider : Microsoft.CodeAnalysis.CodeFixes.CodeFixProvider
 	{
-		protected abstract LocalizableString CodeFixTittle { get; }
+		private protected abstract LocalizableString CodeFixTitle { get; }
 
-		protected abstract string FullyQualifiedAttributeName { get; }
+		private protected abstract string FullyQualifiedAttributeName { get; }
 
-		protected abstract AttributeableParentTargets AttributableParentTargets { get; }
+		private protected abstract AttributeableParentTargets AttributableParentTargets { get; }
 
 		public sealed override FixAllProvider GetFixAllProvider ()
 		{
@@ -46,15 +46,15 @@ namespace ILLink.CodeFix
 				var editor = new SyntaxEditor (root, document.Project.Solution.Workspace);
 				var generator = editor.Generator;
 				var attrArgs = GetAttributeArguments (semanticModel, targetNode, declarationSyntax, generator, diagnostic);
-				var codeFixTittle = CodeFixTittle.ToString ();
+				var codeFixTitle = CodeFixTitle.ToString ();
 
 				// Register a code action that will invoke the fix.
 				context.RegisterCodeFix (
 					CodeAction.Create (
-						title: codeFixTittle,
+						title: codeFixTitle,
 						createChangedDocument: c => AddAttribute (
 							document, editor, generator, declarationSyntax, attrArgs, symbol!, c),
-						equivalenceKey: codeFixTittle),
+						equivalenceKey: codeFixTitle),
 					diagnostic);
 			}
 		}
