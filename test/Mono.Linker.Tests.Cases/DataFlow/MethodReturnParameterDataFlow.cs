@@ -181,7 +181,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		// https://github.com/mono/linker/issues/2025
 		// Ideally this should not warn
-		[UnrecognizedReflectionAccessPattern (typeof (MethodReturnParameterDataFlow), nameof (ReturnWithRequirementsAlwaysThrows), new Type[] { }, returnType: typeof(Type),
+		[UnrecognizedReflectionAccessPattern (typeof (MethodReturnParameterDataFlow), nameof (ReturnWithRequirementsAlwaysThrows), new Type[] { }, returnType: typeof (Type),
 			messageCode: "IL2063")]
 		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 		Type ReturnWithRequirementsAlwaysThrows ()
