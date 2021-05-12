@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using Mono.Linker.Tests.Extensions;
 using Mono.Linker.Tests.TestCasesRunner;
 using NUnit.Framework;
@@ -167,6 +166,11 @@ namespace Mono.Linker.Tests.TestCases
 			return NUnitCasesBySuiteName ("Sealer");
 		}
 
+		public static IEnumerable<TestCaseData> SerializationTests ()
+		{
+			return NUnitCasesBySuiteName ("Serialization");
+		}
+
 		public static IEnumerable<TestCaseData> SubstitutionsTests ()
 		{
 			return NUnitCasesBySuiteName ("Substitutions");
@@ -206,6 +210,11 @@ namespace Mono.Linker.Tests.TestCases
 		public static IEnumerable<TestCaseData> LinkAttributesTests ()
 		{
 			return NUnitCasesBySuiteName ("LinkAttributes");
+		}
+
+		public static IEnumerable<TestCaseData> MetadataTests ()
+		{
+			return NUnitCasesBySuiteName ("Metadata");
 		}
 
 		public static TestCaseCollector CreateCollector ()

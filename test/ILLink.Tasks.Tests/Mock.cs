@@ -1,3 +1,7 @@
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -7,7 +11,6 @@ using System.Reflection;
 using Microsoft.Build.Framework;
 using Mono.Linker;
 using Mono.Linker.Steps;
-using Xunit;
 
 namespace ILLink.Tasks.Tests
 {
@@ -21,6 +24,7 @@ namespace ILLink.Tasks.Tests
 			// Ensure that [Required] members are non-null
 			AssemblyPaths = new ITaskItem[0];
 			RootAssemblyNames = new ITaskItem[0];
+			ILLinkPath = Path.Combine (Path.GetDirectoryName (Assembly.GetExecutingAssembly ().Location), "illink.dll");
 		}
 
 		public MockDriver CreateDriver ()
@@ -48,7 +52,8 @@ namespace ILLink.Tasks.Tests
 		static readonly string[] nonOptimizationBooleanProperties = new string[] {
 			"DumpDependencies",
 			"RemoveSymbols",
-			"TreatWarningsAsErrors"
+			"TreatWarningsAsErrors",
+			"SingleWarn"
 		};
 
 		public static IEnumerable<string> GetOptimizationPropertyNames ()
@@ -107,7 +112,7 @@ namespace ILLink.Tasks.Tests
 				if (!(step is RootAssemblyInput))
 					continue;
 
-				var assemblyName = (string) (typeof (RootAssemblyInput).GetField ("fileName", BindingFlags.NonPublic | BindingFlags.Instance).GetValue (step));
+				var assemblyName = (string) typeof (RootAssemblyInput).GetField ("fileName", BindingFlags.NonPublic | BindingFlags.Instance).GetValue (step);
 				if (assemblyName == null)
 					continue;
 
@@ -121,7 +126,7 @@ namespace ILLink.Tasks.Tests
 				if (!(step is ResolveFromXmlStep))
 					continue;
 
-				var descriptor = (string) (typeof (ResolveFromXmlStep).GetField ("_xmlDocumentLocation", BindingFlags.NonPublic | BindingFlags.Instance).GetValue (step));
+				var descriptor = (string) typeof (ResolveFromXmlStep).GetField ("_xmlDocumentLocation", BindingFlags.NonPublic | BindingFlags.Instance).GetValue (step);
 
 				yield return descriptor;
 			}
@@ -129,7 +134,7 @@ namespace ILLink.Tasks.Tests
 
 		public IEnumerable<string> GetReferenceAssemblies ()
 		{
-			return (IEnumerable<string>) (typeof (AssemblyResolver).GetField ("_references", BindingFlags.NonPublic | BindingFlags.Instance).GetValue (context.Resolver));
+			return (IEnumerable<string>) typeof (AssemblyResolver).GetField ("_references", BindingFlags.NonPublic | BindingFlags.Instance).GetValue (context.Resolver);
 		}
 
 		protected override void AddResolveFromXmlStep (Pipeline pipeline, string file)
@@ -146,7 +151,7 @@ namespace ILLink.Tasks.Tests
 
 		public IEnumerable<IDependencyRecorder> GetDependencyRecorders ()
 		{
-			return (IEnumerable<IDependencyRecorder>) (typeof (Tracer).GetField ("recorders", BindingFlags.NonPublic | BindingFlags.Instance).GetValue (context.Tracer));
+			return (IEnumerable<IDependencyRecorder>) typeof (Tracer).GetField ("recorders", BindingFlags.NonPublic | BindingFlags.Instance).GetValue (context.Tracer);
 		}
 
 		public new bool GetOptimizationName (string optimization, out CodeOptimizations codeOptimizations)

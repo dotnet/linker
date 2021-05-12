@@ -29,10 +29,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
+using System.Reflection;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-
+using Mono.Linker.Steps;
 namespace Mono.Linker
 {
 
@@ -54,8 +54,6 @@ namespace Mono.Linker
 	{
 
 		readonly Pipeline _pipeline;
-		AssemblyAction _coreAction;
-		AssemblyAction _userAction;
 		readonly Dictionary<string, AssemblyAction> _actions;
 		string _outputDirectory;
 		readonly Dictionary<string, string> _parameters;
@@ -67,7 +65,6 @@ namespace Mono.Linker
 		readonly AssemblyResolver _resolver;
 		readonly TypeNameResolver _typeNameResolver;
 
-		readonly ReaderParameters _readerParameters;
 		ISymbolReaderProvider _symbolReaderProvider;
 		ISymbolWriterProvider _symbolWriterProvider;
 
@@ -97,15 +94,11 @@ namespace Mono.Linker
 			set { _outputDirectory = value; }
 		}
 
-		public AssemblyAction CoreAction {
-			get { return _coreAction; }
-			set { _coreAction = value; }
-		}
+		public MetadataTrimming MetadataTrimming { get; set; }
 
-		public AssemblyAction UserAction {
-			get { return _userAction; }
-			set { _userAction = value; }
-		}
+		public AssemblyAction TrimAction { get; set; }
+
+		public AssemblyAction DefaultAction { get; set; }
 
 		public bool LinkSymbols {
 			get { return _linkSymbols; }
@@ -128,13 +121,15 @@ namespace Mono.Linker
 
 		public bool KeepUsedAttributeTypesOnly { get; set; }
 
+		public bool DisableSerializationDiscovery { get; set; }
+
 		public bool IgnoreDescriptors { get; set; }
 
 		public bool IgnoreSubstitutions { get; set; }
 
 		public bool IgnoreLinkAttributes { get; set; }
 
-		public Dictionary<string, bool> FeatureSettings { get; private set; }
+		public Dictionary<string, bool> FeatureSettings { get; init; }
 
 		public List<string> AttributeDefinitions { get; private set; }
 
@@ -154,10 +149,6 @@ namespace Mono.Linker
 
 		internal TypeNameResolver TypeNameResolver {
 			get { return _typeNameResolver; }
-		}
-
-		public ReaderParameters ReaderParameters {
-			get { return _readerParameters; }
 		}
 
 		public ISymbolReaderProvider SymbolReaderProvider {
@@ -198,28 +189,35 @@ namespace Mono.Linker
 
 		public string AssemblyListFile { get; set; }
 
+		public List<IMarkHandler> MarkHandlers { get; }
+
+		public Dictionary<string, bool> SingleWarn { get; set; }
+
+		public bool GeneralSingleWarn { get; set; }
+
+		public HashSet<string> AssembliesWithGeneratedSingleWarning { get; set; }
+
+		public SerializationMarker SerializationMarker { get; }
+
 		public LinkContext (Pipeline pipeline, ILogger logger)
 		{
 			_pipeline = pipeline;
 			_logger = logger ?? throw new ArgumentNullException (nameof (logger));
 
-			_resolver = new AssemblyResolver () {
-				Context = this
-			};
+			_resolver = new AssemblyResolver (this);
 			_typeNameResolver = new TypeNameResolver (this);
 			_actions = new Dictionary<string, AssemblyAction> ();
 			_parameters = new Dictionary<string, string> (StringComparer.Ordinal);
-			_readerParameters = new ReaderParameters {
-				AssemblyResolver = _resolver
-			};
 			_customAttributes = new CustomAttributeSource (this);
 			_cachedWarningMessageContainers = new List<MessageContainer> ();
+			FeatureSettings = new Dictionary<string, bool> (StringComparer.Ordinal);
 
 			SymbolReaderProvider = new DefaultSymbolReaderProvider (false);
 
 			var factory = new UnintializedContextFactory ();
 			_annotations = factory.CreateAnnotationStore (this);
 			MarkingHelpers = factory.CreateMarkingHelpers (this);
+			SerializationMarker = new SerializationMarker (this);
 			Tracer = factory.CreateTracer (this);
 			ReflectionPatternRecorder = new LoggingReflectionPatternRecorder (this);
 			MarkedKnownMembers = new KnownMembers ();
@@ -229,6 +227,10 @@ namespace Mono.Linker
 			GeneralWarnAsError = false;
 			WarnAsError = new Dictionary<int, bool> ();
 			WarnVersion = WarnVersion.Latest;
+			MarkHandlers = new List<IMarkHandler> ();
+			GeneralSingleWarn = false;
+			SingleWarn = new Dictionary<string, bool> ();
+			AssembliesWithGeneratedSingleWarning = new HashSet<string> ();
 
 			const CodeOptimizations defaultOptimizations =
 				CodeOptimizations.BeforeFieldInit |
@@ -248,12 +250,12 @@ namespace Mono.Linker
 		public void SetFeatureValue (string feature, bool value)
 		{
 			Debug.Assert (!String.IsNullOrEmpty (feature));
-			if (FeatureSettings == null) {
-				FeatureSettings = new Dictionary<string, bool> { { feature, value } };
-				return;
-			}
-
 			FeatureSettings[feature] = value;
+		}
+
+		public bool HasFeatureValue (string feature, bool value)
+		{
+			return FeatureSettings.TryGetValue (feature, out bool fvalue) && value == fvalue;
 		}
 
 		public void AddAttributeDefinitionFile (string file)
@@ -291,29 +293,25 @@ namespace Mono.Linker
 
 		public AssemblyDefinition TryResolve (string name)
 		{
-			try {
-				return Resolve (new AssemblyNameReference (name, new Version ()));
-			} catch (AssemblyResolutionException) {
-				return null;
-			}
+			return TryResolve (new AssemblyNameReference (name, new Version ()));
+		}
+
+		public AssemblyDefinition TryResolve (AssemblyNameReference name)
+		{
+			return _resolver.Resolve (name, probing: true);
 		}
 
 		public AssemblyDefinition Resolve (IMetadataScope scope)
 		{
 			AssemblyNameReference reference = GetReference (scope);
-			try {
-				AssemblyDefinition assembly = _resolver.Resolve (reference, _readerParameters);
-				return assembly;
-			} catch (Exception e) when (!(e is AssemblyResolutionException)) {
-				throw new AssemblyResolutionException (reference, e);
-			}
+			return _resolver.Resolve (reference);
 		}
 
 		public void RegisterAssembly (AssemblyDefinition assembly)
 		{
 			if (SeenFirstTime (assembly)) {
 				SafeReadSymbols (assembly);
-				Annotations.SetAction (assembly, CalculateAssemblyAction (assembly.Name));
+				Annotations.SetAction (assembly, CalculateAssemblyAction (assembly));
 			}
 		}
 
@@ -333,7 +331,7 @@ namespace Mono.Linker
 			try {
 				var symbolReader = _symbolReaderProvider.GetSymbolReader (
 					assembly.MainModule,
-					_resolver.GetAssemblyFileName (assembly));
+					GetAssemblyLocation (assembly));
 
 				if (symbolReader == null)
 					return;
@@ -357,14 +355,11 @@ namespace Mono.Linker
 				return references;
 
 			foreach (AssemblyNameReference reference in assembly.MainModule.AssemblyReferences) {
-				try {
-					AssemblyDefinition definition = Resolve (reference);
-					if (definition != null)
-						references.Add (definition);
-				} catch (Exception e) {
-					throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage ($"Assembly '{assembly.FullName}' reference '{reference.FullName}' could not be resolved", 1009), e);
-				}
+				AssemblyDefinition definition = Resolve (reference);
+				if (definition != null)
+					references.Add (definition);
 			}
+
 			return references;
 		}
 
@@ -394,37 +389,44 @@ namespace Mono.Linker
 			Annotations.SetAction (assembly, action);
 		}
 #endif
-		public AssemblyAction CalculateAssemblyAction (AssemblyNameDefinition name)
+		public AssemblyAction CalculateAssemblyAction (AssemblyDefinition assembly)
 		{
-			if (_actions.TryGetValue (name.Name, out AssemblyAction action))
+			if (_actions.TryGetValue (assembly.Name.Name, out AssemblyAction action))
 				return action;
 
-			if (IsCore (name))
-				return CoreAction;
+			if (IsTrimmable (assembly))
+				return TrimAction;
 
-			return UserAction;
+			return DefaultAction;
 		}
 
-		public static bool IsCore (AssemblyNameReference name)
+		bool IsTrimmable (AssemblyDefinition assembly)
 		{
-			switch (name.Name) {
-			case "mscorlib":
-			case "Accessibility":
-			case "Mono.Security":
-			// WPF
-			case "PresentationFramework":
-			case "PresentationCore":
-			case "WindowsBase":
-			case "UIAutomationProvider":
-			case "UIAutomationTypes":
-			case "PresentationUI":
-			case "ReachFramework":
-			case "netstandard":
-				return true;
-			default:
-				return name.Name.StartsWith ("System")
-					|| name.Name.StartsWith ("Microsoft");
+			if (!assembly.HasCustomAttributes)
+				return false;
+
+			bool isTrimmable = false;
+
+			foreach (var ca in assembly.CustomAttributes) {
+				if (!ca.AttributeType.IsTypeOf<AssemblyMetadataAttribute> ())
+					continue;
+
+				var args = ca.ConstructorArguments;
+				if (args.Count != 2)
+					continue;
+
+				if (args[0].Value is not string key || !key.Equals ("IsTrimmable", StringComparison.OrdinalIgnoreCase))
+					continue;
+
+				if (args[1].Value is not string value || !value.Equals ("True", StringComparison.OrdinalIgnoreCase)) {
+					LogWarning ($"Invalid AssemblyMetadata(\"IsTrimmable\", \"{args[1].Value}\") attribute in assembly '{assembly.Name.Name}'. Value must be \"True\"", 2102, GetAssemblyLocation (assembly));
+					continue;
+				}
+
+				isTrimmable = true;
 			}
+
+			return isTrimmable;
 		}
 
 		public virtual AssemblyDefinition[] GetAssemblies ()
@@ -441,6 +443,11 @@ namespace Mono.Linker
 				return ad;
 
 			return null;
+		}
+
+		public string GetAssemblyLocation (AssemblyDefinition assembly)
+		{
+			return Resolver.GetAssemblyLocation (assembly);
 		}
 
 		public IEnumerable<AssemblyDefinition> GetReferencedAssemblies ()
@@ -630,6 +637,15 @@ namespace Mono.Linker
 			return WarnAsError.TryGetValue (warningCode, out value) && value;
 		}
 
+		public bool IsSingleWarn (string assemblyName)
+		{
+			bool value;
+			if (GeneralSingleWarn)
+				return !SingleWarn.TryGetValue (assemblyName, out value) || value;
+
+			return SingleWarn.TryGetValue (assemblyName, out value) && value;
+		}
+
 		static WarnVersion GetWarningVersion ()
 		{
 			// This should return an increasing WarnVersion for new warning waves.
@@ -649,6 +665,174 @@ namespace Mono.Linker
 			};
 
 			return _targetRuntime.Value;
+		}
+
+		readonly Dictionary<MethodReference, MethodDefinition> methodresolveCache = new ();
+		readonly Dictionary<FieldReference, FieldDefinition> fieldresolveCache = new ();
+		readonly Dictionary<TypeReference, TypeDefinition> typeresolveCache = new ();
+
+		public MethodDefinition ResolveMethodDefinition (MethodReference methodReference)
+		{
+			if (methodReference is MethodDefinition md)
+				return md;
+
+			if (methodReference is null)
+				return null;
+
+			if (methodresolveCache.TryGetValue (methodReference, out md)) {
+				if (md == null && !IgnoreUnresolved)
+					ReportUnresolved (methodReference);
+
+				return md;
+			}
+
+			md = methodReference.Resolve ();
+			if (md == null && !IgnoreUnresolved) {
+				ReportUnresolved (methodReference);
+			}
+
+			methodresolveCache.Add (methodReference, md);
+			return md;
+		}
+
+		public MethodDefinition TryResolveMethodDefinition (MethodReference methodReference)
+		{
+			if (methodReference is MethodDefinition md)
+				return md;
+
+			if (methodReference is null)
+				return null;
+
+			if (methodresolveCache.TryGetValue (methodReference, out md))
+				return md;
+
+			md = methodReference.Resolve ();
+			methodresolveCache.Add (methodReference, md);
+			return md;
+		}
+
+		public FieldDefinition ResolveFieldDefinition (FieldReference fieldReference)
+		{
+			if (fieldReference is FieldDefinition fd)
+				return fd;
+
+			if (fieldReference is null)
+				return null;
+
+			if (fieldresolveCache.TryGetValue (fieldReference, out fd)) {
+				if (fd == null && !IgnoreUnresolved)
+					ReportUnresolved (fieldReference);
+
+				return fd;
+			}
+
+			fd = fieldReference.Resolve ();
+			if (fd == null && !IgnoreUnresolved) {
+				ReportUnresolved (fieldReference);
+			}
+
+			fieldresolveCache.Add (fieldReference, fd);
+			return fd;
+		}
+
+		public FieldDefinition TryResolveFieldDefinition (FieldReference fieldReference)
+		{
+			if (fieldReference is FieldDefinition fd)
+				return fd;
+
+			if (fieldReference is null)
+				return null;
+
+			if (fieldresolveCache.TryGetValue (fieldReference, out fd))
+				return fd;
+
+			fd = fieldReference.Resolve ();
+			fieldresolveCache.Add (fieldReference, fd);
+			return fd;
+		}
+
+		public TypeDefinition ResolveTypeDefinition (TypeReference typeReference)
+		{
+			if (typeReference is TypeDefinition td)
+				return td;
+
+			if (typeReference is null)
+				return null;
+
+			if (typeresolveCache.TryGetValue (typeReference, out td)) {
+				if (td == null && !IgnoreUnresolved)
+					ReportUnresolved (typeReference);
+
+				return td;
+			}
+
+			//
+			// Types which never have TypeDefinition or can have ambiguous definition should not be passed in
+			//
+			if (typeReference is GenericParameter || (typeReference is TypeSpecification && typeReference is not GenericInstanceType))
+				throw new NotSupportedException ($"TypeDefinition cannot be resolved from '{typeReference.GetType ()}' type");
+
+			td = typeReference.Resolve ();
+			if (td == null && !IgnoreUnresolved) {
+				ReportUnresolved (typeReference);
+			}
+
+			typeresolveCache.Add (typeReference, td);
+			return td;
+		}
+
+		public TypeDefinition TryResolveTypeDefinition (TypeReference typeReference)
+		{
+			if (typeReference is TypeDefinition td)
+				return td;
+
+			if (typeReference is null || typeReference is GenericParameter)
+				return null;
+
+			if (typeresolveCache.TryGetValue (typeReference, out td))
+				return td;
+
+			if (typeReference is TypeSpecification ts) {
+				if (typeReference is FunctionPointerType) {
+					td = null;
+				} else {
+					//
+					// It returns element-type for arrays and also element type for wrapping types like ByReference, PinnedType, etc
+					//
+					td = TryResolveTypeDefinition (ts.GetElementType ());
+				}
+			} else {
+				td = typeReference.Resolve ();
+			}
+
+			typeresolveCache.Add (typeReference, td);
+			return td;
+		}
+
+		public TypeDefinition TryResolveTypeDefinition (AssemblyDefinition assembly, string typeNameString)
+		{
+			// It could be cached if it shows up on fast path
+			return TryResolveTypeDefinition (_typeNameResolver.ResolveTypeName (assembly, typeNameString));
+		}
+
+		readonly HashSet<MemberReference> unresolved_reported = new ();
+
+		protected virtual void ReportUnresolved (FieldReference fieldReference)
+		{
+			if (unresolved_reported.Add (fieldReference))
+				LogError ($"Field '{fieldReference.FullName}' reference could not be resolved", 1040);
+		}
+
+		protected virtual void ReportUnresolved (MethodReference methodReference)
+		{
+			if (unresolved_reported.Add (methodReference))
+				LogError ($"Method '{methodReference.GetDisplayName ()}' reference could not be resolved", 1040);
+		}
+
+		protected virtual void ReportUnresolved (TypeReference typeReference)
+		{
+			if (unresolved_reported.Add (typeReference))
+				LogError ($"Type '{typeReference.GetDisplayName ()}' reference could not be resolved", 1040);
 		}
 	}
 

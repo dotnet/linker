@@ -21,6 +21,8 @@ namespace Mono.Linker.Steps
 		protected override void Process ()
 		{
 			AssemblyDefinition assembly = LoadAssemblyFile ();
+			if (assembly == null)
+				return;
 
 			var di = new DependencyInfo (DependencyKind.RootAssembly, assembly);
 
@@ -56,7 +58,7 @@ namespace Mono.Linker.Steps
 				break;
 			case AssemblyRootMode.VisibleMembers:
 				var preserve_visible = TypePreserveMembers.Visible;
-				if (HasInternalsVisibleTo (assembly))
+				if (MarkInternalsVisibleTo (assembly))
 					preserve_visible |= TypePreserveMembers.Internal;
 
 				MarkAndPreserve (assembly, preserve_visible);
@@ -64,7 +66,7 @@ namespace Mono.Linker.Steps
 
 			case AssemblyRootMode.Library:
 				var preserve_library = TypePreserveMembers.Visible | TypePreserveMembers.Library;
-				if (HasInternalsVisibleTo (assembly))
+				if (MarkInternalsVisibleTo (assembly))
 					preserve_library |= TypePreserveMembers.Internal;
 
 				MarkAndPreserve (assembly, preserve_library);
@@ -80,6 +82,9 @@ namespace Mono.Linker.Steps
 					CodeOptimizations.RemoveLinkAttributes |
 					CodeOptimizations.RemoveSubstitutions |
 					CodeOptimizations.RemoveDynamicDependencyAttribute, assembly.Name.Name);
+
+				// No metadata trimming
+				Context.MetadataTrimming = MetadataTrimming.None;
 				break;
 			case AssemblyRootMode.AllMembers:
 				Context.Annotations.SetAction (assembly, AssemblyAction.Copy);
@@ -89,14 +94,27 @@ namespace Mono.Linker.Steps
 
 		AssemblyDefinition LoadAssemblyFile ()
 		{
-			AssemblyDefinition assembly = Context.Resolver.GetAssembly (fileName, Context.ReaderParameters);
-			AssemblyDefinition loaded = Context.GetLoadedAssembly (assembly.Name.Name);
+			AssemblyDefinition assembly;
 
-			// The same assembly could be already loaded if there are multiple inputs pointing to same file
-			if (loaded != null)
-				return loaded;
+			if (File.Exists (fileName)) {
+				assembly = Context.Resolver.GetAssembly (fileName);
+				AssemblyDefinition loaded = Context.GetLoadedAssembly (assembly.Name.Name);
 
-			Context.Resolver.CacheAssembly (assembly);
+				// The same assembly could be already loaded if there are multiple inputs pointing to same file
+				if (loaded != null)
+					return loaded;
+
+				Context.Resolver.CacheAssembly (assembly);
+				return assembly;
+			}
+
+			//
+			// Quirks mode for netcore to support passing ambiguous assembly name
+			//
+			assembly = Context.TryResolve (fileName);
+			if (assembly == null)
+				Context.LogError ($"Root assembly '{fileName}' could not be found", 1032);
+
 			return assembly;
 		}
 
@@ -120,13 +138,22 @@ namespace Mono.Linker.Steps
 			if ((preserve & TypePreserveMembers.Internal) != 0 && IsTypePrivate (type))
 				preserve_anything &= ~TypePreserveMembers.Internal;
 
-			// For now there are no cases where library mode for non-visible type would need
-			// to mark anything
-			if ((preserve_anything & ~TypePreserveMembers.Library) == 0)
+			switch (preserve_anything) {
+			case 0:
 				return;
-
-			Annotations.Mark (type, new DependencyInfo (DependencyKind.RootAssembly, type.Module.Assembly));
-			Annotations.SetMembersPreserve (type, preserve);
+			case TypePreserveMembers.Library:
+				//
+				// In library mode private type can have members kept for serialization if
+				// the type is referenced
+				//
+				preserve = preserve_anything;
+				Annotations.SetMembersPreserve (type, preserve);
+				break;
+			default:
+				Annotations.Mark (type, new DependencyInfo (DependencyKind.RootAssembly, type.Module.Assembly));
+				Annotations.SetMembersPreserve (type, preserve);
+				break;
+			}
 
 			if (!type.HasNestedTypes)
 				return;
@@ -153,11 +180,13 @@ namespace Mono.Linker.Steps
 			return type.IsNestedPrivate;
 		}
 
-		static bool HasInternalsVisibleTo (AssemblyDefinition assembly)
+		bool MarkInternalsVisibleTo (AssemblyDefinition assembly)
 		{
 			foreach (CustomAttribute attribute in assembly.CustomAttributes) {
-				if (attribute.Constructor.DeclaringType.IsTypeOf ("System.Runtime.CompilerServices", "InternalsVisibleToAttribute"))
+				if (attribute.Constructor.DeclaringType.IsTypeOf ("System.Runtime.CompilerServices", "InternalsVisibleToAttribute")) {
+					Context.Annotations.Mark (attribute, new DependencyInfo (DependencyKind.RootAssembly, assembly));
 					return true;
+				}
 			}
 
 			return false;

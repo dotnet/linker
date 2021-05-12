@@ -1,3 +1,7 @@
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -76,9 +80,7 @@ namespace ILLink.Tasks.Tests
 						continue;
 
 					AssemblyAction expectedAction = (AssemblyAction) Enum.Parse (typeof (AssemblyAction), trimMode, ignoreCase: true);
-
-					var ad = new Mono.Cecil.AssemblyNameDefinition (Path.GetFileNameWithoutExtension (assemblyPath), new Version ());
-					AssemblyAction actualAction = context.CalculateAssemblyAction (ad);
+					AssemblyAction actualAction = context.Actions[Path.GetFileNameWithoutExtension (assemblyPath)];
 
 					Assert.Equal (expectedAction, actualAction);
 				}
@@ -113,8 +115,8 @@ namespace ILLink.Tasks.Tests
 				var actualReferences = driver.GetReferenceAssemblies ();
 				Assert.Equal (expectedReferences.OrderBy (a => a), actualReferences.OrderBy (a => a));
 				foreach (var reference in expectedReferences) {
-					var ad = new Mono.Cecil.AssemblyNameDefinition (Path.GetFileNameWithoutExtension (reference), new Version ());
-					AssemblyAction actualAction = driver.Context.CalculateAssemblyAction (ad);
+					var referenceName = Path.GetFileNameWithoutExtension (reference);
+					var actualAction = driver.Context.Actions[referenceName];
 					Assert.Equal (AssemblyAction.Skip, actualAction);
 				}
 			}
@@ -239,6 +241,41 @@ namespace ILLink.Tasks.Tests
 						Assert.Equal (enabled, actualValue);
 					}
 				}
+			}
+		}
+
+		public static IEnumerable<object[]> SingleWarnCases => new List<object[]> {
+			new object[] {
+				true,
+				new ITaskItem [] {
+					new TaskItem ("AssemblyTrue.dll", new Dictionary<string, string> { { "TrimmerSingleWarn", "true" } } ),
+					new TaskItem ("AssemblyFalse.dll", new Dictionary<string, string> { { "TrimmerSingleWarn", "false" } } )
+				},
+			},
+			new object [] {
+				false,
+				new ITaskItem [] {
+					new TaskItem ("AssemblyTrue.dll", new Dictionary<string, string> { { "TrimmerSingleWarn", "true" } } ),
+					new TaskItem ("AssemblyFalse.dll", new Dictionary<string, string> { { "TrimmerSingleWarn", "false" } } )
+				}
+			}
+		};
+
+		[Theory]
+		[MemberData (nameof (SingleWarnCases))]
+		public void TestSingleWarn (bool singleWarn, ITaskItem[] assemblyPaths)
+		{
+			var task = new MockTask () {
+				AssemblyPaths = assemblyPaths,
+				SingleWarn = singleWarn
+			};
+			using (var driver = task.CreateDriver ()) {
+				Assert.Equal (singleWarn, driver.Context.GeneralSingleWarn);
+				var expectedSingleWarn = assemblyPaths.ToDictionary (
+					p => Path.GetFileNameWithoutExtension (p.ItemSpec),
+					p => bool.Parse (p.GetMetadata ("TrimmerSingleWarn"))
+				);
+				Assert.Equal (expectedSingleWarn, driver.Context.SingleWarn);
 			}
 		}
 
@@ -441,12 +478,12 @@ namespace ILLink.Tasks.Tests
 		{
 			var task = new MockTask () {
 				TrimMode = "copy",
-				ExtraArgs = "-c link"
+				ExtraArgs = "--trim-mode copyused"
 			};
 			using (var driver = task.CreateDriver ()) {
-				Assert.Equal (AssemblyAction.Copy, driver.Context.UserAction);
+				Assert.Equal (AssemblyAction.Link, driver.Context.DefaultAction);
 				// Check that ExtraArgs can override TrimMode
-				Assert.Equal (AssemblyAction.Link, driver.Context.CoreAction);
+				Assert.Equal (AssemblyAction.CopyUsed, driver.Context.TrimAction);
 			}
 		}
 
@@ -485,6 +522,19 @@ namespace ILLink.Tasks.Tests
 			}
 		}
 
+
+		[Fact]
+		public void TestKeepCustomMetadata ()
+		{
+			var task = new MockTask () {
+				KeepMetadata = new ITaskItem[] { new TaskItem ("parametername") }
+			};
+
+			using (var driver = task.CreateDriver ()) {
+				Assert.Equal (MetadataTrimming.None, driver.Context.MetadataTrimming);
+			}
+		}
+
 		[Theory]
 		[InlineData ("copy")]
 		[InlineData ("link")]
@@ -496,8 +546,24 @@ namespace ILLink.Tasks.Tests
 			};
 			using (var driver = task.CreateDriver ()) {
 				var expectedAction = (AssemblyAction) Enum.Parse (typeof (AssemblyAction), trimMode, ignoreCase: true);
-				Assert.Equal (expectedAction, driver.Context.CoreAction);
-				Assert.Equal (expectedAction, driver.Context.UserAction);
+				Assert.Equal (expectedAction, driver.Context.TrimAction);
+				Assert.Equal (AssemblyAction.Link, driver.Context.DefaultAction);
+			}
+		}
+
+		[Theory]
+		[InlineData ("copy")]
+		[InlineData ("link")]
+		[InlineData ("copyused")]
+		public void TestDefaultAction (string defaultAction)
+		{
+			var task = new MockTask () {
+				DefaultAction = defaultAction
+			};
+			using (var driver = task.CreateDriver ()) {
+				var expectedAction = (AssemblyAction) Enum.Parse (typeof (AssemblyAction), defaultAction, ignoreCase: true);
+				Assert.Equal (expectedAction, driver.Context.DefaultAction);
+				Assert.Equal (AssemblyAction.Link, driver.Context.TrimAction);
 			}
 		}
 
@@ -621,12 +687,12 @@ namespace ILLink.Tasks.Tests
 		public void TestErrorHandling ()
 		{
 			var task = new MockTask () {
-				RootAssemblyNames = new ITaskItem[] { new TaskItem ("MissingAssembly.dll") }
+				RootAssemblyNames = new ITaskItem[0]
 			};
 			task.BuildEngine = new MockBuildEngine ();
 			Assert.False (task.Execute ());
 			Assert.Contains (task.Messages, message =>
-				message.Line.Contains ("Root assembly 'MissingAssembly.dll' could not be found'"));
+				message.Line.Contains ("No input files were specified"));
 		}
 	}
 }

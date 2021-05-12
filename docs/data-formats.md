@@ -314,9 +314,22 @@ Attribute annotation XML can be embedded in an assembly by including it as an em
   </ItemGroup>
 ```
 
-Embedded attribute annotations should only address methods from the containing assembly.
+Embedded attribute annotations should only address methods from the containing assembly. Whereas attribute annotations specified on the command line via the [`--link-attributes` parameter](illink-options.md#supplementary-custom-attributes) can alter types and members in any assembly.
 
-Attribute annotations XML can be specified on the command line via the [`--link-attributes` parameter](illink-options.md#supplementary-custom-attributes).
+The attribute element requires 'fullname' attribute without it linker will generate a warning and skip the attribute. Optionally you can use the 'assembly' attribute to point to certain assembly to look
+for the attribute, if not specified the linker will look up the attribute in any loaded assembly.
+
+Inside an attribute element in the xml you can further define argument, field and property elements used as an input for the attribute. An attribute can have several arguments, several fields or several properties. When writing custom attribute with multiple arguments you need to write the xml elements in an order-dependent form. That is, the first xml argument element corresponds to the first custom attribute argument, second xml argument element correspond to the second custom attribute argument and so on. When argument type is not specified it's considered to be of `string` type. Any other custom attribute value has to have its type specified for linker to find the correct constructor overload.
+
+```xml
+<attribute fullname="SomeCustomAttribute" assembly="AssemblyName">
+  <argument>StringValue</argument>
+  <argument type="System.Int32">-45</argument>
+  <argument type="System.DayOfWeek">Sunday</argument>
+  <field name="fieldName">StringValue</field>
+  <property name="propertyName" type="System.Byte">200</property>
+</attribute>
+```
 
 ### Custom attribute on assembly
 
@@ -509,43 +522,41 @@ attributes are applied.
 </linker>
 ```
 
-### Custom attributes elements
-
-The attribute element requires 'fullname' attribute without it linker will generate a warning and skip
-the attribute. Optionally you can use the 'assembly' attribute to point to certain assembly to look
-for the attribute, if not specified the linker will look up the attribute in any loaded assembly.
-Inside an attribute element in the xml you can define argument, field and property elements.
-An attribute could have several arguments, several fields or several properties. When writing
-custom attribute with multiple arguments you need to write the xml elements in an order dependent
-form. That is, the first xml argument element corresponds to the first custom attribute argument,
-second xml argument element correspond to the second custom attribute argument and so on.
-For fields and properties, you need to include the name since they are not order dependent.
-
-```xml
-<attribute fullname="SomeCustomAttribute" assembly="AssemblyName">
-  <argument>Argument1</argument>
-  <argument>Argument2</argument>
-  <argument>Argument3</argument>
-  <field name="fieldName">SomeValue</field>
-  <property name="propertyName">SomeValue</property>
-</attribute>
-```
-
-Additionally the attribute element also supports the usage of the feature switch
+### Custom attributes with feature
 
 ```xml
 <attribute fullname="SomecustomAttribute" feature="EnableOptionalFeature" featurevalue="false"/>
 ```
 
-Also if the attribute is used in a type, a special property can be used to specify that the type
-is a Custom Attribute and it's instances should be removed by the linker. To do this use `internal="RemoveAttributeInstances"` instead of specifying `fullname` in the attribute as described in the following
-example:
+### Removing custom attributes
+
+Any custom attribute can be annotated with a special custom attribute which can be used to specify
+that all instances of the attribute can be removed by the linker. To do this use `internal="RemoveAttributeInstances"`
+instead of specifying `fullname` in the attribute as described in the following example:
 
 ```xml
 <linker>
-  <assembly fullname="*"> 
+  <assembly fullname="*">
     <type fullname="System.Runtime.CompilerServices.NullableAttribute">
       <attribute internal="RemoveAttributeInstances" feature="EnableOptionalFeature" featurevalue="false" />
+    </type>
+  </assembly>
+</linker>
+```
+
+In some cases, it's useful to remove only specific usage of the attribute. This can be achieved by specifying the value
+or values of the arguments to match. In the example below only `System.Reflection.AssemblyMetadataAttribute` custom attributes
+with the first argument equal to `RemovableValue` will be removed.
+
+```xml
+<linker>
+  <assembly fullname="*">
+    <type fullname="System.Reflection.AssemblyMetadataAttribute">
+      <attribute internal="RemoveAttributeInstances">
+        <argument type="System.Object">
+          <argument>RemovableValue</argument>
+        </argument>
+      </attribute>
     </type>
   </assembly>
 </linker>

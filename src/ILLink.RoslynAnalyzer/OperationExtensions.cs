@@ -2,11 +2,8 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System;
-using System.Collections.Immutable;
 using System.Diagnostics;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.FlowAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 
 namespace ILLink.RoslynAnalyzer
@@ -127,7 +124,7 @@ namespace ILLink.RoslynAnalyzer
 					   operation.Parent is ISizeOfOperation) {
 				return ValueUsageInfo.Name;
 			} else if (operation.Parent is IArgumentOperation argumentOperation) {
-				switch (argumentOperation.Parameter.RefKind) {
+				switch (argumentOperation.Parameter?.RefKind) {
 				case RefKind.RefReadOnly:
 					return ValueUsageInfo.ReadableReference;
 
@@ -206,19 +203,19 @@ namespace ILLink.RoslynAnalyzer
 			deconstructionAssignment = null;
 
 			var previousOperation = operation;
-			operation = operation.Parent;
+			var current = operation.Parent;
 
-			while (operation != null) {
-				switch (operation.Kind) {
+			while (current != null) {
+				switch (current.Kind) {
 				case OperationKind.DeconstructionAssignment:
-					deconstructionAssignment = (IDeconstructionAssignmentOperation) operation;
+					deconstructionAssignment = (IDeconstructionAssignmentOperation) current;
 					return deconstructionAssignment.Target == previousOperation;
 
 				case OperationKind.Tuple:
 				case OperationKind.Conversion:
 				case OperationKind.Parenthesized:
-					previousOperation = operation;
-					operation = operation.Parent;
+					previousOperation = current;
+					current = current.Parent;
 					continue;
 
 				default:

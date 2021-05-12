@@ -23,7 +23,9 @@ namespace ILLink.Tasks
 		///       UnusedInterfaces
 		///       IPConstProp
 		///       Sealer
-		///   Maps to '-reference', and possibly '-p', '--enable-opt', '--disable-opt'
+		///   Optional metadata "TrimmerSingleWarn" may also be set to "True"/"False" to control
+		///   whether the linker produces granular warnings for this assembly.
+		///   Maps to '-reference', and possibly '--action', '--enable-opt', '--disable-opt', '--verbose'
 		/// </summary>
 		[Required]
 		public ITaskItem[] AssemblyPaths { get; set; }
@@ -31,7 +33,7 @@ namespace ILLink.Tasks
 		/// <summary>
 		///    Paths to assembly files that are reference assemblies,
 		///    representing the surface area for compilation.
-		///    Maps to '-reference', with action set to 'skip' via '-p'.
+		///    Maps to '-reference', with action set to 'skip' via '--action'.
 		/// </summary>
 		public ITaskItem[] ReferenceAssemblyPaths { get; set; }
 
@@ -72,6 +74,13 @@ namespace ILLink.Tasks
 		/// </summary>
 		public bool TreatWarningsAsErrors { set => _treatWarningsAsErrors = value; }
 		bool? _treatWarningsAsErrors;
+
+		/// <summary>
+		/// Produce at most one trim analysis warning per assembly.
+		/// Maps to '--singlewarn' if true, '--singlewarn-' if false.
+		/// </summary>
+		public bool SingleWarn { set => _singleWarn = value; }
+		bool? _singleWarn;
 
 		/// <summary>
 		/// The list of warnings to report as errors.
@@ -180,10 +189,15 @@ namespace ILLink.Tasks
 		bool? _removeSymbols;
 
 		/// <summary>
-		///   Sets the default action for assemblies.
-		///   Maps to '-c' and '-u'.
+		///   Sets the default action for trimmable assemblies.
+		///   Maps to '--trim-mode'
 		/// </summary>
 		public string TrimMode { get; set; }
+
+		/// <summary>
+		///   Sets the default action for assemblies which have not opted into trimming.
+		///   Maps to '--action'
+		public string DefaultAction { get; set; }
 
 		/// <summary>
 		///   A list of custom steps to insert into the linker pipeline.
@@ -198,6 +212,11 @@ namespace ILLink.Tasks
 		///   Maps to '--custom-step'.
 		/// </summary>
 		public ITaskItem[] CustomSteps { get; set; }
+
+		/// <summary>
+		///   A list selected metadata which should not be trimmed. It maps to 'keep-metadata' option
+		/// </summary>
+		public ITaskItem[] KeepMetadata { get; set; }
 
 		private const string DotNetHostPathEnvironmentName = "DOTNET_HOST_PATH";
 
@@ -283,6 +302,13 @@ namespace ILLink.Tasks
 				args.AppendLine ();
 			}
 
+			if (_singleWarn is bool generalSingleWarn) {
+				if (generalSingleWarn)
+					args.AppendLine ("--singlewarn");
+				else
+					args.AppendLine ("--singlewarn-");
+			}
+
 			HashSet<string> assemblyNames = new HashSet<string> (StringComparer.OrdinalIgnoreCase);
 			foreach (var assembly in AssemblyPaths) {
 				var assemblyPath = assembly.ItemSpec;
@@ -296,7 +322,7 @@ namespace ILLink.Tasks
 
 				string trimMode = assembly.GetMetadata ("TrimMode");
 				if (!String.IsNullOrEmpty (trimMode)) {
-					args.Append ("-p ");
+					args.Append ("--action ");
 					args.Append (trimMode);
 					args.Append (' ').AppendLine (Quote (assemblyName));
 				}
@@ -311,6 +337,18 @@ namespace ILLink.Tasks
 						throw new ArgumentException ($"optimization metadata {optimization} must be True or False");
 
 					SetOpt (args, optimization, assemblyName, enabled);
+				}
+
+				// Add per-assembly verbosity arguments
+				string singleWarn = assembly.GetMetadata ("TrimmerSingleWarn");
+				if (!String.IsNullOrEmpty (singleWarn)) {
+					if (!Boolean.TryParse (singleWarn, out bool value))
+						throw new ArgumentException ($"TrimmerSingleWarn metadata must be True or False");
+
+					if (value)
+						args.Append ("--singlewarn ").AppendLine (Quote (assemblyName));
+					else
+						args.Append ("--singlewarn- ").AppendLine (Quote (assemblyName));
 				}
 			}
 
@@ -329,7 +367,7 @@ namespace ILLink.Tasks
 					// Treat reference assemblies as "skip". Ideally we
 					// would not even look at the IL, but only use them to
 					// resolve surface area.
-					args.Append ("-p skip ").AppendLine (Quote (assemblyName));
+					args.Append ("--action skip ").AppendLine (Quote (assemblyName));
 				}
 			}
 
@@ -392,11 +430,19 @@ namespace ILLink.Tasks
 				}
 			}
 
+			if (KeepMetadata != null) {
+				foreach (var metadata in KeepMetadata)
+					args.Append ("--keep-metadata ").AppendLine (Quote (metadata.ItemSpec));
+			}
+
 			if (_removeSymbols == false)
 				args.AppendLine ("-b");
 
 			if (TrimMode != null)
-				args.Append ("-c ").Append (TrimMode).Append (" -u ").AppendLine (TrimMode);
+				args.Append ("--trim-mode ").AppendLine (TrimMode);
+
+			if (DefaultAction != null)
+				args.Append ("--action ").AppendLine (DefaultAction);
 
 			if (CustomSteps != null) {
 				foreach (var customStep in CustomSteps) {

@@ -2,6 +2,7 @@
 using System.Security;
 using System.Security.Permissions;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
+using Mono.Linker.Tests.Cases.Expectations.Helpers;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.Attributes.NoSecurity
@@ -9,7 +10,7 @@ namespace Mono.Linker.Tests.Cases.Attributes.NoSecurity
 #if NETCOREAPP
 	[IgnoreTestCase ("Not important for .NET Core build")]
 #endif
-	[SetupLinkerCoreAction ("link")]
+	[SetupLinkerTrimMode ("link")]
 	[SetupLinkerArgument ("--strip-security", "true")]
 	[Reference ("System.dll")]
 	// Attributes from System.Security.Permissions

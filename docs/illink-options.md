@@ -58,22 +58,25 @@ The linker can do the following things on all or individual assemblies
 - `delete`- remove them from the output
 - `save` - save them in memory without linking
 
-You can specify an action per assembly using `-p` option like this:
+You can specify an action per assembly using `--action` option like this:
 
-`illink -p link Foo`
+`illink --action link Foo`
 
 or
 
-`illink -p skip System.Windows.Forms`
+`illink --action skip System.Windows.Forms`
 
-Or you can specify what to do for the core assemblies.
+Or you can specify what to do for the trimmed assemblies.
 
-Core assemblies are the assemblies that belong to the base class library,
-like `System.Private.CoreLib.dll`, `System.dll` or `System.Windows.Forms.dll`.
+A trimmable assembly is any assembly that includes the attribute `System.Reflection.AssemblyMetadata("IsTrimmable", "True")`.
 
-You can specify what action to do on the core assemblies with the option:
+You can specify what action to do on the trimmed assemblies with the option:
 
-`-c skip|copy|link`
+`--trim-mode skip|copy|copyused|link`
+
+You can specify what action to do on assemblies without such an attribute with the option:
+
+`--action copy|link`
 
 ### The output directory
 
@@ -187,6 +190,13 @@ warnings should be separated with a comma or semicolon.
 The `--warn VERSION` option prevents the linker from displaying warnings newer than the specified
 version. Valid versions are in the range 0-9999, where 9999 will display all current and future
 warnings.
+
+### Emit single warnings per assembly
+
+The `--singlewarn` (or `--singlewarn+`) option will show at most one trim analysis warning per
+assembly which represents all of the warnings produced by code in the assembly. The default is to show all trim analysis warnings.
+
+You may also pass `--singlewarn Assembly` (or `--singlewarn- Assembly`) to control this behavior for a particular assembly.
 
 ### Generating warning suppressions
 

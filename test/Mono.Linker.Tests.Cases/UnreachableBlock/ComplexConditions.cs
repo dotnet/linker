@@ -19,11 +19,11 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 #if !NETCOREAPP
 		[ExpectBodyModified]
 #else
-		[ExpectedInstructionSequence (new [] {
+		[ExpectedInstructionSequence (new[] {
 			"nop",
 			"ldarg.0",
 			"isinst",
-			"brtrue.s",
+			"brtrue.s il_19",
 			"call",
 			"pop",
 			"ldarg.0",
@@ -31,12 +31,12 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 			"ldnull",
 			"ldnull",
 			"cgt.un",
-			"br.s",
-			"br.s",
+			"br.s il_17",
+			"br.s il_1a",
 			"ldc.i4.1",
 			"stloc.0",
 			"ldloc.0",
-			"brfalse.s",
+			"brfalse.s il_24",
 			"call",
 			"nop",
 			"ret"
@@ -52,7 +52,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 #if !NETCOREAPP
 		[ExpectBodyModified]
 #else
-		[ExpectedInstructionSequence (new [] {
+		[ExpectedInstructionSequence (new[] {
 			"nop",
 			"call",
 			"stloc.1",
@@ -62,15 +62,15 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 			"stloc.0",
 			"ldarg.0",
 			"ldc.i4.2",
-			"beq.s",
+			"beq.s il_15",
 			"ldarg.0",
 			"ldc.i4.3",
 			"ceq",
-			"br.s",
+			"br.s il_16",
 			"ldc.i4.1",
 			"stloc.2",
 			"ldloc.2",
-			"brfalse.s",
+			"brfalse.s il_20",
 			"newobj",
 			"throw",
 			"newobj",

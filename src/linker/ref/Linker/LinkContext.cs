@@ -13,11 +13,20 @@ namespace Mono.Linker
 		public AnnotationStore Annotations { get { throw null; } }
 
 		public TypeDefinition GetType (string fullName) { throw null; }
+		public string GetAssemblyLocation (AssemblyDefinition assembly) { throw null; }
 		public AssemblyDefinition GetLoadedAssembly (string name) { throw null; }
 
 		public void LogMessage (MessageContainer message) { throw null; }
 
 		public bool HasCustomData (string key) { throw null; }
 		public bool TryGetCustomData (string key, out string value) { throw null; }
+
+		public MethodDefinition ResolveMethodDefinition (MethodReference methodReference) { throw null; }
+		public FieldDefinition ResolveFieldDefinition (FieldReference fieldReference) { throw null; }
+		public TypeDefinition ResolveTypeDefinition (TypeReference typeReference) { throw null; }
+
+		public MethodDefinition TryResolveMethodDefinition (MethodReference methodReference) { throw null; }
+		public FieldDefinition TryResolveFieldDefinition (FieldReference fieldReference) { throw null; }
+		public TypeDefinition TryResolveTypeDefinition (TypeReference typeReference) { throw null; }
 	}
 }

@@ -9,17 +9,14 @@ namespace Mono.Linker.Tests.Cases.BCLFeatures
 		public static void Main ()
 		{
 			new C (2);
+			new CustomSerialization ();
 		}
 	}
 
 	[Kept]
-
 	[Serializable]
 	class C
 	{
-		//#if !NET6_0
-		[Kept]
-		//#endif
 		public C ()
 		{
 		}
@@ -29,10 +26,40 @@ namespace Mono.Linker.Tests.Cases.BCLFeatures
 		{
 		}
 
-		//#if !NET6_0
-		[Kept]
-		//#endif
 		protected C (SerializationInfo info, StreamingContext context)
+		{
+		}
+	}
+
+	[Kept]
+	class CustomSerialization
+	{
+		[Kept]
+		public CustomSerialization ()
+		{
+		}
+
+		[OnSerializing]
+		[KeptAttributeAttribute (typeof (OnSerializingAttribute))]
+		internal void OnSerializingMethod (StreamingContext context)
+		{
+		}
+
+		[OnSerialized]
+		[KeptAttributeAttribute (typeof (OnSerializedAttribute))]
+		internal void OnSerializedMethod (StreamingContext context)
+		{
+		}
+
+		[OnDeserializing]
+		[KeptAttributeAttribute (typeof (OnDeserializingAttribute))]
+		internal void OnDeserializingMethod (StreamingContext context)
+		{
+		}
+
+		[OnDeserialized]
+		[KeptAttributeAttribute (typeof (OnDeserializedAttribute))]
+		internal void OnDeserializedMethod (StreamingContext context)
 		{
 		}
 	}

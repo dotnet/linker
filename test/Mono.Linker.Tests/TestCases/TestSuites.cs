@@ -176,7 +176,7 @@ namespace Mono.Linker.Tests.TestCases
 				Assert.Ignore ("These tests are not valid when linking against .NET Framework");
 
 #if NETCOREAPP
-			Assert.Ignore("These tests are not valid when linking against .NET Core");
+			Assert.Ignore ("These tests are not valid when linking against .NET Core");
 #endif
 			Run (testCase);
 		}
@@ -217,6 +217,12 @@ namespace Mono.Linker.Tests.TestCases
 			Run (testCase);
 		}
 
+		[TestCaseSource (typeof (TestDatabase), nameof (TestDatabase.SerializationTests))]
+		public void SerializationTests (TestCase testCase)
+		{
+			Run (testCase);
+		}
+
 
 		[TestCaseSource (typeof (TestDatabase), nameof (TestDatabase.ExtensibilityTests))]
 		public void ExtensibilityTests (TestCase testCase)
@@ -244,6 +250,12 @@ namespace Mono.Linker.Tests.TestCases
 
 		[TestCaseSource (typeof (TestDatabase), nameof (TestDatabase.LinkAttributesTests))]
 		public void LinkAttributesTests (TestCase testCase)
+		{
+			Run (testCase);
+		}
+
+		[TestCaseSource (typeof (TestDatabase), nameof (TestDatabase.MetadataTests))]
+		public void MetadataTests (TestCase testCase)
 		{
 			Run (testCase);
 		}

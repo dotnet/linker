@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Mono.Cecil;
+using Mono.Linker;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.TestCasesRunner;
 using NUnit.Framework;
@@ -78,27 +78,27 @@ namespace Mono.Linker.Tests
 
 			// PointerType
 			[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.A.CommonPointerPointerTypeParameter(Int32*)")]
-			unsafe public void CommonPointerPointerTypeParameter (int* p)
+			public unsafe void CommonPointerPointerTypeParameter (int* p)
 			{
 			}
 
 			[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.A.PointerToPointerPointerTypeParameter(Int32**)")]
-			unsafe public void PointerToPointerPointerTypeParameter (int** p)
+			public unsafe void PointerToPointerPointerTypeParameter (int** p)
 			{
 			}
 
 			[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.A.PointerToArrayPointerTypeParameter(Int32*[,,,])")]
-			unsafe public void PointerToArrayPointerTypeParameter (int*[,,,] p)
+			public unsafe void PointerToArrayPointerTypeParameter (int*[,,,] p)
 			{
 			}
 
 			[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.A.PointerToArrayPointerTypeParameter(Int32*[,][,,])")]
-			unsafe public void PointerToArrayPointerTypeParameter (int*[,][,,] p)
+			public unsafe void PointerToArrayPointerTypeParameter (int*[,][,,] p)
 			{
 			}
 
 			[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.A.PointerTypeToUnknownTypeParameter(Void*)")]
-			unsafe public void PointerTypeToUnknownTypeParameter (void* p)
+			public unsafe void PointerTypeToUnknownTypeParameter (void* p)
 			{
 			}
 		}
@@ -198,6 +198,28 @@ namespace Mono.Linker.Tests
 			"(GetDisplayNameTests.GenericClassMultipleParameters<MethodT,String>.NestedGenericClassMultipleParameters<Int32,MethodV>)")]
 		public void MethodWithPartiallyInstantiatedNestedGenericTypeArguments<MethodT, MethodV> (
 			GenericClassMultipleParameters<MethodT, string>.NestedGenericClassMultipleParameters<int, MethodV> p)
+		{
+		}
+	}
+}
+
+[TestFixture]
+public class GetDisplayNameTestsGlobalScope
+{
+	[TestCaseSource (nameof (GetMemberAssertions), new object[] { typeof (global::GetDisplayNameTestsGlobalScope) })]
+	public void TestGetDisplayName (IMemberDefinition member, CustomAttribute customAttribute)
+	{
+		var expectedDisplayName = (string) customAttribute.ConstructorArguments[0].Value;
+		Assert.AreEqual (expectedDisplayName, (member as MemberReference).GetDisplayName ());
+	}
+
+	public static IEnumerable<TestCaseData> GetMemberAssertions (Type type) => MemberAssertionsCollector.GetMemberAssertionsData (type);
+
+	[DisplayName ("GetDisplayNameTestsGlobalScope.TypeInGlobalScope")]
+	public class TypeInGlobalScope
+	{
+		[DisplayName ("GetDisplayNameTestsGlobalScope.TypeInGlobalScope.Method()")]
+		public void Method ()
 		{
 		}
 	}

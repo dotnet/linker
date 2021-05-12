@@ -29,109 +29,171 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.MemoryMappedFiles;
 using Mono.Cecil;
-using Mono.Collections.Generic;
 
 namespace Mono.Linker
 {
-
-	public class AssemblyResolver : DirectoryAssemblyResolver
+	public class AssemblyResolver : IAssemblyResolver
 	{
+		readonly List<string> _references = new ();
+		readonly LinkContext _context;
+		readonly List<string> _directories = new ();
+		readonly Dictionary<AssemblyDefinition, string> _assemblyToPath = new ();
+		readonly List<MemoryMappedViewStream> _viewStreams = new ();
+		readonly ReaderParameters _defaultReaderParameters;
 
-		readonly Dictionary<string, AssemblyDefinition> _assemblies;
 		HashSet<string> _unresolvedAssemblies;
-		bool _ignoreUnresolved;
-		LinkContext _context;
-		readonly Collection<string> _references;
+		HashSet<string> _reportedUnresolvedAssemblies;
 
-
-		public IDictionary<string, AssemblyDefinition> AssemblyCache {
-			get { return _assemblies; }
-		}
-
-		public AssemblyResolver ()
-			: this (new Dictionary<string, AssemblyDefinition> (StringComparer.OrdinalIgnoreCase))
+		public AssemblyResolver (LinkContext context)
 		{
+			_context = context;
+			_defaultReaderParameters = new ReaderParameters () {
+				AssemblyResolver = this
+			};
 		}
 
-		public AssemblyResolver (Dictionary<string, AssemblyDefinition> assembly_cache)
+		public IDictionary<string, AssemblyDefinition> AssemblyCache { get; } = new Dictionary<string, AssemblyDefinition> (StringComparer.OrdinalIgnoreCase);
+
+		public string GetAssemblyLocation (AssemblyDefinition assembly)
 		{
-			_assemblies = assembly_cache;
-			_references = new Collection<string> () { };
-		}
-
-		public bool IgnoreUnresolved {
-			get { return _ignoreUnresolved; }
-			set { _ignoreUnresolved = value; }
-		}
-
-		public LinkContext Context {
-			get { return _context; }
-			set { _context = value; }
-		}
-
-		public string GetAssemblyFileName (AssemblyDefinition assembly)
-		{
-			if (assemblyToPath.TryGetValue (assembly, out string path)) {
+			if (_assemblyToPath.TryGetValue (assembly, out string path))
 				return path;
-			}
 
-			// Must be an assembly that we didn't open through the resolver
-			return assembly.MainModule.FileName;
+			throw new InternalErrorException ($"Assembly '{assembly}' was not loaded using linker resolver");
 		}
 
-		AssemblyDefinition ResolveFromReferences (AssemblyNameReference name, Collection<string> references, ReaderParameters parameters)
+		AssemblyDefinition ResolveFromReferences (AssemblyNameReference name)
 		{
-			var fileName = name.Name + ".dll";
-			foreach (var reference in references) {
-				if (Path.GetFileName (reference) != fileName)
-					continue;
-				try {
-					return GetAssembly (reference, parameters);
-				} catch (BadImageFormatException) {
-					continue;
+			foreach (var reference in _references) {
+				foreach (var extension in Extensions) {
+					var fileName = name.Name + extension;
+					if (Path.GetFileName (reference) != fileName)
+						continue;
+					try {
+						return GetAssembly (reference);
+					} catch (BadImageFormatException) {
+						continue;
+					}
 				}
 			}
 
 			return null;
 		}
 
-		public override AssemblyDefinition Resolve (AssemblyNameReference name, ReaderParameters parameters)
+		public AssemblyDefinition Resolve (AssemblyNameReference name, bool probing)
 		{
-			// Validate arguments, similarly to how the base class does it.
-			if (name == null)
-				throw new ArgumentNullException (nameof (name));
-			if (parameters == null)
-				throw new ArgumentNullException (nameof (parameters));
+			if (AssemblyCache.TryGetValue (name.Name, out AssemblyDefinition asm))
+				return asm;
 
-			if (!_assemblies.TryGetValue (name.Name, out AssemblyDefinition asm) && (_unresolvedAssemblies == null || !_unresolvedAssemblies.Contains (name.Name))) {
-				try {
-					// Any full path explicit reference takes precedence over other look up logic
-					asm = ResolveFromReferences (name, _references, parameters);
+			if (_unresolvedAssemblies?.Contains (name.Name) == true) {
+				if (!probing)
+					ReportUnresolvedAssembly (name);
+				return null;
+			}
 
-					// Fall back to the base class resolution logic
-					if (asm == null)
-						asm = base.Resolve (name, parameters);
+			// Any full path explicit reference takes precedence over other look up logic
+			asm = ResolveFromReferences (name);
 
-					CacheAssembly (asm);
-				} catch (AssemblyResolutionException) {
-					if (!_ignoreUnresolved)
-						throw;
-					_context.LogMessage ($"Ignoring unresolved assembly '{name.Name}'.");
-					if (_unresolvedAssemblies == null)
-						_unresolvedAssemblies = new HashSet<string> ();
-					_unresolvedAssemblies.Add (name.Name);
+			if (asm == null)
+				asm = SearchDirectory (name);
+
+			if (asm == null) {
+				if (_unresolvedAssemblies == null)
+					_unresolvedAssemblies = new HashSet<string> ();
+
+				if (!probing)
+					ReportUnresolvedAssembly (name);
+
+				_unresolvedAssemblies.Add (name.Name);
+				return null;
+			}
+
+			CacheAssembly (asm);
+			return asm;
+		}
+
+		void ReportUnresolvedAssembly (AssemblyNameReference reference)
+		{
+			if (_reportedUnresolvedAssemblies == null)
+				_reportedUnresolvedAssemblies = new HashSet<string> ();
+
+			if (!_reportedUnresolvedAssemblies.Add (reference.Name))
+				return;
+
+			if (_context.IgnoreUnresolved)
+				_context.LogMessage ($"Ignoring unresolved assembly '{reference.Name}' reference");
+			else
+				_context.LogError ($"Assembly reference '{reference.Name}' could not be resolved", 1009);
+		}
+
+		public void AddSearchDirectory (string directory)
+		{
+			_directories.Add (directory);
+		}
+
+		public AssemblyDefinition GetAssembly (string file)
+		{
+			MemoryMappedViewStream viewStream = null;
+			try {
+				// Create stream because CreateFromFile(string, ...) uses FileShare.None which is too strict
+				using var fileStream = new FileStream (file, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, false);
+				using var mappedFile = MemoryMappedFile.CreateFromFile (
+					fileStream, null, fileStream.Length, MemoryMappedFileAccess.Read, HandleInheritability.None, true);
+				viewStream = mappedFile.CreateViewStream (0, 0, MemoryMappedFileAccess.Read);
+
+				AssemblyDefinition result = ModuleDefinition.ReadModule (viewStream, _defaultReaderParameters).Assembly;
+
+				_assemblyToPath.Add (result, file);
+
+				_viewStreams.Add (viewStream);
+
+				// We transferred the ownership of the viewStream to the collection.
+				viewStream = null;
+
+				return result;
+			} finally {
+				if (viewStream != null)
+					viewStream.Dispose ();
+			}
+		}
+
+		public AssemblyDefinition Resolve (AssemblyNameReference name)
+		{
+			return Resolve (name, probing: false);
+		}
+
+		AssemblyDefinition IAssemblyResolver.Resolve (AssemblyNameReference name, ReaderParameters parameters)
+		{
+			// This is never used by cecil in linker context
+			throw new NotSupportedException ();
+		}
+
+		static readonly string[] Extensions = new[] { ".dll", ".exe" };
+
+		AssemblyDefinition SearchDirectory (AssemblyNameReference name)
+		{
+			foreach (var directory in _directories) {
+				foreach (var extension in Extensions) {
+					string file = Path.Combine (directory, name.Name + extension);
+					if (!File.Exists (file))
+						continue;
+					try {
+						return GetAssembly (file);
+					} catch (BadImageFormatException) {
+						continue;
+					}
 				}
 			}
 
-			return asm;
+			return null;
 		}
 
 		public void CacheAssembly (AssemblyDefinition assembly)
 		{
-			_assemblies[assembly.Name.Name] = assembly;
-			if (assembly != null)
-				_context.RegisterAssembly (assembly);
+			AssemblyCache[assembly.Name.Name] = assembly;
+			_context.RegisterAssembly (assembly);
 		}
 
 		public void AddReferenceAssembly (string referencePath)
@@ -139,17 +201,37 @@ namespace Mono.Linker
 			_references.Add (referencePath);
 		}
 
-		protected override void Dispose (bool disposing)
+		public List<string> GetReferencePaths ()
 		{
-			foreach (var asm in _assemblies.Values) {
+			return _references;
+		}
+
+		public void Dispose ()
+		{
+			Dispose (true);
+		}
+
+		protected virtual void Dispose (bool disposing)
+		{
+			if (!disposing)
+				return;
+
+			foreach (var asm in AssemblyCache.Values) {
 				asm.Dispose ();
 			}
 
-			_assemblies.Clear ();
+			AssemblyCache.Clear ();
 			if (_unresolvedAssemblies != null)
 				_unresolvedAssemblies.Clear ();
 
-			base.Dispose (disposing);
+			if (_reportedUnresolvedAssemblies != null)
+				_reportedUnresolvedAssemblies.Clear ();
+
+			foreach (var viewStream in _viewStreams) {
+				viewStream.Dispose ();
+			}
+
+			_viewStreams.Clear ();
 		}
 	}
 }

@@ -66,13 +66,14 @@ namespace Mono.Linker
 		protected readonly HashSet<TypeDefinition> marked_instantiated = new HashSet<TypeDefinition> ();
 		protected readonly HashSet<MethodDefinition> indirectly_called = new HashSet<MethodDefinition> ();
 		protected readonly HashSet<TypeDefinition> types_relevant_to_variant_casting = new HashSet<TypeDefinition> ();
+		readonly HashSet<IMemberDefinition> reflection_used = new ();
 
 		public AnnotationStore (LinkContext context)
 		{
 			this.context = context;
 			FlowAnnotations = new FlowAnnotations (context);
 			VirtualMethodsWithAnnotationsToValidate = new HashSet<MethodDefinition> ();
-			TypeMapInfo = new TypeMapInfo ();
+			TypeMapInfo = new TypeMapInfo (context);
 			MemberActions = new MemberActionStore (context);
 		}
 
@@ -135,6 +136,11 @@ namespace Mono.Linker
 		public void SetAction (MethodDefinition method, MethodAction action)
 		{
 			MemberActions.PrimarySubstitutionInfo.SetMethodAction (method, action);
+		}
+
+		public void SetStubValue (MethodDefinition method, object value)
+		{
+			MemberActions.PrimarySubstitutionInfo.SetMethodStubValue (method, value);
 		}
 
 		public bool HasSubstitutedInit (FieldDefinition field)
@@ -216,6 +222,16 @@ namespace Mono.Linker
 		public bool IsIndirectlyCalled (MethodDefinition method)
 		{
 			return indirectly_called.Contains (method);
+		}
+
+		public void MarkReflectionUsed (IMemberDefinition member)
+		{
+			reflection_used.Add (member);
+		}
+
+		public bool IsReflectionUsed (IMemberDefinition method)
+		{
+			return reflection_used.Contains (method);
 		}
 
 		public void MarkInstantiated (TypeDefinition type)
@@ -303,6 +319,12 @@ namespace Mono.Linker
 			Debug.Assert (preserve != TypePreserve.Nothing);
 			if (!preserved_types.TryGetValue (type, out (TypePreserve preserve, bool applied) existing)) {
 				preserved_types.Add (type, (preserve, false));
+				if (IsProcessed (type)) {
+					// Required to track preserve for marked types where the existing preserve
+					// was Nothing (since these aren't explicitly tracked.)
+					var addedPending = pending_preserve.Add (type);
+					Debug.Assert (addedPending);
+				}
 				return;
 			}
 			Debug.Assert (existing.preserve != TypePreserve.Nothing);
@@ -533,11 +555,11 @@ namespace Mono.Linker
 		public bool HasLinkerAttribute<T> (IMemberDefinition member) where T : Attribute
 		{
 			// Avoid setting up and inserting LinkerAttributesInformation for members without attributes.
-			if (!context.CustomAttributes.HasAttributes (member))
+			if (!context.CustomAttributes.HasAny (member))
 				return false;
 
 			if (!linker_attributes.TryGetValue (member, out var linkerAttributeInformation)) {
-				linkerAttributeInformation = new LinkerAttributesInformation (context, member);
+				linkerAttributeInformation = LinkerAttributesInformation.Create (context, member);
 				linker_attributes.Add (member, linkerAttributeInformation);
 			}
 
@@ -547,11 +569,11 @@ namespace Mono.Linker
 		public IEnumerable<T> GetLinkerAttributes<T> (IMemberDefinition member) where T : Attribute
 		{
 			// Avoid setting up and inserting LinkerAttributesInformation for members without attributes.
-			if (!context.CustomAttributes.HasAttributes (member))
+			if (!context.CustomAttributes.HasAny (member))
 				return Enumerable.Empty<T> ();
 
 			if (!linker_attributes.TryGetValue (member, out var linkerAttributeInformation)) {
-				linkerAttributeInformation = new LinkerAttributesInformation (context, member);
+				linkerAttributeInformation = LinkerAttributesInformation.Create (context, member);
 				linker_attributes.Add (member, linkerAttributeInformation);
 			}
 

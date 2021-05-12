@@ -58,9 +58,9 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		[Kept]
 		[ExpectedInstructionSequence (new[] {
 			"call",
-			"brfalse.s",
+			"brfalse.s il_7",
 			"ldc.i4.1",
-			"ret",
+			"ret"
 		})]
 		int TestCallOnInstanceMulti ()
 		{
@@ -151,10 +151,15 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		}
 
 		[Kept]
+		[ExpectedInstructionSequence (new[] {
+			"call",
+			"brfalse.s il_7",
+			"ldarg.0",
+			"call",
+			"ret"
+		})]
 		void TestStaticPropagation ()
 		{
-			// Propagation of return value across static method is not supported
-			// (propagation of return value from a method which has call in the body is not supported)
 			if (PropagateStaticIsEnabled ())
 				StaticPropagation_Reached1 ();
 			else
@@ -170,7 +175,6 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 			return _staticInstance.IsEnabled ();
 		}
 
-		[Kept]
 		void StaticPropagation_Reached1 ()
 		{
 		}

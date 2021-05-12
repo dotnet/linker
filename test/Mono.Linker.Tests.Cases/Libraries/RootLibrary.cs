@@ -8,6 +8,7 @@ namespace Mono.Linker.Tests.Cases.Libraries
 {
 	[SetupLinkerArgument ("-a", "test.exe", "library")]
 	[SetupLinkerArgument ("--enable-opt", "ipconstprop")]
+	[VerifyMetadataNames]
 	public class RootLibrary
 	{
 		private int field;
@@ -20,6 +21,8 @@ namespace Mono.Linker.Tests.Cases.Libraries
 		[Kept]
 		public static void Main ()
 		{
+			var t = typeof (SerializationTestPrivate);
+			t = typeof (SerializationTestNested.SerializationTestPrivate);
 		}
 
 		[Kept]
@@ -71,6 +74,67 @@ namespace Mono.Linker.Tests.Cases.Libraries
 		}
 
 		[Kept]
+		private class SerializationTestPrivate
+		{
+			[Kept]
+			private SerializationTestPrivate (SerializationInfo info, StreamingContext context)
+			{
+			}
+
+			public void NotUsed ()
+			{
+			}
+
+			[Kept]
+			[OnSerializing]
+			[KeptAttributeAttribute (typeof (OnSerializingAttribute))]
+			private void OnSerializingMethod (StreamingContext context)
+			{
+			}
+
+			[Kept]
+			[OnSerialized]
+			[KeptAttributeAttribute (typeof (OnSerializedAttribute))]
+			private void OnSerializedMethod (StreamingContext context)
+			{
+			}
+
+			[Kept]
+			[OnDeserializing]
+			[KeptAttributeAttribute (typeof (OnDeserializingAttribute))]
+			private void OnDeserializingMethod (StreamingContext context)
+			{
+			}
+
+			[Kept]
+			[OnDeserialized]
+			[KeptAttributeAttribute (typeof (OnDeserializedAttribute))]
+			private void OnDeserializedMethod (StreamingContext context)
+			{
+			}
+		}
+
+		[Kept]
+		private class SerializationTestNested
+		{
+			internal class SerializationTestPrivate
+			{
+				[Kept]
+				private SerializationTestPrivate (SerializationInfo info, StreamingContext context)
+				{
+				}
+
+				public void NotUsed ()
+				{
+				}
+			}
+
+			public void NotUsed ()
+			{
+			}
+		}
+
+		[Kept]
 		public class SubstitutionsTest
 		{
 			[Kept]
@@ -113,5 +177,12 @@ namespace Mono.Linker.Tests.Cases.Libraries
 
 	internal class RootLibrary_Internal
 	{
+		protected RootLibrary_Internal (SerializationInfo info, StreamingContext context)
+		{
+		}
+
+		internal void Unused ()
+		{
+		}
 	}
 }

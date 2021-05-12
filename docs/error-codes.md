@@ -37,9 +37,9 @@ the error code. For example:
 
 #### `IL1008`: Could not find constructor on 'type'
 
-#### `IL1009`: Assembly 'assembly' reference 'reference' could not be resolved
+#### `IL1009`: Assembly reference 'name' could not be resolved
 
-- There was en error resolving the reference assembly 'reference'. An exception with more details is printed.
+- There was an error resolving assembly 'name'. Consider adding missing reference to your project or pass `--skip-unresolved` option if you are sure the dependencies don't need to be analyzed.
 
 #### `IL1010`: Assembly 'assembly' cannot be loaded due to failure in processing 'reference' reference
 
@@ -128,6 +128,36 @@ the error code. For example:
 #### `IL1037`: Invalid assembly root mode '{mode}'
 
 #### `IL1038`: Exported type '{type.Name}' cannot be resolved
+
+#### `IL1039`: Reference assembly '{assemblyPath}' could not be loaded
+
+- A reference assembly input passed via -reference could not be loaded.
+
+#### `IL1040`: Failed to resolve {name}
+
+- Metadata element 'name' cannot be resolved. This usually means there is a version mismatch between dependencies.
+
+#### `IL1041`: The type '{typeName}' used with attribute value 'value' could not be found
+
+- The type name used to define custom attribute value could not be resolved. This can mean the assembly reference is missing or that the type does not exist.
+
+#### `IL1042`: Cannot convert value '{value}' to type '{typeName}'
+
+- The 'value' specified for the custom attribute value cannot be converted to specified argument type 'typeName'.
+
+#### `IL1043`: Custom attribute argument for 'type' type requires nested 'argument' node
+
+- The syntax for custom attribute value for 'type' requires to also specify the underlying attribute type.
+
+#### `IL1044`: Could not resolve custom attribute type value '{value}'
+
+- The 'value' specified for the custom attribute of `System.Type` type could not be resolved.
+
+#### `IL1045`: Unexpected attribute argument type 'type'
+
+- The type name used with attribute type is not one of the supported types.
+
+#### `IL1046`: Invalid metadata '{name}' option
 
 ----
 ## Warning Codes
@@ -395,12 +425,12 @@ the error code. For example:
   </linker>
   ```
 
-#### `IL2022`: Could not find a constructor for type 'attribute type' that has 'number of arguments' arguments
+#### `IL2022`: Could not find matching constructor for custom attribute 'attribute-type' arguments
 
-- The XML attribute for attribute type 'attribute type' specifies 'number of arguments' arguments but there's no constructor for 'attribute type' which has that many arguments
+- The XML attribute arguments for attribute type 'attribute-type' use values or types which don't match to any constructor on 'attribute-type'
 
   ```XML
-  <!-- IL2022: Could not find a constructor for type 'AttributeWithNoParametersAttribute' that has '1' arguments -->
+  <!-- IL2022: Could not find matching constructor for custom attribute 'attribute-type' arguments -->
   <linker>
     <assembly fullname="MyAssembly">
       <type fullname="MyType">
@@ -876,7 +906,7 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
   </linker>
   ```
 
-#### `IL2055`: Trim analysis: Call to 'System.Reflection.MethodInfo.MakeGenericType' can not be statically analyzed. It's not possible to guarantee the availability of requirements of the generic type.
+#### `IL2055`: Trim analysis: Call to 'System.Type.MakeGenericType' can not be statically analyzed. It's not possible to guarantee the availability of requirements of the generic type.
 
 - This can be either that the type on which the `MakeGenericType` is called can't be statically determined, or that the type parameters to be used for generic arguments can't be statically determined. If the open generic type has `DynamicallyAccessedMembersAttribute` on any of its generic parameters, ILLink currently can't validate that the requirements are fulfilled by the calling method.  
 
@@ -888,10 +918,10 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
   
   void TestMethod(Type unknownType)
   {
-      // IL2055 Trim analysis: Call to `System.Reflection.MethodInfo.MakeGenericType(Type[])` can not be statically analyzed. It's not possible to guarantee the availability of requirements of the generic type.
+      // IL2055 Trim analysis: Call to `System.Type.MakeGenericType(Type[])` can not be statically analyzed. It's not possible to guarantee the availability of requirements of the generic type.
       typeof(Lazy<>).MakeGenericType(new Type[] { typeof(TestType) });
 
-      // IL2055 Trim analysis: Call to `System.Reflection.MethodInfo.MakeGenericType(Type[])` can not be statically analyzed. It's not possible to guarantee the availability of requirements of the generic type.
+      // IL2055 Trim analysis: Call to `System.Type.MakeGenericType(Type[])` can not be statically analyzed. It's not possible to guarantee the availability of requirements of the generic type.
       unknownType.MakeGenericType(new Type[] { typeof(TestType) });
   }
   ```
@@ -943,17 +973,27 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
   }
   ```
 
-#### `IL2060`: Trim analysis: Call to `System.Reflection.MethodInfo.MakeGenericMethod` can not be statically analyzed. It's not possible to guarantee the availability of requirements of the generic method.
+#### `IL2060`: Trim analysis: Call to 'System.Reflection.MethodInfo.MakeGenericMethod' can not be statically analyzed. It's not possible to guarantee the availability of requirements of the generic method
 
-- ILLink currently doesn't analyze `MethodInfo` values and thus can't statically determine the generic method the `MakeGenericMethod` operates on. If the actual method has generic parameters with `DynamicallyAccessedMembersAttribute` ILLink would be required to fulfill the requirements declared by those attributes, but since the ILLink doesn't know the method, it can't determine if such requirements exist.  
+- This can be either that the method on which the `MakeGenericMethod` is called can't be statically determined, or that the type parameters to be used for generic arguments can't be statically determined. If the open generic method has `DynamicallyAccessedMembersAttribute` on any of its generic parameters, ILLink currently can't validate that the requirements are fulfilled by the calling method.
 
-  ``` C#
-  void TestMethod()
+``` C#
+class Test
+{
+  public static void TestGenericMethod<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>()
   {
-      // IL2060 Trim analysis: Call to `System.Reflection.MethodInfo.MakeGenericMethod` can not be statically analyzed. It's not possible to guarantee the availability of requirements of the generic method.
-      typeof(MyType).GetMethod("MyMethod").MakeGenericMethod(new Type[] { typeof(MyType) });
   }
-  ```
+  
+  void TestMethod(Type unknownType)
+  {
+    // IL2060 Trim analysis: Call to 'System.Reflection.MethodInfo.MakeGenericMethod' can not be statically analyzed. It's not possible to guarantee the availability of requirements of the generic method
+    typeof(Test).GetMethod("TestGenericMethod").MakeGenericMethod(new Type[] { typeof(TestType) });
+
+    // IL2060 Trim analysis: Call to 'System.Reflection.MethodInfo.MakeGenericMethod' can not be statically analyzed. It's not possible to guarantee the availability of requirements of the generic method
+    unknownMethod.MakeGenericMethod(new Type[] { typeof(TestType) });
+  }
+}
+```
 
 #### `IL2061`: Trim analysis: The assembly name 'assembly name' passed to method 'method' references assembly which is not available.
 
@@ -1509,6 +1549,48 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
     </assembly>
   </linker>
   ```
+
+#### `IL2102`: Invalid AssemblyMetadata("IsTrimmable", ...) attribute in assembly 'assembly'. Value must be "True"
+
+- AssemblyMetadataAttribute may be used at the assembly level to turn on trimming for the assembly. The only supported value is "True", but the attribute contained an unsupported value.
+
+  ``` C#
+  // IL2102: Invalid AssemblyMetadata("IsTrimmable", "False") attribute in assembly 'assembly'. Value must be "True"
+  [assembly: AssemblyMetadata("IsTrimmable", "False")] 
+  ```
+
+#### `IL2103`: Trim analysis: Value passed to the 'propertyAccessor' parameter of method 'System.Linq.Expressions.Expression.Property(Expression, MethodInfo)' cannot be statically determined as a property accessor
+
+The value passed to the `propertyAccessor` parameter of `Expression.Property(expression, propertyAccessor)` was not recognized as a property accessor method. Trimmer can't guarantee the presence of the property.
+
+```C#
+void TestMethod(MethodInfo methodInfo)
+{
+  // IL2103: Value passed to the 'propertyAccessor' parameter of method 'System.Linq.Expressions.Expression.Property(Expression, MethodInfo)' cannot be statically determined as a property accessor.
+  Expression.Property(null, methodInfo);
+}
+```
+
+#### `IL2104`: Assembly 'assembly' produced trim warnings. For more information see https://aka.ms/dotnet-illink/libraries
+
+The assembly 'assembly' produced trim analysis warnings in the context of the app. This means the assembly has not been fully annotated for trimming. Consider contacting the library author to request they add trim annotations to the library. To see detailed warnings for this assembly, turn off grouped warnings by passing either `--singlewarn-` to show detailed warnings for all assemblies, or `--singlewarn- "assembly"` to show detailed warnings for that assembly. https://aka.ms/dotnet-illink/libraries has more information on annotating libraries for trimming.
+
+#### `IL2105`: Type 'type' was not found in the caller assembly nor in the base library. Type name strings used for dynamically accessing a type should be assembly qualified.
+
+Type name strings representing dynamically accessed types must be assembly qualified, otherwise linker will first search for the type name in the caller's assembly and then in System.Private.CoreLib.
+If the linker fails to resolve the type name, null will be returned.
+
+```C#
+void TestInvalidTypeName()
+{
+    RequirePublicMethodOnAType("Foo.Unqualified.TypeName");
+}
+void RequirePublicMethodOnAType(
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+    string typeName)
+{
+}
+```
 
 ## Single-File Warning Codes
 

@@ -9,7 +9,7 @@ namespace Mono.Linker.Tests.Cases.TypeForwarding
 	// link - Forwarder.dll and Implementation.dll
 	// copy - this (test.dll) assembly
 
-	[SetupLinkerUserAction ("link")]
+	[SetupLinkerDefaultAction ("link")]
 	[SetupLinkerAction ("copy", "test")]
 	[KeepTypeForwarderOnlyAssemblies ("false")]
 
@@ -19,7 +19,7 @@ namespace Mono.Linker.Tests.Cases.TypeForwarding
 	[SetupCompileAfter ("Implementation.dll", new[] { "Dependencies/ImplementationLibrary.cs" })]
 	[SetupCompileAfter ("Forwarder.dll", new[] { "Dependencies/ForwarderLibrary.cs" }, references: new[] { "Implementation.dll" })]
 
-	[RemovedAssembly ("Forwarder.dll")]
+	[KeptMemberInAssembly ("Forwarder.dll", typeof (ImplementationLibrary))]
 	[KeptMemberInAssembly ("Implementation.dll", typeof (ImplementationLibrary))]
 	static class AttributesScopeUpdated
 	{

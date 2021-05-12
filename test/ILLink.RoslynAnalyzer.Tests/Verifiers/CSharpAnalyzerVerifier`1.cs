@@ -42,10 +42,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			SyntaxTree src,
 			(string, string)[]? globalAnalyzerOptions = null)
 		{
-			TestCaseUtils.GetDirectoryPaths (out _, out string testAssemblyPath);
-			var expectationsPath = Path.Combine (testAssemblyPath, "Mono.Linker.Tests.Cases.Expectations.dll");
-
-			var mdRef = MetadataReference.CreateFromFile (expectationsPath);
+			var mdRef = MetadataReference.CreateFromFile (typeof (Mono.Linker.Tests.Cases.Expectations.Metadata.BaseMetadataAttribute).Assembly.Location);
 
 			var comp = CSharpCompilation.Create (
 				assemblyName: Guid.NewGuid ().ToString ("N"),
@@ -79,7 +76,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			VerifyDiagnosticResults (diags, analyzers, expected, DefaultVerifier);
 		}
 
-		private static IVerifier DefaultVerifier = new DefaultVerifier ();
+		private static readonly IVerifier DefaultVerifier = new DefaultVerifier ();
 
 		/// <summary>
 		/// Gets the default full name of the first source file added for a test.

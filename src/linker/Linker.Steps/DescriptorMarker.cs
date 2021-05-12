@@ -45,6 +45,9 @@ namespace Mono.Linker.Steps
 			if (GetTypePreserve (nav) == TypePreserve.All) {
 				foreach (var type in assembly.MainModule.Types)
 					MarkAndPreserveAll (type);
+
+				foreach (var exportedType in assembly.MainModule.ExportedTypes)
+					_context.MarkingHelpers.MarkExportedType (exportedType, assembly.MainModule, new DependencyInfo (DependencyKind.XmlDescriptor, assembly.MainModule));
 			} else {
 				ProcessTypes (assembly, nav, warnOnUnresolvedTypes);
 				ProcessNamespaces (assembly, nav);
@@ -231,11 +234,6 @@ namespace Mono.Linker.Steps
 				ProcessMethod (type, property.SetMethod, null, customData);
 			else if (property.SetMethod == null)
 				_context.LogWarning ($"Could not find the set accessor of property '{property.Name}' in type '{type.FullName}' specified in {_xmlDocumentLocation}", 2019, _xmlDocumentLocation);
-		}
-
-		protected override AssemblyDefinition GetAssembly (LinkContext context, AssemblyNameReference assemblyName)
-		{
-			return context.Resolve (assemblyName);
 		}
 
 		static bool IsRequired (XPathNavigator nav)
