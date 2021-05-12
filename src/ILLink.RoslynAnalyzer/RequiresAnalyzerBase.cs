@@ -30,18 +30,18 @@ namespace ILLink.RoslynAnalyzer
 				var compilation = context.Compilation;
 				if (!IsAnalyzerEnabled (context.Options, compilation))
 					return;
-				var dangerousPatterns = GetSpecialIncompatibleMembers (compilation);
+				var incompatibleMembers = GetSpecialIncompatibleMembers (compilation);
 
 				context.RegisterOperationAction (operationContext => {
 					var methodInvocation = (IInvocationOperation) operationContext.Operation;
-					CheckCalledMember (operationContext, methodInvocation.TargetMethod, dangerousPatterns);
+					CheckCalledMember (operationContext, methodInvocation.TargetMethod, incompatibleMembers);
 				}, OperationKind.Invocation);
 
 				context.RegisterOperationAction (operationContext => {
 					var objectCreation = (IObjectCreationOperation) operationContext.Operation;
 					var ctor = objectCreation.Constructor;
 					if (ctor is not null) {
-						CheckCalledMember (operationContext, ctor, dangerousPatterns);
+						CheckCalledMember (operationContext, ctor, incompatibleMembers);
 					}
 				}, OperationKind.ObjectCreation);
 
@@ -58,19 +58,19 @@ namespace ILLink.RoslynAnalyzer
 					var prop = propAccess.Property;
 					var usageInfo = propAccess.GetValueUsageInfo (prop);
 					if (usageInfo.HasFlag (ValueUsageInfo.Read) && prop.GetMethod != null)
-						CheckCalledMember (operationContext, prop.GetMethod, dangerousPatterns);
+						CheckCalledMember (operationContext, prop.GetMethod, incompatibleMembers);
 
 					if (usageInfo.HasFlag (ValueUsageInfo.Write) && prop.SetMethod != null)
-						CheckCalledMember (operationContext, prop.SetMethod, dangerousPatterns);
+						CheckCalledMember (operationContext, prop.SetMethod, incompatibleMembers);
 
 					if (AnalyzerDiagnosticTargets.HasFlag (DiagnosticTargets.Property))
-						CheckCalledMember (operationContext, prop, dangerousPatterns);
+						CheckCalledMember (operationContext, prop, incompatibleMembers);
 				}, OperationKind.PropertyReference);
 
 				if (AnalyzerDiagnosticTargets.HasFlag (DiagnosticTargets.Event)) {
 					context.RegisterOperationAction (operationContext => {
 						var eventRef = (IEventReferenceOperation) operationContext.Operation;
-						CheckCalledMember (operationContext, eventRef.Member, dangerousPatterns);
+						CheckCalledMember (operationContext, eventRef.Member, incompatibleMembers);
 					}, OperationKind.EventReference);
 				}
 
@@ -83,7 +83,7 @@ namespace ILLink.RoslynAnalyzer
 						methodSymbol = lambda.Symbol;
 					else
 						return;
-					CheckCalledMember (operationContext, methodSymbol, dangerousPatterns);
+					CheckCalledMember (operationContext, methodSymbol, incompatibleMembers);
 				}, OperationKind.DelegateCreation);
 
 				void CheckStaticConstructors (OperationAnalysisContext operationContext,
@@ -98,7 +98,7 @@ namespace ILLink.RoslynAnalyzer
 				void CheckCalledMember (
 					OperationAnalysisContext operationContext,
 					ISymbol member,
-					ImmutableArray<ISymbol> dangerousPatterns)
+					ImmutableArray<ISymbol> incompatibleMembers)
 				{
 					ISymbol containingSymbol = FindContainingSymbol (operationContext, AnalyzerDiagnosticTargets);
 
@@ -113,7 +113,7 @@ namespace ILLink.RoslynAnalyzer
 					if (member.ContainingType is { } containingType && operationContext.Operation is IObjectCreationOperation)
 						CheckStaticConstructors (operationContext, containingType.StaticConstructors);
 
-					if (ReportSpecialIncompatibleMembersDiagnostic (operationContext, dangerousPatterns, member))
+					if (ReportSpecialIncompatibleMembersDiagnostic (operationContext, incompatibleMembers, member))
 						return;
 
 					if (!member.HasAttribute (RequiresAttributeName))
