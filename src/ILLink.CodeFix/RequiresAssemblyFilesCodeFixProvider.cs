@@ -21,7 +21,7 @@ namespace ILLink.CodeFix
 		public sealed override ImmutableArray<string> FixableDiagnosticIds
 			=> ImmutableArray.Create (RequiresAssemblyFilesAnalyzer.IL3000, RequiresAssemblyFilesAnalyzer.IL3001, RequiresAssemblyFilesAnalyzer.IL3002);
 
-		private protected override LocalizableString CodeFixTitle => new LocalizableResourceString (nameof (Resources.RequiresAssemblyFilesCodeFixTittle), Resources.ResourceManager, typeof (Resources));
+		private protected override LocalizableString CodeFixTitle => new LocalizableResourceString (nameof (Resources.RequiresAssemblyFilesCodeFixTitle), Resources.ResourceManager, typeof (Resources));
 
 		private protected override string FullyQualifiedAttributeName => RequiresAssemblyFilesAnalyzer.RequiresAssemblyFilesAttributeFullyQualifiedName;
 

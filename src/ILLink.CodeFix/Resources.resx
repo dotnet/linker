@@ -117,13 +117,13 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="RequiresAssemblyFilesCodeFixTittle" xml:space="preserve">
+  <data name="RequiresAssemblyFilesCodeFixTitle" xml:space="preserve">
     <value>Add RequiresAssemblyFiles attribute to parent method</value>
   </data>
-  <data name="RequiresUnreferencedCodeCodeFixTittle" xml:space="preserve">
+  <data name="RequiresUnreferencedCodeCodeFixTitle" xml:space="preserve">
     <value>Add RequiresUnreferencedCode attribute to parent method</value>
   </data>
-  <data name="UconditionalSuppressMessageCodeFixTittle" xml:space="preserve">
+  <data name="UconditionalSuppressMessageCodeFixTitle" xml:space="preserve">
     <value>Add UnconditionalSuppressMessage attribute to parent method</value>
   </data>
 </root>

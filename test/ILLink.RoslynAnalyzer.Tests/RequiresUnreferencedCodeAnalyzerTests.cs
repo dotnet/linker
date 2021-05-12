@@ -386,6 +386,93 @@ class C
 		}
 
 		[Fact]
+		public Task TestStaticCctorRequiresUnreferencedCode ()
+		{
+			var src = @"
+using System.Diagnostics.CodeAnalysis;
+
+class StaticCtor
+{
+	[RequiresUnreferencedCode (""Message for --TestStaticCtor--"")]
+	static StaticCtor ()
+	{
+	}
+
+	static void TestStaticCctorRequiresUnreferencedCode ()
+	{
+		_ = new StaticCtor ();
+	}
+}";
+			return VerifyRequiresUnreferencedCodeAnalyzer (src,
+				// (13,7): warning IL2026: Using method 'StaticCtor.StaticCtor()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. Message for --TestStaticCtor--.
+				VerifyCS.Diagnostic ().WithSpan (13, 7, 13, 24).WithArguments ("StaticCtor.StaticCtor()", " Message for --TestStaticCtor--.", "")
+				);
+		}
+
+		[Fact]
+		public Task StaticCtorTriggeredByFieldAccess ()
+		{
+			var src = @"
+using System.Diagnostics.CodeAnalysis;
+
+class StaticCtorTriggeredByFieldAccess
+{
+	public static int field;
+
+	[RequiresUnreferencedCode (""Message for --StaticCtorTriggeredByFieldAccess.Cctor--"")]
+	static StaticCtorTriggeredByFieldAccess ()
+	{
+		field = 0;
+	}
+}
+class C
+{
+	static void TestStaticCtorMarkingIsTriggeredByFieldAccess ()
+	{
+		var x = StaticCtorTriggeredByFieldAccess.field + 1;
+	}
+}";
+			return VerifyRequiresUnreferencedCodeAnalyzer (src,
+				// (18,11): warning IL2026: Using method 'StaticCtorTriggeredByFieldAccess.StaticCtorTriggeredByFieldAccess()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. Message for --StaticCtorTriggeredByFieldAccess.Cctor--.
+				VerifyCS.Diagnostic ().WithSpan (18, 11, 18, 49).WithArguments ("StaticCtorTriggeredByFieldAccess.StaticCtorTriggeredByFieldAccess()", " Message for --StaticCtorTriggeredByFieldAccess.Cctor--.", "")
+				);
+		}
+
+		[Fact]
+		public Task TestStaticCtorTriggeredByMethodCall ()
+		{
+			var src = @"
+using System.Diagnostics.CodeAnalysis;
+
+class StaticCtorTriggeredByMethodCall
+{
+	[RequiresUnreferencedCode (""Message for --StaticCtorTriggeredByMethodCall.Cctor--"")]
+	static StaticCtorTriggeredByMethodCall ()
+	{
+	}
+
+	[RequiresUnreferencedCode (""Message for --StaticCtorTriggeredByMethodCall.TriggerStaticCtorMarking--"")]
+	public void TriggerStaticCtorMarking ()
+	{
+	}
+}
+
+class C
+{
+	static void TestStaticCtorTriggeredByMethodCall ()
+	{
+		new StaticCtorTriggeredByMethodCall ().TriggerStaticCtorMarking ();
+	}
+}";
+			return VerifyRequiresUnreferencedCodeAnalyzer (src,
+				// (21,3): warning IL2026: Using method 'StaticCtorTriggeredByMethodCall.TriggerStaticCtorMarking()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. Message for --StaticCtorTriggeredByMethodCall.TriggerStaticCtorMarking--.
+				VerifyCS.Diagnostic ().WithSpan (21, 3, 21, 69).WithArguments ("StaticCtorTriggeredByMethodCall.TriggerStaticCtorMarking()", " Message for --StaticCtorTriggeredByMethodCall.TriggerStaticCtorMarking--.", ""),
+				// (21,3): warning IL2026: Using method 'StaticCtorTriggeredByMethodCall.StaticCtorTriggeredByMethodCall()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. Message for --StaticCtorTriggeredByMethodCall.Cctor--.
+				VerifyCS.Diagnostic ().WithSpan (21, 3, 21, 41).WithArguments ("StaticCtorTriggeredByMethodCall.StaticCtorTriggeredByMethodCall()", " Message for --StaticCtorTriggeredByMethodCall.Cctor--.", "")
+				);
+		}
+
+		[Fact]
 		public Task TypeIsBeforeFieldInit ()
 		{
 			var TypeIsBeforeFieldInit = @"

@@ -63,7 +63,7 @@ namespace ILLink.RoslynAnalyzer
 
 		private protected override DiagnosticDescriptor RequiresDiagnosticRule => s_requiresAssemblyFilesRule;
 
-		protected override bool VerifyMSBuildOptions (AnalyzerOptions options, Compilation compilation)
+		protected override bool IsAnalyzerEnabled (AnalyzerOptions options, Compilation compilation)
 		{
 			var isSingleFileAnalyzerEnabled = options.GetMSBuildPropertyValue (MSBuildPropertyOptionNames.EnableSingleFileAnalyzer, compilation);
 			if (!string.Equals (isSingleFileAnalyzerEnabled?.Trim (), "true", StringComparison.OrdinalIgnoreCase))

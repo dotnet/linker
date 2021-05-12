@@ -36,7 +36,7 @@ namespace ILLink.RoslynAnalyzer
 
 		private protected override DiagnosticDescriptor RequiresDiagnosticRule => s_requiresUnreferencedCodeRule;
 
-		protected override bool VerifyMSBuildOptions (AnalyzerOptions options, Compilation compilation)
+		protected override bool IsAnalyzerEnabled (AnalyzerOptions options, Compilation compilation)
 		{
 			var isTrimAnalyzerEnabled = options.GetMSBuildPropertyValue (MSBuildPropertyOptionNames.EnableTrimAnalyzer, compilation);
 			if (!string.Equals (isTrimAnalyzerEnabled?.Trim (), "true", StringComparison.OrdinalIgnoreCase))

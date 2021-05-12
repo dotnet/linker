@@ -28,7 +28,7 @@ namespace ILLink.RoslynAnalyzer
 			context.ConfigureGeneratedCodeAnalysis (GeneratedCodeAnalysisFlags.ReportDiagnostics);
 			context.RegisterCompilationStartAction (context => {
 				var compilation = context.Compilation;
-				if (VerifyMSBuildOptions (context.Options, compilation) == false)
+				if (!IsAnalyzerEnabled (context.Options, compilation))
 					return;
 				var dangerousPatterns = GetSpecialIncompatibleMembers (compilation);
 
@@ -244,6 +244,6 @@ namespace ILLink.RoslynAnalyzer
 		/// <param name="options">Analyzer options</param>
 		/// <param name="compilation">Analyzer compilation information</param>
 		/// <returns>True if the requirements to run the analyzer are met; otherwise, returns false</returns>
-		protected abstract bool VerifyMSBuildOptions (AnalyzerOptions options, Compilation compilation);
+		protected abstract bool IsAnalyzerEnabled (AnalyzerOptions options, Compilation compilation);
 	}
 }
