@@ -21,6 +21,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TestParameter (typeof (TestClass));
 			TestLocalVariable ();
 			TestGenericParameter<TestClass> ();
+			TestWarning<TestClass> ();
 		}
 
 		static async void TestParameter ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
@@ -43,6 +44,13 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			typeof (T).GetMethod ("BeforeIteratorMethod");
 			await AsyncMethod ();
 			typeof (T).GetMethod ("AfterIteratorMethod");
+		}
+
+		[ExpectedWarning("IL2000", "'TInput'")]
+		static async void TestWarning<TInput>()
+		{
+			typeof (TInput).GetMethod ("InAsyncMethod");
+			await AsyncMethod ();
 		}
 
 		static async Task<int> AsyncMethod ()

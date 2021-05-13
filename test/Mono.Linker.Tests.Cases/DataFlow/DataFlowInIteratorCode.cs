@@ -21,6 +21,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TestParameter (typeof (TestType));
 			TestLocalVariable ();
 			TestGenericParameter<TestType> ();
+			TestWarning (typeof (TestType));
 		}
 
 		static IEnumerable<int> TestParameter ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
@@ -43,6 +44,13 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			typeof (T).GetMethod ("BeforeIteratorMethod");
 			yield return 1;
 			typeof (T).GetMethod ("AfterIteratorMethod");
+		}
+
+		[ExpectedWarning("IL2000", "'typeParameter'")]
+		static IEnumerable<int> TestWarning(Type typeParameter)
+		{
+			typeParameter.GetMethod ("InIteratorMethod");
+			yield return 1;
 		}
 
 		class TestType

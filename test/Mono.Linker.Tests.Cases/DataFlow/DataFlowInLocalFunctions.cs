@@ -24,6 +24,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TestParameterInLocalFunction (typeof (TestType));
 			TestLocalVariableInLocalFunction ();
 			TestGenericParameterInLocalFunction<TestType> ();
+			TestWarningInLambda (typeof (TestType));
+			TestWarningInLocalFunction<TestType> ();
 		}
 
 		static void TestParameterInLambda ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
@@ -77,6 +79,20 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 				typeof (T).GetMethod ("InLocalMethod");
 			}
+		}
+
+		// Should report the warning pointing to typeParameter as the source of the value
+		[ExpectedWarning("IL2000", "'typeParameter'")]
+		static void TestWarningInLambda (Type typeParameter)
+		{
+			Action a = () => typeParameter.GetMethod ("InLambdaMethod");
+		}
+
+		// Should report the warning pointing to TInput as the source of the value
+		[ExpectedWarning ("IL2000", "'TInput'")]
+		static void TestWarningInLocalFunction<TInput> ()
+		{
+			Action a = () => typeof(TInput).GetMethod ("InLambdaMethod");
 		}
 
 		class TestType
