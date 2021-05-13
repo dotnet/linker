@@ -527,3 +527,67 @@ static async void TestWarning<TInput>()
 
 And this one should blame `TInput`.
 
+## Recommended solution
+
+The solution needs to solve two problems:
+
+* How to propagate warning suppression and `RequiresUnreferencedCode` suppression from
+the user method to all of the compiler generated methods/types which are called by that method.
+This is called "suppression propagation" below.
+* How to implement data flow analysis across the user method's body and all of the compiler generated
+methods, types and fields. This is called "data flow analysis" below.
+
+In both cases the first thing the trimmer needs to figure out is for a given user method
+what are all of the compiler generated items which were used to implement that method
+in the IL. This can include:
+
+* New types - for example closure types
+* New methods - for example methods on the closure types, or methods on the parent type for local functions
+* New fields - fields on the closure types
+* New generic parameters - closure types and methods may be generic if the user method is generic
+
+To correctly handle warning suppression, the trimmer needs to apply the same warning suppressions
+on warnings generated due to all of the compiler generated items as if those were coming
+directly from the user method's body.
+
+To correctly handle data flow analysis, the trimmer needs to be able to track values across all of the
+compiler generated items as if they implement a single unit. This almost inevitable leads to
+cross method data flow analysis. Since that is a very expensive thing to do, being able to confine
+it to only the compiler generated code for a given user method is almost necessary. On top of that
+the trimmer needs to be able to track values as they traverse local variables, method parameters
+and fields on the closure types.
+
+### Long term solution
+
+Detecting which compiler generated items are used by any given user method is currently relatively tricky.
+There's no definitive marker in the IL which would let the trimmer confidently determine this information.
+Good long term solution will need the compilers to produce some kind of marker in the IL so that
+static analysis tools can reliably detect all of the compiler generated items.
+
+This ask can be described as:
+For a given user method, ability to determine all of the items (methods, fields, types, IL code) which were
+used by the compiler to generate the functionality of the method into an IL assembly.
+
+This should be things which are directly generated from the user's code. It should NOT include compiler
+helpers and other infrastructure which may be needed but is not directly attributable to a user code.
+
+This should be enough to implement solutions for both suppression propagation and data flow analysis.
+
+### Possible short term solution
+
+Without compiler provided markers, there's no existing way to 100% reliably implement the required
+functionality in the trimmer. That said, it should be possible to implement a reasonably good
+approximation. This approximation will necessarily make assumptions about the compilers used
+to produce the analyzed code. So for the purposes of a short term solution, Roslyn CSharp compiler
+should be treated as first priority (since it's by far the most common compiler to produce analyzed IL).
+Second in row should be the FSharp compiler.
+
+It is also much simpler to implement suppression propagation, so that should be done first.
+
+The general idea how to detect compiler generated code for a given user method:
+
+* Ability to detect compiler generated code. Can be done by detecting identifiers which are invalid
+in a given language. For CSharp, the compiler uses `<` and `>` characters in the identifiers
+of a compiler generated items. In FSharp this role is served by the `@` character.
+* Any compiler generated item (as detected per above) referenced from a user method
+will be considered to belong to that user method.
