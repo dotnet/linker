@@ -20,15 +20,12 @@ namespace ILLink.RoslynAnalyzer.Tests
 		{
 			foreach (var testFile in s_testFiles[testSuiteName]) {
 
-				var root = CSharpSyntaxTree.ParseText (File.ReadAllText(testFile)).GetRoot ();
+				var root = CSharpSyntaxTree.ParseText (File.ReadAllText (testFile)).GetRoot ();
 
-				foreach (var node in root.DescendantNodes())
-				{
-					if (node is MethodDeclarationSyntax m)
-					{
-						var attrs = m.AttributeLists.SelectMany(al => al.Attributes.Where(IsWellKnown)).ToList();
-						if (attrs.Count > 0)
-						{
+				foreach (var node in root.DescendantNodes ()) {
+					if (node is MethodDeclarationSyntax m) {
+						var attrs = m.AttributeLists.SelectMany (al => al.Attributes.Where (IsWellKnown)).ToList ();
+						if (attrs.Count > 0) {
 							yield return new object[] { m, attrs };
 						}
 					}
