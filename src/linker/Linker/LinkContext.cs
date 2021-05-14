@@ -308,7 +308,18 @@ namespace Mono.Linker
 		{
 			if (SeenFirstTime (assembly)) {
 				SafeReadSymbols (assembly);
-				Annotations.SetAction (assembly, CalculateAssemblyAction (assembly));
+				Annotations.SetAction (assembly,
+					IsCPPCLIAssembly (assembly.MainModule) ? AssemblyAction.Copy : CalculateAssemblyAction (assembly));
+			}
+
+			static bool IsCPPCLIAssembly (ModuleDefinition module)
+			{
+				foreach (var type in module.Types)
+					if (type.Namespace == "<CppImplementationDetails>" ||
+						type.Namespace == "<CrtImplementationDetails>")
+						return true;
+
+				return false;
 			}
 		}
 
