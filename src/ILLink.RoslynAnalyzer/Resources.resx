@@ -141,4 +141,82 @@
   <data name="RequiresAssemblyFilesMessage" xml:space="preserve">
     <value>Using member '{0}' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.{1}{2}</value>
   </data>
+  <data name="DynamicallyAccessedMembersAnnotationsDoNotMatch" xml:space="preserve">
+    <value />
+  </data>
+  <data name="IL2068" xml:space="preserve">
+    <value>'{0}' method return value does not satisfy {3} requirements. The parameter '{1}' of method '{2}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+  </data>
+  <data name="IL2077" xml:space="preserve">
+    <value>'{0}' argument does not satisfy {3} in call to '{1}'. The field '{2}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+  </data>
+  <data name="IL2078" xml:space="preserve">
+    <value>'{0}' method return value does not satisfy {2} requirements. The field '{1}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+  </data>
+  <data name="IL2079" xml:space="preserve">
+    <value>value stored in field '{0}' does not satisfy {2} requirements. The field '{1}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+  </data>
+  <data name="IL2080" xml:space="preserve">
+    <value>'this' argument does not satisfy {2} in call to '{0}'. The field '{1}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+  </data>
+  <data name="IL2067" xml:space="preserve">
+    <value>'{0}' argument does not satisfy {4} in call to '{1}'. The parameter '{2}' of method '{3}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+  </data>
+  <data name="IL2069" xml:space="preserve">
+    <value>value stored in field '{0}' does not satisfy {3} requirements. The parameter '{1}' of method '{2}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+  </data>
+  <data name="IL2070" xml:space="preserve">
+    <value>'this' argument does not satisfy {3} in call to '{0}'. The parameter '{1}' of method '{2}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+  </data>
+  <data name="IL2071" xml:space="preserve">
+    <value>'{0}' generic argument does not satisfy {4} in '{1}'. The parameter '{2}' of method '{3}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+  </data>
+  <data name="IL2072" xml:space="preserve">
+    <value>'{0}' argument does not satisfy {3} in call to '{1}'. The return value of method '{2}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+  </data>
+  <data name="IL2073" xml:space="preserve">
+    <value>'{0}' method return value does not satisfy {2} requirements. The return value of method '{1}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+  </data>
+  <data name="IL2074" xml:space="preserve">
+    <value>value stored in field '{0}' does not satisfy {2} requirements. The return value of method '{1}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+  </data>
+  <data name="IL2075" xml:space="preserve">
+    <value>'this' argument does not satisfy {2} in call to '{0}'. The return value of method '{1}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+  </data>
+  <data name="IL2076" xml:space="preserve">
+    <value>'{0}' generic argument does not satisfy {3} in '{1}'. The return value of method '{2}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+  </data>
+  <data name="IL2081" xml:space="preserve">
+    <value>'{0}' generic argument does not satisfy {3} in '{1}'. The field '{2}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+  </data>
+  <data name="IL2082" xml:space="preserve">
+    <value>'{0}' argument does not satisfy {3} in call to '{1}'. The implicit 'this' argument of method '{2}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+  </data>
+  <data name="IL2083" xml:space="preserve">
+    <value>'{0}' method return value does not satisfy {2} requirements. The implicit 'this' argument of method '{1}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+  </data>
+  <data name="IL2084" xml:space="preserve">
+    <value>value stored in field '{0}' does not satisfy {2} requirements. The implicit 'this' argument of method '{1}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+  </data>
+  <data name="IL2085" xml:space="preserve">
+    <value>'this' argument does not satisfy {2} in call to '{0}'. The implicit 'this' argument of method '{1}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+  </data>
+  <data name="IL2086" xml:space="preserve">
+    <value>'{0}' generic argument does not satisfy {3} in '{1}'. The implicit 'this' argument of method '{2}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+  </data>
+  <data name="IL2087" xml:space="preserve">
+    <value>'{0}' argument does not satisfy {4} in call to '{1}'. The generic parameter '{2}' of '{3}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+  </data>
+  <data name="IL2088" xml:space="preserve">
+    <value>'{0}' method return value does not satisfy {3} requirements. The generic parameter '{1}' of '{2}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+  </data>
+  <data name="IL2089" xml:space="preserve">
+    <value>value stored in field '{0}' does not satisfy {3} requirements. The generic parameter '{1}' of '{2}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+  </data>
+  <data name="IL2090" xml:space="preserve">
+    <value>'this' argument does not satisfy {3} in call to '{0}'. The generic parameter '{1}' of '{2}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+  </data>
+  <data name="IL2091" xml:space="preserve">
+    <value>'{0}' generic argument does not satisfy {4} in '{1}'. The generic parameter '{2}' of '{3}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+  </data>
 </root>

@@ -2,6 +2,8 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 
 namespace ILLink.RoslynAnalyzer
@@ -18,6 +20,46 @@ namespace ILLink.RoslynAnalyzer
 					return true;
 
 			return false;
+		}
+
+		internal static bool TryGetDynamicallyAccessedMemberTypes (this ISymbol symbol, out DynamicallyAccessedMemberTypes? dynamicallyAccessedMemberTypes)
+		{
+			dynamicallyAccessedMemberTypes = null;
+			if (!symbol.HasAttribute (DynamicallyAccessedMembersAnalyzer.DynamicallyAccessedMembersAttribute))
+				return false;
+
+			var damAttributeName = DynamicallyAccessedMembersAnalyzer.DynamicallyAccessedMembersAttribute;
+			AttributeData? dynamicallyAccessedMembers = null;
+			foreach (var _attribute in symbol.GetAttributes ())
+				if (_attribute.AttributeClass is var attrClass && attrClass != null &&
+					attrClass.HasName (damAttributeName)) {
+					dynamicallyAccessedMembers = _attribute;
+					break;
+				}
+
+			dynamicallyAccessedMemberTypes = (DynamicallyAccessedMemberTypes) dynamicallyAccessedMembers?.ConstructorArguments[0].Value!;
+			return dynamicallyAccessedMemberTypes != null;
+		}
+
+		internal static bool TryGetDynamicallyAccessedMemberTypesOnReturnType (this ISymbol symbol, out DynamicallyAccessedMemberTypes? dynamicallyAccessedMemberTypes)
+		{
+			dynamicallyAccessedMemberTypes = null;
+			if (symbol is not IMethodSymbol methodSymbol)
+				return false;
+
+			AttributeData? dynamicallyAccessedMembers = null;
+			foreach (var returnTypeAttribute in methodSymbol.GetReturnTypeAttributes ())
+				if (returnTypeAttribute.AttributeClass is var attrClass && attrClass != null &&
+					attrClass.HasName (DynamicallyAccessedMembersAnalyzer.DynamicallyAccessedMembersAttribute)) {
+					dynamicallyAccessedMembers = returnTypeAttribute;
+					break;
+				}
+
+			if (dynamicallyAccessedMembers == null)
+				return false;
+			
+			dynamicallyAccessedMemberTypes = (DynamicallyAccessedMemberTypes) dynamicallyAccessedMembers.ConstructorArguments[0].Value!;
+			return true;
 		}
 	}
 }
