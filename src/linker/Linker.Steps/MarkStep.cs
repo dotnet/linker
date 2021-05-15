@@ -1697,7 +1697,7 @@ namespace Mono.Linker.Steps
 			MarkSerializable (type);
 
 			// This marks static fields of KeyWords/OpCodes/Tasks subclasses of an EventSource type.
-			if (BCL.EventTracingForWindows.IsEventSourceImplementation (type, _context)) {
+			if (_context.GetTargetRuntimeVersion () < TargetRuntimeVersion.NET6 && BCL.EventTracingForWindows.IsEventSourceImplementation (type, _context)) {
 				MarkEventSourceProviders (type);
 			}
 
