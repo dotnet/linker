@@ -11,7 +11,8 @@ namespace Mono.Linker
 	{
 		None = 0,
 		ParameterName = 1,
+		FieldName = 1 << 1,
 
-		Any = ParameterName
+		Any = ParameterName | FieldName
 	}
 }

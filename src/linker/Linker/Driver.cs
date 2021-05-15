@@ -1114,6 +1114,9 @@ namespace Mono.Linker
 			case "none":
 				metadataTrimming = MetadataTrimming.None;
 				return true;
+			case "fieldname":
+				metadataTrimming = MetadataTrimming.FieldName;
+				return true;
 			case "parametername":
 				metadataTrimming = MetadataTrimming.ParameterName;
 				return true;
@@ -1289,6 +1292,7 @@ namespace Mono.Linker
 			Console.WriteLine ("  --keep-dep-attributes      Keep attributes used for manual dependency tracking. Defaults to false");
 			Console.WriteLine ("  --keep-metadata NAME       Keep metadata which would otherwise be removed if not used");
 			Console.WriteLine ("                               all: Metadata for any member are all kept");
+			Console.WriteLine ("                               fieldname: All field names are kept");
 			Console.WriteLine ("                               parametername: All parameter names are kept");
 			Console.WriteLine ("  --new-mvid                 Generate a new guid for each linked assembly (short -g). Defaults to true");
 			Console.WriteLine ("  --strip-descriptors        Remove XML descriptor resources for linked assemblies. Defaults to true");

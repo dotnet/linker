@@ -531,7 +531,7 @@ namespace ILLink.Tasks.Tests
 			};
 
 			using (var driver = task.CreateDriver ()) {
-				Assert.Equal (MetadataTrimming.None, driver.Context.MetadataTrimming);
+				Assert.Equal (MetadataTrimming.FieldName, driver.Context.MetadataTrimming);
 			}
 		}
 

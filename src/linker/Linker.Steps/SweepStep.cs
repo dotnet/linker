@@ -307,7 +307,7 @@ namespace Mono.Linker.Steps
 		protected virtual void SweepType (TypeDefinition type)
 		{
 			if (type.HasFields)
-				SweepCollectionWithCustomAttributes (type.Fields);
+				SweepFields (type);
 
 			if (type.HasMethods)
 				SweepMethods (type.Methods);
@@ -439,6 +439,18 @@ namespace Mono.Linker.Steps
 		{
 			foreach (var provider in providers)
 				SweepCustomAttributes (provider);
+		}
+
+		void SweepFields (TypeDefinition type)
+		{
+			SweepCollectionWithCustomAttributes (type.Fields);
+
+			if (type.IsCompilerGenerated ()) {
+				foreach (var field in type.Fields) {
+					if (CanSweepNamesForMember (field, MetadataTrimming.FieldName))
+						field.Name = null;
+				}
+			}
 		}
 
 		protected virtual void SweepMethods (Collection<MethodDefinition> methods)

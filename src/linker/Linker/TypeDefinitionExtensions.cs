@@ -25,5 +25,19 @@ namespace Mono.Linker
 		{
 			return (td.Attributes & TypeAttributes.Serializable) != 0;
 		}
+
+		public static bool IsCompilerGenerated (this TypeDefinition td)
+		{
+			if (!td.HasCustomAttributes)
+				return false;
+
+			foreach (var ca in td.CustomAttributes) {
+				var caType = ca.AttributeType;
+				if (caType.Name == "CompilerGeneratedAttribute" && caType.Namespace == "System.Runtime.CompilerServices")
+					return true;
+			}
+
+			return false;
+		}
 	}
 }
