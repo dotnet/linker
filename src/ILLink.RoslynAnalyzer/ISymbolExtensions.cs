@@ -3,7 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
+using System.Text;
 using Microsoft.CodeAnalysis;
 
 namespace ILLink.RoslynAnalyzer
@@ -60,6 +60,30 @@ namespace ILLink.RoslynAnalyzer
 			
 			dynamicallyAccessedMemberTypes = (DynamicallyAccessedMemberTypes) dynamicallyAccessedMembers.ConstructorArguments[0].Value!;
 			return true;
+		}
+
+		internal static string GetDisplayName (this ISymbol symbol)
+		{
+			var sb = new StringBuilder ();
+			switch (symbol) {
+			case IFieldSymbol fieldSymbol:
+				sb.Append (fieldSymbol.Type);
+				sb.Append (" ");
+				sb.Append (fieldSymbol.ContainingSymbol.ToDisplayString ());
+				sb.Append ("::");
+				sb.Append (fieldSymbol.MetadataName);
+				break;
+
+			case IParameterSymbol parameterSymbol:
+				sb.Append (parameterSymbol.Name);
+				break;
+
+			default:
+				sb.Append (symbol.ToDisplayString ());
+				break;
+			}
+
+			return sb.ToString ();
 		}
 	}
 }
