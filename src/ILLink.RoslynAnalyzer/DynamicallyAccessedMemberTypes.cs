@@ -30,7 +30,7 @@ namespace System.Diagnostics.CodeAnalysis
 		/// <summary>
 		/// Specifies all public constructors.
 		/// </summary>
-		PublicConstructors = 0x0002, // | PublicParameterlessConstructor,
+		PublicConstructors = 0x0002 | PublicParameterlessConstructor,
 
 		/// <summary>
 		/// Specifies all non-public constructors.

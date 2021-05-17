@@ -454,22 +454,27 @@ namespace ILLink.RoslynAnalyzer
 						returnValueSymbol, containingMethodSymbol, missingAnnotations, context, sourceIsMethodReturnType: returnValueIsAMethodCall);
 		}
 
-		static bool SourceHasMatchingAnnotations (DynamicallyAccessedMemberTypes? sourceMemberTypes, DynamicallyAccessedMemberTypes? targetMemberTypes, out string missingTypeMembersString)
+		static bool SourceHasMatchingAnnotations (DynamicallyAccessedMemberTypes? sourceMemberTypes, DynamicallyAccessedMemberTypes? targetMemberTypes, out string missingMemberTypesString)
 		{
-			missingTypeMembersString = $"'{nameof (DynamicallyAccessedMemberTypes.All)}'";
+			missingMemberTypesString = $"'{nameof (DynamicallyAccessedMemberTypes.All)}'";
 			if (targetMemberTypes == null)
 				return true;
 
 			sourceMemberTypes ??= DynamicallyAccessedMemberTypes.None;
-			var missingTypeMembersList = Enum.GetValues (typeof (DynamicallyAccessedMemberTypes))
+			var missingMemberTypesList = Enum.GetValues (typeof (DynamicallyAccessedMemberTypes))
 				.Cast<DynamicallyAccessedMemberTypes> ()
 				.Where (damt => (damt & targetMemberTypes & ~sourceMemberTypes) == damt && damt != DynamicallyAccessedMemberTypes.None)
-				.Select (damt => damt.ToString ()).ToList ();
+				.ToList ();
 
-			if (missingTypeMembersList.Count == 0)
+			if (missingMemberTypesList.Count == 0)
 				return true;
 
-			missingTypeMembersString = string.Join (", ", missingTypeMembersList.Select (mmt => $"'DynamicallyAccessedMemberTypes.{mmt}'"));
+			if (missingMemberTypesList.Contains (DynamicallyAccessedMemberTypes.PublicConstructors) &&
+				missingMemberTypesList.SingleOrDefault (mt => mt == DynamicallyAccessedMemberTypes.PublicParameterlessConstructor) is var ppc &&
+				ppc != DynamicallyAccessedMemberTypes.None)
+				missingMemberTypesList.Remove (ppc);
+
+			missingMemberTypesString = string.Join (", ", missingMemberTypesList.Select (mmt => $"'DynamicallyAccessedMemberTypes.{mmt}'"));
 			return false;
 		}
 
