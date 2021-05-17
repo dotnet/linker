@@ -28,12 +28,5 @@ namespace ILLink.RoslynAnalyzer.Tests
 
 			RunTest<RequiresUnreferencedCodeAnalyzer> (m, attrs, UseMSBuildProperties (MSBuildPropertyOptionNames.EnableTrimAnalyzer));
 		}
-
-		[Theory]
-		[MemberData (nameof (GetTestData), parameters: nameof (DataFlow), DisableDiscoveryEnumeration = true)]
-		public void DataFlow (MethodDeclarationSyntax m, List<AttributeSyntax> attrs)
-		{
-			RunTest (m, attrs, UseMSBuildProperties (MSBuildPropertyOptionNames.EnableTrimAnalyzer));
-		}
 	}
 }
