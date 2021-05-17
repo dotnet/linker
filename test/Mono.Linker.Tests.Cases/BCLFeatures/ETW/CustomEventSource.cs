@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics.Tracing;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
+using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.BCLFeatures.ETW
 {
@@ -8,7 +9,8 @@ namespace Mono.Linker.Tests.Cases.BCLFeatures.ETW
 	{
 		public static void Main ()
 		{
-			var b = MyCompanyEventSource.Log.IsEnabled ();
+			var es = new MyCompanyEventSource ();
+			Console.WriteLine (es.GetType ());
 		}
 	}
 
@@ -17,6 +19,7 @@ namespace Mono.Linker.Tests.Cases.BCLFeatures.ETW
 	[KeptAttributeAttribute (typeof (EventSourceAttribute))]
 	[KeptMember (".ctor()")]
 	[KeptMember (".cctor()")]
+	[SetupLinkerTrimMode ("link")]
 
 	[EventSource (Name = "MyCompany")]
 	class MyCompanyEventSource : EventSource
@@ -43,7 +46,6 @@ namespace Mono.Linker.Tests.Cases.BCLFeatures.ETW
 		{
 		}
 
-		[Kept]
 		public static MyCompanyEventSource Log = new MyCompanyEventSource ();
 	}
 }
