@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -317,7 +318,9 @@ namespace ILLink.RoslynAnalyzer
 		static void DynamicallyAccessedMembersAnalyze (SyntaxNodeAnalysisContext context)
 		{
 			var syntaxNode = context.Node;
-			var statementSyntax = syntaxNode.AncestorsAndSelf ().OfType<StatementSyntax> ().First ();
+			if (syntaxNode.AncestorsAndSelf ().OfType<StatementSyntax> ().FirstOrDefault () is not StatementSyntax statementSyntax)
+				return;
+
 			var cfAnalysis = context.SemanticModel.AnalyzeControlFlow (statementSyntax);
 			// We don't care about unreachable statements.
 			if (cfAnalysis is null || !cfAnalysis.Succeeded || !cfAnalysis.StartPointIsReachable)
@@ -457,29 +460,20 @@ namespace ILLink.RoslynAnalyzer
 			if (targetMemberTypes == null)
 				return true;
 
+			sourceMemberTypes ??= DynamicallyAccessedMemberTypes.None;
 			var missingTypeMembersList = Enum.GetValues (typeof (DynamicallyAccessedMemberTypes))
 				.Cast<DynamicallyAccessedMemberTypes> ()
-				.Where (damt => (damt & targetMemberTypes) == damt && damt != DynamicallyAccessedMemberTypes.None)
+				.Where (damt => (damt & targetMemberTypes & ~sourceMemberTypes) == damt && damt != DynamicallyAccessedMemberTypes.None)
 				.Select (damt => damt.ToString ()).ToList ();
 
-			if (sourceMemberTypes == null) {
-				missingTypeMembersString = string.Join (", ", missingTypeMembersList.Select (mmt => $"'DynamicallyAccessedMemberTypes.{mmt}'"));
-				return false;
-			}
+			if (missingTypeMembersList.Count == 0)
+				return true;
 
-			if (targetMemberTypes != DynamicallyAccessedMemberTypes.All) {
-				var missingMemberTypesList = Enum.GetValues (typeof (DynamicallyAccessedMemberTypes))
-					.Cast<DynamicallyAccessedMemberTypes> ()
-					.Where (damt => (targetMemberTypes.Value & ~sourceMemberTypes.Value) == sourceMemberTypes && sourceMemberTypes != DynamicallyAccessedMemberTypes.None)
-					.Select (damt => damt.ToString ()).ToList ();
-				missingTypeMembersString = string.Join (", ", missingMemberTypesList.Select (mmt => $"'DynamicallyAccessedMemberTypes.{mmt}'"));
-				return false;
-			}
-
-			return true;
+			missingTypeMembersString = string.Join (", ", missingTypeMembersList.Select (mmt => $"'DynamicallyAccessedMemberTypes.{mmt}'"));
+			return false;
 		}
 
-		static void ReportUnmatchedAnnotations (
+			static void ReportUnmatchedAnnotations (
 			Location diagnosticLocation,
 			ISymbol sourceSymbol,
 			ISymbol targetSymbol,
@@ -487,15 +481,17 @@ namespace ILLink.RoslynAnalyzer
 			SyntaxNodeAnalysisContext context,
 			bool sourceIsMethodReturnType = false)
 		{
+			Debug.Assert (!string.IsNullOrEmpty (missingMemberTypes));
+
 			switch ((sourceSymbol, targetSymbol)) {
 			case (IParameterSymbol sourceParameter, IParameterSymbol targetParameter):
 				context.ReportDiagnostic (Diagnostic.Create (
 					s_IL2067,
 					diagnosticLocation,
-					targetParameter.Name,
-					targetParameter.ContainingSymbol.Name,
-					sourceParameter.Name,
-					sourceParameter.ContainingSymbol.Name,
+					targetParameter.GetDisplayName (),
+					targetParameter.ContainingSymbol.GetDisplayName (),
+					sourceParameter.GetDisplayName (),
+					sourceParameter.ContainingSymbol.GetDisplayName (),
 					missingMemberTypes));
 				break;
 			case (IParameterSymbol sourceParameter, IMethodSymbol targetMethodReturn) when
@@ -503,27 +499,27 @@ namespace ILLink.RoslynAnalyzer
 				context.ReportDiagnostic (Diagnostic.Create (
 					s_IL2068,
 					diagnosticLocation,
-					targetMethodReturn.Name,
-					sourceParameter.Name,
-					sourceParameter.ContainingSymbol.Name,
+					targetMethodReturn.GetDisplayName (),
+					sourceParameter.GetDisplayName (),
+					sourceParameter.ContainingSymbol.GetDisplayName (),
 					missingMemberTypes));
 				break;
 			case (IParameterSymbol sourceParameter, IFieldSymbol targetField):
 				context.ReportDiagnostic (Diagnostic.Create (
 					s_IL2069,
 					diagnosticLocation,
-					targetField.Name,
-					sourceParameter.Name,
-					sourceParameter.ContainingSymbol.Name,
+					targetField.GetDisplayName (),
+					sourceParameter.GetDisplayName (),
+					sourceParameter.ContainingSymbol.GetDisplayName (),
 					missingMemberTypes));
 				break;
 			case (IParameterSymbol sourceParameter, IMethodSymbol targetMethod):
 				context.ReportDiagnostic (Diagnostic.Create (
 					s_IL2070,
 					diagnosticLocation,
-					targetMethod.Name,
-					sourceParameter.Name,
-					sourceParameter.ContainingSymbol.Name,
+					targetMethod.GetDisplayName (),
+					sourceParameter.GetDisplayName (),
+					sourceParameter.ContainingSymbol.GetDisplayName (),
 					missingMemberTypes));
 				break;
 			// IL2071 not generated until we have full support of MakeGenericType/MakeGenericMethod
@@ -532,9 +528,9 @@ namespace ILLink.RoslynAnalyzer
 				context.ReportDiagnostic (Diagnostic.Create (
 					s_IL2072,
 					diagnosticLocation,
-					targetParameter.Name,
-					targetParameter.ContainingSymbol.Name,
-					sourceMethodReturnType.Name,
+					targetParameter.GetDisplayName (),
+					targetParameter.ContainingSymbol.GetDisplayName (),
+					sourceMethodReturnType.GetDisplayName (),
 					missingMemberTypes));
 				break;
 			case (IMethodSymbol sourceMethodReturnType, IMethodSymbol targetMethodReturnType) when sourceIsMethodReturnType &&
@@ -542,24 +538,24 @@ namespace ILLink.RoslynAnalyzer
 				context.ReportDiagnostic (Diagnostic.Create (
 					s_IL2073,
 					diagnosticLocation,
-					targetMethodReturnType.Name,
-					sourceMethodReturnType.Name,
+					targetMethodReturnType.GetDisplayName (),
+					sourceMethodReturnType.GetDisplayName (),
 					missingMemberTypes));
 				break;
 			case (IMethodSymbol sourceMethodReturnType, IFieldSymbol targetField) when sourceIsMethodReturnType:
 				context.ReportDiagnostic (Diagnostic.Create (
 					s_IL2074,
 					diagnosticLocation,
-					targetField.Name,
-					sourceMethodReturnType.Name,
+					targetField.GetDisplayName (),
+					sourceMethodReturnType.GetDisplayName (),
 					missingMemberTypes));
 				break;
 			case (IMethodSymbol sourceMethodReturnType, IMethodSymbol targetMethod) when sourceIsMethodReturnType:
 				context.ReportDiagnostic (Diagnostic.Create (
 					s_IL2075,
 					diagnosticLocation,
-					targetMethod.Name,
-					sourceMethodReturnType.Name,
+					targetMethod.GetDisplayName (),
+					sourceMethodReturnType.GetDisplayName (),
 					missingMemberTypes));
 				break;
 			// IL2076 not generated until we have full support of MakeGenericType/MakeGenericMethod
@@ -568,9 +564,9 @@ namespace ILLink.RoslynAnalyzer
 				context.ReportDiagnostic (Diagnostic.Create (
 					s_IL2077,
 					diagnosticLocation,
-					targetParameter.Name,
-					targetParameter.ContainingSymbol.Name,
-					sourceField.Name,
+					targetParameter.GetDisplayName (),
+					targetParameter.ContainingSymbol.GetDisplayName (),
+					sourceField.GetDisplayName (),
 					missingMemberTypes));
 				break;
 			case (IFieldSymbol sourceField, IMethodSymbol targetMethodReturn) when
@@ -578,24 +574,24 @@ namespace ILLink.RoslynAnalyzer
 				context.ReportDiagnostic (Diagnostic.Create (
 					s_IL2078,
 					diagnosticLocation,
-					targetMethodReturn.Name,
-					sourceField.Name,
+					targetMethodReturn.GetDisplayName (),
+					sourceField.GetDisplayName (),
 					missingMemberTypes));
 				break;
 			case (IFieldSymbol sourceField, IFieldSymbol targetField):
 				context.ReportDiagnostic (Diagnostic.Create (
 					s_IL2079,
 					diagnosticLocation,
-					targetField.Name,
-					sourceField.Name,
+					targetField.GetDisplayName (),
+					sourceField.GetDisplayName (),
 					missingMemberTypes));
 				break;
 			case (IFieldSymbol sourceFieldSymbol, IMethodSymbol targetMethodSymbol):
 				context.ReportDiagnostic (Diagnostic.Create (
 					s_IL2080,
 					diagnosticLocation,
-					targetMethodSymbol.Name,
-					sourceFieldSymbol.Name,
+					targetMethodSymbol.GetDisplayName (),
+					sourceFieldSymbol.GetDisplayName (),
 					missingMemberTypes));
 				break;
 			// IL2081 not generated until we have full support of MakeGenericType/MakeGenericMethod
@@ -604,9 +600,9 @@ namespace ILLink.RoslynAnalyzer
 				context.ReportDiagnostic (Diagnostic.Create (
 					s_IL2082,
 					diagnosticLocation,
-					targetParameter.Name,
-					targetParameter.ContainingSymbol.Name,
-					sourceMethod.Name,
+					targetParameter.GetDisplayName (),
+					targetParameter.ContainingSymbol.GetDisplayName (),
+					sourceMethod.GetDisplayName (),
 					missingMemberTypes));
 				break;
 			case (IMethodSymbol sourceMethod, IMethodSymbol targetMethod) when
@@ -614,24 +610,24 @@ namespace ILLink.RoslynAnalyzer
 				context.ReportDiagnostic (Diagnostic.Create (
 					s_IL2083,
 					diagnosticLocation,
-					targetMethod.Name,
-					sourceMethod.Name,
+					targetMethod.GetDisplayName (),
+					sourceMethod.GetDisplayName (),
 					missingMemberTypes));
 				break;
 			case (IMethodSymbol sourceMethod, IFieldSymbol targetField):
 				context.ReportDiagnostic (Diagnostic.Create (
 					s_IL2084,
 					diagnosticLocation,
-					targetField.Name,
-					sourceMethod.Name,
+					targetField.GetDisplayName (),
+					sourceMethod.GetDisplayName (),
 					missingMemberTypes));
 				break;
 			case (IMethodSymbol sourceMethod, IMethodSymbol targetMethod):
 				context.ReportDiagnostic (Diagnostic.Create (
 					s_IL2085,
 					diagnosticLocation,
-					targetMethod.Name,
-					sourceMethod.Name,
+					targetMethod.GetDisplayName (),
+					sourceMethod.GetDisplayName (),
 					missingMemberTypes));
 				break;
 			// IL2086 not generated until we have full support of MakeGenericType/MakeGenericMethod
@@ -640,10 +636,10 @@ namespace ILLink.RoslynAnalyzer
 				context.ReportDiagnostic (Diagnostic.Create (
 					s_IL2087,
 					diagnosticLocation,
-					targetParameter.Name,
-					targetParameter.ContainingSymbol.Name,
-					sourceGenericParameter.Name,
-					sourceGenericParameter.ContainingSymbol.Name,
+					targetParameter.GetDisplayName (),
+					targetParameter.ContainingSymbol.GetDisplayName (),
+					sourceGenericParameter.GetDisplayName (),
+					sourceGenericParameter.ContainingSymbol.GetDisplayName (),
 					missingMemberTypes));
 				break;
 			case (ITypeParameterSymbol sourceGenericParameter, IMethodSymbol targetMethod) when
@@ -651,18 +647,18 @@ namespace ILLink.RoslynAnalyzer
 				context.ReportDiagnostic (Diagnostic.Create (
 					s_IL2088,
 					diagnosticLocation,
-					targetMethod.Name,
-					sourceGenericParameter.Name,
-					sourceGenericParameter.ContainingSymbol.Name,
+					targetMethod.GetDisplayName (),
+					sourceGenericParameter.GetDisplayName (),
+					sourceGenericParameter.ContainingSymbol.GetDisplayName (),
 					missingMemberTypes));
 				break;
 			case (ITypeParameterSymbol sourceGenericParameter, IFieldSymbol targetField):
 				context.ReportDiagnostic (Diagnostic.Create (
 					s_IL2089,
 					diagnosticLocation,
-					targetField.Name,
-					sourceGenericParameter.Name,
-					sourceGenericParameter.ContainingSymbol.Name,
+					targetField.GetDisplayName (),
+					sourceGenericParameter.GetDisplayName (),
+					sourceGenericParameter.ContainingSymbol.GetDisplayName (),
 					missingMemberTypes));
 				break;
 			// IL2090 currently not generated
@@ -670,10 +666,10 @@ namespace ILLink.RoslynAnalyzer
 				context.ReportDiagnostic (Diagnostic.Create (
 					s_IL2091,
 					diagnosticLocation,
-					targetGenericParameter.Name,
-					targetGenericParameter.ContainingSymbol.Name,
-					sourceGenericParameter.Name,
-					sourceGenericParameter.ContainingSymbol.Name,
+					targetGenericParameter.GetDisplayName (),
+					targetGenericParameter.ContainingSymbol.GetDisplayName (),
+					sourceGenericParameter.GetDisplayName (),
+					sourceGenericParameter.ContainingSymbol.GetDisplayName (),
 					missingMemberTypes));
 				break;
 			}
