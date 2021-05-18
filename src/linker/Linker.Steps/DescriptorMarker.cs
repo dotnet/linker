@@ -110,10 +110,8 @@ namespace Mono.Linker.Steps
 				LogWarning ($"Type {type.GetDisplayName ()} has no methods to preserve", 2002, nav);
 				break;
 
-			default:
-				if (preserve != TypePreserve.Nothing)
-					_context.Annotations.SetPreserve (type, preserve);
-
+			case TypePreserve.All:
+				_context.Annotations.SetPreserve (type, preserve);
 				break;
 			}
 
