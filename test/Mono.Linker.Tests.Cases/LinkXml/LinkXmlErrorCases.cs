@@ -28,14 +28,12 @@ namespace Mono.Linker.Tests.Cases.LinkXml
 		}
 
 		[Kept]
-		[ExpectedWarning ("IL2001", "TypeWithNoFields")]
 		class TypeWithNoFields
 		{
 			private void Method () { }
 		}
 
 		[Kept]
-		[ExpectedWarning ("IL2002", "TypeWithNoMethods")]
 		struct TypeWithNoMethods
 		{
 		}
