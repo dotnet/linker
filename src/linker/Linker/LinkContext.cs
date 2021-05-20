@@ -308,18 +308,7 @@ namespace Mono.Linker
 		{
 			if (SeenFirstTime (assembly)) {
 				SafeReadSymbols (assembly);
-				Annotations.SetAction (assembly,
-					IsCPPCLIAssembly (assembly.MainModule) ? AssemblyAction.Copy : CalculateAssemblyAction (assembly));
-			}
-
-			static bool IsCPPCLIAssembly (ModuleDefinition module)
-			{
-				foreach (var type in module.Types)
-					if (type.Namespace == "<CppImplementationDetails>" ||
-						type.Namespace == "<CrtImplementationDetails>")
-						return true;
-
-				return false;
+				Annotations.SetAction (assembly, CalculateAssemblyAction (assembly));
 			}
 		}
 
@@ -399,13 +388,32 @@ namespace Mono.Linker
 #endif
 		public AssemblyAction CalculateAssemblyAction (AssemblyDefinition assembly)
 		{
-			if (_actions.TryGetValue (assembly.Name.Name, out AssemblyAction action))
+			if (_actions.TryGetValue (assembly.Name.Name, out AssemblyAction action)) {
+				if (IsCPPCLIAssembly (assembly.MainModule)) {
+					LogWarning ($"Invalid assembly action '{action}' in for assembly '{assembly.Name.Name}'. C++/CLI assemblies can only be copied or skipped.", 2106, GetAssemblyLocation (assembly));
+					return action == AssemblyAction.Skip ? action : AssemblyAction.Copy;
+				}
+
 				return action;
+			}
+
+			if (IsCPPCLIAssembly (assembly.MainModule))
+				return DefaultAction == AssemblyAction.Skip ? DefaultAction : AssemblyAction.Copy;
 
 			if (IsTrimmable (assembly))
 				return TrimAction;
 
 			return DefaultAction;
+
+			static bool IsCPPCLIAssembly (ModuleDefinition module)
+			{
+				foreach (var type in module.Types)
+					if (type.Namespace == "<CppImplementationDetails>" ||
+						type.Namespace == "<CrtImplementationDetails>")
+						return true;
+
+				return false;
+			}
 		}
 
 		bool IsTrimmable (AssemblyDefinition assembly)
