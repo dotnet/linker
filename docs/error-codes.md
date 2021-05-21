@@ -1590,7 +1590,7 @@ void RequirePublicMethodOnAType(
 }
 ```
 
-#### `IL2106`: Invalid assembly action '{action}' in for assembly '{assembly}'. C++/CLI assemblies can only be copied or skipped. 
+#### `IL2106`: Invalid assembly action '{action}' specified for assembly '{assembly}'. C++/CLI assemblies can only be copied or skipped. 
 
 
 ## Single-File Warning Codes
