@@ -1637,3 +1637,21 @@ void RequirePublicMethodOnAType(
       MethodWithAssemblyFilesUsage();
   }
   ```
+
+#### `IL3003`: Presence of 'RequiresAssemblyFilesAttribute' on method 'method' doesn't match overridden method 'base method'. All overridden methods must have 'RequiresAssemblyFilesAttribute'.
+
+- All overrides of a virtual method including the base method must either have or not have the `RequiresAssemblyFilesAttribute`.
+
+  ```C#
+  public class Base
+  {
+    [RequiresAssemblyFiles]
+    public virtual void TestMethod() {}
+  }
+
+  public class Derived : Base
+  {
+    // IL3003: Presence of 'RequiresAssemblyFilesAttribute' on method 'Derived.TestMethod()' doesn't match overridden method 'Base.TestMethod'. All overridden methods must have 'RequiresAssemblyFilesAttribute'.
+    public override void TestMethod() {}
+  }
+  ```

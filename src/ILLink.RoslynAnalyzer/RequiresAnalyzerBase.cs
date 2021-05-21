@@ -21,6 +21,8 @@ namespace ILLink.RoslynAnalyzer
 
 		private protected abstract DiagnosticDescriptor RequiresDiagnosticRule { get; }
 
+		private protected abstract DiagnosticDescriptor MatchOverridesRule { get; }
+
 		public override void Initialize (AnalysisContext context)
 		{
 			context.EnableConcurrentExecution ();
@@ -30,6 +32,12 @@ namespace ILLink.RoslynAnalyzer
 				if (!IsAnalyzerEnabled (context.Options, compilation))
 					return;
 				var incompatibleMembers = GetSpecialIncompatibleMembers (compilation);
+
+				context.RegisterSymbolAction (symbolAnalysisContext => {
+					var method = (IMethodSymbol) symbolAnalysisContext.Symbol;
+					if (method.IsVirtual || method.IsOverride)
+						CheckOverrides (symbolAnalysisContext, method);
+				}, SymbolKind.Method);
 
 				context.RegisterOperationAction (operationContext => {
 					var methodInvocation = (IInvocationOperation) operationContext.Operation;
@@ -126,6 +134,28 @@ namespace ILLink.RoslynAnalyzer
 						ReportRequiresDiagnostic (operationContext, member, requiresAttribute);
 					}
 				}
+
+				void CheckOverrides (
+					SymbolAnalysisContext symbolAnalysisContext,
+					IMethodSymbol method)
+				{
+					if (!method.HasAttribute (RequiresAttributeName)) {
+						while (method.OverriddenMethod != null) {
+							var overridden = method.OverriddenMethod;
+							if (overridden.HasAttribute (RequiresAttributeName))
+								ReportMatchOverridesDiagnostic (symbolAnalysisContext, method.Locations[0], overridden, method);
+							method = overridden;
+						}
+					} else {
+						while (method.OverriddenMethod != null) {
+							var overridden = method.OverriddenMethod;
+							if (!overridden.HasAttribute (RequiresAttributeName))
+								ReportMatchOverridesDiagnostic (symbolAnalysisContext, overridden.Locations[0], method, overridden);
+							method = overridden;
+						}
+					}
+				}
+
 			});
 		}
 
@@ -184,6 +214,15 @@ namespace ILLink.RoslynAnalyzer
 				member.ToString (),
 				message,
 				url));
+		}
+
+		private void ReportMatchOverridesDiagnostic (SymbolAnalysisContext symbolAnalysisContext, Location location, IMethodSymbol methodWithAttribute, IMethodSymbol methodWithoutAttribute)
+		{
+			symbolAnalysisContext.ReportDiagnostic (Diagnostic.Create (
+				MatchOverridesRule,
+				location,
+				methodWithAttribute.ToString (),
+				methodWithoutAttribute.ToString ()));
 		}
 
 		protected abstract string GetMessageFromAttribute (AttributeData? requiresAssemblyFilesAttribute);

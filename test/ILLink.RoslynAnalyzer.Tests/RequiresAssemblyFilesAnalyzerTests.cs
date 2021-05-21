@@ -814,7 +814,7 @@ class C
 	}
 }";
 			return VerifyRequiresAssemblyFilesAnalyzer (src,
-				// (18,11): warning IL2026: Using member 'StaticCtorTriggeredByFieldAccess.StaticCtorTriggeredByFieldAccess()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.. Message for --StaticCtorTriggeredByFieldAccess.Cctor--.
+				// (18,11): warning IL3002: Using member 'StaticCtorTriggeredByFieldAccess.StaticCtorTriggeredByFieldAccess()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.. Message for --StaticCtorTriggeredByFieldAccess.Cctor--.
 				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (18, 11, 18, 49).WithArguments ("StaticCtorTriggeredByFieldAccess.StaticCtorTriggeredByFieldAccess()", " Message for --StaticCtorTriggeredByFieldAccess.Cctor--.", "")
 				);
 		}
@@ -846,11 +846,61 @@ class C
 	}
 }";
 			return VerifyRequiresAssemblyFilesAnalyzer (src,
-				// (21,3): warning IL2026: Using member 'StaticCtorTriggeredByMethodCall.TriggerStaticCtorMarking()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app. Message for --StaticCtorTriggeredByMethodCall.TriggerStaticCtorMarking--.
+				// (21,3): warning IL3002: Using member 'StaticCtorTriggeredByMethodCall.TriggerStaticCtorMarking()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app. Message for --StaticCtorTriggeredByMethodCall.TriggerStaticCtorMarking--.
 				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (21, 3, 21, 69).WithArguments ("StaticCtorTriggeredByMethodCall.TriggerStaticCtorMarking()", " Message for --StaticCtorTriggeredByMethodCall.TriggerStaticCtorMarking--.", ""),
-				// (21,3): warning IL2026: Using member 'StaticCtorTriggeredByMethodCall.StaticCtorTriggeredByMethodCall()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.. Message for --StaticCtorTriggeredByMethodCall.Cctor--.
+				// (21,3): warning IL3002: Using member 'StaticCtorTriggeredByMethodCall.StaticCtorTriggeredByMethodCall()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app. Message for --StaticCtorTriggeredByMethodCall.Cctor--.
 				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (21, 3, 21, 41).WithArguments ("StaticCtorTriggeredByMethodCall.StaticCtorTriggeredByMethodCall()", " Message for --StaticCtorTriggeredByMethodCall.Cctor--.", "")
 				);
+		}
+
+		[Fact]
+		public Task OverrideHasAttributeButBaseDoesnt ()
+		{
+			var src = @"
+using System.Diagnostics.CodeAnalysis;
+
+class DerivedClass : BaseClass
+{
+	[RequiresAssemblyFiles]
+	public override void VirtualMethod ()
+	{
+	}
+}
+
+class BaseClass
+{
+	public virtual void VirtualMethod ()
+	{
+	}
+}";
+			return VerifyRequiresAssemblyFilesAnalyzer (src,
+				// (14,22): warning IL3003: Presence of 'RequiresAssemblyFilesAttribute' on method 'DerivedClass.VirtualMethod()' doesn't match overridden method 'BaseClass.VirtualMethod()'. All overridden methods must have 'RequiresAssemblyFilesAttribute'.
+				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (14, 22, 14, 35).WithArguments ("DerivedClass.VirtualMethod()", "BaseClass.VirtualMethod()"));
+		}
+
+		[Fact]
+		public Task VirtualHasAttributeButOverrideDoesnt ()
+		{
+			var src = @"
+using System.Diagnostics.CodeAnalysis;
+
+class DerivedClass : BaseClass
+{
+	public override void VirtualMethod ()
+	{
+	}
+}
+
+class BaseClass
+{
+	[RequiresAssemblyFiles]
+	public virtual void VirtualMethod ()
+	{
+	}
+}";
+			return VerifyRequiresAssemblyFilesAnalyzer (src,
+				// (6,23): warning IL3003: Presence of 'RequiresAssemblyFilesAttribute' on method 'BaseClass.VirtualMethod()' doesn't match overridden method 'DerivedClass.VirtualMethod()'. All overridden methods must have 'RequiresAssemblyFilesAttribute'.
+				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (6, 23, 6, 36).WithArguments ("BaseClass.VirtualMethod()", "DerivedClass.VirtualMethod()"));
 		}
 	}
 }
