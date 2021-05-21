@@ -389,8 +389,10 @@ namespace Mono.Linker
 		public AssemblyAction CalculateAssemblyAction (AssemblyDefinition assembly)
 		{
 			if (_actions.TryGetValue (assembly.Name.Name, out AssemblyAction action)) {
-				if (IsCPPCLIAssembly (assembly.MainModule) && action != AssemblyAction.Copy && action != AssemblyAction.Skip)
+				if (IsCPPCLIAssembly (assembly.MainModule) && action != AssemblyAction.Copy && action != AssemblyAction.Skip) {
 					LogWarning ($"Invalid assembly action '{action}' specified for assembly '{assembly.Name.Name}'. C++/CLI assemblies can only be copied or skipped.", 2106, GetAssemblyLocation (assembly));
+					return AssemblyAction.Copy;
+				}
 
 				return action;
 			}
