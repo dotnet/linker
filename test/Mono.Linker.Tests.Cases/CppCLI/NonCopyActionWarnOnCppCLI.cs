@@ -20,7 +20,7 @@ namespace Mono.Linker.Tests.Cases.CppCLI
 	[SetupCompileBefore ("ManagedSide.dll", new[] { "Dependencies/CallCppCLIFromManagedRef.cs" })]
 	[SetupCompileAfter ("ManagedSide.dll", new[] { "Dependencies/CallCppCLIFromManaged.cs" }, references: new[] { "TestLibrary.dll" })]
 
-	[LogContains ("Invalid assembly action 'CopyUsed' in for assembly 'TestLibrary'. C++/CLI assemblies can only be copied or skipped.")]
+	[LogContains ("Invalid assembly action 'CopyUsed' specified for assembly 'TestLibrary'. C++/CLI assemblies can only be copied or skipped.")]
 	[KeptAssembly ("TestLibrary.dll")]
 
 	[Kept]
