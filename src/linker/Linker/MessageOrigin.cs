@@ -15,6 +15,9 @@ namespace Mono.Linker
 #nullable enable
 		public string? FileName { get; }
 		public IMemberDefinition? MemberDefinition { get; }
+
+		readonly IMemberDefinition _suppressionContextMember;
+		public IMemberDefinition? SuppressionContextMember { get => _suppressionContextMember ?? MemberDefinition; }
 #nullable disable
 		public int SourceLine { get; }
 		public int SourceColumn { get; }
@@ -33,13 +36,20 @@ namespace Mono.Linker
 			SourceLine = sourceLine;
 			SourceColumn = sourceColumn;
 			MemberDefinition = null;
+			_suppressionContextMember = null;
 			ILOffset = null;
 		}
 
 		public MessageOrigin (IMemberDefinition memberDefinition, int? ilOffset)
+			: this (memberDefinition, ilOffset, null)
+		{
+		}
+
+		public MessageOrigin (IMemberDefinition memberDefinition, int? ilOffset, IMemberDefinition suppressionContextMember)
 		{
 			FileName = null;
 			MemberDefinition = memberDefinition;
+			_suppressionContextMember = suppressionContextMember;
 			SourceLine = 0;
 			SourceColumn = 0;
 			ILOffset = ilOffset;
@@ -85,7 +95,7 @@ namespace Mono.Linker
 		}
 
 		public bool Equals (MessageOrigin other) =>
-			(FileName, MemberDefinition, SourceLine, SourceColumn) == (other.FileName, other.MemberDefinition, other.SourceLine, other.SourceColumn);
+			(FileName, MemberDefinition, SourceLine, SourceColumn, ILOffset) == (other.FileName, other.MemberDefinition, other.SourceLine, other.SourceColumn, other.ILOffset);
 
 		public override bool Equals (object obj) => obj is MessageOrigin messageOrigin && Equals (messageOrigin);
 		public override int GetHashCode () => (FileName, MemberDefinition, SourceLine, SourceColumn).GetHashCode ();
@@ -95,8 +105,15 @@ namespace Mono.Linker
 		public int CompareTo (MessageOrigin other)
 		{
 			if (MemberDefinition != null && other.MemberDefinition != null) {
-				return (MemberDefinition.DeclaringType?.Module?.Assembly?.Name?.Name, MemberDefinition.DeclaringType?.Name, MemberDefinition?.Name).CompareTo
+				int result = (MemberDefinition.DeclaringType?.Module?.Assembly?.Name?.Name, MemberDefinition.DeclaringType?.Name, MemberDefinition?.Name).CompareTo
 					((other.MemberDefinition.DeclaringType?.Module?.Assembly?.Name?.Name, other.MemberDefinition.DeclaringType?.Name, other.MemberDefinition?.Name));
+				if (result != 0)
+					return result;
+
+				if (ILOffset != null && other.ILOffset != null)
+					return ILOffset.Value.CompareTo (other.ILOffset);
+
+				return ILOffset == null ? 1 : -1;
 			} else if (MemberDefinition == null && other.MemberDefinition == null) {
 				if (FileName != null && other.FileName != null) {
 					return string.Compare (FileName, other.FileName);

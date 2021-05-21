@@ -15,12 +15,13 @@ namespace Mono.Linker.Steps
 		{
 			public readonly MessageOrigin Origin;
 
-			public Scope (MessageOrigin origin)
+			public Scope (in MessageOrigin origin)
 			{
 				Origin = origin;
 			}
 		}
 
+		readonly LinkContext _context;
 		readonly Stack<Scope> _scopeStack;
 
 		readonly struct LocalScope : IDisposable
@@ -32,7 +33,22 @@ namespace Mono.Linker.Steps
 			{
 				_origin = origin;
 				_scopeStack = scopeStack;
-				_scopeStack.Push (new Scope (origin));
+
+				// Compiler generated methods and types should "inherit" suppression context
+				// from the user defined method from which the compiler generated them.
+				// This is transfered through the SuppressionContextMember as that should
+				// always point to user defined code (and not compiler generated code).
+				// So if the newly added scope is for compiler generated code
+				// keep the suppression context from the current top of the scope stack.
+				// Otherwise the scope is from user code and so its suppression context
+				// should be the same as the scope itself.
+				IMemberDefinition suppressionContextMember = origin.MemberDefinition;
+				if (origin.MemberDefinition is MemberReference memberRef &&
+					_scopeStack._context.CompilerGeneratedState.IsCompilerGenerated (memberRef)) {
+					suppressionContextMember = _scopeStack.CurrentScope.Origin.SuppressionContextMember;
+				}
+
+				_scopeStack.Push (new Scope (new MessageOrigin (origin.MemberDefinition, origin.ILOffset, suppressionContextMember)));
 			}
 
 			public LocalScope (in Scope scope, MarkScopeStack scopeStack)
@@ -73,8 +89,9 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		public MarkScopeStack ()
+		public MarkScopeStack (LinkContext context)
 		{
+			_context = context;
 			_scopeStack = new Stack<Scope> ();
 		}
 
@@ -108,7 +125,7 @@ namespace Mono.Linker.Steps
 			if (scope.Origin.MemberDefinition is not MethodDefinition)
 				throw new InternalErrorException ($"Trying to update instruction offset of scope stack which is not a method. Current stack scope is '{scope}'.");
 
-			_scopeStack.Push (new Scope (new MessageOrigin (scope.Origin.MemberDefinition, offset)));
+			_scopeStack.Push (new Scope (new MessageOrigin (scope.Origin.MemberDefinition, offset, scope.Origin.SuppressionContextMember)));
 		}
 
 		void Push (in Scope scope)
