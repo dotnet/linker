@@ -302,7 +302,7 @@ namespace ILLink.Tasks
 			XmlNode linkerNode = doc["linker"];
 
 			if (featureSwitchMembers.Count > 0) {
-				foreach ((var fs, var members) in featureSwitchMembers.Select(kv => (kv.Key, kv.Value))) {
+				foreach ((var fs, var members) in featureSwitchMembers.Select (kv => (kv.Key, kv.Value))) {
 					if (members.Count == 0)
 						continue;
 
