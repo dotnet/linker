@@ -50,7 +50,7 @@ namespace Mono.Linker.Steps
 		protected Queue<AttributeProviderPair> _assemblyLevelAttributes;
 		readonly List<AttributeProviderPair> _ivt_attributes;
 		protected Queue<(AttributeProviderPair, DependencyInfo, MarkScopeStack.Scope)> _lateMarkedAttributes;
-		protected List<TypeDefinition> _typesWithInterfaces;
+		protected List<(TypeDefinition, MarkScopeStack.Scope)> _typesWithInterfaces;
 		protected HashSet<AssemblyDefinition> _dynamicInterfaceCastableImplementationTypesDiscovered;
 		protected List<TypeDefinition> _dynamicInterfaceCastableImplementationTypes;
 		protected List<(MethodBody, MarkScopeStack.Scope)> _unreachableBodies;
@@ -186,7 +186,7 @@ namespace Mono.Linker.Steps
 			_assemblyLevelAttributes = new Queue<AttributeProviderPair> ();
 			_ivt_attributes = new List<AttributeProviderPair> ();
 			_lateMarkedAttributes = new Queue<(AttributeProviderPair, DependencyInfo, MarkScopeStack.Scope)> ();
-			_typesWithInterfaces = new List<TypeDefinition> ();
+			_typesWithInterfaces = new List<(TypeDefinition, MarkScopeStack.Scope)> ();
 			_dynamicInterfaceCastableImplementationTypesDiscovered = new HashSet<AssemblyDefinition> ();
 			_dynamicInterfaceCastableImplementationTypes = new List<TypeDefinition> ();
 			_unreachableBodies = new List<(MethodBody, MarkScopeStack.Scope)> ();
@@ -563,13 +563,14 @@ namespace Mono.Linker.Steps
 			// copy the data to avoid modified while enumerating error potential, which can happen under certain conditions.
 			var typesWithInterfaces = _typesWithInterfaces.ToArray ();
 
-			foreach (var type in typesWithInterfaces) {
+			foreach ((var type, var scope) in typesWithInterfaces) {
 				// Exception, types that have not been flagged as instantiated yet.  These types may not need their interfaces even if the
 				// interface type is marked
 				if (!Annotations.IsInstantiated (type) && !Annotations.IsRelevantToVariantCasting (type))
 					continue;
 
-				MarkInterfaceImplementations (type);
+				using (_scopeStack.PushScope (scope))
+					MarkInterfaceImplementations (type);
 			}
 		}
 
@@ -1796,7 +1797,7 @@ namespace Mono.Linker.Steps
 			}
 
 			if (type.HasInterfaces)
-				_typesWithInterfaces.Add (type);
+				_typesWithInterfaces.Add ((type, _scopeStack.CurrentScope));
 
 			if (type.HasMethods) {
 				// For virtuals that must be preserved, blame the declaring type.
