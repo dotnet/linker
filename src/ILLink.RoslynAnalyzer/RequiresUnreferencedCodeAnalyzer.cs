@@ -27,17 +27,17 @@ namespace ILLink.RoslynAnalyzer
 			DiagnosticSeverity.Warning,
 			isEnabledByDefault: true);
 
-		static readonly DiagnosticDescriptor s_matchOverridesRule = new DiagnosticDescriptor (
+		static readonly DiagnosticDescriptor s_matchOverrideOrInterfaceRule = new DiagnosticDescriptor (
 			IL2046,
-			new LocalizableResourceString (nameof (Resources.MatchRequiresUnreferencedCodeOverridesTitle),
+			new LocalizableResourceString (nameof (Resources.MatchRequiresAttributeOverridesOrInterfacesTitle),
 			Resources.ResourceManager, typeof (Resources)),
-			new LocalizableResourceString (nameof (Resources.MatchRequiresUnreferencedCodeOverridesMessage),
+			new LocalizableResourceString (nameof (Resources.MatchRequiresAttributeOverridesOrInterfacesMessage),
 			Resources.ResourceManager, typeof (Resources)),
 			DiagnosticCategory.Trimming,
 			DiagnosticSeverity.Warning,
 			isEnabledByDefault: true);
 
-		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create (s_requiresUnreferencedCodeRule, s_matchOverridesRule);
+		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create (s_requiresUnreferencedCodeRule, s_matchOverrideOrInterfaceRule);
 
 		private protected override string RequiresAttributeName => RequiresUnreferencedCodeAttribute;
 
@@ -47,7 +47,7 @@ namespace ILLink.RoslynAnalyzer
 
 		private protected override DiagnosticDescriptor RequiresDiagnosticRule => s_requiresUnreferencedCodeRule;
 
-		private protected override DiagnosticDescriptor MatchOverridesRule => s_matchOverridesRule;
+		private protected override DiagnosticDescriptor MatchOverrideOrInterfaceRule => s_matchOverrideOrInterfaceRule;
 
 		protected override bool IsAnalyzerEnabled (AnalyzerOptions options, Compilation compilation)
 		{

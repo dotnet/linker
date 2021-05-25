@@ -54,17 +54,17 @@ namespace ILLink.RoslynAnalyzer
 			isEnabledByDefault: true,
 			helpLinkUri: "https://docs.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/il3002");
 
-		static readonly DiagnosticDescriptor s_matchOverridesRule = new DiagnosticDescriptor (
+		static readonly DiagnosticDescriptor s_matchOverrideOrInterfaceRule = new DiagnosticDescriptor (
 			IL3003,
-			new LocalizableResourceString (nameof (Resources.MatchRequiresAssemblyFilesOverridesTitle),
+			new LocalizableResourceString (nameof (Resources.MatchRequiresAttributeOverridesOrInterfacesTitle),
 			Resources.ResourceManager, typeof (Resources)),
-			new LocalizableResourceString (nameof (Resources.MatchRequiresAssemblyFilesOverridesMessage),
+			new LocalizableResourceString (nameof (Resources.MatchRequiresAttributeOverridesOrInterfacesMessage),
 			Resources.ResourceManager, typeof (Resources)),
 			DiagnosticCategory.SingleFile,
 			DiagnosticSeverity.Warning,
 			isEnabledByDefault: true);
 
-		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create (s_locationRule, s_getFilesRule, s_requiresAssemblyFilesRule, s_matchOverridesRule);
+		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create (s_locationRule, s_getFilesRule, s_requiresAssemblyFilesRule, s_matchOverrideOrInterfaceRule);
 
 		private protected override string RequiresAttributeName => RequiresAssemblyFilesAttribute;
 
@@ -74,7 +74,7 @@ namespace ILLink.RoslynAnalyzer
 
 		private protected override DiagnosticDescriptor RequiresDiagnosticRule => s_requiresAssemblyFilesRule;
 
-		private protected override DiagnosticDescriptor MatchOverridesRule => s_matchOverridesRule;
+		private protected override DiagnosticDescriptor MatchOverrideOrInterfaceRule => s_matchOverrideOrInterfaceRule;
 
 		protected override bool IsAnalyzerEnabled (AnalyzerOptions options, Compilation compilation)
 		{

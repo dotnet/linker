@@ -21,7 +21,7 @@ namespace ILLink.RoslynAnalyzer
 
 		private protected abstract DiagnosticDescriptor RequiresDiagnosticRule { get; }
 
-		private protected abstract DiagnosticDescriptor MatchOverridesRule { get; }
+		private protected abstract DiagnosticDescriptor MatchOverrideOrInterfaceRule { get; }
 
 		public override void Initialize (AnalysisContext context)
 		{
@@ -34,10 +34,23 @@ namespace ILLink.RoslynAnalyzer
 				var incompatibleMembers = GetSpecialIncompatibleMembers (compilation);
 
 				context.RegisterSymbolAction (symbolAnalysisContext => {
-					var method = (IMethodSymbol) symbolAnalysisContext.Symbol;
-					if (method.IsVirtual || method.IsOverride)
-						CheckOverrides (symbolAnalysisContext, method);
+					var methodSymbol = (IMethodSymbol) symbolAnalysisContext.Symbol;
+					CheckOverridesAndInterfaces (symbolAnalysisContext, methodSymbol);
 				}, SymbolKind.Method);
+
+				if (AnalyzerDiagnosticTargets.HasFlag (DiagnosticTargets.Property)) {
+					context.RegisterSymbolAction (symbolAnalysisContext => {
+						var propertySymbol = (IPropertySymbol) symbolAnalysisContext.Symbol;
+						CheckOverridesAndInterfaces (symbolAnalysisContext, propertySymbol);
+					}, SymbolKind.Property);
+				}
+
+				if (AnalyzerDiagnosticTargets.HasFlag (DiagnosticTargets.Event)) {
+					context.RegisterSymbolAction (symbolAnalysisContext => {
+						var eventSymbol = (IEventSymbol) symbolAnalysisContext.Symbol;
+						CheckOverridesAndInterfaces (symbolAnalysisContext, eventSymbol);
+					}, SymbolKind.Event);
+				}
 
 				context.RegisterOperationAction (operationContext => {
 					var methodInvocation = (IInvocationOperation) operationContext.Operation;
@@ -135,23 +148,23 @@ namespace ILLink.RoslynAnalyzer
 					}
 				}
 
-				void CheckOverrides (
+				void CheckOverridesAndInterfaces (
 					SymbolAnalysisContext symbolAnalysisContext,
-					IMethodSymbol method)
+					ISymbol member)
 				{
-					if (!method.HasAttribute (RequiresAttributeName)) {
-						while (method.OverriddenMethod != null) {
-							var overridden = method.OverriddenMethod;
-							if (overridden.HasAttribute (RequiresAttributeName))
-								ReportMatchOverridesDiagnostic (symbolAnalysisContext, method.Locations[0], overridden, method);
-							method = overridden;
-						}
-					} else {
-						while (method.OverriddenMethod != null) {
-							var overridden = method.OverriddenMethod;
-							if (!overridden.HasAttribute (RequiresAttributeName))
-								ReportMatchOverridesDiagnostic (symbolAnalysisContext, overridden.Locations[0], method, overridden);
-							method = overridden;
+					ISymbol? overriddenMember;
+					ImmutableArray<ISymbol> interfacesImplementations;
+					if ((member.IsVirtual || member.IsOverride) && member.TryGetOverriddenMember (out overriddenMember)) {
+						if (!member.HasAttribute (RequiresAttributeName) && overriddenMember!.HasAttribute (RequiresAttributeName))
+							ReportMatchOverrideOrInterfaceDiagnostic (symbolAnalysisContext, member.Locations[0], overriddenMember!, member);
+						else if (member.HasAttribute (RequiresAttributeName) && !overriddenMember!.HasAttribute (RequiresAttributeName))
+							ReportMatchOverrideOrInterfaceDiagnostic (symbolAnalysisContext, overriddenMember!.Locations[0], member, overriddenMember);
+					} else if (member.TryGetExplicitOrImplicitInterfaceImplementations (out interfacesImplementations)) {
+						foreach (var interfaceImplementation in interfacesImplementations) {
+							if (!member.HasAttribute (RequiresAttributeName) && interfaceImplementation.HasAttribute (RequiresAttributeName))
+								ReportMatchOverrideOrInterfaceDiagnostic (symbolAnalysisContext, member.Locations[0], interfaceImplementation, member);
+							else if (member.HasAttribute (RequiresAttributeName) && !interfaceImplementation.HasAttribute (RequiresAttributeName))
+								ReportMatchOverrideOrInterfaceDiagnostic (symbolAnalysisContext, interfaceImplementation.Locations[0], member, interfaceImplementation);
 						}
 					}
 				}
@@ -216,13 +229,14 @@ namespace ILLink.RoslynAnalyzer
 				url));
 		}
 
-		private void ReportMatchOverridesDiagnostic (SymbolAnalysisContext symbolAnalysisContext, Location location, IMethodSymbol methodWithAttribute, IMethodSymbol methodWithoutAttribute)
+		private void ReportMatchOverrideOrInterfaceDiagnostic (SymbolAnalysisContext symbolAnalysisContext, Location location, ISymbol memberWithAttribute, ISymbol memberWithoutAttribute)
 		{
 			symbolAnalysisContext.ReportDiagnostic (Diagnostic.Create (
-				MatchOverridesRule,
+				MatchOverrideOrInterfaceRule,
 				location,
-				methodWithAttribute.ToString (),
-				methodWithoutAttribute.ToString ()));
+				RequiresAttributeName,
+				memberWithAttribute.ToString (),
+				memberWithoutAttribute.ToString ()));
 		}
 
 		protected abstract string GetMessageFromAttribute (AttributeData? requiresAssemblyFilesAttribute);

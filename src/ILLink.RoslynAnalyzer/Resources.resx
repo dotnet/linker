@@ -141,16 +141,10 @@
   <data name="RequiresAssemblyFilesMessage" xml:space="preserve">
     <value>Using member '{0}' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.{1}{2}</value>
   </data>
-  <data name="MatchRequiresUnreferencedCodeOverridesMessage" xml:space="preserve">
-    <value>Presence of 'RequiresUnreferencedCodeAttribute' on method '{0}' doesn't match overridden method '{1}'. All overridden methods must have 'RequiresUnreferencedCodeAttribute'.</value>
+  <data name="MatchRequiresAttributeOverridesOrInterfacesMessage" xml:space="preserve">
+    <value>Presence of '{0}' on member '{1}' doesn't match overridden member '{2}'. All overridden members must have '{0}'.</value>
   </data>
-  <data name="MatchRequiresUnreferencedCodeOverridesTitle" xml:space="preserve">
-    <value>All overrides of a virtual method including the base method must either have or not have the RequiresUnreferencedCodeAttribute</value>
-  </data>
-  <data name="MatchRequiresAssemblyFilesOverridesMessage" xml:space="preserve">
-    <value>Presence of 'RequiresAssemblyFilesAttribute' on method '{0}' doesn't match overridden method '{1}'. All overridden methods must have 'RequiresAssemblyFilesAttribute'.</value>
-  </data>
-  <data name="MatchRequiresAssemblyFilesOverridesTitle" xml:space="preserve">
-    <value>All overrides of a virtual method including the base method must either have or not have the RequiresAssemblyFilesAttribute</value>
+  <data name="MatchRequiresAttributeOverridesOrInterfacesTitle" xml:space="preserve">
+    <value>All overrides of a virtual member including the base member must either have or not have the RequiresAttribute</value>
   </data>
 </root>

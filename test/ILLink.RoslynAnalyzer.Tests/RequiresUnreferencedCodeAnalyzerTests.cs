@@ -558,6 +558,14 @@ class DerivedClass : BaseClass
 	public override void VirtualMethod ()
 	{
 	}
+
+	private string name;
+	public override string VirtualProperty
+	{
+		[RequiresUnreferencedCode(""Message"")]
+		get { return name; }
+		set { name = value; }
+	}
 }
 
 class BaseClass
@@ -565,10 +573,14 @@ class BaseClass
 	public virtual void VirtualMethod ()
 	{
 	}
+
+	public virtual string VirtualProperty { get; set; }
 }";
 			return VerifyRequiresUnreferencedCodeAnalyzer (src,
-				// (14,22): warning IL2046: Presence of 'RequiresUnreferencedCodeAttribute' on method 'DerivedClass.VirtualMethod()' doesn't match overridden method 'BaseClass.VirtualMethod()'. All overridden methods must have 'RequiresUnreferencedCodeAttribute'.
-				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (14, 22, 14, 35).WithArguments ("DerivedClass.VirtualMethod()", "BaseClass.VirtualMethod()"));
+				// (22,22): warning IL2046: Presence of 'RequiresUnreferencedCodeAttribute' on method 'DerivedClass.VirtualMethod()' doesn't match overridden method 'BaseClass.VirtualMethod()'. All overridden methods must have 'RequiresUnreferencedCodeAttribute'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (22, 22, 22, 35).WithArguments ("RequiresUnreferencedCodeAttribute", "DerivedClass.VirtualMethod()", "BaseClass.VirtualMethod()"),
+				// (26,42): warning IL2046: Presence of 'RequiresUnreferencedCodeAttribute' on method 'DerivedClass.VirtualProperty.get' doesn't match overridden method 'BaseClass.VirtualProperty.get'. All overridden methods must have 'RequiresUnreferencedCodeAttribute'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (26, 42, 26, 45).WithArguments ("RequiresUnreferencedCodeAttribute", "DerivedClass.VirtualProperty.get", "BaseClass.VirtualProperty.get"));
 		}
 
 		[Fact]
@@ -582,6 +594,13 @@ class DerivedClass : BaseClass
 	public override void VirtualMethod ()
 	{
 	}
+
+	private string name;
+	public override string VirtualProperty
+	{
+		get { return name; }
+		set { name = value; }
+	}
 }
 
 class BaseClass
@@ -590,10 +609,105 @@ class BaseClass
 	public virtual void VirtualMethod ()
 	{
 	}
+
+	public virtual string VirtualProperty {[RequiresUnreferencedCode(""Message"")] get; set; }
 }";
 			return VerifyRequiresUnreferencedCodeAnalyzer (src,
 				// (6,23): warning IL2046: Presence of 'RequiresUnreferencedCodeAttribute' on method 'BaseClass.VirtualMethod()' doesn't match overridden method 'DerivedClass.VirtualMethod()'. All overridden methods must have 'RequiresAssemblyFilesAttribute'.
-				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (6, 23, 6, 36).WithArguments ("BaseClass.VirtualMethod()", "DerivedClass.VirtualMethod()"));
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (6, 23, 6, 36).WithArguments ("RequiresUnreferencedCodeAttribute", "BaseClass.VirtualMethod()", "DerivedClass.VirtualMethod()"),
+				// (13,3): warning IL2046: Presence of 'RequiresUnreferencedCodeAttribute' on method 'BaseClass.VirtualProperty.get' doesn't match overridden method 'DerivedClass.VirtualProperty.get'. All overridden methods must have 'RequiresUnreferencedCodeAttribute'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (13, 3, 13, 6).WithArguments ("RequiresUnreferencedCodeAttribute", "BaseClass.VirtualProperty.get", "DerivedClass.VirtualProperty.get"));
+		}
+
+		[Fact]
+		public Task ImplementationHasAttributeButInterfaceDoesnt ()
+		{
+			var src = @"
+using System.Diagnostics.CodeAnalysis;
+
+class Implementation : IRUC
+{
+	[RequiresUnreferencedCode(""Message"")]
+	public void RUC () { }
+
+	private string name;
+	public string Property
+	{
+		[RequiresUnreferencedCode(""Message"")]
+		get { return name; }
+		set { name = value; }
+	}
+}
+
+class AnotherImplementation : IRUC
+{
+	public void RUC () { }
+
+	private string name;
+	public string Property
+	{
+		get { return name; }
+		set { name = value; }
+	}
+}
+
+interface IRUC
+{
+	void RUC();
+	string Property { get; set; }
+}";
+			return VerifyRequiresUnreferencedCodeAnalyzer (src,
+				// (32,7): warning IL2046: Presence of 'RequiresUnreferencedCodeAttribute' on method 'Implementation.RUC()' doesn't match overridden method 'IRUC.RUC()'. All overridden methods must have 'RequiresUnreferencedCodeAttribute'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (32, 7, 32, 10).WithArguments ("RequiresUnreferencedCodeAttribute", "Implementation.RUC()", "IRUC.RUC()"),
+				// (33,20): warning IL2046: Presence of 'RequiresUnreferencedCodeAttribute' on method 'Implementation.Property.get' doesn't match overridden method 'IRUC.Property.get'. All overridden methods must have 'RequiresUnreferencedCodeAttribute'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (33, 20, 33, 23).WithArguments ("RequiresUnreferencedCodeAttribute", "Implementation.Property.get", "IRUC.Property.get"));
+		}
+
+		[Fact]
+		public Task InterfaceHasAttributeButImplementationDoesnt ()
+		{
+			var src = @"
+using System.Diagnostics.CodeAnalysis;
+
+class Implementation : IRUC
+{
+	public void RUC () { }
+
+	private string name;
+	public string Property
+	{
+		get { return name; }
+		set { name = value; }
+	}
+}
+
+class AnotherImplementation : IRUC
+{
+	public void RUC () { }
+
+	private string name;
+	public string Property
+	{
+		get { return name; }
+		set { name = value; }
+	}
+}
+
+interface IRUC
+{
+	[RequiresUnreferencedCode(""Message"")]
+	void RUC();
+	string Property {[RequiresUnreferencedCode(""Message"")] get; set; }
+}";
+			return VerifyRequiresUnreferencedCodeAnalyzer (src,
+				// (6,14): warning IL2046: Presence of 'RequiresUnreferencedCodeAttribute' on method 'IRUC.RUC()' doesn't match overridden method 'Implementation.RUC()'. All overridden methods must have 'RequiresUnreferencedCodeAttribute'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (6, 14, 6, 17).WithArguments ("RequiresUnreferencedCodeAttribute", "IRUC.RUC()", "Implementation.RUC()"),
+				// (11,3): warning IL2046: Presence of 'RequiresUnreferencedCodeAttribute' on method 'IRUC.Property.get' doesn't match overridden method 'Implementation.Property.get'. All overridden methods must have 'RequiresUnreferencedCodeAttribute'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (11, 3, 11, 6).WithArguments ("RequiresUnreferencedCodeAttribute", "IRUC.Property.get", "Implementation.Property.get"),
+				// (18,14): warning IL2046: Presence of 'RequiresUnreferencedCodeAttribute' on method 'IRUC.RUC()' doesn't match overridden method 'AnotherImplementation.RUC()'. All overridden methods must have 'RequiresUnreferencedCodeAttribute'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (18, 14, 18, 17).WithArguments ("RequiresUnreferencedCodeAttribute", "IRUC.RUC()", "AnotherImplementation.RUC()"),
+				// (23,3): warning IL2046: Presence of 'RequiresUnreferencedCodeAttribute' on method 'IRUC.Property.get' doesn't match overridden method 'AnotherImplementation.Property.get'. All overridden methods must have 'RequiresUnreferencedCodeAttribute'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (23, 3, 23, 6).WithArguments ("RequiresUnreferencedCodeAttribute", "IRUC.Property.get", "AnotherImplementation.Property.get"));
 		}
 	}
 }

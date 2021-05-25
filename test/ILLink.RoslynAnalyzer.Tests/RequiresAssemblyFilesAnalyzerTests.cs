@@ -865,6 +865,17 @@ class DerivedClass : BaseClass
 	public override void VirtualMethod ()
 	{
 	}
+
+	private string name;
+	public override string VirtualPropertyWithAnnotationInAccesor
+	{
+		[RequiresAssemblyFiles]
+		get { return name; }
+		set { name = value; }
+	}
+
+	[RequiresAssemblyFiles]
+	public override string VirtualPropertyWithAnnotationInProperty { get; set; }
 }
 
 class BaseClass
@@ -872,10 +883,18 @@ class BaseClass
 	public virtual void VirtualMethod ()
 	{
 	}
+
+	public virtual string VirtualPropertyWithAnnotationInAccesor { get; set; }
+
+	public virtual string VirtualPropertyWithAnnotationInProperty { get; set; }
 }";
 			return VerifyRequiresAssemblyFilesAnalyzer (src,
-				// (14,22): warning IL3003: Presence of 'RequiresAssemblyFilesAttribute' on method 'DerivedClass.VirtualMethod()' doesn't match overridden method 'BaseClass.VirtualMethod()'. All overridden methods must have 'RequiresAssemblyFilesAttribute'.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (14, 22, 14, 35).WithArguments ("DerivedClass.VirtualMethod()", "BaseClass.VirtualMethod()"));
+				// (25,22): warning IL3003: Presence of 'RequiresAssemblyFilesAttribute' on member 'DerivedClass.VirtualMethod()' doesn't match overridden member 'BaseClass.VirtualMethod()'. All overridden members must have 'RequiresAssemblyFilesAttribute'.
+				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (25, 22, 25, 35).WithArguments ("RequiresAssemblyFilesAttribute", "DerivedClass.VirtualMethod()", "BaseClass.VirtualMethod()"),
+				// (29,65): warning IL3003: Presence of 'RequiresAssemblyFilesAttribute' on member 'DerivedClass.VirtualPropertyWithAnnotationInAccesor.get' doesn't match overridden member 'BaseClass.VirtualPropertyWithAnnotationInAccesor.get'. All overridden members must have 'RequiresAssemblyFilesAttribute'.
+				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (29, 65, 29, 68).WithArguments ("RequiresAssemblyFilesAttribute", "DerivedClass.VirtualPropertyWithAnnotationInAccesor.get", "BaseClass.VirtualPropertyWithAnnotationInAccesor.get"),
+				// (31,24): warning IL3003: Presence of 'RequiresAssemblyFilesAttribute' on member 'DerivedClass.VirtualPropertyWithAnnotationInProperty' doesn't match overridden member 'BaseClass.VirtualPropertyWithAnnotationInProperty'. All overridden members must have 'RequiresAssemblyFilesAttribute'.
+				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (31, 24, 31, 63).WithArguments ("RequiresAssemblyFilesAttribute", "DerivedClass.VirtualPropertyWithAnnotationInProperty", "BaseClass.VirtualPropertyWithAnnotationInProperty"));
 		}
 
 		[Fact]
@@ -889,6 +908,15 @@ class DerivedClass : BaseClass
 	public override void VirtualMethod ()
 	{
 	}
+
+	private string name;
+	public override string VirtualPropertyWithAnnotationInAccesor
+	{
+		get { return name; }
+		set { name = value; }
+	}
+
+	public override string VirtualPropertyWithAnnotationInProperty { get; set; }
 }
 
 class BaseClass
@@ -897,10 +925,150 @@ class BaseClass
 	public virtual void VirtualMethod ()
 	{
 	}
+
+	public virtual string VirtualPropertyWithAnnotationInAccesor {[RequiresAssemblyFiles] get; set; }
+
+	[RequiresAssemblyFiles]
+	public virtual string VirtualPropertyWithAnnotationInProperty { get; set; }
 }";
 			return VerifyRequiresAssemblyFilesAnalyzer (src,
-				// (6,23): warning IL3003: Presence of 'RequiresAssemblyFilesAttribute' on method 'BaseClass.VirtualMethod()' doesn't match overridden method 'DerivedClass.VirtualMethod()'. All overridden methods must have 'RequiresAssemblyFilesAttribute'.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (6, 23, 6, 36).WithArguments ("BaseClass.VirtualMethod()", "DerivedClass.VirtualMethod()"));
+				// (6,23): warning IL3003: Presence of 'RequiresAssemblyFilesAttribute' on member 'BaseClass.VirtualMethod()' doesn't match overridden member 'DerivedClass.VirtualMethod()'. All overridden members must have 'RequiresAssemblyFilesAttribute'.
+				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (6, 23, 6, 36).WithArguments ("RequiresAssemblyFilesAttribute", "BaseClass.VirtualMethod()", "DerivedClass.VirtualMethod()"),
+				// (13,3): warning IL3003: Presence of 'RequiresAssemblyFilesAttribute' on member 'BaseClass.VirtualPropertyWithAnnotationInAccesor.get' doesn't match overridden member 'DerivedClass.VirtualPropertyWithAnnotationInAccesor.get'. All overridden members must have 'RequiresAssemblyFilesAttribute'.
+				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (13, 3, 13, 6).WithArguments ("RequiresAssemblyFilesAttribute", "BaseClass.VirtualPropertyWithAnnotationInAccesor.get", "DerivedClass.VirtualPropertyWithAnnotationInAccesor.get"),
+				// (17,25): warning IL3003: Presence of 'RequiresAssemblyFilesAttribute' on member 'BaseClass.VirtualPropertyWithAnnotationInProperty' doesn't match overridden member 'DerivedClass.VirtualPropertyWithAnnotationInProperty'. All overridden members must have 'RequiresAssemblyFilesAttribute'.
+				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (17, 25, 17, 64).WithArguments ("RequiresAssemblyFilesAttribute", "BaseClass.VirtualPropertyWithAnnotationInProperty", "DerivedClass.VirtualPropertyWithAnnotationInProperty"));
+		}
+
+		[Fact]
+		public Task ImplementationHasAttributeButInterfaceDoesnt ()
+		{
+			// Once the interface has the attributes indicated in the warnings we would have warnings for AnotherImplementation.
+			// In the meantime AnotherImplementation doesn't generate a warning
+			var src = @"
+using System.Diagnostics.CodeAnalysis;
+
+class Implementation : IRUC
+{
+	[RequiresAssemblyFiles]
+	public void Method () { }
+
+	private string name;
+	public string StringProperty
+	{
+		[RequiresAssemblyFiles]
+		get { return name; }
+		set { name = value; }
+	}
+
+	private int num;
+	[RequiresAssemblyFiles]
+	public int NumProperty
+	{
+		get { return num; }
+		set { num = value; }
+	}
+}
+
+class AnotherImplementation : IRUC
+{
+	public void Method () { }
+
+	private string name;
+	public string StringProperty
+	{
+		get { return name; }
+		set { name = value; }
+	}
+
+	private int num;
+	public int NumProperty
+	{
+		get { return num; }
+		set { num = value; }
+	}
+}
+
+interface IRUC
+{
+	void Method();
+	string StringProperty { get; set; }
+	int NumProperty { get; set; }
+}";
+			return VerifyRequiresAssemblyFilesAnalyzer (src,
+				// (47,7): warning IL3003: Presence of 'RequiresAssemblyFilesAttribute' on method 'Implementation.Method()' doesn't match overridden method 'IRUC.Method()'. All overridden methods must have 'RequiresAssemblyFilesAttribute'.
+				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (47, 7, 47, 13).WithArguments ("RequiresAssemblyFilesAttribute", "Implementation.Method()", "IRUC.Method()"),
+				// (48,26): warning IL3003: Presence of 'RequiresAssemblyFilesAttribute' on method 'Implementation.StringProperty.get' doesn't match overridden method 'IRUC.StringProperty.get'. All overridden methods must have 'RequiresAssemblyFilesAttribute'.
+				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (48, 26, 48, 29).WithArguments ("RequiresAssemblyFilesAttribute", "Implementation.StringProperty.get", "IRUC.StringProperty.get"),
+				// (49,6): warning IL3003: Presence of 'RequiresAssemblyFilesAttribute' on member 'Implementation.NumProperty' doesn't match overridden member 'IRUC.NumProperty'. All overridden members must have 'RequiresAssemblyFilesAttribute'.
+				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (49, 6, 49, 17).WithArguments ("RequiresAssemblyFilesAttribute", "Implementation.NumProperty", "IRUC.NumProperty"));
+		}
+
+		[Fact]
+		public Task InterfaceHasAttributeButImplementationDoesnt ()
+		{
+			var src = @"
+using System.Diagnostics.CodeAnalysis;
+
+class Implementation : IRUC
+{
+	public void Method () { }
+
+	private string name;
+	public string StringProperty
+	{
+		get { return name; }
+		set { name = value; }
+	}
+
+	private int num;
+	public int NumProperty
+	{
+		get { return num; }
+		set { num = value; }
+	}
+}
+
+class AnotherImplementation : IRUC
+{
+	public void Method () { }
+
+	private string name;
+	public string StringProperty
+	{
+		get { return name; }
+		set { name = value; }
+	}
+
+	private int num;
+	public int NumProperty
+	{
+		get { return num; }
+		set { num = value; }
+	}
+}
+
+interface IRUC
+{
+	[RequiresAssemblyFiles]
+	void Method();
+	string StringProperty { [RequiresAssemblyFiles] get; set; }
+	[RequiresAssemblyFiles]
+	int NumProperty { get; set; }
+}";
+			return VerifyRequiresAssemblyFilesAnalyzer (src,
+				// (6,14): warning IL3003: Presence of 'RequiresAssemblyFilesAttribute' on member 'IRUC.Method()' doesn't match overridden member 'Implementation.Method()'. All overridden members must have 'RequiresAssemblyFilesAttribute'.
+				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (6, 14, 6, 20).WithArguments ("RequiresAssemblyFilesAttribute", "IRUC.Method()", "Implementation.Method()"),
+				// (11,3): warning IL3003: Presence of 'RequiresAssemblyFilesAttribute' on member 'IRUC.StringProperty.get' doesn't match overridden member 'Implementation.StringProperty.get'. All overridden members must have 'RequiresAssemblyFilesAttribute'.
+				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (11, 3, 11, 6).WithArguments ("RequiresAssemblyFilesAttribute", "IRUC.StringProperty.get", "Implementation.StringProperty.get"),
+				// (16,13): warning IL3003: Presence of 'RequiresAssemblyFilesAttribute' on member 'IRUC.NumProperty' doesn't match overridden member 'Implementation.NumProperty'. All overridden members must have 'RequiresAssemblyFilesAttribute'.
+				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (16, 13, 16, 24).WithArguments ("RequiresAssemblyFilesAttribute", "IRUC.NumProperty", "Implementation.NumProperty"),
+				// (25,14): warning IL3003: Presence of 'RequiresAssemblyFilesAttribute' on member 'IRUC.Method()' doesn't match overridden member 'AnotherImplementation.Method()'. All overridden members must have 'RequiresAssemblyFilesAttribute'.
+				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (25, 14, 25, 20).WithArguments ("RequiresAssemblyFilesAttribute", "IRUC.Method()", "AnotherImplementation.Method()"),
+				// (30,3): warning IL3003: Presence of 'RequiresAssemblyFilesAttribute' on member 'IRUC.StringProperty.get' doesn't match overridden member 'AnotherImplementation.StringProperty.get'. All overridden members must have 'RequiresAssemblyFilesAttribute'.
+				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (30, 3, 30, 6).WithArguments ("RequiresAssemblyFilesAttribute", "IRUC.StringProperty.get", "AnotherImplementation.StringProperty.get"),
+				// (35,13): warning IL3003: Presence of 'RequiresAssemblyFilesAttribute' on member 'IRUC.NumProperty' doesn't match overridden member 'AnotherImplementation.NumProperty'. All overridden members must have 'RequiresAssemblyFilesAttribute'.
+				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (35, 13, 35, 24).WithArguments ("RequiresAssemblyFilesAttribute", "IRUC.NumProperty", "AnotherImplementation.NumProperty"));
 		}
 	}
 }
