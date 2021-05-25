@@ -53,7 +53,7 @@ namespace Mono.Linker.Steps
 		protected List<TypeDefinition> _typesWithInterfaces;
 		protected HashSet<AssemblyDefinition> _dynamicInterfaceCastableImplementationTypesDiscovered;
 		protected List<TypeDefinition> _dynamicInterfaceCastableImplementationTypes;
-		protected List<MethodBody> _unreachableBodies;
+		protected List<(MethodBody, MarkScopeStack.Scope)> _unreachableBodies;
 
 		readonly List<(TypeDefinition Type, MethodBody Body, Instruction Instr)> _pending_isinst_instr;
 		UnreachableBlocksOptimizer _unreachableBlocksOptimizer;
@@ -189,7 +189,7 @@ namespace Mono.Linker.Steps
 			_typesWithInterfaces = new List<TypeDefinition> ();
 			_dynamicInterfaceCastableImplementationTypesDiscovered = new HashSet<AssemblyDefinition> ();
 			_dynamicInterfaceCastableImplementationTypes = new List<TypeDefinition> ();
-			_unreachableBodies = new List<MethodBody> ();
+			_unreachableBodies = new List<(MethodBody, MarkScopeStack.Scope)> ();
 			_pending_isinst_instr = new List<(TypeDefinition, MethodBody, Instruction)> ();
 			_entireTypesMarked = new HashSet<TypeDefinition> ();
 			_scopeStack = new MarkScopeStack ();
@@ -241,7 +241,7 @@ namespace Mono.Linker.Steps
 
 		void Complete ()
 		{
-			foreach (var body in _unreachableBodies) {
+			foreach ((var body, var _) in _unreachableBodies) {
 				Annotations.SetAction (body.Method, MethodAction.ConvertToThrow);
 			}
 		}
@@ -639,9 +639,9 @@ namespace Mono.Linker.Steps
 		void ProcessPendingBodies ()
 		{
 			for (int i = 0; i < _unreachableBodies.Count; i++) {
-				var body = _unreachableBodies[i];
+				(var body, var scope) = _unreachableBodies[i];
 				if (Annotations.IsInstantiated (body.Method.DeclaringType)) {
-					using (_scopeStack.PushScope (new MessageOrigin (body.Method)))
+					using (_scopeStack.PushScope (scope))
 						MarkMethodBody (body);
 
 					_unreachableBodies.RemoveAt (i--);
@@ -3210,7 +3210,7 @@ namespace Mono.Linker.Steps
 		{
 			if (_context.IsOptimizationEnabled (CodeOptimizations.UnreachableBodies, body.Method) && IsUnreachableBody (body)) {
 				MarkAndCacheConvertToThrowExceptionCtor (new DependencyInfo (DependencyKind.UnreachableBodyRequirement, body.Method));
-				_unreachableBodies.Add (body);
+				_unreachableBodies.Add ((body, _scopeStack.CurrentScope));
 				return;
 			}
 
