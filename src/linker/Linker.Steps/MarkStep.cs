@@ -46,7 +46,7 @@ namespace Mono.Linker.Steps
 	{
 		protected LinkContext _context;
 		protected Queue<(MethodDefinition, DependencyInfo, MarkScopeStack.Scope)> _methods;
-		protected List<MethodDefinition> _virtual_methods;
+		protected List<(MethodDefinition, MarkScopeStack.Scope)> _virtual_methods;
 		protected Queue<AttributeProviderPair> _assemblyLevelAttributes;
 		readonly List<AttributeProviderPair> _ivt_attributes;
 		protected Queue<(AttributeProviderPair, DependencyInfo, MarkScopeStack.Scope)> _lateMarkedAttributes;
@@ -182,7 +182,7 @@ namespace Mono.Linker.Steps
 		public MarkStep ()
 		{
 			_methods = new Queue<(MethodDefinition, DependencyInfo, MarkScopeStack.Scope)> ();
-			_virtual_methods = new List<MethodDefinition> ();
+			_virtual_methods = new List<(MethodDefinition, MarkScopeStack.Scope)> ();
 			_assemblyLevelAttributes = new Queue<AttributeProviderPair> ();
 			_ivt_attributes = new List<AttributeProviderPair> ();
 			_lateMarkedAttributes = new Queue<(AttributeProviderPair, DependencyInfo, MarkScopeStack.Scope)> ();
@@ -549,8 +549,9 @@ namespace Mono.Linker.Steps
 
 		void ProcessVirtualMethods ()
 		{
-			foreach (MethodDefinition method in _virtual_methods) {
-				ProcessVirtualMethod (method);
+			foreach ((MethodDefinition method, MarkScopeStack.Scope scope) in _virtual_methods) {
+				using (_scopeStack.PushScope (scope))
+					ProcessVirtualMethod (method);
 			}
 		}
 
@@ -692,11 +693,11 @@ namespace Mono.Linker.Steps
 			// Only track instantiations if override removal is enabled and the type is instantiated.
 			// If it's disabled, all overrides are kept, so there's no instantiation site to blame.
 			if (_context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, method) && isInstantiated) {
-				MarkMethod (method, new DependencyInfo (DependencyKind.OverrideOnInstantiatedType, method.DeclaringType), new MessageOrigin (method.DeclaringType));
+				MarkMethod (method, new DependencyInfo (DependencyKind.OverrideOnInstantiatedType, method.DeclaringType));
 			} else {
 				// If the optimization is disabled or it's an abstract type, we just mark it as a normal override.
 				Debug.Assert (!_context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, method) || @base.IsAbstract);
-				MarkMethod (method, new DependencyInfo (DependencyKind.Override, @base), new MessageOrigin (@base));
+				MarkMethod (method, new DependencyInfo (DependencyKind.Override, @base));
 			}
 
 			ProcessVirtualMethod (method);
@@ -759,7 +760,7 @@ namespace Mono.Linker.Steps
 			if (!Annotations.IsInstantiated (typeWithDefaultImplementedInterfaceMethod))
 				return;
 
-			MarkInterfaceImplementation (implementation, new MessageOrigin (typeWithDefaultImplementedInterfaceMethod));
+			MarkInterfaceImplementation (implementation);
 		}
 
 		void MarkMarshalSpec (IMarshalInfoProvider spec, in DependencyInfo reason)
@@ -2829,7 +2830,7 @@ namespace Mono.Linker.Steps
 
 			MarkMethodSpecialCustomAttributes (method);
 			if (method.IsVirtual)
-				_virtual_methods.Add (method);
+				_virtual_methods.Add ((method, _scopeStack.CurrentScope));
 
 			MarkNewCodeDependencies (method);
 
