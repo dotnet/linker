@@ -2645,10 +2645,8 @@ namespace Mono.Linker.Steps
 			Annotations.MarkIndirectlyCalledMethod (method);
 		}
 
-		protected virtual MethodDefinition MarkMethod (MethodReference reference, DependencyInfo reason, MessageOrigin? origin = null)
+		protected virtual MethodDefinition MarkMethod (MethodReference reference, DependencyInfo reason)
 		{
-			using var localScope = origin.HasValue ? _scopeStack.PushScope (origin.Value) : null;
-
 			(reference, reason) = GetOriginalMethod (reference, reason);
 
 			if (reference.DeclaringType is ArrayType arrayType) {
