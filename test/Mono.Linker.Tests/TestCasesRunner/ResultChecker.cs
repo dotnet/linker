@@ -732,7 +732,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 										if (mc.Origin?.MemberDefinition?.FullName == attrProvider.FullName)
 											return true;
 
-										if (loggedMessages.Any (m => m.Text.Contains (attrProvider.FullName)))
+										if (mc.Text.Contains (attrProvider.FullName))
 											return true;
 
 										return false;
