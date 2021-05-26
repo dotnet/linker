@@ -729,9 +729,6 @@ namespace Mono.Linker.Tests.TestCasesRunner
 										if (sourceColumn != null && mc.Origin?.SourceColumn != sourceColumn.Value)
 											return false;
 									} else {
-										if (attrProvider.FullName.Contains ("PropertyWithUnsupportedType"))
-											System.Diagnostics.Debug.WriteLine ("");
-
 										if (mc.Origin?.MemberDefinition?.FullName == attrProvider.FullName)
 											return true;
 
