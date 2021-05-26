@@ -729,10 +729,16 @@ namespace Mono.Linker.Tests.TestCasesRunner
 										if (sourceColumn != null && mc.Origin?.SourceColumn != sourceColumn.Value)
 											return false;
 									} else {
+										if (attrProvider.FullName.Contains ("PropertyWithUnsupportedType"))
+											System.Diagnostics.Debug.WriteLine ("");
+
 										if (mc.Origin?.MemberDefinition?.FullName == attrProvider.FullName)
 											return true;
 
-										if (mc.Text.Contains (attrProvider.FullName))
+										// Compensate for cases where for some reason the OM doesn't preserve the declaring types
+										// on certain things after trimming.
+										if (mc.Origin?.MemberDefinition != null && mc.Origin?.MemberDefinition.DeclaringType == null &&
+											mc.Origin?.MemberDefinition.Name == attrProvider.Name)
 											return true;
 
 										return false;
