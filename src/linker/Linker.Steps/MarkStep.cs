@@ -58,7 +58,7 @@ namespace Mono.Linker.Steps
 		readonly List<(TypeDefinition Type, MethodBody Body, Instruction Instr)> _pending_isinst_instr;
 		UnreachableBlocksOptimizer _unreachableBlocksOptimizer;
 		MarkStepContext _markContext;
-		readonly HashSet<TypeDefinition> _entireTypesMarked;
+		readonly Dictionary<TypeDefinition, bool> _entireTypesMarked; // The value is markBaseAndInterfaceTypes flag used to mark the type
 		DynamicallyAccessedMembersTypeHierarchy _dynamicallyAccessedMembersTypeHierarchy;
 
 		internal DynamicallyAccessedMembersTypeHierarchy DynamicallyAccessedMembersTypeHierarchy {
@@ -190,7 +190,7 @@ namespace Mono.Linker.Steps
 			_dynamicInterfaceCastableImplementationTypes = new List<TypeDefinition> ();
 			_unreachableBodies = new List<MethodBody> ();
 			_pending_isinst_instr = new List<(TypeDefinition, MethodBody, Instruction)> ();
-			_entireTypesMarked = new HashSet<TypeDefinition> ();
+			_entireTypesMarked = new Dictionary<TypeDefinition, bool> ();
 		}
 
 		public AnnotationStore Annotations => _context.Annotations;
@@ -302,30 +302,33 @@ namespace Mono.Linker.Steps
 			return false;
 		}
 
-		internal void MarkEntireType (TypeDefinition type, bool includeBaseTypes, bool includeInterfaceTypes, in DependencyInfo reason, IMemberDefinition sourceLocationMember)
+		internal void MarkEntireType (TypeDefinition type, bool includeBaseAndInterfaceTypes, in DependencyInfo reason, IMemberDefinition sourceLocationMember)
 		{
-			MarkEntireTypeInternal (type, includeBaseTypes, includeInterfaceTypes, reason, sourceLocationMember);
+			MarkEntireTypeInternal (type, includeBaseAndInterfaceTypes, reason, sourceLocationMember);
 		}
 
-		private void MarkEntireTypeInternal (TypeDefinition type, bool includeBaseTypes, bool includeInterfaceTypes, in DependencyInfo reason, IMemberDefinition sourceLocationMember)
+		private void MarkEntireTypeInternal (TypeDefinition type, bool includeBaseAndInterfaceTypes, in DependencyInfo reason, IMemberDefinition sourceLocationMember)
 		{
 #if DEBUG
 			if (!_entireTypeReasons.Contains (reason.Kind))
 				throw new InternalErrorException ($"Unsupported type dependency '{reason.Kind}'.");
 #endif
 
-			if (!_entireTypesMarked.Add (type))
+			if (_entireTypesMarked.TryGetValue (type, out bool alreadyIncludedBaseAndInterfaceTypes) &&
+				(!includeBaseAndInterfaceTypes || alreadyIncludedBaseAndInterfaceTypes))
 				return;
+
+			_entireTypesMarked[type] = includeBaseAndInterfaceTypes;
 
 			if (type.HasNestedTypes) {
 				foreach (TypeDefinition nested in type.NestedTypes)
-					MarkEntireTypeInternal (nested, includeBaseTypes, includeInterfaceTypes, new DependencyInfo (DependencyKind.NestedType, type), type);
+					MarkEntireTypeInternal (nested, includeBaseAndInterfaceTypes, new DependencyInfo (DependencyKind.NestedType, type), type);
 			}
 
 			Annotations.Mark (type, reason);
 			var baseTypeDefinition = _context.ResolveTypeDefinition (type.BaseType);
-			if (includeBaseTypes && baseTypeDefinition != null) {
-				MarkEntireTypeInternal (baseTypeDefinition, includeBaseTypes: true, includeInterfaceTypes, new DependencyInfo (DependencyKind.BaseType, type), type);
+			if (includeBaseAndInterfaceTypes && baseTypeDefinition != null) {
+				MarkEntireTypeInternal (baseTypeDefinition, true, new DependencyInfo (DependencyKind.BaseType, type), type);
 			}
 			MarkCustomAttributes (type, new DependencyInfo (DependencyKind.CustomAttribute, type), type);
 			MarkTypeSpecialCustomAttributes (type);
@@ -333,8 +336,8 @@ namespace Mono.Linker.Steps
 			if (type.HasInterfaces) {
 				foreach (InterfaceImplementation iface in type.Interfaces) {
 					var interfaceTypeDefinition = _context.ResolveTypeDefinition (iface.InterfaceType);
-					if (includeInterfaceTypes && interfaceTypeDefinition != null)
-						MarkEntireTypeInternal (interfaceTypeDefinition, includeBaseTypes, includeInterfaceTypes: true, new DependencyInfo (reason.Kind, type), type);
+					if (includeBaseAndInterfaceTypes && interfaceTypeDefinition != null)
+						MarkEntireTypeInternal (interfaceTypeDefinition, true, new DependencyInfo (reason.Kind, type), type);
 
 					MarkInterfaceImplementation (iface, type);
 				}
@@ -930,7 +933,7 @@ namespace Mono.Linker.Steps
 					MarkInterfaceImplementation (interfaceType, sourceLocationMember, reason);
 					break;
 				case null:
-					MarkEntireType (typeDefinition, includeBaseTypes: true, includeInterfaceTypes: true, reason, sourceLocationMember);
+					MarkEntireType (typeDefinition, includeBaseAndInterfaceTypes: true, reason, sourceLocationMember);
 					break;
 				}
 			}
@@ -994,7 +997,7 @@ namespace Mono.Linker.Steps
 			}
 
 			if (member == "*") {
-				MarkEntireType (td, includeBaseTypes: false, includeInterfaceTypes: false, new DependencyInfo (DependencyKind.PreservedDependency, ca), sourceLocationMember);
+				MarkEntireType (td, includeBaseAndInterfaceTypes: false, new DependencyInfo (DependencyKind.PreservedDependency, ca), sourceLocationMember);
 				return;
 			}
 
@@ -1368,7 +1371,7 @@ namespace Mono.Linker.Steps
 			MarkCustomAttributes (module, new DependencyInfo (DependencyKind.AssemblyOrModuleAttribute, module), null);
 
 			foreach (TypeDefinition type in module.Types)
-				MarkEntireType (type, includeBaseTypes: false, includeInterfaceTypes: false, new DependencyInfo (DependencyKind.TypeInAssembly, assembly), null);
+				MarkEntireType (type, includeBaseAndInterfaceTypes: false, new DependencyInfo (DependencyKind.TypeInAssembly, assembly), null);
 
 			foreach (ExportedType exportedType in module.ExportedTypes) {
 				MarkingHelpers.MarkExportedType (exportedType, module, new DependencyInfo (DependencyKind.ExportedType, assembly));
