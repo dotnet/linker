@@ -58,7 +58,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			test.ValidateAttributes (attrs);
 		}
 
-		
+
 
 		public static readonly ImmutableDictionary<string, List<string>> s_testFiles = GetTestFilesByDirName ();
 
@@ -81,7 +81,6 @@ namespace ILLink.RoslynAnalyzer.Tests
 
 		public static void GetDirectoryPaths (out string rootSourceDirectory, out string testAssemblyPath)
 		{
-
 #if DEBUG
 			var configDirectoryName = "Debug";
 #else
