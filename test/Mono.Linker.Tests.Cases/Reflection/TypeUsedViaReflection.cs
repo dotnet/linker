@@ -386,8 +386,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 		[Kept]
 		public class GenericTypeWithAnnotations_OuterType<
-			[KeptAttributeAttribute(typeof(DynamicallyAccessedMembersAttribute))]
-			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicProperties)] T>
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicProperties)] T>
 		{
 		}
 
