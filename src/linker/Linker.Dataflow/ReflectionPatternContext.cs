@@ -25,11 +25,11 @@ namespace Mono.Linker.Dataflow
 		bool _patternReported;
 #endif
 
-		public MessageOrigin Origin { get; private set; }
+		public MessageOrigin Origin { get; init; }
 		public IMemberDefinition Source { get => Origin.MemberDefinition; }
-		public IMetadataTokenProvider MemberWithRequirements { get; private set; }
-		public Instruction Instruction { get; private set; }
-		public bool ReportingEnabled { get; private set; }
+		public IMetadataTokenProvider MemberWithRequirements { get; init; }
+		public Instruction Instruction { get; init; }
+		public bool ReportingEnabled { get; init; }
 
 		public ReflectionPatternContext (
 			LinkContext context,
