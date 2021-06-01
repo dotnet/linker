@@ -671,9 +671,11 @@ namespace Mono.Linker.Steps
 
 			var isInstantiated = Annotations.IsInstantiated (method.DeclaringType);
 
+			var isStaticInterfaceOverride = @base.IsStatic && method.IsStatic;
+
 			// We don't need to mark overrides until it is possible that the type could be instantiated
 			// Note : The base type is interface check should be removed once we have base type sweeping
-			if (IsInterfaceOverrideThatDoesNotNeedMarked (overrideInformation, isInstantiated))
+			if (!isStaticInterfaceOverride && IsInterfaceOverrideThatDoesNotNeedMarked (overrideInformation, isInstantiated))
 				return;
 
 			if (!isInstantiated && !@base.IsAbstract && _context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, method))
@@ -2706,6 +2708,7 @@ namespace Mono.Linker.Steps
 				Debug.Assert (Annotations.IsMarked (method));
 				break;
 			default:
+
 				Annotations.Mark (method, reason);
 				break;
 			}
