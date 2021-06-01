@@ -558,7 +558,7 @@ namespace Mono.Linker.Steps
 			foreach (var type in typesWithInterfaces) {
 				// Exception, types that have not been flagged as instantiated yet.  These types may not need their interfaces even if the
 				// interface type is marked
-				if (!Annotations.IsInstantiated (type) && !Annotations.IsRelevantToVariantCasting (type))
+				if (!Annotations.IsFromStaticInterface (type) && !Annotations.IsInstantiated (type) && !Annotations.IsRelevantToVariantCasting (type))
 					continue;
 
 				MarkInterfaceImplementations (type);
@@ -671,11 +671,9 @@ namespace Mono.Linker.Steps
 
 			var isInstantiated = Annotations.IsInstantiated (method.DeclaringType);
 
-			var isStaticInterfaceOverride = @base.IsStatic && method.IsStatic;
-
 			// We don't need to mark overrides until it is possible that the type could be instantiated
 			// Note : The base type is interface check should be removed once we have base type sweeping
-			if (!isStaticInterfaceOverride && IsInterfaceOverrideThatDoesNotNeedMarked (overrideInformation, isInstantiated))
+			if (IsInterfaceOverrideThatDoesNotNeedMarked (overrideInformation, isInstantiated))
 				return;
 
 			if (!isInstantiated && !@base.IsAbstract && _context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, method))
@@ -697,6 +695,10 @@ namespace Mono.Linker.Steps
 		bool IsInterfaceOverrideThatDoesNotNeedMarked (OverrideInformation overrideInformation, bool isInstantiated)
 		{
 			if (!overrideInformation.IsOverrideOfInterfaceMember || isInstantiated)
+				return false;
+
+			// This is a static interface method
+			if (overrideInformation.Override.IsStatic && overrideInformation.Base.IsStatic)
 				return false;
 
 			if (overrideInformation.MatchingInterfaceImplementation != null)

@@ -119,7 +119,7 @@ namespace Mono.Linker
 		void MapInterfaceMethodsInTypeHierarchy (TypeDefinition type)
 		{
 
-			if (!type.HasInterfaces)
+				if (!type.HasInterfaces)
 				return;
 
 			// Foreach interface and for each newslot virtual method on the interface, try
@@ -301,12 +301,17 @@ namespace Mono.Linker
 		MethodDefinition TryMatchMethod (TypeReference type, MethodReference method)
 		{
 			var isStaticInterfaceMethod = (method as MethodDefinition)?.IsStatic;
+			if(isStaticInterfaceMethod==true && !context.Annotations.IsFromStaticInterface(type as TypeDefinition)) {
+				context.Annotations.ImplementsStaticInterface (type as TypeDefinition);
+			}
 			foreach (var candidate in type.GetMethods (context)) {
 				var md = context.TryResolve (candidate);
 				//Static interface methods - they are not virtual
 				bool isMethodStaticInterface = false;
-				if (isStaticInterfaceMethod != false && md?.IsStatic == true)
+				if (isStaticInterfaceMethod == true && md?.IsStatic == true) {
 					isMethodStaticInterface = true;
+					context.Annotations.ImplementsStaticInterface (type as TypeDefinition);
+				}
 				if (md?.IsVirtual != true && !isMethodStaticInterface)
 					continue;
 

@@ -12,7 +12,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.DefaultInterfaceMethods
 #endif
 	[Define ("IL_ASSEMBLY_AVAILABLE")]
 	[SetupCompileBefore ("library.dll", new[] { "Dependencies/StaticInterfaceImpl.il" })]
-	class InterfaceWithStaticMethods
+	class StaticInterfaceImplementation
 	{
 		static void Main ()
 		{

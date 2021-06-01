@@ -64,6 +64,7 @@ namespace Mono.Linker
 		protected readonly HashSet<CustomAttribute> marked_attributes = new HashSet<CustomAttribute> ();
 		readonly HashSet<TypeDefinition> marked_types_with_cctor = new HashSet<TypeDefinition> ();
 		protected readonly HashSet<TypeDefinition> marked_instantiated = new HashSet<TypeDefinition> ();
+		protected readonly HashSet<TypeDefinition> implements_static_interface_methods = new HashSet<TypeDefinition> ();
 		protected readonly HashSet<MethodDefinition> indirectly_called = new HashSet<MethodDefinition> ();
 		protected readonly HashSet<TypeDefinition> types_relevant_to_variant_casting = new HashSet<TypeDefinition> ();
 		readonly HashSet<IMemberDefinition> reflection_used = new ();
@@ -243,6 +244,17 @@ namespace Mono.Linker
 		{
 			return marked_instantiated.Contains (type);
 		}
+
+		public void ImplementsStaticInterface (TypeDefinition type)
+		{
+			implements_static_interface_methods.Add (type);
+		}
+
+		public bool IsFromStaticInterface (TypeDefinition type)
+		{
+			return implements_static_interface_methods.Contains (type);
+		}
+
 
 		public void MarkRelevantToVariantCasting (TypeDefinition type)
 		{
