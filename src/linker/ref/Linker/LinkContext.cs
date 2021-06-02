@@ -3,11 +3,12 @@
 // See the LICENSE file in the project root for more information.
 
 using Mono.Cecil;
+using System;
 
 namespace Mono.Linker
 {
 
-	public class LinkContext : IMetadataResolver
+	public class LinkContext : IMetadataResolver, IAssemblyResolver, IDisposable
 	{
 		internal LinkContext () { }
 		public AnnotationStore Annotations { get { throw null; } }
@@ -28,5 +29,9 @@ namespace Mono.Linker
 		public MethodDefinition TryResolve (MethodReference methodReference) { throw null; }
 		public FieldDefinition TryResolve (FieldReference fieldReference) { throw null; }
 		public TypeDefinition TryResolve (TypeReference typeReference) { throw null; }
+
+		public AssemblyDefinition Resolve (AssemblyNameReference nameReference) { throw null; }
+		AssemblyDefinition IAssemblyResolver.Resolve (AssemblyNameReference nameReference, ReaderParameters parameters) { throw null; }
+		public void Dispose () { throw null; }
 	}
 }

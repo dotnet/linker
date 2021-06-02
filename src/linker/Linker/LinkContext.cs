@@ -50,7 +50,7 @@ namespace Mono.Linker
 		NET6 = 6,
 	}
 
-	public class LinkContext : IMetadataResolver, IDisposable
+	public class LinkContext : IMetadataResolver, IAssemblyResolver, IDisposable
 	{
 
 		readonly Pipeline _pipeline;
@@ -305,6 +305,16 @@ namespace Mono.Linker
 		{
 			AssemblyNameReference reference = GetReference (scope);
 			return _resolver.Resolve (reference);
+		}
+
+		public AssemblyDefinition Resolve (AssemblyNameReference name)
+		{
+			return _resolver.Resolve (name);
+		}
+
+		AssemblyDefinition IAssemblyResolver.Resolve (AssemblyNameReference name, ReaderParameters parameters)
+		{
+			throw new NotSupportedException ("ReaderParameters argument is not supported.");
 		}
 
 		public void RegisterAssembly (AssemblyDefinition assembly)
