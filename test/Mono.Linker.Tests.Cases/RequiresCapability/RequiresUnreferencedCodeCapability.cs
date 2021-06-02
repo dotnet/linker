@@ -28,12 +28,11 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 	[LogDoesNotContain ("--UnusedVirtualMethod2--")]
 	[LogDoesNotContain ("--IUnusedInterface.UnusedMethod--")]
 	[LogDoesNotContain ("--UnusedImplementationClass.UnusedMethod--")]
-	[ExpectedWarning ("IL2026", "--DynamicallyAccessedTypeWithRequiresUnreferencedCode.RequiresUnreferencedCode--")]
-	[ExpectedWarning ("IL2026", "--IDerivedInterface.MethodInDerivedInterface--")]
-	[ExpectedWarning ("IL2026", "--IBaseInterface.MethodInBaseInterface--")]
-	[ExpectedWarning ("IL2026", "--BaseType.VirtualMethodRequiresUnreferencedCode--")]
 	public class RequiresUnreferencedCodeCapability
 	{
+		[ExpectedWarning ("IL2026", "--IDerivedInterface.MethodInDerivedInterface--", GlobalAnalysisOnly = true)]
+		[ExpectedWarning ("IL2026", "--DynamicallyAccessedTypeWithRequiresUnreferencedCode.RequiresUnreferencedCode--", GlobalAnalysisOnly = true)]
+		[ExpectedWarning ("IL2026", "--BaseType.VirtualMethodRequiresUnreferencedCode--", GlobalAnalysisOnly = true)]
 		public static void Main ()
 		{
 			TestRequiresWithMessageOnlyOnMethod ();
@@ -61,6 +60,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			TestRequiresInDynamicDependency ();
 			TestThatTrailingPeriodIsAddedToMessage ();
 			TestThatTrailingPeriodIsNotDuplicatedInWarningMessage ();
+			TestRequiresOnAttributeOnGenericParameter ();
 		}
 
 		[ExpectedWarning ("IL2026", "Message for --RequiresWithMessageOnly--.")]
@@ -424,6 +424,25 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		static void TestThatTrailingPeriodIsNotDuplicatedInWarningMessage ()
 		{
 			WarningMessageEndsWithPeriod ();
+    }
+
+		class AttributeWhichRequiresUnreferencedCodeAttribute : Attribute
+		{
+			[RequiresUnreferencedCode ("Message for --AttributeWhichRequiresUnreferencedCodeAttribute.ctor--")]
+			public AttributeWhichRequiresUnreferencedCodeAttribute ()
+			{
+			}
+		}
+
+		[ExpectedWarning ("IL2026", "--AttributeWhichRequiresUnreferencedCodeAttribute.ctor--")]
+		class GenericTypeWithAttributedParameter<[AttributeWhichRequiresUnreferencedCode] T>
+		{
+			public static void TestMethod () { }
+		}
+
+		static void TestRequiresOnAttributeOnGenericParameter ()
+		{
+			GenericTypeWithAttributedParameter<int>.TestMethod ();
 		}
 	}
 }
