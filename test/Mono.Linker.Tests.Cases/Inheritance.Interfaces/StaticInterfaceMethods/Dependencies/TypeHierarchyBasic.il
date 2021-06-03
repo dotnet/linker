@@ -3,36 +3,8 @@
 // See the LICENSE file in the project root for more information.
 
 .assembly extern mscorlib { }
-.assembly extern System.Runtime {}
 
 .assembly 'library' { }
-
-.class interface public auto ansi abstract IMyInterface
-{
-  .method public hidebysig newslot abstract virtual 
-          instance void  Frob() cil managed
-  {
-  } // end of method InterfaceScenario1::Method
-
-}
-
-.class public auto ansi MyClass
-	extends [System.Runtime]System.Object
-	implements IMyInterface
-{
-  .method public hidebysig specialname rtspecialname 
-          instance void  .ctor() cil managed
-  {
-    ret
-  } // end of method MyClass::.ctor
-
-  .method public hidebysig newslot virtual final 
-          instance void  Frob() cil managed
-	{
-        call void TestEntrypoint::Test()
-		ret
-	}
-}
 
 .class interface public abstract auto ansi InterfaceScenario1
 {
@@ -41,7 +13,7 @@
   } // end of method Method
 } // end of class InterfaceScenario1
 .class public auto ansi BaseScenario1
-       extends [System.Runtime]System.Object
+       extends [mscorlib]System.Object
        implements InterfaceScenario1
 {
   .method public static int32 Method() cil managed noinlining
@@ -65,7 +37,7 @@
   } // end of method Method
 } // end of class InterfaceScenario2
 .class public auto ansi BaseScenario2
-       extends [System.Runtime]System.Object
+       extends [mscorlib]System.Object
        implements InterfaceScenario2
 {
   .method public static int32 Method() cil managed noinlining
@@ -90,7 +62,7 @@
   } // end of method Method
 } // end of class InterfaceScenario3
 .class public abstract auto ansi BaseScenario3
-       extends [System.Runtime]System.Object
+       extends [mscorlib]System.Object
        implements InterfaceScenario3
 {
 } // end of class BaseScenario3
@@ -110,7 +82,7 @@
 } // end of class DerivedScenario3
 
 .class public auto ansi TestEntrypoint
-       extends [System.Runtime]System.Object
+       extends [mscorlib]System.Object
 {
   .method public static void Test_Scenario1() cil managed noinlining
   {
@@ -135,19 +107,19 @@
   } // end of method Test_Scenario3
   .method public static int32 Test() cil managed noinlining
   {
-    .locals init (class [System.Runtime]System.Exception V_0)
+    .locals init (class [mscorlib]System.Exception V_0)
     .try {
         call void TestEntrypoint::Test_Scenario1()
         call void TestEntrypoint::Test_Scenario2()
         call void TestEntrypoint::Test_Scenario3()
         leave.s Scenario1Done
-    } catch [System.Runtime]System.Exception {
+    } catch [mscorlib]System.Exception {
         stloc.0
         leave.s Scenario1Done
     }
 Scenario1Done: nop
     ret
-  } // end of method Main
+  } // end of method Test
 } // end of class TestEntrypoint
 
 

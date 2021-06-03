@@ -4,20 +4,24 @@ using System.Text;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
-namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.DefaultInterfaceMethods
+namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 {
 	[SetupLinkerArgument ("--skip-unresolved", "true")]
 #if !NETCOREAPP
 	[IgnoreTestCase("Only for .NET Core for some reason")]
 #endif
 	[Define ("IL_ASSEMBLY_AVAILABLE")]
-	[SetupCompileBefore ("library.dll", new[] { "Dependencies/StaticInterfaceImpl.il" })]
-	class StaticInterfaceImplementation
+	[SetupCompileBefore ("library.dll", new[] { "Dependencies/VarianceBasic.il" })]
+
+	[KeptTypeInAssembly ("library.dll", "InterfaceScenario1`1")]
+	[KeptMemberInAssembly ("library.dll", "BaseScenario1", "Method()")]
+
+	class VarianceBasic
 	{
 		static void Main ()
 		{
 #if IL_ASSEMBLY_AVAILABLE
-			((IMyInterface)new MyClass ()).Frob ();
+			TestEntrypoint.Test();
 #endif
 		}
 	}

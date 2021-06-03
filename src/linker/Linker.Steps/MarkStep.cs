@@ -558,7 +558,7 @@ namespace Mono.Linker.Steps
 			foreach (var type in typesWithInterfaces) {
 				// Exception, types that have not been flagged as instantiated yet.  These types may not need their interfaces even if the
 				// interface type is marked
-				if (!Annotations.IsFromStaticInterface (type) && !Annotations.IsInstantiated (type) && !Annotations.IsRelevantToVariantCasting (type))
+				if (!Annotations.IsInstantiated (type) && !Annotations.IsRelevantToVariantCasting (type))
 					continue;
 
 				MarkInterfaceImplementations (type);
