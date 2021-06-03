@@ -424,7 +424,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		static void TestThatTrailingPeriodIsNotDuplicatedInWarningMessage ()
 		{
 			WarningMessageEndsWithPeriod ();
-    }
+		}
 
 		class AttributeWhichRequiresUnreferencedCodeAttribute : Attribute
 		{
