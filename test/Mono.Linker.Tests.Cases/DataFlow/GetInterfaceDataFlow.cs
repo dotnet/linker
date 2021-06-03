@@ -69,7 +69,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[ExpectedWarning ("IL2075", nameof (DynamicallyAccessedMemberTypes) + "." + nameof (DynamicallyAccessedMemberTypes.Interfaces))]
 			static void TestMergedValues (int p, [DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] Type typeWithAll)
 			{
-				Type type = new TestType().GetType();
+				Type type = new TestType ().GetType ();
 				if (p == 0) {
 					type = typeWithAll;
 					type.GetInterface ("ITestInterface").RequiresInterfaces ();
