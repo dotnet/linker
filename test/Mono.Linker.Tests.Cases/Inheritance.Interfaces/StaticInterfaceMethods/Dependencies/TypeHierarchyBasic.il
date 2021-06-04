@@ -2,7 +2,10 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-.assembly extern mscorlib { }
+.assembly extern System.Runtime
+{
+  .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A)
+}
 
 .assembly 'library' { }
 
@@ -13,7 +16,7 @@
   } // end of method Method
 } // end of class InterfaceScenario1
 .class public auto ansi BaseScenario1
-       extends [mscorlib]System.Object
+       extends [System.Runtime]System.Object
        implements InterfaceScenario1
 {
   .method public static int32 Method() cil managed noinlining
@@ -37,7 +40,7 @@
   } // end of method Method
 } // end of class InterfaceScenario2
 .class public auto ansi BaseScenario2
-       extends [mscorlib]System.Object
+       extends [System.Runtime]System.Object
        implements InterfaceScenario2
 {
   .method public static int32 Method() cil managed noinlining
@@ -62,7 +65,7 @@
   } // end of method Method
 } // end of class InterfaceScenario3
 .class public abstract auto ansi BaseScenario3
-       extends [mscorlib]System.Object
+       extends [System.Runtime]System.Object
        implements InterfaceScenario3
 {
 } // end of class BaseScenario3
@@ -82,7 +85,7 @@
 } // end of class DerivedScenario3
 
 .class public auto ansi TestEntrypoint
-       extends [mscorlib]System.Object
+       extends [System.Runtime]System.Object
 {
   .method public static void Test_Scenario1() cil managed noinlining
   {
@@ -107,13 +110,13 @@
   } // end of method Test_Scenario3
   .method public static int32 Test() cil managed noinlining
   {
-    .locals init (class [mscorlib]System.Exception V_0)
+    .locals init (class [System.Runtime]System.Exception V_0)
     .try {
         call void TestEntrypoint::Test_Scenario1()
         call void TestEntrypoint::Test_Scenario2()
         call void TestEntrypoint::Test_Scenario3()
         leave.s Scenario1Done
-    } catch [mscorlib]System.Exception {
+    } catch [System.Runtime]System.Exception {
         stloc.0
         leave.s Scenario1Done
     }
