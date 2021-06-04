@@ -25,7 +25,7 @@ namespace ILLink.RoslynAnalyzer
 
 		public override void Initialize (AnalysisContext context)
 		{
-			context.EnableConcurrentExecution ();
+			//context.EnableConcurrentExecution ();
 			context.ConfigureGeneratedCodeAnalysis (GeneratedCodeAnalysisFlags.ReportDiagnostics);
 			context.RegisterCompilationStartAction (context => {
 				var compilation = context.Compilation;
@@ -35,20 +35,25 @@ namespace ILLink.RoslynAnalyzer
 
 				context.RegisterSymbolAction (symbolAnalysisContext => {
 					var methodSymbol = (IMethodSymbol) symbolAnalysisContext.Symbol;
-					CheckOverridesAndInterfaces (symbolAnalysisContext, methodSymbol);
+					CheckMatchingAttributesInOverrides (symbolAnalysisContext, methodSymbol);
 				}, SymbolKind.Method);
+
+				context.RegisterSymbolAction (symbolAnalysisContext => {
+					var typeSymbol = (INamedTypeSymbol) symbolAnalysisContext.Symbol;
+					CheckMatchingAttributesInInterfaces (symbolAnalysisContext, typeSymbol);
+				}, SymbolKind.NamedType);
 
 				if (AnalyzerDiagnosticTargets.HasFlag (DiagnosticTargets.Property)) {
 					context.RegisterSymbolAction (symbolAnalysisContext => {
 						var propertySymbol = (IPropertySymbol) symbolAnalysisContext.Symbol;
-						CheckOverridesAndInterfaces (symbolAnalysisContext, propertySymbol);
+						CheckMatchingAttributesInOverrides (symbolAnalysisContext, propertySymbol);
 					}, SymbolKind.Property);
 				}
 
 				if (AnalyzerDiagnosticTargets.HasFlag (DiagnosticTargets.Event)) {
 					context.RegisterSymbolAction (symbolAnalysisContext => {
 						var eventSymbol = (IEventSymbol) symbolAnalysisContext.Symbol;
-						CheckOverridesAndInterfaces (symbolAnalysisContext, eventSymbol);
+						CheckMatchingAttributesInOverrides (symbolAnalysisContext, eventSymbol);
 					}, SymbolKind.Event);
 				}
 
@@ -148,27 +153,32 @@ namespace ILLink.RoslynAnalyzer
 					}
 				}
 
-				void CheckOverridesAndInterfaces (
+				void CheckMatchingAttributesInOverrides (
 					SymbolAnalysisContext symbolAnalysisContext,
 					ISymbol member)
 				{
 					ISymbol? overriddenMember;
-					ImmutableArray<ISymbol> interfacesImplementations;
-					if ((member.IsVirtual || member.IsOverride) && member.TryGetOverriddenMember (out overriddenMember)) {
-						if (!member.HasAttribute (RequiresAttributeName) && overriddenMember!.HasAttribute (RequiresAttributeName))
-							ReportMatchOverrideOrInterfaceDiagnostic (symbolAnalysisContext, member.Locations[0], overriddenMember!, member);
-						else if (member.HasAttribute (RequiresAttributeName) && !overriddenMember!.HasAttribute (RequiresAttributeName))
-							ReportMatchOverrideOrInterfaceDiagnostic (symbolAnalysisContext, overriddenMember!.Locations[0], member, overriddenMember);
-					} else if (member.TryGetExplicitOrImplicitInterfaceImplementations (out interfacesImplementations)) {
-						foreach (var interfaceImplementation in interfacesImplementations) {
-							if (!member.HasAttribute (RequiresAttributeName) && interfaceImplementation.HasAttribute (RequiresAttributeName))
-								ReportMatchOverrideOrInterfaceDiagnostic (symbolAnalysisContext, member.Locations[0], interfaceImplementation, member);
-							else if (member.HasAttribute (RequiresAttributeName) && !interfaceImplementation.HasAttribute (RequiresAttributeName))
-								ReportMatchOverrideOrInterfaceDiagnostic (symbolAnalysisContext, interfaceImplementation.Locations[0], member, interfaceImplementation);
-						}
-					}
+					if ((member.IsVirtual || member.IsOverride) && member.TryGetOverriddenMember (out overriddenMember) && verifyMatchingAttributesBetweenMembers (member, overriddenMember!))
+						ReportMatchOverrideOrInterfaceDiagnostic (symbolAnalysisContext, overriddenMember!, member);
 				}
 
+				void CheckMatchingAttributesInInterfaces (
+					SymbolAnalysisContext symbolAnalysisContext,
+					INamedTypeSymbol type)
+				{
+					ImmutableArray<INamedTypeSymbol> interfaces = type.Interfaces;
+					foreach (INamespaceOrTypeSymbol iface in interfaces) {
+						var members = iface.GetMembers ();
+						foreach (var member in members) {
+							var implementation = type.FindImplementationForInterfaceMember (member);
+							// In case the implementation is null in case the user code is missing an implementation, we dont provide diagnostics.
+							// The compiler will provide an error
+							if (implementation != null && verifyMatchingAttributesBetweenMembers (member, implementation))
+								ReportMatchOverrideOrInterfaceDiagnostic (symbolAnalysisContext, implementation, member);
+						}
+					}
+					
+				}
 			});
 		}
 
@@ -229,15 +239,18 @@ namespace ILLink.RoslynAnalyzer
 				url));
 		}
 
-		private void ReportMatchOverrideOrInterfaceDiagnostic (SymbolAnalysisContext symbolAnalysisContext, Location location, ISymbol memberWithAttribute, ISymbol memberWithoutAttribute)
+		private void ReportMatchOverrideOrInterfaceDiagnostic (SymbolAnalysisContext symbolAnalysisContext, ISymbol member1, ISymbol member2)
 		{
+			bool member1HasAttribute = member1.HasAttribute (RequiresAttributeName);
 			symbolAnalysisContext.ReportDiagnostic (Diagnostic.Create (
 				MatchOverrideOrInterfaceRule,
-				location,
+				member1HasAttribute ? member2.Locations[0] : member1.Locations[0],
 				RequiresAttributeName,
-				memberWithAttribute.ToString (),
-				memberWithoutAttribute.ToString ()));
+				member1HasAttribute ? member1.ToString () : member2.ToString (),
+				member1HasAttribute ? member2.ToString () : member1.ToString ()));
 		}
+
+		private bool verifyMatchingAttributesBetweenMembers (ISymbol member1, ISymbol member2) => member1.HasAttribute (RequiresAttributeName) ^ member2.HasAttribute (RequiresAttributeName);
 
 		protected abstract string GetMessageFromAttribute (AttributeData? requiresAssemblyFilesAttribute);
 

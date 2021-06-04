@@ -33,6 +33,17 @@ namespace ILLink.RoslynAnalyzer
 			return overridenMember != null;
 		}
 
+		internal static bool TryGetExplicitInterfaceImplementations (this ISymbol symbol, out ImmutableArray<ISymbol> explicitInterfaces)
+		{
+			explicitInterfaces = symbol switch {
+				IEventSymbol @event => ImmutableArray<ISymbol>.CastUp (@event.ExplicitInterfaceImplementations),
+				IMethodSymbol method => ImmutableArray<ISymbol>.CastUp (method.ExplicitInterfaceImplementations),
+				IPropertySymbol property => ImmutableArray<ISymbol>.CastUp (property.ExplicitInterfaceImplementations),
+				_ => ImmutableArray.Create<ISymbol> (),
+			};
+			return explicitInterfaces.IsDefaultOrEmpty ? false : true;
+		}
+
 		internal static bool TryGetExplicitOrImplicitInterfaceImplementations (this ISymbol symbol, out ImmutableArray<ISymbol> interfaces)
 		{
 			if (symbol.Kind != SymbolKind.Method && symbol.Kind != SymbolKind.Property && symbol.Kind != SymbolKind.Event)

@@ -651,6 +651,20 @@ class AnotherImplementation : IRUC
 	}
 }
 
+class ExplicitImplementation : IRUC
+{
+	[RequiresUnreferencedCode(""Message"")]
+	void IRUC.RUC() { }
+
+	private string name;
+	string IRUC.Property
+	{
+		[RequiresUnreferencedCode(""Message"")]
+		get { return name; }
+		set { name = value; }
+	}
+}
+
 interface IRUC
 {
 	void RUC();
