@@ -11,11 +11,12 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 	[IgnoreTestCase("Only for .NET Core for some reason")]
 #endif
 	[Define ("IL_ASSEMBLY_AVAILABLE")]
-	[SetupCompileBefore ("library.dll", new[] { "Dependencies/GenericsBasic.il" })]
+	[SetupCompileBefore ("library.dll", new[] { "Dependencies/GenericsBasic_Ldftn.il" })]
 	[KeptTypeInAssembly ("library.dll", "IFaceNonGeneric")]
 	[KeptMemberInAssembly ("library.dll", "NonGenericClass", "IFaceNonGeneric.NormalMethod()")]
+	[KeptMemberInAssembly ("library.dll", "NonGenericClass", "IFaceNonGeneric.GenericMethod<#1>()")]
 
-	class GenericsBasic
+	class GenericsBasic_Ldftn
 	{
 		static void Main ()
 		{

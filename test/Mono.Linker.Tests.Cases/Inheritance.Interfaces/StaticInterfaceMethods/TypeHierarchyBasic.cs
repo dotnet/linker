@@ -15,8 +15,10 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 	[KeptTypeInAssembly ("library.dll", "InterfaceScenario1")]
 	[KeptMemberInAssembly ("library.dll", "BaseScenario1", "Method()")]
 	[KeptTypeInAssembly ("library.dll", "DerivedScenario1")]
+	[KeptTypeInAssembly ("library.dll", "InterfaceScenario2")]
 	[KeptMemberInAssembly ("library.dll", "BaseScenario2", "Method()")]
 	[KeptTypeInAssembly ("library.dll", "DerivedScenario2")]
+	[KeptTypeInAssembly ("library.dll", "InterfaceScenario3")]
 	[KeptTypeInAssembly ("library.dll", "BaseScenario3")]
 	[KeptMemberInAssembly ("library.dll", "DerivedScenario3", "MethodImplOnDerived()")]
 
