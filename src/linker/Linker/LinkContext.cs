@@ -78,11 +78,11 @@ namespace Mono.Linker
 			get { return _pipeline; }
 		}
 
-		public CustomAttributeSource CustomAttributes { get => _customAttributes; }
+		public CustomAttributeSource CustomAttributes => _customAttributes;
 
-		public CompilerGeneratedState CompilerGeneratedState { get => _compilerGeneratedState; }
+		public CompilerGeneratedState CompilerGeneratedState => _compilerGeneratedState;
 
-		public AnnotationStore Annotations { get => _annotations; }
+		public AnnotationStore Annotations => _annotations;
 
 		public bool DeterministicOutput { get; set; }
 

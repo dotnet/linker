@@ -105,15 +105,17 @@ namespace Mono.Linker
 		public int CompareTo (MessageOrigin other)
 		{
 			if (MemberDefinition != null && other.MemberDefinition != null) {
-				int result = (MemberDefinition.DeclaringType?.Module?.Assembly?.Name?.Name, MemberDefinition.DeclaringType?.Name, MemberDefinition?.Name).CompareTo
-					((other.MemberDefinition.DeclaringType?.Module?.Assembly?.Name?.Name, other.MemberDefinition.DeclaringType?.Name, other.MemberDefinition?.Name));
+				TypeDefinition thisTypeDef = (MemberDefinition as TypeDefinition) ?? MemberDefinition.DeclaringType;
+				TypeDefinition otherTypeDef = (other.MemberDefinition as TypeDefinition) ?? other.MemberDefinition.DeclaringType;
+				int result = (thisTypeDef?.Module?.Assembly?.Name?.Name, thisTypeDef?.Name, MemberDefinition?.Name).CompareTo
+					((otherTypeDef?.Module?.Assembly?.Name?.Name, otherTypeDef?.Name, other.MemberDefinition?.Name));
 				if (result != 0)
 					return result;
 
 				if (ILOffset != null && other.ILOffset != null)
 					return ILOffset.Value.CompareTo (other.ILOffset);
 
-				return ILOffset == null ? 1 : -1;
+				return ILOffset == null ? (other.ILOffset == null ? 0 : 1) : -1;
 			} else if (MemberDefinition == null && other.MemberDefinition == null) {
 				if (FileName != null && other.FileName != null) {
 					return string.Compare (FileName, other.FileName);
