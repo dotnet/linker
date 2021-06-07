@@ -2,13 +2,12 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System;
 using Mono.Cecil;
 
 namespace Mono.Linker
 {
 
-	public class LinkContext : IMetadataResolver, IAssemblyResolver, IDisposable
+	public class LinkContext : IMetadataResolver
 	{
 		internal LinkContext () { }
 		public AnnotationStore Annotations { get { throw null; } }
@@ -31,7 +30,5 @@ namespace Mono.Linker
 		public TypeDefinition TryResolve (TypeReference typeReference) { throw null; }
 
 		public AssemblyDefinition Resolve (AssemblyNameReference nameReference) { throw null; }
-		AssemblyDefinition IAssemblyResolver.Resolve (AssemblyNameReference nameReference, ReaderParameters parameters) { throw null; }
-		public void Dispose () { throw null; }
 	}
 }
