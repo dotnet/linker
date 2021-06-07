@@ -509,54 +509,37 @@
   .method public static void Test_CreateDelegate_NonGenericNonGenericClass_NonGeneric_NonGeneric_NormalMethod() cil managed noinlining
   {
     ldnull
-    constrained. class [GenericContextCommonAndImplementation]NonGenericClass
-    ldftn void class [GenericContextCommonAndImplementation]IFaceNonGeneric::NormalMethod()
+    constrained. class NonGenericClass
+    ldftn void class IFaceNonGeneric::NormalMethod()
     newobj instance void [System.Runtime]System.Action::.ctor(object,
                                                               native int)
     volatile.
-    stsfld     class [System.Runtime] System.Action modreq([System.Runtime] System.Runtime.CompilerServices.IsVolatile) [GenericContextCommonCs]Statics::ActionHolder
+    stsfld     class [System.Runtime] System.Action modreq([System.Runtime] System.Runtime.CompilerServices.IsVolatile) Statics::ActionHolder
     volatile.
-    ldsfld class [System.Runtime] System.Action modreq([System.Runtime] System.Runtime.CompilerServices.IsVolatile) [GenericContextCommonCs]Statics::ActionHolder
+    ldsfld class [System.Runtime] System.Action modreq([System.Runtime] System.Runtime.CompilerServices.IsVolatile) Statics::ActionHolder
     callvirt instance void[System.Runtime] System.Action::Invoke()
     ldstr "CreateDelegate_NonGenericNonGenericClass_NonGeneric_NonGeneric_NormalMethod"
     ldstr "class NonGenericClass'IFaceNonGeneric.NormalMethod'"
-    call void [GenericContextCommonCs]Statics::CheckForFailure(string,string)
+    call void Statics::CheckForFailure(string,string)
     ret
   } // end of method Test_CreateDelegate_NonGenericNonGenericClass_NonGeneric_NonGeneric_NormalMethod
   .method public static void Test_CreateDelegate_NonGenericNonGenericClass_NonGeneric_NonGeneric_GenericMethodOverInt() cil managed noinlining
   {
     ldnull
-    constrained. class [GenericContextCommonAndImplementation]NonGenericClass
-    ldftn void class [GenericContextCommonAndImplementation]IFaceNonGeneric::GenericMethod<int32>()
+    constrained. class NonGenericClass
+    ldftn void class IFaceNonGeneric::GenericMethod<int32>()
     newobj instance void [System.Runtime]System.Action::.ctor(object,
                                                               native int)
     volatile.
-    stsfld     class [System.Runtime] System.Action modreq([System.Runtime] System.Runtime.CompilerServices.IsVolatile) [GenericContextCommonCs]Statics::ActionHolder
+    stsfld     class [System.Runtime] System.Action modreq([System.Runtime] System.Runtime.CompilerServices.IsVolatile) Statics::ActionHolder
     volatile.
-    ldsfld class [System.Runtime] System.Action modreq([System.Runtime] System.Runtime.CompilerServices.IsVolatile) [GenericContextCommonCs]Statics::ActionHolder
+    ldsfld class [System.Runtime] System.Action modreq([System.Runtime] System.Runtime.CompilerServices.IsVolatile) Statics::ActionHolder
     callvirt instance void[System.Runtime] System.Action::Invoke()
     ldstr "CreateDelegate_NonGenericNonGenericClass_NonGeneric_NonGeneric_GenericMethodOverInt"
     ldstr "class NonGenericClass'IFaceNonGeneric.GenericMethod'<int32>"
-    call void [GenericContextCommonCs]Statics::CheckForFailure(string,string)
+    call void Statics::CheckForFailure(string,string)
     ret
   } // end of method Test_CreateDelegate_NonGenericNonGenericClass_NonGeneric_NonGeneric_GenericMethodOverInt
-  .method public static void Test_CreateDelegate_NonGenericNonGenericClass_NonGeneric_NonGeneric_GenericMethodOverString() cil managed noinlining
-  {
-    ldnull
-    constrained. class [GenericContextCommonAndImplementation]NonGenericClass
-    ldftn void class [GenericContextCommonAndImplementation]IFaceNonGeneric::GenericMethod<string>()
-    newobj instance void [System.Runtime]System.Action::.ctor(object,
-                                                              native int)
-    volatile.
-    stsfld     class [System.Runtime] System.Action modreq([System.Runtime] System.Runtime.CompilerServices.IsVolatile) [GenericContextCommonCs]Statics::ActionHolder
-    volatile.
-    ldsfld class [System.Runtime] System.Action modreq([System.Runtime] System.Runtime.CompilerServices.IsVolatile) [GenericContextCommonCs]Statics::ActionHolder
-    callvirt instance void[System.Runtime] System.Action::Invoke()
-    ldstr "CreateDelegate_NonGenericNonGenericClass_NonGeneric_NonGeneric_GenericMethodOverString"
-    ldstr "class NonGenericClass'IFaceNonGeneric.GenericMethod'<string>"
-    call void [GenericContextCommonCs]Statics::CheckForFailure(string,string)
-    ret
-  } // end of method Test_CreateDelegate_NonGenericNonGenericClass_NonGeneric_NonGeneric_GenericMethodOverString
   .method public static int32 Test() cil managed noinlining
   {
     .locals init (class [System.Runtime]System.Exception V_0)
@@ -569,7 +552,7 @@
         ldstr "class NonGenericClass'IFaceNonGeneric.NormalMethod'"
         ldloc.0
         callvirt   instance string [System.Runtime]System.Object::ToString()
-        call void [GenericContextCommonCs]Statics::CheckForFailure(string,string,string)
+        call void Statics::CheckForFailure(string,string,string)
         leave.s CreateDelegate_NonGenericNonGenericClass_NonGeneric_NonGeneric_NormalMethodDone
     }
 CreateDelegate_NonGenericNonGenericClass_NonGeneric_NonGeneric_NormalMethodDone: nop
@@ -582,23 +565,10 @@ CreateDelegate_NonGenericNonGenericClass_NonGeneric_NonGeneric_NormalMethodDone:
         ldstr "class NonGenericClass'IFaceNonGeneric.GenericMethod'<int32>"
         ldloc.0
         callvirt   instance string [System.Runtime]System.Object::ToString()
-        call void [GenericContextCommonCs]Statics::CheckForFailure(string,string,string)
+        call void Statics::CheckForFailure(string,string,string)
         leave.s CreateDelegate_NonGenericNonGenericClass_NonGeneric_NonGeneric_GenericMethodOverIntDone
     }
 CreateDelegate_NonGenericNonGenericClass_NonGeneric_NonGeneric_GenericMethodOverIntDone: nop
-    .try {
-        call void TestEntrypoint::Test_CreateDelegate_NonGenericNonGenericClass_NonGeneric_NonGeneric_GenericMethodOverString()
-        leave.s CreateDelegate_NonGenericNonGenericClass_NonGeneric_NonGeneric_GenericMethodOverStringDone
-    } catch [System.Runtime]System.Exception {
-        stloc.0
-        ldstr "CreateDelegate_NonGenericNonGenericClass_NonGeneric_NonGeneric_GenericMethodOverString"
-        ldstr "class NonGenericClass'IFaceNonGeneric.GenericMethod'<string>"
-        ldloc.0
-        callvirt   instance string [System.Runtime]System.Object::ToString()
-        call void [GenericContextCommonCs]Statics::CheckForFailure(string,string,string)
-        leave.s CreateDelegate_NonGenericNonGenericClass_NonGeneric_NonGeneric_GenericMethodOverStringDone
-    }
-CreateDelegate_NonGenericNonGenericClass_NonGeneric_NonGeneric_GenericMethodOverStringDone: nop
     call int32 Statics::ReportResults()
     ret
   } // end of method Test

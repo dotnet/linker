@@ -517,22 +517,13 @@
   } // end of method Test_Call_NonGenericNonGenericClass_NonGeneric_NonGeneric_NormalMethod
   .method public static void Test_Call_NonGenericNonGenericClass_NonGeneric_NonGeneric_GenericMethodOverInt() cil managed noinlining
   {
-    constrained. class [GenericContextCommonAndImplementation]NonGenericClass
-    call void class [GenericContextCommonAndImplementation]IFaceNonGeneric::GenericMethod<int32>()
+    constrained. class NonGenericClass
+    call void class IFaceNonGeneric::GenericMethod<int32>()
     ldstr "Call_NonGenericNonGenericClass_NonGeneric_NonGeneric_GenericMethodOverInt"
     ldstr "class NonGenericClass'IFaceNonGeneric.GenericMethod'<int32>"
     call void [GenericContextCommonCs]Statics::CheckForFailure(string,string)
     ret
   } // end of method Test_Call_NonGenericNonGenericClass_NonGeneric_NonGeneric_GenericMethodOverInt
-  .method public static void Test_Call_NonGenericNonGenericClass_NonGeneric_NonGeneric_GenericMethodOverString() cil managed noinlining
-  {
-    constrained. class [GenericContextCommonAndImplementation]NonGenericClass
-    call void class [GenericContextCommonAndImplementation]IFaceNonGeneric::GenericMethod<string>()
-    ldstr "Call_NonGenericNonGenericClass_NonGeneric_NonGeneric_GenericMethodOverString"
-    ldstr "class NonGenericClass'IFaceNonGeneric.GenericMethod'<string>"
-    call void [GenericContextCommonCs]Statics::CheckForFailure(string,string)
-    ret
-  } // end of method Test_Call_NonGenericNonGenericClass_NonGeneric_NonGeneric_GenericMethodOverString
   .method public static int32 Test() cil managed noinlining
   {
     .locals init (class [System.Runtime]System.Exception V_0)
@@ -562,19 +553,6 @@ Call_NonGenericNonGenericClass_NonGeneric_NonGeneric_NormalMethodDone: nop
         leave.s Call_NonGenericNonGenericClass_NonGeneric_NonGeneric_GenericMethodOverIntDone
     }
 Call_NonGenericNonGenericClass_NonGeneric_NonGeneric_GenericMethodOverIntDone: nop
-    .try {
-        call void TestEntrypoint::Test_Call_NonGenericNonGenericClass_NonGeneric_NonGeneric_GenericMethodOverString()
-        leave.s Call_NonGenericNonGenericClass_NonGeneric_NonGeneric_GenericMethodOverStringDone
-    } catch [System.Runtime]System.Exception {
-        stloc.0
-        ldstr "Call_NonGenericNonGenericClass_NonGeneric_NonGeneric_GenericMethodOverString"
-        ldstr "class NonGenericClass'IFaceNonGeneric.GenericMethod'<string>"
-        ldloc.0
-        callvirt   instance string [System.Runtime]System.Object::ToString()
-        call void [GenericContextCommonCs]Statics::CheckForFailure(string,string,string)
-        leave.s Call_NonGenericNonGenericClass_NonGeneric_NonGeneric_GenericMethodOverStringDone
-    }
-Call_NonGenericNonGenericClass_NonGeneric_NonGeneric_GenericMethodOverStringDone: nop
     call int32 Statics::ReportResults()
     ret
   } // end of method Test
