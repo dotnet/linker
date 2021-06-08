@@ -10,57 +10,84 @@ namespace Mono.Linker
 	// Currently this is implemented using heuristics
 	public class CompilerGeneratedState
 	{
-		enum Language
-		{
-			CSharp = 0,
-			FSharp = 1
-		}
-
 		readonly LinkContext _context;
-		readonly Dictionary<AssemblyDefinition, Language> _assumedAssemblyLanguage;
+		readonly Dictionary<TypeDefinition, MethodDefinition> _compilerGeneratedTypeToUserCodeMethod;
+		readonly HashSet<TypeDefinition> _typesWithPopulatedCache;
 
-		public CompilerGeneratedState (LinkContext context)
+		public CompilerGeneratedState ()
 		{
-			_context = context;
-			_assumedAssemblyLanguage = new Dictionary<AssemblyDefinition, Language> ();
+			_compilerGeneratedTypeToUserCodeMethod = new Dictionary<TypeDefinition, MethodDefinition> ();
+			_typesWithPopulatedCache = new HashSet<TypeDefinition> ();
 		}
 
-		public bool IsCompilerGenerated (MemberReference memberReference)
+		static bool HasRoslynCompilerGeneratedName (IMemberDefinition member) =>
+			member.Name.Contains ('<') || member.DeclaringType == null || HasRoslynCompilerGeneratedName (member.DeclaringType);
+
+		void PopulateCacheForType (TypeDefinition type)
 		{
-			switch (GetAssumedLanguage (memberReference)) {
-			case Language.CSharp:
-				if (memberReference.Name.Contains ('<'))
-					return true;
-				break;
+			// Avoid repeat scans of the same type
+			if (!_typesWithPopulatedCache.Add (type))
+				return;
 
-			case Language.FSharp:
-				if (memberReference.Name.Contains ('@'))
-					return true;
-				break;
-			}
+			foreach (MethodDefinition method in type.Methods) {
+				if (!method.HasCustomAttributes)
+					continue;
 
-			if (memberReference.DeclaringType != null)
-				return IsCompilerGenerated (memberReference.DeclaringType);
+				foreach (var attribute in method.CustomAttributes) {
+					if (attribute.AttributeType.Namespace != "System.Runtime.CompilerServices")
+						continue;
 
-			return false;
-		}
+					switch (attribute.AttributeType.Name) {
+					case "AsyncIteratorStateMachineAttribute":
+					case "AsyncStateMachineAttribute":
+					case "IteratorStateMachineAttribute":
+						TypeDefinition stateMachineType = GetFirstConstructorArgumentAsType (attribute);
+						if (stateMachineType != null) {
+							if (!_compilerGeneratedTypeToUserCodeMethod.TryAdd (stateMachineType, method)) {
+								var alreadyAssociatedMethod = _compilerGeneratedTypeToUserCodeMethod[stateMachineType];
+								_context.LogWarning (
+									$"Methods '{method.GetDisplayName ()}' and '{alreadyAssociatedMethod.GetDisplayName ()}' are both associated with state machine type '{stateMachineType.GetDisplayName ()}'. This is currently unsupported and may lead to incorrectly reported warnings.",
+									2107,
+									new MessageOrigin (method),
+									MessageSubCategory.TrimAnalysis);
+							}
+						}
 
-		Language GetAssumedLanguage (MemberReference memberReference)
-		{
-			AssemblyDefinition asm = memberReference.Module.Assembly;
-			if (_assumedAssemblyLanguage.TryGetValue (asm, out Language language))
-				return language;
-
-			language = Language.CSharp;
-			foreach (var attribute in _context.CustomAttributes.GetCustomAttributes (asm)) {
-				if (attribute.AttributeType.IsTypeOf ("Microsoft.FSharp.Core", "FSharpInterfaceDataVersionAttribute")) {
-					language = Language.FSharp;
-					break;
+						break;
+					}
 				}
 			}
+		}
 
-			_assumedAssemblyLanguage.Add (asm, language);
-			return language;
+		static TypeDefinition GetFirstConstructorArgumentAsType (CustomAttribute attribute)
+		{
+			if (!attribute.HasConstructorArguments)
+				return null;
+
+			return attribute.ConstructorArguments[0].Value as TypeDefinition;
+		}
+
+		public MethodDefinition GetUserDefinedMethodForCompilerGeneratedMember (IMemberDefinition sourceMember)
+		{
+			if (sourceMember == null)
+				return null;
+
+			TypeDefinition compilerGeneratedType = (sourceMember as TypeDefinition) ?? sourceMember.DeclaringType;
+			if (_compilerGeneratedTypeToUserCodeMethod.TryGetValue (compilerGeneratedType, out MethodDefinition userDefinedMethod))
+				return userDefinedMethod;
+
+			// Only handle async or iterator state machine
+			// So go to the declaring type and check if it's compiler generated (as a perf optimization)
+			if (!HasRoslynCompilerGeneratedName (compilerGeneratedType) || compilerGeneratedType.DeclaringType == null)
+				return null;
+
+			// Now go to its declaring type and search all methods to find the one which points to the type as its
+			// state machine implementation.
+			PopulateCacheForType (compilerGeneratedType.DeclaringType);
+			if (_compilerGeneratedTypeToUserCodeMethod.TryGetValue (compilerGeneratedType, out userDefinedMethod))
+				return userDefinedMethod;
+
+			return null;
 		}
 	}
 }
