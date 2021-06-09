@@ -167,7 +167,8 @@ namespace Mono.Linker
 				return;
 
 			foreach (MethodDefinition method in type.Methods) {
-				// This could be a static interface method implementation that has a .override
+				// We do not proceed unless a method is virtual or is static
+				// A static method with a .override could be implementing a static interface method
 				if (!(method.IsStatic || method.IsVirtual))
 					continue;
 
