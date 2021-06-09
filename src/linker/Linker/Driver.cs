@@ -164,7 +164,7 @@ namespace Mono.Linker
 
 			var body_substituter_steps = new Stack<string> ();
 			var xml_custom_attribute_steps = new Stack<string> ();
-			var custom_steps = new Stack<string> ();
+			var custom_steps = new List<string> ();
 			var set_optimizations = new List<(CodeOptimizations, string, bool)> ();
 			bool dumpDependencies = false;
 			string dependenciesFileName = null;
@@ -298,7 +298,7 @@ namespace Mono.Linker
 							continue;
 						}
 					case "--custom-step":
-						if (!GetStringParam (token, l => custom_steps.Push (l)))
+						if (!GetStringParam (token, l => custom_steps.Add (l)))
 							return -1;
 
 						continue;
@@ -595,7 +595,7 @@ namespace Mono.Linker
 								return -1;
 							}
 
-							inputs.Add (new ResolveFromXmlStep (new XPathDocument (xmlFile), xmlFile));
+							inputs.Add (new ResolveFromXmlStep (File.OpenRead (xmlFile), xmlFile));
 							continue;
 						}
 					case "a": {
@@ -822,17 +822,17 @@ namespace Mono.Linker
 
 		protected virtual void AddResolveFromXmlStep (Pipeline pipeline, string file)
 		{
-			pipeline.PrependStep (new ResolveFromXmlStep (new XPathDocument (file), file));
+			pipeline.PrependStep (new ResolveFromXmlStep (File.OpenRead (file), file));
 		}
 
 		protected virtual void AddLinkAttributesStep (Pipeline pipeline, string file)
 		{
-			pipeline.AddStepBefore (typeof (MarkStep), new LinkAttributesStep (new XPathDocument (file), file));
+			pipeline.AddStepBefore (typeof (MarkStep), new LinkAttributesStep (File.OpenRead (file), file));
 		}
 
 		static void AddBodySubstituterStep (Pipeline pipeline, string file)
 		{
-			pipeline.AddStepBefore (typeof (MarkStep), new BodySubstituterStep (new XPathDocument (file), file));
+			pipeline.AddStepBefore (typeof (MarkStep), new BodySubstituterStep (File.OpenRead (file), file));
 		}
 
 		protected virtual void AddXmlDependencyRecorder (LinkContext context, string fileName)

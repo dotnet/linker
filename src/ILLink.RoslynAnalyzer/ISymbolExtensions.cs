@@ -2,13 +2,12 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System.Collections.Immutable;
-using System.Linq;
+using System.Text;
 using Microsoft.CodeAnalysis;
 
 namespace ILLink.RoslynAnalyzer
 {
-	static class ISymbolExtensions
+	public static class ISymbolExtensions
 	{
 		/// <summary>
 		/// Returns true if symbol <see paramref="symbol"/> has an attribute with name <see paramref="attributeName"/>.
@@ -32,31 +31,28 @@ namespace ILLink.RoslynAnalyzer
 			};
 			return overridenMember != null;
 		}
-
-		internal static bool TryGetExplicitInterfaceImplementations (this ISymbol symbol, out ImmutableArray<ISymbol> explicitInterfaces)
+		public static string GetDisplayName (this ISymbol symbol)
 		{
-			explicitInterfaces = symbol switch {
-				IEventSymbol @event => ImmutableArray<ISymbol>.CastUp (@event.ExplicitInterfaceImplementations),
-				IMethodSymbol method => ImmutableArray<ISymbol>.CastUp (method.ExplicitInterfaceImplementations),
-				IPropertySymbol property => ImmutableArray<ISymbol>.CastUp (property.ExplicitInterfaceImplementations),
-				_ => ImmutableArray.Create<ISymbol> (),
-			};
-			return explicitInterfaces.IsDefaultOrEmpty ? false : true;
-		}
+			var sb = new StringBuilder ();
+			switch (symbol) {
+			case IFieldSymbol fieldSymbol:
+				sb.Append (fieldSymbol.Type);
+				sb.Append (" ");
+				sb.Append (fieldSymbol.ContainingSymbol.ToDisplayString ());
+				sb.Append ("::");
+				sb.Append (fieldSymbol.MetadataName);
+				break;
 
-		internal static bool TryGetExplicitOrImplicitInterfaceImplementations (this ISymbol symbol, out ImmutableArray<ISymbol> interfaces)
-		{
-			if (symbol.Kind != SymbolKind.Method && symbol.Kind != SymbolKind.Property && symbol.Kind != SymbolKind.Event)
-				return false;
+			case IParameterSymbol parameterSymbol:
+				sb.Append (parameterSymbol.Name);
+				break;
 
-			var containingType = symbol.ContainingType;
-			var query = from iface in containingType.AllInterfaces
-						from interfaceMember in iface.GetMembers ()
-						let impl = containingType.FindImplementationForInterfaceMember (interfaceMember)
-						where SymbolEqualityComparer.Default.Equals (symbol, impl)
-						select interfaceMember;
-			interfaces = query.ToImmutableArray ();
-			return !interfaces.IsEmpty;
+			default:
+				sb.Append (symbol.ToDisplayString ());
+				break;
+			}
+
+			return sb.ToString ();
 		}
 	}
 }

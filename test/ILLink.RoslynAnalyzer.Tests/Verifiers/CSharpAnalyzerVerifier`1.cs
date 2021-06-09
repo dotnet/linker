@@ -33,20 +33,33 @@ namespace ILLink.RoslynAnalyzer.Tests
 		public static DiagnosticResult Diagnostic (DiagnosticDescriptor descriptor)
 			=> CSharpAnalyzerVerifier<TAnalyzer, XUnitVerifier>.Diagnostic (descriptor);
 
-		public static Task<CompilationWithAnalyzers> CreateCompilation (
+		public static Task<(CompilationWithAnalyzers Compilation, SemanticModel SemanticModel)> CreateCompilation (
 			string src,
 			(string, string)[]? globalAnalyzerOptions = null)
 			=> CreateCompilation (CSharpSyntaxTree.ParseText (src), globalAnalyzerOptions);
 
-		public static async Task<CompilationWithAnalyzers> CreateCompilation (
+		public static async Task<(CompilationWithAnalyzers Compilation, SemanticModel SemanticModel)> CreateCompilation (
 			SyntaxTree src,
 			(string, string)[]? globalAnalyzerOptions = null)
 		{
+			var refRaf = @"
+#nullable enable
+namespace System.Diagnostics.CodeAnalysis
+{
+	[AttributeUsage(AttributeTargets.Constructor | AttributeTargets.Event | AttributeTargets.Method | AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
+	public sealed class RequiresAssemblyFilesAttribute : Attribute
+	{
+		public RequiresAssemblyFilesAttribute () { }
+		public string? Message { get; set; }
+		public string? Url { get; set; }
+	}
+}";
+			var refRafSyntaxTree = CSharpSyntaxTree.ParseText (refRaf);
 			var mdRef = MetadataReference.CreateFromFile (typeof (Mono.Linker.Tests.Cases.Expectations.Metadata.BaseMetadataAttribute).Assembly.Location);
 
 			var comp = CSharpCompilation.Create (
 				assemblyName: Guid.NewGuid ().ToString ("N"),
-				syntaxTrees: new SyntaxTree[] { src },
+				syntaxTrees: new SyntaxTree[] { src, refRafSyntaxTree },
 				references: (await ReferenceAssemblies.Net.Net50.ResolveAsync (null, default)).Add (mdRef),
 				new CSharpCompilationOptions (OutputKind.DynamicallyLinkedLibrary));
 
@@ -61,16 +74,13 @@ namespace ILLink.RoslynAnalyzer.Tests
 				logAnalyzerExecutionTime: false);
 
 			var analyzers = ImmutableArray.Create<DiagnosticAnalyzer> (new TAnalyzer ());
-			return new CompilationWithAnalyzers (
-				comp,
-				analyzers,
-				compWithAnalyzerOptions);
+			return (new CompilationWithAnalyzers (comp, analyzers, compWithAnalyzerOptions), comp.GetSemanticModel (src));
 		}
 
 		/// <inheritdoc cref="AnalyzerVerifier{TAnalyzer, TTest, TVerifier}.VerifyAnalyzerAsync(string, DiagnosticResult[])"/>
 		public static async Task VerifyAnalyzerAsync (string src, (string, string)[]? analyzerOptions = null, params DiagnosticResult[] expected)
 		{
-			var diags = await (await CreateCompilation (src, analyzerOptions)).GetAllDiagnosticsAsync ();
+			var diags = await (await CreateCompilation (src, analyzerOptions)).Compilation.GetAllDiagnosticsAsync ();
 
 			var analyzers = ImmutableArray.Create<DiagnosticAnalyzer> (new TAnalyzer ());
 			VerifyDiagnosticResults (diags, analyzers, expected, DefaultVerifier);

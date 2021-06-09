@@ -77,7 +77,7 @@ namespace Mono.Linker.Dataflow
 
 		public DynamicallyAccessedMemberTypes GetGenericParameterAnnotation (GenericParameter genericParameter)
 		{
-			TypeDefinition declaringType = _context.ResolveTypeDefinition (genericParameter.DeclaringType);
+			TypeDefinition declaringType = _context.Resolve (genericParameter.DeclaringType);
 			if (declaringType != null) {
 				if (GetAnnotations (declaringType).TryGetAnnotation (genericParameter, out var annotation))
 					return annotation;
@@ -85,7 +85,7 @@ namespace Mono.Linker.Dataflow
 				return DynamicallyAccessedMemberTypes.None;
 			}
 
-			MethodDefinition declaringMethod = _context.ResolveMethodDefinition (genericParameter.DeclaringMethod);
+			MethodDefinition declaringMethod = _context.Resolve (genericParameter.DeclaringMethod);
 			if (declaringMethod != null && GetAnnotations (declaringMethod.DeclaringType).TryGetAnnotation (declaringMethod, out var methodTypeAnnotations) &&
 				methodTypeAnnotations.TryGetAnnotation (genericParameter, out var methodAnnotation))
 				return methodAnnotation;
@@ -120,7 +120,7 @@ namespace Mono.Linker.Dataflow
 					return (DynamicallyAccessedMemberTypes) (int) attribute.ConstructorArguments[0].Value;
 				else
 					_context.LogWarning (
-						$"Attribute 'System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute' doesn't have the required number of parameters specified",
+						$"Attribute 'System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute' doesn't have the required number of parameters specified.",
 						2028, locationMember ?? (provider as IMemberDefinition));
 			}
 			return DynamicallyAccessedMemberTypes.None;
@@ -144,7 +144,7 @@ namespace Mono.Linker.Dataflow
 					if (!IsTypeInterestingForDataflow (field.FieldType)) {
 						// Already know that there's a non-empty annotation on a field which is not System.Type/String and we're about to ignore it
 						_context.LogWarning (
-							$"Field '{field.GetDisplayName ()}' has 'DynamicallyAccessedMembersAttribute', but that attribute can only be applied to fields of type 'System.Type' or 'System.String'",
+							$"Field '{field.GetDisplayName ()}' has 'DynamicallyAccessedMembersAttribute', but that attribute can only be applied to fields of type 'System.Type' or 'System.String'.",
 							2097, field, subcategory: MessageSubCategory.TrimAnalysis);
 						continue;
 					}
@@ -209,8 +209,12 @@ namespace Mono.Linker.Dataflow
 						paramAnnotations[i + offset] = pa;
 					}
 
-					DynamicallyAccessedMemberTypes returnAnnotation = IsTypeInterestingForDataflow (method.ReturnType) ?
-						GetMemberTypesForDynamicallyAccessedMembersAttribute (method.MethodReturnType, method) : DynamicallyAccessedMemberTypes.None;
+					DynamicallyAccessedMemberTypes returnAnnotation = GetMemberTypesForDynamicallyAccessedMembersAttribute (method.MethodReturnType, method);
+					if (returnAnnotation != DynamicallyAccessedMemberTypes.None && !IsTypeInterestingForDataflow (method.ReturnType)) {
+						_context.LogWarning (
+							$"Return type of method '{method.GetDisplayName ()}' has 'DynamicallyAccessedMembersAttribute', but that attribute can only be applied to properties of type 'System.Type' or 'System.String'.",
+							2106, method, subcategory: MessageSubCategory.TrimAnalysis);
+					}
 
 					DynamicallyAccessedMemberTypes[] genericParameterAnnotations = null;
 					if (method.HasGenericParameters) {
@@ -253,7 +257,7 @@ namespace Mono.Linker.Dataflow
 
 					if (!IsTypeInterestingForDataflow (property.PropertyType)) {
 						_context.LogWarning (
-							$"Property '{property.GetDisplayName ()}' has 'DynamicallyAccessedMembersAttribute', but that attribute can only be applied to properties of type 'System.Type' or 'System.String'",
+							$"Property '{property.GetDisplayName ()}' has 'DynamicallyAccessedMembersAttribute', but that attribute can only be applied to properties of type 'System.Type' or 'System.String'.",
 							2099, property, subcategory: MessageSubCategory.TrimAnalysis);
 						continue;
 					}
@@ -384,7 +388,7 @@ namespace Mono.Linker.Dataflow
 				return true;
 			}
 
-			found = _context.ResolveFieldDefinition (foundReference);
+			found = _context.Resolve (foundReference);
 
 			if (found == null) {
 				// If the field doesn't resolve, it can't be a field on the current type
@@ -409,7 +413,7 @@ namespace Mono.Linker.Dataflow
 			if (typeReference.MetadataType == MetadataType.String)
 				return true;
 
-			TypeDefinition type = _context.TryResolveTypeDefinition (typeReference);
+			TypeDefinition type = _context.TryResolve (typeReference);
 			return type != null && (
 				_hierarchyInfo.IsSystemType (type) ||
 				_hierarchyInfo.IsSystemReflectionIReflect (type));

@@ -3,7 +3,7 @@
 namespace Mono.Linker.Tests.Cases.Expectations.Assertions
 {
 	[AttributeUsage (
-		AttributeTargets.Struct | AttributeTargets.Class | AttributeTargets.Method | AttributeTargets.Property | AttributeTargets.Constructor | AttributeTargets.Field,
+		AttributeTargets.Struct | AttributeTargets.Class | AttributeTargets.Method | AttributeTargets.Property | AttributeTargets.Constructor | AttributeTargets.Field | AttributeTargets.Interface,
 		AllowMultiple = true,
 		Inherited = false)]
 	public class ExpectedWarningAttribute : EnableLoggerAttribute
@@ -15,5 +15,6 @@ namespace Mono.Linker.Tests.Cases.Expectations.Assertions
 		public string FileName { get; set; }
 		public int SourceLine { get; set; }
 		public int SourceColumn { get; set; }
+		public ProducedBy ProducedBy { get; set; } = ProducedBy.LinkerAndAnalyzer;
 	}
 }

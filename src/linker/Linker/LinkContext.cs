@@ -50,7 +50,7 @@ namespace Mono.Linker
 		NET6 = 6,
 	}
 
-	public class LinkContext : IDisposable
+	public class LinkContext : IMetadataResolver, IDisposable
 	{
 
 		readonly Pipeline _pipeline;
@@ -391,13 +391,32 @@ namespace Mono.Linker
 #endif
 		public AssemblyAction CalculateAssemblyAction (AssemblyDefinition assembly)
 		{
-			if (_actions.TryGetValue (assembly.Name.Name, out AssemblyAction action))
+			if (_actions.TryGetValue (assembly.Name.Name, out AssemblyAction action)) {
+				if (IsCPPCLIAssembly (assembly.MainModule) && action != AssemblyAction.Copy && action != AssemblyAction.Skip) {
+					LogWarning ($"Invalid assembly action '{action}' specified for assembly '{assembly.Name.Name}'. C++/CLI assemblies can only be copied or skipped.", 2106, GetAssemblyLocation (assembly));
+					return AssemblyAction.Copy;
+				}
+
 				return action;
+			}
+
+			if (IsCPPCLIAssembly (assembly.MainModule))
+				return DefaultAction == AssemblyAction.Skip ? DefaultAction : AssemblyAction.Copy;
 
 			if (IsTrimmable (assembly))
 				return TrimAction;
 
 			return DefaultAction;
+
+			static bool IsCPPCLIAssembly (ModuleDefinition module)
+			{
+				foreach (var type in module.Types)
+					if (type.Namespace == "<CppImplementationDetails>" ||
+						type.Namespace == "<CrtImplementationDetails>")
+						return true;
+
+				return false;
+			}
 		}
 
 		bool IsTrimmable (AssemblyDefinition assembly)
@@ -671,7 +690,7 @@ namespace Mono.Linker
 		readonly Dictionary<FieldReference, FieldDefinition> fieldresolveCache = new ();
 		readonly Dictionary<TypeReference, TypeDefinition> typeresolveCache = new ();
 
-		public MethodDefinition ResolveMethodDefinition (MethodReference methodReference)
+		public MethodDefinition Resolve (MethodReference methodReference)
 		{
 			if (methodReference is MethodDefinition md)
 				return md;
@@ -695,7 +714,7 @@ namespace Mono.Linker
 			return md;
 		}
 
-		public MethodDefinition TryResolveMethodDefinition (MethodReference methodReference)
+		public MethodDefinition TryResolve (MethodReference methodReference)
 		{
 			if (methodReference is MethodDefinition md)
 				return md;
@@ -711,7 +730,7 @@ namespace Mono.Linker
 			return md;
 		}
 
-		public FieldDefinition ResolveFieldDefinition (FieldReference fieldReference)
+		public FieldDefinition Resolve (FieldReference fieldReference)
 		{
 			if (fieldReference is FieldDefinition fd)
 				return fd;
@@ -735,7 +754,7 @@ namespace Mono.Linker
 			return fd;
 		}
 
-		public FieldDefinition TryResolveFieldDefinition (FieldReference fieldReference)
+		public FieldDefinition TryResolve (FieldReference fieldReference)
 		{
 			if (fieldReference is FieldDefinition fd)
 				return fd;
@@ -751,7 +770,7 @@ namespace Mono.Linker
 			return fd;
 		}
 
-		public TypeDefinition ResolveTypeDefinition (TypeReference typeReference)
+		public TypeDefinition Resolve (TypeReference typeReference)
 		{
 			if (typeReference is TypeDefinition td)
 				return td;
@@ -781,7 +800,7 @@ namespace Mono.Linker
 			return td;
 		}
 
-		public TypeDefinition TryResolveTypeDefinition (TypeReference typeReference)
+		public TypeDefinition TryResolve (TypeReference typeReference)
 		{
 			if (typeReference is TypeDefinition td)
 				return td;
@@ -799,7 +818,7 @@ namespace Mono.Linker
 					//
 					// It returns element-type for arrays and also element type for wrapping types like ByReference, PinnedType, etc
 					//
-					td = TryResolveTypeDefinition (ts.GetElementType ());
+					td = TryResolve (ts.GetElementType ());
 				}
 			} else {
 				td = typeReference.Resolve ();
@@ -809,10 +828,10 @@ namespace Mono.Linker
 			return td;
 		}
 
-		public TypeDefinition TryResolveTypeDefinition (AssemblyDefinition assembly, string typeNameString)
+		public TypeDefinition TryResolve (AssemblyDefinition assembly, string typeNameString)
 		{
 			// It could be cached if it shows up on fast path
-			return TryResolveTypeDefinition (_typeNameResolver.ResolveTypeName (assembly, typeNameString));
+			return TryResolve (_typeNameResolver.ResolveTypeName (assembly, typeNameString));
 		}
 
 		readonly HashSet<MemberReference> unresolved_reported = new ();

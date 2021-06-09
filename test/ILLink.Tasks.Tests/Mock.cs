@@ -140,7 +140,7 @@ namespace ILLink.Tasks.Tests
 		protected override void AddResolveFromXmlStep (Pipeline pipeline, string file)
 		{
 			// Don't try to load an xml file - just pretend it exists.
-			pipeline.PrependStep (new ResolveFromXmlStep (document: null, file));
+			pipeline.PrependStep (new ResolveFromXmlStep (documentStream: null, file));
 		}
 
 		protected override void AddXmlDependencyRecorder (LinkContext context, string file)
@@ -189,5 +189,26 @@ namespace ILLink.Tasks.Tests
 	{
 		public void Process (LinkContext context) { }
 	}
+
+	public class MockCustomStep2 : MockCustomStep { }
+
+	public class MockCustomStep3 : MockCustomStep { }
+
+	public class MockCustomStep4 : MockCustomStep { }
+
+	public class MockCustomStep5 : MockCustomStep { }
+
+	public class MockCustomStep6 : MockCustomStep { }
+
+	public class MockMarkHandler : IMarkHandler
+	{
+		public void Initialize (LinkContext context, MarkContext markContext) { }
+	}
+
+	public class MockMarkHandler2 : MockMarkHandler { }
+
+	public class MockMarkHandler3 : MockMarkHandler { }
+
+	public class MockMarkHandler4 : MockMarkHandler { }
 
 }

@@ -23,13 +23,10 @@ namespace System.Diagnostics.CodeAnalysis
 		public string? Url { get; set; }
 	}
 }";
-		static Task VerifyRequiresAssemblyFilesAnalyzer (string source, params DiagnosticResult[] expected)
-		{
-			source = source + rafDef;
-			return VerifyCS.VerifyAnalyzerAsync (source,
+		static Task VerifyRequiresAssemblyFilesAnalyzer (string source, params DiagnosticResult[] expected) =>
+			VerifyCS.VerifyAnalyzerAsync (source,
 				TestCaseUtils.UseMSBuildProperties (MSBuildPropertyOptionNames.EnableSingleFileAnalyzer),
 				expected);
-		}
 
 		static Task VerifyRequiresAssemblyFilesCodeFix (
 			string source,
@@ -75,29 +72,6 @@ class C
 			return VerifyRequiresAssemblyFilesAnalyzer (TestRequiresAssemblyFieldsOnEvent,
 				// (12,17): warning IL3002: Using member 'C.E' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
 				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (12, 17, 12, 18).WithArguments ("C.E", "", ""));
-		}
-
-		[Fact]
-		public Task SimpleDiagnosticOnMethod ()
-		{
-			var TestRequiresAssemblyFilesOnMethod = @"
-using System.Diagnostics.CodeAnalysis;
-
-class C
-{
-	[RequiresAssemblyFiles]
-	void M1()
-	{
-	}
-
-	void M2()
-	{
-		M1();
-	}
-}";
-			return VerifyRequiresAssemblyFilesAnalyzer (TestRequiresAssemblyFilesOnMethod,
-				// (13,3): warning IL3002: Using member 'C.M1()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (13, 3, 13, 7).WithArguments ("C.M1()", "", ""));
 		}
 
 		[Fact]
@@ -157,29 +131,6 @@ class C
 			return VerifyRequiresAssemblyFilesAnalyzer (TestRequiresAssemblyFilesOnMethodInsideProperty,
 				// (24,3): warning IL3002: Using member 'C.P' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
 				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (24, 3, 24, 4).WithArguments ("C.P", "", ""));
-		}
-
-		[Fact]
-		public Task RequiresAssemblyFilesWithMessageAndUrl ()
-		{
-			var TestRequiresAssemblyFilesWithMessageAndUrl = @"
-using System.Diagnostics.CodeAnalysis;
-
-class C
-{
-	[RequiresAssemblyFiles (Message = ""Message from attribute"", Url = ""https://helpurl"")]
-	void M1()
-	{
-	}
-
-	void M2()
-	{
-		M1();
-	}
-}";
-			return VerifyRequiresAssemblyFilesAnalyzer (TestRequiresAssemblyFilesWithMessageAndUrl,
-				// (13,3): warning IL3002: Using member 'C.M1()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app. Message from attribute. https://helpurl
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (13, 3, 13, 7).WithArguments ("C.M1()", " Message from attribute.", " https://helpurl"));
 		}
 
 		[Fact]

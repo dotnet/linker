@@ -14,23 +14,33 @@ namespace ILLink.RoslynAnalyzer.Tests
 	public class LinkerTestCases : TestCaseUtils
 	{
 		[Theory]
-		[MemberData (nameof (GetTestData), parameters: nameof (RequiresCapability))]
-		public void RequiresCapability (MethodDeclarationSyntax m, List<AttributeSyntax> attrs)
+		[MemberData (nameof (TestCaseUtils.GetTestData), parameters: "RequiresCapability")]
+		public void RequiresUnreferencedCodeCapability (MethodDeclarationSyntax m, List<AttributeSyntax> attrs)
 		{
 			switch (m.Identifier.ValueText) {
 			case "MethodWithDuplicateRequiresAttribute":
-			case "TestRequiresUnreferencedCodeOnlyThroughReflection":
+			case "TestRequiresOnlyThroughReflection":
 			case "TestRequiresInMethodFromCopiedAssembly":
 			case "TestRequiresThroughReflectionInMethodFromCopiedAssembly":
-			// There is a discrepancy between the way linker and the analyzer represent the location of the error,
-			// linker will point to the method caller and the analyzer will point to a line of code.
-			// The TestTypeIsBeforeFieldInit scenario is supported by the analyzer, just the diagnostic message is different
-			// We verify the analyzer generating the right diagnostic in RequiresUnreferencedCodeAnalyzerTests.cs
-			case "TestTypeIsBeforeFieldInit":
 				return;
 			}
 
-			RunTest (m, attrs, UseMSBuildProperties (MSBuildPropertyOptionNames.EnableTrimAnalyzer));
+			RunTest<RequiresUnreferencedCodeAnalyzer> (m, attrs, UseMSBuildProperties (MSBuildPropertyOptionNames.EnableTrimAnalyzer));
+		}
+
+		[Theory]
+		[MemberData (nameof (TestCaseUtils.GetTestData), parameters: "RequiresCapability")]
+		public void RequiresAssemblyFilesCapability (MethodDeclarationSyntax m, List<AttributeSyntax> attrs)
+		{
+			switch (m.Identifier.ValueText) {
+			case "MethodWithDuplicateRequiresAttribute":
+			case "TestRequiresOnlyThroughReflection":
+			case "TestRequiresInMethodFromCopiedAssembly":
+			case "TestRequiresThroughReflectionInMethodFromCopiedAssembly":
+				return;
+			}
+
+			RunTest<RequiresAssemblyFilesAnalyzer> (m, attrs, UseMSBuildProperties (MSBuildPropertyOptionNames.EnableSingleFileAnalyzer));
 		}
 	}
 }
