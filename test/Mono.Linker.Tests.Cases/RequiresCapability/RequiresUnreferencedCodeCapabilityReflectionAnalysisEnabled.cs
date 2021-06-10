@@ -10,9 +10,9 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 {
 	public class RequiresUnreferencedCodeCapabilityReflectionAnalysisEnabled
 	{
-		[LogContains ("-- DynamicallyAccessedMembersEnabled --", ProducedBy = ProducedBy.Linker)]
-		[LogContains ("-- ReflectionPattern --", ProducedBy = ProducedBy.Linker)]
-		[LogContains ("-- DynamicallyAccessedMembersOnGenericsEnabled --", ProducedBy = ProducedBy.Linker)]
+		[LogContains ("-- DynamicallyAccessedMembersEnabled --")]
+		[LogContains ("-- ReflectionPattern --")]
+		[LogContains ("-- DynamicallyAccessedMembersOnGenericsEnabled --")]
 		public static void Main ()
 		{
 			TestRequiresUnreferencedCodeAttributeWithDynamicallyAccessedMembersEnabled ();

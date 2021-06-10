@@ -671,11 +671,6 @@ namespace Mono.Linker.Tests.TestCasesRunner
 						case nameof (LogContainsAttribute): {
 								var expectedMessage = (string) attr.ConstructorArguments[0].Value;
 
-								var propertyObject = attr.GetPropertyValue ("ProducedBy");
-								ProducedBy diagnosticProducedBy = propertyObject is null ? ProducedBy.LinkerAndAnalyzer : (ProducedBy) propertyObject;
-								if (!diagnosticProducedBy.HasFlag (ProducedBy.Linker))
-									break;
-
 								List<MessageContainer> matchedMessages;
 								if ((bool) attr.ConstructorArguments[1].Value)
 									matchedMessages = loggedMessages.Where (m => Regex.IsMatch (m.ToString (), expectedMessage)).ToList ();
@@ -708,10 +703,6 @@ namespace Mono.Linker.Tests.TestCasesRunner
 								if (!expectedWarningCode.StartsWith ("IL")) {
 									Assert.Fail ($"The warning code specified in {nameof (ExpectedWarningAttribute)} must start with the 'IL' prefix. Specified value: '{expectedWarningCode}'.");
 								}
-								var propertyObject = attr.GetPropertyValue ("ProducedBy");
-								ProducedBy diagnosticProducedBy = propertyObject is null ? ProducedBy.LinkerAndAnalyzer : (ProducedBy) propertyObject;
-								if (!diagnosticProducedBy.HasFlag (ProducedBy.Linker))
-									break;
 								var expectedMessageContains = ((CustomAttributeArgument[]) attr.GetConstructorArgumentValue (1)).Select (a => (string) a.Value).ToArray ();
 								string fileName = (string) attr.GetPropertyValue ("FileName");
 								int? sourceLine = (int?) attr.GetPropertyValue ("SourceLine");

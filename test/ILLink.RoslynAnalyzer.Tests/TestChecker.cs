@@ -11,7 +11,6 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
-using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Xunit;
 
 namespace ILLink.RoslynAnalyzer.Tests
@@ -60,25 +59,13 @@ namespace ILLink.RoslynAnalyzer.Tests
 		private void ValidateExpectedWarningAttribute (AttributeSyntax attribute)
 		{
 			var args = TestCaseUtils.GetAttributeArguments (attribute);
-
-			if (args.TryGetValue ("ProducedBy", out var diagnosticProducedBy) &&
-				diagnosticProducedBy is MemberAccessExpressionSyntax memberAccessExpression &&
-				memberAccessExpression.Expression.ToString () == "ProducedBy" &&
-				memberAccessExpression.Name.Identifier.ValueText == "Linker") {
-				return;
-			}
-
 			string expectedWarningCode = TestCaseUtils.GetStringFromExpression (args["#0"]);
 
 			if (!expectedWarningCode.StartsWith ("IL"))
 				return;
 
-			bool isSupportedDiagnostic = false;
-			foreach (var supportedDiagnostic in Compilation.Analyzers.Single ().SupportedDiagnostics) {
-				if (supportedDiagnostic.Id == expectedWarningCode)
-					isSupportedDiagnostic = true;
-			}
-			if (!isSupportedDiagnostic)
+			if (args.TryGetValue ("GlobalAnalysisOnly", out var globalAnalysisOnly) &&
+				globalAnalysisOnly is LiteralExpressionSyntax { Token: { Value: true } })
 				return;
 
 			List<string> expectedMessages = args
@@ -88,6 +75,9 @@ namespace ILLink.RoslynAnalyzer.Tests
 
 			Assert.True (
 				DiagnosticMessages.Any (mc => {
+					if (mc.Id != expectedWarningCode)
+						return true;
+
 					foreach (var expectedMessage in expectedMessages)
 						if (!mc.Message.Contains (expectedMessage))
 							return false;
@@ -100,15 +90,8 @@ namespace ILLink.RoslynAnalyzer.Tests
 
 		private void ValidateLogContainsAttribute (AttributeSyntax attribute)
 		{
-			var args = TestCaseUtils.GetAttributeArguments (attribute);
-			var text = TestCaseUtils.GetStringFromExpression (args["#0"]);
-
-			if (args.TryGetValue ("ProducedBy", out var diagnosticProducedBy) &&
-				diagnosticProducedBy is MemberAccessExpressionSyntax memberAccessExpression &&
-				memberAccessExpression.Expression.ToString () == "ProducedBy" &&
-				memberAccessExpression.Name.Identifier.ValueText == "Linker") {
-				return;
-			}
+			var arg = Assert.Single (TestCaseUtils.GetAttributeArguments (attribute));
+			var text = TestCaseUtils.GetStringFromExpression (arg.Value);
 
 			// If the text starts with `warning IL...` then it probably follows the pattern
 			//	'warning <diagId>: <location>:'
