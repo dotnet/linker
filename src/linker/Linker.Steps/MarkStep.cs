@@ -676,6 +676,7 @@ namespace Mono.Linker.Steps
 			if (IsInterfaceOverrideThatDoesNotNeedMarked (overrideInformation, isInstantiated))
 				return;
 
+			// Interface static veitual methods will be abstract and will also by pass this check to get marked
 			if (!isInstantiated && !@base.IsAbstract && _context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, method))
 				return;
 
@@ -689,7 +690,8 @@ namespace Mono.Linker.Steps
 				MarkMethod (method, new DependencyInfo (DependencyKind.Override, @base), new MessageOrigin (@base));
 			}
 
-			ProcessVirtualMethod (method);
+			if (method.IsVirtual)
+				ProcessVirtualMethod (method);
 		}
 
 		bool IsInterfaceOverrideThatDoesNotNeedMarked (OverrideInformation overrideInformation, bool isInstantiated)
@@ -697,8 +699,8 @@ namespace Mono.Linker.Steps
 			if (!overrideInformation.IsOverrideOfInterfaceMember || isInstantiated)
 				return false;
 
-			// This is a static interface method
-			if (overrideInformation.Override.IsStatic && overrideInformation.Base.IsStatic)
+			// This is a static interface method and these checks should all be true
+			if (overrideInformation.Override.IsStatic && overrideInformation.Base.IsStatic && overrideInformation.Base.IsAbstract && !overrideInformation.Override.IsVirtual)
 				return false;
 
 			if (overrideInformation.MatchingInterfaceImplementation != null)
@@ -2710,7 +2712,6 @@ namespace Mono.Linker.Steps
 				Debug.Assert (Annotations.IsMarked (method));
 				break;
 			default:
-
 				Annotations.Mark (method, reason);
 				break;
 			}

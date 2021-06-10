@@ -118,7 +118,6 @@ namespace Mono.Linker
 
 		void MapInterfaceMethodsInTypeHierarchy (TypeDefinition type)
 		{
-
 			if (!type.HasInterfaces)
 				return;
 
