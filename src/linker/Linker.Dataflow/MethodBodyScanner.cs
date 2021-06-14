@@ -531,8 +531,9 @@ namespace Mono.Linker.Dataflow
 						// Pop function pointer
 						PopUnknown (currentStack, 1, methodBody, operation.Offset);
 
-						// Push return value
-						if (signature.ReturnType.MetadataType != MetadataType.Void)
+						// Push return value - BUG: signature.ReturnType.MetadataType sometime doesn't show void for valid cases
+						// Revisit after https://github.com/mono/linker/issues/2090
+						if (signature.ReturnType.GetElementType ().MetadataType != MetadataType.Void)
 							PushUnknown (currentStack);
 					}
 					break;
