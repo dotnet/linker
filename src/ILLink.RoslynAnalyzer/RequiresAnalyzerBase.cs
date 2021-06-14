@@ -157,9 +157,8 @@ namespace ILLink.RoslynAnalyzer
 					SymbolAnalysisContext symbolAnalysisContext,
 					ISymbol member)
 				{
-					ISymbol? overriddenMember;
-					if ((member.IsVirtual || member.IsOverride) && member.TryGetOverriddenMember (out overriddenMember) && verifyMatchingAttributesBetweenMembers (member, overriddenMember!))
-						ReportMatchOverrideOrInterfaceDiagnostic (symbolAnalysisContext, overriddenMember!, member);
+					if ((member.IsVirtual || member.IsOverride) && member.TryGetOverriddenMember (out var overriddenMember) && HasMismatchingAttributes (member, overriddenMember))
+						ReportMatchOverrideOrInterfaceDiagnostic (symbolAnalysisContext, overriddenMember, member);
 				}
 
 				void CheckMatchingAttributesInInterfaces (
@@ -171,9 +170,9 @@ namespace ILLink.RoslynAnalyzer
 						var members = iface.GetMembers ();
 						foreach (var member in members) {
 							var implementation = type.FindImplementationForInterfaceMember (member);
-							// In case the implementation is null in case the user code is missing an implementation, we dont provide diagnostics.
+							// In case the implementation is null because the user code is missing an implementation, we dont provide diagnostics.
 							// The compiler will provide an error
-							if (implementation != null && verifyMatchingAttributesBetweenMembers (member, implementation))
+							if (implementation != null && HasMismatchingAttributes (member, implementation))
 								ReportMatchOverrideOrInterfaceDiagnostic (symbolAnalysisContext, implementation, member);
 						}
 					}
@@ -250,7 +249,7 @@ namespace ILLink.RoslynAnalyzer
 				member1HasAttribute ? member2.ToString () : member1.ToString ()));
 		}
 
-		private bool verifyMatchingAttributesBetweenMembers (ISymbol member1, ISymbol member2) => member1.HasAttribute (RequiresAttributeName) ^ member2.HasAttribute (RequiresAttributeName);
+		private bool HasMismatchingAttributes (ISymbol member1, ISymbol member2) => member1.HasAttribute (RequiresAttributeName) ^ member2.HasAttribute (RequiresAttributeName);
 
 		protected abstract string GetMessageFromAttribute (AttributeData? requiresAssemblyFilesAttribute);
 
