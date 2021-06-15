@@ -575,6 +575,8 @@ This should be enough to implement solutions for both suppression propagation an
 
 ### Possible short term solution
 
+#### Heuristic based solution
+
 Without compiler provided markers, there's no existing way to 100% reliably implement the required
 functionality in the trimmer. That said, it should be possible to implement a reasonably good
 approximation. This approximation will necessarily make assumptions about the compilers used
@@ -591,3 +593,36 @@ in a given language. For CSharp, the compiler uses `<` and `>` characters in the
 of a compiler generated items. In FSharp this role is served by the `@` character.
 * Any compiler generated item (as detected per above) referenced from a user method
 will be considered to belong to that user method.
+
+Pros:
+
+* Can handle all cases for warning suppressions - async, iterator, lambdas and local functions
+* Can work on not just Roslyn generated IL
+
+Cons:
+
+* Heuristic - it may get it wrong in which case the trimmer may report less warnings than it should
+* Complex implementation mainly due to issues with reflection accessed code. For example if the closure class
+is marked only due to reflection access (for example `DynamicallyAccessedMemberType.All`) and the actual
+user method is not marked at all then there's no good way to determine the user method to figure out suppression
+context. Again can lead to reporting less warnings.
+
+#### Deterministic partial solution based on attributes
+
+For state machines the Roslyn compiler currently generates `IteratorStateMachineAttribute`, `AsyncStateMachineAttribute` and `AsyncIteratorStateMachineAttribute` attributes onto the "user method" and the attribute points to the generated state machine type.
+
+This can be used to completely deterministically figure out the mapping between state machine code and user methods.
+
+Pros:
+
+* Deterministic and reliable - as long as Roslyn generates these attributes (which is considered internal behavior)
+* Relatively simple implementation in the trimmer for suppressions
+
+Cons:
+
+* Partial solution - only works on async and iterator methods, doesn't work on lambdas and local functions
+
+The recommended solution is to use the deterministic approach via attributes. This solution doesn't have the reflection access problem (which is very problematic).
+The fact that it doesn't solve lambdas and local functions has a reasonable workaround. Both can be annotated
+manually by the developer by adding attributes to them. This introduces a discrepancy between analyzer
+and trimmer (as analyzer would not have this problem), but it's acceptable behavior for .NET 6.
