@@ -512,7 +512,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				public static void TestMethod () { }
 			}
 
-			// TODO: Should this be supported by analyzer?
+			// https://github.com/mono/linker/issues/2094 - should be supported by the analyzer
 			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresUnreferencedCodeAttribute.ctor--", GlobalAnalysisOnly = true)]
 			static void GenericMethodWithAttributedParameter<[AttributeWhichRequiresUnreferencedCode] T> () { }
 
@@ -522,14 +522,14 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				GenericMethodWithAttributedParameter<int> ();
 			}
 
-			// TODO: Should this be supported by analyzer?
+			// https://github.com/mono/linker/issues/2094 - should be supported by the analyzer
 			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresUnreferencedCodeAttribute.ctor--", GlobalAnalysisOnly = true)]
 			[AttributeWhichRequiresUnreferencedCode]
 			class TypeWithAttributeWhichRequires
 			{
 			}
 
-			// TODO: Should this be supported by analyzer?
+			// https://github.com/mono/linker/issues/2094 - should be supported by the analyzer
 			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresUnreferencedCodeAttribute.ctor--", GlobalAnalysisOnly = true)]
 			[AttributeWhichRequiresUnreferencedCode]
 			static void MethodWithAttributeWhichRequires () { }
