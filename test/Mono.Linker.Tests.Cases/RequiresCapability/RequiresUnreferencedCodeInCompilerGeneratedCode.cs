@@ -34,6 +34,12 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 			WarnInComplex.Test ();
 			SuppressInComplex.Test ();
+
+			StateMachinesOnlyReferencedViaReflection.Test ();
+
+			ComplexCases.AsyncBodyCallingRUCMethod.Test ();
+			ComplexCases.GenericAsyncBodyCallingRUCMethod.Test ();
+			ComplexCases.GenericAsyncEnumerableBodyCallingRUCWithAnnotations.Test ();
 		}
 
 		class WarnInIteratorBody
@@ -914,6 +920,131 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestIteratorLocalFunctionInAsyncWithoutInner ();
 				TestDynamicallyAccessedMethodViaGenericMethodParameterInIterator ();
 			}
+		}
+
+		class StateMachinesOnlyReferencedViaReflection
+		{
+			[RequiresUnreferencedCode ("RUC to suppress")]
+			static IEnumerable<int> TestIteratorOnlyReferencedViaReflectionWhichShouldSuppress ()
+			{
+				yield return 0;
+				RequiresUnreferencedCodeMethod ();
+			}
+
+			[RequiresUnreferencedCode ("RUC to suppress")]
+			static async void TestAsyncOnlyReferencedViaReflectionWhichShouldSuppress ()
+			{
+				await MethodAsync ();
+				RequiresUnreferencedCodeMethod ();
+			}
+
+			[ExpectedWarning ("IL2026", CompilerGeneratedCode = true)]
+			static IEnumerable<int> TestIteratorOnlyReferencedViaReflectionWhichShouldWarn ()
+			{
+				yield return 0;
+				RequiresUnreferencedCodeMethod ();
+			}
+
+			[ExpectedWarning ("IL2026", CompilerGeneratedCode = true)]
+			static async void TestAsyncOnlyReferencedViaReflectionWhichShouldWarn ()
+			{
+				await MethodAsync ();
+				RequiresUnreferencedCodeMethod ();
+			}
+
+			[ExpectedWarning ("IL2026", "RUC to suppress", GlobalAnalysisOnly = true)]
+			public static void Test ()
+			{
+				// This is not a 100% reliable test, since in theory it can be marked in any order and so it could happen that the
+				// user method is marked before the nested state machine gets marked. But it's the best we can do right now.
+				// (Note that currently linker will mark the state machine first actually so the test is effective).
+				typeof (StateMachinesOnlyReferencedViaReflection).RequiresAll ();
+			}
+		}
+
+		class ComplexCases
+		{
+			public class AsyncBodyCallingRUCMethod
+			{
+				[RequiresUnreferencedCode ("")]
+				static Task<object> MethodWithRUCAsync (Type type)
+				{
+					return Task.FromResult (new object ());
+				}
+
+				[RequiresUnreferencedCode ("ParentSuppression")]
+				static async Task<object> AsyncMethodCallingRUC (Type type)
+				{
+					using (var diposable = await GetDisposableAsync ()) {
+						return await MethodWithRUCAsync (type);
+					}
+				}
+
+				[ExpectedWarning ("IL2026", "ParentSuppression")]
+				public static void Test ()
+				{
+					AsyncMethodCallingRUC (typeof (object));
+				}
+			}
+
+			public class GenericAsyncBodyCallingRUCMethod
+			{
+				[RequiresUnreferencedCode ("")]
+				static ValueTask<TValue> MethodWithRUCAsync<TValue> ()
+				{
+					return ValueTask.FromResult (default (TValue));
+				}
+
+				[RequiresUnreferencedCode ("ParentSuppression")]
+				static async Task<T> AsyncMethodCallingRUC<T> ()
+				{
+					using (var disposable = await GetDisposableAsync ()) {
+						return await MethodWithRUCAsync<T> ();
+					}
+				}
+
+				[ExpectedWarning ("IL2026", "ParentSuppression")]
+				public static void Test ()
+				{
+					AsyncMethodCallingRUC<object> ();
+				}
+			}
+
+			public class GenericAsyncEnumerableBodyCallingRUCWithAnnotations
+			{
+				class RUCOnCtor
+				{
+					[RequiresUnreferencedCode ("")]
+					public RUCOnCtor ()
+					{
+					}
+				}
+
+				[RequiresUnreferencedCode ("ParentSuppression")]
+				static IAsyncEnumerable<TValue> AsyncEnumMethodCallingRUC<
+					[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicProperties)] TValue> ()
+				{
+					return CreateAsync ();
+
+					[RequiresUnreferencedCode ("")]
+					static async IAsyncEnumerable<TValue> CreateAsync ()
+					{
+						await MethodAsync ();
+						new RUCOnCtor ();
+						yield return default (TValue);
+					}
+				}
+
+				[ExpectedWarning ("IL2026", "ParentSuppression")]
+				public static void Test ()
+				{
+					AsyncEnumMethodCallingRUC<object> ();
+				}
+			}
+
+			class Disposable : IDisposable { public void Dispose () { } }
+
+			static Task<Disposable> GetDisposableAsync () { return Task.FromResult (new Disposable ()); }
 		}
 
 		static async Task<int> MethodAsync ()
