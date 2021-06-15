@@ -526,14 +526,13 @@ namespace Mono.Linker.Dataflow
 						}
 
 						// Pop arguments
-						PopUnknown (currentStack, signature.Parameters.Count, methodBody, operation.Offset);
+						if (signature.Parameters.Count > 0)
+							PopUnknown (currentStack, signature.Parameters.Count, methodBody, operation.Offset);
 
 						// Pop function pointer
 						PopUnknown (currentStack, 1, methodBody, operation.Offset);
 
-						// Push return value - BUG: signature.ReturnType.MetadataType sometime doesn't show void for valid cases
-						// Revisit after https://github.com/mono/linker/issues/2090
-						if (signature.ReturnType.GetElementType ().MetadataType != MetadataType.Void)
+						if (GetReturnTypeWithoutModifiers (signature.ReturnType).MetadataType != MetadataType.Void)
 							PushUnknown (currentStack);
 					}
 					break;
@@ -568,7 +567,9 @@ namespace Mono.Linker.Dataflow
 					break;
 
 				case Code.Ret: {
-						bool hasReturnValue = methodBody.Method.ReturnType.MetadataType != MetadataType.Void;
+
+						bool hasReturnValue = GetReturnTypeWithoutModifiers (methodBody.Method.ReturnType).MetadataType != MetadataType.Void;
+
 						if (currentStack.Count != (hasReturnValue ? 1 : 0)) {
 							WarnAboutInvalidILInMethod (methodBody, operation.Offset);
 						}
@@ -893,7 +894,7 @@ namespace Mono.Linker.Dataflow
 					else
 						methodReturnValue = newObjValue;
 				} else {
-					if (calledMethod.ReturnType.MetadataType != MetadataType.Void) {
+					if (GetReturnTypeWithoutModifiers (calledMethod.ReturnType).MetadataType != MetadataType.Void) {
 						methodReturnValue = UnknownValue.Instance;
 					}
 				}
@@ -907,6 +908,14 @@ namespace Mono.Linker.Dataflow
 					MarkArrayValuesAsUnknown (arr, curBasicBlock);
 				}
 			}
+		}
+
+		protected static TypeReference GetReturnTypeWithoutModifiers (TypeReference returnType)
+		{
+			while (returnType is IModifierType) {
+				returnType = ((IModifierType) returnType).ElementType;
+			}
+			return returnType;
 		}
 
 		// Array types that are dynamically accessed should resolve to System.Array instead of its element type - which is what Cecil resolves to.
