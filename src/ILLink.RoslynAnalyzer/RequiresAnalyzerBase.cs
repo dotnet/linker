@@ -240,13 +240,24 @@ namespace ILLink.RoslynAnalyzer
 
 		private void ReportMatchOverrideOrInterfaceDiagnostic (SymbolAnalysisContext symbolAnalysisContext, ISymbol member1, ISymbol member2)
 		{
+			var location = DefineLocation (member1, member2);
 			bool member1HasAttribute = member1.HasAttribute (RequiresAttributeName);
 			symbolAnalysisContext.ReportDiagnostic (Diagnostic.Create (
 				MatchOverrideOrInterfaceRule,
-				member1HasAttribute ? member2.Locations[0] : member1.Locations[0],
+				location,
 				RequiresAttributeName,
 				member1HasAttribute ? member1.ToString () : member2.ToString (),
 				member1HasAttribute ? member2.ToString () : member1.ToString ()));
+		}
+
+		private Location DefineLocation (ISymbol member1, ISymbol member2)
+		{
+			// If the location is in metadata cannot be represented in the diagnostic, we can only present diagnostics to code that is in source so we present the diagnostic there instead
+			if (member1.Locations[0].IsInMetadata)
+				return member2.Locations[0];
+			if (member2.Locations[0].IsInMetadata)
+				return member1.Locations[0];
+			return member1.HasAttribute (RequiresAttributeName) ? member2.Locations[0] : member1.Locations[0];
 		}
 
 		private bool HasMismatchingAttributes (ISymbol member1, ISymbol member2) => member1.HasAttribute (RequiresAttributeName) ^ member2.HasAttribute (RequiresAttributeName);

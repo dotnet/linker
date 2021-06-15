@@ -3,7 +3,9 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Testing;
 using Microsoft.CodeAnalysis.Text;
 using Xunit;
@@ -15,12 +17,14 @@ namespace ILLink.RoslynAnalyzer.Tests
 {
 	public class RequiresUnreferencedCodeAnalyzerTests
 	{
-		static Task VerifyRequiresUnreferencedCodeAnalyzer (string source, params DiagnosticResult[] expected)
-		{
-			return VerifyCS.VerifyAnalyzerAsync (source,
+		static Task VerifyRequiresUnreferencedCodeAnalyzer (string source, params DiagnosticResult[] expected) =>
+			VerifyRequiresUnreferencedCodeAnalyzer (source, null, expected);
+
+		static async Task VerifyRequiresUnreferencedCodeAnalyzer (string source, IEnumerable<MetadataReference>? additionalReferences, params DiagnosticResult[] expected) =>
+			await VerifyCS.VerifyAnalyzerAsync (source,
 				TestCaseUtils.UseMSBuildProperties (MSBuildPropertyOptionNames.EnableTrimAnalyzer),
+				additionalReferences ?? Array.Empty<MetadataReference> (),
 				expected);
-		}
 
 		static Task VerifyRequiresUnreferencedCodeCodeFix (
 			string source,
@@ -756,6 +760,105 @@ interface IRUC
 				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (18, 14, 18, 17).WithArguments ("RequiresUnreferencedCodeAttribute", "IRUC.RUC()", "AnotherImplementation.RUC()"),
 				// (23,3): warning IL2046: Presence of 'RequiresUnreferencedCodeAttribute' on method 'IRUC.Property.get' doesn't match overridden method 'AnotherImplementation.Property.get'. All overridden methods must have 'RequiresUnreferencedCodeAttribute'.
 				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (23, 3, 23, 6).WithArguments ("RequiresUnreferencedCodeAttribute", "IRUC.Property.get", "AnotherImplementation.Property.get"));
+		}
+
+		[Fact]
+		public async Task MissingRAFAttributeOnSource ()
+		{
+			var references = @"
+using System.Diagnostics.CodeAnalysis;
+
+public interface IRAF
+{
+	[RequiresUnreferencedCode (""Message"")]
+	void Method();
+	string StringProperty { [RequiresUnreferencedCode (""Message"")] get; set; }
+}";
+
+			var src = @"
+class Implementation : IRAF
+{
+	public void Method () { }
+
+	private string name;
+	public string StringProperty
+	{
+		get { return name; }
+		set { name = value; }
+	}
+}
+
+class AnotherImplementation : IRAF
+{
+	public void Method () { }
+
+	private string name;
+	public string StringProperty
+	{
+		get { return name; }
+		set { name = value; }
+	}
+}
+";
+			var compilation = (await CSharpAnalyzerVerifier<RequiresUnreferencedCodeAnalyzer>.GetCompilation (references)).EmitToImageReference ();
+
+			await VerifyRequiresUnreferencedCodeAnalyzer (src, additionalReferences: new[] { compilation },
+				// (4,14): warning IL2046: Presence of 'RequiresUnreferencedCodeAttribute' on member 'IRAF.Method()' doesn't match overridden member 'Implementation.Method()'. All overridden members must have 'RequiresUnreferencedCodeAttribute'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (4, 14, 4, 20).WithArguments ("RequiresUnreferencedCodeAttribute", "IRAF.Method()", "Implementation.Method()"),
+				// (16,14): warning IL2046: Presence of 'RequiresUnreferencedCodeAttribute' on member 'IRAF.Method()' doesn't match overridden member 'AnotherImplementation.Method()'. All overridden members must have 'RequiresUnreferencedCodeAttribute'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (16, 14, 16, 20).WithArguments ("RequiresUnreferencedCodeAttribute", "IRAF.Method()", "AnotherImplementation.Method()"),
+				// (9,3): warning IL2046: Presence of 'RequiresUnreferencedCodeAttribute' on member 'IRAF.StringProperty.get' doesn't match overridden member 'Implementation.StringProperty.get'. All overridden members must have 'RequiresUnreferencedCodeAttribute'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (9, 3, 9, 6).WithArguments ("RequiresUnreferencedCodeAttribute", "IRAF.StringProperty.get", "Implementation.StringProperty.get"),
+				// (21,3): warning IL2046: Presence of 'RequiresUnreferencedCodeAttribute' on member 'IRAF.StringProperty.get' doesn't match overridden member 'AnotherImplementation.StringProperty.get'. All overridden members must have 'RequiresUnreferencedCodeAttribute'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (21, 3, 21, 6).WithArguments ("RequiresUnreferencedCodeAttribute", "IRAF.StringProperty.get", "AnotherImplementation.StringProperty.get"));
+		}
+
+		[Fact]
+		public async Task MissingRAFAttributeOnReference ()
+		{
+			var references = @"
+public interface IRAF
+{
+	void Method();
+	string StringProperty { get; set; }
+}";
+
+			var src = @"
+using System.Diagnostics.CodeAnalysis;
+
+class Implementation : IRAF
+{
+	[RequiresUnreferencedCode (""Message"")]
+	public void Method () { }
+
+	private string name;
+	public string StringProperty
+	{
+		[RequiresUnreferencedCode (""Message"")]
+		get { return name; }
+		set { name = value; }
+	}
+}
+
+class AnotherImplementation : IRAF
+{
+	public void Method () { }
+
+	private string name;
+	public string StringProperty
+	{
+		get { return name; }
+		set { name = value; }
+	}
+}
+";
+			var compilation = (await CSharpAnalyzerVerifier<RequiresUnreferencedCodeAnalyzer>.GetCompilation (references)).EmitToImageReference ();
+
+			await VerifyRequiresUnreferencedCodeAnalyzer (src, additionalReferences: new[] { compilation },
+				// (7,14): warning IL2046: Presence of 'RequiresUnreferencedCodeAttribute' on member 'Implementation.Method()' doesn't match overridden member 'IRAF.Method()'. All overridden members must have 'RequiresUnreferencedCodeAttribute'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (7, 14, 7, 20).WithArguments ("RequiresUnreferencedCodeAttribute", "Implementation.Method()", "IRAF.Method()"),
+				// (13,3): warning IL2046: Presence of 'RequiresUnreferencedCodeAttribute' on member 'Implementation.StringProperty.get' doesn't match overridden member 'IRAF.StringProperty.get'. All overridden members must have 'RequiresUnreferencedCodeAttribute'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (13, 3, 13, 6).WithArguments ("RequiresUnreferencedCodeAttribute", "Implementation.StringProperty.get", "IRAF.StringProperty.get"));
 		}
 	}
 }

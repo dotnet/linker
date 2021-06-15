@@ -1,5 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Testing;
 using Microsoft.CodeAnalysis.Text;
 using Xunit;
@@ -11,7 +15,9 @@ namespace ILLink.RoslynAnalyzer.Tests
 {
 	public class RequiresAssemblyFilesAnalyzerTests
 	{
-		private const string rafDef = @"
+		private readonly static MetadataReference _rafReference = CSharpAnalyzerVerifier<RequiresAssemblyFilesAnalyzer>.GetCompilation (rafSourceDefinition).Result.EmitToImageReference ();
+
+		private const string rafSourceDefinition = @"
 #nullable enable
 namespace System.Diagnostics.CodeAnalysis
 {
@@ -23,10 +29,19 @@ namespace System.Diagnostics.CodeAnalysis
 		public string? Url { get; set; }
 	}
 }";
-		static Task VerifyRequiresAssemblyFilesAnalyzer (string source, params DiagnosticResult[] expected) =>
-			VerifyCS.VerifyAnalyzerAsync (source,
+		static Task VerifyRequiresAssemblyFilesAnalyzer (string source, params DiagnosticResult[] expected)
+		{
+			return VerifyRequiresAssemblyFilesAnalyzer (source, null, expected);
+		}
+
+		static async Task VerifyRequiresAssemblyFilesAnalyzer (string source, IEnumerable<MetadataReference>? additionalReferences, params DiagnosticResult[] expected)
+		{
+
+			await VerifyCS.VerifyAnalyzerAsync (source,
 				TestCaseUtils.UseMSBuildProperties (MSBuildPropertyOptionNames.EnableSingleFileAnalyzer),
+				new[] { _rafReference }.Concat (additionalReferences ?? Array.Empty<MetadataReference> ()),
 				expected);
+		}
 
 		static Task VerifyRequiresAssemblyFilesCodeFix (
 			string source,
@@ -36,8 +51,8 @@ namespace System.Diagnostics.CodeAnalysis
 			int? numberOfIterations = null)
 		{
 			var test = new VerifyCS.Test {
-				TestCode = source + rafDef,
-				FixedCode = fixedSource + rafDef,
+				TestCode = source + rafSourceDefinition,
+				FixedCode = fixedSource + rafSourceDefinition,
 			};
 			test.ExpectedDiagnostics.AddRange (baselineExpected);
 			test.TestState.AnalyzerConfigFiles.Add (
@@ -1094,6 +1109,143 @@ interface IRAF
 				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (30, 3, 30, 6).WithArguments ("RequiresAssemblyFilesAttribute", "IRAF.StringProperty.get", "AnotherImplementation.StringProperty.get"),
 				// (35,13): warning IL3003: Presence of 'RequiresAssemblyFilesAttribute' on member 'IRAF.NumProperty' doesn't match overridden member 'AnotherImplementation.NumProperty'. All overridden members must have 'RequiresAssemblyFilesAttribute'.
 				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (35, 13, 35, 24).WithArguments ("RequiresAssemblyFilesAttribute", "IRAF.NumProperty", "AnotherImplementation.NumProperty"));
+		}
+
+		[Fact]
+		public async Task MissingRAFAttributeOnSource ()
+		{
+			var references = @"
+using System.Diagnostics.CodeAnalysis;
+
+public interface IRAF
+{
+	[RequiresAssemblyFiles]
+	void Method();
+	string StringProperty { [RequiresAssemblyFiles] get; set; }
+	[RequiresAssemblyFiles]
+	int NumProperty { get; set; }
+}";
+
+			var src = @"
+class Implementation : IRAF
+{
+	public void Method () { }
+
+	private string name;
+	public string StringProperty
+	{
+		get { return name; }
+		set { name = value; }
+	}
+
+	private int num;
+	public int NumProperty
+	{
+		get { return num; }
+		set { num = value; }
+	}
+}
+
+class AnotherImplementation : IRAF
+{
+	public void Method () { }
+
+	private string name;
+	public string StringProperty
+	{
+		get { return name; }
+		set { name = value; }
+	}
+
+	private int num;
+	public int NumProperty
+	{
+		get { return num; }
+		set { num = value; }
+	}
+}
+";
+			var compilation = (await CSharpAnalyzerVerifier<RequiresAssemblyFilesAnalyzer>.GetCompilation (references, additionalReferences: new[] { _rafReference })).EmitToImageReference ();
+
+			await VerifyRequiresAssemblyFilesAnalyzer (src, additionalReferences: new[] { compilation },
+				// (4,14): warning IL3003: Presence of 'RequiresAssemblyFilesAttribute' on member 'IRAF.Method()' doesn't match overridden member 'Implementation.Method()'. All overridden members must have 'RequiresAssemblyFilesAttribute'.
+				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (4, 14, 4, 20).WithArguments ("RequiresAssemblyFilesAttribute", "IRAF.Method()", "Implementation.Method()"),
+				// (23,14): warning IL3003: Presence of 'RequiresAssemblyFilesAttribute' on member 'IRAF.Method()' doesn't match overridden member 'AnotherImplementation.Method()'. All overridden members must have 'RequiresAssemblyFilesAttribute'.
+				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (23, 14, 23, 20).WithArguments ("RequiresAssemblyFilesAttribute", "IRAF.Method()", "AnotherImplementation.Method()"),
+				// (28,3): warning IL3003: Presence of 'RequiresAssemblyFilesAttribute' on member 'IRAF.StringProperty.get' doesn't match overridden member 'AnotherImplementation.StringProperty.get'. All overridden members must have 'RequiresAssemblyFilesAttribute'.
+				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (28, 3, 28, 6).WithArguments ("RequiresAssemblyFilesAttribute", "IRAF.StringProperty.get", "AnotherImplementation.StringProperty.get"),
+				// (9,3): warning IL3003: Presence of 'RequiresAssemblyFilesAttribute' on member 'IRAF.StringProperty.get' doesn't match overridden member 'Implementation.StringProperty.get'. All overridden members must have 'RequiresAssemblyFilesAttribute'.
+				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (9, 3, 9, 6).WithArguments ("RequiresAssemblyFilesAttribute", "IRAF.StringProperty.get", "Implementation.StringProperty.get"),
+				// (33,13): warning IL3003: Presence of 'RequiresAssemblyFilesAttribute' on member 'IRAF.NumProperty' doesn't match overridden member 'AnotherImplementation.NumProperty'. All overridden members must have 'RequiresAssemblyFilesAttribute'.
+				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (33, 13, 33, 24).WithArguments ("RequiresAssemblyFilesAttribute", "IRAF.NumProperty", "AnotherImplementation.NumProperty"),
+				// (14,13): warning IL3003: Presence of 'RequiresAssemblyFilesAttribute' on member 'IRAF.NumProperty' doesn't match overridden member 'Implementation.NumProperty'. All overridden members must have 'RequiresAssemblyFilesAttribute'.
+				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (14, 13, 14, 24).WithArguments ("RequiresAssemblyFilesAttribute", "IRAF.NumProperty", "Implementation.NumProperty"));
+		}
+
+		[Fact]
+		public async Task MissingRAFAttributeOnReference ()
+		{
+			var references = @"
+public interface IRAF
+{
+	void Method();
+	string StringProperty { get; set; }
+	int NumProperty { get; set; }
+}";
+
+			var src = @"
+using System.Diagnostics.CodeAnalysis;
+
+class Implementation : IRAF
+{
+	[RequiresAssemblyFiles]
+	public void Method () { }
+
+	private string name;
+	public string StringProperty
+	{
+		[RequiresAssemblyFiles]
+		get { return name; }
+		set { name = value; }
+	}
+
+	private int num;
+	[RequiresAssemblyFiles]
+	public int NumProperty
+	{
+		get { return num; }
+		set { num = value; }
+	}
+}
+
+class AnotherImplementation : IRAF
+{
+	public void Method () { }
+
+	private string name;
+	public string StringProperty
+	{
+		get { return name; }
+		set { name = value; }
+	}
+
+	private int num;
+	public int NumProperty
+	{
+		get { return num; }
+		set { num = value; }
+	}
+}
+";
+			var compilation = (await CSharpAnalyzerVerifier<RequiresAssemblyFilesAnalyzer>.GetCompilation (references, additionalReferences: new[] { _rafReference })).EmitToImageReference ();
+
+			await VerifyRequiresAssemblyFilesAnalyzer (src, additionalReferences: new[] { compilation },
+				// (7,14): warning IL3003: Presence of 'RequiresAssemblyFilesAttribute' on member 'Implementation.Method()' doesn't match overridden member 'IRAF.Method()'. All overridden members must have 'RequiresAssemblyFilesAttribute'.
+				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (7, 14, 7, 20).WithArguments ("RequiresAssemblyFilesAttribute", "Implementation.Method()", "IRAF.Method()"),
+				// (13,3): warning IL3003: Presence of 'RequiresAssemblyFilesAttribute' on member 'Implementation.StringProperty.get' doesn't match overridden member 'IRAF.StringProperty.get'. All overridden members must have 'RequiresAssemblyFilesAttribute'.
+				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (13, 3, 13, 6).WithArguments ("RequiresAssemblyFilesAttribute", "Implementation.StringProperty.get", "IRAF.StringProperty.get"),
+				// (19,13): warning IL3003: Presence of 'RequiresAssemblyFilesAttribute' on member 'Implementation.NumProperty' doesn't match overridden member 'IRAF.NumProperty'. All overridden members must have 'RequiresAssemblyFilesAttribute'.
+				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (19, 13, 19, 24).WithArguments ("RequiresAssemblyFilesAttribute", "Implementation.NumProperty", "IRAF.NumProperty"));
 		}
 	}
 }
