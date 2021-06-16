@@ -1734,10 +1734,7 @@ namespace Mono.Linker.Dataflow
 						// Is the PInvoke dangerous?
 						bool comDangerousMethod = IsComInterop (calledMethodDefinition.MethodReturnType, calledMethodDefinition.ReturnType);
 						foreach (ParameterDefinition pd in calledMethodDefinition.Parameters) {
-							TypeReference paramTypeReference = pd.ParameterType;
-							if (paramTypeReference != null) {
-								comDangerousMethod |= IsComInterop (pd, paramTypeReference);
-							}
+							comDangerousMethod |= IsComInterop (pd, pd.ParameterType);
 						}
 
 						if (comDangerousMethod) {

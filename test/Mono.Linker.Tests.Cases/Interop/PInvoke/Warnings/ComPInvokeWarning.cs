@@ -29,6 +29,7 @@ namespace Mono.Linker.Tests.Cases.Interop.PInvoke.Warnings
 			Call_CanSuppressWarningOnParameter ();
 			Call_CanSuppressWarningOnReturnType ();
 			Call_CanSuppressWithRequiresUnreferencedCode ();
+			Call_CanSuppressPInvokeWithRequiresUnreferencedCode ();
 		}
 
 		[ExpectedWarning ("IL2050")]
@@ -139,6 +140,17 @@ namespace Mono.Linker.Tests.Cases.Interop.PInvoke.Warnings
 
 		[DllImport ("Foo")]
 		static extern void CanSuppressWithRequiresUnreferencedCode (IFoo foo);
+
+		[RequiresUnreferencedCode ("test")]
+		static void Call_CanSuppressPInvokeWithRequiresUnreferencedCode ()
+		{
+			CanSuppressPInvokeWithRequiresUnreferencedCode (null);
+		}
+
+		[RequiresUnreferencedCode ("test")]
+		[DllImport ("Foo")]
+		static extern void CanSuppressPInvokeWithRequiresUnreferencedCode (IFoo foo);
+
 
 		interface IFoo { }
 
