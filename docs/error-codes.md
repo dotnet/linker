@@ -1613,7 +1613,7 @@ class Test
 
   ```C#
   class <compiler_generated_state_machine>_type {
-      void MoveNext ()
+      void MoveNext()
       {
           // This should normally produce IL2026
           CallSomethingWhichRequiresUnreferencedCode ();
@@ -1622,7 +1622,7 @@ class Test
 
   [RequiresUnreferencedCode ("")] // This should suppress all warnings from the method
   [IteratorStateMachine(typeof(<compiler_generated_state_machine>_type))]
-  IEnumerable<int> UserDefinedMethod ()
+  IEnumerable<int> UserDefinedMethod()
   {
       // Uses the state machine type
       // The IL2026 from the state machine should be suppressed in this case
@@ -1630,12 +1630,11 @@ class Test
 
   // IL2107: Methods 'UserDefinedMethod' and 'SecondUserDefinedMethod' are both associated with state machine type '<compiler_generated_state_machine>_type'.
   [IteratorStateMachine(typeof(<compiler_generated_state_machine>_type))]
-  IEnumerable<int> SecondUserDefinedMethod ()
+  IEnumerable<int> SecondUserDefinedMethod()
   {
       // Uses the state machine type
       // The IL2026 from the state should be reported in this case
   }
-
   ```
 
 ## Single-File Warning Codes
