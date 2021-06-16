@@ -21,7 +21,13 @@ namespace ILLink.RoslynAnalyzer
 
 		private protected abstract DiagnosticDescriptor RequiresDiagnosticRule { get; }
 
-		private protected abstract DiagnosticDescriptor MatchOverrideOrInterfaceRule { get; }
+		private protected abstract DiagnosticDescriptor BaseRequiresMismatch { get; }
+
+		private protected abstract DiagnosticDescriptor DerivedRequiresMismatch { get; }
+
+		private protected abstract DiagnosticDescriptor InterfaceRequiresMismatch { get; }
+
+		private protected abstract DiagnosticDescriptor ImplementationRequiresMismatch { get; }
 
 		public override void Initialize (AnalysisContext context)
 		{
@@ -158,7 +164,7 @@ namespace ILLink.RoslynAnalyzer
 					ISymbol member)
 				{
 					if ((member.IsVirtual || member.IsOverride) && member.TryGetOverriddenMember (out var overriddenMember) && HasMismatchingAttributes (member, overriddenMember))
-						ReportMatchOverrideOrInterfaceDiagnostic (symbolAnalysisContext, overriddenMember, member);
+						ReportMismatchInAttributesDiagnostic (symbolAnalysisContext, member, overriddenMember);
 				}
 
 				void CheckMatchingAttributesInInterfaces (
@@ -173,7 +179,7 @@ namespace ILLink.RoslynAnalyzer
 							// In case the implementation is null because the user code is missing an implementation, we dont provide diagnostics.
 							// The compiler will provide an error
 							if (implementation != null && HasMismatchingAttributes (member, implementation))
-								ReportMatchOverrideOrInterfaceDiagnostic (symbolAnalysisContext, implementation, member);
+								ReportMismatchInAttributesDiagnostic (symbolAnalysisContext, implementation, member);
 						}
 					}
 
@@ -238,26 +244,22 @@ namespace ILLink.RoslynAnalyzer
 				url));
 		}
 
-		private void ReportMatchOverrideOrInterfaceDiagnostic (SymbolAnalysisContext symbolAnalysisContext, ISymbol member1, ISymbol member2)
+		private void ReportMismatchInAttributesDiagnostic (SymbolAnalysisContext symbolAnalysisContext, ISymbol member, ISymbol baseMember)
 		{
-			var location = DefineLocation (member1, member2);
-			bool member1HasAttribute = member1.HasAttribute (RequiresAttributeName);
-			symbolAnalysisContext.ReportDiagnostic (Diagnostic.Create (
-				MatchOverrideOrInterfaceRule,
-				location,
+			if (!member.HasAttribute (RequiresAttributeName))
+				symbolAnalysisContext.ReportDiagnostic (Diagnostic.Create (
+				baseMember.IsVirtual ? BaseRequiresMismatch : InterfaceRequiresMismatch,
+				member.Locations[0],
 				RequiresAttributeName,
-				member1HasAttribute ? member1.ToString () : member2.ToString (),
-				member1HasAttribute ? member2.ToString () : member1.ToString ()));
-		}
-
-		private Location DefineLocation (ISymbol member1, ISymbol member2)
-		{
-			// If the location is in metadata cannot be represented in the diagnostic, we can only present diagnostics to code that is in source so we present the diagnostic there instead
-			if (member1.Locations[0].IsInMetadata)
-				return member2.Locations[0];
-			if (member2.Locations[0].IsInMetadata)
-				return member1.Locations[0];
-			return member1.HasAttribute (RequiresAttributeName) ? member2.Locations[0] : member1.Locations[0];
+				baseMember.ToString (),
+				member.ToString ()));
+			else
+				symbolAnalysisContext.ReportDiagnostic (Diagnostic.Create (
+				baseMember.IsVirtual ? DerivedRequiresMismatch : ImplementationRequiresMismatch,
+				member.Locations[0],
+				RequiresAttributeName,
+				member.ToString (),
+				baseMember.ToString ()));
 		}
 
 		private bool HasMismatchingAttributes (ISymbol member1, ISymbol member2) => member1.HasAttribute (RequiresAttributeName) ^ member2.HasAttribute (RequiresAttributeName);

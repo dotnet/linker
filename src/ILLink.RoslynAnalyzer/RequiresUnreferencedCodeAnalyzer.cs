@@ -14,6 +14,9 @@ namespace ILLink.RoslynAnalyzer
 	{
 		public const string IL2026 = nameof (IL2026);
 		public const string IL2046 = nameof (IL2046);
+		public const string IL2107 = nameof (IL2107);
+		public const string IL2108 = nameof (IL2108);
+		public const string IL2109 = nameof (IL2109);
 		const string RequiresUnreferencedCodeAttribute = nameof (RequiresUnreferencedCodeAttribute);
 		public const string FullyQualifiedRequiresUnreferencedCodeAttribute = "System.Diagnostics.CodeAnalysis." + RequiresUnreferencedCodeAttribute;
 
@@ -27,17 +30,47 @@ namespace ILLink.RoslynAnalyzer
 			DiagnosticSeverity.Warning,
 			isEnabledByDefault: true);
 
-		static readonly DiagnosticDescriptor s_matchOverrideOrInterfaceRule = new DiagnosticDescriptor (
+		static readonly DiagnosticDescriptor s_baseRequiresMismatch = new DiagnosticDescriptor (
 			IL2046,
-			new LocalizableResourceString (nameof (Resources.MatchRequiresAttributeOverridesOrInterfacesTitle),
+			new LocalizableResourceString (nameof (Resources.BaseRequiresMismatchTitle),
 			Resources.ResourceManager, typeof (Resources)),
-			new LocalizableResourceString (nameof (Resources.MatchRequiresAttributeOverridesOrInterfacesMessage),
+			new LocalizableResourceString (nameof (Resources.BaseRequiresMismatchMessage),
 			Resources.ResourceManager, typeof (Resources)),
 			DiagnosticCategory.Trimming,
 			DiagnosticSeverity.Warning,
 			isEnabledByDefault: true);
 
-		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create (s_requiresUnreferencedCodeRule, s_matchOverrideOrInterfaceRule);
+		static readonly DiagnosticDescriptor s_derivedRequiresMismatch = new DiagnosticDescriptor (
+			IL2107,
+			new LocalizableResourceString (nameof (Resources.DerivedRequiresMismatchTitle),
+			Resources.ResourceManager, typeof (Resources)),
+			new LocalizableResourceString (nameof (Resources.DerivedRequiresMismatchMessage),
+			Resources.ResourceManager, typeof (Resources)),
+			DiagnosticCategory.Trimming,
+			DiagnosticSeverity.Warning,
+			isEnabledByDefault: true);
+
+		static readonly DiagnosticDescriptor s_interfaceRequiresMismatch = new DiagnosticDescriptor (
+			IL2108,
+			new LocalizableResourceString (nameof (Resources.InterfaceRequiresMismatchTitle),
+			Resources.ResourceManager, typeof (Resources)),
+			new LocalizableResourceString (nameof (Resources.InterfaceRequiresMismatchMessage),
+			Resources.ResourceManager, typeof (Resources)),
+			DiagnosticCategory.Trimming,
+			DiagnosticSeverity.Warning,
+			isEnabledByDefault: true);
+
+		static readonly DiagnosticDescriptor s_implementationRequiresMismatch = new DiagnosticDescriptor (
+			IL2109,
+			new LocalizableResourceString (nameof (Resources.ImplementationRequiresMismatchTitle),
+			Resources.ResourceManager, typeof (Resources)),
+			new LocalizableResourceString (nameof (Resources.ImplementationRequiresMismatchMessage),
+			Resources.ResourceManager, typeof (Resources)),
+			DiagnosticCategory.Trimming,
+			DiagnosticSeverity.Warning,
+			isEnabledByDefault: true);
+
+		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create (s_requiresUnreferencedCodeRule, s_baseRequiresMismatch, s_derivedRequiresMismatch, s_interfaceRequiresMismatch, s_implementationRequiresMismatch);
 
 		private protected override string RequiresAttributeName => RequiresUnreferencedCodeAttribute;
 
@@ -47,7 +80,13 @@ namespace ILLink.RoslynAnalyzer
 
 		private protected override DiagnosticDescriptor RequiresDiagnosticRule => s_requiresUnreferencedCodeRule;
 
-		private protected override DiagnosticDescriptor MatchOverrideOrInterfaceRule => s_matchOverrideOrInterfaceRule;
+		private protected override DiagnosticDescriptor BaseRequiresMismatch => s_baseRequiresMismatch;
+
+		private protected override DiagnosticDescriptor DerivedRequiresMismatch => s_derivedRequiresMismatch;
+
+		private protected override DiagnosticDescriptor InterfaceRequiresMismatch => s_interfaceRequiresMismatch;
+
+		private protected override DiagnosticDescriptor ImplementationRequiresMismatch => s_implementationRequiresMismatch;
 
 		protected override bool IsAnalyzerEnabled (AnalyzerOptions options, Compilation compilation)
 		{

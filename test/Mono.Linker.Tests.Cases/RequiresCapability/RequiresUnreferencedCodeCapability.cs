@@ -61,6 +61,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			TestThatTrailingPeriodIsAddedToMessage ();
 			TestThatTrailingPeriodIsNotDuplicatedInWarningMessage ();
 			TestRequiresOnAttributeOnGenericParameter ();
+			TestRequiresImplementationHasAttributeButInterfaceDoesnt ();
 		}
 
 		[ExpectedWarning ("IL2026", "Message for --RequiresWithMessageOnly--.")]
@@ -443,6 +444,65 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		static void TestRequiresOnAttributeOnGenericParameter ()
 		{
 			GenericTypeWithAttributedParameter<int>.TestMethod ();
+		}
+
+		class Implementation : IRUC
+		{
+			[ExpectedWarning ("IL2046", "Mono.Linker.Tests.Cases.RequiresCapability.RequiresUnreferencedCodeCapability.Implementation.RUC()", "Mono.Linker.Tests.Cases.RequiresCapability.RequiresUnreferencedCodeCapability.IRUC.RUC()")]
+			[RequiresUnreferencedCode ("Message")]
+			public void RUC () { }
+
+			private string name;
+			public string Property {
+				[ExpectedWarning ("IL2046", "Mono.Linker.Tests.Cases.RequiresCapability.RequiresUnreferencedCodeCapability.Implementation.Property.get", "Mono.Linker.Tests.Cases.RequiresCapability.RequiresUnreferencedCodeCapability.IRUC.Property.get")]
+				[RequiresUnreferencedCode ("Message")]
+				get { return name; }
+				set { name = value; }
+			}
+		}
+
+		class AnotherImplementation : IRUC
+		{
+			[ExpectedNoWarnings]
+			public void RUC () { }
+
+			private string name;
+			public string Property {
+				[ExpectedNoWarnings]
+				get { return name; }
+				set { name = value; }
+			}
+		}
+
+		class ExplicitImplementation : IRUC
+		{
+			[RequiresUnreferencedCode ("Message")]
+			void IRUC.RUC () { }
+
+			private string name;
+			string IRUC.Property {
+				[RequiresUnreferencedCode ("Message")]
+				get { return name; }
+				set { name = value; }
+			}
+		}
+
+		interface IRUC
+		{
+			void RUC ();
+			string Property { get; set; }
+		}
+
+		static void TestRequiresImplementationHasAttributeButInterfaceDoesnt ()
+		{
+			var implementation = new Implementation ();
+			implementation.RUC ();
+			var value = implementation.Property;
+			var anotherImplementation = new AnotherImplementation ();
+			anotherImplementation.RUC ();
+			value = anotherImplementation.Property;
+			var explicitImplementation = new ExplicitImplementation ();
+
 		}
 	}
 }

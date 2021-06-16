@@ -40,12 +40,23 @@ namespace Mono.Linker.Steps
 		void ValidateMethodRequiresUnreferencedCodeAreSame (MethodDefinition method, MethodDefinition baseMethod)
 		{
 			var annotations = Context.Annotations;
-			if (annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (method) !=
-				annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (baseMethod))
-				Context.LogWarning (
-					$"Presence of 'RequiresUnreferencedCodeAttribute' on method '{method.GetDisplayName ()}' doesn't match overridden method '{baseMethod.GetDisplayName ()}'. " +
-					$"All overridden methods must have 'RequiresUnreferencedCodeAttribute'.",
-					2046, method, subcategory: MessageSubCategory.TrimAnalysis);
+			bool methodHasAttribute = annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (method);
+			if (methodHasAttribute != annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (baseMethod)) {
+				if (!methodHasAttribute && baseMethod.IsVirtual)
+					Context.LogWarning ($"Base member '{ baseMethod.GetDisplayName () }' with 'RequiresUnreferencedCodeAttribute' has a derived member '{ method.GetDisplayName () }' without 'RequiresUnreferencedCodeAttribute'. " +
+										$"Add the 'RequiresUnreferencedCodeAttribute' to '{ method.GetDisplayName () }'",
+										2046, method, subcategory: MessageSubCategory.TrimAnalysis);
+				else if (methodHasAttribute && baseMethod.IsVirtual)
+					Context.LogWarning ($"Member '{ method.GetDisplayName () }' with 'RequiresUnreferencedCodeAttribute' overrides base member '{ baseMethod.GetDisplayName () }' without 'RequiresUnreferencedCodeAttribute'.",
+										2107, method, subcategory: MessageSubCategory.TrimAnalysis);
+				else if (!methodHasAttribute && !baseMethod.IsVirtual)
+					Context.LogWarning ($"Interface member '{ baseMethod.GetDisplayName () }' with 'RequiresUnreferencedCodeAttribute' has an implementation member '{ method.GetDisplayName () }' without 'RequiresUnreferencedCodeAttribute'. " +
+										$"Add the 'RequiresUnreferencedCodeAttribute' to '{ method.GetDisplayName () }'",
+										2108, method, subcategory: MessageSubCategory.TrimAnalysis);
+				else if (methodHasAttribute && !baseMethod.IsVirtual)
+					Context.LogWarning ($"Member '{ method.GetDisplayName () }' with 'RequiresUnreferencedCodeAttribute' implements interface member '{ baseMethod.GetDisplayName () }' without 'RequiresUnreferencedCodeAttribute'.",
+										2109, method, subcategory: MessageSubCategory.TrimAnalysis);
+			}
 		}
 	}
 }

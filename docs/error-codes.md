@@ -782,9 +782,9 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
   }
   ```
 
-#### `IL2046` Trim analysis: Presence of 'RequiresUnreferencedCodeAttribute' on method 'method' doesn't match overridden method 'base method'. All overridden methods must have 'RequiresUnreferencedCodeAttribute'.
+#### `IL2046`: Trim analysis: Base member 'member' with 'RequiresUnreferencedCodeAttribute' has a derived member 'member' without 'RequiresUnreferencedCodeAttribute'. Add the 'RequiresUnreferencedCodeAttribute' to 'member'.
 
-- All overrides of a virtual method including the base method must either have or not have the `RequiresUnreferencedCodeAttribute`.
+- All overrides of a virtual member including the base member must either have or not have the `RequiresUnreferencedCodeAttribute`.
 
   ```C#
   public class Base
@@ -795,7 +795,7 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
 
   public class Derived : Base
   {
-    // IL2046: Presence of 'RequiresUnreferencedCodeAttribute' on method 'Derived.TestMethod()' doesn't match overridden method 'Base.TestMethod'. All overridden methods must have 'RequiresUnreferencedCodeAttribute'.
+    // IL2046: Base member 'Base.TestMethod' with 'RequiresUnreferencedCodeAttribute' has a derived member 'Derived.TestMethod()' without 'RequiresUnreferencedCodeAttribute'. Add the 'RequiresUnreferencedCodeAttribute' to 'Derived.TestMethod()'.
     public override void TestMethod() {}
   }
   ```
@@ -1604,6 +1604,59 @@ void RequirePublicMethodOnAType(
   }
   ```
 
+#### `IL2107`: Trim analysis: Member 'member' with 'RequiresUnreferencedCodeAttribute' overrides base member 'member' without 'RequiresUnreferencedCodeAttribute'.
+
+- All overrides of a virtual member including the base member must either have or not have the `RequiresUnreferencedCodeAttribute`.
+
+  ```C#
+  public class Base
+  {
+    public virtual void TestMethod() {}
+  }
+
+  public class Derived : Base
+  {
+    // IL2107: Member 'Derived.TestMethod()' with 'RequiresUnreferencedCodeAttribute' overrides base member 'Base.TestMethod' without 'RequiresUnreferencedCodeAttribute'.
+    [RequiresUnreferencedCode("Message")]
+    public override void TestMethod() {}
+  }
+  ```
+
+#### `IL2108`: Trim analysis: Interface member 'member' with 'RequiresUnreferencedCodeAttribute' has an implementation member 'member' without 'RequiresUnreferencedCodeAttribute'. Add the 'RequiresUnreferencedCodeAttribute' to 'member'.
+
+- All implementations of a interface member including the base interface member must either have or not have the `RequiresUnreferencedCodeAttribute`.
+
+  ```C#
+  public interface IRUC
+  {
+    [RequiresUnreferencedCode("Message")]
+    void TestMethod() {}
+  }
+
+  public class Implementation : IRUC
+  {
+    // IL2108: Interface member 'IRUC.TestMethod()' with 'RequiresUnreferencedCodeAttribute' has an implementation member 'Implementation.TestMethod' without 'RequiresUnreferencedCodeAttribute'. Add the 'RequiresUnreferencedCodeAttribute' to 'Implementation.TestMethod'.
+    public void TestMethod() {}
+  }
+  ```
+
+#### `IL2109`: Trim analysis: Member 'member' with 'RequiresUnreferencedCodeAttribute' implements interface member 'member' without 'RequiresUnreferencedCodeAttribute'.
+
+- All implementations of a interface member including the base interface member must either have or not have the `RequiresUnreferencedCodeAttribute`.
+
+  ```C#
+  public interface IRUC
+  {
+    void TestMethod() {}
+  }
+
+  public class Implementation : IRUC
+  {
+    // IL2109: Member 'Implementation.TestMethod()' with 'RequiresUnreferencedCodeAttribute' implements interface member 'IRUC.TestMethod' without 'RequiresUnreferencedCodeAttribute'.
+    [RequiresUnreferencedCode("Message")]
+    public void TestMethod() {}
+  }
+  ```
 
 ## Single-File Warning Codes
 
@@ -1666,5 +1719,77 @@ void RequirePublicMethodOnAType(
   {
     // IL3003: Presence of 'RequiresAssemblyFilesAttribute' on method 'Derived.TestMethod()' doesn't match overridden method 'Base.TestMethod'. All overridden methods must have 'RequiresAssemblyFilesAttribute'.
     public override void TestMethod() {}
+  }
+  ```
+
+#### `IL3003`: Base member 'member' with 'RequiresAssemblyFilesAttribute' has a derived member 'member' without 'RequiresAssemblyFilesAttribute'. Add the 'RequiresAssemblyFilesAttribute' to 'member'.
+
+- All overrides of a virtual method including the base method must either have or not have the `RequiresAssemblyFilesAttribute`.
+
+  ```C#
+  public class Base
+  {
+    [RequiresAssemblyFiles("Message")]
+    public virtual void TestMethod() {}
+  }
+
+  public class Derived : Base
+  {
+    // IL3003: Base member 'Base.TestMethod' with 'RequiresAssemblyFilesAttribute' has a derived member 'Derived.TestMethod()' without 'RequiresAssemblyFilesAttribute'. Add the 'RequiresAssemblyFilesAttribute' to 'Derived.TestMethod()'.
+    public void TestMethod() {}
+  }
+  ```
+
+#### `IL3004`: Member 'member' with 'RequiresAssemblyFilesAttribute' overrides base member 'member' without 'RequiresAssemblyFilesAttribute'.
+
+- All overrides of a virtual method including the base method must either have or not have the `RequiresAssemblyFilesAttribute`.
+
+  ```C#
+  public class Base
+  {
+    public virtual void TestMethod() {}
+  }
+
+  public class Derived : Base
+  {
+    // IL3004: Member 'Derived.TestMethod()' with 'RequiresAssemblyFilesAttribute' overrides base member 'Base.TestMethod' without 'RequiresAssemblyFilesAttribute'.
+    [RequiresAssemblyFiles("Message")]
+    public override void TestMethod() {}
+  }
+  ```
+
+#### `IL3005`: Trim analysis: Interface member 'member' with 'RequiresAssemblyFilesAttribute' has an implementation member 'member' without 'RequiresAssemblyFilesAttribute'. Add the 'RequiresAssemblyFilesAttribute' to 'member'.
+
+- All implementations of a interface method including the base interface method must either have or not have the `RequiresAssemblyFilesAttribute`.
+
+  ```C#
+  public interface IRUC
+  {
+    [RequiresAssemblyFiles("Message")]
+    void TestMethod() {}
+  }
+
+  public class Implementation : IRUC
+  {
+    // IL3005: Interface member 'IRUC.TestMethod()' with 'RequiresAssemblyFilesAttribute' has an implementation member 'Implementation.TestMethod' without 'RequiresAssemblyFilesAttribute'. Add the 'RequiresAssemblyFilesAttribute' to 'Implementation.TestMethod'.
+    public void TestMethod() {}
+  }
+  ```
+
+#### `IL3006` Trim analysis: Member 'member' with 'RequiresAssemblyFilesAttribute' implements interface member 'member' without 'RequiresAssemblyFilesAttribute'.
+
+- All implementations of a interface method including the base interface method must either have or not have the `RequiresAssemblyFilesAttribute`.
+
+  ```C#
+  public interface IRUC
+  {
+    void TestMethod() {}
+  }
+
+  public class Implementation : IRUC
+  {
+    // IL3006: Member 'Implementation.TestMethod()' with 'RequiresAssemblyFilesAttribute' implements interface member 'IRUC.TestMethod' without 'RequiresAssemblyFilesAttribute'.
+    [RequiresAssemblyFiles("Message")]
+    public void TestMethod() {}
   }
   ```

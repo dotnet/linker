@@ -267,15 +267,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 
 			// === RequiresUnreferencedCode ===
-			[LogContains (
-				"Presence of 'RequiresUnreferencedCodeAttribute' on method 'Mono.Linker.Tests.Cases.DataFlow.VirtualMethodHierarchyDataflowAnnotationValidation.DerivedClass.RequiresUnreferencedCodeBaseWithDerivedWithout()' " +
-				"doesn't match overridden method 'Mono.Linker.Tests.Cases.DataFlow.VirtualMethodHierarchyDataflowAnnotationValidation.BaseClass.RequiresUnreferencedCodeBaseWithDerivedWithout()'. " +
-				"All overridden methods must have 'RequiresUnreferencedCodeAttribute'.")]
+			[ExpectedWarning ("IL2046", "DerivedClass.RequiresUnreferencedCodeBaseWithDerivedWithout()", "BaseClass.RequiresUnreferencedCodeBaseWithDerivedWithout()")]
 			public override void RequiresUnreferencedCodeBaseWithDerivedWithout () { }
-			[LogContains (
-				"Presence of 'RequiresUnreferencedCodeAttribute' on method 'Mono.Linker.Tests.Cases.DataFlow.VirtualMethodHierarchyDataflowAnnotationValidation.DerivedClass.RequiresUnreferencedCodeBaseWithoutDerivedWith_()' " +
-				"doesn't match overridden method 'Mono.Linker.Tests.Cases.DataFlow.VirtualMethodHierarchyDataflowAnnotationValidation.BaseClass.RequiresUnreferencedCodeBaseWithoutDerivedWith_()'. " +
-				"All overridden methods must have 'RequiresUnreferencedCodeAttribute'.")]
+			[ExpectedWarning ("IL2107", "DerivedClass.RequiresUnreferencedCodeBaseWithoutDerivedWith_()", "BaseClass.RequiresUnreferencedCodeBaseWithoutDerivedWith_()")]
 			[RequiresUnreferencedCode ("")]
 			public override void RequiresUnreferencedCodeBaseWithoutDerivedWith_ () { }
 			[LogDoesNotContain ("DerivedClass.RequiresUnreferencedCodeBaseWithDerivedWith_")]

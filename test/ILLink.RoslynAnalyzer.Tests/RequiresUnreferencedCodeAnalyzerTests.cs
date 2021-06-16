@@ -611,10 +611,10 @@ class BaseClass
 	public virtual string VirtualProperty { get; set; }
 }";
 			return VerifyRequiresUnreferencedCodeAnalyzer (src,
-				// (22,22): warning IL2046: Presence of 'RequiresUnreferencedCodeAttribute' on method 'DerivedClass.VirtualMethod()' doesn't match overridden method 'BaseClass.VirtualMethod()'. All overridden methods must have 'RequiresUnreferencedCodeAttribute'.
-				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (22, 22, 22, 35).WithArguments ("RequiresUnreferencedCodeAttribute", "DerivedClass.VirtualMethod()", "BaseClass.VirtualMethod()"),
-				// (26,42): warning IL2046: Presence of 'RequiresUnreferencedCodeAttribute' on method 'DerivedClass.VirtualProperty.get' doesn't match overridden method 'BaseClass.VirtualProperty.get'. All overridden methods must have 'RequiresUnreferencedCodeAttribute'.
-				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (26, 42, 26, 45).WithArguments ("RequiresUnreferencedCodeAttribute", "DerivedClass.VirtualProperty.get", "BaseClass.VirtualProperty.get"));
+				// (7,23): warning IL2046: Presence of 'RequiresUnreferencedCodeAttribute' on member 'DerivedClass.VirtualMethod()' doesn't match overridden member 'BaseClass.VirtualMethod()'. All overridden members must have 'RequiresUnreferencedCodeAttribute'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (7, 23, 7, 36).WithArguments ("RequiresUnreferencedCodeAttribute", "DerivedClass.VirtualMethod()", "BaseClass.VirtualMethod()"),
+				// (15,3): warning IL2046: Presence of 'RequiresUnreferencedCodeAttribute' on member 'DerivedClass.VirtualProperty.get' doesn't match overridden member 'BaseClass.VirtualProperty.get'. All overridden members must have 'RequiresUnreferencedCodeAttribute'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (15, 3, 15, 6).WithArguments ("RequiresUnreferencedCodeAttribute", "DerivedClass.VirtualProperty.get", "BaseClass.VirtualProperty.get"));
 		}
 
 		[Fact]
@@ -705,14 +705,14 @@ interface IRUC
 	string Property { get; set; }
 }";
 			return VerifyRequiresUnreferencedCodeAnalyzer (src,
-				// (46,7): warning IL2046: Presence of 'RequiresUnreferencedCodeAttribute' on member 'Implementation.RUC()' doesn't match overridden member 'IRUC.RUC()'. All overridden members must have 'RequiresUnreferencedCodeAttribute'.
-				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (46, 7, 46, 10).WithArguments ("RequiresUnreferencedCodeAttribute", "Implementation.RUC()", "IRUC.RUC()"),
-				// (46,7): warning IL2046: Presence of 'RequiresUnreferencedCodeAttribute' on member 'ExplicitImplementation.IRUC.RUC()' doesn't match overridden member 'IRUC.RUC()'. All overridden members must have 'RequiresUnreferencedCodeAttribute'.
-				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (46, 7, 46, 10).WithArguments ("RequiresUnreferencedCodeAttribute", "ExplicitImplementation.IRUC.RUC()", "IRUC.RUC()"),
-				// (47,20): warning IL2046: Presence of 'RequiresUnreferencedCodeAttribute' on member 'Implementation.Property.get' doesn't match overridden member 'IRUC.Property.get'. All overridden members must have 'RequiresUnreferencedCodeAttribute'.
-				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (47, 20, 47, 23).WithArguments ("RequiresUnreferencedCodeAttribute", "Implementation.Property.get", "IRUC.Property.get"),
-				// (47,20): warning IL2046: Presence of 'RequiresUnreferencedCodeAttribute' on member 'ExplicitImplementation.IRUC.Property.get' doesn't match overridden member 'IRUC.Property.get'. All overridden members must have 'RequiresUnreferencedCodeAttribute'.
-				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (47, 20, 47, 23).WithArguments ("RequiresUnreferencedCodeAttribute", "ExplicitImplementation.IRUC.Property.get", "IRUC.Property.get"));
+				// (7,14): warning IL2046: Presence of 'RequiresUnreferencedCodeAttribute' on member 'Implementation.RUC()' doesn't match overridden member 'IRUC.RUC()'. All overridden members must have 'RequiresUnreferencedCodeAttribute'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (7, 14, 7, 17).WithArguments ("RequiresUnreferencedCodeAttribute", "Implementation.RUC()", "IRUC.RUC()"),
+				// (13,3): warning IL2046: Presence of 'RequiresUnreferencedCodeAttribute' on member 'Implementation.Property.get' doesn't match overridden member 'IRUC.Property.get'. All overridden members must have 'RequiresUnreferencedCodeAttribute'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (13, 3, 13, 6).WithArguments ("RequiresUnreferencedCodeAttribute", "Implementation.Property.get", "IRUC.Property.get"),
+				// (33,12): warning IL2046: Presence of 'RequiresUnreferencedCodeAttribute' on member 'ExplicitImplementation.IRUC.RUC()' doesn't match overridden member 'IRUC.RUC()'. All overridden members must have 'RequiresUnreferencedCodeAttribute'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (33, 12, 33, 15).WithArguments ("RequiresUnreferencedCodeAttribute", "ExplicitImplementation.IRUC.RUC()", "IRUC.RUC()"),
+				// (39,3): warning IL2046: Presence of 'RequiresUnreferencedCodeAttribute' on member 'ExplicitImplementation.IRUC.Property.get' doesn't match overridden member 'IRUC.Property.get'. All overridden members must have 'RequiresUnreferencedCodeAttribute'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (39, 3, 39, 6).WithArguments ("RequiresUnreferencedCodeAttribute", "ExplicitImplementation.IRUC.Property.get", "IRUC.Property.get"));
 		}
 
 		[Fact]

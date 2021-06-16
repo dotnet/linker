@@ -141,10 +141,28 @@
   <data name="RequiresAssemblyFilesMessage" xml:space="preserve">
     <value>Using member '{0}' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.{1}{2}</value>
   </data>
-  <data name="MatchRequiresAttributeOverridesOrInterfacesMessage" xml:space="preserve">
-    <value>Presence of '{0}' on member '{1}' doesn't match overridden member '{2}'. All overridden members must have '{0}'.</value>
+  <data name="BaseRequiresMismatchMessage" xml:space="preserve">
+    <value>Base member '{1}' with '{0}' has a derived member '{2}' without '{0}'. Add the '{0}' to '{1}'.</value>
   </data>
-  <data name="MatchRequiresAttributeOverridesOrInterfacesTitle" xml:space="preserve">
+  <data name="BaseRequiresMismatchTitle" xml:space="preserve">
     <value>All overrides of a virtual member including the base member must either have or not have the RequiresAttribute</value>
+  </data>
+  <data name="DerivedRequiresMismatchMessage" xml:space="preserve">
+    <value>Member '{1}' with '{0}' overrides base member '{2}' without '{0}'.</value>
+  </data>
+  <data name="DerivedRequiresMismatchTitle" xml:space="preserve">
+    <value>All overrides of a virtual member including the base member must either have or not have the RequiresAttribute</value>
+  </data>
+  <data name="ImplementationRequiresMismatchMessage" xml:space="preserve">
+    <value>Member '{1}' with '{0}' implements interface member '{2}' without '{0}'.</value>
+  </data>
+  <data name="ImplementationRequiresMismatchTitle" xml:space="preserve">
+    <value>All implementations of an interface member including the base interface member must either have or not have the RequiresAttribute</value>
+  </data>
+  <data name="InterfaceRequiresMismatchMessage" xml:space="preserve">
+    <value>Interface member '{1}' with '{0}' has an implementation member '{2}' without '{0}'. Add the '{0}' to '{1}'.</value>
+  </data>
+  <data name="InterfaceRequiresMismatchTitle" xml:space="preserve">
+    <value>All implementations of an interface member including the base interface member must either have or not have the RequiresAttribute</value>
   </data>
 </root>
