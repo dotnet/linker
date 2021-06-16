@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Immutable;
 using System.Linq;
+using ILLink.Shared;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -191,7 +192,7 @@ namespace ILLink.RoslynAnalyzer
 		private string GetUrlFromAttribute (AttributeData? requiresAssemblyFilesAttribute)
 		{
 			var url = requiresAssemblyFilesAttribute?.NamedArguments.FirstOrDefault (na => na.Key == "Url").Value.Value?.ToString ();
-			return string.IsNullOrEmpty (url) ? "" : " " + url;
+			return MessageFormat.GetRucUrlArg (url);
 		}
 
 		/// <summary>
