@@ -540,7 +540,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[LogDoesNotContain ("ImplementationClass.RequiresUnreferencedCodeInterfaceBaseWithImplementationWith_")]
 			[RequiresUnreferencedCode ("")]
 			public void RequiresUnreferencedCodeInterfaceBaseWithImplementationWith_ () { }
-			[LogContains ("ImplementationClass.RequiresUnreferencedCodeInterfaceBaseWithoutImplementationWith_")]
+			[ExpectedWarning ("IL2109", "ImplementationClass.RequiresUnreferencedCodeInterfaceBaseWithoutImplementationWith_")]
 			[RequiresUnreferencedCode ("")]
 			public void RequiresUnreferencedCodeInterfaceBaseWithoutImplementationWith_ () { }
 		}
@@ -563,7 +563,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
 			public virtual Type ReturnValueBaseWithInterfaceWithout () => null;
 
-			[LogContains ("BaseImplementsInterfaceViaDerived.RequiresUnreferencedCodeBaseWithoutInterfaceWith")]
+			[ExpectedWarning ("IL2108", "BaseImplementsInterfaceViaDerived.RequiresUnreferencedCodeBaseWithoutInterfaceWith")]
 			public virtual void RequiresUnreferencedCodeBaseWithoutInterfaceWith () { }
 		}
 
