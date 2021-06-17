@@ -2733,8 +2733,8 @@ namespace Mono.Linker.Steps
 
 			if (Annotations.TryGetLinkerAttribute (method, out RequiresUnreferencedCodeAttribute requiresUnreferencedCode)) {
 				string formatString = ILLink.Shared.Resources.RequiresUnreferencedCodeMessage;
-				string arg1 = MessageFormat.GetRucMessageArg (requiresUnreferencedCode.Message);
-				string arg2 = MessageFormat.GetRucUrlArg (requiresUnreferencedCode.Url);
+				string arg1 = MessageFormat.FormatRequiresAttributeMessageArg (requiresUnreferencedCode.Message);
+				string arg2 = MessageFormat.FormatRequiresAttributeUrlArg (requiresUnreferencedCode.Url);
 				string message = string.Format (formatString, method.GetDisplayName (), arg1, arg2);
 				_context.LogWarning (message, 2026, currentScope.Origin, MessageSubCategory.TrimAnalysis);
 			}

@@ -187,12 +187,12 @@ namespace ILLink.RoslynAnalyzer
 				url));
 		}
 
-		protected abstract string GetMessageFromAttribute (AttributeData? requiresAssemblyFilesAttribute);
+		protected abstract string GetMessageFromAttribute (AttributeData? requiresAttribute);
 
-		private string GetUrlFromAttribute (AttributeData? requiresAssemblyFilesAttribute)
+		private string GetUrlFromAttribute (AttributeData? requiresAttribute)
 		{
-			var url = requiresAssemblyFilesAttribute?.NamedArguments.FirstOrDefault (na => na.Key == "Url").Value.Value?.ToString ();
-			return MessageFormat.GetRucUrlArg (url);
+			var url = requiresAttribute?.NamedArguments.FirstOrDefault (na => na.Key == "Url").Value.Value?.ToString ();
+			return MessageFormat.FormatRequiresAttributeUrlArg (url);
 		}
 
 		/// <summary>

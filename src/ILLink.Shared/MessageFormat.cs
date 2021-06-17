@@ -3,7 +3,7 @@ namespace ILLink.Shared
 {
 	internal static class MessageFormat
 	{
-		public static string GetRucMessageArg (string? message)
+		public static string FormatRequiresAttributeMessageArg (string? message)
 		{
 			string arg1 = "";
 			if (!string.IsNullOrEmpty (message))
@@ -11,7 +11,7 @@ namespace ILLink.Shared
 			return arg1;
 		}
 
-		public static string GetRucUrlArg (string? url)
+		public static string FormatRequiresAttributeUrlArg (string? url)
 		{
 			string arg2 = "";
 			if (!string.IsNullOrEmpty (url))
