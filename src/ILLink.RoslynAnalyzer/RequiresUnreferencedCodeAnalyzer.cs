@@ -51,7 +51,7 @@ namespace ILLink.RoslynAnalyzer
 		protected override string GetMessageFromAttribute (AttributeData? requiresAttribute)
 		{
 			var message = (string) requiresAttribute!.ConstructorArguments[0].Value!;
-			return MessageFormat.GetRucMessageArg (message);
+			return MessageFormat.FormatRequiresAttributeMessageArg (message);
 		}
 	}
 }
