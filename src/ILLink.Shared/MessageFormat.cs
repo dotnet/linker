@@ -1,4 +1,6 @@
 
+#nullable enable
+
 namespace ILLink.Shared
 {
 	internal static class MessageFormat

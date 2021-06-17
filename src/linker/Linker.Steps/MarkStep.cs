@@ -2732,7 +2732,7 @@ namespace Mono.Linker.Steps
 				return;
 
 			if (Annotations.TryGetLinkerAttribute (method, out RequiresUnreferencedCodeAttribute requiresUnreferencedCode)) {
-				string formatString = ILLink.Shared.Resources.RequiresUnreferencedCodeMessage;
+				string formatString = SharedStrings.RequiresUnreferencedCodeMessage;
 				string arg1 = MessageFormat.FormatRequiresAttributeMessageArg (requiresUnreferencedCode.Message);
 				string arg2 = MessageFormat.FormatRequiresAttributeUrlArg (requiresUnreferencedCode.Url);
 				string message = string.Format (formatString, method.GetDisplayName (), arg1, arg2);

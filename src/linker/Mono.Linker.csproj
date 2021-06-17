@@ -15,6 +15,8 @@
          used for packages.config which we do not support. -->
     <NoWarn>$(NoWarn);NU5131</NoWarn>
     <RootNamespace>Mono.Linker</RootNamespace>
+    <!-- There are currently no translations, so the satellite assemblies are a waste of space. -->
+    <EnableXlfLocalization>false</EnableXlfLocalization>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,11 +24,16 @@
     <Compile Include="..\..\external\corert\**\*.cs" />
   </ItemGroup>
 
+  <!-- Shared files with analyzer -->
+  <ItemGroup>
+    <EmbeddedResource Include="../ILLink.Shared/SharedStrings.resx" GenerateSource="true" />
+    <Compile Include="../ILLink.Shared/**/*.cs" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Condition="'$(UseCecilPackage)' == 'true'" Include="Mono.Cecil" Version="$(MonoCecilVersion)" />
     <ProjectReference Condition="'$(UseCecilPackage)' != 'true'" Include="..\..\external\cecil\Mono.Cecil.csproj" />
     <ProjectReference Condition="'$(UseCecilPackage)' != 'true'" Include="..\..\external\cecil\symbols\pdb\Mono.Cecil.Pdb.csproj" PrivateAssets="all" />
-    <ProjectReference Include="../ILLink.Shared/ILLink.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>

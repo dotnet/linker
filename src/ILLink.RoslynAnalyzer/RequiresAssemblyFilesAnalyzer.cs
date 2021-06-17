@@ -23,10 +23,10 @@ namespace ILLink.RoslynAnalyzer
 
 		static readonly DiagnosticDescriptor s_locationRule = new DiagnosticDescriptor (
 			IL3000,
-			new LocalizableResourceString (nameof (Resources.AvoidAssemblyLocationInSingleFileTitle),
-				Resources.ResourceManager, typeof (Resources)),
-			new LocalizableResourceString (nameof (Resources.AvoidAssemblyLocationInSingleFileMessage),
-				Resources.ResourceManager, typeof (Resources)),
+			new LocalizableResourceString (nameof (SharedStrings.AvoidAssemblyLocationInSingleFileTitle),
+				SharedStrings.ResourceManager, typeof (SharedStrings)),
+			new LocalizableResourceString (nameof (SharedStrings.AvoidAssemblyLocationInSingleFileMessage),
+				SharedStrings.ResourceManager, typeof (SharedStrings)),
 			DiagnosticCategory.SingleFile,
 			DiagnosticSeverity.Warning,
 			isEnabledByDefault: true,
@@ -34,10 +34,10 @@ namespace ILLink.RoslynAnalyzer
 
 		static readonly DiagnosticDescriptor s_getFilesRule = new DiagnosticDescriptor (
 			IL3001,
-			new LocalizableResourceString (nameof (Resources.AvoidAssemblyGetFilesInSingleFileTitle),
-				Resources.ResourceManager, typeof (Resources)),
-			new LocalizableResourceString (nameof (Resources.AvoidAssemblyGetFilesInSingleFileMessage),
-				Resources.ResourceManager, typeof (Resources)),
+			new LocalizableResourceString (nameof (SharedStrings.AvoidAssemblyGetFilesInSingleFileTitle),
+				SharedStrings.ResourceManager, typeof (SharedStrings)),
+			new LocalizableResourceString (nameof (SharedStrings.AvoidAssemblyGetFilesInSingleFileMessage),
+				SharedStrings.ResourceManager, typeof (SharedStrings)),
 			DiagnosticCategory.SingleFile,
 			DiagnosticSeverity.Warning,
 			isEnabledByDefault: true,
@@ -45,10 +45,10 @@ namespace ILLink.RoslynAnalyzer
 
 		static readonly DiagnosticDescriptor s_requiresAssemblyFilesRule = new DiagnosticDescriptor (
 			IL3002,
-			new LocalizableResourceString (nameof (Resources.RequiresAssemblyFilesTitle),
-				Resources.ResourceManager, typeof (Resources)),
-			new LocalizableResourceString (nameof (Resources.RequiresAssemblyFilesMessage),
-				Resources.ResourceManager, typeof (Resources)),
+			new LocalizableResourceString (nameof (SharedStrings.RequiresAssemblyFilesTitle),
+				SharedStrings.ResourceManager, typeof (SharedStrings)),
+			new LocalizableResourceString (nameof (SharedStrings.RequiresAssemblyFilesMessage),
+				SharedStrings.ResourceManager, typeof (SharedStrings)),
 			DiagnosticCategory.SingleFile,
 			DiagnosticSeverity.Warning,
 			isEnabledByDefault: true,
