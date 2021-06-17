@@ -2714,22 +2714,34 @@ namespace Mono.Linker.Steps
 			CheckAndReportRequiresUnreferencedCode (method);
 		}
 
+		internal bool ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode ()
+		{
+			// Check if the current scope method has RequiresUnreferencedCode on it
+			// since that attribute automatically suppresses all trim analysis warnings.
+			// Check both the immediate origin method as well as suppression context method
+			// since that will be different for compiler generated code.
+			var currentOrigin = _scopeStack.CurrentScope.Origin;
+
+			IMemberDefinition suppressionContextMember = currentOrigin.SuppressionContextMember;
+			if (suppressionContextMember != null &&
+				Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (suppressionContextMember))
+				return true;
+
+			IMemberDefinition originMember = currentOrigin.MemberDefinition;
+			if (suppressionContextMember != originMember && originMember != null &&
+				Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (originMember))
+				return true;
+
+			return false;
+		}
+
 		internal void CheckAndReportRequiresUnreferencedCode (MethodDefinition method)
 		{
 			var currentOrigin = _scopeStack.CurrentScope.Origin;
 
 			// If the caller of a method is already marked with `RequiresUnreferencedCodeAttribute` a new warning should not
 			// be produced for the callee.
-			// Check both the origin's member (the direct method which contains the call to RUC)
-			// as well as the suppression context member (the "user code" source in case of compiler generated code)
-			IMemberDefinition suppressionContextMember = currentOrigin.SuppressionContextMember;
-			if (suppressionContextMember != null &&
-				Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (suppressionContextMember))
-				return;
-
-			IMemberDefinition originMember = currentOrigin.MemberDefinition;
-			if (suppressionContextMember != originMember && originMember != null &&
-				Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (originMember))
+			if (ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode ())
 				return;
 
 			if (Annotations.TryGetLinkerAttribute (method, out RequiresUnreferencedCodeAttribute requiresUnreferencedCode)) {

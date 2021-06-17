@@ -61,18 +61,7 @@ namespace Mono.Linker.Dataflow
 
 		bool ShouldEnableReflectionPatternReporting ()
 		{
-			// Check if the current scope method has RequiresUnreferencedCode on it
-			// since that attribute automatically suppresses all trim analysis warnings.
-			// Check both the immediate origin method as well as suppression context method
-			// since that will be different for compiler generated code.
-			IMemberDefinition suppressionContextMember = _scopeStack.CurrentScope.Origin.SuppressionContextMember;
-			if (suppressionContextMember is MethodDefinition suppressionContextMethod &&
-				_context.Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (suppressionContextMethod))
-				return false;
-
-			IMemberDefinition originMember = _scopeStack.CurrentScope.Origin.MemberDefinition;
-			if (suppressionContextMember != originMember && originMember is MethodDefinition originMethod &&
-				_context.Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (originMethod))
+			if (_markStep.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode ())
 				return false;
 
 			return true;

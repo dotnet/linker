@@ -21,8 +21,8 @@ namespace Mono.Linker
 			_typesWithPopulatedCache = new HashSet<TypeDefinition> ();
 		}
 
-		static bool HasRoslynCompilerGeneratedName (IMemberDefinition member) =>
-			member.Name.Contains ('<') || member.DeclaringType == null || HasRoslynCompilerGeneratedName (member.DeclaringType);
+		static bool HasRoslynCompilerGeneratedName (TypeDefinition type) =>
+			type.Name.Contains ('<') || (type.DeclaringType != null && HasRoslynCompilerGeneratedName (type.DeclaringType));
 
 		void PopulateCacheForType (TypeDefinition type)
 		{
