@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Immutable;
+using ILLink.Shared;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -14,58 +15,58 @@ namespace ILLink.RoslynAnalyzer
 	{
 		public const string IL2026 = nameof (IL2026);
 		public const string IL2046 = nameof (IL2046);
-		public const string IL2107 = nameof (IL2107);
 		public const string IL2108 = nameof (IL2108);
 		public const string IL2109 = nameof (IL2109);
+		public const string IL2110 = nameof (IL2110);
 		const string RequiresUnreferencedCodeAttribute = nameof (RequiresUnreferencedCodeAttribute);
 		public const string FullyQualifiedRequiresUnreferencedCodeAttribute = "System.Diagnostics.CodeAnalysis." + RequiresUnreferencedCodeAttribute;
 
 		static readonly DiagnosticDescriptor s_requiresUnreferencedCodeRule = new DiagnosticDescriptor (
 			IL2026,
-			new LocalizableResourceString (nameof (Resources.RequiresUnreferencedCodeTitle),
-			Resources.ResourceManager, typeof (Resources)),
-			new LocalizableResourceString (nameof (Resources.RequiresUnreferencedCodeMessage),
-			Resources.ResourceManager, typeof (Resources)),
+			new LocalizableResourceString (nameof (SharedStrings.RequiresUnreferencedCodeTitle),
+			SharedStrings.ResourceManager, typeof (SharedStrings)),
+			new LocalizableResourceString (nameof (SharedStrings.RequiresUnreferencedCodeMessage),
+			SharedStrings.ResourceManager, typeof (SharedStrings)),
 			DiagnosticCategory.Trimming,
 			DiagnosticSeverity.Warning,
 			isEnabledByDefault: true);
 
 		static readonly DiagnosticDescriptor s_baseRequiresMismatch = new DiagnosticDescriptor (
 			IL2046,
-			new LocalizableResourceString (nameof (Resources.BaseRequiresMismatchTitle),
-			Resources.ResourceManager, typeof (Resources)),
-			new LocalizableResourceString (nameof (Resources.BaseRequiresMismatchMessage),
-			Resources.ResourceManager, typeof (Resources)),
+			new LocalizableResourceString (nameof (SharedStrings.BaseRequiresMismatchTitle),
+			SharedStrings.ResourceManager, typeof (SharedStrings)),
+			new LocalizableResourceString (nameof (SharedStrings.BaseRequiresMismatchMessage),
+			SharedStrings.ResourceManager, typeof (SharedStrings)),
 			DiagnosticCategory.Trimming,
 			DiagnosticSeverity.Warning,
 			isEnabledByDefault: true);
 
 		static readonly DiagnosticDescriptor s_derivedRequiresMismatch = new DiagnosticDescriptor (
-			IL2107,
-			new LocalizableResourceString (nameof (Resources.DerivedRequiresMismatchTitle),
-			Resources.ResourceManager, typeof (Resources)),
-			new LocalizableResourceString (nameof (Resources.DerivedRequiresMismatchMessage),
-			Resources.ResourceManager, typeof (Resources)),
+			IL2108,
+			new LocalizableResourceString (nameof (SharedStrings.DerivedRequiresMismatchTitle),
+			SharedStrings.ResourceManager, typeof (SharedStrings)),
+			new LocalizableResourceString (nameof (SharedStrings.DerivedRequiresMismatchMessage),
+			SharedStrings.ResourceManager, typeof (SharedStrings)),
 			DiagnosticCategory.Trimming,
 			DiagnosticSeverity.Warning,
 			isEnabledByDefault: true);
 
 		static readonly DiagnosticDescriptor s_interfaceRequiresMismatch = new DiagnosticDescriptor (
-			IL2108,
-			new LocalizableResourceString (nameof (Resources.InterfaceRequiresMismatchTitle),
-			Resources.ResourceManager, typeof (Resources)),
-			new LocalizableResourceString (nameof (Resources.InterfaceRequiresMismatchMessage),
-			Resources.ResourceManager, typeof (Resources)),
+			IL2109,
+			new LocalizableResourceString (nameof (SharedStrings.InterfaceRequiresMismatchTitle),
+			SharedStrings.ResourceManager, typeof (SharedStrings)),
+			new LocalizableResourceString (nameof (SharedStrings.InterfaceRequiresMismatchMessage),
+			SharedStrings.ResourceManager, typeof (SharedStrings)),
 			DiagnosticCategory.Trimming,
 			DiagnosticSeverity.Warning,
 			isEnabledByDefault: true);
 
 		static readonly DiagnosticDescriptor s_implementationRequiresMismatch = new DiagnosticDescriptor (
-			IL2109,
-			new LocalizableResourceString (nameof (Resources.ImplementationRequiresMismatchTitle),
-			Resources.ResourceManager, typeof (Resources)),
-			new LocalizableResourceString (nameof (Resources.ImplementationRequiresMismatchMessage),
-			Resources.ResourceManager, typeof (Resources)),
+			IL2110,
+			new LocalizableResourceString (nameof (SharedStrings.ImplementationRequiresMismatchTitle),
+			SharedStrings.ResourceManager, typeof (SharedStrings)),
+			new LocalizableResourceString (nameof (SharedStrings.ImplementationRequiresMismatchMessage),
+			SharedStrings.ResourceManager, typeof (SharedStrings)),
 			DiagnosticCategory.Trimming,
 			DiagnosticSeverity.Warning,
 			isEnabledByDefault: true);
@@ -102,10 +103,7 @@ namespace ILLink.RoslynAnalyzer
 		protected override string GetMessageFromAttribute (AttributeData? requiresAttribute)
 		{
 			var message = (string) requiresAttribute!.ConstructorArguments[0].Value!;
-			if (!string.IsNullOrEmpty (message))
-				message = $" {message}{(message.TrimEnd ().EndsWith (".") ? "" : ".")}";
-
-			return message;
+			return MessageFormat.FormatRequiresAttributeMessageArg (message);
 		}
 	}
 }

@@ -34,6 +34,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection.Runtime.TypeParsing;
 using System.Text.RegularExpressions;
+using ILLink.Shared;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Collections.Generic;
@@ -60,7 +61,7 @@ namespace Mono.Linker.Steps
 		MarkStepContext _markContext;
 		readonly Dictionary<TypeDefinition, bool> _entireTypesMarked; // The value is markBaseAndInterfaceTypes flag used to mark the type
 		DynamicallyAccessedMembersTypeHierarchy _dynamicallyAccessedMembersTypeHierarchy;
-		readonly MarkScopeStack _scopeStack;
+		MarkScopeStack _scopeStack;
 
 		internal DynamicallyAccessedMembersTypeHierarchy DynamicallyAccessedMembersTypeHierarchy {
 			get => _dynamicallyAccessedMembersTypeHierarchy;
@@ -192,7 +193,6 @@ namespace Mono.Linker.Steps
 			_unreachableBodies = new List<(MethodBody, MarkScopeStack.Scope)> ();
 			_pending_isinst_instr = new List<(TypeDefinition, MethodBody, Instruction)> ();
 			_entireTypesMarked = new Dictionary<TypeDefinition, bool> ();
-			_scopeStack = new MarkScopeStack ();
 		}
 
 		public AnnotationStore Annotations => _context.Annotations;
@@ -204,6 +204,7 @@ namespace Mono.Linker.Steps
 			_context = context;
 			_unreachableBlocksOptimizer = new UnreachableBlocksOptimizer (_context);
 			_markContext = new MarkStepContext ();
+			_scopeStack = new MarkScopeStack (_context);
 			_dynamicallyAccessedMembersTypeHierarchy = new DynamicallyAccessedMembersTypeHierarchy (_context, this, _scopeStack);
 
 			Initialize ();
@@ -690,6 +691,7 @@ namespace Mono.Linker.Steps
 			if (IsInterfaceOverrideThatDoesNotNeedMarked (overrideInformation, isInstantiated))
 				return;
 
+			// Interface static veitual methods will be abstract and will also by pass this check to get marked
 			if (!isInstantiated && !@base.IsAbstract && _context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, method))
 				return;
 
@@ -703,12 +705,17 @@ namespace Mono.Linker.Steps
 				MarkMethod (method, new DependencyInfo (DependencyKind.Override, @base));
 			}
 
-			ProcessVirtualMethod (method);
+			if (method.IsVirtual)
+				ProcessVirtualMethod (method);
 		}
 
 		bool IsInterfaceOverrideThatDoesNotNeedMarked (OverrideInformation overrideInformation, bool isInstantiated)
 		{
 			if (!overrideInformation.IsOverrideOfInterfaceMember || isInstantiated)
+				return false;
+
+			// This is a static interface method and these checks should all be true
+			if (overrideInformation.Override.IsStatic && overrideInformation.Base.IsStatic && overrideInformation.Base.IsAbstract && !overrideInformation.Override.IsVirtual)
 				return false;
 
 			if (overrideInformation.MatchingInterfaceImplementation != null)
@@ -1719,7 +1726,7 @@ namespace Mono.Linker.Steps
 
 			if (_context.Annotations.HasLinkerAttribute<RemoveAttributeInstancesAttribute> (type)) {
 				// Don't warn about references from the removed attribute itself (for example the .ctor on the attribute
-				// will call MarkType on the attribute type itself). 
+				// will call MarkType on the attribute type itself).
 				// If for some reason we do keep the attribute type (could be because of previous reference which would cause IL2045
 				// or because of a copy assembly with a reference and so on) then we should not spam the warnings due to the type itself.
 				if (!(reason.Source is IMemberDefinition sourceMemberDefinition && sourceMemberDefinition.DeclaringType == type))
@@ -2003,7 +2010,7 @@ namespace Mono.Linker.Steps
 						string methodName = realMatch.Substring (0, realMatch.Length - 2);
 
 						// It's a call to a method on some member.  Handling this scenario robustly would be complicated and a decent bit of work.
-						// 
+						//
 						// We could implement support for this at some point, but for now it's important to make sure at least we don't crash trying to find some
 						// method on the current type when it exists on some other type
 						if (methodName.Contains ("."))
@@ -2714,25 +2721,42 @@ namespace Mono.Linker.Steps
 			CheckAndReportRequiresUnreferencedCode (method);
 		}
 
+		internal bool ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode ()
+		{
+			// Check if the current scope method has RequiresUnreferencedCode on it
+			// since that attribute automatically suppresses all trim analysis warnings.
+			// Check both the immediate origin method as well as suppression context method
+			// since that will be different for compiler generated code.
+			var currentOrigin = _scopeStack.CurrentScope.Origin;
+
+			IMemberDefinition suppressionContextMember = currentOrigin.SuppressionContextMember;
+			if (suppressionContextMember != null &&
+				Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (suppressionContextMember))
+				return true;
+
+			IMemberDefinition originMember = currentOrigin.MemberDefinition;
+			if (suppressionContextMember != originMember && originMember != null &&
+				Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (originMember))
+				return true;
+
+			return false;
+		}
+
 		internal void CheckAndReportRequiresUnreferencedCode (MethodDefinition method)
 		{
-			var currentScope = _scopeStack.CurrentScope;
+			var currentOrigin = _scopeStack.CurrentScope.Origin;
 
 			// If the caller of a method is already marked with `RequiresUnreferencedCodeAttribute` a new warning should not
 			// be produced for the callee.
-			if (currentScope.Origin.MemberDefinition != null &&
-				Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (currentScope.Origin.MemberDefinition))
+			if (ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode ())
 				return;
 
 			if (Annotations.TryGetLinkerAttribute (method, out RequiresUnreferencedCodeAttribute requiresUnreferencedCode)) {
-				string message = $"Using method '{method.GetDisplayName ()}' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code.";
-				if (!string.IsNullOrEmpty (requiresUnreferencedCode.Message))
-					message += $" {requiresUnreferencedCode.Message}{(requiresUnreferencedCode.Message.TrimEnd ().EndsWith ('.') ? "" : ".")}";
-
-				if (!string.IsNullOrEmpty (requiresUnreferencedCode.Url))
-					message += " " + requiresUnreferencedCode.Url;
-
-				_context.LogWarning (message, 2026, currentScope.Origin, MessageSubCategory.TrimAnalysis);
+				string formatString = SharedStrings.RequiresUnreferencedCodeMessage;
+				string arg1 = MessageFormat.FormatRequiresAttributeMessageArg (requiresUnreferencedCode.Message);
+				string arg2 = MessageFormat.FormatRequiresAttributeUrlArg (requiresUnreferencedCode.Url);
+				string message = string.Format (formatString, method.GetDisplayName (), arg1, arg2);
+				_context.LogWarning (message, 2026, currentOrigin, MessageSubCategory.TrimAnalysis);
 			}
 		}
 
@@ -2904,7 +2928,7 @@ namespace Mono.Linker.Steps
 		/// <summary>
 		/// Collect methods that must be marked once a type is determined to be instantiated.
 		///
-		/// This method is virtual in order to give derived mark steps an opportunity to modify the collection of methods that are needed 
+		/// This method is virtual in order to give derived mark steps an opportunity to modify the collection of methods that are needed
 		/// </summary>
 		/// <param name="type"></param>
 		/// <returns></returns>
@@ -3036,27 +3060,12 @@ namespace Mono.Linker.Steps
 
 			TypeDefinition returnTypeDefinition = _context.TryResolve (method.ReturnType);
 
-			bool didWarnAboutCom = false;
-
 			const bool includeStaticFields = false;
 			if (returnTypeDefinition != null) {
 				if (!returnTypeDefinition.IsImport) {
 					// What we keep here is correct most of the time, but not every time. Fine for now.
 					MarkDefaultConstructor (returnTypeDefinition, new DependencyInfo (DependencyKind.InteropMethodDependency, method));
 					MarkFields (returnTypeDefinition, includeStaticFields, new DependencyInfo (DependencyKind.InteropMethodDependency, method));
-				}
-
-				// Best-effort attempt to find COM marshalling.
-				// It might seem reasonable to allow out parameters, but once we get a foreign object back (an RCW), it's going to look
-				// like a regular managed class/interface, but every method invocation that takes a class/interface implies COM
-				// marshalling. We can't detect that once we have an RCW.
-				if (method.IsPInvokeImpl) {
-					if (IsComInterop (method.MethodReturnType, method.ReturnType) && !didWarnAboutCom) {
-						_context.LogWarning (
-							$"P/invoke method '{method.GetDisplayName ()}' declares a parameter with COM marshalling. Correctness of COM interop cannot be guaranteed after trimming. Interfaces and interface members might be removed.",
-							2050, method, subcategory: MessageSubCategory.TrimAnalysis);
-						didWarnAboutCom = true;
-					}
 				}
 			}
 
@@ -3079,75 +3088,8 @@ namespace Mono.Linker.Steps
 							MarkDefaultConstructor (paramTypeDefinition, new DependencyInfo (DependencyKind.InteropMethodDependency, method));
 						}
 					}
-
-					// Best-effort attempt to find COM marshalling.
-					// It might seem reasonable to allow out parameters, but once we get a foreign object back (an RCW), it's going to look
-					// like a regular managed class/interface, but every method invocation that takes a class/interface implies COM
-					// marshalling. We can't detect that once we have an RCW.
-					if (method.IsPInvokeImpl) {
-						if (IsComInterop (pd, paramTypeReference) && !didWarnAboutCom) {
-							_context.LogWarning ($"P/invoke method '{method.GetDisplayName ()}' declares a parameter with COM marshalling. Correctness of COM interop cannot be guaranteed after trimming. Interfaces and interface members might be removed.", 2050, method);
-							didWarnAboutCom = true;
-						}
-					}
 				}
 			}
-		}
-
-		bool IsComInterop (IMarshalInfoProvider marshalInfoProvider, TypeReference parameterType)
-		{
-			// This is best effort. One can likely find ways how to get COM without triggering these alarms.
-			// AsAny marshalling of a struct with an object-typed field would be one, for example.
-
-			// This logic roughly corresponds to MarshalInfo::MarshalInfo in CoreCLR,
-			// not trying to handle invalid cases and distinctions that are not interesting wrt
-			// "is this COM?" question.
-
-			NativeType nativeType = NativeType.None;
-			if (marshalInfoProvider.HasMarshalInfo) {
-				nativeType = marshalInfoProvider.MarshalInfo.NativeType;
-			}
-
-			if (nativeType == NativeType.IUnknown || nativeType == NativeType.IDispatch || nativeType == NativeType.IntF) {
-				// This is COM by definition
-				return true;
-			}
-
-			if (nativeType == NativeType.None) {
-				if (parameterType.IsTypeOf ("System", "Array")) {
-					// System.Array marshals as IUnknown by default
-					return true;
-				} else if (parameterType.IsTypeOf ("System", "String") ||
-					parameterType.IsTypeOf ("System.Text", "StringBuilder")) {
-					// String and StringBuilder are special cased by interop
-					return false;
-				}
-
-				var parameterTypeDef = _context.TryResolve (parameterType);
-				if (parameterTypeDef != null) {
-					if (parameterTypeDef.IsValueType) {
-						// Value types don't marshal as COM
-						return false;
-					} else if (parameterTypeDef.IsInterface) {
-						// Interface types marshal as COM by default
-						return true;
-					} else if (parameterTypeDef.IsMulticastDelegate ()) {
-						// Delegates are special cased by interop
-						return false;
-					} else if (parameterTypeDef.IsSubclassOf ("System.Runtime.InteropServices", "CriticalHandle")) {
-						// Subclasses of CriticalHandle are special cased by interop
-						return false;
-					} else if (parameterTypeDef.IsSubclassOf ("System.Runtime.InteropServices", "SafeHandle")) {
-						// Subclasses of SafeHandle are special cased by interop
-						return false;
-					} else if (!parameterTypeDef.IsSequentialLayout && !parameterTypeDef.IsExplicitLayout) {
-						// Rest of classes that don't have layout marshal as COM
-						return true;
-					}
-				}
-			}
-
-			return false;
 		}
 
 		protected virtual bool ShouldParseMethodBody (MethodDefinition method)

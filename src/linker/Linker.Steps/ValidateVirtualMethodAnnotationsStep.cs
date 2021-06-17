@@ -42,20 +42,23 @@ namespace Mono.Linker.Steps
 			var annotations = Context.Annotations;
 			bool methodHasAttribute = annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (method);
 			if (methodHasAttribute != annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (baseMethod)) {
-				if (!methodHasAttribute && !baseMethod.DeclaringType.IsInterface)
-					Context.LogWarning ($"Base member '{ baseMethod.GetDisplayName () }' with 'RequiresUnreferencedCodeAttribute' has a derived member '{ method.GetDisplayName () }' without 'RequiresUnreferencedCodeAttribute'. " +
-										$"Add the 'RequiresUnreferencedCodeAttribute' to '{ method.GetDisplayName () }'",
-										2046, method, subcategory: MessageSubCategory.TrimAnalysis);
-				else if (methodHasAttribute && !baseMethod.DeclaringType.IsInterface)
-					Context.LogWarning ($"Member '{ method.GetDisplayName () }' with 'RequiresUnreferencedCodeAttribute' overrides base member '{ baseMethod.GetDisplayName () }' without 'RequiresUnreferencedCodeAttribute'.",
-										2107, method, subcategory: MessageSubCategory.TrimAnalysis);
-				if (!methodHasAttribute && baseMethod.DeclaringType.IsInterface)
-					Context.LogWarning ($"Interface member '{ baseMethod.GetDisplayName () }' with 'RequiresUnreferencedCodeAttribute' has an implementation member '{ method.GetDisplayName () }' without 'RequiresUnreferencedCodeAttribute'. " +
-										$"Add the 'RequiresUnreferencedCodeAttribute' to '{ method.GetDisplayName () }'",
-										2108, method, subcategory: MessageSubCategory.TrimAnalysis);
-				else if (methodHasAttribute && baseMethod.DeclaringType.IsInterface)
-					Context.LogWarning ($"Member '{ method.GetDisplayName () }' with 'RequiresUnreferencedCodeAttribute' implements interface member '{ baseMethod.GetDisplayName () }' without 'RequiresUnreferencedCodeAttribute'.",
-										2109, method, subcategory: MessageSubCategory.TrimAnalysis);
+				string arg0 = nameof (RequiresUnreferencedCodeAttribute);
+				string arg1 = method.GetDisplayName ();
+				string arg2 = baseMethod.GetDisplayName ();
+				if (!methodHasAttribute && !baseMethod.DeclaringType.IsInterface) {
+					string message = string.Format (SharedStrings.BaseRequiresMismatchMessage, arg0, arg1, arg2);
+					Context.LogWarning (message, 2046, method, subcategory: MessageSubCategory.TrimAnalysis);
+				} else if (methodHasAttribute && !baseMethod.DeclaringType.IsInterface) {
+					string message = string.Format (SharedStrings.DerivedRequiresMismatchMessage, arg0, arg1, arg2);
+					Context.LogWarning (message, 2108, method, subcategory: MessageSubCategory.TrimAnalysis);
+				}
+				if (!methodHasAttribute && baseMethod.DeclaringType.IsInterface) {
+					string message = string.Format (SharedStrings.InterfaceRequiresMismatchMessage, arg0, arg1, arg2);
+					Context.LogWarning (message, 2109, method, subcategory: MessageSubCategory.TrimAnalysis);
+				} else if (methodHasAttribute && baseMethod.DeclaringType.IsInterface) {
+					string message = string.Format (SharedStrings.ImplementationRequiresMismatchMessage, arg0, arg1, arg2);
+					Context.LogWarning (message, 2110, method, subcategory: MessageSubCategory.TrimAnalysis);
+				}
 			}
 		}
 	}

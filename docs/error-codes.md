@@ -1561,36 +1561,36 @@ class Test
 
 #### `IL2103`: Trim analysis: Value passed to the 'propertyAccessor' parameter of method 'System.Linq.Expressions.Expression.Property(Expression, MethodInfo)' cannot be statically determined as a property accessor
 
-The value passed to the `propertyAccessor` parameter of `Expression.Property(expression, propertyAccessor)` was not recognized as a property accessor method. Trimmer can't guarantee the presence of the property.
+- The value passed to the `propertyAccessor` parameter of `Expression.Property(expression, propertyAccessor)` was not recognized as a property accessor method. Trimmer can't guarantee the presence of the property.
 
-```C#
-void TestMethod(MethodInfo methodInfo)
-{
-  // IL2103: Value passed to the 'propertyAccessor' parameter of method 'System.Linq.Expressions.Expression.Property(Expression, MethodInfo)' cannot be statically determined as a property accessor.
-  Expression.Property(null, methodInfo);
-}
-```
+  ```C#
+  void TestMethod(MethodInfo methodInfo)
+  {
+    // IL2103: Value passed to the 'propertyAccessor' parameter of method 'System.Linq.Expressions.Expression.Property(Expression, MethodInfo)' cannot be statically determined as a property accessor.
+    Expression.Property(null, methodInfo);
+  }
+  ```
 
 #### `IL2104`: Assembly 'assembly' produced trim warnings. For more information see https://aka.ms/dotnet-illink/libraries
 
-The assembly 'assembly' produced trim analysis warnings in the context of the app. This means the assembly has not been fully annotated for trimming. Consider contacting the library author to request they add trim annotations to the library. To see detailed warnings for this assembly, turn off grouped warnings by passing either `--singlewarn-` to show detailed warnings for all assemblies, or `--singlewarn- "assembly"` to show detailed warnings for that assembly. https://aka.ms/dotnet-illink/libraries has more information on annotating libraries for trimming.
+- The assembly 'assembly' produced trim analysis warnings in the context of the app. This means the assembly has not been fully annotated for trimming. Consider contacting the library author to request they add trim annotations to the library. To see detailed warnings for this assembly, turn off grouped warnings by passing either `--singlewarn-` to show detailed warnings for all assemblies, or `--singlewarn- "assembly"` to show detailed warnings for that assembly. https://aka.ms/dotnet-illink/libraries has more information on annotating libraries for trimming.
 
 #### `IL2105`: Type 'type' was not found in the caller assembly nor in the base library. Type name strings used for dynamically accessing a type should be assembly qualified.
 
-Type name strings representing dynamically accessed types must be assembly qualified, otherwise linker will first search for the type name in the caller's assembly and then in System.Private.CoreLib.
-If the linker fails to resolve the type name, null will be returned.
+- Type name strings representing dynamically accessed types must be assembly qualified, otherwise linker will first search for the type name in the caller's assembly and then in System.Private.CoreLib.
+  If the linker fails to resolve the type name, null will be returned.
 
-```C#
-void TestInvalidTypeName()
-{
-    RequirePublicMethodOnAType("Foo.Unqualified.TypeName");
-}
-void RequirePublicMethodOnAType(
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
-    string typeName)
-{
-}
-```
+  ```C#
+  void TestInvalidTypeName()
+  {
+      RequirePublicMethodOnAType("Foo.Unqualified.TypeName");
+  }
+  void RequirePublicMethodOnAType(
+      [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+      string typeName)
+  {
+  }
+  ```
 
 #### `IL2106`: Trim analysis: Return type of method 'method' has 'DynamicallyAccessedMembersAttribute', but that attribute can only be applied to properties of type 'System.Type' or 'System.String'
 
@@ -1604,7 +1604,40 @@ void RequirePublicMethodOnAType(
   }
   ```
 
-#### `IL2107`: Trim analysis: Member 'member' with 'RequiresUnreferencedCodeAttribute' overrides base member 'member' without 'RequiresUnreferencedCodeAttribute'.
+#### `IL2107`: Trim analysis: Methods 'method1' and 'method2' are both associated with state machine type 'type'. This is currently unsupported and may lead to incorrectly reported warnings.
+
+- Trimmer currently can't correctly handle if the same compiler generated state machine type is associated (via the state machine attributes) with two different methods.
+  Since the trimmer currently derives warning suppressions from the method which produced the state machine and currently doesn't support reprocessing the same method/type more than once.
+
+  Only a meta-sample:
+
+  ```C#
+  class <compiler_generated_state_machine>_type {
+      void MoveNext()
+      {
+          // This should normally produce IL2026
+          CallSomethingWhichRequiresUnreferencedCode ();
+      }
+  }
+
+  [RequiresUnreferencedCode ("")] // This should suppress all warnings from the method
+  [IteratorStateMachine(typeof(<compiler_generated_state_machine>_type))]
+  IEnumerable<int> UserDefinedMethod()
+  {
+      // Uses the state machine type
+      // The IL2026 from the state machine should be suppressed in this case
+  }
+
+  // IL2107: Methods 'UserDefinedMethod' and 'SecondUserDefinedMethod' are both associated with state machine type '<compiler_generated_state_machine>_type'.
+  [IteratorStateMachine(typeof(<compiler_generated_state_machine>_type))]
+  IEnumerable<int> SecondUserDefinedMethod()
+  {
+      // Uses the state machine type
+      // The IL2026 from the state should be reported in this case
+  }
+  ```
+
+#### `IL2108`: Trim analysis: Member 'member' with 'RequiresUnreferencedCodeAttribute' overrides base member 'member' without 'RequiresUnreferencedCodeAttribute'.
 
 - All overrides of a virtual member including the base member must either have or not have the `RequiresUnreferencedCodeAttribute`.
 
@@ -1616,13 +1649,13 @@ void RequirePublicMethodOnAType(
 
   public class Derived : Base
   {
-    // IL2107: Member 'Derived.TestMethod()' with 'RequiresUnreferencedCodeAttribute' overrides base member 'Base.TestMethod' without 'RequiresUnreferencedCodeAttribute'.
+    // IL2108: Member 'Derived.TestMethod()' with 'RequiresUnreferencedCodeAttribute' overrides base member 'Base.TestMethod' without 'RequiresUnreferencedCodeAttribute'.
     [RequiresUnreferencedCode("Message")]
     public override void TestMethod() {}
   }
   ```
 
-#### `IL2108`: Trim analysis: Interface member 'member' with 'RequiresUnreferencedCodeAttribute' has an implementation member 'member' without 'RequiresUnreferencedCodeAttribute'. Add the 'RequiresUnreferencedCodeAttribute' to 'member'.
+#### `IL2109`: Trim analysis: Interface member 'member' with 'RequiresUnreferencedCodeAttribute' has an implementation member 'member' without 'RequiresUnreferencedCodeAttribute'. Add the 'RequiresUnreferencedCodeAttribute' to 'member'.
 
 - All implementations of a interface member including the base interface member must either have or not have the `RequiresUnreferencedCodeAttribute`.
 
@@ -1635,12 +1668,12 @@ void RequirePublicMethodOnAType(
 
   public class Implementation : IRUC
   {
-    // IL2108: Interface member 'IRUC.TestMethod()' with 'RequiresUnreferencedCodeAttribute' has an implementation member 'Implementation.TestMethod' without 'RequiresUnreferencedCodeAttribute'. Add the 'RequiresUnreferencedCodeAttribute' to 'Implementation.TestMethod'.
+    // IL2109: Interface member 'IRUC.TestMethod()' with 'RequiresUnreferencedCodeAttribute' has an implementation member 'Implementation.TestMethod' without 'RequiresUnreferencedCodeAttribute'. Add the 'RequiresUnreferencedCodeAttribute' to 'Implementation.TestMethod'.
     public void TestMethod() {}
   }
   ```
 
-#### `IL2109`: Trim analysis: Member 'member' with 'RequiresUnreferencedCodeAttribute' implements interface member 'member' without 'RequiresUnreferencedCodeAttribute'.
+#### `IL2110`: Trim analysis: Member 'member' with 'RequiresUnreferencedCodeAttribute' implements interface member 'member' without 'RequiresUnreferencedCodeAttribute'.
 
 - All implementations of a interface member including the base interface member must either have or not have the `RequiresUnreferencedCodeAttribute`.
 
@@ -1652,7 +1685,7 @@ void RequirePublicMethodOnAType(
 
   public class Implementation : IRUC
   {
-    // IL2109: Member 'Implementation.TestMethod()' with 'RequiresUnreferencedCodeAttribute' implements interface member 'IRUC.TestMethod' without 'RequiresUnreferencedCodeAttribute'.
+    // IL2110: Member 'Implementation.TestMethod()' with 'RequiresUnreferencedCodeAttribute' implements interface member 'IRUC.TestMethod' without 'RequiresUnreferencedCodeAttribute'.
     [RequiresUnreferencedCode("Message")]
     public void TestMethod() {}
   }

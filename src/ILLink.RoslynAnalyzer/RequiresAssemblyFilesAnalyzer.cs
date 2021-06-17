@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Immutable;
 using System.Linq;
+using ILLink.Shared;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -26,10 +27,10 @@ namespace ILLink.RoslynAnalyzer
 
 		static readonly DiagnosticDescriptor s_locationRule = new DiagnosticDescriptor (
 			IL3000,
-			new LocalizableResourceString (nameof (Resources.AvoidAssemblyLocationInSingleFileTitle),
-				Resources.ResourceManager, typeof (Resources)),
-			new LocalizableResourceString (nameof (Resources.AvoidAssemblyLocationInSingleFileMessage),
-				Resources.ResourceManager, typeof (Resources)),
+			new LocalizableResourceString (nameof (SharedStrings.AvoidAssemblyLocationInSingleFileTitle),
+				SharedStrings.ResourceManager, typeof (SharedStrings)),
+			new LocalizableResourceString (nameof (SharedStrings.AvoidAssemblyLocationInSingleFileMessage),
+				SharedStrings.ResourceManager, typeof (SharedStrings)),
 			DiagnosticCategory.SingleFile,
 			DiagnosticSeverity.Warning,
 			isEnabledByDefault: true,
@@ -37,10 +38,10 @@ namespace ILLink.RoslynAnalyzer
 
 		static readonly DiagnosticDescriptor s_getFilesRule = new DiagnosticDescriptor (
 			IL3001,
-			new LocalizableResourceString (nameof (Resources.AvoidAssemblyGetFilesInSingleFileTitle),
-				Resources.ResourceManager, typeof (Resources)),
-			new LocalizableResourceString (nameof (Resources.AvoidAssemblyGetFilesInSingleFileMessage),
-				Resources.ResourceManager, typeof (Resources)),
+			new LocalizableResourceString (nameof (SharedStrings.AvoidAssemblyGetFilesInSingleFileTitle),
+				SharedStrings.ResourceManager, typeof (SharedStrings)),
+			new LocalizableResourceString (nameof (SharedStrings.AvoidAssemblyGetFilesInSingleFileMessage),
+				SharedStrings.ResourceManager, typeof (SharedStrings)),
 			DiagnosticCategory.SingleFile,
 			DiagnosticSeverity.Warning,
 			isEnabledByDefault: true,
@@ -48,10 +49,10 @@ namespace ILLink.RoslynAnalyzer
 
 		static readonly DiagnosticDescriptor s_requiresAssemblyFilesRule = new DiagnosticDescriptor (
 			IL3002,
-			new LocalizableResourceString (nameof (Resources.RequiresAssemblyFilesTitle),
-				Resources.ResourceManager, typeof (Resources)),
-			new LocalizableResourceString (nameof (Resources.RequiresAssemblyFilesMessage),
-				Resources.ResourceManager, typeof (Resources)),
+			new LocalizableResourceString (nameof (SharedStrings.RequiresAssemblyFilesTitle),
+				SharedStrings.ResourceManager, typeof (SharedStrings)),
+			new LocalizableResourceString (nameof (SharedStrings.RequiresAssemblyFilesMessage),
+				SharedStrings.ResourceManager, typeof (SharedStrings)),
 			DiagnosticCategory.SingleFile,
 			DiagnosticSeverity.Warning,
 			isEnabledByDefault: true,
@@ -59,40 +60,40 @@ namespace ILLink.RoslynAnalyzer
 
 		static readonly DiagnosticDescriptor s_baseRequiresMismatch = new DiagnosticDescriptor (
 			IL3003,
-			new LocalizableResourceString (nameof (Resources.BaseRequiresMismatchTitle),
-			Resources.ResourceManager, typeof (Resources)),
-			new LocalizableResourceString (nameof (Resources.BaseRequiresMismatchMessage),
-			Resources.ResourceManager, typeof (Resources)),
+			new LocalizableResourceString (nameof (SharedStrings.BaseRequiresMismatchTitle),
+			SharedStrings.ResourceManager, typeof (SharedStrings)),
+			new LocalizableResourceString (nameof (SharedStrings.BaseRequiresMismatchMessage),
+			SharedStrings.ResourceManager, typeof (SharedStrings)),
 			DiagnosticCategory.Trimming,
 			DiagnosticSeverity.Warning,
 			isEnabledByDefault: true);
 
 		static readonly DiagnosticDescriptor s_derivedRequiresMismatch = new DiagnosticDescriptor (
 			IL3004,
-			new LocalizableResourceString (nameof (Resources.DerivedRequiresMismatchTitle),
-			Resources.ResourceManager, typeof (Resources)),
-			new LocalizableResourceString (nameof (Resources.DerivedRequiresMismatchMessage),
-			Resources.ResourceManager, typeof (Resources)),
+			new LocalizableResourceString (nameof (SharedStrings.DerivedRequiresMismatchTitle),
+			SharedStrings.ResourceManager, typeof (SharedStrings)),
+			new LocalizableResourceString (nameof (SharedStrings.DerivedRequiresMismatchMessage),
+			SharedStrings.ResourceManager, typeof (SharedStrings)),
 			DiagnosticCategory.Trimming,
 			DiagnosticSeverity.Warning,
 			isEnabledByDefault: true);
 
 		static readonly DiagnosticDescriptor s_interfaceRequiresMismatch = new DiagnosticDescriptor (
 			IL3005,
-			new LocalizableResourceString (nameof (Resources.InterfaceRequiresMismatchTitle),
-			Resources.ResourceManager, typeof (Resources)),
-			new LocalizableResourceString (nameof (Resources.InterfaceRequiresMismatchMessage),
-			Resources.ResourceManager, typeof (Resources)),
+			new LocalizableResourceString (nameof (SharedStrings.InterfaceRequiresMismatchTitle),
+			SharedStrings.ResourceManager, typeof (SharedStrings)),
+			new LocalizableResourceString (nameof (SharedStrings.InterfaceRequiresMismatchMessage),
+			SharedStrings.ResourceManager, typeof (SharedStrings)),
 			DiagnosticCategory.Trimming,
 			DiagnosticSeverity.Warning,
 			isEnabledByDefault: true);
 
 		static readonly DiagnosticDescriptor s_implementationRequiresMismatch = new DiagnosticDescriptor (
 			IL3006,
-			new LocalizableResourceString (nameof (Resources.ImplementationRequiresMismatchTitle),
-			Resources.ResourceManager, typeof (Resources)),
-			new LocalizableResourceString (nameof (Resources.ImplementationRequiresMismatchMessage),
-			Resources.ResourceManager, typeof (Resources)),
+			new LocalizableResourceString (nameof (SharedStrings.ImplementationRequiresMismatchTitle),
+			SharedStrings.ResourceManager, typeof (SharedStrings)),
+			new LocalizableResourceString (nameof (SharedStrings.ImplementationRequiresMismatchMessage),
+			SharedStrings.ResourceManager, typeof (SharedStrings)),
 			DiagnosticCategory.Trimming,
 			DiagnosticSeverity.Warning,
 			isEnabledByDefault: true);

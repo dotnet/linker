@@ -611,10 +611,10 @@ class BaseClass
 	public virtual string VirtualProperty { get; set; }
 }";
 			return VerifyRequiresUnreferencedCodeAnalyzer (src,
-				// (7,23): warning IL2107: Member 'DerivedClass.VirtualMethod()' with 'RequiresUnreferencedCodeAttribute' overrides base member 'BaseClass.VirtualMethod()' without 'RequiresUnreferencedCodeAttribute'.
-				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2107).WithSpan (7, 23, 7, 36).WithArguments ("RequiresUnreferencedCodeAttribute", "DerivedClass.VirtualMethod()", "BaseClass.VirtualMethod()"),
-				// (15,3): warning IL2107: Member 'DerivedClass.VirtualProperty.get' with 'RequiresUnreferencedCodeAttribute' overrides base member 'BaseClass.VirtualProperty.get' without 'RequiresUnreferencedCodeAttribute'.
-				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2107).WithSpan (15, 3, 15, 6).WithArguments ("RequiresUnreferencedCodeAttribute", "DerivedClass.VirtualProperty.get", "BaseClass.VirtualProperty.get"));
+				// (7,23): warning IL2108: Member 'DerivedClass.VirtualMethod()' with 'RequiresUnreferencedCodeAttribute' overrides base member 'BaseClass.VirtualMethod()' without 'RequiresUnreferencedCodeAttribute'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2108).WithSpan (7, 23, 7, 36).WithArguments ("RequiresUnreferencedCodeAttribute", "DerivedClass.VirtualMethod()", "BaseClass.VirtualMethod()"),
+				// (15,3): warning IL2108: Member 'DerivedClass.VirtualProperty.get' with 'RequiresUnreferencedCodeAttribute' overrides base member 'BaseClass.VirtualProperty.get' without 'RequiresUnreferencedCodeAttribute'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2108).WithSpan (15, 3, 15, 6).WithArguments ("RequiresUnreferencedCodeAttribute", "DerivedClass.VirtualProperty.get", "BaseClass.VirtualProperty.get"));
 		}
 
 		[Fact]
@@ -705,14 +705,14 @@ interface IRUC
 	string Property { get; set; }
 }";
 			return VerifyRequiresUnreferencedCodeAnalyzer (src,
-				// (7,14): warning IL2109: Member 'Implementation.RUC()' with 'RequiresUnreferencedCodeAttribute' implements interface member 'IRUC.RUC()' without 'RequiresUnreferencedCodeAttribute'.
-				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2109).WithSpan (7, 14, 7, 17).WithArguments ("RequiresUnreferencedCodeAttribute", "Implementation.RUC()", "IRUC.RUC()"),
-				// (13,3): warning IL2109: Member 'Implementation.Property.get' with 'RequiresUnreferencedCodeAttribute' implements interface member 'IRUC.Property.get' without 'RequiresUnreferencedCodeAttribute'.
-				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2109).WithSpan (13, 3, 13, 6).WithArguments ("RequiresUnreferencedCodeAttribute", "Implementation.Property.get", "IRUC.Property.get"),
-				// (33,12): warning IL2109: Member 'ExplicitImplementation.IRUC.RUC()' with 'RequiresUnreferencedCodeAttribute' implements interface member 'IRUC.RUC()' without 'RequiresUnreferencedCodeAttribute'.
-				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2109).WithSpan (33, 12, 33, 15).WithArguments ("RequiresUnreferencedCodeAttribute", "ExplicitImplementation.IRUC.RUC()", "IRUC.RUC()"),
-				// (39,3): warning IL2109: Member 'ExplicitImplementation.IRUC.Property.get' with 'RequiresUnreferencedCodeAttribute' implements interface member 'IRUC.Property.get' without 'RequiresUnreferencedCodeAttribute'.
-				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2109).WithSpan (39, 3, 39, 6).WithArguments ("RequiresUnreferencedCodeAttribute", "ExplicitImplementation.IRUC.Property.get", "IRUC.Property.get"));
+				// (7,14): warning IL2110: Member 'Implementation.RUC()' with 'RequiresUnreferencedCodeAttribute' implements interface member 'IRUC.RUC()' without 'RequiresUnreferencedCodeAttribute'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2110).WithSpan (7, 14, 7, 17).WithArguments ("RequiresUnreferencedCodeAttribute", "Implementation.RUC()", "IRUC.RUC()"),
+				// (13,3): warning IL2110: Member 'Implementation.Property.get' with 'RequiresUnreferencedCodeAttribute' implements interface member 'IRUC.Property.get' without 'RequiresUnreferencedCodeAttribute'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2110).WithSpan (13, 3, 13, 6).WithArguments ("RequiresUnreferencedCodeAttribute", "Implementation.Property.get", "IRUC.Property.get"),
+				// (33,12): warning IL2110: Member 'ExplicitImplementation.IRUC.RUC()' with 'RequiresUnreferencedCodeAttribute' implements interface member 'IRUC.RUC()' without 'RequiresUnreferencedCodeAttribute'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2110).WithSpan (33, 12, 33, 15).WithArguments ("RequiresUnreferencedCodeAttribute", "ExplicitImplementation.IRUC.RUC()", "IRUC.RUC()"),
+				// (39,3): warning IL2110: Member 'ExplicitImplementation.IRUC.Property.get' with 'RequiresUnreferencedCodeAttribute' implements interface member 'IRUC.Property.get' without 'RequiresUnreferencedCodeAttribute'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2110).WithSpan (39, 3, 39, 6).WithArguments ("RequiresUnreferencedCodeAttribute", "ExplicitImplementation.IRUC.Property.get", "IRUC.Property.get"));
 		}
 
 		[Fact]
@@ -752,14 +752,14 @@ interface IRUC
 	string Property {[RequiresUnreferencedCode(""Message"")] get; set; }
 }";
 			return VerifyRequiresUnreferencedCodeAnalyzer (src,
-				// (6,14): warning IL2108: Interface member 'IRUC.RUC()' with 'RequiresUnreferencedCodeAttribute' has an implementation member 'Implementation.RUC()' without 'RequiresUnreferencedCodeAttribute'. Add the 'RequiresUnreferencedCodeAttribute' to 'IRUC.RUC()'.
-				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2108).WithSpan (6, 14, 6, 17).WithArguments ("RequiresUnreferencedCodeAttribute", "IRUC.RUC()", "Implementation.RUC()"),
-				// (11,3): warning IL2108: Interface member 'IRUC.Property.get' with 'RequiresUnreferencedCodeAttribute' has an implementation member 'Implementation.Property.get' without 'RequiresUnreferencedCodeAttribute'. Add the 'RequiresUnreferencedCodeAttribute' to 'IRUC.Property.get'.
-				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2108).WithSpan (11, 3, 11, 6).WithArguments ("RequiresUnreferencedCodeAttribute", "IRUC.Property.get", "Implementation.Property.get"),
-				// (18,14): warning IL2108: Interface member 'IRUC.RUC()' with 'RequiresUnreferencedCodeAttribute' has an implementation member 'AnotherImplementation.RUC()' without 'RequiresUnreferencedCodeAttribute'. Add the 'RequiresUnreferencedCodeAttribute' to 'IRUC.RUC()'.
-				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2108).WithSpan (18, 14, 18, 17).WithArguments ("RequiresUnreferencedCodeAttribute", "IRUC.RUC()", "AnotherImplementation.RUC()"),
-				// (23,3): warning IL2108: Interface member 'IRUC.Property.get' with 'RequiresUnreferencedCodeAttribute' has an implementation member 'AnotherImplementation.Property.get' without 'RequiresUnreferencedCodeAttribute'. Add the 'RequiresUnreferencedCodeAttribute' to 'IRUC.Property.get'.
-				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2108).WithSpan (23, 3, 23, 6).WithArguments ("RequiresUnreferencedCodeAttribute", "IRUC.Property.get", "AnotherImplementation.Property.get"));
+				// (6,14): warning IL2109: Interface member 'IRUC.RUC()' with 'RequiresUnreferencedCodeAttribute' has an implementation member 'Implementation.RUC()' without 'RequiresUnreferencedCodeAttribute'. Add the 'RequiresUnreferencedCodeAttribute' to 'IRUC.RUC()'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2109).WithSpan (6, 14, 6, 17).WithArguments ("RequiresUnreferencedCodeAttribute", "IRUC.RUC()", "Implementation.RUC()"),
+				// (11,3): warning IL2109: Interface member 'IRUC.Property.get' with 'RequiresUnreferencedCodeAttribute' has an implementation member 'Implementation.Property.get' without 'RequiresUnreferencedCodeAttribute'. Add the 'RequiresUnreferencedCodeAttribute' to 'IRUC.Property.get'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2109).WithSpan (11, 3, 11, 6).WithArguments ("RequiresUnreferencedCodeAttribute", "IRUC.Property.get", "Implementation.Property.get"),
+				// (18,14): warning IL2109: Interface member 'IRUC.RUC()' with 'RequiresUnreferencedCodeAttribute' has an implementation member 'AnotherImplementation.RUC()' without 'RequiresUnreferencedCodeAttribute'. Add the 'RequiresUnreferencedCodeAttribute' to 'IRUC.RUC()'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2109).WithSpan (18, 14, 18, 17).WithArguments ("RequiresUnreferencedCodeAttribute", "IRUC.RUC()", "AnotherImplementation.RUC()"),
+				// (23,3): warning IL2109: Interface member 'IRUC.Property.get' with 'RequiresUnreferencedCodeAttribute' has an implementation member 'AnotherImplementation.Property.get' without 'RequiresUnreferencedCodeAttribute'. Add the 'RequiresUnreferencedCodeAttribute' to 'IRUC.Property.get'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2109).WithSpan (23, 3, 23, 6).WithArguments ("RequiresUnreferencedCodeAttribute", "IRUC.Property.get", "AnotherImplementation.Property.get"));
 		}
 
 		[Fact]
@@ -803,14 +803,14 @@ class AnotherImplementation : IRAF
 			var compilation = (await CSharpAnalyzerVerifier<RequiresUnreferencedCodeAnalyzer>.GetCompilation (references)).EmitToImageReference ();
 
 			await VerifyRequiresUnreferencedCodeAnalyzer (src, additionalReferences: new[] { compilation },
-				// (4,14): warning IL2108: Interface member 'IRAF.Method()' with 'RequiresUnreferencedCodeAttribute' has an implementation member 'Implementation.Method()' without 'RequiresUnreferencedCodeAttribute'. Add the 'RequiresUnreferencedCodeAttribute' to 'IRAF.Method()'.
-				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2108).WithSpan (4, 14, 4, 20).WithArguments ("RequiresUnreferencedCodeAttribute", "IRAF.Method()", "Implementation.Method()"),
-				// (9,3): warning IL2108: Interface member 'IRAF.StringProperty.get' with 'RequiresUnreferencedCodeAttribute' has an implementation member 'Implementation.StringProperty.get' without 'RequiresUnreferencedCodeAttribute'. Add the 'RequiresUnreferencedCodeAttribute' to 'IRAF.StringProperty.get'.
-				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2108).WithSpan (9, 3, 9, 6).WithArguments ("RequiresUnreferencedCodeAttribute", "IRAF.StringProperty.get", "Implementation.StringProperty.get"),
-				// (16,14): warning IL2108: Interface member 'IRAF.Method()' with 'RequiresUnreferencedCodeAttribute' has an implementation member 'AnotherImplementation.Method()' without 'RequiresUnreferencedCodeAttribute'. Add the 'RequiresUnreferencedCodeAttribute' to 'IRAF.Method()'.
-				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2108).WithSpan (16, 14, 16, 20).WithArguments ("RequiresUnreferencedCodeAttribute", "IRAF.Method()", "AnotherImplementation.Method()"),
-				// (21,3): warning IL2108: Interface member 'IRAF.StringProperty.get' with 'RequiresUnreferencedCodeAttribute' has an implementation member 'AnotherImplementation.StringProperty.get' without 'RequiresUnreferencedCodeAttribute'. Add the 'RequiresUnreferencedCodeAttribute' to 'IRAF.StringProperty.get'.
-				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2108).WithSpan (21, 3, 21, 6).WithArguments ("RequiresUnreferencedCodeAttribute", "IRAF.StringProperty.get", "AnotherImplementation.StringProperty.get"));
+				// (4,14): warning IL2109: Interface member 'IRAF.Method()' with 'RequiresUnreferencedCodeAttribute' has an implementation member 'Implementation.Method()' without 'RequiresUnreferencedCodeAttribute'. Add the 'RequiresUnreferencedCodeAttribute' to 'IRAF.Method()'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2109).WithSpan (4, 14, 4, 20).WithArguments ("RequiresUnreferencedCodeAttribute", "IRAF.Method()", "Implementation.Method()"),
+				// (9,3): warning IL2109: Interface member 'IRAF.StringProperty.get' with 'RequiresUnreferencedCodeAttribute' has an implementation member 'Implementation.StringProperty.get' without 'RequiresUnreferencedCodeAttribute'. Add the 'RequiresUnreferencedCodeAttribute' to 'IRAF.StringProperty.get'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2109).WithSpan (9, 3, 9, 6).WithArguments ("RequiresUnreferencedCodeAttribute", "IRAF.StringProperty.get", "Implementation.StringProperty.get"),
+				// (16,14): warning IL2109: Interface member 'IRAF.Method()' with 'RequiresUnreferencedCodeAttribute' has an implementation member 'AnotherImplementation.Method()' without 'RequiresUnreferencedCodeAttribute'. Add the 'RequiresUnreferencedCodeAttribute' to 'IRAF.Method()'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2109).WithSpan (16, 14, 16, 20).WithArguments ("RequiresUnreferencedCodeAttribute", "IRAF.Method()", "AnotherImplementation.Method()"),
+				// (21,3): warning IL2109: Interface member 'IRAF.StringProperty.get' with 'RequiresUnreferencedCodeAttribute' has an implementation member 'AnotherImplementation.StringProperty.get' without 'RequiresUnreferencedCodeAttribute'. Add the 'RequiresUnreferencedCodeAttribute' to 'IRAF.StringProperty.get'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2109).WithSpan (21, 3, 21, 6).WithArguments ("RequiresUnreferencedCodeAttribute", "IRAF.StringProperty.get", "AnotherImplementation.StringProperty.get"));
 		}
 
 		[Fact]
@@ -855,10 +855,10 @@ class AnotherImplementation : IRAF
 			var compilation = (await CSharpAnalyzerVerifier<RequiresUnreferencedCodeAnalyzer>.GetCompilation (references)).EmitToImageReference ();
 
 			await VerifyRequiresUnreferencedCodeAnalyzer (src, additionalReferences: new[] { compilation },
-				// (7,14): warning IL2109: Member 'Implementation.Method()' with 'RequiresUnreferencedCodeAttribute' implements interface member 'IRAF.Method()' without 'RequiresUnreferencedCodeAttribute'.
-				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2109).WithSpan (7, 14, 7, 20).WithArguments ("RequiresUnreferencedCodeAttribute", "Implementation.Method()", "IRAF.Method()"),
-				// (13,3): warning IL2109: Member 'Implementation.StringProperty.get' with 'RequiresUnreferencedCodeAttribute' implements interface member 'IRAF.StringProperty.get' without 'RequiresUnreferencedCodeAttribute'.
-				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2109).WithSpan (13, 3, 13, 6).WithArguments ("RequiresUnreferencedCodeAttribute", "Implementation.StringProperty.get", "IRAF.StringProperty.get"));
+				// (7,14): warning IL2110: Member 'Implementation.Method()' with 'RequiresUnreferencedCodeAttribute' implements interface member 'IRAF.Method()' without 'RequiresUnreferencedCodeAttribute'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2110).WithSpan (7, 14, 7, 20).WithArguments ("RequiresUnreferencedCodeAttribute", "Implementation.Method()", "IRAF.Method()"),
+				// (13,3): warning IL2110: Member 'Implementation.StringProperty.get' with 'RequiresUnreferencedCodeAttribute' implements interface member 'IRAF.StringProperty.get' without 'RequiresUnreferencedCodeAttribute'.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2110).WithSpan (13, 3, 13, 6).WithArguments ("RequiresUnreferencedCodeAttribute", "Implementation.StringProperty.get", "IRAF.StringProperty.get"));
 		}
 	}
 }
