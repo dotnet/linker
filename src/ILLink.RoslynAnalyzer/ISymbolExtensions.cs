@@ -32,6 +32,7 @@ namespace ILLink.RoslynAnalyzer
 			};
 			return overridenMember != null;
 		}
+
 		public static string GetDisplayName (this ISymbol symbol)
 		{
 			var sb = new StringBuilder ();

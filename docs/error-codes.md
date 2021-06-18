@@ -1737,24 +1737,6 @@ class Test
   }
   ```
 
-#### `IL3003`: Presence of 'RequiresAttribute' on method 'method' doesn't match overridden method 'base method'. All overridden methods must have 'RequiresAttribute'.
-
-- All overrides of a virtual method including the base method must either have or not have the `RequiresAttribute`.
-
-  ```C#
-  public class Base
-  {
-    [RequiresAssemblyFiles]
-    public virtual void TestMethod() {}
-  }
-
-  public class Derived : Base
-  {
-    // IL3003: Presence of 'RequiresAssemblyFilesAttribute' on method 'Derived.TestMethod()' doesn't match overridden method 'Base.TestMethod'. All overridden methods must have 'RequiresAssemblyFilesAttribute'.
-    public override void TestMethod() {}
-  }
-  ```
-
 #### `IL3003`: Base member 'member' with 'RequiresAssemblyFilesAttribute' has a derived member 'member' without 'RequiresAssemblyFilesAttribute'. Add the 'RequiresAssemblyFilesAttribute' to 'member'.
 
 - All overrides of a virtual method including the base method must either have or not have the `RequiresAssemblyFilesAttribute`.
