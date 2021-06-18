@@ -13,12 +13,12 @@ namespace ILLink.RoslynAnalyzer
 	[DiagnosticAnalyzer (LanguageNames.CSharp)]
 	public sealed class RequiresUnreferencedCodeAnalyzer : RequiresAnalyzerBase
 	{
-		public const string IL2026 = nameof (IL2026);
+		public static readonly string WRN_UsingRequiresUnreferencedCode = DiagCode.WRN_UsingRequiresUnreferencedCode.ToId();
 		const string RequiresUnreferencedCodeAttribute = nameof (RequiresUnreferencedCodeAttribute);
 		public const string FullyQualifiedRequiresUnreferencedCodeAttribute = "System.Diagnostics.CodeAnalysis." + RequiresUnreferencedCodeAttribute;
 
 		static readonly DiagnosticDescriptor s_requiresUnreferencedCodeRule = new DiagnosticDescriptor (
-			IL2026,
+			WRN_UsingRequiresUnreferencedCode,
 			new LocalizableResourceString (nameof (SharedStrings.RequiresUnreferencedCodeTitle),
 			SharedStrings.ResourceManager, typeof (SharedStrings)),
 			new LocalizableResourceString (nameof (SharedStrings.RequiresUnreferencedCodeMessage),

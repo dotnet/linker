@@ -30,6 +30,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
+using ILLink.Shared;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Linker.Steps;
@@ -571,6 +572,21 @@ namespace Mono.Linker
 				return;
 
 			LogMessage (MessageContainer.CreateDiagnosticMessage (message));
+		}
+
+		/// <summary>
+		/// Display a warning message to the end user.
+		/// This API is used for warnings defined in the linker, not by custom steps. Warning
+		/// versions are inferred from the code, and every warning that we define is versioned.
+		/// </summary>
+		/// <param name="text">Humanly readable message describing the warning</param>
+		/// <param name="code">Unique warning ID. Please see https://github.com/mono/linker/blob/main/docs/error-codes.md for the list of warnings and possibly add a new one</param>
+		/// <param name="origin">Filename or member where the warning is coming from</param>
+		/// <param name="subcategory">Optionally, further categorize this warning</param>
+		/// <returns>New MessageContainer of 'Warning' category</returns>
+		internal void LogWarning (string text, DiagCode code, MessageOrigin origin, string subcategory = MessageSubCategory.None)
+		{
+			LogWarning(text, (int)code, origin, subcategory);
 		}
 
 

@@ -2756,7 +2756,7 @@ namespace Mono.Linker.Steps
 				string arg1 = MessageFormat.FormatRequiresAttributeMessageArg (requiresUnreferencedCode.Message);
 				string arg2 = MessageFormat.FormatRequiresAttributeUrlArg (requiresUnreferencedCode.Url);
 				string message = string.Format (formatString, method.GetDisplayName (), arg1, arg2);
-				_context.LogWarning (message, 2026, currentOrigin, MessageSubCategory.TrimAnalysis);
+				_context.LogWarning (message, DiagCode.WRN_UsingRequiresUnreferencedCode, currentOrigin, MessageSubCategory.TrimAnalysis);
 			}
 		}
 

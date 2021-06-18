@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Text;
 using Mono.Cecil;
+using ILLink.Shared;
 
 namespace Mono.Linker
 {
@@ -156,7 +157,7 @@ namespace Mono.Linker
 
 			// Any IL2026 warnings left in an assembly with an IsTrimmable attribute are considered intentional
 			// and should not be collapsed, so that the user-visible RUC message gets printed.
-			if (code == 2026 && context.IsTrimmable (assembly))
+			if (code == (int)DiagCode.WRN_UsingRequiresUnreferencedCode && context.IsTrimmable (assembly))
 				return false;
 
 			var assemblyName = assembly.Name.Name;
