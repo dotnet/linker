@@ -42,23 +42,19 @@ namespace Mono.Linker.Steps
 			var annotations = Context.Annotations;
 			bool methodHasAttribute = annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (method);
 			if (methodHasAttribute != annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (baseMethod)) {
-				string arg0 = nameof (RequiresUnreferencedCodeAttribute);
-				string arg1 = method.GetDisplayName ();
-				string arg2 = baseMethod.GetDisplayName ();
-				if (!methodHasAttribute && !baseMethod.DeclaringType.IsInterface) {
-					string message = string.Format (SharedStrings.BaseRequiresMismatchMessage, arg0, arg1, arg2);
-					Context.LogWarning (message, 2046, method, subcategory: MessageSubCategory.TrimAnalysis);
-				} else if (methodHasAttribute && !baseMethod.DeclaringType.IsInterface) {
-					string message = string.Format (SharedStrings.DerivedRequiresMismatchMessage, arg0, arg1, arg2);
-					Context.LogWarning (message, 2108, method, subcategory: MessageSubCategory.TrimAnalysis);
+				string message = string.Empty;
+				if (!methodHasAttribute && !baseMethod.DeclaringType.IsInterface)
+					message = $"Base member '{baseMethod.GetDisplayName ()}' with 'RequiresUnreferencedCodeAttribute' has a derived member '{method.GetDisplayName ()}' without 'RequiresUnreferencedCodeAttribute'";
+				else if (methodHasAttribute && !baseMethod.DeclaringType.IsInterface)
+					message = $"Member '{method.GetDisplayName ()}' with 'RequiresUnreferencedCodeAttribute' overrides base member '{baseMethod.GetDisplayName ()}' without 'RequiresUnreferencedCodeAttribute'";
+				else if (!methodHasAttribute && baseMethod.DeclaringType.IsInterface)
+					message = $"Interface member '{baseMethod.GetDisplayName ()}' with 'RequiresUnreferencedCodeAttribute' has an implementation member '{method.GetDisplayName ()}' without 'RequiresUnreferencedCodeAttribute'";
+				else if (methodHasAttribute && baseMethod.DeclaringType.IsInterface)
+					message = $"Member '{method.GetDisplayName ()}' with 'RequiresUnreferencedCodeAttribute' implements interface member '{baseMethod.GetDisplayName ()}' without 'RequiresUnreferencedCodeAttribute'";
+				if (string.IsNullOrEmpty (message)) {
+					return;
 				}
-				if (!methodHasAttribute && baseMethod.DeclaringType.IsInterface) {
-					string message = string.Format (SharedStrings.InterfaceRequiresMismatchMessage, arg0, arg1, arg2);
-					Context.LogWarning (message, 2109, method, subcategory: MessageSubCategory.TrimAnalysis);
-				} else if (methodHasAttribute && baseMethod.DeclaringType.IsInterface) {
-					string message = string.Format (SharedStrings.ImplementationRequiresMismatchMessage, arg0, arg1, arg2);
-					Context.LogWarning (message, 2110, method, subcategory: MessageSubCategory.TrimAnalysis);
-				}
+				Context.LogWarning (string.Format (SharedStrings.RequiresAttributeMismatchMessage, message), 2046, method, subcategory: MessageSubCategory.TrimAnalysis);
 			}
 		}
 	}

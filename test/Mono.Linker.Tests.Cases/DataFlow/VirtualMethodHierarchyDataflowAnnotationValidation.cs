@@ -269,7 +269,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			// === RequiresUnreferencedCode ===
 			[ExpectedWarning ("IL2046", "DerivedClass.RequiresUnreferencedCodeBaseWithDerivedWithout()", "BaseClass.RequiresUnreferencedCodeBaseWithDerivedWithout()")]
 			public override void RequiresUnreferencedCodeBaseWithDerivedWithout () { }
-			[ExpectedWarning ("IL2108", "DerivedClass.RequiresUnreferencedCodeBaseWithoutDerivedWith_()", "BaseClass.RequiresUnreferencedCodeBaseWithoutDerivedWith_()")]
+			[ExpectedWarning ("IL2046", "DerivedClass.RequiresUnreferencedCodeBaseWithoutDerivedWith_()", "BaseClass.RequiresUnreferencedCodeBaseWithoutDerivedWith_()")]
 			[RequiresUnreferencedCode ("")]
 			public override void RequiresUnreferencedCodeBaseWithoutDerivedWith_ () { }
 			[LogDoesNotContain ("DerivedClass.RequiresUnreferencedCodeBaseWithDerivedWith_")]
@@ -540,7 +540,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[LogDoesNotContain ("ImplementationClass.RequiresUnreferencedCodeInterfaceBaseWithImplementationWith_")]
 			[RequiresUnreferencedCode ("")]
 			public void RequiresUnreferencedCodeInterfaceBaseWithImplementationWith_ () { }
-			[ExpectedWarning ("IL2110", "ImplementationClass.RequiresUnreferencedCodeInterfaceBaseWithoutImplementationWith_")]
+			[ExpectedWarning ("IL2046", "ImplementationClass.RequiresUnreferencedCodeInterfaceBaseWithoutImplementationWith_")]
 			[RequiresUnreferencedCode ("")]
 			public void RequiresUnreferencedCodeInterfaceBaseWithoutImplementationWith_ () { }
 		}
@@ -563,7 +563,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
 			public virtual Type ReturnValueBaseWithInterfaceWithout () => null;
 
-			[ExpectedWarning ("IL2109", "BaseImplementsInterfaceViaDerived.RequiresUnreferencedCodeBaseWithoutInterfaceWith")]
+			[ExpectedWarning ("IL2046", "BaseImplementsInterfaceViaDerived.RequiresUnreferencedCodeBaseWithoutInterfaceWith")]
 			public virtual void RequiresUnreferencedCodeBaseWithoutInterfaceWith () { }
 		}
 

@@ -18,9 +18,6 @@ namespace ILLink.RoslynAnalyzer
 		public const string IL3001 = nameof (IL3001);
 		public const string IL3002 = nameof (IL3002);
 		public const string IL3003 = nameof (IL3003);
-		public const string IL3004 = nameof (IL3004);
-		public const string IL3005 = nameof (IL3005);
-		public const string IL3006 = nameof (IL3006);
 
 		private const string RequiresAssemblyFilesAttribute = nameof (RequiresAssemblyFilesAttribute);
 		public const string RequiresAssemblyFilesAttributeFullyQualifiedName = "System.Diagnostics.CodeAnalysis." + RequiresAssemblyFilesAttribute;
@@ -58,47 +55,17 @@ namespace ILLink.RoslynAnalyzer
 			isEnabledByDefault: true,
 			helpLinkUri: "https://docs.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/il3002");
 
-		static readonly DiagnosticDescriptor s_baseRequiresMismatch = new DiagnosticDescriptor (
+		static readonly DiagnosticDescriptor s_RequiresAttributeMismatch = new DiagnosticDescriptor (
 			IL3003,
-			new LocalizableResourceString (nameof (SharedStrings.BaseRequiresMismatchTitle),
+			new LocalizableResourceString (nameof (SharedStrings.RequiresAttributeMismatchTitle),
 			SharedStrings.ResourceManager, typeof (SharedStrings)),
-			new LocalizableResourceString (nameof (SharedStrings.BaseRequiresMismatchMessage),
-			SharedStrings.ResourceManager, typeof (SharedStrings)),
-			DiagnosticCategory.Trimming,
-			DiagnosticSeverity.Warning,
-			isEnabledByDefault: true);
-
-		static readonly DiagnosticDescriptor s_derivedRequiresMismatch = new DiagnosticDescriptor (
-			IL3004,
-			new LocalizableResourceString (nameof (SharedStrings.DerivedRequiresMismatchTitle),
-			SharedStrings.ResourceManager, typeof (SharedStrings)),
-			new LocalizableResourceString (nameof (SharedStrings.DerivedRequiresMismatchMessage),
+			new LocalizableResourceString (nameof (SharedStrings.RequiresAttributeMismatchMessage),
 			SharedStrings.ResourceManager, typeof (SharedStrings)),
 			DiagnosticCategory.Trimming,
 			DiagnosticSeverity.Warning,
 			isEnabledByDefault: true);
 
-		static readonly DiagnosticDescriptor s_interfaceRequiresMismatch = new DiagnosticDescriptor (
-			IL3005,
-			new LocalizableResourceString (nameof (SharedStrings.InterfaceRequiresMismatchTitle),
-			SharedStrings.ResourceManager, typeof (SharedStrings)),
-			new LocalizableResourceString (nameof (SharedStrings.InterfaceRequiresMismatchMessage),
-			SharedStrings.ResourceManager, typeof (SharedStrings)),
-			DiagnosticCategory.Trimming,
-			DiagnosticSeverity.Warning,
-			isEnabledByDefault: true);
-
-		static readonly DiagnosticDescriptor s_implementationRequiresMismatch = new DiagnosticDescriptor (
-			IL3006,
-			new LocalizableResourceString (nameof (SharedStrings.ImplementationRequiresMismatchTitle),
-			SharedStrings.ResourceManager, typeof (SharedStrings)),
-			new LocalizableResourceString (nameof (SharedStrings.ImplementationRequiresMismatchMessage),
-			SharedStrings.ResourceManager, typeof (SharedStrings)),
-			DiagnosticCategory.Trimming,
-			DiagnosticSeverity.Warning,
-			isEnabledByDefault: true);
-
-		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create (s_locationRule, s_getFilesRule, s_requiresAssemblyFilesRule, s_baseRequiresMismatch, s_derivedRequiresMismatch, s_interfaceRequiresMismatch, s_implementationRequiresMismatch);
+		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create (s_locationRule, s_getFilesRule, s_requiresAssemblyFilesRule, s_RequiresAttributeMismatch);
 
 		private protected override string RequiresAttributeName => RequiresAssemblyFilesAttribute;
 
@@ -108,13 +75,7 @@ namespace ILLink.RoslynAnalyzer
 
 		private protected override DiagnosticDescriptor RequiresDiagnosticRule => s_requiresAssemblyFilesRule;
 
-		private protected override DiagnosticDescriptor BaseRequiresMismatch => s_baseRequiresMismatch;
-
-		private protected override DiagnosticDescriptor DerivedRequiresMismatch => s_derivedRequiresMismatch;
-
-		private protected override DiagnosticDescriptor InterfaceRequiresMismatch => s_interfaceRequiresMismatch;
-
-		private protected override DiagnosticDescriptor ImplementationRequiresMismatch => s_implementationRequiresMismatch;
+		private protected override DiagnosticDescriptor RequiresAttributeMismatch => s_RequiresAttributeMismatch;
 
 		protected override bool IsAnalyzerEnabled (AnalyzerOptions options, Compilation compilation)
 		{

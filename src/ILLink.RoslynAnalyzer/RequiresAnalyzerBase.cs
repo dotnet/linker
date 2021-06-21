@@ -22,13 +22,7 @@ namespace ILLink.RoslynAnalyzer
 
 		private protected abstract DiagnosticDescriptor RequiresDiagnosticRule { get; }
 
-		private protected abstract DiagnosticDescriptor BaseRequiresMismatch { get; }
-
-		private protected abstract DiagnosticDescriptor DerivedRequiresMismatch { get; }
-
-		private protected abstract DiagnosticDescriptor InterfaceRequiresMismatch { get; }
-
-		private protected abstract DiagnosticDescriptor ImplementationRequiresMismatch { get; }
+		private protected abstract DiagnosticDescriptor RequiresAttributeMismatch { get; }
 
 		public override void Initialize (AnalysisContext context)
 		{
@@ -247,20 +241,22 @@ namespace ILLink.RoslynAnalyzer
 
 		private void ReportMismatchInAttributesDiagnostic (SymbolAnalysisContext symbolAnalysisContext, ISymbol member, ISymbol baseMember)
 		{
-			if (!member.HasAttribute (RequiresAttributeName))
-				symbolAnalysisContext.ReportDiagnostic (Diagnostic.Create (
-				baseMember.IsVirtual ? BaseRequiresMismatch : InterfaceRequiresMismatch,
+			string message = string.Empty;
+			if (!member.HasAttribute (RequiresAttributeName) && baseMember.IsVirtual)
+				message = $"Base member '{baseMember.ToDisplayString ()}' with 'RequiresUnreferencedCodeAttribute' has a derived member '{member.ToDisplayString ()}' without 'RequiresUnreferencedCodeAttribute'";
+			else if (member.HasAttribute (RequiresAttributeName) && baseMember.IsVirtual)
+				message = $"Member '{member.ToDisplayString ()}' with 'RequiresUnreferencedCodeAttribute' overrides base member '{baseMember.ToDisplayString ()}' without 'RequiresUnreferencedCodeAttribute'";
+			else if (!member.HasAttribute (RequiresAttributeName) && !baseMember.IsVirtual)
+				message = $"Interface member '{baseMember.ToDisplayString ()}' with 'RequiresUnreferencedCodeAttribute' has an implementation member '{member.ToDisplayString ()}' without 'RequiresUnreferencedCodeAttribute'";
+			else if (member.HasAttribute (RequiresAttributeName) && !baseMember.IsVirtual)
+				message = $"Member '{member.ToDisplayString ()}' with 'RequiresUnreferencedCodeAttribute' implements interface member '{baseMember.ToDisplayString ()}' without 'RequiresUnreferencedCodeAttribute'";
+			if (string.IsNullOrEmpty (message)) {
+				return;
+			}
+			symbolAnalysisContext.ReportDiagnostic (Diagnostic.Create (
+				RequiresAttributeMismatch,
 				member.Locations[0],
-				RequiresAttributeName,
-				baseMember.ToString (),
-				member.ToString ()));
-			else
-				symbolAnalysisContext.ReportDiagnostic (Diagnostic.Create (
-				baseMember.IsVirtual ? DerivedRequiresMismatch : ImplementationRequiresMismatch,
-				member.Locations[0],
-				RequiresAttributeName,
-				member.ToString (),
-				baseMember.ToString ()));
+				message));
 		}
 
 		private bool HasMismatchingAttributes (ISymbol member1, ISymbol member2) => member1.HasAttribute (RequiresAttributeName) ^ member2.HasAttribute (RequiresAttributeName);
