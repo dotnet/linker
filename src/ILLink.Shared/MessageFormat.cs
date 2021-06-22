@@ -1,17 +1,10 @@
 
 #nullable enable
 
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Resources;
-
 namespace ILLink.Shared
 {
 	internal static class MessageFormat
 	{
-		static readonly ResourceManager sharedStrings = new ResourceManager (Path.GetFileNameWithoutExtension (Assembly.GetExecutingAssembly ().GetManifestResourceNames ().FirstOrDefault (name => name.Contains ("SharedStrings")))!, Assembly.GetExecutingAssembly ());
-
 		public static string FormatRequiresAttributeMessageArg (string? message)
 		{
 			string arg1 = "";
@@ -28,18 +21,15 @@ namespace ILLink.Shared
 			return arg2;
 		}
 
-		public static string FormatRequiresAttributeMismatch (bool memberHasAttribute, bool condition, string var0, string var1, string var2)
+		public static string FormatRequiresAttributeMismatch (bool memberHasAttribute, bool isInterface, string var0, string var1, string var2)
 		{
-			if (!memberHasAttribute && condition)
-				return string.Format (sharedStrings.GetString ("BaseRequiresMismatchMessage")!, var0, var1, var2);
-			else if (memberHasAttribute && condition)
-				return string.Format (sharedStrings.GetString ("DerivedRequiresMismatchMessage")!, var0, var1, var2);
-			else if (!memberHasAttribute && !condition)
-				return string.Format (sharedStrings.GetString ("InterfaceRequiresMismatchMessage")!, var0, var1, var2);
-			else if (memberHasAttribute && !condition)
-				return string.Format (sharedStrings.GetString ("ImplementationRequiresMismatchMessage")!, var0, var1, var2);
-			else
-				return string.Empty;
+			string format = (memberHasAttribute, isInterface) switch {
+				(false, true) => SharedStrings.InterfaceRequiresMismatchMessage,
+				(true, true) => SharedStrings.ImplementationRequiresMismatchMessage,
+				(false, false) => SharedStrings.BaseRequiresMismatchMessage,
+				(true, false) => SharedStrings.DerivedRequiresMismatchMessage
+			};
+			return string.Format (format, var0, var1, var2);
 		}
 	}
 }

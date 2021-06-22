@@ -174,7 +174,7 @@ namespace ILLink.RoslynAnalyzer
 							// In case the implementation is null because the user code is missing an implementation, we dont provide diagnostics.
 							// The compiler will provide an error
 							if (implementation != null && HasMismatchingAttributes (member, implementation))
-								ReportMismatchInAttributesDiagnostic (symbolAnalysisContext, implementation, member);
+								ReportMismatchInAttributesDiagnostic (symbolAnalysisContext, implementation, member, isInterface: true);
 						}
 					}
 
@@ -239,14 +239,13 @@ namespace ILLink.RoslynAnalyzer
 				url));
 		}
 
-		private void ReportMismatchInAttributesDiagnostic (SymbolAnalysisContext symbolAnalysisContext, ISymbol member, ISymbol baseMember)
+		private void ReportMismatchInAttributesDiagnostic (SymbolAnalysisContext symbolAnalysisContext, ISymbol member, ISymbol baseMember, bool isInterface = false)
 		{
-			string message = MessageFormat.FormatRequiresAttributeMismatch (member.HasAttribute (RequiresAttributeName), baseMember.IsVirtual, RequiresAttributeName, member.GetDisplayName (), baseMember.GetDisplayName ());
-			if (message != string.Empty)
-				symbolAnalysisContext.ReportDiagnostic (Diagnostic.Create (
-					RequiresAttributeMismatch,
-					member.Locations[0],
-					message));
+			string message = MessageFormat.FormatRequiresAttributeMismatch (member.HasAttribute (RequiresAttributeName), isInterface, RequiresAttributeName, member.GetDisplayName (), baseMember.GetDisplayName ());
+			symbolAnalysisContext.ReportDiagnostic (Diagnostic.Create (
+				RequiresAttributeMismatch,
+				member.Locations[0],
+				message));
 		}
 
 		private bool HasMismatchingAttributes (ISymbol member1, ISymbol member2) => member1.HasAttribute (RequiresAttributeName) ^ member2.HasAttribute (RequiresAttributeName);
