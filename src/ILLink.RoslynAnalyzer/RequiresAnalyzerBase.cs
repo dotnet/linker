@@ -241,25 +241,12 @@ namespace ILLink.RoslynAnalyzer
 
 		private void ReportMismatchInAttributesDiagnostic (SymbolAnalysisContext symbolAnalysisContext, ISymbol member, ISymbol baseMember)
 		{
-			string message = string.Empty;
-			string var0 = RequiresAttributeName;
-			string var1 = member.ToDisplayString ();
-			string var2 = baseMember.ToDisplayString ();
-			if (!member.HasAttribute (RequiresAttributeName) && baseMember.IsVirtual)
-				message = string.Format (SharedStrings.BaseRequiresMismatchMessage, var0, var1, var2);
-			else if (member.HasAttribute (RequiresAttributeName) && baseMember.IsVirtual)
-				message = string.Format (SharedStrings.DerivedRequiresMismatchMessage, var0, var1, var2);
-			else if (!member.HasAttribute (RequiresAttributeName) && !baseMember.IsVirtual)
-				message = string.Format (SharedStrings.InterfaceRequiresMismatchMessage, var0, var1, var2);
-			else if (member.HasAttribute (RequiresAttributeName) && !baseMember.IsVirtual)
-				message = string.Format (SharedStrings.ImplementationRequiresMismatchMessage, var0, var1, var2);
-			if (string.IsNullOrEmpty (message)) {
-				return;
-			}
-			symbolAnalysisContext.ReportDiagnostic (Diagnostic.Create (
-				RequiresAttributeMismatch,
-				member.Locations[0],
-				message));
+			string message = MessageFormat.FormatRequiresAttributeMismatch (member.HasAttribute (RequiresAttributeName), baseMember.IsVirtual, RequiresAttributeName, member.GetDisplayName (), baseMember.GetDisplayName ());
+			if (message != string.Empty)
+				symbolAnalysisContext.ReportDiagnostic (Diagnostic.Create (
+					RequiresAttributeMismatch,
+					member.Locations[0],
+					message));
 		}
 
 		private bool HasMismatchingAttributes (ISymbol member1, ISymbol member2) => member1.HasAttribute (RequiresAttributeName) ^ member2.HasAttribute (RequiresAttributeName);

@@ -55,7 +55,7 @@ namespace ILLink.RoslynAnalyzer
 			isEnabledByDefault: true,
 			helpLinkUri: "https://docs.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/il3002");
 
-		static readonly DiagnosticDescriptor s_RequiresAttributeMismatch = new DiagnosticDescriptor (
+		static readonly DiagnosticDescriptor s_requiresAttributeMismatch = new DiagnosticDescriptor (
 			IL3003,
 			new LocalizableResourceString (nameof (SharedStrings.RequiresAttributeMismatchTitle),
 			SharedStrings.ResourceManager, typeof (SharedStrings)),
@@ -65,7 +65,7 @@ namespace ILLink.RoslynAnalyzer
 			DiagnosticSeverity.Warning,
 			isEnabledByDefault: true);
 
-		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create (s_locationRule, s_getFilesRule, s_requiresAssemblyFilesRule, s_RequiresAttributeMismatch);
+		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create (s_locationRule, s_getFilesRule, s_requiresAssemblyFilesRule, s_requiresAttributeMismatch);
 
 		private protected override string RequiresAttributeName => RequiresAssemblyFilesAttribute;
 
@@ -75,7 +75,7 @@ namespace ILLink.RoslynAnalyzer
 
 		private protected override DiagnosticDescriptor RequiresDiagnosticRule => s_requiresAssemblyFilesRule;
 
-		private protected override DiagnosticDescriptor RequiresAttributeMismatch => s_RequiresAttributeMismatch;
+		private protected override DiagnosticDescriptor RequiresAttributeMismatch => s_requiresAttributeMismatch;
 
 		protected override bool IsAnalyzerEnabled (AnalyzerOptions options, Compilation compilation)
 		{

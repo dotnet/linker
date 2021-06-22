@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using System.Diagnostics.CodeAnalysis;
+using ILLink.Shared;
 using Mono.Cecil;
 
 namespace Mono.Linker.Steps
@@ -42,21 +43,9 @@ namespace Mono.Linker.Steps
 			var annotations = Context.Annotations;
 			bool methodHasAttribute = annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (method);
 			if (methodHasAttribute != annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (baseMethod)) {
-				string message = string.Empty;
-				string var0 = nameof (RequiresUnreferencedCodeAttribute);
-				string var1 = method.GetDisplayName ();
-				string var2 = baseMethod.GetDisplayName ();
-				if (!methodHasAttribute && !baseMethod.DeclaringType.IsInterface)
-					message = string.Format (SharedStrings.BaseRequiresMismatchMessage, var0, var1, var2);
-				else if (methodHasAttribute && !baseMethod.DeclaringType.IsInterface)
-					message = string.Format (SharedStrings.DerivedRequiresMismatchMessage, var0, var1, var2);
-				else if (!methodHasAttribute && baseMethod.DeclaringType.IsInterface)
-					message = string.Format (SharedStrings.InterfaceRequiresMismatchMessage, var0, var1, var2);
-				else if (methodHasAttribute && baseMethod.DeclaringType.IsInterface)
-					message = string.Format (SharedStrings.ImplementationRequiresMismatchMessage, var0, var1, var2);
-				if (string.IsNullOrEmpty (message))
-					return;
-				Context.LogWarning (string.Format (SharedStrings.RequiresAttributeMismatchMessage, message), 2046, method, subcategory: MessageSubCategory.TrimAnalysis);
+				string message = MessageFormat.FormatRequiresAttributeMismatch (methodHasAttribute, !baseMethod.DeclaringType.IsInterface, nameof (RequiresUnreferencedCodeAttribute), method.GetDisplayName (), baseMethod.GetDisplayName ());
+				if (message != string.Empty)
+					Context.LogWarning (string.Format (SharedStrings.RequiresAttributeMismatchMessage, message), 2046, method, subcategory: MessageSubCategory.TrimAnalysis);
 			}
 		}
 	}

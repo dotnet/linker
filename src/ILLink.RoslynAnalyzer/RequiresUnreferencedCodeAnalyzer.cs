@@ -28,7 +28,7 @@ namespace ILLink.RoslynAnalyzer
 			DiagnosticSeverity.Warning,
 			isEnabledByDefault: true);
 
-		static readonly DiagnosticDescriptor s_RequiresAttributeMismatch = new DiagnosticDescriptor (
+		static readonly DiagnosticDescriptor s_requiresAttributeMismatch = new DiagnosticDescriptor (
 			IL2046,
 			new LocalizableResourceString (nameof (SharedStrings.RequiresAttributeMismatchTitle),
 			SharedStrings.ResourceManager, typeof (SharedStrings)),
@@ -38,7 +38,7 @@ namespace ILLink.RoslynAnalyzer
 			DiagnosticSeverity.Warning,
 			isEnabledByDefault: true);
 
-		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create (s_requiresUnreferencedCodeRule, s_RequiresAttributeMismatch);
+		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create (s_requiresUnreferencedCodeRule, s_requiresAttributeMismatch);
 
 		private protected override string RequiresAttributeName => RequiresUnreferencedCodeAttribute;
 
@@ -48,7 +48,7 @@ namespace ILLink.RoslynAnalyzer
 
 		private protected override DiagnosticDescriptor RequiresDiagnosticRule => s_requiresUnreferencedCodeRule;
 
-		private protected override DiagnosticDescriptor RequiresAttributeMismatch => s_RequiresAttributeMismatch;
+		private protected override DiagnosticDescriptor RequiresAttributeMismatch => s_requiresAttributeMismatch;
 
 		protected override bool IsAnalyzerEnabled (AnalyzerOptions options, Compilation compilation)
 		{
