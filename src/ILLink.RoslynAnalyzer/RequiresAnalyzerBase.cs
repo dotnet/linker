@@ -242,14 +242,17 @@ namespace ILLink.RoslynAnalyzer
 		private void ReportMismatchInAttributesDiagnostic (SymbolAnalysisContext symbolAnalysisContext, ISymbol member, ISymbol baseMember)
 		{
 			string message = string.Empty;
+			string var0 = RequiresAttributeName;
+			string var1 = member.ToDisplayString ();
+			string var2 = baseMember.ToDisplayString ();
 			if (!member.HasAttribute (RequiresAttributeName) && baseMember.IsVirtual)
-				message = $"Base member '{baseMember.ToDisplayString ()}' with 'RequiresUnreferencedCodeAttribute' has a derived member '{member.ToDisplayString ()}' without 'RequiresUnreferencedCodeAttribute'";
+				message = string.Format (SharedStrings.BaseRequiresMismatchMessage, var0, var1, var2);
 			else if (member.HasAttribute (RequiresAttributeName) && baseMember.IsVirtual)
-				message = $"Member '{member.ToDisplayString ()}' with 'RequiresUnreferencedCodeAttribute' overrides base member '{baseMember.ToDisplayString ()}' without 'RequiresUnreferencedCodeAttribute'";
+				message = string.Format (SharedStrings.DerivedRequiresMismatchMessage, var0, var1, var2);
 			else if (!member.HasAttribute (RequiresAttributeName) && !baseMember.IsVirtual)
-				message = $"Interface member '{baseMember.ToDisplayString ()}' with 'RequiresUnreferencedCodeAttribute' has an implementation member '{member.ToDisplayString ()}' without 'RequiresUnreferencedCodeAttribute'";
+				message = string.Format (SharedStrings.InterfaceRequiresMismatchMessage, var0, var1, var2);
 			else if (member.HasAttribute (RequiresAttributeName) && !baseMember.IsVirtual)
-				message = $"Member '{member.ToDisplayString ()}' with 'RequiresUnreferencedCodeAttribute' implements interface member '{baseMember.ToDisplayString ()}' without 'RequiresUnreferencedCodeAttribute'";
+				message = string.Format (SharedStrings.ImplementationRequiresMismatchMessage, var0, var1, var2);
 			if (string.IsNullOrEmpty (message)) {
 				return;
 			}

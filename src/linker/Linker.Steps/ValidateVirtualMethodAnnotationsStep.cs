@@ -43,17 +43,19 @@ namespace Mono.Linker.Steps
 			bool methodHasAttribute = annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (method);
 			if (methodHasAttribute != annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (baseMethod)) {
 				string message = string.Empty;
+				string var0 = nameof (RequiresUnreferencedCodeAttribute);
+				string var1 = method.GetDisplayName ();
+				string var2 = baseMethod.GetDisplayName ();
 				if (!methodHasAttribute && !baseMethod.DeclaringType.IsInterface)
-					message = $"Base member '{baseMethod.GetDisplayName ()}' with 'RequiresUnreferencedCodeAttribute' has a derived member '{method.GetDisplayName ()}' without 'RequiresUnreferencedCodeAttribute'";
+					message = string.Format (SharedStrings.BaseRequiresMismatchMessage, var0, var1, var2);
 				else if (methodHasAttribute && !baseMethod.DeclaringType.IsInterface)
-					message = $"Member '{method.GetDisplayName ()}' with 'RequiresUnreferencedCodeAttribute' overrides base member '{baseMethod.GetDisplayName ()}' without 'RequiresUnreferencedCodeAttribute'";
+					message = string.Format (SharedStrings.DerivedRequiresMismatchMessage, var0, var1, var2);
 				else if (!methodHasAttribute && baseMethod.DeclaringType.IsInterface)
-					message = $"Interface member '{baseMethod.GetDisplayName ()}' with 'RequiresUnreferencedCodeAttribute' has an implementation member '{method.GetDisplayName ()}' without 'RequiresUnreferencedCodeAttribute'";
+					message = string.Format (SharedStrings.InterfaceRequiresMismatchMessage, var0, var1, var2);
 				else if (methodHasAttribute && baseMethod.DeclaringType.IsInterface)
-					message = $"Member '{method.GetDisplayName ()}' with 'RequiresUnreferencedCodeAttribute' implements interface member '{baseMethod.GetDisplayName ()}' without 'RequiresUnreferencedCodeAttribute'";
-				if (string.IsNullOrEmpty (message)) {
+					message = string.Format (SharedStrings.ImplementationRequiresMismatchMessage, var0, var1, var2);
+				if (string.IsNullOrEmpty (message))
 					return;
-				}
 				Context.LogWarning (string.Format (SharedStrings.RequiresAttributeMismatchMessage, message), 2046, method, subcategory: MessageSubCategory.TrimAnalysis);
 			}
 		}
