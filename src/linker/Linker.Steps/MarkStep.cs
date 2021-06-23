@@ -1557,6 +1557,22 @@ namespace Mono.Linker.Steps
 				Annotations.Mark (field, reason);
 			}
 
+			switch (reason.Kind) {
+			case DependencyKind.AccessedViaReflection:
+			case DependencyKind.DynamicDependency:
+			case DependencyKind.DynamicallyAccessedMember:
+			case DependencyKind.InteropMethodDependency:
+				if (_context.Annotations.FlowAnnotations.ShouldWarnWhenAccessedForReflection (field))
+					_context.LogWarning (
+						$"Field '{field.GetDisplayName ()}' with 'DynamicallyAccessedMembersAttribute' is accessed via reflection. Trimmer can't guarantee availability of the requirements of the field.",
+						2110,
+						_scopeStack.CurrentScope.Origin,
+						MessageSubCategory.TrimAnalysis);
+
+				break;
+			}
+				
+
 			if (CheckProcessed (field))
 				return;
 
@@ -2711,12 +2727,12 @@ namespace Mono.Linker.Steps
 
 			// Use the original reason as it's important to correctly generate warnings
 			// the updated reason is only useful for better tracking of dependencies.
-			ProcessRequiresUnreferencedCode (method, originalReasonKind);
+			ProcessAnalysisAnnotationsForMethod (method, originalReasonKind);
 
 			return method;
 		}
 
-		void ProcessRequiresUnreferencedCode (MethodDefinition method, DependencyKind dependencyKind)
+		void ProcessAnalysisAnnotationsForMethod (MethodDefinition method, DependencyKind dependencyKind)
 		{
 			switch (dependencyKind) {
 			// DirectCall, VirtualCall and NewObj are handled by ReflectionMethodBodyScanner
@@ -2773,24 +2789,43 @@ namespace Mono.Linker.Steps
 				return;
 
 			default:
-				// DirectCall, VirtualCall and NewObj are handled by ReflectionMethodBodyScanner
-				// This is necessary since the ReflectionMethodBodyScanner has intrinsic handling for some
-				// of the annotated methods annotated (for example Type.GetType)
-				// and it knows when it's OK and when it needs a warning. In this place we don't know
-				// and would have to warn every time
-
 				// All other cases have the potential of us missing a warning if we don't report it
 				// It is possible that in some cases we may report the same warning twice, but that's better than not reporting it.
 				break;
 			}
 
-			// All override methods should have the same annotations as their base methods (else we will produce warning IL2046.)
-			// When marking override methods with RequiresUnreferencedCode on a type annotated with DynamicallyAccessedMembers,
-			// we should only issue a warning for the base method.
-			if (dependencyKind != DependencyKind.DynamicallyAccessedMember ||
-				!method.IsVirtual ||
-				Annotations.GetBaseMethods (method) == null)
-				CheckAndReportRequiresUnreferencedCode (method);
+			// All override methods should have the same annotations as their base methods
+			// (else we will produce warning IL2046 or IL2092 or some other warning).
+			// When marking override methods via DynamicallyAccessedMembers, we should only issue a warning for the base method.
+			if (dependencyKind == DependencyKind.DynamicallyAccessedMember &&
+				method.IsVirtual &&
+				Annotations.GetBaseMethods (method) != null)
+				return;
+
+			CheckAndReportRequiresUnreferencedCode (method);
+
+			if (_context.Annotations.FlowAnnotations.ShouldWarnWhenAccessedForReflection (method)) {
+				// If the current scope has analysis warnings suppressed, don't generate any
+				if (ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode ())
+					return;
+
+				// ReflectionMethodBodyScanner handles more cases for data flow annotations
+				// so don't warn for those.
+				switch (dependencyKind) {
+				case DependencyKind.AttributeConstructor:
+				case DependencyKind.AttributeProperty:
+					return;
+
+				default:
+					break;
+				}
+
+				_context.LogWarning (
+					$"Method '{method.GetDisplayName ()}' with parameters or return value with `DynamicallyAccessedMembersAttribute` is accessed via reflection. Trimmer can't guarantee availability of the requirements of the field.",
+					2111,
+					_scopeStack.CurrentScope.Origin,
+					MessageSubCategory.TrimAnalysis);
+			}
 		}
 
 		internal bool ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode ()
