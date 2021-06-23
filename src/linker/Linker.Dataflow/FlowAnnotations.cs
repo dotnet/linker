@@ -23,57 +23,37 @@ namespace Mono.Linker.Dataflow
 			_hierarchyInfo = new TypeHierarchyCache (context);
 		}
 
-		public bool RequiresDataFlowAnalysis (MethodDefinition method)
-		{
-			return GetAnnotations (method.DeclaringType).TryGetAnnotation (method, out _);
-		}
+		public bool RequiresDataFlowAnalysis (MethodDefinition method) =>
+			GetAnnotations (method.DeclaringType).TryGetAnnotation (method, out _);
 
-		public bool RequiresDataFlowAnalysis (FieldDefinition field)
-		{
-			return GetAnnotations (field.DeclaringType).TryGetAnnotation (field, out _);
-		}
+		public bool RequiresDataFlowAnalysis (FieldDefinition field) =>
+			GetAnnotations (field.DeclaringType).TryGetAnnotation (field, out _);
 
-		public bool RequiresDataFlowAnalysis (GenericParameter genericParameter)
-		{
-			return GetGenericParameterAnnotation (genericParameter) != DynamicallyAccessedMemberTypes.None;
-		}
+		public bool RequiresDataFlowAnalysis (GenericParameter genericParameter) =>
+			GetGenericParameterAnnotation (genericParameter) != DynamicallyAccessedMemberTypes.None;
 
 		/// <summary>
 		/// Retrieves the annotations for the given parameter.
 		/// </summary>
 		/// <param name="parameterIndex">Parameter index in the IL sense. Parameter 0 on instance methods is `this`.</param>
 		/// <returns></returns>
-		public DynamicallyAccessedMemberTypes GetParameterAnnotation (MethodDefinition method, int parameterIndex)
-		{
-			if (GetAnnotations (method.DeclaringType).TryGetAnnotation (method, out var annotation) && annotation.ParameterAnnotations != null) {
-				return annotation.ParameterAnnotations[parameterIndex];
-			}
+		public DynamicallyAccessedMemberTypes GetParameterAnnotation (MethodDefinition method, int parameterIndex) =>
+			(GetAnnotations (method.DeclaringType).TryGetAnnotation (method, out var annotation) && annotation.ParameterAnnotations != null)
+				? annotation.ParameterAnnotations[parameterIndex]
+				: DynamicallyAccessedMemberTypes.None;
 
-			return DynamicallyAccessedMemberTypes.None;
-		}
+		public DynamicallyAccessedMemberTypes GetReturnParameterAnnotation (MethodDefinition method) =>
+			GetAnnotations (method.DeclaringType).TryGetAnnotation (method, out var annotation)
+				? annotation.ReturnParameterAnnotation
+				: DynamicallyAccessedMemberTypes.None;
 
-		public DynamicallyAccessedMemberTypes GetReturnParameterAnnotation (MethodDefinition method)
-		{
-			if (GetAnnotations (method.DeclaringType).TryGetAnnotation (method, out var annotation)) {
-				return annotation.ReturnParameterAnnotation;
-			}
+		public DynamicallyAccessedMemberTypes GetFieldAnnotation (FieldDefinition field) =>
+			GetAnnotations (field.DeclaringType).TryGetAnnotation (field, out var annotation)
+				? annotation.Annotation
+				: DynamicallyAccessedMemberTypes.None;
 
-			return DynamicallyAccessedMemberTypes.None;
-		}
-
-		public DynamicallyAccessedMemberTypes GetFieldAnnotation (FieldDefinition field)
-		{
-			if (GetAnnotations (field.DeclaringType).TryGetAnnotation (field, out var annotation)) {
-				return annotation.Annotation;
-			}
-
-			return DynamicallyAccessedMemberTypes.None;
-		}
-
-		public DynamicallyAccessedMemberTypes GetTypeAnnotation (TypeDefinition type)
-		{
-			return GetAnnotations (type).TypeAnnotation;
-		}
+		public DynamicallyAccessedMemberTypes GetTypeAnnotation (TypeDefinition type) =>
+			GetAnnotations (type).TypeAnnotation;
 
 		public DynamicallyAccessedMemberTypes GetGenericParameterAnnotation (GenericParameter genericParameter)
 		{
@@ -92,6 +72,13 @@ namespace Mono.Linker.Dataflow
 
 			return DynamicallyAccessedMemberTypes.None;
 		}
+
+		public bool ShouldWarnWhenAccessedForReflection (MethodDefinition method) =>
+			GetAnnotations (method.DeclaringType).TryGetAnnotation (method, out var annotation) &&
+				(annotation.ParameterAnnotations != null || annotation.ReturnParameterAnnotation != DynamicallyAccessedMemberTypes.None);
+
+		public bool ShouldWarnWhenAccessedForReflection (FieldDefinition field) =>
+			GetAnnotations (field.DeclaringType).TryGetAnnotation (field, out _);
 
 		TypeAnnotations GetAnnotations (TypeDefinition type)
 		{
