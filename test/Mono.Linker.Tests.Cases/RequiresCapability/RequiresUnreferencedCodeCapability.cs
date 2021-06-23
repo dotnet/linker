@@ -463,7 +463,10 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			tmp.GetRequiresUnreferencedCode ();
 		}
 
-		// TODO - WHy GlobalAnalysisOnly? - For some reason when I try to debug the analyzer it never sees this method
+		// https://github.com/mono/linker/issues/2107
+		// Doesn't work in the analyzer because the test infra for analyzer will not build the second assembly
+		// and provide it as a ref assembly to the compilation - so the analyzer actually sees the below
+		// as errors (missing assembly).
 		[ExpectedWarning ("IL2026", "--Method--", GlobalAnalysisOnly = true)]
 		static void TestRequiresInMethodFromCopiedAssembly ()
 		{
