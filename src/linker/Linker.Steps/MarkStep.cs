@@ -938,21 +938,21 @@ namespace Mono.Linker.Steps
 				}
 			}
 
-			MarkMembers (type, members, new DependencyInfo (DependencyKind.DynamicDependency, dynamicDependency.OriginalAttribute));
+			MarkMembersVisibleToReflection (type, members, new DependencyInfo (DependencyKind.DynamicDependency, dynamicDependency.OriginalAttribute));
 		}
 
-		void MarkMembers (TypeDefinition typeDefinition, IEnumerable<IMetadataTokenProvider> members, in DependencyInfo reason)
+		void MarkMembersVisibleToReflection (TypeDefinition typeDefinition, IEnumerable<IMetadataTokenProvider> members, in DependencyInfo reason)
 		{
 			foreach (var member in members) {
 				switch (member) {
 				case TypeDefinition type:
-					MarkType (type, reason);
+					MarkTypeVisibleToReflection (type, type, reason);
 					break;
 				case MethodDefinition method:
-					MarkMethod (method, reason);
+					MarkMethodVisibleToReflection (method, reason);
 					break;
 				case FieldDefinition field:
-					MarkField (field, reason);
+					MarkFieldVisibleToReflection (field, reason);
 					break;
 				case PropertyDefinition property:
 					MarkPropertyVisibleToReflection (property, reason);
@@ -969,7 +969,6 @@ namespace Mono.Linker.Steps
 				}
 			}
 		}
-
 
 		protected virtual bool IsUserDependencyMarker (TypeReference type)
 		{
@@ -2685,11 +2684,7 @@ namespace Mono.Linker.Steps
 
 			EnqueueMethod (method, reason, _scopeStack.CurrentScope);
 
-			// All override methods should have the same annotations as their base methods (else we will produce warning IL2046.)
-			// When marking override methods with RequiresUnreferencedCode on a type annotated with DynamicallyAccessedMembers,
-			// we should only issue a warning for the base method.
-			if (reason.Kind != DependencyKind.DynamicallyAccessedMember || !method.IsVirtual || Annotations.GetBaseMethods (method) == null)
-				ProcessRequiresUnreferencedCode (method, reason.Kind);
+			ProcessRequiresUnreferencedCode (method, reason.Kind);
 
 			return method;
 		}
@@ -2706,19 +2701,24 @@ namespace Mono.Linker.Steps
 			case DependencyKind.Ldvirtftn:
 			case DependencyKind.TriggersCctorForCalledMethod:
 			case DependencyKind.AttributeConstructor:
+			case DependencyKind.AttributeProperty:
 				break;
 
 			// DirectCall, VirtualCall and NewObj are handled by ReflectionMethodBodyScanner
 			// This is necessary since the ReflectionMethodBodyScanner has intrinsic handling for some
-			// of the methods annotated with the attribute (for example Type.GetType)
-			// and it know when it's OK and when it needs a warning. In this place we don't know
+			// of the annotated methods annotated (for example Type.GetType)
+			// and it knows when it's OK and when it needs a warning. In this place we don't know
 			// and would have to warn every time.
 
 			default:
 				return;
 			}
 
-			CheckAndReportRequiresUnreferencedCode (method);
+			// All override methods should have the same annotations as their base methods (else we will produce warning IL2046.)
+			// When marking override methods with RequiresUnreferencedCode on a type annotated with DynamicallyAccessedMembers,
+			// we should only issue a warning for the base method.
+			if (dependencyKind != DependencyKind.DynamicallyAccessedMember || !method.IsVirtual || Annotations.GetBaseMethods (method) == null)
+				CheckAndReportRequiresUnreferencedCode (method);
 		}
 
 		internal bool ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode ()

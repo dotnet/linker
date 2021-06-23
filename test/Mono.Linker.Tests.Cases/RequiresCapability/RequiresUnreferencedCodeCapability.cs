@@ -13,10 +13,11 @@ using Mono.Linker.Tests.Cases.RequiresCapability.Dependencies;
 
 namespace Mono.Linker.Tests.Cases.RequiresCapability
 {
-	[SetupLinkerAction ("copyused", "lib")]
+	[SetupLinkerAction ("copy", "lib")]
 	[SetupCompileBefore ("lib.dll", new[] { "Dependencies/RequiresUnreferencedCodeInCopyAssembly.cs" })]
 	[KeptAllTypesAndMembersInAssembly ("lib.dll")]
 	[SetupLinkAttributesFile ("RequiresUnreferencedCodeCapability.attributes.xml")]
+	[SetupLinkerDescriptorFile ("RequiresUnreferencedCodeCapability.descriptor.xml")]
 	[SkipKeptItemsValidation]
 	// Annotated members on a copied assembly should not produce any warnings
 	// unless directly called or referenced through reflection.
@@ -28,11 +29,15 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 	[LogDoesNotContain ("--UnusedVirtualMethod2--")]
 	[LogDoesNotContain ("--IUnusedInterface.UnusedMethod--")]
 	[LogDoesNotContain ("--UnusedImplementationClass.UnusedMethod--")]
+	// [LogDoesNotContain ("UnusedVirtualMethod2")] // https://github.com/mono/linker/issues/2106
+	// [LogContains ("--RequiresUnreferencedCodeOnlyViaDescriptor--")]  // https://github.com/mono/linker/issues/2103
+	[ExpectedNoWarnings]
 	public class RequiresUnreferencedCodeCapability
 	{
 		[ExpectedWarning ("IL2026", "--IDerivedInterface.MethodInDerivedInterface--", GlobalAnalysisOnly = true)]
 		[ExpectedWarning ("IL2026", "--DynamicallyAccessedTypeWithRequiresUnreferencedCode.RequiresUnreferencedCode--", GlobalAnalysisOnly = true)]
 		[ExpectedWarning ("IL2026", "--BaseType.VirtualMethodRequiresUnreferencedCode--", GlobalAnalysisOnly = true)]
+		[ExpectedWarning ("IL2026", "--IBaseInterface.MethodInBaseInterface--", GlobalAnalysisOnly = true)]
 		public static void Main ()
 		{
 			TestRequiresWithMessageOnlyOnMethod ();
@@ -43,6 +48,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			SuppressGenericParameters<TestType, TestType>.Test ();
 			TestDuplicateRequiresAttribute ();
 			TestRequiresUnreferencedCodeOnlyThroughReflection ();
+			AccessedThroughReflectionOnGenericType<TestType>.Test ();
 			TestBaseTypeVirtualMethodRequiresUnreferencedCode ();
 			TestTypeWhichOverridesMethodVirtualMethodRequiresUnreferencedCode ();
 			TestTypeWhichOverridesMethodVirtualMethodRequiresUnreferencedCodeOnBase ();
@@ -234,7 +240,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		// The second attribute is added through link attribute XML
 		[RequiresUnreferencedCode ("Message for --MethodWithDuplicateRequiresAttribute--")]
-		[ExpectedWarning ("IL2027", "RequiresUnreferencedCodeAttribute", nameof (MethodWithDuplicateRequiresAttribute))]
+		[ExpectedWarning ("IL2027", "RequiresUnreferencedCodeAttribute", nameof (MethodWithDuplicateRequiresAttribute), GlobalAnalysisOnly = true)]
 		static void MethodWithDuplicateRequiresAttribute ()
 		{
 		}
@@ -244,12 +250,28 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		{
 		}
 
-		[ExpectedWarning ("IL2026", "--RequiresUnreferencedCodeOnlyThroughReflection--")]
+		[ExpectedWarning ("IL2026", "--RequiresUnreferencedCodeOnlyThroughReflection--", GlobalAnalysisOnly = true)]
 		static void TestRequiresUnreferencedCodeOnlyThroughReflection ()
 		{
 			typeof (RequiresUnreferencedCodeCapability)
 				.GetMethod (nameof (RequiresUnreferencedCodeOnlyThroughReflection), System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)
 				.Invoke (null, new object[0]);
+		}
+
+		class AccessedThroughReflectionOnGenericType<T>
+		{
+			[RequiresUnreferencedCode ("Message for --GenericType.RequiresUnreferencedCodeOnlyThroughReflection--")]
+			public static void RequiresUnreferencedCodeOnlyThroughReflection ()
+			{
+			}
+
+			[ExpectedWarning ("IL2026", "--GenericType.RequiresUnreferencedCodeOnlyThroughReflection--", GlobalAnalysisOnly = true)]
+			public static void Test ()
+			{
+				typeof (AccessedThroughReflectionOnGenericType<T>)
+					.GetMethod (nameof (RequiresUnreferencedCodeOnlyThroughReflection))
+					.Invoke (null, new object[0]);
+			}
 		}
 
 		class BaseType
@@ -441,14 +463,15 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			tmp.GetRequiresUnreferencedCode ();
 		}
 
-		[ExpectedWarning ("IL2026", "--Method--")]
+		// TODO - WHy GlobalAnalysisOnly? - For some reason when I try to debug the analyzer it never sees this method
+		[ExpectedWarning ("IL2026", "--Method--", GlobalAnalysisOnly = true)]
 		static void TestRequiresInMethodFromCopiedAssembly ()
 		{
 			var tmp = new RequiresUnreferencedCodeInCopyAssembly ();
 			tmp.Method ();
 		}
 
-		[ExpectedWarning ("IL2026", "--MethodCalledThroughReflection--")]
+		[ExpectedWarning ("IL2026", "--MethodCalledThroughReflection--", GlobalAnalysisOnly = true)]
 		static void TestRequiresThroughReflectionInMethodFromCopiedAssembly ()
 		{
 			typeof (RequiresUnreferencedCodeInCopyAssembly)
@@ -506,6 +529,20 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				}
 			}
 
+			class AttributeWhichRequiresUnreferencedCodeOnPropertyAttribute : Attribute
+			{
+				public AttributeWhichRequiresUnreferencedCodeOnPropertyAttribute ()
+				{
+				}
+
+				public bool PropertyWhichRequires {
+					get => false;
+
+					[RequiresUnreferencedCode ("--AttributeWhichRequiresUnreferencedCodeOnPropertyAttribute.PropertyWhichRequires--")]
+					set { }
+				}
+			}
+
 			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresUnreferencedCodeAttribute.ctor--")]
 			class GenericTypeWithAttributedParameter<[AttributeWhichRequiresUnreferencedCode] T>
 			{
@@ -524,25 +561,34 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 			// https://github.com/mono/linker/issues/2094 - should be supported by the analyzer
 			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresUnreferencedCodeAttribute.ctor--", GlobalAnalysisOnly = true)]
+			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresUnreferencedCodeOnPropertyAttribute.PropertyWhichRequires--")]
 			[AttributeWhichRequiresUnreferencedCode]
+			[AttributeWhichRequiresUnreferencedCodeOnProperty (PropertyWhichRequires = true)]
 			class TypeWithAttributeWhichRequires
 			{
 			}
 
 			// https://github.com/mono/linker/issues/2094 - should be supported by the analyzer
 			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresUnreferencedCodeAttribute.ctor--", GlobalAnalysisOnly = true)]
+			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresUnreferencedCodeOnPropertyAttribute.PropertyWhichRequires--")]
 			[AttributeWhichRequiresUnreferencedCode]
+			[AttributeWhichRequiresUnreferencedCodeOnProperty (PropertyWhichRequires = true)]
 			static void MethodWithAttributeWhichRequires () { }
 
 			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresUnreferencedCodeAttribute.ctor--")]
+			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresUnreferencedCodeOnPropertyAttribute.PropertyWhichRequires--")]
 			[AttributeWhichRequiresUnreferencedCode]
+			[AttributeWhichRequiresUnreferencedCodeOnProperty (PropertyWhichRequires = true)]
 			static int _fieldWithAttributeWhichRequires;
 
 			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresUnreferencedCodeAttribute.ctor--")]
+			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresUnreferencedCodeOnPropertyAttribute.PropertyWhichRequires--")]
 			[AttributeWhichRequiresUnreferencedCode]
+			[AttributeWhichRequiresUnreferencedCodeOnProperty (PropertyWhichRequires = true)]
 			static bool PropertyWithAttributeWhichRequires { get; set; }
 
 			[AttributeWhichRequiresUnreferencedCode]
+			[AttributeWhichRequiresUnreferencedCodeOnProperty (PropertyWhichRequires = true)]
 			[RequiresUnreferencedCode ("--MethodWhichRequiresWithAttributeWhichRequires--")]
 			static void MethodWhichRequiresWithAttributeWhichRequires () { }
 
@@ -561,6 +607,11 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				PropertyWithAttributeWhichRequires = false;
 				TestMethodWhichRequiresWithAttributeWhichRequires ();
 			}
+		}
+
+		[RequiresUnreferencedCode ("Message for --RequiresUnreferencedCodeOnlyViaDescriptor--")]
+		static void RequiresUnreferencedCodeOnlyViaDescriptor ()
+		{
 		}
 	}
 }
