@@ -112,7 +112,7 @@ stages:
           - script: build.sh --projects $(Build.SourcesDirectory)/illink.sln
                     --configuration $(_BuildConfig) $(_BuildArgs)
                     --integrationTest
-                    --nodeReuse false # https://github.com/Microsoft/vstest/issues/1503
+                    --nodeReuse false
                     --test
                     --pack
                     --publish
