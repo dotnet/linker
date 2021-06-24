@@ -109,7 +109,7 @@ stages:
           steps:
           - checkout: self
             submodules: true
-          - script: build.sh --projects $(Build.SourcesDirectory)/illink.sln
+          - script: ./build.sh --projects $(Build.SourcesDirectory)/illink.sln
                     --configuration $(_BuildConfig) $(_BuildArgs)
                     --integrationTest
                     --nodeReuse false
