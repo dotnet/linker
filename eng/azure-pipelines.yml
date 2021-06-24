@@ -109,11 +109,15 @@ stages:
           steps:
           - checkout: self
             submodules: true
-          - script: eng/common/cibuild.sh --projects $(Build.SourcesDirectory)/illink.sln
+          - script: build.sh --projects $(Build.SourcesDirectory)/illink.sln
                     --configuration $(_BuildConfig) $(_BuildArgs)
                     --integrationTest
-                    --nodeReuse false
-                    --bootstrap # https://github.com/Microsoft/vstest/issues/1503
+                    --nodeReuse false # https://github.com/Microsoft/vstest/issues/1503
+                    --test
+                    --pack
+                    --publish
+                    --ci
+                    --bootstrap
             env:
               # https://github.com/Microsoft/vstest/issues/1503#issuecomment-410732193
               MSBUILDENSURESTDOUTFORTASKPROCESSES: 1
