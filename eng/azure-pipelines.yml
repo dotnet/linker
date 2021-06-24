@@ -113,7 +113,7 @@ stages:
                     --configuration $(_BuildConfig) $(_BuildArgs)
                     --integrationTest
                     --nodeReuse false
-                    --bootstrap# https://github.com/Microsoft/vstest/issues/1503
+                    --bootstrap # https://github.com/Microsoft/vstest/issues/1503
             env:
               # https://github.com/Microsoft/vstest/issues/1503#issuecomment-410732193
               MSBUILDENSURESTDOUTFORTASKPROCESSES: 1
