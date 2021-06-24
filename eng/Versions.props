@@ -22,8 +22,14 @@
     <MicrosoftBuildUtilitiesCoreVersion>17.0.0-preview-21267-01</MicrosoftBuildUtilitiesCoreVersion>
     <MicrosoftDotNetApiCompatVersion>6.0.0-beta.21319.2</MicrosoftDotNetApiCompatVersion>
     <MicrosoftDotNetCodeAnalysisVersion>6.0.0-beta.21271.1</MicrosoftDotNetCodeAnalysisVersion>
+    <!-- Microsoft.CodeAnalysis.Csharp is used for building the TestCsc project. If this library isn't at least as recent
+         as the SDK then the bootstrap build may fail because the CodeAnalysis library used in the TestCsc is older than
+         the compiler in the SDK. This should be regularly updated by Maestro. -->
+    <MicrosoftCodeAnalysisCSharpVersion>4.0.0-2.21323.33</MicrosoftCodeAnalysisCSharpVersion>
     <MicrosoftCodeAnalysisCSharpCodeStyleVersion>3.10.0-2.final</MicrosoftCodeAnalysisCSharpCodeStyleVersion>
-    <MicrosoftCodeAnalysisVersion>3.10.0-2.final</MicrosoftCodeAnalysisVersion>
+    <!-- This is the version used as a reference for building analyzers and other compiler plugins. It should
+         only be updated when new APIs are needed. -->
+    <MicrosoftCodeAnalysisRefVersion>3.10.0-2.final</MicrosoftCodeAnalysisRefVersion>
     <MicrosoftCodeAnalysisCSharpAnalyzerTestingXunitVersion>1.0.1-beta1.*</MicrosoftCodeAnalysisCSharpAnalyzerTestingXunitVersion>
     <!-- This controls the version of the cecil package, or the version of cecil in the project graph
          when we build the cecil submodule. The reference assembly package will depend on this version of cecil.

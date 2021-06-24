@@ -13,7 +13,7 @@
 
   <ItemGroup>
     <None Include="Microsoft.NET.ILLink.Analyzers.props" CopyToOutputDirectory="PreserveNewest" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="$(MicrosoftCodeAnalysisVersion)" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="$(MicrosoftCodeAnalysisRefVersion)" PrivateAssets="all" />
   </ItemGroup>
 
   <!-- Shared files with the linker -->

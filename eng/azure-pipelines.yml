@@ -102,6 +102,24 @@ stages:
             enablePublishTestResults: true
 
       - ${{ if eq(variables.officialBuild, 'false') }}:
+        - job: Bootstrap
+          condition: eq(variables.officialBuild, 'false')
+          pool:
+            name: Hosted Ubuntu 1604
+          steps:
+          - checkout: self
+            submodules: true
+          - script: eng/common/cibuild.sh --projects $(Build.SourcesDirectory)/illink.sln
+                    --configuration $(_BuildConfig) $(_BuildArgs)
+                    --integrationTest
+                    --nodeReuse false
+                    --bootstrap# https://github.com/Microsoft/vstest/issues/1503
+            env:
+              # https://github.com/Microsoft/vstest/issues/1503#issuecomment-410732193
+              MSBUILDENSURESTDOUTFORTASKPROCESSES: 1
+            displayName: Bootstrap trim csc $(_BuildConfig)
+
+      - ${{ if eq(variables.officialBuild, 'false') }}:
         - job: Linux
           condition: eq(variables.officialBuild, 'false')
           pool:

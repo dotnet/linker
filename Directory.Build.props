@@ -27,6 +27,14 @@
     <DebugType Condition=" '$(IsReferenceAssembly)' == 'true' ">none</DebugType>
   </PropertyGroup>
 
+  <Import Project="$(BootstrapLinkerPath)/build/Microsoft.NET.ILLink.Tasks.props" Condition="'$(BootstrapLinkerPath)' != ''" />
+
+  <PropertyGroup Condition="'$(BootstrapCscPath)' != ''">
+    <CscToolPath>$(BootstrapCscPath)</CscToolPath>
+    <CscToolExe>csc</CscToolExe>
+    <CscToolExe Condition="'$(OS)' == 'Windows_NT'">$(CscToolExe).exe</CscToolExe>
+  </PropertyGroup>
+
   <PropertyGroup>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
