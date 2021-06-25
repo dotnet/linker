@@ -10,17 +10,14 @@ bootstrap=false
 
 args=""
 while [[ $# > 0 ]]; do
-  opt="$(echo "$1" | awk '{print tolower($0)}')"
+  opt="$(echo "${1/#--/-}" | tr "[:upper:]" "[:lower:]")"
   case "$opt" in
-    --bootstrap)
+    -integrationtest)
       bootstrap=true
-      shift
       ;;
-    *)
-    args="$args $1"
-    shift
-    ;;
   esac
+  args="$args $1"
+  shift
 done
 
 source="${BASH_SOURCE[0]}"
