@@ -51,14 +51,15 @@ namespace ILLink.RoslynAnalyzer.Tests
 		}
 
 		public static void RunTest<TAnalyzer> (MemberDeclarationSyntax m, List<AttributeSyntax> attrs, params (string, string)[] MSBuildProperties)
+			where TAnalyzer : DiagnosticAnalyzer, new() => RunTest<TAnalyzer> (m, attrs, null, MSBuildProperties);
+
+		public static void RunTest<TAnalyzer> (MemberDeclarationSyntax m, List<AttributeSyntax> attrs, IEnumerable<MetadataReference>? additionalReferences = null, params (string, string)[] MSBuildProperties)
 			where TAnalyzer : DiagnosticAnalyzer, new()
 		{
 			var test = new TestChecker (m, CSharpAnalyzerVerifier<TAnalyzer>
-				.CreateCompilation (m.SyntaxTree.GetRoot ().SyntaxTree, MSBuildProperties).Result);
+				.CreateCompilation (m.SyntaxTree.GetRoot ().SyntaxTree, MSBuildProperties, additionalReferences).Result);
 			test.ValidateAttributes (attrs);
 		}
-
-
 
 		public static readonly ImmutableDictionary<string, List<string>> s_testFiles = GetTestFilesByDirName ();
 

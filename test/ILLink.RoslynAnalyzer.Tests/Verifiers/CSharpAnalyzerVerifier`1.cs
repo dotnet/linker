@@ -40,7 +40,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			=> CreateCompilation (CSharpSyntaxTree.ParseText (src), globalAnalyzerOptions, additionalReferences);
 
 		public static async Task<Compilation> GetCompilation (string source, IEnumerable<MetadataReference>? additionalReferences = null)
-			=> (await CSharpAnalyzerVerifier<RequiresAssemblyFilesAnalyzer>.CreateCompilation (source, additionalReferences: additionalReferences ?? Array.Empty<MetadataReference> ())).Compilation.Compilation;
+			=> (await CSharpAnalyzerVerifier<TAnalyzer>.CreateCompilation (source, additionalReferences: additionalReferences ?? Array.Empty<MetadataReference> ())).Compilation.Compilation;
 
 
 		public static async Task<(CompilationWithAnalyzers Compilation, SemanticModel SemanticModel)> CreateCompilation (

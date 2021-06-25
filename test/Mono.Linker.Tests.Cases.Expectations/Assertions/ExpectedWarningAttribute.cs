@@ -16,8 +16,7 @@ namespace Mono.Linker.Tests.Cases.Expectations.Assertions
 		public int SourceLine { get; set; }
 		public int SourceColumn { get; set; }
 
-		// Set to true if the warning only applies to global analysis (ILLinker, as opposed to Roslyn Analyzer)
-		public bool GlobalAnalysisOnly { get; set; }
+		public ProducedBy ProducedBy { get; set; } = ProducedBy.LinkerAndAnalyzer;
 
 		public bool CompilerGeneratedCode { get; set; }
 	}
