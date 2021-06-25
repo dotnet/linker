@@ -4,7 +4,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq.Expressions;
+using System.Runtime.InteropServices;
 using System.Text;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Helpers;
@@ -55,6 +58,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			TestTypeWhichOverridesVirtualPropertyRequiresUnreferencedCode ();
 			TestStaticCctorRequiresUnreferencedCode ();
 			TestStaticCtorMarkingIsTriggeredByFieldAccess ();
+			TestStaticCtorMarkingIsTriggeredByFieldAccessOnExplicitLayout ();
 			TestStaticCtorTriggeredByMethodCall ();
 			TestTypeIsBeforeFieldInit ();
 			TestDynamicallyAccessedMembersWithRequiresUnreferencedCode (typeof (DynamicallyAccessedTypeWithRequiresUnreferencedCode));
@@ -68,6 +72,13 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			TestThatTrailingPeriodIsAddedToMessage ();
 			TestThatTrailingPeriodIsNotDuplicatedInWarningMessage ();
 			RequiresOnAttribute.Test ();
+			RequiresOnGenerics.Test ();
+			CovariantReturnViaLdftn.Test ();
+			AccessThroughSpecialAttribute.Test ();
+			AccessThroughPInvoke.Test ();
+			OnEventMethod.Test ();
+			AccessThroughNewConstraint.Test ();
+			AccessThroughLdToken.Test ();
 		}
 
 		[ExpectedWarning ("IL2026", "Message for --RequiresWithMessageOnly--.")]
@@ -365,6 +376,20 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			var x = StaticCtorTriggeredByFieldAccess.field + 1;
 		}
 
+		struct StaticCCtorForFieldAccess
+		{
+			[RequiresUnreferencedCode ("Message for --StaticCCtorForFieldAccess.cctor--")]
+			static StaticCCtorForFieldAccess () { }
+
+			public static int field;
+		}
+
+		[ExpectedWarning ("IL2026", "--StaticCCtorForFieldAccess.cctor--")]
+		static void TestStaticCtorMarkingIsTriggeredByFieldAccessOnExplicitLayout ()
+		{
+			StaticCCtorForFieldAccess.field = 0;
+		}
+
 		class TypeIsBeforeFieldInit
 		{
 			public static int field = AnnotatedMethod ();
@@ -615,6 +640,144 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		[RequiresUnreferencedCode ("Message for --RequiresUnreferencedCodeOnlyViaDescriptor--")]
 		static void RequiresUnreferencedCodeOnlyViaDescriptor ()
 		{
+		}
+
+		class RequiresOnGenerics
+		{
+			class GenericWithStaticMethod<T>
+			{
+				[RequiresUnreferencedCode ("Message for --GenericTypeWithStaticMethodWhichRequires--")]
+				public static void GenericTypeWithStaticMethodWhichRequires () { }
+			}
+
+			[ExpectedWarning ("IL2026", "--GenericTypeWithStaticMethodWhichRequires--")]
+			public static void GenericTypeWithStaticMethodViaLdftn ()
+			{
+				var _ = new Action (GenericWithStaticMethod<TestType>.GenericTypeWithStaticMethodWhichRequires);
+			}
+
+			public static void Test ()
+			{
+				GenericTypeWithStaticMethodViaLdftn ();
+			}
+		}
+
+		class CovariantReturnViaLdftn
+		{
+			abstract class Base
+			{
+				[RequiresUnreferencedCode ("Message for --CovariantReturnViaLdftn.Base.GetRequiresUnreferencedCode--")]
+				public abstract BaseReturnType GetRequiresUnreferencedCode ();
+			}
+
+			class Derived : Base
+			{
+				[RequiresUnreferencedCode ("Message for --CovariantReturnViaLdftn.Derived.GetRequiresUnreferencedCode--")]
+				public override DerivedReturnType GetRequiresUnreferencedCode ()
+				{
+					return null;
+				}
+			}
+
+			[ExpectedWarning ("IL2026", "--CovariantReturnViaLdftn.Derived.GetRequiresUnreferencedCode--")]
+			public static void Test ()
+			{
+				var tmp = new Derived ();
+				var _ = new Func<DerivedReturnType> (tmp.GetRequiresUnreferencedCode);
+			}
+		}
+
+		class AccessThroughSpecialAttribute
+		{
+			[ExpectedWarning ("IL2026", "--DebuggerProxyType.Method--")]
+			[DebuggerDisplay ("Some{*}value")]
+			class TypeWithDebuggerDisplay
+			{
+				[RequiresUnreferencedCode ("Message for --DebuggerProxyType.Method--")]
+				public void Method ()
+				{
+				}
+			}
+
+			public static void Test ()
+			{
+				var _ = new TypeWithDebuggerDisplay ();
+			}
+		}
+
+		class AccessThroughPInvoke
+		{
+			class PInvokeReturnType
+			{
+				[RequiresUnreferencedCode ("Message for --PInvokeReturnType.ctor--")]
+				public PInvokeReturnType () { }
+			}
+
+			[ExpectedWarning ("IL2026", "--PInvokeReturnType.ctor--")]
+			[DllImport ("nonexistent")]
+			static extern PInvokeReturnType PInvokeReturnsType ();
+
+			[ExpectedWarning ("IL2050")]
+			public static void Test ()
+			{
+				PInvokeReturnsType ();
+			}
+		}
+
+		class OnEventMethod
+		{
+			[ExpectedWarning ("IL2026", "--EventToTestRemove.remove--")]
+			static event EventHandler EventToTestRemove {
+				add { }
+				[RequiresUnreferencedCode ("Message for --EventToTestRemove.remove--")]
+				remove { }
+			}
+
+			[ExpectedWarning ("IL2026", "--EventToTestAdd.add--")]
+			static event EventHandler EventToTestAdd {
+				[RequiresUnreferencedCode ("Message for --EventToTestAdd.add--")]
+				add { }
+				remove { }
+			}
+
+			public static void Test ()
+			{
+				EventToTestRemove += (sender, e) => { };
+				EventToTestAdd -= (sender, e) => { };
+			}
+		}
+
+		class AccessThroughNewConstraint
+		{
+			class NewConstrainTestType
+			{
+				[RequiresUnreferencedCode ("Message for --NewConstrainTestType.ctor--")]
+				public NewConstrainTestType () { }
+			}
+
+			static void GenericMethod<T> () where T : new() { }
+
+			[ExpectedWarning ("IL2026", "--NewConstrainTestType.ctor--")]
+			public static void Test ()
+			{
+				GenericMethod<NewConstrainTestType> ();
+			}
+		}
+
+		class AccessThroughLdToken
+		{
+			static bool PropertyWithLdToken {
+				[RequiresUnreferencedCode ("Message for --PropertyWithLdToken.get--")]
+				get {
+					return false;
+				}
+			}
+
+			[ExpectedWarning ("IL2026", "--PropertyWithLdToken.get--")]
+			public static void Test ()
+			{
+				Expression<Func<bool>> getter = () => PropertyWithLdToken;
+			}
 		}
 	}
 }
