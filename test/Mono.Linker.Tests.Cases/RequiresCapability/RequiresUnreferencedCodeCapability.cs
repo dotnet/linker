@@ -713,11 +713,13 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				public PInvokeReturnType () { }
 			}
 
-			[ExpectedWarning ("IL2026", "--PInvokeReturnType.ctor--")]
+			// https://github.com/mono/linker/issues/2116
+			[ExpectedWarning ("IL2026", "--PInvokeReturnType.ctor--", GlobalAnalysisOnly = true)]
 			[DllImport ("nonexistent")]
 			static extern PInvokeReturnType PInvokeReturnsType ();
 
-			[ExpectedWarning ("IL2050")]
+			// Analyzer doesn't support IL2050 yet
+			[ExpectedWarning ("IL2050", GlobalAnalysisOnly = true)]
 			public static void Test ()
 			{
 				PInvokeReturnsType ();
@@ -757,7 +759,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 			static void GenericMethod<T> () where T : new() { }
 
-			[ExpectedWarning ("IL2026", "--NewConstrainTestType.ctor--")]
+			// https://github.com/mono/linker/issues/2117
+			[ExpectedWarning ("IL2026", "--NewConstrainTestType.ctor--", GlobalAnalysisOnly = true)]
 			public static void Test ()
 			{
 				GenericMethod<NewConstrainTestType> ();
