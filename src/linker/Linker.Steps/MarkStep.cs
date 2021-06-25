@@ -1776,7 +1776,8 @@ namespace Mono.Linker.Steps
 			MarkSerializable (type);
 
 			// This marks static fields of KeyWords/OpCodes/Tasks subclasses of an EventSource type.
-			if (BCL.EventTracingForWindows.IsEventSourceImplementation (type, _context)) {
+			// The special handling of EventSource is not needed in .NET6 since DynamicallyAccessedMembers can be applied to types
+			if (_context.GetTargetRuntimeVersion () < TargetRuntimeVersion.NET6 && BCL.EventTracingForWindows.IsEventSourceImplementation (type, _context)) {
 				MarkEventSourceProviders (type);
 			}
 
@@ -1911,7 +1912,8 @@ namespace Mono.Linker.Steps
 				case "DebuggerTypeProxyAttribute" when attrType.Namespace == "System.Diagnostics":
 					MarkTypeWithDebuggerTypeProxyAttribute (type, attribute);
 					break;
-				case "EventDataAttribute" when attrType.Namespace == "System.Diagnostics.Tracing":
+				// The special handling of EventSource is not needed in .NET6 since DynamicallyAccessedMembers can be applied to types
+				case "EventDataAttribute" when attrType.Namespace == "System.Diagnostics.Tracing" && _context.GetTargetRuntimeVersion () < TargetRuntimeVersion.NET6:
 					if (MarkMethodsIf (type.Methods, MethodDefinitionExtensions.IsPublicInstancePropertyMethod, new DependencyInfo (DependencyKind.ReferencedBySpecialAttribute, type)))
 						Tracer.AddDirectDependency (attribute, new DependencyInfo (DependencyKind.CustomAttribute, type), marked: false);
 					break;
@@ -2377,6 +2379,7 @@ namespace Mono.Linker.Steps
 
 		void MarkEventSourceProviders (TypeDefinition td)
 		{
+			Debug.Assert (_context.GetTargetRuntimeVersion () < TargetRuntimeVersion.NET6);
 			foreach (var nestedType in td.NestedTypes) {
 				if (BCL.EventTracingForWindows.IsProviderName (nestedType.Name))
 					MarkStaticFields (nestedType, new DependencyInfo (DependencyKind.EventSourceProviderField, td));

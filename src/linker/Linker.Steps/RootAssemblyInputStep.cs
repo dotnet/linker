@@ -81,7 +81,8 @@ namespace Mono.Linker.Steps
 					CodeOptimizations.RemoveDescriptors |
 					CodeOptimizations.RemoveLinkAttributes |
 					CodeOptimizations.RemoveSubstitutions |
-					CodeOptimizations.RemoveDynamicDependencyAttribute, assembly.Name.Name);
+					CodeOptimizations.RemoveDynamicDependencyAttribute |
+					CodeOptimizations.OptimizeTypeHierarchyAnnotations, assembly.Name.Name);
 
 				// No metadata trimming
 				Context.MetadataTrimming = MetadataTrimming.None;

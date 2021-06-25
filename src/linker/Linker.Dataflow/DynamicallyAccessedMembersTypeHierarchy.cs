@@ -91,6 +91,9 @@ namespace Mono.Linker.Dataflow
 
 			Debug.Assert (!apply || annotation != DynamicallyAccessedMemberTypes.None);
 
+			// If OptimizeTypeHierarchyAnnotations is disabled, we will apply the annotations without seeing object.GetType()
+			apply |= (annotation != DynamicallyAccessedMemberTypes.None) && !_context.IsOptimizationEnabled (CodeOptimizations.OptimizeTypeHierarchyAnnotations, type);
+
 			// Store the results in the cache
 			// Don't store empty annotations for non-interface types - we can use the presence of the row
 			// in the cache as indication of it instead.

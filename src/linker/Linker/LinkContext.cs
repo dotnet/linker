@@ -246,7 +246,8 @@ namespace Mono.Linker
 				CodeOptimizations.RemoveDescriptors |
 				CodeOptimizations.RemoveLinkAttributes |
 				CodeOptimizations.RemoveSubstitutions |
-				CodeOptimizations.RemoveDynamicDependencyAttribute;
+				CodeOptimizations.RemoveDynamicDependencyAttribute |
+				CodeOptimizations.OptimizeTypeHierarchyAnnotations;
 
 			Optimizations = new CodeOptimizationsSettings (defaultOptimizations);
 		}
@@ -986,5 +987,12 @@ namespace Mono.Linker
 		RemoveSubstitutions = 1 << 21,
 		RemoveLinkAttributes = 1 << 22,
 		RemoveDynamicDependencyAttribute = 1 << 23,
+
+		/// <summary>
+		/// Option to apply annotations to type heirarchy
+		/// Enable type heirarchy apply in library mode to annotate derived types eagerly
+		/// Otherwise, type annotation will only be applied with calls to object.GetType()
+		/// </summary>
+		OptimizeTypeHierarchyAnnotations = 1 << 24,
 	}
 }
