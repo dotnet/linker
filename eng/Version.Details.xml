@@ -21,7 +21,7 @@
       -->
     </Dependency>
     <Dependency Name="Microsoft.CodeAnalysis.CSharp" Version="4.0.0-2.21323.33">
-      <Uri>dotnet/roslyn</Uri>
+      <Uri>https://github.com/dotnet/roslyn</Uri>
       <Sha />
     </Dependency>
   </ToolsetDependencies>
