@@ -2,7 +2,9 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System;
 using System.Collections.Generic;
+using System.IO;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Xunit;
@@ -14,20 +16,18 @@ namespace ILLink.RoslynAnalyzer.Tests
 	/// </summary>
 	public class LinkerTestCases : TestCaseUtils
 	{
-		private readonly static MetadataReference _rafReference = CSharpAnalyzerVerifier<RequiresAssemblyFilesAnalyzer>.GetCompilation (rafSourceDefinition).Result.EmitToImageReference ();
+		private static Lazy<IEnumerable<MetadataReference>> _additionalReferences = new Lazy<IEnumerable<MetadataReference>> (LoadDependencies);
 
-		private const string rafSourceDefinition = @"
-#nullable enable
-namespace System.Diagnostics.CodeAnalysis
-{
-	[AttributeUsage(AttributeTargets.Constructor | AttributeTargets.Event | AttributeTargets.Method | AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
-	public sealed class RequiresAssemblyFilesAttribute : Attribute
-	{
-		public RequiresAssemblyFilesAttribute () { }
-		public string? Message { get; set; }
-		public string? Url { get; set; }
-	}
-}";
+		private static IEnumerable<MetadataReference> LoadDependencies ()
+		{
+			List<MetadataReference> additionalReferences = new List<MetadataReference> ();
+			var s_refFiles = GetReferenceFilesByDirName ();
+			foreach (var refFile in s_refFiles["Dependencies"]) {
+				if (refFile.Contains ("RequiresCapability"))
+					additionalReferences.Add (CSharpAnalyzerVerifier<RequiresUnreferencedCodeAnalyzer>.GetCompilation (File.ReadAllText (refFile)).Result.EmitToImageReference ());
+			}
+			return additionalReferences;
+		}
 
 		[Theory]
 		[MemberData (nameof (TestCaseUtils.GetTestData), parameters: "RequiresCapability")]

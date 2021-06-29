@@ -18,6 +18,21 @@ namespace ILLink.RoslynAnalyzer.Tests
 {
 	public abstract class TestCaseUtils
 	{
+		internal readonly static MetadataReference _rafReference = CSharpAnalyzerVerifier<RequiresAssemblyFilesAnalyzer>.GetCompilation (rafSourceDefinition).Result.EmitToImageReference ();
+
+		internal const string rafSourceDefinition = @"
+#nullable enable
+namespace System.Diagnostics.CodeAnalysis
+{
+	[AttributeUsage(AttributeTargets.Constructor | AttributeTargets.Event | AttributeTargets.Method | AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
+	public sealed class RequiresAssemblyFilesAttribute : Attribute
+	{
+		public RequiresAssemblyFilesAttribute () { }
+		public string? Message { get; set; }
+		public string? Url { get; set; }
+	}
+}";
+
 		public static IEnumerable<object[]> GetTestData (string testSuiteName)
 		{
 			foreach (var testFile in s_testFiles[testSuiteName]) {
@@ -78,6 +93,38 @@ namespace ILLink.RoslynAnalyzer.Tests
 			}
 
 			return builder.ToImmutable ();
+		}
+
+		public static ImmutableDictionary<string, List<string>> GetReferenceFilesByDirName ()
+		{
+			var builder = ImmutableDictionary.CreateBuilder<string, List<string>> ();
+
+			foreach (var file in GetReferenceFiles ()) {
+				var dirName = Path.GetFileName (Path.GetDirectoryName (file))!;
+				if (builder.TryGetValue (dirName, out var sources)) {
+					sources.Add (file);
+				} else {
+					sources = new List<string> () { file };
+					builder[dirName] = sources;
+				}
+			}
+
+			return builder.ToImmutable ();
+		}
+
+		public static IEnumerable<string> GetReferenceFiles ()
+		{
+			GetDirectoryPaths (out var rootSourceDir, out _);
+
+			foreach (var subDir in Directory.EnumerateDirectories (rootSourceDir, "*", SearchOption.AllDirectories)) {
+				var subDirName = Path.GetFileName (subDir);
+				switch (subDirName) {
+				case "Dependencies":
+					foreach (var file in Directory.EnumerateFiles (subDir, "*.cs"))
+						yield return file;
+					break;
+				}
+			}
 		}
 
 		public static void GetDirectoryPaths (out string rootSourceDirectory, out string testAssemblyPath)
