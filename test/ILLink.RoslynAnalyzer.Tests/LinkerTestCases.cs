@@ -31,31 +31,12 @@ namespace ILLink.RoslynAnalyzer.Tests
 
 		[Theory]
 		[MemberData (nameof (TestCaseUtils.GetTestData), parameters: "RequiresCapability")]
-		public void RequiresUnreferencedCodeCapability (MethodDeclarationSyntax m, List<AttributeSyntax> attrs)
-		{
-			switch (m.Identifier.ValueText) {
-			case "MethodWithDuplicateRequiresAttribute":
-			case "TestRequiresOnlyThroughReflection":
-			case "TestRequiresInMethodFromCopiedAssembly":
-			case "TestRequiresThroughReflectionInMethodFromCopiedAssembly":
-				return;
-			}
+		public void RequiresUnreferencedCodeCapability (MethodDeclarationSyntax m, List<AttributeSyntax> attrs) =>
 			RunTest<RequiresUnreferencedCodeAnalyzer> (m, attrs, UseMSBuildProperties (MSBuildPropertyOptionNames.EnableTrimAnalyzer));
-		}
 
 		[Theory]
 		[MemberData (nameof (TestCaseUtils.GetTestData), parameters: "RequiresCapability")]
-		public void RequiresAssemblyFilesCapability (MethodDeclarationSyntax m, List<AttributeSyntax> attrs)
-		{
-			switch (m.Identifier.ValueText) {
-			case "MethodWithDuplicateRequiresAttribute":
-			case "TestRequiresOnlyThroughReflection":
-			case "TestRequiresInMethodFromCopiedAssembly":
-			case "TestRequiresThroughReflectionInMethodFromCopiedAssembly":
-				return;
-			}
-
+		public void RequiresAssemblyFilesCapability (MethodDeclarationSyntax m, List<AttributeSyntax> attrs) =>
 			RunTest<RequiresAssemblyFilesAnalyzer> (m, attrs, new[] { _rafReference }, UseMSBuildProperties (MSBuildPropertyOptionNames.EnableSingleFileAnalyzer));
-		}
 	}
 }
