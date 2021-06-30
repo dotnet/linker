@@ -52,7 +52,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			var comp = CSharpCompilation.Create (
 				assemblyName: Guid.NewGuid ().ToString ("N"),
 				syntaxTrees: new SyntaxTree[] { src },
-				references: (await TestCaseUtils.GetNet6References()).Add (mdRef).AddRange (additionalReferences),
+				references: (await TestCaseUtils.GetNet6References ()).Add (mdRef).AddRange (additionalReferences),
 				new CSharpCompilationOptions (OutputKind.DynamicallyLinkedLibrary));
 
 			var analyzerOptions = new AnalyzerOptions (

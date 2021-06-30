@@ -17,7 +17,7 @@ using Xunit;
 
 namespace ILLink.RoslynAnalyzer.Tests
 {
-    public abstract class TestCaseUtils
+	public abstract class TestCaseUtils
 	{
 		public static readonly ReferenceAssemblies Net6PreviewAssemblies =
 			new ReferenceAssemblies (
@@ -27,11 +27,11 @@ namespace ILLink.RoslynAnalyzer.Tests
 			.WithNuGetConfigFilePath (Path.Combine (TestCaseUtils.GetRepoRoot (), "NuGet.config"));
 
 		private static ImmutableArray<MetadataReference> s_net6Refs;
-		public async static ValueTask<ImmutableArray<MetadataReference>> GetNet6References()
+		public async static ValueTask<ImmutableArray<MetadataReference>> GetNet6References ()
 		{
 			if (s_net6Refs.IsDefault) {
 				var refs = await Net6PreviewAssemblies.ResolveAsync (null, default);
-				ImmutableInterlocked.InterlockedInitialize(ref s_net6Refs, refs);
+				ImmutableInterlocked.InterlockedInitialize (ref s_net6Refs, refs);
 			}
 			return s_net6Refs;
 		}
@@ -194,11 +194,11 @@ namespace ILLink.RoslynAnalyzer.Tests
 			return MSBuildProperties.Select (msbp => ($"build_property.{msbp}", "true")).ToArray ();
 		}
 
-		public static string GetRepoRoot()
+		public static string GetRepoRoot ()
 		{
-			return Directory.GetParent(ThisFile())!.Parent!.Parent!.FullName;
+			return Directory.GetParent (ThisFile ())!.Parent!.Parent!.FullName;
 
-			string ThisFile([CallerFilePath]string path = "") => path;
+			string ThisFile ([CallerFilePath] string path = "") => path;
 		}
 	}
 }
