@@ -38,8 +38,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 	public class RequiresCapability
 	{
 		[ExpectedWarning ("IL2026", "--IDerivedInterface.MethodInDerivedInterface--", ProducedBy = ProducedBy.Linker)]
-		[ExpectedWarning ("IL2026", "--DynamicallyAccessedTypeWithRequiresUnreferencedCode.RequiresUnreferencedCode--", ProducedBy = ProducedBy.Linker)]
-		[ExpectedWarning ("IL2026", "--BaseType.VirtualMethodRequiresUnreferencedCode--", ProducedBy = ProducedBy.Linker)]
+		[ExpectedWarning ("IL2026", "--DynamicallyAccessedTypeWithRequiresAttribute.RequiresAttribute--", ProducedBy = ProducedBy.Linker)]
+		[ExpectedWarning ("IL2026", "--BaseType.VirtualMethodWithRequires--", ProducedBy = ProducedBy.Linker)]
 		[ExpectedWarning ("IL2026", "--IBaseInterface.MethodInBaseInterface--", ProducedBy = ProducedBy.Linker)]
 		public static void Main ()
 		{
@@ -61,9 +61,9 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			TestStaticCtorMarkingIsTriggeredByFieldAccessOnExplicitLayout ();
 			TestStaticCtorTriggeredByMethodCall ();
 			TestTypeIsBeforeFieldInit ();
-			TestDynamicallyAccessedMembersWithRequiresUnreferencedCode (typeof (DynamicallyAccessedTypeWithRequiresUnreferencedCode));
-			TestDynamicallyAccessedMembersWithRequiresUnreferencedCode (typeof (TypeWhichOverridesMethod));
-			TestInterfaceMethodWithRequiresUnreferencedCode ();
+			TestDynamicallyAccessedMembersWithRequiresAttribute (typeof (DynamicallyAccessedTypeWithRequiresAttribute));
+			TestDynamicallyAccessedMembersWithRequiresAttribute (typeof (TypeWhichOverridesMethod));
+			TestInterfaceMethodWithRequiresAttribute ();
 			TestCovariantReturnCallOnDerived ();
 			TestRequiresInMethodFromCopiedAssembly ();
 			TestRequiresThroughReflectionInMethodFromCopiedAssembly ();
@@ -388,6 +388,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 		}
 
+		[ExpectedWarning ("IL2026", "--TestStaticCtor--")]
 		[ExpectedWarning ("IL3002", "--TestStaticCtor--", ProducedBy = ProducedBy.Analyzer)]
 		static void TestStaticCctorRequires ()
 		{
@@ -416,12 +417,14 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		struct StaticCCtorForFieldAccess
 		{
 			[RequiresUnreferencedCode ("Message for --StaticCCtorForFieldAccess.cctor--")]
+			[RequiresAssemblyFiles (Message = "Message for --StaticCCtorForFieldAccess.cctor--")]
 			static StaticCCtorForFieldAccess () { }
 
 			public static int field;
 		}
 
 		[ExpectedWarning ("IL2026", "--StaticCCtorForFieldAccess.cctor--")]
+		[ExpectedWarning ("IL3002", "--StaticCCtorForFieldAccess.cctor--", ProducedBy = ProducedBy.Analyzer)]
 		static void TestStaticCtorMarkingIsTriggeredByFieldAccessOnExplicitLayout ()
 		{
 			StaticCCtorForFieldAccess.field = 0;
@@ -429,8 +432,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		class TypeIsBeforeFieldInit
 		{
-			[LogContains ("Mono.Linker.Tests.Cases.RequiresCapability.RequiresCapability.TypeIsBeforeFieldInit..cctor():", ProducedBy = ProducedBy.Linker)]
-			[LogContains ("'Mono.Linker.Tests.Cases.RequiresCapability.RequiresCapability.TypeIsBeforeFieldInit.AnnotatedMethod()'")]
 			[LogContains ("Message from --TypeIsBeforeFieldInit.AnnotatedMethod--")]
 			public static int field = AnnotatedMethod ();
 
@@ -461,70 +462,78 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		[ExpectedWarning ("IL2026", "--StaticCtorTriggeredByMethodCall.Cctor--")]
 		[ExpectedWarning ("IL2026", "--StaticCtorTriggeredByMethodCall.TriggerStaticCtorMarking--")]
+		[ExpectedWarning ("IL3002", "--StaticCtorTriggeredByMethodCall.Cctor--", ProducedBy = ProducedBy.Analyzer)]
+		[ExpectedWarning ("IL3002", "--StaticCtorTriggeredByMethodCall.TriggerStaticCtorMarking--", ProducedBy = ProducedBy.Analyzer)]
 		static void TestStaticCtorTriggeredByMethodCall ()
 		{
 			new StaticCtorTriggeredByMethodCall ().TriggerStaticCtorMarking ();
 		}
 
-		public class DynamicallyAccessedTypeWithRequiresUnreferencedCode
+		public class DynamicallyAccessedTypeWithRequiresAttribute
 		{
-			[RequiresUnreferencedCode ("Message for --DynamicallyAccessedTypeWithRequiresUnreferencedCode.RequiresUnreferencedCode--")]
-			public void RequiresUnreferencedCode ()
+			[RequiresUnreferencedCode ("Message for --DynamicallyAccessedTypeWithRequiresAttribute.RequiresAttribute--")]
+			public void RequiresAttribute ()
 			{
 			}
 		}
 
-		static void TestDynamicallyAccessedMembersWithRequiresUnreferencedCode (
+		static void TestDynamicallyAccessedMembersWithRequiresAttribute (
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
 		{
 		}
 
-		[LogDoesNotContain ("ImplementationClass.RequiresUnreferencedCodeMethod")]
-		[ExpectedWarning ("IL2026", "--IRequiresUnreferencedCode.RequiresUnreferencedCodeMethod--")]
-		static void TestInterfaceMethodWithRequiresUnreferencedCode ()
+		[LogDoesNotContain ("ImplementationClass.RequiresAttributeMethod")]
+		[ExpectedWarning ("IL2026", "--IRequiresAttribute.RequiresAttributeMethod--")]
+		[ExpectedWarning ("IL3002", "--IRequiresAttribute.RequiresAttributeMethod--", ProducedBy = ProducedBy.Analyzer)]
+		static void TestInterfaceMethodWithRequiresAttribute ()
 		{
-			IRequiresUnreferencedCode inst = new ImplementationClass ();
-			inst.RequiresUnreferencedCodeMethod ();
+			IRequiresAttribute inst = new ImplementationClass ();
+			inst.RequiresAttributeMethod ();
 		}
 
 		class BaseReturnType { }
 		class DerivedReturnType : BaseReturnType { }
 
-		interface IRequiresUnreferencedCode
+		interface IRequiresAttribute
 		{
-			[RequiresUnreferencedCode ("Message for --IRequiresUnreferencedCode.RequiresUnreferencedCodeMethod--")]
-			public void RequiresUnreferencedCodeMethod ();
+			[RequiresUnreferencedCode ("Message for --IRequiresAttribute.RequiresAttributeMethod--")]
+			[RequiresAssemblyFiles (Message = "Message for --IRequiresAttribute.RequiresAttributeMethod--")]
+			public void RequiresAttributeMethod ();
 		}
 
-		class ImplementationClass : IRequiresUnreferencedCode
+		class ImplementationClass : IRequiresAttribute
 		{
-			[RequiresUnreferencedCode ("Message for --ImplementationClass.RequiresUnreferencedCodeMethod--")]
-			public void RequiresUnreferencedCodeMethod ()
+			[RequiresUnreferencedCode ("Message for --ImplementationClass.RequiresAttributeMethod--")]
+			[RequiresAssemblyFiles (Message = "Message for --ImplementationClass.RequiresAttributeMethod--")]
+			public void RequiresAttributeMethod ()
 			{
 			}
 		}
 
 		abstract class CovariantReturnBase
 		{
-			[RequiresUnreferencedCode ("Message for --CovariantReturnBase.GetRequiresUnreferencedCode--")]
-			public abstract BaseReturnType GetRequiresUnreferencedCode ();
+			[RequiresUnreferencedCode ("Message for --CovariantReturnBase.GetRequiresAttribute--")]
+			[RequiresAssemblyFiles (Message = "Message for --CovariantReturnBase.GetRequiresAttribute--")]
+			public abstract BaseReturnType GetRequiresAttribute ();
 		}
 
 		class CovariantReturnDerived : CovariantReturnBase
 		{
-			[RequiresUnreferencedCode ("Message for --CovariantReturnDerived.GetRequiresUnreferencedCode--")]
-			public override DerivedReturnType GetRequiresUnreferencedCode ()
+			[RequiresUnreferencedCode ("Message for --CovariantReturnDerived.GetRequiresAttribute--")]
+			[RequiresAssemblyFiles (Message = "Message for --CovariantReturnDerived.GetRequiresAttribute--")]
+			public override DerivedReturnType GetRequiresAttribute ()
 			{
 				return null;
 			}
 		}
 
-		[LogDoesNotContain ("--CovariantReturnBase.GetRequiresUnreferencedCode--")]
-		[ExpectedWarning ("IL2026", "--CovariantReturnDerived.GetRequiresUnreferencedCode--")]
+		[LogDoesNotContain ("--CovariantReturnBase.GetRequiresAttribute--")]
+		[ExpectedWarning ("IL2026", "--CovariantReturnDerived.GetRequiresAttribute--")]
+		[ExpectedWarning ("IL3002", "--CovariantReturnDerived.GetRequiresAttribute--", ProducedBy = ProducedBy.Analyzer)]
 		static void TestCovariantReturnCallOnDerived ()
 		{
 			var tmp = new CovariantReturnDerived ();
-			tmp.GetRequiresUnreferencedCode ();
+			tmp.GetRequiresAttribute ();
 		}
 
 		// https://github.com/mono/linker/issues/2107
@@ -551,16 +560,18 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		{
 		}
 
-		[RequiresUnreferencedCode ("Message for --RequiresUnreferencedCodeInDynamicDependency--")]
-		static void RequiresUnreferencedCodeInDynamicDependency ()
+		[RequiresUnreferencedCode ("Message for --RequiresAttributeInDynamicDependency--")]
+		[RequiresAssemblyFiles (Message = "Message for --RequiresAttributeInDynamicDependency--")]
+		static void RequiresAttributeInDynamicDependency ()
 		{
 		}
 
-		[ExpectedWarning ("IL2026", "--RequiresUnreferencedCodeInDynamicDependency--")]
-		[DynamicDependency ("RequiresUnreferencedCodeInDynamicDependency")]
+		[ExpectedWarning ("IL2026", "--RequiresAttributeInDynamicDependency--")]
+		[ExpectedWarning ("IL3002", "--RequiresAttributeInDynamicDependency--", ProducedBy = ProducedBy.Analyzer)]
+		[DynamicDependency ("RequiresAttributeInDynamicDependency")]
 		static void TestRequiresInDynamicDependency ()
 		{
-			RequiresUnreferencedCodeInDynamicDependency ();
+			RequiresAttributeInDynamicDependency ();
 		}
 
 		[RequiresUnreferencedCode ("Linker adds a trailing period to this message")]
@@ -588,37 +599,40 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		[ExpectedNoWarnings]
 		class RequiresOnAttribute
 		{
-			class AttributeWhichRequiresUnreferencedCodeAttribute : Attribute
+			class AttributeWhichRequiresAttribute : Attribute
 			{
-				[RequiresUnreferencedCode ("Message for --AttributeWhichRequiresUnreferencedCodeAttribute.ctor--")]
-				public AttributeWhichRequiresUnreferencedCodeAttribute ()
+				[RequiresUnreferencedCode ("Message for --AttributeWhichRequiresAttribute.ctor--")]
+				[RequiresAssemblyFiles (Message = "Message for --AttributeWhichRequiresAttribute.ctor--")]
+				public AttributeWhichRequiresAttribute ()
 				{
 				}
 			}
 
-			class AttributeWhichRequiresUnreferencedCodeOnPropertyAttribute : Attribute
+			class AttributeWhichRequiresOnPropertyAttribute : Attribute
 			{
-				public AttributeWhichRequiresUnreferencedCodeOnPropertyAttribute ()
+				public AttributeWhichRequiresOnPropertyAttribute ()
 				{
 				}
 
 				public bool PropertyWhichRequires {
 					get => false;
 
-					[RequiresUnreferencedCode ("--AttributeWhichRequiresUnreferencedCodeOnPropertyAttribute.PropertyWhichRequires--")]
+					[RequiresUnreferencedCode ("--AttributeWhichRequiresOnPropertyAttribute.PropertyWhichRequires--")]
+					[RequiresAssemblyFiles (Message = "--AttributeWhichRequiresOnPropertyAttribute.PropertyWhichRequires--")]
 					set { }
 				}
 			}
 
-			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresUnreferencedCodeAttribute.ctor--")]
-			class GenericTypeWithAttributedParameter<[AttributeWhichRequiresUnreferencedCode] T>
+			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresAttribute.ctor--")]
+			[ExpectedWarning ("IL3002", "--AttributeWhichRequiresAttribute.ctor--", ProducedBy = ProducedBy.Analyzer)]
+			class GenericTypeWithAttributedParameter<[AttributeWhichRequires] T>
 			{
 				public static void TestMethod () { }
 			}
 
 			// https://github.com/mono/linker/issues/2094 - should be supported by the analyzer
-			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresUnreferencedCodeAttribute.ctor--", ProducedBy = ProducedBy.Linker)]
-			static void GenericMethodWithAttributedParameter<[AttributeWhichRequiresUnreferencedCode] T> () { }
+			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresAttribute.ctor--", ProducedBy = ProducedBy.Linker)]
+			static void GenericMethodWithAttributedParameter<[AttributeWhichRequires] T> () { }
 
 			static void TestRequiresOnAttributeOnGenericParameter ()
 			{
@@ -627,39 +641,46 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			// https://github.com/mono/linker/issues/2094 - should be supported by the analyzer
-			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresUnreferencedCodeAttribute.ctor--", ProducedBy = ProducedBy.Linker)]
-			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresUnreferencedCodeOnPropertyAttribute.PropertyWhichRequires--")]
-			[AttributeWhichRequiresUnreferencedCode]
-			[AttributeWhichRequiresUnreferencedCodeOnProperty (PropertyWhichRequires = true)]
+			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresAttribute.ctor--", ProducedBy = ProducedBy.Linker)]
+			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresOnPropertyAttribute.PropertyWhichRequires--")]
+			[ExpectedWarning ("IL3002", "--AttributeWhichRequiresOnPropertyAttribute.PropertyWhichRequires--", ProducedBy = ProducedBy.Analyzer)]
+			[AttributeWhichRequires]
+			[AttributeWhichRequiresOnProperty (PropertyWhichRequires = true)]
 			class TypeWithAttributeWhichRequires
 			{
 			}
 
 			// https://github.com/mono/linker/issues/2094 - should be supported by the analyzer
-			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresUnreferencedCodeAttribute.ctor--", ProducedBy = ProducedBy.Linker)]
-			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresUnreferencedCodeOnPropertyAttribute.PropertyWhichRequires--")]
-			[AttributeWhichRequiresUnreferencedCode]
-			[AttributeWhichRequiresUnreferencedCodeOnProperty (PropertyWhichRequires = true)]
+			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresAttribute.ctor--", ProducedBy = ProducedBy.Linker)]
+			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresOnPropertyAttribute.PropertyWhichRequires--")]
+			[ExpectedWarning ("IL3002", "--AttributeWhichRequiresOnPropertyAttribute.PropertyWhichRequires--", ProducedBy = ProducedBy.Analyzer)]
+
+			[AttributeWhichRequires]
+			[AttributeWhichRequiresOnProperty (PropertyWhichRequires = true)]
 			static void MethodWithAttributeWhichRequires () { }
 
-			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresUnreferencedCodeAttribute.ctor--")]
-			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresUnreferencedCodeOnPropertyAttribute.PropertyWhichRequires--")]
-			[AttributeWhichRequiresUnreferencedCode]
-			[AttributeWhichRequiresUnreferencedCodeOnProperty (PropertyWhichRequires = true)]
+			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresAttribute.ctor--")]
+			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresOnPropertyAttribute.PropertyWhichRequires--")]
+			[ExpectedWarning ("IL3002", "--AttributeWhichRequiresOnPropertyAttribute.PropertyWhichRequires--", ProducedBy = ProducedBy.Analyzer)]
+			[AttributeWhichRequires]
+			[AttributeWhichRequiresOnProperty (PropertyWhichRequires = true)]
 			static int _fieldWithAttributeWhichRequires;
 
-			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresUnreferencedCodeAttribute.ctor--")]
-			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresUnreferencedCodeOnPropertyAttribute.PropertyWhichRequires--")]
-			[AttributeWhichRequiresUnreferencedCode]
-			[AttributeWhichRequiresUnreferencedCodeOnProperty (PropertyWhichRequires = true)]
+			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresAttribute.ctor--")]
+			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresOnPropertyAttribute.PropertyWhichRequires--")]
+			[ExpectedWarning ("IL3002", "--AttributeWhichRequiresOnPropertyAttribute.PropertyWhichRequires--", ProducedBy = ProducedBy.Analyzer)]
+			[AttributeWhichRequires]
+			[AttributeWhichRequiresOnProperty (PropertyWhichRequires = true)]
 			static bool PropertyWithAttributeWhichRequires { get; set; }
 
-			[AttributeWhichRequiresUnreferencedCode]
-			[AttributeWhichRequiresUnreferencedCodeOnProperty (PropertyWhichRequires = true)]
+			[AttributeWhichRequires]
+			[AttributeWhichRequiresOnProperty (PropertyWhichRequires = true)]
 			[RequiresUnreferencedCode ("--MethodWhichRequiresWithAttributeWhichRequires--")]
+			[RequiresAssemblyFiles (Message = "--MethodWhichRequiresWithAttributeWhichRequires--")]
 			static void MethodWhichRequiresWithAttributeWhichRequires () { }
 
 			[ExpectedWarning ("IL2026", "--MethodWhichRequiresWithAttributeWhichRequires--")]
+			[ExpectedWarning ("IL3002", "--MethodWhichRequiresWithAttributeWhichRequires--", ProducedBy = ProducedBy.Analyzer)]
 			static void TestMethodWhichRequiresWithAttributeWhichRequires ()
 			{
 				MethodWhichRequiresWithAttributeWhichRequires ();
@@ -676,8 +697,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 		}
 
-		[RequiresUnreferencedCode ("Message for --RequiresUnreferencedCodeOnlyViaDescriptor--")]
-		static void RequiresUnreferencedCodeOnlyViaDescriptor ()
+		[RequiresUnreferencedCode ("Message for --RequiresAttributeOnlyViaDescriptor--")]
+		static void RequiresAttributeOnlyViaDescriptor ()
 		{
 		}
 
@@ -686,10 +707,12 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			class GenericWithStaticMethod<T>
 			{
 				[RequiresUnreferencedCode ("Message for --GenericTypeWithStaticMethodWhichRequires--")]
+				[RequiresAssemblyFiles (Message = "Message for --GenericTypeWithStaticMethodWhichRequires--")]
 				public static void GenericTypeWithStaticMethodWhichRequires () { }
 			}
 
 			[ExpectedWarning ("IL2026", "--GenericTypeWithStaticMethodWhichRequires--")]
+			[ExpectedWarning ("IL3002", "--GenericTypeWithStaticMethodWhichRequires--", ProducedBy = ProducedBy.Analyzer)]
 			public static void GenericTypeWithStaticMethodViaLdftn ()
 			{
 				var _ = new Action (GenericWithStaticMethod<TestType>.GenericTypeWithStaticMethodWhichRequires);
@@ -705,34 +728,39 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		{
 			abstract class Base
 			{
-				[RequiresUnreferencedCode ("Message for --CovariantReturnViaLdftn.Base.GetRequiresUnreferencedCode--")]
-				public abstract BaseReturnType GetRequiresUnreferencedCode ();
+				[RequiresUnreferencedCode ("Message for --CovariantReturnViaLdftn.Base.GetRequiresAttribute--")]
+				[RequiresAssemblyFiles (Message = "Message for --CovariantReturnViaLdftn.Base.GetRequiresAttribute--")]
+				public abstract BaseReturnType GetRequiresAttribute ();
 			}
 
 			class Derived : Base
 			{
-				[RequiresUnreferencedCode ("Message for --CovariantReturnViaLdftn.Derived.GetRequiresUnreferencedCode--")]
-				public override DerivedReturnType GetRequiresUnreferencedCode ()
+				[RequiresUnreferencedCode ("Message for --CovariantReturnViaLdftn.Derived.GetRequiresAttribute--")]
+				[RequiresAssemblyFiles (Message = "Message for --CovariantReturnViaLdftn.Derived.GetRequiresAttribute--")]
+				public override DerivedReturnType GetRequiresAttribute ()
 				{
 					return null;
 				}
 			}
 
-			[ExpectedWarning ("IL2026", "--CovariantReturnViaLdftn.Derived.GetRequiresUnreferencedCode--")]
+			[ExpectedWarning ("IL2026", "--CovariantReturnViaLdftn.Derived.GetRequiresAttribute--")]
+			[ExpectedWarning ("IL3002", "--CovariantReturnViaLdftn.Derived.GetRequiresAttribute--", ProducedBy = ProducedBy.Analyzer)]
 			public static void Test ()
 			{
 				var tmp = new Derived ();
-				var _ = new Func<DerivedReturnType> (tmp.GetRequiresUnreferencedCode);
+				var _ = new Func<DerivedReturnType> (tmp.GetRequiresAttribute);
 			}
 		}
 
 		class AccessThroughSpecialAttribute
 		{
 			[ExpectedWarning ("IL2026", "--DebuggerProxyType.Method--")]
+			[ExpectedWarning ("IL3002", "--DebuggerProxyType.Method--", ProducedBy = ProducedBy.Analyzer)]
 			[DebuggerDisplay ("Some{*}value")]
 			class TypeWithDebuggerDisplay
 			{
 				[RequiresUnreferencedCode ("Message for --DebuggerProxyType.Method--")]
+				[RequiresAssemblyFiles (Message = "Message for --DebuggerProxyType.Method--")]
 				public void Method ()
 				{
 				}
@@ -768,15 +796,19 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		class OnEventMethod
 		{
 			[ExpectedWarning ("IL2026", "--EventToTestRemove.remove--")]
+			[ExpectedWarning ("IL3002", "--EventToTestRemove.remove--", ProducedBy = ProducedBy.Analyzer)]
 			static event EventHandler EventToTestRemove {
 				add { }
 				[RequiresUnreferencedCode ("Message for --EventToTestRemove.remove--")]
+				[RequiresAssemblyFiles (Message = "Message for --EventToTestRemove.remove--")]
 				remove { }
 			}
 
 			[ExpectedWarning ("IL2026", "--EventToTestAdd.add--")]
+			[ExpectedWarning ("IL3002", "--EventToTestAdd.add--", ProducedBy = ProducedBy.Analyzer)]
 			static event EventHandler EventToTestAdd {
 				[RequiresUnreferencedCode ("Message for --EventToTestAdd.add--")]
+				[RequiresAssemblyFiles (Message = "Message for --EventToTestAdd.add--")]
 				add { }
 				remove { }
 			}
@@ -810,12 +842,14 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		{
 			static bool PropertyWithLdToken {
 				[RequiresUnreferencedCode ("Message for --PropertyWithLdToken.get--")]
+				[RequiresAssemblyFiles (Message = "Message for --PropertyWithLdToken.get--")]
 				get {
 					return false;
 				}
 			}
 
 			[ExpectedWarning ("IL2026", "--PropertyWithLdToken.get--")]
+			[ExpectedWarning ("IL3002", "--PropertyWithLdToken.get--", ProducedBy = ProducedBy.Analyzer)]
 			public static void Test ()
 			{
 				Expression<Func<bool>> getter = () => PropertyWithLdToken;
