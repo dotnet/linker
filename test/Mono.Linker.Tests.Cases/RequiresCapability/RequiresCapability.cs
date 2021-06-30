@@ -17,7 +17,7 @@ using Mono.Linker.Tests.Cases.RequiresCapability.Dependencies;
 namespace Mono.Linker.Tests.Cases.RequiresCapability
 {
 	[SetupLinkerAction ("copy", "lib")]
-	[SetupCompileBefore ("lib.dll", new[] { "Dependencies/RequiresUnreferencedCodeInCopyAssembly.cs" })]
+	[SetupCompileBefore ("lib.dll", new[] { "Dependencies/RequiresAttributeInCopyAssembly.cs" })]
 	[KeptAllTypesAndMembersInAssembly ("lib.dll")]
 	[SetupLinkAttributesFile ("RequiresUnreferencedCodeCapability.attributes.xml")]
 	[SetupLinkerDescriptorFile ("RequiresUnreferencedCodeCapability.descriptor.xml")]
@@ -67,7 +67,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			TestCovariantReturnCallOnDerived ();
 			TestRequiresInMethodFromCopiedAssembly ();
 			TestRequiresThroughReflectionInMethodFromCopiedAssembly ();
-			TestRequiresInDynamicallyAccessedMethodFromCopiedAssembly (typeof (RequiresUnreferencedCodeInCopyAssembly.IDerivedInterface));
+			TestRequiresInDynamicallyAccessedMethodFromCopiedAssembly (typeof (RequiresAttributeInCopyAssembly.IDerivedInterface));
 			TestRequiresInDynamicDependency ();
 			TestThatTrailingPeriodIsAddedToMessage ();
 			TestThatTrailingPeriodIsNotDuplicatedInWarningMessage ();
@@ -536,21 +536,18 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			tmp.GetRequiresAttribute ();
 		}
 
-		// https://github.com/mono/linker/issues/2107
-		// Doesn't work in the analyzer because the test infra for analyzer will not build the second assembly
-		// and provide it as a ref assembly to the compilation - so the analyzer actually sees the below
-		// as errors (missing assembly).
-		[ExpectedWarning ("IL2026", "--Method--", ProducedBy = ProducedBy.Linker)]
+		[ExpectedWarning ("IL2026", "--Method--")]
+		[ExpectedWarning ("IL3002", "--Method--", ProducedBy = ProducedBy.Analyzer)]
 		static void TestRequiresInMethodFromCopiedAssembly ()
 		{
-			var tmp = new RequiresUnreferencedCodeInCopyAssembly ();
+			var tmp = new RequiresAttributeInCopyAssembly ();
 			tmp.Method ();
 		}
 
 		[ExpectedWarning ("IL2026", "--MethodCalledThroughReflection--", ProducedBy = ProducedBy.Linker)]
 		static void TestRequiresThroughReflectionInMethodFromCopiedAssembly ()
 		{
-			typeof (RequiresUnreferencedCodeInCopyAssembly)
+			typeof (RequiresAttributeInCopyAssembly)
 				.GetMethod ("MethodCalledThroughReflection", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)
 				.Invoke (null, new object[0]);
 		}

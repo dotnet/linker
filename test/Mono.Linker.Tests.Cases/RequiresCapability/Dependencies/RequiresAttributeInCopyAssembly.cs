@@ -9,48 +9,56 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.RequiresCapability.Dependencies
 {
-	public class RequiresUnreferencedCodeInCopyAssembly
+	public class RequiresAttributeInCopyAssembly
 	{
-		public RequiresUnreferencedCodeInCopyAssembly ()
+		public RequiresAttributeInCopyAssembly ()
 		{
 		}
 
 		[RequiresUnreferencedCode ("Message for --Method--")]
+		[RequiresAssemblyFiles (Message = "Message for --Method--")]
 		public void Method ()
 		{
 		}
 
 		[RequiresUnreferencedCode ("Message for --UncalledMethod--")]
+		[RequiresAssemblyFiles (Message = "Message for --UncalledMethod--")]
 		public void UncalledMethod ()
 		{
 		}
 
 		[RequiresUnreferencedCode ("Message for --MethodCalledThroughReflection--")]
+		[RequiresAssemblyFiles (Message = "Message for --MethodCalledThroughReflection--")]
 		static void MethodCalledThroughReflection ()
 		{
 		}
 
 		public int UnusedProperty {
 			[RequiresUnreferencedCode ("Message for --getter UnusedProperty--")]
+			[RequiresAssemblyFiles (Message = "Message for --getter UnusedProperty--")]
 			get { return 42; }
 
 			[RequiresUnreferencedCode ("Message for --setter UnusedProperty--")]
+			[RequiresAssemblyFiles (Message = "Message for --setter UnusedProperty--")]
 			set { }
 		}
 
 		class UnusedBaseType
 		{
 			[RequiresUnreferencedCode ("Message for --UnusedBaseTypeCctor--")]
+			[RequiresAssemblyFiles (Message = "Message for --UnusedBaseTypeCctor--")]
 			static UnusedBaseType ()
 			{
 			}
 
 			[RequiresUnreferencedCode ("Message for --UnusedVirtualMethod1--")]
+			[RequiresAssemblyFiles (Message = "Message for --UnusedVirtualMethod1--")]
 			public virtual void UnusedVirtualMethod1 ()
 			{
 			}
 
 			[RequiresUnreferencedCode ("Message for --UnusedVirtualMethod2--")]
+			[RequiresAssemblyFiles (Message = "Message for --UnusedVirtualMethod2--")]
 			public virtual void UnusedVirtualMethod2 ()
 			{
 			}
@@ -59,6 +67,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability.Dependencies
 		class UnusedDerivedType : UnusedBaseType
 		{
 			[RequiresUnreferencedCode ("Message for --UnusedVirtualMethod1--")]
+			[RequiresAssemblyFiles (Message = "Message for --UnusedVirtualMethod1--")]
 			public override void UnusedVirtualMethod1 ()
 			{
 			}
@@ -72,12 +81,14 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability.Dependencies
 		interface IUnusedInterface
 		{
 			[RequiresUnreferencedCode ("Message for --IUnusedInterface.UnusedMethod--")]
+			[RequiresAssemblyFiles (Message = "Message for --IUnusedInterface.UnusedMethod--")]
 			public void UnusedMethod ();
 		}
 
 		class UnusedImplementationClass : IUnusedInterface
 		{
 			[RequiresUnreferencedCode ("Message for --UnusedImplementationClass.UnusedMethod--")]
+			[RequiresAssemblyFiles (Message = "Message for --UnusedImplementationClass.UnusedMethod--")]
 			public void UnusedMethod ()
 			{
 			}
@@ -86,12 +97,14 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability.Dependencies
 		public interface IBaseInterface
 		{
 			[RequiresUnreferencedCode ("Message for --IBaseInterface.MethodInBaseInterface--")]
+			[RequiresAssemblyFiles (Message = "Message for --IBaseInterface.MethodInBaseInterface--")]
 			void MethodInBaseInterface ();
 		}
 
 		public interface IDerivedInterface : IBaseInterface
 		{
 			[RequiresUnreferencedCode ("Message for --IDerivedInterface.MethodInDerivedInterface--")]
+			[RequiresAssemblyFiles (Message = "Message for --IDerivedInterface.MethodInDerivedInterface--")]
 			void MethodInDerivedInterface ();
 		}
 	}
