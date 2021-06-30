@@ -25,7 +25,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 
 			await VerifyCS.VerifyAnalyzerAsync (source,
 				TestCaseUtils.UseMSBuildProperties (MSBuildPropertyOptionNames.EnableSingleFileAnalyzer),
-				new[] { TestCaseUtils._rafReference }.Concat (additionalReferences ?? Array.Empty<MetadataReference> ()),
+				additionalReferences ?? Array.Empty<MetadataReference> (),
 				expected);
 		}
 
@@ -37,8 +37,9 @@ namespace ILLink.RoslynAnalyzer.Tests
 			int? numberOfIterations = null)
 		{
 			var test = new VerifyCS.Test {
-				TestCode = source + TestCaseUtils.rafSourceDefinition,
-				FixedCode = fixedSource + TestCaseUtils.rafSourceDefinition,
+				TestCode = source,
+				FixedCode = fixedSource,
+				ReferenceAssemblies = TestCaseUtils.Net6PreviewAssemblies
 			};
 			test.ExpectedDiagnostics.AddRange (baselineExpected);
 			test.TestState.AnalyzerConfigFiles.Add (
@@ -111,14 +112,14 @@ class C
 	bool field;
 
 	[RequiresAssemblyFiles]
-	bool P { 
+	bool P {
 		get {
 			return field;
 		}
 		set {
 			CallDangerousMethod ();
 			field = value;
-		} 
+		}
 	}
 
 	[RequiresAssemblyFiles]
@@ -1105,7 +1106,7 @@ class AnotherImplementation : IRAF
 	}
 }
 ";
-			var compilation = (await CSharpAnalyzerVerifier<RequiresAssemblyFilesAnalyzer>.GetCompilation (references, additionalReferences: new[] { TestCaseUtils._rafReference })).EmitToImageReference ();
+			var compilation = (await CSharpAnalyzerVerifier<RequiresAssemblyFilesAnalyzer>.GetCompilation (references)).EmitToImageReference ();
 
 			await VerifyRequiresAssemblyFilesAnalyzer (src, additionalReferences: new[] { compilation },
 				// (4,14): warning IL3003: Interface member 'IRAF.Method()' with 'RequiresAssemblyFilesAttribute' has an implementation member 'Implementation.Method()' without 'RequiresAssemblyFilesAttribute'. Attributes must match across all interface implementations or overrides.
@@ -1177,7 +1178,7 @@ class AnotherImplementation : IRAF
 	}
 }
 ";
-			var compilation = (await CSharpAnalyzerVerifier<RequiresAssemblyFilesAnalyzer>.GetCompilation (references, additionalReferences: new[] { TestCaseUtils._rafReference })).EmitToImageReference ();
+			var compilation = (await CSharpAnalyzerVerifier<RequiresAssemblyFilesAnalyzer>.GetCompilation (references)).EmitToImageReference ();
 
 			await VerifyRequiresAssemblyFilesAnalyzer (src, additionalReferences: new[] { compilation },
 				// (7,14): warning IL3003: Member 'Implementation.Method()' with 'RequiresAssemblyFilesAttribute' implements interface member 'IRAF.Method()' without 'RequiresAssemblyFilesAttribute'. Attributes must match across all interface implementations or overrides.

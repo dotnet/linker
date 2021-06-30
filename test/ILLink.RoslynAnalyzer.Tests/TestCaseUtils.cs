@@ -2,36 +2,39 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
-using System.Text;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace ILLink.RoslynAnalyzer.Tests
 {
 	public abstract class TestCaseUtils
 	{
-		internal readonly static MetadataReference _rafReference = CSharpAnalyzerVerifier<RequiresAssemblyFilesAnalyzer>.GetCompilation (rafSourceDefinition).Result.EmitToImageReference ();
+		public static readonly ReferenceAssemblies Net6PreviewAssemblies =
+			new ReferenceAssemblies (
+				"net6.0",
+				new PackageIdentity ("Microsoft.NETCore.App.Ref", "6.0.0-preview.5.21224.4"),
+				Path.Combine ("ref", "net6.0"))
+			.WithNuGetConfigFilePath (Path.Combine (TestCaseUtils.GetRepoRoot (), "NuGet.config"));
 
-		internal const string rafSourceDefinition = @"
-#nullable enable
-namespace System.Diagnostics.CodeAnalysis
-{
-	[AttributeUsage(AttributeTargets.Constructor | AttributeTargets.Event | AttributeTargets.Method | AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
-	public sealed class RequiresAssemblyFilesAttribute : Attribute
-	{
-		public RequiresAssemblyFilesAttribute () { }
-		public string? Message { get; set; }
-		public string? Url { get; set; }
-	}
-}";
+		private static ImmutableArray<MetadataReference> s_net6Refs;
+		public async static ValueTask<ImmutableArray<MetadataReference>> GetNet6References ()
+		{
+			if (s_net6Refs.IsDefault) {
+				var refs = await Net6PreviewAssemblies.ResolveAsync (null, default);
+				ImmutableInterlocked.InterlockedInitialize (ref s_net6Refs, refs);
+			}
+			return s_net6Refs;
+		}
 
 		public static IEnumerable<object[]> GetTestData (string testSuiteName)
 		{
@@ -224,6 +227,13 @@ namespace System.Diagnostics.CodeAnalysis
 		public static (string, string)[] UseMSBuildProperties (params string[] MSBuildProperties)
 		{
 			return MSBuildProperties.Select (msbp => ($"build_property.{msbp}", "true")).ToArray ();
+		}
+
+		public static string GetRepoRoot ()
+		{
+			return Directory.GetParent (ThisFile ())!.Parent!.Parent!.FullName;
+
+			string ThisFile ([CallerFilePath] string path = "") => path;
 		}
 	}
 }
