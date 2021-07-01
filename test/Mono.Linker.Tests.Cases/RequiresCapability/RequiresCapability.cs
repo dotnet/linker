@@ -149,9 +149,9 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			static Type _unknownType;
 			static Type GetUnknownType () => null;
 
-			[RequiresUnreferencedCode ("Message for --RequiresUnreferencedCodeMethod--")]
-			[RequiresAssemblyFiles]
-			static void RequiresUnreferencedCodeMethod ()
+			[RequiresUnreferencedCode ("Message for --RequiresAttributeMethod--")]
+			[RequiresAssemblyFiles (Message = "Message for --RequiresAttributeMethod--")]
+			static void RequiresAttributeMethod ()
 			{
 			}
 
@@ -160,10 +160,10 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 			[RequiresUnreferencedCode ("")]
 			[RequiresAssemblyFiles]
-			static void TestRUCMethod ()
+			static void TestRequiresMethod ()
 			{
 				// Normally this would warn, but with the attribute on this method it should be auto-suppressed
-				RequiresUnreferencedCodeMethod ();
+				RequiresAttributeMethod ();
 			}
 
 			[RequiresUnreferencedCode ("")]
@@ -191,7 +191,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			[UnconditionalSuppressMessage ("SingleFile", "IL3002")]
 			public static void Test ()
 			{
-				TestRUCMethod ();
+				TestRequiresMethod ();
 				TestParameter ();
 				TestReturnValue ();
 				TestField ();

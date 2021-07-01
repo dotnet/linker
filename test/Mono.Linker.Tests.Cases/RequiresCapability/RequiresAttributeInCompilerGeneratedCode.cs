@@ -79,6 +79,17 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				var action = new Action (RequiresAttributeMethod);
 			}
 
+			[ExpectedWarning ("IL2026", "Message from --InitString--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "Message from --InitString--", ProducedBy = ProducedBy.Analyzer)]
+			public static Lazy<string> _default = new Lazy<string> (InitString);
+
+			static IEnumerable<int> TestLazyDelegate ()
+			{
+				yield return 0;
+				yield return 1;
+				_ = _default.Value;
+			}
+
 			[ExpectedWarning ("IL2026", "--TypeWithRequiresAttributeMethod.RequiresAttributeMethod--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Linker)]
 			static IEnumerable<int> TestDynamicallyAccessedMethod ()
 			{
@@ -93,6 +104,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestCallAfterYieldReturn ();
 				TestReflectionAccess ();
 				TestLdftn ();
+				TestLazyDelegate ();
 				TestDynamicallyAccessedMethod ();
 			}
 		}
@@ -127,6 +139,15 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				yield return 0;
 				yield return 1;
 				var action = new Action (RequiresAttributeMethod);
+			}
+
+			public static Lazy<string> _default = new Lazy<string> (InitString);
+
+			static IEnumerable<int> TestLazyDelegate ()
+			{
+				yield return 0;
+				yield return 1;
+				_ = _default.Value;
 			}
 
 			[RequiresUnreferencedCode ("Suppress in body")]
@@ -169,6 +190,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestCall ();
 				TestReflectionAccess ();
 				TestLdftn ();
+				TestLazyDelegate ();
 				TestDynamicallyAccessedMethod ();
 				TestMethodParameterWithRequirements ();
 				TestGenericMethodParameterRequirement<TestType> ();
@@ -212,6 +234,16 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				var action = new Action (RequiresAttributeMethod);
 			}
 
+			[ExpectedWarning ("IL2026", "Message from --InitString--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "Message from --InitString--", ProducedBy = ProducedBy.Analyzer)]
+			public static Lazy<string> _default = new Lazy<string> (InitString);
+
+			static async void TestLazyDelegate ()
+			{
+				await MethodAsync ();
+				_ = _default.Value;
+			}
+
 			[ExpectedWarning ("IL2026", "--TypeWithRequiresAttributeMethod.RequiresAttributeMethod--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Linker)]
 			static async void TestDynamicallyAccessedMethod ()
 			{
@@ -225,6 +257,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestCallAfterYieldReturn ();
 				TestReflectionAccess ();
 				TestLdftn ();
+				TestLazyDelegate ();
 				TestDynamicallyAccessedMethod ();
 			}
 		}
@@ -258,6 +291,14 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			{
 				await MethodAsync ();
 				var action = new Action (RequiresAttributeMethod);
+			}
+
+			public static Lazy<string> _default = new Lazy<string> (InitString);
+
+			static async void TestLazyDelegate ()
+			{
+				await MethodAsync ();
+				_ = _default.Value;
 			}
 
 			[RequiresUnreferencedCode ("Suppress in body")]
@@ -299,6 +340,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestCall ();
 				TestReflectionAccess ();
 				TestLdftn ();
+				TestLazyDelegate ();
 				TestDynamicallyAccessedMethod ();
 				TestMethodParameterWithRequirements ();
 				TestGenericMethodParameterRequirement<TestType> ();
@@ -347,6 +389,17 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				var action = new Action (RequiresAttributeMethod);
 			}
 
+			[ExpectedWarning ("IL2026", "Message from --InitString--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "Message from --InitString--", ProducedBy = ProducedBy.Analyzer)]
+			public static Lazy<string> _default = new Lazy<string> (InitString);
+
+			static async IAsyncEnumerable<int> TestLazyDelegate ()
+			{
+				await MethodAsync ();
+				yield return 0;
+				_ = _default.Value;
+			}
+
 			[ExpectedWarning ("IL2026", "--TypeWithRequiresAttributeMethod.RequiresAttributeMethod--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Linker)]
 			static async IAsyncEnumerable<int> TestDynamicallyAccessedMethod ()
 			{
@@ -361,6 +414,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestCallAfterYieldReturn ();
 				TestReflectionAccess ();
 				TestLdftn ();
+				TestLazyDelegate ();
 				TestDynamicallyAccessedMethod ();
 			}
 		}
@@ -398,6 +452,15 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				await MethodAsync ();
 				var action = new Action (RequiresAttributeMethod);
 				yield return 0;
+			}
+
+			public static Lazy<string> _default = new Lazy<string> (InitString);
+
+			static async IAsyncEnumerable<int> TestLazyDelegate ()
+			{
+				await MethodAsync ();
+				yield return 0;
+				_ = _default.Value;
 			}
 
 			[RequiresUnreferencedCode ("Suppress in body")]
@@ -443,6 +506,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestCall ();
 				TestReflectionAccess ();
 				TestLdftn ();
+				TestLazyDelegate ();
 				TestDynamicallyAccessedMethod ();
 				TestMethodParameterWithRequirements ();
 				TestGenericMethodParameterRequirement<TestType> ();
@@ -496,6 +560,20 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				}
 			}
 
+			[ExpectedWarning ("IL2026", "Message from --InitString--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "Message from --InitString--", ProducedBy = ProducedBy.Analyzer)]
+			public static Lazy<string> _default = new Lazy<string> (InitString);
+
+			static void TestLazyDelegate ()
+			{
+				LocalFunction ();
+
+				void LocalFunction ()
+				{
+					_ = _default.Value;
+				}
+			}
+
 			[ExpectedWarning ("IL2026", "--TypeWithRequiresAttributeMethod.RequiresAttributeMethod--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Linker)]
 			static void TestDynamicallyAccessedMethod ()
 			{
@@ -510,6 +588,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestCallWithClosure ();
 				TestReflectionAccess ();
 				TestLdftn ();
+				TestLazyDelegate ();
 				TestDynamicallyAccessedMethod ();
 			}
 		}
@@ -569,6 +648,20 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				void LocalFunction ()
 				{
 					var action = new Action (RequiresAttributeMethod);
+				}
+			}
+
+			[ExpectedWarning ("IL2026", "Message from --InitString--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "Message from --InitString--", ProducedBy = ProducedBy.Analyzer)]
+			public static Lazy<string> _default = new Lazy<string> (InitString);
+
+			static void TestLazyDelegate ()
+			{
+				LocalFunction ();
+
+				void LocalFunction ()
+				{
+					_ = _default.Value;
 				}
 			}
 
@@ -723,6 +816,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestCallWithClosure ();
 				TestReflectionAccess ();
 				TestLdftn ();
+				TestLazyDelegate ();
 				TestMethodParameterWithRequirements ();
 				TestDynamicallyAccessedMethod ();
 				TestGenericMethodParameterRequirement<TestType> ();
@@ -776,6 +870,17 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				};
 			}
 
+			[ExpectedWarning ("IL2026", "--InitString--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "--InitString--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Analyzer)]
+			public static Lazy<string> _default = new Lazy<string> (InitString);
+
+			static void TestLazyDelegate ()
+			{
+				Action _ = () => {
+					var action = _default.Value;
+				};
+			}
+
 			[ExpectedWarning ("IL2026", "--TypeWithRequiresAttributeMethod.RequiresAttributeMethod--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Linker)]
 			static void TestDynamicallyAccessedMethod ()
 			{
@@ -790,6 +895,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestCallWithClosure ();
 				TestReflectionAccess ();
 				TestLdftn ();
+				TestLazyDelegate ();
 				TestDynamicallyAccessedMethod ();
 			}
 		}
@@ -854,6 +960,17 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				};
 			}
 
+			[ExpectedWarning ("IL2026", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Analyzer)]
+			public static Lazy<string> _default = new Lazy<string> (InitString);
+
+			static void TestLazyDelegate ()
+			{
+				Action _ = () => {
+					var action = _default.Value;
+				};
+			}
+
 			// Analyzer doesn't apply DAM - so won't see this warnings
 			[ExpectedWarning ("IL2026", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Linker)]
 			[RequiresUnreferencedCode ("Suppress in body")]
@@ -905,6 +1022,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestCallWithClosure ();
 				TestReflectionAccess ();
 				TestLdftn ();
+				TestLazyDelegate ();
 				TestDynamicallyAccessedMethod ();
 				TestMethodParameterWithRequirements ();
 				TestGenericMethodParameterRequirement<TestType> ();
@@ -1157,6 +1275,13 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			static void RequiresAttributeMethod ()
 			{
 			}
+		}
+
+		[RequiresUnreferencedCode ("Message from --InitString--")]
+		[RequiresAssemblyFiles (Message = "Message from --InitString--")]
+		public static string InitString ()
+		{
+			return "string";
 		}
 
 		static void MethodWithGenericWhichRequiresMethods<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicMethods)] T> ()
