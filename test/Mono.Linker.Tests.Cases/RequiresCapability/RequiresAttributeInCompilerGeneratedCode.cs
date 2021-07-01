@@ -45,7 +45,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		class WarnInIteratorBody
 		{
 			[ExpectedWarning ("IL2026", "--RequiresAttributeMethod--", CompilerGeneratedCode = true)]
-			//[ExpectedWarning ("IL3002", "--RequiresAttributeMethod--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3002", "--RequiresAttributeMethod--", ProducedBy = ProducedBy.Analyzer)]
 			static IEnumerable<int> TestCallBeforeYieldReturn ()
 			{
 				RequiresAttributeMethod ();
@@ -53,7 +53,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[ExpectedWarning ("IL2026", "--RequiresAttributeMethod--", CompilerGeneratedCode = true)]
-			//[ExpectedWarning ("IL3002", "--RequiresAttributeMethod--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3002", "--RequiresAttributeMethod--", ProducedBy = ProducedBy.Analyzer)]
 			static IEnumerable<int> TestCallAfterYieldReturn ()
 			{
 				yield return 0;
@@ -61,7 +61,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[ExpectedWarning ("IL2026", "--RequiresAttributeMethod--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Linker)]
-			//[ExpectedWarning ("IL3002", "--RequiresAttributeMethod--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Analyzer)]
 			static IEnumerable<int> TestReflectionAccess ()
 			{
 				yield return 0;
@@ -72,7 +71,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[ExpectedWarning ("IL2026", "--RequiresAttributeMethod--", CompilerGeneratedCode = true)]
-			//[ExpectedWarning ("IL3002", "--RequiresAttributeMethod--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3002", "--RequiresAttributeMethod--", ProducedBy = ProducedBy.Analyzer)]
 			static IEnumerable<int> TestLdftn ()
 			{
 				yield return 0;
@@ -180,7 +179,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		class WarnInAsyncBody
 		{
 			[ExpectedWarning ("IL2026", "--RequiresAttributeMethod--", CompilerGeneratedCode = true)]
-			//[ExpectedWarning ("IL3002", "--RequiresAttributeMethod--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3002", "--RequiresAttributeMethod--", ProducedBy = ProducedBy.Analyzer)]
 			static async void TestCallBeforeYieldReturn ()
 			{
 				RequiresAttributeMethod ();
@@ -188,7 +187,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[ExpectedWarning ("IL2026", "--RequiresAttributeMethod--", CompilerGeneratedCode = true)]
-			//[ExpectedWarning ("IL3002", "--RequiresAttributeMethod--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3002", "--RequiresAttributeMethod--", ProducedBy = ProducedBy.Analyzer)]
 			static async void TestCallAfterYieldReturn ()
 			{
 				await MethodAsync ();
@@ -206,7 +205,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[ExpectedWarning ("IL2026", "--RequiresAttributeMethod--", CompilerGeneratedCode = true)]
-			//[ExpectedWarning ("IL3002", "--RequiresAttributeMethod--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3002", "--RequiresAttributeMethod--", ProducedBy = ProducedBy.Analyzer)]
 			static async void TestLdftn ()
 			{
 				await MethodAsync ();
@@ -310,7 +309,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		class WarnInAsyncIteratorBody
 		{
 			[ExpectedWarning ("IL2026", "--RequiresAttributeMethod--", CompilerGeneratedCode = true)]
-			//[ExpectedWarning ("IL3002", "--RequiresAttributeMethod--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3002", "--RequiresAttributeMethod--", ProducedBy = ProducedBy.Analyzer)]
 			static async IAsyncEnumerable<int> TestCallBeforeYieldReturn ()
 			{
 				await MethodAsync ();
@@ -319,7 +318,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[ExpectedWarning ("IL2026", "--RequiresAttributeMethod--", CompilerGeneratedCode = true)]
-			//[ExpectedWarning ("IL3002", "--RequiresAttributeMethod--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3002", "--RequiresAttributeMethod--", ProducedBy = ProducedBy.Analyzer)]
 			static async IAsyncEnumerable<int> TestCallAfterYieldReturn ()
 			{
 				yield return 0;
@@ -340,7 +339,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[ExpectedWarning ("IL2026", "--RequiresAttributeMethod--", CompilerGeneratedCode = true)]
-			//[ExpectedWarning ("IL3002", "--RequiresAttributeMethod--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3002", "--RequiresAttributeMethod--", ProducedBy = ProducedBy.Analyzer)]
 			static async IAsyncEnumerable<int> TestLdftn ()
 			{
 				await MethodAsync ();
@@ -454,7 +453,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		class WarnInLocalFunction
 		{
 			[ExpectedWarning ("IL2026", "--RequiresAttributeMethod--", CompilerGeneratedCode = true)]
-			//[ExpectedWarning ("IL3002", "--RequiresAttributeMethod--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3002", "--RequiresAttributeMethod--", ProducedBy = ProducedBy.Analyzer)]
 			static void TestCall ()
 			{
 				LocalFunction ();
@@ -463,7 +462,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[ExpectedWarning ("IL2026", "--RequiresAttributeMethod--", CompilerGeneratedCode = true)]
-			//[ExpectedWarning ("IL3002", "--RequiresAttributeMethod--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3002", "--RequiresAttributeMethod--", ProducedBy = ProducedBy.Analyzer)]
 			static void TestCallWithClosure (int p = 0)
 			{
 				LocalFunction ();
@@ -486,7 +485,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[ExpectedWarning ("IL2026", "--RequiresAttributeMethod--", CompilerGeneratedCode = true)]
-			//[ExpectedWarning ("IL3002", "--RequiresAttributeMethod--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3002", "--RequiresAttributeMethod--", ProducedBy = ProducedBy.Analyzer)]
 			static void TestLdftn ()
 			{
 				LocalFunction ();
@@ -742,14 +741,14 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		class WarnInLambda
 		{
 			[ExpectedWarning ("IL2026", "--RequiresAttributeMethod--", CompilerGeneratedCode = true)]
-			//[ExpectedWarning ("IL3002", "--RequiresAttributeMethod--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3002", "--RequiresAttributeMethod--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Analyzer)]
 			static void TestCall ()
 			{
 				Action _ = () => RequiresAttributeMethod ();
 			}
 
 			[ExpectedWarning ("IL2026", "--RequiresAttributeMethod--", CompilerGeneratedCode = true)]
-			//[ExpectedWarning ("IL3002", "--RequiresAttributeMethod--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3002", "--RequiresAttributeMethod--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Analyzer)]
 			static void TestCallWithClosure (int p = 0)
 			{
 				Action _ = () => {
@@ -769,7 +768,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[ExpectedWarning ("IL2026", "--RequiresAttributeMethod--", CompilerGeneratedCode = true)]
-			//[ExpectedWarning ("IL3002", "--RequiresAttributeMethod--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3002", "--RequiresAttributeMethod--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Analyzer)]
 			static void TestLdftn ()
 			{
 				Action _ = () => {
@@ -804,7 +803,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			// - Would be useful for testing - have to use the CompilerGeneratedCode = true trick instead
 
 			[ExpectedWarning ("IL2026", CompilerGeneratedCode = true)]
-			//[ExpectedWarning ("IL3002", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
 			[RequiresUnreferencedCode ("Suppress in body")]
 			static void TestCall ()
 			{
@@ -821,7 +820,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[ExpectedWarning ("IL2026", CompilerGeneratedCode = true)]
-			//[ExpectedWarning ("IL3002", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
 			[RequiresUnreferencedCode ("Suppress in body")]
 			static void TestCallWithClosure (int p = 0)
 			{
@@ -845,7 +844,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[ExpectedWarning ("IL2026", CompilerGeneratedCode = true)]
-			//[ExpectedWarning ("IL3002", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
 			[RequiresUnreferencedCode ("Suppress in body")]
 			[RequiresAssemblyFiles (Message = "Suppress in body")]
 			static void TestLdftn ()
@@ -916,7 +915,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		class WarnInComplex
 		{
 			[ExpectedWarning ("IL2026", "--RequiresAttributeMethod--", CompilerGeneratedCode = true)]
-			//[ExpectedWarning ("IL3002", "--RequiresAttributeMethod--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3002", "--RequiresAttributeMethod--", ProducedBy = ProducedBy.Analyzer)]
 			static async void TestIteratorLocalFunctionInAsync ()
 			{
 				await MethodAsync ();
@@ -974,7 +973,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				await MethodAsync ();
 
 				[ExpectedWarning ("IL2026", CompilerGeneratedCode = true)]
-				//[ExpectedWarning ("IL3002", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Analyzer)]
+				[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
 				IEnumerable<int> LocalFunction ()
 				{
 					yield return 0;
@@ -1020,7 +1019,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[ExpectedWarning ("IL2026", CompilerGeneratedCode = true)]
-			//[ExpectedWarning ("IL3002", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
 			static IEnumerable<int> TestIteratorOnlyReferencedViaReflectionWhichShouldWarn ()
 			{
 				yield return 0;
@@ -1028,7 +1027,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[ExpectedWarning ("IL2026", CompilerGeneratedCode = true)]
-			//[ExpectedWarning ("IL3002", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
 			static async void TestAsyncOnlyReferencedViaReflectionWhichShouldWarn ()
 			{
 				await MethodAsync ();
@@ -1146,6 +1145,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		}
 
 		[RequiresUnreferencedCode ("--RequiresAttributeMethod--")]
+		[RequiresAssemblyFiles (Message = "--RequiresAttributeMethod--")]
 		static void RequiresAttributeMethod ()
 		{
 		}
@@ -1153,6 +1153,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		class TypeWithRequiresAttributeMethod
 		{
 			[RequiresUnreferencedCode ("--TypeWithRequiresAttributeMethod.RequiresAttributeMethod--")]
+			[RequiresAssemblyFiles (Message = "--TypeWithRequiresAttributeMethod.RequiresAttributeMethod--")]
 			static void RequiresAttributeMethod ()
 			{
 			}
