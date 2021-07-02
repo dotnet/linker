@@ -19,6 +19,9 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 	[SetupLinkerAction ("copy", "lib")]
 	[SetupCompileBefore ("lib.dll", new[] { "Dependencies/RequiresAttributeInCopyAssembly.cs" })]
 	[KeptAllTypesAndMembersInAssembly ("lib.dll")]
+	[SetupLinkerAction ("copy", "lib2")]
+	[SetupCompileBefore ("lib2.dll", new[] { "Dependencies/ReferenceInterfaces.cs" })]
+	[KeptAllTypesAndMembersInAssembly ("lib2.dll")]
 	[SetupLinkAttributesFile ("RequiresUnreferencedCodeCapability.attributes.xml")]
 	[SetupLinkerDescriptorFile ("RequiresUnreferencedCodeCapability.descriptor.xml")]
 	[SkipKeptItemsValidation]
@@ -43,6 +46,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		[ExpectedWarning ("IL2026", "--IBaseInterface.MethodInBaseInterface--", ProducedBy = ProducedBy.Linker)]
 		[ExpectedWarning ("IL2026", "BaseClassWithRequires.VirtualMethod()", ProducedBy = ProducedBy.Linker)]
 		[ExpectedWarning ("IL2026", "BaseClassWithRequires.VirtualPropertyAnnotationInAccesor.get", ProducedBy = ProducedBy.Linker)]
+		[ExpectedWarning ("IL2026", "IBaseWithRequires.Method()", ProducedBy = ProducedBy.Linker)]
+		[ExpectedWarning ("IL2026", "IBaseWithRequires.PropertyAnnotationInAccesor.get", ProducedBy = ProducedBy.Linker)]
 		public static void Main ()
 		{
 			TestRequiresWithMessageOnlyOnMethod ();
@@ -85,6 +90,14 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			RequirePublicMethods (typeof (BaseClassWithoutRequires));
 			RequirePublicMethods (typeof (DerivedClassWithRequires));
 			RequirePublicMethods (typeof (DerivedClassWithoutRequires));
+			RequirePublicMethods (typeof (IBaseWithRequires));
+			RequirePublicMethods (typeof (IBaseWithoutRequires));
+			RequirePublicMethods (typeof (ImplementationClassWithRequires));
+			RequirePublicMethods (typeof (ImplementationClassWithoutRequires));
+			RequirePublicMethods (typeof (ExplicitImplementationClassWithRequires));
+			RequirePublicMethods (typeof (ExplicitImplementationClassWithoutRequires));
+			RequirePublicMethods (typeof (ImplementationClassWithoutRequiresInSource));
+			RequirePublicMethods (typeof (ImplementationClassWithRequiresInSource));
 		}
 
 		[ExpectedWarning ("IL2026", "Message for --RequiresWithMessageOnly--.")]
@@ -939,13 +952,13 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			public override string VirtualPropertyAnnotationInProperty { get; set; }
 		}
 
-		interface IBaseWithRequires
+		public interface IBaseWithRequires
 		{
 			[RequiresUnreferencedCode ("Message")]
 			[RequiresAssemblyFiles (Message = "Message")]
-			public void Method ();
+			void Method ();
 
-			public string PropertyAnnotationInAccesor {
+			string PropertyAnnotationInAccesor {
 				[RequiresUnreferencedCode ("Message")]
 				[RequiresAssemblyFiles (Message = "Message")]
 				get;
@@ -953,16 +966,16 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[RequiresAssemblyFiles (Message = "Message")]
-			public string PropertyAnnotationInProperty { get; set; }
+			string PropertyAnnotationInProperty { get; set; }
 		}
 
-		interface IBaseWithoutRequires
+		public interface IBaseWithoutRequires
 		{
-			public void Method ();
+			void Method ();
 
-			public string PropertyAnnotationInAccesor { get; set; }
+			string PropertyAnnotationInAccesor { get; set; }
 
-			public string PropertyAnnotationInProperty { get; set; }
+			string PropertyAnnotationInProperty { get; set; }
 		}
 
 		class ImplementationClassWithRequires : IBaseWithoutRequires
@@ -1002,8 +1015,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 			private string name;
 			string IBaseWithoutRequires.PropertyAnnotationInAccesor {
-				[ExpectedWarning ("IL2046", "ExplicitImplementationClassWithRequires.Mono.Linker.Tests.Cases.RequiresCapability.RequiresCapability.IBaseWithoutRequires.PropertyAnnotationInAccesor.get", "IBaseWithoutRequires.PropertyAnnotationInAccesor.get")]
-				[ExpectedWarning ("IL3003", "ExplicitImplementationClassWithRequires.Mono.Linker.Tests.Cases.RequiresCapability.RequiresCapability.IBaseWithoutRequires.PropertyAnnotationInAccesor.get", "IBaseWithoutRequires.PropertyAnnotationInAccesor.get", ProducedBy = ProducedBy.Analyzer)]
+				[ExpectedWarning ("IL2046", "PropertyAnnotationInAccesor.get", "IBaseWithoutRequires.PropertyAnnotationInAccesor.get")]
+				[ExpectedWarning ("IL3003", "PropertyAnnotationInAccesor.get", "IBaseWithoutRequires.PropertyAnnotationInAccesor.get", ProducedBy = ProducedBy.Analyzer)]
 				[RequiresUnreferencedCode ("Message")]
 				[RequiresAssemblyFiles (Message = "Message")]
 				get { return name; }
@@ -1045,14 +1058,59 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 			private string name;
 			string IBaseWithRequires.PropertyAnnotationInAccesor {
-				[ExpectedWarning ("IL2046", "ExplicitImplementationClassWithoutRequires.Mono.Linker.Tests.Cases.RequiresCapability.RequiresCapability.IBaseWithRequires.PropertyAnnotationInAccesor.get", "IBaseWithRequires.PropertyAnnotationInAccesor.get")]
-				[ExpectedWarning ("IL3003", "ExplicitImplementationClassWithoutRequires.Mono.Linker.Tests.Cases.RequiresCapability.RequiresCapability.IBaseWithRequires.PropertyAnnotationInAccesor.get", "IBaseWithRequires.PropertyAnnotationInAccesor.get", ProducedBy = ProducedBy.Analyzer)]
+				[ExpectedWarning ("IL2046", "PropertyAnnotationInAccesor.get", "IBaseWithRequires.PropertyAnnotationInAccesor.get")]
+				[ExpectedWarning ("IL3003", "PropertyAnnotationInAccesor.get", "IBaseWithRequires.PropertyAnnotationInAccesor.get", ProducedBy = ProducedBy.Analyzer)]
 				get { return name; }
 				set { name = value; }
 			}
 
 			[ExpectedWarning ("IL3003", "ExplicitImplementationClassWithoutRequires.Mono.Linker.Tests.Cases.RequiresCapability.RequiresCapability.IBaseWithRequires.PropertyAnnotationInProperty", "IBaseWithRequires.PropertyAnnotationInProperty", ProducedBy = ProducedBy.Analyzer)]
 			string IBaseWithRequires.PropertyAnnotationInProperty { get; set; }
+		}
+
+		class ImplementationClassWithoutRequiresInSource : ReferenceInterfaces.IBaseWithRequiresInReference
+		{
+			[ExpectedWarning ("IL2046", "ImplementationClassWithoutRequiresInSource.Method()", "IBaseWithRequiresInReference.Method()")]
+			[ExpectedWarning ("IL3003", "ImplementationClassWithoutRequiresInSource.Method()", "IBaseWithRequiresInReference.Method()", ProducedBy = ProducedBy.Analyzer)]
+			public void Method ()
+			{
+			}
+
+			private string name;
+			public string PropertyAnnotationInAccesor {
+				[ExpectedWarning ("IL2046", "ImplementationClassWithoutRequiresInSource.PropertyAnnotationInAccesor.get", "IBaseWithRequiresInReference.PropertyAnnotationInAccesor.get")]
+				[ExpectedWarning ("IL3003", "ImplementationClassWithoutRequiresInSource.PropertyAnnotationInAccesor.get", "IBaseWithRequiresInReference.PropertyAnnotationInAccesor.get", ProducedBy = ProducedBy.Analyzer)]
+				get { return name; }
+				set { name = value; }
+			}
+
+			[ExpectedWarning ("IL3003", "ImplementationClassWithoutRequiresInSource.PropertyAnnotationInProperty", "IBaseWithRequiresInReference.PropertyAnnotationInProperty", ProducedBy = ProducedBy.Analyzer)]
+			public string PropertyAnnotationInProperty { get; set; }
+		}
+
+		class ImplementationClassWithRequiresInSource : ReferenceInterfaces.IBaseWithoutRequiresInReference
+		{
+			[ExpectedWarning ("IL2046", "ImplementationClassWithRequiresInSource.Method()", "IBaseWithoutRequiresInReference.Method()")]
+			[ExpectedWarning ("IL3003", "ImplementationClassWithRequiresInSource.Method()", "IBaseWithoutRequiresInReference.Method()", ProducedBy = ProducedBy.Analyzer)]
+			[RequiresUnreferencedCode ("Message")]
+			[RequiresAssemblyFiles (Message = "Message")]
+			public void Method ()
+			{
+			}
+
+			private string name;
+			public string PropertyAnnotationInAccesor {
+				[ExpectedWarning ("IL2046", "ImplementationClassWithRequiresInSource.PropertyAnnotationInAccesor.get", "IBaseWithoutRequiresInReference.PropertyAnnotationInAccesor.get")]
+				[ExpectedWarning ("IL3003", "ImplementationClassWithRequiresInSource.PropertyAnnotationInAccesor.get", "IBaseWithoutRequiresInReference.PropertyAnnotationInAccesor.get", ProducedBy = ProducedBy.Analyzer)]
+				[RequiresUnreferencedCode ("Message")]
+				[RequiresAssemblyFiles (Message = "Message")]
+				get { return name; }
+				set { name = value; }
+			}
+
+			[ExpectedWarning ("IL3003", "ImplementationClassWithRequiresInSource.PropertyAnnotationInProperty", "IBaseWithoutRequiresInReference.PropertyAnnotationInProperty", ProducedBy = ProducedBy.Analyzer)]
+			[RequiresAssemblyFiles (Message = "Message")]
+			public string PropertyAnnotationInProperty { get; set; }
 		}
 	}
 }
