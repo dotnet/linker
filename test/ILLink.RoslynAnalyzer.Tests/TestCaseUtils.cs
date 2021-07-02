@@ -48,16 +48,25 @@ namespace ILLink.RoslynAnalyzer.Tests
 							yield return new object[] { m, attrs };
 						}
 					}
+					if (node is AccessorDeclarationSyntax a) {
+						var attrs = a.AttributeLists.SelectMany (al => al.Attributes.Where (IsWellKnown)).ToList ();
+						if (attrs.Count > 0) {
+							yield return new object[] { a, attrs };
+						}
+					}
 				}
 
 				static bool IsWellKnown (AttributeSyntax attr)
 				{
 					switch (attr.Name.ToString ()) {
-					// Currently, the analyzer's test infra only understands these attributes when placed on methods.
+					// Currently, the analyzer's test infra only understands these attributes when placed on methods and properties.
 					case "ExpectedWarning":
 					case "LogContains":
 					case "LogDoesNotContain":
-						return attr.Ancestors ().OfType<MemberDeclarationSyntax> ().First ().IsKind (SyntaxKind.MethodDeclaration);
+						var ancestor = attr.Ancestors ().OfType<MemberDeclarationSyntax> ().First ();
+						if (ancestor.IsKind (SyntaxKind.MethodDeclaration) || ancestor.IsKind (SyntaxKind.PropertyDeclaration) || ancestor.IsKind (SyntaxKind.GetAccessorDeclaration) || ancestor.IsKind (SyntaxKind.SetAccessorDeclaration))
+							return true;
+						return false;
 
 					case "UnrecognizedReflectionAccessPattern":
 						return true;
@@ -68,10 +77,10 @@ namespace ILLink.RoslynAnalyzer.Tests
 			}
 		}
 
-		public static void RunTest<TAnalyzer> (MemberDeclarationSyntax m, List<AttributeSyntax> attrs, params (string, string)[] MSBuildProperties)
+		public static void RunTest<TAnalyzer> (SyntaxNode m, List<AttributeSyntax> attrs, params (string, string)[] MSBuildProperties)
 			where TAnalyzer : DiagnosticAnalyzer, new() => RunTest<TAnalyzer> (m, attrs, null, MSBuildProperties);
 
-		public static void RunTest<TAnalyzer> (MemberDeclarationSyntax m, List<AttributeSyntax> attrs, IEnumerable<MetadataReference>? additionalReferences = null, params (string, string)[] MSBuildProperties)
+		public static void RunTest<TAnalyzer> (SyntaxNode m, List<AttributeSyntax> attrs, IEnumerable<MetadataReference>? additionalReferences = null, params (string, string)[] MSBuildProperties)
 			where TAnalyzer : DiagnosticAnalyzer, new()
 		{
 			var test = new TestChecker (m, CSharpAnalyzerVerifier<TAnalyzer>

@@ -31,12 +31,12 @@ namespace ILLink.RoslynAnalyzer.Tests
 
 		[Theory]
 		[MemberData (nameof (TestCaseUtils.GetTestData), parameters: "RequiresCapability")]
-		public void RequiresUnreferencedCodeCapability (MethodDeclarationSyntax m, List<AttributeSyntax> attrs) =>
+		public void RequiresUnreferencedCodeCapability (SyntaxNode m, List<AttributeSyntax> attrs) =>
 			RunTest<RequiresUnreferencedCodeAnalyzer> (m, attrs, _additionalReferences.Value, UseMSBuildProperties (MSBuildPropertyOptionNames.EnableTrimAnalyzer));
 
 		[Theory]
 		[MemberData (nameof (TestCaseUtils.GetTestData), parameters: "RequiresCapability")]
-		public void RequiresAssemblyFilesCapability (MethodDeclarationSyntax m, List<AttributeSyntax> attrs) =>
+		public void RequiresAssemblyFilesCapability (SyntaxNode m, List<AttributeSyntax> attrs) =>
 			RunTest<RequiresAssemblyFilesAnalyzer> (m, attrs, _additionalReferences.Value, UseMSBuildProperties (MSBuildPropertyOptionNames.EnableSingleFileAnalyzer));
 	}
 }

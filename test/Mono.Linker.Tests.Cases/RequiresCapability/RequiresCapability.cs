@@ -41,6 +41,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		[ExpectedWarning ("IL2026", "--DynamicallyAccessedTypeWithRequiresAttribute.RequiresAttribute--", ProducedBy = ProducedBy.Linker)]
 		[ExpectedWarning ("IL2026", "--BaseType.VirtualMethodWithRequires--", ProducedBy = ProducedBy.Linker)]
 		[ExpectedWarning ("IL2026", "--IBaseInterface.MethodInBaseInterface--", ProducedBy = ProducedBy.Linker)]
+		[ExpectedWarning ("IL2026", "BaseClassWithRequires.VirtualMethod()", ProducedBy = ProducedBy.Linker)]
+		[ExpectedWarning ("IL2026", "BaseClassWithRequires.VirtualPropertyAnnotationInAccesor.get", ProducedBy = ProducedBy.Linker)]
 		public static void Main ()
 		{
 			TestRequiresWithMessageOnlyOnMethod ();
@@ -79,6 +81,10 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			OnEventMethod.Test ();
 			AccessThroughNewConstraint.Test ();
 			AccessThroughLdToken.Test ();
+			RequirePublicMethods (typeof (BaseClassWithRequires));
+			RequirePublicMethods (typeof (BaseClassWithoutRequires));
+			RequirePublicMethods (typeof (DerivedClassWithRequires));
+			RequirePublicMethods (typeof (DerivedClassWithoutRequires));
 		}
 
 		[ExpectedWarning ("IL2026", "Message for --RequiresWithMessageOnly--.")]
@@ -663,7 +669,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			[AttributeWhichRequiresOnProperty (PropertyWhichRequires = true)]
 			static int _fieldWithAttributeWhichRequires;
 
-			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresAttribute.ctor--")]
+			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresAttribute.ctor--", ProducedBy = ProducedBy.Linker)]
 			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresOnPropertyAttribute.PropertyWhichRequires--")]
 			[ExpectedWarning ("IL3002", "--AttributeWhichRequiresOnPropertyAttribute.PropertyWhichRequires--", ProducedBy = ProducedBy.Analyzer)]
 			[AttributeWhichRequires]
@@ -852,6 +858,201 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			{
 				Expression<Func<bool>> getter = () => PropertyWithLdToken;
 			}
+		}
+
+		static void RequirePublicMethods ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
+		{
+		}
+
+		class BaseClassWithRequires
+		{
+			[RequiresUnreferencedCode ("Message")]
+			[RequiresAssemblyFiles (Message = "Message")]
+			public virtual void VirtualMethod ()
+			{
+			}
+
+			public virtual string VirtualPropertyAnnotationInAccesor {
+				[RequiresUnreferencedCode ("Message")]
+				[RequiresAssemblyFiles (Message = "Message")]
+				get;
+				set;
+			}
+
+			[RequiresAssemblyFiles (Message = "Message")]
+			public virtual string VirtualPropertyAnnotationInProperty { get; set; }
+		}
+
+		class BaseClassWithoutRequires
+		{
+			public virtual void VirtualMethod ()
+			{
+			}
+
+			public virtual string VirtualPropertyAnnotationInAccesor { get; set; }
+
+			public virtual string VirtualPropertyAnnotationInProperty { get; set; }
+		}
+
+		class DerivedClassWithRequires : BaseClassWithoutRequires
+		{
+			[RequiresUnreferencedCode ("Message")]
+			[RequiresAssemblyFiles (Message = "Message")]
+			[ExpectedWarning ("IL2046", "DerivedClassWithRequires.VirtualMethod()", "BaseClassWithoutRequires.VirtualMethod()")]
+			[ExpectedWarning ("IL3003", "DerivedClassWithRequires.VirtualMethod()", "BaseClassWithoutRequires.VirtualMethod()", ProducedBy = ProducedBy.Analyzer)]
+			public override void VirtualMethod ()
+			{
+			}
+
+			private string name;
+			public override string VirtualPropertyAnnotationInAccesor {
+				[ExpectedWarning ("IL2046", "DerivedClassWithRequires.VirtualPropertyAnnotationInAccesor.get", "BaseClassWithoutRequires.VirtualPropertyAnnotationInAccesor.get")]
+				[ExpectedWarning ("IL3003", "DerivedClassWithRequires.VirtualPropertyAnnotationInAccesor.get", "BaseClassWithoutRequires.VirtualPropertyAnnotationInAccesor.get", ProducedBy = ProducedBy.Analyzer)]
+				[RequiresUnreferencedCode ("Message")]
+				[RequiresAssemblyFiles (Message = "Message")]
+				get { return name; }
+				set { name = value; }
+			}
+
+			[RequiresAssemblyFiles (Message = "Message")]
+			[ExpectedWarning ("IL3003", "DerivedClassWithRequires.VirtualPropertyAnnotationInProperty", "BaseClassWithoutRequires.VirtualPropertyAnnotationInProperty", ProducedBy = ProducedBy.Analyzer)]
+			public override string VirtualPropertyAnnotationInProperty { get; set; }
+		}
+
+		class DerivedClassWithoutRequires : BaseClassWithRequires
+		{
+			[ExpectedWarning ("IL2046", "DerivedClassWithoutRequires.VirtualMethod()", "BaseClassWithRequires.VirtualMethod()")]
+			[ExpectedWarning ("IL3003", "DerivedClassWithoutRequires.VirtualMethod()", "BaseClassWithRequires.VirtualMethod()", ProducedBy = ProducedBy.Analyzer)]
+			public override void VirtualMethod ()
+			{
+			}
+
+			private string name;
+			public override string VirtualPropertyAnnotationInAccesor {
+				[ExpectedWarning ("IL2046", "DerivedClassWithoutRequires.VirtualPropertyAnnotationInAccesor.get", "BaseClassWithRequires.VirtualPropertyAnnotationInAccesor.get")]
+				[ExpectedWarning ("IL3003", "DerivedClassWithoutRequires.VirtualPropertyAnnotationInAccesor.get", "BaseClassWithRequires.VirtualPropertyAnnotationInAccesor.get", ProducedBy = ProducedBy.Analyzer)]
+				get { return name; }
+				set { name = value; }
+			}
+
+			[ExpectedWarning ("IL3003", "DerivedClassWithoutRequires.VirtualPropertyAnnotationInProperty", "BaseClassWithRequires.VirtualPropertyAnnotationInProperty", ProducedBy = ProducedBy.Analyzer)]
+			public override string VirtualPropertyAnnotationInProperty { get; set; }
+		}
+
+		interface IBaseWithRequires
+		{
+			[RequiresUnreferencedCode ("Message")]
+			[RequiresAssemblyFiles (Message = "Message")]
+			public void Method ();
+
+			public string PropertyAnnotationInAccesor {
+				[RequiresUnreferencedCode ("Message")]
+				[RequiresAssemblyFiles (Message = "Message")]
+				get;
+				set;
+			}
+
+			[RequiresAssemblyFiles (Message = "Message")]
+			public string PropertyAnnotationInProperty { get; set; }
+		}
+
+		interface IBaseWithoutRequires
+		{
+			public void Method ();
+
+			public string PropertyAnnotationInAccesor { get; set; }
+
+			public string PropertyAnnotationInProperty { get; set; }
+		}
+
+		class ImplementationClassWithRequires : IBaseWithoutRequires
+		{
+			[RequiresUnreferencedCode ("Message")]
+			[RequiresAssemblyFiles (Message = "Message")]
+			[ExpectedWarning ("IL2046", "ImplementationClassWithRequires.Method()", "IBaseWithoutRequires.Method()")]
+			[ExpectedWarning ("IL3003", "ImplementationClassWithRequires.Method()", "IBaseWithoutRequires.Method()", ProducedBy = ProducedBy.Analyzer)]
+			public void Method ()
+			{
+			}
+
+			private string name;
+			public string PropertyAnnotationInAccesor {
+				[ExpectedWarning ("IL2046", "ImplementationClassWithRequires.PropertyAnnotationInAccesor.get", "IBaseWithoutRequires.PropertyAnnotationInAccesor.get")]
+				[ExpectedWarning ("IL3003", "ImplementationClassWithRequires.PropertyAnnotationInAccesor.get", "IBaseWithoutRequires.PropertyAnnotationInAccesor.get", ProducedBy = ProducedBy.Analyzer)]
+				[RequiresUnreferencedCode ("Message")]
+				[RequiresAssemblyFiles (Message = "Message")]
+				get { return name; }
+				set { name = value; }
+			}
+
+			[RequiresAssemblyFiles (Message = "Message")]
+			[ExpectedWarning ("IL3003", "ImplementationClassWithRequires.PropertyAnnotationInProperty", "IBaseWithoutRequires.PropertyAnnotationInProperty", ProducedBy = ProducedBy.Analyzer)]
+			public string PropertyAnnotationInProperty { get; set; }
+		}
+
+		class ExplicitImplementationClassWithRequires : IBaseWithoutRequires
+		{
+			[RequiresUnreferencedCode ("Message")]
+			[RequiresAssemblyFiles (Message = "Message")]
+			[ExpectedWarning ("IL2046", "ExplicitImplementationClassWithRequires.Mono.Linker.Tests.Cases.RequiresCapability.RequiresCapability.IBaseWithoutRequires.Method()", "IBaseWithoutRequires.Method()")]
+			[ExpectedWarning ("IL3003", "ExplicitImplementationClassWithRequires.Mono.Linker.Tests.Cases.RequiresCapability.RequiresCapability.IBaseWithoutRequires.Method()", "IBaseWithoutRequires.Method()", ProducedBy = ProducedBy.Analyzer)]
+			void IBaseWithoutRequires.Method ()
+			{
+			}
+
+			private string name;
+			string IBaseWithoutRequires.PropertyAnnotationInAccesor {
+				[ExpectedWarning ("IL2046", "ExplicitImplementationClassWithRequires.Mono.Linker.Tests.Cases.RequiresCapability.RequiresCapability.IBaseWithoutRequires.PropertyAnnotationInAccesor.get", "IBaseWithoutRequires.PropertyAnnotationInAccesor.get")]
+				[ExpectedWarning ("IL3003", "ExplicitImplementationClassWithRequires.Mono.Linker.Tests.Cases.RequiresCapability.RequiresCapability.IBaseWithoutRequires.PropertyAnnotationInAccesor.get", "IBaseWithoutRequires.PropertyAnnotationInAccesor.get", ProducedBy = ProducedBy.Analyzer)]
+				[RequiresUnreferencedCode ("Message")]
+				[RequiresAssemblyFiles (Message = "Message")]
+				get { return name; }
+				set { name = value; }
+			}
+
+			[RequiresAssemblyFiles (Message = "Message")]
+			[ExpectedWarning ("IL3003", "ExplicitImplementationClassWithRequires.Mono.Linker.Tests.Cases.RequiresCapability.RequiresCapability.IBaseWithoutRequires.PropertyAnnotationInProperty", "IBaseWithoutRequires.PropertyAnnotationInProperty", ProducedBy = ProducedBy.Analyzer)]
+			string IBaseWithoutRequires.PropertyAnnotationInProperty { get; set; }
+		}
+
+		class ImplementationClassWithoutRequires : IBaseWithRequires
+		{
+			[ExpectedWarning ("IL2046", "ImplementationClassWithoutRequires.Method()", "IBaseWithRequires.Method()")]
+			[ExpectedWarning ("IL3003", "ImplementationClassWithoutRequires.Method()", "IBaseWithRequires.Method()", ProducedBy = ProducedBy.Analyzer)]
+			public void Method ()
+			{
+			}
+
+			private string name;
+			public string PropertyAnnotationInAccesor {
+				[ExpectedWarning ("IL2046", "ImplementationClassWithoutRequires.PropertyAnnotationInAccesor.get", "IBaseWithRequires.PropertyAnnotationInAccesor.get")]
+				[ExpectedWarning ("IL3003", "ImplementationClassWithoutRequires.PropertyAnnotationInAccesor.get", "IBaseWithRequires.PropertyAnnotationInAccesor.get", ProducedBy = ProducedBy.Analyzer)]
+				get { return name; }
+				set { name = value; }
+			}
+
+			[ExpectedWarning ("IL3003", "ImplementationClassWithoutRequires.PropertyAnnotationInProperty", "IBaseWithRequires.PropertyAnnotationInProperty", ProducedBy = ProducedBy.Analyzer)]
+			public string PropertyAnnotationInProperty { get; set; }
+		}
+
+		class ExplicitImplementationClassWithoutRequires : IBaseWithRequires
+		{
+			[ExpectedWarning ("IL2046", "ExplicitImplementationClassWithoutRequires.Mono.Linker.Tests.Cases.RequiresCapability.RequiresCapability.IBaseWithRequires.Method()", "IBaseWithRequires.Method()")]
+			[ExpectedWarning ("IL3003", "ExplicitImplementationClassWithoutRequires.Mono.Linker.Tests.Cases.RequiresCapability.RequiresCapability.IBaseWithRequires.Method()", "IBaseWithRequires.Method()", ProducedBy = ProducedBy.Analyzer)]
+			void IBaseWithRequires.Method ()
+			{
+			}
+
+			private string name;
+			string IBaseWithRequires.PropertyAnnotationInAccesor {
+				[ExpectedWarning ("IL2046", "ExplicitImplementationClassWithoutRequires.Mono.Linker.Tests.Cases.RequiresCapability.RequiresCapability.IBaseWithRequires.PropertyAnnotationInAccesor.get", "IBaseWithRequires.PropertyAnnotationInAccesor.get")]
+				[ExpectedWarning ("IL3003", "ExplicitImplementationClassWithoutRequires.Mono.Linker.Tests.Cases.RequiresCapability.RequiresCapability.IBaseWithRequires.PropertyAnnotationInAccesor.get", "IBaseWithRequires.PropertyAnnotationInAccesor.get", ProducedBy = ProducedBy.Analyzer)]
+				get { return name; }
+				set { name = value; }
+			}
+
+			[ExpectedWarning ("IL3003", "ExplicitImplementationClassWithoutRequires.Mono.Linker.Tests.Cases.RequiresCapability.RequiresCapability.IBaseWithRequires.PropertyAnnotationInProperty", "IBaseWithRequires.PropertyAnnotationInProperty", ProducedBy = ProducedBy.Analyzer)]
+			string IBaseWithRequires.PropertyAnnotationInProperty { get; set; }
 		}
 	}
 }

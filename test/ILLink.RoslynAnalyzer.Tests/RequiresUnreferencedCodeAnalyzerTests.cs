@@ -54,7 +54,7 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 		[Fact]
 		public async Task SimpleDiagnosticFix ()
 		{
-			var test = @"
+			var src = @"
 using System.Diagnostics.CodeAnalysis;
 
 public class C
@@ -82,7 +82,7 @@ public class E
 }
 ";
 
-			var fixtest = @"
+			var fix = @"
 using System.Diagnostics.CodeAnalysis;
 
 public class C
@@ -114,20 +114,23 @@ public class E
 }
 ";
 
-			await VerifyRequiresUnreferencedCodeCodeFix (test, fixtest, new[] {
-	// /0/Test0.cs(9,17): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. message.
-	VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2026).WithSpan (9, 17, 9, 21).WithArguments ("C.M1()", " message.", ""),
-	// /0/Test0.cs(13,27): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. message.
-	VerifyCS.Diagnostic(RequiresUnreferencedCodeAnalyzer.IL2026).WithSpan(13, 27, 13, 33).WithArguments("C.M1()", " message.", ""),
-	// /0/Test0.cs(17,31): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. message.
-	VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2026).WithSpan (17, 31, 17, 37).WithArguments ("C.M1()", " message.", ""),
-	// /0/Test0.cs(24,31): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. message.
-	VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2026).WithSpan (24, 31, 24, 37).WithArguments ("C.M1()", " message.", "")
-			}, new[] {
-	// /0/Test0.cs(27,10): error CS7036: There is no argument given that corresponds to the required formal parameter 'message' of 'RequiresUnreferencedCodeAttribute.RequiresUnreferencedCodeAttribute(string)'
-	DiagnosticResult.CompilerError("CS7036").WithSpan(27, 10, 27, 36).WithArguments("message", "System.Diagnostics.CodeAnalysis.RequiresUnreferencedCodeAttribute.RequiresUnreferencedCodeAttribute(string)"),
-			}
-	);
+			await VerifyRequiresUnreferencedCodeCodeFix (
+				src,
+				fix,
+				baselineExpected: new[] {
+				// /0/Test0.cs(9,17): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. message.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2026).WithSpan (9, 17, 9, 21).WithArguments ("C.M1()", " message.", ""),
+				// /0/Test0.cs(13,27): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. message.
+				VerifyCS.Diagnostic(RequiresUnreferencedCodeAnalyzer.IL2026).WithSpan(13, 27, 13, 33).WithArguments("C.M1()", " message.", ""),
+				// /0/Test0.cs(17,31): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. message.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2026).WithSpan (17, 31, 17, 37).WithArguments ("C.M1()", " message.", ""),
+				// /0/Test0.cs(24,31): warning IL2026: Using method 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. message.
+				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2026).WithSpan (24, 31, 24, 37).WithArguments ("C.M1()", " message.", "")
+				},
+				fixedExpected: new[] {
+				// /0/Test0.cs(27,10): error CS7036: There is no argument given that corresponds to the required formal parameter 'message' of 'RequiresUnreferencedCodeAttribute.RequiresUnreferencedCodeAttribute(string)'
+				DiagnosticResult.CompilerError("CS7036").WithSpan(27, 10, 27, 36).WithArguments("message", "System.Diagnostics.CodeAnalysis.RequiresUnreferencedCodeAttribute.RequiresUnreferencedCodeAttribute(string)"),
+				});
 		}
 
 		[Fact]
@@ -329,188 +332,6 @@ class C
 			return VerifyRequiresUnreferencedCodeAnalyzer (source,
 				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2026).WithSpan (18, 3, 18, 34).WithArguments ("C.MessageWithoutTrailingPeriod()", " Warning message.", string.Empty),
 				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2026).WithSpan (19, 3, 19, 31).WithArguments ("C.MessageWithTrailingPeriod()", " Warning message.", string.Empty));
-		}
-
-		[Fact]
-		public Task OverrideHasAttributeButBaseDoesnt ()
-		{
-			var src = @"
-using System.Diagnostics.CodeAnalysis;
-
-class DerivedClass : BaseClass
-{
-	[RequiresUnreferencedCode(""Message"")]
-	public override void VirtualMethod ()
-	{
-	}
-
-	private string name;
-	public override string VirtualProperty
-	{
-		[RequiresUnreferencedCode(""Message"")]
-		get { return name; }
-		set { name = value; }
-	}
-}
-
-class BaseClass
-{
-	public virtual void VirtualMethod ()
-	{
-	}
-
-	public virtual string VirtualProperty { get; set; }
-}";
-			return VerifyRequiresUnreferencedCodeAnalyzer (src,
-				// (7,23): warning IL2046: Member 'DerivedClass.VirtualMethod()' with 'RequiresUnreferencedCodeAttribute' overrides base member 'BaseClass.VirtualMethod()' without 'RequiresUnreferencedCodeAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (7, 23, 7, 36).WithArguments ("Member 'DerivedClass.VirtualMethod()' with 'RequiresUnreferencedCodeAttribute' overrides base member 'BaseClass.VirtualMethod()' without 'RequiresUnreferencedCodeAttribute'"),
-				// (15,3): warning IL2046: Member 'DerivedClass.VirtualProperty.get' with 'RequiresUnreferencedCodeAttribute' overrides base member 'BaseClass.VirtualProperty.get' without 'RequiresUnreferencedCodeAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (15, 3, 15, 6).WithArguments ("Member 'DerivedClass.VirtualProperty.get' with 'RequiresUnreferencedCodeAttribute' overrides base member 'BaseClass.VirtualProperty.get' without 'RequiresUnreferencedCodeAttribute'"));
-		}
-
-		[Fact]
-		public Task VirtualHasAttributeButOverrideDoesnt ()
-		{
-			var src = @"
-using System.Diagnostics.CodeAnalysis;
-
-class DerivedClass : BaseClass
-{
-	public override void VirtualMethod ()
-	{
-	}
-
-	private string name;
-	public override string VirtualProperty
-	{
-		get { return name; }
-		set { name = value; }
-	}
-}
-
-class BaseClass
-{
-	[RequiresUnreferencedCode(""Message"")]
-	public virtual void VirtualMethod ()
-	{
-	}
-
-	public virtual string VirtualProperty {[RequiresUnreferencedCode(""Message"")] get; set; }
-}";
-			return VerifyRequiresUnreferencedCodeAnalyzer (src,
-				// (13,3): warning IL2046: Base member 'BaseClass.VirtualProperty.get' with 'RequiresUnreferencedCodeAttribute' has a derived member 'DerivedClass.VirtualProperty.get' without 'RequiresUnreferencedCodeAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (13, 3, 13, 6).WithArguments ("Base member 'BaseClass.VirtualProperty.get' with 'RequiresUnreferencedCodeAttribute' has a derived member 'DerivedClass.VirtualProperty.get' without 'RequiresUnreferencedCodeAttribute'"),
-				// (6,23): warning IL2046: Base member 'BaseClass.VirtualMethod()' with 'RequiresUnreferencedCodeAttribute' has a derived member 'DerivedClass.VirtualMethod()' without 'RequiresUnreferencedCodeAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (6, 23, 6, 36).WithArguments ("Base member 'BaseClass.VirtualMethod()' with 'RequiresUnreferencedCodeAttribute' has a derived member 'DerivedClass.VirtualMethod()' without 'RequiresUnreferencedCodeAttribute'"));
-		}
-
-		[Fact]
-		public Task ImplementationHasAttributeButInterfaceDoesnt ()
-		{
-			var src = @"
-using System.Diagnostics.CodeAnalysis;
-
-class Implementation : IRUC
-{
-	[RequiresUnreferencedCode(""Message"")]
-	public void RUC () { }
-
-	private string name;
-	public string Property
-	{
-		[RequiresUnreferencedCode(""Message"")]
-		get { return name; }
-		set { name = value; }
-	}
-}
-
-class AnotherImplementation : IRUC
-{
-	public void RUC () { }
-
-	private string name;
-	public string Property
-	{
-		get { return name; }
-		set { name = value; }
-	}
-}
-
-class ExplicitImplementation : IRUC
-{
-	[RequiresUnreferencedCode(""Message"")]
-	void IRUC.RUC() { }
-
-	private string name;
-	string IRUC.Property
-	{
-		[RequiresUnreferencedCode(""Message"")]
-		get { return name; }
-		set { name = value; }
-	}
-}
-
-interface IRUC
-{
-	void RUC();
-	string Property { get; set; }
-}";
-			return VerifyRequiresUnreferencedCodeAnalyzer (src,
-				// (7,14): warning IL2046: Member 'Implementation.RUC()' with 'RequiresUnreferencedCodeAttribute' implements interface member 'IRUC.RUC()' without 'RequiresUnreferencedCodeAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (7, 14, 7, 17).WithArguments ("Member 'Implementation.RUC()' with 'RequiresUnreferencedCodeAttribute' implements interface member 'IRUC.RUC()' without 'RequiresUnreferencedCodeAttribute'"),
-				// (13,3): warning IL2046: Member 'Implementation.Property.get' with 'RequiresUnreferencedCodeAttribute' implements interface member 'IRUC.Property.get' without 'RequiresUnreferencedCodeAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (13, 3, 13, 6).WithArguments ("Member 'Implementation.Property.get' with 'RequiresUnreferencedCodeAttribute' implements interface member 'IRUC.Property.get' without 'RequiresUnreferencedCodeAttribute'"),
-				// (33,12): warning IL2046: Member 'ExplicitImplementation.IRUC.RUC()' with 'RequiresUnreferencedCodeAttribute' implements interface member 'IRUC.RUC()' without 'RequiresUnreferencedCodeAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (33, 12, 33, 15).WithArguments ("Member 'ExplicitImplementation.IRUC.RUC()' with 'RequiresUnreferencedCodeAttribute' implements interface member 'IRUC.RUC()' without 'RequiresUnreferencedCodeAttribute'"),
-				// (39,3): warning IL2046: Member 'ExplicitImplementation.IRUC.Property.get' with 'RequiresUnreferencedCodeAttribute' implements interface member 'IRUC.Property.get' without 'RequiresUnreferencedCodeAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (39, 3, 39, 6).WithArguments ("Member 'ExplicitImplementation.IRUC.Property.get' with 'RequiresUnreferencedCodeAttribute' implements interface member 'IRUC.Property.get' without 'RequiresUnreferencedCodeAttribute'"));
-		}
-
-		[Fact]
-		public Task InterfaceHasAttributeButImplementationDoesnt ()
-		{
-			var src = @"
-using System.Diagnostics.CodeAnalysis;
-
-class Implementation : IRUC
-{
-	public void RUC () { }
-
-	private string name;
-	public string Property
-	{
-		get { return name; }
-		set { name = value; }
-	}
-}
-
-class AnotherImplementation : IRUC
-{
-	public void RUC () { }
-
-	private string name;
-	public string Property
-	{
-		get { return name; }
-		set { name = value; }
-	}
-}
-
-interface IRUC
-{
-	[RequiresUnreferencedCode(""Message"")]
-	void RUC();
-	string Property {[RequiresUnreferencedCode(""Message"")] get; set; }
-}";
-			return VerifyRequiresUnreferencedCodeAnalyzer (src,
-				// (6,14): warning IL2046: Interface member 'IRUC.RUC()' with 'RequiresUnreferencedCodeAttribute' has an implementation member 'Implementation.RUC()' without 'RequiresUnreferencedCodeAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (6, 14, 6, 17).WithArguments ("Interface member 'IRUC.RUC()' with 'RequiresUnreferencedCodeAttribute' has an implementation member 'Implementation.RUC()' without 'RequiresUnreferencedCodeAttribute'"),
-				// (11,3): warning IL2046: Interface member 'IRUC.Property.get' with 'RequiresUnreferencedCodeAttribute' has an implementation member 'Implementation.Property.get' without 'RequiresUnreferencedCodeAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (11, 3, 11, 6).WithArguments ("Interface member 'IRUC.Property.get' with 'RequiresUnreferencedCodeAttribute' has an implementation member 'Implementation.Property.get' without 'RequiresUnreferencedCodeAttribute'"),
-				// (18,14): warning IL2046: Interface member 'IRUC.RUC()' with 'RequiresUnreferencedCodeAttribute' has an implementation member 'AnotherImplementation.RUC()' without 'RequiresUnreferencedCodeAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (18, 14, 18, 17).WithArguments ("Interface member 'IRUC.RUC()' with 'RequiresUnreferencedCodeAttribute' has an implementation member 'AnotherImplementation.RUC()' without 'RequiresUnreferencedCodeAttribute'"),
-				// (23,3): warning IL2046: Interface member 'IRUC.Property.get' with 'RequiresUnreferencedCodeAttribute' has an implementation member 'AnotherImplementation.Property.get' without 'RequiresUnreferencedCodeAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresUnreferencedCodeAnalyzer.IL2046).WithSpan (23, 3, 23, 6).WithArguments ("Interface member 'IRUC.Property.get' with 'RequiresUnreferencedCodeAttribute' has an implementation member 'AnotherImplementation.Property.get' without 'RequiresUnreferencedCodeAttribute'"));
 		}
 
 		[Fact]

@@ -294,7 +294,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			public override Type ReturnValueBaseWithSuperDerivedWithout () => null;
 
 			// === RequiresUnreferencedCode ===
-			[LogContains ("SuperDerivedClass.RequiresUnreferencedCodeBaseWithoutSuperDerivedWith_")]
+			[ExpectedWarning ("IL2046", "SuperDerivedClass.RequiresUnreferencedCodeBaseWithoutSuperDerivedWith_")]
 			[RequiresUnreferencedCode ("")]
 			public override void RequiresUnreferencedCodeBaseWithoutSuperDerivedWith_ () { }
 		}
@@ -354,7 +354,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 
 			// === RequiresUnreferencedCode ===
-			[LogContains ("DerivedOverNoAnnotations.RequiresUnreferencedCodeBaseWithoutDerivedWith_")]
+			[ExpectedWarning ("IL2046", "DerivedOverNoAnnotations.RequiresUnreferencedCodeBaseWithoutDerivedWith_")]
 			[RequiresUnreferencedCode ("")]
 			public override void RequiresUnreferencedCodeBaseWithoutDerivedWith_ () { }
 			[LogDoesNotContain ("DerivedOverNoAnnotations.RequiresUnreferencedCodeBaseWithoutDerivedWithout")]
@@ -428,7 +428,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[LogDoesNotContain ("DerivedWithNoAnnotations.RequiresUnreferencedCodeBaseWithDerivedWith_")]
 			[RequiresUnreferencedCode ("")]
 			public override void RequiresUnreferencedCodeBaseWithDerivedWith_ () { }
-			[LogContains ("DerivedWithNoAnnotations.RequiresUnreferencedCodeBaseWithDerivedWithout")]
+			[ExpectedWarning ("IL2046", "DerivedWithNoAnnotations.RequiresUnreferencedCodeBaseWithDerivedWithout")]
 			public override void RequiresUnreferencedCodeBaseWithDerivedWithout () { }
 		}
 
