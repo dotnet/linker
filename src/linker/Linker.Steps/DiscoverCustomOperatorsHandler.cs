@@ -11,15 +11,26 @@ namespace Mono.Linker.Steps
 	public class DiscoverOperatorsHandler : IMarkHandler
 	{
 		LinkContext _context;
-		bool markOperators;
-		HashSet<TypeDefinition> _trackedTypesWithOperators;
+		bool seenLinqExpressions;
+		readonly HashSet<TypeDefinition> _trackedTypesWithOperators;
 		Dictionary<TypeDefinition, HashSet<MethodDefinition>> _pendingOperatorsForType;
+
+		Dictionary<TypeDefinition, HashSet<MethodDefinition>> PendingOperatorsForType {
+			get {
+				if (_pendingOperatorsForType == null)
+					_pendingOperatorsForType = new Dictionary<TypeDefinition, HashSet<MethodDefinition>> ();
+				return _pendingOperatorsForType;
+			}
+		}
+
+		public DiscoverOperatorsHandler ()
+		{
+			_trackedTypesWithOperators = new HashSet<TypeDefinition> ();
+		}
 
 		public void Initialize (LinkContext context, MarkContext markContext)
 		{
 			_context = context;
-			_trackedTypesWithOperators = new HashSet<TypeDefinition> ();
-			_pendingOperatorsForType = new Dictionary<TypeDefinition, HashSet<MethodDefinition>> ();
 			markContext.RegisterMarkTypeAction (ProcessType);
 		}
 
@@ -27,25 +38,34 @@ namespace Mono.Linker.Steps
 		{
 			CheckForLinqExpressions (type);
 
-			if (_pendingOperatorsForType.TryGetValue (type, out var pendingOperators)) {
-				foreach (var customOperator in pendingOperators)
-					MarkOperator (customOperator);
-				_pendingOperatorsForType.Remove (type);
+			// Check for custom operators and either:
+			// - mark them, if Linq.Expressions was already marked, or
+			// - track them to be marked in case Linq.Expressions is marked later
+			var hasOperators = ProcessCustomOperators (type, mark: seenLinqExpressions);
+			if (!seenLinqExpressions) {
+				if (hasOperators)
+					_trackedTypesWithOperators.Add (type);
+				return;
 			}
 
-			if (ProcessCustomOperators (type, mark: markOperators) && !markOperators)
-				_trackedTypesWithOperators.Add (type);
+			// Mark pending operators defined on other types that reference this type
+			// (these are only tracked if we have already seen Linq.Expressions)
+			if (PendingOperatorsForType.TryGetValue (type, out var pendingOperators)) {
+				foreach (var customOperator in pendingOperators)
+					MarkOperator (customOperator);
+				PendingOperatorsForType.Remove (type);
+			}
 		}
 
 		void CheckForLinqExpressions (TypeDefinition type)
 		{
-			if (markOperators)
+			if (seenLinqExpressions)
 				return;
 
 			if (type.Namespace != "System.Linq.Expressions" || type.Name != "Expression")
 				return;
 
-			markOperators = true;
+			seenLinqExpressions = true;
 
 			foreach (var markedType in _trackedTypesWithOperators)
 				ProcessCustomOperators (markedType, mark: true);
@@ -71,6 +91,7 @@ namespace Mono.Linker.Steps
 				if (!mark)
 					return true;
 
+				Debug.Assert (seenLinqExpressions);
 				hasCustomOperators = true;
 
 				if (otherType == null || _context.Annotations.IsMarked (otherType)) {
@@ -79,22 +100,13 @@ namespace Mono.Linker.Steps
 				}
 
 				// Wait until otherType gets marked to mark the operator.
-				if (!_pendingOperatorsForType.TryGetValue (otherType, out var pendingOperators)) {
+				if (!PendingOperatorsForType.TryGetValue (otherType, out var pendingOperators)) {
 					pendingOperators = new HashSet<MethodDefinition> ();
-					_pendingOperatorsForType.Add (otherType, pendingOperators);
+					PendingOperatorsForType.Add (otherType, pendingOperators);
 				}
 				pendingOperators.Add (method);
 			}
 			return hasCustomOperators;
-		}
-
-		TypeDefinition _int32;
-		TypeDefinition Int32 {
-			get {
-				if (_int32 == null)
-					_int32 = BCL.FindPredefinedType ("System", "Int32", _context);
-				return _int32;
-			}
 		}
 
 		TypeDefinition _nullableOfT;
@@ -173,7 +185,7 @@ namespace Mono.Linker.Steps
 				if (nnLeft == null || nnRight == null)
 					return false;
 				// << and >> must take the declaring type and int
-				if (operatorName is "LeftShift" or "RightShift" && (nnLeft != self || nnRight != Int32))
+				if (operatorName is "LeftShift" or "RightShift" && (nnLeft != self || nnRight.MetadataType != MetadataType.Int32))
 					return false;
 				// At least one argument must be the declaring type
 				if (nnLeft != self && nnRight != self)
