@@ -1683,6 +1683,11 @@ class Test
   }
   ```
 
+#### `IL2108`: Invalid scope 'scope' used in 'UnconditionalSuppressMessageAttribute' on module 'module'.
+
+The only scopes supported on global unconditional suppressions are 'module', 'type' and 'member'. If the scope argument is null or missing on a global suppression,
+it is assumed that the suppression is put on the module. Global unconditional suppressions using invalid scopes are ignored.
+
 ## Single-File Warning Codes
 
 #### `IL3000`: 'member' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'
