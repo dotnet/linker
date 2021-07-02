@@ -768,6 +768,9 @@ namespace Mono.Linker.Tests.TestCasesRunner
 											if (actualName.StartsWith (attrProvider.DeclaringType.FullName) &&
 												actualName.Contains ("<" + attrProvider.Name + ">"))
 												return true;
+											if (actualName.StartsWith (attrProvider.DeclaringType.FullName) &&
+												actualName.Contains (".cctor"))
+												return true;
 										}
 
 										return false;

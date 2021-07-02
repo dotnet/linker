@@ -141,6 +141,9 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				var action = new Action (RequiresAttributeMethod);
 			}
 
+			// Cannot annotate fields either with RUC nor RAF therefore the warning persists
+			[ExpectedWarning ("IL2026", "Message from --InitString--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "Message from --InitString--", ProducedBy = ProducedBy.Analyzer)]
 			public static Lazy<string> _default = new Lazy<string> (InitString);
 
 			static IEnumerable<int> TestLazyDelegate ()
@@ -293,6 +296,9 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				var action = new Action (RequiresAttributeMethod);
 			}
 
+			// Cannot annotate fields either with RUC nor RAF therefore the warning persists
+			[ExpectedWarning ("IL2026", "Message from --InitString--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "Message from --InitString--", ProducedBy = ProducedBy.Analyzer)]
 			public static Lazy<string> _default = new Lazy<string> (InitString);
 
 			static async void TestLazyDelegate ()
@@ -454,6 +460,9 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				yield return 0;
 			}
 
+			// Cannot annotate fields either with RUC nor RAF therefore the warning persists
+			[ExpectedWarning ("IL2026", "Message from --InitString--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "Message from --InitString--", ProducedBy = ProducedBy.Analyzer)]
 			public static Lazy<string> _default = new Lazy<string> (InitString);
 
 			static async IAsyncEnumerable<int> TestLazyDelegate ()
@@ -633,7 +642,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				[ExpectedWarning ("IL2026")]
 				[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
 				void LocalFunction () => typeof (RequiresAttributeInCompilerGeneratedCode)
-					.GetMethod ("RequiresUnreferencedCodeMethod", System.Reflection.BindingFlags.NonPublic)
+					.GetMethod ("RequiresAttributeMethod", System.Reflection.BindingFlags.NonPublic)
 					.Invoke (null, new object[] { });
 			}
 
@@ -960,8 +969,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				};
 			}
 
-			[ExpectedWarning ("IL2026", CompilerGeneratedCode = true)]
-			[ExpectedWarning ("IL3002", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL2026", "--InitString--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "--InitString--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Analyzer)]
 			public static Lazy<string> _default = new Lazy<string> (InitString);
 
 			static void TestLazyDelegate ()
