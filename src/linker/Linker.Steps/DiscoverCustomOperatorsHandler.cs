@@ -129,7 +129,7 @@ namespace Mono.Linker.Steps
 
 			// Unwrap Nullable<T>
 			Debug.Assert (typeDef.HasGenericParameters);
-			var nullableType = (type as GenericInstanceType);
+			var nullableType = type as GenericInstanceType;
 			Debug.Assert (nullableType != null && nullableType.HasGenericArguments && nullableType.GenericArguments.Count == 1);
 			return _context.TryResolve (nullableType.GenericArguments[0]);
 		}
