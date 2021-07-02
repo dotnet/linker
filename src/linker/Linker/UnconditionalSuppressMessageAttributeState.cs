@@ -175,7 +175,7 @@ namespace Mono.Linker
 					continue;
 
 				// If the scope is missing we treat the suppression as if it was placed on the module.
-				var scope = info.Scope ?.ToLower ();
+				var scope = info.Scope?.ToLower ();
 				if (info.Target == null && (scope == "module" || scope == null)) {
 					AddSuppression (info, provider);
 					continue;
