@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using System.Collections.Generic;
+using System.Diagnostics;
 using Mono.Cecil;
 
 namespace Mono.Linker.Steps
@@ -96,6 +97,31 @@ namespace Mono.Linker.Steps
 			}
 		}
 
+		TypeDefinition _nullableOfT;
+		TypeDefinition NullableOfT {
+			get {
+				if (_nullableOfT == null)
+					_nullableOfT = BCL.FindPredefinedType ("System", "Nullable`1", _context);
+				return _nullableOfT;
+			}
+		}
+
+		TypeDefinition NonNullableType (TypeReference type)
+		{
+			var typeDef = _context.TryResolve (type);
+			if (typeDef == null)
+				return null;
+
+			if (!typeDef.IsValueType || typeDef != NullableOfT)
+				return typeDef;
+
+			// Unwrap Nullable<T>
+			Debug.Assert (typeDef.HasGenericParameters);
+			var nullableType = (type as GenericInstanceType);
+			Debug.Assert (nullableType != null && nullableType.HasGenericArguments && nullableType.GenericArguments.Count == 1);
+			return _context.TryResolve (nullableType.GenericArguments[0]);
+		}
+
 		bool IsOperator (MethodDefinition method, out TypeDefinition otherType)
 		{
 			otherType = null;
@@ -117,10 +143,10 @@ namespace Mono.Linker.Steps
 			case "True":
 			case "False":
 				// Parameter type of a unary operator must be the declaring type
-				if (method.Parameters.Count != 1 || _context.TryResolve (method.Parameters[0].ParameterType) != self)
+				if (method.Parameters.Count != 1 || NonNullableType (method.Parameters[0].ParameterType) != self)
 					return false;
 				// ++ and -- must return the declaring type
-				if (operatorName is "Increment" or "Decrement" && _context.TryResolve (method.ReturnType) != self)
+				if (operatorName is "Increment" or "Decrement" && NonNullableType (method.ReturnType) != self)
 					return false;
 				return true;
 			// Binary operators
@@ -132,7 +158,6 @@ namespace Mono.Linker.Steps
 			case "BitwiseAnd":
 			case "BitwiseOr":
 			case "ExclusiveOr":
-			// take int as right
 			case "LeftShift":
 			case "RightShift":
 			case "Equality":
@@ -143,34 +168,32 @@ namespace Mono.Linker.Steps
 			case "GreaterThanOrEqual":
 				if (method.Parameters.Count != 2)
 					return false;
-				var left = _context.TryResolve (method.Parameters[0].ParameterType);
-				var right = _context.TryResolve (method.Parameters[1].ParameterType);
-				if (left == null || right == null)
+				var nnLeft = NonNullableType (method.Parameters[0].ParameterType);
+				var nnRight = NonNullableType (method.Parameters[1].ParameterType);
+				if (nnLeft == null || nnRight == null)
 					return false;
 				// << and >> must take the declaring type and int
-				if (operatorName is "LeftShift" or "RightShift" && (left != self || right != Int32))
+				if (operatorName is "LeftShift" or "RightShift" && (nnLeft != self || nnRight != Int32))
 					return false;
 				// At least one argument must be the declaring type
-				if (left != self && right != self)
+				if (nnLeft != self && nnRight != self)
 					return false;
-				if (left != self)
-					otherType = left;
-				if (right != self)
-					otherType = right;
+				if (nnLeft != self)
+					otherType = nnLeft;
+				if (nnRight != self)
+					otherType = nnRight;
 				return true;
 			// Conversion operators
 			case "Implicit":
 			case "Explicit":
 				if (method.Parameters.Count != 1)
 					return false;
-				var source = _context.TryResolve (method.Parameters[0].ParameterType);
-				var target = _context.TryResolve (method.ReturnType);
-				if (source == null || target == null)
-					return false;
+				var nnSource = NonNullableType (method.Parameters[0].ParameterType);
+				var nnTarget = NonNullableType (method.ReturnType);
 				// Exactly one of source/target must be the declaring type
-				if (source == self == (target == self))
+				if (nnSource == self == (nnTarget == self))
 					return false;
-				otherType = source == self ? target : source;
+				otherType = nnSource == self ? nnTarget : nnSource;
 				return true;
 			default:
 				return false;
