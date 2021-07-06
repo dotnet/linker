@@ -1688,6 +1688,24 @@ class Test
 The only scopes supported on global unconditional suppressions are 'module', 'type' and 'member'. If the scope argument is null or missing on a global suppression,
 it is assumed that the suppression is put on the module. Global unconditional suppressions using invalid scopes are ignored.
 
+```C#
+// Invalid scope 'method' used in 'UnconditionalSuppressMessageAttribute' on module 'Warning'.
+[module: UnconditionalSuppressMessage ("Test suppression with invalid scope", "IL2026", Scope = "method", Target = "...")]
+
+class Warning
+{
+   static void Main(string[] args)
+   {
+      Foo();
+   }
+
+   [RequiresUnreferencedCode("Warn when Foo() is called")]
+   static void Foo()
+   {
+   }
+}
+```
+
 ## Single-File Warning Codes
 
 #### `IL3000`: 'member' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'
