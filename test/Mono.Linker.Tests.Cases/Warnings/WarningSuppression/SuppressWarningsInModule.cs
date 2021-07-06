@@ -5,7 +5,7 @@ using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 [module: UnconditionalSuppressMessage ("Test", "IL2072:Suppress unrecognized reflection pattern warnings in this module")]
-[module: UnconditionalSuppressMessage ("Test", "IL2072:Test that specifying an invalid scope will result on a global suppression being ignored.",
+[module: UnconditionalSuppressMessage ("Test", "IL2026:Test that specifying an invalid scope will result in a global suppression being ignored.",
 	Scope = "invalidScope", Target = "Non-existent target")]
 
 namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
