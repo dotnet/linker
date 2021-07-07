@@ -11,14 +11,14 @@ namespace Mono.Linker.Steps
 	public class DiscoverOperatorsHandler : IMarkHandler
 	{
 		LinkContext _context;
-		bool seenLinqExpressions;
+		bool _seenLinqExpressions;
 		readonly HashSet<TypeDefinition> _trackedTypesWithOperators;
-		Dictionary<TypeDefinition, HashSet<MethodDefinition>> _pendingOperatorsForType;
+		Dictionary<TypeDefinition, List<MethodDefinition>> _pendingOperatorsForType;
 
-		Dictionary<TypeDefinition, HashSet<MethodDefinition>> PendingOperatorsForType {
+		Dictionary<TypeDefinition, List<MethodDefinition>> PendingOperatorsForType {
 			get {
 				if (_pendingOperatorsForType == null)
-					_pendingOperatorsForType = new Dictionary<TypeDefinition, HashSet<MethodDefinition>> ();
+					_pendingOperatorsForType = new Dictionary<TypeDefinition, List<MethodDefinition>> ();
 				return _pendingOperatorsForType;
 			}
 		}
@@ -41,8 +41,8 @@ namespace Mono.Linker.Steps
 			// Check for custom operators and either:
 			// - mark them, if Linq.Expressions was already marked, or
 			// - track them to be marked in case Linq.Expressions is marked later
-			var hasOperators = ProcessCustomOperators (type, mark: seenLinqExpressions);
-			if (!seenLinqExpressions) {
+			var hasOperators = ProcessCustomOperators (type, mark: _seenLinqExpressions);
+			if (!_seenLinqExpressions) {
 				if (hasOperators)
 					_trackedTypesWithOperators.Add (type);
 				return;
@@ -59,13 +59,13 @@ namespace Mono.Linker.Steps
 
 		void CheckForLinqExpressions (TypeDefinition type)
 		{
-			if (seenLinqExpressions)
+			if (_seenLinqExpressions)
 				return;
 
 			if (type.Namespace != "System.Linq.Expressions" || type.Name != "Expression")
 				return;
 
-			seenLinqExpressions = true;
+			_seenLinqExpressions = true;
 
 			foreach (var markedType in _trackedTypesWithOperators)
 				ProcessCustomOperators (markedType, mark: true);
@@ -91,7 +91,7 @@ namespace Mono.Linker.Steps
 				if (!mark)
 					return true;
 
-				Debug.Assert (seenLinqExpressions);
+				Debug.Assert (_seenLinqExpressions);
 				hasCustomOperators = true;
 
 				if (otherType == null || _context.Annotations.IsMarked (otherType)) {
@@ -101,7 +101,7 @@ namespace Mono.Linker.Steps
 
 				// Wait until otherType gets marked to mark the operator.
 				if (!PendingOperatorsForType.TryGetValue (otherType, out var pendingOperators)) {
-					pendingOperators = new HashSet<MethodDefinition> ();
+					pendingOperators = new List<MethodDefinition> ();
 					PendingOperatorsForType.Add (otherType, pendingOperators);
 				}
 				pendingOperators.Add (method);
