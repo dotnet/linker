@@ -90,8 +90,7 @@ namespace Mono.Linker
 				return false;
 
 			return _suppressions.TryGetValue (provider, out var suppressions) &&
-				suppressions.TryGetValue (id, out info) &&
-				(provider is ModuleDefinition || provider is AssemblyDefinition ? info.Target == null : true);
+				suppressions.TryGetValue (id, out info);
 		}
 
 		static bool TryDecodeSuppressMessageAttributeData (CustomAttribute attribute, out SuppressMessageInfo info)
@@ -176,13 +175,10 @@ namespace Mono.Linker
 
 				// If the scope is missing we treat the suppression as if it was placed on the module.
 				var scope = info.Scope?.ToLower ();
-				if (info.Target == null && (scope == "module" || scope == null)) {
+				if (scope == "module" || scope == null) {
 					AddSuppression (info, provider);
 					continue;
 				}
-
-				if (info.Target == null || scope == null)
-					continue;
 
 				switch (scope) {
 				case "type":
