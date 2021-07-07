@@ -11,6 +11,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Xunit;
 
 namespace ILLink.RoslynAnalyzer.Tests
@@ -56,16 +57,20 @@ namespace ILLink.RoslynAnalyzer.Tests
 			}
 		}
 
+		private bool IsProducedOnlyByLinker (Dictionary<string, ExpressionSyntax> args)
+		{
+			return args.TryGetValue ("ProducedBy", out var diagnosticProducedBy) &&
+				diagnosticProducedBy is MemberAccessExpressionSyntax memberAccessExpression &&
+				memberAccessExpression.Expression.ToString () == nameof (ProducedBy) &&
+				memberAccessExpression.Name.Identifier.ValueText == nameof (ProducedBy.Linker);
+		}
+
 		private void ValidateExpectedWarningAttribute (AttributeSyntax attribute)
 		{
 			var args = TestCaseUtils.GetAttributeArguments (attribute);
 
-			if (args.TryGetValue ("ProducedBy", out var diagnosticProducedBy) &&
-				diagnosticProducedBy is MemberAccessExpressionSyntax memberAccessExpression &&
-				memberAccessExpression.Expression.ToString () == "ProducedBy" &&
-				memberAccessExpression.Name.Identifier.ValueText == "Linker") {
+			if (IsProducedOnlyByLinker (args))
 				return;
-			}
 
 			string expectedWarningCode = TestCaseUtils.GetStringFromExpression (args["#0"]);
 
@@ -102,12 +107,8 @@ namespace ILLink.RoslynAnalyzer.Tests
 			var args = TestCaseUtils.GetAttributeArguments (attribute);
 			var text = TestCaseUtils.GetStringFromExpression (args["#0"]);
 
-			if (args.TryGetValue ("ProducedBy", out var diagnosticProducedBy) &&
-				diagnosticProducedBy is MemberAccessExpressionSyntax memberAccessExpression &&
-				memberAccessExpression.Expression.ToString () == "ProducedBy" &&
-				memberAccessExpression.Name.Identifier.ValueText == "Linker") {
+			if (IsProducedOnlyByLinker (args))
 				return;
-			}
 
 			// If the text starts with `warning IL...` then it probably follows the pattern
 			//	'warning <diagId>: <location>:'

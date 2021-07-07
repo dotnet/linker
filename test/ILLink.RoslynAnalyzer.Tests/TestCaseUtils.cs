@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
@@ -75,6 +76,19 @@ namespace ILLink.RoslynAnalyzer.Tests
 					return false;
 				}
 			}
+		}
+
+		public static async Task<Compilation> GetCompilation (string src)
+		{
+			var srctree = CSharpSyntaxTree.ParseText (src);
+			var mdRef = MetadataReference.CreateFromFile (typeof (Mono.Linker.Tests.Cases.Expectations.Metadata.BaseMetadataAttribute).Assembly.Location);
+			var comp = CSharpCompilation.Create (
+				assemblyName: Guid.NewGuid ().ToString ("N"),
+				syntaxTrees: new SyntaxTree[] { srctree },
+				references: (await GetNet6References ()).Add (mdRef),
+				new CSharpCompilationOptions (OutputKind.DynamicallyLinkedLibrary));
+
+			return comp;
 		}
 
 		public static void RunTest<TAnalyzer> (SyntaxNode m, List<AttributeSyntax> attrs, params (string, string)[] MSBuildProperties)

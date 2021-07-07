@@ -659,6 +659,13 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			}
 		}
 
+		bool IsProducedOnlyByAnalyzer (CustomAttribute attr)
+		{
+			var propertyObject = attr.GetPropertyValue ("ProducedBy");
+			ProducedBy diagnosticProducedBy = propertyObject is null ? ProducedBy.LinkerAndAnalyzer : (ProducedBy) propertyObject;
+			return !diagnosticProducedBy.HasFlag (ProducedBy.Linker);
+		}
+
 		void VerifyLoggedMessages (AssemblyDefinition original, LinkerTestLogger logger, bool checkRemainingErrors)
 		{
 			List<MessageContainer> loggedMessages = logger.GetLoggedMessages ();
@@ -671,9 +678,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 						case nameof (LogContainsAttribute): {
 								var expectedMessage = (string) attr.ConstructorArguments[0].Value;
 
-								var propertyObject = attr.GetPropertyValue ("ProducedBy");
-								ProducedBy diagnosticProducedBy = propertyObject is null ? ProducedBy.LinkerAndAnalyzer : (ProducedBy) propertyObject;
-								if (!diagnosticProducedBy.HasFlag (ProducedBy.Linker))
+								if (IsProducedOnlyByAnalyzer (attr))
 									break;
 
 								List<MessageContainer> matchedMessages;
@@ -708,10 +713,10 @@ namespace Mono.Linker.Tests.TestCasesRunner
 								if (!expectedWarningCode.StartsWith ("IL")) {
 									Assert.Fail ($"The warning code specified in {nameof (ExpectedWarningAttribute)} must start with the 'IL' prefix. Specified value: '{expectedWarningCode}'.");
 								}
-								var propertyObject = attr.GetPropertyValue ("ProducedBy");
-								ProducedBy diagnosticProducedBy = propertyObject is null ? ProducedBy.LinkerAndAnalyzer : (ProducedBy) propertyObject;
-								if (!diagnosticProducedBy.HasFlag (ProducedBy.Linker))
+
+								if (IsProducedOnlyByAnalyzer (attr))
 									break;
+
 								var expectedMessageContains = ((CustomAttributeArgument[]) attr.GetConstructorArgumentValue (1)).Select (a => (string) a.Value).ToArray ();
 								string fileName = (string) attr.GetPropertyValue ("FileName");
 								int? sourceLine = (int?) attr.GetPropertyValue ("SourceLine");
@@ -769,7 +774,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 												actualName.Contains ("<" + attrProvider.Name + ">"))
 												return true;
 											if (actualName.StartsWith (attrProvider.DeclaringType.FullName) &&
-												actualName.Contains (".cctor"))
+												actualName.Contains (".cctor") && (attrProvider is FieldDefinition || attrProvider is PropertyDefinition))
 												return true;
 										}
 

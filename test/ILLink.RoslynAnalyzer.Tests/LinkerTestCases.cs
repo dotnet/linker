@@ -24,7 +24,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			var s_refFiles = GetReferenceFilesByDirName ();
 			foreach (var refFile in s_refFiles["Dependencies"]) {
 				if (refFile.Contains ("RequiresCapability"))
-					additionalReferences.Add (CSharpAnalyzerVerifier<RequiresUnreferencedCodeAnalyzer>.GetCompilation (File.ReadAllText (refFile)).Result.EmitToImageReference ());
+					additionalReferences.Add (TestCaseUtils.GetCompilation (File.ReadAllText (refFile)).Result.EmitToImageReference ());
 			}
 			return additionalReferences;
 		}
