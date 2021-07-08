@@ -21,19 +21,16 @@ namespace Mono.Linker.Tests.Cases.BCLFeatures.ETW
 	[EventSource (Name = "MyCompany")]
 	class MyCompanyEventSource : EventSource
 	{
-		[Kept]
+		// Although EventSource has a type level attribute, marking of it is not triggered unless object.GetType() gets called from GenerateManifest which doesn't happen here
 		public class Keywords
 		{
-			[Kept]
 			public const EventKeywords Page = (EventKeywords) 1;
 
 			public int Unused;
 		}
 
-		[Kept]
 		public class Tasks
 		{
-			[Kept]
 			public const EventTask Page = (EventTask) 1;
 
 			public int Unused;

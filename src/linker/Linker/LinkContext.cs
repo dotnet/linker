@@ -246,7 +246,8 @@ namespace Mono.Linker
 				CodeOptimizations.RemoveDescriptors |
 				CodeOptimizations.RemoveLinkAttributes |
 				CodeOptimizations.RemoveSubstitutions |
-				CodeOptimizations.RemoveDynamicDependencyAttribute;
+				CodeOptimizations.RemoveDynamicDependencyAttribute |
+				CodeOptimizations.RemoveEventSourceSpecialHandling;
 
 			Optimizations = new CodeOptimizationsSettings (defaultOptimizations);
 		}
@@ -986,5 +987,9 @@ namespace Mono.Linker
 		RemoveSubstitutions = 1 << 21,
 		RemoveLinkAttributes = 1 << 22,
 		RemoveDynamicDependencyAttribute = 1 << 23,
+		/// <summary>
+		/// option to not special case EventSource
+		/// </summary>
+		RemoveEventSourceSpecialHandling = 1 << 24,
 	}
 }

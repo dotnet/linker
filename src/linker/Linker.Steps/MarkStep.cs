@@ -1775,7 +1775,7 @@ namespace Mono.Linker.Steps
 			MarkSerializable (type);
 
 			// This marks static fields of KeyWords/OpCodes/Tasks subclasses of an EventSource type.
-			if (BCL.EventTracingForWindows.IsEventSourceImplementation (type, _context)) {
+			if ((_context.GetTargetRuntimeVersion () < TargetRuntimeVersion.NET6 || !_context.IsOptimizationEnabled (CodeOptimizations.RemoveEventSourceSpecialHandling, type)) && BCL.EventTracingForWindows.IsEventSourceImplementation (type, _context)) {
 				MarkEventSourceProviders (type);
 			}
 
@@ -1910,7 +1910,7 @@ namespace Mono.Linker.Steps
 				case "DebuggerTypeProxyAttribute" when attrType.Namespace == "System.Diagnostics":
 					MarkTypeWithDebuggerTypeProxyAttribute (type, attribute);
 					break;
-				case "EventDataAttribute" when attrType.Namespace == "System.Diagnostics.Tracing":
+				case "EventDataAttribute" when attrType.Namespace == "System.Diagnostics.Tracing" && (_context.GetTargetRuntimeVersion () < TargetRuntimeVersion.NET6 || !_context.IsOptimizationEnabled (CodeOptimizations.RemoveEventSourceSpecialHandling, type)):
 					if (MarkMethodsIf (type.Methods, MethodDefinitionExtensions.IsPublicInstancePropertyMethod, new DependencyInfo (DependencyKind.ReferencedBySpecialAttribute, type)))
 						Tracer.AddDirectDependency (attribute, new DependencyInfo (DependencyKind.CustomAttribute, type), marked: false);
 					break;
