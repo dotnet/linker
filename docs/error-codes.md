@@ -1683,14 +1683,14 @@ class Test
   }
   ```
 
-#### `IL2108`: Invalid scope 'scope' used in 'UnconditionalSuppressMessageAttribute' on module 'module'.
+#### `IL2108`: Invalid scope 'scope' used in 'UnconditionalSuppressMessageAttribute' on module 'module' with target 'target'.
 
-The only scopes supported on global unconditional suppressions are 'module', 'type' and 'member'. If the scope argument is null or missing on a global suppression,
+The only scopes supported on global unconditional suppressions are 'module', 'type' and 'member'. If the scope and target arguments are null or missing on a global suppression,
 it is assumed that the suppression is put on the module. Global unconditional suppressions using invalid scopes are ignored.
 
 ```C#
-// Invalid scope 'method' used in 'UnconditionalSuppressMessageAttribute' on module 'Warning'.
-[module: UnconditionalSuppressMessage ("Test suppression with invalid scope", "IL2026", Scope = "method", Target = "...")]
+// Invalid scope 'method' used in 'UnconditionalSuppressMessageAttribute' on module 'Warning' with target 'MyTarget'.
+[module: UnconditionalSuppressMessage ("Test suppression with invalid scope", "IL2026", Scope = "method", Target = "MyTarget")]
 
 class Warning
 {

@@ -173,14 +173,17 @@ namespace Mono.Linker
 				if (!TryDecodeSuppressMessageAttributeData (instance, out info))
 					continue;
 
-				// If the scope is missing we treat the suppression as if it was placed on the module.
 				var scope = info.Scope?.ToLower ();
-				if (scope == "module" || scope == null) {
+				if (info.Target == null && (scope == "module" || scope == null)) {
 					AddSuppression (info, provider);
 					continue;
 				}
 
 				switch (scope) {
+				case "module":
+					AddSuppression (info, provider);
+					break;
+
 				case "type":
 				case "member":
 					foreach (var result in DocumentationSignatureParser.GetMembersForDocumentationSignature (info.Target, module))
@@ -188,7 +191,8 @@ namespace Mono.Linker
 
 					break;
 				default:
-					_context.LogWarning ($"Invalid scope '{info.Scope}' used in 'UnconditionalSuppressMessageAttribute' on module '{module.Name}'.",
+					_context.LogWarning ($"Invalid scope '{info.Scope}' used in 'UnconditionalSuppressMessageAttribute' on module '{module.Name}' " +
+						$"with target '{info.Target}'.",
 						2108, _context.GetAssemblyLocation (module.Assembly));
 					break;
 				}

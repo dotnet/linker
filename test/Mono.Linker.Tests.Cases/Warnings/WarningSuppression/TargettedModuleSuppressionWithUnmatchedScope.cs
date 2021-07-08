@@ -21,10 +21,13 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 // put on the module.
 [module: UnconditionalSuppressMessage ("Test", "IL2072",
 	Scope = "module", Target = "T:Mono.Linker.Tests.Cases.Warnings.WarningSuppression.TargettedModuleSuppressionWithUnmatchedScope")]
+[module: UnconditionalSuppressMessage ("Test", "IL2026",
+	Target = "M:Mono.Linker.Tests.Cases.Warnings.WarningSuppression.TargettedModuleSuppressionWithUnmatchedScope.Main()")]
 
 namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 {
 	[SkipKeptItemsValidation]
+	[LogContains ("warning IL2108: Invalid scope '' used in 'UnconditionalSuppressMessageAttribute'")]
 	[LogDoesNotContain ("IL2026")]
 	[LogDoesNotContain ("IL2072")]
 	class TargettedModuleSuppressionWithUnmatchedScope
