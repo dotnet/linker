@@ -25,30 +25,25 @@ namespace Mono.Linker.Tests.Cases.BCLFeatures.ETW
 	[EventSource (Name = "MyLibraryCompany")]
 	class CustomEventSourceInLibraryMode : EventSource
 	{
-		[KeptMember (".ctor()")]
+		// In library mode, we special case nested types
 		[Kept]
 		public class Keywords
 		{
 			[Kept]
 			public const EventKeywords Page = (EventKeywords) 1;
 
-			[Kept]
 			public int Unused;
 		}
 
-		[KeptMember (".ctor()")]
 		[Kept]
 		public class Tasks
 		{
 			[Kept]
 			public const EventTask Page = (EventTask) 1;
 
-			[Kept]
 			public int Unused;
 		}
 
-		[KeptMember (".ctor()")]
-		[Kept]
 		class NotMatching
 		{
 		}
@@ -56,11 +51,8 @@ namespace Mono.Linker.Tests.Cases.BCLFeatures.ETW
 		[Kept]
 		public static CustomEventSourceInLibraryMode Log = new CustomEventSourceInLibraryMode ();
 
-		// Revisit after https://github.com/mono/linker/issues/1174 is fixed
-		[Kept]
 		int private_member;
 
-		[Kept]
 		void PrivateMethod () { }
 	}
 }

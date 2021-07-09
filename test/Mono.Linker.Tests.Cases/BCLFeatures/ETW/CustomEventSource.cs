@@ -53,7 +53,6 @@ namespace Mono.Linker.Tests.Cases.BCLFeatures.ETW
 		[Kept]
 		public static MyCompanyEventSource Log = new MyCompanyEventSource ();
 
-		// Revisit after https://github.com/mono/linker/issues/1174 is fixed
 		[Kept]
 		int private_member;
 
