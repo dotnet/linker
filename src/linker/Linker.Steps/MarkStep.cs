@@ -1776,8 +1776,8 @@ namespace Mono.Linker.Steps
 			MarkSerializable (type);
 
 			// This marks static fields of KeyWords/OpCodes/Tasks subclasses of an EventSource type.
-			// The special handling of EventSource is not needed in .NET6 since DynamicallyAccessedMembers can be applied to types
-			if (_context.GetTargetRuntimeVersion () < TargetRuntimeVersion.NET6 && BCL.EventTracingForWindows.IsEventSourceImplementation (type, _context)) {
+			// The special handling of EventSource is still needed in .NET6 in library mode
+			if ((_context.GetTargetRuntimeVersion () < TargetRuntimeVersion.NET6 || !_context.IsOptimizationEnabled (CodeOptimizations.RemoveEventSourceSpecialHandling, type)) && BCL.EventTracingForWindows.IsEventSourceImplementation (type, _context)) {
 				MarkEventSourceProviders (type);
 			}
 
@@ -1912,8 +1912,8 @@ namespace Mono.Linker.Steps
 				case "DebuggerTypeProxyAttribute" when attrType.Namespace == "System.Diagnostics":
 					MarkTypeWithDebuggerTypeProxyAttribute (type, attribute);
 					break;
-				// The special handling of EventSource is not needed in .NET6 since DynamicallyAccessedMembers can be applied to types
-				case "EventDataAttribute" when attrType.Namespace == "System.Diagnostics.Tracing" && _context.GetTargetRuntimeVersion () < TargetRuntimeVersion.NET6:
+				// The special handling of EventSource is still needed in .NET6 in library mode
+				case "EventDataAttribute" when attrType.Namespace == "System.Diagnostics.Tracing" && (_context.GetTargetRuntimeVersion () < TargetRuntimeVersion.NET6 || !_context.IsOptimizationEnabled (CodeOptimizations.RemoveEventSourceSpecialHandling, type)):
 					if (MarkMethodsIf (type.Methods, MethodDefinitionExtensions.IsPublicInstancePropertyMethod, new DependencyInfo (DependencyKind.ReferencedBySpecialAttribute, type)))
 						Tracer.AddDirectDependency (attribute, new DependencyInfo (DependencyKind.CustomAttribute, type), marked: false);
 					break;
@@ -2379,7 +2379,7 @@ namespace Mono.Linker.Steps
 
 		void MarkEventSourceProviders (TypeDefinition td)
 		{
-			Debug.Assert (_context.GetTargetRuntimeVersion () < TargetRuntimeVersion.NET6);
+			Debug.Assert (_context.GetTargetRuntimeVersion () < TargetRuntimeVersion.NET6 || !_context.IsOptimizationEnabled (CodeOptimizations.RemoveEventSourceSpecialHandling, td));
 			foreach (var nestedType in td.NestedTypes) {
 				if (BCL.EventTracingForWindows.IsProviderName (nestedType.Name))
 					MarkStaticFields (nestedType, new DependencyInfo (DependencyKind.EventSourceProviderField, td));

@@ -247,7 +247,8 @@ namespace Mono.Linker
 				CodeOptimizations.RemoveLinkAttributes |
 				CodeOptimizations.RemoveSubstitutions |
 				CodeOptimizations.RemoveDynamicDependencyAttribute |
-				CodeOptimizations.OptimizeTypeHierarchyAnnotations;
+				CodeOptimizations.OptimizeTypeHierarchyAnnotations |
+				CodeOptimizations.RemoveEventSourceSpecialHandling;
 
 			Optimizations = new CodeOptimizationsSettings (defaultOptimizations);
 		}
@@ -994,5 +995,10 @@ namespace Mono.Linker
 		/// Otherwise, type annotation will only be applied with calls to object.GetType()
 		/// </summary>
 		OptimizeTypeHierarchyAnnotations = 1 << 24,
+
+		/// <summary>
+		/// Pption to not special case EventSource
+		/// </summary>
+		RemoveEventSourceSpecialHandling = 1 << 25,
 	}
 }
