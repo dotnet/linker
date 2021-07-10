@@ -1,8 +1,8 @@
+using System;
+using System.Reflection;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 using Mono.Linker.Tests.Cases.TypeForwarding.Dependencies;
-using System;
-using System.Reflection;
 
 namespace Mono.Linker.Tests.Cases.TypeForwarding
 {
