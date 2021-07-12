@@ -997,7 +997,7 @@ namespace Mono.Linker
 		OptimizeTypeHierarchyAnnotations = 1 << 24,
 
 		/// <summary>
-		/// Pption to not special case EventSource
+		/// Option to not special case EventSource
 		/// </summary>
 		RemoveEventSourceSpecialHandling = 1 << 25,
 	}
