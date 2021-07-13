@@ -125,6 +125,12 @@ namespace Mono.Linker
 
 		public bool DisableOperatorDiscovery { get; set; }
 
+		/// <summary>
+		/// Option to not special case EventSource.
+		/// Currently, values are hard-coded and does not have a command line option to control
+		/// </summary>
+		public bool DisableEventSourceSpecialHandling { get; set; }
+
 		public bool IgnoreDescriptors { get; set; }
 
 		public bool IgnoreSubstitutions { get; set; }
@@ -247,8 +253,9 @@ namespace Mono.Linker
 				CodeOptimizations.RemoveLinkAttributes |
 				CodeOptimizations.RemoveSubstitutions |
 				CodeOptimizations.RemoveDynamicDependencyAttribute |
-				CodeOptimizations.OptimizeTypeHierarchyAnnotations |
-				CodeOptimizations.RemoveEventSourceSpecialHandling;
+				CodeOptimizations.OptimizeTypeHierarchyAnnotations;
+
+			DisableEventSourceSpecialHandling = true;
 
 			Optimizations = new CodeOptimizationsSettings (defaultOptimizations);
 		}
@@ -995,10 +1002,5 @@ namespace Mono.Linker
 		/// Otherwise, type annotation will only be applied with calls to object.GetType()
 		/// </summary>
 		OptimizeTypeHierarchyAnnotations = 1 << 24,
-
-		/// <summary>
-		/// Option to not special case EventSource
-		/// </summary>
-		RemoveEventSourceSpecialHandling = 1 << 25,
 	}
 }

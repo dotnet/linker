@@ -1777,7 +1777,7 @@ namespace Mono.Linker.Steps
 
 			// This marks static fields of KeyWords/OpCodes/Tasks subclasses of an EventSource type.
 			// The special handling of EventSource is still needed in .NET6 in library mode
-			if ((_context.GetTargetRuntimeVersion () < TargetRuntimeVersion.NET6 || !_context.IsOptimizationEnabled (CodeOptimizations.RemoveEventSourceSpecialHandling, type)) && BCL.EventTracingForWindows.IsEventSourceImplementation (type, _context)) {
+			if ((!_context.DisableEventSourceSpecialHandling || _context.GetTargetRuntimeVersion () < TargetRuntimeVersion.NET6) && BCL.EventTracingForWindows.IsEventSourceImplementation (type, _context)) {
 				MarkEventSourceProviders (type);
 			}
 
@@ -1913,7 +1913,7 @@ namespace Mono.Linker.Steps
 					MarkTypeWithDebuggerTypeProxyAttribute (type, attribute);
 					break;
 				// The special handling of EventSource is still needed in .NET6 in library mode
-				case "EventDataAttribute" when attrType.Namespace == "System.Diagnostics.Tracing" && (_context.GetTargetRuntimeVersion () < TargetRuntimeVersion.NET6 || !_context.IsOptimizationEnabled (CodeOptimizations.RemoveEventSourceSpecialHandling, type)):
+				case "EventDataAttribute" when attrType.Namespace == "System.Diagnostics.Tracing" && (!_context.DisableEventSourceSpecialHandling || _context.GetTargetRuntimeVersion () < TargetRuntimeVersion.NET6):
 					if (MarkMethodsIf (type.Methods, MethodDefinitionExtensions.IsPublicInstancePropertyMethod, new DependencyInfo (DependencyKind.ReferencedBySpecialAttribute, type)))
 						Tracer.AddDirectDependency (attribute, new DependencyInfo (DependencyKind.CustomAttribute, type), marked: false);
 					break;
@@ -2379,7 +2379,7 @@ namespace Mono.Linker.Steps
 
 		void MarkEventSourceProviders (TypeDefinition td)
 		{
-			Debug.Assert (_context.GetTargetRuntimeVersion () < TargetRuntimeVersion.NET6 || !_context.IsOptimizationEnabled (CodeOptimizations.RemoveEventSourceSpecialHandling, td));
+			Debug.Assert (_context.GetTargetRuntimeVersion () < TargetRuntimeVersion.NET6 || !_context.DisableEventSourceSpecialHandling);
 			foreach (var nestedType in td.NestedTypes) {
 				if (BCL.EventTracingForWindows.IsProviderName (nestedType.Name))
 					MarkStaticFields (nestedType, new DependencyInfo (DependencyKind.EventSourceProviderField, td));

@@ -92,9 +92,12 @@ namespace Mono.Linker.Dataflow
 			Debug.Assert (!apply || annotation != DynamicallyAccessedMemberTypes.None);
 
 			// If OptimizeTypeHierarchyAnnotations is disabled, we will apply the annotations without seeing object.GetType()
+			bool applyOptimizeTypeHierarchyAnnotations = (annotation != DynamicallyAccessedMemberTypes.None) && !_context.IsOptimizationEnabled (CodeOptimizations.OptimizeTypeHierarchyAnnotations, type);
 			// Unfortunately, we cannot apply the annotation to type derived from EventSource - Revisit after https://github.com/dotnet/runtime/issues/54859
-			apply |= (annotation != DynamicallyAccessedMemberTypes.None) && !_context.IsOptimizationEnabled (CodeOptimizations.OptimizeTypeHierarchyAnnotations, type)
-				&& !_context.IsOptimizationEnabled (CodeOptimizations.RemoveEventSourceSpecialHandling, type) && !BCL.EventTracingForWindows.IsEventSourceImplementation (type, _context);
+			// Breaking the logic to make it easier to maintain in the future since the logic is convoluted
+			// DisableEventSourceSpecialHandling is closely tied to a type derived from EventSource and should always go together
+			// However, logically it should be possible to use DisableEventSourceSpecialHandling to control OptimizeTypeHierarchyAnnotations
+			apply |= applyOptimizeTypeHierarchyAnnotations && (_context.DisableEventSourceSpecialHandling || !BCL.EventTracingForWindows.IsEventSourceImplementation (type, _context));
 
 			// Store the results in the cache
 			// Don't store empty annotations for non-interface types - we can use the presence of the row
