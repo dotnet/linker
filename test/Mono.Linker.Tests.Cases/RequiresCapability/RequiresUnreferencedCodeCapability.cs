@@ -79,6 +79,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			OnEventMethod.Test ();
 			AccessThroughNewConstraint.Test ();
 			AccessThroughLdToken.Test ();
+			RequiresOnClass.Test ();
 		}
 
 		[ExpectedWarning ("IL2026", "Message for --RequiresWithMessageOnly--.")]
@@ -781,6 +782,143 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			public static void Test ()
 			{
 				Expression<Func<bool>> getter = () => PropertyWithLdToken;
+			}
+		}
+
+		class RequiresOnClass
+		{
+			[RequiresUnreferencedCode ("Message for --ClassWithRequiresUnreferencedCode--")]
+			class ClassWithRequiresUnreferencedCode
+			{
+				public ClassWithRequiresUnreferencedCode () { }
+
+				public static void StaticMethod () { }
+
+				public void NonStaticMethod () { }
+
+				public class NestedClass
+				{
+					public static void NestedStaticMethod () { }
+				}
+
+				public static void TestSuppressions (Type[] types)
+				{
+					// RequiresUnreferencedCode in the class suppresses other RequiresUnreferencedCode messages
+					StaticMethod ();
+					// RequiresUnreferencedCode in the class suppresses DynamicallyAccessedMembers messages
+					types[1].GetMethods ();
+				}
+			}
+
+			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequiresUnreferencedCode", "--ClassWithRequiresUnreferencedCode--")]
+			private class InheritedClass : ClassWithRequiresUnreferencedCode
+			{
+				public static void StaticMethodInInheritedClass () { }
+
+				public class InheritedNestedClass
+				{
+					public static void NestedStaticMethod () { }
+				}
+			}
+
+			class ClassWithoutRequiresUnreferencedCode
+			{
+				public ClassWithoutRequiresUnreferencedCode () { }
+
+				public static void StaticMethod () { }
+
+				public void NonStaticMethod () { }
+
+				public class NestedClass
+				{
+					public static void NestedStaticMethod () { }
+				}
+			}
+
+			[RequiresUnreferencedCode ("Message for --InheritedClassWithRequires--")]
+			private class InheritedClassWithRequires : ClassWithoutRequiresUnreferencedCode
+			{
+				public static void StaticMethodInInheritedClass () { }
+
+				public class InheritedNestedClass
+				{
+					public static void NestedStaticMethod () { }
+				}
+			}
+
+			[RequiresUnreferencedCode ("Message for --InheritedClassWithRequires2--")]
+			private class InheritedClassWithRequires2 : ClassWithRequiresUnreferencedCode
+			{
+				public static void StaticMethodInInheritedClass () { }
+
+				public class InheritedNestedClass
+				{
+					public static void NestedStaticMethod () { }
+				}
+			}
+
+			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequiresUnreferencedCode.StaticMethod()", "--ClassWithRequiresUnreferencedCode--", GlobalAnalysisOnly = true)]
+			static void TestRequiresInClassAccessedByStaticMethod ()
+			{
+				ClassWithRequiresUnreferencedCode.StaticMethod ();
+			}
+
+			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequiresUnreferencedCode", "--ClassWithRequiresUnreferencedCode--", GlobalAnalysisOnly = true)]
+			static void TestRequiresInClassAccessedByCctor ()
+			{
+				var classObject = new ClassWithRequiresUnreferencedCode ();
+			}
+			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequiresUnreferencedCode.NestedClass.NestedStaticMethod()", "--ClassWithRequiresUnreferencedCode--", GlobalAnalysisOnly = true)]
+			static void TestRequiresInParentClassAccesedByStaticMethod ()
+			{
+				ClassWithRequiresUnreferencedCode.NestedClass.NestedStaticMethod ();
+			}
+
+			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequiresUnreferencedCode.StaticMethod()", "--ClassWithRequiresUnreferencedCode--", GlobalAnalysisOnly = true)]
+			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequiresUnreferencedCode.NestedClass.NestedStaticMethod()", "--ClassWithRequiresUnreferencedCode--", GlobalAnalysisOnly = true)]
+			static void TestRequiresOnBaseButNotOnDerived ()
+			{
+				InheritedClass.StaticMethodInInheritedClass ();
+				InheritedClass.StaticMethod ();
+				InheritedClass.InheritedNestedClass.NestedStaticMethod ();
+				InheritedClass.NestedClass.NestedStaticMethod ();
+			}
+
+			[ExpectedWarning ("IL2026", "RequiresOnClass.InheritedClassWithRequires.StaticMethodInInheritedClass()", "--InheritedClassWithRequires--", GlobalAnalysisOnly = true)]
+			[ExpectedWarning ("IL2026", "RequiresOnClass.InheritedClassWithRequires.InheritedNestedClass.NestedStaticMethod()", "--InheritedClassWithRequires--", GlobalAnalysisOnly = true)]
+			static void TestRequiresOnDerivedButNotOnBase ()
+			{
+				InheritedClassWithRequires.StaticMethodInInheritedClass ();
+				InheritedClassWithRequires.StaticMethod ();
+				InheritedClassWithRequires.InheritedNestedClass.NestedStaticMethod ();
+				InheritedClassWithRequires.NestedClass.NestedStaticMethod ();
+			}
+
+			[ExpectedWarning ("IL2026", "RequiresOnClass.InheritedClassWithRequires2.StaticMethodInInheritedClass()", "--InheritedClassWithRequires2--", GlobalAnalysisOnly = true)]
+			[ExpectedWarning ("IL2026", "RequiresOnClass.InheritedClassWithRequires2.InheritedNestedClass.NestedStaticMethod()", "--InheritedClassWithRequires2--", GlobalAnalysisOnly = true)]
+			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequiresUnreferencedCode.StaticMethod()", "--ClassWithRequiresUnreferencedCode--", GlobalAnalysisOnly = true)]
+			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequiresUnreferencedCode.NestedClass.NestedStaticMethod()", "--ClassWithRequiresUnreferencedCode--", GlobalAnalysisOnly = true)]
+			static void TestRequiresOnBaseAndDerived ()
+			{
+				InheritedClassWithRequires2.StaticMethodInInheritedClass ();
+				InheritedClassWithRequires2.StaticMethod ();
+				InheritedClassWithRequires2.InheritedNestedClass.NestedStaticMethod ();
+				InheritedClassWithRequires2.NestedClass.NestedStaticMethod ();
+			}
+
+			static void TestSuppressionsOnClass ()
+			{
+				ClassWithRequiresUnreferencedCode.TestSuppressions (new[] { typeof (ClassWithRequiresUnreferencedCode) });
+			}
+
+			public static void Test ()
+			{
+				TestRequiresInClassAccessedByStaticMethod ();
+				TestRequiresInParentClassAccesedByStaticMethod ();
+				TestRequiresInClassAccessedByCctor ();
+				TestRequiresOnBaseButNotOnDerived ();
+				TestRequiresOnDerivedButNotOnBase ();
+				TestRequiresOnBaseAndDerived ();
 			}
 		}
 	}

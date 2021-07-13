@@ -58,6 +58,7 @@ namespace Mono.Linker
 		protected readonly Dictionary<IMemberDefinition, List<MethodDefinition>> preserved_methods = new Dictionary<IMemberDefinition, List<MethodDefinition>> ();
 		protected readonly HashSet<IMetadataTokenProvider> public_api = new HashSet<IMetadataTokenProvider> ();
 		protected readonly Dictionary<AssemblyDefinition, ISymbolReader> symbol_readers = new Dictionary<AssemblyDefinition, ISymbolReader> ();
+		readonly Dictionary<TypeDefinition, Attribute> ruc_on_type_hierarchy = new Dictionary<TypeDefinition, Attribute> ();
 		readonly Dictionary<IMemberDefinition, LinkerAttributesInformation> linker_attributes = new Dictionary<IMemberDefinition, LinkerAttributesInformation> ();
 		readonly Dictionary<object, Dictionary<IMetadataTokenProvider, object>> custom_annotations = new Dictionary<object, Dictionary<IMetadataTokenProvider, object>> ();
 		protected readonly Dictionary<AssemblyDefinition, HashSet<EmbeddedResource>> resources_to_remove = new Dictionary<AssemblyDefinition, HashSet<EmbeddedResource>> ();
@@ -550,6 +551,31 @@ namespace Mono.Linker
 		public bool SetPreservedStaticCtor (TypeDefinition type)
 		{
 			return marked_types_with_cctor.Add (type);
+		}
+
+		public bool HasRequiresUnreferencedCodeOnTypeHyerarchy (TypeDefinition type)
+		{
+			if (!ruc_on_type_hierarchy.TryGetValue (type, out var hasRucOnTypeHierarchy))
+				return TryGetRequiresUnreferencedCodeAttributeOnTypeHierarchy (type, out var _);
+			return hasRucOnTypeHierarchy is not null;
+		}
+
+		public bool TryGetRequiresUnreferencedCodeAttributeOnTypeHierarchy (TypeDefinition type, out RequiresUnreferencedCodeAttribute attribute)
+		{
+			if (!ruc_on_type_hierarchy.TryGetValue (type, out var output)) {
+				if (TryGetLinkerAttribute (type, out RequiresUnreferencedCodeAttribute currentTypeAttribute)) {
+					ruc_on_type_hierarchy.Add (type, currentTypeAttribute);
+					attribute = currentTypeAttribute;
+					return true;
+				} else if (type.DeclaringType != null && TryGetRequiresUnreferencedCodeAttributeOnTypeHierarchy (type.DeclaringType, out var declaringTypeAttribute)) {
+					ruc_on_type_hierarchy.Add (type, declaringTypeAttribute);
+					attribute = declaringTypeAttribute;
+					return true;
+				} else
+					ruc_on_type_hierarchy.Add (type, null);
+			}
+			attribute = (RequiresUnreferencedCodeAttribute) output;
+			return attribute is not null;
 		}
 
 		public bool HasLinkerAttribute<T> (IMemberDefinition member) where T : Attribute

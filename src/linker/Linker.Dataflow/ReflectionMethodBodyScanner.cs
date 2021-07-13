@@ -39,8 +39,9 @@ namespace Mono.Linker.Dataflow
 
 			return GetIntrinsicIdForMethod (methodDefinition) > IntrinsicId.RequiresReflectionBodyScanner_Sentinel ||
 				context.Annotations.FlowAnnotations.RequiresDataFlowAnalysis (methodDefinition) ||
-				context.Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (methodDefinition)
-				|| methodDefinition.IsPInvokeImpl;
+				context.Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (methodDefinition) ||
+				context.Annotations.HasRequiresUnreferencedCodeOnTypeHyerarchy (methodDefinition.DeclaringType) ||
+				methodDefinition.IsPInvokeImpl;
 		}
 
 		public static bool RequiresReflectionMethodBodyScannerForMethodBody (FlowAnnotations flowAnnotations, MethodDefinition methodDefinition)
