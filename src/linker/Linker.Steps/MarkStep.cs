@@ -2792,14 +2792,14 @@ namespace Mono.Linker.Steps
 			if (suppressionContextMember != null &&
 				(Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (suppressionContextMember) ||
 				(suppressionContextMember.DeclaringType != null &&
-				Annotations.HasRequiresUnreferencedCodeOnTypeHyerarchy (suppressionContextMember.DeclaringType))))
+				Annotations.HasRequiresUnreferencedCodeOnTypeHierarchy (suppressionContextMember.DeclaringType))))
 				return true;
 
 			IMemberDefinition originMember = currentOrigin.MemberDefinition;
 			if (suppressionContextMember != originMember && originMember != null &&
 				(Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (originMember) ||
 				(originMember.DeclaringType != null &&
-				Annotations.HasRequiresUnreferencedCodeOnTypeHyerarchy (originMember.DeclaringType))))
+				Annotations.HasRequiresUnreferencedCodeOnTypeHierarchy (originMember.DeclaringType))))
 				return true;
 
 			return false;

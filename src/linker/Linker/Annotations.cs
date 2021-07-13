@@ -553,7 +553,7 @@ namespace Mono.Linker
 			return marked_types_with_cctor.Add (type);
 		}
 
-		public bool HasRequiresUnreferencedCodeOnTypeHyerarchy (TypeDefinition type)
+		public bool HasRequiresUnreferencedCodeOnTypeHierarchy (TypeDefinition type)
 		{
 			if (!ruc_on_type_hierarchy.TryGetValue (type, out var hasRucOnTypeHierarchy))
 				return TryGetRequiresUnreferencedCodeAttributeOnTypeHierarchy (type, out var _);
