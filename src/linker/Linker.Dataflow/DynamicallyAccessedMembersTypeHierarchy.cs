@@ -96,7 +96,7 @@ namespace Mono.Linker.Dataflow
 			// Unfortunately, we cannot apply the annotation to type derived from EventSource - Revisit after https://github.com/dotnet/runtime/issues/54859
 			// Breaking the logic to make it easier to maintain in the future since the logic is convoluted
 			// DisableEventSourceSpecialHandling is closely tied to a type derived from EventSource and should always go together
-			// However, logically it should be possible to use DisableEventSourceSpecialHandling to control OptimizeTypeHierarchyAnnotations
+			// However, logically it should be possible to use DisableEventSourceSpecialHandling to allow marking types derived from EventSource when OptimizeTypeHierarchyAnnotations is disabled
 			apply |= applyOptimizeTypeHierarchyAnnotations && (_context.DisableEventSourceSpecialHandling || !BCL.EventTracingForWindows.IsEventSourceImplementation (type, _context));
 
 			// Store the results in the cache
