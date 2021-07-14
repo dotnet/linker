@@ -1571,7 +1571,7 @@ namespace Mono.Linker.Steps
 
 				break;
 			}
-				
+
 
 			if (CheckProcessed (field))
 				return;
