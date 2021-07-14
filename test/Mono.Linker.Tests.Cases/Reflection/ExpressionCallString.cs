@@ -213,13 +213,13 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			[Kept]
 			public static void GenericMethodWithRequirements<
 				[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
-				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicProperties)] T> ()
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicProperties)] T> ()
 			{ }
 
 			[Kept]
 			public static void GenericMethodWithRequirementsNoArguments<
 				[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
-				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicProperties)] T> ()
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicProperties)] T> ()
 			{ }
 
 			[Kept]

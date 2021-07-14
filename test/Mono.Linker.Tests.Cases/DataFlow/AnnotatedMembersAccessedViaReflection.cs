@@ -85,7 +85,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			class AttributeWithConstructorWithAnnotation : Attribute
 			{
 				public AttributeWithConstructorWithAnnotation (
-					[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type type) { }
+					[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
+				{ }
 			}
 
 			[ExpectedWarning ("IL2111", nameof (MethodWithSingleAnnotatedParameter))]
@@ -95,7 +96,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 
 			// Should not warn, there's nothing wrong about this
-			[AttributeWithConstructorWithAnnotation(typeof (TestType))]
+			[AttributeWithConstructorWithAnnotation (typeof (TestType))]
 			static void AnnotatedAttributeConstructor ()
 			{
 			}
@@ -278,27 +279,27 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.Interfaces)] T> ()
 			{ }
 
-			static void ReflectionOnly()
+			static void ReflectionOnly ()
 			{
 				// Should not warn - there's nothing wrong with asking for MethodInfo alone
 				typeof (AnnotatedGenerics).GetMethod (nameof (GenericWithAnnotation));
 			}
 
 			// Similarly to direct reflection - no warning expected
-			[DynamicDependency(DynamicallyAccessedMemberTypes.PublicMethods, typeof(AnnotatedGenerics))]
+			[DynamicDependency (DynamicallyAccessedMemberTypes.PublicMethods, typeof (AnnotatedGenerics))]
 			static void DynamicDependency ()
 			{
 			}
 
 			// Similarly to direct reflection - no warning expected
-			static void DynamicallyAccessedMembers()
+			static void DynamicallyAccessedMembers ()
 			{
 				typeof (AnnotatedGenerics).RequiresPublicMethods ();
 			}
 
 			// This should produce IL2071 https://github.com/mono/linker/issues/2144
 			[ExpectedWarning ("IL2070", "MakeGenericMethod")]
-			static void InstantiateGeneric(Type type = null)
+			static void InstantiateGeneric (Type type = null)
 			{
 				// This should warn due to MakeGenericMethod - in this case the generic parameter is unannotated type
 				typeof (AnnotatedGenerics).GetMethod (nameof (GenericWithAnnotation)).MakeGenericMethod (type);
@@ -319,11 +320,13 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			class GenericWithAnnotatedMethod<T>
 			{
 				public static void AnnotatedMethod (
-					[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type type) { }
+					[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
+				{ }
 			}
 
-			public static void GenericMethodWithAnnotation<T>(
-			   [DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type type) {}
+			public static void GenericMethodWithAnnotation<T> (
+			   [DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
+			{ }
 
 			[ExpectedWarning ("IL2111", nameof (GenericWithAnnotatedMethod<TestType>.AnnotatedMethod))]
 			public static void GenericTypeWithStaticMethodViaLdftn ()
@@ -343,7 +346,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				GenericMethodWithAnnotation<TestType> (typeof (TestType));
 			}
 
-			[ExpectedWarning ("IL2111", nameof(GenericMethodWithAnnotation))]
+			[ExpectedWarning ("IL2111", nameof (GenericMethodWithAnnotation))]
 			public static void GenericMethodWithAnnotationViaLdftn ()
 			{
 				var _ = new Action<Type> (GenericMethodWithAnnotation<TestType>);
