@@ -19,7 +19,7 @@ namespace ILLink.CodeFix
 	public class RequiresAssemblyFilesCodeFixProvider : BaseAttributeCodeFixProvider
 	{
 		public sealed override ImmutableArray<string> FixableDiagnosticIds
-			=> ImmutableArray.Create (RequiresAssemblyFilesAnalyzer.IL3000, RequiresAssemblyFilesAnalyzer.IL3001, RequiresAssemblyFilesAnalyzer.IL3002);
+			=> ImmutableArray.Create ("IL3000", "IL3001", "IL3002");
 
 		private protected override LocalizableString CodeFixTitle => new LocalizableResourceString (nameof (Resources.RequiresAssemblyFilesCodeFixTitle), Resources.ResourceManager, typeof (Resources));
 

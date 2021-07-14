@@ -73,7 +73,7 @@ class C
 }";
 			return VerifyRequiresAssemblyFilesAnalyzer (TestRequiresAssemblyFieldsOnEvent,
 				// (12,17): warning IL3002: Using member 'C.E' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (12, 17, 12, 18).WithArguments ("C.E", "", ""));
+				VerifyCS.Diagnostic ("IL3002").WithSpan (12, 17, 12, 18).WithArguments ("C.E", "", ""));
 		}
 
 		[Fact]
@@ -96,7 +96,7 @@ class C
 }";
 			return VerifyRequiresAssemblyFilesAnalyzer (TestRequiresAssemblyFilesOnMethod,
 				// (13,3): warning IL3002: Using member 'C.M1()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (13, 3, 13, 7).WithArguments ("C.M1()", "", ""));
+				VerifyCS.Diagnostic ("IL3002").WithSpan (13, 3, 13, 7).WithArguments ("C.M1()", "", ""));
 		}
 
 		[Fact]
@@ -119,9 +119,9 @@ class C
 }";
 			return VerifyRequiresAssemblyFilesAnalyzer (TestRequiresAssemblyFilesOnProperty,
 				// (11,3): warning IL3002: Using member 'C.P' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (12, 3, 12, 4).WithArguments ("C.P", "", ""),
+				VerifyCS.Diagnostic ("IL3002").WithSpan (12, 3, 12, 4).WithArguments ("C.P", "", ""),
 				// (13,12): warning IL3002: Using member 'C.P' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (13, 35, 13, 36).WithArguments ("C.P", "", ""));
+				VerifyCS.Diagnostic ("IL3002").WithSpan (13, 35, 13, 36).WithArguments ("C.P", "", ""));
 		}
 
 		[Fact]
@@ -155,7 +155,7 @@ class C
 }";
 			return VerifyRequiresAssemblyFilesAnalyzer (TestRequiresAssemblyFilesOnMethodInsideProperty,
 				// (24,3): warning IL3002: Using member 'C.P' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (24, 3, 24, 4).WithArguments ("C.P", "", ""));
+				VerifyCS.Diagnostic ("IL3002").WithSpan (24, 3, 24, 4).WithArguments ("C.P", "", ""));
 		}
 
 		[Fact]
@@ -178,7 +178,7 @@ class C
 }";
 			return VerifyRequiresAssemblyFilesAnalyzer (TestRequiresAssemblyFilesWithMessageAndUrl,
 				// (13,3): warning IL3002: Using member 'C.M1()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app. Message from attribute. https://helpurl
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (13, 3, 13, 7).WithArguments ("C.M1()", " Message from attribute.", " https://helpurl"));
+				VerifyCS.Diagnostic ("IL3002").WithSpan (13, 3, 13, 7).WithArguments ("C.M1()", " Message from attribute.", " https://helpurl"));
 		}
 
 		[Fact]
@@ -201,7 +201,7 @@ class C
 }";
 			return VerifyRequiresAssemblyFilesAnalyzer (TestRequiresAssemblyFilesWithMessageAndUrl,
 				// (13,3): warning IL3002: Using member 'C.M1()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app. https://helpurl
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (13, 3, 13, 7).WithArguments ("C.M1()", "", " https://helpurl"));
+				VerifyCS.Diagnostic ("IL3002").WithSpan (13, 3, 13, 7).WithArguments ("C.M1()", "", " https://helpurl"));
 		}
 
 		[Fact]
@@ -244,7 +244,7 @@ class C
 }";
 			return VerifyRequiresAssemblyFilesAnalyzer (TestNoDiagnosticIsProducedIfCallerIsAnnotated,
 				// (8,3): warning IL3002: Using member 'C.M2()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app. Warn from M2.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (8, 3, 8, 7).WithArguments ("C.M2()", " Warn from M2.", ""));
+				VerifyCS.Diagnostic ("IL3002").WithSpan (8, 3, 8, 7).WithArguments ("C.M2()", " Warn from M2.", ""));
 		}
 
 		[Fact]
@@ -259,7 +259,7 @@ class C
 
 			return VerifyRequiresAssemblyFilesAnalyzer (src,
 				// (5,26): warning IL3000: 'System.Reflection.Assembly.Location' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3000).WithSpan (5, 26, 5, 66).WithArguments ("System.Reflection.Assembly.Location"));
+				VerifyCS.Diagnostic ("IL3000").WithSpan (5, 26, 5, 66).WithArguments ("System.Reflection.Assembly.Location"));
 		}
 
 		[Fact]
@@ -280,7 +280,7 @@ class C
 }";
 			return VerifyRequiresAssemblyFilesAnalyzer (src,
 				// (8,13): warning IL3000: 'System.Reflection.Assembly.Location' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3000).WithSpan (8, 13, 8, 23).WithArguments ("System.Reflection.Assembly.Location")
+				VerifyCS.Diagnostic ("IL3000").WithSpan (8, 13, 8, 23).WithArguments ("System.Reflection.Assembly.Location")
 			);
 		}
 
@@ -300,9 +300,9 @@ class C
 }";
 			return VerifyRequiresAssemblyFilesAnalyzer (src,
 				// (8,13): warning IL3001: Assemblies embedded in a single-file app cannot have additional files in the manifest.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3001).WithSpan (8, 13, 8, 41).WithArguments ("System.Reflection.Assembly.GetFile(string)"),
+				VerifyCS.Diagnostic ("IL3001").WithSpan (8, 13, 8, 41).WithArguments ("System.Reflection.Assembly.GetFile(string)"),
 				// (9,13): warning IL3001: Assemblies embedded in a single-file app cannot have additional files in the manifest.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3001).WithSpan (9, 13, 9, 25).WithArguments ("System.Reflection.Assembly.GetFiles()")
+				VerifyCS.Diagnostic ("IL3001").WithSpan (9, 13, 9, 25).WithArguments ("System.Reflection.Assembly.GetFiles()")
 				);
 		}
 
@@ -322,9 +322,9 @@ class C
 }";
 			return VerifyRequiresAssemblyFilesAnalyzer (src,
 				// (8,13): warning IL3000: 'System.Reflection.AssemblyName.CodeBase' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3000).WithSpan (8, 13, 8, 23).WithArguments ("System.Reflection.AssemblyName.CodeBase"),
+				VerifyCS.Diagnostic ("IL3000").WithSpan (8, 13, 8, 23).WithArguments ("System.Reflection.AssemblyName.CodeBase"),
 				// (9,13): warning IL3000: 'System.Reflection.AssemblyName.EscapedCodeBase' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3000).WithSpan (9, 13, 9, 30).WithArguments ("System.Reflection.AssemblyName.EscapedCodeBase")
+				VerifyCS.Diagnostic ("IL3000").WithSpan (9, 13, 9, 30).WithArguments ("System.Reflection.AssemblyName.EscapedCodeBase")
 				);
 		}
 
@@ -346,9 +346,9 @@ class C
 }";
 			return VerifyRequiresAssemblyFilesAnalyzer (src,
 				// (8,13): warning IL3000: 'System.Reflection.Assembly.Location' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3000).WithSpan (8, 13, 8, 23).WithArguments ("System.Reflection.Assembly.Location"),
+				VerifyCS.Diagnostic ("IL3000").WithSpan (8, 13, 8, 23).WithArguments ("System.Reflection.Assembly.Location"),
 				// (9,13): warning IL3001: Assemblies embedded in a single-file app cannot have additional files in the manifest.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3001).WithSpan (9, 13, 9, 25).WithArguments ("System.Reflection.Assembly.GetFiles()")
+				VerifyCS.Diagnostic ("IL3001").WithSpan (9, 13, 9, 25).WithArguments ("System.Reflection.Assembly.GetFiles()")
 				);
 		}
 
@@ -411,7 +411,7 @@ class C
 
 			return VerifyRequiresAssemblyFilesAnalyzer (src,
 				// (6,50): warning IL3002: Using member 'C.InitC()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (6, 50, 6, 55).WithArguments ("C.InitC()", "", ""));
+				VerifyCS.Diagnostic ("IL3002").WithSpan (6, 50, 6, 55).WithArguments ("C.InitC()", "", ""));
 		}
 
 		[Fact]
@@ -433,9 +433,9 @@ class C
 
 			return VerifyRequiresAssemblyFilesAnalyzer (src,
 				// (10,20): warning IL3002: Using member 'C.M1()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (10, 20, 10, 22).WithArguments ("C.M1()", "", ""),
+				VerifyCS.Diagnostic ("IL3002").WithSpan (10, 20, 10, 22).WithArguments ("C.M1()", "", ""),
 				// (11,26): warning IL3002: Using member 'C.M1()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (11, 26, 11, 30).WithArguments ("C.M1()", "", ""));
+				VerifyCS.Diagnostic ("IL3002").WithSpan (11, 26, 11, 30).WithArguments ("C.M1()", "", ""));
 		}
 
 		[Fact]
@@ -498,13 +498,13 @@ public class E
 				fixtest,
 				baselineExpected: new[] {
 				// /0/Test0.cs(7,17): warning IL3002: Using method 'C.M1()' which has 'RequiresAssemblyFilesAttribute' can break functionality when trimming application code. message.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (7, 17, 7, 21).WithArguments ("C.M1()", " message.", ""),
+				VerifyCS.Diagnostic ("IL3002").WithSpan (7, 17, 7, 21).WithArguments ("C.M1()", " message.", ""),
 				// /0/Test0.cs(11,27): warning IL3002: Using method 'C.M1()' which has 'RequiresAssemblyFilesAttribute' can break functionality when trimming application code. message.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (11, 27, 11, 33).WithArguments ("C.M1()", " message.", ""),
+				VerifyCS.Diagnostic ("IL3002").WithSpan (11, 27, 11, 33).WithArguments ("C.M1()", " message.", ""),
 				// /0/Test0.cs(14,31): warning IL3002: Using method 'C.M1()' which has 'RequiresAssemblyFilesAttribute' can break functionality when trimming application code. message.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (14, 31, 14, 37).WithArguments ("C.M1()", " message.", ""),
+				VerifyCS.Diagnostic ("IL3002").WithSpan (14, 31, 14, 37).WithArguments ("C.M1()", " message.", ""),
 				// /0/Test0.cs(21,31): warning IL3002: Using method 'C.M1()' which has 'RequiresAssemblyFilesAttribute' can break functionality when trimming application code. message.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (21, 31, 21, 37).WithArguments ("C.M1()", " message.", "")
+				VerifyCS.Diagnostic ("IL3002").WithSpan (21, 31, 21, 37).WithArguments ("C.M1()", " message.", "")
 				},
 				fixedExpected: Array.Empty<DiagnosticResult> ());
 		}
@@ -545,9 +545,9 @@ public class C
 				fixtest,
 				baselineExpected: new[] {
 				// /0/Test0.cs(7,27): warning IL3000: 'System.Reflection.Assembly.Location' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3000).WithSpan (7, 27, 7, 44).WithArguments ("System.Reflection.Assembly.Location", "", ""),
+				VerifyCS.Diagnostic ("IL3000").WithSpan (7, 27, 7, 44).WithArguments ("System.Reflection.Assembly.Location", "", ""),
 				// /0/Test0.cs(9,13): warning IL3001: 'System.Reflection.Assembly.GetFiles()' will throw for assemblies embedded in a single-file app
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3001).WithSpan (9, 13, 9, 32).WithArguments("System.Reflection.Assembly.GetFiles()", "", ""),
+				VerifyCS.Diagnostic ("IL3001").WithSpan (9, 13, 9, 32).WithArguments("System.Reflection.Assembly.GetFiles()", "", ""),
 				},
 				fixedExpected: Array.Empty<DiagnosticResult> ());
 		}
@@ -583,7 +583,7 @@ public class C
 				fix,
 				baselineExpected: new[] {
 					// /0/Test0.cs(10,15): warning IL3002: Using member 'C.M1()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app. message.
-					VerifyCS.Diagnostic(RequiresAssemblyFilesAnalyzer.IL3002).WithSpan(10, 15, 10, 19).WithArguments("C.M1()", " message.", "")
+					VerifyCS.Diagnostic("IL3002").WithSpan(10, 15, 10, 19).WithArguments("C.M1()", " message.", "")
 				},
 				fixedExpected: Array.Empty<DiagnosticResult> ());
 		}
@@ -625,11 +625,11 @@ class C
 				fixtest,
 				baselineExpected: new[] {
 				// /0/Test0.cs(6,50): warning IL3002: Using member 'C.InitC()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (6, 50, 6, 55).WithArguments ("C.InitC()", "", ""),
+				VerifyCS.Diagnostic ("IL3002").WithSpan (6, 50, 6, 55).WithArguments ("C.InitC()", "", ""),
 				},
 				fixedExpected: new[] {
 				// /0/Test0.cs(6,50): warning IL3002: Using member 'C.InitC()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (6, 50, 6, 55).WithArguments ("C.InitC()", "", ""),
+				VerifyCS.Diagnostic ("IL3002").WithSpan (6, 50, 6, 55).WithArguments ("C.InitC()", "", ""),
 				});
 		}
 
@@ -673,7 +673,7 @@ public class C
 				fix,
 				baselineExpected: new[] {
 					// /0/Test0.cs(12,28): warning IL3002: Using member 'C.M1()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app. message.
-					VerifyCS.Diagnostic(RequiresAssemblyFilesAnalyzer.IL3002).WithSpan(12, 28, 12, 32).WithArguments("C.M1()", " message.", "")
+					VerifyCS.Diagnostic("IL3002").WithSpan(12, 28, 12, 32).WithArguments("C.M1()", " message.", "")
 				},
 				fixedExpected: Array.Empty<DiagnosticResult> (),
 				numberOfIterations: 2);
@@ -710,7 +710,7 @@ public class C
 				fix,
 				baselineExpected: new[] {
 					// /0/Test0.cs(10,15): warning IL3002: Using member 'C.M1()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app. message.
-					VerifyCS.Diagnostic(RequiresAssemblyFilesAnalyzer.IL3002).WithSpan(10, 20, 10, 24).WithArguments("C.M1()", " message.", "")
+					VerifyCS.Diagnostic("IL3002").WithSpan(10, 20, 10, 24).WithArguments("C.M1()", " message.", "")
 				},
 				fixedExpected: Array.Empty<DiagnosticResult> ());
 		}
@@ -760,7 +760,7 @@ public class C
 				fix,
 				baselineExpected: new[] {
 					// /0/Test0.cs(14,21): warning IL3002: Using method 'C.M1()' which has 'RequiresAssemblyFilesAttribute' can break functionality when trimming application code. message.
-					VerifyCS.Diagnostic(RequiresAssemblyFilesAnalyzer.IL3002).WithSpan(14, 21, 14, 25).WithArguments("C.M1()", " message.", "")
+					VerifyCS.Diagnostic("IL3002").WithSpan(14, 21, 14, 25).WithArguments("C.M1()", " message.", "")
 				},
 				fixedExpected: Array.Empty<DiagnosticResult> ());
 		}
@@ -785,7 +785,7 @@ class StaticCtor
 }";
 			return VerifyRequiresAssemblyFilesAnalyzer (src,
 				// (13,7): warning IL3002: Using member 'StaticCtor.StaticCtor()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app. Message for --TestStaticCtor--.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (13, 7, 13, 24).WithArguments ("StaticCtor.StaticCtor()", " Message for --TestStaticCtor--.", "")
+				VerifyCS.Diagnostic ("IL3002").WithSpan (13, 7, 13, 24).WithArguments ("StaticCtor.StaticCtor()", " Message for --TestStaticCtor--.", "")
 				);
 		}
 
@@ -814,7 +814,7 @@ class C
 }";
 			return VerifyRequiresAssemblyFilesAnalyzer (src,
 				// (18,11): warning IL3002: Using member 'StaticCtorTriggeredByFieldAccess.StaticCtorTriggeredByFieldAccess()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.. Message for --StaticCtorTriggeredByFieldAccess.Cctor--.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (18, 11, 18, 49).WithArguments ("StaticCtorTriggeredByFieldAccess.StaticCtorTriggeredByFieldAccess()", " Message for --StaticCtorTriggeredByFieldAccess.Cctor--.", "")
+				VerifyCS.Diagnostic ("IL3002").WithSpan (18, 11, 18, 49).WithArguments ("StaticCtorTriggeredByFieldAccess.StaticCtorTriggeredByFieldAccess()", " Message for --StaticCtorTriggeredByFieldAccess.Cctor--.", "")
 				);
 		}
 
@@ -846,9 +846,9 @@ class C
 }";
 			return VerifyRequiresAssemblyFilesAnalyzer (src,
 				// (21,3): warning IL3002: Using member 'StaticCtorTriggeredByMethodCall.TriggerStaticCtorMarking()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app. Message for --StaticCtorTriggeredByMethodCall.TriggerStaticCtorMarking--.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (21, 3, 21, 69).WithArguments ("StaticCtorTriggeredByMethodCall.TriggerStaticCtorMarking()", " Message for --StaticCtorTriggeredByMethodCall.TriggerStaticCtorMarking--.", ""),
+				VerifyCS.Diagnostic ("IL3002").WithSpan (21, 3, 21, 69).WithArguments ("StaticCtorTriggeredByMethodCall.TriggerStaticCtorMarking()", " Message for --StaticCtorTriggeredByMethodCall.TriggerStaticCtorMarking--.", ""),
 				// (21,3): warning IL3002: Using member 'StaticCtorTriggeredByMethodCall.StaticCtorTriggeredByMethodCall()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app. Message for --StaticCtorTriggeredByMethodCall.Cctor--.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (21, 3, 21, 41).WithArguments ("StaticCtorTriggeredByMethodCall.StaticCtorTriggeredByMethodCall()", " Message for --StaticCtorTriggeredByMethodCall.Cctor--.", "")
+				VerifyCS.Diagnostic ("IL3002").WithSpan (21, 3, 21, 41).WithArguments ("StaticCtorTriggeredByMethodCall.StaticCtorTriggeredByMethodCall()", " Message for --StaticCtorTriggeredByMethodCall.Cctor--.", "")
 				);
 		}
 
@@ -889,11 +889,11 @@ class BaseClass
 }";
 			return VerifyRequiresAssemblyFilesAnalyzer (src,
 				// (7,23): warning IL3003: Member 'DerivedClass.VirtualMethod()' with 'RequiresAssemblyFilesAttribute' overrides base member 'BaseClass.VirtualMethod()' without 'RequiresAssemblyFilesAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (7, 23, 7, 36).WithArguments ("Member 'DerivedClass.VirtualMethod()' with 'RequiresAssemblyFilesAttribute' overrides base member 'BaseClass.VirtualMethod()' without 'RequiresAssemblyFilesAttribute'"),
+				VerifyCS.Diagnostic ("IL3003").WithSpan (7, 23, 7, 36).WithArguments ("Member 'DerivedClass.VirtualMethod()' with 'RequiresAssemblyFilesAttribute' overrides base member 'BaseClass.VirtualMethod()' without 'RequiresAssemblyFilesAttribute'"),
 				// (15,3): warning IL3003: Member 'DerivedClass.VirtualPropertyWithAnnotationInAccesor.get' with 'RequiresAssemblyFilesAttribute' overrides base member 'BaseClass.VirtualPropertyWithAnnotationInAccesor.get' without 'RequiresAssemblyFilesAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (15, 3, 15, 6).WithArguments ("Member 'DerivedClass.VirtualPropertyWithAnnotationInAccesor.get' with 'RequiresAssemblyFilesAttribute' overrides base member 'BaseClass.VirtualPropertyWithAnnotationInAccesor.get' without 'RequiresAssemblyFilesAttribute'"),
+				VerifyCS.Diagnostic ("IL3003").WithSpan (15, 3, 15, 6).WithArguments ("Member 'DerivedClass.VirtualPropertyWithAnnotationInAccesor.get' with 'RequiresAssemblyFilesAttribute' overrides base member 'BaseClass.VirtualPropertyWithAnnotationInAccesor.get' without 'RequiresAssemblyFilesAttribute'"),
 				// (20,25): warning IL3003: Member 'DerivedClass.VirtualPropertyWithAnnotationInProperty' with 'RequiresAssemblyFilesAttribute' overrides base member 'BaseClass.VirtualPropertyWithAnnotationInProperty' without 'RequiresAssemblyFilesAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (20, 25, 20, 64).WithArguments ("Member 'DerivedClass.VirtualPropertyWithAnnotationInProperty' with 'RequiresAssemblyFilesAttribute' overrides base member 'BaseClass.VirtualPropertyWithAnnotationInProperty' without 'RequiresAssemblyFilesAttribute'"));
+				VerifyCS.Diagnostic ("IL3003").WithSpan (20, 25, 20, 64).WithArguments ("Member 'DerivedClass.VirtualPropertyWithAnnotationInProperty' with 'RequiresAssemblyFilesAttribute' overrides base member 'BaseClass.VirtualPropertyWithAnnotationInProperty' without 'RequiresAssemblyFilesAttribute'"));
 		}
 
 		[Fact]
@@ -932,11 +932,11 @@ class BaseClass
 }";
 			return VerifyRequiresAssemblyFilesAnalyzer (src,
 				// (6,23): warning IL3003: Base member 'BaseClass.VirtualMethod()' with 'RequiresAssemblyFilesAttribute' has a derived member 'DerivedClass.VirtualMethod()' without 'RequiresAssemblyFilesAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (6, 23, 6, 36).WithArguments ("Base member 'BaseClass.VirtualMethod()' with 'RequiresAssemblyFilesAttribute' has a derived member 'DerivedClass.VirtualMethod()' without 'RequiresAssemblyFilesAttribute'"),
+				VerifyCS.Diagnostic ("IL3003").WithSpan (6, 23, 6, 36).WithArguments ("Base member 'BaseClass.VirtualMethod()' with 'RequiresAssemblyFilesAttribute' has a derived member 'DerivedClass.VirtualMethod()' without 'RequiresAssemblyFilesAttribute'"),
 				// (13,3): warning IL3003: Base member 'BaseClass.VirtualPropertyWithAnnotationInAccesor.get' with 'RequiresAssemblyFilesAttribute' has a derived member 'DerivedClass.VirtualPropertyWithAnnotationInAccesor.get' without 'RequiresAssemblyFilesAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (13, 3, 13, 6).WithArguments ("Base member 'BaseClass.VirtualPropertyWithAnnotationInAccesor.get' with 'RequiresAssemblyFilesAttribute' has a derived member 'DerivedClass.VirtualPropertyWithAnnotationInAccesor.get' without 'RequiresAssemblyFilesAttribute'"),
+				VerifyCS.Diagnostic ("IL3003").WithSpan (13, 3, 13, 6).WithArguments ("Base member 'BaseClass.VirtualPropertyWithAnnotationInAccesor.get' with 'RequiresAssemblyFilesAttribute' has a derived member 'DerivedClass.VirtualPropertyWithAnnotationInAccesor.get' without 'RequiresAssemblyFilesAttribute'"),
 				// (17,25): warning IL3003: Base member 'BaseClass.VirtualPropertyWithAnnotationInProperty' with 'RequiresAssemblyFilesAttribute' has a derived member 'DerivedClass.VirtualPropertyWithAnnotationInProperty' without 'RequiresAssemblyFilesAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (17, 25, 17, 64).WithArguments ("Base member 'BaseClass.VirtualPropertyWithAnnotationInProperty' with 'RequiresAssemblyFilesAttribute' has a derived member 'DerivedClass.VirtualPropertyWithAnnotationInProperty' without 'RequiresAssemblyFilesAttribute'"));
+				VerifyCS.Diagnostic ("IL3003").WithSpan (17, 25, 17, 64).WithArguments ("Base member 'BaseClass.VirtualPropertyWithAnnotationInProperty' with 'RequiresAssemblyFilesAttribute' has a derived member 'DerivedClass.VirtualPropertyWithAnnotationInProperty' without 'RequiresAssemblyFilesAttribute'"));
 		}
 
 		[Fact]
@@ -1018,17 +1018,17 @@ interface IRAF
 }";
 			return VerifyRequiresAssemblyFilesAnalyzer (src,
 				// (7,14): warning IL3003: Member 'Implementation.Method()' with 'RequiresAssemblyFilesAttribute' implements interface member 'IRAF.Method()' without 'RequiresAssemblyFilesAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (7, 14, 7, 20).WithArguments ("Member 'Implementation.Method()' with 'RequiresAssemblyFilesAttribute' implements interface member 'IRAF.Method()' without 'RequiresAssemblyFilesAttribute'"),
+				VerifyCS.Diagnostic ("IL3003").WithSpan (7, 14, 7, 20).WithArguments ("Member 'Implementation.Method()' with 'RequiresAssemblyFilesAttribute' implements interface member 'IRAF.Method()' without 'RequiresAssemblyFilesAttribute'"),
 				// (13,3): warning IL3003: Member 'Implementation.StringProperty.get' with 'RequiresAssemblyFilesAttribute' implements interface member 'IRAF.StringProperty.get' without 'RequiresAssemblyFilesAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (13, 3, 13, 6).WithArguments ("Member 'Implementation.StringProperty.get' with 'RequiresAssemblyFilesAttribute' implements interface member 'IRAF.StringProperty.get' without 'RequiresAssemblyFilesAttribute'"),
+				VerifyCS.Diagnostic ("IL3003").WithSpan (13, 3, 13, 6).WithArguments ("Member 'Implementation.StringProperty.get' with 'RequiresAssemblyFilesAttribute' implements interface member 'IRAF.StringProperty.get' without 'RequiresAssemblyFilesAttribute'"),
 				// (19,13): warning IL3003: Member 'Implementation.NumProperty' with 'RequiresAssemblyFilesAttribute' implements interface member 'IRAF.NumProperty' without 'RequiresAssemblyFilesAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (19, 13, 19, 24).WithArguments ("Member 'Implementation.NumProperty' with 'RequiresAssemblyFilesAttribute' implements interface member 'IRAF.NumProperty' without 'RequiresAssemblyFilesAttribute'"),
+				VerifyCS.Diagnostic ("IL3003").WithSpan (19, 13, 19, 24).WithArguments ("Member 'Implementation.NumProperty' with 'RequiresAssemblyFilesAttribute' implements interface member 'IRAF.NumProperty' without 'RequiresAssemblyFilesAttribute'"),
 				// (48,12): warning IL3003: Member 'ExplicitImplementation.IRAF.Method()' with 'RequiresAssemblyFilesAttribute' implements interface member 'IRAF.Method()' without 'RequiresAssemblyFilesAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (48, 12, 48, 18).WithArguments ("Member 'ExplicitImplementation.IRAF.Method()' with 'RequiresAssemblyFilesAttribute' implements interface member 'IRAF.Method()' without 'RequiresAssemblyFilesAttribute'"),
+				VerifyCS.Diagnostic ("IL3003").WithSpan (48, 12, 48, 18).WithArguments ("Member 'ExplicitImplementation.IRAF.Method()' with 'RequiresAssemblyFilesAttribute' implements interface member 'IRAF.Method()' without 'RequiresAssemblyFilesAttribute'"),
 				// (54,3): warning IL3003: Member 'ExplicitImplementation.IRAF.StringProperty.get' with 'RequiresAssemblyFilesAttribute' implements interface member 'IRAF.StringProperty.get' without 'RequiresAssemblyFilesAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (54, 3, 54, 6).WithArguments ("Member 'ExplicitImplementation.IRAF.StringProperty.get' with 'RequiresAssemblyFilesAttribute' implements interface member 'IRAF.StringProperty.get' without 'RequiresAssemblyFilesAttribute'"),
+				VerifyCS.Diagnostic ("IL3003").WithSpan (54, 3, 54, 6).WithArguments ("Member 'ExplicitImplementation.IRAF.StringProperty.get' with 'RequiresAssemblyFilesAttribute' implements interface member 'IRAF.StringProperty.get' without 'RequiresAssemblyFilesAttribute'"),
 				// (60,11): warning IL3003: Member 'ExplicitImplementation.IRAF.NumProperty' with 'RequiresAssemblyFilesAttribute' implements interface member 'IRAF.NumProperty' without 'RequiresAssemblyFilesAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (60, 11, 60, 22).WithArguments ("Member 'ExplicitImplementation.IRAF.NumProperty' with 'RequiresAssemblyFilesAttribute' implements interface member 'IRAF.NumProperty' without 'RequiresAssemblyFilesAttribute'"));
+				VerifyCS.Diagnostic ("IL3003").WithSpan (60, 11, 60, 22).WithArguments ("Member 'ExplicitImplementation.IRAF.NumProperty' with 'RequiresAssemblyFilesAttribute' implements interface member 'IRAF.NumProperty' without 'RequiresAssemblyFilesAttribute'"));
 		}
 
 		[Fact]
@@ -1085,17 +1085,17 @@ interface IRAF
 }";
 			return VerifyRequiresAssemblyFilesAnalyzer (src,
 				// (6,14): warning IL3003: Interface member 'IRAF.Method()' with 'RequiresAssemblyFilesAttribute' has an implementation member 'Implementation.Method()' without 'RequiresAssemblyFilesAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (6, 14, 6, 20).WithArguments ("Interface member 'IRAF.Method()' with 'RequiresAssemblyFilesAttribute' has an implementation member 'Implementation.Method()' without 'RequiresAssemblyFilesAttribute'"),
+				VerifyCS.Diagnostic ("IL3003").WithSpan (6, 14, 6, 20).WithArguments ("Interface member 'IRAF.Method()' with 'RequiresAssemblyFilesAttribute' has an implementation member 'Implementation.Method()' without 'RequiresAssemblyFilesAttribute'"),
 				// (11,3): warning IL3003: Interface member 'IRAF.StringProperty.get' with 'RequiresAssemblyFilesAttribute' has an implementation member 'Implementation.StringProperty.get' without 'RequiresAssemblyFilesAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (11, 3, 11, 6).WithArguments ("Interface member 'IRAF.StringProperty.get' with 'RequiresAssemblyFilesAttribute' has an implementation member 'Implementation.StringProperty.get' without 'RequiresAssemblyFilesAttribute'"),
+				VerifyCS.Diagnostic ("IL3003").WithSpan (11, 3, 11, 6).WithArguments ("Interface member 'IRAF.StringProperty.get' with 'RequiresAssemblyFilesAttribute' has an implementation member 'Implementation.StringProperty.get' without 'RequiresAssemblyFilesAttribute'"),
 				// (16,13): warning IL3003: Interface member 'IRAF.NumProperty' with 'RequiresAssemblyFilesAttribute' has an implementation member 'Implementation.NumProperty' without 'RequiresAssemblyFilesAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (16, 13, 16, 24).WithArguments ("Interface member 'IRAF.NumProperty' with 'RequiresAssemblyFilesAttribute' has an implementation member 'Implementation.NumProperty' without 'RequiresAssemblyFilesAttribute'"),
+				VerifyCS.Diagnostic ("IL3003").WithSpan (16, 13, 16, 24).WithArguments ("Interface member 'IRAF.NumProperty' with 'RequiresAssemblyFilesAttribute' has an implementation member 'Implementation.NumProperty' without 'RequiresAssemblyFilesAttribute'"),
 				// (25,14): warning IL3003: Interface member 'IRAF.Method()' with 'RequiresAssemblyFilesAttribute' has an implementation member 'AnotherImplementation.Method()' without 'RequiresAssemblyFilesAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (25, 14, 25, 20).WithArguments ("Interface member 'IRAF.Method()' with 'RequiresAssemblyFilesAttribute' has an implementation member 'AnotherImplementation.Method()' without 'RequiresAssemblyFilesAttribute'"),
+				VerifyCS.Diagnostic ("IL3003").WithSpan (25, 14, 25, 20).WithArguments ("Interface member 'IRAF.Method()' with 'RequiresAssemblyFilesAttribute' has an implementation member 'AnotherImplementation.Method()' without 'RequiresAssemblyFilesAttribute'"),
 				// (30,3): warning IL3003: Interface member 'IRAF.StringProperty.get' with 'RequiresAssemblyFilesAttribute' has an implementation member 'AnotherImplementation.StringProperty.get' without 'RequiresAssemblyFilesAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (30, 3, 30, 6).WithArguments ("Interface member 'IRAF.StringProperty.get' with 'RequiresAssemblyFilesAttribute' has an implementation member 'AnotherImplementation.StringProperty.get' without 'RequiresAssemblyFilesAttribute'"),
+				VerifyCS.Diagnostic ("IL3003").WithSpan (30, 3, 30, 6).WithArguments ("Interface member 'IRAF.StringProperty.get' with 'RequiresAssemblyFilesAttribute' has an implementation member 'AnotherImplementation.StringProperty.get' without 'RequiresAssemblyFilesAttribute'"),
 				// (35,13): warning IL3003: Interface member 'IRAF.NumProperty' with 'RequiresAssemblyFilesAttribute' has an implementation member 'AnotherImplementation.NumProperty' without 'RequiresAssemblyFilesAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (35, 13, 35, 24).WithArguments ("Interface member 'IRAF.NumProperty' with 'RequiresAssemblyFilesAttribute' has an implementation member 'AnotherImplementation.NumProperty' without 'RequiresAssemblyFilesAttribute'"));
+				VerifyCS.Diagnostic ("IL3003").WithSpan (35, 13, 35, 24).WithArguments ("Interface member 'IRAF.NumProperty' with 'RequiresAssemblyFilesAttribute' has an implementation member 'AnotherImplementation.NumProperty' without 'RequiresAssemblyFilesAttribute'"));
 		}
 
 		[Fact]
@@ -1156,17 +1156,17 @@ class AnotherImplementation : IRAF
 
 			await VerifyRequiresAssemblyFilesAnalyzer (src, additionalReferences: new[] { compilation },
 				// (4,14): warning IL3003: Interface member 'IRAF.Method()' with 'RequiresAssemblyFilesAttribute' has an implementation member 'Implementation.Method()' without 'RequiresAssemblyFilesAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (4, 14, 4, 20).WithArguments ("Interface member 'IRAF.Method()' with 'RequiresAssemblyFilesAttribute' has an implementation member 'Implementation.Method()' without 'RequiresAssemblyFilesAttribute'"),
+				VerifyCS.Diagnostic ("IL3003").WithSpan (4, 14, 4, 20).WithArguments ("Interface member 'IRAF.Method()' with 'RequiresAssemblyFilesAttribute' has an implementation member 'Implementation.Method()' without 'RequiresAssemblyFilesAttribute'"),
 				// (9,3): warning IL3003: Interface member 'IRAF.StringProperty.get' with 'RequiresAssemblyFilesAttribute' has an implementation member 'Implementation.StringProperty.get' without 'RequiresAssemblyFilesAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (9, 3, 9, 6).WithArguments ("Interface member 'IRAF.StringProperty.get' with 'RequiresAssemblyFilesAttribute' has an implementation member 'Implementation.StringProperty.get' without 'RequiresAssemblyFilesAttribute'"),
+				VerifyCS.Diagnostic ("IL3003").WithSpan (9, 3, 9, 6).WithArguments ("Interface member 'IRAF.StringProperty.get' with 'RequiresAssemblyFilesAttribute' has an implementation member 'Implementation.StringProperty.get' without 'RequiresAssemblyFilesAttribute'"),
 				// (14,13): warning IL3003: Interface member 'IRAF.NumProperty' with 'RequiresAssemblyFilesAttribute' has an implementation member 'Implementation.NumProperty' without 'RequiresAssemblyFilesAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (14, 13, 14, 24).WithArguments ("Interface member 'IRAF.NumProperty' with 'RequiresAssemblyFilesAttribute' has an implementation member 'Implementation.NumProperty' without 'RequiresAssemblyFilesAttribute'"),
+				VerifyCS.Diagnostic ("IL3003").WithSpan (14, 13, 14, 24).WithArguments ("Interface member 'IRAF.NumProperty' with 'RequiresAssemblyFilesAttribute' has an implementation member 'Implementation.NumProperty' without 'RequiresAssemblyFilesAttribute'"),
 				// (23,14): warning IL3003: Interface member 'IRAF.Method()' with 'RequiresAssemblyFilesAttribute' has an implementation member 'AnotherImplementation.Method()' without 'RequiresAssemblyFilesAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (23, 14, 23, 20).WithArguments ("Interface member 'IRAF.Method()' with 'RequiresAssemblyFilesAttribute' has an implementation member 'AnotherImplementation.Method()' without 'RequiresAssemblyFilesAttribute'"),
+				VerifyCS.Diagnostic ("IL3003").WithSpan (23, 14, 23, 20).WithArguments ("Interface member 'IRAF.Method()' with 'RequiresAssemblyFilesAttribute' has an implementation member 'AnotherImplementation.Method()' without 'RequiresAssemblyFilesAttribute'"),
 				// (28,3): warning IL3003: Interface member 'IRAF.StringProperty.get' with 'RequiresAssemblyFilesAttribute' has an implementation member 'AnotherImplementation.StringProperty.get' without 'RequiresAssemblyFilesAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (28, 3, 28, 6).WithArguments ("Interface member 'IRAF.StringProperty.get' with 'RequiresAssemblyFilesAttribute' has an implementation member 'AnotherImplementation.StringProperty.get' without 'RequiresAssemblyFilesAttribute'"),
+				VerifyCS.Diagnostic ("IL3003").WithSpan (28, 3, 28, 6).WithArguments ("Interface member 'IRAF.StringProperty.get' with 'RequiresAssemblyFilesAttribute' has an implementation member 'AnotherImplementation.StringProperty.get' without 'RequiresAssemblyFilesAttribute'"),
 				// (33,13): warning IL3003: Interface member 'IRAF.NumProperty' with 'RequiresAssemblyFilesAttribute' has an implementation member 'AnotherImplementation.NumProperty' without 'RequiresAssemblyFilesAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (33, 13, 33, 24).WithArguments ("Interface member 'IRAF.NumProperty' with 'RequiresAssemblyFilesAttribute' has an implementation member 'AnotherImplementation.NumProperty' without 'RequiresAssemblyFilesAttribute'"));
+				VerifyCS.Diagnostic ("IL3003").WithSpan (33, 13, 33, 24).WithArguments ("Interface member 'IRAF.NumProperty' with 'RequiresAssemblyFilesAttribute' has an implementation member 'AnotherImplementation.NumProperty' without 'RequiresAssemblyFilesAttribute'"));
 		}
 
 		[Fact]
@@ -1228,11 +1228,11 @@ class AnotherImplementation : IRAF
 
 			await VerifyRequiresAssemblyFilesAnalyzer (src, additionalReferences: new[] { compilation },
 				// (7,14): warning IL3003: Member 'Implementation.Method()' with 'RequiresAssemblyFilesAttribute' implements interface member 'IRAF.Method()' without 'RequiresAssemblyFilesAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (7, 14, 7, 20).WithArguments ("Member 'Implementation.Method()' with 'RequiresAssemblyFilesAttribute' implements interface member 'IRAF.Method()' without 'RequiresAssemblyFilesAttribute'"),
+				VerifyCS.Diagnostic ("IL3003").WithSpan (7, 14, 7, 20).WithArguments ("Member 'Implementation.Method()' with 'RequiresAssemblyFilesAttribute' implements interface member 'IRAF.Method()' without 'RequiresAssemblyFilesAttribute'"),
 				// (13,3): warning IL3003: Member 'Implementation.StringProperty.get' with 'RequiresAssemblyFilesAttribute' implements interface member 'IRAF.StringProperty.get' without 'RequiresAssemblyFilesAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (13, 3, 13, 6).WithArguments ("Member 'Implementation.StringProperty.get' with 'RequiresAssemblyFilesAttribute' implements interface member 'IRAF.StringProperty.get' without 'RequiresAssemblyFilesAttribute'"),
+				VerifyCS.Diagnostic ("IL3003").WithSpan (13, 3, 13, 6).WithArguments ("Member 'Implementation.StringProperty.get' with 'RequiresAssemblyFilesAttribute' implements interface member 'IRAF.StringProperty.get' without 'RequiresAssemblyFilesAttribute'"),
 				// (19,13): warning IL3003: Member 'Implementation.NumProperty' with 'RequiresAssemblyFilesAttribute' implements interface member 'IRAF.NumProperty' without 'RequiresAssemblyFilesAttribute'. Attributes must match across all interface implementations or overrides.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3003).WithSpan (19, 13, 19, 24).WithArguments ("Member 'Implementation.NumProperty' with 'RequiresAssemblyFilesAttribute' implements interface member 'IRAF.NumProperty' without 'RequiresAssemblyFilesAttribute'"));
+				VerifyCS.Diagnostic ("IL3003").WithSpan (19, 13, 19, 24).WithArguments ("Member 'Implementation.NumProperty' with 'RequiresAssemblyFilesAttribute' implements interface member 'IRAF.NumProperty' without 'RequiresAssemblyFilesAttribute'"));
 		}
 	}
 }
