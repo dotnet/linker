@@ -1766,11 +1766,8 @@ namespace Mono.Linker.Steps
 			MarkCustomAttributes (type, new DependencyInfo (DependencyKind.CustomAttribute, type));
 			MarkSecurityDeclarations (type, new DependencyInfo (DependencyKind.CustomAttribute, type));
 
-			if (type.ToString ().Contains ("Requires"))
-				Debugger.Break ();
-
 			if (type.BaseType != null &&
-				!_context.Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (type) &&
+				!_context.Annotations.HasEffectiveRequiresUnreferencedCodeOnType (type) &&
 				_context.Annotations.TryGetEffectiveRequiresUnreferencedCodeAttributeOnType (_context.TryResolve (type.BaseType), out RequiresUnreferencedCodeAttribute effectiveRequiresUnreferencedCode)) {
 				var currentOrigin = _scopeStack.CurrentScope.Origin;
 

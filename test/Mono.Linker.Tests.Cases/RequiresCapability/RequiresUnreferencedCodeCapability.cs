@@ -822,14 +822,15 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 					public static void NestedStaticMethod () { }
 				}
 
-				public static void  ShouldntWarn ()
+				public static void ShouldntWarn ()
 				{
 					_ = typeof (ClassWithRequiresUnreferencedCode);
 				}
 			}
 
 			[ExpectedWarning ("IL2109", "RequiresOnClass/DerivedWithoutRequires2", "RequiresOnClass.ClassWithRequiresUnreferencedCode.NestedClass", "--ClassWithRequiresUnreferencedCode--")]
-			private class DerivedWithoutRequires2 : ClassWithRequiresUnreferencedCode.NestedClass {
+			private class DerivedWithoutRequires2 : ClassWithRequiresUnreferencedCode.NestedClass
+			{
 				public static void StaticMethod () { }
 			}
 
@@ -869,12 +870,13 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			{
 				public static void StaticMethodInInheritedClass () { }
 
-				public class DerivedNestedClass
+				// The requires attribute in the declaring type suppresses IL2109 here
+				public class DerivedNestedClass : ClassWithRequiresUnreferencedCode
 				{
 					public static void NestedStaticMethod () { }
 				}
 			}
-			
+
 			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequiresUnreferencedCode.StaticMethod()", "--ClassWithRequiresUnreferencedCode--", GlobalAnalysisOnly = true)]
 			static void TestRequiresInClassAccessedByStaticMethod ()
 			{
@@ -926,7 +928,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				DerivedWithRequires2.NestedClass.NestedStaticMethod ();
 			}
 
-			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequiresUnreferencedCode.TestSuppressions(Type[])")]
+			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequiresUnreferencedCode.TestSuppressions(Type[])", GlobalAnalysisOnly = true)]
 			static void TestSuppressionsOnClass ()
 			{
 				ClassWithRequiresUnreferencedCode.TestSuppressions (new[] { typeof (ClassWithRequiresUnreferencedCode) });

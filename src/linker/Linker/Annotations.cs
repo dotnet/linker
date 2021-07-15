@@ -559,13 +559,11 @@ namespace Mono.Linker
 		/// <returns>True if it was able to find the attribute on the type or any of its declaring types, false otherwise</returns>
 		public bool HasEffectiveRequiresUnreferencedCodeOnType (TypeDefinition type)
 		{
-			if (HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (type))
-				return true;
-			while (type.DeclaringType != null) {
-				if (HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (type))
+			do {
+				if (TryGetLinkerAttribute (type, out RequiresUnreferencedCodeAttribute _))
 					return true;
 				type = type.DeclaringType;
-			}
+			} while (type != null);
 			return false;
 		}
 
@@ -578,17 +576,13 @@ namespace Mono.Linker
 		/// <returns>Returns true along with the RequiresUnreferencedCodeAttribute if found, otherwise returns false</returns>
 		public bool TryGetEffectiveRequiresUnreferencedCodeAttributeOnType (TypeDefinition type, out RequiresUnreferencedCodeAttribute attribute)
 		{
-			if (TryGetLinkerAttribute (type, out RequiresUnreferencedCodeAttribute currentTypeAttribute)) {
-				attribute = currentTypeAttribute;
-				return true;
-			} 
-			while (type.DeclaringType != null) {
-				if(TryGetLinkerAttribute (type.DeclaringType, out RequiresUnreferencedCodeAttribute declaringTypeAttribute)) {
+			do {
+				if (TryGetLinkerAttribute (type, out RequiresUnreferencedCodeAttribute declaringTypeAttribute)) {
 					attribute = declaringTypeAttribute;
 					return true;
 				}
 				type = type.DeclaringType;
-			}
+			} while (type != null);
 			attribute = null;
 			return false;
 		}
