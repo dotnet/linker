@@ -58,7 +58,6 @@ namespace Mono.Linker
 		protected readonly Dictionary<IMemberDefinition, List<MethodDefinition>> preserved_methods = new Dictionary<IMemberDefinition, List<MethodDefinition>> ();
 		protected readonly HashSet<IMetadataTokenProvider> public_api = new HashSet<IMetadataTokenProvider> ();
 		protected readonly Dictionary<AssemblyDefinition, ISymbolReader> symbol_readers = new Dictionary<AssemblyDefinition, ISymbolReader> ();
-		readonly Dictionary<TypeDefinition, Attribute> ruc_on_type_hierarchy = new Dictionary<TypeDefinition, Attribute> ();
 		readonly Dictionary<IMemberDefinition, LinkerAttributesInformation> linker_attributes = new Dictionary<IMemberDefinition, LinkerAttributesInformation> ();
 		readonly Dictionary<object, Dictionary<IMetadataTokenProvider, object>> custom_annotations = new Dictionary<object, Dictionary<IMetadataTokenProvider, object>> ();
 		protected readonly Dictionary<AssemblyDefinition, HashSet<EmbeddedResource>> resources_to_remove = new Dictionary<AssemblyDefinition, HashSet<EmbeddedResource>> ();
@@ -553,29 +552,45 @@ namespace Mono.Linker
 			return marked_types_with_cctor.Add (type);
 		}
 
-		public bool HasRequiresUnreferencedCodeOnTypeHierarchy (TypeDefinition type)
+		/// <summary>
+		/// Looks if there is a RequiresUnreferencedCodeAttribute on the <paramref name="type"/> or any of its declaring types
+		/// </summary>
+		/// <param name="type">Type to start the search of the attribute</param>
+		/// <returns>True if it was able to find the attribute on the type or any of its declaring types, false otherwise</returns>
+		public bool HasEffectiveRequiresUnreferencedCodeOnType (TypeDefinition type)
 		{
-			if (!ruc_on_type_hierarchy.TryGetValue (type, out var hasRucOnTypeHierarchy))
-				return TryGetRequiresUnreferencedCodeAttributeOnTypeHierarchy (type, out var _);
-			return hasRucOnTypeHierarchy is not null;
+			if (HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (type))
+				return true;
+			while (type.DeclaringType != null) {
+				if (HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (type))
+					return true;
+				type = type.DeclaringType;
+			}
+			return false;
 		}
 
-		public bool TryGetRequiresUnreferencedCodeAttributeOnTypeHierarchy (TypeDefinition type, out RequiresUnreferencedCodeAttribute attribute)
+		/// <summary>
+		/// Looks if there is a RequiresUnreferencedCodeAttribute on the <paramref name="type"/> or any of its declaring types and returns the attribute information
+		/// on <paramref name="attribute"/>
+		/// </summary>
+		/// <param name="type">Type to start the search of the attribute</param>
+		/// <param name="attribute">Information about the found RequiresUnreferencedCode Attribute</param>
+		/// <returns>Returns true along with the RequiresUnreferencedCodeAttribute if found, otherwise returns false</returns>
+		public bool TryGetEffectiveRequiresUnreferencedCodeAttributeOnType (TypeDefinition type, out RequiresUnreferencedCodeAttribute attribute)
 		{
-			if (!ruc_on_type_hierarchy.TryGetValue (type, out var output)) {
-				if (TryGetLinkerAttribute (type, out RequiresUnreferencedCodeAttribute currentTypeAttribute)) {
-					ruc_on_type_hierarchy.Add (type, currentTypeAttribute);
-					attribute = currentTypeAttribute;
-					return true;
-				} else if (type.DeclaringType != null && TryGetRequiresUnreferencedCodeAttributeOnTypeHierarchy (type.DeclaringType, out var declaringTypeAttribute)) {
-					ruc_on_type_hierarchy.Add (type, declaringTypeAttribute);
+			if (TryGetLinkerAttribute (type, out RequiresUnreferencedCodeAttribute currentTypeAttribute)) {
+				attribute = currentTypeAttribute;
+				return true;
+			} 
+			while (type.DeclaringType != null) {
+				if(TryGetLinkerAttribute (type.DeclaringType, out RequiresUnreferencedCodeAttribute declaringTypeAttribute)) {
 					attribute = declaringTypeAttribute;
 					return true;
-				} else
-					ruc_on_type_hierarchy.Add (type, null);
+				}
+				type = type.DeclaringType;
 			}
-			attribute = (RequiresUnreferencedCodeAttribute) output;
-			return attribute is not null;
+			attribute = null;
+			return false;
 		}
 
 		public bool HasLinkerAttribute<T> (IMemberDefinition member) where T : Attribute

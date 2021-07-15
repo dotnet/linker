@@ -1754,11 +1754,6 @@ namespace Mono.Linker.Steps
 			foreach (Action<TypeDefinition> handleMarkType in _markContext.MarkTypeActions)
 				handleMarkType (type);
 
-			if (type.BaseType != null &&
-				!_context.Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (type) &&
-				_context.Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (_context.TryResolve (type.BaseType)))
-				CheckAndReportRequiresUnreferencedCode (type);
-
 			MarkType (type.BaseType, new DependencyInfo (DependencyKind.BaseType, type));
 
 			// The DynamicallyAccessedMembers hiearchy processing must be done after the base type was marked
@@ -1770,6 +1765,22 @@ namespace Mono.Linker.Steps
 				MarkType (type.DeclaringType, new DependencyInfo (DependencyKind.DeclaringType, type));
 			MarkCustomAttributes (type, new DependencyInfo (DependencyKind.CustomAttribute, type));
 			MarkSecurityDeclarations (type, new DependencyInfo (DependencyKind.CustomAttribute, type));
+
+			if (type.ToString ().Contains ("Requires"))
+				Debugger.Break ();
+
+			if (type.BaseType != null &&
+				!_context.Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (type) &&
+				_context.Annotations.TryGetEffectiveRequiresUnreferencedCodeAttributeOnType (_context.TryResolve (type.BaseType), out RequiresUnreferencedCodeAttribute effectiveRequiresUnreferencedCode)) {
+				var currentOrigin = _scopeStack.CurrentScope.Origin;
+
+				string formatString = SharedStrings.RequiresOnBaseClassMessage;
+				string arg1 = MessageFormat.FormatRequiresAttributeMessageArg (effectiveRequiresUnreferencedCode.Message);
+				string arg2 = MessageFormat.FormatRequiresAttributeUrlArg (effectiveRequiresUnreferencedCode.Url);
+				string message = string.Format (formatString, type, type.BaseType.GetDisplayName (), arg1, arg2);
+				_context.LogWarning (message, 2109, currentOrigin, MessageSubCategory.TrimAnalysis);
+			}
+
 
 			if (type.IsMulticastDelegate ()) {
 				MarkMulticastDelegate (type);
@@ -2792,30 +2803,17 @@ namespace Mono.Linker.Steps
 			if (suppressionContextMember != null &&
 				(Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (suppressionContextMember) ||
 				(suppressionContextMember.DeclaringType != null &&
-				Annotations.HasRequiresUnreferencedCodeOnTypeHierarchy (suppressionContextMember.DeclaringType))))
+				Annotations.HasEffectiveRequiresUnreferencedCodeOnType (suppressionContextMember.DeclaringType))))
 				return true;
 
 			IMemberDefinition originMember = currentOrigin.MemberDefinition;
 			if (suppressionContextMember != originMember && originMember != null &&
 				(Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (originMember) ||
 				(originMember.DeclaringType != null &&
-				Annotations.HasRequiresUnreferencedCodeOnTypeHierarchy (originMember.DeclaringType))))
+				Annotations.HasEffectiveRequiresUnreferencedCodeOnType (originMember.DeclaringType))))
 				return true;
 
 			return false;
-		}
-
-		internal void CheckAndReportRequiresUnreferencedCode (TypeDefinition type)
-		{
-			var currentOrigin = _scopeStack.CurrentScope.Origin;
-
-			// If the caller of a type is already marked with `RequiresUnreferencedCodeAttribute` a new warning should not
-			// be produced for the callee.
-			if (ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode ())
-				return;
-
-			if (Annotations.TryGetLinkerAttribute (_context.TryResolve (type.BaseType), out RequiresUnreferencedCodeAttribute requiresUnreferencedCodeOnTypeHierarchy))
-				ReportRequiresUnreferencedCode (type.BaseType.GetDisplayName (), requiresUnreferencedCodeOnTypeHierarchy, currentOrigin);
 		}
 
 		internal void CheckAndReportRequiresUnreferencedCode (MethodDefinition method)
@@ -2828,7 +2826,7 @@ namespace Mono.Linker.Steps
 				return;
 
 			if (method.IsStatic || method.IsConstructor) {
-				if (Annotations.TryGetRequiresUnreferencedCodeAttributeOnTypeHierarchy (method.DeclaringType, out RequiresUnreferencedCodeAttribute requiresUnreferencedCodeOnTypeHierarchy) && requiresUnreferencedCodeOnTypeHierarchy != null) {
+				if (Annotations.TryGetEffectiveRequiresUnreferencedCodeAttributeOnType (method.DeclaringType, out RequiresUnreferencedCodeAttribute requiresUnreferencedCodeOnTypeHierarchy) && requiresUnreferencedCodeOnTypeHierarchy != null) {
 					ReportRequiresUnreferencedCode (method.GetDisplayName (), requiresUnreferencedCodeOnTypeHierarchy, currentOrigin);
 					return;
 				}
