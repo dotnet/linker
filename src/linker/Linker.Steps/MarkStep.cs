@@ -2820,6 +2820,14 @@ namespace Mono.Linker.Steps
 					break;
 				}
 
+				// If the method only has annotation on the return value and it's not virtual avoid warning.
+				// Return value annotations are "consumed" by the caller of a method, and as such there is nothing
+				// wrong calling these dynamically. The only problem can happen if something overrides a virtual
+				// method with annotated return value at runtime - in this case the trimmer can't validate
+				// that the method will return only types which fulfill the annotation's requirements.
+				if (!method.IsVirtual && _context.Annotations.FlowAnnotations.MethodHasNoAnnotatedParameters (method))
+					return;
+
 				_context.LogWarning (
 					$"Method '{method.GetDisplayName ()}' with parameters or return value with `DynamicallyAccessedMembersAttribute` is accessed via reflection. Trimmer can't guarantee availability of the requirements of the field.",
 					2111,

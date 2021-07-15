@@ -151,45 +151,90 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		class AnnotatedMethodReturnValue
 		{
 			[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
-			public static Type MethodWithAnnotatedReturnValue () => null;
+			public static Type StaticMethodWithAnnotatedReturnValue () => null;
 
-			[ExpectedWarning ("IL2111", nameof (MethodWithAnnotatedReturnValue))]
-			static void Reflection ()
+			[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			public Type InstanceMethodWithAnnotatedReturnValue () => null;
+
+			[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			public virtual Type VirtualMethodWithAnnotatedReturnValue () => null;
+
+			// Only virtual methods should warn - the problem is only possible if something overrides a virtual method.
+			// Getting an annotated value in itself is not dangerous in any way.
+
+			static void ReflectionOnStatic ()
 			{
-				typeof (AnnotatedMethodReturnValue).GetMethod (nameof (MethodWithAnnotatedReturnValue)).Invoke (null, null);
+				typeof (AnnotatedMethodReturnValue).GetMethod (nameof (StaticMethodWithAnnotatedReturnValue)).Invoke (null, null);
 			}
 
-			[ExpectedWarning ("IL2111", nameof (MethodWithAnnotatedReturnValue))]
+			static void ReflectionOnInstance ()
+			{
+				typeof (AnnotatedMethodReturnValue).GetMethod (nameof (InstanceMethodWithAnnotatedReturnValue)).Invoke (null, null);
+			}
+
+			[ExpectedWarning ("IL2111", nameof (VirtualMethodWithAnnotatedReturnValue))]
+			static void ReflectionOnVirtual ()
+			{
+				typeof (AnnotatedMethodReturnValue).GetMethod (nameof (VirtualMethodWithAnnotatedReturnValue)).Invoke (null, null);
+			}
+
+			[ExpectedWarning ("IL2111", nameof (VirtualMethodWithAnnotatedReturnValue))]
 			[DynamicDependency (DynamicallyAccessedMemberTypes.PublicMethods, typeof (AnnotatedMethodReturnValue))]
 			static void DynamicDependency ()
 			{
 			}
 
-			[ExpectedWarning ("IL2111", nameof (MethodWithAnnotatedReturnValue))]
-			[DynamicDependency (nameof (MethodWithAnnotatedReturnValue), typeof (AnnotatedMethodReturnValue))]
-			static void DynamicDependencyByName ()
+			[DynamicDependency (nameof (StaticMethodWithAnnotatedReturnValue), typeof (AnnotatedMethodReturnValue))]
+			static void DynamicDependencyByNameOnStatic ()
 			{
 			}
 
-			[ExpectedWarning ("IL2111", nameof (MethodWithAnnotatedReturnValue))]
+			[DynamicDependency (nameof (InstanceMethodWithAnnotatedReturnValue), typeof (AnnotatedMethodReturnValue))]
+			static void DynamicDependencyByNameOnInstance ()
+			{
+			}
+
+			[ExpectedWarning ("IL2111", nameof (VirtualMethodWithAnnotatedReturnValue))]
+			[DynamicDependency (nameof (VirtualMethodWithAnnotatedReturnValue), typeof (AnnotatedMethodReturnValue))]
+			static void DynamicDependencyByNameOnVirtual ()
+			{
+			}
+
+			[ExpectedWarning ("IL2111", nameof (VirtualMethodWithAnnotatedReturnValue))]
 			static void DynamicallyAccessedMembers ()
 			{
 				typeof (AnnotatedMethodReturnValue).RequiresPublicMethods ();
 			}
 
-			[ExpectedWarning ("IL2111", nameof (MethodWithAnnotatedReturnValue))]
-			static void Ldftn ()
+			static void LdftnOnStatic ()
 			{
-				var _ = new Func<Type> (AnnotatedMethodReturnValue.MethodWithAnnotatedReturnValue);
+				var _ = new Func<Type> (AnnotatedMethodReturnValue.StaticMethodWithAnnotatedReturnValue);
+			}
+
+			static void LdftnOnInstance ()
+			{
+				var _ = new Func<Type> ((new AnnotatedMethodReturnValue ()).InstanceMethodWithAnnotatedReturnValue);
+			}
+
+			[ExpectedWarning ("IL2111", nameof (VirtualMethodWithAnnotatedReturnValue))]
+			static void LdftnOnVirtual ()
+			{
+				var _ = new Func<Type> ((new AnnotatedMethodReturnValue ()).VirtualMethodWithAnnotatedReturnValue);
 			}
 
 			public static void Test ()
 			{
-				Reflection ();
+				ReflectionOnStatic ();
+				ReflectionOnInstance ();
+				ReflectionOnVirtual ();
 				DynamicDependency ();
-				DynamicDependencyByName ();
+				DynamicDependencyByNameOnStatic ();
+				DynamicDependencyByNameOnInstance ();
+				DynamicDependencyByNameOnVirtual ();
 				DynamicallyAccessedMembers ();
-				Ldftn ();
+				LdftnOnStatic ();
+				LdftnOnInstance ();
+				LdftnOnVirtual ();
 			}
 		}
 
@@ -200,6 +245,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicEvents)]
 			public static Type PropertyWithAnnotationGetterOnly { get => null; }
+
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicEvents)]
+			public virtual Type VirtualPropertyWithAnnotationGetterOnly { get => null; }
 
 			class AttributeWithPropertyWithAnnotation : Attribute
 			{
@@ -212,21 +260,20 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[ExpectedWarning ("IL2111", nameof (PropertyWithAnnotation))]
 			static void ReflectionOnPropertyItself ()
 			{
-				// TODO: Technically this should warn if one of the setter is annotated since
-				// linker can't guarantee that it will not be used.
 				typeof (AnnotatedProperty).GetProperty (nameof (PropertyWithAnnotation));
 			}
 
-			[ExpectedWarning ("IL2111", nameof (PropertyWithAnnotationGetterOnly))]
 			static void ReflectionOnPropertyWithGetterOnly ()
 			{
-				// Following the rules we maintain on normal methods, just returning annotated value is considered dangerous
-				// (in theory one could use type builder to create an override for the method, and its body would not be validated
-				// and would need to fulfill the annotation on the return value anyway)
 				typeof (AnnotatedProperty).GetProperty (nameof (PropertyWithAnnotationGetterOnly));
 			}
 
-			[ExpectedWarning ("IL2111", nameof (PropertyWithAnnotation) + ".get")]
+			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationGetterOnly))]
+			static void ReflectionOnPropertyWithGetterOnlyOnVirtual ()
+			{
+				typeof (AnnotatedProperty).GetProperty (nameof (VirtualPropertyWithAnnotationGetterOnly));
+			}
+
 			static void ReflectionOnGetter ()
 			{
 				typeof (AnnotatedProperty).GetMethod ("get_" + nameof (PropertyWithAnnotation));
@@ -238,23 +285,27 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				typeof (AnnotatedProperty).GetMethod ("set_" + nameof (PropertyWithAnnotation));
 			}
 
+			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationGetterOnly) + ".get")]
+			static void ReflectionOnVirtualGetter ()
+			{
+				typeof (AnnotatedProperty).GetMethod ("get_" + nameof (VirtualPropertyWithAnnotationGetterOnly));
+			}
+
 			// Should not warn - there's nothing wrong with this
 			[AttributeWithPropertyWithAnnotation (PropertyWithAnnotation = typeof (TestType))]
 			static void AnnotatedAttributeProperty ()
 			{
 			}
 
-			[ExpectedWarning ("IL2111", nameof (PropertyWithAnnotation) + ".get")]
 			[ExpectedWarning ("IL2111", nameof (PropertyWithAnnotation) + ".set")]
-			[ExpectedWarning ("IL2111", nameof (PropertyWithAnnotationGetterOnly) + ".get")]
+			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationGetterOnly) + ".get")]
 			[DynamicDependency (DynamicallyAccessedMemberTypes.PublicProperties, typeof (AnnotatedProperty))]
 			static void DynamicDependency ()
 			{
 			}
 
-			[ExpectedWarning ("IL2111", nameof (PropertyWithAnnotation) + ".get")]
 			[ExpectedWarning ("IL2111", nameof (PropertyWithAnnotation) + ".set")]
-			[ExpectedWarning ("IL2111", nameof (PropertyWithAnnotationGetterOnly) + ".get")]
+			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationGetterOnly) + ".get")]
 			static void DynamicallyAccessedMembers ()
 			{
 				typeof (AnnotatedProperty).RequiresPublicProperties ();
@@ -264,8 +315,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 				ReflectionOnPropertyItself ();
 				ReflectionOnPropertyWithGetterOnly ();
+				ReflectionOnPropertyWithGetterOnlyOnVirtual ();
 				ReflectionOnGetter ();
 				ReflectionOnSetter ();
+				ReflectionOnVirtualGetter ();
 				AnnotatedAttributeProperty ();
 				DynamicDependency ();
 				DynamicallyAccessedMembers ();
@@ -393,7 +446,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		class AccessThroughLdToken
 		{
-			static Type PropertyWithLdToken {
+			public virtual Type PropertyWithLdToken {
 				[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 				get {
 					return null;
@@ -403,7 +456,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[ExpectedWarning ("IL2111", nameof (PropertyWithLdToken))]
 			public static void Test ()
 			{
-				Expression<Func<Type>> getter = () => PropertyWithLdToken;
+				Expression<Func<Type>> getter = () => (new AccessThroughLdToken ()).PropertyWithLdToken;
 			}
 		}
 
