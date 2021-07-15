@@ -75,7 +75,11 @@ namespace Mono.Linker.Dataflow
 
 		public bool ShouldWarnWhenAccessedForReflection (MethodDefinition method) =>
 			GetAnnotations (method.DeclaringType).TryGetAnnotation (method, out var annotation) &&
-				(annotation.ParameterAnnotations != null || annotation.ReturnParameterAnnotation != DynamicallyAccessedMemberTypes.None);
+			(annotation.ParameterAnnotations != null || annotation.ReturnParameterAnnotation != DynamicallyAccessedMemberTypes.None);
+
+		public bool MethodHasNoAnnotatedParameters (MethodDefinition method) =>
+			GetAnnotations (method.DeclaringType).TryGetAnnotation (method, out var annotation) &&
+			annotation.ParameterAnnotations == null;
 
 		public bool ShouldWarnWhenAccessedForReflection (FieldDefinition field) =>
 			GetAnnotations (field.DeclaringType).TryGetAnnotation (field, out _);
