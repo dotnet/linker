@@ -553,21 +553,6 @@ namespace Mono.Linker
 		}
 
 		/// <summary>
-		/// Looks if there is a RequiresUnreferencedCodeAttribute on the <paramref name="type"/> or any of its declaring types
-		/// </summary>
-		/// <param name="type">Type to start the search of the attribute</param>
-		/// <returns>True if it was able to find the attribute on the type or any of its declaring types, false otherwise</returns>
-		public bool HasEffectiveRequiresUnreferencedCodeOnType (TypeDefinition type)
-		{
-			do {
-				if (TryGetLinkerAttribute (type, out RequiresUnreferencedCodeAttribute _))
-					return true;
-				type = type.DeclaringType;
-			} while (type != null);
-			return false;
-		}
-
-		/// <summary>
 		/// Looks if there is a RequiresUnreferencedCodeAttribute on the <paramref name="type"/> or any of its declaring types and returns the attribute information
 		/// on <paramref name="attribute"/>
 		/// </summary>

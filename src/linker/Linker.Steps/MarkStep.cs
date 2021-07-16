@@ -1769,7 +1769,7 @@ namespace Mono.Linker.Steps
 			MarkSecurityDeclarations (type, new DependencyInfo (DependencyKind.CustomAttribute, type));
 
 			if (type.BaseType != null &&
-				!_context.Annotations.HasEffectiveRequiresUnreferencedCodeOnType (type) &&
+				!_context.Annotations.TryGetEffectiveRequiresUnreferencedCodeAttributeOnType (type, out RequiresUnreferencedCodeAttribute _) &&
 				_context.Annotations.TryGetEffectiveRequiresUnreferencedCodeAttributeOnType (_context.TryResolve (type.BaseType), out RequiresUnreferencedCodeAttribute effectiveRequiresUnreferencedCode)) {
 				var currentOrigin = _scopeStack.CurrentScope.Origin;
 
@@ -2805,14 +2805,14 @@ namespace Mono.Linker.Steps
 			if (suppressionContextMember != null &&
 				(Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (suppressionContextMember) ||
 				(suppressionContextMember.DeclaringType != null &&
-				Annotations.HasEffectiveRequiresUnreferencedCodeOnType (suppressionContextMember.DeclaringType))))
+				Annotations.TryGetEffectiveRequiresUnreferencedCodeAttributeOnType (suppressionContextMember.DeclaringType, out RequiresUnreferencedCodeAttribute _))))
 				return true;
 
 			IMemberDefinition originMember = currentOrigin.MemberDefinition;
 			if (suppressionContextMember != originMember && originMember != null &&
 				(Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (originMember) ||
 				(originMember.DeclaringType != null &&
-				Annotations.HasEffectiveRequiresUnreferencedCodeOnType (originMember.DeclaringType))))
+				Annotations.TryGetEffectiveRequiresUnreferencedCodeAttributeOnType (originMember.DeclaringType, out RequiresUnreferencedCodeAttribute _))))
 				return true;
 
 			return false;
