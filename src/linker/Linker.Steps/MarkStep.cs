@@ -2828,7 +2828,7 @@ namespace Mono.Linker.Steps
 				return;
 
 			if (method.IsStatic || method.IsConstructor) {
-				if (Annotations.TryGetEffectiveRequiresUnreferencedCodeAttributeOnType (method.DeclaringType, out RequiresUnreferencedCodeAttribute requiresUnreferencedCodeOnTypeHierarchy) && requiresUnreferencedCodeOnTypeHierarchy != null) {
+				if (Annotations.TryGetEffectiveRequiresUnreferencedCodeAttributeOnType (method.DeclaringType, out RequiresUnreferencedCodeAttribute requiresUnreferencedCodeOnTypeHierarchy)) {
 					ReportRequiresUnreferencedCode (method.GetDisplayName (), requiresUnreferencedCodeOnTypeHierarchy, currentOrigin);
 					return;
 				}
