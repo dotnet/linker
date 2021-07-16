@@ -19,7 +19,7 @@ namespace ILLink.RoslynAnalyzer
 	[AddSupportedDiagnostic ("IL3002", "RequiresAssemblyFiles",
 		Category = DiagnosticCategory.SingleFile,
 		HelpLinkURI = "https://docs.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/il3002")]
-	[AddSupportedDiagnostic ("IL3003", "RequiresAttributeMismatch")]
+	[AddSupportedDiagnostic ("IL3003", "RequiresAttributeMismatch", Category = DiagnosticCategory.SingleFile)]
 	[DiagnosticAnalyzer (LanguageNames.CSharp)]
 	public sealed class RequiresAssemblyFilesAnalyzer : RequiresAnalyzerBase
 	{
