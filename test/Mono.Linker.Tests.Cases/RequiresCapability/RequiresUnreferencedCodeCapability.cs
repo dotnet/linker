@@ -790,6 +790,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			[RequiresUnreferencedCode ("Message for --ClassWithRequiresUnreferencedCode--")]
 			class ClassWithRequiresUnreferencedCode
 			{
+				public static object Instance;
+
 				public ClassWithRequiresUnreferencedCode () { }
 
 				public static void StaticMethod () { }
@@ -801,14 +803,25 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 					public static void NestedStaticMethod () { }
 				}
 
+				// RequiresUnfereferencedCode on the type will suppress IL2072
+				static ClassWithRequiresUnreferencedCode ()
+				{
+					Instance = Activator.CreateInstance (Type.GetType ("SomeText"));
+				}
+
 				public static void TestSuppressions (Type[] types)
 				{
 					// StaticMethod is a static method on a RUC annotated type, so it should warn. But RequiresUnreferencedCode in the
 					// class suppresses other RequiresUnreferencedCode messages
 					StaticMethod ();
+
 					var nested = new NestedClass ();
+
 					// RequiresUnreferencedCode in the class suppresses DynamicallyAccessedMembers messages
 					types[1].GetMethods ();
+
+					void LocalFunction (int a) { }
+					LocalFunction (2);
 				}
 			}
 
@@ -822,9 +835,10 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 					public static void NestedStaticMethod () { }
 				}
 
-				public static void ShouldntWarn ()
+				public static void ShouldntWarn (object objectToCast)
 				{
 					_ = typeof (ClassWithRequiresUnreferencedCode);
+					var type = (ClassWithRequiresUnreferencedCode) objectToCast;
 				}
 			}
 
@@ -902,7 +916,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				DerivedWithoutRequires.StaticMethod ();
 				DerivedWithoutRequires.DerivedNestedClass.NestedStaticMethod ();
 				DerivedWithoutRequires.NestedClass.NestedStaticMethod ();
-				DerivedWithoutRequires.ShouldntWarn ();
+				DerivedWithoutRequires.ShouldntWarn (null);
+				DerivedWithoutRequires.Instance.ToString ();
 				DerivedWithoutRequires2.StaticMethod ();
 			}
 
