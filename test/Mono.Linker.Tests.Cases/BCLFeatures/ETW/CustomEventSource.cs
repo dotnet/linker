@@ -8,7 +8,8 @@ namespace Mono.Linker.Tests.Cases.BCLFeatures.ETW
 	{
 		public static void Main ()
 		{
-			var b = MyCompanyEventSource.Log.IsEnabled ();
+			// This call will trigger Object.GetType() Reflection pattern that will preserve all
+			EventSource.GenerateManifest (typeof (MyCompanyEventSource), null);
 		}
 	}
 
@@ -21,29 +22,41 @@ namespace Mono.Linker.Tests.Cases.BCLFeatures.ETW
 	[EventSource (Name = "MyCompany")]
 	class MyCompanyEventSource : EventSource
 	{
+		[KeptMember (".ctor()")]
 		[Kept]
 		public class Keywords
 		{
 			[Kept]
 			public const EventKeywords Page = (EventKeywords) 1;
 
+			[Kept]
 			public int Unused;
 		}
 
+		[KeptMember (".ctor()")]
 		[Kept]
 		public class Tasks
 		{
 			[Kept]
 			public const EventTask Page = (EventTask) 1;
 
+			[Kept]
 			public int Unused;
 		}
 
+		[KeptMember (".ctor()")]
+		[Kept]
 		class NotMatching
 		{
 		}
 
 		[Kept]
 		public static MyCompanyEventSource Log = new MyCompanyEventSource ();
+
+		[Kept]
+		int private_member;
+
+		[Kept]
+		void PrivateMethod () { }
 	}
 }

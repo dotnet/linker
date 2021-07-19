@@ -220,19 +220,19 @@ namespace Mono.Linker.Tests.TestCasesRunner
 					using (var linkedAssembly = ResolveLinkedAssembly (assemblyName)) {
 						foreach (var checkAttrInAssembly in checks[assemblyName]) {
 							var attributeTypeName = checkAttrInAssembly.AttributeType.Name;
-							if (attributeTypeName == nameof (KeptAllTypesAndMembersInAssemblyAttribute)) {
+
+							switch (attributeTypeName) {
+							case nameof (KeptAllTypesAndMembersInAssemblyAttribute):
 								VerifyKeptAllTypesAndMembersInAssembly (linkedAssembly);
 								continue;
-							}
-
-							if (attributeTypeName == nameof (KeptAttributeInAssemblyAttribute)) {
+							case nameof (KeptAttributeInAssemblyAttribute):
 								VerifyKeptAttributeInAssembly (checkAttrInAssembly, linkedAssembly);
 								continue;
-							}
-
-							if (attributeTypeName == nameof (RemovedAttributeInAssembly)) {
+							case nameof (RemovedAttributeInAssembly):
 								VerifyRemovedAttributeInAssembly (checkAttrInAssembly, linkedAssembly);
 								continue;
+							default:
+								break;
 							}
 
 							var expectedTypeName = checkAttrInAssembly.ConstructorArguments[1].Value.ToString ();
@@ -539,7 +539,9 @@ namespace Mono.Linker.Tests.TestCasesRunner
 		void VerifyKeptMemberInAssembly (CustomAttribute inAssemblyAttribute, TypeDefinition linkedType)
 		{
 			var originalType = GetOriginalTypeFromInAssemblyAttribute (inAssemblyAttribute);
-			foreach (var memberNameAttr in (CustomAttributeArgument[]) inAssemblyAttribute.ConstructorArguments[2].Value) {
+			var memberNames = (CustomAttributeArgument[]) inAssemblyAttribute.ConstructorArguments[2].Value;
+			Assert.IsTrue (memberNames.Length > 0, "Invalid KeptMemberInAssemblyAttribute. Expected member names.");
+			foreach (var memberNameAttr in memberNames) {
 				string memberName = (string) memberNameAttr.Value;
 
 				// We will find the matching type from the original assembly first that way we can confirm
@@ -780,16 +782,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 										return false;
 									} else {
-										if (mc.Origin?.MemberDefinition?.FullName == attrProvider.FullName)
-											return true;
-
-										// Compensate for cases where for some reason the OM doesn't preserve the declaring types
-										// on certain things after trimming.
-										if (mc.Origin?.MemberDefinition != null && mc.Origin?.MemberDefinition.DeclaringType == null &&
-											mc.Origin?.MemberDefinition.Name == attrProvider.Name)
-											return true;
-
-										return false;
+										return LogMessageHasSameOriginMember (mc, attrProvider);
 									}
 
 									return true;
@@ -820,7 +813,10 @@ namespace Mono.Linker.Tests.TestCasesRunner
 								if (expectedWarningCode != null) {
 									int expectedWarningCodeNumber = int.Parse (expectedWarningCode.Substring (2));
 
-									var matchedMessages = loggedMessages.Where (mc => mc.Category == MessageCategory.Warning && mc.Code == expectedWarningCodeNumber).ToList ();
+									var matchedMessages = loggedMessages.Where (mc =>
+										mc.Category == MessageCategory.Warning &&
+										mc.Code == expectedWarningCodeNumber &&
+										LogMessageHasSameOriginMember (mc, attrProvider)).ToList ();
 									foreach (var matchedMessage in matchedMessages)
 										loggedMessages.Remove (matchedMessage);
 								}
@@ -868,6 +864,20 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			if (checkRemainingErrors) {
 				var remainingErrors = loggedMessages.Where (m => Regex.IsMatch (m.ToString (), @".*(error | warning): \d{4}.*"));
 				Assert.IsEmpty (remainingErrors, $"Found unexpected errors:{Environment.NewLine}{string.Join (Environment.NewLine, remainingErrors)}");
+			}
+
+			bool LogMessageHasSameOriginMember (MessageContainer mc, IMemberDefinition expectedOriginMember)
+			{
+				if (mc.Origin?.MemberDefinition?.FullName == expectedOriginMember.FullName)
+					return true;
+
+				// Compensate for cases where for some reason the OM doesn't preserve the declaring types
+				// on certain things after trimming.
+				if (mc.Origin?.MemberDefinition != null && mc.Origin?.MemberDefinition.DeclaringType == null &&
+					mc.Origin?.MemberDefinition.Name == expectedOriginMember.Name)
+					return true;
+
+				return false;
 			}
 		}
 

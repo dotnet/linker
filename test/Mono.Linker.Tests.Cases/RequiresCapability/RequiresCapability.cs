@@ -1112,5 +1112,191 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			[RequiresAssemblyFiles (Message = "Message")]
 			public string PropertyAnnotationInProperty { get; set; }
 		}
-	}
+
+		class RequiresOnClass
+		{
+			[RequiresUnreferencedCode ("Message for --ClassWithRequiresUnreferencedCode--")]
+			class ClassWithRequiresUnreferencedCode
+			{
+				public static object Instance;
+
+				public ClassWithRequiresUnreferencedCode () { }
+
+				public static void StaticMethod () { }
+
+				public void NonStaticMethod () { }
+
+				public class NestedClass
+				{
+					public static void NestedStaticMethod () { }
+					// RequiresOnMethod.MethodWithRUC generates a warning that gets suppressed because the declaring type has RUC
+					public static void CallRUCMethod () => RequiresOnMethod.MethodWithRUC ();
+				}
+
+				// RequiresUnfereferencedCode on the type will suppress IL2072
+				static ClassWithRequiresUnreferencedCode ()
+				{
+					Instance = Activator.CreateInstance (Type.GetType ("SomeText"));
+				}
+
+				public static void TestSuppressions (Type[] types)
+				{
+					// StaticMethod is a static method on a RUC annotated type, so it should warn. But RequiresUnreferencedCode in the
+					// class suppresses other RequiresUnreferencedCode messages
+					StaticMethod ();
+
+					var nested = new NestedClass ();
+
+					// RequiresUnreferencedCode in the class suppresses DynamicallyAccessedMembers messages
+					types[1].GetMethods ();
+
+					void LocalFunction (int a) { }
+					LocalFunction (2);
+				}
+			}
+
+			class RequiresOnMethod
+			{
+				[RequiresUnreferencedCode ("MethodWithRUC")]
+				public static void MethodWithRUC () { }
+			}
+
+			[ExpectedWarning ("IL2109", "RequiresOnClass/DerivedWithoutRequires", "RequiresOnClass.ClassWithRequiresUnreferencedCode", "--ClassWithRequiresUnreferencedCode--")]
+			private class DerivedWithoutRequires : ClassWithRequiresUnreferencedCode
+			{
+				public static void StaticMethodInInheritedClass () { }
+
+				public class DerivedNestedClass
+				{
+					public static void NestedStaticMethod () { }
+				}
+
+				public static void ShouldntWarn (object objectToCast)
+				{
+					_ = typeof (ClassWithRequiresUnreferencedCode);
+					var type = (ClassWithRequiresUnreferencedCode) objectToCast;
+				}
+			}
+
+			[ExpectedWarning ("IL2109", "RequiresOnClass/DerivedWithoutRequires2", "RequiresOnClass.ClassWithRequiresUnreferencedCode.NestedClass", "--ClassWithRequiresUnreferencedCode--")]
+			private class DerivedWithoutRequires2 : ClassWithRequiresUnreferencedCode.NestedClass
+			{
+				public static void StaticMethod () { }
+			}
+
+			[UnconditionalSuppressMessage ("trim", "IL2109")]
+			class TestUnconditionalSuppressMessage : ClassWithRequiresUnreferencedCode
+			{
+				public static void StaticMethodInTestSuppressionClass () { }
+			}
+
+			class ClassWithoutRequiresUnreferencedCode
+			{
+				public ClassWithoutRequiresUnreferencedCode () { }
+
+				public static void StaticMethod () { }
+
+				public void NonStaticMethod () { }
+
+				public class NestedClass
+				{
+					public static void NestedStaticMethod () { }
+				}
+			}
+
+			[RequiresUnreferencedCode ("Message for --DerivedWithRequires--")]
+			private class DerivedWithRequires : ClassWithoutRequiresUnreferencedCode
+			{
+				public static void StaticMethodInInheritedClass () { }
+
+				public class DerivedNestedClass
+				{
+					public static void NestedStaticMethod () { }
+				}
+			}
+
+			[RequiresUnreferencedCode ("Message for --DerivedWithRequires2--")]
+			private class DerivedWithRequires2 : ClassWithRequiresUnreferencedCode
+			{
+				public static void StaticMethodInInheritedClass () { }
+
+				// The requires attribute in the declaring type suppresses IL2109 here
+				public class DerivedNestedClass : ClassWithRequiresUnreferencedCode
+				{
+					public static void NestedStaticMethod () { }
+				}
+			}
+
+			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequiresUnreferencedCode.StaticMethod()", "--ClassWithRequiresUnreferencedCode--", ProducedBy = ProducedBy.Linker)]
+			static void TestRequiresInClassAccessedByStaticMethod ()
+			{
+				ClassWithRequiresUnreferencedCode.StaticMethod ();
+			}
+
+			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequiresUnreferencedCode", "--ClassWithRequiresUnreferencedCode--", ProducedBy = ProducedBy.Linker)]
+			static void TestRequiresInClassAccessedByCctor ()
+			{
+				var classObject = new ClassWithRequiresUnreferencedCode ();
+			}
+			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequiresUnreferencedCode.NestedClass.NestedStaticMethod()", "--ClassWithRequiresUnreferencedCode--", ProducedBy = ProducedBy.Linker)]
+			static void TestRequiresInParentClassAccesedByStaticMethod ()
+			{
+				ClassWithRequiresUnreferencedCode.NestedClass.NestedStaticMethod ();
+			}
+
+			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequiresUnreferencedCode.StaticMethod()", "--ClassWithRequiresUnreferencedCode--", ProducedBy = ProducedBy.Linker)]
+			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequiresUnreferencedCode.NestedClass.NestedStaticMethod()", "--ClassWithRequiresUnreferencedCode--", ProducedBy = ProducedBy.Linker)]
+			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequiresUnreferencedCode.NestedClass.CallRUCMethod()", "Message for --ClassWithRequiresUnreferencedCode--", ProducedBy = ProducedBy.Linker)]
+			static void TestRequiresOnBaseButNotOnDerived ()
+			{
+				DerivedWithoutRequires.StaticMethodInInheritedClass ();
+				DerivedWithoutRequires.StaticMethod ();
+				DerivedWithoutRequires.DerivedNestedClass.NestedStaticMethod ();
+				DerivedWithoutRequires.NestedClass.NestedStaticMethod ();
+				DerivedWithoutRequires.NestedClass.CallRUCMethod ();
+				DerivedWithoutRequires.ShouldntWarn (null);
+				DerivedWithoutRequires.Instance.ToString ();
+				DerivedWithoutRequires2.StaticMethod ();
+			}
+
+			[ExpectedWarning ("IL2026", "RequiresOnClass.DerivedWithRequires.StaticMethodInInheritedClass()", "--DerivedWithRequires--", ProducedBy = ProducedBy.Linker)]
+			[ExpectedWarning ("IL2026", "RequiresOnClass.DerivedWithRequires.DerivedNestedClass.NestedStaticMethod()", "--DerivedWithRequires--", ProducedBy = ProducedBy.Linker)]
+			static void TestRequiresOnDerivedButNotOnBase ()
+			{
+				DerivedWithRequires.StaticMethodInInheritedClass ();
+				DerivedWithRequires.StaticMethod ();
+				DerivedWithRequires.DerivedNestedClass.NestedStaticMethod ();
+				DerivedWithRequires.NestedClass.NestedStaticMethod ();
+			}
+
+			[ExpectedWarning ("IL2026", "RequiresOnClass.DerivedWithRequires2.StaticMethodInInheritedClass()", "--DerivedWithRequires2--", ProducedBy = ProducedBy.Linker)]
+			[ExpectedWarning ("IL2026", "RequiresOnClass.DerivedWithRequires2.DerivedNestedClass.NestedStaticMethod()", "--DerivedWithRequires2--", ProducedBy = ProducedBy.Linker)]
+			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequiresUnreferencedCode.StaticMethod()", "--ClassWithRequiresUnreferencedCode--", ProducedBy = ProducedBy.Linker)]
+			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequiresUnreferencedCode.NestedClass.NestedStaticMethod()", "--ClassWithRequiresUnreferencedCode--", ProducedBy = ProducedBy.Linker)]
+			static void TestRequiresOnBaseAndDerived ()
+			{
+				DerivedWithRequires2.StaticMethodInInheritedClass ();
+				DerivedWithRequires2.StaticMethod ();
+				DerivedWithRequires2.DerivedNestedClass.NestedStaticMethod ();
+				DerivedWithRequires2.NestedClass.NestedStaticMethod ();
+			}
+
+			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequiresUnreferencedCode.TestSuppressions(Type[])", ProducedBy = ProducedBy.Linker)]
+			static void TestSuppressionsOnClass ()
+			{
+				ClassWithRequiresUnreferencedCode.TestSuppressions (new[] { typeof (ClassWithRequiresUnreferencedCode) });
+				TestUnconditionalSuppressMessage.StaticMethodInTestSuppressionClass ();
+			}
+
+			public static void Test ()
+			{
+				TestRequiresInClassAccessedByStaticMethod ();
+				TestRequiresInParentClassAccesedByStaticMethod ();
+				TestRequiresInClassAccessedByCctor ();
+				TestRequiresOnBaseButNotOnDerived ();
+				TestRequiresOnDerivedButNotOnBase ();
+				TestRequiresOnBaseAndDerived ();
+				TestSuppressionsOnClass ();
+			}
+		}
 }

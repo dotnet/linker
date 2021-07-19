@@ -138,7 +138,9 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			[Kept]
 			public static class PublicNestedType
 			{
+				[Kept]
 				public static int _nestedPublicField;
+				[Kept]
 				public static void NestedPublicMethod ()
 				{ }
 			}
@@ -192,8 +194,9 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			[Kept]
 			public static class PublicNestedType
 			{
-				// PublicNestedType should be kept but linker won't mark anything besides the declaration
+				[Kept]
 				public static int _nestedPublicField;
+				[Kept]
 				public static void NestedPublicMethod ()
 				{ }
 			}
@@ -257,8 +260,9 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			[Kept]
 			public static class PublicNestedType
 			{
-				// PublicNestedType should be kept but linker won't mark anything besides the declaration
+				[Kept]
 				public static int _nestedPublicField;
+				[Kept]
 				public static void NestedPublicMethod ()
 				{ }
 			}
@@ -312,8 +316,9 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			[Kept]
 			public static class PublicNestedType
 			{
-				// PublicNestedType should be kept but linker won't mark anything besides the declaration
+				[Kept]
 				public static int _nestedPublicField;
+				[Kept]
 				public static void NestedPublicMethod ()
 				{ }
 			}
@@ -367,8 +372,9 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			[Kept]
 			public static class PublicNestedType
 			{
-				// PublicNestedType should be kept but linker won't mark anything besides the declaration
+				[Kept]
 				public static int _nestedPublicField;
+				[Kept]
 				public static void NestedPublicMethod ()
 				{ }
 			}
@@ -422,8 +428,9 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			[Kept]
 			public static class PublicNestedType
 			{
-				// PublicNestedType should be kept but linker won't mark anything besides the declaration
+				[Kept]
 				public static int _nestedPublicField;
+				[Kept]
 				public static void NestedPublicMethod ()
 				{ }
 			}

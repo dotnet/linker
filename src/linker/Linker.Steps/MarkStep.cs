@@ -808,7 +808,8 @@ namespace Mono.Linker.Steps
 						continue;
 					}
 
-					if (UnconditionalSuppressMessageAttributeState.TypeRefHasUnconditionalSuppressions (ca.Constructor.DeclaringType))
+					if (UnconditionalSuppressMessageAttributeState.TypeRefHasUnconditionalSuppressions (ca.Constructor.DeclaringType) &&
+						provider is not ModuleDefinition && provider is not AssemblyDefinition)
 						_context.Suppressions.AddSuppression (ca, provider);
 
 					var resolvedAttributeType = _context.Resolve (ca.AttributeType);
@@ -1755,15 +1756,30 @@ namespace Mono.Linker.Steps
 
 			MarkType (type.BaseType, new DependencyInfo (DependencyKind.BaseType, type));
 
+			MarkCustomAttributes (type, new DependencyInfo (DependencyKind.CustomAttribute, type));
+
 			// The DynamicallyAccessedMembers hiearchy processing must be done after the base type was marked
-			// (to avoid inconsistencies in the cache), but before anything else as work done below
+			// (to avoid inconsistencies in the cache), and after marking custom attributes (in case the attributes have
+			// warning suppressions for the type hierarchy marking) but before anything else as work done below
 			// might need the results of the processing here.
 			_dynamicallyAccessedMembersTypeHierarchy.ProcessMarkedTypeForDynamicallyAccessedMembersHierarchy (type);
 
 			if (type.DeclaringType != null)
 				MarkType (type.DeclaringType, new DependencyInfo (DependencyKind.DeclaringType, type));
-			MarkCustomAttributes (type, new DependencyInfo (DependencyKind.CustomAttribute, type));
 			MarkSecurityDeclarations (type, new DependencyInfo (DependencyKind.CustomAttribute, type));
+
+			if (type.BaseType != null &&
+				!_context.Annotations.TryGetEffectiveRequiresUnreferencedCodeAttributeOnType (type, out RequiresUnreferencedCodeAttribute _) &&
+				_context.Annotations.TryGetEffectiveRequiresUnreferencedCodeAttributeOnType (_context.TryResolve (type.BaseType), out RequiresUnreferencedCodeAttribute effectiveRequiresUnreferencedCode)) {
+				var currentOrigin = _scopeStack.CurrentScope.Origin;
+
+				string formatString = SharedStrings.RequiresOnBaseClassMessage;
+				string arg1 = MessageFormat.FormatRequiresAttributeMessageArg (effectiveRequiresUnreferencedCode.Message);
+				string arg2 = MessageFormat.FormatRequiresAttributeUrlArg (effectiveRequiresUnreferencedCode.Url);
+				string message = string.Format (formatString, type, type.BaseType.GetDisplayName (), arg1, arg2);
+				_context.LogWarning (message, 2109, currentOrigin, MessageSubCategory.TrimAnalysis);
+			}
+
 
 			if (type.IsMulticastDelegate ()) {
 				MarkMulticastDelegate (type);
@@ -1775,7 +1791,8 @@ namespace Mono.Linker.Steps
 			MarkSerializable (type);
 
 			// This marks static fields of KeyWords/OpCodes/Tasks subclasses of an EventSource type.
-			if (BCL.EventTracingForWindows.IsEventSourceImplementation (type, _context)) {
+			// The special handling of EventSource is still needed in .NET6 in library mode
+			if ((!_context.DisableEventSourceSpecialHandling || _context.GetTargetRuntimeVersion () < TargetRuntimeVersion.NET6) && BCL.EventTracingForWindows.IsEventSourceImplementation (type, _context)) {
 				MarkEventSourceProviders (type);
 			}
 
@@ -1910,7 +1927,8 @@ namespace Mono.Linker.Steps
 				case "DebuggerTypeProxyAttribute" when attrType.Namespace == "System.Diagnostics":
 					MarkTypeWithDebuggerTypeProxyAttribute (type, attribute);
 					break;
-				case "EventDataAttribute" when attrType.Namespace == "System.Diagnostics.Tracing":
+				// The special handling of EventSource is still needed in .NET6 in library mode
+				case "EventDataAttribute" when attrType.Namespace == "System.Diagnostics.Tracing" && (!_context.DisableEventSourceSpecialHandling || _context.GetTargetRuntimeVersion () < TargetRuntimeVersion.NET6):
 					if (MarkMethodsIf (type.Methods, MethodDefinitionExtensions.IsPublicInstancePropertyMethod, new DependencyInfo (DependencyKind.ReferencedBySpecialAttribute, type)))
 						Tracer.AddDirectDependency (attribute, new DependencyInfo (DependencyKind.CustomAttribute, type), marked: false);
 					break;
@@ -2376,6 +2394,7 @@ namespace Mono.Linker.Steps
 
 		void MarkEventSourceProviders (TypeDefinition td)
 		{
+			Debug.Assert (_context.GetTargetRuntimeVersion () < TargetRuntimeVersion.NET6 || !_context.DisableEventSourceSpecialHandling);
 			foreach (var nestedType in td.NestedTypes) {
 				if (BCL.EventTracingForWindows.IsProviderName (nestedType.Name))
 					MarkStaticFields (nestedType, new DependencyInfo (DependencyKind.EventSourceProviderField, td));
@@ -2784,12 +2803,16 @@ namespace Mono.Linker.Steps
 
 			IMemberDefinition suppressionContextMember = currentOrigin.SuppressionContextMember;
 			if (suppressionContextMember != null &&
-				Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (suppressionContextMember))
+				(Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (suppressionContextMember) ||
+				(suppressionContextMember.DeclaringType != null &&
+				Annotations.TryGetEffectiveRequiresUnreferencedCodeAttributeOnType (suppressionContextMember.DeclaringType, out RequiresUnreferencedCodeAttribute _))))
 				return true;
 
 			IMemberDefinition originMember = currentOrigin.MemberDefinition;
 			if (suppressionContextMember != originMember && originMember != null &&
-				Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (originMember))
+				(Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (originMember) ||
+				(originMember.DeclaringType != null &&
+				Annotations.TryGetEffectiveRequiresUnreferencedCodeAttributeOnType (originMember.DeclaringType, out RequiresUnreferencedCodeAttribute _))))
 				return true;
 
 			return false;
@@ -2804,13 +2827,24 @@ namespace Mono.Linker.Steps
 			if (ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode ())
 				return;
 
-			if (Annotations.TryGetLinkerAttribute (method, out RequiresUnreferencedCodeAttribute requiresUnreferencedCode)) {
-				string formatString = SharedStrings.RequiresUnreferencedCodeMessage;
-				string arg1 = MessageFormat.FormatRequiresAttributeMessageArg (requiresUnreferencedCode.Message);
-				string arg2 = MessageFormat.FormatRequiresAttributeUrlArg (requiresUnreferencedCode.Url);
-				string message = string.Format (formatString, method.GetDisplayName (), arg1, arg2);
-				_context.LogWarning (message, 2026, currentOrigin, MessageSubCategory.TrimAnalysis);
+			if (method.IsStatic || method.IsConstructor) {
+				if (Annotations.TryGetEffectiveRequiresUnreferencedCodeAttributeOnType (method.DeclaringType, out RequiresUnreferencedCodeAttribute requiresUnreferencedCodeOnTypeHierarchy)) {
+					ReportRequiresUnreferencedCode (method.GetDisplayName (), requiresUnreferencedCodeOnTypeHierarchy, currentOrigin);
+					return;
+				}
 			}
+
+			if (Annotations.TryGetLinkerAttribute (method, out RequiresUnreferencedCodeAttribute requiresUnreferencedCode))
+				ReportRequiresUnreferencedCode (method.GetDisplayName (), requiresUnreferencedCode, currentOrigin);
+		}
+
+		private void ReportRequiresUnreferencedCode (string displayName, RequiresUnreferencedCodeAttribute requiresUnreferencedCode, MessageOrigin currentOrigin)
+		{
+			string formatString = SharedStrings.RequiresUnreferencedCodeMessage;
+			string arg1 = MessageFormat.FormatRequiresAttributeMessageArg (requiresUnreferencedCode.Message);
+			string arg2 = MessageFormat.FormatRequiresAttributeUrlArg (requiresUnreferencedCode.Url);
+			string message = string.Format (formatString, displayName, arg1, arg2);
+			_context.LogWarning (message, 2026, currentOrigin, MessageSubCategory.TrimAnalysis);
 		}
 
 		protected (MethodReference, DependencyInfo) GetOriginalMethod (MethodReference method, DependencyInfo reason)

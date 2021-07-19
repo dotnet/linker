@@ -33,7 +33,6 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.Loader;
 using System.Text;
-using System.Xml.XPath;
 using Mono.Cecil;
 using Mono.Linker.Steps;
 
@@ -351,6 +350,12 @@ namespace Mono.Linker
 
 					case "--disable-serialization-discovery":
 						if (!GetBoolParam (token, l => context.DisableSerializationDiscovery = l))
+							return -1;
+
+						continue;
+
+					case "--disable-operator-discovery":
+						if (!GetBoolParam (token, l => context.DisableOperatorDiscovery = l))
 							return -1;
 
 						continue;
@@ -731,6 +736,9 @@ namespace Mono.Linker
 
 			if (!context.DisableSerializationDiscovery)
 				p.MarkHandlers.Add (new DiscoverSerializationHandler ());
+
+			if (!context.DisableOperatorDiscovery)
+				p.MarkHandlers.Add (new DiscoverOperatorsHandler ());
 
 			foreach (string custom_step in custom_steps) {
 				if (!AddCustomStep (p, custom_step))

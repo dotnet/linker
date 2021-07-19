@@ -1683,6 +1683,45 @@ class Test
   }
   ```
 
+#### `IL2108`: Invalid scope 'scope' used in 'UnconditionalSuppressMessageAttribute' on module 'module' with target 'target'.
+
+The only scopes supported on global unconditional suppressions are 'module', 'type' and 'member'. If the scope and target arguments are null or missing on a global suppression,
+it is assumed that the suppression is put on the module. Global unconditional suppressions using invalid scopes are ignored.
+
+```C#
+// Invalid scope 'method' used in 'UnconditionalSuppressMessageAttribute' on module 'Warning' with target 'MyTarget'.
+[module: UnconditionalSuppressMessage ("Test suppression with invalid scope", "IL2026", Scope = "method", Target = "MyTarget")]
+
+class Warning
+{
+   static void Main(string[] args)
+   {
+      Foo();
+   }
+
+   [RequiresUnreferencedCode("Warn when Foo() is called")]
+   static void Foo()
+   {
+   }
+}
+```
+
+#### `IL2109` Trim analysis: Type 'type' derives from 'BaseType' which has 'RequiresUnreferencedCodeAttribute'. [message]. [url]
+
+- A type is being referenced in code, and this type derives from a base type with 'RequiresUnreferencedCodeAttribute' which can break functionality of a trimmed application.
+  Types that derive from a base class with 'RequiresUnreferencedCodeAttribute' need to explicitly use the 'RequiresUnreferencedCodeAttribute' or suppress this warning
+
+  ```C#
+  [RequiresUnreferencedCode("Using any of the members inside this class is trim unsafe", Url="http://help/unreferencedcode")]
+  public class UnsafeClass {
+     public UnsafeClass () {}
+     public static void UnsafeMethod();
+  }
+
+  // IL2109: Type 'Derived' derives from 'UnsafeClass' which has 'RequiresUnreferencedCodeAttribute'. Using any of the members inside this class is trim unsafe. http://help/unreferencedcode
+  class Derived : UnsafeClass {}
+  ```
+
 ## Single-File Warning Codes
 
 #### `IL3000`: 'member' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'
