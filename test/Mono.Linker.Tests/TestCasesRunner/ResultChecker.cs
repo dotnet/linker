@@ -661,11 +661,11 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			}
 		}
 
-		bool IsProducedOnlyByAnalyzer (CustomAttribute attr)
+		bool IsProducedByLinker (CustomAttribute attr)
 		{
 			var propertyObject = attr.GetPropertyValue ("ProducedBy");
 			ProducedBy diagnosticProducedBy = propertyObject is null ? ProducedBy.LinkerAndAnalyzer : (ProducedBy) propertyObject;
-			return !diagnosticProducedBy.HasFlag (ProducedBy.Linker);
+			return diagnosticProducedBy.HasFlag (ProducedBy.Linker);
 		}
 
 		void VerifyLoggedMessages (AssemblyDefinition original, LinkerTestLogger logger, bool checkRemainingErrors)
@@ -675,13 +675,12 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			foreach (var testType in original.AllDefinedTypes ()) {
 				foreach (var attrProvider in testType.AllMembers ().Append (testType)) {
 					foreach (var attr in attrProvider.CustomAttributes) {
+						if (!IsProducedByLinker (attr))
+							break;
 						switch (attr.AttributeType.Name) {
 
 						case nameof (LogContainsAttribute): {
 								var expectedMessage = (string) attr.ConstructorArguments[0].Value;
-
-								if (IsProducedOnlyByAnalyzer (attr))
-									break;
 
 								List<MessageContainer> matchedMessages;
 								if ((bool) attr.ConstructorArguments[1].Value)
@@ -715,9 +714,6 @@ namespace Mono.Linker.Tests.TestCasesRunner
 								if (!expectedWarningCode.StartsWith ("IL")) {
 									Assert.Fail ($"The warning code specified in {nameof (ExpectedWarningAttribute)} must start with the 'IL' prefix. Specified value: '{expectedWarningCode}'.");
 								}
-
-								if (IsProducedOnlyByAnalyzer (attr))
-									break;
 
 								var expectedMessageContains = ((CustomAttributeArgument[]) attr.GetConstructorArgumentValue (1)).Select (a => (string) a.Value).ToArray ();
 								string fileName = (string) attr.GetPropertyValue ("FileName");

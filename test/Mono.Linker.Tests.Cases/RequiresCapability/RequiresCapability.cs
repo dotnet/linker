@@ -98,6 +98,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			RequirePublicMethods (typeof (ExplicitImplementationClassWithoutRequires));
 			RequirePublicMethods (typeof (ImplementationClassWithoutRequiresInSource));
 			RequirePublicMethods (typeof (ImplementationClassWithRequiresInSource));
+			RequiresOnClass.Test ();
 		}
 
 		[ExpectedWarning ("IL2026", "Message for --RequiresWithMessageOnly--.")]
@@ -1299,4 +1300,5 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestSuppressionsOnClass ();
 			}
 		}
+	}
 }

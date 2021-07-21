@@ -57,19 +57,20 @@ namespace ILLink.RoslynAnalyzer.Tests
 			}
 		}
 
-		private bool IsProducedOnlyByLinker (Dictionary<string, ExpressionSyntax> args)
+		private bool IsProducedByAnalyzer (Dictionary<string, ExpressionSyntax> args)
 		{
-			return args.TryGetValue ("ProducedBy", out var diagnosticProducedBy) &&
+			return !args.TryGetValue ("ProducedBy", out var diagnosticProducedBy) || (
 				diagnosticProducedBy is MemberAccessExpressionSyntax memberAccessExpression &&
 				memberAccessExpression.Expression.ToString () == nameof (ProducedBy) &&
-				memberAccessExpression.Name.Identifier.ValueText == nameof (ProducedBy.Linker);
+				(memberAccessExpression.Name.Identifier.ValueText == nameof (ProducedBy.Analyzer) ||
+				memberAccessExpression.Name.Identifier.ValueText == nameof (ProducedBy.LinkerAndAnalyzer)));
 		}
 
 		private void ValidateExpectedWarningAttribute (AttributeSyntax attribute)
 		{
 			var args = TestCaseUtils.GetAttributeArguments (attribute);
 
-			if (IsProducedOnlyByLinker (args))
+			if (!IsProducedByAnalyzer (args))
 				return;
 
 			string expectedWarningCode = TestCaseUtils.GetStringFromExpression (args["#0"]);
@@ -79,8 +80,10 @@ namespace ILLink.RoslynAnalyzer.Tests
 
 			bool isSupportedDiagnostic = false;
 			foreach (var supportedDiagnostic in Compilation.Analyzers.Single ().SupportedDiagnostics) {
-				if (supportedDiagnostic.Id == expectedWarningCode)
+				if (supportedDiagnostic.Id == expectedWarningCode) {
 					isSupportedDiagnostic = true;
+					break;
+				}
 			}
 			if (!isSupportedDiagnostic)
 				return;
@@ -92,6 +95,8 @@ namespace ILLink.RoslynAnalyzer.Tests
 
 			Assert.True (
 				DiagnosticMessages.Any (mc => {
+					if (mc.Id != expectedWarningCode)
+						return true;
 					foreach (var expectedMessage in expectedMessages) {
 						if (!mc.Message.Contains (expectedMessage))
 							return false;
@@ -107,7 +112,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			var args = TestCaseUtils.GetAttributeArguments (attribute);
 			var text = TestCaseUtils.GetStringFromExpression (args["#0"]);
 
-			if (IsProducedOnlyByLinker (args))
+			if (!IsProducedByAnalyzer (args))
 				return;
 
 			// If the text starts with `warning IL...` then it probably follows the pattern
