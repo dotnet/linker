@@ -50,7 +50,7 @@ namespace Mono.Linker
 		NET6 = 6,
 	}
 
-	public class LinkContext : IDisposable
+	public class LinkContext : IMetadataResolver, IDisposable
 	{
 
 		readonly Pipeline _pipeline;
@@ -70,20 +70,20 @@ namespace Mono.Linker
 
 		readonly AnnotationStore _annotations;
 		readonly CustomAttributeSource _customAttributes;
+		readonly CompilerGeneratedState _compilerGeneratedState;
 		readonly List<MessageContainer> _cachedWarningMessageContainers;
 		readonly ILogger _logger;
+		readonly Dictionary<AssemblyDefinition, bool> _isTrimmable;
 
 		public Pipeline Pipeline {
 			get { return _pipeline; }
 		}
 
-		public CustomAttributeSource CustomAttributes {
-			get { return _customAttributes; }
-		}
+		public CustomAttributeSource CustomAttributes => _customAttributes;
 
-		public AnnotationStore Annotations {
-			get { return _annotations; }
-		}
+		public CompilerGeneratedState CompilerGeneratedState => _compilerGeneratedState;
+
+		public AnnotationStore Annotations => _annotations;
 
 		public bool DeterministicOutput { get; set; }
 
@@ -122,6 +122,14 @@ namespace Mono.Linker
 		public bool KeepUsedAttributeTypesOnly { get; set; }
 
 		public bool DisableSerializationDiscovery { get; set; }
+
+		public bool DisableOperatorDiscovery { get; set; }
+
+		/// <summary>
+		/// Option to not special case EventSource.
+		/// Currently, values are hard-coded and does not have a command line option to control
+		/// </summary>
+		public bool DisableEventSourceSpecialHandling { get; set; }
 
 		public bool IgnoreDescriptors { get; set; }
 
@@ -209,7 +217,9 @@ namespace Mono.Linker
 			_actions = new Dictionary<string, AssemblyAction> ();
 			_parameters = new Dictionary<string, string> (StringComparer.Ordinal);
 			_customAttributes = new CustomAttributeSource (this);
+			_compilerGeneratedState = new CompilerGeneratedState (this);
 			_cachedWarningMessageContainers = new List<MessageContainer> ();
+			_isTrimmable = new Dictionary<AssemblyDefinition, bool> ();
 			FeatureSettings = new Dictionary<string, bool> (StringComparer.Ordinal);
 
 			SymbolReaderProvider = new DefaultSymbolReaderProvider (false);
@@ -242,7 +252,10 @@ namespace Mono.Linker
 				CodeOptimizations.RemoveDescriptors |
 				CodeOptimizations.RemoveLinkAttributes |
 				CodeOptimizations.RemoveSubstitutions |
-				CodeOptimizations.RemoveDynamicDependencyAttribute;
+				CodeOptimizations.RemoveDynamicDependencyAttribute |
+				CodeOptimizations.OptimizeTypeHierarchyAnnotations;
+
+			DisableEventSourceSpecialHandling = true;
 
 			Optimizations = new CodeOptimizationsSettings (defaultOptimizations);
 		}
@@ -305,6 +318,11 @@ namespace Mono.Linker
 		{
 			AssemblyNameReference reference = GetReference (scope);
 			return _resolver.Resolve (reference);
+		}
+
+		public AssemblyDefinition Resolve (AssemblyNameReference name)
+		{
+			return _resolver.Resolve (name);
 		}
 
 		public void RegisterAssembly (AssemblyDefinition assembly)
@@ -391,21 +409,43 @@ namespace Mono.Linker
 #endif
 		public AssemblyAction CalculateAssemblyAction (AssemblyDefinition assembly)
 		{
-			if (_actions.TryGetValue (assembly.Name.Name, out AssemblyAction action))
+			if (_actions.TryGetValue (assembly.Name.Name, out AssemblyAction action)) {
+				if (IsCPPCLIAssembly (assembly.MainModule) && action != AssemblyAction.Copy && action != AssemblyAction.Skip) {
+					LogWarning ($"Invalid assembly action '{action}' specified for assembly '{assembly.Name.Name}'. C++/CLI assemblies can only be copied or skipped.", 2106, GetAssemblyLocation (assembly));
+					return AssemblyAction.Copy;
+				}
+
 				return action;
+			}
+
+			if (IsCPPCLIAssembly (assembly.MainModule))
+				return DefaultAction == AssemblyAction.Skip ? DefaultAction : AssemblyAction.Copy;
 
 			if (IsTrimmable (assembly))
 				return TrimAction;
 
 			return DefaultAction;
+
+			static bool IsCPPCLIAssembly (ModuleDefinition module)
+			{
+				foreach (var type in module.Types)
+					if (type.Namespace == "<CppImplementationDetails>" ||
+						type.Namespace == "<CrtImplementationDetails>")
+						return true;
+
+				return false;
+			}
 		}
 
-		bool IsTrimmable (AssemblyDefinition assembly)
+		public bool IsTrimmable (AssemblyDefinition assembly)
 		{
-			if (!assembly.HasCustomAttributes)
-				return false;
+			if (_isTrimmable.TryGetValue (assembly, out bool isTrimmable))
+				return isTrimmable;
 
-			bool isTrimmable = false;
+			if (!assembly.HasCustomAttributes) {
+				_isTrimmable.Add (assembly, false);
+				return false;
+			}
 
 			foreach (var ca in assembly.CustomAttributes) {
 				if (!ca.AttributeType.IsTypeOf<AssemblyMetadataAttribute> ())
@@ -426,6 +466,7 @@ namespace Mono.Linker
 				isTrimmable = true;
 			}
 
+			_isTrimmable.Add (assembly, isTrimmable);
 			return isTrimmable;
 		}
 
@@ -671,7 +712,7 @@ namespace Mono.Linker
 		readonly Dictionary<FieldReference, FieldDefinition> fieldresolveCache = new ();
 		readonly Dictionary<TypeReference, TypeDefinition> typeresolveCache = new ();
 
-		public MethodDefinition ResolveMethodDefinition (MethodReference methodReference)
+		public MethodDefinition Resolve (MethodReference methodReference)
 		{
 			if (methodReference is MethodDefinition md)
 				return md;
@@ -695,7 +736,7 @@ namespace Mono.Linker
 			return md;
 		}
 
-		public MethodDefinition TryResolveMethodDefinition (MethodReference methodReference)
+		public MethodDefinition TryResolve (MethodReference methodReference)
 		{
 			if (methodReference is MethodDefinition md)
 				return md;
@@ -711,7 +752,7 @@ namespace Mono.Linker
 			return md;
 		}
 
-		public FieldDefinition ResolveFieldDefinition (FieldReference fieldReference)
+		public FieldDefinition Resolve (FieldReference fieldReference)
 		{
 			if (fieldReference is FieldDefinition fd)
 				return fd;
@@ -735,7 +776,7 @@ namespace Mono.Linker
 			return fd;
 		}
 
-		public FieldDefinition TryResolveFieldDefinition (FieldReference fieldReference)
+		public FieldDefinition TryResolve (FieldReference fieldReference)
 		{
 			if (fieldReference is FieldDefinition fd)
 				return fd;
@@ -751,7 +792,7 @@ namespace Mono.Linker
 			return fd;
 		}
 
-		public TypeDefinition ResolveTypeDefinition (TypeReference typeReference)
+		public TypeDefinition Resolve (TypeReference typeReference)
 		{
 			if (typeReference is TypeDefinition td)
 				return td;
@@ -781,7 +822,7 @@ namespace Mono.Linker
 			return td;
 		}
 
-		public TypeDefinition TryResolveTypeDefinition (TypeReference typeReference)
+		public TypeDefinition TryResolve (TypeReference typeReference)
 		{
 			if (typeReference is TypeDefinition td)
 				return td;
@@ -799,7 +840,7 @@ namespace Mono.Linker
 					//
 					// It returns element-type for arrays and also element type for wrapping types like ByReference, PinnedType, etc
 					//
-					td = TryResolveTypeDefinition (ts.GetElementType ());
+					td = TryResolve (ts.GetElementType ());
 				}
 			} else {
 				td = typeReference.Resolve ();
@@ -809,10 +850,10 @@ namespace Mono.Linker
 			return td;
 		}
 
-		public TypeDefinition TryResolveTypeDefinition (AssemblyDefinition assembly, string typeNameString)
+		public TypeDefinition TryResolve (AssemblyDefinition assembly, string typeNameString)
 		{
 			// It could be cached if it shows up on fast path
-			return TryResolveTypeDefinition (_typeNameResolver.ResolveTypeName (assembly, typeNameString));
+			return TryResolve (_typeNameResolver.ResolveTypeName (assembly, typeNameString));
 		}
 
 		readonly HashSet<MemberReference> unresolved_reported = new ();
@@ -954,5 +995,12 @@ namespace Mono.Linker
 		RemoveSubstitutions = 1 << 21,
 		RemoveLinkAttributes = 1 << 22,
 		RemoveDynamicDependencyAttribute = 1 << 23,
+
+		/// <summary>
+		/// Option to apply annotations to type heirarchy
+		/// Enable type heirarchy apply in library mode to annotate derived types eagerly
+		/// Otherwise, type annotation will only be applied with calls to object.GetType()
+		/// </summary>
+		OptimizeTypeHierarchyAnnotations = 1 << 24,
 	}
 }

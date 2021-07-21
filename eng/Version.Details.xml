@@ -3,18 +3,18 @@
   <ProductDependencies>
   </ProductDependencies>
   <ToolsetDependencies>
-    <Dependency Name="Microsoft.DotNet.Arcade.Sdk" Version="6.0.0-beta.21257.5">
+    <Dependency Name="Microsoft.DotNet.Arcade.Sdk" Version="6.0.0-beta.21366.1">
       <Uri>https://github.com/dotnet/arcade</Uri>
-      <Sha>5faea1b7965644d1f1c666a7130f6f614abe76c0</Sha>
+      <Sha>b03966cd85285e425ffe56003c0ab57e103dd14e</Sha>
       <SourceBuild RepoName="arcade" ManagedOnly="true" />
     </Dependency>
-    <Dependency Name="Microsoft.DotNet.ApiCompat" Version="6.0.0-beta.21257.5">
+    <Dependency Name="Microsoft.DotNet.ApiCompat" Version="6.0.0-beta.21366.1">
       <Uri>https://github.com/dotnet/arcade</Uri>
-      <Sha>5faea1b7965644d1f1c666a7130f6f614abe76c0</Sha>
+      <Sha>b03966cd85285e425ffe56003c0ab57e103dd14e</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.NET.Sdk.IL" Version="6.0.0-preview.5.21260.1">
+    <Dependency Name="Microsoft.NET.Sdk.IL" Version="6.0.0-rc.1.21369.2">
       <Uri>https://github.com/dotnet/runtime</Uri>
-      <Sha>e39196ffc9e50f3d8927622daaedcd50681d56f2</Sha>
+      <Sha>f7e4c261815c66fde2c1e750b744f193e236c17e</Sha>
       <!--
       This would introduce a cyclic dependency, so it's explictly not enabled for now
       <SourceBuild RepoName="runtime" />

@@ -14,6 +14,7 @@ namespace Mono.Linker.Dataflow
 	{
 		readonly LinkContext _context;
 		readonly MarkStep _markStep;
+		readonly MarkScopeStack _scopeStack;
 
 		// Cache of DynamicallyAccessedMembers annotations applied to types and their hierarchies
 		// Values
@@ -38,10 +39,11 @@ namespace Mono.Linker.Dataflow
 		// of a type which is currently being marked - at which point the interfaces are not yet marked.
 		readonly Dictionary<TypeDefinition, (DynamicallyAccessedMemberTypes annotation, bool applied)> _typesInDynamicallyAccessedMembersHierarchy;
 
-		public DynamicallyAccessedMembersTypeHierarchy (LinkContext context, MarkStep markStep)
+		public DynamicallyAccessedMembersTypeHierarchy (LinkContext context, MarkStep markStep, MarkScopeStack scopeStack)
 		{
 			_context = context;
 			_markStep = markStep;
+			_scopeStack = scopeStack;
 			_typesInDynamicallyAccessedMembersHierarchy = new Dictionary<TypeDefinition, (DynamicallyAccessedMemberTypes, bool)> ();
 		}
 
@@ -89,6 +91,14 @@ namespace Mono.Linker.Dataflow
 
 			Debug.Assert (!apply || annotation != DynamicallyAccessedMemberTypes.None);
 
+			// If OptimizeTypeHierarchyAnnotations is disabled, we will apply the annotations without seeing object.GetType()
+			bool applyOptimizeTypeHierarchyAnnotations = (annotation != DynamicallyAccessedMemberTypes.None) && !_context.IsOptimizationEnabled (CodeOptimizations.OptimizeTypeHierarchyAnnotations, type);
+			// Unfortunately, we cannot apply the annotation to type derived from EventSource - Revisit after https://github.com/dotnet/runtime/issues/54859
+			// Breaking the logic to make it easier to maintain in the future since the logic is convoluted
+			// DisableEventSourceSpecialHandling is closely tied to a type derived from EventSource and should always go together
+			// However, logically it should be possible to use DisableEventSourceSpecialHandling to allow marking types derived from EventSource when OptimizeTypeHierarchyAnnotations is disabled
+			apply |= applyOptimizeTypeHierarchyAnnotations && (_context.DisableEventSourceSpecialHandling || !BCL.EventTracingForWindows.IsEventSourceImplementation (type, _context));
+
 			// Store the results in the cache
 			// Don't store empty annotations for non-interface types - we can use the presence of the row
 			// in the cache as indication of it instead.
@@ -106,8 +116,9 @@ namespace Mono.Linker.Dataflow
 			if (apply) {
 				// One of the base/interface types is already marked as having the annotation applied
 				// so we need to apply the annotation to this type as well
-				var reflectionMethodBodyScanner = new ReflectionMethodBodyScanner (_context, _markStep);
-				var reflectionPatternContext = new ReflectionPatternContext (_context, true, type, type);
+				using var _ = _scopeStack.PushScope (new MessageOrigin (type));
+				var reflectionMethodBodyScanner = new ReflectionMethodBodyScanner (_context, _markStep, _scopeStack);
+				var reflectionPatternContext = new ReflectionPatternContext (_context, true, _scopeStack.CurrentScope.Origin, type);
 				reflectionMethodBodyScanner.ApplyDynamicallyAccessedMembersToType (ref reflectionPatternContext, type, annotation);
 				reflectionPatternContext.Dispose ();
 			}

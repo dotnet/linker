@@ -15,6 +15,8 @@
          used for packages.config which we do not support. -->
     <NoWarn>$(NoWarn);NU5131</NoWarn>
     <RootNamespace>Mono.Linker</RootNamespace>
+    <!-- There are currently no translations, so the satellite assemblies are a waste of space. -->
+    <EnableXlfLocalization>false</EnableXlfLocalization>
   </PropertyGroup>
 
   <ItemGroup>
@@ -52,5 +54,6 @@
       <ContentWithTargetPath Include="$(ProjectRuntimeConfigFilePath)" CopyToOutputDirectory="PreserveNewest" TargetPath="$(ProjectRuntimeConfigFileName)" />
     </ItemGroup>
   </Target>
+  <Import Project="..\ILLink.Shared\ILLink.Shared.projitems" Label="Shared" />
 
 </Project>

@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <Compile Remove="Attributes\OnlyKeepUsed\Dependencies\UnusedAttributeWithTypeForwarderIsRemoved_Forwarder.cs" />
+    <Compile Remove="CppCLI\Dependencies\CallCppCLIFromManaged.cs" />
     <Compile Remove="LinkXml\Dependencies\CanPreserveAnExportedType_Forwarder.cs" />
     <Compile Remove="LinkXml\Dependencies\UsedNonRequiredExportedTypeIsKept_fwd.cs" />
     <Compile Remove="LinkXml\Dependencies\UsedNonRequiredExportedTypeIsKeptWhenRooted_fwd.cs" />
@@ -18,6 +19,7 @@
     <Compile Remove="TypeForwarding\Dependencies\ForwarderLibrary.cs" />
     <Compile Remove="TypeForwarding\Dependencies\ForwarderLibrary_2.cs" />
     <Compile Remove="TypeForwarding\Dependencies\ForwarderLibrary_3.cs" />
+    <Compile Remove="TypeForwarding\Dependencies\ForwarderLibraryWithUnusedReference.cs" />
     <Compile Remove="TypeForwarding\Dependencies\ImplementationLibrary_3.cs" />
     <Compile Remove="TypeForwarding\Dependencies\MyEnumForwarder.cs" />
     <Compile Remove="TypeForwarding\Dependencies\TypeForwardedIsUpdatedForMissingTypeFwd.cs" />

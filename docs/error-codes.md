@@ -782,10 +782,13 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
   }
   ```
 
-#### `IL2046` Trim analysis: Presence of 'RequiresUnreferencedCodeAttribute' on method 'method' doesn't match overridden method 'base method'. All overridden methods must have 'RequiresUnreferencedCodeAttribute'.
+#### `IL2046`: Trim analysis: Member 'member' with 'RequiresUnreferencedCodeAttribute' has a member 'member' without 'RequiresUnreferencedCodeAttribute'. For all interfaces and overrides the implementation attribute must match the definition attribute.
 
-- All overrides of a virtual method including the base method must either have or not have the `RequiresUnreferencedCodeAttribute`.
+- For all interfaces and overrides the implementation 'RequiresUnreferencedCodeAttribute' must match the definition 'RequiresUnreferecedCodeAttribute', either all the members contain the attribute o none of them.
 
+  Here is a list of posible scenarios where the warning can be generated:
+
+  A base member has the attribute but the derived member does not have the attribute
   ```C#
   public class Base
   {
@@ -795,8 +798,51 @@ This is technically possible if a custom assembly defines `DynamicDependencyAttr
 
   public class Derived : Base
   {
-    // IL2046: Presence of 'RequiresUnreferencedCodeAttribute' on method 'Derived.TestMethod()' doesn't match overridden method 'Base.TestMethod'. All overridden methods must have 'RequiresUnreferencedCodeAttribute'.
+    // IL2046: Base member 'Base.TestMethod' with 'RequiresUnreferencedCodeAttribute' has a derived member 'Derived.TestMethod()' without 'RequiresUnreferencedCodeAttribute'. For all interfaces and overrides the implementation attribute must match the definition attribute.
     public override void TestMethod() {}
+  }
+  ```
+  A derived member has the attribute but the overriden base member does not have the attribute
+  ```C#
+  public class Base
+  {
+    public virtual void TestMethod() {}
+  }
+
+  public class Derived : Base
+  {
+    // IL2046: Member 'Derived.TestMethod()' with 'RequiresUnreferencedCodeAttribute' overrides base member 'Base.TestMethod()' without 'RequiresUnreferencedCodeAttribute'. For all interfaces and overrides the implementation attribute must match the definition attribute.
+    [RequireUnreferencedCode("Message")]
+    public override void TestMethod() {}
+  }
+  ```
+  An interface member has the attribute but it's implementation does not have the attribute
+  ```C#
+  interface IRUC
+  {
+    [RequiresUnreferencedCode("Message")]
+    void TestMethod();
+  }
+
+  class Implementation : IRUC
+  {
+    // IL2046: Interface member 'IRUC.TestMethod()' with 'RequiresUnreferencedCodeAttribute' has an implementation member 'Implementation.TestMethod()' without 'RequiresUnreferencedCodeAttribute'. For all interfaces and overrides the implementation attribute must match the definition attribute.
+    public void TestMethod () { }
+  }
+  ```
+  An implementation member has the attribute but the interface that implementes does not have the attribute
+
+  ```C#
+  interface IRUC
+  {
+    void TestMethod();
+  }
+
+  class Implementation : IRUC
+  {
+    [RequiresUnreferencedCode("Message")]
+    // IL2046: Member 'Implementation.TestMethod()' with 'RequiresUnreferencedCodeAttribute' implements interface member 'IRUC.TestMethod()' without 'RequiresUnreferencedCodeAttribute'. For all interfaces and overrides the implementation attribute must match the definition attribute.
+    public void TestMethod () { }
   }
   ```
 
@@ -1561,36 +1607,120 @@ class Test
 
 #### `IL2103`: Trim analysis: Value passed to the 'propertyAccessor' parameter of method 'System.Linq.Expressions.Expression.Property(Expression, MethodInfo)' cannot be statically determined as a property accessor
 
-The value passed to the `propertyAccessor` parameter of `Expression.Property(expression, propertyAccessor)` was not recognized as a property accessor method. Trimmer can't guarantee the presence of the property.
+- The value passed to the `propertyAccessor` parameter of `Expression.Property(expression, propertyAccessor)` was not recognized as a property accessor method. Trimmer can't guarantee the presence of the property.
 
-```C#
-void TestMethod(MethodInfo methodInfo)
-{
-  // IL2103: Value passed to the 'propertyAccessor' parameter of method 'System.Linq.Expressions.Expression.Property(Expression, MethodInfo)' cannot be statically determined as a property accessor.
-  Expression.Property(null, methodInfo);
-}
-```
+  ```C#
+  void TestMethod(MethodInfo methodInfo)
+  {
+    // IL2103: Value passed to the 'propertyAccessor' parameter of method 'System.Linq.Expressions.Expression.Property(Expression, MethodInfo)' cannot be statically determined as a property accessor.
+    Expression.Property(null, methodInfo);
+  }
+  ```
 
 #### `IL2104`: Assembly 'assembly' produced trim warnings. For more information see https://aka.ms/dotnet-illink/libraries
 
-The assembly 'assembly' produced trim analysis warnings in the context of the app. This means the assembly has not been fully annotated for trimming. Consider contacting the library author to request they add trim annotations to the library. To see detailed warnings for this assembly, turn off grouped warnings by passing either `--singlewarn-` to show detailed warnings for all assemblies, or `--singlewarn- "assembly"` to show detailed warnings for that assembly. https://aka.ms/dotnet-illink/libraries has more information on annotating libraries for trimming.
+- The assembly 'assembly' produced trim analysis warnings in the context of the app. This means the assembly has not been fully annotated for trimming. Consider contacting the library author to request they add trim annotations to the library. To see detailed warnings for this assembly, turn off grouped warnings by passing either `--singlewarn-` to show detailed warnings for all assemblies, or `--singlewarn- "assembly"` to show detailed warnings for that assembly. https://aka.ms/dotnet-illink/libraries has more information on annotating libraries for trimming.
 
 #### `IL2105`: Type 'type' was not found in the caller assembly nor in the base library. Type name strings used for dynamically accessing a type should be assembly qualified.
 
-Type name strings representing dynamically accessed types must be assembly qualified, otherwise linker will first search for the type name in the caller's assembly and then in System.Private.CoreLib.
-If the linker fails to resolve the type name, null will be returned.
+- Type name strings representing dynamically accessed types must be assembly qualified, otherwise linker will first search for the type name in the caller's assembly and then in System.Private.CoreLib.
+  If the linker fails to resolve the type name, null will be returned.
+
+  ```C#
+  void TestInvalidTypeName()
+  {
+      RequirePublicMethodOnAType("Foo.Unqualified.TypeName");
+  }
+  void RequirePublicMethodOnAType(
+      [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+      string typeName)
+  {
+  }
+  ```
+
+#### `IL2106`: Trim analysis: Return type of method 'method' has 'DynamicallyAccessedMembersAttribute', but that attribute can only be applied to properties of type 'System.Type' or 'System.String'
+
+- `DynamicallyAccessedMembersAttribute` is only applicable to items of type `System.Type` or `System.String` (or derived), on all other types the attribute will be ignored. Using the attribute on any other type is likely incorrect and unintentional.
+
+  ```C#
+  // IL2106: Return type of method 'TestMethod' has 'DynamicallyAccessedMembersAttribute', but that attribute can only be applied to properties of type 'System.Type' or 'System.String'
+  [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] object TestMethod()
+  {
+      return typeof(TestType);
+  }
+  ```
+
+#### `IL2107`: Trim analysis: Methods 'method1' and 'method2' are both associated with state machine type 'type'. This is currently unsupported and may lead to incorrectly reported warnings.
+
+- Trimmer currently can't correctly handle if the same compiler generated state machine type is associated (via the state machine attributes) with two different methods.
+  Since the trimmer currently derives warning suppressions from the method which produced the state machine and currently doesn't support reprocessing the same method/type more than once.
+
+  Only a meta-sample:
+
+  ```C#
+  class <compiler_generated_state_machine>_type {
+      void MoveNext()
+      {
+          // This should normally produce IL2026
+          CallSomethingWhichRequiresUnreferencedCode ();
+      }
+  }
+
+  [RequiresUnreferencedCode ("")] // This should suppress all warnings from the method
+  [IteratorStateMachine(typeof(<compiler_generated_state_machine>_type))]
+  IEnumerable<int> UserDefinedMethod()
+  {
+      // Uses the state machine type
+      // The IL2026 from the state machine should be suppressed in this case
+  }
+
+  // IL2107: Methods 'UserDefinedMethod' and 'SecondUserDefinedMethod' are both associated with state machine type '<compiler_generated_state_machine>_type'.
+  [IteratorStateMachine(typeof(<compiler_generated_state_machine>_type))]
+  IEnumerable<int> SecondUserDefinedMethod()
+  {
+      // Uses the state machine type
+      // The IL2026 from the state should be reported in this case
+  }
+  ```
+
+#### `IL2108`: Invalid scope 'scope' used in 'UnconditionalSuppressMessageAttribute' on module 'module' with target 'target'.
+
+The only scopes supported on global unconditional suppressions are 'module', 'type' and 'member'. If the scope and target arguments are null or missing on a global suppression,
+it is assumed that the suppression is put on the module. Global unconditional suppressions using invalid scopes are ignored.
 
 ```C#
-void TestInvalidTypeName()
+// Invalid scope 'method' used in 'UnconditionalSuppressMessageAttribute' on module 'Warning' with target 'MyTarget'.
+[module: UnconditionalSuppressMessage ("Test suppression with invalid scope", "IL2026", Scope = "method", Target = "MyTarget")]
+
+class Warning
 {
-    RequirePublicMethodOnAType("Foo.Unqualified.TypeName");
-}
-void RequirePublicMethodOnAType(
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
-    string typeName)
-{
+   static void Main(string[] args)
+   {
+      Foo();
+   }
+
+   [RequiresUnreferencedCode("Warn when Foo() is called")]
+   static void Foo()
+   {
+   }
 }
 ```
+
+#### `IL2109` Trim analysis: Type 'type' derives from 'BaseType' which has 'RequiresUnreferencedCodeAttribute'. [message]. [url]
+
+- A type is being referenced in code, and this type derives from a base type with 'RequiresUnreferencedCodeAttribute' which can break functionality of a trimmed application.
+  Types that derive from a base class with 'RequiresUnreferencedCodeAttribute' need to explicitly use the 'RequiresUnreferencedCodeAttribute' or suppress this warning
+
+  ```C#
+  [RequiresUnreferencedCode("Using any of the members inside this class is trim unsafe", Url="http://help/unreferencedcode")]
+  public class UnsafeClass {
+     public UnsafeClass () {}
+     public static void UnsafeMethod();
+  }
+
+  // IL2109: Type 'Derived' derives from 'UnsafeClass' which has 'RequiresUnreferencedCodeAttribute'. Using any of the members inside this class is trim unsafe. http://help/unreferencedcode
+  class Derived : UnsafeClass {}
+  ```
 
 ## Single-File Warning Codes
 
@@ -1635,5 +1765,69 @@ void RequirePublicMethodOnAType(
       // IL3002: Using member 'MethodWithAssemblyFilesUsage' which has 'RequiresAssemblyFilesAttribute'
       // can break functionality when embedded in a single-file app. Use 'MethodFriendlyToSingleFile' instead. http://help/assemblyfiles
       MethodWithAssemblyFilesUsage();
+  }
+  ```
+
+#### `IL3003`: Member 'member' with 'RequiresAssemblyFilesAttribute' has a member 'member' without 'RequiresAssemblyFilesAttribute'. For all interfaces and overrides the implementation attribute must match the definition attribute.
+
+- For all interfaces and overrides the implementation 'RequiresAssemblyFilesAttribute' must match the definition 'RequiresAssemblyFilesAttribute', either all the members contain the attribute o none of them.
+
+  Here is a list of posible scenarios where the warning can be generated:
+
+  A base member has the attribute but the derived member does not have the attribute
+  ```C#
+  public class Base
+  {
+    [RequiresAssemblyFiles]
+    public virtual void TestMethod() {}
+  }
+
+  public class Derived : Base
+  {
+    // IL3003: Base member 'Base.TestMethod' with 'RequiresAssemblyFilesAttribute' has a derived member 'Derived.TestMethod()' without 'RequiresAssemblyFilesAttribute'. For all interfaces and overrides the implementation attribute must match the definition attribute.
+    public override void TestMethod() {}
+  }
+  ```
+  A derived member has the attribute but the overriden base member does not have the attribute
+  ```C#
+  public class Base
+  {
+    public virtual void TestMethod() {}
+  }
+
+  public class Derived : Base
+  {
+    // IL3003: Member 'Derived.TestMethod()' with 'RequiresAssemblyFilesAttribute' overrides base member 'Base.TestMethod()' without 'RequiresAssemblyFilesAttribute'. For all interfaces and overrides the implementation attribute must match the definition attribute.
+    [RequiresAssemblyFiles]
+    public override void TestMethod() {}
+  }
+  ```
+  An interface member has the attribute but it's implementation does not have the attribute
+  ```C#
+  interface IRAF
+  {
+    [RequiresAssemblyFiles]
+    void TestMethod();
+  }
+
+  class Implementation : IRAF
+  {
+    // IL3003: Interface member 'IRAF.TestMethod()' with 'RequiresAssemblyFilesAttribute' has an implementation member 'Implementation.TestMethod()' without 'RequiresAssemblyFilesAttribute'. For all interfaces and overrides the implementation attribute must match the definition attribute.
+    public void TestMethod () { }
+  }
+  ```
+  An implementation member has the attribute but the interface that implementes does not have the attribute
+
+  ```C#
+  interface IRAF
+  {
+    void TestMethod();
+  }
+
+  class Implementation : IRAF
+  {
+    [RequiresAssemblyFiles]
+    // IL3003: Member 'Implementation.TestMethod()' with 'RequiresAssemblyFilesAttribute' implements interface member 'IRAF.TestMethod()' without 'RequiresAssemblyFilesAttribute'. For all interfaces and overrides the implementation attribute must match the definition attribute.
+    public void TestMethod () { }
   }
   ```

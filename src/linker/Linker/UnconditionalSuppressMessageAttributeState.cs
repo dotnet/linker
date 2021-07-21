@@ -10,9 +10,9 @@ namespace Mono.Linker
 		internal const string TargetProperty = "Target";
 		internal const string MessageIdProperty = "MessageId";
 
-		private readonly LinkContext _context;
-		private readonly Dictionary<ICustomAttributeProvider, Dictionary<int, SuppressMessageInfo>> _suppressions;
-		private HashSet<AssemblyDefinition> InitializedAssemblies { get; }
+		readonly LinkContext _context;
+		readonly Dictionary<ICustomAttributeProvider, Dictionary<int, SuppressMessageInfo>> _suppressions;
+		HashSet<AssemblyDefinition> InitializedAssemblies { get; }
 
 		public UnconditionalSuppressMessageAttributeState (LinkContext context)
 		{
@@ -30,7 +30,7 @@ namespace Mono.Linker
 			AddSuppression (info, provider);
 		}
 
-		private void AddSuppression (SuppressMessageInfo info, ICustomAttributeProvider provider)
+		void AddSuppression (SuppressMessageInfo info, ICustomAttributeProvider provider)
 		{
 			if (!_suppressions.TryGetValue (provider, out var suppressions)) {
 				suppressions = new Dictionary<int, SuppressMessageInfo> ();
@@ -45,29 +45,45 @@ namespace Mono.Linker
 
 		public bool IsSuppressed (int id, MessageOrigin warningOrigin, out SuppressMessageInfo info)
 		{
-			info = default;
-			if (warningOrigin.MemberDefinition == null)
-				return false;
+			// Check for suppressions on both the suppression context as well as the original member
+			// (if they're different). This is to correctly handle compiler generated code
+			// which needs to use suppressions from both the compiler generated scope
+			// as well as the original user defined method.
+			IMemberDefinition suppressionContextMember = warningOrigin.SuppressionContextMember;
+			if (IsSuppressed (id, suppressionContextMember, out info))
+				return true;
 
-			IMemberDefinition elementContainingWarning = warningOrigin.MemberDefinition;
-			ModuleDefinition module = GetModuleFromProvider (warningOrigin.MemberDefinition);
-			DecodeModuleLevelAndGlobalSuppressMessageAttributes (module);
-			while (elementContainingWarning != null) {
-				if (IsSuppressed (id, elementContainingWarning, out info))
-					return true;
-
-				elementContainingWarning = elementContainingWarning.DeclaringType;
-			}
-
-			// Check if there's an assembly or module level suppression.
-			if (IsSuppressed (id, module, out info) ||
-				IsSuppressed (id, module.Assembly, out info))
+			IMemberDefinition originMember = warningOrigin.MemberDefinition;
+			if (suppressionContextMember != originMember && IsSuppressed (id, originMember, out info))
 				return true;
 
 			return false;
 		}
 
-		private bool IsSuppressed (int id, ICustomAttributeProvider provider, out SuppressMessageInfo info)
+		bool IsSuppressed (int id, IMemberDefinition warningOriginMember, out SuppressMessageInfo info)
+		{
+			info = default;
+			if (warningOriginMember == null)
+				return false;
+
+			ModuleDefinition module = GetModuleFromProvider (warningOriginMember);
+			DecodeModuleLevelAndGlobalSuppressMessageAttributes (module);
+			while (warningOriginMember != null) {
+				if (IsSuppressedOnElement (id, warningOriginMember, out info))
+					return true;
+
+				warningOriginMember = warningOriginMember.DeclaringType;
+			}
+
+			// Check if there's an assembly or module level suppression.
+			if (IsSuppressedOnElement (id, module, out info) ||
+				IsSuppressedOnElement (id, module.Assembly, out info))
+				return true;
+
+			return false;
+		}
+
+		bool IsSuppressedOnElement (int id, ICustomAttributeProvider provider, out SuppressMessageInfo info)
 		{
 			info = default;
 			if (provider == null)
@@ -77,7 +93,7 @@ namespace Mono.Linker
 				suppressions.TryGetValue (id, out info);
 		}
 
-		private static bool TryDecodeSuppressMessageAttributeData (CustomAttribute attribute, out SuppressMessageInfo info)
+		static bool TryDecodeSuppressMessageAttributeData (CustomAttribute attribute, out SuppressMessageInfo info)
 		{
 			info = default;
 
@@ -104,7 +120,7 @@ namespace Mono.Linker
 				foreach (var p in attribute.Properties) {
 					switch (p.Name) {
 					case ScopeProperty:
-						info.Scope = (p.Argument.Value as string)?.ToLower ();
+						info.Scope = p.Argument.Value as string;
 						break;
 					case TargetProperty:
 						info.Target = p.Argument.Value as string;
@@ -138,7 +154,7 @@ namespace Mono.Linker
 			}
 		}
 
-		private void DecodeModuleLevelAndGlobalSuppressMessageAttributes (ModuleDefinition module)
+		void DecodeModuleLevelAndGlobalSuppressMessageAttributes (ModuleDefinition module)
 		{
 			AssemblyDefinition assembly = module.Assembly;
 			if (InitializedAssemblies.Add (assembly)) {
@@ -157,15 +173,17 @@ namespace Mono.Linker
 				if (!TryDecodeSuppressMessageAttributeData (instance, out info))
 					continue;
 
-				if (info.Target == null && (info.Scope == "module" || info.Scope == null)) {
+				var scope = info.Scope?.ToLower ();
+				if (info.Target == null && (scope == "module" || scope == null)) {
 					AddSuppression (info, provider);
 					continue;
 				}
 
-				if (info.Target == null || info.Scope == null)
-					continue;
+				switch (scope) {
+				case "module":
+					AddSuppression (info, provider);
+					break;
 
-				switch (info.Scope) {
 				case "type":
 				case "member":
 					foreach (var result in DocumentationSignatureParser.GetMembersForDocumentationSignature (info.Target, module))
@@ -173,7 +191,9 @@ namespace Mono.Linker
 
 					break;
 				default:
-					_context.LogMessage ($"Scope `{info.Scope}` used in `UnconditionalSuppressMessage` is currently not supported.");
+					_context.LogWarning ($"Invalid scope '{info.Scope}' used in 'UnconditionalSuppressMessageAttribute' on module '{module.Name}' " +
+						$"with target '{info.Target}'.",
+						2108, _context.GetAssemblyLocation (module.Assembly));
 					break;
 				}
 			}
