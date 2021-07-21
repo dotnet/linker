@@ -9,6 +9,8 @@
     <Import_RootNamespace>ILLink.Shared</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)DiagnosticCategory.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)DiagnosticId.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MessageFormat.cs" />
   </ItemGroup>
   <ItemGroup>

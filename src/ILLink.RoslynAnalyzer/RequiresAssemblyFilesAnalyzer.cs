@@ -14,56 +14,19 @@ namespace ILLink.RoslynAnalyzer
 	[DiagnosticAnalyzer (LanguageNames.CSharp)]
 	public sealed class RequiresAssemblyFilesAnalyzer : RequiresAnalyzerBase
 	{
-		public const string IL3000 = nameof (IL3000);
-		public const string IL3001 = nameof (IL3001);
-		public const string IL3002 = nameof (IL3002);
-		public const string IL3003 = nameof (IL3003);
-
 		private const string RequiresAssemblyFilesAttribute = nameof (RequiresAssemblyFilesAttribute);
 		public const string RequiresAssemblyFilesAttributeFullyQualifiedName = "System.Diagnostics.CodeAnalysis." + RequiresAssemblyFilesAttribute;
 
-		static readonly DiagnosticDescriptor s_locationRule = new DiagnosticDescriptor (
-			IL3000,
-			new LocalizableResourceString (nameof (SharedStrings.AvoidAssemblyLocationInSingleFileTitle),
-				SharedStrings.ResourceManager, typeof (SharedStrings)),
-			new LocalizableResourceString (nameof (SharedStrings.AvoidAssemblyLocationInSingleFileMessage),
-				SharedStrings.ResourceManager, typeof (SharedStrings)),
-			DiagnosticCategory.SingleFile,
-			DiagnosticSeverity.Warning,
-			isEnabledByDefault: true,
+		static readonly DiagnosticDescriptor s_locationRule = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.AvoidAssemblyLocationInSingleFile,
 			helpLinkUri: "https://docs.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/il3000");
 
-		static readonly DiagnosticDescriptor s_getFilesRule = new DiagnosticDescriptor (
-			IL3001,
-			new LocalizableResourceString (nameof (SharedStrings.AvoidAssemblyGetFilesInSingleFileTitle),
-				SharedStrings.ResourceManager, typeof (SharedStrings)),
-			new LocalizableResourceString (nameof (SharedStrings.AvoidAssemblyGetFilesInSingleFileMessage),
-				SharedStrings.ResourceManager, typeof (SharedStrings)),
-			DiagnosticCategory.SingleFile,
-			DiagnosticSeverity.Warning,
-			isEnabledByDefault: true,
+		static readonly DiagnosticDescriptor s_getFilesRule = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.AvoidAssemblyGetFilesInSingleFile,
 			helpLinkUri: "https://docs.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/il3001");
 
-		static readonly DiagnosticDescriptor s_requiresAssemblyFilesRule = new DiagnosticDescriptor (
-			IL3002,
-			new LocalizableResourceString (nameof (SharedStrings.RequiresAssemblyFilesTitle),
-				SharedStrings.ResourceManager, typeof (SharedStrings)),
-			new LocalizableResourceString (nameof (SharedStrings.RequiresAssemblyFilesMessage),
-				SharedStrings.ResourceManager, typeof (SharedStrings)),
-			DiagnosticCategory.SingleFile,
-			DiagnosticSeverity.Warning,
-			isEnabledByDefault: true,
+		static readonly DiagnosticDescriptor s_requiresAssemblyFilesRule = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.RequiresAssemblyFiles,
 			helpLinkUri: "https://docs.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/il3002");
 
-		static readonly DiagnosticDescriptor s_requiresAttributeMismatch = new DiagnosticDescriptor (
-			IL3003,
-			new LocalizableResourceString (nameof (SharedStrings.RequiresAttributeMismatchTitle),
-			SharedStrings.ResourceManager, typeof (SharedStrings)),
-			new LocalizableResourceString (nameof (SharedStrings.RequiresAttributeMismatchMessage),
-			SharedStrings.ResourceManager, typeof (SharedStrings)),
-			DiagnosticCategory.Trimming,
-			DiagnosticSeverity.Warning,
-			isEnabledByDefault: true);
+		static readonly DiagnosticDescriptor s_requiresAttributeMismatch = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.RequiresAssembyFilesAttributeMismatch);
 
 		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create (s_locationRule, s_getFilesRule, s_requiresAssemblyFilesRule, s_requiresAttributeMismatch);
 
@@ -82,9 +45,11 @@ namespace ILLink.RoslynAnalyzer
 			var isSingleFileAnalyzerEnabled = options.GetMSBuildPropertyValue (MSBuildPropertyOptionNames.EnableSingleFileAnalyzer, compilation);
 			if (!string.Equals (isSingleFileAnalyzerEnabled?.Trim (), "true", StringComparison.OrdinalIgnoreCase))
 				return false;
+
 			var includesAllContent = options.GetMSBuildPropertyValue (MSBuildPropertyOptionNames.IncludeAllContentForSelfExtract, compilation);
 			if (string.Equals (includesAllContent?.Trim (), "true", StringComparison.OrdinalIgnoreCase))
 				return false;
+			
 			return true;
 		}
 
@@ -94,10 +59,10 @@ namespace ILLink.RoslynAnalyzer
 
 			var assemblyType = compilation.GetTypeByMetadataName ("System.Reflection.Assembly");
 			if (assemblyType != null) {
-				// properties
+				// Properties
 				ImmutableArrayOperations.AddIfNotNull (dangerousPatternsBuilder, ImmutableArrayOperations.TryGetSingleSymbol<IPropertySymbol> (assemblyType.GetMembers ("Location")));
 
-				// methods
+				// Methods
 				dangerousPatternsBuilder.AddRange (assemblyType.GetMembers ("GetFile").OfType<IMethodSymbol> ());
 				dangerousPatternsBuilder.AddRange (assemblyType.GetMembers ("GetFiles").OfType<IMethodSymbol> ());
 			}
@@ -120,6 +85,7 @@ namespace ILLink.RoslynAnalyzer
 				operationContext.ReportDiagnostic (Diagnostic.Create (s_locationRule, operationContext.Operation.Syntax.GetLocation (), member.GetDisplayName ()));
 				return true;
 			}
+
 			return false;
 		}
 

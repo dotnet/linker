@@ -13,30 +13,13 @@ namespace ILLink.RoslynAnalyzer
 	[DiagnosticAnalyzer (LanguageNames.CSharp)]
 	public sealed class RequiresUnreferencedCodeAnalyzer : RequiresAnalyzerBase
 	{
-		public const string IL2026 = nameof (IL2026);
-		public const string IL2046 = nameof (IL2046);
 		const string RequiresUnreferencedCodeAttribute = nameof (RequiresUnreferencedCodeAttribute);
 		public const string FullyQualifiedRequiresUnreferencedCodeAttribute = "System.Diagnostics.CodeAnalysis." + RequiresUnreferencedCodeAttribute;
 
-		static readonly DiagnosticDescriptor s_requiresUnreferencedCodeRule = new DiagnosticDescriptor (
-			IL2026,
-			new LocalizableResourceString (nameof (SharedStrings.RequiresUnreferencedCodeTitle),
-			SharedStrings.ResourceManager, typeof (SharedStrings)),
-			new LocalizableResourceString (nameof (SharedStrings.RequiresUnreferencedCodeMessage),
-			SharedStrings.ResourceManager, typeof (SharedStrings)),
-			DiagnosticCategory.Trimming,
-			DiagnosticSeverity.Warning,
-			isEnabledByDefault: true);
-
-		static readonly DiagnosticDescriptor s_requiresAttributeMismatch = new DiagnosticDescriptor (
-			IL2046,
-			new LocalizableResourceString (nameof (SharedStrings.RequiresAttributeMismatchTitle),
-			SharedStrings.ResourceManager, typeof (SharedStrings)),
-			new LocalizableResourceString (nameof (SharedStrings.RequiresAttributeMismatchMessage),
-			SharedStrings.ResourceManager, typeof (SharedStrings)),
-			DiagnosticCategory.Trimming,
-			DiagnosticSeverity.Warning,
-			isEnabledByDefault: true);
+		static readonly DiagnosticDescriptor s_requiresUnreferencedCodeRule = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.RequiresUnreferencedCode);
+		static readonly DiagnosticDescriptor s_requiresAttributeMismatch = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.RequiresUnreferencedCodeAttributeMismatch,
+			DiagnosticStrings.GetResourceString (nameof (SharedStrings.RequiresAttributeMismatchTitle))!,
+			DiagnosticStrings.GetResourceString (nameof (SharedStrings.RequiresAttributeMismatchMessage))!);
 
 		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create (s_requiresUnreferencedCodeRule, s_requiresAttributeMismatch);
 
