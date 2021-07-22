@@ -42,6 +42,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				typeof (AnnotatedField).GetField ("_annotatedField").SetValue (null, typeof (TestType));
 			}
 
+			[RequiresUnreferencedCode ("test")]
+			static void ReflectionSuppressedByRUC ()
+			{
+				typeof (AnnotatedField).GetField ("_annotatedField").SetValue (null, typeof (TestType));
+			}
+
 			[ExpectedWarning ("IL2110", nameof (_annotatedField))]
 			static void ReflectionReadOnly ()
 			{
@@ -51,6 +57,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[ExpectedWarning ("IL2110", nameof (_annotatedField))]
 			[DynamicDependency (DynamicallyAccessedMemberTypes.PublicFields, typeof (AnnotatedField))]
 			static void DynamicDependency ()
+			{
+			}
+
+			[RequiresUnreferencedCode ("test")]
+			[DynamicDependency (DynamicallyAccessedMemberTypes.PublicFields, typeof (AnnotatedField))]
+			static void DynamicDependencySuppressedByRUC ()
 			{
 			}
 
@@ -66,13 +78,23 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				typeof (AnnotatedField).RequiresPublicFields ();
 			}
 
+			[RequiresUnreferencedCode ("test")]
+			static void DynamicallyAccessedMembersSuppressedByRUC ()
+			{
+				typeof (AnnotatedField).RequiresPublicFields ();
+			}
+
+			[UnconditionalSuppressMessage ("test", "IL2026")]
 			public static void Test ()
 			{
 				Reflection ();
+				ReflectionSuppressedByRUC ();
 				ReflectionReadOnly ();
 				DynamicDependency ();
+				DynamicDependencySuppressedByRUC ();
 				DynamicDependencyByName ();
 				DynamicallyAccessedMembers ();
+				DynamicallyAccessedMembersSuppressedByRUC ();
 			}
 		}
 
@@ -95,6 +117,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				typeof (AnnotatedMethodParameters).GetMethod (nameof (MethodWithSingleAnnotatedParameter)).Invoke (null, null);
 			}
 
+			[RequiresUnreferencedCode ("test")]
+			static void ReflectionSuppressedByRUC ()
+			{
+				typeof (AnnotatedMethodParameters).GetMethod (nameof (MethodWithSingleAnnotatedParameter)).Invoke (null, null);
+			}
+
 			// Should not warn, there's nothing wrong about this
 			[AttributeWithConstructorWithAnnotation (typeof (TestType))]
 			static void AnnotatedAttributeConstructor ()
@@ -107,6 +135,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 			}
 
+			[RequiresUnreferencedCode ("test")]
+			[DynamicDependency (DynamicallyAccessedMemberTypes.PublicMethods, typeof (AnnotatedMethodParameters))]
+			static void DynamicDependencySuppressedByRUC ()
+			{
+			}
+
 			[ExpectedWarning ("IL2111", nameof (MethodWithSingleAnnotatedParameter))]
 			[DynamicDependency (nameof (MethodWithSingleAnnotatedParameter), typeof (AnnotatedMethodParameters))]
 			static void DynamicDependencyByName ()
@@ -115,6 +149,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			[ExpectedWarning ("IL2111", nameof (MethodWithSingleAnnotatedParameter))]
 			static void DynamicallyAccessedMembers ()
+			{
+				typeof (AnnotatedMethodParameters).RequiresPublicMethods ();
+			}
+
+			[RequiresUnreferencedCode ("test")]
+			static void DynamicallyAccessedMembersSuppressedByRUC ()
 			{
 				typeof (AnnotatedMethodParameters).RequiresPublicMethods ();
 			}
@@ -137,12 +177,16 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				var _ = new Action<Type> (instance.AnnotatedMethod);
 			}
 
+			[UnconditionalSuppressMessage ("test", "IL2026")]
 			public static void Test ()
 			{
 				Reflection ();
+				ReflectionSuppressedByRUC ();
 				DynamicDependency ();
+				DynamicDependencySuppressedByRUC ();
 				DynamicDependencyByName ();
 				DynamicallyAccessedMembers ();
+				DynamicallyAccessedMembersSuppressedByRUC ();
 				Ldftn ();
 				Ldvirtftn ();
 			}
@@ -178,9 +222,21 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				typeof (AnnotatedMethodReturnValue).GetMethod (nameof (VirtualMethodWithAnnotatedReturnValue)).Invoke (null, null);
 			}
 
+			[RequiresUnreferencedCode ("test")]
+			static void ReflectionOnVirtualSuppressedByRUC ()
+			{
+				typeof (AnnotatedMethodReturnValue).GetMethod (nameof (VirtualMethodWithAnnotatedReturnValue)).Invoke (null, null);
+			}
+
 			[ExpectedWarning ("IL2111", nameof (VirtualMethodWithAnnotatedReturnValue))]
 			[DynamicDependency (DynamicallyAccessedMemberTypes.PublicMethods, typeof (AnnotatedMethodReturnValue))]
 			static void DynamicDependency ()
+			{
+			}
+
+			[RequiresUnreferencedCode ("test")]
+			[DynamicDependency (DynamicallyAccessedMemberTypes.PublicMethods, typeof (AnnotatedMethodReturnValue))]
+			static void DynamicDependencySuppressedByRUC ()
 			{
 			}
 
@@ -206,6 +262,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				typeof (AnnotatedMethodReturnValue).RequiresPublicMethods ();
 			}
 
+			[RequiresUnreferencedCode ("test")]
+			static void DynamicallyAccessedMembersSuppressedByRUC ()
+			{
+				typeof (AnnotatedMethodReturnValue).RequiresPublicMethods ();
+			}
+
 			static void LdftnOnStatic ()
 			{
 				var _ = new Func<Type> (AnnotatedMethodReturnValue.StaticMethodWithAnnotatedReturnValue);
@@ -222,16 +284,20 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				var _ = new Func<Type> ((new AnnotatedMethodReturnValue ()).VirtualMethodWithAnnotatedReturnValue);
 			}
 
+			[UnconditionalSuppressMessage ("test", "IL2026")]
 			public static void Test ()
 			{
 				ReflectionOnStatic ();
 				ReflectionOnInstance ();
 				ReflectionOnVirtual ();
+				ReflectionOnVirtualSuppressedByRUC ();
 				DynamicDependency ();
+				DynamicDependencySuppressedByRUC ();
 				DynamicDependencyByNameOnStatic ();
 				DynamicDependencyByNameOnInstance ();
 				DynamicDependencyByNameOnVirtual ();
 				DynamicallyAccessedMembers ();
+				DynamicallyAccessedMembersSuppressedByRUC ();
 				LdftnOnStatic ();
 				LdftnOnInstance ();
 				LdftnOnVirtual ();
@@ -259,6 +325,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			[ExpectedWarning ("IL2111", nameof (PropertyWithAnnotation))]
 			static void ReflectionOnPropertyItself ()
+			{
+				typeof (AnnotatedProperty).GetProperty (nameof (PropertyWithAnnotation));
+			}
+
+			[RequiresUnreferencedCode ("test")]
+			static void ReflectionOnPropertyItselfSuppressedByRUC ()
 			{
 				typeof (AnnotatedProperty).GetProperty (nameof (PropertyWithAnnotation));
 			}
@@ -304,6 +376,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 			}
 
+			[RequiresUnreferencedCode ("test")]
+			[DynamicDependency (DynamicallyAccessedMemberTypes.PublicProperties, typeof (AnnotatedProperty))]
+			static void DynamicDependencySuppressedByRUC ()
+			{
+			}
+
 			[ExpectedWarning ("IL2111", nameof (PropertyWithAnnotation) + ".set")]
 			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationGetterOnly) + ".get")]
 			static void DynamicallyAccessedMembers ()
@@ -311,9 +389,17 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				typeof (AnnotatedProperty).RequiresPublicProperties ();
 			}
 
+			[RequiresUnreferencedCode ("test")]
+			static void DynamicallyAccessedMembersSuppressedByRUC ()
+			{
+				typeof (AnnotatedProperty).RequiresPublicProperties ();
+			}
+
+			[UnconditionalSuppressMessage ("test", "IL2026")]
 			public static void Test ()
 			{
 				ReflectionOnPropertyItself ();
+				ReflectionOnPropertyItselfSuppressedByRUC ();
 				ReflectionOnPropertyWithGetterOnly ();
 				ReflectionOnPropertyWithGetterOnlyOnVirtual ();
 				ReflectionOnGetter ();
@@ -321,7 +407,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				ReflectionOnVirtualGetter ();
 				AnnotatedAttributeProperty ();
 				DynamicDependency ();
+				DynamicDependencySuppressedByRUC ();
 				DynamicallyAccessedMembers ();
+				DynamicallyAccessedMembersSuppressedByRUC ();
 			}
 		}
 
