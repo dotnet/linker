@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using Mono.Cecil;
@@ -758,9 +759,17 @@ namespace Mono.Linker.Tests.TestCasesRunner
 										MethodDefinition methodDefinition = mc.Origin?.MemberDefinition as MethodDefinition;
 										if (methodDefinition != null) {
 											string actualName = methodDefinition.DeclaringType.FullName + "." + methodDefinition.Name;
-											if (actualName.StartsWith (attrProvider.DeclaringType.FullName) &&
-												actualName.Contains ("<" + attrProvider.Name + ">"))
-												return true;
+											if (actualName.StartsWith (attrProvider.DeclaringType.FullName)) {
+												if (actualName.Contains ("<" + attrProvider.Name + ">"))
+													return true;
+
+												if ((actualName.Contains ("get_" + attrProvider.Name) || actualName.Contains ("set_" + attrProvider.Name)) && methodDefinition.HasCustomAttributes) {
+													foreach (var attr in methodDefinition.CustomAttributes) {
+														if (attr.AttributeType.Resolve ()?.Name == nameof (CompilerGeneratedAttribute))
+															return true;
+													}
+												}
+											}
 										}
 
 										return false;
