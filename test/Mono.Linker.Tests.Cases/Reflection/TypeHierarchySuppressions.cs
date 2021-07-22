@@ -16,18 +16,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 	public class TypeHierarchySuppressions
 	{
 		// https://github.com/mono/linker/issues/2136
-		// Warnings should originate from the types (or rather their members, with the
-		// proposed behavior), and the type suppressions should silence the relevant
-		// warnings.
-
-		// Should originate from types instead
-		[ExpectedWarning ("IL2026", "--RUC on Unsuppressed--")]
-		[ExpectedWarning ("IL2026", "--RUC on DerivedFromUnsuppressed1--")]
-
-		// Should be suppressed by type-level suppression
-		[ExpectedWarning ("IL2026", "--RUC on Suppressed--")]
-		[ExpectedWarning ("IL2026", "--RUC on SuppressedOnDerived1--")]
-		[ExpectedWarning ("IL2026", "--RUC on DerivedFromSuppressed1--")]
+		// Warnings should originate from the members, and the type or member
+		// suppressions should silence the relevant warnings.
 		public static void Main ()
 		{
 			RequireMethods (unsuppressed.GetType ());
@@ -36,12 +26,18 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			var t = typeof (DerivedFromSuppressed1);
 			var t2 = typeof (DerivedFromUnsuppressed1);
 			var t3 = typeof (SuppressedOnDerived1);
+			var t4 = typeof (SuppressedBaseWarningsOnDerived);
 
 			UseDerivedTypes ();
+
+			derivedFromSuppressed.GetType ().GetMethod ("RUCMethod"); // no warning
+
+			RequireAll (annotatedAllSuppressed.GetType ());
+
+			derivedFromAnnotatedAllSuppressed = new DerivedFromAnnotatedAllSuppressed ();
+			derivedFromAnnotatedAllSuppressed.GetType ().GetMethod ("RUCMethod").Invoke (null, null); // no warning!
 		}
 
-		// Referencing these types in a separate method ensures that they get
-		// marked after applying annotations on the base type.
 		[Kept]
 		static void UseDerivedTypes ()
 		{
@@ -52,9 +48,14 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 		[Kept]
 		static Unsuppressed unsuppressed;
-
 		[Kept]
 		static Suppressed suppressed;
+		[Kept]
+		static DerivedFromSuppressed1 derivedFromSuppressed;
+		[Kept]
+		static AnnotatedAllSuppressed annotatedAllSuppressed;
+		[Kept]
+		static DerivedFromAnnotatedAllSuppressed derivedFromAnnotatedAllSuppressed;
 
 		[Kept]
 		static void RequireMethods (
@@ -64,40 +65,44 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		{ }
 
 		[Kept]
+		static void RequireAll (
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+			Type type)
+		{ }
+
+		[Kept]
 		[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
-		// https://github.com/mono/linker/issues/2136
-		// [ExpectedWarning ("IL2026", "--RUC on Unsuppressed--")]
 		class Unsuppressed
 		{
 			[Kept]
 			[KeptAttributeAttribute (typeof (RequiresUnreferencedCodeAttribute))]
+			[ExpectedWarning ("IL2112", "--RUC on Unsuppressed--")]
 			[RequiresUnreferencedCode ("--RUC on Unsuppressed--")]
 			public void RUCMethod () { }
 		}
 
 		[Kept]
 		[KeptBaseType (typeof (Unsuppressed))]
-		// https://github.com/mono/linker/issues/2136
-		// [ExpectedWarning ("IL2026", "--RUC on DerivedFromUnsuppressed1--")]
+		[ExpectedWarning ("IL2113", "--RUC on Unsuppressed--")]
 		class DerivedFromUnsuppressed1 : Unsuppressed
 		{
 			[Kept]
 			[KeptAttributeAttribute (typeof (RequiresUnreferencedCodeAttribute))]
+			[ExpectedWarning ("IL2112", "--RUC on DerivedFromUnsuppressed1--")]
 			[RequiresUnreferencedCode ("--RUC on DerivedFromUnsuppressed1--")]
 			public void DerivedRUCMethod () { }
 		}
 
 		[Kept]
 		[KeptBaseType (typeof (Unsuppressed))]
-		[ExpectedWarning ("IL2026", "--RUC on DerivedFromUnsuppressed2")]
-		// https://github.com/mono/linker/issues/2136
-		// Should originate from the base type instead
-		[ExpectedWarning ("IL2026", "--RUC on Unsuppressed--")]
+		[ExpectedWarning ("IL2113", "--RUC on Unsuppressed--")]
 		class DerivedFromUnsuppressed2 : Unsuppressed
 		{
 			[Kept]
 			[KeptAttributeAttribute (typeof (RequiresUnreferencedCodeAttribute))]
+			[ExpectedWarning ("IL2112", "--RUC on DerivedFromUnsuppressed2")]
 			[RequiresUnreferencedCode ("--RUC on DerivedFromUnsuppressed2--")]
 			public void DerivedRUCMethod () { }
 		}
@@ -105,7 +110,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		[Kept]
 		[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
 		[KeptAttributeAttribute (typeof (UnconditionalSuppressMessageAttribute))]
-		[UnconditionalSuppressMessage ("TrimAnalysis", "IL2026")]
+		[UnconditionalSuppressMessage ("TrimAnalysis", "IL2112")]
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 		class Suppressed
 		{
@@ -117,25 +122,26 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 		[Kept]
 		[KeptBaseType (typeof (Suppressed))]
-		// https://github.com/mono/linker/issues/2136
-		// [ExpectedWarning ("IL2026", "--RUC on DerivedFromSuppressed1--")]
+		// Base method should warn even though it was suppressed on the base
+		[ExpectedWarning ("IL2113", "--RUC on Suppressed--")]
 		class DerivedFromSuppressed1 : Suppressed
 		{
 			[Kept]
 			[KeptAttributeAttribute (typeof (RequiresUnreferencedCodeAttribute))]
+			[ExpectedWarning ("IL2112", "--RUC on DerivedFromSuppressed1--")]
 			[RequiresUnreferencedCode ("--RUC on DerivedFromSuppressed1--")]
 			public void RUCDerivedMethod () { }
 		}
 
 		[Kept]
 		[KeptBaseType (typeof (Suppressed))]
-		[ExpectedWarning ("IL2026", "--RUC on DerivedFromSuppressed2--")]
-		// https://github.com/mono/linker/issues/2136
-		[ExpectedWarning ("IL2026", "--RUC on Suppressed--")]
+		// Base method should warn even though it was suppressed on the base
+		[ExpectedWarning ("IL2113", "--RUC on Suppressed--")]
 		class DerivedFromSuppressed2 : Suppressed
 		{
 			[Kept]
 			[KeptAttributeAttribute (typeof (RequiresUnreferencedCodeAttribute))]
+			[ExpectedWarning ("IL2112", "--RUC on DerivedFromSuppressed2--")]
 			[RequiresUnreferencedCode ("--RUC on DerivedFromSuppressed2--")]
 			public void RUCDerivedMethod () { }
 		}
@@ -143,7 +149,10 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		[Kept]
 		[KeptBaseType (typeof (Unsuppressed))]
 		[KeptAttributeAttribute (typeof (UnconditionalSuppressMessageAttribute))]
-		[UnconditionalSuppressMessage ("TrimAnalysis", "IL2026")]
+		// Suppress warnings about this type's members
+		// TODO: This currently can't be suppressed on the individual members.
+		[UnconditionalSuppressMessage ("TrimAnalysis", "IL2112")]
+		[ExpectedWarning ("IL2113", "--RUC on Unsuppressed--")]
 		class SuppressedOnDerived1 : Unsuppressed
 		{
 			[Kept]
@@ -155,13 +164,74 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		[Kept]
 		[KeptBaseType (typeof (Unsuppressed))]
 		[KeptAttributeAttribute (typeof (UnconditionalSuppressMessageAttribute))]
-		[UnconditionalSuppressMessage ("TrimAnalysis", "IL2026")]
+		// Suppress warnings about this type's members
+		// TODO: This currently can't be suppressed on the individual members.
+		[UnconditionalSuppressMessage ("TrimAnalysis", "IL2112")]
+		[ExpectedWarning ("IL2113", "--RUC on Unsuppressed--")]
 		class SuppressedOnDerived2 : Unsuppressed
 		{
 			[Kept]
 			[KeptAttributeAttribute (typeof (RequiresUnreferencedCodeAttribute))]
 			[RequiresUnreferencedCode ("--RUC on SuppressedOnDerived2--")]
 			public void DerivedRUCMethod () { }
+		}
+
+		[Kept]
+		[KeptBaseType (typeof (Unsuppressed))]
+		[KeptAttributeAttribute (typeof (UnconditionalSuppressMessageAttribute))]
+		// Suppress warnings about base members
+		[UnconditionalSuppressMessage ("TrimAnalysis", "IL2113")]
+		class SuppressedBaseWarningsOnDerived : Unsuppressed
+		{
+			[Kept]
+			[KeptAttributeAttribute (typeof (RequiresUnreferencedCodeAttribute))]
+			[ExpectedWarning ("IL2112", "--RUC on SuppressedBaseWarningsOnDerived")]
+			[RequiresUnreferencedCode ("--RUC on SuppressedBaseWarningsOnDerived--")]
+			public void DerivedRUCMethod () { }
+		}
+
+		[Kept]
+		[KeptMember (".ctor()")]
+		[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+		[KeptAttributeAttribute (typeof (UnconditionalSuppressMessageAttribute))]
+		[KeptAttributeAttribute (typeof (UnconditionalSuppressMessageAttribute))]
+		// Suppress warnings about this type's members
+		// TODO: This currently can't be suppressed on the individual members.
+		[UnconditionalSuppressMessage ("TrimAnalysis", "IL2112")]
+		[UnconditionalSuppressMessage ("TrimAnalysis", "IL2114")]
+		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+		class AnnotatedAllSuppressed
+		{
+			[Kept]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			// [KeptAttributeAttribute (typeof (UnconditionalSuppressMessageAttribute))]
+			// [UnconditionalSuppressMessage ("TrimAnalysis", "IL2114")]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			public Type DAMTField;
+
+			[Kept]
+			[KeptAttributeAttribute (typeof (RequiresUnreferencedCodeAttribute))]
+			// [KeptAttributeAttribute (typeof (UnconditionalSuppressMessageAttribute))]
+			// [UnconditionalSuppressMessage ("TrimAnalysis", "IL2112")]
+			[RequiresUnreferencedCode ("--RUC on AnnotatedAllSuppresed.RUCMethod--")]
+			public static void RUCMethod () { }
+
+			[Kept]
+			// [KeptAttributeAttribute (typeof (UnconditionalSuppressMessageAttribute))]
+			// [UnconditionalSuppressMessage ("TrimAnalysis", "IL2114")]
+			public void DAMTMethod (
+				[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+				Type t
+			)
+			{ }
+		}
+
+		[Kept]
+		[KeptMember (".ctor()")]
+		[KeptBaseType (typeof (AnnotatedAllSuppressed))]
+		class DerivedFromAnnotatedAllSuppressed : AnnotatedAllSuppressed
+		{
 		}
 	}
 }

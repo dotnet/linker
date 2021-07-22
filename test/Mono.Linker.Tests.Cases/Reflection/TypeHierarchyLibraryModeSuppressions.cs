@@ -26,11 +26,11 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		[Kept]
 		[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
-		[ExpectedWarning ("IL2026", nameof (Unsuppressed))]
 		class Unsuppressed
 		{
 			[Kept]
 			[KeptAttributeAttribute (typeof (RequiresUnreferencedCodeAttribute))]
+			[ExpectedWarning ("IL2112", "--RUC on Unsuppressed--")]
 			[RequiresUnreferencedCode ("--RUC on Unsuppressed--")]
 			public void RUCMethod () { }
 		}
@@ -38,7 +38,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		[Kept]
 		[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
 		[KeptAttributeAttribute (typeof (UnconditionalSuppressMessageAttribute))]
-		[UnconditionalSuppressMessage ("TrimAnalysis", "IL2026")]
+		// TODO: it should be possible to suppress this on the method instead
+		[UnconditionalSuppressMessage ("TrimAnalysis", "IL2112")]
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 		class Suppressed
 		{

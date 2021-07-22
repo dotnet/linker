@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -64,6 +64,16 @@ namespace Mono.Linker.Dataflow
 
 		public DynamicallyAccessedMemberTypes GetTypeAnnotation (TypeDefinition type) =>
 			GetAnnotations (type).TypeAnnotation;
+
+		public bool DoesMemberAccessRequireDynamicallyAccessedMembers (IMemberDefinition provider) =>
+			provider switch {
+				MethodDefinition method =>
+					GetAnnotations (method.DeclaringType).TryGetAnnotation (method, out var annotation) &&
+					(annotation.ParameterAnnotations != null || annotation.ReturnParameterAnnotation != DynamicallyAccessedMemberTypes.None),
+				FieldDefinition field =>
+					GetAnnotations (field.DeclaringType).TryGetAnnotation (field, out _),
+				_ => false
+			};
 
 		public DynamicallyAccessedMemberTypes GetGenericParameterAnnotation (GenericParameter genericParameter)
 		{

@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -128,7 +128,6 @@ namespace Mono.Linker.Dataflow
 
 		public DynamicallyAccessedMemberTypes ApplyDynamicallyAccessedMembersToTypeHierarchy (
 			ReflectionMethodBodyScanner reflectionMethodBodyScanner,
-			ref ReflectionPatternContext reflectionPatternContext,
 			TypeDefinition type)
 		{
 			Debug.Assert (_context.Annotations.IsMarked (type));
@@ -142,6 +141,8 @@ namespace Mono.Linker.Dataflow
 				return annotation;
 
 			// Apply the effective annotation for the type
+			using var _ = _scopeStack.PushScope (new MessageOrigin (type));
+			var reflectionPatternContext = new ReflectionPatternContext (_context, true, _scopeStack.CurrentScope.Origin, type);
 			reflectionMethodBodyScanner.ApplyDynamicallyAccessedMembersToType (ref reflectionPatternContext, type, annotation);
 
 			// Mark it as applied in the cache
@@ -174,7 +175,7 @@ namespace Mono.Linker.Dataflow
 					break;
 
 				foreach (var candidateType in candidateTypes) {
-					ApplyDynamicallyAccessedMembersToTypeHierarchyInner (reflectionMethodBodyScanner, ref reflectionPatternContext, candidateType);
+					ApplyDynamicallyAccessedMembersToTypeHierarchyInner (reflectionMethodBodyScanner, candidateType);
 				}
 			}
 
@@ -183,7 +184,6 @@ namespace Mono.Linker.Dataflow
 
 		bool ApplyDynamicallyAccessedMembersToTypeHierarchyInner (
 			ReflectionMethodBodyScanner reflectionMethodBodyScanner,
-			ref ReflectionPatternContext reflectionPatternContext,
 			TypeDefinition type)
 		{
 			(var annotation, var applied) = GetCachedInfoForTypeInHierarchy (type);
@@ -196,13 +196,13 @@ namespace Mono.Linker.Dataflow
 
 			TypeDefinition baseType = type.BaseType?.Resolve ();
 			if (baseType != null)
-				applied = ApplyDynamicallyAccessedMembersToTypeHierarchyInner (reflectionMethodBodyScanner, ref reflectionPatternContext, baseType);
+				applied = ApplyDynamicallyAccessedMembersToTypeHierarchyInner (reflectionMethodBodyScanner, baseType);
 
 			if (!applied && type.HasInterfaces) {
 				foreach (InterfaceImplementation iface in type.Interfaces) {
 					var interfaceType = iface.InterfaceType.Resolve ();
 					if (interfaceType != null) {
-						if (ApplyDynamicallyAccessedMembersToTypeHierarchyInner (reflectionMethodBodyScanner, ref reflectionPatternContext, interfaceType)) {
+						if (ApplyDynamicallyAccessedMembersToTypeHierarchyInner (reflectionMethodBodyScanner, interfaceType)) {
 							applied = true;
 							break;
 						}
@@ -211,6 +211,8 @@ namespace Mono.Linker.Dataflow
 			}
 
 			if (applied) {
+				using var _ = _scopeStack.PushScope (new MessageOrigin (type));
+				var reflectionPatternContext = new ReflectionPatternContext (_context, true, _scopeStack.CurrentScope.Origin, type);
 				reflectionMethodBodyScanner.ApplyDynamicallyAccessedMembersToType (ref reflectionPatternContext, type, annotation);
 				_typesInDynamicallyAccessedMembersHierarchy[type] = (annotation, true);
 			}
