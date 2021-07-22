@@ -1558,7 +1558,8 @@ namespace Mono.Linker.Steps
 			case DependencyKind.DynamicDependency:
 			case DependencyKind.DynamicallyAccessedMember:
 			case DependencyKind.InteropMethodDependency:
-				if (_context.Annotations.FlowAnnotations.ShouldWarnWhenAccessedForReflection (field))
+				if (_context.Annotations.FlowAnnotations.ShouldWarnWhenAccessedForReflection (field) &&
+					!ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode ())
 					_context.LogWarning (
 						$"Field '{field.GetDisplayName ()}' with 'DynamicallyAccessedMembersAttribute' is accessed via reflection. Trimmer can't guarantee availability of the requirements of the field.",
 						2110,
@@ -2829,6 +2830,10 @@ namespace Mono.Linker.Steps
 					MessageSubCategory.TrimAnalysis);
 			}
 		}
+
+		Type _typeField;
+
+		private ref Type GetRefType () { Type type = null; return ref _typeField; }
 
 		internal bool ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode ()
 		{

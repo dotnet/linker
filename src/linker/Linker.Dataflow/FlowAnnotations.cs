@@ -37,20 +37,30 @@ namespace Mono.Linker.Dataflow
 		/// </summary>
 		/// <param name="parameterIndex">Parameter index in the IL sense. Parameter 0 on instance methods is `this`.</param>
 		/// <returns></returns>
-		public DynamicallyAccessedMemberTypes GetParameterAnnotation (MethodDefinition method, int parameterIndex) =>
-			(GetAnnotations (method.DeclaringType).TryGetAnnotation (method, out var annotation) && annotation.ParameterAnnotations != null)
-				? annotation.ParameterAnnotations[parameterIndex]
-				: DynamicallyAccessedMemberTypes.None;
+		public DynamicallyAccessedMemberTypes GetParameterAnnotation (MethodDefinition method, int parameterIndex)
+		{
+			if (GetAnnotations (method.DeclaringType).TryGetAnnotation (method, out var annotation) &&
+				annotation.ParameterAnnotations != null)
+				return annotation.ParameterAnnotations[parameterIndex];
 
-		public DynamicallyAccessedMemberTypes GetReturnParameterAnnotation (MethodDefinition method) =>
-			GetAnnotations (method.DeclaringType).TryGetAnnotation (method, out var annotation)
-				? annotation.ReturnParameterAnnotation
-				: DynamicallyAccessedMemberTypes.None;
+			return DynamicallyAccessedMemberTypes.None;
+		}
 
-		public DynamicallyAccessedMemberTypes GetFieldAnnotation (FieldDefinition field) =>
-			GetAnnotations (field.DeclaringType).TryGetAnnotation (field, out var annotation)
-				? annotation.Annotation
-				: DynamicallyAccessedMemberTypes.None;
+		public DynamicallyAccessedMemberTypes GetReturnParameterAnnotation (MethodDefinition method)
+		{
+			if (GetAnnotations (method.DeclaringType).TryGetAnnotation (method, out var annotation))
+				return annotation.ReturnParameterAnnotation;
+
+			return DynamicallyAccessedMemberTypes.None;
+		}
+
+		public DynamicallyAccessedMemberTypes GetFieldAnnotation (FieldDefinition field)
+		{
+			if (GetAnnotations (field.DeclaringType).TryGetAnnotation (field, out var annotation))
+				return annotation.Annotation;
+
+			return DynamicallyAccessedMemberTypes.None;
+		}
 
 		public DynamicallyAccessedMemberTypes GetTypeAnnotation (TypeDefinition type) =>
 			GetAnnotations (type).TypeAnnotation;
