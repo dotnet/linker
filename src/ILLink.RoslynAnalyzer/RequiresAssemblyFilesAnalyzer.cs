@@ -49,7 +49,7 @@ namespace ILLink.RoslynAnalyzer
 			var includesAllContent = options.GetMSBuildPropertyValue (MSBuildPropertyOptionNames.IncludeAllContentForSelfExtract, compilation);
 			if (string.Equals (includesAllContent?.Trim (), "true", StringComparison.OrdinalIgnoreCase))
 				return false;
-			
+
 			return true;
 		}
 

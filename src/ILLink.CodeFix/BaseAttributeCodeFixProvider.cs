@@ -71,7 +71,7 @@ namespace ILLink.CodeFix
 			var semanticModel = await document.GetSemanticModelAsync (cancellationToken).ConfigureAwait (false);
 			if (semanticModel is null)
 				return document;
-			
+
 			var newAttribute = generator
 				.Attribute (generator.TypeExpression (AttributeSymbol), attrArgs)
 				.WithAdditionalAnnotations (

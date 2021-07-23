@@ -8,7 +8,7 @@ namespace ILLink.Shared
 		{
 			if (!string.IsNullOrEmpty (message))
 				return $" {message}{(message!.TrimEnd ().EndsWith (".") ? "" : ".")}";
-			
+
 			return string.Empty;
 		}
 
@@ -16,7 +16,7 @@ namespace ILLink.Shared
 		{
 			if (!string.IsNullOrEmpty (url))
 				return $" {url}";
-			
+
 			return string.Empty;
 		}
 

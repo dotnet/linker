@@ -1,7 +1,7 @@
 ﻿namespace ILLink.Shared
 {
-    public enum DiagnosticId
-    {
+	public enum DiagnosticId
+	{
 		// Linker diagnostic ids.
 		RequiresUnreferencedCode = 2026,
 		RequiresUnreferencedCodeAttributeMismatch = 2046,
