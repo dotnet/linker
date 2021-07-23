@@ -1,5 +1,2 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <DisableImplicitNamespaceImports_DotNet>true</DisableImplicitNamespaceImports_DotNet>
-  </PropertyGroup>
 </Project>

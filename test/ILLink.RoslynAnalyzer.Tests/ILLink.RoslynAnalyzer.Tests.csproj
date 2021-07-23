@@ -3,7 +3,6 @@
   <PropertyGroup>
     <Nullable>enable</Nullable>
     <DeterministicSourcePaths>false</DeterministicSourcePaths>
-    <DisableImplicitNamespaceImports_DotNet>true</DisableImplicitNamespaceImports_DotNet>
   </PropertyGroup>
 
   <ItemGroup>
