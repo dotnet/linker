@@ -1768,9 +1768,13 @@ namespace Mono.Linker.Steps
 				MarkType (type.DeclaringType, new DependencyInfo (DependencyKind.DeclaringType, type));
 			MarkSecurityDeclarations (type, new DependencyInfo (DependencyKind.CustomAttribute, type));
 
-			if (type.BaseType != null &&
-				!_context.Annotations.TryGetEffectiveRequiresUnreferencedCodeAttributeOnType (type, out RequiresUnreferencedCodeAttribute _) &&
-				_context.Annotations.TryGetEffectiveRequiresUnreferencedCodeAttributeOnType (_context.TryResolve (type.BaseType), out RequiresUnreferencedCodeAttribute effectiveRequiresUnreferencedCode)) {
+			if (((type.DeclaringType is not null &&
+				!_context.Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (type.DeclaringType)) ||
+				type.DeclaringType is null) &&
+				type.BaseType is not null &&
+				!_context.Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (type) &&
+				_context.Annotations.TryGetLinkerAttribute (_context.TryResolve (type.BaseType), out RequiresUnreferencedCodeAttribute effectiveRequiresUnreferencedCode)) {
+
 				var currentOrigin = _scopeStack.CurrentScope.Origin;
 
 				string formatString = SharedStrings.RequiresOnBaseClassMessage;
@@ -2805,14 +2809,14 @@ namespace Mono.Linker.Steps
 			if (suppressionContextMember != null &&
 				(Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (suppressionContextMember) ||
 				(suppressionContextMember.DeclaringType != null &&
-				Annotations.TryGetEffectiveRequiresUnreferencedCodeAttributeOnType (suppressionContextMember.DeclaringType, out RequiresUnreferencedCodeAttribute _))))
+				Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (suppressionContextMember.DeclaringType))))
 				return true;
 
 			IMemberDefinition originMember = currentOrigin.MemberDefinition;
 			if (suppressionContextMember != originMember && originMember != null &&
 				(Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (originMember) ||
 				(originMember.DeclaringType != null &&
-				Annotations.TryGetEffectiveRequiresUnreferencedCodeAttributeOnType (originMember.DeclaringType, out RequiresUnreferencedCodeAttribute _))))
+				Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (originMember.DeclaringType))))
 				return true;
 
 			return false;
@@ -2821,14 +2825,13 @@ namespace Mono.Linker.Steps
 		internal void CheckAndReportRequiresUnreferencedCode (MethodDefinition method)
 		{
 			var currentOrigin = _scopeStack.CurrentScope.Origin;
-
 			// If the caller of a method is already marked with `RequiresUnreferencedCodeAttribute` a new warning should not
 			// be produced for the callee.
 			if (ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode ())
 				return;
 
 			if (method.IsStatic || method.IsConstructor) {
-				if (Annotations.TryGetEffectiveRequiresUnreferencedCodeAttributeOnType (method.DeclaringType, out RequiresUnreferencedCodeAttribute requiresUnreferencedCodeOnTypeHierarchy)) {
+				if (Annotations.TryGetLinkerAttribute (method.DeclaringType, out RequiresUnreferencedCodeAttribute requiresUnreferencedCodeOnTypeHierarchy)) {
 					ReportRequiresUnreferencedCode (method.GetDisplayName (), requiresUnreferencedCodeOnTypeHierarchy, currentOrigin);
 					return;
 				}
