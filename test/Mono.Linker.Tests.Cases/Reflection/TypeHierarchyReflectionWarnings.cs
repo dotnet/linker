@@ -1,4 +1,4 @@
-// Licensed to the .NET Foundation under one or more agreements.
+﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -130,12 +130,12 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			[Kept]
 			[KeptBackingField]
 			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
-			// TODO: This can't currently be suppressed on the property. requires a type-level suppression.
-			// [KeptAttributeAttribute (typeof (UnconditionalSuppressMessageAttribute))]
-			// [UnconditionalSuppressMessage ("TrimAnalysis", "IL2114")]
-			[ExpectedWarning ("IL2114", nameof (AnnotatedPublicProperties), nameof (DAMTProperty) + ".get", CompilerGeneratedCode = true)]
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
-			public static string DAMTProperty { get; }
+			public static string DAMTProperty {
+				// Property access reports warnings on getter/setter
+				[ExpectedWarning ("IL2114", nameof (AnnotatedPublicProperties), nameof (DAMTProperty) + ".get")]
+				get;
+			}
 		}
 
 		[Kept]
