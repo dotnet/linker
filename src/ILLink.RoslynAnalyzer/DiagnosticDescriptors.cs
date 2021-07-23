@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis;
 
 namespace ILLink.RoslynAnalyzer
 {
-	internal static class DiagnosticDescriptors
+	public static class DiagnosticDescriptors
 	{
 		public static DiagnosticDescriptor GetDiagnosticDescriptor (DiagnosticId diagnosticId) =>
 			new DiagnosticDescriptor (diagnosticId.AsString (),
@@ -41,7 +41,7 @@ namespace ILLink.RoslynAnalyzer
 		static string GetDiagnosticCategory (DiagnosticId diagnosticId)
 		{
 			switch ((int) diagnosticId) {
-			case >= 1000 and < 3000:
+			case > 2000 and < 3000:
 				return DiagnosticCategory.Trimming;
 
 			case >= 3000 and < 6000:
@@ -51,7 +51,7 @@ namespace ILLink.RoslynAnalyzer
 				break;
 			}
 
-			throw new ArgumentException ("TODO");
+			throw new ArgumentException ($"The provided diagnostic id '{diagnosticId}' does not fall into the range of supported warning codes 2001 to 6000 (inclusive).");
 		}
 	}
 }
