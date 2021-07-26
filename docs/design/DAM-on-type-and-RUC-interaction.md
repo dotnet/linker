@@ -98,6 +98,8 @@ Personally I'm not a big fan of the fact that RUC on type doesn't suppress the n
 
 In the end the interaction is very simple, the new warnings caused by DAM on type are not affected by RUC in any way (as in, they're never suppressed by RUC).
 
+**Important note:** Suppressing the new warnings is very likely to create unexpected breaks in the app. The DAM annotation on the type is effectively "public" in that anybody can use it. So for example reasoning like "This warning is OK because the one use where the DAM is utilized will not actually access this method." is very problematic, since if there's more than one use of the DAM (either already, or in the future), the trimmer will not generate new warnings. The DAM on type is effectively part of the type's contract, and as such the type should fulfill the contract. And part of such contract is that none of the members referenced by the DAM is dangerous to use in trimmed apps.
+
 ## Samples
 
 ```csharp
