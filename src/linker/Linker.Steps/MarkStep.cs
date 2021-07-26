@@ -2871,10 +2871,6 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		Type _typeField;
-
-		private ref Type GetRefType () { Type type = null; return ref _typeField; }
-
 		internal bool ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode ()
 		{
 			// Check if the current scope method has RequiresUnreferencedCode on it
