@@ -49,7 +49,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			=> CSharpAnalyzerVerifier<TAnalyzer>.Diagnostic (diagnosticId);
 
 		public static DiagnosticResult Diagnostic (DiagnosticId diagnosticId)
-			=> CSharpAnalyzerVerifier<TAnalyzer>.Diagnostic (diagnosticId.AsString ());
+			=> CSharpAnalyzerVerifier<TAnalyzer>.Diagnostic (DiagnosticDescriptors.GetDiagnosticDescriptor (diagnosticId));
 
 		/// <inheritdoc cref="AnalyzerVerifier{TAnalyzer, TTest}.Diagnostic(DiagnosticDescriptor)"/>
 		public static DiagnosticResult Diagnostic (DiagnosticDescriptor descriptor)

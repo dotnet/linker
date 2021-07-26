@@ -10,13 +10,16 @@ namespace ILLink.RoslynAnalyzer
 {
 	public static class DiagnosticDescriptors
 	{
-		public static DiagnosticDescriptor GetDiagnosticDescriptor (DiagnosticId diagnosticId) =>
-			new DiagnosticDescriptor (diagnosticId.AsString (),
-				DiagnosticStrings.GetDiagnosticTitleString (diagnosticId)!,
-				DiagnosticStrings.GetDiagnosticMessageString (diagnosticId)!,
+		public static DiagnosticDescriptor GetDiagnosticDescriptor (DiagnosticId diagnosticId)
+		{
+			var diagnosticString = new DiagnosticString (diagnosticId);
+			return new DiagnosticDescriptor (diagnosticId.AsString (),
+				diagnosticString.GetTitleFormat (),
+				diagnosticString.GetMessageFormat (),
 				GetDiagnosticCategory (diagnosticId),
 				DiagnosticSeverity.Warning,
 				true);
+		}
 
 		public static DiagnosticDescriptor GetDiagnosticDescriptor (DiagnosticId diagnosticId,
 			LocalizableResourceString? lrsTitle = null,
@@ -26,8 +29,16 @@ namespace ILLink.RoslynAnalyzer
 			bool isEnabledByDefault = true,
 			string? helpLinkUri = null)
 		{
-			lrsTitle ??= DiagnosticStrings.GetDiagnosticTitleString (diagnosticId);
-			lrsMessage ??= DiagnosticStrings.GetDiagnosticMessageString (diagnosticId);
+			if (lrsTitle == null && lrsMessage == null) {
+				var diagnosticString = new DiagnosticString (diagnosticId);
+				return new DiagnosticDescriptor (diagnosticId.AsString (),
+					diagnosticString.GetTitleFormat (),
+					diagnosticString.GetMessageFormat (),
+					diagnosticCategory ?? GetDiagnosticCategory (diagnosticId),
+					diagnosticSeverity,
+					isEnabledByDefault,
+					helpLinkUri);
+			}
 
 			return new DiagnosticDescriptor (diagnosticId.AsString (),
 				lrsTitle!,

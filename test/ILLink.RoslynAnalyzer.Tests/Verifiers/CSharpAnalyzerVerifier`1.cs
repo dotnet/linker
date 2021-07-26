@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using ILLink.Shared;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Testing;
@@ -234,7 +235,8 @@ namespace ILLink.RoslynAnalyzer.Tests
 				var applicableAnalyzer = analyzers.FirstOrDefault (a => a.SupportedDiagnostics.Any (dd => dd.Id == diagnosticsId));
 				if (applicableAnalyzer != null) {
 					var analyzerType = applicableAnalyzer.GetType ();
-					var rule = diagnostics[i].HasLocation && applicableAnalyzer.SupportedDiagnostics.Length == 1 ? string.Empty : $"{analyzerType.Name}.{diagnosticsId}";
+					var rule = diagnostics[i].HasLocation &&
+						applicableAnalyzer.SupportedDiagnostics.Length == 1 ? string.Empty : $"DiagnosticId.{(DiagnosticId) Int32.Parse (diagnosticsId.Substring (2))}";
 
 					if (!diagnostics[i].HasLocation) {
 						builder.Append ($"new DiagnosticResult({rule})");
@@ -308,13 +310,13 @@ namespace ILLink.RoslynAnalyzer.Tests
 				var applicableAnalyzer = analyzers.FirstOrDefault (a => a.SupportedDiagnostics.Any (dd => dd.Id == diagnosticsId));
 				if (applicableAnalyzer != null) {
 					var analyzerType = applicableAnalyzer.GetType ();
-					var rule = location != Location.None && location.IsInSource && applicableAnalyzer.SupportedDiagnostics.Length == 1 ? string.Empty : $"{analyzerType.Name}.{diagnosticsId}";
+					var rule = location != Location.None && location.IsInSource &&
+						applicableAnalyzer.SupportedDiagnostics.Length == 1 ? string.Empty : $"DiagnosticId.{(DiagnosticId) Int32.Parse (diagnosticsId.Substring (2))}";
 
 					if (location == Location.None || !location.IsInSource) {
 						builder.Append ($"new DiagnosticResult({rule})");
 					} else {
-						var resultMethodName = location.SourceTree!.FilePath.EndsWith (".cs") ? "VerifyCS.Diagnostic" : "VerifyVB.Diagnostic";
-						builder.Append ($"{resultMethodName}({rule})");
+						builder.Append ($"VerifyCS.Diagnostic({rule})");
 					}
 				} else {
 					builder.Append (

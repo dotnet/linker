@@ -17,9 +17,9 @@ namespace ILLink.RoslynAnalyzer
 		public const string FullyQualifiedRequiresUnreferencedCodeAttribute = "System.Diagnostics.CodeAnalysis." + RequiresUnreferencedCodeAttribute;
 
 		static readonly DiagnosticDescriptor s_requiresUnreferencedCodeRule = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.RequiresUnreferencedCode);
-		static readonly DiagnosticDescriptor s_requiresAttributeMismatch = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.RequiresUnreferencedCodeAttributeMismatch,
-			DiagnosticStrings.GetResourceString (nameof (SharedStrings.RequiresAttributeMismatchTitle))!,
-			DiagnosticStrings.GetResourceString (nameof (SharedStrings.RequiresAttributeMismatchMessage))!);
+		static readonly DiagnosticDescriptor s_requiresAttributeMismatch = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.RequiresAttributeMismatch,
+			new LocalizableResourceString (nameof (SharedStrings.RequiresAttributeMismatchTitle), SharedStrings.ResourceManager, typeof (SharedStrings)),
+			new LocalizableResourceString (nameof (SharedStrings.RequiresAttributeMismatchMessage), SharedStrings.ResourceManager, typeof (SharedStrings)));
 
 		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create (s_requiresUnreferencedCodeRule, s_requiresAttributeMismatch);
 
