@@ -1,0 +1,151 @@
+# Interaction of DAM and RUC on type and members
+
+## Existing rules
+
+* RUC on method suppresses warnings from the method's body and attributes.
+* RUC on method doesn't suppress warnings about the method usage (call to the method, accessing the method via reflection, ...)
+* RUC on type externally behaves as if all static members and constructors have RUC
+* RUC on type suppresses warnings as if all methods in the type have RUC on them (so method bodies and attributes)
+* RUC on type does NOT suppress warnings about/on nested types in any way
+
+## DAM on type behavior
+
+Annotating type with DAM effectively creates a reflection access to all affected members (depends on the annotation). The behavior in terms of getting a warning or not should be equivalent to accessing the member directly through reflection (`GetMethod` or similar).
+
+For better warning UX and suppression we decided to generate the warnings from:
+
+* The member itself if the type or one of its base types is annotated with a DAM which accesses the member in question
+* The type which adds DAM annotation which accesses a member on a base type (so unlike the above rule, we don't warn on the member, but on the type which added the DAM)
+
+*Note: the reasoning behind this behavior is to warn on the thing which is to blame for the problem. If type derives from annotated type, then the source of the problem is adding a member which will be accessed by such DAM and has issues (like RUC on it). If type adds DAM on itself, but such DAM causes access to a problematic member on base type, then the one to blame is the annotated type.*
+
+## RUC on type and interaction with DAM on type
+
+```csharp
+[DAM(All)]
+class AnnotatedBase {}
+
+[RUC]
+class DerivedWithRUC : AnnotatedBase
+{
+    [RUC]
+    public void MethodWithRUC() {}
+
+    public void MethodWithDAM([DAM(Fields)] Type type) {}
+}
+```
+
+Following the existing rules, accessing `MethodWithRUC` or `MethodWithDAM` via reflection will generate a warning, regardless of the RUC on type.
+Since DAM on type is meant to behave as if accessing the members via reflection, those warnings should not be affected by the RUC on type either.
+
+## RUC on method and interaction with DAM on type
+
+```csharp
+[DAM(All)]
+class AnnotatedBase {}
+
+class Derived : AnnotatedBase
+{
+    [RUC]
+    public void MethodWithRUC() {}
+
+    public void MethodWithDAM([DAM(Fields)] Type type) {}
+
+    [RUC]
+    public void MethodWithRUCAndDAM([DAM(Fields)] Type type) {}
+}
+```
+
+Following the existing rules, accessing `MethodWithRUC` or `MethodWithDAM` via reflection will generate a warning. The same rules also imply that accessing `MethodWithRUCAndDAM` via reflection will also generate a warning (actually two of them).
+RUC on method does not affect usage of the method (other than it should generate a warning on the usage).
+
+## RUC or DAM on nested type
+
+```csharp
+[DAM(All)]
+class AnnotatedBase {}
+
+class Derived : AnnotatedBase
+{
+    [RUC]
+    class NestedWithRUC {}
+
+    [DAM]
+    class NestedWithDAM {}
+}
+```
+
+This is probably an existing hole. Accessing a RUC or DAM type itself via reflection is not problematic on its own (since both annotations should behave as applying to members only). But it can create a hole in the analysis because of annotation propagation through `GetNestedType`. For example (given the above code):
+
+```csharp
+void TestMethod(Derived instance)
+{
+    Type typeOfDerived = instance.GetType(); // The type value is effectively annotated with All
+    Type nestedWithRUC = typeOfDerived.GetNestedType("NestedWithRUC"); // The resulting type value is effectively annotated with All
+    Activator.CreateInstance(nestedWithRUC); // No warning - nestedWithRUC has All annotation on it
+}
+```
+
+The above MUST warn, since it's calling a `.ctor` on a RUC annotated type.
+
+DAM on nested type doesn't seem to have a problem mainly because for marking purposes it's not needed (the DAM on the outer type if it applies to the nested type will mark the entire nested type, so DAM on it can't mark more).
+Also accessing DAM annotated types themselves is not a problem, and accessing their members is drive by the DAM annotation.
+This needs verification!!! (It is tricky)
+
+## Conclusion
+
+Personally I'm not a big fan of the fact that RUC on type doesn't suppress the new warnings on the type's members - as a normal user I would expect that to happen. That said, doing so would introduce an "Exception" to the existing rules, which is not ideal either. If we warn more (RUC on type doesn't affect the new warnings), it sort of creates noise, but it's not exactly wrong. And we can change our mind later on (by not warning anymore some day in the future).
+
+In the end the interaction is very simple, the new warnings caused by DAM on type are not affected by RUC in any way (as in, they're never suppressed by RUC).
+
+## Samples
+
+```csharp
+[DAM(All)]
+class AnnotatedBase {}
+
+[RUC]
+class DerivedWithRUC : AnnotatedBase
+{
+    // IL2112
+    [RUC]
+    public void MethodWithRUC() {}
+
+    // IL2114
+    public static void MethodWithDAM([DAM] Type type) {}
+
+    // IL2112
+    // IL2114
+    [RUC]
+    public void MethodWithDAMAndRUC([DAM] Type type) {}
+
+    // IL2114
+    [DAM]
+    public Type FieldWithDAM;
+
+    // IL2112 - we must do this here, since we won't be able to see the RUC anywhere else
+    [RUC]
+    public class NestedWithRUC {}
+
+    // No warnings - ??? Probably ??? - I think the DAM on the outer type effectively implies DAM(All) on the nested type
+    // and thus declaring it explicitly has no effect. But this needs validation specifically for cases where the outer type
+    // has DAM(PublicNestedTypes) on it (the new behavior should still imply All on the nested type in such case I think)
+    [DAM(Fields)]
+    public class NestedWithDAM {}
+}
+
+class Derived : AnnotatedBase
+{
+    // IL2112
+    [RUC]
+    public void MethodWithRUC() {}
+
+    // IL2114
+    public static void MethodWithDAM([DAM] Type type) {}
+
+    // IL2112
+    // IL2114
+    [RUC]
+    public void MethodWithDAMAndRUC([DAM] Type type) {}
+}
+```
