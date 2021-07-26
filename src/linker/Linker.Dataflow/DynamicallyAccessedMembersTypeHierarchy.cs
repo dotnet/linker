@@ -118,7 +118,8 @@ namespace Mono.Linker.Dataflow
 				// so we need to apply the annotation to this type as well
 				using var _ = _scopeStack.PushScope (new MessageOrigin (type));
 				var reflectionMethodBodyScanner = new ReflectionMethodBodyScanner (_context, _markStep, _scopeStack);
-				var reflectionPatternContext = new ReflectionPatternContext (_context, true, _scopeStack.CurrentScope.Origin, type);
+				// Set up a context to report warnings on access to annotated members, with the annotated type as the origin.
+				var reflectionPatternContext = new ReflectionPatternContext (_context, reportingEnabled: true, _scopeStack.CurrentScope.Origin, type);
 				reflectionMethodBodyScanner.ApplyDynamicallyAccessedMembersToType (ref reflectionPatternContext, type, annotation);
 				reflectionPatternContext.Dispose ();
 			}
@@ -142,7 +143,8 @@ namespace Mono.Linker.Dataflow
 
 			// Apply the effective annotation for the type
 			using var _ = _scopeStack.PushScope (new MessageOrigin (type));
-			var reflectionPatternContext = new ReflectionPatternContext (_context, true, _scopeStack.CurrentScope.Origin, type);
+			// Set up a context to report warnings on access to annotated members, with the annotated type as the origin.
+			var reflectionPatternContext = new ReflectionPatternContext (_context, reportingEnabled: true, _scopeStack.CurrentScope.Origin, type);
 			reflectionMethodBodyScanner.ApplyDynamicallyAccessedMembersToType (ref reflectionPatternContext, type, annotation);
 
 			// Mark it as applied in the cache
@@ -212,7 +214,8 @@ namespace Mono.Linker.Dataflow
 
 			if (applied) {
 				using var _ = _scopeStack.PushScope (new MessageOrigin (type));
-				var reflectionPatternContext = new ReflectionPatternContext (_context, true, _scopeStack.CurrentScope.Origin, type);
+				// Set up a context to report warnings on access to annotated members, with the annotated type as the origin.
+				var reflectionPatternContext = new ReflectionPatternContext (_context, reportingEnabled: true, _scopeStack.CurrentScope.Origin, type);
 				reflectionMethodBodyScanner.ApplyDynamicallyAccessedMembersToType (ref reflectionPatternContext, type, annotation);
 				_typesInDynamicallyAccessedMembersHierarchy[type] = (annotation, true);
 			}

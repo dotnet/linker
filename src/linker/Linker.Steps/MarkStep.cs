@@ -1548,6 +1548,11 @@ namespace Mono.Linker.Steps
 		{
 			Debug.Assert (member is MethodDefinition or FieldDefinition);
 
+			// Don't check whether the current scope is a RUC type or RUC method because these warnings
+			// are not suppressed in RUC scopes. Here the scope represents the DynamicallyAccessedMembers
+			// annotation on a type, not a callsite which uses the annotation. We always want to warn about
+			// possible reflection access indicated by these annotations.
+
 			var type = _scopeStack.CurrentScope.Origin.MemberDefinition as TypeDefinition;
 			Debug.Assert (type != null);
 
@@ -1568,7 +1573,7 @@ namespace Mono.Linker.Steps
 
 				if (member is MethodDefinition method && DoesMethodRequireUnreferencedCode (method, out RequiresUnreferencedCodeAttribute attribute)) {
 					var message = string.Format (
-						"'DynamicallyAccessedMembers' on '{0}' or one of its base types references '{1}' which requires unreferenced code.{2}{3}",
+						"'DynamicallyAccessedMembersAttribute' on '{0}' or one of its base types references '{1}' which requires unreferenced code.{2}{3}",
 						type.GetDisplayName (),
 						method.GetDisplayName (),
 						MessageFormat.FormatRequiresAttributeMessageArg (attribute.Message),
@@ -1579,7 +1584,7 @@ namespace Mono.Linker.Steps
 
 				if (_context.Annotations.FlowAnnotations.DoesMemberAccessRequireDynamicallyAccessedMembers (member)) {
 					var message = string.Format (
-						"'DynamicallyAccessedMembers' on '{0}' or one of its base types references '{1}' which has 'DynamicallyAccessedMembers' requirements.",
+						"'DynamicallyAccessedMembersAttribute' on '{0}' or one of its base types references '{1}' which has 'DynamicallyAccessedMembersAttribute' requirements.",
 						type.GetDisplayName (),
 						(member as MemberReference).GetDisplayName ());
 					var code = reportOnMember ? 2114 : 2115;
