@@ -89,7 +89,7 @@ void TestMethod(Derived instance)
 The above MUST warn, since it's calling a `.ctor` on a RUC annotated type.
 
 DAM on nested type doesn't seem to have a problem mainly because for marking purposes it's not needed (the DAM on the outer type if it applies to the nested type will mark the entire nested type, so DAM on it can't mark more).
-Also accessing DAM annotated types themselves is not a problem, and accessing their members is drive by the DAM annotation.
+Also accessing DAM annotated types themselves is not a problem, and accessing their members is driven by the DAM annotation.
 This needs verification!!! (It is tricky)
 
 ## Conclusion
