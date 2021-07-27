@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -359,6 +359,14 @@ namespace Mono.Linker.Tests.Cases.Reflection
 				[Kept]
 				[ExpectedWarning ("IL2112", "--RUC on NestedRUCType--")]
 				static void StaticMethod () { }
+			}
+
+			[KeptMember (".ctor()")]
+			[KeptAttributeAttribute (typeof (RequiresUnreferencedCodeAttribute))]
+			[ExpectedWarning ("IL2112", nameof (NestedRUCTypeWithDefaultConstructor) + "()", "--RUC on NestedRUCTypeWithDefaultConstructor--", CompilerGeneratedCode = true)]
+			[RequiresUnreferencedCode ("--RUC on NestedRUCTypeWithDefaultConstructor--")]
+			public class NestedRUCTypeWithDefaultConstructor
+			{
 			}
 		}
 
