@@ -18,14 +18,15 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 			var t = typeof (SuppressedOnType);
 		}
 
-		static void SuppressedOnMethod () {
+		static void SuppressedOnMethod ()
+		{
 			TriggerWarning ();
 		}
 
 		class SuppressedOnType : TriggerWarningType { }
 
 		[RequiresUnreferencedCode ("--TriggerWarning--")]
-		static void TriggerWarning () {}
+		static void TriggerWarning () { }
 
 		[RequiresUnreferencedCode ("--TriggerWarningType--")]
 		class TriggerWarningType { }
