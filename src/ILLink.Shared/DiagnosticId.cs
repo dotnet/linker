@@ -4,7 +4,7 @@
 	{
 		// Linker diagnostic ids.
 		RequiresUnreferencedCode = 2026,
-		RequiresAttributeMismatch = 2046,
+		RequiresUnreferencedCodeAttributeMismatch = 2046,
 
 		// Single-file diagnostic ids.
 		AvoidAssemblyLocationInSingleFile = 3000,

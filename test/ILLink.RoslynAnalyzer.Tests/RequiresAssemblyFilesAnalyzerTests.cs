@@ -323,7 +323,7 @@ class C
 }";
 			return VerifyRequiresAssemblyFilesAnalyzer (src,
 				// (8,13): warning IL3002: Using member 'System.Reflection.AssemblyName.CodeBase.get' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app. The code will return an empty string for assemblies embedded in a single-file app.
-				VerifyCS.Diagnostic (RequiresAssemblyFilesAnalyzer.IL3002).WithSpan (8, 13, 8, 23).WithArguments ("System.Reflection.AssemblyName.CodeBase.get", " The code will return an empty string for assemblies embedded in a single-file app.", ""),
+				VerifyCS.Diagnostic (DiagnosticId.RequiresAssemblyFiles).WithSpan (8, 13, 8, 23).WithArguments ("System.Reflection.AssemblyName.CodeBase.get", " The code will return an empty string for assemblies embedded in a single-file app.", ""),
 				// (8,13): warning IL3000: 'System.Reflection.AssemblyName.CodeBase' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'.
 				VerifyCS.Diagnostic (DiagnosticId.AvoidAssemblyLocationInSingleFile).WithSpan (8, 13, 8, 23).WithArguments ("System.Reflection.AssemblyName.CodeBase"),
 				// (9,13): warning IL3000: 'System.Reflection.AssemblyName.EscapedCodeBase' always returns an empty string for assemblies embedded in a single-file app. If the path to the app directory is needed, consider calling 'System.AppContext.BaseDirectory'.
