@@ -34,6 +34,10 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 			// Instantiate this type just so its property getters are considered reachable
 			var b = new DerivedFromAnnotatedDerivedFromBase ();
+
+			// Check that this field doesn't produce a warning even if it is kept
+			// for some non-reflection access.
+			var f = AnnotatedPublicMethods.DAMField;
 		}
 
 		[Kept]
@@ -68,8 +72,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			[Kept]
 			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
-			[ExpectedWarning ("IL2114", nameof (AnnotatedAll), nameof (DAMTField))]
-			public Type DAMTField;
+			[ExpectedWarning ("IL2114", nameof (AnnotatedAll), nameof (DAMField))]
+			public Type DAMField;
 
 			[Kept]
 			[KeptAttributeAttribute (typeof (RequiresUnreferencedCodeAttribute))]
@@ -78,8 +82,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			public void RUCMethod () { }
 
 			[Kept]
-			[ExpectedWarning ("IL2114", nameof (AnnotatedAll), nameof (DAMTMethod))]
-			public void DAMTMethod (
+			[ExpectedWarning ("IL2114", nameof (AnnotatedAll), nameof (DAMMethod))]
+			public void DAMMethod (
 				[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
 				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 				Type t
@@ -98,9 +102,19 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			[RequiresUnreferencedCode ("--RUC on AnnotatedPublicMethods.RUCMethod--")]
 			public void RUCMethod () { }
 
+			// No warning for members not selected by the type's annotation
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			public static Type UnusedDAMField;
+
+			// No warning for members not selected by the type's annotation, even if field is referenced statically
 			[Kept]
-			[ExpectedWarning ("IL2114", nameof (AnnotatedPublicMethods), nameof (DAMTMethod))]
-			public void DAMTMethod (
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			public static Type DAMField;
+
+			[Kept]
+			[ExpectedWarning ("IL2114", nameof (AnnotatedPublicMethods), nameof (DAMMethod))]
+			public void DAMMethod (
 				[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
 				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 				Type t
@@ -116,13 +130,13 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			[Kept]
 			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
-			[ExpectedWarning ("IL2114", nameof (AnnotatedPublicFields), nameof (DAMTField))]
-			public Type DAMTField;
+			[ExpectedWarning ("IL2114", nameof (AnnotatedPublicFields), nameof (DAMField))]
+			public Type DAMField;
 
 		}
 
 		[Kept]
-		[KeptMember ("get_DAMTProperty()")]
+		[KeptMember ("get_DAMProperty()")]
 		[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicProperties)]
 		class AnnotatedPublicProperties
@@ -131,9 +145,9 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			[KeptBackingField]
 			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
-			public static string DAMTProperty {
+			public static string DAMProperty {
 				// Property access reports warnings on getter/setter
-				[ExpectedWarning ("IL2114", nameof (AnnotatedPublicProperties), nameof (DAMTProperty) + ".get")]
+				[ExpectedWarning ("IL2114", nameof (AnnotatedPublicProperties), nameof (DAMProperty) + ".get")]
 				get;
 			}
 		}
@@ -201,6 +215,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[KeptBaseType (typeof (AnnotatedBase))]
+		// Warning about base member could go away with https://github.com/mono/linker/issues/2175
 		[ExpectedWarning ("IL2113", "--RUC on AnnotatedBase--")]
 		class DerivedFromAnnotatedBase : AnnotatedBase
 		{
@@ -212,7 +227,6 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[KeptMember (".ctor()")]
-		[KeptMember ("get_DAMTVirtualProperty()")]
 		class Base
 		{
 			[Kept]
@@ -228,21 +242,21 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			[Kept]
 			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicMethods)]
-			public string DAMTField1;
+			public string DAMField1;
 
 			[Kept]
 			[KeptBackingField]
 			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicMethods)]
-			public virtual string DAMTVirtualProperty { get; }
+			public virtual string DAMVirtualProperty { [Kept] get; }
 		}
 
 		[KeptBaseType (typeof (Base))]
 		[KeptMember (".ctor()")]
-		[KeptMember ("get_DAMTVirtualProperty()")]
+		[KeptMember ("get_DAMVirtualProperty()")]
 		[ExpectedWarning ("IL2113", "--RUCBaseMethod--")]
 		[ExpectedWarning ("IL2113", "--Base.RUCVirtualMethod--")]
-		[ExpectedWarning ("IL2115", nameof (Base), nameof (Base.DAMTVirtualProperty) + ".get")]
+		[ExpectedWarning ("IL2115", nameof (Base), nameof (Base.DAMVirtualProperty) + ".get")]
 		[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 		class AnnotatedDerivedFromBase : Base
@@ -262,28 +276,29 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			[Kept]
 			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicMethods)]
-			public string DAMTField2;
+			public string DAMField2;
 
 			[Kept]
 			[KeptBackingField]
 			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
 			// shouldn't warn because we warn on the base getter instead
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicMethods)]
-			public override string DAMTVirtualProperty { get; }
+			public override string DAMVirtualProperty { get; }
 
 		}
 
 		[KeptBaseType (typeof (AnnotatedDerivedFromBase))]
 		[KeptMember (".ctor()")]
-		[KeptMember ("get_DAMTVirtualProperty()")]
+		[KeptMember ("get_DAMVirtualProperty()")]
 		[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)]
-		[ExpectedWarning ("IL2115", nameof (Base), nameof (DAMTField1))]
-		[ExpectedWarning ("IL2115", nameof (AnnotatedDerivedFromBase), nameof (DAMTField2))]
+		// Warnings about base members could go away with https://github.com/mono/linker/issues/2175
+		[ExpectedWarning ("IL2115", nameof (Base), nameof (DAMField1))]
+		[ExpectedWarning ("IL2115", nameof (AnnotatedDerivedFromBase), nameof (DAMField2))]
 		[ExpectedWarning ("IL2113", "--RUCBaseMethod--")]
 		[ExpectedWarning ("IL2113", "--Base.RUCVirtualMethod--")]
 		[ExpectedWarning ("IL2113", "--RUC on AnnotatedDerivedFromBase--")]
-		[ExpectedWarning ("IL2115", nameof (Base), nameof (Base.DAMTVirtualProperty) + ".get")]
+		[ExpectedWarning ("IL2115", nameof (Base), nameof (Base.DAMVirtualProperty) + ".get")]
 		class DerivedFromAnnotatedDerivedFromBase : AnnotatedDerivedFromBase
 		{
 			[Kept]
@@ -299,17 +314,17 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			public override void RUCVirtualMethod () { }
 
 			[Kept]
-			[ExpectedWarning ("IL2114", nameof (DerivedFromAnnotatedDerivedFromBase), nameof (DAMTField3))]
+			[ExpectedWarning ("IL2114", nameof (DerivedFromAnnotatedDerivedFromBase), nameof (DAMField3))]
 			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicMethods)]
-			public string DAMTField3;
+			public string DAMField3;
 
 			[Kept]
 			[KeptBackingField]
 			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
 			// shouldn't warn because we warn on the base getter instead
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicMethods)]
-			public override string DAMTVirtualProperty { get; }
+			public override string DAMVirtualProperty { get; }
 		}
 
 		[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
