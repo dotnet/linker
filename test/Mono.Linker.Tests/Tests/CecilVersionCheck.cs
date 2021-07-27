@@ -14,7 +14,7 @@ namespace Mono.Linker.Tests
 			var thisAssembly = Assembly.GetExecutingAssembly ();
 			var cecilPackageVersion = thisAssembly
 				.GetCustomAttributes<AssemblyMetadataAttribute> ()
-				.Where (ca => (ca as AssemblyMetadataAttribute).Key == "CecilPackageVersion")
+				.Where (ca => ca.Key == "CecilPackageVersion")
 				.Single ().Value;
 			// Assume that the test assembly builds against the same cecil as the linker.
 			var cecilAssemblyVersion = thisAssembly
