@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
@@ -212,7 +212,7 @@ namespace Mono.Linker
 			}
 		}
 
-		public static bool TypeRefHasUnconditionalSuppressions (TypeReference typeRef)
+		static bool TypeRefHasUnconditionalSuppressions (TypeReference typeRef)
 		{
 			return typeRef.Name == "UnconditionalSuppressMessageAttribute" &&
 				typeRef.Namespace == "System.Diagnostics.CodeAnalysis";
