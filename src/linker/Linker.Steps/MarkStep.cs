@@ -1582,7 +1582,7 @@ namespace Mono.Linker.Steps
 					_context.LogWarning (message, code, origin, MessageSubCategory.TrimAnalysis);
 				}
 
-				if (_context.Annotations.FlowAnnotations.DoesMemberAccessRequireDynamicallyAccessedMembers (member)) {
+				if (_context.Annotations.FlowAnnotations.ShouldWarnWhenAccessedForReflection (member)) {
 					var message = string.Format (
 						"'DynamicallyAccessedMembersAttribute' on '{0}' or one of its base types references '{1}' which has 'DynamicallyAccessedMembersAttribute' requirements.",
 						type.GetDisplayName (),
@@ -2884,48 +2884,6 @@ namespace Mono.Linker.Steps
 				default:
 					break;
 				}
-
-				// If the method only has annotation on the return value and it's not virtual avoid warning.
-				// Return value annotations are "consumed" by the caller of a method, and as such there is nothing
-				// wrong calling these dynamically. The only problem can happen if something overrides a virtual
-				// method with annotated return value at runtime - in this case the trimmer can't validate
-				// that the method will return only types which fulfill the annotation's requirements.
-				// For example:
-				//   class BaseWithAnnotation
-				//   {
-				//       [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)]
-				//       public abstract Type GetTypeWithFields();
-				//   }
-				//
-				//   class UsingTheBase
-				//   {
-				//       public void PrintFields(Base base)
-				//       {
-				//            // No warning here - GetTypeWithFields is correctly annotated to allow GetFields on the return value.
-				//            Console.WriteLine(string.Join(" ", base.GetTypeWithFields().GetFields().Select(f => f.Name)));
-				//       }
-				//   }
-				//
-				// If at runtime (through ref emit) something generates code like this:
-				//   class DerivedAtRuntimeFromBase
-				//   {
-				//       // No point in adding annotation on the return value - nothing will look at it anyway
-				//       // Linker will not see this code, so there are no checks
-				//       public override Type GetTypeWithFields() { return typeof(TestType); }
-				//   }
-				//
-				// If TestType from above is trimmed, it may note have all its fields, and there would be no warnings generated.
-				// But there has to be code like this somewhere in the app, in order to generate the override:
-				//   class RuntimeTypeGenerator
-				//   {
-				//       public MethodInfo GetBaseMethod()
-				//       {
-				//            // This must warn - that the GetTypeWithFields has annotation on the return value
-				//            return typeof(BaseWithAnnotation).GetMethod("GetTypeWithFields");
-				//       }
-				//   }
-				if (!method.IsVirtual && _context.Annotations.FlowAnnotations.MethodHasNoAnnotatedParameters (method))
-					return;
 
 				_context.LogWarning (
 					$"Method '{method.GetDisplayName ()}' with parameters or return value with `DynamicallyAccessedMembersAttribute` is accessed via reflection. Trimmer can't guarantee availability of the requirements of the field.",
