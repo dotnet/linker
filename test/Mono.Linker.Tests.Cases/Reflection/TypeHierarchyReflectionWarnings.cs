@@ -167,7 +167,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 			public static string DAMProperty {
 				[Kept]
-				// No warning for getter since return value is not annotated
+				// No warning for non-virtual getter since return value is not annotated
 				get;
 				[Kept]
 				// Property access reports warnings on getter/setter
