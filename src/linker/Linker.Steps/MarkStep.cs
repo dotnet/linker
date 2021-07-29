@@ -1768,10 +1768,7 @@ namespace Mono.Linker.Steps
 				MarkType (type.DeclaringType, new DependencyInfo (DependencyKind.DeclaringType, type));
 			MarkSecurityDeclarations (type, new DependencyInfo (DependencyKind.CustomAttribute, type));
 
-			if (((type.DeclaringType is not null &&
-				!_context.Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (type.DeclaringType)) ||
-				type.DeclaringType is null) &&
-				type.BaseType is not null &&
+			if (type.BaseType is not null &&
 				!_context.Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (type) &&
 				_context.Annotations.TryGetLinkerAttribute (_context.TryResolve (type.BaseType), out RequiresUnreferencedCodeAttribute effectiveRequiresUnreferencedCode)) {
 

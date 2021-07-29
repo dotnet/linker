@@ -898,7 +898,9 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			{
 				public static void StaticMethodInInheritedClass () { }
 
-				// The requires attribute in the declaring type suppresses IL2109 here
+				// A nested class is not considered a static method nor constructor therefore RequiresUnreferencedCode doesnt apply
+				// and this warning is not suppressed
+				[ExpectedWarning ("IL2109", "RequiresOnClass/DerivedWithRequires2/DerivedNestedClass", "--ClassWithRequiresUnreferencedCode--")]
 				public class DerivedNestedClass : ClassWithRequiresUnreferencedCode
 				{
 					public static void NestedStaticMethod () { }
