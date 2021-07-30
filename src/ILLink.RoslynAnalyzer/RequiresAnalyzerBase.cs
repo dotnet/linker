@@ -249,7 +249,9 @@ namespace ILLink.RoslynAnalyzer
 				message));
 		}
 
-		private bool HasMismatchingAttributes (ISymbol member1, ISymbol member2) => member1.HasAttribute (RequiresAttributeName) ^ member2.HasAttribute (RequiresAttributeName);
+		private bool HasMismatchingAttributes (ISymbol member1, ISymbol member2) => 
+			(member1.HasAttribute (RequiresAttributeName) || (member1.ContainingType is not null && member1.ContainingType.HasAttribute(RequiresAttributeName))) 
+			^ (member2.HasAttribute (RequiresAttributeName) || (member2.ContainingType is not null && member2.ContainingType.HasAttribute (RequiresAttributeName)));
 
 		protected abstract string GetMessageFromAttribute (AttributeData requiresAttribute);
 
