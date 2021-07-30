@@ -242,7 +242,7 @@ namespace ILLink.RoslynAnalyzer
 
 		private void ReportMismatchInAttributesDiagnostic (SymbolAnalysisContext symbolAnalysisContext, ISymbol member, ISymbol baseMember, bool isInterface = false)
 		{
-			string message = MessageFormat.FormatRequiresAttributeMismatch (member.HasAttribute (RequiresAttributeName) || member.ContainingType is not null && member.ContainingType.HasAttribute(RequiresAttributeName), isInterface, RequiresAttributeName, member.GetDisplayName (), baseMember.GetDisplayName ());
+			string message = MessageFormat.FormatRequiresAttributeMismatch (member.HasAttribute (RequiresAttributeName) || member.ContainingType is { } containingType && containingType.HasAttribute (RequiresAttributeName), isInterface, RequiresAttributeName, member.GetDisplayName (), baseMember.GetDisplayName ());
 			symbolAnalysisContext.ReportDiagnostic (Diagnostic.Create (
 				RequiresAttributeMismatch,
 				member.Locations[0],
@@ -250,8 +250,8 @@ namespace ILLink.RoslynAnalyzer
 		}
 
 		private bool HasMismatchingAttributes (ISymbol member1, ISymbol member2) => 
-			(member1.HasAttribute (RequiresAttributeName) || (member1.ContainingType is not null && member1.ContainingType.HasAttribute(RequiresAttributeName))) 
-			^ (member2.HasAttribute (RequiresAttributeName) || (member2.ContainingType is not null && member2.ContainingType.HasAttribute (RequiresAttributeName)));
+			(member1.HasAttribute (RequiresAttributeName) || (member1.ContainingType is { } member1ContainingType && member1ContainingType.HasAttribute(RequiresAttributeName))) 
+			^ (member2.HasAttribute (RequiresAttributeName) || (member2.ContainingType is { } member2ContainingType && member2ContainingType.HasAttribute (RequiresAttributeName)));
 
 		protected abstract string GetMessageFromAttribute (AttributeData requiresAttribute);
 
