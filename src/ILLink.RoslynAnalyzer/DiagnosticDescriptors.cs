@@ -29,7 +29,7 @@ namespace ILLink.RoslynAnalyzer
 			bool isEnabledByDefault = true,
 			string? helpLinkUri = null)
 		{
-			if (lrsTitle == null && lrsMessage == null) {
+			if (lrsTitle == null || lrsMessage == null) {
 				var diagnosticString = new DiagnosticString (diagnosticId);
 				return new DiagnosticDescriptor (diagnosticId.AsString (),
 					diagnosticString.GetTitleFormat (),

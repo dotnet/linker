@@ -6,12 +6,12 @@ namespace ILLink.Shared
 	{
 		readonly string _titleFormat;
 		readonly string _messageFormat;
-		static readonly ResourceManager _resourceManager = SharedStrings.ResourceManager;
 
 		public DiagnosticString (DiagnosticId diagnosticId)
 		{
-			_titleFormat = _resourceManager.GetString ($"{diagnosticId}Title");
-			_messageFormat = _resourceManager.GetString ($"{diagnosticId}Message");
+			var resourceManager = SharedStrings.ResourceManager;
+			_titleFormat = resourceManager.GetString ($"{diagnosticId}Title");
+			_messageFormat = resourceManager.GetString ($"{diagnosticId}Message");
 		}
 
 		public string GetMessage (params string[] args) =>

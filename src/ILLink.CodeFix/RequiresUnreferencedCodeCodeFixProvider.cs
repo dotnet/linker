@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Immutable;
 using System.Composition;
+using System.Linq;
 using System.Threading.Tasks;
 using ILLink.CodeFixProvider;
 using ILLink.RoslynAnalyzer;
@@ -19,8 +20,9 @@ namespace ILLink.CodeFix
 	[ExportCodeFixProvider (LanguageNames.CSharp, Name = nameof (RequiresUnreferencedCodeCodeFixProvider)), Shared]
 	public class RequiresUnreferencedCodeCodeFixProvider : BaseAttributeCodeFixProvider
 	{
-		public sealed override ImmutableArray<string> FixableDiagnosticIds
-			=> ImmutableArray.Create (DiagnosticId.RequiresUnreferencedCode.AsString ());
+		public ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.RequiresUnreferencedCode));
+
+		public sealed override ImmutableArray<string> FixableDiagnosticIds => SupportedDiagnostics.Select (dd => dd.Id).ToImmutableArray ();
 
 		private protected override LocalizableString CodeFixTitle => new LocalizableResourceString (nameof (Resources.RequiresUnreferencedCodeCodeFixTitle), Resources.ResourceManager, typeof (Resources));
 
