@@ -236,7 +236,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 				if (applicableAnalyzer != null) {
 					var analyzerType = applicableAnalyzer.GetType ();
 					var rule = diagnostics[i].HasLocation &&
-						applicableAnalyzer.SupportedDiagnostics.Length == 1 ? string.Empty : $"DiagnosticId.{(DiagnosticId) Int32.Parse (diagnosticsId.Substring (2))}";
+						applicableAnalyzer.SupportedDiagnostics.Length == 1 ? string.Empty : GetDiagnosticIdArgumentString (diagnosticsId);
 
 					if (!diagnostics[i].HasLocation) {
 						builder.Append ($"new DiagnosticResult({rule})");
@@ -311,7 +311,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 				if (applicableAnalyzer != null) {
 					var analyzerType = applicableAnalyzer.GetType ();
 					var rule = location != Location.None && location.IsInSource &&
-						applicableAnalyzer.SupportedDiagnostics.Length == 1 ? string.Empty : $"DiagnosticId.{(DiagnosticId) Int32.Parse (diagnosticsId.Substring (2))}";
+						applicableAnalyzer.SupportedDiagnostics.Length == 1 ? string.Empty : GetDiagnosticIdArgumentString (diagnosticsId);
 
 					if (location == Location.None || !location.IsInSource) {
 						builder.Append ($"new DiagnosticResult({rule})");
@@ -606,7 +606,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 				return string.Equals (expected.Message, actual.GetMessage ());
 			}
 		}
-
+		private static string GetDiagnosticIdArgumentString (string diagnosticId) => $"DiagnosticId.{(DiagnosticId) Int32.Parse (diagnosticId.Substring (2))}";
 
 		internal readonly struct MatchQuality : IComparable<MatchQuality>, IEquatable<MatchQuality>
 		{
