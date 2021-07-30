@@ -1014,7 +1014,11 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			{
 			}
 
-
+			// Analyzer still dont understand RUC on type
+			[ExpectedWarning ("IL2026", "BaseWithoutRequiresOnType.Method()", GlobalAnalysisOnly = true)]
+			[ExpectedWarning ("IL2026", "InterfaceWithoutRequires.Method(Int32)", GlobalAnalysisOnly = true)]
+			[ExpectedWarning ("IL2026", "InterfaceWithoutRequires.Method()", GlobalAnalysisOnly = true)]
+			[ExpectedWarning ("IL2026", "ImplementationWithRequiresOnType.Method()", GlobalAnalysisOnly = true)]
 			public static void Test ()
 			{
 				TestRequiresInClassAccessedByStaticMethod ();
