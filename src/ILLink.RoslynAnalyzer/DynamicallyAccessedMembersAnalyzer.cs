@@ -167,7 +167,7 @@ namespace ILLink.RoslynAnalyzer
 					DiagnosticId.DynamicallyAccessedMembersMismatchFieldTargetsMethodReturnType :
 					DiagnosticId.DynamicallyAccessedMembersMismatchFieldTargetsMethod,
 				(SymbolKind.Field, SymbolKind.TypeParameter) => DiagnosticId.DynamicallyAccessedMembersMismatchFieldTargetsGenericParameter,
-				(SymbolKind.NamedType, SymbolKind.Method) => targetsType ? 
+				(SymbolKind.NamedType, SymbolKind.Method) => targetsType ?
 					DiagnosticId.DynamicallyAccessedMembersMismatchMethodTargetsMethodReturnType :
 					DiagnosticId.DynamicallyAccessedMembersMismatchMethodTargetsMethod,
 				(SymbolKind.Method, SymbolKind.Field) => DiagnosticId.DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsField,
