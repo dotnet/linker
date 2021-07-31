@@ -13,35 +13,26 @@ namespace Mono.Linker
 		internal const string MessageIdProperty = "MessageId";
 
 		readonly LinkContext _context;
-		readonly Dictionary<ICustomAttributeProvider, (bool ScannedProvider, Dictionary<int, SuppressMessageInfo> Suppressions)> _suppressions;
+		readonly Dictionary<ICustomAttributeProvider, Dictionary<int, SuppressMessageInfo>> _suppressions;
 		HashSet<AssemblyDefinition> InitializedAssemblies { get; }
 
 		public UnconditionalSuppressMessageAttributeState (LinkContext context)
 		{
 			_context = context;
-			_suppressions = new Dictionary<ICustomAttributeProvider, (bool, Dictionary<int, SuppressMessageInfo>)> ();
+			_suppressions = new Dictionary<ICustomAttributeProvider, Dictionary<int, SuppressMessageInfo>> ();
 			InitializedAssemblies = new HashSet<AssemblyDefinition> ();
-		}
-
-		void AddSuppression (CustomAttribute ca, ICustomAttributeProvider provider)
-		{
-			SuppressMessageInfo info;
-			if (!TryDecodeSuppressMessageAttributeData (ca, out info))
-				return;
-
-			AddSuppression (info, provider);
 		}
 
 		void AddSuppression (SuppressMessageInfo info, ICustomAttributeProvider provider)
 		{
 			if (!_suppressions.TryGetValue (provider, out var suppressions)) {
-				suppressions = (ScannedProvider: false, Suppressions: new Dictionary<int, SuppressMessageInfo> ());
+				suppressions = new Dictionary<int, SuppressMessageInfo> ();
 				_suppressions.Add (provider, suppressions);
-			} else if (suppressions.Suppressions.ContainsKey (info.Id)) {
+			} else if (suppressions.ContainsKey (info.Id)) {
 				_context.LogMessage ($"Element {provider} has more than one unconditional suppression. Note that only the last one is used.");
 			}
 
-			suppressions.Suppressions[info.Id] = info;
+			suppressions[info.Id] = info;
 		}
 
 		public bool IsSuppressed (int id, MessageOrigin warningOrigin, out SuppressMessageInfo info)
@@ -68,7 +59,6 @@ namespace Mono.Linker
 				return false;
 
 			ModuleDefinition module = GetModuleFromProvider (warningOriginMember);
-			DecodeModuleLevelAndGlobalSuppressMessageAttributes (module);
 			while (warningOriginMember != null) {
 				if (IsSuppressedOnElement (id, warningOriginMember, out info))
 					return true;
@@ -90,38 +80,36 @@ namespace Mono.Linker
 			if (provider == null)
 				return false;
 
-			// If the provider has suppressions and we already scanned its attributes,
-			// the cached suppressions are complete.
-			var hasSuppressions = _suppressions.TryGetValue (provider, out var suppressions);
-			if (hasSuppressions && suppressions.ScannedProvider)
-				return suppressions.Suppressions.TryGetValue (id, out info);
+			if (_suppressions.TryGetValue (provider, out var suppressions))
+				return suppressions.TryGetValue (id, out info);
 
-			// Either there were no cached suppressions for the provider, or there were some global
-			// suppressions but we haven't scanned the provider yet. Scan it.
-			if (_context.CustomAttributes.HasAny (provider)) {
-				foreach (var ca in _context.CustomAttributes.GetCustomAttributes (provider)) {
-					if (!TypeRefHasUnconditionalSuppressions (ca.Constructor.DeclaringType) ||
-						provider is ModuleDefinition or AssemblyDefinition)
-						continue;
+			// Populate the cache with suppressions for this member. We need to look for suppressions on the
+			// member itself, and on the assembly/module.
 
-					hasSuppressions = true;
-					AddSuppression (ca, provider);
-					if (suppressions == default ((bool, Dictionary<int, SuppressMessageInfo>)))
-						_suppressions.TryGetValue (provider, out suppressions);
+			var membersToScan = new HashSet<ICustomAttributeProvider> { { provider } };
+
+			// Gather assembly-level suppressions if we haven't already. To ensure that we always cache
+			// complete information for a member, we will also scan for attributes on any other members
+			// targeted by the assembly-level suppressions.
+			var module = GetModuleFromProvider (provider);
+			var assembly = module.Assembly;
+			if (InitializedAssemblies.Add (assembly)) {
+				foreach (var suppression in DecodeAssemblyAndModuleSuppressions (module)) {
+					AddSuppression (suppression.Info, suppression.Target);
+					membersToScan.Add (suppression.Target);
 				}
 			}
 
-			if (!hasSuppressions)
-				return false;
+			// Populate the cache for this member, and for any members that were targeted by assembly-level
+			// suppressions to make sure the cached info is complete.
+			foreach (var member in membersToScan) {
+				if (member is ModuleDefinition or AssemblyDefinition)
+					continue;
+				foreach (var suppressionInfo in DecodeSuppressions (member))
+					AddSuppression (suppressionInfo, member);
+			}
 
-			// Now we have scanned this provider and it has cached suppressions (either global, or new ones
-			// from the scan). Record this in the cache to avoid discovering the same suppressions multiple times.
-			// Providers without any suppressions are not cached and may still be scanned multiple times.
-			Debug.Assert (!suppressions.ScannedProvider);
-			suppressions.ScannedProvider = true;
-			_suppressions[provider] = suppressions;
-
-			return suppressions.Suppressions.TryGetValue (id, out info);
+			return _suppressions.TryGetValue (provider, out suppressions) && suppressions.TryGetValue (id, out info);
 		}
 
 		static bool TryDecodeSuppressMessageAttributeData (CustomAttribute attribute, out SuppressMessageInfo info)
@@ -185,17 +173,37 @@ namespace Mono.Linker
 			}
 		}
 
-		void DecodeModuleLevelAndGlobalSuppressMessageAttributes (ModuleDefinition module)
+		public IEnumerable<SuppressMessageInfo> DecodeSuppressions (ICustomAttributeProvider provider)
 		{
-			AssemblyDefinition assembly = module.Assembly;
-			if (InitializedAssemblies.Add (assembly)) {
-				LookForModuleLevelAndGlobalSuppressions (module, assembly);
-				foreach (var _module in assembly.Modules)
-					LookForModuleLevelAndGlobalSuppressions (_module, _module);
+			Debug.Assert (provider is not ModuleDefinition or AssemblyDefinition);
+
+			if (!_context.CustomAttributes.HasAny (provider))
+				yield break;
+
+			foreach (var ca in _context.CustomAttributes.GetCustomAttributes (provider)) {
+				if (!TypeRefHasUnconditionalSuppressions (ca.Constructor.DeclaringType))
+					continue;
+
+				if (!TryDecodeSuppressMessageAttributeData (ca, out var info))
+					continue;
+
+				yield return info;
 			}
 		}
 
-		public void LookForModuleLevelAndGlobalSuppressions (ModuleDefinition module, ICustomAttributeProvider provider)
+		public IEnumerable<(SuppressMessageInfo Info, ICustomAttributeProvider Target)> DecodeAssemblyAndModuleSuppressions (ModuleDefinition module)
+		{
+			AssemblyDefinition assembly = module.Assembly;
+			foreach (var suppression in DecodeGlobalSuppressions (module, assembly))
+				yield return suppression;
+
+			foreach (var _module in assembly.Modules) {
+				foreach (var suppression in DecodeGlobalSuppressions (_module, _module))
+					yield return suppression;
+			}
+		}
+
+		public IEnumerable<(SuppressMessageInfo Info, ICustomAttributeProvider Target)> DecodeGlobalSuppressions (ModuleDefinition module, ICustomAttributeProvider provider)
 		{
 			var attributes = _context.CustomAttributes.GetCustomAttributes (provider).
 					Where (a => TypeRefHasUnconditionalSuppressions (a.AttributeType));
@@ -206,19 +214,19 @@ namespace Mono.Linker
 
 				var scope = info.Scope?.ToLower ();
 				if (info.Target == null && (scope == "module" || scope == null)) {
-					AddSuppression (info, provider);
+					yield return (info, provider);
 					continue;
 				}
 
 				switch (scope) {
 				case "module":
-					AddSuppression (info, provider);
+					yield return (info, provider);
 					break;
 
 				case "type":
 				case "member":
 					foreach (var result in DocumentationSignatureParser.GetMembersForDocumentationSignature (info.Target, module))
-						AddSuppression (info, result);
+						yield return (info, result);
 
 					break;
 				default:
