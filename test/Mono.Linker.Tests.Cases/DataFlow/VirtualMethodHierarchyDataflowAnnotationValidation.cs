@@ -13,6 +13,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 {
 	[SkipKeptItemsValidation]
 	[SandboxDependency ("Dependencies/TestSystemTypeBase.cs")]
+
+	// Suppress warnings about accessing methods with annotations via reflection - the test below does that a LOT
+	// (The test accessed these methods through DynamicallyAccessedMembers annotations which is effectively the same reflection access)
+	[UnconditionalSuppressMessage ("test", "IL2111")]
 	class VirtualMethodHierarchyDataflowAnnotationValidation
 	{
 		public static void Main ()
@@ -267,9 +271,13 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 
 			// === RequiresUnreferencedCode ===
-			[ExpectedWarning ("IL2046", "DerivedClass.RequiresUnreferencedCodeBaseWithDerivedWithout()", "BaseClass.RequiresUnreferencedCodeBaseWithDerivedWithout()")]
+			[ExpectedWarning ("IL2046", "DerivedClass.RequiresUnreferencedCodeBaseWithDerivedWithout()",
+				"BaseClass.RequiresUnreferencedCodeBaseWithDerivedWithout()",
+				"'RequiresUnreferencedCodeAttribute' annotations must match across all interface implementations or overrides")]
 			public override void RequiresUnreferencedCodeBaseWithDerivedWithout () { }
-			[ExpectedWarning ("IL2046", "DerivedClass.RequiresUnreferencedCodeBaseWithoutDerivedWith_()", "BaseClass.RequiresUnreferencedCodeBaseWithoutDerivedWith_()")]
+			[ExpectedWarning ("IL2046", "DerivedClass.RequiresUnreferencedCodeBaseWithoutDerivedWith_()",
+				"BaseClass.RequiresUnreferencedCodeBaseWithoutDerivedWith_()",
+				"'RequiresUnreferencedCodeAttribute' annotations must match across all interface implementations or overrides")]
 			[RequiresUnreferencedCode ("")]
 			public override void RequiresUnreferencedCodeBaseWithoutDerivedWith_ () { }
 			[LogDoesNotContain ("DerivedClass.RequiresUnreferencedCodeBaseWithDerivedWith_")]
