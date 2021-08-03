@@ -252,7 +252,7 @@ namespace ILLink.RoslynAnalyzer
 
 		private void ReportMismatchInAttributesDiagnostic (SymbolAnalysisContext symbolAnalysisContext, ISymbol member, ISymbol baseMember, bool isInterface = false)
 		{
-			string message = MessageFormat.FormatRequiresAttributeMismatch (member.HasAttribute (RequiresAttributeName), isInterface, RequiresAttributeName, member.GetDisplayName (), baseMember.GetDisplayName ()); 
+			string message = MessageFormat.FormatRequiresAttributeMismatch (member.HasAttribute (RequiresAttributeName), isInterface, RequiresAttributeName, member.GetDisplayName (), baseMember.GetDisplayName ());
 			symbolAnalysisContext.ReportDiagnostic (Diagnostic.Create (
 				RequiresAttributeMismatch,
 				member.Locations[0],
