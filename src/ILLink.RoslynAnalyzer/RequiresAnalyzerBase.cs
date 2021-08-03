@@ -216,13 +216,13 @@ namespace ILLink.RoslynAnalyzer
 
 				case ILocalFunctionOperation local when targets.HasFlag (DiagnosticTargets.MethodOrConstructor):
 					return local.Symbol;
-				
+
 				case IMethodBodyBaseOperation when targets.HasFlag (DiagnosticTargets.MethodOrConstructor):
 				case IPropertyReferenceOperation when targets.HasFlag (DiagnosticTargets.Property):
 				case IFieldReferenceOperation when targets.HasFlag (DiagnosticTargets.Field):
 				case IEventReferenceOperation when targets.HasFlag (DiagnosticTargets.Event):
 					return operationContext.ContainingSymbol;
-				
+
 				default:
 					parent = parent.Parent;
 					break;
