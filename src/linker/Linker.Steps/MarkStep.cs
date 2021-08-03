@@ -1571,7 +1571,7 @@ namespace Mono.Linker.Steps
 			try {
 				var origin = _scopeStack.CurrentScope.Origin;
 
-				if (member is MethodDefinition method && DoesMethodRequireUnreferencedCode (method, out RequiresUnreferencedCodeAttribute attribute)) {
+				if (member is MethodDefinition method && Annotations.DoesMethodRequireUnreferencedCode (method, out RequiresUnreferencedCodeAttribute attribute)) {
 					var message = string.Format (
 						"'DynamicallyAccessedMembersAttribute' on '{0}' or one of its base types references '{1}' which requires unreferenced code.{2}{3}",
 						type.GetDisplayName (),
@@ -2904,28 +2904,12 @@ namespace Mono.Linker.Steps
 
 			IMemberDefinition suppressionContextMember = currentOrigin.SuppressionContextMember;
 			if (suppressionContextMember != null &&
-				(Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (suppressionContextMember) ||
-				(suppressionContextMember.DeclaringType != null &&
-				Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (suppressionContextMember.DeclaringType))))
+				Annotations.DoesMethodRequireUnreferencedCode (suppressionContextMember, out _))
 				return true;
 
 			IMemberDefinition originMember = currentOrigin.MemberDefinition;
 			if (suppressionContextMember != originMember && originMember != null &&
-				(Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (originMember) ||
-				(originMember.DeclaringType != null &&
-				Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (originMember.DeclaringType))))
-				return true;
-
-			return false;
-		}
-
-		bool DoesMethodRequireUnreferencedCode (MethodDefinition method, out RequiresUnreferencedCodeAttribute attribute)
-		{
-			if (Annotations.TryGetLinkerAttribute (method, out attribute))
-				return true;
-
-			if ((method.IsStatic || method.IsConstructor) && method.DeclaringType is not null && 
-				Annotations.TryGetLinkerAttribute (method.DeclaringType, out attribute))
+				Annotations.DoesMethodRequireUnreferencedCode (originMember.DeclaringType, out _))
 				return true;
 
 			return false;
@@ -2938,7 +2922,7 @@ namespace Mono.Linker.Steps
 			if (ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode ())
 				return;
 
-			if (!DoesMethodRequireUnreferencedCode (method, out RequiresUnreferencedCodeAttribute requiresUnreferencedCode))
+			if (!Annotations.DoesMethodRequireUnreferencedCode (method, out RequiresUnreferencedCodeAttribute requiresUnreferencedCode))
 				return;
 
 			ReportRequiresUnreferencedCode (method.GetDisplayName (), requiresUnreferencedCode, _scopeStack.CurrentScope.Origin);
