@@ -2909,7 +2909,7 @@ namespace Mono.Linker.Steps
 
 			IMemberDefinition originMember = currentOrigin.MemberDefinition;
 			if (suppressionContextMember != originMember && originMember != null &&
-				Annotations.DoesMethodRequireUnreferencedCode (originMember.DeclaringType, out _))
+				Annotations.DoesMethodRequireUnreferencedCode (originMember, out _))
 				return true;
 
 			return false;
