@@ -2908,7 +2908,7 @@ namespace Mono.Linker.Steps
 				return true;
 
 			IMemberDefinition originMember = currentOrigin.MemberDefinition;
-			if (originMember is not null && originMember is MethodDefinition && suppressionContextMember != originMember && 
+			if (originMember is not null && originMember is MethodDefinition && suppressionContextMember != originMember &&
 				Annotations.DoesMethodRequireUnreferencedCode ((MethodDefinition) originMember, out _))
 				return true;
 
