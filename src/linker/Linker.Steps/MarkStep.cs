@@ -2903,13 +2903,13 @@ namespace Mono.Linker.Steps
 			var currentOrigin = _scopeStack.CurrentScope.Origin;
 
 			IMemberDefinition suppressionContextMember = currentOrigin.SuppressionContextMember;
-			if (suppressionContextMember != null &&
-				Annotations.DoesMethodRequireUnreferencedCode (suppressionContextMember, out _))
+			if (suppressionContextMember is not null && suppressionContextMember is MethodDefinition &&
+				Annotations.DoesMethodRequireUnreferencedCode ((MethodDefinition) suppressionContextMember, out _))
 				return true;
 
 			IMemberDefinition originMember = currentOrigin.MemberDefinition;
-			if (suppressionContextMember != originMember && originMember != null &&
-				Annotations.DoesMethodRequireUnreferencedCode (originMember, out _))
+			if (originMember is not null && originMember is MethodDefinition && suppressionContextMember != originMember && 
+				Annotations.DoesMethodRequireUnreferencedCode ((MethodDefinition) originMember, out _))
 				return true;
 
 			return false;

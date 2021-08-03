@@ -591,12 +591,12 @@ namespace Mono.Linker
 			return attribute != null;
 		}
 
-		internal bool DoesMethodRequireUnreferencedCode (IMemberDefinition member, out RequiresUnreferencedCodeAttribute attribute)
+		internal bool DoesMethodRequireUnreferencedCode (MethodDefinition method, out RequiresUnreferencedCodeAttribute attribute)
 		{
-			if (TryGetLinkerAttribute (member, out attribute))
+			if (TryGetLinkerAttribute (method, out attribute))
 				return true;
 
-			if (member is MethodDefinition method && (method.IsStatic || method.IsConstructor) && method.DeclaringType is not null &&
+			if ((method.IsStatic || method.IsConstructor) && method.DeclaringType is not null &&
 				TryGetLinkerAttribute (method.DeclaringType, out attribute))
 				return true;
 
