@@ -1689,7 +1689,7 @@ The only scopes supported on global unconditional suppressions are 'module', 'ty
 it is assumed that the suppression is put on the module. Global unconditional suppressions using invalid scopes are ignored.
 
 ```C#
-// Invalid scope 'method' used in 'UnconditionalSuppressMessageAttribute' on module 'Warning' with target 'MyTarget'.
+// IL2108: Invalid scope 'method' used in 'UnconditionalSuppressMessageAttribute' on module 'Warning' with target 'MyTarget'.
 [module: UnconditionalSuppressMessage ("Test suppression with invalid scope", "IL2026", Scope = "method", Target = "MyTarget")]
 
 class Warning
@@ -1720,6 +1720,99 @@ class Warning
 
   // IL2109: Type 'Derived' derives from 'UnsafeClass' which has 'RequiresUnreferencedCodeAttribute'. Using any of the members inside this class is trim unsafe. http://help/unreferencedcode
   class Derived : UnsafeClass {}
+  ```
+
+#### `IL2110`: Trim analysis: Field 'field' with 'DynamicallyAccessedMembersAttribute' is accessed via reflection. Trimmer can't guarantee availability of the requirements of the field.
+
+- Trimmer currently can't guarantee that all requirements of the `DynamicallyAccessedMembersAttribute` are fulfilled if the field is accessed via reflection.
+
+```C#
+[DynamicallyAccessedMembers(DynamicallyAccessedMemeberTypes.PublicMethods)]
+Type _field;
+
+void TestMethod()
+{
+    // IL2110: Field '_field' with 'DynamicallyAccessedMembersAttribute' is accessed via reflection. Trimmer can't guarantee availability of the requirements of the field.
+    typeof(Test).GetField("_field");
+}
+```
+
+#### `IL2111`: Trim analysis: Method 'method' with parameters or return value with `DynamicallyAccessedMembersAttribute` is accessed via reflection. Trimmer can't guarantee availability of the requirements of the method.
+
+- Trimmer currently can't guarantee that all requirements of the `DynamicallyAccessedMembersAttribute` are fulfilled if the method is accessed via reflection.
+
+```C#
+void MethodWithRequirements([DynamicallyAccessedMembers(DynamicallyAccessedMemeberTypes.PublicMethods)] Type type)
+{
+}
+
+void TestMethod()
+{
+    // IL2111: Method 'MethodWithRequirements' with parameters or return value with `DynamicallyAccessedMembersAttribute` is accessed via reflection. Trimmer can't guarantee availability of the requirements of the method.
+    typeof(Test).GetMethod("MethodWithRequirements");
+}
+```
+
+#### `IL2112` Trim analysis: 'DynamicallyAccessedMembersAttribute' on 'type' or one of its base types references 'member' which requires unreferenced code. [message]. [url]
+
+- A type is annotated with `DynamicallyAccessedMembersAttribute` indicating that the type may dynamically access some members declared on the type or its derived types. This instructs the trimmer to keep the specified members, but one of them is annotated with `RequiresUnreferencedCodeAttribute` which can break functionality when trimming. The `DynamicallyAccessedMembersAttribute` annotation may be directly on the type, or implied by an annotation on one of its base or interface types. This warning originates from the member with `RequiresUnreferencedCodeAttribute`.
+
+  ```C#
+  [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+  public class AnnotatedType {
+      // Trim analysis warning IL2112: AnnotatedType.Method(): 'DynamicallyAccessedMembersAttribute' on 'AnnotatedType' or one of its
+      // base types references 'AnnotatedType.Method()' which requires unreferenced code. Using this member is trim unsafe.
+      [RequiresUnreferencedCode("Using this member is trim unsafe")]
+      public static void Method() { }
+  }
+  ```
+
+#### `IL2113` Trim analysis: 'DynamicallyAccessedMembersAttribute' on 'type' or one of its base types references 'member' which requires unreferenced code. [message]. [url]
+
+- A type is annotated with `DynamicallyAccessedMembersAttribute` indicating that the type may dynamically access some members declared on the type or its derived types. This instructs the trimmer to keep the specified members, but a member of one of the base or interface types is annotated with `RequiresUnreferencedCodeAttribute` which can break functionality when trimming. The `DynamicallyAccessedMembersAttribute` annotation may be directly on the type, or implied by an annotation on one of its base or interface types. This warning originates from the type which has `DynamicallyAccessedMembersAttribute` requirements.
+
+  ```C#
+  public class BaseType {
+      [RequiresUnreferencedCode("Using this member is trim unsafe")]
+      public static void Method() { }
+  }
+
+  // Trim analysis warning IL2113: AnnotatedType: 'DynamicallyAccessedMembersAttribute' on 'AnnotatedType' or one of its
+  // base types references 'BaseType.Method()' which requires unreferenced code. Using this member is trim unsafe.
+  [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+  public class AnnotatedType : BaseType {
+  }
+  ```
+
+#### `IL2114 ` Trim analysis: 'DynamicallyAccessedMembersAttribute' on 'type' or one of its base types references 'member' which has 'DynamicallyAccessedMembersAttribute' requirements.
+
+- A type is annotated with `DynamicallyAccessedMembersAttribute` indicating that the type may dynamically access some members declared on the type or its derived types. This instructs the trimmer to keep the specified members, but one of them is annotated with `DynamicallyAccessedMembersAttribute` which can not be statically verified. The `DynamicallyAccessedMembersAttribute` annotation may be directly on the type, or implied by an annotation on one of its base or interface types. This warning originates from the member with `DynamicallyAccessedMembersAttribute` requirements.
+
+  ```C#
+  [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)]
+  public class AnnotatedType {
+      // Trim analysis warning IL2114: System.Type AnnotatedType::Field: 'DynamicallyAccessedMembersAttribute' on 'AnnotatedType' or one of its
+      // base types references 'System.Type AnnotatedType::Field' which has 'DynamicallyAccessedMembersAttribute' requirements .
+      [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
+      public static Type Field;
+  }
+  ```
+
+#### `IL2115 ` Trim analysis: 'DynamicallyAccessedMembersAttribute' on 'type' or one of its base types references 'member' which has 'DynamicallyAccessedMembersAttribute' requirements.
+
+- A type is annotated with `DynamicallyAccessedMembersAttribute` indicating that the type may dynamically access some members declared on the type or its derived types. This instructs the trimmer to keep the specified members, but a member of one of the base or interface types is annotated with `DynamicallyAccessedMembersAttribute` which can not be statically verified. The `DynamicallyAccessedMembersAttribute` annotation may be directly on the type, or implied by an annotation on one of its base or interface types. This warning originates from the type which has `DynamicallyAccessedMembersAttribute` requirements.
+
+  ```C#
+  public class BaseType {
+      [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
+      public static Type Field;
+  }
+
+  // Trim analysis warning IL2115: AnnotatedType: 'DynamicallyAccessedMembersAttribute' on 'AnnotatedType' or one of its
+  // base types references 'System.Type BaseType::Field' which has 'DynamicallyAccessedMembersAttribute' requirements .
+  [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)]
+  public class AnnotatedType : BaseType {
+  }
   ```
 
 ## Single-File Warning Codes
