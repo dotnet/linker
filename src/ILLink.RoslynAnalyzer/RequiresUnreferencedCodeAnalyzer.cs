@@ -13,32 +13,26 @@ namespace ILLink.RoslynAnalyzer
 	[DiagnosticAnalyzer (LanguageNames.CSharp)]
 	public sealed class RequiresUnreferencedCodeAnalyzer : RequiresAnalyzerBase
 	{
-		public const string IL2026 = nameof (IL2026);
-		public const string IL2046 = nameof (IL2046);
 		const string RequiresUnreferencedCodeAttribute = nameof (RequiresUnreferencedCodeAttribute);
 		public const string FullyQualifiedRequiresUnreferencedCodeAttribute = "System.Diagnostics.CodeAnalysis." + RequiresUnreferencedCodeAttribute;
 
-		static readonly DiagnosticDescriptor s_requiresUnreferencedCodeRule = new DiagnosticDescriptor (
-			IL2026,
-			new LocalizableResourceString (nameof (SharedStrings.RequiresUnreferencedCodeTitle),
-			SharedStrings.ResourceManager, typeof (SharedStrings)),
-			new LocalizableResourceString (nameof (SharedStrings.RequiresUnreferencedCodeMessage),
-			SharedStrings.ResourceManager, typeof (SharedStrings)),
-			DiagnosticCategory.Trimming,
-			DiagnosticSeverity.Warning,
-			isEnabledByDefault: true);
+		static readonly DiagnosticDescriptor s_requiresUnreferencedCodeRule = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.RequiresUnreferencedCode);
+		static readonly DiagnosticDescriptor s_requiresUnreferencedCodeAttributeMismatch = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.RequiresUnreferencedCodeAttributeMismatch);
+		static readonly DiagnosticDescriptor s_dynamicTypeInvocationRule = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.RequiresUnreferencedCode,
+			new LocalizableResourceString (nameof (SharedStrings.DynamicTypeInvocationTitle), SharedStrings.ResourceManager, typeof (SharedStrings)),
+			new LocalizableResourceString (nameof (SharedStrings.DynamicTypeInvocationMessage), SharedStrings.ResourceManager, typeof (SharedStrings)));
 
-		static readonly DiagnosticDescriptor s_requiresAttributeMismatch = new DiagnosticDescriptor (
-			IL2046,
-			new LocalizableResourceString (nameof (SharedStrings.RequiresAttributeMismatchTitle),
-			SharedStrings.ResourceManager, typeof (SharedStrings)),
-			new LocalizableResourceString (nameof (SharedStrings.RequiresAttributeMismatchMessage),
-			SharedStrings.ResourceManager, typeof (SharedStrings)),
-			DiagnosticCategory.Trimming,
-			DiagnosticSeverity.Warning,
-			isEnabledByDefault: true);
+		static readonly Action<OperationAnalysisContext> s_dynamicTypeInvocation = operationContext => {
+			if (FindContainingSymbol (operationContext, DiagnosticTargets.All) is ISymbol containingSymbol &&
+				containingSymbol.HasAttribute (RequiresUnreferencedCodeAttribute))
+				return;
 
-		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create (s_requiresUnreferencedCodeRule, s_requiresAttributeMismatch);
+			operationContext.ReportDiagnostic (Diagnostic.Create (s_dynamicTypeInvocationRule,
+				operationContext.Operation.Syntax.GetLocation ()));
+		};
+
+		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
+			ImmutableArray.Create (s_dynamicTypeInvocationRule, s_requiresUnreferencedCodeRule, s_requiresUnreferencedCodeAttributeMismatch);
 
 		private protected override string RequiresAttributeName => RequiresUnreferencedCodeAttribute;
 
@@ -48,15 +42,13 @@ namespace ILLink.RoslynAnalyzer
 
 		private protected override DiagnosticDescriptor RequiresDiagnosticRule => s_requiresUnreferencedCodeRule;
 
-		private protected override DiagnosticDescriptor RequiresAttributeMismatch => s_requiresAttributeMismatch;
+		private protected override DiagnosticDescriptor RequiresAttributeMismatch => s_requiresUnreferencedCodeAttributeMismatch;
 
-		protected override bool IsAnalyzerEnabled (AnalyzerOptions options, Compilation compilation)
-		{
-			var isTrimAnalyzerEnabled = options.GetMSBuildPropertyValue (MSBuildPropertyOptionNames.EnableTrimAnalyzer, compilation);
-			if (!string.Equals (isTrimAnalyzerEnabled?.Trim (), "true", StringComparison.OrdinalIgnoreCase))
-				return false;
-			return true;
-		}
+		protected override bool IsAnalyzerEnabled (AnalyzerOptions options, Compilation compilation) =>
+			options.IsMSBuildPropertyValueTrue (MSBuildPropertyOptionNames.EnableTrimAnalyzer, compilation);
+
+		private protected override ImmutableArray<(Action<OperationAnalysisContext> Action, OperationKind[] OperationKind)> ExtraOperationActions =>
+			ImmutableArray.Create ((s_dynamicTypeInvocation, new OperationKind[] { OperationKind.DynamicInvocation }));
 
 		protected override bool VerifyAttributeArguments (AttributeData attribute) =>
 			attribute.ConstructorArguments.Length >= 1 && attribute.ConstructorArguments[0] is { Type: { SpecialType: SpecialType.System_String } } ctorArg;
