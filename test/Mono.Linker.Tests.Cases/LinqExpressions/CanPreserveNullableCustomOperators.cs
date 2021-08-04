@@ -20,6 +20,8 @@ namespace Mono.Linker.Tests.Cases.LinqExpressions
 			var t5 = typeof (SourceValueType);
 
 			var s2 = typeof (ValueTypeUnusedOperators);
+
+			var e = typeof (ArrayElementValueType);
 		}
 
 		class ReferenceTypeOperators
@@ -61,6 +63,12 @@ namespace Mono.Linker.Tests.Cases.LinqExpressions
 			public static explicit operator TargetValueType? (ValueTypeOperators? self) => null;
 			[Kept]
 			public static explicit operator ValueTypeOperators? (SourceValueType? other) => null;
+
+			[Kept]
+			public static ValueTypeOperators? operator + (ArrayElementValueType?[] left, ValueTypeOperators? right) => null;
+
+			[Kept]
+			public static ValueTypeOperators? operator + (ArrayElementValueType?[][][] left, ValueTypeOperators? right) => null;
 		}
 
 		[Kept]
@@ -81,5 +89,8 @@ namespace Mono.Linker.Tests.Cases.LinqExpressions
 		struct AdditionValueTypeUnused { }
 		struct TargetValueTypeUnused { }
 		struct SourceValueTypeUnused { }
+
+		[Kept]
+		struct ArrayElementValueType { }
 	}
 }
