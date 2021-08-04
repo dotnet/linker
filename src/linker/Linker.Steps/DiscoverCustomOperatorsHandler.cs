@@ -129,19 +129,14 @@ namespace Mono.Linker.Steps
 
 			// Unwrap Nullable<T>
 			Debug.Assert (typeDef.HasGenericParameters);
-			var nullableType = type as GenericInstanceType;
 			// The original type reference might be a TypeSpecification like array of Nullable<T>
 			// that we need to unwrap until we get to the Nullable<T>
-			while (nullableType == null) {
-				var typeSpec = type as TypeSpecification;
-				Debug.Assert (typeSpec != null);
-				if (typeSpec == null)
-					return null;
-
-				type = typeSpec.ElementType;
-				nullableType = type as GenericInstanceType;
+			while (!type.IsGenericInstance) {
+				Debug.Assert (type is TypeSpecification);
+				type = (type as TypeSpecification).ElementType;
 			}
-			Debug.Assert (nullableType.HasGenericArguments && nullableType.GenericArguments.Count == 1);
+			var nullableType = type as GenericInstanceType;
+			Debug.Assert (nullableType != null && nullableType.HasGenericArguments && nullableType.GenericArguments.Count == 1);
 			return _context.TryResolve (nullableType.GenericArguments[0]);
 		}
 
