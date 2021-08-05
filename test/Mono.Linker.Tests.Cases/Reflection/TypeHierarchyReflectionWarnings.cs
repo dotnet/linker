@@ -30,6 +30,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			RequirePublicNestedTypes (annotatedPublicNestedTypes.GetType ());
 			RequireInterfaces (annotatedInterfaces.GetType ());
 			RequireAll (annotatedAll.GetType ());
+			var t1 = typeof (DerivedFromAnnotatedAll1);
+			var t2 = typeof (DerivedFromAnnotatedAll2);
 			RequirePublicMethods (annotatedRUCPublicMethods.GetType ());
 
 			// Instantiate this type just so its property getters are considered reachable
@@ -89,6 +91,28 @@ namespace Mono.Linker.Tests.Cases.Reflection
 				Type t
 			)
 			{ }
+		}
+
+		[Kept]
+		[KeptMember (".ctor()")]
+		[KeptBaseType (typeof (AnnotatedAll))]
+		// https://github.com/mono/linker/issues/2175
+		[ExpectedWarning ("IL2113", "--RUC on AnnotatedAll.RUCMethod--")]
+		[ExpectedWarning ("IL2115", nameof (AnnotatedAll.DAMField))]
+		[ExpectedWarning ("IL2115", nameof (AnnotatedAll.DAMMethod))]
+		class DerivedFromAnnotatedAll1 : AnnotatedAll
+		{
+		}
+
+		[Kept]
+		[KeptMember (".ctor()")]
+		[KeptBaseType (typeof (AnnotatedAll))]
+		// https://github.com/mono/linker/issues/2175
+		[ExpectedWarning ("IL2113", "--RUC on AnnotatedAll.RUCMethod--")]
+		[ExpectedWarning ("IL2115", nameof (AnnotatedAll.DAMField))]
+		[ExpectedWarning ("IL2115", nameof (AnnotatedAll.DAMMethod))]
+		class DerivedFromAnnotatedAll2 : AnnotatedAll
+		{
 		}
 
 		[Kept]

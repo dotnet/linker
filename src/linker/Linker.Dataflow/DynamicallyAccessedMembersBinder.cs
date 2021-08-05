@@ -20,7 +20,8 @@ namespace Mono.Linker
 	internal static class DynamicallyAccessedMembersBinder
 	{
 		// Returns the members of the type bound by memberTypes. For DynamicallyAccessedMemberTypes.All, this returns all members of the type and its
-		// nested types, plus the same or any base types or interfaces. The behavior for nested types
+		// nested types, including interface implementations, plus the same or any base types or implemented interfaces.
+		// DynamicallyAccessedMemberTypes.PublicNestedTypes and NonPublicNestedTypes do the same for members of the selected nested types.
 		public static IEnumerable<IMetadataTokenProvider> GetDynamicallyAccessedMembers (this TypeDefinition typeDefinition, LinkContext context, DynamicallyAccessedMemberTypes memberTypes)
 		{
 			if (memberTypes == DynamicallyAccessedMemberTypes.All) {
@@ -357,11 +358,10 @@ namespace Mono.Linker
 
 			if (type.HasInterfaces) {
 				foreach (var iface in type.Interfaces) {
+					yield return iface;
 					var interfaceType = context.Resolve (iface.InterfaceType);
 					foreach (var m in GetAllOnType (interfaceType, context, types))
 						yield return m;
-
-					yield return iface;
 				}
 			}
 
