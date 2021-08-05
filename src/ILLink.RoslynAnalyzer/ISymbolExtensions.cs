@@ -22,23 +22,28 @@ namespace ILLink.RoslynAnalyzer
 			return false;
 		}
 
+		internal static bool TryGetAttribute (this ISymbol member, string attributeName, [NotNullWhen (returnValue: true)] out AttributeData? attribute)
+		{
+			attribute = null;
+			foreach (var _attribute in member.GetAttributes ()) {
+				if (_attribute.AttributeClass is { } attrClass &&
+					attrClass.HasName (attributeName)) {
+					attribute = _attribute;
+					return true;
+				}
+			}
+
+			return false;
+		}
+
 		internal static bool TryGetDynamicallyAccessedMemberTypes (this ISymbol symbol, out DynamicallyAccessedMemberTypes? dynamicallyAccessedMemberTypes)
 		{
 			dynamicallyAccessedMemberTypes = null;
-			if (!symbol.HasAttribute (DynamicallyAccessedMembersAnalyzer.DynamicallyAccessedMembersAttribute))
+			if (!TryGetAttribute (symbol, DynamicallyAccessedMembersAnalyzer.DynamicallyAccessedMembersAttribute, out var dynamicallyAccessedMembers))
 				return false;
-
-			var damAttributeName = DynamicallyAccessedMembersAnalyzer.DynamicallyAccessedMembersAttribute;
-			AttributeData? dynamicallyAccessedMembers = null;
-			foreach (var _attribute in symbol.GetAttributes ())
-				if (_attribute.AttributeClass is var attrClass && attrClass != null &&
-					attrClass.HasName (damAttributeName)) {
-					dynamicallyAccessedMembers = _attribute;
-					break;
-				}
-
-			dynamicallyAccessedMemberTypes = (DynamicallyAccessedMemberTypes) dynamicallyAccessedMembers?.ConstructorArguments[0].Value!;
-			return dynamicallyAccessedMemberTypes != null;
+			
+			dynamicallyAccessedMemberTypes = (DynamicallyAccessedMemberTypes) dynamicallyAccessedMembers!.ConstructorArguments[0].Value!;
+			return true;
 		}
 
 		internal static bool TryGetDynamicallyAccessedMemberTypesOnReturnType (this ISymbol symbol, out DynamicallyAccessedMemberTypes? dynamicallyAccessedMemberTypes)

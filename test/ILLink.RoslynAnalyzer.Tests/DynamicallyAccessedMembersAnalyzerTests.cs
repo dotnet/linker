@@ -170,7 +170,7 @@ class C
 			// The parameter 'type' of method 'C.M(System.Type)' does not have matching annotations.
 			// The source value must declare at least the same requirements as those declared on the target location it is assigned to.
 			return VerifyDynamicallyAccessedMembersAnalyzer (TargetMethodWithAnnotations,
-				VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsMethod)
+				VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsThisParameter)
 				.WithSpan (17, 9, 17, 30)
 				.WithArguments ("System.Type.GetMethod(string)",
 					"type",
@@ -323,7 +323,7 @@ class C
 			// The return value of method 'C.GetT()' does not have matching annotations.
 			// The source value must declare at least the same requirements as those declared on the target location it is assigned to.
 			return VerifyDynamicallyAccessedMembersAnalyzer (TargetMethodWithAnnotations,
-				VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsMethod)
+				VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsThisParameter)
 				.WithSpan (12, 9, 12, 32)
 				.WithArguments ("System.Type.GetMethod(string)", "C.GetT()", "'DynamicallyAccessedMemberTypes.PublicMethods'"));
 		}
@@ -463,7 +463,7 @@ class C
 			// The field 'System.Type C::f' does not have matching annotations.
 			// The source value must declare at least the same requirements as those declared on the target location it is assigned to.
 			return VerifyDynamicallyAccessedMembersAnalyzer (TargetMethodWithAnnotations,
-				VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchFieldTargetsMethod)
+				VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchFieldTargetsThisParameter)
 				.WithSpan (14, 9, 14, 27)
 				.WithArguments ("System.Type.GetMethod(string)",
 					"System.Type C::f",
@@ -673,7 +673,7 @@ namespace System
 			// The implicit 'this' argument of method 'System.C.M1()' does not have matching annotations.
 			// The source value must declare at least the same requirements as those declared on the target location it is assigned to.
 			return VerifyDynamicallyAccessedMembersAnalyzer (string.Concat (GetSystemTypeBase (), TargetParameterWithAnnotations),
-				VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchMethodTargetsParameter)
+				VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchThisParameterTargetsParameter)
 				.WithSpan (178, 16, 178, 20)
 				.WithArguments ("type", "System.C.M2(System.Type)", "System.C.M1()", "'DynamicallyAccessedMemberTypes.PublicMethods'"));
 		}
@@ -704,7 +704,7 @@ namespace System
 			// The implicit 'this' argument of method 'System.C.M()' does not have matching annotations.
 			// The source value must declare at least the same requirements as those declared on the target location it is assigned to.
 			return VerifyDynamicallyAccessedMembersAnalyzer (string.Concat (GetSystemTypeBase (), TargetMethodReturnTypeWithAnnotations),
-				VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchMethodTargetsMethodReturnType)
+				VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchThisParameterTargetsMethodReturnType)
 				.WithSpan (180, 13, 180, 25)
 				.WithArguments ("System.C.M()", "System.C.M()", "'DynamicallyAccessedMemberTypes.PublicMethods'"));
 		}
@@ -737,7 +737,7 @@ namespace System
 			// The implicit 'this' argument of method 'System.C.M()' does not have matching annotations.
 			// The source value must declare at least the same requirements as those declared on the target location it is assigned to.
 			return VerifyDynamicallyAccessedMembersAnalyzer (string.Concat (GetSystemTypeBase (), TargetFieldWithAnnotations),
-				VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchMethodTargetsField)
+				VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchThisParameterTargetsField)
 				.WithSpan (178, 13, 178, 21)
 				.WithArguments ("System.Type System.C::f",
 					"System.C.M()",
@@ -768,7 +768,7 @@ namespace System
 			// The implicit 'this' argument of method 'System.C.M()' does not have matching annotations.
 			// The source value must declare at least the same requirements as those declared on the target location it is assigned to.
 			return VerifyDynamicallyAccessedMembersAnalyzer (string.Concat (GetSystemTypeBase (), TargetMethodWithAnnotations),
-				VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchMethodTargetsMethod)
+				VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchThisParameterTargetsThisParameter)
 				.WithSpan (178, 13, 178, 30)
 				.WithArguments ("System.Type.GetMethods()", "System.C.M()", "'DynamicallyAccessedMemberTypes.PublicMethods'"));
 		}

@@ -5,8 +5,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using ILLink.Shared;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -22,11 +20,13 @@ namespace ILLink.RoslynAnalyzer
 
 		static ImmutableArray<DiagnosticDescriptor> GetSupportedDiagnostics ()
 		{
-			var diagDescriptorsList = new List<DiagnosticDescriptor> ();
-			for (int i = 2067; i <= 2091; i++)
-				diagDescriptorsList.Add (DiagnosticDescriptors.GetDiagnosticDescriptor ((DiagnosticId) i));
+			var diagDescriptorsArrayBuilder = ImmutableArray.CreateBuilder<DiagnosticDescriptor>(23);
+			for (int i = (int)DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsParameter; 
+				i <= (int)DiagnosticId.DynamicallyAccessedMembersMismatchTypeArgumentTargetsGenericParameter; i++) {
+				diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor ((DiagnosticId) i));
+			}
 
-			return diagDescriptorsList.ToImmutableArray ();
+			return diagDescriptorsArrayBuilder.ToImmutable();
 		}
 
 		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => GetSupportedDiagnostics ();
@@ -35,43 +35,33 @@ namespace ILLink.RoslynAnalyzer
 		{
 			context.EnableConcurrentExecution ();
 			context.ConfigureGeneratedCodeAnalysis (GeneratedCodeAnalysisFlags.ReportDiagnostics);
-			context.RegisterOperationAction (DynamicallyAccessedMembersAnalyze,
-				OperationKind.Invocation,
-				OperationKind.Return,
-				OperationKind.SimpleAssignment);
-		}
+			context.RegisterOperationAction (operationAnalysisContext => {
+				var assignmentOperation = (IAssignmentOperation) operationAnalysisContext.Operation;
+				ProcessAssignmentOperation (operationAnalysisContext, assignmentOperation);
+			}, OperationKind.SimpleAssignment);
 
-		void DynamicallyAccessedMembersAnalyze (OperationAnalysisContext context)
-		{
-			switch (context.Operation) {
-			case IAssignmentOperation assignmentOp:
-				ProcessAssignmentOperation (context, assignmentOp);
-				break;
+			context.RegisterOperationAction (operationAnalysisContext => {
+				var invocationOperation = (IInvocationOperation) operationAnalysisContext.Operation;
+				ProcessInvocationOperation (operationAnalysisContext, invocationOperation);
+			}, OperationKind.Invocation);
 
-			case IInvocationOperation invocationOp:
-				ProcessInvocationOperation (context, invocationOp);
-				break;
-
-			case IReturnOperation returnOp:
-				ProcessReturnOperation (context, returnOp);
-				break;
-
-			default:
-				break;
-			}
+			context.RegisterOperationAction (operationAnalysisContext => {
+				var returnOperation = (IReturnOperation) operationAnalysisContext.Operation;
+				ProcessReturnOperation (operationAnalysisContext, returnOperation);
+			}, OperationKind.Return);
 		}
 
 		static void ProcessAssignmentOperation (OperationAnalysisContext context, IAssignmentOperation assignmentOperation)
 		{
-			if (GetSymbolFromOperation (assignmentOperation.Target) is not ISymbol target ||
-				GetSymbolFromOperation (assignmentOperation.Value) is not ISymbol source)
+			if (TryGetSymbolFromOperation (assignmentOperation.Target) is not ISymbol target ||
+				TryGetSymbolFromOperation (assignmentOperation.Value) is not ISymbol source)
 				return;
 
 			if (!target.TryGetDynamicallyAccessedMemberTypes (out var damtOnTarget))
 				return;
 
 			source.TryGetDynamicallyAccessedMemberTypes (out var damtOnSource);
-			if (SourceHasMatchingAnnotations (damtOnSource, damtOnTarget, out var missingAnnotations))
+			if (Annotations.SourceHasRequiredAnnotations (damtOnSource, damtOnTarget, out var missingAnnotations))
 				return;
 
 			var diag = GetDiagnosticId (source.Kind, target.Kind);
@@ -86,9 +76,10 @@ namespace ILLink.RoslynAnalyzer
 			if (!invocationOperation.TargetMethod.TryGetDynamicallyAccessedMemberTypes (out var damtOnCalledMethod))
 				return;
 
-			if (GetSymbolFromOperation (invocationOperation.Instance) is ISymbol instance) {
+			if (TryGetSymbolFromOperation (invocationOperation.Instance) is ISymbol instance &&
+				!instance.HasAttribute (RequiresUnreferencedCodeAnalyzer.FullyQualifiedRequiresUnreferencedCodeAttribute)) {
 				instance!.TryGetDynamicallyAccessedMemberTypes (out var damtOnCaller);
-				if (SourceHasMatchingAnnotations (damtOnCaller, damtOnCalledMethod, out var missingAnnotations))
+				if (Annotations.SourceHasRequiredAnnotations (damtOnCaller, damtOnCalledMethod, out var missingAnnotations))
 					return;
 
 				var diag = GetDiagnosticId (instance!.Kind, invocationOperation.TargetMethod.Kind);
@@ -99,14 +90,15 @@ namespace ILLink.RoslynAnalyzer
 
 		static void ProcessReturnOperation (OperationAnalysisContext context, IReturnOperation returnOperation)
 		{
-			if (!context.ContainingSymbol.TryGetDynamicallyAccessedMemberTypesOnReturnType (out var damtOnReturnType))
+			if (!context.ContainingSymbol.TryGetDynamicallyAccessedMemberTypesOnReturnType (out var damtOnReturnType) ||
+				context.ContainingSymbol.HasAttribute (RequiresUnreferencedCodeAnalyzer.FullyQualifiedRequiresUnreferencedCodeAttribute))
 				return;
 
-			if (GetSymbolFromOperation (returnOperation) is not ISymbol returnedSymbol)
+			if (TryGetSymbolFromOperation (returnOperation) is not ISymbol returnedSymbol)
 				return;
 
 			returnedSymbol.TryGetDynamicallyAccessedMemberTypes (out var damtOnReturnedValue);
-			if (SourceHasMatchingAnnotations (damtOnReturnedValue, damtOnReturnType, out var missingAnnotations))
+			if (Annotations.SourceHasRequiredAnnotations (damtOnReturnedValue, damtOnReturnType, out var missingAnnotations))
 				return;
 
 			var diag = GetDiagnosticId (returnedSymbol.Kind, context.ContainingSymbol.Kind, true);
@@ -121,15 +113,15 @@ namespace ILLink.RoslynAnalyzer
 				if (targetParameter is null || !targetParameter.TryGetDynamicallyAccessedMemberTypes (out var damtOnParameter))
 					return;
 
-				ISymbol sourceArgument = argument.Value.Kind == OperationKind.Conversion ? context.ContainingSymbol : GetSymbolFromOperation (argument.Value)!;
+				ISymbol sourceArgument = argument.Value.Kind == OperationKind.Conversion ? context.ContainingSymbol : TryGetSymbolFromOperation (argument.Value)!;
 				if (sourceArgument is null)
 					return;
 
 				sourceArgument.TryGetDynamicallyAccessedMemberTypes (out var damtOnArgument);
-				if (SourceHasMatchingAnnotations (damtOnArgument, damtOnParameter, out var missingAnnotations))
+				if (Annotations.SourceHasRequiredAnnotations (damtOnArgument, damtOnParameter, out var missingAnnotations))
 					return;
 
-				var diag = GetDiagnosticId (sourceArgument.Kind, targetParameter.Kind, argument.Value.Kind == OperationKind.Conversion);
+				var diag = GetDiagnosticId (sourceArgument.Kind, targetParameter.Kind, argument.Value.Kind != OperationKind.Conversion);
 				var diagArgs = GetDiagnosticArguments (sourceArgument, targetParameter, missingAnnotations);
 				context.ReportDiagnostic (Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (diag), argument.Syntax.GetLocation (), diagArgs));
 			}
@@ -145,7 +137,7 @@ namespace ILLink.RoslynAnalyzer
 					continue;
 
 				arg.TryGetDynamicallyAccessedMemberTypes (out var damtOnTypeArgument);
-				if (SourceHasMatchingAnnotations (damtOnTypeArgument, damtOnTypeParameter, out var missingAnnotations))
+				if (Annotations.SourceHasRequiredAnnotations (damtOnTypeArgument, damtOnTypeParameter, out var missingAnnotations))
 					continue;
 
 				var diag = GetDiagnosticId (arg.Kind, param.Kind);
@@ -159,25 +151,25 @@ namespace ILLink.RoslynAnalyzer
 				(SymbolKind.Parameter, SymbolKind.Field) => DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsField,
 				(SymbolKind.Parameter, SymbolKind.Method) => targetsType ?
 					DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsMethodReturnType :
-					DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsMethod,
+					DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsThisParameter,
 				(SymbolKind.Parameter, SymbolKind.Parameter) => DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsParameter,
 				(SymbolKind.Field, SymbolKind.Parameter) => DiagnosticId.DynamicallyAccessedMembersMismatchFieldTargetsParameter,
 				(SymbolKind.Field, SymbolKind.Field) => DiagnosticId.DynamicallyAccessedMembersMismatchFieldTargetsField,
 				(SymbolKind.Field, SymbolKind.Method) => targetsType ?
 					DiagnosticId.DynamicallyAccessedMembersMismatchFieldTargetsMethodReturnType :
-					DiagnosticId.DynamicallyAccessedMembersMismatchFieldTargetsMethod,
+					DiagnosticId.DynamicallyAccessedMembersMismatchFieldTargetsThisParameter,
 				(SymbolKind.Field, SymbolKind.TypeParameter) => DiagnosticId.DynamicallyAccessedMembersMismatchFieldTargetsGenericParameter,
 				(SymbolKind.NamedType, SymbolKind.Method) => targetsType ?
-					DiagnosticId.DynamicallyAccessedMembersMismatchMethodTargetsMethodReturnType :
-					DiagnosticId.DynamicallyAccessedMembersMismatchMethodTargetsMethod,
+					DiagnosticId.DynamicallyAccessedMembersMismatchThisParameterTargetsMethodReturnType :
+					DiagnosticId.DynamicallyAccessedMembersMismatchThisParameterTargetsThisParameter,
 				(SymbolKind.Method, SymbolKind.Field) => DiagnosticId.DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsField,
 				(SymbolKind.Method, SymbolKind.Method) => targetsType ?
 					DiagnosticId.DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsMethodReturnType :
-					DiagnosticId.DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsMethod,
+					DiagnosticId.DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsThisParameter,
 				(SymbolKind.Method, SymbolKind.Parameter) => targetsType ?
-					DiagnosticId.DynamicallyAccessedMembersMismatchMethodTargetsParameter :
-					DiagnosticId.DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsParameter,
-				(SymbolKind.NamedType, SymbolKind.Field) => DiagnosticId.DynamicallyAccessedMembersMismatchMethodTargetsField,
+					DiagnosticId.DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsParameter :
+					DiagnosticId.DynamicallyAccessedMembersMismatchThisParameterTargetsParameter,
+				(SymbolKind.NamedType, SymbolKind.Field) => DiagnosticId.DynamicallyAccessedMembersMismatchThisParameterTargetsField,
 				(SymbolKind.TypeParameter, SymbolKind.Field) => DiagnosticId.DynamicallyAccessedMembersMismatchTypeArgumentTargetsField,
 				(SymbolKind.TypeParameter, SymbolKind.Method) => DiagnosticId.DynamicallyAccessedMembersMismatchTypeArgumentTargetsMethodReturnType,
 				(SymbolKind.TypeParameter, SymbolKind.Parameter) => DiagnosticId.DynamicallyAccessedMembersMismatchTypeArgumentTargetsParameter,
@@ -209,45 +201,18 @@ namespace ILLink.RoslynAnalyzer
 			return args;
 		}
 
-		static ISymbol? GetSymbolFromOperation (IOperation? operation) =>
+		static ISymbol? TryGetSymbolFromOperation (IOperation? operation) =>
 			operation switch {
-				IArgumentOperation argument => GetSymbolFromOperation (argument.Value),
-				IAssignmentOperation assignment => GetSymbolFromOperation (assignment.Value),
+				IArgumentOperation argument => TryGetSymbolFromOperation (argument.Value),
+				IAssignmentOperation assignment => TryGetSymbolFromOperation (assignment.Value),
 				IConversionOperation conversion => conversion.Type,
 				IInstanceReferenceOperation instanceReference => instanceReference.Type,
 				IInvocationOperation invocation => invocation.TargetMethod,
 				IMemberReferenceOperation memberReference => memberReference.Member,
 				IParameterReferenceOperation parameterReference => parameterReference.Parameter,
-				IReturnOperation returnOp => GetSymbolFromOperation (returnOp.ReturnedValue),
+				IReturnOperation returnOp => TryGetSymbolFromOperation (returnOp.ReturnedValue),
 				ITypeOfOperation typeOf => typeOf.TypeOperand,
 				_ => null
 			};
-
-		static bool SourceHasMatchingAnnotations (
-			DynamicallyAccessedMemberTypes? sourceMemberTypes,
-			DynamicallyAccessedMemberTypes? targetMemberTypes,
-			out string missingMemberTypesString)
-		{
-			missingMemberTypesString = $"'{nameof (DynamicallyAccessedMemberTypes.All)}'";
-			if (targetMemberTypes == null)
-				return true;
-
-			sourceMemberTypes ??= DynamicallyAccessedMemberTypes.None;
-			var missingMemberTypesList = Enum.GetValues (typeof (DynamicallyAccessedMemberTypes))
-				.Cast<DynamicallyAccessedMemberTypes> ()
-				.Where (damt => (damt & targetMemberTypes & ~sourceMemberTypes) == damt && damt != DynamicallyAccessedMemberTypes.None)
-				.ToList ();
-
-			if (missingMemberTypesList.Count == 0)
-				return true;
-
-			if (missingMemberTypesList.Contains (DynamicallyAccessedMemberTypes.PublicConstructors) &&
-				missingMemberTypesList.SingleOrDefault (mt => mt == DynamicallyAccessedMemberTypes.PublicParameterlessConstructor) is var ppc &&
-				ppc != DynamicallyAccessedMemberTypes.None)
-				missingMemberTypesList.Remove (ppc);
-
-			missingMemberTypesString = string.Join (", ", missingMemberTypesList.Select (mmt => $"'DynamicallyAccessedMemberTypes.{mmt}'"));
-			return false;
-		}
 	}
 }
