@@ -19,13 +19,13 @@ namespace Mono.Linker
 
 	internal static class DynamicallyAccessedMembersBinder
 	{
-		// Returns the members of the type bound by memberTypes. For DynamicallyAccessedMemberTypes.All, this returns a single null result.
-		// This sentinel value allows callers to handle the case where DynamicallyAccessedMemberTypes.All conceptually binds to the entire type
-		// including all recursive nested members.
+		// Returns the members of the type bound by memberTypes. For DynamicallyAccessedMemberTypes.All, this returns all members of the type and its
+		// nested types, plus the same or any base types or interfaces. The behavior for nested types
 		public static IEnumerable<IMetadataTokenProvider> GetDynamicallyAccessedMembers (this TypeDefinition typeDefinition, LinkContext context, DynamicallyAccessedMemberTypes memberTypes)
 		{
 			if (memberTypes == DynamicallyAccessedMemberTypes.All) {
-				yield return null;
+				foreach (var m in typeDefinition.GetAllOnType (context))
+					yield return m;
 				yield break;
 			}
 
@@ -65,13 +65,19 @@ namespace Mono.Linker
 			}
 
 			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.NonPublicNestedTypes)) {
-				foreach (var t in typeDefinition.GetNestedTypesOnType (filter: null, bindingFlags: BindingFlags.NonPublic))
-					yield return t;
+				foreach (var nested in typeDefinition.GetNestedTypesOnType (filter: null, bindingFlags: BindingFlags.NonPublic)) {
+					yield return nested;
+					foreach (var m in nested.GetAllOnType (context))
+						yield return m;
+				}
 			}
 
 			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicNestedTypes)) {
-				foreach (var t in typeDefinition.GetNestedTypesOnType (filter: null, bindingFlags: BindingFlags.Public))
-					yield return t;
+				foreach (var nested in typeDefinition.GetNestedTypesOnType (filter: null, bindingFlags: BindingFlags.Public)) {
+					yield return nested;
+					foreach (var m in nested.GetAllOnType (context))
+						yield return m;
+				}
 			}
 
 			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.NonPublicProperties)) {
@@ -325,6 +331,58 @@ namespace Mono.Linker
 				}
 
 				type = context.TryResolve (type.BaseType);
+			}
+		}
+
+		public static IEnumerable<IMetadataTokenProvider> GetAllOnType (this TypeDefinition type, LinkContext context) => GetAllOnType (type, context, new HashSet<TypeDefinition> ());
+
+		static IEnumerable<IMetadataTokenProvider> GetAllOnType (TypeDefinition type, LinkContext context, HashSet<TypeDefinition> types)
+		{
+			if (!types.Add (type))
+				yield break;
+
+			if (type.HasNestedTypes) {
+				foreach (var nested in type.NestedTypes) {
+					yield return nested;
+					foreach (var m in GetAllOnType (nested, context, types))
+						yield return m;
+				}
+			}
+
+			var baseType = context.TryResolve (type.BaseType);
+			if (baseType != null) {
+				foreach (var m in GetAllOnType (baseType, context, types))
+					yield return m;
+			}
+
+			if (type.HasInterfaces) {
+				foreach (var iface in type.Interfaces) {
+					var interfaceType = context.Resolve (iface.InterfaceType);
+					foreach (var m in GetAllOnType (interfaceType, context, types))
+						yield return m;
+
+					yield return iface;
+				}
+			}
+
+			if (type.HasFields) {
+				foreach (var f in type.Fields)
+					yield return f;
+			}
+
+			if (type.HasMethods) {
+				foreach (var m in type.Methods)
+					yield return m;
+			}
+
+			if (type.HasProperties) {
+				foreach (var p in type.Properties)
+					yield return p;
+			}
+
+			if (type.HasEvents) {
+				foreach (var e in type.Events)
+					yield return e;
 			}
 		}
 	}

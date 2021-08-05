@@ -2296,8 +2296,7 @@ namespace Mono.Linker.Dataflow
 					MarkField (ref reflectionContext, field, dependencyKind);
 					break;
 				case TypeDefinition nestedType:
-					DependencyInfo nestedDependencyInfo = new DependencyInfo (dependencyKind, reflectionContext.Source);
-					reflectionContext.RecordRecognizedPattern (nestedType, () => _markStep.MarkEntireType (nestedType, includeBaseAndInterfaceTypes: true, nestedDependencyInfo));
+					MarkType (ref reflectionContext, nestedType, dependencyKind);
 					break;
 				case PropertyDefinition property:
 					MarkProperty (ref reflectionContext, property, dependencyKind);
@@ -2307,10 +2306,6 @@ namespace Mono.Linker.Dataflow
 					break;
 				case InterfaceImplementation interfaceImplementation:
 					MarkInterfaceImplementation (ref reflectionContext, interfaceImplementation, dependencyKind);
-					break;
-				case null:
-					DependencyInfo dependencyInfo = new DependencyInfo (dependencyKind, reflectionContext.Source);
-					reflectionContext.RecordRecognizedPattern (typeDefinition, () => _markStep.MarkEntireType (typeDefinition, includeBaseAndInterfaceTypes: true, dependencyInfo));
 					break;
 				}
 			}
