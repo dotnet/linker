@@ -311,26 +311,21 @@ namespace Mono.Linker.Steps
 
 		internal void MarkEntireType (TypeDefinition type, in DependencyInfo reason)
 		{
-			// Prevent cases where there's nothing on the stack (can happen when marking entire assemblies)
-			// In which case we would generate warnings with no source (hard to debug)
-			using var _ = _scopeStack.CurrentScope.Origin.MemberDefinition == null ? _scopeStack.PushScope (new MessageOrigin (type)) : null;
-
-			MarkEntireTypeInternal (type, reason);
-		}
-
-		void MarkEntireTypeInternal (TypeDefinition type, in DependencyInfo reason)
-		{
 #if DEBUG
 			if (!_entireTypeReasons.Contains (reason.Kind))
 				throw new InternalErrorException ($"Unsupported type dependency '{reason.Kind}'.");
 #endif
+
+			// Prevent cases where there's nothing on the stack (can happen when marking entire assemblies)
+			// In which case we would generate warnings with no source (hard to debug)
+			using var _ = _scopeStack.CurrentScope.Origin.MemberDefinition == null ? _scopeStack.PushScope (new MessageOrigin (type)) : null;
 
 			if (!_entireTypesMarked.Add (type))
 				return;
 
 			if (type.HasNestedTypes) {
 				foreach (TypeDefinition nested in type.NestedTypes)
-					MarkEntireTypeInternal (nested, new DependencyInfo (DependencyKind.NestedType, type));
+					MarkEntireType (nested, new DependencyInfo (DependencyKind.NestedType, type));
 			}
 
 			Annotations.Mark (type, reason);
