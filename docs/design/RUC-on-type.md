@@ -142,8 +142,67 @@ static void TestRequiresOnBaseButNotOnDerived ()
 As the previous example illustrates the DerivedType without `RequiresUnreferencedCode` will generate a warning only for deriving from `ClassWithRequiresUnreferencedCode`. Additionally, by calling some of the methods we can see the difference on behavior on methods declared on the derived type vs methods on the base type. Calling a method in the derived type will not generate a warning since the derived type is not annotated, while calling a method for which the base type will be called will generate IL2026.
 
 ## Behavior using virtual methods
-Although we threat virtual methods as just another method, meaning that the same rules applying for other methods will also apply here (constructors and static methods will warn). 
+Although we threat virtual methods as just another method, meaning that the same rules applying for other methods will also apply here (constructors and static methods will warn). There are some special behaviors of having `RequiresUnreferencedCode` on a type that later on gets override, and that is the behavior of mismatching annotations. 
+In the scenario when there is a mismatch in annotations between the base and derived members there is a warning generated asking for consistency in the attribute in the base and the derived member. See the following example:
+```C#
+public class Base
+{
+  [RequiresUnreferencedCode("Message")]
+  public virtual void TestMethod() {}
+}
 
+public class Derived : Base
+{
+  // IL2046: Base member 'Base.TestMethod' with 'RequiresUnreferencedCodeAttribute' has a derived member 'Derived.TestMethod()' without 'RequiresUnreferencedCodeAttribute'. For all interfaces and overrides the implementation attribute must match the definition attribute.
+  public override void TestMethod() {}
+}
+```
+In this case if the derived type gets annotated with `RequiresUnreferencedCode` the annotation mismatch warning will dissapear since the `TestMethod` would now be considered as annotated with `RequiresUnreferencedCode`
+
+```C#
+public class Base
+{
+  [RequiresUnreferencedCode("Message")]
+  public virtual void TestMethod() {}
+}
+
+[RequiresUnreferencedCode("Message")]
+public class Derived : Base
+{
+  public override void TestMethod() {}
+}
+```
+
+This same behavior applies for implementing an interface
+```C#
+interface IRUC
+{
+  [RequiresUnreferencedCode("Message")]
+  void TestMethod();
+}
+
+[RequiresUnreferencedCode("Message")]
+class Implementation : IRUC
+{
+  public void TestMethod () { }
+}
+```
+Notice that you cannot do the following
+```C#
+[RequiresUnreferencedCode("Message")]
+interface IRUC
+{
+  void TestMethod();
+}
+
+
+class Implementation : IRUC
+{
+  [RequiresUnreferencedCode("Message")]
+  public void TestMethod () { }
+}
+```
+Since `RequiresUnreferencedCode` cannot be placed in interfaces
 ## Static interface methods
 
 ```C#
