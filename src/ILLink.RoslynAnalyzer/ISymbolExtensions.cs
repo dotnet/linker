@@ -41,7 +41,7 @@ namespace ILLink.RoslynAnalyzer
 			dynamicallyAccessedMemberTypes = null;
 			if (!TryGetAttribute (symbol, DynamicallyAccessedMembersAnalyzer.DynamicallyAccessedMembersAttribute, out var dynamicallyAccessedMembers))
 				return false;
-			
+
 			dynamicallyAccessedMemberTypes = (DynamicallyAccessedMemberTypes) dynamicallyAccessedMembers!.ConstructorArguments[0].Value!;
 			return true;
 		}

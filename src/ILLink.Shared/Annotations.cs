@@ -8,8 +8,8 @@ using System.Linq;
 
 namespace ILLink.Shared
 {
-    internal static class Annotations
-    {
+	internal static class Annotations
+	{
 		public static bool SourceHasRequiredAnnotations (
 			DynamicallyAccessedMemberTypes? sourceMemberTypes,
 			DynamicallyAccessedMemberTypes? targetMemberTypes,
@@ -25,15 +25,22 @@ namespace ILLink.Shared
 				.Where (damt => (damt & targetMemberTypes & ~sourceMemberTypes) == damt && damt != DynamicallyAccessedMemberTypes.None)
 				.ToList ();
 
+			if (targetMemberTypes.Value.HasFlag (DynamicallyAccessedMemberTypes.PublicConstructors) &&
+				sourceMemberTypes.Value.HasFlag (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor) &&
+				!sourceMemberTypes.Value.HasFlag (DynamicallyAccessedMemberTypes.PublicConstructors))
+				missingMemberTypesList.Add (DynamicallyAccessedMemberTypes.PublicConstructors);
+
+			if (missingMemberTypesList.Contains (DynamicallyAccessedMemberTypes.PublicConstructors) &&
+				missingMemberTypesList.Contains (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor))
+				missingMemberTypesList.Remove (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor);
+
 			if (missingMemberTypesList.Count == 0)
 				return true;
 
-			if (missingMemberTypesList.Contains (DynamicallyAccessedMemberTypes.PublicConstructors) &&
-				missingMemberTypesList.SingleOrDefault (mt => mt == DynamicallyAccessedMemberTypes.PublicParameterlessConstructor) is var ppc &&
-				ppc != DynamicallyAccessedMemberTypes.None)
-				missingMemberTypesList.Remove (ppc);
+			missingMemberTypesString = targetMemberTypes.Value == DynamicallyAccessedMemberTypes.All
+				? $"'{nameof (DynamicallyAccessedMemberTypes)}.{nameof (DynamicallyAccessedMemberTypes.All)}'"
+				: string.Join (", ", missingMemberTypesList.Select (mmt => $"'{nameof (DynamicallyAccessedMemberTypes)}.{mmt}'"));
 
-			missingMemberTypesString = string.Join (", ", missingMemberTypesList.Select (mmt => $"'{nameof (DynamicallyAccessedMemberTypes)}.{mmt}'"));
 			return false;
 		}
 	}

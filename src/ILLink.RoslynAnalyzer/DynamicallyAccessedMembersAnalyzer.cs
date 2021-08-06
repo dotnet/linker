@@ -20,13 +20,13 @@ namespace ILLink.RoslynAnalyzer
 
 		static ImmutableArray<DiagnosticDescriptor> GetSupportedDiagnostics ()
 		{
-			var diagDescriptorsArrayBuilder = ImmutableArray.CreateBuilder<DiagnosticDescriptor>(23);
-			for (int i = (int)DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsParameter; 
-				i <= (int)DiagnosticId.DynamicallyAccessedMembersMismatchTypeArgumentTargetsGenericParameter; i++) {
+			var diagDescriptorsArrayBuilder = ImmutableArray.CreateBuilder<DiagnosticDescriptor> (23);
+			for (int i = (int) DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsParameter;
+				i <= (int) DiagnosticId.DynamicallyAccessedMembersMismatchTypeArgumentTargetsGenericParameter; i++) {
 				diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor ((DiagnosticId) i));
 			}
 
-			return diagDescriptorsArrayBuilder.ToImmutable();
+			return diagDescriptorsArrayBuilder.ToImmutable ();
 		}
 
 		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => GetSupportedDiagnostics ();
@@ -53,6 +53,9 @@ namespace ILLink.RoslynAnalyzer
 
 		static void ProcessAssignmentOperation (OperationAnalysisContext context, IAssignmentOperation assignmentOperation)
 		{
+			if (context.ContainingSymbol.HasAttribute (RequiresUnreferencedCodeAnalyzer.FullyQualifiedRequiresUnreferencedCodeAttribute))
+				return;
+
 			if (TryGetSymbolFromOperation (assignmentOperation.Target) is not ISymbol target ||
 				TryGetSymbolFromOperation (assignmentOperation.Value) is not ISymbol source)
 				return;
@@ -71,6 +74,9 @@ namespace ILLink.RoslynAnalyzer
 
 		static void ProcessInvocationOperation (OperationAnalysisContext context, IInvocationOperation invocationOperation)
 		{
+			if (context.ContainingSymbol.HasAttribute (RequiresUnreferencedCodeAnalyzer.FullyQualifiedRequiresUnreferencedCodeAttribute))
+				return;
+
 			ProcessTypeArguments (context, invocationOperation);
 			ProcessArguments (context, invocationOperation);
 			if (!invocationOperation.TargetMethod.TryGetDynamicallyAccessedMemberTypes (out var damtOnCalledMethod))
@@ -108,6 +114,9 @@ namespace ILLink.RoslynAnalyzer
 
 		static void ProcessArguments (OperationAnalysisContext context, IInvocationOperation invocationOperation)
 		{
+			if (context.ContainingSymbol.HasAttribute (RequiresUnreferencedCodeAnalyzer.FullyQualifiedRequiresUnreferencedCodeAttribute))
+				return;
+
 			foreach (var argument in invocationOperation.Arguments) {
 				var targetParameter = argument.Parameter;
 				if (targetParameter is null || !targetParameter.TryGetDynamicallyAccessedMemberTypes (out var damtOnParameter))
@@ -130,6 +139,9 @@ namespace ILLink.RoslynAnalyzer
 		static void ProcessTypeArguments (OperationAnalysisContext context, IInvocationOperation invocationOperation)
 		{
 			var targetMethod = invocationOperation.TargetMethod;
+			if (targetMethod.HasAttribute (RequiresUnreferencedCodeAnalyzer.FullyQualifiedRequiresUnreferencedCodeAttribute))
+				return;
+
 			for (int i = 0; i < targetMethod.TypeParameters.Length; i++) {
 				var arg = targetMethod.TypeArguments[i];
 				var param = targetMethod.TypeParameters[i];

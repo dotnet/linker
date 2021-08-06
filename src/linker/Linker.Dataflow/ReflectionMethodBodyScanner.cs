@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using ILLink.Shared;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -20,17 +19,6 @@ namespace Mono.Linker.Dataflow
 	{
 		readonly MarkStep _markStep;
 		readonly MarkScopeStack _scopeStack;
-		static readonly DynamicallyAccessedMemberTypes[] AllDynamicallyAccessedMemberTypes = GetAllDynamicallyAccessedMemberTypes ();
-
-		static DynamicallyAccessedMemberTypes[] GetAllDynamicallyAccessedMemberTypes ()
-		{
-			HashSet<DynamicallyAccessedMemberTypes> values = Enum.GetValues (typeof (DynamicallyAccessedMemberTypes))
-								.Cast<DynamicallyAccessedMemberTypes> ()
-								.ToHashSet ();
-			if (!values.Contains (DynamicallyAccessedMemberTypesOverlay.Interfaces))
-				values.Add (DynamicallyAccessedMemberTypesOverlay.Interfaces);
-			return values.ToArray ();
-		}
 
 		public static bool RequiresReflectionMethodBodyScannerForCallSite (LinkContext context, MethodReference calledMethod)
 		{
@@ -2010,33 +1998,7 @@ namespace Mono.Linker.Dataflow
 					reflectionContext.RecordHandledPattern ();
 				} else if (uniqueValue is LeafValueWithDynamicallyAccessedMemberNode valueWithDynamicallyAccessedMember) {
 					var availableMemberTypes = valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes;
-					if (!availableMemberTypes.HasFlag (requiredMemberTypes)) {
-						string missingMemberTypes = $"'{nameof (DynamicallyAccessedMemberTypes)}.{nameof (DynamicallyAccessedMemberTypes.All)}'";
-						if (requiredMemberTypes != DynamicallyAccessedMemberTypes.All) {
-							var missingMemberTypesList = AllDynamicallyAccessedMemberTypes
-								.Where (damt => (requiredMemberTypes & ~availableMemberTypes & damt) == damt && damt != DynamicallyAccessedMemberTypes.None)
-								.ToList ();
-
-							// PublicConstructors is a special case since its value is 3 - so PublicParameterlessConstructor (1) | _PublicConstructor_WithMoreThanOneParameter_ (2)
-							// The above bit logic only works for value with single bit set.
-							if (requiredMemberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicConstructors) &&
-								availableMemberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor) &&
-								!availableMemberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicConstructors))
-								missingMemberTypesList.Add (DynamicallyAccessedMemberTypes.PublicConstructors);
-
-							if (missingMemberTypesList.Contains (DynamicallyAccessedMemberTypes.PublicConstructors) &&
-								missingMemberTypesList.Contains (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor))
-								missingMemberTypesList.Remove (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor);
-
-							missingMemberTypes = string.Join (", ", missingMemberTypesList.Select (mmt => {
-								string mmtName = mmt == DynamicallyAccessedMemberTypesOverlay.Interfaces
-									? nameof (DynamicallyAccessedMemberTypesOverlay.Interfaces)
-									: mmt.ToString ();
-
-								return $"'{nameof (DynamicallyAccessedMemberTypes)}.{mmtName}'";
-							}));
-						}
-
+					if (!Annotations.SourceHasRequiredAnnotations (availableMemberTypes, requiredMemberTypes, out var missingMemberTypes)) {
 						DiagnosticId diagnosticId = GetDiagnosticId (valueWithDynamicallyAccessedMember.SourceContext, targetContext);
 						var diagnosticArguments = GetDiagnosticArguments (valueWithDynamicallyAccessedMember.SourceContext, targetContext, missingMemberTypes);
 						reflectionContext.RecordUnrecognizedPattern ((int) diagnosticId, new DiagnosticString (diagnosticId).GetMessage (diagnosticArguments));
