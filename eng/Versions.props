@@ -13,14 +13,14 @@
   <PropertyGroup>
     <UsingToolMicrosoftNetCompilers>true</UsingToolMicrosoftNetCompilers>
     <!-- ilasm -->
-    <MicrosoftNETSdkILPackageVersion>6.0.0-rc.1.21375.2</MicrosoftNETSdkILPackageVersion>
+    <MicrosoftNETSdkILPackageVersion>6.0.0-rc.1.21406.5</MicrosoftNETSdkILPackageVersion>
     <!-- see https://github.com/dotnet/runtime/issues/1338 -->
     <MicrosoftNETCoreILAsmVersion>$(MicrosoftNETSdkILPackageVersion)</MicrosoftNETCoreILAsmVersion>
     <!-- SRM version should match the SDK version at https://github.com/dotnet/sdk/blob/master/eng/Versions.props -->
     <SystemReflectionMetadataVersion>5.0.0</SystemReflectionMetadataVersion>
     <MicrosoftBuildFrameworkVersion>17.0.0-preview-21267-01</MicrosoftBuildFrameworkVersion>
     <MicrosoftBuildUtilitiesCoreVersion>17.0.0-preview-21267-01</MicrosoftBuildUtilitiesCoreVersion>
-    <MicrosoftDotNetApiCompatVersion>6.0.0-beta.21366.1</MicrosoftDotNetApiCompatVersion>
+    <MicrosoftDotNetApiCompatVersion>6.0.0-beta.21406.6</MicrosoftDotNetApiCompatVersion>
     <MicrosoftDotNetCodeAnalysisVersion>6.0.0-beta.21271.1</MicrosoftDotNetCodeAnalysisVersion>
     <MicrosoftCodeAnalysisCSharpCodeStyleVersion>3.10.0-2.final</MicrosoftCodeAnalysisCSharpCodeStyleVersion>
     <MicrosoftCodeAnalysisVersion>3.10.0-2.final</MicrosoftCodeAnalysisVersion>
