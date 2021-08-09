@@ -319,7 +319,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				public static bool TestProperty { get; set; }
 			}
 
-			public static void Test()
+			public static void Test ()
 			{
 				// https://github.com/mono/linker/issues/2196
 				// TestPropertyWithAttributeMarkingSelfType.TestProperty = true;
