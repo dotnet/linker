@@ -27,7 +27,9 @@ namespace Mono.Linker
 			var declaredOnlyFlags = declaredOnly ? BindingFlags.DeclaredOnly : BindingFlags.Default;
 
 			if (memberTypes == DynamicallyAccessedMemberTypes.All) {
-				foreach (var m in typeDefinition.GetAllOnType (context, declaredOnly))
+				var members = new List<IMetadataTokenProvider> ();
+				typeDefinition.GetAllOnType (context, declaredOnly, members);
+				foreach (var m in members)
 					yield return m;
 				yield break;
 			}
@@ -70,7 +72,9 @@ namespace Mono.Linker
 			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.NonPublicNestedTypes)) {
 				foreach (var nested in typeDefinition.GetNestedTypesOnType (filter: null, bindingFlags: BindingFlags.NonPublic)) {
 					yield return nested;
-					foreach (var m in nested.GetAllOnType (context, declaredOnly: false))
+					var members = new List<IMetadataTokenProvider> ();
+					nested.GetAllOnType (context, declaredOnly: false, members);
+					foreach (var m in members)
 						yield return m;
 				}
 			}
@@ -78,7 +82,9 @@ namespace Mono.Linker
 			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicNestedTypes)) {
 				foreach (var nested in typeDefinition.GetNestedTypesOnType (filter: null, bindingFlags: BindingFlags.Public)) {
 					yield return nested;
-					foreach (var m in nested.GetAllOnType (context, declaredOnly: false))
+					var members = new List<IMetadataTokenProvider> ();
+					nested.GetAllOnType (context, declaredOnly: false, members);
+					foreach (var m in members)
 						yield return m;
 				}
 			}
@@ -354,57 +360,53 @@ namespace Mono.Linker
 			}
 		}
 
-		public static IEnumerable<IMetadataTokenProvider> GetAllOnType (this TypeDefinition type, LinkContext context, bool declaredOnly) => GetAllOnType (type, context, declaredOnly, new HashSet<TypeDefinition> ());
+		public static void GetAllOnType (this TypeDefinition type, LinkContext context, bool declaredOnly, List<IMetadataTokenProvider> members) => GetAllOnType (type, context, declaredOnly, members, new HashSet<TypeDefinition> ());
 
-		static IEnumerable<IMetadataTokenProvider> GetAllOnType (TypeDefinition type, LinkContext context, bool declaredOnly, HashSet<TypeDefinition> types)
+		static void GetAllOnType (TypeDefinition type, LinkContext context, bool declaredOnly, List<IMetadataTokenProvider> members, HashSet<TypeDefinition> types)
 		{
 			if (!types.Add (type))
-				yield break;
+				return;
 
 			if (type.HasNestedTypes) {
 				foreach (var nested in type.NestedTypes) {
-					yield return nested;
+					members.Add (nested);
 					// Base types and interfaces of nested types are always included.
-					foreach (var m in GetAllOnType (nested, context, declaredOnly: false, types))
-						yield return m;
+					GetAllOnType (nested, context, declaredOnly: false, members, types);
 				}
 			}
 
 			if (!declaredOnly) {
 				var baseType = context.TryResolve (type.BaseType);
-				if (baseType != null) {
-					foreach (var m in GetAllOnType (baseType, context, declaredOnly: false, types))
-						yield return m;
-				}
+				if (baseType != null)
+					GetAllOnType (baseType, context, declaredOnly: false, members, types);
 			}
 
 			if (!declaredOnly && type.HasInterfaces) {
 				foreach (var iface in type.Interfaces) {
-					yield return iface;
-					var interfaceType = context.Resolve (iface.InterfaceType);
-					foreach (var m in GetAllOnType (interfaceType, context, declaredOnly: false, types))
-						yield return m;
+					members.Add (iface);
+					var interfaceType = context.TryResolve (iface.InterfaceType);
+					GetAllOnType (interfaceType, context, declaredOnly: false, members, types);
 				}
 			}
 
 			if (type.HasFields) {
 				foreach (var f in type.Fields)
-					yield return f;
+					members.Add (f);
 			}
 
 			if (type.HasMethods) {
 				foreach (var m in type.Methods)
-					yield return m;
+					members.Add (m);
 			}
 
 			if (type.HasProperties) {
 				foreach (var p in type.Properties)
-					yield return p;
+					members.Add (p);
 			}
 
 			if (type.HasEvents) {
 				foreach (var e in type.Events)
-					yield return e;
+					members.Add (e);
 			}
 		}
 	}
