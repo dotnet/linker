@@ -652,11 +652,13 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				public static void GenericTypeWithStaticMethodWhichRequires () { }
 			}
 
-			class GenericWithConstraint<T> where T : new() {
+			class GenericWithConstraint<T> where T : new()
+			{
 				public static void Generic<T> (T toDisplay) { }
 			}
 
-			class ClassWithRequiresUnreferencedCodeOnConstructor {
+			class ClassWithRequiresUnreferencedCodeOnConstructor
+			{
 				[RequiresUnreferencedCode ("Message for --ClassWithRequiresUnreferencedCodeOnCostructor--")]
 				void ClassWithRequiresUnreferencedCodeOnCostructor () { }
 			}
@@ -912,7 +914,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 			[RequiresUnreferencedCode ("Message for --ClassWithRequiresUnreferencedCode4--")]
 			class ClassWithRequiresUnreferencedCode4 { }
-			
+
 			[RequiresUnreferencedCode ("Message for --ClassWithRequiresUnreferencedCode5--")]
 			class ClassWithRequiresUnreferencedCode5 { }
 
@@ -1078,8 +1080,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				miConstructed.Invoke (null, null);
 			}
 
-			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequiresUnreferencedCode.ClassWithRequiresUnreferencedCode()", "Message for --ClassWithRequiresUnreferencedCode--")]
-			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequiresUnreferencedCode2.ClassWithRequiresUnreferencedCode2()", "Message for --ClassWithRequiresUnreferencedCode2--")]
+			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequiresUnreferencedCode.ClassWithRequiresUnreferencedCode()", "Message for --ClassWithRequiresUnreferencedCode--", GlobalAnalysisOnly = true)]
+			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequiresUnreferencedCode2.ClassWithRequiresUnreferencedCode2()", "Message for --ClassWithRequiresUnreferencedCode2--", GlobalAnalysisOnly = true)]
 			// ClassWithRequiresUnreferencedCode3 will not warn since there is no new constraint in the GenericClass3
 			static void TestGenericBehavior ()
 			{
