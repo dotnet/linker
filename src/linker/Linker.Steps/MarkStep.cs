@@ -532,6 +532,19 @@ namespace Mono.Linker.Steps
 						break;
 					}
 				}
+
+				foreach (var handler in body.ExceptionHandlers) {
+					if (handler.TryStart == oldTarget)
+						handler.TryStart = newTarget;
+					if (handler.TryEnd == oldTarget)
+						handler.TryEnd = newTarget;
+					if (handler.HandlerStart == oldTarget)
+						handler.HandlerStart = newTarget;
+					if (handler.HandlerEnd == oldTarget)
+						handler.HandlerEnd = newTarget;
+					if (handler.FilterStart == oldTarget)
+						handler.FilterStart = newTarget;
+				}
 			}
 		}
 
@@ -3454,6 +3467,12 @@ namespace Mono.Linker.Steps
 
 					if (type.IsInterface)
 						break;
+
+					if (type.Name == "QuicStreamAbortedException")
+						Debugger.Break ();
+
+					if (type.Name == "TypeToCheckException")
+						Debugger.Break ();
 
 					if (!Annotations.IsInstantiated (type)) {
 						_pending_isinst_instr.Add ((type, method.Body, instruction));
