@@ -43,11 +43,13 @@ namespace ILLink.RoslynAnalyzer
 				context.RegisterSymbolAction (symbolAnalysisContext => {
 					var methodSymbol = (IMethodSymbol) symbolAnalysisContext.Symbol;
 					CheckMatchingAttributesInOverrides (symbolAnalysisContext, methodSymbol);
+					CheckAttributeCtor (symbolAnalysisContext, methodSymbol);
 				}, SymbolKind.Method);
 
 				context.RegisterSymbolAction (symbolAnalysisContext => {
 					var typeSymbol = (INamedTypeSymbol) symbolAnalysisContext.Symbol;
 					CheckMatchingAttributesInInterfaces (symbolAnalysisContext, typeSymbol);
+					CheckAttributeCtor (symbolAnalysisContext, typeSymbol);
 				}, SymbolKind.NamedType);
 
 				if (AnalyzerDiagnosticTargets.HasFlag (DiagnosticTargets.Property)) {
@@ -175,6 +177,21 @@ namespace ILLink.RoslynAnalyzer
 						ReportMismatchInAttributesDiagnostic (symbolAnalysisContext, member, overriddenMember);
 				}
 
+				void CheckAttributeCtor (
+					SymbolAnalysisContext symbolAnalysisContext,
+					ISymbol symbol)
+				{
+					if (symbol.HasAttribute (RequiresAttributeName))
+						return;
+
+					foreach (var attr in symbol.GetAttributes ()) {
+						if (TryGetRequiresAttribute (attr.AttributeConstructor, out var requiresAttribute)) {
+							symbolAnalysisContext.ReportDiagnostic (Diagnostic.Create (RequiresDiagnosticRule,
+								symbol.Locations[0], attr.AttributeConstructor!.Name, GetMessageFromAttribute (requiresAttribute), GetUrlFromAttribute (requiresAttribute)));
+						}
+					}
+				}
+
 				void CheckMatchingAttributesInInterfaces (
 					SymbolAnalysisContext symbolAnalysisContext,
 					INamedTypeSymbol type)
@@ -281,9 +298,12 @@ namespace ILLink.RoslynAnalyzer
 		/// <param name="member">Symbol of the member to search attribute.</param>
 		/// <param name="requiresAttribute">Output variable in case of matching Requires attribute.</param>
 		/// <returns>True if the member contains a Requires attribute; otherwise, returns false.</returns>
-		private bool TryGetRequiresAttribute (ISymbol member, [NotNullWhen (returnValue: true)] out AttributeData? requiresAttribute)
+		private bool TryGetRequiresAttribute (ISymbol? member, [NotNullWhen (returnValue: true)] out AttributeData? requiresAttribute)
 		{
 			requiresAttribute = null;
+			if (member == null)
+				return false;
+
 			foreach (var _attribute in member.GetAttributes ()) {
 				if (_attribute.AttributeClass is { } attrClass &&
 					attrClass.HasName (RequiresAttributeFullyQualifiedName) &&
@@ -292,6 +312,7 @@ namespace ILLink.RoslynAnalyzer
 					return true;
 				}
 			}
+
 			return false;
 		}
 
