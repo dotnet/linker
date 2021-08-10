@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
@@ -651,15 +652,41 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				public static void GenericTypeWithStaticMethodWhichRequires () { }
 			}
 
+			class GenericWithConstraint<T> where T : new() {
+				public static void Generic<T> (T toDisplay) { }
+			}
+
+			class ClassWithRequiresUnreferencedCodeOnConstructor {
+				[RequiresUnreferencedCode ("Message for --ClassWithRequiresUnreferencedCodeOnCostructor--")]
+				void ClassWithRequiresUnreferencedCodeOnCostructor () { }
+			}
+
 			[ExpectedWarning ("IL2026", "--GenericTypeWithStaticMethodWhichRequires--")]
 			public static void GenericTypeWithStaticMethodViaLdftn ()
 			{
 				var _ = new Action (GenericWithStaticMethod<TestType>.GenericTypeWithStaticMethodWhichRequires);
 			}
 
+			public static void GenericCallUsingMakeGenericType ()
+			{
+				Type generic = typeof (GenericWithConstraint<>);
+				Type constructed = generic.MakeGenericType (typeof (ClassWithRequiresUnreferencedCodeOnConstructor));
+			}
+
+			public static void GenericCallUsingMakeGenericMethod ()
+			{
+				Type example = typeof (GenericWithConstraint<>);
+				MethodInfo mi = example.GetMethod ("Generic");
+				MethodInfo miConstructed = mi.MakeGenericMethod (typeof (ClassWithRequiresUnreferencedCodeOnConstructor));
+				miConstructed.Invoke (null, null);
+			}
+
 			public static void Test ()
 			{
 				GenericTypeWithStaticMethodViaLdftn ();
+				// Trimmer doesnt recognize RUC after MakeGenericType/MakeGenericMethod https://github.com/mono/linker/issues/2198
+				GenericCallUsingMakeGenericType ();
+				GenericCallUsingMakeGenericMethod ();
 			}
 		}
 
@@ -868,6 +895,27 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				public static void StaticMethodInTestSuppressionClass () { }
 			}
 
+			private class GenericClass1<T> where T : ClassWithRequiresUnreferencedCode, new() { }
+			private class GenericClass2<T> where T : new() { }
+			private class GenericClass3<T> { }
+
+			private class ClassWithOpenGenericMethod
+			{
+				public static void Generic<T> (T toDisplay) { }
+			}
+
+			[RequiresUnreferencedCode ("Message for --ClassWithRequiresUnreferencedCode2--")]
+			class ClassWithRequiresUnreferencedCode2 { }
+
+			[RequiresUnreferencedCode ("Message for --ClassWithRequiresUnreferencedCode3--")]
+			class ClassWithRequiresUnreferencedCode3 { }
+
+			[RequiresUnreferencedCode ("Message for --ClassWithRequiresUnreferencedCode4--")]
+			class ClassWithRequiresUnreferencedCode4 { }
+			
+			[RequiresUnreferencedCode ("Message for --ClassWithRequiresUnreferencedCode5--")]
+			class ClassWithRequiresUnreferencedCode5 { }
+
 			class ClassWithoutRequiresUnreferencedCode
 			{
 				public ClassWithoutRequiresUnreferencedCode () { }
@@ -1016,6 +1064,34 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestUnconditionalSuppressMessage.StaticMethodInTestSuppressionClass ();
 			}
 
+			static void GenericCallUsingMakeGenericType ()
+			{
+				Type generic = typeof (GenericClass2<>);
+				Type constructed = generic.MakeGenericType (typeof (ClassWithRequiresUnreferencedCode4));
+			}
+
+			static void GenericCallUsingMakeGenericMethod ()
+			{
+				Type example = typeof (ClassWithOpenGenericMethod);
+				MethodInfo mi = example.GetMethod ("Generic");
+				MethodInfo miConstructed = mi.MakeGenericMethod (typeof (ClassWithRequiresUnreferencedCode5));
+				miConstructed.Invoke (null, null);
+			}
+
+			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequiresUnreferencedCode.ClassWithRequiresUnreferencedCode()", "Message for --ClassWithRequiresUnreferencedCode--")]
+			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequiresUnreferencedCode2.ClassWithRequiresUnreferencedCode2()", "Message for --ClassWithRequiresUnreferencedCode2--")]
+			// ClassWithRequiresUnreferencedCode3 will not warn since there is no new constraint in the GenericClass3
+			static void TestGenericBehavior ()
+			{
+				var classGeneric1 = new GenericClass1<ClassWithRequiresUnreferencedCode> ();
+				var classGeneric2 = new GenericClass2<ClassWithRequiresUnreferencedCode2> ();
+				var classGeneric3 = new GenericClass3<ClassWithRequiresUnreferencedCode3> ();
+
+				// Trimmer doesnt recognize RUC after MakeGenericType/MakeGenericMethod https://github.com/mono/linker/issues/2198
+				GenericCallUsingMakeGenericType ();
+				GenericCallUsingMakeGenericMethod ();
+			}
+
 			static void RequirePublicMethods ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
 			{
 			}
@@ -1034,6 +1110,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestRequiresOnDerivedButNotOnBase ();
 				TestRequiresOnBaseAndDerived ();
 				TestSuppressionsOnClass ();
+				TestGenericBehavior ();
 				RequirePublicMethods (typeof (BaseWithoutRequiresOnType));
 				RequirePublicMethods (typeof (DerivedWithRequiresOnType));
 				RequirePublicMethods (typeof (BaseWithRequiresOnType));
