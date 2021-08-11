@@ -404,7 +404,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 			HashSet<(Instruction, Instruction)> existingTryBlocks = new HashSet<(Instruction, Instruction)> ();
 			foreach (var exHandler in body.ExceptionHandlers) {
-				if (!existingTryBlocks.Contains ((exHandler.TryStart, exHandler.TryEnd))) {
+				if (existingTryBlocks.Add ((exHandler.TryStart, exHandler.TryEnd))) {
 					InsertBeforeInstruction (exHandler.TryStart, ".try");
 					InsertBeforeInstruction (exHandler.TryEnd, ".endtry");
 				}
@@ -417,8 +417,6 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 				if (exHandler.FilterStart != null)
 					InsertBeforeInstruction (exHandler.FilterStart, ".filter");
-
-				existingTryBlocks.Add ((exHandler.TryStart, exHandler.TryEnd));
 			}
 
 			return result.Select (i => i.Item2).ToArray ();
