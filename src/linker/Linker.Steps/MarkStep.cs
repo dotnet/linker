@@ -3468,12 +3468,6 @@ namespace Mono.Linker.Steps
 					if (type.IsInterface)
 						break;
 
-					if (type.Name == "QuicStreamAbortedException")
-						Debugger.Break ();
-
-					if (type.Name == "TypeToCheckException")
-						Debugger.Break ();
-
 					if (!Annotations.IsInstantiated (type)) {
 						_pending_isinst_instr.Add ((type, method.Body, instruction));
 						return;

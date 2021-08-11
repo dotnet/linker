@@ -20,6 +20,8 @@ namespace Mono.Linker.Tests.Cases.Advanced
 			TestTypeCheckKept_2<string> (null);
 			TestTypeCheckKept_3 ();
 			TestTypeCheckKept_4 (null);
+
+			TypeCheckRemovalInExceptionFilter.Test ();
 		}
 
 		[Kept]
@@ -229,6 +231,44 @@ namespace Mono.Linker.Tests.Cases.Advanced
 		{
 			[Kept]
 			public object Instance;
+		}
+
+		[Kept]
+		class TypeCheckRemovalInExceptionFilter
+		{
+			[Kept]
+			[KeptBaseType(typeof(Exception))]
+			class TypeToCheckException : Exception { 
+				[Kept]
+				public int Value { 
+					[Kept]
+					[ExpectedInstructionSequence (new string[] {
+						"ldstr",
+						"newobj",
+						"throw"
+					})]
+					get; } 
+			}
+
+			[Kept]
+			static void MethodWithFilter ()
+			{
+				try {
+					new object (); // Do nothing
+				}
+				catch (TypeToCheckException ex) when (ex.Value == 0) {
+					throw new ApplicationException ();
+				}
+				catch (TypeToCheckException ex) when (ex.Value == 1) {
+					throw new ApplicationException ();
+				}
+			}
+
+			[Kept]
+			public static void Test ()
+			{
+				MethodWithFilter ();
+			}
 		}
 	}
 }

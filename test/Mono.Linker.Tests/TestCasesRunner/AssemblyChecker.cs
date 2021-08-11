@@ -390,11 +390,44 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				nameof (ExpectedInstructionSequenceAttribute),
 				nameof (ExpectBodyModifiedAttribute),
 				"instructions",
-				m => m.Body.Instructions.Select (ins => FormatInstruction (ins).ToLower ()).ToArray (),
+				m => FormatMethodBody (m.Body),
 				attr => GetStringArrayAttributeValue (attr).Select (v => v.ToLower ()).ToArray ());
 		}
 
-		public static string FormatInstruction (Instruction instr)
+		public static string[] FormatMethodBody (MethodBody body)
+		{
+			List<(Instruction, string)> result = new List<(Instruction, string)> (body.Instructions.Count);
+			for (int index = 0; index < body.Instructions.Count; index++) {
+				var instruction = body.Instructions[index];
+				result.Add ((instruction, FormatInstruction (instruction)));
+			}
+
+			HashSet<(Instruction, Instruction)> existingTryBlocks = new HashSet<(Instruction, Instruction)> ();
+			foreach (var exHandler in body.ExceptionHandlers) {
+				if (!existingTryBlocks.Contains ((exHandler.TryStart, exHandler.TryEnd))) {
+					InsertBeforeInstruction (exHandler.TryStart, ".try");
+					InsertBeforeInstruction (exHandler.TryEnd, ".endtry");
+				}
+
+				if (exHandler.HandlerStart != null)
+					InsertBeforeInstruction (exHandler.HandlerStart, ".catch");
+
+				if (exHandler.HandlerEnd != null)
+					InsertBeforeInstruction (exHandler.HandlerEnd, ".endcatch");
+
+				if (exHandler.FilterStart != null)
+					InsertBeforeInstruction (exHandler.FilterStart, ".filter");
+
+				existingTryBlocks.Add ((exHandler.TryStart, exHandler.TryEnd));
+			}
+
+			return result.Select (i => i.Item2).ToArray ();
+
+			void InsertBeforeInstruction (Instruction instruction, string text) =>
+				result.Insert (result.FindIndex (i => i.Item1 == instruction), (null, text));
+		}
+
+		static string FormatInstruction (Instruction instr)
 		{
 			switch (instr.OpCode.FlowControl) {
 			case FlowControl.Branch:
