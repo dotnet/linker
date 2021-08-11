@@ -290,15 +290,15 @@ public static void Main()
 ```
 This is a very similar example as with MakeGenericType, we have an open type generic method `Generic<T>` then we have a call to MakeGenericMethod in which we pass a closed type to generate a constructed type called `miConstructed` that has the substitution of the elements. Printing `mi` variable would generate `Generic[T](T)` whereas printing the value of the `miConstructed` variable would generate `Generic[ClassWithRequiresUnreferencedCode](ClassWithRequiresUnreferencedCode)`.
 
-Similar to the previous example, if the linker detects that the behavior is dangerous for trimming a warning will be issued.
+Similar to the previous example, if the trimmer detects that the behavior is dangerous for trimming a warning will be issued.
 ## Structs and interfaces
 We have decided not to allow `RequiresUnreferencedCode` on structs and interfaces because the semantics are hard to guard - both structs and interfaces can be "instantiated" without running an explicit constructor and at that point all instance methods on them are callable, even indirectly through virtual dispatch.
 
 ## Static constructors and static fields
-`RequiresUnreferencedCode` is an annotation that allows you to tell callers which piece of code is safe/unsafe, static constructors are not callable method from the user perspective, the runtime will issue calls to the static constructor when it needs to but from the user perspective these are not called and therefore we don't allow to annotate with `RequiresUnreferencedCode` the static constructor method. In case you annotate the static constructor directly a warning will be generated and the annotation will have no effect.
+`RequiresUnreferencedCode` is an annotation that allows you to tell callers which piece of code is safe/unsafe, static constructors are not callable method from the user perspective, the runtime will issue calls to the static constructor as a type initialization method, but from the user perspective the method is not callable and therefore we don't allow to annotate with `RequiresUnreferencedCode` the static constructor method. In case you annotate the static constructor directly a warning will be generated and the annotation will have no effect on the method (will not generate IL2026 nor suppress other warnings).
 ```C#
 public class MyClass {
-    // IL21XX: You cannot add RUC to a static constructor. Consider to add RUC on the type
+    // IL2116: 'RequiresUnreferencedCodeAttribute' cannot be placed directly on static constructor 'MyClass..cctor()', consider placing 'RequiresUnreferencedCodeAttribute' on the type declaration instead.
     [RequiresUnreferencedCode ("Static constructor with RequiresUnreferencedCode")]
     public static MyClass {
         // Does something dangerous
@@ -314,7 +314,7 @@ public class MyClass {
     }
 }
 ```
-Static constructors are considered special since most of the calls of these methods will be from the runtime environment, following rules that most of the developers are not aware and generating code that is not easy to visualize to the developer.Most common uses of the static constructor will come from the usage of the static field initializers, see the following example
+Static constructors are considered special since most of the calls of these methods will be from the runtime environment, understanding the semantics of when and what triggers execution of such type initialization methods is something that most of the developers are not aware. Most common uses of the static constructor will come from the usage of the static field initializers, see the following example
 ```C#
 class C
 {
@@ -329,7 +329,7 @@ class C
     }
 }
 ```
-The key part in this example is that since the static fields are being assigned a value, therefore the runtime will generate an implicit static constructor method to execute the initialization. The code is not visible to the user but gets produced in what is called Intermediate Language (IL), the static constructor IL code generated for the previous example is the following
+The key part in this example is that since the static fields are being assigned a value, the runtime will generate an implicit static constructor method to execute the initialization. The code is not visible to the user but gets produced in what is called Intermediate Language (IL), the static constructor IL code generated for the previous example is the following
 ```IL
 .method private hidebysig specialname rtspecialname static 
     void .cctor () cil managed 
@@ -345,7 +345,7 @@ The key part in this example is that since the static fields are being assigned 
     IL_0011: ret
 } // end of method C::.cctor
 ```
-The static constructor gets executed in a particular way by first trying to initilize the value of A which then calls to `CallRUCAnnotatedMethod`, we get the unitialized value of B (the default value for an int is 0) and assign it to A. Then we proceed to initialize B with the value 42. Meaning that in the `Console.WriteLine(A);` we will print the value of 0. Also, since `CallRUCAnnotatedMethod` has `RequiresUnreferecedCode` attribute but the method is called from inside the static constructor method the origin of the warning will be the static constructor.
+The static constructor gets executed in a particular way by first trying to initilize the value of A which then calls to `CallRUCAnnotatedMethod`, we get the unitialized value of B (the default value for an int is 0) and assign it to A. Then we proceed to initialize B with the value 42. Meaning that in the `Console.WriteLine(A);` we will print the value of 0. Also, since `CallRUCAnnotatedMethod` has `RequiresUnreferecedCode` attribute but the method is called from inside the static constructor method the origin of the warning will be the static constructor. For more information about static constructor semantics and beforefieldinit initialization read the CLI specification (ECMA 335), partition I section 8.9.5
 
 In this case the recommended action for this is to analyze if the CallRUCAnnotatedMethod() represents an actual threat for trimming the application. If it's safe to call the method you can generate a explicit static constructor method and suppress the warning in the explicit static constructor or if its actually trimming dangerous annotate the class with `RequiresUnreferencedCode`
 ```C#
@@ -362,7 +362,7 @@ class C
     }
 }
 ```
-Having `RequiresUnreferencedCode` on the type will make that accessing the type fields from another part of the code will also generate a warning, whether there is or isn't a static constructor called.
+Having `RequiresUnreferencedCode` on the type will make that accessing the type fields from another part of the code will also generate a warning when a static constructor is called.
 ```C#
 [RequiresUnreferencedCode ("Message for --C--")]
 class C
