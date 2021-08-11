@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <!-- Keep these in sync with _ILLinkTasksTFM in Sdk.props. -->
-    <!-- Keep the netcoreapp TFM in sync with the Mono.Linker.csproj condition below. -->
+    <!-- Keep these in sync with ILLinkTasksAssembly in Microsoft.NET.ILLInk.Tasks.props. -->
+    <!-- Keep the net#.0 TFM in sync with the Mono.Linker.csproj condition below. -->
     <TargetFrameworks>net6.0;net472</TargetFrameworks>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <Description>MSBuild tasks for running the IL Linker</Description>
