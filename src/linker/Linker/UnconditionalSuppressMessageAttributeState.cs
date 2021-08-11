@@ -173,7 +173,7 @@ namespace Mono.Linker
 			}
 		}
 
-		public IEnumerable<SuppressMessageInfo> DecodeSuppressions (ICustomAttributeProvider provider)
+		IEnumerable<SuppressMessageInfo> DecodeSuppressions (ICustomAttributeProvider provider)
 		{
 			Debug.Assert (provider is not ModuleDefinition or AssemblyDefinition);
 
@@ -191,7 +191,7 @@ namespace Mono.Linker
 			}
 		}
 
-		public IEnumerable<(SuppressMessageInfo Info, ICustomAttributeProvider Target)> DecodeAssemblyAndModuleSuppressions (ModuleDefinition module)
+		IEnumerable<(SuppressMessageInfo Info, ICustomAttributeProvider Target)> DecodeAssemblyAndModuleSuppressions (ModuleDefinition module)
 		{
 			AssemblyDefinition assembly = module.Assembly;
 			foreach (var suppression in DecodeGlobalSuppressions (module, assembly))
@@ -203,7 +203,7 @@ namespace Mono.Linker
 			}
 		}
 
-		public IEnumerable<(SuppressMessageInfo Info, ICustomAttributeProvider Target)> DecodeGlobalSuppressions (ModuleDefinition module, ICustomAttributeProvider provider)
+		IEnumerable<(SuppressMessageInfo Info, ICustomAttributeProvider Target)> DecodeGlobalSuppressions (ModuleDefinition module, ICustomAttributeProvider provider)
 		{
 			var attributes = _context.CustomAttributes.GetCustomAttributes (provider).
 					Where (a => TypeRefHasUnconditionalSuppressions (a.AttributeType));
