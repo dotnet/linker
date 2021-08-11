@@ -238,36 +238,111 @@ namespace Mono.Linker.Tests.Cases.Advanced
 		{
 			[Kept]
 			[KeptBaseType(typeof(Exception))]
-			class TypeToCheckException : Exception { 
+			class TypeToCheckException : Exception {
 				[Kept]
-				public int Value { 
-					[Kept]
-					[ExpectedInstructionSequence (new string[] {
-						"ldstr",
-						"newobj",
-						"throw"
-					})]
-					get; } 
+				public int Value;
 			}
 
 			[Kept]
-			static void MethodWithFilter ()
+			[ExpectedInstructionSequence (new string[] {
+				".try",
+				"ldarg.0",
+				"pop",
+				"ldnull",
+				"pop",
+				"leave.s il_1f",
+				".endtry",
+				".filter",
+				"pop",
+				"ldnull",
+				"dup",
+				"brtrue.s il_f",
+				"pop",
+				"ldc.i4.0",
+				"br.s il_1a",
+				"ldfld",
+				"ldc.i4.0",
+				"ceq",
+				"ldc.i4.0",
+				"cgt.un",
+				"endfilter",
+				".catch",
+				"pop",
+				"leave.s il_1f",
+				".endcatch",
+				"ret"
+			})]
+			static void MethodWithFilterRemovalInTry (object o)
 			{
 				try {
-					new object (); // Do nothing
+					if (o is TypeToCheckException) {
+					}
 				}
 				catch (TypeToCheckException ex) when (ex.Value == 0) {
-					throw new ApplicationException ();
+				}
+			}
+
+			[Kept]
+			[ExpectedInstructionSequence (new string[] {
+				".try",
+				"newobj",
+				"pop",
+				"leave.s il_3a",
+				".endtry",
+				".filter",
+				"pop",
+				"ldnull",
+				"dup",
+				"brtrue.s il_11",
+				"pop",
+				"ldc.i4.0",
+				"br.s il_1c",
+				"ldfld",
+				"ldc.i4.0",
+				"ceq",
+				"ldc.i4.0",
+				"cgt.un",
+				"endfilter",
+				".catch",
+				"pop",
+				"leave.s il_3a",
+				".endcatch",
+				".filter",
+				"pop",
+				"ldnull",
+				"dup",
+				"brtrue.s il_2a",
+				"pop",
+				"ldc.i4.0",
+				"br.s il_35",
+				"ldfld",
+				"ldc.i4.1",
+				"ceq",
+				"ldc.i4.0",
+				"cgt.un",
+				"endfilter",
+				".catch",
+				"pop",
+				"leave.s il_3a",
+				".endcatch",
+				"ret",          
+			})]
+			static void MethodWithTwoFilters ()
+			{
+				try {
+					new object ();
+				}
+				catch (TypeToCheckException ex) when (ex.Value == 0) {
 				}
 				catch (TypeToCheckException ex) when (ex.Value == 1) {
-					throw new ApplicationException ();
 				}
 			}
 
 			[Kept]
 			public static void Test ()
 			{
-				MethodWithFilter ();
+				MethodWithFilterRemovalInTry (null);
+				MethodWithTwoFilters ();
 			}
 		}
 	}
