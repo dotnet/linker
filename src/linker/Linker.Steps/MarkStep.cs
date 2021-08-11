@@ -59,7 +59,6 @@ namespace Mono.Linker.Steps
 		readonly List<(TypeDefinition Type, MethodBody Body, Instruction Instr)> _pending_isinst_instr;
 		UnreachableBlocksOptimizer _unreachableBlocksOptimizer;
 		MarkStepContext _markContext;
-		readonly HashSet<TypeDefinition> _entireTypesMarked;
 		DynamicallyAccessedMembersTypeHierarchy _dynamicallyAccessedMembersTypeHierarchy;
 		MarkScopeStack _scopeStack;
 
@@ -69,12 +68,8 @@ namespace Mono.Linker.Steps
 
 #if DEBUG
 		static readonly DependencyKind[] _entireTypeReasons = new DependencyKind[] {
-			DependencyKind.AccessedViaReflection,
-			DependencyKind.BaseType,
+			DependencyKind.MemberInAssembly,
 			DependencyKind.PreservedDependency,
-			DependencyKind.NestedType,
-			DependencyKind.TypeInAssembly,
-			DependencyKind.Unspecified,
 		};
 
 		static readonly DependencyKind[] _fieldReasons = new DependencyKind[] {
@@ -90,6 +85,7 @@ namespace Mono.Linker.Steps
 			DependencyKind.FieldOnGenericInstance,
 			DependencyKind.InteropMethodDependency,
 			DependencyKind.Ldtoken,
+			DependencyKind.MemberInAssembly,
 			DependencyKind.MemberOfType,
 			DependencyKind.DynamicDependency,
 			DependencyKind.ReferencedBySpecialAttribute,
@@ -118,12 +114,12 @@ namespace Mono.Linker.Steps
 			DependencyKind.GenericParameterConstraintType,
 			DependencyKind.InterfaceImplementationInterfaceType,
 			DependencyKind.Ldtoken,
+			DependencyKind.MemberInAssembly,
 			DependencyKind.ModifierType,
 			DependencyKind.InstructionTypeRef,
 			DependencyKind.ParameterType,
 			DependencyKind.ReferencedBySpecialAttribute,
 			DependencyKind.ReturnType,
-			DependencyKind.TypeInAssembly,
 			DependencyKind.UnreachableBodyRequirement,
 			DependencyKind.VariableType,
 			DependencyKind.ParameterMarshalSpec,
@@ -157,7 +153,7 @@ namespace Mono.Linker.Steps
 			DependencyKind.Ldftn,
 			DependencyKind.Ldtoken,
 			DependencyKind.Ldvirtftn,
-			DependencyKind.MemberOfType,
+			DependencyKind.MemberInAssembly,
 			DependencyKind.MethodForInstantiatedType,
 			DependencyKind.MethodForSpecialType,
 			DependencyKind.MethodImplOverride,
@@ -194,7 +190,6 @@ namespace Mono.Linker.Steps
 			_dynamicInterfaceCastableImplementationTypes = new List<TypeDefinition> ();
 			_unreachableBodies = new List<(MethodBody, MarkScopeStack.Scope)> ();
 			_pending_isinst_instr = new List<(TypeDefinition, MethodBody, Instruction)> ();
-			_entireTypesMarked = new HashSet<TypeDefinition> ();
 		}
 
 		public AnnotationStore Annotations => _context.Annotations;
@@ -309,6 +304,7 @@ namespace Mono.Linker.Steps
 			return false;
 		}
 
+		// Try to avoid calling this more than once for a type since it is not cached.
 		internal void MarkEntireType (TypeDefinition type, in DependencyInfo reason)
 		{
 #if DEBUG
@@ -320,47 +316,42 @@ namespace Mono.Linker.Steps
 			// In which case we would generate warnings with no source (hard to debug)
 			using var _ = _scopeStack.CurrentScope.Origin.MemberDefinition == null ? _scopeStack.PushScope (new MessageOrigin (type)) : null;
 
-			if (!_entireTypesMarked.Add (type))
-				return;
-
-			if (type.HasNestedTypes) {
-				foreach (TypeDefinition nested in type.NestedTypes)
-					MarkEntireType (nested, new DependencyInfo (DependencyKind.NestedType, type));
+			// Calling MarkType here would result in extra warnings for cctors, ctors, delegate methods,
+			// serialization ctors, and overrides of preserved abstract methods.
+			// Instead, we only do extra type marking not already covered by the other cases in MarkEntireType.
+			void MarkTypeOnly (TypeDefinition type, in DependencyInfo reason)
+			{
+				Annotations.Mark (type, reason);
+				MarkCustomAttributes (type, new DependencyInfo (DependencyKind.CustomAttribute, type));
+				MarkTypeSpecialCustomAttributes (type);
+				MarkGenericParameterProvider (type);
 			}
 
-			Annotations.Mark (type, reason);
-			MarkCustomAttributes (type, new DependencyInfo (DependencyKind.CustomAttribute, type));
-			MarkTypeSpecialCustomAttributes (type);
+			MarkTypeOnly (type, reason);
 
-			if (type.HasInterfaces) {
-				foreach (InterfaceImplementation iface in type.Interfaces)
-					MarkInterfaceImplementation (iface, new MessageOrigin (type));
-			}
-
-			MarkGenericParameterProvider (type);
-
-			if (type.HasFields) {
-				foreach (FieldDefinition field in type.Fields) {
-					MarkField (field, new DependencyInfo (DependencyKind.MemberOfType, type));
-				}
-			}
-
-			if (type.HasMethods) {
-				foreach (MethodDefinition method in type.Methods) {
+			// Note: This actually has nothing to do with dynamically accessed members - here we just use the DynamicallyAccessedMemberTypes.All
+			// as a convenient way to select every member of the type.
+			foreach (var member in type.GetDynamicallyAccessedMembers (_context, DynamicallyAccessedMemberTypes.All, declaredOnly: true)) {
+				switch (member) {
+				case MethodDefinition method:
 					Annotations.SetAction (method, MethodAction.ForceParse);
-					MarkMethod (method, new DependencyInfo (DependencyKind.MemberOfType, type));
-				}
-			}
-
-			if (type.HasProperties) {
-				foreach (var property in type.Properties) {
-					MarkProperty (property, new DependencyInfo (DependencyKind.MemberOfType, type));
-				}
-			}
-
-			if (type.HasEvents) {
-				foreach (var ev in type.Events) {
-					MarkEvent (ev, new DependencyInfo (DependencyKind.MemberOfType, type));
+					MarkMethod (method, reason);
+					break;
+				case FieldDefinition field:
+					MarkField (field, reason);
+					break;
+				case TypeDefinition nestedType:
+					MarkTypeOnly (nestedType, reason);
+					break;
+				case PropertyDefinition property:
+					MarkProperty (property, reason);
+					break;
+				case EventDefinition @event:
+					MarkEvent (@event, reason);
+					break;
+				case InterfaceImplementation iface:
+					MarkInterfaceImplementation (iface, new MessageOrigin (type));
+					break;
 				}
 			}
 		}
@@ -1387,7 +1378,7 @@ namespace Mono.Linker.Steps
 			MarkCustomAttributes (module, new DependencyInfo (DependencyKind.AssemblyOrModuleAttribute, module));
 
 			foreach (TypeDefinition type in module.Types)
-				MarkEntireType (type, new DependencyInfo (DependencyKind.TypeInAssembly, assembly));
+				MarkEntireType (type, new DependencyInfo (DependencyKind.MemberInAssembly, assembly));
 
 			foreach (ExportedType exportedType in module.ExportedTypes) {
 				MarkingHelpers.MarkExportedType (exportedType, module, new DependencyInfo (DependencyKind.ExportedType, assembly));
@@ -1403,7 +1394,7 @@ namespace Mono.Linker.Steps
 			// The <Module> type may have an initializer, in which case we want to keep it.
 			TypeDefinition moduleType = assembly.MainModule.Types.FirstOrDefault (t => t.MetadataToken.RID == 1);
 			if (moduleType != null && moduleType.HasMethods)
-				MarkType (moduleType, new DependencyInfo (DependencyKind.TypeInAssembly, assembly));
+				MarkType (moduleType, new DependencyInfo (DependencyKind.MemberInAssembly, assembly));
 		}
 
 		bool ProcessLazyAttributes ()
@@ -2803,13 +2794,13 @@ namespace Mono.Linker.Steps
 			case DependencyKind.MethodForInstantiatedType:
 			case DependencyKind.VirtualNeededDueToPreservedScope:
 
-			// Used when marked because the member must be kept for the type to function (for example explicit layout,
-			// or because the type is included as a whole for some other reasons). This alone should not act as a base
-			// for raising a warning.
-			// Note that "include whole type" due to dynamic access is handled specifically in MarkEntireType
-			// and the DependencyKind in that case will be one of the dynamic acccess kinds and not MemberOfType
-			// since in those cases the warnings are desirable (potential access through reflection).
-			case DependencyKind.MemberOfType:
+			// Used when the type is included as a whole due to the assembly action or for some other reason. This alone
+			// should not act as a base for raising a warning.
+			// Note that "include whole type" due to dynamic access is handled differently and the DependencyKind in
+			// that case will be one of the dynamic access kinds and not MemberOfType since in those cases the warnings
+			// are desirable (potential access through reflection).
+			case DependencyKind.MemberInAssembly:
+			case DependencyKind.PreservedDependency:
 
 			// We should not be generating code which would produce warnings
 			case DependencyKind.UnreachableBodyRequirement:

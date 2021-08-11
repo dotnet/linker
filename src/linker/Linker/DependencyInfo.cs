@@ -19,7 +19,6 @@ namespace Mono.Linker
 		AssemblyOrModuleAttribute = 4, // assembly/module -> entry attribute
 
 		// Membership and containment relationships
-		NestedType = 5, // parent type -> nested type
 		MemberOfType = 6, // type -> member
 		DeclaringType = 7, // member -> type
 		FieldOnGenericInstance = 8, // fieldref on instantiated generic -> field on generic typedef
@@ -52,7 +51,7 @@ namespace Mono.Linker
 		// Modules and assemblies
 		ScopeOfType = 28, // type -> module/assembly
 		AssemblyOfModule = 81, // module -> assembly
-		TypeInAssembly = 29, // assembly -> type
+		MemberInAssembly = 29, // assembly -> member
 		ModuleOfExportedType = 30, // exported type -> module
 		ExportedType = 31, // type -> exported type
 
