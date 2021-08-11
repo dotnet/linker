@@ -2794,13 +2794,12 @@ namespace Mono.Linker.Steps
 			case DependencyKind.MethodForInstantiatedType:
 			case DependencyKind.VirtualNeededDueToPreservedScope:
 
-			// Used when the type is included as a whole due to the assembly action or for some other reason. This alone
-			// should not act as a base for raising a warning.
+			// Used when the type is included as a whole due to the assembly action. This alone should not act as a
+			// base for raising a warning.
 			// Note that "include whole type" due to dynamic access is handled differently and the DependencyKind in
 			// that case will be one of the dynamic access kinds and not MemberOfType since in those cases the warnings
 			// are desirable (potential access through reflection).
 			case DependencyKind.MemberInAssembly:
-			case DependencyKind.PreservedDependency:
 
 			// We should not be generating code which would produce warnings
 			case DependencyKind.UnreachableBodyRequirement:
