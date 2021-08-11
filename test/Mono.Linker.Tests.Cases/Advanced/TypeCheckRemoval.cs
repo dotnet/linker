@@ -237,8 +237,9 @@ namespace Mono.Linker.Tests.Cases.Advanced
 		class TypeCheckRemovalInExceptionFilter
 		{
 			[Kept]
-			[KeptBaseType(typeof(Exception))]
-			class TypeToCheckException : Exception {
+			[KeptBaseType (typeof (Exception))]
+			class TypeToCheckException : Exception
+			{
 				[Kept]
 				public int Value;
 			}
@@ -277,8 +278,7 @@ namespace Mono.Linker.Tests.Cases.Advanced
 				try {
 					if (o is TypeToCheckException) {
 					}
-				}
-				catch (TypeToCheckException ex) when (ex.Value == 0) {
+				} catch (TypeToCheckException ex) when (ex.Value == 0) {
 				}
 			}
 
@@ -325,16 +325,14 @@ namespace Mono.Linker.Tests.Cases.Advanced
 				"pop",
 				"leave.s il_3a",
 				".endcatch",
-				"ret",          
+				"ret",
 			})]
 			static void MethodWithTwoFilters ()
 			{
 				try {
 					new object ();
-				}
-				catch (TypeToCheckException ex) when (ex.Value == 0) {
-				}
-				catch (TypeToCheckException ex) when (ex.Value == 1) {
+				} catch (TypeToCheckException ex) when (ex.Value == 0) {
+				} catch (TypeToCheckException ex) when (ex.Value == 1) {
 				}
 			}
 
