@@ -118,10 +118,10 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="RequiresUnreferencedCodeTitle" xml:space="preserve">
-    <value>Methods annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code</value>
+    <value>Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code</value>
   </data>
   <data name="RequiresUnreferencedCodeMessage" xml:space="preserve">
-    <value>Using method '{0}' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code.{1}{2}</value>
+    <value>Using member '{0}' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code.{1}{2}</value>
   </data>
   <data name="AvoidAssemblyLocationInSingleFileTitle" xml:space="preserve">
     <value>Avoid accessing Assembly file path when publishing as a single file</value>

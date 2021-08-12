@@ -401,7 +401,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		}
 
 		[LogContains ("IL2026: Mono.Linker.Tests.Cases.RequiresCapability.RequiresUnreferencedCodeCapability.TypeIsBeforeFieldInit..cctor():" +
-			" Using method 'Mono.Linker.Tests.Cases.RequiresCapability.RequiresUnreferencedCodeCapability.TypeIsBeforeFieldInit.AnnotatedMethod()'" +
+			" Using member 'Mono.Linker.Tests.Cases.RequiresCapability.RequiresUnreferencedCodeCapability.TypeIsBeforeFieldInit.AnnotatedMethod()'" +
 			" which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code." +
 			" Message from --TypeIsBeforeFieldInit.AnnotatedMethod--.")]
 		static void TestTypeIsBeforeFieldInit ()
@@ -897,7 +897,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				}
 			}
 
-			[RequiresUnreferencedCode("Message for --StaticCtor--")]
+			[RequiresUnreferencedCode ("Message for --StaticCtor--")]
 			class StaticCtor
 			{
 				static StaticCtor ()
@@ -912,7 +912,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				_ = new StaticCtor ();
 			}
 
-			[RequiresUnreferencedCode("Message for --StaticCtorTriggeredByFieldAccess--")]
+			[RequiresUnreferencedCode ("Message for --StaticCtorTriggeredByFieldAccess--")]
 			class StaticCtorTriggeredByFieldAccess
 			{
 				static StaticCtorTriggeredByFieldAccess ()
@@ -935,7 +935,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				public static int field = 42;
 			}
 
-			[ExpectedWarning ("IL2026", "StaticCCtorTriggeredByFieldAccessRead..cctor()", "Message for --StaticCCtorTriggeredByFieldAccessRead--", GlobalAnalysisOnly = true)]
+			[ExpectedWarning ("IL2026", "StaticCCtorTriggeredByFieldAccessRead::field", "Message for --StaticCCtorTriggeredByFieldAccessRead--", GlobalAnalysisOnly = true)]
 			static void TestStaticCtorMarkingIsTriggeredByFieldAccessRead ()
 			{
 				var _ = StaticCCtorTriggeredByFieldAccessRead.field;

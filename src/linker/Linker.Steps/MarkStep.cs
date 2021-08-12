@@ -1604,16 +1604,6 @@ namespace Mono.Linker.Steps
 			// Use the original scope for marking the declaring type - it provides better warning message location
 			MarkType (field.DeclaringType, new DependencyInfo (DependencyKind.DeclaringType, field));
 
-			var parent = field.DeclaringType;
-			if (!Annotations.HasPreservedStaticCtor (parent)) {
-				var cctorReason = reason.Kind switch {
-					// Report an edge directly from the method accessing the field to the static ctor it triggers
-					DependencyKind.FieldAccess => new DependencyInfo (DependencyKind.TriggersCctorThroughFieldAccess, reason.Source),
-					_ => new DependencyInfo (DependencyKind.CctorForField, field)
-				};
-				MarkStaticConstructor (parent, cctorReason);
-			}
-
 			using var fieldScope = _scopeStack.PushScope (new MessageOrigin (field));
 			MarkType (field.FieldType, new DependencyInfo (DependencyKind.FieldType, field));
 			MarkCustomAttributes (field, new DependencyInfo (DependencyKind.CustomAttribute, field));
@@ -1636,6 +1626,16 @@ namespace Mono.Linker.Steps
 					MarkImplicitlyUsedFields (typeWithFields);
 					typeWithFields = _context.TryResolve (typeWithFields.BaseType);
 				}
+			}
+
+			var parent = field.DeclaringType;
+			if (!Annotations.HasPreservedStaticCtor (parent)) {
+				var cctorReason = reason.Kind switch {
+					// Report an edge directly from the method accessing the field to the static ctor it triggers
+					DependencyKind.FieldAccess => new DependencyInfo (DependencyKind.TriggersCctorThroughFieldAccess, reason.Source),
+					_ => new DependencyInfo (DependencyKind.CctorForField, field)
+				};
+				MarkStaticConstructor (parent, cctorReason);
 			}
 
 			if (Annotations.HasSubstitutedInit (field)) {
@@ -2895,8 +2895,15 @@ namespace Mono.Linker.Steps
 
 			if (!Annotations.DoesMethodRequireUnreferencedCode (method, out RequiresUnreferencedCodeAttribute requiresUnreferencedCode))
 				return;
-
-			ReportRequiresUnreferencedCode (method.GetDisplayName (), requiresUnreferencedCode, _scopeStack.CurrentScope.Origin);
+			if (method.IsStaticConstructor () && _scopeStack.CurrentScope.Origin.MemberDefinition is FieldDefinition field) {
+				var scope = _scopeStack.CurrentScope;
+				_scopeStack.PopToParent ();
+				var caller = _scopeStack.CurrentScope.Origin;
+				_scopeStack.PushScope (scope);
+				ReportRequiresUnreferencedCode (field.GetDisplayName (), requiresUnreferencedCode, caller);
+			} else {
+				ReportRequiresUnreferencedCode (method.GetDisplayName (), requiresUnreferencedCode, _scopeStack.CurrentScope.Origin);
+			}
 		}
 
 		private void ReportRequiresUnreferencedCode (string displayName, RequiresUnreferencedCodeAttribute requiresUnreferencedCode, MessageOrigin currentOrigin)
@@ -2976,8 +2983,7 @@ namespace Mono.Linker.Steps
 			if (method.IsInstanceConstructor ()) {
 				MarkRequirementsForInstantiatedTypes (method.DeclaringType);
 				Tracer.AddDirectDependency (method.DeclaringType, new DependencyInfo (DependencyKind.InstantiatedByCtor, method), marked: false);
-			}
-			if (method.IsStaticConstructor () && Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute>(method)) {
+			} else if (method.IsStaticConstructor () && Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (method)) {
 				string formatString = SharedStrings.RequiresUnreferencedCodeOnStaticConstructorMessage;
 				string message = string.Format (formatString, method.GetDisplayName ());
 				_context.LogWarning (message, 2116, _scopeStack.CurrentScope.Origin, MessageSubCategory.TrimAnalysis);
