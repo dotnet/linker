@@ -21,6 +21,8 @@ namespace ILLink.RoslynAnalyzer
 		static readonly DiagnosticDescriptor s_dynamicTypeInvocationRule = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.RequiresUnreferencedCode,
 			new LocalizableResourceString (nameof (SharedStrings.DynamicTypeInvocationTitle), SharedStrings.ResourceManager, typeof (SharedStrings)),
 			new LocalizableResourceString (nameof (SharedStrings.DynamicTypeInvocationMessage), SharedStrings.ResourceManager, typeof (SharedStrings)));
+		static readonly DiagnosticDescriptor s_makeGenericTypeRule = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.MakeGenericType);
+		static readonly DiagnosticDescriptor s_makeGenericMethodRule = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.MakeGenericMethod);
 
 		static readonly Action<OperationAnalysisContext> s_dynamicTypeInvocation = operationContext => {
 			if (FindContainingSymbol (operationContext, DiagnosticTargets.All) is ISymbol containingSymbol &&
@@ -32,7 +34,7 @@ namespace ILLink.RoslynAnalyzer
 		};
 
 		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-			ImmutableArray.Create (s_dynamicTypeInvocationRule, s_requiresUnreferencedCodeRule, s_requiresUnreferencedCodeAttributeMismatch);
+			ImmutableArray.Create (s_dynamicTypeInvocationRule, s_makeGenericMethodRule, s_makeGenericTypeRule, s_requiresUnreferencedCodeRule, s_requiresUnreferencedCodeAttributeMismatch);
 
 		private protected override string RequiresAttributeName => RequiresUnreferencedCodeAttribute;
 
@@ -49,6 +51,37 @@ namespace ILLink.RoslynAnalyzer
 
 		private protected override ImmutableArray<(Action<OperationAnalysisContext> Action, OperationKind[] OperationKind)> ExtraOperationActions =>
 			ImmutableArray.Create ((s_dynamicTypeInvocation, new OperationKind[] { OperationKind.DynamicInvocation }));
+
+		protected override ImmutableArray<ISymbol> GetSpecialIncompatibleMembers (Compilation compilation)
+		{
+			var incompatibleMembers = ImmutableArray.CreateBuilder<ISymbol> ();
+			var typeType = compilation.GetTypeByMetadataName ("System.Type");
+			if (typeType != null) {
+				incompatibleMembers.AddRange (typeType.GetMembers ("MakeGenericType").OfType<IMethodSymbol> ());
+			}
+
+			var methodInfoType = compilation.GetTypeByMetadataName ("System.Reflection.MethodInfo");
+			if (methodInfoType != null) {
+				incompatibleMembers.AddRange (methodInfoType.GetMembers ("MakeGenericMethod").OfType<IMethodSymbol> ());
+			}
+
+			return incompatibleMembers.ToImmutable ();
+		}
+
+		protected override bool ReportSpecialIncompatibleMembersDiagnostic (OperationAnalysisContext operationContext, ImmutableArray<ISymbol> specialIncompatibleMembers, ISymbol member)
+		{
+			if (member is IMethodSymbol method && ImmutableArrayOperations.Contains (specialIncompatibleMembers, member, SymbolEqualityComparer.Default)) {
+				if (method.Name == "MakeGenericType") {
+					operationContext.ReportDiagnostic (Diagnostic.Create (s_makeGenericTypeRule, operationContext.Operation.Syntax.GetLocation (), method.GetDisplayName ()));
+				} else if (method.Name == "MakeGenericMethod") {
+					operationContext.ReportDiagnostic (Diagnostic.Create (s_makeGenericMethodRule, operationContext.Operation.Syntax.GetLocation (), method.GetDisplayName ()));
+				}
+
+				return true;
+			}
+
+			return false;
+		}
 
 		protected override bool VerifyAttributeArguments (AttributeData attribute) =>
 			attribute.ConstructorArguments.Length >= 1 && attribute.ConstructorArguments[0] is { Type: { SpecialType: SpecialType.System_String } } ctorArg;
