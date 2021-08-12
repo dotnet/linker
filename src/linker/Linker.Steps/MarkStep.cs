@@ -1604,6 +1604,16 @@ namespace Mono.Linker.Steps
 			// Use the original scope for marking the declaring type - it provides better warning message location
 			MarkType (field.DeclaringType, new DependencyInfo (DependencyKind.DeclaringType, field));
 
+			var parent = field.DeclaringType;
+			if (!Annotations.HasPreservedStaticCtor (parent)) {
+				var cctorReason = reason.Kind switch {
+					// Report an edge directly from the method accessing the field to the static ctor it triggers
+					DependencyKind.FieldAccess => new DependencyInfo (DependencyKind.TriggersCctorThroughFieldAccess, reason.Source),
+					_ => new DependencyInfo (DependencyKind.CctorForField, field)
+				};
+				MarkStaticConstructor (parent, cctorReason);
+			}
+
 			using var fieldScope = _scopeStack.PushScope (new MessageOrigin (field));
 			MarkType (field.FieldType, new DependencyInfo (DependencyKind.FieldType, field));
 			MarkCustomAttributes (field, new DependencyInfo (DependencyKind.CustomAttribute, field));
@@ -1626,16 +1636,6 @@ namespace Mono.Linker.Steps
 					MarkImplicitlyUsedFields (typeWithFields);
 					typeWithFields = _context.TryResolve (typeWithFields.BaseType);
 				}
-			}
-
-			var parent = field.DeclaringType;
-			if (!Annotations.HasPreservedStaticCtor (parent)) {
-				var cctorReason = reason.Kind switch {
-					// Report an edge directly from the method accessing the field to the static ctor it triggers
-					DependencyKind.FieldAccess => new DependencyInfo (DependencyKind.TriggersCctorThroughFieldAccess, reason.Source),
-					_ => new DependencyInfo (DependencyKind.CctorForField, field)
-				};
-				MarkStaticConstructor (parent, cctorReason);
 			}
 
 			if (Annotations.HasSubstitutedInit (field)) {
@@ -2930,7 +2930,6 @@ namespace Mono.Linker.Steps
 			if (!_methodReasons.Contains (reason.Kind))
 				throw new InternalErrorException ($"Unsupported method dependency {reason.Kind}");
 #endif
-
 			_scopeStack.AssertIsEmpty ();
 			using var parentScope = _scopeStack.PushScope (scope);
 			using var methodScope = _scopeStack.PushScope (new MessageOrigin (method));
@@ -2977,6 +2976,11 @@ namespace Mono.Linker.Steps
 			if (method.IsInstanceConstructor ()) {
 				MarkRequirementsForInstantiatedTypes (method.DeclaringType);
 				Tracer.AddDirectDependency (method.DeclaringType, new DependencyInfo (DependencyKind.InstantiatedByCtor, method), marked: false);
+			}
+			if (method.IsStaticConstructor () && Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute>(method)) {
+				string formatString = SharedStrings.RequiresUnreferencedCodeOnStaticConstructorMessage;
+				string message = string.Format (formatString, method.GetDisplayName ());
+				_context.LogWarning (message, 2116, _scopeStack.CurrentScope.Origin, MessageSubCategory.TrimAnalysis);
 			}
 
 			if (method.IsConstructor) {

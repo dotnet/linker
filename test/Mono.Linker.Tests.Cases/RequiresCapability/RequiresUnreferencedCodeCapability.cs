@@ -71,6 +71,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			TestRequiresInDynamicDependency ();
 			TestThatTrailingPeriodIsAddedToMessage ();
 			TestThatTrailingPeriodIsNotDuplicatedInWarningMessage ();
+			TestWarnIfRequiresUnreferencedCodeIsInStaticConstructor ();
 			RequiresOnAttribute.Test ();
 			RequiresOnGenerics.Test ();
 			CovariantReturnViaLdftn.Test ();
@@ -348,13 +349,13 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		class StaticCtor
 		{
+			[ExpectedWarning ("IL2116", "StaticCtor..cctor()")]
 			[RequiresUnreferencedCode ("Message for --TestStaticCtor--")]
 			static StaticCtor ()
 			{
 			}
 		}
 
-		[ExpectedWarning ("IL2026", "--TestStaticCtor--")]
 		static void TestStaticCctorRequiresUnreferencedCode ()
 		{
 			_ = new StaticCtor ();
@@ -362,6 +363,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		class StaticCtorTriggeredByFieldAccess
 		{
+			[ExpectedWarning ("IL2116", "StaticCtorTriggeredByFieldAccess..cctor()")]
 			[RequiresUnreferencedCode ("Message for --StaticCtorTriggeredByFieldAccess.Cctor--")]
 			static StaticCtorTriggeredByFieldAccess ()
 			{
@@ -371,7 +373,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			public static int field;
 		}
 
-		[ExpectedWarning ("IL2026", "--StaticCtorTriggeredByFieldAccess.Cctor--")]
 		static void TestStaticCtorMarkingIsTriggeredByFieldAccess ()
 		{
 			var x = StaticCtorTriggeredByFieldAccess.field + 1;
@@ -379,13 +380,13 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		struct StaticCCtorForFieldAccess
 		{
+			[ExpectedWarning ("IL2116", "StaticCCtorForFieldAccess..cctor()")]
 			[RequiresUnreferencedCode ("Message for --StaticCCtorForFieldAccess.cctor--")]
 			static StaticCCtorForFieldAccess () { }
 
 			public static int field;
 		}
 
-		[ExpectedWarning ("IL2026", "--StaticCCtorForFieldAccess.cctor--")]
 		static void TestStaticCtorMarkingIsTriggeredByFieldAccessOnExplicitLayout ()
 		{
 			StaticCCtorForFieldAccess.field = 0;
@@ -410,6 +411,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		class StaticCtorTriggeredByMethodCall
 		{
+			[ExpectedWarning ("IL2116", "StaticCtorTriggeredByMethodCall..cctor()")]
 			[RequiresUnreferencedCode ("Message for --StaticCtorTriggeredByMethodCall.Cctor--")]
 			static StaticCtorTriggeredByMethodCall ()
 			{
@@ -421,7 +423,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 		}
 
-		[ExpectedWarning ("IL2026", "--StaticCtorTriggeredByMethodCall.Cctor--")]
 		[ExpectedWarning ("IL2026", "--StaticCtorTriggeredByMethodCall.TriggerStaticCtorMarking--")]
 		static void TestStaticCtorTriggeredByMethodCall ()
 		{
@@ -545,6 +546,20 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		static void TestThatTrailingPeriodIsNotDuplicatedInWarningMessage ()
 		{
 			WarningMessageEndsWithPeriod ();
+		}
+
+		class ClassWithRequiresUnreferencedCodeOnStaticConstructor
+		{
+			[ExpectedWarning ("IL2116")]
+			[RequiresUnreferencedCode ("This attribute shouldn't be allowed")]
+			static ClassWithRequiresUnreferencedCodeOnStaticConstructor () { }
+		}
+
+		static void RequireNonPublicConstructors ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicConstructors)] Type type) { }
+
+		static void TestWarnIfRequiresUnreferencedCodeIsInStaticConstructor ()
+		{
+			RequireNonPublicConstructors (typeof (ClassWithRequiresUnreferencedCodeOnStaticConstructor));
 		}
 
 		[ExpectedNoWarnings]
@@ -882,6 +897,87 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				}
 			}
 
+			[RequiresUnreferencedCode("Message for --StaticCtor--")]
+			class StaticCtor
+			{
+				static StaticCtor ()
+				{
+				}
+			}
+
+			[ExpectedWarning ("IL2026", "RequiresOnClass.StaticCtor.StaticCtor()", "Message for --StaticCtor--", GlobalAnalysisOnly = true)]
+			[ExpectedWarning ("IL2026", "RequiresOnClass.StaticCtor..cctor()", "Message for --StaticCtor--", GlobalAnalysisOnly = true)]
+			static void TestStaticCctorRequiresUnreferencedCode ()
+			{
+				_ = new StaticCtor ();
+			}
+
+			[RequiresUnreferencedCode("Message for --StaticCtorTriggeredByFieldAccess--")]
+			class StaticCtorTriggeredByFieldAccess
+			{
+				static StaticCtorTriggeredByFieldAccess ()
+				{
+					field = 0;
+				}
+
+				public static int field;
+			}
+
+			[ExpectedWarning ("IL2026", "StaticCtorTriggeredByFieldAccess..cctor()", "Message for --StaticCtorTriggeredByFieldAccess--", GlobalAnalysisOnly = true)]
+			static void TestStaticCtorMarkingIsTriggeredByFieldAccessWrite ()
+			{
+				var x = StaticCtorTriggeredByFieldAccess.field + 1;
+			}
+
+			[RequiresUnreferencedCode ("Message for --StaticCCtorTriggeredByFieldAccessRead--")]
+			class StaticCCtorTriggeredByFieldAccessRead
+			{
+				public static int field = 42;
+			}
+
+			[ExpectedWarning ("IL2026", "StaticCCtorTriggeredByFieldAccessRead..cctor()", "Message for --StaticCCtorTriggeredByFieldAccessRead--", GlobalAnalysisOnly = true)]
+			static void TestStaticCtorMarkingIsTriggeredByFieldAccessRead ()
+			{
+				var _ = StaticCCtorTriggeredByFieldAccessRead.field;
+			}
+
+			[RequiresUnreferencedCode ("Message for --StaticCtorTriggeredByMethodCall--")]
+			class StaticCtorTriggeredByMethodCall
+			{
+				static StaticCtorTriggeredByMethodCall ()
+				{
+				}
+
+				public void TriggerStaticCtorMarking ()
+				{
+				}
+			}
+
+			[ExpectedWarning ("IL2026", "StaticCtorTriggeredByMethodCall..cctor()", GlobalAnalysisOnly = true)]
+			[ExpectedWarning ("IL2026", "StaticCtorTriggeredByMethodCall.StaticCtorTriggeredByMethodCall()", GlobalAnalysisOnly = true)]
+			static void TestStaticCtorTriggeredByMethodCall ()
+			{
+				new StaticCtorTriggeredByMethodCall ().TriggerStaticCtorMarking ();
+			}
+
+			[RequiresUnreferencedCode ("Message for --StaticCtorTriggeredByMethodCall--")]
+			class StaticCtorTriggeredByMethodCall2
+			{
+				static StaticCtorTriggeredByMethodCall2 ()
+				{
+				}
+
+				public void TriggerStaticCtorMarking ()
+				{
+				}
+			}
+
+			static void TestNullInstanceTryingToCallMethod ()
+			{
+				StaticCtorTriggeredByMethodCall2 instance = null;
+				instance.TriggerStaticCtorMarking ();
+			}
+
 			[RequiresUnreferencedCode ("Message for --DerivedWithRequires--")]
 			private class DerivedWithRequires : ClassWithoutRequiresUnreferencedCode
 			{
@@ -1016,6 +1112,14 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestUnconditionalSuppressMessage.StaticMethodInTestSuppressionClass ();
 			}
 
+			static void TestStaticConstructorCalls ()
+			{
+				TestStaticCctorRequiresUnreferencedCode ();
+				TestStaticCtorMarkingIsTriggeredByFieldAccessWrite ();
+				TestStaticCtorMarkingIsTriggeredByFieldAccessRead ();
+				TestStaticCtorTriggeredByMethodCall ();
+			}
+
 			static void RequirePublicMethods ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
 			{
 			}
@@ -1034,6 +1138,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestRequiresOnDerivedButNotOnBase ();
 				TestRequiresOnBaseAndDerived ();
 				TestSuppressionsOnClass ();
+				TestStaticConstructorCalls ();
 				RequirePublicMethods (typeof (BaseWithoutRequiresOnType));
 				RequirePublicMethods (typeof (DerivedWithRequiresOnType));
 				RequirePublicMethods (typeof (BaseWithRequiresOnType));
