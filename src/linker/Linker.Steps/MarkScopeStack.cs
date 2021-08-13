@@ -138,7 +138,8 @@ namespace Mono.Linker.Steps
 		[Conditional ("DEBUG")]
 		public void AssertIsEmpty () => Debug.Assert (_scopeStack.Count == 0);
 
-		IMemberDefinition GetSuppressionContext (ICustomAttributeProvider provider) {
+		IMemberDefinition GetSuppressionContext (ICustomAttributeProvider provider)
+		{
 			if (provider is not IMemberDefinition sourceMember)
 				return null;
 			return _context.CompilerGeneratedState.GetUserDefinedMethodForCompilerGeneratedMember (sourceMember) ?? sourceMember;
