@@ -26,9 +26,9 @@ class ClassWithRequiresUnreferencedCode
 
 static void TestRequiresUnreferencedCodeInClass ()
 {
-    // IL2026: TestRequiresUnreferencedCodeInClass(): Using method 'ClassWithRequiresUnreferencedCode.StaticMethod()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. Message for --ClassWithRequiresUnreferencedCode--.
+    // IL2026: TestRequiresUnreferencedCodeInClass(): Using member 'ClassWithRequiresUnreferencedCode.StaticMethod()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. Message for --ClassWithRequiresUnreferencedCode--.
     ClassWithRequiresUnreferencedCode.StaticMethod ();
-    // IL2026: TestRequiresUnreferencedCodeInClass(): Using method 'ClassWithRequiresUnreferencedCode.ClassWithRequiresUnreferencedCode()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. Message for --ClassWithRequiresUnreferencedCode--.
+    // IL2026: TestRequiresUnreferencedCodeInClass(): Using member 'ClassWithRequiresUnreferencedCode.ClassWithRequiresUnreferencedCode()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. Message for --ClassWithRequiresUnreferencedCode--.
     var classWithRequiresUnreferencedCode = new ClassWithRequiresUnreferencedCode ();
 
     classWithRequiresUnreferencedCode.NonStaticMethod();
@@ -46,7 +46,7 @@ public static void MethodWithDangerousCode ()
 
 static void TestSuppressionOnMethod ()
 {
-    // IL2026: TestSuppressionOnMethod(): Using method 'MethodWithDangerousCode()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. This method calls dangerous code.
+    // IL2026: TestSuppressionOnMethod(): Using member 'MethodWithDangerousCode()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. This method calls dangerous code.
     MethodWithDangerousCode()
 }
 ```
@@ -65,7 +65,7 @@ class ClassWithRequiresUnreferencedCode
 
 static void TestSuppressionOnType ()
 {
-    // IL2026: TestSuppressionOnMethod(): Using method 'ClassWithRequiresUnreferencedCode.MethodWithDangerousCode()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. Message for --ClassWithRequiresUnreferencedCode--.
+    // IL2026: TestSuppressionOnMethod(): Using member 'ClassWithRequiresUnreferencedCode.MethodWithDangerousCode()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. Message for --ClassWithRequiresUnreferencedCode--.
     ClassWithRequiresUnreferencedCode.MethodWithDangerousCode()
 }
 ```
@@ -85,7 +85,7 @@ class ClassWithRequiresUnreferencedCode
 
 static void TestRequiresUnreferencedCodeInClass ()
 {
-    // IL2026: TestRequiresUnreferencedCodeInClass(): Using method 'ClassWithRequiresUnreferencedCode.StaticMethod()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. Message for --ClassWithRequiresUnreferencedCode--.
+    // IL2026: TestRequiresUnreferencedCodeInClass(): Using member 'ClassWithRequiresUnreferencedCode.StaticMethod()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. Message for --ClassWithRequiresUnreferencedCode--.
     ClassWithRequiresUnreferencedCode.StaticMethod ();
 
     ClassWithRequiresUnreferencedCode.NestedClass.StaticMethod ();
@@ -132,7 +132,7 @@ class DerivedWithoutRequires : ClassWithRequiresUnreferencedCode
     public static void StaticMethodInInheritedClass () { }
 }
 
-// IL2026: TestRequiresOnBaseButNotOnDerived(): Using method 'ClassWithRequiresUnreferencedCode.StaticMethod()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. Message for --ClassWithRequiresUnreferencedCode--.
+// IL2026: TestRequiresOnBaseButNotOnDerived(): Using member 'ClassWithRequiresUnreferencedCode.StaticMethod()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. Message for --ClassWithRequiresUnreferencedCode--.
 static void TestRequiresOnBaseButNotOnDerived ()
 {
     DerivedWithoutRequires.StaticMethodInInheritedClass ();
@@ -206,7 +206,7 @@ Since `RequiresUnreferencedCode` cannot be placed in interfaces
 ## Static interface methods
 
 ```C#
-// IL2026: Invoker<Foo>.Invoke(): Using method 'Foo.StaticMethod()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. Message for --ClassWithRequiresUnreferencedCode--.
+// IL2026: Invoker<Foo>.Invoke(): Using member 'Foo.StaticMethod()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. Message for --ClassWithRequiresUnreferencedCode--.
 Invoker<Foo>.Invoke();
 
 interface IStatic
@@ -260,7 +260,7 @@ public static void Main()
 
     Type typeArg = typeof(ClassWithRequiresUnreferencedCode);
 
-    // IL2026: Main(): Using method 'ClassWithRequiresUnreferencedCode.ctor()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. Message for --ClassWithRequiresUnreferencedCode--.
+    // IL2026: Main(): Using member 'ClassWithRequiresUnreferencedCode.ctor()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. Message for --ClassWithRequiresUnreferencedCode--.
     Type constructed = generic.MakeGenericType(typeArg);
 }
 ```
@@ -283,7 +283,7 @@ public static void Main()
     Type example = typeof(ClassWithOpenGenericMethod);
     MethodInfo mi = example.GetMethod("Generic");
     
-    // IL2026: Main(): Using method 'ClassWithRequiresUnreferencedCode.ctor()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. Message for --ClassWithRequiresUnreferencedCode--.
+    // IL2026: Main(): Using member 'ClassWithRequiresUnreferencedCode.ctor()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. Message for --ClassWithRequiresUnreferencedCode--.
     MethodInfo miConstructed = mi.MakeGenericMethod(typeof(ClassWithRequiresUnreferencedCode));
     miConstructed.Invoke(null, null);
 }
@@ -374,7 +374,7 @@ class Program
 {
     static void Main()
     {
-        // IL2026: Main(): Using method 'C.cctor()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. Message for --C--.
+        // IL2026: Main(): Using member 'C.A' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. Message for --C--.
         var result = C.A;
     }
 }
@@ -390,7 +390,7 @@ class Program
 {
     static void Main()
     {
-        // IL2026: Main(): Using method 'C.cctor()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. Message for --C--.
+        // IL2026: Main(): Using member 'C.A' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. Message for --C--.
         var result = C.A;
     }
 }
