@@ -2899,7 +2899,7 @@ namespace Mono.Linker.Steps
 
 			if (!Annotations.DoesMethodRequireUnreferencedCode (method, out RequiresUnreferencedCodeAttribute requiresUnreferencedCode))
 				return;
-			
+
 			ReportRequiresUnreferencedCode (method.GetDisplayName (), requiresUnreferencedCode, _scopeStack.CurrentScope.Origin);
 		}
 

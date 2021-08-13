@@ -1071,7 +1071,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequiresUnreferencedCode.StaticMethod()", "--ClassWithRequiresUnreferencedCode--", GlobalAnalysisOnly = true)]
 			// Although we suppress the warning from RequiresOnMethod.MethodWithRUC () we still get a warning because we call CallRUCMethod() which is an static method on a type with RUC
 			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequiresUnreferencedCode.CallRUCMethod()", "--ClassWithRequiresUnreferencedCode--", GlobalAnalysisOnly = true)]
-			[ExpectedWarning ("IL2026", "ClassWithRequiresUnreferencedCode::Instance", "--ClassWithRequiresUnreferencedCode--")]
+			[ExpectedWarning ("IL2026", "ClassWithRequiresUnreferencedCode::Instance", "--ClassWithRequiresUnreferencedCode--", GlobalAnalysisOnly = true)]
 			static void TestRequiresOnBaseButNotOnDerived ()
 			{
 				DerivedWithoutRequires.StaticMethodInInheritedClass ();
