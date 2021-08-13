@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -756,7 +757,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 												return false;
 										}
 									} else if (isCompilerGeneratedCode == true) {
-										MethodDefinition methodDefinition = mc.Origin?.MemberDefinition as MethodDefinition;
+										MethodDefinition methodDefinition = mc.Origin?.Provider as MethodDefinition;
 										if (methodDefinition != null) {
 											string actualName = methodDefinition.DeclaringType.FullName + "." + methodDefinition.Name;
 											if (actualName.StartsWith (attrProvider.DeclaringType.FullName) &&
@@ -837,7 +838,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 						continue;
 
 					// This is a hacky way to say anything in the "subtree" of the attrProvider
-					if (mc.Origin?.MemberDefinition?.FullName.Contains (attrProvider.FullName) != true)
+					if ((mc.Origin?.Provider is IMemberDefinition member) && member.FullName.Contains (attrProvider.FullName) != true)
 						continue;
 
 					unexpectedWarningMessage = mc;
@@ -853,15 +854,22 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				Assert.IsEmpty (remainingErrors, $"Found unexpected errors:{Environment.NewLine}{string.Join (Environment.NewLine, remainingErrors)}");
 			}
 
-			bool LogMessageHasSameOriginMember (MessageContainer mc, IMemberDefinition expectedOriginMember)
+			bool LogMessageHasSameOriginMember (MessageContainer mc, ICustomAttributeProvider expectedOriginProvider)
 			{
-				if (mc.Origin?.MemberDefinition?.FullName == expectedOriginMember.FullName)
+				var origin = mc.Origin;
+				Debug.Assert (origin != null);
+				if (origin?.Provider is AssemblyDefinition asm)
+					return expectedOriginProvider is AssemblyDefinition expectedAsm && asm.Name.Name == expectedAsm.Name.Name;
+
+				var actualMember = origin?.Provider as IMemberDefinition;
+				var expectedOriginMember = expectedOriginProvider as IMemberDefinition;
+				if (actualMember?.FullName == expectedOriginMember.FullName)
 					return true;
 
 				// Compensate for cases where for some reason the OM doesn't preserve the declaring types
 				// on certain things after trimming.
-				if (mc.Origin?.MemberDefinition != null && mc.Origin?.MemberDefinition.DeclaringType == null &&
-					mc.Origin?.MemberDefinition.Name == expectedOriginMember.Name)
+				if (actualMember != null && actualMember?.DeclaringType == null &&
+					actualMember?.Name == expectedOriginMember.Name)
 					return true;
 
 				return false;
@@ -1049,9 +1057,9 @@ namespace Mono.Linker.Tests.TestCasesRunner
 						// By now all verified recorded patterns were removed from the test recorder lists, so validate
 						// that there are no remaining patterns for this type.
 						var recognizedPatternsForType = reflectionPatternRecorder.RecognizedPatterns
-							.Where (pattern => pattern.Source?.DeclaringType?.FullName == typeToVerify.FullName);
+							.Where (pattern => (pattern.Source is IMemberDefinition member) && member.DeclaringType?.FullName == typeToVerify.FullName);
 						var unrecognizedPatternsForType = reflectionPatternRecorder.UnrecognizedPatterns
-							.Where (pattern => pattern.Source?.DeclaringType?.FullName == typeToVerify.FullName);
+							.Where (pattern => (pattern.Source is IMemberDefinition member) && member.DeclaringType?.FullName == typeToVerify.FullName);
 
 						if (recognizedPatternsForType.Any () || unrecognizedPatternsForType.Any ()) {
 							string recognizedPatterns = string.Join (Environment.NewLine, recognizedPatternsForType
