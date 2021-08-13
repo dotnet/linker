@@ -2934,8 +2934,6 @@ namespace Mono.Linker.Steps
 			if (!_methodReasons.Contains (reason.Kind))
 				throw new InternalErrorException ($"Unsupported method dependency {reason.Kind}");
 #endif
-			if (method.FullName.Contains ("TestStaticCtorMarkingIsTriggeredByFieldAccessWrite"))
-				Debugger.Break ();
 			_scopeStack.AssertIsEmpty ();
 			using var parentScope = _scopeStack.PushScope (scope);
 			using var methodScope = _scopeStack.PushScope (new MessageOrigin (method));
