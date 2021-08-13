@@ -228,7 +228,7 @@ namespace Mono.Linker.Dataflow
 			Debug.Assert (annotation != DynamicallyAccessedMemberTypes.None);
 
 			reflectionPatternContext.AnalyzingPattern ();
-			// Handle cases where a type has no members but annotations are to be applied to derived type members
+			// There are no cases where we don't handle the pattern - the method will always "deal with it"
 			reflectionPatternContext.RecordHandledPattern ();
 
 			// We need to apply annotations to this type, and its base/interface types (recursively)
@@ -266,7 +266,7 @@ namespace Mono.Linker.Dataflow
 
 			// The annotations this type inherited from its base types or interfaces should not produce
 			// warnings on the respective base/interface members, since those are already covered by applying
-			// the annotations to those types.
+			// the annotations to those types. So we only need to handle the members directly declared on this type.
 			reflectionMethodBodyScanner.MarkTypeForDynamicallyAccessedMembers (ref reflectionPatternContext, type, annotation, DependencyKind.DynamicallyAccessedMemberOnType, declaredOnly: true);
 		}
 
