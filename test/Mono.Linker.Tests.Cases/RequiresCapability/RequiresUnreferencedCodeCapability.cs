@@ -906,7 +906,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[ExpectedWarning ("IL2026", "RequiresOnClass.StaticCtor.StaticCtor()", "Message for --StaticCtor--", GlobalAnalysisOnly = true)]
-			[ExpectedWarning ("IL2026", "RequiresOnClass.StaticCtor..cctor()", "Message for --StaticCtor--", GlobalAnalysisOnly = true)]
 			static void TestStaticCctorRequiresUnreferencedCode ()
 			{
 				_ = new StaticCtor ();
@@ -923,7 +922,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				public static int field;
 			}
 
-			[ExpectedWarning ("IL2026", "StaticCtorTriggeredByFieldAccess..cctor()", "Message for --StaticCtorTriggeredByFieldAccess--", GlobalAnalysisOnly = true)]
+			[ExpectedWarning ("IL2026", "StaticCtorTriggeredByFieldAccess::field", "Message for --StaticCtorTriggeredByFieldAccess--", GlobalAnalysisOnly = true)]
 			static void TestStaticCtorMarkingIsTriggeredByFieldAccessWrite ()
 			{
 				var x = StaticCtorTriggeredByFieldAccess.field + 1;
@@ -953,7 +952,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				}
 			}
 
-			[ExpectedWarning ("IL2026", "StaticCtorTriggeredByMethodCall..cctor()", GlobalAnalysisOnly = true)]
 			[ExpectedWarning ("IL2026", "StaticCtorTriggeredByMethodCall.StaticCtorTriggeredByMethodCall()", GlobalAnalysisOnly = true)]
 			static void TestStaticCtorTriggeredByMethodCall ()
 			{
@@ -1073,6 +1071,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequiresUnreferencedCode.StaticMethod()", "--ClassWithRequiresUnreferencedCode--", GlobalAnalysisOnly = true)]
 			// Although we suppress the warning from RequiresOnMethod.MethodWithRUC () we still get a warning because we call CallRUCMethod() which is an static method on a type with RUC
 			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequiresUnreferencedCode.CallRUCMethod()", "--ClassWithRequiresUnreferencedCode--", GlobalAnalysisOnly = true)]
+			[ExpectedWarning ("IL2026", "ClassWithRequiresUnreferencedCode::Instance", "--ClassWithRequiresUnreferencedCode--")]
 			static void TestRequiresOnBaseButNotOnDerived ()
 			{
 				DerivedWithoutRequires.StaticMethodInInheritedClass ();

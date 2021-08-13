@@ -1604,6 +1604,7 @@ namespace Mono.Linker.Steps
 			// Use the original scope for marking the declaring type - it provides better warning message location
 			MarkType (field.DeclaringType, new DependencyInfo (DependencyKind.DeclaringType, field));
 
+			var methodCaller = _scopeStack.CurrentScope.Origin;
 			using var fieldScope = _scopeStack.PushScope (new MessageOrigin (field));
 			MarkType (field.FieldType, new DependencyInfo (DependencyKind.FieldType, field));
 			MarkCustomAttributes (field, new DependencyInfo (DependencyKind.CustomAttribute, field));
@@ -1627,6 +1628,9 @@ namespace Mono.Linker.Steps
 					typeWithFields = _context.TryResolve (typeWithFields.BaseType);
 				}
 			}
+
+			if (reason.Kind is DependencyKind.FieldAccess && Annotations.TryGetLinkerAttribute (field.DeclaringType, out RequiresUnreferencedCodeAttribute requiresUnreferencedCode))
+				ReportRequiresUnreferencedCode (field.GetDisplayName (), requiresUnreferencedCode, methodCaller);
 
 			var parent = field.DeclaringType;
 			if (!Annotations.HasPreservedStaticCtor (parent)) {
@@ -2895,15 +2899,8 @@ namespace Mono.Linker.Steps
 
 			if (!Annotations.DoesMethodRequireUnreferencedCode (method, out RequiresUnreferencedCodeAttribute requiresUnreferencedCode))
 				return;
-			if (method.IsStaticConstructor () && _scopeStack.CurrentScope.Origin.MemberDefinition is FieldDefinition field) {
-				var scope = _scopeStack.CurrentScope;
-				_scopeStack.PopToParent ();
-				var caller = _scopeStack.CurrentScope.Origin;
-				_scopeStack.PushScope (scope);
-				ReportRequiresUnreferencedCode (field.GetDisplayName (), requiresUnreferencedCode, caller);
-			} else {
-				ReportRequiresUnreferencedCode (method.GetDisplayName (), requiresUnreferencedCode, _scopeStack.CurrentScope.Origin);
-			}
+			
+			ReportRequiresUnreferencedCode (method.GetDisplayName (), requiresUnreferencedCode, _scopeStack.CurrentScope.Origin);
 		}
 
 		private void ReportRequiresUnreferencedCode (string displayName, RequiresUnreferencedCodeAttribute requiresUnreferencedCode, MessageOrigin currentOrigin)
@@ -2937,6 +2934,8 @@ namespace Mono.Linker.Steps
 			if (!_methodReasons.Contains (reason.Kind))
 				throw new InternalErrorException ($"Unsupported method dependency {reason.Kind}");
 #endif
+			if (method.FullName.Contains ("TestStaticCtorMarkingIsTriggeredByFieldAccessWrite"))
+				Debugger.Break ();
 			_scopeStack.AssertIsEmpty ();
 			using var parentScope = _scopeStack.PushScope (scope);
 			using var methodScope = _scopeStack.PushScope (new MessageOrigin (method));

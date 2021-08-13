@@ -598,7 +598,11 @@ namespace Mono.Linker
 		/// and .ctors are reported as requiring unreferenced code when the declaring type has RUC on it.</remarks>
 		internal bool DoesMethodRequireUnreferencedCode (MethodDefinition method, out RequiresUnreferencedCodeAttribute attribute)
 		{
-			if (TryGetLinkerAttribute (method, out attribute) && !method.IsStaticConstructor ())
+			if (method.IsStaticConstructor ()) {
+				attribute = null;
+				return false;
+			}
+			if (TryGetLinkerAttribute (method, out attribute))
 				return true;
 
 			if ((method.IsStatic || method.IsConstructor) && method.DeclaringType is not null &&
