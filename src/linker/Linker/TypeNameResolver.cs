@@ -41,7 +41,7 @@ namespace Mono.Linker
 			// assembly.
 			typeAssembly = origin switch {
 				AssemblyDefinition asm => asm,
-				TypeDefinition type => type.Module.Assembly,
+				TypeDefinition type => type.Module?.Assembly,
 				IMemberDefinition member => member.DeclaringType.Module.Assembly,
 				null => null,
 				_ => throw new NotSupportedException ()

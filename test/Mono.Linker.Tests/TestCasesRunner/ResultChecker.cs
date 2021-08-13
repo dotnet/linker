@@ -774,16 +774,16 @@ namespace Mono.Linker.Tests.TestCasesRunner
 							} else if (isCompilerGeneratedCode == true) {
 								MethodDefinition methodDefinition = mc.Origin?.Provider as MethodDefinition;
 								if (methodDefinition != null) {
-									if (attrProvider is not MethodDefinition expectedMethod)
+									if (attrProvider is not IMemberDefinition expectedMember)
 										return false;
 
 									string actualName = methodDefinition.DeclaringType.FullName + "." + methodDefinition.Name;
 
-									if (actualName.StartsWith (expectedMethod.DeclaringType.FullName) &&
-										actualName.Contains ("<" + expectedMethod.Name + ">"))
+									if (actualName.StartsWith (expectedMember.DeclaringType.FullName) &&
+										actualName.Contains ("<" + expectedMember.Name + ">"))
 										return true;
 									if (methodDefinition.Name == ".ctor" &&
-										methodDefinition.DeclaringType.FullName == expectedMethod.FullName)
+										methodDefinition.DeclaringType.FullName == expectedMember.FullName)
 										return true;
 								}
 
@@ -800,6 +800,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 								MethodDefinition method => method.GetDisplayName (),
 								IMemberDefinition member => member.FullName,
 								AssemblyDefinition asm => asm.Name.Name,
+								_ => throw new NotImplementedException ()
 							} + ": "
 							: "";
 
