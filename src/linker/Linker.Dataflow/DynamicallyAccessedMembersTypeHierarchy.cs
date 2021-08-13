@@ -227,9 +227,6 @@ namespace Mono.Linker.Dataflow
 		{
 			Debug.Assert (annotation != DynamicallyAccessedMemberTypes.None);
 
-			if (type.Name == "AnnotatedAll")
-				System.Console.WriteLine ("Hey");
-
 			reflectionPatternContext.AnalyzingPattern ();
 			// Handle cases where a type has no members but annotations are to be applied to derived type members
 			reflectionPatternContext.RecordHandledPattern ();
