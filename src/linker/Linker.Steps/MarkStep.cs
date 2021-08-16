@@ -1629,7 +1629,7 @@ namespace Mono.Linker.Steps
 				}
 			}
 
-			if (reason.Kind is DependencyKind.FieldAccess && Annotations.TryGetLinkerAttribute (field.DeclaringType, out RequiresUnreferencedCodeAttribute requiresUnreferencedCode))
+			if (reason.Kind is DependencyKind.FieldAccess && field.IsStatic && Annotations.TryGetLinkerAttribute (field.DeclaringType, out RequiresUnreferencedCodeAttribute requiresUnreferencedCode))
 				ReportRequiresUnreferencedCode (field.GetDisplayName (), requiresUnreferencedCode, methodCaller);
 
 			var parent = field.DeclaringType;

@@ -959,6 +959,19 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[RequiresUnreferencedCode ("Message for --StaticCtorTriggeredByMethodCall--")]
+			class ClassWithInstanceField
+			{
+				public int field = 42;
+			}
+
+			[ExpectedWarning ("IL2026", "ClassWithInstanceField.ClassWithInstanceField()", GlobalAnalysisOnly = true)]
+			static void TestInstanceFieldCallDontWarn ()
+			{
+				ClassWithInstanceField instance = new ClassWithInstanceField ();
+				var _ = instance.field;
+			}
+
+			[RequiresUnreferencedCode ("Message for --StaticCtorTriggeredByMethodCall--")]
 			class StaticCtorTriggeredByMethodCall2
 			{
 				static StaticCtorTriggeredByMethodCall2 ()
@@ -1117,6 +1130,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestStaticCtorMarkingIsTriggeredByFieldAccessWrite ();
 				TestStaticCtorMarkingIsTriggeredByFieldAccessRead ();
 				TestStaticCtorTriggeredByMethodCall ();
+				TestInstanceFieldCallDontWarn ();
 			}
 
 			static void RequirePublicMethods ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
