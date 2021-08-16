@@ -925,7 +925,25 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			[ExpectedWarning ("IL2026", "StaticCtorTriggeredByFieldAccess::field", "Message for --StaticCtorTriggeredByFieldAccess--", GlobalAnalysisOnly = true)]
 			static void TestStaticCtorMarkingIsTriggeredByFieldAccessWrite ()
 			{
-				var x = StaticCtorTriggeredByFieldAccess.field + 1;
+				StaticCtorTriggeredByFieldAccess.field = 1;
+			}
+
+			[ExpectedWarning ("IL2026", "StaticCtorTriggeredByFieldAccess::field", "Message for --StaticCtorTriggeredByFieldAccess--", GlobalAnalysisOnly = true)]
+			static void TestStaticCtorMarkingTriggeredOnSecondAccessWrite ()
+			{
+				StaticCtorTriggeredByFieldAccess.field = 2;
+			}
+
+			[RequiresUnreferencedCode ("--TestStaticRUCFieldAccessSuppressedByRUCOnMethod_Inner--")]
+			static void TestStaticRUCFieldAccessSuppressedByRUCOnMethod_Inner ()
+			{
+				StaticCtorTriggeredByFieldAccess.field = 3;
+			}
+
+			[UnconditionalSuppressMessage ("test", "IL2026")]
+			static void TestStaticRUCFieldAccessSuppressedByRUCOnMethod ()
+			{
+				TestStaticRUCFieldAccessSuppressedByRUCOnMethod_Inner ();
 			}
 
 			[RequiresUnreferencedCode ("Message for --StaticCCtorTriggeredByFieldAccessRead--")]
@@ -940,10 +958,10 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				var _ = StaticCCtorTriggeredByFieldAccessRead.field;
 			}
 
-			[RequiresUnreferencedCode ("Message for --StaticCtorTriggeredByMethodCall--")]
-			class StaticCtorTriggeredByMethodCall
+			[RequiresUnreferencedCode ("Message for --StaticCtorTriggeredByCtorCalls--")]
+			class StaticCtorTriggeredByCtorCalls
 			{
-				static StaticCtorTriggeredByMethodCall ()
+				static StaticCtorTriggeredByCtorCalls ()
 				{
 				}
 
@@ -952,13 +970,13 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				}
 			}
 
-			[ExpectedWarning ("IL2026", "StaticCtorTriggeredByMethodCall.StaticCtorTriggeredByMethodCall()", GlobalAnalysisOnly = true)]
-			static void TestStaticCtorTriggeredByMethodCall ()
+			[ExpectedWarning ("IL2026", "StaticCtorTriggeredByCtorCalls.StaticCtorTriggeredByCtorCalls()", GlobalAnalysisOnly = true)]
+			static void TestStaticCtorTriggeredByCtorCall ()
 			{
-				new StaticCtorTriggeredByMethodCall ().TriggerStaticCtorMarking ();
+				new StaticCtorTriggeredByCtorCalls ();
 			}
 
-			[RequiresUnreferencedCode ("Message for --StaticCtorTriggeredByMethodCall--")]
+			[RequiresUnreferencedCode ("Message for --ClassWithInstanceField--")]
 			class ClassWithInstanceField
 			{
 				public int field = 42;
@@ -971,7 +989,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				var _ = instance.field;
 			}
 
-			[RequiresUnreferencedCode ("Message for --StaticCtorTriggeredByMethodCall--")]
+			[RequiresUnreferencedCode ("Message for --StaticCtorTriggeredByMethodCall2--")]
 			class StaticCtorTriggeredByMethodCall2
 			{
 				static StaticCtorTriggeredByMethodCall2 ()
@@ -1124,17 +1142,28 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestUnconditionalSuppressMessage.StaticMethodInTestSuppressionClass ();
 			}
 
+			[RequiresUnreferencedCode ("--StaticMethodOnRUCTypeSuppressedByRUCOnMethod--")]
+			static void StaticMethodOnRUCTypeSuppressedByRUCOnMethod ()
+			{
+				DerivedWithRequires.StaticMethodInInheritedClass ();
+			}
+
+			[UnconditionalSuppressMessage ("test", "IL2026")]
+			static void TestStaticMethodOnRUCTypeSuppressedByRUCOnMethod ()
+			{
+				StaticMethodOnRUCTypeSuppressedByRUCOnMethod ();
+			}
+
 			static void TestStaticConstructorCalls ()
 			{
 				TestStaticCctorRequiresUnreferencedCode ();
 				TestStaticCtorMarkingIsTriggeredByFieldAccessWrite ();
+				TestStaticCtorMarkingTriggeredOnSecondAccessWrite ();
+				TestStaticRUCFieldAccessSuppressedByRUCOnMethod ();
 				TestStaticCtorMarkingIsTriggeredByFieldAccessRead ();
 				TestStaticCtorTriggeredByMethodCall ();
+				TestStaticCtorTriggeredByCtorCall ();
 				TestInstanceFieldCallDontWarn ();
-			}
-
-			static void RequirePublicMethods ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
-			{
 			}
 
 			// Analyzer still dont understand RUC on type
@@ -1142,6 +1171,116 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			[ExpectedWarning ("IL2026", "InterfaceWithoutRequires.Method(Int32)", GlobalAnalysisOnly = true)]
 			[ExpectedWarning ("IL2026", "InterfaceWithoutRequires.Method()", GlobalAnalysisOnly = true)]
 			[ExpectedWarning ("IL2026", "ImplementationWithRequiresOnType.Method()", GlobalAnalysisOnly = true)]
+			static void TestDAMAccessOnStaticMethods ()
+			{
+				// Warns because BaseWithoutRequiresOnType.Method as RUC on the method
+				typeof (BaseWithoutRequiresOnType).RequiresPublicMethods ();
+
+				// Doesn't warn because DerivedWithRequiresOnType doesn't have any static methods
+				typeof (DerivedWithRequiresOnType).RequiresPublicMethods ();
+
+				// Warns twice since both methods on InterfaceWithoutRequires have RUC on the method
+				typeof (InterfaceWithoutRequires).RequiresPublicMethods ();
+
+				// Warns because ImplementationWithRequiresOnType.Method is a static public method on a RUC type
+				typeof (ImplementationWithRequiresOnType).RequiresPublicMethods ();
+
+				// Doesn't warn since BaseWithRequiresOnType has no static methods
+				typeof (BaseWithRequiresOnType).RequiresPublicMethods ();
+
+				// Doesn't warn since DerivedWithoutRequiresOnType has no static methods
+				typeof (DerivedWithoutRequiresOnType).RequiresPublicMethods ();
+			}
+
+			class DAMAccessOnCtor
+			{
+				[RequiresUnreferencedCode ("--BaseWithRUC--")]
+				class BaseWithRUC
+				{
+					public BaseWithRUC () { }
+				}
+
+				class DerivedWithoutRUC : BaseWithRUC
+				{
+					[ExpectedWarning ("IL2026", "--BaseWithRUC--")] // The body has direct call to the base.ctor()
+					public DerivedWithoutRUC () { }
+				}
+
+				[RequiresUnreferencedCode ("--DerivedWithRUCOnBaseWithRUC--")]
+				class DerivedWithRUCOnBaseWithRUC : BaseWithRUC
+				{
+					// No warning - suppressed by the RUC on this type
+					private DerivedWithRUCOnBaseWithRUC () { }
+				}
+
+				class BaseWithoutRUC { }
+
+				[RequiresUnreferencedCode ("--DerivedWithRUCOnBaseWithout--")]
+				class DerivedWithRUCOnBaseWithoutRuc : BaseWithoutRUC
+				{
+					public DerivedWithRUCOnBaseWithoutRuc () { }
+				}
+
+				[ExpectedWarning ("IL2026", "BaseWithRUC.BaseWithRUC()", GlobalAnalysisOnly = true)]
+				[ExpectedWarning ("IL2026", "DerivedWithRUCOnBaseWithRUC.DerivedWithRUCOnBaseWithRUC()", GlobalAnalysisOnly = true)]
+				[ExpectedWarning ("IL2026", "DerivedWithRUCOnBaseWithoutRuc.DerivedWithRUCOnBaseWithoutRuc()", GlobalAnalysisOnly = true)]
+				public static void Test ()
+				{
+					// Warns because the type has RUC
+					typeof (BaseWithRUC).RequiresPublicConstructors ();
+
+					// Doesn't warn since there's no RUC on this type
+					typeof (DerivedWithoutRUC).RequiresPublicParameterlessConstructor ();
+
+					// Warns - RUC on the type
+					typeof (DerivedWithRUCOnBaseWithRUC).RequiresNonPublicConstructors ();
+
+					// Warns - RUC On the type
+					typeof (DerivedWithRUCOnBaseWithoutRuc).RequiresPublicConstructors ();
+				}
+			}
+
+			class DAMAccessOnField
+			{
+				[RequiresUnreferencedCode ("--WithRUC--")]
+				class WithRUC
+				{
+					public int InstanceField;
+					public static int StaticField;
+					private static int PrivateStaticField;
+				}
+
+				[RequiresUnreferencedCode ("--WithRUCOnlyInstanceFields--")]
+				class WithRUCOnlyInstanceFields
+				{
+					public int InstnaceField;
+				}
+
+				class DerivedWithoutRUC : WithRUC
+				{
+					public static int DerivedStaticField;
+				}
+
+				[RequiresUnreferencedCode ("--DerivedWithRUC--")]
+				class DerivedWithRUC : WithRUC
+				{
+					public static int DerivedStaticField;
+				}
+
+				// TODO - These should warn
+				// [ExpectedWarning ("IL2026", "WithRUC.StaticField", GlobalAnalysisOnly = true)]
+				// [ExpectedWarning ("IL2026", "WithRUC.PrivateStaticField", GlobalAnalysisOnly = true)]
+				// [ExpectedWarning ("IL2026", "DerovedWithRUC.DerivedStaticField", GlobalAnalysisOnly = true)]
+				public static void Test ()
+				{
+					typeof (WithRUC).RequiresPublicFields ();
+					typeof (WithRUC).RequiresNonPublicFields ();
+					typeof (WithRUCOnlyInstanceFields).RequiresPublicFields ();
+					typeof (DerivedWithoutRUC).RequiresPublicFields ();
+					typeof (DerivedWithRUC).RequiresPublicFields ();
+				}
+			}
+
 			public static void Test ()
 			{
 				TestRequiresInClassAccessedByStaticMethod ();
@@ -1151,13 +1290,11 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestRequiresOnDerivedButNotOnBase ();
 				TestRequiresOnBaseAndDerived ();
 				TestSuppressionsOnClass ();
+				TestStaticMethodOnRUCTypeSuppressedByRUCOnMethod ();
 				TestStaticConstructorCalls ();
-				RequirePublicMethods (typeof (BaseWithoutRequiresOnType));
-				RequirePublicMethods (typeof (DerivedWithRequiresOnType));
-				RequirePublicMethods (typeof (BaseWithRequiresOnType));
-				RequirePublicMethods (typeof (DerivedWithoutRequiresOnType));
-				RequirePublicMethods (typeof (InterfaceWithoutRequires));
-				RequirePublicMethods (typeof (ImplementationWithRequiresOnType));
+				TestDAMAccessOnStaticMethods ();
+				DAMAccessOnCtor.Test ();
+				DAMAccessOnField.Test ();
 			}
 		}
 	}

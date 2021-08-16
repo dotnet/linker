@@ -1596,6 +1596,12 @@ namespace Mono.Linker.Steps
 			case DependencyKind.DynamicallyAccessedMemberOnType:
 				ReportWarningsForTypeHierarchyReflectionAccess (field);
 				break;
+			case DependencyKind.FieldAccess:
+				if (field.IsStatic && Annotations.TryGetLinkerAttribute (field.DeclaringType, out RequiresUnreferencedCodeAttribute requiresUnreferencedCode) &&
+					!ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode ())
+					ReportRequiresUnreferencedCode (field.GetDisplayName (), requiresUnreferencedCode, _scopeStack.CurrentScope.Origin);
+
+				break;
 			}
 
 			if (CheckProcessed (field))
@@ -1604,7 +1610,6 @@ namespace Mono.Linker.Steps
 			// Use the original scope for marking the declaring type - it provides better warning message location
 			MarkType (field.DeclaringType, new DependencyInfo (DependencyKind.DeclaringType, field));
 
-			var methodCaller = _scopeStack.CurrentScope.Origin;
 			using var fieldScope = _scopeStack.PushScope (new MessageOrigin (field));
 			MarkType (field.FieldType, new DependencyInfo (DependencyKind.FieldType, field));
 			MarkCustomAttributes (field, new DependencyInfo (DependencyKind.CustomAttribute, field));
@@ -1628,9 +1633,6 @@ namespace Mono.Linker.Steps
 					typeWithFields = _context.TryResolve (typeWithFields.BaseType);
 				}
 			}
-
-			if (reason.Kind is DependencyKind.FieldAccess && field.IsStatic && Annotations.TryGetLinkerAttribute (field.DeclaringType, out RequiresUnreferencedCodeAttribute requiresUnreferencedCode))
-				ReportRequiresUnreferencedCode (field.GetDisplayName (), requiresUnreferencedCode, methodCaller);
 
 			var parent = field.DeclaringType;
 			if (!Annotations.HasPreservedStaticCtor (parent)) {
@@ -2770,7 +2772,7 @@ namespace Mono.Linker.Steps
 			switch (dependencyKind) {
 			// DirectCall, VirtualCall and NewObj are handled by ReflectionMethodBodyScanner
 			// This is necessary since the ReflectionMethodBodyScanner has intrinsic handling for some
-			// of the annotated methods annotated (for example Type.GetType)
+			// of the annotated methods (for example Type.GetType)
 			// and it knows when it's OK and when it needs a warning. In this place we don't know
 			// and would have to warn every time.
 			case DependencyKind.DirectCall:
