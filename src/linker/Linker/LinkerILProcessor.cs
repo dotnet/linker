@@ -29,6 +29,7 @@ namespace Mono.Linker
 		{
 			// So when inserting before, all pointers have to be updated to the new "before" instruction.
 			RedirectScopeStart (target, instruction);
+			ReplaceInstructionReference (target, instruction);
 			_ilProcessor.InsertBefore (target, instruction);
 		}
 
@@ -51,7 +52,7 @@ namespace Mono.Linker
 		{
 			RedirectScopeStart (target, instruction);
 			RedirectScopeEnd (target, instruction);
-			ReplaceInstruction (target, instruction);
+			ReplaceInstructionReference (target, instruction);
 			_ilProcessor.Replace (target, instruction);
 		}
 
@@ -68,6 +69,7 @@ namespace Mono.Linker
 
 			RedirectScopeStart (instruction, nextInstruction);
 			RedirectScopeEnd (instruction, previousInstruction);
+			ReplaceInstructionReference (instruction, nextInstruction ?? previousInstruction);
 			_ilProcessor.Remove (instruction);
 		}
 
@@ -101,7 +103,7 @@ namespace Mono.Linker
 			// so nothing to do here.
 		}
 
-		void ReplaceInstruction (Instruction oldTarget, Instruction newTarget)
+		void ReplaceInstructionReference (Instruction oldTarget, Instruction newTarget)
 		{
 			foreach (var instr in Instructions) {
 				switch (instr.OpCode.FlowControl) {
