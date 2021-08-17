@@ -65,11 +65,11 @@ namespace Mono.Linker
 				throw new ArgumentOutOfRangeException (nameof (instruction));
 
 			Instruction nextInstruction = Instructions.Count == index + 1 ? null : Instructions[index + 1];
-			Instruction previousInstruction = index == 0 ? (Instructions.Count == 1 ? null : Instructions[index + 1]) : Instructions[index - 1];
+			Instruction previousInstruction = index == 0 ? null : Instructions[index - 1];
 
 			RedirectScopeStart (instruction, nextInstruction);
 			RedirectScopeEnd (instruction, previousInstruction);
-			ReplaceInstructionReference (instruction, nextInstruction ?? previousInstruction);
+			ReplaceInstructionReference (instruction, nextInstruction);
 			_ilProcessor.Remove (instruction);
 		}
 
