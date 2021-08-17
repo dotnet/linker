@@ -44,27 +44,43 @@ namespace ILLink.RoslynAnalyzer
 					var methodSymbol = (IMethodSymbol) symbolAnalysisContext.Symbol;
 					CheckMatchingAttributesInOverrides (symbolAnalysisContext, methodSymbol);
 					CheckAttributeCtor (symbolAnalysisContext, methodSymbol);
+					foreach (var typeParameter in methodSymbol.TypeParameters)
+						CheckAttributeCtor (symbolAnalysisContext, typeParameter);
+
 				}, SymbolKind.Method);
 
 				context.RegisterSymbolAction (symbolAnalysisContext => {
 					var typeSymbol = (INamedTypeSymbol) symbolAnalysisContext.Symbol;
 					CheckMatchingAttributesInInterfaces (symbolAnalysisContext, typeSymbol);
 					CheckAttributeCtor (symbolAnalysisContext, typeSymbol);
+					foreach (var typeParameter in typeSymbol.TypeParameters)
+						CheckAttributeCtor (symbolAnalysisContext, typeParameter);
+
 				}, SymbolKind.NamedType);
 
-				if (AnalyzerDiagnosticTargets.HasFlag (DiagnosticTargets.Property)) {
-					context.RegisterSymbolAction (symbolAnalysisContext => {
-						var propertySymbol = (IPropertySymbol) symbolAnalysisContext.Symbol;
-						CheckMatchingAttributesInOverrides (symbolAnalysisContext, propertySymbol);
-					}, SymbolKind.Property);
-				}
 
-				if (AnalyzerDiagnosticTargets.HasFlag (DiagnosticTargets.Event)) {
-					context.RegisterSymbolAction (symbolAnalysisContext => {
-						var eventSymbol = (IEventSymbol) symbolAnalysisContext.Symbol;
+				context.RegisterSymbolAction (symbolAnalysisContext => {
+					var propertySymbol = (IPropertySymbol) symbolAnalysisContext.Symbol;
+					if (AnalyzerDiagnosticTargets.HasFlag (DiagnosticTargets.Property)) {
+						CheckMatchingAttributesInOverrides (symbolAnalysisContext, propertySymbol);
+					}
+
+					CheckAttributeCtor (symbolAnalysisContext, propertySymbol);
+				}, SymbolKind.Property);
+
+				context.RegisterSymbolAction (symbolAnalysisContext => {
+					var eventSymbol = (IEventSymbol) symbolAnalysisContext.Symbol;
+					if (AnalyzerDiagnosticTargets.HasFlag (DiagnosticTargets.Event)) {
 						CheckMatchingAttributesInOverrides (symbolAnalysisContext, eventSymbol);
-					}, SymbolKind.Event);
-				}
+					}
+
+					CheckAttributeCtor (symbolAnalysisContext, eventSymbol);
+				}, SymbolKind.Event);
+
+				context.RegisterSymbolAction (symbolAnalysisContext => {
+					var fieldSymbol = (IFieldSymbol) symbolAnalysisContext.Symbol;
+					CheckAttributeCtor (symbolAnalysisContext, fieldSymbol);
+				}, SymbolKind.Field);
 
 				context.RegisterOperationAction (operationContext => {
 					var methodInvocation = (IInvocationOperation) operationContext.Operation;
@@ -101,12 +117,17 @@ namespace ILLink.RoslynAnalyzer
 						CheckCalledMember (operationContext, prop, incompatibleMembers);
 				}, OperationKind.PropertyReference);
 
-				if (AnalyzerDiagnosticTargets.HasFlag (DiagnosticTargets.Event)) {
-					context.RegisterOperationAction (operationContext => {
-						var eventRef = (IEventReferenceOperation) operationContext.Operation;
-						CheckCalledMember (operationContext, eventRef.Member, incompatibleMembers);
-					}, OperationKind.EventReference);
-				}
+				context.RegisterOperationAction (operationContext => {
+					var eventRef = (IEventReferenceOperation) operationContext.Operation;
+					var eventSymbol = (IEventSymbol) eventRef.Member;
+					CheckCalledMember (operationContext, eventSymbol, incompatibleMembers);
+
+					if (eventSymbol.AddMethod is IMethodSymbol eventAddMethod)
+						CheckCalledMember (operationContext, eventAddMethod, incompatibleMembers);
+
+					if (eventSymbol.RemoveMethod is IMethodSymbol eventRemoveMethod)
+						CheckCalledMember (operationContext, eventRemoveMethod, incompatibleMembers);
+				}, OperationKind.EventReference);
 
 				context.RegisterOperationAction (operationContext => {
 					var delegateCreation = (IDelegateCreationOperation) operationContext.Operation;
@@ -117,6 +138,7 @@ namespace ILLink.RoslynAnalyzer
 						methodSymbol = lambda.Symbol;
 					else
 						return;
+
 					CheckCalledMember (operationContext, methodSymbol, incompatibleMembers);
 				}, OperationKind.DelegateCreation);
 
@@ -126,6 +148,21 @@ namespace ILLink.RoslynAnalyzer
 
 				foreach (var extraSyntaxNodeAction in ExtraSyntaxNodeActions)
 					context.RegisterSyntaxNodeAction (extraSyntaxNodeAction.Action, extraSyntaxNodeAction.SyntaxKind);
+
+				void CheckAttributeCtor (
+					SymbolAnalysisContext symbolAnalysisContext,
+					ISymbol symbol)
+				{
+					if (symbol.HasAttribute (RequiresAttributeName))
+						return;
+
+					foreach (var attr in symbol.GetAttributes ()) {
+						if (TryGetRequiresAttribute (attr.AttributeConstructor, out var requiresAttribute)) {
+							symbolAnalysisContext.ReportDiagnostic (Diagnostic.Create (RequiresDiagnosticRule,
+								symbol.Locations[0], attr.AttributeConstructor!.Name, GetMessageFromAttribute (requiresAttribute), GetUrlFromAttribute (requiresAttribute)));
+						}
+					}
+				}
 
 				void CheckStaticConstructors (OperationAnalysisContext operationContext,
 					ImmutableArray<IMethodSymbol> staticConstructors)
@@ -146,10 +183,11 @@ namespace ILLink.RoslynAnalyzer
 					// Do not emit any diagnostic if caller is annotated with the attribute too.
 					if (containingSymbol.HasAttribute (RequiresAttributeName))
 						return;
+
 					// Check also for RequiresAttribute in the associated symbol
-					if (containingSymbol is IMethodSymbol methodSymbol && methodSymbol.AssociatedSymbol is not null && methodSymbol.AssociatedSymbol!.HasAttribute (RequiresAttributeName)) {
+					if (containingSymbol is IMethodSymbol methodSymbol && methodSymbol.AssociatedSymbol is not null && methodSymbol.AssociatedSymbol!.HasAttribute (RequiresAttributeName))
 						return;
-					}
+
 					// If calling an instance constructor, check first for any static constructor since it will be called implicitly
 					if (member.ContainingType is { } containingType && operationContext.Operation is IObjectCreationOperation)
 						CheckStaticConstructors (operationContext, containingType.StaticConstructors);
@@ -165,6 +203,14 @@ namespace ILLink.RoslynAnalyzer
 						member = method.OverriddenMethod;
 
 					if (TryGetRequiresAttribute (member, out var requiresAttribute)) {
+						if (member is IMethodSymbol eventAccessorMethod && eventAccessorMethod.AssociatedSymbol is IEventSymbol eventSymbol) {
+							// If the annotated member is an event accessor, we warn on the event to match the linker behavior.
+							member = eventAccessorMethod.ContainingSymbol;
+							operationContext.ReportDiagnostic (Diagnostic.Create (RequiresDiagnosticRule,
+								eventSymbol.Locations[0], member.Name, GetMessageFromAttribute (requiresAttribute), GetUrlFromAttribute (requiresAttribute)));
+							return;
+						}
+
 						ReportRequiresDiagnostic (operationContext, member, requiresAttribute);
 					}
 				}
@@ -175,21 +221,6 @@ namespace ILLink.RoslynAnalyzer
 				{
 					if ((member.IsVirtual || member.IsOverride) && member.TryGetOverriddenMember (out var overriddenMember) && HasMismatchingAttributes (member, overriddenMember))
 						ReportMismatchInAttributesDiagnostic (symbolAnalysisContext, member, overriddenMember);
-				}
-
-				void CheckAttributeCtor (
-					SymbolAnalysisContext symbolAnalysisContext,
-					ISymbol symbol)
-				{
-					if (symbol.HasAttribute (RequiresAttributeName))
-						return;
-
-					foreach (var attr in symbol.GetAttributes ()) {
-						if (TryGetRequiresAttribute (attr.AttributeConstructor, out var requiresAttribute)) {
-							symbolAnalysisContext.ReportDiagnostic (Diagnostic.Create (RequiresDiagnosticRule,
-								symbol.Locations[0], attr.AttributeConstructor!.Name, GetMessageFromAttribute (requiresAttribute), GetUrlFromAttribute (requiresAttribute)));
-						}
-					}
 				}
 
 				void CheckMatchingAttributesInInterfaces (

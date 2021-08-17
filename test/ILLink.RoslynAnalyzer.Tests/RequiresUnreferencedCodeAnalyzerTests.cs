@@ -511,33 +511,6 @@ class C
 		}
 
 		[Fact]
-		public Task TestUsingAttributeWithAnnotatedCtor ()
-		{
-			var source = @"
-using System;
-using System.Diagnostics.CodeAnalysis;
-
-public class AttributeWithRUC : Attribute
-{
-    [RequiresUnreferencedCode (""Message from 'AttributeWithRUC()'"")]
-    public AttributeWithRUC() {}
-}
-
-class Test
-{
-	[AttributeWithRUC]
-	static void MethodWithAttributeWithRUC() {}
-
-	[RequiresUnreferencedCode(""Message from 'RUCMethodWithAttributeWithRUC()'"")]
-	[AttributeWithRUC]
-	static void RUCMethodWithAttributeWithRUC() {}
-}";
-			return VerifyRequiresUnreferencedCodeAnalyzer (source,
-				// (14,14): warning IL2026: Using method '.ctor' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. Message from 'AttributeWithRUC()'.
-				VerifyCS.Diagnostic (DiagnosticId.RequiresUnreferencedCode).WithSpan (14, 14, 14, 40).WithArguments (".ctor", " Message from 'AttributeWithRUC()'.", ""));
-		}
-
-		[Fact]
 		public Task TypeIsBeforeFieldInit ()
 		{
 			var TypeIsBeforeFieldInit = @"
