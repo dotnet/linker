@@ -54,7 +54,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 				"call",
 				"pop",
 				"call",
-				"ret",          
+				"ret",
 			})]
 			public static void Test ()
 			{
