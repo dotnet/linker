@@ -607,7 +607,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresUnreferencedCodeAttribute.ctor--")]
-			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresUnreferencedCodeOnPropertyAttribute.PropertyWhichRequires--", ProducedBy = ProducedBy.Linker)]
+			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresUnreferencedCodeOnPropertyAttribute.PropertyWhichRequires--")]
 			[AttributeWhichRequiresUnreferencedCode]
 			[AttributeWhichRequiresUnreferencedCodeOnProperty (PropertyWhichRequires = true)]
 			class TypeWithAttributeWhichRequires
@@ -615,19 +615,19 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresUnreferencedCodeAttribute.ctor--")]
-			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresUnreferencedCodeOnPropertyAttribute.PropertyWhichRequires--", ProducedBy = ProducedBy.Linker)]
+			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresUnreferencedCodeOnPropertyAttribute.PropertyWhichRequires--")]
 			[AttributeWhichRequiresUnreferencedCode]
 			[AttributeWhichRequiresUnreferencedCodeOnProperty (PropertyWhichRequires = true)]
 			static void MethodWithAttributeWhichRequires () { }
 
 			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresUnreferencedCodeAttribute.ctor--")]
-			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresUnreferencedCodeOnPropertyAttribute.PropertyWhichRequires--", ProducedBy = ProducedBy.Linker)]
+			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresUnreferencedCodeOnPropertyAttribute.PropertyWhichRequires--")]
 			[AttributeWhichRequiresUnreferencedCode]
 			[AttributeWhichRequiresUnreferencedCodeOnProperty (PropertyWhichRequires = true)]
 			static int _fieldWithAttributeWhichRequires;
 
 			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresUnreferencedCodeAttribute.ctor--")]
-			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresUnreferencedCodeOnPropertyAttribute.PropertyWhichRequires--", ProducedBy = ProducedBy.Linker)]
+			[ExpectedWarning ("IL2026", "--AttributeWhichRequiresUnreferencedCodeOnPropertyAttribute.PropertyWhichRequires--")]
 			[AttributeWhichRequiresUnreferencedCode]
 			[AttributeWhichRequiresUnreferencedCodeOnProperty (PropertyWhichRequires = true)]
 			static bool PropertyWithAttributeWhichRequires { get; set; }
