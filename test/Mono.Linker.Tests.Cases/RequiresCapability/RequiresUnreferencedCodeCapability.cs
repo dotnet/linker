@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
@@ -1282,6 +1283,41 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				}
 			}
 
+			[RequiresUnreferencedCode ("Field use is dangerous")]
+			public class ClassWithRUCFieldUsedViaReflection
+			{
+				public static int publicField;
+			}
+
+			[ExpectedWarning ("IL2026", "FieldUsedViaReflection::publicField")]
+			static void KeepFieldViaReflection ()
+			{
+				var field = typeof (ClassWithRUCFieldUsedViaReflection).GetField ("publicField");
+				field.GetValue (null);
+			}
+
+			[ExpectedWarning ("IL2026", "FieldUsedViaReflection::publicField")]
+			[DynamicDependency ("publicField", typeof (ClassWithRUCFieldUsedViaReflection))]
+			static void KeepFieldViaDynamicDependency () { }
+
+			[RequiresUnreferencedCode ("The attribute is dangerous")]
+			public class AttributeWithRUC : Attribute
+			{
+				public static int field;
+
+				// `field` cannot be used as named attribute argument because is static, and if accessed via
+				// a property the property will be the one generating the warning, but then the warning will 
+				// be suppresed by the RequiresUnreferencedCode on the declaring type
+				public int PropertyOnAttribute {
+					get { return field; }
+					set { field = value; }
+				}
+			}
+
+			[AttributeWithRUC (PropertyOnAttribute = 42)]
+			[ExpectedWarning ("IL2026", "AttributeWithRUC.AttributeWithRUC()")]
+			static void KeepFieldOnAttribute () { }
+
 			public static void Test ()
 			{
 				TestRequiresInClassAccessedByStaticMethod ();
@@ -1296,6 +1332,10 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestDAMAccessOnStaticMethods ();
 				DAMAccessOnCtor.Test ();
 				DAMAccessOnField.Test ();
+				KeepFieldViaReflection ();
+				KeepFieldViaDynamicDependency ();
+				KeepFieldOnAttribute ();
+
 			}
 		}
 	}
