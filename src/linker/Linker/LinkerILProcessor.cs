@@ -27,7 +27,7 @@ namespace Mono.Linker
 		public void Emit (OpCode opcode, string value) => Append (_ilProcessor.Create (opcode, value));
 		public void InsertBefore (Instruction target, Instruction instruction)
 		{
-			// So when inserting before, all pointers have to be updated to the new "before" instruction.
+			// When inserting before, all pointers have to be updated to the new "before" instruction.
 			RedirectScopeStart (target, instruction);
 			ReplaceInstructionReference (target, instruction);
 			_ilProcessor.InsertBefore (target, instruction);
