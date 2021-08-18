@@ -1542,15 +1542,24 @@ namespace Mono.Linker.Steps
 			try {
 				var origin = _scopeStack.CurrentScope.Origin;
 
-				if (member is MethodDefinition method && Annotations.DoesMethodRequireUnreferencedCode (method, out RequiresUnreferencedCodeAttribute attribute)) {
+				void ReportRequiresUnreferencedCodeWhileApplyingDynamicallyAccessedMembers (string type, string member, RequiresUnreferencedCodeAttribute memberAttribute)
+				{
 					var message = string.Format (
 						"'DynamicallyAccessedMembersAttribute' on '{0}' or one of its base types references '{1}' which requires unreferenced code.{2}{3}",
-						type.GetDisplayName (),
-						method.GetDisplayName (),
-						MessageFormat.FormatRequiresAttributeMessageArg (attribute.Message),
-						MessageFormat.FormatRequiresAttributeMessageArg (attribute.Url));
+						type,
+						member,
+						MessageFormat.FormatRequiresAttributeMessageArg (memberAttribute.Message),
+						MessageFormat.FormatRequiresAttributeMessageArg (memberAttribute.Url));
 					var code = reportOnMember ? 2112 : 2113;
 					_context.LogWarning (message, code, origin, MessageSubCategory.TrimAnalysis);
+				}
+
+				if (member is MethodDefinition method && Annotations.DoesMethodRequireUnreferencedCode (method, out RequiresUnreferencedCodeAttribute methodAttribute)) {
+					ReportRequiresUnreferencedCodeWhileApplyingDynamicallyAccessedMembers (type.GetDisplayName (), method.GetDisplayName (), methodAttribute);
+				} else if (member is FieldDefinition field && field.IsStatic &&
+					Annotations.TryGetLinkerAttribute (field.DeclaringType, out RequiresUnreferencedCodeAttribute fieldAttribute) &&
+					!ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode ()) {
+					ReportRequiresUnreferencedCodeWhileApplyingDynamicallyAccessedMembers (type.GetDisplayName (), field.GetDisplayName (), fieldAttribute);
 				}
 
 				if (_context.Annotations.FlowAnnotations.ShouldWarnWhenAccessedForReflection (member)) {
@@ -1579,7 +1588,7 @@ namespace Mono.Linker.Steps
 				Annotations.Mark (field, reason);
 			}
 
-			if (reason.Kind != DependencyKind.DynamicallyAccessedMemberOnType && field.IsStatic && 
+			if (reason.Kind != DependencyKind.DynamicallyAccessedMemberOnType && field.IsStatic &&
 				Annotations.TryGetLinkerAttribute (field.DeclaringType, out RequiresUnreferencedCodeAttribute requiresUnreferencedCode) &&
 				!ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode ())
 				ReportRequiresUnreferencedCode (field.GetDisplayName (), requiresUnreferencedCode, _scopeStack.CurrentScope.Origin);

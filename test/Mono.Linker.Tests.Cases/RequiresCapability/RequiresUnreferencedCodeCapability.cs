@@ -1318,6 +1318,22 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			[ExpectedWarning ("IL2026", "AttributeWithRUC.AttributeWithRUC()")]
 			static void KeepFieldOnAttribute () { }
 
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields)]
+			[RequiresUnreferencedCode ("This class is dangerous")]
+			class ClassImplementingAnnotatedInterface
+			{
+				[ExpectedWarning ("IL2112", "ClassImplementingAnnotatedInterface::publicField")]
+				public static int publicField;
+
+				[ExpectedWarning ("IL2112", "ClassImplementingAnnotatedInterface::privatefield")]
+				static int privatefield;
+			}
+
+			static void KeepFieldUsingTypeHierarchy (ClassImplementingAnnotatedInterface classImplementingInterface)
+			{
+				classImplementingInterface.GetType ().GetField ("publicField");
+			}
+
 			public static void Test ()
 			{
 				TestRequiresInClassAccessedByStaticMethod ();
@@ -1335,7 +1351,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				KeepFieldViaReflection ();
 				KeepFieldViaDynamicDependency ();
 				KeepFieldOnAttribute ();
-
+				KeepFieldUsingTypeHierarchy (null);
 			}
 		}
 	}
