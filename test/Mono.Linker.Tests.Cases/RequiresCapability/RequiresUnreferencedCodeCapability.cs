@@ -1201,7 +1201,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 					public BaseWithRUC () { }
 				}
 
-				[ExpectedWarning ("IL2109", "DAMAccessOnCtor/DerivedWithoutRUC", "DAMAccessOnCtor.BaseWithRUC")]
+				[ExpectedWarning ("IL2109", "DAMAccessOnCtor/DerivedWithoutRUC", "DAMAccessOnCtor.BaseWithRUC", GlobalAnalysisOnly = true)]
 				class DerivedWithoutRUC : BaseWithRUC
 				{
 					[ExpectedWarning ("IL2026", "--BaseWithRUC--")] // The body has direct call to the base.ctor()
@@ -1258,7 +1258,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 					public int InstnaceField;
 				}
 
-				[ExpectedWarning ("IL2109", "DAMAccessOnField/DerivedWithoutRUC", "DAMAccessOnField.WithRUC")]
+				[ExpectedWarning ("IL2109", "DAMAccessOnField/DerivedWithoutRUC", "DAMAccessOnField.WithRUC", GlobalAnalysisOnly = true)]
 				class DerivedWithoutRUC : WithRUC
 				{
 					public static int DerivedStaticField;
@@ -1289,14 +1289,14 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				public static int publicField;
 			}
 
-			[ExpectedWarning ("IL2026", "FieldUsedViaReflection::publicField")]
+			[ExpectedWarning ("IL2026", "FieldUsedViaReflection::publicField", GlobalAnalysisOnly = true)]
 			static void KeepFieldViaReflection ()
 			{
 				var field = typeof (ClassWithRUCFieldUsedViaReflection).GetField ("publicField");
 				field.GetValue (null);
 			}
 
-			[ExpectedWarning ("IL2026", "FieldUsedViaReflection::publicField")]
+			[ExpectedWarning ("IL2026", "FieldUsedViaReflection::publicField", GlobalAnalysisOnly = true)]
 			[DynamicDependency ("publicField", typeof (ClassWithRUCFieldUsedViaReflection))]
 			static void KeepFieldViaDynamicDependency () { }
 
@@ -1315,17 +1315,17 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[AttributeWithRUC (PropertyOnAttribute = 42)]
-			[ExpectedWarning ("IL2026", "AttributeWithRUC.AttributeWithRUC()")]
+			[ExpectedWarning ("IL2026", "AttributeWithRUC.AttributeWithRUC()", GlobalAnalysisOnly = true)]
 			static void KeepFieldOnAttribute () { }
 
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields)]
 			[RequiresUnreferencedCode ("This class is dangerous")]
 			class ClassImplementingAnnotatedInterface
 			{
-				[ExpectedWarning ("IL2112", "ClassImplementingAnnotatedInterface::publicField")]
+				[ExpectedWarning ("IL2112", "ClassImplementingAnnotatedInterface::publicField", GlobalAnalysisOnly = true)]
 				public static int publicField;
 
-				[ExpectedWarning ("IL2112", "ClassImplementingAnnotatedInterface::privatefield")]
+				[ExpectedWarning ("IL2112", "ClassImplementingAnnotatedInterface::privatefield", GlobalAnalysisOnly = true)]
 				static int privatefield;
 			}
 
