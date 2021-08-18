@@ -1367,7 +1367,6 @@ namespace Mono.Linker.Steps
 			if (CheckProcessed (assembly))
 				return;
 
-			// We don't have a good origin for "assembly" level, so just use null for now
 			using var assemblyScope = _scopeStack.PushScope (new MessageOrigin (assembly));
 
 			EmbeddedXmlInfo.ProcessDescriptors (assembly, _context);
