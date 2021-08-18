@@ -1579,6 +1579,11 @@ namespace Mono.Linker.Steps
 				Annotations.Mark (field, reason);
 			}
 
+			if (reason.Kind != DependencyKind.DynamicallyAccessedMemberOnType && field.IsStatic && 
+				Annotations.TryGetLinkerAttribute (field.DeclaringType, out RequiresUnreferencedCodeAttribute requiresUnreferencedCode) &&
+				!ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode ())
+				ReportRequiresUnreferencedCode (field.GetDisplayName (), requiresUnreferencedCode, _scopeStack.CurrentScope.Origin);
+
 			switch (reason.Kind) {
 			case DependencyKind.AccessedViaReflection:
 			case DependencyKind.DynamicDependency:
@@ -1595,12 +1600,6 @@ namespace Mono.Linker.Steps
 				break;
 			case DependencyKind.DynamicallyAccessedMemberOnType:
 				ReportWarningsForTypeHierarchyReflectionAccess (field);
-				break;
-			case DependencyKind.FieldAccess:
-				if (field.IsStatic && Annotations.TryGetLinkerAttribute (field.DeclaringType, out RequiresUnreferencedCodeAttribute requiresUnreferencedCode) &&
-					!ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode ())
-					ReportRequiresUnreferencedCode (field.GetDisplayName (), requiresUnreferencedCode, _scopeStack.CurrentScope.Origin);
-
 				break;
 			}
 

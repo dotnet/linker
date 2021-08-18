@@ -1200,6 +1200,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 					public BaseWithRUC () { }
 				}
 
+				[ExpectedWarning ("IL2109", "DAMAccessOnCtor/DerivedWithoutRUC", "DAMAccessOnCtor.BaseWithRUC")]
 				class DerivedWithoutRUC : BaseWithRUC
 				{
 					[ExpectedWarning ("IL2026", "--BaseWithRUC--")] // The body has direct call to the base.ctor()
@@ -1256,6 +1257,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 					public int InstnaceField;
 				}
 
+				[ExpectedWarning ("IL2109", "DAMAccessOnField/DerivedWithoutRUC", "DAMAccessOnField.WithRUC")]
 				class DerivedWithoutRUC : WithRUC
 				{
 					public static int DerivedStaticField;
@@ -1267,10 +1269,9 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 					public static int DerivedStaticField;
 				}
 
-				// TODO - These should warn
-				// [ExpectedWarning ("IL2026", "WithRUC.StaticField", GlobalAnalysisOnly = true)]
-				// [ExpectedWarning ("IL2026", "WithRUC.PrivateStaticField", GlobalAnalysisOnly = true)]
-				// [ExpectedWarning ("IL2026", "DerovedWithRUC.DerivedStaticField", GlobalAnalysisOnly = true)]
+				[ExpectedWarning ("IL2026", "WithRUC::StaticField", GlobalAnalysisOnly = true)]
+				[ExpectedWarning ("IL2026", "WithRUC::PrivateStaticField", GlobalAnalysisOnly = true)]
+				[ExpectedWarning ("IL2026", "DerivedWithRUC::DerivedStaticField", GlobalAnalysisOnly = true)]
 				public static void Test ()
 				{
 					typeof (WithRUC).RequiresPublicFields ();
