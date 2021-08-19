@@ -72,7 +72,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			TestRequiresInDynamicDependency ();
 			TestThatTrailingPeriodIsAddedToMessage ();
 			TestThatTrailingPeriodIsNotDuplicatedInWarningMessage ();
-			TestWarnIfRequiresUnreferencedCodeIsInStaticConstructor ();
+			WarnIfRequiresUnreferencedCodeOnStaticConstructor.Test ();
 			RequiresOnAttribute.Test ();
 			RequiresOnGenerics.Test ();
 			CovariantReturnViaLdftn.Test ();
@@ -549,18 +549,19 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			WarningMessageEndsWithPeriod ();
 		}
 
-		class ClassWithRequiresUnreferencedCodeOnStaticConstructor
+		class WarnIfRequiresUnreferencedCodeOnStaticConstructor
 		{
-			[ExpectedWarning ("IL2116")]
-			[RequiresUnreferencedCode ("This attribute shouldn't be allowed")]
-			static ClassWithRequiresUnreferencedCodeOnStaticConstructor () { }
-		}
+			class ClassWithRequiresUnreferencedCodeOnStaticConstructor
+			{
+				[ExpectedWarning ("IL2116")]
+				[RequiresUnreferencedCode ("This attribute shouldn't be allowed")]
+				static ClassWithRequiresUnreferencedCodeOnStaticConstructor () { }
+			}
 
-		static void RequireNonPublicConstructors ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicConstructors)] Type type) { }
-
-		static void TestWarnIfRequiresUnreferencedCodeIsInStaticConstructor ()
-		{
-			RequireNonPublicConstructors (typeof (ClassWithRequiresUnreferencedCodeOnStaticConstructor));
+			public static void Test ()
+			{
+				typeof (ClassWithRequiresUnreferencedCodeOnStaticConstructor).RequiresNonPublicConstructors ();
+			}
 		}
 
 		[ExpectedNoWarnings]
@@ -1167,33 +1168,61 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestInstanceFieldCallDontWarn ();
 			}
 
-			// Analyzer still dont understand RUC on type
-			[ExpectedWarning ("IL2026", "BaseWithoutRequiresOnType.Method()", GlobalAnalysisOnly = true)]
-			[ExpectedWarning ("IL2026", "InterfaceWithoutRequires.Method(Int32)", GlobalAnalysisOnly = true)]
-			[ExpectedWarning ("IL2026", "InterfaceWithoutRequires.Method()", GlobalAnalysisOnly = true)]
-			[ExpectedWarning ("IL2026", "ImplementationWithRequiresOnType.Method()", GlobalAnalysisOnly = true)]
-			static void TestDAMAccessOnStaticMethods ()
+			class ReflectionAccessOnMethod
 			{
-				// Warns because BaseWithoutRequiresOnType.Method as RUC on the method
-				typeof (BaseWithoutRequiresOnType).RequiresPublicMethods ();
+				// Analyzer still dont understand RUC on type
+				[ExpectedWarning ("IL2026", "BaseWithoutRequiresOnType.Method()", GlobalAnalysisOnly = true)]
+				[ExpectedWarning ("IL2026", "InterfaceWithoutRequires.Method(Int32)", GlobalAnalysisOnly = true)]
+				[ExpectedWarning ("IL2026", "InterfaceWithoutRequires.Method()", GlobalAnalysisOnly = true)]
+				[ExpectedWarning ("IL2026", "ImplementationWithRequiresOnType.Method()", GlobalAnalysisOnly = true)]
+				static void TestDAMAccess ()
+				{
+					// Warns because BaseWithoutRequiresOnType.Method as RUC on the method
+					typeof (BaseWithoutRequiresOnType).RequiresPublicMethods ();
 
-				// Doesn't warn because DerivedWithRequiresOnType doesn't have any static methods
-				typeof (DerivedWithRequiresOnType).RequiresPublicMethods ();
+					// Doesn't warn because DerivedWithRequiresOnType doesn't have any static methods
+					typeof (DerivedWithRequiresOnType).RequiresPublicMethods ();
 
-				// Warns twice since both methods on InterfaceWithoutRequires have RUC on the method
-				typeof (InterfaceWithoutRequires).RequiresPublicMethods ();
+					// Warns twice since both methods on InterfaceWithoutRequires have RUC on the method
+					typeof (InterfaceWithoutRequires).RequiresPublicMethods ();
 
-				// Warns because ImplementationWithRequiresOnType.Method is a static public method on a RUC type
-				typeof (ImplementationWithRequiresOnType).RequiresPublicMethods ();
+					// Warns because ImplementationWithRequiresOnType.Method is a static public method on a RUC type
+					typeof (ImplementationWithRequiresOnType).RequiresPublicMethods ();
 
-				// Doesn't warn since BaseWithRequiresOnType has no static methods
-				typeof (BaseWithRequiresOnType).RequiresPublicMethods ();
+					// Doesn't warn since BaseWithRequiresOnType has no static methods
+					typeof (BaseWithRequiresOnType).RequiresPublicMethods ();
 
-				// Doesn't warn since DerivedWithoutRequiresOnType has no static methods
-				typeof (DerivedWithoutRequiresOnType).RequiresPublicMethods ();
+					// Doesn't warn since DerivedWithoutRequiresOnType has no static methods
+					typeof (DerivedWithoutRequiresOnType).RequiresPublicMethods ();
+				}
+
+				[ExpectedWarning ("IL2026", "BaseWithoutRequiresOnType.Method()", GlobalAnalysisOnly = true)]
+				[ExpectedWarning ("IL2026", "InterfaceWithoutRequires.Method(Int32)", GlobalAnalysisOnly = true)]
+				[ExpectedWarning ("IL2026", "InterfaceWithoutRequires.Method()", GlobalAnalysisOnly = true)]
+				[ExpectedWarning ("IL2026", "ImplementationWithRequiresOnType.Method()", GlobalAnalysisOnly = true)]
+				static void TestDirectReflectionAccess ()
+				{
+					// RUC on the method itself
+					typeof (BaseWithoutRequiresOnType).GetMethod (nameof (BaseWithoutRequiresOnType.Method));
+
+					// RUC on the method itself
+					typeof (InterfaceWithoutRequires).GetMethod (nameof (InterfaceWithoutRequires.Method));
+
+					// Warns because ImplementationWithRequiresOnType.Method is a static public method on a RUC type
+					typeof (ImplementationWithRequiresOnType).GetMethod (nameof (ImplementationWithRequiresOnType.Method));
+
+					// Doesn't warn since Method is not static (so it doesn't matter that the type has RUC)
+					typeof (BaseWithRequiresOnType).GetMethod (nameof (BaseWithRequiresOnType.Method));
+				}
+
+				public static void Test ()
+				{
+					TestDAMAccess ();
+					TestDirectReflectionAccess ();
+				}
 			}
 
-			class DAMAccessOnCtor
+			class ReflectionAccessOnCtor
 			{
 				[RequiresUnreferencedCode ("--BaseWithRUC--")]
 				class BaseWithRUC
@@ -1201,7 +1230,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 					public BaseWithRUC () { }
 				}
 
-				[ExpectedWarning ("IL2109", "DAMAccessOnCtor/DerivedWithoutRUC", "DAMAccessOnCtor.BaseWithRUC", GlobalAnalysisOnly = true)]
+				[ExpectedWarning ("IL2109", "ReflectionAccessOnCtor/DerivedWithoutRUC", "ReflectionAccessOnCtor.BaseWithRUC", GlobalAnalysisOnly = true)]
 				class DerivedWithoutRUC : BaseWithRUC
 				{
 					[ExpectedWarning ("IL2026", "--BaseWithRUC--")] // The body has direct call to the base.ctor()
@@ -1226,7 +1255,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				[ExpectedWarning ("IL2026", "BaseWithRUC.BaseWithRUC()", GlobalAnalysisOnly = true)]
 				[ExpectedWarning ("IL2026", "DerivedWithRUCOnBaseWithRUC.DerivedWithRUCOnBaseWithRUC()", GlobalAnalysisOnly = true)]
 				[ExpectedWarning ("IL2026", "DerivedWithRUCOnBaseWithoutRuc.DerivedWithRUCOnBaseWithoutRuc()", GlobalAnalysisOnly = true)]
-				public static void Test ()
+				static void TestDAMAccess ()
 				{
 					// Warns because the type has RUC
 					typeof (BaseWithRUC).RequiresPublicConstructors ();
@@ -1240,9 +1269,26 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 					// Warns - RUC On the type
 					typeof (DerivedWithRUCOnBaseWithoutRuc).RequiresPublicConstructors ();
 				}
+
+				[ExpectedWarning ("IL2026", "BaseWithRUC.BaseWithRUC()", GlobalAnalysisOnly = true)]
+				[ExpectedWarning ("IL2026", "DerivedWithRUCOnBaseWithRUC.DerivedWithRUCOnBaseWithRUC()", GlobalAnalysisOnly = true)]
+				[ExpectedWarning ("IL2026", "DerivedWithRUCOnBaseWithoutRuc.DerivedWithRUCOnBaseWithoutRuc()", GlobalAnalysisOnly = true)]
+				static void TestDirectReflectionAccess ()
+				{
+					typeof (BaseWithRUC).GetConstructor (Type.EmptyTypes);
+					typeof (DerivedWithoutRUC).GetConstructor (Type.EmptyTypes);
+					typeof (DerivedWithRUCOnBaseWithRUC).GetConstructor (BindingFlags.NonPublic, Type.EmptyTypes);
+					typeof (DerivedWithRUCOnBaseWithoutRuc).GetConstructor (Type.EmptyTypes);
+				}
+
+				public static void Test ()
+				{
+					TestDAMAccess ();
+					TestDirectReflectionAccess ();
+				}
 			}
 
-			class DAMAccessOnField
+			class ReflectionAccessOnField
 			{
 				[RequiresUnreferencedCode ("--WithRUC--")]
 				class WithRUC
@@ -1258,7 +1304,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 					public int InstnaceField;
 				}
 
-				[ExpectedWarning ("IL2109", "DAMAccessOnField/DerivedWithoutRUC", "DAMAccessOnField.WithRUC", GlobalAnalysisOnly = true)]
+				[ExpectedWarning ("IL2109", "ReflectionAccessOnField/DerivedWithoutRUC", "ReflectionAccessOnField.WithRUC", GlobalAnalysisOnly = true)]
 				class DerivedWithoutRUC : WithRUC
 				{
 					public static int DerivedStaticField;
@@ -1273,7 +1319,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				[ExpectedWarning ("IL2026", "WithRUC::StaticField", GlobalAnalysisOnly = true)]
 				[ExpectedWarning ("IL2026", "WithRUC::PrivateStaticField", GlobalAnalysisOnly = true)]
 				[ExpectedWarning ("IL2026", "DerivedWithRUC::DerivedStaticField", GlobalAnalysisOnly = true)]
-				public static void Test ()
+				static void TestDAMAccess ()
 				{
 					typeof (WithRUC).RequiresPublicFields ();
 					typeof (WithRUC).RequiresNonPublicFields ();
@@ -1281,24 +1327,61 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 					typeof (DerivedWithoutRUC).RequiresPublicFields ();
 					typeof (DerivedWithRUC).RequiresPublicFields ();
 				}
-			}
 
-			[RequiresUnreferencedCode ("Field use is dangerous")]
-			public class ClassWithRUCFieldUsedViaReflection
-			{
-				public static int publicField;
-			}
+				[ExpectedWarning ("IL2026", "WithRUC::StaticField", GlobalAnalysisOnly = true)]
+				[ExpectedWarning ("IL2026", "WithRUC::PrivateStaticField", GlobalAnalysisOnly = true)]
+				[ExpectedWarning ("IL2026", "DerivedWithRUC::DerivedStaticField", GlobalAnalysisOnly = true)]
+				static void TestDirectReflectionAccess ()
+				{
+					typeof (WithRUC).GetField (nameof (WithRUC.StaticField));
+					typeof (WithRUC).GetField (nameof (WithRUC.InstanceField)); // Doesn't warn
+					typeof (WithRUC).GetField ("PrivateStaticField", BindingFlags.NonPublic);
+					typeof (WithRUCOnlyInstanceFields).GetField (nameof (WithRUCOnlyInstanceFields.InstnaceField)); // Doesn't warn
+					typeof (DerivedWithoutRUC).GetField (nameof (DerivedWithRUC.DerivedStaticField)); // Doesn't warn
+					typeof (DerivedWithRUC).GetField (nameof (DerivedWithRUC.DerivedStaticField));
+				}
 
-			[ExpectedWarning ("IL2026", "FieldUsedViaReflection::publicField", GlobalAnalysisOnly = true)]
-			static void KeepFieldViaReflection ()
-			{
-				var field = typeof (ClassWithRUCFieldUsedViaReflection).GetField ("publicField");
-				field.GetValue (null);
-			}
+				[ExpectedWarning ("IL2026", "WithRUC::StaticField", GlobalAnalysisOnly = true)]
+				[DynamicDependency (nameof (WithRUC.StaticField), typeof (WithRUC))]
+				[DynamicDependency (nameof (WithRUC.InstanceField), typeof (WithRUC))] // Doesn't warn
+				[DynamicDependency (DynamicallyAccessedMemberTypes.PublicFields, typeof (DerivedWithoutRUC))] // Doesn't warn
+				[ExpectedWarning ("IL2026", "DerivedWithRUC::DerivedStaticField", GlobalAnalysisOnly = true)]
+				[DynamicDependency (DynamicallyAccessedMemberTypes.PublicFields, typeof (DerivedWithRUC))]
+				static void TestDynamicDependencyAccess ()
+				{
+				}
 
-			[ExpectedWarning ("IL2026", "FieldUsedViaReflection::publicField", GlobalAnalysisOnly = true)]
-			[DynamicDependency ("publicField", typeof (ClassWithRUCFieldUsedViaReflection))]
-			static void KeepFieldViaDynamicDependency () { }
+				[RequiresUnreferencedCode ("This class is dangerous")]
+				class BaseForDAMAnnotatedClass
+				{
+					public static int baseField;
+				}
+
+				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields)]
+				[RequiresUnreferencedCode ("This class is dangerous")]
+				[ExpectedWarning ("IL2113", "BaseForDAMAnnotatedClass::baseField", GlobalAnalysisOnly = true)]
+				class DAMAnnotatedClass : BaseForDAMAnnotatedClass
+				{
+					[ExpectedWarning ("IL2112", "DAMAnnotatedClass::publicField", GlobalAnalysisOnly = true)]
+					public static int publicField;
+
+					[ExpectedWarning ("IL2112", "DAMAnnotatedClass::privatefield", GlobalAnalysisOnly = true)]
+					static int privatefield;
+				}
+
+				static void TestDAMOnTypeAccess (DAMAnnotatedClass instance)
+				{
+					instance.GetType ().GetField ("publicField");
+				}
+
+				public static void Test ()
+				{
+					TestDAMAccess ();
+					TestDirectReflectionAccess ();
+					TestDynamicDependencyAccess ();
+					TestDAMOnTypeAccess (null);
+				}
+			}
 
 			[RequiresUnreferencedCode ("The attribute is dangerous")]
 			public class AttributeWithRUC : Attribute
@@ -1318,22 +1401,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			[ExpectedWarning ("IL2026", "AttributeWithRUC.AttributeWithRUC()", GlobalAnalysisOnly = true)]
 			static void KeepFieldOnAttribute () { }
 
-			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields)]
-			[RequiresUnreferencedCode ("This class is dangerous")]
-			class ClassImplementingAnnotatedInterface
-			{
-				[ExpectedWarning ("IL2112", "ClassImplementingAnnotatedInterface::publicField", GlobalAnalysisOnly = true)]
-				public static int publicField;
-
-				[ExpectedWarning ("IL2112", "ClassImplementingAnnotatedInterface::privatefield", GlobalAnalysisOnly = true)]
-				static int privatefield;
-			}
-
-			static void KeepFieldUsingTypeHierarchy (ClassImplementingAnnotatedInterface classImplementingInterface)
-			{
-				classImplementingInterface.GetType ().GetField ("publicField");
-			}
-
 			public static void Test ()
 			{
 				TestRequiresInClassAccessedByStaticMethod ();
@@ -1345,13 +1412,10 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestSuppressionsOnClass ();
 				TestStaticMethodOnRUCTypeSuppressedByRUCOnMethod ();
 				TestStaticConstructorCalls ();
-				TestDAMAccessOnStaticMethods ();
-				DAMAccessOnCtor.Test ();
-				DAMAccessOnField.Test ();
-				KeepFieldViaReflection ();
-				KeepFieldViaDynamicDependency ();
+				ReflectionAccessOnMethod.Test ();
+				ReflectionAccessOnCtor.Test ();
+				ReflectionAccessOnField.Test ();
 				KeepFieldOnAttribute ();
-				KeepFieldUsingTypeHierarchy (null);
 			}
 		}
 	}

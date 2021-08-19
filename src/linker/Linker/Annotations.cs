@@ -628,6 +628,26 @@ namespace Mono.Linker
 			return false;
 		}
 
+		internal bool DoesFieldRequireUnreferencedCode (FieldDefinition field, out RequiresUnreferencedCodeAttribute attribute)
+		{
+			if (!field.IsStatic || field.DeclaringType is null) {
+				attribute = null;
+				return false;
+			}
+
+			return TryGetLinkerAttribute (field.DeclaringType, out attribute);
+		}
+
+		internal bool DoesMemberRequireUnreferencedCode (IMemberDefinition member, out RequiresUnreferencedCodeAttribute attribute)
+		{
+			attribute = null;
+			return member switch {
+				MethodDefinition method => DoesMethodRequireUnreferencedCode (method, out attribute),
+				FieldDefinition field => DoesFieldRequireUnreferencedCode (field, out attribute),
+				_ => false
+			};
+		}
+
 		public void EnqueueVirtualMethod (MethodDefinition method)
 		{
 			if (!method.IsVirtual)

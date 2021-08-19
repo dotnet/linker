@@ -1542,24 +1542,15 @@ namespace Mono.Linker.Steps
 			try {
 				var origin = _scopeStack.CurrentScope.Origin;
 
-				void ReportRequiresUnreferencedCodeWhileApplyingDynamicallyAccessedMembers (string type, string member, RequiresUnreferencedCodeAttribute memberAttribute)
-				{
+				if (Annotations.DoesMemberRequireUnreferencedCode (member, out RequiresUnreferencedCodeAttribute requiresUnreferencedCodeAttribute)) {
 					var message = string.Format (
 						"'DynamicallyAccessedMembersAttribute' on '{0}' or one of its base types references '{1}' which requires unreferenced code.{2}{3}",
-						type,
-						member,
-						MessageFormat.FormatRequiresAttributeMessageArg (memberAttribute.Message),
-						MessageFormat.FormatRequiresAttributeMessageArg (memberAttribute.Url));
+						type.GetDisplayName (),
+						((MemberReference) member).GetDisplayName (), // The cast is valid since it has to be a method or field
+						MessageFormat.FormatRequiresAttributeMessageArg (requiresUnreferencedCodeAttribute.Message),
+						MessageFormat.FormatRequiresAttributeMessageArg (requiresUnreferencedCodeAttribute.Url));
 					var code = reportOnMember ? 2112 : 2113;
 					_context.LogWarning (message, code, origin, MessageSubCategory.TrimAnalysis);
-				}
-
-				if (member is MethodDefinition method && Annotations.DoesMethodRequireUnreferencedCode (method, out RequiresUnreferencedCodeAttribute methodAttribute)) {
-					ReportRequiresUnreferencedCodeWhileApplyingDynamicallyAccessedMembers (type.GetDisplayName (), method.GetDisplayName (), methodAttribute);
-				} else if (member is FieldDefinition field && field.IsStatic &&
-					Annotations.TryGetLinkerAttribute (field.DeclaringType, out RequiresUnreferencedCodeAttribute fieldAttribute) &&
-					!ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode ()) {
-					ReportRequiresUnreferencedCodeWhileApplyingDynamicallyAccessedMembers (type.GetDisplayName (), field.GetDisplayName (), fieldAttribute);
 				}
 
 				if (_context.Annotations.FlowAnnotations.ShouldWarnWhenAccessedForReflection (member)) {
@@ -1588,10 +1579,10 @@ namespace Mono.Linker.Steps
 				Annotations.Mark (field, reason);
 			}
 
-			if (reason.Kind != DependencyKind.DynamicallyAccessedMemberOnType && field.IsStatic &&
-				Annotations.TryGetLinkerAttribute (field.DeclaringType, out RequiresUnreferencedCodeAttribute requiresUnreferencedCode) &&
+			if (reason.Kind != DependencyKind.DynamicallyAccessedMemberOnType &&
+				Annotations.DoesFieldRequireUnreferencedCode (field, out RequiresUnreferencedCodeAttribute requiresUnreferencedCodeAttribute) &&
 				!ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode ())
-				ReportRequiresUnreferencedCode (field.GetDisplayName (), requiresUnreferencedCode, _scopeStack.CurrentScope.Origin);
+				ReportRequiresUnreferencedCode (field.GetDisplayName (), requiresUnreferencedCodeAttribute, _scopeStack.CurrentScope.Origin);
 
 			switch (reason.Kind) {
 			case DependencyKind.AccessedViaReflection:
@@ -2915,10 +2906,9 @@ namespace Mono.Linker.Steps
 
 		private void ReportRequiresUnreferencedCode (string displayName, RequiresUnreferencedCodeAttribute requiresUnreferencedCode, MessageOrigin currentOrigin)
 		{
-			string formatString = SharedStrings.RequiresUnreferencedCodeMessage;
 			string arg1 = MessageFormat.FormatRequiresAttributeMessageArg (requiresUnreferencedCode.Message);
 			string arg2 = MessageFormat.FormatRequiresAttributeUrlArg (requiresUnreferencedCode.Url);
-			string message = string.Format (formatString, displayName, arg1, arg2);
+			string message = string.Format (SharedStrings.RequiresUnreferencedCodeMessage, displayName, arg1, arg2);
 			_context.LogWarning (message, 2026, currentOrigin, MessageSubCategory.TrimAnalysis);
 		}
 
