@@ -1168,6 +1168,28 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestInstanceFieldCallDontWarn ();
 			}
 
+			[RequiresUnreferencedCode ("--MemberTypesWithRUC--")]
+			class MemberTypesWithRUC
+			{
+				public static int field;
+				public static int Property { get; set; }
+
+				// These should not be reported https://github.com/mono/linker/issues/2218
+				[ExpectedWarning ("IL2026", "add_Event", GlobalAnalysisOnly = true)]
+				[ExpectedWarning ("IL2026", "remove_Event", GlobalAnalysisOnly = true)]
+				public static event EventHandler Event;
+			}
+
+			[ExpectedWarning ("IL2026", "MemberTypesWithRUC::field", GlobalAnalysisOnly = true)]
+			[ExpectedWarning ("IL2026", "MemberTypesWithRUC.Property.set", GlobalAnalysisOnly = true)]
+			[ExpectedWarning ("IL2026", "MemberTypesWithRUC.remove_Event", GlobalAnalysisOnly = true)]
+			static void TestOtherMemberTypesWithRUC ()
+			{
+				MemberTypesWithRUC.field = 1;
+				MemberTypesWithRUC.Property = 1;
+				MemberTypesWithRUC.Event -= null;
+			}
+
 			class ReflectionAccessOnMethod
 			{
 				// Analyzer still dont understand RUC on type
@@ -1383,6 +1405,145 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				}
 			}
 
+			class ReflectionAccessOnEvents
+			{
+				// Most of the tests in this run into https://github.com/mono/linker/issues/2218
+				// So for now keeping just a very simple test
+
+				[RequiresUnreferencedCode ("--WithRUC--")]
+				class WithRUC
+				{
+					// These should be reported only in TestDirectReflectionAccess
+					// https://github.com/mono/linker/issues/2218
+					[ExpectedWarning ("IL2026", "add_StaticEvent", GlobalAnalysisOnly = true)]
+					[ExpectedWarning ("IL2026", "remove_StaticEvent", GlobalAnalysisOnly = true)]
+					public static event EventHandler StaticEvent;
+				}
+
+				[ExpectedWarning ("IL2026", "add_StaticEvent", GlobalAnalysisOnly = true)]
+				static void TestDirectReflectionAccess ()
+				{
+					typeof (WithRUC).GetEvent (nameof (WithRUC.StaticEvent));
+				}
+
+				public static void Test ()
+				{
+					TestDirectReflectionAccess ();
+				}
+			}
+
+			class ReflectionAccessOnProperties
+			{
+				[RequiresUnreferencedCode ("--WithRUC--")]
+				class WithRUC
+				{
+					public int InstanceProperty { get; set; }
+					public static int StaticProperty { get; set; }
+					private static int PrivateStaticProperty { get; set; }
+				}
+
+				[RequiresUnreferencedCode ("--WithRUCOnlyInstanceProperties--")]
+				class WithRUCOnlyInstanceProperties
+				{
+					public int InstnaceProperty { get; set; }
+				}
+
+				[ExpectedWarning ("IL2109", "ReflectionAccessOnProperties/DerivedWithoutRUC", "ReflectionAccessOnProperties.WithRUC", GlobalAnalysisOnly = true)]
+				class DerivedWithoutRUC : WithRUC
+				{
+					public static int DerivedStaticProperty { get; set; }
+				}
+
+				[RequiresUnreferencedCode ("--DerivedWithRUC--")]
+				class DerivedWithRUC : WithRUC
+				{
+					public static int DerivedStaticProperty { get; set; }
+				}
+
+				[ExpectedWarning ("IL2026", "WithRUC.StaticProperty.get", GlobalAnalysisOnly = true)]
+				[ExpectedWarning ("IL2026", "WithRUC.StaticProperty.set", GlobalAnalysisOnly = true)]
+				[ExpectedWarning ("IL2026", "WithRUC.PrivateStaticProperty.get", GlobalAnalysisOnly = true)]
+				[ExpectedWarning ("IL2026", "WithRUC.PrivateStaticProperty.set", GlobalAnalysisOnly = true)]
+				[ExpectedWarning ("IL2026", "DerivedWithRUC.DerivedStaticProperty.get", GlobalAnalysisOnly = true)]
+				[ExpectedWarning ("IL2026", "DerivedWithRUC.DerivedStaticProperty.set", GlobalAnalysisOnly = true)]
+				static void TestDAMAccess ()
+				{
+					typeof (WithRUC).RequiresPublicProperties ();
+					typeof (WithRUC).RequiresNonPublicProperties ();
+					typeof (WithRUCOnlyInstanceProperties).RequiresPublicProperties ();
+					typeof (DerivedWithoutRUC).RequiresPublicProperties ();
+					typeof (DerivedWithRUC).RequiresPublicProperties ();
+				}
+
+				[ExpectedWarning ("IL2026", "WithRUC.StaticProperty.get", GlobalAnalysisOnly = true)]
+				[ExpectedWarning ("IL2026", "WithRUC.StaticProperty.set", GlobalAnalysisOnly = true)]
+				[ExpectedWarning ("IL2026", "WithRUC.PrivateStaticProperty.get", GlobalAnalysisOnly = true)]
+				[ExpectedWarning ("IL2026", "WithRUC.PrivateStaticProperty.set", GlobalAnalysisOnly = true)]
+				[ExpectedWarning ("IL2026", "DerivedWithRUC.DerivedStaticProperty.get", GlobalAnalysisOnly = true)]
+				[ExpectedWarning ("IL2026", "DerivedWithRUC.DerivedStaticProperty.set", GlobalAnalysisOnly = true)]
+				static void TestDirectReflectionAccess ()
+				{
+					typeof (WithRUC).GetProperty (nameof (WithRUC.StaticProperty));
+					typeof (WithRUC).GetProperty (nameof (WithRUC.InstanceProperty)); // Doesn't warn
+					typeof (WithRUC).GetProperty ("PrivateStaticProperty", BindingFlags.NonPublic);
+					typeof (WithRUCOnlyInstanceProperties).GetProperty (nameof (WithRUCOnlyInstanceProperties.InstnaceProperty)); // Doesn't warn
+					typeof (DerivedWithoutRUC).GetProperty (nameof (DerivedWithRUC.DerivedStaticProperty)); // Doesn't warn
+					typeof (DerivedWithRUC).GetProperty (nameof (DerivedWithRUC.DerivedStaticProperty));
+				}
+
+				[ExpectedWarning ("IL2026", "WithRUC.StaticProperty.get", GlobalAnalysisOnly = true)]
+				[ExpectedWarning ("IL2026", "WithRUC.StaticProperty.set", GlobalAnalysisOnly = true)]
+				[DynamicDependency (nameof (WithRUC.StaticProperty), typeof (WithRUC))]
+				[DynamicDependency (nameof (WithRUC.InstanceProperty), typeof (WithRUC))] // Doesn't warn
+				[DynamicDependency (DynamicallyAccessedMemberTypes.PublicProperties, typeof (DerivedWithoutRUC))] // Doesn't warn
+				[ExpectedWarning ("IL2026", "DerivedWithRUC.DerivedStaticProperty.get", GlobalAnalysisOnly = true)]
+				[ExpectedWarning ("IL2026", "DerivedWithRUC.DerivedStaticProperty.set", GlobalAnalysisOnly = true)]
+				[DynamicDependency (DynamicallyAccessedMemberTypes.PublicProperties, typeof (DerivedWithRUC))]
+				static void TestDynamicDependencyAccess ()
+				{
+				}
+
+				[RequiresUnreferencedCode ("This class is dangerous")]
+				class BaseForDAMAnnotatedClass
+				{
+					public static int baseProperty { get; set; }
+				}
+
+				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.NonPublicProperties)]
+				[RequiresUnreferencedCode ("This class is dangerous")]
+				[ExpectedWarning ("IL2113", "BaseForDAMAnnotatedClass.baseProperty.get", GlobalAnalysisOnly = true)]
+				[ExpectedWarning ("IL2113", "BaseForDAMAnnotatedClass.baseProperty.set", GlobalAnalysisOnly = true)]
+				class DAMAnnotatedClass : BaseForDAMAnnotatedClass
+				{
+					public static int publicProperty {
+						[ExpectedWarning ("IL2112", "DAMAnnotatedClass.publicProperty.get", GlobalAnalysisOnly = true)]
+						get;
+						[ExpectedWarning ("IL2112", "DAMAnnotatedClass.publicProperty.set", GlobalAnalysisOnly = true)]
+						set;
+					}
+
+					static int privateProperty {
+						[ExpectedWarning ("IL2112", "DAMAnnotatedClass.privateProperty.get", GlobalAnalysisOnly = true)]
+						get;
+						[ExpectedWarning ("IL2112", "DAMAnnotatedClass.privateProperty.set", GlobalAnalysisOnly = true)]
+						set;
+					}
+				}
+
+				static void TestDAMOnTypeAccess (DAMAnnotatedClass instance)
+				{
+					instance.GetType ().GetProperty ("publicProperty");
+				}
+
+				public static void Test ()
+				{
+					TestDAMAccess ();
+					TestDirectReflectionAccess ();
+					TestDynamicDependencyAccess ();
+					TestDAMOnTypeAccess (null);
+				}
+			}
+
 			[RequiresUnreferencedCode ("The attribute is dangerous")]
 			public class AttributeWithRUC : Attribute
 			{
@@ -1412,9 +1573,12 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestSuppressionsOnClass ();
 				TestStaticMethodOnRUCTypeSuppressedByRUCOnMethod ();
 				TestStaticConstructorCalls ();
+				TestOtherMemberTypesWithRUC ();
 				ReflectionAccessOnMethod.Test ();
 				ReflectionAccessOnCtor.Test ();
 				ReflectionAccessOnField.Test ();
+				ReflectionAccessOnEvents.Test ();
+				ReflectionAccessOnProperties.Test ();
 				KeepFieldOnAttribute ();
 			}
 		}
