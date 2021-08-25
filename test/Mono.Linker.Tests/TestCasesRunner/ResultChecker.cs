@@ -698,7 +698,8 @@ namespace Mono.Linker.Tests.TestCasesRunner
 								matchedMessages.Count > 0,
 								$"Expected to find logged message matching `{expectedMessage}`, but no such message was found.{Environment.NewLine}Logged messages:{Environment.NewLine}{string.Join (Environment.NewLine, loggedMessages)}");
 
-							loggedMessages.Remove (matchedMessages.First ());
+							foreach (var matchedMessage in matchedMessages)
+								loggedMessages.Remove (matchedMessage);
 						}
 						break;
 
@@ -808,7 +809,8 @@ namespace Mono.Linker.Tests.TestCasesRunner
 								$"and message containing {string.Join (" ", expectedMessageContains.Select (m => "'" + m + "'"))}, " +
 								$"but no such message was found.{Environment.NewLine}Logged messages:{Environment.NewLine}{string.Join (Environment.NewLine, loggedMessages)}");
 
-							loggedMessages.Remove (matchedMessages.First ());
+							foreach (var matchedMessage in matchedMessages)
+								loggedMessages.Remove (matchedMessage);
 						}
 						break;
 
@@ -823,8 +825,6 @@ namespace Mono.Linker.Tests.TestCasesRunner
 							string expectedSourceMember = GetFullMemberNameFromDefinition (attrProvider);
 							string expectedReflectionMember = GetFullMemberNameFromReflectionAccessPatternAttribute (attr, constructorArgumentsOffset: 0, out string expectedReflectionMemberGenericMember);
 							string expectedAccessedItem = GetFullMemberNameFromReflectionAccessPatternAttribute (attr, constructorArgumentsOffset: 3, out string _genericMember);
-
-							var sameSourcePatterns = reflectionPatternRecorder.RecognizedPatterns.Where (p => GetFullMemberNameFromDefinition (p.Source) == expectedSourceMember);
 
 							var matchedPatterns = reflectionPatternRecorder.RecognizedPatterns.Where (pattern => {
 								if (GetFullMemberNameFromDefinition (pattern.Source) != expectedSourceMember)
@@ -909,9 +909,6 @@ namespace Mono.Linker.Tests.TestCasesRunner
 								return true;
 							}).ToList ();
 
-							if (matchedMessages.Any ())
-								loggedMessages.Remove (matchedMessages.First ());
-
 							var matchedPatterns = reflectionPatternRecorder.UnrecognizedPatterns.Where (pattern => {
 								if (GetFullMemberNameFromDefinition (pattern.Source) != expectedSourceMember)
 									return false;
@@ -937,6 +934,9 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 								return true;
 							}).ToList ();
+
+							if (matchedMessages.Any ())
+								loggedMessages.Remove (matchedMessages.First ());
 
 							if (matchedPatterns.Any ())
 								reflectionPatternRecorder.UnrecognizedPatterns.Remove (matchedPatterns.First ());
