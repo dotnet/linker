@@ -1,4 +1,6 @@
-﻿using Mono.Cecil;
+using System;
+using System.Text;
+using Mono.Cecil;
 
 namespace Mono.Linker
 {
@@ -13,8 +15,15 @@ namespace Mono.Linker
 			case MethodReference method:
 				return method.GetDisplayName ();
 
+			case IMemberDefinition memberDef:
+				var sb = new StringBuilder ();
+				if (memberDef.DeclaringType != null)
+					sb.Append (memberDef.DeclaringType.GetDisplayName ()).Append ('.');
+				sb.Append (memberDef.Name);
+				return sb.ToString ();
+
 			default:
-				return member.FullName;
+				throw new NotImplementedException ();
 			}
 		}
 

@@ -467,11 +467,10 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[UnrecognizedReflectionAccessPattern (typeof (Activator), nameof (Activator.CreateInstance) + "<#1>", new Type[0], messageCode: "IL2091")]
-#if NETCOREAPP
+		[ExpectedWarning ("IL2091", nameof (Activator), nameof (Activator.CreateInstance) + "<T>")]
+		[ExpectedWarning ("IL2091", nameof (Activator), nameof (Activator.CreateInstance) + "<T>")]
 		// Warnings are currently duplicated in NETCORE (annotation and intrinsics) - but they're not identical in this case, so we have to list both cases
-		[UnrecognizedReflectionAccessPattern (typeof (Activator), nameof (Activator.CreateInstance) + "<#1>()::T", messageCode: "IL2091")]
-#endif
+		// See https://github.com/mono/linker/issues/1483
 		private static void TestCreateInstanceOfTWithNoConstraint<T> ()
 		{
 			Activator.CreateInstance<T> ();
