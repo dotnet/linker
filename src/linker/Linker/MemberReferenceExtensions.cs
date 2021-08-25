@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Text;
 using Mono.Cecil;
 
@@ -23,7 +23,8 @@ namespace Mono.Linker
 				return sb.ToString ();
 
 			default:
-				throw new NotImplementedException ();
+				Debug.Assert (false, "The display name should not use cecil's signature format.");
+				return member.FullName;
 			}
 		}
 

@@ -729,8 +729,6 @@ namespace Mono.Linker.Tests.TestCasesRunner
 							int expectedWarningCodeNumber = int.Parse (expectedWarningCode.Substring (2));
 							string expectedOrigin = null;
 
-							var partialMatch = loggedMessages.Where (m => m.ToString ().Contains ("--StaticCtorTriggeredByFieldAccess--"));
-
 							var matchedMessages = loggedMessages.Where (mc => {
 								if (mc.Category != MessageCategory.Warning || mc.Code != expectedWarningCodeNumber)
 									return false;
