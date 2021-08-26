@@ -581,7 +581,7 @@ namespace Mono.Linker.Steps
 
 			case MetadataType.ValueType:
 				if (value is string &&
-					_context.TryResolve (target) is var typeDefinition &&
+					_context.TryResolve (target) is TypeDefinition typeDefinition &&
 					typeDefinition.IsEnum) {
 					var enumField = typeDefinition.Fields.Where (f => f.IsStatic && f.Name == value).FirstOrDefault ();
 					if (enumField != null) {

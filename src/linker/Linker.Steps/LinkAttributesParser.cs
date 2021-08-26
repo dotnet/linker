@@ -170,7 +170,8 @@ namespace Mono.Linker.Steps
 					//
 					// No candidates betterness, only exact matches are supported
 					//
-					if (_context.TryResolve (p[ii].ParameterType) != _context.TryResolve (args[ii].Type))
+					var parameterType = _context.TryResolve (p[ii].ParameterType);
+					if (parameterType == null || parameterType != _context.TryResolve (args[ii].Type))
 						match = false;
 				}
 
