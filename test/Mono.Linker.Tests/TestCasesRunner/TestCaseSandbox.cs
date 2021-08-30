@@ -163,22 +163,22 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 		public NPath BeforeReferenceSourceDirectoryFor (string outputName)
 		{
-			return _directory.Combine ($"ref_source_before_{Path.GetFileNameWithoutExtension (outputName)}");
+			return _directory.Combine ($"sb_{Path.GetFileNameWithoutExtension (outputName)}");
 		}
 
 		public NPath AfterReferenceSourceDirectoryFor (string outputName)
 		{
-			return _directory.Combine ($"ref_source_after_{Path.GetFileNameWithoutExtension (outputName)}");
+			return _directory.Combine ($"sa_{Path.GetFileNameWithoutExtension (outputName)}");
 		}
 
 		public NPath BeforeReferenceResourceDirectoryFor (string outputName)
 		{
-			return _directory.Combine ($"ref_resource_before_{Path.GetFileNameWithoutExtension (outputName)}");
+			return _directory.Combine ($"rb_{Path.GetFileNameWithoutExtension (outputName)}");
 		}
 
 		public NPath AfterReferenceResourceDirectoryFor (string outputName)
 		{
-			return _directory.Combine ($"ref_resource_after_{Path.GetFileNameWithoutExtension (outputName)}");
+			return _directory.Combine ($"ra_{Path.GetFileNameWithoutExtension (outputName)}");
 		}
 	}
 }
