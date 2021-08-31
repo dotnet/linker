@@ -1,3 +1,5 @@
+using System;
+using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
@@ -172,6 +174,22 @@ namespace Mono.Linker.Tests.Cases.Libraries
 		[Kept]
 		public interface I
 		{
+		}
+
+		[Kept]
+		[KeptInterface (typeof (IEnumerator))]
+		public class UninstantiatedPublicClassWithInterface : IEnumerator
+		{
+			internal UninstantiatedPublicClassWithInterface () { }
+
+			[Kept]
+			bool IEnumerator.MoveNext () { throw new PlatformNotSupportedException (); }
+
+			[Kept]
+			object IEnumerator.Current { [Kept] get { throw new PlatformNotSupportedException (); } }
+
+			[Kept]
+			void IEnumerator.Reset () {}
 		}
 	}
 

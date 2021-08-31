@@ -2626,6 +2626,9 @@ namespace Mono.Linker.Steps
 						}
 					}
 				}
+
+				if (members.HasFlag (TypePreserveMembers.Library))
+					MarkRequirementsForInstantiatedTypes (type);
 			}
 		}
 
