@@ -191,6 +191,33 @@ namespace Mono.Linker.Tests.Cases.Libraries
 			[Kept]
 			void IEnumerator.Reset () {}
 		}
+
+		[Kept]
+		[KeptInterface (typeof (IPublicInterface))]
+		[KeptInterface (typeof (IInternalInterface))]
+		public class InstantiatedClassWithInterfaces : IPublicInterface, IInternalInterface
+		{
+			[Kept]
+			public InstantiatedClassWithInterfaces () { }
+
+			[Kept]
+			void IPublicInterface.PublicInterfaceMethod () { }
+
+			void IInternalInterface.InternalInterfaceMethod () { }
+		}
+
+		[Kept]
+		public interface IPublicInterface
+		{
+			[Kept]
+			void PublicInterfaceMethod ();
+		}
+
+		[Kept]
+		internal interface IInternalInterface
+		{
+			void InternalInterfaceMethod ();
+		}
 	}
 
 	internal class RootLibrary_Internal

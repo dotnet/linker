@@ -581,11 +581,27 @@ namespace Mono.Linker.Steps
 			foreach ((var type, var scope) in typesWithInterfaces) {
 				// Exception, types that have not been flagged as instantiated yet.  These types may not need their interfaces even if the
 				// interface type is marked
-				if (!Annotations.IsInstantiated (type) && !Annotations.IsRelevantToVariantCasting (type))
+				// UnusedInterfaces optimization is turned off mark all interface implementations
+				bool unusedInterfacesOptimizationEnabled = _context.IsOptimizationEnabled (CodeOptimizations.UnusedInterfaces, type);
+				if (!Annotations.IsInstantiated (type) && !Annotations.IsRelevantToVariantCasting (type) &&
+					unusedInterfacesOptimizationEnabled)
 					continue;
 
 				using (ScopeStack.PushScope (scope))
 					MarkInterfaceImplementations (type);
+
+					if (unusedInterfacesOptimizationEnabled)
+						continue;
+
+					// If the optimization is disabled, make sure to mark all methods which implement interfaces
+					foreach (MethodDefinition method in type.Methods) {
+						if (!IsMethodNeededByTypeToImplementInterface (method))
+							continue;
+
+						if (!Annotations.IsMarked (method))
+							MarkMethod (method, new DependencyInfo (DependencyKind.MethodForInstantiatedType, type));
+					}
+				}
 			}
 		}
 
@@ -2326,6 +2342,29 @@ namespace Mono.Linker.Steps
 			return false;
 		}
 
+		bool IsMethodNeededByTypeToImplementInterface (MethodDefinition method)
+		{
+			if (!method.IsVirtual)
+				return false;
+
+			var base_list = Annotations.GetBaseMethods (method);
+			if (base_list == null)
+				return false;
+
+			foreach (MethodDefinition @base in base_list) {
+				if (!@base.DeclaringType.IsInterface)
+					continue;
+
+				if (IgnoreScope (@base.DeclaringType.Scope))
+					return true;
+
+				if (IsVirtualNeededByTypeDueToPreservedScope (@base))
+					return true;
+			}
+
+			return false;
+		}
+
 		static bool IsSpecialSerializationConstructor (MethodDefinition method)
 		{
 			if (!method.IsInstanceConstructor ())
@@ -2626,9 +2665,6 @@ namespace Mono.Linker.Steps
 						}
 					}
 				}
-
-				if (members.HasFlag (TypePreserveMembers.Library))
-					MarkRequirementsForInstantiatedTypes (type);
 			}
 		}
 
