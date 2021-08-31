@@ -54,7 +54,7 @@ The linker can do the following things on all or individual assemblies
 - `skip` - skip them, and do nothing with them
 - `copy` - copy them to the output directory
 - `copyused` - copy used assemblies to the output directory
-- `link` - link them to reduce their size
+- `link` - trim them to reduce their size
 - `delete`- remove them from the output
 - `save` - save them in memory without trimming
 
