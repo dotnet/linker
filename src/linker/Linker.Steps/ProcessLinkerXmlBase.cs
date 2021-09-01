@@ -114,7 +114,7 @@ namespace Mono.Linker.Steps
 				// skipped due to feature conditions.
 				bool processAllAssemblies = ShouldProcessAllAssemblies (assemblyNav, out AssemblyNameReference name);
 				if (processAllAssemblies && AllowedAssemblySelector != AllowedAssemblies.AllAssemblies) {
-					LogWarning ($"XML contains unsupported wildcard for assembly \"fullname\" attribute", 2100, assemblyNav);
+					LogWarning ($"XML contains unsupported wildcard for assembly 'fullname' attribute.", 2100, assemblyNav);
 					continue;
 				}
 
@@ -122,7 +122,7 @@ namespace Mono.Linker.Steps
 				if (!AllowedAssemblySelector.HasFlag (AllowedAssemblies.AnyAssembly)) {
 					Debug.Assert (!processAllAssemblies);
 					if (_resourceAssembly.Name.Name != name.Name) {
-						LogWarning ($"Embedded XML in assembly '{_resourceAssembly.Name.Name}' contains assembly \"fullname\" attribute for another assembly '{name}'", 2101, assemblyNav);
+						LogWarning ($"Embedded XML in assembly '{_resourceAssembly.Name.Name}' contains assembly 'fullname' attribute for another assembly '{name}'.", 2101, assemblyNav);
 						continue;
 					}
 					assemblyToProcess = _resourceAssembly;
@@ -139,7 +139,7 @@ namespace Mono.Linker.Steps
 					AssemblyDefinition assembly = assemblyToProcess ?? _context.TryResolve (name);
 
 					if (assembly == null) {
-						LogWarning ($"Could not resolve assembly '{name.Name}'", 2007, assemblyNav);
+						LogWarning ($"Could not resolve assembly '{name.Name}'.", 2007, assemblyNav);
 						continue;
 					}
 
@@ -180,7 +180,7 @@ namespace Mono.Linker.Steps
 
 				if (type == null) {
 					if (warnOnUnresolvedTypes)
-						LogWarning ($"Could not resolve type '{fullname}'", 2008, typeNav);
+						LogWarning ($"Could not resolve type '{fullname}'.", 2008, typeNav);
 					continue;
 				}
 
@@ -255,7 +255,7 @@ namespace Mono.Linker.Steps
 			if (!String.IsNullOrEmpty (signature)) {
 				FieldDefinition field = GetField (type, signature);
 				if (field == null) {
-					LogWarning ($"Could not find field '{signature}' on type '{type.GetDisplayName ()}'", 2012, nav);
+					LogWarning ($"Could not find field '{signature}' on type '{type.GetDisplayName ()}'.", 2012, nav);
 					return;
 				}
 
@@ -275,7 +275,7 @@ namespace Mono.Linker.Steps
 				}
 
 				if (!foundMatch) {
-					LogWarning ($"Could not find field '{name}' on type '{type.GetDisplayName ()}'", 2012, nav);
+					LogWarning ($"Could not find field '{name}' on type '{type.GetDisplayName ()}'.", 2012, nav);
 				}
 			}
 		}
@@ -313,7 +313,7 @@ namespace Mono.Linker.Steps
 			if (!String.IsNullOrEmpty (signature)) {
 				MethodDefinition method = GetMethod (type, signature);
 				if (method == null) {
-					LogWarning ($"Could not find method '{signature}' on type '{type.GetDisplayName ()}'", 2009, nav);
+					LogWarning ($"Could not find method '{signature}' on type '{type.GetDisplayName ()}'.", 2009, nav);
 					return;
 				}
 
@@ -333,7 +333,7 @@ namespace Mono.Linker.Steps
 				}
 
 				if (!foundMatch) {
-					LogWarning ($"Could not find method '{name}' on type '{type.GetDisplayName ()}'", 2009, nav);
+					LogWarning ($"Could not find method '{name}' on type '{type.GetDisplayName ()}'.", 2009, nav);
 				}
 			}
 		}
@@ -361,7 +361,7 @@ namespace Mono.Linker.Steps
 			if (!String.IsNullOrEmpty (signature)) {
 				EventDefinition @event = GetEvent (type, signature);
 				if (@event == null) {
-					LogWarning ($"Could not find event '{signature}' on type '{type.GetDisplayName ()}'", 2016, nav);
+					LogWarning ($"Could not find event '{signature}' on type '{type.GetDisplayName ()}'.", 2016, nav);
 					return;
 				}
 
@@ -379,7 +379,7 @@ namespace Mono.Linker.Steps
 				}
 
 				if (!foundMatch) {
-					LogWarning ($"Could not find event '{name}' on type '{type.GetDisplayName ()}'", 2016, nav);
+					LogWarning ($"Could not find event '{name}' on type '{type.GetDisplayName ()}'.", 2016, nav);
 				}
 			}
 		}
@@ -417,7 +417,7 @@ namespace Mono.Linker.Steps
 			if (!String.IsNullOrEmpty (signature)) {
 				PropertyDefinition property = GetProperty (type, signature);
 				if (property == null) {
-					LogWarning ($"Could not find property '{signature}' on type '{type.GetDisplayName ()}'", 2017, nav);
+					LogWarning ($"Could not find property '{signature}' on type '{type.GetDisplayName ()}'.", 2017, nav);
 					return;
 				}
 
@@ -435,7 +435,7 @@ namespace Mono.Linker.Steps
 				}
 
 				if (!foundMatch) {
-					LogWarning ($"Could not find property '{name}' on type '{type.GetDisplayName ()}'", 2017, nav);
+					LogWarning ($"Could not find property '{name}' on type '{type.GetDisplayName ()}'.", 2017, nav);
 				}
 			}
 		}
