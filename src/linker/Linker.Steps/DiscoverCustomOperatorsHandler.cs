@@ -133,7 +133,7 @@ namespace Mono.Linker.Steps
 			// that we need to unwrap until we get to the Nullable<T>
 			while (!type.IsGenericInstance) {
 				Debug.Assert (type is TypeSpecification);
-				type = (type as TypeSpecification).ElementType;
+				type = ((TypeSpecification) type).ElementType;
 			}
 			var nullableType = type as GenericInstanceType;
 			Debug.Assert (nullableType != null && nullableType.HasGenericArguments && nullableType.GenericArguments.Count == 1);
