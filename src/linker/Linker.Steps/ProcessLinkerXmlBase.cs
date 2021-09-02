@@ -297,8 +297,7 @@ namespace Mono.Linker.Steps
 
 		void ProcessSelectedMethods (XPathNavigator nav, TypeDefinition type, object? customData)
 		{
-			foreach (XPathNavigator methodNav in nav.SelectChildren (MethodElementName, XmlNamespace))
-			{
+			foreach (XPathNavigator methodNav in nav.SelectChildren (MethodElementName, XmlNamespace)) {
 				if (!ShouldProcessElement (methodNav))
 					continue;
 				ProcessMethod (type, methodNav, customData);

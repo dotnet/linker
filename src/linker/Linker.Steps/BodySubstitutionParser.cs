@@ -46,7 +46,8 @@ namespace Mono.Linker.Steps
 			ProcessTypeChildren (type, nav);
 		}
 
-		protected override void ProcessMethod (TypeDefinition type, XPathNavigator methodNav, object? _customData) {
+		protected override void ProcessMethod (TypeDefinition type, XPathNavigator methodNav, object? _customData)
+		{
 			Debug.Assert (_substitutionInfo != null);
 			string signature = GetSignature (methodNav);
 			if (string.IsNullOrEmpty (signature))
