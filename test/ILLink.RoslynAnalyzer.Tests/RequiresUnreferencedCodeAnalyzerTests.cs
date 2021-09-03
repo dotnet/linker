@@ -942,10 +942,7 @@ class C
 	}
 }";
 
-			return VerifyRequiresUnreferencedCodeAnalyzer (source,
-				// (9,3): warning IL2060: Call to 'System.Reflection.MethodInfo.MakeGenericMethod(params System.Type[])' can not be statically analyzed.
-				// It's not possible to guarantee the availability of requirements of the generic method.
-				VerifyCS.Diagnostic (DiagnosticId.MakeGenericMethod).WithSpan (9, 3, 9, 44).WithArguments ("System.Reflection.MethodInfo.MakeGenericMethod(params System.Type[])"));
+			return VerifyRequiresUnreferencedCodeAnalyzer (source);
 		}
 
 		[Fact]
@@ -969,10 +966,7 @@ class C
 	}
 }";
 
-			return VerifyRequiresUnreferencedCodeAnalyzer (source,
-				// (9,3): warning IL2055: Call to 'System.Type.MakeGenericType(params System.Type[])' can not be statically analyzed.
-				// It's not possible to guarantee the availability of requirements of the generic type.
-				VerifyCS.Diagnostic (DiagnosticId.MakeGenericType).WithSpan (9, 3, 9, 51).WithArguments ("System.Type.MakeGenericType(params System.Type[])"));
+			return VerifyRequiresUnreferencedCodeAnalyzer (source);
 		}
 	}
 }

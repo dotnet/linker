@@ -70,13 +70,8 @@ namespace ILLink.RoslynAnalyzer
 
 		protected override bool ReportSpecialIncompatibleMembersDiagnostic (OperationAnalysisContext operationContext, ImmutableArray<ISymbol> specialIncompatibleMembers, ISymbol member)
 		{
-			if (member is IMethodSymbol method && ImmutableArrayOperations.Contains (specialIncompatibleMembers, member, SymbolEqualityComparer.Default)) {
-				if (method.Name == "MakeGenericType") {
-					operationContext.ReportDiagnostic (Diagnostic.Create (s_makeGenericTypeRule, operationContext.Operation.Syntax.GetLocation (), method.GetDisplayName ()));
-				} else if (method.Name == "MakeGenericMethod") {
-					operationContext.ReportDiagnostic (Diagnostic.Create (s_makeGenericMethodRule, operationContext.Operation.Syntax.GetLocation (), method.GetDisplayName ()));
-				}
-
+			if (member is IMethodSymbol method && ImmutableArrayOperations.Contains (specialIncompatibleMembers, member, SymbolEqualityComparer.Default) &&
+				(method.Name == "MakeGenericMethod" || method.Name == "MakeGenericType")) {
 				return true;
 			}
 
