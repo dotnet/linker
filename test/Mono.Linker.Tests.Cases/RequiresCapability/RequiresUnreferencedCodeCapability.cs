@@ -80,6 +80,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			AccessThroughPInvoke.Test ();
 			OnEventMethod.Test ();
 			AccessThroughNewConstraint.Test ();
+			AccessThroughNewConstraint.TestNewConstraintOnTypeParameter ();
 			AccessThroughLdToken.Test ();
 			RequiresOnClass.Test ();
 		}
@@ -770,18 +771,28 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		class AccessThroughNewConstraint
 		{
-			class NewConstrainTestType
+			class NewConstraintTestType
 			{
-				[RequiresUnreferencedCode ("Message for --NewConstrainTestType.ctor--")]
-				public NewConstrainTestType () { }
+				[RequiresUnreferencedCode ("Message for --NewConstraintTestType.ctor--")]
+				public NewConstraintTestType () { }
 			}
 
 			static void GenericMethod<T> () where T : new() { }
 
-			[ExpectedWarning ("IL2026", "--NewConstrainTestType.ctor--")]
+			[ExpectedWarning ("IL2026", "--NewConstraintTestType.ctor--")]
 			public static void Test ()
 			{
-				GenericMethod<NewConstrainTestType> ();
+				GenericMethod<NewConstraintTestType> ();
+			}
+
+			class NewConstaintOnTypeParameter<T> where T : new()
+			{
+			}
+
+			[ExpectedWarning ("IL2026", "--NewConstraintTestType.ctor--")]
+			public static void TestNewConstraintOnTypeParameter ()
+			{
+				_ = new NewConstaintOnTypeParameter<NewConstraintTestType> ();
 			}
 		}
 

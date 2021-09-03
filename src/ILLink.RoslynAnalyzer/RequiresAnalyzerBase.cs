@@ -35,8 +35,8 @@ namespace ILLink.RoslynAnalyzer
 				var compilation = context.Compilation;
 				if (!IsAnalyzerEnabled (context.Options, compilation))
 					return;
-				var incompatibleMembers = GetSpecialIncompatibleMembers (compilation);
 
+				var incompatibleMembers = GetSpecialIncompatibleMembers (compilation);
 				context.RegisterSymbolAction (symbolAnalysisContext => {
 					var methodSymbol = (IMethodSymbol) symbolAnalysisContext.Symbol;
 					CheckMatchingAttributesInOverrides (symbolAnalysisContext, methodSymbol);

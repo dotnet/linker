@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using ILLink.Shared;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -32,19 +33,30 @@ namespace ILLink.RoslynAnalyzer
 				operationContext.Operation.Syntax.GetLocation ()));
 		};
 
+		[SuppressMessage ("MicrosoftCodeAnalysisPerformance", "RS1008",
+			Justification = "This action is registered through a compilation start action, so that the instances which " +
+			"can register this operation action will not outlive a compilation's lifetime, avoiding the possibility of " +
+			"this data causing stale compilations to remain in memory.")]
 		static readonly Action<OperationAnalysisContext> s_constructorConstraint = operationContext => {
-			var invocationOperation = (IInvocationOperation) operationContext.Operation;
 			if (FindContainingSymbol (operationContext, DiagnosticTargets.All) is not ISymbol containingSymbol ||
 			containingSymbol.HasAttribute (RequiresUnreferencedCodeAttribute))
 				return;
 
-			var targetMethod = invocationOperation.TargetMethod;
-			if (!targetMethod.IsGenericMethod)
-				return;
+			var typeParams = ImmutableArray<ITypeParameterSymbol>.Empty;
+			var typeArgs = ImmutableArray<ITypeSymbol>.Empty;
+			if (operationContext.Operation is IObjectCreationOperation objectCreationOperation &&
+				objectCreationOperation.Type is INamedTypeSymbol objectType && objectType.IsGenericType) {
+				typeParams = objectType.TypeParameters;
+				typeArgs = objectType.TypeArguments;
+			} else if (operationContext.Operation is IInvocationOperation invocationOperation &&
+				invocationOperation.TargetMethod is IMethodSymbol targetMethod && targetMethod.IsGenericMethod) {
+				typeParams = targetMethod.TypeParameters;
+				typeArgs = targetMethod.TypeArguments;
+			}
 
-			for (int i = 0; i < targetMethod.TypeParameters.Length; i++) {
-				var typeParameter = targetMethod.TypeParameters[i];
-				var typeArgument = targetMethod.TypeArguments[i];
+			for (int i = 0; i < typeParams.Length; i++) {
+				var typeParameter = typeParams[i];
+				var typeArgument = typeArgs[i];
 				if (!typeParameter.HasConstructorConstraint)
 					continue;
 
@@ -84,7 +96,7 @@ namespace ILLink.RoslynAnalyzer
 			get {
 				var diagsBuilder = ImmutableArray.CreateBuilder<(Action<OperationAnalysisContext>, OperationKind[])> ();
 				diagsBuilder.Add ((s_dynamicTypeInvocation, new OperationKind[] { OperationKind.DynamicInvocation }));
-				diagsBuilder.Add ((s_constructorConstraint, new OperationKind[] { OperationKind.Invocation }));
+				diagsBuilder.Add ((s_constructorConstraint, new OperationKind[] { OperationKind.Invocation, OperationKind.ObjectCreation }));
 
 				return diagsBuilder.ToImmutable ();
 			}
