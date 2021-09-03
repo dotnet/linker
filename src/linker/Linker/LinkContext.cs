@@ -31,6 +31,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -488,7 +489,7 @@ namespace Mono.Linker
 			return _parameters.ContainsKey (key);
 		}
 
-		public bool TryGetCustomData (string key, out string? value)
+		public bool TryGetCustomData (string key, [NotNullWhen (true)] out string? value)
 		{
 			return _parameters.TryGetValue (key, out value);
 		}
