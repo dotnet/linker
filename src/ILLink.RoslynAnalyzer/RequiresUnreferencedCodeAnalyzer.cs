@@ -7,6 +7,7 @@ using System.Collections.Immutable;
 using ILLink.Shared;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace ILLink.RoslynAnalyzer
 {
@@ -31,6 +32,38 @@ namespace ILLink.RoslynAnalyzer
 				operationContext.Operation.Syntax.GetLocation ()));
 		};
 
+		static readonly Action<OperationAnalysisContext> s_constructorConstraint = operationContext => {
+			var invocationOperation = (IInvocationOperation) operationContext.Operation;
+			if (FindContainingSymbol (operationContext, DiagnosticTargets.All) is not ISymbol containingSymbol ||
+			containingSymbol.HasAttribute (RequiresUnreferencedCodeAttribute))
+				return;
+
+			var targetMethod = invocationOperation.TargetMethod;
+			if (!targetMethod.IsGenericMethod)
+				return;
+
+			for (int i = 0; i < targetMethod.TypeParameters.Length; i++) {
+				var typeParameter = targetMethod.TypeParameters[i];
+				var typeArgument = targetMethod.TypeArguments[i];
+				if (!typeParameter.HasConstructorConstraint)
+					continue;
+
+				var typeArgCtors = ((INamedTypeSymbol) typeArgument).InstanceConstructors;
+				foreach (var instanceCtor in typeArgCtors) {
+					if (instanceCtor.Arity > 0)
+						continue;
+
+					if (instanceCtor.TryGetAttribute (RequiresUnreferencedCodeAttribute, out var requiresUnreferencedCodeAttribute)) {
+						operationContext.ReportDiagnostic (Diagnostic.Create (s_requiresUnreferencedCodeRule,
+							operationContext.Operation.Syntax.GetLocation (),
+							containingSymbol.GetDisplayName (),
+							(string) requiresUnreferencedCodeAttribute.ConstructorArguments[0].Value!,
+							GetUrlFromAttribute (requiresUnreferencedCodeAttribute)));
+					}
+				}
+			}
+		};
+
 		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
 			ImmutableArray.Create (s_dynamicTypeInvocationRule, s_requiresUnreferencedCodeRule, s_requiresUnreferencedCodeAttributeMismatch);
 
@@ -47,8 +80,15 @@ namespace ILLink.RoslynAnalyzer
 		protected override bool IsAnalyzerEnabled (AnalyzerOptions options, Compilation compilation) =>
 			options.IsMSBuildPropertyValueTrue (MSBuildPropertyOptionNames.EnableTrimAnalyzer, compilation);
 
-		private protected override ImmutableArray<(Action<OperationAnalysisContext> Action, OperationKind[] OperationKind)> ExtraOperationActions =>
-			ImmutableArray.Create ((s_dynamicTypeInvocation, new OperationKind[] { OperationKind.DynamicInvocation }));
+		private protected override ImmutableArray<(Action<OperationAnalysisContext> Action, OperationKind[] OperationKind)> ExtraOperationActions {
+			get {
+				var diagsBuilder = ImmutableArray.CreateBuilder<(Action<OperationAnalysisContext>, OperationKind[])> ();
+				diagsBuilder.Add ((s_dynamicTypeInvocation, new OperationKind[] { OperationKind.DynamicInvocation }));
+				diagsBuilder.Add ((s_constructorConstraint, new OperationKind[] { OperationKind.Invocation }));
+
+				return diagsBuilder.ToImmutable ();
+			}
+		}
 
 		protected override bool VerifyAttributeArguments (AttributeData attribute) =>
 			attribute.ConstructorArguments.Length >= 1 && attribute.ConstructorArguments[0] is { Type: { SpecialType: SpecialType.System_String } } ctorArg;

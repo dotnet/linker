@@ -263,7 +263,7 @@ namespace ILLink.RoslynAnalyzer
 
 		protected abstract string GetMessageFromAttribute (AttributeData requiresAttribute);
 
-		private string GetUrlFromAttribute (AttributeData? requiresAttribute)
+		public static string GetUrlFromAttribute (AttributeData? requiresAttribute)
 		{
 			var url = requiresAttribute?.NamedArguments.FirstOrDefault (na => na.Key == "Url").Value.Value?.ToString ();
 			return MessageFormat.FormatRequiresAttributeUrlArg (url);

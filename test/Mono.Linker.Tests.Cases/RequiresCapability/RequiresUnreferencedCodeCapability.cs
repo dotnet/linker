@@ -778,8 +778,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 			static void GenericMethod<T> () where T : new() { }
 
-			// https://github.com/mono/linker/issues/2117
-			[ExpectedWarning ("IL2026", "--NewConstrainTestType.ctor--", GlobalAnalysisOnly = true)]
+			[ExpectedWarning ("IL2026", "--NewConstrainTestType.ctor--")]
 			public static void Test ()
 			{
 				GenericMethod<NewConstrainTestType> ();
