@@ -925,7 +925,10 @@ namespace Mono.Linker.Steps
 				//
 				// Resolve to type definition to remove any type forwarding imports
 				//
-				TypeDefinition td = resolver.TryResolve (type);
+				// Workaround for https://github.com/mono/linker/issues/2260
+#pragma warning disable RS0030 // Do not used banned APIs
+				TypeDefinition td = type.Resolve ();
+#pragma warning restore RS0030 // Do not used banned APIs
 				if (td == null) {
 					//
 					// This can happen when not all assembly refences were provided and we
