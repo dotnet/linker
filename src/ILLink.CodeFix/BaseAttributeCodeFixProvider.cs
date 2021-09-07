@@ -44,7 +44,7 @@ namespace ILLink.CodeFix
 
 			var attributableSymbol = model!.GetDeclaredSymbol (attributableNode)!;
 			var attributeSymbol = model!.Compilation.GetTypeByMetadataName (FullyQualifiedAttributeName)!;
-			var attributeArguments = GetAttributeArguments (SyntaxGenerator.GetGenerator (document), attributableSymbol, targetSymbol, diagnostic);
+			var attributeArguments = GetAttributeArguments (attributableSymbol, targetSymbol, SyntaxGenerator.GetGenerator (document), diagnostic);
 			var codeFixTitle = CodeFixTitle.ToString ();
 
 			context.RegisterCodeFix (CodeAction.Create (
@@ -63,21 +63,12 @@ namespace ILLink.CodeFix
 		{
 			var editor = await DocumentEditor.CreateAsync (document, cancellationToken).ConfigureAwait (false);
 			var generator = editor.Generator;
-			var attribute = CreateNewAttribute (generator, attributeSymbol, attributeArguments);
-			editor.AddAttribute (targetNode, attribute);
-			return editor.GetChangedDocument ();
-		}
-
-		private static SyntaxNode CreateNewAttribute (
-			SyntaxGenerator syntaxGenerator,
-			ITypeSymbol attributeSymbol,
-			SyntaxNode[] attributeArguments)
-		{
-			var attribute = syntaxGenerator.Attribute (
-				syntaxGenerator.TypeExpression (attributeSymbol), attributeArguments)
+			var attribute = generator.Attribute (
+				generator.TypeExpression (attributeSymbol), attributeArguments)
 				.WithAdditionalAnnotations (Simplifier.Annotation, Simplifier.AddImportsAnnotation);
 
-			return attribute;
+			editor.AddAttribute (targetNode, attribute);
+			return editor.GetChangedDocument ();
 		}
 
 		[Flags]
@@ -114,9 +105,9 @@ namespace ILLink.CodeFix
 		}
 
 		protected abstract SyntaxNode[] GetAttributeArguments (
-			SyntaxGenerator syntaxGenerator,
 			ISymbol attributableSymbol,
 			ISymbol targetSymbol,
+			SyntaxGenerator syntaxGenerator,
 			Diagnostic diagnostic);
 
 		protected static bool HasPublicAccessibility (ISymbol? m)

@@ -31,7 +31,7 @@ namespace ILLink.CodeFix
 
 		public sealed override Task RegisterCodeFixesAsync (CodeFixContext context) => BaseRegisterCodeFixesAsync (context);
 
-		protected override SyntaxNode[] GetAttributeArguments (SyntaxGenerator syntaxGenerator, ISymbol attributableSymbol, ISymbol targetSymbol, Diagnostic diagnostic)
+		protected override SyntaxNode[] GetAttributeArguments (ISymbol attributableSymbol, ISymbol targetSymbol, SyntaxGenerator syntaxGenerator, Diagnostic diagnostic)
 		{
 			var symbolDisplayName = targetSymbol.GetDisplayName ();
 			if (string.IsNullOrEmpty (symbolDisplayName) || HasPublicAccessibility (attributableSymbol))
