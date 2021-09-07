@@ -568,7 +568,9 @@ namespace Mono.Linker.Steps
 		{
 			readonly AssemblyDefinition assembly;
 			readonly DefaultMetadataImporter importer;
+#pragma warning disable IDE0052 // Remove unread private members
 			readonly ITryResolveMetadata resolver;
+#pragma warning restore IDE0052 // Remove unread private members
 
 			HashSet<TypeReference> updated;
 			bool changedAnyScopes;
