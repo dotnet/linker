@@ -35,9 +35,10 @@ namespace ILLink.RoslynAnalyzer
 		};
 
 		[SuppressMessage ("MicrosoftCodeAnalysisPerformance", "RS1008",
-			Justification = "This action is registered through a compilation start action, so that the instances which " +
-			"can register this operation action will not outlive a compilation's lifetime, avoiding the possibility of " +
-			"this data causing stale compilations to remain in memory.")]
+			Justification = "Storing per-compilation data inside a diagnostic analyzer might cause stale compilations to remain alive." +
+				"This action is registered through a compilation start action, so that instances that register this syntax" +
+				" node action will not outlive a compilation's lifetime, avoiding the possibility of the locals stored in" +
+				" this function to cause for any stale compilations to remain in memory.")]
 		static readonly Action<SyntaxNodeAnalysisContext> s_constructorConstraint = syntaxNodeAnalysisContext => {
 			var model = syntaxNodeAnalysisContext.SemanticModel;
 			if (syntaxNodeAnalysisContext.ContainingSymbol is not ISymbol containingSymbol || containingSymbol.HasAttribute (RequiresUnreferencedCodeAttribute))
