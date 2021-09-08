@@ -256,7 +256,7 @@ namespace Mono.Linker.Steps
 				SweepAssemblyReferences (assembly);
 		}
 
-		bool SweepAssemblyReferences (AssemblyDefinition assembly)
+		static bool SweepAssemblyReferences (AssemblyDefinition assembly)
 		{
 			//
 			// We used to run over list returned by GetTypeReferences but
@@ -266,7 +266,7 @@ namespace Mono.Linker.Steps
 			//
 			assembly.MainModule.AssemblyReferences.Clear ();
 
-			var ars = new AssemblyReferencesCorrector (assembly, Context);
+			var ars = new AssemblyReferencesCorrector (assembly);
 			return ars.Process ();
 		}
 
@@ -568,18 +568,14 @@ namespace Mono.Linker.Steps
 		{
 			readonly AssemblyDefinition assembly;
 			readonly DefaultMetadataImporter importer;
-#pragma warning disable IDE0052 // Remove unread private members
-			readonly ITryResolveMetadata resolver;
-#pragma warning restore IDE0052 // Remove unread private members
 
 			HashSet<TypeReference> updated;
 			bool changedAnyScopes;
 
-			public AssemblyReferencesCorrector (AssemblyDefinition assembly, ITryResolveMetadata resolver)
+			public AssemblyReferencesCorrector (AssemblyDefinition assembly)
 			{
 				this.assembly = assembly;
 				this.importer = new DefaultMetadataImporter (assembly.MainModule);
-				this.resolver = resolver;
 
 				updated = null;
 				changedAnyScopes = false;
