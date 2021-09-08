@@ -62,8 +62,8 @@ namespace ILLink.RoslynAnalyzer
 			}
 
 			for (int i = 0; i < typeParams.Length; i++) {
-				var typeParam = typeParams [i];
-				var typeArg = typeArgs [i];
+				var typeParam = typeParams[i];
+				var typeArg = typeArgs[i];
 				if (!typeParam.HasConstructorConstraint)
 					continue;
 
