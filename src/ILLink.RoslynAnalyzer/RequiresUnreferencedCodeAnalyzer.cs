@@ -7,8 +7,9 @@ using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using ILLink.Shared;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
-using Microsoft.CodeAnalysis.Operations;
 
 namespace ILLink.RoslynAnalyzer
 {
@@ -37,37 +38,43 @@ namespace ILLink.RoslynAnalyzer
 			Justification = "This action is registered through a compilation start action, so that the instances which " +
 			"can register this operation action will not outlive a compilation's lifetime, avoiding the possibility of " +
 			"this data causing stale compilations to remain in memory.")]
-		static readonly Action<OperationAnalysisContext> s_constructorConstraint = operationContext => {
-			if (FindContainingSymbol (operationContext, DiagnosticTargets.All) is not ISymbol containingSymbol ||
-			containingSymbol.HasAttribute (RequiresUnreferencedCodeAttribute))
+		static readonly Action<SyntaxNodeAnalysisContext> s_constructorConstraint = syntaxNodeAnalysisContext => {
+			var model = syntaxNodeAnalysisContext.SemanticModel;
+			if (syntaxNodeAnalysisContext.ContainingSymbol is not ISymbol containingSymbol || containingSymbol.HasAttribute (RequiresUnreferencedCodeAttribute))
 				return;
 
+			GenericNameSyntax genericNameSyntaxNode = (GenericNameSyntax) syntaxNodeAnalysisContext.Node;
 			var typeParams = ImmutableArray<ITypeParameterSymbol>.Empty;
 			var typeArgs = ImmutableArray<ITypeSymbol>.Empty;
-			if (operationContext.Operation is IObjectCreationOperation objectCreationOperation &&
-				objectCreationOperation.Type is INamedTypeSymbol objectType && objectType.IsGenericType) {
-				typeParams = objectType.TypeParameters;
-				typeArgs = objectType.TypeArguments;
-			} else if (operationContext.Operation is IInvocationOperation invocationOperation &&
-				invocationOperation.TargetMethod is IMethodSymbol targetMethod && targetMethod.IsGenericMethod) {
-				typeParams = targetMethod.TypeParameters;
-				typeArgs = targetMethod.TypeArguments;
+			switch (model.GetSymbolInfo (genericNameSyntaxNode).Symbol) {
+			case INamedTypeSymbol typeSymbol:
+				typeParams = typeSymbol.TypeParameters;
+				typeArgs = typeSymbol.TypeArguments;
+				break;
+
+			case IMethodSymbol methodSymbol:
+				typeParams = methodSymbol.TypeParameters;
+				typeArgs = methodSymbol.TypeArguments;
+				break;
+
+			default:
+				return;
 			}
 
 			for (int i = 0; i < typeParams.Length; i++) {
-				var typeParameter = typeParams[i];
-				var typeArgument = typeArgs[i];
-				if (!typeParameter.HasConstructorConstraint)
+				var typeParam = typeParams [i];
+				var typeArg = typeArgs [i];
+				if (!typeParam.HasConstructorConstraint)
 					continue;
 
-				var typeArgCtors = ((INamedTypeSymbol) typeArgument).InstanceConstructors;
+				var typeArgCtors = ((INamedTypeSymbol) typeArg).InstanceConstructors;
 				foreach (var instanceCtor in typeArgCtors) {
 					if (instanceCtor.Arity > 0)
 						continue;
 
 					if (instanceCtor.TryGetAttribute (RequiresUnreferencedCodeAttribute, out var requiresUnreferencedCodeAttribute)) {
-						operationContext.ReportDiagnostic (Diagnostic.Create (s_requiresUnreferencedCodeRule,
-							operationContext.Operation.Syntax.GetLocation (),
+						syntaxNodeAnalysisContext.ReportDiagnostic (Diagnostic.Create (s_requiresUnreferencedCodeRule,
+							syntaxNodeAnalysisContext.Node.GetLocation (),
 							containingSymbol.GetDisplayName (),
 							(string) requiresUnreferencedCodeAttribute.ConstructorArguments[0].Value!,
 							GetUrlFromAttribute (requiresUnreferencedCodeAttribute)));
@@ -92,15 +99,11 @@ namespace ILLink.RoslynAnalyzer
 		protected override bool IsAnalyzerEnabled (AnalyzerOptions options, Compilation compilation) =>
 			options.IsMSBuildPropertyValueTrue (MSBuildPropertyOptionNames.EnableTrimAnalyzer, compilation);
 
-		private protected override ImmutableArray<(Action<OperationAnalysisContext> Action, OperationKind[] OperationKind)> ExtraOperationActions {
-			get {
-				var diagsBuilder = ImmutableArray.CreateBuilder<(Action<OperationAnalysisContext>, OperationKind[])> ();
-				diagsBuilder.Add ((s_dynamicTypeInvocation, new OperationKind[] { OperationKind.DynamicInvocation }));
-				diagsBuilder.Add ((s_constructorConstraint, new OperationKind[] { OperationKind.Invocation, OperationKind.ObjectCreation }));
+		private protected override ImmutableArray<(Action<OperationAnalysisContext> Action, OperationKind[] OperationKind)> ExtraOperationActions =>
+			ImmutableArray.Create ((s_dynamicTypeInvocation, new OperationKind[] { OperationKind.DynamicInvocation }));
 
-				return diagsBuilder.ToImmutable ();
-			}
-		}
+		private protected override ImmutableArray<(Action<SyntaxNodeAnalysisContext> Action, SyntaxKind[] SyntaxKind)> ExtraSyntaxNodeActions =>
+			ImmutableArray.Create ((s_constructorConstraint, new SyntaxKind[] { SyntaxKind.GenericName }));
 
 		protected override bool VerifyAttributeArguments (AttributeData attribute) =>
 			attribute.ConstructorArguments.Length >= 1 && attribute.ConstructorArguments[0] is { Type: { SpecialType: SpecialType.System_String } } ctorArg;

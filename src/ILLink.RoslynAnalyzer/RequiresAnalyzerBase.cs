@@ -8,6 +8,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using ILLink.Shared;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 
@@ -26,6 +27,8 @@ namespace ILLink.RoslynAnalyzer
 		private protected abstract DiagnosticDescriptor RequiresAttributeMismatch { get; }
 
 		private protected virtual ImmutableArray<(Action<OperationAnalysisContext> Action, OperationKind[] OperationKind)> ExtraOperationActions { get; } = ImmutableArray<(Action<OperationAnalysisContext> Action, OperationKind[] OperationKind)>.Empty;
+
+		private protected virtual ImmutableArray<(Action<SyntaxNodeAnalysisContext> Action, SyntaxKind[] SyntaxKind)> ExtraSyntaxNodeActions { get; } = ImmutableArray<(Action<SyntaxNodeAnalysisContext> Action, SyntaxKind[] SyntaxKind)>.Empty;
 
 		public override void Initialize (AnalysisContext context)
 		{
@@ -118,6 +121,9 @@ namespace ILLink.RoslynAnalyzer
 				// Register any extra operation actions supported by the analyzer.
 				foreach (var extraOperationAction in ExtraOperationActions)
 					context.RegisterOperationAction (extraOperationAction.Action, extraOperationAction.OperationKind);
+
+				foreach (var extraSyntaxNodeAction in ExtraSyntaxNodeActions)
+					context.RegisterSyntaxNodeAction (extraSyntaxNodeAction.Action, extraSyntaxNodeAction.SyntaxKind);
 
 				void CheckStaticConstructors (OperationAnalysisContext operationContext,
 					ImmutableArray<IMethodSymbol> staticConstructors)

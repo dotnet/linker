@@ -81,6 +81,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			OnEventMethod.Test ();
 			AccessThroughNewConstraint.Test ();
 			AccessThroughNewConstraint.TestNewConstraintOnTypeParameter ();
+			AccessThroughNewConstraint.TestNewConstraintOnTypeParameterOfStaticType ();
 			AccessThroughLdToken.Test ();
 			RequiresOnClass.Test ();
 		}
@@ -785,6 +786,11 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				GenericMethod<NewConstraintTestType> ();
 			}
 
+			static class NewConstraintOnTypeParameterOfStaticType<T> where T : new()
+			{
+				public static void DoNothing () { }
+			}
+
 			class NewConstaintOnTypeParameter<T> where T : new()
 			{
 			}
@@ -793,6 +799,12 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			public static void TestNewConstraintOnTypeParameter ()
 			{
 				_ = new NewConstaintOnTypeParameter<NewConstraintTestType> ();
+			}
+
+			[ExpectedWarning ("IL2026", "--NewConstraintTestType.ctor--")]
+			public static void TestNewConstraintOnTypeParameterOfStaticType ()
+			{
+				NewConstraintOnTypeParameterOfStaticType<NewConstraintTestType>.DoNothing ();
 			}
 		}
 
