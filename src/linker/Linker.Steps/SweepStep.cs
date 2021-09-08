@@ -924,6 +924,11 @@ namespace Mono.Linker.Steps
 				// Resolve to type definition to remove any type forwarding imports
 				//
 				// Workaround for https://github.com/mono/linker/issues/2260
+				// Context has a cache which stores ref->def mapping. This code runs during sweeping
+				// which can remove the type-def from its assembly, effectively making the ref unresolvable.
+				// But the cache doesn't know that, it would still "resolve" the type-ref to now defunct type-def.
+				// For this reason we can't use the context resolution here, and must force Cecil to perform
+				// real type resolution again (since it can fail, and that's OK).
 #pragma warning disable RS0030 // Do not used banned APIs
 				TypeDefinition td = type.Resolve ();
 #pragma warning restore RS0030 // Do not used banned APIs
