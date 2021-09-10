@@ -1994,29 +1994,6 @@ namespace Mono.Linker.Dataflow
 			return missingMemberTypes;
 		}
 
-		string GetMemberTypesString (DynamicallyAccessedMemberTypes memberTypes)
-		{
-			Debug.Assert (memberTypes != DynamicallyAccessedMemberTypes.None);
-
-			if (memberTypes == DynamicallyAccessedMemberTypes.All)
-				return $"'{nameof (DynamicallyAccessedMemberTypes)}.{nameof (DynamicallyAccessedMemberTypes.All)}'";
-
-			var memberTypesList = AllDynamicallyAccessedMemberTypes
-				.Where (damt => (memberTypes & damt) == damt && damt != DynamicallyAccessedMemberTypes.None)
-				.ToList ();
-
-			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicConstructors))
-				memberTypesList.Remove (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor);
-
-			return string.Join (", ", memberTypesList.Select (mt => {
-				string mtName = mt == DynamicallyAccessedMemberTypesOverlay.Interfaces
-					? nameof (DynamicallyAccessedMemberTypesOverlay.Interfaces)
-					: mt.ToString ();
-
-				return $"'{nameof (DynamicallyAccessedMemberTypes)}.{mtName}'";
-			}));
-		}
-
 		void RequireDynamicallyAccessedMembers (ref ReflectionPatternContext reflectionContext, DynamicallyAccessedMemberTypes requiredMemberTypes, ValueNode value, IMetadataTokenProvider targetContext)
 		{
 			foreach (var uniqueValue in value.UniqueValues ()) {
