@@ -1,4 +1,4 @@
-﻿// Licensed to the.NET Foundation under one or more agreements.
+// Licensed to the.NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -16,17 +16,24 @@ namespace Mono.Linker
 	{
 		private readonly Dictionary<AssemblyNameDefinition, HashSet<(int Code, IMemberDefinition Member)>> _warnings;
 		private readonly FileOutputKind _fileOutputKind;
+		readonly LinkContext _context;
 
-		public WarningSuppressionWriter (FileOutputKind fileOutputKind = FileOutputKind.CSharp)
+		public WarningSuppressionWriter (LinkContext context, FileOutputKind fileOutputKind = FileOutputKind.CSharp)
 		{
 			_warnings = new Dictionary<AssemblyNameDefinition, HashSet<(int, IMemberDefinition)>> ();
 			_fileOutputKind = fileOutputKind;
+			_context = context;
 		}
 
 		public bool IsEmpty => _warnings.Count == 0;
 
-		public void AddWarning (int code, IMemberDefinition memberDefinition)
+		public void AddWarning (int code, ICustomAttributeProvider provider)
 		{
+			// We don't have a targeted suppression mechanism for
+			// warnings from assembly-level attributes.
+			if (provider is not IMemberDefinition memberDefinition)
+				return;
+
 			var assemblyName = UnconditionalSuppressMessageAttributeState.GetModuleFromProvider (memberDefinition).Assembly.Name;
 			if (!_warnings.TryGetValue (assemblyName, out var warnings)) {
 				warnings = new HashSet<(int, IMemberDefinition)> ();
@@ -49,12 +56,12 @@ namespace Mono.Linker
 
 		void OutputSuppressionsXmlFormat (AssemblyNameDefinition assemblyName, string directory)
 		{
-			var xmlTree =
-				new XElement ("linker",
-					new XElement ("assembly", new XAttribute ("fullname", assemblyName.FullName)));
+			var xmlTree = new XElement ("linker");
+			var xmlAssembly = new XElement ("assembly", new XAttribute ("fullname", assemblyName.FullName));
+			xmlTree.Add (xmlAssembly);
 
 			foreach (var warning in GetListOfWarnings (assemblyName)) {
-				xmlTree.Element ("assembly").Add (
+				xmlAssembly.Add (
 					new XElement ("attribute",
 						new XAttribute ("fullname", "System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute"),
 						new XElement ("argument", Constants.ILLink),
@@ -94,7 +101,7 @@ namespace Mono.Linker
 			List<(int Code, string MemberDocumentationSignature)> listOfWarnings = new List<(int Code, string MemberDocumentationSignature)> ();
 			StringBuilder sb = new StringBuilder ();
 			foreach (var warning in _warnings[assemblyName].ToList ()) {
-				DocumentationSignatureGenerator.VisitMember (warning.Member, sb);
+				DocumentationSignatureGenerator.VisitMember (warning.Member, sb, _context);
 				listOfWarnings.Add ((warning.Code, sb.ToString ()));
 				sb.Clear ();
 			}

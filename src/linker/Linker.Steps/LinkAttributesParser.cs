@@ -35,14 +35,13 @@ namespace Mono.Linker.Steps
 
 		CustomAttribute[] ProcessAttributes (XPathNavigator nav, ICustomAttributeProvider provider)
 		{
-			XPathNodeIterator iterator = nav.SelectChildren ("attribute", string.Empty);
 			var builder = new ArrayBuilder<CustomAttribute> ();
-			while (iterator.MoveNext ()) {
-				if (!ShouldProcessElement (iterator.Current))
+			foreach (XPathNavigator argumentNav in nav.SelectChildren ("attribute", string.Empty)) {
+				if (!ShouldProcessElement (argumentNav))
 					continue;
 
 				TypeDefinition attributeType;
-				string internalAttribute = GetAttribute (iterator.Current, "internal");
+				string internalAttribute = GetAttribute (argumentNav, "internal");
 				if (!string.IsNullOrEmpty (internalAttribute)) {
 					attributeType = GenerateRemoveAttributeInstancesAttribute ();
 					if (attributeType == null)
@@ -50,23 +49,23 @@ namespace Mono.Linker.Steps
 
 					// TODO: Replace with IsAttributeType check once we have it
 					if (provider is not TypeDefinition) {
-						LogWarning ($"Internal attribute '{attributeType.Name}' can only be used on attribute types", 2048, iterator.Current);
+						LogWarning ($"Internal attribute '{attributeType.Name}' can only be used on attribute types.", 2048, argumentNav);
 						continue;
 					}
 				} else {
-					string attributeFullName = GetFullName (iterator.Current);
+					string attributeFullName = GetFullName (argumentNav);
 					if (string.IsNullOrEmpty (attributeFullName)) {
-						LogWarning ($"'attribute' element does not contain attribute 'fullname' or it's empty", 2029, iterator.Current);
+						LogWarning ($"'attribute' element does not contain attribute 'fullname' or it's empty.", 2029, argumentNav);
 						continue;
 					}
 
-					if (!GetAttributeType (iterator, attributeFullName, out attributeType))
+					if (!GetAttributeType (argumentNav, attributeFullName, out attributeType))
 						continue;
 				}
 
-				CustomAttribute customAttribute = CreateCustomAttribute (iterator, attributeType);
+				CustomAttribute customAttribute = CreateCustomAttribute (argumentNav, attributeType);
 				if (customAttribute != null) {
-					_context.LogMessage ($"Assigning external custom attribute '{FormatCustomAttribute (customAttribute)}' instance to '{provider}'");
+					_context.LogMessage ($"Assigning external custom attribute '{FormatCustomAttribute (customAttribute)}' instance to '{provider}'.");
 					builder.Add (customAttribute);
 				}
 			}
@@ -131,16 +130,16 @@ namespace Mono.Linker.Steps
 			return _context.MarkedKnownMembers.RemoveAttributeInstancesAttributeDefinition = td;
 		}
 
-		CustomAttribute CreateCustomAttribute (XPathNodeIterator iterator, TypeDefinition attributeType)
+		CustomAttribute CreateCustomAttribute (XPathNavigator nav, TypeDefinition attributeType)
 		{
-			CustomAttributeArgument[] arguments = ReadCustomAttributeArguments (iterator, attributeType);
+			CustomAttributeArgument[] arguments = ReadCustomAttributeArguments (nav, attributeType);
 
 			MethodDefinition constructor = FindBestMatchingConstructor (attributeType, arguments);
 			if (constructor == null) {
 				LogWarning (
-					$"Could not find matching constructor for custom attribute '{attributeType.GetDisplayName ()}' arguments",
+					$"Could not find matching constructor for custom attribute '{attributeType.GetDisplayName ()}' arguments.",
 					2022,
-					iterator.Current);
+					nav);
 				return null;
 			}
 
@@ -148,12 +147,12 @@ namespace Mono.Linker.Steps
 			foreach (var argument in arguments)
 				customAttribute.ConstructorArguments.Add (argument);
 
-			ReadCustomAttributeProperties (iterator.Current.SelectChildren ("property", string.Empty), attributeType, customAttribute);
+			ReadCustomAttributeProperties (nav, attributeType, customAttribute);
 
 			return customAttribute;
 		}
 
-		static MethodDefinition FindBestMatchingConstructor (TypeDefinition attributeType, CustomAttributeArgument[] args)
+		MethodDefinition FindBestMatchingConstructor (TypeDefinition attributeType, CustomAttributeArgument[] args)
 		{
 			var methods = attributeType.Methods;
 			for (int i = 0; i < attributeType.Methods.Count; ++i) {
@@ -170,7 +169,8 @@ namespace Mono.Linker.Steps
 					//
 					// No candidates betterness, only exact matches are supported
 					//
-					if (p[ii].ParameterType.Resolve () != args[ii].Type.Resolve ())
+					var parameterType = _context.TryResolve (p[ii].ParameterType);
+					if (parameterType == null || parameterType != _context.TryResolve (args[ii].Type))
 						match = false;
 				}
 
@@ -181,22 +181,22 @@ namespace Mono.Linker.Steps
 			return null;
 		}
 
-		void ReadCustomAttributeProperties (XPathNodeIterator iterator, TypeDefinition attributeType, CustomAttribute customAttribute)
+		void ReadCustomAttributeProperties (XPathNavigator nav, TypeDefinition attributeType, CustomAttribute customAttribute)
 		{
-			while (iterator.MoveNext ()) {
-				string propertyName = GetName (iterator.Current);
+			foreach (XPathNavigator propertyNav in nav.SelectChildren ("property", string.Empty)) {
+				string propertyName = GetName (propertyNav);
 				if (string.IsNullOrEmpty (propertyName)) {
-					LogWarning ($"Property element does not contain attribute 'name'", 2051, iterator.Current);
+					LogWarning ($"Property element does not contain attribute 'name'.", 2051, propertyNav);
 					continue;
 				}
 
 				PropertyDefinition property = attributeType.Properties.Where (prop => prop.Name == propertyName).FirstOrDefault ();
 				if (property == null) {
-					LogWarning ($"Property '{propertyName}' could not be found", 2052, iterator.Current);
+					LogWarning ($"Property '{propertyName}' could not be found.", 2052, propertyNav);
 					continue;
 				}
 
-				var caa = ReadCustomAttributeArgument (iterator, property);
+				var caa = ReadCustomAttributeArgument (propertyNav, property);
 				if (caa is null)
 					continue;
 
@@ -204,13 +204,12 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		CustomAttributeArgument[] ReadCustomAttributeArguments (XPathNodeIterator iterator, TypeDefinition attributeType)
+		CustomAttributeArgument[] ReadCustomAttributeArguments (XPathNavigator nav, TypeDefinition attributeType)
 		{
 			var args = new ArrayBuilder<CustomAttributeArgument> ();
 
-			iterator = iterator.Current.SelectChildren ("argument", string.Empty);
-			while (iterator.MoveNext ()) {
-				CustomAttributeArgument? caa = ReadCustomAttributeArgument (iterator, attributeType);
+			foreach (XPathNavigator argumentNav in nav.SelectChildren ("argument", string.Empty)) {
+				CustomAttributeArgument? caa = ReadCustomAttributeArgument (argumentNav, attributeType);
 				if (caa is not null)
 					args.Add (caa.Value);
 			}
@@ -218,13 +217,13 @@ namespace Mono.Linker.Steps
 			return args.ToArray () ?? Array.Empty<CustomAttributeArgument> ();
 		}
 
-		CustomAttributeArgument? ReadCustomAttributeArgument (XPathNodeIterator iterator, IMemberDefinition memberWithAttribute)
+		CustomAttributeArgument? ReadCustomAttributeArgument (XPathNavigator nav, IMemberDefinition memberWithAttribute)
 		{
-			TypeReference typeref = ResolveArgumentType (iterator, memberWithAttribute);
+			TypeReference typeref = ResolveArgumentType (nav, memberWithAttribute);
 			if (typeref is null)
 				return null;
 
-			string svalue = iterator.Current.Value;
+			string svalue = nav.Value;
 
 			//
 			// Builds CustomAttributeArgument in the same way as it would be
@@ -234,13 +233,13 @@ namespace Mono.Linker.Steps
 			//
 			switch (typeref.MetadataType) {
 			case MetadataType.Object:
-				iterator = iterator.Current.SelectChildren ("argument", string.Empty);
-				if (iterator?.MoveNext () != true) {
-					_context.LogError ($"Custom attribute argument for 'System.Object' requires nested 'argument' node", 1043);
+				var argumentIterator = nav.SelectChildren ("argument", string.Empty);
+				if (argumentIterator?.MoveNext () != true) {
+					_context.LogError ($"Custom attribute argument for 'System.Object' requires nested 'argument' node.", 1043);
 					return null;
 				}
 
-				var boxedValue = ReadCustomAttributeArgument (iterator, typeref.Resolve ());
+				var boxedValue = ReadCustomAttributeArgument (argumentIterator.Current!, _context.TryResolve (typeref));
 				if (boxedValue is null)
 					return null;
 
@@ -275,26 +274,26 @@ namespace Mono.Linker.Steps
 
 				TypeReference type = _context.TypeNameResolver.ResolveTypeName (svalue, memberWithAttribute, out _);
 				if (type == null) {
-					_context.LogError ($"Could not resolve custom attribute type value '{svalue}'", 1044, origin: GetMessageOriginForPosition (iterator.Current));
+					_context.LogError ($"Could not resolve custom attribute type value '{svalue}'.", 1044, origin: GetMessageOriginForPosition (nav));
 					return null;
 				}
 
 				return new CustomAttributeArgument (typeref, type);
 			default:
 				// No support for null and arrays, consider adding - mono/linker/issues/1957
-				_context.LogError ($"Unexpected attribute argument type '{typeref.GetDisplayName ()}'", 1045);
+				_context.LogError ($"Unexpected attribute argument type '{typeref.GetDisplayName ()}'.", 1045);
 				return null;
 			}
 
-			TypeReference ResolveArgumentType (XPathNodeIterator iterator, IMemberDefinition memberWithAttribute)
+			TypeReference ResolveArgumentType (XPathNavigator nav, IMemberDefinition memberWithAttribute)
 			{
-				string typeName = GetAttribute (iterator.Current, "type");
+				string typeName = GetAttribute (nav, "type");
 				if (string.IsNullOrEmpty (typeName))
 					typeName = "System.String";
 
 				TypeReference typeref = _context.TypeNameResolver.ResolveTypeName (typeName, memberWithAttribute, out _);
 				if (typeref == null) {
-					_context.LogError ($"The type '{typeName}' used with attribute value '{iterator.Current.Value}' could not be found", 1041, origin: GetMessageOriginForPosition (iterator.Current));
+					_context.LogError ($"The type '{typeName}' used with attribute value '{nav.Value}' could not be found.", 1041, origin: GetMessageOriginForPosition (nav));
 					return null;
 				}
 
@@ -352,14 +351,14 @@ namespace Mono.Linker.Steps
 			try {
 				return Convert.ChangeType (value, typeCode);
 			} catch {
-				_context.LogError ($"Cannot convert value '{value}' to type '{targetType.GetDisplayName ()}'", 1042);
+				_context.LogError ($"Cannot convert value '{value}' to type '{targetType.GetDisplayName ()}'.", 1042);
 				return null;
 			}
 		}
 
-		bool GetAttributeType (XPathNodeIterator iterator, string attributeFullName, out TypeDefinition attributeType)
+		bool GetAttributeType (XPathNavigator nav, string attributeFullName, out TypeDefinition attributeType)
 		{
-			string assemblyName = GetAttribute (iterator.Current, "assembly");
+			string assemblyName = GetAttribute (nav, "assembly");
 			if (string.IsNullOrEmpty (assemblyName)) {
 				attributeType = _context.GetType (attributeFullName);
 			} else {
@@ -367,12 +366,13 @@ namespace Mono.Linker.Steps
 				try {
 					assembly = _context.TryResolve (AssemblyNameReference.Parse (assemblyName));
 					if (assembly == null) {
-						LogWarning ($"Could not resolve assembly '{assemblyName}' for attribute '{attributeFullName}'", 2030, iterator.Current);
+						LogWarning ($"Could not resolve assembly '{assemblyName}' for attribute '{attributeFullName}'.", 2030, nav);
+
 						attributeType = default;
 						return false;
 					}
 				} catch (Exception) {
-					LogWarning ($"Could not resolve assembly '{assemblyName}' for attribute '{attributeFullName}'", 2030, iterator.Current);
+					LogWarning ($"Could not resolve assembly '{assemblyName}' for attribute '{attributeFullName}'.", 2030, nav);
 					attributeType = default;
 					return false;
 				}
@@ -381,7 +381,7 @@ namespace Mono.Linker.Steps
 			}
 
 			if (attributeType == null) {
-				LogWarning ($"Attribute type '{attributeFullName}' could not be found", 2031, iterator.Current);
+				LogWarning ($"Attribute type '{attributeFullName}' could not be found.", 2031, nav);
 				return false;
 			}
 
@@ -440,17 +440,16 @@ namespace Mono.Linker.Steps
 
 		void ProcessParameters (MethodDefinition method, XPathNavigator nav)
 		{
-			var iterator = nav.SelectChildren ("parameter", string.Empty);
-			while (iterator.MoveNext ()) {
-				var attributes = ProcessAttributes (iterator.Current, method);
+			foreach (XPathNavigator parameterNav in nav.SelectChildren ("parameter", string.Empty)) {
+				var attributes = ProcessAttributes (parameterNav, method);
 				if (attributes != null) {
-					string paramName = GetAttribute (iterator.Current, "name");
+					string paramName = GetAttribute (parameterNav, "name");
 					foreach (ParameterDefinition parameter in method.Parameters) {
 						if (paramName == parameter.Name) {
 							if (parameter.HasCustomAttributes || _attributeInfo.CustomAttributes.ContainsKey (parameter))
 								LogWarning (
-									$"More than one value specified for parameter '{paramName}' of method '{method.GetDisplayName ()}'",
-									2024, iterator.Current);
+									$"More than one value specified for parameter '{paramName}' of method '{method.GetDisplayName ()}'.",
+									2024, parameterNav);
 							_attributeInfo.AddCustomAttributes (parameter, attributes);
 							break;
 						}
@@ -469,7 +468,7 @@ namespace Mono.Linker.Steps
 					PopulateAttributeInfo (method.MethodReturnType, iterator.Current);
 				} else {
 					LogWarning (
-						$"There is more than one 'return' child element specified for method '{method.GetDisplayName ()}'",
+						$"There is more than one 'return' child element specified for method '{method.GetDisplayName ()}'.",
 						2023, iterator.Current);
 				}
 			}

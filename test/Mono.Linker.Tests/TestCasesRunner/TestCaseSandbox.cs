@@ -16,7 +16,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 		static NPath GetArtifactsTestPath ()
 		{
-			// Converts paths like /root-folder/linker/artifacts/bin/Mono.Linker.Tests/Debug/net5.0/illink.dll
+			// Converts paths like /root-folder/linker/artifacts/bin/Mono.Linker.Tests/Debug/net6.0/illink.dll
 			// to /root-folder/linker/artifacts/testcases/
 			string artifacts = Path.GetFullPath (Path.Combine (Path.GetDirectoryName (_linkerAssemblyPath), "..", "..", "..", ".."));
 			string tests = Path.Combine (artifacts, "testcases");
@@ -42,16 +42,11 @@ namespace Mono.Linker.Tests.TestCasesRunner
 		{
 			_testCase = testCase;
 
-			_directory = rootTemporaryDirectory.Combine (string.IsNullOrEmpty (namePrefix) ? "linker_tests" : namePrefix);
+			var rootDirectory = rootTemporaryDirectory.Combine (string.IsNullOrEmpty (namePrefix) ? "linker_tests" : namePrefix);
 
-			const string tcases_name = "Mono.Linker.Tests.Cases";
-			var location = testCase.SourceFile.Parent.ToString ();
-			int idx = location.IndexOf (tcases_name + Path.DirectorySeparatorChar);
-			if (idx < 0)
-				throw new ArgumentException ("Unknown test cases location");
-
-			_directory = _directory.Combine (location.Substring (idx + tcases_name.Length + 1));
-			_directory = _directory.Combine (testCase.SourceFile.FileNameWithoutExtension);
+			var locationRelativeToRoot = testCase.SourceFile.Parent.RelativeTo (testCase.RootCasesDirectory);
+			var suiteDirectory = rootDirectory.Combine (locationRelativeToRoot);
+			_directory = suiteDirectory.Combine (testCase.SourceFile.FileNameWithoutExtension);
 
 			_directory.DeleteContents ();
 

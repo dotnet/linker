@@ -1,4 +1,4 @@
-﻿//
+//
 // Tracer.cs
 //
 // Copyright (C) 2017 Microsoft Corporation (http://www.microsoft.com)
@@ -136,14 +136,14 @@ namespace Mono.Linker
 			return false;
 		}
 
-		static string TokenString (object o)
+		string TokenString (object o)
 		{
 			if (o == null)
 				return "N:null";
 
 			if (o is TypeReference t) {
 				bool addAssembly = true;
-				var td = t as TypeDefinition ?? t.Resolve ();
+				var td = context.TryResolve (t);
 
 				if (td != null) {
 					addAssembly = td.IsNotPublic || IsAssemblyBound (td);
@@ -152,11 +152,11 @@ namespace Mono.Linker
 
 				var addition = addAssembly ? $":{t.Module}" : "";
 
-				return $"{(o as IMetadataTokenProvider).MetadataToken.TokenType}:{o}{addition}";
+				return $"{((IMetadataTokenProvider) o).MetadataToken.TokenType}:{o}{addition}";
 			}
 
-			if (o is IMetadataTokenProvider)
-				return (o as IMetadataTokenProvider).MetadataToken.TokenType + ":" + o;
+			if (o is IMetadataTokenProvider provider)
+				return provider.MetadataToken.TokenType + ":" + o;
 
 			return "Other:" + o;
 		}
@@ -185,7 +185,7 @@ namespace Mono.Linker
 				return WillAssemblyBeModified (m.DeclaringType.Module.Assembly);
 
 			if (o is TypeReference typeRef) {
-				var resolved = typeRef.Resolve ();
+				var resolved = context.TryResolve (typeRef);
 
 				// Err on the side of caution if we can't resolve
 				if (resolved == null)

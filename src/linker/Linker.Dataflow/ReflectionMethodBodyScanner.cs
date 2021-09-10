@@ -108,17 +108,6 @@ namespace Mono.Linker.Dataflow
 			reflectionContext.Dispose ();
 		}
 
-		public void ApplyDynamicallyAccessedMembersToType (ref ReflectionPatternContext reflectionPatternContext, TypeDefinition type, DynamicallyAccessedMemberTypes annotation)
-		{
-			Debug.Assert (annotation != DynamicallyAccessedMemberTypes.None);
-
-			reflectionPatternContext.AnalyzingPattern ();
-			// Handle cases where a type has no members but annotations are to be applied to derived type members
-			reflectionPatternContext.RecordHandledPattern ();
-
-			MarkTypeForDynamicallyAccessedMembers (ref reflectionPatternContext, type, annotation, DependencyKind.DynamicallyAccessedMemberOnType);
-		}
-
 		ValueNode GetValueNodeForCustomAttributeArgument (CustomAttributeArgument argument)
 		{
 			ValueNode valueNode;
@@ -1559,8 +1548,8 @@ namespace Mono.Linker.Dataflow
 								}
 
 								if (parameters.Count > 3) {
-									if (methodParams[1].AsConstInt () != null)
-										bindingFlags |= (BindingFlags) methodParams[1].AsConstInt ();
+									if (methodParams[1].AsConstInt () is int constInt)
+										bindingFlags |= (BindingFlags) constInt;
 									else
 										bindingFlags |= BindingFlags.NonPublic | BindingFlags.Public;
 								} else {
@@ -1851,10 +1840,10 @@ namespace Mono.Linker.Dataflow
 					} else if (parameterTypeDef.IsMulticastDelegate ()) {
 						// Delegates are special cased by interop
 						return false;
-					} else if (parameterTypeDef.IsSubclassOf ("System.Runtime.InteropServices", "CriticalHandle")) {
+					} else if (parameterTypeDef.IsSubclassOf ("System.Runtime.InteropServices", "CriticalHandle", _context)) {
 						// Subclasses of CriticalHandle are special cased by interop
 						return false;
-					} else if (parameterTypeDef.IsSubclassOf ("System.Runtime.InteropServices", "SafeHandle")) {
+					} else if (parameterTypeDef.IsSubclassOf ("System.Runtime.InteropServices", "SafeHandle", _context)) {
 						// Subclasses of SafeHandle are special cased by interop
 						return false;
 					} else if (!parameterTypeDef.IsSequentialLayout && !parameterTypeDef.IsExplicitLayout) {
@@ -1921,14 +1910,13 @@ namespace Mono.Linker.Dataflow
 
 			BindingFlags bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
 			bool parameterlessConstructor = true;
-			if (calledMethod.Parameters.Count == 8 && calledMethod.Parameters[2].ParameterType.MetadataType == MetadataType.Boolean &&
-				methodParams[3].AsConstInt () != null) {
+			if (calledMethod.Parameters.Count == 8 && calledMethod.Parameters[2].ParameterType.MetadataType == MetadataType.Boolean) {
 				parameterlessConstructor = false;
-				bindingFlags = BindingFlags.Instance | (BindingFlags) methodParams[3].AsConstInt ();
-			} else if (calledMethod.Parameters.Count == 8 && calledMethod.Parameters[2].ParameterType.MetadataType == MetadataType.Boolean &&
-				  methodParams[3].AsConstInt () == null) {
-				parameterlessConstructor = false;
-				bindingFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+				bindingFlags = BindingFlags.Instance;
+				if (methodParams[3].AsConstInt () is int bindingFlagsInt)
+					bindingFlags |= (BindingFlags) bindingFlagsInt;
+				else
+					bindingFlags |= BindingFlags.Public | BindingFlags.NonPublic;
 			}
 
 			int methodParamsOffset = calledMethod.HasImplicitThis () ? 1 : 0;
@@ -1985,6 +1973,48 @@ namespace Mono.Linker.Dataflow
 			// "unknown" and consumers may warn.
 			if (!foundAny)
 				methodReturnValue = MergePointValue.MergeValues (methodReturnValue, NullValue.Instance);
+		}
+
+		public static DynamicallyAccessedMemberTypes GetMissingMemberTypes (DynamicallyAccessedMemberTypes requiredMemberTypes, DynamicallyAccessedMemberTypes availableMemberTypes)
+		{
+			if (availableMemberTypes.HasFlag (requiredMemberTypes))
+				return DynamicallyAccessedMemberTypes.None;
+
+			if (requiredMemberTypes == DynamicallyAccessedMemberTypes.All)
+				return DynamicallyAccessedMemberTypes.All;
+
+			var missingMemberTypes = requiredMemberTypes & ~availableMemberTypes;
+
+			// PublicConstructors is a special case since its value is 3 - so PublicParameterlessConstructor (1) | _PublicConstructor_WithMoreThanOneParameter_ (2)
+			// The above bit logic only works for value with single bit set.
+			if (requiredMemberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicConstructors) &&
+				!availableMemberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicConstructors))
+				missingMemberTypes |= DynamicallyAccessedMemberTypes.PublicConstructors;
+
+			return missingMemberTypes;
+		}
+
+		string GetMemberTypesString (DynamicallyAccessedMemberTypes memberTypes)
+		{
+			Debug.Assert (memberTypes != DynamicallyAccessedMemberTypes.None);
+
+			if (memberTypes == DynamicallyAccessedMemberTypes.All)
+				return $"'{nameof (DynamicallyAccessedMemberTypes)}.{nameof (DynamicallyAccessedMemberTypes.All)}'";
+
+			var memberTypesList = AllDynamicallyAccessedMemberTypes
+				.Where (damt => (memberTypes & damt) == damt && damt != DynamicallyAccessedMemberTypes.None)
+				.ToList ();
+
+			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicConstructors))
+				memberTypesList.Remove (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor);
+
+			return string.Join (", ", memberTypesList.Select (mt => {
+				string mtName = mt == DynamicallyAccessedMemberTypesOverlay.Interfaces
+					? nameof (DynamicallyAccessedMemberTypesOverlay.Interfaces)
+					: mt.ToString ();
+
+				return $"'{nameof (DynamicallyAccessedMemberTypes)}.{mtName}'";
+			}));
 		}
 
 		void RequireDynamicallyAccessedMembers (ref ReflectionPatternContext reflectionContext, DynamicallyAccessedMemberTypes requiredMemberTypes, ValueNode value, IMetadataTokenProvider targetContext)
@@ -2115,9 +2145,9 @@ namespace Mono.Linker.Dataflow
 
 		static bool HasBindingFlag (BindingFlags? bindingFlags, BindingFlags? search) => bindingFlags != null && (bindingFlags & search) == search;
 
-		void MarkTypeForDynamicallyAccessedMembers (ref ReflectionPatternContext reflectionContext, TypeDefinition typeDefinition, DynamicallyAccessedMemberTypes requiredMemberTypes, DependencyKind dependencyKind)
+		public void MarkTypeForDynamicallyAccessedMembers (ref ReflectionPatternContext reflectionContext, TypeDefinition typeDefinition, DynamicallyAccessedMemberTypes requiredMemberTypes, DependencyKind dependencyKind, bool declaredOnly = false)
 		{
-			foreach (var member in typeDefinition.GetDynamicallyAccessedMembers (_context, requiredMemberTypes)) {
+			foreach (var member in typeDefinition.GetDynamicallyAccessedMembers (_context, requiredMemberTypes, declaredOnly)) {
 				switch (member) {
 				case MethodDefinition method:
 					MarkMethod (ref reflectionContext, method, dependencyKind);
@@ -2126,8 +2156,7 @@ namespace Mono.Linker.Dataflow
 					MarkField (ref reflectionContext, field, dependencyKind);
 					break;
 				case TypeDefinition nestedType:
-					DependencyInfo nestedDependencyInfo = new DependencyInfo (dependencyKind, reflectionContext.Source);
-					reflectionContext.RecordRecognizedPattern (nestedType, () => _markStep.MarkEntireType (nestedType, includeBaseAndInterfaceTypes: true, nestedDependencyInfo));
+					MarkType (ref reflectionContext, nestedType, dependencyKind);
 					break;
 				case PropertyDefinition property:
 					MarkProperty (ref reflectionContext, property, dependencyKind);
@@ -2137,10 +2166,6 @@ namespace Mono.Linker.Dataflow
 					break;
 				case InterfaceImplementation interfaceImplementation:
 					MarkInterfaceImplementation (ref reflectionContext, interfaceImplementation, dependencyKind);
-					break;
-				case null:
-					DependencyInfo dependencyInfo = new DependencyInfo (dependencyKind, reflectionContext.Source);
-					reflectionContext.RecordRecognizedPattern (typeDefinition, () => _markStep.MarkEntireType (typeDefinition, includeBaseAndInterfaceTypes: true, dependencyInfo));
 					break;
 				}
 			}

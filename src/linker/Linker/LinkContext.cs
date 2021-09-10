@@ -43,14 +43,19 @@ namespace Mono.Linker
 		public virtual Tracer CreateTracer (LinkContext context) => new Tracer (context);
 	}
 
-	public enum TargetRuntimeVersion
+	public static class TargetRuntimeVersion
 	{
-		Unknown = 0,
-		NET5 = 5,
-		NET6 = 6,
+		public const int NET5 = 5;
+		public const int NET6 = 6;
 	}
 
-	public class LinkContext : IMetadataResolver, IDisposable
+	public interface ITryResolveMetadata
+	{
+		MethodDefinition TryResolve (MethodReference methodReference);
+		TypeDefinition TryResolve (TypeReference typeReference);
+	}
+
+	public class LinkContext : IMetadataResolver, ITryResolveMetadata, IDisposable
 	{
 
 		readonly Pipeline _pipeline;
@@ -60,7 +65,7 @@ namespace Mono.Linker
 		bool _linkSymbols;
 		bool _keepTypeForwarderOnlyAssemblies;
 		bool _ignoreUnresolved;
-		TargetRuntimeVersion? _targetRuntime;
+		int? _targetRuntime;
 
 		readonly AssemblyResolver _resolver;
 		readonly TypeNameResolver _typeNameResolver;
@@ -459,7 +464,7 @@ namespace Mono.Linker
 					continue;
 
 				if (args[1].Value is not string value || !value.Equals ("True", StringComparison.OrdinalIgnoreCase)) {
-					LogWarning ($"Invalid AssemblyMetadata(\"IsTrimmable\", \"{args[1].Value}\") attribute in assembly '{assembly.Name.Name}'. Value must be \"True\"", 2102, GetAssemblyLocation (assembly));
+					LogWarning ($"Invalid AssemblyMetadata(\"IsTrimmable\", \"{args[1].Value}\") attribute in assembly '{assembly.Name.Name}'. Value must be \"True\".", 2102, GetAssemblyLocation (assembly));
 					continue;
 				}
 
@@ -558,9 +563,9 @@ namespace Mono.Linker
 				return;
 
 			if (WarningSuppressionWriter != null &&
-				(message.Category == MessageCategory.Warning || message.Category == MessageCategory.WarningAsError) &&
-				message.Origin?.MemberDefinition != null)
-				WarningSuppressionWriter.AddWarning (message.Code.Value, message.Origin?.MemberDefinition);
+				message.IsWarningMessage (out int? code) &&
+				message.Origin?.Provider != null)
+				WarningSuppressionWriter.AddWarning (code.Value, message.Origin?.Provider);
 
 			if (message.Category == MessageCategory.Error || message.Category == MessageCategory.WarningAsError)
 				ErrorsCount++;
@@ -693,17 +698,13 @@ namespace Mono.Linker
 			return WarnVersion.ILLink5;
 		}
 
-		public TargetRuntimeVersion GetTargetRuntimeVersion ()
+		public int GetTargetRuntimeVersion ()
 		{
 			if (_targetRuntime != null)
 				return _targetRuntime.Value;
 
 			TypeDefinition objectType = BCL.FindPredefinedType ("System", "Object", this);
-			_targetRuntime = objectType?.Module.Assembly.Name.Version.Major switch {
-				6 => TargetRuntimeVersion.NET6,
-				5 => TargetRuntimeVersion.NET5,
-				_ => TargetRuntimeVersion.Unknown,
-			};
+			_targetRuntime = objectType?.Module.Assembly.Name.Version.Major ?? -1;
 
 			return _targetRuntime.Value;
 		}
@@ -714,13 +715,13 @@ namespace Mono.Linker
 
 		public MethodDefinition Resolve (MethodReference methodReference)
 		{
-			if (methodReference is MethodDefinition md)
-				return md;
+			if (methodReference is MethodDefinition methodDefinition)
+				return methodDefinition;
 
 			if (methodReference is null)
 				return null;
 
-			if (methodresolveCache.TryGetValue (methodReference, out md)) {
+			if (methodresolveCache.TryGetValue (methodReference, out MethodDefinition md)) {
 				if (md == null && !IgnoreUnresolved)
 					ReportUnresolved (methodReference);
 
@@ -738,13 +739,13 @@ namespace Mono.Linker
 
 		public MethodDefinition TryResolve (MethodReference methodReference)
 		{
-			if (methodReference is MethodDefinition md)
-				return md;
+			if (methodReference is MethodDefinition methodDefinition)
+				return methodDefinition;
 
 			if (methodReference is null)
 				return null;
 
-			if (methodresolveCache.TryGetValue (methodReference, out md))
+			if (methodresolveCache.TryGetValue (methodReference, out MethodDefinition md))
 				return md;
 
 			md = methodReference.Resolve ();
@@ -754,13 +755,13 @@ namespace Mono.Linker
 
 		public FieldDefinition Resolve (FieldReference fieldReference)
 		{
-			if (fieldReference is FieldDefinition fd)
-				return fd;
+			if (fieldReference is FieldDefinition fieldDefinition)
+				return fieldDefinition;
 
 			if (fieldReference is null)
 				return null;
 
-			if (fieldresolveCache.TryGetValue (fieldReference, out fd)) {
+			if (fieldresolveCache.TryGetValue (fieldReference, out FieldDefinition fd)) {
 				if (fd == null && !IgnoreUnresolved)
 					ReportUnresolved (fieldReference);
 
@@ -778,13 +779,13 @@ namespace Mono.Linker
 
 		public FieldDefinition TryResolve (FieldReference fieldReference)
 		{
-			if (fieldReference is FieldDefinition fd)
-				return fd;
+			if (fieldReference is FieldDefinition fieldDefinition)
+				return fieldDefinition;
 
 			if (fieldReference is null)
 				return null;
 
-			if (fieldresolveCache.TryGetValue (fieldReference, out fd))
+			if (fieldresolveCache.TryGetValue (fieldReference, out FieldDefinition fd))
 				return fd;
 
 			fd = fieldReference.Resolve ();
@@ -794,13 +795,13 @@ namespace Mono.Linker
 
 		public TypeDefinition Resolve (TypeReference typeReference)
 		{
-			if (typeReference is TypeDefinition td)
-				return td;
+			if (typeReference is TypeDefinition typeDefinition)
+				return typeDefinition;
 
 			if (typeReference is null)
 				return null;
 
-			if (typeresolveCache.TryGetValue (typeReference, out td)) {
+			if (typeresolveCache.TryGetValue (typeReference, out TypeDefinition td)) {
 				if (td == null && !IgnoreUnresolved)
 					ReportUnresolved (typeReference);
 
@@ -813,7 +814,9 @@ namespace Mono.Linker
 			if (typeReference is GenericParameter || (typeReference is TypeSpecification && typeReference is not GenericInstanceType))
 				throw new NotSupportedException ($"TypeDefinition cannot be resolved from '{typeReference.GetType ()}' type");
 
+#pragma warning disable RS0030
 			td = typeReference.Resolve ();
+#pragma warning restore RS0030
 			if (td == null && !IgnoreUnresolved) {
 				ReportUnresolved (typeReference);
 			}
@@ -824,13 +827,13 @@ namespace Mono.Linker
 
 		public TypeDefinition TryResolve (TypeReference typeReference)
 		{
-			if (typeReference is TypeDefinition td)
-				return td;
+			if (typeReference is TypeDefinition typeDefinition)
+				return typeDefinition;
 
 			if (typeReference is null || typeReference is GenericParameter)
 				return null;
 
-			if (typeresolveCache.TryGetValue (typeReference, out td))
+			if (typeresolveCache.TryGetValue (typeReference, out TypeDefinition td))
 				return td;
 
 			if (typeReference is TypeSpecification ts) {
@@ -843,7 +846,9 @@ namespace Mono.Linker
 					td = TryResolve (ts.GetElementType ());
 				}
 			} else {
+#pragma warning disable RS0030
 				td = typeReference.Resolve ();
+#pragma warning restore RS0030
 			}
 
 			typeresolveCache.Add (typeReference, td);
@@ -861,19 +866,19 @@ namespace Mono.Linker
 		protected virtual void ReportUnresolved (FieldReference fieldReference)
 		{
 			if (unresolved_reported.Add (fieldReference))
-				LogError ($"Field '{fieldReference.FullName}' reference could not be resolved", 1040);
+				LogError ($"Field '{fieldReference.FullName}' reference could not be resolved.", 1040);
 		}
 
 		protected virtual void ReportUnresolved (MethodReference methodReference)
 		{
 			if (unresolved_reported.Add (methodReference))
-				LogError ($"Method '{methodReference.GetDisplayName ()}' reference could not be resolved", 1040);
+				LogError ($"Method '{methodReference.GetDisplayName ()}' reference could not be resolved.", 1040);
 		}
 
 		protected virtual void ReportUnresolved (TypeReference typeReference)
 		{
 			if (unresolved_reported.Add (typeReference))
-				LogError ($"Type '{typeReference.GetDisplayName ()}' reference could not be resolved", 1040);
+				LogError ($"Type '{typeReference.GetDisplayName ()}' reference could not be resolved.", 1040);
 		}
 	}
 
