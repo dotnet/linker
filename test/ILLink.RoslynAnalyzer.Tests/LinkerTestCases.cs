@@ -26,7 +26,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 				return;
 			}
 
-			RunTestAsync<RequiresUnreferencedCodeAnalyzer> (m, attrs, UseMSBuildProperties (MSBuildPropertyOptionNames.EnableTrimAnalyzer));
+			RunTest<RequiresUnreferencedCodeAnalyzer> (m, attrs, UseMSBuildProperties (MSBuildPropertyOptionNames.EnableTrimAnalyzer));
 		}
 	}
 }
