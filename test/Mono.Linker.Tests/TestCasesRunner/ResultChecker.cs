@@ -654,7 +654,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 		bool IsProducedByLinker (CustomAttribute attr)
 		{
 			var producedBy = attr.GetPropertyValue ("ProducedBy");
-			return producedBy is null ? true : ((ProducedBy) producedBy).HasFlag (ProducedBy.Linker);
+			return producedBy is null ? true : ((ProducedBy) producedBy).HasFlag (ProducedBy.Trimmer);
 		}
 		IEnumerable<ICustomAttributeProvider> GetAttributeProviders (AssemblyDefinition assembly)
 		{

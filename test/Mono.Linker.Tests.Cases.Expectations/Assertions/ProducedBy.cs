@@ -9,8 +9,8 @@ namespace Mono.Linker.Tests.Cases.Expectations.Assertions
 	[Flags]
 	public enum ProducedBy
 	{
-		Linker = 1,
+		Trimmer = 1,
 		Analyzer = 2,
-		LinkerAndAnalyzer = Linker | Analyzer
+		TrimmerAndAnalyzer = Trimmer | Analyzer
 	}
 }
