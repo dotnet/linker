@@ -43,18 +43,18 @@ namespace ILLink.RoslynAnalyzer
 				context.RegisterSymbolAction (symbolAnalysisContext => {
 					var methodSymbol = (IMethodSymbol) symbolAnalysisContext.Symbol;
 					CheckMatchingAttributesInOverrides (symbolAnalysisContext, methodSymbol);
-					CheckAttributeCtor (symbolAnalysisContext, methodSymbol);
+					CheckAttributeInstantiation (symbolAnalysisContext, methodSymbol);
 					foreach (var typeParameter in methodSymbol.TypeParameters)
-						CheckAttributeCtor (symbolAnalysisContext, typeParameter);
+						CheckAttributeInstantiation (symbolAnalysisContext, typeParameter);
 
 				}, SymbolKind.Method);
 
 				context.RegisterSymbolAction (symbolAnalysisContext => {
 					var typeSymbol = (INamedTypeSymbol) symbolAnalysisContext.Symbol;
 					CheckMatchingAttributesInInterfaces (symbolAnalysisContext, typeSymbol);
-					CheckAttributeCtor (symbolAnalysisContext, typeSymbol);
+					CheckAttributeInstantiation (symbolAnalysisContext, typeSymbol);
 					foreach (var typeParameter in typeSymbol.TypeParameters)
-						CheckAttributeCtor (symbolAnalysisContext, typeParameter);
+						CheckAttributeInstantiation (symbolAnalysisContext, typeParameter);
 
 				}, SymbolKind.NamedType);
 
@@ -65,7 +65,7 @@ namespace ILLink.RoslynAnalyzer
 						CheckMatchingAttributesInOverrides (symbolAnalysisContext, propertySymbol);
 					}
 
-					CheckAttributeCtor (symbolAnalysisContext, propertySymbol);
+					CheckAttributeInstantiation (symbolAnalysisContext, propertySymbol);
 				}, SymbolKind.Property);
 
 				context.RegisterSymbolAction (symbolAnalysisContext => {
@@ -74,12 +74,12 @@ namespace ILLink.RoslynAnalyzer
 						CheckMatchingAttributesInOverrides (symbolAnalysisContext, eventSymbol);
 					}
 
-					CheckAttributeCtor (symbolAnalysisContext, eventSymbol);
+					CheckAttributeInstantiation (symbolAnalysisContext, eventSymbol);
 				}, SymbolKind.Event);
 
 				context.RegisterSymbolAction (symbolAnalysisContext => {
 					var fieldSymbol = (IFieldSymbol) symbolAnalysisContext.Symbol;
-					CheckAttributeCtor (symbolAnalysisContext, fieldSymbol);
+					CheckAttributeInstantiation (symbolAnalysisContext, fieldSymbol);
 				}, SymbolKind.Field);
 
 				context.RegisterOperationAction (operationContext => {
@@ -149,7 +149,7 @@ namespace ILLink.RoslynAnalyzer
 				foreach (var extraSyntaxNodeAction in ExtraSyntaxNodeActions)
 					context.RegisterSyntaxNodeAction (extraSyntaxNodeAction.Action, extraSyntaxNodeAction.SyntaxKind);
 
-				void CheckAttributeCtor (
+				void CheckAttributeInstantiation (
 					SymbolAnalysisContext symbolAnalysisContext,
 					ISymbol symbol)
 				{
@@ -160,6 +160,20 @@ namespace ILLink.RoslynAnalyzer
 						if (TryGetRequiresAttribute (attr.AttributeConstructor, out var requiresAttribute)) {
 							symbolAnalysisContext.ReportDiagnostic (Diagnostic.Create (RequiresDiagnosticRule,
 								symbol.Locations[0], attr.AttributeConstructor!.Name, GetMessageFromAttribute (requiresAttribute), GetUrlFromAttribute (requiresAttribute)));
+						}
+
+						foreach (var namedArgument in attr.NamedArguments) {
+							var propertyOnArgument = attr.AttributeClass!.GetMembers ()
+								.Where (m => m.Kind == SymbolKind.Property && m.Name == namedArgument.Key)
+								.FirstOrDefault ();
+
+							if (propertyOnArgument is not IPropertySymbol setProperty)
+								continue;
+
+							if (setProperty.SetMethod is IMethodSymbol setter && setter.TryGetAttribute (RequiresAttributeFullyQualifiedName, out var requiresAttributeOnProperty)) {
+								symbolAnalysisContext.ReportDiagnostic (Diagnostic.Create (RequiresDiagnosticRule,
+									symbol.Locations[0], attr.AttributeConstructor!.Name, GetMessageFromAttribute (requiresAttributeOnProperty), GetUrlFromAttribute (requiresAttributeOnProperty)));
+							}
 						}
 					}
 				}
