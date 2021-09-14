@@ -66,13 +66,12 @@ namespace ILLink.RoslynAnalyzer.Tests
 			}
 		}
 
-		public static void RunTestAsync<TAnalyzer> (MemberDeclarationSyntax m, List<AttributeSyntax> attrs, params (string, string)[] MSBuildProperties)
+		public static void RunTest<TAnalyzer> (MemberDeclarationSyntax m, List<AttributeSyntax> attrs, params (string, string)[] MSBuildProperties)
 			where TAnalyzer : DiagnosticAnalyzer, new()
 		{
 			var testSyntaxTree = m.SyntaxTree.GetRoot ().SyntaxTree;
-			var testDependenciesSource = new List<SyntaxTree> ();
-			foreach (var testDependency in GetTestDependencies (testSyntaxTree))
-				testDependenciesSource.Add (CSharpSyntaxTree.ParseText (File.ReadAllText (testDependency)));
+			var testDependenciesSource = GetTestDependencies (testSyntaxTree)
+			    .Select(testDependency => CSharpSyntaxTree.ParseText (File.ReadAllText (testDependency)));
 
 			var test = new TestChecker (m, CSharpAnalyzerVerifier<TAnalyzer>
 				.CreateCompilation (testSyntaxTree, MSBuildProperties, additionalSources: testDependenciesSource).Result);

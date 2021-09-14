@@ -52,11 +52,11 @@ namespace ILLink.RoslynAnalyzer.Tests
 		{
 			var mdRef = MetadataReference.CreateFromFile (typeof (Mono.Linker.Tests.Cases.Expectations.Metadata.BaseMetadataAttribute).Assembly.Location);
 			additionalReferences ??= Array.Empty<MetadataReference> ();
-			List<SyntaxTree> sources = additionalSources != null ? additionalSources.ToList () : new List<SyntaxTree> ();
-			sources.Add (src);
+			var sources = new List (src);
+			sources.AddRange (additionalSources ?? Array.Empty<SyntaxTree> ());
 			var comp = CSharpCompilation.Create (
 				assemblyName: Guid.NewGuid ().ToString ("N"),
-				syntaxTrees: sources.ToArray (),
+				syntaxTrees: sources,
 				references: (await TestCaseUtils.GetNet6References ()).Add (mdRef).AddRange (additionalReferences),
 				new CSharpCompilationOptions (OutputKind.DynamicallyLinkedLibrary));
 
