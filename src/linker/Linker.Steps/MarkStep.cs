@@ -1380,7 +1380,12 @@ namespace Mono.Linker.Steps
 			foreach (TypeDefinition type in module.Types)
 				MarkEntireType (type, new DependencyInfo (DependencyKind.TypeInAssembly, assembly));
 
-			// Mark scopes of type references and exported types by traversing the assembly.
+			foreach (ExportedType exportedType in module.ExportedTypes) {
+				MarkingHelpers.MarkExportedType (exportedType, module, new DependencyInfo (DependencyKind.ExportedType, assembly));
+				MarkingHelpers.MarkForwardedScope (new TypeReference (exportedType.Namespace, exportedType.Name, module, exportedType.Scope));
+			}
+
+			// Mark scopes of type references by traversing the assembly.
 			new TypeReferenceMarker (assembly, MarkingHelpers).Process ();
 
 			// Also mark the scopes of metadata typeref rows to cover any not discovered by the traversal.

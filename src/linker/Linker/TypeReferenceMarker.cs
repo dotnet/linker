@@ -22,7 +22,7 @@ namespace Mono.Linker
 			visited = null;
 		}
 
-		// Traverse the assembly and mark exported types, and the scopes of discovered type references.
+		// Traverse the assembly and mark the scopes of discovered type references (but not exported types).
 		// This includes scopes referenced by Cecil TypeReference objects that don't represent rows in the typeref table,
 		// such as references to built-in types, or attribute arguments which encode type references as strings.
 		public void Process ()
@@ -41,9 +41,6 @@ namespace Mono.Linker
 					WalkScopes (type);
 				}
 			}
-
-			if (mmodule.HasExportedTypes)
-				WalkTypeScope (mmodule.ExportedTypes);
 
 			visited = null;
 		}
@@ -141,15 +138,6 @@ namespace Mono.Linker
 				WalkCustomAttributesTypesScopes (p);
 				WalkScopeOfTypeReference (p.ParameterType);
 				WalkMarshalInfoTypeScope (p);
-			}
-		}
-
-		void WalkTypeScope (Collection<ExportedType> forwarders)
-		{
-			var module = assembly.MainModule;
-			foreach (var f in forwarders) {
-				markingHelpers.MarkExportedType (f, module, new DependencyInfo (DependencyKind.ExportedType, assembly));
-				markingHelpers.MarkForwardedScope (new TypeReference (f.Namespace, f.Name, module, f.Scope));
 			}
 		}
 
