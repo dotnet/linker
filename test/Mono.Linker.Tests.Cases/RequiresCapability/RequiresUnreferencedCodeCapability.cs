@@ -33,8 +33,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 	[LogDoesNotContain ("--UnusedVirtualMethod2--")]
 	[LogDoesNotContain ("--IUnusedInterface.UnusedMethod--")]
 	[LogDoesNotContain ("--UnusedImplementationClass.UnusedMethod--")]
-	// [LogDoesNotContain ("UnusedVirtualMethod2")] // https://github.com/mono/linker/issues/2106
-	// [LogContains ("--RequiresUnreferencedCodeOnlyViaDescriptor--")]  // https://github.com/mono/linker/issues/2103
+	// [LogDoesNotContain ("UnusedVirtualMethod2")] // https://github.com/dotnet/linker/issues/2106
+	// [LogContains ("--RequiresUnreferencedCodeOnlyViaDescriptor--")]  // https://github.com/dotnet/linker/issues/2103
 	[ExpectedNoWarnings]
 	public class RequiresUnreferencedCodeCapability
 	{
@@ -493,7 +493,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			tmp.GetRequiresUnreferencedCode ();
 		}
 
-		// https://github.com/mono/linker/issues/2107
+		// https://github.com/dotnet/linker/issues/2107
 		// Doesn't work in the analyzer because the test infra for analyzer will not build the second assembly
 		// and provide it as a ref assembly to the compilation - so the analyzer actually sees the below
 		// as errors (missing assembly).
@@ -706,7 +706,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		class AccessThroughSpecialAttribute
 		{
-			// https://github.com/mono/linker/issues/1873
+			// https://github.com/dotnet/linker/issues/1873
 			// [ExpectedWarning ("IL2026", "--DebuggerProxyType.Method--")]
 			[DebuggerDisplay ("Some{*}value")]
 			class TypeWithDebuggerDisplay
@@ -1426,7 +1426,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 			class ReflectionAccessOnEvents
 			{
-				// Most of the tests in this run into https://github.com/mono/linker/issues/2218
+				// Most of the tests in this run into https://github.com/dotnet/linker/issues/2218
 				// So for now keeping just a very simple test
 
 				[RequiresUnreferencedCode ("--WithRUC--")]
