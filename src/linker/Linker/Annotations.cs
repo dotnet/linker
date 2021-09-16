@@ -245,7 +245,7 @@ namespace Mono.Linker
 			return marked_instantiated.Contains (type);
 		}
 
-		public void MarkRelevantToVariantCasting (TypeDefinition? type)
+		public void MarkRelevantToVariantCasting (TypeDefinition type)
 		{
 			if (type != null)
 				types_relevant_to_variant_casting.Add (type);
