@@ -18,6 +18,8 @@ namespace ILLink.RoslynAnalyzer.Tests
 {
 	public abstract class TestCaseUtils
 	{
+		private static readonly string MonoLinkerTestsCases = "Mono.Linker.Tests.Cases";
+
 		public static readonly ReferenceAssemblies Net6PreviewAssemblies =
 			new ReferenceAssemblies (
 				"net6.0",
@@ -86,12 +88,16 @@ namespace ILLink.RoslynAnalyzer.Tests
 			var builder = ImmutableDictionary.CreateBuilder<string, List<string>> ();
 
 			foreach (var file in GetTestFiles ()) {
-				var dirName = Path.GetFileName (Path.GetDirectoryName (file))!;
-				if (builder.TryGetValue (dirName, out var sources)) {
+				var dirName = Path.GetDirectoryName (file);
+				while (Path.GetFileName (Path.GetDirectoryName (dirName)) != MonoLinkerTestsCases)
+					dirName = Path.GetDirectoryName (dirName);
+
+				dirName = Path.GetFileName (dirName);
+				if (builder.TryGetValue (dirName!, out var sources)) {
 					sources.Add (file);
 				} else {
 					sources = new List<string> () { file };
-					builder[dirName] = sources;
+					builder[dirName!] = sources;
 				}
 			}
 

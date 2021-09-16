@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using System.Collections.Immutable;
+using System.Runtime.InteropServices;
 using ILLink.Shared;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -13,6 +14,7 @@ namespace ILLink.RoslynAnalyzer
 	[DiagnosticAnalyzer (LanguageNames.CSharp)]
 	public sealed class COMAnalyzer : DiagnosticAnalyzer
 	{
+		private const string StructLayoutAttribute = nameof (StructLayoutAttribute);
 		private const string DllImportAttribute = nameof (DllImportAttribute);
 		private const string MarshalAsAttribute = nameof (MarshalAsAttribute);
 
@@ -55,11 +57,11 @@ namespace ILLink.RoslynAnalyzer
 				if (symbol.TryGetAttribute (MarshalAsAttribute, out var marshalAsAttribute) &&
 					marshalAsAttribute.ConstructorArguments.Length >= 1 && marshalAsAttribute.ConstructorArguments[0] is TypedConstant typedConstant &&
 					typedConstant.Type != null && typedConstant.Type.IsUnmanagedType) {
-					var unmanagedType = typedConstant.Type;
-					switch (unmanagedType.Name) {
-					case "IUnknown":
-					case "IDispatch":
-					case "Interface":
+					var unmanagedType = typedConstant.Value;
+					switch (unmanagedType) {
+					case (int) UnmanagedType.IUnknown:
+					case (int) UnmanagedType.IDispatch:
+					case (int) UnmanagedType.Interface:
 						return true;
 
 					default:
@@ -67,13 +69,53 @@ namespace ILLink.RoslynAnalyzer
 					}
 				}
 
-				var namedTypeSymbol = symbol.ContainingType;
-				if (namedTypeSymbol.ContainingNamespace.Name == "System" && namedTypeSymbol.Name == "Array") {
+				if (IsInterface (symbol))
 					return true;
-				} else if (namedTypeSymbol.ContainingNamespace.Name == "System" && namedTypeSymbol.Name == "String" ||
-					namedTypeSymbol.ContainingNamespace.Name == "System.Text" && namedTypeSymbol.Name == "StringBuilder") {
+
+				if (symbol is not IParameterSymbol parameterSymbol)
+					return false;
+
+				var parameterType = parameterSymbol.Type;
+				if (parameterType.ContainingNamespace.Name == "System" && parameterType.Name == "Array") {
+					// System.Array marshals as IUnknown by default
+					return true;
+				} else if (parameterType.ContainingNamespace.Name == "System" && parameterType.Name == "String" ||
+					parameterType.ContainingNamespace.Name == "System.Text" && parameterType.Name == "StringBuilder") {
+					// String and StringBuilder are special cased by interop
 					return false;
 				}
+
+				if (parameterType.IsValueType) {
+					// Value types don't marshal as COM
+					return false;
+				} else if (IsInterface (parameterSymbol.Type)) {
+					// Interface types marshal as COM by default
+					return true;
+				} else if (parameterType.ContainingNamespace.Name == "System" &&
+					parameterType.Name == "MulticastDelegate") {
+					// Delegates are special cased by interop
+					return false;
+				} else if (parameterType.ContainingNamespace.Name == "System.Runtime.InteropServices" &&
+					(parameterType.Name == "CriticalHandle" || parameterType.Name == "SafeHandle")) {
+					// Subclasses of CriticalHandle and SafeHandle are special cased by interop
+					return false;
+				} else if (parameterType.TryGetAttribute (StructLayoutAttribute, out var structLayoutAttribute) &&
+					(LayoutKind) structLayoutAttribute.ConstructorArguments[0].Value! == LayoutKind.Auto) {
+					// Rest of classes that don't have layout marshal as COM
+					return true;
+				}
+
+				return false;
+			}
+
+			static bool IsInterface (ISymbol symbol)
+			{
+				if (symbol is not INamedTypeSymbol namedTypeSymbol)
+					return false;
+
+				if (namedTypeSymbol.BaseType == null && namedTypeSymbol.IsReferenceType &&
+					!(namedTypeSymbol.ContainingNamespace.Name == "System" && namedTypeSymbol.Name == "Object"))
+					return true;
 
 				return false;
 			}
