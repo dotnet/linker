@@ -1817,9 +1817,9 @@ namespace Mono.Linker.Steps
 			MarkCustomAttributes (type, new DependencyInfo (DependencyKind.CustomAttribute, type));
 			MarkSecurityDeclarations (type, new DependencyInfo (DependencyKind.CustomAttribute, type));
 
-			if (type.BaseType is not null &&
+			if (_context.TryResolve (type.BaseType) is TypeDefinition baseType &&
 				!_context.Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (type) &&
-				_context.Annotations.TryGetLinkerAttribute (_context.TryResolve (type.BaseType), out RequiresUnreferencedCodeAttribute effectiveRequiresUnreferencedCode)) {
+				_context.Annotations.TryGetLinkerAttribute (baseType, out RequiresUnreferencedCodeAttribute effectiveRequiresUnreferencedCode)) {
 
 				var currentOrigin = _scopeStack.CurrentScope.Origin;
 
