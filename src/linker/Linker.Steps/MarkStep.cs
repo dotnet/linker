@@ -2736,8 +2736,8 @@ namespace Mono.Linker.Steps
 			if (reference.DeclaringType is ArrayType arrayType) {
 				MarkType (reference.DeclaringType, new DependencyInfo (DependencyKind.DeclaringType, reference));
 
-				if (reference.Name == ".ctor") {
-					Annotations.MarkRelevantToVariantCasting (_context.TryResolve (arrayType));
+				if (reference.Name == ".ctor" && _context.TryResolve (arrayType) is TypeDefinition typeDefinition) {
+					Annotations.MarkRelevantToVariantCasting (typeDefinition);
 				}
 				return null;
 			}
@@ -3414,7 +3414,8 @@ namespace Mono.Linker.Steps
 				var operand = (TypeReference) instruction.Operand;
 				switch (instruction.OpCode.Code) {
 				case Code.Newarr:
-					Annotations.MarkRelevantToVariantCasting (_context.TryResolve (operand));
+					if (_context.TryResolve (operand) is TypeDefinition typeDefinition)
+						Annotations.MarkRelevantToVariantCasting (typeDefinition);
 					break;
 				case Code.Isinst:
 					if (operand is TypeSpecification || operand is GenericParameter)
