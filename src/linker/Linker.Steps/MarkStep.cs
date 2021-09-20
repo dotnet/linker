@@ -1380,18 +1380,42 @@ namespace Mono.Linker.Steps
 			foreach (TypeDefinition type in module.Types)
 				MarkEntireType (type, new DependencyInfo (DependencyKind.TypeInAssembly, assembly));
 
-			foreach (ExportedType exportedType in module.ExportedTypes) {
-				MarkingHelpers.MarkExportedType (exportedType, module, new DependencyInfo (DependencyKind.ExportedType, assembly));
-				MarkingHelpers.MarkForwardedScope (new TypeReference (exportedType.Namespace, exportedType.Name, module, exportedType.Scope));
+			// Mark scopes of type references and exported types.
+			new TypeReferenceMarker (assembly, MarkingHelpers).Process ();
+		}
+
+		class TypeReferenceMarker : TypeReferenceWalker
+		{
+
+			readonly MarkingHelpers markingHelpers;
+
+			public TypeReferenceMarker (AssemblyDefinition assembly, MarkingHelpers markingHelpers)
+				: base (assembly)
+			{
+				this.markingHelpers = markingHelpers;
 			}
 
-			// Mark scopes of type references by traversing the assembly.
-			new TypeReferenceMarker (assembly, MarkingHelpers).Process ();
+			protected override void ProcessTypeReference (TypeReference type)
+			{
+				markingHelpers.MarkForwardedScope (type);
+			}
 
-			// Also mark the scopes of metadata typeref rows to cover any not discovered by the traversal.
-			// This can happen when the compiler emits typerefs into IL which aren't strictly necessary per ECMA 335.
-			foreach (TypeReference typeReference in module.GetTypeReferences ())
-				MarkingHelpers.MarkForwardedScope (typeReference);
+			protected override void ProcessExportedType (ExportedType exportedType)
+			{
+				markingHelpers.MarkExportedType (exportedType, assembly.MainModule, new DependencyInfo (DependencyKind.ExportedType, assembly));
+				markingHelpers.MarkForwardedScope (new TypeReference (exportedType.Namespace, exportedType.Name, assembly.MainModule, exportedType.Scope));
+			}
+
+			protected override void ProcessExtra ()
+			{
+				// Also mark the scopes of metadata typeref rows to cover any not discovered by the traversal.
+				// This can happen when the compiler emits typerefs into IL which aren't strictly necessary per ECMA 335.
+				foreach (TypeReference typeReference in assembly.MainModule.GetTypeReferences ()) {
+					if (!visited!.Add (typeReference))
+						continue;
+					markingHelpers.MarkForwardedScope (typeReference);
+				}
+			}
 		}
 
 		void ProcessModuleType (AssemblyDefinition assembly)
