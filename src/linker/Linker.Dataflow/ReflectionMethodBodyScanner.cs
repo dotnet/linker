@@ -730,7 +730,7 @@ namespace Mono.Linker.Dataflow
 						reflectionContext.AnalyzingPattern ();
 						foreach (var value in methodParams[0].UniqueValues ()) {
 							if (value is SystemTypeValue typeValue) {
-								if (AnalyzeGenericInstatiationTypeArray (methodParams[1], ref reflectionContext, calledMethodDefinition, typeValue.TypeRepresented.GenericParameters)) {
+								if (AnalyzeGenericInstantiationTypeArray (methodParams[1], ref reflectionContext, calledMethodDefinition, typeValue.TypeRepresented.GenericParameters)) {
 									reflectionContext.RecordHandledPattern ();
 								} else {
 									bool hasUncheckedAnnotation = false;
@@ -1862,7 +1862,7 @@ namespace Mono.Linker.Dataflow
 			return false;
 		}
 
-		bool AnalyzeGenericInstatiationTypeArray (ValueNode? arrayParam, ref ReflectionPatternContext reflectionContext, MethodReference calledMethod, IList<GenericParameter> genericParameters)
+		bool AnalyzeGenericInstantiationTypeArray (ValueNode? arrayParam, ref ReflectionPatternContext reflectionContext, MethodReference calledMethod, IList<GenericParameter> genericParameters)
 		{
 			bool hasRequirements = false;
 			foreach (var genericParameter in genericParameters) {
@@ -2397,7 +2397,7 @@ namespace Mono.Linker.Dataflow
 				return;
 			}
 
-			if (!AnalyzeGenericInstatiationTypeArray (genericParametersArray, ref reflectionContext, reflectionMethod, genericMethod.GenericParameters)) {
+			if (!AnalyzeGenericInstantiationTypeArray (genericParametersArray, ref reflectionContext, reflectionMethod, genericMethod.GenericParameters)) {
 				reflectionContext.RecordUnrecognizedPattern ((int) DiagnosticId.MakeGenericMethod,
 					new DiagnosticString (DiagnosticId.MakeGenericMethod).GetMessage (DiagnosticUtilities.GetMethodSignatureDisplayName (reflectionMethod)));
 			} else {
