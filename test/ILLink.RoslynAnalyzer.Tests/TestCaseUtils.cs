@@ -144,7 +144,9 @@ namespace ILLink.RoslynAnalyzer.Tests
 				return token.ValueText;
 
 			case SyntaxKind.TypeOfExpression:
-				return semanticModel.GetSymbolInfo ((expr as TypeOfExpressionSyntax).Type).Symbol.GetDisplayName ();
+				var typeofExpression = (TypeOfExpressionSyntax) expr;
+				var typeSymbol = semanticModel.GetSymbolInfo (typeofExpression.Type).Symbol;
+				return typeSymbol?.GetDisplayName () ?? string.Empty;
 
 			default:
 				Assert.True (false, "Unsupported expr kind " + expr.Kind ());

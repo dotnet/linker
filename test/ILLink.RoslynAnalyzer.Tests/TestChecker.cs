@@ -4,13 +4,14 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Text;
 using Xunit;
 
 namespace ILLink.RoslynAnalyzer.Tests
@@ -21,21 +22,58 @@ namespace ILLink.RoslynAnalyzer.Tests
 
 		private readonly SemanticModel SemanticModel;
 
-		private readonly List<(string Id, string Message)> DiagnosticMessages;
+		private readonly List<Diagnostic> DiagnosticMessages;
 
-		public TestChecker (SyntaxNode syntaxNode, (CompilationWithAnalyzers Compilation, SemanticModel SemanticModel) compilationResult)
+		private readonly SyntaxNode MemberSyntax;
+
+		public TestChecker (MemberDeclarationSyntax memberSyntax, (CompilationWithAnalyzers Compilation, SemanticModel SemanticModel) compilationResult)
 		{
 			Compilation = compilationResult.Compilation;
 			SemanticModel = compilationResult.SemanticModel;
 			DiagnosticMessages = Compilation.GetAnalyzerDiagnosticsAsync ().Result
-				.Where (d => d.Location.SourceSpan.IntersectsWith (syntaxNode.Span))
-				.Select (d => (d.Id, d.GetMessage ()))
+				.Where (d => {
+					// Filter down to diagnostics which originate from this member.
+
+					// Test data may include diagnostics originating from a testcase or testcase dependencies.
+					if (memberSyntax.SyntaxTree != d.Location.SourceTree)
+						return false;
+
+					// Filter down to diagnostics which originate from this member
+					if (memberSyntax is ClassDeclarationSyntax classSyntax) {
+						if (SemanticModel.GetDeclaredSymbol (classSyntax) is not ITypeSymbol typeSymbol)
+							throw new NotImplementedException ("Unable to get type symbol for class declaration syntax.");
+
+						if (typeSymbol.Locations.Length != 1)
+							throw new NotImplementedException ("Type defined in multiple source locations.");
+
+						// For classes, only consider diagnostics which originate from the type (not its members).
+						// Approximate this by getting the location from the start of the type's syntax (which includes
+						// attributes declared on the type) to the opening brace.
+						var classSpan = TextSpan.FromBounds (
+							classSyntax.GetLocation ().SourceSpan.Start,
+							classSyntax.OpenBraceToken.GetLocation ().SourceSpan.Start
+						);
+
+						return d.Location.SourceSpan.IntersectsWith (classSpan);
+					}
+
+					return d.Location.SourceSpan.IntersectsWith (memberSyntax.Span);
+				})
 				.ToList ();
+			MemberSyntax = memberSyntax;
 		}
 
-		bool IsExpectedDiagnostic (AttributeSyntax attribute) {
-			switch (attribute.Name.ToString()) {
+		bool IsExpectedDiagnostic (AttributeSyntax attribute)
+		{
+			switch (attribute.Name.ToString ()) {
 			case "ExpectedWarning":
+				var args = TestCaseUtils.GetAttributeArguments (attribute);
+				if (args.TryGetValue ("ProducedBy", out var producedBy) &&
+					producedBy is MemberAccessExpressionSyntax memberAccessExpression &&
+					memberAccessExpression.Name is IdentifierNameSyntax identifierNameSyntax &&
+					identifierNameSyntax.Identifier.ValueText == "Trimmer")
+					return false;
+				return true;
 			case "LogContains":
 			case "UnrecognizedReflectionAccessPattern":
 				return true;
@@ -44,34 +82,33 @@ namespace ILLink.RoslynAnalyzer.Tests
 			}
 		}
 
-		int? ValidateExpectedDiagnostic (AttributeSyntax attribute, List<(string Id, string Message)> diagnosticMessages, out string? missingDiagnosticMessage)
+		bool TryValidateExpectedDiagnostic (AttributeSyntax attribute, List<Diagnostic> diagnostics, [NotNullWhen (true)] out int? matchIndex, [NotNullWhen (false)] out string? missingDiagnosticMessage)
 		{
 			switch (attribute.Name.ToString ()) {
 			case "ExpectedWarning":
-				return ValidateExpectedWarningAttribute (attribute!, diagnosticMessages, out missingDiagnosticMessage);
+				return TryValidateExpectedWarningAttribute (attribute!, diagnostics, out matchIndex, out missingDiagnosticMessage);
 			case "LogContains":
-				return ValidateLogContainsAttribute (attribute!, diagnosticMessages, out missingDiagnosticMessage);
+				return TryValidateLogContainsAttribute (attribute!, diagnostics, out matchIndex, out missingDiagnosticMessage);
 			case "UnrecognizedReflectionAccessPattern":
-				return ValidateUnrecognizedReflectionAccessPatternAttribute (attribute!, diagnosticMessages, out missingDiagnosticMessage);
+				return TryValidateUnrecognizedReflectionAccessPatternAttribute (attribute!, diagnostics, out matchIndex, out missingDiagnosticMessage);
+			default:
+				throw new InvalidOperationException ($"Unsupported attribute type {attribute.Name}");
 			}
-			missingDiagnosticMessage = null;
-			return null;
 		}
 
 		public void ValidateAttributes (List<AttributeSyntax> attributes)
 		{
-			var unmatchedDiagnostics = DiagnosticMessages;
+			var unmatchedDiagnostics = DiagnosticMessages.ToList ();
 
 			var missingDiagnostics = new List<(AttributeSyntax Attribute, string Message)> ();
 			foreach (var attribute in attributes) {
-				if (attribute.Name.ToString() == "LogDoesNotContain")
+				if (attribute.Name.ToString () == "LogDoesNotContain")
 					ValidateLogDoesNotContainAttribute (attribute, DiagnosticMessages);
-				
+
 				if (!IsExpectedDiagnostic (attribute))
 					continue;
 
-				var matchIndex = ValidateExpectedDiagnostic (attribute, unmatchedDiagnostics, out string missingDiagnosticMessage);
-				if (matchIndex == null) {
+				if (!TryValidateExpectedDiagnostic (attribute, unmatchedDiagnostics, out int? matchIndex, out string? missingDiagnosticMessage)) {
 					missingDiagnostics.Add ((attribute, missingDiagnosticMessage));
 					continue;
 				}
@@ -91,50 +128,49 @@ namespace ILLink.RoslynAnalyzer.Tests
 			Assert.True (!unmatchedDiagnostics.Any (), unmatchedDiagnosticsMessage);
 		}
 
-		private int? ValidateExpectedWarningAttribute (AttributeSyntax attribute, List<(string Id, string Message)> diagnosticMessages, out string missingDiagnosticMessage)
+		private bool TryValidateExpectedWarningAttribute (AttributeSyntax attribute, List<Diagnostic> diagnostics, out int? matchIndex, out string? missingDiagnosticMessage)
 		{
 			missingDiagnosticMessage = null;
+			matchIndex = null;
 			var args = TestCaseUtils.GetAttributeArguments (attribute);
 			string expectedWarningCode = TestCaseUtils.GetStringFromExpression (args["#0"]);
 
 			if (!expectedWarningCode.StartsWith ("IL"))
-				return null;
-
-			if (args.TryGetValue ("ProducedBy", out var producedBy) &&
-				producedBy is MemberAccessExpressionSyntax memberAccessExpression &&
-				memberAccessExpression.Name is IdentifierNameSyntax identifierNameSyntax &&
-				identifierNameSyntax.Identifier.ValueText == "Trimmer")
-				return;
+				throw new InvalidOperationException ($"Expected warning code should start with \"IL\" prefix.");
 
 			List<string> expectedMessages = args
 				.Where (arg => arg.Key.StartsWith ("#") && arg.Key != "#0")
 				.Select (arg => TestCaseUtils.GetStringFromExpression (arg.Value, SemanticModel))
 				.ToList ();
 
-			for (int i = 0; i < diagnosticMessages.Count; i++) {
-				if (Matches (diagnosticMessages[i]))
-					return i;
+			for (int i = 0; i < diagnostics.Count; i++) {
+				if (Matches (diagnostics[i])) {
+					matchIndex = i;
+					return true;
+				}
 			}
 
 			missingDiagnosticMessage = $"Expected to find warning containing:{string.Join (" ", expectedMessages.Select (m => "'" + m + "'"))}" +
 					$", but no such message was found.{ Environment.NewLine}";
-			return null;
+			return false;
 
-			bool Matches ((string Id, string Message) mc) {
-				if (mc.Id != expectedWarningCode)
+			bool Matches (Diagnostic diagnostic)
+			{
+				if (diagnostic.Id != expectedWarningCode)
 					return false;
 
 				foreach (var expectedMessage in expectedMessages)
-					if (!mc.Message.Contains (expectedMessage))
+					if (!diagnostic.GetMessage ().Contains (expectedMessage))
 						return false;
 
 				return true;
 			}
 		}
 
-		private int? ValidateLogContainsAttribute (AttributeSyntax attribute, List<(string Id, string Message)> diagnosticMessages, out string missingDiagnosticMessage)
+		private bool TryValidateLogContainsAttribute (AttributeSyntax attribute, List<Diagnostic> diagnostics, out int? matchIndex, out string? missingDiagnosticMessage)
 		{
 			missingDiagnosticMessage = null;
+			matchIndex = null;
 			var arg = Assert.Single (TestCaseUtils.GetAttributeArguments (attribute));
 			var text = TestCaseUtils.GetStringFromExpression (arg.Value);
 
@@ -153,38 +189,41 @@ namespace ILLink.RoslynAnalyzer.Tests
 				}
 			}
 
-			for (int i = 0; i < diagnosticMessages.Count; i++) {
-				if (diagnosticMessages[i].Message.Contains (text))
-					return i;
+			for (int i = 0; i < diagnostics.Count; i++) {
+				if (diagnostics[i].GetMessage ().Contains (text)) {
+					matchIndex = i;
+					return true;
+				}
 			}
 
 			missingDiagnosticMessage = $"Could not find text:\n{text}\nIn diagnostics:\n{(string.Join (Environment.NewLine, DiagnosticMessages))}";
-			return null;
+			return false;
 		}
 
-		private void ValidateLogDoesNotContainAttribute (AttributeSyntax attribute, List<(string Id, string Message)> diagnosticMessages)
+		private void ValidateLogDoesNotContainAttribute (AttributeSyntax attribute, List<Diagnostic> diagnosticMessages)
 		{
 			var arg = Assert.Single (TestCaseUtils.GetAttributeArguments (attribute));
 			var text = TestCaseUtils.GetStringFromExpression (arg.Value);
 			foreach (var diagnostic in DiagnosticMessages)
-				Assert.DoesNotContain (text, diagnostic.Message);
+				Assert.DoesNotContain (text, diagnostic.GetMessage ());
 		}
 
-		private int? ValidateUnrecognizedReflectionAccessPatternAttribute (AttributeSyntax attribute, List<(string Id, string Message)> diagnosticMessages, out string missingDiagnosticMessage)
+		private bool TryValidateUnrecognizedReflectionAccessPatternAttribute (AttributeSyntax attribute, List<Diagnostic> diagnostics, out int? matchIndex, out string? missingDiagnosticMessage)
 		{
 			missingDiagnosticMessage = null;
+			matchIndex = null;
 			var args = TestCaseUtils.GetAttributeArguments (attribute);
 
 			MemberDeclarationSyntax sourceMember = attribute.Ancestors ().OfType<MemberDeclarationSyntax> ().First ();
 			if (SemanticModel.GetDeclaredSymbol (sourceMember) is not ISymbol memberSymbol)
-				return null;
+				return false;
 
 			string sourceMemberName = memberSymbol!.GetDisplayName ();
 			string expectedReflectionMemberMethodType = TestCaseUtils.GetStringFromExpression (args["#0"], SemanticModel);
 			string expectedReflectionMemberMethodName = TestCaseUtils.GetStringFromExpression (args["#1"], SemanticModel);
 
 			var reflectionMethodParameters = new List<string> ();
-			if (args.TryGetValue("#2", out var reflectionMethodParametersExpr) || args.TryGetValue("reflectionMethodParameters", out reflectionMethodParametersExpr)) {
+			if (args.TryGetValue ("#2", out var reflectionMethodParametersExpr) || args.TryGetValue ("reflectionMethodParameters", out reflectionMethodParametersExpr)) {
 				if (reflectionMethodParametersExpr is ArrayCreationExpressionSyntax arrayReflectionMethodParametersExpr) {
 					foreach (var rmp in arrayReflectionMethodParametersExpr.Initializer!.Expressions)
 						reflectionMethodParameters.Add (TestCaseUtils.GetStringFromExpression (rmp, SemanticModel));
@@ -192,7 +231,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			}
 
 			var expectedStringsInMessage = new List<string> ();
-			if (args.TryGetValue("#3", out var messageExpr) || args.TryGetValue("message", out messageExpr)) {
+			if (args.TryGetValue ("#3", out var messageExpr) || args.TryGetValue ("message", out messageExpr)) {
 				if (messageExpr is ArrayCreationExpressionSyntax arrayMessageExpr) {
 					foreach (var m in arrayMessageExpr.Initializer!.Expressions)
 						expectedStringsInMessage.Add (TestCaseUtils.GetStringFromExpression (m, SemanticModel));
@@ -208,7 +247,6 @@ namespace ILLink.RoslynAnalyzer.Tests
 
 			// Don't validate the return type becasue this is not included in the diagnostic messages.
 
-
 			var sb = new StringBuilder ();
 
 			// Format the member signature the same way Roslyn would since this is what will be included in the warning message.
@@ -220,27 +258,30 @@ namespace ILLink.RoslynAnalyzer.Tests
 
 			var reflectionAccessPattern = sb.ToString ();
 
-			for (int i = 0; i < diagnosticMessages.Count; i++) {
-				if (Matches (diagnosticMessages[i]))
-					return i;
+			for (int i = 0; i < diagnostics.Count; i++) {
+				if (Matches (diagnostics[i])) {
+					matchIndex = i;
+					return true;
+				}
 			}
 
 			missingDiagnosticMessage = $"Expected to find unrecognized reflection access pattern '{(expectedWarningCode == string.Empty ? "" : expectedWarningCode + " ")}" +
 					$"{sourceMemberName}: Usage of {reflectionAccessPattern} unrecognized.";
-			return null;
+			return false;
 
-			bool Matches ((string Id, string Message) mc) {
-				if (!string.IsNullOrEmpty (expectedWarningCode) && mc.Id != expectedWarningCode)
+			bool Matches (Diagnostic diagnostic)
+			{
+				if (!string.IsNullOrEmpty (expectedWarningCode) && diagnostic.Id != expectedWarningCode)
 					return false;
 
 				// Don't check whether the message contains the source member name. Roslyn's diagnostics don't include the source
 				// member as part of the message.
 
 				foreach (var expectedString in expectedStringsInMessage)
-					if (!mc.Message.Contains (expectedString))
+					if (!diagnostic.GetMessage ().Contains (expectedString))
 						return false;
 
-				return mc.Message.Contains (reflectionAccessPattern);
+				return diagnostic.GetMessage ().Contains (reflectionAccessPattern);
 			}
 		}
 	}
