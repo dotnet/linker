@@ -1381,7 +1381,7 @@ namespace Mono.Linker.Steps
 				MarkEntireType (type, new DependencyInfo (DependencyKind.TypeInAssembly, assembly));
 
 			// Mark scopes of type references and exported types.
-			new TypeReferenceMarker (assembly, MarkingHelpers).Process ();
+			TypeReferenceMarker.MarkTypeReferences (assembly, MarkingHelpers);
 		}
 
 		class TypeReferenceMarker : TypeReferenceWalker
@@ -1389,10 +1389,15 @@ namespace Mono.Linker.Steps
 
 			readonly MarkingHelpers markingHelpers;
 
-			public TypeReferenceMarker (AssemblyDefinition assembly, MarkingHelpers markingHelpers)
+			TypeReferenceMarker (AssemblyDefinition assembly, MarkingHelpers markingHelpers)
 				: base (assembly)
 			{
 				this.markingHelpers = markingHelpers;
+			}
+
+			public static void MarkTypeReferences (AssemblyDefinition assembly, MarkingHelpers markingHelpers)
+			{
+				new TypeReferenceMarker (assembly, markingHelpers).Process ();
 			}
 
 			protected override void ProcessTypeReference (TypeReference type)
@@ -1411,7 +1416,7 @@ namespace Mono.Linker.Steps
 				// Also mark the scopes of metadata typeref rows to cover any not discovered by the traversal.
 				// This can happen when the compiler emits typerefs into IL which aren't strictly necessary per ECMA 335.
 				foreach (TypeReference typeReference in assembly.MainModule.GetTypeReferences ()) {
-					if (!visited!.Add (typeReference))
+					if (!Visited!.Add (typeReference))
 						continue;
 					markingHelpers.MarkForwardedScope (typeReference);
 				}

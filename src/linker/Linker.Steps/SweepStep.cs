@@ -70,7 +70,7 @@ namespace Mono.Linker.Steps
 				case AssemblyAction.CopyUsed:
 				case AssemblyAction.Link:
 				case AssemblyAction.Save:
-					bool changed = SweepAssemblyReferences (assembly);
+					bool changed = AssemblyReferencesCorrector.SweepAssemblyReferences (assembly);
 					if (changed && action == AssemblyAction.CopyUsed)
 						Annotations.SetAction (assembly, AssemblyAction.Save);
 					break;
@@ -188,7 +188,7 @@ namespace Mono.Linker.Steps
 				AssemblyAction assemblyAction = AssemblyAction.Copy;
 				if (!Context.KeepTypeForwarderOnlyAssemblies && SweepTypeForwarders (assembly)) {
 					// Need to sweep references, in case sweeping type forwarders removed any
-					SweepAssemblyReferences (assembly);
+					AssemblyReferencesCorrector.SweepAssemblyReferences (assembly);
 					assemblyAction = AssemblyAction.Save;
 				}
 
@@ -205,7 +205,7 @@ namespace Mono.Linker.Steps
 			case AssemblyAction.Save:
 				if (!Context.KeepTypeForwarderOnlyAssemblies && SweepTypeForwarders (assembly)) {
 					// Need to sweep references, in case sweeping type forwarders removed any
-					SweepAssemblyReferences (assembly);
+					AssemblyReferencesCorrector.SweepAssemblyReferences (assembly);
 				}
 				break;
 			}
@@ -253,21 +253,7 @@ namespace Mono.Linker.Steps
 			}
 
 			if (SweepTypeForwarders (assembly) || updateScopes)
-				SweepAssemblyReferences (assembly);
-		}
-
-		static bool SweepAssemblyReferences (AssemblyDefinition assembly)
-		{
-			//
-			// We used to run over list returned by GetTypeReferences but
-			// that returns typeref(s) of original assembly and we don't track
-			// which types are needed for which assembly which left us
-			// with dangling assembly references
-			//
-			assembly.MainModule.AssemblyReferences.Clear ();
-
-			var arc = new AssemblyReferencesCorrector (assembly);
-			return arc.Update ();
+				AssemblyReferencesCorrector.SweepAssemblyReferences (assembly);
 		}
 
 		bool IsUsedAssembly (AssemblyDefinition assembly)
@@ -570,13 +556,27 @@ namespace Mono.Linker.Steps
 
 			bool changedAnyScopes;
 
-			public AssemblyReferencesCorrector (AssemblyDefinition assembly) : base (assembly)
+			AssemblyReferencesCorrector (AssemblyDefinition assembly) : base (assembly)
 			{
 				this.importer = new DefaultMetadataImporter (assembly.MainModule);
 				changedAnyScopes = false;
 			}
 
-			public bool Update ()
+			public static bool SweepAssemblyReferences (AssemblyDefinition assembly)
+			{
+				//
+				// We used to run over list returned by GetTypeReferences but
+				// that returns typeref(s) of original assembly and we don't track
+				// which types are needed for which assembly which left us
+				// with dangling assembly references
+				//
+				assembly.MainModule.AssemblyReferences.Clear ();
+
+				var arc = new AssemblyReferencesCorrector (assembly);
+				return arc.Update ();
+			}
+
+			bool Update ()
 			{
 				base.Process ();
 				var ret = changedAnyScopes;

@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System;
 using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -15,7 +16,8 @@ namespace Mono.Linker
 	{
 		protected readonly AssemblyDefinition assembly;
 
-		protected HashSet<TypeReference>? visited;
+		HashSet<TypeReference>? visited;
+		protected HashSet<TypeReference> Visited => visited ?? throw new InvalidOperationException ();
 
 		public TypeReferenceWalker (AssemblyDefinition assembly)
 		{
@@ -26,7 +28,7 @@ namespace Mono.Linker
 		// Traverse the assembly and mark the scopes of discovered type references (but not exported types).
 		// This includes scopes referenced by Cecil TypeReference objects that don't represent rows in the typeref table,
 		// such as references to built-in types, or attribute arguments which encode type references as strings.
-		public virtual void Process ()
+		protected virtual void Process ()
 		{
 			visited = new HashSet<TypeReference> ();
 
