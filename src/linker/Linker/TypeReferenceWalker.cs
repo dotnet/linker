@@ -16,7 +16,7 @@ namespace Mono.Linker
 	{
 		protected readonly AssemblyDefinition assembly;
 
-		protected HashSet<TypeReference> Visited { get; init; } = new HashSet<TypeReference> ();
+		protected HashSet<TypeReference> Visited { get; } = new HashSet<TypeReference> ();
 
 		public TypeReferenceWalker (AssemblyDefinition assembly)
 		{
