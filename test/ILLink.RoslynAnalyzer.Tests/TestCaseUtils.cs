@@ -88,16 +88,16 @@ namespace ILLink.RoslynAnalyzer.Tests
 			var builder = ImmutableDictionary.CreateBuilder<string, List<string>> ();
 
 			foreach (var file in GetTestFiles ()) {
-				var dirName = Path.GetDirectoryName (file);
-				while (Path.GetFileName (Path.GetDirectoryName (dirName)) != MonoLinkerTestsCases)
-					dirName = Path.GetDirectoryName (dirName);
+				var directory = Path.GetDirectoryName (file);
+				while (Path.GetFileName (Path.GetDirectoryName (directory)) != MonoLinkerTestsCases)
+					directory = Path.GetDirectoryName (directory);
 
-				dirName = Path.GetFileName (dirName);
-				if (builder.TryGetValue (dirName!, out var sources)) {
+				var parentDirectory = Path.GetFileName (directory);
+				if (builder.TryGetValue (parentDirectory!, out var sources)) {
 					sources.Add (file);
 				} else {
 					sources = new List<string> () { file };
-					builder[dirName!] = sources;
+					builder[parentDirectory!] = sources;
 				}
 			}
 
