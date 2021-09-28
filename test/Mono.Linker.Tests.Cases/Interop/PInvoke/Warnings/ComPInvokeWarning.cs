@@ -15,6 +15,7 @@ namespace Mono.Linker.Tests.Cases.Interop.PInvoke.Warnings
 		[UnconditionalSuppressMessage ("trim", "IL2026")]
 		static void Main ()
 		{
+			Call_SomeMethodReturningAutoLayoutClass ();
 			Call_SomeMethodTakingInterface ();
 			Call_SomeMethodTakingObject ();
 			Call_SomeMethodTakingArray ();
@@ -110,6 +111,14 @@ namespace Mono.Linker.Tests.Cases.Interop.PInvoke.Warnings
 		[DllImport ("Foo")]
 		static extern void SomeMethodTakingAutoLayout (AutoLayout _class);
 
+		[ExpectedWarning ("IL2050")]
+		static void Call_SomeMethodReturningAutoLayoutClass ()
+		{
+			SomeMethodReturningAutoLayout ();
+		}
+
+		[DllImport ("Foo")]
+		static extern AutoLayout SomeMethodReturningAutoLayout ();
 
 		static void Call_SomeMethodTakingString ()
 		{

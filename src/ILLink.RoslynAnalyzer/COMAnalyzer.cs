@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System;
 using System.Collections.Immutable;
 using System.Runtime.InteropServices;
 using ILLink.Shared;
@@ -38,16 +39,14 @@ namespace ILLink.RoslynAnalyzer
 					if (!targetMethod.HasAttribute (DllImportAttribute))
 						return;
 
+					bool comDangerousMethod = IsComInterop (targetMethod.ReturnType);
 					foreach (var parameter in targetMethod.Parameters) {
-						if (IsComInterop (parameter)) {
-							operationContext.ReportDiagnostic (Diagnostic.Create (s_correctnessOfCOMCannotBeGuaranteed,
-								operationContext.Operation.Syntax.GetLocation (), targetMethod.GetDisplayName ()));
-						}
+						comDangerousMethod |= IsComInterop (parameter);
 					}
 
-					if (IsComInterop (targetMethod.ReturnType)) {
+					if (comDangerousMethod) {
 						operationContext.ReportDiagnostic (Diagnostic.Create (s_correctnessOfCOMCannotBeGuaranteed,
-								operationContext.Operation.Syntax.GetLocation (), targetMethod.GetDisplayName ()));
+							operationContext.Operation.Syntax.GetLocation (), targetMethod.GetDisplayName ()));
 					}
 				}, OperationKind.Invocation);
 			});
@@ -65,57 +64,51 @@ namespace ILLink.RoslynAnalyzer
 						return true;
 
 					default:
+						if (Enum.IsDefined (typeof (UnmanagedType), unmanagedType))
+							return false;
+
 						break;
 					}
 				}
 
-				if (IsInterface (symbol))
+				if (symbol.IsInterface ())
 					return true;
 
-				if (symbol is not IParameterSymbol parameterSymbol)
+				ITypeSymbol? typeSymbol = symbol is ITypeSymbol ? symbol as ITypeSymbol : null;
+				if (symbol is IParameterSymbol parameterSymbol)
+					typeSymbol = parameterSymbol.Type;
+
+				if (typeSymbol == null)
 					return false;
 
-				var parameterType = parameterSymbol.Type;
-				if (parameterType.ContainingNamespace.Name == "System" && parameterType.Name == "Array") {
+				if (typeSymbol.ContainingNamespace.Name == "System" && typeSymbol.Name == "Array") {
 					// System.Array marshals as IUnknown by default
 					return true;
-				} else if (parameterType.ContainingNamespace.Name == "System" && parameterType.Name == "String" ||
-					parameterType.ContainingNamespace.Name == "System.Text" && parameterType.Name == "StringBuilder") {
+				} else if (typeSymbol.ContainingNamespace.Name == "System" && typeSymbol.Name == "String" ||
+					typeSymbol.ContainingNamespace.Name == "System.Text" && typeSymbol.Name == "StringBuilder") {
 					// String and StringBuilder are special cased by interop
 					return false;
 				}
 
-				if (parameterType.IsValueType) {
+				if (typeSymbol.IsValueType) {
 					// Value types don't marshal as COM
 					return false;
-				} else if (IsInterface (parameterSymbol.Type)) {
+				} else if (typeSymbol.IsInterface ()) {
 					// Interface types marshal as COM by default
 					return true;
-				} else if (parameterType.ContainingNamespace.Name == "System" &&
-					parameterType.Name == "MulticastDelegate") {
+				} else if (typeSymbol.ContainingNamespace.Name == "System" &&
+					typeSymbol.Name == "MulticastDelegate") {
 					// Delegates are special cased by interop
 					return false;
-				} else if (parameterType.ContainingNamespace.Name == "System.Runtime.InteropServices" &&
-					(parameterType.Name == "CriticalHandle" || parameterType.Name == "SafeHandle")) {
+				} else if (typeSymbol.IsSubclassOf ("System.Runtime.InteropServices", "CriticalHandle") ||
+					typeSymbol.IsSubclassOf ("System.Runtime.InteropServices", "SafeHandle")) {
 					// Subclasses of CriticalHandle and SafeHandle are special cased by interop
 					return false;
-				} else if (parameterType.TryGetAttribute (StructLayoutAttribute, out var structLayoutAttribute) &&
+				} else if (typeSymbol.TryGetAttribute (StructLayoutAttribute, out var structLayoutAttribute) &&
 					(LayoutKind) structLayoutAttribute.ConstructorArguments[0].Value! == LayoutKind.Auto) {
 					// Rest of classes that don't have layout marshal as COM
 					return true;
 				}
-
-				return false;
-			}
-
-			static bool IsInterface (ISymbol symbol)
-			{
-				if (symbol is not INamedTypeSymbol namedTypeSymbol)
-					return false;
-
-				if (namedTypeSymbol.BaseType == null && namedTypeSymbol.IsReferenceType &&
-					!(namedTypeSymbol.ContainingNamespace.Name == "System" && namedTypeSymbol.Name == "Object"))
-					return true;
 
 				return false;
 			}
