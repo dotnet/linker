@@ -679,6 +679,43 @@ namespace System
 		}
 
 		[Fact]
+		public Task ConversionOperation ()
+		{
+			var TargetParameterWithAnnotations = @"
+namespace System
+{
+    class ConvertsToType
+    {
+        public static implicit operator Type(ConvertsToType value) => typeof (ConvertsToType);
+    }
+
+    class C : TestSystemTypeBase
+    {
+        public static void Main()
+        {
+            new C().M1();
+        }
+
+        private void M1()
+        {
+            M2(new ConvertsToType());
+        }
+
+        private static void M2(
+            [System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(
+				System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
+        {
+        }
+    }
+}";
+
+			return VerifyDynamicallyAccessedMembersAnalyzer (string.Concat (GetSystemTypeBase (), TargetParameterWithAnnotations),
+				VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsParameter)
+				.WithSpan (183, 16, 183, 36)
+				.WithArguments ("type", "System.C.M2(System.Type)", "System.ConvertsToType.implicit operator System.Type(System.ConvertsToType)", "'DynamicallyAccessedMemberTypes.PublicMethods'"));
+		}
+
+		[Fact]
 		public Task SourceMethodDoesNotMatchTargetMethodReturnTypeAnnotations ()
 		{
 			var TargetMethodReturnTypeWithAnnotations = @"
