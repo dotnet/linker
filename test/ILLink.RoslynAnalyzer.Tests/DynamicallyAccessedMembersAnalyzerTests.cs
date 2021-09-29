@@ -717,7 +717,7 @@ namespace System
 
 
 		[Fact]
-		public Task AnnotatedConversionOperation ()
+		public Task ConversionOperationAnnotationDoesNotMatch ()
 		{
 			var AnnotatedConversionOperation = @"
 namespace System
@@ -754,6 +754,43 @@ namespace System
 				.WithSpan (185, 16, 185, 36)
 				.WithArguments ("type", "System.C.M2(System.Type)", "System.ConvertsToType.implicit operator System.Type(System.ConvertsToType)", "'DynamicallyAccessedMemberTypes.PublicMethods'"));
 		}
+
+		[Fact]
+		public Task ConversionOperationAnnotationMatches ()
+		{
+			var AnnotatedConversionOperation = @"
+namespace System
+{
+    class ConvertsToType
+    {
+        [return: System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(
+            System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods)]
+        public static implicit operator Type(ConvertsToType value) => null;
+    }
+
+    class C : TestSystemTypeBase
+    {
+        public static void Main()
+        {
+            new C().M1();
+        }
+
+        private void M1()
+        {
+            M2(new ConvertsToType());
+        }
+
+        private static void M2(
+            [System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(
+				System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
+        {
+        }
+    }
+}";
+
+			return VerifyDynamicallyAccessedMembersAnalyzer (string.Concat (GetSystemTypeBase (), AnnotatedConversionOperation));
+		}
+
 
 		[Fact]
 		public Task SourceMethodDoesNotMatchTargetMethodReturnTypeAnnotations ()
