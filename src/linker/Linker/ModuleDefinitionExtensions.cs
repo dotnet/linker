@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Mono.Cecil;
 
 namespace Mono.Linker
@@ -11,7 +12,7 @@ namespace Mono.Linker
 				(module.Attributes & ModuleAttributes.ILLibrary) != 0;
 		}
 
-		public static bool GetMatchingExportedType (this ModuleDefinition module, TypeDefinition typeDefinition, out ExportedType exportedType)
+		public static bool GetMatchingExportedType (this ModuleDefinition module, TypeDefinition typeDefinition, [NotNullWhen (true)] out ExportedType? exportedType)
 		{
 			exportedType = null;
 			if (!module.HasExportedTypes || typeDefinition == null)
@@ -26,7 +27,7 @@ namespace Mono.Linker
 			return false;
 		}
 
-		public static TypeDefinition ResolveType (this ModuleDefinition module, string typeFullName, ITryResolveMetadata resolver)
+		public static TypeDefinition? ResolveType (this ModuleDefinition module, string typeFullName, ITryResolveMetadata resolver)
 		{
 			if (typeFullName == null)
 				return null;

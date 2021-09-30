@@ -1,10 +1,12 @@
+using System;
 using Mono.Cecil;
 
 namespace Mono.Linker.Steps
 {
 	public class ReflectionBlockedStep : BaseStep
 	{
-		AssemblyDefinition assembly;
+		AssemblyDefinition? assembly;
+		AssemblyDefinition Assembly => assembly ?? throw new InvalidOperationException ();
 
 		protected override void ProcessAssembly (AssemblyDefinition assembly)
 		{
@@ -56,8 +58,8 @@ namespace Mono.Linker.Steps
 		{
 			// We are using DisableReflectionAttribute which is not exact match but it's quite
 			// close to what we need and it already exists in the BCL
-			MethodReference ctor = Context.MarkedKnownMembers.DisablePrivateReflectionAttributeCtor;
-			ctor = assembly.MainModule.ImportReference (ctor);
+			MethodReference ctor = Context.MarkedKnownMembers.DisablePrivateReflectionAttributeCtor ?? throw new InvalidOperationException ();
+			ctor = Assembly.MainModule.ImportReference (ctor);
 
 			var ca = new CustomAttribute (ctor);
 			caProvider.CustomAttributes.Add (ca);

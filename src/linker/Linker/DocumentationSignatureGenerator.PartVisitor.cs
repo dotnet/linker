@@ -147,7 +147,7 @@ namespace Mono.Linker
 				}
 
 				if (typeReference.IsNested) {
-					VisitTypeReference (typeReference.GetInflatedDeclaringType (resolver), builder, resolver);
+					VisitTypeReference (typeReference.GetInflatedDeclaringType (resolver)!, builder, resolver);
 					builder.Append ('.');
 				}
 

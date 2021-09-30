@@ -11,8 +11,6 @@ using System.Text;
 using System.Xml.XPath;
 using Mono.Cecil;
 
-#nullable enable
-
 namespace Mono.Linker.Steps
 {
 	public class LinkAttributesParser : ProcessLinkerXmlBase
@@ -36,7 +34,7 @@ namespace Mono.Linker.Steps
 			ProcessXml (stripLinkAttributes, _context.IgnoreLinkAttributes);
 		}
 
-		CustomAttribute[] ProcessAttributes (XPathNavigator nav, ICustomAttributeProvider provider)
+		CustomAttribute[]? ProcessAttributes (XPathNavigator nav, ICustomAttributeProvider provider)
 		{
 			var builder = new ArrayBuilder<CustomAttribute> ();
 			foreach (XPathNavigator argumentNav in nav.SelectChildren ("attribute", string.Empty)) {
@@ -279,8 +277,7 @@ namespace Mono.Linker.Steps
 				if (!typeref.IsTypeOf ("System", "Type"))
 					goto default;
 
-				TypeReference type = _context.TypeNameResolver.ResolveTypeName (svalue, memberWithAttribute, out _);
-				if (type == null) {
+				if (!_context.TypeNameResolver.TryResolveTypeName (svalue, memberWithAttribute, out TypeReference? type, out _)) {
 					_context.LogError ($"Could not resolve custom attribute type value '{svalue}'.", 1044, origin: GetMessageOriginForPosition (nav));
 					return null;
 				}
@@ -298,8 +295,7 @@ namespace Mono.Linker.Steps
 				if (string.IsNullOrEmpty (typeName))
 					typeName = "System.String";
 
-				TypeReference typeref = _context.TypeNameResolver.ResolveTypeName (typeName, memberWithAttribute, out _);
-				if (typeref == null) {
+				if (!_context.TypeNameResolver.TryResolveTypeName (typeName, memberWithAttribute, out TypeReference? typeref, out _)) {
 					_context.LogError ($"The type '{typeName}' used with attribute value '{nav.Value}' could not be found.", 1041, origin: GetMessageOriginForPosition (nav));
 					return null;
 				}
@@ -369,7 +365,7 @@ namespace Mono.Linker.Steps
 			if (string.IsNullOrEmpty (assemblyName)) {
 				attributeType = _context.GetType (attributeFullName);
 			} else {
-				AssemblyDefinition assembly;
+				AssemblyDefinition? assembly;
 				try {
 					assembly = _context.TryResolve (AssemblyNameReference.Parse (assemblyName));
 					if (assembly == null) {

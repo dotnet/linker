@@ -35,21 +35,19 @@ namespace Mono.Linker.Steps
 	public abstract class BaseStep : IStep
 	{
 
-		private LinkContext _context;
+		private LinkContext? _context;
 
-		public LinkContext Context {
-			get { return _context; }
-		}
+		public LinkContext Context => _context ?? throw new InvalidOperationException ();
 
 		public AnnotationStore Annotations {
-			get { return _context.Annotations; }
+			get { return Context.Annotations; }
 		}
 
 		public Tracer Tracer {
-			get { return _context.Tracer; }
+			get { return Context.Tracer; }
 		}
 
-		public MarkingHelpers MarkingHelpers => _context.MarkingHelpers;
+		public MarkingHelpers MarkingHelpers => Context.MarkingHelpers;
 
 		public void Process (LinkContext context)
 		{

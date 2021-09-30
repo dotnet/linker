@@ -14,8 +14,6 @@ using System.Xml.Linq;
 using System.Xml.XPath;
 using Mono.Cecil;
 
-#nullable enable
-
 namespace Mono.Linker.Steps
 {
 	[Flags]
@@ -141,7 +139,7 @@ namespace Mono.Linker.Steps
 						ProcessAssembly (assembly, assemblyNav, warnOnUnresolvedTypes: false);
 				} else {
 					Debug.Assert (!processAllAssemblies);
-					AssemblyDefinition assembly = assemblyToProcess ?? _context.TryResolve (name!);
+					AssemblyDefinition? assembly = assemblyToProcess ?? _context.TryResolve (name!);
 
 					if (assembly == null) {
 						LogWarning ($"Could not resolve assembly '{name!.Name}'.", 2007, assemblyNav);

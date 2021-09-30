@@ -26,7 +26,7 @@ namespace Mono.Linker
 			if (type == null)
 				return sb;
 
-			Stack<TypeReference> genericArguments = null;
+			Stack<TypeReference>? genericArguments = null;
 			while (true) {
 				switch (type) {
 				case ArrayType arrayType:
@@ -61,9 +61,11 @@ namespace Mono.Linker
 					break;
 				}
 
-				type = type.DeclaringType;
-				if (type == null)
+				var nType = type.DeclaringType;
+				if (nType == null)
 					break;
+
+				type = nType;
 
 				sb.Insert (0, '.');
 			}
@@ -109,7 +111,7 @@ namespace Mono.Linker
 			}
 		}
 
-		public static TypeReference GetInflatedDeclaringType (this TypeReference type, ITryResolveMetadata resolver)
+		public static TypeReference? GetInflatedDeclaringType (this TypeReference type, ITryResolveMetadata resolver)
 		{
 			if (type == null)
 				return null;
@@ -154,14 +156,14 @@ namespace Mono.Linker
 
 			if (typeRef is GenericInstanceType genericInstance) {
 				foreach (var interfaceImpl in typeDef.Interfaces)
-					yield return (InflateGenericType (genericInstance, interfaceImpl.InterfaceType, resolver), interfaceImpl);
+					yield return (InflateGenericType (genericInstance, interfaceImpl.InterfaceType, resolver), interfaceImpl)!;
 			} else {
 				foreach (var interfaceImpl in typeDef.Interfaces)
 					yield return (interfaceImpl.InterfaceType, interfaceImpl);
 			}
 		}
 
-		public static TypeReference InflateGenericType (GenericInstanceType genericInstanceProvider, TypeReference typeToInflate, ITryResolveMetadata resolver)
+		public static TypeReference? InflateGenericType (GenericInstanceType genericInstanceProvider, TypeReference typeToInflate, ITryResolveMetadata resolver)
 		{
 			if (typeToInflate is ArrayType arrayType) {
 				var inflatedElementType = InflateGenericType (genericInstanceProvider, arrayType.ElementType, resolver);
@@ -262,7 +264,7 @@ namespace Mono.Linker
 
 		public static IEnumerable<MethodReference> GetMethods (this TypeReference type, ITryResolveMetadata resolver)
 		{
-			TypeDefinition typeDef = resolver.TryResolve (type);
+			TypeDefinition? typeDef = resolver.TryResolve (type);
 			if (typeDef?.HasMethods != true)
 				yield break;
 
@@ -341,7 +343,7 @@ namespace Mono.Linker
 
 		public static bool IsSubclassOf (this TypeReference type, string ns, string name, ITryResolveMetadata resolver)
 		{
-			TypeDefinition baseType = resolver.TryResolve (type);
+			TypeDefinition? baseType = resolver.TryResolve (type);
 			while (baseType != null) {
 				if (baseType.IsTypeOf (ns, name))
 					return true;

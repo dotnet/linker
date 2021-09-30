@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Mono.Cecil;
 
 namespace Mono.Linker
@@ -10,17 +11,17 @@ namespace Mono.Linker
 	public class MemberActionStore
 	{
 		public SubstitutionInfo PrimarySubstitutionInfo { get; }
-		private readonly Dictionary<AssemblyDefinition, SubstitutionInfo> _embeddedXmlInfos;
+		private readonly Dictionary<AssemblyDefinition, SubstitutionInfo?> _embeddedXmlInfos;
 		readonly LinkContext _context;
 
 		public MemberActionStore (LinkContext context)
 		{
 			PrimarySubstitutionInfo = new SubstitutionInfo ();
-			_embeddedXmlInfos = new Dictionary<AssemblyDefinition, SubstitutionInfo> ();
+			_embeddedXmlInfos = new Dictionary<AssemblyDefinition, SubstitutionInfo?> ();
 			_context = context;
 		}
 
-		public bool TryGetSubstitutionInfo (MemberReference member, out SubstitutionInfo xmlInfo)
+		public bool TryGetSubstitutionInfo (MemberReference member, [NotNullWhen (true)] out SubstitutionInfo? xmlInfo)
 		{
 			var assembly = member.Module.Assembly;
 			if (!_embeddedXmlInfos.TryGetValue (assembly, out xmlInfo)) {
@@ -44,7 +45,7 @@ namespace Mono.Linker
 			return MethodAction.Nothing;
 		}
 
-		public bool TryGetMethodStubValue (MethodDefinition method, out object value)
+		public bool TryGetMethodStubValue (MethodDefinition method, out object? value)
 		{
 			if (PrimarySubstitutionInfo.MethodStubValues.TryGetValue (method, out value))
 				return true;
@@ -55,7 +56,7 @@ namespace Mono.Linker
 			return embeddedXml.MethodStubValues.TryGetValue (method, out value);
 		}
 
-		public bool TryGetFieldUserValue (FieldDefinition field, out object value)
+		public bool TryGetFieldUserValue (FieldDefinition field, out object? value)
 		{
 			if (PrimarySubstitutionInfo.FieldValues.TryGetValue (field, out value))
 				return true;

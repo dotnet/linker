@@ -9,8 +9,6 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Collections.Generic;
 
-#nullable enable
-
 namespace Mono.Linker.Dataflow
 {
 	/// <summary>

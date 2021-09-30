@@ -13,7 +13,6 @@ namespace Mono.Linker
 {
 	public readonly struct MessageOrigin : IComparable<MessageOrigin>, IEquatable<MessageOrigin>
 	{
-#nullable enable
 		public string? FileName { get; }
 		public ICustomAttributeProvider? Provider { get; }
 		readonly ICustomAttributeProvider _suppressionContextMember;

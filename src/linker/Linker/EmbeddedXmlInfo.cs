@@ -14,7 +14,7 @@ namespace Mono.Linker
 {
 	public static class EmbeddedXmlInfo
 	{
-		static EmbeddedResource GetEmbeddedXml (AssemblyDefinition assembly, Func<Resource, bool> predicate)
+		static EmbeddedResource? GetEmbeddedXml (AssemblyDefinition assembly, Func<Resource, bool> predicate)
 		{
 			return assembly.Modules
 				.SelectMany (mod => mod.Resources)
@@ -33,7 +33,7 @@ namespace Mono.Linker
 			if (rsc == null)
 				return;
 
-			DescriptorMarker marker = null;
+			DescriptorMarker? marker = null;
 			try {
 				context.LogMessage ($"Processing embedded linker descriptor '{rsc.Name}' from '{assembly.Name}'.");
 				marker = GetExternalResolveStep (context, rsc, assembly);
@@ -46,7 +46,7 @@ namespace Mono.Linker
 				marker.Mark ();
 		}
 
-		public static SubstitutionInfo ProcessSubstitutions (AssemblyDefinition assembly, LinkContext context)
+		public static SubstitutionInfo? ProcessSubstitutions (AssemblyDefinition assembly, LinkContext context)
 		{
 			if (context.Annotations.GetAction (assembly) == AssemblyAction.Skip)
 				return null;
@@ -55,7 +55,7 @@ namespace Mono.Linker
 			if (rsc == null)
 				return null;
 
-			BodySubstitutionParser parser = null;
+			BodySubstitutionParser? parser = null;
 			try {
 				context.LogMessage ($"Processing embedded substitution descriptor '{rsc.Name}' from '{assembly.Name}'.");
 				parser = GetExternalSubstitutionParser (context, rsc, assembly);
@@ -71,7 +71,7 @@ namespace Mono.Linker
 			return substitutionInfo;
 		}
 
-		public static AttributeInfo ProcessAttributes (AssemblyDefinition assembly, LinkContext context)
+		public static AttributeInfo? ProcessAttributes (AssemblyDefinition assembly, LinkContext context)
 		{
 			if (context.Annotations.GetAction (assembly) == AssemblyAction.Skip)
 				return null;
@@ -80,7 +80,7 @@ namespace Mono.Linker
 			if (rsc == null)
 				return null;
 
-			LinkAttributesParser parser = null;
+			LinkAttributesParser? parser = null;
 			try {
 				context.LogMessage ($"Processing embedded '{rsc.Name}' from '{assembly.Name}'.");
 				parser = GetExternalLinkAttributesParser (context, rsc, assembly);

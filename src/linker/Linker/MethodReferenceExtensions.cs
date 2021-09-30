@@ -56,7 +56,7 @@ namespace Mono.Linker
 		public static TypeReference GetReturnType (this MethodReference method, LinkContext context)
 		{
 			if (method.DeclaringType is GenericInstanceType genericInstance)
-				return TypeReferenceExtensions.InflateGenericType (genericInstance, method.ReturnType, context);
+				return TypeReferenceExtensions.InflateGenericType (genericInstance, method.ReturnType, context)!;
 
 			return method.ReturnType;
 		}
@@ -64,7 +64,7 @@ namespace Mono.Linker
 		public static TypeReference GetParameterType (this MethodReference method, int parameterIndex, LinkContext context)
 		{
 			if (method.DeclaringType is GenericInstanceType genericInstance)
-				return TypeReferenceExtensions.InflateGenericType (genericInstance, method.Parameters[parameterIndex].ParameterType, context);
+				return TypeReferenceExtensions.InflateGenericType (genericInstance, method.Parameters[parameterIndex].ParameterType, context)!;
 
 			return method.Parameters[parameterIndex].ParameterType;
 		}
