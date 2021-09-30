@@ -2164,13 +2164,14 @@ namespace Mono.Linker.Steps
 						}
 					}
 
-					TypeDefinition? nType = type;
-					while (nType != null) {
+					while (true) {
 						// Currently if we don't understand the DebuggerDisplayAttribute we mark everything on the type
 						// This can be improved: dotnet/linker/issues/1873
-						MarkMethods (nType, new DependencyInfo (DependencyKind.KeptForSpecialAttribute, attribute));
-						MarkFields (nType, includeStatic: true, new DependencyInfo (DependencyKind.ReferencedBySpecialAttribute, attribute));
-						nType = Context.TryResolve (nType.BaseType);
+						MarkMethods (type, new DependencyInfo (DependencyKind.KeptForSpecialAttribute, attribute));
+						MarkFields (type, includeStatic: true, new DependencyInfo (DependencyKind.ReferencedBySpecialAttribute, attribute));
+						if (Context.TryResolve (type.BaseType) is not TypeDefinition baseType)
+							break;
+						type = baseType;
 					}
 					return;
 				}

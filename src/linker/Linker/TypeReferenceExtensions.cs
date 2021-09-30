@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -61,11 +61,10 @@ namespace Mono.Linker
 					break;
 				}
 
-				var nType = type.DeclaringType;
-				if (nType == null)
+				if (type.DeclaringType is not TypeReference declaringType)
 					break;
 
-				type = nType;
+				type = declaringType;
 
 				sb.Insert (0, '.');
 			}
