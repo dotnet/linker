@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection.Runtime.TypeParsing;
 using Mono.Cecil;
@@ -102,8 +103,8 @@ namespace Mono.Linker
 				if (genericTypeRef == null)
 					return null;
 
-				TypeDefinition? genericType = _context.TryResolve (genericTypeRef);
-				var genericInstanceType = new GenericInstanceType (genericType);
+				Debug.Assert (genericTypeRef is TypeDefinition);
+				var genericInstanceType = new GenericInstanceType (genericTypeRef);
 				foreach (var arg in constructedGenericTypeName.GenericArguments) {
 					var genericArgument = ResolveTypeName (assembly, arg);
 					if (genericArgument == null)
