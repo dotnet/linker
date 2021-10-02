@@ -147,6 +147,9 @@ namespace Mono.Linker
 				}
 
 				if (typeReference.IsNested) {
+					Debug.Assert (typeReference is not SentinelType && typeReference is not PinnedType);
+					// GetInflatedDeclaringType may return null for generic parameters, byrefs, and pointers, but these
+					// are separately handled above.
 					VisitTypeReference (typeReference.GetInflatedDeclaringType (resolver)!, builder, resolver);
 					builder.Append ('.');
 				}

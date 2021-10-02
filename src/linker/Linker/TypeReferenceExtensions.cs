@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Mono.Cecil;
@@ -112,9 +113,6 @@ namespace Mono.Linker
 
 		public static TypeReference? GetInflatedDeclaringType (this TypeReference type, ITryResolveMetadata resolver)
 		{
-			if (type == null)
-				return null;
-
 			if (type.IsGenericParameter || type.IsByReference || type.IsPointer)
 				return null;
 
@@ -141,9 +139,11 @@ namespace Mono.Linker
 				return declaringType;
 			}
 
-			var resolved = resolver.TryResolve (type);
-			System.Diagnostics.Debug.Assert (resolved == type);
-			return resolved?.DeclaringType;
+			if (type is TypeDefinition typeDefinition)
+				return typeDefinition.DeclaringType;
+
+			Debug.Assert (false);
+			return null;
 		}
 
 		public static IEnumerable<(TypeReference InflatedInterface, InterfaceImplementation OriginalImpl)> GetInflatedInterfaces (this TypeReference typeRef, ITryResolveMetadata resolver)
