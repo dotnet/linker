@@ -154,8 +154,11 @@ namespace Mono.Linker
 				yield break;
 
 			if (typeRef is GenericInstanceType genericInstance) {
-				foreach (var interfaceImpl in typeDef.Interfaces)
+				foreach (var interfaceImpl in typeDef.Interfaces) {
+					// InflateGenericType only returns null when inflating generic parameters (and the generic instance type doesn't resolve).
+					// Here we are not inflating a generic parameter but an interface type reference.
 					yield return (InflateGenericType (genericInstance, interfaceImpl.InterfaceType, resolver), interfaceImpl)!;
+				}
 			} else {
 				foreach (var interfaceImpl in typeDef.Interfaces)
 					yield return (interfaceImpl.InterfaceType, interfaceImpl);

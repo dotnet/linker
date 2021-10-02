@@ -327,7 +327,9 @@ namespace Mono.Linker
 
 			// we need to track what the generic parameter represent - as we cannot allow it to
 			// differ between the return type or any parameter
-			if (!TypeMatch (candidate.GetReturnType (context), method.GetReturnType (context)))
+			if (candidate.GetReturnType (context) is not TypeReference candidateReturnType ||
+				method.GetReturnType (context) is not TypeReference methodReturnType ||
+				!TypeMatch (candidateReturnType, methodReturnType))
 				return false;
 
 			if (!candidate.HasParameters)
@@ -342,7 +344,9 @@ namespace Mono.Linker
 				return false;
 
 			for (int i = 0; i < cp.Count; i++) {
-				if (!TypeMatch (candidate.GetParameterType (i, context), method.GetParameterType (i, context)))
+				if (candidate.GetParameterType (i, context) is not TypeReference candidateParameterType ||
+					method.GetParameterType (i, context) is not TypeReference methodParameterType ||
+					!TypeMatch (candidateParameterType, methodParameterType))
 					return false;
 			}
 

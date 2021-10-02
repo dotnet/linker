@@ -401,7 +401,7 @@ namespace Mono.Linker
 			return preserved_exportedtype_members.TryGetValue (type, out preserve);
 		}
 
-		public bool TryGetMethodStubValue (MethodDefinition method, [NotNullWhen (true)] out object? value)
+		public bool TryGetMethodStubValue (MethodDefinition method, out object? value)
 		{
 			return MemberActions.TryGetMethodStubValue (method, out value);
 		}
