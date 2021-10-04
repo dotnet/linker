@@ -35,6 +35,6 @@ namespace Mono.Linker.Dataflow
 				genericParameter.DeclaringType.GetDisplayName ();
 
 		internal static string GetMethodSignatureDisplayName (IMethodSignature methodSignature) =>
-			(methodSignature is MethodReference method) ? method.GetDisplayName () : methodSignature.ToString () ?? string.Empty;
+			(methodSignature is MethodReference method) ? method.GetDisplayName () : (methodSignature.ToString () ?? string.Empty);
 	}
 }
