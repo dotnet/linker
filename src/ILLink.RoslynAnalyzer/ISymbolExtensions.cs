@@ -70,13 +70,13 @@ namespace ILLink.RoslynAnalyzer
 			return overridenMember != null;
 		}
 
-		static SymbolDisplayFormat ILLinkTypeDisplayFormat { get; } =
+		public static SymbolDisplayFormat ILLinkTypeDisplayFormat { get; } =
 			new SymbolDisplayFormat (
 				typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
 				genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters
 			);
 
-		static SymbolDisplayFormat ILLinkMemberDisplayFormat { get; } =
+		public static SymbolDisplayFormat ILLinkMemberDisplayFormat { get; } =
 			new SymbolDisplayFormat (
 				typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameOnly,
 				genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,

@@ -141,8 +141,15 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (DataFlowTypeExtensions), nameof (DataFlowTypeExtensions.RequiresPublicConstructors), new Type[] { typeof (Type) }, messageCode: "IL2072")]
-		[UnrecognizedReflectionAccessPattern (typeof (DataFlowTypeExtensions), nameof (DataFlowTypeExtensions.RequiresNonPublicConstructors), new Type[] { typeof (Type) }, messageCode: "IL2072")]
+		// These warnings require dataflow analysis which the analyzer doesn't have yet: https://github.com/dotnet/linker/issues/2273
+		[ExpectedWarning ("IL2072",
+			nameof (DataFlowTypeExtensions) + "." + nameof (DataFlowTypeExtensions.RequiresPublicConstructors) + "(Type)", 
+			nameof (MethodReturnParameterDataFlow) + "." + nameof (ReturnPublicParameterlessConstructor) + "(Type, Type, Type)",
+			ProducedBy = ProducedBy.Trimmer)]
+		[ExpectedWarning ("IL2072",
+			nameof (DataFlowTypeExtensions) + "." + nameof (DataFlowTypeExtensions.RequiresNonPublicConstructors) + "(Type)",
+			nameof (MethodReturnParameterDataFlow) + "." + nameof (ReturnPublicParameterlessConstructor) + "(Type, Type, Type)",
+			ProducedBy = ProducedBy.Trimmer)]
 		void PropagateReturnPublicParameterlessConstructor ()
 		{
 			Type t = ReturnPublicParameterlessConstructor (typeof (TestType), typeof (TestType), typeof (TestType));
@@ -152,8 +159,15 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			t.RequiresNone ();
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (DataFlowTypeExtensions), nameof (DataFlowTypeExtensions.RequiresPublicConstructors), new Type[] { typeof (Type) }, messageCode: "IL2072")]
-		[UnrecognizedReflectionAccessPattern (typeof (DataFlowTypeExtensions), nameof (DataFlowTypeExtensions.RequiresNonPublicConstructors), new Type[] { typeof (Type) }, messageCode: "IL2072")]
+		// These warnings require dataflow analysis which the analyzer doesn't have yet: https://github.com/dotnet/linker/issues/2273
+		[ExpectedWarning ("IL2072",
+			nameof (DataFlowTypeExtensions) + "." + nameof (DataFlowTypeExtensions.RequiresPublicConstructors) + "(Type)",
+			nameof (MethodReturnParameterDataFlow) + "." + nameof (ReturnPublicParameterlessConstructorFromConstant) + "()",
+			ProducedBy = ProducedBy.Trimmer)]
+		[ExpectedWarning ("IL2072",
+			nameof (DataFlowTypeExtensions) + "." + nameof (DataFlowTypeExtensions.RequiresNonPublicConstructors) + "(Type)",
+			nameof (MethodReturnParameterDataFlow) + "." + nameof (ReturnPublicParameterlessConstructorFromConstant) + "()",
+			ProducedBy = ProducedBy.Trimmer)]
 		void PropagateReturnPublicParameterlessConstructorFromConstant ()
 		{
 			Type t = ReturnPublicParameterlessConstructorFromConstant ();
