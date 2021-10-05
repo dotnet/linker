@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -91,10 +91,8 @@ namespace ILLink.RoslynAnalyzer
 			var sb = new StringBuilder ();
 			switch (symbol) {
 			case IFieldSymbol fieldSymbol:
-				sb.Append (fieldSymbol.Type);
-				sb.Append (" ");
-				sb.Append (fieldSymbol.ContainingSymbol.ToDisplayString ());
-				sb.Append ("::");
+				sb.Append (fieldSymbol.ContainingSymbol.ToDisplayString (ILLinkTypeDisplayFormat));
+				sb.Append (".");
 				sb.Append (fieldSymbol.MetadataName);
 				break;
 
