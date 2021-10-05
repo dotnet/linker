@@ -100,18 +100,18 @@ namespace ILLink.RoslynAnalyzer
 				sb.Append (parameterSymbol.Name);
 				break;
 
- 			case IMethodSymbol methodSymbol:
+			case IMethodSymbol methodSymbol:
 				// Format the declaring type with namespace and containing types.
 				if (methodSymbol.ContainingSymbol.Kind == SymbolKind.NamedType) {
 					// If the containing symbol is a method (for example for local functions),
 					// don't include the containing type's name. This matches the behavior of
 					// CSharpErrorMessageFormat.
-	 				sb.Append (methodSymbol.ContainingType.ToDisplayString (ILLinkTypeDisplayFormat));
- 					sb.Append (".");
+					sb.Append (methodSymbol.ContainingType.ToDisplayString (ILLinkTypeDisplayFormat));
+					sb.Append (".");
 				}
 				// Format parameter types with only type names.
- 				sb.Append (methodSymbol.ToDisplayString (ILLinkMemberDisplayFormat));
- 				break;
+				sb.Append (methodSymbol.ToDisplayString (ILLinkMemberDisplayFormat));
+				break;
 
 			default:
 				sb.Append (symbol.ToDisplayString ());

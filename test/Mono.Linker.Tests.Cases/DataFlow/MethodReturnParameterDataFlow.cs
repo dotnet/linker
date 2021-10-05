@@ -143,7 +143,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		// These warnings require dataflow analysis which the analyzer doesn't have yet: https://github.com/dotnet/linker/issues/2273
 		[ExpectedWarning ("IL2072",
-			nameof (DataFlowTypeExtensions) + "." + nameof (DataFlowTypeExtensions.RequiresPublicConstructors) + "(Type)", 
+			nameof (DataFlowTypeExtensions) + "." + nameof (DataFlowTypeExtensions.RequiresPublicConstructors) + "(Type)",
 			nameof (MethodReturnParameterDataFlow) + "." + nameof (ReturnPublicParameterlessConstructor) + "(Type, Type, Type)",
 			ProducedBy = ProducedBy.Trimmer)]
 		[ExpectedWarning ("IL2072",

@@ -226,7 +226,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			if (args.TryGetValue ("#2", out var reflectionMethodParametersExpr) || args.TryGetValue ("reflectionMethodParameters", out reflectionMethodParametersExpr)) {
 				if (reflectionMethodParametersExpr is ArrayCreationExpressionSyntax arrayReflectionMethodParametersExpr) {
 					foreach (var rmp in arrayReflectionMethodParametersExpr.Initializer!.Expressions) {
-						var parameterStr = rmp.Kind() == SyntaxKind.TypeOfExpression
+						var parameterStr = rmp.Kind () == SyntaxKind.TypeOfExpression
 							? TestCaseUtils.GetStringFromExpression ((TypeOfExpressionSyntax) rmp, SemanticModel, ISymbolExtensions.ILLinkMemberDisplayFormat)
 							: TestCaseUtils.GetStringFromExpression (rmp, SemanticModel);
 						reflectionMethodParameters.Add (parameterStr);
