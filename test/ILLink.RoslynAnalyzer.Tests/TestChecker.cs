@@ -25,10 +25,16 @@ namespace ILLink.RoslynAnalyzer.Tests
 
 		private readonly SyntaxNode MemberSyntax;
 
+		private readonly HashSet<string> TestingAnalyzers; 
+
 		public TestChecker (MemberDeclarationSyntax memberSyntax, (CompilationWithAnalyzers Compilation, SemanticModel SemanticModel) compilationResult)
 		{
 			Compilation = compilationResult.Compilation;
 			SemanticModel = compilationResult.SemanticModel;
+			TestingAnalyzers = new HashSet<string> ();
+			foreach (var analyzer in Compilation.Analyzers)
+				TestingAnalyzers.Add (analyzer.GetType ().Name);
+
 			DiagnosticMessages = Compilation.GetAnalyzerDiagnosticsAsync ().Result
 				.Where (d => {
 					// Filter down to diagnostics which originate from this member.
@@ -67,17 +73,38 @@ namespace ILLink.RoslynAnalyzer.Tests
 			switch (attribute.Name.ToString ()) {
 			case "ExpectedWarning":
 				var args = TestCaseUtils.GetAttributeArguments (attribute);
-				if (args.TryGetValue ("ProducedBy", out var producedBy) &&
-					producedBy is MemberAccessExpressionSyntax memberAccessExpression &&
-					memberAccessExpression.Name is IdentifierNameSyntax identifierNameSyntax &&
-					identifierNameSyntax.Identifier.ValueText == "Trimmer")
-					return false;
+				if (args.TryGetValue ("ProducedBy", out var producedBy)) {
+					var producedByValues = GetProducedByValues (producedBy);
+					// Skip if this warning is not expected to be produced by any of the analyzers that we are currently testing.
+					return !producedByValues.Contains ("Analyzer") && (producedByValues.Intersect (TestingAnalyzers) == null);
+				}
+
 				return true;
 			case "LogContains":
 			case "UnrecognizedReflectionAccessPattern":
 				return true;
 			default:
 				return false;
+			}
+
+			static List<string> GetProducedByValues (ExpressionSyntax expression)
+			{
+				var producedByStrValues = new List<string> ();
+				switch (expression) {
+				case BinaryExpressionSyntax binaryExpressionSyntax:
+					producedByStrValues.Add ((binaryExpressionSyntax.Left as MemberAccessExpressionSyntax)!.Name.Identifier.ValueText);
+					producedByStrValues.AddRange (GetProducedByValues (binaryExpressionSyntax.Right));
+					break;
+
+				case MemberAccessExpressionSyntax memberAccessExpressionSyntax:
+					producedByStrValues.Add (memberAccessExpressionSyntax.Name.Identifier.ValueText);
+					break;
+
+				default:
+					break;
+				}
+
+				return producedByStrValues;
 			}
 		}
 
