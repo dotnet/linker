@@ -36,7 +36,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			switch (testName) {
 			case "MemberTypesRelationships":
 			case "MethodParametersDataFlow":
-			case "MethodReturnParametersDataFlow":
+			case "MethodReturnParameterDataFlow":
 				break;
 			default:
 				return;

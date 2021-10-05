@@ -1018,5 +1018,82 @@ class C
 				.WithSpan (17, 9, 17, 16)
 				.WithArguments ("T", "C.M1<T>()", "S", "C.M2<S>()", "'DynamicallyAccessedMemberTypes.PublicMethods'"));
 		}
+
+		[Fact]
+		public Task SourceTypeofFlowsIntoTargetMethodReturnTypeAnnotation ()
+		{
+			var TargetMethodReturnTypeWithAnnotations = @"
+using System;
+using System.Diagnostics.CodeAnalysis;
+
+public class T
+{
+}
+
+class C
+{
+    public static void Main()
+    {
+        M();
+    }
+
+    [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+    private static Type M()
+    {
+        return typeof(C);
+    }
+}";
+
+			// TODO: https://github.com/dotnet/linker/issues/2308
+			// This should produce no warnings. Currently it produces the following:
+
+			// (19,9): warning IL2083: 'C.M()' method return value does not satisfy 'DynamicallyAccessedMemberTypes.PublicMethods' requirements.
+			// The implicit 'this' argument of method 'C.M()' does not have matching annotations.
+			// The source value must declare at least the same requirements as those declared on the target location it is assigned to.
+			return VerifyDynamicallyAccessedMembersAnalyzer (TargetMethodReturnTypeWithAnnotations,
+				VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchThisParameterTargetsMethodReturnType)
+				.WithSpan (19, 9, 19, 26)
+				.WithArguments ("C.M()",
+					"C.M()",
+					"'DynamicallyAccessedMemberTypes.PublicMethods'"));
+		}
+
+		[Fact]
+		public Task SourceTypeofFlowsIntoTargetParameterAnnotations ()
+		{
+			var TargetParameterWithAnnotations = @"
+using System;
+using System.Diagnostics.CodeAnalysis;
+
+public class T
+{
+}
+
+class C
+{
+    public static void Main()
+    {
+        M(typeof(C));
+    }
+
+    private static void M([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
+    {
+    }
+}";
+
+			// TODO: https://github.com/dotnet/linker/issues/2308
+			// This should produce no warnings. Currently it produces the following:
+
+			// (13,11): warning IL2082: 'type' argument does not satisfy 'DynamicallyAccessedMemberTypes.PublicMethods' in call to 'C.M(Type)'.
+			// The implicit 'this' argument of method 'C.Main()' does not have matching annotations.
+			// The source value must declare at least the same requirements as those declared on the target location it is assigned to.
+			return VerifyDynamicallyAccessedMembersAnalyzer (TargetParameterWithAnnotations,
+				VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchThisParameterTargetsParameter)
+				.WithSpan (13, 11, 13, 20)
+				.WithArguments ("type",
+					"C.M(Type)",
+					"C.Main()",
+					"'DynamicallyAccessedMemberTypes.PublicMethods'"));
+		}
 	}
 }

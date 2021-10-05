@@ -49,6 +49,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		[UnrecognizedReflectionAccessPattern (typeof (MethodReturnParameterDataFlow), nameof (ReturnPublicParameterlessConstructor),
 			new Type[] { typeof (Type), typeof (Type), typeof (Type) }, returnType: typeof (Type), messageCode: "IL2068")]
+		// TODO: https://github.com/dotnet/linker/issues/2308
+		// This warning should not be produced.
+		[ExpectedWarning ("IL2083",
+			nameof (MethodReturnParameterDataFlow) + "." + nameof (ReturnPublicParameterlessConstructor) + "(Type, Type, Type)",
+			"'this'",
+			ProducedBy = ProducedBy.Analyzer)]
 		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
 		Type ReturnPublicParameterlessConstructor (
 			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
@@ -125,9 +131,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			return publicConstructorsType;
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (MethodReturnParameterDataFlow), nameof (ReturnUnknownValue),
-			new Type[] { }, returnType: typeof (Type),
-			messageCode: "IL2063", message: new string[] { nameof (ReturnUnknownValue) })]
+		// TODO: https://github.com/dotnet/linker/issues/2273
+		[ExpectedWarning ("IL2063",
+			nameof (MethodReturnParameterDataFlow) + "." + nameof (ReturnUnknownValue) + "()",
+			ProducedBy = ProducedBy.Trimmer)]
 		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 		Type ReturnUnknownValue ()
 		{
@@ -150,6 +157,23 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			nameof (DataFlowTypeExtensions) + "." + nameof (DataFlowTypeExtensions.RequiresNonPublicConstructors) + "(Type)",
 			nameof (MethodReturnParameterDataFlow) + "." + nameof (ReturnPublicParameterlessConstructor) + "(Type, Type, Type)",
 			ProducedBy = ProducedBy.Trimmer)]
+		// TODO: https://github.com/dotnet/linker/issues/2308
+		// These warnings should not be produced.
+		[ExpectedWarning ("IL2082",
+			nameof (MethodReturnParameterDataFlow) + "." + nameof (ReturnPublicParameterlessConstructor) + "(Type, Type, Type)",
+			"'this'",
+			nameof (MethodReturnParameterDataFlow) + "." + nameof (PropagateReturnPublicParameterlessConstructor),
+			ProducedBy = ProducedBy.Analyzer)]
+		[ExpectedWarning ("IL2082",
+			nameof (MethodReturnParameterDataFlow) + "." + nameof (ReturnPublicParameterlessConstructor) + "(Type, Type, Type)",
+			"'this'",
+			nameof (MethodReturnParameterDataFlow) + "." + nameof (PropagateReturnPublicParameterlessConstructor),
+			ProducedBy = ProducedBy.Analyzer)]
+		[ExpectedWarning ("IL2082",
+			nameof (MethodReturnParameterDataFlow) + "." + nameof (ReturnPublicParameterlessConstructor) + "(Type, Type, Type)",
+			"'this'",
+			nameof (MethodReturnParameterDataFlow) + "." + nameof (PropagateReturnPublicParameterlessConstructor),
+			ProducedBy = ProducedBy.Analyzer)]
 		void PropagateReturnPublicParameterlessConstructor ()
 		{
 			Type t = ReturnPublicParameterlessConstructor (typeof (TestType), typeof (TestType), typeof (TestType));
@@ -197,15 +221,17 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		// https://github.com/dotnet/linker/issues/2025
 		// Ideally this should not warn
-		[UnrecognizedReflectionAccessPattern (typeof (MethodReturnParameterDataFlow), nameof (ReturnWithRequirementsAlwaysThrows), new Type[] { }, returnType: typeof (Type),
-			messageCode: "IL2063")]
+		[ExpectedWarning ("IL2063",
+			nameof (MethodReturnParameterDataFlow) + "." + nameof (ReturnWithRequirementsAlwaysThrows) + "()",
+			ProducedBy = ProducedBy.Trimmer)]
 		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 		Type ReturnWithRequirementsAlwaysThrows ()
 		{
 			throw new NotImplementedException ();
 		}
 
-		[ExpectedWarning ("IL2106", nameof (UnsupportedReturnType))]
+		// TODO: https://github.com/dotnet/linker/issues/2273
+		[ExpectedWarning ("IL2106", nameof (UnsupportedReturnType), ProducedBy = ProducedBy.Trimmer)]
 		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 		static object UnsupportedReturnType () => null;
 
