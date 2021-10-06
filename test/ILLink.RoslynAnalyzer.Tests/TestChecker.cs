@@ -25,7 +25,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 
 		private readonly SyntaxNode MemberSyntax;
 
-		private readonly HashSet<string> TestingAnalyzers; 
+		private readonly HashSet<string> TestingAnalyzers;
 
 		public TestChecker (MemberDeclarationSyntax memberSyntax, (CompilationWithAnalyzers Compilation, SemanticModel SemanticModel) compilationResult)
 		{
