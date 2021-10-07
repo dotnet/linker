@@ -1019,7 +1019,7 @@ class C
 				.WithArguments ("T", "C.M1<T>()", "S", "C.M2<S>()", "'DynamicallyAccessedMemberTypes.PublicMethods'"));
 		}
 
-		[Fact]
+		[Fact (Skip = "https://github.com/dotnet/linker/issues/2308")]
 		public Task SourceTypeofFlowsIntoTargetMethodReturnTypeAnnotation ()
 		{
 			var TargetMethodReturnTypeWithAnnotations = @"
@@ -1044,21 +1044,10 @@ class C
     }
 }";
 
-			// TODO: https://github.com/dotnet/linker/issues/2308
-			// This should produce no warnings. Currently it produces the following:
-
-			// (19,9): warning IL2083: 'C.M()' method return value does not satisfy 'DynamicallyAccessedMemberTypes.PublicMethods' requirements.
-			// The implicit 'this' argument of method 'C.M()' does not have matching annotations.
-			// The source value must declare at least the same requirements as those declared on the target location it is assigned to.
-			return VerifyDynamicallyAccessedMembersAnalyzer (TargetMethodReturnTypeWithAnnotations,
-				VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchThisParameterTargetsMethodReturnType)
-				.WithSpan (19, 9, 19, 26)
-				.WithArguments ("C.M()",
-					"C.M()",
-					"'DynamicallyAccessedMemberTypes.PublicMethods'"));
+			return VerifyDynamicallyAccessedMembersAnalyzer (TargetMethodReturnTypeWithAnnotations);
 		}
 
-		[Fact]
+		[Fact (Skip = "https://github.com/dotnet/linker/issues/2308")]
 		public Task SourceTypeofFlowsIntoTargetParameterAnnotations ()
 		{
 			var TargetParameterWithAnnotations = @"
@@ -1080,20 +1069,7 @@ class C
     {
     }
 }";
-
-			// TODO: https://github.com/dotnet/linker/issues/2308
-			// This should produce no warnings. Currently it produces the following:
-
-			// (13,11): warning IL2082: 'type' argument does not satisfy 'DynamicallyAccessedMemberTypes.PublicMethods' in call to 'C.M(Type)'.
-			// The implicit 'this' argument of method 'C.Main()' does not have matching annotations.
-			// The source value must declare at least the same requirements as those declared on the target location it is assigned to.
-			return VerifyDynamicallyAccessedMembersAnalyzer (TargetParameterWithAnnotations,
-				VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchThisParameterTargetsParameter)
-				.WithSpan (13, 11, 13, 20)
-				.WithArguments ("type",
-					"C.M(Type)",
-					"C.Main()",
-					"'DynamicallyAccessedMemberTypes.PublicMethods'"));
+			return VerifyDynamicallyAccessedMembersAnalyzer (TargetParameterWithAnnotations);
 		}
 	}
 }
