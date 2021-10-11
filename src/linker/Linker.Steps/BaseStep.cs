@@ -27,6 +27,7 @@
 //
 
 using System;
+using System.Diagnostics;
 using Mono.Cecil;
 
 namespace Mono.Linker.Steps
@@ -37,7 +38,12 @@ namespace Mono.Linker.Steps
 
 		private LinkContext? _context;
 
-		public LinkContext Context => _context ?? throw new InvalidOperationException ();
+		public LinkContext Context {
+			get {
+				Debug.Assert (_context != null);
+				return _context;
+			}
+		}
 
 		public AnnotationStore Annotations {
 			get { return Context.Annotations; }

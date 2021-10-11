@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Mono.Cecil;
 using Mono.Linker.Dataflow;
@@ -18,7 +19,12 @@ namespace Mono.Linker.Steps
 	public class DiscoverSerializationHandler : IMarkHandler
 	{
 		LinkContext? _context;
-		LinkContext Context => _context ?? throw new InvalidOperationException ();
+		LinkContext Context {
+			get {
+				Debug.Assert (_context != null);
+				return _context;
+			}
+		}
 
 		public void Initialize (LinkContext context, MarkContext markContext)
 		{

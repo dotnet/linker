@@ -68,7 +68,12 @@ namespace Mono.Linker
 		readonly Queue<string> arguments;
 		bool _needAddBypassNGenStep;
 		LinkContext? context;
-		protected LinkContext Context => context ?? throw new InvalidOperationException ();
+		protected LinkContext Context {
+			get {
+				Debug.Assert (context != null);
+				return context;
+			}
+		}
 
 		public Driver (Queue<string> arguments)
 		{

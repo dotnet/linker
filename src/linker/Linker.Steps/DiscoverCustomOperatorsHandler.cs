@@ -12,7 +12,12 @@ namespace Mono.Linker.Steps
 	public class DiscoverOperatorsHandler : IMarkHandler
 	{
 		LinkContext? _context;
-		LinkContext Context => _context ?? throw new InvalidOperationException ();
+		LinkContext Context {
+			get {
+				Debug.Assert (_context != null);
+				return _context;
+			}
+		}
 
 		bool _seenLinqExpressions;
 		readonly HashSet<TypeDefinition> _trackedTypesWithOperators;

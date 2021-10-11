@@ -46,7 +46,13 @@ namespace Mono.Linker.Steps
 	public partial class MarkStep : IStep
 	{
 		LinkContext? _context;
-		protected LinkContext Context => _context ?? throw new InvalidOperationException ();
+		protected LinkContext Context {
+			get {
+				Debug.Assert (_context != null);
+				return _context;
+			}
+		}
+
 		protected Queue<(MethodDefinition, DependencyInfo, MarkScopeStack.Scope)> _methods;
 		protected List<(MethodDefinition, MarkScopeStack.Scope)> _virtual_methods;
 		protected Queue<AttributeProviderPair> _assemblyLevelAttributes;
@@ -59,16 +65,34 @@ namespace Mono.Linker.Steps
 
 		readonly List<(TypeDefinition Type, MethodBody Body, Instruction Instr)> _pending_isinst_instr;
 		UnreachableBlocksOptimizer? _unreachableBlocksOptimizer;
-		UnreachableBlocksOptimizer UnreachableBlocksOptimizer => _unreachableBlocksOptimizer ?? throw new InvalidOperationException ();
+		UnreachableBlocksOptimizer UnreachableBlocksOptimizer {
+			get {
+				Debug.Assert (_unreachableBlocksOptimizer != null);
+				return _unreachableBlocksOptimizer;
+			}
+		}
 		MarkStepContext? _markContext;
-		MarkStepContext MarkContext => _markContext ?? throw new InvalidOperationException ();
+		MarkStepContext MarkContext {
+			get {
+				Debug.Assert (_markContext != null);
+				return _markContext;
+			}
+		}
 		readonly HashSet<TypeDefinition> _entireTypesMarked;
 		DynamicallyAccessedMembersTypeHierarchy? _dynamicallyAccessedMembersTypeHierarchy;
 		MarkScopeStack? _scopeStack;
-		MarkScopeStack ScopeStack => _scopeStack ?? throw new InvalidOperationException ();
+		MarkScopeStack ScopeStack {
+			get {
+				Debug.Assert (_scopeStack != null);
+				return _scopeStack;
+			}
+		}
 
 		internal DynamicallyAccessedMembersTypeHierarchy DynamicallyAccessedMembersTypeHierarchy {
-			get => _dynamicallyAccessedMembersTypeHierarchy ?? throw new InvalidOperationException ();
+			get {
+				Debug.Assert (_dynamicallyAccessedMembersTypeHierarchy != null);
+				return _dynamicallyAccessedMembersTypeHierarchy;
+			}
 		}
 
 #if DEBUG

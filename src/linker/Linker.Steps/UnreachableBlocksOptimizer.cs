@@ -1122,7 +1122,12 @@ namespace Mono.Linker.Steps
 			readonly List<ExceptionHandler>? unreachableExceptionHandlers;
 			readonly LinkContext context;
 			LinkerILProcessor? ilprocessor;
-			LinkerILProcessor ILProcessor => ilprocessor ?? throw new InvalidOperationException ();
+			LinkerILProcessor ILProcessor {
+				get {
+					Debug.Assert (ilprocessor != null);
+					return ilprocessor;
+				}
+			}
 
 			public BodySweeper (MethodBody body, BitArray reachable, List<ExceptionHandler>? unreachableEH, LinkContext context)
 			{

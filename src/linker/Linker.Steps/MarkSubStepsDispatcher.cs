@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 using Mono.Cecil;
 using Mono.Collections.Generic;
@@ -22,7 +23,12 @@ namespace Mono.Linker.Steps
 		readonly List<ISubStep> substeps;
 
 		CategorizedSubSteps? categorized;
-		CategorizedSubSteps Categorized => categorized ?? throw new InvalidOperationException ();
+		CategorizedSubSteps Categorized {
+			get {
+				Debug.Assert (categorized.HasValue);
+				return categorized.Value;
+			}
+		}
 
 		public MarkSubStepsDispatcher (IEnumerable<ISubStep> subSteps)
 		{

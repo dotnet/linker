@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
+using System.Diagnostics;
 using Mono.Cecil;
 
 namespace Mono.Linker.Steps
@@ -12,7 +13,12 @@ namespace Mono.Linker.Steps
 		protected AnnotationStore Annotations => Context.Annotations;
 
 		LinkContext? _context { get; set; }
-		protected LinkContext Context => _context ?? throw new InvalidOperationException ();
+		protected LinkContext Context {
+			get {
+				Debug.Assert (_context != null);
+				return _context;
+			}
+		}
 
 		public abstract SubStepTargets Targets { get; }
 

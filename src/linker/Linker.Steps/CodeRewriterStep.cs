@@ -9,7 +9,12 @@ namespace Mono.Linker.Steps
 	public class CodeRewriterStep : BaseStep
 	{
 		AssemblyDefinition? assembly;
-		AssemblyDefinition Assembly => assembly ?? throw new InvalidOperationException ();
+		AssemblyDefinition Assembly {
+			get {
+				Debug.Assert (assembly != null);
+				return assembly;
+			}
+		}
 
 		protected override void ProcessAssembly (AssemblyDefinition assembly)
 		{
