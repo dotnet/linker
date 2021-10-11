@@ -11,6 +11,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
+using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Xunit;
 
 namespace ILLink.RoslynAnalyzer.Tests
@@ -25,16 +26,15 @@ namespace ILLink.RoslynAnalyzer.Tests
 
 		private readonly SyntaxNode MemberSyntax;
 
-		private readonly HashSet<string> TestingAnalyzers;
+		private readonly string TestingAnalyzerName;
 
 		public TestChecker (MemberDeclarationSyntax memberSyntax, (CompilationWithAnalyzers Compilation, SemanticModel SemanticModel) compilationResult)
 		{
 			Compilation = compilationResult.Compilation;
 			SemanticModel = compilationResult.SemanticModel;
-			TestingAnalyzers = new HashSet<string> ();
-			foreach (var analyzer in Compilation.Analyzers)
-				TestingAnalyzers.Add (analyzer.GetType ().Name);
 
+			// Currently, tests are only run using a single analyzer.
+			TestingAnalyzerName = Compilation.Analyzers.Single ().GetType ().Name;
 			DiagnosticMessages = Compilation.GetAnalyzerDiagnosticsAsync ().Result
 				.Where (d => {
 					// Filter down to diagnostics which originate from this member.
@@ -76,7 +76,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 				if (args.TryGetValue ("ProducedBy", out var producedBy)) {
 					var producedByValues = GetProducedByValues (producedBy);
 					// Skip if this warning is not expected to be produced by any of the analyzers that we are currently testing.
-					return !producedByValues.Contains ("Analyzer") && (producedByValues.Intersect (TestingAnalyzers) == null);
+					return producedByValues.Any (pb => pb.HasFlag (Enum.Parse<ProducedBy> (TestingAnalyzerName)));
 				}
 
 				return true;
@@ -87,24 +87,26 @@ namespace ILLink.RoslynAnalyzer.Tests
 				return false;
 			}
 
-			static List<string> GetProducedByValues (ExpressionSyntax expression)
+			static List<ProducedBy> GetProducedByValues (ExpressionSyntax expression)
 			{
-				var producedByStrValues = new List<string> ();
+				var producedByValues = new List<ProducedBy> ();
 				switch (expression) {
 				case BinaryExpressionSyntax binaryExpressionSyntax:
-					producedByStrValues.Add ((binaryExpressionSyntax.Left as MemberAccessExpressionSyntax)!.Name.Identifier.ValueText);
-					producedByStrValues.AddRange (GetProducedByValues (binaryExpressionSyntax.Right));
+					Enum.TryParse<ProducedBy> ((binaryExpressionSyntax.Left as MemberAccessExpressionSyntax)!.Name.Identifier.ValueText, out var besProducedBy);
+					producedByValues.Add (besProducedBy);
+					producedByValues.AddRange (GetProducedByValues (binaryExpressionSyntax.Right));
 					break;
 
 				case MemberAccessExpressionSyntax memberAccessExpressionSyntax:
-					producedByStrValues.Add (memberAccessExpressionSyntax.Name.Identifier.ValueText);
+					Enum.TryParse<ProducedBy> (memberAccessExpressionSyntax.Name.Identifier.ValueText, out var maeProducedBy);
+					producedByValues.Add (maeProducedBy);
 					break;
 
 				default:
 					break;
 				}
 
-				return producedByStrValues;
+				return producedByValues;
 			}
 		}
 
