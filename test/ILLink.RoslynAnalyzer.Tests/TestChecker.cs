@@ -74,9 +74,8 @@ namespace ILLink.RoslynAnalyzer.Tests
 			case "ExpectedWarning":
 				var args = TestCaseUtils.GetAttributeArguments (attribute);
 				if (args.TryGetValue ("ProducedBy", out var producedBy)) {
-					var producedByValues = GetProducedByValues (producedBy);
 					// Skip if this warning is not expected to be produced by any of the analyzers that we are currently testing.
-					return producedByValues.Any (pb => pb.HasFlag (Enum.Parse<ProducedBy> (TestingAnalyzerName)));
+					return GetProducedBy (producedBy).HasFlag (Enum.Parse<ProducedBy> (TestingAnalyzerName));
 				}
 
 				return true;
@@ -87,26 +86,26 @@ namespace ILLink.RoslynAnalyzer.Tests
 				return false;
 			}
 
-			static List<ProducedBy> GetProducedByValues (ExpressionSyntax expression)
+			static ProducedBy GetProducedBy (ExpressionSyntax expression)
 			{
-				var producedByValues = new List<ProducedBy> ();
+				var producedBy = (ProducedBy) 0x0;
 				switch (expression) {
 				case BinaryExpressionSyntax binaryExpressionSyntax:
 					Enum.TryParse<ProducedBy> ((binaryExpressionSyntax.Left as MemberAccessExpressionSyntax)!.Name.Identifier.ValueText, out var besProducedBy);
-					producedByValues.Add (besProducedBy);
-					producedByValues.AddRange (GetProducedByValues (binaryExpressionSyntax.Right));
+					producedBy |= besProducedBy;
+					producedBy |= GetProducedBy (binaryExpressionSyntax.Right);
 					break;
 
 				case MemberAccessExpressionSyntax memberAccessExpressionSyntax:
 					Enum.TryParse<ProducedBy> (memberAccessExpressionSyntax.Name.Identifier.ValueText, out var maeProducedBy);
-					producedByValues.Add (maeProducedBy);
+					producedBy |= maeProducedBy;
 					break;
 
 				default:
 					break;
 				}
 
-				return producedByValues;
+				return producedBy;
 			}
 		}
 
