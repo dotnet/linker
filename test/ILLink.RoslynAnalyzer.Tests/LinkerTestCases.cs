@@ -1,6 +1,5 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 
 using System.Collections.Generic;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -15,7 +14,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 	{
 		[Theory]
 		[MemberData (nameof (TestCaseUtils.GetTestData), parameters: nameof (RequiresCapability))]
-		public void RequiresCapability (MemberDeclarationSyntax m, List<AttributeSyntax> attrs)
+		public void RequiresCapability (string testName, MemberDeclarationSyntax m, List<AttributeSyntax> attrs)
 		{
 			if (m is MethodDeclarationSyntax method &&
 				method.Identifier.ValueText == "TestTypeIsBeforeFieldInit") {
@@ -27,6 +26,13 @@ namespace ILLink.RoslynAnalyzer.Tests
 			}
 
 			RunTest<RequiresUnreferencedCodeAnalyzer> (m, attrs, UseMSBuildProperties (MSBuildPropertyOptionNames.EnableTrimAnalyzer));
+		}
+
+		[Theory]
+		[MemberData (nameof (TestCaseUtils.GetTestData), parameters: nameof (Interop))]
+		public void Interop (string testName, MethodDeclarationSyntax m, List<AttributeSyntax> attrs)
+		{
+			RunTest<COMAnalyzer> (m, attrs, UseMSBuildProperties (MSBuildPropertyOptionNames.EnableTrimAnalyzer));
 		}
 	}
 }
