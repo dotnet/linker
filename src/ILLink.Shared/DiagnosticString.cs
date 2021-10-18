@@ -11,14 +11,14 @@ namespace ILLink.Shared
 		{
 			var resourceManager = SharedStrings.ResourceManager;
 			_titleFormat = resourceManager.GetString ($"{diagnosticId}Title") ?? string.Empty;
-			_messageFormat = resourceManager.GetString ($"{diagnosticId}Message") ?? throw new ArgumentException ($"Diagnostic ID {nameof (diagnosticId)} has no message.");
+			_messageFormat = resourceManager.GetString ($"{diagnosticId}Message") ?? string.Empty;
 		}
 
 		public DiagnosticString (string diagnosticResourceStringName)
 		{
 			var resourceManager = SharedStrings.ResourceManager;
 			_titleFormat = resourceManager.GetString ($"{diagnosticResourceStringName}Title") ?? string.Empty;
-			_messageFormat = resourceManager.GetString ($"{diagnosticResourceStringName}Message") ?? throw new ArgumentException ($"Diagnostic ID {nameof (diagnosticResourceStringName)} has no message.");
+			_messageFormat = resourceManager.GetString ($"{diagnosticResourceStringName}Message") ?? string.Empty;
 		}
 
 		public string GetMessage (params string[] args) =>
