@@ -594,9 +594,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				Assert.That (embeddedResource.GetResourceData (), Is.EquivalentTo (expectedResource.GetResourceData ()), $"Resource '{resource.Name}' data doesn't match.");
 			}
 
-			if (expectedResourceNames.Count > 0) {
-				Assert.Fail ($"Resource '{expectedResourceNames.First ()}' should be kept.");
-			}
+			Assert.IsEmpty (expectedResourceNames, $"Resource '{expectedResourceNames.FirstOrDefault ()}' should be kept.");
 		}
 
 		void VerifyExportedTypes (AssemblyDefinition original, AssemblyDefinition linked)
