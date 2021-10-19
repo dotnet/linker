@@ -131,7 +131,7 @@ stages:
   - ${{ if eq(variables.officialBuild, 'false') }}:
     - job: Linux_Mono
       pool:
-        name: Hosted Ubuntu 1604
+        vmImage: ubuntu-20.04
       steps:
       - checkout: self
         submodules: true
