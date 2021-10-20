@@ -632,42 +632,6 @@ namespace ILLink.RoslynAnalyzer.Tests
 			return (IReadOnlyList<object?>?) diagnostic.GetType ().GetProperty ("Arguments", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue (diagnostic)
 				?? Array.Empty<object> ();
 		}
-
-		class SimpleAnalyzerOptions : AnalyzerConfigOptionsProvider
-		{
-			public SimpleAnalyzerOptions ((string, string)[]? globalOptions)
-			{
-				globalOptions ??= Array.Empty<(string, string)> ();
-				GlobalOptions = new SimpleAnalyzerConfigOptions (ImmutableDictionary.CreateRange (
-					StringComparer.OrdinalIgnoreCase,
-					globalOptions.Select (x => new KeyValuePair<string, string> (x.Item1, x.Item2))));
-			}
-
-			public override AnalyzerConfigOptions GlobalOptions { get; }
-
-			public override AnalyzerConfigOptions GetOptions (SyntaxTree tree)
-				=> SimpleAnalyzerConfigOptions.Empty;
-
-			public override AnalyzerConfigOptions GetOptions (AdditionalText textFile)
-				=> SimpleAnalyzerConfigOptions.Empty;
-
-			class SimpleAnalyzerConfigOptions : AnalyzerConfigOptions
-			{
-				public static readonly SimpleAnalyzerConfigOptions Empty = new SimpleAnalyzerConfigOptions (ImmutableDictionary<string, string>.Empty);
-
-				private readonly ImmutableDictionary<string, string> _dict;
-				public SimpleAnalyzerConfigOptions (ImmutableDictionary<string, string> dict)
-				{
-					_dict = dict;
-				}
-
-				// Suppress warning about missing nullable attributes
-#pragma warning disable 8765
-				public override bool TryGetValue (string key, out string? value)
-					=> _dict.TryGetValue (key, out value);
-#pragma warning restore 8765
-			}
-		}
 	}
 
 	internal static class IEnumerableExtensions

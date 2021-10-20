@@ -54,7 +54,6 @@ namespace ILLink.RoslynAnalyzer.Tests
 				concurrentAnalysis: true,
 				logAnalyzerExecutionTime: false);
 
-			// Aquí mero.
 			return (new CompilationWithAnalyzers (comp, SupportedDiagnosticAnalyzers, compWithAnalyzerOptions), comp.GetSemanticModel (src));
 		}
 
