@@ -162,6 +162,9 @@ namespace ILLink.RoslynAnalyzer
 				{
 					ISymbol containingSymbol = FindContainingSymbol (operationContext, AnalyzerDiagnosticTargets);
 
+					if(AnalyzerDiagnosticTargets.HasFlag (DiagnosticTargets.Class) && member.ContainingType is INamedTypeSymbol declaringType && declaringType.TryGetAttribute (RequiresAttributeName, out var typeRequires))
+						ReportRequiresDiagnostic (operationContext, member, typeRequires);
+
 					// Do not emit any diagnostic if caller is annotated with the attribute too.
 					if (containingSymbol.HasAttribute (RequiresAttributeName))
 						return;
@@ -228,7 +231,8 @@ namespace ILLink.RoslynAnalyzer
 			Property = 0x0002,
 			Field = 0x0004,
 			Event = 0x0008,
-			All = MethodOrConstructor | Property | Field | Event
+			Class = 0x0010,
+			All = MethodOrConstructor | Property | Field | Event | Class
 		}
 
 		/// <summary>
