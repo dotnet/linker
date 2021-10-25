@@ -53,7 +53,7 @@ namespace ILLink.Shared
 			return missingMemberTypes;
 		}
 
-		static string GetMemberTypesString (DynamicallyAccessedMemberTypes memberTypes)
+		public static string GetMemberTypesString (DynamicallyAccessedMemberTypes memberTypes)
 		{
 			Debug.Assert (memberTypes != DynamicallyAccessedMemberTypes.None);
 

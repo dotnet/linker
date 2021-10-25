@@ -9,6 +9,7 @@ using System.Diagnostics;
 using ILLink.Shared;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.FlowAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 
 namespace ILLink.RoslynAnalyzer
@@ -36,40 +37,53 @@ namespace ILLink.RoslynAnalyzer
 		{
 			context.EnableConcurrentExecution ();
 			context.ConfigureGeneratedCodeAnalysis (GeneratedCodeAnalysisFlags.ReportDiagnostics);
-			context.RegisterOperationAction (operationAnalysisContext => {
-				var assignmentOperation = (IAssignmentOperation) operationAnalysisContext.Operation;
-				ProcessAssignmentOperation (operationAnalysisContext, assignmentOperation);
-			}, OperationKind.SimpleAssignment);
+			context.RegisterOperationBlockAction (context => {
+				foreach (var operationBlock in context.OperationBlocks) {
+					ControlFlowGraph cfg = context.GetControlFlowGraph (operationBlock);
+					DynamicallyAccessedMembersAnalysis damAnalysis = new (context, cfg);
 
-			context.RegisterOperationAction (operationAnalysisContext => {
-				var invocationOperation = (IInvocationOperation) operationAnalysisContext.Operation;
-				ProcessInvocationOperation (operationAnalysisContext, invocationOperation);
-			}, OperationKind.Invocation);
-
-			context.RegisterOperationAction (operationAnalysisContext => {
-				var returnOperation = (IReturnOperation) operationAnalysisContext.Operation;
-				ProcessReturnOperation (operationAnalysisContext, returnOperation);
-			}, OperationKind.Return);
+					foreach (ReflectionAccessPattern accessPattern in damAnalysis.GetResults ())
+						CheckAndReportDynamicallyAccessedMembers (accessPattern.Source, accessPattern.Target, context, accessPattern.Operation.Syntax.GetLocation ());
+				}
+			});
 		}
 
-		static void CheckAndReportDynamicallyAccessedMembers (IOperation sourceOperation, IOperation targetOperation, OperationAnalysisContext context, Location location)
+		// static void CheckAndReportDynamicallyAccessedMembers (IOperation sourceOperation, IOperation targetOperation, OperationBlockAnalysisContext context, DynamicallyAccessedMembersAnalysis analysis, Location location)
+		// {
+		// 	if (TryGetSymbolFromOperation (targetOperation, context) is not ISymbol target ||
+		// 		!TryGetSourceValue (sourceOperation, context, analysis, out HashSetWrapper<SingleValue> source))
+		// 		return;
+
+		// 	CheckAndReportDynamicallyAccessedMembers (source, target, context, location, targetIsMethodReturn: false);
+		// }
+
+		// static void CheckAndReportDynamicallyAccessedMembers (IOperation sourceOperation, ISymbol target, OperationBlockAnalysisContext context, DynamicallyAccessedMembersAnalysis analysis, Location location, bool targetIsMethodReturn)
+		// {
+		// 	if (!TryGetSourceValue (sourceOperation, context, analysis, out HashSetWrapper<SingleValue> source))
+		// 		return;
+
+		// 	CheckAndReportDynamicallyAccessedMembers (source, target, context, location, targetIsMethodReturn);
+		// }
+
+		static void CheckAndReportDynamicallyAccessedMembers (HashSetWrapper<SingleValue> source, ISymbol target, OperationBlockAnalysisContext context, Location location, bool targetIsMethodReturn)
 		{
-			if (TryGetSymbolFromOperation (targetOperation, context) is not ISymbol target ||
-				TryGetSymbolFromOperation (sourceOperation, context) is not ISymbol source)
+			if (source.Values == null)
 				return;
 
-			CheckAndReportDynamicallyAccessedMembers (source, target, context, location, targetIsMethodReturn: false);
+			foreach (var sourceValue in source.Values)
+				CheckAndReportDynamicallyAccessedMembers (sourceValue.Symbol.Symbol, target, context, location, targetIsMethodReturn);
 		}
 
-		static void CheckAndReportDynamicallyAccessedMembers (IOperation sourceOperation, ISymbol target, OperationAnalysisContext context, Location location, bool targetIsMethodReturn)
+		static void CheckAndReportDynamicallyAccessedMembers (HashSetWrapper<SingleValue> source, HashSetWrapper<SingleValue> target, OperationBlockAnalysisContext context, Location location)
 		{
-			if (TryGetSymbolFromOperation (sourceOperation, context) is not ISymbol source)
+			if (target.Values == null)
 				return;
 
-			CheckAndReportDynamicallyAccessedMembers (source, target, context, location, targetIsMethodReturn);
+			foreach (var targetValue in target.Values)
+				CheckAndReportDynamicallyAccessedMembers (source, targetValue.Symbol.Symbol, context, location, targetIsMethodReturn: targetValue.Symbol.MethodReturn);
 		}
 
-		static void CheckAndReportDynamicallyAccessedMembers (ISymbol source, ISymbol target, OperationAnalysisContext context, Location location, bool targetIsMethodReturn)
+		static void CheckAndReportDynamicallyAccessedMembers (ISymbol source, ISymbol target, OperationBlockAnalysisContext context, Location location, bool targetIsMethodReturn)
 		{
 			// For the target symbol, a method symbol may represent either a "this" parameter or a method return.
 			// The target symbol should never be a named type.
@@ -79,7 +93,7 @@ namespace ILLink.RoslynAnalyzer
 				: target.GetDynamicallyAccessedMemberTypes ();
 			// For the source symbol, a named type represents a "this" parameter and a method symbol represents a method return.
 			var damtOnSource = source.Kind switch {
-				SymbolKind.NamedType => context.ContainingSymbol.GetDynamicallyAccessedMemberTypes (),
+				SymbolKind.NamedType => context.OwningSymbol.GetDynamicallyAccessedMemberTypes (),
 				SymbolKind.Method => ((IMethodSymbol) source).GetDynamicallyAccessedMemberTypesOnReturnType (),
 				_ => source.GetDynamicallyAccessedMemberTypes ()
 			};
@@ -88,56 +102,9 @@ namespace ILLink.RoslynAnalyzer
 				return;
 
 			var diag = GetDiagnosticId (source.Kind, target.Kind, targetIsMethodReturn);
-			var diagArgs = GetDiagnosticArguments (source.Kind == SymbolKind.NamedType ? context.ContainingSymbol : source, target, missingAnnotations);
+			var diagArgs = GetDiagnosticArguments (source.Kind == SymbolKind.NamedType ? context.OwningSymbol : source, target, missingAnnotations);
+
 			context.ReportDiagnostic (Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (diag), location, diagArgs));
-		}
-
-		static void ProcessAssignmentOperation (OperationAnalysisContext context, IAssignmentOperation assignmentOperation)
-		{
-			if (context.ContainingSymbol.HasAttribute (RequiresUnreferencedCodeAnalyzer.FullyQualifiedRequiresUnreferencedCodeAttribute))
-				return;
-
-			CheckAndReportDynamicallyAccessedMembers (assignmentOperation.Value, assignmentOperation.Target, context, assignmentOperation.Syntax.GetLocation ());
-		}
-
-		static void ProcessInvocationOperation (OperationAnalysisContext context, IInvocationOperation invocationOperation)
-		{
-			if (context.ContainingSymbol.HasAttribute (RequiresUnreferencedCodeAnalyzer.FullyQualifiedRequiresUnreferencedCodeAttribute))
-				return;
-
-			ProcessTypeArguments (context, invocationOperation);
-			ProcessArguments (context, invocationOperation);
-			if (invocationOperation.Instance != null)
-				CheckAndReportDynamicallyAccessedMembers (invocationOperation.Instance, invocationOperation.TargetMethod, context, invocationOperation.Syntax.GetLocation (), targetIsMethodReturn: false);
-		}
-
-		static void ProcessReturnOperation (OperationAnalysisContext context, IReturnOperation returnOperation)
-		{
-			if (context.ContainingSymbol.HasAttribute (RequiresUnreferencedCodeAnalyzer.FullyQualifiedRequiresUnreferencedCodeAttribute))
-				return;
-
-			CheckAndReportDynamicallyAccessedMembers (returnOperation, context.ContainingSymbol, context, returnOperation.Syntax.GetLocation (), targetIsMethodReturn: true);
-		}
-
-		static void ProcessArguments (OperationAnalysisContext context, IInvocationOperation invocationOperation)
-		{
-			foreach (var argument in invocationOperation.Arguments) {
-				var sourceSymbol = TryGetSymbolFromOperation (argument.Value, context);
-				if (argument.Parameter == null || sourceSymbol == null)
-					continue;
-				CheckAndReportDynamicallyAccessedMembers (sourceSymbol, argument.Parameter, context, argument.Syntax.GetLocation (), targetIsMethodReturn: false);
-			}
-		}
-
-		static void ProcessTypeArguments (OperationAnalysisContext context, IInvocationOperation invocationOperation)
-		{
-			var targetMethod = invocationOperation.TargetMethod;
-			if (targetMethod.HasAttribute (RequiresUnreferencedCodeAnalyzer.FullyQualifiedRequiresUnreferencedCodeAttribute))
-				return;
-
-			for (int i = 0; i < targetMethod.TypeParameters.Length; i++) {
-				CheckAndReportDynamicallyAccessedMembers (targetMethod.TypeArguments[i], targetMethod.TypeParameters[i], context, invocationOperation.Syntax.GetLocation (), targetIsMethodReturn: false);
-			}
 		}
 
 		static DiagnosticId GetDiagnosticId (SymbolKind source, SymbolKind target, bool targetIsMethodReturnType = false)
@@ -194,28 +161,5 @@ namespace ILLink.RoslynAnalyzer
 
 			return args;
 		}
-
-		static ISymbol? TryGetSymbolFromOperation (IOperation? operation, OperationAnalysisContext context) =>
-			operation switch {
-				IArgumentOperation argument => TryGetSymbolFromOperation (argument.Value, context),
-				IAssignmentOperation assignment => TryGetSymbolFromOperation (assignment.Value, context),
-				IConversionOperation conversion => conversion.OperatorMethod ?? TryGetSymbolFromOperation (conversion.Operand, context),
-				IInstanceReferenceOperation instanceReference => instanceReference.ReferenceKind switch {
-					InstanceReferenceKind.ContainingTypeInstance =>
-						context.ContainingSymbol.Kind == SymbolKind.Method
-							? ((IMethodSymbol) context.ContainingSymbol).ContainingType
-							: null,
-					_ => null
-				},
-				// The target method of an invocation represents the called method. If this invocation is found within
-				// a return operation, this representes the returned value, which might be annotated.
-				IInvocationOperation invocation => invocation.TargetMethod,
-				IMemberReferenceOperation memberReference => memberReference.Member,
-				IParameterReferenceOperation parameterReference => parameterReference.Parameter,
-				IReturnOperation returnOp => TryGetSymbolFromOperation (returnOp.ReturnedValue, context),
-				// We only need to find the symbol for generic types here
-				ITypeOfOperation typeOf => typeOf.TypeOperand is ITypeParameterSymbol ? typeOf.TypeOperand : null,
-				_ => null
-			};
 	}
 }

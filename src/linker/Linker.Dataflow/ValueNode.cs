@@ -11,6 +11,7 @@ using Mono.Cecil;
 using FieldDefinition = Mono.Cecil.FieldDefinition;
 using GenericParameter = Mono.Cecil.GenericParameter;
 using TypeDefinition = Mono.Cecil.TypeDefinition;
+using ILLink.Shared;
 
 namespace Mono.Linker.Dataflow
 {
@@ -1354,17 +1355,6 @@ namespace Mono.Linker.Dataflow
 		}
 	}
 	#endregion
-
-	static class HashUtils
-	{
-		public static int CalcHashCodeEnumerable<T> (IEnumerable<T> list) where T : class?
-		{
-			HashCode hashCode = new HashCode ();
-			foreach (var item in list)
-				hashCode.Add (item);
-			return hashCode.ToHashCode ();
-		}
-	}
 
 	public struct ValueBasicBlockPair
 	{
