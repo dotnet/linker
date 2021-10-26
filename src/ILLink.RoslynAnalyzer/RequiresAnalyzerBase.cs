@@ -31,7 +31,7 @@ namespace ILLink.RoslynAnalyzer
 
 		public override void Initialize (AnalysisContext context)
 		{
-			context.EnableConcurrentExecution ();
+			//context.EnableConcurrentExecution ();
 			context.ConfigureGeneratedCodeAnalysis (GeneratedCodeAnalysisFlags.ReportDiagnostics);
 			context.RegisterCompilationStartAction (context => {
 				var compilation = context.Compilation;
@@ -90,9 +90,20 @@ namespace ILLink.RoslynAnalyzer
 					var objectCreation = (IObjectCreationOperation) operationContext.Operation;
 					var ctor = objectCreation.Constructor;
 					if (ctor is not null) {
-						CheckCalledMember (operationContext, ctor, incompatibleMembers);
+						CheckCalledMember (operationContext, ctor, incompatibleMembers, IsConstructor: true);
 					}
 				}, OperationKind.ObjectCreation);
+
+				context.RegisterOperationAction (operationContext => {
+					var fieldReference = (IFieldReferenceOperation) operationContext.Operation;
+					if (AnalyzerDiagnosticTargets.HasFlag (DiagnosticTargets.Class) &&
+						fieldReference.Field.IsStatic &&
+						fieldReference.Syntax.IsKind (SyntaxKind.SimpleMemberAccessExpression) &&
+						fieldReference.Field.ContainingType is INamedTypeSymbol fieldDeclaringType &&
+						fieldDeclaringType.TryGetAttribute (RequiresAttributeName, out var requiresAttribute)) {
+						ReportRequiresDiagnostic (operationContext, fieldReference.Field, requiresAttribute);
+					}
+				}, OperationKind.FieldReference);
 
 				context.RegisterOperationAction (operationContext => {
 					var propAccess = (IPropertyReferenceOperation) operationContext.Operation;
@@ -158,15 +169,23 @@ namespace ILLink.RoslynAnalyzer
 				void CheckCalledMember (
 					OperationAnalysisContext operationContext,
 					ISymbol member,
-					ImmutableArray<ISymbol> incompatibleMembers)
+					ImmutableArray<ISymbol> incompatibleMembers,
+					bool IsConstructor = false)
 				{
 					ISymbol containingSymbol = FindContainingSymbol (operationContext, AnalyzerDiagnosticTargets);
+					INamedTypeSymbol memberDeclaringType = member.ContainingType;
+					INamedTypeSymbol containingSymbolDeclaringType = containingSymbol.ContainingType;
 
-					if(AnalyzerDiagnosticTargets.HasFlag (DiagnosticTargets.Class) && member.ContainingType is INamedTypeSymbol declaringType && declaringType.TryGetAttribute (RequiresAttributeName, out var typeRequires))
+					if (AnalyzerDiagnosticTargets.HasFlag (DiagnosticTargets.Class) &&
+						(!IsConstructor && member.IsStatic || IsConstructor) &&
+						memberDeclaringType.TryGetAttribute (RequiresAttributeName, out var typeRequires) &&
+						!containingSymbolDeclaringType.HasAttribute (RequiresAttributeName))
 						ReportRequiresDiagnostic (operationContext, member, typeRequires);
 
 					// Do not emit any diagnostic if caller is annotated with the attribute too.
-					if (containingSymbol.HasAttribute (RequiresAttributeName))
+					if (containingSymbol.HasAttribute (RequiresAttributeName) ||
+						(AnalyzerDiagnosticTargets.HasFlag (DiagnosticTargets.Class)
+						&& containingSymbolDeclaringType.HasAttribute (RequiresAttributeName)))
 						return;
 
 					// Check also for RequiresAttribute in the associated symbol

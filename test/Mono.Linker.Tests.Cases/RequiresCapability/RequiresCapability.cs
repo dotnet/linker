@@ -918,7 +918,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				}
 			}
 
-			[ExpectedWarning ("IL2026", "RequiresOnClass.StaticCtor.StaticCtor()", "Message for --StaticCtor--", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "RequiresOnClass.StaticCtor.StaticCtor()", "Message for --StaticCtor--")]
 			static void TestStaticCctorRequires ()
 			{
 				_ = new StaticCtor ();
@@ -935,13 +935,13 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				public static int field;
 			}
 
-			[ExpectedWarning ("IL2026", "StaticCtorTriggeredByFieldAccess.field", "Message for --StaticCtorTriggeredByFieldAccess--", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "StaticCtorTriggeredByFieldAccess.field", "Message for --StaticCtorTriggeredByFieldAccess--")]
 			static void TestStaticCtorMarkingIsTriggeredByFieldAccessWrite ()
 			{
 				StaticCtorTriggeredByFieldAccess.field = 1;
 			}
 
-			[ExpectedWarning ("IL2026", "StaticCtorTriggeredByFieldAccess.field", "Message for --StaticCtorTriggeredByFieldAccess--", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "StaticCtorTriggeredByFieldAccess.field", "Message for --StaticCtorTriggeredByFieldAccess--")]
 			static void TestStaticCtorMarkingTriggeredOnSecondAccessWrite ()
 			{
 				StaticCtorTriggeredByFieldAccess.field = 2;
@@ -965,7 +965,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				public static int field = 42;
 			}
 
-			[ExpectedWarning ("IL2026", "StaticCCtorTriggeredByFieldAccessRead.field", "Message for --StaticCCtorTriggeredByFieldAccessRead--", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "StaticCCtorTriggeredByFieldAccessRead.field", "Message for --StaticCCtorTriggeredByFieldAccessRead--")]
 			static void TestStaticCtorMarkingIsTriggeredByFieldAccessRead ()
 			{
 				var _ = StaticCCtorTriggeredByFieldAccessRead.field;
@@ -983,7 +983,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				}
 			}
 
-			[ExpectedWarning ("IL2026", "StaticCtorTriggeredByCtorCalls.StaticCtorTriggeredByCtorCalls()", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "StaticCtorTriggeredByCtorCalls.StaticCtorTriggeredByCtorCalls()")]
 			static void TestStaticCtorTriggeredByCtorCall ()
 			{
 				new StaticCtorTriggeredByCtorCalls ();
@@ -995,7 +995,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				public int field = 42;
 			}
 
-			[ExpectedWarning ("IL2026", "ClassWithInstanceField.ClassWithInstanceField()", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "ClassWithInstanceField.ClassWithInstanceField()")]
 			static void TestInstanceFieldCallDontWarn ()
 			{
 				ClassWithInstanceField instance = new ClassWithInstanceField ();
@@ -1095,13 +1095,13 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				}
 			}
 
-			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequires.StaticMethod()", "--ClassWithRequires--", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequires.StaticMethod()", "--ClassWithRequires--")]
 			static void TestRequiresInClassAccessedByStaticMethod ()
 			{
 				ClassWithRequires.StaticMethod ();
 			}
 
-			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequires", "--ClassWithRequires--", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequires", "--ClassWithRequires--")]
 			static void TestRequiresInClassAccessedByCctor ()
 			{
 				var classObject = new ClassWithRequires ();
@@ -1112,10 +1112,10 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				ClassWithRequires.NestedClass.NestedStaticMethod ();
 			}
 
-			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequires.StaticMethod()", "--ClassWithRequires--", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequires.StaticMethod()", "--ClassWithRequires--")]
 			// Although we suppress the warning from RequiresOnMethod.MethodWithRequires () we still get a warning because we call CallRequiresMethod() which is an static method on a type with RUC
-			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequires.CallMethodWithRequires()", "--ClassWithRequires--", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "ClassWithRequires.Instance", "--ClassWithRequires--", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequires.CallMethodWithRequires()", "--ClassWithRequires--")]
+			[ExpectedWarning ("IL2026", "ClassWithRequires.Instance", "--ClassWithRequires--")]
 			static void TestRequiresOnBaseButNotOnDerived ()
 			{
 				DerivedWithoutRequires.StaticMethodInInheritedClass ();
@@ -1129,7 +1129,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				DerivedWithoutRequires2.StaticMethod ();
 			}
 
-			[ExpectedWarning ("IL2026", "RequiresOnClass.DerivedWithRequires.StaticMethodInInheritedClass()", "--DerivedWithRequires--", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "RequiresOnClass.DerivedWithRequires.StaticMethodInInheritedClass()", "--DerivedWithRequires--")]
 			static void TestRequiresOnDerivedButNotOnBase ()
 			{
 				DerivedWithRequires.StaticMethodInInheritedClass ();
@@ -1138,8 +1138,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				DerivedWithRequires.NestedClass.NestedStaticMethod ();
 			}
 
-			[ExpectedWarning ("IL2026", "RequiresOnClass.DerivedWithRequires2.StaticMethodInInheritedClass()", "--DerivedWithRequires2--", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequires.StaticMethod()", "--ClassWithRequires--", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "RequiresOnClass.DerivedWithRequires2.StaticMethodInInheritedClass()", "--DerivedWithRequires2--")]
+			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequires.StaticMethod()", "--ClassWithRequires--")]
 			static void TestRequiresOnBaseAndDerived ()
 			{
 				DerivedWithRequires2.StaticMethodInInheritedClass ();
@@ -1148,7 +1148,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				DerivedWithRequires2.NestedClass.NestedStaticMethod ();
 			}
 
-			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequires.TestSuppressions(Type[])", ProducedBy = ProducedBy.Trimmer)]
+			// TODO: Parameter signature differs between linker and analyzer
+			[ExpectedWarning ("IL2026", "RequiresOnClass.ClassWithRequires.TestSuppressions(", "Type[])")]
 			static void TestSuppressionsOnClass ()
 			{
 				ClassWithRequires.TestSuppressions (new[] { typeof (ClassWithRequires) });
@@ -1186,14 +1187,16 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				public static int Property { get; set; }
 
 				// These should not be reported https://github.com/mono/linker/issues/2218
-				[ExpectedWarning ("IL2026", "add_Event", ProducedBy = ProducedBy.Trimmer)]
-				[ExpectedWarning ("IL2026", "remove_Event", ProducedBy = ProducedBy.Trimmer)]
+				[ExpectedWarning ("IL2026", "MemberTypesWithRequires.Event.add", ProducedBy = ProducedBy.Trimmer)]
+				[ExpectedWarning ("IL2026", "MemberTypesWithRequires.Event.remove", ProducedBy = ProducedBy.Trimmer)]
 				public static event EventHandler Event;
 			}
 
-			[ExpectedWarning ("IL2026", "MemberTypesWithRequires.field", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "MemberTypesWithRequires.Property.set", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "MemberTypesWithRequires.remove_Event", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "MemberTypesWithRequires.field")]
+			[ExpectedWarning ("IL2026", "MemberTypesWithRequires.Property.set")]
+			[ExpectedWarning ("IL2026", "MemberTypesWithRequires.Event", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL2026", "MemberTypesWithRequires.Event.add", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL2026", "MemberTypesWithRequires.Event.remove")]
 			static void TestOtherMemberTypesWithRequires ()
 			{
 				MemberTypesWithRequires.field = 1;
@@ -1334,7 +1337,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				[RequiresUnreferencedCode ("--WithRequiresOnlyInstanceFields--")]
 				class WithRequiresOnlyInstanceFields
 				{
-					public int InstnaceField;
+					public int InstanceField;
 				}
 
 				[ExpectedWarning ("IL2109", "ReflectionAccessOnField/DerivedWithoutRequires", "ReflectionAccessOnField.WithRequires", ProducedBy = ProducedBy.Trimmer)]
@@ -1361,20 +1364,22 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 					typeof (DerivedWithRequires).RequiresPublicFields ();
 				}
 
-				[ExpectedWarning ("IL2026", "WithRequires.StaticField", ProducedBy = ProducedBy.Trimmer)]
+				[ExpectedWarning ("IL2026", "WithRequires.StaticField")]
+				// Analyzer does not recognize the binding flags
 				[ExpectedWarning ("IL2026", "WithRequires.PrivateStaticField", ProducedBy = ProducedBy.Trimmer)]
-				[ExpectedWarning ("IL2026", "DerivedWithRequires.DerivedStaticField", ProducedBy = ProducedBy.Trimmer)]
+				[ExpectedWarning ("IL2026", "DerivedWithRequires.DerivedStaticField")]
+				[ExpectedWarning ("IL2026", "DerivedWithRequires.DerivedStaticField", ProducedBy = ProducedBy.Analyzer)]
 				static void TestDirectReflectionAccess ()
 				{
 					typeof (WithRequires).GetField (nameof (WithRequires.StaticField));
 					typeof (WithRequires).GetField (nameof (WithRequires.InstanceField)); // Doesn't warn
 					typeof (WithRequires).GetField ("PrivateStaticField", BindingFlags.NonPublic);
-					typeof (WithRequiresOnlyInstanceFields).GetField (nameof (WithRequiresOnlyInstanceFields.InstnaceField)); // Doesn't warn
+					typeof (WithRequiresOnlyInstanceFields).GetField (nameof (WithRequiresOnlyInstanceFields.InstanceField)); // Doesn't warn
 					typeof (DerivedWithoutRequires).GetField (nameof (DerivedWithRequires.DerivedStaticField)); // Doesn't warn
 					typeof (DerivedWithRequires).GetField (nameof (DerivedWithRequires.DerivedStaticField));
 				}
 
-				[ExpectedWarning ("IL2026", "WithRequires.StaticField", ProducedBy = ProducedBy.Trimmer)]
+				[ExpectedWarning ("IL2026", "WithRequires.StaticField")]
 				[DynamicDependency (nameof (WithRequires.StaticField), typeof (WithRequires))]
 				[DynamicDependency (nameof (WithRequires.InstanceField), typeof (WithRequires))] // Doesn't warn
 				[DynamicDependency (DynamicallyAccessedMemberTypes.PublicFields, typeof (DerivedWithoutRequires))] // Doesn't warn
@@ -1426,12 +1431,14 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				{
 					// These should be reported only in TestDirectReflectionAccess
 					// https://github.com/mono/linker/issues/2218
-					[ExpectedWarning ("IL2026", "add_StaticEvent", ProducedBy = ProducedBy.Trimmer)]
-					[ExpectedWarning ("IL2026", "remove_StaticEvent", ProducedBy = ProducedBy.Trimmer)]
+					[ExpectedWarning ("IL2026", "StaticEvent.add", ProducedBy = ProducedBy.Trimmer)]
+					[ExpectedWarning ("IL2026", "StaticEvent.remove", ProducedBy = ProducedBy.Trimmer)]
 					public static event EventHandler StaticEvent;
 				}
 
-				[ExpectedWarning ("IL2026", "add_StaticEvent", ProducedBy = ProducedBy.Trimmer)]
+				[ExpectedWarning ("IL2026", "StaticEvent", ProducedBy = ProducedBy.Analyzer)]
+				[ExpectedWarning ("IL2026", "StaticEvent.add")]
+				[ExpectedWarning ("IL2026", "StaticEvent.remove", ProducedBy = ProducedBy.Analyzer)]
 				static void TestDirectReflectionAccess ()
 				{
 					typeof (WithRequires).GetEvent (nameof (WithRequires.StaticEvent));

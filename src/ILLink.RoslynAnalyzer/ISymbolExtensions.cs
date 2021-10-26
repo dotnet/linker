@@ -49,14 +49,6 @@ namespace ILLink.RoslynAnalyzer
 		{
 			var sb = new StringBuilder ();
 			switch (symbol) {
-			case IFieldSymbol fieldSymbol:
-				sb.Append (fieldSymbol.Type);
-				sb.Append (" ");
-				sb.Append (fieldSymbol.ContainingSymbol.ToDisplayString ());
-				sb.Append ("::");
-				sb.Append (fieldSymbol.MetadataName);
-				break;
-
 			case IParameterSymbol parameterSymbol:
 				sb.Append (parameterSymbol.Name);
 				break;
