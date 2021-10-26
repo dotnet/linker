@@ -168,6 +168,10 @@ namespace Mono.Linker.Steps
 
 				TypeDefinition type = assembly.MainModule.GetType (fullname);
 
+				// Before giving up, check .NET style nested type naming
+				if (type == null)
+					type = assembly.MainModule.GetType (fullname.Replace ('+', '/'));
+
 				if (type == null && assembly.MainModule.HasExportedTypes) {
 					foreach (var exported in assembly.MainModule.ExportedTypes) {
 						if (fullname == exported.FullName) {

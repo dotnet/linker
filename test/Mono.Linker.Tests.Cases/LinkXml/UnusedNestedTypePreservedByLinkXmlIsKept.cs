@@ -15,5 +15,20 @@ namespace Mono.Linker.Tests.Cases.LinkXml
 		class Unused
 		{
 		}
+
+		[Kept]
+		[KeptMember (".ctor()")]
+		class Unused2
+		{
+			[Kept]
+			class Unused3
+			{
+				[Kept]
+				[KeptMember (".ctor()")]
+				class Unused4
+				{
+				}
+			}
+		}
 	}
 }

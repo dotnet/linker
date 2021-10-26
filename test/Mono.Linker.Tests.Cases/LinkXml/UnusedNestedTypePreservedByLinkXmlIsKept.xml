@@ -1,5 +1,8 @@
 <linker>
   <assembly fullname="test, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
     <type fullname="Mono.Linker.Tests.Cases.LinkXml.UnusedNestedTypePreservedByLinkXmlIsKept/Unused" />
+    <!--Allow .NET style nested type naming-->
+    <type fullname="Mono.Linker.Tests.Cases.LinkXml.UnusedNestedTypePreservedByLinkXmlIsKept+Unused2" />
+    <type fullname="Mono.Linker.Tests.Cases.LinkXml.UnusedNestedTypePreservedByLinkXmlIsKept+Unused2+Unused3+Unused4" />
   </assembly>
 </linker>
