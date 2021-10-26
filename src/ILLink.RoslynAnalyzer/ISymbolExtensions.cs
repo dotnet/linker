@@ -85,5 +85,11 @@ namespace ILLink.RoslynAnalyzer
 
 			return false;
 		}
+
+		public static bool IsConstructor ([NotNullWhen (returnValue: true)] this ISymbol? symbol)
+			=> (symbol as IMethodSymbol)?.MethodKind == MethodKind.Constructor;
+
+		public static bool IsStaticConstructor ([NotNullWhen (returnValue: true)] this ISymbol? symbol)
+			=> (symbol as IMethodSymbol)?.MethodKind == MethodKind.StaticConstructor;
 	}
 }
