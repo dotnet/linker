@@ -1437,8 +1437,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				}
 
 				[ExpectedWarning ("IL2026", "StaticEvent", ProducedBy = ProducedBy.Analyzer)]
-				[ExpectedWarning ("IL2026", "StaticEvent.add")]
 				[ExpectedWarning ("IL2026", "StaticEvent.remove", ProducedBy = ProducedBy.Analyzer)]
+				[ExpectedWarning ("IL2026", "StaticEvent.add")]
 				static void TestDirectReflectionAccess ()
 				{
 					typeof (WithRequires).GetEvent (nameof (WithRequires.StaticEvent));

@@ -23,10 +23,10 @@ namespace Mono.Linker
 				return sb.ToString ();
 			}
 
-			if (methodDefinition != null && methodDefinition.IsEventMethod()) {
+			if (methodDefinition != null && methodDefinition.IsEventMethod ()) {
 				// Append event name
 				string name = methodDefinition.SemanticsAttributes switch {
-					MethodSemanticsAttributes.AddOn => string.Concat(methodDefinition.Name.AsSpan (4), ".add"),
+					MethodSemanticsAttributes.AddOn => string.Concat (methodDefinition.Name.AsSpan (4), ".add"),
 					MethodSemanticsAttributes.RemoveOn => string.Concat (methodDefinition.Name.AsSpan (7), ".remove"),
 					MethodSemanticsAttributes.Fire => string.Concat (methodDefinition.Name.AsSpan (6), ".raise"),
 					_ => throw new NotSupportedException (),
