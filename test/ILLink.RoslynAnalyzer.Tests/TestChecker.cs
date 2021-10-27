@@ -66,6 +66,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 		{
 			switch (attribute.Name.ToString ()) {
 			case "ExpectedWarning":
+			case "LogContains":
 				var args = TestCaseUtils.GetAttributeArguments (attribute);
 				if (args.TryGetValue ("ProducedBy", out var producedBy) &&
 					producedBy is MemberAccessExpressionSyntax memberAccessExpression &&
@@ -73,7 +74,6 @@ namespace ILLink.RoslynAnalyzer.Tests
 					identifierNameSyntax.Identifier.ValueText == "Trimmer")
 					return false;
 				return true;
-			case "LogContains":
 			case "UnrecognizedReflectionAccessPattern":
 				return true;
 			default:
@@ -170,8 +170,8 @@ namespace ILLink.RoslynAnalyzer.Tests
 		{
 			missingDiagnosticMessage = null;
 			matchIndex = null;
-			var arg = Assert.Single (TestCaseUtils.GetAttributeArguments (attribute));
-			var text = TestCaseUtils.GetStringFromExpression (arg.Value);
+			var args = TestCaseUtils.GetAttributeArguments (attribute);
+			var text = TestCaseUtils.GetStringFromExpression (args["#0"]);
 
 			// If the text starts with `warning IL...` then it probably follows the pattern
 			//	'warning <diagId>: <location>:'

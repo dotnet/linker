@@ -225,7 +225,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			member switch {
 				MethodDeclarationSyntax method => method.Identifier.ToString (),
 				PropertyDeclarationSyntax property => property.Identifier.ToString (),
-				FieldDeclarationSyntax field => field.Declaration.Variables.First ().Identifier.ToString (),
+				FieldDeclarationSyntax field => field.Declaration.Variables.Single ().Identifier.ToString (),
 				EventDeclarationSyntax @event => @event.Identifier.ToString (),
 				ClassDeclarationSyntax @class => @class.Identifier.ToString (),
 				ConstructorDeclarationSyntax ctor => ctor.Modifiers.Any (t => t.Text == "static") ? ".cctor" : ".ctor",
