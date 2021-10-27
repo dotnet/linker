@@ -686,9 +686,6 @@ namespace Mono.Linker.Tests.TestCasesRunner
 					case nameof (LogContainsAttribute): {
 							var expectedMessage = (string) attr.ConstructorArguments[0].Value;
 
-							if (expectedMessage.Contains ("TypeIsBeforeFieldInit"))
-								Debugger.Break ();
-
 							List<MessageContainer> matchedMessages;
 							if ((bool) attr.ConstructorArguments[1].Value)
 								matchedMessages = loggedMessages.Where (m => Regex.IsMatch (m.ToString (), expectedMessage)).ToList ();
