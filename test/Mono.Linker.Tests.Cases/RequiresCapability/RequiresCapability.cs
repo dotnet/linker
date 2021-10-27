@@ -86,28 +86,33 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		}
 
 		[ExpectedWarning ("IL2026", "Message for --RequiresWithMessageOnly--.")]
+		[ExpectedWarning ("IL3002", "Message for --RequiresWithMessageOnly--.", ProducedBy = ProducedBy.Analyzer)]
 		static void TestRequiresWithMessageOnlyOnMethod ()
 		{
 			RequiresWithMessageOnly ();
 		}
 
 		[RequiresUnreferencedCode ("Message for --RequiresWithMessageOnly--")]
+		[RequiresAssemblyFiles ("Message for --RequiresWithMessageOnly--")]
 		static void RequiresWithMessageOnly ()
 		{
 		}
 
 		[ExpectedWarning ("IL2026", "Message for --RequiresWithMessageAndUrl--.", "https://helpurl")]
+		[ExpectedWarning ("IL3002", "Message for --RequiresWithMessageAndUrl--.", "https://helpurl", ProducedBy = ProducedBy.Analyzer)]
 		static void TestRequiresWithMessageAndUrlOnMethod ()
 		{
 			RequiresWithMessageAndUrl ();
 		}
 
 		[RequiresUnreferencedCode ("Message for --RequiresWithMessageAndUrl--", Url = "https://helpurl")]
+		[RequiresAssemblyFiles ("Message for --RequiresWithMessageAndUrl--", Url = "https://helpurl")]
 		static void RequiresWithMessageAndUrl ()
 		{
 		}
 
 		[ExpectedWarning ("IL2026", "Message for --ConstructorRequires--.")]
+		[ExpectedWarning ("IL3002", "Message for --ConstructorRequires--.", ProducedBy = ProducedBy.Analyzer)]
 		static void TestRequiresOnConstructor ()
 		{
 			new ConstructorRequires ();
@@ -116,6 +121,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		class ConstructorRequires
 		{
 			[RequiresUnreferencedCode ("Message for --ConstructorRequires--")]
+			[RequiresAssemblyFiles ("Message for --ConstructorRequires--")]
 			public ConstructorRequires ()
 			{
 			}
@@ -123,6 +129,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		[ExpectedWarning ("IL2026", "Message for --getter PropertyRequires--.")]
 		[ExpectedWarning ("IL2026", "Message for --setter PropertyRequires--.")]
+		[ExpectedWarning ("IL3002", "Message for --getter PropertyRequires--.", ProducedBy = ProducedBy.Analyzer)]
+		[ExpectedWarning ("IL3002", "Message for --setter PropertyRequires--.", ProducedBy = ProducedBy.Analyzer)]
 		static void TestRequiresOnPropertyGetterAndSetter ()
 		{
 			_ = PropertyRequires;
@@ -131,9 +139,11 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		static int PropertyRequires {
 			[RequiresUnreferencedCode ("Message for --getter PropertyRequires--")]
+			[RequiresAssemblyFiles ("Message for --getter PropertyRequires--")]
 			get { return 42; }
 
 			[RequiresUnreferencedCode ("Message for --setter PropertyRequires--")]
+			[RequiresAssemblyFiles ("Message for --setter PropertyRequires--")]
 			set { }
 		}
 
@@ -144,6 +154,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			static Type GetUnknownType () => null;
 
 			[RequiresUnreferencedCode ("Message for --MethodWithRequires--")]
+			[RequiresAssemblyFiles ("Message for --MethodWithRequires--")]
 			static void MethodWithRequires ()
 			{
 			}
@@ -152,6 +163,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			static Type _requiresPublicConstructors;
 
 			[RequiresUnreferencedCode ("")]
+			[RequiresAssemblyFiles ("")]
 			static void TestMethodWithRequires ()
 			{
 				// Normally this would warn, but with the attribute on this method it should be auto-suppressed
@@ -159,24 +171,28 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[RequiresUnreferencedCode ("")]
+			[RequiresAssemblyFiles ("")]
 			static void TestParameter ()
 			{
 				_unknownType.RequiresPublicMethods ();
 			}
 
 			[RequiresUnreferencedCode ("")]
+			[RequiresAssemblyFiles ("")]
 			static void TestReturnValue ()
 			{
 				GetUnknownType ().RequiresPublicEvents ();
 			}
 
 			[RequiresUnreferencedCode ("")]
+			[RequiresAssemblyFiles ("")]
 			static void TestField ()
 			{
 				_requiresPublicConstructors = _unknownType;
 			}
 
 			[UnconditionalSuppressMessage ("Trimming", "IL2026")]
+			[UnconditionalSuppressMessage ("SingleFile", "IL3002")]
 			public static void Test ()
 			{
 				TestMethodWithRequires ();
@@ -196,36 +212,42 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			class GenericTypeRequiresPublicFields<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] T> { }
 
 			[RequiresUnreferencedCode ("")]
+			[RequiresAssemblyFiles ("")]
 			static void TestGenericMethod ()
 			{
 				GenericMethodRequiresPublicMethods<TUnknown> ();
 			}
 
 			[RequiresUnreferencedCode ("")]
+			[RequiresAssemblyFiles ("")]
 			static void TestGenericMethodMismatch ()
 			{
 				GenericMethodRequiresPublicMethods<TPublicProperties> ();
 			}
 
 			[RequiresUnreferencedCode ("")]
+			[RequiresAssemblyFiles ("")]
 			static void TestGenericType ()
 			{
 				new GenericTypeRequiresPublicFields<TUnknown> ();
 			}
 
 			[RequiresUnreferencedCode ("")]
+			[RequiresAssemblyFiles ("")]
 			static void TestMakeGenericTypeWithStaticTypes ()
 			{
 				typeof (GenericTypeRequiresPublicFields<>).MakeGenericType (typeof (TUnknown));
 			}
 
 			[RequiresUnreferencedCode ("")]
+			[RequiresAssemblyFiles ("")]
 			static void TestMakeGenericTypeWithDynamicTypes ()
 			{
 				typeof (GenericTypeRequiresPublicFields<>).MakeGenericType (_unknownType);
 			}
 
 			[RequiresUnreferencedCode ("")]
+			[RequiresAssemblyFiles ("")]
 			static void TestMakeGenericMethod ()
 			{
 				typeof (SuppressGenericParameters<TUnknown, TPublicProperties>)
@@ -234,6 +256,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[UnconditionalSuppressMessage ("Trimming", "IL2026")]
+			[UnconditionalSuppressMessage ("SingleFile", "IL3002")]
 			public static void Test ()
 			{
 				TestGenericMethod ();
@@ -292,6 +315,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		class BaseType
 		{
 			[RequiresUnreferencedCode ("Message for --BaseType.VirtualMethodRequires--")]
+			[RequiresAssemblyFiles ("Message for --BaseType.VirtualMethodRequires--")]
 			public virtual void VirtualMethodRequires ()
 			{
 			}
@@ -300,12 +324,14 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		class TypeWhichOverridesMethod : BaseType
 		{
 			[RequiresUnreferencedCode ("Message for --TypeWhichOverridesMethod.VirtualMethodRequires--")]
+			[RequiresAssemblyFiles ("Message for --TypeWhichOverridesMethod.VirtualMethodRequires--")]
 			public override void VirtualMethodRequires ()
 			{
 			}
 		}
 
 		[ExpectedWarning ("IL2026", "--BaseType.VirtualMethodRequires--")]
+		[ExpectedWarning ("IL3002", "--BaseType.VirtualMethodRequires--", ProducedBy = ProducedBy.Analyzer)]
 		static void TestBaseTypeVirtualMethodRequires ()
 		{
 			var tmp = new BaseType ();
@@ -314,6 +340,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		[LogDoesNotContain ("TypeWhichOverridesMethod.VirtualMethodRequires")]
 		[ExpectedWarning ("IL2026", "--BaseType.VirtualMethodRequires--")]
+		[ExpectedWarning ("IL3002", "--BaseType.VirtualMethodRequires--", ProducedBy = ProducedBy.Analyzer)]
 		static void TestTypeWhichOverridesMethodVirtualMethodRequires ()
 		{
 			var tmp = new TypeWhichOverridesMethod ();
@@ -322,6 +349,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		[LogDoesNotContain ("TypeWhichOverridesMethod.VirtualMethodRequires")]
 		[ExpectedWarning ("IL2026", "--BaseType.VirtualMethodRequires--")]
+		[ExpectedWarning ("IL3002", "--BaseType.VirtualMethodRequires--", ProducedBy = ProducedBy.Analyzer)]
 		static void TestTypeWhichOverridesMethodVirtualMethodRequiresOnBase ()
 		{
 			BaseType tmp = new TypeWhichOverridesMethod ();
@@ -330,19 +358,25 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		class PropertyBaseType
 		{
-			public virtual int VirtualPropertyRequires { [RequiresUnreferencedCode ("Message for --PropertyBaseType.VirtualPropertyRequires--")] get; }
+			public virtual int VirtualPropertyRequires {
+				[RequiresUnreferencedCode ("Message for --PropertyBaseType.VirtualPropertyRequires--")]
+				[RequiresAssemblyFiles ("Message for --PropertyBaseType.VirtualPropertyRequires--")]
+				get;
+			}
 		}
 
 		class TypeWhichOverridesProperty : PropertyBaseType
 		{
 			public override int VirtualPropertyRequires {
 				[RequiresUnreferencedCode ("Message for --TypeWhichOverridesProperty.VirtualPropertyRequires--")]
+				[RequiresAssemblyFiles ("Message for --TypeWhichOverridesProperty.VirtualPropertyRequires--")]
 				get { return 1; }
 			}
 		}
 
 		[LogDoesNotContain ("TypeWhichOverridesProperty.VirtualPropertyRequires")]
 		[ExpectedWarning ("IL2026", "--PropertyBaseType.VirtualPropertyRequires--")]
+		[ExpectedWarning ("IL3002", "--PropertyBaseType.VirtualPropertyRequires--", ProducedBy = ProducedBy.Analyzer)]
 		static void TestTypeWhichOverridesVirtualPropertyRequires ()
 		{
 			var tmp = new TypeWhichOverridesProperty ();
@@ -397,9 +431,11 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		class TypeIsBeforeFieldInit
 		{
 			[LogContains ("Message from --TypeIsBeforeFieldInit.AnnotatedMethod--")]
+			[LogContains ("Message from --TypeIsBeforeFieldInit.AnnotatedMethod--", ProducedBy = ProducedBy.Analyzer)]
 			public static int field = AnnotatedMethod ();
 
 			[RequiresUnreferencedCode ("Message from --TypeIsBeforeFieldInit.AnnotatedMethod--")]
+			[RequiresAssemblyFiles ("Message from --TypeIsBeforeFieldInit.AnnotatedMethod--")]
 			public static int AnnotatedMethod () => 42;
 		}
 

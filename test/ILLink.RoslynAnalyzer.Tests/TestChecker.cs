@@ -67,6 +67,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 		{
 			switch (attribute.Name.ToString ()) {
 			case "ExpectedWarning":
+			case "LogContains":
 				var args = TestCaseUtils.GetAttributeArguments (attribute);
 				if (args.TryGetValue ("ProducedBy", out var producedBy)) {
 					// Skip if this warning is not expected to be produced by any of the analyzers that we are currently testing.
@@ -74,7 +75,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 				}
 
 				return true;
-			case "LogContains":
+			
 			case "UnrecognizedReflectionAccessPattern":
 				return true;
 			default:
