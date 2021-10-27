@@ -3,6 +3,7 @@
 
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -40,31 +41,49 @@ namespace ILLink.RoslynAnalyzer.Tests
 		public static IEnumerable<object[]> GetTestData (string testSuiteName)
 		{
 			foreach (var testFile in s_testFiles[testSuiteName]) {
-				var testName = Path.GetFileNameWithoutExtension (testFile);
-				var root = CSharpSyntaxTree.ParseText (File.ReadAllText (testFile)).GetRoot ();
+				foreach (var (m, attrs) in GetTestDataFromFile(testFile)) {
+					var testName = Path.GetFileNameWithoutExtension (testFile);
+					yield return new object[] { testName, m, attrs };
+				}
+			}
+		}
 
-				foreach (var node in root.DescendantNodes ()) {
-					if (node is MemberDeclarationSyntax m) {
-						var attrs = m.AttributeLists.SelectMany (al => al.Attributes.Where (IsWellKnown)).ToList ();
-						if (attrs.Count > 0) {
-							yield return new object[] { testName, m, attrs };
-						}
+		private static IEnumerable<(MemberDeclarationSyntax Member, List<AttributeSyntax>)> GetTestDataFromFile(string testFile)
+		{
+			var root = CSharpSyntaxTree.ParseText (File.ReadAllText (testFile)).GetRoot ();
+
+			foreach (var node in root.DescendantNodes ()) {
+				if (node is MemberDeclarationSyntax m) {
+					var attrs = m.AttributeLists.SelectMany (al => al.Attributes.Where (IsWellKnown)).ToList ();
+					if (attrs.Count > 0) {
+						yield return (m, attrs);
 					}
 				}
+			}
 
-				static bool IsWellKnown (AttributeSyntax attr)
-				{
-					switch (attr.Name.ToString ()) {
-					// Currently, the analyzer's test infra only understands these attributes when placed on methods.
-					case "ExpectedWarning":
-					case "LogContains":
-					case "LogDoesNotContain":
-					case "UnrecognizedReflectionAccessPattern":
-						return true;
-					}
-
-					return false;
+			static bool IsWellKnown (AttributeSyntax attr)
+			{
+				switch (attr.Name.ToString ()) {
+				// Currently, the analyzer's test infra only understands these attributes when placed on methods.
+				case "ExpectedWarning":
+				case "LogContains":
+				case "LogDoesNotContain":
+				case "UnrecognizedReflectionAccessPattern":
+					return true;
 				}
+
+				return false;
+			}
+
+		}
+
+		public static void RunTest(string testSuiteName, string testName)
+		{
+			var testFiles = s_testFiles[testSuiteName];
+			var filePath = testFiles.Find(f => Path.GetFileNameWithoutExtension(f) == testName);
+			Debug.Assert(filePath is not null);
+			foreach (var (member, attrs) in GetTestDataFromFile (filePath)) {
+				RunTest<RequiresUnreferencedCodeAnalyzer> (member, attrs, UseMSBuildProperties (MSBuildPropertyOptionNames.EnableTrimAnalyzer));
 			}
 		}
 

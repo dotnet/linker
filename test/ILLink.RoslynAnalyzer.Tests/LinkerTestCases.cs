@@ -12,6 +12,12 @@ namespace ILLink.RoslynAnalyzer.Tests
 	/// </summary>
 	public class LinkerTestCases : TestCaseUtils
 	{
+		[Fact]
+		public void TestStaticCctor()
+		{
+			RunTest ("RequiresCapability", nameof(TestStaticCctor));
+		}
+
 		[Theory]
 		[MemberData (nameof (TestCaseUtils.GetTestData), parameters: nameof (RequiresCapability))]
 		public void RequiresCapability (string testName, MemberDeclarationSyntax m, List<AttributeSyntax> attrs)
