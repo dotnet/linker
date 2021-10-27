@@ -95,7 +95,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			}
 		}
 
-		public void ValidateAttributes (List<AttributeSyntax> attributes)
+		public void ValidateAttributes (IEnumerable<AttributeSyntax> attributes)
 		{
 			var unmatchedDiagnostics = DiagnosticMessages.ToList ();
 
