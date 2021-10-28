@@ -242,15 +242,5 @@ namespace ILLink.RoslynAnalyzer
 				return false;
 			}
 		}
-
-		/*
-		public static IEventAssignmentOperation GetEventUsageInfo (this IOperation operation)
-		{
-			if (operation.Parent is IEventAssignmentOperation assignmentOperation) {
-				return assignmentOperation;
-			}
-			return null;
-		}
-		*/
 	}
 }
