@@ -41,10 +41,9 @@ namespace ILLink.RoslynAnalyzer.Tests
 		public static IEnumerable<object[]> GetTestData (string testSuiteName)
 			=> s_testCases[testSuiteName].Keys.Select (testName => new object[] { testName });
 
-		public static void RunTest<TAnalyzer> (string suiteName, string testName, params (string, string)[] MSBuildProperties)
-			where TAnalyzer : DiagnosticAnalyzer, new()
+		public static void RunTest (string suiteName, string testName, params (string, string)[] MSBuildProperties)
 		{
-			s_testCases[suiteName][testName].Run<TAnalyzer> (MSBuildProperties);
+			s_testCases[suiteName][testName].Run (MSBuildProperties);
 		}
 
 		private static readonly Dictionary<string, Dictionary<string, TestCase>> s_testCases = InitializeTestCases ();

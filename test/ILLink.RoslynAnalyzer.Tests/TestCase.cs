@@ -28,8 +28,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			Attributes = attributes;
 		}
 
-		public void Run<TAnalyzer> (params (string, string)[] MSBuildProperties)
-			where TAnalyzer : DiagnosticAnalyzer, new()
+		public void Run (params (string, string)[] MSBuildProperties)
 		{
 			var testSyntaxTree = MemberSyntax.SyntaxTree.GetRoot ().SyntaxTree;
 			var testDependenciesSource = GetTestDependencies (testSyntaxTree)
