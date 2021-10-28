@@ -19,6 +19,8 @@ namespace ILLink.RoslynAnalyzer.Tests
 {
 	public abstract class TestCaseUtils
 	{
+		private static readonly string MonoLinkerTestsCases = "Mono.Linker.Tests.Cases";
+
 		public static readonly ReferenceAssemblies Net6PreviewAssemblies =
 			new ReferenceAssemblies (
 				"net6.0",
@@ -68,14 +70,12 @@ namespace ILLink.RoslynAnalyzer.Tests
 					testCase.Name = testName;
 				}
 			}
-
 			return testCases;
 		}
 
 		private static IEnumerable<TestCase> BuildTestCasesForFile (string testFile)
 		{
 			var root = CSharpSyntaxTree.ParseText (File.ReadAllText (testFile)).GetRoot ();
-
 			foreach (var node in root.DescendantNodes ()) {
 				if (node is MemberDeclarationSyntax m) {
 					var attrs = m.AttributeLists.SelectMany (al => al.Attributes.Where (IsWellKnown)).ToList ();

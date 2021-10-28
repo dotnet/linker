@@ -18,5 +18,12 @@ namespace ILLink.RoslynAnalyzer.Tests
 		{
 			RunTest<RequiresUnreferencedCodeAnalyzer> (nameof (RequiresCapability), m, UseMSBuildProperties (MSBuildPropertyOptionNames.EnableTrimAnalyzer));
 		}
+
+		[Theory]
+		[MemberData (nameof (TestCaseUtils.GetTestData), parameters: nameof (Interop))]
+		public void Interop (string testName, MethodDeclarationSyntax m, List<AttributeSyntax> attrs)
+		{
+			RunTest<COMAnalyzer> (m, attrs, UseMSBuildProperties (MSBuildPropertyOptionNames.EnableTrimAnalyzer));
+		}
 	}
 }
