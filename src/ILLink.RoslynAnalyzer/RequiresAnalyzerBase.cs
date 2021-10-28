@@ -96,12 +96,7 @@ namespace ILLink.RoslynAnalyzer
 
 				context.RegisterOperationAction (operationContext => {
 					var fieldReference = (IFieldReferenceOperation) operationContext.Operation;
-					if (fieldReference.Field.IsStatic &&
-						fieldReference.Syntax.IsKind (SyntaxKind.SimpleMemberAccessExpression) &&
-						fieldReference.Field.ContainingType is INamedTypeSymbol fieldDeclaringType &&
-						fieldDeclaringType.TryGetAttribute (RequiresAttributeName, out var requiresAttribute)) {
-						ReportRequiresDiagnostic (operationContext, fieldReference.Field, requiresAttribute);
-					}
+					CheckCalledMember (operationContext, fieldReference.Field, incompatibleMembers);
 				}, OperationKind.FieldReference);
 
 				context.RegisterOperationAction (operationContext => {
@@ -304,7 +299,7 @@ namespace ILLink.RoslynAnalyzer
 
 		private bool HasMismatchingAttributes (ISymbol member1, ISymbol member2) => member1.HasAttribute (RequiresAttributeName) ^ member2.HasAttribute (RequiresAttributeName);
 
-		// TODO: Consider sharing method with linker
+		// TODO: Consider sharing with linker IsMethodInRequiresUnreferencedCodeScope method
 		/// <summary>
 		/// True if the source of a call is considered to be annotated with the Requires... attribute
 		/// </summary>
@@ -322,7 +317,7 @@ namespace ILLink.RoslynAnalyzer
 			return false;
 		}
 
-		// TODO: Consider sharing method with linker
+		// TODO: Consider sharing with linker DoesMethodRequireUnreferencedCode method
 		/// <summary>
 		/// True if the target of a call is considered to be annotated with the Requires... attribute
 		/// </summary>
