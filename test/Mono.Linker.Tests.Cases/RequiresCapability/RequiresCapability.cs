@@ -752,10 +752,12 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				remove { }
 			}
 
+			[ExpectedWarning ("IL2026", "--EventToTestRemove.remove--", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "--EventToTestAdd.add--", ProducedBy = ProducedBy.Trimmer)]
 			public static void Test ()
 			{
-				EventToTestRemove += (sender, e) => { };
-				EventToTestAdd -= (sender, e) => { };
+				EventToTestRemove -= (sender, e) => { };
+				EventToTestAdd += (sender, e) => { };
 			}
 		}
 
@@ -1188,15 +1190,13 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 				// These should not be reported https://github.com/mono/linker/issues/2218
 				[ExpectedWarning ("IL2026", "MemberTypesWithRequires.Event.add", ProducedBy = ProducedBy.Trimmer)]
-				[ExpectedWarning ("IL2026", "MemberTypesWithRequires.Event.remove", ProducedBy = ProducedBy.Trimmer)]
+				[ExpectedWarning ("IL2026", "MemberTypesWithRequires.Event.remove")]
 				public static event EventHandler Event;
 			}
 
 			[ExpectedWarning ("IL2026", "MemberTypesWithRequires.field")]
 			[ExpectedWarning ("IL2026", "MemberTypesWithRequires.Property.set")]
-			[ExpectedWarning ("IL2026", "MemberTypesWithRequires.Event", ProducedBy = ProducedBy.Analyzer)]
-			[ExpectedWarning ("IL2026", "MemberTypesWithRequires.Event.add", ProducedBy = ProducedBy.Analyzer)]
-			[ExpectedWarning ("IL2026", "MemberTypesWithRequires.Event.remove")]
+			[ExpectedWarning ("IL2026", "MemberTypesWithRequires.Event.remove", ProducedBy = ProducedBy.Trimmer)]
 			static void TestOtherMemberTypesWithRequires ()
 			{
 				MemberTypesWithRequires.field = 1;
@@ -1436,9 +1436,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 					public static event EventHandler StaticEvent;
 				}
 
-				[ExpectedWarning ("IL2026", "StaticEvent", ProducedBy = ProducedBy.Analyzer)]
-				[ExpectedWarning ("IL2026", "StaticEvent.remove", ProducedBy = ProducedBy.Analyzer)]
-				[ExpectedWarning ("IL2026", "StaticEvent.add")]
+				[ExpectedWarning ("IL2026", "StaticEvent.add", ProducedBy = ProducedBy.Trimmer)]
 				static void TestDirectReflectionAccess ()
 				{
 					typeof (WithRequires).GetEvent (nameof (WithRequires.StaticEvent));
