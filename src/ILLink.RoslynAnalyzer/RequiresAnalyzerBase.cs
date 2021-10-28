@@ -187,14 +187,6 @@ namespace ILLink.RoslynAnalyzer
 					if (!TargetHasRequiresAttribute (member, out var requiresAttribute))
 						return;
 
-					// If the annotated member is an event accessor, we warn on the event to match the linker behavior.
-					if (member is IMethodSymbol eventAccessorMethod && eventAccessorMethod.AssociatedSymbol is IEventSymbol eventSymbol) {
-						member = eventAccessorMethod.ContainingSymbol;
-						operationContext.ReportDiagnostic (Diagnostic.Create (RequiresDiagnosticRule,
-							eventSymbol.Locations[0], eventAccessorMethod.GetDisplayName (), GetMessageFromAttribute (requiresAttribute), GetUrlFromAttribute (requiresAttribute)));
-						return;
-					}
-
 					ReportRequiresDiagnostic (operationContext, member, requiresAttribute);
 				}
 

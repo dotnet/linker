@@ -744,22 +744,22 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		class OnEventMethod
 		{
-			[ExpectedWarning ("IL2026", "--EventToTestRemove.remove--")]
+			[ExpectedWarning ("IL2026", "--EventToTestRemove.remove--", ProducedBy = ProducedBy.Trimmer)]
 			static event EventHandler EventToTestRemove {
 				add { }
 				[RequiresUnreferencedCode ("Message for --EventToTestRemove.remove--")]
 				remove { }
 			}
 
-			[ExpectedWarning ("IL2026", "--EventToTestAdd.add--")]
+			[ExpectedWarning ("IL2026", "--EventToTestAdd.add--", ProducedBy = ProducedBy.Trimmer)]
 			static event EventHandler EventToTestAdd {
 				[RequiresUnreferencedCode ("Message for --EventToTestAdd.add--")]
 				add { }
 				remove { }
 			}
 
-			[ExpectedWarning ("IL2026", "--EventToTestRemove.remove--", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "--EventToTestAdd.add--", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "--EventToTestRemove.remove--")]
+			[ExpectedWarning ("IL2026", "--EventToTestAdd.add--")]
 			public static void Test ()
 			{
 				EventToTestRemove -= (sender, e) => { };
@@ -1196,13 +1196,13 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 				// These should not be reported https://github.com/mono/linker/issues/2218
 				[ExpectedWarning ("IL2026", "MemberTypesWithRequires.Event.add", ProducedBy = ProducedBy.Trimmer)]
-				[ExpectedWarning ("IL2026", "MemberTypesWithRequires.Event.remove")]
+				[ExpectedWarning ("IL2026", "MemberTypesWithRequires.Event.remove", ProducedBy = ProducedBy.Trimmer)]
 				public static event EventHandler Event;
 			}
 
 			[ExpectedWarning ("IL2026", "MemberTypesWithRequires.field")]
 			[ExpectedWarning ("IL2026", "MemberTypesWithRequires.Property.set")]
-			[ExpectedWarning ("IL2026", "MemberTypesWithRequires.Event.remove", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "MemberTypesWithRequires.Event.remove")]
 			static void TestOtherMemberTypesWithRequires ()
 			{
 				MemberTypesWithRequires.field = 1;
