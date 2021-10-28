@@ -53,10 +53,16 @@ namespace ILLink.RoslynAnalyzer.Tests
 		{
 			var testCases = new Dictionary<string, Dictionary<string, TestCase>> ();
 			foreach (var file in GetTestFiles ()) {
-				var dirName = Path.GetFileName (Path.GetDirectoryName (file))!;
-				if (!testCases.TryGetValue (dirName, out var suiteTestCases)) {
+				// Some tests are in nested directories. Walk up until we get the test suite directory.
+				string directory = Path.GetDirectoryName (file)!;
+				string parentDirectory;
+				while (Path.GetFileName (parentDirectory = Path.GetDirectoryName (directory)!) != MonoLinkerTestsCases)
+					directory = parentDirectory;
+				string suiteName = Path.GetFileName (directory);
+
+				if (!testCases.TryGetValue (suiteName, out var suiteTestCases)) {
 					suiteTestCases = new ();
-					testCases.Add (dirName, suiteTestCases);
+					testCases.Add (suiteName, suiteTestCases);
 				}
 
 				foreach (var testCase in BuildTestCasesForFile (file)) {
