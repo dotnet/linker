@@ -11,38 +11,24 @@ namespace ILLink.RoslynAnalyzer
 	// TODO: find a better name for it!
 	public class AnnotatedSymbol : DynamicallyAccessedMembersValue
 	{
-		public ISymbol Source;
-		public bool IsMethodReturn;
+		public readonly ISymbol Source;
+		public readonly bool IsMethodReturn;
 
-		public AnnotatedSymbol (IMethodSymbol method, bool isMethodReturn)
-		{
-			Source = method;
-			IsMethodReturn = isMethodReturn;
-		}
+		public AnnotatedSymbol (IMethodSymbol method, bool isMethodReturn) => (Source, IsMethodReturn) = (method, isMethodReturn);
 
-		public AnnotatedSymbol (IParameterSymbol parameter)
-		{
-			Source = parameter;
-			IsMethodReturn = false;
-		}
+		public AnnotatedSymbol (IParameterSymbol parameter) => Source = parameter;
 
-		public AnnotatedSymbol (IFieldSymbol field)
-		{
-			Source = field;
-			IsMethodReturn = false;
-		}
+		public AnnotatedSymbol (IFieldSymbol field) => Source = field;
 
-		public AnnotatedSymbol (INamedTypeSymbol type)
-		{
-			Source = type;
-			IsMethodReturn = false;
-		}
+		public AnnotatedSymbol (INamedTypeSymbol type) => Source = type;
 
-		public AnnotatedSymbol (ITypeParameterSymbol typeParameter)
-		{
-			Source = typeParameter;
-			IsMethodReturn = false;
-		}
+		// Somewhat special compared to the other ctors.
+		// This one isn't used for dataflow - it's really just a wrapper
+		// for annotations on type arguments/parameters which are type-checked
+		// by the analyzer (outside of the dataflow analysis).
+		public AnnotatedSymbol (ITypeSymbol typeArgument) => Source = typeArgument;
+
+		public AnnotatedSymbol (ITypeParameterSymbol typeParameter) => Source = typeParameter;
 
 		public override DynamicallyAccessedMemberTypes DynamicallyAccessedMemberTypes =>
 			IsMethodReturn

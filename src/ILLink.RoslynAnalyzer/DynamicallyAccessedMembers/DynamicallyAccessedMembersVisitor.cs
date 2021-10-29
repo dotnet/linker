@@ -45,6 +45,16 @@ namespace ILLink.RoslynAnalyzer
 			return new MultiValue (new AnnotatedSymbol (operation.TargetMethod, isMethodReturn: true));
 		}
 
+		public override MultiValue VisitConversion (IConversionOperation operation, StateValue state)
+		{
+			var value = base.VisitConversion (operation, state);
+
+			if (operation.OperatorMethod != null)
+				return new MultiValue (new AnnotatedSymbol (operation.OperatorMethod, isMethodReturn: true));
+
+			return value;
+		}
+
 		public override MultiValue VisitParameterReference (IParameterReferenceOperation paramRef, StateValue state)
 		{
 			// TODO: don't track unannotated locations
@@ -74,6 +84,15 @@ namespace ILLink.RoslynAnalyzer
 
 			// var damt = fieldRef.Field.GetDynamicallyAccessedMemberTypes ();
 			return new MultiValue (new AnnotatedSymbol (fieldRef.Field));
+		}
+
+		public override MultiValue VisitTypeOf (ITypeOfOperation typeOfOperation, StateValue state)
+		{
+			// TODO: track known types too!
+			if (typeOfOperation.TypeOperand is ITypeParameterSymbol typeParameter)
+				return new MultiValue (new AnnotatedSymbol (typeParameter));
+
+			return TopValue;
 		}
 
 		// Override handlers for situations where annotated locations may be involved in dataflow:

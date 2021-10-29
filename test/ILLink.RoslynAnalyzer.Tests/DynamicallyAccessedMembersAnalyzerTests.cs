@@ -97,7 +97,7 @@ class C
 			// The source value must declare at least the same requirements as those declared on the target location it is assigned to.
 			return VerifyDynamicallyAccessedMembersAnalyzer (TargetMethodReturnTypeWithAnnotations,
 				VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsMethodReturnType)
-				.WithSpan (19, 9, 19, 21)
+				.WithSpan (19, 16, 19, 20)
 				.WithArguments ("C.M(Type)",
 					"type",
 					"C.M(Type)",
@@ -400,7 +400,7 @@ class C
 			// The source value must declare at least the same requirements as those declared on the target location it is assigned to.
 			return VerifyDynamicallyAccessedMembersAnalyzer (TargetMethodReturnTypeWithAnnotations,
 				VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchFieldTargetsMethodReturnType)
-				.WithSpan (21, 9, 21, 18)
+				.WithSpan (21, 16, 21, 17)
 				.WithArguments ("C.M()", "C.f",
 					"'DynamicallyAccessedMemberTypes.PublicMethods'"));
 		}
@@ -819,7 +819,7 @@ namespace System
 			// The source value must declare at least the same requirements as those declared on the target location it is assigned to.
 			return VerifyDynamicallyAccessedMembersAnalyzer (string.Concat (GetSystemTypeBase (), TargetMethodReturnTypeWithAnnotations),
 				VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchThisParameterTargetsMethodReturnType)
-				.WithSpan (180, 13, 180, 25)
+				.WithSpan (180, 20, 180, 24)
 				.WithArguments ("System.C.M()", "System.C.M()", "'DynamicallyAccessedMemberTypes.PublicMethods'"));
 		}
 
@@ -948,7 +948,7 @@ class C
 			// The source value must declare at least the same requirements as those declared on the target location it is assigned to.
 			return VerifyDynamicallyAccessedMembersAnalyzer (TargetMethodReturnTypeWithAnnotations,
 				VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchTypeArgumentTargetsMethodReturnType)
-				.WithSpan (15, 9, 15, 26)
+				.WithSpan (15, 16, 15, 25)
 				.WithArguments ("C.M<T>()", "T", "C.M<T>()", "'DynamicallyAccessedMemberTypes.PublicConstructors'"));
 		}
 

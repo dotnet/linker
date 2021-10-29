@@ -154,5 +154,11 @@ namespace ILLink.RoslynAnalyzer
 
 			return TopValue;
 		}
+
+		public override TValue? VisitConversion (IConversionOperation operation, LocalState<TValue> state)
+		{
+			var operandValue = Visit (operation.Operand, state);
+			return operation.OperatorMethod == null ? operandValue : TopValue;
+		}
 	}
 }

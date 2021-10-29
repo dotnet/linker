@@ -42,80 +42,123 @@ namespace ILLink.RoslynAnalyzer
 					ControlFlowGraph cfg = context.GetControlFlowGraph (operationBlock);
 					DynamicallyAccessedMembersAnalysis damAnalysis = new (context, cfg);
 
-					foreach (ReflectionAccessPattern accessPattern in damAnalysis.GetResults ())
-						CheckAndReportDynamicallyAccessedMembers (accessPattern.Source, accessPattern.Target, context, accessPattern.Operation.Syntax.GetLocation ());
+					foreach (ReflectionAccessPattern accessPattern in damAnalysis.GetResults ()) {
+						foreach (var diagnostic in GetDynamicallyAccessedMembersDiagnostics (accessPattern.Source, accessPattern.Target, accessPattern.Operation.Syntax.GetLocation ()))
+							context.ReportDiagnostic (diagnostic);
+					}
 				}
 			});
+			// TODO: fix reporting for generic type substitutions.
+			// This shouldn't happen only for method invocations, but for any reference
+			// to an instantiated method or type.
+			context.RegisterOperationAction (context => {
+				var invocationOperation = (IInvocationOperation) context.Operation;
+				ProcessInvocationOperation (context, invocationOperation);
+			}, OperationKind.Invocation);
 		}
 
-		static void CheckAndReportDynamicallyAccessedMembers (HashSetWrapper<SingleValue> source, HashSetWrapper<SingleValue> target, OperationBlockAnalysisContext context, Location location)
+		static void ProcessInvocationOperation (OperationAnalysisContext context, IInvocationOperation invocationOperation)
+		{
+			DebugHelpers.BreakOnOperationIn (invocationOperation, "SourceMethodDoesNotMatchTargetMethodReturnTypeAnnotations", context.Compilation);
+
+			if (context.ContainingSymbol.HasAttribute (RequiresUnreferencedCodeAnalyzer.FullyQualifiedRequiresUnreferencedCodeAttribute))
+				return;
+
+			ProcessTypeArguments (context, invocationOperation);
+		}
+
+		static void ProcessTypeArguments (OperationAnalysisContext context, IInvocationOperation invocationOperation)
+		{
+			var targetMethod = invocationOperation.TargetMethod;
+			if (targetMethod.HasAttribute (RequiresUnreferencedCodeAnalyzer.FullyQualifiedRequiresUnreferencedCodeAttribute))
+				return;
+
+			for (int i = 0; i < targetMethod.TypeParameters.Length; i++) {
+				var sourceValue = new AnnotatedSymbol (targetMethod.TypeArguments[i]);
+				var targetValue = new AnnotatedSymbol (targetMethod.TypeParameters[i]);
+				foreach (var diagnostic in GetDynamicallyAccessedMembersDiagnostics (sourceValue, targetValue, invocationOperation.Syntax.GetLocation ()))
+					context.ReportDiagnostic (diagnostic);
+			}
+		}
+
+		static IEnumerable<Diagnostic> GetDynamicallyAccessedMembersDiagnostics (HashSetWrapper<SingleValue> source, HashSetWrapper<SingleValue> target, Location location)
 		{
 			if (target.Values == null)
-				return;
+				yield break;
 
-			foreach (var targetValue in target.Values)
-				CheckAndReportDynamicallyAccessedMembers (source, targetValue, context, location);
+			foreach (var targetValue in target.Values) {
+				foreach (var diagnostic in GetDynamicallyAccessedMembersDiagnostics (source, targetValue, location))
+					yield return diagnostic;
+			}
 		}
 
-		static void CheckAndReportDynamicallyAccessedMembers (HashSetWrapper<SingleValue> source, SingleValue target, OperationBlockAnalysisContext context, Location location)
+		static IEnumerable<Diagnostic> GetDynamicallyAccessedMembersDiagnostics (HashSetWrapper<SingleValue> source, SingleValue target, Location location)
 		{
 			if (source.Values == null)
-				return;
+				yield break;
 
-			foreach (var sourceValue in source.Values)
-				CheckAndReportDynamicallyAccessedMembers (sourceValue, target, context, location);
+			foreach (var sourceValue in source.Values) {
+				foreach (var diagnostic in GetDynamicallyAccessedMembersDiagnostics (sourceValue, target, location))
+					yield return diagnostic;
+			}
 		}
 
-		static void CheckAndReportDynamicallyAccessedMembers (SingleValue sourceValue, SingleValue targetValue, OperationBlockAnalysisContext context, Location location)
+		static IEnumerable<Diagnostic> GetDynamicallyAccessedMembersDiagnostics (SingleValue sourceValue, SingleValue targetValue, Location location)
 		{
 			if (sourceValue is not AnnotatedSymbol source || targetValue is not AnnotatedSymbol target)
-				return;
+				yield break;
 
 			Debug.Assert (target.Source.Kind is not SymbolKind.NamedType);
 			var damtOnTarget = target.DynamicallyAccessedMemberTypes;
 			var damtOnSource = source.DynamicallyAccessedMemberTypes;
 
 			if (Annotations.SourceHasRequiredAnnotations (damtOnSource, damtOnTarget, out var missingAnnotations))
-				return;
+				yield break;
 
-			var diag = GetDiagnosticId (source.Source.Kind, target.Source.Kind, target.IsMethodReturn);
-			var diagArgs = GetDiagnosticArguments (source.Source.Kind == SymbolKind.NamedType ? context.OwningSymbol : source.Source, target.Source, missingAnnotations);
+			var diag = GetDiagnosticId (source, target);
+			var diagArgs = GetDiagnosticArguments (source, target, missingAnnotations);
 
-			context.ReportDiagnostic (Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (diag), location, diagArgs));
+			yield return Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (diag), location, diagArgs);
 		}
 
-		static DiagnosticId GetDiagnosticId (SymbolKind source, SymbolKind target, bool targetIsMethodReturnType = false)
-			=> (source, target) switch {
+		static DiagnosticId GetDiagnosticId (AnnotatedSymbol source, AnnotatedSymbol target)
+			=> (source.Source.Kind, target.Source.Kind) switch {
 				(SymbolKind.Parameter, SymbolKind.Field) => DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsField,
-				(SymbolKind.Parameter, SymbolKind.Method) => targetIsMethodReturnType ?
+				(SymbolKind.Parameter, SymbolKind.Method) => target.IsMethodReturn ?
 					DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsMethodReturnType :
 					DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsThisParameter,
 				(SymbolKind.Parameter, SymbolKind.Parameter) => DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsParameter,
 				(SymbolKind.Field, SymbolKind.Parameter) => DiagnosticId.DynamicallyAccessedMembersMismatchFieldTargetsParameter,
 				(SymbolKind.Field, SymbolKind.Field) => DiagnosticId.DynamicallyAccessedMembersMismatchFieldTargetsField,
-				(SymbolKind.Field, SymbolKind.Method) => targetIsMethodReturnType ?
+				(SymbolKind.Field, SymbolKind.Method) => target.IsMethodReturn ?
 					DiagnosticId.DynamicallyAccessedMembersMismatchFieldTargetsMethodReturnType :
 					DiagnosticId.DynamicallyAccessedMembersMismatchFieldTargetsThisParameter,
 				(SymbolKind.Field, SymbolKind.TypeParameter) => DiagnosticId.DynamicallyAccessedMembersMismatchFieldTargetsGenericParameter,
-				(SymbolKind.NamedType, SymbolKind.Method) => targetIsMethodReturnType ?
-					DiagnosticId.DynamicallyAccessedMembersMismatchThisParameterTargetsMethodReturnType :
-					DiagnosticId.DynamicallyAccessedMembersMismatchThisParameterTargetsThisParameter,
-				(SymbolKind.Method, SymbolKind.Field) => DiagnosticId.DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsField,
-				(SymbolKind.Method, SymbolKind.Method) => targetIsMethodReturnType ?
-					DiagnosticId.DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsMethodReturnType :
-					DiagnosticId.DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsThisParameter,
-				// Source here will always be a method's return type.
-				(SymbolKind.Method, SymbolKind.Parameter) => DiagnosticId.DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsParameter,
-				(SymbolKind.NamedType, SymbolKind.Field) => DiagnosticId.DynamicallyAccessedMembersMismatchThisParameterTargetsField,
-				(SymbolKind.NamedType, SymbolKind.Parameter) => DiagnosticId.DynamicallyAccessedMembersMismatchThisParameterTargetsParameter,
+				(SymbolKind.Method, SymbolKind.Field) => source.IsMethodReturn
+					? DiagnosticId.DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsField
+					: DiagnosticId.DynamicallyAccessedMembersMismatchThisParameterTargetsField,
+				(SymbolKind.Method, SymbolKind.Method) => (source.IsMethodReturn, target.IsMethodReturn) switch {
+					(true, true) => DiagnosticId.DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsMethodReturnType,
+					(true, false) => DiagnosticId.DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsThisParameter,
+					(false, true) => DiagnosticId.DynamicallyAccessedMembersMismatchThisParameterTargetsMethodReturnType,
+					(false, false) => DiagnosticId.DynamicallyAccessedMembersMismatchThisParameterTargetsThisParameter
+				},
+				(SymbolKind.Method, SymbolKind.Parameter) => source.IsMethodReturn
+					? DiagnosticId.DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsParameter
+					: DiagnosticId.DynamicallyAccessedMembersMismatchThisParameterTargetsParameter,
 				(SymbolKind.TypeParameter, SymbolKind.Field) => DiagnosticId.DynamicallyAccessedMembersMismatchTypeArgumentTargetsField,
-				(SymbolKind.TypeParameter, SymbolKind.Method) => DiagnosticId.DynamicallyAccessedMembersMismatchTypeArgumentTargetsMethodReturnType,
+				(SymbolKind.TypeParameter, SymbolKind.Method) => target.IsMethodReturn
+					? DiagnosticId.DynamicallyAccessedMembersMismatchTypeArgumentTargetsMethodReturnType
+					: DiagnosticId.DynamicallyAccessedMembersMismatchTypeArgumentTargetsThisParameter,
 				(SymbolKind.TypeParameter, SymbolKind.Parameter) => DiagnosticId.DynamicallyAccessedMembersMismatchTypeArgumentTargetsParameter,
 				(SymbolKind.TypeParameter, SymbolKind.TypeParameter) => DiagnosticId.DynamicallyAccessedMembersMismatchTypeArgumentTargetsGenericParameter,
+				// AnnotatedSymbol never stores a NamedType (yet). NamedType will only be used for known types which aren't implemented yet.
+				(SymbolKind.NamedType, _) => throw new NotImplementedException (),
+				(_, SymbolKind.NamedType) => throw new NotImplementedException (),
 				_ => throw new NotImplementedException ()
 			};
 
-		static string[] GetDiagnosticArguments (ISymbol source, ISymbol target, string missingAnnotations)
+		static string[] GetDiagnosticArguments (AnnotatedSymbol source, AnnotatedSymbol target, string missingAnnotations)
 		{
 			var args = new List<string> ();
 			args.AddRange (GetDiagnosticArguments (target));
@@ -124,12 +167,13 @@ namespace ILLink.RoslynAnalyzer
 			return args.ToArray ();
 		}
 
-		static IEnumerable<string> GetDiagnosticArguments (ISymbol symbol)
+		static IEnumerable<string> GetDiagnosticArguments (AnnotatedSymbol annotatedSymbol)
 		{
+			ISymbol symbol = annotatedSymbol.Source;
 			var args = new List<string> ();
 			args.AddRange (symbol.Kind switch {
 				SymbolKind.Parameter => new string[] { symbol.GetDisplayName (), symbol.ContainingSymbol.GetDisplayName () },
-				SymbolKind.NamedType => new string[] { symbol.GetDisplayName () },
+				SymbolKind.NamedType => throw new NotImplementedException (),// new string[] { symbol.GetDisplayName () },
 				SymbolKind.Field => new string[] { symbol.GetDisplayName () },
 				SymbolKind.Method => new string[] { symbol.GetDisplayName () },
 				SymbolKind.TypeParameter => new string[] { symbol.GetDisplayName (), symbol.ContainingSymbol.GetDisplayName () },
