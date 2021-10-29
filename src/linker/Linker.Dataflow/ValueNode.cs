@@ -7,11 +7,11 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
+using ILLink.Shared;
 using Mono.Cecil;
 using FieldDefinition = Mono.Cecil.FieldDefinition;
 using GenericParameter = Mono.Cecil.GenericParameter;
 using TypeDefinition = Mono.Cecil.TypeDefinition;
-using ILLink.Shared;
 
 namespace Mono.Linker.Dataflow
 {

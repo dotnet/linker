@@ -51,21 +51,21 @@ namespace ILLink.Shared
 		}
 	}
 
-	public struct HashSetLattice<TSingleValue> : ILattice<HashSetWrapper<TSingleValue>>
-		where TSingleValue : IEquatable<TSingleValue>
+	public struct HashSetLattice<TValue> : ILattice<HashSetWrapper<TValue>>
+		where TValue : IEquatable<TValue>
 	{
-		public HashSetWrapper<TSingleValue> Top => default;
+		public HashSetWrapper<TValue> Top => default;
 
-		public HashSetWrapper<TSingleValue> Meet (HashSetWrapper<TSingleValue> left, HashSetWrapper<TSingleValue> right)
+		public HashSetWrapper<TValue> Meet (HashSetWrapper<TValue> left, HashSetWrapper<TValue> right)
 		{
 			if (left.Values == null)
 				return right; // TODO: OK only if it's immutable
 			if (right.Values == null)
 				return left;
 
-			var values = new HashSet<TSingleValue> (left.Values);
+			var values = new HashSet<TValue> (left.Values);
 			values.UnionWith (right.Values);
-			return new HashSetWrapper<TSingleValue> (values);
+			return new HashSetWrapper<TValue> (values);
 		}
 	}
 }

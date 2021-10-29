@@ -1,13 +1,13 @@
+using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 
 using ILLink.Shared;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 
-using MultiValue = ILLink.Shared.HashSetWrapper<ILLink.RoslynAnalyzer.SingleValue>;
-using StateValue = ILLink.RoslynAnalyzer.LocalState<ILLink.Shared.HashSetWrapper<ILLink.RoslynAnalyzer.SingleValue>>;
+using MultiValue = ILLink.Shared.HashSetWrapper<ILLink.Shared.SingleValue>;
+using StateValue = ILLink.RoslynAnalyzer.LocalState<ILLink.Shared.HashSetWrapper<ILLink.Shared.SingleValue>>;
 
 namespace ILLink.RoslynAnalyzer
 {
@@ -41,16 +41,16 @@ namespace ILLink.RoslynAnalyzer
 
 			// TODO: don't track unannotated locations
 
-			var damt = operation.TargetMethod.GetDynamicallyAccessedMemberTypesOnReturnType ();
-			return new MultiValue (new DynamicallyAccessedTypeValue (damt, operation.TargetMethod, methodReturn: true));
+//			var damt = operation.TargetMethod.GetDynamicallyAccessedMemberTypesOnReturnType ();
+			return new MultiValue (new AnnotatedSymbol (operation.TargetMethod, isMethodReturn: true));
 		}
 
 		public override MultiValue VisitParameterReference (IParameterReferenceOperation paramRef, StateValue state)
 		{
 			// TODO: don't track unannotated locations
 
-			var damt = paramRef.Parameter.GetDynamicallyAccessedMemberTypes ();
-			var value = new MultiValue (new DynamicallyAccessedTypeValue (damt, paramRef.Parameter));
+			// var damt = paramRef.Parameter.GetDynamicallyAccessedMemberTypes ();
+			var value = new MultiValue (new AnnotatedSymbol (paramRef.Parameter));
 
 			return value;
 		}
@@ -63,8 +63,8 @@ namespace ILLink.RoslynAnalyzer
 			// 'this' or 'base', we get annotation from the containing method.
 			// TODO: ensure this works even for lambdas, etc.
 			// Not sure if the context OwningSymbol is the right thing always.
-			var damt = Context.OwningSymbol.GetDynamicallyAccessedMemberTypes ();
-			var value = new MultiValue (new DynamicallyAccessedTypeValue (damt, Context.OwningSymbol));
+			// var damt = Context.OwningSymbol.GetDynamicallyAccessedMemberTypes ();
+			var value = new MultiValue (new AnnotatedSymbol ((IMethodSymbol) Context.OwningSymbol, isMethodReturn: false));
 			return value;
 		}
 
@@ -72,8 +72,8 @@ namespace ILLink.RoslynAnalyzer
 		{
 			// TODO: don't track unannotated fields
 
-			var damt = fieldRef.Field.GetDynamicallyAccessedMemberTypes ();
-			return new MultiValue (new DynamicallyAccessedTypeValue (damt, fieldRef.Field));
+			// var damt = fieldRef.Field.GetDynamicallyAccessedMemberTypes ();
+			return new MultiValue (new AnnotatedSymbol (fieldRef.Field));
 		}
 
 		// Override handlers for situations where annotated locations may be involved in dataflow:
@@ -101,7 +101,7 @@ namespace ILLink.RoslynAnalyzer
 				return;
 
 			// TODO: skip unannotated parameters
-			var parameter = new MultiValue (new SingleValue (operation.Parameter));
+			var parameter = new MultiValue (new AnnotatedSymbol (operation.Parameter));
 
 			var accessPattern = new ReflectionAccessPattern (
 				argumentValue,
@@ -116,7 +116,7 @@ namespace ILLink.RoslynAnalyzer
 			if (operation.Instance == null)
 				return;
 
-			MultiValue implicitReceiverParameter = new MultiValue (new SingleValue (operation.TargetMethod));
+			MultiValue implicitReceiverParameter = new MultiValue (new AnnotatedSymbol (operation.TargetMethod, isMethodReturn: false));
 
 			// TODO: skip unannotated receiever parameter?
 
@@ -127,10 +127,10 @@ namespace ILLink.RoslynAnalyzer
 			));
 		}
 
-		public override void HandleReturnValue (MultiValue returnValue, IReturnOperation operation)
+		public override void HandleReturnValue (MultiValue returnValue, IOperation operation)
 		{
 			// TODO: skip unannotated return?
-			var returnParameter = new MultiValue (new SingleValue (Context.OwningSymbol, methodReturn: true));
+			var returnParameter = new MultiValue (new AnnotatedSymbol ((IMethodSymbol) Context.OwningSymbol, isMethodReturn: true));
 
 			AccessPatterns.Add (new ReflectionAccessPattern (
 				returnValue,

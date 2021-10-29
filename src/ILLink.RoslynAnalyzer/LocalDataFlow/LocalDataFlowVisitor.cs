@@ -27,6 +27,22 @@ namespace ILLink.RoslynAnalyzer
 		{
 			foreach (IOperation operation in block.Block.Operations)
 				Visit (operation, state);
+
+			// Note: ConditionKind != None iff ConditionalSuccessor != null.
+			// But BranchValue may be non-null either way - for None ConditionKind, this just means
+			// that the BranchValue represents a return or throw value associated with the FallThroughSuccessor.
+			// TODO: maybe this needs to be used to detect return values.
+			// if (block.Block.ConditionKind != ControlFlowConditionKind.None)
+			IOperation? branchValueOperation = block.Block.BranchValue;
+			if (branchValueOperation != null) {
+				var branchValue = Visit (branchValueOperation, state);
+				if (block.Block.ConditionKind == ControlFlowConditionKind.None) {
+					// this means it's a return value or throw value associated with the fall-through successor.
+					// TODO: how to deal with throw values?
+
+					HandleReturnValue (branchValue, branchValueOperation);
+				}
+			}
 		}
 
 #pragma warning disable CS8765
@@ -63,6 +79,12 @@ namespace ILLink.RoslynAnalyzer
 				// Or would it be useful for the extension point to include local assignments?
 				HandleAssignment (value, targetValue, operation);
 				break;
+			case IPropertyReferenceOperation:
+			// TODO. attribute property setters
+			case IArrayElementReferenceOperation:
+				// TODO: array[0] in MethodReturnParameterDataFlow.
+				// we don't track array elements yet
+				break;
 			default:
 				throw new NotImplementedException (operation.Target.GetType ().ToString ());
 			}
@@ -75,7 +97,10 @@ namespace ILLink.RoslynAnalyzer
 
 		public abstract void HandleArgument (TValue argument, IArgumentOperation operation);
 
-		public abstract void HandleReturnValue (TValue returnValue, IReturnOperation operation);
+		// This doesn't necessarily take an IReturnOperation (does it ever?)
+		// The return value may come from BranchValue of an opertaion whose FallThroughSuccessor
+		// is the exit block.
+		public abstract void HandleReturnValue (TValue returnValue, IOperation operation);
 
 		// Similar to VisitLocalReference
 		public override TValue? VisitFlowCaptureReference (IFlowCaptureReferenceOperation operation, LocalState<TValue> state)

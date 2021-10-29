@@ -27,7 +27,7 @@ namespace ILLink.Shared
 					// Meet over predecessors to get the new value at the start of this block.
 					TValue blockState = lattice.Top;
 					foreach (var predecessor in cfg.GetPredecessors (block))
-						blockState = lattice.Meet (blockState, blockOutput[predecessor]);
+						blockState = lattice.Meet (blockState, blockOutput.Get (predecessor));
 
 					// Apply transfer function to the input to compute the output state after this block.
 					// This mutates the block state in place.

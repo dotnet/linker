@@ -1,7 +1,7 @@
 using System;
 using Microsoft.CodeAnalysis;
 
-using MultiValue = ILLink.Shared.HashSetWrapper<ILLink.RoslynAnalyzer.SingleValue>;
+using MultiValue = ILLink.Shared.HashSetWrapper<ILLink.Shared.SingleValue>;
 
 namespace ILLink.Shared
 {
