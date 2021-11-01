@@ -49,7 +49,6 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		[UnrecognizedReflectionAccessPattern (typeof (MethodReturnParameterDataFlow), nameof (ReturnPublicParameterlessConstructor),
 			new Type[] { typeof (Type), typeof (Type), typeof (Type) }, returnType: typeof (Type), messageCode: "IL2068")]
-		// TODO: https://github.com/dotnet/linker/issues/2308
 		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
 		Type ReturnPublicParameterlessConstructor (
 			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
@@ -152,7 +151,6 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			nameof (DataFlowTypeExtensions) + "." + nameof (DataFlowTypeExtensions.RequiresNonPublicConstructors) + "(Type)",
 			nameof (MethodReturnParameterDataFlow) + "." + nameof (ReturnPublicParameterlessConstructor) + "(Type, Type, Type)",
 			ProducedBy = ProducedBy.Trimmer)]
-		// TODO: https://github.com/dotnet/linker/issues/2308
 		void PropagateReturnPublicParameterlessConstructor ()
 		{
 			Type t = ReturnPublicParameterlessConstructor (typeof (TestType), typeof (TestType), typeof (TestType));
