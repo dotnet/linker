@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using ILLink.Shared;
@@ -31,7 +32,7 @@ namespace ILLink.RoslynAnalyzer
 
 		public override void Initialize (AnalysisContext context)
 		{
-			context.EnableConcurrentExecution ();
+			//context.EnableConcurrentExecution ();
 			context.ConfigureGeneratedCodeAnalysis (GeneratedCodeAnalysisFlags.ReportDiagnostics);
 			context.RegisterCompilationStartAction (context => {
 				var compilation = context.Compilation;
@@ -161,6 +162,9 @@ namespace ILLink.RoslynAnalyzer
 					ImmutableArray<ISymbol> incompatibleMembers)
 				{
 					ISymbol containingSymbol = FindContainingSymbol (operationContext, AnalyzerDiagnosticTargets);
+
+					if (member.GetDisplayName ().Contains ("VirtualMethodRequires"))
+						Debugger.Break();
 
 					// Do not emit any diagnostic if caller is annotated with the attribute too.
 					if (containingSymbol.HasAttribute (RequiresAttributeName))

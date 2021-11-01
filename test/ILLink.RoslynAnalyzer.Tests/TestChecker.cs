@@ -75,7 +75,6 @@ namespace ILLink.RoslynAnalyzer.Tests
 				}
 
 				return true;
-			
 			case "UnrecognizedReflectionAccessPattern":
 				return true;
 			default:
@@ -119,7 +118,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			}
 		}
 
-		public void ValidateAttributes (List<AttributeSyntax> attributes)
+		public void ValidateAttributes (IEnumerable<AttributeSyntax> attributes)
 		{
 			var unmatchedDiagnostics = DiagnosticMessages.ToList ();
 
@@ -194,8 +193,8 @@ namespace ILLink.RoslynAnalyzer.Tests
 		{
 			missingDiagnosticMessage = null;
 			matchIndex = null;
-			var arg = Assert.Single (TestCaseUtils.GetAttributeArguments (attribute));
-			var text = TestCaseUtils.GetStringFromExpression (arg.Value);
+			var args = TestCaseUtils.GetAttributeArguments (attribute);
+			var text = TestCaseUtils.GetStringFromExpression (args["#0"]);
 
 			// If the text starts with `warning IL...` then it probably follows the pattern
 			//	'warning <diagId>: <location>:'
