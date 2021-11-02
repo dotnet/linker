@@ -1153,6 +1153,10 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				public string PropertyAnnotationInProperty { get; set; }
 			}
 
+			[ExpectedWarning ("IL2026", "BaseClassWithRequires.VirtualPropertyAnnotationInAccesor.get", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "BaseClassWithRequires.VirtualMethod()", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "IBaseWithRequires.PropertyAnnotationInAccesor.get", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "IBaseWithRequires.Method()", ProducedBy = ProducedBy.Trimmer)]
 			public static void Test ()
 			{
 				RequirePublicMethods (typeof (BaseClassWithRequires));
