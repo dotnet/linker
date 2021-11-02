@@ -85,6 +85,7 @@ namespace ILLink.RoslynAnalyzer
 				// TODO: array[0] in MethodReturnParameterDataFlow.
 				// we don't track array elements yet
 				break;
+			// DiscardOperation...
 			default:
 				throw new NotImplementedException (operation.Target.GetType ().ToString ());
 			}

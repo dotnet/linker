@@ -59,8 +59,6 @@ namespace ILLink.RoslynAnalyzer
 
 		static void ProcessInvocationOperation (OperationAnalysisContext context, IInvocationOperation invocationOperation)
 		{
-			DebugHelpers.BreakOnOperationIn (invocationOperation, "SourceMethodDoesNotMatchTargetMethodReturnTypeAnnotations", context.Compilation);
-
 			if (context.ContainingSymbol.HasAttribute (RequiresUnreferencedCodeAnalyzer.FullyQualifiedRequiresUnreferencedCodeAttribute))
 				return;
 

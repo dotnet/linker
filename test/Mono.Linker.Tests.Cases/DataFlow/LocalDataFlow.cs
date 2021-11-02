@@ -138,16 +138,13 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			RequireNonPublicMethods (str); // warns for GetWithPublicFields, GetWithPublicMethods, and GetWithPublicConstructors
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) },
-			messageCode: "IL2072", message: new string[] {
-				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.GetWithPublicMethods()",
-				"type",
-				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.RequirePublicFields(String)" })]
-		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicMethods), new Type[] { typeof (string) },
-			messageCode: "IL2072", message: new string[] {
-				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.GetWithPublicFields()",
-				"type",
-				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.RequirePublicMethods(String)" })]
+
+		// Analyzer doesn't understand exceptional control flow yet (https://github.com/dotnet/linker/issues/2273)
+		[ExpectedWarning ("IL2072", nameof (LocalDataFlow) + "." + nameof (RequirePublicFields) + "(String)",
+			nameof (LocalDataFlow) + "." + nameof (GetWithPublicMethods) + "()",
+			ProducedBy = ProducedBy.Trimmer)]
+		[ExpectedWarning ("IL2072", nameof (LocalDataFlow) + "." + nameof (RequirePublicMethods) + "(String)",
+			nameof (LocalDataFlow) + "." + nameof (GetWithPublicFields) + "()")]
 		public static void TestBranchMergeTry ()
 		{
 			string str = GetWithPublicMethods ();
@@ -185,16 +182,13 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			RequirePublicMethods (str); // warns for GetWithPublicFields
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) },
-			messageCode: "IL2072", message: new string[] {
-				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.GetWithPublicMethods()",
-				"type",
-				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.RequirePublicFields(String)" })]
-		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicMethods), new Type[] { typeof (string) },
-			messageCode: "IL2072", message: new string[] {
-				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.GetWithPublicFields()",
-				"type",
-				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.RequirePublicMethods(String)" })]
+
+		[ExpectedWarning ("IL2072", nameof (LocalDataFlow) + "." + nameof (RequirePublicFields) + "(String)",
+			nameof (LocalDataFlow) + "." + nameof (GetWithPublicMethods) + "()")]
+		// Analyzer doesn't understand exceptional control flow yet (https://github.com/dotnet/linker/issues/2273)
+		[ExpectedWarning ("IL2072", nameof (LocalDataFlow) + "." + nameof (RequirePublicMethods) + "(String)",
+			nameof (LocalDataFlow) + "." + nameof (GetWithPublicFields) + "()",
+			ProducedBy = ProducedBy.Trimmer)]
 		public static void TestBranchMergeFinally ()
 		{
 			string str = GetWithPublicMethods ();
@@ -209,7 +203,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			RequirePublicMethods (str); // warns for GetWithPublicFields
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) }, messageCode: "IL2072")]
+		// Analyzer gets this right (no warning), but trimmer merges all branches going forward.
+		[ExpectedWarning ("IL2072", nameof (LocalDataFlow) + "." + nameof (RequirePublicFields) + "(String)", "type",
+			ProducedBy = ProducedBy.Trimmer)]
 		public static void TestBranchGoto ()
 		{
 			string str = GetWithPublicMethods ();
@@ -221,7 +217,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			return;
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) }, messageCode: "IL2072")]
+		// Analyzer gets this right (no warning), but trimmer merges all branches going forward.
+		[ExpectedWarning ("IL2072", nameof (LocalDataFlow) + "." + nameof (RequirePublicFields) + "(String)", "type",
+			ProducedBy = ProducedBy.Trimmer)]
 		public static void TestBranchIf ()
 		{
 			string str = GetWithPublicMethods ();
@@ -231,7 +229,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) }, messageCode: "IL2072")]
+		// Analyzer gets this right (no warning), but trimmer merges all branches going forward.
+		[ExpectedWarning ("IL2072", nameof (LocalDataFlow) + "." + nameof (RequirePublicFields) + "(String)", "type",
+			ProducedBy = ProducedBy.Trimmer)]
 		public static void TestBranchIfElse ()
 		{
 			string str;
@@ -246,12 +246,19 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequireNonPublicMethods), new Type[] { typeof (string) }, messageCode: "IL2072")]
-		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicMethods), new Type[] { typeof (string) }, messageCode: "IL2072")]
-		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicMethods), new Type[] { typeof (string) }, messageCode: "IL2072")]
-		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicConstructors), new Type[] { typeof (string) }, messageCode: "IL2072")]
-		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicConstructors), new Type[] { typeof (string) }, messageCode: "IL2072")]
-		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicConstructors), new Type[] { typeof (string) }, messageCode: "IL2072")]
+		// Analyzer gets this right (no warning), but trimmer merges all branches going forward.
+		[ExpectedWarning ("IL2072", nameof (LocalDataFlow) + "." + nameof (RequireNonPublicMethods) + "(String)", "type",
+			ProducedBy = ProducedBy.Trimmer)]
+		[ExpectedWarning ("IL2072", nameof (LocalDataFlow) + "." + nameof (RequirePublicMethods) + "(String)", "type",
+			ProducedBy = ProducedBy.Trimmer)]
+		[ExpectedWarning ("IL2072", nameof (LocalDataFlow) + "." + nameof (RequirePublicMethods) + "(String)", "type",
+			ProducedBy = ProducedBy.Trimmer)]
+		[ExpectedWarning ("IL2072", nameof (LocalDataFlow) + "." + nameof (RequirePublicConstructors) + "(String)", "type",
+			ProducedBy = ProducedBy.Trimmer)]
+		[ExpectedWarning ("IL2072", nameof (LocalDataFlow) + "." + nameof (RequirePublicConstructors) + "(String)", "type",
+			ProducedBy = ProducedBy.Trimmer)]
+		[ExpectedWarning ("IL2072", nameof (LocalDataFlow) + "." + nameof (RequirePublicConstructors) + "(String)", "type",
+			ProducedBy = ProducedBy.Trimmer)]
 		public static void TestBranchSwitch ()
 		{
 			string str = null;
@@ -275,7 +282,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) }, messageCode: "IL2072")]
+		// Analyzer doesn't understand exceptional control flow yet (https://github.com/dotnet/linker/issues/2273)
+		[ExpectedWarning ("IL2072", nameof (LocalDataFlow) + "." + nameof (RequirePublicFields) + "(String)",
+			nameof (LocalDataFlow) + "." + nameof (GetWithPublicMethods) + "()",
+			ProducedBy = ProducedBy.Trimmer)]
 		public static void TestBranchTry ()
 		{
 			string str = GetWithPublicMethods ();
@@ -289,7 +299,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) }, messageCode: "IL2072")]
+		// Analyzer doesn't understand exceptional control flow yet (https://github.com/dotnet/linker/issues/2273)
+		[ExpectedWarning ("IL2072", nameof (LocalDataFlow) + "." + nameof (RequirePublicFields) + "(String)",
+			nameof (LocalDataFlow) + "." + nameof (GetWithPublicMethods) + "()",
+			ProducedBy = ProducedBy.Trimmer)]
 		public static void TestBranchCatch ()
 		{
 			string str = GetWithPublicMethods ();
@@ -302,7 +315,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) }, messageCode: "IL2072")]
+		// Analyzer doesn't understand exceptional control flow yet (https://github.com/dotnet/linker/issues/2273)
+		[ExpectedWarning ("IL2072", nameof (LocalDataFlow) + "." + nameof (RequirePublicFields) + "(String)",
+			nameof (LocalDataFlow) + "." + nameof (GetWithPublicMethods) + "()",
+			ProducedBy = ProducedBy.Trimmer)]
 		public static void TestBranchFinally ()
 		{
 			string str = GetWithPublicMethods ();
@@ -317,6 +333,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[RecognizedReflectionAccessPattern]
+		// Analyzer gets this right, but linker doesn't consider backwards branches.
+		[ExpectedWarning ("IL2072", nameof (LocalDataFlow) + "." + nameof (RequirePublicMethods) + "(String)",
+			nameof (LocalDataFlow) + "." + nameof (GetWithPublicFields) + "()",
+			ProducedBy = ProducedBy.Analyzer)]
 		public static void TestBackwardsEdgeLoop ()
 		{
 			string str = GetWithPublicMethods ();
@@ -331,6 +351,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[RecognizedReflectionAccessPattern]
+		// Analyzer gets this right, but linker doesn't consider backwards branches.
+		[ExpectedWarning ("IL2072", nameof (LocalDataFlow) + "." + nameof (RequirePublicMethods) + "(String)",
+			nameof (LocalDataFlow) + "." + nameof (GetWithPublicFields) + "()",
+			ProducedBy = ProducedBy.Analyzer)]
 		public static void TestBackwardsEdgeGoto ()
 		{
 			string str = null;

@@ -41,7 +41,7 @@ namespace ILLink.RoslynAnalyzer
 
 			// TODO: don't track unannotated locations
 
-//			var damt = operation.TargetMethod.GetDynamicallyAccessedMemberTypesOnReturnType ();
+			//			var damt = operation.TargetMethod.GetDynamicallyAccessedMemberTypesOnReturnType ();
 			return new MultiValue (new AnnotatedSymbol (operation.TargetMethod, isMethodReturn: true));
 		}
 
@@ -89,6 +89,8 @@ namespace ILLink.RoslynAnalyzer
 		public override MultiValue VisitTypeOf (ITypeOfOperation typeOfOperation, StateValue state)
 		{
 			// TODO: track known types too!
+
+			// We only need to find the symbol for generic types here
 			if (typeOfOperation.TypeOperand is ITypeParameterSymbol typeParameter)
 				return new MultiValue (new AnnotatedSymbol (typeParameter));
 

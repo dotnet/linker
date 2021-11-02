@@ -42,7 +42,10 @@ namespace ILLink.RoslynAnalyzer.Tests
 				if (testCaseMain.Identifier.ValueText != "Main")
 					throw new NotImplementedException ();
 
+				string memberName = m.Split (".").Last ();
+
 				switch (testCaseClass.Identifier.ValueText) {
+				case "LocalDataFlow":
 				case "MemberTypesRelationships":
 				case "MethodParametersDataFlow":
 				case "MethodReturnParameterDataFlow":
@@ -58,37 +61,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 				// case "GetNestedTypeOnAllAnnotatedType":
 				// case "GetTypeDataFlow":
 				// case "IReflectDataflow":
-				case "LocalDataFlow": {
-						if (m is not MethodDeclarationSyntax method)
-							return;
-						switch (method.Identifier.ValueText) {
-						// These cases still fail:
-						// MergeTry case doesn't track control flow for throw out of a try block,
-						// only sees value assigned after the throw, doesn't warn on RequirePublicMethods. 
-						case "TestBranchMergeTry":
-						case "TestBranchMergeCatch":
-						case "TestBranchMergeFinally":
-						// Analyzer gets these right even though linker doesn't:
-						case "TestBranchGoto":
-						case "TestBranchIf":
-						case "TestBranchIfElse":
-						case "TestBranchSwitch":
-						// Analyzer produces no warnings, linker extraneous warnings
-						// But not sure if analyzer just *happens* to be correct
-						// so need to validate these again later.
-						case "TestBranchTry":
-						case "TestBranchCatch":
-						case "TestBranchFinally":
-						// Analyzer gets these cases right, but testcases expect
-						// the incorrect linker behavior.
-						case "TestBackwardsEdgeLoop":
-						case "TestBackwardsEdgeGoto":
-							return;
-						}
-						break;
-					}
-			default:
-				return;				default:
+				default:
 					return false;
 				}
 			};
