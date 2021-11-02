@@ -79,9 +79,9 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			// Cannot annotate fields either with RUC nor RAF therefore the warning persists
-			[ExpectedWarning ("IL2026", "Message from --InitString--", CompilerGeneratedCode = true)]
-			[ExpectedWarning ("IL3002", "Message from --InitString--", ProducedBy = ProducedBy.Analyzer)]
-			public static Lazy<string> _default = new Lazy<string> (InitString);
+			[ExpectedWarning ("IL2026", "Message from --MethodWithRequiresAndReturns--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "Message from --MethodWithRequiresAndReturns--", ProducedBy = ProducedBy.Analyzer)]
+			public static Lazy<string> _default = new Lazy<string> (MethodWithRequiresAndReturns);
 
 			static IEnumerable<int> TestLazyDelegate ()
 			{
@@ -142,9 +142,9 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			// Cannot annotate fields either with RUC nor RAF therefore the warning persists
-			[ExpectedWarning ("IL2026", "Message from --InitString--", CompilerGeneratedCode = true)]
-			[ExpectedWarning ("IL3002", "Message from --InitString--", ProducedBy = ProducedBy.Analyzer)]
-			public static Lazy<string> _default = new Lazy<string> (InitString);
+			[ExpectedWarning ("IL2026", "Message from --MethodWithRequiresAndReturns--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "Message from --MethodWithRequiresAndReturns--", ProducedBy = ProducedBy.Analyzer)]
+			public static Lazy<string> _default = new Lazy<string> (MethodWithRequiresAndReturns);
 
 			static IEnumerable<int> TestLazyDelegate ()
 			{
@@ -237,9 +237,9 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				var action = new Action (MethodWithRequires);
 			}
 
-			[ExpectedWarning ("IL2026", "Message from --InitString--", CompilerGeneratedCode = true)]
-			[ExpectedWarning ("IL3002", "Message from --InitString--", ProducedBy = ProducedBy.Analyzer)]
-			public static Lazy<string> _default = new Lazy<string> (InitString);
+			[ExpectedWarning ("IL2026", "Message from --MethodWithRequiresAndReturns--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "Message from --MethodWithRequiresAndReturns--", ProducedBy = ProducedBy.Analyzer)]
+			public static Lazy<string> _default = new Lazy<string> (MethodWithRequiresAndReturns);
 
 			static async void TestLazyDelegate ()
 			{
@@ -297,9 +297,9 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			// Cannot annotate fields either with RUC nor RAF therefore the warning persists
-			[ExpectedWarning ("IL2026", "Message from --InitString--", CompilerGeneratedCode = true)]
-			[ExpectedWarning ("IL3002", "Message from --InitString--", ProducedBy = ProducedBy.Analyzer)]
-			public static Lazy<string> _default = new Lazy<string> (InitString);
+			[ExpectedWarning ("IL2026", "Message from --MethodWithRequiresAndReturns--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "Message from --MethodWithRequiresAndReturns--", ProducedBy = ProducedBy.Analyzer)]
+			public static Lazy<string> _default = new Lazy<string> (MethodWithRequiresAndReturns);
 
 			static async void TestLazyDelegate ()
 			{
@@ -395,9 +395,9 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				var action = new Action (MethodWithRequires);
 			}
 
-			[ExpectedWarning ("IL2026", "Message from --InitString--", CompilerGeneratedCode = true)]
-			[ExpectedWarning ("IL3002", "Message from --InitString--", ProducedBy = ProducedBy.Analyzer)]
-			public static Lazy<string> _default = new Lazy<string> (InitString);
+			[ExpectedWarning ("IL2026", "Message from --MethodWithRequiresAndReturns--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "Message from --MethodWithRequiresAndReturns--", ProducedBy = ProducedBy.Analyzer)]
+			public static Lazy<string> _default = new Lazy<string> (MethodWithRequiresAndReturns);
 
 			static async IAsyncEnumerable<int> TestLazyDelegate ()
 			{
@@ -461,9 +461,9 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			// Cannot annotate fields either with RUC nor RAF therefore the warning persists
-			[ExpectedWarning ("IL2026", "Message from --InitString--", CompilerGeneratedCode = true)]
-			[ExpectedWarning ("IL3002", "Message from --InitString--", ProducedBy = ProducedBy.Analyzer)]
-			public static Lazy<string> _default = new Lazy<string> (InitString);
+			[ExpectedWarning ("IL2026", "Message from --MethodWithRequiresAndReturns--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "Message from --MethodWithRequiresAndReturns--", ProducedBy = ProducedBy.Analyzer)]
+			public static Lazy<string> _default = new Lazy<string> (MethodWithRequiresAndReturns);
 
 			static async IAsyncEnumerable<int> TestLazyDelegate ()
 			{
@@ -569,9 +569,9 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				}
 			}
 
-			[ExpectedWarning ("IL2026", "Message from --InitString--", CompilerGeneratedCode = true)]
-			[ExpectedWarning ("IL3002", "Message from --InitString--", ProducedBy = ProducedBy.Analyzer)]
-			public static Lazy<string> _default = new Lazy<string> (InitString);
+			[ExpectedWarning ("IL2026", "Message from --MethodWithRequiresAndReturns--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "Message from --MethodWithRequiresAndReturns--", ProducedBy = ProducedBy.Analyzer)]
+			public static Lazy<string> _default = new Lazy<string> (MethodWithRequiresAndReturns);
 
 			static void TestLazyDelegate ()
 			{
@@ -660,9 +660,9 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				}
 			}
 
-			[ExpectedWarning ("IL2026", "Message from --InitString--", CompilerGeneratedCode = true)]
-			[ExpectedWarning ("IL3002", "Message from --InitString--", ProducedBy = ProducedBy.Analyzer)]
-			public static Lazy<string> _default = new Lazy<string> (InitString);
+			[ExpectedWarning ("IL2026", "Message from --MethodWithRequiresAndReturns--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "Message from --MethodWithRequiresAndReturns--", ProducedBy = ProducedBy.Analyzer)]
+			public static Lazy<string> _default = new Lazy<string> (MethodWithRequiresAndReturns);
 
 			static void TestLazyDelegate ()
 			{
@@ -881,9 +881,9 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				};
 			}
 
-			[ExpectedWarning ("IL2026", "--InitString--", CompilerGeneratedCode = true)]
-			[ExpectedWarning ("IL3002", "--InitString--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Analyzer)]
-			public static Lazy<string> _default = new Lazy<string> (InitString);
+			[ExpectedWarning ("IL2026", "--MethodWithRequiresAndReturns--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "--MethodWithRequiresAndReturns--", ProducedBy = ProducedBy.Analyzer)]
+			public static Lazy<string> _default = new Lazy<string> (MethodWithRequiresAndReturns);
 
 			static void TestLazyDelegate ()
 			{
@@ -974,9 +974,9 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				};
 			}
 
-			[ExpectedWarning ("IL2026", "--InitString--", CompilerGeneratedCode = true)]
-			[ExpectedWarning ("IL3002", "--InitString--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Analyzer)]
-			public static Lazy<string> _default = new Lazy<string> (InitString);
+			[ExpectedWarning ("IL2026", "--MethodWithRequiresAndReturns--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "--MethodWithRequiresAndReturns--", ProducedBy = ProducedBy.Analyzer)]
+			public static Lazy<string> _default = new Lazy<string> (MethodWithRequiresAndReturns);
 
 			static void TestLazyDelegate ()
 			{
@@ -1290,9 +1290,9 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 		}
 
-		[RequiresUnreferencedCode ("Message from --InitString--")]
-		[RequiresAssemblyFiles ("Message from --InitString--")]
-		public static string InitString ()
+		[RequiresUnreferencedCode ("Message from --MethodWithRequiresAndReturns--")]
+		[RequiresAssemblyFiles ("Message from --MethodWithRequiresAndReturns--")]
+		public static string MethodWithRequiresAndReturns ()
 		{
 			return "string";
 		}
