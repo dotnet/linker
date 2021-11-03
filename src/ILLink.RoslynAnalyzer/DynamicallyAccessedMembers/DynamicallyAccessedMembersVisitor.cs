@@ -13,18 +13,16 @@ namespace ILLink.RoslynAnalyzer
 {
 	public class DynamicallyAccessedMembersVisitor : LocalDataFlowVisitor<MultiValue, HashSetLattice<SingleValue>>
 	{
-		public readonly HashSet<ReflectionAccessPattern> AccessPatterns;
-
-		readonly OperationBlockAnalysisContext Context;
+		public readonly ReflectionAccessStore ReflectionAccesses;
 
 
 		public DynamicallyAccessedMembersVisitor (
-			OperationBlockAnalysisContext context,
-			LocalStateLattice<MultiValue, HashSetLattice<SingleValue>> lattice
-		) : base (lattice)
+			LocalStateLattice<MultiValue, HashSetLattice<SingleValue>> lattice,
+			OperationBlockAnalysisContext context
+		) : base (lattice, context)
 		{
-			AccessPatterns = new HashSet<ReflectionAccessPattern> ();
-			Context = context;
+			ReflectionAccesses = new ReflectionAccessStore ();
+		}
 		}
 
 		// Override visitor methods to create tracked values when visiting operations
@@ -111,7 +109,7 @@ namespace ILLink.RoslynAnalyzer
 			if (target.Equals (TopValue))
 				return;
 
-			AccessPatterns.Add (new ReflectionAccessPattern (source, target, operation));
+			ReflectionAccesses.Add (new ReflectionAccessPattern (source, target, operation));
 		}
 
 		public override void HandleArgument (MultiValue argumentValue, IArgumentOperation operation)
@@ -129,7 +127,7 @@ namespace ILLink.RoslynAnalyzer
 				parameter,
 				operation
 			);
-			AccessPatterns.Add (accessPattern);
+			ReflectionAccesses.Add (accessPattern);
 		}
 
 		public override void HandleReceiverArgument (MultiValue receieverValue, IInvocationOperation operation)
@@ -141,7 +139,7 @@ namespace ILLink.RoslynAnalyzer
 
 			// TODO: skip unannotated receiever parameter?
 
-			AccessPatterns.Add (new ReflectionAccessPattern (
+			ReflectionAccesses.Add (new ReflectionAccessPattern (
 				receieverValue,
 				implicitReceiverParameter,
 				operation
@@ -153,7 +151,7 @@ namespace ILLink.RoslynAnalyzer
 			// TODO: skip unannotated return?
 			var returnParameter = new MultiValue (new AnnotatedSymbol ((IMethodSymbol) Context.OwningSymbol, isMethodReturn: true));
 
-			AccessPatterns.Add (new ReflectionAccessPattern (
+			ReflectionAccesses.Add (new ReflectionAccessPattern (
 				returnValue,
 				returnParameter,
 				operation

@@ -144,7 +144,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			nameof (LocalDataFlow) + "." + nameof (GetWithPublicMethods) + "()",
 			ProducedBy = ProducedBy.Trimmer)]
 		[ExpectedWarning ("IL2072", nameof (LocalDataFlow) + "." + nameof (RequirePublicMethods) + "(String)",
-			nameof (LocalDataFlow) + "." + nameof (GetWithPublicFields) + "()")]
+			nameof (LocalDataFlow) + "." + nameof (GetWithPublicFields) + "()",
+			ProducedBy = ProducedBy.Trimmer)]
 		public static void TestBranchMergeTry ()
 		{
 			string str = GetWithPublicMethods ();
@@ -159,16 +160,14 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			RequirePublicMethods (str); // warns for GetWithPublicFields
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) },
-			messageCode: "IL2072", message: new string[] {
-				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.GetWithPublicMethods()",
-				"type",
-				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.RequirePublicFields(String)" })]
-		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicMethods), new Type[] { typeof (string) },
-			messageCode: "IL2072", message: new string[] {
-				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.GetWithPublicFields()",
-				"type",
-				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.RequirePublicMethods(String)" })]
+
+		// Analyzer doesn't understand exceptional control flow yet (https://github.com/dotnet/linker/issues/2273)
+		[ExpectedWarning ("IL2072", nameof (LocalDataFlow) + "." + nameof (RequirePublicFields) + "(String)",
+			nameof (LocalDataFlow) + "." + nameof (GetWithPublicMethods) + "()",
+			ProducedBy = ProducedBy.Trimmer)]
+		[ExpectedWarning ("IL2072", nameof (LocalDataFlow) + "." + nameof (RequirePublicMethods) + "(String)",
+			nameof (LocalDataFlow) + "." + nameof (GetWithPublicFields) + "()",
+			ProducedBy = ProducedBy.Trimmer)]
 		public static void TestBranchMergeCatch ()
 		{
 			string str = GetWithPublicMethods ();
@@ -183,9 +182,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 
-		[ExpectedWarning ("IL2072", nameof (LocalDataFlow) + "." + nameof (RequirePublicFields) + "(String)",
-			nameof (LocalDataFlow) + "." + nameof (GetWithPublicMethods) + "()")]
 		// Analyzer doesn't understand exceptional control flow yet (https://github.com/dotnet/linker/issues/2273)
+		[ExpectedWarning ("IL2072", nameof (LocalDataFlow) + "." + nameof (RequirePublicFields) + "(String)",
+			nameof (LocalDataFlow) + "." + nameof (GetWithPublicMethods) + "()",
+			ProducedBy = ProducedBy.Trimmer)]
 		[ExpectedWarning ("IL2072", nameof (LocalDataFlow) + "." + nameof (RequirePublicMethods) + "(String)",
 			nameof (LocalDataFlow) + "." + nameof (GetWithPublicFields) + "()",
 			ProducedBy = ProducedBy.Trimmer)]

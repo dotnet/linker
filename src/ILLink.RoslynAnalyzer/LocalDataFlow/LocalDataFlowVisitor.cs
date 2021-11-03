@@ -1,6 +1,7 @@
 using System;
 using ILLink.Shared;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.FlowAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 
@@ -19,9 +20,12 @@ namespace ILLink.RoslynAnalyzer
 	{
 		protected readonly LocalStateLattice<TValue, TValueLattice> LocalStateLattice;
 
+		protected readonly OperationBlockAnalysisContext Context;
+
 		protected TValue TopValue => LocalStateLattice.Lattice.ValueLattice.Top;
 
-		public LocalDataFlowVisitor (LocalStateLattice<TValue, TValueLattice> lattice) => LocalStateLattice = lattice;
+		public LocalDataFlowVisitor (LocalStateLattice<TValue, TValueLattice> lattice, OperationBlockAnalysisContext context) =>
+			(LocalStateLattice, Context) = (lattice, context);
 
 		public void Transfer (BlockWrapper block, LocalState<TValue> state)
 		{
@@ -40,7 +44,28 @@ namespace ILLink.RoslynAnalyzer
 					// this means it's a return value or throw value associated with the fall-through successor.
 					// TODO: how to deal with throw values?
 
-					HandleReturnValue (branchValue, branchValueOperation);
+					// Return statements with return values are represented in the control flow graph as
+					// a branch value operation that computes the return value. The return operation itself is the parent
+					// of the branch value operation.
+
+					// Get the actual return operation (not the branch value operation that provides the return value).
+					// This should be used as the location of the warning. This is important to provide the right
+					// warning location and because warnings are disambiguated based on the operation.
+					var parentSyntax = branchValueOperation.Syntax.Parent;
+					if (parentSyntax == null)
+						throw new InvalidOperationException ();
+
+					var parentOperation = Context.Compilation.GetSemanticModel (branchValueOperation.Syntax.SyntaxTree).GetOperation (parentSyntax);
+					// operation.Syntax.Parent
+
+					// TODO: this could also be a throw operation.
+					if (parentOperation is IThrowOperation)
+						throw new NotImplementedException ();
+
+					if (parentOperation is not IReturnOperation returnOperation)
+						throw new InvalidOperationException ();
+
+					HandleReturnValue (branchValue, returnOperation);
 				}
 			}
 		}

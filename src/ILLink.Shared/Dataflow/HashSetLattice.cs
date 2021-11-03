@@ -1,10 +1,11 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 
 namespace ILLink.Shared
 {
-	public struct HashSetWrapper<TValue> : IEquatable<HashSetWrapper<TValue>>
+	public struct HashSetWrapper<TValue> : IEquatable<HashSetWrapper<TValue>>, IEnumerable<TValue>
 		where TValue : notnull
 	{
 		// TODO: use immutable collection?
@@ -29,9 +30,24 @@ namespace ILLink.Shared
 		public override int GetHashCode ()
 		{
 			if (Values == null)
-				return 0x024598;
+				return typeof (HashSetWrapper<TValue>).GetHashCode ();
 			return HashUtils.CalcHashCodeEnumerable (Values);
 		}
+
+		public IEnumerator<TValue> GetEnumerator ()
+		{
+			if (Values == null)
+				yield break;
+
+			foreach (var value in Values)
+				yield return value;
+		}
+
+		IEnumerator IEnumerable.GetEnumerator () => GetEnumerator ();
+
+		// TODO: implement ICollection or IReadOnlySet?
+		// TODO: what should Contains(Top) return?
+		public bool Contains (TValue value) => Values?.Contains (value) ?? false;
 
 		public override string ToString ()
 		{

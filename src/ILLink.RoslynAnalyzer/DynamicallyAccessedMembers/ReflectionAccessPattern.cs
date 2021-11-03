@@ -3,25 +3,8 @@ using Microsoft.CodeAnalysis;
 
 using MultiValue = ILLink.Shared.HashSetWrapper<ILLink.Shared.SingleValue>;
 
-namespace ILLink.Shared
+namespace ILLink.RoslynAnalyzer
 {
-	// TODO: arg/ret types? For now takes and returns an AnalysisState
-	// using State = LocalState<MyLocalValue>; // TODO: use these usings!
-
-	// Why is this necessary?
-	// Because IOperation doesn't implement IEquatable<IOperation>.
-	public struct OperationWrapper : IEquatable<OperationWrapper>
-	{
-		public IOperation Operation;
-
-		public OperationWrapper (IOperation operation) => Operation = operation;
-
-		public bool Equals (OperationWrapper other)
-		{
-			return Operation == other.Operation;
-		}
-	}
-
 	// TODO: share this
 	public struct ReflectionAccessPattern : IEquatable<ReflectionAccessPattern>
 	{

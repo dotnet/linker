@@ -73,14 +73,14 @@ namespace ILLink.RoslynAnalyzer
 			Context = context;
 		}
 
-		public IEnumerable<ReflectionAccessPattern> GetResults ()
+		public IEnumerable<ReflectionAccessPattern> GetReflectionAccessPatterns ()
 		{
 			if (Visitor != null)
-				return Visitor.AccessPatterns;
+				return Visitor.ReflectionAccesses;
 
-			Visitor = new DynamicallyAccessedMembersVisitor (Context, Lattice);
+			Visitor = new DynamicallyAccessedMembersVisitor (Lattice, Context);
 			Fixpoint (ControlFlowGraph, Lattice, Visitor);
-			return Visitor.AccessPatterns;
+			return Visitor.ReflectionAccesses;
 		}
 	}
 }

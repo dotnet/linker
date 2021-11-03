@@ -42,7 +42,7 @@ namespace ILLink.RoslynAnalyzer
 					ControlFlowGraph cfg = context.GetControlFlowGraph (operationBlock);
 					DynamicallyAccessedMembersAnalysis damAnalysis = new (context, cfg);
 
-					foreach (ReflectionAccessPattern accessPattern in damAnalysis.GetResults ()) {
+					foreach (ReflectionAccessPattern accessPattern in damAnalysis.GetReflectionAccessPatterns ()) {
 						foreach (var diagnostic in GetDynamicallyAccessedMembersDiagnostics (accessPattern.Source, accessPattern.Target, accessPattern.Operation.Syntax.GetLocation ()))
 							context.ReportDiagnostic (diagnostic);
 					}
