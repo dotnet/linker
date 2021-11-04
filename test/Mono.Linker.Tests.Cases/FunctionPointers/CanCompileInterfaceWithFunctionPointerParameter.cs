@@ -9,7 +9,7 @@ namespace Mono.Linker.Tests.Cases.FunctionPointers
 	[SetupCompileArgument ("/unsafe")]
 	unsafe class CanCompileInterfaceWithFunctionPointerParameter
 	{
-		public static void Main()
+		public static void Main ()
 		{
 			new CanCompileInterfaceWithFunctionPointerParameter.B ().Method (null);
 		}
