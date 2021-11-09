@@ -46,7 +46,7 @@ namespace ILLink.RoslynAnalyzer
 
 		public override int GetHashCode ()
 		{
-			return HashCode.Combine (EqualityContract, SymbolEqualityComparer.Default.GetHashCode (Source), IsMethodReturn);
+			return (EqualityContract.GetHashCode () * -1521134295 + SymbolEqualityComparer.Default.GetHashCode (Source)) * -1521134295 + IsMethodReturn.GetHashCode ();
 		}
 
 #if DEBUG

@@ -7,7 +7,6 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
-using ILLink.Shared;
 using Mono.Cecil;
 using FieldDefinition = Mono.Cecil.FieldDefinition;
 using GenericParameter = Mono.Cecil.GenericParameter;
@@ -1355,6 +1354,17 @@ namespace Mono.Linker.Dataflow
 		}
 	}
 	#endregion
+
+	static class HashUtils
+	{
+		public static int CalcHashCodeEnumerable<T> (IEnumerable<T> list) where T : class?
+		{
+			HashCode hashCode = new HashCode ();
+			foreach (var item in list)
+				hashCode.Add (item);
+			return hashCode.ToHashCode ();
+		}
+	}
 
 	public struct ValueBasicBlockPair
 	{

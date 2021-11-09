@@ -33,7 +33,13 @@ namespace ILLink.Shared
 		{
 			if (Values == null)
 				return typeof (HashSetWrapper<TValue>).GetHashCode ();
-			return HashUtils.CalcHashCodeEnumerable (Values);
+
+			int hashCode = 0;
+			foreach (var item in Values) {
+				hashCode *= -1521134295;
+				hashCode += item.GetHashCode ();
+			}
+			return hashCode;
 		}
 
 		public IEnumerator<TValue> GetEnumerator ()

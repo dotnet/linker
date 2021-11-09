@@ -14,7 +14,6 @@
   <ItemGroup>
     <None Include="Microsoft.NET.ILLink.Analyzers.props" CopyToOutputDirectory="PreserveNewest" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="$(MicrosoftCodeAnalysisVersion)" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.Bcl.HashCode" Version="1.1.1" />
   </ItemGroup>
 
   <Import Project="..\ILLink.Shared\ILLink.Shared.projitems" Label="Shared" />

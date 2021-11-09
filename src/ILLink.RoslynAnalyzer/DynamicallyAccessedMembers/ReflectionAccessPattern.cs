@@ -33,7 +33,7 @@ namespace ILLink.RoslynAnalyzer
 
 		public override int GetHashCode ()
 		{
-			return HashCode.Combine (Source, Target, Operation);
+			return (Source.GetHashCode () * -1521134295 + Target.GetHashCode ()) * -1521134295 + Operation.GetHashCode ();
 		}
 	}
 }
