@@ -11,7 +11,6 @@ namespace ILLink.Shared
 	public struct HashSetWrapper<TValue> : IEquatable<HashSetWrapper<TValue>>, IEnumerable<TValue>
 		where TValue : notnull
 	{
-		// TODO: use immutable collection?
 		public readonly HashSet<TValue>? Values;
 
 		public HashSetWrapper (HashSet<TValue> values) => Values = values;
@@ -27,7 +26,7 @@ namespace ILLink.Shared
 			if (other.Values == null)
 				return false;
 
-			return Values.SetEquals (other.Values); // TODO: performance? compare ValueNodeHashSet
+			return Values.SetEquals (other.Values);
 		}
 
 		public override int GetHashCode ()
@@ -48,8 +47,6 @@ namespace ILLink.Shared
 
 		IEnumerator IEnumerable.GetEnumerator () => GetEnumerator ();
 
-		// TODO: implement ICollection or IReadOnlySet?
-		// TODO: what should Contains(Top) return?
 		public bool Contains (TValue value) => Values?.Contains (value) ?? false;
 
 		public override string ToString ()
@@ -70,6 +67,7 @@ namespace ILLink.Shared
 		}
 	}
 
+	// A lattice over hashsets where the Meet operation is just set union.
 	public struct HashSetLattice<TValue> : ILattice<HashSetWrapper<TValue>>
 		where TValue : IEquatable<TValue>
 	{
@@ -78,7 +76,7 @@ namespace ILLink.Shared
 		public HashSetWrapper<TValue> Meet (HashSetWrapper<TValue> left, HashSetWrapper<TValue> right)
 		{
 			if (left.Values == null)
-				return right; // TODO: OK only if it's immutable
+				return right;
 			if (right.Values == null)
 				return left;
 

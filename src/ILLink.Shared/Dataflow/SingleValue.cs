@@ -5,13 +5,15 @@ using System;
 
 namespace ILLink.Shared
 {
-	// TODO: merge with ValueNode
-	// logically this is a sum type over:
+	// Similar to ValueNode, and a candidate for future code sharing.
+	// This is a sum type over the various kinds of values we track:
 	// - dynamicallyaccessedmembertypes-annotated locations (types or strings)
 	// - known typeof values and similar
 	// - known strings
 	// - known integers
-	// and anything else we track
+
+	// The implementation is taken from the generated code for records.
+	// We could just make it a record if we weren't targeting netstandard2.0.
 	public abstract class SingleValue : IEquatable<SingleValue>
 	{
 		public virtual bool Equals (SingleValue? other)

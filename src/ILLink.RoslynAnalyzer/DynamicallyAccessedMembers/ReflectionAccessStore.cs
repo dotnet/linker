@@ -21,7 +21,6 @@ namespace ILLink.RoslynAnalyzer
 			// it needs to be updated. The dataflow analysis should result in purely additive
 			// changes to the reflection access patterns generated for a given operation,
 			// so we can just replace the original access pattern here.
-
 #if DEBUG
 			// Validate this in debug mode.
 			if (AccessPatterns.TryGetValue (accessPattern.Operation, out var existingAccessPattern)) {

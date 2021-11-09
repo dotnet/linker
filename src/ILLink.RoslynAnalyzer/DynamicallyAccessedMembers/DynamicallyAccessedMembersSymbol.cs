@@ -10,37 +10,34 @@ using Microsoft.CodeAnalysis;
 
 namespace ILLink.RoslynAnalyzer
 {
-	// TODO: this may store unannotated symbols too!
-	// TODO: find a better name for it!
-	public class AnnotatedSymbol : DynamicallyAccessedMembersValue
+	public class DynamicallyAccessedMembersSymbol : DynamicallyAccessedMembersValue
 	{
 		public readonly ISymbol Source;
 		public readonly bool IsMethodReturn;
 
-		public AnnotatedSymbol (IMethodSymbol method, bool isMethodReturn) => (Source, IsMethodReturn) = (method, isMethodReturn);
+		public DynamicallyAccessedMembersSymbol (IMethodSymbol method, bool isMethodReturn) => (Source, IsMethodReturn) = (method, isMethodReturn);
 
-		public AnnotatedSymbol (IParameterSymbol parameter) => Source = parameter;
+		public DynamicallyAccessedMembersSymbol (IParameterSymbol parameter) => Source = parameter;
 
-		public AnnotatedSymbol (IFieldSymbol field) => Source = field;
+		public DynamicallyAccessedMembersSymbol (IFieldSymbol field) => Source = field;
 
-		public AnnotatedSymbol (INamedTypeSymbol type) => Source = type;
+		public DynamicallyAccessedMembersSymbol (INamedTypeSymbol type) => Source = type;
 
-		// Somewhat special compared to the other ctors.
-		// This one isn't used for dataflow - it's really just a wrapper
+		// This ctor isn't used for dataflow - it's really just a wrapper
 		// for annotations on type arguments/parameters which are type-checked
 		// by the analyzer (outside of the dataflow analysis).
-		public AnnotatedSymbol (ITypeSymbol typeArgument) => Source = typeArgument;
+		public DynamicallyAccessedMembersSymbol (ITypeSymbol typeArgument) => Source = typeArgument;
 
-		public AnnotatedSymbol (ITypeParameterSymbol typeParameter) => Source = typeParameter;
+		public DynamicallyAccessedMembersSymbol (ITypeParameterSymbol typeParameter) => Source = typeParameter;
 
 		public override DynamicallyAccessedMemberTypes DynamicallyAccessedMemberTypes =>
 			IsMethodReturn
 				? ((IMethodSymbol) Source).GetDynamicallyAccessedMemberTypesOnReturnType ()
 				: Source.GetDynamicallyAccessedMemberTypes ();
 
-		protected override Type EqualityContract => typeof (AnnotatedSymbol);
+		protected override Type EqualityContract => typeof (DynamicallyAccessedMembersSymbol);
 
-		public virtual bool Equals (AnnotatedSymbol other)
+		public virtual bool Equals (DynamicallyAccessedMembersSymbol other)
 		{
 			return this == other || (other != null && EqualityContract == other.EqualityContract &&
 				EqualityComparer<ISymbol>.Default.Equals (Source, other.Source) &&
@@ -49,15 +46,12 @@ namespace ILLink.RoslynAnalyzer
 
 		public override int GetHashCode ()
 		{
-			// TODO: use EqualityComparer<Foo>.Default.GetHashCode vs .GetHashCode()?
-			return EqualityContract.GetHashCode () * -1521134295
-				+ SymbolEqualityComparer.Default.GetHashCode (Source) * -1521134295
-				+ IsMethodReturn.GetHashCode ();
+			return HashCode.Combine (EqualityContract, SymbolEqualityComparer.Default.GetHashCode (Source), IsMethodReturn);
 		}
 
+#if DEBUG
 		public override string ToString ()
 		{
-			// TODO: move to AnnotatedLocation?
 			StringBuilder sb = new ();
 			switch (Source) {
 			case IMethodSymbol method:
@@ -83,5 +77,6 @@ namespace ILLink.RoslynAnalyzer
 			sb.Append ("[").Append (memberTypesStr).Append ("]");
 			return sb.ToString ();
 		}
+#endif
 	}
 }

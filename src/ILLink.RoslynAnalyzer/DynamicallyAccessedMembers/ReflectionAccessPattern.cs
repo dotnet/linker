@@ -8,14 +8,13 @@ using MultiValue = ILLink.Shared.HashSetWrapper<ILLink.Shared.SingleValue>;
 
 namespace ILLink.RoslynAnalyzer
 {
-	// TODO: share this
 	public struct ReflectionAccessPattern : IEquatable<ReflectionAccessPattern>
 	{
 		public readonly MultiValue Source;
 		public readonly MultiValue Target;
 
 		// TODO: create abstraction for operation/location suitable for use by
-		// roslyn or linker
+		// roslyn or linker to facilitate sharing
 		public readonly IOperation Operation;
 
 		public ReflectionAccessPattern (MultiValue source, MultiValue target, IOperation operation)

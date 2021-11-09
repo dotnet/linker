@@ -25,8 +25,7 @@ namespace ILLink.RoslynAnalyzer
 		}
 	}
 
-	// Derived class purely to substitute a concrete LocalKey for TKey of DefaultValueDictionary
-	// Is this worth it?
+	// Derived class exists purely to substitute a concrete LocalKey for TKey of DefaultValueDictionary
 	public class LocalState<TValue> : DefaultValueDictionary<LocalKey, TValue>,
 		IEquatable<LocalState<TValue>>
 		where TValue : IEquatable<TValue>
@@ -41,17 +40,19 @@ namespace ILLink.RoslynAnalyzer
 		public bool Equals (LocalState<TValue> other) => base.Equals (other);
 	}
 
-	// Wrapper struct purely to substitute a concrete LocalKey for TKey of DictionaryLattice
-	// Is this worth it?
+	// Wrapper struct exists purely to substitute a concrete LocalKey for TKey of DictionaryLattice
 	public struct LocalStateLattice<TValue, TValueLattice> : ILattice<LocalState<TValue>>
 		where TValue : IEquatable<TValue>
 		where TValueLattice : ILattice<TValue>
 	{
 		public readonly DictionaryLattice<LocalKey, TValue, TValueLattice> Lattice;
 
-		public LocalStateLattice (TValueLattice valueLattice) => Lattice = new DictionaryLattice<LocalKey, TValue, TValueLattice> (valueLattice);
+		public LocalStateLattice (TValueLattice valueLattice) {
+			Lattice = new DictionaryLattice<LocalKey, TValue, TValueLattice> (valueLattice);
+			Top = new (Lattice.Top);
+		}
 
-		public LocalState<TValue> Top => new (Lattice.Top); // TODO: static
+		public LocalState<TValue> Top { get; }
 
 		public LocalState<TValue> Meet (LocalState<TValue> left, LocalState<TValue> right) => new (Lattice.Meet (left, right));
 	}

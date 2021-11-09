@@ -37,6 +37,9 @@ namespace ILLink.RoslynAnalyzer
 			context.EnableConcurrentExecution ();
 			context.ConfigureGeneratedCodeAnalysis (GeneratedCodeAnalysisFlags.ReportDiagnostics);
 			context.RegisterOperationBlockAction (context => {
+				if (context.OwningSymbol.HasAttribute (RequiresUnreferencedCodeAnalyzer.FullyQualifiedRequiresUnreferencedCodeAttribute))
+					return;
+
 				foreach (var operationBlock in context.OperationBlocks) {
 					ControlFlowGraph cfg = context.GetControlFlowGraph (operationBlock);
 					DynamicallyAccessedMembersAnalysis damAnalysis = new (context, cfg);
@@ -47,9 +50,8 @@ namespace ILLink.RoslynAnalyzer
 					}
 				}
 			});
-			// TODO: fix reporting for generic type substitutions.
-			// This shouldn't happen only for method invocations, but for any reference
-			// to an instantiated method or type.
+			// TODO: fix reporting for generic type substitutions. This should happen not only for method invocations,
+			// but for any reference to an instantiated method or type.
 			context.RegisterOperationAction (context => {
 				var invocationOperation = (IInvocationOperation) context.Operation;
 				ProcessInvocationOperation (context, invocationOperation);
@@ -71,8 +73,8 @@ namespace ILLink.RoslynAnalyzer
 				return;
 
 			for (int i = 0; i < targetMethod.TypeParameters.Length; i++) {
-				var sourceValue = new AnnotatedSymbol (targetMethod.TypeArguments[i]);
-				var targetValue = new AnnotatedSymbol (targetMethod.TypeParameters[i]);
+				var sourceValue = new DynamicallyAccessedMembersSymbol (targetMethod.TypeArguments[i]);
+				var targetValue = new DynamicallyAccessedMembersSymbol (targetMethod.TypeParameters[i]);
 				foreach (var diagnostic in GetDynamicallyAccessedMembersDiagnostics (sourceValue, targetValue, invocationOperation.Syntax.GetLocation ()))
 					context.ReportDiagnostic (diagnostic);
 			}
@@ -102,7 +104,7 @@ namespace ILLink.RoslynAnalyzer
 
 		static IEnumerable<Diagnostic> GetDynamicallyAccessedMembersDiagnostics (SingleValue sourceValue, SingleValue targetValue, Location location)
 		{
-			if (sourceValue is not AnnotatedSymbol source || targetValue is not AnnotatedSymbol target)
+			if (sourceValue is not DynamicallyAccessedMembersSymbol source || targetValue is not DynamicallyAccessedMembersSymbol target)
 				yield break;
 
 			Debug.Assert (target.Source.Kind is not SymbolKind.NamedType);
@@ -118,7 +120,7 @@ namespace ILLink.RoslynAnalyzer
 			yield return Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (diag), location, diagArgs);
 		}
 
-		static DiagnosticId GetDiagnosticId (AnnotatedSymbol source, AnnotatedSymbol target)
+		static DiagnosticId GetDiagnosticId (DynamicallyAccessedMembersSymbol source, DynamicallyAccessedMembersSymbol target)
 			=> (source.Source.Kind, target.Source.Kind) switch {
 				(SymbolKind.Parameter, SymbolKind.Field) => DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsField,
 				(SymbolKind.Parameter, SymbolKind.Method) => target.IsMethodReturn ?
@@ -155,7 +157,7 @@ namespace ILLink.RoslynAnalyzer
 				_ => throw new NotImplementedException ()
 			};
 
-		static string[] GetDiagnosticArguments (AnnotatedSymbol source, AnnotatedSymbol target, string missingAnnotations)
+		static string[] GetDiagnosticArguments (DynamicallyAccessedMembersSymbol source, DynamicallyAccessedMembersSymbol target, string missingAnnotations)
 		{
 			var args = new List<string> ();
 			args.AddRange (GetDiagnosticArguments (target));
@@ -164,13 +166,13 @@ namespace ILLink.RoslynAnalyzer
 			return args.ToArray ();
 		}
 
-		static IEnumerable<string> GetDiagnosticArguments (AnnotatedSymbol annotatedSymbol)
+		static IEnumerable<string> GetDiagnosticArguments (DynamicallyAccessedMembersSymbol annotatedSymbol)
 		{
 			ISymbol symbol = annotatedSymbol.Source;
 			var args = new List<string> ();
 			args.AddRange (symbol.Kind switch {
 				SymbolKind.Parameter => new string[] { symbol.GetDisplayName (), symbol.ContainingSymbol.GetDisplayName () },
-				SymbolKind.NamedType => throw new NotImplementedException (),// new string[] { symbol.GetDisplayName () },
+				SymbolKind.NamedType => throw new NotImplementedException (),
 				SymbolKind.Field => new string[] { symbol.GetDisplayName () },
 				SymbolKind.Method => new string[] { symbol.GetDisplayName () },
 				SymbolKind.TypeParameter => new string[] { symbol.GetDisplayName (), symbol.ContainingSymbol.GetDisplayName () },

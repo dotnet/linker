@@ -42,25 +42,12 @@ namespace ILLink.RoslynAnalyzer.Tests
 				if (testCaseMain.Identifier.ValueText != "Main")
 					throw new NotImplementedException ();
 
-				string memberName = m.Split (".").Last ();
-
 				switch (testCaseClass.Identifier.ValueText) {
 				case "LocalDataFlow":
 				case "MemberTypesRelationships":
 				case "MethodParametersDataFlow":
 				case "MethodReturnParameterDataFlow":
 					return true;
-				// case "AnnotatedMembersAccessedViaReflection":
-				// case "AssemblyQualifiedNameDataflow":
-				// case "ByRefDataflow":
-				// case "DynamicDependencyDataflow":
-				// case "EmptyArrayIntrinsicsDataFlow":
-				// case "FieldDataFlow":
-				// case "GenericParameterDataFlow":
-				// case "GetInterfaceDataFlow":
-				// case "GetNestedTypeOnAllAnnotatedType":
-				// case "GetTypeDataFlow":
-				// case "IReflectDataflow":
 				default:
 					return false;
 				}

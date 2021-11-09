@@ -31,8 +31,6 @@ namespace ILLink.Shared
 				this[key] = value;
 		}
 
-		// IEquatable
-		// Why do I get a nullability warning here but not for SingleValue (if make other non-nullable)?
 		public virtual bool Equals (DefaultValueDictionary<TKey, TValue>? other)
 		{
 			if (other == null)
@@ -49,6 +47,7 @@ namespace ILLink.Shared
 		}
 	}
 
+	// A lattice over dictionaries where the stored values are also from a lattice.
 	public struct DictionaryLattice<TKey, TValue, TValueLattice> : ILattice<DefaultValueDictionary<TKey, TValue>>
 		where TKey : IEquatable<TKey>
 		where TValue : IEquatable<TValue>
@@ -63,6 +62,7 @@ namespace ILLink.Shared
 			ValueLattice = valueLattice;
 			Top = new DefaultValueDictionary<TKey, TValue> (valueLattice.Top);
 		}
+
 		public DefaultValueDictionary<TKey, TValue> Meet (DefaultValueDictionary<TKey, TValue> left, DefaultValueDictionary<TKey, TValue> right)
 		{
 			var met = new DefaultValueDictionary<TKey, TValue> (left);

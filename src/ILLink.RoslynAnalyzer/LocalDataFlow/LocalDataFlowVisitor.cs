@@ -10,9 +10,8 @@ using Microsoft.CodeAnalysis.Operations;
 
 namespace ILLink.RoslynAnalyzer
 {
-	// Visitor which tracks the values of locals in a block.
-	// It provides extension points that get called whenever a value that comes from a local
-	// reference flows into one of the following:
+	// Visitor which tracks the values of locals in a block. It provides extension points that get called
+	// whenever a value that comes from a tracked local reference flows into one of the following:
 	// - field
 	// - parameter
 	// - method return
@@ -35,23 +34,23 @@ namespace ILLink.RoslynAnalyzer
 			foreach (IOperation operation in block.Block.Operations)
 				Visit (operation, state);
 
-			// Note: ConditionKind != None iff ConditionalSuccessor != null.
-			// But BranchValue may be non-null either way - for None ConditionKind, this just means
-			// that the BranchValue represents a return or throw value associated with the FallThroughSuccessor.
-			// TODO: maybe this needs to be used to detect return values.
-			// if (block.Block.ConditionKind != ControlFlowConditionKind.None)
+			// Blocks may end with a BranchValue computation. Visit the BranchValue operation after all others.
 			IOperation? branchValueOperation = block.Block.BranchValue;
 			if (branchValueOperation != null) {
 				var branchValue = Visit (branchValueOperation, state);
+
+				// BranchValue may represent a value used in a conditional branch to the ConditionalSuccessor - if so, we are done.
+
+				// If not, the BranchValue represents a return or throw value associated with the FallThroughSuccessor of this block.
+				// (ConditionalSuccessor == null iff ConditionKind == None).
 				if (block.Block.ConditionKind == ControlFlowConditionKind.None) {
-					// this means it's a return value or throw value associated with the fall-through successor.
-					// TODO: how to deal with throw values?
+					// This means it's a return value or throw value associated with the fall-through successor.
 
 					// Return statements with return values are represented in the control flow graph as
 					// a branch value operation that computes the return value. The return operation itself is the parent
 					// of the branch value operation.
 
-					// Get the actual return operation (not the branch value operation that provides the return value).
+					// Get the actual "return Foo;" operation (not the branch value operation "Foo").
 					// This should be used as the location of the warning. This is important to provide the right
 					// warning location and because warnings are disambiguated based on the operation.
 					var parentSyntax = branchValueOperation.Syntax.Parent;
@@ -59,9 +58,7 @@ namespace ILLink.RoslynAnalyzer
 						throw new InvalidOperationException ();
 
 					var parentOperation = Context.Compilation.GetSemanticModel (branchValueOperation.Syntax.SyntaxTree).GetOperation (parentSyntax);
-					// operation.Syntax.Parent
 
-					// TODO: this could also be a throw operation.
 					if (parentOperation is IThrowOperation)
 						throw new NotImplementedException ();
 
@@ -73,26 +70,35 @@ namespace ILLink.RoslynAnalyzer
 			}
 		}
 
+		public abstract void HandleAssignment (TValue source, TValue target, IOperation operation);
+
+		public abstract void HandleReceiverArgument (TValue receiver, IInvocationOperation operation);
+
+		public abstract void HandleArgument (TValue argument, IArgumentOperation operation);
+
+		// This takes an IOperation rather than an IReturnOperation because the return value
+		// may (must?) come from BranchValue of an operation whose FallThroughSuccessor is the exit block.
+		public abstract void HandleReturnValue (TValue returnValue, IOperation operation);
+
 #pragma warning disable CS8765
-		// TODO: do we really want to override with a non-nullable return value?
-		// What about operations which don't have a return value? It may be OK to model both
-		// (untracked values, and the result of operations which don't return anything) as Top values.
+		// Override with a non-nullable return value to prevent some warnings.
+		// This is safe because the interface constraint on TValue ensures that it's not a nullable type.
 		public override TValue Visit (IOperation operation, LocalState<TValue> argument) => operation.Accept (this, argument)!;
 #pragma warning restore CS8765
 
 		public override TValue DefaultVisit (IOperation operation, LocalState<TValue> state)
 		{
 			// The default visitor preserves the local state. Any unimplemented operations will not
-			// have their effects tracked in the state.
+			// have their effects reflected in the tracked state.
 			return LocalStateLattice.Lattice.ValueLattice.Top;
 		}
 
-		public override TValue? VisitLocalReference (ILocalReferenceOperation operation, LocalState<TValue> state)
+		public override TValue VisitLocalReference (ILocalReferenceOperation operation, LocalState<TValue> state)
 		{
 			return state.Get (new LocalKey (operation.Local));
 		}
 
-		public override TValue? VisitSimpleAssignment (ISimpleAssignmentOperation operation, LocalState<TValue> state)
+		public override TValue VisitSimpleAssignment (ISimpleAssignmentOperation operation, LocalState<TValue> state)
 		{
 			var targetValue = Visit (operation.Target, state);
 			var value = Visit (operation.Value, state);
@@ -104,43 +110,30 @@ namespace ILLink.RoslynAnalyzer
 			case IParameterReferenceOperation:
 				// Extension point for assignments to "interesting" targets.
 				// Doesn't get called for assignments to locals, which are handled above.
-				// Or would it be useful for the extension point to include local assignments?
 				HandleAssignment (value, targetValue, operation);
 				break;
 			case IPropertyReferenceOperation:
-			// TODO. attribute property setters
+				// TODO: when setting a property in an attribute, target is an IPropertyReference.
 			case IArrayElementReferenceOperation:
-				// TODO: array[0] in MethodReturnParameterDataFlow.
-				// we don't track array elements yet
+				// TODO
 				break;
-			// DiscardOperation...
+			// TODO: DiscardOperation
 			default:
 				throw new NotImplementedException (operation.Target.GetType ().ToString ());
 			}
 			return value;
 		}
 
-		public abstract void HandleAssignment (TValue source, TValue target, IOperation operation);
-
-		public abstract void HandleReceiverArgument (TValue receiver, IInvocationOperation operation);
-
-		public abstract void HandleArgument (TValue argument, IArgumentOperation operation);
-
-		// This doesn't necessarily take an IReturnOperation (does it ever?)
-		// The return value may come from BranchValue of an opertaion whose FallThroughSuccessor
-		// is the exit block.
-		public abstract void HandleReturnValue (TValue returnValue, IOperation operation);
-
 		// Similar to VisitLocalReference
-		public override TValue? VisitFlowCaptureReference (IFlowCaptureReferenceOperation operation, LocalState<TValue> state)
+		public override TValue VisitFlowCaptureReference (IFlowCaptureReferenceOperation operation, LocalState<TValue> state)
 		{
 			return state.Get (new LocalKey (operation.Id));
 		}
 
 		// Similar to VisitSimpleAssignment when assigning to a local, but for values which are captured without a
-		// corresponding local variable.
-		// The "flow capture" is like a local assignment, and the "flow capture reference" is like a local reference.
-		public override TValue? VisitFlowCapture (IFlowCaptureOperation operation, LocalState<TValue> state)
+		// corresponding local variable. The "flow capture" is like a local assignment, and the "flow capture reference"
+		// is like a local reference.
+		public override TValue VisitFlowCapture (IFlowCaptureOperation operation, LocalState<TValue> state)
 		{
 			TValue value = Visit (operation.Value, state);
 			state.Set (new LocalKey (operation.Id), value);
