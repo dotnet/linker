@@ -113,7 +113,7 @@ namespace ILLink.RoslynAnalyzer
 				HandleAssignment (value, targetValue, operation);
 				break;
 			case IPropertyReferenceOperation:
-				// TODO: when setting a property in an attribute, target is an IPropertyReference.
+			// TODO: when setting a property in an attribute, target is an IPropertyReference.
 			case IArrayElementReferenceOperation:
 				// TODO
 				break;

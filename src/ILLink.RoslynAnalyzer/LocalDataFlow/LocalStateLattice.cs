@@ -47,7 +47,8 @@ namespace ILLink.RoslynAnalyzer
 	{
 		public readonly DictionaryLattice<LocalKey, TValue, TValueLattice> Lattice;
 
-		public LocalStateLattice (TValueLattice valueLattice) {
+		public LocalStateLattice (TValueLattice valueLattice)
+		{
 			Lattice = new DictionaryLattice<LocalKey, TValue, TValueLattice> (valueLattice);
 			Top = new (Lattice.Top);
 		}
