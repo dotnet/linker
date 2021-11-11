@@ -2,9 +2,10 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System;
+using ILLink.Shared;
 using Microsoft.CodeAnalysis;
 
-using MultiValue = ILLink.Shared.HashSetWrapper<ILLink.Shared.SingleValue>;
+using MultiValue = ILLink.Shared.ValueSet<ILLink.Shared.SingleValue>;
 
 namespace ILLink.RoslynAnalyzer
 {
@@ -31,9 +32,6 @@ namespace ILLink.RoslynAnalyzer
 				Operation == other.Operation;
 		}
 
-		public override int GetHashCode ()
-		{
-			return (Source.GetHashCode () * -1521134295 + Target.GetHashCode ()) * -1521134295 + Operation.GetHashCode ();
-		}
+		public override int GetHashCode () => HashUtils.Combine (Source, Target, Operation);
 	}
 }

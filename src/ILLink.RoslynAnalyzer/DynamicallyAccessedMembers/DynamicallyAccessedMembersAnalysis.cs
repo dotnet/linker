@@ -49,8 +49,8 @@ namespace ILLink.RoslynAnalyzer
 
 	public class DynamicallyAccessedMembersAnalysis
 		: ForwardDataFlowAnalysis<
-			LocalState<HashSetWrapper<SingleValue>>,
-			LocalStateLattice<HashSetWrapper<SingleValue>, HashSetLattice<SingleValue>>,
+			LocalState<ValueSet<SingleValue>>,
+			LocalStateLattice<ValueSet<SingleValue>, ValueSetLattice<SingleValue>>,
 			BlockWrapper,
 			ControlFlowGraphWrapper,
 			DynamicallyAccessedMembersVisitor
@@ -58,7 +58,7 @@ namespace ILLink.RoslynAnalyzer
 	{
 		readonly ControlFlowGraphWrapper ControlFlowGraph;
 
-		readonly LocalStateLattice<HashSetWrapper<SingleValue>, HashSetLattice<SingleValue>> Lattice;
+		readonly LocalStateLattice<ValueSet<SingleValue>, ValueSetLattice<SingleValue>> Lattice;
 
 		DynamicallyAccessedMembersVisitor? Visitor;
 
@@ -67,7 +67,7 @@ namespace ILLink.RoslynAnalyzer
 		public DynamicallyAccessedMembersAnalysis (OperationBlockAnalysisContext context, ControlFlowGraph cfg)
 		{
 			ControlFlowGraph = new ControlFlowGraphWrapper (cfg);
-			Lattice = new (new HashSetLattice<SingleValue> ());
+			Lattice = new (new ValueSetLattice<SingleValue> ());
 			Visitor = null;
 			Context = context;
 		}

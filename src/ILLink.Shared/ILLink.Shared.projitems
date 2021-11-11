@@ -10,17 +10,20 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)Annotations.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Dataflow/DefaultValueDictionary.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Dataflow/DictionaryLattice.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Dataflow/ForwardDataFlowAnalysis.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Dataflow/HashSetLattice.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Dataflow/IControlFlowGraph.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Dataflow/ILattice.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Dataflow/ITransfer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Dataflow/SingleValue.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Dataflow/ValueSet.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Dataflow/ValueSetLattice.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DiagnosticCategory.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DiagnosticId.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DiagnosticString.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)DynamicallyAccessedMembers/DynamicallyAccessedMembersValue.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)DynamicallyAccessedMembers/ValueWithDynamicallyAccessedMembers.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)HashUtils.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MessageFormat.cs" />
   </ItemGroup>
   <ItemGroup>

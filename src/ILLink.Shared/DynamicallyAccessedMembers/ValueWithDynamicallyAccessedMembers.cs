@@ -5,7 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace ILLink.Shared
 {
-	public abstract class DynamicallyAccessedMembersValue : SingleValue
+	public abstract class ValueWithDynamicallyAccessedMembers : SingleValue
 	{
 		public abstract DynamicallyAccessedMemberTypes DynamicallyAccessedMemberTypes { get; }
 	}

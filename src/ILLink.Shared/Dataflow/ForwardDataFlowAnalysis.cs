@@ -6,7 +6,7 @@ using System;
 namespace ILLink.Shared
 {
 	public abstract class ForwardDataFlowAnalysis<TValue, TLattice, TBlock, TControlFlowGraph, TTransfer>
-		where TValue : class, IEquatable<TValue>
+		where TValue : IEquatable<TValue>
 		where TLattice : ILattice<TValue>
 		where TBlock : IEquatable<TBlock>
 		where TControlFlowGraph : IControlFlowGraph<TBlock>
@@ -18,6 +18,13 @@ namespace ILLink.Shared
 		{
 			// Initialize output of each block to the Top value of the lattice
 			DefaultValueDictionary<TBlock, TValue> blockOutput = new (lattice.Top);
+
+			// For now, the actual dataflow algorithm is the simplest possible version.
+			// It is written to be obviously correct, but has not been optimized for performance
+			// at all. As written it will almost always perform unnecessary passes over the entire
+			// control flow graph. The core abstractions shouldn't need to change even when we write
+			// an optimized version of this algorithm - ideally any optimizations will be generic,
+			// not specific to a particular analysis.
 
 			bool changed = true;
 			while (changed) {
@@ -38,7 +45,7 @@ namespace ILLink.Shared
 					if (!blockOutput.Get (block).Equals (blockState))
 						changed = true;
 
-					blockOutput[block] = blockState;
+					blockOutput.Set (block, blockState);
 				}
 			}
 		}

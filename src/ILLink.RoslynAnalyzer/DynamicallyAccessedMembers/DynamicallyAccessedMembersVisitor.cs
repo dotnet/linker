@@ -6,18 +6,18 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 
-using MultiValue = ILLink.Shared.HashSetWrapper<ILLink.Shared.SingleValue>;
-using StateValue = ILLink.RoslynAnalyzer.LocalState<ILLink.Shared.HashSetWrapper<ILLink.Shared.SingleValue>>;
+using MultiValue = ILLink.Shared.ValueSet<ILLink.Shared.SingleValue>;
+using StateValue = ILLink.RoslynAnalyzer.LocalState<ILLink.Shared.ValueSet<ILLink.Shared.SingleValue>>;
 
 namespace ILLink.RoslynAnalyzer
 {
-	public class DynamicallyAccessedMembersVisitor : LocalDataFlowVisitor<MultiValue, HashSetLattice<SingleValue>>
+	public class DynamicallyAccessedMembersVisitor : LocalDataFlowVisitor<MultiValue, ValueSetLattice<SingleValue>>
 	{
 		public readonly ReflectionAccessStore ReflectionAccesses;
 
 
 		public DynamicallyAccessedMembersVisitor (
-			LocalStateLattice<MultiValue, HashSetLattice<SingleValue>> lattice,
+			LocalStateLattice<MultiValue, ValueSetLattice<SingleValue>> lattice,
 			OperationBlockAnalysisContext context
 		) : base (lattice, context)
 		{

@@ -80,7 +80,7 @@ namespace ILLink.RoslynAnalyzer
 			}
 		}
 
-		static IEnumerable<Diagnostic> GetDynamicallyAccessedMembersDiagnostics (HashSetWrapper<SingleValue> source, HashSetWrapper<SingleValue> target, Location location)
+		static IEnumerable<Diagnostic> GetDynamicallyAccessedMembersDiagnostics (ValueSet<SingleValue> source, ValueSet<SingleValue> target, Location location)
 		{
 			if (target.Values == null)
 				yield break;
@@ -91,7 +91,7 @@ namespace ILLink.RoslynAnalyzer
 			}
 		}
 
-		static IEnumerable<Diagnostic> GetDynamicallyAccessedMembersDiagnostics (HashSetWrapper<SingleValue> source, SingleValue target, Location location)
+		static IEnumerable<Diagnostic> GetDynamicallyAccessedMembersDiagnostics (ValueSet<SingleValue> source, SingleValue target, Location location)
 		{
 			if (source.Values == null)
 				yield break;

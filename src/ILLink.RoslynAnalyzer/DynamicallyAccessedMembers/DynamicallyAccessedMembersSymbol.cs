@@ -10,7 +10,7 @@ using Microsoft.CodeAnalysis;
 
 namespace ILLink.RoslynAnalyzer
 {
-	public class DynamicallyAccessedMembersSymbol : DynamicallyAccessedMembersValue
+	public class DynamicallyAccessedMembersSymbol : ValueWithDynamicallyAccessedMembers
 	{
 		public readonly ISymbol Source;
 		public readonly bool IsMethodReturn;
@@ -46,7 +46,7 @@ namespace ILLink.RoslynAnalyzer
 
 		public override int GetHashCode ()
 		{
-			return (EqualityContract.GetHashCode () * -1521134295 + SymbolEqualityComparer.Default.GetHashCode (Source)) * -1521134295 + IsMethodReturn.GetHashCode ();
+			return HashUtils.Combine (EqualityContract, SymbolEqualityComparer.Default.GetHashCode (Source), IsMethodReturn);
 		}
 
 #if DEBUG

@@ -25,19 +25,19 @@ namespace ILLink.RoslynAnalyzer
 		}
 	}
 
-	// Derived class exists purely to substitute a concrete LocalKey for TKey of DefaultValueDictionary
-	public class LocalState<TValue> : DefaultValueDictionary<LocalKey, TValue>,
-		IEquatable<LocalState<TValue>>
+	// Wrapper struct exists purely to substitute a concrete LocalKey for TKey of DefaultValueDictionary
+	public struct LocalState<TValue> : IEquatable<LocalState<TValue>>
 		where TValue : IEquatable<TValue>
 	{
-		public LocalState (TValue unknown) : base (unknown) { }
+		public DefaultValueDictionary<LocalKey, TValue> Dictionary;
 
-		public LocalState (DefaultValueDictionary<LocalKey, TValue> defaultValueDictionary)
-			: base (defaultValueDictionary)
-		{
-		}
+		public LocalState (DefaultValueDictionary<LocalKey, TValue> dictionary) => Dictionary = dictionary;
 
-		public bool Equals (LocalState<TValue> other) => base.Equals (other);
+		public bool Equals (LocalState<TValue> other) => Dictionary.Equals (other.Dictionary);
+
+		public TValue Get (LocalKey key) => Dictionary.Get (key);
+
+		public void Set (LocalKey key, TValue value) => Dictionary.Set (key, value);
 	}
 
 	// Wrapper struct exists purely to substitute a concrete LocalKey for TKey of DictionaryLattice
@@ -55,6 +55,6 @@ namespace ILLink.RoslynAnalyzer
 
 		public LocalState<TValue> Top { get; }
 
-		public LocalState<TValue> Meet (LocalState<TValue> left, LocalState<TValue> right) => new (Lattice.Meet (left, right));
+		public LocalState<TValue> Meet (LocalState<TValue> left, LocalState<TValue> right) => new (Lattice.Meet (left.Dictionary, right.Dictionary));
 	}
 }

@@ -5,12 +5,28 @@ using System;
 
 namespace ILLink.Shared
 {
-	// TValue is a class because the typical implementation is a
-	// visitor which modifies the input value instead of creating new immutable ones from the input.
+	// ITransfer represents the transfer functions for a dataflow analysis.
+	// The transfer functions compute the effects of an operation on the set of facts
+	// tracked by a dataflow analysis. This simulates the execution of the operation
+	// on the domain of abstract values tracked in the dataflow analysis.
+
+	// TValue is the type of the information tracked in a dataflow analysis at each program point.
+	// TLattice is the type of the lattice formed by these values.
+
+	// TOperation is a type representing the operations that the transfer function
+	// "simulates". It isn't constrained by the interface, but is typically a basic block,
+	// where the transfer functions are defined in terms of transfer functions for individual
+	// operations in the block.
+
+	// TLattice isn't typically used in the implementation except to provide the "Top" value.
+	// This expresses the conceptual constraint that the transferred values are part of a lattice.
 	public interface ITransfer<TOperation, TValue, TLattice>
-		where TValue : class, IEquatable<TValue>
+		where TValue : IEquatable<TValue>
 		where TLattice : ILattice<TValue>
 	{
+		// Transfer should mutate the input value to reflect the effect of
+		// computing this operation. When using value types, ensure that
+		// any modifications to the values are observable.
 		void Transfer (TOperation operation, TValue value);
 	}
 }
