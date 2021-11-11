@@ -455,9 +455,6 @@ namespace Mono.Linker
 			if (a is GenericParameter genericParameterA && b is GenericParameter genericParameterB)
 				return TypeMatch (genericParameterA, genericParameterB);
 
-			if ((a is null) || (b is null))
-				return a == b;
-
 			return a.FullName == b.FullName;
 		}
 	}
