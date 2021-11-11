@@ -9,7 +9,7 @@ using MultiValue = ILLink.Shared.ValueSet<ILLink.Shared.SingleValue>;
 
 namespace ILLink.RoslynAnalyzer
 {
-	public struct ReflectionAccessPattern : IEquatable<ReflectionAccessPattern>
+	public struct TrimAnalysisPattern : IEquatable<TrimAnalysisPattern>
 	{
 		public readonly MultiValue Source;
 		public readonly MultiValue Target;
@@ -18,14 +18,14 @@ namespace ILLink.RoslynAnalyzer
 		// roslyn or linker to facilitate sharing
 		public readonly IOperation Operation;
 
-		public ReflectionAccessPattern (MultiValue source, MultiValue target, IOperation operation)
+		public TrimAnalysisPattern (MultiValue source, MultiValue target, IOperation operation)
 		{
 			Source = source;
 			Target = target;
 			Operation = operation;
 		}
 
-		public bool Equals (ReflectionAccessPattern other)
+		public bool Equals (TrimAnalysisPattern other)
 		{
 			return Source.Equals (other.Source) &&
 				Target.Equals (other.Target) &&

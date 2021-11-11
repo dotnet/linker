@@ -13,7 +13,7 @@ namespace ILLink.RoslynAnalyzer
 {
 	public class DynamicallyAccessedMembersVisitor : LocalDataFlowVisitor<MultiValue, ValueSetLattice<SingleValue>>
 	{
-		public readonly ReflectionAccessStore ReflectionAccesses;
+		public readonly TrimAnalysisPatternStore TrimAnalysisPatterns;
 
 
 		public DynamicallyAccessedMembersVisitor (
@@ -21,7 +21,7 @@ namespace ILLink.RoslynAnalyzer
 			OperationBlockAnalysisContext context
 		) : base (lattice, context)
 		{
-			ReflectionAccesses = new ReflectionAccessStore ();
+			TrimAnalysisPatterns = new TrimAnalysisPatternStore ();
 		}
 
 		// Override visitor methods to create tracked values when visiting operations
@@ -95,7 +95,7 @@ namespace ILLink.RoslynAnalyzer
 			if (target.Equals (TopValue))
 				return;
 
-			ReflectionAccesses.Add (new ReflectionAccessPattern (source, target, operation));
+			TrimAnalysisPatterns.Add (new TrimAnalysisPattern (source, target, operation));
 		}
 
 		public override void HandleArgument (MultiValue argumentValue, IArgumentOperation operation)
@@ -106,7 +106,7 @@ namespace ILLink.RoslynAnalyzer
 
 			var parameter = new MultiValue (new DynamicallyAccessedMembersSymbol (operation.Parameter));
 
-			ReflectionAccesses.Add (new ReflectionAccessPattern (
+			TrimAnalysisPatterns.Add (new TrimAnalysisPattern (
 				argumentValue,
 				parameter,
 				operation
@@ -120,7 +120,7 @@ namespace ILLink.RoslynAnalyzer
 
 			MultiValue implicitReceiverParameter = new MultiValue (new DynamicallyAccessedMembersSymbol (operation.TargetMethod, isMethodReturn: false));
 
-			ReflectionAccesses.Add (new ReflectionAccessPattern (
+			TrimAnalysisPatterns.Add (new TrimAnalysisPattern (
 				receieverValue,
 				implicitReceiverParameter,
 				operation
@@ -131,7 +131,7 @@ namespace ILLink.RoslynAnalyzer
 		{
 			var returnParameter = new MultiValue (new DynamicallyAccessedMembersSymbol ((IMethodSymbol) Context.OwningSymbol, isMethodReturn: true));
 
-			ReflectionAccesses.Add (new ReflectionAccessPattern (
+			TrimAnalysisPatterns.Add (new TrimAnalysisPattern (
 				returnValue,
 				returnParameter,
 				operation
