@@ -41,11 +41,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 		public BlockProxy Entry => new BlockProxy (ControlFlowGraph.Blocks[0]);
 
-		public IEnumerable<BlockProxy> GetPredecessors (BlockProxy block)
-		{
-			foreach (var predecessor in block.Block.Predecessors)
-				yield return new (predecessor.Source);
-		}
+		public IEnumerable<BlockProxy> GetPredecessors (BlockProxy block) => block.Predecessors;
 	}
 
 	public class TrimDataFlowAnalysis

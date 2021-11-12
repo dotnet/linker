@@ -5,6 +5,9 @@ using System;
 
 namespace ILLink.Shared.DataFlow
 {
+	// A generic implementation of a forward dataflow analysis. Forward means that it flows facts
+	// across code in the order of execution, starting from the beginning of a method,
+	// and merging values from predecessors.
 	public abstract class ForwardDataFlowAnalysis<TValue, TLattice, TBlock, TControlFlowGraph, TTransfer>
 		where TValue : IEquatable<TValue>
 		where TLattice : ILattice<TValue>

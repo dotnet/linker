@@ -81,18 +81,16 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 		// may (must?) come from BranchValue of an operation whose FallThroughSuccessor is the exit block.
 		public abstract void HandleReturnValue (TValue returnValue, IOperation operation);
 
-#pragma warning disable CS8765
 		// Override with a non-nullable return value to prevent some warnings.
-		// This is safe because the interface constraint on TValue ensures that it's not a nullable type.
-		public override TValue Visit (IOperation operation, LocalState<TValue> argument) => operation.Accept (this, argument)!;
-#pragma warning restore CS8765
+		// The interface constraint on TValue ensures that it's not a nullable type, so this is safe as long
+		// as no overrides return default(TValue).
+		public override TValue Visit (IOperation? operation, LocalState<TValue> argument) => operation != null ? operation.Accept (this, argument)! : TopValue;
 
-		public override TValue DefaultVisit (IOperation operation, LocalState<TValue> state)
-		{
-			// The default visitor preserves the local state. Any unimplemented operations will not
-			// have their effects reflected in the tracked state.
-			return LocalStateLattice.Lattice.ValueLattice.Top;
-		}
+		internal virtual TValue VisitNoneOperation (IOperation operation, LocalState<TValue> argument) => TopValue;
+
+		// The default visitor preserves the local state. Any unimplemented operations will not
+		// have their effects reflected in the tracked state.
+		public override TValue DefaultVisit (IOperation operation, LocalState<TValue> state) => TopValue;
 
 		public override TValue VisitLocalReference (ILocalReferenceOperation operation, LocalState<TValue> state)
 		{
@@ -141,13 +139,13 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			return value;
 		}
 
-		public override TValue? VisitExpressionStatement (IExpressionStatementOperation operation, LocalState<TValue> state)
+		public override TValue VisitExpressionStatement (IExpressionStatementOperation operation, LocalState<TValue> state)
 		{
 			Visit (operation.Operation, state);
 			return TopValue;
 		}
 
-		public override TValue? VisitInvocation (IInvocationOperation operation, LocalState<TValue> state)
+		public override TValue VisitInvocation (IInvocationOperation operation, LocalState<TValue> state)
 		{
 			if (operation.Instance != null) {
 				var instanceValue = Visit (operation.Instance, state);
@@ -160,14 +158,14 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			return TopValue;
 		}
 
-		public override TValue? VisitArgument (IArgumentOperation operation, LocalState<TValue> state)
+		public override TValue VisitArgument (IArgumentOperation operation, LocalState<TValue> state)
 		{
 			var value = Visit (operation.Value, state);
 			HandleArgument (value, operation);
 			return value;
 		}
 
-		public override TValue? VisitReturn (IReturnOperation operation, LocalState<TValue> state)
+		public override TValue VisitReturn (IReturnOperation operation, LocalState<TValue> state)
 		{
 			if (operation.ReturnedValue != null) {
 				var value = Visit (operation.ReturnedValue, state);
@@ -178,7 +176,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			return TopValue;
 		}
 
-		public override TValue? VisitConversion (IConversionOperation operation, LocalState<TValue> state)
+		public override TValue VisitConversion (IConversionOperation operation, LocalState<TValue> state)
 		{
 			var operandValue = Visit (operation.Operand, state);
 			return operation.OperatorMethod == null ? operandValue : TopValue;

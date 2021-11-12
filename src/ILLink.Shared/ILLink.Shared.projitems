@@ -23,6 +23,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)DiagnosticId.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DiagnosticString.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)HashUtils.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)IsExternalInit.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MessageFormat.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TrimAnalysis/ValueWithDynamicallyAccessedMembers.cs" />
   </ItemGroup>

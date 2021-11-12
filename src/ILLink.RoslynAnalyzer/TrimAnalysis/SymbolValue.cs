@@ -2,7 +2,6 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using ILLink.Shared;
@@ -11,7 +10,7 @@ using Microsoft.CodeAnalysis;
 
 namespace ILLink.RoslynAnalyzer.TrimAnalysis
 {
-	public class SymbolValue : ValueWithDynamicallyAccessedMembers
+	public record SymbolValue : ValueWithDynamicallyAccessedMembers
 	{
 		public readonly ISymbol Source;
 		public readonly bool IsMethodReturn;
@@ -36,21 +35,6 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 				? ((IMethodSymbol) Source).GetDynamicallyAccessedMemberTypesOnReturnType ()
 				: Source.GetDynamicallyAccessedMemberTypes ();
 
-		protected override Type EqualityContract => typeof (SymbolValue);
-
-		public virtual bool Equals (SymbolValue other)
-		{
-			return this == other || (other != null && EqualityContract == other.EqualityContract &&
-				EqualityComparer<ISymbol>.Default.Equals (Source, other.Source) &&
-				EqualityComparer<bool>.Default.Equals (IsMethodReturn, other.IsMethodReturn));
-		}
-
-		public override int GetHashCode ()
-		{
-			return HashUtils.Combine (EqualityContract, SymbolEqualityComparer.Default.GetHashCode (Source), IsMethodReturn);
-		}
-
-#if DEBUG
 		public override string ToString ()
 		{
 			StringBuilder sb = new ();
@@ -78,6 +62,5 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			sb.Append ("[").Append (memberTypesStr).Append ("]");
 			return sb.ToString ();
 		}
-#endif
 	}
 }

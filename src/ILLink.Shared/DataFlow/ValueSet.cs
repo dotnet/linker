@@ -51,15 +51,7 @@ namespace ILLink.Shared.DataFlow
 		{
 			StringBuilder sb = new ();
 			sb.Append ("{");
-			if (Values != null) {
-				bool first = true;
-				foreach (var v in Values) {
-					if (!first)
-						sb.Append (",");
-					first = false;
-					sb.Append (v.ToString ());
-				}
-			}
+			sb.Append (string.Join (",", Values?.Select (v => v.ToString ()) ?? Enumerable.Empty<string> ()));
 			sb.Append ("}");
 			return sb.ToString ();
 		}
