@@ -1,7 +1,6 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-using System;
 using System.Collections.Generic;
 using ILLink.RoslynAnalyzer.DataFlow;
 using ILLink.Shared.DataFlow;
@@ -10,28 +9,24 @@ using Microsoft.CodeAnalysis.FlowAnalysis;
 
 namespace ILLink.RoslynAnalyzer.TrimAnalysis
 {
-	public readonly struct BlockProxy : IEquatable<BlockProxy>
+	// Blocks should be usable as keys of a dictionary.
+	// The record equality implementation will check for reference equality
+	// on the underlying BasicBlock, so uses of this class should not expect
+	// any kind of value equality for different block instances. In practice
+	// this should be fine as long as we consistently use block instances from
+	// a single ControlFlowGraph.
+	public readonly record struct BlockProxy (BasicBlock Block)
 	{
-		public readonly BasicBlock Block;
-
-		public BlockProxy (BasicBlock block) => Block = block;
-
 		public IEnumerable<BlockProxy> Predecessors {
 			get {
 				foreach (var predecessor in Block.Predecessors)
 					yield return new BlockProxy (predecessor.Source);
 			}
 		}
-
-		public bool Equals (BlockProxy other) => Block.Equals (other.Block);
 	}
 
-	public readonly struct ControlFlowGraphProxy : IControlFlowGraph<BlockProxy>
+	public readonly record struct ControlFlowGraphProxy (ControlFlowGraph ControlFlowGraph) : IControlFlowGraph<BlockProxy>
 	{
-		readonly ControlFlowGraph ControlFlowGraph;
-
-		public ControlFlowGraphProxy (ControlFlowGraph cfg) => ControlFlowGraph = cfg;
-
 		public IEnumerable<BlockProxy> Blocks {
 			get {
 				foreach (var block in ControlFlowGraph.Blocks)
