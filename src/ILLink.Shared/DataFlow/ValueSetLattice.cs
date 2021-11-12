@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace ILLink.Shared
+namespace ILLink.Shared.DataFlow
 {
 	// A lattice over ValrueSets where the Meet operation is just set union.
 	public struct ValueSetLattice<TValue> : ILattice<ValueSet<TValue>>

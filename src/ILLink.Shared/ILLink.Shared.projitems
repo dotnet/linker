@@ -10,21 +10,21 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)Annotations.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Dataflow/DefaultValueDictionary.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Dataflow/DictionaryLattice.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Dataflow/ForwardDataFlowAnalysis.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Dataflow/IControlFlowGraph.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Dataflow/ILattice.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Dataflow/ITransfer.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Dataflow/SingleValue.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Dataflow/ValueSet.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Dataflow/ValueSetLattice.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)DataFlow/DefaultValueDictionary.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)DataFlow/DictionaryLattice.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)DataFlow/ForwardDataFlowAnalysis.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)DataFlow/IControlFlowGraph.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)DataFlow/ILattice.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)DataFlow/ITransfer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)DataFlow/SingleValue.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)DataFlow/ValueSet.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)DataFlow/ValueSetLattice.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DiagnosticCategory.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DiagnosticId.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DiagnosticString.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)DynamicallyAccessedMembers/ValueWithDynamicallyAccessedMembers.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)HashUtils.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MessageFormat.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TrimAnalysis/ValueWithDynamicallyAccessedMembers.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)SharedStrings.resx">

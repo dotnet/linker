@@ -3,7 +3,7 @@
 
 using System;
 
-namespace ILLink.Shared
+namespace ILLink.Shared.DataFlow
 {
 	// ITransfer represents the transfer functions for a dataflow analysis.
 	// The transfer functions compute the effects of an operation on the set of facts

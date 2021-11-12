@@ -3,70 +3,71 @@
 
 using System;
 using System.Collections.Generic;
-using ILLink.Shared;
+using ILLink.RoslynAnalyzer.DataFlow;
+using ILLink.Shared.DataFlow;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.FlowAnalysis;
 
-namespace ILLink.RoslynAnalyzer
+namespace ILLink.RoslynAnalyzer.TrimAnalysis
 {
-	public readonly struct BlockWrapper : IEquatable<BlockWrapper>
+	public readonly struct BlockProxy : IEquatable<BlockProxy>
 	{
 		public readonly BasicBlock Block;
 
-		public BlockWrapper (BasicBlock block) => Block = block;
+		public BlockProxy (BasicBlock block) => Block = block;
 
-		public IEnumerable<BlockWrapper> Predecessors {
+		public IEnumerable<BlockProxy> Predecessors {
 			get {
 				foreach (var predecessor in Block.Predecessors)
-					yield return new BlockWrapper (predecessor.Source);
+					yield return new BlockProxy (predecessor.Source);
 			}
 		}
 
-		public bool Equals (BlockWrapper other) => Block.Equals (other.Block);
+		public bool Equals (BlockProxy other) => Block.Equals (other.Block);
 	}
 
-	public readonly struct ControlFlowGraphWrapper : IControlFlowGraph<BlockWrapper>
+	public readonly struct ControlFlowGraphProxy : IControlFlowGraph<BlockProxy>
 	{
 		readonly ControlFlowGraph ControlFlowGraph;
 
-		public ControlFlowGraphWrapper (ControlFlowGraph cfg) => ControlFlowGraph = cfg;
+		public ControlFlowGraphProxy (ControlFlowGraph cfg) => ControlFlowGraph = cfg;
 
-		public IEnumerable<BlockWrapper> Blocks {
+		public IEnumerable<BlockProxy> Blocks {
 			get {
 				foreach (var block in ControlFlowGraph.Blocks)
-					yield return new BlockWrapper (block);
+					yield return new BlockProxy (block);
 			}
 		}
 
-		public BlockWrapper Entry => new BlockWrapper (ControlFlowGraph.Blocks[0]);
+		public BlockProxy Entry => new BlockProxy (ControlFlowGraph.Blocks[0]);
 
-		public IEnumerable<BlockWrapper> GetPredecessors (BlockWrapper block)
+		public IEnumerable<BlockProxy> GetPredecessors (BlockProxy block)
 		{
 			foreach (var predecessor in block.Block.Predecessors)
 				yield return new (predecessor.Source);
 		}
 	}
 
-	public class DynamicallyAccessedMembersAnalysis
+	public class TrimDataFlowAnalysis
 		: ForwardDataFlowAnalysis<
 			LocalState<ValueSet<SingleValue>>,
 			LocalStateLattice<ValueSet<SingleValue>, ValueSetLattice<SingleValue>>,
-			BlockWrapper,
-			ControlFlowGraphWrapper,
-			DynamicallyAccessedMembersVisitor
+			BlockProxy,
+			ControlFlowGraphProxy,
+			TrimAnalysisVisitor
 		>
 	{
-		readonly ControlFlowGraphWrapper ControlFlowGraph;
+		readonly ControlFlowGraphProxy ControlFlowGraph;
 
 		readonly LocalStateLattice<ValueSet<SingleValue>, ValueSetLattice<SingleValue>> Lattice;
 
-		DynamicallyAccessedMembersVisitor? Visitor;
+		TrimAnalysisVisitor? Visitor;
 
 		readonly OperationBlockAnalysisContext Context;
 
-		public DynamicallyAccessedMembersAnalysis (OperationBlockAnalysisContext context, ControlFlowGraph cfg)
+		public TrimDataFlowAnalysis (OperationBlockAnalysisContext context, ControlFlowGraph cfg)
 		{
-			ControlFlowGraph = new ControlFlowGraphWrapper (cfg);
+			ControlFlowGraph = new ControlFlowGraphProxy (cfg);
 			Lattice = new (new ValueSetLattice<SingleValue> ());
 			Visitor = null;
 			Context = context;
@@ -77,7 +78,7 @@ namespace ILLink.RoslynAnalyzer
 			if (Visitor != null)
 				return Visitor.TrimAnalysisPatterns;
 
-			Visitor = new DynamicallyAccessedMembersVisitor (Lattice, Context);
+			Visitor = new TrimAnalysisVisitor (Lattice, Context);
 			Fixpoint (ControlFlowGraph, Lattice, Visitor);
 			return Visitor.TrimAnalysisPatterns;
 		}

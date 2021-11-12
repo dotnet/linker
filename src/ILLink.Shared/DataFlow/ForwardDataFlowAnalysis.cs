@@ -3,7 +3,7 @@
 
 using System;
 
-namespace ILLink.Shared
+namespace ILLink.Shared.DataFlow
 {
 	public abstract class ForwardDataFlowAnalysis<TValue, TLattice, TBlock, TControlFlowGraph, TTransfer>
 		where TValue : IEquatable<TValue>

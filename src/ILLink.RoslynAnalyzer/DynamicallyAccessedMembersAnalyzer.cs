@@ -5,7 +5,9 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using ILLink.RoslynAnalyzer.TrimAnalysis;
 using ILLink.Shared;
+using ILLink.Shared.DataFlow;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.FlowAnalysis;
@@ -42,9 +44,9 @@ namespace ILLink.RoslynAnalyzer
 
 				foreach (var operationBlock in context.OperationBlocks) {
 					ControlFlowGraph cfg = context.GetControlFlowGraph (operationBlock);
-					DynamicallyAccessedMembersAnalysis damAnalysis = new (context, cfg);
+					TrimDataFlowAnalysis trimDataFlowAnalysis = new (context, cfg);
 
-					foreach (TrimAnalysisPattern trimAnalysisPattern in damAnalysis.GetTrimAnalysisPatterns ()) {
+					foreach (TrimAnalysisPattern trimAnalysisPattern in trimDataFlowAnalysis.GetTrimAnalysisPatterns ()) {
 						foreach (var diagnostic in GetDynamicallyAccessedMembersDiagnostics (trimAnalysisPattern.Source, trimAnalysisPattern.Target, trimAnalysisPattern.Operation.Syntax.GetLocation ()))
 							context.ReportDiagnostic (diagnostic);
 					}
@@ -73,8 +75,8 @@ namespace ILLink.RoslynAnalyzer
 				return;
 
 			for (int i = 0; i < targetMethod.TypeParameters.Length; i++) {
-				var sourceValue = new DynamicallyAccessedMembersSymbol (targetMethod.TypeArguments[i]);
-				var targetValue = new DynamicallyAccessedMembersSymbol (targetMethod.TypeParameters[i]);
+				var sourceValue = new SymbolValue (targetMethod.TypeArguments[i]);
+				var targetValue = new SymbolValue (targetMethod.TypeParameters[i]);
 				foreach (var diagnostic in GetDynamicallyAccessedMembersDiagnostics (sourceValue, targetValue, invocationOperation.Syntax.GetLocation ()))
 					context.ReportDiagnostic (diagnostic);
 			}
@@ -104,7 +106,7 @@ namespace ILLink.RoslynAnalyzer
 
 		static IEnumerable<Diagnostic> GetDynamicallyAccessedMembersDiagnostics (SingleValue sourceValue, SingleValue targetValue, Location location)
 		{
-			if (sourceValue is not DynamicallyAccessedMembersSymbol source || targetValue is not DynamicallyAccessedMembersSymbol target)
+			if (sourceValue is not SymbolValue source || targetValue is not SymbolValue target)
 				yield break;
 
 			Debug.Assert (target.Source.Kind is not SymbolKind.NamedType);
@@ -120,7 +122,7 @@ namespace ILLink.RoslynAnalyzer
 			yield return Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (diag), location, diagArgs);
 		}
 
-		static DiagnosticId GetDiagnosticId (DynamicallyAccessedMembersSymbol source, DynamicallyAccessedMembersSymbol target)
+		static DiagnosticId GetDiagnosticId (SymbolValue source, SymbolValue target)
 			=> (source.Source.Kind, target.Source.Kind) switch {
 				(SymbolKind.Parameter, SymbolKind.Field) => DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsField,
 				(SymbolKind.Parameter, SymbolKind.Method) => target.IsMethodReturn ?
@@ -157,7 +159,7 @@ namespace ILLink.RoslynAnalyzer
 				_ => throw new NotImplementedException ()
 			};
 
-		static string[] GetDiagnosticArguments (DynamicallyAccessedMembersSymbol source, DynamicallyAccessedMembersSymbol target, string missingAnnotations)
+		static string[] GetDiagnosticArguments (SymbolValue source, SymbolValue target, string missingAnnotations)
 		{
 			var args = new List<string> ();
 			args.AddRange (GetDiagnosticArguments (target));
@@ -166,7 +168,7 @@ namespace ILLink.RoslynAnalyzer
 			return args.ToArray ();
 		}
 
-		static IEnumerable<string> GetDiagnosticArguments (DynamicallyAccessedMembersSymbol annotatedSymbol)
+		static IEnumerable<string> GetDiagnosticArguments (SymbolValue annotatedSymbol)
 		{
 			ISymbol symbol = annotatedSymbol.Source;
 			var args = new List<string> ();

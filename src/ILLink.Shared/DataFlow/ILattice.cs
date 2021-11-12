@@ -3,7 +3,7 @@
 
 using System;
 
-namespace ILLink.Shared
+namespace ILLink.Shared.DataFlow
 {
 	// ILattice represents a lattice (technically a semilattice) of values.
 	// A semilattice is a set of values along with a meet operation (or greatest lower bound).

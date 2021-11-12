@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace ILLink.Shared
+namespace ILLink.Shared.DataFlow
 {
 	public interface IControlFlowGraph<TBlock>
 		where TBlock : IEquatable<TBlock>

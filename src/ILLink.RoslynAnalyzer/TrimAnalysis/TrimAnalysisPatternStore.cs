@@ -4,10 +4,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using ILLink.Shared;
+using ILLink.Shared.DataFlow;
 using Microsoft.CodeAnalysis;
 
-namespace ILLink.RoslynAnalyzer
+namespace ILLink.RoslynAnalyzer.TrimAnalysis
 {
 	public struct TrimAnalysisPatternStore : IEnumerable<TrimAnalysisPattern>
 	{

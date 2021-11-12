@@ -4,10 +4,9 @@
 using System;
 using ILLink.Shared;
 using Microsoft.CodeAnalysis;
+using MultiValue = ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.SingleValue>;
 
-using MultiValue = ILLink.Shared.ValueSet<ILLink.Shared.SingleValue>;
-
-namespace ILLink.RoslynAnalyzer
+namespace ILLink.RoslynAnalyzer.TrimAnalysis
 {
 	public struct TrimAnalysisPattern : IEquatable<TrimAnalysisPattern>
 	{

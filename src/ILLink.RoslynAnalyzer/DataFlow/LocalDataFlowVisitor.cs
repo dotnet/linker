@@ -2,13 +2,14 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System;
-using ILLink.Shared;
+using ILLink.RoslynAnalyzer.TrimAnalysis;
+using ILLink.Shared.DataFlow;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.FlowAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 
-namespace ILLink.RoslynAnalyzer
+namespace ILLink.RoslynAnalyzer.DataFlow
 {
 	// Visitor which tracks the values of locals in a block. It provides extension points that get called
 	// whenever a value that comes from a tracked local reference flows into one of the following:
@@ -16,7 +17,7 @@ namespace ILLink.RoslynAnalyzer
 	// - parameter
 	// - method return
 	public abstract class LocalDataFlowVisitor<TValue, TValueLattice> : OperationVisitor<LocalState<TValue>, TValue>,
-		ITransfer<BlockWrapper, LocalState<TValue>, LocalStateLattice<TValue, TValueLattice>>
+		ITransfer<BlockProxy, LocalState<TValue>, LocalStateLattice<TValue, TValueLattice>>
 		where TValue : IEquatable<TValue>
 		where TValueLattice : ILattice<TValue>
 	{
@@ -29,7 +30,7 @@ namespace ILLink.RoslynAnalyzer
 		public LocalDataFlowVisitor (LocalStateLattice<TValue, TValueLattice> lattice, OperationBlockAnalysisContext context) =>
 			(LocalStateLattice, Context) = (lattice, context);
 
-		public void Transfer (BlockWrapper block, LocalState<TValue> state)
+		public void Transfer (BlockProxy block, LocalState<TValue> state)
 		{
 			foreach (IOperation operation in block.Block.Operations)
 				Visit (operation, state);

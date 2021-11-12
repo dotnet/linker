@@ -6,38 +6,39 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using ILLink.Shared;
+using ILLink.Shared.TrimAnalysis;
 using Microsoft.CodeAnalysis;
 
-namespace ILLink.RoslynAnalyzer
+namespace ILLink.RoslynAnalyzer.TrimAnalysis
 {
-	public class DynamicallyAccessedMembersSymbol : ValueWithDynamicallyAccessedMembers
+	public class SymbolValue : ValueWithDynamicallyAccessedMembers
 	{
 		public readonly ISymbol Source;
 		public readonly bool IsMethodReturn;
 
-		public DynamicallyAccessedMembersSymbol (IMethodSymbol method, bool isMethodReturn) => (Source, IsMethodReturn) = (method, isMethodReturn);
+		public SymbolValue (IMethodSymbol method, bool isMethodReturn) => (Source, IsMethodReturn) = (method, isMethodReturn);
 
-		public DynamicallyAccessedMembersSymbol (IParameterSymbol parameter) => Source = parameter;
+		public SymbolValue (IParameterSymbol parameter) => Source = parameter;
 
-		public DynamicallyAccessedMembersSymbol (IFieldSymbol field) => Source = field;
+		public SymbolValue (IFieldSymbol field) => Source = field;
 
-		public DynamicallyAccessedMembersSymbol (INamedTypeSymbol type) => Source = type;
+		public SymbolValue (INamedTypeSymbol type) => Source = type;
 
 		// This ctor isn't used for dataflow - it's really just a wrapper
 		// for annotations on type arguments/parameters which are type-checked
 		// by the analyzer (outside of the dataflow analysis).
-		public DynamicallyAccessedMembersSymbol (ITypeSymbol typeArgument) => Source = typeArgument;
+		public SymbolValue (ITypeSymbol typeArgument) => Source = typeArgument;
 
-		public DynamicallyAccessedMembersSymbol (ITypeParameterSymbol typeParameter) => Source = typeParameter;
+		public SymbolValue (ITypeParameterSymbol typeParameter) => Source = typeParameter;
 
 		public override DynamicallyAccessedMemberTypes DynamicallyAccessedMemberTypes =>
 			IsMethodReturn
 				? ((IMethodSymbol) Source).GetDynamicallyAccessedMemberTypesOnReturnType ()
 				: Source.GetDynamicallyAccessedMemberTypes ();
 
-		protected override Type EqualityContract => typeof (DynamicallyAccessedMembersSymbol);
+		protected override Type EqualityContract => typeof (SymbolValue);
 
-		public virtual bool Equals (DynamicallyAccessedMembersSymbol other)
+		public virtual bool Equals (SymbolValue other)
 		{
 			return this == other || (other != null && EqualityContract == other.EqualityContract &&
 				EqualityComparer<ISymbol>.Default.Equals (Source, other.Source) &&

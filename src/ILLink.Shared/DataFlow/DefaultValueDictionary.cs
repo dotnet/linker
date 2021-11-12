@@ -6,7 +6,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace ILLink.Shared
+namespace ILLink.Shared.DataFlow
 {
 	public struct DefaultValueDictionary<TKey, TValue> : IEquatable<DefaultValueDictionary<TKey, TValue>>,
 		IEnumerable<KeyValuePair<TKey, TValue>>

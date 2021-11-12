@@ -2,11 +2,11 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System;
-using ILLink.Shared;
+using ILLink.Shared.DataFlow;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.FlowAnalysis;
 
-namespace ILLink.RoslynAnalyzer
+namespace ILLink.RoslynAnalyzer.DataFlow
 {
 	public readonly struct LocalKey : IEquatable<LocalKey>
 	{

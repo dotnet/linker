@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace ILLink.Shared
+namespace ILLink.Shared.DataFlow
 {
 	public struct ValueSet<TValue> : IEquatable<ValueSet<TValue>>, IEnumerable<TValue>
 		where TValue : notnull

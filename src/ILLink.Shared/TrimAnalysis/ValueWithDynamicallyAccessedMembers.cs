@@ -2,8 +2,9 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System.Diagnostics.CodeAnalysis;
+using ILLink.Shared.DataFlow;
 
-namespace ILLink.Shared
+namespace ILLink.Shared.TrimAnalysis
 {
 	public abstract class ValueWithDynamicallyAccessedMembers : SingleValue
 	{

@@ -3,7 +3,7 @@
 
 using System;
 
-namespace ILLink.Shared
+namespace ILLink.Shared.DataFlow
 {
 	// Similar to ValueNode, and a candidate for future code sharing.
 	// This is a sum type over the various kinds of values we track:

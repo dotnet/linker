@@ -1,22 +1,22 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-using ILLink.Shared;
+using ILLink.RoslynAnalyzer.DataFlow;
+using ILLink.Shared.DataFlow;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
+using MultiValue = ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.SingleValue>;
+using StateValue = ILLink.RoslynAnalyzer.DataFlow.LocalState<ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.SingleValue>>;
 
-using MultiValue = ILLink.Shared.ValueSet<ILLink.Shared.SingleValue>;
-using StateValue = ILLink.RoslynAnalyzer.LocalState<ILLink.Shared.ValueSet<ILLink.Shared.SingleValue>>;
-
-namespace ILLink.RoslynAnalyzer
+namespace ILLink.RoslynAnalyzer.TrimAnalysis
 {
-	public class DynamicallyAccessedMembersVisitor : LocalDataFlowVisitor<MultiValue, ValueSetLattice<SingleValue>>
+	public class TrimAnalysisVisitor : LocalDataFlowVisitor<MultiValue, ValueSetLattice<SingleValue>>
 	{
 		public readonly TrimAnalysisPatternStore TrimAnalysisPatterns;
 
 
-		public DynamicallyAccessedMembersVisitor (
+		public TrimAnalysisVisitor (
 			LocalStateLattice<MultiValue, ValueSetLattice<SingleValue>> lattice,
 			OperationBlockAnalysisContext context
 		) : base (lattice, context)
@@ -36,7 +36,7 @@ namespace ILLink.RoslynAnalyzer
 			// Base logic takes care of visiting arguments, etc.
 			base.VisitInvocation (operation, state);
 
-			return new MultiValue (new DynamicallyAccessedMembersSymbol (operation.TargetMethod, isMethodReturn: true));
+			return new MultiValue (new SymbolValue (operation.TargetMethod, isMethodReturn: true));
 		}
 
 		public override MultiValue VisitConversion (IConversionOperation operation, StateValue state)
@@ -44,14 +44,14 @@ namespace ILLink.RoslynAnalyzer
 			var value = base.VisitConversion (operation, state);
 
 			if (operation.OperatorMethod != null)
-				return new MultiValue (new DynamicallyAccessedMembersSymbol (operation.OperatorMethod, isMethodReturn: true));
+				return new MultiValue (new SymbolValue (operation.OperatorMethod, isMethodReturn: true));
 
 			return value;
 		}
 
 		public override MultiValue VisitParameterReference (IParameterReferenceOperation paramRef, StateValue state)
 		{
-			return new MultiValue (new DynamicallyAccessedMembersSymbol (paramRef.Parameter));
+			return new MultiValue (new SymbolValue (paramRef.Parameter));
 		}
 
 		public override MultiValue VisitInstanceReference (IInstanceReferenceOperation instanceRef, StateValue state)
@@ -62,13 +62,13 @@ namespace ILLink.RoslynAnalyzer
 			// The instance reference operation represents a 'this' or 'base' reference to the containing type,
 			// so we get the annotation from the containing method.
 			// TODO: Check whether the Context.OwningSymbol is the containing type in case we are in a lambda.
-			var value = new MultiValue (new DynamicallyAccessedMembersSymbol ((IMethodSymbol) Context.OwningSymbol, isMethodReturn: false));
+			var value = new MultiValue (new SymbolValue ((IMethodSymbol) Context.OwningSymbol, isMethodReturn: false));
 			return value;
 		}
 
 		public override MultiValue VisitFieldReference (IFieldReferenceOperation fieldRef, StateValue state)
 		{
-			return new MultiValue (new DynamicallyAccessedMembersSymbol (fieldRef.Field));
+			return new MultiValue (new SymbolValue (fieldRef.Field));
 		}
 
 		public override MultiValue VisitTypeOf (ITypeOfOperation typeOfOperation, StateValue state)
@@ -76,7 +76,7 @@ namespace ILLink.RoslynAnalyzer
 			// TODO: track known types too!
 
 			if (typeOfOperation.TypeOperand is ITypeParameterSymbol typeParameter)
-				return new MultiValue (new DynamicallyAccessedMembersSymbol (typeParameter));
+				return new MultiValue (new SymbolValue (typeParameter));
 
 			return TopValue;
 		}
@@ -104,7 +104,7 @@ namespace ILLink.RoslynAnalyzer
 			if (operation.Parameter == null)
 				return;
 
-			var parameter = new MultiValue (new DynamicallyAccessedMembersSymbol (operation.Parameter));
+			var parameter = new MultiValue (new SymbolValue (operation.Parameter));
 
 			TrimAnalysisPatterns.Add (new TrimAnalysisPattern (
 				argumentValue,
@@ -118,7 +118,7 @@ namespace ILLink.RoslynAnalyzer
 			if (operation.Instance == null)
 				return;
 
-			MultiValue implicitReceiverParameter = new MultiValue (new DynamicallyAccessedMembersSymbol (operation.TargetMethod, isMethodReturn: false));
+			MultiValue implicitReceiverParameter = new MultiValue (new SymbolValue (operation.TargetMethod, isMethodReturn: false));
 
 			TrimAnalysisPatterns.Add (new TrimAnalysisPattern (
 				receieverValue,
@@ -129,7 +129,7 @@ namespace ILLink.RoslynAnalyzer
 
 		public override void HandleReturnValue (MultiValue returnValue, IOperation operation)
 		{
-			var returnParameter = new MultiValue (new DynamicallyAccessedMembersSymbol ((IMethodSymbol) Context.OwningSymbol, isMethodReturn: true));
+			var returnParameter = new MultiValue (new SymbolValue ((IMethodSymbol) Context.OwningSymbol, isMethodReturn: true));
 
 			TrimAnalysisPatterns.Add (new TrimAnalysisPattern (
 				returnValue,
