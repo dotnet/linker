@@ -1387,7 +1387,7 @@ namespace Mono.Linker.Steps
 			MarkExportedTypesTarget.ProcessAssembly (assembly, Context);
 
 			if (ProcessReferencesStep.IsFullyPreservedAction (Context.Annotations.GetAction (assembly))) {
-				if (!Context.TryGetCustomData("DisableMarkingOfCopyAssemblies", out string? disableMarkingOfCopyAssembliesValue) ||
+				if (!Context.TryGetCustomData ("DisableMarkingOfCopyAssemblies", out string? disableMarkingOfCopyAssembliesValue) ||
 					disableMarkingOfCopyAssembliesValue != "true")
 					MarkEntireAssembly (assembly);
 				return;

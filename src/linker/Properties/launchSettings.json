@@ -1,9 +1,0 @@
-{
-  "profiles": {
-    "Mono.Linker": {
-      "commandName": "Project",
-      "commandLineArgs": "@F:\\ILLinker\\repro\\SlowApp\\linker.rsp",
-      "workingDirectory": "F:\\ILLinker\\repro\\SlowApp"
-    }
-  }
-}
