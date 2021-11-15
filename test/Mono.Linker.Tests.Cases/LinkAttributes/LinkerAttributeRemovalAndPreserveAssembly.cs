@@ -22,16 +22,16 @@ namespace Mono.Linker.Tests.Cases.LinkAttributes
 	[SetupLinkAttributesFile ("LinkerAttributeRemovalAndPreserveAssembly.LinkAttributes.xml")]
 
 	[SetupCompileBefore (
-		"lib.dll", 
+		"lib.dll",
 		new[] { "Dependencies/LinkerAttributeRemovalAndPreserveAssembly_Lib.cs" })]
-		// https://github.com/dotnet/linker/issues/2358 - adding the descriptor currently causes nullref in the linker
-		// resources: new object[] { new string[] { "Dependencies/LinkerAttributeRemovalAndPreserveAssembly_Lib.Descriptor.xml", "ILLink.Descriptors.xml" } })]
+	// https://github.com/dotnet/linker/issues/2358 - adding the descriptor currently causes nullref in the linker
+	// resources: new object[] { new string[] { "Dependencies/LinkerAttributeRemovalAndPreserveAssembly_Lib.Descriptor.xml", "ILLink.Descriptors.xml" } })]
 
 	[ExpectedNoWarnings]
 
 	class LinkerAttributeRemovalAndPreserveAssembly
 	{
-		public static void Main()
+		public static void Main ()
 		{
 			TestAttributeRemoval ();
 		}
