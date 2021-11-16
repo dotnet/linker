@@ -25,10 +25,10 @@ namespace Mono.Linker.Tests.Cases.TypeForwarding
 	// https://github.com/dotnet/linker/issues/2359
 	// One of the type forwarders in NestedForwarderLibrary will not be kept.
 	// Which one depends on order.
-	[KeptTypeInAssembly ("NestedForwarderLibrary.dll", typeof (ImplementationLibrary.ForwardedNestedType))]
-	[KeptTypeInAssembly ("NestedForwarderLibrary.dll", typeof (AnotherImplementationClass.ForwardedNestedType))]
-	[KeptTypeInAssembly ("NestedForwarderLibrary_2.dll", typeof (ImplementationLibrary.ForwardedNestedType))]
-	[KeptTypeInAssembly ("NestedForwarderLibrary_2.dll", typeof (AnotherImplementationClass.ForwardedNestedType))]
+	//[KeptTypeInAssembly ("NestedForwarderLibrary.dll", typeof (ImplementationLibrary.ForwardedNestedType))]
+	//[KeptTypeInAssembly ("NestedForwarderLibrary.dll", typeof (AnotherImplementationClass.ForwardedNestedType))]
+	//[KeptTypeInAssembly ("NestedForwarderLibrary_2.dll", typeof (ImplementationLibrary.ForwardedNestedType))]
+	//[KeptTypeInAssembly ("NestedForwarderLibrary_2.dll", typeof (AnotherImplementationClass.ForwardedNestedType))]
 	[KeptTypeInAssembly ("Implementation.dll", typeof (ImplementationLibrary.ForwardedNestedType))]
 	[KeptTypeInAssembly ("Implementation.dll", typeof (AnotherImplementationClass.ForwardedNestedType))]
 
