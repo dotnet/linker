@@ -8,6 +8,10 @@ using System.Linq;
 
 namespace ILLink.Shared.DataFlow
 {
+	// This is a dictionary along with a default value, where every possible key either maps to
+	// the default value, or another value. The default value is never explicitly stored in the dictionary,
+	// and the empty dictionary (where all possible keys have the default value) is represented without
+	// actually allocating a dictionary.
 	public struct DefaultValueDictionary<TKey, TValue> : IEquatable<DefaultValueDictionary<TKey, TValue>>,
 		IEnumerable<KeyValuePair<TKey, TValue>>
 		where TKey : IEquatable<TKey>

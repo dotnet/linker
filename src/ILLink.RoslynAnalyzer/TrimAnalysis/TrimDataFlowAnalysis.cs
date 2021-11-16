@@ -15,15 +15,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 	// any kind of value equality for different block instances. In practice
 	// this should be fine as long as we consistently use block instances from
 	// a single ControlFlowGraph.
-	public readonly record struct BlockProxy (BasicBlock Block)
-	{
-		public IEnumerable<BlockProxy> Predecessors {
-			get {
-				foreach (var predecessor in Block.Predecessors)
-					yield return new BlockProxy (predecessor.Source);
-			}
-		}
-	}
+	public readonly record struct BlockProxy (BasicBlock Block);
 
 	public readonly record struct ControlFlowGraphProxy (ControlFlowGraph ControlFlowGraph) : IControlFlowGraph<BlockProxy>
 	{
@@ -36,7 +28,13 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 		public BlockProxy Entry => new BlockProxy (ControlFlowGraph.Blocks[0]);
 
-		public IEnumerable<BlockProxy> GetPredecessors (BlockProxy block) => block.Predecessors;
+		// This is implemented by getting predecessors of the underlying Roslyn BasicBlock.
+		// This is fine as long as the blocks come from the correct control-flow graph.
+		public IEnumerable<BlockProxy> GetPredecessors (BlockProxy block)
+		{
+			foreach (var predecessor in block.Block.Predecessors)
+				yield return new BlockProxy (predecessor.Source);
+		}
 	}
 
 	public class TrimDataFlowAnalysis
@@ -52,26 +50,20 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 		readonly LocalStateLattice<ValueSet<SingleValue>, ValueSetLattice<SingleValue>> Lattice;
 
-		TrimAnalysisVisitor? Visitor;
-
 		readonly OperationBlockAnalysisContext Context;
 
 		public TrimDataFlowAnalysis (OperationBlockAnalysisContext context, ControlFlowGraph cfg)
 		{
 			ControlFlowGraph = new ControlFlowGraphProxy (cfg);
 			Lattice = new (new ValueSetLattice<SingleValue> ());
-			Visitor = null;
 			Context = context;
 		}
 
-		public IEnumerable<TrimAnalysisPattern> GetTrimAnalysisPatterns ()
+		public IEnumerable<TrimAnalysisPattern> ComputeTrimAnalysisPatterns ()
 		{
-			if (Visitor != null)
-				return Visitor.TrimAnalysisPatterns;
-
-			Visitor = new TrimAnalysisVisitor (Lattice, Context);
-			Fixpoint (ControlFlowGraph, Lattice, Visitor);
-			return Visitor.TrimAnalysisPatterns;
+			var visitor = new TrimAnalysisVisitor (Lattice, Context);
+			Fixpoint (ControlFlowGraph, Lattice, visitor);
+			return visitor.TrimAnalysisPatterns;
 		}
 	}
 }

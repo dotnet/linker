@@ -9,23 +9,7 @@
     <Import_RootNamespace>ILLink.Shared</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)Annotations.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)DataFlow/DefaultValueDictionary.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)DataFlow/DictionaryLattice.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)DataFlow/ForwardDataFlowAnalysis.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)DataFlow/IControlFlowGraph.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)DataFlow/ILattice.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)DataFlow/ITransfer.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)DataFlow/SingleValue.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)DataFlow/ValueSet.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)DataFlow/ValueSetLattice.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)DiagnosticCategory.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)DiagnosticId.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)DiagnosticString.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)HashUtils.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)IsExternalInit.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)MessageFormat.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)TrimAnalysis/ValueWithDynamicallyAccessedMembers.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)/**/*.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)SharedStrings.resx">

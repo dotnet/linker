@@ -60,6 +60,8 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 
 					var parentOperation = Context.Compilation.GetSemanticModel (branchValueOperation.Syntax.SyntaxTree).GetOperation (parentSyntax);
 
+					// Analyzer doesn't support exceptional control-flow:
+					// https://github.com/dotnet/linker/issues/2273
 					if (parentOperation is IThrowOperation)
 						throw new NotImplementedException ();
 
@@ -73,6 +75,8 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 
 		public abstract void HandleAssignment (TValue source, TValue target, IOperation operation);
 
+		// This is called to handle instance method invocations, where "receiver" is the
+		// analyzed value for the object on which the instance method is called.
 		public abstract void HandleReceiverArgument (TValue receiver, IInvocationOperation operation);
 
 		public abstract void HandleArgument (TValue argument, IArgumentOperation operation);

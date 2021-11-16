@@ -36,6 +36,9 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			// Base logic takes care of visiting arguments, etc.
 			base.VisitInvocation (operation, state);
 
+			// TODO: don't track values for unsupported types. Can be done when adding warnings
+			// for annotations on unsupported types.
+			// https://github.com/dotnet/linker/issues/2273
 			return new MultiValue (new SymbolValue (operation.TargetMethod, isMethodReturn: true));
 		}
 
@@ -84,7 +87,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 		// Override handlers for situations where annotated locations may be involved in reflection access:
 		// - assignments
 		// - arguments passed to method parameters
-		//   this also needs to create the annotated value for parmeters, because they are not represented
+		//   this also needs to create the annotated value for parameters, because they are not represented
 		//   as 'IParameterReferenceOperation' when passing arguments
 		// - instance passed as explicit or implicit receiver to a method invocation
 		//   this also needs to create the annotation for the implicit receiver parameter.

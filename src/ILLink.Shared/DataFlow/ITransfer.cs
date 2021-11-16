@@ -26,7 +26,9 @@ namespace ILLink.Shared.DataFlow
 	{
 		// Transfer should mutate the input value to reflect the effect of
 		// computing this operation. When using value types, ensure that
-		// any modifications to the values are observable.
+		// any modifications to the values are observable by the caller (consider
+		// using readonly structs to prevent the implementation from making changes
+		// that won't be reflected in the caller).
 		void Transfer (TOperation operation, TValue value);
 	}
 }

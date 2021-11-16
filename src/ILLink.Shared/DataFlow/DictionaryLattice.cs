@@ -6,7 +6,7 @@ using System;
 namespace ILLink.Shared.DataFlow
 {
 	// A lattice over dictionaries where the stored values are also from a lattice.
-	public struct DictionaryLattice<TKey, TValue, TValueLattice> : ILattice<DefaultValueDictionary<TKey, TValue>>
+	public readonly struct DictionaryLattice<TKey, TValue, TValueLattice> : ILattice<DefaultValueDictionary<TKey, TValue>>
 		where TKey : IEquatable<TKey>
 		where TValue : IEquatable<TValue>
 		where TValueLattice : ILattice<TValue>

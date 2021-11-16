@@ -6,7 +6,7 @@ using System.Text;
 
 namespace ILLink.Shared.DataFlow
 {
-	public struct ValueSet<TValue> : IEquatable<ValueSet<TValue>>, IEnumerable<TValue>
+	public readonly struct ValueSet<TValue> : IEquatable<ValueSet<TValue>>, IEnumerable<TValue>
 		where TValue : notnull
 	{
 		public readonly HashSet<TValue>? Values;

@@ -46,7 +46,7 @@ namespace ILLink.RoslynAnalyzer
 					ControlFlowGraph cfg = context.GetControlFlowGraph (operationBlock);
 					TrimDataFlowAnalysis trimDataFlowAnalysis = new (context, cfg);
 
-					foreach (TrimAnalysisPattern trimAnalysisPattern in trimDataFlowAnalysis.GetTrimAnalysisPatterns ()) {
+					foreach (TrimAnalysisPattern trimAnalysisPattern in trimDataFlowAnalysis.ComputeTrimAnalysisPatterns ()) {
 						foreach (var diagnostic in GetDynamicallyAccessedMembersDiagnostics (trimAnalysisPattern.Source, trimAnalysisPattern.Target, trimAnalysisPattern.Operation.Syntax.GetLocation ()))
 							context.ReportDiagnostic (diagnostic);
 					}

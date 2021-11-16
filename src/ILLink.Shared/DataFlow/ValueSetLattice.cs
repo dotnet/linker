@@ -6,8 +6,8 @@ using System.Collections.Generic;
 
 namespace ILLink.Shared.DataFlow
 {
-	// A lattice over ValrueSets where the Meet operation is just set union.
-	public struct ValueSetLattice<TValue> : ILattice<ValueSet<TValue>>
+	// A lattice over ValueSets where the Meet operation is just set union.
+	public readonly struct ValueSetLattice<TValue> : ILattice<ValueSet<TValue>>
 		where TValue : IEquatable<TValue>
 	{
 		public ValueSet<TValue> Top => default;

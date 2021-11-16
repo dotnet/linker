@@ -9,7 +9,7 @@ using Microsoft.CodeAnalysis;
 
 namespace ILLink.RoslynAnalyzer.TrimAnalysis
 {
-	public struct TrimAnalysisPatternStore : IEnumerable<TrimAnalysisPattern>
+	public readonly struct TrimAnalysisPatternStore : IEnumerable<TrimAnalysisPattern>
 	{
 		readonly Dictionary<IOperation, TrimAnalysisPattern> TrimAnalysisPatterns;
 
@@ -20,7 +20,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			// If we already stored a trim analysis pattern for this operation,
 			// it needs to be updated. The dataflow analysis should result in purely additive
 			// changes to the trim analysis patterns generated for a given operation,
-			// so we can just replace the original access pattern here.
+			// so we can just replace the original analysis pattern here.
 #if DEBUG
 			// Validate this in debug mode.
 			if (TrimAnalysisPatterns.TryGetValue (trimAnalysisPattern.Operation, out var existingTrimAnalysisPattern)) {
