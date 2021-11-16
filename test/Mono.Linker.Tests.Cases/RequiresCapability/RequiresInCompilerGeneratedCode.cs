@@ -44,6 +44,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		class WarnInIteratorBody
 		{
 			[ExpectedWarning ("IL2026", "--MethodWithRequires--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 			static IEnumerable<int> TestCallBeforeYieldReturn ()
 			{
 				MethodWithRequires ();
@@ -51,6 +52,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[ExpectedWarning ("IL2026", "--MethodWithRequires--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 			static IEnumerable<int> TestCallAfterYieldReturn ()
 			{
 				yield return 0;
@@ -68,11 +70,24 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[ExpectedWarning ("IL2026", "--MethodWithRequires--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 			static IEnumerable<int> TestLdftn ()
 			{
 				yield return 0;
 				yield return 1;
 				var action = new Action (MethodWithRequires);
+			}
+
+			// Cannot annotate fields either with RUC nor RAF therefore the warning persists
+			[ExpectedWarning ("IL2026", "Message from --MethodWithRequiresAndReturns--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "Message from --MethodWithRequiresAndReturns--", ProducedBy = ProducedBy.Analyzer)]
+			public static Lazy<string> _default = new Lazy<string> (MethodWithRequiresAndReturns);
+
+			static IEnumerable<int> TestLazyDelegate ()
+			{
+				yield return 0;
+				yield return 1;
+				_ = _default.Value;
 			}
 
 			[ExpectedWarning ("IL2026", "--TypeWithMethodWithRequires.MethodWithRequires--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Trimmer)]
@@ -89,6 +104,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestCallAfterYieldReturn ();
 				TestReflectionAccess ();
 				TestLdftn ();
+				TestLazyDelegate ();
 				TestDynamicallyAccessedMethod ();
 			}
 		}
@@ -96,6 +112,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		class SuppressInIteratorBody
 		{
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static IEnumerable<int> TestCall ()
 			{
 				MethodWithRequires ();
@@ -105,6 +122,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static IEnumerable<int> TestReflectionAccess ()
 			{
 				yield return 0;
@@ -115,6 +133,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static IEnumerable<int> TestLdftn ()
 			{
 				yield return 0;
@@ -122,7 +141,20 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				var action = new Action (MethodWithRequires);
 			}
 
+			// Cannot annotate fields either with RUC nor RAF therefore the warning persists
+			[ExpectedWarning ("IL2026", "Message from --MethodWithRequiresAndReturns--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "Message from --MethodWithRequiresAndReturns--", ProducedBy = ProducedBy.Analyzer)]
+			public static Lazy<string> _default = new Lazy<string> (MethodWithRequiresAndReturns);
+
+			static IEnumerable<int> TestLazyDelegate ()
+			{
+				yield return 0;
+				yield return 1;
+				_ = _default.Value;
+			}
+
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static IEnumerable<int> TestDynamicallyAccessedMethod ()
 			{
 				typeof (TypeWithMethodWithRequires).RequiresNonPublicMethods ();
@@ -131,6 +163,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static IEnumerable<int> TestMethodParameterWithRequirements (Type unknownType = null)
 			{
 				unknownType.RequiresNonPublicMethods ();
@@ -138,6 +171,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static IEnumerable<int> TestGenericMethodParameterRequirement<TUnknown> ()
 			{
 				MethodWithGenericWhichRequiresMethods<TUnknown> ();
@@ -145,6 +179,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static IEnumerable<int> TestGenericTypeParameterRequirement<TUnknown> ()
 			{
 				new TypeWithGenericWhichRequiresNonPublicFields<TUnknown> ();
@@ -152,11 +187,13 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[UnconditionalSuppressMessage ("Trimming", "IL2026")]
+			[UnconditionalSuppressMessage ("SingleFile", "IL3002")]
 			public static void Test ()
 			{
 				TestCall ();
 				TestReflectionAccess ();
 				TestLdftn ();
+				TestLazyDelegate ();
 				TestDynamicallyAccessedMethod ();
 				TestMethodParameterWithRequirements ();
 				TestGenericMethodParameterRequirement<TestType> ();
@@ -167,6 +204,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		class WarnInAsyncBody
 		{
 			[ExpectedWarning ("IL2026", "--MethodWithRequires--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 			static async void TestCallBeforeYieldReturn ()
 			{
 				MethodWithRequires ();
@@ -174,6 +212,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[ExpectedWarning ("IL2026", "--MethodWithRequires--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 			static async void TestCallAfterYieldReturn ()
 			{
 				await MethodAsync ();
@@ -191,10 +230,21 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[ExpectedWarning ("IL2026", "--MethodWithRequires--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 			static async void TestLdftn ()
 			{
 				await MethodAsync ();
 				var action = new Action (MethodWithRequires);
+			}
+
+			[ExpectedWarning ("IL2026", "Message from --MethodWithRequiresAndReturns--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "Message from --MethodWithRequiresAndReturns--", ProducedBy = ProducedBy.Analyzer)]
+			public static Lazy<string> _default = new Lazy<string> (MethodWithRequiresAndReturns);
+
+			static async void TestLazyDelegate ()
+			{
+				await MethodAsync ();
+				_ = _default.Value;
 			}
 
 			[ExpectedWarning ("IL2026", "--TypeWithMethodWithRequires.MethodWithRequires--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Trimmer)]
@@ -210,6 +260,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestCallAfterYieldReturn ();
 				TestReflectionAccess ();
 				TestLdftn ();
+				TestLazyDelegate ();
 				TestDynamicallyAccessedMethod ();
 			}
 		}
@@ -217,6 +268,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		class SuppressInAsyncBody
 		{
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static async void TestCall ()
 			{
 				MethodWithRequires ();
@@ -226,6 +278,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static async void TestReflectionAccess ()
 			{
 				await MethodAsync ();
@@ -236,13 +289,26 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static async void TestLdftn ()
 			{
 				await MethodAsync ();
 				var action = new Action (MethodWithRequires);
 			}
 
+			// Cannot annotate fields either with RUC nor RAF therefore the warning persists
+			[ExpectedWarning ("IL2026", "Message from --MethodWithRequiresAndReturns--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "Message from --MethodWithRequiresAndReturns--", ProducedBy = ProducedBy.Analyzer)]
+			public static Lazy<string> _default = new Lazy<string> (MethodWithRequiresAndReturns);
+
+			static async void TestLazyDelegate ()
+			{
+				await MethodAsync ();
+				_ = _default.Value;
+			}
+
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static async void TestDynamicallyAccessedMethod ()
 			{
 				typeof (TypeWithMethodWithRequires).RequiresNonPublicMethods ();
@@ -250,6 +316,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static async void TestMethodParameterWithRequirements (Type unknownType = null)
 			{
 				unknownType.RequiresNonPublicMethods ();
@@ -257,6 +324,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static async void TestGenericMethodParameterRequirement<TUnknown> ()
 			{
 				MethodWithGenericWhichRequiresMethods<TUnknown> ();
@@ -264,6 +332,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static async void TestGenericTypeParameterRequirement<TUnknown> ()
 			{
 				new TypeWithGenericWhichRequiresNonPublicFields<TUnknown> ();
@@ -271,11 +340,13 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[UnconditionalSuppressMessage ("Trimming", "IL2026")]
+			[UnconditionalSuppressMessage ("SingleFile", "IL3002")]
 			public static void Test ()
 			{
 				TestCall ();
 				TestReflectionAccess ();
 				TestLdftn ();
+				TestLazyDelegate ();
 				TestDynamicallyAccessedMethod ();
 				TestMethodParameterWithRequirements ();
 				TestGenericMethodParameterRequirement<TestType> ();
@@ -286,6 +357,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		class WarnInAsyncIteratorBody
 		{
 			[ExpectedWarning ("IL2026", "--MethodWithRequires--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 			static async IAsyncEnumerable<int> TestCallBeforeYieldReturn ()
 			{
 				await MethodAsync ();
@@ -294,6 +366,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[ExpectedWarning ("IL2026", "--MethodWithRequires--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 			static async IAsyncEnumerable<int> TestCallAfterYieldReturn ()
 			{
 				yield return 0;
@@ -314,11 +387,23 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[ExpectedWarning ("IL2026", "--MethodWithRequires--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 			static async IAsyncEnumerable<int> TestLdftn ()
 			{
 				await MethodAsync ();
 				yield return 0;
 				var action = new Action (MethodWithRequires);
+			}
+
+			[ExpectedWarning ("IL2026", "Message from --MethodWithRequiresAndReturns--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "Message from --MethodWithRequiresAndReturns--", ProducedBy = ProducedBy.Analyzer)]
+			public static Lazy<string> _default = new Lazy<string> (MethodWithRequiresAndReturns);
+
+			static async IAsyncEnumerable<int> TestLazyDelegate ()
+			{
+				await MethodAsync ();
+				yield return 0;
+				_ = _default.Value;
 			}
 
 			[ExpectedWarning ("IL2026", "--TypeWithMethodWithRequires.MethodWithRequires--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Trimmer)]
@@ -335,6 +420,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestCallAfterYieldReturn ();
 				TestReflectionAccess ();
 				TestLdftn ();
+				TestLazyDelegate ();
 				TestDynamicallyAccessedMethod ();
 			}
 		}
@@ -342,6 +428,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		class SuppressInAsyncIteratorBody
 		{
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static async IAsyncEnumerable<int> TestCall ()
 			{
 				MethodWithRequires ();
@@ -352,6 +439,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static async IAsyncEnumerable<int> TestReflectionAccess ()
 			{
 				await MethodAsync ();
@@ -364,6 +452,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static async IAsyncEnumerable<int> TestLdftn ()
 			{
 				await MethodAsync ();
@@ -371,7 +460,20 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				yield return 0;
 			}
 
+			// Cannot annotate fields either with RUC nor RAF therefore the warning persists
+			[ExpectedWarning ("IL2026", "Message from --MethodWithRequiresAndReturns--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "Message from --MethodWithRequiresAndReturns--", ProducedBy = ProducedBy.Analyzer)]
+			public static Lazy<string> _default = new Lazy<string> (MethodWithRequiresAndReturns);
+
+			static async IAsyncEnumerable<int> TestLazyDelegate ()
+			{
+				await MethodAsync ();
+				yield return 0;
+				_ = _default.Value;
+			}
+
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static async IAsyncEnumerable<int> TestDynamicallyAccessedMethod ()
 			{
 				typeof (TypeWithMethodWithRequires).RequiresNonPublicMethods ();
@@ -380,6 +482,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static async IAsyncEnumerable<int> TestMethodParameterWithRequirements (Type unknownType = null)
 			{
 				unknownType.RequiresNonPublicMethods ();
@@ -388,6 +491,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static async IAsyncEnumerable<int> TestGenericMethodParameterRequirement<TUnknown> ()
 			{
 				yield return 0;
@@ -396,6 +500,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static async IAsyncEnumerable<int> TestGenericTypeParameterRequirement<TUnknown> ()
 			{
 				new TypeWithGenericWhichRequiresNonPublicFields<TUnknown> ();
@@ -404,11 +509,13 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[UnconditionalSuppressMessage ("Trimming", "IL2026")]
+			[UnconditionalSuppressMessage ("SingleFile", "IL3002")]
 			public static void Test ()
 			{
 				TestCall ();
 				TestReflectionAccess ();
 				TestLdftn ();
+				TestLazyDelegate ();
 				TestDynamicallyAccessedMethod ();
 				TestMethodParameterWithRequirements ();
 				TestGenericMethodParameterRequirement<TestType> ();
@@ -419,6 +526,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		class WarnInLocalFunction
 		{
 			[ExpectedWarning ("IL2026", "--MethodWithRequires--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 			static void TestCall ()
 			{
 				LocalFunction ();
@@ -427,6 +535,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[ExpectedWarning ("IL2026", "--MethodWithRequires--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 			static void TestCallWithClosure (int p = 0)
 			{
 				LocalFunction ();
@@ -449,6 +558,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[ExpectedWarning ("IL2026", "--MethodWithRequires--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 			static void TestLdftn ()
 			{
 				LocalFunction ();
@@ -456,6 +566,20 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				void LocalFunction ()
 				{
 					var action = new Action (MethodWithRequires);
+				}
+			}
+
+			[ExpectedWarning ("IL2026", "Message from --MethodWithRequiresAndReturns--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "Message from --MethodWithRequiresAndReturns--", ProducedBy = ProducedBy.Analyzer)]
+			public static Lazy<string> _default = new Lazy<string> (MethodWithRequiresAndReturns);
+
+			static void TestLazyDelegate ()
+			{
+				LocalFunction ();
+
+				void LocalFunction ()
+				{
+					_ = _default.Value;
 				}
 			}
 
@@ -473,6 +597,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestCallWithClosure ();
 				TestReflectionAccess ();
 				TestLdftn ();
+				TestLazyDelegate ();
 				TestDynamicallyAccessedMethod ();
 			}
 		}
@@ -483,20 +608,24 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			// so its suppression effect also doesn't propagate
 
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static void TestCall ()
 			{
 				LocalFunction ();
 
 				[ExpectedWarning ("IL2026")]
+				[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
 				void LocalFunction () => MethodWithRequires ();
 			}
 
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static void TestCallWithClosure (int p = 0)
 			{
 				LocalFunction ();
 
 				[ExpectedWarning ("IL2026")]
+				[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
 				void LocalFunction ()
 				{
 					p++;
@@ -505,38 +634,59 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static async void TestReflectionAccess ()
 			{
 				LocalFunction ();
 
 				[ExpectedWarning ("IL2026")]
+				[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
 				void LocalFunction () => typeof (RequiresInCompilerGeneratedCode)
 					.GetMethod ("MethodWithRequires", System.Reflection.BindingFlags.NonPublic)
 					.Invoke (null, new object[] { });
 			}
 
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static async void TestLdftn ()
 			{
 				LocalFunction ();
 
 				[ExpectedWarning ("IL2026")]
+				[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
 				void LocalFunction ()
 				{
 					var action = new Action (MethodWithRequires);
 				}
 			}
 
+			[ExpectedWarning ("IL2026", "Message from --MethodWithRequiresAndReturns--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "Message from --MethodWithRequiresAndReturns--", ProducedBy = ProducedBy.Analyzer)]
+			public static Lazy<string> _default = new Lazy<string> (MethodWithRequiresAndReturns);
+
+			static void TestLazyDelegate ()
+			{
+				LocalFunction ();
+
+				void LocalFunction ()
+				{
+					_ = _default.Value;
+				}
+			}
+
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static async void TestDynamicallyAccessedMethod ()
 			{
 				LocalFunction ();
 
 				[ExpectedWarning ("IL2026")]
+				[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
 				void LocalFunction () => typeof (TypeWithMethodWithRequires).RequiresNonPublicMethods ();
 			}
 
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static async void TestMethodParameterWithRequirements (Type unknownType = null)
 			{
 				LocalFunction ();
@@ -546,6 +696,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static void TestGenericMethodParameterRequirement<TUnknown> ()
 			{
 				LocalFunction ();
@@ -555,6 +706,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static void TestGenericTypeParameterRequirement<TUnknown> ()
 			{
 				LocalFunction ();
@@ -564,6 +716,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static void TestGenericLocalFunction<TUnknown> ()
 			{
 				LocalFunction<TUnknown> ();
@@ -575,6 +728,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static void TestGenericLocalFunctionInner<TUnknown> ()
 			{
 				LocalFunction<TUnknown> ();
@@ -611,32 +765,41 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static void TestCallMethodWithRequiresInLtftnLocalFunction ()
 			{
 				var _ = new Action (LocalFunction);
 
 				[ExpectedWarning ("IL2026")]
+				[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
 				void LocalFunction () => MethodWithRequires ();
 			}
 
 			class DynamicallyAccessedLocalFunction
 			{
 				[RequiresUnreferencedCode ("Suppress in body")]
+				[RequiresAssemblyFiles ("Suppress in body")]
 				public static void TestCallMethodWithRequiresInDynamicallyAccessedLocalFunction ()
 				{
 					typeof (DynamicallyAccessedLocalFunction).RequiresNonPublicMethods ();
 
 					[ExpectedWarning ("IL2026")]
+					[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
 					void LocalFunction () => MethodWithRequires ();
 				}
 			}
 
 			[ExpectedWarning ("IL2026")]
+			[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
+			// TODO: Analyzer should suppress warnings when caller is anotated with RUC
+			// https://github.com/dotnet/linker/issues/2349
+			[ExpectedWarning ("IL2067", ProducedBy = ProducedBy.Analyzer)]
 			static void TestSuppressionLocalFunction ()
 			{
 				LocalFunction (); // This will produce a warning since the location function has Requires on it
 
 				[RequiresUnreferencedCode ("Suppress in body")]
+				[RequiresAssemblyFiles ("Suppress in body")]
 				void LocalFunction (Type unknownType = null)
 				{
 					MethodWithRequires ();
@@ -645,11 +808,13 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static void TestSuppressionOnOuterAndLocalFunction ()
 			{
 				LocalFunction ();
 
 				[RequiresUnreferencedCode ("Suppress in body")]
+				[RequiresAssemblyFiles ("Suppress in body")]
 				void LocalFunction (Type unknownType = null)
 				{
 					MethodWithRequires ();
@@ -658,12 +823,14 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[UnconditionalSuppressMessage ("Trimming", "IL2026")]
+			[UnconditionalSuppressMessage ("SingleFile", "IL3002")]
 			public static void Test ()
 			{
 				TestCall ();
 				TestCallWithClosure ();
 				TestReflectionAccess ();
 				TestLdftn ();
+				TestLazyDelegate ();
 				TestMethodParameterWithRequirements ();
 				TestDynamicallyAccessedMethod ();
 				TestGenericMethodParameterRequirement<TestType> ();
@@ -682,12 +849,14 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		class WarnInLambda
 		{
 			[ExpectedWarning ("IL2026", "--MethodWithRequires--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 			static void TestCall ()
 			{
 				Action _ = () => MethodWithRequires ();
 			}
 
 			[ExpectedWarning ("IL2026", "--MethodWithRequires--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 			static void TestCallWithClosure (int p = 0)
 			{
 				Action _ = () => {
@@ -707,10 +876,22 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[ExpectedWarning ("IL2026", "--MethodWithRequires--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 			static void TestLdftn ()
 			{
 				Action _ = () => {
 					var action = new Action (MethodWithRequires);
+				};
+			}
+
+			[ExpectedWarning ("IL2026", "--MethodWithRequiresAndReturns--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "--MethodWithRequiresAndReturns--", ProducedBy = ProducedBy.Analyzer)]
+			public static Lazy<string> _default = new Lazy<string> (MethodWithRequiresAndReturns);
+
+			static void TestLazyDelegate ()
+			{
+				Action _ = () => {
+					var action = _default.Value;
 				};
 			}
 
@@ -728,6 +909,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestCallWithClosure ();
 				TestReflectionAccess ();
 				TestLdftn ();
+				TestLazyDelegate ();
 				TestDynamicallyAccessedMethod ();
 			}
 		}
@@ -741,7 +923,9 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			// - Would be useful for testing - have to use the CompilerGeneratedCode = true trick instead
 
 			[ExpectedWarning ("IL2026", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static void TestCall ()
 			{
 				Action _ = () => MethodWithRequires ();
@@ -749,6 +933,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 			[ExpectedWarning ("IL2067", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Trimmer)]
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static void TestCallWithReflectionAnalysisWarning ()
 			{
 				// This should not produce warning because the Requires
@@ -756,7 +941,9 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[ExpectedWarning ("IL2026", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static void TestCallWithClosure (int p = 0)
 			{
 				Action _ = () => {
@@ -768,6 +955,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			// Analyzer doesn't recognize reflection access - so doesn't warn in this case
 			[ExpectedWarning ("IL2026", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Trimmer)]
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static void TestReflectionAccess ()
 			{
 				Action _ = () => {
@@ -778,7 +966,9 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[ExpectedWarning ("IL2026", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static void TestLdftn ()
 			{
 				Action _ = () => {
@@ -786,9 +976,21 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				};
 			}
 
+			[ExpectedWarning ("IL2026", "--MethodWithRequiresAndReturns--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "--MethodWithRequiresAndReturns--", ProducedBy = ProducedBy.Analyzer)]
+			public static Lazy<string> _default = new Lazy<string> (MethodWithRequiresAndReturns);
+
+			static void TestLazyDelegate ()
+			{
+				Action _ = () => {
+					var action = _default.Value;
+				};
+			}
+
 			// Analyzer doesn't apply DAM - so won't see this warnings
 			[ExpectedWarning ("IL2026", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Trimmer)]
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static void TestDynamicallyAccessedMethod ()
 			{
 				Action _ = () => {
@@ -800,6 +1002,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			// https://github.com/dotnet/linker/issues/2350
 			[ExpectedWarning ("IL2077", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Trimmer)]
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static async void TestMethodParameterWithRequirements (Type unknownType = null)
 			{
 				Action _ = () => unknownType.RequiresNonPublicMethods ();
@@ -807,6 +1010,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 			[ExpectedWarning ("IL2091", CompilerGeneratedCode = true)]
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static void TestGenericMethodParameterRequirement<TUnknown> ()
 			{
 				Action _ = () => {
@@ -817,6 +1021,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			// The warning is currently not detected by roslyn analyzer since it doesn't analyze DAM yet
 			[ExpectedWarning ("IL2091", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Trimmer)]
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static void TestGenericTypeParameterRequirement<TUnknown> ()
 			{
 				Action _ = () => {
@@ -825,6 +1030,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[UnconditionalSuppressMessage ("Trimming", "IL2026")]
+			[UnconditionalSuppressMessage ("SingleFile", "IL3002")]
 			public static void Test ()
 			{
 				TestCall ();
@@ -832,6 +1038,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestCallWithClosure ();
 				TestReflectionAccess ();
 				TestLdftn ();
+				TestLazyDelegate ();
 				TestDynamicallyAccessedMethod ();
 				TestMethodParameterWithRequirements ();
 				TestGenericMethodParameterRequirement<TestType> ();
@@ -842,6 +1049,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		class WarnInComplex
 		{
 			[ExpectedWarning ("IL2026", "--MethodWithRequires--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 			static async void TestIteratorLocalFunctionInAsync ()
 			{
 				await MethodAsync ();
@@ -873,6 +1081,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		class SuppressInComplex
 		{
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static async void TestIteratorLocalFunctionInAsync ()
 			{
 				await MethodAsync ();
@@ -880,6 +1089,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				await MethodAsync ();
 
 				[RequiresUnreferencedCode ("Suppress in local function")]
+				[RequiresAssemblyFiles ("Suppress in local function")]
 				IEnumerable<int> LocalFunction ()
 				{
 					yield return 0;
@@ -889,6 +1099,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static async void TestIteratorLocalFunctionInAsyncWithoutInner ()
 			{
 				await MethodAsync ();
@@ -896,6 +1107,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				await MethodAsync ();
 
 				[ExpectedWarning ("IL2026", CompilerGeneratedCode = true)]
+				[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
 				IEnumerable<int> LocalFunction ()
 				{
 					yield return 0;
@@ -905,6 +1117,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
 			static IEnumerable<int> TestDynamicallyAccessedMethodViaGenericMethodParameterInIterator ()
 			{
 				MethodWithGenericWhichRequiresMethods<TypeWithMethodWithRequires> ();
@@ -912,6 +1125,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[UnconditionalSuppressMessage ("Trimming", "IL2026")]
+			[UnconditionalSuppressMessage ("SingleFile", "IL3002")]
 			public static void Test ()
 			{
 				TestIteratorLocalFunctionInAsync ();
@@ -923,6 +1137,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		class StateMachinesOnlyReferencedViaReflection
 		{
 			[RequiresUnreferencedCode ("Requires to suppress")]
+			[RequiresAssemblyFiles ("Requires to suppress")]
 			static IEnumerable<int> TestIteratorOnlyReferencedViaReflectionWhichShouldSuppress ()
 			{
 				yield return 0;
@@ -930,6 +1145,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[RequiresUnreferencedCode ("Requires to suppress")]
+			[RequiresAssemblyFiles ("Requires to suppress")]
 			static async void TestAsyncOnlyReferencedViaReflectionWhichShouldSuppress ()
 			{
 				await MethodAsync ();
@@ -937,6 +1153,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[ExpectedWarning ("IL2026", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
 			static IEnumerable<int> TestIteratorOnlyReferencedViaReflectionWhichShouldWarn ()
 			{
 				yield return 0;
@@ -944,6 +1161,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[ExpectedWarning ("IL2026", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
 			static async void TestAsyncOnlyReferencedViaReflectionWhichShouldWarn ()
 			{
 				await MethodAsync ();
@@ -965,12 +1183,14 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			public class AsyncBodyCallingMethodWithRequires
 			{
 				[RequiresUnreferencedCode ("")]
+				[RequiresAssemblyFiles ("")]
 				static Task<object> MethodWithRequiresAsync (Type type)
 				{
 					return Task.FromResult (new object ());
 				}
 
 				[RequiresUnreferencedCode ("ParentSuppression")]
+				[RequiresAssemblyFiles ("ParentSuppression")]
 				static async Task<object> AsyncMethodCallingRequires (Type type)
 				{
 					using (var diposable = await GetDisposableAsync ()) {
@@ -979,6 +1199,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				}
 
 				[ExpectedWarning ("IL2026", "ParentSuppression")]
+				[ExpectedWarning ("IL3002", "ParentSuppression", ProducedBy = ProducedBy.Analyzer)]
 				public static void Test ()
 				{
 					AsyncMethodCallingRequires (typeof (object));
@@ -988,12 +1209,14 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			public class GenericAsyncBodyCallingMethodWithRequires
 			{
 				[RequiresUnreferencedCode ("")]
+				[RequiresAssemblyFiles ("")]
 				static ValueTask<TValue> MethodWithRequiresAsync<TValue> ()
 				{
 					return ValueTask.FromResult (default (TValue));
 				}
 
 				[RequiresUnreferencedCode ("ParentSuppression")]
+				[RequiresAssemblyFiles ("ParentSuppression")]
 				static async Task<T> AsyncMethodCallingRequires<T> ()
 				{
 					using (var disposable = await GetDisposableAsync ()) {
@@ -1002,6 +1225,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				}
 
 				[ExpectedWarning ("IL2026", "ParentSuppression")]
+				[ExpectedWarning ("IL3002", "ParentSuppression", ProducedBy = ProducedBy.Analyzer)]
 				public static void Test ()
 				{
 					AsyncMethodCallingRequires<object> ();
@@ -1013,12 +1237,14 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				class RequiresOnCtor
 				{
 					[RequiresUnreferencedCode ("")]
+					[RequiresAssemblyFiles ("")]
 					public RequiresOnCtor ()
 					{
 					}
 				}
 
 				[RequiresUnreferencedCode ("ParentSuppression")]
+				[RequiresAssemblyFiles ("ParentSuppression")]
 				static IAsyncEnumerable<TValue> AsyncEnumMethodCallingRequires<
 					[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicProperties)] TValue> ()
 				{
@@ -1034,6 +1260,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				}
 
 				[ExpectedWarning ("IL2026", "ParentSuppression")]
+				[ExpectedWarning ("IL3002", "ParentSuppression", ProducedBy = ProducedBy.Analyzer)]
 				public static void Test ()
 				{
 					AsyncEnumMethodCallingRequires<object> ();
@@ -1051,6 +1278,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		}
 
 		[RequiresUnreferencedCode ("--MethodWithRequires--")]
+		[RequiresAssemblyFiles ("--MethodWithRequires--")]
 		static void MethodWithRequires ()
 		{
 		}
@@ -1058,9 +1286,17 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		class TypeWithMethodWithRequires
 		{
 			[RequiresUnreferencedCode ("--TypeWithMethodWithRequires.MethodWithRequires--")]
+			[RequiresAssemblyFiles ("--TypeWithMethodWithRequires.MethodWithRequires--")]
 			static void MethodWithRequires ()
 			{
 			}
+		}
+
+		[RequiresUnreferencedCode ("Message from --MethodWithRequiresAndReturns--")]
+		[RequiresAssemblyFiles ("Message from --MethodWithRequiresAndReturns--")]
+		public static string MethodWithRequiresAndReturns ()
+		{
+			return "string";
 		}
 
 		static void MethodWithGenericWhichRequiresMethods<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicMethods)] T> ()
