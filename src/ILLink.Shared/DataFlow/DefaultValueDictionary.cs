@@ -5,6 +5,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace ILLink.Shared.DataFlow
 {
@@ -63,5 +64,18 @@ namespace ILLink.Shared.DataFlow
 		}
 
 		IEnumerator IEnumerable.GetEnumerator () => GetEnumerator ();
+
+		public override string ToString ()
+		{
+			StringBuilder sb = new ();
+			sb.Append ("{");
+			if (Dictionary != null) {
+				foreach (var kvp in Dictionary)
+					sb.Append (Environment.NewLine).Append ('\t').Append (kvp.Key.ToString ()).Append (" -> ").Append (kvp.Value.ToString ());
+			}
+			sb.Append (Environment.NewLine).Append ("\t_ -> ").Append (DefaultValue.ToString ());
+			sb.Append (Environment.NewLine).Append ("}");
+			return sb.ToString ();
+		}
 	}
 }

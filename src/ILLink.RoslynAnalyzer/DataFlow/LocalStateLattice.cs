@@ -18,10 +18,14 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 
 		public LocalKey (CaptureId captureId) => (Local, CaptureId) = (null, captureId);
 
-		public bool Equals (LocalKey other)
+		public bool Equals (LocalKey other) => SymbolEqualityComparer.Default.Equals (Local, other.Local) &&
+			(CaptureId?.Equals (other.CaptureId) ?? other.CaptureId == null);
+
+		public override string ToString ()
 		{
-			return SymbolEqualityComparer.Default.Equals (Local, other.Local) &&
-				(CaptureId?.Equals (other.CaptureId) ?? other.CaptureId == null);
+			if (Local != null)
+				return Local.ToString ();
+			return $"capture {CaptureId.GetHashCode ().ToString ().Substring (0, 3)}";
 		}
 	}
 
@@ -31,7 +35,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 	public class LocalState<TValue> : IEquatable<LocalState<TValue>>
 		where TValue : IEquatable<TValue>
 	{
-		public readonly DefaultValueDictionary<LocalKey, TValue> Dictionary;
+		public DefaultValueDictionary<LocalKey, TValue> Dictionary;
 
 		public LocalState (DefaultValueDictionary<LocalKey, TValue> dictionary) => Dictionary = dictionary;
 
@@ -40,6 +44,8 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 		public TValue Get (LocalKey key) => Dictionary.Get (key);
 
 		public void Set (LocalKey key, TValue value) => Dictionary.Set (key, value);
+
+		public override string ToString () => Dictionary.ToString ();
 	}
 
 	// Wrapper struct exists purely to substitute a concrete LocalKey for TKey of DictionaryLattice

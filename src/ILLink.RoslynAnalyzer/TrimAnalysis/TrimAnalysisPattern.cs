@@ -8,5 +8,5 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 {
 	// TODO: create abstraction for operation/location suitable for use by
 	// roslyn or linker to facilitate sharing
-	public readonly record struct TrimAnalysisPattern(MultiValue Source, MultiValue Target, IOperation Operation);
+	public readonly record struct TrimAnalysisPattern (MultiValue Source, MultiValue Target, IOperation Operation);
 }

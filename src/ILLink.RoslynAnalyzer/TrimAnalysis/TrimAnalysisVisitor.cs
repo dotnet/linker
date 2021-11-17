@@ -98,6 +98,8 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			if (target.Equals (TopValue))
 				return;
 
+			// TODO: consider not tracking patterns unless the target is something
+			// annotated with DAMT.
 			TrimAnalysisPatterns.Add (new TrimAnalysisPattern (source, target, operation));
 		}
 
