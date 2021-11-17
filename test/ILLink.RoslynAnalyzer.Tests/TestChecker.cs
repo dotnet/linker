@@ -54,12 +54,11 @@ namespace ILLink.RoslynAnalyzer.Tests
 				var missingLines = string.Join (
 					Environment.NewLine,
 					_missing.Select (md => $"({md.Attribute.GetLocation ().GetLineSpan ()}) {md.Message}"));
-				message += $@"Missing diagnostics:{Environment.NewLine}{missingLines}
-";
+				message += $@"Expected warnings were not generated:{Environment.NewLine}{missingLines}{Environment.NewLine}";
 			}
 			if (_unmatched.Any ()) {
 
-				message += $"Found unmatched diagnostics:{Environment.NewLine}{string.Join (Environment.NewLine, _unmatched)}";
+				message += $"Unexpected warnings were generated:{Environment.NewLine}{string.Join (Environment.NewLine, _unmatched)}";
 			}
 
 			if (message.Length > 0) {
