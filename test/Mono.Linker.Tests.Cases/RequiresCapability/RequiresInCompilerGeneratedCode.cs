@@ -639,8 +639,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			{
 				LocalFunction ();
 
-				[ExpectedWarning ("IL2026")]
-				[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
 				void LocalFunction () => typeof (RequiresInCompilerGeneratedCode)
 					.GetMethod ("MethodWithRequires", System.Reflection.BindingFlags.NonPublic)
 					.Invoke (null, new object[] { });
@@ -680,8 +678,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			{
 				LocalFunction ();
 
-				[ExpectedWarning ("IL2026")]
-				[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
 				void LocalFunction () => typeof (TypeWithMethodWithRequires).RequiresNonPublicMethods ();
 			}
 
@@ -691,7 +687,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			{
 				LocalFunction ();
 
-				[ExpectedWarning ("IL2077")]
 				void LocalFunction () => unknownType.RequiresNonPublicMethods ();
 			}
 
@@ -701,7 +696,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			{
 				LocalFunction ();
 
-				[ExpectedWarning ("IL2091")]
 				void LocalFunction () => MethodWithGenericWhichRequiresMethods<TUnknown> ();
 			}
 
@@ -711,7 +705,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			{
 				LocalFunction ();
 
-				[ExpectedWarning ("IL2091")]
 				void LocalFunction () => new TypeWithGenericWhichRequiresNonPublicFields<TUnknown> ();
 			}
 
@@ -733,7 +726,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			{
 				LocalFunction<TUnknown> ();
 
-				[ExpectedWarning ("IL2087")]
 				void LocalFunction<TSecond> ()
 				{
 					typeof (TUnknown).RequiresPublicMethods ();
@@ -1249,6 +1241,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 					return CreateAsync ();
 
 					[RequiresUnreferencedCode ("")]
+					[RequiresAssemblyFiles]
 					static async IAsyncEnumerable<TValue> CreateAsync ()
 					{
 						await MethodAsync ();
