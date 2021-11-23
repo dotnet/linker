@@ -53,10 +53,10 @@ stages:
       - job: Windows_NT
         pool:
           ${{ if eq(variables.officialBuild, 'false') }}:
-            name: Hosted VS2017
+            vmImage: windows-2019
           ${{ if eq(variables.officialBuild, 'true') }}:
             name: NetCore1ESPool-Internal
-            demands: ImageOverride -equals Build.Windows.10.Amd64.VS2017
+            demands: ImageOverride -equals Build.Windows.10.Amd64.VS2019
         variables:
           - ${{ if eq(variables.officialBuild, 'false') }}:
             - _SignType: test
@@ -121,7 +121,7 @@ stages:
       - ${{ if eq(variables.officialBuild, 'false') }}:
         - job: macOS
           pool:
-              name: Hosted MacOS
+              vmImage: macOS-10.15
           steps:
           - checkout: self
             submodules: true
