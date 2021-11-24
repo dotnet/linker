@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Microsoft.CodeAnalysis;
@@ -12,13 +13,6 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 {
 	internal static class DynamicallyAccessedMembersBinder
 	{
-		// Temporary workaround - should be removed once linker can be upgraded to build against
-		// high enough version of the framework which has this enum value.
-		internal static class DynamicallyAccessedMemberTypesOverlay
-		{
-			public const DynamicallyAccessedMemberTypes Interfaces = (DynamicallyAccessedMemberTypes) 0x2000;
-		}
-
 		// Returns the members of the type bound by memberTypes. For DynamicallyAccessedMemberTypes.All, this returns all members of the type and its
 		// nested types, including interface implementations, plus the same or any base types or implemented interfaces.
 		// DynamicallyAccessedMemberTypes.PublicNestedTypes and NonPublicNestedTypes do the same for members of the selected nested types.
@@ -48,27 +42,27 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			}
 
 			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)) {
-				foreach (var c in typeDefinition.GetConstructorsOnType (filter: m => (m.DeclaredAccessibility== Accessibility.Public) && m.Parameters.Length == 0))
+				foreach (var c in typeDefinition.GetConstructorsOnType (filter: m => (m.DeclaredAccessibility == Accessibility.Public) && m.Parameters.Length == 0))
 					yield return c;
 			}
 
 			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.NonPublicMethods)) {
-				foreach (var m in typeDefinition.GetMethodsOnTypeHierarchy (context, filter: null, bindingFlags: BindingFlags.NonPublic | declaredOnlyFlags))
+				foreach (var m in typeDefinition.GetMethodsOnTypeHierarchy (filter: null, bindingFlags: BindingFlags.NonPublic | declaredOnlyFlags))
 					yield return m;
 			}
 
 			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicMethods)) {
-				foreach (var m in typeDefinition.GetMethodsOnTypeHierarchy (context, filter: null, bindingFlags: BindingFlags.Public | declaredOnlyFlags))
+				foreach (var m in typeDefinition.GetMethodsOnTypeHierarchy (filter: null, bindingFlags: BindingFlags.Public | declaredOnlyFlags))
 					yield return m;
 			}
 
 			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.NonPublicFields)) {
-				foreach (var f in typeDefinition.GetFieldsOnTypeHierarchy (context, filter: null, bindingFlags: BindingFlags.NonPublic | declaredOnlyFlags))
+				foreach (var f in typeDefinition.GetFieldsOnTypeHierarchy (filter: null, bindingFlags: BindingFlags.NonPublic | declaredOnlyFlags))
 					yield return f;
 			}
 
 			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicFields)) {
-				foreach (var f in typeDefinition.GetFieldsOnTypeHierarchy (context, filter: null, bindingFlags: BindingFlags.Public | declaredOnlyFlags))
+				foreach (var f in typeDefinition.GetFieldsOnTypeHierarchy (filter: null, bindingFlags: BindingFlags.Public | declaredOnlyFlags))
 					yield return f;
 			}
 
@@ -93,33 +87,33 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			}
 
 			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.NonPublicProperties)) {
-				foreach (var p in typeDefinition.GetPropertiesOnTypeHierarchy (context, filter: null, bindingFlags: BindingFlags.NonPublic | declaredOnlyFlags))
+				foreach (var p in typeDefinition.GetPropertiesOnTypeHierarchy (filter: null, bindingFlags: BindingFlags.NonPublic | declaredOnlyFlags))
 					yield return p;
 			}
 
 			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicProperties)) {
-				foreach (var p in typeDefinition.GetPropertiesOnTypeHierarchy (context, filter: null, bindingFlags: BindingFlags.Public | declaredOnlyFlags))
+				foreach (var p in typeDefinition.GetPropertiesOnTypeHierarchy (filter: null, bindingFlags: BindingFlags.Public | declaredOnlyFlags))
 					yield return p;
 			}
 
 			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.NonPublicEvents)) {
-				foreach (var e in typeDefinition.GetEventsOnTypeHierarchy (context, filter: null, bindingFlags: BindingFlags.NonPublic | declaredOnlyFlags))
+				foreach (var e in typeDefinition.GetEventsOnTypeHierarchy (filter: null, bindingFlags: BindingFlags.NonPublic | declaredOnlyFlags))
 					yield return e;
 			}
 
 			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicEvents)) {
-				foreach (var e in typeDefinition.GetEventsOnTypeHierarchy (context, filter: null, bindingFlags: BindingFlags.Public | declaredOnlyFlags))
+				foreach (var e in typeDefinition.GetEventsOnTypeHierarchy (filter: null, bindingFlags: BindingFlags.Public | declaredOnlyFlags))
 					yield return e;
 			}
 
-			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypesOverlay.Interfaces)) {
+			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.Interfaces)) {
 				foreach (var i in typeDefinition.GetAllInterfaceImplementations (context, declaredOnly))
 					yield return i;
 			}
 		}
 		public static IEnumerable<IMethodSymbol> GetConstructorsOnType (this ITypeSymbol type, Func<IMethodSymbol, bool>? filter, BindingFlags? bindingFlags = null)
 		{
-			foreach (var member in type.GetMembers () ) {
+			foreach (var member in type.GetMembers ()) {
 				if (!(member is IMethodSymbol method))
 					continue;
 				if (method.MethodKind != MethodKind.Constructor)
@@ -144,7 +138,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			}
 		}
 
-		public static IEnumerable<IMethodSymbol> GetMethodsOnTypeHierarchy (this ITypeSymbol thisType, OperationAnalysisContext context, Func<IMethodSymbol, bool>? filter, BindingFlags? bindingFlags = null)
+		public static IEnumerable<IMethodSymbol> GetMethodsOnTypeHierarchy (this ITypeSymbol thisType, Func<IMethodSymbol, bool>? filter, BindingFlags? bindingFlags = null)
 		{
 			ITypeSymbol? type = thisType;
 			bool onBaseType = false;
@@ -190,7 +184,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			}
 		}
 
-		public static IEnumerable<IFieldSymbol> GetFieldsOnTypeHierarchy (this ITypeSymbol thisType, OperationAnalysisContext context, Func<IFieldSymbol, bool>? filter, BindingFlags? bindingFlags = BindingFlags.Default)
+		public static IEnumerable<IFieldSymbol> GetFieldsOnTypeHierarchy (this ITypeSymbol thisType, Func<IFieldSymbol, bool>? filter, BindingFlags? bindingFlags = BindingFlags.Default)
 		{
 			ITypeSymbol? type = thisType;
 			bool onBaseType = false;
@@ -234,28 +228,28 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 
 		public static IEnumerable<ITypeSymbol> GetNestedTypesOnType (this ITypeSymbol type, Func<ITypeSymbol, bool>? filter, BindingFlags? bindingFlags = BindingFlags.Default)
 		{
-			// @TODO
-			throw new NotImplementedException ("@TODO");
-			//type.InheritsFromOrEquals()
-			//foreach (var nestedType in type.NestedTypes) {
-			//	ITypeSymbol
-			//	if (filter != null && !filter (nestedType))
-			//		continue;
+			foreach (var namedType in type.GetTypeMembers ()) {
+				if (!(namedType is ITypeSymbol nestedType))
+					continue;
+				Debug.Assert (nestedType.IsType);
+				if (filter != null && !filter (nestedType))
+					continue;
 
-			//	if ((bindingFlags & (BindingFlags.Public | BindingFlags.NonPublic)) == BindingFlags.Public) {
-			//		if (!nestedType.IsNestedPublic)
-			//			continue;
-			//	}
+				if ((bindingFlags & (BindingFlags.Public | BindingFlags.NonPublic)) == BindingFlags.Public) {
+					if (nestedType.DeclaredAccessibility != Accessibility.Public)
+						continue;
+				}
 
-			//	if ((bindingFlags & (BindingFlags.Public | BindingFlags.NonPublic)) == BindingFlags.NonPublic) {
-			//		if (nestedType.IsNestedPublic)
-			//			continue;
-			//	}
+				if ((bindingFlags & (BindingFlags.Public | BindingFlags.NonPublic)) == BindingFlags.NonPublic) {
+					if (nestedType.DeclaredAccessibility == Accessibility.Public)
+						continue;
+				}
 
-			//	yield return nestedType;
+				yield return nestedType;
+			}
 		}
 
-		public static IEnumerable<IPropertySymbol> GetPropertiesOnTypeHierarchy (this ITypeSymbol thisType, OperationAnalysisContext context, Func<IPropertySymbol, bool>? filter, BindingFlags? bindingFlags = BindingFlags.Default)
+		public static IEnumerable<IPropertySymbol> GetPropertiesOnTypeHierarchy (this ITypeSymbol thisType, Func<IPropertySymbol, bool>? filter, BindingFlags? bindingFlags = BindingFlags.Default)
 		{
 			ITypeSymbol? type = thisType;
 			bool onBaseType = false;
@@ -306,7 +300,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			}
 		}
 
-		public static IEnumerable<IEventSymbol> GetEventsOnTypeHierarchy (this ITypeSymbol thisType, OperationAnalysisContext context, Func<IEventSymbol, bool>? filter, BindingFlags? bindingFlags = BindingFlags.Default)
+		public static IEnumerable<IEventSymbol> GetEventsOnTypeHierarchy (this ITypeSymbol thisType, Func<IEventSymbol, bool>? filter, BindingFlags? bindingFlags = BindingFlags.Default)
 		{
 			ITypeSymbol? type = thisType;
 			bool onBaseType = false;
@@ -382,9 +376,12 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			}
 		}
 
+		// Issue https://github.com/dotnet/roslyn-analyzers/issues/4845
+#pragma warning disable RS1024
 		// declaredOnly will cause this to retrieve only members of the type, not of its base types. This includes interfaces recursively
 		// required by this type (but not members of these interfaces, or interfaces required only by base types).
 		public static void GetAllOnType (this ITypeSymbol type, OperationAnalysisContext context, bool declaredOnly, List<ISymbol> members) => GetAllOnType (type, context, declaredOnly, members, new HashSet<ITypeSymbol> ());
+#pragma warning restore RS1024
 
 		static void GetAllOnType (ITypeSymbol type, OperationAnalysisContext context, bool declaredOnly, List<ISymbol> members, HashSet<ITypeSymbol> types)
 		{
