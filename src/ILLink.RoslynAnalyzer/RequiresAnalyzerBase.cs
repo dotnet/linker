@@ -344,6 +344,7 @@ namespace ILLink.RoslynAnalyzer
 		protected bool IsMemberInRequiresScope (ISymbol containingSymbol)
 		{
 			if (containingSymbol.HasAttribute (RequiresAttributeName) ||
+				containingSymbol.ContainingType is not null &&
 				containingSymbol.ContainingType.HasAttribute (RequiresAttributeName)) {
 				return true;
 			}
@@ -371,7 +372,7 @@ namespace ILLink.RoslynAnalyzer
 			}
 
 			// Also check the containing type
-			if (member.IsStatic || member.IsConstructor ()) {
+			if ((member.IsStatic || member.IsConstructor ()) && member.ContainingType is not null) {
 				return TryGetRequiresAttribute (member.ContainingType, out requiresAttribute);
 			}
 			return false;
