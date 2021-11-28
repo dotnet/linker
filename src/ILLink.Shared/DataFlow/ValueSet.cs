@@ -1,3 +1,6 @@
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -12,10 +15,17 @@ namespace ILLink.Shared.DataFlow
 	{
 		// Since we're going to do lot of type checks for this class a lot, it is much more efficient
 		// if the class is sealed (as then the runtime can do a simple method table pointer comparison)
-		class SealedHashSet : HashSet<TValue>
+		sealed class EnumerableValues : HashSet<TValue>
 		{
-			public SealedHashSet () { }
-			public SealedHashSet (IEnumerable<TValue> values) : base (values) { }
+			public EnumerableValues (IEnumerable<TValue> values) : base (values) { }
+
+			public override int GetHashCode ()
+			{
+				int hashCode = 0;
+				foreach (var item in this)
+					hashCode = HashUtils.Combine (hashCode, item);
+				return hashCode;
+			}
 		}
 
 		public struct Enumerator : IEnumerator<TValue>, IDisposable, IEnumerator
@@ -27,7 +37,7 @@ namespace ILLink.Shared.DataFlow
 			internal Enumerator (object? values)
 			{
 				_state = 0;
-				if (values is SealedHashSet valuesSet) {
+				if (values is EnumerableValues valuesSet) {
 					_enumerator = valuesSet.GetEnumerator ();
 					_value = default (TValue);
 				} else {
@@ -39,7 +49,9 @@ namespace ILLink.Shared.DataFlow
 			// TODO: How to get this to work - without the '!' at the end this complains that default can return null.
 			// But how does this work for HashSet<T>? That will return null from Current in reality as well... 
 			// It seems that the nullability is not propagated "inside" HashSet (since that one is implemented with TValue being nullable)
-			public TValue Current => (_enumerator is not null ? _enumerator.Current : (_state == 1 ? (TValue)_value! : default))!;
+			public TValue Current => (_enumerator is not null
+				? _enumerator.Current
+				: (_state == 1 ? (TValue) _value! : default))!;
 
 			object? IEnumerator.Current => Current;
 
@@ -76,13 +88,13 @@ namespace ILLink.Shared.DataFlow
 		//   null - no values (empty set)
 		//   TValue - single value itself
 		//   SealedHashSet typed object - multiple values, stored in the hashset
-		private readonly object? _values;
+		readonly object? _values;
 
 		public ValueSet (TValue value) => _values = value;
 
-		public ValueSet (IEnumerable<TValue> values) => _values = new SealedHashSet (values);
+		public ValueSet (IEnumerable<TValue> values) => _values = new EnumerableValues (values);
 
-		private ValueSet (SealedHashSet values) => _values = values;
+		ValueSet (EnumerableValues values) => _values = values;
 
 		public override bool Equals (object? obj) => obj is ValueSet<TValue> other && Equals (other);
 
@@ -93,20 +105,20 @@ namespace ILLink.Shared.DataFlow
 			if (other._values == null)
 				return false;
 
-			if (_values is SealedHashSet valuesSet) {
-				Debug.Assert (valuesSet.Count > 1);
-				if (other._values is SealedHashSet otherValuesSet) {
+			if (_values is EnumerableValues enumerableValues) {
+				Debug.Assert (enumerableValues.Count > 1);
+				if (other._values is EnumerableValues otherValuesSet) {
 					Debug.Assert (otherValuesSet.Count > 1);
-					return valuesSet.SetEquals (otherValuesSet);
+					return enumerableValues.SetEquals (otherValuesSet);
 				} else
 					return false;
 			} else {
-				if (other._values is SealedHashSet otherValuesSet) {
-					Debug.Assert (otherValuesSet.Count > 1);
+				if (other._values is EnumerableValues otherEnumerableValues) {
+					Debug.Assert (otherEnumerableValues.Count > 1);
 					return false;
 				}
 
-				return EqualityComparer<TValue>.Default.Equals ((TValue)_values, (TValue)other._values);
+				return EqualityComparer<TValue>.Default.Equals ((TValue) _values, (TValue) other._values);
 			}
 		}
 
@@ -115,22 +127,23 @@ namespace ILLink.Shared.DataFlow
 			if (_values == null)
 				return typeof (ValueSet<TValue>).GetHashCode ();
 
-			if (_values is SealedHashSet valuesSet) {
-				int hashCode = 0;
-				foreach (var item in valuesSet)
-					hashCode = HashUtils.Combine (hashCode, item);
-				return hashCode;
-			}
+			if (_values is EnumerableValues enumerableValues)
+				return enumerableValues.GetHashCode ();
 
 			return _values.GetHashCode ();
 		}
 
-		public Enumerator GetEnumerator () => new(_values);
+		public Enumerator GetEnumerator () => new (_values);
+
 		IEnumerator<TValue> IEnumerable<TValue>.GetEnumerator () => GetEnumerator ();
 
 		IEnumerator IEnumerable.GetEnumerator () => GetEnumerator ();
 
-		public bool Contains (TValue value) => _values is null ? false : _values is SealedHashSet valuesSet ? valuesSet.Contains (value) : EqualityComparer <TValue>.Default.Equals (value, (TValue)_values);
+		public bool Contains (TValue value) => _values is null
+			? false
+			: _values is EnumerableValues valuesSet
+				? valuesSet.Contains (value)
+				: EqualityComparer<TValue>.Default.Equals (value, (TValue) _values);
 
 		internal static ValueSet<TValue> Meet (ValueSet<TValue> left, ValueSet<TValue> right)
 		{
@@ -139,13 +152,13 @@ namespace ILLink.Shared.DataFlow
 			if (right._values == null)
 				return left;
 
-			if (left._values is not SealedHashSet && right.Contains ((TValue)left._values))
+			if (left._values is not EnumerableValues && right.Contains ((TValue) left._values))
 				return right;
-				
-			if (right._values is not SealedHashSet && left.Contains ((TValue)right._values))
+
+			if (right._values is not EnumerableValues && left.Contains ((TValue) right._values))
 				return left;
 
-			var values = new SealedHashSet (left);
+			var values = new EnumerableValues (left);
 			values.UnionWith (right);
 			return new ValueSet<TValue> (values);
 		}
