@@ -37,7 +37,8 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 					var method = (IMethodSymbol) Source;
 					var returnDamt = method.GetDynamicallyAccessedMemberTypesOnReturnType ();
 					// Is this a property getter?
-					// TODO: handle conflicts between the getter and the property annotation
+					// If there are conflicts between the getter and the property annotation,
+					// the getter annotation wins. (But DAMT.None is ignored)
 					if (method.MethodKind is MethodKind.PropertyGet && returnDamt == DynamicallyAccessedMemberTypes.None) {
 						var property = (IPropertySymbol) method.AssociatedSymbol!;
 						Debug.Assert (property != null);
@@ -53,7 +54,8 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 				if (Source.Kind == SymbolKind.Parameter) {
 					var parameterMethod = (IMethodSymbol) Source.ContainingSymbol;
 					Debug.Assert (parameterMethod != null);
-					// TODO: handle conflicts between the getter and the property annotation
+					// If there are conflicts between the setter and the property annotation,
+					// the setter annotation wins. (But DAMT.None is ignored)
 					if (parameterMethod!.MethodKind == MethodKind.PropertySet && damt == DynamicallyAccessedMemberTypes.None) {
 						var property = (IPropertySymbol) parameterMethod.AssociatedSymbol!;
 						Debug.Assert (property != null);

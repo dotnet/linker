@@ -147,6 +147,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			instance.TestInstancePropertyWithStaticField ();
 			instance.TestPropertyWithDifferentBackingFields ();
 			instance.TestPropertyWithExistingAttributes ();
+			instance.TestPropertyWithConflictingAttributes ();
+			instance.TestPropertyWithConflictingNoneAttributes ();
 			instance.TestPropertyWithIndexerWithMatchingAnnotations (null);
 			instance.TestPropertyWithIndexerWithoutMatchingAnnotations (null);
 		}
@@ -280,6 +282,67 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				[ExpectedWarning ("IL2043", "PropertyWithExistingAttributes", "PropertyWithExistingAttributes.set")]
 				[param: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 				set { PropertyWithExistingAttributes_Field = value; }
+			}
+
+			// When the property annotation conflicts with the getter/setter annotation,
+			// we issue a warning (IL2043 below) but respect the getter/setter annotations.
+			[ExpectedWarning ("IL2072", nameof (TestAutomaticPropagationType) + "." + nameof (PropertyWithConflictingAttributes) + ".get",
+				nameof (DataFlowTypeExtensions) + "." + nameof (DataFlowTypeExtensions.RequiresPublicConstructors) + "(Type)")]
+			[ExpectedWarning ("IL2072", nameof (TestAutomaticPropagationType) + "." + nameof (PropertyWithConflictingAttributes) + ".set",
+				nameof (PropertyDataFlow) + "." + nameof (GetTypeWithPublicConstructors) + "()")]
+			public void TestPropertyWithConflictingAttributes ()
+			{
+				PropertyWithConflictingAttributes.RequiresPublicConstructors ();
+				PropertyWithConflictingAttributes.RequiresNonPublicConstructors ();
+				PropertyWithConflictingAttributes = GetTypeWithPublicConstructors ();
+				PropertyWithConflictingAttributes = GetTypeWithNonPublicConstructors ();
+			}
+
+			// Analyzer doesn't try to detect backing fields of properties.
+			// https://github.com/dotnet/linker/issues/2273
+			[ExpectedWarning ("IL2056", "PropertyWithConflictingAttributes", "PropertyWithConflictingAttributes_Field",
+				ProducedBy = ProducedBy.Trimmer)]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicConstructors)]
+			[CompilerGenerated]
+			Type PropertyWithConflictingAttributes_Field;
+
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
+			Type PropertyWithConflictingAttributes {
+				[ExpectedWarning ("IL2043", "PropertyWithConflictingAttributes", "PropertyWithConflictingAttributes.get")]
+				[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicConstructors)]
+				get { return PropertyWithConflictingAttributes_Field; }
+
+				[ExpectedWarning ("IL2043", "PropertyWithConflictingAttributes", "PropertyWithConflictingAttributes.set")]
+				[param: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicConstructors)]
+				set { PropertyWithConflictingAttributes_Field = value; }
+			}
+
+			// When the property annotation is DAMT.None and this conflicts with the getter/setter annotations,
+			// we don't produce a warning about the conflict, and just respect the property annotations.
+			[ExpectedWarning ("IL2072", nameof (TestAutomaticPropagationType) + "." + nameof (PropertyWithConflictingNoneAttributes) + ".get",
+				nameof (DataFlowTypeExtensions) + "." + nameof (DataFlowTypeExtensions.RequiresNonPublicConstructors) + "(Type)")]
+			[ExpectedWarning ("IL2072", nameof (TestAutomaticPropagationType) + "." + nameof (PropertyWithConflictingNoneAttributes) + ".set",
+				nameof (PropertyDataFlow) + "." + nameof (GetTypeWithNonPublicConstructors) + "()")]
+			public void TestPropertyWithConflictingNoneAttributes ()
+			{
+				PropertyWithConflictingNoneAttributes.RequiresPublicConstructors ();
+				PropertyWithConflictingNoneAttributes.RequiresNonPublicConstructors ();
+				PropertyWithConflictingNoneAttributes = GetTypeWithPublicConstructors ();
+				PropertyWithConflictingNoneAttributes = GetTypeWithNonPublicConstructors ();
+			}
+
+			// Backing field with None doesn't produce warning about conflicting attributes.
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.None)]
+			[CompilerGenerated]
+			Type PropertyWithConflictingNoneAttributes_Field;
+
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
+			Type PropertyWithConflictingNoneAttributes {
+				[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.None)]
+				get { return PropertyWithConflictingNoneAttributes_Field; }
+
+				[param: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.None)]
+				set { PropertyWithConflictingNoneAttributes_Field = value; }
 			}
 
 			[RecognizedReflectionAccessPattern]
