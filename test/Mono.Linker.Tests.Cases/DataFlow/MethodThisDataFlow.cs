@@ -94,7 +94,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 		// Analyer doesn't warn about unknown values flowing into annotated locations
 		// https://github.com/dotnet/linker/issues/2273
-		[ExpectedWarning ("IL2065", nameof (MethodThisDataFlowTypeTest) + "." + nameof (MethodThisDataFlowTypeTest.RequireThisNonPublicMethods) + "(Type)",
+		[ExpectedWarning ("IL2065", nameof (MethodThisDataFlowTypeTest) + "." + nameof (MethodThisDataFlowTypeTest.RequireThisNonPublicMethods), "'this'",
 			ProducedBy = ProducedBy.Trimmer)]
 		static void TestUnknownThis ()
 		{

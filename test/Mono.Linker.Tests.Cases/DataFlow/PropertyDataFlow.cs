@@ -291,9 +291,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 
 			// Trimmer and analyzer handle formatting of indexers differently.
-			[ExpectedWarning ("IL2067", nameof (PropertyWithIndexer) + ".Item.set(Type)", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2067", nameof (PropertyWithIndexer) + ".Item.set", ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2067", nameof (PropertyWithIndexer) + ".this[Int32].set", ProducedBy = ProducedBy.Analyzer)]
-			[UnrecognizedReflectionAccessPattern (typeof (DataFlowTypeExtensions), "RequiresNonPublicConstructors", new Type[] { typeof (Type) }, messageCode: "IL2072")]
+			[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions) + "." + nameof (DataFlowTypeExtensions.RequiresNonPublicConstructors) + "(Type)")]
 			[LogDoesNotContain ("'Value passed to parameter 'index' of method 'Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow.TestAutomaticPropagationType.PropertyWithIndexer.Item.set'")]
 			public void TestPropertyWithIndexerWithoutMatchingAnnotations (Type myType)
 			{
