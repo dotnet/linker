@@ -40,7 +40,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		static Type s_typeWithPublicParameterlessConstructor;
 
 		[Kept]
-		// Trimmer and analyzer use different formats for ref parameters
+		// Trimmer and analyzer use different formats for ref parameters: https://github.com/dotnet/linker/issues/2406
 		[ExpectedWarning ("IL2077", nameof (ByRefDataflow) + "." + nameof (MethodWithRefParameter) + "(Type&)", ProducedBy = ProducedBy.Trimmer)]
 		[ExpectedWarning ("IL2077", nameof (ByRefDataflow) + "." + nameof (MethodWithRefParameter) + "(ref Type)", ProducedBy = ProducedBy.Analyzer)]
 		public static void PassRefToField ()
@@ -49,7 +49,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[Kept]
-		// Trimmer and analyzer use different formats for ref parameters
+		// Trimmer and analyzer use different formats for ref parameters: https://github.com/dotnet/linker/issues/2406
 		[ExpectedWarning ("IL2067", nameof (ByRefDataflow) + "." + nameof (MethodWithRefParameter) + "(Type&)", ProducedBy = ProducedBy.Trimmer)]
 		[ExpectedWarning ("IL2067", nameof (ByRefDataflow) + "." + nameof (MethodWithRefParameter) + "(ref Type)", ProducedBy = ProducedBy.Analyzer)]
 		public static void PassRefToParameter (Type parameter)

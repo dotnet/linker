@@ -144,11 +144,11 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 		// where the receiver is not null (so an instance method/property).
 		public override void HandleReceiverArgument (MultiValue receiverValue, IMethodSymbol targetMethod, IOperation operation)
 		{
-			MultiValue implicitReceiverParameter = new MultiValue (new SymbolValue (targetMethod!, isMethodReturn: false));
+			MultiValue thisParameter = new MultiValue (new SymbolValue (targetMethod!, isMethodReturn: false));
 
 			TrimAnalysisPatterns.Add (new TrimAnalysisPattern (
 				receiverValue,
-				implicitReceiverParameter,
+				thisParameter,
 				operation
 			));
 		}
