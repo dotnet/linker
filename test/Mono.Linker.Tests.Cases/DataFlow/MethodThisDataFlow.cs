@@ -169,12 +169,9 @@ namespace System
 	class MethodThisDataFlowTypeTest : TestSystemTypeBase
 	{
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
-		// Analyzer doesn't handle these because they turn into InvalidOperation
-		// TODO: add support for SandboxDependency
 		[ExpectedWarning ("IL2082", nameof (MethodThisDataFlowTypeTest) + "." + nameof (RequireNonPublicMethods) + "(Type)",
 			"'type' argument ", "in call to 'System.MethodThisDataFlowTypeTest.RequireNonPublicMethods(Type)'",
-			"implicit 'this' argument of method 'System.MethodThisDataFlowTypeTest.RequireThisPublicMethods()'",
-			ProducedBy = ProducedBy.Trimmer)]
+			"implicit 'this' argument of method 'System.MethodThisDataFlowTypeTest.RequireThisPublicMethods()'")]
 		public void RequireThisPublicMethods ()
 		{
 			RequirePublicMethods (this);
@@ -182,10 +179,7 @@ namespace System
 		}
 
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicMethods)]
-		// Analyzer doesn't handle these because they turn into InvalidOperation
-		// TODO: add support for SandboxDependency
-		[ExpectedWarning ("IL2082", nameof (MethodThisDataFlowTypeTest) + "." + nameof (RequirePublicMethods) + "(Type)",
-			ProducedBy = ProducedBy.Trimmer)]
+		[ExpectedWarning ("IL2082", nameof (MethodThisDataFlowTypeTest) + "." + nameof (RequirePublicMethods) + "(Type)")]
 		public void RequireThisNonPublicMethods ()
 		{
 			RequirePublicMethods (this);
