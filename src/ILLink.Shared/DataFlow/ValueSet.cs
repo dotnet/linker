@@ -87,7 +87,7 @@ namespace ILLink.Shared.DataFlow
 		// Cases where there are multiple values stored are relatively very rare.
 		//   null - no values (empty set)
 		//   TValue - single value itself
-		//   SealedHashSet typed object - multiple values, stored in the hashset
+		//   EnumerableValues typed object - multiple values, stored in the hashset
 		readonly object? _values;
 
 		public ValueSet (TValue value) => _values = value;
