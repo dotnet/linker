@@ -408,31 +408,5 @@ class C
 
 			return VerifyRequiresUnreferencedCodeAnalyzer (source);
 		}
-	
-
-		[Fact]
-		public Task BaseRucMethodDerivedRucClass ()
-		{
-			var source = @"
-	using System.Diagnostics.CodeAnalysis;
-
-	class BaseWithoutRequiresOnType
-	{
-		[RequiresUnreferencedCode (""RUC"")]
-		public virtual void Method () { }
-	}
-
-	[RequiresUnreferencedCode (""RUC"")]
-	class DerivedWithRequiresOnType : BaseWithoutRequiresOnType
-	{
-		public override void Method () { }
-	}
-	";
-
-			return VerifyRequiresUnreferencedCodeAnalyzer (source);
-		}
 	}
 }
-
-
-
