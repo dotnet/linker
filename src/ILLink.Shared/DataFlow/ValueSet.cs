@@ -39,7 +39,7 @@ namespace ILLink.Shared.DataFlow
 				_state = 0;
 				if (values is EnumerableValues valuesSet) {
 					_enumerator = valuesSet.GetEnumerator ();
-					_value = default (TValue);
+					_value = null;
 				} else {
 					_enumerator = null;
 					_value = values;
