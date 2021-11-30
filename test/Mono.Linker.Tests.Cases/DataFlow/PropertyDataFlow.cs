@@ -112,8 +112,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				return _fieldWithPublicConstructors;
 			}
 
-			[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), nameof (_fieldWithPublicConstructors),
-				messageCode: "IL2069", message: new string[] { "value", nameof (PropertyPublicParameterlessConstructorWithExplicitAccessors) + ".set", nameof (_fieldWithPublicConstructors) })]
+			[ExpectedWarning ("IL2069", nameof (PropertyDataFlow) + "." + nameof (_fieldWithPublicConstructors),
+				"'value'",
+				nameof (PropertyPublicParameterlessConstructorWithExplicitAccessors) + ".set")]
 			[param: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
 			set {
 				_fieldWithPublicConstructors = value;
@@ -131,7 +132,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				return _fieldWithPublicConstructors;
 			}
 
-			[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), nameof (_fieldWithPublicConstructors), messageCode: "IL2069")]
+			[ExpectedWarning ("IL2069", nameof (PropertyDataFlow) + "." + nameof (_fieldWithPublicConstructors),
+				"'value'",
+				nameof (PropertyNonPublicConstructorsWithExplicitAccessors) + ".set")]
 			[param: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicConstructors)]
 			set {
 				_fieldWithPublicConstructors = value;
@@ -189,6 +192,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 
 			[RecognizedReflectionAccessPattern]
+			// Analyzer doesn't try to detect backing fields of properties: https://github.com/dotnet/linker/issues/2273
+			[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions) + "." + nameof (DataFlowTypeExtensions.RequiresPublicConstructors) + "(Type)",
+				nameof (TestAutomaticPropagationType) + "." + nameof (PropertyWhichLooksLikeCompilerGenerated_Field),
+				ProducedBy = ProducedBy.Analyzer)]
 			public void TestPropertyWhichLooksLikeCompilerGenerated ()
 			{
 				// If the property was correctly recognized both the property getter and the backing field should get the annotation.
@@ -201,6 +208,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 			static Type PropertyWhichLooksLikeCompilerGenerated {
+				// Analyzer doesn't try to detect backing fields of properties: https://github.com/dotnet/linker/issues/2273
+				[ExpectedWarning ("IL2078", nameof (TestAutomaticPropagationType) + "." + nameof (PropertyWhichLooksLikeCompilerGenerated) + ".get",
+					nameof (TestAutomaticPropagationType) + "." + nameof (PropertyWhichLooksLikeCompilerGenerated_Field),
+					ProducedBy = ProducedBy.Analyzer)]
 				get {
 					return PropertyWhichLooksLikeCompilerGenerated_Field;
 				}
@@ -239,8 +250,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[CompilerGenerated]
 			private Type PropertyWithDifferentBackingFields_SetterField;
 
-			// Analyzer doesn't try to detect backing fields of properties.
-			// https://github.com/dotnet/linker/issues/2273
+			// Analyzer doesn't try to detect backing fields of properties: https://github.com/dotnet/linker/issues/2273
 			[ExpectedWarning ("IL2042",
 				"Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow.TestAutomaticPropagationType.PropertyWithDifferentBackingFields",
 				ProducedBy = ProducedBy.Trimmer)]
@@ -265,8 +275,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				PropertyWithExistingAttributes = null;
 			}
 
-			// Analyzer doesn't try to detect backing fields of properties.
-			// https://github.com/dotnet/linker/issues/2273
+			// Analyzer doesn't try to detect backing fields of properties: https://github.com/dotnet/linker/issues/2273
 			[ExpectedWarning ("IL2056", "PropertyWithExistingAttributes", "PropertyWithExistingAttributes_Field",
 				ProducedBy = ProducedBy.Trimmer)]
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
@@ -275,11 +284,15 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 			Type PropertyWithExistingAttributes {
-				[ExpectedWarning ("IL2043", "PropertyWithExistingAttributes", "PropertyWithExistingAttributes.get")]
+				// Analyzer doesn't try to detect backing fields of properties: https://github.com/dotnet/linker/issues/2273
+				[ExpectedWarning ("IL2043", "PropertyWithExistingAttributes", "PropertyWithExistingAttributes.get",
+					ProducedBy = ProducedBy.Trimmer)]
 				[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 				get { return PropertyWithExistingAttributes_Field; }
 
-				[ExpectedWarning ("IL2043", "PropertyWithExistingAttributes", "PropertyWithExistingAttributes.set")]
+				// Analyzer doesn't try to detect backing fields of properties: https://github.com/dotnet/linker/issues/2273
+				[ExpectedWarning ("IL2043", "PropertyWithExistingAttributes", "PropertyWithExistingAttributes.set",
+					ProducedBy = ProducedBy.Trimmer)]
 				[param: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 				set { PropertyWithExistingAttributes_Field = value; }
 			}
@@ -298,8 +311,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				PropertyWithConflictingAttributes = GetTypeWithNonPublicConstructors ();
 			}
 
-			// Analyzer doesn't try to detect backing fields of properties.
-			// https://github.com/dotnet/linker/issues/2273
+			// Analyzer doesn't try to detect backing fields of properties: https://github.com/dotnet/linker/issues/2273
 			[ExpectedWarning ("IL2056", "PropertyWithConflictingAttributes", "PropertyWithConflictingAttributes_Field",
 				ProducedBy = ProducedBy.Trimmer)]
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicConstructors)]
@@ -308,11 +320,15 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 			Type PropertyWithConflictingAttributes {
-				[ExpectedWarning ("IL2043", "PropertyWithConflictingAttributes", "PropertyWithConflictingAttributes.get")]
+				// Analyzer doesn't try to detect backing fields of properties: https://github.com/dotnet/linker/issues/2273
+				[ExpectedWarning ("IL2043", "PropertyWithConflictingAttributes", "PropertyWithConflictingAttributes.get",
+					ProducedBy = ProducedBy.Trimmer)]
 				[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicConstructors)]
 				get { return PropertyWithConflictingAttributes_Field; }
 
-				[ExpectedWarning ("IL2043", "PropertyWithConflictingAttributes", "PropertyWithConflictingAttributes.set")]
+				// Analyzer doesn't try to detect backing fields of properties: https://github.com/dotnet/linker/issues/2273
+				[ExpectedWarning ("IL2043", "PropertyWithConflictingAttributes", "PropertyWithConflictingAttributes.set",
+					ProducedBy = ProducedBy.Trimmer)]
 				[param: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicConstructors)]
 				set { PropertyWithConflictingAttributes_Field = value; }
 			}
@@ -331,13 +347,16 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				PropertyWithConflictingNoneAttributes = GetTypeWithNonPublicConstructors ();
 			}
 
-			// Backing field with None doesn't produce warning about conflicting attributes.
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.None)]
 			[CompilerGenerated]
 			Type PropertyWithConflictingNoneAttributes_Field;
 
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 			Type PropertyWithConflictingNoneAttributes {
+				// Analyzer doesn't try to detect backing fields of properties: https://github.com/dotnet/linker/issues/2273
+				[ExpectedWarning ("IL2078", nameof (TestAutomaticPropagationType) + "." + nameof (PropertyWithConflictingNoneAttributes) + ".get",
+					nameof (TestAutomaticPropagationType) + "." + nameof (PropertyWithConflictingNoneAttributes_Field),
+					ProducedBy = ProducedBy.Analyzer)]
 				[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.None)]
 				get { return PropertyWithConflictingNoneAttributes_Field; }
 
@@ -372,7 +391,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 				public Type this[int index] {
-					[ExpectedWarning ("IL2063", "PropertyWithIndexer.Item.get")]
+					// TODO: warn about unknown types in analyzer: https://github.com/dotnet/linker/issues/2273
+					[ExpectedWarning ("IL2063", "PropertyWithIndexer.Item.get",
+						ProducedBy = ProducedBy.Trimmer)]
 					get => Property_Field[index];
 					set => Property_Field[index] = value;
 				}

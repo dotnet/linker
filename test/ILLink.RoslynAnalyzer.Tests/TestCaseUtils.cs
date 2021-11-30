@@ -69,7 +69,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 				if (attributeName != "SetupCompileBefore" && attributeName != "SandboxDependency")
 					continue;
 
-				var testNamespace = testSyntaxTree.GetRoot ().DescendantNodes ().OfType<NamespaceDeclarationSyntax> ().Single ().Name.ToString ();
+				var testNamespace = testSyntaxTree.GetRoot ().DescendantNodes ().OfType<NamespaceDeclarationSyntax> ().First ().Name.ToString ();
 				var testSuiteName = testNamespace.Substring (testNamespace.LastIndexOf ('.') + 1);
 				var args = LinkerTestBase.GetAttributeArguments (attribute);
 

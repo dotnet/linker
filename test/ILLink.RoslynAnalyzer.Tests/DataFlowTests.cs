@@ -85,7 +85,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			return RunTest (nameof (GetInterfaceDataFlow));
 		}
 
-		[Fact]
+		[Fact (Skip = "https://github.com/dotnet/linker/issues/2273")]
 		public Task GetNestedTypeOnAllAnnotatedType ()
 		{
 			return RunTest (nameof (GetNestedTypeOnAllAnnotatedType));
