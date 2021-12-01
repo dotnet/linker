@@ -8,12 +8,10 @@ using System.Linq;
 using System.Text;
 using ILLink.Shared.DataFlow;
 using Mono.Cecil;
-
 using FieldDefinition = Mono.Cecil.FieldDefinition;
 using GenericParameter = Mono.Cecil.GenericParameter;
-using TypeDefinition = Mono.Cecil.TypeDefinition;
-
 using MultiValue = ILLink.Shared.DataFlow.ValueSet<Mono.Linker.Dataflow.ValueNode>;
+using TypeDefinition = Mono.Cecil.TypeDefinition;
 
 namespace Mono.Linker.Dataflow
 {
@@ -196,7 +194,7 @@ namespace Mono.Linker.Dataflow
 
 		public static int? AsConstInt (this in MultiValue value)
 		{
-			if (value.AsSingleValue() is ConstIntValue constInt)
+			if (value.AsSingleValue () is ConstIntValue constInt)
 				return constInt.Value;
 
 			return null;
@@ -751,7 +749,7 @@ namespace Mono.Linker.Dataflow
 	{
 		static ValueSetLattice<ValueNode> MultiValueLattice => default;
 
-		public static MultiValue Create(MultiValue size, TypeReference elementType)
+		public static MultiValue Create (MultiValue size, TypeReference elementType)
 		{
 			MultiValue result = MultiValueLattice.Top;
 			foreach (var sizeValue in size) {
@@ -761,7 +759,7 @@ namespace Mono.Linker.Dataflow
 			return result;
 		}
 
-		public static MultiValue Create(ValueNode size, TypeReference elementType)
+		public static MultiValue Create (ValueNode size, TypeReference elementType)
 		{
 			return new MultiValue (new ArrayValue (size, elementType));
 		}

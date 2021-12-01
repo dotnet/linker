@@ -93,7 +93,7 @@ namespace ILLink.Shared.DataFlow
 
 		ValueSet (EnumerableValues values) => _values = values;
 
-		public static implicit operator ValueSet<TValue>(TValue value) => new (value);
+		public static implicit operator ValueSet<TValue> (TValue value) => new (value);
 
 		public override bool Equals (object? obj) => obj is ValueSet<TValue> other && Equals (other);
 
@@ -162,7 +162,7 @@ namespace ILLink.Shared.DataFlow
 			return new ValueSet<TValue> (values);
 		}
 
-		public bool IsEmpty () => Values == null || Values.Count == 0;
+		public bool IsEmpty () => _values == null;
 
 		public override string ToString ()
 		{
