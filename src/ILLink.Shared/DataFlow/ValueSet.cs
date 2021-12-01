@@ -46,12 +46,9 @@ namespace ILLink.Shared.DataFlow
 				}
 			}
 
-			// TODO: How to get this to work - without the '!' at the end this complains that default can return null.
-			// But how does this work for HashSet<T>? That will return null from Current in reality as well... 
-			// It seems that the nullability is not propagated "inside" HashSet (since that one is implemented with TValue being nullable)
-			public TValue Current => (_enumerator is not null
+			public TValue Current => _enumerator is not null
 				? _enumerator.Current
-				: (_state == 1 ? (TValue) _value! : default))!;
+				: (_state == 1 ? (TValue) _value! : default!);
 
 			object? IEnumerator.Current => Current;
 
