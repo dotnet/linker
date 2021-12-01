@@ -114,7 +114,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 		public static IEnumerable<IMethodSymbol> GetConstructorsOnType (this ITypeSymbol type, Func<IMethodSymbol, bool>? filter, BindingFlags? bindingFlags = null)
 		{
 			foreach (var member in type.GetMembers ()) {
-				if (!(member is IMethodSymbol method))
+				if (member is not IMethodSymbol method)
 					continue;
 				if (method.MethodKind != MethodKind.Constructor)
 					continue;
@@ -144,7 +144,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			bool onBaseType = false;
 			while (type != null) {
 				foreach (var member in type.GetMembers ()) {
-					if (!(member is IMethodSymbol method))
+					if (member is not IMethodSymbol method)
 						continue;
 					// Ignore constructors as those are not considered methods from a reflection's point of view
 					if (method.MethodKind == MethodKind.Constructor)
@@ -190,7 +190,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			bool onBaseType = false;
 			while (type != null) {
 				foreach (var member in type.GetMembers ()) {
-					if (!(member is IFieldSymbol field))
+					if (member is not IFieldSymbol field)
 						continue;
 					// Ignore private fields on a base type - those are completely ignored by reflection
 					// (anything private on the base type is not visible via the derived type)
@@ -229,7 +229,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 		public static IEnumerable<ITypeSymbol> GetNestedTypesOnType (this ITypeSymbol type, Func<ITypeSymbol, bool>? filter, BindingFlags? bindingFlags = BindingFlags.Default)
 		{
 			foreach (var namedType in type.GetTypeMembers ()) {
-				if (!(namedType is ITypeSymbol nestedType))
+				if (namedType is not ITypeSymbol nestedType)
 					continue;
 				Debug.Assert (nestedType.IsType);
 				if (filter != null && !filter (nestedType))
@@ -255,7 +255,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			bool onBaseType = false;
 			while (type != null) {
 				foreach (var member in type.GetMembers ()) {
-					if (!(member is IPropertySymbol property))
+					if (member is not IPropertySymbol property)
 						continue;
 					// Ignore private properties on a base type - those are completely ignored by reflection
 					// (anything private on the base type is not visible via the derived type)
@@ -306,7 +306,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			bool onBaseType = false;
 			while (type != null) {
 				foreach (var member in type.GetMembers ()) {
-					if (!(member is IEventSymbol @event))
+					if (member is not IEventSymbol @event)
 						continue;
 
 					// Ignore private properties on a base type - those are completely ignored by reflection
@@ -376,11 +376,11 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			}
 		}
 
-		// Issue https://github.com/dotnet/roslyn-analyzers/issues/4845
+		// Can not pass SymbolEqualityComparer to HashSet since the collection type is ITypeSymbol and not ISymbol.
 #pragma warning disable RS1024
 		// declaredOnly will cause this to retrieve only members of the type, not of its base types. This includes interfaces recursively
 		// required by this type (but not members of these interfaces, or interfaces required only by base types).
-		public static void GetAllOnType (this ITypeSymbol type, OperationAnalysisContext context, bool declaredOnly, List<ISymbol> members) => GetAllOnType (type, context, declaredOnly, members, new HashSet<ITypeSymbol> ());
+		public static void GetAllOnType (this ITypeSymbol type, OperationAnalysisContext context, bool declaredOnly, List<ISymbol> members) => GetAllOnType (type, context, declaredOnly, members, new HashSet<ITypeSymbol> (SymbolEqualityComparer.Default));
 #pragma warning restore RS1024
 
 		static void GetAllOnType (ITypeSymbol type, OperationAnalysisContext context, bool declaredOnly, List<ISymbol> members, HashSet<ITypeSymbol> types)
@@ -388,14 +388,13 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			if (!types.Add (type))
 				return;
 
-			// @TODO
-			//if (type.HasNestedTypes) {
-			//	foreach (var nested in type.NestedTypes) {
-			//		members.Add (nested);
-			//		// Base types and interfaces of nested types are always included.
-			//		GetAllOnType (nested, context, declaredOnly: false, members, types);
-			//	}
-			//}
+			foreach (var namedType in type.GetTypeMembers ()) {
+				if (namedType is ITypeSymbol nestedType) {
+					members.Add (nestedType);
+					// Base types and interfaces of nested types are always included.
+					GetAllOnType (nestedType, context, declaredOnly: false, members, types);
+				}
+			}
 
 			if (!declaredOnly) {
 				var baseType = type.BaseType;
@@ -419,17 +418,15 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			}
 
 			foreach (var member in type.GetMembers ()) {
-				if (member is IFieldSymbol f)
-					members.Add (f);
-				if (member is IMethodSymbol m)
-					members.Add (m);
-				if (member is IPropertySymbol p)
-					members.Add (p);
-				if (member is IEventSymbol e)
-					members.Add (e);
+				switch (member.Kind) {
+				case SymbolKind.Field:
+				case SymbolKind.Method:
+				case SymbolKind.Property:
+				case SymbolKind.Event:
+					members.Add (member);
+					break;
+				}
 			}
 		}
-
-
 	}
 }
