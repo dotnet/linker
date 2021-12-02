@@ -177,7 +177,7 @@ public class C
 {
     [RequiresDynamicCode(""message"")]
     public int M1() => 0;
-    [UnconditionalSuppressMessage(""AOT"", ""IL2117:Members annotated with 'RequiresDynamicCodeAttribute' require dynamic access otherwise can break functionality when trimming application code"", Justification = ""<Pending>"")]
+    [UnconditionalSuppressMessage(""AOT"", ""IL3050:Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling."", Justification = ""<Pending>"")]
     int M2() => M1();
 }";
 			return VerifyUnconditionalSuppressMessageCodeFixWithRDC (

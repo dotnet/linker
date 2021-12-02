@@ -142,10 +142,10 @@
     <value>Using member '{0}' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.{1}{2}</value>
   </data>
  <data name="RequiresDynamicCodeTitle" xml:space="preserve">
-    <value>Members annotated with 'RequiresDynamicCodeAttribute' require dynamic access otherwise can break functionality when trimming application code</value>
+    <value>Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.</value>
   </data>
   <data name="RequiresDynamicCodeMessage" xml:space="preserve">
-    <value>Using member '{0}' which has 'RequiresDynamicCodeAttribute' can break functionality when trimming application code.{1}{2}</value>
+    <value>Using member '{0}' which has 'RequiresDynamicCodeAttribute' can break functionality when AOT compiling.{1}{2}</value>
   </data>
   <data name="RequiresUnreferencedCodeAttributeMismatchMessage" xml:space="preserve">
     <value>{0}. 'RequiresUnreferencedCodeAttribute' annotations must match across all interface implementations or overrides.</value>
