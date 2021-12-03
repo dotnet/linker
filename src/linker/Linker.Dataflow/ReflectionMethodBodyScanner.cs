@@ -21,7 +21,6 @@ namespace Mono.Linker.Dataflow
 	{
 		readonly MarkStep _markStep;
 		readonly MarkScopeStack _scopeStack;
-		static ValueSetLattice<ValueNode> MultiValueLattice => default;
 
 		public static bool RequiresReflectionMethodBodyScannerForCallSite (LinkContext context, MethodReference calledMethod)
 		{
@@ -196,7 +195,7 @@ namespace Mono.Linker.Dataflow
 		{
 			switch (field.Name) {
 			case "EmptyTypes" when field.DeclaringType.IsTypeOf ("System", "Type"): {
-					return ArrayValue.Create (new ConstIntValue (0), field.DeclaringType);
+					return ArrayValue.Create (0, field.DeclaringType);
 				}
 			case "Empty" when field.DeclaringType.IsTypeOf ("System", "String"): {
 					return new KnownStringValue (string.Empty);
@@ -673,7 +672,7 @@ namespace Mono.Linker.Dataflow
 					break;
 
 				case IntrinsicId.Array_Empty: {
-						methodReturnValue = ArrayValue.Create (new ConstIntValue (0), ((GenericInstanceMethod) calledMethod).GenericArguments[0]);
+						methodReturnValue = ArrayValue.Create (0, ((GenericInstanceMethod) calledMethod).GenericArguments[0]);
 					}
 					break;
 

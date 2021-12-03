@@ -759,9 +759,9 @@ namespace Mono.Linker.Dataflow
 			return result;
 		}
 
-		public static MultiValue Create (ValueNode size, TypeReference elementType)
+		public static MultiValue Create (int size, TypeReference elementType)
 		{
-			return new MultiValue (new ArrayValue (size, elementType));
+			return new MultiValue (new ArrayValue (new ConstIntValue (size), elementType));
 		}
 
 		/// <summary>

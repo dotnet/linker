@@ -47,7 +47,7 @@ namespace Mono.Linker.Dataflow
 	abstract partial class MethodBodyScanner
 	{
 		protected readonly LinkContext _context;
-		static ValueSetLattice<ValueNode> MultiValueLattice => default;
+		protected static ValueSetLattice<ValueNode> MultiValueLattice => default;
 
 		protected MethodBodyScanner (LinkContext context)
 		{
