@@ -40,54 +40,6 @@ namespace Mono.Linker.Dataflow
 		public TypeDefinition? StaticType { get; init; }
 
 		/// <summary>
-		/// Allows the enumeration of the direct children of this node.  The ChildCollection struct returned here
-		/// supports 'foreach' without allocation.
-		/// </summary>
-		public ChildCollection Children { get { return new ChildCollection (this); } }
-
-		/// <summary>
-		/// This property allows you to enumerate all 'unique values' represented by a given ValueNode.  The basic idea
-		/// is that there will be no MergePointValues in the returned ValueNodes and all structural operations will be
-		/// applied so that each 'unique value' can be considered on its own without regard to the structure that led to
-		/// it.
-		/// </summary>
-		public UniqueValueCollection UniqueValuesInternal {
-			get {
-				return new UniqueValueCollection (this);
-			}
-		}
-
-		/// <summary>
-		/// This protected method is how nodes implement the UniqueValues property.  It is protected because it returns
-		/// an IEnumerable and we want to avoid allocating an enumerator for the exceedingly common case of there being
-		/// only one value in the enumeration.  The UniqueValueCollection returned by the UniqueValues property handles
-		/// this detail.
-		/// </summary>
-		protected abstract IEnumerable<ValueNode> EvaluateUniqueValues ();
-
-		/// <summary>
-		/// RepresentsExactlyOneValue is used by the UniqueValues property to allow us to bypass allocating an
-		/// enumerator to return just one value.  If a node returns 'true' from RepresentsExactlyOneValue, it must also
-		/// return that one value from GetSingleUniqueValue.  If it always returns 'false', it doesn't need to implement
-		/// GetSingleUniqueValue.
-		/// </summary>
-		protected virtual bool RepresentsExactlyOneValue { get { return false; } }
-
-		/// <summary>
-		/// GetSingleUniqueValue is called if, and only if, RepresentsExactlyOneValue returns true.  It allows us to
-		/// bypass the allocation of an enumerator for the common case of returning exactly one value.
-		/// </summary>
-		protected virtual ValueNode GetSingleUniqueValue ()
-		{
-			// Not implemented because RepresentsExactlyOneValue returns false and, therefore, this method should be
-			// unreachable.
-			throw new NotImplementedException ();
-		}
-
-		protected abstract int NumChildren { get; }
-		protected abstract ValueNode ChildAt (int index);
-
-		/// <summary>
 		/// Each node type must implement this to stringize itself.  The expectation is that it is implemented using
 		/// ValueNodeDump.ValueNodeToString(), passing any non-ValueNode properties of interest (e.g.
 		/// SystemTypeValue.TypeRepresented).  Properties that are invariant on a particular node type
@@ -99,102 +51,7 @@ namespace Mono.Linker.Dataflow
 		{
 			return NodeToString ();
 		}
-
-		#region Specialized Collection Nested Types
-		/// <summary>
-		/// ChildCollection struct is used to wrap the operations on a node involving its children.  In particular, the
-		/// struct implements a GetEnumerator method that is used to allow "foreach (ValueNode node in myNode.Children)"
-		/// without heap allocations.
-		/// </summary>
-		public struct ChildCollection : IEnumerable<ValueNode>
-		{
-			/// <summary>
-			/// Enumerator for children of a ValueNode.  Allows foreach(var child in node.Children) to work without
-			/// allocating a heap-based enumerator.
-			/// </summary>
-			public struct Enumerator : IEnumerator<ValueNode>
-			{
-				int _index;
-				readonly ValueNode _parent;
-
-				public Enumerator (ValueNode parent)
-				{
-					_parent = parent;
-					_index = -1;
-				}
-
-				public ValueNode Current { get { return _parent.ChildAt (_index); } }
-
-				object System.Collections.IEnumerator.Current { get { return Current; } }
-
-				public bool MoveNext ()
-				{
-					_index++;
-					return (_parent != null) ? (_index < _parent.NumChildren) : false;
-				}
-
-				public void Reset ()
-				{
-					_index = -1;
-				}
-
-				public void Dispose ()
-				{
-				}
-			}
-
-			readonly ValueNode _parentNode;
-
-			public ChildCollection (ValueNode parentNode) { _parentNode = parentNode; }
-
-			// Used by C# 'foreach', when strongly typed, to avoid allocation.
-			public Enumerator GetEnumerator ()
-			{
-				return new Enumerator (_parentNode);
-			}
-
-			IEnumerator<ValueNode> IEnumerable<ValueNode>.GetEnumerator ()
-			{
-				// note the boxing!
-				return new Enumerator (_parentNode);
-			}
-			System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator ()
-			{
-				// note the boxing!
-				return new Enumerator (_parentNode);
-			}
-
-			public int Count { get { return (_parentNode != null) ? _parentNode.NumChildren : 0; } }
-		}
-
-		/// <summary>
-		/// UniqueValueCollection is used to wrap calls to ValueNode.EvaluateUniqueValues.  If a ValueNode represents
-		/// only one value, then foreach(ValueNode value in node.UniqueValues) will not allocate a heap-based enumerator.
-		///
-		/// This is implented by having each ValueNode tell us whether or not it represents exactly one value or not.
-		/// If it does, we fetch it with ValueNode.GetSingleUniqueValue(), otherwise, we fall back to the usual heap-
-		/// based IEnumerable returned by ValueNode.EvaluateUniqueValues.
-		/// </summary>
-		public struct UniqueValueCollection : IEnumerable<ValueNode>
-		{
-			readonly IEnumerable<ValueNode>? _multiValueEnumerable;
-			readonly ValueNode? _treeNode;
-
-			public UniqueValueCollection (ValueNode node)
-			{
-				if (node.RepresentsExactlyOneValue) {
-					_multiValueEnumerable = null;
-					_treeNode = node;
-				} else {
-					_multiValueEnumerable = node.EvaluateUniqueValues ();
-					_treeNode = null;
-				}
-			}
-
-			public Enumerator GetEnumerator ()
-			{
-				return new Enumerator (_treeNode, _multiValueEnumerable);
-			}
+	}
 
 	/// <summary>
 	/// LeafValueNode represents a 'leaf' in the expression tree.  In other words, the node has no ValueNode children.
@@ -258,14 +115,6 @@ namespace Mono.Linker.Dataflow
 			//
 			// Nodes with children
 			//
-			case MergePointValue mergePointNode:
-				foreach (ValueNode val in mergePointNode.Values) {
-					if (val.DetectCycle (seenNodes, allNodesSeen)) {
-						foundCycle = true;
-					}
-				}
-				break;
-
 			case ArrayValue:
 				ArrayValue av = (ArrayValue) node;
 				foundCycle = av.Size.DetectCycle (seenNodes, allNodesSeen);
@@ -586,110 +435,6 @@ namespace Mono.Linker.Dataflow
 			return ValueNodeDump.ValueNodeToString (this, DynamicallyAccessedMemberTypes);
 		}
 	}
-
-	/// <summary>
-	/// A merge point commonly occurs due to control flow in a method body.  It represents a set of values
-	/// from different paths through the method.  It is the reason for EvaluateUniqueValues, which essentially
-	/// provides an enumeration over all the concrete values represented by a given ValueNode after 'erasing'
-	/// the merge point nodes.
-	/// </summary>
-	record MergePointValue : ValueNode
-	{
-		private MergePointValue (ValueNode one, ValueNode two)
-		{
-			StaticType = null;
-			m_values = new ValueNodeHashSet ();
-
-			if (one is MergePointValue mpvOne) {
-				foreach (ValueNode value in mpvOne.Values)
-					m_values.Add (value);
-			} else
-				m_values.Add (one);
-
-			if (two is MergePointValue mpvTwo) {
-				foreach (ValueNode value in mpvTwo.Values)
-					m_values.Add (value);
-			} else
-				m_values.Add (two);
-		}
-
-		public MergePointValue ()
-		{
-			m_values = new ValueNodeHashSet ();
-		}
-
-		public void AddValue (ValueNode node)
-		{
-			// we are mutating our state, so we must invalidate any cached knowledge
-			//InvalidateIsOpen ();
-
-			if (node is MergePointValue mpv) {
-				foreach (ValueNode value in mpv.Values)
-					m_values.Add (value);
-			} else
-				m_values.Add (node);
-		}
-
-		readonly ValueNodeHashSet m_values;
-
-		public ValueNodeHashSet Values { get { return m_values; } }
-
-		protected override int NumChildren { get { return Values.Count; } }
-		protected override ValueNode ChildAt (int index)
-		{
-			if (index < NumChildren)
-				return Values.ElementAt (index);
-			throw new InvalidOperationException ();
-		}
-
-		public static ValueNode? MergeValues (ValueNode? one, ValueNode? two)
-		{
-			if (one == null)
-				return two;
-			else if (two == null)
-				return one;
-			else if (one.Equals (two))
-				return one;
-			else
-				return new MergePointValue (one, two);
-		}
-
-		protected override IEnumerable<ValueNode> EvaluateUniqueValues ()
-		{
-			foreach (ValueNode value in Values) {
-				foreach (ValueNode uniqueValue in value.UniqueValuesInternal) {
-					yield return uniqueValue;
-				}
-			}
-		}
-
-		public virtual bool Equals (MergePointValue? otherMpv)
-		{
-			if (otherMpv == null)
-				return false;
-
-			if (this.Values.Count != otherMpv.Values.Count)
-				return false;
-
-			foreach (ValueNode value in this.Values) {
-				if (!otherMpv.Values.Contains (value))
-					return false;
-			}
-			return true;
-		}
-
-		public override int GetHashCode ()
-		{
-			return HashCode.Combine (GetType ().GetHashCode (), Values);
-		}
-
-		protected override string NodeToString ()
-		{
-			return ValueNodeDump.ValueNodeToString (this);
-		}
-	}
-
-	delegate TypeDefinition TypeResolver (string assemblyString, string typeString);
 
 	/// <summary>
 	/// A representation of a ldfld.  Note that we don't have a representation of objects containing fields
