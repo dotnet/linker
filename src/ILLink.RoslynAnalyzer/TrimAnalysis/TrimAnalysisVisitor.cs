@@ -90,7 +90,8 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 		public override MultiValue VisitTypeOf (ITypeOfOperation typeOfOperation, StateValue state)
 		{
-			// TODO: track known types too!
+			if (typeOfOperation.TypeOperand is INamedTypeSymbol namedType)
+				return new MultiValue (new KnownValueType (namedType));
 
 			if (typeOfOperation.TypeOperand is ITypeParameterSymbol typeParameter)
 				return new MultiValue (new SymbolValue (typeParameter));

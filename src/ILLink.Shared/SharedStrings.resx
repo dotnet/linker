@@ -246,6 +246,12 @@
   <data name="DynamicallyAccessedMembersMismatchParameterTargetsParameterMessage" xml:space="preserve">
     <value>'{0}' argument does not satisfy {4} in call to '{1}'. The parameter '{2}' of method '{3}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
   </data>
+  <data name="DynamicallyAccessedMembersUnsuportedReflectionAccessInFieldMessage" xml:space="preserve">
+    <value>Field '{0}' with 'DynamicallyAccessedMembersAttribute' is accessed via reflection. Trimmer can't guarantee availability of the requirements of the field.</value>
+  </data>
+  <data name="DynamicallyAccessedMembersUnsuportedReflectionAccessInMethodMessage" xml:space="preserve">
+    <value>Method '{0}' with parameters or return value with `DynamicallyAccessedMembersAttribute` is accessed via reflection. Trimmer can't guarantee availability of the requirements of the method.</value>
+  </data>
   <data name="DynamicTypeInvocationMessage" xml:space="preserve">
     <value>Invoking members on dynamic types is not trimming-compatible. Types or members might have been removed by the trimmer.</value>
   </data>

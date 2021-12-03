@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using ILLink.RoslynAnalyzer.DataFlow;
 using ILLink.RoslynAnalyzer.TrimAnalysis;
 using ILLink.Shared;
 using ILLink.Shared.DataFlow;
@@ -28,6 +30,8 @@ namespace ILLink.RoslynAnalyzer
 				i <= (int) DiagnosticId.DynamicallyAccessedMembersMismatchTypeArgumentTargetsGenericParameter; i++) {
 				diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor ((DiagnosticId) i));
 			}
+			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersUnsuportedReflectionAccessInField));
+			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersUnsuportedReflectionAccessInMethod));
 
 			return diagDescriptorsArrayBuilder.ToImmutable ();
 		}
@@ -100,6 +104,27 @@ namespace ILLink.RoslynAnalyzer
 
 		static IEnumerable<Diagnostic> GetDynamicallyAccessedMembersDiagnostics (SingleValue sourceValue, SingleValue targetValue, Location location)
 		{
+			if (sourceValue is KnownValueType knownType && targetValue is SymbolValue targetForKnownType) {
+				var members = knownType.Source.GetDynamicallyAccessedMembers (targetForKnownType.DynamicallyAccessedMemberTypes);
+				foreach (var member in members) {
+					var unsupportedReflectionDiag = GetUnsupportedReflectionId (member);
+					var memberDisplayName = member.GetDisplayName ();
+					if (member is IMethodSymbol methodSymbol) {
+						foreach (var paratemer in methodSymbol.Parameters) {
+							if (paratemer.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None) {
+								yield return Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (unsupportedReflectionDiag), location, memberDisplayName);
+							}
+						}
+						if (methodSymbol.ReturnType.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None) {
+							yield return Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (unsupportedReflectionDiag), location, memberDisplayName);
+						}
+					}
+					if (member is IFieldSymbol && member.GetDynamicallyAccessedMemberTypes() != DynamicallyAccessedMemberTypes.None) {
+						yield return Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (unsupportedReflectionDiag), location, memberDisplayName);
+					}
+				}
+			}
+
 			if (sourceValue is not SymbolValue source || targetValue is not SymbolValue target)
 				yield break;
 
@@ -115,6 +140,13 @@ namespace ILLink.RoslynAnalyzer
 
 			yield return Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (diag), location, diagArgs);
 		}
+
+		static DiagnosticId GetUnsupportedReflectionId (ISymbol member)
+			=> member.Kind switch {
+				SymbolKind.Field => DiagnosticId.DynamicallyAccessedMembersUnsuportedReflectionAccessInField,
+				SymbolKind.Method => DiagnosticId.DynamicallyAccessedMembersUnsuportedReflectionAccessInMethod,
+				_ => throw new NotImplementedException ()
+			};
 
 		static DiagnosticId GetDiagnosticId (SymbolValue source, SymbolValue target)
 			=> (source.Source.Kind, target.Source.Kind) switch {
