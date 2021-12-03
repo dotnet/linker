@@ -127,7 +127,7 @@ namespace Mono.Linker.Dataflow
 		/// and should not be used by the caller after returning</param>
 		/// <param name="allNodesSeen">Optional. The set of all nodes encountered during a walk after DetectCycle returns</param>
 		/// <returns></returns>
-		public static bool DetectCycle (this ValueNode? node, HashSet<ValueNode> seenNodes, HashSet<ValueNode>? allNodesSeen)
+		public static bool DetectCycle (this ValueNode node, HashSet<ValueNode> seenNodes, HashSet<ValueNode>? allNodesSeen)
 		{
 			if (node == null)
 				return false;
@@ -184,7 +184,7 @@ namespace Mono.Linker.Dataflow
 			return foundCycle;
 		}
 
-		public static int? AsConstInt (this ValueNode? node)
+		public static int? AsConstInt (this ValueNode node)
 		{
 			if (node is ConstIntValue constInt)
 				return constInt.Value;
@@ -211,7 +211,7 @@ namespace Mono.Linker.Dataflow
 
 	internal static class ValueNodeDump
 	{
-		internal static string ValueNodeToString (ValueNode? node, params object[] args)
+		internal static string ValueNodeToString (ValueNode node, params object[] args)
 		{
 			if (node == null)
 				return "<null>";
