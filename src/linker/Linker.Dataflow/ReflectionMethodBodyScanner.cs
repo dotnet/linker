@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using ILLink.Shared;
-using ILLink.Shared.DataFlow;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Linker.Steps;
@@ -1870,7 +1869,7 @@ namespace Mono.Linker.Dataflow
 
 				bool allIndicesKnown = true;
 				for (int i = 0; i < size.Value; i++) {
-					if (!array.IndexValues.TryGetValue (i, out ValueBasicBlockPair value) || value.Value.IsEmpty() || value.Value.AsSingleValue () is UnknownValue) {
+					if (!array.IndexValues.TryGetValue (i, out ValueBasicBlockPair value) || value.Value.IsEmpty () || value.Value.AsSingleValue () is UnknownValue) {
 						allIndicesKnown = false;
 						break;
 					}

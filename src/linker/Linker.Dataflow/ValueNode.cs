@@ -126,7 +126,7 @@ namespace Mono.Linker.Dataflow
 				break;
 
 			default:
-				throw new Exception (String.Format ("Unknown node type: {0}", node.GetType().Name));
+				throw new Exception (String.Format ("Unknown node type: {0}", node.GetType ().Name));
 			}
 			seenNodes.Remove (node);
 
@@ -166,7 +166,7 @@ namespace Mono.Linker.Dataflow
 				return "<null>";
 
 			StringBuilder sb = new StringBuilder ();
-			sb.Append (node.GetType().Name);
+			sb.Append (node.GetType ().Name);
 			sb.Append ("(");
 			if (args != null) {
 				for (int i = 0; i < args.Length; i++) {
