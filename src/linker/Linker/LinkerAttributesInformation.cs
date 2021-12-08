@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+//using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -12,9 +13,11 @@ namespace Mono.Linker
 {
 	readonly struct LinkerAttributesInformation
 	{
-		readonly Dictionary<Type, List<Attribute>>? _linkerAttributes;
+		readonly List<Tuple<Type, List<Attribute>>>? _linkerAttributes;
 
-		private LinkerAttributesInformation (Dictionary<Type, List<Attribute>>? cache)
+		private static Predicate<Tuple<Type, List<Attribute>>> finder (Type matchedType) { return x => x.Item1 == matchedType; }
+
+		private LinkerAttributesInformation (List<Tuple<Type, List<Attribute>>>? cache)
 		{
 			this._linkerAttributes = cache;
 		}
@@ -23,7 +26,7 @@ namespace Mono.Linker
 		{
 			Debug.Assert (context.CustomAttributes.HasAny (provider));
 
-			Dictionary<Type, List<Attribute>>? cache = null;
+			List<Tuple<Type, List<Attribute>>>? cache = null;
 
 			foreach (var customAttribute in context.CustomAttributes.GetCustomAttributes (provider)) {
 				var attributeType = customAttribute.AttributeType;
@@ -54,12 +57,17 @@ namespace Mono.Linker
 					continue;
 
 				if (cache == null)
-					cache = new Dictionary<Type, List<Attribute>> ();
+					cache = new List<Tuple<Type, List<Attribute>>> ();
 
 				Type attributeValueType = attributeValue.GetType ();
-				if (!cache.TryGetValue (attributeValueType, out var attributeList)) {
+
+				var found = cache.Find (finder (attributeValueType));
+				List<Attribute> attributeList;
+				if (found == null || found == default) {
 					attributeList = new List<Attribute> ();
-					cache.Add (attributeValueType, attributeList);
+					cache.Add (Tuple.Create (attributeValueType, attributeList));
+				} else {
+					attributeList = found.Item2;
 				}
 
 				attributeList.Add (attributeValue);
@@ -70,13 +78,19 @@ namespace Mono.Linker
 
 		public bool HasAttribute<T> () where T : Attribute
 		{
-			return _linkerAttributes != null && _linkerAttributes.ContainsKey (typeof (T));
+			return _linkerAttributes != null && _linkerAttributes.Exists (finder(typeof (T)));
 		}
 
 		public IEnumerable<T> GetAttributes<T> () where T : Attribute
 		{
-			if (_linkerAttributes == null || !_linkerAttributes.TryGetValue (typeof (T), out var attributeList))
+			List<Attribute> attributeList;
+			if (_linkerAttributes == null)
 				return Enumerable.Empty<T> ();
+
+			var found = _linkerAttributes.Find (finder (typeof (T)));
+			if (found == null || found == default)
+				return Enumerable.Empty<T> ();
+			attributeList = found.Item2;
 
 			if (attributeList == null || attributeList.Count == 0)
 				throw new InvalidOperationException ("Unexpected list of attributes.");
