@@ -1086,12 +1086,6 @@ namespace Mono.Linker.Dataflow
 							_ => null,
 						};
 
-						// Otherwise fall back to the bitfield requirements
-						var requiredMemberTypes = GetDynamicallyAccessedMemberTypesFromBindingFlagsForConstructors (bindingFlags);
-						// We can scope down the public constructors requirement if we know the number of parameters is 0
-						if (requiredMemberTypes == DynamicallyAccessedMemberTypes.PublicConstructors && ctorParameterCount == 0)
-							requiredMemberTypes = DynamicallyAccessedMemberTypes.PublicParameterlessConstructor;
-
 						// Go over all types we've seen
 						foreach (var value in methodParams[0]) {
 							if (value is SystemTypeValue systemTypeValue && !BindingFlagsAreUnsupported (bindingFlags)) {
@@ -1104,6 +1098,12 @@ namespace Mono.Linker.Dataflow
 
 								reflectionContext.RecordHandledPattern ();
 							} else {
+								// Otherwise fall back to the bitfield requirements
+								var requiredMemberTypes = GetDynamicallyAccessedMemberTypesFromBindingFlagsForConstructors (bindingFlags);
+								// We can scope down the public constructors requirement if we know the number of parameters is 0
+								if (requiredMemberTypes == DynamicallyAccessedMemberTypes.PublicConstructors && ctorParameterCount == 0)
+									requiredMemberTypes = DynamicallyAccessedMemberTypes.PublicParameterlessConstructor;
+
 								RequireDynamicallyAccessedMembers (ref reflectionContext, requiredMemberTypes, value, calledMethodDefinition);
 							}
 						}
