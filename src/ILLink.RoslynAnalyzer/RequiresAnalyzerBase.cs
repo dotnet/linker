@@ -343,17 +343,7 @@ namespace ILLink.RoslynAnalyzer
 		/// </summary>
 		protected bool IsMemberInRequiresScope (ISymbol member)
 		{
-			if (member.HasAttribute (RequiresAttributeName) ||
-				(member is not ITypeSymbol &&
-				member.ContainingType.HasAttribute (RequiresAttributeName))) {
-				return true;
-			}
-
-			// Check also for RequiresAttribute in the associated symbol
-			if (member is IMethodSymbol { AssociatedSymbol: { } associated } && associated.HasAttribute (RequiresAttributeName))
-				return true;
-
-			return false;
+			return this.IsMemberInRequiresScope (member, RequiresAttributeName);
 		}
 
 		// TODO: Consider sharing with linker DoesMethodRequireUnreferencedCode method
