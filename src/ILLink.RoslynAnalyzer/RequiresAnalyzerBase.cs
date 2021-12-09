@@ -220,7 +220,7 @@ namespace ILLink.RoslynAnalyzer
 					ISymbol containingSymbol = FindContainingSymbol (operationContext, AnalyzerDiagnosticTargets);
 
 					// Do not emit any diagnostic if caller is annotated with the attribute too.
-					if (IsMemberInRequiresScope (containingSymbol))
+					if (containingSymbol.IsInRequiresScope(RequiresAttributeName))
 						return;
 
 					if (ReportSpecialIncompatibleMembersDiagnostic (operationContext, incompatibleMembers, member))
@@ -336,15 +336,6 @@ namespace ILLink.RoslynAnalyzer
 		}
 
 		private bool HasMismatchingAttributes (ISymbol member1, ISymbol member2) => member1.HasAttribute (RequiresAttributeName) ^ member2.HasAttribute (RequiresAttributeName);
-
-		// TODO: Consider sharing with linker IsMethodInRequiresUnreferencedCodeScope method
-		/// <summary>
-		/// True if the source of a call is considered to be annotated with the Requires... attribute
-		/// </summary>
-		protected bool IsMemberInRequiresScope (ISymbol member)
-		{
-			return this.IsMemberInRequiresScope (member, RequiresAttributeName);
-		}
 
 		// TODO: Consider sharing with linker DoesMethodRequireUnreferencedCode method
 		/// <summary>
