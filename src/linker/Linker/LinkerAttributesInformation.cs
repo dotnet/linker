@@ -21,13 +21,13 @@ namespace Mono.Linker
 
 		private static bool TryFindAttributeList (List<(Type Type, List<Attribute> Attributes)> list, Type type, [NotNullWhen (returnValue: true)] out List<Attribute>? foundAttributes)
 		{
-			foundAttributes = null;
 			foreach (var item in list) {
 				if (item.Type == type) {
 					foundAttributes = item.Attributes;
 					return true;
 				}
 			}
+			foundAttributes = null;
 			return false;
 		}
 
