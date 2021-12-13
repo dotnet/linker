@@ -182,7 +182,7 @@ namespace System
 
 		[ExpectedWarning ("IL2083",
 				nameof (PropagateToReturn),
-				nameof(PropagateToReturn))]
+				nameof (PropagateToReturn))]
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 		public Type PropagateToReturn ()

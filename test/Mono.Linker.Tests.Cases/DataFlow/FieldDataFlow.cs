@@ -51,7 +51,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		static object _annotationOnWrongType;
 
 		[ExpectedWarning ("IL2077", nameof (RequirePublicConstructors),
-			"_typeWithPublicParameterlessConstructor", "type", "RequirePublicConstructors(Type)" )]
+			"_typeWithPublicParameterlessConstructor", "type", "RequirePublicConstructors(Type)")]
 		[ExpectedWarning ("IL2077", nameof (RequireNonPublicConstructors))]
 		private void ReadFromInstanceField ()
 		{

@@ -68,7 +68,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		class TypeRequiresPublicFields<
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] T>
 		{
-			[ExpectedWarning ("IL2087", "'" + nameof (T) + "'", nameof (TypeRequiresPublicFields <T>), nameof (DataFlowTypeExtensions.RequiresPublicMethods))]
+			[ExpectedWarning ("IL2087", "'" + nameof (T) + "'", nameof (TypeRequiresPublicFields<T>), nameof (DataFlowTypeExtensions.RequiresPublicMethods))]
 			public static void Test ()
 			{
 				typeof (T).RequiresPublicFields ();
@@ -76,7 +76,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				typeof (T).RequiresNone ();
 			}
 
-			[ExpectedWarning ("IL2089", "'" + nameof (T) + "'",	nameof (TypeRequiresPublicFields <T>), nameof (FieldRequiresPublicMethods))]
+			[ExpectedWarning ("IL2089", "'" + nameof (T) + "'", nameof (TypeRequiresPublicFields<T>), nameof (FieldRequiresPublicMethods))]
 			public static void TestFields ()
 			{
 				FieldRequiresPublicFields = typeof (T);
@@ -132,7 +132,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		class TypeRequiresPublicFieldsPassThrough<
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] TSource>
 		{
-			[ExpectedWarning ("IL2091", nameof(TSource),
+			[ExpectedWarning ("IL2091", nameof (TSource),
 					"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.TypeRequiresPublicFieldsPassThrough<TSource>",
 					"T",
 					"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.TypeRequiresPublicMethods<T>")]
@@ -301,10 +301,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 				// The message is not ideal since we report the TRoot to come from RootTypeWithRequirements/InnerTypeWIthNoAddedGenerics
 				// while it originates on RootTypeWithRequirements, but it's correct from IL's point of view.
-				[ExpectedWarning ("IL2087", nameof(TRoot),
+				[ExpectedWarning ("IL2087", nameof (TRoot),
 						"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.RootTypeWithRequirements<TRoot>.InnerTypeWithNoAddedGenerics",
 						"type",
-						"DataFlowTypeExtensions.RequiresPublicMethods(Type)" )]
+						"DataFlowTypeExtensions.RequiresPublicMethods(Type)")]
 				public static void TestAccess ()
 				{
 					typeof (TRoot).RequiresPublicFields ();
@@ -523,7 +523,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		class TypeWithInstantiatedGenericMethodViaGenericParameter<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] TOuter>
 			: BaseTypeWithGenericMethod, IInterfaceWithGenericMethod
 		{
-			[ExpectedWarning ("IL2091", 
+			[ExpectedWarning ("IL2091",
 				"'TInner'",
 				"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.TypeWithInstantiatedGenericMethodViaGenericParameter<TOuter>.StaticRequiresPublicFields<TInner>()",
 				"'T'",
