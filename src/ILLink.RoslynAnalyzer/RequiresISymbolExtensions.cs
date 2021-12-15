@@ -74,8 +74,6 @@ namespace ILLink.RoslynAnalyzer
 		private static bool TryGetRequiresAttribute (ISymbol member, string requiresAttribute, [NotNullWhen (returnValue: true)] out AttributeData? requiresAttributeData)
 		{
 			requiresAttributeData = null;
-			if (member == null)
-				return false;
 
 			if (!member.TryGetAttribute (requiresAttribute, out var attribute))
 				return false;
