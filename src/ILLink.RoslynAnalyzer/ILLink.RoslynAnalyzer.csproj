@@ -16,6 +16,12 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="$(MicrosoftCodeAnalysisVersion)" PrivateAssets="all" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="Mono.Cecil">
+      <HintPath>..\..\artifacts\bin\Mono.Cecil\Debug\netstandard2.0\Mono.Cecil.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
   <Import Project="..\ILLink.Shared\ILLink.Shared.projitems" Label="Shared" />
 
 </Project>
