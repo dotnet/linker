@@ -472,6 +472,13 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 		}
 
+		class ExpectWarningOnCtor
+		{
+			// Bug https://github.com/dotnet/linker/issues/2446
+			[ExpectedWarning ("WarningNeverComesButTestPasses")]
+			public ExpectWarningOnCtor () { }
+		}
+
 		[ExpectedWarning ("IL2026", "--StaticCtorTriggeredByMethodCall.TriggerStaticCtorMarking--")]
 		[ExpectedWarning ("IL3002", "--StaticCtorTriggeredByMethodCall.TriggerStaticCtorMarking--", ProducedBy = ProducedBy.Analyzer)]
 		static void TestStaticCtorTriggeredByMethodCall ()
@@ -1293,6 +1300,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				RequirePublicMethods (typeof (ExplicitImplementationClassWithoutRequires));
 				RequirePublicMethods (typeof (ImplementationClassWithoutRequiresInSource));
 				RequirePublicMethods (typeof (ImplementationClassWithRequiresInSource));
+				RequirePublicMethods (typeof (ExpectWarningOnCtor));
 			}
 		}
 
