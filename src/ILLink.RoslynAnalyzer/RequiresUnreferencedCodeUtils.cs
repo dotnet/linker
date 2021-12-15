@@ -15,27 +15,21 @@ namespace ILLink.RoslynAnalyzer
 		/// True if the target of a call is considered to be annotated with the RequiresUnreferencedCode attribute
 		/// </summary>
 		public static bool TargetHasRequiresUnreferencedCodeAttribute (this ISymbol member, [NotNullWhen (returnValue: true)] out AttributeData? requiresAttributeData)
-		{
-			if (member.TargetHasRequiresAttribute (RequiresUnreferencedCodeAttribute, out requiresAttributeData))
-				return true;
-			return false;
-		}
+			=> member.TargetHasRequiresAttribute (RequiresUnreferencedCodeAttribute, out requiresAttributeData);
 
 		// TODO: Consider sharing with linker IsMethodInRequiresUnreferencedCodeScope method
 		/// <summary>
 		/// True if the source of a call is considered to be annotated with the RequiresUnreferencedCode attribute
 		/// </summary>
 		public static bool IsInRequiresUnreferencedCodeAttributeScope (this ISymbol member)
-		{
-			return member.IsInRequiresScope (RequiresUnreferencedCodeAttribute);
-		}
+			=> member.IsInRequiresScope (RequiresUnreferencedCodeAttribute);
 
 		/// <summary>
 		/// This method verifies that the arguments in an attribute have certain structure.
 		/// </summary>
 		/// <param name="attribute">Attribute data to compare.</param>
 		/// <returns>True if the validation was successfull; otherwise, returns false.</returns>
-		public static bool VerifyRequiresUnreferencedCodeAttributeArguments (AttributeData attribute) =>
-			attribute.ConstructorArguments.Length >= 1 && attribute.ConstructorArguments[0] is { Type: { SpecialType: SpecialType.System_String } } ctorArg;
+		public static bool VerifyRequiresUnreferencedCodeAttributeArguments (AttributeData attribute)
+			=> attribute.ConstructorArguments.Length >= 1 && attribute.ConstructorArguments[0] is { Type: { SpecialType: SpecialType.System_String } } ctorArg;
 	}
 }

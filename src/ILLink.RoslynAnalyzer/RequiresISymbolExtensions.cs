@@ -71,7 +71,7 @@ namespace ILLink.RoslynAnalyzer
 		/// <param name="member">Symbol of the member to search attribute.</param>
 		/// <param name="requiresAttribute">Output variable in case of matching Requires attribute.</param>
 		/// <returns>True if the member contains a Requires attribute; otherwise, returns false.</returns>
-		private static bool TryGetRequiresAttribute (ISymbol? member, string requiresAttribute, [NotNullWhen (returnValue: true)] out AttributeData? requiresAttributeData)
+		private static bool TryGetRequiresAttribute (ISymbol member, string requiresAttribute, [NotNullWhen (returnValue: true)] out AttributeData? requiresAttributeData)
 		{
 			requiresAttributeData = null;
 			if (member == null)
