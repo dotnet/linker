@@ -123,7 +123,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			{
 				// Keep all methods of the type that made the call
 				Expression.Call (GetUnknownType (), "This string will not be reached", Type.EmptyTypes);
-				// UnrecognizedReflectionAccessPattern
+				// IL2072
 				Expression.Call (TriggerUnrecognizedPattern (), "This string will not be reached", Type.EmptyTypes);
 			}
 

@@ -21,7 +21,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			Expression.Property (null, typeof (Derived), "PublicPropertyOnBase");
 			UnknownType.Test ();
 			UnknownString.Test ();
-			Expression.Property (null, GetType (), "This string will not be reached"); // UnrecognizedReflectionAccessPattern
+			Expression.Property (null, GetType (), "This string will not be reached"); // IL2072
 		}
 
 		[Kept]

@@ -26,7 +26,6 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			Expression.New (5 + 7 == 12 ? null : typeof (RemovedType));
 		}
 
-		#region RecognizedReflectionAccessPatterns
 		[Kept]
 		static void Branch_SystemTypeValueNode (int i)
 		{
@@ -44,9 +43,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 			Expression.New (T);
 		}
-		#endregion
 
-		#region UnrecognizedReflectionAccessPatterns
 		[ExpectedWarning ("IL2067", nameof (Expression) + "." + nameof (Expression.New))]
 		[Kept]
 		static void Branch_MethodParameterValueNode (Type T)
@@ -62,7 +59,6 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			Expression.New (Type.GetType ("RemovedType"));
 			Expression.New (GetType ());
 		}
-		#endregion
 
 		#region Helpers
 		[Kept]

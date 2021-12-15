@@ -20,7 +20,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			UnknownType.Test ();
 			UnknownTypeNoAnnotation.Test ();
 			UnknownString.Test ();
-			Expression.Field (null, GetType (), "This string will not be reached"); // UnrecognizedReflectionAccessPattern
+			Expression.Field (null, GetType (), "This string will not be reached"); // IL2072
 		}
 
 		[Kept]
