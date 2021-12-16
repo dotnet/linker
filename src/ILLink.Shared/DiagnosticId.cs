@@ -10,14 +10,15 @@
 		MakeGenericMethod = 2060,
 		RequiresOnBaseClass = 2109,
 		RequiresUnreferencedCodeOnStaticConstructor = 2116,
-		RequiresDynamicCodeOnStaticConstructor = 2117,
-		RequiresAssemblyFilesOnStaticConstructor = 2118,
+		
 
 		// Single-file diagnostic ids.
 		AvoidAssemblyLocationInSingleFile = 3000,
 		AvoidAssemblyGetFilesInSingleFile = 3001,
 		RequiresAssemblyFiles = 3002,
-		RequiresAssemblyFilesAttributeMismatch = 3003
+		RequiresAssemblyFilesAttributeMismatch = 3003,
+		RequiresAssemblyFilesOnStaticConstructor = 3004,
+		RequiresDynamicCodeOnStaticConstructor = 3052
 	}
 
 	public static class DiagnosticIdExtensions

@@ -389,7 +389,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		class StaticCtor
 		{
-			[ExpectedWarning ("IL2116", "StaticCtor..cctor()")]
+			[ExpectedWarning ("IL2116", "StaticCtor..cctor()", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2116", "StaticCtor()", ProducedBy = ProducedBy.Analyzer)]
 			[RequiresUnreferencedCode ("Message for --TestStaticCtor--")]
 			static StaticCtor ()
 			{
@@ -403,7 +404,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		class StaticCtorTriggeredByFieldAccess
 		{
-			[ExpectedWarning ("IL2116", "StaticCtorTriggeredByFieldAccess..cctor()")]
+			[ExpectedWarning ("IL2116", "StaticCtorTriggeredByFieldAccess..cctor()", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2116", "StaticCtorTriggeredByFieldAccess()", ProducedBy = ProducedBy.Analyzer)]
 			[RequiresUnreferencedCode ("Message for --StaticCtorTriggeredByFieldAccess.Cctor--")]
 			static StaticCtorTriggeredByFieldAccess ()
 			{
@@ -420,7 +422,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		struct StaticCCtorForFieldAccess
 		{
-			[ExpectedWarning ("IL2116", "StaticCCtorForFieldAccess..cctor()")]
+			[ExpectedWarning ("IL2116", "StaticCCtorForFieldAccess..cctor()", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2116", "StaticCCtorForFieldAccess()", ProducedBy = ProducedBy.Analyzer)]
 			[RequiresUnreferencedCode ("Message for --StaticCCtorForFieldAccess.cctor--")]
 			static StaticCCtorForFieldAccess () { }
 
@@ -456,8 +459,9 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		class StaticCtorTriggeredByMethodCall
 		{
-			[ExpectedWarning ("IL2116", "StaticCtorTriggeredByMethodCall..cctor()")]
-			[ExpectedWarning ("IL2118", "StaticCtorTriggeredByMethodCall..cctor()", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL2116", "StaticCtorTriggeredByMethodCall..cctor()", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2116", "StaticCtorTriggeredByMethodCall()", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3004", "StaticCtorTriggeredByMethodCall()", ProducedBy = ProducedBy.Analyzer)]
 			[RequiresUnreferencedCode ("Message for --StaticCtorTriggeredByMethodCall.Cctor--")]
 			[RequiresAssemblyFiles ("Message for --StaticCtorTriggeredByMethodCall.Cctor--")]
 			static StaticCtorTriggeredByMethodCall ()

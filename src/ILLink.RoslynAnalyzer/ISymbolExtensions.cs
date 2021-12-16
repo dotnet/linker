@@ -52,7 +52,6 @@ namespace ILLink.RoslynAnalyzer
 			case IParameterSymbol parameterSymbol:
 				sb.Append (parameterSymbol.Name);
 				break;
-
 			default:
 				sb.Append (symbol.ToDisplayString ());
 				break;
