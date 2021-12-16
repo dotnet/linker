@@ -54,7 +54,7 @@ namespace Mono.Linker
 			}
 
 			// Insert method name
-			if (method.Name == ".ctor")
+			if (method.Name == ".ctor" || method.Name == ".cctor")
 				sb.Insert (0, method.DeclaringType.Name);
 			else
 				sb.Insert (0, method.Name);

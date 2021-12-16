@@ -389,8 +389,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		class StaticCtor
 		{
-			[ExpectedWarning ("IL2116", "StaticCtor..cctor()", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2116", "StaticCtor()", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL2116", "StaticCtor.StaticCtor()")]
 			[RequiresUnreferencedCode ("Message for --TestStaticCtor--")]
 			static StaticCtor ()
 			{
@@ -404,8 +403,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		class StaticCtorTriggeredByFieldAccess
 		{
-			[ExpectedWarning ("IL2116", "StaticCtorTriggeredByFieldAccess..cctor()", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2116", "StaticCtorTriggeredByFieldAccess()", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL2116", "StaticCtorTriggeredByFieldAccess.StaticCtorTriggeredByFieldAccess()")]
 			[RequiresUnreferencedCode ("Message for --StaticCtorTriggeredByFieldAccess.Cctor--")]
 			static StaticCtorTriggeredByFieldAccess ()
 			{
@@ -422,8 +420,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		struct StaticCCtorForFieldAccess
 		{
-			[ExpectedWarning ("IL2116", "StaticCCtorForFieldAccess..cctor()", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2116", "StaticCCtorForFieldAccess()", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL2116", "StaticCCtorForFieldAccess.StaticCCtorForFieldAccess()")]
 			[RequiresUnreferencedCode ("Message for --StaticCCtorForFieldAccess.cctor--")]
 			static StaticCCtorForFieldAccess () { }
 
@@ -448,7 +445,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		// Linker sees the call to AnnotatedMethod in the static .ctor, but analyzer doesn't see the static .ctor at all
 		// since it's fully compiler generated, instead it sees the call on the field initialization itself.
-		[LogContains ("IL2026: Mono.Linker.Tests.Cases.RequiresCapability.RequiresCapability.TypeIsBeforeFieldInit..cctor():" +
+		[LogContains ("IL2026: Mono.Linker.Tests.Cases.RequiresCapability.RequiresCapability.TypeIsBeforeFieldInit.TypeIsBeforeFieldInit():" +
 			" Using member 'Mono.Linker.Tests.Cases.RequiresCapability.RequiresCapability.TypeIsBeforeFieldInit.AnnotatedMethod()'" +
 			" which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code." +
 			" Message from --TypeIsBeforeFieldInit.AnnotatedMethod--.", ProducedBy = ProducedBy.Trimmer)]
@@ -459,8 +456,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		class StaticCtorTriggeredByMethodCall
 		{
-			[ExpectedWarning ("IL2116", "StaticCtorTriggeredByMethodCall..cctor()", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2116", "StaticCtorTriggeredByMethodCall()", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL2116", "StaticCtorTriggeredByMethodCall.StaticCtorTriggeredByMethodCall()")]
 			[ExpectedWarning ("IL3004", "StaticCtorTriggeredByMethodCall()", ProducedBy = ProducedBy.Analyzer)]
 			[RequiresUnreferencedCode ("Message for --StaticCtorTriggeredByMethodCall.Cctor--")]
 			[RequiresAssemblyFiles ("Message for --StaticCtorTriggeredByMethodCall.Cctor--")]

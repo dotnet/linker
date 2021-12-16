@@ -10,7 +10,7 @@
 		MakeGenericMethod = 2060,
 		RequiresOnBaseClass = 2109,
 		RequiresUnreferencedCodeOnStaticConstructor = 2116,
-		
+
 
 		// Single-file diagnostic ids.
 		AvoidAssemblyLocationInSingleFile = 3000,
