@@ -25,13 +25,14 @@ namespace ILLink.RoslynAnalyzer
 
 		static ImmutableArray<DiagnosticDescriptor> GetSupportedDiagnostics ()
 		{
-			var diagDescriptorsArrayBuilder = ImmutableArray.CreateBuilder<DiagnosticDescriptor> (23);
+			var diagDescriptorsArrayBuilder = ImmutableArray.CreateBuilder<DiagnosticDescriptor> (26);
+			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.RequiresUnreferencedCode));
 			for (int i = (int) DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsParameter;
 				i <= (int) DiagnosticId.DynamicallyAccessedMembersMismatchTypeArgumentTargetsGenericParameter; i++) {
 				diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor ((DiagnosticId) i));
 			}
-			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersUnsuportedReflectionAccessInField));
-			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersUnsuportedReflectionAccessInMethod));
+			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAcccessedMembersFieldAccessedViaReflection));
+			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection));
 
 			return diagDescriptorsArrayBuilder.ToImmutable ();
 		}
@@ -110,8 +111,8 @@ namespace ILLink.RoslynAnalyzer
 					var unsupportedReflectionDiag = GetUnsupportedReflectionId (member);
 					var memberDisplayName = member.GetDisplayName ();
 					if (member is IMethodSymbol methodSymbol) {
-						foreach (var paratemer in methodSymbol.Parameters) {
-							if (paratemer.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None) {
+						foreach (var parameter in methodSymbol.Parameters) {
+							if (parameter.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None) {
 								yield return Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (unsupportedReflectionDiag), location, memberDisplayName);
 							}
 						}
@@ -143,8 +144,8 @@ namespace ILLink.RoslynAnalyzer
 
 		static DiagnosticId GetUnsupportedReflectionId (ISymbol member)
 			=> member.Kind switch {
-				SymbolKind.Field => DiagnosticId.DynamicallyAccessedMembersUnsuportedReflectionAccessInField,
-				SymbolKind.Method => DiagnosticId.DynamicallyAccessedMembersUnsuportedReflectionAccessInMethod,
+				SymbolKind.Field => DiagnosticId.DynamicallyAcccessedMembersFieldAccessedViaReflection,
+				SymbolKind.Method => DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection,
 				_ => throw new NotImplementedException ()
 			};
 

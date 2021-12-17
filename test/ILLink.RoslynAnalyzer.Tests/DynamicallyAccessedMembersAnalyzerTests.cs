@@ -1182,7 +1182,7 @@ public static class DataFlowTypeExtensions
 			// (7,24): warning CS0649: Field 'AnnotatedField._annotatedField' is never assigned to, and will always have its default value null
 			DiagnosticResult.CompilerWarning ("CS0649").WithSpan (7, 24, 7, 39).WithArguments ("AnnotatedField._annotatedField", "null"),
 			// (11,9): warning IL2110: Field 'AnnotatedField._annotatedField' with 'DynamicallyAccessedMembersAttribute' is accessed via reflection. Trimmer can't guarantee availability of the requirements of the field.
-			VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersUnsuportedReflectionAccessInField).WithSpan (11, 9, 11, 32).WithArguments ("AnnotatedField._annotatedField"));
+			VerifyCS.Diagnostic (DiagnosticId.DynamicallyAcccessedMembersFieldAccessedViaReflection).WithSpan (11, 9, 11, 32).WithArguments ("AnnotatedField._annotatedField"));
 		}
 
 		[Fact]
@@ -1214,7 +1214,7 @@ public static class DataFlowTypeExtensions
 			// (7,24): warning CS0649: Field 'AnnotatedField._annotatedField' is never assigned to, and will always have its default value null
 			DiagnosticResult.CompilerWarning ("CS0649").WithSpan (7, 24, 7, 39).WithArguments ("AnnotatedField._annotatedField", "null"),
 			// (11,9): warning IL2110: Field 'AnnotatedField._annotatedField' with 'DynamicallyAccessedMembersAttribute' is accessed via reflection. Trimmer can't guarantee availability of the requirements of the field.
-			VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersUnsuportedReflectionAccessInField).WithSpan (11, 9, 11, 32).WithArguments ("AnnotatedField._annotatedField"));
+			VerifyCS.Diagnostic (DiagnosticId.DynamicallyAcccessedMembersFieldAccessedViaReflection).WithSpan (11, 9, 11, 32).WithArguments ("AnnotatedField._annotatedField"));
 		}
 	}
 }
