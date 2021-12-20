@@ -63,6 +63,9 @@ namespace Mono.Linker
 			if (method.DeclaringType != null)
 				sb.Insert (0, '.').Insert (0, method.DeclaringType.GetDisplayName ());
 
+			if (method.Name == ".cctor")
+				sb.Insert (0, "static ");
+
 			return sb.ToString ();
 		}
 
