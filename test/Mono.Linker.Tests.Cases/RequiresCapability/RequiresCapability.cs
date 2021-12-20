@@ -389,7 +389,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		class StaticCtor
 		{
-			[ExpectedWarning ("IL2116", "static Mono.Linker.Tests.Cases.RequiresCapability.RequiresCapability.StaticCtor.StaticCtor()")]
+			[ExpectedWarning ("IL2116", "Mono.Linker.Tests.Cases.RequiresCapability.RequiresCapability.StaticCtor..cctor()")]
 			[RequiresUnreferencedCode ("Message for --TestStaticCtor--")]
 			static StaticCtor ()
 			{
@@ -403,7 +403,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		class StaticCtorTriggeredByFieldAccess
 		{
-			[ExpectedWarning ("IL2116", "static Mono.Linker.Tests.Cases.RequiresCapability.RequiresCapability.StaticCtorTriggeredByFieldAccess.StaticCtorTriggeredByFieldAccess()")]
+			[ExpectedWarning ("IL2116", "Mono.Linker.Tests.Cases.RequiresCapability.RequiresCapability.StaticCtorTriggeredByFieldAccess..cctor()")]
 			[RequiresUnreferencedCode ("Message for --StaticCtorTriggeredByFieldAccess.Cctor--")]
 			static StaticCtorTriggeredByFieldAccess ()
 			{
@@ -420,7 +420,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		struct StaticCCtorForFieldAccess
 		{
-			[ExpectedWarning ("IL2116", "static Mono.Linker.Tests.Cases.RequiresCapability.RequiresCapability.StaticCCtorForFieldAccess.StaticCCtorForFieldAccess()")]
+			[ExpectedWarning ("IL2116", "Mono.Linker.Tests.Cases.RequiresCapability.RequiresCapability.StaticCCtorForFieldAccess..cctor()")]
 			[RequiresUnreferencedCode ("Message for --StaticCCtorForFieldAccess.cctor--")]
 			static StaticCCtorForFieldAccess () { }
 
@@ -445,7 +445,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		// Linker sees the call to AnnotatedMethod in the static .ctor, but analyzer doesn't see the static .ctor at all
 		// since it's fully compiler generated, instead it sees the call on the field initialization itself.
-		[LogContains ("IL2026: static Mono.Linker.Tests.Cases.RequiresCapability.RequiresCapability.TypeIsBeforeFieldInit.TypeIsBeforeFieldInit():" +
+		[LogContains ("IL2026: Mono.Linker.Tests.Cases.RequiresCapability.RequiresCapability.TypeIsBeforeFieldInit..cctor():" +
 			" Using member 'Mono.Linker.Tests.Cases.RequiresCapability.RequiresCapability.TypeIsBeforeFieldInit.AnnotatedMethod()'" +
 			" which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code." +
 			" Message from --TypeIsBeforeFieldInit.AnnotatedMethod--.", ProducedBy = ProducedBy.Trimmer)]
@@ -456,8 +456,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		class StaticCtorTriggeredByMethodCall
 		{
-			[ExpectedWarning ("IL2116", "static Mono.Linker.Tests.Cases.RequiresCapability.RequiresCapability.StaticCtorTriggeredByMethodCall.StaticCtorTriggeredByMethodCall()")]
-			[ExpectedWarning ("IL3004", "static Mono.Linker.Tests.Cases.RequiresCapability.RequiresCapability.StaticCtorTriggeredByMethodCall.StaticCtorTriggeredByMethodCall()", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL2116", "Mono.Linker.Tests.Cases.RequiresCapability.RequiresCapability.StaticCtorTriggeredByMethodCall..cctor()")]
+			[ExpectedWarning ("IL3004", "Mono.Linker.Tests.Cases.RequiresCapability.RequiresCapability.StaticCtorTriggeredByMethodCall..cctor()", ProducedBy = ProducedBy.Analyzer)]
 			[RequiresUnreferencedCode ("Message for --StaticCtorTriggeredByMethodCall.Cctor--")]
 			[RequiresAssemblyFiles ("Message for --StaticCtorTriggeredByMethodCall.Cctor--")]
 			static StaticCtorTriggeredByMethodCall ()
@@ -611,7 +611,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		{
 			class ClassWithRequiresOnStaticConstructor
 			{
-				[ExpectedWarning ("IL2116", "static Mono.Linker.Tests.Cases.RequiresCapability.RequiresCapability.WarnIfRequiresOnStaticConstructor.ClassWithRequiresOnStaticConstructor.ClassWithRequiresOnStaticConstructor()")]
+				[ExpectedWarning ("IL2116", "Mono.Linker.Tests.Cases.RequiresCapability.RequiresCapability.WarnIfRequiresOnStaticConstructor.ClassWithRequiresOnStaticConstructor..cctor()")]
 				[RequiresUnreferencedCode ("This attribute shouldn't be allowed")]
 				static ClassWithRequiresOnStaticConstructor () { }
 			}

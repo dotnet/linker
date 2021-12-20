@@ -54,7 +54,7 @@ namespace Mono.Linker
 			}
 
 			// Insert method name
-			if (method.Name == ".ctor" || method.Name == ".cctor")
+			if (method.Name == ".ctor")
 				sb.Insert (0, method.DeclaringType.Name);
 			else
 				sb.Insert (0, method.Name);
@@ -62,9 +62,6 @@ namespace Mono.Linker
 			// Insert declaring type name and namespace
 			if (method.DeclaringType != null)
 				sb.Insert (0, '.').Insert (0, method.DeclaringType.GetDisplayName ());
-
-			if (method.Name == ".cctor")
-				sb.Insert (0, "static ");
 
 			return sb.ToString ();
 		}

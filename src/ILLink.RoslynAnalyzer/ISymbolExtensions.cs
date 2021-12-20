@@ -53,9 +53,10 @@ namespace ILLink.RoslynAnalyzer
 				sb.Append (parameterSymbol.Name);
 				break;
 			default:
-				if (symbol.IsStaticConstructor ())
-					sb.Append (symbol.ToDisplayString (SymbolDisplayFormat.CSharpErrorMessageFormat.AddMemberOptions (SymbolDisplayMemberOptions.IncludeModifiers)));
-				else 
+				if (symbol.IsStaticConstructor ()) {
+					sb.Append (symbol.ContainingType.ToDisplayString ());
+					sb.Append ("..cctor()");
+				} else
 					sb.Append (symbol.ToDisplayString ());
 				break;
 			}
