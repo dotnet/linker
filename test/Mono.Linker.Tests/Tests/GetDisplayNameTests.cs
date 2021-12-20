@@ -132,12 +132,12 @@ namespace Mono.Linker.Tests
 				{
 				}
 
-				[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.GenericClassOneParameter<T>.NestedGenericClassOneParameter<S>.MethodWithRef(Int32&)")]
+				[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.GenericClassOneParameter<T>.NestedGenericClassOneParameter<S>.MethodWithRef(ref Int32)")]
 				public void MethodWithRef (ref int p)
 				{
 				}
 
-				[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.GenericClassOneParameter<T>.NestedGenericClassOneParameter<S>.MethodWithRefAndGeneric<U>(U&)")]
+				[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.GenericClassOneParameter<T>.NestedGenericClassOneParameter<S>.MethodWithRefAndGeneric<U>(ref U)")]
 				public void MethodWithRefAndGeneric<U> (ref U p)
 				{
 				}

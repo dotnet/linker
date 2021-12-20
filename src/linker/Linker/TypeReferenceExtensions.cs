@@ -57,7 +57,11 @@ namespace Mono.Linker
 						sb.Insert (0, simpleName);
 						break;
 					}
-
+					if (type.IsByReference) {
+						sb.Insert (0, type.GetElementType ().Name);
+						sb.Insert (0, "ref ");
+						break;
+					}
 					sb.Insert (0, type.Name);
 					break;
 				}
