@@ -31,7 +31,7 @@ namespace ILLink.RoslynAnalyzer
 				i <= (int) DiagnosticId.DynamicallyAccessedMembersMismatchTypeArgumentTargetsGenericParameter; i++) {
 				diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor ((DiagnosticId) i));
 			}
-			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAcccessedMembersFieldAccessedViaReflection));
+			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersFieldAccessedViaReflection));
 			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection));
 
 			return diagDescriptorsArrayBuilder.ToImmutable ();
@@ -108,21 +108,20 @@ namespace ILLink.RoslynAnalyzer
 			if (sourceValue is KnownValueType knownType && targetValue is SymbolValue targetForKnownType) {
 				var members = knownType.Source.GetDynamicallyAccessedMembers (targetForKnownType.DynamicallyAccessedMemberTypes);
 				foreach (var member in members) {
-					var unsupportedReflectionDiag = GetUnsupportedReflectionId (member);
 					var memberDisplayName = member.GetDisplayName ();
-					if (member is IMethodSymbol methodSymbol) {
-						foreach (var parameter in methodSymbol.Parameters) {
-							if (parameter.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None) {
-								yield return Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (unsupportedReflectionDiag), location, memberDisplayName);
-							}
-						}
-						if (methodSymbol.ReturnType.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None) {
-							yield return Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (unsupportedReflectionDiag), location, memberDisplayName);
-						}
-					}
-					if (member is IFieldSymbol && member.GetDynamicallyAccessedMemberTypes() != DynamicallyAccessedMemberTypes.None) {
-						yield return Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (unsupportedReflectionDiag), location, memberDisplayName);
-					}
+
+					if (member.TargetHasRequiresUnreferencedCodeAttribute (out var requiresAttributeData) && RequiresUnreferencedCodeUtils.VerifyRequiresUnreferencedCodeAttributeArguments (requiresAttributeData))
+						yield return ReportRequiresUnreferencedCodeDiagnostic (requiresAttributeData, member, location);
+
+					var diagnostics = member switch {
+						IMethodSymbol methodSymbol => VerifyMethodSymbolForDiagnostic (methodSymbol, location),
+						IPropertySymbol propertySymbol => VerifyPropertySymbolForDiagnostic (propertySymbol, location),
+						IFieldSymbol fieldSymbol => VerifyFieldSymbolForDiagnostic (fieldSymbol, location),
+						ITypeSymbol typeSymbol => new List<Diagnostic> (),
+						_ => throw new NotImplementedException (),
+					};
+					foreach (var diagnostic in diagnostics)
+						yield return diagnostic;
 				}
 			}
 
@@ -141,13 +140,6 @@ namespace ILLink.RoslynAnalyzer
 
 			yield return Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (diag), location, diagArgs);
 		}
-
-		static DiagnosticId GetUnsupportedReflectionId (ISymbol member)
-			=> member.Kind switch {
-				SymbolKind.Field => DiagnosticId.DynamicallyAcccessedMembersFieldAccessedViaReflection,
-				SymbolKind.Method => DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection,
-				_ => throw new NotImplementedException ()
-			};
 
 		static DiagnosticId GetDiagnosticId (SymbolValue source, SymbolValue target)
 			=> (source.Source.Kind, target.Source.Kind) switch {
@@ -185,6 +177,56 @@ namespace ILLink.RoslynAnalyzer
 				(_, SymbolKind.NamedType) => throw new NotImplementedException (),
 				_ => throw new NotImplementedException ()
 			};
+
+		static Diagnostic ReportRequiresUnreferencedCodeDiagnostic (AttributeData requiresAttributeData, ISymbol member, Location location)
+		{
+			var message = RequiresUnreferencedCodeUtils.GetMessageFromAttribute (requiresAttributeData);
+			var url = RequiresAnalyzerBase.GetUrlFromAttribute (requiresAttributeData);
+			return Diagnostic.Create (
+				DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.RequiresUnreferencedCode),
+				location,
+				member.GetDisplayName (),
+				message,
+				url);
+		}
+
+		static IEnumerable<Diagnostic> VerifyMethodSymbolForDiagnostic (IMethodSymbol methodSymbol, Location location)
+		{
+			foreach (var parameter in methodSymbol.Parameters) {
+				if (parameter.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None)
+					yield return Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection), location, methodSymbol.GetDisplayName ());
+			}
+
+			if (methodSymbol.IsVirtual && methodSymbol.GetDynamicallyAccessedMemberTypesOnReturnType () != DynamicallyAccessedMemberTypes.None)
+				yield return Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection), location, methodSymbol.GetDisplayName ());
+
+			if (methodSymbol.IsVirtual && methodSymbol.MethodKind is MethodKind.PropertyGet &&
+				(methodSymbol.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None ||
+				methodSymbol.GetDynamicallyAccessedMemberTypesOnAssociatedSymbol () != DynamicallyAccessedMemberTypes.None))
+				yield return Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection), location, methodSymbol.GetDisplayName ());
+
+			if (methodSymbol.MethodKind is MethodKind.PropertySet &&
+				(methodSymbol.GetDynamicallyAccessedMemberTypesOnReturnType () != DynamicallyAccessedMemberTypes.None ||
+				methodSymbol.GetDynamicallyAccessedMemberTypesOnAssociatedSymbol () != DynamicallyAccessedMemberTypes.None))
+				yield return Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection), location, methodSymbol.GetDisplayName ());
+		}
+
+		static IEnumerable<Diagnostic> VerifyPropertySymbolForDiagnostic (IPropertySymbol propertySymbol, Location location)
+		{
+			if (propertySymbol.SetMethod is not null && propertySymbol.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None) {
+				yield return Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection), location, propertySymbol.SetMethod.GetDisplayName ());
+			}
+
+			if (propertySymbol.IsVirtual && propertySymbol.GetMethod is not null && propertySymbol.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None) {
+				yield return Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection), location, propertySymbol.GetMethod.GetDisplayName ());
+			}
+		}
+
+		static IEnumerable<Diagnostic> VerifyFieldSymbolForDiagnostic (IFieldSymbol fieldSymbol, Location location)
+		{
+			if (fieldSymbol.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None)
+				yield return Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersFieldAccessedViaReflection), location, fieldSymbol.GetDisplayName ());
+		}
 
 		static string[] GetDiagnosticArguments (SymbolValue source, SymbolValue target, string missingAnnotations)
 		{

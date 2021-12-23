@@ -724,8 +724,7 @@ namespace Mono.Linker.Dataflow
 							// We haven't found any generic parameters with annotations, so there's nothing to validate.
 						} else if (value == NullValue.Instance) {
 							// Do nothing - null value is valid and should not cause warnings nor marking
-						}
-						else {
+						} else {
 							// We have no way to "include more" to fix this if we don't know, so we have to warn
 							analysisContext.ReportWarning (
 								new DiagnosticString (DiagnosticId.MakeGenericType).GetMessage (calledMethodDefinition.GetDisplayName ()),

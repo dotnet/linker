@@ -41,7 +41,7 @@ namespace ILLink.Shared
 		DynamicallyAccessedMembersMismatchTypeArgumentTargetsThisParameter = 2090,
 		DynamicallyAccessedMembersMismatchTypeArgumentTargetsGenericParameter = 2091,
 		// Dynamically Accessed Members Unsuported Reflection Access
-		DynamicallyAcccessedMembersFieldAccessedViaReflection = 2110,
+		DynamicallyAccessedMembersFieldAccessedViaReflection = 2110,
 		DynamicallyAccessedMembersMethodAccessedViaReflection = 2111,
 
 		// Single-file diagnostic ids.

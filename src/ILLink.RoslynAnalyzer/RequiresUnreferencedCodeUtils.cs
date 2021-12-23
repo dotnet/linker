@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System.Diagnostics.CodeAnalysis;
+using ILLink.Shared;
 using Microsoft.CodeAnalysis;
 
 namespace ILLink.RoslynAnalyzer
@@ -31,5 +32,11 @@ namespace ILLink.RoslynAnalyzer
 		/// <returns>True if the validation was successfull; otherwise, returns false.</returns>
 		public static bool VerifyRequiresUnreferencedCodeAttributeArguments (AttributeData attribute)
 			=> attribute.ConstructorArguments.Length >= 1 && attribute.ConstructorArguments[0] is { Type: { SpecialType: SpecialType.System_String } } ctorArg;
+
+		public static string GetMessageFromAttribute (AttributeData? requiresAttribute)
+		{
+			var message = (string) requiresAttribute!.ConstructorArguments[0].Value!;
+			return MessageFormat.FormatRequiresAttributeMessageArg (message);
+		}
 	}
 }
