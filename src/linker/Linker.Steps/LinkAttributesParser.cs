@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Xml.XPath;
+using ILLink.Shared;
 using Mono.Cecil;
 
 namespace Mono.Linker.Steps
@@ -235,7 +236,8 @@ namespace Mono.Linker.Steps
 			case MetadataType.Object:
 				var argumentIterator = nav.SelectChildren ("argument", string.Empty);
 				if (argumentIterator?.MoveNext () != true) {
-					_context.LogError ($"Custom attribute argument for 'System.Object' requires nested 'argument' node.", 1043);
+					_context.LogError (new DiagnosticString (DiagnosticId.CustomAttributeArgumentForTypeRequiresNestedNode).GetMessage ("System.Object", "argument"),
+						(int) DiagnosticId.CustomAttributeArgumentForTypeRequiresNestedNode);
 					return null;
 				}
 
@@ -277,14 +279,16 @@ namespace Mono.Linker.Steps
 					goto default;
 
 				if (!_context.TypeNameResolver.TryResolveTypeName (svalue, memberWithAttribute, out TypeReference? type, out _)) {
-					_context.LogError ($"Could not resolve custom attribute type value '{svalue}'.", 1044, origin: GetMessageOriginForPosition (nav));
+					_context.LogError (new DiagnosticString (DiagnosticId.CouldNotResolveCustomAttributeTypeValue).GetMessage (svalue),
+						(int) DiagnosticId.CouldNotResolveCustomAttributeTypeValue,
+						origin: GetMessageOriginForPosition (nav));
 					return null;
 				}
 
 				return new CustomAttributeArgument (typeref, type);
 			default:
 				// No support for null and arrays, consider adding - dotnet/linker/issues/1957
-				_context.LogError ($"Unexpected attribute argument type '{typeref.GetDisplayName ()}'.", 1045);
+				_context.LogError (new DiagnosticString (DiagnosticId.UnexpectedAttributeArgumentType).GetMessage (typeref.GetDisplayName ()), (int) DiagnosticId.UnexpectedAttributeArgumentType);
 				return null;
 			}
 
@@ -295,7 +299,9 @@ namespace Mono.Linker.Steps
 					typeName = "System.String";
 
 				if (!_context.TypeNameResolver.TryResolveTypeName (typeName, memberWithAttribute, out TypeReference? typeref, out _)) {
-					_context.LogError ($"The type '{typeName}' used with attribute value '{nav.Value}' could not be found.", 1041, origin: GetMessageOriginForPosition (nav));
+					_context.LogError (new DiagnosticString (DiagnosticId.TypeUsedWithAttributeValueCouldNotBeFound).GetMessage (typeName, nav.Value),
+						(int) DiagnosticId.TypeUsedWithAttributeValueCouldNotBeFound,
+						origin: GetMessageOriginForPosition (nav));
 					return null;
 				}
 
@@ -353,7 +359,9 @@ namespace Mono.Linker.Steps
 			try {
 				return Convert.ChangeType (value, typeCode);
 			} catch {
-				_context.LogError ($"Cannot convert value '{value}' to type '{targetType.GetDisplayName ()}'.", 1042);
+#pragma warning disable CS8604 // Possible null reference argument.
+				_context.LogError (new DiagnosticString (DiagnosticId.CannotConverValueToType).GetMessage (value.ToString (), targetType.GetDisplayName ()), (int) DiagnosticId.CannotConverValueToType);
+#pragma warning restore CS8604 // Possible null reference argument.
 				return null;
 			}
 		}

@@ -31,6 +31,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using ILLink.Shared;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Linker.Steps;
@@ -813,19 +814,19 @@ namespace Mono.Linker
 		protected virtual void ReportUnresolved (FieldReference fieldReference)
 		{
 			if (unresolved_reported.Add (fieldReference))
-				LogError ($"Field '{fieldReference.FullName}' reference could not be resolved.", 1040);
+				LogError (string.Format (SharedStrings.FailedToResolveFieldElementMessage, fieldReference.FullName), (int) DiagnosticId.FailedToResolveMetadataElement);
 		}
 
 		protected virtual void ReportUnresolved (MethodReference methodReference)
 		{
 			if (unresolved_reported.Add (methodReference))
-				LogError ($"Method '{methodReference.GetDisplayName ()}' reference could not be resolved.", 1040);
+				LogError (string.Format (SharedStrings.FailedToResolveMethodElementMessage, methodReference.GetDisplayName ()), (int) DiagnosticId.FailedToResolveMetadataElement);
 		}
 
 		protected virtual void ReportUnresolved (TypeReference typeReference)
 		{
 			if (unresolved_reported.Add (typeReference))
-				LogError ($"Type '{typeReference.GetDisplayName ()}' reference could not be resolved.", 1040);
+				LogError (string.Format (SharedStrings.FailedToResolveTypeElementMessage, typeReference.GetDisplayName ()), (int) DiagnosticId.FailedToResolveMetadataElement);
 		}
 	}
 
