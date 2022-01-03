@@ -51,13 +51,13 @@ namespace Mono.Linker.Steps
 					// TODO: Replace with IsAttributeType check once we have it
 					if (provider is not TypeDefinition) {
 						LogWarning (new DiagnosticString (DiagnosticId.XmlRemoveAttributeInstancesCanOnlyBeUsedOnType).GetMessage (attributeType.Name),
-							(int) DiagnosticId.XmlRemoveAttributeInstancesCanOnlyBeUsedOnType, argumentNav);
+							DiagnosticId.XmlRemoveAttributeInstancesCanOnlyBeUsedOnType, argumentNav);
 						continue;
 					}
 				} else {
 					string attributeFullName = GetFullName (argumentNav);
 					if (string.IsNullOrEmpty (attributeFullName)) {
-						LogWarning (new DiagnosticString (DiagnosticId.XmlElementDoesNotContainRequiredAttributeFullname).GetMessage (), (int) DiagnosticId.XmlElementDoesNotContainRequiredAttributeFullname, argumentNav);
+						LogWarning (new DiagnosticString (DiagnosticId.XmlElementDoesNotContainRequiredAttributeFullname).GetMessage (), DiagnosticId.XmlElementDoesNotContainRequiredAttributeFullname, argumentNav);
 						continue;
 					}
 
@@ -140,7 +140,7 @@ namespace Mono.Linker.Steps
 			if (constructor == null) {
 				LogWarning (new DiagnosticString (
 					DiagnosticId.XmlCouldNotFindMatchingConstructorForCustomAttribute).GetMessage (attributeType.GetDisplayName ()),
-					(int) DiagnosticId.XmlCouldNotFindMatchingConstructorForCustomAttribute,
+					DiagnosticId.XmlCouldNotFindMatchingConstructorForCustomAttribute,
 					nav);
 				return null;
 			}
@@ -371,14 +371,14 @@ namespace Mono.Linker.Steps
 					assembly = _context.TryResolve (AssemblyNameReference.Parse (assemblyName));
 					if (assembly == null) {
 						LogWarning (new DiagnosticString (DiagnosticId.XmlCouldNotResolveAssemblyForAttribute).GetMessage (assemblyName, attributeFullName),
-							(int) DiagnosticId.XmlCouldNotResolveAssemblyForAttribute, nav);
+							DiagnosticId.XmlCouldNotResolveAssemblyForAttribute, nav);
 
 						attributeType = default;
 						return false;
 					}
 				} catch (Exception) {
 					LogWarning (new DiagnosticString (DiagnosticId.XmlCouldNotResolveAssemblyForAttribute).GetMessage (assemblyName, attributeFullName),
-						(int) DiagnosticId.XmlCouldNotResolveAssemblyForAttribute, nav);
+						DiagnosticId.XmlCouldNotResolveAssemblyForAttribute, nav);
 					attributeType = default;
 					return false;
 				}
@@ -387,7 +387,7 @@ namespace Mono.Linker.Steps
 			}
 
 			if (attributeType == null) {
-				LogWarning (new DiagnosticString (DiagnosticId.XmlAttributeTypeCouldNotBeFound).GetMessage (attributeFullName), (int) DiagnosticId.XmlAttributeTypeCouldNotBeFound, nav);
+				LogWarning (new DiagnosticString (DiagnosticId.XmlAttributeTypeCouldNotBeFound).GetMessage (attributeFullName), DiagnosticId.XmlAttributeTypeCouldNotBeFound, nav);
 				return false;
 			}
 
@@ -455,7 +455,7 @@ namespace Mono.Linker.Steps
 							if (parameter.HasCustomAttributes || _attributeInfo.CustomAttributes.ContainsKey (parameter))
 								LogWarning (
 									new DiagnosticString (DiagnosticId.XmlMoreThanOneValyForParameterOfMethod).GetMessage (paramName, method.GetDisplayName ()),
-									(int) DiagnosticId.XmlMoreThanOneValyForParameterOfMethod, parameterNav);
+									DiagnosticId.XmlMoreThanOneValyForParameterOfMethod, parameterNav);
 							_attributeInfo.AddCustomAttributes (parameter, attributes);
 							break;
 						}
@@ -474,7 +474,7 @@ namespace Mono.Linker.Steps
 				} else {
 					LogWarning (
 						new DiagnosticString (DiagnosticId.XmlMoreThanOneReturnElementForMethod).GetMessage (method.GetDisplayName ()),
-						(int) DiagnosticId.XmlMoreThanOneReturnElementForMethod, returnNav);
+						DiagnosticId.XmlMoreThanOneReturnElementForMethod, returnNav);
 				}
 			}
 		}
