@@ -37,7 +37,7 @@ namespace Mono.Linker.Steps
 			case AssemblyAction.Link:
 				break;
 			default:
-				Context.LogError (new DiagnosticString (DiagnosticId.RootAssemblyCannotUseAction).GetMessage (assembly.Name.ToString (), action.ToString ()), (int) DiagnosticId.RootAssemblyCannotUseAction);
+				Context.LogError (DiagnosticId.RootAssemblyCannotUseAction, args: new string[] { assembly.Name.ToString (), action.ToString () });
 				return;
 			}
 
@@ -50,7 +50,7 @@ namespace Mono.Linker.Steps
 			case AssemblyRootMode.EntryPoint:
 				var ep = assembly.MainModule.EntryPoint;
 				if (ep == null) {
-					Context.LogError (new DiagnosticString (DiagnosticId.RootAssemblyDoesNotHaveEntryPoint).GetMessage (assembly.Name.ToString ()), (int) DiagnosticId.RootAssemblyDoesNotHaveEntryPoint);
+					Context.LogError (DiagnosticId.RootAssemblyDoesNotHaveEntryPoint, args: assembly.Name.ToString ());
 					return;
 				}
 
@@ -118,7 +118,7 @@ namespace Mono.Linker.Steps
 			//
 			assembly = Context.TryResolve (fileName);
 			if (assembly == null)
-				Context.LogError (new DiagnosticString (DiagnosticId.RootAssemblyCouldNotBeFound).GetMessage (fileName), (int) DiagnosticId.RootAssemblyCouldNotBeFound);
+				Context.LogError (DiagnosticId.RootAssemblyCouldNotBeFound, args: fileName);
 
 			return assembly;
 		}

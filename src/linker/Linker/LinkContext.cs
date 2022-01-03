@@ -614,6 +614,20 @@ namespace Mono.Linker
 			LogMessage (error);
 		}
 
+		/// <summary>
+		/// Display an error message to the end user.
+		/// </summary>
+		/// <param name="text">Humanly readable message describing the error</param>
+		/// <param name="code">Unique error ID. Please see https://github.com/dotnet/linker/blob/main/docs/error-codes.md for the list of errors and possibly add a new one</param>
+		/// <param name="subcategory">Optionally, further categorize this error</param>
+		/// <param name="origin">Filename, line, and column where the error was found</param>
+		/// <returns>New MessageContainer of 'Error' category</returns>
+		public void LogError (DiagnosticId id, string subcategory = MessageSubCategory.None, MessageOrigin? origin = null, params string[] args)
+		{
+			var error = MessageContainer.CreateErrorMessage (new DiagnosticString (id).GetMessage (args), (int) id, subcategory, origin);
+			LogMessage (error);
+		}
+
 		public void FlushCachedWarnings ()
 		{
 			_cachedWarningMessageContainers.Sort ();

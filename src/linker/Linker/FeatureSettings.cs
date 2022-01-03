@@ -17,19 +17,19 @@ namespace Mono.Linker
 
 			var value = GetAttribute (nav, "featurevalue");
 			if (string.IsNullOrEmpty (value)) {
-				context.LogError (new DiagnosticString (DiagnosticId.XmlFeatureDoesNotSpecifyFeatureValue).GetMessage (documentLocation, feature), (int) DiagnosticId.XmlFeatureDoesNotSpecifyFeatureValue);
+				context.LogError (DiagnosticId.XmlFeatureDoesNotSpecifyFeatureValue, args: new string[] { documentLocation, feature });
 				return false;
 			}
 
 			if (!bool.TryParse (value, out bool bValue)) {
-				context.LogError (new DiagnosticString (DiagnosticId.XmlUnsupportedNonBooleanValueForFeature).GetMessage (documentLocation, feature), (int) DiagnosticId.XmlUnsupportedNonBooleanValueForFeature);
+				context.LogError (DiagnosticId.XmlUnsupportedNonBooleanValueForFeature, args: new string[] { documentLocation, feature });
 				return false;
 			}
 
 			var isDefault = GetAttribute (nav, "featuredefault");
 			bool bIsDefault = false;
 			if (!string.IsNullOrEmpty (isDefault) && (!bool.TryParse (isDefault, out bIsDefault) || !bIsDefault)) {
-				context.LogError (new DiagnosticString (DiagnosticId.XmlDocumentLocationHasInvalidFeatureDefault).GetMessage (documentLocation), (int) DiagnosticId.XmlDocumentLocationHasInvalidFeatureDefault);
+				context.LogError (DiagnosticId.XmlDocumentLocationHasInvalidFeatureDefault, args: documentLocation);
 				return false;
 			}
 

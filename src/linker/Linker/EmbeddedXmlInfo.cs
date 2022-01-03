@@ -37,7 +37,7 @@ namespace Mono.Linker
 				marker = GetExternalResolveStep (context, rsc, assembly);
 			} catch (XmlException ex) {
 				/* This could happen if some broken XML file is embedded. */
-				context.LogError (new DiagnosticString (DiagnosticId.XmlException).GetMessage (rsc.Name, ex.ToString ()), (int) DiagnosticId.XmlException);
+				context.LogError (DiagnosticId.XmlException, args: new string[] { rsc.Name, ex.ToString () });
 			}
 
 			if (marker != null)
@@ -58,7 +58,7 @@ namespace Mono.Linker
 				context.LogMessage ($"Processing embedded substitution descriptor '{rsc.Name}' from '{assembly.Name}'.");
 				parser = GetExternalSubstitutionParser (context, rsc, assembly);
 			} catch (XmlException ex) {
-				context.LogError (new DiagnosticString (DiagnosticId.XmlException).GetMessage (rsc.Name, ex.ToString ()), (int) DiagnosticId.XmlException);
+				context.LogError (DiagnosticId.XmlException, args: new string[] { rsc.Name, ex.ToString () });
 			}
 
 			if (parser == null)
@@ -83,7 +83,7 @@ namespace Mono.Linker
 				context.LogMessage ($"Processing embedded '{rsc.Name}' from '{assembly.Name}'.");
 				parser = GetExternalLinkAttributesParser (context, rsc, assembly);
 			} catch (XmlException ex) {
-				context.LogError (new DiagnosticString (DiagnosticId.XmlException).GetMessage (rsc.Name, ex.ToString ()), (int) DiagnosticId.XmlException);
+				context.LogError (DiagnosticId.XmlException, args: new string[] { rsc.Name, ex.ToString () });
 			}
 
 			if (parser == null)

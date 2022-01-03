@@ -126,7 +126,7 @@ namespace Mono.Linker
 			if (_context.IgnoreUnresolved)
 				_context.LogMessage ($"Ignoring unresolved assembly '{reference.Name}' reference.");
 			else
-				_context.LogError (new DiagnosticString (DiagnosticId.CouldNotFindAssemblyReference).GetMessage (reference.Name), (int) DiagnosticId.CouldNotFindAssemblyReference);
+				_context.LogError (DiagnosticId.CouldNotFindAssemblyReference, args: reference.Name);
 		}
 
 		public void AddSearchDirectory (string directory)

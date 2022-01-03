@@ -156,7 +156,7 @@ namespace Mono.Linker
 
 		void ErrorMissingArgument (string optionName)
 		{
-			Context.LogError (new DiagnosticString (DiagnosticId.MissingArgumentForCommanLineOptionName).GetMessage (optionName), (int) DiagnosticId.MissingArgumentForCommanLineOptionName);
+			Context.LogError (DiagnosticId.MissingArgumentForCommanLineOptionName, args: optionName);
 		}
 
 		// Perform setup of the LinkContext and parse the arguments.
@@ -186,7 +186,7 @@ namespace Mono.Linker
 			while (arguments.Count > 0) {
 				string token = arguments.Dequeue ();
 				if (token.Length < 2) {
-					context.LogError (new DiagnosticString (DiagnosticId.UnrecognizedCommandLineOption).GetMessage (token), (int) DiagnosticId.UnrecognizedCommandLineOption);
+					context.LogError (DiagnosticId.UnrecognizedCommandLineOption, args: token);
 					return -1;
 				}
 
@@ -288,7 +288,7 @@ namespace Mono.Linker
 							}
 
 							if (!IsValidAssemblyName (assemblyName)) {
-								context.LogError (new DiagnosticString (DiagnosticId.InvalidAssemblyName).GetMessage (assemblyName), (int) DiagnosticId.InvalidAssemblyName);
+								context.LogError (DiagnosticId.InvalidAssemblyName, args: assemblyName);
 								return -1;
 							}
 
@@ -323,7 +323,7 @@ namespace Mono.Linker
 						var arg = arguments.Dequeue ();
 						string[] values = arg.Split ('=');
 						if (values?.Length != 2) {
-							context.LogError (new DiagnosticString (DiagnosticId.CustomDataFormatIsInvalid).GetMessage (), (int) DiagnosticId.CustomDataFormatIsInvalid);
+							context.LogError (DiagnosticId.CustomDataFormatIsInvalid);
 							return -1;
 						}
 
@@ -482,8 +482,7 @@ namespace Mono.Linker
 							return -1;
 
 						if (!GetWarningSuppressionWriterFileOutputKind (generateWarningSuppressionsArgument, out var fileOutputKind)) {
-							context.LogError (new DiagnosticString (DiagnosticId.InvalidGenerateWarningSuppressionsValue).GetMessage (generateWarningSuppressionsArgument),
-								(int) DiagnosticId.InvalidGenerateWarningSuppressionsValue);
+							context.LogError (DiagnosticId.InvalidGenerateWarningSuppressionsValue, args: generateWarningSuppressionsArgument);
 							return -1;
 						}
 
@@ -607,7 +606,7 @@ namespace Mono.Linker
 								return -1;
 
 							if (!File.Exists (xmlFile)) {
-								context.LogError (new DiagnosticString (DiagnosticId.XmlDescriptorCouldNotBeFound).GetMessage (xmlFile), (int) DiagnosticId.XmlDescriptorCouldNotBeFound);
+								context.LogError (DiagnosticId.XmlDescriptorCouldNotBeFound, args: xmlFile);
 								return -1;
 							}
 
@@ -619,7 +618,7 @@ namespace Mono.Linker
 								return -1;
 
 							if (!File.Exists (assemblyFile) && assemblyFile.EndsWith (".dll", StringComparison.InvariantCultureIgnoreCase)) {
-								context.LogError (new DiagnosticString (DiagnosticId.RootAssemblyCouldNotBeFound).GetMessage (assemblyFile), (int) DiagnosticId.RootAssemblyCouldNotBeFound);
+								context.LogError (DiagnosticId.RootAssemblyCouldNotBeFound, args: assemblyFile);
 								return -1;
 							}
 
@@ -667,17 +666,17 @@ namespace Mono.Linker
 					}
 				}
 
-				context.LogError (new DiagnosticString (DiagnosticId.UnrecognizedCommandLineOption).GetMessage (token), (int) DiagnosticId.UnrecognizedCommandLineOption);
+				context.LogError (DiagnosticId.UnrecognizedCommandLineOption, args: token);
 				return -1;
 			}
 
 			if (inputs.Count == 0) {
-				context.LogError (new DiagnosticString (DiagnosticId.NoFilesToLinkSpecified).GetMessage (resolvers), (int) DiagnosticId.NoFilesToLinkSpecified);
+				context.LogError (DiagnosticId.NoFilesToLinkSpecified, args: resolvers);
 				return -1;
 			}
 
 			if (new_mvid_used && deterministic_used) {
-				context.LogError (new DiagnosticString (DiagnosticId.NewMvidAndDeterministicCannotBeUsedAtSameTime).GetMessage (), (int) DiagnosticId.NewMvidAndDeterministicCannotBeUsedAtSameTime);
+				context.LogError (DiagnosticId.NewMvidAndDeterministicCannotBeUsedAtSameTime);
 				return -1;
 			}
 
@@ -788,10 +787,10 @@ namespace Mono.Linker
 					throw;
 				return lex.MessageContainer.Code ?? 1;
 			} catch (ResolutionException e) {
-				Context.LogError (new DiagnosticString (DiagnosticId.FailedToResolveMetadataElement).GetMessage (e.Message), (int) DiagnosticId.FailedToResolveMetadataElement);
+				Context.LogError (DiagnosticId.FailedToResolveMetadataElement, args: e.Message);
 			} catch (Exception) {
 				// Unhandled exceptions are usually linker bugs. Ask the user to report it.
-				Context.LogError (new DiagnosticString (DiagnosticId.LinkerUnexpectedError).GetMessage (), (int) DiagnosticId.LinkerUnexpectedError);
+				Context.LogError (DiagnosticId.LinkerUnexpectedError);
 				// Don't swallow the exception and exit code - rethrow it and let the surrounding tooling decide what to do.
 				// The stack trace will go to stderr, and the MSBuild task will surface it with High importance.
 				throw;
@@ -835,9 +834,9 @@ namespace Mono.Linker
 					// (or even if a different path specifies the "same" assembly, based on the MVID).
 					return AssemblyLoadContext.Default.LoadFromAssemblyPath (assemblyPath);
 				}
-				Context.LogError (new DiagnosticString (DiagnosticId.AssemblyInCustomStepOptionCouldNotBeFound).GetMessage (arg), (int) DiagnosticId.AssemblyInCustomStepOptionCouldNotBeFound);
+				Context.LogError (DiagnosticId.AssemblyInCustomStepOptionCouldNotBeFound, args: arg);
 			} else
-				Context.LogError (new DiagnosticString (DiagnosticId.AssemblyPathInCustomStepMustBeFullyQualified).GetMessage (arg), (int) DiagnosticId.AssemblyPathInCustomStepMustBeFullyQualified);
+				Context.LogError (DiagnosticId.AssemblyPathInCustomStepMustBeFullyQualified, args: arg);
 
 			return null;
 		}
@@ -903,13 +902,13 @@ namespace Mono.Linker
 			} else {
 				string[] parts = arg.Split (':');
 				if (parts.Length != 2) {
-					Context.LogError (new DiagnosticString (DiagnosticId.InvalidArgForCustomStep).GetMessage (arg), (int) DiagnosticId.InvalidArgForCustomStep);
+					Context.LogError (DiagnosticId.InvalidArgForCustomStep, args: arg);
 					return false;
 				}
 				customStepName = parts[1];
 
 				if (!parts[0].StartsWith ("-") && !parts[0].StartsWith ("+")) {
-					Context.LogError (new DiagnosticString (DiagnosticId.ExpectedSignToControlNewStepInsertion).GetMessage (), (int) DiagnosticId.ExpectedSignToControlNewStepInsertion);
+					Context.LogError (DiagnosticId.ExpectedSignToControlNewStepInsertion);
 					return false;
 				}
 
@@ -931,7 +930,7 @@ namespace Mono.Linker
 
 				IStep? target = FindStep (pipeline, targetName);
 				if (target == null) {
-					Context.LogError (new DiagnosticString (DiagnosticId.PipelineStepCouldNotBeFound).GetMessage (targetName), (int) DiagnosticId.PipelineStepCouldNotBeFound);
+					Context.LogError (DiagnosticId.PipelineStepCouldNotBeFound, args: targetName);
 					return false;
 				}
 
@@ -953,7 +952,7 @@ namespace Mono.Linker
 
 				IMarkHandler? target = FindMarkHandler (pipeline, targetName);
 				if (target == null) {
-					Context.LogError (new DiagnosticString (DiagnosticId.PipelineStepCouldNotBeFound).GetMessage (targetName), (int) DiagnosticId.PipelineStepCouldNotBeFound);
+					Context.LogError (DiagnosticId.PipelineStepCouldNotBeFound, args: targetName);
 					return false;
 				}
 
@@ -965,7 +964,7 @@ namespace Mono.Linker
 				return true;
 			}
 
-			Context.LogError (new DiagnosticString (DiagnosticId.CustomStepTypeIsIncompatibleWithLinkerVersion).GetMessage (stepType.ToString ()), (int) DiagnosticId.CustomStepTypeIsIncompatibleWithLinkerVersion);
+			Context.LogError (DiagnosticId.CustomStepTypeIsIncompatibleWithLinkerVersion, args: stepType.ToString ());
 			return false;
 		}
 
@@ -996,7 +995,7 @@ namespace Mono.Linker
 			Type? step = assembly != null ? assembly.GetType (type) : Type.GetType (type, false);
 
 			if (step == null) {
-				Context.LogError (new DiagnosticString (DiagnosticId.CustomStepTypeCouldNotBeFound).GetMessage (type), (int) DiagnosticId.CustomStepTypeCouldNotBeFound);
+				Context.LogError (DiagnosticId.CustomStepTypeCouldNotBeFound, args: type);
 				return null;
 			}
 
@@ -1008,12 +1007,12 @@ namespace Mono.Linker
 			Type? step = assembly != null ? assembly.GetType (type) : Type.GetType (type, false);
 
 			if (step == null) {
-				Context.LogError (new DiagnosticString (DiagnosticId.CustomStepTypeCouldNotBeFound).GetMessage (type), (int) DiagnosticId.CustomStepTypeCouldNotBeFound);
+				Context.LogError (DiagnosticId.CustomStepTypeCouldNotBeFound, args: type);
 				return null;
 			}
 
 			if (!typeof (TStep).IsAssignableFrom (step)) {
-				Context.LogError (new DiagnosticString (DiagnosticId.CustomStepTypeIsIncompatibleWithLinkerVersion).GetMessage (type), (int) DiagnosticId.CustomStepTypeIsIncompatibleWithLinkerVersion);
+				Context.LogError (DiagnosticId.CustomStepTypeIsIncompatibleWithLinkerVersion, args: type);
 				return null;
 			}
 
@@ -1060,7 +1059,7 @@ namespace Mono.Linker
 				return AssemblyAction.AddBypassNGenUsed;
 			}
 
-			Context.LogError (new DiagnosticString (DiagnosticId.InvalidAssemblyAction).GetMessage (s), (int) DiagnosticId.InvalidAssemblyAction);
+			Context.LogError (DiagnosticId.InvalidAssemblyAction, args: s);
 			return null;
 		}
 
@@ -1079,7 +1078,7 @@ namespace Mono.Linker
 				return AssemblyRootMode.Library;
 			}
 
-			Context.LogError (new DiagnosticString (DiagnosticId.InvalidAssemblyRootMode).GetMessage (s), (int) DiagnosticId.InvalidAssemblyRootMode);
+			Context.LogError (DiagnosticId.InvalidAssemblyRootMode, args: s);
 			return null;
 		}
 
@@ -1091,7 +1090,7 @@ namespace Mono.Linker
 					return true;
 			}
 
-			Context.LogError (new DiagnosticString (DiagnosticId.InvalidWarningVersion).GetMessage (text), (int) DiagnosticId.InvalidWarningVersion);
+			Context.LogError (DiagnosticId.InvalidWarningVersion, args: text);
 			version = 0;
 			return false;
 		}
@@ -1122,7 +1121,7 @@ namespace Mono.Linker
 				return true;
 			}
 
-			Context.LogError (new DiagnosticString (DiagnosticId.InvalidOptimizationValue).GetMessage (text), (int) DiagnosticId.InvalidOptimizationValue);
+			Context.LogError (DiagnosticId.InvalidOptimizationValue, args: text);
 			optimization = 0;
 			return false;
 		}
@@ -1141,7 +1140,7 @@ namespace Mono.Linker
 				return true;
 			}
 
-			Context.LogError (new DiagnosticString (DiagnosticId.InvalidMetadataOption).GetMessage (text), (int) DiagnosticId.InvalidMetadataOption);
+			Context.LogError (DiagnosticId.InvalidMetadataOption, args: text);
 			metadataTrimming = 0;
 			return false;
 		}
@@ -1182,7 +1181,7 @@ namespace Mono.Linker
 				return true;
 			}
 
-			Context.LogError (new DiagnosticString (DiagnosticId.InvalidArgumentForTokenOption).GetMessage (token), (int) DiagnosticId.InvalidArgumentForTokenOption);
+			Context.LogError (DiagnosticId.InvalidArgumentForTokenOption, args: token);
 			return false;
 		}
 

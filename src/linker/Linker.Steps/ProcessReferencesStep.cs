@@ -38,7 +38,7 @@ namespace Mono.Linker.Steps
 				// to determine the action.
 				var assembly = Context.TryResolve (assemblyName);
 				if (assembly == null) {
-					Context.LogError (new DiagnosticString (DiagnosticId.ReferenceAssemblyCouldNotBeLoaded).GetMessage (assemblyPath), (int) DiagnosticId.ReferenceAssemblyCouldNotBeLoaded);
+					Context.LogError (DiagnosticId.ReferenceAssemblyCouldNotBeLoaded, args: assemblyPath);
 					continue;
 				}
 
