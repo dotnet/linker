@@ -69,7 +69,7 @@ namespace Mono.Linker
 			if (!((int) id >= 1000 && (int) id <= 2000))
 				throw new ArgumentOutOfRangeException (nameof (id), $"The provided code '{(int) id}' does not fall into the error category, which is in the range of 1000 to 2000 (inclusive).");
 
-			return new MessageContainer (MessageCategory.Error, new DiagnosticString (id).GetMessage (args), (int) id, subcategory, origin);
+			return new MessageContainer (MessageCategory.Error, id, subcategory, origin, args);
 		}
 
 		/// <summary>
@@ -232,6 +232,15 @@ namespace Mono.Linker
 			Origin = origin;
 			SubCategory = subcategory;
 			Text = text;
+		}
+
+		private MessageContainer (MessageCategory category, DiagnosticId id, string subcategory = MessageSubCategory.None, MessageOrigin? origin = null, params string[] args)
+		{
+			Code = (int) id;
+			Category = category;
+			Origin = origin;
+			SubCategory = subcategory;
+			Text = new DiagnosticString(id).GetMessage(args);
 		}
 
 		public override string ToString () => ToMSBuildString ();
