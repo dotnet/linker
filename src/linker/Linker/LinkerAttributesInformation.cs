@@ -122,7 +122,7 @@ namespace Mono.Linker
 
 			context.LogWarning (
 				new DiagnosticString (DiagnosticId.AttributeDoesntHaveTheRequiredNumberOfParameters).GetMessage (typeof (RequiresUnreferencedCodeAttribute).FullName ?? ""),
-				(int) DiagnosticId.AttributeDoesntHaveTheRequiredNumberOfParameters, (IMemberDefinition) provider);
+				DiagnosticId.AttributeDoesntHaveTheRequiredNumberOfParameters, (IMemberDefinition) provider);
 			return null;
 		}
 
@@ -137,7 +137,7 @@ namespace Mono.Linker
 			default:
 				context.LogWarning (
 					new DiagnosticString (DiagnosticId.AttributeDoesntHaveTheRequiredNumberOfParameters).GetMessage (ca.AttributeType.GetDisplayName ()),
-					(int) DiagnosticId.AttributeDoesntHaveTheRequiredNumberOfParameters, attributeContext);
+					DiagnosticId.AttributeDoesntHaveTheRequiredNumberOfParameters, attributeContext);
 				return null;
 			};
 		}

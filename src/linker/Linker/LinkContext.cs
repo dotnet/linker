@@ -31,9 +31,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using ILLink.Shared;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Linker.Steps;
+
 namespace Mono.Linker
 {
 
@@ -574,6 +576,23 @@ namespace Mono.Linker
 		/// </summary>
 		/// <param name="text">Humanly readable message describing the warning</param>
 		/// <param name="code">Unique warning ID. Please see https://github.com/dotnet/linker/blob/main/docs/error-codes.md for the list of warnings and possibly add a new one</param>
+		/// <param name="origin">Filename or member where the warning is coming from</param>
+		/// <param name="subcategory">Optionally, further categorize this warning</param>
+		/// <returns>New MessageContainer of 'Warning' category</returns>
+		public void LogWarning (string text, DiagnosticId code, MessageOrigin origin, string subcategory = MessageSubCategory.None)
+		{
+			WarnVersion version = GetWarningVersion ();
+			MessageContainer warning = MessageContainer.CreateWarningMessage (this, text, (int) code, origin, version, subcategory);
+			_cachedWarningMessageContainers.Add (warning);
+		}
+
+		/// <summary>
+		/// Display a warning message to the end user.
+		/// This API is used for warnings defined in the linker, not by custom steps. Warning
+		/// versions are inferred from the code, and every warning that we define is versioned.
+		/// </summary>
+		/// <param name="text">Humanly readable message describing the warning</param>
+		/// <param name="code">Unique warning ID. Please see https://github.com/dotnet/linker/blob/main/docs/error-codes.md for the list of warnings and possibly add a new one</param>
 		/// <param name="origin">Type or member where the warning is coming from</param>
 		/// <param name="subcategory">Optionally, further categorize this warning</param>
 		/// <returns>New MessageContainer of 'Warning' category</returns>
@@ -590,10 +609,42 @@ namespace Mono.Linker
 		/// </summary>
 		/// <param name="text">Humanly readable message describing the warning</param>
 		/// <param name="code">Unique warning ID. Please see https://github.com/dotnet/linker/blob/main/docs/error-codes.md for the list of warnings and possibly add a new one</param>
+		/// <param name="origin">Type or member where the warning is coming from</param>
+		/// <param name="subcategory">Optionally, further categorize this warning</param>
+		/// <returns>New MessageContainer of 'Warning' category</returns>
+		public void LogWarning (string text, DiagnosticId code, IMemberDefinition origin, int? ilOffset = null, string subcategory = MessageSubCategory.None)
+		{
+			MessageOrigin _origin = new MessageOrigin (origin, ilOffset);
+			LogWarning (text, code, _origin, subcategory);
+		}
+
+		/// <summary>
+		/// Display a warning message to the end user.
+		/// This API is used for warnings defined in the linker, not by custom steps. Warning
+		/// versions are inferred from the code, and every warning that we define is versioned.
+		/// </summary>
+		/// <param name="text">Humanly readable message describing the warning</param>
+		/// <param name="code">Unique warning ID. Please see https://github.com/dotnet/linker/blob/main/docs/error-codes.md for the list of warnings and possibly add a new one</param>
 		/// <param name="origin">Filename where the warning is coming from</param>
 		/// <param name="subcategory">Optionally, further categorize this warning</param>
 		/// <returns>New MessageContainer of 'Warning' category</returns>
 		public void LogWarning (string text, int code, string origin, string subcategory = MessageSubCategory.None)
+		{
+			MessageOrigin _origin = new MessageOrigin (origin);
+			LogWarning (text, code, _origin, subcategory);
+		}
+
+		/// <summary>
+		/// Display a warning message to the end user.
+		/// This API is used for warnings defined in the linker, not by custom steps. Warning
+		/// versions are inferred from the code, and every warning that we define is versioned.
+		/// </summary>
+		/// <param name="text">Humanly readable message describing the warning</param>
+		/// <param name="code">Unique warning ID. Please see https://github.com/dotnet/linker/blob/main/docs/error-codes.md for the list of warnings and possibly add a new one</param>
+		/// <param name="origin">Filename where the warning is coming from</param>
+		/// <param name="subcategory">Optionally, further categorize this warning</param>
+		/// <returns>New MessageContainer of 'Warning' category</returns>
+		public void LogWarning (string text, DiagnosticId code, string origin, string subcategory = MessageSubCategory.None)
 		{
 			MessageOrigin _origin = new MessageOrigin (origin);
 			LogWarning (text, code, _origin, subcategory);

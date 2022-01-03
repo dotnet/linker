@@ -3,6 +3,7 @@
 
 using System;
 using System.Diagnostics;
+using ILLink.Shared;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
@@ -93,6 +94,19 @@ namespace Mono.Linker.Dataflow
 
 			if (ReportingEnabled)
 				_context.ReflectionPatternRecorder.UnrecognizedReflectionAccessPattern (Origin, Source, Instruction, MemberWithRequirements, message, messageCode);
+		}
+
+		public void RecordUnrecognizedPattern (DiagnosticId messageCode, string message)
+		{
+#if DEBUG
+			if (!_patternAnalysisAttempted)
+				throw new InvalidOperationException ($"Internal error: To correctly report all patterns, when starting to analyze a pattern the AnalyzingPattern must be called first. {Source} -> {MemberWithRequirements}");
+
+			_patternReported = true;
+#endif
+
+			if (ReportingEnabled)
+				_context.ReflectionPatternRecorder.UnrecognizedReflectionAccessPattern (Origin, Source, Instruction, MemberWithRequirements, message, (int) messageCode);
 		}
 
 		public void Dispose ()

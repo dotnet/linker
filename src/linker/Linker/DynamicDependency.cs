@@ -74,7 +74,7 @@ namespace Mono.Linker
 			if (dynamicDependency != null)
 				return dynamicDependency;
 
-			context.LogWarning (new DiagnosticString (DiagnosticId.DynamicDependencyAttributeCouldNotBeAnalyzed).GetMessage (), (int) DiagnosticId.DynamicDependencyAttributeCouldNotBeAnalyzed, member);
+			context.LogWarning (new DiagnosticString (DiagnosticId.DynamicDependencyAttributeCouldNotBeAnalyzed).GetMessage (), DiagnosticId.DynamicDependencyAttributeCouldNotBeAnalyzed, member);
 			return null;
 		}
 

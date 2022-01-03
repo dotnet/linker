@@ -477,6 +477,11 @@ namespace Mono.Linker.Steps
 			_context.LogWarning (message, warningCode, GetMessageOriginForPosition (position));
 		}
 
+		protected void LogWarning (string message, DiagnosticId warningCode, XPathNavigator position)
+		{
+			_context.LogWarning (message, warningCode, GetMessageOriginForPosition (position));
+		}
+
 		public override string ToString () => GetType ().Name + ": " + _xmlDocumentLocation;
 
 		public bool TryConvertValue (string value, TypeReference target, out object? result)

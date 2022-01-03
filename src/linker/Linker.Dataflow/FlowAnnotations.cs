@@ -172,7 +172,7 @@ namespace Mono.Linker.Dataflow
 				else
 					_context.LogWarning (
 						new DiagnosticString (DiagnosticId.AttributeDoesntHaveTheRequiredNumberOfParameters).GetMessage ("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute"),
-						(int) DiagnosticId.AttributeDoesntHaveTheRequiredNumberOfParameters, member);
+						DiagnosticId.AttributeDoesntHaveTheRequiredNumberOfParameters, member);
 			}
 			return DynamicallyAccessedMemberTypes.None;
 		}
@@ -230,14 +230,14 @@ namespace Mono.Linker.Dataflow
 						} else if (methodMemberTypes != DynamicallyAccessedMemberTypes.None) {
 							_context.LogWarning (
 								new DiagnosticString (DiagnosticId.DynamicallyAccessedMembersIsNotAllowedOnMethods).GetMessage (),
-								(int) DiagnosticId.DynamicallyAccessedMembersIsNotAllowedOnMethods, method, subcategory: MessageSubCategory.TrimAnalysis);
+								DiagnosticId.DynamicallyAccessedMembersIsNotAllowedOnMethods, method, subcategory: MessageSubCategory.TrimAnalysis);
 						}
 					} else {
 						offset = 0;
 						if (methodMemberTypes != DynamicallyAccessedMemberTypes.None) {
 							_context.LogWarning (
 								new DiagnosticString (DiagnosticId.DynamicallyAccessedMembersIsNotAllowedOnMethods).GetMessage (),
-								(int) DiagnosticId.DynamicallyAccessedMembersIsNotAllowedOnMethods, method, subcategory: MessageSubCategory.TrimAnalysis);
+								DiagnosticId.DynamicallyAccessedMembersIsNotAllowedOnMethods, method, subcategory: MessageSubCategory.TrimAnalysis);
 						}
 					}
 
@@ -331,7 +331,7 @@ namespace Mono.Linker.Dataflow
 						if (annotatedMethods.Any (a => a.Method == setMethod)) {
 							_context.LogWarning (
 								new DiagnosticString (DiagnosticId.DynamicallyAccessedMembersConflictsBetweenPropertyAndAccessor).GetMessage (property.GetDisplayName (), setMethod.GetDisplayName ()),
-								(int) DiagnosticId.DynamicallyAccessedMembersConflictsBetweenPropertyAndAccessor, setMethod, subcategory: MessageSubCategory.TrimAnalysis);
+								DiagnosticId.DynamicallyAccessedMembersConflictsBetweenPropertyAndAccessor, setMethod, subcategory: MessageSubCategory.TrimAnalysis);
 						} else {
 							int offset = setMethod.HasImplicitThis () ? 1 : 0;
 							if (setMethod.Parameters.Count > 0) {
@@ -360,7 +360,7 @@ namespace Mono.Linker.Dataflow
 						if (annotatedMethods.Any (a => a.Method == getMethod)) {
 							_context.LogWarning (
 								new DiagnosticString (DiagnosticId.DynamicallyAccessedMembersConflictsBetweenPropertyAndAccessor).GetMessage (property.GetDisplayName (), getMethod.GetDisplayName ()),
-								(int) DiagnosticId.DynamicallyAccessedMembersConflictsBetweenPropertyAndAccessor, getMethod, subcategory: MessageSubCategory.TrimAnalysis);
+								DiagnosticId.DynamicallyAccessedMembersConflictsBetweenPropertyAndAccessor, getMethod, subcategory: MessageSubCategory.TrimAnalysis);
 						} else {
 							annotatedMethods.Add (new MethodAnnotations (getMethod, null, annotation, null));
 						}
@@ -371,7 +371,7 @@ namespace Mono.Linker.Dataflow
 						backingFieldFromGetter != backingFieldFromSetter) {
 						_context.LogWarning (
 							new DiagnosticString (DiagnosticId.DynamicallyAccessedMembersCouldNotFindBackingField).GetMessage (property.GetDisplayName ()),
-							(int) DiagnosticId.DynamicallyAccessedMembersCouldNotFindBackingField, property, subcategory: MessageSubCategory.TrimAnalysis);
+							DiagnosticId.DynamicallyAccessedMembersCouldNotFindBackingField, property, subcategory: MessageSubCategory.TrimAnalysis);
 						backingField = null;
 					} else {
 						backingField = backingFieldFromGetter ?? backingFieldFromSetter;
