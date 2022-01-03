@@ -440,7 +440,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			}
 
 			[Kept]
-			public static void Test()
+			public static void Test ()
 			{
 				ITest t = null;
 				t.Method ();
