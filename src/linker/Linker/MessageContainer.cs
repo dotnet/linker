@@ -240,7 +240,7 @@ namespace Mono.Linker
 			Category = category;
 			Origin = origin;
 			SubCategory = subcategory;
-			Text = new DiagnosticString(id).GetMessage(args);
+			Text = new DiagnosticString (id).GetMessage (args);
 		}
 
 		public override string ToString () => ToMSBuildString ();
