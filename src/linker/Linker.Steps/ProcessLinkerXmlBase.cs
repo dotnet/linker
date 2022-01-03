@@ -11,6 +11,7 @@ using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
+using ILLink.Shared;
 using Mono.Cecil;
 
 namespace Mono.Linker.Steps
@@ -141,7 +142,7 @@ namespace Mono.Linker.Steps
 					AssemblyDefinition? assembly = assemblyToProcess ?? _context.TryResolve (name!);
 
 					if (assembly == null) {
-						LogWarning ($"Could not resolve assembly '{name!.Name}'.", 2007, assemblyNav);
+						LogWarning (new DiagnosticString (DiagnosticId.XmlCouldNotResolveAssembly).GetMessage (name!.Name), (int) DiagnosticId.XmlCouldNotResolveAssembly, assemblyNav);
 						continue;
 					}
 
@@ -182,7 +183,7 @@ namespace Mono.Linker.Steps
 
 				if (type == null) {
 					if (warnOnUnresolvedTypes)
-						LogWarning ($"Could not resolve type '{fullname}'.", 2008, typeNav);
+						LogWarning (new DiagnosticString (DiagnosticId.XmlCouldNotResolveType).GetMessage (fullname), (int) DiagnosticId.XmlCouldNotResolveType, typeNav);
 					continue;
 				}
 
@@ -253,7 +254,7 @@ namespace Mono.Linker.Steps
 			if (!String.IsNullOrEmpty (signature)) {
 				FieldDefinition? field = GetField (type, signature);
 				if (field == null) {
-					LogWarning ($"Could not find field '{signature}' on type '{type.GetDisplayName ()}'.", 2012, nav);
+					LogWarning (new DiagnosticString (DiagnosticId.XmlCouldNotFindFieldOnType).GetMessage (signature, type.GetDisplayName ()), (int) DiagnosticId.XmlCouldNotFindFieldOnType, nav);
 					return;
 				}
 
@@ -273,7 +274,7 @@ namespace Mono.Linker.Steps
 				}
 
 				if (!foundMatch) {
-					LogWarning ($"Could not find field '{name}' on type '{type.GetDisplayName ()}'.", 2012, nav);
+					LogWarning (new DiagnosticString (DiagnosticId.XmlCouldNotFindFieldOnType).GetMessage (name, type.GetDisplayName ()), (int) DiagnosticId.XmlCouldNotFindFieldOnType, nav);
 				}
 			}
 		}
@@ -307,7 +308,7 @@ namespace Mono.Linker.Steps
 			if (!String.IsNullOrEmpty (signature)) {
 				MethodDefinition? method = GetMethod (type, signature);
 				if (method == null) {
-					LogWarning ($"Could not find method '{signature}' on type '{type.GetDisplayName ()}'.", 2009, nav);
+					LogWarning (new DiagnosticString (DiagnosticId.XmlCouldNotFindMethodOnType).GetMessage (signature, type.GetDisplayName ()), (int) DiagnosticId.XmlCouldNotFindMethodOnType, nav);
 					return;
 				}
 
@@ -327,7 +328,7 @@ namespace Mono.Linker.Steps
 				}
 
 				if (!foundMatch) {
-					LogWarning ($"Could not find method '{name}' on type '{type.GetDisplayName ()}'.", 2009, nav);
+					LogWarning (new DiagnosticString (DiagnosticId.XmlCouldNotFindMethodOnType).GetMessage (name, type.GetDisplayName ()), (int) DiagnosticId.XmlCouldNotFindMethodOnType, nav);
 				}
 			}
 		}
@@ -351,7 +352,7 @@ namespace Mono.Linker.Steps
 			if (!String.IsNullOrEmpty (signature)) {
 				EventDefinition? @event = GetEvent (type, signature);
 				if (@event == null) {
-					LogWarning ($"Could not find event '{signature}' on type '{type.GetDisplayName ()}'.", 2016, nav);
+					LogWarning (new DiagnosticString (DiagnosticId.XmlCouldNotFindEventOnType).GetMessage (signature, type.GetDisplayName ()), (int) DiagnosticId.XmlCouldNotFindEventOnType, nav);
 					return;
 				}
 
@@ -369,7 +370,7 @@ namespace Mono.Linker.Steps
 				}
 
 				if (!foundMatch) {
-					LogWarning ($"Could not find event '{name}' on type '{type.GetDisplayName ()}'.", 2016, nav);
+					LogWarning (new DiagnosticString (DiagnosticId.XmlCouldNotFindEventOnType).GetMessage (name, type.GetDisplayName ()), (int) DiagnosticId.XmlCouldNotFindEventOnType, nav);
 				}
 			}
 		}
@@ -403,7 +404,7 @@ namespace Mono.Linker.Steps
 			if (!String.IsNullOrEmpty (signature)) {
 				PropertyDefinition? property = GetProperty (type, signature);
 				if (property == null) {
-					LogWarning ($"Could not find property '{signature}' on type '{type.GetDisplayName ()}'.", 2017, nav);
+					LogWarning (new DiagnosticString (DiagnosticId.XmlCouldNotFindPropertyOnType).GetMessage (signature, type.GetDisplayName ()), (int) DiagnosticId.XmlCouldNotFindPropertyOnType, nav);
 					return;
 				}
 
@@ -421,7 +422,7 @@ namespace Mono.Linker.Steps
 				}
 
 				if (!foundMatch) {
-					LogWarning ($"Could not find property '{name}' on type '{type.GetDisplayName ()}'.", 2017, nav);
+					LogWarning (new DiagnosticString (DiagnosticId.XmlCouldNotFindPropertyOnType).GetMessage (name, type.GetDisplayName ()), (int) DiagnosticId.XmlCouldNotFindPropertyOnType, nav);
 				}
 			}
 		}

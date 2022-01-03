@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using ILLink.Shared;
 using Mono.Cecil;
 
 namespace Mono.Linker
@@ -120,8 +121,8 @@ namespace Mono.Linker
 			}
 
 			context.LogWarning (
-				$"Attribute '{typeof (RequiresUnreferencedCodeAttribute).FullName}' doesn't have the required number of parameters specified.",
-				2028, (IMemberDefinition) provider);
+				new DiagnosticString (DiagnosticId.AttributeDoesntHaveTheRequiredNumberOfParameters).GetMessage (typeof (RequiresUnreferencedCodeAttribute).FullName ?? ""),
+				(int) DiagnosticId.AttributeDoesntHaveTheRequiredNumberOfParameters, (IMemberDefinition) provider);
 			return null;
 		}
 
@@ -135,8 +136,8 @@ namespace Mono.Linker
 				return new RemoveAttributeInstancesAttribute ((CustomAttributeArgument) ca.ConstructorArguments[0].Value);
 			default:
 				context.LogWarning (
-					$"Attribute '{ca.AttributeType.GetDisplayName ()}' doesn't have the required number of arguments specified.",
-					2028, attributeContext);
+					new DiagnosticString (DiagnosticId.AttributeDoesntHaveTheRequiredNumberOfParameters).GetMessage (ca.AttributeType.GetDisplayName ()),
+					(int) DiagnosticId.AttributeDoesntHaveTheRequiredNumberOfParameters, attributeContext);
 				return null;
 			};
 		}

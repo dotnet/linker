@@ -901,7 +901,8 @@ namespace Mono.Linker.Steps
 			if (dynamicDependency.AssemblyName != null) {
 				assembly = Context.TryResolve (dynamicDependency.AssemblyName);
 				if (assembly == null) {
-					Context.LogWarning ($"Unresolved assembly '{dynamicDependency.AssemblyName}' in 'DynamicDependencyAttribute'.", 2035, ScopeStack.CurrentScope.Origin);
+					Context.LogWarning (new DiagnosticString (DiagnosticId.UnresolvedAssemblyInDynamicDependencyAttribute).GetMessage (dynamicDependency.AssemblyName),
+						(int) DiagnosticId.UnresolvedAssemblyInDynamicDependencyAttribute, ScopeStack.CurrentScope.Origin);
 					return;
 				}
 			} else {
@@ -913,7 +914,8 @@ namespace Mono.Linker.Steps
 			if (dynamicDependency.TypeName is string typeName) {
 				type = DocumentationSignatureParser.GetTypeByDocumentationSignature (assembly, typeName, Context);
 				if (type == null) {
-					Context.LogWarning ($"Unresolved type '{typeName}' in 'DynamicDependencyAttribute'.", 2036, ScopeStack.CurrentScope.Origin);
+					Context.LogWarning (new DiagnosticString (DiagnosticId.UnresolvedTypeInDynamicDependencyAttribute).GetMessage (typeName),
+						(int) DiagnosticId.UnresolvedTypeInDynamicDependencyAttribute, ScopeStack.CurrentScope.Origin);
 					return;
 				}
 
@@ -921,13 +923,15 @@ namespace Mono.Linker.Steps
 			} else if (dynamicDependency.Type is TypeReference typeReference) {
 				type = Context.TryResolve (typeReference);
 				if (type == null) {
-					Context.LogWarning ($"Unresolved type '{typeReference}' in 'DynamicDependencyAtribute'.", 2036, ScopeStack.CurrentScope.Origin);
+					Context.LogWarning (new DiagnosticString (DiagnosticId.UnresolvedTypeInDynamicDependencyAttribute).GetMessage (typeReference.GetDisplayName ()),
+						(int) DiagnosticId.UnresolvedTypeInDynamicDependencyAttribute, ScopeStack.CurrentScope.Origin);
 					return;
 				}
 			} else {
 				type = Context.TryResolve (context.DeclaringType);
 				if (type == null) {
-					Context.LogWarning ($"Unresolved type '{context.DeclaringType}' in 'DynamicDependencyAttribute'.", 2036, context);
+					Context.LogWarning (new DiagnosticString (DiagnosticId.UnresolvedTypeInDynamicDependencyAttribute).GetMessage (context.DeclaringType.GetDisplayName ()),
+						(int) DiagnosticId.UnresolvedTypeInDynamicDependencyAttribute, context);
 					return;
 				}
 			}
@@ -936,14 +940,16 @@ namespace Mono.Linker.Steps
 			if (dynamicDependency.MemberSignature is string memberSignature) {
 				members = DocumentationSignatureParser.GetMembersByDocumentationSignature (type, memberSignature, Context, acceptName: true);
 				if (!members.Any ()) {
-					Context.LogWarning ($"No members were resolved for '{memberSignature}'.", 2037, ScopeStack.CurrentScope.Origin);
+					Context.LogWarning (new DiagnosticString (DiagnosticId.NoMembersResolvedForMemberSignatureOrType).GetMessage (memberSignature),
+						(int) DiagnosticId.NoMembersResolvedForMemberSignatureOrType, ScopeStack.CurrentScope.Origin);
 					return;
 				}
 			} else {
 				var memberTypes = dynamicDependency.MemberTypes;
 				members = type.GetDynamicallyAccessedMembers (Context, memberTypes);
 				if (!members.Any ()) {
-					Context.LogWarning ($"No members were resolved for '{memberTypes}'.", 2037, ScopeStack.CurrentScope.Origin);
+					Context.LogWarning (new DiagnosticString (DiagnosticId.NoMembersResolvedForMemberSignatureOrType).GetMessage (memberTypes.ToString ()),
+						(int) DiagnosticId.NoMembersResolvedForMemberSignatureOrType, ScopeStack.CurrentScope.Origin);
 					return;
 				}
 			}
@@ -984,7 +990,7 @@ namespace Mono.Linker.Steps
 
 		protected virtual void MarkUserDependency (IMemberDefinition context, CustomAttribute ca)
 		{
-			Context.LogWarning ($"'PreserveDependencyAttribute' is deprecated. Use 'DynamicDependencyAttribute' instead.", 2033, context);
+			Context.LogWarning (new DiagnosticString (DiagnosticId.DeprecatedPreserveDependencyAttribute).GetMessage (), (int) DiagnosticId.DeprecatedPreserveDependencyAttribute, context);
 
 			if (!DynamicDependency.ShouldProcess (Context, ca))
 				return;
@@ -994,8 +1000,7 @@ namespace Mono.Linker.Steps
 			if (args.Count >= 3 && args[2].Value is string assemblyName) {
 				assembly = Context.TryResolve (assemblyName);
 				if (assembly == null) {
-					Context.LogWarning (
-						$"Could not resolve dependency assembly '{assemblyName}' specified in a 'PreserveDependency' attribute.", 2003, context);
+					Context.LogWarning (new DiagnosticString (DiagnosticId.CouldNotResolveDependencyAssembly).GetMessage (assemblyName), (int) DiagnosticId.CouldNotResolveDependencyAssembly, context);
 					return;
 				}
 			} else {
@@ -1008,8 +1013,7 @@ namespace Mono.Linker.Steps
 				td = Context.TryResolve (assemblyDef, typeName);
 
 				if (td == null) {
-					Context.LogWarning (
-						$"Could not resolve dependency type '{typeName}' specified in a 'PreserveDependency' attribute.", 2004, context);
+					Context.LogWarning (new DiagnosticString (DiagnosticId.CouldNotResolveDependencyType).GetMessage (typeName), (int) DiagnosticId.CouldNotResolveDependencyType, context);
 					return;
 				}
 
@@ -1046,8 +1050,7 @@ namespace Mono.Linker.Steps
 					return;
 			}
 
-			Context.LogWarning (
-				$"Could not resolve dependency member '{member}' declared in type '{td.GetDisplayName ()}' specified in a 'PreserveDependency' attribute.", 2005, context);
+			Context.LogWarning (new DiagnosticString (DiagnosticId.CouldNotResolveDependencyMember).GetMessage (member ?? "", td.GetDisplayName ()), (int) DiagnosticId.CouldNotResolveDependencyMember, context);
 		}
 
 		bool MarkDependencyMethod (TypeDefinition type, string name, string[]? signature, in DependencyInfo reason)
@@ -1880,12 +1883,8 @@ namespace Mono.Linker.Steps
 				// or because of a copy assembly with a reference and so on) then we should not spam the warnings due to the type itself.
 				if (!(reason.Source is IMemberDefinition sourceMemberDefinition && sourceMemberDefinition.DeclaringType == type))
 					Context.LogWarning (
-						$"Attribute '{type.GetDisplayName ()}' is being referenced in code but the trimmer was " +
-						$"instructed to remove all instances of this attribute. If the attribute instances are necessary make sure to " +
-						$"either remove the trimmer attribute XML portion which removes the attribute instances, " +
-						$"or override the removal by using the trimmer XML descriptor to keep the attribute type " +
-						$"(which in turn keeps all of its instances).",
-						2045, ScopeStack.CurrentScope.Origin, subcategory: MessageSubCategory.TrimAnalysis);
+						new DiagnosticString (DiagnosticId.AttributeIsReferencedButTrimmerRemoveAllInstances).GetMessage (type.GetDisplayName ()),
+						(int) DiagnosticId.AttributeIsReferencedButTrimmerRemoveAllInstances, ScopeStack.CurrentScope.Origin, subcategory: MessageSubCategory.TrimAnalysis);
 			}
 
 			if (CheckProcessed (type))
@@ -2662,11 +2661,11 @@ namespace Mono.Linker.Steps
 
 				case TypePreserve.Fields:
 					if (!MarkFields (type, true, di, true))
-						Context.LogWarning ($"Type '{type.GetDisplayName ()}' has no fields to preserve.", 2001, type);
+						Context.LogWarning (new DiagnosticString (DiagnosticId.TypeHasNoFieldsToPreserve).GetMessage (type.GetDisplayName ()), (int) DiagnosticId.TypeHasNoFieldsToPreserve, type);
 					break;
 				case TypePreserve.Methods:
 					if (!MarkMethods (type, di))
-						Context.LogWarning ($"Type '{type.GetDisplayName ()}' has no methods to preserve.", 2002, type);
+						Context.LogWarning (new DiagnosticString (DiagnosticId.TypeHasNoMethodsToPreserve).GetMessage (type.GetDisplayName ()), (int) DiagnosticId.TypeHasNoMethodsToPreserve, type);
 					break;
 				}
 			}

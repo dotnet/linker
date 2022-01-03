@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using ILLink.Shared;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
@@ -170,8 +171,8 @@ namespace Mono.Linker.Dataflow
 					return (DynamicallyAccessedMemberTypes) (int) attribute.ConstructorArguments[0].Value;
 				else
 					_context.LogWarning (
-						$"Attribute 'System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute' doesn't have the required number of parameters specified.",
-						2028, member);
+						new DiagnosticString (DiagnosticId.AttributeDoesntHaveTheRequiredNumberOfParameters).GetMessage ("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute"),
+						(int) DiagnosticId.AttributeDoesntHaveTheRequiredNumberOfParameters, member);
 			}
 			return DynamicallyAccessedMemberTypes.None;
 		}
@@ -228,15 +229,15 @@ namespace Mono.Linker.Dataflow
 							}
 						} else if (methodMemberTypes != DynamicallyAccessedMemberTypes.None) {
 							_context.LogWarning (
-								$"The 'DynamicallyAccessedMembersAttribute' is not allowed on methods. It is allowed on method return value or method parameters though.",
-								2041, method, subcategory: MessageSubCategory.TrimAnalysis);
+								new DiagnosticString (DiagnosticId.DynamicallyAccessedMembersIsNotAllowedOnMethods).GetMessage (),
+								(int) DiagnosticId.DynamicallyAccessedMembersIsNotAllowedOnMethods, method, subcategory: MessageSubCategory.TrimAnalysis);
 						}
 					} else {
 						offset = 0;
 						if (methodMemberTypes != DynamicallyAccessedMemberTypes.None) {
 							_context.LogWarning (
-								$"The 'DynamicallyAccessedMembersAttribute' is not allowed on methods. It is allowed on method return value or method parameters though.",
-								2041, method, subcategory: MessageSubCategory.TrimAnalysis);
+								new DiagnosticString (DiagnosticId.DynamicallyAccessedMembersIsNotAllowedOnMethods).GetMessage (),
+								(int) DiagnosticId.DynamicallyAccessedMembersIsNotAllowedOnMethods, method, subcategory: MessageSubCategory.TrimAnalysis);
 						}
 					}
 
@@ -329,8 +330,8 @@ namespace Mono.Linker.Dataflow
 
 						if (annotatedMethods.Any (a => a.Method == setMethod)) {
 							_context.LogWarning (
-								$"'DynamicallyAccessedMembersAttribute' on property '{property.GetDisplayName ()}' conflicts with the same attribute on its accessor '{setMethod.GetDisplayName ()}'.",
-								2043, setMethod, subcategory: MessageSubCategory.TrimAnalysis);
+								new DiagnosticString (DiagnosticId.DynamicallyAccessedMembersConflictsBetweenPropertyAndAccessor).GetMessage (property.GetDisplayName (), setMethod.GetDisplayName ()),
+								(int) DiagnosticId.DynamicallyAccessedMembersConflictsBetweenPropertyAndAccessor, setMethod, subcategory: MessageSubCategory.TrimAnalysis);
 						} else {
 							int offset = setMethod.HasImplicitThis () ? 1 : 0;
 							if (setMethod.Parameters.Count > 0) {
@@ -358,8 +359,8 @@ namespace Mono.Linker.Dataflow
 
 						if (annotatedMethods.Any (a => a.Method == getMethod)) {
 							_context.LogWarning (
-								$"'DynamicallyAccessedMembersAttribute' on property '{property.GetDisplayName ()}' conflicts with the same attribute on its accessor '{getMethod.GetDisplayName ()}'.",
-								2043, getMethod, subcategory: MessageSubCategory.TrimAnalysis);
+								new DiagnosticString (DiagnosticId.DynamicallyAccessedMembersConflictsBetweenPropertyAndAccessor).GetMessage (property.GetDisplayName (), getMethod.GetDisplayName ()),
+								(int) DiagnosticId.DynamicallyAccessedMembersConflictsBetweenPropertyAndAccessor, getMethod, subcategory: MessageSubCategory.TrimAnalysis);
 						} else {
 							annotatedMethods.Add (new MethodAnnotations (getMethod, null, annotation, null));
 						}
@@ -369,8 +370,8 @@ namespace Mono.Linker.Dataflow
 					if (backingFieldFromGetter != null && backingFieldFromSetter != null &&
 						backingFieldFromGetter != backingFieldFromSetter) {
 						_context.LogWarning (
-							$"Could not find a unique backing field for property '{property.GetDisplayName ()}' to propagate 'DynamicallyAccessedMembersAttribute'.",
-							2042, property, subcategory: MessageSubCategory.TrimAnalysis);
+							new DiagnosticString (DiagnosticId.DynamicallyAccessedMembersCouldNotFindBackingField).GetMessage (property.GetDisplayName ()),
+							(int) DiagnosticId.DynamicallyAccessedMembersCouldNotFindBackingField, property, subcategory: MessageSubCategory.TrimAnalysis);
 						backingField = null;
 					} else {
 						backingField = backingFieldFromGetter ?? backingFieldFromSetter;

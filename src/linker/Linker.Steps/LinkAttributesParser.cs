@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Xml.XPath;
+using ILLink.Shared;
 using Mono.Cecil;
 
 namespace Mono.Linker.Steps
@@ -49,13 +50,14 @@ namespace Mono.Linker.Steps
 
 					// TODO: Replace with IsAttributeType check once we have it
 					if (provider is not TypeDefinition) {
-						LogWarning ($"Internal attribute '{attributeType.Name}' can only be used on attribute types.", 2048, argumentNav);
+						LogWarning (new DiagnosticString (DiagnosticId.XmlRemoveAttributeInstancesCanOnlyBeUsedOnType).GetMessage (attributeType.Name),
+							(int) DiagnosticId.XmlRemoveAttributeInstancesCanOnlyBeUsedOnType, argumentNav);
 						continue;
 					}
 				} else {
 					string attributeFullName = GetFullName (argumentNav);
 					if (string.IsNullOrEmpty (attributeFullName)) {
-						LogWarning ($"'attribute' element does not contain attribute 'fullname' or it's empty.", 2029, argumentNav);
+						LogWarning (new DiagnosticString (DiagnosticId.XmlElementDoesNotContainRequiredAttributeFullname).GetMessage (), (int) DiagnosticId.XmlElementDoesNotContainRequiredAttributeFullname, argumentNav);
 						continue;
 					}
 
@@ -136,9 +138,9 @@ namespace Mono.Linker.Steps
 
 			MethodDefinition? constructor = FindBestMatchingConstructor (attributeType, arguments);
 			if (constructor == null) {
-				LogWarning (
-					$"Could not find matching constructor for custom attribute '{attributeType.GetDisplayName ()}' arguments.",
-					2022,
+				LogWarning (new DiagnosticString (
+					DiagnosticId.XmlCouldNotFindMatchingConstructorForCustomAttribute).GetMessage (attributeType.GetDisplayName ()),
+					(int) DiagnosticId.XmlCouldNotFindMatchingConstructorForCustomAttribute,
 					nav);
 				return null;
 			}
@@ -368,13 +370,15 @@ namespace Mono.Linker.Steps
 				try {
 					assembly = _context.TryResolve (AssemblyNameReference.Parse (assemblyName));
 					if (assembly == null) {
-						LogWarning ($"Could not resolve assembly '{assemblyName}' for attribute '{attributeFullName}'.", 2030, nav);
+						LogWarning (new DiagnosticString (DiagnosticId.XmlCouldNotResolveAssemblyForAttribute).GetMessage (assemblyName, attributeFullName),
+							(int) DiagnosticId.XmlCouldNotResolveAssemblyForAttribute, nav);
 
 						attributeType = default;
 						return false;
 					}
 				} catch (Exception) {
-					LogWarning ($"Could not resolve assembly '{assemblyName}' for attribute '{attributeFullName}'.", 2030, nav);
+					LogWarning (new DiagnosticString (DiagnosticId.XmlCouldNotResolveAssemblyForAttribute).GetMessage (assemblyName, attributeFullName),
+						(int) DiagnosticId.XmlCouldNotResolveAssemblyForAttribute, nav);
 					attributeType = default;
 					return false;
 				}
@@ -383,7 +387,7 @@ namespace Mono.Linker.Steps
 			}
 
 			if (attributeType == null) {
-				LogWarning ($"Attribute type '{attributeFullName}' could not be found.", 2031, nav);
+				LogWarning (new DiagnosticString (DiagnosticId.XmlAttributeTypeCouldNotBeFound).GetMessage (attributeFullName), (int) DiagnosticId.XmlAttributeTypeCouldNotBeFound, nav);
 				return false;
 			}
 
@@ -450,8 +454,8 @@ namespace Mono.Linker.Steps
 						if (paramName == parameter.Name) {
 							if (parameter.HasCustomAttributes || _attributeInfo.CustomAttributes.ContainsKey (parameter))
 								LogWarning (
-									$"More than one value specified for parameter '{paramName}' of method '{method.GetDisplayName ()}'.",
-									2024, parameterNav);
+									new DiagnosticString (DiagnosticId.XmlMoreThanOneValyForParameterOfMethod).GetMessage (paramName, method.GetDisplayName ()),
+									(int) DiagnosticId.XmlMoreThanOneValyForParameterOfMethod, parameterNav);
 							_attributeInfo.AddCustomAttributes (parameter, attributes);
 							break;
 						}
@@ -469,8 +473,8 @@ namespace Mono.Linker.Steps
 					PopulateAttributeInfo (method.MethodReturnType, returnNav);
 				} else {
 					LogWarning (
-						$"There is more than one 'return' child element specified for method '{method.GetDisplayName ()}'.",
-						2023, returnNav);
+						new DiagnosticString (DiagnosticId.XmlMoreThanOneReturnElementForMethod).GetMessage (method.GetDisplayName ()),
+						(int) DiagnosticId.XmlMoreThanOneReturnElementForMethod, returnNav);
 				}
 			}
 		}

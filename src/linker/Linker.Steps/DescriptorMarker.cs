@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Xml.XPath;
+using ILLink.Shared;
 
 using Mono.Cecil;
 
@@ -71,7 +72,7 @@ namespace Mono.Linker.Steps
 				}
 
 				if (!foundMatch) {
-					LogWarning ($"Could not find any type in namespace '{fullname}'.", 2044, namespaceNav);
+					LogWarning (new DiagnosticString (DiagnosticId.XmlCouldNotFindAnyTypeInNamespace).GetMessage (fullname), (int) DiagnosticId.XmlCouldNotFindAnyTypeInNamespace, namespaceNav);
 				}
 			}
 		}
@@ -101,11 +102,11 @@ namespace Mono.Linker.Steps
 			TypePreserve preserve = GetTypePreserve (nav);
 			switch (preserve) {
 			case TypePreserve.Fields when !type.HasFields:
-				LogWarning ($"Type '{type.GetDisplayName ()}' has no fields to preserve.", 2001, nav);
+				LogWarning (new DiagnosticString (DiagnosticId.TypeHasNoFieldsToPreserve).GetMessage (type.GetDisplayName ()), (int) DiagnosticId.TypeHasNoFieldsToPreserve, nav);
 				break;
 
 			case TypePreserve.Methods when !type.HasMethods:
-				LogWarning ($"Type '{type.GetDisplayName ()}' has no methods to preserve.", 2002, nav);
+				LogWarning (new DiagnosticString (DiagnosticId.TypeHasNoMethodsToPreserve).GetMessage (type.GetDisplayName ()), (int) DiagnosticId.TypeHasNoMethodsToPreserve, nav);
 				break;
 
 			case TypePreserve.Fields:
@@ -147,7 +148,7 @@ namespace Mono.Linker.Steps
 		protected override void ProcessField (TypeDefinition type, FieldDefinition field, XPathNavigator nav)
 		{
 			if (_context.Annotations.IsMarked (field))
-				LogWarning ($"Duplicate preserve of '{field.FullName}'.", 2025, nav);
+				LogWarning (new DiagnosticString (DiagnosticId.XmlDuplicatePreserveMember).GetMessage (field.FullName), (int) DiagnosticId.XmlDuplicatePreserveMember, nav);
 
 			_context.Annotations.Mark (field, new DependencyInfo (DependencyKind.XmlDescriptor, _xmlDocumentLocation), GetMessageOriginForPosition (nav));
 		}
@@ -155,7 +156,7 @@ namespace Mono.Linker.Steps
 		protected override void ProcessMethod (TypeDefinition type, MethodDefinition method, XPathNavigator nav, object? customData)
 		{
 			if (_context.Annotations.IsMarked (method))
-				LogWarning ($"Duplicate preserve of '{method.GetDisplayName ()}'.", 2025, nav);
+				LogWarning (new DiagnosticString (DiagnosticId.XmlDuplicatePreserveMember).GetMessage (method.GetDisplayName ()), (int) DiagnosticId.XmlDuplicatePreserveMember, nav);
 
 			_context.Annotations.MarkIndirectlyCalledMethod (method);
 			_context.Annotations.SetAction (method, MethodAction.Parse);
@@ -212,7 +213,7 @@ namespace Mono.Linker.Steps
 		protected override void ProcessEvent (TypeDefinition type, EventDefinition @event, XPathNavigator nav, object? customData)
 		{
 			if (_context.Annotations.IsMarked (@event))
-				LogWarning ($"Duplicate preserve of '{@event.FullName}'.", 2025, nav);
+				LogWarning (new DiagnosticString (DiagnosticId.XmlDuplicatePreserveMember).GetMessage (@event.FullName), (int) DiagnosticId.XmlDuplicatePreserveMember, nav);
 
 			ProcessMethod (type, @event.AddMethod, nav, customData);
 			ProcessMethod (type, @event.RemoveMethod, nav, customData);
@@ -224,7 +225,7 @@ namespace Mono.Linker.Steps
 			string[] accessors = fromSignature ? GetAccessors (nav) : _accessorsAll;
 
 			if (_context.Annotations.IsMarked (property))
-				LogWarning ($"Duplicate preserve of '{property.FullName}'.", 2025, nav);
+				LogWarning (new DiagnosticString (DiagnosticId.XmlDuplicatePreserveMember).GetMessage (property.FullName), (int) DiagnosticId.XmlDuplicatePreserveMember, nav);
 
 			if (Array.IndexOf (accessors, "all") >= 0) {
 				ProcessMethodIfNotNull (type, property.GetMethod, nav, customData);
@@ -235,12 +236,12 @@ namespace Mono.Linker.Steps
 			if (property.GetMethod != null && Array.IndexOf (accessors, "get") >= 0)
 				ProcessMethod (type, property.GetMethod, nav, customData);
 			else if (property.GetMethod == null)
-				LogWarning ($"Could not find the get accessor of property '{property.Name}' on type '{type.FullName}'.", 2018, nav);
+				LogWarning (new DiagnosticString (DiagnosticId.XmlCouldNotFindGetAccesorOfPropertyOnType).GetMessage (property.Name, type.FullName), (int) DiagnosticId.XmlCouldNotFindGetAccesorOfPropertyOnType, nav);
 
 			if (property.SetMethod != null && Array.IndexOf (accessors, "set") >= 0)
 				ProcessMethod (type, property.SetMethod, nav, customData);
 			else if (property.SetMethod == null)
-				LogWarning ($"Could not find the set accessor of property '{property.Name}' in type '{type.FullName}'.", 2019, nav);
+				LogWarning (new DiagnosticString (DiagnosticId.XmlCouldNotFindSetAccesorOfPropertyOnType).GetMessage (property.Name, type.FullName), (int) DiagnosticId.XmlCouldNotFindSetAccesorOfPropertyOnType, nav);
 		}
 
 		static bool IsRequired (XPathNavigator nav)
