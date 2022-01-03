@@ -58,11 +58,11 @@ namespace Mono.Linker
 		/// <summary>
 		/// Create an error message.
 		/// </summary>
-		/// <param name="text">Humanly readable message describing the error</param>
-		/// <param name="code">Unique error ID. Please see https://github.com/dotnet/linker/blob/main/docs/error-codes.md
+		/// <param name="id">Unique error ID. Please see https://github.com/dotnet/linker/blob/main/docs/error-codes.md
 		/// for the list of errors and possibly add a new one</param>
 		/// <param name="subcategory">Optionally, further categorize this error</param>
 		/// <param name="origin">Filename, line, and column where the error was found</param>
+		/// <param name="args">Additional arguments to form a humanly readable message describing the warning</param>
 		/// <returns>New MessageContainer of 'Error' category</returns>
 		internal static MessageContainer CreateErrorMessage (DiagnosticId id, string subcategory = MessageSubCategory.None, MessageOrigin? origin = null, params string[] args)
 		{
