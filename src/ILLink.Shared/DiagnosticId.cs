@@ -52,7 +52,7 @@ namespace ILLink.Shared
 		XmlRemoveAttributeInstancesCanOnlyBeUsedOnType = 2048,
 		CorrectnessOfCOMCannotBeGuaranteed = 2050,
 		MakeGenericType = 2055,
-		MakeGenericMethodCannotBeStaticallyAnalyzed = 2060,
+		MakeGenericMethod = 2060,
 		PropertyAccessorParameterInLinqExpressionsCannotBeStaticallyDetermined = 2103,
 		RequiresOnBaseClass = 2109,
 		RequiresUnreferencedCodeOnStaticConstructor = 2116,

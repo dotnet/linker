@@ -246,14 +246,17 @@
   <data name="AttributeIsReferencedButTrimmerRemoveAllInstancesMessage" xml:space="preserve">
     <value>Attribute '{0}' is being referenced in code but the trimmer was instructed to remove all instances of this attribute. If the attribute instances are necessary make sure to either remove the trimmer attribute XML portion which removes the attribute instances, or override the removal by using the trimmer XML descriptor to keep the attribute type (which in turn keeps all of its instances).</value>
   </data>
+  <data name="RequiresUnreferencedCodeAttributeMismatchTitle" xml:space="preserve">
+    <value>'RequiresUnreferencedCodeAttribute' annotations must match across all interface implementations or overrides.</value>
+  </data>
   <data name="RequiresUnreferencedCodeAttributeMismatchMessage" xml:space="preserve">
     <value>{0}. 'RequiresUnreferencedCodeAttribute' annotations must match across all interface implementations or overrides.</value>
   </data>
   <data name="XmlRemoveAttributeInstancesCanOnlyBeUsedOnTypeMessage" xml:space="preserve">
-    <value>Internal attribute '{attributeType.Name}' can only be used on attribute types.</value>
+    <value>Internal attribute '{0}' can only be used on attribute types.</value>
   </data>
   <data name="CorrectnessOfCOMCannotBeGuaranteedMessage" xml:space="preserve">
-    <value>P/invoke method '{calledMethodDefinition.GetDisplayName ()}' declares a parameter with COM marshalling. Correctness of COM interop cannot be guaranteed after trimming. Interfaces and interface members might be removed.</value>
+    <value>P/invoke method '{0}' declares a parameter with COM marshalling. Correctness of COM interop cannot be guaranteed after trimming. Interfaces and interface members might be removed.</value>
   </data>
   <data name="AvoidAssemblyLocationInSingleFileTitle" xml:space="preserve">
     <value>Avoid accessing Assembly file path when publishing as a single file</value>
@@ -278,12 +281,6 @@
   </data>
   <data name="RequiresDynamicCodeMessage" xml:space="preserve">
     <value>Using member '{0}' which has 'RequiresDynamicCodeAttribute' can break functionality when AOT compiling.{1}{2}</value>
-  </data>
-  <data name="RequiresUnreferencedCodeAttributeMismatchMessage" xml:space="preserve">
-    <value>{0}. 'RequiresUnreferencedCodeAttribute' annotations must match across all interface implementations or overrides.</value>
-  </data>
-  <data name="RequiresUnreferencedCodeAttributeMismatchTitle" xml:space="preserve">
-    <value>'RequiresUnreferencedCodeAttribute' annotations must match across all interface implementations or overrides.</value>
   </data>
   <data name="RequiresDynamicCodeAttributeMismatchMessage" xml:space="preserve">
     <value>{0}. 'RequiresDynamicCodeAttribute' annotations must match across all interface implementations or overrides.</value>
@@ -332,8 +329,5 @@
   </data>
   <data name="RequiresUnreferencedCodeOnStaticConstructorTitle" xml:space="preserve">
     <value>The use of 'RequiresUnreferencedCodeAttribute' on static constructors is disallowed since is a method not callable by the user, is only called by the runtime. Placing the attribute directly on the static constructor will have no effect, instead use 'RequiresUnreferencedCodeAttribute' on the type which will handle warning and silencing from the static constructor.</value>
-  </data>
-  <data name="CorrectnessOfCOMCannotBeGuaranteedMessage" xml:space="preserve">
-    <value>P/invoke method '{0}' declares a parameter with COM marshalling. Correctness of COM interop cannot be guaranteed after trimming. Interfaces and interface members might be removed.</value>
   </data>
 </root>
