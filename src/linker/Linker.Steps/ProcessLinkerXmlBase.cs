@@ -92,8 +92,7 @@ namespace Mono.Linker.Steps
 					ProcessAssembly (_resource.Value.Assembly, nav, warnOnUnresolvedTypes: true);
 
 			} catch (Exception ex) when (!(ex is LinkerFatalErrorException)) {
-				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage (
-					new DiagnosticString (DiagnosticId.ErrorProcessingXmlLocation).GetMessage (_xmlDocumentLocation), (int) DiagnosticId.ErrorProcessingXmlLocation), ex);
+				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage (DiagnosticId.ErrorProcessingXmlLocation, args: _xmlDocumentLocation), ex);
 			}
 		}
 

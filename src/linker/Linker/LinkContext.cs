@@ -624,7 +624,7 @@ namespace Mono.Linker
 		/// <returns>New MessageContainer of 'Error' category</returns>
 		public void LogError (DiagnosticId id, string subcategory = MessageSubCategory.None, MessageOrigin? origin = null, params string[] args)
 		{
-			var error = MessageContainer.CreateErrorMessage (new DiagnosticString (id).GetMessage (args), (int) id, subcategory, origin);
+			var error = MessageContainer.CreateErrorMessage (id, subcategory, origin, args);
 			LogMessage (error);
 		}
 

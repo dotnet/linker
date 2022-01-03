@@ -548,9 +548,7 @@ namespace Mono.Linker.Steps
 				} catch (Exception e) when (!(e is LinkerFatalErrorException)) {
 					throw new LinkerFatalErrorException (
 						MessageContainer.CreateErrorMessage (
-							new DiagnosticString (DiagnosticId.CouldNotFindMethodInAssembly).GetMessage (method.GetDisplayName (), method.Module.Name),
-							(int) DiagnosticId.CouldNotFindMethodInAssembly,
-							origin: scope.Origin), e);
+							DiagnosticId.CouldNotFindMethodInAssembly, args: new string[] { method.GetDisplayName (), method.Module.Name }, origin: scope.Origin), e);
 				}
 			}
 		}
@@ -3224,9 +3222,7 @@ namespace Mono.Linker.Steps
 					break;
 				if (!MarkDefaultConstructor (baseType, new DependencyInfo (DependencyKind.BaseDefaultCtorForStubbedMethod, method)))
 					throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage (
-						new DiagnosticString (DiagnosticId.CannotStubConstructorWhenBaseTypeDoesNotHaveConstructor).GetMessage (method.DeclaringType.GetDisplayName ()),
-						(int) DiagnosticId.CannotStubConstructorWhenBaseTypeDoesNotHaveConstructor,
-						origin: ScopeStack.CurrentScope.Origin));
+						DiagnosticId.CannotStubConstructorWhenBaseTypeDoesNotHaveConstructor, args: method.DeclaringType.GetDisplayName (), origin: ScopeStack.CurrentScope.Origin));
 
 				break;
 
@@ -3243,17 +3239,13 @@ namespace Mono.Linker.Steps
 
 			var nse = BCL.FindPredefinedType ("System", "NotSupportedException", Context);
 			if (nse == null)
-				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage (
-					new DiagnosticString (DiagnosticId.CouldNotFindType).GetMessage ("System.NotSupportedException"),
-					(int) DiagnosticId.CouldNotFindType));
+				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage (DiagnosticId.CouldNotFindType, args: "System.NotSupportedException"));
 
 			MarkType (nse, reason);
 
 			var nseCtor = MarkMethodIf (nse.Methods, KnownMembers.IsNotSupportedExceptionCtorString, reason);
 			Context.MarkedKnownMembers.NotSupportedExceptionCtorString = nseCtor ??
-				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage (
-					new DiagnosticString (DiagnosticId.CouldNotFindConstructor).GetMessage (nse.GetDisplayName ()),
-					(int) DiagnosticId.CouldNotFindConstructor));
+				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage (DiagnosticId.CouldNotFindConstructor, args: nse.GetDisplayName ()));
 
 			var objectType = BCL.FindPredefinedType ("System", "Object", Context);
 			if (objectType == null)
@@ -3263,9 +3255,7 @@ namespace Mono.Linker.Steps
 
 			var objectCtor = MarkMethodIf (objectType.Methods, MethodDefinitionExtensions.IsDefaultConstructor, reason);
 			Context.MarkedKnownMembers.ObjectCtor = objectCtor ??
-					throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage (
-						new DiagnosticString (DiagnosticId.CouldNotFindConstructor).GetMessage (objectType.GetDisplayName ()),
-						(int) DiagnosticId.CouldNotFindConstructor));
+					throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage (DiagnosticId.CouldNotFindConstructor, args: objectType.GetDisplayName ()));
 		}
 
 		bool MarkDisablePrivateReflectionAttribute ()
@@ -3275,17 +3265,14 @@ namespace Mono.Linker.Steps
 
 			var disablePrivateReflection = BCL.FindPredefinedType ("System.Runtime.CompilerServices", "DisablePrivateReflectionAttribute", Context);
 			if (disablePrivateReflection == null)
-				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage (
-					new DiagnosticString (DiagnosticId.CouldNotFindType).GetMessage ("System.Runtime.CompilerServices.DisablePrivateReflectionAttribute"),
-					(int) DiagnosticId.CouldNotFindType));
+				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage (DiagnosticId.CouldNotFindType, args: "System.Runtime.CompilerServices.DisablePrivateReflectionAttribute"));
 
 			using (ScopeStack.PushScope (new MessageOrigin (null as ICustomAttributeProvider))) {
 				MarkType (disablePrivateReflection, DependencyInfo.DisablePrivateReflectionRequirement);
 
 				var ctor = MarkMethodIf (disablePrivateReflection.Methods, MethodDefinitionExtensions.IsDefaultConstructor, new DependencyInfo (DependencyKind.DisablePrivateReflectionRequirement, disablePrivateReflection));
 				Context.MarkedKnownMembers.DisablePrivateReflectionAttributeCtor = ctor ??
-					throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage (
-						new DiagnosticString (DiagnosticId.CouldNotFindConstructor).GetMessage (disablePrivateReflection.GetDisplayName ()), (int) DiagnosticId.CouldNotFindConstructor));
+					throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage (DiagnosticId.CouldNotFindConstructor, args: disablePrivateReflection.GetDisplayName ()));
 			}
 
 			return true;

@@ -130,8 +130,7 @@ namespace Mono.Linker.Steps
 			try {
 				assembly.Write (outputName, writerParameters);
 			} catch (Exception e) {
-				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage (
-					new DiagnosticString (DiagnosticId.FailedToWriteOutput).GetMessage (outputName), (int) DiagnosticId.FailedToWriteOutput), e);
+				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage (DiagnosticId.FailedToWriteOutput, args: outputName), e);
 			}
 		}
 
