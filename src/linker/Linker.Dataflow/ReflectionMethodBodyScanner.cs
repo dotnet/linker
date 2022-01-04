@@ -70,7 +70,7 @@ namespace Mono.Linker.Dataflow
 
 			if (GetReturnTypeWithoutModifiers (methodBody.Method.ReturnType).MetadataType != MetadataType.Void) {
 				var method = methodBody.Method;
-				var methodReturnValue = CreateMethodReturnValue (method);
+				var methodReturnValue = GetMethodReturnValue (method);
 				if (methodReturnValue.DynamicallyAccessedMemberTypes != 0) {
 					var analysisContext = new AnalysisContext (_scopeStack.CurrentScope.Origin, ShouldEnableReflectionPatternReporting (), _context);
 					RequireDynamicallyAccessedMembers (analysisContext, ReturnValue, methodReturnValue);
@@ -130,10 +130,10 @@ namespace Mono.Linker.Dataflow
 			Debug.Assert (annotation != DynamicallyAccessedMemberTypes.None);
 
 			var genericParameterValue = new GenericParameterValue (genericParameter, annotation);
-			MultiValue valueNode = GetTypeValueNodeFromGenericArgument (genericArgument);
+			MultiValue genericArgumentValue = GetTypeValueNodeFromGenericArgument (genericArgument);
 
 			var analysisContext = new AnalysisContext (_scopeStack.CurrentScope.Origin, ShouldEnableReflectionPatternReporting (), _context);
-			RequireDynamicallyAccessedMembers (analysisContext, valueNode, genericParameterValue);
+			RequireDynamicallyAccessedMembers (analysisContext, genericArgumentValue, genericParameterValue);
 		}
 
 		MultiValue GetTypeValueNodeFromGenericArgument (TypeReference genericArgument)
@@ -166,10 +166,10 @@ namespace Mono.Linker.Dataflow
 			Debug.Fail ("Invalid IL or a bug in the scanner");
 		}
 
-		MethodReturnValue CreateMethodReturnValue (MethodDefinition method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
+		MethodReturnValue GetMethodReturnValue (MethodDefinition method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 			=> new (ResolveToTypeDefinition (method.ReturnType), method, dynamicallyAccessedMemberTypes);
 
-		MethodReturnValue CreateMethodReturnValue (MethodDefinition method)
+		MethodReturnValue GetMethodReturnValue (MethodDefinition method)
 			=> new (
 				ResolveToTypeDefinition (method.ReturnType),
 				method,
@@ -737,8 +737,7 @@ namespace Mono.Linker.Dataflow
 							// We haven't found any generic parameters with annotations, so there's nothing to validate.
 						} else if (value == NullValue.Instance) {
 							// Do nothing - null value is valid and should not cause warnings nor marking
-						}
-						else {
+						} else {
 							// We have no way to "include more" to fix this if we don't know, so we have to warn
 							analysisContext.ReportWarning (
 								new DiagnosticString (DiagnosticId.MakeGenericType).GetMessage (calledMethodDefinition.GetDisplayName ()),
@@ -967,7 +966,7 @@ namespace Mono.Linker.Dataflow
 						TypeDefinition? staticType = valueNode.StaticType;
 						if (staticType is null) {
 							// We don't know anything about the type GetType was called on. Track this as a usual result of a method call without any annotations
-							methodReturnValue = MultiValueLattice.Meet (methodReturnValue, CreateMethodReturnValue (calledMethodDefinition));
+							methodReturnValue = MultiValueLattice.Meet (methodReturnValue, GetMethodReturnValue (calledMethodDefinition));
 						} else if (staticType.IsSealed || staticType.IsTypeOf ("System", "Delegate")) {
 							// We can treat this one the same as if it was a typeof() expression
 
@@ -994,7 +993,7 @@ namespace Mono.Linker.Dataflow
 							// Return a value which is "unknown type" with annotation. For now we'll use the return value node
 							// for the method, which means we're loosing the information about which staticType this
 							// started with. For now we don't need it, but we can add it later on.
-							methodReturnValue = MultiValueLattice.Meet (methodReturnValue, CreateMethodReturnValue (calledMethodDefinition, annotation));
+							methodReturnValue = MultiValueLattice.Meet (methodReturnValue, GetMethodReturnValue (calledMethodDefinition, annotation));
 						}
 					}
 				}
@@ -1032,7 +1031,7 @@ namespace Mono.Linker.Dataflow
 						} else if (typeNameValue is LeafValueWithDynamicallyAccessedMemberNode valueWithDynamicallyAccessedMember && valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes != 0) {
 							// Propagate the annotation from the type name to the return value. Annotation on a string value will be fullfilled whenever a value is assigned to the string with annotation.
 							// So while we don't know which type it is, we can guarantee that it will fulfill the annotation.
-							methodReturnValue = MultiValueLattice.Meet (methodReturnValue, CreateMethodReturnValue (calledMethodDefinition, valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes));
+							methodReturnValue = MultiValueLattice.Meet (methodReturnValue, GetMethodReturnValue (calledMethodDefinition, valueWithDynamicallyAccessedMember.DynamicallyAccessedMemberTypes));
 						} else {
 							analysisContext.ReportWarning ($"Unrecognized value passed to the parameter 'typeName' of method '{calledMethod.GetDisplayName ()}'. It's not possible to guarantee the availability of the target type.", 2057);
 						}
@@ -1182,7 +1181,7 @@ namespace Mono.Linker.Dataflow
 					// Note it's OK to blindly overwrite any potential annotation on the return value from the method definition
 					// since DynamicallyAccessedMemberTypes.All is a superset of any other annotation.
 					if (everyParentTypeHasAll && methodReturnValue.IsEmpty ())
-						methodReturnValue = CreateMethodReturnValue (calledMethodDefinition, DynamicallyAccessedMemberTypes.All);
+						methodReturnValue = GetMethodReturnValue (calledMethodDefinition, DynamicallyAccessedMemberTypes.All);
 				}
 				break;
 
@@ -1245,18 +1244,18 @@ namespace Mono.Linker.Dataflow
 									propagatedMemberTypes |= DynamicallyAccessedMemberTypes.PublicProperties;
 							}
 
-							methodReturnValue = MultiValueLattice.Meet (methodReturnValue, CreateMethodReturnValue (calledMethodDefinition, propagatedMemberTypes));
+							methodReturnValue = MultiValueLattice.Meet (methodReturnValue, GetMethodReturnValue (calledMethodDefinition, propagatedMemberTypes));
 						} else if (value is SystemTypeValue systemTypeValue) {
 							if (systemTypeValue.TypeRepresented.BaseType is TypeReference baseTypeRef && _context.TryResolve (baseTypeRef) is TypeDefinition baseTypeDefinition)
 								methodReturnValue = MultiValueLattice.Meet (methodReturnValue, new SystemTypeValue (baseTypeDefinition));
 							else
-								methodReturnValue = MultiValueLattice.Meet (methodReturnValue, CreateMethodReturnValue (calledMethodDefinition));
+								methodReturnValue = MultiValueLattice.Meet (methodReturnValue, GetMethodReturnValue (calledMethodDefinition));
 						} else if (value == NullValue.Instance) {
 							// Ignore nulls - null.BaseType will fail at runtime, but it has no effect on static analysis
 							continue;
 						} else {
 							// Unknown input - propagate a return value without any annotation - we know it's a Type but we know nothing about it
-							methodReturnValue = MultiValueLattice.Meet (methodReturnValue, CreateMethodReturnValue (calledMethodDefinition));
+							methodReturnValue = MultiValueLattice.Meet (methodReturnValue, GetMethodReturnValue (calledMethodDefinition));
 						}
 					}
 				}
@@ -1442,7 +1441,7 @@ namespace Mono.Linker.Dataflow
 							&& annotatedNode.DynamicallyAccessedMemberTypes == DynamicallyAccessedMemberTypes.All)
 							returnMemberTypes = DynamicallyAccessedMemberTypes.All;
 
-						methodReturnValue = MultiValueLattice.Meet (methodReturnValue, CreateMethodReturnValue (calledMethodDefinition, returnMemberTypes));
+						methodReturnValue = MultiValueLattice.Meet (methodReturnValue, GetMethodReturnValue (calledMethodDefinition, returnMemberTypes));
 					}
 				}
 				break;
@@ -1679,7 +1678,7 @@ namespace Mono.Linker.Dataflow
 				// To get good reporting of errors we need to track the origin of the value for all method calls
 				// but except Newobj as those are special.
 				if (GetReturnTypeWithoutModifiers (calledMethodDefinition.ReturnType).MetadataType != MetadataType.Void) {
-					methodReturnValue = CreateMethodReturnValue (calledMethodDefinition, returnValueDynamicallyAccessedMemberTypes);
+					methodReturnValue = GetMethodReturnValue (calledMethodDefinition, returnValueDynamicallyAccessedMemberTypes);
 
 					return true;
 				}
@@ -1692,7 +1691,7 @@ namespace Mono.Linker.Dataflow
 			// unknown value with the return type of the method.
 			if (methodReturnValue.IsEmpty ()) {
 				if (GetReturnTypeWithoutModifiers (calledMethod.ReturnType).MetadataType != MetadataType.Void) {
-					methodReturnValue = CreateMethodReturnValue (calledMethodDefinition, returnValueDynamicallyAccessedMemberTypes);
+					methodReturnValue = GetMethodReturnValue (calledMethodDefinition, returnValueDynamicallyAccessedMemberTypes);
 				}
 			}
 
