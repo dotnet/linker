@@ -20,6 +20,42 @@ namespace ILLink.RoslynAnalyzer.Tests
 				expected: expected);
 		}
 
+		#region TempGenerics
+		[Fact]
+		public Task GenericsDerivedTypeWithOpenGenericOnBaseSimple ()
+		{
+			var TargetParameterWithAnnotations = @"
+using System.Diagnostics.CodeAnalysis;
+
+public class TestType
+{
+}
+
+class Program
+{
+	public static void Main()
+	{
+		new DerivedTypeWithOpenGenericOnBase<TestType> ();	
+	}
+}
+
+class DerivedTypeWithOpenGenericOnBase<TDerived> : GenericBaseTypeWithRequirements<TDerived>
+{
+}
+
+class GenericBaseTypeWithRequirements<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] TBase>
+{
+}";
+
+			// warning IL2091: 'TBase' generic argument does not satisfy 'DynamicallyAccessedMemberTypes.PublicFields' in 'GenericBaseTypeWithRequirements<TBase>'.
+			// The generic parameter 'TDerived' of 'DerivedTypeWithOpenGenericOnBase<TDerived>' does not have matching annotations.
+			// The source value must declare at least the same requirements as those declared on the target location it is assigned to.
+			return VerifyDynamicallyAccessedMembersAnalyzer (TargetParameterWithAnnotations,
+				VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchTypeArgumentTargetsGenericParameter)
+				.WithArguments ("TBase", "GenericBaseTypeWithRequirements<TBase>", "TDerived", "DerivedTypeWithOpenGenericOnBase<TDerived>", "'DynamicallyAccessedMemberTypes.PublicFields'"));
+		}
+		#endregion
+
 		#region SourceParameter
 		[Fact]
 		public Task SourceParameterDoesNotMatchTargetParameterAnnotations ()

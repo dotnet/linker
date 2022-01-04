@@ -58,6 +58,37 @@ namespace ILLink.RoslynAnalyzer
 				var invocationOperation = (IInvocationOperation) context.Operation;
 				ProcessInvocationOperation (context, invocationOperation);
 			}, OperationKind.Invocation);
+
+			context.RegisterSymbolAction (context => {
+				ProcessGenericTypes (context);
+			}, SymbolKind.NamedType);
+		}
+
+		static void ProcessGenericTypes (SymbolAnalysisContext context)
+		{
+			// Check the Symbol to see the generics relationship, specifically around DAMT
+			// We will initially explore if an unbounded generic type has mismatched annotations with its base-class,
+			// which is an open generic type. i.e. Bar<T> : Foo<[DAMT] T>
+
+			INamedTypeSymbol derivedType = (INamedTypeSymbol) context.Symbol;
+			var baseType = derivedType.BaseType;
+
+			//Check if generic parameter of derived and generic argument of the base have mismatched annotation
+
+			var typeParams = baseType!.TypeParameters;
+			var typeArgs = baseType.TypeArguments;
+
+			for (int i = 0; i < typeParams.Length; i++) {
+				var sourceValue = new SymbolValue (typeArgs[i]);
+				var targetValue = new SymbolValue (typeParams[i]);
+				var damtOnTarget = targetValue.DynamicallyAccessedMemberTypes;
+				var damtOnSource = sourceValue.DynamicallyAccessedMemberTypes;
+				if (Annotations.SourceHasRequiredAnnotations (damtOnSource, damtOnTarget, out var missingAnnotations))
+					continue;
+				var diag = DiagnosticId.DynamicallyAccessedMembersMismatchTypeArgumentTargetsGenericParameter;
+				var diagArgs = GetDiagnosticArguments (sourceValue, targetValue, missingAnnotations);
+				context.ReportDiagnostic (Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (diag), Location.None, diagArgs));
+			}
 		}
 
 		static void ProcessInvocationOperation (OperationAnalysisContext context, IInvocationOperation invocationOperation)
