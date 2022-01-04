@@ -41,47 +41,44 @@ namespace Mono.Linker
 		/// <summary>
 		/// Create an error message.
 		/// </summary>
-		/// <param name="text">Humanly readable message describing the error</param>
+		/// <param name="origin">Filename, line, and column where the error was found</param>
 		/// <param name="code">Unique error ID. Please see https://github.com/dotnet/linker/blob/main/docs/error-codes.md
 		/// for the list of errors and possibly add a new one</param>
-		/// <param name="subcategory">Optionally, further categorize this error</param>
-		/// <param name="origin">Filename, line, and column where the error was found</param>
+		/// <param name="text">Humanly readable message describing the error</param>
 		/// <returns>New MessageContainer of 'Error' category</returns>
-		internal static MessageContainer CreateErrorMessage (string text, int code, string subcategory = MessageSubCategory.None, MessageOrigin? origin = null)
+		internal static MessageContainer CreateErrorMessage (MessageOrigin? origin, int code, string text)
 		{
 			if (!(code >= 1000 && code <= 2000))
 				throw new ArgumentOutOfRangeException (nameof (code), $"The provided code '{code}' does not fall into the error category, which is in the range of 1000 to 2000 (inclusive).");
 
-			return new MessageContainer (MessageCategory.Error, text, code, subcategory, origin);
+			return new MessageContainer (MessageCategory.Error, text, code, origin: origin);
 		}
 
 		/// <summary>
 		/// Create an error message.
 		/// </summary>
+		/// <param name="origin">Filename, line, and column where the error was found</param>
 		/// <param name="id">Unique error ID. Please see https://github.com/dotnet/linker/blob/main/docs/error-codes.md
 		/// for the list of errors and possibly add a new one</param>
-		/// <param name="subcategory">Optionally, further categorize this error</param>
-		/// <param name="origin">Filename, line, and column where the error was found</param>
 		/// <param name="args">Additional arguments to form a humanly readable message describing the warning</param>
 		/// <returns>New MessageContainer of 'Error' category</returns>
-		internal static MessageContainer CreateErrorMessage (DiagnosticId id, string subcategory = MessageSubCategory.None, MessageOrigin? origin = null, params string[] args)
+		internal static MessageContainer CreateErrorMessage (MessageOrigin? origin, DiagnosticId id, params string[] args)
 		{
 			if (!((int) id >= 1000 && (int) id <= 2000))
 				throw new ArgumentOutOfRangeException (nameof (id), $"The provided code '{(int) id}' does not fall into the error category, which is in the range of 1000 to 2000 (inclusive).");
 
-			return new MessageContainer (MessageCategory.Error, id, subcategory, origin, args);
+			return new MessageContainer (MessageCategory.Error, id, origin: origin, args: args);
 		}
 
 		/// <summary>
 		/// Create a custom error message.
 		/// </summary>
-		/// <param name="text">Humanly readable message describing the error</param>
+		/// <param name="origin">Filename or member where the error is coming from</param>
 		/// <param name="code">A custom error ID. This code should be greater than or equal to 6001
 		/// to avoid any collisions with existing and future linker errors</param>
-		/// <param name="subcategory">Optionally, further categorize this error</param>
-		/// <param name="origin">Filename or member where the error is coming from</param>
+		/// <param name="text">Humanly readable message describing the error</param>
 		/// <returns>Custom MessageContainer of 'Error' category</returns>
-		public static MessageContainer CreateCustomErrorMessage (string text, int code, string subcategory = MessageSubCategory.None, MessageOrigin? origin = null)
+		public static MessageContainer CreateCustomErrorMessage (MessageOrigin? origin, int code, string text)
 		{
 #if DEBUG
 			Debug.Assert (Assembly.GetCallingAssembly () != typeof (MessageContainer).Assembly,
@@ -91,7 +88,7 @@ namespace Mono.Linker
 				throw new ArgumentOutOfRangeException (nameof (code), $"The provided code '{code}' does not fall into the permitted range for external errors. To avoid possible collisions " +
 					"with existing and future {Constants.ILLink} errors, external messages should use codes starting from 6001.");
 
-			return new MessageContainer (MessageCategory.Error, text, code, subcategory, origin);
+			return new MessageContainer (MessageCategory.Error, text, code, origin: origin);
 		}
 
 		/// <summary>

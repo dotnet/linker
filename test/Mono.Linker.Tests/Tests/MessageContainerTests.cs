@@ -10,7 +10,7 @@ namespace Mono.Linker.Tests
 		{
 			LinkContext context = new LinkContext (new Pipeline (), new ConsoleLogger (), string.Empty);
 
-			var msg = MessageContainer.CreateCustomErrorMessage ("text", 6001);
+			var msg = MessageContainer.CreateCustomErrorMessage (null, 6001, "text");
 			Assert.AreEqual ("ILLink: error IL6001: text", msg.ToMSBuildString ());
 
 			msg = MessageContainer.CreateCustomWarningMessage (context, "message", 6002, new MessageOrigin ("logtest", 1, 1), WarnVersion.Latest);

@@ -603,28 +603,26 @@ namespace Mono.Linker
 		/// <summary>
 		/// Display an error message to the end user.
 		/// </summary>
-		/// <param name="text">Humanly readable message describing the error</param>
-		/// <param name="code">Unique error ID. Please see https://github.com/dotnet/linker/blob/main/docs/error-codes.md for the list of errors and possibly add a new one</param>
-		/// <param name="subcategory">Optionally, further categorize this error</param>
 		/// <param name="origin">Filename, line, and column where the error was found</param>
+		/// <param name="code">Unique error ID. Please see https://github.com/dotnet/linker/blob/main/docs/error-codes.md for the list of errors and possibly add a new one</param>
+		/// <param name="text">Humanly readable message describing the error</param>
 		/// <returns>New MessageContainer of 'Error' category</returns>
-		public void LogError (string text, int code, string subcategory = MessageSubCategory.None, MessageOrigin? origin = null)
+		public void LogError (MessageOrigin? origin, int code, string text)
 		{
-			var error = MessageContainer.CreateErrorMessage (text, code, subcategory, origin);
+			var error = MessageContainer.CreateErrorMessage (origin, code, text);
 			LogMessage (error);
 		}
 
 		/// <summary>
 		/// Display an error message to the end user.
 		/// </summary>
-		/// <param name="id">Unique error ID. Please see https://github.com/dotnet/linker/blob/main/docs/error-codes.md and https://github.com/dotnet/linker/blob/main/src/ILLink.Shared/DiagnosticId.cs for the list of errors and possibly add a new one</param>
-		/// <param name="subcategory">Optionally, further categorize this error</param>
 		/// <param name="origin">Filename, line, and column where the error was found</param>
+		/// <param name="id">Unique error ID. Please see https://github.com/dotnet/linker/blob/main/docs/error-codes.md and https://github.com/dotnet/linker/blob/main/src/ILLink.Shared/DiagnosticId.cs for the list of errors and possibly add a new one</param>
 		/// <param name="args">Additional arguments to form a humanly readable message describing the warning</param>
 		/// <returns>New MessageContainer of 'Error' category</returns>
-		public void LogError (DiagnosticId id, string subcategory = MessageSubCategory.None, MessageOrigin? origin = null, params string[] args)
+		public void LogError (MessageOrigin? origin, DiagnosticId id, params string[] args)
 		{
-			var error = MessageContainer.CreateErrorMessage (id, subcategory, origin, args);
+			var error = MessageContainer.CreateErrorMessage (origin, id, args);
 			LogMessage (error);
 		}
 
@@ -828,19 +826,19 @@ namespace Mono.Linker
 		protected virtual void ReportUnresolved (FieldReference fieldReference)
 		{
 			if (unresolved_reported.Add (fieldReference))
-				LogError (string.Format (SharedStrings.FailedToResolveFieldElementMessage, fieldReference.FullName), (int) DiagnosticId.FailedToResolveMetadataElement);
+				LogError (null, (int) DiagnosticId.FailedToResolveMetadataElement, string.Format (SharedStrings.FailedToResolveFieldElementMessage, fieldReference.FullName));
 		}
 
 		protected virtual void ReportUnresolved (MethodReference methodReference)
 		{
 			if (unresolved_reported.Add (methodReference))
-				LogError (string.Format (SharedStrings.FailedToResolveMethodElementMessage, methodReference.GetDisplayName ()), (int) DiagnosticId.FailedToResolveMetadataElement);
+				LogError (null, (int) DiagnosticId.FailedToResolveMetadataElement, string.Format (SharedStrings.FailedToResolveMethodElementMessage, methodReference.GetDisplayName ()));
 		}
 
 		protected virtual void ReportUnresolved (TypeReference typeReference)
 		{
 			if (unresolved_reported.Add (typeReference))
-				LogError (string.Format (SharedStrings.FailedToResolveTypeElementMessage, typeReference.GetDisplayName ()), (int) DiagnosticId.FailedToResolveMetadataElement);
+				LogError (null, (int) DiagnosticId.FailedToResolveMetadataElement, string.Format (SharedStrings.FailedToResolveTypeElementMessage, typeReference.GetDisplayName ()));
 		}
 	}
 

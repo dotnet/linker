@@ -236,7 +236,7 @@ namespace Mono.Linker.Steps
 			case MetadataType.Object:
 				var argumentIterator = nav.SelectChildren ("argument", string.Empty);
 				if (argumentIterator?.MoveNext () != true) {
-					_context.LogError (DiagnosticId.CustomAttributeArgumentForTypeRequiresNestedNode, args: new string[] { "System.Object", "argument" });
+					_context.LogError (null, DiagnosticId.CustomAttributeArgumentForTypeRequiresNestedNode, "System.Object", "argument");
 					return null;
 				}
 
@@ -278,14 +278,14 @@ namespace Mono.Linker.Steps
 					goto default;
 
 				if (!_context.TypeNameResolver.TryResolveTypeName (svalue, memberWithAttribute, out TypeReference? type, out _)) {
-					_context.LogError (DiagnosticId.CouldNotResolveCustomAttributeTypeValue, args: svalue, origin: GetMessageOriginForPosition (nav));
+					_context.LogError (GetMessageOriginForPosition (nav), DiagnosticId.CouldNotResolveCustomAttributeTypeValue, svalue);
 					return null;
 				}
 
 				return new CustomAttributeArgument (typeref, type);
 			default:
 				// No support for null and arrays, consider adding - dotnet/linker/issues/1957
-				_context.LogError (DiagnosticId.UnexpectedAttributeArgumentType, args: typeref.GetDisplayName ());
+				_context.LogError (GetMessageOriginForPosition (nav), DiagnosticId.UnexpectedAttributeArgumentType, typeref.GetDisplayName ());
 				return null;
 			}
 
@@ -296,7 +296,7 @@ namespace Mono.Linker.Steps
 					typeName = "System.String";
 
 				if (!_context.TypeNameResolver.TryResolveTypeName (typeName, memberWithAttribute, out TypeReference? typeref, out _)) {
-					_context.LogError (DiagnosticId.TypeUsedWithAttributeValueCouldNotBeFound, args: new string[] { typeName, nav.Value }, origin: GetMessageOriginForPosition (nav));
+					_context.LogError (GetMessageOriginForPosition (nav), DiagnosticId.TypeUsedWithAttributeValueCouldNotBeFound, typeName, nav.Value);
 					return null;
 				}
 
@@ -354,7 +354,7 @@ namespace Mono.Linker.Steps
 			try {
 				return Convert.ChangeType (value, typeCode);
 			} catch {
-				_context.LogError (DiagnosticId.CannotConverValueToType, args: new string[] { value.ToString () ?? "", targetType.GetDisplayName () });
+				_context.LogError (null, DiagnosticId.CannotConverValueToType, value.ToString () ?? "", targetType.GetDisplayName ());
 				return null;
 			}
 		}

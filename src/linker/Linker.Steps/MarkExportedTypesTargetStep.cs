@@ -28,7 +28,7 @@ namespace Mono.Linker.Steps
 			TypeDefinition type = exportedType.Resolve ();
 			if (type == null) {
 				if (!context.IgnoreUnresolved)
-					context.LogError (DiagnosticId.ExportedTypeCannotBeResolved, args: exportedType.Name);
+					context.LogError (null, DiagnosticId.ExportedTypeCannotBeResolved, exportedType.Name);
 
 				return;
 			}
