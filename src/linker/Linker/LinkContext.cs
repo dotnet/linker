@@ -603,13 +603,14 @@ namespace Mono.Linker
 		/// <summary>
 		/// Display an error message to the end user.
 		/// </summary>
-		/// <param name="origin">Filename, line, and column where the error was found</param>
-		/// <param name="code">Unique error ID. Please see https://github.com/dotnet/linker/blob/main/docs/error-codes.md for the list of errors and possibly add a new one</param>
 		/// <param name="text">Humanly readable message describing the error</param>
+		/// <param name="code">Unique error ID. Please see https://github.com/dotnet/linker/blob/main/docs/error-codes.md for the list of errors and possibly add a new one</param>
+		/// <param name="subcategory">Optionally, further categorize this error</param>
+		/// <param name="origin">Filename, line, and column where the error was found</param>
 		/// <returns>New MessageContainer of 'Error' category</returns>
-		public void LogError (MessageOrigin? origin, int code, string text)
+		public void LogError (string text, int code, string subcategory = MessageSubCategory.None, MessageOrigin? origin = null)
 		{
-			var error = MessageContainer.CreateErrorMessage (origin, code, text);
+			var error = MessageContainer.CreateErrorMessage (text, code, subcategory, origin);
 			LogMessage (error);
 		}
 
@@ -826,19 +827,19 @@ namespace Mono.Linker
 		protected virtual void ReportUnresolved (FieldReference fieldReference)
 		{
 			if (unresolved_reported.Add (fieldReference))
-				LogError (null, (int) DiagnosticId.FailedToResolveMetadataElement, string.Format (SharedStrings.FailedToResolveFieldElementMessage, fieldReference.FullName));
+				LogError (string.Format (SharedStrings.FailedToResolveFieldElementMessage, fieldReference.FullName), (int) DiagnosticId.FailedToResolveMetadataElement);
 		}
 
 		protected virtual void ReportUnresolved (MethodReference methodReference)
 		{
 			if (unresolved_reported.Add (methodReference))
-				LogError (null, (int) DiagnosticId.FailedToResolveMetadataElement, string.Format (SharedStrings.FailedToResolveMethodElementMessage, methodReference.GetDisplayName ()));
+				LogError (string.Format (SharedStrings.FailedToResolveMethodElementMessage, methodReference.GetDisplayName ()), (int) DiagnosticId.FailedToResolveMetadataElement);
 		}
 
 		protected virtual void ReportUnresolved (TypeReference typeReference)
 		{
 			if (unresolved_reported.Add (typeReference))
-				LogError (null, (int) DiagnosticId.FailedToResolveMetadataElement, string.Format (SharedStrings.FailedToResolveTypeElementMessage, typeReference.GetDisplayName ()));
+				LogError (string.Format (SharedStrings.FailedToResolveTypeElementMessage, typeReference.GetDisplayName ()), (int) DiagnosticId.FailedToResolveMetadataElement);
 		}
 	}
 
