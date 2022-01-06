@@ -401,12 +401,15 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			[RequiresUnreferencedCode ("Message for WarningsInCtor.MethodWithRUC")]
 			static void MethodWithRUC () { }
 
-			[ExpectedWarning ("IL2026", "Message for WarningsInCtor.MethodWithRUC")]
+			//Bug: Should be produced by trimmer as well
+			[ExpectedWarning ("IL2026", "Message for WarningsInCtor.MethodWithRUC", ProducedBy = ProducedBy.Analyzer)]
 			public WarningsInCtor () { MethodWithRUC (); }
 
-			[ExpectedWarning ("IL2026", "Message for WarningsInCtor.MethodWithRUC")]
+			//Bug: Should be produced by trimmer as well
+			[ExpectedWarning ("IL2026", "Message for WarningsInCtor.MethodWithRUC", ProducedBy = ProducedBy.Analyzer)]
 			static WarningsInCtor () { MethodWithRUC (); }
 		}
+
 		static void TestStaticCctorRequires ()
 		{
 			_ = new StaticCtor ();
