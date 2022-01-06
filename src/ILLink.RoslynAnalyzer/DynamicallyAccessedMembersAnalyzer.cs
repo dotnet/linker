@@ -103,6 +103,10 @@ namespace ILLink.RoslynAnalyzer
 			if (sourceValue is not SymbolValue source || targetValue is not SymbolValue target)
 				yield break;
 
+			// TODO: track known types
+			if (source.Source.Kind is SymbolKind.NamedType)
+				yield break;
+
 			Debug.Assert (target.Source.Kind is not SymbolKind.NamedType);
 			var damtOnTarget = target.DynamicallyAccessedMemberTypes;
 			var damtOnSource = source.DynamicallyAccessedMemberTypes;
@@ -147,9 +151,6 @@ namespace ILLink.RoslynAnalyzer
 					: DiagnosticId.DynamicallyAccessedMembersMismatchTypeArgumentTargetsThisParameter,
 				(SymbolKind.TypeParameter, SymbolKind.Parameter) => DiagnosticId.DynamicallyAccessedMembersMismatchTypeArgumentTargetsParameter,
 				(SymbolKind.TypeParameter, SymbolKind.TypeParameter) => DiagnosticId.DynamicallyAccessedMembersMismatchTypeArgumentTargetsGenericParameter,
-				// AnnotatedSymbol never stores a NamedType (yet). NamedType will only be used for known types which aren't implemented yet.
-				(SymbolKind.NamedType, _) => throw new NotImplementedException (),
-				(_, SymbolKind.NamedType) => throw new NotImplementedException (),
 				_ => throw new NotImplementedException ()
 			};
 

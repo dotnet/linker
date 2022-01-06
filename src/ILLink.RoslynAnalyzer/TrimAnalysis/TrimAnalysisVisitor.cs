@@ -6,8 +6,13 @@ using ILLink.Shared.DataFlow;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
+
 using MultiValue = ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.SingleValue>;
-using StateValue = ILLink.RoslynAnalyzer.DataFlow.LocalState<ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.SingleValue>>;
+using StateValue =
+	ILLink.Shared.DataFlow.DataFlowState<
+		ILLink.RoslynAnalyzer.DataFlow.LocalState<
+			ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.SingleValue>
+	>>;
 
 namespace ILLink.RoslynAnalyzer.TrimAnalysis
 {

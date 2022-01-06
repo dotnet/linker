@@ -22,8 +22,6 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 		public SymbolValue (IFieldSymbol field) => Source = field;
 
-		public SymbolValue (INamedTypeSymbol type) => Source = type;
-
 		// This ctor isn't used for dataflow - it's really just a wrapper
 		// for annotations on type arguments/parameters which are type-checked
 		// by the analyzer (outside of the dataflow analysis).
@@ -89,9 +87,11 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			default:
 				throw new NotImplementedException (Source.GetType ().ToString ());
 			}
-			var damtStr = Annotations.GetMemberTypesString (DynamicallyAccessedMemberTypes);
-			var memberTypesStr = damtStr.Split ('.')[1].TrimEnd ('\'');
-			sb.Append ("[").Append (memberTypesStr).Append ("]");
+			if (DynamicallyAccessedMemberTypes != DynamicallyAccessedMemberTypes.None) {
+				var damtStr = Annotations.GetMemberTypesString (DynamicallyAccessedMemberTypes);
+				var memberTypesStr = damtStr.Split ('.')[1].TrimEnd ('\'');
+				sb.Append ("[").Append (memberTypesStr).Append ("]");
+			}
 			return sb.ToString ();
 		}
 	}
