@@ -194,7 +194,8 @@
   </data>
   <data name="RequiresDynamicCodeOnStaticConstructorTitle" xml:space="preserve">
     <value>The use of 'RequiresDynamicCodeAttribute' on static constructors is disallowed since is a method not callable by the user, is only called by the runtime. Placing the attribute directly on the static constructor will have no effect, instead use 'RequiresUnreferencedCodeAttribute' on the type which will handle warning and silencing from the static constructor.</value>
-  </data><data name="RequiresAssemblyFilesOnStaticConstructorMessage" xml:space="preserve">
+  </data>
+  <data name="RequiresAssemblyFilesOnStaticConstructorMessage" xml:space="preserve">
     <value>'RequiresAssemblyFilesAttribute' cannot be placed directly on static constructor '{0}'.</value>
   </data>
   <data name="RequiresAssemblyFilesOnStaticConstructorTitle" xml:space="preserve">
