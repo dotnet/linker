@@ -413,9 +413,9 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			static WarningsInCtor () { MethodWithRUC (); }
 		}
 
-		static void TestWarningsInCtor() 
+		static void TestWarningsInCtor ()
 		{
-			_ = new WarningsInCtor();
+			_ = new WarningsInCtor ();
 		}
 
 		class StaticCtorTriggeredByFieldAccess
@@ -1668,7 +1668,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			static void TestStaticConstructorCalls ()
 			{
 				TestStaticCctorRequires ();
-				TestWarningsInCtor();
+				TestWarningsInCtor ();
 				TestStaticCtorMarkingIsTriggeredByFieldAccessWrite ();
 				TestStaticCtorMarkingTriggeredOnSecondAccessWrite ();
 				TestStaticRequiresFieldAccessSuppressedByRequiresOnMethod ();
