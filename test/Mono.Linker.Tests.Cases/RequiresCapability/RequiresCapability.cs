@@ -396,23 +396,26 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 		}
 
+		static void TestStaticCctorRequires ()
+		{
+			_ = new StaticCtor ();
+		}
+
 		class WarningsInCtor
 		{
 			[RequiresUnreferencedCode ("Message for WarningsInCtor.MethodWithRUC")]
 			static void MethodWithRUC () { }
 
-			//Bug: Should be produced by trimmer as well
-			[ExpectedWarning ("IL2026", "Message for WarningsInCtor.MethodWithRUC", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL2026", "Message for WarningsInCtor.MethodWithRUC")]
 			public WarningsInCtor () { MethodWithRUC (); }
 
-			//Bug: Should be produced by trimmer as well
-			[ExpectedWarning ("IL2026", "Message for WarningsInCtor.MethodWithRUC", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL2026", "Message for WarningsInCtor.MethodWithRUC")]
 			static WarningsInCtor () { MethodWithRUC (); }
 		}
 
-		static void TestStaticCctorRequires ()
+		static void TestWarningsInCtor() 
 		{
-			_ = new StaticCtor ();
+			_ = new WarningsInCtor();
 		}
 
 		class StaticCtorTriggeredByFieldAccess
@@ -1665,6 +1668,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			static void TestStaticConstructorCalls ()
 			{
 				TestStaticCctorRequires ();
+				TestWarningsInCtor();
 				TestStaticCtorMarkingIsTriggeredByFieldAccessWrite ();
 				TestStaticCtorMarkingTriggeredOnSecondAccessWrite ();
 				TestStaticRequiresFieldAccessSuppressedByRequiresOnMethod ();
