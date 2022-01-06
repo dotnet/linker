@@ -396,6 +396,17 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 		}
 
+		class WarningsInCtor
+		{
+			[RequiresUnreferencedCode("Message for WarningsInCtor.MethodWithRUC")]
+			static void MethodWithRUC() { }
+
+			[ExpectedWarning("IL2026", "Message for WarningsInCtor.MethodWithRUC")]
+			public WarningsInCtor() { MethodWithRUC();}
+
+			[ExpectedWarning("IL2026", "Message for WarningsInCtor.MethodWithRUC")]
+			static WarningsInCtor() { MethodWithRUC();}
+		}
 		static void TestStaticCctorRequires ()
 		{
 			_ = new StaticCtor ();
