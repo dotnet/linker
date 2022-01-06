@@ -455,12 +455,89 @@ namespace Mono.Linker.Steps
 
 				bool sweepNames = CanSweepNamesForMember (method, MetadataTrimming.ParameterName);
 
+				if (method.HasBody && sweepNames)
+					RemoveParameterNamesReferences (method);
+
 				foreach (var parameter in method.Parameters) {
 					if (sweepNames)
 						parameter.Name = null;
 
 					SweepCustomAttributes (parameter);
 				}
+			}
+		}
+
+		static void RemoveParameterNamesReferences (MethodDefinition method)
+		{
+			var instructions = method.Body.Instructions;
+			for (int i = 1; i < instructions.Count; ++i) {
+				Instruction instr = instructions [i];
+				if (instr.OpCode.Code != Code.Ldstr)
+					continue;
+
+				//
+				// The patterns we are looking for are like
+				//
+				//  ldstr   "argument"
+				//  newobj  instance void System.ArgumentNullException::.ctor(string)
+				//
+				//  OR
+				//
+				//  ldstr   "argument"
+				//  ldstr   "another string"
+				//  newobj  instance void System.ArgumentNullException::.ctor(string, string)				
+				//
+				//  OR
+				//
+				//  ldstr   "argument"
+				//  call    string System.SR::get_ArgumentOutOfRange_StartIndex()
+				//  newobj  instance void System.ArgumentOutOfRangeException::.ctor(string, string)
+				//
+				// 	OR
+				//
+				//  ldstr    "argument"
+				//  newobj   instance void System.ArgumentException::.ctor(string, string)
+				//
+				string str = (string)instr.Operand;
+				int index = FindParameterIndex (method, str);
+				if (index == 0)
+					continue;
+
+				//if (!IsSingleArgumentExceptionCtor (instructions, i))
+				//	continue;
+
+				//instr.Operand = "#" + index;
+			}
+/*
+			static bool IsArgumentExceptionCtor (Collection<Instruction> instructions, int index)
+			{
+				for (int peek = 0; index < instructions.Count && peek < 2; ++peek) {
+					switch (instructions [index + peek].OpCode.Code) {
+						case Code.Newobj:
+							if (instructions [index + peek].Operand is not MethodReference mr)
+								continue;
+
+							Console.WriteLine (mr);
+							return true;
+						case Code.Ldstr:
+							continue;
+					}
+
+					return false;
+				}
+
+				return false;
+			}
+*/
+			static int FindParameterIndex (MethodDefinition method, string value)
+			{
+				var p = method.Parameters;
+				for (int i = 0; i < p.Count; ++i) {
+					if (p[i].Name == value)
+						return i + 1;
+				}
+
+				return 0;
 			}
 		}
 
