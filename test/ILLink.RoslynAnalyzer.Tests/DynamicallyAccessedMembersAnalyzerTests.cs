@@ -21,6 +21,69 @@ namespace ILLink.RoslynAnalyzer.Tests
 		}
 
 		#region TempGenerics
+
+		[Fact]
+		public Task DerivedTypeWithInstantiatedGenericOnBaseSimple ()
+		{
+			var TargetParameterWithAnnotations = @"
+using System.Diagnostics.CodeAnalysis;
+
+public class TestType
+{
+}
+
+class Program
+{
+	public static void Main()
+	{
+		new DerivedTypeWithInstantiatedGenericOnBase ();	
+	}
+}
+
+class DerivedTypeWithInstantiatedGenericOnBase : GenericBaseTypeWithRequirements<TestType>
+{
+}
+
+class GenericBaseTypeWithRequirements<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] TBase>
+{
+}";
+
+			// Should not generate any warnings
+
+			return VerifyDynamicallyAccessedMembersAnalyzer (TargetParameterWithAnnotations);
+		}
+
+		[Fact]
+		public Task DerivedTypeWithInstantiationOverSelfOnBaseSimple ()
+		{
+			var TargetParameterWithAnnotations = @"
+using System.Diagnostics.CodeAnalysis;
+
+public class TestType
+{
+}
+
+class Program
+{
+	public static void Main()
+	{
+		new DerivedTypeWithInstantiationOverSelfOnBase ();	
+	}
+}
+
+class DerivedTypeWithInstantiationOverSelfOnBase : GenericBaseTypeWithRequirements<DerivedTypeWithInstantiationOverSelfOnBase>
+{
+}
+
+class GenericBaseTypeWithRequirements<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] TBase>
+{
+}";
+
+			// Should not generate any warnings
+
+			return VerifyDynamicallyAccessedMembersAnalyzer (TargetParameterWithAnnotations);
+		}
+
 		[Fact]
 		public Task GenericsDerivedTypeWithOpenGenericOnBaseSimple ()
 		{
@@ -47,13 +110,47 @@ class GenericBaseTypeWithRequirements<[DynamicallyAccessedMembers (DynamicallyAc
 {
 }";
 
-			// warning IL2091: 'TBase' generic argument does not satisfy 'DynamicallyAccessedMemberTypes.PublicFields' in 'GenericBaseTypeWithRequirements<TBase>'.
+			// (16,40): warning IL2091: 'TBase' generic argument does not satisfy 'DynamicallyAccessedMemberTypes.PublicFields' in 'GenericBaseTypeWithRequirements<TBase>'.
 			// The generic parameter 'TDerived' of 'DerivedTypeWithOpenGenericOnBase<TDerived>' does not have matching annotations.
 			// The source value must declare at least the same requirements as those declared on the target location it is assigned to.
+
 			return VerifyDynamicallyAccessedMembersAnalyzer (TargetParameterWithAnnotations,
 				VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchTypeArgumentTargetsGenericParameter)
+				.WithSpan (16, 40, 16, 48)
 				.WithArguments ("TBase", "GenericBaseTypeWithRequirements<TBase>", "TDerived", "DerivedTypeWithOpenGenericOnBase<TDerived>", "'DynamicallyAccessedMemberTypes.PublicFields'"));
 		}
+
+		[Fact]
+		public Task DerivedTypeWithOpenGenericOnBaseWithRequirementsSimple ()
+		{
+			var TargetParameterWithAnnotations = @"
+using System.Diagnostics.CodeAnalysis;
+
+public class TestType
+{
+}
+
+class Program
+{
+	public static void Main()
+	{
+		new DerivedTypeWithOpenGenericOnBaseWithRequirements<TestType> ();	
+	}
+}
+
+class DerivedTypeWithOpenGenericOnBaseWithRequirements<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] TDerived> : GenericBaseTypeWithRequirements<TDerived>
+{
+}
+
+class GenericBaseTypeWithRequirements<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] TBase>
+{
+}";
+
+			// Should not generate any warnings
+
+			return VerifyDynamicallyAccessedMembersAnalyzer (TargetParameterWithAnnotations);
+		}
+
 		#endregion
 
 		#region SourceParameter

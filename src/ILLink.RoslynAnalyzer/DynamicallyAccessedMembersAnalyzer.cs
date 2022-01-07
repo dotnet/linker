@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Linq;
 using ILLink.RoslynAnalyzer.TrimAnalysis;
 using ILLink.Shared;
 using ILLink.Shared.DataFlow;
@@ -81,13 +82,11 @@ namespace ILLink.RoslynAnalyzer
 			for (int i = 0; i < typeParams.Length; i++) {
 				var sourceValue = new SymbolValue (typeArgs[i]);
 				var targetValue = new SymbolValue (typeParams[i]);
-				var damtOnTarget = targetValue.DynamicallyAccessedMemberTypes;
-				var damtOnSource = sourceValue.DynamicallyAccessedMemberTypes;
-				if (Annotations.SourceHasRequiredAnnotations (damtOnSource, damtOnTarget, out var missingAnnotations))
+				// if a source is known, we dont need to warn
+				if (sourceValue.Source.Kind == SymbolKind.NamedType)
 					continue;
-				var diag = DiagnosticId.DynamicallyAccessedMembersMismatchTypeArgumentTargetsGenericParameter;
-				var diagArgs = GetDiagnosticArguments (sourceValue, targetValue, missingAnnotations);
-				context.ReportDiagnostic (Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (diag), Location.None, diagArgs));
+				foreach (var diagnostic in GetDynamicallyAccessedMembersDiagnostics (sourceValue, targetValue, typeArgs[i].Locations.First ()))
+					context.ReportDiagnostic (diagnostic);
 			}
 		}
 
