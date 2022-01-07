@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using ILLink.RoslynAnalyzer.TrimAnalysis;
 using ILLink.Shared;
 using ILLink.Shared.DataFlow;
@@ -86,9 +85,9 @@ namespace ILLink.RoslynAnalyzer
 		static SingleValue GetTypeValueNodeFromGenericArgument (ITypeSymbol type)
 		{
 			return type.Kind switch {
+				SymbolKind.TypeParameter => new GenericParameterValue ((ITypeParameterSymbol) type),
 				// Technically this should be a new value node type as it's not a System.Type instance representation, but just the generic parameter
 				// That said we only use it to perform the dynamically accessed members checks and for that purpose treating it as System.Type is perfectly valid.
-				SymbolKind.TypeParameter => new GenericParameterValue ((ITypeParameterSymbol) type),
 				SymbolKind.NamedType => new SystemTypeValue ((INamedTypeSymbol) type),
 				SymbolKind.ErrorType => UnknownValue.Instance,
 				// What about things like ArrayType or PointerType and so on. Linker treats these as "named types" since it can resolve them to concrete type

@@ -18,7 +18,7 @@ using TypeDefinition = Mono.Cecil.TypeDefinition;
 namespace ILLink.Shared.TrimAnalysis
 {
 	// These are extension methods because we want to allow the use of them on null 'this' pointers.
-	internal static class SingleNodeExtensions
+	internal static class SingleValueExtensions
 	{
 		/// <summary>
 		/// Returns true if a ValueNode graph contains a cycle
@@ -119,7 +119,7 @@ namespace ILLink.Shared.TrimAnalysis
 
 		public readonly TypeDefinition TypeRepresented;
 
-		public override string ToString () => this.ValueToString  (TypeRepresented);
+		public override string ToString () => this.ValueToString (TypeRepresented);
 	}
 
 	/// <summary>
@@ -153,7 +153,7 @@ namespace ILLink.Shared.TrimAnalysis
 		public override DynamicallyAccessedMemberTypes DynamicallyAccessedMemberTypes { get; }
 
 		public override IEnumerable<string> GetDiagnosticArgumentsForAnnotationMismatch ()
-			=>new string[] { GenericParameter.Name, DiagnosticUtilities.GetGenericParameterDeclaringMemberDisplayName(GenericParameter) };
+			=> new string[] { GenericParameter.Name, DiagnosticUtilities.GetGenericParameterDeclaringMemberDisplayName (GenericParameter) };
 
 		public override string ToString () => this.ValueToString (GenericParameter, DynamicallyAccessedMemberTypes);
 	}

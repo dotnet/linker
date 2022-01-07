@@ -1802,7 +1802,7 @@ namespace Mono.Linker.Dataflow
 
 				bool allIndicesKnown = true;
 				for (int i = 0; i < size.Value; i++) {
-					if (!array.TryGetValueByIndex (i, out var value) || value.IsEmpty () || value.AsSingleValue () is UnknownValue) {
+					if (!array.TryGetValueByIndex (i, out MultiValue value) || value.IsEmpty () || value.AsSingleValue () is UnknownValue) {
 						allIndicesKnown = false;
 						break;
 					}
@@ -1813,7 +1813,7 @@ namespace Mono.Linker.Dataflow
 				}
 
 				for (int i = 0; i < size.Value; i++) {
-					if (array.TryGetValueByIndex (i, out var value)) {
+					if (array.TryGetValueByIndex (i, out MultiValue value)) {
 						// https://github.com/dotnet/linker/issues/2428
 						// We need to report the target as "this" - as that was the previous behavior
 						// but with the annotation from the generic parameter.
