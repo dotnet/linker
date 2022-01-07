@@ -116,6 +116,11 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			}
 
 			for (int argumentIndex = 0; argumentIndex < arguments.Length; argumentIndex++) {
+				// For __arglist arguments, there may not be a parameter, so skip these as there can't be any annotations on the parameter
+				if (arguments[argumentIndex].Operation is IArgumentOperation argumentOperation &&
+					argumentOperation.Parameter == null)
+					continue;
+
 				TrimAnalysisPatterns.Add (
 					new TrimAnalysisPattern (
 						arguments[argumentIndex].Value,
