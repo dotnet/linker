@@ -182,7 +182,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 				// Accessing property for reading is really a call to the getter
 				// The setter case is handled in assignment operation since here we don't have access to the value to pass to the setter
 				TValue instanceValue = Visit (operation.Instance, state);
-				return HandleMethodCall (propertyMethod, new ValueOfOperation(instanceValue, operation), ImmutableArray<ValueOfOperation>.Empty, operation);
+				return HandleMethodCall (propertyMethod, new ValueOfOperation (instanceValue, operation), ImmutableArray<ValueOfOperation>.Empty, operation);
 			}
 
 			return TopValue;
