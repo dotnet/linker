@@ -9,7 +9,7 @@ namespace ILLink.Shared.TrimAnalysis
 	/// A known string - such as the result of a ldstr.
 	/// </summary>
 	sealed partial record KnownStringValue : SingleValue
-    {
+	{
 		public KnownStringValue (string contents) => Contents = contents;
 
 		public readonly string Contents;
