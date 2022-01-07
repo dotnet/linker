@@ -72,6 +72,10 @@ namespace ILLink.RoslynAnalyzer
 			// which is an open generic type. i.e. Bar<T> : Foo<[DAMT] T>
 
 			INamedTypeSymbol derivedType = (INamedTypeSymbol) context.Symbol;
+
+			if (derivedType.HasAttribute (RequiresUnreferencedCodeAnalyzer.RequiresUnreferencedCodeAttribute))
+				return;
+
 			var baseType = derivedType.BaseType;
 
 			//Check if generic parameter of derived and generic argument of the base have mismatched annotation
@@ -82,9 +86,6 @@ namespace ILLink.RoslynAnalyzer
 			for (int i = 0; i < typeParams.Length; i++) {
 				var sourceValue = new SymbolValue (typeArgs[i]);
 				var targetValue = new SymbolValue (typeParams[i]);
-				// if a source is known, we dont need to warn
-				if (sourceValue.Source.Kind == SymbolKind.NamedType)
-					continue;
 				foreach (var diagnostic in GetDynamicallyAccessedMembersDiagnostics (sourceValue, targetValue, typeArgs[i].Locations.First ()))
 					context.ReportDiagnostic (diagnostic);
 			}
@@ -131,6 +132,9 @@ namespace ILLink.RoslynAnalyzer
 		static IEnumerable<Diagnostic> GetDynamicallyAccessedMembersDiagnostics (SingleValue sourceValue, SingleValue targetValue, Location location)
 		{
 			if (sourceValue is not SymbolValue source || targetValue is not SymbolValue target)
+				yield break;
+
+			if (source.Source.Kind is SymbolKind.NamedType)
 				yield break;
 
 			Debug.Assert (target.Source.Kind is not SymbolKind.NamedType);
