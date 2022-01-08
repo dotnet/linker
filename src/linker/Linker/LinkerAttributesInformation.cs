@@ -120,9 +120,7 @@ namespace Mono.Linker
 				return ruca;
 			}
 
-			context.LogWarning (
-				new DiagnosticString (DiagnosticId.AttributeDoesntHaveTheRequiredNumberOfParameters).GetMessage (typeof (RequiresUnreferencedCodeAttribute).FullName ?? ""),
-				DiagnosticId.AttributeDoesntHaveTheRequiredNumberOfParameters, (IMemberDefinition) provider);
+			context.LogWarning ((IMemberDefinition) provider, DiagnosticId.AttributeDoesntHaveTheRequiredNumberOfParameters, typeof (RequiresUnreferencedCodeAttribute).FullName ?? "");
 			return null;
 		}
 
@@ -135,9 +133,7 @@ namespace Mono.Linker
 				// Argument is always boxed
 				return new RemoveAttributeInstancesAttribute ((CustomAttributeArgument) ca.ConstructorArguments[0].Value);
 			default:
-				context.LogWarning (
-					new DiagnosticString (DiagnosticId.AttributeDoesntHaveTheRequiredNumberOfParameters).GetMessage (ca.AttributeType.GetDisplayName ()),
-					DiagnosticId.AttributeDoesntHaveTheRequiredNumberOfParameters, attributeContext);
+				context.LogWarning (attributeContext, DiagnosticId.AttributeDoesntHaveTheRequiredNumberOfParameters, ca.AttributeType.GetDisplayName ());
 				return null;
 			};
 		}

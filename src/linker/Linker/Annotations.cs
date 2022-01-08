@@ -581,8 +581,7 @@ namespace Mono.Linker
 		{
 			var attributes = GetLinkerAttributes<T> (member);
 			if (attributes.Count () > 1) {
-				context.LogWarning (new DiagnosticString (DiagnosticId.AttributeShouldOnlyBeUsedOnceOnMember).GetMessage (typeof (T).FullName ?? "", (member is MemberReference memberRef) ? memberRef.GetDisplayName () : member.FullName),
-					DiagnosticId.AttributeShouldOnlyBeUsedOnceOnMember, member);
+				context.LogWarning (member, DiagnosticId.AttributeShouldOnlyBeUsedOnceOnMember, typeof (T).FullName ?? "", (member is MemberReference memberRef) ? memberRef.GetDisplayName () : member.FullName);
 			}
 
 			attribute = attributes.FirstOrDefault ();

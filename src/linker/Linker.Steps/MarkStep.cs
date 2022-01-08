@@ -547,8 +547,7 @@ namespace Mono.Linker.Steps
 					ProcessMethod (method, reason, scope);
 				} catch (Exception e) when (!(e is LinkerFatalErrorException)) {
 					throw new LinkerFatalErrorException (
-						MessageContainer.CreateErrorMessage ($"Error processing method '{method.GetDisplayName ()}' in assembly '{method.Module.Name}'", 1005,
-						origin: scope.Origin), e);
+						MessageContainer.CreateErrorMessage (scope.Origin, DiagnosticId.CouldNotFindMethodInAssembly, method.GetDisplayName (), method.Module.Name), e);
 				}
 			}
 		}
@@ -901,8 +900,7 @@ namespace Mono.Linker.Steps
 			if (dynamicDependency.AssemblyName != null) {
 				assembly = Context.TryResolve (dynamicDependency.AssemblyName);
 				if (assembly == null) {
-					Context.LogWarning (new DiagnosticString (DiagnosticId.UnresolvedAssemblyInDynamicDependencyAttribute).GetMessage (dynamicDependency.AssemblyName),
-						DiagnosticId.UnresolvedAssemblyInDynamicDependencyAttribute, ScopeStack.CurrentScope.Origin);
+					Context.LogWarning (ScopeStack.CurrentScope.Origin, DiagnosticId.UnresolvedAssemblyInDynamicDependencyAttribute, dynamicDependency.AssemblyName);
 					return;
 				}
 			} else {
@@ -914,8 +912,7 @@ namespace Mono.Linker.Steps
 			if (dynamicDependency.TypeName is string typeName) {
 				type = DocumentationSignatureParser.GetTypeByDocumentationSignature (assembly, typeName, Context);
 				if (type == null) {
-					Context.LogWarning (new DiagnosticString (DiagnosticId.UnresolvedTypeInDynamicDependencyAttribute).GetMessage (typeName),
-						DiagnosticId.UnresolvedTypeInDynamicDependencyAttribute, ScopeStack.CurrentScope.Origin);
+					Context.LogWarning (ScopeStack.CurrentScope.Origin, DiagnosticId.UnresolvedTypeInDynamicDependencyAttribute, typeName);
 					return;
 				}
 
@@ -923,15 +920,13 @@ namespace Mono.Linker.Steps
 			} else if (dynamicDependency.Type is TypeReference typeReference) {
 				type = Context.TryResolve (typeReference);
 				if (type == null) {
-					Context.LogWarning (new DiagnosticString (DiagnosticId.UnresolvedTypeInDynamicDependencyAttribute).GetMessage (typeReference.GetDisplayName ()),
-						DiagnosticId.UnresolvedTypeInDynamicDependencyAttribute, ScopeStack.CurrentScope.Origin);
+					Context.LogWarning (ScopeStack.CurrentScope.Origin, DiagnosticId.UnresolvedTypeInDynamicDependencyAttribute, typeReference.GetDisplayName ());
 					return;
 				}
 			} else {
 				type = Context.TryResolve (context.DeclaringType);
 				if (type == null) {
-					Context.LogWarning (new DiagnosticString (DiagnosticId.UnresolvedTypeInDynamicDependencyAttribute).GetMessage (context.DeclaringType.GetDisplayName ()),
-						DiagnosticId.UnresolvedTypeInDynamicDependencyAttribute, context);
+					Context.LogWarning (context, DiagnosticId.UnresolvedTypeInDynamicDependencyAttribute, context.DeclaringType.GetDisplayName ());
 					return;
 				}
 			}
@@ -940,16 +935,14 @@ namespace Mono.Linker.Steps
 			if (dynamicDependency.MemberSignature is string memberSignature) {
 				members = DocumentationSignatureParser.GetMembersByDocumentationSignature (type, memberSignature, Context, acceptName: true);
 				if (!members.Any ()) {
-					Context.LogWarning (new DiagnosticString (DiagnosticId.NoMembersResolvedForMemberSignatureOrType).GetMessage (memberSignature),
-						DiagnosticId.NoMembersResolvedForMemberSignatureOrType, ScopeStack.CurrentScope.Origin);
+					Context.LogWarning (ScopeStack.CurrentScope.Origin, DiagnosticId.NoMembersResolvedForMemberSignatureOrType, memberSignature);
 					return;
 				}
 			} else {
 				var memberTypes = dynamicDependency.MemberTypes;
 				members = type.GetDynamicallyAccessedMembers (Context, memberTypes);
 				if (!members.Any ()) {
-					Context.LogWarning (new DiagnosticString (DiagnosticId.NoMembersResolvedForMemberSignatureOrType).GetMessage (memberTypes.ToString ()),
-						DiagnosticId.NoMembersResolvedForMemberSignatureOrType, ScopeStack.CurrentScope.Origin);
+					Context.LogWarning (ScopeStack.CurrentScope.Origin, DiagnosticId.NoMembersResolvedForMemberSignatureOrType, memberTypes.ToString ());
 					return;
 				}
 			}
@@ -990,7 +983,7 @@ namespace Mono.Linker.Steps
 
 		protected virtual void MarkUserDependency (IMemberDefinition context, CustomAttribute ca)
 		{
-			Context.LogWarning (new DiagnosticString (DiagnosticId.DeprecatedPreserveDependencyAttribute).GetMessage (), DiagnosticId.DeprecatedPreserveDependencyAttribute, context);
+			Context.LogWarning (context, DiagnosticId.DeprecatedPreserveDependencyAttribute);
 
 			if (!DynamicDependency.ShouldProcess (Context, ca))
 				return;
@@ -1000,7 +993,7 @@ namespace Mono.Linker.Steps
 			if (args.Count >= 3 && args[2].Value is string assemblyName) {
 				assembly = Context.TryResolve (assemblyName);
 				if (assembly == null) {
-					Context.LogWarning (new DiagnosticString (DiagnosticId.CouldNotResolveDependencyAssembly).GetMessage (assemblyName), DiagnosticId.CouldNotResolveDependencyAssembly, context);
+					Context.LogWarning (context, DiagnosticId.CouldNotResolveDependencyAssembly, assemblyName);
 					return;
 				}
 			} else {
@@ -1013,7 +1006,7 @@ namespace Mono.Linker.Steps
 				td = Context.TryResolve (assemblyDef, typeName);
 
 				if (td == null) {
-					Context.LogWarning (new DiagnosticString (DiagnosticId.CouldNotResolveDependencyType).GetMessage (typeName), DiagnosticId.CouldNotResolveDependencyType, context);
+					Context.LogWarning (context, DiagnosticId.CouldNotResolveDependencyType, typeName);
 					return;
 				}
 
@@ -1050,7 +1043,7 @@ namespace Mono.Linker.Steps
 					return;
 			}
 
-			Context.LogWarning (new DiagnosticString (DiagnosticId.CouldNotResolveDependencyMember).GetMessage (member ?? "", td.GetDisplayName ()), DiagnosticId.CouldNotResolveDependencyMember, context);
+			Context.LogWarning (context, DiagnosticId.CouldNotResolveDependencyMember, member ?? "", td.GetDisplayName ());
 		}
 
 		bool MarkDependencyMethod (TypeDefinition type, string name, string[]? signature, in DependencyInfo reason)
@@ -1882,9 +1875,7 @@ namespace Mono.Linker.Steps
 				// If for some reason we do keep the attribute type (could be because of previous reference which would cause IL2045
 				// or because of a copy assembly with a reference and so on) then we should not spam the warnings due to the type itself.
 				if (!(reason.Source is IMemberDefinition sourceMemberDefinition && sourceMemberDefinition.DeclaringType == type))
-					Context.LogWarning (
-						new DiagnosticString (DiagnosticId.AttributeIsReferencedButTrimmerRemoveAllInstances).GetMessage (type.GetDisplayName ()),
-						DiagnosticId.AttributeIsReferencedButTrimmerRemoveAllInstances, ScopeStack.CurrentScope.Origin, subcategory: MessageSubCategory.TrimAnalysis);
+					Context.LogWarning (ScopeStack.CurrentScope.Origin, DiagnosticId.AttributeIsReferencedButTrimmerRemoveAllInstances, type.GetDisplayName ());
 			}
 
 			if (CheckProcessed (type))
@@ -2661,11 +2652,11 @@ namespace Mono.Linker.Steps
 
 				case TypePreserve.Fields:
 					if (!MarkFields (type, true, di, true))
-						Context.LogWarning (new DiagnosticString (DiagnosticId.TypeHasNoFieldsToPreserve).GetMessage (type.GetDisplayName ()), DiagnosticId.TypeHasNoFieldsToPreserve, type);
+						Context.LogWarning (type, DiagnosticId.TypeHasNoFieldsToPreserve, type.GetDisplayName ());
 					break;
 				case TypePreserve.Methods:
 					if (!MarkMethods (type, di))
-						Context.LogWarning (new DiagnosticString (DiagnosticId.TypeHasNoMethodsToPreserve).GetMessage (type.GetDisplayName ()), DiagnosticId.TypeHasNoMethodsToPreserve, type);
+						Context.LogWarning (type, DiagnosticId.TypeHasNoMethodsToPreserve, type.GetDisplayName ());
 					break;
 				}
 			}
@@ -3078,7 +3069,7 @@ namespace Mono.Linker.Steps
 				MarkRequirementsForInstantiatedTypes (method.DeclaringType);
 				Tracer.AddDirectDependency (method.DeclaringType, new DependencyInfo (DependencyKind.InstantiatedByCtor, method), marked: false);
 			} else if (method.IsStaticConstructor () && Annotations.HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (method))
-				Context.LogWarning (new DiagnosticString (DiagnosticId.RequiresUnreferencedCodeOnStaticConstructor).GetMessage (method.GetDisplayName ()), DiagnosticId.RequiresUnreferencedCodeOnStaticConstructor, ScopeStack.CurrentScope.Origin, MessageSubCategory.TrimAnalysis);
+				Context.LogWarning (ScopeStack.CurrentScope.Origin, DiagnosticId.RequiresUnreferencedCodeOnStaticConstructor, method.GetDisplayName ());
 
 			if (method.IsConstructor) {
 				if (!Annotations.ProcessSatelliteAssemblies && KnownMembers.IsSatelliteAssemblyMarker (method))
@@ -3220,8 +3211,7 @@ namespace Mono.Linker.Steps
 				if (baseType == null)
 					break;
 				if (!MarkDefaultConstructor (baseType, new DependencyInfo (DependencyKind.BaseDefaultCtorForStubbedMethod, method)))
-					throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage ($"Cannot stub constructor on '{method.DeclaringType}' when base type does not have default constructor",
-						1006, origin: ScopeStack.CurrentScope.Origin));
+					throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage (ScopeStack.CurrentScope.Origin, DiagnosticId.CannotStubConstructorWhenBaseTypeDoesNotHaveConstructor, method.DeclaringType.GetDisplayName ()));
 
 				break;
 
@@ -3238,13 +3228,13 @@ namespace Mono.Linker.Steps
 
 			var nse = BCL.FindPredefinedType ("System", "NotSupportedException", Context);
 			if (nse == null)
-				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage ("Missing predefined 'System.NotSupportedException' type", 1007));
+				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage (null, DiagnosticId.CouldNotFindType, "System.NotSupportedException"));
 
 			MarkType (nse, reason);
 
 			var nseCtor = MarkMethodIf (nse.Methods, KnownMembers.IsNotSupportedExceptionCtorString, reason);
 			Context.MarkedKnownMembers.NotSupportedExceptionCtorString = nseCtor ??
-				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage ($"Could not find constructor on '{nse.GetDisplayName ()}'", 1008));
+				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage (null, DiagnosticId.CouldNotFindConstructor, nse.GetDisplayName ()));
 
 			var objectType = BCL.FindPredefinedType ("System", "Object", Context);
 			if (objectType == null)
@@ -3254,7 +3244,7 @@ namespace Mono.Linker.Steps
 
 			var objectCtor = MarkMethodIf (objectType.Methods, MethodDefinitionExtensions.IsDefaultConstructor, reason);
 			Context.MarkedKnownMembers.ObjectCtor = objectCtor ??
-				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage ($"Could not find constructor on '{objectType.GetDisplayName ()}'", 1008));
+					throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage (null, DiagnosticId.CouldNotFindConstructor, objectType.GetDisplayName ()));
 		}
 
 		bool MarkDisablePrivateReflectionAttribute ()
@@ -3264,14 +3254,14 @@ namespace Mono.Linker.Steps
 
 			var disablePrivateReflection = BCL.FindPredefinedType ("System.Runtime.CompilerServices", "DisablePrivateReflectionAttribute", Context);
 			if (disablePrivateReflection == null)
-				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage ("Missing predefined 'System.Runtime.CompilerServices.DisablePrivateReflectionAttribute' type", 1007));
+				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage (null, DiagnosticId.CouldNotFindType, "System.Runtime.CompilerServices.DisablePrivateReflectionAttribute"));
 
 			using (ScopeStack.PushScope (new MessageOrigin (null as ICustomAttributeProvider))) {
 				MarkType (disablePrivateReflection, DependencyInfo.DisablePrivateReflectionRequirement);
 
 				var ctor = MarkMethodIf (disablePrivateReflection.Methods, MethodDefinitionExtensions.IsDefaultConstructor, new DependencyInfo (DependencyKind.DisablePrivateReflectionRequirement, disablePrivateReflection));
 				Context.MarkedKnownMembers.DisablePrivateReflectionAttributeCtor = ctor ??
-					throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage ($"Could not find constructor on '{disablePrivateReflection.GetDisplayName ()}'", 1010));
+					throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage (null, DiagnosticId.CouldNotFindConstructor, disablePrivateReflection.GetDisplayName ()));
 			}
 
 			return true;

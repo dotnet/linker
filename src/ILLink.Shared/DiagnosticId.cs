@@ -5,6 +5,53 @@ namespace ILLink.Shared
 {
 	public enum DiagnosticId
 	{
+		// Linker error ids.
+		XmlFeatureDoesNotSpecifyFeatureValue = 1001,
+		XmlUnsupportedNonBooleanValueForFeature = 1002,
+		XmlException = 1003,
+		CouldNotFindMethodInAssembly = 1005,
+		CannotStubConstructorWhenBaseTypeDoesNotHaveConstructor = 1006,
+		CouldNotFindType = 1007,
+		CouldNotFindConstructor = 1008,
+		CouldNotFindAssemblyReference = 1009,
+		CouldNotLoadAssembly = 1010,
+		FailedToWriteOutput = 1011,
+		LinkerUnexpectedError = 1012,
+		ErrorProcessingXmlLocation = 1013,
+		XmlDocumentLocationHasInvalidFeatureDefault = 1014,
+		UnrecognizedCommandLineOption = 1015,
+		InvalidWarningVersion = 1016,
+		InvalidGenerateWarningSuppressionsValue = 1017,
+		MissingArgumentForCommanLineOptionName = 1018,
+		CustomDataFormatIsInvalid = 1019,
+		NoFilesToLinkSpecified = 1020,
+		NewMvidAndDeterministicCannotBeUsedAtSameTime = 1021,
+		AssemblyInCustomStepOptionCouldNotBeFound = 1022,
+		AssemblyPathInCustomStepMustBeFullyQualified = 1023,
+		InvalidArgForCustomStep = 1024,
+		ExpectedSignToControlNewStepInsertion = 1025,
+		PipelineStepCouldNotBeFound = 1026,
+		CustomStepTypeCouldNotBeFound = 1027,
+		CustomStepTypeIsIncompatibleWithLinkerVersion = 1028,
+		InvalidOptimizationValue = 1029,
+		InvalidArgumentForTokenOption = 1030,
+		InvalidAssemblyAction = 1031,
+		RootAssemblyCouldNotBeFound = 1032,
+		XmlDescriptorCouldNotBeFound = 1033,
+		RootAssemblyDoesNotHaveEntryPoint = 1034,
+		RootAssemblyCannotUseAction = 1035,
+		InvalidAssemblyName = 1036,
+		InvalidAssemblyRootMode = 1037,
+		ExportedTypeCannotBeResolved = 1038,
+		ReferenceAssemblyCouldNotBeLoaded = 1039,
+		FailedToResolveMetadataElement = 1040,
+		TypeUsedWithAttributeValueCouldNotBeFound = 1041,
+		CannotConverValueToType = 1042,
+		CustomAttributeArgumentForTypeRequiresNestedNode = 1043,
+		CouldNotResolveCustomAttributeTypeValue = 1044,
+		UnexpectedAttributeArgumentType = 1045,
+		InvalidMetadataOption = 1046,
+
 		// Linker diagnostic ids.
 		TypeHasNoFieldsToPreserve = 2001,
 		TypeHasNoMethodsToPreserve = 2002,
@@ -71,5 +118,23 @@ namespace ILLink.Shared
 	public static class DiagnosticIdExtensions
 	{
 		public static string AsString (this DiagnosticId diagnosticId) => $"IL{(int) diagnosticId}";
+
+		public static string GetDiagnosticSubcategory (this DiagnosticId diagnosticId) =>
+			(int) diagnosticId switch {
+				2026 => MessageSubCategory.TrimAnalysis,
+				2032 => MessageSubCategory.TrimAnalysis,
+				2041 => MessageSubCategory.TrimAnalysis,
+				2042 => MessageSubCategory.TrimAnalysis,
+				2043 => MessageSubCategory.TrimAnalysis,
+				2045 => MessageSubCategory.TrimAnalysis,
+				2046 => MessageSubCategory.TrimAnalysis,
+				2050 => MessageSubCategory.TrimAnalysis,
+				var x when x >= 2055 && x <= 2099 => MessageSubCategory.TrimAnalysis,
+				2103 => MessageSubCategory.TrimAnalysis,
+				2106 => MessageSubCategory.TrimAnalysis,
+				2107 => MessageSubCategory.TrimAnalysis,
+				var x when x >= 2109 && x <= 2116 => MessageSubCategory.TrimAnalysis,
+				_ => MessageSubCategory.None,
+			};
 	}
 }
