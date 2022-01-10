@@ -3,9 +3,11 @@
 
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Linq;
 using ILLink.RoslynAnalyzer.DataFlow;
 using ILLink.Shared.DataFlow;
 using ILLink.Shared.TrimAnalysis;
+using ILLink.Shared.TypeSystemProxy;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -101,6 +103,9 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 		public override MultiValue HandleMethodCall (IMethodSymbol calledMethod, ValueOfOperation instance, ImmutableArray<ValueOfOperation> arguments, IOperation operation)
 		{
+			if (Intrinsics.HandleMethodCall (new MethodProxy (calledMethod), instance.Value, arguments.Select (a => a.Value).ToImmutableList (), out MultiValue methodReturnValue))
+				return methodReturnValue;
+
 			// For now no intrinsics, so for each call we have to:
 			//   Handle the instance value
 			//   Handle argument passing
