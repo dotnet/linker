@@ -745,7 +745,7 @@ namespace Mono.Linker.Dataflow
 										}
 									}
 									if (hasUncheckedAnnotation) {
-										reflectionContext.RecordUnrecognizedPattern (DiagnosticId.MakeGenericType,
+										reflectionContext.RecordUnrecognizedPattern ((int) DiagnosticId.MakeGenericType,
 											new DiagnosticString (DiagnosticId.MakeGenericType).GetMessage (calledMethodDefinition.GetDisplayName ()));
 									}
 								}
@@ -756,7 +756,7 @@ namespace Mono.Linker.Dataflow
 								reflectionContext.RecordHandledPattern ();
 							else {
 								// We have no way to "include more" to fix this if we don't know, so we have to warn
-								reflectionContext.RecordUnrecognizedPattern (DiagnosticId.MakeGenericType,
+								reflectionContext.RecordUnrecognizedPattern ((int) DiagnosticId.MakeGenericType,
 											new DiagnosticString (DiagnosticId.MakeGenericType).GetMessage (calledMethodDefinition.GetDisplayName ()));
 							}
 						}
@@ -849,7 +849,7 @@ namespace Mono.Linker.Dataflow
 										if (hasTypeArguments) {
 											// We don't know what method the `MakeGenericMethod` was called on, so we have to assume
 											// that the method may have requirements which we can't fullfil -> warn.
-											reflectionContext.RecordUnrecognizedPattern (DiagnosticId.MakeGenericMethod,
+											reflectionContext.RecordUnrecognizedPattern ((int) DiagnosticId.MakeGenericMethod,
 												new DiagnosticString (DiagnosticId.MakeGenericMethod).GetMessage (DiagnosticUtilities.GetMethodSignatureDisplayName (calledMethod)));
 										}
 
@@ -864,7 +864,7 @@ namespace Mono.Linker.Dataflow
 								if (hasTypeArguments) {
 									// We don't know what method the `MakeGenericMethod` was called on, so we have to assume
 									// that the method may have requirements which we can't fullfil -> warn.
-									reflectionContext.RecordUnrecognizedPattern (DiagnosticId.MakeGenericMethod,
+									reflectionContext.RecordUnrecognizedPattern ((int) DiagnosticId.MakeGenericMethod,
 										new DiagnosticString (DiagnosticId.MakeGenericMethod).GetMessage (DiagnosticUtilities.GetMethodSignatureDisplayName (calledMethod)));
 								}
 
@@ -1708,7 +1708,7 @@ namespace Mono.Linker.Dataflow
 							} else {
 								// We don't know what method the `MakeGenericMethod` was called on, so we have to assume
 								// that the method may have requirements which we can't fullfil -> warn.
-								reflectionContext.RecordUnrecognizedPattern (DiagnosticId.MakeGenericMethod,
+								reflectionContext.RecordUnrecognizedPattern ((int) DiagnosticId.MakeGenericMethod,
 									new DiagnosticString (DiagnosticId.MakeGenericMethod).GetMessage (DiagnosticUtilities.GetMethodSignatureDisplayName (calledMethod)));
 							}
 						}
@@ -1729,7 +1729,7 @@ namespace Mono.Linker.Dataflow
 
 						if (comDangerousMethod) {
 							reflectionContext.AnalyzingPattern ();
-							reflectionContext.RecordUnrecognizedPattern (DiagnosticId.CorrectnessOfCOMCannotBeGuaranteed, new DiagnosticString (DiagnosticId.CorrectnessOfCOMCannotBeGuaranteed).GetMessage (calledMethodDefinition.GetDisplayName ()));
+							reflectionContext.RecordUnrecognizedPattern ((int) DiagnosticId.CorrectnessOfCOMCannotBeGuaranteed, new DiagnosticString (DiagnosticId.CorrectnessOfCOMCannotBeGuaranteed).GetMessage (calledMethodDefinition.GetDisplayName ()));
 						}
 					}
 
@@ -1944,12 +1944,12 @@ namespace Mono.Linker.Dataflow
 
 							MarkConstructorsOnType (ref reflectionContext, resolvedType, parameterlessConstructor ? m => m.Parameters.Count == 0 : null, bindingFlags);
 						} else {
-							reflectionContext.RecordUnrecognizedPattern (DiagnosticId.UnrecognizedParameterInMethodCreateInstance,
+							reflectionContext.RecordUnrecognizedPattern ((int) DiagnosticId.UnrecognizedParameterInMethodCreateInstance,
 								new DiagnosticString (DiagnosticId.UnrecognizedParameterInMethodCreateInstance).GetMessage (calledMethod.Parameters[1].Name, calledMethod.GetDisplayName ()));
 						}
 					}
 				} else {
-					reflectionContext.RecordUnrecognizedPattern (DiagnosticId.UnrecognizedParameterInMethodCreateInstance,
+					reflectionContext.RecordUnrecognizedPattern ((int) DiagnosticId.UnrecognizedParameterInMethodCreateInstance,
 						new DiagnosticString (DiagnosticId.UnrecognizedParameterInMethodCreateInstance).GetMessage (calledMethod.Parameters[0].Name, calledMethod.GetDisplayName ()));
 				}
 			}
@@ -2419,7 +2419,7 @@ namespace Mono.Linker.Dataflow
 			}
 
 			if (!AnalyzeGenericInstantiationTypeArray (genericParametersArray, ref reflectionContext, reflectionMethod, genericMethod.GenericParameters)) {
-				reflectionContext.RecordUnrecognizedPattern (DiagnosticId.MakeGenericMethod,
+				reflectionContext.RecordUnrecognizedPattern ((int) DiagnosticId.MakeGenericMethod,
 					new DiagnosticString (DiagnosticId.MakeGenericMethod).GetMessage (DiagnosticUtilities.GetMethodSignatureDisplayName (reflectionMethod)));
 			} else {
 				reflectionContext.RecordHandledPattern ();
