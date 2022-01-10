@@ -39,7 +39,7 @@ namespace ILLink.Shared.TypeSystemProxy
 				return false;
 
 			return namedType.HasName (fullTypeName);
-		}
+			}
 
 		public override string ToString () => Method.ToString ();
 	}
