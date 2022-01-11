@@ -140,11 +140,24 @@ namespace ILLink.Shared.DataFlow
 			}
 		}
 
+		[Conditional ("DEBUG")]
+		public virtual void TraceStart (TControlFlowGraph cfg) { }
+
+		[Conditional ("DEBUG")]
+		public virtual void TraceVisitBlock (TBlock block) { }
+
+		[Conditional ("DEBUG")]
+		public virtual void TraceBlockInput (TValue normalState, TValue? exceptionState, TValue? exceptionFinallyState) { }
+
+		[Conditional ("DEBUG")]
+		public virtual void TraceBlockOutput (TValue normalState, TValue? exceptionState, TValue? exceptionFinallyState) { }
 
 		// This just runs a dataflow algorithm until convergence. It doesn't cache any results,
 		// allowing each particular kind of analysis to decide what is worth saving.
 		public void Fixpoint (TControlFlowGraph cfg, TLattice lattice, TTransfer transfer)
 		{
+			TraceStart (cfg);
+
 			// Initialize output of each block to the Top value of the lattice
 			var cfgState = new ControlFlowGraphState (cfg, lattice);
 
@@ -164,6 +177,8 @@ namespace ILLink.Shared.DataFlow
 			while (changed) {
 				changed = false;
 				foreach (var block in cfg.Blocks) {
+
+					TraceVisitBlock (block);
 
 					if (block.Equals (cfg.Entry))
 						continue;
@@ -261,6 +276,8 @@ namespace ILLink.Shared.DataFlow
 						}
 					}
 
+					TraceBlockInput (currentState, exceptionState?.Value, exceptionFinallyState);
+
 					//
 					// Apply transfer functions to the met input to get an output value for this block.
 					//
@@ -303,6 +320,7 @@ namespace ILLink.Shared.DataFlow
 						}
 					}
 
+					TraceBlockOutput (state.Current, exceptionState?.Value, exceptionFinallyState);
 				}
 			}
 		}
