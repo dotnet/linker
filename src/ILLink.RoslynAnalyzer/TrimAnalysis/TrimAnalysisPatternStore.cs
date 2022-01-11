@@ -15,15 +15,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 		public void Add (TrimAnalysisPattern trimAnalysisPattern)
 		{
-			// If we already stored a trim analysis pattern for this operation,
-			// it needs to be updated. The dataflow analysis should result in purely additive
-			// changes to the trim analysis patterns generated for a given operation,
-			// so we can just replace the original analysis pattern here.
-
-			// This is no longer true since we effectively clone the finally blocks,
-			// but continue using the same operation as the warning origin.
-
-			// TODO: add instead of replace, to be safe? Or add extra handling for finally blocks.
+			// TODO: check that this doesn't lose warnings (or add instead of replace)
 			TrimAnalysisPatterns[trimAnalysisPattern.Operation] = trimAnalysisPattern;
 		}
 

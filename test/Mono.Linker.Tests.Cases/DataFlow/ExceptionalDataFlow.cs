@@ -97,39 +97,6 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 		}
 
-		// [ExpectedWarning ("IL2072", nameof (RequireAll) + "(Type)", nameof (GetWithPublicConstructors) + "()")]
-		// [ExpectedWarning ("IL2072", nameof (RequireAll) + "(Type)", nameof (GetWithPublicMethods) + "()")]
-		// [ExpectedWarning ("IL2072", nameof (RequireAll) + "(Type)", nameof (GetWithPublicFields) + "()")]
-		// [ExpectedWarning ("IL2072", nameof (RequireAll) + "(Type)", nameof (GetWithPublicProperties) + "()")]
-		// public static void MultipleTryExits() {
-		// 	Type t = GetWithPublicConstructors ();// 1 <- 0
-		// 	for (int i = 0; i < 10; i++) { // 2 (i=0) <- 1; 3 (i < 10) <- 2, 11;
-		// 		// 3 branches to 12 whenfales
-		// 		try {
-		// 			if (string.Empty.Length == 0) { // 4 <- 3
-		// 				t = GetWithPublicMethods (); // 5 <- 4
-		// 				return;
-		// 			}
-		// 			if (string.Empty.Length == 1) { // 6 <- 4
-		// 				t = GetWithPublicFields (); // 7 <- 6
-		// 				continue;
-		// 			}
-		// 			if (string.Empty.Length == 2) { // 8 <- 6
-		// 				t = GetWithPublicProperties (); // 9 <- 8
-		// 				break;
-		// 			}
-		// 		} finally {
-		// 			RequireAll (t); // 10 (no pred) // fallthroughsucc. dest null, semantics SEH
-		// 		}
-		// 		// 11 (i++) <- 10, 10 (why double?) (fallthrough -> 3)
-		// 		// 11 has two predecessors in the Roslyn CFG:
-		// 		// 7 and 8, both Regular semantics. both have FinallyRegions 10
-		// 		// 12 (exit) <- 3, 10, 10 (prob. )
-		// 		// 12 has three predecessors in Roslyn CFG:
-		// 		// - 9 (finally) 5 (finally), 3 (no finally)
-		// 	}
-		// }
-
 		// There are multiple paths through the finally to different subsequent blocks.
 		// On each path, only one state is possible, but we conservatively merge the (non-exceptional)
 		// finally states for each path and expect the warnings to reflect this merged state.

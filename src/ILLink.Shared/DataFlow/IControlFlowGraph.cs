@@ -42,8 +42,6 @@ namespace ILLink.Shared.DataFlow
 		// This does not include predecessor edges for exceptional control flow into
 		// catch regions or finally regions. It also doesn't include edges for non-exceptional
 		// control flow from try -> finally or from catch -> finally.
-
-		// It does, however, include edges for non-exceptional control flow out of a finally region.
 		IEnumerable<Predecessor> GetPredecessors (TBlock block);
 
 		bool TryGetEnclosingTryOrCatch (TBlock block, [NotNullWhen (true)] out TRegion? tryOrCatchRegion);
