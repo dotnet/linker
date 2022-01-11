@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 
 namespace ILLink.Shared.DataFlow
@@ -23,6 +24,16 @@ namespace ILLink.Shared.DataFlow
 		where TBlock : IEquatable<TBlock>
 		where TRegion : IRegion<TRegion>
 	{
+
+		public readonly struct Predecessor
+		{
+			public readonly TBlock Block;
+			public readonly ImmutableArray<TRegion> FinallyRegions;
+			public Predecessor (TBlock block, ImmutableArray<TRegion> finallyRegions) {
+				(Block, FinallyRegions) = (block, finallyRegions);
+			}
+		}
+
 		IEnumerable<TBlock> Blocks { get; }
 
 		TBlock Entry { get; }
@@ -32,7 +43,7 @@ namespace ILLink.Shared.DataFlow
 		// control flow from try -> finally or from catch -> finally.
 
 		// It does, however, include edges for non-exceptional control flow out of a finally region.
-		IEnumerable<TBlock> GetPredecessors (TBlock block);
+		IEnumerable<Predecessor> GetPredecessors (TBlock block);
 
 		bool TryGetEnclosingTry (TBlock block, [NotNullWhen (true)] out TRegion? region);
 
@@ -48,5 +59,7 @@ namespace ILLink.Shared.DataFlow
 		bool TryGetEnclosingTryOrCatch (TRegion region, out TRegion tryOrCatchRegion);
 
 		TBlock FirstBlock (TRegion region);
+
+		TBlock LastBlock (TRegion region);
 	}
 }

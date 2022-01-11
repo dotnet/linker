@@ -1,7 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using ILLink.Shared.DataFlow;
 using Microsoft.CodeAnalysis.FlowAnalysis;
+
+using Predecessor = ILLink.Shared.DataFlow.IControlFlowGraph<
+	ILLink.RoslynAnalyzer.DataFlow.BlockProxy,
+	ILLink.RoslynAnalyzer.DataFlow.RegionProxy
+>.Predecessor;
 
 namespace ILLink.RoslynAnalyzer.DataFlow
 {
@@ -42,22 +48,20 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 
 		// This is implemented by getting predecessors of the underlying Roslyn BasicBlock.
 		// This is fine as long as the blocks come from the correct control-flow graph.
-		public IEnumerable<BlockProxy> GetPredecessors (BlockProxy block)
+		public IEnumerable<Predecessor> GetPredecessors (BlockProxy block)
 		{
 			foreach (var predecessor in block.Block.Predecessors) {
 				if (predecessor.FinallyRegions.IsEmpty) {
-					yield return new BlockProxy (predecessor.Source);
+					yield return new Predecessor (new BlockProxy (predecessor.Source), ImmutableArray<RegionProxy>.Empty);
 					continue;
 				}
-
-				// Flow out of a try block to the code after a finally is represented by a single control
-				// flow edge, which references the (possibly multiple) finally regions through which control passes along the way.
-				// So when the predecessor edge is leaving a finally region, we instead return the
-				// last block of the last finally region as a predecessor.
-				var finallyRegions = predecessor.FinallyRegions;
-				var lastFinallyRegion = finallyRegions[finallyRegions.Length - 1];
-				var lastFinallyBlock = ControlFlowGraph.Blocks[lastFinallyRegion.LastBlockOrdinal];
-				yield return new BlockProxy (lastFinallyBlock);
+				var finallyRegions = ImmutableArray.CreateBuilder<RegionProxy> ();
+				foreach (var region in predecessor.FinallyRegions) {
+					if (region == null)
+						throw new InvalidOperationException ();
+					finallyRegions.Add (new RegionProxy (region));
+				}
+				yield return new Predecessor (new BlockProxy (predecessor.Source), finallyRegions.ToImmutable ());
 			}
 		}
 
@@ -170,6 +174,10 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			}
 		}
 
-		public BlockProxy FirstBlock (RegionProxy region) => new BlockProxy (ControlFlowGraph.Blocks[region.Region.FirstBlockOrdinal]);
+		public BlockProxy FirstBlock (RegionProxy region) =>
+			new BlockProxy (ControlFlowGraph.Blocks[region.Region.FirstBlockOrdinal]);
+
+		public BlockProxy LastBlock (RegionProxy region) =>
+			new BlockProxy (ControlFlowGraph.Blocks[region.Region.LastBlockOrdinal]);
 	}
 }

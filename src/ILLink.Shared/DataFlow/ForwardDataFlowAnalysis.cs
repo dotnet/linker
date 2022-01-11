@@ -48,6 +48,11 @@ namespace ILLink.Shared.DataFlow
 			// Dataflow states for finally blocks when exception propagate through the finally region
 			readonly Dictionary<TBlock, TValue> exceptionFinallyState;
 
+			// Finally regions may be reached (along non-exceptional paths)
+			// from multiple branches. This gets updated to track the normal finally input
+			// states from all of these branches (which aren't represented explicitly in the CFG).
+			readonly Dictionary<TRegion, TValue> finallyInputState;
+
 			readonly TControlFlowGraph cfg;
 			readonly TLattice lattice;
 
@@ -56,6 +61,7 @@ namespace ILLink.Shared.DataFlow
 				blockOutput = new ();
 				exceptionState = new ();
 				exceptionFinallyState = new ();
+				finallyInputState = new ();
 				this.cfg = cfg;
 				this.lattice = lattice;
 			}
@@ -80,6 +86,26 @@ namespace ILLink.Shared.DataFlow
 
 				state = GetExceptionState (tryOrCatchRegion);
 				return true;
+			}
+
+			public TValue GetFinallyInputState (TRegion finallyRegion)
+			{
+				if (finallyRegion.Kind is not (RegionKind.Finally))
+					throw new ArgumentException (null, nameof (finallyRegion));
+
+				if (!finallyInputState.TryGetValue (finallyRegion, out TValue state)) {
+					state = lattice.Top;
+					finallyInputState.Add (finallyRegion, state);
+				}
+				return state;
+			}
+
+			public void SetFinallyInputState (TRegion finallyRegion, TValue state)
+			{
+				if (finallyRegion.Kind is not (RegionKind.Finally))
+					throw new ArgumentException (null, nameof (finallyRegion));
+
+				finallyInputState[finallyRegion] = state;
 			}
 
 			public bool TryGetExceptionFinallyState (TBlock block, out TValue state)
@@ -141,14 +167,10 @@ namespace ILLink.Shared.DataFlow
 						continue;
 
 					bool isCatchStart = cfg.TryGetEnclosingCatch (block, out TRegion? catchRegion) && block.Equals (cfg.FirstBlock (catchRegion));
-					bool isTryBlock = false, isTryStart = false;
-					if (cfg.TryGetEnclosingTry (block, out TRegion? tryRegion)) {
-						isTryBlock = true;
-						if (block.Equals (cfg.FirstBlock (tryRegion))) {
-							isTryStart = true;
-						}
-					}
-
+					bool isTryBlock = cfg.TryGetEnclosingTry (block, out TRegion? tryRegion);
+					bool isTryStart = isTryBlock && block.Equals (cfg.FirstBlock (tryRegion!));
+					bool isFinallyBlock = cfg.TryGetEnclosingFinally (block, out TRegion? finallyRegion);
+					bool isFinallyStart = isFinallyBlock && block.Equals (cfg.FirstBlock (finallyRegion!));
 
 					//
 					// Meet over predecessors to get the new value at the start of this block.
@@ -157,7 +179,22 @@ namespace ILLink.Shared.DataFlow
 					// Compute the dataflow state at the beginning of this block.
 					TValue currentState = lattice.Top;
 					foreach (var predecessor in cfg.GetPredecessors (block)) {
-						TValue predecessorState = cfgState.Get (predecessor).Current;
+						TValue predecessorState = cfgState.Get (predecessor.Block).Current;
+
+						// Handle finally regions along the predecessor edge.
+						foreach (var exitedFinally in predecessor.FinallyRegions) {
+							// Propagate state through all finally blocks.
+							TValue oldFinallyInputState = cfgState.GetFinallyInputState (exitedFinally);
+							TValue finallyInputState = lattice.Meet (oldFinallyInputState, predecessorState);
+							cfgState.SetFinallyInputState (exitedFinally, finallyInputState);
+
+							if (!changed && !finallyInputState.Equals (oldFinallyInputState))
+								changed = true;
+
+							TBlock lastFinallyBlock = cfg.LastBlock (exitedFinally);
+							predecessorState = cfgState.Get (lastFinallyBlock).Current;
+						}
+
 						currentState = lattice.Meet (currentState, predecessorState);
 					}
 					// State at start of a catch also includes the exceptional state from
@@ -167,33 +204,38 @@ namespace ILLink.Shared.DataFlow
 						Box<TValue> tryExceptionState = cfgState.GetExceptionState (correspondingTry);
 						currentState = lattice.Meet (currentState, tryExceptionState.Value);
 					}
+					if (isFinallyStart) {
+						TValue finallyInputState = cfgState.GetFinallyInputState (finallyRegion);
+						currentState = lattice.Meet (currentState, finallyInputState);
+					}
 
 					// Initialize the exception state at the start of try/catch regions. Control flow edges from predecessors
-					// within a try or catch region doesn't need to be handled here because the transfer functions update
+					// within a try or catch region don't need to be handled here because the transfer functions update
 					// the exception state to reflect every operation in the region.
 					DataFlowState<TValue> currentBlockState = cfgState.Get (block);
 					Box<TValue>? exceptionState = currentBlockState.Exception;
 					TValue? oldExceptionState = exceptionState?.Value;
 					if (isTryStart || isCatchStart) {
 						// Catch regions get the initial state from the exception state of the corresponding try region.
-						// This is already accounted for in the non-exceptional control flow state (blockState) of the catch block above,
+						// This is already accounted for in the non-exceptional control flow state of the catch block above,
 						// so we can just use the blockState in both cases.
 						exceptionState!.Value = lattice.Meet (exceptionState!.Value, currentState);
 					}
 
 					// Compute the independent exceptional finally state at beginning of a finally.
 					TValue? exceptionFinallyState = null;
-					if (cfg.TryGetEnclosingFinally (block, out TRegion? finallyRegion)) {
+					if (isFinallyBlock) {
 						// Inside finally regions, must compute the parallel meet state for unhandled exceptions.
 						// Using predecessors in the finally. But not from outside the finally.
 						exceptionFinallyState = lattice.Top;
 						foreach (var predecessor in cfg.GetPredecessors (block)) {
-							cfgState.TryGetExceptionFinallyState (predecessor, out TValue predecessorFinallyState);
+							var isPredecessorInFinally = cfgState.TryGetExceptionFinallyState (predecessor.Block, out TValue predecessorFinallyState);
+							Debug.Assert (isPredecessorInFinally);
 							exceptionFinallyState = lattice.Meet (exceptionFinallyState.Value, predecessorFinallyState);
 						}
 
 						// For first block, also initialize it from the try or catch blocks.
-						if (block.Equals (cfg.FirstBlock (finallyRegion))) {
+						if (isFinallyStart) {
 							// From try
 							TRegion correspondingTry = cfg.GetCorrespondingTry (finallyRegion!);
 							Box<TValue> tryExceptionState = cfgState.GetExceptionState (correspondingTry);
