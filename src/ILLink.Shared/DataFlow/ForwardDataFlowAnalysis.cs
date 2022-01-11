@@ -90,7 +90,7 @@ namespace ILLink.Shared.DataFlow
 
 			public TValue GetFinallyInputState (TRegion finallyRegion)
 			{
-				if (finallyRegion.Kind is not (RegionKind.Finally))
+				if (finallyRegion.Kind is not RegionKind.Finally)
 					throw new ArgumentException (null, nameof (finallyRegion));
 
 				if (!finallyInputState.TryGetValue (finallyRegion, out TValue state)) {
@@ -102,7 +102,7 @@ namespace ILLink.Shared.DataFlow
 
 			public void SetFinallyInputState (TRegion finallyRegion, TValue state)
 			{
-				if (finallyRegion.Kind is not (RegionKind.Finally))
+				if (finallyRegion.Kind is not RegionKind.Finally)
 					throw new ArgumentException (null, nameof (finallyRegion));
 
 				finallyInputState[finallyRegion] = state;
@@ -166,11 +166,15 @@ namespace ILLink.Shared.DataFlow
 					if (block.Equals (cfg.Entry))
 						continue;
 
-					bool isCatchStart = cfg.TryGetEnclosingCatch (block, out TRegion? catchRegion) && block.Equals (cfg.FirstBlock (catchRegion));
-					bool isTryBlock = cfg.TryGetEnclosingTry (block, out TRegion? tryRegion);
-					bool isTryStart = isTryBlock && block.Equals (cfg.FirstBlock (tryRegion!));
+					bool isTryOrCatchBlock = cfg.TryGetEnclosingTryOrCatch (block, out TRegion? tryOrCatchRegion);
+					bool isTryBlock = isTryOrCatchBlock && tryOrCatchRegion!.Kind == RegionKind.Try;
+					bool isCatchBlock = isTryOrCatchBlock && !isTryBlock;
+					bool isTryStart = isTryBlock && block.Equals (cfg.FirstBlock (tryOrCatchRegion!));
+					bool isCatchStart = isCatchBlock && block.Equals (cfg.FirstBlock (tryOrCatchRegion!));
+
 					bool isFinallyBlock = cfg.TryGetEnclosingFinally (block, out TRegion? finallyRegion);
 					bool isFinallyStart = isFinallyBlock && block.Equals (cfg.FirstBlock (finallyRegion!));
+
 
 					//
 					// Meet over predecessors to get the new value at the start of this block.
@@ -181,13 +185,16 @@ namespace ILLink.Shared.DataFlow
 					foreach (var predecessor in cfg.GetPredecessors (block)) {
 						TValue predecessorState = cfgState.Get (predecessor.Block).Current;
 
-						// Handle finally regions along the predecessor edge.
+						// Propagate state through all finally blocks.
 						foreach (var exitedFinally in predecessor.FinallyRegions) {
-							// Propagate state through all finally blocks.
 							TValue oldFinallyInputState = cfgState.GetFinallyInputState (exitedFinally);
 							TValue finallyInputState = lattice.Meet (oldFinallyInputState, predecessorState);
+
 							cfgState.SetFinallyInputState (exitedFinally, finallyInputState);
 
+							// Note: the current approach here is inefficient for long chains of finally regions because
+							// the states will not converge until we have visited each block along the chain
+							// and propagated the new states along this path.
 							if (!changed && !finallyInputState.Equals (oldFinallyInputState))
 								changed = true;
 
@@ -200,26 +207,13 @@ namespace ILLink.Shared.DataFlow
 					// State at start of a catch also includes the exceptional state from
 					// try -> catch exceptional control flow.
 					if (isCatchStart) {
-						TRegion correspondingTry = cfg.GetCorrespondingTry (catchRegion!);
+						TRegion correspondingTry = cfg.GetCorrespondingTry (tryOrCatchRegion!);
 						Box<TValue> tryExceptionState = cfgState.GetExceptionState (correspondingTry);
 						currentState = lattice.Meet (currentState, tryExceptionState.Value);
 					}
 					if (isFinallyStart) {
-						TValue finallyInputState = cfgState.GetFinallyInputState (finallyRegion);
+						TValue finallyInputState = cfgState.GetFinallyInputState (finallyRegion!);
 						currentState = lattice.Meet (currentState, finallyInputState);
-					}
-
-					// Initialize the exception state at the start of try/catch regions. Control flow edges from predecessors
-					// within a try or catch region don't need to be handled here because the transfer functions update
-					// the exception state to reflect every operation in the region.
-					DataFlowState<TValue> currentBlockState = cfgState.Get (block);
-					Box<TValue>? exceptionState = currentBlockState.Exception;
-					TValue? oldExceptionState = exceptionState?.Value;
-					if (isTryStart || isCatchStart) {
-						// Catch regions get the initial state from the exception state of the corresponding try region.
-						// This is already accounted for in the non-exceptional control flow state of the catch block above,
-						// so we can just use the blockState in both cases.
-						exceptionState!.Value = lattice.Meet (exceptionState!.Value, currentState);
 					}
 
 					// Compute the independent exceptional finally state at beginning of a finally.
@@ -249,6 +243,25 @@ namespace ILLink.Shared.DataFlow
 						}
 					}
 
+					// Initialize the exception state at the start of try/catch regions. Control flow edges from predecessors
+					// within the same try or catch region don't need to be handled here because the transfer functions update
+					// the exception state to reflect every operation in the region.
+					DataFlowState<TValue> currentBlockState = cfgState.Get (block);
+					Box<TValue>? exceptionState = currentBlockState.Exception;
+					TValue? oldExceptionState = exceptionState?.Value;
+					if (isTryStart || isCatchStart) {
+						// Catch regions get the initial state from the exception state of the corresponding try region.
+						// This is already accounted for in the non-exceptional control flow state of the catch block above,
+						// so we can just use the state we already computed, for both try and catch regions.
+						exceptionState!.Value = lattice.Meet (exceptionState!.Value, currentState);
+
+						if (isFinallyBlock) {
+							// Exceptions could also be thrown from inside a finally that was entered due to a previous exception.
+							// So the exception state must also include values from the exceptional finally state (computed above).
+							exceptionState!.Value = lattice.Meet (exceptionState!.Value, exceptionFinallyState!.Value);
+						}
+					}
+
 
 					//
 					// Apply transfer functions to the met input to get an output value for this block.
@@ -258,7 +271,7 @@ namespace ILLink.Shared.DataFlow
 					state.Exception = exceptionState;
 					transfer.Transfer (block, state);
 
-					if (!cfgState.Get (block).Current.Equals (state.Current))
+					if (!changed && !cfgState.Get (block).Current.Equals (state.Current))
 						changed = true;
 
 					cfgState.Get (block).Current = state.Current;
@@ -285,8 +298,7 @@ namespace ILLink.Shared.DataFlow
 						changed = true;
 
 						// Bubble up the changed exception state to the next enclosing try or catch exception state.
-						TRegion tryOrCatchRegion = isTryBlock ? tryRegion! : catchRegion!;
-						while (cfg.TryGetEnclosingTryOrCatch (tryOrCatchRegion, out TRegion? enclosingTryOrCatch)) {
+						while (cfg.TryGetEnclosingTryOrCatch (tryOrCatchRegion!, out TRegion? enclosingTryOrCatch)) {
 							Box<TValue> tryOrCatchExceptionState = cfgState.GetExceptionState (enclosingTryOrCatch!);
 							tryOrCatchExceptionState.Value = lattice.Meet (tryOrCatchExceptionState!.Value, exceptionState!.Value);
 							tryOrCatchRegion = enclosingTryOrCatch;

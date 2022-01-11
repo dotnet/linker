@@ -11,31 +11,31 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		{
 			TryFlowsToFinally ();
 			TryFlowsToAfterFinally ();
-
+			MultipleTryExits ();
+			MultipleFinallyPaths ();
+			FinallyChain ();
+			FinallyChainWithPostFinallyState ();
 			TryFlowsToCatch ();
-
 			CatchFlowsToFinally ();
 			CatchFlowsToAfterTry ();
 			CatchFlowsToAfterFinally ();
-
 			FinallyFlowsToAfterFinally ();
-
 			TryFlowsToMultipleCatchAndFinally ();
 			NestedWithFinally ();
 			ControlFlowsOutOfMultipleFinally ();
 			NestedWithCatch ();
-
 			CatchInTry ();
 			CatchInTryWithFinally ();
 			TestCatchesHaveSeparateState ();
-
 			FinallyWithBranchToFirstBlock ();
 			FinallyWithBranchToFirstBlockAndEnclosingTryCatchState ();
 			CatchWithBranchToFirstBlock ();
 			CatchWithBranchToFirstBlockAndReassignment ();
 			CatchWithNonSimplePredecessor ();
 			FinallyWithNonSimplePredecessor ();
-			NestedFinallyWithNonSimplePredecessor ();
+			FinallyInTryWithPredecessor ();
+			NestedFinally ();
+			NestedFinallyWithPredecessor();
 		}
 
 		[ExpectedWarning ("IL2072", nameof (RequireAll) + "(Type)", nameof (GetWithPublicFields) + "()",
@@ -62,11 +62,134 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			try {
 				t = GetWithPublicFields ();
 				t = GetWithPublicProperties ();
-			} finally { }
+			} finally {
+				// prevent optimizing this away
+				_ = string.Empty;
+			}
 			// properties
 			RequireAll (t);
 		}
 
+		[ExpectedWarning ("IL2072", nameof (RequireAll) + "(Type)", nameof (GetWithPublicConstructors) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAll) + "(Type)", nameof (GetWithPublicMethods) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAll) + "(Type)", nameof (GetWithPublicFields) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAll) + "(Type)", nameof (GetWithPublicProperties) + "()")]
+		public static void MultipleTryExits() {
+			Type t = GetWithPublicConstructors ();
+			for (int i = 0; i < 10; i++) {
+				try {
+					if (string.Empty.Length == 0) {
+						t = GetWithPublicMethods ();
+						return;
+					}
+					if (string.Empty.Length == 1) {
+						t = GetWithPublicFields ();
+						continue;
+					}
+					if (string.Empty.Length == 2) {
+						t = GetWithPublicProperties ();
+						break;
+					}
+				} finally {
+					RequireAll (t);
+				}
+			}
+		}
+		
+		// There are multiple paths through the finally to different subsequent blocks.
+		// On each path, only one state is possible, but we conservatively merge the (non-exceptional)
+		// finally states for each path and expect the warnings to reflect this merged state.
+		[ExpectedWarning ("IL2072", nameof (RequireAll1) + "(Type)", nameof (GetWithPublicMethods) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAll1) + "(Type)", nameof (GetWithPublicFields) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAll1) + "(Type)", nameof (GetWithPublicProperties) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAll1) + "(Type)", nameof (GetWithPublicEvents) + "()")]
+
+		[ExpectedWarning ("IL2072", nameof (RequireAll2) + "(Type)", nameof (GetWithPublicMethods) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAll2) + "(Type)", nameof (GetWithPublicFields) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAll2) + "(Type)", nameof (GetWithPublicProperties) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAll2) + "(Type)", nameof (GetWithPublicEvents) + "()")]
+
+		[ExpectedWarning ("IL2073", nameof (MultipleFinallyPaths) + "()", nameof (GetWithPublicEvents) + "()")]
+		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+		public static Type MultipleFinallyPaths ()
+		{
+			Type t = GetWithPublicMethods (); // reaches RequireAll1 and RequireAll2
+			while (true) {
+				RequireAll1 (t);
+				try {
+					if (string.Empty.Length == 1) {
+						t = GetWithPublicFields (); // reaches RequireAll1 and RequireAll2
+						continue;
+					}
+					if (string.Empty.Length == 0) {
+						t = GetWithPublicProperties (); // reaches RequireAll2 only
+						// but the finally merging means the analysis thinks it can reach RequireAll1.
+						break;
+					}
+					if (string.Empty.Length == 2) {
+						t = GetWithPublicEvents (); // reaches return only
+						// but the finally merging means the analysis thinks it can reach RequireAll1 (and hence RequireAll2).
+						return t;
+					}
+				} finally {
+					_ = string.Empty;
+				}
+			}
+			// break target
+			RequireAll2(t); // properties
+
+			throw new Exception ();
+		}
+
+		[ExpectedWarning ("IL2072", nameof (RequireAll1) + "(Type)", nameof (GetWithPublicFields) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAll1) + "(Type)", nameof (GetWithPublicProperties) + "()")]
+
+		[ExpectedWarning ("IL2072", nameof (RequireAll2) + "(Type)", nameof (GetWithPublicMethods) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAll2) + "(Type)", nameof (GetWithPublicFields) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAll2) + "(Type)", nameof (GetWithPublicProperties) + "()")]
+		public static void FinallyChain () {
+			Type t = GetWithPublicMethods ();
+			try {
+				t = GetWithPublicFields ();
+				try {
+					t = GetWithPublicProperties ();
+				} finally {
+					RequireAll1 (t); // fields/properties
+				}
+			} finally {
+				RequireAll2 (t); // methods/fields/properties
+			}
+		}
+
+		[ExpectedWarning ("IL2072", nameof (RequireAll1) + "(Type)", nameof (GetWithPublicFields) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAll1) + "(Type)", nameof (GetWithPublicProperties) + "()")]
+
+		[ExpectedWarning ("IL2072", nameof (RequireAll2) + "(Type)", nameof (GetWithPublicProperties) + "()")]
+
+		[ExpectedWarning ("IL2072", nameof (RequireAll3) + "(Type)", nameof (GetWithPublicMethods) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAll3) + "(Type)", nameof (GetWithPublicFields) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAll3) + "(Type)", nameof (GetWithPublicProperties) + "()")]
+
+		[ExpectedWarning ("IL2072", nameof (RequireAll4) + "(Type)", nameof (GetWithPublicProperties) + "()")]
+		public static void FinallyChainWithPostFinallyState () {
+			Type t = GetWithPublicMethods ();
+			try {
+				t = GetWithPublicFields ();
+				try {
+					t = GetWithPublicProperties ();
+				} finally {
+					// normal: properties
+					// exception: fields/properties
+					RequireAll1(t); // fields/properties
+				}
+				RequireAll2(t); // properties
+			} finally {
+				// normal: properties
+				// exception: methods/fields/properties
+				RequireAll3(t); // methods/fields/properties
+			}
+			RequireAll4(t);
+		}
 		[ExpectedWarning ("IL2072", nameof (RequireAll) + "(Type)", nameof (GetWithPublicFields) + "()",
 			ProducedBy = ProducedBy.Analyzer)]
 		[ExpectedWarning ("IL2072", nameof (RequireAll) + "(Type)", nameof (GetWithPublicMethods) + "()",
@@ -511,7 +634,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		[ExpectedWarning ("IL2072", nameof (RequireAll2) + "(Type)", nameof (GetWithPublicFields) + "()",
 			ProducedBy = ProducedBy.Analyzer)]
 		[ExpectedWarning ("IL2072", nameof (RequireAll2) + "(Type)", nameof (GetWithPublicProperties) + "()")]
-		public static void NestedFinallyWithNonSimplePredecessor ()
+		public static void FinallyInTryWithPredecessor ()
 		{
 			Type t = GetWithPublicMethods ();
 			try {
@@ -526,6 +649,55 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			} finally {
 				// methods/fields/properties
 				RequireAll2 (t);
+			}
+		}
+
+		[ExpectedWarning ("IL2072", nameof (RequireAll1) + "(Type)", nameof (GetWithPublicMethods) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAll1) + "(Type)", nameof (GetWithPublicFields) + "()")]
+
+		[ExpectedWarning ("IL2072", nameof (RequireAll2) + "(Type)", nameof (GetWithPublicMethods) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAll2) + "(Type)", nameof (GetWithPublicFields) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAll2) + "(Type)", nameof (GetWithPublicProperties) + "()")]
+
+		[ExpectedWarning ("IL2072", nameof (RequireAll3) + "(Type)", nameof (GetWithPublicProperties) + "()")]
+		public static void NestedFinally ()
+		{
+			Type t = GetWithPublicMethods ();
+			try {
+				t = GetWithPublicFields ();
+			} finally {
+				try {
+					RequireAll1(t);
+					t = GetWithPublicProperties ();
+				} finally {
+					RequireAll2 (t);
+				}
+				RequireAll3(t);
+			}
+		}
+
+		[ExpectedWarning ("IL2072", nameof (RequireAll1) + "(Type)", nameof (GetWithPublicMethods) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAll1) + "(Type)", nameof (GetWithPublicFields) + "()")]
+
+		[ExpectedWarning ("IL2072", nameof (RequireAll2) + "(Type)", nameof (GetWithPublicMethods) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAll2) + "(Type)", nameof (GetWithPublicFields) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAll2) + "(Type)", nameof (GetWithPublicProperties) + "()")]
+
+		[ExpectedWarning ("IL2072", nameof (RequireAll3) + "(Type)", nameof (GetWithPublicProperties) + "()")]
+		public static void NestedFinallyWithPredecessor ()
+		{
+			Type t = GetWithPublicMethods ();
+			try {
+				t = GetWithPublicFields ();
+			} finally {
+				_ = 0; // add an operation so that the try isn't the start of the finally.
+				try {
+					RequireAll1(t);
+					t = GetWithPublicProperties ();
+				} finally {
+					RequireAll2(t);
+				}
+				RequireAll3(t);
 			}
 		}
 
