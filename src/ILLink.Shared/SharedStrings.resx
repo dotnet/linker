@@ -552,6 +552,9 @@
   <data name="XmlUnsuportedWildcardMessage" xml:space="preserve">
     <value>XML contains unsupported wildcard for assembly 'fullname' attribute.</value>
   </data>
+  <data name="AssemblyWithEmbeddedXmlApplyToAnotherAssemblyMessage" xml:space="preserve">
+    <value>Embedded XML in assembly '{0}' contains assembly "fullname" attribute for another assembly '{1}'</value>
+  </data>
   <data name="InvalidIsTrimmableValueMessage" xml:space="preserve">
     <value>Invalid AssemblyMetadata("IsTrimmable", "{0}") attribute in assembly '{1}'. Value must be "True".</value>
   </data>
