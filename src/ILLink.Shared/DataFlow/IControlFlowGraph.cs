@@ -45,22 +45,13 @@ namespace ILLink.Shared.DataFlow
 		// It does, however, include edges for non-exceptional control flow out of a finally region.
 		IEnumerable<Predecessor> GetPredecessors (TBlock block);
 
-		bool TryGetEnclosingExceptionRegion (TBlock block, [NotNullWhen (true)] out TRegion? region);
+		bool TryGetEnclosingTryOrCatch (TBlock block, [NotNullWhen (true)] out TRegion? tryOrCatchRegion);
 
-		bool TryGetEnclosingTry (TBlock block, [NotNullWhen (true)] out TRegion? region);
-
-		bool TryGetEnclosingCatch (TBlock block, [NotNullWhen (true)] out TRegion? region);
+		bool TryGetEnclosingTryOrCatch (TRegion region, [NotNullWhen (true)] out TRegion? tryOrCatchRegion);
 
 		bool TryGetEnclosingFinally (TBlock block, [NotNullWhen (true)] out TRegion? region);
 
-
 		TRegion GetCorrespondingTry (TRegion cathOrFinallyRegion);
-
-		IEnumerable<TRegion> GetCorrespondingCatch (TRegion finallyRegion);
-
-		bool TryGetEnclosingTryOrCatch (TBlock block, [NotNullWhen (true)] out TRegion? tryOrCatchRegion);
-
-		bool TryGetEnclosingTryOrCatch (TRegion region, out TRegion tryOrCatchRegion);
 
 		TBlock FirstBlock (TRegion region);
 
