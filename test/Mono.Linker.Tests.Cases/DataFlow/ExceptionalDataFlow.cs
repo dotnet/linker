@@ -35,7 +35,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			FinallyWithNonSimplePredecessor ();
 			FinallyInTryWithPredecessor ();
 			NestedFinally ();
-			NestedFinallyWithPredecessor();
+			NestedFinallyWithPredecessor ();
 		}
 
 		[ExpectedWarning ("IL2072", nameof (RequireAll) + "(Type)", nameof (GetWithPublicFields) + "()",
@@ -74,7 +74,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		[ExpectedWarning ("IL2072", nameof (RequireAll) + "(Type)", nameof (GetWithPublicMethods) + "()")]
 		[ExpectedWarning ("IL2072", nameof (RequireAll) + "(Type)", nameof (GetWithPublicFields) + "()")]
 		[ExpectedWarning ("IL2072", nameof (RequireAll) + "(Type)", nameof (GetWithPublicProperties) + "()")]
-		public static void MultipleTryExits() {
+		public static void MultipleTryExits ()
+		{
 			Type t = GetWithPublicConstructors ();
 			for (int i = 0; i < 10; i++) {
 				try {
@@ -95,7 +96,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				}
 			}
 		}
-		
+
 		// There are multiple paths through the finally to different subsequent blocks.
 		// On each path, only one state is possible, but we conservatively merge the (non-exceptional)
 		// finally states for each path and expect the warnings to reflect this merged state.
@@ -122,21 +123,20 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 						continue;
 					}
 					if (string.Empty.Length == 0) {
-						t = GetWithPublicProperties (); // reaches RequireAll2 only
-						// but the finally merging means the analysis thinks it can reach RequireAll1.
+						t = GetWithPublicProperties (); // reaches RequireAll2 only, but the finally mergig means
+														// the analysis thinks it can reach RequireAll1.
 						break;
 					}
 					if (string.Empty.Length == 2) {
-						t = GetWithPublicEvents (); // reaches return only
-						// but the finally merging means the analysis thinks it can reach RequireAll1 (and hence RequireAll2).
+						t = GetWithPublicEvents (); // reaches return only, but the finally merging means
+													// the analysis thinks it can reach RequireAll1 (and hence RequireAll2).
 						return t;
 					}
 				} finally {
 					_ = string.Empty;
 				}
 			}
-			// break target
-			RequireAll2(t); // properties
+			RequireAll2 (t); // properties
 
 			throw new Exception ();
 		}
@@ -147,7 +147,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		[ExpectedWarning ("IL2072", nameof (RequireAll2) + "(Type)", nameof (GetWithPublicMethods) + "()")]
 		[ExpectedWarning ("IL2072", nameof (RequireAll2) + "(Type)", nameof (GetWithPublicFields) + "()")]
 		[ExpectedWarning ("IL2072", nameof (RequireAll2) + "(Type)", nameof (GetWithPublicProperties) + "()")]
-		public static void FinallyChain () {
+		public static void FinallyChain ()
+		{
 			Type t = GetWithPublicMethods ();
 			try {
 				t = GetWithPublicFields ();
@@ -171,7 +172,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		[ExpectedWarning ("IL2072", nameof (RequireAll3) + "(Type)", nameof (GetWithPublicProperties) + "()")]
 
 		[ExpectedWarning ("IL2072", nameof (RequireAll4) + "(Type)", nameof (GetWithPublicProperties) + "()")]
-		public static void FinallyChainWithPostFinallyState () {
+		public static void FinallyChainWithPostFinallyState ()
+		{
 			Type t = GetWithPublicMethods ();
 			try {
 				t = GetWithPublicFields ();
@@ -180,16 +182,17 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				} finally {
 					// normal: properties
 					// exception: fields/properties
-					RequireAll1(t); // fields/properties
+					RequireAll1 (t); // fields/properties
 				}
-				RequireAll2(t); // properties
+				RequireAll2 (t); // properties
 			} finally {
 				// normal: properties
 				// exception: methods/fields/properties
-				RequireAll3(t); // methods/fields/properties
+				RequireAll3 (t); // methods/fields/properties
 			}
-			RequireAll4(t);
+			RequireAll4 (t);
 		}
+
 		[ExpectedWarning ("IL2072", nameof (RequireAll) + "(Type)", nameof (GetWithPublicFields) + "()",
 			ProducedBy = ProducedBy.Analyzer)]
 		[ExpectedWarning ("IL2072", nameof (RequireAll) + "(Type)", nameof (GetWithPublicMethods) + "()",
@@ -667,12 +670,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				t = GetWithPublicFields ();
 			} finally {
 				try {
-					RequireAll1(t);
+					RequireAll1 (t);
 					t = GetWithPublicProperties ();
 				} finally {
 					RequireAll2 (t);
 				}
-				RequireAll3(t);
+				RequireAll3 (t);
 			}
 		}
 
@@ -692,12 +695,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			} finally {
 				_ = 0; // add an operation so that the try isn't the start of the finally.
 				try {
-					RequireAll1(t);
+					RequireAll1 (t);
 					t = GetWithPublicProperties ();
 				} finally {
-					RequireAll2(t);
+					RequireAll2 (t);
 				}
-				RequireAll3(t);
+				RequireAll3 (t);
 			}
 		}
 

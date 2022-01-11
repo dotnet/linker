@@ -29,7 +29,8 @@ namespace ILLink.Shared.DataFlow
 		{
 			public readonly TBlock Block;
 			public readonly ImmutableArray<TRegion> FinallyRegions;
-			public Predecessor (TBlock block, ImmutableArray<TRegion> finallyRegions) {
+			public Predecessor (TBlock block, ImmutableArray<TRegion> finallyRegions)
+			{
 				(Block, FinallyRegions) = (block, finallyRegions);
 			}
 		}

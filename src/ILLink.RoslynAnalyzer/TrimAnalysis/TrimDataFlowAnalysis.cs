@@ -7,9 +7,9 @@ using System.Linq;
 using ILLink.RoslynAnalyzer.DataFlow;
 using ILLink.Shared.DataFlow;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.FlowAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace ILLink.RoslynAnalyzer.TrimAnalysis
 {
@@ -53,7 +53,8 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 		readonly bool showStates = false;
 		ControlFlowGraphProxy cfg;
 
-		public override void TraceStart (ControlFlowGraphProxy cfg) {
+		public override void TraceStart (ControlFlowGraphProxy cfg)
+		{
 			this.cfg = cfg;
 			var blocks = cfg.Blocks.ToList ();
 			string? methodName = null;
@@ -68,19 +69,20 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 				break;
 			}
 
-			if (methodName?.Equals(traceMethod) == true)
+			if (methodName?.Equals (traceMethod) == true)
 				trace = true;
 		}
 
-		public override void TraceVisitBlock (BlockProxy block) {
+		public override void TraceVisitBlock (BlockProxy block)
+		{
 			if (!trace)
 				return;
 
 			Console.Write ("block " + block.Block.Ordinal + ": ");
 			if (block.Block.Operations.FirstOrDefault () is IOperation firstBlockOp) {
-				Console.WriteLine (firstBlockOp.Syntax.ToString());
+				Console.WriteLine (firstBlockOp.Syntax.ToString ());
 			} else {
-				Console.WriteLine();
+				Console.WriteLine ();
 			}
 			Console.Write ("predecessors: ");
 			foreach (var predecessor in cfg.GetPredecessors (block)) {
@@ -90,12 +92,13 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			Console.WriteLine ();
 		}
 
-		static void WriteIndented(string? s, int level) {
-			string[]? lines = s?.Trim().Split (new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+		static void WriteIndented (string? s, int level)
+		{
+			string[]? lines = s?.Trim ().Split (new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
 			if (lines == null)
 				return;
 			foreach (var line in lines) {
-				Console.Write(new String ('\t', level));
+				Console.Write (new String ('\t', level));
 				Console.WriteLine (line);
 			}
 		}
@@ -104,15 +107,16 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			LocalState<ValueSet<SingleValue>> normalState,
 			LocalState<ValueSet<SingleValue>>? exceptionState,
 			LocalState<ValueSet<SingleValue>>? exceptionFinallyState
-		) {
+		)
+		{
 			if (trace && showStates) {
-				WriteIndented("--- before transfer ---", 1);
-				WriteIndented("normal state:", 1);
-				WriteIndented(normalState.ToString(), 2);
-				WriteIndented("exception state:", 1);
-				WriteIndented(exceptionState?.ToString(), 2);
-				WriteIndented("finally exception state:", 1);
-				WriteIndented(exceptionFinallyState?.ToString(), 2);
+				WriteIndented ("--- before transfer ---", 1);
+				WriteIndented ("normal state:", 1);
+				WriteIndented (normalState.ToString (), 2);
+				WriteIndented ("exception state:", 1);
+				WriteIndented (exceptionState?.ToString (), 2);
+				WriteIndented ("finally exception state:", 1);
+				WriteIndented (exceptionFinallyState?.ToString (), 2);
 			}
 		}
 
@@ -120,15 +124,16 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			LocalState<ValueSet<SingleValue>> normalState,
 			LocalState<ValueSet<SingleValue>>? exceptionState,
 			LocalState<ValueSet<SingleValue>>? exceptionFinallyState
-		) {
+		)
+		{
 			if (trace && showStates) {
-				WriteIndented("--- after transfer ---", 1);
-				WriteIndented("normal state:", 1);
-				WriteIndented(normalState.ToString(), 2);
-				WriteIndented("exception state:", 1);
-				WriteIndented(exceptionState?.ToString(), 2);
-				WriteIndented("finally state:", 1);
-				WriteIndented(exceptionFinallyState?.ToString(), 2);
+				WriteIndented ("--- after transfer ---", 1);
+				WriteIndented ("normal state:", 1);
+				WriteIndented (normalState.ToString (), 2);
+				WriteIndented ("exception state:", 1);
+				WriteIndented (exceptionState?.ToString (), 2);
+				WriteIndented ("finally state:", 1);
+				WriteIndented (exceptionFinallyState?.ToString (), 2);
 			}
 		}
 #endif
