@@ -24,32 +24,15 @@ namespace Mono.Linker.Steps
 		AllAssemblies = 0x4 | AnyAssembly
 	}
 
-	public abstract class ProcessLinkerXmlBase
+	public abstract class ProcessLinkerXmlBase : XmlProcessorBase
 	{
-		const string FullNameAttributeName = "fullname";
-		const string LinkerElementName = "linker";
-		const string TypeElementName = "type";
-		const string SignatureAttributeName = "signature";
-		const string NameAttributeName = "name";
-		const string FieldElementName = "field";
-		const string MethodElementName = "method";
-		const string EventElementName = "event";
-		const string PropertyElementName = "property";
-		const string AllAssembliesFullName = "*";
-		protected const string XmlNamespace = "";
-
-		protected readonly string _xmlDocumentLocation;
-		readonly XPathNavigator _document;
 		protected readonly (EmbeddedResource Resource, AssemblyDefinition Assembly)? _resource;
 		protected readonly LinkContext _context;
 
 		protected ProcessLinkerXmlBase (LinkContext context, Stream documentStream, string xmlDocumentLocation)
+			: base (xmlDocumentLocation, documentStream)
 		{
 			_context = context;
-			using (documentStream) {
-				_document = XDocument.Load (documentStream, LoadOptions.SetLineInfo).CreateNavigator ();
-			}
-			_xmlDocumentLocation = xmlDocumentLocation;
 		}
 
 		protected ProcessLinkerXmlBase (LinkContext context, Stream documentStream, EmbeddedResource resource, AssemblyDefinition resourceAssembly, string xmlDocumentLocation)
@@ -444,26 +427,6 @@ namespace Mono.Linker.Steps
 		protected virtual AssemblyNameReference GetAssemblyName (XPathNavigator nav)
 		{
 			return AssemblyNameReference.Parse (GetFullName (nav));
-		}
-
-		protected static string GetFullName (XPathNavigator nav)
-		{
-			return GetAttribute (nav, FullNameAttributeName);
-		}
-
-		protected static string GetName (XPathNavigator nav)
-		{
-			return GetAttribute (nav, NameAttributeName);
-		}
-
-		protected static string GetSignature (XPathNavigator nav)
-		{
-			return GetAttribute (nav, SignatureAttributeName);
-		}
-
-		protected static string GetAttribute (XPathNavigator nav, string attribute)
-		{
-			return nav.GetAttribute (attribute, XmlNamespace);
 		}
 
 		protected MessageOrigin GetMessageOriginForPosition (XPathNavigator position)

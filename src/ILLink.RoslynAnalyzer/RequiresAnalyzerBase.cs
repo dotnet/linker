@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -36,6 +37,8 @@ namespace ILLink.RoslynAnalyzer
 			context.EnableConcurrentExecution ();
 			context.ConfigureGeneratedCodeAnalysis (GeneratedCodeAnalysisFlags.ReportDiagnostics);
 			context.RegisterCompilationStartAction (context => {
+				Dictionary<InjectedType, List<InjectedAttribute>> xmldata = AnalyzerXmlAttributeParser.ProcessXml(context);
+
 				var compilation = context.Compilation;
 				if (!IsAnalyzerEnabled (context.Options, compilation))
 					return;
