@@ -1,5 +1,6 @@
-<linker>
-  <assembly fullname="test, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+<linker xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="https://www.w3schools.com ../../../src/ILLink.Shared/ILLink.LinkAttributes.xsd">
+	<assembly fullname="test, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
     <type fullname="Mono.Linker.Tests.Cases.LinkXml.PreserveSecondLevelMethodsOfNonRequiredType/Unused" preserve="fields" required="false" >
       <method signature="System.Void PreservedMethod()" />
     </type>

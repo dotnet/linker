@@ -22,4 +22,7 @@
       <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)ILLink.LinkAttributes.xsd" />
+  </ItemGroup>
 </Project>
