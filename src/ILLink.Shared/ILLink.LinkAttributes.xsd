@@ -2,80 +2,175 @@
 <xsd:schema attributeFormDefault="unqualified"
 		elementFormDefault="unqualified"
 		xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-	<xsd:element name="typechild" />
-	<xsd:element name="method" substitutionGroup="typechild">
+	
+	<xsd:element name="method">
+		<xsd:complexType>
+			<xsd:choice maxOccurs="unbounded" minOccurs="0">
+				<xsd:element ref="attribute" />
+				<xsd:element name="parameter">
+					<xsd:complexType>
+						<xsd:choice minOccurs="0" maxOccurs="unbounded">
+							<xsd:element ref="attribute" />
+						</xsd:choice>
+						<xsd:attribute name="name" />
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="return">
+					<xsd:complexType>
+						<xsd:choice maxOccurs="unbounded" minOccurs="0">
+							<xsd:element ref="attribute" />
+						</xsd:choice>
+					</xsd:complexType>
+				</xsd:element>
+			</xsd:choice>
+			<xsd:attribute name="name" type="xsd:string" />
+			<xsd:attribute name="signature" type="xsd:string" />
+			<xsd:attribute name="required" type="xsd:string" />
+			<xsd:attribute name="body" type="xsd:string" />
+			<xsd:attribute name="value" type="xsd:string" />
+			<xsd:attribute name="feature" />
+			<xsd:attribute name="featurevalue" />
+			<xsd:attribute name="featuredefault" />
+		</xsd:complexType>
+	</xsd:element>
+	
+	<xsd:element name="event">
+		<xsd:complexType>
+			<xsd:attribute name="name" type="xsd:string" />
+			<xsd:attribute name="signature" type="xsd:string" />
+			<xsd:attribute name="feature" />
+			<xsd:attribute name="featurevalue" />
+			<xsd:attribute name="featuredefault" />
+		</xsd:complexType>
+	</xsd:element>
+	
+	<xsd:element name="field">
 		<xsd:complexType>
 			<xsd:sequence>
 				<xsd:element minOccurs="0" maxOccurs="unbounded" ref="attribute" />
 			</xsd:sequence>
 			<xsd:attribute name="name" type="xsd:string" />
 			<xsd:attribute name="signature" type="xsd:string" />
-			<xsd:attribute name="required" type="xsd:string" />
-			<xsd:attribute name="body" type="xsd:string" />
-			<xsd:attribute name="value" type="xsd:string" />
-		</xsd:complexType>
-	</xsd:element>
-	<xsd:element name="event" substitutionGroup="typechild">
-		<xsd:complexType>
-			<xsd:attribute name="name" type="xsd:string" />
-			<xsd:attribute name="signature" type="xsd:string" />
-		</xsd:complexType>
-	</xsd:element>
-	<xsd:element name="field" substitutionGroup="typechild">
-		<xsd:complexType>
-			<xsd:attribute name="name" type="xsd:string" />
-			<xsd:attribute name="signature" type="xsd:string" />
 			<xsd:attribute name="value" type="xsd:string" />
 			<xsd:attribute name="initialize" type="xsd:string" />
 			<xsd:attribute name="required" type="xsd:string" />
+			<xsd:attribute name="feature" />
+			<xsd:attribute name="featurevalue" />
+			<xsd:attribute name="featuredefault" />
 		</xsd:complexType>
 	</xsd:element>
-	<xsd:element name="property" substitutionGroup="typechild">
+	
+	<xsd:element name="property">
 		<xsd:complexType>
-			<xsd:attribute name="name" type="xsd:string" />
+			<xsd:choice maxOccurs="unbounded" minOccurs="0">
+				<xsd:element ref="attribute" />
+			</xsd:choice>
+			<xsd:attribute name="name" type="xsd:string"/>
 			<xsd:attribute name="signature" type="xsd:string" />
 			<xsd:attribute name="required" type="xsd:string" />
 			<xsd:attribute name="accessors" type="xsd:string" />
 			<xsd:attribute name="type" type="xsd:string" />
+			<xsd:attribute name="feature" />
+			<xsd:attribute name="featurevalue" />
+			<xsd:attribute name="featuredefault" />
 		</xsd:complexType>
 	</xsd:element>
-	<xsd:element name="attribute" substitutionGroup="typechild">
+	
+	<xsd:element name="resource">
 		<xsd:complexType>
-			<xsd:sequence>
-				<xsd:element minOccurs="0" maxOccurs="unbounded" name="argument">
+			<xsd:attribute name="name" use="required" />
+			<xsd:attribute name="action" use="required" />
+			<xsd:attribute name="featurevalue" />
+			<xsd:attribute name="featuredefault" />
+			<xsd:attribute name="feature" />
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="argument">
+		<xsd:complexType mixed="true">
+			<xsd:choice minOccurs="0" maxOccurs="1">
+				<xsd:element name="argument">
 					<xsd:complexType>
-						<xsd:attribute name="type" type="xsd:string"/>
+						<xsd:simpleContent>
+							<xsd:extension base="xsd:string">
+								<xsd:attribute name="type" />
+							</xsd:extension>
+						</xsd:simpleContent>
 					</xsd:complexType>
 				</xsd:element>
-			</xsd:sequence>
-			<xsd:attribute name="internal" type="xsd:string" use="required" />
+			</xsd:choice>
+			<xsd:attribute name="type" />
 		</xsd:complexType>
 	</xsd:element>
+	
+	<xsd:element name="attribute">
+		<xsd:complexType>
+			<xsd:choice maxOccurs="unbounded" minOccurs="0">
+				<xsd:element ref="argument" />
+				<xsd:element minOccurs="0" maxOccurs="unbounded" name="property">
+					<xsd:complexType>
+						<xsd:simpleContent>
+							<xsd:extension base="xsd:string">
+								<xsd:attribute name="name" />
+							</xsd:extension>
+						</xsd:simpleContent>
+					</xsd:complexType>
+				</xsd:element>
+			</xsd:choice>
+			<xsd:attribute name="internal" type="xsd:string" />
+			<xsd:attribute name="fullname" type="xsd:string" />
+			<xsd:attribute name="assembly" type="xsd:string" />
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="namespace">
+		<xsd:complexType>
+			<xsd:attribute name="fullname"/>
+		</xsd:complexType>
+	</xsd:element>
+	
+	<xsd:element name="assembly">
+		<xsd:complexType>
+			<xsd:choice minOccurs="0" maxOccurs="unbounded">
+				<xsd:element minOccurs="0" maxOccurs="unbounded" ref="type" />
+				<xsd:element minOccurs="0" maxOccurs="unbounded" ref="attribute" />
+				<xsd:element minOccurs="0" maxOccurs="unbounded" ref="resource" />
+				<xsd:element minOccurs="0" maxOccurs="unbounded" ref="namespace" />
+			</xsd:choice>
+			<xsd:attribute name="fullname" type="xsd:string" use="required" />
+			<xsd:attribute name="feature" />
+			<xsd:attribute name="featurevalue" />
+			<xsd:attribute name="featuredefault" />
+			<xsd:attribute name="preserve" />
+		</xsd:complexType>
+	</xsd:element>
+	
+	<xsd:element name="type">
+		<xsd:complexType>
+			<xsd:choice minOccurs="0" maxOccurs="unbounded">
+				<xsd:element ref="event" />
+				<xsd:element ref="method" />
+				<xsd:element ref="attribute" />
+				<xsd:element ref="field" />
+				<xsd:element ref="property" />
+				<xsd:element ref="type" />
+			</xsd:choice>
+			<xsd:attribute name="fullname" type="xsd:string" />
+			<xsd:attribute name="name" type="xsd:string" />
+			<xsd:attribute name="required" type="xsd:string" />
+			<xsd:attribute name="preserve" type="xsd:string" />
+			<xsd:attribute name="feature" type="xsd:string" />
+			<xsd:attribute name="featurevalue" type="xsd:string" />
+		</xsd:complexType>
+	</xsd:element>
+	
 	<xsd:element name="linker">
 		<xsd:complexType>
-			<xsd:sequence>
-				<xsd:element minOccurs="0" maxOccurs="unbounded" name="assembly">
-					<xsd:complexType>
-						<xsd:sequence>
-							<xsd:element minOccurs="0" maxOccurs="unbounded" name="type">
-								<xsd:complexType>
-									<xsd:sequence>
-										<!-- Any number of any of the elements in the "typechild" substitution group -->
-										<xsd:element minOccurs="0" maxOccurs="unbounded" ref="typechild" />
-									</xsd:sequence>
-									<xsd:attribute name="fullname" type="xsd:string" use="required" />
-									<xsd:attribute name="required" type="xsd:string"/>
-									<xsd:attribute name="preserve" type="xsd:string"/>
-									<xsd:attribute name="feature" type="xsd:string"/>
-									<xsd:attribute name="featureValue" type="xsd:string"/>
-								</xsd:complexType>
-							</xsd:element>
-							<xsd:element minOccurs="0" maxOccurs="unbounded" ref="attribute"></xsd:element>
-						</xsd:sequence>
-						<xsd:attribute name="fullname" type="xsd:string" use="required" />
-					</xsd:complexType>
-				</xsd:element>
-			</xsd:sequence>
+			<xsd:choice maxOccurs="unbounded" minOccurs="0">
+				<xsd:element ref="assembly" />
+				<xsd:element ref="type" />
+			</xsd:choice>
 		</xsd:complexType>
 	</xsd:element>
+	
 </xsd:schema>

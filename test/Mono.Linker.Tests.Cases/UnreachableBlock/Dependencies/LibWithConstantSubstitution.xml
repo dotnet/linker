@@ -1,4 +1,4 @@
-﻿<linker>
+<linker xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://www.w3schools.com ..\..\..\..\src\ILLink.Shared\ILLink.LinkAttributes.xsd">
   <type fullname="Mono.Linker.Tests.Cases.UnreachableBlock.Dependencies.LibWithConstantSubstitution">
     <method signature="System.Boolean ReturnFalse()" body="stub" value="false" />
   </type>
