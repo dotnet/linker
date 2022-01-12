@@ -6,7 +6,7 @@ using Mono.Linker;
 
 namespace ILLink.Shared.TypeSystemProxy
 {
-	readonly partial record struct MethodProxy
+	readonly partial struct MethodProxy
 	{
 		public MethodProxy (MethodDefinition method) => Method = method;
 
@@ -16,8 +16,8 @@ namespace ILLink.Shared.TypeSystemProxy
 
 		public string Name { get => Method.Name; }
 
-		internal partial bool IsDeclaredOnType (string namespaceName, string typeName)
-			=> Method.IsDeclaredOnType (namespaceName, typeName);
+		internal partial bool IsDeclaredOnType (string fullTypeName)
+			=> Method.IsDeclaredOnType (fullTypeName);
 
 		internal partial bool HasParameters ()
 			=> Method.HasParameters;
@@ -25,8 +25,8 @@ namespace ILLink.Shared.TypeSystemProxy
 		internal partial bool HasParametersCount (int parameterCount)
 			=> Method.Parameters.Count == parameterCount;
 
-		internal partial bool HasParameterOfType (int parameterIndex, string namespaceName, string typeName)
-			=> Method.HasParameterOfType (parameterIndex, namespaceName, typeName);
+		internal partial bool HasParameterOfType (int parameterIndex, string fullTypeName)
+			=> Method.HasParameterOfType (parameterIndex, fullTypeName);
 
 		internal partial bool HasGenericParameters ()
 			=> Method.HasGenericParameters;

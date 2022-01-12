@@ -480,7 +480,7 @@ namespace Mono.Linker.Dataflow
 			// 
 			// static Property (Expression, MethodInfo)
 			//
-			case IntrinsicId.Expression_Property when calledMethod.HasParameterOfType (1, "System.Reflection", "MethodInfo"): {
+			case IntrinsicId.Expression_Property when calledMethod.HasParameterOfType (1, "System.Reflection.MethodInfo"): {
 					foreach (var value in methodParams[1]) {
 						if (value is SystemReflectionMethodBaseValue methodBaseValue) {
 							// We have one of the accessors for the property. The Expression.Property will in this case search

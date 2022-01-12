@@ -1,12 +1,12 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-using System;
+using ILLink.RoslynAnalyzer;
 using Microsoft.CodeAnalysis;
 
 namespace ILLink.Shared.TypeSystemProxy
 {
-	readonly partial record struct MethodProxy
+	readonly partial struct MethodProxy
 	{
 		public MethodProxy (IMethodSymbol method) => Method = method;
 
@@ -14,8 +14,8 @@ namespace ILLink.Shared.TypeSystemProxy
 
 		public string Name { get => Method.Name; }
 
-		internal partial bool IsDeclaredOnType (string namespaceName, string typeName)
-			=> IsTypeOf (Method.ContainingType, namespaceName, typeName);
+		internal partial bool IsDeclaredOnType (string fullTypeName)
+			=> IsTypeOf (Method.ContainingType, fullTypeName);
 
 		internal partial bool HasParameters ()
 			=> Method.Parameters.Length > 0;
@@ -23,8 +23,8 @@ namespace ILLink.Shared.TypeSystemProxy
 		internal partial bool HasParametersCount (int parameterCount)
 			=> Method.Parameters.Length == parameterCount;
 
-		internal partial bool HasParameterOfType (int parameterIndex, string namespaceName, string typeName)
-			=> Method.Parameters.Length > parameterIndex && IsTypeOf (Method.Parameters[parameterIndex].Type, namespaceName, typeName);
+		internal partial bool HasParameterOfType (int parameterIndex, string fullTypeName)
+			=> Method.Parameters.Length > parameterIndex && IsTypeOf (Method.Parameters[parameterIndex].Type, fullTypeName);
 
 		internal partial bool HasGenericParameters ()
 			=> Method.IsGenericMethod;
@@ -35,36 +35,12 @@ namespace ILLink.Shared.TypeSystemProxy
 		internal partial bool IsStatic ()
 			=> Method.IsStatic;
 
-		bool IsTypeOf (ITypeSymbol type, string namespaceName, string typeName)
+		bool IsTypeOf (ITypeSymbol type, string fullTypeName)
 		{
 			if (type is not INamedTypeSymbol namedType)
 				return false;
 
-			var remainingNamespaceName = namespaceName.AsSpan ();
-			var containingNamespace = namedType.ContainingNamespace;
-			while (containingNamespace != null) {
-				var actualNamespaceName = containingNamespace.Name.AsSpan ();
-
-				if (containingNamespace.ContainingNamespace.IsGlobalNamespace) {
-					if (remainingNamespaceName.Equals (actualNamespaceName, StringComparison.Ordinal))
-						break;
-
-					return false;
-				}
-
-				if (remainingNamespaceName.Length < actualNamespaceName.Length + 1)
-					return false;
-
-				var expectedNamespaceName = remainingNamespaceName.Slice (remainingNamespaceName.Length - actualNamespaceName.Length);
-				if (!expectedNamespaceName.Equals (actualNamespaceName, StringComparison.Ordinal) ||
-					remainingNamespaceName[remainingNamespaceName.Length - actualNamespaceName.Length - 1] != '.')
-					return false;
-
-				containingNamespace = containingNamespace.ContainingNamespace;
-				remainingNamespaceName = remainingNamespaceName.Slice (0, remainingNamespaceName.Length - actualNamespaceName.Length - 1);
-			}
-
-			return namedType.Name == typeName;
+			return namedType.HasName (fullTypeName);
 		}
 	}
 }

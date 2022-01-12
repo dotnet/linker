@@ -3,12 +3,12 @@
 
 namespace ILLink.Shared.TypeSystemProxy
 {
-	internal readonly partial record struct MethodProxy : IMemberProxy
+	internal readonly partial struct MethodProxy : IMemberProxy
 	{
-		internal partial bool IsDeclaredOnType (string namespaceName, string typeName);
+		internal partial bool IsDeclaredOnType (string fullTypeName);
 		internal partial bool HasParameters ();
 		internal partial bool HasParametersCount (int parameterCount);
-		internal partial bool HasParameterOfType (int parameterIndex, string namespaceName, string typeName);
+		internal partial bool HasParameterOfType (int parameterIndex, string fullTypeName);
 		internal partial bool HasGenericParameters ();
 		internal partial bool HasGenericParametersCount (int genericParameterCount);
 		internal partial bool IsStatic ();
