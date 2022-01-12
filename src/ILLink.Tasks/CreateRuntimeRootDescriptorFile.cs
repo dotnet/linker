@@ -356,7 +356,7 @@ namespace ILLink.Tasks
 					typeNode.Attributes.Append (preserve);
 				} else if ((members.fields == null) && (members.methods == null)) {
 					XmlAttribute preserve = doc.CreateAttribute ("preserve");
-					preserve.Value = "nothing";
+					preserve.Value = "none";
 					typeNode.Attributes.Append (preserve);
 				}
 
