@@ -1,6 +1,6 @@
 <linker xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://www.w3schools.com ..\..\..\src\ILLink.Shared\ILLink.LinkAttributes.xsd">
   <assembly fullname="test, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
-    <type fullname="Mono.Linker.Tests.Cases.LinkXml.UnusedTypeWithPreserveNothingAndPreserveMembers/Unused" preserve="nothing">
+    <type fullname="Mono.Linker.Tests.Cases.LinkXml.UnusedTypeWithPreserveNothingAndPreserveMembers/Unused" preserve="none">
       <field signature="System.Int32 Field1" />
       <method signature="System.Void Method1()" />
     </type>

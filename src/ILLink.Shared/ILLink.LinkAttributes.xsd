@@ -25,12 +25,12 @@
 			</xsd:choice>
 			<xsd:attribute name="name" type="xsd:string" />
 			<xsd:attribute name="signature" type="xsd:string" />
-			<xsd:attribute name="required" type="xsd:string" />
+			<xsd:attribute name="required" type="xsd:boolean" />
 			<xsd:attribute name="body" type="xsd:string" />
 			<xsd:attribute name="value" type="xsd:string" />
 			<xsd:attribute name="feature" />
-			<xsd:attribute name="featurevalue" />
-			<xsd:attribute name="featuredefault" />
+			<xsd:attribute name="featurevalue" type="xsd:boolean" />
+			<xsd:attribute name="featuredefault" type="xsd:boolean" />
 		</xsd:complexType>
 	</xsd:element>
 	
@@ -39,8 +39,8 @@
 			<xsd:attribute name="name" type="xsd:string" />
 			<xsd:attribute name="signature" type="xsd:string" />
 			<xsd:attribute name="feature" />
-			<xsd:attribute name="featurevalue" />
-			<xsd:attribute name="featuredefault" />
+			<xsd:attribute name="featurevalue" type="xsd:boolean" />
+			<xsd:attribute name="featuredefault" type="xsd:boolean" />
 		</xsd:complexType>
 	</xsd:element>
 	
@@ -53,10 +53,10 @@
 			<xsd:attribute name="signature" type="xsd:string" />
 			<xsd:attribute name="value" type="xsd:string" />
 			<xsd:attribute name="initialize" type="xsd:string" />
-			<xsd:attribute name="required" type="xsd:string" />
+			<xsd:attribute name="required" type="xsd:boolean" />
 			<xsd:attribute name="feature" />
-			<xsd:attribute name="featurevalue" />
-			<xsd:attribute name="featuredefault" />
+			<xsd:attribute name="featurevalue" type="xsd:boolean" />
+			<xsd:attribute name="featuredefault" type="xsd:boolean" />
 		</xsd:complexType>
 	</xsd:element>
 	
@@ -67,12 +67,12 @@
 			</xsd:choice>
 			<xsd:attribute name="name" type="xsd:string"/>
 			<xsd:attribute name="signature" type="xsd:string" />
-			<xsd:attribute name="required" type="xsd:string" />
-			<xsd:attribute name="accessors" type="xsd:string" />
+			<xsd:attribute name="required" type="xsd:boolean" />
+			<xsd:attribute name="accessors" type="accessorvalues" />
 			<xsd:attribute name="type" type="xsd:string" />
 			<xsd:attribute name="feature" />
-			<xsd:attribute name="featurevalue" />
-			<xsd:attribute name="featuredefault" />
+			<xsd:attribute name="featurevalue" type="xsd:boolean" />
+			<xsd:attribute name="featuredefault" type="xsd:boolean" />
 		</xsd:complexType>
 	</xsd:element>
 	
@@ -80,8 +80,8 @@
 		<xsd:complexType>
 			<xsd:attribute name="name" use="required" />
 			<xsd:attribute name="action" use="required" />
-			<xsd:attribute name="featurevalue" />
-			<xsd:attribute name="featuredefault" />
+			<xsd:attribute name="featurevalue" type="xsd:boolean" />
+			<xsd:attribute name="featuredefault" type="xsd:boolean" />
 			<xsd:attribute name="feature" />
 		</xsd:complexType>
 	</xsd:element>
@@ -139,12 +139,29 @@
 			</xsd:choice>
 			<xsd:attribute name="fullname" type="xsd:string" use="required" />
 			<xsd:attribute name="feature" />
-			<xsd:attribute name="featurevalue" />
-			<xsd:attribute name="featuredefault" />
-			<xsd:attribute name="preserve" />
+			<xsd:attribute name="featurevalue" type="xsd:boolean" />
+			<xsd:attribute name="featuredefault" type="xsd:boolean" />
+			<xsd:attribute name="preserve" type="preservevalues" />
 		</xsd:complexType>
 	</xsd:element>
 	
+	<xsd:simpleType name="preservevalues">
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="all" />
+			<xsd:enumeration value="none" />
+			<xsd:enumeration value="fields" />
+			<xsd:enumeration value="methods" />
+		</xsd:restriction>
+	</xsd:simpleType>
+
+	<xsd:simpleType name="accessorvalues">
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="all" />
+			<xsd:enumeration value="get" />
+			<xsd:enumeration value="set" />
+		</xsd:restriction>
+	</xsd:simpleType>
+
 	<xsd:element name="type">
 		<xsd:complexType>
 			<xsd:choice minOccurs="0" maxOccurs="unbounded">
@@ -157,10 +174,10 @@
 			</xsd:choice>
 			<xsd:attribute name="fullname" type="xsd:string" />
 			<xsd:attribute name="name" type="xsd:string" />
-			<xsd:attribute name="required" type="xsd:string" />
-			<xsd:attribute name="preserve" type="xsd:string" />
+			<xsd:attribute name="required" type="xsd:boolean" />
+			<xsd:attribute name="preserve" type="preservevalues" />
 			<xsd:attribute name="feature" type="xsd:string" />
-			<xsd:attribute name="featurevalue" type="xsd:string" />
+			<xsd:attribute name="featurevalue" type="xsd:boolean" />
 		</xsd:complexType>
 	</xsd:element>
 	
