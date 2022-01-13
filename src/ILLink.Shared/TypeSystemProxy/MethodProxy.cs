@@ -12,5 +12,6 @@ namespace ILLink.Shared.TypeSystemProxy
 		internal partial bool HasGenericParameters ();
 		internal partial bool HasGenericParametersCount (int genericParameterCount);
 		internal partial bool IsStatic ();
+		internal partial TypeProxy GetReturnType ();
 	}
 }

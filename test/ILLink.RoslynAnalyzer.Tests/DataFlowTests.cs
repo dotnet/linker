@@ -104,6 +104,12 @@ namespace ILLink.RoslynAnalyzer.Tests
 		}
 
 		[Fact]
+		public Task TypeInfoAsTypeDataFlow ()
+		{
+			return RunTest (nameof (TypeInfoAsTypeDataFlow));
+		}
+
+		[Fact]
 		public Task IReflectDataflow ()
 		{
 			return RunTest (nameof (IReflectDataflow));

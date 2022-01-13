@@ -3,10 +3,8 @@
 
 namespace ILLink.Shared.TypeSystemProxy
 {
-	interface IMemberProxy
+	internal readonly partial struct TypeProxy : IMemberProxy
 	{
-		public string Name { get; }
-
-		public string GetDisplayName ();
+		internal partial bool IsVoid ();
 	}
 }

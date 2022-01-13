@@ -16,25 +16,24 @@ namespace ILLink.Shared.TypeSystemProxy
 
 		public string Name { get => Method.Name; }
 
-		internal partial bool IsDeclaredOnType (string fullTypeName)
-			=> Method.IsDeclaredOnType (fullTypeName);
+		public string GetDisplayName () => Method.GetDisplayName ();
 
-		internal partial bool HasParameters ()
-			=> Method.HasParameters;
+		internal partial bool IsDeclaredOnType (string fullTypeName) => Method.IsDeclaredOnType (fullTypeName);
 
-		internal partial bool HasParametersCount (int parameterCount)
-			=> Method.Parameters.Count == parameterCount;
+		internal partial bool HasParameters () => Method.HasParameters;
 
-		internal partial bool HasParameterOfType (int parameterIndex, string fullTypeName)
-			=> Method.HasParameterOfType (parameterIndex, fullTypeName);
+		internal partial bool HasParametersCount (int parameterCount) => Method.Parameters.Count == parameterCount;
 
-		internal partial bool HasGenericParameters ()
-			=> Method.HasGenericParameters;
+		internal partial bool HasParameterOfType (int parameterIndex, string fullTypeName) => Method.HasParameterOfType (parameterIndex, fullTypeName);
 
-		internal partial bool HasGenericParametersCount (int genericParameterCount)
-			=> Method.GenericParameters.Count == genericParameterCount;
+		internal partial bool HasGenericParameters () => Method.HasGenericParameters;
 
-		internal partial bool IsStatic ()
-			=> Method.IsStatic;
+		internal partial bool HasGenericParametersCount (int genericParameterCount) => Method.GenericParameters.Count == genericParameterCount;
+
+		internal partial bool IsStatic () => Method.IsStatic;
+
+		internal partial TypeProxy GetReturnType () => new (Method.ReturnType.WithoutModifiers ());
+
+		public override string ToString () => Method.ToString ();
 	}
 }

@@ -3400,7 +3400,7 @@ namespace Mono.Linker.Steps
 					MarkType (eh.CatchType, new DependencyInfo (DependencyKind.CatchType, body.Method));
 
 			bool requiresReflectionMethodBodyScanner =
-				ReflectionMethodBodyScanner.RequiresReflectionMethodBodyScannerForMethodBody (Context.Annotations.FlowAnnotations, body.Method);
+				ReflectionMethodBodyScanner.RequiresReflectionMethodBodyScannerForMethodBody (Context, body.Method);
 			foreach (Instruction instruction in body.Instructions)
 				MarkInstruction (instruction, body.Method, ref requiresReflectionMethodBodyScanner);
 
@@ -3467,7 +3467,7 @@ namespace Mono.Linker.Steps
 					};
 
 					requiresReflectionMethodBodyScanner |=
-						ReflectionMethodBodyScanner.RequiresReflectionMethodBodyScannerForCallSite (Context, (MethodReference) instruction.Operand);
+						ReflectionMethodBodyScanner.RequiresReflectionMethodBodyScannerForCallSite (Context, method, (MethodReference) instruction.Operand);
 
 					ScopeStack.UpdateCurrentScopeInstructionOffset (instruction.Offset);
 					MarkMethod ((MethodReference) instruction.Operand, new DependencyInfo (dependencyKind, method));

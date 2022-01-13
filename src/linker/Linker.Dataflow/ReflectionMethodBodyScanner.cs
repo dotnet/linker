@@ -3,8 +3,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using ILLink.Shared;
 using ILLink.Shared.DataFlow;
 using ILLink.Shared.TrimAnalysis;
@@ -23,23 +25,24 @@ namespace Mono.Linker.Dataflow
 		readonly MarkStep _markStep;
 		readonly MarkScopeStack _scopeStack;
 
-		public static bool RequiresReflectionMethodBodyScannerForCallSite (LinkContext context, MethodReference calledMethod)
+		public static bool RequiresReflectionMethodBodyScannerForCallSite (LinkContext context, MethodDefinition callingMethod, MethodReference calledMethod)
 		{
 			MethodDefinition? methodDefinition = context.TryResolve (calledMethod);
 			if (methodDefinition == null)
 				return false;
 
-			return Intrinsics.GetIntrinsicIdForMethod (methodDefinition) > IntrinsicId.RequiresReflectionBodyScanner_Sentinel ||
+			return new Intrinsics (context, callingMethod).GetIntrinsicIdForMethod (methodDefinition) > IntrinsicId.RequiresReflectionBodyScanner_Sentinel ||
 				context.Annotations.FlowAnnotations.RequiresDataFlowAnalysis (methodDefinition) ||
 				context.Annotations.DoesMethodRequireUnreferencedCode (methodDefinition, out _) ||
 				methodDefinition.IsPInvokeImpl;
 		}
 
-		public static bool RequiresReflectionMethodBodyScannerForMethodBody (FlowAnnotations flowAnnotations, MethodDefinition methodDefinition)
+		public static bool RequiresReflectionMethodBodyScannerForMethodBody (LinkContext context, MethodDefinition methodDefinition)
 		{
 			return
-				Intrinsics.GetIntrinsicIdForMethod (methodDefinition) > IntrinsicId.RequiresReflectionBodyScanner_Sentinel ||
-				flowAnnotations.RequiresDataFlowAnalysis (methodDefinition);
+				// Using the same method as calling method in this case - not the best, but it's only used for internal diagnostics
+				new Intrinsics (context, methodDefinition).GetIntrinsicIdForMethod (methodDefinition) > IntrinsicId.RequiresReflectionBodyScanner_Sentinel ||
+				context.Annotations.FlowAnnotations.RequiresDataFlowAnalysis (methodDefinition);
 		}
 
 		public static bool RequiresReflectionMethodBodyScannerForAccess (LinkContext context, FieldReference field)
@@ -259,17 +262,17 @@ namespace Mono.Linker.Dataflow
 			returnValueDynamicallyAccessedMemberTypes = requiresDataFlowAnalysis ?
 				_context.Annotations.FlowAnnotations.GetReturnParameterAnnotation (calledMethodDefinition) : 0;
 
+			Intrinsics intrinsics = new Intrinsics (_context, callingMethodDefinition);
 			switch (Intrinsics.GetIntrinsicIdForMethod (calledMethodDefinition)) {
-			case IntrinsicId.IntrospectionExtensions_GetTypeInfo: {
-					Intrinsics.HandleMethodCall (calledMethodDefinition, MultiValueLattice.Top, methodParams, out methodReturnValue);
-				}
-				break;
-
+			case IntrinsicId.IntrospectionExtensions_GetTypeInfo:
 			case IntrinsicId.TypeInfo_AsType: {
-					// someType.AsType()... will be commonly present in code targeting
-					// the dead-end reflection refactoring. The call doesn't do anything and we
-					// don't want to lose the annotation.
-					methodReturnValue = methodParams[0];
+					var instanceValue = MultiValueLattice.Top;
+					IReadOnlyList<MultiValue> parameterValues = methodParams;
+					if (calledMethodDefinition.HasImplicitThis ()) {
+						instanceValue = methodParams[0];
+						parameterValues = parameterValues.Skip (1).ToImmutableList ();
+					}
+					intrinsics.HandleMethodCall (calledMethodDefinition, instanceValue, parameterValues, out methodReturnValue);
 				}
 				break;
 

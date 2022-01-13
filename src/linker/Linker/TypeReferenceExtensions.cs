@@ -369,5 +369,13 @@ namespace Mono.Linker
 
 			return false;
 		}
+
+		public static TypeReference WithoutModifiers (this TypeReference type)
+		{
+			while (type is IModifierType) {
+				type = ((IModifierType) type).ElementType;
+			}
+			return type;
+		}
 	}
 }

@@ -79,6 +79,8 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 			if (typeOfOperation.TypeOperand is ITypeParameterSymbol typeParameter)
 				return new GenericParameterValue (typeParameter);
+			else if (typeOfOperation.TypeOperand is INamedTypeSymbol namedType)
+				return new SystemTypeValue (namedType);
 
 			return TopValue;
 		}
@@ -103,7 +105,8 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 		public override MultiValue HandleMethodCall (IMethodSymbol calledMethod, ValueOfOperation instance, ImmutableArray<ValueOfOperation> arguments, IOperation operation)
 		{
-			if (Intrinsics.HandleMethodCall (new MethodProxy (calledMethod), instance.Value, arguments.Select (a => a.Value).ToImmutableList (), out MultiValue methodReturnValue))
+			Intrinsics intrinsics = new (operation);
+			if (intrinsics.HandleMethodCall (new MethodProxy (calledMethod), instance.Value, arguments.Select (a => a.Value).ToImmutableList (), out MultiValue methodReturnValue))
 				return methodReturnValue;
 
 			// For now no intrinsics, so for each call we have to:
