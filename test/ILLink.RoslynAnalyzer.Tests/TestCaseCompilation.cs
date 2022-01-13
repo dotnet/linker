@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -16,10 +17,10 @@ namespace ILLink.RoslynAnalyzer.Tests
 	{
 		private static readonly ImmutableArray<DiagnosticAnalyzer> SupportedDiagnosticAnalyzers =
 			ImmutableArray.Create<DiagnosticAnalyzer> (
-				new RequiresDynamicCodeAnalyzer (),
 				new COMAnalyzer (),
 				new RequiresAssemblyFilesAnalyzer (),
-				new RequiresUnreferencedCodeAnalyzer ());
+				new RequiresUnreferencedCodeAnalyzer (),
+				new DynamicallyAccessedMembersAnalyzer ());
 
 		public static Task<(CompilationWithAnalyzers Compilation, SemanticModel SemanticModel, List<Diagnostic> ExceptionDiagnostics)> CreateCompilation (
 			string src,
