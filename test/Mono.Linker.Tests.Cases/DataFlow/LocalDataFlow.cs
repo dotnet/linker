@@ -1,17 +1,12 @@
-// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-
 using System;
 using System.Diagnostics.CodeAnalysis;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
-using Mono.Linker.Tests.Cases.Expectations.Helpers;
 
 namespace Mono.Linker.Tests.Cases.DataFlow
 {
 	// Note: this test's goal is to validate that the product correctly reports unrecognized patterns
-	//   - so the main validation is done by the ExpectedWarning attributes.
+	//   - so the main validation is done by the UnrecognizedReflectionAccessPattern attributes.
 	[SkipKeptItemsValidation]
-	[ExpectedNoWarnings]
 	public class LocalDataFlow
 	{
 		public static void Main ()
@@ -23,6 +18,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TestBranchMergeSwitch ();
 			TestBranchMergeTry ();
 			TestBranchMergeCatch ();
+			TestBranchMergeFinally ();
 
 			// The remaining tests illustrate current limitations of the analysis
 			// that we might be able to lift in the future.
@@ -35,19 +31,22 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TestBranchTry ();
 			TestBranchCatch ();
 			TestBranchFinally ();
-			TestBranchMergeFinally ();
 
 			// These are missing warnings (potential failure at runtime)
 			TestBackwardsEdgeGoto ();
 			TestBackwardsEdgeLoop ();
 		}
 
-		[ExpectedWarning ("IL2072",
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) },
+			messageCode: "IL2072", message: new string[] {
 				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.GetWithPublicMethods()",
-				nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicFields) + "(String)")]
-		[ExpectedWarning ("IL2072",
+				"type",
+				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.RequirePublicFields(String)"})]
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicMethods), new Type[] { typeof (string) },
+			messageCode: "IL2072", message: new string[] {
 				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.GetWithPublicFields()",
-				nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicMethods) + "(String)")]
+				"type",
+				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.RequirePublicMethods(String)"})]
 		public static void TestBranchMergeGoto ()
 		{
 			string str = GetWithPublicMethods ();
@@ -56,32 +55,40 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			str = GetWithPublicFields ();
 
 		End:
-			str.RequiresPublicFields (); // warns for GetWithPublicMethods
-			str.RequiresPublicMethods (); // warns for GetWithPublicFields
+			RequirePublicFields (str); // warns for GetWithPublicMethods
+			RequirePublicMethods (str); // warns for GetWithPublicFields
 		}
 
-		[ExpectedWarning ("IL2072",
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) },
+			messageCode: "IL2072", message: new string[] {
 				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.GetWithPublicMethods()",
-				nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicFields) + "(String)")]
-		[ExpectedWarning ("IL2072",
+				"type",
+				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.RequirePublicFields(String)" })]
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicMethods), new Type[] { typeof (string) },
+			messageCode: "IL2072", message: new string[] {
 				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.GetWithPublicFields()",
-				nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicMethods) + "(String)")]
+				"type",
+				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.RequirePublicMethods(String)" })]
 		public static void TestBranchMergeIf ()
 		{
 			string str = GetWithPublicMethods ();
 			if (String.Empty.Length == 0)
 				str = GetWithPublicFields ();
 
-			str.RequiresPublicFields (); // warns for GetWithPublicMethods
-			str.RequiresPublicMethods (); // warns for GetWithPublicFields
+			RequirePublicFields (str); // warns for GetWithPublicMethods
+			RequirePublicMethods (str); // warns for GetWithPublicFields
 		}
 
-		[ExpectedWarning ("IL2072",
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) },
+			messageCode: "IL2072", message: new string[] {
 				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.GetWithPublicMethods()",
-				nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicFields) + "(String)")]
-		[ExpectedWarning ("IL2072",
+				"type",
+				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.RequirePublicFields(String)" })]
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicMethods), new Type[] { typeof (string) },
+			messageCode: "IL2072", message: new string[] {
 				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.GetWithPublicFields()",
-				nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicMethods) + "(String)")]
+				"type",
+				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.RequirePublicMethods(String)" })]
 		public static void TestBranchMergeIfElse ()
 		{
 			string str = null;
@@ -90,21 +97,27 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			} else {
 				str = GetWithPublicMethods ();
 			}
-			str.RequiresPublicFields (); // warns for GetWithPublicMethods
-			str.RequiresPublicMethods (); // warns for GetWithPublicFields
+			RequirePublicFields (str); // warns for GetWithPublicMethods
+			RequirePublicMethods (str); // warns for GetWithPublicFields
 		}
 
 		static int _switchOnField;
 
-		[ExpectedWarning ("IL2072",
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequireNonPublicMethods), new Type[] { typeof (string) },
+			messageCode: "IL2072", message: new string[] {
 				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.GetWithPublicFields()",
-				nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresNonPublicMethods) + "(String)")]
-		[ExpectedWarning ("IL2072",
+				"type",
+				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.RequireNonPublicMethods(String)" })]
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequireNonPublicMethods), new Type[] { typeof (string) },
+			messageCode: "IL2072", message: new string[] {
 				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.GetWithPublicMethods()",
-				nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresNonPublicMethods) + "(String)")]
-		[ExpectedWarning ("IL2072",
+				"type",
+				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.RequireNonPublicMethods(String)" })]
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequireNonPublicMethods), new Type[] { typeof (string) },
+			messageCode: "IL2072", message: new string[] {
 				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.GetWithPublicConstructors()",
-				nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresNonPublicMethods) + "(String)")]
+				"type",
+				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.RequireNonPublicMethods(String)" })]
 		public static void TestBranchMergeSwitch ()
 		{
 			string str = null;
@@ -122,15 +135,19 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				str = GetWithPublicConstructors ();
 				break;
 			}
-
-			str.RequiresNonPublicMethods (); // warns for GetWithPublicFields, GetWithPublicMethods, and GetWithPublicConstructors
+			RequireNonPublicMethods (str); // warns for GetWithPublicFields, GetWithPublicMethods, and GetWithPublicConstructors
 		}
 
-
-		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicFields) + "(String)",
-			nameof (LocalDataFlow) + "." + nameof (GetWithPublicMethods) + "()")]
-		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicMethods) + "(String)",
-			nameof (LocalDataFlow) + "." + nameof (GetWithPublicFields) + "()")]
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) },
+			messageCode: "IL2072", message: new string[] {
+				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.GetWithPublicMethods()",
+				"type",
+				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.RequirePublicFields(String)" })]
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicMethods), new Type[] { typeof (string) },
+			messageCode: "IL2072", message: new string[] {
+				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.GetWithPublicFields()",
+				"type",
+				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.RequirePublicMethods(String)" })]
 		public static void TestBranchMergeTry ()
 		{
 			string str = GetWithPublicMethods ();
@@ -141,16 +158,20 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				str = GetWithPublicFields ();
 			} catch {
 			}
-
-			str.RequiresPublicFields (); // warns for GetWithPublicMethods
-			str.RequiresPublicMethods (); // warns for GetWithPublicFields
+			RequirePublicFields (str); // warns for GetWithPublicMethods
+			RequirePublicMethods (str); // warns for GetWithPublicFields
 		}
 
-
-		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicFields) + "(String)",
-			nameof (LocalDataFlow) + "." + nameof (GetWithPublicMethods) + "()")]
-		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicMethods) + "(String)",
-			nameof (LocalDataFlow) + "." + nameof (GetWithPublicFields) + "()")]
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) },
+			messageCode: "IL2072", message: new string[] {
+				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.GetWithPublicMethods()",
+				"type",
+				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.RequirePublicFields(String)" })]
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicMethods), new Type[] { typeof (string) },
+			messageCode: "IL2072", message: new string[] {
+				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.GetWithPublicFields()",
+				"type",
+				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.RequirePublicMethods(String)" })]
 		public static void TestBranchMergeCatch ()
 		{
 			string str = GetWithPublicMethods ();
@@ -160,17 +181,20 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			} catch {
 				str = GetWithPublicFields ();
 			}
-
-			str.RequiresPublicFields (); // warns for GetWithPublicMethods
-			str.RequiresPublicMethods (); // warns for GetWithPublicFields
+			RequirePublicFields (str); // warns for GetWithPublicMethods
+			RequirePublicMethods (str); // warns for GetWithPublicFields
 		}
 
-		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicMethods) + "(String)",
-			nameof (LocalDataFlow) + "." + nameof (GetWithPublicFields) + "()")]
-		// Linker produces extraneous warnings
-		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicFields) + "(String)",
-			nameof (LocalDataFlow) + "." + nameof (GetWithPublicMethods) + "()",
-			ProducedBy = ProducedBy.Trimmer)]
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) },
+			messageCode: "IL2072", message: new string[] {
+				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.GetWithPublicMethods()",
+				"type",
+				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.RequirePublicFields(String)" })]
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicMethods), new Type[] { typeof (string) },
+			messageCode: "IL2072", message: new string[] {
+				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.GetWithPublicFields()",
+				"type",
+				"Mono.Linker.Tests.Cases.DataFlow.LocalDataFlow.RequirePublicMethods(String)" })]
 		public static void TestBranchMergeFinally ()
 		{
 			string str = GetWithPublicMethods ();
@@ -181,87 +205,77 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			} finally {
 				str = GetWithPublicFields ();
 			}
-			str.RequiresPublicFields (); // should not warn
-			str.RequiresPublicMethods (); // should warn
+			RequirePublicFields (str); // warns for GetWithPublicMethods
+			RequirePublicMethods (str); // warns for GetWithPublicFields
 		}
 
-		// Analyzer gets this right (no warning), but trimmer merges all branches going forward.
-		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicFields) + "(String)",
-			ProducedBy = ProducedBy.Trimmer)]
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) }, messageCode: "IL2072")]
 		public static void TestBranchGoto ()
 		{
 			string str = GetWithPublicMethods ();
 			if (String.Empty.Length == 0)
 				goto End;
 			str = GetWithPublicFields ();
-			str.RequiresPublicFields (); // produces a warning
+			RequirePublicFields (str); // produces a warning
 		End:
 			return;
 		}
 
-		// Analyzer gets this right (no warning), but trimmer merges all branches going forward.
-		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicFields),
-			ProducedBy = ProducedBy.Trimmer)]
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) }, messageCode: "IL2072")]
 		public static void TestBranchIf ()
 		{
 			string str = GetWithPublicMethods ();
 			if (String.Empty.Length == 0) {
 				str = GetWithPublicFields (); // dataflow will merge this with the value from the previous basic block
-				str.RequiresPublicFields (); // produces a warning
+				RequirePublicFields (str); // produces a warning
 			}
 		}
 
-		// Analyzer gets this right (no warning), but trimmer merges all branches going forward.
-		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicFields),
-			ProducedBy = ProducedBy.Trimmer)]
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) }, messageCode: "IL2072")]
 		public static void TestBranchIfElse ()
 		{
 			string str;
 			if (String.Empty.Length == 0) {
 				// because this branch *happens* to come first in IL, we will only see one value
 				str = GetWithPublicMethods ();
-				str.RequiresPublicMethods (); // this works
+				RequirePublicMethods (str); // this works
 			} else {
 				// because this branch *happens* to come second in IL, we will see the merged value for str
 				str = GetWithPublicFields ();
-				str.RequiresPublicFields (); // produces a warning
+				RequirePublicFields (str); // produces a warning
 			}
 		}
 
-		// Analyzer gets this right (no warning), but trimmer merges all branches going forward.
-		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresNonPublicMethods) + "(String)",
-			ProducedBy = ProducedBy.Trimmer)]
-		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicMethods) + "(String)",
-			ProducedBy = ProducedBy.Trimmer)]
-		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicConstructors) + "(String)",
-			ProducedBy = ProducedBy.Trimmer)]
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequireNonPublicMethods), new Type[] { typeof (string) }, messageCode: "IL2072")]
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicMethods), new Type[] { typeof (string) }, messageCode: "IL2072")]
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicMethods), new Type[] { typeof (string) }, messageCode: "IL2072")]
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicConstructors), new Type[] { typeof (string) }, messageCode: "IL2072")]
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicConstructors), new Type[] { typeof (string) }, messageCode: "IL2072")]
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicConstructors), new Type[] { typeof (string) }, messageCode: "IL2072")]
 		public static void TestBranchSwitch ()
 		{
 			string str = null;
 			switch (_switchOnField) {
 			case 0:
 				str = GetWithPublicFields ();
-				str.RequiresPublicFields (); // success
+				RequirePublicFields (str); // success
 				break;
 			case 1:
 				str = GetWithNonPublicMethods ();
-				str.RequiresNonPublicMethods (); // warns for GetWithPublicFields
+				RequireNonPublicMethods (str); // warns for GetWithPublicFields
 				break;
 			case 2:
 				str = GetWithPublicMethods ();
-				str.RequiresPublicMethods (); // warns for GetWithPublicFields and GetWithNonPublicMethods
+				RequirePublicMethods (str); // warns for GetWithPublicFields and GetWithNonPublicMethods
 				break;
 			case 3:
 				str = GetWithPublicConstructors ();
-				str.RequiresPublicConstructors (); // warns for GetWithPublicFields, GetWithNonPublicMethods, GetWithPublicMethods
+				RequirePublicConstructors (str); // warns for GetWithPublicFields, GetWithNonPublicMethods, GetWithPublicMethods
 				break;
 			}
 		}
 
-		// Analyzer gets this right (no warning), but trimmer merges all branches going forward.
-		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicFields),
-			nameof (LocalDataFlow) + "." + nameof (GetWithPublicMethods) + "()",
-			ProducedBy = ProducedBy.Trimmer)]
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) }, messageCode: "IL2072")]
 		public static void TestBranchTry ()
 		{
 			string str = GetWithPublicMethods ();
@@ -270,15 +284,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 					throw null;
 
 				str = GetWithPublicFields ();
-				str.RequiresPublicFields (); // warns for GetWithPublicMethods
+				RequirePublicFields (str); // warns for GetWithPublicMethods
 			} catch {
 			}
 		}
 
-		// Analyzer gets this right (no warning), but trimmer merges all branches going forward.
-		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicFields),
-			nameof (LocalDataFlow) + "." + nameof (GetWithPublicMethods) + "()",
-			ProducedBy = ProducedBy.Trimmer)]
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) }, messageCode: "IL2072")]
 		public static void TestBranchCatch ()
 		{
 			string str = GetWithPublicMethods ();
@@ -287,14 +298,11 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 					throw null;
 			} catch {
 				str = GetWithPublicFields ();
-				str.RequiresPublicFields (); // warns for GetWithPublicMethods
+				RequirePublicFields (str); // warns for GetWithPublicMethods
 			}
 		}
 
-		// Analyzer gets this right (no warning), but trimmer merges all branches going forward.
-		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicFields),
-			nameof (LocalDataFlow) + "." + nameof (GetWithPublicMethods) + "()",
-			ProducedBy = ProducedBy.Trimmer)]
+		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) }, messageCode: "IL2072")]
 		public static void TestBranchFinally ()
 		{
 			string str = GetWithPublicMethods ();
@@ -304,14 +312,11 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			} catch {
 			} finally {
 				str = GetWithPublicFields ();
-				str.RequiresPublicFields (); // warns for GetWithPublicMethods
+				RequirePublicFields (str); // warns for GetWithPublicMethods
 			}
 		}
 
-		// Analyzer gets this right, but linker doesn't consider backwards branches.
-		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicMethods) + "(String)",
-			nameof (LocalDataFlow) + "." + nameof (GetWithPublicFields) + "()",
-			ProducedBy = ProducedBy.Analyzer)]
+		[RecognizedReflectionAccessPattern]
 		public static void TestBackwardsEdgeLoop ()
 		{
 			string str = GetWithPublicMethods ();
@@ -321,25 +326,45 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				str = GetWithPublicFields (); // dataflow will merge values to track both possible annotation kinds
 			}
 
-			// str.RequiresPublicMethods (); // this would produce a warning for the value that comes from GetWithPublicFields, as expected
-			prev.RequiresPublicMethods (); // this produces no warning, even though "prev" will have the value from GetWithPublicFields!
+			// RequirePublicMethods (str); // this would produce a warning for the value that comes from GetWithPublicFields, as expected
+			RequirePublicMethods (prev); // this produces no warning, even though "prev" will have the value from GetWithPublicFields!
 		}
 
-		// Analyzer gets this right, but linker doesn't consider backwards branches.
-		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicMethods) + "(String)",
-			nameof (LocalDataFlow) + "." + nameof (GetWithPublicFields) + "()",
-			ProducedBy = ProducedBy.Analyzer)]
+		[RecognizedReflectionAccessPattern]
 		public static void TestBackwardsEdgeGoto ()
 		{
 			string str = null;
 			goto ForwardTarget;
 		BackwardTarget:
-			str.RequiresPublicMethods (); // should warn for the value that comes from GetWithPublicFields, but it doesn't.
+			RequirePublicMethods (str); // should warn for the value that comes from GetWithPublicFields, but it doesn't.
 			return;
 
 		ForwardTarget:
 			str = GetWithPublicFields ();
 			goto BackwardTarget;
+		}
+
+		public static void RequirePublicFields (
+			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)]
+			string type)
+		{
+		}
+
+		public static void RequireNonPublicMethods (
+			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.NonPublicMethods)]
+			string type)
+		{
+		}
+		public static void RequirePublicMethods (
+			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+			string type)
+		{
+		}
+
+		public static void RequirePublicConstructors (
+			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+			string type)
+		{
 		}
 
 		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)]

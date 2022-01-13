@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
-using Mono.Linker.Tests.Cases.Expectations.Helpers;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.DataFlow
@@ -15,7 +14,6 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 	[SetupLinkAttributesFile ("XmlAnnotations.xml")]
 	[ExpectedWarning ("IL2031", "Attribute type 'System.DoesNotExistAttribute' could not be found", FileName = "XmlAnnotations.xml")]
 	[LogDoesNotContain ("IL2067: Mono.Linker.Tests.Cases.DataFlow.XmlAnnotations.ReadFromInstanceField():*", true)]
-	[ExpectedNoWarnings]
 	class XmlAnnotations
 	{
 		public static void Main ()
@@ -38,55 +36,77 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		Type PropertyWithPublicParameterlessConstructor { get; set; }
 
-		[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions) + "." + nameof (DataFlowTypeExtensions.RequiresPublicConstructors))]
-		[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions) + "." + nameof (DataFlowTypeExtensions.RequiresNonPublicConstructors))]
+		[UnrecognizedReflectionAccessPattern (typeof (XmlAnnotations), nameof (RequirePublicConstructors), new Type[] { typeof (Type) })]
+		[UnrecognizedReflectionAccessPattern (typeof (XmlAnnotations), nameof (RequireNonPublicConstructors), new Type[] { typeof (Type) })]
+		[RecognizedReflectionAccessPattern]
 		private void ReadFromInstanceField ()
 		{
-			_typeWithPublicParameterlessConstructor.RequiresPublicParameterlessConstructor ();
-			_typeWithPublicParameterlessConstructor.RequiresPublicConstructors ();
-			_typeWithPublicParameterlessConstructor.RequiresNonPublicConstructors ();
+			RequirePublicParameterlessConstructor (_typeWithPublicParameterlessConstructor);
+			RequirePublicConstructors (_typeWithPublicParameterlessConstructor);
+			RequireNonPublicConstructors (_typeWithPublicParameterlessConstructor);
 		}
 
-		[ExpectedWarning ("IL2067", nameof (DataFlowTypeExtensions) + "." + nameof (DataFlowTypeExtensions.RequiresPublicConstructors))]
+		[UnrecognizedReflectionAccessPattern (typeof (XmlAnnotations), nameof (RequirePublicConstructors), new Type[] { typeof (Type) })]
+		[RecognizedReflectionAccessPattern]
 		private void TwoAnnotatedParameters (
 			Type type,
 			Type type2)
 		{
-			type.RequiresPublicParameterlessConstructor ();
-			type2.RequiresPublicParameterlessConstructor ();
-			type.RequiresPublicConstructors ();
-			type2.RequiresPublicConstructors ();
+			RequirePublicParameterlessConstructor (type);
+			RequirePublicParameterlessConstructor (type2);
+			RequirePublicConstructors (type);
+			RequirePublicConstructors (type2);
 		}
 
-		[ExpectedWarning ("IL2067", nameof (DataFlowTypeExtensions) + "." + nameof (DataFlowTypeExtensions.RequiresPublicParameterlessConstructor))]
+		[UnrecognizedReflectionAccessPattern (typeof (XmlAnnotations), nameof (RequirePublicParameterlessConstructor), new Type[] { typeof (Type) })]
 		private void SpacesBetweenParametersWrongArgument (
 			Type type,
 			bool nonused)
 		{
-			type.RequiresPublicParameterlessConstructor ();
+			RequirePublicParameterlessConstructor (type);
 		}
 
+		[RecognizedReflectionAccessPattern]
 		private void GenericMethod<T> (
 			T input,
 			Type type)
 		{
-			type.RequiresPublicParameterlessConstructor ();
+			RequirePublicParameterlessConstructor (type);
 		}
 
-		[ExpectedWarning ("IL2068", nameof (XmlAnnotations) + "." + nameof (ReturnConstructorsFailure))]
+		[UnrecognizedReflectionAccessPattern (typeof (XmlAnnotations), nameof (ReturnConstructorsFailure), new Type[] { typeof (Type) },
+			returnType: typeof (Type))]
 		private Type ReturnConstructorsFailure (
 			Type publicParameterlessConstructorType)
 		{
 			return publicParameterlessConstructorType;
 		}
 
-		[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions) + "." + nameof (DataFlowTypeExtensions.RequiresPublicConstructors))]
-		[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions) + "." + nameof (DataFlowTypeExtensions.RequiresNonPublicConstructors))]
+		[UnrecognizedReflectionAccessPattern (typeof (XmlAnnotations), nameof (RequirePublicConstructors), new Type[] { typeof (Type) })]
+		[UnrecognizedReflectionAccessPattern (typeof (XmlAnnotations), nameof (RequireNonPublicConstructors), new Type[] { typeof (Type) })]
 		private void ReadFromInstanceProperty ()
 		{
-			PropertyWithPublicParameterlessConstructor.RequiresPublicParameterlessConstructor ();
-			PropertyWithPublicParameterlessConstructor.RequiresPublicConstructors ();
-			PropertyWithPublicParameterlessConstructor.RequiresNonPublicConstructors ();
+			RequirePublicParameterlessConstructor (PropertyWithPublicParameterlessConstructor);
+			RequirePublicConstructors (PropertyWithPublicParameterlessConstructor);
+			RequireNonPublicConstructors (PropertyWithPublicParameterlessConstructor);
+		}
+
+		private static void RequirePublicParameterlessConstructor (
+			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+			Type type)
+		{
+		}
+
+		private static void RequirePublicConstructors (
+			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+			Type type)
+		{
+		}
+
+		private static void RequireNonPublicConstructors (
+			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.NonPublicConstructors)]
+			Type type)
+		{
 		}
 
 		class TestType { }
@@ -95,13 +115,32 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		{
 			Type _typeWithPublicParameterlessConstructor;
 
-			[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions) + "." + nameof (DataFlowTypeExtensions.RequiresPublicConstructors))]
-			[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions) + "." + nameof (DataFlowTypeExtensions.RequiresNonPublicConstructors))]
+			[UnrecognizedReflectionAccessPattern (typeof (NestedType), nameof (RequirePublicConstructors), new Type[] { typeof (Type) })]
+			[UnrecognizedReflectionAccessPattern (typeof (NestedType), nameof (RequireConstructors), new Type[] { typeof (Type) })]
+			[RecognizedReflectionAccessPattern]
 			public void ReadFromInstanceField ()
 			{
-				_typeWithPublicParameterlessConstructor.RequiresPublicParameterlessConstructor ();
-				_typeWithPublicParameterlessConstructor.RequiresPublicConstructors ();
-				_typeWithPublicParameterlessConstructor.RequiresNonPublicConstructors ();
+				RequirePublicParameterlessConstructor (_typeWithPublicParameterlessConstructor);
+				RequirePublicConstructors (_typeWithPublicParameterlessConstructor);
+				RequireConstructors (_typeWithPublicParameterlessConstructor);
+			}
+
+			private static void RequirePublicParameterlessConstructor (
+			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+			Type type)
+			{
+			}
+
+			private static void RequirePublicConstructors (
+				[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+			Type type)
+			{
+			}
+
+			private static void RequireConstructors (
+				[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.NonPublicConstructors)]
+			Type type)
+			{
 			}
 		}
 	}

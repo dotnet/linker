@@ -27,18 +27,21 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
+		[RecognizedReflectionAccessPattern]
 		static void TestGetMethods ()
 		{
 			var methods = typeof (MethodsUsedViaReflection).GetMethods ();
 		}
 
 		[Kept]
+		[RecognizedReflectionAccessPattern]
 		static void TestBindingFlags ()
 		{
 			var methods = typeof (TestBindingClass).GetMethods (BindingFlags.Static | BindingFlags.Public);
 		}
 
 		[Kept]
+		[RecognizedReflectionAccessPattern]
 		static void TestUnknownBindingFlags (BindingFlags bindingFlags)
 		{
 			// Since the binding flags are not known linker should mark all methods on the type
@@ -46,6 +49,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
+		[RecognizedReflectionAccessPattern]
 		static void TestNullType ()
 		{
 			Type type = null;
@@ -59,7 +63,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[ExpectedWarning ("IL2075", "FindType", "GetMethods")]
+		[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.GetMethods), new Type[] { typeof (BindingFlags) },
+			messageCode: "IL2075", message: new string[] { "FindType", "GetMethods" })]
 		static void TestDataFlowType ()
 		{
 			Type type = FindType ();
@@ -67,12 +72,14 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
+		[RecognizedReflectionAccessPattern]
 		private static void TestDataFlowWithAnnotation ([KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))][DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
 		{
 			var methods = type.GetMethods (BindingFlags.Public | BindingFlags.Static);
 		}
 
 		[Kept]
+		[RecognizedReflectionAccessPattern]
 		static void TestIfElse (int i)
 		{
 			Type myType;
@@ -87,6 +94,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
+		[RecognizedReflectionAccessPattern]
 		static void TestIgnoreCaseBindingFlags ()
 		{
 			var methods = typeof (IgnoreCaseClass).GetMethods (BindingFlags.IgnoreCase | BindingFlags.Public);

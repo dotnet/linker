@@ -11,7 +11,6 @@ using Mono.Linker.Tests.Cases.Expectations.Assertions;
 namespace Mono.Linker.Tests.Cases.DataFlow
 {
 	[Kept]
-	[ExpectedNoWarnings]
 	class AttributeFieldDataflow
 	{
 		[KeptAttributeAttribute (typeof (KeepsPublicConstructorsAttribute))]

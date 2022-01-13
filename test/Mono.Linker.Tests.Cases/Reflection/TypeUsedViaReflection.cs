@@ -42,9 +42,12 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			TestUnkownIgnoreCase3Params (1);
 			TestUnkownIgnoreCase5Params (1);
 			TestGenericTypeWithAnnotations ();
+
+			BaseTypeInterfaces.Test ();
 		}
 
 		[Kept]
+		[RecognizedReflectionAccessPattern]
 		public static void TestNull ()
 		{
 			const string reflectionTypeKeptString = null;
@@ -130,6 +133,9 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		public class AType { }
 
 		[Kept]
+		[RecognizedReflectionAccessPattern (
+			typeof (Type), nameof (Type.GetType), new Type[] { typeof (string), typeof (bool) },
+			typeof (AType), null, (Type[]) null)]
 		public static void TestType ()
 		{
 			const string reflectionTypeKeptString = "Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection+AType";
@@ -261,7 +267,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		public class CaseInsensitive { }
 
 		[Kept]
-		[ExpectedWarning ("IL2096", "'System.Type.GetType(String, Boolean, Boolean)'")]
+		[ExpectedWarning ("IL2096", "'System.Type.GetType(String,Boolean,Boolean)'")]
 		static void TestTypeUsingCaseInsensitiveFlag ()
 		{
 			const string reflectionTypeKeptString = "mono.linker.tests.cases.reflection.TypeUsedViaReflection+CaseInsensitive, test, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null";
@@ -271,7 +277,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		public class CaseUnknown { }
 
 		[Kept]
-		[ExpectedWarning ("IL2096", "'System.Type.GetType(String, Boolean, Boolean)'")]
+		[ExpectedWarning ("IL2096", "'System.Type.GetType(String,Boolean,Boolean)'")]
 		static void TestTypeUsingCaseUnknownByTheLinker ()
 		{
 			bool hideCase = GetCase ();
@@ -291,7 +297,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		public class CaseUnknown2 { }
 
 		[Kept]
-		[ExpectedWarning ("IL2096", "'System.Type.GetType(String, Boolean, Boolean)'")]
+		[ExpectedWarning ("IL2096", "'System.Type.GetType(String,Boolean,Boolean)'")]
 		static void TestTypeUsingCaseUnknownByTheLinker2 ()
 		{
 			const string reflectionTypeKeptString = "mono.linker.tests.cases.reflection.TypeUsedViaReflection+CaseUnknown2, test, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null";
@@ -322,7 +328,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		public class OverloadWith5ParametersWithIgnoreCase { }
 
 		[Kept]
-		[ExpectedWarning ("IL2096", "'System.Type.GetType(String, Func<AssemblyName,Assembly>, Func<Assembly,String,Boolean,Type>, Boolean, Boolean)'")]
+		[ExpectedWarning ("IL2096", "'System.Type.GetType(String,Func<AssemblyName,Assembly>,Func<Assembly,String,Boolean,Type>,Boolean,Boolean)'")]
 		static void TestTypeOverloadWith5ParametersWithIgnoreCase ()
 		{
 			const string reflectionTypeKeptString = "Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection+OverloadWith5ParametersWithIgnoreCase";
@@ -355,15 +361,15 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[ExpectedWarning ("IL2026", "'System.Reflection.Assembly.GetType(String, Boolean)'")]
-		[ExpectedWarning ("IL2057", "'System.Type.GetType(String, Boolean)'")]
+		[ExpectedWarning ("IL2026", "'System.Reflection.Assembly.GetType(String,Boolean)'")]
+		[ExpectedWarning ("IL2057", "'System.Type.GetType(String,Boolean)'")]
 		static Type GetTypeFromAssembly (Assembly assembly, string name, bool caseSensitive)
 		{
 			return assembly == null ? Type.GetType (name, caseSensitive) : assembly.GetType (name, caseSensitive);
 		}
 
 		[Kept]
-		[ExpectedWarning ("IL2096", "'System.Type.GetType(String, Boolean, Boolean)'")]
+		[ExpectedWarning ("IL2096", "'System.Type.GetType(String,Boolean,Boolean)'")]
 		static void TestUnkownIgnoreCase3Params (int num)
 		{
 			const string reflectionTypeKeptString = "mono.linker.tests.cases.reflection.TypeUsedViaReflection+CaseUnknown2, test, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null";
@@ -372,7 +378,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[ExpectedWarning ("IL2096", "'System.Type.GetType(String, Func<AssemblyName,Assembly>, Func<Assembly,String,Boolean,Type>, Boolean, Boolean)'")]
+		[ExpectedWarning ("IL2096", "'System.Type.GetType(String,Func<AssemblyName,Assembly>,Func<Assembly,String,Boolean,Type>,Boolean,Boolean)'")]
 		static void TestUnkownIgnoreCase5Params (int num)
 		{
 			const string reflectionTypeKeptString = "mono.linker.tests.cases.reflection.TypeUsedViaReflection+CaseUnknown2, test, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null";
@@ -404,6 +410,42 @@ namespace Mono.Linker.Tests.Cases.Reflection
 				"[[Mono.Linker.Tests.Cases.Reflection.TypeUsedViaReflection+GenericTypeWithAnnotations_InnerType, test, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]," +
 				" test, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null";
 			Type.GetType (reflectionTypeKeptString);
+		}
+
+		[Kept]
+		class BaseTypeInterfaces
+		{
+			[Kept]
+			interface ITest
+			{
+				[Kept]
+				void Method ();
+			}
+
+			[Kept]
+			[KeptInterface (typeof (ITest))]
+			class BaseType : ITest
+			{
+				[Kept]
+				public void Method () { }
+			}
+
+			[Kept]
+			[KeptBaseType (typeof (BaseType))]
+			[KeptInterface (typeof (ITest))]
+			class DerivedType : BaseType, ITest
+			{
+				[Kept]
+				public void Method () { }
+			}
+
+			[Kept]
+			public static void Test ()
+			{
+				ITest t = null;
+				t.Method ();
+				typeof (DerivedType).GetInterfaces ();
+			}
 		}
 	}
 }

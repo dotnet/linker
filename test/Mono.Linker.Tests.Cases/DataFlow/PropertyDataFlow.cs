@@ -10,9 +10,8 @@ using Mono.Linker.Tests.Cases.Expectations.Helpers;
 namespace Mono.Linker.Tests.Cases.DataFlow
 {
 	// Note: this test's goal is to validate that the product correctly reports unrecognized patterns
-	//   - so the main validation is done by the ExpectedWarning attributes.
+	//   - so the main validation is done by the UnrecognizedReflectionAccessPattern attributes.
 	[SkipKeptItemsValidation]
-	[ExpectedNoWarnings]
 	public class PropertyDataFlow
 	{
 		public static void Main ()
@@ -43,13 +42,11 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 		static Type StaticPropertyWithPublicConstructor { get; set; }
 
-		// Analyzer doesn't warn about annotations on unsupported types
-		// https://github.com/dotnet/linker/issues/2273
-		[ExpectedWarning ("IL2099", nameof (PropertyWithUnsupportedType), ProducedBy = ProducedBy.Trimmer)]
+		[ExpectedWarning ("IL2099", nameof (PropertyWithUnsupportedType))]
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)]
 		static object PropertyWithUnsupportedType { get; set; }
 
-		[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions) + "." + nameof (DataFlowTypeExtensions.RequiresNonPublicConstructors))]
+		[UnrecognizedReflectionAccessPattern (typeof (DataFlowTypeExtensions), nameof (DataFlowTypeExtensions.RequiresNonPublicConstructors), new Type[] { typeof (Type) }, messageCode: "IL2072")]
 		private void ReadFromInstanceProperty ()
 		{
 			PropertyWithPublicConstructor.RequiresPublicParameterlessConstructor ();
@@ -58,7 +55,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			PropertyWithPublicConstructor.RequiresNone ();
 		}
 
-		[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions) + "." + nameof (DataFlowTypeExtensions.RequiresNonPublicConstructors))]
+		[UnrecognizedReflectionAccessPattern (typeof (DataFlowTypeExtensions), nameof (DataFlowTypeExtensions.RequiresNonPublicConstructors), new Type[] { typeof (Type) }, messageCode: "IL2072")]
 		private void ReadFromStaticProperty ()
 		{
 			StaticPropertyWithPublicConstructor.RequiresPublicParameterlessConstructor ();
@@ -67,9 +64,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			StaticPropertyWithPublicConstructor.RequiresNone ();
 		}
 
-		[ExpectedWarning ("IL2072", nameof (PropertyDataFlow) + "." + nameof (PropertyWithPublicConstructor) + ".set", nameof (GetTypeWithPublicParameterlessConstructor))]
-		[ExpectedWarning ("IL2072", nameof (PropertyDataFlow) + "." + nameof (PropertyWithPublicConstructor) + ".set", nameof (GetTypeWithNonPublicConstructors))]
-		[ExpectedWarning ("IL2072", nameof (PropertyDataFlow) + "." + nameof (PropertyWithPublicConstructor) + ".set", nameof (GetUnkownType))]
+		[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), nameof (PropertyWithPublicConstructor) + ".set", new Type[] { typeof (Type) }, messageCode: "IL2072")]
+		[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), nameof (PropertyWithPublicConstructor) + ".set", new Type[] { typeof (Type) }, messageCode: "IL2072")]
+		[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), nameof (PropertyWithPublicConstructor) + ".set", new Type[] { typeof (Type) }, messageCode: "IL2072")]
 		private void WriteToInstanceProperty ()
 		{
 			PropertyWithPublicConstructor = GetTypeWithPublicParameterlessConstructor ();
@@ -78,9 +75,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			PropertyWithPublicConstructor = GetUnkownType ();
 		}
 
-		[ExpectedWarning ("IL2072", nameof (PropertyDataFlow) + "." + nameof (StaticPropertyWithPublicConstructor) + ".set", nameof (GetTypeWithPublicParameterlessConstructor))]
-		[ExpectedWarning ("IL2072", nameof (PropertyDataFlow) + "." + nameof (StaticPropertyWithPublicConstructor) + ".set", nameof (GetTypeWithNonPublicConstructors))]
-		[ExpectedWarning ("IL2072", nameof (PropertyDataFlow) + "." + nameof (StaticPropertyWithPublicConstructor) + ".set", nameof (GetUnkownType))]
+		[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), nameof (StaticPropertyWithPublicConstructor) + ".set", new Type[] { typeof (Type) }, messageCode: "IL2072")]
+		[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), nameof (StaticPropertyWithPublicConstructor) + ".set", new Type[] { typeof (Type) }, messageCode: "IL2072")]
+		[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), nameof (StaticPropertyWithPublicConstructor) + ".set", new Type[] { typeof (Type) }, messageCode: "IL2072")]
 		private void WriteToStaticProperty ()
 		{
 			StaticPropertyWithPublicConstructor = GetTypeWithPublicParameterlessConstructor ();
@@ -93,11 +90,13 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		Type _fieldWithPublicConstructors;
 
 		Type PropertyPublicConstructorsWithExplicitAccessors {
+			[RecognizedReflectionAccessPattern]
 			[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 			get {
 				return _fieldWithPublicConstructors;
 			}
 
+			[RecognizedReflectionAccessPattern]
 			[param: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 			set {
 				_fieldWithPublicConstructors = value;
@@ -105,14 +104,14 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		Type PropertyPublicParameterlessConstructorWithExplicitAccessors {
+			[RecognizedReflectionAccessPattern]
 			[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
 			get {
 				return _fieldWithPublicConstructors;
 			}
 
-			[ExpectedWarning ("IL2069", nameof (PropertyDataFlow) + "." + nameof (_fieldWithPublicConstructors),
-				"'value'",
-				nameof (PropertyPublicParameterlessConstructorWithExplicitAccessors) + ".set")]
+			[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), nameof (_fieldWithPublicConstructors),
+				messageCode: "IL2069", message: new string[] { "value", nameof (PropertyPublicParameterlessConstructorWithExplicitAccessors) + ".set", nameof (_fieldWithPublicConstructors) })]
 			[param: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
 			set {
 				_fieldWithPublicConstructors = value;
@@ -120,16 +119,17 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		Type PropertyNonPublicConstructorsWithExplicitAccessors {
-			[ExpectedWarning ("IL2078", nameof (PropertyDataFlow) + "." + nameof (PropertyNonPublicConstructorsWithExplicitAccessors) + ".get",
-					nameof (_fieldWithPublicConstructors))]
+			[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), nameof (PropertyNonPublicConstructorsWithExplicitAccessors) + ".get",
+				new Type[] { }, returnType: typeof (Type), messageCode: "IL2078", message: new string[] {
+					nameof (_fieldWithPublicConstructors),
+					nameof (PropertyNonPublicConstructorsWithExplicitAccessors) + ".get"
+				})]
 			[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicConstructors)]
 			get {
 				return _fieldWithPublicConstructors;
 			}
 
-			[ExpectedWarning ("IL2069", nameof (PropertyDataFlow) + "." + nameof (_fieldWithPublicConstructors),
-				"'value'",
-				nameof (PropertyNonPublicConstructorsWithExplicitAccessors) + ".set")]
+			[UnrecognizedReflectionAccessPattern (typeof (PropertyDataFlow), nameof (_fieldWithPublicConstructors), messageCode: "IL2069")]
 			[param: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicConstructors)]
 			set {
 				_fieldWithPublicConstructors = value;
@@ -145,8 +145,6 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			instance.TestInstancePropertyWithStaticField ();
 			instance.TestPropertyWithDifferentBackingFields ();
 			instance.TestPropertyWithExistingAttributes ();
-			instance.TestPropertyWithConflictingAttributes ();
-			instance.TestPropertyWithConflictingNoneAttributes ();
 			instance.TestPropertyWithIndexerWithMatchingAnnotations (null);
 			instance.TestPropertyWithIndexerWithoutMatchingAnnotations (null);
 		}
@@ -154,7 +152,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		class TestAutomaticPropagationType
 		{
 			// Fully implicit property should work
-			[ExpectedWarning ("IL2072", nameof (TestAutomaticPropagationType) + "." + nameof (ImplicitProperty) + ".set")]
+			[UnrecognizedReflectionAccessPattern (typeof (TestAutomaticPropagationType), nameof (ImplicitProperty) + ".set", new Type[] { typeof (Type) }, messageCode: "IL2072")]
 			public void TestImplicitProperty ()
 			{
 				ImplicitProperty.RequiresPublicConstructors ();
@@ -167,7 +165,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 
 			// Simple getter is not enough - we do detect the field, but we require the field to be compiler generated for this to work
-			[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions) + "." + nameof (DataFlowTypeExtensions.RequiresPublicConstructors))]
+			[UnrecognizedReflectionAccessPattern (typeof (DataFlowTypeExtensions), nameof (DataFlowTypeExtensions.RequiresPublicConstructors), new Type[] { typeof (Type) }, messageCode: "IL2077")]
 			// Make sure we don't warn about the field in context of property annotation propagation.
 			[LogDoesNotContain ("Could not find a unique backing field for property 'System.Type Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow/TestAutomaticPropagationType::PropertyWithSimpleGetter()'")]
 			public void TestPropertyWithSimpleGetter ()
@@ -180,16 +178,13 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 			static Type PropertyWithSimpleGetter {
-				[ExpectedWarning ("IL2078", nameof (TestAutomaticPropagationType) + "." + nameof (PropertyWithSimpleGetter) + ".get")]
+				[UnrecognizedReflectionAccessPattern (typeof (TestAutomaticPropagationType), nameof (PropertyWithSimpleGetter) + ".get", new Type[] { }, returnType: typeof (Type), messageCode: "IL2078")]
 				get {
 					return PropertyWithSimpleGetter_Field;
 				}
 			}
 
-			// Analyzer doesn't try to detect backing fields of properties: https://github.com/dotnet/linker/issues/2273
-			[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions) + "." + nameof (DataFlowTypeExtensions.RequiresPublicConstructors) + "(Type)",
-				nameof (TestAutomaticPropagationType) + "." + nameof (PropertyWhichLooksLikeCompilerGenerated_Field),
-				ProducedBy = ProducedBy.Analyzer)]
+			[RecognizedReflectionAccessPattern]
 			public void TestPropertyWhichLooksLikeCompilerGenerated ()
 			{
 				// If the property was correctly recognized both the property getter and the backing field should get the annotation.
@@ -202,16 +197,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 			static Type PropertyWhichLooksLikeCompilerGenerated {
-				// Analyzer doesn't try to detect backing fields of properties: https://github.com/dotnet/linker/issues/2273
-				[ExpectedWarning ("IL2078", nameof (TestAutomaticPropagationType) + "." + nameof (PropertyWhichLooksLikeCompilerGenerated) + ".get",
-					nameof (TestAutomaticPropagationType) + "." + nameof (PropertyWhichLooksLikeCompilerGenerated_Field),
-					ProducedBy = ProducedBy.Analyzer)]
 				get {
 					return PropertyWhichLooksLikeCompilerGenerated_Field;
 				}
 			}
 
-			[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions) + "." + nameof (DataFlowTypeExtensions.RequiresPublicConstructors))]
+			[UnrecognizedReflectionAccessPattern (typeof (DataFlowTypeExtensions), nameof (DataFlowTypeExtensions.RequiresPublicConstructors), new Type[] { typeof (Type) }, messageCode: "IL2077")]
 			// Make sure we don't warn about the field in context of property annotation propagation.
 			[LogDoesNotContain ("Could not find a unique backing field for property 'System.Type Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow/TestAutomaticPropagationType::InstancePropertyWithStaticField()'")]
 			public void TestInstancePropertyWithStaticField ()
@@ -227,6 +218,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			Type InstancePropertyWithStaticField {
 				// Nothing to warn about - the "value" is annotated with PublicConstructors and we're assigning
 				// it to unannotated field - that's a perfectly valid operation.
+				[RecognizedReflectionAccessPattern]
 				set {
 					InstancePropertyWithStaticField_Field = value;
 				}
@@ -243,19 +235,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[CompilerGenerated]
 			private Type PropertyWithDifferentBackingFields_SetterField;
 
-			// Analyzer doesn't try to detect backing fields of properties: https://github.com/dotnet/linker/issues/2273
 			[ExpectedWarning ("IL2042",
-				"Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow.TestAutomaticPropagationType.PropertyWithDifferentBackingFields",
-				ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2078",
-				nameof (TestAutomaticPropagationType) + "." + nameof (PropertyWithDifferentBackingFields) + ".get",
-				"Type",
-				ProducedBy = ProducedBy.Analyzer)]
+				"Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow.TestAutomaticPropagationType.PropertyWithDifferentBackingFields")]
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 			Type PropertyWithDifferentBackingFields {
-				[ExpectedWarning ("IL2078",
-					nameof (TestAutomaticPropagationType) + "." + nameof (PropertyWithDifferentBackingFields) + ".get",
-					ProducedBy = ProducedBy.Trimmer)]
 				get {
 					return PropertyWithDifferentBackingFields_GetterField;
 				}
@@ -271,95 +254,23 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				PropertyWithExistingAttributes = null;
 			}
 
-			// Analyzer doesn't try to detect backing fields of properties: https://github.com/dotnet/linker/issues/2273
-			[ExpectedWarning ("IL2056", "PropertyWithExistingAttributes", "PropertyWithExistingAttributes_Field",
-				ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2056", "PropertyWithExistingAttributes", "PropertyWithExistingAttributes_Field")]
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 			[CompilerGenerated]
 			Type PropertyWithExistingAttributes_Field;
 
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 			Type PropertyWithExistingAttributes {
-				// Analyzer doesn't try to detect backing fields of properties: https://github.com/dotnet/linker/issues/2273
-				[ExpectedWarning ("IL2043", "PropertyWithExistingAttributes", "PropertyWithExistingAttributes.get",
-					ProducedBy = ProducedBy.Trimmer)]
+				[ExpectedWarning ("IL2043", "PropertyWithExistingAttributes", "PropertyWithExistingAttributes.get")]
 				[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 				get { return PropertyWithExistingAttributes_Field; }
 
-				// Analyzer doesn't try to detect backing fields of properties: https://github.com/dotnet/linker/issues/2273
-				[ExpectedWarning ("IL2043", "PropertyWithExistingAttributes", "PropertyWithExistingAttributes.set",
-					ProducedBy = ProducedBy.Trimmer)]
+				[ExpectedWarning ("IL2043", "PropertyWithExistingAttributes", "PropertyWithExistingAttributes.set")]
 				[param: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 				set { PropertyWithExistingAttributes_Field = value; }
 			}
 
-			// When the property annotation conflicts with the getter/setter annotation,
-			// we issue a warning (IL2043 below) but respect the getter/setter annotations.
-			[ExpectedWarning ("IL2072", nameof (TestAutomaticPropagationType) + "." + nameof (PropertyWithConflictingAttributes) + ".get",
-				nameof (DataFlowTypeExtensions) + "." + nameof (DataFlowTypeExtensions.RequiresPublicConstructors) + "(Type)")]
-			[ExpectedWarning ("IL2072", nameof (TestAutomaticPropagationType) + "." + nameof (PropertyWithConflictingAttributes) + ".set",
-				nameof (PropertyDataFlow) + "." + nameof (GetTypeWithPublicConstructors) + "()")]
-			public void TestPropertyWithConflictingAttributes ()
-			{
-				PropertyWithConflictingAttributes.RequiresPublicConstructors ();
-				PropertyWithConflictingAttributes.RequiresNonPublicConstructors ();
-				PropertyWithConflictingAttributes = GetTypeWithPublicConstructors ();
-				PropertyWithConflictingAttributes = GetTypeWithNonPublicConstructors ();
-			}
-
-			// Analyzer doesn't try to detect backing fields of properties: https://github.com/dotnet/linker/issues/2273
-			[ExpectedWarning ("IL2056", "PropertyWithConflictingAttributes", "PropertyWithConflictingAttributes_Field",
-				ProducedBy = ProducedBy.Trimmer)]
-			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicConstructors)]
-			[CompilerGenerated]
-			Type PropertyWithConflictingAttributes_Field;
-
-			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
-			Type PropertyWithConflictingAttributes {
-				// Analyzer doesn't try to detect backing fields of properties: https://github.com/dotnet/linker/issues/2273
-				[ExpectedWarning ("IL2043", "PropertyWithConflictingAttributes", "PropertyWithConflictingAttributes.get",
-					ProducedBy = ProducedBy.Trimmer)]
-				[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicConstructors)]
-				get { return PropertyWithConflictingAttributes_Field; }
-
-				// Analyzer doesn't try to detect backing fields of properties: https://github.com/dotnet/linker/issues/2273
-				[ExpectedWarning ("IL2043", "PropertyWithConflictingAttributes", "PropertyWithConflictingAttributes.set",
-					ProducedBy = ProducedBy.Trimmer)]
-				[param: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicConstructors)]
-				set { PropertyWithConflictingAttributes_Field = value; }
-			}
-
-			// When the property annotation is DAMT.None and this conflicts with the getter/setter annotations,
-			// we don't produce a warning about the conflict, and just respect the property annotations.
-			[ExpectedWarning ("IL2072", nameof (TestAutomaticPropagationType) + "." + nameof (PropertyWithConflictingNoneAttributes) + ".get",
-				nameof (DataFlowTypeExtensions) + "." + nameof (DataFlowTypeExtensions.RequiresNonPublicConstructors) + "(Type)")]
-			[ExpectedWarning ("IL2072", nameof (TestAutomaticPropagationType) + "." + nameof (PropertyWithConflictingNoneAttributes) + ".set",
-				nameof (PropertyDataFlow) + "." + nameof (GetTypeWithNonPublicConstructors) + "()")]
-			public void TestPropertyWithConflictingNoneAttributes ()
-			{
-				PropertyWithConflictingNoneAttributes.RequiresPublicConstructors ();
-				PropertyWithConflictingNoneAttributes.RequiresNonPublicConstructors ();
-				PropertyWithConflictingNoneAttributes = GetTypeWithPublicConstructors ();
-				PropertyWithConflictingNoneAttributes = GetTypeWithNonPublicConstructors ();
-			}
-
-			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.None)]
-			[CompilerGenerated]
-			Type PropertyWithConflictingNoneAttributes_Field;
-
-			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
-			Type PropertyWithConflictingNoneAttributes {
-				// Analyzer doesn't try to detect backing fields of properties: https://github.com/dotnet/linker/issues/2273
-				[ExpectedWarning ("IL2078", nameof (TestAutomaticPropagationType) + "." + nameof (PropertyWithConflictingNoneAttributes) + ".get",
-					nameof (TestAutomaticPropagationType) + "." + nameof (PropertyWithConflictingNoneAttributes_Field),
-					ProducedBy = ProducedBy.Analyzer)]
-				[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.None)]
-				get { return PropertyWithConflictingNoneAttributes_Field; }
-
-				[param: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.None)]
-				set { PropertyWithConflictingNoneAttributes_Field = value; }
-			}
-
+			[RecognizedReflectionAccessPattern]
 			public void TestPropertyWithIndexerWithMatchingAnnotations ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)] Type myType)
 			{
 				var propclass = new PropertyWithIndexer ();
@@ -367,10 +278,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				propclass[1].RequiresPublicConstructors ();
 			}
 
-			// Trimmer and analyzer handle formatting of indexers differently.
-			[ExpectedWarning ("IL2067", nameof (PropertyWithIndexer) + ".Item.set", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2067", nameof (PropertyWithIndexer) + ".this[Int32].set", ProducedBy = ProducedBy.Analyzer)]
-			[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions) + "." + nameof (DataFlowTypeExtensions.RequiresNonPublicConstructors) + "(Type)")]
+			[UnrecognizedReflectionAccessPattern (typeof (PropertyWithIndexer), "Item.set", new Type[] { typeof (Type) }, messageCode: "IL2067")]
+			[UnrecognizedReflectionAccessPattern (typeof (DataFlowTypeExtensions), "RequiresNonPublicConstructors", new Type[] { typeof (Type) }, messageCode: "IL2072")]
 			[LogDoesNotContain ("'Value passed to parameter 'index' of method 'Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow.TestAutomaticPropagationType.PropertyWithIndexer.Item.set'")]
 			public void TestPropertyWithIndexerWithoutMatchingAnnotations (Type myType)
 			{
@@ -386,9 +295,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 				public Type this[int index] {
-					// TODO: warn about unknown types in analyzer: https://github.com/dotnet/linker/issues/2273
-					[ExpectedWarning ("IL2063", "PropertyWithIndexer.Item.get",
-						ProducedBy = ProducedBy.Trimmer)]
+					[ExpectedWarning ("IL2063", "PropertyWithIndexer.Item.get")]
 					get => Property_Field[index];
 					set => Property_Field[index] = value;
 				}

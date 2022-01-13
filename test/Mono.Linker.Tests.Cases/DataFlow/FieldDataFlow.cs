@@ -1,4 +1,4 @@
-// Licensed to the .NET Foundation under one or more agreements.
+﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System;
@@ -10,9 +10,8 @@ using Mono.Linker.Tests.Cases.Expectations.Assertions;
 namespace Mono.Linker.Tests.Cases.DataFlow
 {
 	// Note: this test's goal is to validate that the product correctly reports unrecognized patterns
-	//   - so the main validation is done by the ExpectedWarning attributes.
+	//   - so the main validation is done by the UnrecognizedReflectionAccessPattern attributes.
 	[SkipKeptItemsValidation]
-	[ExpectedNoWarnings]
 	public class FieldDataFlow
 	{
 		public static void Main ()
@@ -44,15 +43,13 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		static Type _staticTypeWithoutRequirements;
 
-		// TODO: warn about annotation on wrong type in analyzer: https://github.com/dotnet/linker/issues/2273
-		[ExpectedWarning ("IL2097", nameof (_annotationOnWrongType),
-			ProducedBy = ProducedBy.Trimmer)]
+		[ExpectedWarning ("IL2097", nameof (_annotationOnWrongType))]
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)]
 		static object _annotationOnWrongType;
 
-		[ExpectedWarning ("IL2077", nameof (RequirePublicConstructors),
-			"_typeWithPublicParameterlessConstructor", "type", "RequirePublicConstructors(Type)")]
-		[ExpectedWarning ("IL2077", nameof (RequireNonPublicConstructors))]
+		[UnrecognizedReflectionAccessPattern (typeof (FieldDataFlow), nameof (RequirePublicConstructors), new Type[] { typeof (Type) },
+			messageCode: "IL2077", message: new string[] { "_typeWithPublicParameterlessConstructor", "type", "RequirePublicConstructors(Type)" })]
+		[UnrecognizedReflectionAccessPattern (typeof (FieldDataFlow), nameof (RequireNonPublicConstructors), new Type[] { typeof (Type) }, messageCode: "IL2077")]
 		private void ReadFromInstanceField ()
 		{
 			RequirePublicParameterlessConstructor (_typeWithPublicParameterlessConstructor);
@@ -61,18 +58,22 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			RequireNothing (_typeWithPublicParameterlessConstructor);
 		}
 
-		[ExpectedWarning ("IL2074", nameof (FieldDataFlow) + "." + nameof (_typeWithPublicParameterlessConstructor), nameof (GetUnknownType))]
-		[ExpectedWarning ("IL2074", nameof (FieldDataFlow) + "." + nameof (_typeWithPublicParameterlessConstructor), nameof (GetTypeWithNonPublicConstructors))]
+		[UnrecognizedReflectionAccessPattern (typeof (FieldDataFlow), nameof (_typeWithPublicParameterlessConstructor),
+			messageCode: "IL2074", message: new string[] {
+				nameof (GetUnkownType),
+				nameof (_typeWithPublicParameterlessConstructor)
+			})]
+		[UnrecognizedReflectionAccessPattern (typeof (FieldDataFlow), nameof (_typeWithPublicParameterlessConstructor), messageCode: "IL2074")]
 		private void WriteToInstanceField ()
 		{
 			_typeWithPublicParameterlessConstructor = GetTypeWithPublicParameterlessConstructor ();
 			_typeWithPublicParameterlessConstructor = GetTypeWithPublicConstructors ();
 			_typeWithPublicParameterlessConstructor = GetTypeWithNonPublicConstructors ();
-			_typeWithPublicParameterlessConstructor = GetUnknownType ();
+			_typeWithPublicParameterlessConstructor = GetUnkownType ();
 		}
 
-		[ExpectedWarning ("IL2077", nameof (RequirePublicConstructors))]
-		[ExpectedWarning ("IL2077", nameof (RequireNonPublicConstructors))]
+		[UnrecognizedReflectionAccessPattern (typeof (FieldDataFlow), nameof (RequirePublicConstructors), new Type[] { typeof (Type) }, messageCode: "IL2077")]
+		[UnrecognizedReflectionAccessPattern (typeof (FieldDataFlow), nameof (RequireNonPublicConstructors), new Type[] { typeof (Type) }, messageCode: "IL2077")]
 		private void ReadFromInstanceFieldOnADifferentClass ()
 		{
 			var store = new TypeStore ();
@@ -83,8 +84,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			RequireNothing (store._typeWithPublicParameterlessConstructor);
 		}
 
-		[ExpectedWarning ("IL2074", nameof (TypeStore) + "." + nameof (TypeStore._typeWithPublicParameterlessConstructor), nameof (GetUnknownType))]
-		[ExpectedWarning ("IL2074", nameof (TypeStore) + "." + nameof (TypeStore._typeWithPublicParameterlessConstructor), nameof (GetTypeWithNonPublicConstructors))]
+		[UnrecognizedReflectionAccessPattern (typeof (TypeStore), nameof (TypeStore._typeWithPublicParameterlessConstructor), messageCode: "IL2074")]
+		[UnrecognizedReflectionAccessPattern (typeof (TypeStore), nameof (TypeStore._typeWithPublicParameterlessConstructor), messageCode: "IL2074")]
 		private void WriteToInstanceFieldOnADifferentClass ()
 		{
 			var store = new TypeStore ();
@@ -92,11 +93,11 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			store._typeWithPublicParameterlessConstructor = GetTypeWithPublicParameterlessConstructor ();
 			store._typeWithPublicParameterlessConstructor = GetTypeWithPublicConstructors ();
 			store._typeWithPublicParameterlessConstructor = GetTypeWithNonPublicConstructors ();
-			store._typeWithPublicParameterlessConstructor = GetUnknownType ();
+			store._typeWithPublicParameterlessConstructor = GetUnkownType ();
 		}
 
-		[ExpectedWarning ("IL2077", nameof (RequirePublicConstructors))]
-		[ExpectedWarning ("IL2077", nameof (RequireNonPublicConstructors))]
+		[UnrecognizedReflectionAccessPattern (typeof (FieldDataFlow), nameof (RequirePublicConstructors), new Type[] { typeof (Type) }, messageCode: "IL2077")]
+		[UnrecognizedReflectionAccessPattern (typeof (FieldDataFlow), nameof (RequireNonPublicConstructors), new Type[] { typeof (Type) }, messageCode: "IL2077")]
 		private void ReadFromStaticField ()
 		{
 			RequirePublicParameterlessConstructor (_staticTypeWithPublicParameterlessConstructor);
@@ -105,20 +106,24 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			RequireNothing (_staticTypeWithPublicParameterlessConstructor);
 		}
 
-		[ExpectedWarning ("IL2074", nameof (FieldDataFlow) + "." + nameof (_staticTypeWithPublicParameterlessConstructor), nameof (GetUnknownType))]
-		[ExpectedWarning ("IL2074", nameof (FieldDataFlow) + "." + nameof (_staticTypeWithPublicParameterlessConstructor), nameof (GetTypeWithNonPublicConstructors))]
-		[ExpectedWarning ("IL2079", nameof (FieldDataFlow) + "." + nameof (_staticTypeWithPublicParameterlessConstructor), nameof (_staticTypeWithoutRequirements))]
+		[UnrecognizedReflectionAccessPattern (typeof (FieldDataFlow), nameof (_staticTypeWithPublicParameterlessConstructor), messageCode: "IL2074")]
+		[UnrecognizedReflectionAccessPattern (typeof (FieldDataFlow), nameof (_staticTypeWithPublicParameterlessConstructor), messageCode: "IL2074")]
+		[UnrecognizedReflectionAccessPattern (typeof (FieldDataFlow), nameof (_staticTypeWithPublicParameterlessConstructor),
+			messageCode: "IL2079", message: new string[] {
+				nameof(_staticTypeWithoutRequirements),
+				nameof(_staticTypeWithPublicParameterlessConstructor)
+			})]
 		private void WriteToStaticField ()
 		{
 			_staticTypeWithPublicParameterlessConstructor = GetTypeWithPublicParameterlessConstructor ();
 			_staticTypeWithPublicParameterlessConstructor = GetTypeWithPublicConstructors ();
 			_staticTypeWithPublicParameterlessConstructor = GetTypeWithNonPublicConstructors ();
-			_staticTypeWithPublicParameterlessConstructor = GetUnknownType ();
+			_staticTypeWithPublicParameterlessConstructor = GetUnkownType ();
 			_staticTypeWithPublicParameterlessConstructor = _staticTypeWithoutRequirements;
 		}
 
-		[ExpectedWarning ("IL2077", nameof (RequirePublicConstructors))]
-		[ExpectedWarning ("IL2077", nameof (RequireNonPublicConstructors))]
+		[UnrecognizedReflectionAccessPattern (typeof (FieldDataFlow), nameof (RequirePublicConstructors), new Type[] { typeof (Type) }, messageCode: "IL2077")]
+		[UnrecognizedReflectionAccessPattern (typeof (FieldDataFlow), nameof (RequireNonPublicConstructors), new Type[] { typeof (Type) }, messageCode: "IL2077")]
 		private void ReadFromStaticFieldOnADifferentClass ()
 		{
 			RequirePublicParameterlessConstructor (TypeStore._staticTypeWithPublicParameterlessConstructor);
@@ -127,19 +132,17 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			RequireNothing (TypeStore._staticTypeWithPublicParameterlessConstructor);
 		}
 
-		[ExpectedWarning ("IL2074", nameof (TypeStore) + "." + nameof (TypeStore._staticTypeWithPublicParameterlessConstructor), nameof (GetUnknownType))]
-		[ExpectedWarning ("IL2074", nameof (TypeStore) + "." + nameof (TypeStore._staticTypeWithPublicParameterlessConstructor), nameof (GetTypeWithNonPublicConstructors))]
+		[UnrecognizedReflectionAccessPattern (typeof (TypeStore), nameof (TypeStore._staticTypeWithPublicParameterlessConstructor), messageCode: "IL2074")]
+		[UnrecognizedReflectionAccessPattern (typeof (TypeStore), nameof (TypeStore._staticTypeWithPublicParameterlessConstructor), messageCode: "IL2074")]
 		private void WriteToStaticFieldOnADifferentClass ()
 		{
 			TypeStore._staticTypeWithPublicParameterlessConstructor = GetTypeWithPublicParameterlessConstructor ();
 			TypeStore._staticTypeWithPublicParameterlessConstructor = GetTypeWithPublicConstructors ();
 			TypeStore._staticTypeWithPublicParameterlessConstructor = GetTypeWithNonPublicConstructors ();
-			TypeStore._staticTypeWithPublicParameterlessConstructor = GetUnknownType ();
+			TypeStore._staticTypeWithPublicParameterlessConstructor = GetUnkownType ();
 		}
 
-		// TODO: warn about unknown types in analyzer: https://github.com/dotnet/linker/issues/2273
-		[ExpectedWarning ("IL2064", nameof (TypeStore) + "." + nameof (TypeStore._staticTypeWithPublicParameterlessConstructor),
-			ProducedBy = ProducedBy.Trimmer)]
+		[UnrecognizedReflectionAccessPattern (typeof (TypeStore), nameof (TypeStore._staticTypeWithPublicParameterlessConstructor), messageCode: "IL2064", message: new string[] { nameof (TypeStore._staticTypeWithPublicParameterlessConstructor) })]
 		private void WriteUnknownValue ()
 		{
 			var array = new object[1];
@@ -188,7 +191,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			return null;
 		}
 
-		private static Type GetUnknownType ()
+		private static Type GetUnkownType ()
 		{
 			return null;
 		}

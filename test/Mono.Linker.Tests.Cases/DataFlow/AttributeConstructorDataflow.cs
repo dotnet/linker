@@ -11,7 +11,6 @@ using Mono.Linker.Tests.Cases.Expectations.Assertions;
 namespace Mono.Linker.Tests.Cases.DataFlow
 {
 	[Kept]
-	[ExpectedNoWarnings]
 	class AttributeConstructorDataflow
 	{
 		[KeptAttributeAttribute (typeof (KeepsPublicConstructorAttribute))]
@@ -74,6 +73,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		class AllOnSelf
 		{
 			[Kept]
+			[RecognizedReflectionAccessPattern]
 			public static void Test ()
 			{
 				var t = typeof (KeepAllOnSelf);

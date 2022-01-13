@@ -5,7 +5,6 @@ using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
 namespace Mono.Linker.Tests.Cases.DataFlow
 {
-	[ExpectedNoWarnings]
 	public class DynamicDependencyDataflow
 	{
 		public static void Main ()
@@ -19,7 +18,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		static Type TypeWithPublicMethods;
 
 		[Kept]
-		[ExpectedWarning ("IL2080", nameof (Type.GetField))]
+		[UnrecognizedReflectionAccessPattern (typeof (Type), "GetField", new Type[] { typeof (string) }, messageCode: "IL2080")]
 		[DynamicDependency ("DynamicDependencyTo")]
 		static void DynamicDependencyFrom ()
 		{
@@ -27,7 +26,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[Kept]
-		[ExpectedWarning ("IL2080", nameof (Type.GetProperty))]
+		[UnrecognizedReflectionAccessPattern (typeof (Type), "GetProperty", new Type[] { typeof (string) }, messageCode: "IL2080")]
 		static void DynamicDependencyTo ()
 		{
 			_ = TypeWithPublicMethods.GetProperty ("p");

@@ -13,8 +13,6 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.DataFlow
 {
-	[ExpectedNoWarnings]
-
 	[SetupCompileBefore ("base.dll", new[] { "Dependencies/MemberTypesAllBaseTypeAssembly.cs" })]
 	[KeptAssembly ("base.dll")]
 	[SetupLinkerAction ("link", "base")]

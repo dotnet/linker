@@ -6,14 +6,12 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
-using Mono.Linker.Tests.Cases.Expectations.Helpers;
 
 namespace Mono.Linker.Tests.Cases.DataFlow
 {
 	// Note: this test's goal is to validate that the product correctly reports unrecognized patterns
-	//   - so the main validation is done by the ExpectedWarning attributes.
+	//   - so the main validation is done by the UnrecognizedReflectionAccessPattern attributes.
 	[SkipKeptItemsValidation]
-	[ExpectedNoWarnings]
 	public class GetTypeDataFlow
 	{
 		public static void Main ()
@@ -37,59 +35,59 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			//    Type.GetType over two params
 		}
 
-		[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions.RequiresPublicConstructors))]
-		[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions.RequiresNonPublicConstructors))]
+		[UnrecognizedReflectionAccessPattern (typeof (GetTypeDataFlow), nameof (RequirePublicConstructors), new Type[] { typeof (Type) }, messageCode: "IL2072")]
+		[UnrecognizedReflectionAccessPattern (typeof (GetTypeDataFlow), nameof (RequireNonPublicConstructors), new Type[] { typeof (Type) }, messageCode: "IL2072")]
 		static void TestPublicParameterlessConstructor ()
 		{
 			Type type = Type.GetType (GetStringTypeWithPublicParameterlessConstructor ());
-			type.RequiresPublicParameterlessConstructor ();
-			type.RequiresPublicConstructors ();
-			type.RequiresNonPublicConstructors ();
-			type.RequiresNone ();
+			RequirePublicParameterlessConstructor (type);
+			RequirePublicConstructors (type);
+			RequireNonPublicConstructors (type);
+			RequireNothing (type);
 		}
 
-		[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions.RequiresNonPublicConstructors))]
+		[UnrecognizedReflectionAccessPattern (typeof (GetTypeDataFlow), nameof (RequireNonPublicConstructors), new Type[] { typeof (Type) }, messageCode: "IL2072")]
 		static void TestPublicConstructors ()
 		{
 			Type type = Type.GetType (GetStringTypeWithPublicConstructors ());
-			type.RequiresPublicParameterlessConstructor ();
-			type.RequiresPublicConstructors ();
-			type.RequiresNonPublicConstructors ();
-			type.RequiresNone ();
+			RequirePublicParameterlessConstructor (type);
+			RequirePublicConstructors (type);
+			RequireNonPublicConstructors (type);
+			RequireNothing (type);
 		}
 
-		[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions.RequiresPublicParameterlessConstructor))]
-		[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions.RequiresPublicConstructors))]
+		[UnrecognizedReflectionAccessPattern (typeof (GetTypeDataFlow), nameof (RequirePublicParameterlessConstructor), new Type[] { typeof (Type) }, messageCode: "IL2072")]
+		[UnrecognizedReflectionAccessPattern (typeof (GetTypeDataFlow), nameof (RequirePublicConstructors), new Type[] { typeof (Type) }, messageCode: "IL2072")]
 		static void TestConstructors ()
 		{
 			Type type = Type.GetType (GetStringTypeWithNonPublicConstructors ());
-			type.RequiresPublicParameterlessConstructor ();
-			type.RequiresPublicConstructors ();
-			type.RequiresNonPublicConstructors ();
-			type.RequiresNone ();
+			RequirePublicParameterlessConstructor (type);
+			RequirePublicConstructors (type);
+			RequireNonPublicConstructors (type);
+			RequireNothing (type);
 		}
 
-		[ExpectedWarning ("IL2057", nameof (GetType))]
+		[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (GetType), new Type[] { typeof (string) }, messageCode: "IL2057")]
 		static void TestUnknownType ()
 		{
 			Type type = Type.GetType (GetStringUnkownType ());
 		}
 
-		[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions.RequiresPublicConstructors))]
+		[UnrecognizedReflectionAccessPattern (typeof (GetTypeDataFlow), nameof (RequirePublicConstructors), new Type[] { typeof (Type) }, messageCode: "IL2072")]
 		static void TestTypeNameFromParameter (
 			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
 			string typeName)
 		{
-			Type.GetType (typeName).RequiresPublicConstructors ();
+			RequirePublicConstructors (Type.GetType (typeName));
 		}
 
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
 		static string _typeNameWithPublicParameterlessConstructor;
 
-		[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions.RequiresPublicConstructors))]
+		[UnrecognizedReflectionAccessPattern (typeof (GetTypeDataFlow), nameof (RequirePublicConstructors), new Type[] { typeof (Type) }, messageCode: "IL2072")]
 		static void TestTypeNameFromField ()
 		{
-			Type.GetType (_typeNameWithPublicParameterlessConstructor).RequiresPublicConstructors ();
+			RequirePublicConstructors (Type.GetType (_typeNameWithPublicParameterlessConstructor));
 		}
 
 		static int _switchOnField;
@@ -115,13 +113,16 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			Type.GetType (typeName);
 		}
 
+		[RecognizedReflectionAccessPattern]
 		static void TestStringEmpty ()
 		{
 			Type.GetType (string.Empty);
 		}
 
-		[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions.RequiresNonPublicConstructors), nameof (Type.GetType))]
-		[ExpectedWarning ("IL2057", "System.Type.GetType(String)")]
+		[UnrecognizedReflectionAccessPattern (typeof (GetTypeDataFlow), nameof (RequireNonPublicConstructors), new Type[] { typeof (Type) },
+			messageCode: "IL2072", message: new string[] { "GetType" })]
+		[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.GetType), new Type[] { typeof (string) },
+			messageCode: "IL2057", message: new string[] { "System.Type.GetType(String)" })]
 		static void TestMultipleMixedValues ()
 		{
 			string typeName = null;
@@ -140,7 +141,29 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				break;
 			}
 
-			Type.GetType (typeName).RequiresNonPublicConstructors ();
+			RequireNonPublicConstructors (Type.GetType (typeName));
+		}
+
+		private static void RequirePublicParameterlessConstructor (
+			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+			Type type)
+		{
+		}
+
+		private static void RequirePublicConstructors (
+			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+			Type type)
+		{
+		}
+
+		private static void RequireNonPublicConstructors (
+			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.NonPublicConstructors)]
+			Type type)
+		{
+		}
+
+		private static void RequireNothing (Type type)
+		{
 		}
 
 		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]

@@ -6,7 +6,6 @@ using Mono.Linker.Tests.Cases.Expectations.Assertions;
 namespace Mono.Linker.Tests.Cases.Reflection
 {
 #pragma warning disable 67 // The event {event} is not used
-	[ExpectedNoWarnings]
 	public class RuntimeReflectionExtensionsCalls
 	{
 		public static void Main ()
@@ -20,7 +19,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 		#region GetRuntimeEvent
 		[Kept]
-		[ExpectedWarning ("IL2072", nameof (RuntimeReflectionExtensions) + "." + nameof (RuntimeReflectionExtensions.GetRuntimeEvent))]
+		[UnrecognizedReflectionAccessPattern (typeof (RuntimeReflectionExtensions), nameof (RuntimeReflectionExtensions.GetRuntimeEvent),
+			new Type[] { typeof (Type), typeof (string) }, messageCode: "IL2072")]
 		public static void TestGetRuntimeEvent ()
 		{
 			typeof (ClassWithKeptMembers).GetRuntimeEvent ("PublicEvent");
@@ -28,13 +28,14 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			typeof (ClassWithUnkeptMembers).GetRuntimeEvent ("ProtectedEvent");
 			GetClassWithEvent ().GetRuntimeEvent ("This string will not be reached");
 			typeof (Derived).GetRuntimeEvent ("Event");
-			GetUnknownType ().GetRuntimeEvent (GetUnknownString ()); // IL2072
+			GetUnknownType ().GetRuntimeEvent (GetUnknownString ()); // UnrecognizedReflectionAccessPattern
 		}
 		#endregion
 
 		#region GetRuntimeField
 		[Kept]
-		[ExpectedWarning ("IL2072", nameof (RuntimeReflectionExtensions) + "." + nameof (RuntimeReflectionExtensions.GetRuntimeField))]
+		[UnrecognizedReflectionAccessPattern (typeof (RuntimeReflectionExtensions), nameof (RuntimeReflectionExtensions.GetRuntimeField),
+			new Type[] { typeof (Type), typeof (string) }, messageCode: "IL2072")]
 		public static void TestGetRuntimeField ()
 		{
 			typeof (ClassWithKeptMembers).GetRuntimeField ("PublicField");
@@ -42,13 +43,14 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			typeof (ClassWithUnkeptMembers).GetRuntimeField ("ProtectedField");
 			GetClassWithField ().GetRuntimeField ("This string will not be reached");
 			typeof (Derived).GetRuntimeField ("Field");
-			GetUnknownType ().GetRuntimeField (GetUnknownString ()); // IL2072
+			GetUnknownType ().GetRuntimeField (GetUnknownString ()); // UnrecognizedReflectionAccessPattern
 		}
 		#endregion
 
 		#region GetRuntimeMethod
 		[Kept]
-		[ExpectedWarning ("IL2072", nameof (RuntimeReflectionExtensions) + "." + nameof (RuntimeReflectionExtensions.GetRuntimeMethod))]
+		[UnrecognizedReflectionAccessPattern (typeof (RuntimeReflectionExtensions), nameof (RuntimeReflectionExtensions.GetRuntimeMethod),
+			new Type[] { typeof (Type), typeof (string), typeof (Type[]) }, messageCode: "IL2072")]
 		public static void TestGetRuntimeMethod ()
 		{
 			typeof (ClassWithKeptMembers).GetRuntimeMethod ("PublicMethod", Type.EmptyTypes);
@@ -56,13 +58,14 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			typeof (ClassWithUnkeptMembers).GetRuntimeMethod ("ProtectedMethod", Type.EmptyTypes);
 			GetClassWithMethod ().GetRuntimeMethod ("This string will not be reached", Type.EmptyTypes);
 			typeof (Derived).GetRuntimeMethod ("Method", Type.EmptyTypes);
-			GetUnknownType ().GetRuntimeMethod (GetUnknownString (), Type.EmptyTypes); // IL2072
+			GetUnknownType ().GetRuntimeMethod (GetUnknownString (), Type.EmptyTypes); // UnrecognizedReflectionAccessPattern
 		}
 		#endregion
 
 		#region GetRuntimeProperty
 		[Kept]
-		[ExpectedWarning ("IL2072", nameof (RuntimeReflectionExtensions) + "." + nameof (RuntimeReflectionExtensions.GetRuntimeProperty))]
+		[UnrecognizedReflectionAccessPattern (typeof (RuntimeReflectionExtensions), nameof (RuntimeReflectionExtensions.GetRuntimeProperty),
+			new Type[] { typeof (Type), typeof (string) }, messageCode: "IL2072")]
 		public static void TestGetRuntimeProperty ()
 		{
 			typeof (ClassWithKeptMembers).GetRuntimeProperty ("PublicProperty");
@@ -70,7 +73,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			typeof (ClassWithUnkeptMembers).GetRuntimeProperty ("ProtectedProperty");
 			GetClassWithProperty ().GetRuntimeProperty ("This string will not be reached");
 			typeof (Derived).GetRuntimeProperty ("Property");
-			GetUnknownType ().GetRuntimeProperty (GetUnknownString ()); // IL2072
+			GetUnknownType ().GetRuntimeProperty (GetUnknownString ()); // UnrecognizedReflectionAccessPattern
 		}
 		#endregion
 
