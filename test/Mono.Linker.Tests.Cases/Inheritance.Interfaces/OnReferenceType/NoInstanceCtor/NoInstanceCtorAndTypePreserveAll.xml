@@ -1,4 +1,4 @@
-<linker xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://www.w3schools.com ../../../../../src/ILLink.Shared/ILLink.xsd">
+<linker xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../../src/ILLink.Shared/ILLink.xsd">
     <assembly fullname="library, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
         <type fullname="Mono.Linker.Tests.Cases.Inheritance.Interfaces.OnReferenceType.NoInstanceCtor.Dependencies.NoInstanceCtorAndAssemblyPreserveAll_Lib/A" preserve="all"/>
     </assembly>

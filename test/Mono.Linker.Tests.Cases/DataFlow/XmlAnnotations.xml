@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<linker xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://www.w3schools.com ../../../src/ILLink.Shared/ILLink.LinkAttributes.xsd">
+<linker xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../src/ILLink.Shared/ILLink.LinkAttributes.xsd">
 	<assembly fullname="Test">
 		<attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
 			<argument>ILLink</argument>
