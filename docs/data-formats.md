@@ -68,7 +68,7 @@ The `required` attribute specifies that if the type is not marked, during the ma
     <type fullname="Assembly.B" /> 
     
     <!-- Preserve the type declaration only -->
-    <type fullname="Assembly.C" preserve="nothing" /> 
+    <type fullname="Assembly.C" preserve="none" /> 
 
     <!-- Preserve a nested type -->
     <type fullname="Assembly.D/Nested" preserve="all" />
