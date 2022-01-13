@@ -67,22 +67,17 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 
 		public bool TryGetEnclosingTryOrCatch (BlockProxy block, out RegionProxy tryOrCatchRegion)
 		{
-			tryOrCatchRegion = default;
-			ControlFlowRegion? region = block.Block.EnclosingRegion;
-			while (region != null) {
-				if (region.Kind is ControlFlowRegionKind.Try or ControlFlowRegionKind.Catch) {
-					tryOrCatchRegion = new RegionProxy (region);
-					return true;
-				}
-				region = region.EnclosingRegion;
-			}
-			return false;
+			return TryGetTryOrCatch (block.Block.EnclosingRegion, out tryOrCatchRegion);
 		}
 
 		public bool TryGetEnclosingTryOrCatch (RegionProxy regionProxy, out RegionProxy tryOrCatchRegion)
 		{
+			return TryGetTryOrCatch (regionProxy.Region.EnclosingRegion, out tryOrCatchRegion);
+		}
+
+		bool TryGetTryOrCatch (ControlFlowRegion? region, out RegionProxy tryOrCatchRegion)
+		{
 			tryOrCatchRegion = default;
-			ControlFlowRegion? region = regionProxy.Region.EnclosingRegion;
 			while (region != null) {
 				if (region.Kind is ControlFlowRegionKind.Try or ControlFlowRegionKind.Catch) {
 					tryOrCatchRegion = new RegionProxy (region);

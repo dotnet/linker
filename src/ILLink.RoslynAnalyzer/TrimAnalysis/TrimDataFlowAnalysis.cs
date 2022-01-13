@@ -16,6 +16,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 	public class TrimDataFlowAnalysis
 		: ForwardDataFlowAnalysis<
 			LocalState<ValueSet<SingleValue>>,
+			LocalDataFlowState<ValueSet<SingleValue>, ValueSetLattice<SingleValue>>,
 			LocalStateLattice<ValueSet<SingleValue>, ValueSetLattice<SingleValue>>,
 			BlockProxy,
 			RegionProxy,

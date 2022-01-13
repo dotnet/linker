@@ -12,13 +12,12 @@ namespace ILLink.Shared.DataFlow
 
 	}
 
-	public class DataFlowState<TValue>
+	public interface IDataFlowState<TValue, TValueLattice>
 		where TValue : struct, IEquatable<TValue>
+		where TValueLattice : ILattice<TValue>
 	{
-		public TValue Current;
-		public Box<TValue>? Exception;
-
-		public DataFlowState (TValue current, Box<TValue>? exception) => (Current, Exception) = (current, exception);
-		public DataFlowState (TValue current) : this (current, default) { }
+		TValue Current { get; set; }
+		Box<TValue>? Exception { get; set; }
+		TValueLattice Lattice { get; init; }
 	}
 }

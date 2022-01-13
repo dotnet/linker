@@ -12,10 +12,11 @@ namespace ILLink.Shared.DataFlow
 	// A generic implementation of a forward dataflow analysis. Forward means that it flows facts
 	// across code in the order of execution, starting from the beginning of a method,
 	// and merging values from predecessors.
-	public abstract class ForwardDataFlowAnalysis<TValue, TLattice, TBlock, TRegion, TControlFlowGraph, TTransfer>
+	public abstract class ForwardDataFlowAnalysis<TValue, TState, TLattice, TBlock, TRegion, TControlFlowGraph, TTransfer>
 		where TValue : struct, IEquatable<TValue>
+		where TState : class, IDataFlowState<TValue, TLattice>, new()
 		where TLattice : ILattice<TValue>
-		where TTransfer : ITransfer<TBlock, TValue, TLattice>
+		where TTransfer : ITransfer<TBlock, TValue, TState, TLattice>
 		where TBlock : IEquatable<TBlock>
 		where TRegion : IRegion<TRegion>
 		where TControlFlowGraph : IControlFlowGraph<TBlock, TRegion>
@@ -23,12 +24,10 @@ namespace ILLink.Shared.DataFlow
 
 		// Data structure to store dataflow states for every basic block in the control flow graph,
 		// keeping the exception states shared across different basic blocks owned by the same try or catch region.
-
 		struct ControlFlowGraphState
 		{
-
 			// Dataflow states for each basic block
-			readonly Dictionary<TBlock, DataFlowState<TValue>> blockOutput;
+			readonly Dictionary<TBlock, TState> blockOutput;
 
 			// The control flow graph doesn't contain edges for exceptional control flow:
 			// - From any point in a try region to the start of any catch or finally
@@ -129,11 +128,15 @@ namespace ILLink.Shared.DataFlow
 				exceptionFinallyState[block] = state;
 			}
 
-			public DataFlowState<TValue> Get (TBlock block)
+			public TState Get (TBlock block)
 			{
-				if (!blockOutput.TryGetValue (block, out DataFlowState<TValue>? state)) {
+				if (!blockOutput.TryGetValue (block, out TState? state)) {
 					TryGetExceptionState (block, out Box<TValue>? exceptionState);
-					state = new DataFlowState<TValue> (lattice.Top, exceptionState);
+					state = new TState () {
+						Lattice = lattice,
+						Current = lattice.Top,
+						Exception = exceptionState
+					};
 					blockOutput.Add (block, state);
 				}
 				return state;
@@ -170,8 +173,16 @@ namespace ILLink.Shared.DataFlow
 
 			// Allocate some objects which will be reused to hold the current dataflow state,
 			// to avoid allocatons in the inner loop below.
-			var state = new DataFlowState<TValue> (lattice.Top, null);
-			var finallyState = new DataFlowState<TValue> (lattice.Top, null);
+			var state = new TState () {
+				Lattice = lattice,
+				Current = lattice.Top,
+				Exception = null
+			};
+			var finallyState = new TState () {
+				Lattice = lattice,
+				Current = lattice.Top,
+				Exception = null
+			};
 
 			bool changed = true;
 			while (changed) {
@@ -260,7 +271,7 @@ namespace ILLink.Shared.DataFlow
 					// Initialize the exception state at the start of try/catch regions. Control flow edges from predecessors
 					// within the same try or catch region don't need to be handled here because the transfer functions update
 					// the exception state to reflect every operation in the region.
-					DataFlowState<TValue> currentBlockState = cfgState.Get (block);
+					TState currentBlockState = cfgState.Get (block);
 					Box<TValue>? exceptionState = currentBlockState.Exception;
 					TValue? oldExceptionState = exceptionState?.Value;
 					if (isTryStart || isCatchStart) {

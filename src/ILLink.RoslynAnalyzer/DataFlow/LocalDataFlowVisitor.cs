@@ -16,8 +16,8 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 	// - field
 	// - parameter
 	// - method return
-	public abstract class LocalDataFlowVisitor<TValue, TValueLattice> : OperationWalker<DataFlowState<LocalState<TValue>>, TValue>,
-		ITransfer<BlockProxy, LocalState<TValue>, LocalStateLattice<TValue, TValueLattice>>
+	public abstract class LocalDataFlowVisitor<TValue, TValueLattice> : OperationWalker<LocalDataFlowState<TValue, TValueLattice>, TValue>,
+		ITransfer<BlockProxy, LocalState<TValue>, LocalDataFlowState<TValue, TValueLattice>, LocalStateLattice<TValue, TValueLattice>>
 		// This struct constraint prevents warnings due to possible null returns from the visitor methods.
 		// Note that this assumes that default(TValue) is equal to the TopValue.
 		where TValue : struct, IEquatable<TValue>
@@ -32,7 +32,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 		public LocalDataFlowVisitor (LocalStateLattice<TValue, TValueLattice> lattice, OperationBlockAnalysisContext context) =>
 			(LocalStateLattice, Context) = (lattice, context);
 
-		public void Transfer (BlockProxy block, DataFlowState<LocalState<TValue>> state)
+		public void Transfer (BlockProxy block, LocalDataFlowState<TValue, TValueLattice> state)
 		{
 			foreach (IOperation operation in block.Block.Operations)
 				Visit (operation, state);
@@ -79,20 +79,18 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 		// may (must?) come from BranchValue of an operation whose FallThroughSuccessor is the exit block.
 		public abstract void HandleReturnValue (TValue returnValue, IOperation operation);
 
-		public override TValue VisitLocalReference (ILocalReferenceOperation operation, DataFlowState<LocalState<TValue>> state)
+		public override TValue VisitLocalReference (ILocalReferenceOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
 		{
-			return state.Current.Get (new LocalKey (operation.Local));
+			return state.Get (new LocalKey (operation.Local));
 		}
 
-		public override TValue VisitSimpleAssignment (ISimpleAssignmentOperation operation, DataFlowState<LocalState<TValue>> state)
+		public override TValue VisitSimpleAssignment (ISimpleAssignmentOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
 		{
 			var targetValue = Visit (operation.Target, state);
 			var value = Visit (operation.Value, state);
 			switch (operation.Target) {
 			case ILocalReferenceOperation localRef:
-				state.Current.Set (new LocalKey (localRef.Local), value);
-				if (state.Exception != null)
-					state.Exception.Value = LocalStateLattice.Meet (state.Exception.Value, state.Current);
+				state.Set (new LocalKey (localRef.Local), value);
 				break;
 			case IFieldReferenceOperation:
 			case IParameterReferenceOperation:
@@ -120,31 +118,28 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 		}
 
 		// Similar to VisitLocalReference
-		public override TValue VisitFlowCaptureReference (IFlowCaptureReferenceOperation operation, DataFlowState<LocalState<TValue>> state)
+		public override TValue VisitFlowCaptureReference (IFlowCaptureReferenceOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
 		{
-			return state.Current.Get (new LocalKey (operation.Id));
+			return state.Get (new LocalKey (operation.Id));
 		}
 
 		// Similar to VisitSimpleAssignment when assigning to a local, but for values which are captured without a
 		// corresponding local variable. The "flow capture" is like a local assignment, and the "flow capture reference"
 		// is like a local reference.
-		public override TValue VisitFlowCapture (IFlowCaptureOperation operation, DataFlowState<LocalState<TValue>> state)
+		public override TValue VisitFlowCapture (IFlowCaptureOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
 		{
 			TValue value = Visit (operation.Value, state);
-			state.Current.Set (new LocalKey (operation.Id), value);
-			if (state.Exception != null)
-				// TODO: optimize this to not meet the whole value, but just modify one value without copying.
-				state.Exception.Value = LocalStateLattice.Meet (state.Exception.Value, state.Current);
+			state.Set (new LocalKey (operation.Id), value);
 			return value;
 		}
 
-		public override TValue VisitExpressionStatement (IExpressionStatementOperation operation, DataFlowState<LocalState<TValue>> state)
+		public override TValue VisitExpressionStatement (IExpressionStatementOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
 		{
 			Visit (operation.Operation, state);
 			return TopValue;
 		}
 
-		public override TValue VisitInvocation (IInvocationOperation operation, DataFlowState<LocalState<TValue>> state)
+		public override TValue VisitInvocation (IInvocationOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
 		{
 			if (operation.Instance != null) {
 				var instanceValue = Visit (operation.Instance, state);
@@ -177,7 +172,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			return getMethod!;
 		}
 
-		public override TValue VisitPropertyReference (IPropertyReferenceOperation operation, DataFlowState<LocalState<TValue>> state)
+		public override TValue VisitPropertyReference (IPropertyReferenceOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
 		{
 			if (operation.Instance != null) {
 				var instanceValue = Visit (operation.Instance, state);
@@ -187,14 +182,14 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			return TopValue;
 		}
 
-		public override TValue VisitArgument (IArgumentOperation operation, DataFlowState<LocalState<TValue>> state)
+		public override TValue VisitArgument (IArgumentOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
 		{
 			var value = Visit (operation.Value, state);
 			HandleArgument (value, operation);
 			return value;
 		}
 
-		public override TValue VisitReturn (IReturnOperation operation, DataFlowState<LocalState<TValue>> state)
+		public override TValue VisitReturn (IReturnOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
 		{
 			if (operation.ReturnedValue != null) {
 				var value = Visit (operation.ReturnedValue, state);
@@ -205,7 +200,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			return TopValue;
 		}
 
-		public override TValue VisitConversion (IConversionOperation operation, DataFlowState<LocalState<TValue>> state)
+		public override TValue VisitConversion (IConversionOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
 		{
 			var operandValue = Visit (operation.Operand, state);
 			return operation.OperatorMethod == null ? operandValue : TopValue;
