@@ -162,7 +162,6 @@
 		<xsd:complexType>
 			<xsd:choice maxOccurs="unbounded" minOccurs="0">
 				<xsd:element ref="assembly" />
-				<xsd:element ref="type" />
 			</xsd:choice>
 		</xsd:complexType>
 	</xsd:element>
