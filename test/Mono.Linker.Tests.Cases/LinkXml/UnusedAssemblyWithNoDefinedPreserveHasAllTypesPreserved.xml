@@ -1,5 +1,5 @@
 <linker xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		xsi:schemaLocation="https://www.w3schools.com ../../../src/ILLink.Shared/ILLink.LinkAttributes.xsd">
+		xsi:schemaLocation="https://www.w3schools.com ../../../src/ILLink.Shared/ILLink.xsd">
     <assembly fullname="test, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
     </assembly>
 </linker>

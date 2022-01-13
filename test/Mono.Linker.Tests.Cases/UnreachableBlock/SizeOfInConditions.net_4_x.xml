@@ -1,4 +1,4 @@
-<linker xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://www.w3schools.com ..\..\..\src\ILLink.Shared\ILLink.LinkAttributes.xsd">
+<linker xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://www.w3schools.com ../../../src/ILLink.Shared/ILLink.xsd">
   <assembly fullname="mscorlib">
     <type fullname="System.IntPtr">
       <method signature="System.Int32 get_Size()" body="stub" value="16">
