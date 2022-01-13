@@ -3,7 +3,7 @@
 		elementFormDefault="unqualified"
 		xmlns:xsd="http://www.w3.org/2001/XMLSchema">
 
-	<xsd:complexType name="typechild">
+	<xsd:complexType name="membertype">
 		<xsd:choice maxOccurs="unbounded" minOccurs="0">
 			<xsd:element ref="attribute"></xsd:element>
 		</xsd:choice>
@@ -17,7 +17,7 @@
 	<xsd:element name="method">
 		<xsd:complexType>
 			<xsd:complexContent>
-				<xsd:extension base="typechild">
+				<xsd:extension base="membertype">
 					<xsd:choice maxOccurs="unbounded" minOccurs="0">
 						<xsd:choice maxOccurs="unbounded" minOccurs="0">
 							<xsd:element name="parameter">
@@ -47,7 +47,7 @@
 	<xsd:element name="event">
 		<xsd:complexType>
 			<xsd:complexContent>
-				<xsd:extension base="typechild" />
+				<xsd:extension base="membertype" />
 			</xsd:complexContent>
 		</xsd:complexType>
 	</xsd:element>
@@ -55,7 +55,7 @@
 	<xsd:element name="field">
 		<xsd:complexType>
 			<xsd:complexContent>
-				<xsd:extension base="typechild" />
+				<xsd:extension base="membertype" />
 			</xsd:complexContent>
 		</xsd:complexType>
 	</xsd:element>
@@ -63,7 +63,7 @@
 	<xsd:element name="property">
 		<xsd:complexType>
 			<xsd:complexContent>
-				<xsd:extension base="typechild" />
+				<xsd:extension base="membertype" />
 			</xsd:complexContent>
 		</xsd:complexType>
 	</xsd:element>
@@ -71,7 +71,15 @@
 	<xsd:element name="argument">
 		<xsd:complexType mixed="true">
 			<xsd:choice minOccurs="0" maxOccurs="1">
-				<xsd:element name="argument" type="xsd:string"/>
+				<xsd:element name="argument">
+					<xsd:complexType>
+						<xsd:simpleContent>
+							<xsd:extension base="xsd:string">
+								<xsd:attribute name="type" />
+							</xsd:extension>
+						</xsd:simpleContent>
+					</xsd:complexType>
+				</xsd:element>
 			</xsd:choice>
 			<xsd:attribute name="type" />
 		</xsd:complexType>
@@ -117,6 +125,21 @@
 			<xsd:attribute name="featuredefault" type="xsd:boolean" />
 		</xsd:complexType>
 	</xsd:element>
+
+	<xsd:complexType name ="nestedtype">
+		<xsd:choice minOccurs="0" maxOccurs="unbounded">
+			<xsd:element ref="event" />
+			<xsd:element ref="method" />
+			<xsd:element ref="field" />
+			<xsd:element ref="property" />
+			<xsd:element ref="attribute" />
+			<xsd:element name="type" type="nestedtype" />
+		</xsd:choice>
+		<xsd:attribute name="name" type="xsd:string" />
+		<xsd:attribute name="feature" />
+		<xsd:attribute name="featurevalue" type="xsd:boolean" />
+		<xsd:attribute name="featuredefault" type="xsd:boolean" />
+	</xsd:complexType>
 	
 	<xsd:element name="type">
 		<xsd:complexType>
@@ -126,21 +149,7 @@
 				<xsd:element ref="method" />
 				<xsd:element ref="field" />
 				<xsd:element ref="property" />
-				<xsd:element name="type">
-					<xsd:complexType>
-						<xsd:choice minOccurs="0" maxOccurs="unbounded">
-							<xsd:element ref="event" />
-							<xsd:element ref="method" />
-							<xsd:element ref="field" />
-							<xsd:element ref="property" />
-							<xsd:element ref="attribute"></xsd:element>
-						</xsd:choice>
-						<xsd:attribute name="name" type="xsd:string" />
-						<xsd:attribute name="feature" />
-						<xsd:attribute name="featurevalue" type="xsd:boolean" />
-						<xsd:attribute name="featuredefault" type="xsd:boolean" />
-					</xsd:complexType>
-				</xsd:element>
+				<xsd:element name="type" type="nestedtype" />
 			</xsd:choice>
 			<xsd:attribute name="feature" />
 			<xsd:attribute name="featurevalue" type="xsd:boolean" />
