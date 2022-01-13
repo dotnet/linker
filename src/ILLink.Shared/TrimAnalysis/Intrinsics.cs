@@ -351,13 +351,13 @@ namespace ILLink.Shared.TrimAnalysis
 
 			switch (GetIntrinsicIdForMethod (calledMethod)) {
 			case IntrinsicId.IntrospectionExtensions_GetTypeInfo:
-					Debug.Assert (instanceValue.IsEmpty ());
-					Debug.Assert (argumentValues.Count == 1);
+				Debug.Assert (instanceValue.IsEmpty ());
+				Debug.Assert (argumentValues.Count == 1);
 
-					// typeof(Foo).GetTypeInfo()... will be commonly present in code targeting
-					// the dead-end reflection refactoring. The call doesn't do anything and we
-					// don't want to lose the annotation.
-					methodReturnValue = argumentValues[0];
+				// typeof(Foo).GetTypeInfo()... will be commonly present in code targeting
+				// the dead-end reflection refactoring. The call doesn't do anything and we
+				// don't want to lose the annotation.
+				methodReturnValue = argumentValues[0];
 				break;
 
 			case IntrinsicId.TypeInfo_AsType:
