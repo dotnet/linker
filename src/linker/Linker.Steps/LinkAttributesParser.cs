@@ -37,34 +37,35 @@ namespace Mono.Linker.Steps
 		CustomAttribute[]? ProcessAttributes (XPathNavigator nav, ICustomAttributeProvider provider)
 		{
 			var builder = new ArrayBuilder<CustomAttribute> ();
-			foreach (XPathNavigator argumentNav in nav.SelectChildren ("attribute", string.Empty)) {
-				if (!ShouldProcessElement (argumentNav))
+			foreach (XPathNavigator attributeNav in nav.SelectChildren ("attribute", string.Empty)) {
+				if (!ShouldProcessElement (attributeNav))
 					continue;
 
 				TypeDefinition? attributeType;
-				string internalAttribute = GetAttribute (argumentNav, "internal");
+				string internalAttribute = GetAttribute (attributeNav, "internal");
 				if (!string.IsNullOrEmpty (internalAttribute)) {
-					attributeType = GenerateRemoveAttributeInstancesAttribute ();
+					var argCount = attributeNav.SelectChildren ("argument", string.Empty).Count;
+					attributeType = GenerateRemoveAttributeInstancesAttribute (argCount);
 					if (attributeType == null)
 						continue;
 
 					// TODO: Replace with IsAttributeType check once we have it
 					if (provider is not TypeDefinition) {
-						LogWarning (argumentNav, DiagnosticId.XmlRemoveAttributeInstancesCanOnlyBeUsedOnType, attributeType.Name);
+						LogWarning (attributeNav, DiagnosticId.XmlRemoveAttributeInstancesCanOnlyBeUsedOnType, attributeType.Name);
 						continue;
 					}
 				} else {
-					string attributeFullName = GetFullName (argumentNav);
+					string attributeFullName = GetFullName (attributeNav);
 					if (string.IsNullOrEmpty (attributeFullName)) {
-						LogWarning (argumentNav, DiagnosticId.XmlElementDoesNotContainRequiredAttributeFullname);
+						LogWarning (attributeNav, DiagnosticId.XmlElementDoesNotContainRequiredAttributeFullname);
 						continue;
 					}
 
-					if (!GetAttributeType (argumentNav, attributeFullName, out attributeType))
+					if (!GetAttributeType (attributeNav, attributeFullName, out attributeType))
 						continue;
 				}
 
-				CustomAttribute? customAttribute = CreateCustomAttribute (argumentNav, attributeType);
+				CustomAttribute? customAttribute = CreateCustomAttribute (attributeNav, attributeType);
 				if (customAttribute != null) {
 					_context.LogMessage ($"Assigning external custom attribute '{FormatCustomAttribute (customAttribute)}' instance to '{provider}'.");
 					builder.Add (customAttribute);
@@ -91,10 +92,17 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		TypeDefinition? GenerateRemoveAttributeInstancesAttribute ()
+		TypeDefinition? GenerateRemoveAttributeInstancesAttribute (int ctorArgumentCount)
 		{
-			if (_context.MarkedKnownMembers.RemoveAttributeInstancesAttributeDefinition != null)
-				return _context.MarkedKnownMembers.RemoveAttributeInstancesAttributeDefinition;
+			TypeDefinition? td = null;
+
+			if (_context.MarkedKnownMembers.RemoveAttributeInstancesAttributeDefinition is TypeDefinition knownTypeDef) {
+				if (knownTypeDef.GetConstructorsOnType (_ => true).Any (m => m.Parameters.Count == ctorArgumentCount)) {
+					return knownTypeDef;
+				} else {
+					td = knownTypeDef;
+				}
+			}
 
 			var voidType = BCL.FindPredefinedType ("System", "Void", _context);
 			if (voidType == null)
@@ -117,16 +125,22 @@ namespace Mono.Linker.Steps
 			//		public RemoveAttributeInstancesAttribute (object value1) {}
 			// }
 			//
-			var td = new TypeDefinition ("", "RemoveAttributeInstancesAttribute", TypeAttributes.Public);
-			td.BaseType = attributeType;
-
 			const MethodAttributes ctorAttributes = MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName | MethodAttributes.Final;
-			var ctor = new MethodDefinition (".ctor", ctorAttributes, voidType);
-			td.Methods.Add (ctor);
 
-			ctor = new MethodDefinition (".ctor", ctorAttributes, voidType);
-			ctor.Parameters.Add (new ParameterDefinition (objectType));
-			td.Methods.Add (ctor);
+			if (td == null) {
+				td = new TypeDefinition ("", "RemoveAttributeInstancesAttribute", TypeAttributes.Public);
+
+				td.BaseType = attributeType;
+
+				var ctor0 = new MethodDefinition (".ctor", ctorAttributes, voidType);
+				td.Methods.Add (ctor0);
+			}
+
+			var ctorN = new MethodDefinition (".ctor", ctorAttributes, voidType);
+			for (int i = 0; i < ctorArgumentCount; i++) {
+				ctorN.Parameters.Add (new ParameterDefinition (objectType));
+			}
+			td.Methods.Add (ctorN);
 
 			return _context.MarkedKnownMembers.RemoveAttributeInstancesAttributeDefinition = td;
 		}

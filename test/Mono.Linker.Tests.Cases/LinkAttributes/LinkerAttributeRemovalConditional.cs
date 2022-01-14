@@ -20,6 +20,8 @@ namespace Mono.Linker.Tests.Cases.LinkAttributes
 			Removed_1 ();
 			Removed_2 ();
 			Removed_3 ();
+			Removed_4 ();
+			Kept_4 ();
 		}
 
 		[Kept]
@@ -59,6 +61,17 @@ namespace Mono.Linker.Tests.Cases.LinkAttributes
 		[Kept]
 		[TestConditionalRemove ("remove0", 'k', 0)] // It's removed because the converted string value matches
 		static void Removed_3 ()
+		{
+		}
+		[Kept]
+		[TestConditionalRemove ("99", "98")]
+		static void Removed_4 () // Removed because both 99 and 98 match
+		{
+		}
+		[Kept]
+		[KeptAttributeAttribute (typeof (TestConditionalRemoveAttribute))]
+		[TestConditionalRemove ("99", "k")]
+		static void Kept_4 () // Kept because only 99 matches, but not "k"
 		{
 		}
 	}

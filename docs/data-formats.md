@@ -530,9 +530,8 @@ attributes are applied.
 
 ### Removing custom attributes
 
-Any custom attribute can be annotated with a special custom attribute which can be used to specify
-that all instances of the attribute can be removed by the trimmer. To do this use `internal="RemoveAttributeInstances"`
-instead of specifying `fullname` in the attribute as described in the following example:
+To remove a custom attribute, you can add a special custom attribute `RemoveAttributeInstancesAttribute` to indicate to the linker that instances of the attribute should be removed. To do this, use `internal="RemoveAttributeInstances"`
+instead of specifying `fullname` in the xml `attribute` tag. For example, to remove all instances of the `Nullable` attribute, use the following xml:
 
 ```xml
 <linker>
@@ -544,9 +543,8 @@ instead of specifying `fullname` in the attribute as described in the following 
 </linker>
 ```
 
-In some cases, it's useful to remove only specific usage of the attribute. This can be achieved by specifying the value
-or values of the arguments to match. In the example below only `System.Reflection.AssemblyMetadataAttribute` custom attributes
-with the first argument equal to `RemovableValue` will be removed.
+In some cases, it's useful to remove only specific usage of the attribute. To do this, you can add arguments to the `RemoveAttributeInstances` constructor. Any instances of the custom attribute that have arguments that match its `RemoveAttributeInstances` arguments will be removed. To do this, add an `<argument>` tag with `type="System.Object"` inside the `RemoveAttributeInstances` tag. Inside that tag, add the `<argument>` tag with the type and value you want to match with the instances of the custom attribute. In the example below only `System.Reflection.AssemblyMetadataAttribute` custom attributes
+with the first argument that is a `System.String` and is equal to `RemovableValue` will be removed.
 
 ```xml
 <linker>
@@ -554,7 +552,7 @@ with the first argument equal to `RemovableValue` will be removed.
     <type fullname="System.Reflection.AssemblyMetadataAttribute">
       <attribute internal="RemoveAttributeInstances">
         <argument type="System.Object">
-          <argument>RemovableValue</argument>
+          <argument type="System.String">RemovableValue</argument>
         </argument>
       </attribute>
     </type>

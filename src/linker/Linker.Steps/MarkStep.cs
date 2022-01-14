@@ -853,19 +853,27 @@ namespace Mono.Linker.Steps
 
 			return false;
 
-			static bool HasMatchingArguments (CustomAttributeArgument[] argsA, Collection<CustomAttributeArgument> argsB)
+			static bool HasMatchingArguments (CustomAttributeArgument[] removeAttrInstancesArgs, Collection<CustomAttributeArgument> attributeInstanceArgs)
 			{
-				for (int i = 0; i < argsA.Length; ++i) {
-					object argB = argsB[i].Value;
-
+				for (int i = 0; i < removeAttrInstancesArgs.Length; ++i) {
+					object raiVal = removeAttrInstancesArgs[i].Value;
+					object aiVal = attributeInstanceArgs[i].Value;
+					TypeReference raiType = removeAttrInstancesArgs[i].Type;
+					TypeReference aiType = attributeInstanceArgs[i].Type;
 					// The internal attribute has only object overloads which does not allow
 					// to distinguish between boxed/converted and exact candidates. This
 					// allows simpler data entering and for now it does not like problem.
-					if (argB is CustomAttributeArgument caa)
-						argB = caa.Value;
 
-					if (!argsA[i].Value.Equals (argB))
-						return false;
+					// RemoveAttributeInstances constructor should unbox each argument out of the Object box
+					Debug.Assert (raiVal is not CustomAttribute);
+
+					// Arguments to a custom argument may be boxed in an Object
+					if (aiVal is CustomAttributeArgument caaB) {
+						aiVal = caaB.Value;
+						aiType = caaB.Type;
+					}
+
+					if (!raiVal.Equals (aiVal) || !(raiType.FullName == aiType.FullName)) return false;
 				}
 
 				return true;

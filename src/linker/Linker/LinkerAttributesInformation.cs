@@ -124,18 +124,9 @@ namespace Mono.Linker
 			return null;
 		}
 
-		static RemoveAttributeInstancesAttribute? BuildRemoveAttributeInstancesAttribute (LinkContext context, TypeDefinition attributeContext, CustomAttribute ca)
+		static RemoveAttributeInstancesAttribute? BuildRemoveAttributeInstancesAttribute (LinkContext _, TypeDefinition __, CustomAttribute ca)
 		{
-			switch (ca.ConstructorArguments.Count) {
-			case 0:
-				return new RemoveAttributeInstancesAttribute ();
-			case 1:
-				// Argument is always boxed
-				return new RemoveAttributeInstancesAttribute ((CustomAttributeArgument) ca.ConstructorArguments[0].Value);
-			default:
-				context.LogWarning (attributeContext, DiagnosticId.AttributeDoesntHaveTheRequiredNumberOfParameters, ca.AttributeType.GetDisplayName ());
-				return null;
-			};
+			return new RemoveAttributeInstancesAttribute (ca.ConstructorArguments);
 		}
 	}
 }

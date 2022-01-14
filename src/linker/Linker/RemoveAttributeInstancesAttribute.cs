@@ -2,6 +2,8 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System;
+using System.Diagnostics;
+using System.Linq;
 using Mono.Cecil;
 
 namespace Mono.Linker
@@ -14,14 +16,14 @@ namespace Mono.Linker
 		AttributeTargets.Class, Inherited = false)]
 	public sealed class RemoveAttributeInstancesAttribute : Attribute
 	{
-		public RemoveAttributeInstancesAttribute ()
+		public RemoveAttributeInstancesAttribute (System.Collections.Generic.ICollection<CustomAttributeArgument> values)
 		{
-			Arguments = Array.Empty<CustomAttributeArgument> ();
-		}
-
-		public RemoveAttributeInstancesAttribute (CustomAttributeArgument value1)
-		{
-			Arguments = new[] { value1 };
+			// Arguments were previously boxed in Object, but don't need to be
+			Arguments = values.Select ((arg) => {
+				Debug.Assert (arg.Value is CustomAttributeArgument);
+				if (arg.Value is CustomAttributeArgument caa) return caa;
+				return arg;
+			}).ToArray ();
 		}
 
 		public CustomAttributeArgument[] Arguments { get; }
