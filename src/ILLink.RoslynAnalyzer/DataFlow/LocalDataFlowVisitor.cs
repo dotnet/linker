@@ -99,12 +99,11 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 				// Doesn't get called for assignments to locals, which are handled above.
 				HandleAssignment (value, targetValue, operation);
 				break;
-			case IPropertyReferenceOperation propertyRef: {
-					// A property assignment is really a call to the property setter.
-					var setMethod = propertyRef.Property.SetMethod!;
-					TValue instanceValue = Visit (propertyRef.Instance, state);
-					return HandleMethodCall (setMethod, new (instanceValue, propertyRef), ImmutableArray.Create (new ValueOfOperation (value, operation.Value)), operation);
-				}
+			case IPropertyReferenceOperation propertyRef:
+				// A property assignment is really a call to the property setter.
+				var setMethod = propertyRef.Property.SetMethod!;
+				TValue instanceValue = Visit (propertyRef.Instance, state);
+				return HandleMethodCall (setMethod, new (instanceValue, propertyRef), ImmutableArray.Create (new ValueOfOperation (value, operation.Value)), operation);
 			// TODO: when setting a property in an attribute, target is an IPropertyReference.
 			case IArrayElementReferenceOperation:
 				// TODO
@@ -177,12 +176,11 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 
 		public override TValue VisitPropertyReference (IPropertyReferenceOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
 		{
-			var propertyMethod = GetPropertyMethod (operation);
-			if (propertyMethod.MethodKind == MethodKind.PropertyGet) {
+			if (operation.GetValueUsageInfo (operation.Property).HasFlag (ValueUsageInfo.Read)) {
 				// Accessing property for reading is really a call to the getter
 				// The setter case is handled in assignment operation since here we don't have access to the value to pass to the setter
 				TValue instanceValue = Visit (operation.Instance, state);
-				return HandleMethodCall (propertyMethod, new ValueOfOperation (instanceValue, operation), ImmutableArray<ValueOfOperation>.Empty, operation);
+				return HandleMethodCall (operation.Property.GetMethod!, new ValueOfOperation (instanceValue, operation), ImmutableArray<ValueOfOperation>.Empty, operation);
 			}
 
 			return TopValue;
