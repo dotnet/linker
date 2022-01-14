@@ -109,10 +109,11 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			if (intrinsics.HandleMethodCall (new MethodProxy (calledMethod), instance.Value, arguments.Select (a => a.Value).ToImmutableList (), out MultiValue methodReturnValue))
 				return methodReturnValue;
 
-			// For now no intrinsics, so for each call we have to:
+			// If the intrinsic handling didn't work we have to:
 			//   Handle the instance value
 			//   Handle argument passing
 			//   Construct the return value
+			// Note: this is temporary as eventually the handling of all method calls should be done in the shared code (not just intrinsics)
 			if (!calledMethod.IsStatic) {
 				Debug.Assert (instance.Operation != null);
 				TrimAnalysisPatterns.Add (
