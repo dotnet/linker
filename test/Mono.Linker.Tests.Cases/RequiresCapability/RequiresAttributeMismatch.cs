@@ -36,7 +36,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		public static void Main ()
 		{
-			typeof (BaseClassWithRequires).RequiresPublicMethods();
+			typeof (BaseClassWithRequires).RequiresPublicMethods ();
 			typeof (BaseClassWithoutRequires).RequiresPublicMethods ();
 			typeof (DerivedClassWithRequires).RequiresPublicMethods ();
 			typeof (DerivedClassWithoutRequires).RequiresPublicMethods ();

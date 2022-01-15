@@ -21,7 +21,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			SuppressMethodBodyReferences.Test ();
 			SuppressGenericParameters<TestType, TestType>.Test ();
 		}
-		
+
 		class SuppressMethodBodyReferences
 		{
 			static Type _unknownType;
