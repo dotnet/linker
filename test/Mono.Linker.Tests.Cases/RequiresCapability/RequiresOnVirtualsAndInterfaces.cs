@@ -15,6 +15,17 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 	[ExpectedNoWarnings]
 	class RequiresOnVirtualsAndInterfaces
 	{
+		public static void Main ()
+		{
+			TestBaseTypeVirtualMethodRequires ();
+			TestTypeWhichOverridesMethodVirtualMethodRequires ();
+			TestTypeWhichOverridesMethodVirtualMethodRequiresOnBase ();
+			TestTypeWhichOverridesVirtualPropertyRequires ();
+			TestInterfaceMethodWithRequires ();
+			TestCovariantReturnCallOnDerived ();
+			CovariantReturnViaLdftn.Test ();
+		}
+
 		class BaseType
 		{
 			[RequiresUnreferencedCode ("Message for --BaseType.VirtualMethodRequires--")]
@@ -183,17 +194,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				var tmp = new Derived ();
 				var _ = new Func<DerivedReturnType> (tmp.GetRequires);
 			}
-		}
-
-		public static void Test ()
-		{
-			TestBaseTypeVirtualMethodRequires ();
-			TestTypeWhichOverridesMethodVirtualMethodRequires ();
-			TestTypeWhichOverridesMethodVirtualMethodRequiresOnBase ();
-			TestTypeWhichOverridesVirtualPropertyRequires ();
-			TestInterfaceMethodWithRequires ();
-			TestCovariantReturnCallOnDerived ();
-			CovariantReturnViaLdftn.Test ();
 		}
 	}
 }

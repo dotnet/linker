@@ -75,6 +75,12 @@ namespace ILLink.RoslynAnalyzer.Tests
 		}
 
 		[Fact]
+		public Task RequiresOnVirtualsAndInterfaces ()
+		{
+			return RunTest (nameof (RequiresOnVirtualsAndInterfaces));
+		}
+
+		[Fact]
 		public Task RequiresViaDataflow ()
 		{
 			return RunTest (nameof (RequiresViaDataflow));
