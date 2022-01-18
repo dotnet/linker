@@ -9,6 +9,8 @@ using ILLink.Shared;
 using ILLink.Shared.DataFlow;
 using ILLink.Shared.TrimAnalysis;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.FlowAnalysis;
 using Microsoft.CodeAnalysis.Operations;
@@ -59,34 +61,28 @@ namespace ILLink.RoslynAnalyzer
 				var invocationOperation = (IInvocationOperation) context.Operation;
 				ProcessInvocationOperation (context, invocationOperation);
 			}, OperationKind.Invocation);
-
-			context.RegisterSymbolAction (context => {
-				ProcessGenericTypes (context);
-			}, SymbolKind.NamedType);
+			context.RegisterSyntaxNodeAction (context => {
+				ProcessSyntaxNode (context);
+			}, SyntaxKind.GenericName);
 		}
 
-		static void ProcessGenericTypes (SymbolAnalysisContext context)
+		private void ProcessSyntaxNode (SyntaxNodeAnalysisContext context)
 		{
-			// Check the Symbol to see the generics relationship, specifically around DAMT
-			// We will initially explore if an unbounded generic type has mismatched annotations with its base-class,
-			// which is an open generic type. i.e. Bar<T> : Foo<[DAMT] T>
-
-			INamedTypeSymbol derivedType = (INamedTypeSymbol) context.Symbol;
-
-			if (derivedType.HasAttribute (RequiresUnreferencedCodeAnalyzer.RequiresUnreferencedCodeAttribute))
+			if (context.SemanticModel.GetTypeInfo (context.Node).ConvertedType is not INamedTypeSymbol type)
 				return;
 
-			var baseType = derivedType.BaseType;
+			// The same INamedTypeSymbol can be called back resulting in duplicate warnings
+			// One way to filter is via the Node's Parent
+			if (context.Node.Parent is not ArgumentSyntax)
+				return;
 
-			//Check if generic parameter of derived and generic argument of the base have mismatched annotation
-
-			var typeParams = baseType!.TypeParameters;
-			var typeArgs = baseType.TypeArguments;
+			var typeParams = type!.TypeParameters;
+			var typeArgs = type.TypeArguments;
 
 			for (int i = 0; i < typeParams.Length; i++) {
-				var sourceValue = new SymbolValue (typeArgs[i]);
-				var targetValue = new SymbolValue (typeParams[i]);
-				foreach (var diagnostic in GetDynamicallyAccessedMembersDiagnostics (sourceValue, targetValue, typeArgs[i].Locations.First ()))
+				var sourceValue = GetTypeValueNodeFromGenericArgument (typeArgs[i]);
+				var targetValue = new GenericParameterValue (typeParams[i]);
+				foreach (var diagnostic in GetDynamicallyAccessedMembersDiagnostics (sourceValue, targetValue, context.Node.GetLocation ()))
 					context.ReportDiagnostic (diagnostic);
 			}
 		}
@@ -155,9 +151,8 @@ namespace ILLink.RoslynAnalyzer
 			if (sourceValue is not ValueWithDynamicallyAccessedMembers sourceWithDynamicallyAccessedMembers)
 				yield break;
 
-			Debug.Assert (target.Source.Kind is not SymbolKind.NamedType);
-			var damtOnTarget = target.DynamicallyAccessedMemberTypes;
-			var damtOnSource = source.DynamicallyAccessedMemberTypes;
+			var damtOnTarget = targetWithDynamicallyAccessedMembers.DynamicallyAccessedMemberTypes;
+			var damtOnSource = sourceWithDynamicallyAccessedMembers.DynamicallyAccessedMemberTypes;
 
 			if (Annotations.SourceHasRequiredAnnotations (damtOnSource, damtOnTarget, out var missingAnnotations))
 				yield break;
