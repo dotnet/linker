@@ -31,7 +31,7 @@ namespace Mono.Linker.Dataflow
 			if (methodDefinition == null)
 				return false;
 
-			return new Intrinsics (context, callingMethod).GetIntrinsicIdForMethod (methodDefinition) > IntrinsicId.RequiresReflectionBodyScanner_Sentinel ||
+			return Intrinsics.GetIntrinsicIdForMethod (methodDefinition) > IntrinsicId.RequiresReflectionBodyScanner_Sentinel ||
 				context.Annotations.FlowAnnotations.RequiresDataFlowAnalysis (methodDefinition) ||
 				context.Annotations.DoesMethodRequireUnreferencedCode (methodDefinition, out _) ||
 				methodDefinition.IsPInvokeImpl;
@@ -39,9 +39,7 @@ namespace Mono.Linker.Dataflow
 
 		public static bool RequiresReflectionMethodBodyScannerForMethodBody (LinkContext context, MethodDefinition methodDefinition)
 		{
-			return
-				// Using the same method as calling method in this case - not the best, but it's only used for internal diagnostics
-				new Intrinsics (context, methodDefinition).GetIntrinsicIdForMethod (methodDefinition) > IntrinsicId.RequiresReflectionBodyScanner_Sentinel ||
+			return Intrinsics.GetIntrinsicIdForMethod (methodDefinition) > IntrinsicId.RequiresReflectionBodyScanner_Sentinel ||
 				context.Annotations.FlowAnnotations.RequiresDataFlowAnalysis (methodDefinition);
 		}
 
@@ -262,7 +260,7 @@ namespace Mono.Linker.Dataflow
 			returnValueDynamicallyAccessedMemberTypes = requiresDataFlowAnalysis ?
 				_context.Annotations.FlowAnnotations.GetReturnParameterAnnotation (calledMethodDefinition) : 0;
 
-			Intrinsics intrinsics = new Intrinsics (_context, callingMethodDefinition);
+			var intrinsics = new Intrinsics (_context, callingMethodDefinition);
 			switch (Intrinsics.GetIntrinsicIdForMethod (calledMethodDefinition)) {
 			case IntrinsicId.IntrospectionExtensions_GetTypeInfo:
 			case IntrinsicId.TypeInfo_AsType: {
@@ -1754,7 +1752,7 @@ namespace Mono.Linker.Dataflow
 		{
 			public readonly MessageOrigin Origin;
 			public readonly bool DiagnosticsEnabled;
-			private readonly LinkContext _context;
+			readonly LinkContext _context;
 
 			public AnalysisContext (in MessageOrigin origin, bool diagnosticsEnabled, LinkContext context)
 				=> (Origin, DiagnosticsEnabled, _context) = (origin, diagnosticsEnabled, context);
