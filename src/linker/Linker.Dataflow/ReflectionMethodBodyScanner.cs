@@ -25,7 +25,7 @@ namespace Mono.Linker.Dataflow
 		readonly MarkStep _markStep;
 		readonly MarkScopeStack _scopeStack;
 
-		public static bool RequiresReflectionMethodBodyScannerForCallSite (LinkContext context, MethodDefinition callingMethod, MethodReference calledMethod)
+		public static bool RequiresReflectionMethodBodyScannerForCallSite (LinkContext context, MethodReference calledMethod)
 		{
 			MethodDefinition? methodDefinition = context.TryResolve (calledMethod);
 			if (methodDefinition == null)
