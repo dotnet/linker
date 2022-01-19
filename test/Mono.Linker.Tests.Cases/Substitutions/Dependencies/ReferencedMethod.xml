@@ -1,4 +1,4 @@
-<linker xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../src/ILLink.Shared/ILLink.xsd">
+<linker>
   <assembly fullname="library">
     <type fullname="Mono.Linker.Tests.Cases.Substitutions.Dependencies.ReferencedMethod">
       <method signature="System.Void ConvertToThrowMethod()" body="remove" />

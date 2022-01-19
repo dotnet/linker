@@ -1,4 +1,4 @@
-<linker xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../../src/ILLink.Shared/ILLink.xsd">
+<linker>
     <assembly fullname="Library1, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
         <type fullname="Mono.Linker.Tests.Cases.LinkXml.Dependencies.EmbeddedLinkXmlPreservesAdditionalAssemblyWithOverriddenMethod.Library1Secondary" preserve="none">
             <!-- Need to preserve a ctor so that an instance of the type is possible-->

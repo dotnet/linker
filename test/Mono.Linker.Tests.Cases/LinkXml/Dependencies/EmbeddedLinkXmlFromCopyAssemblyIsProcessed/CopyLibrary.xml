@@ -1,3 +1,3 @@
-<linker xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../../src/ILLink.Shared/ILLink.xsd">
+<linker>
     <assembly fullname="Library" />
 </linker>

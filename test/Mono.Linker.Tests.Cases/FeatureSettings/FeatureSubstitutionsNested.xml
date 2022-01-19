@@ -1,4 +1,4 @@
-<linker xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../src/ILLink.Shared/ILLink.xsd">
+<linker>
   <!-- Check that the feature attribute can be used on the assembly element. -->
   <assembly fullname="test, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null" feature="AssemblyCondition" featurevalue="false">
     <type fullname="Mono.Linker.Tests.Cases.FeatureSettings.FeatureSubstitutionsNested">
