@@ -1,21 +1,25 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <OutputType>Library</OutputType>
-    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
-    <AutoGenerateAssemblyVersion>true</AutoGenerateAssemblyVersion>
-    <IncludeBuildOutput>false</IncludeBuildOutput>
-    <!-- There are currently no translations, so the satellite assemblies are a waste of space. -->
-    <EnableXlfLocalization>false</EnableXlfLocalization>
-    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<OutputType>Library</OutputType>
+		<EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+		<AutoGenerateAssemblyVersion>true</AutoGenerateAssemblyVersion>
+		<IncludeBuildOutput>false</IncludeBuildOutput>
+		<!-- There are currently no translations, so the satellite assemblies are a waste of space. -->
+		<EnableXlfLocalization>false</EnableXlfLocalization>
+		<EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <None Include="Microsoft.NET.ILLink.Analyzers.props" CopyToOutputDirectory="PreserveNewest" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="$(MicrosoftCodeAnalysisVersion)" PrivateAssets="all" />
-  </ItemGroup>
+	<ItemGroup>
+		<None Include="Microsoft.NET.ILLink.Analyzers.props" CopyToOutputDirectory="PreserveNewest" />
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="$(MicrosoftCodeAnalysisVersion)" PrivateAssets="all" />
+	</ItemGroup>
 
-  <Import Project="..\ILLink.Shared\ILLink.Shared.projitems" Label="Shared" />
+	<ItemGroup>
+		<Compile Include="..\..\external\corert\**\*.cs" />
+	</ItemGroup>
+
+	<Import Project="..\ILLink.Shared\ILLink.Shared.projitems" Label="Shared" />
 
 </Project>
