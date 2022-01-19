@@ -39,7 +39,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			_missing = new List<(AttributeSyntax Attribute, string Message)> ();
 		}
 
-		public void Check ()
+		public void Check (bool allowMissingWarnings)
 		{
 			_unmatched.Clear ();
 			_unmatched.AddRange (_diagnostics);
@@ -48,7 +48,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			Visit (_tree.GetRoot ());
 
 			string message = "";
-			if (_missing.Any ()) {
+			if (!allowMissingWarnings && _missing.Any ()) {
 				var missingLines = string.Join (
 					Environment.NewLine,
 					_missing.Select (md => $"({md.Attribute.GetLocation ().GetLineSpan ()}) {md.Message}"));

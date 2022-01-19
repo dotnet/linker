@@ -40,7 +40,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			return s_net6Refs;
 		}
 
-		public static async Task RunTestFile (string suiteName, string testName, params (string, string)[] msbuildProperties)
+		public static async Task RunTestFile (string suiteName, string testName, bool allowMissingWarnings, params (string, string)[] msbuildProperties)
 		{
 			GetDirectoryPaths (out string rootSourceDir, out string testAssemblyPath);
 			Debug.Assert (Path.GetFileName (rootSourceDir) == MonoLinkerTestsCases);
@@ -63,7 +63,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			var diags = (await comp.GetAnalyzerDiagnosticsAsync ()).AddRange (exceptionDiagnostics);
 
 			var testChecker = new TestChecker ((CSharpSyntaxTree) tree, model, diags);
-			testChecker.Check ();
+			testChecker.Check (allowMissingWarnings);
 		}
 
 		private static IEnumerable<string> GetTestDependencies (string rootSourceDir, SyntaxTree testSyntaxTree)
