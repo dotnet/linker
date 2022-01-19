@@ -260,7 +260,7 @@ namespace Mono.Linker.Dataflow
 			returnValueDynamicallyAccessedMemberTypes = requiresDataFlowAnalysis ?
 				_context.Annotations.FlowAnnotations.GetReturnParameterAnnotation (calledMethodDefinition) : 0;
 
-			var intrinsics = new Intrinsics (_context, callingMethodDefinition);
+			var handleCallAction = new HandleCallAction (_context, callingMethodDefinition);
 			switch (Intrinsics.GetIntrinsicIdForMethod (calledMethodDefinition)) {
 			case IntrinsicId.IntrospectionExtensions_GetTypeInfo:
 			case IntrinsicId.TypeInfo_AsType: {
@@ -270,7 +270,7 @@ namespace Mono.Linker.Dataflow
 						instanceValue = methodParams[0];
 						parameterValues = parameterValues.Skip (1).ToImmutableList ();
 					}
-					intrinsics.HandleMethodCall (calledMethodDefinition, instanceValue, parameterValues, out methodReturnValue);
+					handleCallAction.Invoke (calledMethodDefinition, instanceValue, parameterValues, out methodReturnValue);
 				}
 				break;
 

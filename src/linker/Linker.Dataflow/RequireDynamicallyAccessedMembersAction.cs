@@ -29,7 +29,7 @@ namespace ILLink.Shared.TrimAnalysis
 		private partial bool TryResolveTypeNameAndMark (string typeName, out TypeProxy type)
 		{
 			if (!_context.TypeNameResolver.TryResolveTypeName (typeName, _analysisContext.Origin.Provider, out TypeReference? typeRef, out AssemblyDefinition? typeAssembly)
-				|| ResolveToTypeDefinition (typeRef) is not TypeDefinition foundType) {
+				|| ReflectionMethodBodyScanner.ResolveToTypeDefinition (_context, typeRef) is not TypeDefinition foundType) {
 				type = default;
 				return false;
 			} else {
@@ -45,17 +45,6 @@ namespace ILLink.Shared.TrimAnalysis
 			// This method should only be called with already resolved types.
 			Debug.Assert (type.Type is TypeDefinition);
 			_reflectionMethodBodyScanner.MarkTypeForDynamicallyAccessedMembers (_analysisContext, (TypeDefinition) type.Type, dynamicallyAccessedMemberTypes, DependencyKind.DynamicallyAccessedMember);
-		}
-
-		// Array types that are dynamically accessed should resolve to System.Array instead of its element type - which is what Cecil resolves to.
-		// Any data flow annotations placed on a type parameter which receives an array type apply to the array itself. None of the members in its
-		// element type should be marked.
-		TypeDefinition? ResolveToTypeDefinition (TypeReference typeReference)
-		{
-			if (typeReference is ArrayType)
-				return BCL.FindPredefinedType ("System", "Array", _context);
-
-			return _context.TryResolve (typeReference);
 		}
 	}
 }
