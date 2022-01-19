@@ -601,9 +601,26 @@ the first argument that is a `System.String` and is equal to `RemovableValue` wi
 </linker>
 ```
 
-This can also be done to match multiple arguments. In the example below, all instances with
-`RequiresUnreferencedCodeAttribute` where the first argument is of type `System.String` and the 
+This can also be done to match multiple arguments. In the example below, all instances of
+`RequiresUnreferencedCodeAttribute` where the first argument is of type `System.String` and value "Remove",
+and the second argument is of type `System.Int32` and value 2 will be removed
 
+```xml
+<linker>
+  <assembly fullname="*">
+    <type fullname="System.Diagnostics.CodeAnalysis.RequiresUnreferencedCodeAttribute">
+      <attribute internal="RemoveAttributeInstances">
+        <argument type="System.Object">
+          <argument type="System.String">Remove</argument>
+        </argument>
+        <argument type="System.Object">
+          <argument type="System.Int32">2</argument>
+        </argument>
+      </attribute>
+    </type>
+  </assembly>
+</linker>
+```
 
 Notice that a descriptor file containing the custom attribute type overrides this behavior. In case the
 custom attribute type is being referenced in a descriptor file and in the attribute annotations file for
