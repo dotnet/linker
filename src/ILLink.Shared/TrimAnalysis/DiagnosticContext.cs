@@ -3,8 +3,8 @@
 
 namespace ILLink.Shared.TrimAnalysis
 {
-    readonly partial struct DiagnosticContext
-    {
+	readonly partial struct DiagnosticContext
+	{
 		public partial void ReportDiagnostic (DiagnosticId id, params string[] args);
-    }
+	}
 }

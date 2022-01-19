@@ -20,7 +20,7 @@ namespace ILLink.Shared.TrimAnalysis
 		public Intrinsics (
 			LinkContext context,
 			ReflectionMethodBodyScanner reflectionMethodBodyScanner,
-			in ReflectionMethodBodyScanner.AnalysisContext analysisContext, 
+			in ReflectionMethodBodyScanner.AnalysisContext analysisContext,
 			MethodDefinition callingMethodDefinition)
 		{
 			_context = context;
@@ -44,11 +44,10 @@ namespace ILLink.Shared.TrimAnalysis
 		{
 			if (!_context.TypeNameResolver.TryResolveTypeName (typeName, _analysisContext.Origin.Provider, out TypeReference? typeRef, out AssemblyDefinition? typeAssembly)
 				|| ResolveToTypeDefinition (typeRef) is not TypeDefinition foundType) {
-				// Intentionally ignore - it's not wrong for code to call Type.GetType on non-existing name, the code might expect null/exception back.
 				type = default;
 				return false;
 			} else {
-				_reflectionMethodBodyScanner.MarkType (_analysisContext, foundType);
+				_reflectionMethodBodyScanner.MarkType (_analysisContext, typeRef);
 				_context.MarkingHelpers.MarkMatchingExportedType (foundType, typeAssembly, new DependencyInfo (DependencyKind.DynamicallyAccessedMember, foundType), _analysisContext.Origin);
 				type = new TypeProxy (foundType);
 				return true;
