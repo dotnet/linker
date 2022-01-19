@@ -57,7 +57,7 @@ namespace Mono.Linker
 					if (context.Annotations.TryGetPreserve (td, out TypePreserve preserve) && preserve != TypePreserve.Nothing)
 						continue;
 
-					attributeValue = new RemoveAttributeInstancesAttribute (ca.ConstructorArguments);
+					attributeValue = new RemoveAttributeInstancesAttribute (customAttribute.ConstructorArguments);
 					break;
 				default:
 					continue;

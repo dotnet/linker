@@ -81,7 +81,7 @@ namespace ILLink.Shared
 		XmlDuplicatePreserveMember = 2025,
 		RequiresUnreferencedCode = 2026,
 		AttributeShouldOnlyBeUsedOnceOnMember = 2027,
-		_unused_AttributeDoesntHaveTheRequiredNumberOfParameters = 2028,
+		AttributeDoesntHaveTheRequiredNumberOfParameters = 2028,
 		XmlElementDoesNotContainRequiredAttributeFullname = 2029,
 		XmlCouldNotResolveAssemblyForAttribute = 2030,
 		XmlAttributeTypeCouldNotBeFound = 2031,
