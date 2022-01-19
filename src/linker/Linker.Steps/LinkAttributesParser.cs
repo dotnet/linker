@@ -91,13 +91,24 @@ namespace Mono.Linker.Steps
 				return sb.ToString ();
 			}
 		}
-
+		///	<summary>
+		/// Here, we generate new constructors for the synthetic RemoveAttributeInstancesAttribute type
+		///	(in the Cecil space, with no namespace) based on the number of arguments in the XML.
+		///	Each such .ctor is defined as .ctor(object, object, ....) - all arguments are boxed
+		///	in the XML by wrapping them with "object" argument.
+		/// The internal linker representation which is a type called 
+		/// <see cref="Mono.Linker.RemoveAttributeInstancesAttribute">Mono.Linker.RemoveAttributeInstancesAttribute</see>
+		///	which has only one .ctor which takes a collection of arguments (<c>Collection&lt;CustomAttributeArgument&gt;</c>).
+		///	The linker attribute caching mechanism <see cref="Mono.Linker.LinkerAttributesInformation"/> converts the call to 
+		///	this generated .ctor with arbitrary number of arguments to the instantiation of the internal representation.
+		///	The boxing within an Object is removed in this conversion.
+		///	</summary>
 		TypeDefinition? GenerateRemoveAttributeInstancesAttribute (int ctorArgumentCount)
 		{
 			TypeDefinition? td = null;
 
 			if (_context.MarkedKnownMembers.RemoveAttributeInstancesAttributeDefinition is TypeDefinition knownTypeDef) {
-				if (knownTypeDef.GetConstructorsOnType (_ => true).Any (m => m.Parameters.Count == ctorArgumentCount)) {
+				if (knownTypeDef.GetConstructorsOnType(ctor => ctor.Parameters.Count == ctorArgumentCount).Any(_ => true)) {
 					return knownTypeDef;
 				} else {
 					td = knownTypeDef;
