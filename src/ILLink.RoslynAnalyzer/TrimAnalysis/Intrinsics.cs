@@ -2,17 +2,20 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System.Diagnostics.CodeAnalysis;
+using ILLink.RoslynAnalyzer;
 using ILLink.RoslynAnalyzer.TrimAnalysis;
 using ILLink.Shared.TypeSystemProxy;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace ILLink.Shared.TrimAnalysis
 {
 	partial struct Intrinsics
 	{
+		readonly OperationBlockAnalysisContext _context;
 		readonly IOperation _operation;
 
-		public Intrinsics (IOperation operation) => _operation = operation;
+		public Intrinsics (OperationBlockAnalysisContext context, IOperation operation) => (_context, _operation) = (context, operation);
 
 		// TODO: This is relatively expensive on the analyzer since it doesn't cache the annotation information
 		// In linker this is an optimization to avoid the heavy lifting of analysis if there's no point
@@ -22,17 +25,8 @@ namespace ILLink.Shared.TrimAnalysis
 		private partial DynamicallyAccessedMemberTypes GetReturnValueAnnotation (MethodProxy method) => FlowAnnotations.GetMethodReturnValueAnnotation (method.Method);
 
 		private partial MethodReturnValue GetMethodReturnValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
-			=> new MethodReturnValue (method.Method, dynamicallyAccessedMemberTypes);
+			=> new (method.Method, dynamicallyAccessedMemberTypes);
 
-		private partial MethodProxy GetCallingMethod ()
-		{
-			var operation = _operation?.Parent;
-			while (operation != null) {
-
-				operation = operation.Parent;
-			}
-
-			return default;
-		}
+		private partial string GetContainingSymbolDisplayName () => _operation.FindContainingSymbol (_context.OwningSymbol).GetDisplayName ();
 	}
 }

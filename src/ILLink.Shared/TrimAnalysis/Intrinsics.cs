@@ -385,12 +385,12 @@ namespace ILLink.Shared.TrimAnalysis
 				foreach (var uniqueValue in methodReturnValue) {
 					if (uniqueValue is ValueWithDynamicallyAccessedMembers methodReturnValueWithMemberTypes) {
 						if (!methodReturnValueWithMemberTypes.DynamicallyAccessedMemberTypes.HasFlag (returnValueDynamicallyAccessedMemberTypes))
-							throw new InvalidOperationException ($"Internal linker error: processing of call from {GetCallingMethod ().GetDisplayName ()} to {calledMethod.GetDisplayName ()} returned value which is not correctly annotated with the expected dynamic member access kinds.");
+							throw new InvalidOperationException ($"Internal linker error: in {GetContainingSymbolDisplayName ()} processing call to {calledMethod.GetDisplayName ()} returned value which is not correctly annotated with the expected dynamic member access kinds.");
 					} else if (uniqueValue is SystemTypeValue) {
 						// SystemTypeValue can fullfill any requirement, so it's always valid
 						// The requirements will be applied at the point where it's consumed (passed as a method parameter, set as field value, returned from the method)
 					} else {
-						throw new InvalidOperationException ($"Internal linker error: processing of call from {GetCallingMethod ().GetDisplayName ()} to {calledMethod.GetDisplayName ()} returned value which is not correctly annotated with the expected dynamic member access kinds.");
+						throw new InvalidOperationException ($"Internal linker error: in {GetContainingSymbolDisplayName ()} processing call to {calledMethod.GetDisplayName ()} returned value which is not correctly annotated with the expected dynamic member access kinds.");
 					}
 				}
 			}
@@ -404,6 +404,7 @@ namespace ILLink.Shared.TrimAnalysis
 
 		private partial MethodReturnValue GetMethodReturnValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes);
 
-		private partial MethodProxy GetCallingMethod ();
+		// Only used for internal diagnostic purposes (not even for warning messages)
+		private partial string GetContainingSymbolDisplayName ();
 	}
 }

@@ -24,7 +24,7 @@ namespace ILLink.Shared.TrimAnalysis
 		private partial MethodReturnValue GetMethodReturnValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 			=> new (ResolveToTypeDefinition (method.Method.ReturnType), method.Method, dynamicallyAccessedMemberTypes);
 
-		private partial MethodProxy GetCallingMethod () => new (_callingMethodDefinition);
+		private partial string GetContainingSymbolDisplayName () => _callingMethodDefinition.GetDisplayName ();
 
 		// Array types that are dynamically accessed should resolve to System.Array instead of its element type - which is what Cecil resolves to.
 		// Any data flow annotations placed on a type parameter which receives an array type apply to the array itself. None of the members in its
