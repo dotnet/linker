@@ -260,7 +260,7 @@ namespace Mono.Linker.Dataflow
 			returnValueDynamicallyAccessedMemberTypes = requiresDataFlowAnalysis ?
 				_context.Annotations.FlowAnnotations.GetReturnParameterAnnotation (calledMethodDefinition) : 0;
 
-			var intrinsics = new Intrinsics (_context, this, analysisContext, callingMethodDefinition);
+			var intrinsics = new Intrinsics (_context, callingMethodDefinition);
 			switch (Intrinsics.GetIntrinsicIdForMethod (calledMethodDefinition)) {
 			case IntrinsicId.IntrospectionExtensions_GetTypeInfo:
 			case IntrinsicId.TypeInfo_AsType: {
@@ -1540,8 +1540,8 @@ namespace Mono.Linker.Dataflow
 
 		void RequireDynamicallyAccessedMembers (in AnalysisContext analysisContext, in MultiValue value, ValueWithDynamicallyAccessedMembers targetValue)
 		{
-			Intrinsics intrinsics = new Intrinsics (_context, this, analysisContext, null!);
-			intrinsics.RequireDynamicallyAccessedMembers (new DiagnosticContext (analysisContext.Origin, analysisContext.DiagnosticsEnabled, _context), value, targetValue);
+			var requireDynamicallyAccessedMembersAction = new RequireDynamicallyAccessedMembersAction (_context, this, analysisContext);
+			requireDynamicallyAccessedMembersAction.Invoke (new DiagnosticContext (analysisContext.Origin, analysisContext.DiagnosticsEnabled, _context), value, targetValue);
 		}
 
 		static BindingFlags? GetBindingFlagsFromValue (in MultiValue parameter) => (BindingFlags?) parameter.AsConstInt ();
