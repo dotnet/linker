@@ -30,7 +30,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 	// [LogDoesNotContain ("UnusedVirtualMethod2")] // https://github.com/dotnet/linker/issues/2106
 
 	[ExpectedNoWarnings]
-	class RequiresCopyAssembly
+	class RequiresWithCopyAssembly
 	{
 		[ExpectedWarning ("IL2026", "--IDerivedInterface.MethodInDerivedInterface--", ProducedBy = ProducedBy.Trimmer)]
 		[ExpectedWarning ("IL2026", "--IBaseInterface.MethodInBaseInterface--", ProducedBy = ProducedBy.Trimmer)]

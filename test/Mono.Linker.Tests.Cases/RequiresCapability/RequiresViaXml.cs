@@ -13,12 +13,12 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 namespace Mono.Linker.Tests.Cases.RequiresCapability
 {
 
-	[SetupLinkAttributesFile ("RequiresCapability.attributes.xml")]
-	[SetupLinkerDescriptorFile ("RequiresCapability.descriptor.xml")]
+	[SetupLinkAttributesFile ("RequiresViaXml.attributes.xml")]
+	[SetupLinkerDescriptorFile ("RequiresViaXml.descriptor.xml")]
 	[SkipKeptItemsValidation]
 	[ExpectedNoWarnings]
 	// [LogContains ("--RequiresOnlyViaDescriptor--")]  // https://github.com/dotnet/linker/issues/2103
-	[ExpectedWarning ("IL2026", "RequiresOnFieldOnlyViaDescriptor.Field", FileName = "RequiresCapability.descriptor.xml", ProducedBy = ProducedBy.Trimmer)]
+	[ExpectedWarning ("IL2026", "RequiresOnFieldOnlyViaDescriptor.Field", FileName = "RequiresViaXml.descriptor.xml", ProducedBy = ProducedBy.Trimmer)]
 	class RequiresViaXml
 	{
 

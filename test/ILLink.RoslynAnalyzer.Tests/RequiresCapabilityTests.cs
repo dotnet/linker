@@ -39,12 +39,6 @@ namespace ILLink.RoslynAnalyzer.Tests
 		}
 
 		[Fact]
-		public Task RequiresCopyAssembly ()
-		{
-			return RunTest (nameof (RequiresCopyAssembly));
-		}
-
-		[Fact]
 		public Task RequiresInCompilerGeneratedCode ()
 		{
 			return RunTest (nameof (RequiresInCompilerGeneratedCode));
@@ -90,6 +84,12 @@ namespace ILLink.RoslynAnalyzer.Tests
 		public Task RequiresViaXml ()
 		{
 			return RunTest (nameof (RequiresViaXml));
+		}
+
+		[Fact]
+		public Task RequiresWithCopyAssembly ()
+		{
+			return RunTest (nameof (RequiresWithCopyAssembly));
 		}
 
 		[Fact]
