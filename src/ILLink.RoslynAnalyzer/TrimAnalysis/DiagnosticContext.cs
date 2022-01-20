@@ -9,7 +9,8 @@ namespace ILLink.Shared.TrimAnalysis
 {
 	readonly partial struct DiagnosticContext
 	{
-		readonly List<Diagnostic> _diagnostics = new ();
+		public List<Diagnostic> Diagnostics { get; } = new ();
+
 		readonly Location _location;
 
 		public DiagnosticContext (Location location)
@@ -19,7 +20,7 @@ namespace ILLink.Shared.TrimAnalysis
 
 		public partial void ReportDiagnostic (DiagnosticId id, params string[] args)
 		{
-			_diagnostics.Add (Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (id), _location, args));
+			Diagnostics.Add (Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (id), _location, args));
 		}
 	}
 }
