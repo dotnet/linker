@@ -122,15 +122,30 @@ namespace ILLink.RoslynAnalyzer
 			if (sourceValue is SystemTypeValue knownType && targetValue is ValueWithDynamicallyAccessedMembers targetForKnownType) {
 				var members = knownType.NamedTypeSymbol.GetDynamicallyAccessedMembers (targetForKnownType.DynamicallyAccessedMemberTypes);
 				foreach (var member in members) {
-					if (member.TargetHasRequiresUnreferencedCodeAttribute (out var requiresAttributeData) && RequiresUnreferencedCodeUtils.VerifyRequiresUnreferencedCodeAttributeArguments (requiresAttributeData))
-						yield return ReportRequiresUnreferencedCodeDiagnostic (requiresAttributeData, member, location);
+					if (!member.IsOverride && !member.IsImplementationOfInterfaceMember () &&
+						member.TargetHasRequiresUnreferencedCodeAttribute (out var requiresAttributeData)
+						&& RequiresUnreferencedCodeUtils.VerifyRequiresUnreferencedCodeAttributeArguments (requiresAttributeData)) {
+						if (member is IPropertySymbol property) {
+							if (property.GetMethod != null)
+								yield return ReportRequiresUnreferencedCodeDiagnostic (requiresAttributeData, property.GetMethod, location);
+							if (property.SetMethod != null)
+								yield return ReportRequiresUnreferencedCodeDiagnostic (requiresAttributeData, property.SetMethod, location);
+						} else if (member is IEventSymbol eventSymbol) {
+							if(eventSymbol.AddMethod != null)
+								yield return ReportRequiresUnreferencedCodeDiagnostic (requiresAttributeData, eventSymbol.AddMethod, location);
+							if (eventSymbol.RemoveMethod != null)
+								yield return ReportRequiresUnreferencedCodeDiagnostic (requiresAttributeData, eventSymbol.RemoveMethod, location);
+							if(eventSymbol.RaiseMethod != null)
+								yield return ReportRequiresUnreferencedCodeDiagnostic (requiresAttributeData, eventSymbol.RaiseMethod, location);
+						} else
+							yield return ReportRequiresUnreferencedCodeDiagnostic (requiresAttributeData, member, location);
+					}
 
 					var diagnostics = member switch {
 						IMethodSymbol methodSymbol => VerifyMethodSymbolForDiagnostic (methodSymbol, location),
 						IPropertySymbol propertySymbol => VerifyPropertySymbolForDiagnostic (propertySymbol, location),
 						IFieldSymbol fieldSymbol => VerifyFieldSymbolForDiagnostic (fieldSymbol, location),
-						ITypeSymbol => new List<Diagnostic> (),
-						_ => throw new NotImplementedException (),
+						_ => new List<Diagnostic> ()
 					};
 					foreach (var diagnostic in diagnostics)
 						yield return diagnostic;
