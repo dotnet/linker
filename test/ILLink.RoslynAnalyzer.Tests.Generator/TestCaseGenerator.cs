@@ -67,7 +67,7 @@ namespace {TestNamespace}{suiteNamespacePart}
 ";
 			if (newTestSuite)
 				header += $@"
-		protected override string TestSuiteName => ""{suiteClassName}"";
+		protected override string TestSuiteName => ""{suiteName}"";
 ";
 			return header;
 		}
