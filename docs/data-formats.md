@@ -2,8 +2,7 @@
 
 ## Input Data Formats
 
-ILLink uses several data formats to control or influence the trimming process. The data formats are not
-versioned but are backward compatible.
+ILLink uses several data formats to control or influence the trimming process. The data formats are not versioned but are backward compatible.
 
 - [Descriptors](#descriptor-format)
 - [Substitutions](#substitution-format)
@@ -17,12 +16,9 @@ versioned but are backward compatible.
 
 ## Descriptor Format
 
-Descriptors are used to direct the trimmer to always keep some items in the assembly, regardless of if
-the trimmer can find any references to them.
+Descriptors are used to direct the trimmer to always keep some items in the assembly, regardless of if the trimmer can find any references to them.
 
-Descriptor XML can be embedded in an assembly. In that case it must be stored as an embedded resource
-with logical name `ILLink.Descriptors.xml`. To achieve this when building an assembly use this in the
-project file to include the XML:
+Descriptor XML can be embedded in an assembly. In that case it must be stored as an embedded resource with logical name `ILLink.Descriptors.xml`. To achieve this when building an assembly use this in the project file to include the XML:
 
 ```xml
   <ItemGroup>
@@ -32,11 +28,9 @@ project file to include the XML:
   </ItemGroup>
 ```
 
-Embedded descriptors only take effect if the containing assembly is included in the trimmer output, so if
-something from that assembly is marked to be kept.
+Embedded descriptors only take effect if the containing assembly is included in the trimmer output, so if something from that assembly is marked to be kept.
 
-Descriptor XML can also be passed to the trimmer on the command via the [`-x`
-parameter](illink-options.md#trimming-from-an-xml-descriptor).
+Descriptor XML can also be passed to the trimmer on the command via the [`-x` parameter](illink-options.md#trimming-from-an-xml-descriptor).
 
 ### XML Examples
 
@@ -63,8 +57,7 @@ parameter](illink-options.md#trimming-from-an-xml-descriptor).
 
 ### Preserve a type
 
-The `required` attribute specifies that if the type is not marked, during the mark operation, it will not
-be trimmed. Both `required` and `preserve` can be combined together.
+The `required` attribute specifies that if the type is not marked, during the mark operation, it will not be trimmed. Both `required` and `preserve` can be combined together.
 
 ```xml
 <linker>
@@ -199,18 +192,11 @@ be trimmed. Both `required` and `preserve` can be combined together.
 
 ## Substitution Format
 
-Substitutions direct the trimmer to replace specific method's body with either a throw or return constant
-statements.
+Substitutions direct the trimmer to replace specific method's body with either a throw or return constant statements.
 
-Substitutions have effect only on assemblies which are trimmed with assembly action `link`, any other
-assembly will not be affected. That said it is possible to have a `copy` assembly with the substitution
-on a method in it, and then a separate `link` assembly which calls such method. The `link` assembly will
-see the constant value of the method after the substitution and potentially remove unused branches and
-such.
+Substitutions have effect only on assemblies which are trimmed with assembly action `link`, any other assembly will not be affected. That said it is possible to have a `copy` assembly with the substitution on a method in it, and then a separate `link` assembly which calls such method. The `link` assembly will see the constant value of the method after the substitution and potentially remove unused branches and such.
 
-Substitutions XML can be embedded in an assembly by including it as an embedded resource with logical
-name `ILLink.Substitutions.xml`. To include an XML file in an assembly this way, use this in the project
-file:
+Substitutions XML can be embedded in an assembly by including it as an embedded resource with logical name `ILLink.Substitutions.xml`. To include an XML file in an assembly this way, use this in the project file:
 
 ```xml
   <ItemGroup>
@@ -220,18 +206,13 @@ file:
   </ItemGroup>
 ```
 
-Embedded substitutions only take effect if the containing assembly is included in the trimmer output.
-Embedded substitutions should only address methods from the containing assembly.
+Embedded substitutions only take effect if the containing assembly is included in the trimmer output. Embedded substitutions should only address methods from the containing assembly.
 
-Substitutions XML can be specified on the command line via the [`--substitutions`
-parameter](illink-options.md#using-custom-substitutions). Using substitutions with `ipconstprop`
-optimization (enabled by default) can help reduce output size as any dependencies under conditional logic
-which will be evaluated as unreachable will be removed.
+Substitutions XML can be specified on the command line via the [`--substitutions` parameter](illink-options.md#using-custom-substitutions). Using substitutions with `ipconstprop` optimization (enabled by default) can help reduce output size as any dependencies under conditional logic which will be evaluated as unreachable will be removed.
 
 ### Substitute method body with a constant
 
-The `value` attribute is optional and only required when the method should be hardcoded to return a
-non-default value and the return type is not `void`.
+The `value` attribute is optional and only required when the method should be hardcoded to return a non-default value and the return type is not `void`.
 
 ```xml
 <linker>
@@ -259,8 +240,7 @@ Entire method body is replaces with `throw` instruction when method is reference
 
 ### Override static field value with a constant
 
-The `initialize` attribute is optional and when not specified the code to set the static field to the
-value will not be generated.
+The `initialize` attribute is optional and when not specified the code to set the static field to the value will not be generated.
 
 ```xml
 <linker>
@@ -284,8 +264,8 @@ value will not be generated.
 
 ### Conditional substitutions and descriptors
 
-The `feature` and `featurevalue` attributes are optional, but must be used together when used. They can
-be applied to any element to specify conditions under which the contained substitutions or descriptors
+The `feature` and `featurevalue` attributes are optional, but must be used together when used.
+They can be applied to any element to specify conditions under which the contained substitutions or descriptors
 are applied, based on feature settings passed via `--feature FeatureName bool`
 
 ```xml
@@ -299,10 +279,9 @@ are applied, based on feature settings passed via `--feature FeatureName bool`
 </linker>
 ```
 
-`featuredefault="true"` can be used to indicate that this `featurevalue` is the default value for
-`feature`, causing the contained substitutions or descriptors to be applied even when the feature setting
-is not passed to the trimmer. Note that this will only have an effect where it is applied - the default
-value is not remembered or reused for other elements.
+`featuredefault="true"` can be used to indicate that this `featurevalue` is the default value for `feature`,
+causing the contained substitutions or descriptors to be applied even when the feature setting is not passed to the trimmer.
+Note that this will only have an effect where it is applied - the default value is not remembered or reused for other elements.
 
 ```xml
 <linker>
@@ -323,13 +302,9 @@ value is not remembered or reused for other elements.
 
 Attribute annotations direct the trimmer to behave as if the specified item has the specified attribute.
 
-Attribute annotations can only be used to add attributes which have effect on trimmer behavior, all other
-attributes will be ignored. Attributes added via attribute annotations only influence trimmer behavior,
-they are never added to the output assembly.
+Attribute annotations can only be used to add attributes which have effect on trimmer behavior, all other attributes will be ignored. Attributes added via attribute annotations only influence trimmer behavior, they are never added to the output assembly.
 
-Attribute annotation XML can be embedded in an assembly by including it as an embedded resource with
-logical name `ILLink.LinkAttributes.xml`. To include an XML file in an assembly this way, use this in the
-project file:
+Attribute annotation XML can be embedded in an assembly by including it as an embedded resource with logical name `ILLink.LinkAttributes.xml`. To include an XML file in an assembly this way, use this in the project file:
 
 ```xml
   <ItemGroup>
@@ -339,22 +314,12 @@ project file:
   </ItemGroup>
 ```
 
-Embedded attribute annotations should only address methods from the containing assembly. Whereas
-attribute annotations specified on the command line via the [`--link-attributes`
-parameter](illink-options.md#supplementary-custom-attributes) can alter types and members in any
-assembly.
+Embedded attribute annotations should only address methods from the containing assembly. Whereas attribute annotations specified on the command line via the [`--link-attributes` parameter](illink-options.md#supplementary-custom-attributes) can alter types and members in any assembly.
 
-The attribute element requires 'fullname' attribute without it trimmer will generate a warning and skip
-the attribute. Optionally you can use the 'assembly' attribute to point to certain assembly to look for
-the attribute, if not specified the trimmer will look up the attribute in any loaded assembly.
+The attribute element requires 'fullname' attribute without it trimmer will generate a warning and skip the attribute. Optionally you can use the 'assembly' attribute to point to certain assembly to look
+for the attribute, if not specified the trimmer will look up the attribute in any loaded assembly.
 
-Inside an attribute element in the xml you can further define argument, field and property elements used
-as an input for the attribute. An attribute can have several arguments, several fields or several
-properties. When writing custom attribute with multiple arguments you need to write the xml elements in
-an order-dependent form. That is, the first xml argument element corresponds to the first custom
-attribute argument, second xml argument element correspond to the second custom attribute argument and so
-on. When argument type is not specified it's considered to be of `string` type. Any other custom
-attribute value has to have its type specified for trimmer to find the correct constructor overload.
+Inside an attribute element in the xml you can further define argument, field and property elements used as an input for the attribute. An attribute can have several arguments, several fields or several properties. When writing custom attribute with multiple arguments you need to write the xml elements in an order-dependent form. That is, the first xml argument element corresponds to the first custom attribute argument, second xml argument element correspond to the second custom attribute argument and so on. When argument type is not specified it's considered to be of `string` type. Any other custom attribute value has to have its type specified for trimmer to find the correct constructor overload.
 
 ```xml
 <attribute fullname="SomeCustomAttribute" assembly="AssemblyName">
@@ -536,8 +501,9 @@ This allows to add a custom attribute to a class, interface, delegate, struct or
 
 ### Conditional custom attributes
 
-The `feature` and `featurevalue` attributes are optional, but must be used together when used. They can
-be applied to any element to specify conditions under which the contained custom attributes are applied.
+The `feature` and `featurevalue` attributes are optional, but must be used together when used.
+They can be applied to any element to specify conditions under which the contained custom
+attributes are applied.
 
 ```xml
 <linker>
@@ -564,10 +530,9 @@ be applied to any element to specify conditions under which the contained custom
 
 ### Removing custom attributes
 
-To remove a custom attribute, you can add a special custom attribute `RemoveAttributeInstancesAttribute`
-to indicate to the linker that instances of the attribute should be removed. To do this, use
-`internal="RemoveAttributeInstances"` instead of specifying `fullname` in the xml `attribute` tag. For
-example, to remove all instances of the `Nullable` attribute, use the following xml:
+Any custom attribute can be annotated with a special custom attribute which can be used to specify
+that all instances of the attribute can be removed by the trimmer. To do this use `internal="RemoveAttributeInstances"`
+instead of specifying `fullname` in the attribute as described in the following example:
 
 ```xml
 <linker>
@@ -579,13 +544,9 @@ example, to remove all instances of the `Nullable` attribute, use the following 
 </linker>
 ```
 
-In some cases, it's useful to remove only specific usage of the attribute. To do this, you can add
-arguments to the `RemoveAttributeInstances` constructor. Any instances of the custom attribute that have
-arguments that match its `RemoveAttributeInstances` arguments will be removed. To do this, add an
-`<argument>` tag with `type="System.Object"` inside the `RemoveAttributeInstances` tag. Inside that tag,
-add the `<argument>` tag with the type and value you want to match with the instances of the custom
-attribute. In the example below only `System.Reflection.AssemblyMetadataAttribute` custom attributes with
-the first argument that is a `System.String` and is equal to `RemovableValue` will be removed.
+In some cases, it's useful to remove only specific usage of the attribute. This can be achieved by specifying the value
+or values of the arguments to match. In the example below only `System.Reflection.AssemblyMetadataAttribute` custom attributes
+with the first argument equal to `RemovableValue` will be removed.
 
 ```xml
 <linker>
@@ -593,28 +554,7 @@ the first argument that is a `System.String` and is equal to `RemovableValue` wi
     <type fullname="System.Reflection.AssemblyMetadataAttribute">
       <attribute internal="RemoveAttributeInstances">
         <argument type="System.Object">
-          <argument type="System.String">RemovableValue</argument>
-        </argument>
-      </attribute>
-    </type>
-  </assembly>
-</linker>
-```
-
-This can also be done to match multiple arguments. In the example below, all instances of
-`RequiresUnreferencedCodeAttribute` where the first argument is of type `System.String` and value "Remove",
-and the second argument is of type `System.Int32` and value 2 will be removed
-
-```xml
-<linker>
-  <assembly fullname="*">
-    <type fullname="System.Diagnostics.CodeAnalysis.RequiresUnreferencedCodeAttribute">
-      <attribute internal="RemoveAttributeInstances">
-        <argument type="System.Object">
-          <argument type="System.String">Remove</argument>
-        </argument>
-        <argument type="System.Object">
-          <argument type="System.Int32">2</argument>
+          <argument>RemovableValue</argument>
         </argument>
       </attribute>
     </type>
@@ -623,11 +563,12 @@ and the second argument is of type `System.Int32` and value 2 will be removed
 ```
 
 Notice that a descriptor file containing the custom attribute type overrides this behavior. In case the
-custom attribute type is being referenced in a descriptor file and in the attribute annotations file for
-removal, the custom attribute will not be removed.
+custom attribute type is being referenced in a descriptor file and in the attribute annotations file
+for removal, the custom attribute will not be removed.
 
 ## Dependencies Trace Format
 
-This is the format of data used to capture trimmer logic about why members, types, and other metadata
-elements were marked by the trimmer as required and persisted in the trimmed output. The format includes
-edges of the graph for every dependency which was tracked by the trimmer.
+This is the format of data used to capture trimmer logic about why
+members, types, and other metadata elements were marked by the trimmer
+as required and persisted in the trimmed output. The format includes edges
+of the graph for every dependency which was tracked by the trimmer.
