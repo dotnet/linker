@@ -243,6 +243,9 @@ namespace ILLink.RoslynAnalyzer.Tests
 
 			bool Matches (Diagnostic diagnostic)
 			{
+				if (!attribute.Parent.Parent.Span.Contains (diagnostic.Location.SourceSpan))
+					return false;
+
 				if (diagnostic.Id != expectedWarningCode)
 					return false;
 
