@@ -93,7 +93,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				public static Type _annotatedField;
 			}
 
-			[ExpectedWarning ("IL2110", nameof (AnnotatedField._annotatedField), ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL2110", nameof (AnnotatedField._annotatedField))]
 			[ExpectedWarning ("IL2110", nameof (NestedType._annotatedField))]
 			[ExpectedWarning ("IL2026", "ReflectionSuppressedByRUC", "test")]
 			[ExpectedWarning ("IL2026", "DynamicDependencySuppressedByRUC", "test")]
@@ -103,7 +103,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				typeof (AnnotatedField).RequiresAll ();
 			}
 
-			[ExpectedWarning ("IL2110", nameof (AnnotatedField._annotatedField), ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL2110", nameof (AnnotatedField._annotatedField))]
 			[ExpectedWarning ("IL2110", nameof (NestedType._annotatedField))]
 			[ExpectedWarning ("IL2026", "ReflectionSuppressedByRUC", "test")]
 			[ExpectedWarning ("IL2026", "DynamicDependencySuppressedByRUC", "test")]
@@ -238,7 +238,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[ExpectedWarning ("IL2026", "DynamicallyAccessedMembersSuppressedByRUC", "test")]
 			[ExpectedWarning ("IL2111", nameof (MethodWithSingleAnnotatedParameter))]
 			[ExpectedWarning ("IL2111", nameof (IWithAnnotatedMethod.AnnotatedMethod))]
-			[ExpectedWarning ("IL2111", nameof (IWithAnnotatedMethod.AnnotatedMethod), ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL2111", nameof (IWithAnnotatedMethod.AnnotatedMethod))]
 			static void DynamicallyAccessedMembersAll2 ()
 			{
 				typeof (AnnotatedMethodParameters).RequiresAll ();
@@ -284,15 +284,11 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			// Only virtual methods should warn - the problem is only possible if something overrides a virtual method.
 			// Getting an annotated value in itself is not dangerous in any way.
 
-			// Analyzer doesnt support intrinsics yet, so its using the annotation PublicMethods in GetMethod which calls the three methods including virtual one. Hence producing the warning
-			[ExpectedWarning ("IL2111", nameof (VirtualMethodWithAnnotatedReturnValue), ProducedBy = ProducedBy.Analyzer)]
 			static void ReflectionOnStatic ()
 			{
 				typeof (AnnotatedMethodReturnValue).GetMethod (nameof (StaticMethodWithAnnotatedReturnValue)).Invoke (null, null);
 			}
 
-			// Analyzer doesnt support intrinsics yet, so its using the annotation PublicMethods in GetMethod which calls the three methods including virtual one. Hence producing the warning
-			[ExpectedWarning ("IL2111", nameof (VirtualMethodWithAnnotatedReturnValue), ProducedBy = ProducedBy.Analyzer)]
 			static void ReflectionOnInstance ()
 			{
 				typeof (AnnotatedMethodReturnValue).GetMethod (nameof (InstanceMethodWithAnnotatedReturnValue)).Invoke (null, null);
@@ -406,8 +402,6 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 
 			[ExpectedWarning ("IL2111", nameof (PropertyWithAnnotation) + ".set")]
-			// Analyzer doesnt support intrinsics yet, so its using the annotation PublicProperties in GetProperty which calls all public properties. Hence producing additional warnings
-			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationGetterOnly), ProducedBy = ProducedBy.Analyzer)]
 			static void ReflectionOnPropertyItself ()
 			{
 				typeof (AnnotatedProperty).GetProperty (nameof (PropertyWithAnnotation));
@@ -419,26 +413,17 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				typeof (AnnotatedProperty).GetProperty (nameof (PropertyWithAnnotation));
 			}
 
-
-			// Analyzer doesnt support intrinsics yet, so its using the annotation PublicProperties in GetProperty which calls all public properties. Hence producing additional warnings
-			[ExpectedWarning ("IL2111", nameof (PropertyWithAnnotation) + ".set", ProducedBy = ProducedBy.Analyzer)]
-			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationGetterOnly) + ".get", ProducedBy = ProducedBy.Analyzer)]
 			static void ReflectionOnPropertyWithGetterOnly ()
 			{
 				typeof (AnnotatedProperty).GetProperty (nameof (PropertyWithAnnotationGetterOnly));
 			}
 
-			// Analyzer doesnt support intrinsics yet, so its using the annotation PublicProperties in GetProperty which calls all public properties. Hence producing additional warnings
-			[ExpectedWarning ("IL2111", nameof (PropertyWithAnnotation) + ".set", ProducedBy = ProducedBy.Analyzer)]
-			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationGetterOnly) + ".get")]
+			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationGetterOnly))]
 			static void ReflectionOnPropertyWithGetterOnlyOnVirtual ()
 			{
 				typeof (AnnotatedProperty).GetProperty (nameof (VirtualPropertyWithAnnotationGetterOnly));
 			}
 
-			// Analyzer doesnt support intrinsics yet, so its using the annotation PublicProperties in GetProperty which calls all public properties. Hence producing additional warnings
-			[ExpectedWarning ("IL2111", nameof (PropertyWithAnnotation) + ".set", ProducedBy = ProducedBy.Analyzer)]
-			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationGetterOnly) + ".get", ProducedBy = ProducedBy.Analyzer)]
 			static void ReflectionOnGetter ()
 			{
 				typeof (AnnotatedProperty).GetMethod ("get_" + nameof (PropertyWithAnnotation));
@@ -496,12 +481,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[ExpectedWarning ("IL2026", nameof (DynamicallyAccessedMembersSuppressedByRUC), "test")]
 			[ExpectedWarning ("IL2026", nameof (ReflectionOnPropertyItselfSuppressedByRUC), "test")]
 			// Duplicated warnings for linker and analyzer see bug https://github.com/dotnet/linker/issues/2462
-			[ExpectedWarning ("IL2111", nameof (AnnotatedProperty.PropertyWithAnnotation) + ".set", ProducedBy = ProducedBy.Analyzer)]
-			[ExpectedWarning ("IL2111", nameof (AnnotatedProperty.PropertyWithAnnotation) + ".set", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL2111", nameof (AnnotatedProperty.PropertyWithAnnotation) + ".set")]
+			[ExpectedWarning ("IL2111", nameof (AnnotatedProperty.PropertyWithAnnotation) + ".set")]
 			[ExpectedWarning ("IL2111", nameof (AttributeWithPropertyWithAnnotation.PropertyWithAnnotation) + ".set")]
-			[ExpectedWarning ("IL2111", nameof (AttributeWithPropertyWithAnnotation.PropertyWithAnnotation) + ".set", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL2111", nameof (AttributeWithPropertyWithAnnotation.PropertyWithAnnotation) + ".set")]
 			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationGetterOnly) + ".get")]
-			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationGetterOnly) + ".get", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationGetterOnly) + ".get")]
 			[UnconditionalSuppressMessage ("Test", "IL2110", Justification = "Suppress warning about backing field of PropertyWithAnnotation")]
 			static void DynamicallyAccessedMembersAll1 ()
 			{
@@ -512,10 +497,11 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[ExpectedWarning ("IL2026", nameof (DynamicallyAccessedMembersSuppressedByRUC), "test")]
 			[ExpectedWarning ("IL2026", nameof (ReflectionOnPropertyItselfSuppressedByRUC), "test")]
 			// Duplicated warnings for linker and analyzer see bug https://github.com/dotnet/linker/issues/2462
-			[ExpectedWarning ("IL2111", nameof (AnnotatedProperty.PropertyWithAnnotation) + ".set", ProducedBy = ProducedBy.Analyzer)]
-			[ExpectedWarning ("IL2111", nameof (AnnotatedProperty.PropertyWithAnnotation) + ".set", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL2111", nameof (AnnotatedProperty.PropertyWithAnnotation) + ".set")]
+			[ExpectedWarning ("IL2111", nameof (AnnotatedProperty.PropertyWithAnnotation) + ".set")]
 			[ExpectedWarning ("IL2111", nameof (AttributeWithPropertyWithAnnotation.PropertyWithAnnotation) + ".set")]
-			[ExpectedWarning ("IL2111", nameof (AttributeWithPropertyWithAnnotation.PropertyWithAnnotation) + ".set", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL2111", nameof (AttributeWithPropertyWithAnnotation.PropertyWithAnnotation) + ".set")]
+			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationGetterOnly) + ".get")]
 			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationGetterOnly) + ".get")]
 			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationGetterOnly) + ".get", ProducedBy = ProducedBy.Analyzer)]
 			[UnconditionalSuppressMessage ("Test", "IL2110", Justification = "Suppress warning about backing field of PropertyWithAnnotation")]
@@ -695,6 +681,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				}
 			}
 
+			[ExpectedWarning ("IL2111", nameof (PropertyWithLdToken))]
 			[ExpectedWarning ("IL2111", nameof (PropertyWithLdToken), ProducedBy = ProducedBy.Trimmer)]
 			public static void Test ()
 			{
