@@ -367,6 +367,15 @@ namespace ILLink.Shared.TrimAnalysis
 				methodReturnValue = instanceValue;
 				break;
 
+			case IntrinsicId.Type_GetMethod:
+				return true;
+
+			case IntrinsicId.Type_GetField:
+				return true;
+
+			case IntrinsicId.Type_GetProperty:
+				return true;
+
 			default:
 				return false;
 			}

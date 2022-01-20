@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using ILLink.RoslynAnalyzer.DataFlow;
 using ILLink.RoslynAnalyzer.TrimAnalysis;
@@ -120,6 +119,24 @@ namespace ILLink.RoslynAnalyzer
 
 		static IEnumerable<Diagnostic> GetDynamicallyAccessedMembersDiagnostics (SingleValue sourceValue, SingleValue targetValue, Location location)
 		{
+			if (sourceValue is SystemTypeValue knownType && targetValue is ValueWithDynamicallyAccessedMembers targetForKnownType) {
+				var members = knownType.NamedTypeSymbol.GetDynamicallyAccessedMembers (targetForKnownType.DynamicallyAccessedMemberTypes);
+				foreach (var member in members) {
+					if (member.TargetHasRequiresUnreferencedCodeAttribute (out var requiresAttributeData) && RequiresUnreferencedCodeUtils.VerifyRequiresUnreferencedCodeAttributeArguments (requiresAttributeData))
+						yield return ReportRequiresUnreferencedCodeDiagnostic (requiresAttributeData, member, location);
+
+					var diagnostics = member switch {
+						IMethodSymbol methodSymbol => VerifyMethodSymbolForDiagnostic (methodSymbol, location),
+						IPropertySymbol propertySymbol => VerifyPropertySymbolForDiagnostic (propertySymbol, location),
+						IFieldSymbol fieldSymbol => VerifyFieldSymbolForDiagnostic (fieldSymbol, location),
+						ITypeSymbol => new List<Diagnostic> (),
+						_ => throw new NotImplementedException (),
+					};
+					foreach (var diagnostic in diagnostics)
+						yield return diagnostic;
+				}
+			}
+
 			// The target should always be an annotated value, but the visitor design currently prevents
 			// declaring this in the type system.
 			if (targetValue is not ValueWithDynamicallyAccessedMembers targetWithDynamicallyAccessedMembers)
@@ -140,6 +157,64 @@ namespace ILLink.RoslynAnalyzer
 			(var diagnosticId, var diagnosticArguments) = Annotations.GetDiagnosticForAnnotationMismatch (sourceWithDynamicallyAccessedMembers, targetWithDynamicallyAccessedMembers, missingAnnotations);
 
 			yield return Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (diagnosticId), location, diagnosticArguments);
+		}
+
+		static Diagnostic ReportRequiresUnreferencedCodeDiagnostic (AttributeData requiresAttributeData, ISymbol member, Location location)
+		{
+			var message = RequiresUnreferencedCodeUtils.GetMessageFromAttribute (requiresAttributeData);
+			var url = RequiresAnalyzerBase.GetUrlFromAttribute (requiresAttributeData);
+			return Diagnostic.Create (
+				DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.RequiresUnreferencedCode),
+				location,
+				member.GetDisplayName (),
+				message,
+				url);
+		}
+
+		static IEnumerable<Diagnostic> VerifyMethodSymbolForDiagnostic (IMethodSymbol methodSymbol, Location location)
+		{
+			foreach (var parameter in methodSymbol.Parameters) {
+				if (parameter.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None) {
+					yield return Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection), location, methodSymbol.GetDisplayName ());
+					yield break;
+				}
+			}
+
+			if (methodSymbol.IsVirtual && methodSymbol.GetDynamicallyAccessedMemberTypesOnReturnType () != DynamicallyAccessedMemberTypes.None) {
+				yield return Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection), location, methodSymbol.GetDisplayName ());
+				yield break;
+			}
+
+			if (methodSymbol.IsVirtual && methodSymbol.MethodKind is MethodKind.PropertyGet &&
+				(methodSymbol.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None ||
+				methodSymbol.GetDynamicallyAccessedMemberTypesOnAssociatedSymbol () != DynamicallyAccessedMemberTypes.None)) {
+				yield return Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection), location, methodSymbol.GetDisplayName ());
+				yield break;
+			}
+
+			if (methodSymbol.MethodKind is MethodKind.PropertySet &&
+				(methodSymbol.GetDynamicallyAccessedMemberTypesOnReturnType () != DynamicallyAccessedMemberTypes.None ||
+				methodSymbol.GetDynamicallyAccessedMemberTypesOnAssociatedSymbol () != DynamicallyAccessedMemberTypes.None)) {
+				yield return Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection), location, methodSymbol.GetDisplayName ());
+				yield break;
+			}
+		}
+
+		static IEnumerable<Diagnostic> VerifyPropertySymbolForDiagnostic (IPropertySymbol propertySymbol, Location location)
+		{
+			if (propertySymbol.SetMethod is not null && propertySymbol.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None) {
+				yield return Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection), location, propertySymbol.SetMethod.GetDisplayName ());
+			}
+
+			if (propertySymbol.IsVirtual && propertySymbol.GetMethod is not null && propertySymbol.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None) {
+				yield return Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection), location, propertySymbol.GetMethod.GetDisplayName ());
+			}
+		}
+
+		static IEnumerable<Diagnostic> VerifyFieldSymbolForDiagnostic (IFieldSymbol fieldSymbol, Location location)
+		{
+			if (fieldSymbol.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None)
+				yield return Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersFieldAccessedViaReflection), location, fieldSymbol.GetDisplayName ());
 		}
 	}
 }
