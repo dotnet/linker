@@ -142,9 +142,6 @@ namespace Mono.Linker.Steps
 				td = new TypeDefinition ("", "RemoveAttributeInstancesAttribute", TypeAttributes.Public);
 
 				td.BaseType = attributeType;
-
-				var ctor0 = new MethodDefinition (".ctor", ctorAttributes, voidType);
-				td.Methods.Add (ctor0);
 			}
 
 			var ctorN = new MethodDefinition (".ctor", ctorAttributes, voidType);

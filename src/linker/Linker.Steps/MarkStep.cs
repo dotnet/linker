@@ -873,7 +873,7 @@ namespace Mono.Linker.Steps
 						aiType = caaB.Type;
 					}
 
-					if (!raiVal.Equals (aiVal) || !(raiType.FullName == aiType.FullName)) return false;
+					if (!raiVal.Equals (aiVal)) return false;
 				}
 
 				return true;

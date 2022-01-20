@@ -5,6 +5,7 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using Mono.Cecil;
+using Mono.Collections.Generic;
 
 namespace Mono.Linker
 {
@@ -16,7 +17,7 @@ namespace Mono.Linker
 		AttributeTargets.Class, Inherited = false)]
 	public sealed class RemoveAttributeInstancesAttribute : Attribute
 	{
-		public RemoveAttributeInstancesAttribute (System.Collections.Generic.ICollection<CustomAttributeArgument> values)
+		public RemoveAttributeInstancesAttribute (Collection<CustomAttributeArgument> values)
 		{
 			// Arguments must be boxed in an Object CustomArgumentAttribute where the .Value is a CustomArgumentAttribute
 			Debug.Assert(values.All (a => a.Value is CustomAttributeArgument));
