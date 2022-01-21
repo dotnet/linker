@@ -184,7 +184,7 @@ namespace ILLink.Shared
 		// Dynamic code diagnostic ids.
 		RequiresDynamicCode = 3050,
 		RequiresDynamicCodeAttributeMismatch = 3051,
-		RequiresDynamicCodeOnStaticConstructor = 3052,
+		RequiresDynamicCodeOnStaticConstructor = 3052
 	}
 
 	public static class DiagnosticIdExtensions
