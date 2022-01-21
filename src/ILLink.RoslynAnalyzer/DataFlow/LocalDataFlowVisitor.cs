@@ -2,8 +2,8 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System;
+using System.Collections.Immutable;
 using System.Diagnostics;
-using ILLink.RoslynAnalyzer.TrimAnalysis;
 using ILLink.Shared.DataFlow;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -17,13 +17,15 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 	// - field
 	// - parameter
 	// - method return
-	public abstract class LocalDataFlowVisitor<TValue, TValueLattice> : OperationWalker<LocalState<TValue>, TValue>,
-		ITransfer<BlockProxy, LocalState<TValue>, LocalStateLattice<TValue, TValueLattice>>
+	public abstract class LocalDataFlowVisitor<TValue, TValueLattice> : OperationWalker<LocalDataFlowState<TValue, TValueLattice>, TValue>,
+		ITransfer<BlockProxy, LocalState<TValue>, LocalDataFlowState<TValue, TValueLattice>, LocalStateLattice<TValue, TValueLattice>>
 		// This struct constraint prevents warnings due to possible null returns from the visitor methods.
 		// Note that this assumes that default(TValue) is equal to the TopValue.
 		where TValue : struct, IEquatable<TValue>
 		where TValueLattice : ILattice<TValue>
 	{
+		public record struct ValueOfOperation (TValue Value, IOperation? Operation);
+
 		protected readonly LocalStateLattice<TValue, TValueLattice> LocalStateLattice;
 
 		protected readonly OperationBlockAnalysisContext Context;
@@ -33,71 +35,57 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 		public LocalDataFlowVisitor (LocalStateLattice<TValue, TValueLattice> lattice, OperationBlockAnalysisContext context) =>
 			(LocalStateLattice, Context) = (lattice, context);
 
-		public void Transfer (BlockProxy block, LocalState<TValue> state)
+		public void Transfer (BlockProxy block, LocalDataFlowState<TValue, TValueLattice> state)
 		{
 			foreach (IOperation operation in block.Block.Operations)
 				Visit (operation, state);
 
 			// Blocks may end with a BranchValue computation. Visit the BranchValue operation after all others.
 			IOperation? branchValueOperation = block.Block.BranchValue;
-			if (branchValueOperation != null) {
-				var branchValue = Visit (branchValueOperation, state);
+			if (branchValueOperation == null)
+				return;
 
-				// BranchValue may represent a value used in a conditional branch to the ConditionalSuccessor - if so, we are done.
+			var branchValue = Visit (branchValueOperation, state);
 
-				// If not, the BranchValue represents a return or throw value associated with the FallThroughSuccessor of this block.
-				// (ConditionalSuccessor == null iff ConditionKind == None).
-				if (block.Block.ConditionKind == ControlFlowConditionKind.None) {
-					// This means it's a return value or throw value associated with the fall-through successor.
+			// BranchValue may represent a value used in a conditional branch to the ConditionalSuccessor - if so, we are done.
+			if (block.Block.ConditionKind != ControlFlowConditionKind.None)
+				return;
 
-					// Return statements with return values are represented in the control flow graph as
-					// a branch value operation that computes the return value. The return operation itself is the parent
-					// of the branch value operation.
+			// If not, the BranchValue represents a return or throw value associated with the FallThroughSuccessor of this block.
+			// (ConditionalSuccessor == null iff ConditionKind == None).
 
-					// Get the actual "return Foo;" operation (not the branch value operation "Foo").
-					// This should be used as the location of the warning. This is important to provide the right
-					// warning location and because warnings are disambiguated based on the operation.
-					var parentSyntax = branchValueOperation.Syntax.Parent;
-					if (parentSyntax == null)
-						throw new InvalidOperationException ();
+			// The BranchValue for a thrown value is not involved in dataflow tracking.
+			if (block.Block.FallThroughSuccessor?.Semantics == ControlFlowBranchSemantics.Throw)
+				return;
 
-					var parentOperation = Context.Compilation.GetSemanticModel (branchValueOperation.Syntax.SyntaxTree).GetOperation (parentSyntax);
+			// Return statements with return values are represented in the control flow graph as
+			// a branch value operation that computes the return value.
 
-					// Analyzer doesn't support exceptional control-flow:
-					// https://github.com/dotnet/linker/issues/2273
-					if (parentOperation is IThrowOperation)
-						throw new NotImplementedException ();
-
-					if (parentOperation is not IReturnOperation returnOperation)
-						throw new InvalidOperationException ();
-
-					HandleReturnValue (branchValue, returnOperation);
-				}
-			}
+			// Use the branch value operation as the key for the warning store and the location of the warning.
+			// We don't want the return operation because this might have multiple possible return values in general.
+			HandleReturnValue (branchValue, branchValueOperation);
 		}
 
 		public abstract void HandleAssignment (TValue source, TValue target, IOperation operation);
-
-		// This is called to handle instance method invocations, where "receiver" is the
-		// analyzed value for the object on which the instance method is called, and similarly
-		// for property references.
-		public abstract void HandleReceiverArgument (TValue receiver, IMethodSymbol targetMethod, IOperation operation);
-
-		public abstract void HandleArgument (TValue argument, IArgumentOperation operation);
-
-		// Called for property setters which are essentially like arguments passed to a method.
-		public abstract void HandlePropertySetterArgument (TValue value, IMethodSymbol setMethod, ISimpleAssignmentOperation operation);
 
 		// This takes an IOperation rather than an IReturnOperation because the return value
 		// may (must?) come from BranchValue of an operation whose FallThroughSuccessor is the exit block.
 		public abstract void HandleReturnValue (TValue returnValue, IOperation operation);
 
-		public override TValue VisitLocalReference (ILocalReferenceOperation operation, LocalState<TValue> state)
+		// This is called for any method call, which includes:
+		// - Normal invocation operation
+		// - Accessing property value - which is treated as a call to the getter
+		// - Setting a property value - which is treated as a call to the setter
+		// All inputs are already visited and turned into values.
+		// The return value should be a value representing the return value from the called method.
+		public abstract TValue HandleMethodCall (IMethodSymbol calledMethod, ValueOfOperation instance, ImmutableArray<ValueOfOperation> arguments, IOperation operation);
+
+		public override TValue VisitLocalReference (ILocalReferenceOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
 		{
 			return state.Get (new LocalKey (operation.Local));
 		}
 
-		public override TValue VisitSimpleAssignment (ISimpleAssignmentOperation operation, LocalState<TValue> state)
+		public override TValue VisitSimpleAssignment (ISimpleAssignmentOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
 		{
 			var targetValue = Visit (operation.Target, state);
 			var value = Visit (operation.Value, state);
@@ -113,10 +101,9 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 				break;
 			case IPropertyReferenceOperation propertyRef:
 				// A property assignment is really a call to the property setter.
-				var setMethod = propertyRef.Property.SetMethod;
-				Debug.Assert (setMethod != null);
-				HandlePropertySetterArgument (value, setMethod!, operation);
-				break;
+				var setMethod = propertyRef.Property.SetMethod!;
+				TValue instanceValue = Visit (propertyRef.Instance, state);
+				return HandleMethodCall (setMethod, new (instanceValue, propertyRef), ImmutableArray.Create (new ValueOfOperation (value, operation.Value)), operation);
 			// TODO: when setting a property in an attribute, target is an IPropertyReference.
 			case IArrayElementReferenceOperation:
 				// TODO
@@ -131,7 +118,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 		}
 
 		// Similar to VisitLocalReference
-		public override TValue VisitFlowCaptureReference (IFlowCaptureReferenceOperation operation, LocalState<TValue> state)
+		public override TValue VisitFlowCaptureReference (IFlowCaptureReferenceOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
 		{
 			return state.Get (new LocalKey (operation.Id));
 		}
@@ -139,30 +126,32 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 		// Similar to VisitSimpleAssignment when assigning to a local, but for values which are captured without a
 		// corresponding local variable. The "flow capture" is like a local assignment, and the "flow capture reference"
 		// is like a local reference.
-		public override TValue VisitFlowCapture (IFlowCaptureOperation operation, LocalState<TValue> state)
+		public override TValue VisitFlowCapture (IFlowCaptureOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
 		{
 			TValue value = Visit (operation.Value, state);
 			state.Set (new LocalKey (operation.Id), value);
 			return value;
 		}
 
-		public override TValue VisitExpressionStatement (IExpressionStatementOperation operation, LocalState<TValue> state)
+		public override TValue VisitExpressionStatement (IExpressionStatementOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
 		{
 			Visit (operation.Operation, state);
 			return TopValue;
 		}
 
-		public override TValue VisitInvocation (IInvocationOperation operation, LocalState<TValue> state)
+		public override TValue VisitInvocation (IInvocationOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
 		{
-			if (operation.Instance != null) {
-				var instanceValue = Visit (operation.Instance, state);
-				HandleReceiverArgument (instanceValue, operation.TargetMethod, operation);
-			}
+			TValue instanceValue = Visit (operation.Instance, state);
 
+			var argumentsBuilder = ImmutableArray.CreateBuilder<ValueOfOperation> ();
 			foreach (var argument in operation.Arguments)
-				VisitArgument (argument, state);
+				argumentsBuilder.Add (new (VisitArgument (argument, state), argument));
 
-			return TopValue;
+			return HandleMethodCall (
+				operation.TargetMethod,
+				new (instanceValue, operation),
+				argumentsBuilder.ToImmutableArray (),
+				operation);
 		}
 
 		public static IMethodSymbol GetPropertyMethod (IPropertyReferenceOperation operation)
@@ -170,8 +159,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			// The IPropertyReferenceOperation doesn't tell us whether this reference is to the getter or setter.
 			// For this we need to look at the containing operation.
 			var parent = operation.Parent;
-			Debug.Assert (parent != null);
-			if (parent!.Kind == OperationKind.SimpleAssignment) {
+			if (parent?.Kind == OperationKind.SimpleAssignment) {
 				var assignment = (ISimpleAssignmentOperation) parent;
 				if (assignment.Target == operation) {
 					var setMethod = operation.Property.SetMethod;
@@ -186,24 +174,24 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			return getMethod!;
 		}
 
-		public override TValue VisitPropertyReference (IPropertyReferenceOperation operation, LocalState<TValue> state)
+		public override TValue VisitPropertyReference (IPropertyReferenceOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
 		{
-			if (operation.Instance != null) {
-				var instanceValue = Visit (operation.Instance, state);
-				HandleReceiverArgument (instanceValue, GetPropertyMethod (operation), operation);
+			if (operation.GetValueUsageInfo (operation.Property).HasFlag (ValueUsageInfo.Read)) {
+				// Accessing property for reading is really a call to the getter
+				// The setter case is handled in assignment operation since here we don't have access to the value to pass to the setter
+				TValue instanceValue = Visit (operation.Instance, state);
+				return HandleMethodCall (operation.Property.GetMethod!, new ValueOfOperation (instanceValue, operation), ImmutableArray<ValueOfOperation>.Empty, operation);
 			}
 
 			return TopValue;
 		}
 
-		public override TValue VisitArgument (IArgumentOperation operation, LocalState<TValue> state)
+		public override TValue VisitArgument (IArgumentOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
 		{
-			var value = Visit (operation.Value, state);
-			HandleArgument (value, operation);
-			return value;
+			return Visit (operation.Value, state);
 		}
 
-		public override TValue VisitReturn (IReturnOperation operation, LocalState<TValue> state)
+		public override TValue VisitReturn (IReturnOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
 		{
 			if (operation.ReturnedValue != null) {
 				var value = Visit (operation.ReturnedValue, state);
@@ -214,7 +202,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			return TopValue;
 		}
 
-		public override TValue VisitConversion (IConversionOperation operation, LocalState<TValue> state)
+		public override TValue VisitConversion (IConversionOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
 		{
 			var operandValue = Visit (operation.Operand, state);
 			return operation.OperatorMethod == null ? operandValue : TopValue;
