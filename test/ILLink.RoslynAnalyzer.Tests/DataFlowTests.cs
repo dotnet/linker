@@ -74,15 +74,15 @@ namespace ILLink.RoslynAnalyzer.Tests
 		}
 
 		[Fact]
-		public Task GenericParameterDataFlow1 ()
+		public Task GenericParameterDataFlowWithoutMakeGeneric ()
 		{
-			return RunTest (nameof (GenericParameterDataFlow1));
+			return RunTest (nameof (GenericParameterDataFlowWithoutMakeGeneric));
 		}
 
 		[Fact (Skip = "https://github.com/dotnet/linker/issues/2273")]
-		public Task GenericParameterDataFlow ()
+		public Task GenericParameterDataFlowWithMakeGeneric ()
 		{
-			return RunTest (nameof (GenericParameterDataFlow));
+			return RunTest (nameof (GenericParameterDataFlowWithMakeGeneric));
 		}
 
 		[Fact (Skip = "https://github.com/dotnet/linker/issues/2273")]

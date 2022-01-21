@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using ILLink.RoslynAnalyzer.TrimAnalysis;
 using ILLink.Shared;
 using ILLink.Shared.DataFlow;
@@ -13,7 +14,6 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.FlowAnalysis;
-using Microsoft.CodeAnalysis.Operations;
 
 namespace ILLink.RoslynAnalyzer
 {
@@ -55,57 +55,47 @@ namespace ILLink.RoslynAnalyzer
 					}
 				}
 			});
-			// TODO: fix reporting for generic type substitutions. This should happen not only for method invocations,
-			// but for any reference to an instantiated method or type.
-			context.RegisterOperationAction (context => {
-				var invocationOperation = (IInvocationOperation) context.Operation;
-				ProcessInvocationOperation (context, invocationOperation);
-			}, OperationKind.Invocation);
 			context.RegisterSyntaxNodeAction (context => {
-				ProcessSyntaxNode (context);
+				ProcessGenericParameters (context);
 			}, SyntaxKind.GenericName);
 		}
 
-		private void ProcessSyntaxNode (SyntaxNodeAnalysisContext context)
+		private void ProcessGenericParameters (SyntaxNodeAnalysisContext context)
 		{
-			if (context.SemanticModel.GetTypeInfo (context.Node).ConvertedType is not INamedTypeSymbol type)
+			if (context.ContainingSymbol is not null && context.ContainingSymbol.HasAttribute (RequiresUnreferencedCodeAnalyzer.RequiresUnreferencedCodeAttribute)) {
 				return;
-
-			// The same INamedTypeSymbol can be called back resulting in duplicate warnings
-			// One way to filter is via the Node's Parent
-			if (context.Node.Parent is not ArgumentSyntax)
-				return;
-
-			var typeParams = type!.TypeParameters;
-			var typeArgs = type.TypeArguments;
-
-			for (int i = 0; i < typeParams.Length; i++) {
-				var sourceValue = GetTypeValueNodeFromGenericArgument (typeArgs[i]);
-				var targetValue = new GenericParameterValue (typeParams[i]);
-				foreach (var diagnostic in GetDynamicallyAccessedMembersDiagnostics (sourceValue, targetValue, context.Node.GetLocation ()))
-					context.ReportDiagnostic (diagnostic);
 			}
-		}
 
-		static void ProcessInvocationOperation (OperationAnalysisContext context, IInvocationOperation invocationOperation)
-		{
-			if (context.ContainingSymbol.HasAttribute (RequiresUnreferencedCodeAnalyzer.RequiresUnreferencedCodeAttribute))
-				return;
+			ImmutableArray<ITypeParameterSymbol> typeParams;
+			ImmutableArray<ITypeSymbol> typeArgs;
+			if (context.SemanticModel.GetTypeInfo (context.Node).ConvertedType is INamedTypeSymbol type) {
+				// INamedTypeSymbol inside nameof, commonly used in [ExpectedWarning] can generate diagnostics
+				// Walking the node heirarchy to check if INamedTypeSymbol is inside a nameof
+				var node = context.Node;
+				while (node != null) {
+					if (node is InvocationExpressionSyntax invocationExpression && invocationExpression.Expression is IdentifierNameSyntax ident1) {
+						if (ident1.Identifier.ValueText.Equals ("nameof"))
+							return;
+					}
+					node = node.Parent;
+				}
+				typeParams = type.TypeParameters;
+				typeArgs = type.TypeArguments;
+			}
 
-			ProcessTypeArguments (context, invocationOperation);
-		}
+			if (context.SemanticModel.GetSymbolInfo (context.Node, context.CancellationToken).Symbol is IMethodSymbol targetMethod) {
+				typeParams = targetMethod.TypeParameters;
+				typeArgs = targetMethod.TypeArguments;
+			}
 
-		static void ProcessTypeArguments (OperationAnalysisContext context, IInvocationOperation invocationOperation)
-		{
-			var targetMethod = invocationOperation.TargetMethod;
-			if (targetMethod.HasAttribute (RequiresUnreferencedCodeAnalyzer.RequiresUnreferencedCodeAttribute))
-				return;
-
-			for (int i = 0; i < targetMethod.TypeParameters.Length; i++) {
-				var sourceValue = GetTypeValueNodeFromGenericArgument (targetMethod.TypeArguments[i]);
-				var targetValue = new GenericParameterValue (targetMethod.TypeParameters[i]);
-				foreach (var diagnostic in GetDynamicallyAccessedMembersDiagnostics (sourceValue, targetValue, invocationOperation.Syntax.GetLocation ()))
-					context.ReportDiagnostic (diagnostic);
+			if (typeParams != null) {
+				Debug.Assert (typeParams.Length == typeArgs.Length);
+				for (int i = 0; i < typeParams.Length; i++) {
+					var sourceValue = GetTypeValueNodeFromGenericArgument (typeArgs[i]);
+					var targetValue = new GenericParameterValue (typeParams[i]);
+					foreach (var diagnostic in GetDynamicallyAccessedMembersDiagnostics (sourceValue, targetValue, context.Node.GetLocation ()))
+						context.ReportDiagnostic (diagnostic);
+				}
 			}
 		}
 
