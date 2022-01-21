@@ -23,7 +23,13 @@ namespace ILLink.RoslynAnalyzer
 				var document = XDocument.Load (documentStream, LoadOptions.SetLineInfo);
 				// Check against Schema
 				var xmldata = LinkAttributes.ProcessXml (document);
-
+				foreach (var root in xmldata) {
+					if (root is LinkAttributes.TypeNode) {
+						context.RegisterSymbolAction (context => {
+							// Do things
+						}, SymbolKind.NamedType);
+					}
+				}
 			});
 		}
 		
