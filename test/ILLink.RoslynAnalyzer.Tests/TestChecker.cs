@@ -22,6 +22,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 		private readonly IReadOnlyList<Diagnostic> _diagnostics;
 		private readonly List<Diagnostic> _unmatched;
 		private readonly List<(AttributeSyntax Attribute, string Message)> _missing;
+		private readonly List<AttributeSyntax> _expectedNoWarnings;
 
 		public TestChecker (
 			CSharpSyntaxTree tree,
@@ -37,6 +38,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			// Filled in later
 			_unmatched = new List<Diagnostic> ();
 			_missing = new List<(AttributeSyntax Attribute, string Message)> ();
+			_expectedNoWarnings = new List<AttributeSyntax> ();
 		}
 
 		public void Check (bool allowMissingWarnings)
@@ -44,6 +46,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			_unmatched.Clear ();
 			_unmatched.AddRange (_diagnostics);
 			_missing.Clear ();
+			_expectedNoWarnings.Clear ();
 
 			Visit (_tree.GetRoot ());
 
@@ -54,8 +57,11 @@ namespace ILLink.RoslynAnalyzer.Tests
 					_missing.Select (md => $"({md.Attribute.GetLocation ().GetLineSpan ()}) {md.Message}"));
 				message += $@"Expected warnings were not generated:{Environment.NewLine}{missingLines}{Environment.NewLine}";
 			}
-			if (_unmatched.Any ()) {
-				message += $"Unexpected warnings were generated:{Environment.NewLine}{string.Join (Environment.NewLine, _unmatched)}";
+			var unexpected = _unmatched.Where (diag =>
+				diag.Location.SourceTree == null ||
+				_expectedNoWarnings.Any (attr => attr.Parent.Parent.Span.Contains (diag.Location.SourceSpan)));
+			if (unexpected.Any ()) {
+				message += $"Unexpected warnings were generated:{Environment.NewLine}{string.Join (Environment.NewLine, unexpected)}";
 			}
 
 			if (message.Length > 0) {
@@ -143,8 +149,14 @@ namespace ILLink.RoslynAnalyzer.Tests
 
 			foreach (var attrList in attrLists) {
 				foreach (var attribute in attrList.Attributes) {
-					if (attribute.Name.ToString () == "LogDoesNotContain")
+					switch (attribute.Name.ToString ()) {
+					case "LogDoesNotContain":
 						ValidateLogDoesNotContainAttribute (attribute, memberDiagnostics);
+						break;
+					case "ExpectedNoWarnings":
+						_expectedNoWarnings.Add (attribute);
+						break;
+					}
 
 					if (!IsExpectedDiagnostic (attribute))
 						continue;
