@@ -1,6 +1,4 @@
-﻿using System.IO;
-using System.Xml.Linq;
-using System.Xml.XPath;
+﻿using System.Xml.XPath;
 
 namespace ILLink.Shared
 {
@@ -24,17 +22,6 @@ namespace ILLink.Shared
 
 		protected const string XmlNamespace = "";
 
-		protected readonly string _xmlDocumentLocation;
-		protected readonly XPathNavigator _document;
-
-		protected XmlProcessorBase (string xmlDocumentLocation, Stream documentStream)
-		{
-			_xmlDocumentLocation = xmlDocumentLocation;
-			using (documentStream) {
-				_document = XDocument.Load (documentStream, LoadOptions.SetLineInfo).CreateNavigator ();
-			}
-		}
-
 		protected static string GetFullName (XPathNavigator nav)
 		{
 			return GetAttribute (nav, FullNameAttributeName);
@@ -44,15 +31,6 @@ namespace ILLink.Shared
 		{
 			var name = GetAttribute (nav, NameAttributeName);
 			return name;
-			//if (name != null && name != ""){
-			//	return name;
-			//}
-			//var fullname = GetFullName (nav);
-			//if (fullname != null) {
-			//	var lastDot = fullname.LastIndexOf ('.');
-			//	return fullname.Substring (lastDot + 1);
-			//}
-			//return "";
 		}
 
 		protected static string GetSignature (XPathNavigator nav)

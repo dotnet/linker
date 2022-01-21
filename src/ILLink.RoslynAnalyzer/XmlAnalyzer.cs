@@ -1,18 +1,14 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
+using System;using System.Collections.Immutable;
 using System.Linq;
 using ILLink.Shared;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Diagnostics;
-using System.Reflection.Runtime.TypeParsing;
+using Microsoft.CodeAnalysis;using Microsoft.CodeAnalysis.Diagnostics;
+using System.IO;
+using Microsoft.CodeAnalysis.Text;
+using System.Text;
+using System.Xml.Linq;
 
 namespace ILLink.RoslynAnalyzer
 {
@@ -23,69 +19,33 @@ namespace ILLink.RoslynAnalyzer
 			context.EnableConcurrentExecution ();
 			context.ConfigureGeneratedCodeAnalysis (GeneratedCodeAnalysisFlags.ReportDiagnostics);
 			context.RegisterCompilationStartAction (context => {
-				Dictionary<InjectedType, List<InjectedAttribute>> xmldata = AnalyzerXmlAttributeParser.ProcessXml (context);
+				var documentStream = GenerateStream ("", context);
+				var document = XDocument.Load (documentStream, LoadOptions.SetLineInfo);
+				// Check against Schema
+				var xmldata = LinkAttributes.ProcessXml (document);
 
-				foreach (var pair in xmldata) {
-					var type = pair.Key;
-					var attribute = pair.Value;
-					SymbolKind? symbolKind = type.AttributeTarget switch {
-						AttributeTargets.Field => SymbolKind.Field,
-						AttributeTargets.Property => SymbolKind.Property,
-						AttributeTargets.Event => SymbolKind.Event,
-						AttributeTargets.Method => SymbolKind.Method,
-						AttributeTargets.Class => SymbolKind.NamedType,
-						AttributeTargets.Assembly => SymbolKind.Assembly,
-						AttributeTargets.Parameter => SymbolKind.Parameter,
-						//case AttributeTargets.ReturnValue _ => SymbolKind.Return
-						_ => null
-					};
-					if (symbolKind is null) {
-						Debug.Fail ($"Unknown Attribute target: {nameof (type.AttributeTarget)}");
-						continue;
-					}
-					
-					context.RegisterSymbolAction (symbolContext => {
-						TypeName parsedTypeName;
-						var symbol = symbolContext.Symbol;
-						try {
-							parsedTypeName = TypeParser.ParseTypeName (type.Fullname);
-						} catch (ArgumentException) {
-							symbolContext.ReportDiagnostic(DiagnosticId.xml)
-						} catch (System.IO.FileLoadException) {
-							return false;
-						}
-					}, (SymbolKind)symbolKind);
-					
-				}
 			});
 		}
-	}
-
-	partial class InjectedType
-	{
-		public SymbolKind? Kind {
-			get {
-				return this.AttributeTarget switch {
-					AttributeTargets.Field => SymbolKind.Field,
-					AttributeTargets.Property => SymbolKind.Property,
-					AttributeTargets.Event => SymbolKind.Event,
-					AttributeTargets.Method => SymbolKind.Method,
-					AttributeTargets.Class => SymbolKind.NamedType,
-					AttributeTargets.Assembly => SymbolKind.Assembly,
-					AttributeTargets.Parameter => SymbolKind.Parameter,
-					//case AttributeTargets.ReturnValue _ => SymbolKind.Return
-					_ => null
-				};
-			}
-		}
-		public bool RefersTo (ISymbol symbol)
-		{
-			if (symbol is INamedTypeSymbol namedTypeSymbol) {
-				namedTypeSymbol.
-			}
-			if (symbol is IAssemblySymbol assemblySymbol) {
-				assemblySymbol.
-		}
 		
+		private static Stream? GenerateStream (string xmlDocumentLocation, CompilationStartAnalysisContext context)
+		{
+			ImmutableArray<AdditionalText> additionalFiles = context.Options.AdditionalFiles;
+			AdditionalText? xmlFile = additionalFiles.FirstOrDefault (file => Path.GetFileName (file.Path).Contains (xmlDocumentLocation));
+			if (xmlFile == null) {
+				return null;
+			}
+			SourceText? fileText = xmlFile.GetText (context.CancellationToken);
+			if (fileText == null) {
+				throw new NotImplementedException ();
+			}
+			MemoryStream stream = new MemoryStream ();
+			using (StreamWriter writer = new StreamWriter (stream, Encoding.UTF8, 1024, true)) {
+				fileText.Write (writer);
+			}
+
+			stream.Position = 0;
+			return stream;
+		}
+
 	}
 }

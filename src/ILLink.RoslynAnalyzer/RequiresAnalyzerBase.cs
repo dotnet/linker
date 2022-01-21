@@ -37,8 +37,6 @@ namespace ILLink.RoslynAnalyzer
 			context.EnableConcurrentExecution ();
 			context.ConfigureGeneratedCodeAnalysis (GeneratedCodeAnalysisFlags.ReportDiagnostics);
 			context.RegisterCompilationStartAction (context => {
-				Dictionary<InjectedType, List<InjectedAttribute>> xmldata = AnalyzerXmlAttributeParser.ProcessXml(context);
-
 				var compilation = context.Compilation;
 				if (!IsAnalyzerEnabled (context.Options, compilation))
 					return;
