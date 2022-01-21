@@ -91,22 +91,21 @@ class Derived : AnnotatedBase
 }
 ```
 
-This is probably an existing hole. Accessing a RUC or DAM type itself via reflection is not problematic on its own (since both annotations should behave as applying to members only). But it can create a hole in the analysis because of annotation propagation through `GetNestedType`. For example (given the above code):
+This is probably an existing hole. Accessing a RUC or DAM type itself via reflection is not problematic on its own (since both annotations should behave as applying to members only). But using such type can be problematic.
+Since just asking for the type of a DAM annotated type is considered reflection access to all of the members affected by the DAM, RUC on nested types must be reported if the nested type has any static members or .ctors.
 
 ```csharp
 void TestMethod(Derived instance)
 {
+    // This will warn that it's accessing NestedWithRUC..ctor
     Type typeOfDerived = instance.GetType(); // The type value is effectively annotated with All
     Type nestedWithRUC = typeOfDerived.GetNestedType("NestedWithRUC"); // The resulting type value is effectively annotated with All
     Activator.CreateInstance(nestedWithRUC); // No warning - nestedWithRUC has All annotation on it
 }
 ```
 
-The above MUST warn, since it's calling a `.ctor` on a RUC annotated type.
-
 DAM on nested type doesn't seem to have a problem mainly because for marking purposes it's not needed (the DAM on the outer type if it applies to the nested type will mark the entire nested type, so DAM on it can't mark more).
 Also accessing DAM annotated types themselves is not a problem, and accessing their members is driven by the DAM annotation.
-This needs verification!!! (It is tricky)
 
 ## Conclusion
 
