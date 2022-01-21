@@ -11,7 +11,6 @@ namespace ILLink.RoslynAnalyzer
 	[DiagnosticAnalyzer (LanguageNames.CSharp)]
 	public sealed class RequiresDynamicCodeAnalyzer : RequiresAnalyzerBase
 	{
-
 		const string RequiresDynamicCodeAttribute = nameof (RequiresDynamicCodeAttribute);
 		public const string FullyQualifiedRequiresDynamicCodeAttribute = "System.Diagnostics.CodeAnalysis." + RequiresDynamicCodeAttribute;
 
