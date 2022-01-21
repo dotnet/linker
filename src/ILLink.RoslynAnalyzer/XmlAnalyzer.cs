@@ -47,7 +47,6 @@ namespace ILLink.RoslynAnalyzer
 					context.RegisterSymbolAction (symbolContext => {
 						TypeName parsedTypeName;
 						var symbol = symbolContext.Symbol;
-						symbol.Name
 						try {
 							parsedTypeName = TypeParser.ParseTypeName (type.Fullname);
 						} catch (ArgumentException) {

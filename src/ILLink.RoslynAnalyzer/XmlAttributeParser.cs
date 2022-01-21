@@ -53,152 +53,155 @@ namespace ILLink.RoslynAnalyzer
 		// Looks at features settings in the XML to determine whether the element should be processed
 		// Assumes defaults if present, otherwise assumes features are not featurevalue
 		// i.e. we don't process an element if there is a feature gate unless the default is the featurevalue
-		static bool ShouldProcessElement (XPathNavigator nav)
+		static LinkAttributesFeatureGate? ProcessFeatureGate (XPathNavigator nav)
 		{
 			string? feature = GetAttribute (nav, "feature");
+			if (String.IsNullOrEmpty (feature)) 
+				feature = null;
 			string? featurevalue = GetAttribute (nav, "featurevalue");
+			if (String.IsNullOrEmpty (featurevalue))
+				featurevalue = null;
 			string? featuredefault = GetAttribute (nav, "featuredefault");
-			if (feature == null) return true;
-
-			bool.TryParse (featuredefault, out var defaultVal);
-			if (featurevalue == featuredefault || (featurevalue == null && defaultVal == false)) return true;
-			return false;
+			if (String.IsNullOrEmpty (featuredefault))
+				featuredefault = null;
+			if (feature is null && featurevalue is null && featuredefault is null) {
+				return null;
+			}
+			return new LinkAttributesFeatureGate (feature, featurevalue, featuredefault);
+			
 		}
 
-		public static Dictionary<LinkAttributesType, List<LinkAttributesAttribute>> ProcessXml (CompilationStartAnalysisContext compilationContext)
+		public static List<ILinkAttributesRootNode> ProcessXml (CompilationStartAnalysisContext compilationContext)
 		{
 			var injectionContext = new LinkAttributesContext ();
-			var _injections = new Dictionary<LinkAttributesType, List<LinkAttributesAttribute>> ();
+			var roots = new List<ILinkAttributesRootNode> ();
 			Stream? stream = GenerateStream ("ILLink.LinkAttributes.xml", compilationContext);
 			if (stream == null)
-				return _injections;
+				return roots;
 			XPathDocument doc = new XPathDocument (stream);
 			try {
 				XPathNavigator nav = doc.CreateNavigator ();
 
 
 				if (!nav.MoveToChild (LinkerElementName, XmlNamespace))
-					return _injections;
+					return roots;
 
 				if (nav.SchemaInfo.Validity == XmlSchemaValidity.Invalid) { }
 				// Warn about invalid xml according to schema
 
-				if (!ShouldProcessElement (nav))
-					return _injections;
-
-				ProcessAssemblies (nav, injectionContext);
+				roots.Concat (ProcessAssemblies (nav));
+				roots.Concat (ProcessTypes (nav));
 			}
 			// TODO: handle the correct exceptions correctly
 			catch (Exception) {
 				throw new NotImplementedException ("Processing XML failed and was not handled");
 			}
-			return _injections;
+			return roots;
 
-			void ProcessAssemblies (XPathNavigator nav, LinkAttributesContext context)
+			List<LinkAttributesAssembly> ProcessAssemblies (XPathNavigator nav)
 			{
+				var assemblies = new List<LinkAttributesAssembly> ();
 				foreach (XPathNavigator assemblyNav in nav.SelectChildren (AssemblyElementName, "")) {
 					// Errors for invalid assembly names should show up even if this element will be
 					// skipped due to feature conditions.
 					bool processAllAssemblies = ShouldProcessAllAssemblies (assemblyNav);
 
-					if (!ShouldProcessElement (assemblyNav))
-						continue;
-					ProcessAssembly (assemblyNav, context);
+					if (ProcessAssembly (assemblyNav) is LinkAttributesAssembly assembly)
+						assemblies.Add(assembly);
 				}
+				return assemblies;
 			}
 
-			void ProcessAssembly (XPathNavigator nav, LinkAttributesContext context)
+			LinkAttributesAssembly? ProcessAssembly (XPathNavigator nav)
 			{
-				if (!ShouldProcessElement (nav))
-					return;
-				var newContext = new LinkAttributesContext (GetFullName (nav), context.Path);
-				ProcessAttributes (nav, newContext, AttributeTargets.Assembly);
-				ProcessTypes (nav, newContext);
+				var attributes = ProcessAttributes (nav, AttributeTargets.Assembly);
+				var types = ProcessTypes (nav);
+				return new LinkAttributesAssembly (GetFullName (nav), attributes: attributes) {
+					Types = types,
+					FeatureGate = ProcessFeatureGate (nav),
+				};
 			}
 
 			/// <summary>
 			///		Takes an XPathNavigator that might have <type> children and processes those children
 			/// </summary>
-			void ProcessTypes (XPathNavigator nav, LinkAttributesContext context)
+			List<LinkAttributesType> ProcessTypes (XPathNavigator nav)
 			{
+				var types = new List<LinkAttributesType> ();
 				foreach (XPathNavigator typeNav in nav.SelectChildren (TypeElementName, "")) {
-					if (ShouldProcessElement (typeNav))
-						ProcessType (typeNav, context);
+					ProcessType (typeNav, false);
 				}
+				return types;
 			}
 
-			void ProcessType (XPathNavigator nav, LinkAttributesContext context)
+			LinkAttributesType ProcessType (XPathNavigator nav, bool isNested)
 			{
-				var path = GetFullName (nav);
-				if (path == "") path = context.Path + GetName (nav);
-				var childContext = new LinkAttributesContext (context.Assembly, path);
+				
 				foreach (XPathNavigator methodNav in nav.SelectChildren (MethodElementName, "")) {
-					if (ShouldProcessElement (methodNav))
-						ProcessMethod (methodNav, childContext);
+						var methods = ProcessMethod (methodNav, childContext);
 				}
 				foreach (XPathNavigator propertyNav in nav.SelectChildren (PropertyElementName, "")) {
-					if (ShouldProcessElement (propertyNav))
-						ProcessMember (propertyNav, childContext, AttributeTargets.Property);
+						var properties = ProcessMember (propertyNav, childContext, AttributeTargets.Property);
 				}
 				foreach (XPathNavigator eventNav in nav.SelectChildren (EventElementName, "")) {
-					if (ShouldProcessElement (eventNav))
-						ProcessMember (eventNav, childContext, AttributeTargets.Event);
+						var events = ProcessMember (eventNav, childContext, AttributeTargets.Event);
 				}
 				foreach (XPathNavigator fieldNav in nav.SelectChildren (FieldElementName, "")) {
-					if (ShouldProcessElement (fieldNav))
-						ProcessMember (fieldNav, childContext, AttributeTargets.Field);
+						var fields = ProcessMember (fieldNav, childContext, AttributeTargets.Field);
 				}
 
-				ProcessTypes (nav, childContext);
-				ProcessAttributes (nav, childContext, AttributeTargets.Class);
+				var nestedTypes = ProcessTypes (nav);
+				var attributes = ProcessAttributes (nav);
+				if (isNested) {
+					var name = GetName (nav);
+					return new LinkAttributesNestedType (name: name, attributes: attributes, methods: methods, properties: properties, fields: fields, events:events, nestedTypes:nestedTypes);
+				} else {
+					var fullname = GetFullName (nav);
+					return new LinkAttributesNestedType (fullname: fullname, attributes: attributes, methods: methods, properties: properties, fields: fields, events:events, nestedTypes:nestedTypes);
+				}
+				
 			}
 
-			void ProcessMember (XPathNavigator nav, LinkAttributesContext context, AttributeTargets kind)
+			LinkAttributesTypeMember ProcessMember (XPathNavigator nav)
 			{
-				var newContext = new LinkAttributesContext (context.Assembly, context.Path + "." + GetName (nav));
-				ProcessAttributes (nav, newContext, kind);
+				var attributes = ProcessAttributes (nav);
+				return new LinkAttributesTypeMember (attributes: attributes, name:GetName(nav), signature: GetSignature(nav));
 			}
 
-			void ProcessMethod (XPathNavigator nav, LinkAttributesContext context)
+			LinkAttributesMethod ProcessMethod (XPathNavigator nav)
 			{
-				var newContext = new LinkAttributesContext (assembly: context.Assembly, path: context.Path + "." + GetName (nav));
-				ProcessAttributes (nav, context, AttributeTargets.Method);
+				var attributes = ProcessAttributes (nav);
+				var parameters = new List<LinkAttributesParameter> ();
+				var returnAttributes = new List<LinkAttributesAttribute> ();
 				foreach (XPathNavigator parameterNav in nav.SelectChildren (ParameterElementName, "")) {
-					if (ShouldProcessElement (parameterNav))
-						ProcessMember (parameterNav, newContext, AttributeTargets.Parameter);
+					parameters.Add (ProcessParameter (parameterNav));
 				}
 				foreach (XPathNavigator returnNav in nav.SelectChildren (ReturnElementName, "")) {
-					if (ShouldProcessElement (returnNav)) {
-						var returnContext = new LinkAttributesContext (context.Assembly, context.Path + "." + GetName (nav));
-						ProcessAttributes (nav, returnContext, AttributeTargets.ReturnValue);
-					}
+					returnAttributes.Concat(ProcessAttributes (nav));
 				}
+				return new LinkAttributesMethod (name: GetName (nav), signature: GetSignature (nav), parameters: parameters, attributes: attributes, returnAttributes: returnAttributes, featureGate: ProcessFeatureGate (nav));
 			}
 
-			void ProcessAttributes (XPathNavigator nav, LinkAttributesContext context, AttributeTargets kind)
+			List<LinkAttributesAttribute> ProcessAttributes (XPathNavigator nav)
 			{
 				var attributes = new List<LinkAttributesAttribute> ();
 				foreach (XPathNavigator attributeNav in nav.SelectChildren (AttributeElementName, "")) {
-					if (!ShouldProcessElement (attributeNav))
-						continue;
-					var attr = ProcessAttribute (attributeNav, context);
+					var attr = ProcessAttribute (attributeNav);
 					if (attr == null)
 						continue;
 					attributes.Add (attr);
 				}
-				var type = new LinkAttributesType (name: context.Path, attributeTarget: kind, assembly: context.Assembly);
-				_injections.Add (type, attributes);
+				return attributes;
 			}
 
-			LinkAttributesAttribute? ProcessAttribute (XPathNavigator nav, LinkAttributesContext context)
+			LinkAttributesAttribute? ProcessAttribute (XPathNavigator nav)
 			{
-				if (!ShouldProcessElement (nav)) return null;
-				var args = new List<LinkAttributesAttributeArgument> ();
+				var arguments = new List<LinkAttributesAttributeArgument> ();
 				foreach (XPathNavigator argNav in nav.SelectChildren (ArgumentElementName, "")) {
 					var type = GetAttribute (argNav, "type");
 					if (type == "") type = "System.String";
 					var arg = new LinkAttributesAttributeArgument (type, argNav.Value);
-					args.Add (arg);
+					arguments.Add (arg);
 				}
 				var properties = new List<LinkAttributesAttributeProperty> ();
 				foreach (XPathNavigator propertyNav in nav.SelectChildren (ArgumentElementName, "")) {
@@ -214,29 +217,48 @@ namespace ILLink.RoslynAnalyzer
 					var field = new LinkAttributesAttributeField (name: GetName (fieldNav), type: type, value: fieldNav.Value);
 					fields.Add (field);
 				}
-				return new LinkAttributesAttribute (fullname: GetFullName (nav), assembly: context.Assembly, args: args.ToArray (), fields: fields.ToArray (), props: properties.ToArray ());
+				return new LinkAttributesAttribute (fullname: GetFullName(nav), @internal: GetAttribute(nav, "internal"), assembly: GetAttribute(nav, AssemblyElementName), );
 			}
 		}
 	}
 
-
-
 	public record LinkAttributesAttribute
 	{
-		public string? Fullname;
+		public string Fullname;
 		public string? Internal;
 		public string? Assembly;
-		public LinkAttributesAttributeArgument[]? Args;
-		public LinkAttributesAttributeProperty[]? Props;
-		public LinkAttributesAttributeField[]? Fields;
+		public List<ILinkAttributesAttributeArgument>? Arguments;
+		public List<LinkAttributesAttributeProperty>? Properties;
+		public List<LinkAttributesAttributeField>? Fields;
 
-		public LinkAttributesAttribute () { }
+		public LinkAttributesAttribute (string fullname, string? @internal, string? assembly, List<ILinkAttributesAttributeArgument>? arguments, List<LinkAttributesAttributeProperty>? properties, List<LinkAttributesAttributeField>? fields)
+		{
+			Fullname = fullname;
+			Internal = @internal;
+			Assembly = assembly;
+			Arguments = arguments;
+			Properties = properties;
+			Fields = fields;
+		}
 	}
 
-	public struct LinkAttributesAttributeArgument
+	public interface ILinkAttributesAttributeArgument { }
+
+	public record LinkAttributesAttributeArgumentBox : ILinkAttributesAttributeArgument
 	{
-		public readonly string Type;
-		public readonly string Value;
+		public Type Type = typeof(System.Object);
+		public LinkAttributesAttributeArgument InnerArgument;
+
+		public LinkAttributesAttributeArgumentBox (LinkAttributesAttributeArgument innerArgument)
+		{
+			InnerArgument = innerArgument;
+		}
+	}
+
+	public record LinkAttributesAttributeArgument : ILinkAttributesAttributeArgument
+	{
+		public string Type;
+		public string Value;
 
 		public LinkAttributesAttributeArgument (string type, string value)
 		{
@@ -244,21 +266,23 @@ namespace ILLink.RoslynAnalyzer
 			Value = value;
 		}
 	}
-	public struct LinkAttributesAttributeProperty
-	{
-		public readonly string Name;
-		public readonly string Value;
 
-		public LinkAttributesAttributeProperty (string name, string type, string value)
+	public record LinkAttributesAttributeProperty
+	{
+		public string Name;
+		public string Value;
+
+		public LinkAttributesAttributeProperty (string name, string value)
 		{
 			Value = value;
 			Name = name;
 		}
 	}
-	public struct LinkAttributesAttributeField
+
+	public record LinkAttributesAttributeField
 	{
-		public readonly string Name;
-		public readonly string Value;
+		public string Name;
+		public string Value;
 
 		public LinkAttributesAttributeField (string name, string type, string value)
 		{
@@ -269,18 +293,22 @@ namespace ILLink.RoslynAnalyzer
 
 	public partial record LinkAttributesTypeMember : LinkAttributesFeatureGated, ILinkAttributesNode
 	{
-		public readonly string? Name;
-		public readonly string? Signature;
-		public readonly string? Type;
-		public readonly string? Value;
-		public LinkAttributesTypeMember()
+		public string? Name;
+		public string? Signature;
+		public LinkAttributesTypeMember(List<LinkAttributesAttribute> attributes) : base (attributes)
 		{
+		}
+		public LinkAttributesTypeMember(List<LinkAttributesAttribute> attributes, string? name, string? signature) : base (attributes)
+		{
+			Name = name;
+			Signature = signature;
 		}
 	}
 
 	public partial record LinkAttributesParameter : ILinkAttributesNode
 	{
 		public string Name;
+		public List<LinkAttributesAttribute>? Attributes { get; }
 		public LinkAttributesParameter(string name)
 		{
 			Name = name;
@@ -289,67 +317,100 @@ namespace ILLink.RoslynAnalyzer
 
 	public partial record LinkAttributesMethod : LinkAttributesTypeMember, ILinkAttributesNode
 	{
-		public LinkAttributesParameter[]? Parameters;
-		public LinkAttributesAttribute? ReturnAttribute;
-		public LinkAttributesMethod() { }
+		public List<LinkAttributesParameter>? Parameters;
+		public List<LinkAttributesAttribute>? ReturnAttributes;
+		public LinkAttributesMethod(string? name, string? signature, List<LinkAttributesParameter> parameters, List<LinkAttributesAttribute> attributes, List<LinkAttributesAttribute>? returnAttributes, LinkAttributesFeatureGate featureGate) : base (attributes, name:name, signature:signature) 
+		{
+			Parameters = parameters;
+			ReturnAttributes = returnAttributes;
+			FeatureGate = featureGate;
+		}
 	}
 
 	public partial record LinkAttributesNestedType : LinkAttributesFeatureGated, ILinkAttributesNode
 	{
-		public readonly string Name;
-		public readonly LinkAttributesTypeMember[]? Events;
-		public readonly LinkAttributesTypeMember[]? Field;
-		public readonly LinkAttributesTypeMember[]? Properties;
-		public readonly LinkAttributesMethod[]? Methods;
-		public readonly LinkAttributesNestedType[]? Types;
-		public LinkAttributesNestedType (string name)
+		public string Name;
+		public List<LinkAttributesTypeMember>? Events;
+		public List<LinkAttributesTypeMember>? Fields;
+		public List<LinkAttributesTypeMember>? Properties;
+		public List<LinkAttributesMethod>? Methods;
+		public List<LinkAttributesNestedType>? Types;
+		public LinkAttributesNestedType (string name, List<LinkAttributesAttribute> attributes, List<LinkAttributesMethod>? methods, List<LinkAttributesTypeMember>? properties, List<LinkAttributesTypeMember>? fields, List<LinkAttributesTypeMember>? events, List<LinkAttributesNestedType> nestedTypes) : base(attributes)
 		{
 			Name = name;
+			Methods = methods;
+			Properties = properties;
+			Fields = fields;
+			Events = events;
+			Types = nestedTypes;
 		}
 	}
 
-	public partial record LinkAttributesType : LinkAttributesFeatureGated, ILinkAttributesNode
+	public partial record LinkAttributesType : LinkAttributesFeatureGated, ILinkAttributesRootNode
 	{
-		public readonly string Fullname;
-		public readonly LinkAttributesTypeMember[]? Events;
-		public readonly LinkAttributesTypeMember[]? Field;
-		public readonly LinkAttributesTypeMember[]? Properties;
-		public readonly LinkAttributesMethod[]? Methods;
-		public readonly LinkAttributesNestedType[]? Types;
-		public LinkAttributesType (string fullname)
-		{
-			Fullname = fullname;
-		}
-	}
-
-	public record LinkAttributesAssembly : LinkAttributesFeatureGated, ILinkAttributesNode
-	{
-		public LinkAttributesType[]? Types;
 		public string Fullname;
-		public LinkAttributesAssembly (string fullname)
+		public List<LinkAttributesMethod>? Methods;
+		public List<LinkAttributesTypeMember>? Properties;
+		public List<LinkAttributesTypeMember>? Fields;
+		public List<LinkAttributesTypeMember>? Events;
+		public List<LinkAttributesNestedType>? Types;
+		public LinkAttributesType (string fullname, List<LinkAttributesAttribute> attributes, List<LinkAttributesMethod>? methods, List<LinkAttributesTypeMember>? properties, List<LinkAttributesTypeMember>? fields, List<LinkAttributesTypeMember>? events, List<LinkAttributesNestedType> nestedTypes) : base(attributes)
 		{
 			Fullname = fullname;
+			Methods = methods;
+			Properties = properties;
+			Fields = fields;
+			Events = events;
+			Types = nestedTypes;
 		}
 	}
+
+	public record LinkAttributesAssembly : LinkAttributesFeatureGated, ILinkAttributesRootNode
+	{
+		public List<LinkAttributesType>? Types;
+		public string Fullname;
+		public LinkAttributesAssembly (string fullname, List<LinkAttributesAttribute> attributes, List<LinkAttributesType>? types) : base (attributes)
+		{
+			Fullname = fullname;
+			Types = types;
+		}
+	}
+
+	public interface ILinkAttributesRootNode  : ILinkAttributesNode { }
 
 	public interface ILinkAttributesNode
 	{
-		public LinkAttributesAttribute[]? Attributes { get; }
+		public List<LinkAttributesAttribute>? Attributes { get; }
 	}
 
 	public abstract record LinkAttributesFeatureGated : ILinkAttributesNode
 	{
-		public LinkAttributesAttribute[]? Attributes { get; }
-		public readonly string? Feature;
-		public readonly bool? FeatureValue;
-		public readonly bool? FeatureDefault;
-		public LinkAttributesFeatureGated () { }
+		public List<LinkAttributesAttribute>? Attributes { get; }
+		public LinkAttributesFeatureGate? FeatureGate;
+		public LinkAttributesFeatureGated (List<LinkAttributesAttribute>? attributes)
+		{
+			Attributes = attributes;
+		}
 	}
 
-	internal readonly struct LinkAttributesContext
+	public record LinkAttributesFeatureGate
 	{
-		public readonly string Assembly;
-		public readonly string Path;
+		public string? Feature;
+		public string? FeatureValue;
+		public string? FeatureDefault;
+		public LinkAttributesFeatureGate (string? feature, string? featureValue, string? featureDefault)
+		{
+			Feature = feature;
+			FeatureValue = featureValue;
+			FeatureDefault = featureDefault;
+		}
+	}
+
+
+	internal struct LinkAttributesContext
+	{
+		public string Assembly;
+		public string Path;
 
 		internal LinkAttributesContext (string assembly, string path)
 		{

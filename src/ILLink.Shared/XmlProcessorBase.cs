@@ -43,15 +43,16 @@ namespace ILLink.Shared
 		protected static string GetName (XPathNavigator nav)
 		{
 			var name = GetAttribute (nav, NameAttributeName);
-			if (name != null && name != ""){
-				return name;
-			}
-			var fullname = GetFullName (nav);
-			if (fullname != null) {
-				var lastDot = fullname.LastIndexOf ('.');
-				return fullname.Substring (lastDot + 1);
-			}
-			return "";
+			return name;
+			//if (name != null && name != ""){
+			//	return name;
+			//}
+			//var fullname = GetFullName (nav);
+			//if (fullname != null) {
+			//	var lastDot = fullname.LastIndexOf ('.');
+			//	return fullname.Substring (lastDot + 1);
+			//}
+			//return "";
 		}
 
 		protected static string GetSignature (XPathNavigator nav)
