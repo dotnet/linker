@@ -5,10 +5,14 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Net.NetworkInformation;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Text;
+using Mono.Linker.Tests.Cases.Expectations.Metadata;
+using Mono.Linker.Tests.Cases.LinkXml;
 
 namespace ILLink.RoslynAnalyzer.Tests
 {
@@ -25,14 +29,18 @@ namespace ILLink.RoslynAnalyzer.Tests
 			string src,
 			(string, string)[]? globalAnalyzerOptions = null,
 			IEnumerable<MetadataReference>? additionalReferences = null,
-			IEnumerable<SyntaxTree>? additionalSources = null)
-			=> CreateCompilation (CSharpSyntaxTree.ParseText (src), globalAnalyzerOptions, additionalReferences, additionalSources);
+			IEnumerable<SyntaxTree>? additionalSources = null,
+			string? testCaseDirectory = null,
+			string? testCaseName = null)
+			=> CreateCompilation (CSharpSyntaxTree.ParseText (src), globalAnalyzerOptions, additionalReferences, additionalSources, testCaseDirectory, testCaseName);
 
 		public static async Task<(CompilationWithAnalyzers Compilation, SemanticModel SemanticModel, List<Diagnostic> ExceptionDiagnostics)> CreateCompilation (
 			SyntaxTree src,
 			(string, string)[]? globalAnalyzerOptions = null,
 			IEnumerable<MetadataReference>? additionalReferences = null,
-			IEnumerable<SyntaxTree>? additionalSources = null)
+			IEnumerable<SyntaxTree>? additionalSources = null,
+			string? testCaseDirectory = null,
+			string? testCaseName = null)
 		{
 			var mdRef = MetadataReference.CreateFromFile (typeof (Mono.Linker.Tests.Cases.Expectations.Metadata.BaseMetadataAttribute).Assembly.Location);
 			additionalReferences ??= Array.Empty<MetadataReference> ();
@@ -43,9 +51,26 @@ namespace ILLink.RoslynAnalyzer.Tests
 				syntaxTrees: sources,
 				references: (await TestCaseUtils.GetNet6References ()).Add (mdRef).AddRange (additionalReferences),
 				new CSharpCompilationOptions (OutputKind.DynamicallyLinkedLibrary));
-
+			List<AdditionalText> additionalTexts = new ();
+			if (testCaseName != null) {
+				var testClasses = comp.GetSymbolsWithName (testCaseName);
+				foreach (var testClass in testClasses) {
+					var attributeFileAttribute = testClass.GetAttributes ()
+						.Where (attribute => attribute.AttributeClass?.Name == nameof (SetupLinkAttributesFile) || (attribute.AttributeClass?.Name == nameof(SetupCompileResourceAttribute) && (string?) attribute.ConstructorArguments[1].Value == "ILLink.LinkAttributes.xml"));
+					foreach (var attribute in attributeFileAttribute) {
+						var xmlFileName = (string) attribute.ConstructorArguments[0].Value!;
+						var resolver = new XmlFileResolver (testCaseDirectory);
+						var resolvedPath = resolver.ResolveReference (xmlFileName, testCaseDirectory);
+						if (resolvedPath != null) {
+							var stream = resolver.OpenRead (resolvedPath);
+							XmlText text = new ("ILLink.LinkAttributes.xml", stream);
+							additionalTexts.Add (text);
+						}
+					}
+				}
+			}
 			var analyzerOptions = new AnalyzerOptions (
-				ImmutableArray<AdditionalText>.Empty,
+				additionalFiles: additionalTexts.ToImmutableArray (),
 				new SimpleAnalyzerOptions (globalAnalyzerOptions));
 
 			var exceptionDiagnostics = new List<Diagnostic> ();
