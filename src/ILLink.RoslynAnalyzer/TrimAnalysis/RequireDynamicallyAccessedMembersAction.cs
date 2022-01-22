@@ -8,16 +8,17 @@ namespace ILLink.Shared.TrimAnalysis
 {
 	partial struct RequireDynamicallyAccessedMembersAction
 	{
-		private partial bool TryResolveTypeNameAndMark (string _, out TypeProxy type)
+#pragma warning disable CA1822 // Mark members as static - the other partial implementations might need to be instance methods
+#pragma warning disable IDE0060 // Unused parameters - should be removed once methods are actually implemented
+
+		private partial bool TryResolveTypeNameAndMark (string typeName, out TypeProxy type)
 		{
 			// TODO: Implement type name resolution to type symbol
 			type = default;
 			return false;
 		}
 
-#pragma warning disable IDE0060
 		private partial void MarkTypeForDynamicallyAccessedMembers (in TypeProxy type, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
-#pragma warning restore IDE0060
 		{
 			// TODO: Implement "marking" of members - this should call into DynamicallyAccessedMembersBinder to get the members and then "mark" them
 		}
