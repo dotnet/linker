@@ -25,7 +25,7 @@ namespace ILLink.Shared
 
 		public record AttributeNode : NodeBase
 		{
-			public string Fullname;
+			public string FullName;
 			public string Internal;
 			public string Assembly;
 			public List<IAttributeArgumentNode> Arguments;
@@ -50,7 +50,7 @@ namespace ILLink.Shared
 					var field = new AttributeFieldNode (name: GetName (fieldNav), value: fieldNav.Value);
 					fields.Add (field);
 				}
-				Fullname = GetFullName (nav);
+				FullName = GetFullName (nav);
 				Internal = GetAttribute (nav, "internal");
 				Assembly = GetAttribute (nav, AssemblyElementName);
 				Arguments = arguments;
@@ -128,7 +128,7 @@ namespace ILLink.Shared
 			}
 		}
 
-		public partial record TypeMemberNode : FeatureGatedNode
+		public partial record TypeMemberNode : FeatureSwitchedNode
 		{
 			public string Name;
 			public string Signature;
@@ -168,7 +168,7 @@ namespace ILLink.Shared
 			}
 		}
 
-		public abstract record TypeBaseNode : FeatureGatedNode
+		public abstract record TypeBaseNode : FeatureSwitchedNode
 		{
 			public List<TypeMemberNode> Events;
 			public List<TypeMemberNode> Fields;
@@ -210,20 +210,20 @@ namespace ILLink.Shared
 
 		public partial record TypeNode : TypeBaseNode, IRootNode
 		{
-			public string Fullname;
+			public string FullName;
 			public TypeNode (XPathNavigator nav) : base (nav)
 			{
-				Fullname = GetFullName (nav);
+				FullName = GetFullName (nav);
 			}
 		}
 
-		public record AssemblyNode : FeatureGatedNode, IRootNode
+		public record AssemblyNode : FeatureSwitchedNode, IRootNode
 		{
 			public List<TypeNode> Types;
-			public string Fullname;
+			public string FullName;
 			public AssemblyNode (XPathNavigator nav) : base (nav)
 			{
-				Fullname = GetFullName (nav);
+				FullName = GetFullName (nav);
 				Types = new List<TypeNode> ();
 				foreach (XPathNavigator typeNav in nav.SelectChildren (TypeElementName, "")) {
 					Types.Add (new TypeNode (typeNav));
@@ -308,11 +308,11 @@ namespace ILLink.Shared
 			}
 		}
 
-		public abstract record FeatureGatedNode : AttributeTargetNode
+		public abstract record FeatureSwitchedNode : AttributeTargetNode
 		{
-			public FeatureGate? FeatureGate;
+			public FeatureSwitch? FeatureSwitch;
 
-			public FeatureGatedNode (XPathNavigator nav) : base (nav)
+			public FeatureSwitchedNode (XPathNavigator nav) : base (nav)
 			{
 				string? feature = GetAttribute (nav, "feature");
 				if (String.IsNullOrEmpty (feature))
@@ -328,15 +328,15 @@ namespace ILLink.Shared
 				}
 				// if (feature is null && (featurevalue is not null || featuredefault is not null)) ;
 					// error, feature must be defined if featurevalue or featuredefault is defined
-				FeatureGate = new FeatureGate(feature, featurevalue, featuredefault);
+				FeatureSwitch = new FeatureSwitch (feature, featurevalue, featuredefault);
 			}
 		}
 
-		public record FeatureGate{
+		public record FeatureSwitch {
 			public string? Feature;
 			public string? FeatureValue;
 			public string? FeatureDefault;
-			public FeatureGate(string? feature, string? featureValue, string? featureDefault)
+			public FeatureSwitch (string? feature, string? featureValue, string? featureDefault)
 			{
 				Feature = feature;
 				FeatureValue = featureValue;
