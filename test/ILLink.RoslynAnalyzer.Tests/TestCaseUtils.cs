@@ -43,6 +43,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 		{
 			GetDirectoryPaths (out string rootSourceDir, out string testAssemblyPath);
 			Debug.Assert (Path.GetFileName (rootSourceDir) == MonoLinkerTestsCases);
+			var testDirectory = Path.Combine (rootSourceDir, suiteName);
 			var testPath = Path.Combine (rootSourceDir, suiteName, $"{testName}.cs");
 			Assert.True (File.Exists (testPath));
 			var tree = SyntaxFactory.ParseSyntaxTree (
@@ -55,7 +56,9 @@ namespace ILLink.RoslynAnalyzer.Tests
 			var (comp, model, exceptionDiagnostics) = await TestCaseCompilation.CreateCompilation (
 					tree,
 					msbuildProperties,
-					additionalSources: testDependenciesSource);
+					additionalSources: testDependenciesSource,
+					testCaseDirectory: testDirectory,
+					testCaseName: testName);
 
 			// Note that the exception diagnostics will be empty until the analyzer has run,
 			// so be sure to get them after awaiting GetAnalyzerDiagnosticsAsync().
