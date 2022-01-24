@@ -3,8 +3,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace ILLink.Shared
 {
@@ -32,7 +35,7 @@ namespace ILLink.Shared
 			public List<AttributePropertyNode> Properties;
 			public List<AttributeFieldNode> Fields;
 
-			public AttributeNode (XPathNavigator nav)
+			public AttributeNode (XPathNavigator nav) : base (nav)
 			{
 				var arguments = new List<IAttributeArgumentNode> ();
 				foreach (XPathNavigator argNav in nav.SelectChildren (ArgumentElementName, "")) {
@@ -237,6 +240,12 @@ namespace ILLink.Shared
 
 		public abstract record NodeBase
 		{
+			public IXmlLineInfo? LineInfo;
+			protected NodeBase(XPathNavigator nav)
+			{
+				LineInfo = (nav is IXmlLineInfo lineInfo) ? lineInfo : null;
+			}
+
 			protected const string FullNameAttributeName = "fullname";
 			protected const string LinkerElementName = "linker";
 			protected const string TypeElementName = "type";
@@ -288,14 +297,13 @@ namespace ILLink.Shared
 			{
 				return nav.GetAttribute (attribute, XmlNamespace);
 			}
-
 		}
 
 		public abstract record AttributeTargetNode : NodeBase
 		{
 			public List<AttributeNode> Attributes;
 
-			public AttributeTargetNode (XPathNavigator nav)
+			public AttributeTargetNode (XPathNavigator nav) : base (nav)
 			{
 				var attributes = new List<AttributeNode> ();
 				foreach (XPathNavigator attributeNav in nav.SelectChildren (AttributeElementName, "")) {
