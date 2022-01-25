@@ -4,18 +4,12 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.IO;
 using System.Linq;
-using System.Net.NetworkInformation;
 using System.Threading.Tasks;
-using System.Xml.Linq;
-using System.Xml.XPath;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
-using Microsoft.CodeAnalysis.Text;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
-using Mono.Linker.Tests.Cases.LinkXml;
 
 namespace ILLink.RoslynAnalyzer.Tests
 {
@@ -60,7 +54,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 				var testClasses = comp.GetSymbolsWithName (testCaseName);
 				foreach (var testClass in testClasses) {
 					var attributeFileAttribute = testClass.GetAttributes ()
-						.Where (attribute => attribute.AttributeClass?.Name == nameof (SetupLinkAttributesFile) || (attribute.AttributeClass?.Name == nameof(SetupCompileResourceAttribute) && (string?) attribute.ConstructorArguments[1].Value == "ILLink.LinkAttributes.xml"));
+						.Where (attribute => attribute.AttributeClass?.Name == nameof (SetupLinkAttributesFile) || (attribute.AttributeClass?.Name == nameof (SetupCompileResourceAttribute) && (string?) attribute.ConstructorArguments[1].Value == "ILLink.LinkAttributes.xml"));
 					foreach (var attribute in attributeFileAttribute) {
 						var xmlFileName = (string) attribute.ConstructorArguments[0].Value!;
 						var resolver = new XmlFileResolver (testCaseDirectory);

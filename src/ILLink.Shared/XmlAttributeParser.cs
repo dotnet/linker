@@ -6,8 +6,6 @@ using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace ILLink.Shared
 {
@@ -241,7 +239,7 @@ namespace ILLink.Shared
 		public abstract record NodeBase
 		{
 			public IXmlLineInfo? LineInfo;
-			protected NodeBase(XPathNavigator nav)
+			protected NodeBase (XPathNavigator nav)
 			{
 				LineInfo = (nav is IXmlLineInfo lineInfo) ? lineInfo : null;
 			}
@@ -265,7 +263,7 @@ namespace ILLink.Shared
 
 			public static List<IRootNode> ProcessRootNodes (XPathNavigator nav)
 			{
-				if (!nav.MoveToChild(LinkerElementName, XmlNamespace)) {
+				if (!nav.MoveToChild (LinkerElementName, XmlNamespace)) {
 					throw new ArgumentException ("XML does not have <linker> base tag");
 				}
 				var roots = new List<IRootNode> ();
@@ -335,12 +333,13 @@ namespace ILLink.Shared
 					return;
 				}
 				// if (feature is null && (featurevalue is not null || featuredefault is not null)) ;
-					// error, feature must be defined if featurevalue or featuredefault is defined
+				// error, feature must be defined if featurevalue or featuredefault is defined
 				FeatureSwitch = new FeatureSwitch (feature, featurevalue, featuredefault);
 			}
 		}
 
-		public record FeatureSwitch {
+		public record FeatureSwitch
+		{
 			public string? Feature;
 			public string? FeatureValue;
 			public string? FeatureDefault;

@@ -1,6 +1,5 @@
 
 using System.Threading.Tasks;
-using Xunit;
 
 namespace ILLink.RoslynAnalyzer.Tests
 {
@@ -8,7 +7,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 	{
 		protected override string TestSuiteName => "LinkAttributes";
 
-		[Fact]
+		//[Fact]
 		public Task EmbeddedLinkAttributes ()
 		{
 			return RunTest (nameof (EmbeddedLinkAttributes));
