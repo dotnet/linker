@@ -8,7 +8,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 	{
 		protected override string TestSuiteName => "LinkAttributes";
 
-		//[Fact]
+		[Fact]
 		public Task EmbeddedLinkAttributes ()
 		{
 			return RunTest (nameof (EmbeddedLinkAttributes));
@@ -27,6 +27,11 @@ namespace ILLink.RoslynAnalyzer.Tests
 		public Task LinkerAttributeRemovalConditional ()
 		{
 			return RunTest (nameof (LinkerAttributeRemovalConditional));
+		}
+		//[Fact]
+		public Task LinkAttributeErrorCases ()
+		{
+			return RunTest (nameof (LinkAttributeErrorCases));
 		}
 	}
 }

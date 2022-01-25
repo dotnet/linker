@@ -23,11 +23,10 @@
       <Namespace>ILLink.Shared</Namespace>
       <SubType>Designer</SubType>
     </EmbeddedResource>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)ILLink.LinkAttributes.xsd">
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)ILLink.LinkAttributes.xsd">
+      <GenerateSource>true</GenerateSource>
+      <Namespace>ILLink.Shared</Namespace>
       <SubType>Designer</SubType>
-    </None>
-    <None Include="$(MSBuildThisFileDirectory)ILLink.xsd" />
+    </EmbeddedResource>
   </ItemGroup>
 </Project>

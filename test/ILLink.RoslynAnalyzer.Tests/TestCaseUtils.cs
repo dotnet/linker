@@ -77,7 +77,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 				var testNamespace = testSyntaxTree.GetRoot ().DescendantNodes ().OfType<NamespaceDeclarationSyntax> ().Single ().Name.ToString ();
 				var testSuiteName = testNamespace.Substring (testNamespace.LastIndexOf ('.') + 1);
 				var args = LinkerTestBase.GetAttributeArguments (attribute);
-				foreach (var sourceFile in ((ImplicitArrayCreationExpressionSyntax) args["#1"]).DescendantNodes ().OfType<LiteralExpressionSyntax> ())
+				foreach (var sourceFile in ((ExpressionSyntax) args["#1"]).DescendantNodes ().OfType<LiteralExpressionSyntax> ())
 					yield return Path.Combine (rootSourceDir, testSuiteName, LinkerTestBase.GetStringFromExpression (sourceFile));
 			}
 		}
