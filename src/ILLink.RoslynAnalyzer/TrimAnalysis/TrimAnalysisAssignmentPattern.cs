@@ -29,6 +29,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 		public IEnumerable<Diagnostic> ReportDiagnostics ()
 		{
+			var diagnosticContext = new DiagnosticContext (Operation.Syntax.GetLocation ());
 			foreach (var sourceValue in Source) {
 				foreach (var targetValue in Target) {
 					// The target should always be an annotated value, but the visitor design currently prevents
@@ -37,13 +38,11 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 						throw new NotImplementedException ();
 
 					var requireDynamicallyAccessedMembersAction = new RequireDynamicallyAccessedMembersAction ();
-					var diagnosticContext = new DiagnosticContext (Operation.Syntax.GetLocation ());
 					requireDynamicallyAccessedMembersAction.Invoke (diagnosticContext, sourceValue, targetWithDynamicallyAccessedMembers);
-
-					foreach (var diagnostic in diagnosticContext.Diagnostics)
-						yield return diagnostic;
 				}
 			}
+
+			return diagnosticContext.Diagnostics;
 		}
 	}
 }
