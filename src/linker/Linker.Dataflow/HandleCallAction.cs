@@ -11,15 +11,20 @@ namespace ILLink.Shared.TrimAnalysis
 {
 	partial struct HandleCallAction
 	{
+#pragma warning disable CA1822 // Mark members as static - the other partial implementations might need to be instance methods
+
 		readonly LinkContext _context;
 		readonly MethodDefinition _callingMethodDefinition;
 
 		public HandleCallAction (
 			LinkContext context,
+			ReflectionMethodBodyScanner reflectionMethodBodyScanner,
+			in ReflectionMethodBodyScanner.AnalysisContext analysisContext,
 			MethodDefinition callingMethodDefinition)
 		{
 			_context = context;
 			_callingMethodDefinition = callingMethodDefinition;
+			_requireDynamicallyAccessedMembersAction = new (context, reflectionMethodBodyScanner, analysisContext);
 		}
 
 		private partial bool MethodRequiresDataFlowAnalysis (MethodProxy method)
@@ -30,6 +35,12 @@ namespace ILLink.Shared.TrimAnalysis
 
 		private partial MethodReturnValue GetMethodReturnValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 			=> new (ReflectionMethodBodyScanner.ResolveToTypeDefinition (_context, method.Method.ReturnType), method.Method, dynamicallyAccessedMemberTypes);
+
+		private partial GenericParameterValue GetGenericParameterValue (GenericParameterProxy genericParameter)
+			=> new (genericParameter.GenericParameter, _context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameter.GenericParameter));
+
+		private partial MethodThisParameterValue GetMethodThisParameterValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
+			=> new (method.Method, dynamicallyAccessedMemberTypes);
 
 		private partial string GetContainingSymbolDisplayName () => _callingMethodDefinition.GetDisplayName ();
 	}

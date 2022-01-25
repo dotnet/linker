@@ -16,7 +16,12 @@ namespace ILLink.Shared.TrimAnalysis
 		readonly ISymbol _owningSymbol;
 		readonly IOperation _operation;
 
-		public HandleCallAction (ISymbol owningSymbol, IOperation operation) => (_owningSymbol, _operation) = (owningSymbol, operation);
+		public HandleCallAction (in DiagnosticContext diagnosticContext, ISymbol owningSymbol, IOperation operation)
+		{
+			_owningSymbol = owningSymbol;
+			_operation = operation;
+			_requireDynamicallyAccessedMembersAction = new (diagnosticContext, new ReflectionAccessAnalyzer ());
+		}
 
 		// TODO: This is relatively expensive on the analyzer since it doesn't cache the annotation information
 		// In linker this is an optimization to avoid the heavy lifting of analysis if there's no point
@@ -26,6 +31,12 @@ namespace ILLink.Shared.TrimAnalysis
 		private partial DynamicallyAccessedMemberTypes GetReturnValueAnnotation (MethodProxy method) => FlowAnnotations.GetMethodReturnValueAnnotation (method.Method);
 
 		private partial MethodReturnValue GetMethodReturnValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
+			=> new (method.Method, dynamicallyAccessedMemberTypes);
+
+		private partial GenericParameterValue GetGenericParameterValue (GenericParameterProxy genericParameter)
+			=> new (genericParameter.TypeParameterSymbol);
+
+		private partial MethodThisParameterValue GetMethodThisParameterValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 			=> new (method.Method, dynamicallyAccessedMemberTypes);
 
 		private partial string GetContainingSymbolDisplayName () => _operation.FindContainingSymbol (_owningSymbol).GetDisplayName ();
