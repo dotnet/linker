@@ -37,7 +37,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			Context = context;
 		}
 
-		public IEnumerable<TrimAnalysisPattern> ComputeTrimAnalysisPatterns ()
+		public IEnumerable<ITrimAnalysisPattern> ComputeTrimAnalysisPatterns ()
 		{
 			var visitor = new TrimAnalysisVisitor (Lattice, Context);
 			Fixpoint (ControlFlowGraph, Lattice, visitor);

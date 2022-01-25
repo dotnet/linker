@@ -3,25 +3,21 @@
 
 using System.Collections;
 using System.Collections.Generic;
-using ILLink.Shared.DataFlow;
+using System.Diagnostics;
 using Microsoft.CodeAnalysis;
-using MultiValue = ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.SingleValue>;
 
 namespace ILLink.RoslynAnalyzer.TrimAnalysis
 {
-	public readonly struct TrimAnalysisPatternStore : IEnumerable<TrimAnalysisPattern>
+	public readonly struct TrimAnalysisPatternStore : IEnumerable<ITrimAnalysisPattern>
 	{
-		readonly Dictionary<(IOperation, bool), TrimAnalysisPattern> TrimAnalysisPatterns;
+		readonly Dictionary<(IOperation, bool), ITrimAnalysisPattern> TrimAnalysisPatterns;
 
-		readonly ValueSetLattice<SingleValue> Lattice;
-
-		public TrimAnalysisPatternStore (ValueSetLattice<SingleValue> lattice)
+		public TrimAnalysisPatternStore ()
 		{
-			TrimAnalysisPatterns = new Dictionary<(IOperation, bool), TrimAnalysisPattern> ();
-			Lattice = lattice;
+			TrimAnalysisPatterns = new Dictionary<(IOperation, bool), ITrimAnalysisPattern> ();
 		}
 
-		public void Add (TrimAnalysisPattern trimAnalysisPattern, bool isReturnValue)
+		public void Add (ITrimAnalysisPattern trimAnalysisPattern, bool isReturnValue)
 		{
 			// Finally blocks will be analyzed multiple times, once for normal control flow and once
 			// for exceptional control flow, and these separate analyses could produce different
@@ -31,18 +27,17 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			// of the normal control-flow state.
 			// We still add patterns to the operation, rather than replacing, to make this resilient to
 			// changes in the analysis algorithm.
-			if (!TrimAnalysisPatterns.TryGetValue ((trimAnalysisPattern.Operation, isReturnValue), out TrimAnalysisPattern existingPattern)) {
+			if (!TrimAnalysisPatterns.TryGetValue ((trimAnalysisPattern.Operation, isReturnValue), out ITrimAnalysisPattern existingPattern)) {
 				TrimAnalysisPatterns.Add ((trimAnalysisPattern.Operation, isReturnValue), trimAnalysisPattern);
 				return;
 			}
 
-			MultiValue source = Lattice.Meet (trimAnalysisPattern.Source, existingPattern.Source);
-			MultiValue target = Lattice.Meet (trimAnalysisPattern.Target, existingPattern.Target);
-			TrimAnalysisPatterns[(trimAnalysisPattern.Operation, isReturnValue)] = new TrimAnalysisPattern (source, target, trimAnalysisPattern.Operation);
+			Debug.Assert (trimAnalysisPattern.GetType () == existingPattern.GetType ());
+			TrimAnalysisPatterns[(trimAnalysisPattern.Operation, isReturnValue)] = trimAnalysisPattern.Merge (existingPattern);
 		}
 
 		IEnumerator IEnumerable.GetEnumerator () => GetEnumerator ();
 
-		public IEnumerator<TrimAnalysisPattern> GetEnumerator () => TrimAnalysisPatterns.Values.GetEnumerator ();
+		public IEnumerator<ITrimAnalysisPattern> GetEnumerator () => TrimAnalysisPatterns.Values.GetEnumerator ();
 	}
 }
