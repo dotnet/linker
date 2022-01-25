@@ -6,8 +6,6 @@ Param(
 
 . (Join-Path $PSScriptRoot "common/tools.ps1")
 
-echo $ArtifactsDir
-
 $args = $remaining.Clone()
 
 if ($integrationTest) {
