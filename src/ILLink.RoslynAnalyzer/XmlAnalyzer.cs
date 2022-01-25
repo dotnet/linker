@@ -24,47 +24,24 @@ namespace ILLink.RoslynAnalyzer
 		private static readonly DiagnosticDescriptor s_moreThanOneValueForParameterOfMethod = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.XmlMoreThanOneValyForParameterOfMethod);
 		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create (s_moreThanOneValueForParameterOfMethod);
 
-		private static readonly Regex _regex = new (@"ILLink\.LinkAttributes.*\.xml");
+		private static readonly Regex _linkAttributesRegex = new (@"ILLink\.LinkAttributes.*\.xml");
 
 		public override void Initialize (AnalysisContext context)
 		{
 			context.EnableConcurrentExecution ();
 			context.ConfigureGeneratedCodeAnalysis (GeneratedCodeAnalysisFlags.ReportDiagnostics);
 
-			context.RegisterCompilationAction (context => {
-				var assembly = Assembly.GetExecutingAssembly ();
-				using (var schemaStream = assembly.GetManifestResourceStream ("ILLink.RoslynAnalyzer.ILLink.LinkAttributes.xsd"))
-				using (var reader = XmlReader.Create (schemaStream)) {
-					XmlSchema schema = XmlSchema.Read (
-						reader,
-						null);
-					foreach (SourceText text in context.GetLinkAttributesSourceTexts ()) {
-						var xmlStream = GenerateStream (text);
-						XDocument? document;
-						try {
-							document = XDocument.Load (xmlStream, LoadOptions.SetLineInfo | LoadOptions.PreserveWhitespace);
-						} catch (XmlException ex) {
-							context.ReportDiagnostic (Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.ErrorProcessingXmlLocation), null, ex.Message));
-							return;
-						}
-						XmlSchemaSet schemaSet = new XmlSchemaSet ();
-						schemaSet.Add (schema);
-						document.Validate (schemaSet, (sender, error) => {
-							context.ReportDiagnostic (Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.ErrorProcessingXmlLocation), null, "ILLinkAttributes.xml': '" + "At line " + error.Exception.LineNumber + ": " + error.Message));
-						});
-					}
-				}
-			});
-
 			context.RegisterCompilationStartAction (context => {
-				foreach (SourceText text in context.GetLinkAttributesSourceTexts ()) {
-					if (!context.TryGetValue (text, ProcessXmlProvider, out var xmlData) || xmlData is null)
-						return;
-				}
+				// Report Diagnostics on malformed XML with additionalFileContext and register actions to resolve names with (CompilationStartAnalysisContext) context.
 				context.RegisterAdditionalFileAction (additionalFileContext => {
-					if (_regex.IsMatch (Path.GetFileName (additionalFileContext.AdditionalFile.Path))) {
+					// Check if it's a LinkAttributes xml
+					if (_linkAttributesRegex.IsMatch (Path.GetFileName (additionalFileContext.AdditionalFile.Path))) {
 						if (additionalFileContext.AdditionalFile.GetText () is not SourceText text)
 							return;
+
+						if (!ValidateLinkAttributesXml (additionalFileContext, text))
+							return;
+
 						if (!context.TryGetValue (text, ProcessXmlProvider, out var xmlData) || xmlData is null)
 							return;
 						foreach (var root in xmlData) {
@@ -77,6 +54,43 @@ namespace ILLink.RoslynAnalyzer
 					}
 				});
 			});
+		}
+
+		private static XmlSchema? _LinkAttributesSchema = null;
+		private static XmlSchema LinkAttributesSchema {
+			get {
+				if (_LinkAttributesSchema is XmlSchema schema)
+					return schema;
+				var assembly = Assembly.GetExecutingAssembly ();
+				using (var schemaStream = assembly.GetManifestResourceStream ("ILLink.RoslynAnalyzer.ILLink.LinkAttributes.xsd"))
+				using (var reader = XmlReader.Create (schemaStream)) {
+					_LinkAttributesSchema = XmlSchema.Read (
+						reader,
+						null);
+					return _LinkAttributesSchema;
+				}
+			}
+		}
+
+		private static bool ValidateLinkAttributesXml (AdditionalFileAnalysisContext context, SourceText text)
+		{
+			var xmlStream = GenerateStream (text);
+			XDocument? document;
+			try {
+				document = XDocument.Load (xmlStream, LoadOptions.SetLineInfo | LoadOptions.PreserveWhitespace);
+			} catch (XmlException ex) {
+				context.ReportDiagnostic (Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.ErrorProcessingXmlLocation), null, ex.Message));
+				return false;
+			}
+			XmlSchemaSet schemaSet = new XmlSchemaSet ();
+			schemaSet.Add (LinkAttributesSchema);
+			bool valid = true;
+			document.Validate (schemaSet, (sender, error) => {
+				// 1xxx Diagnostics aren't okay yet
+				// context.ReportDiagnostic (Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.ErrorProcessingXmlLocation), null, "ILLinkAttributes.xml': '" + "At line " + error.Exception.LineNumber + ": " + error.Message));
+				valid = false;
+			});
+			return valid;
 		}
 
 		private static Stream GenerateStream (SourceText xmlText)
@@ -100,22 +114,5 @@ namespace ILLink.RoslynAnalyzer
 			}
 			return LinkAttributes.ProcessXml (document);
 		});
-
-	}
-
-	public static class ContextExtensions
-	{
-		private static readonly Regex _regex = new (@"ILLink\.LinkAttributes.*\.xml");
-
-		[System.Diagnostics.CodeAnalysis.SuppressMessage ("MicrosoftCodeAnalysisPerformance", "RS1012:Start action has no registered actions", Justification = "Part of an extension method")]
-		public static IEnumerable<SourceText> GetLinkAttributesSourceTexts (this CompilationStartAnalysisContext context)
-		{
-			return context.Options.AdditionalFiles.Select (file => _regex.IsMatch (Path.GetFileName (file.Path)) ? file.GetText (context.CancellationToken) : null).Where ((text) => text is not null)!;
-		}
-
-		public static IEnumerable<SourceText> GetLinkAttributesSourceTexts (this CompilationAnalysisContext context)
-		{
-			return context.Options.AdditionalFiles.Select (file => _regex.IsMatch (Path.GetFileName (file.Path)) ? file.GetText (context.CancellationToken) : null).Where ((text) => text is not null)!;
-		}
 	}
 }
