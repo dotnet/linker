@@ -68,6 +68,9 @@ namespace ILLink.RoslynAnalyzer
 			case >= 3050 and <= 6000:
 				return DiagnosticCategory.AOT;
 
+			case 1013:
+				return DiagnosticCategory.XML;
+
 			default:
 				break;
 			}

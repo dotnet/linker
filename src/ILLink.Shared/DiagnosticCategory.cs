@@ -8,5 +8,6 @@ namespace ILLink.Shared
 		public const string SingleFile = nameof (SingleFile);
 		public const string Trimming = nameof (Trimming);
 		public const string AOT = nameof (AOT);
+		public const string XML = nameof (XML);
 	}
 }
