@@ -2,7 +2,6 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System.Collections.Immutable;
-using System.Linq;
 using ILLink.RoslynAnalyzer.DataFlow;
 using ILLink.Shared.DataFlow;
 using ILLink.Shared.TrimAnalysis;
@@ -28,7 +27,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			OperationBlockAnalysisContext context
 		) : base (lattice, context)
 		{
-			TrimAnalysisPatterns = new TrimAnalysisPatternStore ();
+			TrimAnalysisPatterns = new TrimAnalysisPatternStore (lattice.Lattice.ValueLattice);
 		}
 
 		// Override visitor methods to create tracked values when visiting operations
@@ -115,7 +114,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 				instance,
 				arguments,
 				operation,
-				Context.OwningSymbol), false);
+				Context.OwningSymbol));
 
 			return methodReturnValue;
 		}

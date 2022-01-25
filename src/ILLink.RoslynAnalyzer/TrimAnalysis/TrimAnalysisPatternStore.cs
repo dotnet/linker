@@ -1,23 +1,26 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
+using ILLink.Shared.DataFlow;
 using Microsoft.CodeAnalysis;
 
 namespace ILLink.RoslynAnalyzer.TrimAnalysis
 {
-	public readonly struct TrimAnalysisPatternStore : IEnumerable<ITrimAnalysisPattern>
+	public readonly struct TrimAnalysisPatternStore
 	{
-		readonly Dictionary<(IOperation, bool), ITrimAnalysisPattern> TrimAnalysisPatterns;
+		readonly Dictionary<(IOperation, bool), TrimAnalysisAssignmentPattern> AssignmentPatterns;
+		readonly Dictionary<IOperation, TrimAnalysisMethodCallPattern> MethodCallPatterns;
+		readonly ValueSetLattice<SingleValue> Lattice;
 
-		public TrimAnalysisPatternStore ()
+		public TrimAnalysisPatternStore (ValueSetLattice<SingleValue> lattice)
 		{
-			TrimAnalysisPatterns = new Dictionary<(IOperation, bool), ITrimAnalysisPattern> ();
+			AssignmentPatterns = new Dictionary<(IOperation, bool), TrimAnalysisAssignmentPattern> ();
+			MethodCallPatterns = new Dictionary<IOperation, TrimAnalysisMethodCallPattern> ();
+			Lattice = lattice;
 		}
 
-		public void Add (ITrimAnalysisPattern trimAnalysisPattern, bool isReturnValue)
+		public void Add (TrimAnalysisAssignmentPattern trimAnalysisPattern, bool isReturnValue)
 		{
 			// Finally blocks will be analyzed multiple times, once for normal control flow and once
 			// for exceptional control flow, and these separate analyses could produce different
@@ -27,17 +30,35 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			// of the normal control-flow state.
 			// We still add patterns to the operation, rather than replacing, to make this resilient to
 			// changes in the analysis algorithm.
-			if (!TrimAnalysisPatterns.TryGetValue ((trimAnalysisPattern.Operation, isReturnValue), out ITrimAnalysisPattern existingPattern)) {
-				TrimAnalysisPatterns.Add ((trimAnalysisPattern.Operation, isReturnValue), trimAnalysisPattern);
+			if (!AssignmentPatterns.TryGetValue ((trimAnalysisPattern.Operation, isReturnValue), out var existingPattern)) {
+				AssignmentPatterns.Add ((trimAnalysisPattern.Operation, isReturnValue), trimAnalysisPattern);
 				return;
 			}
 
-			Debug.Assert (trimAnalysisPattern.GetType () == existingPattern.GetType ());
-			TrimAnalysisPatterns[(trimAnalysisPattern.Operation, isReturnValue)] = trimAnalysisPattern.Merge (existingPattern);
+			AssignmentPatterns[(trimAnalysisPattern.Operation, isReturnValue)] = trimAnalysisPattern.Merge (Lattice, existingPattern);
 		}
 
-		IEnumerator IEnumerable.GetEnumerator () => GetEnumerator ();
+		public void Add (TrimAnalysisMethodCallPattern pattern)
+		{
+			if (!MethodCallPatterns.TryGetValue (pattern.Operation, out var existingPattern)) {
+				MethodCallPatterns.Add (pattern.Operation, pattern);
+				return;
+			}
 
-		public IEnumerator<ITrimAnalysisPattern> GetEnumerator () => TrimAnalysisPatterns.Values.GetEnumerator ();
+			MethodCallPatterns[pattern.Operation] = pattern.Merge (Lattice, existingPattern);
+		}
+
+		public IEnumerable<Diagnostic> ReportDiagnostics ()
+		{
+			foreach (var assignmentPattern in AssignmentPatterns.Values) {
+				foreach (var diagnostic in assignmentPattern.ReportDiagnostics ())
+					yield return diagnostic;
+			}
+
+			foreach (var methodCallPattern in MethodCallPatterns.Values) {
+				foreach (var diagnostic in methodCallPattern.ReportDiagnostics ())
+					yield return diagnostic;
+			}
+		}
 	}
 }

@@ -18,13 +18,10 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 		MultiValue Instance,
 		ImmutableArray<MultiValue> Arguments,
 		IOperation Operation,
-		ISymbol OwningSymbol) : ITrimAnalysisPattern
+		ISymbol OwningSymbol)
 	{
-		static ValueSetLattice<SingleValue> Lattice => default;
-
-		public ITrimAnalysisPattern Merge (ITrimAnalysisPattern pattern)
+		public TrimAnalysisMethodCallPattern Merge (ValueSetLattice<SingleValue> lattice, TrimAnalysisMethodCallPattern other)
 		{
-			var other = (TrimAnalysisMethodCallPattern) pattern;
 			Debug.Assert (Operation == other.Operation);
 #pragma warning disable RS1024 // Compare symbols correctly
 			Debug.Assert (CalledMethod == other.CalledMethod);
@@ -34,12 +31,12 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			var argumentsBuilder = ImmutableArray.CreateBuilder<MultiValue> ();
 			for (int i = 0; i < Arguments.Length; i++)
             {
-				argumentsBuilder.Add (Lattice.Meet (Arguments [i], other.Arguments [i]));
+				argumentsBuilder.Add (lattice.Meet (Arguments [i], other.Arguments [i]));
             }
 
 			return new TrimAnalysisMethodCallPattern (
 				CalledMethod,
-				Lattice.Meet (Instance, other.Instance),
+				lattice.Meet (Instance, other.Instance),
 				argumentsBuilder.ToImmutable (),
 				Operation,
 				OwningSymbol);

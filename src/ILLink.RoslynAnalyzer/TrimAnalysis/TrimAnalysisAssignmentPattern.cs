@@ -15,18 +15,15 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 	public readonly record struct TrimAnalysisAssignmentPattern (
 		MultiValue Source,
 		MultiValue Target,
-		IOperation Operation) : ITrimAnalysisPattern
+		IOperation Operation)
 	{
-		static ValueSetLattice<SingleValue> Lattice => default;
-
-		public ITrimAnalysisPattern Merge (ITrimAnalysisPattern pattern)
+		public TrimAnalysisAssignmentPattern Merge (ValueSetLattice<SingleValue> lattice, TrimAnalysisAssignmentPattern other)
 		{
-			var other = (TrimAnalysisAssignmentPattern) pattern;
 			Debug.Assert (Operation == other.Operation);
 
 			return new TrimAnalysisAssignmentPattern (
-				Lattice.Meet (Source, other.Source),
-				Lattice.Meet (Target, other.Target),
+				lattice.Meet (Source, other.Source),
+				lattice.Meet (Target, other.Target),
 				Operation);
 		}
 
