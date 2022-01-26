@@ -221,13 +221,14 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			return;
 		}
 
+		// https://github.com/dotnet/linker/issues/2550
 		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) }, messageCode: "IL2072")]
 		public static void TestBranchIf ()
 		{
 			string str = GetWithPublicMethods ();
 			if (String.Empty.Length == 0) {
 				str = GetWithPublicFields (); // dataflow will merge this with the value from the previous basic block
-				RequirePublicFields (str); // produces a warning
+				RequirePublicFields (str); // produces a warning (technically it should not)
 			}
 		}
 
