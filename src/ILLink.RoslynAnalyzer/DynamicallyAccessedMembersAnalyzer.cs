@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Linq;
 using ILLink.RoslynAnalyzer.TrimAnalysis;
 using ILLink.Shared;
 using ILLink.Shared.DataFlow;
@@ -81,19 +82,24 @@ namespace ILLink.RoslynAnalyzer
 				}
 				typeParams = type.TypeParameters;
 				typeArgs = type.TypeArguments;
-			}
-
-			if (context.SemanticModel.GetSymbolInfo (context.Node, context.CancellationToken).Symbol is IMethodSymbol targetMethod) {
-				// Check if the generic parameters have any constraints
+			} else if (context.SemanticModel.GetSymbolInfo (context.Node, context.CancellationToken).Symbol is IMethodSymbol targetMethod) {
+				// Check if the generic parameters have any constraints on this method
 				var node = context.Node;
 				while (node != null) {
 					if (node is MethodDeclarationSyntax parentMethod) {
-						if (parentMethod.ConstraintClauses.Count > 0) {
-							// This is safe, the linker would have marked the default .ctor already
-							return;
-						} else {
-							break;
+						foreach (var constraintCaluse in parentMethod.ConstraintClauses) {
+							foreach (var constraint in constraintCaluse.Constraints) {
+								if (constraint.DescendantTokens ().Where (t => t.Kind () == SyntaxKind.StructKeyword ||
+								t.Kind () == SyntaxKind.NewKeyword).Any ())
+									return;
+								if (constraint is TypeConstraintSyntax typeConstraint &&
+									typeConstraint.Type is IdentifierNameSyntax typeConstraintTdentifier &&
+									typeConstraintTdentifier.Identifier.Text.Equals ("unmanaged"))
+									return;
+							}
 						}
+						// Exit loop if the declared method doesn't have any constraints
+						break;
 					}
 					node = node.Parent;
 				}
