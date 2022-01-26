@@ -447,7 +447,7 @@ namespace Mono.Linker.Steps
 					foreach (ParameterDefinition parameter in method.Parameters) {
 						if (paramName == parameter.Name) {
 							if (parameter.HasCustomAttributes || _attributeInfo.CustomAttributes.ContainsKey (parameter))
-								LogWarning (parameterNav, DiagnosticId.XmlMoreThanOneValyForParameterOfMethod, paramName, method.GetDisplayName ());
+								LogWarning (parameterNav, DiagnosticId.XmlMoreThanOneValueForParameterOfMethod, paramName, method.GetDisplayName ());
 							_attributeInfo.AddCustomAttributes (parameter, attributes);
 							break;
 						}
