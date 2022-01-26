@@ -24,6 +24,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			// that we might be able to lift in the future.
 
 			// These are overly conservative (extraneous warnings)
+			// 	 https://github.com/dotnet/linker/issues/2550
 			TestBranchGoto ();
 			TestBranchIf ();
 			TestBranchIfElse ();
@@ -221,7 +222,6 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			return;
 		}
 
-		// https://github.com/dotnet/linker/issues/2550
 		[UnrecognizedReflectionAccessPattern (typeof (LocalDataFlow), nameof (RequirePublicFields), new Type[] { typeof (string) }, messageCode: "IL2072")]
 		public static void TestBranchIf ()
 		{
