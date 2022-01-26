@@ -84,6 +84,19 @@ namespace ILLink.RoslynAnalyzer
 			}
 
 			if (context.SemanticModel.GetSymbolInfo (context.Node, context.CancellationToken).Symbol is IMethodSymbol targetMethod) {
+				// Check if the generic parameters have any constraints
+				var node = context.Node;
+				while (node != null) {
+					if (node is MethodDeclarationSyntax parentMethod) {
+						if(parentMethod.ConstraintClauses.Count > 0) {
+							// This is safe, the linker would have marked the default .ctor already
+							return;
+						} else {
+							break;
+						}
+					}
+					node = node.Parent;
+				}
 				typeParams = targetMethod.TypeParameters;
 				typeArgs = targetMethod.TypeArguments;
 			}

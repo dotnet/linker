@@ -173,7 +173,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		[ExpectedWarning ("IL2091", nameof (GenericBaseTypeWithRequirements<T>))]
 		class DerivedTypeWithOpenGenericOnBase<T> : GenericBaseTypeWithRequirements<T>
 		{
-			[ExpectedWarning ("IL2091", nameof (GenericBaseTypeWithRequirements<T>))]
+			// Analyzer does not see the base class constructor
+			[ExpectedWarning ("IL2091", nameof (GenericBaseTypeWithRequirements<T>), ProducedBy = ProducedBy.Trimmer)]
 			public DerivedTypeWithOpenGenericOnBase () { }
 		}
 
@@ -251,10 +252,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		{
 			public class InnerTypeWithNoAddedGenerics
 			{
-				// The message is not ideal since we report the TRoot to come from RootTypeWithRequirements/InnerTypeWIthNoAddedGenerics
-				// while it originates on RootTypeWithRequirements, but it's correct from IL's point of view.
 				[ExpectedWarning ("IL2087", nameof (TRoot),
-						"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlowWithoutMakeGeneric.RootTypeWithRequirements<TRoot>.InnerTypeWithNoAddedGenerics",
+						"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlowWithoutMakeGeneric.RootTypeWithRequirements<TRoot>",
 						"type",
 						"DataFlowTypeExtensions.RequiresPublicMethods(Type)")]
 				public static void TestAccess ()
@@ -315,7 +314,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			instance.PublicMethodsMethodParameter (null);
 
 			instance.PublicFieldsMethodReturnValue ();
-			//instance.PublicMethodsMethodReturnValue ();
+			instance.PublicMethodsMethodReturnValue ();
 
 			instance.PublicFieldsMethodLocalVariable ();
 			instance.PublicMethodsMethodLocalVariable ();
@@ -333,10 +332,11 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				set;
 			}
 
+			[ExpectedWarning ("IL2091", nameof (TypeGenericRequirementsOnMembers<TOuter>), ProducedBy = ProducedBy.Analyzer)]
 			public TypeRequiresPublicMethods<TOuter> PublicMethodsProperty {
-				[ExpectedWarning ("IL2091", nameof (TypeRequiresPublicMethods<TOuter>))]
+				[ExpectedWarning ("IL2091", nameof (TypeRequiresPublicMethods<TOuter>), ProducedBy = ProducedBy.Trimmer)]
 				get => null;
-				[ExpectedWarning ("IL2091", nameof (TypeRequiresPublicMethods<TOuter>))]
+				[ExpectedWarning ("IL2091", nameof (TypeRequiresPublicMethods<TOuter>), ProducedBy = ProducedBy.Trimmer)]
 				set { }
 			}
 
@@ -345,8 +345,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			public void PublicMethodsMethodParameter (TypeRequiresPublicMethods<TOuter> param) { }
 
 			public TypeRequiresPublicFields<TOuter> PublicFieldsMethodReturnValue () { return null; }
-			//[ExpectedWarning ("IL2091", nameof (TypeRequiresPublicMethods<TOuter>))]
-			//public TypeRequiresPublicMethods<TOuter> PublicMethodsMethodReturnValue () { return null; }
+
+			[ExpectedWarning ("IL2091", nameof (TypeRequiresPublicMethods<TOuter>), ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2091", nameof (TypeRequiresPublicMethods<TOuter>))]
+			public TypeRequiresPublicMethods<TOuter> PublicMethodsMethodReturnValue () { return null; }
 
 			public void PublicFieldsMethodLocalVariable ()
 			{
@@ -388,7 +390,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		class PartialyInstantiatedMethods<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] TOuter>
 			: BaseForPartialInstantiation<TestType, TOuter>
 		{
-			[ExpectedWarning ("IL2091", nameof (BaseForPartialInstantiation<TestType, TOuter>), "'TMethods'")]
+			// Analyzer does not see the base class constructor
+			[ExpectedWarning ("IL2091", nameof (BaseForPartialInstantiation<TestType, TOuter>), "'TMethods'", ProducedBy = ProducedBy.Trimmer)]
 			public PartialyInstantiatedMethods () { }
 		}
 
@@ -610,10 +613,17 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 
 			[ExpectedWarning ("IL2091",
+				nameof (TOuter),
+				"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlowWithoutMakeGeneric.TypeWithInstantiatedGenericMethodViaGenericParameter<TOuter>",
+				"TMethods",
+				"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlowWithoutMakeGeneric.BaseTypeWithGenericMethod.StaticRequiresMultipleGenericParams<TFields, TMethods>()",
+				ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL2091",
 				"'TOuter'",
 				"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlowWithoutMakeGeneric.TypeWithInstantiatedGenericMethodViaGenericParameter<TOuter>",
 				"'TMethods'",
-				"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlowWithoutMakeGeneric.BaseTypeWithGenericMethod.StaticRequiresMultipleGenericParams<TFields,TMethods>()")]
+				"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlowWithoutMakeGeneric.BaseTypeWithGenericMethod.StaticRequiresMultipleGenericParams<TFields,TMethods>()",
+				ProducedBy = ProducedBy.Trimmer)]
 			public static void StaticPartialInstantiationUnrecognized ()
 			{
 				StaticRequiresMultipleGenericParams<TestType, TOuter> ();
