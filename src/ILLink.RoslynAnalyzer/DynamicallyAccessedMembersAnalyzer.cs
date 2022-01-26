@@ -60,14 +60,14 @@ namespace ILLink.RoslynAnalyzer
 			}, SyntaxKind.GenericName);
 		}
 
-		private void ProcessGenericParameters (SyntaxNodeAnalysisContext context)
+		static void ProcessGenericParameters (SyntaxNodeAnalysisContext context)
 		{
 			if (context.ContainingSymbol is not null && context.ContainingSymbol.HasAttribute (RequiresUnreferencedCodeAnalyzer.RequiresUnreferencedCodeAttribute)) {
 				return;
 			}
 
-			ImmutableArray<ITypeParameterSymbol> typeParams;
-			ImmutableArray<ITypeSymbol> typeArgs;
+			ImmutableArray<ITypeParameterSymbol> typeParams = default;
+			ImmutableArray<ITypeSymbol> typeArgs = default;
 			if (context.SemanticModel.GetTypeInfo (context.Node).ConvertedType is INamedTypeSymbol type) {
 				// INamedTypeSymbol inside nameof, commonly used in [ExpectedWarning] can generate diagnostics
 				// Walking the node heirarchy to check if INamedTypeSymbol is inside a nameof
@@ -88,7 +88,7 @@ namespace ILLink.RoslynAnalyzer
 				var node = context.Node;
 				while (node != null) {
 					if (node is MethodDeclarationSyntax parentMethod) {
-						if(parentMethod.ConstraintClauses.Count > 0) {
+						if (parentMethod.ConstraintClauses.Count > 0) {
 							// This is safe, the linker would have marked the default .ctor already
 							return;
 						} else {
