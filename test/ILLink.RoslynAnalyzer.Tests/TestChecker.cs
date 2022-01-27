@@ -59,7 +59,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			}
 			var unexpected = _unmatched.Where (diag =>
 				diag.Location.SourceTree == null ||
-				_expectedNoWarnings.Any (attr => attr.Parent.Parent.Span.Contains (diag.Location.SourceSpan)));
+				_expectedNoWarnings.Any (attr => attr.Parent?.Parent?.Span.Contains (diag.Location.SourceSpan) == true));
 			if (unexpected.Any ()) {
 				message += $"Unexpected warnings were generated:{Environment.NewLine}{string.Join (Environment.NewLine, unexpected)}";
 			}
@@ -255,7 +255,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 
 			bool Matches (Diagnostic diagnostic)
 			{
-				if (!attribute.Parent.Parent.Span.Contains (diagnostic.Location.SourceSpan))
+				if (!attribute.Parent?.Parent?.Span.Contains (diagnostic.Location.SourceSpan) == true)
 					return false;
 
 				if (diagnostic.Id != expectedWarningCode)

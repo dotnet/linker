@@ -44,7 +44,6 @@ namespace ILLink.RoslynAnalyzer.Tests
 		{
 			string[] suiteParts = suiteName.Split ('.');
 			string currentDir = rootDir;
-			string currentDirName = "";
 			foreach (var suitePart in suiteParts) {
 				string dirCandidate = Path.Combine (currentDir, suitePart);
 				if (currentDir == rootDir || Directory.Exists (dirCandidate))
