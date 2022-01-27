@@ -53,7 +53,7 @@ namespace ILLink.RoslynAnalyzer
 		{
 			// Requires attribute on a type does not silence warnings that originate
 			// from the type directly.
-			if (member is ITypeSymbol typeSymbol)
+			if (member is ITypeSymbol)
 				return false;
 
 			if (member is ISymbol containingSymbol) {
