@@ -20,7 +20,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		{
 			typeof (RequiresOnClass).RequiresAll ();
 			typeof (NoRequiresOnClass).RequiresAll ();
-
 		}
 
 		[RequiresUnreferencedCode (nameof (RequiresOnClass))]
@@ -59,6 +58,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		public class NoRequiresOnClass
 		{
 			public delegate void action ();
+
 			[RequiresUnreferencedCode (nameof (RucMethod))]
 			public void RucMethod () { }
 
@@ -84,10 +84,12 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				var f = ReturnRucAction ();
 				f ();
 			}
+
 			public void InvokeActionArg (action f)
 			{
 				f ();
 			}
+
 			[RequiresUnreferencedCode (nameof (PassRucMethodToBeInvoked))]
 			public void PassRucMethodToBeInvoked ()
 			{
