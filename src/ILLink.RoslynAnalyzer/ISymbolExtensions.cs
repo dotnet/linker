@@ -72,20 +72,6 @@ namespace ILLink.RoslynAnalyzer
 			return overridenMember != null;
 		}
 
-		internal static bool IsImplementationOfInterfaceMember (this ISymbol symbol)
-		{
-			if (!symbol.ContainingType.Interfaces.IsEmpty) {
-				foreach (var iface in symbol.ContainingType.Interfaces) {
-					foreach (var name in iface.MemberNames) {
-						if (symbol.Name.EndsWith(name)) {
-							return true;
-						}
-					}
-				}
-			}
-			return false;
-		}
-
 		public static SymbolDisplayFormat ILLinkTypeDisplayFormat { get; } =
 			new SymbolDisplayFormat (
 				typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,

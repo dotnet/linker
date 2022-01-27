@@ -122,8 +122,7 @@ namespace ILLink.RoslynAnalyzer
 			if (sourceValue is SystemTypeValue knownType && targetValue is ValueWithDynamicallyAccessedMembers targetForKnownType) {
 				var members = knownType.NamedTypeSymbol.GetDynamicallyAccessedMembers (targetForKnownType.DynamicallyAccessedMemberTypes);
 				foreach (var member in members) {
-					if (!member.IsOverride && !member.IsImplementationOfInterfaceMember () &&
-						member.TargetHasRequiresUnreferencedCodeAttribute (out var requiresAttributeData)
+					if (member.TargetHasRequiresUnreferencedCodeAttribute (out var requiresAttributeData)
 						&& RequiresUnreferencedCodeUtils.VerifyRequiresUnreferencedCodeAttributeArguments (requiresAttributeData)) {
 						if (member is IPropertySymbol property) {
 							if (property.GetMethod != null)

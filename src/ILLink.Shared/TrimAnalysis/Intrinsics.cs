@@ -376,6 +376,12 @@ namespace ILLink.Shared.TrimAnalysis
 			case IntrinsicId.Type_GetProperty:
 				return true;
 
+			case IntrinsicId.Type_GetEvent:
+				return true;
+
+			case IntrinsicId.Type_GetConstructor:
+				return true;
+
 			default:
 				return false;
 			}
