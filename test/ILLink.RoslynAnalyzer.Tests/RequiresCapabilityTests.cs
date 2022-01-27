@@ -97,5 +97,11 @@ namespace ILLink.RoslynAnalyzer.Tests
 		{
 			return RunTest (nameof (SuppressRequires));
 		}
+
+		[Fact]
+		public Task RequiresWithLambdas ()
+		{
+			return RunTest (nameof (RequiresWithLambdas));
+		}
 	}
 }
