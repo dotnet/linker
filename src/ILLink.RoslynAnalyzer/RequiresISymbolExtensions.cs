@@ -51,6 +51,11 @@ namespace ILLink.RoslynAnalyzer
 
 		private static bool IsInRequiresScope (this ISymbol member, string requiresAttribute, bool checkAssociatedSymbol)
 		{
+			// Requires attribute on a type does not silence warnings that originate
+			// from the type directly.
+			if (member is ITypeSymbol typeSymbol)
+				return false;
+
 			if (member is ISymbol containingSymbol) {
 				if (containingSymbol.HasAttribute (requiresAttribute)
 					|| (containingSymbol is not ITypeSymbol &&
