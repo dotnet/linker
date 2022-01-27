@@ -49,23 +49,21 @@ namespace ILLink.RoslynAnalyzer
 			return member.IsInRequiresScope (requiresAttribute, false);
 		}
 
-		private static bool IsInRequiresScope (this ISymbol member, string requiresAttribute, bool checkAssociatedSymbol)
+		private static bool IsInRequiresScope (this ISymbol containingSymbol, string requiresAttribute, bool checkAssociatedSymbol)
 		{
 			// Requires attribute on a type does not silence warnings that originate
-			// from the type directly.
-			if (member is ITypeSymbol)
+			// from the type directly. We also only check the containing type for members
+			// below, not of nested types.
+			if (containingSymbol is null or ITypeSymbol)
 				return false;
 
-			if (member is ISymbol containingSymbol) {
-				if (containingSymbol.HasAttribute (requiresAttribute)
-					|| (containingSymbol is not ITypeSymbol &&
-						containingSymbol.ContainingType is ITypeSymbol containingType &&
-						containingType.HasAttribute (requiresAttribute))) {
-					return true;
-				}
+			if (containingSymbol.HasAttribute (requiresAttribute)
+				|| (containingSymbol.ContainingType is ITypeSymbol containingType &&
+					containingType.HasAttribute (requiresAttribute))) {
+				return true;
 			}
 			// Only check associated symbol if not override or virtual method
-			if (checkAssociatedSymbol && member is IMethodSymbol { AssociatedSymbol: { } associated } && associated.HasAttribute (requiresAttribute))
+			if (checkAssociatedSymbol && containingSymbol is IMethodSymbol { AssociatedSymbol: { } associated } && associated.HasAttribute (requiresAttribute))
 				return true;
 
 			return false;
