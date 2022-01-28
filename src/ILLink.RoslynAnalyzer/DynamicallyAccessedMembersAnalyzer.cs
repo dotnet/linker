@@ -45,7 +45,7 @@ namespace ILLink.RoslynAnalyzer
 				context.EnableConcurrentExecution ();
 			context.ConfigureGeneratedCodeAnalysis (GeneratedCodeAnalysisFlags.ReportDiagnostics);
 			context.RegisterOperationBlockAction (context => {
-				if (context.OwningSymbol.HasAttribute (RequiresUnreferencedCodeAnalyzer.RequiresUnreferencedCodeAttribute))
+				if (context.OwningSymbol.IsInRequiresUnreferencedCodeAttributeScope())
 					return;
 
 				foreach (var operationBlock in context.OperationBlocks) {
@@ -68,7 +68,7 @@ namespace ILLink.RoslynAnalyzer
 
 		static void ProcessInvocationOperation (OperationAnalysisContext context, IInvocationOperation invocationOperation)
 		{
-			if (context.ContainingSymbol.HasAttribute (RequiresUnreferencedCodeAnalyzer.RequiresUnreferencedCodeAttribute))
+			if (context.ContainingSymbol.IsInRequiresUnreferencedCodeAttributeScope ())
 				return;
 
 			ProcessTypeArguments (context, invocationOperation);
@@ -77,7 +77,7 @@ namespace ILLink.RoslynAnalyzer
 		static void ProcessTypeArguments (OperationAnalysisContext context, IInvocationOperation invocationOperation)
 		{
 			var targetMethod = invocationOperation.TargetMethod;
-			if (targetMethod.HasAttribute (RequiresUnreferencedCodeAnalyzer.RequiresUnreferencedCodeAttribute))
+			if (targetMethod.IsInRequiresUnreferencedCodeAttributeScope ())
 				return;
 
 			for (int i = 0; i < targetMethod.TypeParameters.Length; i++) {
@@ -119,116 +119,16 @@ namespace ILLink.RoslynAnalyzer
 
 		static IEnumerable<Diagnostic> GetDynamicallyAccessedMembersDiagnostics (SingleValue sourceValue, SingleValue targetValue, Location location)
 		{
-			if (sourceValue is SystemTypeValue knownType && targetValue is ValueWithDynamicallyAccessedMembers targetForKnownType) {
-				var members = knownType.NamedTypeSymbol.GetDynamicallyAccessedMembers (targetForKnownType.DynamicallyAccessedMemberTypes);
-				foreach (var member in members) {
-					if (member.TargetHasRequiresUnreferencedCodeAttribute (out var requiresAttributeData)
-						&& RequiresUnreferencedCodeUtils.VerifyRequiresUnreferencedCodeAttributeArguments (requiresAttributeData)) {
-						if (member is IPropertySymbol property) {
-							if (property.GetMethod != null)
-								yield return ReportRequiresUnreferencedCodeDiagnostic (requiresAttributeData, property.GetMethod, location);
-							if (property.SetMethod != null)
-								yield return ReportRequiresUnreferencedCodeDiagnostic (requiresAttributeData, property.SetMethod, location);
-						} else if (member is IEventSymbol eventSymbol) {
-							if(eventSymbol.AddMethod != null)
-								yield return ReportRequiresUnreferencedCodeDiagnostic (requiresAttributeData, eventSymbol.AddMethod, location);
-							if (eventSymbol.RemoveMethod != null)
-								yield return ReportRequiresUnreferencedCodeDiagnostic (requiresAttributeData, eventSymbol.RemoveMethod, location);
-							if(eventSymbol.RaiseMethod != null)
-								yield return ReportRequiresUnreferencedCodeDiagnostic (requiresAttributeData, eventSymbol.RaiseMethod, location);
-						} else
-							yield return ReportRequiresUnreferencedCodeDiagnostic (requiresAttributeData, member, location);
-					}
-
-					var diagnostics = member switch {
-						IMethodSymbol methodSymbol => VerifyMethodSymbolForDiagnostic (methodSymbol, location),
-						IPropertySymbol propertySymbol => VerifyPropertySymbolForDiagnostic (propertySymbol, location),
-						IFieldSymbol fieldSymbol => VerifyFieldSymbolForDiagnostic (fieldSymbol, location),
-						_ => new List<Diagnostic> ()
-					};
-					foreach (var diagnostic in diagnostics)
-						yield return diagnostic;
-				}
-			}
-
 			// The target should always be an annotated value, but the visitor design currently prevents
 			// declaring this in the type system.
 			if (targetValue is not ValueWithDynamicallyAccessedMembers targetWithDynamicallyAccessedMembers)
 				throw new NotImplementedException ();
 
-			// For now only implement annotated value versus annotated value comparisons. Eventually this method should be replaced by a shared version
-			// of the ReflectionMethodBodyScanner.RequireDynamicallyAccessedMembers from the linker
-			// which will handle things like constant string/type values, "marking" as appropriate, unknown values, null values, ....
-			if (sourceValue is not ValueWithDynamicallyAccessedMembers sourceWithDynamicallyAccessedMembers)
-				yield break;
+			var diagnosticContext = new DiagnosticContext (location);
+			var requireDynamicallyAccessedMembersAction = new RequireDynamicallyAccessedMembersAction (diagnosticContext, new ReflectionMethodBodyScanner());
+			requireDynamicallyAccessedMembersAction.Invoke (diagnosticContext, sourceValue, targetWithDynamicallyAccessedMembers);
 
-			var damtOnTarget = targetWithDynamicallyAccessedMembers.DynamicallyAccessedMemberTypes;
-			var damtOnSource = sourceWithDynamicallyAccessedMembers.DynamicallyAccessedMemberTypes;
-
-			if (Annotations.SourceHasRequiredAnnotations (damtOnSource, damtOnTarget, out var missingAnnotations))
-				yield break;
-
-			(var diagnosticId, var diagnosticArguments) = Annotations.GetDiagnosticForAnnotationMismatch (sourceWithDynamicallyAccessedMembers, targetWithDynamicallyAccessedMembers, missingAnnotations);
-
-			yield return Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (diagnosticId), location, diagnosticArguments);
-		}
-
-		static Diagnostic ReportRequiresUnreferencedCodeDiagnostic (AttributeData requiresAttributeData, ISymbol member, Location location)
-		{
-			var message = RequiresUnreferencedCodeUtils.GetMessageFromAttribute (requiresAttributeData);
-			var url = RequiresAnalyzerBase.GetUrlFromAttribute (requiresAttributeData);
-			return Diagnostic.Create (
-				DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.RequiresUnreferencedCode),
-				location,
-				member.GetDisplayName (),
-				message,
-				url);
-		}
-
-		static IEnumerable<Diagnostic> VerifyMethodSymbolForDiagnostic (IMethodSymbol methodSymbol, Location location)
-		{
-			foreach (var parameter in methodSymbol.Parameters) {
-				if (parameter.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None) {
-					yield return Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection), location, methodSymbol.GetDisplayName ());
-					yield break;
-				}
-			}
-
-			if (methodSymbol.IsVirtual && methodSymbol.GetDynamicallyAccessedMemberTypesOnReturnType () != DynamicallyAccessedMemberTypes.None) {
-				yield return Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection), location, methodSymbol.GetDisplayName ());
-				yield break;
-			}
-
-			if (methodSymbol.IsVirtual && methodSymbol.MethodKind is MethodKind.PropertyGet &&
-				(methodSymbol.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None ||
-				methodSymbol.GetDynamicallyAccessedMemberTypesOnAssociatedSymbol () != DynamicallyAccessedMemberTypes.None)) {
-				yield return Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection), location, methodSymbol.GetDisplayName ());
-				yield break;
-			}
-
-			if (methodSymbol.MethodKind is MethodKind.PropertySet &&
-				(methodSymbol.GetDynamicallyAccessedMemberTypesOnReturnType () != DynamicallyAccessedMemberTypes.None ||
-				methodSymbol.GetDynamicallyAccessedMemberTypesOnAssociatedSymbol () != DynamicallyAccessedMemberTypes.None)) {
-				yield return Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection), location, methodSymbol.GetDisplayName ());
-				yield break;
-			}
-		}
-
-		static IEnumerable<Diagnostic> VerifyPropertySymbolForDiagnostic (IPropertySymbol propertySymbol, Location location)
-		{
-			if (propertySymbol.SetMethod is not null && propertySymbol.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None) {
-				yield return Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection), location, propertySymbol.SetMethod.GetDisplayName ());
-			}
-
-			if (propertySymbol.IsVirtual && propertySymbol.GetMethod is not null && propertySymbol.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None) {
-				yield return Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection), location, propertySymbol.GetMethod.GetDisplayName ());
-			}
-		}
-
-		static IEnumerable<Diagnostic> VerifyFieldSymbolForDiagnostic (IFieldSymbol fieldSymbol, Location location)
-		{
-			if (fieldSymbol.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None)
-				yield return Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersFieldAccessedViaReflection), location, fieldSymbol.GetDisplayName ());
+			return diagnosticContext.Diagnostics;
 		}
 	}
 }
