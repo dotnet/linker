@@ -14,11 +14,8 @@ using Mono.Linker.Tests.Cases.Expectations.Helpers;
 namespace Mono.Linker.Tests.Cases.RequiresCapability
 {
 	[SkipKeptItemsValidation]
-	[ExpectedNoWarnings]
 	public class RequiresWithLambdas
 	{
-		[ExpectedWarning("IL2026", nameof(RequiresOnClass))]
-		[ExpectedWarning("IL2026", nameof(NoRequiresOnClass))]
 		public static void Main ()
 		{
 			typeof (RequiresOnClass).RequiresAll ();
