@@ -15,8 +15,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 {
 	[SkipKeptItemsValidation]
 	[ExpectedNoWarnings]
-	[LogContains("IL2026: Mono.Linker.Tests.Cases.RequiresCapability.RequiresWithLambdas.NoRequiresOnClass.<InvokeLocalRucAction>b__2_0(): Using member 'Mono.Linker.Tests.Cases.RequiresCapability.RequiresWithLambdas.NoRequiresOnClass.RucMethod()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. RucMethod.", ProducedBy = ProducedBy.Trimmer)]
-	[LogContains("IL2026: Mono.Linker.Tests.Cases.RequiresCapability.RequiresWithLambdas.NoRequiresOnClass.<ReturnRucAction>b__3_0(): Using member 'Mono.Linker.Tests.Cases.RequiresCapability.RequiresWithLambdas.NoRequiresOnClass.RucMethod()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. RucMethod.", ProducedBy = ProducedBy.Trimmer)]
+	[LogContains("IL2026: Mono.Linker.Tests.Cases.RequiresCapability.RequiresWithLambdas.NoRequiresOnClass.<InvokeLocalRucAction>b__1_0(): Using member 'Mono.Linker.Tests.Cases.RequiresCapability.RequiresWithLambdas.NoRequiresOnClass.RucMethod()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. RucMethod.", ProducedBy = ProducedBy.Trimmer)]
+	[LogContains("IL2026: Mono.Linker.Tests.Cases.RequiresCapability.RequiresWithLambdas.NoRequiresOnClass.<ReturnRucAction>b__2_0(): Using member 'Mono.Linker.Tests.Cases.RequiresCapability.RequiresWithLambdas.NoRequiresOnClass.RucMethod()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. RucMethod.", ProducedBy = ProducedBy.Trimmer)]
 	public class RequiresWithLambdas
 	{
 		[ExpectedWarning("IL2026", nameof(RequiresOnClass), ProducedBy = ProducedBy.Trimmer)]
@@ -63,9 +63,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		public class NoRequiresOnClass
 		{
-			[ExpectedWarning("IL2011", "System.Delegate.CreateDelegate(Type,Type,String,Boolean,Boolean)", ProducedBy = ProducedBy.Trimmer)]
-			public delegate void action ();
-
 			[RequiresUnreferencedCode (nameof (RucMethod))]
 			public void RucMethod () { }
 
