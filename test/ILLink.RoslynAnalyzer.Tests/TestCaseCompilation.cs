@@ -28,17 +28,15 @@ namespace ILLink.RoslynAnalyzer.Tests
 			(string, string)[]? globalAnalyzerOptions = null,
 			IEnumerable<MetadataReference>? additionalReferences = null,
 			IEnumerable<SyntaxTree>? additionalSources = null,
-			string? testCaseDirectory = null,
-			string? testCaseName = null)
-			=> CreateCompilation (CSharpSyntaxTree.ParseText (src), globalAnalyzerOptions, additionalReferences, additionalSources, testCaseDirectory, testCaseName);
+			IEnumerable<AdditionalText>? additionalFiles = null)
+			=> CreateCompilation (CSharpSyntaxTree.ParseText (src), globalAnalyzerOptions, additionalReferences, additionalSources, additionalFiles);
 
 		public static async Task<(CompilationWithAnalyzers Compilation, SemanticModel SemanticModel, List<Diagnostic> ExceptionDiagnostics)> CreateCompilation (
 			SyntaxTree src,
 			(string, string)[]? globalAnalyzerOptions = null,
 			IEnumerable<MetadataReference>? additionalReferences = null,
 			IEnumerable<SyntaxTree>? additionalSources = null,
-			string? testCaseDirectory = null,
-			string? testCaseName = null)
+			IEnumerable<AdditionalText>? additionalFiles = null)
 		{
 			var mdRef = MetadataReference.CreateFromFile (typeof (Mono.Linker.Tests.Cases.Expectations.Metadata.BaseMetadataAttribute).Assembly.Location);
 			additionalReferences ??= Array.Empty<MetadataReference> ();
@@ -49,26 +47,8 @@ namespace ILLink.RoslynAnalyzer.Tests
 				syntaxTrees: sources,
 				references: (await TestCaseUtils.GetNet6References ()).Add (mdRef).AddRange (additionalReferences),
 				new CSharpCompilationOptions (OutputKind.DynamicallyLinkedLibrary));
-			List<AdditionalText> additionalTexts = new ();
-			if (testCaseName != null) {
-				var testClasses = comp.GetSymbolsWithName (testCaseName);
-				foreach (var testClass in testClasses) {
-					var attributeFileAttribute = testClass.GetAttributes ()
-						.Where (attribute => attribute.AttributeClass?.Name == nameof (SetupLinkAttributesFile) || (attribute.AttributeClass?.Name == nameof (SetupCompileResourceAttribute) && (string?) attribute.ConstructorArguments[1].Value == "ILLink.LinkAttributes.xml"));
-					foreach (var attribute in attributeFileAttribute) {
-						var xmlFileName = (string) attribute.ConstructorArguments[0].Value!;
-						var resolver = new XmlFileResolver (testCaseDirectory);
-						var resolvedPath = resolver.ResolveReference (xmlFileName, testCaseDirectory);
-						if (resolvedPath != null) {
-							var stream = resolver.OpenRead (resolvedPath);
-							XmlText text = new ("ILLink.LinkAttributes.xml", stream);
-							additionalTexts.Add (text);
-						}
-					}
-				}
-			}
 			var analyzerOptions = new AnalyzerOptions (
-				additionalFiles: additionalTexts.ToImmutableArray (),
+				additionalFiles: additionalFiles?.ToImmutableArray () ?? ImmutableArray<AdditionalText>.Empty,
 				new SimpleAnalyzerOptions (globalAnalyzerOptions));
 
 			var exceptionDiagnostics = new List<Diagnostic> ();
