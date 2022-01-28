@@ -1,5 +1,6 @@
 
 using System.Threading.Tasks;
+using Xunit;
 
 namespace ILLink.RoslynAnalyzer.Tests
 {
@@ -30,7 +31,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 		{
 			return RunTest (nameof (LinkerAttributeRemovalConditional));
 		}
-		//[Fact]
+		[Fact(Skip = "XML Analyzer not implemented"]
 		public Task LinkAttributeErrorCases ()
 		{
 			return RunTest (nameof (LinkAttributeErrorCases));
