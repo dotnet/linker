@@ -31,7 +31,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 		{
 			return RunTest (nameof (LinkerAttributeRemovalConditional));
 		}
-		[Fact(Skip = "XML Analyzer not implemented"]
+		[Fact(Skip = "XML Analyzer not implemented")]
 		public Task LinkAttributeErrorCases ()
 		{
 			return RunTest (nameof (LinkAttributeErrorCases));
