@@ -9,21 +9,21 @@ using Microsoft.CodeAnalysis;
 
 namespace ILLink.RoslynAnalyzer.TrimAnalysis
 {
-	class DiagnosticSolver
+	class ReflectionAccessAnalyzer
 	{
 #pragma warning disable CA1822 // Mark members as static - the other partial implementations might need to be instance methods
-		internal void SolveDiagnosticsForDynamicallyAccessedMembers (in DiagnosticContext diagnosticContext, ITypeSymbol typeSymbol, DynamicallyAccessedMemberTypes requiredMemberTypes, bool declaredOnly = false)
+		internal void GetReflectionAccessDiagnostics (in DiagnosticContext diagnosticContext, ITypeSymbol typeSymbol, DynamicallyAccessedMemberTypes requiredMemberTypes, bool declaredOnly = false)
 		{
 			foreach (var member in typeSymbol.GetDynamicallyAccessedMembers (requiredMemberTypes, declaredOnly)) {
 				switch (member) {
 				case IMethodSymbol method:
-					SolveDiagnosticsForMethod (diagnosticContext, method);
+					GetDiagnosticsForMethod (diagnosticContext, method);
 					break;
 				case IFieldSymbol field:
-					SolveDiagnosticsForField (diagnosticContext, field);
+					GetDiagnosticsForField (diagnosticContext, field);
 					break;
 				case IPropertySymbol property:
-					SolveDiagnosticsForProperty (diagnosticContext, property);
+					GetDiagnosticsForProperty (diagnosticContext, property);
 					break;
 				/* Skip Type and InterfaceImplementation marking since doesnt seem relevant for diagnostic generation
 				case ITypeSymbol nestedType:
@@ -34,7 +34,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 					break;
 				*/
 				case IEventSymbol @event:
-					SolveDiagnosticsForEvent (diagnosticContext, @event);
+					GetDiagnosticsForEvent (diagnosticContext, @event);
 					break;
 				}
 			}
@@ -47,9 +47,9 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			diagnosticContext.ReportDiagnostic (DiagnosticId.RequiresUnreferencedCode, member.GetDisplayName (), message, url);
 		}
 
-		static void SolveDiagnosticsForMethod (in DiagnosticContext diagnosticContext, IMethodSymbol methodSymbol)
+		static void GetDiagnosticsForMethod (in DiagnosticContext diagnosticContext, IMethodSymbol methodSymbol)
 		{
-			if (methodSymbol.TryGetRequiresUnreferencedCodeAttribute(out var requiresAttributeData))
+			if (methodSymbol.TryGetRequiresUnreferencedCodeAttribute (out var requiresAttributeData))
 				ReportRequiresUnreferencedCodeDiagnostic (diagnosticContext, requiresAttributeData, methodSymbol);
 
 			if (methodSymbol.IsVirtual && methodSymbol.GetDynamicallyAccessedMemberTypesOnReturnType () != DynamicallyAccessedMemberTypes.None)
@@ -72,25 +72,25 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			}
 		}
 
-		static void SolveDiagnosticsForProperty (in DiagnosticContext diagnosticContext, IPropertySymbol propertySymbol)
+		static void GetDiagnosticsForProperty (in DiagnosticContext diagnosticContext, IPropertySymbol propertySymbol)
 		{
 			if (propertySymbol.SetMethod is not null)
-				SolveDiagnosticsForMethod (diagnosticContext, propertySymbol.SetMethod);
+				GetDiagnosticsForMethod (diagnosticContext, propertySymbol.SetMethod);
 			if (propertySymbol.GetMethod is not null)
-				SolveDiagnosticsForMethod (diagnosticContext, propertySymbol.GetMethod);
+				GetDiagnosticsForMethod (diagnosticContext, propertySymbol.GetMethod);
 		}
 
-		static void SolveDiagnosticsForEvent (in DiagnosticContext diagnosticContext, IEventSymbol eventSymbol)
+		static void GetDiagnosticsForEvent (in DiagnosticContext diagnosticContext, IEventSymbol eventSymbol)
 		{
 			if (eventSymbol.AddMethod is not null)
-				SolveDiagnosticsForMethod (diagnosticContext, eventSymbol.AddMethod);
+				GetDiagnosticsForMethod (diagnosticContext, eventSymbol.AddMethod);
 			if (eventSymbol.RemoveMethod is not null)
-				SolveDiagnosticsForMethod (diagnosticContext, eventSymbol.RemoveMethod);
+				GetDiagnosticsForMethod (diagnosticContext, eventSymbol.RemoveMethod);
 			if (eventSymbol.RaiseMethod is not null)
-				SolveDiagnosticsForMethod (diagnosticContext, eventSymbol.RaiseMethod);
+				GetDiagnosticsForMethod (diagnosticContext, eventSymbol.RaiseMethod);
 		}
 
-		static void SolveDiagnosticsForField (in DiagnosticContext diagnosticContext, IFieldSymbol fieldSymbol)
+		static void GetDiagnosticsForField (in DiagnosticContext diagnosticContext, IFieldSymbol fieldSymbol)
 		{
 			if (fieldSymbol.TryGetRequiresUnreferencedCodeAttribute (out var requiresAttributeData))
 				ReportRequiresUnreferencedCodeDiagnostic (diagnosticContext, requiresAttributeData, fieldSymbol);
