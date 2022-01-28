@@ -81,7 +81,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				return () => { RucMethod (); return; };
 			}
 
-			// Bug - Should warn in Trimmer
 			[ExpectedWarning ("IL2026", nameof (ReturnRucAction))]
 			public void InvokeReturnedRucAction ()
 			{
