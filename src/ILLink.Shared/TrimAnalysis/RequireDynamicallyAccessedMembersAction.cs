@@ -11,7 +11,7 @@ namespace ILLink.Shared.TrimAnalysis
 {
 	partial struct RequireDynamicallyAccessedMembersAction
 	{
-		public void Invoke (in DiagnosticContext diagnosticContext, in MultiValue value, ValueWithDynamicallyAccessedMembers targetValue)
+		public void Invoke (in MultiValue value, ValueWithDynamicallyAccessedMembers targetValue)
 		{
 			foreach (var uniqueValue in value) {
 				if (targetValue.DynamicallyAccessedMemberTypes == DynamicallyAccessedMemberTypes.PublicParameterlessConstructor
@@ -22,7 +22,7 @@ namespace ILLink.Shared.TrimAnalysis
 					var availableMemberTypes = valueWithDynamicallyAccessedMembers.DynamicallyAccessedMemberTypes;
 					if (!Annotations.SourceHasRequiredAnnotations (availableMemberTypes, targetValue.DynamicallyAccessedMemberTypes, out var missingMemberTypes)) {
 						(var diagnosticId, var diagnosticArguments) = Annotations.GetDiagnosticForAnnotationMismatch (valueWithDynamicallyAccessedMembers, targetValue, missingMemberTypes);
-						diagnosticContext.ReportDiagnostic (diagnosticId, diagnosticArguments);
+						_diagnosticContext.ReportDiagnostic (diagnosticId, diagnosticArguments);
 					}
 				} else if (uniqueValue is SystemTypeValue systemTypeValue) {
 					MarkTypeForDynamicallyAccessedMembers (systemTypeValue.GetRepresentedType (), targetValue.DynamicallyAccessedMemberTypes);
@@ -44,7 +44,7 @@ namespace ILLink.Shared.TrimAnalysis
 						_ => throw new NotImplementedException ($"unsupported target value {targetValue}")
 					};
 
-					diagnosticContext.ReportDiagnostic (diagnosticId, targetValue.GetDiagnosticArgumentsForAnnotationMismatch ().ToArray ());
+					_diagnosticContext.ReportDiagnostic (diagnosticId, targetValue.GetDiagnosticArgumentsForAnnotationMismatch ().ToArray ());
 				}
 			}
 		}

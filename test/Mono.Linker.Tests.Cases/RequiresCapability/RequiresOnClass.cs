@@ -577,11 +577,11 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				public static int DerivedStaticField;
 			}
 
-			[ExpectedWarning ("IL2026", "WithRequires.StaticField", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "WithRequires.StaticField", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "WithRequires.StaticField", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "WithRequires.PrivateStaticField", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "DerivedWithRequires.DerivedStaticField", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "WithRequires.StaticField")]
+			[ExpectedWarning ("IL2026", "WithRequires.StaticField")]
+			[ExpectedWarning ("IL2026", "WithRequires.StaticField")]
+			[ExpectedWarning ("IL2026", "WithRequires.PrivateStaticField")]
+			[ExpectedWarning ("IL2026", "DerivedWithRequires.DerivedStaticField")]
 			static void TestDAMAccess ()
 			{
 				typeof (WithRequires).RequiresPublicFields ();

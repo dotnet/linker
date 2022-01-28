@@ -18,6 +18,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 		static Type TypeWithPublicMethods;
 
+		// Intrinsic is disabled https://github.com/dotnet/linker/issues/2559
 		[Kept]
 		[ExpectedWarning ("IL2080", nameof (Type.GetField), ProducedBy = ProducedBy.Trimmer)]
 		[DynamicDependency ("DynamicDependencyTo")]
@@ -26,6 +27,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			_ = TypeWithPublicMethods.GetField ("f");
 		}
 
+		// Intrinsic is disabled https://github.com/dotnet/linker/issues/2559
 		[Kept]
 		[ExpectedWarning ("IL2080", nameof (Type.GetProperty), ProducedBy = ProducedBy.Trimmer)]
 		static void DynamicDependencyTo ()

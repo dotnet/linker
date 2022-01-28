@@ -15,6 +15,7 @@ namespace ILLink.Shared.TrimAnalysis
 		readonly LinkContext _context;
 		readonly ReflectionMethodBodyScanner _reflectionMethodBodyScanner;
 		readonly ReflectionMethodBodyScanner.AnalysisContext _analysisContext;
+		readonly DiagnosticContext _diagnosticContext;
 
 		public RequireDynamicallyAccessedMembersAction (
 			LinkContext context,
@@ -24,6 +25,7 @@ namespace ILLink.Shared.TrimAnalysis
 			_context = context;
 			_reflectionMethodBodyScanner = reflectionMethodBodyScanner;
 			_analysisContext = analysisContext;
+			_diagnosticContext = new DiagnosticContext (analysisContext.Origin, analysisContext.DiagnosticsEnabled, _context);
 		}
 
 		private partial bool TryResolveTypeNameAndMark (string typeName, out TypeProxy type)

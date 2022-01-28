@@ -9,21 +9,21 @@ using Microsoft.CodeAnalysis;
 
 namespace ILLink.RoslynAnalyzer.TrimAnalysis
 {
-	class ReflectionMethodBodyScanner
+	class DiagnosticSolver
 	{
 #pragma warning disable CA1822 // Mark members as static - the other partial implementations might need to be instance methods
-		internal void MarkTypeForDynamicallyAccessedMembers (in DiagnosticContext diagnosticContext, ITypeSymbol typeSymbol, DynamicallyAccessedMemberTypes requiredMemberTypes, bool declaredOnly = false)
+		internal void SolveDiagnosticsForDynamicallyAccessedMembers (in DiagnosticContext diagnosticContext, ITypeSymbol typeSymbol, DynamicallyAccessedMemberTypes requiredMemberTypes, bool declaredOnly = false)
 		{
 			foreach (var member in typeSymbol.GetDynamicallyAccessedMembers (requiredMemberTypes, declaredOnly)) {
 				switch (member) {
 				case IMethodSymbol method:
-					MarkMethod (diagnosticContext, method);
+					SolveDiagnosticsForMethod (diagnosticContext, method);
 					break;
 				case IFieldSymbol field:
-					MarkField (diagnosticContext, field);
+					SolveDiagnosticsForField (diagnosticContext, field);
 					break;
 				case IPropertySymbol property:
-					MarkProperty (diagnosticContext, property);
+					SolveDiagnosticsForProperty (diagnosticContext, property);
 					break;
 				/* Skip Type and InterfaceImplementation marking since doesnt seem relevant for diagnostic generation
 				case ITypeSymbol nestedType:
@@ -34,26 +34,23 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 					break;
 				*/
 				case IEventSymbol @event:
-					MarkEvent (diagnosticContext, @event);
+					SolveDiagnosticsForEvent (diagnosticContext, @event);
 					break;
-
 				}
 			}
 		}
 
-		static void ReportRequiresUnreferencedCodeDiagnostic (DiagnosticContext diagnosticContext, AttributeData requiresAttributeData, ISymbol member)
+		static void ReportRequiresUnreferencedCodeDiagnostic (in DiagnosticContext diagnosticContext, AttributeData requiresAttributeData, ISymbol member)
 		{
 			var message = RequiresUnreferencedCodeUtils.GetMessageFromAttribute (requiresAttributeData);
 			var url = RequiresAnalyzerBase.GetUrlFromAttribute (requiresAttributeData);
 			diagnosticContext.ReportDiagnostic (DiagnosticId.RequiresUnreferencedCode, member.GetDisplayName (), message, url);
 		}
 
-		static void MarkMethod (DiagnosticContext diagnosticContext, IMethodSymbol methodSymbol)
+		static void SolveDiagnosticsForMethod (in DiagnosticContext diagnosticContext, IMethodSymbol methodSymbol)
 		{
-			if (methodSymbol.TargetHasRequiresUnreferencedCodeAttribute (out var requiresAttributeData)
-						&& RequiresUnreferencedCodeUtils.VerifyRequiresUnreferencedCodeAttributeArguments (requiresAttributeData)) {
+			if (methodSymbol.TryGetRequiresUnreferencedCodeAttribute(out var requiresAttributeData))
 				ReportRequiresUnreferencedCodeDiagnostic (diagnosticContext, requiresAttributeData, methodSymbol);
-			}
 
 			if (methodSymbol.IsVirtual && methodSymbol.GetDynamicallyAccessedMemberTypesOnReturnType () != DynamicallyAccessedMemberTypes.None)
 				diagnosticContext.ReportDiagnostic (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection, methodSymbol.GetDisplayName ());
@@ -75,38 +72,29 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			}
 		}
 
-		static void MarkProperty (DiagnosticContext diagnosticContext, IPropertySymbol propertySymbol)
+		static void SolveDiagnosticsForProperty (in DiagnosticContext diagnosticContext, IPropertySymbol propertySymbol)
 		{
-			if (propertySymbol.TargetHasRequiresUnreferencedCodeAttribute (out var requiresAttributeData)
-						&& RequiresUnreferencedCodeUtils.VerifyRequiresUnreferencedCodeAttributeArguments (requiresAttributeData)) {
-				if (propertySymbol.GetMethod != null)
-					ReportRequiresUnreferencedCodeDiagnostic (diagnosticContext, requiresAttributeData, propertySymbol.GetMethod);
-				if (propertySymbol.SetMethod != null)
-					ReportRequiresUnreferencedCodeDiagnostic (diagnosticContext, requiresAttributeData, propertySymbol.SetMethod);
-			}
-
-			if (propertySymbol.SetMethod is not null && propertySymbol.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None)
-				diagnosticContext.ReportDiagnostic (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection, propertySymbol.SetMethod.GetDisplayName ());
-
-			if (propertySymbol.IsVirtual && propertySymbol.GetMethod is not null && propertySymbol.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None)
-				diagnosticContext.ReportDiagnostic (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection, propertySymbol.GetMethod.GetDisplayName ());
+			if (propertySymbol.SetMethod is not null)
+				SolveDiagnosticsForMethod (diagnosticContext, propertySymbol.SetMethod);
+			if (propertySymbol.GetMethod is not null)
+				SolveDiagnosticsForMethod (diagnosticContext, propertySymbol.GetMethod);
 		}
 
-		static void MarkEvent (DiagnosticContext diagnosticContext, IEventSymbol eventSymbol)
+		static void SolveDiagnosticsForEvent (in DiagnosticContext diagnosticContext, IEventSymbol eventSymbol)
 		{
-			if (eventSymbol.TargetHasRequiresUnreferencedCodeAttribute (out var requiresAttributeData)
-						&& RequiresUnreferencedCodeUtils.VerifyRequiresUnreferencedCodeAttributeArguments (requiresAttributeData)) {
-				if (eventSymbol.AddMethod != null)
-					ReportRequiresUnreferencedCodeDiagnostic (diagnosticContext, requiresAttributeData, eventSymbol.AddMethod);
-				if (eventSymbol.RemoveMethod != null)
-					ReportRequiresUnreferencedCodeDiagnostic (diagnosticContext, requiresAttributeData, eventSymbol.RemoveMethod);
-				if (eventSymbol.RaiseMethod != null)
-					ReportRequiresUnreferencedCodeDiagnostic (diagnosticContext, requiresAttributeData, eventSymbol.RaiseMethod);
-			}
+			if (eventSymbol.AddMethod is not null)
+				SolveDiagnosticsForMethod (diagnosticContext, eventSymbol.AddMethod);
+			if (eventSymbol.RemoveMethod is not null)
+				SolveDiagnosticsForMethod (diagnosticContext, eventSymbol.RemoveMethod);
+			if (eventSymbol.RaiseMethod is not null)
+				SolveDiagnosticsForMethod (diagnosticContext, eventSymbol.RaiseMethod);
 		}
 
-		static void MarkField (DiagnosticContext diagnosticContext, IFieldSymbol fieldSymbol)
+		static void SolveDiagnosticsForField (in DiagnosticContext diagnosticContext, IFieldSymbol fieldSymbol)
 		{
+			if (fieldSymbol.TryGetRequiresUnreferencedCodeAttribute (out var requiresAttributeData))
+				ReportRequiresUnreferencedCodeDiagnostic (diagnosticContext, requiresAttributeData, fieldSymbol);
+
 			if (fieldSymbol.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None)
 				diagnosticContext.ReportDiagnostic (DiagnosticId.DynamicallyAccessedMembersFieldAccessedViaReflection, fieldSymbol.GetDisplayName ());
 		}

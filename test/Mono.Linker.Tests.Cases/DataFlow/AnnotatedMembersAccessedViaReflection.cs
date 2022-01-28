@@ -39,6 +39,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 			public static Type _annotatedField;
 
+			// Intrinsic is disabled https://github.com/dotnet/linker/issues/2559
 			[ExpectedWarning ("IL2110", nameof (_annotatedField), ProducedBy = ProducedBy.Trimmer)]
 			static void Reflection ()
 			{
@@ -51,12 +52,14 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				typeof (AnnotatedField).GetField ("_annotatedField").SetValue (null, typeof (TestType));
 			}
 
+			// Intrinsic is disabled https://github.com/dotnet/linker/issues/2559
 			[ExpectedWarning ("IL2110", nameof (_annotatedField), ProducedBy = ProducedBy.Trimmer)]
 			static void ReflectionReadOnly ()
 			{
 				typeof (AnnotatedField).GetField ("_annotatedField").GetValue (null);
 			}
 
+			// DynamicDependency is not supported yet in the analyzer https://github.com/dotnet/linker/issues/2560
 			[ExpectedWarning ("IL2110", nameof (_annotatedField), ProducedBy = ProducedBy.Trimmer)]
 			[DynamicDependency (DynamicallyAccessedMemberTypes.PublicFields, typeof (AnnotatedField))]
 			static void DynamicDependency ()
@@ -69,6 +72,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 			}
 
+			// DynamicDependency is not supported yet in the analyzer https://github.com/dotnet/linker/issues/2560
 			[ExpectedWarning ("IL2110", nameof (_annotatedField), ProducedBy = ProducedBy.Trimmer)]
 			[DynamicDependency (nameof (_annotatedField), typeof (AnnotatedField))]
 			static void DynamicDependencyByName ()
@@ -156,6 +160,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				{ }
 			}
 
+			// Intrinsic is disabled https://github.com/dotnet/linker/issues/2559
 			[ExpectedWarning ("IL2111", nameof (MethodWithSingleAnnotatedParameter), ProducedBy = ProducedBy.Trimmer)]
 			static void Reflection ()
 			{
@@ -174,6 +179,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 			}
 
+			// DynamicDependency is not supported yet in the analyzer https://github.com/dotnet/linker/issues/2560
 			[ExpectedWarning ("IL2111", nameof (MethodWithSingleAnnotatedParameter), ProducedBy = ProducedBy.Trimmer)]
 			[DynamicDependency (DynamicallyAccessedMemberTypes.PublicMethods, typeof (AnnotatedMethodParameters))]
 			static void DynamicDependency ()
@@ -186,6 +192,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 			}
 
+			// DynamicDependency is not supported yet in the analyzer https://github.com/dotnet/linker/issues/2560
 			[ExpectedWarning ("IL2111", nameof (MethodWithSingleAnnotatedParameter), ProducedBy = ProducedBy.Trimmer)]
 			[DynamicDependency (nameof (MethodWithSingleAnnotatedParameter), typeof (AnnotatedMethodParameters))]
 			static void DynamicDependencyByName ()
@@ -204,6 +211,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				typeof (AnnotatedMethodParameters).RequiresPublicMethods ();
 			}
 
+			// Action delegate is not handled correctly https://github.com/dotnet/linker/issues/2561
 			[ExpectedWarning ("IL2111", nameof (MethodWithSingleAnnotatedParameter), ProducedBy = ProducedBy.Trimmer)]
 			static void Ldftn ()
 			{
@@ -215,6 +223,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				public void AnnotatedMethod ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)] Type type);
 			}
 
+			// Action delegate is not handled correctly https://github.com/dotnet/linker/issues/2561
 			[ExpectedWarning ("IL2111", nameof (IWithAnnotatedMethod.AnnotatedMethod), ProducedBy = ProducedBy.Trimmer)]
 			static void Ldvirtftn ()
 			{
@@ -264,22 +273,13 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		class AnnotatedMethodReturnValue
 		{
 			[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
-			public static Type StaticMethodWithAnnotatedReturnValue ()
-			{
-				return null;
-			}
+			public static Type StaticMethodWithAnnotatedReturnValue () => null;
 
 			[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
-			public Type InstanceMethodWithAnnotatedReturnValue ()
-			{
-				return null;
-			}
+			public Type InstanceMethodWithAnnotatedReturnValue () => null;
 
 			[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
-			public virtual Type VirtualMethodWithAnnotatedReturnValue ()
-			{
-				return null;
-			}
+			public virtual Type VirtualMethodWithAnnotatedReturnValue () => null;
 
 			// Only virtual methods should warn - the problem is only possible if something overrides a virtual method.
 			// Getting an annotated value in itself is not dangerous in any way.
@@ -294,6 +294,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				typeof (AnnotatedMethodReturnValue).GetMethod (nameof (InstanceMethodWithAnnotatedReturnValue)).Invoke (null, null);
 			}
 
+			// Intrinsic is disabled https://github.com/dotnet/linker/issues/2559
 			[ExpectedWarning ("IL2111", nameof (VirtualMethodWithAnnotatedReturnValue), ProducedBy = ProducedBy.Trimmer)]
 			static void ReflectionOnVirtual ()
 			{
@@ -306,6 +307,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				typeof (AnnotatedMethodReturnValue).GetMethod (nameof (VirtualMethodWithAnnotatedReturnValue)).Invoke (null, null);
 			}
 
+			// DynamicDependency is not supported yet in the analyzer https://github.com/dotnet/linker/issues/2560
 			[ExpectedWarning ("IL2111", nameof (VirtualMethodWithAnnotatedReturnValue), ProducedBy = ProducedBy.Trimmer)]
 			[DynamicDependency (DynamicallyAccessedMemberTypes.PublicMethods, typeof (AnnotatedMethodReturnValue))]
 			static void DynamicDependency ()
@@ -328,6 +330,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 			}
 
+			// DynamicDependency is not supported yet in the analyzer https://github.com/dotnet/linker/issues/2560
 			[ExpectedWarning ("IL2111", nameof (VirtualMethodWithAnnotatedReturnValue), ProducedBy = ProducedBy.Trimmer)]
 			[DynamicDependency (nameof (VirtualMethodWithAnnotatedReturnValue), typeof (AnnotatedMethodReturnValue))]
 			static void DynamicDependencyByNameOnVirtual ()
@@ -356,6 +359,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				var _ = new Func<Type> ((new AnnotatedMethodReturnValue ()).InstanceMethodWithAnnotatedReturnValue);
 			}
 
+			// Action delegate is not handled correctly https://github.com/dotnet/linker/issues/2561
 			[ExpectedWarning ("IL2111", nameof (VirtualMethodWithAnnotatedReturnValue), ProducedBy = ProducedBy.Trimmer)]
 			static void LdftnOnVirtual ()
 			{
@@ -388,10 +392,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			public static Type PropertyWithAnnotation { get; set; }
 
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicEvents)]
-			public static Type PropertyWithAnnotationGetterOnly { get { return null; } }
+			public static Type PropertyWithAnnotationGetterOnly { get => null; }
 
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicEvents)]
-			public virtual Type VirtualPropertyWithAnnotationGetterOnly { get { return null; } }
+			public virtual Type VirtualPropertyWithAnnotationGetterOnly { get => null; }
 
 			class AttributeWithPropertyWithAnnotation : Attribute
 			{
@@ -401,6 +405,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				public Type PropertyWithAnnotation { get; set; }
 			}
 
+			// Intrinsic is disabled https://github.com/dotnet/linker/issues/2559
 			[ExpectedWarning ("IL2111", nameof (PropertyWithAnnotation) + ".set", ProducedBy = ProducedBy.Trimmer)]
 			static void ReflectionOnPropertyItself ()
 			{
@@ -418,6 +423,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				typeof (AnnotatedProperty).GetProperty (nameof (PropertyWithAnnotationGetterOnly));
 			}
 
+			// Intrinsic is disabled https://github.com/dotnet/linker/issues/2559
 			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationGetterOnly), ProducedBy = ProducedBy.Trimmer)]
 			static void ReflectionOnPropertyWithGetterOnlyOnVirtual ()
 			{
@@ -429,12 +435,14 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				typeof (AnnotatedProperty).GetMethod ("get_" + nameof (PropertyWithAnnotation));
 			}
 
+			// Intrinsic is disabled https://github.com/dotnet/linker/issues/2559
 			[ExpectedWarning ("IL2111", nameof (PropertyWithAnnotation) + ".set", ProducedBy = ProducedBy.Trimmer)]
 			static void ReflectionOnSetter ()
 			{
 				typeof (AnnotatedProperty).GetMethod ("set_" + nameof (PropertyWithAnnotation));
 			}
 
+			// Intrinsic is disabled https://github.com/dotnet/linker/issues/2559
 			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationGetterOnly) + ".get", ProducedBy = ProducedBy.Trimmer)]
 			static void ReflectionOnVirtualGetter ()
 			{
@@ -447,6 +455,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 			}
 
+			// DynamicDependency is not supported yet in the analyzer https://github.com/dotnet/linker/issues/2560
 			[ExpectedWarning ("IL2111", nameof (PropertyWithAnnotation) + ".set", ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationGetterOnly) + ".get", ProducedBy = ProducedBy.Trimmer)]
 			[DynamicDependency (DynamicallyAccessedMemberTypes.PublicProperties, typeof (AnnotatedProperty))]
@@ -550,6 +559,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				typeof (AnnotatedGenerics).RequiresPublicMethods ();
 			}
 
+			// Intrinsic is disabled https://github.com/dotnet/linker/issues/2559
 			// This should produce IL2071 https://github.com/dotnet/linker/issues/2144
 			[ExpectedWarning ("IL2070", "MakeGenericMethod", ProducedBy = ProducedBy.Trimmer)]
 			static void InstantiateGeneric (Type type = null)
@@ -588,12 +598,14 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			   [DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
 			{ }
 
+			// Action delegate is not handled correctly https://github.com/dotnet/linker/issues/2561
 			[ExpectedWarning ("IL2111", nameof (GenericWithAnnotatedMethod<TestType>.AnnotatedMethod), ProducedBy = ProducedBy.Trimmer)]
 			public static void GenericTypeWithStaticMethodViaLdftn ()
 			{
 				var _ = new Action<Type> (GenericWithAnnotatedMethod<TestType>.AnnotatedMethod);
 			}
 
+			// Intrinsic is disabled https://github.com/dotnet/linker/issues/2559
 			[ExpectedWarning ("IL2111", nameof (GenericMethodWithAnnotation), ProducedBy = ProducedBy.Trimmer)]
 			public static void GenericMethodWithAnnotationReflection ()
 			{
@@ -606,6 +618,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				GenericMethodWithAnnotation<TestType> (typeof (TestType));
 			}
 
+			// Action delegate is not handled correctly https://github.com/dotnet/linker/issues/2561
 			[ExpectedWarning ("IL2111", nameof (GenericMethodWithAnnotation), ProducedBy = ProducedBy.Trimmer)]
 			public static void GenericMethodWithAnnotationViaLdftn ()
 			{
@@ -652,10 +665,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				public Type _typeField;
 			}
 
+			// Analyzer doesnt take into account interop attributes https://github.com/dotnet/linker/issues/2562
 			[ExpectedWarning ("IL2110", nameof (ValueWithAnnotatedField._typeField), ProducedBy = ProducedBy.Trimmer)]
 			[DllImport ("nonexistent")]
 			static extern ValueWithAnnotatedField GetValueWithAnnotatedField ();
 
+			// Analyzer doesnt take into account interop attributes https://github.com/dotnet/linker/issues/2562
 			[ExpectedWarning ("IL2110", nameof (ValueWithAnnotatedField._typeField), ProducedBy = ProducedBy.Trimmer)]
 			[DllImport ("nonexistent")]
 			static extern void AcceptValueWithAnnotatedField (ValueWithAnnotatedField value);
@@ -676,6 +691,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				}
 			}
 
+			// Action delegate is not handled correctly https://github.com/dotnet/linker/issues/2561
 			[ExpectedWarning ("IL2111", nameof (PropertyWithLdToken), ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2111", nameof (PropertyWithLdToken), ProducedBy = ProducedBy.Trimmer)]
 			public static void Test ()

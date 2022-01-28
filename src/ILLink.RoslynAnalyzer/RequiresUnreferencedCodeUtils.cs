@@ -11,6 +11,9 @@ namespace ILLink.RoslynAnalyzer
 	{
 		private const string RequiresUnreferencedCodeAttribute = nameof (RequiresUnreferencedCodeAttribute);
 
+		public static bool TryGetRequiresUnreferencedCodeAttribute (this ISymbol member, [NotNullWhen (returnValue: true)] out AttributeData? requiresAttributeData) =>
+			member.TargetHasRequiresUnreferencedCodeAttribute (out requiresAttributeData) && VerifyRequiresUnreferencedCodeAttributeArguments (requiresAttributeData);
+
 		// TODO: Consider sharing with linker DoesMethodRequireUnreferencedCode method
 		/// <summary>
 		/// True if the target of a call is considered to be annotated with the RequiresUnreferencedCode attribute
