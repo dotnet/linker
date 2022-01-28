@@ -264,14 +264,14 @@ namespace ILLink.Shared
 			public static List<IRootNode> ProcessRootNodes (XPathNavigator nav)
 			{
 				if (!nav.MoveToChild (LinkerElementName, XmlNamespace)) {
-					throw new ArgumentException ("XML does not have <linker> base tag");
+					throw new ArgumentException ($"XML does not have <{LinkerElementName}> base tag");
 				}
 				var roots = new List<IRootNode> ();
 				foreach (XPathNavigator typeNav in nav.SelectChildren (TypeElementName, "")) {
 					roots.Add (new TypeNode (typeNav));
 				}
 				foreach (XPathNavigator assemblyNav in nav.SelectChildren (AssemblyElementName, "")) {
-					roots.Add (new TypeNode (assemblyNav));
+					roots.Add (new AssemblyNode (assemblyNav));
 				}
 				return roots;
 			}

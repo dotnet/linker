@@ -43,8 +43,10 @@ namespace ILLink.RoslynAnalyzer
 						if (!ValidateLinkAttributesXml (additionalFileContext, text))
 							return;
 
-						if (!context.TryGetValue (text, ProcessXmlProvider, out var xmlData) || xmlData is null)
+						if (!context.TryGetValue (text, ProcessXmlProvider, out var xmlData) || xmlData is null) {
+							additionalFileContext.ReportDiagnostic (Diagnostic.Create (s_errorProcessingXmlLocation, null, additionalFileContext.AdditionalFile.Path));
 							return;
+						}
 						foreach (var root in xmlData) {
 							if (root is LinkAttributes.TypeNode typeNode) {
 								foreach (var duplicatedMethods in typeNode.Methods.GroupBy (m => m.Name).Where (m => m.Count () > 0)) {
@@ -82,10 +84,7 @@ namespace ILLink.RoslynAnalyzer
 			XmlSchemaSet schemaSet = new XmlSchemaSet ();
 			schemaSet.Add (LinkAttributesSchema);
 			bool valid = true;
-			document.Validate (schemaSet, (sender, error) => {
-				context.ReportDiagnostic (Diagnostic.Create (s_errorProcessingXmlLocation, null, "ILLinkAttributes.xml': '" + "At line " + error.Exception.LineNumber + ": " + error.Message));
-				valid = false;
-			});
+			document.Validate (schemaSet, (sender, error) => { });
 			return valid;
 		}
 

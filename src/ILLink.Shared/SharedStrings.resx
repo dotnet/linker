@@ -153,7 +153,7 @@
   <data name="CouldNotFindTypeMessage" xml:space="preserve">
     <value>Missing predefined '{0}' type".</value>
   </data>
-<data name="CouldNotFindConstructorTitle" xml:space="preserve">
+  <data name="CouldNotFindConstructorTitle" xml:space="preserve">
     <value>Could not find constructor.</value>
   </data>
   <data name="CouldNotFindConstructorMessage" xml:space="preserve">
@@ -184,7 +184,7 @@
     <value>IL Trimmer has encountered an unexpected error. Please report the issue at https://github.com/dotnet/linker/issues</value>
   </data>
   <data name="ErrorProcessingXmlLocationTitle" xml:space="preserve">
-    <value>There was an error processing 'XML document location' xml file. The most likely reason for this is that the XML file has syntactical errors.</value>
+    <value>There was an error processing '{0}' xml file. The most likely reason for this is that the XML file has syntactical errors.</value>
   </data>
   <data name="ErrorProcessingXmlLocationMessage" xml:space="preserve">
     <value>Error processing '{0}'.</value>
