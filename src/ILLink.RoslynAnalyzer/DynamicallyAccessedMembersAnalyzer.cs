@@ -43,7 +43,7 @@ namespace ILLink.RoslynAnalyzer
 				context.EnableConcurrentExecution ();
 			context.ConfigureGeneratedCodeAnalysis (GeneratedCodeAnalysisFlags.ReportDiagnostics);
 			context.RegisterOperationBlockAction (context => {
-				if (context.OwningSymbol.HasAttribute (RequiresUnreferencedCodeAnalyzer.RequiresUnreferencedCodeAttribute))
+				if (context.OwningSymbol.IsInRequiresUnreferencedCodeAttributeScope ())
 					return;
 
 				foreach (var operationBlock in context.OperationBlocks) {
@@ -63,9 +63,8 @@ namespace ILLink.RoslynAnalyzer
 
 		static void ProcessGenericParameters (SyntaxNodeAnalysisContext context)
 		{
-			if (context.ContainingSymbol is not null && context.ContainingSymbol.HasAttribute (RequiresUnreferencedCodeAnalyzer.RequiresUnreferencedCodeAttribute)) {
+			if (context.ContainingSymbol is ITypeSymbol containingSymbol && containingSymbol.IsInRequiresUnreferencedCodeAttributeScope ()) 
 				return;
-			}
 
 			ImmutableArray<ITypeParameterSymbol> typeParams = default;
 			ImmutableArray<ITypeSymbol> typeArgs = default;
@@ -154,21 +153,11 @@ namespace ILLink.RoslynAnalyzer
 			if (targetValue is not ValueWithDynamicallyAccessedMembers targetWithDynamicallyAccessedMembers)
 				throw new NotImplementedException ();
 
-			// For now only implement annotated value versus annotated value comparisons. Eventually this method should be replaced by a shared version
-			// of the ReflectionMethodBodyScanner.RequireDynamicallyAccessedMembers from the linker
-			// which will handle things like constant string/type values, "marking" as appropriate, unknown values, null values, ....
-			if (sourceValue is not ValueWithDynamicallyAccessedMembers sourceWithDynamicallyAccessedMembers)
-				yield break;
+			var requireDynamicallyAccessedMembersAction = new RequireDynamicallyAccessedMembersAction ();
+			var diagnosticContext = new DiagnosticContext (location);
+			requireDynamicallyAccessedMembersAction.Invoke (diagnosticContext, sourceValue, targetWithDynamicallyAccessedMembers);
 
-			var damtOnTarget = targetWithDynamicallyAccessedMembers.DynamicallyAccessedMemberTypes;
-			var damtOnSource = sourceWithDynamicallyAccessedMembers.DynamicallyAccessedMemberTypes;
-
-			if (Annotations.SourceHasRequiredAnnotations (damtOnSource, damtOnTarget, out var missingAnnotations))
-				yield break;
-
-			(var diagnosticId, var diagnosticArguments) = Annotations.GetDiagnosticForAnnotationMismatch (sourceWithDynamicallyAccessedMembers, targetWithDynamicallyAccessedMembers, missingAnnotations);
-
-			yield return Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (diagnosticId), location, diagnosticArguments);
+			return diagnosticContext.Diagnostics;
 		}
 	}
 }
