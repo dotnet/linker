@@ -2,10 +2,10 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System.Diagnostics.CodeAnalysis;
-using Microsoft.CodeAnalysis;
 using ILLink.RoslynAnalyzer.DataFlow;
-using ILLink.Shared.TrimAnalysis;
 using ILLink.Shared;
+using ILLink.Shared.TrimAnalysis;
+using Microsoft.CodeAnalysis;
 
 namespace ILLink.RoslynAnalyzer.TrimAnalysis
 {

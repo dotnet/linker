@@ -4,8 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
-using ILLink.RoslynAnalyzer.DataFlow;
 using ILLink.RoslynAnalyzer.TrimAnalysis;
 using ILLink.Shared;
 using ILLink.Shared.DataFlow;
@@ -45,7 +43,7 @@ namespace ILLink.RoslynAnalyzer
 				context.EnableConcurrentExecution ();
 			context.ConfigureGeneratedCodeAnalysis (GeneratedCodeAnalysisFlags.ReportDiagnostics);
 			context.RegisterOperationBlockAction (context => {
-				if (context.OwningSymbol.IsInRequiresUnreferencedCodeAttributeScope())
+				if (context.OwningSymbol.IsInRequiresUnreferencedCodeAttributeScope ())
 					return;
 
 				foreach (var operationBlock in context.OperationBlocks) {
@@ -125,7 +123,7 @@ namespace ILLink.RoslynAnalyzer
 				throw new NotImplementedException ();
 
 			var diagnosticContext = new DiagnosticContext (location);
-			var requireDynamicallyAccessedMembersAction = new RequireDynamicallyAccessedMembersAction (diagnosticContext, new ReflectionMethodBodyScanner());
+			var requireDynamicallyAccessedMembersAction = new RequireDynamicallyAccessedMembersAction (diagnosticContext, new ReflectionMethodBodyScanner ());
 			requireDynamicallyAccessedMembersAction.Invoke (diagnosticContext, sourceValue, targetWithDynamicallyAccessedMembers);
 
 			return diagnosticContext.Diagnostics;
