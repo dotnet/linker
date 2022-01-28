@@ -45,7 +45,6 @@ namespace ILLink.RoslynAnalyzer.Tests
 		{
 			GetDirectoryPaths (out string rootSourceDir, out string testAssemblyPath);
 			Debug.Assert (Path.GetFileName (rootSourceDir) == MonoLinkerTestsCases);
-			var testDirectory = Path.Combine (rootSourceDir, suiteName);
 			var testPath = Path.Combine (rootSourceDir, suiteName, $"{testName}.cs");
 			Assert.True (File.Exists (testPath));
 			var tree = SyntaxFactory.ParseSyntaxTree (
@@ -72,7 +71,6 @@ namespace ILLink.RoslynAnalyzer.Tests
 
 		private static IEnumerable<string> GetTestDependencies (string rootSourceDir, SyntaxTree testSyntaxTree)
 		{
-			List<AdditionalText> additionalTexts = new ();
 			foreach (var attribute in testSyntaxTree.GetRoot ().DescendantNodes ().OfType<AttributeSyntax> ()) {
 				if (attribute.Name.ToString () != "SetupCompileBefore")
 					continue;
