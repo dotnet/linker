@@ -9,7 +9,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 {
 	[SkipKeptItemsValidation]
 	[ExpectedNoWarnings]
-	public class GenericParameterDataFlowWithMakeGeneric
+	public class MakeGenericDataFlow
 	{
 		public static void Main ()
 		{

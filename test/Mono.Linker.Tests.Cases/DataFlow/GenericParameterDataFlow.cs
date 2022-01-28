@@ -9,7 +9,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 {
 	[SkipKeptItemsValidation]
 	[ExpectedNoWarnings]
-	public class GenericParameterDataFlowWithoutMakeGeneric
+	public class GenericParameterDataFlow
 	{
 		public static void Main ()
 		{
@@ -123,9 +123,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] TSource>
 		{
 			[ExpectedWarning ("IL2091", nameof (TSource),
-					"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlowWithoutMakeGeneric.TypeRequiresPublicFieldsPassThrough<TSource>",
+					"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.TypeRequiresPublicFieldsPassThrough<TSource>",
 					"T",
-					"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlowWithoutMakeGeneric.TypeRequiresPublicMethods<T>")]
+					"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.TypeRequiresPublicMethods<T>")]
 			public static void Test ()
 			{
 				TypeRequiresPublicFields<TSource>.Test ();
@@ -253,7 +253,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			public class InnerTypeWithNoAddedGenerics
 			{
 				[ExpectedWarning ("IL2087", nameof (TRoot),
-						"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlowWithoutMakeGeneric.RootTypeWithRequirements<TRoot>",
+						"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.RootTypeWithRequirements<TRoot>",
 						"type",
 						"DataFlowTypeExtensions.RequiresPublicMethods(Type)")]
 				public static void TestAccess ()
@@ -587,9 +587,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		{
 			[ExpectedWarning ("IL2091",
 				"'TInner'",
-				"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlowWithoutMakeGeneric.TypeWithInstantiatedGenericMethodViaGenericParameter<TOuter>.StaticRequiresPublicFields<TInner>()",
+				"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.TypeWithInstantiatedGenericMethodViaGenericParameter<TOuter>.StaticRequiresPublicFields<TInner>()",
 				"'T'",
-				"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlowWithoutMakeGeneric.BaseTypeWithGenericMethod.StaticRequiresPublicMethods<T>()")]
+				"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.BaseTypeWithGenericMethod.StaticRequiresPublicMethods<T>()")]
 			public static void StaticRequiresPublicFields<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] TInner> ()
 			{
 				StaticRequiresPublicFields<TInner> ();
@@ -598,9 +598,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			[ExpectedWarning ("IL2091",
 				"'TOuter'",
-				"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlowWithoutMakeGeneric.TypeWithInstantiatedGenericMethodViaGenericParameter<TOuter>",
+				"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.TypeWithInstantiatedGenericMethodViaGenericParameter<TOuter>",
 				"'T'",
-				"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlowWithoutMakeGeneric.BaseTypeWithGenericMethod.StaticRequiresPublicMethods<T>()")]
+				"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.BaseTypeWithGenericMethod.StaticRequiresPublicMethods<T>()")]
 			public static void StaticRequiresPublicFieldsNonGeneric ()
 			{
 				StaticRequiresPublicFields<TOuter> ();
@@ -614,15 +614,15 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			[ExpectedWarning ("IL2091",
 				nameof (TOuter),
-				"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlowWithoutMakeGeneric.TypeWithInstantiatedGenericMethodViaGenericParameter<TOuter>",
+				"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.TypeWithInstantiatedGenericMethodViaGenericParameter<TOuter>",
 				"TMethods",
-				"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlowWithoutMakeGeneric.BaseTypeWithGenericMethod.StaticRequiresMultipleGenericParams<TFields, TMethods>()",
+				"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.BaseTypeWithGenericMethod.StaticRequiresMultipleGenericParams<TFields, TMethods>()",
 				ProducedBy = ProducedBy.Analyzer)]
 			[ExpectedWarning ("IL2091",
 				"'TOuter'",
-				"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlowWithoutMakeGeneric.TypeWithInstantiatedGenericMethodViaGenericParameter<TOuter>",
+				"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.TypeWithInstantiatedGenericMethodViaGenericParameter<TOuter>",
 				"'TMethods'",
-				"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlowWithoutMakeGeneric.BaseTypeWithGenericMethod.StaticRequiresMultipleGenericParams<TFields,TMethods>()",
+				"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.BaseTypeWithGenericMethod.StaticRequiresMultipleGenericParams<TFields,TMethods>()",
 				ProducedBy = ProducedBy.Trimmer)]
 			public static void StaticPartialInstantiationUnrecognized ()
 			{
@@ -631,9 +631,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			[ExpectedWarning ("IL2091",
 				"'TInner'",
-				"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlowWithoutMakeGeneric.TypeWithInstantiatedGenericMethodViaGenericParameter<TOuter>.InstanceRequiresPublicFields<TInner>()",
+				"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.TypeWithInstantiatedGenericMethodViaGenericParameter<TOuter>.InstanceRequiresPublicFields<TInner>()",
 				"'T'",
-				"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlowWithoutMakeGeneric.BaseTypeWithGenericMethod.InstanceRequiresPublicMethods<T>()")]
+				"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.BaseTypeWithGenericMethod.InstanceRequiresPublicMethods<T>()")]
 			public void InstanceRequiresPublicFields<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] TInner> ()
 			{
 				InstanceRequiresPublicFields<TInner> ();
@@ -642,9 +642,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			[ExpectedWarning ("IL2091",
 				"'TOuter'",
-				"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlowWithoutMakeGeneric.TypeWithInstantiatedGenericMethodViaGenericParameter<TOuter>",
+				"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.TypeWithInstantiatedGenericMethodViaGenericParameter<TOuter>",
 				"'T'",
-				"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlowWithoutMakeGeneric.BaseTypeWithGenericMethod.InstanceRequiresPublicMethods<T>()")]
+				"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.BaseTypeWithGenericMethod.InstanceRequiresPublicMethods<T>()")]
 			public void InstanceRequiresPublicFieldsNonGeneric ()
 			{
 				InstanceRequiresPublicFields<TOuter> ();
@@ -673,9 +673,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			[ExpectedWarning ("IL2091",
 				"'TOuter'",
-				"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlowWithoutMakeGeneric.TypeWithInstantiatedGenericMethodViaGenericParameter<TOuter>",
+				"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.TypeWithInstantiatedGenericMethodViaGenericParameter<TOuter>",
 				"'T'",
-				"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlowWithoutMakeGeneric.IInterfaceWithGenericMethod.InterfaceRequiresPublicMethods<T>()")]
+				"Mono.Linker.Tests.Cases.DataFlow.GenericParameterDataFlow.IInterfaceWithGenericMethod.InterfaceRequiresPublicMethods<T>()")]
 			public void CallInterface ()
 			{
 				IInterfaceWithGenericMethod interfaceInstance = (IInterfaceWithGenericMethod) this;

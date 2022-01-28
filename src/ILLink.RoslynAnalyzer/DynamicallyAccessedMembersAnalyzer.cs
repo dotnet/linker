@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
-using System.Linq;
 using ILLink.RoslynAnalyzer.TrimAnalysis;
 using ILLink.Shared;
 using ILLink.Shared.DataFlow;
@@ -63,51 +62,35 @@ namespace ILLink.RoslynAnalyzer
 
 		static void ProcessGenericParameters (SyntaxNodeAnalysisContext context)
 		{
-			if (context.ContainingSymbol is ITypeSymbol containingSymbol && containingSymbol.IsInRequiresUnreferencedCodeAttributeScope ()) 
+			// We dont need to check for RUC for INamedTypeSymbol here
+			if (context.ContainingSymbol is not null
+				&& context.ContainingSymbol is not INamedTypeSymbol
+				&& context.ContainingSymbol.IsInRequiresUnreferencedCodeAttributeScope ())
 				return;
 
 			ImmutableArray<ITypeParameterSymbol> typeParams = default;
 			ImmutableArray<ITypeSymbol> typeArgs = default;
-			if (context.SemanticModel.GetTypeInfo (context.Node).ConvertedType is INamedTypeSymbol type) {
+			if (context.SemanticModel.GetTypeInfo (context.Node).Type is INamedTypeSymbol type) {
 				// INamedTypeSymbol inside nameof, commonly used in [ExpectedWarning] can generate diagnostics
 				// Walking the node heirarchy to check if INamedTypeSymbol is inside a nameof
-				var node = context.Node;
-				while (node != null) {
-					if (node is InvocationExpressionSyntax invocationExpression && invocationExpression.Expression is IdentifierNameSyntax ident1) {
+				var parentNode = context.Node;
+				while (parentNode != null) {
+					if (parentNode is InvocationExpressionSyntax invocationExpression && invocationExpression.Expression is IdentifierNameSyntax ident1) {
 						if (ident1.Identifier.ValueText.Equals ("nameof"))
 							return;
 					}
-					node = node.Parent;
+					parentNode = parentNode.Parent;
 				}
 				typeParams = type.TypeParameters;
 				typeArgs = type.TypeArguments;
 			} else if (context.SemanticModel.GetSymbolInfo (context.Node, context.CancellationToken).Symbol is IMethodSymbol targetMethod) {
-				// Check if the generic parameters have any constraints on this method
-				var node = context.Node;
-				while (node != null) {
-					if (node is MethodDeclarationSyntax parentMethod) {
-						foreach (var constraintCaluse in parentMethod.ConstraintClauses) {
-							foreach (var constraint in constraintCaluse.Constraints) {
-								if (constraint.DescendantTokens ().Where (t => t.Kind () == SyntaxKind.StructKeyword ||
-								t.Kind () == SyntaxKind.NewKeyword).Any ())
-									return;
-								if (constraint is TypeConstraintSyntax typeConstraint &&
-									typeConstraint.Type is IdentifierNameSyntax typeConstraintTdentifier &&
-									typeConstraintTdentifier.Identifier.Text.Equals ("unmanaged"))
-									return;
-							}
-						}
-						// Exit loop if the declared method doesn't have any constraints
-						break;
-					}
-					node = node.Parent;
-				}
 				typeParams = targetMethod.TypeParameters;
 				typeArgs = targetMethod.TypeArguments;
 			}
 
 			if (typeParams != null) {
 				Debug.Assert (typeParams.Length == typeArgs.Length);
+
 				for (int i = 0; i < typeParams.Length; i++) {
 					var sourceValue = GetTypeValueNodeFromGenericArgument (typeArgs[i]);
 					var targetValue = new GenericParameterValue (typeParams[i]);
