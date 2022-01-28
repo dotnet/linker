@@ -982,7 +982,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		class SuppressInLambda
 		{
-			// Requires doesn't propagate into lambdas
+			// Bug https://github.com/dotnet/linker/issues/2001
+			// Requires should propagate into lambdas
 
 			// C# currently doesn't allow attributes on lambdas
 			// - This would be useful as a workaround for the limitation as Requires could be applied to the lambda directly
