@@ -151,6 +151,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			new DerivedTypeWithInstantiatedGenericOnBase ();
 			new DerivedTypeWithInstantiationOverSelfOnBase ();
 			new DerivedTypeWithOpenGenericOnBase<TestType> ();
+			TestDerivedTypeWithOpenGenericOnBaseWithRUCOnBase ();
+			TestDerivedTypeWithOpenGenericOnBaseWithRUCOnDerived ();
 			new DerivedTypeWithOpenGenericOnBaseWithRequirements<TestType> ();
 		}
 
@@ -177,6 +179,38 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[ExpectedWarning ("IL2091", nameof (GenericBaseTypeWithRequirements<T>), ProducedBy = ProducedBy.Trimmer)]
 			public DerivedTypeWithOpenGenericOnBase () { }
 		}
+
+		static void TestDerivedTypeWithOpenGenericOnBaseWithRUCOnBase ()
+		{
+			new DerivedTypeWithOpenGenericOnBaseWithRUCOnBase<TestType> ();
+		}
+
+		[ExpectedWarning ("IL2109", nameof (BaseTypeWithOpenGenericDAMTAndRUC<T>))]
+		[ExpectedWarning ("IL2091", nameof (BaseTypeWithOpenGenericDAMTAndRUC<T>))]
+		class DerivedTypeWithOpenGenericOnBaseWithRUCOnBase<T> : BaseTypeWithOpenGenericDAMTAndRUC<T>
+		{
+			[ExpectedWarning ("IL2091", nameof (DerivedTypeWithOpenGenericOnBaseWithRUCOnBase<T>), ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", nameof (BaseTypeWithOpenGenericDAMTAndRUC<T>), ProducedBy = ProducedBy.Trimmer)]
+			public DerivedTypeWithOpenGenericOnBaseWithRUCOnBase () { }
+		}
+
+		[RequiresUnreferencedCode ("RUC")]
+		class BaseTypeWithOpenGenericDAMTAndRUC<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] T> { }
+
+
+		[ExpectedWarning ("IL2026", nameof (DerivedTypeWithOpenGenericOnBaseWithRUCOnDerived<TestType>))]
+		static void TestDerivedTypeWithOpenGenericOnBaseWithRUCOnDerived ()
+		{
+			new DerivedTypeWithOpenGenericOnBaseWithRUCOnDerived<TestType> ();
+		}
+		[ExpectedWarning ("IL2091", nameof (BaseTypeWithOpenGenericDAMT<T>))]
+		[RequiresUnreferencedCode ("RUC")]
+		class DerivedTypeWithOpenGenericOnBaseWithRUCOnDerived<T> : BaseTypeWithOpenGenericDAMT<T>
+		{
+		}
+
+		class BaseTypeWithOpenGenericDAMT<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] T> { }
+
 
 		class DerivedTypeWithOpenGenericOnBaseWithRequirements<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] T>
 			: GenericBaseTypeWithRequirements<T>
