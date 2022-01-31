@@ -2,7 +2,7 @@
 
 namespace ILLink.Shared
 {
-	public abstract class XmlProcessorBase
+	public abstract record XmlProcessorBase
 	{
 		protected const string FullNameAttributeName = "fullname";
 		protected const string LinkerElementName = "linker";
