@@ -16,10 +16,6 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="$(MicrosoftCodeAnalysisVersion)" PrivateAssets="all" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Compile Include="..\..\external\corert\**\*.cs" />
-  </ItemGroup>
-
   <Import Project="..\ILLink.Shared\ILLink.Shared.projitems" Label="Shared" />
 
 </Project>
