@@ -3,7 +3,13 @@
   <PropertyGroup>
     <Nullable>enable</Nullable>
     <DeterministicSourcePaths>false</DeterministicSourcePaths>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>generated</CompilerGeneratedFilesOutputPath>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="$(CompilerGeneratedFilesOutputPath)" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing.XUnit" Version="$(MicrosoftCodeAnalysisCSharpAnalyzerTestingXunitVersion)" />
