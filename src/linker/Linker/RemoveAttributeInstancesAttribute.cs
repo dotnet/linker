@@ -20,9 +20,8 @@ namespace Mono.Linker
 		public RemoveAttributeInstancesAttribute (Collection<CustomAttributeArgument> values)
 		{
 			// Arguments must be boxed in an Object CustomArgumentAttribute where the .Value is a CustomArgumentAttribute
-			Debug.Assert(values.All (a => a.Value is CustomAttributeArgument));
+			Debug.Assert (values.All (a => a.Value is CustomAttributeArgument));
 			Arguments = values
-				.Where (arg => arg.Value is CustomAttributeArgument) // So we don't crash on conversion if the arg isn't boxed
 				.Select (arg => (CustomAttributeArgument) arg.Value)
 				.ToArray ();
 		}

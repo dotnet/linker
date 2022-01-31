@@ -23,6 +23,7 @@ namespace Mono.Linker.Tests.Cases.LinkAttributes
 			Removed_4 ();
 			Kept_4 ();
 			Kept_5 ();
+			Removed_5 ();
 		}
 
 		[Kept]
@@ -81,6 +82,11 @@ namespace Mono.Linker.Tests.Cases.LinkAttributes
 		static void Kept_5 () // Kept because int arg in constructor doesn't match long arg in xml
 		{
 		}
+
+		[Kept]
+		[TestConditionalRemove (72, "a", "b", "c", "d", "e")]
+		static void Removed_5 ()
+		{ }
 	}
 
 	[Kept]
@@ -110,5 +116,11 @@ namespace Mono.Linker.Tests.Cases.LinkAttributes
 		public TestConditionalRemoveAttribute (int key, object value)
 		{
 		}
+
+		[Kept]
+		public TestConditionalRemoveAttribute (int key, [KeptAttributeAttribute (typeof (ParamArrayAttribute))] params string[] values)
+		{
+		}
+
 	}
 }

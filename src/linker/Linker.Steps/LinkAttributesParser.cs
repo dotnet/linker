@@ -33,6 +33,32 @@ namespace Mono.Linker.Steps
 			bool stripLinkAttributes = _context.IsOptimizationEnabled (CodeOptimizations.RemoveLinkAttributes, _resource?.Assembly);
 			ProcessXml (stripLinkAttributes, _context.IgnoreLinkAttributes);
 		}
+		TypeDefinition? _paramArrayAttributeType;
+		TypeDefinition? ParamArrayAttributeType {
+			get {
+				if (_paramArrayAttributeType is TypeDefinition td)
+					return td;
+				_paramArrayAttributeType = BCL.FindPredefinedType ("System", "ParamArrayAttribute", _context);
+				return _paramArrayAttributeType;
+			}
+		}
+
+		CustomAttribute? _paramArrayCustomAttribute;
+		CustomAttribute? ParamArrayCustomAttribute {
+			get {
+				if (_paramArrayCustomAttribute is CustomAttribute ca)
+					return ca;
+				else {
+					var paramArrayAttributeType = BCL.FindPredefinedType ("System", "ParamArrayAttribute", _context);
+					if (paramArrayAttributeType == null)
+						return null;
+					_paramArrayCustomAttribute = new CustomAttribute (paramArrayAttributeType.GetDefaultInstanceConstructor ());
+					return _paramArrayCustomAttribute;
+				}
+			}
+		}
+
+		static bool IsRemoveAttributeInstances (string attributeName) => attributeName == "RemoveAttributeInstances" || attributeName == "RemoveAttributeInstancesAttribute";
 
 		CustomAttribute[]? ProcessAttributes (XPathNavigator nav, ICustomAttributeProvider provider)
 		{
@@ -44,16 +70,20 @@ namespace Mono.Linker.Steps
 				TypeDefinition? attributeType;
 				string internalAttribute = GetAttribute (attributeNav, "internal");
 				if (!string.IsNullOrEmpty (internalAttribute)) {
+					if (!IsRemoveAttributeInstances (internalAttribute)) {
+						LogWarning (attributeNav, DiagnosticId.UnrecognizedInternalAttribute, internalAttribute);
+						continue;
+					}
+					// TODO: Replace with IsAttributeType check once we have it
+					if (provider is not TypeDefinition) {
+						LogWarning (attributeNav, DiagnosticId.XmlRemoveAttributeInstancesCanOnlyBeUsedOnType, nameof (RemoveAttributeInstancesAttribute));
+						continue;
+					}
+
 					var argCount = attributeNav.SelectChildren ("argument", string.Empty).Count;
 					attributeType = GenerateRemoveAttributeInstancesAttribute (argCount);
 					if (attributeType == null)
 						continue;
-
-					// TODO: Replace with IsAttributeType check once we have it
-					if (provider is not TypeDefinition) {
-						LogWarning (attributeNav, DiagnosticId.XmlRemoveAttributeInstancesCanOnlyBeUsedOnType, attributeType.Name);
-						continue;
-					}
 				} else {
 					string attributeFullName = GetFullName (attributeNav);
 					if (string.IsNullOrEmpty (attributeFullName)) {
@@ -108,11 +138,7 @@ namespace Mono.Linker.Steps
 			TypeDefinition? td = null;
 
 			if (_context.MarkedKnownMembers.RemoveAttributeInstancesAttributeDefinition is TypeDefinition knownTypeDef) {
-				if (knownTypeDef.GetConstructorsOnType(ctor => ctor.Parameters.Count == ctorArgumentCount).Any(_ => true)) {
-					return knownTypeDef;
-				} else {
-					td = knownTypeDef;
-				}
+				return knownTypeDef;
 			}
 
 			var voidType = BCL.FindPredefinedType ("System", "Void", _context);
@@ -126,6 +152,9 @@ namespace Mono.Linker.Steps
 			var objectType = BCL.FindPredefinedType ("System", "Object", _context);
 			if (objectType == null)
 				return null;
+			var objectArrayType = new ArrayType (objectType);
+			if (objectArrayType == null)
+				return null;
 
 			//
 			// Generates metadata information for internal type
@@ -133,21 +162,21 @@ namespace Mono.Linker.Steps
 			// public sealed class RemoveAttributeInstancesAttribute : Attribute
 			// {
 			//		public RemoveAttributeInstancesAttribute () {}
-			//		public RemoveAttributeInstancesAttribute (object value1) {}
+			//		public RemoveAttributeInstancesAttribute (params object[] values) {}
 			// }
 			//
 			const MethodAttributes ctorAttributes = MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName | MethodAttributes.Final;
 
 			if (td == null) {
-				td = new TypeDefinition ("", "RemoveAttributeInstancesAttribute", TypeAttributes.Public);
+				td = new TypeDefinition ("", nameof (RemoveAttributeInstancesAttribute), TypeAttributes.Public);
 
 				td.BaseType = attributeType;
 			}
 
 			var ctorN = new MethodDefinition (".ctor", ctorAttributes, voidType);
-			for (int i = 0; i < ctorArgumentCount; i++) {
-				ctorN.Parameters.Add (new ParameterDefinition (objectType));
-			}
+			var param = new ParameterDefinition (objectArrayType);
+			param.CustomAttributes.Add (ParamArrayCustomAttribute);
+			ctorN.Parameters.Add (param);
 			td.Methods.Add (ctorN);
 
 			return _context.MarkedKnownMembers.RemoveAttributeInstancesAttributeDefinition = td;
@@ -176,26 +205,39 @@ namespace Mono.Linker.Steps
 		{
 			var methods = attributeType.Methods;
 			for (int i = 0; i < attributeType.Methods.Count; ++i) {
-				var m = methods[i];
-				if (!m.IsInstanceConstructor ())
+				var method = methods[i];
+				if (!method.IsInstanceConstructor ())
 					continue;
 
-				var p = m.Parameters;
-				if (args.Length != p.Count)
+				var parameters = method.Parameters;
+				if (args.Length != parameters.Count
+					&& !(parameters.Count > 0
+						&& method.Parameters.Last ().CustomAttributes
+							.Any (ca => _context.Resolve (ca.AttributeType) == ParamArrayAttributeType)))
 					continue;
 
 				bool match = true;
-				for (int ii = 0; match && ii != args.Length; ++ii) {
+				for (int ii = 0; match && ii < args.Length; ++ii) {
 					//
 					// No candidates betterness, only exact matches are supported
 					//
-					var parameterType = _context.TryResolve (p[ii].ParameterType);
-					if (parameterType == null || parameterType != _context.TryResolve (args[ii].Type))
+					var parameterType = _context.TryResolve (parameters[ii].ParameterType);
+					if (parameterType == null)
+						match = false;
+					// Account for param array constructors (params T[] arg)
+					else if (parameters[ii].CustomAttributes.Any (ca => _context.Resolve (ca.AttributeType) == ParamArrayAttributeType)
+							&& parameters[ii].ParameterType.MetadataType == MetadataType.Array) {
+						for (; ii < args.Length; ii++) {
+							if (parameterType != _context.TryResolve (args[ii].Type)) {
+								match = false;
+							}
+						}
+					} else if (parameterType != _context.TryResolve (args[ii].Type))
 						match = false;
 				}
 
 				if (match)
-					return m;
+					return method;
 			}
 
 			return null;
