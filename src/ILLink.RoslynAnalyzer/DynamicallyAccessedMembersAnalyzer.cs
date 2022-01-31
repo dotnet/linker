@@ -61,7 +61,9 @@ namespace ILLink.RoslynAnalyzer
 
 		static void ProcessGenericParameters (SyntaxNodeAnalysisContext context)
 		{
-			// We dont need to check for RUC for INamedTypeSymbol here
+			// RUC on the containing symbol normally silences warnings, but when examining a generic base type,
+			// the containing symbol is the declared derived type. RUC on the derived type does not silence
+			// warnings about base type arguments.
 			if (context.ContainingSymbol is not null
 				&& context.ContainingSymbol is not INamedTypeSymbol
 				&& context.ContainingSymbol.IsInRequiresUnreferencedCodeAttributeScope ())
@@ -70,8 +72,9 @@ namespace ILLink.RoslynAnalyzer
 			ImmutableArray<ITypeParameterSymbol> typeParams = default;
 			ImmutableArray<ITypeSymbol> typeArgs = default;
 			if (context.SemanticModel.GetTypeInfo (context.Node).Type is INamedTypeSymbol type) {
-				// INamedTypeSymbol inside nameof, commonly used in [ExpectedWarning] can generate diagnostics
-				// Walking the node heirarchy to check if INamedTypeSymbol is inside a nameof
+				// INamedTypeSymbol inside nameof, commonly used to access the string value of a variable, type, or a memeber,
+				// can generate diagnostics warnings, which can be noisy and unhelpful. 
+				// Walking the node heirarchy to check if INamedTypeSymbol is inside a nameof to not generate diagnostics
 				var parentNode = context.Node;
 				while (parentNode != null) {
 					if (parentNode is InvocationExpressionSyntax invocationExpression && invocationExpression.Expression is IdentifierNameSyntax ident1) {
