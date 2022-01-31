@@ -853,8 +853,7 @@ namespace Mono.Linker.Steps
 					else
 						continue;
 				}
-				if (args.Length > ca.ConstructorArguments.Count
-					&& !HasParamArrayArg)
+				if (args.Length > ca.ConstructorArguments.Count)
 					continue;
 
 				if (HasMatchingArguments (args, ca))
