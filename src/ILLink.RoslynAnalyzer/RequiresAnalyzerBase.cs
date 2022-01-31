@@ -149,7 +149,7 @@ namespace ILLink.RoslynAnalyzer
 
 				context.RegisterSyntaxNodeAction (syntaxNodeAnalysisContext => {
 					var model = syntaxNodeAnalysisContext.SemanticModel;
-					if (syntaxNodeAnalysisContext.ContainingSymbol is not ISymbol containingSymbol || containingSymbol.HasAttribute (RequiresAttributeName))
+					if (syntaxNodeAnalysisContext.ContainingSymbol is not ISymbol containingSymbol || containingSymbol.IsInRequiresScope (RequiresAttributeName))
 						return;
 
 					GenericNameSyntax genericNameSyntaxNode = (GenericNameSyntax) syntaxNodeAnalysisContext.Node;
@@ -181,12 +181,13 @@ namespace ILLink.RoslynAnalyzer
 							if (instanceCtor.Arity > 0)
 								continue;
 
-							if (instanceCtor.TryGetAttribute (RequiresAttributeName, out var requiresUnreferencedCodeAttribute)) {
+							if (instanceCtor.TargetHasRequiresAttribute (RequiresAttributeName, out var requiresAttribute) &&
+								VerifyAttributeArguments (requiresAttribute)) {
 								syntaxNodeAnalysisContext.ReportDiagnostic (Diagnostic.Create (RequiresDiagnosticRule,
 									syntaxNodeAnalysisContext.Node.GetLocation (),
 									containingSymbol.GetDisplayName (),
-									(string) requiresUnreferencedCodeAttribute.ConstructorArguments[0].Value!,
-									GetUrlFromAttribute (requiresUnreferencedCodeAttribute)));
+									(string) requiresAttribute.ConstructorArguments[0].Value!,
+									GetUrlFromAttribute (requiresAttribute)));
 							}
 						}
 					}
@@ -206,13 +207,13 @@ namespace ILLink.RoslynAnalyzer
 					SymbolAnalysisContext symbolAnalysisContext,
 					ISymbol symbol)
 				{
-					if (symbol.HasAttribute (RequiresAttributeName))
+					if (symbol.IsInRequiresScope (RequiresAttributeName))
 						return;
 
 					foreach (var attr in symbol.GetAttributes ()) {
-						if (TryGetRequiresAttribute (attr.AttributeConstructor, out var requiresAttribute)) {
+						if (attr.AttributeConstructor?.TargetHasRequiresAttribute (RequiresAttributeName, out var requiresAttribute) == true) {
 							symbolAnalysisContext.ReportDiagnostic (Diagnostic.Create (RequiresDiagnosticRule,
-								symbol.Locations[0], attr.AttributeConstructor!.Name, GetMessageFromAttribute (requiresAttribute), GetUrlFromAttribute (requiresAttribute)));
+								symbol.Locations[0], attr.AttributeConstructor.GetDisplayName (), GetMessageFromAttribute (requiresAttribute), GetUrlFromAttribute (requiresAttribute)));
 						}
 					}
 				}
