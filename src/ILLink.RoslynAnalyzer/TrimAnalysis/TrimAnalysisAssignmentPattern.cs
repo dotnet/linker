@@ -27,7 +27,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 				Operation);
 		}
 
-		public IEnumerable<Diagnostic> ReportDiagnostics ()
+		public IEnumerable<Diagnostic> CollectDiagnostics ()
 		{
 			var diagnosticContext = new DiagnosticContext (Operation.Syntax.GetLocation ());
 			foreach (var sourceValue in Source) {

@@ -29,10 +29,9 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			Debug.Assert (Arguments.Length == other.Arguments.Length);
 
 			var argumentsBuilder = ImmutableArray.CreateBuilder<MultiValue> ();
-			for (int i = 0; i < Arguments.Length; i++)
-            {
-				argumentsBuilder.Add (lattice.Meet (Arguments [i], other.Arguments [i]));
-            }
+			for (int i = 0; i < Arguments.Length; i++) {
+				argumentsBuilder.Add (lattice.Meet (Arguments[i], other.Arguments[i]));
+			}
 
 			return new TrimAnalysisMethodCallPattern (
 				CalledMethod,
@@ -42,7 +41,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 				OwningSymbol);
 		}
 
-		public IEnumerable<Diagnostic> ReportDiagnostics ()
+		public IEnumerable<Diagnostic> CollectDiagnostics ()
 		{
 			DiagnosticContext diagnosticContext = new (Operation.Syntax.GetLocation ());
 			HandleCallAction handleCallAction = new (OwningSymbol, Operation);

@@ -48,15 +48,15 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			MethodCallPatterns[pattern.Operation] = pattern.Merge (Lattice, existingPattern);
 		}
 
-		public IEnumerable<Diagnostic> ReportDiagnostics ()
+		public IEnumerable<Diagnostic> CollectDiagnostics ()
 		{
 			foreach (var assignmentPattern in AssignmentPatterns.Values) {
-				foreach (var diagnostic in assignmentPattern.ReportDiagnostics ())
+				foreach (var diagnostic in assignmentPattern.CollectDiagnostics ())
 					yield return diagnostic;
 			}
 
 			foreach (var methodCallPattern in MethodCallPatterns.Values) {
-				foreach (var diagnostic in methodCallPattern.ReportDiagnostics ())
+				foreach (var diagnostic in methodCallPattern.CollectDiagnostics ())
 					yield return diagnostic;
 			}
 		}

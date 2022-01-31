@@ -104,8 +104,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 		public override MultiValue HandleMethodCall (IMethodSymbol calledMethod, MultiValue instance, ImmutableArray<MultiValue> arguments, IOperation operation)
 		{
 			var handleCallAction = new HandleCallAction (Context.OwningSymbol, operation);
-			if (!handleCallAction.Invoke (new MethodProxy (calledMethod), instance, arguments, out MultiValue methodReturnValue))
-			{
+			if (!handleCallAction.Invoke (new MethodProxy (calledMethod), instance, arguments, out MultiValue methodReturnValue)) {
 				methodReturnValue = calledMethod.ReturnsVoid ? TopValue : new MethodReturnValue (calledMethod);
 			}
 
