@@ -135,7 +135,7 @@ stages:
                     --configuration $(_BuildConfig) $(_BuildArgs)
                     --integrationTest
                     --nodeReuse false # https://github.com/Microsoft/vstest/issues/1503
-                    /p:CheckForExtraAnalyzerWarningsInAllTests=true
+                    -p:CheckForExtraAnalyzerWarningsInAllTests=true
             env:
               # https://github.com/Microsoft/vstest/issues/1503#issuecomment-410732193
               MSBUILDENSURESTDOUTFORTASKPROCESSES: 1
