@@ -134,7 +134,7 @@ stages:
           - script: eng/common/cibuild.sh --projects $(Build.SourcesDirectory)/test/ILLink.RoslynAnalyzer.Tests/ILLink.RoslynAnalyzer.Tests.csproj
                     --configuration $(_BuildConfig) $(_BuildArgs)
                     --integrationTest
-                    --nodeReuse false # https://github.com/Microsoft/vstest/issues/1503
+                    --nodeReuse false
                     -p:CheckForExtraAnalyzerWarningsInAllTests=true
             env:
               # https://github.com/Microsoft/vstest/issues/1503#issuecomment-410732193
