@@ -123,7 +123,8 @@ stages:
             displayName: Build illink.sln $(_BuildConfig)
 
       - ${{ if eq(variables.officialBuild, 'false') }}:
-        - job: Linux analyzer unexpected warnings check
+        - job: Linux_analyzer_unexpected_warnings_check
+          displayName: Linux analyzer unexpected warnings check
           condition: eq(variables.officialBuild, 'false')
           pool:
             vmImage: ubuntu-latest
