@@ -69,6 +69,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 				path: testPath);
 
 			var testDependenciesSource = GetTestDependencies (testDir, tree)
+				.Where (f => Path.GetExtension (f) == ".cs")
 				.Select (f => SyntaxFactory.ParseSyntaxTree (SourceText.From (File.OpenRead (f))));
 			var additionalFiles = GetAdditionalFiles (rootSourceDir, tree);
 
