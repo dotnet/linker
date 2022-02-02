@@ -86,6 +86,9 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 		static void GetDiagnosticsForField (in DiagnosticContext diagnosticContext, IFieldSymbol fieldSymbol)
 		{
+			if (fieldSymbol.TryGetRequiresUnreferencedCodeAttribute (out var requiresAttributeData))
+				ReportRequiresUnreferencedCodeDiagnostic (diagnosticContext, requiresAttributeData, fieldSymbol);
+
 			if (fieldSymbol.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None)
 				diagnosticContext.AddDiagnostic (DiagnosticId.DynamicallyAccessedMembersFieldAccessedViaReflection, fieldSymbol.GetDisplayName ());
 		}

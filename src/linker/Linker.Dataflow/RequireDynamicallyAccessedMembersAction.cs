@@ -11,7 +11,6 @@ using Mono.Linker.Dataflow;
 
 namespace ILLink.Shared.TrimAnalysis
 {
-	[StructLayout (LayoutKind.Auto)]
 	partial struct RequireDynamicallyAccessedMembersAction
 	{
 		readonly LinkContext _context;

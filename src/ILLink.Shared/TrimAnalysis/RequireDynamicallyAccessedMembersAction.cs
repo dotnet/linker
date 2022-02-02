@@ -4,11 +4,13 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.InteropServices;
 using ILLink.Shared.TypeSystemProxy;
 using MultiValue = ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.SingleValue>;
 
 namespace ILLink.Shared.TrimAnalysis
 {
+	[StructLayout (LayoutKind.Auto)]
 	partial struct RequireDynamicallyAccessedMembersAction
 	{
 		readonly DiagnosticContext _diagnosticContext;
