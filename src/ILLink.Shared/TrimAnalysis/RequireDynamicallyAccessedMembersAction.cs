@@ -34,6 +34,8 @@ namespace ILLink.Shared.TrimAnalysis
 					}
 				} else if (uniqueValue == NullValue.Instance) {
 					// Ignore - probably unreachable path as it would fail at runtime anyway.
+				} else if (uniqueValue is ArrayValue) {
+					// Ignore 
 				} else {
 					DiagnosticId diagnosticId = targetValue switch {
 						MethodParameterValue => DiagnosticId.MethodParameterCannotBeStaticallyDetermined,

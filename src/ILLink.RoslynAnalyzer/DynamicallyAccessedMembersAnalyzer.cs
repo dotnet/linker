@@ -114,7 +114,8 @@ namespace ILLink.RoslynAnalyzer
 				// That said we only use it to perform the dynamically accessed members checks and for that purpose treating it as System.Type is perfectly valid.
 				SymbolKind.NamedType => new SystemTypeValue ((INamedTypeSymbol) type),
 				SymbolKind.ErrorType => UnknownValue.Instance,
-				// What about things like ArrayType or PointerType and so on. Linker treats these as "named types" since it can resolve them to concrete type
+				SymbolKind.ArrayType => new ArrayValue (GetTypeValueNodeFromGenericArgument (((IArrayTypeSymbol) type).ElementType)),
+				// What about things like PointerType and so on. Linker treats these as "named types" since it can resolve them to concrete type
 				_ => throw new NotImplementedException ()
 			};
 		}
