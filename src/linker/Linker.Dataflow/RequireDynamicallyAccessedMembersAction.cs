@@ -3,6 +3,7 @@
 
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 using ILLink.Shared.TypeSystemProxy;
 using Mono.Cecil;
 using Mono.Linker;
@@ -10,6 +11,7 @@ using Mono.Linker.Dataflow;
 
 namespace ILLink.Shared.TrimAnalysis
 {
+	[StructLayout (LayoutKind.Auto)]
 	partial struct RequireDynamicallyAccessedMembersAction
 	{
 		readonly LinkContext _context;
@@ -21,10 +23,10 @@ namespace ILLink.Shared.TrimAnalysis
 			ReflectionMethodBodyScanner reflectionMethodBodyScanner,
 			in ReflectionMethodBodyScanner.AnalysisContext analysisContext)
 		{
+			_diagnosticContext = new DiagnosticContext (analysisContext.Origin, analysisContext.DiagnosticsEnabled, context);
 			_context = context;
 			_reflectionMethodBodyScanner = reflectionMethodBodyScanner;
 			_analysisContext = analysisContext;
-			_diagnosticContext = new DiagnosticContext (analysisContext.Origin, analysisContext.DiagnosticsEnabled, _context);
 		}
 
 		private partial bool TryResolveTypeNameAndMark (string typeName, out TypeProxy type)

@@ -2,12 +2,13 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 using ILLink.RoslynAnalyzer.TrimAnalysis;
 using ILLink.Shared.TypeSystemProxy;
 
 namespace ILLink.Shared.TrimAnalysis
 {
-#pragma warning disable CS0282 // There is no defined ordering between fields in multiple declarations of partial struct
+	[StructLayout (LayoutKind.Auto)]
 	partial struct RequireDynamicallyAccessedMembersAction
 	{
 		readonly ReflectionAccessAnalyzer _reflectionAccessAnalyzer;
