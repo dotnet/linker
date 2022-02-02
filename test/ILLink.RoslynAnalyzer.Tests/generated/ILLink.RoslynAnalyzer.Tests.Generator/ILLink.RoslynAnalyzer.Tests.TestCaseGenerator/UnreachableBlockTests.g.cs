@@ -7,8 +7,6 @@ namespace ILLink.RoslynAnalyzer.Tests
 	public sealed partial class UnreachableBlockTests : LinkerTestBase
 	{
 
-		protected override string TestSuiteName => "UnreachableBlock";
-
 		[Fact]
 		public Task BodiesWithSubstitutions ()
 		{
@@ -71,12 +69,6 @@ namespace ILLink.RoslynAnalyzer.Tests
 
 		[Fact]
 		public Task TryCatchBlocks ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
-		public Task TryFilterBlocks ()
 		{
 			return RunTest (allowMissingWarnings: true);
 		}

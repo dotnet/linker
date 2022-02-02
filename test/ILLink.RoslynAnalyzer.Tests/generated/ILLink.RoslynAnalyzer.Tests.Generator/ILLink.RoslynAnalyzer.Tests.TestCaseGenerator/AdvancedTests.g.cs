@@ -7,8 +7,6 @@ namespace ILLink.RoslynAnalyzer.Tests
 	public sealed partial class AdvancedTests : LinkerTestBase
 	{
 
-		protected override string TestSuiteName => "Advanced";
-
 		[Fact]
 		public Task DeadCodeElimination1 ()
 		{
@@ -17,12 +15,6 @@ namespace ILLink.RoslynAnalyzer.Tests
 
 		[Fact]
 		public Task FieldThatOnlyGetsSetIsRemoved ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
-		public Task TypeCheckRemoval ()
 		{
 			return RunTest (allowMissingWarnings: true);
 		}

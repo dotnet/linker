@@ -7,14 +7,6 @@ namespace ILLink.RoslynAnalyzer.Tests
 	public sealed partial class ReflectionTests : LinkerTestBase
 	{
 
-		protected override string TestSuiteName => "Reflection";
-
-		[Fact]
-		public Task ActivatorCreateInstance ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
 		[Fact]
 		public Task AssemblyImportedViaReflection ()
 		{
@@ -34,25 +26,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 		}
 
 		[Fact]
-		public Task AssemblyImportedViaReflectionWithSweptReferences ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
 		public Task AsType ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
-		public Task ConstructorsUsedViaReflection ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
-		public Task ConstructorUsedViaReflection ()
 		{
 			return RunTest (allowMissingWarnings: true);
 		}
@@ -64,19 +38,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 		}
 
 		[Fact]
-		public Task EventsUsedViaReflection ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
 		public Task EventUsedViaReflection ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
-		public Task ExpressionCallString ()
 		{
 			return RunTest (allowMissingWarnings: true);
 		}
@@ -94,49 +56,13 @@ namespace ILLink.RoslynAnalyzer.Tests
 		}
 
 		[Fact]
-		public Task ExpressionNewType ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
-		public Task ExpressionPropertyMethodInfo ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
 		public Task ExpressionPropertyString ()
 		{
 			return RunTest (allowMissingWarnings: true);
 		}
 
 		[Fact]
-		public Task FieldsUsedViaReflection ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
 		public Task FieldUsedViaReflection ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
-		public Task MembersUsedViaReflection ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
-		public Task MemberUsedViaReflection ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
-		public Task MethodsUsedViaReflection ()
 		{
 			return RunTest (allowMissingWarnings: true);
 		}
@@ -160,19 +86,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 		}
 
 		[Fact]
-		public Task NestedTypesUsedViaReflection ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
 		public Task NestedTypeUsedViaReflection ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
-		public Task ObjectGetType ()
 		{
 			return RunTest (allowMissingWarnings: true);
 		}
@@ -185,12 +99,6 @@ namespace ILLink.RoslynAnalyzer.Tests
 
 		[Fact]
 		public Task ParametersUsedViaReflection ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
-		public Task PropertiesUsedViaReflection ()
 		{
 			return RunTest (allowMissingWarnings: true);
 		}
@@ -232,24 +140,6 @@ namespace ILLink.RoslynAnalyzer.Tests
 		}
 
 		[Fact]
-		public Task TypeHierarchyReflectionWarnings ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
-		public Task TypeHierarchySuppressions ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
-		public Task TypeUsedViaReflection ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
 		public Task TypeUsedViaReflectionAssemblyDoesntExist ()
 		{
 			return RunTest (allowMissingWarnings: true);
@@ -269,12 +159,6 @@ namespace ILLink.RoslynAnalyzer.Tests
 
 		[Fact]
 		public Task TypeUsedViaReflectionLdstrValidButChanged ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
-		public Task TypeUsedViaReflectionTypeDoesntExist ()
 		{
 			return RunTest (allowMissingWarnings: true);
 		}
