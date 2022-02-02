@@ -9,12 +9,7 @@ namespace ILLink.Shared.TrimAnalysis
 {
 	partial record ArrayValue
 	{
-		public SingleValue ElementType;
-		public ArrayValue (SingleValue elementType)
-		{
-			ElementType = elementType;
-			Size = UnknownValue.Instance;
-		}
+		public ArrayValue (SingleValue size) => Size = size;
 
 #pragma warning disable IDE0060 // Remove unused parameter
 		public partial bool TryGetValueByIndex (int index, out MultiValue value) => throw new NotImplementedException ();
