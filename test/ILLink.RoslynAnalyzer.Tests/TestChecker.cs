@@ -232,7 +232,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			missingDiagnosticMessage = null;
 			matchIndex = null;
 			var args = LinkerTestBase.GetAttributeArguments (attribute);
-			string expectedWarningCode = LinkerTestBase.GetStringFromExpression (args["#0"]);
+			string expectedWarningCode = LinkerTestBase.GetStringFromExpression (args["#0"], _semanticModel);
 
 			if (!expectedWarningCode.StartsWith ("IL"))
 				throw new InvalidOperationException ($"Expected warning code should start with \"IL\" prefix.");
@@ -274,7 +274,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			missingDiagnosticMessage = null;
 			matchIndex = null;
 			var args = LinkerTestBase.GetAttributeArguments (attribute);
-			var text = LinkerTestBase.GetStringFromExpression (args["#0"]);
+			var text = LinkerTestBase.GetStringFromExpression (args["#0"], _semanticModel);
 
 			// If the text starts with `warning IL...` then it probably follows the pattern
 			//	'warning <diagId>: <location>:'
@@ -302,10 +302,10 @@ namespace ILLink.RoslynAnalyzer.Tests
 			return false;
 		}
 
-		private static void ValidateLogDoesNotContainAttribute (AttributeSyntax attribute, IReadOnlyList<Diagnostic> diagnosticMessages)
+		private void ValidateLogDoesNotContainAttribute (AttributeSyntax attribute, IReadOnlyList<Diagnostic> diagnosticMessages)
 		{
 			var arg = Assert.Single (LinkerTestBase.GetAttributeArguments (attribute));
-			var text = LinkerTestBase.GetStringFromExpression (arg.Value);
+			var text = LinkerTestBase.GetStringFromExpression (arg.Value, _semanticModel);
 			foreach (var diagnostic in diagnosticMessages)
 				Assert.DoesNotContain (text, diagnostic.GetMessage ());
 		}

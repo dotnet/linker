@@ -7,6 +7,8 @@ namespace ILLink.RoslynAnalyzer.Tests
 	public sealed partial class WarningsTests : LinkerTestBase
 	{
 
+		protected override string TestSuiteName => "Warnings";
+
 		[Fact]
 		public Task CanDisableWarnAsError ()
 		{
@@ -15,6 +17,12 @@ namespace ILLink.RoslynAnalyzer.Tests
 
 		[Fact]
 		public Task CanDisableWarnings ()
+		{
+			return RunTest (allowMissingWarnings: true);
+		}
+
+		[Fact]
+		public Task CanNotSingleWarnPerAssembly ()
 		{
 			return RunTest (allowMissingWarnings: true);
 		}
@@ -51,6 +59,12 @@ namespace ILLink.RoslynAnalyzer.Tests
 
 		[Fact]
 		public Task CanSingleWarnPerAssembly ()
+		{
+			return RunTest (allowMissingWarnings: true);
+		}
+
+		[Fact]
+		public Task CanSingleWarnWithIndividualWarnAsError ()
 		{
 			return RunTest (allowMissingWarnings: true);
 		}
