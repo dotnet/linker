@@ -343,6 +343,25 @@ class C
 		}
 
 		[Fact]
+		public Task DynamicInRequiresUnreferencedCodeClass ()
+		{
+			var source = @"
+using System.Diagnostics.CodeAnalysis;
+
+[RequiresUnreferencedCode(""message"")]
+class ClassWithRequires
+{
+	public static void MethodWithDynamicArg (dynamic arg)
+	{
+		arg.DynamicInvocation ();
+	}
+}
+";
+
+			return VerifyRequiresUnreferencedCodeAnalyzer (source);
+		}
+
+		[Fact]
 		public Task InvocationOnDynamicTypeInMethodWithRUCDoesNotWarnTwoTimes ()
 		{
 			var source = @"
@@ -385,7 +404,7 @@ class C
 			return VerifyRequiresUnreferencedCodeAnalyzer (source);
 		}
 
-		[Fact]
+		[Fact (Skip = "https://github.com/dotnet/linker/issues/2557")]
 		public Task TestMakeGenericTypeUsage ()
 		{
 			var source = @"

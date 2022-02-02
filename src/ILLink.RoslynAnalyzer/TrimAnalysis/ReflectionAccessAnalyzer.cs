@@ -44,7 +44,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 		{
 			var message = RequiresUnreferencedCodeUtils.GetMessageFromAttribute (requiresAttributeData);
 			var url = RequiresAnalyzerBase.GetUrlFromAttribute (requiresAttributeData);
-			diagnosticContext.ReportDiagnostic (DiagnosticId.RequiresUnreferencedCode, member.GetDisplayName (), message, url);
+			diagnosticContext.AddDiagnostic (DiagnosticId.RequiresUnreferencedCode, member.GetDisplayName (), message, url);
 		}
 
 		static void GetDiagnosticsForMethod (in DiagnosticContext diagnosticContext, IMethodSymbol methodSymbol)
@@ -53,13 +53,13 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 				ReportRequiresUnreferencedCodeDiagnostic (diagnosticContext, requiresAttributeData, methodSymbol);
 
 			if (methodSymbol.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None)
-				diagnosticContext.ReportDiagnostic (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection, methodSymbol.GetDisplayName ());
+				diagnosticContext.AddDiagnostic (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection, methodSymbol.GetDisplayName ());
 			else if (methodSymbol.IsVirtual && FlowAnnotations.GetMethodReturnValueAnnotation (methodSymbol) != DynamicallyAccessedMemberTypes.None)
-				diagnosticContext.ReportDiagnostic (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection, methodSymbol.GetDisplayName ());
+				diagnosticContext.AddDiagnostic (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection, methodSymbol.GetDisplayName ());
 			else {
 				foreach (var parameter in methodSymbol.Parameters) {
 					if (FlowAnnotations.GetMethodParameterAnnotation (parameter) != DynamicallyAccessedMemberTypes.None) {
-						diagnosticContext.ReportDiagnostic (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection, methodSymbol.GetDisplayName ());
+						diagnosticContext.AddDiagnostic (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection, methodSymbol.GetDisplayName ());
 						break;
 					}
 				}
@@ -90,7 +90,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 				ReportRequiresUnreferencedCodeDiagnostic (diagnosticContext, requiresAttributeData, fieldSymbol);
 
 			if (fieldSymbol.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None)
-				diagnosticContext.ReportDiagnostic (DiagnosticId.DynamicallyAccessedMembersFieldAccessedViaReflection, fieldSymbol.GetDisplayName ());
+				diagnosticContext.AddDiagnostic (DiagnosticId.DynamicallyAccessedMembersFieldAccessedViaReflection, fieldSymbol.GetDisplayName ());
 		}
 	}
 }

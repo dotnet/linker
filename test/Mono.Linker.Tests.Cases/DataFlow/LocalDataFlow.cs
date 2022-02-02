@@ -28,6 +28,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			// that we might be able to lift in the future.
 
 			// These are overly conservative (extraneous warnings)
+			// 	 https://github.com/dotnet/linker/issues/2550
 			TestBranchGoto ();
 			TestBranchIf ();
 			TestBranchIfElse ();
@@ -40,6 +41,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			// These are missing warnings (potential failure at runtime)
 			TestBackwardsEdgeGoto ();
 			TestBackwardsEdgeLoop ();
+
+			TestNoWarningsInRUCMethod ();
+			TestNoWarningsInRUCType ();
 		}
 
 		[ExpectedWarning ("IL2072",
@@ -207,7 +211,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			string str = GetWithPublicMethods ();
 			if (String.Empty.Length == 0) {
 				str = GetWithPublicFields (); // dataflow will merge this with the value from the previous basic block
-				str.RequiresPublicFields (); // produces a warning
+				str.RequiresPublicFields (); // produces a warning (technically it should not)
 			}
 		}
 
@@ -346,6 +350,47 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		ForwardTarget:
 			str = GetWithPublicFields ();
 			goto BackwardTarget;
+		}
+
+		[ExpectedWarning ("IL2026", nameof (RUCMethod), "message")]
+		public static void TestNoWarningsInRUCMethod ()
+		{
+			RUCMethod ();
+		}
+
+		[RequiresUnreferencedCode ("message")]
+		public static void RUCMethod ()
+		{
+			GetWithPublicMethods ().RequiresAll ();
+		}
+
+		[ExpectedWarning ("IL2026", nameof (RUCType) + "." + nameof (RUCType), "message")]
+		[ExpectedWarning ("IL2026", nameof (RUCType.StaticMethod), "message")]
+		public static void TestNoWarningsInRUCType ()
+		{
+			RUCType.StaticMethod ();
+			var rucType = new RUCType ();
+			rucType.InstanceMethod ();
+			rucType.VirtualMethod ();
+		}
+
+		[RequiresUnreferencedCode ("message")]
+		public class RUCType
+		{
+			public static void StaticMethod ()
+			{
+				GetWithPublicMethods ().RequiresAll ();
+			}
+
+			public void InstanceMethod ()
+			{
+				GetWithPublicMethods ().RequiresAll ();
+			}
+
+			public virtual void VirtualMethod ()
+			{
+				GetWithPublicMethods ().RequiresAll ();
+			}
 		}
 
 		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)]

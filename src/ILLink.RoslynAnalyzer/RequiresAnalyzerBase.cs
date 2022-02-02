@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using ILLink.Shared;
 using Microsoft.CodeAnalysis;
@@ -25,6 +24,7 @@ namespace ILLink.RoslynAnalyzer
 		private protected abstract DiagnosticDescriptor RequiresDiagnosticRule { get; }
 
 		private protected abstract DiagnosticDescriptor RequiresAttributeMismatch { get; }
+		private protected abstract DiagnosticDescriptor RequiresOnStaticCtor { get; }
 
 		private protected virtual ImmutableArray<(Action<OperationAnalysisContext> Action, OperationKind[] OperationKind)> ExtraOperationActions { get; } = ImmutableArray<(Action<OperationAnalysisContext> Action, OperationKind[] OperationKind)>.Empty;
 
@@ -44,6 +44,8 @@ namespace ILLink.RoslynAnalyzer
 				var incompatibleMembers = GetSpecialIncompatibleMembers (compilation);
 				context.RegisterSymbolAction (symbolAnalysisContext => {
 					var methodSymbol = (IMethodSymbol) symbolAnalysisContext.Symbol;
+					if (methodSymbol.IsStaticConstructor () && methodSymbol.HasAttribute (RequiresAttributeName))
+						ReportRequiresOnStaticCtorDiagnostic (symbolAnalysisContext, methodSymbol);
 					CheckMatchingAttributesInOverrides (symbolAnalysisContext, methodSymbol);
 					CheckAttributeInstantiation (symbolAnalysisContext, methodSymbol);
 					foreach (var typeParameter in methodSymbol.TypeParameters)
@@ -149,7 +151,7 @@ namespace ILLink.RoslynAnalyzer
 
 				context.RegisterSyntaxNodeAction (syntaxNodeAnalysisContext => {
 					var model = syntaxNodeAnalysisContext.SemanticModel;
-					if (syntaxNodeAnalysisContext.ContainingSymbol is not ISymbol containingSymbol || containingSymbol.HasAttribute (RequiresAttributeName))
+					if (syntaxNodeAnalysisContext.ContainingSymbol is not ISymbol containingSymbol || containingSymbol.IsInRequiresScope (RequiresAttributeName))
 						return;
 
 					GenericNameSyntax genericNameSyntaxNode = (GenericNameSyntax) syntaxNodeAnalysisContext.Node;
@@ -173,20 +175,21 @@ namespace ILLink.RoslynAnalyzer
 					for (int i = 0; i < typeParams.Length; i++) {
 						var typeParam = typeParams[i];
 						var typeArg = typeArgs[i];
-						if (!typeParam.HasConstructorConstraint)
+						if (!typeParam.HasConstructorConstraint ||
+							typeArg is not INamedTypeSymbol { InstanceConstructors: { } typeArgCtors })
 							continue;
 
-						var typeArgCtors = ((INamedTypeSymbol) typeArg).InstanceConstructors;
 						foreach (var instanceCtor in typeArgCtors) {
 							if (instanceCtor.Arity > 0)
 								continue;
 
-							if (instanceCtor.TryGetAttribute (RequiresAttributeName, out var requiresUnreferencedCodeAttribute)) {
+							if (instanceCtor.TargetHasRequiresAttribute (RequiresAttributeName, out var requiresAttribute) &&
+								VerifyAttributeArguments (requiresAttribute)) {
 								syntaxNodeAnalysisContext.ReportDiagnostic (Diagnostic.Create (RequiresDiagnosticRule,
 									syntaxNodeAnalysisContext.Node.GetLocation (),
 									containingSymbol.GetDisplayName (),
-									(string) requiresUnreferencedCodeAttribute.ConstructorArguments[0].Value!,
-									GetUrlFromAttribute (requiresUnreferencedCodeAttribute)));
+									(string) requiresAttribute.ConstructorArguments[0].Value!,
+									GetUrlFromAttribute (requiresAttribute)));
 							}
 						}
 					}
@@ -206,13 +209,13 @@ namespace ILLink.RoslynAnalyzer
 					SymbolAnalysisContext symbolAnalysisContext,
 					ISymbol symbol)
 				{
-					if (symbol.HasAttribute (RequiresAttributeName))
+					if (symbol.IsInRequiresScope (RequiresAttributeName))
 						return;
 
 					foreach (var attr in symbol.GetAttributes ()) {
-						if (TryGetRequiresAttribute (attr.AttributeConstructor, out var requiresAttribute)) {
+						if (attr.AttributeConstructor?.TargetHasRequiresAttribute (RequiresAttributeName, out var requiresAttribute) == true) {
 							symbolAnalysisContext.ReportDiagnostic (Diagnostic.Create (RequiresDiagnosticRule,
-								symbol.Locations[0], attr.AttributeConstructor!.Name, GetMessageFromAttribute (requiresAttribute), GetUrlFromAttribute (requiresAttribute)));
+								symbol.Locations[0], attr.AttributeConstructor.GetDisplayName (), GetMessageFromAttribute (requiresAttribute), GetUrlFromAttribute (requiresAttribute)));
 						}
 					}
 				}
@@ -333,6 +336,14 @@ namespace ILLink.RoslynAnalyzer
 				url));
 		}
 
+		private void ReportRequiresOnStaticCtorDiagnostic (SymbolAnalysisContext symbolAnalysisContext, IMethodSymbol ctor)
+		{
+			symbolAnalysisContext.ReportDiagnostic (Diagnostic.Create (
+				RequiresOnStaticCtor,
+				ctor.Locations[0],
+				ctor.GetDisplayName ()));
+		}
+
 		private void ReportMismatchInAttributesDiagnostic (SymbolAnalysisContext symbolAnalysisContext, ISymbol member, ISymbol baseMember, bool isInterface = false)
 		{
 			string message = MessageFormat.FormatRequiresAttributeMismatch (member.HasAttribute (RequiresAttributeName), isInterface, RequiresAttributeName, member.GetDisplayName (), baseMember.GetDisplayName ());
@@ -355,29 +366,6 @@ namespace ILLink.RoslynAnalyzer
 		{
 			var url = requiresAttribute?.NamedArguments.FirstOrDefault (na => na.Key == "Url").Value.Value?.ToString ();
 			return MessageFormat.FormatRequiresAttributeUrlArg (url);
-		}
-
-		/// <summary>
-		/// This method determines if the member has a Requires attribute and returns it in the variable requiresAttribute.
-		/// </summary>
-		/// <param name="member">Symbol of the member to search attribute.</param>
-		/// <param name="requiresAttribute">Output variable in case of matching Requires attribute.</param>
-		/// <returns>True if the member contains a Requires attribute; otherwise, returns false.</returns>
-		private bool TryGetRequiresAttribute (ISymbol? member, [NotNullWhen (returnValue: true)] out AttributeData? requiresAttribute)
-		{
-			requiresAttribute = null;
-			if (member == null)
-				return false;
-
-			if (!member.TryGetAttribute (RequiresAttributeName, out var _attribute))
-				return false;
-
-			if (VerifyAttributeArguments (_attribute)) {
-				requiresAttribute = _attribute;
-				return true;
-			}
-
-			return false;
 		}
 
 		/// <summary>

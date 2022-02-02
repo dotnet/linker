@@ -51,7 +51,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			if (_missing.Any ()) {
 				var missingLines = string.Join (
 					Environment.NewLine,
-					_missing.Select (md => $"({md.Attribute.GetLocation ().GetLineSpan ()}) {md.Message}"));
+					_missing.Select (md => $"({md.Attribute.Parent?.Parent?.GetLocation ().GetLineSpan ()}) {md.Message}"));
 				message += $@"Expected warnings were not generated:{Environment.NewLine}{missingLines}{Environment.NewLine}";
 			}
 			if (_unmatched.Any ()) {
@@ -66,6 +66,12 @@ namespace ILLink.RoslynAnalyzer.Tests
 		public override void VisitClassDeclaration (ClassDeclarationSyntax node)
 		{
 			base.VisitClassDeclaration (node);
+			CheckMember (node);
+		}
+
+		public override void VisitConstructorDeclaration (ConstructorDeclarationSyntax node)
+		{
+			base.VisitConstructorDeclaration (node);
 			CheckMember (node);
 		}
 
@@ -107,12 +113,6 @@ namespace ILLink.RoslynAnalyzer.Tests
 		public override void VisitAccessorDeclaration (AccessorDeclarationSyntax node)
 		{
 			base.VisitAccessorDeclaration (node);
-			ValidateDiagnostics (node, node.AttributeLists);
-		}
-
-		public override void VisitConstructorDeclaration (ConstructorDeclarationSyntax node)
-		{
-			base.VisitConstructorDeclaration (node);
 			ValidateDiagnostics (node, node.AttributeLists);
 		}
 

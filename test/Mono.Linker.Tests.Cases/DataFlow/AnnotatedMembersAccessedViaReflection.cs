@@ -401,7 +401,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			public virtual Type VirtualPropertyWithAnnotation { get => null; set { value.ToString (); } }
 
 			public static Type PropertyWithAnnotationOnMembers {
-				[ExpectedWarning ("IL2078", nameof(PropertyWithAnnotationOnMembers) + ".get", ProducedBy = ProducedBy.Trimmer)]
+				[ExpectedWarning ("IL2078", nameof (PropertyWithAnnotationOnMembers) + ".get", ProducedBy = ProducedBy.Trimmer)]
 				[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicEvents)]
 				get;
 				[param: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicEvents)]
