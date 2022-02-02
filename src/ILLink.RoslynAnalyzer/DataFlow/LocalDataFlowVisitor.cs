@@ -5,7 +5,6 @@ using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using ILLink.Shared.DataFlow;
-using ILLink.Shared.TrimAnalysis;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.FlowAnalysis;
@@ -208,6 +207,14 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			if (operation.Constructor == null)
 				return TopValue;
 
+			// Passing null for instance value is a bit wrong - below we will translate it to TopValue right now.
+			// Technically this is an instance call and the instance is some valid value, we just don't know which
+			// but for example it does have a static type. For now this is OK since we don't need the information
+			// for anything yet.
+
+			// The return here is also technically problematic, the return value is an instance of a known type.
+			// Especially with DAM on type, this can lead to incorrectly analyzed code (as in unknown type which leads
+			// to noise). Linker has the same problem currently: https://github.com/dotnet/linker/issues/1952
 			return ProcessMethodCall (operation, operation.Constructor, null, operation.Arguments, state);
 		}
 
