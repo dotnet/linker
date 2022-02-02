@@ -52,7 +52,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			if (methodSymbol.TryGetRequiresUnreferencedCodeAttribute (out var requiresAttributeData))
 				ReportRequiresUnreferencedCodeDiagnostic (diagnosticContext, requiresAttributeData, methodSymbol);
 
-			if (methodSymbol.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None)
+			if (!methodSymbol.IsStatic && methodSymbol.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None)
 				diagnosticContext.AddDiagnostic (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection, methodSymbol.GetDisplayName ());
 			else if (methodSymbol.IsVirtual && FlowAnnotations.GetMethodReturnValueAnnotation (methodSymbol) != DynamicallyAccessedMemberTypes.None)
 				diagnosticContext.AddDiagnostic (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection, methodSymbol.GetDisplayName ());

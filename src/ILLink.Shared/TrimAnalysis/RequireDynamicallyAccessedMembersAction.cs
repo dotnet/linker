@@ -11,6 +11,8 @@ namespace ILLink.Shared.TrimAnalysis
 {
 	partial struct RequireDynamicallyAccessedMembersAction
 	{
+		readonly DiagnosticContext _diagnosticContext;
+
 		public void Invoke (in MultiValue value, ValueWithDynamicallyAccessedMembers targetValue)
 		{
 			foreach (var uniqueValue in value) {

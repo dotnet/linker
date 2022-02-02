@@ -15,7 +15,6 @@ namespace ILLink.Shared.TrimAnalysis
 		readonly LinkContext _context;
 		readonly ReflectionMethodBodyScanner _reflectionMethodBodyScanner;
 		readonly ReflectionMethodBodyScanner.AnalysisContext _analysisContext;
-		readonly DiagnosticContext _diagnosticContext;
 
 		public RequireDynamicallyAccessedMembersAction (
 			LinkContext context,
