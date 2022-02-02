@@ -397,6 +397,24 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicEvents)]
 			public virtual Type VirtualPropertyWithAnnotationGetterOnly { get => null; }
 
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicEvents)]
+			public virtual Type VirtualPropertyWithAnnotation { get => null; set { value.ToString (); } }
+
+			public static Type PropertyWithAnnotationOnMembers {
+				[ExpectedWarning ("IL2078", nameof(PropertyWithAnnotationOnMembers) + ".get", ProducedBy = ProducedBy.Trimmer)]
+				[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicEvents)]
+				get;
+				[param: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicEvents)]
+				set;
+			}
+
+			public virtual Type VirtualPropertyWithAnnotationOnMembers {
+				[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicEvents)]
+				get => null;
+				[param: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicEvents)]
+				set { value.ToString (); }
+			}
+
 			class AttributeWithPropertyWithAnnotation : Attribute
 			{
 				public AttributeWithPropertyWithAnnotation () { }
@@ -457,7 +475,16 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			// DynamicDependency is not supported yet in the analyzer https://github.com/dotnet/linker/issues/2560
 			[ExpectedWarning ("IL2111", nameof (PropertyWithAnnotation) + ".set", ProducedBy = ProducedBy.Trimmer)]
+			// Linker produces warnings in incorrect places https://github.com/dotnet/linker/issues/2575
+			[ExpectedWarning ("IL2111", nameof (PropertyWithAnnotation) + ".set", ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationGetterOnly) + ".get", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotation) + ".get", ProducedBy = ProducedBy.Trimmer)]
+			//[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotation) + ".set", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2111", nameof (PropertyWithAnnotationOnMembers) + ".set", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2111", nameof (PropertyWithAnnotationOnMembers) + ".set", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2111", nameof (PropertyWithAnnotationOnMembers) + ".get", ProducedBy = ProducedBy.Trimmer)]
+			//[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationOnMembers) + ".get", ProducedBy = ProducedBy.Trimmer)]
+			//[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationOnMembers) + ".set", ProducedBy = ProducedBy.Trimmer)]
 			[DynamicDependency (DynamicallyAccessedMemberTypes.PublicProperties, typeof (AnnotatedProperty))]
 			static void DynamicDependency ()
 			{
@@ -471,6 +498,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			[ExpectedWarning ("IL2111", nameof (PropertyWithAnnotation) + ".set")]
 			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationGetterOnly) + ".get")]
+			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotation) + ".get")]
+			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotation) + ".set")]
+			[ExpectedWarning ("IL2111", nameof (PropertyWithAnnotationOnMembers) + ".set")]
+			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationOnMembers) + ".get")]
+			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationOnMembers) + ".set")]
+
 			static void DynamicallyAccessedMembers ()
 			{
 				typeof (AnnotatedProperty).RequiresPublicProperties ();
@@ -488,10 +521,26 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			// Duplicated warnings for linker and analyzer see bug https://github.com/dotnet/linker/issues/2462
 			[ExpectedWarning ("IL2111", nameof (AnnotatedProperty.PropertyWithAnnotation) + ".set")]
 			[ExpectedWarning ("IL2111", nameof (AnnotatedProperty.PropertyWithAnnotation) + ".set")]
+			// Linker produces warnings in incorrect places https://github.com/dotnet/linker/issues/2575
+			[ExpectedWarning ("IL2111", nameof (AnnotatedProperty.PropertyWithAnnotation) + ".set", ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2111", nameof (AttributeWithPropertyWithAnnotation.PropertyWithAnnotation) + ".set")]
 			[ExpectedWarning ("IL2111", nameof (AttributeWithPropertyWithAnnotation.PropertyWithAnnotation) + ".set")]
 			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationGetterOnly) + ".get")]
 			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationGetterOnly) + ".get")]
+			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotation) + ".get")]
+			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotation) + ".get")]
+			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotation) + ".set", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotation) + ".set")]
+			[ExpectedWarning ("IL2111", nameof (PropertyWithAnnotationOnMembers) + ".set")]
+			[ExpectedWarning ("IL2111", nameof (PropertyWithAnnotationOnMembers) + ".set")]
+			[ExpectedWarning ("IL2111", nameof (PropertyWithAnnotationOnMembers) + ".set", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2111", nameof (PropertyWithAnnotationOnMembers) + ".set", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2111", nameof (PropertyWithAnnotationOnMembers) + ".get", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2111", nameof (PropertyWithAnnotationOnMembers) + ".get", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationOnMembers) + ".get", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationOnMembers) + ".get", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationOnMembers) + ".set", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationOnMembers) + ".set", ProducedBy = ProducedBy.Analyzer)]
 			[UnconditionalSuppressMessage ("Test", "IL2110", Justification = "Suppress warning about backing field of PropertyWithAnnotation")]
 			static void DynamicallyAccessedMembersAll1 ()
 			{
@@ -504,10 +553,24 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			// Duplicated warnings for linker and analyzer see bug https://github.com/dotnet/linker/issues/2462
 			[ExpectedWarning ("IL2111", nameof (AnnotatedProperty.PropertyWithAnnotation) + ".set")]
 			[ExpectedWarning ("IL2111", nameof (AnnotatedProperty.PropertyWithAnnotation) + ".set")]
+			// Linker produces warnings in incorrect places https://github.com/dotnet/linker/issues/2575
+			[ExpectedWarning ("IL2111", nameof (AnnotatedProperty.PropertyWithAnnotation) + ".set", ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2111", nameof (AttributeWithPropertyWithAnnotation.PropertyWithAnnotation) + ".set")]
 			[ExpectedWarning ("IL2111", nameof (AttributeWithPropertyWithAnnotation.PropertyWithAnnotation) + ".set")]
+			[ExpectedWarning ("IL2111", nameof (AttributeWithPropertyWithAnnotation.PropertyWithAnnotation) + ".set", ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationGetterOnly) + ".get")]
 			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationGetterOnly) + ".get")]
+			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotation) + ".get")]
+			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotation) + ".get")]
+			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotation) + ".set", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotation) + ".set", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL2111", nameof (PropertyWithAnnotationOnMembers) + ".set")]
+			[ExpectedWarning ("IL2111", nameof (PropertyWithAnnotationOnMembers) + ".set")]
+			[ExpectedWarning ("IL2111", nameof (PropertyWithAnnotationOnMembers) + ".set", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationOnMembers) + ".get")]
+			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationOnMembers) + ".get")]
+			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationOnMembers) + ".set", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL2111", nameof (VirtualPropertyWithAnnotationOnMembers) + ".set")]
 			[UnconditionalSuppressMessage ("Test", "IL2110", Justification = "Suppress warning about backing field of PropertyWithAnnotation")]
 			static void DynamicallyAccessedMembersAll2 ()
 			{
