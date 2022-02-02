@@ -104,7 +104,18 @@ namespace ILLink.RoslynAnalyzer.Tests
 						break;
 					}
 				case "SandboxDependency": {
-						var sourceFile = LinkerTestBase.GetStringFromExpression (args["#0"]);
+						var argExpression = args["#0"];
+						string sourceFile;
+						if (argExpression is TypeOfExpressionSyntax typeOfSyntax) {
+							// If the argument is a Type, assume the dependency is located in a file with the
+							// outermost declaring type's name in the Dependencies subdirectory.
+							var typeNameSyntax = typeOfSyntax.Type;
+							while (typeNameSyntax is QualifiedNameSyntax qualifiedNameSyntax)
+								typeNameSyntax = qualifiedNameSyntax.Left;
+							sourceFile = Path.Combine("Dependencies", $"{typeNameSyntax.ToString ()}.cs");
+						} else {
+							sourceFile = LinkerTestBase.GetStringFromExpression (args["#0"]);
+						}
 						if (!sourceFile.EndsWith (".cs"))
 							throw new NotSupportedException ();
 						yield return Path.Combine (testDir, sourceFile);
@@ -120,16 +131,24 @@ namespace ILLink.RoslynAnalyzer.Tests
 		{
 			var resolver = new XmlFileResolver (rootSourceDir);
 			foreach (var attribute in tree.GetRoot ().DescendantNodes ().OfType<AttributeSyntax> ()) {
-				if (attribute.Name.ToString () == nameof (SetupLinkAttributesFile)
-					|| (attribute.Name.ToString ().Contains ("SetupCompileResource")
-						&& (attribute.ArgumentList?.Arguments[1].ToString ()) == "\"ILLink.LinkAttributes.xml\"")) {
-					var xmlFileName = attribute.ArgumentList?.Arguments[0].ToString ().Trim ('"') ?? "";
-					var resolvedPath = resolver.ResolveReference (xmlFileName, rootSourceDir);
-					if (resolvedPath != null) {
-						var stream = resolver.OpenRead (resolvedPath);
-						XmlText text = new ("ILLink.LinkAttributes.xml", stream);
-						yield return text;
-					}
+				switch (attribute.Name.ToString ()) {
+				case nameof (SetupLinkAttributesFile):
+					break;
+				case nameof (SetupCompileResourceAttribute):
+					var args = attribute.ArgumentList?.Arguments;
+					if (args?.Count == 2 && args?[1].ToString () == "\"ILLink.LinkAttributes.xml\"")
+						break;
+					continue;
+				default:
+					continue;
+				}
+
+				var xmlFileName = attribute.ArgumentList?.Arguments[0].ToString ().Trim ('"') ?? "";
+				var resolvedPath = resolver.ResolveReference (xmlFileName, rootSourceDir);
+				if (resolvedPath != null) {
+					var stream = resolver.OpenRead (resolvedPath);
+					XmlText text = new ("ILLink.LinkAttributes.xml", stream);
+					yield return text;
 				}
 			}
 		}
