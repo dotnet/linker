@@ -25,11 +25,14 @@ namespace ILLink.RoslynAnalyzer
 
 		static ImmutableArray<DiagnosticDescriptor> GetSupportedDiagnostics ()
 		{
-			var diagDescriptorsArrayBuilder = ImmutableArray.CreateBuilder<DiagnosticDescriptor> (23);
+			var diagDescriptorsArrayBuilder = ImmutableArray.CreateBuilder<DiagnosticDescriptor> (26);
+			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.RequiresUnreferencedCode));
 			for (int i = (int) DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsParameter;
 				i <= (int) DiagnosticId.DynamicallyAccessedMembersMismatchTypeArgumentTargetsGenericParameter; i++) {
 				diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor ((DiagnosticId) i));
 			}
+			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersFieldAccessedViaReflection));
+			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection));
 
 			return diagDescriptorsArrayBuilder.ToImmutable ();
 		}
@@ -102,7 +105,7 @@ namespace ILLink.RoslynAnalyzer
 					// These uninstantiated generics should not produce warnings.
 					if (typeArgs[i].Kind == SymbolKind.ErrorType)
 						continue;
-					var sourceValue = GetTypeValueNodeFromGenericArgument (typeArgs[i]);
+					var sourceValue = GetTypeValueNodeFromGenericArgument (context, typeArgs[i]);
 					var targetValue = new GenericParameterValue (typeParams[i]);
 					foreach (var diagnostic in GetDynamicallyAccessedMembersDiagnostics (sourceValue, targetValue, context.Node.GetLocation ()))
 						context.ReportDiagnostic (diagnostic);
@@ -110,7 +113,7 @@ namespace ILLink.RoslynAnalyzer
 			}
 		}
 
-		static SingleValue GetTypeValueNodeFromGenericArgument (ITypeSymbol type)
+		static SingleValue GetTypeValueNodeFromGenericArgument (SyntaxNodeAnalysisContext context, ITypeSymbol type)
 		{
 			return type.Kind switch {
 				SymbolKind.TypeParameter => new GenericParameterValue ((ITypeParameterSymbol) type),
@@ -118,7 +121,8 @@ namespace ILLink.RoslynAnalyzer
 				// That said we only use it to perform the dynamically accessed members checks and for that purpose treating it as System.Type is perfectly valid.
 				SymbolKind.NamedType => new SystemTypeValue ((INamedTypeSymbol) type),
 				SymbolKind.ErrorType => UnknownValue.Instance,
-				// What about things like ArrayType or PointerType and so on. Linker treats these as "named types" since it can resolve them to concrete type
+				SymbolKind.ArrayType => new SystemTypeValue (context.Compilation.GetTypeByMetadataName ("System.Array")!),
+				// What about things like PointerType and so on. Linker treats these as "named types" since it can resolve them to concrete type
 				_ => throw new NotImplementedException ()
 			};
 		}
@@ -130,9 +134,9 @@ namespace ILLink.RoslynAnalyzer
 			if (targetValue is not ValueWithDynamicallyAccessedMembers targetWithDynamicallyAccessedMembers)
 				throw new NotImplementedException ();
 
-			var requireDynamicallyAccessedMembersAction = new RequireDynamicallyAccessedMembersAction ();
 			var diagnosticContext = new DiagnosticContext (location);
-			requireDynamicallyAccessedMembersAction.Invoke (diagnosticContext, sourceValue, targetWithDynamicallyAccessedMembers);
+			var requireDynamicallyAccessedMembersAction = new RequireDynamicallyAccessedMembersAction (diagnosticContext, new ReflectionAccessAnalyzer ());
+			requireDynamicallyAccessedMembersAction.Invoke (sourceValue, targetWithDynamicallyAccessedMembers);
 
 			return diagnosticContext.Diagnostics;
 		}
