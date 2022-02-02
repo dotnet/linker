@@ -7,6 +7,7 @@ using ILLink.Shared.TypeSystemProxy;
 
 namespace ILLink.Shared.TrimAnalysis
 {
+#pragma warning disable CS0282 // There is no defined ordering between fields in multiple declarations of partial struct
 	partial struct RequireDynamicallyAccessedMembersAction
 	{
 		readonly ReflectionAccessAnalyzer _reflectionAccessAnalyzer;
