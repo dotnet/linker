@@ -24,6 +24,8 @@ namespace Mono.Linker.Tests.Cases.LinkAttributes
 			Kept_4 ();
 			Kept_5 ();
 			Removed_5 ();
+			Removed_6 ();
+			Kept_6 ();
 		}
 
 		[Kept]
@@ -87,6 +89,17 @@ namespace Mono.Linker.Tests.Cases.LinkAttributes
 		[TestConditionalRemove (72, "a", "b", "c", "d", "e")]
 		static void Removed_5 ()
 		{ }
+
+		[Kept]
+		[TestConditionalRemove (new int[] { 1, 2, 3 }, "remove4")]
+		static void Removed_6 ()
+		{ }
+
+		[Kept]
+		[KeptAttributeAttribute (typeof (TestConditionalRemoveAttribute))]
+		[TestConditionalRemove (new int[] { 1, 2, 3, 4 }, "remove4")]
+		static void Kept_6 ()
+		{ }
 	}
 
 	[Kept]
@@ -117,10 +130,13 @@ namespace Mono.Linker.Tests.Cases.LinkAttributes
 		{
 		}
 
-		[Kept]
-		public TestConditionalRemoveAttribute (int key, [KeptAttributeAttribute (typeof (ParamArrayAttribute))] params string[] values)
+		public TestConditionalRemoveAttribute (int key, [KeptAttributeAttribute (typeof (ParamArrayAttribute))] params object[] values)
 		{
 		}
+
+		[Kept]
+		public TestConditionalRemoveAttribute (int[] intArray, string str)
+		{ }
 
 	}
 }

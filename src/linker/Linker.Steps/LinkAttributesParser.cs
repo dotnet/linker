@@ -173,10 +173,15 @@ namespace Mono.Linker.Steps
 				td.BaseType = attributeType;
 			}
 
+			var ctor = new MethodDefinition (".ctor", ctorAttributes, voidType);
+			td.Methods.Add (ctor);
+			var ctor1 = new MethodDefinition (".ctor", ctorAttributes, voidType);
+			var param = new ParameterDefinition (objectType);
+			td.Methods.Add (ctor);
+
 			var ctorN = new MethodDefinition (".ctor", ctorAttributes, voidType);
-			var param = new ParameterDefinition (objectArrayType);
-			param.CustomAttributes.Add (ParamArrayCustomAttribute);
-			ctorN.Parameters.Add (param);
+			var paramN = new ParameterDefinition (objectArrayType);
+			ctorN.Parameters.Add (paramN);
 			td.Methods.Add (ctorN);
 
 			return _context.MarkedKnownMembers.RemoveAttributeInstancesAttributeDefinition = td;
@@ -344,8 +349,39 @@ namespace Mono.Linker.Steps
 				}
 
 				return new CustomAttributeArgument (typeref, type);
+			case MetadataType.Array:
+				if (typeref is ArrayType arrayTypeRef) {
+					var elementType = arrayTypeRef.ElementType;
+					var arrayArgumentIterator = nav.SelectChildren ("argument", string.Empty);
+					ArrayBuilder<CustomAttributeArgument> elements = new ArrayBuilder<CustomAttributeArgument> ();
+					foreach (XPathNavigator elementNav in arrayArgumentIterator) {
+						if (ReadCustomAttributeArgument (elementNav, memberWithAttribute) is CustomAttributeArgument arg) {
+							// To match Cecil, elements of a list that are subclasses of the list type must be boxed in the base type
+							//	e.g. object[] { 73 } translates to Cecil.CAA { Type: object[] : Value: CAA{ Type: object, Value: CAA{ Type: int, Value: 73} } }
+							if (arg.Type == elementType) {
+								elements.Add (arg);
+							}
+							// This check allows the xml to be less verbose by allowing subtypes to not be boxed in the Array type
+							// e.g.
+							// <argument type="object[]">
+							//   <argument type="string">hello</argument>
+							// </argument>
+							//
+							else if (arg.Type.IsSubclassOf (elementType.Namespace, elementType.Name, _context)) {
+								elements.Add (new CustomAttributeArgument (elementType, arg));
+							} else {
+								_context.LogError (GetMessageOriginForPosition (nav), DiagnosticId.UnexpectedAttributeArgumentType, typeref.GetDisplayName ());
+
+							}
+						} else {
+							return null;
+						}
+					}
+					return new CustomAttributeArgument (arrayTypeRef, elements.ToArray ());
+				}
+				goto default;
 			default:
-				// No support for null and arrays, consider adding - dotnet/linker/issues/1957
+				// No support for null, consider adding - dotnet/linker/issues/1957
 				_context.LogError (GetMessageOriginForPosition (nav), DiagnosticId.UnexpectedAttributeArgumentType, typeref.GetDisplayName ());
 				return null;
 			}

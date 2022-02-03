@@ -843,16 +843,7 @@ namespace Mono.Linker.Steps
 				var args = attr.Arguments;
 				if (args.Length == 0)
 					return true;
-				bool HasParamArrayArg = ca.Constructor.Parameters.Count > 0
-										&& ca.Constructor.Parameters.Last ().CustomAttributes
-											.Any (att => att.AttributeType.ToString () == "System.ParamArrayAttribute");
 
-				if (HasParamArrayArg) {
-					if (HasMatchingParamArrayArguments (args, ca))
-						return true;
-					else
-						continue;
-				}
 				if (args.Length > ca.ConstructorArguments.Count)
 					continue;
 
@@ -866,76 +857,12 @@ namespace Mono.Linker.Steps
 			{
 				var attributeInstanceArgs = attributeInstance.ConstructorArguments;
 				for (int i = 0; i < removeAttrInstancesArgs.Length; ++i) {
-					object raiVal = removeAttrInstancesArgs[i].Value;
-					object aiVal = attributeInstanceArgs[i].Value;
-					TypeReference raiType = removeAttrInstancesArgs[i].Type;
-					TypeReference aiType = attributeInstanceArgs[i].Type;
-					// The internal attribute has only object overloads which does not allow
-					// to distinguish between boxed/converted and exact candidates. This
-					// allows simpler data entering and for now it does not like problem.
-
-					// RemoveAttributeInstances constructor should unbox each argument out of the Object box
-					Debug.Assert (raiVal is not CustomAttribute);
-
-					// Arguments to a custom argument may be boxed in an Object
-					if (aiVal is CustomAttributeArgument caaB) {
-						aiVal = caaB.Value;
-						aiType = caaB.Type;
-					}
-
-					if (!raiVal.Equals (aiVal)) return false;
+					if (!removeAttrInstancesArgs[i].IsEqualTo (attributeInstanceArgs[i])) return false;
 				}
 
 				return true;
 			}
 
-			static bool HasMatchingParamArrayArguments (CustomAttributeArgument[] removeAttrInstancesArgs, CustomAttribute attributeInstance)
-			{
-				var attributeInstanceArgs = attributeInstance.ConstructorArguments;
-				int i = 0;
-				// Check regular parameters
-				for (; i < attributeInstanceArgs.Count - 1; ++i) {
-					object raiVal = removeAttrInstancesArgs[i].Value;
-					object aiVal = attributeInstanceArgs[i].Value;
-					TypeReference raiType = removeAttrInstancesArgs[i].Type;
-					TypeReference aiType = attributeInstanceArgs[i].Type;
-					// The internal attribute has only object overloads which does not allow
-					// to distinguish between boxed/converted and exact candidates. This
-					// allows simpler data entering and for now it does not like problem.
-
-					// RemoveAttributeInstances constructor should unbox each argument out of the Object box
-					Debug.Assert (raiVal is not CustomAttribute);
-
-					// Arguments to a custom argument may be boxed in an Object
-					if (aiVal is CustomAttributeArgument caaB) {
-						aiVal = caaB.Value;
-						aiType = caaB.Type;
-					}
-
-					if (!raiVal.Equals (aiVal)) return false;
-				}
-				// Check ParamArray Arguments
-				int j = i;
-				for (; i < removeAttrInstancesArgs.Length; ++i) {
-					object raiVal = removeAttrInstancesArgs[i].Value;
-					TypeReference raiType = removeAttrInstancesArgs[i].Type;
-					// Flatten the last argument (which is an array) into values
-					object? aiVal = (attributeInstanceArgs[j].Value as CustomAttributeArgument[])?[i - j];
-					TypeReference? aiType = (attributeInstanceArgs[j].Value as CustomAttributeArgument[])?[i - j].Type;
-
-					Debug.Assert (raiVal is not CustomAttribute);
-
-					// Arguments to a custom argument may be boxed in an Object
-					if (aiVal is CustomAttributeArgument caaB) {
-						aiVal = caaB.Value;
-						aiType = caaB.Type;
-					}
-
-					if (!raiVal.Equals (aiVal)) return false;
-				}
-
-				return true;
-			}
 		}
 
 		protected virtual bool ProcessLinkerSpecialAttribute (CustomAttribute ca, ICustomAttributeProvider provider, in DependencyInfo reason)
