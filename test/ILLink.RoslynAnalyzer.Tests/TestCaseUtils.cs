@@ -112,7 +112,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 							var typeNameSyntax = typeOfSyntax.Type;
 							while (typeNameSyntax is QualifiedNameSyntax qualifiedNameSyntax)
 								typeNameSyntax = qualifiedNameSyntax.Left;
-							sourceFile = Path.Combine("Dependencies", $"{typeNameSyntax.ToString ()}.cs");
+							sourceFile = Path.Combine ("Dependencies", $"{typeNameSyntax.ToString ()}.cs");
 						} else {
 							sourceFile = LinkerTestBase.GetStringFromExpression (args["#0"]);
 						}

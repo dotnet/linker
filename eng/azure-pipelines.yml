@@ -123,25 +123,6 @@ stages:
             displayName: Build illink.sln $(_BuildConfig)
 
       - ${{ if eq(variables.officialBuild, 'false') }}:
-        - job: Linux_analyzer_unexpected_warnings_check
-          displayName: Linux analyzer unexpected warnings check
-          condition: eq(variables.officialBuild, 'false')
-          pool:
-            vmImage: ubuntu-latest
-          steps:
-          - checkout: self
-            submodules: true
-          - script: eng/common/cibuild.sh --projects $(Build.SourcesDirectory)/test/ILLink.RoslynAnalyzer.Tests/ILLink.RoslynAnalyzer.Tests.csproj
-                    --configuration $(_BuildConfig) $(_BuildArgs)
-                    --integrationTest
-                    --nodeReuse false
-                    -p:CheckForExtraAnalyzerWarningsInAllTests=true
-            env:
-              # https://github.com/Microsoft/vstest/issues/1503#issuecomment-410732193
-              MSBUILDENSURESTDOUTFORTASKPROCESSES: 1
-            displayName: Build illink.sln $(_BuildConfig)
-
-      - ${{ if eq(variables.officialBuild, 'false') }}:
         - job: macOS
           pool:
               vmImage: macOS-latest
