@@ -847,22 +847,20 @@ namespace Mono.Linker.Steps
 				if (args.Length > ca.ConstructorArguments.Count)
 					continue;
 
-				if (HasMatchingArguments (args, ca))
+				if (HasMatchingArguments (args, ca.ConstructorArguments))
 					return true;
 			}
 
 			return false;
 
-			static bool HasMatchingArguments (CustomAttributeArgument[] removeAttrInstancesArgs, CustomAttribute attributeInstance)
+			static bool HasMatchingArguments (CustomAttributeArgument[] removeAttrInstancesArgs, Collection<CustomAttributeArgument> attributeInstanceArgs)
 			{
-				var attributeInstanceArgs = attributeInstance.ConstructorArguments;
 				for (int i = 0; i < removeAttrInstancesArgs.Length; ++i) {
-					if (!removeAttrInstancesArgs[i].IsEqualTo (attributeInstanceArgs[i])) return false;
+					if (!removeAttrInstancesArgs[i].IsEqualTo (attributeInstanceArgs[i]))
+						return false;
 				}
-
 				return true;
 			}
-
 		}
 
 		protected virtual bool ProcessLinkerSpecialAttribute (CustomAttribute ca, ICustomAttributeProvider provider, in DependencyInfo reason)

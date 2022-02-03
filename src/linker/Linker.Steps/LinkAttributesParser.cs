@@ -33,30 +33,6 @@ namespace Mono.Linker.Steps
 			bool stripLinkAttributes = _context.IsOptimizationEnabled (CodeOptimizations.RemoveLinkAttributes, _resource?.Assembly);
 			ProcessXml (stripLinkAttributes, _context.IgnoreLinkAttributes);
 		}
-		TypeDefinition? _paramArrayAttributeType;
-		TypeDefinition? ParamArrayAttributeType {
-			get {
-				if (_paramArrayAttributeType is TypeDefinition td)
-					return td;
-				_paramArrayAttributeType = BCL.FindPredefinedType ("System", "ParamArrayAttribute", _context);
-				return _paramArrayAttributeType;
-			}
-		}
-
-		CustomAttribute? _paramArrayCustomAttribute;
-		CustomAttribute? ParamArrayCustomAttribute {
-			get {
-				if (_paramArrayCustomAttribute is CustomAttribute ca)
-					return ca;
-				else {
-					var paramArrayAttributeType = BCL.FindPredefinedType ("System", "ParamArrayAttribute", _context);
-					if (paramArrayAttributeType == null)
-						return null;
-					_paramArrayCustomAttribute = new CustomAttribute (paramArrayAttributeType.GetDefaultInstanceConstructor ());
-					return _paramArrayCustomAttribute;
-				}
-			}
-		}
 
 		static bool IsRemoveAttributeInstances (string attributeName) => attributeName == "RemoveAttributeInstances" || attributeName == "RemoveAttributeInstancesAttribute";
 
@@ -80,8 +56,7 @@ namespace Mono.Linker.Steps
 						continue;
 					}
 
-					var argCount = attributeNav.SelectChildren ("argument", string.Empty).Count;
-					attributeType = GenerateRemoveAttributeInstancesAttribute (argCount);
+					attributeType = GenerateRemoveAttributeInstancesAttribute ();
 					if (attributeType == null)
 						continue;
 				} else {
@@ -121,19 +96,7 @@ namespace Mono.Linker.Steps
 				return sb.ToString ();
 			}
 		}
-		///	<summary>
-		/// Here, we generate new constructors for the synthetic RemoveAttributeInstancesAttribute type
-		///	(in the Cecil space, with no namespace) based on the number of arguments in the XML.
-		///	Each such .ctor is defined as .ctor(object, object, ....) - all arguments are boxed
-		///	in the XML by wrapping them with "object" argument.
-		/// The internal linker representation which is a type called 
-		/// <see cref="Mono.Linker.RemoveAttributeInstancesAttribute">Mono.Linker.RemoveAttributeInstancesAttribute</see>
-		///	which has only one .ctor which takes a collection of arguments (<c>Collection&lt;CustomAttributeArgument&gt;</c>).
-		///	The linker attribute caching mechanism <see cref="Mono.Linker.LinkerAttributesInformation"/> converts the call to 
-		///	this generated .ctor with arbitrary number of arguments to the instantiation of the internal representation.
-		///	The boxing within an Object is removed in this conversion.
-		///	</summary>
-		TypeDefinition? GenerateRemoveAttributeInstancesAttribute (int ctorArgumentCount)
+		TypeDefinition? GenerateRemoveAttributeInstancesAttribute ()
 		{
 			TypeDefinition? td = null;
 
@@ -162,22 +125,20 @@ namespace Mono.Linker.Steps
 			// public sealed class RemoveAttributeInstancesAttribute : Attribute
 			// {
 			//		public RemoveAttributeInstancesAttribute () {}
+			//		public RemoveAttributeInstancesAttribute (object values) {} // For legacy uses
 			//		public RemoveAttributeInstancesAttribute (params object[] values) {}
 			// }
 			//
 			const MethodAttributes ctorAttributes = MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName | MethodAttributes.Final;
 
-			if (td == null) {
-				td = new TypeDefinition ("", nameof (RemoveAttributeInstancesAttribute), TypeAttributes.Public);
-
-				td.BaseType = attributeType;
-			}
+			td = new TypeDefinition ("", nameof (RemoveAttributeInstancesAttribute), TypeAttributes.Public);
+			td.BaseType = attributeType;
 
 			var ctor = new MethodDefinition (".ctor", ctorAttributes, voidType);
 			td.Methods.Add (ctor);
 			var ctor1 = new MethodDefinition (".ctor", ctorAttributes, voidType);
 			var param = new ParameterDefinition (objectType);
-			td.Methods.Add (ctor);
+			td.Methods.Add (ctor1);
 
 			var ctorN = new MethodDefinition (".ctor", ctorAttributes, voidType);
 			var paramN = new ParameterDefinition (objectArrayType);
@@ -215,10 +176,7 @@ namespace Mono.Linker.Steps
 					continue;
 
 				var parameters = method.Parameters;
-				if (args.Length != parameters.Count
-					&& !(parameters.Count > 0
-						&& method.Parameters.Last ().CustomAttributes
-							.Any (ca => _context.Resolve (ca.AttributeType) == ParamArrayAttributeType)))
+				if (args.Length != parameters.Count)
 					continue;
 
 				bool match = true;
@@ -227,17 +185,7 @@ namespace Mono.Linker.Steps
 					// No candidates betterness, only exact matches are supported
 					//
 					var parameterType = _context.TryResolve (parameters[ii].ParameterType);
-					if (parameterType == null)
-						match = false;
-					// Account for param array constructors (params T[] arg)
-					else if (parameters[ii].CustomAttributes.Any (ca => _context.Resolve (ca.AttributeType) == ParamArrayAttributeType)
-							&& parameters[ii].ParameterType.MetadataType == MetadataType.Array) {
-						for (; ii < args.Length; ii++) {
-							if (parameterType != _context.TryResolve (args[ii].Type)) {
-								match = false;
-							}
-						}
-					} else if (parameterType != _context.TryResolve (args[ii].Type))
+					if (parameterType == null || parameterType != _context.TryResolve (args[ii].Type))
 						match = false;
 				}
 
@@ -361,17 +309,16 @@ namespace Mono.Linker.Steps
 							if (arg.Type == elementType) {
 								elements.Add (arg);
 							}
-							// This check allows the xml to be less verbose by allowing subtypes to not be boxed in the Array type
-							// e.g.
-							// <argument type="object[]">
-							//   <argument type="string">hello</argument>
+							// This check allows the xml to be less verbose by allowing subtypes to not be boxed in the Array's element type
+							// e.g. here string doesn't need to be boxed in an "object" argument
+							// <argument type="System.Object[]">
+							//   <argument type="System.String">hello</argument>
 							// </argument>
 							//
 							else if (arg.Type.IsSubclassOf (elementType.Namespace, elementType.Name, _context)) {
 								elements.Add (new CustomAttributeArgument (elementType, arg));
 							} else {
 								_context.LogError (GetMessageOriginForPosition (nav), DiagnosticId.UnexpectedAttributeArgumentType, typeref.GetDisplayName ());
-
 							}
 						} else {
 							return null;

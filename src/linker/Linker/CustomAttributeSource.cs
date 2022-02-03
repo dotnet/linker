@@ -39,7 +39,7 @@ namespace Mono.Linker
 		{
 			AssemblyDefinition? assembly;
 			try {
-				// Might be the internal RemoveAttributesInstancesAttribute with no Module or Assembly
+				// Might be the internal RemoveAttributesInstancesAttribute which has no Module or Assembly and throws a NullRef
 				assembly = GetAssemblyFromCustomAttributeProvider (provider);
 			} catch (NullReferenceException) {
 				xmlInfo = null;
