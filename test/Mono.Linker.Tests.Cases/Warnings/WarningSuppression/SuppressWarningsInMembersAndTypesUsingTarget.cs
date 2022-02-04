@@ -12,6 +12,8 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 [module: UnconditionalSuppressMessage ("Test", "IL2072", Scope = "member", Target = "M:Mono.Linker.Tests.Cases.Warnings.WarningSuppression..get_Property")]
 [module: UnconditionalSuppressMessage ("Test", "IL2072", Scope = "member", Target = "M:Mono.Linker.Tests.Cases.Warnings.WarningSuppression.WarningsInMembers.MultipleWarnings")]
 [module: UnconditionalSuppressMessage ("Test", "IL2026", Scope = "member", Target = "M:Mono.Linker.Tests.Cases.Warnings.WarningSuppression.WarningsInMembers.MultipleSuppressions")]
+[module: UnconditionalSuppressMessage ("Test", "IL2026", Scope = "member", Target = "M:Mono.Linker.Tests.Cases.Warnings.WarningSuppression.WarningsInMembers.Method")]
+[module: UnconditionalSuppressMessage ("Test", "IL2026", Scope = "member", Target = "M:Mono.Linker.Tests.Cases.Warnings.WarningSuppression.WarningsInMembers.get_Property")]
 
 namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 {
