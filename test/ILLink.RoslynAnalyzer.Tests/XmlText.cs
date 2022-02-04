@@ -11,6 +11,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 	class XmlText : AdditionalText
 	{
 		public override string Path { get; }
+
 		readonly Stream Doc;
 		public XmlText (string path, Stream data)
 		{
