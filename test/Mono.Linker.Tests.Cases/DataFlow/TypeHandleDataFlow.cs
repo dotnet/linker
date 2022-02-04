@@ -64,9 +64,6 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			Type.GetTypeFromHandle (typeWithMethods.TypeHandle).RequiresPublicMethods ();
 		}
 
-		// https://github.com/dotnet/linker/issues/2528
-		// Analyzer doesn't track null values yet
-		[ExpectedWarning ("IL2072", ProducedBy = ProducedBy.Analyzer)]
 		static void TestNull ()
 		{
 			Type type = null;
