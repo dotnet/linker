@@ -103,7 +103,7 @@ namespace ILLink.RoslynAnalyzer
 		}
 
 		// Used in context.TryGetValue to cache the xml model
-		public static readonly SourceTextValueProvider<List<LinkAttributes.IRootNode>?> ProcessXmlProvider = new ((sourceText) => {
+		public static readonly SourceTextValueProvider<List<LinkAttributes.ITopLevelNode>?> ProcessXmlProvider = new ((sourceText) => {
 			Stream stream = GenerateStream (sourceText);
 			XDocument? document;
 			try {

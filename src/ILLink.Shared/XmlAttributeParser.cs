@@ -11,7 +11,7 @@ namespace ILLink.Shared
 {
 	public static class LinkAttributes
 	{
-		public static List<IRootNode> ProcessXml (XDocument doc)
+		public static List<ITopLevelNode> ProcessXml (XDocument doc)
 		{
 			try {
 				XPathNavigator nav = doc.CreateNavigator ();
@@ -20,7 +20,7 @@ namespace ILLink.Shared
 			// TODO: handle the correct exceptions correctly
 			catch (ArgumentException) {
 				// XML doesn't have a <linker> tag and is invalid. The document should have been validated before 
-				return new List<IRootNode> ();
+				return new List<ITopLevelNode> ();
 			}
 		}
 
@@ -209,7 +209,7 @@ namespace ILLink.Shared
 			}
 		}
 
-		public partial record TypeNode : TypeBaseNode, IRootNode
+		public partial record TypeNode : TypeBaseNode, ITopLevelNode
 		{
 			public string FullName;
 			public TypeNode (XPathNavigator nav) : base (nav)
@@ -218,7 +218,7 @@ namespace ILLink.Shared
 			}
 		}
 
-		public record AssemblyNode : FeatureSwitchedNode, IRootNode
+		public record AssemblyNode : FeatureSwitchedNode, ITopLevelNode
 		{
 			public List<TypeNode> Types;
 			public string FullName;
@@ -232,7 +232,7 @@ namespace ILLink.Shared
 			}
 		}
 
-		public interface IRootNode
+		public interface ITopLevelNode
 		{
 		}
 
@@ -244,12 +244,12 @@ namespace ILLink.Shared
 				LineInfo = (nav is IXmlLineInfo lineInfo) ? lineInfo : null;
 			}
 
-			public static List<IRootNode> ProcessRootNodes (XPathNavigator nav)
+			public static List<ITopLevelNode> ProcessRootNodes (XPathNavigator nav)
 			{
 				if (!nav.MoveToChild (LinkerElementName, XmlNamespace)) {
 					throw new ArgumentException ($"XML does not have <{LinkerElementName}> base tag");
 				}
-				var roots = new List<IRootNode> ();
+				var roots = new List<ITopLevelNode> ();
 				foreach (XPathNavigator typeNav in nav.SelectChildren (TypeElementName, "")) {
 					roots.Add (new TypeNode (typeNav));
 				}
