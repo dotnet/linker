@@ -50,7 +50,6 @@ namespace Mono.Linker.Steps
 						LogWarning (attributeNav, DiagnosticId.UnrecognizedInternalAttribute, internalAttribute);
 						continue;
 					}
-					// TODO: Replace with IsAttributeType check once we have it
 					if (provider is not TypeDefinition) {
 						LogWarning (attributeNav, DiagnosticId.XmlRemoveAttributeInstancesCanOnlyBeUsedOnType, nameof (RemoveAttributeInstancesAttribute));
 						continue;
