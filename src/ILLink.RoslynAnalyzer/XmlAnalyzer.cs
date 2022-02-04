@@ -3,6 +3,7 @@
 
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -40,8 +41,7 @@ namespace ILLink.RoslynAnalyzer
 						if (additionalFileContext.AdditionalFile.GetText () is not SourceText text)
 							return;
 
-						if (!ValidateLinkAttributesXml (additionalFileContext, text))
-							return;
+						Debug.Assert (ValidateLinkAttributesXml (additionalFileContext, text));
 
 						if (!context.TryGetValue (text, ProcessXmlProvider, out var xmlData) || xmlData is null) {
 							additionalFileContext.ReportDiagnostic (Diagnostic.Create (s_errorProcessingXmlLocation, null, additionalFileContext.AdditionalFile.Path));
@@ -49,8 +49,12 @@ namespace ILLink.RoslynAnalyzer
 						}
 						foreach (var root in xmlData) {
 							if (root is LinkAttributes.TypeNode typeNode) {
-								foreach (var duplicatedMethods in typeNode.Methods.GroupBy (m => m.Name).Where (m => m.Count () > 0)) {
-									additionalFileContext.ReportDiagnostic (Diagnostic.Create (s_moreThanOneValueForParameterOfMethod, null, duplicatedMethods.FirstOrDefault ().Name, typeNode.FullName));
+								foreach (var duplicatedMethod in typeNode.Methods.GroupBy (m => m.Name).Where (m => m.Count () > 0)) {
+									additionalFileContext.ReportDiagnostic (Diagnostic.Create (
+										s_moreThanOneValueForParameterOfMethod,
+										null,
+										duplicatedMethod.FirstOrDefault ().Name,
+										typeNode.FullName));
 								}
 							}
 						}
@@ -84,7 +88,7 @@ namespace ILLink.RoslynAnalyzer
 			XmlSchemaSet schemaSet = new XmlSchemaSet ();
 			schemaSet.Add (LinkAttributesSchema);
 			bool valid = true;
-			document.Validate (schemaSet, (sender, error) => { });
+			document.Validate (schemaSet, (sender, error) => { valid = false; });
 			return valid;
 		}
 
