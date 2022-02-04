@@ -32,6 +32,7 @@ namespace ILLink.RoslynAnalyzer
 			AddRange (DiagnosticId.MethodParameterCannotBeStaticallyDetermined, DiagnosticId.TypePassedToGenericParameterCannotBeStaticallyDetermined);
 			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersFieldAccessedViaReflection));
 			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection));
+			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.UnrecognizedTypeInRuntimeHelpersRunClassConstructor));
 
 			return diagDescriptorsArrayBuilder.ToImmutable ();
 

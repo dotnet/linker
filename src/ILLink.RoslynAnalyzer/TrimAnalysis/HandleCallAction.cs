@@ -12,6 +12,7 @@ namespace ILLink.Shared.TrimAnalysis
 	partial struct HandleCallAction
 	{
 #pragma warning disable CA1822 // Mark members as static - the other partial implementations might need to be instance methods
+#pragma warning disable IDE0060 // Unused parameters - the other partial implementation may need the parameter
 
 		readonly ISymbol _owningSymbol;
 		readonly IOperation _operation;
@@ -20,6 +21,7 @@ namespace ILLink.Shared.TrimAnalysis
 		{
 			_owningSymbol = owningSymbol;
 			_operation = operation;
+			_diagnosticContext = diagnosticContext;
 			_requireDynamicallyAccessedMembersAction = new (diagnosticContext, new ReflectionAccessAnalyzer ());
 		}
 
@@ -38,6 +40,9 @@ namespace ILLink.Shared.TrimAnalysis
 
 		private partial MethodThisParameterValue GetMethodThisParameterValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 			=> new (method.Method, dynamicallyAccessedMemberTypes);
+
+		// TODO: Does the analyzer need to do something here?
+		private partial void MarkStaticConstructor (TypeProxy type) { }
 
 		private partial string GetContainingSymbolDisplayName () => _operation.FindContainingSymbol (_owningSymbol).GetDisplayName ();
 	}

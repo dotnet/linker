@@ -14,6 +14,8 @@ namespace ILLink.Shared.TrimAnalysis
 #pragma warning disable CA1822 // Mark members as static - the other partial implementations might need to be instance methods
 
 		readonly LinkContext _context;
+		readonly ReflectionMethodBodyScanner _reflectionMethodBodyScanner;
+		readonly ReflectionMethodBodyScanner.AnalysisContext _analysisContext;
 		readonly MethodDefinition _callingMethodDefinition;
 
 		public HandleCallAction (
@@ -23,7 +25,10 @@ namespace ILLink.Shared.TrimAnalysis
 			MethodDefinition callingMethodDefinition)
 		{
 			_context = context;
+			_reflectionMethodBodyScanner = reflectionMethodBodyScanner;
+			_analysisContext = analysisContext;
 			_callingMethodDefinition = callingMethodDefinition;
+			_diagnosticContext = new DiagnosticContext (analysisContext.Origin, analysisContext.DiagnosticsEnabled, context);
 			_requireDynamicallyAccessedMembersAction = new (context, reflectionMethodBodyScanner, analysisContext);
 		}
 
@@ -41,6 +46,9 @@ namespace ILLink.Shared.TrimAnalysis
 
 		private partial MethodThisParameterValue GetMethodThisParameterValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 			=> new (method.Method, dynamicallyAccessedMemberTypes);
+
+		private partial void MarkStaticConstructor (TypeProxy type)
+			=> _reflectionMethodBodyScanner.MarkStaticConstructor (_analysisContext, type.Type);
 
 		private partial string GetContainingSymbolDisplayName () => _callingMethodDefinition.GetDisplayName ();
 	}

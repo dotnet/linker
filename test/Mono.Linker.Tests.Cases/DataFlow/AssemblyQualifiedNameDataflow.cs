@@ -63,6 +63,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			RequirePublicConstructors ("System.Invalid.TypeName");
 		}
 
+		// https://github.com/dotnet/linker/issues/2528
+		[ExpectedWarning ("IL2072", nameof (RequirePublicConstructors), ProducedBy = ProducedBy.Analyzer)]
 		static void TestNull ()
 		{
 			Type type = null;

@@ -268,16 +268,16 @@ namespace Mono.Linker.Dataflow
 			case IntrinsicId.Type_GetTypeFromHandle:
 			case IntrinsicId.Type_get_TypeHandle:
 			case IntrinsicId.Type_GetInterface:
-			case IntrinsicId.Type_get_AssemblyQualifiedName: {
+			case IntrinsicId.Type_get_AssemblyQualifiedName:
+			case IntrinsicId.RuntimeHelpers_RunClassConstructor : {
 					var instanceValue = MultiValueLattice.Top;
 					IReadOnlyList<MultiValue> parameterValues = methodParams;
 					if (calledMethodDefinition.HasImplicitThis ()) {
 						instanceValue = methodParams[0];
 						parameterValues = parameterValues.Skip (1).ToImmutableList ();
 					}
-					handleCallAction.Invoke (calledMethodDefinition, instanceValue, parameterValues, out methodReturnValue);
+					return handleCallAction.Invoke (calledMethodDefinition, instanceValue, parameterValues, out methodReturnValue);
 				}
-				break;
 
 			case IntrinsicId.TypeDelegator_Ctor: {
 					// This is an identity function for analysis purposes
@@ -1139,24 +1139,6 @@ namespace Mono.Linker.Dataflow
 				break;
 
 			//
-			// System.Runtime.CompilerServices.RuntimeHelpers
-			//
-			// RunClassConstructor (RuntimeTypeHandle type)
-			//
-			case IntrinsicId.RuntimeHelpers_RunClassConstructor: {
-					foreach (var typeHandleValue in methodParams[0]) {
-						if (typeHandleValue is RuntimeTypeHandleValue runtimeTypeHandleValue) {
-							_markStep.MarkStaticConstructorVisibleToReflection (runtimeTypeHandleValue.RepresentedType.Type, new DependencyInfo (DependencyKind.AccessedViaReflection, analysisContext.Origin.Provider));
-						} else if (typeHandleValue == NullValue.Instance) {
-							// Nothing to do
-						} else {
-							analysisContext.ReportWarning (DiagnosticId.UnrecognizedTypeInRuntimeHelpersRunClassConstructor, calledMethodDefinition.GetDisplayName ());
-						}
-					}
-				}
-				break;
-
-			//
 			// System.Reflection.MethodInfo
 			//
 			// MakeGenericMethod (Type[] typeArguments)
@@ -1553,6 +1535,11 @@ namespace Mono.Linker.Dataflow
 		{
 			foreach (var @event in type.GetEventsOnTypeHierarchy (_context, filter, bindingFlags))
 				MarkEvent (analysisContext, @event);
+		}
+
+		internal void MarkStaticConstructor (in AnalysisContext analysisContext, TypeDefinition type)
+		{
+			_markStep.MarkStaticConstructorVisibleToReflection (type, new DependencyInfo (DependencyKind.AccessedViaReflection, analysisContext.Origin.Provider));
 		}
 
 		void ValidateGenericMethodInstantiation (
