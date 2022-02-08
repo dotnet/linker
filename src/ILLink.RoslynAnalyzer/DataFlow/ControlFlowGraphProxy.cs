@@ -130,10 +130,8 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			throw new InvalidOperationException ();
 		}
 
-		public bool TryGetPreviousFilter (RegionProxy catchOrFilterRegion, out RegionProxy filterRegion)
+		public IEnumerable<RegionProxy> GetPreviousFilters (RegionProxy catchOrFilterRegion)
 		{
-			filterRegion = default;
-
 			var region = catchOrFilterRegion.Region;
 			if (region.Kind is not (ControlFlowRegionKind.Catch or ControlFlowRegionKind.Filter))
 				throw new ArgumentException ("Must be a catch or filter region: {}", nameof (catchOrFilterRegion));
@@ -145,7 +143,6 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			var tryRegion = GetCorrespondingTry (catchOrFilterRegion);
 			// The enclosing region is part of a TryAndCatch region, which has
 			// a Try and multiple Catch or FilterAndHandler regions.
-			ControlFlowRegion? previousFilter = null;
 			foreach (var nested in tryRegion.Region.EnclosingRegion!.NestedRegions) {
 				ControlFlowRegion? catchOrFilter = null;
 				switch (nested.Kind) {
@@ -169,16 +166,12 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 				}
 
 				// When we reach this one, we are done searching.
-				if (catchOrFilter.Equals (region)) {
-					if (previousFilter == null)
-						return false;
-					filterRegion = new (previousFilter);
-					return true;
-				}
+				if (catchOrFilter.Equals (region))
+					yield break;
 
-				// If the previous region is a filter region, track this.
+				// If the previous region is a filter region, yield it.
 				if (catchOrFilter.Kind == ControlFlowRegionKind.Filter)
-					previousFilter = catchOrFilter;
+					yield return new (catchOrFilter);
 			}
 			throw new InvalidOperationException ();
 		}

@@ -796,6 +796,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		[ExpectedWarning ("IL2072", nameof (RequireAllFalse) + "(Type)", nameof (GetWithPublicFields) + "()")]
 		[ExpectedWarning ("IL2072", nameof (RequireAll) + "(Type)", nameof (GetWithPublicFields) + "()")]
+
 		[ExpectedWarning ("IL2072", nameof (RequireAllTrue) + "(Type)", nameof (GetWithPublicProperties) + "()")]
 		[ExpectedWarning ("IL2072", nameof (RequireAll2) + "(Type)", nameof (GetWithPublicProperties) + "()")]
 
@@ -803,9 +804,20 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		[ExpectedWarning ("IL2072", nameof (RequireAll3) + "(Type)", nameof (GetWithPublicFields) + "()")]
 		[ExpectedWarning ("IL2072", nameof (RequireAll3) + "(Type)", nameof (GetWithPublicProperties) + "()")]
 
+		[ExpectedWarning ("IL2072", nameof (RequireAllFalse2) + "(Type)", nameof (GetWithPublicMethods) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAllFalse2) + "(Type)", nameof (GetWithPublicFields) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAllFalse2) + "(Type)", nameof (GetWithPublicProperties) + "()")]
 		[ExpectedWarning ("IL2072", nameof (RequireAll4) + "(Type)", nameof (GetWithPublicMethods) + "()")]
 		[ExpectedWarning ("IL2072", nameof (RequireAll4) + "(Type)", nameof (GetWithPublicFields) + "()")]
 		[ExpectedWarning ("IL2072", nameof (RequireAll4) + "(Type)", nameof (GetWithPublicProperties) + "()")]
+
+		[ExpectedWarning ("IL2072", nameof (RequireAll5) + "(Type)", nameof (GetWithPublicMethods) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAll5) + "(Type)", nameof (GetWithPublicFields) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAll5) + "(Type)", nameof (GetWithPublicProperties) + "()")]
+
+		[ExpectedWarning ("IL2072", nameof (RequireAll6) + "(Type)", nameof (GetWithPublicMethods) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAll6) + "(Type)", nameof (GetWithPublicFields) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAll6) + "(Type)", nameof (GetWithPublicProperties) + "()")]
 
 		// Linker merges branches going forward.
 		[ExpectedWarning ("IL2072", nameof (RequireAll) + "(Type)", nameof (GetWithPublicMethods) + "()",
@@ -822,10 +834,14 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				RequireAll (t);
 			} catch (Exception) when (RequireAllTrue (t = GetWithPublicProperties ())) {
 				RequireAll2 (t);
-			} catch {
+			} catch (Exception1) {
 				RequireAll3 (t);
+			} catch (Exception) when (RequireAllFalse2 (t)) {
+				RequireAll4 (t);
+			} catch {
+				RequireAll5 (t);
 			}
-			RequireAll4 (t);
+			RequireAll6 (t);
 		}
 
 		public static bool RequireAllTrue (
@@ -836,6 +852,13 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		public static bool RequireAllFalse (
+			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+			Type type)
+		{
+			return true;
+		}
+
+		public static bool RequireAllFalse2 (
 			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
 			Type type)
 		{

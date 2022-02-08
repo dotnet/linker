@@ -197,7 +197,7 @@ namespace ILLink.Shared.DataFlow
 					bool isTryBlock = isTryOrCatchOrFilterBlock && tryOrCatchOrFilterRegion!.Kind == RegionKind.Try;
 					bool isTryStart = isTryBlock && block.Equals (cfg.FirstBlock (tryOrCatchOrFilterRegion!));
 					bool isCatchBlock = isTryOrCatchOrFilterBlock && tryOrCatchOrFilterRegion!.Kind == RegionKind.Catch;
-					bool isCatchStartWithoutFilter = isCatchBlock && block.Equals (cfg.FirstBlock (tryOrCatchOrFilterRegion!)) && !cfg.HasFilter (tryOrCatchOrFilterRegion);
+					bool isCatchStartWithoutFilter = isCatchBlock && block.Equals (cfg.FirstBlock (tryOrCatchOrFilterRegion!)) && !cfg.HasFilter (tryOrCatchOrFilterRegion!);
 					bool isFilterBlock = isTryOrCatchOrFilterBlock && tryOrCatchOrFilterRegion!.Kind == RegionKind.Filter;
 					bool isFilterStart = isFilterBlock && block.Equals (cfg.FirstBlock (tryOrCatchOrFilterRegion!));
 
@@ -243,8 +243,8 @@ namespace ILLink.Shared.DataFlow
 						currentState = lattice.Meet (currentState, tryExceptionState.Value);
 
 						// A catch or filter can also be reached from a previous filter.
-						if (cfg.TryGetPreviousFilter (tryOrCatchOrFilterRegion!, out TRegion? previousFilter)) {
-							// For now, assume that control always leaves the previous filter from its last block.
+						foreach (TRegion previousFilter in cfg.GetPreviousFilters (tryOrCatchOrFilterRegion!)) {
+							// For now, assume that control always leaves a filter from its last block.
 							TBlock lastFilterBlock = cfg.LastBlock (previousFilter);
 							TValue previousFilterState = cfgState.Get (lastFilterBlock).Current;
 							currentState = lattice.Meet (currentState, previousFilterState);

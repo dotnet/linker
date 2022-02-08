@@ -53,7 +53,7 @@ namespace ILLink.Shared.DataFlow
 
 		TRegion GetCorrespondingTry (TRegion cathOrFilterOrFinallyRegion);
 
-		bool TryGetPreviousFilter (TRegion catchOrFilterRegion, [NotNullWhen (true)] out TRegion? filterRegion);
+		IEnumerable<TRegion> GetPreviousFilters (TRegion catchOrFilterRegion);
 
 		bool HasFilter (TRegion catchRegion);
 
