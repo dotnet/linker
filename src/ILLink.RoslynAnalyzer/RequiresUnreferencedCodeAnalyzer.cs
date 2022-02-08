@@ -97,8 +97,7 @@ namespace ILLink.RoslynAnalyzer
 
 		protected override bool ReportSpecialIncompatibleMembersDiagnostic (OperationAnalysisContext operationContext, ImmutableArray<ISymbol> specialIncompatibleMembers, ISymbol member)
 		{
-			if (member is IMethodSymbol method && ImmutableArrayOperations.Contains (specialIncompatibleMembers, member, SymbolEqualityComparer.Default) &&
-				(method.Name == "MakeGenericMethod" || method.Name == "MakeGenericType" || method.Name == "Call")) {
+			if (member is IMethodSymbol && ImmutableArrayOperations.Contains (specialIncompatibleMembers, member, SymbolEqualityComparer.Default)) {
 				// These RUC-annotated APIs are intrinsically handled by the trimmer, which will not produce any
 				// RUC warning related to them. For unrecognized reflection patterns related to generic type/method
 				// creation IL2055/IL2060 should be used instead.
