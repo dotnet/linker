@@ -36,6 +36,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			FinallyInTryWithPredecessor ();
 			NestedFinally ();
 			NestedFinallyWithPredecessor ();
+			ExceptionFilter ();
+			ExceptionFilterStateChange ();
+			ExceptionMultipleFilters ();
 		}
 
 		[ExpectedWarning ("IL2072", nameof (RequireAll) + "(Type)", nameof (GetWithPublicFields) + "()",
@@ -251,8 +254,6 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			// methods/properties, not fields
 			RequireAll (t);
 		}
-
-
 
 		[ExpectedWarning ("IL2072", nameof (RequireAll) + "(Type)", nameof (GetWithPublicMethods) + "()",
 			ProducedBy = ProducedBy.Analyzer)]
@@ -719,6 +720,67 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 		}
 
+		[ExpectedWarning ("IL2072", nameof (RequireAllTrue) + "(Type)", nameof (GetWithPublicMethods) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAllTrue) + "(Type)", nameof (GetWithPublicFields) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAll) + "(Type)", nameof (GetWithPublicMethods) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAll) + "(Type)", nameof (GetWithPublicFields) + "()")]
+		public static void ExceptionFilter ()
+		{
+			Type t = GetWithPublicMethods ();
+			try {
+				t = GetWithPublicFields ();
+			} catch (Exception) when (RequireAllTrue (t)) {
+				RequireAll (t);
+			}
+		}
+
+		[ExpectedWarning ("IL2072", nameof (RequireAllTrue) + "(Type)", nameof (GetWithPublicFields) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAll) + "(Type)", nameof (GetWithPublicFields) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAll2) + "(Type)", nameof (GetWithPublicMethods) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAll2) + "(Type)", nameof (GetWithPublicFields) + "()")]
+		public static void ExceptionFilterStateChange ()
+		{
+			Type t = GetWithPublicMethods ();
+			try {
+			} catch (Exception) when (RequireAllTrue (t = GetWithPublicFields ())) {
+				RequireAll (t);
+			} finally {
+				RequireAll2 (t);
+			}
+		}
+
+		[ExpectedWarning ("IL2072", nameof (RequireAllFalse) + "(Type)", nameof (GetWithPublicFields) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAll) + "(Type)", nameof (GetWithPublicFields) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAllTrue) + "(Type)", nameof (GetWithPublicFields) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAll2) + "(Type)", nameof (GetWithPublicFields) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAll3) + "(Type)", nameof (GetWithPublicMethods) + "()")]
+		[ExpectedWarning ("IL2072", nameof (RequireAll3) + "(Type)", nameof (GetWithPublicFields) + "()")]
+		public static void ExceptionMultipleFilters ()
+		{
+			Type t = GetWithPublicMethods ();
+			try {
+			} catch (Exception) when (RequireAllFalse (t = GetWithPublicFields ())) {
+				RequireAll (t);
+			} catch (Exception) when (RequireAllTrue (t)) {
+				RequireAll2 (t);
+			}
+			RequireAll3 (t);
+		}
+
+		public static bool RequireAllTrue (
+			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+			Type type)
+		{
+			return true;
+		}
+
+		public static bool RequireAllFalse (
+			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+			Type type)
+		{
+			return true;
+		}
+
 		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 		public static Type GetWithPublicMethods ()
 		{
@@ -744,30 +806,6 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		public static Type GetWithPublicConstructors ()
 		{
 			return null;
-		}
-
-		public static void RequirePublicMethods (
-			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
-			Type type)
-		{
-		}
-
-		public static void RequirePublicFields (
-			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)]
-			Type type)
-		{
-		}
-		public static void RequirePublicProperties (
-			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
-			Type type)
-		{
-		}
-
-
-		public static void RequireFieldsAndProperties (
-			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)]
-			Type type)
-		{
 		}
 
 		public static void RequireAll (
