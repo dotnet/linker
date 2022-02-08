@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
 
@@ -9,6 +10,11 @@ namespace ILLink.RoslynAnalyzer
 {
 	public static class ISymbolExtensions
 	{
+		internal static void GetAllAttributes(this ISymbol symbol)
+		{
+			var attributes = symbol.GetAttributes();
+			var att = attributes.Where(attribute => attribute is not null)
+		}
 		/// <summary>
 		/// Returns true if symbol <see paramref="symbol"/> has an attribute with name <see paramref="attributeName"/>.
 		/// </summary>

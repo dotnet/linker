@@ -83,18 +83,6 @@ namespace ILLink.RoslynAnalyzer
 			}
 		}
 
-		private static XmlSchema GenerateLinkAttributesSchema ()
-		{
-			var assembly = Assembly.GetExecutingAssembly ();
-			using var schemaStream = assembly.GetManifestResourceStream ("ILLink.RoslynAnalyzer.ILLink.LinkAttributes.xsd");
-			using var reader = XmlReader.Create (schemaStream);
-			var schema = XmlSchema.Read (
-				reader,
-				null);
-			return schema;
-		}
-		private static readonly XmlSchema LinkAttributesSchema = GenerateLinkAttributesSchema ();
-
 		private static Stream GenerateStream (SourceText xmlText)
 		{
 			MemoryStream stream = new MemoryStream ();
@@ -116,18 +104,6 @@ namespace ILLink.RoslynAnalyzer
 			}
 			return LinkAttributes.ProcessXml (document);
 		});
-
-		public static void ReportParsingDiagnostics (LinkAttributes.NodeBase node, AdditionalFileAnalysisContext context)
-		{
-			if (node.Diagnostics is null)
-				return;
-			foreach (var diagnostic in node.Diagnostics) {
-				context.ReportDiagnostic (Diagnostic.Create (
-					DiagnosticDescriptors.GetDiagnosticDescriptor (diagnostic.DiagnosticId),
-					node.LineInfo?.ToLocation (context.AdditionalFile.Path),
-					diagnostic.MessageArgs));
-			}
-		}
 	}
 	static class IXmlLineInfoExtensions
 	{
