@@ -60,7 +60,7 @@ namespace ILLink.RoslynAnalyzer
 		{
 			switch ((int) diagnosticId) {
 			case >= 1000 and < 2000:
-				return DiagnosticCategory.TrimmingError;
+				return DiagnosticCategory.None;
 
 			case >= 2000 and < 3000:
 				return DiagnosticCategory.Trimming;

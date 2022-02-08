@@ -121,6 +121,9 @@ namespace ILLink.RoslynAnalyzer.Tests
 		private void ValidateDiagnostics (CSharpSyntaxNode memberSyntax, SyntaxList<AttributeListSyntax> attrLists)
 		{
 			var memberDiagnostics = _unmatched.Where (d => {
+				// AdditionalFiles diagnostics can be expected from anywhere
+				if (d.Location.Kind == LocationKind.ExternalFile)
+					return true;
 				// Filter down to diagnostics which originate from this member
 				if (memberSyntax is ClassDeclarationSyntax classSyntax) {
 					if (_semanticModel.GetDeclaredSymbol (classSyntax) is not ITypeSymbol typeSymbol)

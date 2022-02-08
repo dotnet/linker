@@ -44,7 +44,8 @@ namespace ILLink.RoslynAnalyzer.Tests
 		{
 			GetDirectoryPaths (out string rootSourceDir, out string testAssemblyPath);
 			Debug.Assert (Path.GetFileName (rootSourceDir) == MonoLinkerTestsCases);
-			var testPath = Path.Combine (rootSourceDir, suiteName, $"{testName}.cs");
+			var testSuitePath = Path.Combine (rootSourceDir, suiteName);
+			var testPath = Path.Combine (testSuitePath, $"{testName}.cs");
 			Assert.True (File.Exists (testPath));
 			var tree = SyntaxFactory.ParseSyntaxTree (
 				SourceText.From (File.OpenRead (testPath), Encoding.UTF8),
@@ -52,7 +53,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 
 			var testDependenciesSource = GetTestDependencies (rootSourceDir, tree)
 				.Select (f => SyntaxFactory.ParseSyntaxTree (SourceText.From (File.OpenRead (f))));
-			var additionalFiles = GetAdditionalFiles (rootSourceDir, tree);
+			var additionalFiles = GetAdditionalFiles (testSuitePath, tree);
 
 			var (comp, model, exceptionDiagnostics) = await TestCaseCompilation.CreateCompilation (
 					tree,
