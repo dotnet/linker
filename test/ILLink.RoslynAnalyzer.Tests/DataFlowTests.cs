@@ -61,10 +61,11 @@ namespace ILLink.RoslynAnalyzer.Tests
 			return RunTest (nameof (DynamicDependencyDataflow));
 		}
 
-		[Fact (Skip = "https://github.com/dotnet/linker/issues/2273")]
+		[Fact]
 		public Task EmptyArrayIntrinsicsDataFlow ()
 		{
-			return RunTest (nameof (EmptyArrayIntrinsicsDataFlow));
+			// https://github.com/dotnet/linker/issues/2273
+			return RunTest (allowMissingWarnings: true);
 		}
 
 		[Fact]
@@ -79,10 +80,11 @@ namespace ILLink.RoslynAnalyzer.Tests
 			return RunTest (nameof (GenericParameterDataFlow));
 		}
 
-		[Fact (Skip = "https://github.com/dotnet/linker/issues/2273")]
+		[Fact]
 		public Task MakeGenericDataFlow ()
 		{
-			return RunTest (nameof (MakeGenericDataFlow));
+			// https://github.com/dotnet/linker/issues/2273
+			return RunTest (allowMissingWarnings: true);
 		}
 
 		[Fact]
@@ -200,10 +202,11 @@ namespace ILLink.RoslynAnalyzer.Tests
 			return RunTest (nameof (TypeBaseTypeDataFlow));
 		}
 
-		[Fact (Skip = "https://github.com/dotnet/linker/issues/2273")]
+		[Fact]
 		public Task UnresolvedMembers ()
 		{
-			return RunTest (nameof (UnresolvedMembers));
+			// https://github.com/dotnet/linker/issues/2273
+			return RunTest (allowMissingWarnings: true);
 		}
 
 		[Fact (Skip = "https://github.com/dotnet/linker/issues/2273")]

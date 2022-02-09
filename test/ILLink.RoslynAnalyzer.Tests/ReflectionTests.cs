@@ -28,9 +28,10 @@ namespace ILLink.RoslynAnalyzer.Tests
 			return RunTest (allowMissingWarnings: true);
 		}
 
-		[Fact (Skip = "https://github.com/dotnet/linker/issues/2578")]
+		[Fact]
 		public Task ConstructorUsedViaReflection ()
 		{
+			// https://github.com/dotnet/linker/issues/2578
 			return RunTest (allowMissingWarnings: true);
 		}
 
@@ -40,9 +41,10 @@ namespace ILLink.RoslynAnalyzer.Tests
 			return RunTest (allowMissingWarnings: true);
 		}
 
-		[Fact (Skip = "https://github.com/dotnet/linker/issues/2578")]
+		[Fact]
 		public Task ExpressionCallString ()
 		{
+			// https://github.com/dotnet/linker/issues/2578
 			return RunTest (allowMissingWarnings: true);
 		}
 
