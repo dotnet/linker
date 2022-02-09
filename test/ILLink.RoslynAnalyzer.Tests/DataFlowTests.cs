@@ -16,7 +16,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 		[Fact]
 		public Task ApplyTypeAnnotations ()
 		{
-			return RunTest (nameof (ApplyTypeAnnotations));
+			return RunTest (allowMissingWarnings: true);
 		}
 
 		[Fact]
@@ -52,7 +52,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 		[Fact]
 		public Task ComplexTypeHandling ()
 		{
-			return RunTest (nameof (ComplexTypeHandling));
+			return RunTest (allowMissingWarnings: true);
 		}
 
 		[Fact]
@@ -90,7 +90,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 		[Fact]
 		public Task GetInterfaceDataFlow ()
 		{
-			return RunTest (nameof (GetInterfaceDataFlow));
+			return RunTest (allowMissingWarnings: true);
 		}
 
 		[Fact]
