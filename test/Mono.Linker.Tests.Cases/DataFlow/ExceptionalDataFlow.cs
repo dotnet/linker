@@ -855,6 +855,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		[ExpectedWarning ("IL2072", nameof (RequireAll2) + "(Type)", nameof (GetWithPublicMethods))]
 		[ExpectedWarning ("IL2072", nameof (RequireAll2) + "(Type)", nameof (GetWithPublicFields))]
 		[ExpectedWarning ("IL2072", nameof (RequireAll2) + "(Type)", nameof (GetWithPublicProperties))]
+
+		// Linker merges branches going forward.
+		[ExpectedWarning ("IL2072", nameof (RequireAll) + "(Type)", nameof (GetWithPublicMethods),
+			ProducedBy = ProducedBy.Trimmer)]
 		public static void ExceptionFilterWithBranch ()
 		{
 			Type t = GetWithPublicMethods ();
