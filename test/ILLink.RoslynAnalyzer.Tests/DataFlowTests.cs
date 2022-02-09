@@ -93,10 +93,11 @@ namespace ILLink.RoslynAnalyzer.Tests
 			return RunTest (nameof (GetInterfaceDataFlow));
 		}
 
-		[Fact (Skip = "https://github.com/dotnet/linker/issues/2273")]
+		[Fact]
 		public Task GetNestedTypeOnAllAnnotatedType ()
 		{
-			return RunTest (nameof (GetNestedTypeOnAllAnnotatedType));
+			// https://github.com/dotnet/linker/issues/2273
+			return RunTest (allowMissingWarnings: true);
 		}
 
 		[Fact (Skip = "https://github.com/dotnet/linker/issues/2273")]
@@ -196,10 +197,11 @@ namespace ILLink.RoslynAnalyzer.Tests
 			return RunTest (nameof (SuppressWarningWithLinkAttributes));
 		}
 
-		[Fact (Skip = "https://github.com/dotnet/linker/issues/2273")]
+		[Fact]
 		public Task TypeBaseTypeDataFlow ()
 		{
-			return RunTest (nameof (TypeBaseTypeDataFlow));
+			// https://github.com/dotnet/linker/issues/2273
+			return RunTest (allowMissingWarnings: true);
 		}
 
 		[Fact]

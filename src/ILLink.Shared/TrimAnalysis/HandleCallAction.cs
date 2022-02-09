@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System;
@@ -154,6 +154,18 @@ namespace ILLink.Shared.TrimAnalysis
 			case IntrinsicId.Type_GetConstructor:
 			case IntrinsicId.Type_GetEvent:
 			case IntrinsicId.Activator_CreateInstance_Type:
+			case IntrinsicId.Type_GetNestedType:
+			case IntrinsicId.Type_GetType:
+			case IntrinsicId.Type_get_BaseType:
+			case IntrinsicId.Type_GetConstructors:
+			case IntrinsicId.Type_GetEvents:
+			case IntrinsicId.Type_GetFields:
+			case IntrinsicId.Type_GetMember:
+			case IntrinsicId.Type_GetMembers:
+			case IntrinsicId.Type_GetMethods:
+			case IntrinsicId.Type_GetNestedTypes:
+			case IntrinsicId.Object_GetType:
+			case IntrinsicId.Type_GetProperties:
 				methodReturnValue = MultiValueLattice.Top;
 				return true;
 
