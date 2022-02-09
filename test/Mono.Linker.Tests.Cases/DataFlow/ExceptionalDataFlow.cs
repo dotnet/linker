@@ -40,6 +40,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			ExceptionFilter ();
 			ExceptionFilterStateChange ();
 			ExceptionMultipleFilters ();
+			ExceptionFilterWithBranch ();
 		}
 
 		[ExpectedWarning ("IL2072", nameof (RequireAll) + "(Type)", nameof (GetWithPublicFields) + "()",
@@ -842,6 +843,28 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				RequireAll5 (t);
 			}
 			RequireAll6 (t);
+		}
+
+		[ExpectedWarning ("IL2072", nameof (RequireAll) + "(Type)", nameof (GetWithPublicFields))]
+		[ExpectedWarning ("IL2072", nameof (RequireAll) + "(Type)", nameof (GetWithPublicProperties))]
+
+		[ExpectedWarning ("IL2072", nameof (RequireAllTrue) + "(Type)", nameof (GetWithPublicMethods))]
+		[ExpectedWarning ("IL2072", nameof (RequireAllTrue) + "(Type)", nameof (GetWithPublicFields))]
+		[ExpectedWarning ("IL2072", nameof (RequireAllTrue) + "(Type)", nameof (GetWithPublicProperties))]
+
+		[ExpectedWarning ("IL2072", nameof (RequireAll2) + "(Type)", nameof (GetWithPublicMethods))]
+		[ExpectedWarning ("IL2072", nameof (RequireAll2) + "(Type)", nameof (GetWithPublicFields))]
+		[ExpectedWarning ("IL2072", nameof (RequireAll2) + "(Type)", nameof (GetWithPublicProperties))]
+		public static void ExceptionFilterWithBranch ()
+		{
+			Type t = GetWithPublicMethods ();
+			try {
+			} catch (Exception) when (string.Empty.Length == 0 ? (t = GetWithPublicFields ()) == null : (t = GetWithPublicProperties ()) == null) {
+				RequireAll (t);
+			} catch (Exception) when (RequireAllTrue (t)) {
+			} catch {
+				RequireAll2 (t);
+			}
 		}
 
 		public static bool RequireAllTrue (
