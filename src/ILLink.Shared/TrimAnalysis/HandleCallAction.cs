@@ -144,34 +144,16 @@ namespace ILLink.Shared.TrimAnalysis
 				}
 				break;
 
-
-			// Disable Type_GetMethod, Type_GetProperty, Type_GetField, Type_GetConstructor, Type_GetEvent, Activator_CreateInstance_Type
-			// These calls have annotations on the runtime by default, trying to analyze the annotations without intrinsic handling
-			// might end up generating unnecessary warnings. So we disable handling these calls until a proper intrinsic handling is made
-			case IntrinsicId.Type_GetMethod:
-			case IntrinsicId.Type_GetProperty:
-			case IntrinsicId.Type_GetField:
-			case IntrinsicId.Type_GetConstructor:
-			case IntrinsicId.Type_GetEvent:
-			case IntrinsicId.Activator_CreateInstance_Type:
-			case IntrinsicId.Type_GetNestedType:
-			case IntrinsicId.Type_GetType:
-			case IntrinsicId.Type_get_BaseType:
-			case IntrinsicId.Type_GetConstructors:
-			case IntrinsicId.Type_GetEvents:
-			case IntrinsicId.Type_GetFields:
-			case IntrinsicId.Type_GetMember:
-			case IntrinsicId.Type_GetMembers:
-			case IntrinsicId.Type_GetMethods:
-			case IntrinsicId.Type_GetNestedTypes:
-			case IntrinsicId.Object_GetType:
-			case IntrinsicId.Type_GetProperties:
-				methodReturnValue = MultiValueLattice.Top;
-				return true;
-
-			default:
+			case IntrinsicId.None:
 				methodReturnValue = MultiValueLattice.Top;
 				return false;
+
+			// Disable warnings for all unimplemented intrinsics. Some intrinsic methods have annotations, but analyzing them
+			// would produce unnecessary warnings even for cases that are intrinsically handled. So we disable handling these calls
+			// until a proper intrinsic handling is made
+			default:
+				methodReturnValue = MultiValueLattice.Top;
+				return true;
 			}
 
 			if (returnValue.IsEmpty () && !calledMethod.ReturnsVoid ()) {
