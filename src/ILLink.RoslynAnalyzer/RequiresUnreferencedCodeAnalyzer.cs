@@ -2,9 +2,12 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using ILLink.Shared;
+using ILLink.Shared.TrimAnalysis;
+using ILLink.Shared.TypeSystemProxy;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -72,24 +75,40 @@ namespace ILLink.RoslynAnalyzer
 		protected override bool IsAnalyzerEnabled (AnalyzerOptions options, Compilation compilation) =>
 			options.IsMSBuildPropertyValueTrue (MSBuildPropertyOptionNames.EnableTrimAnalyzer, compilation);
 
+		/// <summary>
+		/// Add methods that the Trimmer handles intrinsically to an exlusionary list
+		/// </summary>
+		/// <param name="compilation"></param>
+		/// <returns></returns>
 		protected override ImmutableArray<ISymbol> GetSpecialIncompatibleMembers (Compilation compilation)
 		{
 			var incompatibleMembers = ImmutableArray.CreateBuilder<ISymbol> ();
-			var typeType = compilation.GetTypeByMetadataName ("System.Type");
-			if (typeType != null) {
-				incompatibleMembers.AddRange (typeType.GetMembers ("MakeGenericType").OfType<IMethodSymbol> ());
-			}
 
-			var methodInfoType = compilation.GetTypeByMetadataName ("System.Reflection.MethodInfo");
-			if (methodInfoType != null) {
-				incompatibleMembers.AddRange (methodInfoType.GetMembers ("MakeGenericMethod").OfType<IMethodSymbol> ());
-			}
+			// We iterate through the types that have intrinsic methods and query the intrinsic implementation
+			// to find out if a method in that type is handled intrinsically
 
-			var expressionCallType = compilation.GetTypeByMetadataName ("System.Linq.Expressions.Expression");
-			if (expressionCallType != null) {
-				incompatibleMembers.AddRange (expressionCallType.GetMembers ("Call").OfType<IMethodSymbol> ()
-					.Where (m => m.Parameters.Length == 4 && m.Parameters[0] is IParameterSymbol parameterSymbol
-					&& parameterSymbol.Type?.ContainingNamespace?.Name == "System" && parameterSymbol.Type?.Name == "Type"));
+			HashSet<string> typesThatHaveIntrinsics = new HashSet<string> (new string[]{
+				"System.Activator",
+				"System.AppDomain",
+				"System.Array",
+				"System.Linq.Expressions.Expression",
+				"System.Reflection.Assembly",
+				"System.Reflection.IntrospectionExtensions",
+				"System.Reflection.MethodBase",
+				"System.Reflection.MethodInfo",
+				"System.Reflection.RuntimeReflectionExtensions",
+				"System.Reflection.TypeDelegator",
+				"System.Reflection.TypeInfo",
+				"System.Runtime.CompilerServices.RuntimeHelpers",
+				"System.Type"
+			});
+
+			foreach (var typeString in typesThatHaveIntrinsics) {
+				var type = compilation.GetTypeByMetadataName (typeString);
+				if (type != null) {
+					incompatibleMembers.AddRange (type.GetMembers ().OfType<IMethodSymbol> ()
+						.Where (method => Intrinsics.GetIntrinsicIdForMethod (new MethodProxy (method)) > IntrinsicId.RequiresReflectionBodyScanner_Sentinel));
+				}
 			}
 
 			return incompatibleMembers.ToImmutable ();
