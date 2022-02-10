@@ -244,10 +244,11 @@ namespace ILLink.Shared.DataFlow
 
 						// A catch or filter can also be reached from a previous filter.
 						foreach (TRegion previousFilter in cfg.GetPreviousFilters (tryOrCatchOrFilterRegion!)) {
-							// For now, assume that control always leaves a filter from its last block.
-							TBlock lastFilterBlock = cfg.LastBlock (previousFilter);
-							TValue previousFilterState = cfgState.Get (lastFilterBlock).Current;
-							currentState = lattice.Meet (currentState, previousFilterState);
+							// Control may flow from the last block of a previous filter region to this catch or filter region.
+							// Exceptions may also propagate from anywhere in a filter region to this catch or filter region.
+							// This covers both cases since the exceptional state is a superset of the normal state.
+							Box<TValue> previousFilterExceptionState = cfgState.GetExceptionState (previousFilter);
+							currentState = lattice.Meet (currentState, previousFilterExceptionState.Value);
 						}
 					}
 					if (isFinallyStart) {
