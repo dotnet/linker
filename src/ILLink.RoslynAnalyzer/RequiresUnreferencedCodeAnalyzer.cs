@@ -78,18 +78,11 @@ namespace ILLink.RoslynAnalyzer
 		/// </summary>
 		/// <param name="compilation"></param>
 		/// <returns></returns>
-		protected override ImmutableArray<ISymbol> GetSpecialIncompatibleMembers (Compilation compilation)
-		{
-			var incompatibleMembers = ImmutableArray.CreateBuilder<ISymbol> ();
-
-			return incompatibleMembers.ToImmutable ();
-		}
 
 		protected override bool ReportSpecialIncompatibleMembersDiagnostic (OperationAnalysisContext operationContext, ImmutableArray<ISymbol> specialIncompatibleMembers, ISymbol member)
 		{
-			if (member is IMethodSymbol method && (ImmutableArrayOperations.Contains (specialIncompatibleMembers, method, SymbolEqualityComparer.Default) ||
-				Intrinsics.GetIntrinsicIdForMethod (new MethodProxy (method)) > IntrinsicId.RequiresReflectionBodyScanner_Sentinel)) {
-				// Some RUC-annotated APIs are intrinsically handled by the trimmer
+			// Some RUC-annotated APIs are intrinsically handled by the trimmer
+			if (member is IMethodSymbol method && Intrinsics.GetIntrinsicIdForMethod (new MethodProxy (method)) > IntrinsicId.RequiresReflectionBodyScanner_Sentinel) {
 				return true;
 			}
 
