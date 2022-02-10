@@ -73,16 +73,10 @@ namespace ILLink.RoslynAnalyzer
 		protected override bool IsAnalyzerEnabled (AnalyzerOptions options, Compilation compilation) =>
 			options.IsMSBuildPropertyValueTrue (MSBuildPropertyOptionNames.EnableTrimAnalyzer, compilation);
 
-		/// <summary>
-		/// Add methods that the Trimmer handles intrinsically to an exlusionary list
-		/// </summary>
-		/// <param name="compilation"></param>
-		/// <returns></returns>
-
 		protected override bool ReportSpecialIncompatibleMembersDiagnostic (OperationAnalysisContext operationContext, ImmutableArray<ISymbol> specialIncompatibleMembers, ISymbol member)
 		{
 			// Some RUC-annotated APIs are intrinsically handled by the trimmer
-			if (member is IMethodSymbol method && Intrinsics.GetIntrinsicIdForMethod (new MethodProxy (method)) > IntrinsicId.RequiresReflectionBodyScanner_Sentinel) {
+			if (member is IMethodSymbol method && Intrinsics.GetIntrinsicIdForMethod (new MethodProxy (method)) != IntrinsicId.None) {
 				return true;
 			}
 
