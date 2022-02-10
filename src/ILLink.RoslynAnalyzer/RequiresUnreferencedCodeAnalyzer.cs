@@ -2,9 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
 using ILLink.Shared;
 using ILLink.Shared.TrimAnalysis;
 using ILLink.Shared.TypeSystemProxy;
@@ -84,42 +82,14 @@ namespace ILLink.RoslynAnalyzer
 		{
 			var incompatibleMembers = ImmutableArray.CreateBuilder<ISymbol> ();
 
-			// We iterate through the types that have intrinsic methods and query the intrinsic implementation
-			// to find out if a method in that type is handled intrinsically
-
-			HashSet<string> typesThatHaveIntrinsics = new HashSet<string> (new string[]{
-				"System.Activator",
-				"System.AppDomain",
-				"System.Array",
-				"System.Linq.Expressions.Expression",
-				"System.Reflection.Assembly",
-				"System.Reflection.IntrospectionExtensions",
-				"System.Reflection.MethodBase",
-				"System.Reflection.MethodInfo",
-				"System.Reflection.RuntimeReflectionExtensions",
-				"System.Reflection.TypeDelegator",
-				"System.Reflection.TypeInfo",
-				"System.Runtime.CompilerServices.RuntimeHelpers",
-				"System.Type"
-			});
-
-			foreach (var typeString in typesThatHaveIntrinsics) {
-				var type = compilation.GetTypeByMetadataName (typeString);
-				if (type != null) {
-					incompatibleMembers.AddRange (type.GetMembers ().OfType<IMethodSymbol> ()
-						.Where (method => Intrinsics.GetIntrinsicIdForMethod (new MethodProxy (method)) > IntrinsicId.RequiresReflectionBodyScanner_Sentinel));
-				}
-			}
-
 			return incompatibleMembers.ToImmutable ();
 		}
 
 		protected override bool ReportSpecialIncompatibleMembersDiagnostic (OperationAnalysisContext operationContext, ImmutableArray<ISymbol> specialIncompatibleMembers, ISymbol member)
 		{
-			if (member is IMethodSymbol && ImmutableArrayOperations.Contains (specialIncompatibleMembers, member, SymbolEqualityComparer.Default)) {
-				// These RUC-annotated APIs are intrinsically handled by the trimmer, which will not produce any
-				// RUC warning related to them. For unrecognized reflection patterns related to generic type/method
-				// creation IL2055/IL2060 should be used instead.
+			if (member is IMethodSymbol method && (ImmutableArrayOperations.Contains (specialIncompatibleMembers, method, SymbolEqualityComparer.Default) ||
+				Intrinsics.GetIntrinsicIdForMethod (new MethodProxy (method)) > IntrinsicId.RequiresReflectionBodyScanner_Sentinel)) {
+				// Some RUC-annotated APIs are intrinsically handled by the trimmer
 				return true;
 			}
 
