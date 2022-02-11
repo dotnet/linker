@@ -33,7 +33,7 @@ namespace ILLink.RoslynAnalyzer
 			return (GetFlags (type) & HierarchyFlags.IsSystemReflectionIReflect) != 0;
 		}
 
-		
+
 		private static HierarchyFlags GetFlags (ITypeSymbol type)
 		{
 			HierarchyFlags flags = 0;

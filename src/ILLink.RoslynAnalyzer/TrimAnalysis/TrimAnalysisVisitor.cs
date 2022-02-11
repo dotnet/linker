@@ -51,7 +51,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 		public override MultiValue VisitParameterReference (IParameterReferenceOperation paramRef, StateValue state)
 		{
-			return paramRef.Parameter.Type.IsTypeInterestingForDataflow() ? new MethodParameterValue (paramRef.Parameter) : TopValue;
+			return paramRef.Parameter.Type.IsTypeInterestingForDataflow () ? new MethodParameterValue (paramRef.Parameter) : TopValue;
 		}
 
 		public override MultiValue VisitInstanceReference (IInstanceReferenceOperation instanceRef, StateValue state)
@@ -68,7 +68,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 		public override MultiValue VisitFieldReference (IFieldReferenceOperation fieldRef, StateValue state)
 		{
-			return fieldRef.Field.Type.IsTypeInterestingForDataflow() ? new FieldValue (fieldRef.Field) : TopValue;
+			return fieldRef.Field.Type.IsTypeInterestingForDataflow () ? new FieldValue (fieldRef.Field) : TopValue;
 		}
 
 		public override MultiValue VisitTypeOf (ITypeOfOperation typeOfOperation, StateValue state)

@@ -18,6 +18,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		public static void Main ()
 		{
 			var instance = new PropertyDataFlow ();
+
 			instance.ReadFromInstanceProperty ();
 			instance.WriteToInstanceProperty ();
 
