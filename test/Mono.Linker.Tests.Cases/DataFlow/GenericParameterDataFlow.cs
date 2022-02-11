@@ -766,9 +766,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		// Warn about calls to the static methods and the ctor on the RUC type:
 		[ExpectedWarning ("IL2026", "RUCTypeRequiresPublicFields<T>.StaticMethod", "message")]
-		[ExpectedWarning ("IL2026", "RUCTypeRequiresPublicFields<T>.StaticMethodRequiresPublicMethods<U>", "message", ProducedBy = ProducedBy.Trimmer)]
-		// https://github.com/dotnet/linker/issues/2573
-		[ExpectedWarning ("IL2026", "RUCTypeRequiresPublicFields<T>.StaticMethodRequiresPublicMethods<T>", "message", ProducedBy = ProducedBy.Analyzer)]
+		[ExpectedWarning ("IL2026", "RUCTypeRequiresPublicFields<T>.StaticMethodRequiresPublicMethods<U>", "message")]
 		[ExpectedWarning ("IL2026", "RUCTypeRequiresPublicFields<T>.RUCTypeRequiresPublicFields", "message")]
 		// And about method generic parameters:
 		[ExpectedWarning ("IL2091", "RUCTypeRequiresPublicFields<T>.InstanceMethodRequiresPublicMethods<U>()")]
