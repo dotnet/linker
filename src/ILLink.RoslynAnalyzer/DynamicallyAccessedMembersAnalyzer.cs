@@ -54,22 +54,27 @@ namespace ILLink.RoslynAnalyzer
 			if (!System.Diagnostics.Debugger.IsAttached)
 				context.EnableConcurrentExecution ();
 			context.ConfigureGeneratedCodeAnalysis (GeneratedCodeAnalysisFlags.ReportDiagnostics);
-			context.RegisterOperationBlockAction (context => {
-				if (context.OwningSymbol.IsInRequiresUnreferencedCodeAttributeScope ())
+			context.RegisterCompilationStartAction (context => {
+				if (!context.Options.IsMSBuildPropertyValueTrue (MSBuildPropertyOptionNames.EnableTrimAnalyzer, context.Compilation))
 					return;
 
-				foreach (var operationBlock in context.OperationBlocks) {
-					ControlFlowGraph cfg = context.GetControlFlowGraph (operationBlock);
-					TrimDataFlowAnalysis trimDataFlowAnalysis = new (context, cfg);
+				context.RegisterOperationBlockAction (context => {
+					if (context.OwningSymbol.IsInRequiresUnreferencedCodeAttributeScope ())
+						return;
 
-					foreach (var diagnostic in trimDataFlowAnalysis.ComputeTrimAnalysisPatterns ().CollectDiagnostics ()) {
-						context.ReportDiagnostic (diagnostic);
+					foreach (var operationBlock in context.OperationBlocks) {
+						ControlFlowGraph cfg = context.GetControlFlowGraph (operationBlock);
+						TrimDataFlowAnalysis trimDataFlowAnalysis = new (context, cfg);
+
+						foreach (var diagnostic in trimDataFlowAnalysis.ComputeTrimAnalysisPatterns ().CollectDiagnostics ()) {
+							context.ReportDiagnostic (diagnostic);
+						}
 					}
-				}
+				});
+				context.RegisterSyntaxNodeAction (context => {
+					ProcessGenericParameters (context);
+				}, SyntaxKind.GenericName);
 			});
-			context.RegisterSyntaxNodeAction (context => {
-				ProcessGenericParameters (context);
-			}, SyntaxKind.GenericName);
 		}
 
 		static void ProcessGenericParameters (SyntaxNodeAnalysisContext context)
