@@ -59,6 +59,9 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			if (instanceRef.ReferenceKind != InstanceReferenceKind.ContainingTypeInstance)
 				return TopValue;
 
+			if (instanceRef.Type != null && !instanceRef.Type.IsTypeInterestingForDataflow ())
+				return TopValue;
+
 			// The instance reference operation represents a 'this' or 'base' reference to the containing type,
 			// so we get the annotation from the containing method.
 			// TODO: Check whether the Context.OwningSymbol is the containing type in case we are in a lambda.
@@ -114,7 +117,13 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			var diagnosticContext = DiagnosticContext.CreateDisabled ();
 			var handleCallAction = new HandleCallAction (diagnosticContext, Context.OwningSymbol, operation);
 			if (!handleCallAction.Invoke (new MethodProxy (calledMethod), instance, arguments, out MultiValue methodReturnValue)) {
-				methodReturnValue = calledMethod.ReturnsVoid ? TopValue : new MethodReturnValue (calledMethod);
+				if (!calledMethod.ReturnsVoid &&
+					(calledMethod.ReturnType.IsTypeInterestingForDataflow () ||
+					(calledMethod.AssociatedSymbol is IPropertySymbol property &&
+					property.Type.IsTypeInterestingForDataflow ()))) {
+					methodReturnValue = new MethodReturnValue (calledMethod);
+				} else
+					methodReturnValue = TopValue;
 			}
 
 			TrimAnalysisPatterns.Add (new TrimAnalysisMethodCallPattern (
