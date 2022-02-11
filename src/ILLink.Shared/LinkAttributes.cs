@@ -29,7 +29,7 @@ namespace ILLink.Shared
 
 			public AttributeNode (XPathNavigator nav) : base (nav)
 			{
-				var diagnostics = new List<ParsingDiagnostic> ();
+				var diagnostics = new List<XmlDiagnostic> ();
 				var arguments = new List<AttributeArgumentNodeBase> ();
 				foreach (XPathNavigator argNav in nav.SelectChildren (ArgumentElementName, "")) {
 					arguments.Add (AttributeArgumentNodeBase.Create (argNav));
@@ -70,6 +70,7 @@ namespace ILLink.Shared
 			}
 		}
 
+		// For argument elements with type argument elements inside it (boxed in object or an array)
 		public record AttributeArgumentBoxNode : AttributeArgumentNodeBase
 		{
 			public Type Type = typeof (System.Object);
@@ -77,19 +78,18 @@ namespace ILLink.Shared
 
 			public AttributeArgumentBoxNode (XPathNavigator nav) : base (nav)
 			{
-				var diagnostics = new List<ParsingDiagnostic> ();
+				var diagnostics = new List<XmlDiagnostic> ();
 				foreach (XPathNavigator innerArgNav in nav.SelectChildren (ArgumentElementName, "")) {
 					if (Create (innerArgNav) is AttributeArgumentNode innerArg) {
 						InnerArgument = innerArg;
 						return;
 					} else {
-						diagnostics.Add (new ParsingDiagnostic (
+						diagnostics.Add (new XmlDiagnostic (
 								DiagnosticId.CustomAttributeArgumentForTypeRequiresNestedNode,
 								nav.GetAttribute ("type", ""), "argument"));
 					}
 				}
 				Diagnostics = diagnostics;
-				// No argument child in <argument type="System.Object>
 			}
 		}
 
@@ -156,7 +156,7 @@ namespace ILLink.Shared
 			public List<AttributeNode> ReturnAttributes;
 			public MethodNode (XPathNavigator nav) : base (nav)
 			{
-				var diagnostics = new List<ParsingDiagnostic> ();
+				var diagnostics = new List<XmlDiagnostic> ();
 				Parameters = new List<ParameterNode> ();
 				ReturnAttributes = new List<AttributeNode> ();
 				foreach (XPathNavigator parameterNav in nav.SelectChildren (ParameterElementName, "")) {
@@ -170,11 +170,11 @@ namespace ILLink.Shared
 					}
 				}
 				if (returnElements > 1)
-					diagnostics.Add (new ParsingDiagnostic (DiagnosticId.XmlMoreThanOneReturnElementForMethod, Name));
+					diagnostics.Add (new XmlDiagnostic (DiagnosticId.XmlMoreThanOneReturnElementForMethod, Name));
 				foreach (var duplicateParam in Parameters.GroupBy (p => p.Name)
 					.Where (names => names.Count () > 1)
 					.Select (group => group.Key)) {
-					diagnostics.Add (new ParsingDiagnostic (DiagnosticId.XmlMoreThanOneValueForParameterOfMethod, duplicateParam, Name));
+					diagnostics.Add (new XmlDiagnostic (DiagnosticId.XmlMoreThanOneValueForParameterOfMethod, duplicateParam, Name));
 				}
 				Diagnostics = diagnostics;
 			}
@@ -248,14 +248,17 @@ namespace ILLink.Shared
 		}
 		public record LinkerNode : NodeBase
 		{
-			public List<TypeNode> Types;
+			public List<TypeNode> Types { get; init; }
 			public List<AssemblyNode> Assemblies;
 			internal LinkerNode (XPathNavigator nav) : base (nav)
 			{
 				Types = new List<TypeNode> ();
 				Assemblies = new List<AssemblyNode> ();
 				if (!nav.MoveToChild (LinkerElementName, XmlNamespace)) {
-					Diagnostics = new ParsingDiagnostic[] { new ParsingDiagnostic (DiagnosticId.ErrorProcessingXmlLocation, $"XML does not have <{LinkerElementName}> base tag") };
+					Diagnostics = new List<XmlDiagnostic> ();
+					Diagnostics.Add(new XmlDiagnostic (
+						DiagnosticId.ErrorProcessingXmlLocation,
+						$"XML does not have <{LinkerElementName}> base tag"));
 					return;
 				}
 				foreach (XPathNavigator typeNav in nav.SelectChildren (TypeElementName, "")) {
@@ -269,7 +272,7 @@ namespace ILLink.Shared
 		public abstract record NodeBase : XmlProcessorBase
 		{
 			public IXmlLineInfo? LineInfo;
-			public IEnumerable<ParsingDiagnostic>? Diagnostics;
+			public List<XmlDiagnostic>? Diagnostics;
 			protected NodeBase (XPathNavigator nav)
 			{
 				LineInfo = (nav is IXmlLineInfo lineInfo) ? lineInfo : null;
@@ -330,12 +333,12 @@ namespace ILLink.Shared
 			}
 		}
 
-		public record struct ParsingDiagnostic
+		public record struct XmlDiagnostic
 		{
 			public DiagnosticId DiagnosticId;
 			public string[] MessageArgs;
 
-			internal ParsingDiagnostic (DiagnosticId diag, params string[] args)
+			internal XmlDiagnostic (DiagnosticId diag, params string[] args)
 			{
 				DiagnosticId = diag;
 				MessageArgs = args;

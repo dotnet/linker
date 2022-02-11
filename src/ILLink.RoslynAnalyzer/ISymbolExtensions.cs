@@ -10,10 +10,13 @@ namespace ILLink.RoslynAnalyzer
 {
 	public static class ISymbolExtensions
 	{
-		internal static void GetAllAttributes(this ISymbol symbol)
+		internal static async Task<ImmutableArray<ITypedConstant>> GetAllAttributes(this ISymbol symbol)
 		{
 			var attributes = symbol.GetAttributes();
-			var att = attributes.Where(attribute => attribute is not null)
+			var att = attributes.Select(attribute => new XmlAttributeData(attribute));
+			await XmlAnalyzer.InjectedAttributes.semaphore.WaitAsync ();
+
+
 		}
 		/// <summary>
 		/// Returns true if symbol <see paramref="symbol"/> has an attribute with name <see paramref="attributeName"/>.
