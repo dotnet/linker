@@ -18,7 +18,6 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		public static void Main ()
 		{
 			var instance = new PropertyDataFlow ();
-
 			instance.ReadFromInstanceProperty ();
 			instance.WriteToInstanceProperty ();
 
@@ -43,9 +42,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 		static Type StaticPropertyWithPublicConstructor { get; set; }
 
-		// Analyzer doesn't warn about annotations on unsupported types
-		// https://github.com/dotnet/linker/issues/2273
-		[ExpectedWarning ("IL2099", nameof (PropertyWithUnsupportedType), ProducedBy = ProducedBy.Trimmer)]
+		[ExpectedWarning ("IL2099", nameof (PropertyWithUnsupportedType))]
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)]
 		static object PropertyWithUnsupportedType { get; set; }
 

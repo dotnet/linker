@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using ILLink.RoslynAnalyzer.TrimAnalysis;
 using ILLink.Shared;
 using ILLink.Shared.DataFlow;
@@ -28,8 +29,8 @@ namespace ILLink.RoslynAnalyzer
 		{
 			var diagDescriptorsArrayBuilder = ImmutableArray.CreateBuilder<DiagnosticDescriptor> (26);
 			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.RequiresUnreferencedCode));
-			AddRange (DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsParameter, DiagnosticId.DynamicallyAccessedMembersMismatchTypeArgumentTargetsGenericParameter);
-			AddRange (DiagnosticId.MethodParameterCannotBeStaticallyDetermined, DiagnosticId.TypePassedToGenericParameterCannotBeStaticallyDetermined);
+			AddRange (DiagnosticId.MethodParameterCannotBeStaticallyDetermined, DiagnosticId.DynamicallyAccessedMembersMismatchTypeArgumentTargetsGenericParameter);
+			AddRange (DiagnosticId.DynamicallyAccessedMembersOnFieldCanOnlyApplyToTypesOrStrings, DiagnosticId.DynamicallyAccessedMembersOnPropertyCanOnlyApplyToTypesOrStrings);
 			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersFieldAccessedViaReflection));
 			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection));
 			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.UnrecognizedTypeInRuntimeHelpersRunClassConstructor));
@@ -70,6 +71,15 @@ namespace ILLink.RoslynAnalyzer
 			context.RegisterSyntaxNodeAction (context => {
 				ProcessGenericParameters (context);
 			}, SyntaxKind.GenericName);
+			context.RegisterSymbolAction (context => {
+				VerifyMemberOnlyApplyToTypesOrStrings (context, context.Symbol);
+			}, SymbolKind.Method);
+			context.RegisterSymbolAction (context => {
+				VerifyMemberOnlyApplyToTypesOrStrings (context, context.Symbol);
+			}, SymbolKind.Property);
+			context.RegisterSymbolAction (context => {
+				VerifyMemberOnlyApplyToTypesOrStrings (context, context.Symbol);
+			}, SymbolKind.Field);
 		}
 
 		static void ProcessGenericParameters (SyntaxNodeAnalysisContext context)
@@ -149,6 +159,21 @@ namespace ILLink.RoslynAnalyzer
 			requireDynamicallyAccessedMembersAction.Invoke (sourceValue, targetWithDynamicallyAccessedMembers);
 
 			return diagnosticContext.Diagnostics;
+		}
+
+		static void VerifyMemberOnlyApplyToTypesOrStrings(SymbolAnalysisContext context, ISymbol member)
+		{
+			if (member is IFieldSymbol field && field.GetDynamicallyAccessedMemberTypes() != DynamicallyAccessedMemberTypes.None && !field.Type.IsTypeInterestingForDataflow ())
+				context.ReportDiagnostic (Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersOnFieldCanOnlyApplyToTypesOrStrings), member.Locations[0], member.GetDisplayName ()));
+			else if (member is IMethodSymbol method) {
+				foreach (var parameter in method.Parameters) {
+					if(parameter.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None && !parameter.Type.IsTypeInterestingForDataflow())
+						context.ReportDiagnostic (Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersOnMethodParameterCanOnlyApplyToTypesOrStrings), member.Locations[0], parameter.GetDisplayName(), member.GetDisplayName ()));
+				}
+			}
+			else if (member is IPropertySymbol property && property.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None &&!property.Type.IsTypeInterestingForDataflow ()) {
+				context.ReportDiagnostic (Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersOnPropertyCanOnlyApplyToTypesOrStrings), member.Locations[0], member.GetDisplayName ()));
+			}
 		}
 	}
 }

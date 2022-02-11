@@ -170,6 +170,9 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 
 		public override TValue VisitPropertyReference (IPropertyReferenceOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
 		{
+			if (!operation.Property.Type.IsTypeInterestingForDataflow ())
+				return TopValue;
+
 			if (operation.GetValueUsageInfo (operation.Property).HasFlag (ValueUsageInfo.Read)) {
 				// Accessing property for reading is really a call to the getter
 				// The setter case is handled in assignment operation since here we don't have access to the value to pass to the setter
