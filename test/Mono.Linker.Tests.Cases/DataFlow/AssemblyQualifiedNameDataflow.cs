@@ -20,6 +20,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TestUnqualifiedTypeNameWarns ();
 			TestNull ();
 			TestMultipleValues ();
+			TestUnknownValue ();
 		}
 
 		[ExpectedWarning ("IL2072", nameof (RequirePublicConstructors))]
@@ -72,8 +73,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[ExpectedWarning ("IL2072", nameof (RequirePublicConstructors), nameof (GetTypeWithNonPublicConstructors))]
-		// https://github.com/dotnet/linker/issues/2273
-		[ExpectedWarning ("IL2062", nameof (RequirePublicConstructors), ProducedBy = ProducedBy.Trimmer)]
+		[ExpectedWarning ("IL2062", nameof (RequirePublicConstructors))]
 		static void TestMultipleValues (int p = 0, object[] o = null)
 		{
 			Type type = p switch {
@@ -84,6 +84,14 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			};
 
 			RequirePublicConstructors (type.AssemblyQualifiedName);
+		}
+
+		[ExpectedWarning ("IL2062", nameof (RequirePublicConstructors))]
+		static void TestUnknownValue (object[] o = null)
+		{
+			string unknown = ((Type) o[0]).AssemblyQualifiedName;
+			RequirePublicConstructors (unknown);
+			RequireNothing (unknown); // shouldn't warn
 		}
 
 		private static void RequirePublicParameterlessConstructor (
@@ -126,6 +134,5 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		{
 			return null;
 		}
-
 	}
 }
