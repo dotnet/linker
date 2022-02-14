@@ -20,19 +20,9 @@ namespace ILLink.RoslynAnalyzer
 			if (type.SpecialType == SpecialType.System_String)
 				return true;
 
-			return IsSystemType (type) || IsSystemReflectionIReflect (type);
+			var flags = GetFlags (type);
+			return IsSystemType (flags) || IsSystemReflectionIReflect (flags);
 		}
-
-		private static bool IsSystemType (ITypeSymbol type)
-		{
-			return (GetFlags (type) & HierarchyFlags.IsSystemType) != 0;
-		}
-
-		private static bool IsSystemReflectionIReflect (this ITypeSymbol type)
-		{
-			return (GetFlags (type) & HierarchyFlags.IsSystemReflectionIReflect) != 0;
-		}
-
 
 		private static HierarchyFlags GetFlags (ITypeSymbol type)
 		{
@@ -43,9 +33,8 @@ namespace ILLink.RoslynAnalyzer
 
 			ITypeSymbol? baseType = type;
 			while (baseType != null) {
-				if (baseType.Name == "Type" && baseType.ContainingNamespace.GetDisplayName () == "System") {
+				if (baseType.Name == "Type" && baseType.ContainingNamespace.GetDisplayName () == "System")
 					flags |= HierarchyFlags.IsSystemType;
-				}
 
 				foreach (var iface in baseType.Interfaces) {
 					if (iface.Name == "IReflect" && iface.ContainingNamespace.GetDisplayName () == "System.Reflection") {
@@ -57,5 +46,9 @@ namespace ILLink.RoslynAnalyzer
 			}
 			return flags;
 		}
+
+		private static bool IsSystemType (HierarchyFlags flags) => (flags & HierarchyFlags.IsSystemType) != 0;
+
+		private static bool IsSystemReflectionIReflect (HierarchyFlags flags) => (flags & HierarchyFlags.IsSystemReflectionIReflect) != 0;
 	}
 }

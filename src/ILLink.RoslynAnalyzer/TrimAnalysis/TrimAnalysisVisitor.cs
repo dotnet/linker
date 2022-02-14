@@ -41,7 +41,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			var value = base.VisitConversion (operation, state);
 
 			if (operation.OperatorMethod != null)
-				return new MethodReturnValue (operation.OperatorMethod);
+				return operation.OperatorMethod.ReturnType.IsTypeInterestingForDataflow () ? new MethodReturnValue (operation.OperatorMethod) : value;
 
 			// TODO - is it possible to have annotation on the operator method parameters?
 			// if so, will these be checked here?
@@ -59,14 +59,13 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			if (instanceRef.ReferenceKind != InstanceReferenceKind.ContainingTypeInstance)
 				return TopValue;
 
-			if (instanceRef.Type != null && !instanceRef.Type.IsTypeInterestingForDataflow ())
-				return TopValue;
-
 			// The instance reference operation represents a 'this' or 'base' reference to the containing type,
 			// so we get the annotation from the containing method.
 			// TODO: Check whether the Context.OwningSymbol is the containing type in case we are in a lambda.
-			var value = new MethodThisParameterValue ((IMethodSymbol) Context.OwningSymbol);
-			return value;
+			if (instanceRef.Type != null && instanceRef.Type.IsTypeInterestingForDataflow ())
+				return new MethodThisParameterValue ((IMethodSymbol) Context.OwningSymbol);
+
+			return TopValue;
 		}
 
 		public override MultiValue VisitFieldReference (IFieldReferenceOperation fieldRef, StateValue state)
@@ -117,12 +116,9 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			var diagnosticContext = DiagnosticContext.CreateDisabled ();
 			var handleCallAction = new HandleCallAction (diagnosticContext, Context.OwningSymbol, operation);
 			if (!handleCallAction.Invoke (new MethodProxy (calledMethod), instance, arguments, out MultiValue methodReturnValue)) {
-				if (!calledMethod.ReturnsVoid &&
-					(calledMethod.ReturnType.IsTypeInterestingForDataflow () ||
-					(calledMethod.AssociatedSymbol is IPropertySymbol property &&
-					property.Type.IsTypeInterestingForDataflow ()))) {
+				if (!calledMethod.ReturnsVoid && calledMethod.ReturnType.IsTypeInterestingForDataflow ())
 					methodReturnValue = new MethodReturnValue (calledMethod);
-				} else
+				else
 					methodReturnValue = TopValue;
 			}
 
@@ -138,12 +134,15 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 		public override void HandleReturnValue (MultiValue returnValue, IOperation operation)
 		{
-			var returnParameter = new MethodReturnValue ((IMethodSymbol) Context.OwningSymbol);
+			var associatedMethod = (IMethodSymbol) Context.OwningSymbol;
+			if (associatedMethod.ReturnType.IsTypeInterestingForDataflow ()) {
+				var returnParameter = new MethodReturnValue (associatedMethod);
 
-			TrimAnalysisPatterns.Add (
-				new TrimAnalysisAssignmentPattern (returnValue, returnParameter, operation),
-				isReturnValue: true
-			);
+				TrimAnalysisPatterns.Add (
+					new TrimAnalysisAssignmentPattern (returnValue, returnParameter, operation),
+					isReturnValue: true
+				);
+			}
 		}
 	}
 }
