@@ -77,14 +77,14 @@ namespace ILLink.RoslynAnalyzer
 				context.RegisterSyntaxNodeAction (context => {
 					ProcessGenericParameters (context);
 				}, SyntaxKind.GenericName);
-				context.RegisterSymbolAction(context => {
-					VerifyMemberOnlyApplyToTypesOrStrings(context, context.Symbol);
+				context.RegisterSymbolAction (context => {
+					VerifyMemberOnlyApplyToTypesOrStrings (context, context.Symbol);
 				}, SymbolKind.Method);
-				context.RegisterSymbolAction(context => {
-					VerifyMemberOnlyApplyToTypesOrStrings(context, context.Symbol);
+				context.RegisterSymbolAction (context => {
+					VerifyMemberOnlyApplyToTypesOrStrings (context, context.Symbol);
 				}, SymbolKind.Property);
-				context.RegisterSymbolAction(context => {
-					VerifyMemberOnlyApplyToTypesOrStrings(context, context.Symbol);
+				context.RegisterSymbolAction (context => {
+					VerifyMemberOnlyApplyToTypesOrStrings (context, context.Symbol);
 				}, SymbolKind.Field);
 			});
 		}
