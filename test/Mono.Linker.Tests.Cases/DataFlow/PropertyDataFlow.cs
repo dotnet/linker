@@ -193,9 +193,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 
 			// Analyzer doesn't try to detect backing fields of properties: https://github.com/dotnet/linker/issues/2273
-			[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions) + "." + nameof (DataFlowTypeExtensions.RequiresPublicConstructors) + "(Type)",
-				nameof (TestAutomaticPropagationType) + "." + nameof (PropertyWhichLooksLikeCompilerGenerated_Field),
-				ProducedBy = ProducedBy.Analyzer)]
+			//[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions) + "." + nameof (DataFlowTypeExtensions.RequiresPublicConstructors) + "(Type)",
+			//	nameof (TestAutomaticPropagationType) + "." + nameof (PropertyWhichLooksLikeCompilerGenerated_Field),
+			//	ProducedBy = ProducedBy.Analyzer)]
 			public void TestPropertyWhichLooksLikeCompilerGenerated ()
 			{
 				// If the property was correctly recognized both the property getter and the backing field should get the annotation.
@@ -209,9 +209,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 			static Type PropertyWhichLooksLikeCompilerGenerated {
 				// Analyzer doesn't try to detect backing fields of properties: https://github.com/dotnet/linker/issues/2273
-				[ExpectedWarning ("IL2078", nameof (TestAutomaticPropagationType) + "." + nameof (PropertyWhichLooksLikeCompilerGenerated) + ".get",
-					nameof (TestAutomaticPropagationType) + "." + nameof (PropertyWhichLooksLikeCompilerGenerated_Field),
-					ProducedBy = ProducedBy.Analyzer)]
+				//[ExpectedWarning ("IL2078", nameof (TestAutomaticPropagationType) + "." + nameof (PropertyWhichLooksLikeCompilerGenerated) + ".get",
+				//	nameof (TestAutomaticPropagationType) + "." + nameof (PropertyWhichLooksLikeCompilerGenerated_Field),
+				//	ProducedBy = ProducedBy.Analyzer)]
 				get {
 					return PropertyWhichLooksLikeCompilerGenerated_Field;
 				}
@@ -356,9 +356,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 			Type PropertyWithConflictingNoneAttributes {
 				// Analyzer doesn't try to detect backing fields of properties: https://github.com/dotnet/linker/issues/2273
-				[ExpectedWarning ("IL2078", nameof (TestAutomaticPropagationType) + "." + nameof (PropertyWithConflictingNoneAttributes) + ".get",
-					nameof (TestAutomaticPropagationType) + "." + nameof (PropertyWithConflictingNoneAttributes_Field),
-					ProducedBy = ProducedBy.Analyzer)]
+				//[ExpectedWarning ("IL2078", nameof (TestAutomaticPropagationType) + "." + nameof (PropertyWithConflictingNoneAttributes) + ".get",
+				//	nameof (TestAutomaticPropagationType) + "." + nameof (PropertyWithConflictingNoneAttributes_Field),
+				//	ProducedBy = ProducedBy.Analyzer)]
 				[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.None)]
 				get { return PropertyWithConflictingNoneAttributes_Field; }
 

@@ -71,7 +71,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		[ExpectedWarning ("IL2072", nameof (RequirePublicConstructors), nameof (GetTypeWithNonPublicConstructors))]
 		// https://github.com/dotnet/linker/issues/2273
-		[ExpectedWarning ("IL2062", nameof (RequirePublicConstructors), ProducedBy = ProducedBy.Trimmer)]
+		// [ExpectedWarning ("IL2062", nameof (RequirePublicConstructors), ProducedBy = ProducedBy.Trimmer)]
 		static void TestMultipleValues (int p = 0, object[] o = null)
 		{
 			Type type = p switch {
