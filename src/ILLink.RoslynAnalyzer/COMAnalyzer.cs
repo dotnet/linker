@@ -82,7 +82,7 @@ namespace ILLink.RoslynAnalyzer
 					typeSymbol = parameterSymbol.Type;
 
 				if (typeSymbol is IPointerTypeSymbol pointerTypeSymbol)
-					return true;
+					return false;
 
 				if (typeSymbol == null)
 					return false;
