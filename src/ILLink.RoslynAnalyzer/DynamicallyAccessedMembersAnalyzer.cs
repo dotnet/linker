@@ -76,7 +76,6 @@ namespace ILLink.RoslynAnalyzer
 
 					// Sub optimal way to handle analyzer not to generate warnings until the linker is fixed
 					// Iterators, local functions and lambdas are handled 
-					bool doNotHandleThisMethod = false;
 					foreach (IOperation blockOperation in context.OperationBlocks) {
 						if (blockOperation is IBlockOperation blocks) {
 							foreach (IOperation operation in blocks.Operations) {
@@ -84,13 +83,10 @@ namespace ILLink.RoslynAnalyzer
 								operation.Kind == OperationKind.LocalFunction ||
 								operation.Kind == OperationKind.YieldBreak ||
 								operation.Kind == OperationKind.YieldReturn)
-									doNotHandleThisMethod = true;
+									return;
 							}
 						}
 					}
-					if (doNotHandleThisMethod)
-						return;
-
 
 					foreach (var operationBlock in context.OperationBlocks) {
 						ControlFlowGraph cfg = context.GetControlFlowGraph (operationBlock);
