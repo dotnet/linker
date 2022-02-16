@@ -319,9 +319,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		// Analyzer gets this right, but linker doesn't consider backwards branches.
-		//[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicMethods) + "(String)",
-		//	nameof (LocalDataFlow) + "." + nameof (GetWithPublicFields) + "()",
-		//	ProducedBy = ProducedBy.Analyzer)]
+		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicMethods) + "(String)",
+			nameof (LocalDataFlow) + "." + nameof (GetWithPublicFields) + "()",
+			ProducedBy = ProducedBy.Analyzer)]
 		public static void TestBackwardsEdgeLoop ()
 		{
 			string str = GetWithPublicMethods ();
@@ -336,9 +336,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		// Analyzer gets this right, but linker doesn't consider backwards branches.
-		//[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicMethods) + "(String)",
-		//	nameof (LocalDataFlow) + "." + nameof (GetWithPublicFields) + "()",
-		//	ProducedBy = ProducedBy.Analyzer)]
+		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicMethods) + "(String)",
+			nameof (LocalDataFlow) + "." + nameof (GetWithPublicFields) + "()",
+			ProducedBy = ProducedBy.Analyzer)]
 		public static void TestBackwardsEdgeGoto ()
 		{
 			string str = null;
