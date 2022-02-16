@@ -36,15 +36,13 @@ static class Program
     {
         unsafe
         {
-            // Make sure the problematic function is used and not optimized away.
-            // NOTE: This is not the NullReferenceException of the warning, that is thrown by the analyzer itself.
             WhateverName(null);
         }
     }
 }";
 			return VerifyComAnalyzer (TargetParameterWithAnnotations,
-				DiagnosticResult.CompilerError ("CS0227").WithSpan (12, 31, 12, 43),
-				DiagnosticResult.CompilerError ("CS0227").WithSpan (16, 9, 16, 15));
+				DiagnosticResult.CompilerError ("CS0227").WithSpan (7, 31, 7, 43),
+				DiagnosticResult.CompilerError ("CS0227").WithSpan (11, 9, 11, 15));
 ;
 		}
 	}
