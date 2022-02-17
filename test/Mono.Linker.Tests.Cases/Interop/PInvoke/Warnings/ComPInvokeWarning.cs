@@ -190,7 +190,7 @@ namespace Mono.Linker.Tests.Cases.Interop.PInvoke.Warnings
 		[DllImport ("Foo")]
 		static extern void PInvokeWithRequiresUnreferencedCode (IFoo foo);
 
-		static unsafe void Call_PInvokeWithVoidPointerArg()
+		static unsafe void Call_PInvokeWithVoidPointerArg ()
 		{
 			PInvokeWithVoidPointerArg (null);
 		}
@@ -198,7 +198,7 @@ namespace Mono.Linker.Tests.Cases.Interop.PInvoke.Warnings
 		[DllImport ("Foo")]
 		static extern unsafe void PInvokeWithVoidPointerArg (void* arg);
 
-		static unsafe void Call_PInvokeWithStructPointerArg()
+		static unsafe void Call_PInvokeWithStructPointerArg ()
 		{
 			PInvokeWithStructPointerArg (null);
 		}
@@ -206,7 +206,7 @@ namespace Mono.Linker.Tests.Cases.Interop.PInvoke.Warnings
 		[DllImport ("Foo")]
 		static extern unsafe ExplicitLayoutStruct* PInvokeWithStructPointerArg (ExplicitLayoutStruct* arg);
 
-		static unsafe void Call_PInvokeWithSequentialStructPointerArg()
+		static unsafe void Call_PInvokeWithSequentialStructPointerArg ()
 		{
 			PInvokeWithSequentialStructPointerArg (null);
 		}
@@ -214,7 +214,7 @@ namespace Mono.Linker.Tests.Cases.Interop.PInvoke.Warnings
 		[DllImport ("Foo")]
 		static extern unsafe SequentialLayoutStruct* PInvokeWithSequentialStructPointerArg (SequentialLayoutStruct* arg);
 
-		static unsafe void Call_PInvokeWithAutoStructPointerArg()
+		static unsafe void Call_PInvokeWithAutoStructPointerArg ()
 		{
 			PInvokeWithAutoStructPointerArg (null);
 		}
