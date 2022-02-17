@@ -37,7 +37,6 @@ namespace Mono.Linker.Tests.Cases.Interop.PInvoke.Warnings
 			Call_PInvokeWithVoidPointerArg ();
 			Call_PInvokeWithStructPointerArg ();
 			Call_PInvokeWithSequentialStructPointerArg ();
-
 		}
 
 		[ExpectedWarning ("IL2050")]
