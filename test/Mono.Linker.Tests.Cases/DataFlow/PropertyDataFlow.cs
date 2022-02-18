@@ -195,9 +195,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			// This test creates a property and field which linker will recognized as a compiler generated backing field for the property
 			// The purpose of the test is to verify, that linker flows the annotation to the backing field and since there's
 			// no good way to reference actual compiler generated backing field, we "Fake" it here as compiler generated.
-			// But this doesn't fool the analyzer - since it seens it as yet another user declared field, so it doesn't propagate the
+			// But this doesn't fool the analyzer - since it's seen as yet another user declared field, so it doesn't propagate the
 			// annotation.
-			// This discrepancy is currently by design and not worth the trouble to implement logic for in the analyzer.
+			// This discrepancy is currently by design and not worth the trouble to implement logic for it in the analyzer.
 			// Producing fields which are annotated with CompilerGeneratedAttribute and making them look like backing fields
 			// is highly unlikely to be done by anybody. If it happens, the analyzer will produce warnings which the linker will not
 			// but those warnings are not really wrong, so it's better if the developer fixes them anyway.
