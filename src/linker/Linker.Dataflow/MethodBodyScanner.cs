@@ -15,14 +15,14 @@ namespace Mono.Linker.Dataflow
 	/// </summary>
 	readonly struct StackSlot
 	{
-		public ValueNode? Value { get; }
+		public ValueNode Value { get; }
 
 		/// <summary>
 		/// True if the value is on the stack as a byref
 		/// </summary>
 		public bool IsByRef { get; }
 
-		public StackSlot (ValueNode? value, bool isByRef = false)
+		public StackSlot (ValueNode value, bool isByRef = false)
 		{
 			Value = value;
 			IsByRef = isByRef;
@@ -49,14 +49,14 @@ namespace Mono.Linker.Dataflow
 			if (stack.Count < depthRequired) {
 				WarnAboutInvalidILInMethod (method, ilOffset);
 				while (stack.Count < depthRequired)
-					stack.Push (new StackSlot ()); // Push dummy values to avoid crashes.
-												   // Analysis of this method will be incorrect.
+					stack.Push (new StackSlot (UnknownValue.Instance)); // Push dummy values to avoid crashes.
+												                        // Analysis of this method will be incorrect.
 			}
 		}
 
 		private static void PushUnknown (Stack<StackSlot> stack)
 		{
-			stack.Push (new StackSlot ());
+			stack.Push (new StackSlot (UnknownValue.Instance));
 		}
 
 		private void PushUnknownAndWarnAboutInvalidIL (Stack<StackSlot> stack, MethodBody methodBody, int offset)
@@ -102,10 +102,10 @@ namespace Mono.Linker.Dataflow
 				// Force stacks to be of equal size to avoid crashes.
 				// Analysis of this method will be incorrect.
 				while (a.Count < b.Count)
-					a.Push (new StackSlot ());
+					a.Push (new StackSlot (UnknownValue.Instance));
 
 				while (b.Count < a.Count)
-					b.Push (new StackSlot ());
+					b.Push (new StackSlot (UnknownValue.Instance));
 			}
 
 			Stack<StackSlot> newStack = new Stack<StackSlot> (a.Count);
@@ -621,7 +621,7 @@ namespace Mono.Linker.Dataflow
 		{
 			foreach (ExceptionHandler exceptionClause in methodBody.ExceptionHandlers) {
 				Stack<StackSlot> catchStack = new Stack<StackSlot> (1);
-				catchStack.Push (new StackSlot ());
+				catchStack.Push (new StackSlot (UnknownValue.Instance));
 
 				if (exceptionClause.HandlerType == ExceptionHandlerType.Filter) {
 					NewKnownStack (knownStacks, exceptionClause.FilterStart.Offset, catchStack);
@@ -711,7 +711,7 @@ namespace Mono.Linker.Dataflow
 				ValueNode valueToPush = localValue.Value;
 				currentStack.Push (new StackSlot (valueToPush, isByRef));
 			} else {
-				currentStack.Push (new StackSlot (null, isByRef));
+				currentStack.Push (new StackSlot (UnknownValue.Instance, isByRef));
 			}
 		}
 
@@ -1001,7 +1001,7 @@ namespace Mono.Linker.Dataflow
 				ValueNode valueToPush = arrayIndexValue.Value;
 				currentStack.Push (new StackSlot (valueToPush, isByRef));
 			} else {
-				currentStack.Push (new StackSlot (null, isByRef));
+				currentStack.Push (new StackSlot (UnknownValue.Instance, isByRef));
 			}
 		}
 	}

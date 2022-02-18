@@ -997,6 +997,7 @@ namespace Mono.Linker.Dataflow
 			throw new InvalidOperationException ();
 		}
 
+		[return: NotNullIfNotNull("one"), NotNullIfNotNull("two")]
 		public static ValueNode? MergeValues (ValueNode? one, ValueNode? two)
 		{
 			if (one == null)
