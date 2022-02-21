@@ -22,12 +22,15 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 	{
 		public readonly TrimAnalysisPatternStore TrimAnalysisPatterns;
 
+		readonly ValueSetLattice<SingleValue> _multiValueLattice;
+
 		public TrimAnalysisVisitor (
 			LocalStateLattice<MultiValue, ValueSetLattice<SingleValue>> lattice,
 			OperationBlockAnalysisContext context
 		) : base (lattice, context)
 		{
-			TrimAnalysisPatterns = new TrimAnalysisPatternStore (lattice.Lattice.ValueLattice);
+			_multiValueLattice = lattice.Lattice.ValueLattice;
+			TrimAnalysisPatterns = new TrimAnalysisPatternStore (_multiValueLattice);
 		}
 
 		// Override visitor methods to create tracked values when visiting operations
@@ -70,14 +73,26 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 		public override MultiValue VisitFieldReference (IFieldReferenceOperation fieldRef, StateValue state)
 		{
-			if (!fieldRef.Field.Type.IsTypeInterestingForDataflow ())
-				return TopValue;
+			if (fieldRef.Field.Type.IsTypeInterestingForDataflow())
+			{
+				var field = fieldRef.Field;
+				if (field.Name is "Empty" && field.ContainingType.HasName("System.String"))
+					return new KnownStringValue(string.Empty);
 
-			var field = fieldRef.Field;
-			if (field.Name is "Empty" && field.ContainingType.HasName ("System.String"))
-				return new KnownStringValue (string.Empty);
+				return new FieldValue(fieldRef.Field);
+			}
 
-			return new FieldValue (fieldRef.Field);
+			if (fieldRef.ConstantValue.HasValue) {
+				object? constantValue = fieldRef.ConstantValue.Value;
+				if (constantValue == null)
+					return NullValue.Instance;
+				else if (fieldRef.Type?.SpecialType == SpecialType.System_String)
+					return new KnownStringValue ((string) constantValue);
+				else if (fieldRef.Type?.TypeKind == TypeKind.Enum)
+					return new ConstIntValue ((int) constantValue);
+			}
+
+			return TopValue;
 		}
 
 		public override MultiValue VisitTypeOf (ITypeOfOperation typeOfOperation, StateValue state)
@@ -93,6 +108,35 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 		public override MultiValue VisitLiteral (ILiteralOperation literalOperation, StateValue state)
 		{
 			return literalOperation.ConstantValue.Value == null ? NullValue.Instance : TopValue;
+		}
+
+		public override MultiValue VisitBinaryOperator (IBinaryOperation operation, StateValue argument)
+		{
+			if (operation.OperatorKind == BinaryOperatorKind.Or &&
+				operation.OperatorMethod is null &&
+				(operation.Type?.TypeKind == TypeKind.Enum || operation.Type?.SpecialType == SpecialType.System_Int32)) {
+				MultiValue leftValue = Visit (operation.LeftOperand, argument);
+				MultiValue rightValue = Visit (operation.RightOperand, argument);
+
+				MultiValue result = TopValue;
+				foreach (var left in leftValue) {
+					if (left is UnknownValue)
+						result = _multiValueLattice.Meet (result, left);
+					else if (left is ConstIntValue leftConstInt) {
+						foreach (var right in rightValue) {
+							if (right is UnknownValue)
+								result = _multiValueLattice.Meet (result, right);
+							else if (right is ConstIntValue rightConstInt) {
+								result = _multiValueLattice.Meet (result, new ConstIntValue (leftConstInt.Value | rightConstInt.Value));
+							}
+						}
+					}
+				}
+
+				return result;
+			}
+
+			return base.VisitBinaryOperator (operation, argument);
 		}
 
 		// Override handlers for situations where annotated locations may be involved in reflection access:
