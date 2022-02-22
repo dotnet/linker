@@ -178,7 +178,7 @@ namespace {TestNamespace}{suiteNamespacePart}
 
 	class ExistingTestCaseDiscoverer : ISyntaxContextReceiver
 	{
-		public readonly TestCases ExistingTestCases = new ();
+		public readonly TestCases ExistingTestCases;
 
 		public void OnVisitSyntaxNode (GeneratorSyntaxContext context)
 		{
