@@ -91,5 +91,5 @@ if (-not ($Update))
 {
     $originalFiles = Join-Path $ILDocsPath ""
     $newfiles = Join-Path $tmpFolder ""
-    git diff --no-index $originalFiles $newfiles 
+    git diff -w --no-index $originalFiles $newfiles 
 }
