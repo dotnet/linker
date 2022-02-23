@@ -841,7 +841,7 @@
     <value>Attribute 'attribute' should only be used once on member 'member'</value>
   </data>
   <data name="AttributeShouldOnlyBeUsedOnceOnMemberMessage" xml:space="preserve">
-    <value>Attribute '{0}' should only be used once on member 'member'</value>
+    <value>Attribute '{0}' should only be used once on member '{1}'</value>
   </data>
   <!--IL2028-->
   <data name="AttributeDoesntHaveTheRequiredNumberOfParametersTitle" xml:space="preserve">
@@ -1171,7 +1171,7 @@
     <value>Value assigned to field 'field' can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.</value>
   </data>
   <data name="FieldValueCannotBeStaticallyDeterminedMessage" xml:space="preserve">
-    <value>Value assigned to field '{0}'' can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.</value>
+    <value>Value assigned to field '{0}' can not be statically determined and may not meet 'DynamicallyAccessedMembersAttribute' requirements.</value>
   </data>
   <!--IL2065-->
   <data name="ImplicitThisCannotBeStaticallyDeterminedTitle" xml:space="preserve">
@@ -1201,7 +1201,7 @@
     <value>Argument 'argument' does not satisfy DynamicallyAccessedMembersAttribute requirement 'requirement' in call to 'method'. The parameter 'parameter' of method 'method' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
   </data>
   <data name="DynamicallyAccessedMembersMismatchParameterTargetsParameterMessage" xml:space="preserve">
-    <value>Argument '{0}' does not satisfy DynamicallyAccessedMembersAttribute requirement '{4}' in call to '{1}'. The parameter '{2}' of method '{3}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+    <value>Argument '{0}' does not satisfy 'DynamicallyAccessedMembersAttribute' requirements '{4}' in call to '{1}'. The parameter '{2}' of method '{3}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
   </data>
   <!--IL2068-->
   <data name="DynamicallyAccessedMembersMismatchParameterTargetsMethodReturnTypeTitle" xml:space="preserve">
@@ -1241,7 +1241,7 @@
     <value>'GenericArgument' generic argument does not satisfy 'requirements' in 'methodCall'. The parameter 'parameter' of method 'method' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
   </data>
   <data name="DynamicallyAccessedMembersMismatchParameterTargetsGenericParameterMessage" xml:space="preserve">
-    <value>'{0}' generic argument does not satisfy '{4}'' in '{1}'. The parameter '{2}' of method '{3}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+    <value>'{0}' generic argument does not satisfy '{4}' in '{1}'. The parameter '{2}' of method '{3}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
   </data>
   <!--IL2072-->
   <data name="DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsParameterTitle" xml:space="preserve">
