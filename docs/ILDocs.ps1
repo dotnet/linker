@@ -84,12 +84,12 @@ $2'
     # Output to temp file to compare, or replace the file in place
     $outfile = Join-Path $tmpFolder ("il" + $ilNumber + ".md")
     if ($Update) {$outfile = $file}
-    Out-File $outfile -InputObject $updated
+    Out-File $outfile -InputObject $updated -NoNewline
 }
 # Show diff if not replacing in place
 if (-not ($Update))
 {
     $originalFiles = Join-Path $ILDocsPath ""
     $newfiles = Join-Path $tmpFolder ""
-    git diff -w --no-index $originalFiles $newfiles 
+    git diff --no-index $originalFiles $newfiles 
 }
