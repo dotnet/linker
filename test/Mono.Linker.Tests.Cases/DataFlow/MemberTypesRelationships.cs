@@ -82,7 +82,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[ExpectedWarning ("IL2067", nameof (DataFlowTypeExtensions.RequiresNonPublicMethods), nameof (DynamicallyAccessedMemberTypes) + "." + nameof (DynamicallyAccessedMemberTypes.NonPublicMethods))]
-		[ExpectedWarning ("IL2067", nameof (DataFlowTypeExtensions.RequiresPublicConstructors), "y '" + nameof (DynamicallyAccessedMemberTypes) + "." + nameof (DynamicallyAccessedMemberTypes.PublicConstructors) + "' i")]
+		[ExpectedWarning ("IL2067", nameof (DataFlowTypeExtensions.RequiresPublicConstructors), "requirements '" + nameof (DynamicallyAccessedMemberTypes) + "." + nameof (DynamicallyAccessedMemberTypes.PublicConstructors) + "' i")]
 		[ExpectedWarning ("IL2067", nameof (DataFlowTypeExtensions.RequiresAll), nameof (DynamicallyAccessedMemberTypes) + "." + nameof (DynamicallyAccessedMemberTypes.All))]
 		static void TestPublicMethods (
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
