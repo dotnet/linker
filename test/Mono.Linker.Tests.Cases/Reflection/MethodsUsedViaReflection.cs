@@ -358,6 +358,10 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			public static void Test ()
 			{
 				typeof (TestClassWithRUCMethods).GetMethods ((BindingFlags) 24);
+
+				// Analyzer currently can't figure this out
+				int bindingFlagsNumber = 24;
+				typeof (TestClassWithRUCMethods).GetMethods ((BindingFlags) bindingFlagsNumber);
 			}
 		}
 

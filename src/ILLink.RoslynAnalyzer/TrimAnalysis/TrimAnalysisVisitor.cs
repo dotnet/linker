@@ -39,6 +39,26 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 		// - 'this' parameter (for annotated methods)
 		// - field reference
 
+		public override MultiValue Visit (IOperation? operation, StateValue argument)
+		{
+			var returnValue = base.Visit (operation, argument);
+
+			// If the return value is empty (TopValue basically) and the Operation tree
+			// reports it as having a constant value, use that as it will automatically cover
+			// cases we don't need/want to handle.
+			if (operation != null && returnValue.IsEmpty () && operation.ConstantValue.HasValue) {
+				object? constantValue = operation.ConstantValue.Value;
+				if (constantValue == null)
+					return NullValue.Instance;
+				else if (operation.Type?.SpecialType == SpecialType.System_String && constantValue is string stringConstantValue)
+					return new KnownStringValue (stringConstantValue);
+				else if (operation.Type?.TypeKind == TypeKind.Enum && constantValue is int intConstantValue)
+					return new ConstIntValue (intConstantValue);
+			}
+
+			return returnValue;
+		}
+
 		public override MultiValue VisitConversion (IConversionOperation operation, StateValue state)
 		{
 			var value = base.VisitConversion (operation, state);
@@ -82,16 +102,6 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 				return new FieldValue(fieldRef.Field);
 			}
 
-			if (fieldRef.ConstantValue.HasValue) {
-				object? constantValue = fieldRef.ConstantValue.Value;
-				if (constantValue == null)
-					return NullValue.Instance;
-				else if (fieldRef.Type?.SpecialType == SpecialType.System_String)
-					return new KnownStringValue ((string) constantValue);
-				else if (fieldRef.Type?.TypeKind == TypeKind.Enum)
-					return new ConstIntValue ((int) constantValue);
-			}
-
 			return TopValue;
 		}
 
@@ -105,14 +115,10 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			return TopValue;
 		}
 
-		public override MultiValue VisitLiteral (ILiteralOperation literalOperation, StateValue state)
-		{
-			return literalOperation.ConstantValue.Value == null ? NullValue.Instance : TopValue;
-		}
-
 		public override MultiValue VisitBinaryOperator (IBinaryOperation operation, StateValue argument)
 		{
-			if (operation.OperatorKind == BinaryOperatorKind.Or &&
+			if (!operation.ConstantValue.HasValue && // Optimization - if there is already a constant value available, rely on the Visit(IOperation) instead
+				operation.OperatorKind == BinaryOperatorKind.Or &&
 				operation.OperatorMethod is null &&
 				(operation.Type?.TypeKind == TypeKind.Enum || operation.Type?.SpecialType == SpecialType.System_Int32)) {
 				MultiValue leftValue = Visit (operation.LeftOperand, argument);
