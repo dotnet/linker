@@ -76,6 +76,14 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				type.GetInterface ("ITestInterface").RequiresInterfaces ();
 			}
 
+			static void TestNoValue ()
+			{
+				Type t = null;
+				Type noValue = Type.GetTypeFromHandle (t.TypeHandle);
+				// t.TypeHandle throws at runtime so don't warn here.
+				noValue.GetInterface ("ITestInterface").RequiresAll ();
+			}
+
 			class GetInterfaceInCtor
 			{
 				public GetInterfaceInCtor ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.Interfaces)] Type type)
@@ -93,6 +101,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				TestKnownType ();
 				TestMultipleValues (0, typeof (TestType));
 				TestMergedValues (0, typeof (TestType));
+				TestNoValue ();
 				var _ = new GetInterfaceInCtor (typeof (TestType));
 			}
 		}

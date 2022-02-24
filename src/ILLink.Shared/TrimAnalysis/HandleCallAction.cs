@@ -72,6 +72,11 @@ namespace ILLink.Shared.TrimAnalysis
 				break;
 
 			case IntrinsicId.Type_get_TypeHandle:
+				if (instanceValue.IsEmpty ()) {
+					returnValue = MultiValueLattice.Top;
+					break;
+				}
+
 				foreach (var value in instanceValue) {
 					if (value is SystemTypeValue typeValue)
 						AddReturnValue (new RuntimeTypeHandleValue (typeValue.RepresentedType));
@@ -90,6 +95,11 @@ namespace ILLink.Shared.TrimAnalysis
 			// GetInterface (String, bool)
 			//
 			case IntrinsicId.Type_GetInterface: {
+					if (instanceValue.IsEmpty ()) {
+						returnValue = MultiValueLattice.Top;
+						break;
+					}
+
 					var targetValue = GetMethodThisParameterValue (calledMethod, DynamicallyAccessedMemberTypesOverlay.Interfaces);
 					foreach (var value in instanceValue) {
 						// For now no support for marking a single interface by name. We would have to correctly support
@@ -115,6 +125,11 @@ namespace ILLink.Shared.TrimAnalysis
 			// AssemblyQualifiedName
 			//
 			case IntrinsicId.Type_get_AssemblyQualifiedName: {
+					if (instanceValue.IsEmpty ()) {
+						returnValue = MultiValueLattice.Top;
+						break;
+					}
+
 					foreach (var value in instanceValue) {
 						if (value is ValueWithDynamicallyAccessedMembers valueWithDynamicallyAccessedMembers) {
 							// Currently we don't need to track the difference between Type and String annotated values
@@ -159,9 +174,10 @@ namespace ILLink.Shared.TrimAnalysis
 				return true;
 			}
 
-			// For some intrinsics we just use the return value from the annotations.
-			if (returnValue == null)
-				returnValue = calledMethod.ReturnsVoid () ? MultiValueLattice.Top : GetMethodReturnValue (calledMethod, returnValueDynamicallyAccessedMemberTypes);
+			if (returnValue == null && !calledMethod.ReturnsVoid ())
+				throw new InvalidOperationException ("No return value set for intrinsic");
+
+			returnValue ??= MultiValueLattice.Top;
 
 			// Validate that the return value has the correct annotations as per the method return value annotations
 			if (returnValueDynamicallyAccessedMemberTypes != 0) {
