@@ -22,7 +22,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			public static void Test ()
 			{
 				TestNullType ();
+				TestNoValueInput ();
 				TestUnknownInput (null);
+				TestNullTypeArgument ();
+				TestNoValueTypeArgument ();
 				TestWithUnknownTypeArray (null);
 				TestWithArrayUnknownIndexSet (0);
 				TestWithArrayUnknownLengthSet (1);
@@ -51,6 +54,26 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 				Type nullType = null;
 				nullType.MakeGenericType (typeof (TestType));
+			}
+
+			static void TestNoValueInput ()
+			{
+				Type t = null;
+				Type noValue = Type.GetTypeFromHandle (t.TypeHandle);
+				noValue.MakeGenericType (typeof (TestType));
+			}
+
+			static void TestNullTypeArgument ()
+			{
+				Type t = null;
+				typeof (GenericWithPublicFieldsArgument<>).MakeGenericType (t);
+			}
+
+			static void TestNoValueTypeArgument ()
+			{
+				Type t = null;
+				Type noValue = Type.GetTypeFromHandle (t.TypeHandle);
+				typeof (GenericWithPublicFieldsArgument<>).MakeGenericType (noValue);
 			}
 
 			[ExpectedWarning ("IL2055", nameof (Type.MakeGenericType))]
@@ -196,6 +219,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				TestNullMethod ();
 				TestUnknownMethod (null);
 				TestUnknownMethodButNoTypeArguments (null);
+				TestNullTypeArgument ();
+				TestNoValueTypeArgument ();
 				TestWithUnknownTypeArray (null);
 				TestWithArrayUnknownIndexSet (0);
 				TestWithArrayUnknownIndexSetByRef (0);
@@ -246,6 +271,21 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 				// Thechnically linker could figure this out, but it's not worth the complexity - such call will always fail at runtime.
 				mi.MakeGenericMethod (Type.EmptyTypes);
+			}
+
+			static void TestNullTypeArgument ()
+			{
+				Type t = null;
+				typeof (MakeGenericMethod).GetMethod (nameof (GenericWithRequirements), BindingFlags.Static)
+					.MakeGenericMethod (t);
+			}
+
+			static void TestNoValueTypeArgument ()
+			{
+				Type t = null;
+				Type noValue = Type.GetTypeFromHandle (t.TypeHandle);
+				typeof (MakeGenericMethod).GetMethod (nameof (GenericWithRequirements), BindingFlags.Static)
+					.MakeGenericMethod (noValue);
 			}
 
 			[ExpectedWarning ("IL2060", nameof (MethodInfo.MakeGenericMethod))]

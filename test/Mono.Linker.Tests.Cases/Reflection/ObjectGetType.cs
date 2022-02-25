@@ -53,6 +53,9 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			EnumerationOverInstances.Test ();
 
 			DataFlowUnusedGetType.Test ();
+
+			NullValue.Test ();
+			NoValue.Test ();
 		}
 
 		[Kept]
@@ -1456,6 +1459,45 @@ namespace Mono.Linker.Tests.Cases.Reflection
 				if (GetBaseInstance ().GetType () is DerivedFromAnnotatedBase) {
 					Console.WriteLine ("Never get here");
 				}
+			}
+		}
+
+		[Kept]
+		class NullValue
+		{
+			[Kept]
+			class TestType
+			{
+			}
+
+			[Kept]
+			[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions.RequiresAll) + "(Type)", nameof (Object.GetType) + "()")]
+			public static void Test ()
+			{
+				TestType nullInstance = null;
+				// Even though this throws at runtime, we warn about the return value of GetType
+				nullInstance.GetType ().RequiresAll ();
+			}
+		}
+
+		[Kept]
+		class NoValue
+		{
+			[Kept]
+			class TestType
+			{
+			}
+
+			[Kept]
+			static TestType GetInstance () => null;
+
+			[Kept]
+			[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions.RequiresAll) + "(Type)", nameof (Object.GetType) + "()")]
+			public static void Test ()
+			{
+				TestType noValue = GetInstance ();
+				// Even though this throws at runtime, we warn about the return value of GetType
+				noValue.GetType ().RequiresAll ();
 			}
 		}
 	}
