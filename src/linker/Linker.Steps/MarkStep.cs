@@ -2042,9 +2042,6 @@ namespace Mono.Linker.Steps
 					if (MarkMethodsIf (type.Methods, MethodDefinitionExtensions.IsPublicInstancePropertyMethod, new DependencyInfo (DependencyKind.ReferencedBySpecialAttribute, type)))
 						Tracer.AddDirectDependency (attribute, new DependencyInfo (DependencyKind.CustomAttribute, type), marked: false);
 					break;
-				case "TypeDescriptionProviderAttribute" when attrType.Namespace == "System.ComponentModel":
-					MarkTypeConverterLikeDependency (attribute, l => l.IsDefaultConstructor (), type);
-					break;
 				}
 			}
 		}
@@ -2069,34 +2066,6 @@ namespace Mono.Linker.Steps
 				Tracer.AddDirectDependency (attribute, new DependencyInfo (DependencyKind.CustomAttribute, type), marked: false);
 				MarkNamedMethod (type, name, new DependencyInfo (DependencyKind.ReferencedBySpecialAttribute, attribute));
 			}
-		}
-
-		protected virtual void MarkTypeConverterLikeDependency (CustomAttribute attribute, Func<MethodDefinition, bool> predicate, ICustomAttributeProvider provider)
-		{
-			var args = attribute.ConstructorArguments;
-			if (args.Count < 1)
-				return;
-
-			TypeDefinition? typeDefinition = null;
-			switch (attribute.ConstructorArguments[0].Value) {
-			case string s:
-				if (!Context.TypeNameResolver.TryResolveTypeName (s, ScopeStack.CurrentScope.Origin.Provider, out TypeReference? typeRef, out AssemblyDefinition? assemblyDefinition))
-					break;
-				typeDefinition = Context.TryResolve (typeRef);
-				if (typeDefinition != null)
-					MarkingHelpers.MarkMatchingExportedType (typeDefinition, assemblyDefinition, new DependencyInfo (DependencyKind.CustomAttribute, provider), ScopeStack.CurrentScope.Origin);
-
-				break;
-			case TypeReference type:
-				typeDefinition = Context.Resolve (type);
-				break;
-			}
-
-			if (typeDefinition == null)
-				return;
-
-			Tracer.AddDirectDependency (attribute, new DependencyInfo (DependencyKind.CustomAttribute, provider), marked: false);
-			MarkMethodsIf (typeDefinition.Methods, predicate, new DependencyInfo (DependencyKind.ReferencedBySpecialAttribute, attribute));
 		}
 
 		static readonly Regex DebuggerDisplayAttributeValueRegex = new Regex ("{[^{}]+}", RegexOptions.Compiled);
