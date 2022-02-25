@@ -7,7 +7,6 @@ using System;
 
 namespace Mono.Linker.Tests.Cases.ComponentModel
 {
-
 	[Reference ("System.dll")]
 	[ExpectedNoWarnings]
 	public class TypeDescriptionProviderAttributeOnType
@@ -39,6 +38,7 @@ namespace Mono.Linker.Tests.Cases.ComponentModel
 				}
 			}
 		}
+
 		[Kept]
 		[KeptAttributeAttribute (typeof (TypeConverterAttribute))]
 		[TypeConverter (typeof (InterfaceTypeConverter))]
@@ -52,7 +52,7 @@ namespace Mono.Linker.Tests.Cases.ComponentModel
 			[Kept]
 			public static IInterface CreateVisual (
 			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
-				[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
 				Type visualType)
 			{
 				try {
