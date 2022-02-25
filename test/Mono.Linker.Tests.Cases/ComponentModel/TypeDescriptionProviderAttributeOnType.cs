@@ -18,7 +18,6 @@ namespace Mono.Linker.Tests.Cases.ComponentModel
 		}
 
 		[TypeDescriptionProvider (typeof (CustomTDP))]
-
 		[Kept]
 		[KeptAttributeAttribute (typeof (TypeDescriptionProviderAttribute))]
 		class CustomTypeDescriptionProvider_1
