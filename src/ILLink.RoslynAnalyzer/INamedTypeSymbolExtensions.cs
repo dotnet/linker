@@ -3,6 +3,7 @@
 
 using System;
 using Microsoft.CodeAnalysis;
+using System.Collections.Generic;
 
 namespace ILLink.RoslynAnalyzer
 {
@@ -27,6 +28,32 @@ namespace ILLink.RoslynAnalyzer
 			}
 
 			return true;
+		}
+
+		internal static IEnumerable<(ISymbol InterfaceMember, ISymbol ImplementationMember)> GetMemberInterfaceImplementationPairs(this INamedTypeSymbol namedType)
+		{
+			var interfaces = namedType.Interfaces;
+			foreach (INamedTypeSymbol iface in interfaces) {
+				foreach (var pair in GetMatchingMembers(namedType, iface)) {
+					yield return pair;
+				}
+			}
+		}
+
+		private static IEnumerable<(ISymbol InterfaceMember, ISymbol ImplementationMember)> GetMatchingMembers (INamedTypeSymbol implementationSymbol, INamedTypeSymbol interfaceSymbol)
+		{
+			var members = interfaceSymbol.GetMembers ();
+			foreach (var member in members) {
+				if (member is ISymbol interfaceMember
+					&& implementationSymbol.FindImplementationForInterfaceMember (member) is ISymbol implementationMember) {
+					yield return (InterfaceMember: interfaceMember, ImplementationMember: implementationMember);
+				}
+			}
+			foreach (var iface in interfaceSymbol.Interfaces) {
+				foreach (var pair in GetMatchingMembers (implementationSymbol, iface)) {
+					yield return pair;
+				}
+			}
 		}
 	}
 }

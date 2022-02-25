@@ -292,6 +292,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[CompilerGenerated]
 			Type PropertyWithExistingAttributes_Field;
 
+			[ExpectedWarning ("IL2043", "PropertyWithExistingAttributes", "PropertyWithExistingAttributes.get", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL2043", "PropertyWithExistingAttributes", "PropertyWithExistingAttributes.set", ProducedBy = ProducedBy.Analyzer)]
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 			Type PropertyWithExistingAttributes {
 				// Analyzer doesn't try to detect backing fields of properties: https://github.com/dotnet/linker/issues/2273
@@ -328,6 +330,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[CompilerGenerated]
 			Type PropertyWithConflictingAttributes_Field;
 
+			[ExpectedWarning ("IL2043", "PropertyWithConflictingAttributes", "PropertyWithConflictingAttributes.get", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL2043", "PropertyWithConflictingAttributes", "PropertyWithConflictingAttributes.set", ProducedBy = ProducedBy.Analyzer)]
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
 			Type PropertyWithConflictingAttributes {
 				// Analyzer doesn't try to detect backing fields of properties: https://github.com/dotnet/linker/issues/2273
