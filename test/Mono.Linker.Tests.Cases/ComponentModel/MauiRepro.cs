@@ -19,42 +19,42 @@ namespace Mono.Linker.Tests.Cases.ComponentModel
 	{
 		public static void Main ()
 		{
-			VisualTypeConverter.CreateVisual(typeof(System.String));
+			IVisual v = VisualTypeConverter.CreateVisual (typeof (System.String));
 			var x = new Visual ();
 		}
-	}
-	[Kept]
-	[KeptAttributeAttribute (typeof (TypeConverterAttribute))]
-	[TypeConverter (typeof (VisualTypeConverter))]
-	public interface IVisual
-	{ }
-
-	[Kept]
-	[KeptInterface (typeof (IVisual))]
-	public class Visual : IVisual
-	{
 		[Kept]
-		public Visual () { }
-	}
+		[KeptAttributeAttribute (typeof (TypeConverterAttribute))]
+		[TypeConverter (typeof (VisualTypeConverter))]
+		public interface IVisual
+		{ }
 
-	[Kept]
-	[KeptBaseType (typeof (TypeConverter))]
-	public class VisualTypeConverter : TypeConverter
-	{
 		[Kept]
-		public static IVisual CreateVisual (
-		[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
-		[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] Type visualType)
+		[KeptInterface (typeof (IVisual))]
+		public class Visual : IVisual
 		{
-			try {
-				return (IVisual) Activator.CreateInstance (visualType);
-			} catch {
-			}
-
-			return null;
+			[Kept]
+			public Visual () { }
 		}
 
 		[Kept]
-		public VisualTypeConverter () { }
+		[KeptBaseType (typeof (TypeConverter))]
+		public class VisualTypeConverter : TypeConverter
+		{
+			[Kept]
+			public static IVisual CreateVisual (
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+		[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] Type visualType)
+			{
+				try {
+					return (IVisual) Activator.CreateInstance (visualType);
+				} catch {
+				}
+
+				return null;
+			}
+
+			[Kept]
+			public VisualTypeConverter () { }
+		}
 	}
 }
