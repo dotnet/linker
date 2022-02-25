@@ -67,6 +67,7 @@ namespace Mono.Linker.Tests.Cases.ComponentModel
 
 			var tc2 = TypeDescriptor.GetConverter (typeof (CustomDataType_2));
 			var res2 = tc2.ConvertFromString ("from");
+
 		}
 	}
 }
