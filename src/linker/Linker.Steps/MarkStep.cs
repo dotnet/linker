@@ -824,7 +824,6 @@ namespace Mono.Linker.Steps
 						continue;
 
 					MarkCustomAttribute (ca, reason);
-					MarkSpecialCustomAttributeDependencies (ca, provider);
 				}
 			}
 
@@ -1563,7 +1562,6 @@ namespace Mono.Linker.Steps
 				markOccurred = true;
 				using (ScopeStack.PushScope (scope)) {
 					MarkCustomAttribute (customAttribute, reason);
-					MarkSpecialCustomAttributeDependencies (customAttribute, provider);
 				}
 			}
 
@@ -2049,23 +2047,6 @@ namespace Mono.Linker.Steps
 					break;
 				}
 			}
-		}
-
-		//
-		// Used for known framework attributes which can be applied to any element
-		//
-		bool MarkSpecialCustomAttributeDependencies (CustomAttribute ca, ICustomAttributeProvider provider)
-		{
-			var dt = ca.Constructor.DeclaringType;
-			if (dt.Name == "TypeConverterAttribute" && dt.Namespace == "System.ComponentModel") {
-				MarkTypeConverterLikeDependency (ca, l =>
-					l.IsDefaultConstructor () ||
-					l.Parameters.Count == 1 && l.Parameters[0].ParameterType.IsTypeOf ("System", "Type"),
-					provider);
-				return true;
-			}
-
-			return false;
 		}
 
 		void MarkMethodSpecialCustomAttributes (MethodDefinition method)
