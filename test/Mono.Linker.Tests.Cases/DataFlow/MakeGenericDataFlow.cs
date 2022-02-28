@@ -217,6 +217,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			public static void Test ()
 			{
 				TestNullMethod ();
+				TestNoValueMethod ();
 				TestUnknownMethod (null);
 				TestUnknownMethodButNoTypeArguments (null);
 				TestNullTypeArgument ();
@@ -258,6 +259,14 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 				MethodInfo mi = null;
 				mi.MakeGenericMethod (typeof (TestType));
+			}
+
+			[ExpectedWarning ("IL2060", nameof (MethodInfo.MakeGenericMethod) + "(Type[])")]
+			static void TestNoValueMethod ()
+			{
+				// GetMethod(null) throws at runtime.
+				MethodInfo noValue = typeof (MakeGenericMethod).GetMethod (null);
+				noValue.MakeGenericMethod (typeof (TestType));
 			}
 
 			[ExpectedWarning ("IL2060", nameof (MethodInfo.MakeGenericMethod))]

@@ -491,8 +491,9 @@ namespace ILLink.Shared.TrimAnalysis
 				return true;
 			}
 
-			Debug.Assert (returnValue != null || calledMethod.ReturnsVoid (), "Intrinsics must set a return value.");
-			returnValue ??= MultiValueLattice.Top;
+			// For now, if the intrinsic doesn't set a return value, fall back on the annotations.
+			// Note that this will be DynamicallyAccessedMembers.None for the intrinsics which don't return types.
+			returnValue ??= calledMethod.ReturnsVoid () ? MultiValueLattice.Top : GetMethodReturnValue (calledMethod, returnValueDynamicallyAccessedMemberTypes);
 
 			// Validate that the return value has the correct annotations as per the method return value annotations
 			if (returnValueDynamicallyAccessedMemberTypes != 0) {
