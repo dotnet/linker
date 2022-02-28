@@ -183,9 +183,7 @@ namespace ILLink.Shared.TrimAnalysis
 				return true;
 			}
 
-			if (returnValue == null && !calledMethod.ReturnsVoid ())
-				throw new InvalidOperationException ("No return value set for intrinsic");
-
+			Debug.Assert (returnValue != null || calledMethod.ReturnsVoid (), "Intrinsics must set a return value.");
 			returnValue ??= MultiValueLattice.Top;
 
 			// Validate that the return value has the correct annotations as per the method return value annotations

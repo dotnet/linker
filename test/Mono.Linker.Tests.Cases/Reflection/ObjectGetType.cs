@@ -56,6 +56,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 			NullValue.Test ();
 			NoValue.Test ();
+			UnknownValue.Test ();
 		}
 
 		[Kept]
@@ -1484,20 +1485,35 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		class NoValue
 		{
 			[Kept]
+			[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions.RequiresAll) + "(Type)", nameof (Object.GetType) + "()")]
+			public static void Test ()
+			{
+				Type t = null;
+				Type noValue = Type.GetTypeFromHandle (t.TypeHandle);
+				// Even though the above throws at runtime, we warn about the return value of GetType
+				noValue.GetType ().RequiresAll ();
+			}
+		}
+
+		[Kept]
+		class UnknownValue
+		{
+			[Kept]
+			[KeptMember (".ctor()")]
 			class TestType
 			{
 			}
 
 			[Kept]
-			static TestType GetInstance () => null;
+			static TestType GetInstance () => new TestType ();
 
 			[Kept]
 			[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions.RequiresAll) + "(Type)", nameof (Object.GetType) + "()")]
 			public static void Test ()
 			{
-				TestType noValue = GetInstance ();
-				// Even though this throws at runtime, we warn about the return value of GetType
-				noValue.GetType ().RequiresAll ();
+				TestType unknownValue = GetInstance ();
+				// Should warn about the return value of GetType
+				unknownValue.GetType ().RequiresAll ();
 			}
 		}
 	}
