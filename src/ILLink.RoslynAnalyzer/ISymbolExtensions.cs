@@ -63,31 +63,6 @@ namespace ILLink.RoslynAnalyzer
 		internal static DynamicallyAccessedMemberTypes GetDynamicallyAccessedMemberTypesOnAssociatedSymbol (this IMethodSymbol methodSymbol) =>
 			methodSymbol.AssociatedSymbol is ISymbol associatedSymbol ? GetDynamicallyAccessedMemberTypes (associatedSymbol) : DynamicallyAccessedMemberTypes.None;
 
-		// Needs to handle 'get' return type differently
-		internal static DynamicallyAccessedMemberTypes GetEffectiveDynamicallyAccessedMemberTypesOnReturnType (this IMethodSymbol methodSymbol)
-		{
-			var damTypes = methodSymbol.GetDynamicallyAccessedMemberTypesOnReturnType ();
-			if (methodSymbol.MethodKind != MethodKind.PropertyGet)
-				return damTypes;
-			else
-				return damTypes != DynamicallyAccessedMemberTypes.None ?
-					damTypes :
-					methodSymbol.AssociatedSymbol!.GetDynamicallyAccessedMemberTypes ();
-		}
-
-		// Needs to handle 'set' parameters differently
-		internal static DynamicallyAccessedMemberTypes GetEffectiveDynamicallyAccessedMemberTypes (this ISymbol symbol)
-		{
-			var damTypes = symbol.GetDynamicallyAccessedMemberTypes ();
-			if (symbol is IParameterSymbol 
-				&& symbol.ContainingSymbol is IMethodSymbol methodSymbol 
-				&& methodSymbol.MethodKind == MethodKind.PropertySet
-				&& damTypes == DynamicallyAccessedMemberTypes.None)
-				return methodSymbol.AssociatedSymbol!.GetDynamicallyAccessedMemberTypes ();
-			else
-				return damTypes;
-		}
-
 		internal static bool TryGetOverriddenMember (this ISymbol? symbol, [NotNullWhen (returnValue: true)] out ISymbol? overridenMember)
 		{
 			overridenMember = symbol switch {

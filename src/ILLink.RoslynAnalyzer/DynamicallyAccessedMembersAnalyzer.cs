@@ -7,6 +7,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Text.RegularExpressions;
 using ILLink.RoslynAnalyzer.TrimAnalysis;
 using ILLink.Shared;
 using ILLink.Shared.DataFlow;
@@ -231,40 +232,31 @@ namespace ILLink.RoslynAnalyzer
 
 		static void VerifyMethodDamAttributesMatch (IMethodSymbol method, IMethodSymbol overriddenMethod, SymbolAnalysisContext context)
 		{
-			if (method.GetEffectiveDynamicallyAccessedMemberTypesOnReturnType () != overriddenMethod.GetEffectiveDynamicallyAccessedMemberTypesOnReturnType ()) {
+			if (FlowAnnotations.GetMethodReturnValueAnnotation (method)  != FlowAnnotations.GetMethodReturnValueAnnotation (overriddenMethod))
 				context.ReportDiagnostic (Diagnostic.Create (
 					DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchOnMethodReturnValueBetweenOverrides),
 					method.Locations[0], method.GetDisplayName (), overriddenMethod.GetDisplayName ()));
-			}
 
-			for (int i = 0; i < method.Parameters.Length; i++) {
-				var methodParam = method.Parameters[i];
-				var overriddenParam = overriddenMethod.Parameters[i];
-				if (methodParam.GetEffectiveDynamicallyAccessedMemberTypes() != overriddenParam.GetEffectiveDynamicallyAccessedMemberTypes()) {
+			for (int i = 0; i < method.Parameters.Length; i++) 
+				if (FlowAnnotations.GetMethodParameterAnnotation(method.Parameters[i]) != FlowAnnotations.GetMethodParameterAnnotation(overriddenMethod.Parameters[i]))
 					context.ReportDiagnostic (Diagnostic.Create (
 						DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchOnMethodParameterBetweenOverrides),
-						methodParam.Locations[0],
-						methodParam.GetDisplayName (), method.GetDisplayName (), overriddenParam.GetDisplayName (), overriddenMethod.GetDisplayName ()));
-				}
-			}
+						method.Parameters[i].Locations[0],
+						method.Parameters[i].GetDisplayName (), method.GetDisplayName (), overriddenMethod.Parameters[i].GetDisplayName (), overriddenMethod.GetDisplayName ()));
 
-			for (int i = 0; i < method.TypeParameters.Length; i++) {
-				var methodTypeParam = method.TypeParameters[i];
-				var overriddenTypeParam = overriddenMethod.TypeParameters[i];
-				if (methodTypeParam.GetEffectiveDynamicallyAccessedMemberTypes() != overriddenTypeParam.GetEffectiveDynamicallyAccessedMemberTypes()) {
+			for (int i = 0; i < method.TypeParameters.Length; i++)
+				if (method.TypeParameters[i].GetDynamicallyAccessedMemberTypes () != overriddenMethod.TypeParameters[i].GetDynamicallyAccessedMemberTypes ())
 					context.ReportDiagnostic (Diagnostic.Create (
 						DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchOnGenericParameterBetweenOverrides),
-						methodTypeParam.Locations[0],
-						methodTypeParam.GetDisplayName (), method.GetDisplayName (), overriddenTypeParam.GetDisplayName (), overriddenMethod.GetDisplayName ()));
-				}
-			}
+						method.TypeParameters[i].Locations[0],
+						method.TypeParameters[i].GetDisplayName (), method.GetDisplayName (),
+						overriddenMethod.TypeParameters[i].GetDisplayName (), overriddenMethod.GetDisplayName ()));
 
-			if (!method.IsStatic && method.GetEffectiveDynamicallyAccessedMemberTypes () != overriddenMethod.GetEffectiveDynamicallyAccessedMemberTypes ()) {
+			if (!method.IsStatic && method.GetDynamicallyAccessedMemberTypes () != overriddenMethod.GetDynamicallyAccessedMemberTypes ())
 				context.ReportDiagnostic (Diagnostic.Create (
 					DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchOnImplicitThisBetweenOverrides),
 					method.Locations[0],
 					method.GetDisplayName (), overriddenMethod.GetDisplayName ()));
-			}
 		}
 
 		static void VerifyDamOnInterfaceAndImplementationMethodsMatch (INamedTypeSymbol type, SymbolAnalysisContext context)
@@ -279,25 +271,15 @@ namespace ILLink.RoslynAnalyzer
 		static void VerifyDamOnPropertyAndAccessorMatch (IMethodSymbol methodSymbol, SymbolAnalysisContext context)
 		{
 			if ((methodSymbol.MethodKind != MethodKind.PropertyGet && methodSymbol.MethodKind != MethodKind.PropertySet)
-				|| !(methodSymbol.AssociatedSymbol?.TryGetAttribute (DynamicallyAccessedMembersAttribute, out var propertyAttribute) == true)
-				|| (propertyAttribute.ConstructorArguments.Length == 1 && propertyAttribute.ConstructorArguments[0].Value is (int)DynamicallyAccessedMemberTypes.None))
+				|| (methodSymbol.AssociatedSymbol?.GetDynamicallyAccessedMemberTypes() == DynamicallyAccessedMemberTypes.None))
 				return;
-
+			
+			// None on the return type of 'get' matches unannotated
 			if (methodSymbol.MethodKind == MethodKind.PropertyGet
-				&& methodSymbol.TryGetReturnTypeAttribute (DynamicallyAccessedMembersAttribute, out var getValueAttribute)
-				&& !(getValueAttribute.ConstructorArguments.Length == 1 && getValueAttribute.ConstructorArguments[0].Value is (int)DynamicallyAccessedMemberTypes.None)) {
-				context.ReportDiagnostic (Diagnostic.Create (
-					DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersConflictsBetweenPropertyAndAccessor),
-					methodSymbol.AssociatedSymbol!.Locations[0],
-					methodSymbol.AssociatedSymbol!.GetDisplayName (),
-					methodSymbol.GetDisplayName ()
-				));
-				return;
-			}
-
-			if (methodSymbol.MethodKind == MethodKind.PropertySet
-				&& methodSymbol.Parameters[0].TryGetAttribute (DynamicallyAccessedMembersAttribute, out var setValueAttribute)
-				&& !(setValueAttribute.ConstructorArguments.Length == 1 && setValueAttribute.ConstructorArguments[0].Value is (int)DynamicallyAccessedMemberTypes.None)) {
+				&& methodSymbol.GetDynamicallyAccessedMemberTypesOnReturnType() != DynamicallyAccessedMemberTypes.None
+				// None on parameter of 'set' matches unannotated
+				|| methodSymbol.MethodKind == MethodKind.PropertySet
+				&& methodSymbol.Parameters[0].GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None) {
 				context.ReportDiagnostic (Diagnostic.Create (
 					DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersConflictsBetweenPropertyAndAccessor),
 					methodSymbol.AssociatedSymbol!.Locations[0],
