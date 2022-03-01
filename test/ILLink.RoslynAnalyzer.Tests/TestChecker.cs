@@ -288,8 +288,9 @@ namespace ILLink.RoslynAnalyzer.Tests
 			var arg = args["#0"];
 			Assert.False (args.ContainsKey ("#1"));
 			var text = LinkerTestBase.GetStringFromExpression (arg, _semanticModel);
-
-			Assert.False (LogContains (attribute, diagnosticMessages, out _, out _));
+			if (LogContains (attribute, diagnosticMessages, out var matchIndex, out var findText)) {
+				Assert.True (false, $"LogDoesNotContain failure: Text\n\"{findText}\"\nfound in diagnostic:\n {diagnosticMessages[(int)matchIndex]}");
+			}
 		}
 
 		private bool LogContains (AttributeSyntax attribute, IReadOnlyList<Diagnostic> diagnostics, [NotNullWhen(true)] out int? matchIndex, out string findText)
