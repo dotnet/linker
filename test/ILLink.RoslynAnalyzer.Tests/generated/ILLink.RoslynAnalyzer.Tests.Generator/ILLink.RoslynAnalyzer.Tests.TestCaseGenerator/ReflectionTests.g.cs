@@ -38,55 +38,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 		}
 
 		[Fact]
-		public Task EventUsedViaReflection ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
 		public Task ExpressionCallStringAndLocals ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
-		public Task ExpressionFieldString ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
-		public Task ExpressionPropertyString ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
-		public Task FieldUsedViaReflection ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
-		public Task MethodUsedViaReflection ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
-		public Task MethodUsedViaReflectionAndLocal ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
-		public Task MethodUsedViaReflectionWithDefaultBindingFlags ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
-		public Task NestedTypeUsedViaReflection ()
 		{
 			return RunTest (allowMissingWarnings: true);
 		}
@@ -104,19 +56,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 		}
 
 		[Fact]
-		public Task PropertyUsedViaReflection ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
 		public Task RunClassConstructorUsedViaReflection ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
-		public Task RuntimeReflectionExtensionsCalls ()
 		{
 			return RunTest (allowMissingWarnings: true);
 		}

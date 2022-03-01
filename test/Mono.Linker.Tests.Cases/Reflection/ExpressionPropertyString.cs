@@ -12,26 +12,36 @@ namespace Mono.Linker.Tests.Cases.Reflection
 	[ExpectedNoWarnings]
 	public class ExpressionPropertyString
 	{
+		[ExpectedWarning ("IL2026", nameof (BasicProperty))]
+		[ExpectedWarning ("IL2111", "ProtectedPropertyOnBase")]
+		[ExpectedWarning ("IL2026", "PublicPropertyOnBase")]
 		[ExpectedWarning ("IL2072", nameof (Expression) + "." + nameof (Expression.Property))]
 		public static void Main ()
 		{
-			Expression.Property (Expression.Parameter (typeof (int), ""), typeof (ExpressionPropertyString), "Property");
-			Expression.Property (null, typeof (ExpressionPropertyString), "StaticProperty");
+			Expression.Property (Expression.Parameter (typeof (int), ""), typeof (ExpressionPropertyString), nameof (BasicProperty));
+			Expression.Property (null, typeof (ExpressionPropertyString), nameof (StaticProperty));
 			Expression.Property (null, typeof (Derived), "ProtectedPropertyOnBase");
 			Expression.Property (null, typeof (Derived), "PublicPropertyOnBase");
 			UnknownType.Test ();
+			TestNull ();
+			TestNoValue ();
+			TestNullString ();
+			TestEmptyString ();
+			TestNoValueString ();
 			UnknownString.Test ();
 			Expression.Property (null, GetType (), "This string will not be reached"); // IL2072
 		}
 
 		[Kept]
-		private int Property {
+		private int BasicProperty {
 			[Kept]
 			[ExpectBodyModified]
 			get;
 
 			[Kept]
 			[ExpectBodyModified]
+			[KeptAttributeAttribute (typeof (RequiresUnreferencedCodeAttribute))]
+			[RequiresUnreferencedCode (nameof (BasicProperty))]
 			set;
 		}
 
@@ -85,6 +95,21 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
+		static void TestNull ()
+		{
+			Type t = null;
+			Expression.Property (null, t, "This string will not be reached");
+		}
+
+		[Kept]
+		static void TestNoValue ()
+		{
+			Type t = null;
+			Type noValue = Type.GetTypeFromHandle (t.TypeHandle);
+			Expression.Property (null, noValue, "This string will not be reached");
+		}
+
+		[Kept]
 		class UnknownString
 		{
 			[Kept]
@@ -115,15 +140,51 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
+		static void TestNullString ()
+		{
+			Expression.Property (null, typeof (Base), null);
+		}
+
+		[Kept]
+		static void TestEmptyString ()
+		{
+			Expression.Property (null, typeof (Base), string.Empty);
+		}
+
+		[Kept]
+		static void TestNoValueString ()
+		{
+			Type t = null;
+			string noValue = t.AssemblyQualifiedName;
+			Expression.Property (null, typeof (Base), noValue);
+		}
+
+		[Kept]
 		class Base
 		{
 			[Kept]
 			[KeptBackingField]
-			protected static bool ProtectedPropertyOnBase { [Kept] get; }
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			protected static Type ProtectedPropertyOnBase {
+				[Kept]
+				get;
+
+				[Kept]
+				set;
+			}
 
 			[Kept]
 			[KeptBackingField]
-			public static bool PublicPropertyOnBase { [Kept] get; }
+			public static bool PublicPropertyOnBase {
+				[Kept]
+				get;
+
+				[Kept]
+				[KeptAttributeAttribute (typeof (RequiresUnreferencedCodeAttribute))]
+				[RequiresUnreferencedCode (nameof (PublicPropertyOnBase))]
+				set;
+			}
 		}
 
 		[Kept]

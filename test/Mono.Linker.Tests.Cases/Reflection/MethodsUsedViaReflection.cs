@@ -18,12 +18,17 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			TestBindingFlags ();
 			TestUnknownBindingFlags (BindingFlags.Public);
 			TestNullType ();
+			TestNoValue ();
 			TestDataFlowType ();
 			TestDataFlowWithAnnotation (typeof (MyType));
 			TestIfElse (1);
 			TestIgnoreCaseBindingFlags ();
 			TestIgnorableBindingFlags ();
 			TestUnsupportedBindingFlags ();
+
+			HandlingOfComplexExpressionForBindingFlags.Test ();
+			HandlingOfBindingFlagsAsNumbers.Test ();
+			HandlingOfBindingFlagsFromConstants.Test ();
 		}
 
 		[Kept]
@@ -50,6 +55,14 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		{
 			Type type = null;
 			var methods = type.GetMethods (BindingFlags.Static | BindingFlags.Public);
+		}
+
+		[Kept]
+		static void TestNoValue ()
+		{
+			Type t = null;
+			Type noValue = Type.GetTypeFromHandle (t.TypeHandle);
+			var methods = noValue.GetMethods (BindingFlags.Static | BindingFlags.Public);
 		}
 
 		[Kept]
@@ -305,6 +318,83 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			private bool MarkedDueToSuppressChangeType ()
 			{
 				return true;
+			}
+		}
+
+		[Kept]
+		class HandlingOfComplexExpressionForBindingFlags
+		{
+			[Kept]
+			class TestClassWithRUCMethods
+			{
+				[Kept]
+				public void Method () { }
+
+				[Kept]
+				[KeptAttributeAttribute (typeof (RequiresUnreferencedCodeAttribute))]
+				[RequiresUnreferencedCode (nameof (HandlingOfComplexExpressionForBindingFlags) + "--" + nameof (TestClassWithRUCMethods))]
+				private void PrivateMethodWithRUC () { }
+			}
+
+			[Kept]
+			// https://github.com/dotnet/linker/issues/2638
+			[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Trimmer)]
+			public static void Test ()
+			{
+				BindingFlags left = BindingFlags.Instance | BindingFlags.Static;
+				BindingFlags right = BindingFlags.Public;
+				int result = (int) left | (int) right;
+				typeof (TestClassWithRUCMethods).GetMethods ((BindingFlags) result);
+			}
+		}
+
+		[Kept]
+		class HandlingOfBindingFlagsAsNumbers
+		{
+			[Kept]
+			class TestClassWithRUCMethods
+			{
+				[Kept]
+				public static void Method () { }
+
+				[RequiresUnreferencedCode (nameof (HandlingOfBindingFlagsAsNumbers) + "--" + nameof (TestClassWithRUCMethods))]
+				private static void PrivateMethodWithRUC () { }
+			}
+
+			[Kept]
+			// https://github.com/dotnet/linker/issues/2638
+			[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Analyzer)]
+			public static void Test ()
+			{
+				typeof (TestClassWithRUCMethods).GetMethods ((BindingFlags) 24);
+
+				// Analyzer currently can't figure this out
+				int bindingFlagsNumber = 24;
+				typeof (TestClassWithRUCMethods).GetMethods ((BindingFlags) bindingFlagsNumber);
+			}
+		}
+
+		[Kept]
+		class HandlingOfBindingFlagsFromConstants
+		{
+			[Kept]
+			class TestClassWithRUCMethods
+			{
+				[Kept]
+				public static void Method () { }
+
+				[RequiresUnreferencedCode (nameof (HandlingOfBindingFlagsAsNumbers) + "--" + nameof (TestClassWithRUCMethods))]
+				private static void PrivateMethodWithRUC () { }
+			}
+
+			const BindingFlags PublicStaticFlags = BindingFlags.Public | BindingFlags.Static;
+			const BindingFlags PublicOnlyFlags = BindingFlags.Public;
+
+			[Kept]
+			public static void Test ()
+			{
+				typeof (TestClassWithRUCMethods).GetMethods (PublicStaticFlags);
+				typeof (TestClassWithRUCMethods).GetMethods (PublicOnlyFlags | BindingFlags.Static);
 			}
 		}
 	}
