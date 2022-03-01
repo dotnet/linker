@@ -334,9 +334,9 @@ public class Foo
 
 class C
 {
-	public static void Main()
-	{
-		GetFoo().GetMethod(""Bar"");
+    public static void Main()
+    {
+        GetFoo().GetMethod(""Bar"");
 
 	}
 
