@@ -109,7 +109,7 @@ namespace ILLink.RoslynAnalyzer
 				context.RegisterSymbolAction (context => {
 					VerifyMemberOnlyApplyToTypesOrStrings (context, context.Symbol);
 					VerifyDamOnPropertyAndAccessorMatch ((IMethodSymbol) context.Symbol, context);
-					VerifyMethodDamAttributesMatchOverrides (context);
+					VerifyDamOnDerivedAndBaseMethodsMatch (context);
 				}, SymbolKind.Method);
 				context.RegisterSymbolAction (context => {
 					if (context.Symbol is INamedTypeSymbol typeSymbol) {
@@ -222,15 +222,15 @@ namespace ILLink.RoslynAnalyzer
 			}
 		}
 
-		static void VerifyMethodDamAttributesMatchOverrides (SymbolAnalysisContext context)
+		static void VerifyDamOnDerivedAndBaseMethodsMatch (SymbolAnalysisContext context)
 		{
 			if (context.Symbol.TryGetOverriddenMember (out var overriddenSymbol) && overriddenSymbol is IMethodSymbol overriddenMethod
 				&& context.Symbol is IMethodSymbol method) {
-				VerifyMethodDamAttributesMatch (method, overriddenMethod, context);
+				VerifyDamOnMethodsMatch (method, overriddenMethod, context);
 			}
 		}
 
-		static void VerifyMethodDamAttributesMatch (IMethodSymbol method, IMethodSymbol overriddenMethod, SymbolAnalysisContext context)
+		static void VerifyDamOnMethodsMatch (IMethodSymbol method, IMethodSymbol overriddenMethod, SymbolAnalysisContext context)
 		{
 			if (FlowAnnotations.GetMethodReturnValueAnnotation (method)  != FlowAnnotations.GetMethodReturnValueAnnotation (overriddenMethod))
 				context.ReportDiagnostic (Diagnostic.Create (
@@ -264,7 +264,7 @@ namespace ILLink.RoslynAnalyzer
 			foreach (var (interfaceMember, implementationMember) in type.GetMemberInterfaceImplementationPairs ()) {
 				if (implementationMember is IMethodSymbol implementationMethod
 					&& interfaceMember is IMethodSymbol interfaceMethod)
-					VerifyMethodDamAttributesMatch (implementationMethod, interfaceMethod, context);
+					VerifyDamOnMethodsMatch (implementationMethod, interfaceMethod, context);
 			}
 		}
 
