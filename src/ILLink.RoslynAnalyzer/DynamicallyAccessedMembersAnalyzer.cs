@@ -175,17 +175,6 @@ namespace ILLink.RoslynAnalyzer
 			}
 		}
 
-		//static bool DamAttributesMatch (AttributeData? attribute1, AttributeData? attribute2)
-		//{
-		//	if (attribute1 == null ^ attribute2 == null) return false;
-		//	if (attribute1 == null && attribute2 == null) return true;
-		//	Debug.Assert (attribute1!.AttributeClass?.Name == DynamicallyAccessedMembersAttribute);
-		//	Debug.Assert (attribute2!.AttributeClass?.Name == DynamicallyAccessedMembersAttribute);
-		//	return attribute1!.ConstructorArguments.All (methodArg =>
-		//	   attribute2!.ConstructorArguments.Any (overriddenArg =>
-		//		  overriddenArg.Value?.Equals (methodArg.Value) == true));
-		//}
-
 		static SingleValue GetTypeValueNodeFromGenericArgument (SyntaxNodeAnalysisContext context, ITypeSymbol type)
 		{
 			return type.Kind switch {
@@ -242,11 +231,6 @@ namespace ILLink.RoslynAnalyzer
 
 		static void VerifyMethodDamAttributesMatch (IMethodSymbol method, IMethodSymbol overriddenMethod, SymbolAnalysisContext context)
 		{
-			// Check parameters and return types for DAM annotations
-			//TryGetReturnDamAttribute (method, out var methodReturnAttribute);
-			//TryGetReturnDamAttribute (overriddenMethod, out var overriddenReturnAttribute);
-			// Do the annotations need to match about whether it's on the property and propagates in one and directly on the accessor in another?
-			// Looks like the code expects a property annotation on one and getter annotation on another to work
 			if (method.GetEffectiveDynamicallyAccessedMemberTypesOnReturnType () != overriddenMethod.GetEffectiveDynamicallyAccessedMemberTypesOnReturnType ()) {
 				context.ReportDiagnostic (Diagnostic.Create (
 					DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchOnMethodReturnValueBetweenOverrides),
@@ -256,8 +240,6 @@ namespace ILLink.RoslynAnalyzer
 			for (int i = 0; i < method.Parameters.Length; i++) {
 				var methodParam = method.Parameters[i];
 				var overriddenParam = overriddenMethod.Parameters[i];
-				//TryGetParamDamAttribute (method, i, out var methodParamAttribute);
-				//TryGetParamDamAttribute (overriddenMethod, i, out var overriddenParamAttribute);
 				if (methodParam.GetEffectiveDynamicallyAccessedMemberTypes() != overriddenParam.GetEffectiveDynamicallyAccessedMemberTypes()) {
 					context.ReportDiagnostic (Diagnostic.Create (
 						DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchOnMethodParameterBetweenOverrides),
@@ -269,8 +251,6 @@ namespace ILLink.RoslynAnalyzer
 			for (int i = 0; i < method.TypeParameters.Length; i++) {
 				var methodTypeParam = method.TypeParameters[i];
 				var overriddenTypeParam = overriddenMethod.TypeParameters[i];
-				//methodTypeParam.TryGetAttribute (DynamicallyAccessedMembersAttribute, out var methodTypeParamAttribute);
-				//overriddenTypeParam.TryGetAttribute (DynamicallyAccessedMembersAttribute, out var overriddenTypeParamAttribute);
 				if (methodTypeParam.GetEffectiveDynamicallyAccessedMemberTypes() != overriddenTypeParam.GetEffectiveDynamicallyAccessedMemberTypes()) {
 					context.ReportDiagnostic (Diagnostic.Create (
 						DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchOnGenericParameterBetweenOverrides),
@@ -279,8 +259,6 @@ namespace ILLink.RoslynAnalyzer
 				}
 			}
 
-			//method.TryGetAttribute (DynamicallyAccessedMembersAttribute, out var methodAttribute);
-			//overriddenMethod.TryGetAttribute (DynamicallyAccessedMembersAttribute, out var overriddenMethodAttribute);
 			if (!method.IsStatic && method.GetEffectiveDynamicallyAccessedMemberTypes () != overriddenMethod.GetEffectiveDynamicallyAccessedMemberTypes ()) {
 				context.ReportDiagnostic (Diagnostic.Create (
 					DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchOnImplicitThisBetweenOverrides),
@@ -329,25 +307,5 @@ namespace ILLink.RoslynAnalyzer
 				return;
 			}
 		}
-
-		// DAM flows from property to ".get" return value
-		//static bool TryGetReturnDamAttribute (IMethodSymbol methodSymbol, [NotNullWhen (true)] out AttributeData? attribute)
-		//{
-		//	// Accessor is used when both are present. Warn on conflicts with VerifyDamOnPropertyAndAccessorMatch
-		//	return methodSymbol.TryGetReturnTypeAttribute (DynamicallyAccessedMembersAttribute, out attribute)
-		//		? true
-		//		: methodSymbol.MethodKind == MethodKind.PropertyGet
-		//			&& methodSymbol.AssociatedSymbol!.TryGetAttribute (DynamicallyAccessedMembersAttribute, out attribute);
-		//}
-
-		//// DAM flows from property to ".set" parameter
-		//static bool TryGetParamDamAttribute (IMethodSymbol methodSymbol, int index, [NotNullWhen (true)] out AttributeData? attribute)
-		//{
-		//	// Accessor is used when both are present. Warn on conflicts with VerifyDamOnPropertyAndAccessorMatch
-		//	return methodSymbol.Parameters[index].TryGetAttribute (DynamicallyAccessedMembersAttribute, out attribute)
-		//		? true
-		//		: methodSymbol.MethodKind == MethodKind.PropertySet
-		//			&& methodSymbol.AssociatedSymbol!.TryGetAttribute (DynamicallyAccessedMembersAttribute, out attribute);
-		//}
 	}
 }
