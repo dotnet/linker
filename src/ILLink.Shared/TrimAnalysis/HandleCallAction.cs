@@ -540,6 +540,10 @@ namespace ILLink.Shared.TrimAnalysis
 				}
 				break;
 
+			case IntrinsicId.Nullable_GetUnderlyingType:
+				AddReturnValue (argumentValues[0]);
+				break;
+
 			case IntrinsicId.None:
 				methodReturnValue = MultiValueLattice.Top;
 				return false;

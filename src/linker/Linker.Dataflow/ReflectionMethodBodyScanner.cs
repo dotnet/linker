@@ -808,6 +808,10 @@ namespace Mono.Linker.Dataflow
 				}
 				break;
 
+			case IntrinsicId.Nullable_GetUnderlyingType:
+				methodReturnValue = methodParams[0];
+				break;
+
 			default:
 
 				if (calledMethodDefinition.IsPInvokeImpl) {
