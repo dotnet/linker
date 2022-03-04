@@ -288,6 +288,7 @@ namespace Mono.Linker.Dataflow
 			case IntrinsicId.Type_GetMember:
 			case IntrinsicId.Type_GetMethod:
 			case IntrinsicId.Type_GetNestedType:
+			case IntrinsicId.Nullable_GetUnderlyingType:
 			case IntrinsicId.Expression_Property when calledMethod.HasParameterOfType (1, "System.Reflection.MethodInfo"):
 			case var fieldOrPropertyInstrinsic when fieldOrPropertyInstrinsic == IntrinsicId.Expression_Field || fieldOrPropertyInstrinsic == IntrinsicId.Expression_Property: {
 					var instanceValue = MultiValueLattice.Top;
@@ -806,10 +807,6 @@ namespace Mono.Linker.Dataflow
 					// MakeGenericMethod doesn't change the identity of the MethodBase we're tracking so propagate to the return value
 					methodReturnValue = methodParams[0];
 				}
-				break;
-
-			case IntrinsicId.Nullable_GetUnderlyingType:
-				methodReturnValue = methodParams[0];
 				break;
 
 			default:

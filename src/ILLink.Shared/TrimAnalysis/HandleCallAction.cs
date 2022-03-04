@@ -64,7 +64,9 @@ namespace ILLink.Shared.TrimAnalysis
 				}
 
 				foreach (var value in argumentValues[0]) {
-					if (value is RuntimeTypeHandleValue typeHandle)
+					if (value is RuntimeNullableTypeHandleValue runtimeNullableTypeHandleValue)
+						AddReturnValue (new SystemNullableTypeValue (runtimeNullableTypeHandleValue.RepresentedType, runtimeNullableTypeHandleValue.UnderlyingTypeValue));
+					else if (value is RuntimeTypeHandleValue typeHandle)
 						AddReturnValue (new SystemTypeValue (typeHandle.RepresentedType));
 					else if (value is RuntimeTypeHandleForGenericParameterValue typeHandleForGenericParameter)
 						AddReturnValue (GetGenericParameterValue (typeHandleForGenericParameter.GenericParameter));
@@ -541,7 +543,16 @@ namespace ILLink.Shared.TrimAnalysis
 				break;
 
 			case IntrinsicId.Nullable_GetUnderlyingType:
-				AddReturnValue (argumentValues[0]);
+				var values = new List<SingleValue>();
+				foreach (var singlevalue in argumentValues[0].AsEnumerable ()) {
+					if (singlevalue is ValueWithDynamicallyAccessedMembers damValue) {
+						values.Add(GetMethodReturnValue(calledMethod, damValue.DynamicallyAccessedMemberTypes));
+					}
+					else if (singlevalue is SystemNullableTypeValue systemNullableTypeValue) {
+						values.AddRange (systemNullableTypeValue.UnderlyingTypeValue);
+					}
+				}
+				returnValue = new MultiValue (values);
 				break;
 
 			case IntrinsicId.None:
@@ -566,7 +577,7 @@ namespace ILLink.Shared.TrimAnalysis
 					if (uniqueValue is ValueWithDynamicallyAccessedMembers methodReturnValueWithMemberTypes) {
 						if (!methodReturnValueWithMemberTypes.DynamicallyAccessedMemberTypes.HasFlag (returnValueDynamicallyAccessedMemberTypes))
 							throw new InvalidOperationException ($"Internal linker error: in {GetContainingSymbolDisplayName ()} processing call to {calledMethod.GetDisplayName ()} returned value which is not correctly annotated with the expected dynamic member access kinds.");
-					} else if (uniqueValue is SystemTypeValue) {
+					} else if (uniqueValue is SystemTypeValue systemTypeValue) {
 						// SystemTypeValue can fullfill any requirement, so it's always valid
 						// The requirements will be applied at the point where it's consumed (passed as a method parameter, set as field value, returned from the method)
 					} else if (uniqueValue == NullValue.Instance) {

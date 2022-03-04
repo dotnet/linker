@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using ILLink.Shared.DataFlow;
 using ILLink.Shared.TrimAnalysis;
+using ILLink.Shared.TypeSystemProxy;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Collections.Generic;
@@ -733,10 +734,19 @@ namespace Mono.Linker.Dataflow
 
 			if (operation.Operand is TypeReference typeReference) {
 				var resolvedReference = ResolveToTypeDefinition (typeReference);
+
 				if (resolvedReference != null) {
-					StackSlot slot = new StackSlot (new RuntimeTypeHandleValue (resolvedReference));
-					currentStack.Push (slot);
-					return;
+					if (resolvedReference.Name == "Nullable`1" && resolvedReference.Namespace == "System" 
+						&& typeReference is IGenericInstance instance && ResolveToTypeDefinition (instance.GenericArguments![0]) is TypeDefinition underlyingType) {
+						StackSlot slot1 = new StackSlot (new RuntimeNullableTypeHandleValue (TypeProxy.NullableTypeProxy (resolvedReference, underlyingType), new SystemTypeValue (underlyingType)));
+						currentStack.Push (slot1);
+						return;
+					}
+					else {
+						StackSlot slot = new StackSlot (new RuntimeTypeHandleValue (resolvedReference));
+						currentStack.Push (slot);
+						return;
+					}
 				}
 			} else if (operation.Operand is MethodReference methodReference) {
 				var resolvedMethod = _context.TryResolve (methodReference);

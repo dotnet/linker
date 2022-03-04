@@ -1,20 +1,31 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using ILLink.Shared.DataFlow;
 using ILLink.Shared.TypeSystemProxy;
+using MultiValue = ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.SingleValue>;
 
 namespace ILLink.Shared.TrimAnalysis
 {
 	/// <summary>
 	/// This is a known System.Type value. TypeRepresented is the 'value' of the System.Type.
 	/// </summary>
-	sealed record SystemTypeValue : SingleValue
+	record SystemTypeValue : SingleValue
 	{
 		public SystemTypeValue (in TypeProxy representedType) => RepresentedType = representedType;
-
+		
 		public readonly TypeProxy RepresentedType;
 
 		public override string ToString () => this.ValueToString (RepresentedType);
+	}
+
+	sealed record SystemNullableTypeValue : SystemTypeValue
+	{
+		public SystemNullableTypeValue (in TypeProxy representedType, in MultiValue underlyingTypeValue) : base(representedType)
+			=> UnderlyingTypeValue = underlyingTypeValue;
+
+		public readonly MultiValue UnderlyingTypeValue;
 	}
 }
