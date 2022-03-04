@@ -52,7 +52,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TestClass? b = new TestClass ();
 			RequiresPropertiesFromInstance (b);
 			RequiresPropertiesFromInstance (new { Id = "asdf", Number = 18 });
-			
+
 			UnderlyingTypeOfAnnotatedParameterRequiresAll (typeof (Nullable<TestStruct>));
 			RequireMethodWithRUC ();
 

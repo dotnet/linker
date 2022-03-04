@@ -43,10 +43,6 @@ namespace ILLink.Shared.TrimAnalysis
 		private partial void MarkTypeForDynamicallyAccessedMembers (in TypeProxy type, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 		{
 			_reflectionMethodBodyScanner.MarkTypeForDynamicallyAccessedMembers (_analysisContext, type.Type, dynamicallyAccessedMemberTypes, DependencyKind.DynamicallyAccessedMember);
-			// Mark underlying type for Nullable<T>
-			if (type.NullableUnderlyingType is not null) {
-				_reflectionMethodBodyScanner.MarkTypeForDynamicallyAccessedMembers (_analysisContext, type.NullableUnderlyingType, dynamicallyAccessedMemberTypes, DependencyKind.DynamicallyAccessedMember);
-			}
 		}
 	}
 }
