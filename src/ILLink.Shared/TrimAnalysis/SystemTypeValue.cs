@@ -15,15 +15,15 @@ namespace ILLink.Shared.TrimAnalysis
 	record SystemTypeValue : SingleValue
 	{
 		public SystemTypeValue (in TypeProxy representedType) => RepresentedType = representedType;
-		
+
 		public readonly TypeProxy RepresentedType;
 
 		public override string ToString () => this.ValueToString (RepresentedType);
 	}
 
-	sealed record SystemNullableTypeValue : SystemTypeValue
+	sealed record NullableSystemTypeValue : SystemTypeValue
 	{
-		public SystemNullableTypeValue (in TypeProxy representedType, in MultiValue underlyingTypeValue) : base(representedType)
+		public NullableSystemTypeValue (in TypeProxy representedType, in MultiValue underlyingTypeValue) : base (representedType)
 			=> UnderlyingTypeValue = underlyingTypeValue;
 
 		public readonly MultiValue UnderlyingTypeValue;

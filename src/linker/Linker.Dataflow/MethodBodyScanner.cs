@@ -734,15 +734,13 @@ namespace Mono.Linker.Dataflow
 
 			if (operation.Operand is TypeReference typeReference) {
 				var resolvedReference = ResolveToTypeDefinition (typeReference);
-
 				if (resolvedReference != null) {
-					if (resolvedReference.Name == "Nullable`1" && resolvedReference.Namespace == "System" 
+					if (resolvedReference.Name == "Nullable`1" && resolvedReference.Namespace == "System"
 						&& typeReference is IGenericInstance instance && ResolveToTypeDefinition (instance.GenericArguments![0]) is TypeDefinition underlyingType) {
-						StackSlot slot1 = new StackSlot (new RuntimeNullableTypeHandleValue (new TypeProxy(resolvedReference), new SystemTypeValue (underlyingType)));
+						StackSlot slot1 = new StackSlot (new NullableRuntimeTypeHandleValue (new TypeProxy (resolvedReference), new SystemTypeValue (underlyingType)));
 						currentStack.Push (slot1);
 						return;
-					}
-					else {
+					} else {
 						StackSlot slot = new StackSlot (new RuntimeTypeHandleValue (resolvedReference));
 						currentStack.Push (slot);
 						return;

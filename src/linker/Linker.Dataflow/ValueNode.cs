@@ -44,12 +44,12 @@ namespace ILLink.Shared.TrimAnalysis
 
 			bool foundCycle = false;
 			switch (node) {
-			case SystemNullableTypeValue:
-				SystemNullableTypeValue nullable = (SystemNullableTypeValue) node;
+			case NullableSystemTypeValue:
+				NullableSystemTypeValue nullable = (NullableSystemTypeValue) node;
 				foreach (var singleval in nullable.UnderlyingTypeValue) {
 					foundCycle |= singleval.DetectCycle (seenNodes, allNodesSeen);
 				}
-					break;
+				break;
 
 			//
 			// Leaf nodes

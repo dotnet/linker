@@ -19,9 +19,9 @@ namespace ILLink.Shared.TrimAnalysis
 		public override string ToString () => this.ValueToString (RepresentedType);
 	}
 
-	sealed record RuntimeNullableTypeHandleValue : RuntimeTypeHandleValue
+	sealed record NullableRuntimeTypeHandleValue : RuntimeTypeHandleValue
 	{
-		public RuntimeNullableTypeHandleValue (in TypeProxy representedType, in MultiValue underlyingTypeValue) : base(representedType)
+		public NullableRuntimeTypeHandleValue (in TypeProxy representedType, in MultiValue underlyingTypeValue) : base (representedType)
 			=> UnderlyingTypeValue = underlyingTypeValue;
 
 		public readonly MultiValue UnderlyingTypeValue;

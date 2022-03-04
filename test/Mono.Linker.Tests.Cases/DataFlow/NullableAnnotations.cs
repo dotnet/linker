@@ -58,8 +58,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		}
 
-		[ExpectedWarning("IL2026", "message")]
-		static void RequireMethodWithRUC()
+		[ExpectedWarning ("IL2026", "message")]
+		static void RequireMethodWithRUC ()
 		{
 			var T = typeof (Nullable<TestStructWithRucMethod>);
 			var uT = Nullable.GetUnderlyingType (T);
@@ -77,20 +77,20 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		static void NullableOfAnnotatedGenericParameter<[DAM (DAMT.PublicProperties)] T> () where T : struct
 		{
-			RequireProperties (Nullable.GetUnderlyingType(typeof(Nullable<T>)));
+			RequireProperties (Nullable.GetUnderlyingType (typeof (Nullable<T>)));
 		}
 
 		[ExpectedWarning ("IL2072")]
 		static void UnderlyingTypeOfUnannotatedGenericParameterRequiresProperties<TNullable> ()
 		{
-			RequireProperties (Nullable.GetUnderlyingType(typeof(TNullable)));
+			RequireProperties (Nullable.GetUnderlyingType (typeof (TNullable)));
 		}
 
 		static void RequiresPropertiesFromInstance<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicProperties)] T> (T instance)
 		{
 		}
 
-		[return: DynamicallyAccessedMembers(DAMT.PublicProperties)]
+		[return: DynamicallyAccessedMembers (DAMT.PublicProperties)]
 		static Type ReturnUnderlyingTypeThatRequiresProperties<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicProperties)] T> (T instance)
 		{
 			Type type = Nullable.GetUnderlyingType (typeof (T)) ?? typeof (T); // RuntimeHandleForGenericParameterValue for typeof(T) does not carry annotations through -- JK looks like it did once I get to the GetUnderlyingType

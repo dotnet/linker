@@ -64,8 +64,8 @@ namespace ILLink.Shared.TrimAnalysis
 				}
 
 				foreach (var value in argumentValues[0]) {
-					if (value is RuntimeNullableTypeHandleValue runtimeNullableTypeHandleValue)
-						AddReturnValue (new SystemNullableTypeValue (runtimeNullableTypeHandleValue.RepresentedType, runtimeNullableTypeHandleValue.UnderlyingTypeValue));
+					if (value is NullableRuntimeTypeHandleValue runtimeNullableTypeHandleValue)
+						AddReturnValue (new NullableSystemTypeValue (runtimeNullableTypeHandleValue.RepresentedType, runtimeNullableTypeHandleValue.UnderlyingTypeValue));
 					else if (value is RuntimeTypeHandleValue typeHandle)
 						AddReturnValue (new SystemTypeValue (typeHandle.RepresentedType));
 					else if (value is RuntimeTypeHandleForGenericParameterValue typeHandleForGenericParameter)
@@ -543,12 +543,11 @@ namespace ILLink.Shared.TrimAnalysis
 				break;
 
 			case IntrinsicId.Nullable_GetUnderlyingType:
-				var values = new List<SingleValue>();
+				var values = new List<SingleValue> ();
 				foreach (var singlevalue in argumentValues[0].AsEnumerable ()) {
 					if (singlevalue is ValueWithDynamicallyAccessedMembers damValue) {
-						values.Add(GetMethodReturnValue(calledMethod, damValue.DynamicallyAccessedMemberTypes));
-					}
-					else if (singlevalue is SystemNullableTypeValue systemNullableTypeValue) {
+						values.Add (GetMethodReturnValue (calledMethod, damValue.DynamicallyAccessedMemberTypes));
+					} else if (singlevalue is NullableSystemTypeValue systemNullableTypeValue) {
 						values.AddRange (systemNullableTypeValue.UnderlyingTypeValue);
 					}
 				}
