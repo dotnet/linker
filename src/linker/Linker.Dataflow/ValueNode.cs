@@ -44,13 +44,6 @@ namespace ILLink.Shared.TrimAnalysis
 
 			bool foundCycle = false;
 			switch (node) {
-			case NullableSystemTypeValue:
-				NullableSystemTypeValue nullable = (NullableSystemTypeValue) node;
-				foreach (var singleval in nullable.UnderlyingTypeValue) {
-					foundCycle |= singleval.DetectCycle (seenNodes, allNodesSeen);
-				}
-				break;
-
 			//
 			// Leaf nodes
 			//
@@ -81,6 +74,14 @@ namespace ILLink.Shared.TrimAnalysis
 						foundCycle |= v.DetectCycle (seenNodes, allNodesSeen);
 					}
 				}
+				break;
+
+			case NullableRuntimeTypeWithDamHandleValue value:
+				foundCycle = value.UnderlyingTypeValue.DetectCycle (seenNodes, allNodesSeen);
+				break;
+
+			case NullableValueWithDynamicallyAccessedMembers value:
+				foundCycle = value.UnderlyingTypeValue.DetectCycle (seenNodes, allNodesSeen);
 				break;
 
 			default:

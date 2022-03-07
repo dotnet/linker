@@ -1,16 +1,18 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using ILLink.Shared.DataFlow;
 using ILLink.Shared.TypeSystemProxy;
-using MultiValue = ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.SingleValue>;
 
 namespace ILLink.Shared.TrimAnalysis
 {
 	/// <summary>
 	/// This is a known System.Type value. TypeRepresented is the 'value' of the System.Type.
 	/// </summary>
-	record SystemTypeValue : SingleValue
+	sealed record SystemTypeValue : SingleValue
 	{
 		public SystemTypeValue (in TypeProxy representedType) => RepresentedType = representedType;
 
@@ -19,11 +21,33 @@ namespace ILLink.Shared.TrimAnalysis
 		public override string ToString () => this.ValueToString (RepresentedType);
 	}
 
-	sealed record NullableSystemTypeValue : SystemTypeValue
+	sealed record NullableSystemTypeValue : SingleValue
 	{
-		public NullableSystemTypeValue (in TypeProxy representedType, in MultiValue underlyingTypeValue) : base (representedType)
-			=> UnderlyingTypeValue = underlyingTypeValue;
+		public NullableSystemTypeValue (in TypeProxy nullableType, in TypeProxy underlyingType)
+		{
+			Debug.Assert (nullableType.Name == "Nullable`1" && nullableType.Namespace == "System");
+			UnderlyingTypeValue = underlyingType;
+			NullableType = nullableType;
+		}
+		public readonly TypeProxy NullableType;
 
-		public readonly MultiValue UnderlyingTypeValue;
+		public readonly TypeProxy UnderlyingTypeValue;
+	}
+
+	sealed record NullableValueWithDynamicallyAccessedMembers : ValueWithDynamicallyAccessedMembers
+	{
+		public NullableValueWithDynamicallyAccessedMembers (in TypeProxy nullableType, in GenericParameterValue underlyingTypeValue)
+		{
+			Debug.Assert (nullableType.Name == "Nullable`1" && nullableType.Namespace == "System");
+			NullableType = nullableType;
+			UnderlyingTypeValue = underlyingTypeValue;
+		}
+
+		public readonly TypeProxy NullableType;
+		public readonly GenericParameterValue UnderlyingTypeValue;
+
+		public override DynamicallyAccessedMemberTypes DynamicallyAccessedMemberTypes => UnderlyingTypeValue.DynamicallyAccessedMemberTypes;
+		public override IEnumerable<string> GetDiagnosticArgumentsForAnnotationMismatch ()
+			=> UnderlyingTypeValue.GetDiagnosticArgumentsForAnnotationMismatch ();
 	}
 }

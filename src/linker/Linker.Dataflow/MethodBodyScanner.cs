@@ -198,7 +198,7 @@ namespace Mono.Linker.Dataflow
 					newValue.Value = valueToStore;
 				} else {
 					// If the previous value came from a previous basic block, then some other use of 
-					// the local could see the previous value, so we must merge the new value with the 
+					// the local cousee the previous value, so we must merge the new value with the 
 					// old value.
 					newValue.Value = MultiValueLattice.Meet (existingValue.Value, valueToStore);
 				}
@@ -725,36 +725,39 @@ namespace Mono.Linker.Dataflow
 
 		void ScanLdtoken (Instruction operation, Stack<StackSlot> currentStack)
 		{
-			if (operation.Operand is GenericParameter genericParameter) {
-				StackSlot slot = new StackSlot (new RuntimeTypeHandleForGenericParameterValue (genericParameter));
-				currentStack.Push (slot);
+			switch (operation.Operand) {
+			case GenericParameter genericParameter:
+				var param = new RuntimeTypeHandleForGenericParameterValue (genericParameter);
+				currentStack.Push (new StackSlot (param));
 				return;
-			}
-
-			if (operation.Operand is TypeReference typeReference) {
-				var resolvedReference = ResolveToTypeDefinition (typeReference);
-				if (resolvedReference != null) {
-					if (resolvedReference.Name == "Nullable`1" && resolvedReference.Namespace == "System"
-						&& typeReference is IGenericInstance instance && ResolveToTypeDefinition (instance.GenericArguments![0]) is TypeDefinition underlyingType) {
-						StackSlot slot1 = new StackSlot (new NullableRuntimeTypeHandleValue (new TypeProxy (resolvedReference), new SystemTypeValue (underlyingType)));
-						currentStack.Push (slot1);
+			case TypeReference typeReference when ResolveToTypeDefinition (typeReference) is TypeDefinition resolvedDefinition:
+				if (typeReference is IGenericInstance instance && resolvedDefinition.IsTypeOf("System", "Nullable`1"))
+					switch (instance.GenericArguments[0]) {
+					case GenericParameter genericParam:
+						var nullableDam = new NullableRuntimeTypeWithDamHandleValue (new TypeProxy (resolvedDefinition),
+							new RuntimeTypeHandleForGenericParameterValue (genericParam));
+						currentStack.Push (new StackSlot (nullableDam));
+						return;
+					case TypeReference underlyingTypeReference when ResolveToTypeDefinition (underlyingTypeReference) is TypeDefinition underlyingType:
+						var nullableType = new NullableRuntimeSystemTypeHandleValue (new TypeProxy (resolvedDefinition), new TypeProxy (underlyingType));
+						currentStack.Push (new StackSlot (nullableType));
+						return;
+					default:
+						PushUnknown (currentStack);
 						return;
 					} else {
-						StackSlot slot = new StackSlot (new RuntimeTypeHandleValue (resolvedReference));
-						currentStack.Push (slot);
-						return;
-					}
-				}
-			} else if (operation.Operand is MethodReference methodReference) {
-				var resolvedMethod = _context.TryResolve (methodReference);
-				if (resolvedMethod != null) {
-					StackSlot slot = new StackSlot (new RuntimeMethodHandleValue (resolvedMethod));
-					currentStack.Push (slot);
+					var typeHandle = new RuntimeTypeHandleValue (new TypeProxy (resolvedDefinition));
+					currentStack.Push (new StackSlot (typeHandle));
 					return;
 				}
+			case MethodReference methodReference when _context.TryResolve (methodReference) is MethodDefinition resolvedMethod:
+				var method = new RuntimeMethodHandleValue (resolvedMethod);
+				currentStack.Push (new StackSlot (method));
+				return;
+			default:
+				PushUnknown (currentStack);
+				return;
 			}
-
-			PushUnknown (currentStack);
 		}
 
 		private void ScanStloc (

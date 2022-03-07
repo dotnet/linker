@@ -170,7 +170,13 @@ namespace ILLink.RoslynAnalyzer
 				SymbolKind.TypeParameter => new GenericParameterValue ((ITypeParameterSymbol) type),
 				// Technically this should be a new value node type as it's not a System.Type instance representation, but just the generic parameter
 				// That said we only use it to perform the dynamically accessed members checks and for that purpose treating it as System.Type is perfectly valid.
-				SymbolKind.NamedType => new SystemTypeValue (new TypeProxy ((INamedTypeSymbol) type)),
+				SymbolKind.NamedType 
+					=> ((INamedTypeSymbol)type).NullableAnnotation switch {
+						NullableAnnotation.Annotated => new NullableSystemTypeValue(
+							new TypeProxy ((INamedTypeSymbol)type), 
+							new TypeProxy (((INamedTypeSymbol) type).TypeArguments[0])),
+						_ => new SystemTypeValue (new TypeProxy ((INamedTypeSymbol) type))
+					},
 				SymbolKind.ErrorType => UnknownValue.Instance,
 				SymbolKind.ArrayType => new SystemTypeValue (new TypeProxy (context.Compilation.GetTypeByMetadataName ("System.Array")!)),
 				// What about things like PointerType and so on. Linker treats these as "named types" since it can resolve them to concrete type

@@ -64,14 +64,18 @@ namespace ILLink.Shared.TrimAnalysis
 				}
 
 				foreach (var value in argumentValues[0]) {
-					if (value is NullableRuntimeTypeHandleValue runtimeNullableTypeHandleValue)
-						AddReturnValue (new NullableSystemTypeValue (runtimeNullableTypeHandleValue.RepresentedType, runtimeNullableTypeHandleValue.UnderlyingTypeValue));
-					else if (value is RuntimeTypeHandleValue typeHandle)
-						AddReturnValue (new SystemTypeValue (typeHandle.RepresentedType));
-					else if (value is RuntimeTypeHandleForGenericParameterValue typeHandleForGenericParameter)
-						AddReturnValue (GetGenericParameterValue (typeHandleForGenericParameter.GenericParameter));
-					else
-						AddReturnValue (GetMethodReturnValue (calledMethod, returnValueDynamicallyAccessedMemberTypes));
+					if (value != NullValue.Instance)
+						AddReturnValue (value switch {
+							NullableRuntimeSystemTypeHandleValue nullableSystemType
+								=> new NullableSystemTypeValue (nullableSystemType.NullableType, nullableSystemType.UnderlyingTypeValue),
+							NullableRuntimeTypeWithDamHandleValue nullableDamType
+								=> new NullableValueWithDynamicallyAccessedMembers (nullableDamType.NullableType, GetGenericParameterValue (nullableDamType.UnderlyingTypeValue.GenericParameter)),
+							RuntimeTypeHandleValue typeHandle
+								=> new SystemTypeValue (typeHandle.RepresentedType),
+							RuntimeTypeHandleForGenericParameterValue genericParam
+								=> GetGenericParameterValue (genericParam.GenericParameter),
+							_ => GetMethodReturnValue (calledMethod, returnValueDynamicallyAccessedMemberTypes)
+						});
 				}
 				break;
 
@@ -82,15 +86,18 @@ namespace ILLink.Shared.TrimAnalysis
 				}
 
 				foreach (var value in instanceValue) {
-					if (value is SystemTypeValue typeValue)
-						AddReturnValue (new RuntimeTypeHandleValue (typeValue.RepresentedType));
-					else if (value is GenericParameterValue genericParameterValue)
-						AddReturnValue (new RuntimeTypeHandleForGenericParameterValue (genericParameterValue.GenericParameter));
-					else if (value == NullValue.Instance) {
-						// Throws if the input is null, so no return value.
-						returnValue ??= MultiValueLattice.Top;
-					} else
-						AddReturnValue (GetMethodReturnValue (calledMethod, returnValueDynamicallyAccessedMemberTypes));
+					if (value != NullValue.Instance)
+						AddReturnValue (value switch {
+							NullableSystemTypeValue nullableSystemType
+								=> new NullableRuntimeSystemTypeHandleValue (nullableSystemType.NullableType, nullableSystemType.UnderlyingTypeValue),
+							NullableValueWithDynamicallyAccessedMembers nullableDamType
+								=> new NullableRuntimeTypeWithDamHandleValue (nullableDamType.NullableType, new RuntimeTypeHandleForGenericParameterValue (nullableDamType.UnderlyingTypeValue.GenericParameter)),
+							SystemTypeValue typeHandle
+								=> new RuntimeTypeHandleValue (typeHandle.RepresentedType),
+							GenericParameterValue genericParam
+								=> new RuntimeTypeHandleForGenericParameterValue (genericParam.GenericParameter),
+							_ => GetMethodReturnValue (calledMethod, returnValueDynamicallyAccessedMemberTypes)
+						});
 				}
 				break;
 
@@ -545,11 +552,13 @@ namespace ILLink.Shared.TrimAnalysis
 			case IntrinsicId.Nullable_GetUnderlyingType:
 				var values = new List<SingleValue> ();
 				foreach (var singlevalue in argumentValues[0].AsEnumerable ()) {
-					if (singlevalue is ValueWithDynamicallyAccessedMembers damValue) {
-						values.Add (GetMethodReturnValue (calledMethod, damValue.DynamicallyAccessedMemberTypes));
-					} else if (singlevalue is NullableSystemTypeValue systemNullableTypeValue) {
-						values.AddRange (systemNullableTypeValue.UnderlyingTypeValue);
-					}
+					values.Add (singlevalue switch {
+						SystemTypeValue systemType => systemType,
+						NullableSystemTypeValue nullableSystemType => new SystemTypeValue (nullableSystemType.UnderlyingTypeValue),
+						NullableValueWithDynamicallyAccessedMembers nullableDamValue => nullableDamValue.UnderlyingTypeValue,
+						ValueWithDynamicallyAccessedMembers damValue => damValue,
+						_ => throw new NotImplementedException ($"Unexpected argument to Nullable.GetUnderlingType: {singlevalue.ToString()}")
+					});
 				}
 				returnValue = new MultiValue (values);
 				break;
@@ -612,6 +621,21 @@ namespace ILLink.Shared.TrimAnalysis
 			// "unknown" and consumers may warn.
 			if (!foundAny)
 				yield return NullValue.Instance;
+		}
+
+		SingleValue? ConvertRuntimeTypeHandleValue (SingleValue value)
+		{
+			return value switch {
+				NullableRuntimeSystemTypeHandleValue nullableSystemType
+					=> new NullableSystemTypeValue (nullableSystemType.NullableType, nullableSystemType.UnderlyingTypeValue),
+				NullableRuntimeTypeWithDamHandleValue nullableDamType
+					=> new NullableValueWithDynamicallyAccessedMembers (nullableDamType.NullableType, GetGenericParameterValue (nullableDamType.UnderlyingTypeValue.GenericParameter)),
+				RuntimeTypeHandleValue typeHandle
+					=> new SystemTypeValue (typeHandle.RepresentedType),
+				RuntimeTypeHandleForGenericParameterValue genericParam
+					=> GetGenericParameterValue (genericParam.GenericParameter),
+				_ => null
+			};
 		}
 
 		internal static BindingFlags? GetBindingFlagsFromValue (in MultiValue parameter) => (BindingFlags?) parameter.AsConstInt ();
