@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
@@ -19,7 +20,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			typeof (Struct).RequiresPublicProperties ();
 		}
 
-		struct Class
+		class Class
 		{
 			[Kept]
 			[KeptBackingField]
@@ -28,6 +29,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[KeptBackingField]
 			public string LastName { [Kept]get; [Kept]set; }
 		}
+
+		[StructLayout(LayoutKind.Auto)]
 		struct Struct
 		{
 			[Kept]
