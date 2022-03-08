@@ -110,7 +110,7 @@ namespace ILLink.Shared.DataFlow
 				} else
 					return false;
 			} else {
-				if (other._values is EnumerableValues ) {
+				if (other._values is EnumerableValues) {
 					return false;
 				}
 

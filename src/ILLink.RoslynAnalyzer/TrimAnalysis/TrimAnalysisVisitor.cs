@@ -115,7 +115,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 					new NullableValueWithDynamicallyAccessedMembers (new TypeProxy (t), new GenericParameterValue ((ITypeParameterSymbol) (t as INamedTypeSymbol)!.TypeArguments[0])),
 				(SymbolKind.NamedType, "System", "Nullable`1", _) =>
 					new NullableSystemTypeValue (new TypeProxy (t), new TypeProxy ((t as INamedTypeSymbol)!.TypeArguments[0])),
-				(SymbolKind.NamedType, _, _, _) => 
+				(SymbolKind.NamedType, _, _, _) =>
 					new SystemTypeValue (new TypeProxy (t)),
 				(_, _, _, _) => TopValue
 			};

@@ -147,13 +147,12 @@ namespace Mono.Linker.Dataflow
 				return new GenericParameterValue (inputGenericParameter, _context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (inputGenericParameter));
 			} else {
 				TypeDefinition? genericArgumentTypeDef = ResolveToTypeDefinition (genericArgument);
-				switch (genericArgumentTypeDef, (genericArgument as IGenericInstance)?.GenericArguments.FirstOrDefault()) 
-				{
-				case (TypeDefinition t, GenericParameter gp) when t.IsTypeOf("System", "Nullable`1"):
-					return new NullableValueWithDynamicallyAccessedMembers (t, new GenericParameterValue(gp, _context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (gp)));
+				switch (genericArgumentTypeDef, (genericArgument as IGenericInstance)?.GenericArguments.FirstOrDefault ()) {
+				case (TypeDefinition t, GenericParameter gp) when t.IsTypeOf ("System", "Nullable`1"):
+					return new NullableValueWithDynamicallyAccessedMembers (t, new GenericParameterValue (gp, _context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (gp)));
 
-				case (TypeDefinition t, TypeReference underlyingType) when t.IsTypeOf("System", "Nullable`1"):
-					return new NullableSystemTypeValue (t, ResolveToTypeDefinition(underlyingType)!);
+				case (TypeDefinition t, TypeReference underlyingType) when t.IsTypeOf ("System", "Nullable`1"):
+					return new NullableSystemTypeValue (t, ResolveToTypeDefinition (underlyingType)!);
 
 				case (TypeDefinition t, null):
 					return new SystemTypeValue (t);
