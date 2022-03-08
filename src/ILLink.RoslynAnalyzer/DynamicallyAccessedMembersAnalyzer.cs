@@ -6,8 +6,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Text.RegularExpressions;
 using ILLink.RoslynAnalyzer.TrimAnalysis;
 using ILLink.Shared;
 using ILLink.Shared.DataFlow;
@@ -233,13 +231,13 @@ namespace ILLink.RoslynAnalyzer
 
 		static void VerifyDamOnMethodsMatch (IMethodSymbol method, IMethodSymbol overriddenMethod, SymbolAnalysisContext context)
 		{
-			if (FlowAnnotations.GetMethodReturnValueAnnotation (method)  != FlowAnnotations.GetMethodReturnValueAnnotation (overriddenMethod))
+			if (FlowAnnotations.GetMethodReturnValueAnnotation (method) != FlowAnnotations.GetMethodReturnValueAnnotation (overriddenMethod))
 				context.ReportDiagnostic (Diagnostic.Create (
 					DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchOnMethodReturnValueBetweenOverrides),
 					method.Locations[0], method.GetDisplayName (), overriddenMethod.GetDisplayName ()));
 
-			for (int i = 0; i < method.Parameters.Length; i++) 
-				if (FlowAnnotations.GetMethodParameterAnnotation(method.Parameters[i]) != FlowAnnotations.GetMethodParameterAnnotation(overriddenMethod.Parameters[i]))
+			for (int i = 0; i < method.Parameters.Length; i++)
+				if (FlowAnnotations.GetMethodParameterAnnotation (method.Parameters[i]) != FlowAnnotations.GetMethodParameterAnnotation (overriddenMethod.Parameters[i]))
 					context.ReportDiagnostic (Diagnostic.Create (
 						DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchOnMethodParameterBetweenOverrides),
 						method.Parameters[i].Locations[0],
@@ -272,12 +270,12 @@ namespace ILLink.RoslynAnalyzer
 		static void VerifyDamOnPropertyAndAccessorMatch (IMethodSymbol methodSymbol, SymbolAnalysisContext context)
 		{
 			if ((methodSymbol.MethodKind != MethodKind.PropertyGet && methodSymbol.MethodKind != MethodKind.PropertySet)
-				|| (methodSymbol.AssociatedSymbol?.GetDynamicallyAccessedMemberTypes() == DynamicallyAccessedMemberTypes.None))
+				|| (methodSymbol.AssociatedSymbol?.GetDynamicallyAccessedMemberTypes () == DynamicallyAccessedMemberTypes.None))
 				return;
-			
+
 			// None on the return type of 'get' matches unannotated
 			if (methodSymbol.MethodKind == MethodKind.PropertyGet
-				&& methodSymbol.GetDynamicallyAccessedMemberTypesOnReturnType() != DynamicallyAccessedMemberTypes.None
+				&& methodSymbol.GetDynamicallyAccessedMemberTypesOnReturnType () != DynamicallyAccessedMemberTypes.None
 				// None on parameter of 'set' matches unannotated
 				|| methodSymbol.MethodKind == MethodKind.PropertySet
 				&& methodSymbol.Parameters[0].GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None) {

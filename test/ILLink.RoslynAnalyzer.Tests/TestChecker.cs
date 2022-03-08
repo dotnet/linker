@@ -272,11 +272,10 @@ namespace ILLink.RoslynAnalyzer.Tests
 
 		private bool TryValidateLogContainsAttribute (AttributeSyntax attribute, List<Diagnostic> diagnostics, out int? matchIndex, out string? missingDiagnosticMessage)
 		{
-			if (!LogContains(attribute, diagnostics, out matchIndex, out string text)) {
+			if (!LogContains (attribute, diagnostics, out matchIndex, out string text)) {
 				missingDiagnosticMessage = $"Could not find text:\n{text}\nIn diagnostics:\n{string.Join (Environment.NewLine, _diagnostics)}";
 				return false;
-			}
-			else {
+			} else {
 				missingDiagnosticMessage = null;
 				return true;
 			}
@@ -287,13 +286,13 @@ namespace ILLink.RoslynAnalyzer.Tests
 			var args = LinkerTestBase.GetAttributeArguments (attribute);
 			var arg = args["#0"];
 			Assert.False (args.ContainsKey ("#1"));
-			var text = LinkerTestBase.GetStringFromExpression (arg, _semanticModel);
+			_ = LinkerTestBase.GetStringFromExpression (arg, _semanticModel);
 			if (LogContains (attribute, diagnosticMessages, out var matchIndex, out var findText)) {
-				Assert.True (false, $"LogDoesNotContain failure: Text\n\"{findText}\"\nfound in diagnostic:\n {diagnosticMessages[(int)matchIndex]}");
+				Assert.True (false, $"LogDoesNotContain failure: Text\n\"{findText}\"\nfound in diagnostic:\n {diagnosticMessages[(int) matchIndex]}");
 			}
 		}
 
-		private bool LogContains (AttributeSyntax attribute, IReadOnlyList<Diagnostic> diagnostics, [NotNullWhen(true)] out int? matchIndex, out string findText)
+		private bool LogContains (AttributeSyntax attribute, IReadOnlyList<Diagnostic> diagnostics, [NotNullWhen (true)] out int? matchIndex, out string findText)
 		{
 
 			var args = LinkerTestBase.GetAttributeArguments (attribute);
@@ -314,9 +313,9 @@ namespace ILLink.RoslynAnalyzer.Tests
 				}
 			}
 
-			bool isRegex = (args.TryGetValue ("regexMatch", out var regexMatchExpr)
+			bool isRegex = args.TryGetValue ("regexMatch", out var regexMatchExpr)
 					&& regexMatchExpr.GetLastToken ().Value is bool regexMatch
-					&& regexMatch);
+					&& regexMatch;
 			if (isRegex) {
 				var regex = new Regex (findText);
 				for (int i = 0; i < diagnostics.Count; i++) {
