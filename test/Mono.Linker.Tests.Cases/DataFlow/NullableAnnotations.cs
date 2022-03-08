@@ -44,11 +44,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		class TestClass
 		{
 			[Kept]
-			[KeptBackingField]
-			public string FirstName { [Kept] get; [Kept] set; }
+			public string FirstName { [Kept][ExpectBodyModified] get; [Kept][ExpectBodyModified] set; }
+			[Kept]
+			public string LastName { [Kept][ExpectBodyModified] get; [Kept][ExpectBodyModified] set; }
 			[Kept]
 			[KeptBackingField]
-			public string LastName { [Kept] get; [Kept] set; }
+			public static string StaticString { [Kept]get; [Kept]set; }
 
 			public void Method () { }
 		}
@@ -59,7 +60,6 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			NullableOfAnnotatedGenericParameterRequiresPublicProperties<TestStruct> ();
 			Type hasProperties = ReturnUnderlyingTypeThatRequiresProperties<Nullable<TestStruct>> (new ());
 			hasProperties.RequiresPublicProperties ();
-
 			RequireMethodWithRUC ();
 
 			DamOnNullableKeepsUnderlyingMembers ();
@@ -227,6 +227,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[Kept]
+		[ExpectedWarning("IL2091")]
 		static void m<T> () where T : struct
 		{
 			RequirePublicFieldsOnGenericParam<Nullable<T>> ();

@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System.Collections.Immutable;
+using System.Linq;
 using ILLink.RoslynAnalyzer.DataFlow;
 using ILLink.Shared.DataFlow;
 using ILLink.Shared.TrimAnalysis;
@@ -106,23 +107,18 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 		public override MultiValue VisitTypeOf (ITypeOfOperation typeOfOperation, StateValue state)
 		{
-			return CreateValue (typeOfOperation.TypeOperand) switch {
-				SingleValue value => value,
-				null => TopValue
+			var t = typeOfOperation.TypeOperand;
+			return (t.Kind, t.ContainingNamespace?.Name, t.MetadataName, (t as INamedTypeSymbol)?.TypeArguments.FirstOrDefault ()?.TypeKind) switch {
+				(SymbolKind.TypeParameter, _, _, _) =>
+					new GenericParameterValue ((ITypeParameterSymbol) t),
+				(SymbolKind.NamedType, "System", "Nullable`1", TypeKind.TypeParameter) =>
+					new NullableValueWithDynamicallyAccessedMembers (new TypeProxy (t), new GenericParameterValue ((ITypeParameterSymbol) (t as INamedTypeSymbol)!.TypeArguments[0])),
+				(SymbolKind.NamedType, "System", "Nullable`1", _) =>
+					new NullableSystemTypeValue (new TypeProxy (t), new TypeProxy ((t as INamedTypeSymbol)!.TypeArguments[0])),
+				(SymbolKind.NamedType, _, _, _) => 
+					new SystemTypeValue (new TypeProxy (t)),
+				(_, _, _, _) => TopValue
 			};
-
-			SingleValue? CreateValue (ITypeSymbol t)
-			{
-				if (t is ITypeParameterSymbol typeParameter)
-					return new GenericParameterValue (typeParameter);
-				else if (t is INamedTypeSymbol namedType)
-					return (namedType.ContainingNamespace.Name, namedType.MetadataName) switch {
-						("System", "Nullable`1") => new NullableSystemTypeValue (new TypeProxy (namedType), new TypeProxy (namedType.TypeArguments[0]))
-					,
-						_ => new SystemTypeValue (new TypeProxy (namedType))
-					};
-				return null;
-			}
 		}
 
 		public override MultiValue VisitBinaryOperator (IBinaryOperation operation, StateValue argument)

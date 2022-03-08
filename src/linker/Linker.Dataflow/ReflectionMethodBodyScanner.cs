@@ -147,12 +147,18 @@ namespace Mono.Linker.Dataflow
 				return new GenericParameterValue (inputGenericParameter, _context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (inputGenericParameter));
 			} else {
 				TypeDefinition? genericArgumentTypeDef = ResolveToTypeDefinition (genericArgument);
-				if (genericArgumentTypeDef != null) {
-					return new SystemTypeValue (genericArgumentTypeDef);
-				} else {
-					// If we can't resolve the generic argument, it means we can't apply potential requirements on it
-					// so track it as unknown value. If we later on hit this unknown value as being used somewhere
-					// where we need to apply requirements on it, it will generate a warning.
+				switch (genericArgumentTypeDef, (genericArgument as IGenericInstance)?.GenericArguments.FirstOrDefault()) 
+				{
+				case (TypeDefinition t, GenericParameter gp) when t.IsTypeOf("System", "Nullable`1"):
+					return new NullableValueWithDynamicallyAccessedMembers (t, new GenericParameterValue(gp, _context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (gp)));
+
+				case (TypeDefinition t, TypeReference underlyingType) when t.IsTypeOf("System", "Nullable`1"):
+					return new NullableSystemTypeValue (t, ResolveToTypeDefinition(underlyingType)!);
+
+				case (TypeDefinition t, null):
+					return new SystemTypeValue (t);
+
+				case (_, _):
 					return UnknownValue.Instance;
 				}
 			}
@@ -327,7 +333,7 @@ namespace Mono.Linker.Dataflow
 			// Type MakeGenericType (params Type[] typeArguments)
 			//
 			case IntrinsicId.Type_MakeGenericType: {
-					// We don't yet handle the very unlikely case where you can create a nullable type with typeof(Nullable<>).MakeGenericType(T)
+					// We don't yet handle the case where you can create a nullable type with typeof(Nullable<>).MakeGenericType(T)
 					foreach (var value in methodParams[0]) {
 						if (value is SystemTypeValue typeValue) {
 							if (!AnalyzeGenericInstantiationTypeArray (analysisContext, methodParams[1], calledMethodDefinition, typeValue.RepresentedType.Type.GenericParameters)) {

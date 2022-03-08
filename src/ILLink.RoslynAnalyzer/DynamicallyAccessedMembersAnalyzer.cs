@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using ILLink.RoslynAnalyzer.TrimAnalysis;
 using ILLink.Shared;
 using ILLink.Shared.DataFlow;
@@ -166,19 +167,21 @@ namespace ILLink.RoslynAnalyzer
 
 		static SingleValue GetTypeValueNodeFromGenericArgument (SyntaxNodeAnalysisContext context, ITypeSymbol type)
 		{
-			return type.Kind switch {
-				SymbolKind.TypeParameter => new GenericParameterValue ((ITypeParameterSymbol) type),
+			return (type.Kind, type.ContainingNamespace?.Name, type.MetadataName, (type as INamedTypeSymbol)?.TypeArguments.FirstOrDefault ()?.TypeKind) switch {
+				(SymbolKind.TypeParameter, _, _, _) => new GenericParameterValue ((ITypeParameterSymbol) type),
 				// Technically this should be a new value node type as it's not a System.Type instance representation, but just the generic parameter
 				// That said we only use it to perform the dynamically accessed members checks and for that purpose treating it as System.Type is perfectly valid.
-				SymbolKind.NamedType 
-					=> ((INamedTypeSymbol)type).NullableAnnotation switch {
-						NullableAnnotation.Annotated => new NullableSystemTypeValue(
-							new TypeProxy ((INamedTypeSymbol)type), 
-							new TypeProxy (((INamedTypeSymbol) type).TypeArguments[0])),
-						_ => new SystemTypeValue (new TypeProxy ((INamedTypeSymbol) type))
-					},
-				SymbolKind.ErrorType => UnknownValue.Instance,
-				SymbolKind.ArrayType => new SystemTypeValue (new TypeProxy (context.Compilation.GetTypeByMetadataName ("System.Array")!)),
+				(SymbolKind.NamedType, "System", "Nullable`1", TypeKind.TypeParameter) =>
+					new NullableValueWithDynamicallyAccessedMembers (new TypeProxy (type),
+						new GenericParameterValue ((ITypeParameterSymbol) ((INamedTypeSymbol) type).TypeArguments[0])),
+				(SymbolKind.NamedType, "System", "Nullable`1", _) =>
+					new NullableSystemTypeValue (
+						new TypeProxy ((INamedTypeSymbol) type),
+						new TypeProxy (((INamedTypeSymbol) type).TypeArguments[0])),
+				(SymbolKind.NamedType, _, _, _) => new SystemTypeValue (new TypeProxy ((INamedTypeSymbol) type)),
+
+				(SymbolKind.ErrorType, _, _, _) => UnknownValue.Instance,
+				(SymbolKind.ArrayType, _, _, _) => new SystemTypeValue (new TypeProxy (context.Compilation.GetTypeByMetadataName ("System.Array")!)),
 				// What about things like PointerType and so on. Linker treats these as "named types" since it can resolve them to concrete type
 				_ => throw new NotImplementedException ()
 			};
