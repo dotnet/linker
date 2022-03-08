@@ -227,7 +227,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[Kept]
-		[ExpectedWarning("IL2091")]
+		[ExpectedWarning ("IL2091")]
 		static void m<T> () where T : struct
 		{
 			RequirePublicFieldsOnGenericParam<Nullable<T>> ();
