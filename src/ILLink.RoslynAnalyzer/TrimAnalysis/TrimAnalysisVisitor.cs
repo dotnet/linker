@@ -59,6 +59,20 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 			return returnValue;
 		}
+		public override MultiValue VisitArrayCreation (IArrayCreationOperation operation, StateValue argument)
+		{
+			var value = base.VisitArrayCreation (operation, argument);
+			var elements = operation.Initializer?.ElementValues.Select (val => Visit (val, argument)).ToArray () ?? System.Array.Empty<MultiValue> ();
+			return new ArrayValue (new ConstIntValue (elements.Length), elements);
+		}
+		//public override MultiValue VisitArrayInitializer (IArrayInitializerOperation operation, StateValue argument)
+		//{
+		//	MultiValue returnValue = base.VisitArrayInitializer (operation, argument);
+		//	foreach (var child in operation.Children) {
+		//		returnValue = _multiValueLattice.Meet(returnValue, Visit (child, argument));
+		//	}
+		//	return returnValue;
+		//}
 
 		public override MultiValue VisitConversion (IConversionOperation operation, StateValue state)
 		{
@@ -113,6 +127,9 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 					new GenericParameterValue ((ITypeParameterSymbol) t),
 				(SymbolKind.NamedType, "System", "Nullable`1", TypeKind.TypeParameter) =>
 					new NullableValueWithDynamicallyAccessedMembers (new TypeProxy (t), new GenericParameterValue ((ITypeParameterSymbol) (t as INamedTypeSymbol)!.TypeArguments[0])),
+				(SymbolKind.NamedType, "System", "Nullable`1", TypeKind.Error) =>
+					// typeof(Nullable<>)
+					new SystemTypeValue (new TypeProxy (t)),
 				(SymbolKind.NamedType, "System", "Nullable`1", _) =>
 					new NullableSystemTypeValue (new TypeProxy (t), new TypeProxy ((t as INamedTypeSymbol)!.TypeArguments[0])),
 				(SymbolKind.NamedType, _, _, _) =>

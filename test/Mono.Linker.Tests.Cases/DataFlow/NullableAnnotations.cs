@@ -74,6 +74,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TestGetUnderlyingTypeOnStructs ();
 			TestGetUnderlyingTypeOnNullableStructs ();
 			TestGetUnderlyingTypeOfCreatedNullableOnStructs ();
+
+			typeof (System.Collections.Generic.Dictionary<,>).MakeGenericType (typeof (int), typeof (string));
 		}
 
 		[Kept]
@@ -162,16 +164,15 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		{
 			NullableOfAnnotatedParameterRequiresPublicProperties (typeof (TestStruct));
 			NullableOfUnannotatedGenericParameterRequiresPublicProperties<TestStruct> ();
-			NullableOfUnannotatedParameterRequiresPublicProperties (typeof (TestStruct));
+			MakeGenericNullableOfUnannotatedParameterRequiresPublicProperties (typeof (TestStruct));
 			NullableOfUnannotatedGenericParameterRequiresPublicProperties<TestStruct> ();
 		}
 
 		[Kept]
-		// Bug - GetUnderlyingType intrinsic handling does not yet have special handling of Nullables
-		//[ExpectedWarning("IL2067")]
-		static void NullableOfUnannotatedParameterRequiresPublicProperties (Type t)
+		[ExpectedWarning ("IL2067")]
+		static void MakeGenericNullableOfUnannotatedParameterRequiresPublicProperties (Type t)
 		{
-			(Nullable.GetUnderlyingType (typeof (Nullable<>).MakeGenericType (t))).RequiresPublicProperties ();
+			(Nullable.GetUnderlyingType ((typeof (Nullable<>)).MakeGenericType (t))).RequiresPublicProperties ();
 		}
 
 		[Kept]

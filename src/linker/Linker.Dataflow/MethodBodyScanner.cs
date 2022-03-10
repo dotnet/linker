@@ -731,7 +731,8 @@ namespace Mono.Linker.Dataflow
 				currentStack.Push (new StackSlot (param));
 				return;
 			case TypeReference typeReference when ResolveToTypeDefinition (typeReference) is TypeDefinition resolvedDefinition:
-				if (typeReference is IGenericInstance instance && resolvedDefinition.IsTypeOf ("System", "Nullable`1"))
+				// Note that Nullable types without a generic argument (i.e. Nullable<>) will be RuntimeTypeHandleValue / SystemTypeValue
+				if (typeReference is IGenericInstance instance && resolvedDefinition.IsTypeOf ("System", "Nullable`1")) {
 					switch (instance.GenericArguments[0]) {
 					case GenericParameter genericParam:
 						var nullableDam = new NullableRuntimeTypeWithDamHandleValue (new TypeProxy (resolvedDefinition),
@@ -745,7 +746,8 @@ namespace Mono.Linker.Dataflow
 					default:
 						PushUnknown (currentStack);
 						return;
-					} else {
+					}
+				} else {
 					var typeHandle = new RuntimeTypeHandleValue (new TypeProxy (resolvedDefinition));
 					currentStack.Push (new StackSlot (typeHandle));
 					return;

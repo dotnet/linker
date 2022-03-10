@@ -174,6 +174,9 @@ namespace ILLink.RoslynAnalyzer
 				(SymbolKind.NamedType, "System", "Nullable`1", TypeKind.TypeParameter) =>
 					new NullableValueWithDynamicallyAccessedMembers (new TypeProxy (type),
 						new GenericParameterValue ((ITypeParameterSymbol) ((INamedTypeSymbol) type).TypeArguments[0])),
+				(SymbolKind.NamedType, "System", "Nullable`1", TypeKind.Error) =>
+					// Nullable<> (with no type parameter)
+					new SystemTypeValue (new TypeProxy (type)),
 				(SymbolKind.NamedType, "System", "Nullable`1", _) =>
 					new NullableSystemTypeValue (
 						new TypeProxy ((INamedTypeSymbol) type),
