@@ -113,22 +113,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 		public override MultiValue VisitTypeOf (ITypeOfOperation typeOfOperation, StateValue state)
 		{
-			var t = typeOfOperation.TypeOperand;
-			if (t.Kind == SymbolKind.NamedType && t.ContainingNamespace.Name == "System" && t.MetadataName == "Nullable`1") {
-				return (t as INamedTypeSymbol)?.TypeArguments.FirstOrDefault ()?.TypeKind switch {
-					TypeKind.TypeParameter =>
-						new NullableValueWithDynamicallyAccessedMembers (new TypeProxy (t),
-							new GenericParameterValue ((ITypeParameterSymbol) (t as INamedTypeSymbol)!.TypeArguments[0])),
-					// typeof(Nullable<>) 
-					TypeKind.Error => new SystemTypeValue (new TypeProxy (t)),
-					_ => new NullableSystemTypeValue (new TypeProxy (t), new TypeProxy ((t as INamedTypeSymbol)!.TypeArguments[0])),
-				};
-			}
-			return t.Kind switch {
-				SymbolKind.TypeParameter => new GenericParameterValue ((ITypeParameterSymbol) t),
-				SymbolKind.NamedType => new SystemTypeValue (new TypeProxy (t)),
-				_ => TopValue
-			};
+			return SingleValueExtensions.FromTypeSymbol (typeOfOperation.TypeOperand) ?? TopValue;
 		}
 
 		public override MultiValue VisitBinaryOperator (IBinaryOperation operation, StateValue argument)
