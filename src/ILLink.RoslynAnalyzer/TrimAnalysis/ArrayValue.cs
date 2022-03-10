@@ -24,10 +24,10 @@ namespace ILLink.Shared.TrimAnalysis
 		{
 			if (other == null) return false;
 			if (other is not ArrayValue otherArray) return false;
-			if (!otherArray.Size.Equals(Size)) return false;
+			if (!otherArray.Size.Equals (Size)) return false;
 			for (int i = 0; i < _elements.Length; i++) {
-				if (!otherArray.TryGetValueByIndex(i, out var otherElement)
-					|| !otherElement.Equals(_elements[i]))
+				if (!otherArray.TryGetValueByIndex (i, out var otherElement)
+					|| !otherElement.Equals (_elements[i]))
 					return false;
 			}
 			return base.Equals (other);

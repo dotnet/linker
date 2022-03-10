@@ -22,6 +22,6 @@ namespace ILLink.Shared.TypeSystemProxy
 
 		public override string ToString () => Type.ToString ();
 
-		public bool IsTypeOf(string @namespace, string name) => Type.IsTypeOf (@namespace, name);
+		public bool IsTypeOf (string @namespace, string name) => Type.IsTypeOf (@namespace, name);
 	}
 }

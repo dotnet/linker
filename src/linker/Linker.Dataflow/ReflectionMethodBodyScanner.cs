@@ -159,8 +159,7 @@ namespace Mono.Linker.Dataflow
 				}
 				// All values except for Nullable<T>, including Nullable<> (with no type arguments)
 				return new SystemTypeValue (genericArgumentType);
-			} 
-			else {
+			} else {
 				return UnknownValue.Instance;
 			}
 		}
@@ -358,7 +357,7 @@ namespace Mono.Linker.Dataflow
 							}
 
 							// Nullables without a type argument are considered SystemTypeValues
-							if (typeValue.RepresentedType.IsTypeOf("System", "Nullable`1")) {
+							if (typeValue.RepresentedType.IsTypeOf ("System", "Nullable`1")) {
 								foreach (var argumentValue in methodParams[1]) {
 									if ((argumentValue as ArrayValue)?.TryGetValueByIndex (0, out var underlyingMultiValue) == true) {
 										foreach (var underlyingValue in underlyingMultiValue) {

@@ -14,7 +14,13 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 	class NullableAnnotations
 	{
 		[Kept]
-		struct TestStruct
+		struct TestType
+		{
+		}
+
+		// This only gets annotations through Nullable<TestStructPassedInsideNullable>
+		[Kept]
+		struct TestStructPassedInsideNullable
 		{
 			[Kept]
 			[KeptBackingField]
@@ -24,16 +30,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			public string LastName { [Kept] get; [Kept] set; }
 		}
 
+
 		[Kept]
 		struct TestStructWithRucMethod
 		{
-			[Kept]
-			[KeptBackingField]
-			public string FirstName { [Kept] get; [Kept] set; }
-			[Kept]
-			[KeptBackingField]
-			public string LastName { [Kept] get; [Kept] set; }
-
 			[Kept]
 			[KeptAttributeAttribute (typeof (RequiresUnreferencedCodeAttribute))]
 			[RequiresUnreferencedCode ("message")]
@@ -41,42 +41,21 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[Kept]
-		class TestClass
-		{
-			[Kept]
-			public string FirstName { [Kept][ExpectBodyModified] get; [Kept][ExpectBodyModified] set; }
-			[Kept]
-			public string LastName { [Kept][ExpectBodyModified] get; [Kept][ExpectBodyModified] set; }
-			[Kept]
-			[KeptBackingField]
-			public static string StaticString { [Kept]get; [Kept]set; }
-
-			public void Method () { }
-		}
-
-		[Kept]
 		public static void Main ()
 		{
-			NullableOfAnnotatedGenericParameterRequiresPublicProperties<TestStruct> ();
-			Type hasProperties = ReturnUnderlyingTypeThatRequiresProperties<Nullable<TestStruct>> (new ());
-			hasProperties.RequiresPublicProperties ();
-			RequireAllFromUnderlyingTypeWithMethodWithRUC ();
-			RequireAllFromNullableOfTypeWithMethodWithRuc ();
+			NullableOfAnnotatedGenericParameterRequiresPublicProperties<TestType> ();
+			Type _ = ReturnUnderlyingTypeThatRequiresProperties<Nullable<TestType>> (new ());
+			TestRequireRucMethodThroughNullable ();
 
 			DamOnNullableKeepsUnderlyingMembers ();
-			UnderlyingTypeOfCreatedNullableOfAnnotatedTRequiresPublicProperties<TestStruct> ();
+			UnderlyingTypeOfCreatedNullableOfAnnotatedTRequiresPublicProperties<TestType> ();
 			RequirePublicFieldsOnGenericParam<Nullable<StructWithFieldsReferencedThroughDamOnNullable>> ();
-			m<StructWithFieldsReferencedThroughDamOnNullable> ();
+			NullableOfUnannotatedGenericParamPassedAsGenericParamRequiresPublicFields<StructWithFieldsReferencedThroughDamOnNullable> ();
+			NullableOfAnnotatedGenericParamPassedAsGenericParamRequiresPublicFields<StructWithFieldsReferencedThroughDamOnNullable> ();
 
-			GenericClassTypeParamRequiresPublicFields<GenericClassTypeParam>.RunTests ();
-			GenericClassUnderlyingTypeParamRequiresPublicFields<Nullable<GenericClassTypeParam>>.RunTests ();
-
-			TestGetUnderlyingTypeOnClasses ();
 			TestGetUnderlyingTypeOnStructs ();
-			TestGetUnderlyingTypeOnNullableStructs ();
+			TestAnnotationsOnNullableKeepsMembersOnUnderlyingType ();
 			TestGetUnderlyingTypeOfCreatedNullableOnStructs ();
-
-			typeof (System.Collections.Generic.Dictionary<,>).MakeGenericType (typeof (int), typeof (string));
 		}
 
 		[Kept]
@@ -90,9 +69,24 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		[Kept]
 		[ExpectedWarning ("IL2026", "message")]
-		static void RequireAllFromNullableOfTypeWithMethodWithRuc()
+		static void RequireAllFromNullableOfTypeWithMethodWithRuc ()
 		{
 			typeof (Nullable<TestStructWithRucMethod>).RequiresAll ();
+		}
+
+		[Kept]
+		[ExpectedWarning ("IL2026", "message")]
+		static void RequireAllFromMadeGenericNullableOfTypeWithMethodWithRuc ()
+		{
+			typeof (Nullable<>).MakeGenericType (typeof (TestStructWithRucMethod)).RequiresAll ();
+		}
+
+		[Kept]
+		static void TestRequireRucMethodThroughNullable ()
+		{
+			RequireAllFromUnderlyingTypeWithMethodWithRUC ();
+			RequireAllFromNullableOfTypeWithMethodWithRuc ();
+			RequireAllFromMadeGenericNullableOfTypeWithMethodWithRuc ();
 		}
 
 		[Kept]
@@ -135,53 +129,60 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[Kept]
-		static void NullableOfAnnotatedParameterRequiresPublicProperties ([KeptAttributeAttribute (typeof (DAM))][DAM (DAMT.PublicProperties)] Type t)
+		static void MakeGenericNullableOfAnnotatedParameterRequiresPublicProperties ([KeptAttributeAttribute (typeof (DAM))][DAM (DAMT.PublicProperties)] Type t)
 		{
 			(Nullable.GetUnderlyingType (typeof (Nullable<>).MakeGenericType (t))).RequiresPublicProperties ();
-		}
-
-		[Kept]
-		static void TestGetUnderlyingTypeOnClasses ()
-		{
-			UnderlyingTypeOfAnnotatedParameterRequiresPublicProperties (typeof (TestClass));
-			UnderlyingTypeOfAnnotatedGenericParameterRequiresPublicProperties<TestClass> ();
-			UnderlyingTypeOfUnannotatedParameterRequiresPublicProperties (typeof (TestClass));
-			UnderlyingTypeOfUnannotatedGenericParameterRequiresProperties<TestClass> ();
-		}
-
-		[Kept]
-		static void TestGetUnderlyingTypeOnStructs ()
-		{
-			UnderlyingTypeOfAnnotatedParameterRequiresPublicProperties (typeof (TestStruct));
-			UnderlyingTypeOfAnnotatedGenericParameterRequiresPublicProperties<TestStruct> ();
-			UnderlyingTypeOfUnannotatedParameterRequiresPublicProperties (typeof (TestStruct));
-			UnderlyingTypeOfUnannotatedGenericParameterRequiresProperties<TestStruct> ();
-		}
-
-		[Kept]
-		static void TestGetUnderlyingTypeOnNullableStructs ()
-		{
-			UnderlyingTypeOfAnnotatedParameterRequiresPublicProperties (typeof (Nullable<TestStruct>));
-			UnderlyingTypeOfAnnotatedGenericParameterRequiresPublicProperties<Nullable<TestStruct>> ();
-			UnderlyingTypeOfUnannotatedParameterRequiresPublicProperties (typeof (Nullable<TestStruct>));
-			UnderlyingTypeOfUnannotatedGenericParameterRequiresProperties<Nullable<TestStruct>> ();
-		}
-
-		[Kept]
-		static void TestGetUnderlyingTypeOfCreatedNullableOnStructs ()
-		{
-			NullableOfAnnotatedParameterRequiresPublicProperties (typeof (TestStruct));
-			NullableOfUnannotatedGenericParameterRequiresPublicProperties<TestStruct> ();
-			MakeGenericNullableOfUnannotatedParameterRequiresPublicProperties (typeof (TestStruct));
-			NullableOfUnannotatedGenericParameterRequiresPublicProperties<TestStruct> ();
 		}
 
 		[Kept]
 		[ExpectedWarning ("IL2067")]
 		static void MakeGenericNullableOfUnannotatedParameterRequiresPublicProperties (Type t)
 		{
-			(Nullable.GetUnderlyingType ((typeof (Nullable<>)).MakeGenericType (t))).RequiresPublicProperties ();
+			(Nullable.GetUnderlyingType (typeof (Nullable<>).MakeGenericType (t))).RequiresPublicProperties ();
 		}
+
+		[Kept]
+		static void MakeGenericNullableOfAnnotatedGenericParameterRequiresPublicProperties<[KeptAttributeAttribute (typeof (DAM))][DAM (DAMT.PublicProperties)] T> ()
+		{
+			(Nullable.GetUnderlyingType (typeof (Nullable<>).MakeGenericType (typeof (T)))).RequiresPublicProperties ();
+		}
+
+		[Kept]
+		[ExpectedWarning ("IL2087")]
+		static void MakeGenericNullableOfUnannotatedGenericParameterRequiresPublicProperties<T> ()
+		{
+			(Nullable.GetUnderlyingType (typeof (Nullable<>).MakeGenericType (typeof (T)))).RequiresPublicProperties ();
+		}
+
+		[Kept]
+		static void TestGetUnderlyingTypeOnStructs ()
+		{
+			UnderlyingTypeOfAnnotatedParameterRequiresPublicProperties (typeof (TestType));
+			UnderlyingTypeOfAnnotatedGenericParameterRequiresPublicProperties<TestType> ();
+			UnderlyingTypeOfUnannotatedParameterRequiresPublicProperties (typeof (TestType));
+			UnderlyingTypeOfUnannotatedGenericParameterRequiresProperties<TestType> ();
+		}
+
+		[Kept]
+		static void TestAnnotationsOnNullableKeepsMembersOnUnderlyingType ()
+		{
+			UnderlyingTypeOfAnnotatedParameterRequiresPublicProperties (typeof (Nullable<TestStructPassedInsideNullable>));
+			UnderlyingTypeOfAnnotatedGenericParameterRequiresPublicProperties<Nullable<TestStructPassedInsideNullable>> ();
+			UnderlyingTypeOfUnannotatedParameterRequiresPublicProperties (typeof (Nullable<TestStructPassedInsideNullable>));
+			UnderlyingTypeOfUnannotatedGenericParameterRequiresProperties<Nullable<TestStructPassedInsideNullable>> ();
+		}
+
+		[Kept]
+		static void TestGetUnderlyingTypeOfCreatedNullableOnStructs ()
+		{
+			MakeGenericNullableOfAnnotatedParameterRequiresPublicProperties (typeof (TestType));
+			MakeGenericNullableOfAnnotatedGenericParameterRequiresPublicProperties<TestType> ();
+			NullableOfUnannotatedGenericParameterRequiresPublicProperties<TestType> ();
+			MakeGenericNullableOfUnannotatedParameterRequiresPublicProperties (typeof (TestType));
+			MakeGenericNullableOfUnannotatedGenericParameterRequiresPublicProperties<TestType> ();
+			NullableOfUnannotatedGenericParameterRequiresPublicProperties<TestType> ();
+		}
+
 
 		[Kept]
 		[return: DynamicallyAccessedMembers (DAMT.PublicProperties)]
@@ -237,62 +238,15 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		[Kept]
 		[ExpectedWarning ("IL2091")]
-		static void m<T> () where T : struct
+		static void NullableOfUnannotatedGenericParamPassedAsGenericParamRequiresPublicFields<T> () where T : struct
 		{
 			RequirePublicFieldsOnGenericParam<Nullable<T>> ();
 		}
 
-		class GenericClassTypeParamRequiresPublicFields<[KeptAttributeAttribute (typeof (DAM))][DAM (DAMT.PublicFields)] T> where T : struct
-		{
-			[Kept]
-			public static void RunTests ()
-			{
-				TestRequiresPublicFieldsOnNullableT ();
-				TestRequiresPublicPropertiesOnNullableT ();
-			}
-
-			[Kept]
-			static void TestRequiresPublicFieldsOnNullableT ()
-			{
-				typeof (Nullable<T>).RequiresPublicFields ();
-			}
-
-			[Kept]
-			[ExpectedWarning ("IL2087")]
-			static void TestRequiresPublicPropertiesOnNullableT ()
-			{
-				typeof (Nullable<T>).RequiresPublicProperties ();
-			}
-
-		}
-
 		[Kept]
-		struct GenericClassTypeParam
+		static void NullableOfAnnotatedGenericParamPassedAsGenericParamRequiresPublicFields<[KeptAttributeAttribute (typeof (DAM))][DAM (DAMT.PublicFields)] T> () where T : struct
 		{
-		}
-
-		class GenericClassUnderlyingTypeParamRequiresPublicFields<[KeptAttributeAttribute (typeof (DAM))][DAM (DAMT.PublicFields)] T>
-		{
-			[Kept]
-			public static void RunTests ()
-			{
-				TestRequiresPublicFieldsOnNullableT ();
-				TestRequiresPublicPropertiesOnNullableT ();
-			}
-
-			[Kept]
-			static void TestRequiresPublicFieldsOnNullableT ()
-			{
-				Nullable.GetUnderlyingType (typeof (T)).RequiresPublicFields ();
-			}
-
-			[Kept]
-			[ExpectedWarning ("IL2087")]
-			static void TestRequiresPublicPropertiesOnNullableT ()
-			{
-				Nullable.GetUnderlyingType (typeof (T)).RequiresPublicProperties ();
-			}
-
+			RequirePublicFieldsOnGenericParam<Nullable<T>> ();
 		}
 	}
 }
