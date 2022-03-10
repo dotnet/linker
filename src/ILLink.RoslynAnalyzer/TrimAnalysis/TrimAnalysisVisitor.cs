@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System.Collections.Immutable;
+using System.Linq;
 using ILLink.RoslynAnalyzer.DataFlow;
 using ILLink.Shared.DataFlow;
 using ILLink.Shared.TrimAnalysis;
@@ -23,6 +24,11 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 		public readonly TrimAnalysisPatternStore TrimAnalysisPatterns;
 
 		readonly ValueSetLattice<SingleValue> _multiValueLattice;
+
+		// Limit tracking array values to 32 values for performance reasons.
+		// There are many arrays much longer than 32 elements in .NET,
+		// but the interesting ones for the linker are nearly always less than 32 elements.
+		private const int MaxTrackedArrayValues = 32;
 
 		public TrimAnalysisVisitor (
 			LocalStateLattice<MultiValue, ValueSetLattice<SingleValue>> lattice,
@@ -52,11 +58,25 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 					return NullValue.Instance;
 				else if (operation.Type?.SpecialType == SpecialType.System_String && constantValue is string stringConstantValue)
 					return new KnownStringValue (stringConstantValue);
-				else if (operation.Type?.TypeKind == TypeKind.Enum && constantValue is int intConstantValue)
-					return new ConstIntValue (intConstantValue);
+				else if (operation.Type?.TypeKind == TypeKind.Enum && constantValue is int enumConstantValue)
+					return new ConstIntValue (enumConstantValue);
+				else if (operation.Type?.SpecialType == SpecialType.System_Int32 && constantValue is int intConstantValue)
+					return new ConstIntValue ((int)constantValue);
 			}
 
 			return returnValue;
+		}
+
+		public override MultiValue VisitArrayCreation (IArrayCreationOperation operation, StateValue argument)
+		{
+			var value = base.VisitArrayCreation (operation, argument);
+			
+			// Don't track large arrays for performance reasons
+			if (operation.Initializer?.ElementValues.Length >= MaxTrackedArrayValues)
+				return TopValue;
+
+			var elements = operation.Initializer?.ElementValues.Select (val => Visit (val, argument)).ToArray () ?? System.Array.Empty<MultiValue> ();
+			return new ArrayValue (new ConstIntValue (elements.Length), elements);
 		}
 
 		public override MultiValue VisitConversion (IConversionOperation operation, StateValue state)
@@ -162,9 +182,37 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			);
 		}
 
-		public override MultiValue HandleArrayElementAccess (IOperation arrayReferene)
+		public override MultiValue HandleArrayElementRead (MultiValue arrayValue, MultiValue indexValue, IOperation operation)
 		{
+			if (arrayValue.AsSingleValue () is not ArrayValue arr)
+				return UnknownValue.Instance;
+
+			if (indexValue.AsConstInt () is not int index)
+				return UnknownValue.Instance;
+
+			if (arr.TryGetValueByIndex (index, out var elementValue))
+				return elementValue;
+
 			return UnknownValue.Instance;
+		}
+
+		public override void HandleArrayElementWrite (MultiValue arrayValue, MultiValue indexValue, MultiValue valueToWrite, IOperation operation)
+		{
+			int? index = indexValue.AsConstInt ();
+			foreach (var arraySingleValue in arrayValue) {
+				if (arraySingleValue is ArrayValue arr) {
+					if (index == null) {
+						// Reset the array to all unknowns - since we don't know which index is being assigned
+						arr.IndexValues.Clear ();
+					} else {
+						if (arr.IndexValues.TryGetValue (index.Value, out var existingValue)) {
+							arr.IndexValues[index.Value] = _multiValueLattice.Meet (existingValue, valueToWrite);
+						} else if (arr.IndexValues.Count < MaxTrackedArrayValues) {
+							arr.IndexValues[index.Value] = valueToWrite;
+						}
+					}
+				}
+			}
 		}
 
 		public override MultiValue HandleMethodCall (IMethodSymbol calledMethod, MultiValue instance, ImmutableArray<MultiValue> arguments, IOperation operation)
@@ -194,6 +242,13 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 				arguments,
 				operation,
 				Context.OwningSymbol));
+
+			foreach (var argument in arguments) {
+				foreach (var argumentValue in argument) {
+					if (argumentValue is ArrayValue arrayValue)
+						arrayValue.IndexValues.Clear ();
+				}
+			}
 
 			return methodReturnValue;
 		}

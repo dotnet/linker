@@ -188,25 +188,22 @@ namespace Mono.Linker.Dataflow
 			int? maxTrackedValues = null)
 			where KeyType : notnull
 		{
-			ValueBasicBlockPair newValue = new ValueBasicBlockPair { BasicBlockIndex = curBasicBlock };
-
-			ValueBasicBlockPair existingValue;
-			if (valueCollection.TryGetValue (collectionKey, out existingValue)) {
+			if (valueCollection.TryGetValue (collectionKey, out ValueBasicBlockPair existingValue)) {
+				MultiValue value;
 				if (existingValue.BasicBlockIndex == curBasicBlock) {
 					// If the previous value was stored in the current basic block, then we can safely 
 					// overwrite the previous value with the new one.
-					newValue.Value = valueToStore;
+					value = valueToStore;
 				} else {
 					// If the previous value came from a previous basic block, then some other use of 
 					// the local could see the previous value, so we must merge the new value with the 
 					// old value.
-					newValue.Value = MultiValueLattice.Meet (existingValue.Value, valueToStore);
+					value = MultiValueLattice.Meet (existingValue.Value, valueToStore);
 				}
-				valueCollection[collectionKey] = newValue;
+				valueCollection[collectionKey] = new ValueBasicBlockPair (value, curBasicBlock);
 			} else if (maxTrackedValues == null || valueCollection.Count < maxTrackedValues) {
 				// We're not currently tracking a value a this index, so store the value now.
-				newValue.Value = valueToStore;
-				valueCollection[collectionKey] = newValue;
+				valueCollection[collectionKey] = new ValueBasicBlockPair(valueToStore, curBasicBlock);
 			}
 		}
 
@@ -997,7 +994,7 @@ namespace Mono.Linker.Dataflow
 		{
 			StackSlot indexToLoadFrom = PopUnknown (currentStack, 1, methodBody, operation.Offset);
 			StackSlot arrayToLoadFrom = PopUnknown (currentStack, 1, methodBody, operation.Offset);
-			if (arrayToLoadFrom.Value.Count () != 1 || arrayToLoadFrom.Value.Single () is not ArrayValue arr) {
+			if (arrayToLoadFrom.Value.AsSingleValue () is not ArrayValue arr) {
 				PushUnknown (currentStack);
 				return;
 			}
@@ -1012,8 +1009,10 @@ namespace Mono.Linker.Dataflow
 				return;
 			}
 
-			arr.IndexValues.TryGetValue (index.Value, out ValueBasicBlockPair arrayIndexValue);
-			currentStack.Push (new StackSlot (arrayIndexValue.Value, isByRef));
+			if (arr.IndexValues.TryGetValue (index.Value, out ValueBasicBlockPair arrayIndexValue))
+				currentStack.Push (new StackSlot (arrayIndexValue.Value, isByRef));
+			else
+				PushUnknown (currentStack);
 		}
 	}
 }

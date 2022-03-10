@@ -367,7 +367,13 @@ namespace ILLink.Shared.TrimAnalysis
 
 	public struct ValueBasicBlockPair
 	{
-		public MultiValue Value;
-		public int BasicBlockIndex;
+		public ValueBasicBlockPair (MultiValue value, int basicBlockIndex)
+		{
+			Value = value;
+			BasicBlockIndex = basicBlockIndex;
+		}
+
+		public MultiValue Value { get; }
+		public int BasicBlockIndex { get; }
 	}
 }
