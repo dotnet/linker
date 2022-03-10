@@ -60,7 +60,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			NullableOfAnnotatedGenericParameterRequiresPublicProperties<TestStruct> ();
 			Type hasProperties = ReturnUnderlyingTypeThatRequiresProperties<Nullable<TestStruct>> (new ());
 			hasProperties.RequiresPublicProperties ();
-			RequireMethodWithRUC ();
+			RequireAllFromUnderlyingTypeWithMethodWithRUC ();
+			RequireAllFromNullableOfTypeWithMethodWithRuc ();
 
 			DamOnNullableKeepsUnderlyingMembers ();
 			UnderlyingTypeOfCreatedNullableOfAnnotatedTRequiresPublicProperties<TestStruct> ();
@@ -80,11 +81,18 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		[Kept]
 		[ExpectedWarning ("IL2026", "message")]
-		static void RequireMethodWithRUC ()
+		static void RequireAllFromUnderlyingTypeWithMethodWithRUC ()
 		{
 			var T = typeof (Nullable<TestStructWithRucMethod>);
 			var uT = Nullable.GetUnderlyingType (T);
 			uT.RequiresAll ();
+		}
+
+		[Kept]
+		[ExpectedWarning ("IL2026", "message")]
+		static void RequireAllFromNullableOfTypeWithMethodWithRuc()
+		{
+			typeof (Nullable<TestStructWithRucMethod>).RequiresAll ();
 		}
 
 		[Kept]

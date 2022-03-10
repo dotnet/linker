@@ -15,7 +15,7 @@ namespace ILLink.Shared.TrimAnalysis
 	{
 		public NullableSystemTypeValue (in TypeProxy nullableType, in TypeProxy underlyingType)
 		{
-			Debug.Assert ((nullableType.Name == "Nullable" || nullableType.Name == "Nullable`1") && nullableType.Namespace == "System");
+			Debug.Assert (nullableType.IsTypeOf ("System", "Nullable`1"));
 			UnderlyingTypeValue = underlyingType;
 			NullableType = nullableType;
 		}

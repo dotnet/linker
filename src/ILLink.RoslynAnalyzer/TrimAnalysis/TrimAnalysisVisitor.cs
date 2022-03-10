@@ -122,19 +122,20 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 		public override MultiValue VisitTypeOf (ITypeOfOperation typeOfOperation, StateValue state)
 		{
 			var t = typeOfOperation.TypeOperand;
-			return (t.Kind, t.ContainingNamespace?.Name, t.MetadataName, (t as INamedTypeSymbol)?.TypeArguments.FirstOrDefault ()?.TypeKind) switch {
-				(SymbolKind.TypeParameter, _, _, _) =>
-					new GenericParameterValue ((ITypeParameterSymbol) t),
-				(SymbolKind.NamedType, "System", "Nullable`1", TypeKind.TypeParameter) =>
-					new NullableValueWithDynamicallyAccessedMembers (new TypeProxy (t), new GenericParameterValue ((ITypeParameterSymbol) (t as INamedTypeSymbol)!.TypeArguments[0])),
-				(SymbolKind.NamedType, "System", "Nullable`1", TypeKind.Error) =>
-					// typeof(Nullable<>)
-					new SystemTypeValue (new TypeProxy (t)),
-				(SymbolKind.NamedType, "System", "Nullable`1", _) =>
-					new NullableSystemTypeValue (new TypeProxy (t), new TypeProxy ((t as INamedTypeSymbol)!.TypeArguments[0])),
-				(SymbolKind.NamedType, _, _, _) =>
-					new SystemTypeValue (new TypeProxy (t)),
-				(_, _, _, _) => TopValue
+			if (t.Kind == SymbolKind.NamedType && t.ContainingNamespace.Name == "System" && t.MetadataName == "Nullable`1") {
+				return (t as INamedTypeSymbol)?.TypeArguments.FirstOrDefault ()?.TypeKind switch {
+					TypeKind.TypeParameter =>
+						new NullableValueWithDynamicallyAccessedMembers (new TypeProxy (t),
+							new GenericParameterValue ((ITypeParameterSymbol) (t as INamedTypeSymbol)!.TypeArguments[0])),
+					// typeof(Nullable<>) 
+					TypeKind.Error => new SystemTypeValue (new TypeProxy (t)),
+					_ => new NullableSystemTypeValue (new TypeProxy (t), new TypeProxy ((t as INamedTypeSymbol)!.TypeArguments[0])),
+				};
+			}
+			return t.Kind switch {
+				SymbolKind.TypeParameter => new GenericParameterValue ((ITypeParameterSymbol) t),
+				SymbolKind.NamedType => new SystemTypeValue (new TypeProxy (t)),
+				_ => TopValue
 			};
 		}
 

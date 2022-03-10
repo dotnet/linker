@@ -145,21 +145,23 @@ namespace Mono.Linker.Dataflow
 				// Technically this should be a new value node type as it's not a System.Type instance representation, but just the generic parameter
 				// That said we only use it to perform the dynamically accessed members checks and for that purpose treating it as System.Type is perfectly valid.
 				return new GenericParameterValue (inputGenericParameter, _context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (inputGenericParameter));
-			} else {
-				TypeDefinition? genericArgumentTypeDef = ResolveToTypeDefinition (genericArgument);
-				switch (genericArgumentTypeDef, (genericArgument as IGenericInstance)?.GenericArguments.FirstOrDefault ()) {
-				case (TypeDefinition t, GenericParameter gp) when t.IsTypeOf ("System", "Nullable`1"):
-					return new NullableValueWithDynamicallyAccessedMembers (t, new GenericParameterValue (gp, _context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (gp)));
+			} else if (ResolveToTypeDefinition (genericArgument) is TypeDefinition genericArgumentType) {
+				if (genericArgumentType.IsTypeOf ("System", "Nullable`1")) {
+					var innerGenericArgument = (genericArgument as IGenericInstance)?.GenericArguments.FirstOrDefault ();
+					switch (innerGenericArgument) {
+					case GenericParameter gp:
+						return new NullableValueWithDynamicallyAccessedMembers (genericArgumentType,
+							new GenericParameterValue (gp, _context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (gp)));
 
-				case (TypeDefinition t, TypeReference underlyingType) when t.IsTypeOf ("System", "Nullable`1"):
-					return new NullableSystemTypeValue (t, ResolveToTypeDefinition (underlyingType)!);
-
-				case (TypeDefinition t, null):
-					return new SystemTypeValue (t);
-
-				case (_, _):
-					return UnknownValue.Instance;
+					case TypeReference underlyingType:
+						return new NullableSystemTypeValue (genericArgumentType, ResolveToTypeDefinition (underlyingType)!);
+					}
 				}
+				// All values except for Nullable<T>, including Nullable<> (with no type arguments)
+				return new SystemTypeValue (genericArgumentType);
+			} 
+			else {
+				return UnknownValue.Instance;
 			}
 		}
 
@@ -356,7 +358,7 @@ namespace Mono.Linker.Dataflow
 							}
 
 							// Nullables without a type argument are considered SystemTypeValues
-							if (typeValue.RepresentedType.Namespace == "System" && typeValue.RepresentedType.Name == "Nullable`1") {
+							if (typeValue.RepresentedType.IsTypeOf("System", "Nullable`1")) {
 								foreach (var argumentValue in methodParams[1]) {
 									if ((argumentValue as ArrayValue)?.TryGetValueByIndex (0, out var underlyingMultiValue) == true) {
 										foreach (var underlyingValue in underlyingMultiValue) {

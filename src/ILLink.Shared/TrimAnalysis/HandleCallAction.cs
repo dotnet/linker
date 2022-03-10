@@ -571,7 +571,7 @@ namespace ILLink.Shared.TrimAnalysis
 				foreach (var value in instanceValue) {
 					// Nullables without a type argument are considered SystemTypeValues
 					if (value is SystemTypeValue typeValue
-						&& typeValue.RepresentedType.Namespace == "System" && (typeValue.RepresentedType.Name == "Nullable`1" || typeValue.RepresentedType.Name == "Nullable")) {
+						&& typeValue.RepresentedType.IsTypeOf("System", "Nullable`1")) {
 						foreach (var argumentValue in argumentValues[0]) {
 							if ((argumentValue as ArrayValue)?.TryGetValueByIndex (0, out var underlyingMultiValue) == true) {
 								foreach (var underlyingValue in underlyingMultiValue) {
