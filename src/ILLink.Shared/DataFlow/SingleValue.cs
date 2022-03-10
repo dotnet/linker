@@ -9,5 +9,12 @@ namespace ILLink.Shared.DataFlow
 	// - known strings
 	// - known integers
 
-	public abstract record SingleValue;
+	public abstract record SingleValue
+	{
+	}
+
+	public interface IDeepCopyValue<TSingleValue>
+	{
+		public TSingleValue DeepCopy ();
+	}
 }

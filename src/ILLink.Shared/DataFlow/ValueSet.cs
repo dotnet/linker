@@ -147,18 +147,18 @@ namespace ILLink.Shared.DataFlow
 		internal static ValueSet<TValue> Meet (ValueSet<TValue> left, ValueSet<TValue> right)
 		{
 			if (left._values == null)
-				return right;
+				return right.Clone();
 			if (right._values == null)
-				return left;
+				return left.Clone();
 
 			if (left._values is not EnumerableValues && right.Contains ((TValue) left._values))
-				return right;
+				return right.Clone();
 
 			if (right._values is not EnumerableValues && left.Contains ((TValue) right._values))
-				return left;
+				return left.Clone();
 
-			var values = new EnumerableValues (left);
-			values.UnionWith (right);
+			var values = new EnumerableValues (left.Clone());
+			values.UnionWith (right.Clone());
 			return new ValueSet<TValue> (values);
 		}
 
@@ -171,6 +171,16 @@ namespace ILLink.Shared.DataFlow
 			sb.Append (string.Join (",", this.Select (v => v.ToString ())));
 			sb.Append ("}");
 			return sb.ToString ();
+		}
+
+		public ValueSet<TValue> Clone ()
+		{
+			foreach (var value in this) {
+				if (value is IDeepCopyValue<TValue>) {
+					return new ValueSet<TValue> (this.Select(value => value is IDeepCopyValue<TValue> copyValue ? copyValue.DeepCopy () : value));
+				}
+			}
+			return this;
 		}
 	}
 }

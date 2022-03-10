@@ -7,7 +7,7 @@ using MultiValue = ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.Single
 
 namespace ILLink.Shared.TrimAnalysis
 {
-	partial record ArrayValue
+	partial record ArrayValue : IDeepCopyValue<SingleValue>
 	{
 		public readonly Dictionary<int, MultiValue> IndexValues;
 
@@ -48,6 +48,15 @@ namespace ILLink.Shared.TrimAnalysis
 			HashSet<KeyValuePair<int, MultiValue>> thisValueSet = new (IndexValues);
 			thisValueSet.ExceptWith (otherArr.IndexValues);
 			return thisValueSet.Count == 0;
+		}
+
+		public SingleValue DeepCopy ()
+		{
+			List<MultiValue> elements = new ();
+			for (int i = 0; IndexValues.TryGetValue(i, out var value); i++) {
+				elements.Add (value);
+			}
+			return new ArrayValue (Size, elements.ToArray ());
 		}
 	}
 }
