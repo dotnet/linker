@@ -61,7 +61,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 				else if (operation.Type?.TypeKind == TypeKind.Enum && constantValue is int enumConstantValue)
 					return new ConstIntValue (enumConstantValue);
 				else if (operation.Type?.SpecialType == SpecialType.System_Int32 && constantValue is int intConstantValue)
-					return new ConstIntValue ((int)constantValue);
+					return new ConstIntValue (intConstantValue);
 			}
 
 			return returnValue;

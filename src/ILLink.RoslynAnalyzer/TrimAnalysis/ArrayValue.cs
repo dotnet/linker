@@ -53,7 +53,7 @@ namespace ILLink.Shared.TrimAnalysis
 		public SingleValue DeepCopy ()
 		{
 			List<MultiValue> elements = new ();
-			for (int i = 0; IndexValues.TryGetValue(i, out var value); i++) {
+			for (int i = 0; IndexValues.TryGetValue (i, out var value); i++) {
 				elements.Add (value);
 			}
 			return new ArrayValue (Size, elements.ToArray ());

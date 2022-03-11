@@ -334,41 +334,64 @@ namespace Mono.Linker.Dataflow
 			// Type MakeGenericType (params Type[] typeArguments)
 			//
 			case IntrinsicId.Type_MakeGenericType: {
-					// We don't yet handle the case where you can create a nullable type with typeof(Nullable<>).MakeGenericType(T)
-					foreach (var value in methodParams[0]) {
-						if (value is SystemTypeValue typeValue) {
-							if (!AnalyzeGenericInstantiationTypeArray (analysisContext, methodParams[1], calledMethodDefinition, typeValue.RepresentedType.Type.GenericParameters)) {
-								bool hasUncheckedAnnotation = false;
-								foreach (var genericParameter in typeValue.RepresentedType.Type.GenericParameters) {
-									if (_context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameter) != DynamicallyAccessedMemberTypes.None ||
-										(genericParameter.HasDefaultConstructorConstraint && !typeValue.RepresentedType.Type.IsTypeOf ("System", "Nullable`1"))) {
-										// If we failed to analyze the array, we go through the analyses again
-										// and intentionally ignore one particular annotation:
-										// Special case: Nullable<T> where T : struct
-										//  The struct constraint in C# implies new() constraints, but Nullable doesn't make a use of that part.
-										//  There are several places even in the framework where typeof(Nullable<>).MakeGenericType would warn
-										//  without any good reason to do so.
-										hasUncheckedAnnotation = true;
-										break;
-									}
-								}
-								if (hasUncheckedAnnotation) {
-									analysisContext.ReportWarning (DiagnosticId.MakeGenericType, calledMethodDefinition.GetDisplayName ());
+				// Shared HandleCallAction doesn't cover all the same functionality as this does
+				// We don't yet handle the case where you can create a nullable type with typeof(Nullable<>).MakeGenericType(T)
+				foreach (var value in methodParams[0]) {
+					if (value is SystemTypeValue typeValue) {
+						if (!AnalyzeGenericInstantiationTypeArray (analysisContext, methodParams[1], calledMethodDefinition, typeValue.RepresentedType.Type.GenericParameters)) {
+							bool hasUncheckedAnnotation = false;
+							foreach (var genericParameter in typeValue.RepresentedType.Type.GenericParameters) {
+								if (_context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameter) != DynamicallyAccessedMemberTypes.None ||
+									(genericParameter.HasDefaultConstructorConstraint && !typeValue.RepresentedType.Type.IsTypeOf ("System", "Nullable`1"))) {
+									// If we failed to analyze the array, we go through the analyses again
+									// and intentionally ignore one particular annotation:
+									// Special case: Nullable<T> where T : struct
+									//  The struct constraint in C# implies new() constraints, but Nullable doesn't make a use of that part.
+									//  There are several places even in the framework where typeof(Nullable<>).MakeGenericType would warn
+									//  without any good reason to do so.
+									hasUncheckedAnnotation = true;
+									break;
 								}
 							}
-
-							// We haven't found any generic parameters with annotations, so there's nothing to validate.
-						} else if (value == NullValue.Instance) {
-							// Do nothing - null value is valid and should not cause warnings nor marking
-						} else {
-							// We have no way to "include more" to fix this if we don't know, so we have to warn
-							analysisContext.ReportWarning (DiagnosticId.MakeGenericType, calledMethodDefinition.GetDisplayName ());
+							if (hasUncheckedAnnotation) {
+								analysisContext.ReportWarning (DiagnosticId.MakeGenericType, calledMethodDefinition.GetDisplayName ());
+							}
 						}
-					}
 
-					// We don't want to lose track of the type
-					// in case this is e.g. Activator.CreateInstance(typeof(Foo<>).MakeGenericType(...));
-					methodReturnValue = MultiValueLattice.Meet (methodReturnValue, methodParams[0]);
+						// Nullables without a type argument are considered SystemTypeValues
+						if (typeValue.RepresentedType.IsTypeOf ("System", "Nullable`1")) {
+							foreach (var argumentValue in methodParams[1]) {
+								if ((argumentValue as ArrayValue)?.TryGetValueByIndex (0, out var underlyingMultiValue) == true) {
+									foreach (var underlyingValue in underlyingMultiValue) {
+										switch (underlyingValue) {
+										case SystemTypeValue systemTypeValue:
+											methodReturnValue = MultiValueLattice.Meet (methodReturnValue, new NullableSystemTypeValue (typeValue.RepresentedType, systemTypeValue.RepresentedType));
+											break;
+										// Generic Parameters and method parameters with annotations
+										case ValueWithDynamicallyAccessedMembers damValue:
+											methodReturnValue = MultiValueLattice.Meet (methodReturnValue, new NullableValueWithDynamicallyAccessedMembers (typeValue.RepresentedType, damValue));
+											break;
+										// Nullable values and array values cannot be used as generic arguments to nullables, so we don't need to worry about anything else here
+										default:
+											break;
+										}
+									}
+								}
+							}
+						}
+
+						// We haven't found any generic parameters with annotations, so there's nothing to validate.
+					} else if (value == NullValue.Instance) {
+						// Do nothing - null value is valid and should not cause warnings nor marking
+					} else {
+						// We have no way to "include more" to fix this if we don't know, so we have to warn
+						analysisContext.ReportWarning (DiagnosticId.MakeGenericType, calledMethodDefinition.GetDisplayName ());
+					}
+				}
+
+				// We don't want to lose track of the type
+				// in case this is e.g. Activator.CreateInstance(typeof(Foo<>).MakeGenericType(...));
+				methodReturnValue = MultiValueLattice.Meet (methodReturnValue, methodParams[0]);
 				}
 				break;
 

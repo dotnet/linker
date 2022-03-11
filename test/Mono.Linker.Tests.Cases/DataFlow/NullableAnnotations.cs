@@ -75,8 +75,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[Kept]
-		// Bug
-		//[ExpectedWarning ("IL2026", "message")]
+		[ExpectedWarning ("IL2026", "message")]
 		static void RequireAllFromMadeGenericNullableOfTypeWithMethodWithRuc ()
 		{
 			typeof (Nullable<>).MakeGenericType (typeof (TestStructWithRucMethod)).RequiresAll ();
@@ -136,8 +135,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[Kept]
-		// Bug
-		//[ExpectedWarning ("IL2067")]
+		[ExpectedWarning ("IL2067")]
 		static void MakeGenericNullableOfUnannotatedParameterRequiresPublicProperties (Type t)
 		{
 			(Nullable.GetUnderlyingType (typeof (Nullable<>).MakeGenericType (t))).RequiresPublicProperties ();
@@ -150,8 +148,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[Kept]
-		// Bug
-		//[ExpectedWarning ("IL2087")]
+		[ExpectedWarning ("IL2087")]
 		static void MakeGenericNullableOfUnannotatedGenericParameterRequiresPublicProperties<T> ()
 		{
 			(Nullable.GetUnderlyingType (typeof (Nullable<>).MakeGenericType (typeof (T)))).RequiresPublicProperties ();
