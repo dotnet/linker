@@ -575,7 +575,7 @@ namespace ILLink.Shared.TrimAnalysis
 							AddReturnValue (GetMethodReturnValue (calledMethod, propagatedMemberTypes));
 						} else if (value is SystemTypeValue systemTypeValue) {
 							if (TryGetBaseType (systemTypeValue.RepresentedType, out var baseType))
-								AddReturnValue (new SystemTypeValue (baseType));
+								AddReturnValue (new SystemTypeValue (baseType.Value));
 							else
 								AddReturnValue (GetMethodReturnValue (calledMethod, returnValueDynamicallyAccessedMemberTypes));
 						} else if (value == NullValue.Instance) {
@@ -735,7 +735,7 @@ namespace ILLink.Shared.TrimAnalysis
 
 		private partial IEnumerable<SystemTypeValue> GetNestedTypesOnType (TypeProxy type, string name, BindingFlags? bindingFlags);
 
-		private partial bool TryGetBaseType (TypeProxy type, out TypeProxy baseType);
+		private partial bool TryGetBaseType (TypeProxy type, [NotNullWhen(true)] out TypeProxy? baseType);
 
 		private partial void MarkStaticConstructor (TypeProxy type);
 
