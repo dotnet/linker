@@ -914,43 +914,43 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			{
 				Action _ =
 					[ExpectedWarning ("IL2026", "--MethodWithRequires--")]
-					[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
-					[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
-					() => MethodWithRequires ();
+				[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+				[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+				() => MethodWithRequires ();
 			}
 
 			static void TestCallWithClosure (int p = 0)
 			{
 				Action _ =
 					[ExpectedWarning ("IL2026", "--MethodWithRequires--")]
-					[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
-					[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
-					() => {
-						p++;
-						MethodWithRequires ();
-					};
+				[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+				[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+				() => {
+					p++;
+					MethodWithRequires ();
+				};
 			}
 
 			static void TestReflectionAccess ()
 			{
 				Action _ =
 					[ExpectedWarning ("IL2026", "--MethodWithRequires--", ProducedBy = ProducedBy.Trimmer)]
-					() => {
-						typeof (RequiresInCompilerGeneratedCode)
-							.GetMethod ("MethodWithRequires", System.Reflection.BindingFlags.NonPublic)
-							.Invoke (null, new object[] { });
-					};
+				() => {
+					typeof (RequiresInCompilerGeneratedCode)
+						.GetMethod ("MethodWithRequires", System.Reflection.BindingFlags.NonPublic)
+						.Invoke (null, new object[] { });
+				};
 			}
 
 			static void TestLdftn ()
 			{
 				Action _ =
 					[ExpectedWarning ("IL2026", "--MethodWithRequires--")]
-					[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
-					[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
-					() => {
-						var action = new Action (MethodWithRequires);
-					};
+				[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+				[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+				() => {
+					var action = new Action (MethodWithRequires);
+				};
 			}
 
 			[ExpectedWarning ("IL2026", "--MethodWithRequiresAndReturns--", CompilerGeneratedCode = true)]
@@ -969,9 +969,9 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			{
 				Action _ =
 					[ExpectedWarning ("IL2026", "--TypeWithMethodWithRequires.MethodWithRequires--", ProducedBy = ProducedBy.Trimmer)]
-					() => {
-						typeof (TypeWithMethodWithRequires).RequiresNonPublicMethods ();
-					};
+				() => {
+					typeof (TypeWithMethodWithRequires).RequiresNonPublicMethods ();
+				};
 			}
 
 			public static void Test ()
@@ -1000,9 +1000,9 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			{
 				Action _ =
 					[ExpectedWarning ("IL2026")]
-					[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
-					[ExpectedWarning ("IL3050", ProducedBy = ProducedBy.Analyzer)]
-					() => MethodWithRequires ();
+				[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
+				[ExpectedWarning ("IL3050", ProducedBy = ProducedBy.Analyzer)]
+				() => MethodWithRequires ();
 			}
 
 			[RequiresUnreferencedCode ("Suppress in body")]
@@ -1013,7 +1013,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				// This should not produce warning because the Requires
 				Action<Type> _ =
 					[ExpectedWarning ("IL2067", ProducedBy = ProducedBy.Trimmer)]
-					(t) => t.RequiresPublicMethods ();
+				(t) => t.RequiresPublicMethods ();
 			}
 
 			[RequiresUnreferencedCode ("Suppress in body")]
@@ -1023,12 +1023,12 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			{
 				Action _ =
 					[ExpectedWarning ("IL2026")]
-					[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
-					[ExpectedWarning ("IL3050", ProducedBy = ProducedBy.Analyzer)]
-					() => {
-						p++;
-						MethodWithRequires ();
-					};
+				[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
+				[ExpectedWarning ("IL3050", ProducedBy = ProducedBy.Analyzer)]
+				() => {
+					p++;
+					MethodWithRequires ();
+				};
 			}
 
 			[RequiresUnreferencedCode ("Suppress in body")]
@@ -1039,11 +1039,11 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				Action _ =
 					// Analyzer doesn't recognize reflection access - so doesn't warn in this case
 					[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Trimmer)]
-					() => {
-						typeof (RequiresInCompilerGeneratedCode)
-							.GetMethod ("MethodWithRequires", System.Reflection.BindingFlags.NonPublic)
-							.Invoke (null, new object[] { });
-					};
+				() => {
+					typeof (RequiresInCompilerGeneratedCode)
+						.GetMethod ("MethodWithRequires", System.Reflection.BindingFlags.NonPublic)
+						.Invoke (null, new object[] { });
+				};
 			}
 
 			[RequiresUnreferencedCode ("Suppress in body")]
@@ -1053,11 +1053,11 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			{
 				Action _ =
 					[ExpectedWarning ("IL2026")]
-					[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
-					[ExpectedWarning ("IL3050", ProducedBy = ProducedBy.Analyzer)]
-					() => {
-						var action = new Action (MethodWithRequires);
-					};
+				[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
+				[ExpectedWarning ("IL3050", ProducedBy = ProducedBy.Analyzer)]
+				() => {
+					var action = new Action (MethodWithRequires);
+				};
 			}
 
 			[ExpectedWarning ("IL2026", "--MethodWithRequiresAndReturns--", CompilerGeneratedCode = true)]
@@ -1080,9 +1080,9 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				Action _ =
 					// Analyzer doesn't apply DAM - so won't see this warnings
 					[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Trimmer)]
-					() => {
-						typeof (TypeWithMethodWithRequires).RequiresNonPublicMethods ();
-					};
+				() => {
+					typeof (TypeWithMethodWithRequires).RequiresNonPublicMethods ();
+				};
 			}
 
 			[RequiresUnreferencedCode ("Suppress in body")]
@@ -1094,7 +1094,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 					// TODO: Fix the discrepancy between linker and analyzer
 					// https://github.com/dotnet/linker/issues/2350
 					[ExpectedWarning ("IL2077", ProducedBy = ProducedBy.Trimmer)]
-					() => unknownType.RequiresNonPublicMethods ();
+				() => unknownType.RequiresNonPublicMethods ();
 			}
 
 			// The warning is currently not detected by roslyn analyzer since it doesn't analyze DAM yet

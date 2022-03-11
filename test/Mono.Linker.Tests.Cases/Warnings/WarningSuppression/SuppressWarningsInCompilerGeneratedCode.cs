@@ -349,7 +349,7 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 			{
 				Action _ =
 					[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Trimmer)]
-					() => RequiresUnreferencedCodeMethod ();
+				() => RequiresUnreferencedCodeMethod ();
 			}
 
 			[UnconditionalSuppressMessage ("Test", "IL2026")]
@@ -357,7 +357,7 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 			{
 				Action _ =
 					[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Trimmer)]
-					() => typeof (SuppressWarningsInCompilerGeneratedCode)
+				() => typeof (SuppressWarningsInCompilerGeneratedCode)
 					.GetMethod ("RequiresUnreferencedCodeMethod", System.Reflection.BindingFlags.NonPublic)
 					.Invoke (null, new object[] { });
 			}
@@ -367,7 +367,7 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 			{
 				Action _ =
 					[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Trimmer)]
-					() => { var _ = new Action (RequiresUnreferencedCodeMethod); };
+				() => { var _ = new Action (RequiresUnreferencedCodeMethod); };
 			}
 
 			[UnconditionalSuppressMessage ("Test", "IL2026")]
@@ -375,7 +375,7 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 			{
 				Action _ =
 					[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Trimmer)]
-					() => typeof (TypeWithRUCMethod).RequiresNonPublicMethods ();
+				() => typeof (TypeWithRUCMethod).RequiresNonPublicMethods ();
 			}
 
 			[UnconditionalSuppressMessage ("Test", "IL2077")]
@@ -383,7 +383,7 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 			{
 				Action _ =
 					[ExpectedWarning ("IL2077", ProducedBy = ProducedBy.Trimmer)]
-					() => unknownType.RequiresNonPublicMethods ();
+				() => unknownType.RequiresNonPublicMethods ();
 			}
 
 			[UnconditionalSuppressMessage ("Test", "IL2091")]
@@ -391,7 +391,7 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 			{
 				Action _ =
 					[ExpectedWarning ("IL2091", ProducedBy = ProducedBy.Trimmer)]
-					() => MethodWithGenericWhichRequiresMethods<TUnknown> ();
+				() => MethodWithGenericWhichRequiresMethods<TUnknown> ();
 			}
 
 			[UnconditionalSuppressMessage ("Test", "IL2091")]
@@ -399,7 +399,7 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 			{
 				Action _ =
 					[ExpectedWarning ("IL2091", ProducedBy = ProducedBy.Trimmer)]
-					() => new TypeWithGenericWhichRequiresNonPublicFields<TUnknown> ();
+				() => new TypeWithGenericWhichRequiresNonPublicFields<TUnknown> ();
 			}
 
 			public static void Test ()
