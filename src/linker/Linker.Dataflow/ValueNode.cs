@@ -76,6 +76,14 @@ namespace ILLink.Shared.TrimAnalysis
 				}
 				break;
 
+			case NullableRuntimeTypeWithDamHandleValue value:
+				foundCycle = value.UnderlyingTypeValue.DetectCycle (seenNodes, allNodesSeen);
+				break;
+
+			case NullableValueWithDynamicallyAccessedMembers value:
+				foundCycle = value.UnderlyingTypeValue.DetectCycle (seenNodes, allNodesSeen);
+				break;
+
 			default:
 				throw new Exception (String.Format ("Unknown node type: {0}", node.GetType ().Name));
 			}

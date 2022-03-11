@@ -145,16 +145,22 @@ namespace Mono.Linker.Dataflow
 				// Technically this should be a new value node type as it's not a System.Type instance representation, but just the generic parameter
 				// That said we only use it to perform the dynamically accessed members checks and for that purpose treating it as System.Type is perfectly valid.
 				return new GenericParameterValue (inputGenericParameter, _context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (inputGenericParameter));
-			} else {
-				TypeDefinition? genericArgumentTypeDef = ResolveToTypeDefinition (genericArgument);
-				if (genericArgumentTypeDef != null) {
-					return new SystemTypeValue (genericArgumentTypeDef);
-				} else {
-					// If we can't resolve the generic argument, it means we can't apply potential requirements on it
-					// so track it as unknown value. If we later on hit this unknown value as being used somewhere
-					// where we need to apply requirements on it, it will generate a warning.
-					return UnknownValue.Instance;
+			} else if (ResolveToTypeDefinition (genericArgument) is TypeDefinition genericArgumentType) {
+				if (genericArgumentType.IsTypeOf ("System", "Nullable`1")) {
+					var innerGenericArgument = (genericArgument as IGenericInstance)?.GenericArguments.FirstOrDefault ();
+					switch (innerGenericArgument) {
+					case GenericParameter gp:
+						return new NullableValueWithDynamicallyAccessedMembers (genericArgumentType,
+							new GenericParameterValue (gp, _context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (gp)));
+
+					case TypeReference underlyingType:
+						return new NullableSystemTypeValue (genericArgumentType, ResolveToTypeDefinition (underlyingType)!);
+					}
 				}
+				// All values except for Nullable<T>, including Nullable<> (with no type arguments)
+				return new SystemTypeValue (genericArgumentType);
+			} else {
+				return UnknownValue.Instance;
 			}
 		}
 
@@ -288,6 +294,7 @@ namespace Mono.Linker.Dataflow
 			case IntrinsicId.Type_GetMember:
 			case IntrinsicId.Type_GetMethod:
 			case IntrinsicId.Type_GetNestedType:
+			case IntrinsicId.Nullable_GetUnderlyingType:
 			case IntrinsicId.Expression_Property when calledMethod.HasParameterOfType (1, "System.Reflection.MethodInfo"):
 			case var fieldOrPropertyInstrinsic when fieldOrPropertyInstrinsic == IntrinsicId.Expression_Field || fieldOrPropertyInstrinsic == IntrinsicId.Expression_Property:
 			case IntrinsicId.Type_get_BaseType: {
@@ -327,6 +334,7 @@ namespace Mono.Linker.Dataflow
 			// Type MakeGenericType (params Type[] typeArguments)
 			//
 			case IntrinsicId.Type_MakeGenericType: {
+					// We don't yet handle the case where you can create a nullable type with typeof(Nullable<>).MakeGenericType(T)
 					foreach (var value in methodParams[0]) {
 						if (value is SystemTypeValue typeValue) {
 							if (!AnalyzeGenericInstantiationTypeArray (analysisContext, methodParams[1], calledMethodDefinition, typeValue.RepresentedType.Type.GenericParameters)) {
@@ -360,7 +368,7 @@ namespace Mono.Linker.Dataflow
 
 					// We don't want to lose track of the type
 					// in case this is e.g. Activator.CreateInstance(typeof(Foo<>).MakeGenericType(...));
-					methodReturnValue = methodParams[0];
+					methodReturnValue = MultiValueLattice.Meet (methodReturnValue, methodParams[0]);
 				}
 				break;
 

@@ -4,7 +4,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
@@ -105,15 +104,12 @@ namespace ILLink.Shared.DataFlow
 				return false;
 
 			if (_values is EnumerableValues enumerableValues) {
-				Debug.Assert (enumerableValues.Count > 1);
 				if (other._values is EnumerableValues otherValuesSet) {
-					Debug.Assert (otherValuesSet.Count > 1);
 					return enumerableValues.SetEquals (otherValuesSet);
 				} else
 					return false;
 			} else {
-				if (other._values is EnumerableValues otherEnumerableValues) {
-					Debug.Assert (otherEnumerableValues.Count > 1);
+				if (other._values is EnumerableValues) {
 					return false;
 				}
 

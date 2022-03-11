@@ -126,12 +126,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 		public override MultiValue VisitTypeOf (ITypeOfOperation typeOfOperation, StateValue state)
 		{
-			if (typeOfOperation.TypeOperand is ITypeParameterSymbol typeParameter)
-				return new GenericParameterValue (typeParameter);
-			else if (typeOfOperation.TypeOperand is INamedTypeSymbol namedType)
-				return new SystemTypeValue (new TypeProxy (namedType));
-
-			return TopValue;
+			return SingleValueExtensions.FromTypeSymbol (typeOfOperation.TypeOperand) ?? TopValue;
 		}
 
 		public override MultiValue VisitBinaryOperator (IBinaryOperation operation, StateValue argument)

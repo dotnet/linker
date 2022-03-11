@@ -11,8 +11,10 @@ namespace ILLink.Shared.TrimAnalysis
 	/// </summary>
 	sealed record SystemTypeValue : SingleValue
 	{
-		public SystemTypeValue (in TypeProxy representedType) => RepresentedType = representedType;
-
+		public SystemTypeValue (in TypeProxy representedType)
+		{
+			RepresentedType = representedType;
+		}
 		public readonly TypeProxy RepresentedType;
 
 		public override string ToString () => this.ValueToString (RepresentedType);

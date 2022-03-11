@@ -228,5 +228,10 @@ namespace ILLink.RoslynAnalyzer.Tests
 		{
 			return RunTest (nameof (XmlAnnotations));
 		}
+		[Fact]
+		public Task NullableAnnotations ()
+		{
+			return RunTest ();
+		}
 	}
 }
