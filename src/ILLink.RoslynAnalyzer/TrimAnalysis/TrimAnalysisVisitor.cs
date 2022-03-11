@@ -70,7 +70,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 		public override MultiValue VisitArrayCreation (IArrayCreationOperation operation, StateValue argument)
 		{
 			var value = base.VisitArrayCreation (operation, argument);
-			
+
 			// Don't track large arrays for performance reasons
 			if (operation.Initializer?.ElementValues.Length >= MaxTrackedArrayValues)
 				return TopValue;

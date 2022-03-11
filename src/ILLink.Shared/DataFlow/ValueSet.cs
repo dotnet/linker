@@ -143,18 +143,18 @@ namespace ILLink.Shared.DataFlow
 		internal static ValueSet<TValue> Meet (ValueSet<TValue> left, ValueSet<TValue> right)
 		{
 			if (left._values == null)
-				return right.Clone();
+				return right.Clone ();
 			if (right._values == null)
-				return left.Clone();
+				return left.Clone ();
 
 			if (left._values is not EnumerableValues && right.Contains ((TValue) left._values))
-				return right.Clone();
+				return right.Clone ();
 
 			if (right._values is not EnumerableValues && left.Contains ((TValue) right._values))
-				return left.Clone();
+				return left.Clone ();
 
-			var values = new EnumerableValues (left.Clone());
-			values.UnionWith (right.Clone());
+			var values = new EnumerableValues (left.Clone ());
+			values.UnionWith (right.Clone ());
 			return new ValueSet<TValue> (values);
 		}
 
@@ -169,11 +169,13 @@ namespace ILLink.Shared.DataFlow
 			return sb.ToString ();
 		}
 
-		public ValueSet<TValue> Clone ()
+		// Meet should copy the values, but most SingleValues are immutable.
+		// Clone returns `this` if there are no mutable SingleValues (SingleValues that implement IDeepCopyValue), otherwise creates a new ValueSet with copies of the copiable Values
+		private ValueSet<TValue> Clone ()
 		{
 			foreach (var value in this) {
 				if (value is IDeepCopyValue<TValue>) {
-					return new ValueSet<TValue> (this.Select(value => value is IDeepCopyValue<TValue> copyValue ? copyValue.DeepCopy () : value));
+					return new ValueSet<TValue> (this.Select (value => value is IDeepCopyValue<TValue> copyValue ? copyValue.DeepCopy () : value));
 				}
 			}
 			return this;

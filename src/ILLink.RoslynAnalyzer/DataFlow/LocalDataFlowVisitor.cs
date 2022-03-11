@@ -199,12 +199,12 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			if (operation.GetValueUsageInfo (Context.OwningSymbol).HasFlag (ValueUsageInfo.Read)) {
 				// Accessing an array element for reading is a call to the indexer
 				// or a plain array access. Just handle plain array access for now.
-				
+
 				// Only handle simple index access
 				if (operation.Indices.Length != 1)
 					return TopValue;
 
-				return HandleArrayElementRead (Visit(operation.ArrayReference, state), Visit (operation.Indices[0], state), operation);
+				return HandleArrayElementRead (Visit (operation.ArrayReference, state), Visit (operation.Indices[0], state), operation);
 			}
 
 			return TopValue;

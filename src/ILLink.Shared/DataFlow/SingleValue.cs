@@ -9,10 +9,9 @@ namespace ILLink.Shared.DataFlow
 	// - known strings
 	// - known integers
 
-	public abstract record SingleValue
-	{
-	}
+	public abstract record SingleValue;
 
+	// SingleValues that are mutable should implement IDeepCopyValue to be copied in Lattice.Meet()
 	public interface IDeepCopyValue<TSingleValue>
 	{
 		public TSingleValue DeepCopy ();
