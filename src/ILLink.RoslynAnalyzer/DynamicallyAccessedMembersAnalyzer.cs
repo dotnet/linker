@@ -107,13 +107,11 @@ namespace ILLink.RoslynAnalyzer
 				}, SyntaxKind.GenericName);
 				context.RegisterSymbolAction (context => {
 					VerifyMemberOnlyApplyToTypesOrStrings (context, context.Symbol);
-					VerifyDamOnPropertyAndAccessorMatch ((IMethodSymbol) context.Symbol, context);
-					VerifyDamOnDerivedAndBaseMethodsMatch (context);
+					VerifyDamOnPropertyAndAccessorMatch (context, (IMethodSymbol) context.Symbol);
+					VerifyDamOnDerivedAndBaseMethodsMatch (context, (IMethodSymbol) context.Symbol);
 				}, SymbolKind.Method);
 				context.RegisterSymbolAction (context => {
-					if (context.Symbol is INamedTypeSymbol typeSymbol) {
-						VerifyDamOnInterfaceAndImplementationMethodsMatch (typeSymbol, context);
-					}
+					VerifyDamOnInterfaceAndImplementationMethodsMatch (context, (INamedTypeSymbol) context.Symbol);
 				}, SymbolKind.NamedType);
 				context.RegisterSymbolAction (context => {
 					VerifyMemberOnlyApplyToTypesOrStrings (context, context.Symbol);
@@ -221,35 +219,37 @@ namespace ILLink.RoslynAnalyzer
 			}
 		}
 
-		static void VerifyDamOnDerivedAndBaseMethodsMatch (SymbolAnalysisContext context)
+		static void VerifyDamOnDerivedAndBaseMethodsMatch (SymbolAnalysisContext context, IMethodSymbol methodSymbol)
 		{
-			if (context.Symbol.TryGetOverriddenMember (out var overriddenSymbol) && overriddenSymbol is IMethodSymbol overriddenMethod
+			if (methodSymbol.TryGetOverriddenMember (out var overriddenSymbol) && overriddenSymbol is IMethodSymbol overriddenMethod
 				&& context.Symbol is IMethodSymbol method) {
-				VerifyDamOnMethodsMatch (method, overriddenMethod, context);
+				VerifyDamOnMethodsMatch (context, method, overriddenMethod);
 			}
 		}
 
-		static void VerifyDamOnMethodsMatch (IMethodSymbol method, IMethodSymbol overriddenMethod, SymbolAnalysisContext context)
+		static void VerifyDamOnMethodsMatch (SymbolAnalysisContext context, IMethodSymbol method, IMethodSymbol overriddenMethod)
 		{
 			if (FlowAnnotations.GetMethodReturnValueAnnotation (method) != FlowAnnotations.GetMethodReturnValueAnnotation (overriddenMethod))
 				context.ReportDiagnostic (Diagnostic.Create (
 					DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchOnMethodReturnValueBetweenOverrides),
 					method.Locations[0], method.GetDisplayName (), overriddenMethod.GetDisplayName ()));
 
-			for (int i = 0; i < method.Parameters.Length; i++)
+			for (int i = 0; i < method.Parameters.Length; i++) {
 				if (FlowAnnotations.GetMethodParameterAnnotation (method.Parameters[i]) != FlowAnnotations.GetMethodParameterAnnotation (overriddenMethod.Parameters[i]))
 					context.ReportDiagnostic (Diagnostic.Create (
 						DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchOnMethodParameterBetweenOverrides),
 						method.Parameters[i].Locations[0],
 						method.Parameters[i].GetDisplayName (), method.GetDisplayName (), overriddenMethod.Parameters[i].GetDisplayName (), overriddenMethod.GetDisplayName ()));
+			}
 
-			for (int i = 0; i < method.TypeParameters.Length; i++)
+			for (int i = 0; i < method.TypeParameters.Length; i++) {
 				if (method.TypeParameters[i].GetDynamicallyAccessedMemberTypes () != overriddenMethod.TypeParameters[i].GetDynamicallyAccessedMemberTypes ())
 					context.ReportDiagnostic (Diagnostic.Create (
 						DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchOnGenericParameterBetweenOverrides),
 						method.TypeParameters[i].Locations[0],
 						method.TypeParameters[i].GetDisplayName (), method.GetDisplayName (),
 						overriddenMethod.TypeParameters[i].GetDisplayName (), overriddenMethod.GetDisplayName ()));
+			}
 
 			if (!method.IsStatic && method.GetDynamicallyAccessedMemberTypes () != overriddenMethod.GetDynamicallyAccessedMemberTypes ())
 				context.ReportDiagnostic (Diagnostic.Create (
@@ -258,16 +258,16 @@ namespace ILLink.RoslynAnalyzer
 					method.GetDisplayName (), overriddenMethod.GetDisplayName ()));
 		}
 
-		static void VerifyDamOnInterfaceAndImplementationMethodsMatch (INamedTypeSymbol type, SymbolAnalysisContext context)
+		static void VerifyDamOnInterfaceAndImplementationMethodsMatch (SymbolAnalysisContext context, INamedTypeSymbol type)
 		{
 			foreach (var (interfaceMember, implementationMember) in type.GetMemberInterfaceImplementationPairs ()) {
 				if (implementationMember is IMethodSymbol implementationMethod
 					&& interfaceMember is IMethodSymbol interfaceMethod)
-					VerifyDamOnMethodsMatch (implementationMethod, interfaceMethod, context);
+					VerifyDamOnMethodsMatch (context, implementationMethod, interfaceMethod);
 			}
 		}
 
-		static void VerifyDamOnPropertyAndAccessorMatch (IMethodSymbol methodSymbol, SymbolAnalysisContext context)
+		static void VerifyDamOnPropertyAndAccessorMatch (SymbolAnalysisContext context, IMethodSymbol methodSymbol)
 		{
 			if ((methodSymbol.MethodKind != MethodKind.PropertyGet && methodSymbol.MethodKind != MethodKind.PropertySet)
 				|| (methodSymbol.AssociatedSymbol?.GetDynamicallyAccessedMemberTypes () == DynamicallyAccessedMemberTypes.None))

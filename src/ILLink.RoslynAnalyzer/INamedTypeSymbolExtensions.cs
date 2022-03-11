@@ -43,9 +43,8 @@ namespace ILLink.RoslynAnalyzer
 		private static IEnumerable<(ISymbol InterfaceMember, ISymbol ImplementationMember)> GetMatchingMembers (INamedTypeSymbol implementationSymbol, INamedTypeSymbol interfaceSymbol)
 		{
 			var members = interfaceSymbol.GetMembers ();
-			foreach (var member in members) {
-				if (member is ISymbol interfaceMember
-					&& implementationSymbol.FindImplementationForInterfaceMember (member) is ISymbol implementationMember) {
+			foreach (ISymbol interfaceMember in members) {
+				if (implementationSymbol.FindImplementationForInterfaceMember (interfaceMember) is ISymbol implementationMember) {
 					yield return (InterfaceMember: interfaceMember, ImplementationMember: implementationMember);
 				}
 			}
