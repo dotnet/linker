@@ -203,7 +203,7 @@ namespace Mono.Linker.Dataflow
 				valueCollection[collectionKey] = new ValueBasicBlockPair (value, curBasicBlock);
 			} else if (maxTrackedValues == null || valueCollection.Count < maxTrackedValues) {
 				// We're not currently tracking a value a this index, so store the value now.
-				valueCollection[collectionKey] = new ValueBasicBlockPair(valueToStore, curBasicBlock);
+				valueCollection[collectionKey] = new ValueBasicBlockPair (valueToStore, curBasicBlock);
 			}
 		}
 

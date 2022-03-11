@@ -60,8 +60,8 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 					return new KnownStringValue (stringConstantValue);
 				else if (operation.Type?.TypeKind == TypeKind.Enum && constantValue is int enumConstantValue)
 					return new ConstIntValue (enumConstantValue);
-				else if (operation.Type?.SpecialType == SpecialType.System_Int32 && constantValue is int intConstantValue)
-					return new ConstIntValue ((int)constantValue);
+				else if (operation.Type?.SpecialType == SpecialType.System_Int32 && constantValue is int)
+					return new ConstIntValue ((int) constantValue);
 			}
 
 			return returnValue;
@@ -70,7 +70,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 		public override MultiValue VisitArrayCreation (IArrayCreationOperation operation, StateValue argument)
 		{
 			var value = base.VisitArrayCreation (operation, argument);
-			
+
 			// Don't track large arrays for performance reasons
 			if (operation.Initializer?.ElementValues.Length >= MaxTrackedArrayValues)
 				return TopValue;

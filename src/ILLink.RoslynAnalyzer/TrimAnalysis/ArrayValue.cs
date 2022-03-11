@@ -50,10 +50,11 @@ namespace ILLink.Shared.TrimAnalysis
 			return thisValueSet.Count == 0;
 		}
 
+		// Lattice Meet() is supposed to copy values, so we need to make a deep copy since ArrayValue is mutable through IndexValues
 		public SingleValue DeepCopy ()
 		{
 			List<MultiValue> elements = new ();
-			for (int i = 0; IndexValues.TryGetValue(i, out var value); i++) {
+			for (int i = 0; IndexValues.TryGetValue (i, out var value); i++) {
 				elements.Add (value);
 			}
 			return new ArrayValue (Size, elements.ToArray ());

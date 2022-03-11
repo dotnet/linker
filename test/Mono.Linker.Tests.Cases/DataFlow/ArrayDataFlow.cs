@@ -15,9 +15,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		public static void Main ()
 		{
 			TestArrayWithInitializerOneElementStaticType ();
-			TestArrayWithInitializerOneElementParameter (typeof(TestType));
+			TestArrayWithInitializerOneElementParameter (typeof (TestType));
 			TestArrayWithInitializerMultipleElementsStaticType ();
-			TestArrayWithInitializerMultipleElementsMix<TestType> (typeof(TestType));
+			TestArrayWithInitializerMultipleElementsMix<TestType> (typeof (TestType));
 
 			TestArraySetElementOneElementStaticType ();
 			TestArraySetElementOneElementParameter (typeof (TestType));
@@ -38,8 +38,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TestArrayResetAfterAssignment ();
 		}
 
-		[ExpectedWarning("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicMethods))]
-		static void TestArrayWithInitializerOneElementStaticType()
+		[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicMethods))]
+		static void TestArrayWithInitializerOneElementStaticType ()
 		{
 			Type[] arr = new Type[] { typeof (TestType) };
 			arr[0].RequiresAll ();
@@ -47,7 +47,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicMethods))]
-		static void TestArrayWithInitializerOneElementParameter ([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type type)
+		static void TestArrayWithInitializerOneElementParameter ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] Type type)
 		{
 			Type[] arr = new Type[] { type };
 			arr[0].RequiresAll ();
@@ -66,8 +66,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		[ExpectedWarning ("IL2087", nameof (DataFlowTypeExtensions.RequiresPublicFields))]
 		[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicMethods))]
-		static void TestArrayWithInitializerMultipleElementsMix<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] TProperties> (
-			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type typeAll)
+		static void TestArrayWithInitializerMultipleElementsMix<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicProperties)] TProperties> (
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] Type typeAll)
 		{
 			Type[] arr = new Type[] { typeof (TestType), typeof (TProperties), typeAll };
 			arr[0].RequiresAll ();
@@ -129,7 +129,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		static void TestArraySetElementAndInitializerMultipleElementsMix<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicProperties)] TProperties> (
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] Type typeAll)
 		{
-			Type[] arr = new Type[]  { typeof (TestType), null, null };
+			Type[] arr = new Type[] { typeof (TestType), null, null };
 			arr[1] = typeof (TProperties);
 			arr[2] = typeAll;
 			arr[0].RequiresAll ();
@@ -146,7 +146,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			arr[i].RequiresPublicFields ();
 		}
 
-		[ExpectedWarning("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicFields))]
+		[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicFields))]
 		static void TestArrayResetStoreUnknownIndex (int i = 0)
 		{
 			Type[] arr = new Type[] { typeof (TestType) };
@@ -174,7 +174,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		static void TakesTypeByRef (ref Type type) { }
 
 		[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicFields))]
-		static void TestArrayResetAfterCall()
+		static void TestArrayResetAfterCall ()
 		{
 			Type[] arr = new Type[] { typeof (TestType) };
 			arr[0].RequiresPublicProperties ();
