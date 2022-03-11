@@ -2,7 +2,6 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System.Collections.Immutable;
-using System.Linq;
 using ILLink.RoslynAnalyzer.DataFlow;
 using ILLink.Shared.DataFlow;
 using ILLink.Shared.TrimAnalysis;
@@ -58,12 +57,6 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			}
 
 			return returnValue;
-		}
-		public override MultiValue VisitArrayCreation (IArrayCreationOperation operation, StateValue argument)
-		{
-			var value = base.VisitArrayCreation (operation, argument);
-			var elements = operation.Initializer?.ElementValues.Select (val => Visit (val, argument)).ToArray () ?? System.Array.Empty<MultiValue> ();
-			return new ArrayValue (new ConstIntValue (elements.Length), elements);
 		}
 
 		public override MultiValue VisitConversion (IConversionOperation operation, StateValue state)

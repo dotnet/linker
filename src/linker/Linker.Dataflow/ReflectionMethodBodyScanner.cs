@@ -333,7 +333,7 @@ namespace Mono.Linker.Dataflow
 			// Type MakeGenericType (params Type[] typeArguments)
 			//
 			case IntrinsicId.Type_MakeGenericType: {
-					// Shared HandleCallAction doesn't cover all the same functionality as this does
+					// We don't yet handle the case where you can create a nullable type with typeof(Nullable<>).MakeGenericType(T)
 					foreach (var value in methodParams[0]) {
 						if (value is SystemTypeValue typeValue) {
 							if (!AnalyzeGenericInstantiationTypeArray (analysisContext, methodParams[1], calledMethodDefinition, typeValue.RepresentedType.Type.GenericParameters)) {
@@ -356,27 +356,6 @@ namespace Mono.Linker.Dataflow
 								}
 							}
 
-							// Nullables without a type argument are considered SystemTypeValues
-							if (typeValue.RepresentedType.IsTypeOf ("System", "Nullable`1")) {
-								foreach (var argumentValue in methodParams[1]) {
-									if ((argumentValue as ArrayValue)?.TryGetValueByIndex (0, out var underlyingMultiValue) == true) {
-										foreach (var underlyingValue in underlyingMultiValue) {
-											switch (underlyingValue) {
-											case SystemTypeValue systemTypeValue:
-												methodReturnValue = MultiValueLattice.Meet (methodReturnValue, new NullableSystemTypeValue (typeValue.RepresentedType, systemTypeValue.RepresentedType));
-												break;
-											// Generic Parameters and method parameters with annotations
-											case ValueWithDynamicallyAccessedMembers damValue:
-												methodReturnValue = MultiValueLattice.Meet (methodReturnValue, new NullableValueWithDynamicallyAccessedMembers (typeValue.RepresentedType, damValue));
-												break;
-											// Nullable values and array values cannot be used as generic arguments to nullables, so we don't need to worry about anything else here
-											default:
-												break;
-											}
-										}
-									}
-								}
-							}
 							// We haven't found any generic parameters with annotations, so there's nothing to validate.
 						} else if (value == NullValue.Instance) {
 							// Do nothing - null value is valid and should not cause warnings nor marking
