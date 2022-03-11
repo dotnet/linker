@@ -735,7 +735,7 @@ namespace ILLink.Shared.TrimAnalysis
 
 		private partial IEnumerable<SystemTypeValue> GetNestedTypesOnType (TypeProxy type, string name, BindingFlags? bindingFlags);
 
-		private partial bool TryGetBaseType (TypeProxy type, [NotNullWhen(true)] out TypeProxy? baseType);
+		private partial bool TryGetBaseType (TypeProxy type, [NotNullWhen (true)] out TypeProxy? baseType);
 
 		private partial void MarkStaticConstructor (TypeProxy type);
 
