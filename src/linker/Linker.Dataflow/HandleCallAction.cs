@@ -68,17 +68,6 @@ namespace ILLink.Shared.TrimAnalysis
 				yield return new SystemTypeValue (new TypeProxy (nestedType));
 		}
 
-		private partial bool TryGetBaseType (TypeProxy type, out TypeProxy baseType)
-		{
-			if (type.Type.BaseType is TypeReference baseTypeRef && _context.TryResolve (baseTypeRef) is TypeDefinition baseTypeDefinition) {
-				baseType = new TypeProxy (baseTypeDefinition);
-				return true;
-			}
-
-			baseType = default (TypeProxy);
-			return false;
-		}
-
 		private partial void MarkStaticConstructor (TypeProxy type)
 			=> _reflectionMethodBodyScanner.MarkStaticConstructor (_analysisContext, type.Type);
 

@@ -112,6 +112,8 @@ namespace ILLink.Shared.TrimAnalysis
 		public override IEnumerable<string> GetDiagnosticArgumentsForAnnotationMismatch ()
 			=> new string[] { GenericParameter.GenericParameter.Name, DiagnosticUtilities.GetGenericParameterDeclaringMemberDisplayName (GenericParameter.GenericParameter) };
 
+		public override SingleValue DeepCopy () => this; // This value is immutable
+
 		public override string ToString () => this.ValueToString (GenericParameter, DynamicallyAccessedMemberTypes);
 	}
 
@@ -123,6 +125,8 @@ namespace ILLink.Shared.TrimAnalysis
 		public RuntimeMethodHandleValue (MethodDefinition methodRepresented) => MethodRepresented = methodRepresented;
 
 		public readonly MethodDefinition MethodRepresented;
+
+		public override SingleValue DeepCopy () => this; // This value is immutable
 
 		public override string ToString () => this.ValueToString (MethodRepresented);
 	}
@@ -157,6 +161,8 @@ namespace ILLink.Shared.TrimAnalysis
 
 		public TypeDefinition? StaticType { get; }
 
+		public override SingleValue DeepCopy () => this; // This value is immutable
+
 		public override string ToString () => this.ValueToString (Method, ParameterIndex, DynamicallyAccessedMemberTypes);
 	}
 
@@ -179,6 +185,8 @@ namespace ILLink.Shared.TrimAnalysis
 			=> new string[] { Method.GetDisplayName () };
 
 		public TypeDefinition? StaticType => Method.DeclaringType;
+
+		public override SingleValue DeepCopy () => this; // This value is immutable
 
 		public override string ToString () => this.ValueToString (Method, DynamicallyAccessedMemberTypes);
 	}
@@ -204,6 +212,8 @@ namespace ILLink.Shared.TrimAnalysis
 
 		public TypeDefinition? StaticType { get; }
 
+		public override SingleValue DeepCopy () => this; // This value is immutable
+
 		public override string ToString () => this.ValueToString (Method, DynamicallyAccessedMemberTypes);
 	}
 
@@ -227,6 +237,8 @@ namespace ILLink.Shared.TrimAnalysis
 			=> new string[] { Field.GetDisplayName () };
 
 		public TypeDefinition? StaticType { get; }
+
+		public override SingleValue DeepCopy () => this; // This value is immutable
 
 		public override string ToString () => this.ValueToString (Field, DynamicallyAccessedMemberTypes);
 	}
@@ -294,6 +306,16 @@ namespace ILLink.Shared.TrimAnalysis
 			HashSet<KeyValuePair<int, ValueBasicBlockPair>> otherValueSet = new (otherArr.IndexValues);
 			thisValueSet.ExceptWith (otherValueSet);
 			return thisValueSet.Count == 0;
+		}
+
+		public override SingleValue DeepCopy ()
+		{
+			var newValue = new ArrayValue (Size.DeepCopy (), ElementType);
+			foreach (var kvp in IndexValues) {
+				newValue.IndexValues.Add (kvp.Key, new ValueBasicBlockPair (kvp.Value.Value.Clone (), kvp.Value.BasicBlockIndex));
+			}
+
+			return newValue;
 		}
 
 		public override string ToString ()

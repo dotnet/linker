@@ -62,6 +62,12 @@ namespace ILLink.RoslynAnalyzer.Tests
 		}
 
 		[Fact]
+		public Task TypeBaseTypeUseViaReflection ()
+		{
+			return RunTest (allowMissingWarnings: true);
+		}
+
+		[Fact]
 		public Task TypeDelegator ()
 		{
 			return RunTest (allowMissingWarnings: true);

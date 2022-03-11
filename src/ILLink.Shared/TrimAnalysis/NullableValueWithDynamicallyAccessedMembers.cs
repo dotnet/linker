@@ -4,6 +4,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using ILLink.Shared.DataFlow;
 using ILLink.Shared.TypeSystemProxy;
 
 namespace ILLink.Shared.TrimAnalysis
@@ -27,5 +28,9 @@ namespace ILLink.Shared.TrimAnalysis
 		public override DynamicallyAccessedMemberTypes DynamicallyAccessedMemberTypes => UnderlyingTypeValue.DynamicallyAccessedMemberTypes;
 		public override IEnumerable<string> GetDiagnosticArgumentsForAnnotationMismatch ()
 			=> UnderlyingTypeValue.GetDiagnosticArgumentsForAnnotationMismatch ();
+
+		public override SingleValue DeepCopy () => this; // This value is immutable
+
+		public override string ToString () => this.ValueToString (UnderlyingTypeValue, NullableType);
 	}
 }

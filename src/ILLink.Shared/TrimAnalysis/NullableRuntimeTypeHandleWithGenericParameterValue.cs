@@ -22,5 +22,9 @@ namespace ILLink.Shared.TrimAnalysis
 
 		public readonly TypeProxy NullableType;
 		public readonly SingleValue UnderlyingTypeValue;
+
+		public override SingleValue DeepCopy () => this; // This value is immutable	}
+
+		public override string ToString () => this.ValueToString (UnderlyingTypeValue, NullableType);
 	}
 }

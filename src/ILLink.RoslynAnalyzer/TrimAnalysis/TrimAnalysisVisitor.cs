@@ -67,16 +67,27 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			return returnValue;
 		}
 
-		public override MultiValue VisitArrayCreation (IArrayCreationOperation operation, StateValue argument)
+		public override MultiValue VisitArrayCreation (IArrayCreationOperation operation, StateValue state)
 		{
-			var value = base.VisitArrayCreation (operation, argument);
+			var value = base.VisitArrayCreation (operation, state);
+
+			// Don't track multi-dimensional arrays
+			if (operation.DimensionSizes.Length != 1)
+				return TopValue;
 
 			// Don't track large arrays for performance reasons
 			if (operation.Initializer?.ElementValues.Length >= MaxTrackedArrayValues)
 				return TopValue;
 
-			var elements = operation.Initializer?.ElementValues.Select (val => Visit (val, argument)).ToArray () ?? System.Array.Empty<MultiValue> ();
-			return new ArrayValue (new ConstIntValue (elements.Length), elements);
+			var arrayValue = ArrayValue.Create (Visit (operation.DimensionSizes[0], state));
+			var elements = operation.Initializer?.ElementValues.Select (val => Visit (val, state)).ToArray () ?? System.Array.Empty<MultiValue> ();
+			foreach (var array in arrayValue.Cast<ArrayValue> ()) {
+				for (int i = 0; i < elements.Length; i++) {
+					array.IndexValues.Add (i, elements[i]);
+				}
+			}
+
+			return arrayValue;
 		}
 
 		public override MultiValue VisitConversion (IConversionOperation operation, StateValue state)

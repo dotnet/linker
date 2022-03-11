@@ -171,8 +171,19 @@ namespace ILLink.Shared.DataFlow
 
 		// Meet should copy the values, but most SingleValues are immutable.
 		// Clone returns `this` if there are no mutable SingleValues (SingleValues that implement IDeepCopyValue), otherwise creates a new ValueSet with copies of the copiable Values
-		private ValueSet<TValue> Clone ()
+		public ValueSet<TValue> Clone ()
 		{
+			if (_values is null)
+				return this;
+
+			// Optimize for the most common case with only a single value
+			if (_values is not EnumerableValues) {
+				if (_values is IDeepCopyValue<TValue> copyValue)
+					return new ValueSet<TValue> (copyValue.DeepCopy ());
+				else
+					return this;
+			}
+
 			foreach (var value in this) {
 				if (value is IDeepCopyValue<TValue>) {
 					return new ValueSet<TValue> (this.Select (value => value is IDeepCopyValue<TValue> copyValue ? copyValue.DeepCopy () : value));

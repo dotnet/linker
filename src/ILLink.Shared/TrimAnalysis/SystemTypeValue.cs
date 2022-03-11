@@ -15,7 +15,10 @@ namespace ILLink.Shared.TrimAnalysis
 		{
 			RepresentedType = representedType;
 		}
+
 		public readonly TypeProxy RepresentedType;
+
+		public override SingleValue DeepCopy () => this; // This value is immutable
 
 		public override string ToString () => this.ValueToString (RepresentedType);
 	}

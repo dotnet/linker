@@ -62,17 +62,6 @@ namespace ILLink.Shared.TrimAnalysis
 				yield return new SystemTypeValue (new TypeProxy (nestedType));
 		}
 
-		private partial bool TryGetBaseType (TypeProxy type, out TypeProxy baseType)
-		{
-			if (type.Type.BaseType is not null) {
-				baseType = new TypeProxy (type.Type.BaseType);
-				return true;
-			}
-
-			baseType = default (TypeProxy);
-			return false;
-		}
-
 		// TODO: Does the analyzer need to do something here?
 		private partial void MarkStaticConstructor (TypeProxy type) { }
 

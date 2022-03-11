@@ -193,6 +193,12 @@ namespace ILLink.RoslynAnalyzer.Tests
 		}
 
 		[Fact]
+		public Task NullableAnnotations ()
+		{
+			return RunTest ();
+		}
+
+		[Fact]
 		public Task PropertyDataFlow ()
 		{
 			return RunTest (nameof (PropertyDataFlow));
@@ -207,7 +213,8 @@ namespace ILLink.RoslynAnalyzer.Tests
 		[Fact]
 		public Task TypeBaseTypeDataFlow ()
 		{
-			return RunTest ();
+			// https://github.com/dotnet/linker/issues/2273
+			return RunTest (allowMissingWarnings: true);
 		}
 
 		[Fact]
@@ -227,11 +234,6 @@ namespace ILLink.RoslynAnalyzer.Tests
 		public Task XmlAnnotations ()
 		{
 			return RunTest (nameof (XmlAnnotations));
-		}
-		[Fact]
-		public Task NullableAnnotations ()
-		{
-			return RunTest ();
 		}
 	}
 }
