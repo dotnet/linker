@@ -184,12 +184,7 @@ namespace ILLink.Shared.DataFlow
 					return this;
 			}
 
-			foreach (var value in this) {
-				if (value is IDeepCopyValue<TValue>) {
-					return new ValueSet<TValue> (this.Select (value => value is IDeepCopyValue<TValue> copyValue ? copyValue.DeepCopy () : value));
-				}
-			}
-			return this;
+			return new ValueSet<TValue> (this.Select (value => value is IDeepCopyValue<TValue> copyValue ? copyValue.DeepCopy () : value));
 		}
 	}
 }
