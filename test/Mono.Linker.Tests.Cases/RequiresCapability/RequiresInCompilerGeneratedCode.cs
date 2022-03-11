@@ -913,7 +913,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			static void TestCall ()
 			{
 				Action _ =
-					[ExpectedWarning ("IL2026", "--MethodWithRequires--")]
+				[ExpectedWarning ("IL2026", "--MethodWithRequires--")]
 				[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 				[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 				() => MethodWithRequires ();
@@ -922,7 +922,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			static void TestCallWithClosure (int p = 0)
 			{
 				Action _ =
-					[ExpectedWarning ("IL2026", "--MethodWithRequires--")]
+				[ExpectedWarning ("IL2026", "--MethodWithRequires--")]
 				[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 				[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 				() => {
@@ -934,7 +934,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			static void TestReflectionAccess ()
 			{
 				Action _ =
-					[ExpectedWarning ("IL2026", "--MethodWithRequires--", ProducedBy = ProducedBy.Trimmer)]
+				[ExpectedWarning ("IL2026", "--MethodWithRequires--", ProducedBy = ProducedBy.Trimmer)]
 				() => {
 					typeof (RequiresInCompilerGeneratedCode)
 						.GetMethod ("MethodWithRequires", System.Reflection.BindingFlags.NonPublic)
@@ -945,7 +945,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			static void TestLdftn ()
 			{
 				Action _ =
-					[ExpectedWarning ("IL2026", "--MethodWithRequires--")]
+				[ExpectedWarning ("IL2026", "--MethodWithRequires--")]
 				[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 				[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 				() => {
@@ -968,7 +968,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			static void TestDynamicallyAccessedMethod ()
 			{
 				Action _ =
-					[ExpectedWarning ("IL2026", "--TypeWithMethodWithRequires.MethodWithRequires--", ProducedBy = ProducedBy.Trimmer)]
+				[ExpectedWarning ("IL2026", "--TypeWithMethodWithRequires.MethodWithRequires--", ProducedBy = ProducedBy.Trimmer)]
 				() => {
 					typeof (TypeWithMethodWithRequires).RequiresNonPublicMethods ();
 				};
@@ -999,7 +999,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			static void TestCall ()
 			{
 				Action _ =
-					[ExpectedWarning ("IL2026")]
+				[ExpectedWarning ("IL2026")]
 				[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
 				[ExpectedWarning ("IL3050", ProducedBy = ProducedBy.Analyzer)]
 				() => MethodWithRequires ();
@@ -1012,7 +1012,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			{
 				// This should not produce warning because the Requires
 				Action<Type> _ =
-					[ExpectedWarning ("IL2067", ProducedBy = ProducedBy.Trimmer)]
+				[ExpectedWarning ("IL2067", ProducedBy = ProducedBy.Trimmer)]
 				(t) => t.RequiresPublicMethods ();
 			}
 
@@ -1022,7 +1022,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			static void TestCallWithClosure (int p = 0)
 			{
 				Action _ =
-					[ExpectedWarning ("IL2026")]
+				[ExpectedWarning ("IL2026")]
 				[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
 				[ExpectedWarning ("IL3050", ProducedBy = ProducedBy.Analyzer)]
 				() => {
@@ -1037,8 +1037,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			static void TestReflectionAccess ()
 			{
 				Action _ =
-					// Analyzer doesn't recognize reflection access - so doesn't warn in this case
-					[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Trimmer)]
+				// Analyzer doesn't recognize reflection access - so doesn't warn in this case
+				[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Trimmer)]
 				() => {
 					typeof (RequiresInCompilerGeneratedCode)
 						.GetMethod ("MethodWithRequires", System.Reflection.BindingFlags.NonPublic)
@@ -1078,8 +1078,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			static void TestDynamicallyAccessedMethod ()
 			{
 				Action _ =
-					// Analyzer doesn't apply DAM - so won't see this warnings
-					[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Trimmer)]
+				// Analyzer doesn't apply DAM - so won't see this warnings
+				[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Trimmer)]
 				() => {
 					typeof (TypeWithMethodWithRequires).RequiresNonPublicMethods ();
 				};
@@ -1091,9 +1091,9 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			static async void TestMethodParameterWithRequirements (Type unknownType = null)
 			{
 				Action _ =
-					// TODO: Fix the discrepancy between linker and analyzer
-					// https://github.com/dotnet/linker/issues/2350
-					[ExpectedWarning ("IL2077", ProducedBy = ProducedBy.Trimmer)]
+				// TODO: Fix the discrepancy between linker and analyzer
+				// https://github.com/dotnet/linker/issues/2350
+				[ExpectedWarning ("IL2077", ProducedBy = ProducedBy.Trimmer)]
 				() => unknownType.RequiresNonPublicMethods ();
 			}
 
