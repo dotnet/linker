@@ -213,8 +213,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 		[Fact]
 		public Task TypeBaseTypeDataFlow ()
 		{
-			// https://github.com/dotnet/linker/issues/2273
-			return RunTest (allowMissingWarnings: true);
+			return RunTest ();
 		}
 
 		[Fact]
@@ -224,7 +223,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			return RunTest (allowMissingWarnings: true);
 		}
 
-		[Fact (Skip = "https://github.com/dotnet/linker/issues/2273")]
+		[Fact]
 		public Task VirtualMethodHierarchyDataflowAnnotationValidation ()
 		{
 			return RunTest (nameof (VirtualMethodHierarchyDataflowAnnotationValidation));
