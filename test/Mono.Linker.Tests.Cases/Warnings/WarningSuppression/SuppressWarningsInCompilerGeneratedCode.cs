@@ -435,20 +435,28 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 
 			static void TestSuppressionOnLambda ()
 			{
-				var l =
+				var lambda =
+				// https://github.com/dotnet/roslyn/issues/59746
+				[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Analyzer)]
 				[UnconditionalSuppressMessage ("Test", "IL2026")]
 				() => RequiresUnreferencedCodeMethod ();
+
+				lambda ();
 			}
 
 			[UnconditionalSuppressMessage ("Test", "IL2067")]
 			static void TestSuppressionOnOuterAndLambda ()
 			{
-				var l =
+				var lambda =
+				// https://github.com/dotnet/roslyn/issues/59746
+				[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Analyzer)]
 				[UnconditionalSuppressMessage ("Test", "IL2026")]
 				(Type unknownType) => {
 					RequiresUnreferencedCodeMethod ();
 					unknownType.RequiresNonPublicMethods ();
 				};
+
+				lambda (null);
 			}
 
 			public static void Test ()

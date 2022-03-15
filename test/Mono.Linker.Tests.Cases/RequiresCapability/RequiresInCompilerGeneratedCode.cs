@@ -844,7 +844,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			[ExpectedWarning ("IL3050", ProducedBy = ProducedBy.Analyzer)]
 			static void TestSuppressionLocalFunction ()
 			{
-				LocalFunction (); // This will produce a warning since the location function has Requires on it
+				LocalFunction (); // This will produce a warning since the local function has Requires on it
 
 				[RequiresUnreferencedCode ("Suppress in body")]
 				[RequiresAssemblyFiles ("Suppress in body")]
@@ -1098,6 +1098,38 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				};
 			}
 
+			[ExpectedWarning ("IL2026")]
+			[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3050", ProducedBy = ProducedBy.Analyzer)]
+			static void TestSuppressionOnLambda ()
+			{
+				var lambda =
+				[RequiresUnreferencedCode ("Suppress in body")]
+				[RequiresAssemblyFiles ("Suppress in body")]
+				[RequiresDynamicCode ("Suppress in body")]
+				() => MethodWithRequires ();
+
+				lambda (); // This will produce a warning since the lambda has Requires on it
+			}
+
+			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
+			[RequiresDynamicCode ("Suppress in body")]
+			static void TestSuppressionOnOuterAndLambda ()
+			{
+				var lambda =
+				[RequiresUnreferencedCode ("Suppress in body")]
+				[RequiresAssemblyFiles ("Suppress in body")]
+				[RequiresDynamicCode ("Suppress in body")]
+				(Type unknownType) => {
+					MethodWithRequires ();
+					unknownType.RequiresNonPublicMethods ();
+				};
+
+				lambda (null);
+			}
+
+
 			[UnconditionalSuppressMessage ("Trimming", "IL2026")]
 			[UnconditionalSuppressMessage ("SingleFile", "IL3002")]
 			[UnconditionalSuppressMessage ("AOT", "IL3050")]
@@ -1113,6 +1145,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestMethodParameterWithRequirements ();
 				TestGenericMethodParameterRequirement<TestType> ();
 				TestGenericTypeParameterRequirement<TestType> ();
+				TestSuppressionOnLambda ();
+				TestSuppressionOnOuterAndLambda ();
 			}
 		}
 
