@@ -342,13 +342,10 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 
 		class SuppressInLambda
 		{
-			// Suppression currently doesn't propagate to lambdas
-
 			[UnconditionalSuppressMessage ("Test", "IL2026")]
 			static void TestCallRUCMethod ()
 			{
 				Action _ =
-				[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Trimmer)]
 				() => RequiresUnreferencedCodeMethod ();
 			}
 
@@ -356,7 +353,6 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 			static void TestReflectionAccessRUCMethod ()
 			{
 				Action _ =
-				[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Trimmer)]
 				() => typeof (SuppressWarningsInCompilerGeneratedCode)
 					.GetMethod ("RequiresUnreferencedCodeMethod", System.Reflection.BindingFlags.NonPublic)
 					.Invoke (null, new object[] { });
@@ -366,7 +362,6 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 			static void TestLdftnOnRUCMethod ()
 			{
 				Action _ =
-				[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Trimmer)]
 				() => { var _ = new Action (RequiresUnreferencedCodeMethod); };
 			}
 
@@ -374,7 +369,6 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 			static void TestDynamicallyAccessedMethod ()
 			{
 				Action _ =
-				[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Trimmer)]
 				() => typeof (TypeWithRUCMethod).RequiresNonPublicMethods ();
 			}
 
@@ -382,7 +376,6 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 			static void TestMethodParameterWithRequirements (Type unknownType = null)
 			{
 				Action _ =
-				[ExpectedWarning ("IL2077", ProducedBy = ProducedBy.Trimmer)]
 				() => unknownType.RequiresNonPublicMethods ();
 			}
 
@@ -390,7 +383,6 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 			static void TestGenericMethodParameterRequirement<TUnknown> ()
 			{
 				Action _ =
-				[ExpectedWarning ("IL2091", ProducedBy = ProducedBy.Trimmer)]
 				() => MethodWithGenericWhichRequiresMethods<TUnknown> ();
 			}
 
@@ -398,7 +390,6 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 			static void TestGenericTypeParameterRequirement<TUnknown> ()
 			{
 				Action _ =
-				[ExpectedWarning ("IL2091", ProducedBy = ProducedBy.Trimmer)]
 				() => new TypeWithGenericWhichRequiresNonPublicFields<TUnknown> ();
 			}
 
