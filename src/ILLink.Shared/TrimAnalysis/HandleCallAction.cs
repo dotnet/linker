@@ -574,31 +574,32 @@ namespace ILLink.Shared.TrimAnalysis
 				// instanceValue here is like argumentValues[0] in linker
 				foreach (var value in instanceValue) {
 					// Nullables without a type argument are considered SystemTypeValues
-					if (value is SystemTypeValue typeValue
-							&& typeValue.RepresentedType.IsTypeOf ("System", "Nullable`1")) {
-						foreach (var argumentValue in argumentValues[0]) {
-							if ((argumentValue as ArrayValue)?.TryGetValueByIndex (0, out var underlyingMultiValue) == true) {
-								foreach (var underlyingValue in underlyingMultiValue) {
-									switch (underlyingValue) {
-									case SystemTypeValue systemTypeValue:
-										AddReturnValue (new NullableSystemTypeValue (typeValue.RepresentedType, systemTypeValue.RepresentedType));
-										break;
-									case ValueWithDynamicallyAccessedMembers damValue:
-										AddReturnValue (new NullableValueWithDynamicallyAccessedMembers (typeValue.RepresentedType, damValue));
-										break;
-									// Nullable values and array values cannot be used as generic arguments to nullables, so we don't need to worry about anything else here
-									default:
-										AddReturnValue (MultiValueLattice.Top);
-										break;
-									}
-								}
-							}
-						}
-						// We haven't found any generic parameters with annotations, so there's nothing to validate.
+					if (!(value is SystemTypeValue typeValue && typeValue.RepresentedType.IsTypeOf ("System", "Nullable`1"))) {
+						// We still don't want to lose track of the type if it is not Nullable<T>
+						AddReturnValue (value);
 						continue;
 					}
-					// We still don't want to lose track of the type if it is not Nullable<T>
-					AddReturnValue (value);
+					// We have a nullable
+					foreach (var argumentValue in argumentValues[0]) {
+						if ((argumentValue as ArrayValue)?.TryGetValueByIndex (0, out var underlyingMultiValue) != true) {
+							continue;
+						}
+						foreach (var underlyingValue in underlyingMultiValue) {
+							switch (underlyingValue) {
+							case SystemTypeValue systemTypeValue:
+								AddReturnValue (new NullableSystemTypeValue (typeValue.RepresentedType, systemTypeValue.RepresentedType));
+								break;
+							case ValueWithDynamicallyAccessedMembers damValue:
+								AddReturnValue (new NullableValueWithDynamicallyAccessedMembers (typeValue.RepresentedType, damValue));
+								break;
+							// Nullable values and array values cannot be used as generic arguments to nullables, so we don't need to worry about anything else here
+							default:
+								AddReturnValue (MultiValueLattice.Top);
+								break;
+							}
+						}
+					// We haven't found any generic parameters with annotations, so there's nothing to validate.
+					}
 				}
 				break;
 

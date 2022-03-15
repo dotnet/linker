@@ -9,8 +9,6 @@ namespace ILLink.Shared.TrimAnalysis
 {
 	partial record ArrayValue
 	{
-		static ValueSetLattice<SingleValue> MultiValueLattice => default;
-
 		public readonly Dictionary<int, MultiValue> IndexValues;
 
 		public static MultiValue Create (MultiValue size)

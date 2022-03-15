@@ -211,8 +211,8 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 						// Reset the array to all unknowns - since we don't know which index is being assigned
 						arr.IndexValues.Clear ();
 					} else {
-						if (arr.IndexValues.TryGetValue (index.Value, out var existingValue)) {
-							arr.IndexValues[index.Value] = _multiValueLattice.Meet (existingValue, valueToWrite);
+						if (arr.IndexValues.TryGetValue (index.Value, out _)) {
+							arr.IndexValues[index.Value] = valueToWrite;
 						} else if (arr.IndexValues.Count < MaxTrackedArrayValues) {
 							arr.IndexValues[index.Value] = valueToWrite;
 						}

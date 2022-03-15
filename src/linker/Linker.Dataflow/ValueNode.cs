@@ -245,8 +245,6 @@ namespace ILLink.Shared.TrimAnalysis
 
 	partial record ArrayValue
 	{
-		static ValueSetLattice<SingleValue> MultiValueLattice => default;
-
 		public static MultiValue Create (MultiValue size, TypeReference elementType)
 		{
 			MultiValue result = MultiValueLattice.Top;
