@@ -4,6 +4,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace ILLink.RoslynAnalyzer
 {
@@ -147,10 +148,10 @@ namespace ILLink.RoslynAnalyzer
 				return false;
 
 			while (typeSymbol != null) {
-				if (typeSymbol.ContainingNamespace.Name == ns &&
-					typeSymbol.ContainingType.Name == type)
+				if (typeSymbol.ContainingNamespace?.Name == ns &&
+					typeSymbol.ContainingType?.Name == type)
 					return true;
-
+				if (typeSymbol.ContainingType is null) break;
 				typeSymbol = typeSymbol.ContainingType;
 			}
 
