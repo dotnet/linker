@@ -29,6 +29,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			return type.Kind switch {
 				SymbolKind.TypeParameter => new GenericParameterValue ((ITypeParameterSymbol) type),
 				SymbolKind.NamedType => new SystemTypeValue (new TypeProxy (type)),
+				// If the symbol is an Array type, the BaseType is System.Array
 				SymbolKind.ArrayType => new SystemTypeValue (new TypeProxy (type.BaseType!)),
 				SymbolKind.ErrorType => UnknownValue.Instance,
 				_ => null
