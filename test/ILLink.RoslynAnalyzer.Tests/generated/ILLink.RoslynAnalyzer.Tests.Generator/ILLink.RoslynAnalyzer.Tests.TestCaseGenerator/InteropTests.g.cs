@@ -10,7 +10,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 		protected override string TestSuiteName => "Interop";
 
 		[Fact]
-		public Task ComNullRefMauiRepro2 ()
+		public Task ByteArrayCom ()
 		{
 			return RunTest (allowMissingWarnings: true);
 		}
