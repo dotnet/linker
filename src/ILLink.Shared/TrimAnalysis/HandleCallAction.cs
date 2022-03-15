@@ -66,12 +66,14 @@ namespace ILLink.Shared.TrimAnalysis
 				foreach (var value in argumentValues[0]) {
 					AddReturnValue (value switch {
 						NullableRuntimeSystemTypeHandleValue nullableSystemType
-							=> new NullableSystemTypeValue (nullableSystemType.NullableType, nullableSystemType.UnderlyingTypeValue),
+							=> new NullableSystemTypeValue (nullableSystemType.NullableType, nullableSystemType.UnderlyingType),
+						// When generating type handles from IL, the GenericParameterValue with DAM annotations is not available.
+						// Once we convert it to a Value with annotations here, there is no need to convert it back in get_TypeHandle
 						NullableRuntimeTypeWithDamHandleValue nullableDamType when nullableDamType.UnderlyingTypeValue is RuntimeTypeHandleForGenericParameterValue underlyingGenericParameter
 							=> new NullableValueWithDynamicallyAccessedMembers (nullableDamType.NullableType, GetGenericParameterValue (underlyingGenericParameter.GenericParameter)),
 						// This should only happen if the code does something like typeof(Nullable<>).MakeGenericType(methodParameter).TypeHandle
-						NullableRuntimeTypeWithDamHandleValue nullableDamType when nullableDamType.UnderlyingTypeValue is MethodParameterValue underlyingMethodParameter
-							=> new NullableValueWithDynamicallyAccessedMembers (nullableDamType.NullableType, underlyingMethodParameter),
+						NullableRuntimeTypeWithDamHandleValue nullableDamType when nullableDamType.UnderlyingTypeValue is ValueWithDynamicallyAccessedMembers underlyingTypeValue
+							=> new NullableValueWithDynamicallyAccessedMembers (nullableDamType.NullableType, underlyingTypeValue),
 						RuntimeTypeHandleValue typeHandle
 							=> new SystemTypeValue (typeHandle.RepresentedType),
 						RuntimeTypeHandleForGenericParameterValue genericParam
@@ -91,7 +93,9 @@ namespace ILLink.Shared.TrimAnalysis
 					if (value != NullValue.Instance)
 						AddReturnValue (value switch {
 							NullableSystemTypeValue nullableSystemType
-								=> new NullableRuntimeSystemTypeHandleValue (nullableSystemType.NullableType, nullableSystemType.UnderlyingTypeValue),
+								=> new NullableRuntimeSystemTypeHandleValue (nullableSystemType.NullableType, nullableSystemType.UnderlyingType),
+							NullableValueWithDynamicallyAccessedMembers nullableDamType when nullableDamType.UnderlyingTypeValue is GenericParameterValue genericParam
+								=> new NullableRuntimeTypeWithDamHandleValue (nullableDamType.NullableType, new RuntimeTypeHandleForGenericParameterValue (genericParam.GenericParameter)),
 							NullableValueWithDynamicallyAccessedMembers nullableDamType
 								=> new NullableRuntimeTypeWithDamHandleValue (nullableDamType.NullableType, nullableDamType.UnderlyingTypeValue),
 							SystemTypeValue typeHandle
@@ -557,7 +561,7 @@ namespace ILLink.Shared.TrimAnalysis
 				foreach (var singlevalue in argumentValues[0].AsEnumerable ()) {
 					AddReturnValue (singlevalue switch {
 						SystemTypeValue systemType => systemType,
-						NullableSystemTypeValue nullableSystemType => new SystemTypeValue (nullableSystemType.UnderlyingTypeValue),
+						NullableSystemTypeValue nullableSystemType => new SystemTypeValue (nullableSystemType.UnderlyingType),
 						NullableValueWithDynamicallyAccessedMembers nullableDamValue => nullableDamValue.UnderlyingTypeValue,
 						ValueWithDynamicallyAccessedMembers damValue => damValue,
 						_ => GetMethodReturnValue (calledMethod, returnValueDynamicallyAccessedMemberTypes)
@@ -579,24 +583,25 @@ namespace ILLink.Shared.TrimAnalysis
 									case SystemTypeValue systemTypeValue:
 										AddReturnValue (new NullableSystemTypeValue (typeValue.RepresentedType, systemTypeValue.RepresentedType));
 										break;
-									// Generic Parameters and method parameters with annotations
 									case ValueWithDynamicallyAccessedMembers damValue:
 										AddReturnValue (new NullableValueWithDynamicallyAccessedMembers (typeValue.RepresentedType, damValue));
 										break;
 									// Nullable values and array values cannot be used as generic arguments to nullables, so we don't need to worry about anything else here
 									default:
+										AddReturnValue (MultiValueLattice.Top);
 										break;
 									}
 								}
 							}
 						}
 						// We haven't found any generic parameters with annotations, so there's nothing to validate.
+						continue;
 					}
+					// We still don't want to lose track of the type if it is not Nullable<T>
+					AddReturnValue (value);
 				}
-				// We don't want to lose track of the type
-				// in case this is e.g. Activator.CreateInstance(typeof(Foo<>).MakeGenericType(...));
-				AddReturnValue (instanceValue);
 				break;
+
 			//
 			// Type.BaseType
 			//

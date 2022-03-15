@@ -16,15 +16,15 @@ namespace ILLink.Shared.TrimAnalysis
 		public NullableSystemTypeValue (in TypeProxy nullableType, in TypeProxy underlyingType)
 		{
 			Debug.Assert (nullableType.IsTypeOf ("System", "Nullable`1"));
-			UnderlyingTypeValue = underlyingType;
+			UnderlyingType = underlyingType;
 			NullableType = nullableType;
 		}
 		public readonly TypeProxy NullableType;
 
-		public readonly TypeProxy UnderlyingTypeValue;
+		public readonly TypeProxy UnderlyingType;
 
 		public override SingleValue DeepCopy () => this; // This value is immutable
 
-		public override string ToString () => this.ValueToString (UnderlyingTypeValue, NullableType);
+		public override string ToString () => this.ValueToString (UnderlyingType, NullableType);
 	}
 }

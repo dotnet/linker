@@ -21,7 +21,9 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 							new GenericParameterValue ((ITypeParameterSymbol) underlyingType)),
 					// typeof(Nullable<>) 
 					TypeKind.Error => new SystemTypeValue (new TypeProxy (type)),
-					_ => new NullableSystemTypeValue (new TypeProxy (type), new TypeProxy (underlyingType!)),
+					TypeKind.Class or TypeKind.Struct or TypeKind.Interface =>
+						new NullableSystemTypeValue (new TypeProxy (type), new TypeProxy (underlyingType)),
+					_ => UnknownValue.Instance
 				};
 			}
 			return type.Kind switch {

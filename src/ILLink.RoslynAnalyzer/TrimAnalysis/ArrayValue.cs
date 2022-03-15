@@ -63,8 +63,8 @@ namespace ILLink.Shared.TrimAnalysis
 		public override SingleValue DeepCopy ()
 		{
 			var newArray = new ArrayValue (Size);
-			for (int i = 0; IndexValues.TryGetValue (i, out var value); i++) {
-				newArray.IndexValues.Add (i, value.Clone ());
+			foreach (var kvp in IndexValues) {
+				newArray.IndexValues.Add (kvp.Key, kvp.Value.Clone ());
 			}
 
 			return newArray;

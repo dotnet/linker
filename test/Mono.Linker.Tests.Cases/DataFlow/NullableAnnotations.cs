@@ -56,6 +56,14 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TestGetUnderlyingTypeOnStructs ();
 			TestAnnotationsOnNullableKeepsMembersOnUnderlyingType ();
 			TestGetUnderlyingTypeOfCreatedNullableOnStructs ();
+			ImproperMakeGenericTypeDoesntWarn ();
+		}
+
+		[Kept]
+		static void ImproperMakeGenericTypeDoesntWarn ()
+		{
+			typeof(Nullable<>).MakeGenericType(typeof(Nullable<int>)).GetProperties();  // No warning - we treat the cases where reflection throws as "no value".
+			typeof(Nullable<>).MakeGenericType(typeof(int[])).GetProperties();  // No warning - we treat the cases where reflection throws as "no value".
 		}
 
 		[Kept]

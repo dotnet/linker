@@ -244,6 +244,7 @@ namespace Mono.Linker.Dataflow
 		public override bool HandleCall (MethodBody callingMethodBody, MethodReference calledMethod, Instruction operation, ValueNodeList methodParams, out MultiValue methodReturnValue)
 		{
 			methodReturnValue = new ();
+			MultiValue localReturnValue = new ();
 
 			var reflectionProcessed = _markStep.ProcessReflectionDependency (callingMethodBody, operation);
 			if (reflectionProcessed)
@@ -310,12 +311,12 @@ namespace Mono.Linker.Dataflow
 			case IntrinsicId.TypeDelegator_Ctor: {
 					// This is an identity function for analysis purposes
 					if (operation.OpCode == OpCodes.Newobj)
-						methodReturnValue = methodParams[1];
+						localReturnValue = methodParams[1];
 				}
 				break;
 
 			case IntrinsicId.Array_Empty: {
-					methodReturnValue = ArrayValue.Create (0, ((GenericInstanceMethod) calledMethod).GenericArguments[0]);
+					localReturnValue = ArrayValue.Create (0, ((GenericInstanceMethod) calledMethod).GenericArguments[0]);
 				}
 				break;
 
@@ -324,7 +325,7 @@ namespace Mono.Linker.Dataflow
 			case IntrinsicId.MethodBase_GetMethodFromHandle: {
 					// Infrastructure piece to support "ldtoken method -> GetMethodFromHandle"
 					if (methodParams[0].AsSingleValue () is RuntimeMethodHandleValue methodHandle)
-						methodReturnValue = new SystemReflectionMethodBaseValue (methodHandle.MethodRepresented);
+						localReturnValue = MultiValueLattice.Meet(localReturnValue, new SystemReflectionMethodBaseValue (methodHandle.MethodRepresented));
 				}
 				break;
 
@@ -365,21 +366,24 @@ namespace Mono.Linker.Dataflow
 										foreach (var underlyingValue in underlyingMultiValue) {
 											switch (underlyingValue) {
 											case SystemTypeValue systemTypeValue:
-												methodReturnValue = MultiValueLattice.Meet (methodReturnValue, new NullableSystemTypeValue (typeValue.RepresentedType, systemTypeValue.RepresentedType));
+												localReturnValue = MultiValueLattice.Meet(localReturnValue, new NullableSystemTypeValue(typeValue.RepresentedType, systemTypeValue.RepresentedType));
 												break;
 											// Generic Parameters and method parameters with annotations
 											case ValueWithDynamicallyAccessedMembers damValue:
-												methodReturnValue = MultiValueLattice.Meet (methodReturnValue, new NullableValueWithDynamicallyAccessedMembers (typeValue.RepresentedType, damValue));
+												localReturnValue = MultiValueLattice.Meet(localReturnValue, new NullableValueWithDynamicallyAccessedMembers (typeValue.RepresentedType, damValue));
 												break;
-											// Nullable values and array values cannot be used as generic arguments to nullables, so we don't need to worry about anything else here
+											// Nullable values and array values cannot be used as generic arguments to nullables (i.e. no Nullable<int[]> or Nullable<Nullable<int>>)
+											//  Anything here should warn in the compiler or throw, so add Top as a return value to prevent warning
 											default:
+												localReturnValue = MultiValueLattice.Meet(localReturnValue, MultiValueLattice.Top);
 												break;
 											}
 										}
 									}
 								}
+								// We want to skip adding the `value` to the return Value because we have already added Nullable<value>
+								continue;
 							}
-
 							// We haven't found any generic parameters with annotations, so there's nothing to validate.
 						} else if (value == NullValue.Instance) {
 							// Do nothing - null value is valid and should not cause warnings nor marking
@@ -387,11 +391,10 @@ namespace Mono.Linker.Dataflow
 							// We have no way to "include more" to fix this if we don't know, so we have to warn
 							analysisContext.ReportWarning (DiagnosticId.MakeGenericType, calledMethodDefinition.GetDisplayName ());
 						}
+						// We don't want to lose track of the type
+						// in case this is e.g. Activator.CreateInstance(typeof(Foo<>).MakeGenericType(...));
+						localReturnValue = MultiValueLattice.Meet(localReturnValue, value);
 					}
-
-					// We don't want to lose track of the type
-					// in case this is e.g. Activator.CreateInstance(typeof(Foo<>).MakeGenericType(...));
-					methodReturnValue = MultiValueLattice.Meet (methodReturnValue, methodParams[0]);
 				}
 				break;
 
@@ -488,7 +491,7 @@ namespace Mono.Linker.Dataflow
 						TypeDefinition? staticType = (valueNode as IValueWithStaticType)?.StaticType;
 						if (staticType is null) {
 							// We don't know anything about the type GetType was called on. Track this as a usual result of a method call without any annotations
-							methodReturnValue = MultiValueLattice.Meet (methodReturnValue, GetMethodReturnValue (calledMethodDefinition));
+							localReturnValue = MultiValueLattice.Meet(localReturnValue, GetMethodReturnValue (calledMethodDefinition));
 						} else if (staticType.IsSealed || staticType.IsTypeOf ("System", "Delegate")) {
 							// We can treat this one the same as if it was a typeof() expression
 
@@ -503,7 +506,7 @@ namespace Mono.Linker.Dataflow
 							// This can be seen a little bit as a violation of the annotation, but we already have similar cases
 							// where a parameter is annotated and if something in the method sets a specific known type to it
 							// we will also make it just work, even if the annotation doesn't match the usage.
-							methodReturnValue = MultiValueLattice.Meet (methodReturnValue, new SystemTypeValue (staticType));
+							localReturnValue = MultiValueLattice.Meet(localReturnValue, new SystemTypeValue (staticType));
 						} else {
 							// Make sure the type is marked (this will mark it as used via reflection, which is sort of true)
 							// This should already be true for most cases (method params, fields, ...), but just in case
@@ -515,7 +518,7 @@ namespace Mono.Linker.Dataflow
 							// Return a value which is "unknown type" with annotation. For now we'll use the return value node
 							// for the method, which means we're loosing the information about which staticType this
 							// started with. For now we don't need it, but we can add it later on.
-							methodReturnValue = MultiValueLattice.Meet (methodReturnValue, GetMethodReturnValue (calledMethodDefinition, annotation));
+							localReturnValue = MultiValueLattice.Meet(localReturnValue, GetMethodReturnValue (calledMethodDefinition, annotation));
 						}
 					}
 				}
@@ -545,7 +548,7 @@ namespace Mono.Linker.Dataflow
 								// Intentionally ignore - it's not wrong for code to call Type.GetType on non-existing name, the code might expect null/exception back.
 							} else {
 								_markStep.MarkTypeVisibleToReflection (foundTypeRef, foundType, new DependencyInfo (DependencyKind.AccessedViaReflection, callingMethodDefinition));
-								methodReturnValue = MultiValueLattice.Meet (methodReturnValue, new SystemTypeValue (foundType));
+								localReturnValue = MultiValueLattice.Meet(localReturnValue, new SystemTypeValue (foundType));
 								_context.MarkingHelpers.MarkMatchingExportedType (foundType, typeAssembly, new DependencyInfo (DependencyKind.AccessedViaReflection, foundType), analysisContext.Origin);
 							}
 						} else if (typeNameValue == NullValue.Instance) {
@@ -553,7 +556,7 @@ namespace Mono.Linker.Dataflow
 						} else if (typeNameValue is ValueWithDynamicallyAccessedMembers valueWithDynamicallyAccessedMembers && valueWithDynamicallyAccessedMembers.DynamicallyAccessedMemberTypes != 0) {
 							// Propagate the annotation from the type name to the return value. Annotation on a string value will be fullfilled whenever a value is assigned to the string with annotation.
 							// So while we don't know which type it is, we can guarantee that it will fulfill the annotation.
-							methodReturnValue = MultiValueLattice.Meet (methodReturnValue, GetMethodReturnValue (calledMethodDefinition, valueWithDynamicallyAccessedMembers.DynamicallyAccessedMemberTypes));
+							localReturnValue = MultiValueLattice.Meet(localReturnValue, GetMethodReturnValue (calledMethodDefinition, valueWithDynamicallyAccessedMembers.DynamicallyAccessedMemberTypes));
 						} else {
 							analysisContext.ReportWarning (DiagnosticId.UnrecognizedTypeNameInTypeGetType, calledMethod.GetDisplayName ());
 						}
@@ -787,7 +790,7 @@ namespace Mono.Linker.Dataflow
 					}
 
 					// MakeGenericMethod doesn't change the identity of the MethodBase we're tracking so propagate to the return value
-					methodReturnValue = methodParams[0];
+					localReturnValue = methodParams[0];
 				}
 				break;
 
@@ -820,7 +823,7 @@ namespace Mono.Linker.Dataflow
 				// To get good reporting of errors we need to track the origin of the value for all method calls
 				// but except Newobj as those are special.
 				if (GetReturnTypeWithoutModifiers (calledMethodDefinition.ReturnType).MetadataType != MetadataType.Void) {
-					methodReturnValue = GetMethodReturnValue (calledMethodDefinition, returnValueDynamicallyAccessedMemberTypes);
+					localReturnValue = GetMethodReturnValue (calledMethodDefinition, returnValueDynamicallyAccessedMemberTypes);
 
 					return true;
 				}
@@ -828,14 +831,19 @@ namespace Mono.Linker.Dataflow
 				return false;
 			}
 
+			//localReturnValue ??= GetReturnTypeWithoutModifiers (calledMethod.ReturnType).MetadataType == MetadataType.Void ? 
+				//MultiValueLattice.Top : GetMethodReturnValue (calledMethodDefinition, returnValueDynamicallyAccessedMemberTypes);
+
 			// If we get here, we handled this as an intrinsic.  As a convenience, if the code above
 			// didn't set the return value (and the method has a return value), we will set it to be an
 			// unknown value with the return type of the method.
-			if (methodReturnValue.IsEmpty ()) {
+			if (localReturnValue.IsEmpty ()) {
 				if (GetReturnTypeWithoutModifiers (calledMethod.ReturnType).MetadataType != MetadataType.Void) {
-					methodReturnValue = GetMethodReturnValue (calledMethodDefinition, returnValueDynamicallyAccessedMemberTypes);
+					localReturnValue = GetMethodReturnValue (calledMethodDefinition, returnValueDynamicallyAccessedMemberTypes);
 				}
 			}
+			methodReturnValue = localReturnValue;
+
 
 			// Validate that the return value has the correct annotations as per the method return value annotations
 			if (returnValueDynamicallyAccessedMemberTypes != 0) {
