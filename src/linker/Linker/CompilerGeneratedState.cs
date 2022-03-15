@@ -12,17 +12,19 @@ namespace Mono.Linker
 	{
 		readonly LinkContext _context;
 		readonly Dictionary<TypeDefinition, MethodDefinition> _compilerGeneratedTypeToUserCodeMethod;
+		readonly Dictionary<MethodDefinition, MethodDefinition> _compilerGeneratedMethodToUserCodeMethod;
 		readonly HashSet<TypeDefinition> _typesWithPopulatedCache;
 
 		public CompilerGeneratedState (LinkContext context)
 		{
 			_context = context;
 			_compilerGeneratedTypeToUserCodeMethod = new Dictionary<TypeDefinition, MethodDefinition> ();
+			_compilerGeneratedMethodToUserCodeMethod = new Dictionary<MethodDefinition, MethodDefinition> ();
 			_typesWithPopulatedCache = new HashSet<TypeDefinition> ();
 		}
 
 		static bool HasRoslynCompilerGeneratedName (TypeDefinition type) =>
-			type.Name.Contains ('<') || (type.DeclaringType != null && HasRoslynCompilerGeneratedName (type.DeclaringType));
+			GeneratedNames.IsGeneratedMemberName (type.Name) || (type.DeclaringType != null && HasRoslynCompilerGeneratedName (type.DeclaringType));
 
 		void PopulateCacheForType (TypeDefinition type)
 		{
@@ -30,7 +32,53 @@ namespace Mono.Linker
 			if (!_typesWithPopulatedCache.Add (type))
 				return;
 
+			Dictionary<string, List<MethodDefinition>>? lambdaMethods = null;
+
+			foreach (TypeDefinition nested in type.NestedTypes) {
+				if (!GeneratedNames.IsLambdaDisplayClass (nested.Name))
+					continue;
+
+				lambdaMethods ??= new Dictionary<string, List<MethodDefinition>> ();
+
+				foreach (var lambdaMethod in nested.Methods) {
+					if (!GeneratedNames.TryParseLambdaMethodName (lambdaMethod.Name, out string? userMethodName))
+						continue;
+					if (!lambdaMethods.TryGetValue (userMethodName, out List<MethodDefinition>? lambdaMethodsForName)) {
+						lambdaMethodsForName = new List<MethodDefinition> ();
+						lambdaMethods.Add (userMethodName, lambdaMethodsForName);
+					}
+					lambdaMethodsForName.Add (lambdaMethod);
+				}
+			}
+
+			Dictionary<string, List<MethodDefinition>>? localFunctions = null;
+
+			foreach (MethodDefinition localFunction in type.Methods) {
+				if (!GeneratedNames.TryParseLocalFunctionMethodName (localFunction.Name, out string? userMethodName, out string? localFunctionName))
+					continue;
+
+				localFunctions ??= new Dictionary<string, List<MethodDefinition>> ();
+
+				if (!localFunctions.TryGetValue (userMethodName, out List<MethodDefinition>? localFunctionsForName)) {
+					localFunctionsForName = new List<MethodDefinition> ();
+					localFunctions.Add (userMethodName, localFunctionsForName);
+				}
+				localFunctionsForName.Add (localFunction);
+			}
+
 			foreach (MethodDefinition method in type.Methods) {
+				// TODO: combine into one thing?
+
+				if (lambdaMethods?.TryGetValue (method.Name, out List<MethodDefinition>? lambdaMethodsForName) == true) {
+					foreach (var lambdaMethod in lambdaMethodsForName)
+						_compilerGeneratedMethodToUserCodeMethod.Add (lambdaMethod, method);
+				}
+
+				if (localFunctions?.TryGetValue (method.Name, out List<MethodDefinition>? localFunctionsForName) == true) {
+					foreach (var localFunction in localFunctionsForName)
+						_compilerGeneratedMethodToUserCodeMethod.Add (localFunction, method);
+				}
+
 				if (!method.HasCustomAttributes)
 					continue;
 
@@ -69,8 +117,15 @@ namespace Mono.Linker
 			if (sourceMember == null)
 				return null;
 
+			MethodDefinition? userDefinedMethod;
+			MethodDefinition? compilerGeneratedMethod = sourceMember as MethodDefinition;
+			if (compilerGeneratedMethod != null) {
+				if (_compilerGeneratedMethodToUserCodeMethod.TryGetValue (compilerGeneratedMethod, out userDefinedMethod))
+					return userDefinedMethod;
+			}
+
 			TypeDefinition compilerGeneratedType = (sourceMember as TypeDefinition) ?? sourceMember.DeclaringType;
-			if (_compilerGeneratedTypeToUserCodeMethod.TryGetValue (compilerGeneratedType, out MethodDefinition? userDefinedMethod))
+			if (_compilerGeneratedTypeToUserCodeMethod.TryGetValue (compilerGeneratedType, out userDefinedMethod))
 				return userDefinedMethod;
 
 			// Only handle async or iterator state machine
@@ -81,6 +136,11 @@ namespace Mono.Linker
 			// Now go to its declaring type and search all methods to find the one which points to the type as its
 			// state machine implementation.
 			PopulateCacheForType (compilerGeneratedType.DeclaringType);
+			if (compilerGeneratedMethod != null) {
+				if (_compilerGeneratedMethodToUserCodeMethod.TryGetValue (compilerGeneratedMethod, out userDefinedMethod))
+					return userDefinedMethod;
+			}
+
 			if (_compilerGeneratedTypeToUserCodeMethod.TryGetValue (compilerGeneratedType, out userDefinedMethod))
 				return userDefinedMethod;
 

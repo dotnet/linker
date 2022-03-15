@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System;
@@ -647,9 +647,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		class SuppressInLocalFunction
 		{
-			// Requires doesn't propagate into local functions yet
-			// so its suppression effect also doesn't propagate
-
 			[RequiresUnreferencedCode ("Suppress in body")]
 			[RequiresAssemblyFiles ("Suppress in body")]
 			[RequiresDynamicCode ("Suppress in body")]
@@ -657,7 +654,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			{
 				LocalFunction ();
 
-				[ExpectedWarning ("IL2026")]
+				[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Analyzer)]
 				[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
 				[ExpectedWarning ("IL3050", ProducedBy = ProducedBy.Analyzer)]
 				void LocalFunction () => MethodWithRequires ();
@@ -670,7 +667,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			{
 				LocalFunction ();
 
-				[ExpectedWarning ("IL2026")]
+				[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Analyzer)]
 				[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
 				[ExpectedWarning ("IL3050", ProducedBy = ProducedBy.Analyzer)]
 				void LocalFunction ()
@@ -687,7 +684,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			{
 				LocalFunction ();
 
-				[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Trimmer)]
 				void LocalFunction () => typeof (RequiresInCompilerGeneratedCode)
 					.GetMethod ("MethodWithRequires", System.Reflection.BindingFlags.NonPublic)
 					.Invoke (null, new object[] { });
@@ -700,7 +696,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			{
 				LocalFunction ();
 
-				[ExpectedWarning ("IL2026")]
+				[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Analyzer)]
 				[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
 				[ExpectedWarning ("IL3050", ProducedBy = ProducedBy.Analyzer)]
 				void LocalFunction ()
@@ -731,7 +727,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			{
 				LocalFunction ();
 
-				[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Trimmer)]
 				void LocalFunction () => typeof (TypeWithMethodWithRequires).RequiresNonPublicMethods ();
 			}
 
@@ -742,7 +737,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			{
 				LocalFunction ();
 
-				[ExpectedWarning ("IL2077", ProducedBy = ProducedBy.Trimmer)]
 				void LocalFunction () => unknownType.RequiresNonPublicMethods ();
 			}
 
@@ -753,7 +747,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			{
 				LocalFunction ();
 
-				[ExpectedWarning ("IL2091", ProducedBy = ProducedBy.Trimmer)]
 				void LocalFunction () => MethodWithGenericWhichRequiresMethods<TUnknown> ();
 			}
 
@@ -764,7 +757,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			{
 				LocalFunction ();
 
-				[ExpectedWarning ("IL2091", ProducedBy = ProducedBy.Trimmer)]
 				void LocalFunction () => new TypeWithGenericWhichRequiresNonPublicFields<TUnknown> ();
 			}
 
@@ -788,8 +780,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			{
 				LocalFunction<TUnknown> ();
 
-				[ExpectedWarning ("IL2087", ProducedBy = ProducedBy.Trimmer)]
-				[ExpectedWarning ("IL2087", ProducedBy = ProducedBy.Trimmer)]
 				void LocalFunction<TSecond> ()
 				{
 					typeof (TUnknown).RequiresPublicMethods ();
@@ -827,7 +817,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			{
 				var _ = new Action (LocalFunction);
 
-				[ExpectedWarning ("IL2026")]
+				[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Analyzer)]
 				[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
 				[ExpectedWarning ("IL3050", ProducedBy = ProducedBy.Analyzer)]
 				void LocalFunction () => MethodWithRequires ();
