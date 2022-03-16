@@ -654,9 +654,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			{
 				LocalFunction ();
 
-				[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Analyzer)]
-				[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
-				[ExpectedWarning ("IL3050", ProducedBy = ProducedBy.Analyzer)]
 				void LocalFunction () => MethodWithRequires ();
 			}
 
@@ -667,9 +664,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			{
 				LocalFunction ();
 
-				[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Analyzer)]
-				[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
-				[ExpectedWarning ("IL3050", ProducedBy = ProducedBy.Analyzer)]
 				void LocalFunction ()
 				{
 					p++;
@@ -696,9 +690,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			{
 				LocalFunction ();
 
-				[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Analyzer)]
-				[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
-				[ExpectedWarning ("IL3050", ProducedBy = ProducedBy.Analyzer)]
 				void LocalFunction ()
 				{
 					var action = new Action (MethodWithRequires);
@@ -817,9 +808,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			{
 				var _ = new Action (LocalFunction);
 
-				[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Analyzer)]
-				[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
-				[ExpectedWarning ("IL3050", ProducedBy = ProducedBy.Analyzer)]
 				void LocalFunction () => MethodWithRequires ();
 			}
 
@@ -983,9 +971,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			static void TestCall ()
 			{
 				Action _ =
-				[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Analyzer)]
-				[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
-				[ExpectedWarning ("IL3050", ProducedBy = ProducedBy.Analyzer)]
 				() => MethodWithRequires ();
 			}
 
@@ -1005,9 +990,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			static void TestCallWithClosure (int p = 0)
 			{
 				Action _ =
-				[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Analyzer)]
-				[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
-				[ExpectedWarning ("IL3050", ProducedBy = ProducedBy.Analyzer)]
 				() => {
 					p++;
 					MethodWithRequires ();
@@ -1033,9 +1015,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			static void TestLdftn ()
 			{
 				Action _ =
-				[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Analyzer)]
-				[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
-				[ExpectedWarning ("IL3050", ProducedBy = ProducedBy.Analyzer)]
 				() => {
 					var action = new Action (MethodWithRequires);
 				};
