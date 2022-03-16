@@ -57,6 +57,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TestAnnotationsOnNullableKeepsMembersOnUnderlyingType ();
 			TestGetUnderlyingTypeOfCreatedNullableOnStructs ();
 			ImproperMakeGenericTypeDoesntWarn ();
+			MakeGenericTypeWithUnknownValue (new object[2] { 1, 2 });
 		}
 
 		[Kept]
@@ -255,6 +256,15 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		static void NullableOfAnnotatedGenericParamPassedAsGenericParamRequiresPublicFields<[KeptAttributeAttribute (typeof (DAM))][DAM (DAMT.PublicFields)] T> () where T : struct
 		{
 			RequirePublicFieldsOnGenericParam<Nullable<T>> ();
+		}
+
+		[Kept]
+		[ExpectedWarning("IL2075")]
+		static void MakeGenericTypeWithUnknownValue(object[] maybetypes)
+		{
+			Type[] types = new Type[] { maybetypes[0] as Type };  // Roundabout way to get UnknownValue - it is getting tricky to do that reliably
+			Type nullable = typeof (Nullable<>).MakeGenericType(types);
+			nullable.GetProperties();  // Must WARN
 		}
 	}
 }

@@ -76,7 +76,7 @@ namespace ILLink.Shared.TrimAnalysis
 				}
 				break;
 
-			case NullableRuntimeTypeWithDamHandleValue value:
+			case RuntimeTypeHandleForNullableValueWithDynamicallyAccessedMembers value:
 				foundCycle = value.UnderlyingTypeValue.DetectCycle (seenNodes, allNodesSeen);
 				break;
 

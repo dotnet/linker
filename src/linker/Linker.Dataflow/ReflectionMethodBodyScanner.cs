@@ -365,17 +365,28 @@ namespace Mono.Linker.Dataflow
 									if ((argumentValue as ArrayValue)?.TryGetValueByIndex (0, out var underlyingMultiValue) == true) {
 										foreach (var underlyingValue in underlyingMultiValue) {
 											switch (underlyingValue) {
+											// Don't warn on Array types - it will throw instead
+											case SystemTypeValue maybeArrayValue when maybeArrayValue.RepresentedType.IsTypeOf("System", "Array"):
+												AddReturnValue(MultiValueLattice.Top);
+												break;
 											case SystemTypeValue systemTypeValue:
 												AddReturnValue(new NullableSystemTypeValue(typeValue.RepresentedType, systemTypeValue.RepresentedType));
+												break;
+											// Don't warn on Nullable<T> - it will throw instead
+											case NullableValueWithDynamicallyAccessedMembers:
+												AddReturnValue(MultiValueLattice.Top);
 												break;
 											// Generic Parameters and method parameters with annotations
 											case ValueWithDynamicallyAccessedMembers damValue:
 												AddReturnValue(new NullableValueWithDynamicallyAccessedMembers (typeValue.RepresentedType, damValue));
 												break;
-											// Nullable values and array values cannot be used as generic arguments to nullables (i.e. no Nullable<int[]> or Nullable<Nullable<int>>)
-											//  Anything here should warn in the compiler or throw, so add Top as a return value to prevent warning
-											default:
+											// Don't warn on Nullable<T>, it will throw instead
+											case NullableSystemTypeValue:
 												AddReturnValue(MultiValueLattice.Top);
+												break;
+											// Everything else assume it has no annotations
+											default:
+												AddReturnValue(GetMethodReturnValue (calledMethodDefinition, returnValueDynamicallyAccessedMemberTypes));
 												break;
 											}
 										}
@@ -834,17 +845,10 @@ namespace Mono.Linker.Dataflow
 			// If we get here, we handled this as an intrinsic.  As a convenience, if the code above
 			// didn't set the return value (and the method has a return value), we will set it to be an
 			// unknown value with the return type of the method.
-			maybeMethodReturnValue ??= GetReturnTypeWithoutModifiers (calledMethod.ReturnType).MetadataType == MetadataType.Void ? 
-				MultiValueLattice.Top : GetMethodReturnValue (calledMethodDefinition, returnValueDynamicallyAccessedMemberTypes);
-
-
-			if (maybeMethodReturnValue is not null) {
-				methodReturnValue = (MultiValue) maybeMethodReturnValue;
-			} else {
-				methodReturnValue = GetReturnTypeWithoutModifiers (calledMethod.ReturnType).MetadataType == MetadataType.Void ? 
-					MultiValueLattice.Top : GetMethodReturnValue (calledMethodDefinition, returnValueDynamicallyAccessedMemberTypes);
-			}
-
+			bool returnsVoid = GetReturnTypeWithoutModifiers (calledMethod.ReturnType).MetadataType == MetadataType.Void;
+			methodReturnValue = maybeMethodReturnValue ??  (returnsVoid ? 
+				MultiValueLattice.Top :
+				GetMethodReturnValue (calledMethodDefinition, returnValueDynamicallyAccessedMemberTypes));
 
 			// Validate that the return value has the correct annotations as per the method return value annotations
 			if (returnValueDynamicallyAccessedMemberTypes != 0) {
