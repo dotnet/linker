@@ -236,7 +236,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicMethods), ProducedBy = ProducedBy.Trimmer)]
-			// Bug
+			// Multidimensional Arrays not handled -- assumed to be UnknownValue
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresAll), ProducedBy = ProducedBy.Trimmer)]
 			static void TestArrayWithInitializerOneElementStaticType ()
 			{
@@ -246,7 +246,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicMethods), ProducedBy = ProducedBy.Trimmer)]
-			// Bug
+			// Multidimensional Arrays not handled -- assumed to be UnknownValue
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresAll), ProducedBy = ProducedBy.Trimmer)]
 			static void TestArrayWithInitializerOneElementParameter ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] Type type)
 			{
@@ -256,7 +256,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicMethods), ProducedBy = ProducedBy.Trimmer)]
-			// Below are all bugs
+			// Below are because we do not handle Multi dimensional arrays
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresAll), ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresAll), ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresAll), ProducedBy = ProducedBy.Trimmer)]
@@ -272,7 +272,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			// Bug
 			// [ExpectedWarning ("IL2087", nameof (DataFlowTypeExtensions.RequiresPublicFields), ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicMethods), ProducedBy = ProducedBy.Trimmer)]
-			// Below are all bugs
+			// Below are because we do not handle Multi dimensional arrays
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresAll), ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicProperties), ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicFields), ProducedBy = ProducedBy.Trimmer)]
@@ -289,7 +289,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicMethods), ProducedBy = ProducedBy.Trimmer)]
-			// Bug
+			// Multidimensional Arrays not handled -- assumed to be UnknownValue
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresAll), ProducedBy = ProducedBy.Trimmer)]
 			static void TestArraySetElementOneElementStaticType ()
 			{
@@ -300,7 +300,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicMethods), ProducedBy = ProducedBy.Trimmer)]
-			// Bug
+			// Multidimensional Arrays not handled -- assumed to be UnknownValue
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresAll), ProducedBy = ProducedBy.Trimmer)]
 			static void TestArraySetElementOneElementParameter ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] Type type)
 			{
@@ -311,7 +311,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicMethods), ProducedBy = ProducedBy.Trimmer)]
-			// Below are all bugs
+			// Below are because we do not handle Multi dimensional arrays
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresAll), ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresAll), ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresAll), ProducedBy = ProducedBy.Trimmer)]
@@ -330,7 +330,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			// Bug
 			// [ExpectedWarning ("IL2087", nameof (DataFlowTypeExtensions.RequiresPublicFields), ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicMethods), ProducedBy = ProducedBy.Trimmer)]
-			// Below are all bugs
+			// Below are because we do not handle Multi dimensional arrays
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicFields), ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicProperties), ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresAll), ProducedBy = ProducedBy.Trimmer)]
@@ -352,7 +352,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			// Bug
 			// [ExpectedWarning ("IL2087", nameof (DataFlowTypeExtensions.RequiresPublicFields), ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicMethods), ProducedBy = ProducedBy.Trimmer)]
-			// Below are all bugs
+			// Below are because we do not handle Multi dimensional arrays
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicFields), ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicProperties), ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresAll), ProducedBy = ProducedBy.Trimmer)]
@@ -378,7 +378,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicFields), ProducedBy = ProducedBy.Trimmer)]
-			// Bug
+			// Multidimensional Arrays not handled -- assumed to be UnknownValue
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicProperties), ProducedBy = ProducedBy.Trimmer)]
 			static void TestArrayResetStoreUnknownIndex (int i = 0)
 			{
@@ -392,9 +392,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			// https://github.com/dotnet/linker/issues/2680 - analyzer doesn't reset array in this case
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicFields), ProducedBy = ProducedBy.Trimmer)]
-			// Bug
+			// Multidimensional Arrays not handled -- assumed to be UnknownValue
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicProperties), ProducedBy = ProducedBy.Trimmer)]
-			// Bug
+			// Multidimensional Arrays not handled -- assumed to be UnknownValue
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicMethods), ProducedBy = ProducedBy.Trimmer)]
 			static void TestArrayResetGetElementOnByRefArray (int i = 0)
 			{
@@ -411,7 +411,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			static void TakesTypeByRef (ref Type type) { }
 
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicFields), ProducedBy = ProducedBy.Trimmer)]
-			// Bug
+			// Multidimensional Arrays not handled -- assumed to be UnknownValue
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicProperties), ProducedBy = ProducedBy.Trimmer)]
 			static void TestArrayResetAfterCall ()
 			{
@@ -429,7 +429,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			// https://github.com/dotnet/linker/issues/2680
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicFields), ProducedBy = ProducedBy.Trimmer)]
-			// Bug
+			// Multidimensional Arrays not handled -- assumed to be UnknownValue
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicProperties), ProducedBy = ProducedBy.Trimmer)]
 			static void TestArrayResetAfterAssignment ()
 			{
