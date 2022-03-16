@@ -63,8 +63,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		[Kept]
 		static void ImproperMakeGenericTypeDoesntWarn ()
 		{
-			typeof(Nullable<>).MakeGenericType(typeof(Nullable<int>)).GetProperties();  // No warning - we treat the cases where reflection throws as "no value".
-			typeof(Nullable<>).MakeGenericType(typeof(int[])).GetProperties();  // No warning - we treat the cases where reflection throws as "no value".
+			typeof (Nullable<>).MakeGenericType (typeof (Nullable<int>)).GetProperties ();  // No warning - we treat the cases where reflection throws as "no value".
+			typeof (Nullable<>).MakeGenericType (typeof (int[])).GetProperties ();  // No warning - we treat the cases where reflection throws as "no value".
 		}
 
 		[Kept]
@@ -259,12 +259,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[Kept]
-		[ExpectedWarning("IL2075")]
-		static void MakeGenericTypeWithUnknownValue(object[] maybetypes)
+		[ExpectedWarning ("IL2075")]
+		static void MakeGenericTypeWithUnknownValue (object[] maybetypes)
 		{
 			Type[] types = new Type[] { maybetypes[0] as Type };  // Roundabout way to get UnknownValue - it is getting tricky to do that reliably
-			Type nullable = typeof (Nullable<>).MakeGenericType(types);
-			nullable.GetProperties();  // Must WARN
+			Type nullable = typeof (Nullable<>).MakeGenericType (types);
+			nullable.GetProperties ();  // Must WARN
 		}
 	}
 }
