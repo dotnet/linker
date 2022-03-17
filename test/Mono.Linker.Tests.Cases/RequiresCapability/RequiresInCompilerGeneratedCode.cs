@@ -820,9 +820,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				{
 					typeof (DynamicallyAccessedLocalFunction).RequiresNonPublicMethods ();
 
-					[ExpectedWarning ("IL2026")]
-					[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
-					[ExpectedWarning ("IL3050", ProducedBy = ProducedBy.Analyzer)]
 					void LocalFunction () => MethodWithRequires ();
 				}
 			}

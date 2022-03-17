@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System.Collections.Generic;
@@ -124,24 +124,24 @@ namespace Mono.Linker
 					return userDefinedMethod;
 			}
 
-			TypeDefinition compilerGeneratedType = (sourceMember as TypeDefinition) ?? sourceMember.DeclaringType;
-			if (_compilerGeneratedTypeToUserCodeMethod.TryGetValue (compilerGeneratedType, out userDefinedMethod))
+			TypeDefinition sourceType = (sourceMember as TypeDefinition) ?? sourceMember.DeclaringType;
+			if (_compilerGeneratedTypeToUserCodeMethod.TryGetValue (sourceType, out userDefinedMethod))
 				return userDefinedMethod;
 
-			// Only handle async or iterator state machine
-			// So go to the declaring type and check if it's compiler generated (as a perf optimization)
-			if (!HasRoslynCompilerGeneratedName (compilerGeneratedType) || compilerGeneratedType.DeclaringType == null)
+			if (sourceType.DeclaringType == null)
 				return null;
+
+			var typeToCache = HasRoslynCompilerGeneratedName (sourceType) ? sourceType.DeclaringType : sourceType;
 
 			// Now go to its declaring type and search all methods to find the one which points to the type as its
 			// state machine implementation.
-			PopulateCacheForType (compilerGeneratedType.DeclaringType);
+			PopulateCacheForType (typeToCache);
 			if (compilerGeneratedMethod != null) {
 				if (_compilerGeneratedMethodToUserCodeMethod.TryGetValue (compilerGeneratedMethod, out userDefinedMethod))
 					return userDefinedMethod;
 			}
 
-			if (_compilerGeneratedTypeToUserCodeMethod.TryGetValue (compilerGeneratedType, out userDefinedMethod))
+			if (_compilerGeneratedTypeToUserCodeMethod.TryGetValue (sourceType, out userDefinedMethod))
 				return userDefinedMethod;
 
 			return null;

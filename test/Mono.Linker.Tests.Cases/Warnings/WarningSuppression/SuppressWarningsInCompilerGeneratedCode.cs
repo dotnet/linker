@@ -278,7 +278,6 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 				{
 					typeof (DynamicallyAccessedLocalFunction).RequiresNonPublicMethods ();
 
-					[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Trimmer)]
 					void LocalFunction () => RequiresUnreferencedCodeMethod ();
 				}
 			}
