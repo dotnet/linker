@@ -33,12 +33,21 @@ namespace Mono.Linker
 				return;
 
 			Dictionary<string, List<MethodDefinition>>? lambdaMethods = null;
+			Dictionary<string, List<MethodDefinition>>? localFunctions = null;
 
 			foreach (TypeDefinition nested in type.NestedTypes) {
 				if (!GeneratedNames.IsLambdaDisplayClass (nested.Name))
 					continue;
 
+				// Lambdas and local functions may be generated into a display class which holds
+				// the closure environment. Lambdas are always generated into such a class.
+
+				// Local functions typically get emitted outside of the
+				// display class (which is a struct in this case), but when any of the captured state
+				// is used by a state machine local function, the local function is emitted into a
+				// display class holding that captured state.
 				lambdaMethods ??= new Dictionary<string, List<MethodDefinition>> ();
+				localFunctions ??= new Dictionary<string, List<MethodDefinition>> ();
 
 				foreach (var lambdaMethod in nested.Methods) {
 					if (!GeneratedNames.TryParseLambdaMethodName (lambdaMethod.Name, out string? userMethodName))
@@ -49,13 +58,26 @@ namespace Mono.Linker
 					}
 					lambdaMethodsForName.Add (lambdaMethod);
 				}
+
+				foreach (var localFunction in nested.Methods) {
+					if (!GeneratedNames.TryParseLocalFunctionMethodName (localFunction.Name, out string? userMethodName, out string? localFunctionName))
+						continue;
+					if (!localFunctions.TryGetValue (userMethodName, out List<MethodDefinition>? localFunctionsForName)) {
+						localFunctionsForName = new List<MethodDefinition> ();
+						localFunctions.Add (userMethodName, localFunctionsForName);
+					}
+					localFunctionsForName.Add (localFunction);
+				}
 			}
 
-			Dictionary<string, List<MethodDefinition>>? localFunctions = null;
 
 			foreach (MethodDefinition localFunction in type.Methods) {
 				if (!GeneratedNames.TryParseLocalFunctionMethodName (localFunction.Name, out string? userMethodName, out string? localFunctionName))
 					continue;
+
+				// Local functions may be generated into the same type as its declaring method,
+				// alongside a displayclass which holds the captured state.
+				// Or it may not have a displayclass, if there is no captured state.
 
 				localFunctions ??= new Dictionary<string, List<MethodDefinition>> ();
 
