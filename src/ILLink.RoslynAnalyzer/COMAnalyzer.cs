@@ -89,11 +89,11 @@ namespace ILLink.RoslynAnalyzer
 				if (typeSymbol == null)
 					return false;
 
-				if (typeSymbol.IsTypeOf(WellKnownType.System_Array)) {
+				if (typeSymbol.IsTypeOf (WellKnownType.System_Array)) {
 					// System.Array marshals as IUnknown by default
 					return true;
-				} else if (typeSymbol.IsTypeOf(WellKnownType.System_String) ||
-					typeSymbol.IsTypeOf("System.Text", "StringBuilder")) {
+				} else if (typeSymbol.IsTypeOf (WellKnownType.System_String) ||
+					typeSymbol.IsTypeOf ("System.Text", "StringBuilder")) {
 					// String and StringBuilder are special cased by interop
 					return false;
 				}
@@ -104,7 +104,7 @@ namespace ILLink.RoslynAnalyzer
 				} else if (typeSymbol.IsInterface ()) {
 					// Interface types marshal as COM by default
 					return true;
-				} else if (typeSymbol.IsTypeOf("System", "MulticastDelegate")) {
+				} else if (typeSymbol.IsTypeOf ("System", "MulticastDelegate")) {
 					// Delegates are special cased by interop
 					return false;
 				} else if (typeSymbol.IsSubclassOf ("System.Runtime.InteropServices", "CriticalHandle") ||

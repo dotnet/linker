@@ -13,11 +13,11 @@ namespace ILLink.Shared.TypeSystemProxy
 		public readonly ITypeSymbol Type;
 
 		public string Name { get => Type.MetadataName; }
-		public string? Namespace {get => Type.ContainingNamespace?.Name; }
+		public string? Namespace { get => Type.ContainingNamespace?.Name; }
 
 		public bool IsTypeOf (string @namespace, string name) => Type.IsTypeOf (@namespace, name);
 
-		public bool IsTypeOf (WellKnownType wellKnownType) => Type.IsTypeOf (wellKnownType); 
+		public bool IsTypeOf (WellKnownType wellKnownType) => Type.IsTypeOf (wellKnownType);
 
 		public string GetDisplayName () => Type.GetDisplayName ();
 

@@ -6,7 +6,8 @@ using System;
 
 namespace ILLink.Shared.TypeSystemProxy
 {
-	public enum WellKnownType {
+	public enum WellKnownType
+	{
 		System_String,
 		System_Nullable_T,
 		System_Type,

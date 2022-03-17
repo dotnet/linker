@@ -35,11 +35,11 @@ namespace ILLink.RoslynAnalyzer
 
 			ITypeSymbol? baseType = type;
 			while (baseType != null) {
-				if (baseType.IsTypeOf(WellKnownType.System_Type))
+				if (baseType.IsTypeOf (WellKnownType.System_Type))
 					flags |= HierarchyFlags.IsSystemType;
 
 				foreach (var iface in baseType.Interfaces) {
-					if (iface.IsTypeOf(WellKnownType.System_Reflection_IReflect)) {
+					if (iface.IsTypeOf (WellKnownType.System_Reflection_IReflect)) {
 						flags |= HierarchyFlags.IsSystemReflectionIReflect;
 					}
 				}
@@ -53,16 +53,16 @@ namespace ILLink.RoslynAnalyzer
 
 		private static bool IsSystemReflectionIReflect (HierarchyFlags flags) => (flags & HierarchyFlags.IsSystemReflectionIReflect) != 0;
 
-		public static bool IsTypeOf(this ITypeSymbol symbol, string @namespace, string name)
+		public static bool IsTypeOf (this ITypeSymbol symbol, string @namespace, string name)
 		{
-			return symbol.ContainingNamespace?.GetDisplayName() == @namespace && symbol.MetadataName == name;
+			return symbol.ContainingNamespace?.GetDisplayName () == @namespace && symbol.MetadataName == name;
 		}
 
-		public static bool IsTypeOf (this ITypeSymbol symbol, WellKnownType wellKnownType) 
+		public static bool IsTypeOf (this ITypeSymbol symbol, WellKnownType wellKnownType)
 		{
 			if (wellKnownType.TryGetSpecialType (out var specialType)) {
 				// Make sure checking the special type is the same as checking the metadata string names.
-				Debug.Assert(symbol.IsTypeOf (wellKnownType.GetNamespace (), wellKnownType.GetName ()) == (symbol.SpecialType == specialType));
+				Debug.Assert (symbol.IsTypeOf (wellKnownType.GetNamespace (), wellKnownType.GetName ()) == (symbol.SpecialType == specialType));
 				return symbol.SpecialType == specialType;
 			}
 			var (Namespace, Name) = wellKnownType.GetNamespaceAndName ();

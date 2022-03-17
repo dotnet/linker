@@ -147,7 +147,7 @@ namespace ILLink.RoslynAnalyzer
 				return false;
 
 			while (typeSymbol != null) {
-				if (typeSymbol.IsTypeOf(ns, type))
+				if (typeSymbol.IsTypeOf (ns, type))
 					return true;
 
 				typeSymbol = typeSymbol.ContainingType;
