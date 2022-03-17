@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using ILLink.Shared;
 using Mono.Cecil;
@@ -13,7 +14,8 @@ namespace Mono.Linker
 	{
 		readonly LinkContext _context;
 		readonly Dictionary<TypeDefinition, MethodDefinition> _compilerGeneratedTypeToUserCodeMethod;
-		readonly Dictionary<MethodDefinition, MethodDefinition> _compilerGeneratedMethodToUserCodeMethod;
+		// TODO: fix accessibility
+		internal readonly Dictionary<MethodDefinition, MethodDefinition> _compilerGeneratedMethodToUserCodeMethod;
 		readonly HashSet<TypeDefinition> _typesWithPopulatedCache;
 
 		public CompilerGeneratedState (LinkContext context)
@@ -26,6 +28,30 @@ namespace Mono.Linker
 
 		static bool HasRoslynCompilerGeneratedName (TypeDefinition type) =>
 			GeneratedNames.IsGeneratedMemberName (type.Name) || (type.DeclaringType != null && HasRoslynCompilerGeneratedName (type.DeclaringType));
+
+
+		public void TrackCallToLambdaOrLocalFunction (MethodDefinition caller, MethodDefinition lambdaOrLocalFunction)
+		{
+			if (!GeneratedNames.IsGeneratedMemberName (caller.Name)) {
+				// Caller is a normal method... TODO: MoveNext of a state machine method?)
+				bool added = _compilerGeneratedMethodToUserCodeMethod.TryAdd (lambdaOrLocalFunction, caller);
+				// There should only be one non-compiler-generated caller of a lambda or local function.
+				Debug.Assert (added || _compilerGeneratedMethodToUserCodeMethod[lambdaOrLocalFunction] == caller);
+				return;
+			}
+
+			Debug.Assert (GeneratedNames.TryParseLambdaMethodName (caller.Name, out _) || GeneratedNames.TryParseLocalFunctionMethodName (caller.Name, out _, out _));
+			// Caller is a lambda or local function. This means the lambda or local function is contained within the scope of the caller's user-defined method.
+
+			if (_compilerGeneratedMethodToUserCodeMethod.TryGetValue (caller, out MethodDefinition? userCodeMethod)) {
+				// This lambda/localfn is in the same user code as the caller.
+				bool added = _compilerGeneratedMethodToUserCodeMethod.TryAdd (lambdaOrLocalFunction, userCodeMethod);
+				Debug.Assert (added || _compilerGeneratedMethodToUserCodeMethod[lambdaOrLocalFunction] == caller);
+			} else {
+				// Haven't tracked any calls to the caller yet.
+				throw new System.Exception ("Not yet handled! Need to postpone marking of such methods until we can identify a caller, or bail out.");
+			}
+		}
 
 		void PopulateCacheForType (TypeDefinition type)
 		{
@@ -114,11 +140,12 @@ namespace Mono.Linker
 					case "AsyncStateMachineAttribute":
 					case "IteratorStateMachineAttribute":
 						TypeDefinition? stateMachineType = GetFirstConstructorArgumentAsType (attribute);
-						if (stateMachineType != null) {
-							if (!_compilerGeneratedTypeToUserCodeMethod.TryAdd (stateMachineType, method)) {
-								var alreadyAssociatedMethod = _compilerGeneratedTypeToUserCodeMethod[stateMachineType];
-								_context.LogWarning (new MessageOrigin (method), DiagnosticId.MethodsAreAssociatedWithStateMachine, method.GetDisplayName (), alreadyAssociatedMethod.GetDisplayName (), stateMachineType.GetDisplayName ());
-							}
+						if (stateMachineType == null)
+							break;
+						Debug.Assert (stateMachineType.DeclaringType == type);
+						if (!_compilerGeneratedTypeToUserCodeMethod.TryAdd (stateMachineType, method)) {
+							var alreadyAssociatedMethod = _compilerGeneratedTypeToUserCodeMethod[stateMachineType];
+							_context.LogWarning (new MessageOrigin (method), DiagnosticId.MethodsAreAssociatedWithStateMachine, method.GetDisplayName (), alreadyAssociatedMethod.GetDisplayName (), stateMachineType.GetDisplayName ());
 						}
 
 						break;

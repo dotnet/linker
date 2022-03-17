@@ -559,6 +559,21 @@ namespace Mono.Linker.Steps
 
 		protected virtual void EnqueueMethod (MethodDefinition method, in DependencyInfo reason, in MarkScopeStack.Scope scope)
 		{
+			if (GeneratedNames.IsGeneratedMemberName (method.Name)) {
+				// We only expect a generated method to represent a lambda or local function.
+				// TODO: what about implicit Main? Async main?
+				Debug.Assert (GeneratedNames.TryParseLambdaMethodName (method.Name, out _) || GeneratedNames.TryParseLocalFunctionMethodName (method.Name, out _, out _));
+				// We rely on the callers of compiler-generated methods being marked first... which might not always be true,
+				// if they are marked for a reason other than a discovered call to them.
+				// Might need to postpone processing of such methods. But for now just check the assumption.
+				Debug.Assert (reason.Kind is DependencyKind.DirectCall or DependencyKind.VirtualCall or DependencyKind.Newobj);
+				Debug.Assert (Annotations.IsMarked ((IMetadataTokenProvider) reason.Source));
+				// We should have tracked a user method for this compiler-generated method.
+				Debug.Assert (Context.CompilerGeneratedState._compilerGeneratedMethodToUserCodeMethod.TryGetValue (method, out _));
+
+				MethodDefinition caller = (MethodDefinition) reason.Source;
+				Context.CompilerGeneratedState.TrackCallToLambdaOrLocalFunction (caller, method);
+			}
 			_methods.Enqueue ((method, reason, scope));
 		}
 
