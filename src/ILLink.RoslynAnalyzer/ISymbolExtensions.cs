@@ -95,7 +95,7 @@ namespace ILLink.RoslynAnalyzer
 			var sb = new StringBuilder ();
 			switch (symbol) {
 			case IFieldSymbol fieldSymbol:
-				sb.Append (fieldSymbol.ContainingSymbol.ToDisplayString (ILLinkTypeDisplayFormat));
+				sb.Append (fieldSymbol.ContainingSymbol?.ToDisplayString (ILLinkTypeDisplayFormat));
 				sb.Append (".");
 				sb.Append (fieldSymbol.MetadataName);
 				break;
@@ -105,7 +105,7 @@ namespace ILLink.RoslynAnalyzer
 				break;
 
 			case IMethodSymbol methodSymbol when methodSymbol.IsStaticConstructor ():
-				sb.Append (symbol.ContainingType.ToDisplayString (ILLinkTypeDisplayFormat));
+				sb.Append (symbol.ContainingType?.ToDisplayString (ILLinkTypeDisplayFormat));
 				sb.Append ("..cctor()");
 				break;
 
@@ -117,7 +117,7 @@ namespace ILLink.RoslynAnalyzer
 					// If the containing symbol is a method (for example for local functions),
 					// don't include the containing type's name. This matches the behavior of
 					// CSharpErrorMessageFormat.
-					sb.Append (methodSymbol.ContainingType.ToDisplayString (ILLinkTypeDisplayFormat));
+					sb.Append (methodSymbol.ContainingType?.ToDisplayString (ILLinkTypeDisplayFormat));
 					sb.Append (".");
 				}
 				// Format parameter types with only type names.
@@ -147,8 +147,7 @@ namespace ILLink.RoslynAnalyzer
 				return false;
 
 			while (typeSymbol != null) {
-				if (typeSymbol.ContainingNamespace.Name == ns &&
-					typeSymbol.ContainingType.Name == type)
+				if (typeSymbol.IsTypeOf(ns, type))
 					return true;
 
 				typeSymbol = typeSymbol.ContainingType;

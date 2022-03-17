@@ -2,6 +2,8 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System;
+using System.Diagnostics;
+using ILLink.Shared.TypeSystemProxy;
 using Microsoft.CodeAnalysis;
 
 namespace ILLink.RoslynAnalyzer
@@ -27,7 +29,7 @@ namespace ILLink.RoslynAnalyzer
 		private static HierarchyFlags GetFlags (ITypeSymbol type)
 		{
 			HierarchyFlags flags = 0;
-			if (type.Name == "IReflect" && type.ContainingNamespace.GetDisplayName () == "System.Reflection") {
+			if (type.IsTypeOf (WellKnownType.System_Reflection_IReflect)) {
 				flags |= HierarchyFlags.IsSystemReflectionIReflect;
 			}
 
@@ -50,5 +52,20 @@ namespace ILLink.RoslynAnalyzer
 		private static bool IsSystemType (HierarchyFlags flags) => (flags & HierarchyFlags.IsSystemType) != 0;
 
 		private static bool IsSystemReflectionIReflect (HierarchyFlags flags) => (flags & HierarchyFlags.IsSystemReflectionIReflect) != 0;
+
+		public static bool IsTypeOf(this ITypeSymbol symbol, string @namespace, string name)
+		{
+			return symbol.ContainingNamespace?.Name == @namespace && symbol.MetadataName == name;
+		}
+
+		public static bool IsTypeOf (this ITypeSymbol symbol, WellKnownType wellKnownType) 
+		{
+			if (wellKnownType.TryGetSpecialType (out var specialType)) {
+				Debug.Assert(symbol.IsTypeOf (wellKnownType.GetNamespace (), wellKnownType.GetName ()) == (symbol.SpecialType == specialType));
+				return symbol.SpecialType == specialType;
+			}
+			var (Namespace, Name) = wellKnownType.GetNamespaceAndName ();
+			return symbol.IsTypeOf (Namespace, Name);
+		}
 	}
 }
