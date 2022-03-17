@@ -393,6 +393,21 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 
 		class SuppressInComplex
 		{
+			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
+			[RequiresDynamicCode ("Suppress in body")]
+			static void TestIteratorLocalFunction ()
+			{
+				LocalFunction ();
+
+				IEnumerable<int> LocalFunction ()
+				{
+					yield return 0;
+					RequiresUnreferencedCodeMethod ();
+					yield return 1;
+				}
+			}
+
 			[UnconditionalSuppressMessage ("Test", "IL2026")]
 			static async void TestIteratorLocalFunctionInAsync ()
 			{
@@ -416,7 +431,6 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 				LocalFunction ();
 				await MethodAsync ();
 
-				[ExpectedWarning ("IL2026", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Trimmer)]
 				IEnumerable<int> LocalFunction ()
 				{
 					yield return 0;
@@ -460,6 +474,7 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 
 			public static void Test ()
 			{
+				TestIteratorLocalFunction ();
 				TestIteratorLocalFunctionInAsync ();
 				TestIteratorLocalFunctionInAsyncWithoutInner ();
 				TestDynamicallyAccessedMethodViaGenericMethodParameterInIterator ();

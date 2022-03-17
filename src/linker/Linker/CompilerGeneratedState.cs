@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using ILLink.Shared;
 using Mono.Cecil;
 
@@ -134,24 +135,25 @@ namespace Mono.Linker
 			return attribute.ConstructorArguments[0].Value as TypeDefinition;
 		}
 
-		public MethodDefinition? GetUserDefinedMethodForCompilerGeneratedMember (IMemberDefinition sourceMember)
+		public bool TryGetOwningMethodForCompilerGeneratedMember (IMemberDefinition sourceMember, [NotNullWhen (true)] out MethodDefinition? owningMethod)
 		{
+			owningMethod = null;
 			if (sourceMember == null)
-				return null;
+				return false;
 
-			MethodDefinition? userDefinedMethod;
 			MethodDefinition? compilerGeneratedMethod = sourceMember as MethodDefinition;
 			if (compilerGeneratedMethod != null) {
-				if (_compilerGeneratedMethodToUserCodeMethod.TryGetValue (compilerGeneratedMethod, out userDefinedMethod))
-					return userDefinedMethod;
+				if (_compilerGeneratedMethodToUserCodeMethod.TryGetValue (compilerGeneratedMethod, out owningMethod))
+					return true;
 			}
 
 			TypeDefinition sourceType = (sourceMember as TypeDefinition) ?? sourceMember.DeclaringType;
-			if (_compilerGeneratedTypeToUserCodeMethod.TryGetValue (sourceType, out userDefinedMethod))
-				return userDefinedMethod;
+
+			if (_compilerGeneratedTypeToUserCodeMethod.TryGetValue (sourceType, out owningMethod))
+				return true;
 
 			if (sourceType.DeclaringType == null)
-				return null;
+				return false;
 
 			var typeToCache = HasRoslynCompilerGeneratedName (sourceType) ? sourceType.DeclaringType : sourceType;
 
@@ -159,14 +161,14 @@ namespace Mono.Linker
 			// state machine implementation.
 			PopulateCacheForType (typeToCache);
 			if (compilerGeneratedMethod != null) {
-				if (_compilerGeneratedMethodToUserCodeMethod.TryGetValue (compilerGeneratedMethod, out userDefinedMethod))
-					return userDefinedMethod;
+				if (_compilerGeneratedMethodToUserCodeMethod.TryGetValue (compilerGeneratedMethod, out owningMethod))
+					return true;
 			}
 
-			if (_compilerGeneratedTypeToUserCodeMethod.TryGetValue (sourceType, out userDefinedMethod))
-				return userDefinedMethod;
+			if (_compilerGeneratedTypeToUserCodeMethod.TryGetValue (sourceType, out owningMethod))
+				return true;
 
-			return null;
+			return false;
 		}
 	}
 }
