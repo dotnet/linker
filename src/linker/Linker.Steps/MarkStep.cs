@@ -2952,8 +2952,6 @@ namespace Mono.Linker.Steps
 			if (!_methodReasons.Contains (reason.Kind))
 				throw new InternalErrorException ($"Unsupported method dependency {reason.Kind}");
 #endif
-			if (method.FullName.Contains("DynamicallyAccessedLocalFunction"))
-				Console.WriteLine("Hi");
 			ScopeStack.AssertIsEmpty ();
 			using var parentScope = ScopeStack.PushScope (scope);
 			using var methodScope = ScopeStack.PushScope (new MessageOrigin (method));
