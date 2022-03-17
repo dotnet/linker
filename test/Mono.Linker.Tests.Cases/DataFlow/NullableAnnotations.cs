@@ -101,66 +101,66 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		[Kept]
 		static void UnderlyingTypeOfAnnotatedGenericParameterRequiresPublicProperties<[KeptAttributeAttribute (typeof (DAM))][DAM (DAMT.PublicProperties)] TNullable> ()
 		{
-			(Nullable.GetUnderlyingType (typeof (TNullable))).RequiresPublicProperties ();
+			Nullable.GetUnderlyingType (typeof (TNullable)).RequiresPublicProperties ();
 		}
 
 		[Kept]
 		static void UnderlyingTypeOfAnnotatedParameterRequiresPublicProperties ([KeptAttributeAttribute (typeof (DAM))][DAM (DAMT.PublicProperties)] Type tNullable)
 		{
-			(Nullable.GetUnderlyingType (tNullable)).RequiresPublicProperties ();
+			Nullable.GetUnderlyingType (tNullable).RequiresPublicProperties ();
 		}
 
 		[Kept]
 		[ExpectedWarning ("IL2067")]
 		static void UnderlyingTypeOfUnannotatedParameterRequiresPublicProperties (Type tNullable)
 		{
-			(Nullable.GetUnderlyingType (tNullable)).RequiresPublicProperties ();
+			Nullable.GetUnderlyingType (tNullable).RequiresPublicProperties ();
 		}
 
 		[Kept]
 		[ExpectedWarning ("IL2087")]
 		static void UnderlyingTypeOfUnannotatedGenericParameterRequiresProperties<TNullable> ()
 		{
-			(Nullable.GetUnderlyingType (typeof (TNullable))).RequiresPublicProperties ();
+			Nullable.GetUnderlyingType (typeof (TNullable)).RequiresPublicProperties ();
 		}
 
 		[Kept]
 		static void NullableOfAnnotatedGenericParameterRequiresPublicProperties<[KeptAttributeAttribute (typeof (DAM))][DAM (DAMT.PublicProperties)] T> () where T : struct
 		{
-			(Nullable.GetUnderlyingType (typeof (Nullable<T>))).RequiresPublicProperties ();
+			Nullable.GetUnderlyingType (typeof (Nullable<T>)).RequiresPublicProperties ();
 		}
 
 		[Kept]
 		[ExpectedWarning ("IL2087")]
 		static void NullableOfUnannotatedGenericParameterRequiresPublicProperties<T> () where T : struct
 		{
-			(Nullable.GetUnderlyingType (typeof (Nullable<T>))).RequiresPublicProperties ();
+			Nullable.GetUnderlyingType (typeof (Nullable<T>)).RequiresPublicProperties ();
 		}
 
 		[Kept]
 		static void MakeGenericNullableOfAnnotatedParameterRequiresPublicProperties ([KeptAttributeAttribute (typeof (DAM))][DAM (DAMT.PublicProperties)] Type t)
 		{
-			(Nullable.GetUnderlyingType (typeof (Nullable<>).MakeGenericType (t))).RequiresPublicProperties ();
+			Nullable.GetUnderlyingType (typeof (Nullable<>).MakeGenericType (t)).RequiresPublicProperties ();
 		}
 
 		[Kept]
 		[ExpectedWarning ("IL2067")]
 		static void MakeGenericNullableOfUnannotatedParameterRequiresPublicProperties (Type t)
 		{
-			(Nullable.GetUnderlyingType (typeof (Nullable<>).MakeGenericType (t))).RequiresPublicProperties ();
+			Nullable.GetUnderlyingType (typeof (Nullable<>).MakeGenericType (t)).RequiresPublicProperties ();
 		}
 
 		[Kept]
 		static void MakeGenericNullableOfAnnotatedGenericParameterRequiresPublicProperties<[KeptAttributeAttribute (typeof (DAM))][DAM (DAMT.PublicProperties)] T> ()
 		{
-			(Nullable.GetUnderlyingType (typeof (Nullable<>).MakeGenericType (typeof (T)))).RequiresPublicProperties ();
+			Nullable.GetUnderlyingType (typeof (Nullable<>).MakeGenericType (typeof (T))).RequiresPublicProperties ();
 		}
 
 		[Kept]
 		[ExpectedWarning ("IL2087")]
 		static void MakeGenericNullableOfUnannotatedGenericParameterRequiresPublicProperties<T> ()
 		{
-			(Nullable.GetUnderlyingType (typeof (Nullable<>).MakeGenericType (typeof (T)))).RequiresPublicProperties ();
+			Nullable.GetUnderlyingType (typeof (Nullable<>).MakeGenericType (typeof (T))).RequiresPublicProperties ();
 		}
 
 		[Kept]
