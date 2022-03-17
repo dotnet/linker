@@ -35,11 +35,11 @@ namespace ILLink.RoslynAnalyzer
 
 			ITypeSymbol? baseType = type;
 			while (baseType != null) {
-				if (baseType.Name == "Type" && baseType.ContainingNamespace.GetDisplayName () == "System")
+				if (baseType.IsTypeOf(WellKnownType.System_Type))
 					flags |= HierarchyFlags.IsSystemType;
 
 				foreach (var iface in baseType.Interfaces) {
-					if (iface.Name == "IReflect" && iface.ContainingNamespace.GetDisplayName () == "System.Reflection") {
+					if (iface.IsTypeOf(WellKnownType.System_Reflection_IReflect)) {
 						flags |= HierarchyFlags.IsSystemReflectionIReflect;
 					}
 				}

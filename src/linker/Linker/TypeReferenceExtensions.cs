@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Security.Principal;
 using System.Text;
+using ILLink.Shared.TypeSystemProxy;
 using Mono.Cecil;
 
 namespace Mono.Linker
@@ -356,6 +358,12 @@ namespace Mono.Linker
 		{
 			var type = typeof (T);
 			return tr.Name == type.Name && tr.Namespace == tr.Namespace;
+		}
+
+		public static bool IsTypeOf (this TypeReference tr, WellKnownType type)
+		{
+			var (Namespace, Name) = type.GetNamespaceAndName ();
+			return tr.IsTypeOf (Namespace, Name);
 		}
 
 		public static bool IsSubclassOf (this TypeReference type, string ns, string name, ITryResolveMetadata resolver)

@@ -20,11 +20,7 @@ namespace ILLink.Shared.TypeSystemProxy
 
 		public bool IsTypeOf (string @namespace, string name) => Type.IsTypeOf (@namespace, name);
 
-		public bool IsTypeOf (WellKnownType wellKnownType)
-		{
-			var (Namespace, Name) = wellKnownType.GetNamespaceAndName ();
-			return Type.IsTypeOf (Namespace, Name);
-		} 
+		public bool IsTypeOf (WellKnownType wellKnownType) => Type.IsTypeOf (wellKnownType);
 
 		public string GetDisplayName () => Type.GetDisplayName ();
 
