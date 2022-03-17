@@ -2894,7 +2894,7 @@ namespace Mono.Linker.Steps
 			if (originMember == null)
 				return false;
 
-			if (originMember is MethodDefinition  &&
+			if (originMember is MethodDefinition &&
 				Annotations.IsMethodInRequiresUnreferencedCodeScope ((MethodDefinition) originMember))
 				return true;
 
