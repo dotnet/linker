@@ -32,8 +32,16 @@ namespace Mono.Linker
 
 		public void TrackCallToLambdaOrLocalFunction (MethodDefinition caller, MethodDefinition lambdaOrLocalFunction)
 		{
-			if (!GeneratedNames.IsGeneratedMemberName (caller.Name)) {
-				// Caller is a normal method... TODO: MoveNext of a state machine method?)
+			// The declaring type check makes sure we don't treat MoveNext as a normal method. It should be treated as compiler-generated,
+			// mapping to the state machine user method. TODO: check that this doesn't cause problems for global type, etc.
+			bool callerIsStateMachineMethod = GeneratedNames.IsGeneratedMemberName (caller.DeclaringType.Name) && !GeneratedNames.IsLambdaDisplayClass (caller.DeclaringType.Name);
+			if (callerIsStateMachineMethod)
+				return;
+
+			bool callerIsLambdaOrLocal = GeneratedNames.IsGeneratedMemberName (caller.Name) && !callerIsStateMachineMethod;
+
+			if (!callerIsLambdaOrLocal) {
+				// Caller is a normal method...
 				bool added = _compilerGeneratedMethodToUserCodeMethod.TryAdd (lambdaOrLocalFunction, caller);
 				// There should only be one non-compiler-generated caller of a lambda or local function.
 				Debug.Assert (added || _compilerGeneratedMethodToUserCodeMethod[lambdaOrLocalFunction] == caller);
@@ -120,12 +128,14 @@ namespace Mono.Linker
 
 				if (lambdaMethods?.TryGetValue (method.Name, out List<MethodDefinition>? lambdaMethodsForName) == true) {
 					foreach (var lambdaMethod in lambdaMethodsForName)
-						_compilerGeneratedMethodToUserCodeMethod.Add (lambdaMethod, method);
+						// TODO: change back to add
+						_compilerGeneratedMethodToUserCodeMethod.TryAdd (lambdaMethod, method);
 				}
 
 				if (localFunctions?.TryGetValue (method.Name, out List<MethodDefinition>? localFunctionsForName) == true) {
 					foreach (var localFunction in localFunctionsForName)
-						_compilerGeneratedMethodToUserCodeMethod.Add (localFunction, method);
+						// TODO: change back to add
+						_compilerGeneratedMethodToUserCodeMethod.TryAdd (localFunction, method);
 				}
 
 				if (!method.HasCustomAttributes)

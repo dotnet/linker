@@ -566,13 +566,20 @@ namespace Mono.Linker.Steps
 				// We rely on the callers of compiler-generated methods being marked first... which might not always be true,
 				// if they are marked for a reason other than a discovered call to them.
 				// Might need to postpone processing of such methods. But for now just check the assumption.
-				Debug.Assert (reason.Kind is DependencyKind.DirectCall or DependencyKind.VirtualCall or DependencyKind.Newobj);
-				Debug.Assert (Annotations.IsMarked ((IMetadataTokenProvider) reason.Source));
-				// We should have tracked a user method for this compiler-generated method.
-				Debug.Assert (Context.CompilerGeneratedState._compilerGeneratedMethodToUserCodeMethod.TryGetValue (method, out _));
 
-				MethodDefinition caller = (MethodDefinition) reason.Source;
-				Context.CompilerGeneratedState.TrackCallToLambdaOrLocalFunction (caller, method);
+				// Forget the reason assert. There are too many.
+				// Debug.Assert (reason.Kind is DependencyKind.DirectCall or DependencyKind.VirtualCall or DependencyKind.Newobj or DependencyKind.Ldftn
+				// // Could be a directcall to a generic LocalFunction... :/
+				// 	or DependencyKind.ElementMethod
+				// 	// Or could by dynamically accessed... hopefully not the first time?
+				// 	or DependencyKind.DynamicallyAccessedMember);
+				// We might mark a generic instantiation, which gets resolved to the definition, and the source
+				// is the generic instance. Which doesn't satisfy the above.
+				if (reason.Kind is not (DependencyKind.ElementMethod or DependencyKind.MethodOnGenericInstance)) {
+					Debug.Assert (Annotations.IsMarked ( (IMetadataTokenProvider) reason.Source));
+					MethodDefinition caller = (MethodDefinition) reason.Source;
+					Context.CompilerGeneratedState.TrackCallToLambdaOrLocalFunction (caller, method);
+				}
 			}
 			_methods.Enqueue ((method, reason, scope));
 		}
