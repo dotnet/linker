@@ -55,12 +55,13 @@ namespace ILLink.RoslynAnalyzer
 
 		public static bool IsTypeOf(this ITypeSymbol symbol, string @namespace, string name)
 		{
-			return symbol.ContainingNamespace?.Name == @namespace && symbol.MetadataName == name;
+			return symbol.ContainingNamespace?.GetDisplayName() == @namespace && symbol.MetadataName == name;
 		}
 
 		public static bool IsTypeOf (this ITypeSymbol symbol, WellKnownType wellKnownType) 
 		{
 			if (wellKnownType.TryGetSpecialType (out var specialType)) {
+				// Make sure checking the special type is the same as checking the metadata string names.
 				Debug.Assert(symbol.IsTypeOf (wellKnownType.GetNamespace (), wellKnownType.GetName ()) == (symbol.SpecialType == specialType));
 				return symbol.SpecialType == specialType;
 			}
