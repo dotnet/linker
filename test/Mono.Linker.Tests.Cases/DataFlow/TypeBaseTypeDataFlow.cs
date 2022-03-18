@@ -305,80 +305,25 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			// Can only work with All annotation as NonPublicProperties doesn't propagate to base types
 			static void EnumeratePrivatePropertiesOnBaseTypes ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] Type type)
 			{
+				const BindingFlags DeclaredOnlyLookup = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly;
 				Type? t = type;
 				while (t != null) {
-					t.GetProperties (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.DeclaredOnly);
+					t.GetProperties (DeclaredOnlyLookup).GetEnumerator ();
 					t = t.BaseType;
 				}
 			}
 
-			//private static bool ShouldBeReplaced (
-			//	MemberInfo memberInfoToBeReplaced,
-			//	[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] Type derivedType,
-			//	out MemberInfo replacedInfo)
-			//{
-			//	replacedInfo = memberInfoToBeReplaced;
-			//	Type currentType = derivedType;
-			//	Type typeToBeReplaced = memberInfoToBeReplaced.DeclaringType!;
-
-			//	if (typeToBeReplaced.IsAssignableFrom (currentType)) {
-			//		while (currentType != typeToBeReplaced) {
-			//			const BindingFlags DeclaredOnlyLookup = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly;
-
-			//			foreach (PropertyInfo info in currentType.GetProperties (DeclaredOnlyLookup)) {
-			//				if (info.Name == memberInfoToBeReplaced.Name) {
-			//					// we have a new modifier situation: property names are the same but the declaring types are different
-			//					replacedInfo = info;
-			//					if (replacedInfo != memberInfoToBeReplaced) {
-			//						// The property name is a match. It might be an override, or
-			//						// it might be hiding. Either way, check to see if the derived
-			//						// property has a getter that is usable for serialization.
-			//						if (info.GetMethod != null && !info.GetMethod!.IsPublic
-			//							&& memberInfoToBeReplaced is PropertyInfo
-			//							&& ((PropertyInfo) memberInfoToBeReplaced).GetMethod!.IsPublic
-			//						   ) {
-			//							break;
-			//						}
-
-			//						return true;
-			//					}
-			//				}
-			//			}
-
-			//			foreach (FieldInfo info in currentType.GetFields (DeclaredOnlyLookup)) {
-			//				if (info.Name == memberInfoToBeReplaced.Name) {
-			//					// we have a new modifier situation: field names are the same but the declaring types are different
-			//					replacedInfo = info;
-			//					if (replacedInfo != memberInfoToBeReplaced) {
-			//						return true;
-			//					}
-			//				}
-			//			}
-
-			//			// we go one level down and try again
-			//			currentType = currentType.BaseType!;
-			//		}
-			//	}
-
-			//	return false;
-			//}
-
-			private static bool ShouldBeReplaced (
-				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] Type derivedType)
+			// Can only work with All annotation as NonPublicProperties doesn't propagate to base types
+			static void EnumeratePrivatePropertiesOnBaseTypesWithForeach ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] Type type)
 			{
-				Type currentType = derivedType;
-
-				while (currentType != null) {
-					const BindingFlags DeclaredOnlyLookup = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly;
-
-					foreach (PropertyInfo info in currentType.GetProperties (DeclaredOnlyLookup)) {
+				const BindingFlags DeclaredOnlyLookup = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly;
+				Type? t = type;
+				while (t != null) {
+					foreach (var p in t.GetProperties (DeclaredOnlyLookup)) {
+						// Do nothing
 					}
-
-					// we go one level down and try again
-					currentType = currentType.BaseType!;
+					t = t.BaseType;
 				}
-
-				return false;
 			}
 
 			public static void Test ()
@@ -387,8 +332,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				EnumerateInterfacesOnBaseTypes_Unannotated (typeof (TestType));
 
 				EnumeratePrivatePropertiesOnBaseTypes (typeof (TestType));
-
-				ShouldBeReplaced (typeof (TestType));
+				EnumeratePrivatePropertiesOnBaseTypesWithForeach (typeof (TestType));
 			}
 		}
 
