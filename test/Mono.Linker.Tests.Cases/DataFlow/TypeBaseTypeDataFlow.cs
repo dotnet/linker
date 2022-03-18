@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
@@ -50,6 +51,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TestNoValue ();
 
 			Mixed_Derived.Test (typeof (TestType), 0);
+
+			LoopPatterns.Test ();
 		}
 
 		static void TestAllPropagated ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] Type derivedType)
@@ -274,6 +277,118 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				}
 
 				type.BaseType.RequiresPublicMethods ();
+			}
+		}
+
+		class LoopPatterns
+		{
+			static void EnumerateInterfacesOnBaseTypes ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.Interfaces)] Type type)
+			{
+				Type? t = type;
+				while (t != null) {
+					Type[] interfaces = t.GetInterfaces ();
+					t = t.BaseType;
+				}
+			}
+
+			[ExpectedWarning ("IL2070")]
+			[ExpectedWarning ("IL2075", ProducedBy = ProducedBy.Analyzer)] // Linker doesn't implement backward branches data flow yet
+			static void EnumerateInterfacesOnBaseTypes_Unannotated (Type type)
+			{
+				Type? t = type;
+				while (t != null) {
+					Type[] interfaces = t.GetInterfaces ();
+					t = t.BaseType;
+				}
+			}
+
+			// Can only work with All annotation as NonPublicProperties doesn't propagate to base types
+			static void EnumeratePrivatePropertiesOnBaseTypes ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] Type type)
+			{
+				Type? t = type;
+				while (t != null) {
+					t.GetProperties (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.DeclaredOnly);
+					t = t.BaseType;
+				}
+			}
+
+			//private static bool ShouldBeReplaced (
+			//	MemberInfo memberInfoToBeReplaced,
+			//	[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] Type derivedType,
+			//	out MemberInfo replacedInfo)
+			//{
+			//	replacedInfo = memberInfoToBeReplaced;
+			//	Type currentType = derivedType;
+			//	Type typeToBeReplaced = memberInfoToBeReplaced.DeclaringType!;
+
+			//	if (typeToBeReplaced.IsAssignableFrom (currentType)) {
+			//		while (currentType != typeToBeReplaced) {
+			//			const BindingFlags DeclaredOnlyLookup = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly;
+
+			//			foreach (PropertyInfo info in currentType.GetProperties (DeclaredOnlyLookup)) {
+			//				if (info.Name == memberInfoToBeReplaced.Name) {
+			//					// we have a new modifier situation: property names are the same but the declaring types are different
+			//					replacedInfo = info;
+			//					if (replacedInfo != memberInfoToBeReplaced) {
+			//						// The property name is a match. It might be an override, or
+			//						// it might be hiding. Either way, check to see if the derived
+			//						// property has a getter that is usable for serialization.
+			//						if (info.GetMethod != null && !info.GetMethod!.IsPublic
+			//							&& memberInfoToBeReplaced is PropertyInfo
+			//							&& ((PropertyInfo) memberInfoToBeReplaced).GetMethod!.IsPublic
+			//						   ) {
+			//							break;
+			//						}
+
+			//						return true;
+			//					}
+			//				}
+			//			}
+
+			//			foreach (FieldInfo info in currentType.GetFields (DeclaredOnlyLookup)) {
+			//				if (info.Name == memberInfoToBeReplaced.Name) {
+			//					// we have a new modifier situation: field names are the same but the declaring types are different
+			//					replacedInfo = info;
+			//					if (replacedInfo != memberInfoToBeReplaced) {
+			//						return true;
+			//					}
+			//				}
+			//			}
+
+			//			// we go one level down and try again
+			//			currentType = currentType.BaseType!;
+			//		}
+			//	}
+
+			//	return false;
+			//}
+
+			private static bool ShouldBeReplaced (
+				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] Type derivedType)
+			{
+				Type currentType = derivedType;
+
+				while (currentType != null) {
+					const BindingFlags DeclaredOnlyLookup = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly;
+
+					foreach (PropertyInfo info in currentType.GetProperties (DeclaredOnlyLookup)) {
+					}
+
+					// we go one level down and try again
+					currentType = currentType.BaseType!;
+				}
+
+				return false;
+			}
+
+			public static void Test ()
+			{
+				EnumerateInterfacesOnBaseTypes (typeof (TestType));
+				EnumerateInterfacesOnBaseTypes_Unannotated (typeof (TestType));
+
+				EnumeratePrivatePropertiesOnBaseTypes (typeof (TestType));
+
+				ShouldBeReplaced (typeof (TestType));
 			}
 		}
 

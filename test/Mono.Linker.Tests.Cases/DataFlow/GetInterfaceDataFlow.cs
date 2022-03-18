@@ -20,8 +20,6 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		{
 			GetInterface_Name.Test ();
 			GetInterface_Name_IgnoreCase.Test ();
-
-			GetInterfaces.Test ();
 		}
 
 		class GetInterface_Name
@@ -186,35 +184,6 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				TestWithAll (typeof (TestType));
 				TestKnownType ();
 				TestMultipleValues (0, typeof (TestType));
-			}
-		}
-
-		class GetInterfaces
-		{
-			static void EnumerateOnBaseTypes([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] Type type)
-			{
-				Type? t = type;
-				while (t != null) {
-					Type[] interfaces = t.GetInterfaces ();
-					t = t.BaseType;
-				}
-			}
-
-			[ExpectedWarning("IL2070")]
-			[ExpectedWarning("IL2075", ProducedBy = ProducedBy.Analyzer)] // Linker doesn't implement backward branches data flow yet
-			static void EnumerateOnBaseTypes_Unannotated (Type type)
-			{
-				Type? t = type;
-				while (t != null) {
-					Type[] interfaces = t.GetInterfaces ();
-					t = t.BaseType;
-				}
-			}
-
-			public static void Test()
-			{
-				EnumerateOnBaseTypes (typeof (TestType));
-				EnumerateOnBaseTypes_Unannotated (typeof (TestType));
 			}
 		}
 
