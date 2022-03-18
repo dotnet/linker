@@ -25,7 +25,5 @@ namespace ILLink.Shared.TypeSystemProxy
 		public string GetDisplayName () => Type.GetDisplayName ();
 
 		public override string ToString () => Type.ToString ();
-
-		public bool IsTypeOf (string @namespace, string name) => Type.IsTypeOf (@namespace, name);
 	}
 }
