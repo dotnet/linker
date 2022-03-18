@@ -361,8 +361,8 @@ namespace Mono.Linker
 
 		public static bool IsTypeOf (this TypeReference tr, WellKnownType type)
 		{
-			var (Namespace, Name) = type.GetNamespaceAndName ();
-			return tr.IsTypeOf (Namespace, Name);
+			var (@namespace, name) = type.GetNamespaceAndName ();
+			return tr.IsTypeOf (@namespace, name);
 		}
 
 		public static bool IsSubclassOf (this TypeReference type, string ns, string name, ITryResolveMetadata resolver)
