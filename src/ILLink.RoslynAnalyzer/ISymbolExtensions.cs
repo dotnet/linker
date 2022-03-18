@@ -147,10 +147,10 @@ namespace ILLink.RoslynAnalyzer
 				return false;
 
 			while (typeSymbol != null) {
-				if (typeSymbol.ContainingNamespace?.Name == ns &&
-					typeSymbol.ContainingType?.Name == type)
+				if (typeSymbol.ContainingNamespace.Name == ns &&
+					typeSymbol.ContainingType.Name == type)
 					return true;
-				if (typeSymbol.ContainingType is null) break;
+
 				typeSymbol = typeSymbol.ContainingType;
 			}
 

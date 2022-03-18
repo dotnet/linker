@@ -88,11 +88,11 @@ namespace ILLink.RoslynAnalyzer
 				if (typeSymbol == null)
 					return false;
 
-				if (typeSymbol.ContainingNamespace?.Name == "System" && typeSymbol.Name == "Array") {
+				if (typeSymbol.ContainingNamespace.Name == "System" && typeSymbol.Name == "Array") {
 					// System.Array marshals as IUnknown by default
 					return true;
-				} else if (typeSymbol.ContainingNamespace?.Name == "System" && typeSymbol.Name == "String" ||
-					typeSymbol.ContainingNamespace?.Name == "System.Text" && typeSymbol.Name == "StringBuilder") {
+				} else if (typeSymbol.ContainingNamespace.Name == "System" && typeSymbol.Name == "String" ||
+					typeSymbol.ContainingNamespace.Name == "System.Text" && typeSymbol.Name == "StringBuilder") {
 					// String and StringBuilder are special cased by interop
 					return false;
 				}
@@ -103,7 +103,7 @@ namespace ILLink.RoslynAnalyzer
 				} else if (typeSymbol.IsInterface ()) {
 					// Interface types marshal as COM by default
 					return true;
-				} else if (typeSymbol.ContainingNamespace?.Name == "System" &&
+				} else if (typeSymbol.ContainingNamespace.Name == "System" &&
 					typeSymbol.Name == "MulticastDelegate") {
 					// Delegates are special cased by interop
 					return false;
