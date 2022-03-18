@@ -26,7 +26,8 @@ namespace ILLink.RoslynAnalyzer
 
 		public override void Initialize (AnalysisContext context)
 		{
-			context.EnableConcurrentExecution ();
+			if (!System.Diagnostics.Debugger.IsAttached)
+				context.EnableConcurrentExecution ();
 			context.ConfigureGeneratedCodeAnalysis (GeneratedCodeAnalysisFlags.ReportDiagnostics);
 			context.RegisterCompilationStartAction (context => {
 				var compilation = context.Compilation;
@@ -80,6 +81,9 @@ namespace ILLink.RoslynAnalyzer
 				ITypeSymbol? typeSymbol = symbol is ITypeSymbol ? symbol as ITypeSymbol : null;
 				if (symbol is IParameterSymbol parameterSymbol)
 					typeSymbol = parameterSymbol.Type;
+
+				if (typeSymbol is IPointerTypeSymbol)
+					return false;
 
 				if (typeSymbol == null)
 					return false;

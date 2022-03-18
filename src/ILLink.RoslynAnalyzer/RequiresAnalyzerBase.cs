@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using ILLink.Shared;
 using Microsoft.CodeAnalysis;
@@ -34,7 +33,8 @@ namespace ILLink.RoslynAnalyzer
 
 		public override void Initialize (AnalysisContext context)
 		{
-			context.EnableConcurrentExecution ();
+			if (!System.Diagnostics.Debugger.IsAttached)
+				context.EnableConcurrentExecution ();
 			context.ConfigureGeneratedCodeAnalysis (GeneratedCodeAnalysisFlags.ReportDiagnostics);
 			context.RegisterCompilationStartAction (context => {
 				var compilation = context.Compilation;
@@ -107,7 +107,7 @@ namespace ILLink.RoslynAnalyzer
 				context.RegisterOperationAction (operationContext => {
 					var propAccess = (IPropertyReferenceOperation) operationContext.Operation;
 					var prop = propAccess.Property;
-					var usageInfo = propAccess.GetValueUsageInfo (prop);
+					var usageInfo = propAccess.GetValueUsageInfo (operationContext.ContainingSymbol);
 					if (usageInfo.HasFlag (ValueUsageInfo.Read) && prop.GetMethod != null)
 						CheckCalledMember (operationContext, prop.GetMethod, incompatibleMembers);
 
@@ -151,7 +151,7 @@ namespace ILLink.RoslynAnalyzer
 
 				context.RegisterSyntaxNodeAction (syntaxNodeAnalysisContext => {
 					var model = syntaxNodeAnalysisContext.SemanticModel;
-					if (syntaxNodeAnalysisContext.ContainingSymbol is not ISymbol containingSymbol || containingSymbol.HasAttribute (RequiresAttributeName))
+					if (syntaxNodeAnalysisContext.ContainingSymbol is not ISymbol containingSymbol || containingSymbol.IsInRequiresScope (RequiresAttributeName))
 						return;
 
 					GenericNameSyntax genericNameSyntaxNode = (GenericNameSyntax) syntaxNodeAnalysisContext.Node;
@@ -175,20 +175,21 @@ namespace ILLink.RoslynAnalyzer
 					for (int i = 0; i < typeParams.Length; i++) {
 						var typeParam = typeParams[i];
 						var typeArg = typeArgs[i];
-						if (!typeParam.HasConstructorConstraint)
+						if (!typeParam.HasConstructorConstraint ||
+							typeArg is not INamedTypeSymbol { InstanceConstructors: { } typeArgCtors })
 							continue;
 
-						var typeArgCtors = ((INamedTypeSymbol) typeArg).InstanceConstructors;
 						foreach (var instanceCtor in typeArgCtors) {
 							if (instanceCtor.Arity > 0)
 								continue;
 
-							if (instanceCtor.TryGetAttribute (RequiresAttributeName, out var requiresUnreferencedCodeAttribute)) {
+							if (instanceCtor.TargetHasRequiresAttribute (RequiresAttributeName, out var requiresAttribute) &&
+								VerifyAttributeArguments (requiresAttribute)) {
 								syntaxNodeAnalysisContext.ReportDiagnostic (Diagnostic.Create (RequiresDiagnosticRule,
 									syntaxNodeAnalysisContext.Node.GetLocation (),
 									containingSymbol.GetDisplayName (),
-									(string) requiresUnreferencedCodeAttribute.ConstructorArguments[0].Value!,
-									GetUrlFromAttribute (requiresUnreferencedCodeAttribute)));
+									(string) requiresAttribute.ConstructorArguments[0].Value!,
+									GetUrlFromAttribute (requiresAttribute)));
 							}
 						}
 					}
@@ -208,13 +209,13 @@ namespace ILLink.RoslynAnalyzer
 					SymbolAnalysisContext symbolAnalysisContext,
 					ISymbol symbol)
 				{
-					if (symbol.HasAttribute (RequiresAttributeName))
+					if (symbol.IsInRequiresScope (RequiresAttributeName))
 						return;
 
 					foreach (var attr in symbol.GetAttributes ()) {
-						if (TryGetRequiresAttribute (attr.AttributeConstructor, out var requiresAttribute)) {
+						if (attr.AttributeConstructor?.TargetHasRequiresAttribute (RequiresAttributeName, out var requiresAttribute) == true) {
 							symbolAnalysisContext.ReportDiagnostic (Diagnostic.Create (RequiresDiagnosticRule,
-								symbol.Locations[0], attr.AttributeConstructor!.Name, GetMessageFromAttribute (requiresAttribute), GetUrlFromAttribute (requiresAttribute)));
+								symbol.Locations[0], attr.AttributeConstructor.GetDisplayName (), GetMessageFromAttribute (requiresAttribute), GetUrlFromAttribute (requiresAttribute)));
 						}
 					}
 				}
@@ -224,6 +225,10 @@ namespace ILLink.RoslynAnalyzer
 					ISymbol member,
 					ImmutableArray<ISymbol> incompatibleMembers)
 				{
+					// Do not emit diagnostics if the operation is nameof()
+					if (operationContext.Operation.Parent is IOperation operation && operation.Kind == OperationKind.NameOf)
+						return;
+
 					ISymbol containingSymbol = FindContainingSymbol (operationContext, AnalyzerDiagnosticTargets);
 
 					// Do not emit any diagnostic if caller is annotated with the attribute too.
@@ -258,15 +263,9 @@ namespace ILLink.RoslynAnalyzer
 					SymbolAnalysisContext symbolAnalysisContext,
 					INamedTypeSymbol type)
 				{
-					ImmutableArray<INamedTypeSymbol> interfaces = type.Interfaces;
-					foreach (INamespaceOrTypeSymbol iface in interfaces) {
-						var members = iface.GetMembers ();
-						foreach (var member in members) {
-							var implementation = type.FindImplementationForInterfaceMember (member);
-							// In case the implementation is null because the user code is missing an implementation, we dont provide diagnostics.
-							// The compiler will provide an error
-							if (implementation != null && HasMismatchingAttributes (member, implementation))
-								ReportMismatchInAttributesDiagnostic (symbolAnalysisContext, implementation, member, isInterface: true);
+					foreach (var memberpair in type.GetMemberInterfaceImplementationPairs ()) {
+						if (HasMismatchingAttributes (memberpair.InterfaceMember, memberpair.ImplementationMember)) {
+							ReportMismatchInAttributesDiagnostic (symbolAnalysisContext, memberpair.ImplementationMember, memberpair.InterfaceMember, isInterface: true);
 						}
 					}
 				}
@@ -365,30 +364,6 @@ namespace ILLink.RoslynAnalyzer
 		{
 			var url = requiresAttribute?.NamedArguments.FirstOrDefault (na => na.Key == "Url").Value.Value?.ToString ();
 			return MessageFormat.FormatRequiresAttributeUrlArg (url);
-		}
-
-		/// <summary>
-		/// This method determines if the member has a Requires attribute and returns it in the variable requiresAttribute.
-		/// </summary>
-		/// <param name="member">Symbol of the member to search attribute.</param>
-		/// <param name="requiresAttribute">Output variable in case of matching Requires attribute.</param>
-		/// <returns>True if the member contains a Requires attribute; otherwise, returns false.</returns>
-		private bool TryGetRequiresAttribute (ISymbol? member, [NotNullWhen (returnValue: true)] out AttributeData? requiresAttribute)
-		{
-			requiresAttribute = null;
-			if (member == null)
-				return false;
-
-			foreach (var _attribute in member.GetAttributes ()) {
-				if (_attribute.AttributeClass is { } attrClass &&
-					attrClass.HasName (RequiresAttributeFullyQualifiedName) &&
-					VerifyAttributeArguments (_attribute)) {
-					requiresAttribute = _attribute;
-					return true;
-				}
-			}
-
-			return false;
 		}
 
 		/// <summary>

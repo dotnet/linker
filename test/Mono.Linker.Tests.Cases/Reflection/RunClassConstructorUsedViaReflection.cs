@@ -7,6 +7,7 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 namespace Mono.Linker.Tests.Cases.Reflection
 {
 	[SetupCSharpCompilerToUse ("csc")]
+	[ExpectedNoWarnings]
 	public class RunClassConstructorUsedViaReflection
 	{
 		public static void Main ()
@@ -14,13 +15,13 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			TestRunClassConstructor ();
 			TestNonKeptStaticConstructor ();
 			TestNull ();
+			TestNoValue ();
 			TestDataFlowType ();
 			TestIfElseUsingRuntimeTypeHandle (1);
 			TestIfElseUsingType (1);
 		}
 
 		[Kept]
-		[RecognizedReflectionAccessPattern]
 		static void TestRunClassConstructor ()
 		{
 			RuntimeHelpers.RunClassConstructor (typeof (OnlyUsedViaReflection).TypeHandle);
@@ -33,11 +34,18 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[RecognizedReflectionAccessPattern]
 		static void TestNull ()
 		{
 			Type type = null;
 			RuntimeHelpers.RunClassConstructor (type.TypeHandle);
+		}
+
+		[Kept]
+		static void TestNoValue ()
+		{
+			Type t = null;
+			Type noValue = Type.GetTypeFromHandle (t.TypeHandle);
+			RuntimeHelpers.RunClassConstructor (noValue.TypeHandle);
 		}
 
 		[Kept]
@@ -47,8 +55,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[UnrecognizedReflectionAccessPattern (typeof (RuntimeHelpers), nameof (RuntimeHelpers.RunClassConstructor), new Type[] { typeof (RuntimeTypeHandle) },
-			messageCode: "IL2059", message: new string[] { "RunClassConstructor" })]
+		[ExpectedWarning ("IL2059", nameof (RuntimeHelpers) + "." + nameof (RuntimeHelpers.RunClassConstructor))]
 
 		static void TestDataFlowType ()
 		{
@@ -57,10 +64,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[RecognizedReflectionAccessPattern]
-		[UnrecognizedReflectionAccessPattern (typeof (RuntimeHelpers), nameof (RuntimeHelpers.RunClassConstructor), new Type[] { typeof (RuntimeTypeHandle) },
-			messageCode: "IL2059")]
-
+		[ExpectedWarning ("IL2059", nameof (RuntimeHelpers) + "." + nameof (RuntimeHelpers.RunClassConstructor))]
 		static void TestIfElseUsingRuntimeTypeHandle (int i)
 		{
 			RuntimeTypeHandle myType;
@@ -75,7 +79,6 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[RecognizedReflectionAccessPattern]
 		static void TestIfElseUsingType (int i)
 		{
 			Type myType;

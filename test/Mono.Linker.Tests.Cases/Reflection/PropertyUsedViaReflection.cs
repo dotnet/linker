@@ -6,6 +6,7 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 namespace Mono.Linker.Tests.Cases.Reflection
 {
 	[SetupCSharpCompilerToUse ("csc")]
+	[ExpectedNoWarnings]
 	[SetupLinkerArgument ("--disable-opt", "unreachablebodies")]
 	public class PropertyUsedViaReflection
 	{
@@ -20,9 +21,11 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			TestUnknownBindingFlagsAndName (BindingFlags.Public, "IrrelevantName");
 			TestNullName ();
 			TestEmptyName ();
+			TestNoValueName ();
 			TestNonExistingName ();
 			TestPropertyOfArray ();
 			TestNullType ();
+			TestNoValue ();
 			TestDataFlowType ();
 			TestIfElse (1);
 			TestPropertyInBaseType ();
@@ -33,9 +36,6 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[RecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetProperty), new Type[] { typeof (string) },
-			typeof (PropertyUsedViaReflection), nameof (PropertyUsedViaReflection.OnlyUsedViaReflection), (Type[]) null)]
 		static void TestGetterAndSetter ()
 		{
 			var property = typeof (PropertyUsedViaReflection).GetProperty ("OnlyUsedViaReflection");
@@ -51,9 +51,6 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[RecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetProperty), new Type[] { typeof (string) },
-			typeof (PropertyUsedViaReflection), nameof (PropertyUsedViaReflection.SetterOnly), (Type[]) null)]
 		static void TestSetterOnly ()
 		{
 			var property = typeof (PropertyUsedViaReflection).GetProperty ("SetterOnly");
@@ -61,9 +58,6 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[RecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetProperty), new Type[] { typeof (string) },
-			typeof (PropertyUsedViaReflection), nameof (PropertyUsedViaReflection.GetterOnly), (Type[]) null)]
 		static void TestGetterOnly ()
 		{
 			var property = typeof (PropertyUsedViaReflection).GetProperty ("GetterOnly");
@@ -71,9 +65,6 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[RecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetProperty), new Type[] { typeof (string), typeof (BindingFlags) },
-			typeof (BindingFlagsTest), nameof (BindingFlagsTest.PublicProperty), (Type[]) null)]
 		static void TestBindingFlags ()
 		{
 			var property = typeof (BindingFlagsTest).GetProperty ("PublicProperty", BindingFlags.Public);
@@ -81,9 +72,6 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[RecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetProperty), new Type[] { typeof (string), typeof (BindingFlags) },
-			typeof (UnknownBindingFlags), nameof (UnknownBindingFlags.SomeProperty), (Type[]) null)]
 		static void TestUnknownBindingFlags (BindingFlags bindingFlags)
 		{
 			// Since the binding flags are not known linker should mark all properties on the type
@@ -92,9 +80,6 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[RecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetProperty), new Type[] { typeof (string), typeof (BindingFlags) },
-			typeof (UnknownBindingFlagsAndName), nameof (UnknownBindingFlagsAndName.SomeProperty), (Type[]) null)]
 		static void TestUnknownBindingFlagsAndName (BindingFlags bindingFlags, string name)
 		{
 			// Since the binding flags and name are not known linker should mark all properties on the type
@@ -115,15 +100,20 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
+		static void TestNoValueName ()
+		{
+			Type t = null;
+			string noValue = t.AssemblyQualifiedName;
+			var method = typeof (PropertyUsedViaReflection).GetProperty (noValue);
+		}
+
+		[Kept]
 		static void TestNonExistingName ()
 		{
 			var property = typeof (PropertyUsedViaReflection).GetProperty ("NonExisting");
 		}
 
 		[Kept]
-		[RecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetProperty), new Type[] { typeof (string) },
-			typeof (Array), nameof (Array.LongLength))]
 		static void TestPropertyOfArray ()
 		{
 			var property = typeof (int[]).GetProperty ("LongLength");
@@ -138,14 +128,21 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
+		static void TestNoValue ()
+		{
+			Type t = null;
+			Type noValue = Type.GetTypeFromHandle (t.TypeHandle);
+			var method = noValue.GetProperty ("GetterOnly");
+		}
+
+		[Kept]
 		static Type FindType ()
 		{
 			return typeof (PropertyUsedViaReflection);
 		}
 
 		[Kept]
-		[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.GetProperty), new Type[] { typeof (string) },
-			messageCode: "IL2075", message: new string[] { "FindType", "GetProperty" })]
+		[ExpectedWarning ("IL2075", "FindType", "GetProperty")]
 		static void TestDataFlowType ()
 		{
 			Type type = FindType ();
@@ -153,18 +150,6 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[RecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetProperty), new Type[] { typeof (string) },
-			typeof (IfClass), nameof (IfClass.SetterOnly), (Type[]) null)]
-		[RecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetProperty), new Type[] { typeof (string) },
-			typeof (IfClass), nameof (IfClass.GetterOnly), (Type[]) null)]
-		[RecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetProperty), new Type[] { typeof (string) },
-			typeof (ElseClass), nameof (ElseClass.SetterOnly), (Type[]) null)]
-		[RecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetProperty), new Type[] { typeof (string) },
-			typeof (ElseClass), nameof (ElseClass.GetterOnly), (Type[]) null)]
 		static void TestIfElse (int i)
 		{
 			Type myType;
@@ -183,18 +168,12 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[RecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetProperty), new Type[] { typeof (string) },
-			typeof (BaseClass), nameof (BaseClass.GetterSetterOnBaseClass), (Type[]) null)]
 		static void TestPropertyInBaseType ()
 		{
 			var property = typeof (DerivedClass).GetProperty ("GetterSetterOnBaseClass");
 		}
 
 		[Kept]
-		[RecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetProperty), new Type[] { typeof (string), typeof (BindingFlags) },
-			typeof (IgnoreCaseBindingFlagsClass), nameof (IgnoreCaseBindingFlagsClass.SetterOnly), (Type[]) null)]
 		static void TestIgnoreCaseBindingFlags ()
 		{
 			var property = typeof (IgnoreCaseBindingFlagsClass).GetProperty ("setteronly", BindingFlags.IgnoreCase | BindingFlags.Public);

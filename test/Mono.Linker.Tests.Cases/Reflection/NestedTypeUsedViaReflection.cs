@@ -8,17 +8,22 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.Reflection
 {
+	[ExpectedNoWarnings]
 	public class NestedTypeUsedViaReflection
 	{
 		public static void Main ()
 		{
 			TestByName ();
 			TestPrivateByName ();
+			TestNullName ();
+			TestEmptyName ();
+			TestNoValueName ();
 			TestByBindingFlags ();
 			TestByUnknownBindingFlags (BindingFlags.Public);
 			TestByUnknownBindingFlagsAndName (BindingFlags.Public, "DoesntMatter");
 			TestNonExistingName ();
 			TestNullType ();
+			TestNoValue ();
 			TestIgnoreCaseBindingFlags ();
 			TestFailIgnoreCaseBindingFlags ();
 			TestUnsupportedBindingFlags ();
@@ -28,9 +33,6 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		public static class NestedType { }
 
 		[Kept]
-		[RecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetNestedType), new Type[] { typeof (string) },
-			typeof (NestedTypeUsedViaReflection.NestedType), null, (Type[]) null)]
 		static void TestByName ()
 		{
 			_ = typeof (NestedTypeUsedViaReflection).GetNestedType (nameof (NestedType));
@@ -46,6 +48,26 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
+		static void TestNullName ()
+		{
+			_ = typeof (NestedTypeUsedViaReflection).GetNestedType (null);
+		}
+
+		[Kept]
+		static void TestEmptyName ()
+		{
+			_ = typeof (NestedTypeUsedViaReflection).GetNestedType (string.Empty);
+		}
+
+		[Kept]
+		static void TestNoValueName ()
+		{
+			Type t = null;
+			string noValue = t.AssemblyQualifiedName;
+			var method = typeof (NestedTypeUsedViaReflection).GetNestedType (noValue);
+		}
+
+		[Kept]
 		public static class PublicNestedType { }
 
 		[Kept]
@@ -55,15 +77,6 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		protected static class ProtectedNestedType { }
 
 		[Kept]
-		[RecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetNestedType), new Type[] { typeof (string), typeof (BindingFlags) },
-			typeof (NestedTypeUsedViaReflection.PrivateNestedType), null, (Type[]) null)]
-		[RecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetNestedType), new Type[] { typeof (string), typeof (BindingFlags) },
-			typeof (NestedTypeUsedViaReflection.PublicNestedType), null, (Type[]) null)]
-		[RecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetNestedType), new Type[] { typeof (string), typeof (BindingFlags) },
-			typeof (NestedTypeUsedViaReflection.ProtectedNestedType), null, (Type[]) null)]
 		static void TestByBindingFlags ()
 		{
 			_ = typeof (NestedTypeUsedViaReflection).GetNestedType (nameof (PrivateNestedType), BindingFlags.NonPublic);
@@ -72,9 +85,6 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[RecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetNestedType), new Type[] { typeof (string), typeof (BindingFlags) },
-			typeof (UnknownBindingFlags.PublicNestedType), null, (Type[]) null)]
 		static void TestByUnknownBindingFlags (BindingFlags bindingFlags)
 		{
 			// Since the binding flags are not known linker should mark all nested types on the type
@@ -82,9 +92,6 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[RecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetNestedType), new Type[] { typeof (string), typeof (BindingFlags) },
-			typeof (UnknownBindingFlagsAndName.PublicNestedType), null, (Type[]) null)]
 		static void TestByUnknownBindingFlagsAndName (BindingFlags bindingFlags, string name)
 		{
 			// Since the binding flags and name are not known linker should mark all nested types on the type
@@ -105,9 +112,14 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[RecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetNestedType), new Type[] { typeof (string), typeof (BindingFlags) },
-			typeof (IgnoreCaseClass.IgnoreCasePublicNestedType), null, (Type[]) null)]
+		static void TestNoValue ()
+		{
+			Type t = null;
+			Type noValue = Type.GetTypeFromHandle (t.TypeHandle);
+			var method = noValue.GetNestedType ("NestedType");
+		}
+
+		[Kept]
 		static void TestIgnoreCaseBindingFlags ()
 		{
 			_ = typeof (IgnoreCaseClass).GetNestedType ("ignorecasepublicnestedtype", BindingFlags.IgnoreCase | BindingFlags.Public);

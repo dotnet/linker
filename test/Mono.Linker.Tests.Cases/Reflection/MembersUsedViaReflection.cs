@@ -16,26 +16,24 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			TestWithBindingFlags ();
 			TestWithUnknownBindingFlags (BindingFlags.Public);
 			TestNullType ();
+			TestNoValue ();
 			TestDataFlowType ();
 			TestDataFlowWithAnnotation (typeof (MyType));
 			TestIfElse (true);
 		}
 
-		[RecognizedReflectionAccessPattern]
 		[Kept]
 		static void TestGetMembers ()
 		{
 			var members = typeof (SimpleGetMembers).GetMembers ();
 		}
 
-		[RecognizedReflectionAccessPattern]
 		[Kept]
 		static void TestWithBindingFlags ()
 		{
 			var members = typeof (MembersBindingFlags).GetMembers (BindingFlags.Public);
 		}
 
-		[RecognizedReflectionAccessPattern]
 		[Kept]
 		static void TestWithUnknownBindingFlags (BindingFlags bindingFlags)
 		{
@@ -44,11 +42,18 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[RecognizedReflectionAccessPattern]
 		static void TestNullType ()
 		{
 			Type type = null;
 			var members = type.GetMembers ();
+		}
+
+		[Kept]
+		static void TestNoValue ()
+		{
+			Type t = null;
+			Type noValue = Type.GetTypeFromHandle (t.TypeHandle);
+			var members = noValue.GetMembers ();
 		}
 
 		[Kept]
@@ -57,8 +62,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			return null;
 		}
 
-		[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.GetMembers), new Type[] { typeof (BindingFlags) },
-			messageCode: "IL2075", message: new string[] { "FindType", "GetMembers" })]
+		[ExpectedWarning ("IL2075", "FindType", "GetMembers")]
 		[Kept]
 		static void TestDataFlowType ()
 		{
@@ -67,7 +71,6 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[RecognizedReflectionAccessPattern]
 		private static void TestDataFlowWithAnnotation ([KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors |
 										 DynamicallyAccessedMemberTypes.PublicEvents |
@@ -80,7 +83,6 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[RecognizedReflectionAccessPattern]
 		static void TestIfElse (bool decision)
 		{
 			Type myType;

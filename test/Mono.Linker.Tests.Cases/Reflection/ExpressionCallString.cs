@@ -26,6 +26,11 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			Expression.Call (typeof (UnknownNameMethodClass), GetUnknownString (), Type.EmptyTypes);
 
 			TestUnknownType.Test ();
+			TestNullType ();
+			TestNoValue ();
+			TestNullString ();
+			TestEmptyString ();
+			TestNoValueString ();
 
 			TestGenericMethods.Test ();
 		}
@@ -118,13 +123,12 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		class TestUnknownType
 		{
 			[Kept]
-			[UnrecognizedReflectionAccessPattern (typeof (Expression), nameof (Expression.Call),
-				new Type[] { typeof (Type), typeof (string), typeof (Type[]), typeof (Expression[]) }, messageCode: "IL2072")]
+			[ExpectedWarning ("IL2072", nameof (Expression) + "." + nameof (Expression.Call))]
 			public static void Test ()
 			{
 				// Keep all methods of the type that made the call
 				Expression.Call (GetUnknownType (), "This string will not be reached", Type.EmptyTypes);
-				// UnrecognizedReflectionAccessPattern
+				// IL2072
 				Expression.Call (TriggerUnrecognizedPattern (), "This string will not be reached", Type.EmptyTypes);
 			}
 
@@ -141,6 +145,41 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			{
 				return typeof (TestType);
 			}
+		}
+
+		[Kept]
+		static void TestNullType ()
+		{
+			Type t = null;
+			Expression.Call (t, "This string will not be reached", Type.EmptyTypes);
+		}
+
+		[Kept]
+		static void TestNoValue ()
+		{
+			Type t = null;
+			Type noValue = Type.GetTypeFromHandle (t.TypeHandle);
+			Expression.Call (noValue, "This string will not be reached", Type.EmptyTypes);
+		}
+
+		[Kept]
+		static void TestNullString ()
+		{
+			Expression.Call (typeof (TestType), null, Type.EmptyTypes);
+		}
+
+		[Kept]
+		static void TestEmptyString ()
+		{
+			Expression.Call (typeof (TestType), string.Empty, Type.EmptyTypes);
+		}
+
+		[Kept]
+		static void TestNoValueString ()
+		{
+			Type t = null;
+			string noValue = t.AssemblyQualifiedName;
+			Expression.Call (typeof (TestType), noValue, Type.EmptyTypes);
 		}
 
 		[Kept]

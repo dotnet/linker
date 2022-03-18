@@ -6,6 +6,7 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 namespace Mono.Linker.Tests.Cases.Reflection
 {
 	[SetupCSharpCompilerToUse ("csc")]
+	[ExpectedNoWarnings]
 	public class FieldUsedViaReflection
 	{
 		public static void Main ()
@@ -17,9 +18,11 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			TestNameUnknownBindingFlags (BindingFlags.Public);
 			TestNameUnknownBindingFlagsAndName (BindingFlags.Public, "DoesntMatter");
 			TestNullName ();
+			TestNoValueName ();
 			TestEmptyName ();
 			TestNonExistingName ();
 			TestNullType ();
+			TestNoValue ();
 			TestDataFlowType ();
 			TestIfElse (1);
 			TestFieldInBaseType ();
@@ -29,9 +32,6 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[RecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetField), new Type[] { typeof (string) },
-			typeof (FieldUsedViaReflection), nameof (FieldUsedViaReflection.publicField), (Type[]) null)]
 		static void TestByName ()
 		{
 			var field = typeof (FieldUsedViaReflection).GetField ("publicField");
@@ -46,9 +46,6 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[RecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetField), new Type[] { typeof (string), typeof (BindingFlags) },
-			typeof (Foo), nameof (Foo.field), (Type[]) null)]
 		static void TestNameBindingFlags ()
 		{
 			var field = typeof (Foo).GetField ("field", BindingFlags.Static);
@@ -81,6 +78,14 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
+		static void TestNoValueName ()
+		{
+			Type t = null;
+			string noValue = t.AssemblyQualifiedName;
+			var method = typeof (FieldUsedViaReflection).GetField (noValue);
+		}
+
+		[Kept]
 		static void TestEmptyName ()
 		{
 			var field = typeof (FieldUsedViaReflection).GetField (string.Empty);
@@ -100,14 +105,21 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
+		static void TestNoValue ()
+		{
+			Type t = null;
+			Type noValue = Type.GetTypeFromHandle (t.TypeHandle);
+			var method = noValue.GetField ("publicField");
+		}
+
+		[Kept]
 		static Type FindType ()
 		{
 			return typeof (FieldUsedViaReflection);
 		}
 
 		[Kept]
-		[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.GetField), new Type[] { typeof (string) },
-			messageCode: "IL2075", message: new string[] { "FindType", "GetField" })]
+		[ExpectedWarning ("IL2075", "FindType", "GetField")]
 		static void TestDataFlowType ()
 		{
 			Type type = FindType ();
@@ -115,12 +127,6 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[RecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetField), new Type[] { typeof (string) },
-			typeof (IfClass), nameof (IfClass.ifField), (Type[]) null)]
-		[RecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetField), new Type[] { typeof (string) },
-			typeof (ElseClass), nameof (ElseClass.elseField), (Type[]) null)]
 		static void TestIfElse (int i)
 		{
 			Type myType;
@@ -139,9 +145,6 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[RecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetField), new Type[] { typeof (string) },
-			typeof (BaseClass), nameof (BaseClass.publicFieldOnBase), (Type[]) null)]
 		static void TestFieldInBaseType ()
 		{
 			var protectedField = typeof (DerivedClass).GetField ("protectedFieldOnBase"); // Will not be marked - only public fields work this way
@@ -149,9 +152,6 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[RecognizedReflectionAccessPattern (
-			typeof (Type), nameof (Type.GetField), new Type[] { typeof (string), typeof (BindingFlags) },
-			typeof (IgnoreCaseBindingFlagsClass), nameof (IgnoreCaseBindingFlagsClass.publicField), (Type[]) null)]
 		static void TestIgnoreCaseBindingFlags ()
 		{
 			var field = typeof (IgnoreCaseBindingFlagsClass).GetField ("publicfield", BindingFlags.IgnoreCase | BindingFlags.Public);

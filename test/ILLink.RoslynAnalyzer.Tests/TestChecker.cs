@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Text;
+using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -23,6 +23,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 		private readonly IReadOnlyList<Diagnostic> _diagnostics;
 		private readonly List<Diagnostic> _unmatched;
 		private readonly List<(AttributeSyntax Attribute, string Message)> _missing;
+		private readonly List<AttributeSyntax> _expectedNoWarnings;
 
 		public TestChecker (
 			CSharpSyntaxTree tree,
@@ -38,26 +39,30 @@ namespace ILLink.RoslynAnalyzer.Tests
 			// Filled in later
 			_unmatched = new List<Diagnostic> ();
 			_missing = new List<(AttributeSyntax Attribute, string Message)> ();
+			_expectedNoWarnings = new List<AttributeSyntax> ();
 		}
 
-		public void Check ()
+		public void Check (bool allowMissingWarnings)
 		{
 			_unmatched.Clear ();
 			_unmatched.AddRange (_diagnostics);
 			_missing.Clear ();
+			_expectedNoWarnings.Clear ();
 
 			Visit (_tree.GetRoot ());
 
 			string message = "";
-			if (_missing.Any ()) {
+			if (!allowMissingWarnings && _missing.Any ()) {
 				var missingLines = string.Join (
 					Environment.NewLine,
-					_missing.Select (md => $"({md.Attribute.GetLocation ().GetLineSpan ()}) {md.Message}"));
+					_missing.Select (md => $"({md.Attribute.Parent?.Parent?.GetLocation ().GetLineSpan ()}) {md.Message}"));
 				message += $@"Expected warnings were not generated:{Environment.NewLine}{missingLines}{Environment.NewLine}";
 			}
-			if (_unmatched.Any ()) {
-
-				message += $"Unexpected warnings were generated:{Environment.NewLine}{string.Join (Environment.NewLine, _unmatched)}";
+			var unexpected = _unmatched.Where (diag =>
+				diag.Location.SourceTree == null ||
+				_expectedNoWarnings.Any (attr => attr.Parent?.Parent?.Span.Contains (diag.Location.SourceSpan) == true));
+			if (unexpected.Any ()) {
+				message += $"Unexpected warnings were generated:{Environment.NewLine}{string.Join (Environment.NewLine, unexpected)}";
 			}
 
 			if (message.Length > 0) {
@@ -112,6 +117,18 @@ namespace ILLink.RoslynAnalyzer.Tests
 			ValidateDiagnostics (node, node.AttributeLists);
 		}
 
+		public override void VisitSimpleLambdaExpression (SimpleLambdaExpressionSyntax node)
+		{
+			base.VisitSimpleLambdaExpression (node);
+			ValidateDiagnostics (node, node.AttributeLists);
+		}
+
+		public override void VisitParenthesizedLambdaExpression (ParenthesizedLambdaExpressionSyntax node)
+		{
+			base.VisitParenthesizedLambdaExpression (node);
+			ValidateDiagnostics (node, node.AttributeLists);
+		}
+
 		public override void VisitAccessorDeclaration (AccessorDeclarationSyntax node)
 		{
 			base.VisitAccessorDeclaration (node);
@@ -145,8 +162,14 @@ namespace ILLink.RoslynAnalyzer.Tests
 
 			foreach (var attrList in attrLists) {
 				foreach (var attribute in attrList.Attributes) {
-					if (attribute.Name.ToString () == "LogDoesNotContain")
+					switch (attribute.Name.ToString ()) {
+					case "LogDoesNotContain":
 						ValidateLogDoesNotContainAttribute (attribute, memberDiagnostics);
+						break;
+					case "ExpectedNoWarnings":
+						_expectedNoWarnings.Add (attribute);
+						break;
+					}
 
 					if (!IsExpectedDiagnostic (attribute))
 						continue;
@@ -175,8 +198,6 @@ namespace ILLink.RoslynAnalyzer.Tests
 					return GetProducedBy (producedBy).HasFlag (ProducedBy.Analyzer);
 				}
 
-				return true;
-			case "UnrecognizedReflectionAccessPattern":
 				return true;
 			default:
 				return false;
@@ -214,8 +235,6 @@ namespace ILLink.RoslynAnalyzer.Tests
 				return TryValidateExpectedWarningAttribute (attribute!, diagnostics, out matchIndex, out missingDiagnosticMessage);
 			case "LogContains":
 				return TryValidateLogContainsAttribute (attribute!, diagnostics, out matchIndex, out missingDiagnosticMessage);
-			case "UnrecognizedReflectionAccessPattern":
-				return TryValidateUnrecognizedReflectionAccessPatternAttribute (attribute!, diagnostics, out matchIndex, out missingDiagnosticMessage);
 			default:
 				throw new InvalidOperationException ($"Unsupported attribute type {attribute.Name}");
 			}
@@ -226,7 +245,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			missingDiagnosticMessage = null;
 			matchIndex = null;
 			var args = LinkerTestBase.GetAttributeArguments (attribute);
-			string expectedWarningCode = LinkerTestBase.GetStringFromExpression (args["#0"]);
+			string expectedWarningCode = LinkerTestBase.GetStringFromExpression (args["#0"], _semanticModel);
 
 			if (!expectedWarningCode.StartsWith ("IL"))
 				throw new InvalidOperationException ($"Expected warning code should start with \"IL\" prefix.");
@@ -249,6 +268,9 @@ namespace ILLink.RoslynAnalyzer.Tests
 
 			bool Matches (Diagnostic diagnostic)
 			{
+				if (!attribute.Parent?.Parent?.Span.Contains (diagnostic.Location.SourceSpan) == true)
+					return false;
+
 				if (diagnostic.Id != expectedWarningCode)
 					return false;
 
@@ -262,120 +284,68 @@ namespace ILLink.RoslynAnalyzer.Tests
 
 		private bool TryValidateLogContainsAttribute (AttributeSyntax attribute, List<Diagnostic> diagnostics, out int? matchIndex, out string? missingDiagnosticMessage)
 		{
-			missingDiagnosticMessage = null;
-			matchIndex = null;
+			if (!LogContains (attribute, diagnostics, out matchIndex, out string text)) {
+				missingDiagnosticMessage = $"Could not find text:\n{text}\nIn diagnostics:\n{string.Join (Environment.NewLine, _diagnostics)}";
+				return false;
+			} else {
+				missingDiagnosticMessage = null;
+				return true;
+			}
+		}
+
+		private void ValidateLogDoesNotContainAttribute (AttributeSyntax attribute, IReadOnlyList<Diagnostic> diagnosticMessages)
+		{
 			var args = LinkerTestBase.GetAttributeArguments (attribute);
-			var text = LinkerTestBase.GetStringFromExpression (args["#0"]);
+			var arg = args["#0"];
+			Assert.False (args.ContainsKey ("#1"));
+			_ = LinkerTestBase.GetStringFromExpression (arg, _semanticModel);
+			if (LogContains (attribute, diagnosticMessages, out var matchIndex, out var findText)) {
+				Assert.True (false, $"LogDoesNotContain failure: Text\n\"{findText}\"\nfound in diagnostic:\n {diagnosticMessages[(int) matchIndex]}");
+			}
+		}
+
+		private bool LogContains (AttributeSyntax attribute, IReadOnlyList<Diagnostic> diagnostics, [NotNullWhen (true)] out int? matchIndex, out string findText)
+		{
+
+			var args = LinkerTestBase.GetAttributeArguments (attribute);
+			findText = LinkerTestBase.GetStringFromExpression (args["#0"], _semanticModel);
 
 			// If the text starts with `warning IL...` then it probably follows the pattern
 			//	'warning <diagId>: <location>:'
 			// We don't want to repeat the location in the error message for the analyzer, so
 			// it's better to just trim here. We've already filtered by diagnostic location so
 			// the text location shouldn't matter
-			if (text.StartsWith ("warning IL")) {
-				var firstColon = text.IndexOf (": ");
+			if (findText.StartsWith ("warning IL")) {
+				var firstColon = findText.IndexOf (": ");
 				if (firstColon > 0) {
-					var secondColon = text.IndexOf (": ", firstColon + 1);
+					var secondColon = findText.IndexOf (": ", firstColon + 1);
 					if (secondColon > 0) {
-						text = text.Substring (secondColon + 2);
+						findText = findText.Substring (secondColon + 2);
 					}
 				}
 			}
 
-			for (int i = 0; i < diagnostics.Count; i++) {
-				if (diagnostics[i].GetMessage ().Contains (text)) {
-					matchIndex = i;
-					return true;
+			bool isRegex = args.TryGetValue ("regexMatch", out var regexMatchExpr)
+					&& regexMatchExpr.GetLastToken ().Value is bool regexMatch
+					&& regexMatch;
+			if (isRegex) {
+				var regex = new Regex (findText);
+				for (int i = 0; i < diagnostics.Count; i++) {
+					if (regex.IsMatch (diagnostics[i].GetMessage ())) {
+						matchIndex = i;
+						return true;
+					}
+				}
+			} else {
+				for (int i = 0; i < diagnostics.Count; i++) {
+					if (diagnostics[i].GetMessage ().Contains (findText)) {
+						matchIndex = i;
+						return true;
+					}
 				}
 			}
-
-			missingDiagnosticMessage = $"Could not find text:\n{text}\nIn diagnostics:\n{string.Join (Environment.NewLine, _diagnostics)}";
-			return false;
-		}
-
-		private static void ValidateLogDoesNotContainAttribute (AttributeSyntax attribute, IReadOnlyList<Diagnostic> diagnosticMessages)
-		{
-			var arg = Assert.Single (LinkerTestBase.GetAttributeArguments (attribute));
-			var text = LinkerTestBase.GetStringFromExpression (arg.Value);
-			foreach (var diagnostic in diagnosticMessages)
-				Assert.DoesNotContain (text, diagnostic.GetMessage ());
-		}
-
-		private bool TryValidateUnrecognizedReflectionAccessPatternAttribute (AttributeSyntax attribute, List<Diagnostic> diagnostics, out int? matchIndex, out string? missingDiagnosticMessage)
-		{
-			missingDiagnosticMessage = null;
 			matchIndex = null;
-			var args = LinkerTestBase.GetAttributeArguments (attribute);
-
-			MemberDeclarationSyntax sourceMember = attribute.Ancestors ().OfType<MemberDeclarationSyntax> ().First ();
-			if (_semanticModel.GetDeclaredSymbol (sourceMember) is not ISymbol memberSymbol)
-				return false;
-
-			string sourceMemberName = memberSymbol!.GetDisplayName ();
-			string expectedReflectionMemberMethodType = LinkerTestBase.GetStringFromExpression (args["#0"], _semanticModel);
-			string expectedReflectionMemberMethodName = LinkerTestBase.GetStringFromExpression (args["#1"], _semanticModel);
-
-			var reflectionMethodParameters = new List<string> ();
-			if (args.TryGetValue ("#2", out var reflectionMethodParametersExpr) || args.TryGetValue ("reflectionMethodParameters", out reflectionMethodParametersExpr)) {
-				if (reflectionMethodParametersExpr is ArrayCreationExpressionSyntax arrayReflectionMethodParametersExpr) {
-					foreach (var rmp in arrayReflectionMethodParametersExpr.Initializer!.Expressions)
-						reflectionMethodParameters.Add (LinkerTestBase.GetStringFromExpression (rmp, _semanticModel));
-				}
-			}
-
-			var expectedStringsInMessage = new List<string> ();
-			if (args.TryGetValue ("#3", out var messageExpr) || args.TryGetValue ("message", out messageExpr)) {
-				if (messageExpr is ArrayCreationExpressionSyntax arrayMessageExpr) {
-					foreach (var m in arrayMessageExpr.Initializer!.Expressions)
-						expectedStringsInMessage.Add (LinkerTestBase.GetStringFromExpression (m, _semanticModel));
-				}
-			}
-
-			string expectedWarningCode = string.Empty;
-			if (args.TryGetValue ("#4", out var messageCodeExpr) || args.TryGetValue ("messageCode", out messageCodeExpr)) {
-				expectedWarningCode = LinkerTestBase.GetStringFromExpression (messageCodeExpr);
-				Assert.True (expectedWarningCode.StartsWith ("IL"),
-					$"The warning code specified in {messageCodeExpr.ToString ()} must start with the 'IL' prefix. Specified value: '{expectedWarningCode}'");
-			}
-
-			// Don't validate the return type becasue this is not included in the diagnostic messages.
-
-			var sb = new StringBuilder ();
-
-			// Format the member signature the same way Roslyn would since this is what will be included in the warning message.
-			sb.Append (expectedReflectionMemberMethodType).Append (".").Append (expectedReflectionMemberMethodName);
-			if (!expectedReflectionMemberMethodName.EndsWith (".get") &&
-				!expectedReflectionMemberMethodName.EndsWith (".set") &&
-				reflectionMethodParameters is not null)
-				sb.Append ("(").Append (string.Join (", ", reflectionMethodParameters)).Append (")");
-
-			var reflectionAccessPattern = sb.ToString ();
-
-			for (int i = 0; i < diagnostics.Count; i++) {
-				if (Matches (diagnostics[i])) {
-					matchIndex = i;
-					return true;
-				}
-			}
-
-			missingDiagnosticMessage = $"Expected to find unrecognized reflection access pattern '{(expectedWarningCode == string.Empty ? "" : expectedWarningCode + " ")}" +
-					$"{sourceMemberName}: Usage of {reflectionAccessPattern} unrecognized.";
 			return false;
-
-			bool Matches (Diagnostic diagnostic)
-			{
-				if (!string.IsNullOrEmpty (expectedWarningCode) && diagnostic.Id != expectedWarningCode)
-					return false;
-
-				// Don't check whether the message contains the source member name. Roslyn's diagnostics don't include the source
-				// member as part of the message.
-
-				foreach (var expectedString in expectedStringsInMessage)
-					if (!diagnostic.GetMessage ().Contains (expectedString))
-						return false;
-
-				return diagnostic.GetMessage ().Contains (reflectionAccessPattern);
-			}
 		}
 	}
 }

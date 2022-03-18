@@ -102,7 +102,7 @@ namespace ILLink.Shared
 		RequiresUnreferencedCodeAttributeMismatch = 2046,
 		_unused_DynamicallyAccessedMembersMismatchBetweenOverrides = 2047,
 		XmlRemoveAttributeInstancesCanOnlyBeUsedOnType = 2048,
-		_unused_UnrecognizedInternalAttribute = 2049,
+		UnrecognizedInternalAttribute = 2049,
 		CorrectnessOfCOMCannotBeGuaranteed = 2050,
 		XmlPropertyDoesNotContainAttributeName = 2051,
 		XmlCouldNotFindProperty = 2052,
@@ -115,6 +115,8 @@ namespace ILLink.Shared
 		UnrecognizedTypeInRuntimeHelpersRunClassConstructor = 2059,
 		MakeGenericMethod = 2060,
 		UnresolvedAssemblyInCreateInstance = 2061,
+
+		// Unknown value used in a place which requires annotation
 		MethodParameterCannotBeStaticallyDetermined = 2062,
 		MethodReturnValueCannotBeStaticallyDetermined = 2063,
 		FieldValueCannotBeStaticallyDetermined = 2064,

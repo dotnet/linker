@@ -19,6 +19,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			TestUnknownBindingFlags (BindingFlags.Public);
 			TestPropertiesOfArray ();
 			TestNullType ();
+			TestNoValue ();
 			TestDataFlowType ();
 			TestDataFlowWithAnnotation (typeof (MyType));
 			TestIfElse (1);
@@ -28,21 +29,18 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[RecognizedReflectionAccessPattern]
 		static void TestGetProperties ()
 		{
 			var properties = typeof (PropertiesUsedViaReflection).GetProperties ();
 		}
 
 		[Kept]
-		[RecognizedReflectionAccessPattern]
 		static void TestBindingFlags ()
 		{
 			var properties = typeof (BindingFlagsTest).GetProperties (BindingFlags.Public | BindingFlags.Static);
 		}
 
 		[Kept]
-		[RecognizedReflectionAccessPattern]
 		static void TestUnknownBindingFlags (BindingFlags bindingFlags)
 		{
 			// Since the binding flags are not known linker should mark all properties on the type
@@ -50,18 +48,24 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[RecognizedReflectionAccessPattern]
 		static void TestPropertiesOfArray ()
 		{
 			var properties = typeof (int[]).GetProperties (BindingFlags.Public);
 		}
 
 		[Kept]
-		[RecognizedReflectionAccessPattern]
 		static void TestNullType ()
 		{
 			Type type = null;
 			var properties = type.GetProperties (BindingFlags.Public);
+		}
+
+		[Kept]
+		static void TestNoValue ()
+		{
+			Type t = null;
+			Type noValue = Type.GetTypeFromHandle (t.TypeHandle);
+			var methods = noValue.GetProperties (BindingFlags.Public);
 		}
 
 		[Kept]
@@ -71,8 +75,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[UnrecognizedReflectionAccessPattern (typeof (Type), nameof (Type.GetProperties), new Type[] { typeof (BindingFlags) },
-			messageCode: "IL2075", message: new string[] { "GetProperties" })]
+		[ExpectedWarning ("IL2075", "GetProperties")]
 		static void TestDataFlowType ()
 		{
 			Type type = FindType ();
@@ -80,14 +83,12 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[RecognizedReflectionAccessPattern]
 		private static void TestDataFlowWithAnnotation ([KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))][DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicProperties)] Type type)
 		{
 			var properties = type.GetProperties (BindingFlags.Public | BindingFlags.Static);
 		}
 
 		[Kept]
-		[RecognizedReflectionAccessPattern]
 		static void TestIfElse (int i)
 		{
 			Type myType;
@@ -100,21 +101,18 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		[RecognizedReflectionAccessPattern]
 		static void TestIgnoreCaseBindingFlags ()
 		{
 			var properties = typeof (IgnoreCaseBindingFlagsClass).GetProperties (BindingFlags.IgnoreCase | BindingFlags.Public);
 		}
 
 		[Kept]
-		[RecognizedReflectionAccessPattern]
 		static void TestIgnorableBindingFlags ()
 		{
 			var properties = typeof (ExactBindingBindingFlagsClass).GetProperties (BindingFlags.Public | BindingFlags.ExactBinding);
 		}
 
 		[Kept]
-		[RecognizedReflectionAccessPattern]
 		static void TestUnsupportedBindingFlags ()
 		{
 			var properties = typeof (ChangeTypeBindingFlagsClass).GetProperties (BindingFlags.Public | BindingFlags.SuppressChangeType);

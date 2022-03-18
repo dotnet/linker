@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -28,6 +30,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			TestRequiresOnPropertyGetterAndSetter ();
 			TestThatTrailingPeriodIsAddedToMessage ();
 			TestThatTrailingPeriodIsNotDuplicatedInWarningMessage ();
+			TestRequiresFromNameOf ();
 			OnEventMethod.Test ();
 			RequiresOnGenerics.Test ();
 		}
@@ -135,6 +138,11 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			WarningMessageEndsWithPeriod ();
 		}
 
+		static void TestRequiresFromNameOf ()
+		{
+			_ = nameof (BasicRequires.RequiresWithMessageOnly);
+		}
+
 		class OnEventMethod
 		{
 			[ExpectedWarning ("IL2026", "--EventToTestRemove.remove--", ProducedBy = ProducedBy.Trimmer)]
@@ -190,9 +198,13 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 			class TestType { }
 
+			static T MakeNew<T> () where T : new() => new T ();
+			static T MakeNew2<T> () where T : new() => MakeNew<T> ();
+
 			public static void Test ()
 			{
 				GenericTypeWithStaticMethodViaLdftn ();
+				MakeNew2<TestType> ();
 			}
 		}
 	}

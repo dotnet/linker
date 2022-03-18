@@ -9,6 +9,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 	// Hits what appears to be a bug in the tool
 	// Could not initialize vtable of class(0x02000007) .MyReflect due to VTable setup of type Mono.Linker.Tests.Cases.DataFlow.IReflectDataflow+MyReflect failed assembly:/tmp/linker_tests/output/test.exe type:MyReflect member:(null)
 	[SkipPeVerify]
+	[ExpectedNoWarnings]
 	class IReflectDataflow
 	{
 		[ExpectBodyModified]
@@ -67,16 +68,27 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		class MyReflect : IReflect
 		{
 			public Type UnderlyingSystemType => throw new NotImplementedException ();
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields)]
 			public FieldInfo GetField (string name, BindingFlags bindingAttr) => throw new NotImplementedException ();
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields)]
 			public FieldInfo[] GetFields (BindingFlags bindingAttr) => throw new NotImplementedException ();
+			[DynamicallyAccessedMembers ((DynamicallyAccessedMemberTypes) 8191)]
 			public MemberInfo[] GetMember (string name, BindingFlags bindingAttr) => throw new NotImplementedException ();
+			[DynamicallyAccessedMembers ((DynamicallyAccessedMemberTypes) 8191)]
 			public MemberInfo[] GetMembers (BindingFlags bindingAttr) => throw new NotImplementedException ();
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
 			public MethodInfo GetMethod (string name, BindingFlags bindingAttr) => throw new NotImplementedException ();
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
 			public MethodInfo GetMethod (string name, BindingFlags bindingAttr, Binder binder, Type[] types, ParameterModifier[] modifiers) => throw new NotImplementedException ();
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
 			public MethodInfo[] GetMethods (BindingFlags bindingAttr) => throw new NotImplementedException ();
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.NonPublicProperties)]
 			public PropertyInfo[] GetProperties (BindingFlags bindingAttr) => throw new NotImplementedException ();
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.NonPublicProperties)]
 			public PropertyInfo GetProperty (string name, BindingFlags bindingAttr) => throw new NotImplementedException ();
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.NonPublicProperties)]
 			public PropertyInfo GetProperty (string name, BindingFlags bindingAttr, Binder binder, Type returnType, Type[] types, ParameterModifier[] modifiers) => throw new NotImplementedException ();
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
 			public object InvokeMember (string name, BindingFlags invokeAttr, Binder binder, object target, object[] args, ParameterModifier[] modifiers, CultureInfo culture, string[] namedParameters) => throw new NotImplementedException ();
 		}
 

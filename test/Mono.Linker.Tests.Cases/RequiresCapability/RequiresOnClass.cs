@@ -29,6 +29,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			TestStaticMethodOnRequiresTypeSuppressedByRequiresOnMethod ();
 			TestStaticConstructorCalls ();
 			TestOtherMemberTypesWithRequires ();
+			TestNameOfDoesntWarn ();
 			ReflectionAccessOnMethod.Test ();
 			ReflectionAccessOnCtor.Test ();
 			ReflectionAccessOnField.Test ();
@@ -426,14 +427,22 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			MemberTypesWithRequires.Event -= null;
 		}
 
+		static void TestNameOfDoesntWarn ()
+		{
+			_ = nameof (ClassWithRequires.StaticMethod);
+			_ = nameof (MemberTypesWithRequires.field);
+			_ = nameof (MemberTypesWithRequires.Property);
+			_ = nameof (MemberTypesWithRequires.Event);
+		}
+
 		class ReflectionAccessOnMethod
 		{
 			// Analyzer still dont understand RUC on type
-			[ExpectedWarning ("IL2026", "BaseWithoutRequiresOnType.Method()", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "BaseWithoutRequiresOnType.Method()", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "InterfaceWithoutRequires.Method(Int32)", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "InterfaceWithoutRequires.Method()", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "ImplementationWithRequiresOnType.Method()", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "BaseWithoutRequiresOnType.Method()")]
+			[ExpectedWarning ("IL2026", "BaseWithoutRequiresOnType.Method()")]
+			[ExpectedWarning ("IL2026", "InterfaceWithoutRequires.Method(Int32)")]
+			[ExpectedWarning ("IL2026", "InterfaceWithoutRequires.Method()")]
+			[ExpectedWarning ("IL2026", "ImplementationWithRequiresOnType.Method()")]
 			static void TestDAMAccess ()
 			{
 				// Warns because BaseWithoutRequiresOnType.Method as RUC on the method
@@ -455,10 +464,10 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				typeof (DerivedWithoutRequiresOnType).RequiresPublicMethods ();
 			}
 
-			[ExpectedWarning ("IL2026", "BaseWithoutRequiresOnType.Method()", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "InterfaceWithoutRequires.Method(Int32)", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "InterfaceWithoutRequires.Method()", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "ImplementationWithRequiresOnType.Method()", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "BaseWithoutRequiresOnType.Method()")]
+			[ExpectedWarning ("IL2026", "InterfaceWithoutRequires.Method(Int32)")]
+			[ExpectedWarning ("IL2026", "InterfaceWithoutRequires.Method()")]
+			[ExpectedWarning ("IL2026", "ImplementationWithRequiresOnType.Method()")]
 			static void TestDirectReflectionAccess ()
 			{
 				// Requires on the method itself
@@ -511,11 +520,11 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				public DerivedWithRequiresOnBaseWithoutRequires () { }
 			}
 
-			[ExpectedWarning ("IL2026", "BaseWithRequires.BaseWithRequires()", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "BaseWithRequires.BaseWithRequires()", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "DerivedWithRequiresOnBaseWithRequires.DerivedWithRequiresOnBaseWithRequires()", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "DerivedWithRequiresOnBaseWithoutRequires.DerivedWithRequiresOnBaseWithoutRequires()", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "DerivedWithRequiresOnBaseWithoutRequires.DerivedWithRequiresOnBaseWithoutRequires()", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "BaseWithRequires.BaseWithRequires()")]
+			[ExpectedWarning ("IL2026", "BaseWithRequires.BaseWithRequires()")]
+			[ExpectedWarning ("IL2026", "DerivedWithRequiresOnBaseWithRequires.DerivedWithRequiresOnBaseWithRequires()")]
+			[ExpectedWarning ("IL2026", "DerivedWithRequiresOnBaseWithoutRequires.DerivedWithRequiresOnBaseWithoutRequires()")]
+			[ExpectedWarning ("IL2026", "DerivedWithRequiresOnBaseWithoutRequires.DerivedWithRequiresOnBaseWithoutRequires()")]
 			static void TestDAMAccess ()
 			{
 				// Warns because the type has Requires
@@ -577,11 +586,11 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				public static int DerivedStaticField;
 			}
 
-			[ExpectedWarning ("IL2026", "WithRequires.StaticField", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "WithRequires.StaticField", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "WithRequires.StaticField", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "WithRequires.PrivateStaticField", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "DerivedWithRequires.DerivedStaticField", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "WithRequires.StaticField")]
+			[ExpectedWarning ("IL2026", "WithRequires.StaticField")]
+			[ExpectedWarning ("IL2026", "WithRequires.StaticField")]
+			[ExpectedWarning ("IL2026", "WithRequires.PrivateStaticField")]
+			[ExpectedWarning ("IL2026", "DerivedWithRequires.DerivedStaticField")]
 			static void TestDAMAccess ()
 			{
 				typeof (WithRequires).RequiresPublicFields ();
@@ -592,21 +601,19 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[ExpectedWarning ("IL2026", "WithRequires.StaticField")]
-			// Analyzer does not recognize the binding flags
-			[ExpectedWarning ("IL2026", "WithRequires.PrivateStaticField", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "WithRequires.PrivateStaticField")]
 			[ExpectedWarning ("IL2026", "DerivedWithRequires.DerivedStaticField")]
-			[ExpectedWarning ("IL2026", "DerivedWithRequires.DerivedStaticField", ProducedBy = ProducedBy.Analyzer)]
 			static void TestDirectReflectionAccess ()
 			{
 				typeof (WithRequires).GetField (nameof (WithRequires.StaticField));
 				typeof (WithRequires).GetField (nameof (WithRequires.InstanceField)); // Doesn't warn
 				typeof (WithRequires).GetField ("PrivateStaticField", BindingFlags.NonPublic);
 				typeof (WithRequiresOnlyInstanceFields).GetField (nameof (WithRequiresOnlyInstanceFields.InstanceField)); // Doesn't warn
-				typeof (DerivedWithoutRequires).GetField (nameof (DerivedWithRequires.DerivedStaticField)); // Doesn't warn
+				typeof (DerivedWithoutRequires).GetField (nameof (DerivedWithoutRequires.DerivedStaticField)); // Doesn't warn
 				typeof (DerivedWithRequires).GetField (nameof (DerivedWithRequires.DerivedStaticField));
 			}
 
-			[ExpectedWarning ("IL2026", "WithRequires.StaticField")]
+			[ExpectedWarning ("IL2026", "WithRequires.StaticField", ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2026", "WithRequires.StaticField", ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2026", "WithRequires.StaticField", ProducedBy = ProducedBy.Trimmer)]
 			[DynamicDependency (nameof (WithRequires.StaticField), typeof (WithRequires))]
@@ -669,7 +676,9 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				public static event EventHandler StaticEvent;
 			}
 
-			[ExpectedWarning ("IL2026", "StaticEvent.add", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "StaticEvent.add")]
+			// https://github.com/mono/linker/issues/2218
+			[ExpectedWarning ("IL2026", "StaticEvent.remove", ProducedBy = ProducedBy.Analyzer)]
 			static void TestDirectReflectionAccess ()
 			{
 				typeof (WithRequires).GetEvent (nameof (WithRequires.StaticEvent));
@@ -709,16 +718,16 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				public static int DerivedStaticProperty { get; set; }
 			}
 
-			[ExpectedWarning ("IL2026", "WithRequires.StaticProperty.get", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "WithRequires.StaticProperty.get", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "WithRequires.StaticProperty.get", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "WithRequires.StaticProperty.set", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "WithRequires.StaticProperty.set", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "WithRequires.StaticProperty.set", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "WithRequires.PrivateStaticProperty.get", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "WithRequires.PrivateStaticProperty.set", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "DerivedWithRequires.DerivedStaticProperty.get", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "DerivedWithRequires.DerivedStaticProperty.set", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "WithRequires.StaticProperty.get")]
+			[ExpectedWarning ("IL2026", "WithRequires.StaticProperty.get")]
+			[ExpectedWarning ("IL2026", "WithRequires.StaticProperty.get")]
+			[ExpectedWarning ("IL2026", "WithRequires.StaticProperty.set")]
+			[ExpectedWarning ("IL2026", "WithRequires.StaticProperty.set")]
+			[ExpectedWarning ("IL2026", "WithRequires.StaticProperty.set")]
+			[ExpectedWarning ("IL2026", "WithRequires.PrivateStaticProperty.get")]
+			[ExpectedWarning ("IL2026", "WithRequires.PrivateStaticProperty.set")]
+			[ExpectedWarning ("IL2026", "DerivedWithRequires.DerivedStaticProperty.get")]
+			[ExpectedWarning ("IL2026", "DerivedWithRequires.DerivedStaticProperty.set")]
 			static void TestDAMAccess ()
 			{
 				typeof (WithRequires).RequiresPublicProperties ();
@@ -728,12 +737,12 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				typeof (DerivedWithRequires).RequiresPublicProperties ();
 			}
 
-			[ExpectedWarning ("IL2026", "WithRequires.StaticProperty.get", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "WithRequires.StaticProperty.set", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "WithRequires.PrivateStaticProperty.get", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "WithRequires.PrivateStaticProperty.set", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "DerivedWithRequires.DerivedStaticProperty.get", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "DerivedWithRequires.DerivedStaticProperty.set", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "WithRequires.StaticProperty.get")]
+			[ExpectedWarning ("IL2026", "WithRequires.StaticProperty.set")]
+			[ExpectedWarning ("IL2026", "WithRequires.PrivateStaticProperty.get")]
+			[ExpectedWarning ("IL2026", "WithRequires.PrivateStaticProperty.set")]
+			[ExpectedWarning ("IL2026", "DerivedWithRequires.DerivedStaticProperty.get")]
+			[ExpectedWarning ("IL2026", "DerivedWithRequires.DerivedStaticProperty.set")]
 			static void TestDirectReflectionAccess ()
 			{
 				typeof (WithRequires).GetProperty (nameof (WithRequires.StaticProperty));
@@ -816,7 +825,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		}
 
 		[AttributeWithRequires (PropertyOnAttribute = 42)]
-		[ExpectedWarning ("IL2026", "AttributeWithRequires.AttributeWithRequires()", ProducedBy = ProducedBy.Trimmer)]
+		[ExpectedWarning ("IL2026", "AttributeWithRequires.AttributeWithRequires()")]
 		static void KeepFieldOnAttribute () { }
 	}
 }

@@ -4,7 +4,6 @@
 using System;
 using System.Threading.Tasks;
 using ILLink.Shared;
-using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Testing;
 using Microsoft.CodeAnalysis.Text;
 using Xunit;
@@ -16,8 +15,6 @@ namespace ILLink.RoslynAnalyzer.Tests
 {
 	public class RequiresDynamicCodeAnalyzerTests
 	{
-		static readonly DiagnosticDescriptor dynamicInvocationDiagnosticDescriptor = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.RequiresUnreferencedCode, new DiagnosticString ("DynamicTypeInvocation"));
-
 		static readonly string dynamicCodeAttribute = @"
 #nullable enable
 
@@ -53,7 +50,7 @@ namespace System.Diagnostics.CodeAnalysis
 			test.TestState.AnalyzerConfigFiles.Add (
 						("/.editorconfig", SourceText.From (@$"
 is_global = true
-build_property.{MSBuildPropertyOptionNames.EnableAOTAnalyzer} = true")));
+build_property.{MSBuildPropertyOptionNames.EnableAotAnalyzer} = true")));
 			if (numberOfIterations != null) {
 				test.NumberOfIncrementalIterations = numberOfIterations;
 				test.NumberOfFixAllIterations = numberOfIterations;
