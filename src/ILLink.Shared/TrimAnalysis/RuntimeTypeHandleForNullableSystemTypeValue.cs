@@ -13,18 +13,18 @@ namespace ILLink.Shared.TrimAnalysis
 	/// </summary>
 	sealed record RuntimeTypeHandleForNullableSystemTypeValue : SingleValue
 	{
-		public RuntimeTypeHandleForNullableSystemTypeValue (in TypeProxy nullableType, in TypeProxy underlyingType)
+		public RuntimeTypeHandleForNullableSystemTypeValue (in TypeProxy nullableType, in SystemTypeValue underlyingTypeValue)
 		{
 			Debug.Assert (nullableType.IsTypeOf ("System", "Nullable`1"));
-			UnderlyingType = underlyingType;
+			UnderlyingTypeValue = underlyingTypeValue;
 			NullableType = nullableType;
 		}
 		public readonly TypeProxy NullableType;
 
-		public readonly TypeProxy UnderlyingType;
+		public readonly SystemTypeValue UnderlyingTypeValue;
 
 		public override SingleValue DeepCopy () => this; // This value is immutable
 
-		public override string ToString () => this.ValueToString (UnderlyingType, NullableType);
+		public override string ToString () => this.ValueToString (UnderlyingTypeValue, NullableType);
 	}
 }

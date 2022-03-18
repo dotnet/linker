@@ -22,7 +22,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 					// typeof(Nullable<>) 
 					TypeKind.Error => new SystemTypeValue (new TypeProxy (type)),
 					TypeKind.Class or TypeKind.Struct or TypeKind.Interface =>
-						new NullableSystemTypeValue (new TypeProxy (type), new TypeProxy (underlyingType)),
+						new NullableSystemTypeValue (new TypeProxy (type), new SystemTypeValue (new TypeProxy (underlyingType))),
 					_ => UnknownValue.Instance
 				};
 			}

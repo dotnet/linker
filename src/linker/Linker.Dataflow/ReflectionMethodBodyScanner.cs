@@ -154,7 +154,10 @@ namespace Mono.Linker.Dataflow
 							new GenericParameterValue (gp, _context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (gp)));
 
 					case TypeReference underlyingType:
-						return new NullableSystemTypeValue (genericArgumentType, ResolveToTypeDefinition (underlyingType)!);
+						if (ResolveToTypeDefinition (underlyingType) is TypeDefinition underlyingTypeDefinition)
+							return new NullableSystemTypeValue (genericArgumentType, new SystemTypeValue (underlyingTypeDefinition));
+						else
+							return UnknownValue.Instance;
 					}
 				}
 				// All values except for Nullable<T>, including Nullable<> (with no type arguments)
@@ -365,24 +368,18 @@ namespace Mono.Linker.Dataflow
 									if ((argumentValue as ArrayValue)?.TryGetValueByIndex (0, out var underlyingMultiValue) == true) {
 										foreach (var underlyingValue in underlyingMultiValue) {
 											switch (underlyingValue) {
-											// Don't warn on Array types - it will throw instead
+											// Don't warn on these types - it will throw instead
+											case NullableValueWithDynamicallyAccessedMembers:
+											case NullableSystemTypeValue:
 											case SystemTypeValue maybeArrayValue when maybeArrayValue.RepresentedType.IsTypeOf ("System", "Array"):
 												AddReturnValue (MultiValueLattice.Top);
 												break;
 											case SystemTypeValue systemTypeValue:
-												AddReturnValue (new NullableSystemTypeValue (typeValue.RepresentedType, systemTypeValue.RepresentedType));
-												break;
-											// Don't warn on Nullable<T> - it will throw instead
-											case NullableValueWithDynamicallyAccessedMembers:
-												AddReturnValue (MultiValueLattice.Top);
+												AddReturnValue (new NullableSystemTypeValue (typeValue.RepresentedType, new SystemTypeValue (systemTypeValue.RepresentedType)));
 												break;
 											// Generic Parameters and method parameters with annotations
 											case ValueWithDynamicallyAccessedMembers damValue:
 												AddReturnValue (new NullableValueWithDynamicallyAccessedMembers (typeValue.RepresentedType, damValue));
-												break;
-											// Don't warn on Nullable<T>, it will throw instead
-											case NullableSystemTypeValue:
-												AddReturnValue (MultiValueLattice.Top);
 												break;
 											// Everything else assume it has no annotations
 											default:

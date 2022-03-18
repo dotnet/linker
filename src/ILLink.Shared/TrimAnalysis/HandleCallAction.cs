@@ -66,7 +66,7 @@ namespace ILLink.Shared.TrimAnalysis
 				foreach (var value in argumentValues[0]) {
 					AddReturnValue (value switch {
 						RuntimeTypeHandleForNullableSystemTypeValue nullableSystemType
-							=> new NullableSystemTypeValue (nullableSystemType.NullableType, nullableSystemType.UnderlyingType),
+							=> new NullableSystemTypeValue (nullableSystemType.NullableType, nullableSystemType.UnderlyingTypeValue),
 						// When generating type handles from IL, the GenericParameterValue with DAM annotations is not available.
 						// Once we convert it to a Value with annotations here, there is no need to convert it back in get_TypeHandle
 						RuntimeTypeHandleForNullableValueWithDynamicallyAccessedMembers nullableDamType when nullableDamType.UnderlyingTypeValue is RuntimeTypeHandleForGenericParameterValue underlyingGenericParameter
@@ -93,7 +93,7 @@ namespace ILLink.Shared.TrimAnalysis
 					if (value != NullValue.Instance)
 						AddReturnValue (value switch {
 							NullableSystemTypeValue nullableSystemType
-								=> new RuntimeTypeHandleForNullableSystemTypeValue (nullableSystemType.NullableType, nullableSystemType.UnderlyingType),
+								=> new RuntimeTypeHandleForNullableSystemTypeValue (nullableSystemType.NullableType, nullableSystemType.UnderlyingTypeValue),
 							NullableValueWithDynamicallyAccessedMembers nullableDamType when nullableDamType.UnderlyingTypeValue is GenericParameterValue genericParam
 								=> new RuntimeTypeHandleForNullableValueWithDynamicallyAccessedMembers (nullableDamType.NullableType, new RuntimeTypeHandleForGenericParameterValue (genericParam.GenericParameter)),
 							NullableValueWithDynamicallyAccessedMembers nullableDamType
@@ -561,7 +561,7 @@ namespace ILLink.Shared.TrimAnalysis
 				foreach (var singlevalue in argumentValues[0].AsEnumerable ()) {
 					AddReturnValue (singlevalue switch {
 						SystemTypeValue systemType => systemType,
-						NullableSystemTypeValue nullableSystemType => new SystemTypeValue (nullableSystemType.UnderlyingType),
+						NullableSystemTypeValue nullableSystemType => nullableSystemType.UnderlyingTypeValue,
 						NullableValueWithDynamicallyAccessedMembers nullableDamValue => nullableDamValue.UnderlyingTypeValue,
 						ValueWithDynamicallyAccessedMembers damValue => damValue,
 						_ => GetMethodReturnValue (calledMethod, returnValueDynamicallyAccessedMemberTypes)
@@ -586,23 +586,18 @@ namespace ILLink.Shared.TrimAnalysis
 						}
 						foreach (var underlyingValue in underlyingMultiValue) {
 							switch (underlyingValue) {
+							// Don't warn on these types - it will throw instead
+							case NullableValueWithDynamicallyAccessedMembers:
+							case NullableSystemTypeValue:
 							case SystemTypeValue maybeArrayValue when maybeArrayValue.RepresentedType.IsTypeOf ("System", "Array"):
 								AddReturnValue (MultiValueLattice.Top);
 								break;
 							case SystemTypeValue systemTypeValue:
-								AddReturnValue (new NullableSystemTypeValue (typeValue.RepresentedType, systemTypeValue.RepresentedType));
-								break;
-							// Don't warn on Nullable<T> - it will throw instead
-							case NullableValueWithDynamicallyAccessedMembers:
-								AddReturnValue (MultiValueLattice.Top);
+								AddReturnValue (new NullableSystemTypeValue (typeValue.RepresentedType, new SystemTypeValue (systemTypeValue.RepresentedType)));
 								break;
 							// Generic Parameters and method parameters with annotations
 							case ValueWithDynamicallyAccessedMembers damValue:
 								AddReturnValue (new NullableValueWithDynamicallyAccessedMembers (typeValue.RepresentedType, damValue));
-								break;
-							// Don't warn on Nullable<T>, it will throw instead
-							case NullableSystemTypeValue:
-								AddReturnValue (MultiValueLattice.Top);
 								break;
 							// Everything else assume it has no annotations
 							default:

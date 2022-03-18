@@ -44,7 +44,7 @@ namespace ILLink.Shared.TrimAnalysis
 					}
 				} else if (uniqueValue is NullableSystemTypeValue nullableSystemTypeValue) {
 					MarkTypeForDynamicallyAccessedMembers (nullableSystemTypeValue.NullableType, targetValue.DynamicallyAccessedMemberTypes);
-					MarkTypeForDynamicallyAccessedMembers (nullableSystemTypeValue.UnderlyingType, targetValue.DynamicallyAccessedMemberTypes);
+					MarkTypeForDynamicallyAccessedMembers (nullableSystemTypeValue.UnderlyingTypeValue.RepresentedType, targetValue.DynamicallyAccessedMemberTypes);
 				} else if (uniqueValue == NullValue.Instance) {
 					// Ignore - probably unreachable path as it would fail at runtime anyway.
 				} else {
