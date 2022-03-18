@@ -393,9 +393,7 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 
 		class SuppressInComplex
 		{
-			[RequiresUnreferencedCode ("Suppress in body")]
-			[RequiresAssemblyFiles ("Suppress in body")]
-			[RequiresDynamicCode ("Suppress in body")]
+			[UnconditionalSuppressMessage ("Test", "IL2026")]
 			static void TestIteratorLocalFunction ()
 			{
 				LocalFunction ();
