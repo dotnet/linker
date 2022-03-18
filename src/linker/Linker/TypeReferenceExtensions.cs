@@ -361,6 +361,11 @@ namespace Mono.Linker
 
 		public static bool IsTypeOf (this TypeReference tr, WellKnownType type)
 		{
+			// TypeReferences of System.Array doesn't have metadata type of MetadataType.Array
+			if (type.TryGetMetadataType (out var metadataType)) {
+				Debug.Assert (tr.IsTypeOf (type.GetNamespace (), type.GetName ()) == (metadataType == tr.MetadataType));
+				return metadataType == tr.MetadataType;
+			}
 			var (@namespace, name) = type.GetNamespaceAndName ();
 			return tr.IsTypeOf (@namespace, name);
 		}

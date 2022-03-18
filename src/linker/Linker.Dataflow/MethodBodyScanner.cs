@@ -729,7 +729,7 @@ namespace Mono.Linker.Dataflow
 				return;
 			case TypeReference typeReference when ResolveToTypeDefinition (typeReference) is TypeDefinition resolvedDefinition:
 				// Note that Nullable types without a generic argument (i.e. Nullable<>) will be RuntimeTypeHandleValue / SystemTypeValue
-				if (typeReference is IGenericInstance instance && resolvedDefinition.IsTypeOf ("System", "Nullable`1")) {
+				if (typeReference is IGenericInstance instance && resolvedDefinition.IsTypeOf (WellKnownType.System_Nullable_T)) {
 					switch (instance.GenericArguments[0]) {
 					case GenericParameter genericParam:
 						var nullableDam = new RuntimeTypeHandleForNullableValueWithDynamicallyAccessedMembers (new TypeProxy (resolvedDefinition),

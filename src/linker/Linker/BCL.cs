@@ -1,3 +1,4 @@
+using ILLink.Shared.TypeSystemProxy;
 using Mono.Cecil;
 
 namespace Mono.Linker
@@ -77,6 +78,12 @@ namespace Mono.Linker
 			}
 
 			return null;
+		}
+
+		public static TypeDefinition? FindPredefinedType (WellKnownType type, LinkContext context)
+		{
+			var (@namespace, name) = type.GetNamespaceAndName ();
+			return FindPredefinedType (@namespace, name, context);
 		}
 	}
 }
