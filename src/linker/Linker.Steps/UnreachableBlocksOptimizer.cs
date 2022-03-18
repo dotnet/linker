@@ -21,9 +21,9 @@ namespace Mono.Linker.Steps
 	public class UnreachableBlocksOptimizer
 	{
 		readonly LinkContext _context;
-		readonly Dictionary<MethodDefinition, MethodResult?> cache_no_parameter = new (2048);
-		readonly Dictionary<MethodDefinition, MethodResult?> cache_unknown_parameters = new (2048);
-		readonly Stack<MethodDefinition> resursion_guard = new ();
+		readonly Dictionary<MethodDefinition, MethodResult?> _cache_no_parameter = new (2048);
+		readonly Dictionary<MethodDefinition, MethodResult?> _cache_unknown_parameters = new (2048);
+		readonly Stack<MethodDefinition> _resursion_guard = new ();
 
 		MethodDefinition? IntPtrSize, UIntPtrSize;
 
@@ -34,12 +34,12 @@ namespace Mono.Linker.Steps
 
 		Stack<MethodDefinition> GetRecursionGuard ()
 		{
-			resursion_guard.Clear ();
-			return resursion_guard;
+			_resursion_guard.Clear ();
+			return _resursion_guard;
 		}
 
 		/// <summary>
-		/// Processes the specified and method and perform all branch removal optimizations on it.
+		/// Processes the specified method and perform all branch removal optimizations on it.
 		/// When this returns it's guaranteed that the method has been optimized (if possible).
 		/// </summary>
 		/// <param name="method">The method to process</param>
@@ -69,8 +69,9 @@ namespace Mono.Linker.Steps
 				_context.LogMessage ($"Reduced '{reducer.InstructionsReplaced}' instructions in conditional branches for [{method.DeclaringType.Module.Assembly.Name}] method '{method.GetDisplayName ()}'.");
 
 			//
-			// We cannot run before reducer without as it would require another
-			// recomputing offsets due to instructions replacement
+			// Note: The inliner cannot run before reducer rewrites body as it
+			// would require another recomputing offsets due to instructions replacement
+			// done by inliner
 			//
 			var inliner = new CallInliner (method.Body, this);
 			inliner.RewriteBody ();
@@ -224,6 +225,7 @@ namespace Mono.Linker.Steps
 			return null;
 		}
 
+
 		//
 		// Return expression with a value when method implementation can be
 		// interpreted during trimming
@@ -234,24 +236,26 @@ namespace Mono.Linker.Steps
 
 			MethodDefinition method = callee.Method;
 			if (!method.HasParameters) {
-				if (!cache_no_parameter.TryGetValue (method, out value)) {
+				if (!_cache_no_parameter.TryGetValue (method, out value) && !IsDeepStack (callStack)) {
 					value = AnalyzeMethodForConstantResult (callee, callStack);
-					cache_no_parameter.Add (method, value);
+					_cache_no_parameter.Add (method, value);
 				}
 
 				return value;
 			}
 
 			if (callee.HasUnknownArguments) {
-				if (!cache_unknown_parameters.TryGetValue (method, out value)) {
+				if (!_cache_unknown_parameters.TryGetValue (method, out value) && !IsDeepStack (callStack)) {
 					value = AnalyzeMethodForConstantResult (callee, callStack);
-					cache_unknown_parameters.Add (method, value);
+					_cache_unknown_parameters.Add (method, value);
 				}
 
 				return value;
 			}
 
 			return AnalyzeMethodForConstantResult (callee, callStack);
+
+			static bool IsDeepStack (Stack<MethodDefinition> callStack) => callStack.Count > 100;
 		}
 
 		Instruction? GetSizeOfResult (TypeReference type)
@@ -279,8 +283,7 @@ namespace Mono.Linker.Steps
 		{
 			//
 			// In theory any pure method could be executed easily via reflection
-			// but for now we focus only on selected list method that helps
-			// reduce with framework trimming
+			// but for now we handle only few that help with framework trimming
 			//
 			object? left, right;
 			if (method.DeclaringType.MetadataType == MetadataType.String) {
@@ -296,18 +299,17 @@ namespace Mono.Linker.Steps
 						return null;
 
 					if (left is string sleft && right is string sright) {
-						if (method.Name.Length == 6)
+						if (method.Name.Length == 6) // Concat case
 							return Instruction.Create (OpCodes.Ldstr, string.Concat (sleft, sright));
 
 						bool result = method.Name.Length == 11 ? sleft == sright : sleft != sright;
-						return Instruction.Create (OpCodes.Ldc_I4, result ? 1 : 0);
+						return Instruction.Create (OpCodes.Ldc_I4, result ? 1 : 0); // op_Equality / op_Inequality
 					}
 
 					break;
 				}
 			}
 
-			//Console.WriteLine (method.GetDisplayName ());
 			return null;
 		}
 
@@ -331,8 +333,6 @@ namespace Mono.Linker.Steps
 			if (result != null && HasJumpIntoTargetRange (instructions, index - method.Parameters.Count + 1, index))
 				return null;
 
-			// Primary target are methods with a single parameter. We could support more
-			// but it needs more work on stack extraction logic
 			return result;
 
 			static bool IsConstantValue (Instruction instr)
@@ -1736,6 +1736,8 @@ namespace Mono.Linker.Steps
 
 					goto default;
 				default:
+					// We are not inlining hence can evaluate anything and decide later
+					// how to handle sitation when the result is not deterministic
 					SideEffectFreeResult = false;
 					return true;
 				}
