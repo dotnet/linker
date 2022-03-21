@@ -18,16 +18,16 @@ namespace ILLink.Shared.TypeSystemProxy
 
 		public string? Namespace { get => Type.ContainingNamespace?.Name; }
 
-		[MethodImpl(AggressiveInlining)]
+		[MethodImpl (AggressiveInlining)]
 		public bool IsTypeOf (string @namespace, string name) => Type.IsTypeOf (@namespace, name);
 
-		[MethodImpl(AggressiveInlining)]
+		[MethodImpl (AggressiveInlining)]
 		public bool IsTypeOf (WellKnownType wellKnownType) => Type.IsTypeOf (wellKnownType);
 
-		[MethodImpl(AggressiveInlining)]
+		[MethodImpl (AggressiveInlining)]
 		public string GetDisplayName () => Type.GetDisplayName ();
 
-		[MethodImpl(AggressiveInlining)]
+		[MethodImpl (AggressiveInlining)]
 		public override string ToString () => Type.ToString ();
 	}
 }
