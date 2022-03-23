@@ -350,8 +350,6 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 					LocalFunction ();
 
 					[ExpectedWarning ("IL2026", "--RequiresUnreferencedCodeMethod--")]
-					[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
-					[ExpectedWarning ("IL3050", ProducedBy = ProducedBy.Analyzer)]
 					void LocalFunction () => RequiresUnreferencedCodeMethod ();
 				}
 			}
@@ -511,8 +509,6 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 				{
 					var lambda =
 					[ExpectedWarning ("IL2026", "--RequiresUnreferencedCodeMethod--")]
-					[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
-					[ExpectedWarning ("IL3050", ProducedBy = ProducedBy.Analyzer)]
 					() => RequiresUnreferencedCodeMethod ();
 
 					lambda ();

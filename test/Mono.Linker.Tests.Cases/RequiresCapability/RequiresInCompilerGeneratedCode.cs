@@ -576,6 +576,10 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 			static void TestCallUnused ()
 			{
+				// Analyzer emits warnings for code in unused local functions.
+				[ExpectedWarning ("IL2026", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+				[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+				[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 				void LocalFunction () => MethodWithRequires ();
 			}
 
@@ -595,6 +599,10 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 			static void TestCallWithClosureUnused (int p = 0)
 			{
+				// Analyzer emits warnings for code in unused local functions.
+				[ExpectedWarning ("IL2026", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+				[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+				[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 				void LocalFunction ()
 				{
 					p++;
