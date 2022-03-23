@@ -60,9 +60,9 @@ namespace ILLink.RoslynAnalyzer
 
 		public static bool IsTypeOf (this ITypeSymbol symbol, WellKnownType wellKnownType)
 		{
+			symbol = symbol.OriginalDefinition;
 			if (wellKnownType.TryGetSpecialType (out var specialType)) {
-				// Nullables are SpecialType.None, but the originalDefinition is SpecialType.Nullable_T
-				var symbolSpecialType = symbol.SpecialType == SpecialType.None ? symbol.OriginalDefinition.SpecialType : symbol.SpecialType;
+				var symbolSpecialType = symbol.SpecialType;
 				// Make sure checking the special type is the same as checking the metadata string names.
 				Debug.Assert (symbol.IsTypeOf (wellKnownType.GetNamespace (), wellKnownType.GetName ()) == (symbolSpecialType == specialType));
 				return symbolSpecialType == specialType;
