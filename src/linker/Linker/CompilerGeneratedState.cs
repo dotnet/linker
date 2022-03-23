@@ -48,18 +48,20 @@ namespace Mono.Linker
 				}
 
 				// Discover calls to lambdas or local functions.
-				foreach (var instruction in method.Body.Instructions) {
-					if (instruction.OpCode.OperandType != OperandType.InlineMethod)
-						continue;
+				if (method.Body != null) {
+					foreach (var instruction in method.Body.Instructions) {
+						if (instruction.OpCode.OperandType != OperandType.InlineMethod)
+							continue;
 
-					MethodDefinition? lambdaOrLocalFunction = _context.TryResolve ((MethodReference) instruction.Operand);
-					if (lambdaOrLocalFunction == null)
-						continue;
+						MethodDefinition? lambdaOrLocalFunction = _context.TryResolve ((MethodReference) instruction.Operand);
+						if (lambdaOrLocalFunction == null)
+							continue;
 
-					if (!CompilerGeneratedNames.IsLambdaOrLocalFunction (lambdaOrLocalFunction.Name))
-						continue;
+						if (!CompilerGeneratedNames.IsLambdaOrLocalFunction (lambdaOrLocalFunction.Name))
+							continue;
 
-					callGraph.TrackCall (method, lambdaOrLocalFunction);
+						callGraph.TrackCall (method, lambdaOrLocalFunction);
+					}
 				}
 
 				// Discover state machine methods.
@@ -77,7 +79,9 @@ namespace Mono.Linker
 						TypeDefinition? stateMachineType = GetFirstConstructorArgumentAsType (attribute);
 						if (stateMachineType == null)
 							break;
-						Debug.Assert (stateMachineType.DeclaringType == type);
+						Debug.Assert (stateMachineType.DeclaringType == type ||
+							(CompilerGeneratedNames.IsGeneratedMemberName (stateMachineType.DeclaringType.Name) &&
+							 stateMachineType.DeclaringType.DeclaringType == type));
 						if (!_compilerGeneratedTypeToUserCodeMethod.TryAdd (stateMachineType, method)) {
 							var alreadyAssociatedMethod = _compilerGeneratedTypeToUserCodeMethod[stateMachineType];
 							_context.LogWarning (new MessageOrigin (method), DiagnosticId.MethodsAreAssociatedWithStateMachine, method.GetDisplayName (), alreadyAssociatedMethod.GetDisplayName (), stateMachineType.GetDisplayName ());
@@ -98,9 +102,16 @@ namespace Mono.Linker
 				if (!CompilerGeneratedNames.IsGeneratedMemberName (nestedType.Name))
 					continue;
 
-				// TODO: state machine types shouldn't contain state machine methods. Assert this?
 				foreach (var method in nestedType.Methods)
 					ProcessMethod (method);
+
+				// State machines can be emitted into lambda display classes, so we need to go down one
+				// more level to find calls from iterator nested functions to other nested functions.
+				foreach (var innerNestedType in nestedType.NestedTypes) {
+					Debug.Assert (CompilerGeneratedNames.IsGeneratedMemberName (innerNestedType.Name));
+					foreach (var innerMethod in innerNestedType.Methods)
+						ProcessMethod (innerMethod);
+				}
 			}
 
 			// Now we've discovered the call graphs for calls to nested functions.

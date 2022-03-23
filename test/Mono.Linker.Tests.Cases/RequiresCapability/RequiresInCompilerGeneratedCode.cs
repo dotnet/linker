@@ -1318,6 +1318,112 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			[RequiresUnreferencedCode ("Suppress in body")]
 			[RequiresAssemblyFiles ("Suppress in body")]
 			[RequiresDynamicCode ("Suppress in body")]
+			static void TestAsyncLocalFunction ()
+			{
+				LocalFunction ();
+
+				async Task<int> LocalFunction ()
+				{
+					await MethodAsync ();
+					MethodWithRequires ();
+					return 1;
+				}
+			}
+
+			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
+			[RequiresDynamicCode ("Suppress in body")]
+			static void TestIteratorLocalFunctionWithClosure (int p = 0)
+			{
+				LocalFunction ();
+
+				IEnumerable<int> LocalFunction ()
+				{
+					p++;
+					yield return 0;
+					MethodWithRequires ();
+					yield return 1;
+				}
+			}
+
+			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
+			[RequiresDynamicCode ("Suppress in body")]
+			static void TestAsyncLocalFunctionWithClosure (int p = 0)
+			{
+				LocalFunction ();
+
+				async Task<int> LocalFunction ()
+				{
+					p++;
+					await MethodAsync ();
+					MethodWithRequires ();
+					return 1;
+				}
+			}
+
+			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
+			[RequiresDynamicCode ("Suppress in body")]
+			static void TestCallToLocalFunctionInIteratorLocalFunctionWithClosure (int p = 0)
+			{
+				LocalFunction ();
+
+				IEnumerable<int> LocalFunction ()
+				{
+					p++;
+					yield return 0;
+					LocalFunction2 ();
+					yield return 1;
+
+					void LocalFunction2 ()
+					{
+						MethodWithRequires ();
+					}
+				}
+			}
+
+			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
+			[RequiresDynamicCode ("Suppress in body")]
+			static void TestAsyncLambda ()
+			{
+				Func<Task<int>> _ = async Task<int> () => {
+					await MethodAsync ();
+					MethodWithRequires ();
+					return 1;
+				};
+			}
+
+			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
+			[RequiresDynamicCode ("Suppress in body")]
+			static void TestAsyncLambdaWithClosure (int p = 0)
+			{
+				Func<Task<int>> _ = async Task<int> () => {
+					p++;
+					await MethodAsync ();
+					MethodWithRequires ();
+					return 1;
+				};
+			}
+
+			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
+			[RequiresDynamicCode ("Suppress in body")]
+			static void TestLambdaInAsyncLambdaWithClosure (int p = 0)
+			{
+				Func<Task<int>> _ = async Task<int> () => {
+					p++;
+					await MethodAsync ();
+					var lambda = () => MethodWithRequires ();
+					return 1;
+				};
+			}
+
+			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
+			[RequiresDynamicCode ("Suppress in body")]
 			static async void TestIteratorLocalFunctionInAsync ()
 			{
 				await MethodAsync ();
@@ -1367,6 +1473,13 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			public static void Test ()
 			{
 				TestIteratorLocalFunction ();
+				TestAsyncLocalFunction ();
+				TestIteratorLocalFunctionWithClosure ();
+				TestAsyncLocalFunctionWithClosure ();
+				TestCallToLocalFunctionInIteratorLocalFunctionWithClosure ();
+				TestAsyncLambda ();
+				TestAsyncLambdaWithClosure ();
+				TestLambdaInAsyncLambdaWithClosure ();
 				TestIteratorLocalFunctionInAsync ();
 				TestIteratorLocalFunctionInAsyncWithoutInner ();
 				TestDynamicallyAccessedMethodViaGenericMethodParameterInIterator ();
