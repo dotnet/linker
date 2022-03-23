@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using ILLink.Shared;
 using Mono.Cecil;
+using Mono.Cecil.Cil;
 
 namespace Mono.Linker
 {
@@ -14,8 +15,7 @@ namespace Mono.Linker
 	{
 		readonly LinkContext _context;
 		readonly Dictionary<TypeDefinition, MethodDefinition> _compilerGeneratedTypeToUserCodeMethod;
-		// TODO: fix accessibility
-		internal readonly Dictionary<MethodDefinition, MethodDefinition> _compilerGeneratedMethodToUserCodeMethod;
+		readonly Dictionary<MethodDefinition, MethodDefinition> _compilerGeneratedMethodToUserCodeMethod;
 		readonly HashSet<TypeDefinition> _typesWithPopulatedCache;
 
 		public CompilerGeneratedState (LinkContext context)
@@ -27,39 +27,8 @@ namespace Mono.Linker
 		}
 
 		static bool HasRoslynCompilerGeneratedName (TypeDefinition type) =>
-			GeneratedNames.IsGeneratedMemberName (type.Name) || (type.DeclaringType != null && HasRoslynCompilerGeneratedName (type.DeclaringType));
+			CompilerGeneratedNames.IsGeneratedMemberName (type.Name) || (type.DeclaringType != null && HasRoslynCompilerGeneratedName (type.DeclaringType));
 
-
-		public void TrackCallToLambdaOrLocalFunction (MethodDefinition caller, MethodDefinition lambdaOrLocalFunction)
-		{
-			// The declaring type check makes sure we don't treat MoveNext as a normal method. It should be treated as compiler-generated,
-			// mapping to the state machine user method. TODO: check that this doesn't cause problems for global type, etc.
-			bool callerIsStateMachineMethod = GeneratedNames.IsGeneratedMemberName (caller.DeclaringType.Name) && !GeneratedNames.IsLambdaDisplayClass (caller.DeclaringType.Name);
-			if (callerIsStateMachineMethod)
-				return;
-
-			bool callerIsLambdaOrLocal = GeneratedNames.IsGeneratedMemberName (caller.Name) && !callerIsStateMachineMethod;
-
-			if (!callerIsLambdaOrLocal) {
-				// Caller is a normal method...
-				bool added = _compilerGeneratedMethodToUserCodeMethod.TryAdd (lambdaOrLocalFunction, caller);
-				// There should only be one non-compiler-generated caller of a lambda or local function.
-				Debug.Assert (added || _compilerGeneratedMethodToUserCodeMethod[lambdaOrLocalFunction] == caller);
-				return;
-			}
-
-			Debug.Assert (GeneratedNames.TryParseLambdaMethodName (caller.Name, out _) || GeneratedNames.TryParseLocalFunctionMethodName (caller.Name, out _, out _));
-			// Caller is a lambda or local function. This means the lambda or local function is contained within the scope of the caller's user-defined method.
-
-			if (_compilerGeneratedMethodToUserCodeMethod.TryGetValue (caller, out MethodDefinition? userCodeMethod)) {
-				// This lambda/localfn is in the same user code as the caller.
-				bool added = _compilerGeneratedMethodToUserCodeMethod.TryAdd (lambdaOrLocalFunction, userCodeMethod);
-				Debug.Assert (added || _compilerGeneratedMethodToUserCodeMethod[lambdaOrLocalFunction] == caller);
-			} else {
-				// Haven't tracked any calls to the caller yet.
-				throw new System.Exception ("Not yet handled! Need to postpone marking of such methods until we can identify a caller, or bail out.");
-			}
-		}
 
 		void PopulateCacheForType (TypeDefinition type)
 		{
@@ -67,79 +36,35 @@ namespace Mono.Linker
 			if (!_typesWithPopulatedCache.Add (type))
 				return;
 
-			Dictionary<string, List<MethodDefinition>>? lambdaMethods = null;
-			Dictionary<string, List<MethodDefinition>>? localFunctions = null;
+			var callGraph = new CallGraph ();
+			var callingMethods = new HashSet<MethodDefinition> ();
 
-			foreach (TypeDefinition nested in type.NestedTypes) {
-				if (!GeneratedNames.IsLambdaDisplayClass (nested.Name))
-					continue;
+			void ProcessMethod (MethodDefinition method)
+			{
+				if (!CompilerGeneratedNames.IsLambdaOrLocalFunction (method.Name)) {
+					// If it's not a nested function, track as an entry point to the call graph.
+					var added = callingMethods.Add (method);
+					Debug.Assert (added);
+				}
 
-				// Lambdas and local functions may be generated into a display class which holds
-				// the closure environment. Lambdas are always generated into such a class.
-
-				// Local functions typically get emitted outside of the
-				// display class (which is a struct in this case), but when any of the captured state
-				// is used by a state machine local function, the local function is emitted into a
-				// display class holding that captured state.
-				lambdaMethods ??= new Dictionary<string, List<MethodDefinition>> ();
-				localFunctions ??= new Dictionary<string, List<MethodDefinition>> ();
-
-				foreach (var lambdaMethod in nested.Methods) {
-					if (!GeneratedNames.TryParseLambdaMethodName (lambdaMethod.Name, out string? userMethodName))
+				// Discover calls to lambdas or local functions.
+				foreach (var instruction in method.Body.Instructions) {
+					if (instruction.OpCode.OperandType != OperandType.InlineMethod)
 						continue;
-					if (!lambdaMethods.TryGetValue (userMethodName, out List<MethodDefinition>? lambdaMethodsForName)) {
-						lambdaMethodsForName = new List<MethodDefinition> ();
-						lambdaMethods.Add (userMethodName, lambdaMethodsForName);
-					}
-					lambdaMethodsForName.Add (lambdaMethod);
-				}
 
-				foreach (var localFunction in nested.Methods) {
-					if (!GeneratedNames.TryParseLocalFunctionMethodName (localFunction.Name, out string? userMethodName, out string? localFunctionName))
+					MethodDefinition? lambdaOrLocalFunction = _context.TryResolve ((MethodReference) instruction.Operand);
+					if (lambdaOrLocalFunction == null)
 						continue;
-					if (!localFunctions.TryGetValue (userMethodName, out List<MethodDefinition>? localFunctionsForName)) {
-						localFunctionsForName = new List<MethodDefinition> ();
-						localFunctions.Add (userMethodName, localFunctionsForName);
-					}
-					localFunctionsForName.Add (localFunction);
-				}
-			}
 
+					if (!CompilerGeneratedNames.IsLambdaOrLocalFunction (lambdaOrLocalFunction.Name))
+						continue;
 
-			foreach (MethodDefinition localFunction in type.Methods) {
-				if (!GeneratedNames.TryParseLocalFunctionMethodName (localFunction.Name, out string? userMethodName, out string? localFunctionName))
-					continue;
-
-				// Local functions may be generated into the same type as its declaring method,
-				// alongside a displayclass which holds the captured state.
-				// Or it may not have a displayclass, if there is no captured state.
-
-				localFunctions ??= new Dictionary<string, List<MethodDefinition>> ();
-
-				if (!localFunctions.TryGetValue (userMethodName, out List<MethodDefinition>? localFunctionsForName)) {
-					localFunctionsForName = new List<MethodDefinition> ();
-					localFunctions.Add (userMethodName, localFunctionsForName);
-				}
-				localFunctionsForName.Add (localFunction);
-			}
-
-			foreach (MethodDefinition method in type.Methods) {
-				// TODO: combine into one thing?
-
-				if (lambdaMethods?.TryGetValue (method.Name, out List<MethodDefinition>? lambdaMethodsForName) == true) {
-					foreach (var lambdaMethod in lambdaMethodsForName)
-						// TODO: change back to add
-						_compilerGeneratedMethodToUserCodeMethod.TryAdd (lambdaMethod, method);
+					callGraph.TrackCall (method, lambdaOrLocalFunction);
 				}
 
-				if (localFunctions?.TryGetValue (method.Name, out List<MethodDefinition>? localFunctionsForName) == true) {
-					foreach (var localFunction in localFunctionsForName)
-						// TODO: change back to add
-						_compilerGeneratedMethodToUserCodeMethod.TryAdd (localFunction, method);
-				}
-
+				// Discover state machine methods.
 				if (!method.HasCustomAttributes)
-					continue;
+					return;
 
 				foreach (var attribute in method.CustomAttributes) {
 					if (attribute.AttributeType.Namespace != "System.Runtime.CompilerServices")
@@ -162,6 +87,38 @@ namespace Mono.Linker
 					}
 				}
 			}
+
+			// Look for state machine methods, and methods which call local functions.
+			foreach (MethodDefinition method in type.Methods)
+				ProcessMethod (method);
+
+			// Also scan compiler-generated state machine methods (in case they have calls to nested functions),
+			// and nested functions inside compiler-generated closures (in case they call other nested functions).
+			foreach (var nestedType in type.NestedTypes) {
+				if (!CompilerGeneratedNames.IsGeneratedMemberName (nestedType.Name))
+					continue;
+
+				// TODO: state machine types shouldn't contain state machine methods. Assert this?
+				foreach (var method in nestedType.Methods)
+					ProcessMethod (method);
+			}
+
+			// Now we've discovered the call graphs for calls to nested functions.
+			// Use this to map back from nested functions to the declaring user methods.
+
+			// Note: This maps all nested functions back to the user code, not to the immediately
+			// declaring local function. The IL doesn't contain enough information in general for
+			// us to determine the nesting of local functions and lambdas.
+
+			// Note: this only discovers nested functions which are referenced from the user
+			// code or its referenced nested functions. There is no reliable way to determine from
+			// IL which user code an unused nested function belongs to.
+			foreach (var userDefinedMethod in callingMethods) {
+				foreach (var nestedFunction in callGraph.GetReachableMethods (userDefinedMethod)) {
+					Debug.Assert (CompilerGeneratedNames.IsLambdaOrLocalFunction (nestedFunction.Name));
+					_compilerGeneratedMethodToUserCodeMethod.Add (nestedFunction, userDefinedMethod);
+				}
+			}
 		}
 
 		static TypeDefinition? GetFirstConstructorArgumentAsType (CustomAttribute attribute)
@@ -172,6 +129,9 @@ namespace Mono.Linker
 			return attribute.ConstructorArguments[0].Value as TypeDefinition;
 		}
 
+		// For state machine types/members, maps back to the state machine method.
+		// For local functions and lambdas, maps back to the owning method in user code (not the declaring
+		// lambda or local function, because the IL doesn't contain enough information to figure this out).
 		public bool TryGetOwningMethodForCompilerGeneratedMember (IMemberDefinition sourceMember, [NotNullWhen (true)] out MethodDefinition? owningMethod)
 		{
 			owningMethod = null;

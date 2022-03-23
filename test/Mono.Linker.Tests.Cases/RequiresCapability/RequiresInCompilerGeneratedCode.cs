@@ -914,7 +914,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 					// code for the lambda contained in Outer(int i).
 				}
 
-				static void Outer(int i) {
+				static void Outer (int i)
+				{
 					LocalFunction ();
 
 					[ExpectedWarning ("IL2026", "--MethodWithRequires--")]
@@ -1221,7 +1222,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 					// code for the lambda contained in Outer(int i).
 				}
 
-				static void Outer(int i) {
+				static void Outer (int i)
+				{
 					var lambda =
 					[ExpectedWarning ("IL2026", "--MethodWithRequires--")]
 					[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]

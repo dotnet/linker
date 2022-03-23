@@ -345,7 +345,8 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 					// code for the lambda contained in Outer(int i).
 				}
 
-				static void Outer(int i) {
+				static void Outer (int i)
+				{
 					LocalFunction ();
 
 					[ExpectedWarning ("IL2026", "--RequiresUnreferencedCodeMethod--")]
@@ -440,7 +441,7 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 				() => new TypeWithGenericWhichRequiresNonPublicFields<TUnknown> ();
 			}
 
-class DynamicallyAccessedLambda
+			class DynamicallyAccessedLambda
 			{
 				[UnconditionalSuppressMessage ("Test", "IL2026")]
 				public static void TestCallRUCMethodInDynamicallyAccessedLambda ()
@@ -506,7 +507,8 @@ class DynamicallyAccessedLambda
 					// code for the lambda contained in Outer(int i).
 				}
 
-				static void Outer(int i) {
+				static void Outer (int i)
+				{
 					var lambda =
 					[ExpectedWarning ("IL2026", "--RequiresUnreferencedCodeMethod--")]
 					[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
