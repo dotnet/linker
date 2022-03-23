@@ -29,7 +29,6 @@ namespace Mono.Linker
 		static bool HasRoslynCompilerGeneratedName (TypeDefinition type) =>
 			CompilerGeneratedNames.IsGeneratedMemberName (type.Name) || (type.DeclaringType != null && HasRoslynCompilerGeneratedName (type.DeclaringType));
 
-
 		void PopulateCacheForType (TypeDefinition type)
 		{
 			// Avoid repeat scans of the same type

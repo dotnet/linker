@@ -684,6 +684,21 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			[RequiresUnreferencedCode ("Suppress in body")]
 			[RequiresAssemblyFiles ("Suppress in body")]
 			[RequiresDynamicCode ("Suppress in body")]
+			static void TestCallFromNestedLocalFunction ()
+			{
+				LocalFunction ();
+
+				void LocalFunction ()
+				{
+					NestedLocalFunction ();
+
+					void NestedLocalFunction () => MethodWithRequires ();
+				}
+			}
+
+			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
+			[RequiresDynamicCode ("Suppress in body")]
 			static void TestCallWithClosure (int p = 0)
 			{
 				LocalFunction ();
@@ -870,7 +885,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			[ExpectedWarning ("IL2026")]
 			[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
 			[ExpectedWarning ("IL3050", ProducedBy = ProducedBy.Analyzer)]
-			static void TestSuppressionLocalFunction ()
+			static void TestSuppressionOnLocalFunction ()
 			{
 				LocalFunction (); // This will produce a warning since the local function has Requires on it
 
@@ -881,6 +896,27 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				{
 					MethodWithRequires ();
 					unknownType.RequiresNonPublicMethods ();
+				}
+			}
+
+			[ExpectedWarning ("IL2026")]
+			[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3050", ProducedBy = ProducedBy.Analyzer)]
+			static void TestSuppressionOnLocalFunctionWithNestedLocalFunction ()
+			{
+				LocalFunction (); // This will produce a warning since the local function has Requires on it
+
+				[RequiresUnreferencedCode ("Suppress in body")]
+				[RequiresAssemblyFiles ("Suppress in body")]
+				[RequiresDynamicCode ("Suppress in body")]
+				void LocalFunction ()
+				{
+					NestedLocalFunction ();
+
+					// The linker doesn't have enough information to associate the RUC on LocalFunction
+					// with this nested local function.
+					[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Trimmer)]
+					void NestedLocalFunction () => MethodWithRequires ();
 				}
 			}
 
@@ -939,6 +975,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			public static void Test ()
 			{
 				TestCall ();
+				TestCallFromNestedLocalFunction ();
 				TestCallWithClosure ();
 				TestReflectionAccess ();
 				TestLdftn ();
@@ -954,7 +991,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestCallMethodWithRequiresInLtftnLocalFunction ();
 				DynamicallyAccessedLocalFunction.TestCallMethodWithRequiresInDynamicallyAccessedLocalFunction ();
 				DynamicallyAccessedLocalFunctionUnused.TestCallMethodWithRequiresInDynamicallyAccessedLocalFunction ();
-				TestSuppressionLocalFunction ();
+				TestSuppressionOnLocalFunction ();
+				TestSuppressionOnLocalFunctionWithNestedLocalFunction ();
 				TestSuppressionOnOuterAndLocalFunction ();
 				TestSuppressionOnOuterWithSameName.Test ();
 			}
@@ -1078,6 +1116,16 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			[RequiresUnreferencedCode ("Suppress in body")]
 			[RequiresAssemblyFiles ("Suppress in body")]
 			[RequiresDynamicCode ("Suppress in body")]
+			static void TestCallFromNestedLambda ()
+			{
+				Action lambda = () => {
+					Action nestedLambda = () => MethodWithRequires ();
+				};
+			}
+
+			[RequiresUnreferencedCode ("Suppress in body")]
+			[RequiresAssemblyFiles ("Suppress in body")]
+			[RequiresDynamicCode ("Suppress in body")]
 			static void TestCallWithReflectionAnalysisWarning ()
 			{
 				// This should not produce warning because the Requires
@@ -1192,6 +1240,26 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				lambda (); // This will produce a warning since the lambda has Requires on it
 			}
 
+			[ExpectedWarning ("IL2026")]
+			[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3050", ProducedBy = ProducedBy.Analyzer)]
+			static void TestSuppressionOnLambdaWithNestedLambda ()
+			{
+				var lambda =
+				[RequiresUnreferencedCode ("Suppress in body")]
+				[RequiresAssemblyFiles ("Suppress in body")]
+				[RequiresDynamicCode ("Suppress in body")]
+				() => {
+					// The linker doesn't have enough information to associate the RUC on lambda
+					// with this nested lambda.
+					var nestedLambda =
+					[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Trimmer)]
+					() => MethodWithRequires ();
+				};
+
+				lambda (); // This will produce a warning since the local function has Requires on it
+			}
+
 			[RequiresUnreferencedCode ("Suppress in body")]
 			[RequiresAssemblyFiles ("Suppress in body")]
 			[RequiresDynamicCode ("Suppress in body")]
@@ -1249,6 +1317,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			public static void Test ()
 			{
 				TestCall ();
+				TestCallFromNestedLambda ();
 				TestCallWithReflectionAnalysisWarning ();
 				TestCallWithClosure ();
 				TestReflectionAccess ();
@@ -1259,6 +1328,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestGenericMethodParameterRequirement<TestType> ();
 				TestGenericTypeParameterRequirement<TestType> ();
 				TestSuppressionOnLambda ();
+				TestSuppressionOnLambdaWithNestedLambda ();
 				TestSuppressionOnOuterAndLambda ();
 				TestSuppressionOnOuterWithSameName.Test ();
 			}
