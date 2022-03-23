@@ -574,6 +574,11 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				void LocalFunction () => MethodWithRequires ();
 			}
 
+			static void TestCallUnused ()
+			{
+				void LocalFunction () => MethodWithRequires ();
+			}
+
 			static void TestCallWithClosure (int p = 0)
 			{
 				LocalFunction ();
@@ -581,6 +586,15 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				[ExpectedWarning ("IL2026", "--MethodWithRequires--")]
 				[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 				[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+				void LocalFunction ()
+				{
+					p++;
+					MethodWithRequires ();
+				}
+			}
+
+			static void TestCallWithClosureUnused (int p = 0)
+			{
 				void LocalFunction ()
 				{
 					p++;
@@ -637,7 +651,9 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			public static void Test ()
 			{
 				TestCall ();
+				TestCallUnused ();
 				TestCallWithClosure ();
+				TestCallWithClosureUnused ();
 				TestReflectionAccess ();
 				TestLdftn ();
 				TestLazyDelegate ();
@@ -820,6 +836,25 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				{
 					typeof (DynamicallyAccessedLocalFunction).RequiresNonPublicMethods ();
 
+					LocalFunction ();
+
+					void LocalFunction () => MethodWithRequires ();
+				}
+			}
+
+			class DynamicallyAccessedLocalFunctionUnused
+			{
+				[RequiresUnreferencedCode ("Suppress in body")]
+				[RequiresAssemblyFiles ("Suppress in body")]
+				[RequiresDynamicCode ("Suppress in body")]
+				public static void TestCallMethodWithRequiresInDynamicallyAccessedLocalFunction ()
+				{
+					typeof (DynamicallyAccessedLocalFunctionUnused).RequiresNonPublicMethods ();
+
+					// This local function is unused except for the dynamic reference above,
+					// so the linker isn't able to figure out which user method it belongs to,
+					// and the warning is not suppressed.
+					[ExpectedWarning ("IL2026", "--MethodWithRequires--", ProducedBy = ProducedBy.Trimmer)]
 					void LocalFunction () => MethodWithRequires ();
 				}
 			}
@@ -858,6 +893,37 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				}
 			}
 
+			class TestSuppressionOnOuterWithSameName
+			{
+				[ExpectedWarning ("IL2026", nameof (Outer) + "()")]
+				[ExpectedWarning ("IL3002", nameof (Outer) + "()", ProducedBy = ProducedBy.Analyzer)]
+				[ExpectedWarning ("IL3050", nameof (Outer) + "()", ProducedBy = ProducedBy.Analyzer)]
+				public static void Test ()
+				{
+					Outer ();
+					Outer (0);
+				}
+
+				[RequiresUnreferencedCode ("Suppress in body")]
+				[RequiresAssemblyFiles ("Suppress in body")]
+				[RequiresDynamicCode ("Suppress in body")]
+				static void Outer ()
+				{
+					// Even though this method has the same name as Outer(int i),
+					// it should not suppress warnings originating from compiler-generated
+					// code for the lambda contained in Outer(int i).
+				}
+
+				static void Outer(int i) {
+					LocalFunction ();
+
+					[ExpectedWarning ("IL2026", "--MethodWithRequires--")]
+					[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
+					[ExpectedWarning ("IL3050", ProducedBy = ProducedBy.Analyzer)]
+					void LocalFunction () => MethodWithRequires ();
+				}
+			}
+
 			[UnconditionalSuppressMessage ("Trimming", "IL2026")]
 			[UnconditionalSuppressMessage ("SingleFile", "IL3002")]
 			[UnconditionalSuppressMessage ("AOT", "IL3050")]
@@ -878,14 +944,27 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestGenericLocalFunctionWithAnnotationsAndClosure<TestType> ();
 				TestCallMethodWithRequiresInLtftnLocalFunction ();
 				DynamicallyAccessedLocalFunction.TestCallMethodWithRequiresInDynamicallyAccessedLocalFunction ();
+				DynamicallyAccessedLocalFunctionUnused.TestCallMethodWithRequiresInDynamicallyAccessedLocalFunction ();
 				TestSuppressionLocalFunction ();
 				TestSuppressionOnOuterAndLocalFunction ();
+				TestSuppressionOnOuterWithSameName.Test ();
 			}
 		}
 
 		class WarnInLambda
 		{
 			static void TestCall ()
+			{
+				Action lambda =
+				[ExpectedWarning ("IL2026", "--MethodWithRequires--")]
+				[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+				[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+				() => MethodWithRequires ();
+
+				lambda ();
+			}
+
+			static void TestCallUnused ()
 			{
 				Action _ =
 				[ExpectedWarning ("IL2026", "--MethodWithRequires--")]
@@ -895,6 +974,20 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			static void TestCallWithClosure (int p = 0)
+			{
+				Action lambda =
+				[ExpectedWarning ("IL2026", "--MethodWithRequires--")]
+				[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+				[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+				() => {
+					p++;
+					MethodWithRequires ();
+				};
+
+				lambda ();
+			}
+
+			static void TestCallWithClosureUnused (int p = 0)
 			{
 				Action _ =
 				[ExpectedWarning ("IL2026", "--MethodWithRequires--")]
@@ -952,7 +1045,9 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			public static void Test ()
 			{
 				TestCall ();
+				TestCallUnused ();
 				TestCallWithClosure ();
+				TestCallWithClosureUnused ();
 				TestReflectionAccess ();
 				TestLdftn ();
 				TestLazyDelegate ();
@@ -1105,6 +1200,38 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				lambda (null);
 			}
 
+			class TestSuppressionOnOuterWithSameName
+			{
+				[ExpectedWarning ("IL2026", nameof (Outer) + "()")]
+				[ExpectedWarning ("IL3002", nameof (Outer) + "()", ProducedBy = ProducedBy.Analyzer)]
+				[ExpectedWarning ("IL3050", nameof (Outer) + "()", ProducedBy = ProducedBy.Analyzer)]
+				public static void Test ()
+				{
+					Outer ();
+					Outer (0);
+				}
+
+				[RequiresUnreferencedCode ("Suppress in body")]
+				[RequiresAssemblyFiles ("Suppress in body")]
+				[RequiresDynamicCode ("Suppress in body")]
+				static void Outer ()
+				{
+					// Even though this method has the same name as Outer(int i),
+					// it should not suppress warnings originating from compiler-generated
+					// code for the lambda contained in Outer(int i).
+				}
+
+				static void Outer(int i) {
+					var lambda =
+					[ExpectedWarning ("IL2026", "--MethodWithRequires--")]
+					[ExpectedWarning ("IL3002", ProducedBy = ProducedBy.Analyzer)]
+					[ExpectedWarning ("IL3050", ProducedBy = ProducedBy.Analyzer)]
+					() => MethodWithRequires ();
+
+					lambda ();
+				}
+			}
+
 
 			[UnconditionalSuppressMessage ("Trimming", "IL2026")]
 			[UnconditionalSuppressMessage ("SingleFile", "IL3002")]
@@ -1123,6 +1250,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestGenericTypeParameterRequirement<TestType> ();
 				TestSuppressionOnLambda ();
 				TestSuppressionOnOuterAndLambda ();
+				TestSuppressionOnOuterWithSameName.Test ();
 			}
 		}
 
