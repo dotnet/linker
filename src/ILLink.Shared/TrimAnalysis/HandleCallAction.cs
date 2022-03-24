@@ -666,8 +666,16 @@ namespace ILLink.Shared.TrimAnalysis
 				break;
 
 			case IntrinsicId.None:
-				methodReturnValue = MultiValueLattice.Top;
-				return false;
+				if (!calledMethod.IsStatic ()) {
+					_requireDynamicallyAccessedMembersAction.Invoke (instanceValue, new MethodThisParameterValue (calledMethod.Method, GetMethodThisParameterAnnotation (calledMethod)));
+				}
+				// Verify the argument values match the annotations on the parameter definition
+				if (requiresDataFlowAnalysis) {
+					for (int argumentIndex = 0; argumentIndex < argumentValues.Count; argumentIndex++) {
+						_requireDynamicallyAccessedMembersAction.Invoke (argumentValues[argumentIndex], GetMethodParameterValue (calledMethod, argumentIndex));
+					}
+				}
+				break;
 
 			// Disable warnings for all unimplemented intrinsics. Some intrinsic methods have annotations, but analyzing them
 			// would produce unnecessary warnings even for cases that are intrinsically handled. So we disable handling these calls
@@ -795,6 +803,9 @@ namespace ILLink.Shared.TrimAnalysis
 			GetDynamicallyAccessedMemberTypesFromBindingFlagsForProperties (bindingFlags) |
 			GetDynamicallyAccessedMemberTypesFromBindingFlagsForNestedTypes (bindingFlags);
 
+		private MethodParameterValue GetMethodParameterValue (MethodProxy method, int parameterIndex)
+			=> GetMethodParameterValue (method, parameterIndex, (DynamicallyAccessedMemberTypes) GetMethodParameterAnnotation (method, parameterIndex)!);
+
 		private partial bool MethodRequiresDataFlowAnalysis (MethodProxy method);
 
 		private partial DynamicallyAccessedMemberTypes GetReturnValueAnnotation (MethodProxy method);
@@ -803,7 +814,11 @@ namespace ILLink.Shared.TrimAnalysis
 
 		private partial GenericParameterValue GetGenericParameterValue (GenericParameterProxy genericParameter);
 
+		private partial DynamicallyAccessedMemberTypes GetMethodThisParameterAnnotation (MethodProxy method);
+
 		private partial MethodThisParameterValue GetMethodThisParameterValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes);
+
+		private partial DynamicallyAccessedMemberTypes? GetMethodParameterAnnotation (MethodProxy method, int parameterIndex);
 
 		private partial MethodParameterValue GetMethodParameterValue (MethodProxy method, int parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes);
 
