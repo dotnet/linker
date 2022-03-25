@@ -582,12 +582,12 @@ namespace Mono.Linker.Steps
 				// Exception, types that have not been flagged as instantiated yet.  These types may not need their interfaces even if the
 				// interface type is marked
 				// UnusedInterfaces optimization is turned off mark all interface implementations
-				bool unusedInterfacesOptimizationEnabled = _context.IsOptimizationEnabled (CodeOptimizations.UnusedInterfaces, type);
+				bool unusedInterfacesOptimizationEnabled = Context.IsOptimizationEnabled (CodeOptimizations.UnusedInterfaces, type);
 				if (!Annotations.IsInstantiated (type) && !Annotations.IsRelevantToVariantCasting (type) &&
 					unusedInterfacesOptimizationEnabled)
 					continue;
 
-				using (ScopeStack.PushScope (scope))
+				using (ScopeStack.PushScope (scope)) {
 					MarkInterfaceImplementations (type);
 
 					if (unusedInterfacesOptimizationEnabled)
