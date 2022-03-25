@@ -35,6 +35,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			SuppressInComplex.Test ();
 
 			StateMachinesOnlyReferencedViaReflection.Test ();
+			LocalFunctionsReferencedViaReflection.Test ();
+			LambdasReferencedViaReflection.Test ();
 
 			ComplexCases.AsyncBodyCallingMethodWithRequires.Test ();
 			ComplexCases.GenericAsyncBodyCallingMethodWithRequires.Test ();
@@ -1257,7 +1259,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 					() => MethodWithRequires ();
 				};
 
-				lambda (); // This will produce a warning since the local function has Requires on it
+				lambda (); // This will produce a warning since the lambda has Requires on it
 			}
 
 			[RequiresUnreferencedCode ("Suppress in body")]
@@ -1596,12 +1598,203 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 			[ExpectedWarning ("IL2026", "Requires to suppress")]
 			[ExpectedWarning ("IL2026", "Requires to suppress")]
+			// Analyzer doesn't emit additional warnings about reflection access to the compiler-generated
+			// state machine members.
+			[ExpectedWarning ("IL2026", "Requires to suppress", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "Requires to suppress", ProducedBy = ProducedBy.Trimmer)]
+			static void TestAll ()
+			{
+				typeof (StateMachinesOnlyReferencedViaReflection).RequiresAll ();
+			}
+
+			[ExpectedWarning ("IL2026", "Requires to suppress")]
+			[ExpectedWarning ("IL2026", "Requires to suppress")]
+			// NonPublicMethods doesn't warn for members emitted into compiler-generated state machine types.
+			static void TestNonPublicMethods ()
+			{
+				typeof (StateMachinesOnlyReferencedViaReflection).RequiresNonPublicMethods ();
+			}
+
 			public static void Test ()
 			{
-				// This is not a 100% reliable test, since in theory it can be marked in any order and so it could happen that the
-				// user method is marked before the nested state machine gets marked. But it's the best we can do right now.
-				// (Note that currently linker will mark the state machine first actually so the test is effective).
-				typeof (StateMachinesOnlyReferencedViaReflection).RequiresAll ();
+				TestAll ();
+				TestNonPublicMethods ();
+			}
+		}
+
+		class LocalFunctionsReferencedViaReflection
+		{
+			[ExpectedWarning ("IL2026", "--TestLocalFunctionWithRequires--")]
+			[ExpectedWarning ("IL3002", "--TestLocalFunctionWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3050", "--TestLocalFunctionWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+			static void TestLocalFunctionWithRequires ()
+			{
+				LocalFunction ();
+
+				[RequiresUnreferencedCode ("--TestLocalFunctionWithRequires--")]
+				[RequiresAssemblyFiles ("--TestLocalFunctionWithRequires--")]
+				[RequiresDynamicCode ("--TestLocalFunctionWithRequires--")]
+				void LocalFunction () => MethodWithRequires ();
+			}
+
+			[ExpectedWarning ("IL2026", "LocalFunction")]
+			[ExpectedWarning ("IL3002", "LocalFunction", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3050", "LocalFunction", ProducedBy = ProducedBy.Analyzer)]
+			static void TestLocalFunctionWithClosureWithRequires (int p = 0)
+			{
+				LocalFunction ();
+
+				[RequiresUnreferencedCode ("--TestLocalFunctionWithClosureWithRequires--")]
+				[RequiresAssemblyFiles ("--TestLocalFunctionWithClosureWithRequires--")]
+				[RequiresDynamicCode ("--TestLocalFunctionWithClosureWithRequires--")]
+				void LocalFunction () {
+					p++;
+					MethodWithRequires ();
+				}
+			}
+
+			[RequiresUnreferencedCode ("--TestLocalFunctionInMethodWithRequires--")]
+			[RequiresAssemblyFiles ("--TestLocalFunctionInMethodWithRequires--")]
+			[RequiresDynamicCode ("--TestLocalFunctionInMethodWithRequires--")]
+			static void TestLocalFunctionInMethodWithRequires ()
+			{
+				LocalFunction ();
+
+				void LocalFunction () => MethodWithRequires ();
+			}
+
+			[RequiresUnreferencedCode ("--TestLocalFunctionWithClosureInMethodWithRequires--")]
+			[RequiresAssemblyFiles ("--TestLocalFunctionWithClosureInMethodWithRequires--")]
+			[RequiresDynamicCode ("--TestLocalFunctionWithClosureInMethodWithRequires--")]
+			static void TestLocalFunctionWithClosureInMethodWithRequires (int p = 0)
+			{
+				LocalFunction ();
+
+				void LocalFunction () {
+					p++;
+					MethodWithRequires ();
+				}
+			}
+
+			// Warnings for Reflection access to methods with Requires
+			[ExpectedWarning ("IL2026", "--TestLocalFunctionInMethodWithRequires--")]
+			[ExpectedWarning ("IL2026", "--TestLocalFunctionWithClosureInMethodWithRequires--")]
+			// The linker correctly emits warnings about reflection access to local functions with Requires
+			// or which inherit Requires from the containing method. The analyzer doesn't bind to local functions
+			// so does not warn here.
+			[ExpectedWarning ("IL2026", "--TestLocalFunctionWithRequires--", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "--TestLocalFunctionWithClosureWithRequires--", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "--TestLocalFunctionInMethodWithRequires--", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "--TestLocalFunctionWithClosureInMethodWithRequires--", ProducedBy = ProducedBy.Trimmer)]
+			static void TestAll ()
+			{
+				typeof (LocalFunctionsReferencedViaReflection).RequiresAll ();
+			}
+
+			// Warnings for Reflection access to methods with Requires
+			[ExpectedWarning ("IL2026", "--TestLocalFunctionInMethodWithRequires--")]
+			[ExpectedWarning ("IL2026", "--TestLocalFunctionWithClosureInMethodWithRequires--")]
+			// NonPublicMethods warns for local functions not emitted into display classes.
+			[ExpectedWarning ("IL2026", "--TestLocalFunctionWithRequires--", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "--TestLocalFunctionWithClosureWithRequires--", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "--TestLocalFunctionInMethodWithRequires--", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "--TestLocalFunctionWithClosureInMethodWithRequires--", ProducedBy = ProducedBy.Trimmer)]
+			static void TestNonPublicMethods ()
+			{
+				typeof (LocalFunctionsReferencedViaReflection).RequiresNonPublicMethods ();
+			}
+
+			public static void Test ()
+			{
+				TestAll ();
+				TestNonPublicMethods ();
+			}
+		}
+
+		class LambdasReferencedViaReflection
+		{
+			[ExpectedWarning ("IL2026", "--TestLambdaWithRequires--")]
+			[ExpectedWarning ("IL3002", "--TestLambdaWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3050", "--TestLambdaWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+			static void TestLambdaWithRequires ()
+			{
+				var lambda =
+				[RequiresUnreferencedCode ("--TestLambdaWithRequires--")]
+				[RequiresAssemblyFiles ("--TestLambdaWithRequires--")]
+				[RequiresDynamicCode ("--TestLambdaWithRequires--")]
+				() => MethodWithRequires ();
+
+				lambda ();
+			}
+
+			[ExpectedWarning ("IL2026", "Lambda")]
+			[ExpectedWarning ("IL3002", "Lambda", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3050", "Lambda", ProducedBy = ProducedBy.Analyzer)]
+			static void TestLambdaWithClosureWithRequires (int p = 0)
+			{
+				var lambda =
+				[RequiresUnreferencedCode ("--TestLambdaWithClosureWithRequires--")]
+				[RequiresAssemblyFiles ("--TestLambdaWithClosureWithRequires--")]
+				[RequiresDynamicCode ("--TestLambdaWithClosureWithRequires--")]
+				() => {
+					p++;
+					MethodWithRequires ();
+				};
+
+				lambda ();
+			}
+
+			[RequiresUnreferencedCode ("--TestLambdaInMethodWithRequires--")]
+			[RequiresAssemblyFiles ("--TestLambdaInMethodWithRequires--")]
+			[RequiresDynamicCode ("--TestLambdaInMethodWithRequires--")]
+			static void TestLambdaInMethodWithRequires ()
+			{
+				var lambda = () => MethodWithRequires ();
+
+				lambda ();
+			}
+
+			[RequiresUnreferencedCode ("--TestLambdaWithClosureInMethodWithRequires--")]
+			[RequiresAssemblyFiles ("--TestLambdaWithClosureInMethodWithRequires--")]
+			[RequiresDynamicCode ("--TestLambdaWithClosureInMethodWithRequires--")]
+			static void TestLambdaWithClosureInMethodWithRequires (int p = 0)
+			{
+				var lambda = () => {
+					p++;
+					MethodWithRequires ();
+				};
+
+				lambda ();
+			}
+
+			// Warnings for Reflection access to methods with Requires
+			[ExpectedWarning ("IL2026", "--TestLambdaInMethodWithRequires--")]
+			[ExpectedWarning ("IL2026", "--TestLambdaWithClosureInMethodWithRequires--")]
+			// The linker correctly emits warnings about reflection access to lambdas with Requires
+			// or which inherit Requires from the containing method. The analyzer doesn't bind to lambdas
+			// so does not warn here.
+			[ExpectedWarning ("IL2026", "--TestLambdaWithRequires--", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "--TestLambdaWithClosureWithRequires--", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "--TestLambdaInMethodWithRequires--", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "--TestLambdaWithClosureInMethodWithRequires--", ProducedBy = ProducedBy.Trimmer)]
+			static void TestAll ()
+			{
+				typeof (LambdasReferencedViaReflection).RequiresAll ();
+			}
+
+			// Warnings for Reflection access to methods with Requires
+			[ExpectedWarning ("IL2026", "--TestLambdaInMethodWithRequires--")]
+			[ExpectedWarning ("IL2026", "--TestLambdaWithClosureInMethodWithRequires--")]
+			// NonPublicMethods doesn't warn for lambdas emitted into display class types.
+			static void TestNonPublicMethods ()
+			{
+				typeof (LambdasReferencedViaReflection).RequiresNonPublicMethods ();
+			}
+
+			public static void Test ()
+			{
+				TestAll ();
+				TestNonPublicMethods ();
 			}
 		}
 

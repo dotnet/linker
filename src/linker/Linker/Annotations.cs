@@ -606,6 +606,13 @@ namespace Mono.Linker
 				TryGetLinkerAttribute (method.DeclaringType, out attribute))
 				return true;
 
+			MethodDefinition? owningMethod;
+			while (context.CompilerGeneratedState.TryGetOwningMethodForCompilerGeneratedMember (method, out owningMethod)) {
+				if (DoesMethodRequireUnreferencedCode (owningMethod, out attribute))
+					return true;
+				method = owningMethod;
+			}
+
 			return false;
 		}
 
