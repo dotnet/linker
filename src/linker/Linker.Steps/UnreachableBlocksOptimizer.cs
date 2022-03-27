@@ -32,12 +32,6 @@ namespace Mono.Linker.Steps
 			_context = context;
 		}
 
-		Stack<MethodDefinition> GetRecursionGuard ()
-		{
-			_resursion_guard.Clear ();
-			return _resursion_guard;
-		}
-
 		/// <summary>
 		/// Processes the specified method and perform all branch removal optimizations on it.
 		/// When this returns it's guaranteed that the method has been optimized (if possible).
@@ -230,6 +224,12 @@ namespace Mono.Linker.Steps
 		// Return expression with a value when method implementation can be
 		// interpreted during trimming
 		//
+		MethodResult? TryGetMethodCallResult (in CalleePayload callee)
+		{
+			_resursion_guard.Clear ();
+			return TryGetMethodCallResult (callee, _resursion_guard);
+		}
+
 		MethodResult? TryGetMethodCallResult (in CalleePayload callee, Stack<MethodDefinition> callStack)
 		{
 			MethodResult? value;
@@ -276,7 +276,7 @@ namespace Mono.Linker.Steps
 			if (sizeOfImpl == null)
 				return null;
 
-			return TryGetMethodCallResult (new CalleePayload (sizeOfImpl, Array.Empty<Instruction> ()), GetRecursionGuard ())?.Instruction;
+			return TryGetMethodCallResult (new CalleePayload (sizeOfImpl, Array.Empty<Instruction> ()))?.Instruction;
 		}
 
 		static Instruction? EvaluateIntrinsicCall (MethodReference method, Instruction[] arguments)
@@ -319,7 +319,7 @@ namespace Mono.Linker.Steps
 				return Array.Empty<Instruction> ();
 
 			Instruction[]? result = null;
-			for (int i = method.Parameters.Count; i != 0; --i) {
+			for (int i = method.Parameters.Count, pos = 0; i != 0; --i, ++pos) {
 				Instruction instr = instructions[index - i];
 				if (!IsConstantValue (instr))
 					return null;
@@ -327,7 +327,7 @@ namespace Mono.Linker.Steps
 				if (result == null)
 					result = new Instruction[i];
 
-				result[i - 1] = instr;
+				result[pos] = instr;
 			}
 
 			if (result != null && HasJumpIntoTargetRange (instructions, index - method.Parameters.Count + 1, index))
@@ -461,7 +461,7 @@ namespace Mono.Linker.Steps
 							break;
 
 						var cpl = new CalleePayload (md, GetArgumentsOnStack (md, body.Instructions, i));
-						MethodResult? call_result = optimizer.TryGetMethodCallResult (cpl, optimizer.GetRecursionGuard ());
+						MethodResult? call_result = optimizer.TryGetMethodCallResult (cpl);
 						if (call_result is not MethodResult result)
 							break;
 
@@ -765,7 +765,7 @@ namespace Mono.Linker.Steps
 						targetResult = args?.Length > 0 && md.IsStatic ? EvaluateIntrinsicCall (md, args) : null;
 
 						if (targetResult == null)
-							targetResult = optimizer.TryGetMethodCallResult (new CalleePayload (md, args), optimizer.GetRecursionGuard ())?.Instruction;
+							targetResult = optimizer.TryGetMethodCallResult (new CalleePayload (md, args))?.Instruction;
 
 						if (targetResult == null)
 							break;
