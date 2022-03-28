@@ -666,11 +666,11 @@ namespace ILLink.Shared.TrimAnalysis
 				break;
 
 			case IntrinsicId.None:
-				if (!calledMethod.IsStatic ()) {
-					_requireDynamicallyAccessedMembersAction.Invoke (instanceValue, new MethodThisParameterValue (calledMethod.Method, GetMethodThisParameterAnnotation (calledMethod)));
-				}
 				// Verify the argument values match the annotations on the parameter definition
 				if (requiresDataFlowAnalysis) {
+					if (!calledMethod.IsStatic ()) {
+						_requireDynamicallyAccessedMembersAction.Invoke (instanceValue, GetMethodThisParameterValue(calledMethod));
+					}
 					for (int argumentIndex = 0; argumentIndex < argumentValues.Count; argumentIndex++) {
 						_requireDynamicallyAccessedMembersAction.Invoke (argumentValues[argumentIndex], GetMethodParameterValue (calledMethod, argumentIndex));
 					}
@@ -803,9 +803,6 @@ namespace ILLink.Shared.TrimAnalysis
 			GetDynamicallyAccessedMemberTypesFromBindingFlagsForProperties (bindingFlags) |
 			GetDynamicallyAccessedMemberTypesFromBindingFlagsForNestedTypes (bindingFlags);
 
-		private MethodParameterValue GetMethodParameterValue (MethodProxy method, int parameterIndex)
-			=> GetMethodParameterValue (method, parameterIndex, (DynamicallyAccessedMemberTypes) GetMethodParameterAnnotation (method, parameterIndex)!);
-
 		private partial bool MethodRequiresDataFlowAnalysis (MethodProxy method);
 
 		private partial DynamicallyAccessedMemberTypes GetReturnValueAnnotation (MethodProxy method);
@@ -818,9 +815,15 @@ namespace ILLink.Shared.TrimAnalysis
 
 		private partial MethodThisParameterValue GetMethodThisParameterValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes);
 
-		private partial DynamicallyAccessedMemberTypes? GetMethodParameterAnnotation (MethodProxy method, int parameterIndex);
+		private MethodThisParameterValue GetMethodThisParameterValue (MethodProxy method)
+			=> GetMethodThisParameterValue (method, GetMethodThisParameterAnnotation(method));
+
+		private partial DynamicallyAccessedMemberTypes GetMethodParameterAnnotation (MethodProxy method, int parameterIndex);
 
 		private partial MethodParameterValue GetMethodParameterValue (MethodProxy method, int parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes);
+
+		private MethodParameterValue GetMethodParameterValue (MethodProxy method, int parameterIndex)
+			=> GetMethodParameterValue (method, parameterIndex, GetMethodParameterAnnotation (method, parameterIndex)!);
 
 		private partial IEnumerable<SystemReflectionMethodBaseValue> GetMethodsOnTypeHierarchy (TypeProxy type, string name, BindingFlags? bindingFlags);
 

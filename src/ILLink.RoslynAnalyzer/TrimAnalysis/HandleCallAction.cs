@@ -51,12 +51,10 @@ namespace ILLink.Shared.TrimAnalysis
 		private partial MethodThisParameterValue GetMethodThisParameterValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 			=> new (method.Method, dynamicallyAccessedMemberTypes);
 
-		private partial DynamicallyAccessedMemberTypes? GetMethodParameterAnnotation (MethodProxy method, int parameterIndex)
+		private partial DynamicallyAccessedMemberTypes GetMethodParameterAnnotation (MethodProxy method, int parameterIndex)
 		{
-			if (method.Method.Parameters.Length > parameterIndex)
-				return FlowAnnotations.GetMethodParameterAnnotation (method.Method.Parameters[parameterIndex]);
-			else
-				return null;
+			Debug.Assert (method.Method.Parameters.Length > parameterIndex);
+			return FlowAnnotations.GetMethodParameterAnnotation (method.Method.Parameters[parameterIndex]);
 		}
 
 		private partial MethodParameterValue GetMethodParameterValue (MethodProxy method, int parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)

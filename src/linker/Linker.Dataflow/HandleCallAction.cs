@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using ILLink.Shared.TypeSystemProxy;
@@ -51,12 +52,10 @@ namespace ILLink.Shared.TrimAnalysis
 			return _context.Annotations.FlowAnnotations.GetParameterAnnotation (method.Method, 0);
 		}
 
-		private partial DynamicallyAccessedMemberTypes? GetMethodParameterAnnotation (MethodProxy method, int parameterIndex)
+		private partial DynamicallyAccessedMemberTypes GetMethodParameterAnnotation (MethodProxy method, int parameterIndex)
 		{
-			if (method.Method.Parameters.Count > parameterIndex)
-				return _context.Annotations.FlowAnnotations.GetParameterAnnotation (method.Method, parameterIndex);
-			else
-				return null;
+			Debug.Assert (method.Method.Parameters.Count > parameterIndex);
+			return _context.Annotations.FlowAnnotations.GetParameterAnnotation (method.Method, parameterIndex);
 		}
 
 		private partial MethodThisParameterValue GetMethodThisParameterValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)

@@ -35,7 +35,5 @@ namespace ILLink.Shared.TypeSystemProxy
 		internal partial bool ReturnsVoid () => Method.ReturnType.MetadataType == MetadataType.Void;
 
 		public override string ToString () => Method.ToString ();
-
-		public TypeProxy DeclaringType => new (Method.DeclaringType);
 	}
 }
