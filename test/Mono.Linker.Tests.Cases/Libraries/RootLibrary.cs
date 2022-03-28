@@ -196,8 +196,8 @@ namespace Mono.Linker.Tests.Cases.Libraries
 		}
 
 		[Kept]
-		[KeptInterface (typeof (ICollection<int>))]
-		[KeptInterface (typeof (IEnumerable<int>))]
+		[KeptInterface (typeof (ICollection<CollectedType>))]
+		[KeptInterface (typeof (IEnumerable<CollectedType>))]
 		[KeptInterface (typeof (IEnumerable))]
 		public class UninstantiatedPublicClassWithImplicitlyImplementedInterface : ICollection<CollectedType>
 		{
@@ -260,6 +260,8 @@ namespace Mono.Linker.Tests.Cases.Libraries
 			}
 		}
 
+		[Kept]
+		[KeptMember (".ctor()")]
 		public class CollectedType { }
 
 		[Kept]
