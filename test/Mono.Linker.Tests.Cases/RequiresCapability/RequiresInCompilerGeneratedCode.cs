@@ -1200,10 +1200,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			static async void TestMethodParameterWithRequirements (Type unknownType = null)
 			{
 				Action _ =
-				// TODO: Fix the discrepancy between linker and analyzer
-				// https://github.com/dotnet/linker/issues/2350
-				// [ExpectedWarning ("IL2077", ProducedBy = ProducedBy.Trimmer)]
-				// TODO: add a separate testcase for this.
 				() => unknownType.RequiresNonPublicMethods ();
 			}
 
