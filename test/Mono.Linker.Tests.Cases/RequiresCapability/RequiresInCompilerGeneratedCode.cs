@@ -1647,7 +1647,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				[RequiresUnreferencedCode ("--TestLocalFunctionWithClosureWithRequires--")]
 				[RequiresAssemblyFiles ("--TestLocalFunctionWithClosureWithRequires--")]
 				[RequiresDynamicCode ("--TestLocalFunctionWithClosureWithRequires--")]
-				void LocalFunction () {
+				void LocalFunction ()
+				{
 					p++;
 					MethodWithRequires ();
 				}
@@ -1670,7 +1671,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			{
 				LocalFunction ();
 
-				void LocalFunction () {
+				void LocalFunction ()
+				{
 					p++;
 					MethodWithRequires ();
 				}
