@@ -669,7 +669,7 @@ namespace ILLink.Shared.TrimAnalysis
 				// Verify the argument values match the annotations on the parameter definition
 				if (requiresDataFlowAnalysis) {
 					if (!calledMethod.IsStatic ()) {
-						_requireDynamicallyAccessedMembersAction.Invoke (instanceValue, GetMethodThisParameterValue(calledMethod));
+						_requireDynamicallyAccessedMembersAction.Invoke (instanceValue, GetMethodThisParameterValue (calledMethod));
 					}
 					for (int argumentIndex = 0; argumentIndex < argumentValues.Count; argumentIndex++) {
 						_requireDynamicallyAccessedMembersAction.Invoke (argumentValues[argumentIndex], GetMethodParameterValue (calledMethod, argumentIndex));
@@ -816,7 +816,7 @@ namespace ILLink.Shared.TrimAnalysis
 		private partial MethodThisParameterValue GetMethodThisParameterValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes);
 
 		private MethodThisParameterValue GetMethodThisParameterValue (MethodProxy method)
-			=> GetMethodThisParameterValue (method, GetMethodThisParameterAnnotation(method));
+			=> GetMethodThisParameterValue (method, GetMethodThisParameterAnnotation (method));
 
 		private partial DynamicallyAccessedMemberTypes GetMethodParameterAnnotation (MethodProxy method, int parameterIndex);
 
