@@ -199,7 +199,7 @@ namespace Mono.Linker.Tests.Cases.Libraries
 		[KeptInterface (typeof (ICollection<int>))]
 		[KeptInterface (typeof (IEnumerable<int>))]
 		[KeptInterface (typeof (IEnumerable))]
-		public class UninstantiatedPublicClassWithImplicitlyImplementedInterface : ICollection<int>
+		public class UninstantiatedPublicClassWithImplicitlyImplementedInterface : ICollection<CollectedType>
 		{
 			[Kept]
 			[KeptBackingField]
@@ -218,7 +218,7 @@ namespace Mono.Linker.Tests.Cases.Libraries
 			}
 
 			[Kept]
-			public void Add (int item)
+			public void Add (CollectedType item)
 			{
 				throw new NotImplementedException ();
 			}
@@ -230,19 +230,19 @@ namespace Mono.Linker.Tests.Cases.Libraries
 			}
 
 			[Kept]
-			public bool Contains (int item)
+			public bool Contains (CollectedType item)
 			{
 				throw new NotImplementedException ();
 			}
 
 			[Kept]
-			public void CopyTo (int[] array, int arrayIndex)
+			public void CopyTo (CollectedType[] array, int arrayIndex)
 			{
 				throw new NotImplementedException ();
 			}
 
 			[Kept]
-			public bool Remove (int item)
+			public bool Remove (CollectedType item)
 			{
 				throw new NotImplementedException ();
 			}
@@ -254,11 +254,13 @@ namespace Mono.Linker.Tests.Cases.Libraries
 			}
 
 			[Kept]
-			IEnumerator<int> IEnumerable<int>.GetEnumerator ()
+			IEnumerator<CollectedType> IEnumerable<CollectedType>.GetEnumerator ()
 			{
 				throw new NotImplementedException ();
 			}
 		}
+
+		public class CollectedType { }
 
 		[Kept]
 		[KeptInterface (typeof (IPublicInterface))]
@@ -297,91 +299,5 @@ namespace Mono.Linker.Tests.Cases.Libraries
 		internal void Unused ()
 		{
 		}
-	}
-	
-	[Kept]
-	[KeptInterface (typeof (ICollection<IPAddressInformation>))]
-	[KeptInterface (typeof (IEnumerable<IPAddressInformation>))]
-	[KeptInterface (typeof (IEnumerable))]
-	[KeptAttributeAttribute (typeof (System.Reflection.DefaultMemberAttribute))]
-	public class IPAddressInformationCollection : ICollection<IPAddressInformation>
-	{
-		[Kept]
-		private readonly List<IPAddressInformation> _addresses = new List<IPAddressInformation> ();
-
-		internal IPAddressInformationCollection ()
-		{
-		}
-
-		[Kept]
-		public virtual void CopyTo (IPAddressInformation[] array, int offset)
-		{
-			_addresses.CopyTo (array, offset);
-		}
-
-		[Kept]
-		public virtual int Count {
-		[Kept]
-			get {
-				return _addresses.Count;
-			}
-		}
-
-		[Kept]
-		public virtual bool IsReadOnly {
-		[Kept]
-			get {
-				return true;
-			}
-		}
-
-		[Kept]
-		public virtual void Add (IPAddressInformation address)
-		{
-			throw new NotSupportedException ();
-		}
-
-		internal void InternalAdd (IPAddressInformation address)
-		{
-			_addresses.Add (address);
-		}
-
-		[Kept]
-		public virtual bool Contains (IPAddressInformation address)
-		{
-			return _addresses.Contains (address);
-		}
-
-		[Kept]
-		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator ()
-		{ return this.GetEnumerator (); }
-		[Kept]
-		public virtual IEnumerator<IPAddressInformation> GetEnumerator () { return _addresses.GetEnumerator (); }
-		[Kept]
-		public virtual IPAddressInformation this[int index] {
-		[Kept]
-			get {
-				return _addresses[index];
-			}
-		}
-
-		[Kept]
-		public virtual bool Remove (IPAddressInformation address)
-		{
-			throw new NotSupportedException ();
-		}
-
-		[Kept]
-		public virtual void Clear ()
-		{
-			throw new NotSupportedException ();
-		}
-	}
-	[Kept]
-	public class IPAddressInformation
-	{
-		[Kept]
-		public IPAddressInformation () { }
-
 	}
 }
