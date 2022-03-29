@@ -57,11 +57,13 @@ namespace ILLink.RoslynAnalyzer
 			if (member is ITypeSymbol)
 				return false;
 
-			if (member.HasAttribute (requiresAttribute) && !member.IsStaticConstructor ())
-				return true;
-
-			if (member.ContainingSymbol is IMethodSymbol containingMethod)
-				return containingMethod.IsInRequiresScope (requiresAttribute, checkAssociatedSymbol);
+			while (true) {
+				if (member.HasAttribute (requiresAttribute) && !member.IsStaticConstructor ())
+					return true;
+				if (member.ContainingSymbol is not IMethodSymbol method)
+					break;
+				member = method;
+			}
 
 			if (member.ContainingType is ITypeSymbol containingType && containingType.HasAttribute (requiresAttribute))
 				return true;

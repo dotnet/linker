@@ -26,9 +26,6 @@ namespace Mono.Linker
 			_typesWithPopulatedCache = new HashSet<TypeDefinition> ();
 		}
 
-		static bool HasRoslynCompilerGeneratedName (TypeDefinition type) =>
-			CompilerGeneratedNames.IsGeneratedMemberName (type.Name) || (type.DeclaringType != null && HasRoslynCompilerGeneratedName (type.DeclaringType));
-
 		void PopulateCacheForType (TypeDefinition type)
 		{
 			// Avoid repeat scans of the same type
@@ -159,12 +156,24 @@ namespace Mono.Linker
 			if (_compilerGeneratedTypeToUserCodeMethod.TryGetValue (sourceType, out owningMethod))
 				return true;
 
+			if (!CompilerGeneratedNames.IsGeneratedMemberName (sourceMember.Name) && !CompilerGeneratedNames.IsGeneratedMemberName (sourceType.Name))
+				return false;
+
 			if (sourceType.DeclaringType == null)
 				return false;
 
-			var typeToCache = HasRoslynCompilerGeneratedName (sourceType) ? sourceType.DeclaringType : sourceType;
+			var typeToCache = sourceType;
+			// Look in the declaring type if this is a compiler-generated type (state machine or display class)
+			if (CompilerGeneratedNames.IsGeneratedMemberName (typeToCache.Name))
+				typeToCache = typeToCache.DeclaringType;
 
-			// Now go to its declaring type and search all methods to find the one which points to the type as its
+			// State machines can be emitted into display classes, so we may need to go one more level up.
+			if (CompilerGeneratedNames.IsGeneratedMemberName (typeToCache.Name))
+				typeToCache = typeToCache.DeclaringType;
+
+			Debug.Assert (!CompilerGeneratedNames.IsGeneratedMemberName (typeToCache.Name));
+
+			// Search all methods to find the one which points to the type as its
 			// state machine implementation.
 			PopulateCacheForType (typeToCache);
 			if (compilerGeneratedMethod != null) {
