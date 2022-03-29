@@ -57,7 +57,7 @@ namespace Mono.Linker
 
 			MethodDefinition? owningMethod;
 			while (_context.CompilerGeneratedState.TryGetOwningMethodForCompilerGeneratedMember (member, out owningMethod)) {
-				Debug.Assert (owningMethod != provider);
+				Debug.Assert (owningMethod != member);
 				if (IsSuppressed (id, owningMethod, out info))
 					return true;
 				member = owningMethod;

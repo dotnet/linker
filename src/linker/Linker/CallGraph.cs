@@ -28,13 +28,13 @@ namespace Mono.Linker
 			visited.Add (start);
 			queue.Enqueue (start);
 			while (queue.TryDequeue (out MethodDefinition? method)) {
-				if (!callGraph.TryGetValue (method, out HashSet<MethodDefinition>? neighbors))
+				if (!callGraph.TryGetValue (method, out HashSet<MethodDefinition>? callees))
 					continue;
 
-				foreach (var neighbor in neighbors) {
-					if (visited.Add (neighbor)) {
-						queue.Enqueue (neighbor);
-						yield return neighbor;
+				foreach (var callee in callees) {
+					if (visited.Add (callee)) {
+						queue.Enqueue (callee);
+						yield return callee;
 					}
 				}
 			}

@@ -26,6 +26,19 @@ namespace Mono.Linker
 			_typesWithPopulatedCache = new HashSet<TypeDefinition> ();
 		}
 
+		IEnumerable<TypeDefinition> GetCompilerGeneratedNestedTypes (TypeDefinition type)
+		{
+			foreach (var nestedType in type.NestedTypes) {
+				if (!CompilerGeneratedNames.IsGeneratedMemberName (nestedType.Name))
+					continue;
+
+				yield return nestedType;
+
+				foreach (var recursiveNestedType in GetCompilerGeneratedNestedTypes (nestedType))
+					yield return recursiveNestedType;
+			}
+		}
+
 		void PopulateCacheForType (TypeDefinition type)
 		{
 			// Avoid repeat scans of the same type
@@ -43,7 +56,8 @@ namespace Mono.Linker
 					Debug.Assert (added);
 				}
 
-				// Discover calls to lambdas or local functions.
+				// Discover calls or references to lambdas or local functions. This includes
+				// calls to local functions, and lambda assignments (which use ldftn).
 				if (method.Body != null) {
 					foreach (var instruction in method.Body.Instructions) {
 						if (instruction.OpCode.OperandType != OperandType.InlineMethod)
@@ -94,20 +108,14 @@ namespace Mono.Linker
 
 			// Also scan compiler-generated state machine methods (in case they have calls to nested functions),
 			// and nested functions inside compiler-generated closures (in case they call other nested functions).
-			foreach (var nestedType in type.NestedTypes) {
-				if (!CompilerGeneratedNames.IsGeneratedMemberName (nestedType.Name))
-					continue;
 
+			// State machines can be emitted into lambda display classes, so we need to go down at least two levels
+			// level to find calls from iterator nested functions to other nested functions. We just recurse into
+			// all compiler-generated nested types to avoid depending on implementation details.
+
+			foreach (var nestedType in GetCompilerGeneratedNestedTypes (type)) {
 				foreach (var method in nestedType.Methods)
 					ProcessMethod (method);
-
-				// State machines can be emitted into lambda display classes, so we need to go down one
-				// more level to find calls from iterator nested functions to other nested functions.
-				foreach (var innerNestedType in nestedType.NestedTypes) {
-					Debug.Assert (CompilerGeneratedNames.IsGeneratedMemberName (innerNestedType.Name));
-					foreach (var innerMethod in innerNestedType.Methods)
-						ProcessMethod (innerMethod);
-				}
 			}
 
 			// Now we've discovered the call graphs for calls to nested functions.
@@ -159,19 +167,18 @@ namespace Mono.Linker
 			if (!CompilerGeneratedNames.IsGeneratedMemberName (sourceMember.Name) && !CompilerGeneratedNames.IsGeneratedMemberName (sourceType.Name))
 				return false;
 
-			if (sourceType.DeclaringType == null)
-				return false;
-
+			// sourceType is a state machine type, or the type containing a lambda or local function.
 			var typeToCache = sourceType;
-			// Look in the declaring type if this is a compiler-generated type (state machine or display class)
-			if (CompilerGeneratedNames.IsGeneratedMemberName (typeToCache.Name))
+
+			// Look in the declaring type if this is a compiler-generated type (state machine or display class).
+			// State machines can be emitted into display classes, so we may also need to go one more level up.
+			// To avoid depending on implementation details, we go up until we see a non-compiler-generated type.
+			// This is the counterpart to GetCompilerGeneratedNestedTypes.
+			while (typeToCache != null && CompilerGeneratedNames.IsGeneratedMemberName (typeToCache.Name))
 				typeToCache = typeToCache.DeclaringType;
 
-			// State machines can be emitted into display classes, so we may need to go one more level up.
-			if (CompilerGeneratedNames.IsGeneratedMemberName (typeToCache.Name))
-				typeToCache = typeToCache.DeclaringType;
-
-			Debug.Assert (!CompilerGeneratedNames.IsGeneratedMemberName (typeToCache.Name));
+			if (typeToCache == null)
+				return false;
 
 			// Search all methods to find the one which points to the type as its
 			// state machine implementation.

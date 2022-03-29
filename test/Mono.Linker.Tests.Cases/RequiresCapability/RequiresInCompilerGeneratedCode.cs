@@ -27,6 +27,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 			WarnInLocalFunction.Test ();
 			SuppressInLocalFunction.Test ();
+			WarnInNonNestedLocalFunctionTest ();
+			SuppressInNonNestedLocalFunctionTest ();
 
 			WarnInLambda.Test ();
 			SuppressInLambda.Test ();
@@ -998,6 +1000,34 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestSuppressionOnOuterAndLocalFunction ();
 				TestSuppressionOnOuterWithSameName.Test ();
 			}
+		}
+
+		static void WarnInNonNestedLocalFunctionTest ()
+		{
+			LocalFunction ();
+
+			[ExpectedWarning ("IL2026", "--MethodWithRequires--")]
+			[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+			static void LocalFunction () => MethodWithRequires ();
+		}
+
+		[ExpectedWarning ("IL2026", "--MethodWithNonNestedLocalFunction--")]
+		[ExpectedWarning ("IL3002", "--MethodWithNonNestedLocalFunction--", ProducedBy = ProducedBy.Analyzer)]
+		[ExpectedWarning ("IL3050", "--MethodWithNonNestedLocalFunction--", ProducedBy = ProducedBy.Analyzer)]
+		static void SuppressInNonNestedLocalFunctionTest ()
+		{
+			MethodWithNonNestedLocalFunction ();
+		}
+
+		[RequiresUnreferencedCode ("--MethodWithNonNestedLocalFunction--")]
+		[RequiresAssemblyFiles ("--MethodWithNonNestedLocalFunction--")]
+		[RequiresDynamicCode ("--MethodWithNonNestedLocalFunction--")]
+		static void MethodWithNonNestedLocalFunction ()
+		{
+			LocalFunction ();
+
+			static void LocalFunction () => MethodWithRequires ();
 		}
 
 		class WarnInLambda

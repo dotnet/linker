@@ -22,10 +22,8 @@ namespace Mono.Linker
 
 		internal static bool IsLambdaOrLocalFunction (string methodName) => IsLambdaMethod (methodName) || IsLocalFunction (methodName);
 
-		// Lambda methods have generated names like "<UserMethod>c__0_1" where "UserMethod" is the name
+		// Lambda methods have generated names like "<UserMethod>b__0_1" where "UserMethod" is the name
 		// of the original user code that contains the lambda method declaration.
-		// Note: this might not be the immediately containing method, if the containing method is
-		// a lambda or local function. This is the name of the user method.
 		internal static bool IsLambdaMethod (string methodName)
 		{
 			if (!IsGeneratedMemberName (methodName))
@@ -39,6 +37,9 @@ namespace Mono.Linker
 			return methodName[i + 1] == 'b';
 		}
 
+		// Local functions have generated names like "<UserMethod>g__LocalFunction|0_1" where "UserMethod" is the name
+		// of the original user code that contains the lambda method declaration, and "LocalFunction" is the name of
+		// the local function.
 		internal static bool IsLocalFunction (string methodName)
 		{
 			if (!IsGeneratedMemberName (methodName))
