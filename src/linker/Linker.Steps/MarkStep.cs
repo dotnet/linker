@@ -2903,7 +2903,7 @@ namespace Mono.Linker.Steps
 
 			MethodDefinition? owningMethod;
 			while (Context.CompilerGeneratedState.TryGetOwningMethodForCompilerGeneratedMember (member, out owningMethod)) {
-				Debug.Assert (owningMethod != originMember);
+				Debug.Assert (owningMethod != member);
 				if (Annotations.IsMethodInRequiresUnreferencedCodeScope (owningMethod))
 					return true;
 				member = owningMethod;

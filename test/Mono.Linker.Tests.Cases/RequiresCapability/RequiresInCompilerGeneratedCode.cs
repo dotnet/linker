@@ -917,7 +917,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				{
 					NestedLocalFunction ();
 
-					// The linker doesn't have enough information to associate the RUC on LocalFunction
+					// The linker doesn't have enough information to associate the Requires on LocalFunction
 					// with this nested local function.
 					[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Trimmer)]
 					void NestedLocalFunction () => MethodWithRequires ();
@@ -1278,8 +1278,10 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				[RequiresAssemblyFiles ("Suppress in body")]
 				[RequiresDynamicCode ("Suppress in body")]
 				() => {
-					// The linker doesn't have enough information to associate the RUC on lambda
-					// with this nested lambda.
+					// The linker doesn't try to associate the Requires on lambda with this nested
+					// lambda. It would be possible to do this because the declaration site will contain
+					// an IL reference to the generated lambda method, unlike local functions.
+					// However, we don't make this association, for consistency with local functions.
 					var nestedLambda =
 					[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Trimmer)]
 					() => MethodWithRequires ();

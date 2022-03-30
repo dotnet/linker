@@ -26,7 +26,7 @@ namespace Mono.Linker
 			_typesWithPopulatedCache = new HashSet<TypeDefinition> ();
 		}
 
-		IEnumerable<TypeDefinition> GetCompilerGeneratedNestedTypes (TypeDefinition type)
+		static IEnumerable<TypeDefinition> GetCompilerGeneratedNestedTypes (TypeDefinition type)
 		{
 			foreach (var nestedType in type.NestedTypes) {
 				if (!CompilerGeneratedNames.IsGeneratedMemberName (nestedType.Name))
@@ -109,8 +109,8 @@ namespace Mono.Linker
 			// Also scan compiler-generated state machine methods (in case they have calls to nested functions),
 			// and nested functions inside compiler-generated closures (in case they call other nested functions).
 
-			// State machines can be emitted into lambda display classes, so we need to go down at least two levels
-			// level to find calls from iterator nested functions to other nested functions. We just recurse into
+			// State machines can be emitted into lambda display classes, so we need to go down at least two
+			// levels to find calls from iterator nested functions to other nested functions. We just recurse into
 			// all compiler-generated nested types to avoid depending on implementation details.
 
 			foreach (var nestedType in GetCompilerGeneratedNestedTypes (type)) {
