@@ -12,7 +12,6 @@ namespace Mono.Linker.Tests.Cases.Libraries
 {
 	[SetupLinkerArgument ("-a", "test.exe", "library")]
 	[SetupLinkerArgument ("--enable-opt", "ipconstprop")]
-	[SetupLinkerArgument ("--skip-unresolved")]
 	[VerifyMetadataNames]
 	public class RootLibrary
 	{
@@ -196,73 +195,21 @@ namespace Mono.Linker.Tests.Cases.Libraries
 		}
 
 		[Kept]
-		[KeptInterface (typeof (ICollection<CollectedType>))]
-		[KeptInterface (typeof (IEnumerable<CollectedType>))]
-		[KeptInterface (typeof (IEnumerable))]
-		public class UninstantiatedPublicClassWithImplicitlyImplementedInterface : ICollection<CollectedType>
+		[KeptInterface (typeof (IInternalInterface))]
+		[KeptInterface (typeof (IFormattable))]
+		public class UninstantiatedPublicClassWithImplicitlyImplementedInterface : IInternalInterface, IFormattable
 		{
-			[Kept]
-			[KeptBackingField]
-			public int Count { [Kept] get; }
-
-			[Kept]
-			[KeptBackingField]
-			public bool IsReadOnly { [Kept] get; }
-
 			internal UninstantiatedPublicClassWithImplicitlyImplementedInterface () { }
 
 			[Kept]
-			public void CopyTo (Array array, int index)
-			{
-				throw new NotImplementedException ();
-			}
+			public void InternalInterfaceMethod () { }
 
 			[Kept]
-			public void Add (CollectedType item)
+			public string ToString (string format, IFormatProvider formatProvider)
 			{
-				throw new NotImplementedException ();
-			}
-
-			[Kept]
-			public void Clear ()
-			{
-				throw new NotImplementedException ();
-			}
-
-			[Kept]
-			public bool Contains (CollectedType item)
-			{
-				throw new NotImplementedException ();
-			}
-
-			[Kept]
-			public void CopyTo (CollectedType[] array, int arrayIndex)
-			{
-				throw new NotImplementedException ();
-			}
-
-			[Kept]
-			public bool Remove (CollectedType item)
-			{
-				throw new NotImplementedException ();
-			}
-
-			[Kept]
-			public IEnumerator GetEnumerator ()
-			{
-				throw new NotImplementedException ();
-			}
-
-			[Kept]
-			IEnumerator<CollectedType> IEnumerable<CollectedType>.GetEnumerator ()
-			{
-				throw new NotImplementedException ();
+				return "formatted string";
 			}
 		}
-
-		[Kept]
-		[KeptMember (".ctor()")]
-		public class CollectedType { }
 
 		[Kept]
 		[KeptInterface (typeof (IPublicInterface))]
@@ -279,6 +226,15 @@ namespace Mono.Linker.Tests.Cases.Libraries
 		}
 
 		[Kept]
+		[KeptInterface (typeof (IPrivateInterface))]
+		public class UninstantiatedPublicClassWithPrivateInterface : IPrivateInterface
+		{
+			internal UninstantiatedPublicClassWithPrivateInterface () { }
+
+			void IPrivateInterface.PrivateInterfaceMethod () { }
+		}
+
+		[Kept]
 		public interface IPublicInterface
 		{
 			[Kept]
@@ -289,6 +245,12 @@ namespace Mono.Linker.Tests.Cases.Libraries
 		internal interface IInternalInterface
 		{
 			void InternalInterfaceMethod ();
+		}
+
+		[Kept]
+		private interface IPrivateInterface
+		{
+			void PrivateInterfaceMethod ();
 		}
 	}
 
