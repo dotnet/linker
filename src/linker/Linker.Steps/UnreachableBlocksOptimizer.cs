@@ -21,8 +21,7 @@ namespace Mono.Linker.Steps
 	public class UnreachableBlocksOptimizer
 	{
 		readonly LinkContext _context;
-		readonly Dictionary<MethodDefinition, MethodResult?> _cache_no_parameter = new (2048);
-		readonly Dictionary<MethodDefinition, MethodResult?> _cache_unknown_parameters = new (2048);
+		readonly Dictionary<MethodDefinition, MethodResult?> _cache_method_results = new (2048);
 		readonly Stack<MethodDefinition> _resursion_guard = new ();
 
 		MethodDefinition? IntPtrSize, UIntPtrSize;
@@ -235,19 +234,10 @@ namespace Mono.Linker.Steps
 			MethodResult? value;
 
 			MethodDefinition method = callee.Method;
-			if (!method.HasParameters) {
-				if (!_cache_no_parameter.TryGetValue (method, out value) && !IsDeepStack (callStack)) {
+			if (!method.HasParameters || callee.HasUnknownArguments) {
+				if (!_cache_method_results.TryGetValue (method, out value) && !IsDeepStack (callStack)) {
 					value = AnalyzeMethodForConstantResult (callee, callStack);
-					_cache_no_parameter.Add (method, value);
-				}
-
-				return value;
-			}
-
-			if (callee.HasUnknownArguments) {
-				if (!_cache_unknown_parameters.TryGetValue (method, out value) && !IsDeepStack (callStack)) {
-					value = AnalyzeMethodForConstantResult (callee, callStack);
-					_cache_unknown_parameters.Add (method, value);
+					_cache_method_results.Add (method, value);
 				}
 
 				return value;
@@ -282,8 +272,9 @@ namespace Mono.Linker.Steps
 		static Instruction? EvaluateIntrinsicCall (MethodReference method, Instruction[] arguments)
 		{
 			//
-			// In theory any pure method could be executed easily via reflection
-			// but for now we handle only few that help with framework trimming
+			// In theory any pure method could be executed via reflection but
+			// that would require loading all code path dependencies.
+			// For now we handle only few methods that help with core framework trimming
 			//
 			object? left, right;
 			if (method.DeclaringType.MetadataType == MetadataType.String) {
@@ -325,7 +316,7 @@ namespace Mono.Linker.Steps
 					return null;
 
 				if (result == null)
-					result = new Instruction[i];
+					result = new Instruction[method.Parameters.Count];
 
 				result[pos] = instr;
 			}
@@ -517,6 +508,9 @@ namespace Mono.Linker.Steps
 
 			bool CanInlineInstanceCall (Collection<Instruction> instructions, int index)
 			{
+				//
+				// Instance methods called on `this` have no side-effects
+				//
 				if (instructions[index - 1].OpCode.Code == Code.Ldarg_0)
 					return !body.Method.IsStatic;
 
@@ -1414,6 +1408,9 @@ namespace Mono.Linker.Steps
 					var instr = instructions[i];
 
 					if (jmpTarget != null) {
+						//
+						// Handles both backward and forward jumps
+						//
 						if (instr != jmpTarget)
 							continue;
 
