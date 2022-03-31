@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using MultiValue = ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.SingleValue>;
 
-namespace ILLink.Shared.TrimAnalysis
+namespace Mono.Linker.Dataflow
 {
 	public class ValueNodeList : List<MultiValue>
 	{

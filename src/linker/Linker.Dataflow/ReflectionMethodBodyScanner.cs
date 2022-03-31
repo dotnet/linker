@@ -14,6 +14,7 @@ using ILLink.Shared.TypeSystemProxy;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Linker.Steps;
+using Mono.Linker.Dataflow;
 
 using BindingFlags = System.Reflection.BindingFlags;
 
