@@ -1,3 +1,6 @@
+// Copyright (c) .NET Foundation and contributors. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 //
 // MarkStep.cs
 //
@@ -2940,13 +2943,15 @@ namespace Mono.Linker.Steps
 			if (originMember is not IMemberDefinition member)
 				return false;
 
-			MethodDefinition? userDefinedMethod = Context.CompilerGeneratedState.GetUserDefinedMethodForCompilerGeneratedMember (member);
-			if (userDefinedMethod == null)
-				return false;
+			MethodDefinition? owningMethod;
+			while (Context.CompilerGeneratedState.TryGetOwningMethodForCompilerGeneratedMember (member, out owningMethod)) {
+				Debug.Assert (owningMethod != member);
+				if (Annotations.IsMethodInRequiresUnreferencedCodeScope (owningMethod))
+					return true;
+				member = owningMethod;
+			}
 
-			Debug.Assert (userDefinedMethod != originMember);
-
-			return Annotations.IsMethodInRequiresUnreferencedCodeScope (userDefinedMethod);
+			return false;
 		}
 
 		internal void CheckAndReportRequiresUnreferencedCode (MethodDefinition method)

@@ -1,5 +1,5 @@
-// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
+// Copyright (c) .NET Foundation and contributors. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
@@ -57,8 +57,13 @@ namespace ILLink.RoslynAnalyzer
 			if (member is ITypeSymbol)
 				return false;
 
-			if (member.HasAttribute (requiresAttribute) && !member.IsStaticConstructor ())
-				return true;
+			while (true) {
+				if (member.HasAttribute (requiresAttribute) && !member.IsStaticConstructor ())
+					return true;
+				if (member.ContainingSymbol is not IMethodSymbol method)
+					break;
+				member = method;
+			}
 
 			if (member.ContainingType is ITypeSymbol containingType && containingType.HasAttribute (requiresAttribute))
 				return true;
