@@ -2352,6 +2352,8 @@ namespace Mono.Linker.Steps
 				return false;
 
 			foreach (MethodDefinition @base in base_list) {
+				if (!@base.DeclaringType.IsInterface)
+					continue;
 
 				if (IgnoreScope (@base.DeclaringType.Scope))
 					return true;
