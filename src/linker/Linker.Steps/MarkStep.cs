@@ -598,7 +598,7 @@ namespace Mono.Linker.Steps
 
 					// If the optimization is disabled, make sure to mark all methods which implement interfaces
 					foreach (MethodDefinition method in type.Methods) {
-						if (!IsMethodNeededByTypeToImplementInterface (method))
+						if (!IsMethodNeededByTypeDueToPreservedScope (method))
 							continue;
 
 						if (!Annotations.IsMarked (method))
@@ -2325,7 +2325,7 @@ namespace Mono.Linker.Steps
 			return false;
 		}
 
-		bool IsVirtualNeededByInstantiatedTypeDueToPreservedScope (MethodDefinition method)
+		bool IsMethodNeededByTypeDueToPreservedScope (MethodDefinition method)
 		{
 			if (!method.IsVirtual)
 				return false;
@@ -2335,29 +2335,6 @@ namespace Mono.Linker.Steps
 				return false;
 
 			foreach (MethodDefinition @base in base_list) {
-				if (IgnoreScope (@base.DeclaringType.Scope))
-					return true;
-
-				if (IsVirtualNeededByTypeDueToPreservedScope (@base))
-					return true;
-			}
-
-			return false;
-		}
-
-		bool IsMethodNeededByTypeToImplementInterface (MethodDefinition method)
-		{
-			if (!method.IsVirtual)
-				return false;
-
-			var base_list = Annotations.GetBaseMethods (method);
-			if (base_list == null)
-				return false;
-
-			foreach (MethodDefinition @base in base_list) {
-				if (!@base.DeclaringType.IsInterface)
-					continue;
-
 				if (IgnoreScope (@base.DeclaringType.Scope))
 					return true;
 
@@ -3149,7 +3126,7 @@ namespace Mono.Linker.Steps
 		protected virtual IEnumerable<MethodDefinition> GetRequiredMethodsForInstantiatedType (TypeDefinition type)
 		{
 			foreach (var method in type.Methods) {
-				if (IsVirtualNeededByInstantiatedTypeDueToPreservedScope (method))
+				if (IsMethodNeededByTypeDueToPreservedScope (method))
 					yield return method;
 			}
 		}
