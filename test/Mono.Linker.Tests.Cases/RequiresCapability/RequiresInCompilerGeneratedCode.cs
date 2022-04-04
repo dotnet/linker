@@ -1620,9 +1620,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 					MethodWithRequires ();
 					yield return 1;
 
-					[ExpectedWarning ("IL2026", "--MethodWithRequires--")]
-					[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
-					[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+					// Trimmer doesn't try to associate LocalFunction with IteratorLocalFunction
+					[ExpectedWarning ("IL2026", "--MethodWithRequires--", ProducedBy = ProducedBy.Trimmer)]
 					void LocalFunction () => MethodWithRequires ();
 				}
 			}
