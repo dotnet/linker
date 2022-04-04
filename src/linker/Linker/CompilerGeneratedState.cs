@@ -131,7 +131,10 @@ namespace Mono.Linker
 			foreach (var userDefinedMethod in callingMethods) {
 				foreach (var nestedFunction in callGraph.GetReachableMethods (userDefinedMethod)) {
 					Debug.Assert (CompilerGeneratedNames.IsLambdaOrLocalFunction (nestedFunction.Name));
-					_compilerGeneratedMethodToUserCodeMethod.Add (nestedFunction, userDefinedMethod);
+					if (!_compilerGeneratedMethodToUserCodeMethod.TryAdd (nestedFunction, userDefinedMethod)) {
+						var alreadyAssociatedMethod = _compilerGeneratedMethodToUserCodeMethod[nestedFunction];
+						_context.LogWarning (new MessageOrigin (userDefinedMethod), DiagnosticId.MethodsAreAssociatedWithUserMethod, userDefinedMethod.GetDisplayName (), alreadyAssociatedMethod.GetDisplayName (), nestedFunction.GetDisplayName ());
+					}
 				}
 			}
 		}
