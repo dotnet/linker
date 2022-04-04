@@ -1,14 +1,14 @@
 {
   "sdk": {
-    "version": "6.0.100",
+    "version": "7.0.100-preview.2.22153.17",
     "allowPrerelease": true,
     "rollForward": "major"
   },
   "tools": {
-    "dotnet": "6.0.100"
+    "dotnet": "7.0.100-preview.2.22153.17"
   },
   "msbuild-sdks": {
-    "Microsoft.DotNet.Arcade.Sdk": "7.0.0-beta.22171.2",
+    "Microsoft.DotNet.Arcade.Sdk": "7.0.0-beta.22181.2",
     "Microsoft.FIX-85B6-MERGE-9C38-CONFLICT": "1.0.0",
     "Microsoft.NET.Sdk.IL": "7.0.0-preview.4.22178.1"
   }
