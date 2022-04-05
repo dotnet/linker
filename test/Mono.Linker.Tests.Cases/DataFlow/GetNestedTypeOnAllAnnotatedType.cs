@@ -31,6 +31,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TestOnKnownTypeOnly ();
 			TestOnKnownTypeWithNullName ();
 			TestOnKnownTypeWithUnknownName ("noname");
+			TestWithKnownTypeAndNameWhichDoesntExist ();
 		}
 
 		static void TestOnAllAnnotatedParameter ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] Type parentType)
@@ -118,6 +119,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		{
 			// WARN - we will preserve the nested type, but not as a whole, just the type itself, so it can't fullfil the All annotation
 			typeof (TestType).GetNestedType (name).RequiresAll ();
+		}
+
+		static void TestWithKnownTypeAndNameWhichDoesntExist ()
+		{
+			// Should not warn since we can statically determine that GetNestedType will return null so there's no problem with trimming
+			typeof (TestType).GetNestedType ("NonExisting").RequiresAll ();
 		}
 
 		class TestType
