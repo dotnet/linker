@@ -35,6 +35,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			TestAutomaticPropagation ();
 
+			WriteCapturedProperty.Test ();
+
 			PropertyWithAttributeMarkingItself.Test ();
 			new TestWriteToGetOnlyProperty ();
 		}
@@ -437,6 +439,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 		}
 
+
 		class TestWriteToGetOnlyProperty
 		{
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
@@ -448,6 +451,19 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			public TestWriteToGetOnlyProperty ()
 			{
 				GetOnlyProperty = GetUnknownType ();
+			}
+		}
+
+		static class WriteCapturedProperty
+		{
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+			static Type Property { get; set; }
+
+			[ExpectedWarning ("IL2072", nameof (GetUnknownType), nameof (Property))]
+			[ExpectedWarning ("IL2072", nameof (GetTypeWithPublicConstructors), nameof (Property))]
+			public static void Test ()
+			{
+				Property = GetUnknownType () ?? GetTypeWithPublicConstructors ();
 			}
 		}
 

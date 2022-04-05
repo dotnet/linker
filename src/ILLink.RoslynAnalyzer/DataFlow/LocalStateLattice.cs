@@ -5,6 +5,7 @@ using System;
 using ILLink.Shared.DataFlow;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.FlowAnalysis;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace ILLink.RoslynAnalyzer.DataFlow
 {
@@ -29,19 +30,33 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 		}
 	}
 
-	// Wrapper struct exists purely to substitute a concrete LocalKey for TKey of DefaultValueDictionary
 	public struct LocalState<TValue> : IEquatable<LocalState<TValue>>
 		where TValue : IEquatable<TValue>
 	{
 		public DefaultValueDictionary<LocalKey, TValue> Dictionary;
 
-		public LocalState (DefaultValueDictionary<LocalKey, TValue> dictionary) => Dictionary = dictionary;
+		public DefaultValueDictionary<CaptureId, PropertyValue> CapturedProperties;
+
+		public LocalState (DefaultValueDictionary<LocalKey, TValue> dictionary, DefaultValueDictionary<CaptureId, PropertyValue> capturedProperties)
+		{
+			Dictionary = dictionary;
+			CapturedProperties = capturedProperties;
+		}
+
+		public LocalState (DefaultValueDictionary<LocalKey, TValue> dictionary)
+			: this (dictionary, new DefaultValueDictionary<CaptureId, PropertyValue> (new PropertyValue (null)))
+		{
+		}
 
 		public bool Equals (LocalState<TValue> other) => Dictionary.Equals (other.Dictionary);
 
 		public TValue Get (LocalKey key) => Dictionary.Get (key);
 
 		public void Set (LocalKey key, TValue value) => Dictionary.Set (key, value);
+
+		public void CaptureProperty (CaptureId id, IPropertyReferenceOperation propertyReference) => CapturedProperties.Set (id, new PropertyValue (propertyReference));
+
+		public IPropertyReferenceOperation? GetCapturedProperty (CaptureId id) => CapturedProperties.Get (id).PropertyReference;
 
 		public override string ToString () => Dictionary.ToString ();
 	}
@@ -52,15 +67,22 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 		where TValueLattice : ILattice<TValue>
 	{
 		public readonly DictionaryLattice<LocalKey, TValue, TValueLattice> Lattice;
+		public readonly DictionaryLattice<CaptureId, PropertyValue, PropertyLattice> CapturedPropertyLattice;
 
 		public LocalStateLattice (TValueLattice valueLattice)
 		{
 			Lattice = new DictionaryLattice<LocalKey, TValue, TValueLattice> (valueLattice);
+			CapturedPropertyLattice = new DictionaryLattice<CaptureId, PropertyValue, PropertyLattice> (new PropertyLattice ());
 			Top = new (Lattice.Top);
 		}
 
 		public LocalState<TValue> Top { get; }
 
-		public LocalState<TValue> Meet (LocalState<TValue> left, LocalState<TValue> right) => new (Lattice.Meet (left.Dictionary, right.Dictionary));
+		public LocalState<TValue> Meet (LocalState<TValue> left, LocalState<TValue> right)
+		{
+			var dictionary = Lattice.Meet (left.Dictionary, right.Dictionary);
+			var capturedProperties = CapturedPropertyLattice.Meet (left.CapturedProperties, right.CapturedProperties);
+			return new LocalState<TValue> (dictionary, capturedProperties);
+		}
 	}
 }
