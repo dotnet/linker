@@ -592,18 +592,6 @@ namespace Mono.Linker.Steps
 
 				using (ScopeStack.PushScope (scope)) {
 					MarkInterfaceImplementations (type);
-
-					if (unusedInterfacesOptimizationEnabled)
-						continue;
-
-					// If the optimization is disabled, make sure to mark all methods which implement interfaces
-					foreach (MethodDefinition method in type.Methods) {
-						if (!IsMethodNeededByTypeDueToPreservedScope (method))
-							continue;
-
-						if (!Annotations.IsMarked (method))
-							MarkMethod (method, new DependencyInfo (DependencyKind.MethodForInstantiatedType, type));
-					}
 				}
 			}
 		}
@@ -1735,6 +1723,9 @@ namespace Mono.Linker.Steps
 			}
 		}
 
+		/// <summary>
+		/// Returns true if the assembly of the <paramref name="scope"></paramref> is not set to link (i.e. action=copy is set for that assembly)
+		/// </summary>
 		protected virtual bool IgnoreScope (IMetadataScope scope)
 		{
 			AssemblyDefinition? assembly = Context.Resolve (scope);
@@ -1931,7 +1922,7 @@ namespace Mono.Linker.Steps
 			MarkGenericParameterProvider (type);
 
 			// There are a number of markings we can defer until later when we know it's possible a reference type could be instantiated
-			// For example, if no instance of a type exist, then we don't need to mark the interfaces on that type
+			// For example, if no instance of a type exist, then we don't need to mark the interfaces on that type -- Note this is not true for static interfaces
 			// However, for some other types there is no benefit to deferring
 			if (type.IsInterface) {
 				// There's no benefit to deferring processing of an interface type until we know a type implementing that interface is marked
@@ -1955,6 +1946,7 @@ namespace Mono.Linker.Steps
 				MarkRequirementsForInstantiatedTypes (type);
 			}
 
+			// Save for later once we know which interfaces are marked and then determine which interface implementations and methods to keep
 			if (type.HasInterfaces)
 				_typesWithInterfaces.Add ((type, ScopeStack.CurrentScope));
 
@@ -2294,6 +2286,10 @@ namespace Mono.Linker.Steps
 			}
 		}
 
+		/// <summary>
+		/// Returns true if any of the base methods of the <paramref name="method"/> passed is in an assembly that is not trimmed (i.e. action != trim)
+		/// </summary>
+		/// <remarks>This ignores any base methods defined in interfaces. To also check methods defined in interfaces</remarks>
 		bool IsVirtualNeededByTypeDueToPreservedScope (MethodDefinition method)
 		{
 			if (!method.IsVirtual)
@@ -2305,8 +2301,8 @@ namespace Mono.Linker.Steps
 
 			foreach (MethodDefinition @base in base_list) {
 				// Just because the type is marked does not mean we need interface methods.
-				// if the type is never instantiated, interfaces will be removed
-				if (@base.DeclaringType.IsInterface)
+				// if the type is never instantiated, interfaces will be removed - but only if the optimization is enabled
+				if (@base.DeclaringType.IsInterface && Context.IsOptimizationEnabled (CodeOptimizations.UnusedInterfaces, method.DeclaringType))
 					continue;
 
 				// If the type is marked, we need to keep overrides of abstract members defined in assemblies
@@ -2325,9 +2321,13 @@ namespace Mono.Linker.Steps
 			return false;
 		}
 
-		bool IsMethodNeededByTypeDueToPreservedScope (MethodDefinition method)
+		/// <summary>
+		/// Returns true if any of the base methods of <paramref name="method" /> is defined in an assembly that is not trimmed (i.e. action!=trim)
+		/// </summary>
+		/// <remarks>This is very similar to <see cref="IsVirtualNeededByTypeDueToPreservedScope(MethodDefinition)"/>, except this also checks if the base method is an interface.</remarks>
+		bool IsVirtualNeededByInstantiatedTypeDueToPreservedScope (MethodDefinition method)
 		{
-			if (!method.IsVirtual)
+			if (!(method.IsVirtual || method.IsStatic))
 				return false;
 
 			var base_list = Annotations.GetBaseMethods (method);
@@ -3126,7 +3126,7 @@ namespace Mono.Linker.Steps
 		protected virtual IEnumerable<MethodDefinition> GetRequiredMethodsForInstantiatedType (TypeDefinition type)
 		{
 			foreach (var method in type.Methods) {
-				if (IsMethodNeededByTypeDueToPreservedScope (method))
+				if (IsVirtualNeededByInstantiatedTypeDueToPreservedScope (method))
 					yield return method;
 			}
 		}
