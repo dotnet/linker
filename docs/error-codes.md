@@ -1829,7 +1829,7 @@ void TestMethod()
 
 #### `IL2117`: Trim analysis: Methods 'method1' and 'method2' are both associated with state machine type 'type'. This is currently unsupported and may lead to incorrectly reported warnings.
 
-- Trimmer currently can't correctly handle if the same compiler generated lambda or local function is associated with two different methods.
+- Trimmer currently can't correctly handle if the same compiler generated lambda or local function is associated with two different methods. We don't know of any C# patterns which would cause this problem, but it is possible to write code like this in IL.
 
   Only a meta-sample:
 

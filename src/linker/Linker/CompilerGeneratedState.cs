@@ -154,9 +154,10 @@ namespace Mono.Linker
 						break;
 					case TypeDefinition stateMachineType:
 						// Types in the call graph are always state machine types
-						// For those all their methods are also part of the same call graph (the type is considered to be "transparent" and we track references/calls through it)
-						// So we can rely on the graph to report all of the state machine type's methods to be reported
-						// as part of the "reachable" members anywhere the state machine type itself is used.
+						// For those all their methods are not tracked explicitly in the call graph; instead, they
+						// are represented by the state machine type itself.
+						// We are already tracking the association of the state machine type to the user code method
+						// above, so no need to track it here.
 						Debug.Assert (CompilerGeneratedNames.IsStateMachineType (stateMachineType.Name));
 						break;
 					default:
