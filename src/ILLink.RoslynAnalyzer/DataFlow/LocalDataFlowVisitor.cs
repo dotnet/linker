@@ -30,8 +30,13 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 
 		protected TValue TopValue => LocalStateLattice.Lattice.ValueLattice.Top;
 
-		public LocalDataFlowVisitor (LocalStateLattice<TValue, TValueLattice> lattice, OperationBlockAnalysisContext context) =>
-			(LocalStateLattice, Context) = (lattice, context);
+		private readonly ImmutableDictionary<CaptureId, FlowCaptureKind> lValueFlowCaptures;
+
+		bool IsLValueFlowCapture (CaptureId captureId)
+			=> lValueFlowCaptures.ContainsKey (captureId);
+
+		public LocalDataFlowVisitor (LocalStateLattice<TValue, TValueLattice> lattice, OperationBlockAnalysisContext context, ImmutableDictionary<CaptureId, FlowCaptureKind> lValueFlowCaptures) =>
+			(LocalStateLattice, Context, this.lValueFlowCaptures) = (lattice, context, lValueFlowCaptures);
 
 		public void Transfer (BlockProxy block, LocalDataFlowState<TValue, TValueLattice> state)
 		{
@@ -124,7 +129,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			case IPropertyReferenceOperation propertyRef: {
 					ProcessPropertyAssignment (operation, propertyRef, value, state);
 					break;
-			}
+				}
 			// TODO: when setting a property in an attribute, target is an IPropertyReference.
 			case IArrayElementReferenceOperation arrayElementRef:
 				if (arrayElementRef.Indices.Length != 1)
@@ -140,11 +145,19 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 				// TODO: validate against the field attributes.
 				break;
 			case IFlowCaptureReferenceOperation flowCaptureReference: {
-					if (state.Current.GetCapturedProperty (flowCaptureReference.Id) is not IPropertyReferenceOperation propertyRef)
+					Debug.Assert (IsLValueFlowCapture (flowCaptureReference.Id));
+					switch (state.Current.CapturedReferences.Get (flowCaptureReference.Id).Reference) {
+					case IPropertyReferenceOperation propertyRef:
+						ProcessPropertyAssignment (operation, propertyRef, value, state);
 						break;
-					ProcessPropertyAssignment (operation, propertyRef, value, state);
+					case ILocalReferenceOperation localRef:
+						state.Set (new LocalKey (localRef.Local), value);
+						break;
+					default:
+						throw new NotImplementedException ();
+					}
 					break;
-			}
+				}
 			default:
 				throw new NotImplementedException (operation.Target.GetType ().ToString ());
 			}
@@ -154,6 +167,8 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 		// Similar to VisitLocalReference
 		public override TValue VisitFlowCaptureReference (IFlowCaptureReferenceOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
 		{
+			if (IsLValueFlowCapture (operation.Id))
+				return TopValue;
 			return state.Get (new LocalKey (operation.Id));
 		}
 
@@ -163,9 +178,9 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 		public override TValue VisitFlowCapture (IFlowCaptureOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
 		{
 			TValue value = Visit (operation.Value, state);
-			if (operation.Value is IPropertyReferenceOperation propertyReference) {
+			if (IsLValueFlowCapture (operation.Id)) {
 				var currentState = state.Current;
-				currentState.CaptureProperty (operation.Id, propertyReference);
+				currentState.CapturedReferences.Set (operation.Id, new CapturedReferenceValue (operation.Value));
 				state.Current = currentState;
 			} else {
 				state.Set (new LocalKey (operation.Id), value);

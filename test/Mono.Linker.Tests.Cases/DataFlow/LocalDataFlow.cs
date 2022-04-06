@@ -19,6 +19,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			// These behave as expected
 			TestBranchMergeGoto ();
 			TestBranchMergeIf ();
+			TestBranchMergeNullCoalesce ();
 			TestBranchMergeIfElse ();
 			TestBranchMergeSwitch ();
 			TestBranchMergeTry ();
@@ -81,6 +82,36 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			str.RequiresPublicFields (); // warns for GetWithPublicMethods
 			str.RequiresPublicMethods (); // warns for GetWithPublicFields
+		}
+
+		[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowStringExtensions.RequiresAll))]
+		[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowStringExtensions.RequiresAll))]
+		public static void TestBranchMergeNullCoalesce ()
+		{
+			string str = GetWithPublicMethods () ?? GetWithPublicFields ();
+
+			str.RequiresAll ();
+		}
+
+		[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowStringExtensions.RequiresAll))]
+		[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowStringExtensions.RequiresAll))]
+		public static void TestBranchMergeNullCoalescingAssignment ()
+		{
+			string str = GetWithPublicMethods ();
+			str ??= GetWithPublicFields ();
+
+			str.RequiresAll ();
+		}
+
+		[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowStringExtensions.RequiresAll))]
+		[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowStringExtensions.RequiresAll))]
+		[ExpectedWarning ("IL2072", nameof (GetWithPublicConstructors), nameof (DataFlowStringExtensions.RequiresAll))]
+		public static void TestBranchMergeNullCoalescingAssignmentComplex ()
+		{
+			string str = GetWithPublicMethods ();
+			str ??= GetWithPublicFields () ?? GetWithPublicConstructors ();
+
+			str.RequiresAll ();
 		}
 
 		[ExpectedWarning ("IL2072",

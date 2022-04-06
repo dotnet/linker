@@ -5,7 +5,6 @@ using System;
 using ILLink.Shared.DataFlow;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.FlowAnalysis;
-using Microsoft.CodeAnalysis.Operations;
 
 namespace ILLink.RoslynAnalyzer.DataFlow
 {
@@ -35,16 +34,19 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 	{
 		public DefaultValueDictionary<LocalKey, TValue> Dictionary;
 
-		public DefaultValueDictionary<CaptureId, PropertyValue> CapturedProperties;
+		// Stores any operations which are captured by reference in a FlowCaptureOperation.
+		// Only stores captures which are assigned through. Captures of the values of operations
+		// are tracked as part of the dictionary of values, keyed by LocalKey.
+		public DefaultValueDictionary<CaptureId, CapturedReferenceValue> CapturedReferences;
 
-		public LocalState (DefaultValueDictionary<LocalKey, TValue> dictionary, DefaultValueDictionary<CaptureId, PropertyValue> capturedProperties)
+		public LocalState (DefaultValueDictionary<LocalKey, TValue> dictionary, DefaultValueDictionary<CaptureId, CapturedReferenceValue> capturedReferences)
 		{
 			Dictionary = dictionary;
-			CapturedProperties = capturedProperties;
+			CapturedReferences = capturedReferences;
 		}
 
 		public LocalState (DefaultValueDictionary<LocalKey, TValue> dictionary)
-			: this (dictionary, new DefaultValueDictionary<CaptureId, PropertyValue> (new PropertyValue (null)))
+			: this (dictionary, new DefaultValueDictionary<CaptureId, CapturedReferenceValue> (new CapturedReferenceValue ()))
 		{
 		}
 
@@ -53,10 +55,6 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 		public TValue Get (LocalKey key) => Dictionary.Get (key);
 
 		public void Set (LocalKey key, TValue value) => Dictionary.Set (key, value);
-
-		public void CaptureProperty (CaptureId id, IPropertyReferenceOperation propertyReference) => CapturedProperties.Set (id, new PropertyValue (propertyReference));
-
-		public IPropertyReferenceOperation? GetCapturedProperty (CaptureId id) => CapturedProperties.Get (id).PropertyReference;
 
 		public override string ToString () => Dictionary.ToString ();
 	}
@@ -67,12 +65,12 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 		where TValueLattice : ILattice<TValue>
 	{
 		public readonly DictionaryLattice<LocalKey, TValue, TValueLattice> Lattice;
-		public readonly DictionaryLattice<CaptureId, PropertyValue, PropertyLattice> CapturedPropertyLattice;
+		public readonly DictionaryLattice<CaptureId, CapturedReferenceValue, CapturedReferenceLattice> CapturedPropertyLattice;
 
 		public LocalStateLattice (TValueLattice valueLattice)
 		{
 			Lattice = new DictionaryLattice<LocalKey, TValue, TValueLattice> (valueLattice);
-			CapturedPropertyLattice = new DictionaryLattice<CaptureId, PropertyValue, PropertyLattice> (new PropertyLattice ());
+			CapturedPropertyLattice = new DictionaryLattice<CaptureId, CapturedReferenceValue, CapturedReferenceLattice> (new CapturedReferenceLattice ());
 			Top = new (Lattice.Top);
 		}
 
@@ -81,7 +79,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 		public LocalState<TValue> Meet (LocalState<TValue> left, LocalState<TValue> right)
 		{
 			var dictionary = Lattice.Meet (left.Dictionary, right.Dictionary);
-			var capturedProperties = CapturedPropertyLattice.Meet (left.CapturedProperties, right.CapturedProperties);
+			var capturedProperties = CapturedPropertyLattice.Meet (left.CapturedReferences, right.CapturedReferences);
 			return new LocalState<TValue> (dictionary, capturedProperties);
 		}
 	}
