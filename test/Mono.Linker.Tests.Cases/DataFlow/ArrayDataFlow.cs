@@ -37,6 +37,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TestArrayResetAfterCall ();
 			TestArrayResetAfterAssignment ();
 			TestMultiDimensionalArray.Test ();
+
+			WriteCapturedArrayElement.Test ();
 		}
 
 		[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicMethods))]
@@ -448,6 +450,56 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 
 			static Type[,] _externalArray;
+		}
+
+		class WriteCapturedArrayElement
+		{
+			[ExpectedWarning ("IL2072", nameof (GetUnknownType), nameof (DataFlowTypeExtensions.RequiresAll))]
+			[ExpectedWarning ("IL2072", nameof (GetTypeWithPublicConstructors), nameof (DataFlowTypeExtensions.RequiresAll))]
+			static void TestNullCoalesce ()
+			{
+				Type[] arr = new Type[1];
+				arr[0] = GetUnknownType () ?? GetTypeWithPublicConstructors ();
+				arr[0].RequiresAll ();
+			}
+
+			// Reading an element from a local that stores array values from different branches
+			// currently gives an unknown result.
+			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresAll))]
+			static void TestNullCoalescingAssignment ()
+			{
+				Type[] arr = new Type[1];
+				arr[0] ??= GetUnknownType ();
+				arr[0].RequiresAll ();
+			}
+
+			// Reading an element from a local that stores array values from different branches
+			// currently gives an unknown result.
+			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresAll))]
+			static void TestNullCoalescingAssignmentComplex ()
+			{
+				Type[] arr = new Type[1];
+				arr[0] ??= (GetUnknownType () ?? GetTypeWithPublicConstructors ());
+				arr[0].RequiresAll ();
+			}
+
+			public static void Test ()
+			{
+				TestNullCoalesce ();
+				TestNullCoalescingAssignment ();
+				TestNullCoalescingAssignmentComplex ();
+			}
+		}
+
+		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
+		private static Type GetTypeWithPublicConstructors ()
+		{
+			return null;
+		}
+
+		private static Type GetUnknownType ()
+		{
+			return null;
 		}
 
 		public class TestType { }

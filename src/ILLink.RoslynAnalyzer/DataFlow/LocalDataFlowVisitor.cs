@@ -161,6 +161,12 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 						targetValue = Visit (capturedReference, state);
 						HandleAssignment (value, targetValue, operation);
 						break;
+					case IArrayElementReferenceOperation arrayElementRef:
+						if (arrayElementRef.Indices.Length != 1)
+							break;
+
+						HandleArrayElementWrite (Visit (arrayElementRef.ArrayReference, state), Visit (arrayElementRef.Indices[0], state), value, operation);
+						break;
 					default:
 						throw new NotImplementedException ();
 					}

@@ -19,10 +19,11 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			case OperationKind.LocalReference:
 			case OperationKind.FieldReference:
 			case OperationKind.ParameterReference:
+			case OperationKind.ArrayElementReference:
 				break;
 			// case OperationKind.LocalReference:
 			default:
-				throw new NotImplementedException ();
+				throw new NotImplementedException (operation.Kind.ToString ());
 			}
 			Reference = operation;
 		}
