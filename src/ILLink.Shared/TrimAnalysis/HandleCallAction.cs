@@ -406,6 +406,7 @@ namespace ILLink.Shared.TrimAnalysis
 								} else {
 									// Otherwise fall back to the bitfield requirements
 									_requireDynamicallyAccessedMembersAction.Invoke (value, targetValue);
+									AddReturnValue (GetMethodReturnValue (calledMethod, returnValueDynamicallyAccessedMemberTypes));
 								}
 							}
 						} else if (value is NullValue) {
@@ -414,6 +415,7 @@ namespace ILLink.Shared.TrimAnalysis
 						} else {
 							// Otherwise fall back to the bitfield requirements
 							_requireDynamicallyAccessedMembersAction.Invoke (value, targetValue);
+							AddReturnValue (GetMethodReturnValue (calledMethod, returnValueDynamicallyAccessedMemberTypes));
 						}
 					}
 				}
@@ -441,6 +443,7 @@ namespace ILLink.Shared.TrimAnalysis
 						if (value is SystemTypeValue systemTypeValue) {
 							foreach (var stringParam in argumentValues[0]) {
 								if (stringParam is KnownStringValue stringValue && !BindingFlagsAreUnsupported (bindingFlags)) {
+									AddReturnValue (MultiValueLattice.Top);
 									foreach (var nestedTypeValue in GetNestedTypesOnType (systemTypeValue.RepresentedType, stringValue.Contents, bindingFlags)) {
 										MarkType (nestedTypeValue.RepresentedType);
 										AddReturnValue (nestedTypeValue);
@@ -531,6 +534,7 @@ namespace ILLink.Shared.TrimAnalysis
 									AddReturnValue (MultiValueLattice.Top);
 								} else {
 									_requireDynamicallyAccessedMembersAction.Invoke (value, targetValue);
+									AddReturnValue (GetMethodReturnValue (calledMethod, returnValueDynamicallyAccessedMemberTypes));
 								}
 							}
 						} else if (value is NullValue) {
@@ -538,6 +542,7 @@ namespace ILLink.Shared.TrimAnalysis
 							AddReturnValue (MultiValueLattice.Top);
 						} else {
 							_requireDynamicallyAccessedMembersAction.Invoke (value, targetValue);
+							AddReturnValue (GetMethodReturnValue (calledMethod, returnValueDynamicallyAccessedMemberTypes));
 						}
 					}
 				}
