@@ -187,6 +187,11 @@ namespace ILLink.Shared.TrimAnalysis
 			// RunClassConstructor (RuntimeTypeHandle type)
 			//
 			case IntrinsicId.RuntimeHelpers_RunClassConstructor:
+				if (argumentValues[0].IsEmpty ()) {
+					returnValue = MultiValueLattice.Top;
+					break;
+				}
+
 				foreach (var typeHandleValue in argumentValues[0]) {
 					if (typeHandleValue is RuntimeTypeHandleValue runtimeTypeHandleValue) {
 						MarkStaticConstructor (runtimeTypeHandleValue.RepresentedType);
@@ -266,6 +271,11 @@ namespace ILLink.Shared.TrimAnalysis
 				&& calledMethod.HasParameterOfType (0, "System.String")
 				&& !calledMethod.IsStatic (): {
 
+					if (instanceValue.IsEmpty () || argumentValues[0].IsEmpty ()) {
+						returnValue = MultiValueLattice.Top;
+						break;
+					}
+
 					BindingFlags? bindingFlags;
 					if (calledMethod.HasParameterOfType (1, "System.Reflection.BindingFlags"))
 						bindingFlags = GetBindingFlagsFromValue (argumentValues[1]);
@@ -316,6 +326,11 @@ namespace ILLink.Shared.TrimAnalysis
 			// GetMember (String, MemberTypes, BindingFlags)
 			//
 			case IntrinsicId.Type_GetMember: {
+					if (instanceValue.IsEmpty ()) {
+						returnValue = MultiValueLattice.Top;
+						break;
+					}
+
 					BindingFlags? bindingFlags;
 					if (calledMethod.HasParametersCount (1)) {
 						// Assume a default value for BindingFlags for methods that don't use BindingFlags as a parameter
@@ -534,6 +549,11 @@ namespace ILLink.Shared.TrimAnalysis
 			// static Property (Expression, MethodInfo)
 			//
 			case IntrinsicId.Expression_Property when calledMethod.HasParameterOfType (1, "System.Reflection.MethodInfo"): {
+					if (argumentValues[1].IsEmpty ()) {
+						returnValue = MultiValueLattice.Top;
+						break;
+					}
+
 					foreach (var value in argumentValues[1]) {
 						if (value is SystemReflectionMethodBaseValue methodBaseValue) {
 							// We have one of the accessors for the property. The Expression.Property will in this case search
@@ -563,6 +583,11 @@ namespace ILLink.Shared.TrimAnalysis
 					DynamicallyAccessedMemberTypes memberTypes = fieldOrPropertyInstrinsic == IntrinsicId.Expression_Property
 						? DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.NonPublicProperties
 						: DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields;
+
+					if (argumentValues[1].IsEmpty () || argumentValues[2].IsEmpty ()) {
+						returnValue = MultiValueLattice.Top;
+						break;
+					}
 
 					var targetValue = GetMethodParameterValue (calledMethod, 1, memberTypes);
 					foreach (var value in argumentValues[1]) {
@@ -606,6 +631,11 @@ namespace ILLink.Shared.TrimAnalysis
 				break;
 
 			case IntrinsicId.Type_MakeGenericType:
+				if (instanceValue.IsEmpty () || argumentValues[0].IsEmpty ()) {
+					returnValue = MultiValueLattice.Top;
+					break;
+				}
+
 				// Contains part of the analysis done in the Linker, but is not complete
 				// instanceValue here is like argumentValues[0] in linker
 				foreach (var value in instanceValue) {
@@ -708,6 +738,11 @@ namespace ILLink.Shared.TrimAnalysis
 			// GetConstructor (BindingFlags, Binder, CallingConventions, Type[], ParameterModifier [])
 			//
 			case IntrinsicId.Type_GetConstructor: {
+					if (instanceValue.IsEmpty ()) {
+						returnValue = MultiValueLattice.Top;
+						break;
+					}
+
 					BindingFlags? bindingFlags;
 					if (calledMethod.HasParameterOfType(0, "System.Reflection.BindingFlags"))
 						bindingFlags = GetBindingFlagsFromValue (argumentValues[0]);
