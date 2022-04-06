@@ -146,18 +146,20 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 				break;
 			case IFlowCaptureReferenceOperation flowCaptureReference: {
 					Debug.Assert (IsLValueFlowCapture (flowCaptureReference.Id));
-					switch (state.Current.CapturedReferences.Get (flowCaptureReference.Id).Reference) {
+					var capturedReference = state.Current.CapturedReferences.Get (flowCaptureReference.Id).Reference;
+					switch (capturedReference) {
 					case IPropertyReferenceOperation propertyRef:
 						ProcessPropertyAssignment (operation, propertyRef, value, state);
 						break;
 					case ILocalReferenceOperation localRef:
 						state.Set (new LocalKey (localRef.Local), value);
 						break;
-					case IFieldReferenceOperation fieldRef:
-						// The field reference hasn't been visited yet.
+					case IFieldReferenceOperation:
+					case IParameterReferenceOperation:
+						// The field/parameter reference hasn't been visited yet.
 						// TODO: is the order of operations correct here?
-						var targetFieldValue = VisitFieldReference (fieldRef, state);
-						HandleAssignment (value, targetFieldValue, operation);
+						targetValue = Visit (capturedReference, state);
+						HandleAssignment (value, targetValue, operation);
 						break;
 					default:
 						throw new NotImplementedException ();
