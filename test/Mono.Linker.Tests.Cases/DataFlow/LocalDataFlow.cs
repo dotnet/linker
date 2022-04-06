@@ -20,6 +20,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TestBranchMergeGoto ();
 			TestBranchMergeIf ();
 			TestBranchMergeNullCoalesce ();
+			TestBranchMergeNullCoalescingAssignment ();
+			TestBranchMergeNullCoalescingAssignmentComplex ();
 			TestBranchMergeIfElse ();
 			TestBranchMergeSwitch ();
 			TestBranchMergeTry ();
