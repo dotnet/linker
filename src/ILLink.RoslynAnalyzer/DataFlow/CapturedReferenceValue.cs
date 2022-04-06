@@ -17,6 +17,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			switch (operation.Kind) {
 			case OperationKind.PropertyReference:
 			case OperationKind.LocalReference:
+			case OperationKind.FieldReference:
 				break;
 			// case OperationKind.LocalReference:
 			default:

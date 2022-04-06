@@ -153,6 +153,12 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 					case ILocalReferenceOperation localRef:
 						state.Set (new LocalKey (localRef.Local), value);
 						break;
+					case IFieldReferenceOperation fieldRef:
+						// The field reference hasn't been visited yet.
+						// TODO: is the order of operations correct here?
+						var targetFieldValue = VisitFieldReference (fieldRef, state);
+						HandleAssignment (value, targetFieldValue, operation);
+						break;
 					default:
 						throw new NotImplementedException ();
 					}
