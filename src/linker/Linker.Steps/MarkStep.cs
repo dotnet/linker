@@ -2287,12 +2287,18 @@ namespace Mono.Linker.Steps
 		}
 
 		/// <summary>
-		/// Returns true if any of the base methods of the <paramref name="method"/> passed is in an assembly that is not trimmed (i.e. action != trim)
+		/// Returns true if any of the base methods of the <paramref name="method"/> passed is in an assembly that is not trimmed (i.e. action != trim).
+		/// Meant to be used to determine whether methods should be marked regardless of whether it is instantiated or not. 
 		/// </summary>
-		/// <remarks>This ignores any base methods defined in interfaces. To also check methods defined in interfaces</remarks>
+		/// <remarks>
+		/// When the unusedinterfaces optimization is on, this is used to mark methods that override a virtual from a non-link assembly and must be kept.
+		/// When the unusedinterfaces optimization is off, this will do the same as when on but will also mark interface methods from interfaces defined in a non-link assembly.
+		/// If the containing type is instantiated, the caller should use <see cref="IsOverrideNeededByInstantiatedTypeDueToPreservedScope (MethodDefinition)" />
+		/// </remarks>
 		bool IsVirtualNeededByTypeDueToPreservedScope (MethodDefinition method)
 		{
-			if (!method.IsVirtual)
+			// Static methods may also have base methods in static interface methods. These methods are not captured by IsVirtual and must be checked separately
+			if (!(method.IsVirtual || method.IsStatic))
 				return false;
 
 			var base_list = Annotations.GetBaseMethods (method);
@@ -2322,12 +2328,17 @@ namespace Mono.Linker.Steps
 		}
 
 		/// <summary>
-		/// Returns true if any of the base methods of <paramref name="method" /> is defined in an assembly that is not trimmed (i.e. action!=trim)
+		/// Returns true if any of the base methods of <paramref name="method" /> is defined in an assembly that is not trimmed (i.e. action!=trim).
+		/// This is meant to be used on methods from a type that is known to be instantiated.
 		/// </summary>
-		/// <remarks>This is very similar to <see cref="IsVirtualNeededByTypeDueToPreservedScope(MethodDefinition)"/>, except this also checks if the base method is an interface.</remarks>
-		bool IsVirtualNeededByInstantiatedTypeDueToPreservedScope (MethodDefinition method)
+		/// <remarks>
+		/// This is very similar to <see cref="IsVirtualNeededByTypeDueToPreservedScope (MethodDefinition)"/>,
+		///	but will mark methods from an interface defined in a non-link assembly regardless of the optimization, and does not handle static interface methods.
+		/// </remarks>
+		bool IsOverrideNeededByInstantiatedTypeDueToPreservedScope (MethodDefinition method)
 		{
-			if (!(method.IsVirtual || method.IsStatic))
+			// Any static interface methods are captured by <see cref="IsVirtualNeededByTypeDueToPreservedScope">, which should be called on all relevant methods so no need to check again here.
+			if (!method.IsVirtual)
 				return false;
 
 			var base_list = Annotations.GetBaseMethods (method);
@@ -3126,7 +3137,7 @@ namespace Mono.Linker.Steps
 		protected virtual IEnumerable<MethodDefinition> GetRequiredMethodsForInstantiatedType (TypeDefinition type)
 		{
 			foreach (var method in type.Methods) {
-				if (IsVirtualNeededByInstantiatedTypeDueToPreservedScope (method))
+				if (IsOverrideNeededByInstantiatedTypeDueToPreservedScope (method))
 					yield return method;
 			}
 		}
