@@ -113,7 +113,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 
 			[Kept]
 			[ExpectedWarning ("IL2026", nameof (CtorWithRUC) + "()")]
-			static void TestConstructorWithTypes_EmptyTypes_RUCOnCtor()
+			static void TestConstructorWithTypes_EmptyTypes_RUCOnCtor ()
 			{
 				typeof (CtorWithRUC).GetConstructor (new Type[] { });
 			}

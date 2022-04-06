@@ -749,7 +749,7 @@ namespace ILLink.Shared.TrimAnalysis
 					}
 
 					BindingFlags? bindingFlags;
-					if (calledMethod.HasParameterOfType(0, "System.Reflection.BindingFlags"))
+					if (calledMethod.HasParameterOfType (0, "System.Reflection.BindingFlags"))
 						bindingFlags = GetBindingFlagsFromValue (argumentValues[0]);
 					else
 						// Assume a default value for BindingFlags for methods that don't use BindingFlags as a parameter

@@ -344,7 +344,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[ExpectedWarning ("IL2060", nameof (MethodInfo.MakeGenericMethod))]
 			static void TestWithMultipleTypes (
 				int p = 0,
-				[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] Type annotatedType = null)
+				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type annotatedType = null)
 			{
 				Type t = null;
 				switch (p) {
