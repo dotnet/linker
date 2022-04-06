@@ -87,6 +87,26 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			return state.Get (new LocalKey (operation.Local));
 		}
 
+		public void ProcessPropertyAssignment (ISimpleAssignmentOperation operation, IPropertyReferenceOperation propertyReference, TValue value, LocalDataFlowState<TValue, TValueLattice> state)
+		{
+			var setMethod = propertyReference.Property.SetMethod;
+			if (setMethod == null) {
+				// This can happen in a constructor - there it is possible to assign to a property
+				// without a setter. This turns into an assignment to the compiler-generated backing field.
+				// To match the linker, this should warn about the compiler-generated backing field.
+				// For now, just don't warn. https://github.com/dotnet/linker/issues/2731
+				return;
+			}
+			TValue instanceValue = Visit (propertyReference.Instance, state);
+			// The return value of a property set expression is the value,
+			// even though a property setter has no return value.
+			HandleMethodCall (
+				setMethod,
+				instanceValue,
+				ImmutableArray.Create (value),
+				operation);
+		}
+
 		public override TValue VisitSimpleAssignment (ISimpleAssignmentOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
 		{
 			var targetValue = Visit (operation.Target, state);
@@ -102,23 +122,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 				HandleAssignment (value, targetValue, operation);
 				break;
 			case IPropertyReferenceOperation propertyRef: {
-					// A property assignment is really a call to the property setter.
-					var setMethod = propertyRef.Property.SetMethod;
-					if (setMethod == null) {
-						// This can happen in a constructor - there it is possible to assign to a property
-						// without a setter. This turns into an assignment to the compiler-generated backing field.
-						// To match the linker, this should warn about the compiler-generated backing field.
-						// For now, just don't warn.
-						break;
-					}
-					TValue instanceValue = Visit (propertyRef.Instance, state);
-					// The return value of a property set expression is the value,
-					// even though a property setter has no return value.
-					HandleMethodCall (
-						setMethod,
-						instanceValue,
-						ImmutableArray.Create (value),
-						operation);
+					ProcessPropertyAssignment (operation, propertyRef, value, state);
 					break;
 			}
 			// TODO: when setting a property in an attribute, target is an IPropertyReference.
@@ -138,15 +142,9 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			case IFlowCaptureReferenceOperation flowCaptureReference: {
 					if (state.Current.GetCapturedProperty (flowCaptureReference.Id) is not IPropertyReferenceOperation propertyRef)
 						break;
-					var setMethod = propertyRef.Property.SetMethod!;
-					TValue instanceValue = Visit (propertyRef.Instance, state);
-					HandleMethodCall (
-						setMethod,
-						instanceValue,
-						ImmutableArray.Create (value),
-						operation);
+					ProcessPropertyAssignment (operation, propertyRef, value, state);
 					break;
-				}
+			}
 			default:
 				throw new NotImplementedException (operation.Target.GetType ().ToString ());
 			}
@@ -183,26 +181,6 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 
 		public override TValue VisitInvocation (IInvocationOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
 			=> ProcessMethodCall (operation, operation.TargetMethod, operation.Instance, operation.Arguments, state);
-
-		public static IMethodSymbol GetPropertyMethod (IPropertyReferenceOperation operation)
-		{
-			// The IPropertyReferenceOperation doesn't tell us whether this reference is to the getter or setter.
-			// For this we need to look at the containing operation.
-			var parent = operation.Parent;
-			if (parent?.Kind == OperationKind.SimpleAssignment) {
-				var assignment = (ISimpleAssignmentOperation) parent;
-				if (assignment.Target == operation) {
-					var setMethod = operation.Property.SetMethod;
-					Debug.Assert (setMethod != null);
-					return setMethod!;
-				}
-				Debug.Assert (assignment.Value == operation);
-			}
-
-			var getMethod = operation.Property.GetMethod;
-			Debug.Assert (getMethod != null);
-			return getMethod!;
-		}
 
 		public override TValue VisitPropertyReference (IPropertyReferenceOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
 		{

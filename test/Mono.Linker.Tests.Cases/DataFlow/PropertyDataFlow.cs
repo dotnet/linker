@@ -36,6 +36,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TestAutomaticPropagation ();
 
 			WriteCapturedProperty.Test ();
+			new TestWriteCapturedGetOnlyProperty ();
 
 			PropertyWithAttributeMarkingItself.Test ();
 			new TestWriteToGetOnlyProperty ();
@@ -445,7 +446,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
 			public Type GetOnlyProperty { get; }
 
-			// Analyzer doesn't warn about compiler-generated backing field of property
+			// Analyzer doesn't warn about compiler-generated backing field of property: https://github.com/dotnet/linker/issues/2731
 			[ExpectedWarning ("IL2074", nameof (TestWriteToGetOnlyProperty), nameof (GetUnknownType),
 				ProducedBy = ProducedBy.Trimmer)]
 			public TestWriteToGetOnlyProperty ()
@@ -464,6 +465,22 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			public static void Test ()
 			{
 				Property = GetUnknownType () ?? GetTypeWithPublicConstructors ();
+			}
+		}
+
+		class TestWriteCapturedGetOnlyProperty
+		{
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+			Type GetOnlyProperty { get; }
+
+			// Analyzer doesn't warn about compiler-generated backing field of property: https://github.com/dotnet/linker/issues/2731
+			[ExpectedWarning ("IL2074", nameof (TestWriteCapturedGetOnlyProperty), nameof (GetUnknownType),
+				ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2074", nameof (TestWriteCapturedGetOnlyProperty), nameof (GetTypeWithPublicConstructors),
+				ProducedBy = ProducedBy.Trimmer)]
+			public TestWriteCapturedGetOnlyProperty ()
+			{
+				GetOnlyProperty = GetUnknownType () ?? GetTypeWithPublicConstructors ();
 			}
 		}
 
