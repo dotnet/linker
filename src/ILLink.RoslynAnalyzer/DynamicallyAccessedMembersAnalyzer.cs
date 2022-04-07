@@ -132,7 +132,7 @@ namespace ILLink.RoslynAnalyzer
 				return;
 
 			var symbol = context.SemanticModel.GetSymbolInfo (context.Node).Symbol;
-			
+
 			// Avoid unnecesary execution if not NamedType or Method
 			if (symbol is not INamedTypeSymbol && symbol is not IMethodSymbol)
 				return;
@@ -145,7 +145,7 @@ namespace ILLink.RoslynAnalyzer
 				if (parentNode is InvocationExpressionSyntax invocationExpression &&
 					invocationExpression.Expression is IdentifierNameSyntax ident1 &&
 					ident1.Identifier.ValueText.Equals ("nameof"))
-						return;
+					return;
 				else if (parentNode is NameMemberCrefSyntax)
 					return;
 
