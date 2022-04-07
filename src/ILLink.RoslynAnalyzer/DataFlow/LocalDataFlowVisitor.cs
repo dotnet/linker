@@ -112,69 +112,58 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 				operation);
 		}
 
-		public override TValue VisitSimpleAssignment (ISimpleAssignmentOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
+		public void HandleAssignment (ISimpleAssignmentOperation operation, IOperation targetOperation, LocalDataFlowState<TValue, TValueLattice> state, TValue targetValue, TValue value)
 		{
-			var targetValue = Visit (operation.Target, state);
-			var value = Visit (operation.Value, state);
-			switch (operation.Target) {
+			switch (targetOperation) {
+			case IPropertyReferenceOperation propertyRef:
+				ProcessPropertyAssignment (operation, propertyRef, value, state);
+				break;
+			// TODO: when setting a property in an attribute, target is an IPropertyReference.
 			case ILocalReferenceOperation localRef:
 				state.Set (new LocalKey (localRef.Local), value);
 				break;
 			case IFieldReferenceOperation:
 			case IParameterReferenceOperation:
-				// Extension point for assignments to "interesting" targets.
-				// Doesn't get called for assignments to locals, which are handled above.
+				// The field/parameter reference hasn't been visited yet if it's a FlowCaptureReference.
+				// TODO: but it doesn't need to be visited again for normal assignments
+				// TODO: is the order of operations correct here?
+				targetValue = Visit (targetOperation, state);
 				HandleAssignment (value, targetValue, operation);
 				break;
-			case IPropertyReferenceOperation propertyRef: {
-					ProcessPropertyAssignment (operation, propertyRef, value, state);
-					break;
-				}
-			// TODO: when setting a property in an attribute, target is an IPropertyReference.
 			case IArrayElementReferenceOperation arrayElementRef:
 				if (arrayElementRef.Indices.Length != 1)
 					break;
 
+				// TODO: is the order of operations correct here?
 				HandleArrayElementWrite (Visit (arrayElementRef.ArrayReference, state), Visit (arrayElementRef.Indices[0], state), value, operation);
 				break;
 			case IDiscardOperation:
 				// Assignments like "_ = SomeMethod();" don't need dataflow tracking.
+				// Seems like this can't happen with a flow capture operation.
+				Debug.Assert (operation.Target is not IFlowCaptureReferenceOperation);
 				break;
 			case IInvalidOperation:
 				// This can happen for a field assignment in an attribute instance.
 				// TODO: validate against the field attributes.
 				break;
-			case IFlowCaptureReferenceOperation flowCaptureReference: {
-					Debug.Assert (IsLValueFlowCapture (flowCaptureReference.Id));
-					var capturedReference = state.Current.CapturedReferences.Get (flowCaptureReference.Id).Reference;
-					switch (capturedReference) {
-					case IPropertyReferenceOperation propertyRef:
-						ProcessPropertyAssignment (operation, propertyRef, value, state);
-						break;
-					case ILocalReferenceOperation localRef:
-						state.Set (new LocalKey (localRef.Local), value);
-						break;
-					case IFieldReferenceOperation:
-					case IParameterReferenceOperation:
-						// The field/parameter reference hasn't been visited yet.
-						// TODO: is the order of operations correct here?
-						targetValue = Visit (capturedReference, state);
-						HandleAssignment (value, targetValue, operation);
-						break;
-					case IArrayElementReferenceOperation arrayElementRef:
-						if (arrayElementRef.Indices.Length != 1)
-							break;
-
-						HandleArrayElementWrite (Visit (arrayElementRef.ArrayReference, state), Visit (arrayElementRef.Indices[0], state), value, operation);
-						break;
-					default:
-						throw new NotImplementedException ();
-					}
-					break;
-				}
 			default:
-				throw new NotImplementedException (operation.Target.GetType ().ToString ());
+				throw new NotImplementedException (targetOperation.GetType ().ToString ());
 			}
+		}
+
+		public override TValue VisitSimpleAssignment (ISimpleAssignmentOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
+		{
+			var targetValue = Visit (operation.Target, state);
+			var value = Visit (operation.Value, state);
+
+			var targetOperation = operation.Target;
+			if (targetOperation is IFlowCaptureReferenceOperation flowCaptureReference) {
+				var capturedReference = state.Current.CapturedReferences.Get (flowCaptureReference.Id).Reference;
+				Debug.Assert (IsLValueFlowCapture (flowCaptureReference.Id));
+				targetOperation = capturedReference;
+			}
+
+			HandleAssignment (operation, targetOperation, state, targetValue, value);
 			return value;
 		}
 

@@ -22,6 +22,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TestBranchMergeNullCoalesce ();
 			TestBranchMergeNullCoalescingAssignment ();
 			TestBranchMergeNullCoalescingAssignmentComplex ();
+			TestBranchMergeDiscardNullCoalesce ();
 			TestBranchMergeIfElse ();
 			TestBranchMergeSwitch ();
 			TestBranchMergeTry ();
@@ -114,6 +115,13 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			str ??= GetWithPublicFields () ?? GetWithPublicConstructors ();
 
 			str.RequiresAll ();
+		}
+
+		[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowStringExtensions.RequiresAll))]
+		[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowStringExtensions.RequiresAll))]
+		public static void TestBranchMergeDiscardNullCoalesce ()
+		{
+			(_ = GetWithPublicMethods () ?? GetWithPublicFields ()).RequiresAll ();
 		}
 
 		[ExpectedWarning ("IL2072",
@@ -441,35 +449,6 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 
 			return resultType;
-		}
-
-		public static void RequireAll (
-			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
-			string type)
-		{
-		}
-
-		public static void RequirePublicFields (
-			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)]
-			string type)
-		{
-		}
-
-		public static void RequireNonPublicMethods (
-			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.NonPublicMethods)]
-			string type)
-		{
-		}
-		public static void RequirePublicMethods (
-			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
-			string type)
-		{
-		}
-
-		public static void RequirePublicConstructors (
-			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
-			string type)
-		{
 		}
 
 		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)]
