@@ -7,9 +7,12 @@ using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
+using Mono.Linker.Tests.Cases.Libraries.Dependencies;
 
 namespace Mono.Linker.Tests.Cases.Libraries
 {
+	[SetupCompileBefore ("copylibrary.dll", new[] { "Dependencies/CopyLibrary.cs" })]
+	[SetupLinkerAction ("copy", "copylibrary")]
 	[SetupLinkerArgument ("-a", "test.exe", "library")]
 	[SetupLinkerArgument ("--enable-opt", "ipconstprop")]
 	[VerifyMetadataNames]
@@ -180,9 +183,44 @@ namespace Mono.Linker.Tests.Cases.Libraries
 
 		[Kept]
 		[KeptInterface (typeof (IEnumerator))]
-		public class UninstantiatedPublicClassWithInterface : IEnumerator
+		[KeptInterface (typeof (IPublicInterface))]
+		[KeptInterface (typeof (IPublicStaticInterface))]
+		[KeptInterface (typeof (IInternalInterface))]
+		[KeptInterface (typeof (IInternalStaticInterface))]
+		[KeptInterface (typeof (ICopyLibraryInterface))]
+		[KeptInterface (typeof (ICopyLibraryStaticInterface))]
+		public class UninstantiatedPublicClassWithInterface :
+			IPublicInterface,
+			IPublicStaticInterface,
+			IInternalInterface,
+			IInternalStaticInterface,
+			IEnumerator,
+			ICopyLibraryInterface,
+			ICopyLibraryStaticInterface
 		{
 			internal UninstantiatedPublicClassWithInterface () { }
+
+			[Kept]
+			public void PublicInterfaceMethod () { }
+
+			[Kept]
+			void IPublicInterface.ExplicitImplementationPublicInterfaceMethod () { }
+
+			[Kept]
+			public static void PublicStaticInterfaceMethod () { }
+
+			[Kept]
+			static void IPublicStaticInterface.ExplicitImplementationPublicStaticInterfaceMethod () { }
+
+			[Kept]
+			public void InternalInterfaceMethod () { }
+
+			void IInternalInterface.ExplicitImplementationInternalInterfaceMethod () { }
+
+			[Kept]
+			public static void InternalStaticInterfaceMethod () { }
+
+			static void IInternalStaticInterface.ExplicitImplementationInternalStaticInterfaceMethod () { }
 
 			[Kept]
 			bool IEnumerator.MoveNext () { throw new PlatformNotSupportedException (); }
@@ -192,6 +230,18 @@ namespace Mono.Linker.Tests.Cases.Libraries
 
 			[Kept]
 			void IEnumerator.Reset () { }
+
+			[Kept]
+			public void CopyLibraryInterfaceMethod () { }
+
+			[Kept]
+			void ICopyLibraryInterface.CopyLibraryExplicitImplementationInterfaceMethod () { }
+
+			[Kept]
+			public static void CopyLibraryStaticInterfaceMethod () { }
+
+			[Kept]
+			static void ICopyLibraryStaticInterface.CopyLibraryExplicitImplementationStaticInterfaceMethod () { }
 		}
 
 		[Kept]
@@ -204,6 +254,8 @@ namespace Mono.Linker.Tests.Cases.Libraries
 			[Kept]
 			public void InternalInterfaceMethod () { }
 
+			void IInternalInterface.ExplicitImplementationInternalInterfaceMethod () { }
+
 			[Kept]
 			public string ToString (string format, IFormatProvider formatProvider)
 			{
@@ -212,17 +264,67 @@ namespace Mono.Linker.Tests.Cases.Libraries
 		}
 
 		[Kept]
+		[KeptInterface (typeof (IEnumerator))]
 		[KeptInterface (typeof (IPublicInterface))]
+		[KeptInterface (typeof (IPublicStaticInterface))]
 		[KeptInterface (typeof (IInternalInterface))]
-		public class InstantiatedClassWithInterfaces : IPublicInterface, IInternalInterface
+		[KeptInterface (typeof (IInternalStaticInterface))]
+		[KeptInterface (typeof (ICopyLibraryInterface))]
+		[KeptInterface (typeof (ICopyLibraryStaticInterface))]
+		public class InstantiatedClassWithInterfaces :
+			IPublicInterface,
+			IPublicStaticInterface,
+			IInternalInterface,
+			IInternalStaticInterface,
+			IEnumerator,
+			ICopyLibraryInterface,
+			ICopyLibraryStaticInterface
 		{
 			[Kept]
 			public InstantiatedClassWithInterfaces () { }
 
 			[Kept]
-			void IPublicInterface.PublicInterfaceMethod () { }
+			public void PublicInterfaceMethod () { }
 
-			void IInternalInterface.InternalInterfaceMethod () { }
+			[Kept]
+			void IPublicInterface.ExplicitImplementationPublicInterfaceMethod () { }
+
+			[Kept]
+			public static void PublicStaticInterfaceMethod () { }
+
+			[Kept]
+			static void IPublicStaticInterface.ExplicitImplementationPublicStaticInterfaceMethod () { }
+
+			[Kept]
+			public void InternalInterfaceMethod () { }
+
+			void IInternalInterface.ExplicitImplementationInternalInterfaceMethod () { }
+
+			[Kept]
+			public static void InternalStaticInterfaceMethod () { }
+
+			static void IInternalStaticInterface.ExplicitImplementationInternalStaticInterfaceMethod () { }
+
+			[Kept]
+			bool IEnumerator.MoveNext () { throw new PlatformNotSupportedException (); }
+
+			[Kept]
+			object IEnumerator.Current { [Kept] get { throw new PlatformNotSupportedException (); } }
+
+			[Kept]
+			void IEnumerator.Reset () { }
+
+			[Kept]
+			public void CopyLibraryInterfaceMethod () { }
+
+			[Kept]
+			void ICopyLibraryInterface.CopyLibraryExplicitImplementationInterfaceMethod () { }
+
+			[Kept]
+			public static void CopyLibraryStaticInterfaceMethod () { }
+
+			[Kept]
+			static void ICopyLibraryStaticInterface.CopyLibraryExplicitImplementationStaticInterfaceMethod () { }
 		}
 
 		[Kept]
@@ -239,12 +341,36 @@ namespace Mono.Linker.Tests.Cases.Libraries
 		{
 			[Kept]
 			void PublicInterfaceMethod ();
+
+			[Kept]
+			void ExplicitImplementationPublicInterfaceMethod ();
+		}
+
+		[Kept]
+		public interface IPublicStaticInterface
+		{
+			[Kept]
+			static abstract void PublicStaticInterfaceMethod ();
+
+			[Kept]
+			static abstract void ExplicitImplementationPublicStaticInterfaceMethod ();
 		}
 
 		[Kept]
 		internal interface IInternalInterface
 		{
 			void InternalInterfaceMethod ();
+
+			void ExplicitImplementationInternalInterfaceMethod ();
+		}
+
+		[Kept]
+		internal interface IInternalStaticInterface
+		{
+			[Kept] // TODO: This is probably wrong
+			static abstract void InternalStaticInterfaceMethod ();
+
+			static abstract void ExplicitImplementationInternalStaticInterfaceMethod ();
 		}
 
 		[Kept]
