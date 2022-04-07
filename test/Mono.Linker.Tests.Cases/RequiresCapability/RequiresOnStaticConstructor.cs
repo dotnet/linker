@@ -1,5 +1,5 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
+// Copyright (c) .NET Foundation and contributors. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
 using System.Collections.Generic;
@@ -28,10 +28,14 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		class StaticCtor
 		{
+			[ExpectedWarning ("IL2026", "--MethodWithRequires--")]
+			[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 			[ExpectedWarning ("IL2116", "StaticCtor..cctor()")]
 			[RequiresUnreferencedCode ("Message for --TestStaticCtor--")]
 			static StaticCtor ()
 			{
+				MethodWithRequires ();
 			}
 		}
 
@@ -122,6 +126,13 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		static void TestTypeIsBeforeFieldInit ()
 		{
 			var x = TypeIsBeforeFieldInit.field + 42;
+		}
+
+		[RequiresUnreferencedCode ("--MethodWithRequires--")]
+		[RequiresAssemblyFiles ("--MethodWithRequires--")]
+		[RequiresDynamicCode ("--MethodWithRequires--")]
+		static void MethodWithRequires ()
+		{
 		}
 	}
 }

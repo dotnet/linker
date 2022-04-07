@@ -1,5 +1,5 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
+// Copyright (c) .NET Foundation and contributors. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
@@ -57,6 +57,18 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 		{
 			foreach (var prop in typeSymbol.GetPropertiesOnTypeHierarchy (p => p.Name == name, bindingFlags))
 				GetReflectionAccessDiagnosticsForProperty (diagnosticContext, prop);
+		}
+
+		internal void GetReflectionAccessDiagnosticsForConstructorsOnType (in DiagnosticContext diagnosticContext, ITypeSymbol typeSymbol, BindingFlags? bindingFlags)
+		{
+			foreach (var c in typeSymbol.GetConstructorsOnType (filter: null, bindingFlags: bindingFlags))
+				GetReflectionAccessDiagnosticsForMethod (diagnosticContext, c);
+		}
+
+		internal void GetReflectionAccessDiagnosticsForPublicParameterlessConstructor (in DiagnosticContext diagnosticContext, ITypeSymbol typeSymbol)
+		{
+			foreach (var c in typeSymbol.GetConstructorsOnType (filter: m => (m.DeclaredAccessibility == Accessibility.Public) && m.Parameters.Length == 0))
+				GetReflectionAccessDiagnosticsForMethod (diagnosticContext, c);
 		}
 
 		static void ReportRequiresUnreferencedCodeDiagnostic (in DiagnosticContext diagnosticContext, AttributeData requiresAttributeData, ISymbol member)

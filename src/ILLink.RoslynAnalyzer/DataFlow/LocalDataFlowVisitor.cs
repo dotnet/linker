@@ -1,5 +1,5 @@
-// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
+// Copyright (c) .NET Foundation and contributors. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
 using System.Collections.Immutable;
@@ -66,7 +66,9 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 
 		public abstract void HandleAssignment (TValue source, TValue target, IOperation operation);
 
-		public abstract TValue HandleArrayElementAccess (IOperation arrayReference);
+		public abstract TValue HandleArrayElementRead (TValue arrayValue, TValue indexValue, IOperation operation);
+
+		public abstract void HandleArrayElementWrite (TValue arrayValue, TValue indexValue, TValue valueToWrite, IOperation operation);
 
 		// This takes an IOperation rather than an IReturnOperation because the return value
 		// may (must?) come from BranchValue of an operation whose FallThroughSuccessor is the exit block.
@@ -101,7 +103,14 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 				break;
 			case IPropertyReferenceOperation propertyRef:
 				// A property assignment is really a call to the property setter.
-				var setMethod = propertyRef.Property.SetMethod!;
+				var setMethod = propertyRef.Property.SetMethod;
+				if (setMethod == null) {
+					// This can happen in a constructor - there it is possible to assign to a property
+					// without a setter. This turns into an assignment to the compiler-generated backing field.
+					// To match the linker, this should warn about the compiler-generated backing field.
+					// For now, just don't warn.
+					break;
+				}
 				TValue instanceValue = Visit (propertyRef.Instance, state);
 				// The return value of a property set expression is the value,
 				// even though a property setter has no return value.
@@ -112,8 +121,11 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 					operation);
 				break;
 			// TODO: when setting a property in an attribute, target is an IPropertyReference.
-			case IArrayElementReferenceOperation:
-				// TODO
+			case IArrayElementReferenceOperation arrayElementRef:
+				if (arrayElementRef.Indices.Length != 1)
+					break;
+
+				HandleArrayElementWrite (Visit (arrayElementRef.ArrayReference, state), Visit (arrayElementRef.Indices[0], state), value, operation);
 				break;
 			case IDiscardOperation:
 				// Assignments like "_ = SomeMethod();" don't need dataflow tracking.
@@ -194,7 +206,12 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			if (operation.GetValueUsageInfo (Context.OwningSymbol).HasFlag (ValueUsageInfo.Read)) {
 				// Accessing an array element for reading is a call to the indexer
 				// or a plain array access. Just handle plain array access for now.
-				return HandleArrayElementAccess (operation.ArrayReference);
+
+				// Only handle simple index access
+				if (operation.Indices.Length != 1)
+					return TopValue;
+
+				return HandleArrayElementRead (Visit (operation.ArrayReference, state), Visit (operation.Indices[0], state), operation);
 			}
 
 			return TopValue;

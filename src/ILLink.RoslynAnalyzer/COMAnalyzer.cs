@@ -1,11 +1,11 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
+// Copyright (c) .NET Foundation and contributors. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
 using System.Collections.Immutable;
 using System.Runtime.InteropServices;
 using ILLink.Shared;
+using ILLink.Shared.TypeSystemProxy;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -88,11 +88,11 @@ namespace ILLink.RoslynAnalyzer
 				if (typeSymbol == null)
 					return false;
 
-				if (typeSymbol.ContainingNamespace.Name == "System" && typeSymbol.Name == "Array") {
+				if (typeSymbol.IsTypeOf (WellKnownType.System_Array)) {
 					// System.Array marshals as IUnknown by default
 					return true;
-				} else if (typeSymbol.ContainingNamespace.Name == "System" && typeSymbol.Name == "String" ||
-					typeSymbol.ContainingNamespace.Name == "System.Text" && typeSymbol.Name == "StringBuilder") {
+				} else if (typeSymbol.IsTypeOf (WellKnownType.System_String) ||
+					typeSymbol.IsTypeOf ("System.Text", "StringBuilder")) {
 					// String and StringBuilder are special cased by interop
 					return false;
 				}
@@ -103,8 +103,7 @@ namespace ILLink.RoslynAnalyzer
 				} else if (typeSymbol.IsInterface ()) {
 					// Interface types marshal as COM by default
 					return true;
-				} else if (typeSymbol.ContainingNamespace.Name == "System" &&
-					typeSymbol.Name == "MulticastDelegate") {
+				} else if (typeSymbol.IsTypeOf ("System", "MulticastDelegate")) {
 					// Delegates are special cased by interop
 					return false;
 				} else if (typeSymbol.IsSubclassOf ("System.Runtime.InteropServices", "CriticalHandle") ||

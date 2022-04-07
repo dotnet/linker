@@ -1,5 +1,5 @@
-// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
+// Copyright (c) .NET Foundation and contributors. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
@@ -113,7 +113,7 @@ namespace ILLink.RoslynAnalyzer
 				// Use definition type parameter names, not instance type parameters
 				methodSymbol = methodSymbol.OriginalDefinition;
 				// Format the declaring type with namespace and containing types.
-				if (methodSymbol.ContainingSymbol.Kind == SymbolKind.NamedType) {
+				if (methodSymbol.ContainingSymbol?.Kind == SymbolKind.NamedType) {
 					// If the containing symbol is a method (for example for local functions),
 					// don't include the containing type's name. This matches the behavior of
 					// CSharpErrorMessageFormat.
@@ -147,8 +147,7 @@ namespace ILLink.RoslynAnalyzer
 				return false;
 
 			while (typeSymbol != null) {
-				if (typeSymbol.ContainingNamespace.Name == ns &&
-					typeSymbol.ContainingType.Name == type)
+				if (typeSymbol.IsTypeOf (ns, type))
 					return true;
 
 				typeSymbol = typeSymbol.ContainingType;

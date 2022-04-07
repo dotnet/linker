@@ -1,3 +1,6 @@
+// Copyright (c) .NET Foundation and contributors. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 //
 // Annotations.cs
 //
@@ -593,18 +596,21 @@ namespace Mono.Linker
 		/// </summary>
 		/// <remarks>Unlike <see cref="IsMethodInRequiresUnreferencedCodeScope(MethodDefinition)"/> only static methods 
 		/// and .ctors are reported as requiring unreferenced code when the declaring type has RUC on it.</remarks>
-		internal bool DoesMethodRequireUnreferencedCode (MethodDefinition method, [NotNullWhen (returnValue: true)] out RequiresUnreferencedCodeAttribute? attribute)
+		internal bool DoesMethodRequireUnreferencedCode (MethodDefinition originalMethod, [NotNullWhen (returnValue: true)] out RequiresUnreferencedCodeAttribute? attribute)
 		{
-			if (method.IsStaticConstructor ()) {
-				attribute = null;
-				return false;
-			}
-			if (TryGetLinkerAttribute (method, out attribute))
-				return true;
+			MethodDefinition? method = originalMethod;
+			do {
+				if (method.IsStaticConstructor ()) {
+					attribute = null;
+					return false;
+				}
+				if (TryGetLinkerAttribute (method, out attribute))
+					return true;
 
-			if ((method.IsStatic || method.IsConstructor) && method.DeclaringType is not null &&
-				TryGetLinkerAttribute (method.DeclaringType, out attribute))
-				return true;
+				if ((method.IsStatic || method.IsConstructor) && method.DeclaringType is not null &&
+					TryGetLinkerAttribute (method.DeclaringType, out attribute))
+					return true;
+			} while (context.CompilerGeneratedState.TryGetOwningMethodForCompilerGeneratedMember (method, out method));
 
 			return false;
 		}
@@ -618,8 +624,10 @@ namespace Mono.Linker
 		/// instance methods (not just statics and .ctors).</remarks>
 		internal bool IsMethodInRequiresUnreferencedCodeScope (MethodDefinition method)
 		{
-			if (HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (method) ||
-				(method.DeclaringType is not null && HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (method.DeclaringType)))
+			if (HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (method) && !method.IsStaticConstructor ())
+				return true;
+
+			if (method.DeclaringType is not null && HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (method.DeclaringType))
 				return true;
 
 			return false;

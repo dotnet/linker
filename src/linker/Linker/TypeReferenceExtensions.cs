@@ -1,8 +1,12 @@
+// Copyright (c) .NET Foundation and contributors. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using ILLink.Shared.TypeSystemProxy;
 using Mono.Cecil;
 
 namespace Mono.Linker
@@ -356,6 +360,12 @@ namespace Mono.Linker
 		{
 			var type = typeof (T);
 			return tr.Name == type.Name && tr.Namespace == tr.Namespace;
+		}
+
+		public static bool IsTypeOf (this TypeReference tr, WellKnownType type)
+		{
+			var (@namespace, name) = type.GetNamespaceAndName ();
+			return tr.IsTypeOf (@namespace, name);
 		}
 
 		public static bool IsSubclassOf (this TypeReference type, string ns, string name, ITryResolveMetadata resolver)

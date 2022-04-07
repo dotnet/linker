@@ -1,5 +1,5 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
+// Copyright (c) .NET Foundation and contributors. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using ILLink.Shared.TypeSystemProxy;
 
@@ -332,6 +332,10 @@ namespace ILLink.Shared.TrimAnalysis
 					&& calledMethod.HasParametersCount (1)
 					=> IntrinsicId.MethodInfo_MakeGenericMethod,
 
+				"GetUnderlyingType" when calledMethod.IsDeclaredOnType ("System.Nullable")
+					&& calledMethod.HasParameterOfType (0, "System.Type")
+					&& calledMethod.IsStatic ()
+					=> IntrinsicId.Nullable_GetUnderlyingType,
 				_ => IntrinsicId.None,
 			};
 		}
