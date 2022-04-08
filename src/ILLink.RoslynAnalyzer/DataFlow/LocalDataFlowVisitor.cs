@@ -95,7 +95,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			return state.Get (new LocalKey (operation.Local));
 		}
 
-		public void ProcessPropertyAssignment (ISimpleAssignmentOperation operation, IPropertyReferenceOperation propertyReference, TValue value, LocalDataFlowState<TValue, TValueLattice> state)
+		public TValue ProcessPropertyAssignment (ISimpleAssignmentOperation operation, IPropertyReferenceOperation propertyReference, LocalDataFlowState<TValue, TValueLattice> state)
 		{
 			var setMethod = propertyReference.Property.SetMethod;
 			if (setMethod == null) {
@@ -103,43 +103,53 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 				// without a setter. This turns into an assignment to the compiler-generated backing field.
 				// To match the linker, this should warn about the compiler-generated backing field.
 				// For now, just don't warn. https://github.com/dotnet/linker/issues/2731
-				return;
+				return TopValue;
 			}
 			TValue instanceValue = Visit (propertyReference.Instance, state);
-			// The return value of a property set expression is the value,
-			// even though a property setter has no return value.
+			TValue value = Visit (operation.Value, state);
 			HandleMethodCall (
 				setMethod,
 				instanceValue,
 				ImmutableArray.Create (value),
 				operation);
+			// The return value of a property set expression is the value,
+			// even though a property setter has no return value.
+			return value;
 		}
 
-		public void HandleAssignment (ISimpleAssignmentOperation operation, IOperation targetOperation, LocalDataFlowState<TValue, TValueLattice> state, TValue targetValue, TValue value)
+		public TValue HandleAssignment (ISimpleAssignmentOperation operation, IOperation targetOperation, LocalDataFlowState<TValue, TValueLattice> state, TValue targetValue)
 		{
 			switch (targetOperation) {
-			case IPropertyReferenceOperation propertyRef:
-				ProcessPropertyAssignment (operation, propertyRef, value, state);
-				break;
-			// TODO: when setting a property in an attribute, target is an IPropertyReference.
-			case ILocalReferenceOperation localRef:
-				state.Set (new LocalKey (localRef.Local), value);
-				break;
 			case IFieldReferenceOperation:
-			case IParameterReferenceOperation:
-				// The field/parameter reference hasn't been visited yet if it's a FlowCaptureReference.
-				// TODO: but it doesn't need to be visited again for normal assignments
-				// TODO: is the order of operations correct here?
-				targetValue = Visit (targetOperation, state);
+			case IParameterReferenceOperation: {
+				// These assignment targets have the same dataflow representation for LValues and RValues,
+				// so we can use the target value that we already computed. This simplification is specific
+				// to the trim analysis, so would ideally be moved into TrimAnalysisVisitor.
+				TValue value = Visit (operation.Value, state);
 				HandleAssignment (value, targetValue, operation);
-				break;
-			case IArrayElementReferenceOperation arrayElementRef:
+				return value;
+			}
+
+			// The remaining cases don't have a dataflow value that represents LValues, so we need
+			// to handle the LHS specially.
+			case IPropertyReferenceOperation propertyRef:
+				return ProcessPropertyAssignment (operation, propertyRef, state);
+			// TODO: when setting a property in an attribute, target is an IPropertyReference.
+			case ILocalReferenceOperation localRef: {
+				TValue value = Visit (operation.Value, state);
+				state.Set (new LocalKey (localRef.Local), value);
+				return value;
+			}
+			case IArrayElementReferenceOperation arrayElementRef: {
 				if (arrayElementRef.Indices.Length != 1)
 					break;
 
-				// TODO: is the order of operations correct here?
-				HandleArrayElementWrite (Visit (arrayElementRef.ArrayReference, state), Visit (arrayElementRef.Indices[0], state), value, operation);
-				break;
+				TValue arrayRef = Visit (arrayElementRef.ArrayReference, state);
+				TValue index = Visit (arrayElementRef.Indices[0], state);
+				TValue value = Visit (operation.Value, state);
+				HandleArrayElementWrite (arrayRef, index, value, operation);
+				return value;
+			}
 			case IDiscardOperation:
 				// Assignments like "_ = SomeMethod();" don't need dataflow tracking.
 				// Seems like this can't happen with a flow capture operation.
@@ -152,22 +162,31 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			default:
 				throw new NotImplementedException (targetOperation.GetType ().ToString ());
 			}
+			return Visit (operation.Value, state);
 		}
 
 		public override TValue VisitSimpleAssignment (ISimpleAssignmentOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
 		{
+			// Visiting the target operation is a no-op except for operations which produce
+			// dataflow values that have the same representation as LValues or RValues.
+			// For example, field references.
 			var targetValue = Visit (operation.Target, state);
-			var value = Visit (operation.Value, state);
 
 			var targetOperation = operation.Target;
 			if (targetOperation is IFlowCaptureReferenceOperation flowCaptureReference) {
-				var capturedReference = state.Current.CapturedReferences.Get (flowCaptureReference.Id).Reference;
 				Debug.Assert (IsLValueFlowCapture (flowCaptureReference.Id));
+				var capturedReference = state.Current.CapturedReferences.Get (flowCaptureReference.Id).Reference;
 				targetOperation = capturedReference;
+
+				targetValue = Visit (targetOperation, state);
+				// Note: technically we should avoid visiting the target operation when assigning to a flow capture reference,
+				// because this should be done when the capture is created. For example, a flow capture used as both an LValue and a RValue
+				// should only evaluate the expression that computes the object instance of a property reference once.
+				// However, we just visit the instance again below for simplicity. This could be generalized if we encounter a dataflow
+				// behavior where this makes a difference.
 			}
 
-			HandleAssignment (operation, targetOperation, state, targetValue, value);
-			return value;
+			return HandleAssignment (operation, targetOperation, state, targetValue);
 		}
 
 		// Similar to VisitLocalReference
@@ -189,6 +208,9 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 		{
 			TValue value = Visit (operation.Value, state);
 			if (IsLValueFlowCapture (operation.Id)) {
+				// Note: technically we should save some information about the value for LValue flow captures
+				// (for example, the object instance of a property reference) and avoid re-computing it when
+				// assigning to the FlowCaptureReference.
 				var currentState = state.Current;
 				currentState.CapturedReferences.Set (operation.Id, new CapturedReferenceValue (operation.Value));
 				state.Current = currentState;
