@@ -65,12 +65,12 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 		where TValueLattice : ILattice<TValue>
 	{
 		public readonly DictionaryLattice<LocalKey, TValue, TValueLattice> Lattice;
-		public readonly DictionaryLattice<CaptureId, CapturedReferenceValue, CapturedReferenceLattice> CapturedPropertyLattice;
+		public readonly DictionaryLattice<CaptureId, CapturedReferenceValue, CapturedReferenceLattice> CapturedReferenceLattice;
 
 		public LocalStateLattice (TValueLattice valueLattice)
 		{
 			Lattice = new DictionaryLattice<LocalKey, TValue, TValueLattice> (valueLattice);
-			CapturedPropertyLattice = new DictionaryLattice<CaptureId, CapturedReferenceValue, CapturedReferenceLattice> (new CapturedReferenceLattice ());
+			CapturedReferenceLattice = new DictionaryLattice<CaptureId, CapturedReferenceValue, CapturedReferenceLattice> (new CapturedReferenceLattice ());
 			Top = new (Lattice.Top);
 		}
 
@@ -79,7 +79,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 		public LocalState<TValue> Meet (LocalState<TValue> left, LocalState<TValue> right)
 		{
 			var dictionary = Lattice.Meet (left.Dictionary, right.Dictionary);
-			var capturedProperties = CapturedPropertyLattice.Meet (left.CapturedReferences, right.CapturedReferences);
+			var capturedProperties = CapturedReferenceLattice.Meet (left.CapturedReferences, right.CapturedReferences);
 			return new LocalState<TValue> (dictionary, capturedProperties);
 		}
 	}

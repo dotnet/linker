@@ -4,7 +4,6 @@
 using System;
 using ILLink.Shared.DataFlow;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Operations;
 
 namespace ILLink.RoslynAnalyzer.DataFlow
 {
@@ -21,16 +20,11 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			case OperationKind.ParameterReference:
 			case OperationKind.ArrayElementReference:
 				break;
-			// case OperationKind.LocalReference:
 			default:
 				throw new NotImplementedException (operation.Kind.ToString ());
 			}
 			Reference = operation;
 		}
-
-		public CapturedReferenceValue (IPropertyReferenceOperation propertyReference) => Reference = propertyReference;
-		public CapturedReferenceValue (IFieldReferenceOperation fieldReference) => Reference = fieldReference;
-		public CapturedReferenceValue (ILocalReferenceOperation localReference) => Reference = localReference;
 
 		public bool Equals (CapturedReferenceValue other) => Reference == other.Reference;
 	}

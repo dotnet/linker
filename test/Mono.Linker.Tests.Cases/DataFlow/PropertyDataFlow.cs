@@ -461,7 +461,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 		}
 
-		static class WriteCapturedProperty
+		class WriteCapturedProperty
 		{
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
 			static Type Property { get; set; }
@@ -479,6 +479,21 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				Property ??= GetUnknownType ();
 			}
 
+			class NestedType
+			{
+				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+				public Type Property { get; set; }
+			}
+
+			NestedType NestedTypeProperty { get; set; }
+
+			[ExpectedWarning ("IL2072", nameof (GetUnknownType), nameof (Property))]
+			[ExpectedWarning ("IL2072", nameof (GetTypeWithPublicConstructors), nameof (Property))]
+			void TestNestedNullCoalescingAssignment ()
+			{
+				NestedTypeProperty.Property = GetUnknownType () ?? GetTypeWithPublicConstructors ();
+			}
+
 			[ExpectedWarning ("IL2072", nameof (GetUnknownType), nameof (Property))]
 			[ExpectedWarning ("IL2072", nameof (GetTypeWithPublicConstructors), nameof (Property))]
 			static void TestNullCoalescingAssignmentComplex ()
@@ -491,6 +506,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				TestNullCoalesce ();
 				TestNullCoalescingAssignment ();
 				TestNullCoalescingAssignmentComplex ();
+				new WriteCapturedProperty ().TestNestedNullCoalescingAssignment ();
 			}
 		}
 
