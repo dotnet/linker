@@ -95,61 +95,78 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			return state.Get (new LocalKey (operation.Local));
 		}
 
-		public TValue ProcessPropertyAssignment (ISimpleAssignmentOperation operation, IPropertyReferenceOperation propertyReference, LocalDataFlowState<TValue, TValueLattice> state)
+		public override TValue VisitSimpleAssignment (ISimpleAssignmentOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
 		{
-			var setMethod = propertyReference.Property.SetMethod;
-			if (setMethod == null) {
-				// This can happen in a constructor - there it is possible to assign to a property
-				// without a setter. This turns into an assignment to the compiler-generated backing field.
-				// To match the linker, this should warn about the compiler-generated backing field.
-				// For now, just don't warn. https://github.com/dotnet/linker/issues/2731
-				return TopValue;
-			}
-			TValue instanceValue = Visit (propertyReference.Instance, state);
-			TValue value = Visit (operation.Value, state);
-			HandleMethodCall (
-				setMethod,
-				instanceValue,
-				ImmutableArray.Create (value),
-				operation);
-			// The return value of a property set expression is the value,
-			// even though a property setter has no return value.
-			return value;
-		}
+			// Visiting the target operation is a no-op except for operations which produce
+			// dataflow values that have the same representation as LValues or RValues.
+			// For example, field references.
+			var targetValue = Visit (operation.Target, state);
 
-		public TValue HandleAssignment (ISimpleAssignmentOperation operation, IOperation targetOperation, LocalDataFlowState<TValue, TValueLattice> state, TValue targetValue)
-		{
+			var targetOperation = operation.Target;
+			if (targetOperation is IFlowCaptureReferenceOperation flowCaptureReference) {
+				Debug.Assert (IsLValueFlowCapture (flowCaptureReference.Id));
+				var capturedReference = state.Current.CapturedReferences.Get (flowCaptureReference.Id).Reference;
+				targetOperation = capturedReference;
+				if (targetOperation == null)
+					throw new InvalidOperationException ();
+
+				targetValue = Visit (targetOperation, state);
+				// Note: technically we should avoid visiting the target operation when assigning to a flow capture reference,
+				// because this should be done when the capture is created. For example, a flow capture used as both an LValue and a RValue
+				// should only evaluate the expression that computes the object instance of a property reference once.
+				// However, we just visit the instance again below for simplicity. This could be generalized if we encounter a dataflow
+				// behavior where this makes a difference.
+			}
+
 			switch (targetOperation) {
 			case IFieldReferenceOperation:
 			case IParameterReferenceOperation: {
-				// These assignment targets have the same dataflow representation for LValues and RValues,
-				// so we can use the target value that we already computed. This simplification is specific
-				// to the trim analysis, so would ideally be moved into TrimAnalysisVisitor.
-				TValue value = Visit (operation.Value, state);
-				HandleAssignment (value, targetValue, operation);
-				return value;
-			}
+					// These assignment targets have the same dataflow representation for LValues and RValues,
+					// so we can use the target value that we already computed. This simplification is specific
+					// to the trim analysis, so would ideally be moved into TrimAnalysisVisitor.
+					TValue value = Visit (operation.Value, state);
+					HandleAssignment (value, targetValue, operation);
+					return value;
+				}
 
 			// The remaining cases don't have a dataflow value that represents LValues, so we need
 			// to handle the LHS specially.
-			case IPropertyReferenceOperation propertyRef:
-				return ProcessPropertyAssignment (operation, propertyRef, state);
+			case IPropertyReferenceOperation propertyRef: {
+					var setMethod = propertyRef.Property.SetMethod;
+					if (setMethod == null) {
+						// This can happen in a constructor - there it is possible to assign to a property
+						// without a setter. This turns into an assignment to the compiler-generated backing field.
+						// To match the linker, this should warn about the compiler-generated backing field.
+						// For now, just don't warn. https://github.com/dotnet/linker/issues/2731
+						break;
+					}
+					TValue instanceValue = Visit (propertyRef.Instance, state);
+					TValue value = Visit (operation.Value, state);
+					HandleMethodCall (
+						setMethod,
+						instanceValue,
+						ImmutableArray.Create (value),
+						operation);
+					// The return value of a property set expression is the value,
+					// even though a property setter has no return value.
+					return value;
+				}
 			// TODO: when setting a property in an attribute, target is an IPropertyReference.
 			case ILocalReferenceOperation localRef: {
-				TValue value = Visit (operation.Value, state);
-				state.Set (new LocalKey (localRef.Local), value);
-				return value;
-			}
+					TValue value = Visit (operation.Value, state);
+					state.Set (new LocalKey (localRef.Local), value);
+					return value;
+				}
 			case IArrayElementReferenceOperation arrayElementRef: {
-				if (arrayElementRef.Indices.Length != 1)
-					break;
+					if (arrayElementRef.Indices.Length != 1)
+						break;
 
-				TValue arrayRef = Visit (arrayElementRef.ArrayReference, state);
-				TValue index = Visit (arrayElementRef.Indices[0], state);
-				TValue value = Visit (operation.Value, state);
-				HandleArrayElementWrite (arrayRef, index, value, operation);
-				return value;
-			}
+					TValue arrayRef = Visit (arrayElementRef.ArrayReference, state);
+					TValue index = Visit (arrayElementRef.Indices[0], state);
+					TValue value = Visit (operation.Value, state);
+					HandleArrayElementWrite (arrayRef, index, value, operation);
+					return value;
+				}
 			case IDiscardOperation:
 				// Assignments like "_ = SomeMethod();" don't need dataflow tracking.
 				// Seems like this can't happen with a flow capture operation.
@@ -163,30 +180,6 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 				throw new NotImplementedException (targetOperation.GetType ().ToString ());
 			}
 			return Visit (operation.Value, state);
-		}
-
-		public override TValue VisitSimpleAssignment (ISimpleAssignmentOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
-		{
-			// Visiting the target operation is a no-op except for operations which produce
-			// dataflow values that have the same representation as LValues or RValues.
-			// For example, field references.
-			var targetValue = Visit (operation.Target, state);
-
-			var targetOperation = operation.Target;
-			if (targetOperation is IFlowCaptureReferenceOperation flowCaptureReference) {
-				Debug.Assert (IsLValueFlowCapture (flowCaptureReference.Id));
-				var capturedReference = state.Current.CapturedReferences.Get (flowCaptureReference.Id).Reference;
-				targetOperation = capturedReference;
-
-				targetValue = Visit (targetOperation, state);
-				// Note: technically we should avoid visiting the target operation when assigning to a flow capture reference,
-				// because this should be done when the capture is created. For example, a flow capture used as both an LValue and a RValue
-				// should only evaluate the expression that computes the object instance of a property reference once.
-				// However, we just visit the instance again below for simplicity. This could be generalized if we encounter a dataflow
-				// behavior where this makes a difference.
-			}
-
-			return HandleAssignment (operation, targetOperation, state, targetValue);
 		}
 
 		// Similar to VisitLocalReference
