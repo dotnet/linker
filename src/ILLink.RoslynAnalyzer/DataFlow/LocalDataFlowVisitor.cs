@@ -35,6 +35,9 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 		bool IsLValueFlowCapture (CaptureId captureId)
 			=> lValueFlowCaptures.ContainsKey (captureId);
 
+		bool IsRValueFlowCapture (CaptureId captureId)
+			=> !lValueFlowCaptures.TryGetValue (captureId, out var captureKind) || captureKind != FlowCaptureKind.LValueCapture;
+
 		public LocalDataFlowVisitor (LocalStateLattice<TValue, TValueLattice> lattice, OperationBlockAnalysisContext context, ImmutableDictionary<CaptureId, FlowCaptureKind> lValueFlowCaptures) =>
 			(LocalStateLattice, Context, this.lValueFlowCaptures) = (lattice, context, lValueFlowCaptures);
 
@@ -185,9 +188,10 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 				var currentState = state.Current;
 				currentState.CapturedReferences.Set (operation.Id, new CapturedReferenceValue (operation.Value));
 				state.Current = currentState;
-			} else {
-				state.Set (new LocalKey (operation.Id), value);
 			}
+			if (IsRValueFlowCapture (operation.Id))
+				state.Set (new LocalKey (operation.Id), value);
+
 			return TopValue;
 		}
 
