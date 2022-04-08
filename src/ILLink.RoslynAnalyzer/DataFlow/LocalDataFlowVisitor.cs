@@ -202,12 +202,6 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 
 		public override TValue VisitPropertyReference (IPropertyReferenceOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
 		{
-			if (operation.Parent is IFlowCaptureOperation) {
-				// The CFG may contain a FlowCaptureOperation which captures the property reference, and is later used
-				// for example as the left-hand-side of an assignment. For example: Property = Get1() ?? Get2();
-				// We don't know yet how the property will be used. It might also be used for reading, as in Property ??= Get1() ?? Get2();
-				return TopValue;
-			}
 			if (operation.GetValueUsageInfo (Context.OwningSymbol).HasFlag (ValueUsageInfo.Read)) {
 				// Accessing property for reading is really a call to the getter
 				// The setter case is handled in assignment operation since here we don't have access to the value to pass to the setter

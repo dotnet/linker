@@ -37,6 +37,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			WriteCapturedProperty.Test ();
 			WriteCapturedGetOnlyProperty.Test ();
+			ReadCapturedProperty.Test ();
 
 			PropertyWithAttributeMarkingItself.Test ();
 			WriteToGetOnlyProperty.Test ();
@@ -511,6 +512,22 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			public static void Test ()
 			{
 				new WriteCapturedGetOnlyProperty ();
+			}
+		}
+
+		class ReadCapturedProperty
+		{
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			static Type PublicMethods { get; }
+
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)]
+			static Type PublicFields { get; }
+
+			[ExpectedWarning ("IL2072", nameof (PublicMethods), nameof (DataFlowTypeExtensions.RequiresAll))]
+			[ExpectedWarning ("IL2072", nameof (PublicFields), nameof (DataFlowTypeExtensions.RequiresAll))]
+			public static void Test ()
+			{
+				(PublicMethods ?? PublicFields).RequiresAll ();
 			}
 		}
 
