@@ -173,8 +173,12 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 		// Similar to VisitLocalReference
 		public override TValue VisitFlowCaptureReference (IFlowCaptureReferenceOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
 		{
-			if (IsLValueFlowCapture (operation.Id))
+			if (!operation.GetValueUsageInfo (Context.OwningSymbol).HasFlag (ValueUsageInfo.Read)) {
+				Debug.Assert (IsLValueFlowCapture (operation.Id));
 				return TopValue;
+			}
+
+			Debug.Assert (IsRValueFlowCapture (operation.Id));
 			return state.Get (new LocalKey (operation.Id));
 		}
 
@@ -206,34 +210,32 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 
 		public override TValue VisitPropertyReference (IPropertyReferenceOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
 		{
-			if (operation.GetValueUsageInfo (Context.OwningSymbol).HasFlag (ValueUsageInfo.Read)) {
-				// Accessing property for reading is really a call to the getter
-				// The setter case is handled in assignment operation since here we don't have access to the value to pass to the setter
-				TValue instanceValue = Visit (operation.Instance, state);
-				return HandleMethodCall (
-					operation.Property.GetMethod!,
-					instanceValue,
-					ImmutableArray<TValue>.Empty,
-					operation);
-			}
+			if (!operation.GetValueUsageInfo (Context.OwningSymbol).HasFlag (ValueUsageInfo.Read))
+				return TopValue;
 
-			return TopValue;
+			// Accessing property for reading is really a call to the getter
+			// The setter case is handled in assignment operation since here we don't have access to the value to pass to the setter
+			TValue instanceValue = Visit (operation.Instance, state);
+			return HandleMethodCall (
+				operation.Property.GetMethod!,
+				instanceValue,
+				ImmutableArray<TValue>.Empty,
+				operation);
 		}
 
 		public override TValue VisitArrayElementReference (IArrayElementReferenceOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
 		{
-			if (operation.GetValueUsageInfo (Context.OwningSymbol).HasFlag (ValueUsageInfo.Read)) {
-				// Accessing an array element for reading is a call to the indexer
-				// or a plain array access. Just handle plain array access for now.
+			if (!operation.GetValueUsageInfo (Context.OwningSymbol).HasFlag (ValueUsageInfo.Read))
+				return TopValue;
 
-				// Only handle simple index access
-				if (operation.Indices.Length != 1)
-					return TopValue;
+			// Accessing an array element for reading is a call to the indexer
+			// or a plain array access. Just handle plain array access for now.
 
-				return HandleArrayElementRead (Visit (operation.ArrayReference, state), Visit (operation.Indices[0], state), operation);
-			}
+			// Only handle simple index access
+			if (operation.Indices.Length != 1)
+				return TopValue;
 
-			return TopValue;
+			return HandleArrayElementRead (Visit (operation.ArrayReference, state), Visit (operation.Indices[0], state), operation);
 		}
 
 		public override TValue VisitArgument (IArgumentOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
