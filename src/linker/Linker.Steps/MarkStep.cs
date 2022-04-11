@@ -3049,7 +3049,18 @@ namespace Mono.Linker.Steps
 				}
 			}
 
-			if (method.HasOverrides && !method.IsStatic) {
+			// Mark overrides except for static interface methods
+			if (method.HasOverrides) {
+				List<MethodReference> staticInterfaceOverrideIndices = new ();
+				foreach (MethodReference ov in method.Overrides) {
+					if (_context!.Resolve (ov)?.IsStatic == true
+						&& _context!.Resolve (ov.DeclaringType)?.IsInterface == true) {
+						staticInterfaceOverrideIndices.Add(ov);
+					}
+				}
+				foreach (var overrideToRemove in staticInterfaceOverrideIndices) {
+					method.Overrides.Remove (overrideToRemove);
+				}
 				foreach (MethodReference ov in method.Overrides) {
 					MarkMethod (ov, new DependencyInfo (DependencyKind.MethodImplOverride, method));
 					MarkExplicitInterfaceImplementation (method, ov);
