@@ -264,6 +264,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				TestWithNewConstraint ();
 				TestWithStructConstraint ();
 				TestWithUnmanagedConstraint ();
+
+				TestGetMethodFromHandle ();
 			}
 
 			static void TestNullMethod ()
@@ -683,6 +685,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			static void GenericWithUnmanagedConstraint<T> () where T : unmanaged
 			{
 				var t = new T ();
+			}
+
+			static void TestGetMethodFromHandle (Type unknownType = null)
+			{
+				MethodInfo m = (MethodInfo)MethodInfo.GetMethodFromHandle (typeof (MakeGenericMethod).GetMethod (nameof (GenericWithNoRequirements)).MethodHandle);
+				m.MakeGenericMethod (unknownType);
 			}
 		}
 
