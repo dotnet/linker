@@ -3049,7 +3049,7 @@ namespace Mono.Linker.Steps
 				}
 			}
 
-			if (method.HasOverrides) {
+			if (method.HasOverrides && !method.IsStatic) {
 				foreach (MethodReference ov in method.Overrides) {
 					MarkMethod (ov, new DependencyInfo (DependencyKind.MethodImplOverride, method));
 					MarkExplicitInterfaceImplementation (method, ov);

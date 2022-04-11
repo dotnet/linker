@@ -34,7 +34,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 		[KeptInterface (typeof (IEnumerator))]
 		[KeptInterface (typeof (IPublicInterface))]
 		[KeptInterface (typeof (IPublicStaticInterface))]
-		[KeptInterface (typeof (IInternalStaticInterfaceWithUsedMethod))] // https://github.com/dotnet/linker/issues/2733
+		//[KeptInterface (typeof (IInternalStaticInterfaceWithUsedMethod))] // https://github.com/dotnet/linker/issues/2733
 		[KeptInterface (typeof (ICopyLibraryInterface))]
 		[KeptInterface (typeof (ICopyLibraryStaticInterface))]
 		public class UninstantiatedPublicClassWithInterface :
@@ -122,7 +122,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 		[KeptInterface (typeof (IEnumerator))]
 		[KeptInterface (typeof (IPublicInterface))]
 		[KeptInterface (typeof (IPublicStaticInterface))]
-		[KeptInterface (typeof (IInternalStaticInterfaceWithUsedMethod))] // https://github.com/dotnet/linker/issues/2733
+		//[KeptInterface (typeof (IInternalStaticInterfaceWithUsedMethod))] // https://github.com/dotnet/linker/issues/2733
 		[KeptInterface (typeof (ICopyLibraryInterface))]
 		[KeptInterface (typeof (ICopyLibraryStaticInterface))]
 		public class InstantiatedClassWithInterfaces :
@@ -227,10 +227,10 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 
 		// The interface methods themselves are not used, but the implentation of these methods is
 		// https://github.com/dotnet/linker/issues/2733
-		[Kept]
+		//[Kept]
 		internal interface IInternalStaticInterfaceWithUsedMethod
 		{
-			[Kept] // https://github.com/dotnet/linker/issues/2733
+			//[Kept] // https://github.com/dotnet/linker/issues/2733
 			static abstract void InternalStaticInterfaceMethodUsed ();
 		}
 
