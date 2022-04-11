@@ -78,20 +78,10 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			diagnosticContext.AddDiagnostic (DiagnosticId.RequiresUnreferencedCode, member.GetDisplayName (), message, url);
 		}
 
-		static void ReportRequiresDynamicCodeDiagnostic (in DiagnosticContext diagnosticContext, AttributeData requiresAttributeData, ISymbol member)
-		{
-			var message = RequiresUtils.GetMessageFromAttribute (requiresAttributeData);
-			var url = RequiresAnalyzerBase.GetUrlFromAttribute (requiresAttributeData);
-			diagnosticContext.AddDiagnostic (DiagnosticId.RequiresDynamicCode, member.GetDisplayName (), message, url);
-		}
-
 		internal static void GetReflectionAccessDiagnosticsForMethod (in DiagnosticContext diagnosticContext, IMethodSymbol methodSymbol)
 		{
 			if (methodSymbol.TryGetRequiresUnreferencedCodeAttribute (out var requiresUnreferencedCodeAttributeData))
 				ReportRequiresUnreferencedCodeDiagnostic (diagnosticContext, requiresUnreferencedCodeAttributeData, methodSymbol);
-
-			if (methodSymbol.TryGetRequiresDynamicCodeAttribute (out var requiresDynamicCodeAttributeData))
-				ReportRequiresDynamicCodeDiagnostic (diagnosticContext, requiresDynamicCodeAttributeData, methodSymbol);
 
 			if (!methodSymbol.IsStatic && methodSymbol.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None)
 				diagnosticContext.AddDiagnostic (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection, methodSymbol.GetDisplayName ());
@@ -129,9 +119,6 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 		{
 			if (fieldSymbol.TryGetRequiresUnreferencedCodeAttribute (out var requiresUnreferencedCodeAttributeData))
 				ReportRequiresUnreferencedCodeDiagnostic (diagnosticContext, requiresUnreferencedCodeAttributeData, fieldSymbol);
-
-			if (fieldSymbol.TryGetRequiresDynamicCodeAttribute (out var requiresDynamicCodeAttributeData))
-				ReportRequiresDynamicCodeDiagnostic (diagnosticContext, requiresDynamicCodeAttributeData, fieldSymbol);
 
 			if (fieldSymbol.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None)
 				diagnosticContext.AddDiagnostic (DiagnosticId.DynamicallyAccessedMembersFieldAccessedViaReflection, fieldSymbol.GetDisplayName ());
