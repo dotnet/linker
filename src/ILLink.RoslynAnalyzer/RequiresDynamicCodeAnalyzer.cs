@@ -14,12 +14,12 @@ namespace ILLink.RoslynAnalyzer
 		const string RequiresDynamicCodeAttribute = nameof (RequiresDynamicCodeAttribute);
 		public const string FullyQualifiedRequiresDynamicCodeAttribute = "System.Diagnostics.CodeAnalysis." + RequiresDynamicCodeAttribute;
 
-		static readonly DiagnosticDescriptor s_requiresDynaicCodeOnStaticCtor = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.RequiresDynamicCodeOnStaticConstructor);
+		static readonly DiagnosticDescriptor s_requiresDynamicCodeOnStaticCtor = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.RequiresDynamicCodeOnStaticConstructor);
 		static readonly DiagnosticDescriptor s_requiresDynamicCodeRule = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.RequiresDynamicCode);
 		static readonly DiagnosticDescriptor s_requiresDynamicCodeAttributeMismatch = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.RequiresDynamicCodeAttributeMismatch);
 
 		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-			ImmutableArray.Create (s_requiresDynamicCodeRule, s_requiresDynamicCodeAttributeMismatch, s_requiresDynaicCodeOnStaticCtor);
+			ImmutableArray.Create (s_requiresDynamicCodeRule, s_requiresDynamicCodeAttributeMismatch, s_requiresDynamicCodeOnStaticCtor);
 
 		private protected override string RequiresAttributeName => RequiresDynamicCodeAttribute;
 
@@ -31,18 +31,15 @@ namespace ILLink.RoslynAnalyzer
 
 		private protected override DiagnosticDescriptor RequiresAttributeMismatch => s_requiresDynamicCodeAttributeMismatch;
 
-		private protected override DiagnosticDescriptor RequiresOnStaticCtor => s_requiresDynaicCodeOnStaticCtor;
+		private protected override DiagnosticDescriptor RequiresOnStaticCtor => s_requiresDynamicCodeOnStaticCtor;
 
 		protected override bool IsAnalyzerEnabled (AnalyzerOptions options, Compilation compilation) =>
 			options.IsMSBuildPropertyValueTrue (MSBuildPropertyOptionNames.EnableAotAnalyzer, compilation);
 
 		protected override bool VerifyAttributeArguments (AttributeData attribute) =>
-			attribute.ConstructorArguments.Length >= 1 && attribute.ConstructorArguments[0] is { Type: { SpecialType: SpecialType.System_String } } ctorArg;
+			RequiresUtils.VerifyRequiresDynamicCodeAttributeArguments (attribute);
 
-		protected override string GetMessageFromAttribute (AttributeData? requiresAttribute)
-		{
-			var message = (string) requiresAttribute!.ConstructorArguments[0].Value!;
-			return MessageFormat.FormatRequiresAttributeMessageArg (message);
-		}
+		protected override string GetMessageFromAttribute (AttributeData? requiresAttribute) =>
+			RequiresUtils.GetMessageFromAttribute (requiresAttribute);
 	}
 }
