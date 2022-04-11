@@ -112,8 +112,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			ProducedBy = ProducedBy.Analyzer)]
 		[ExpectedWarning ("IL2072", nameof (GetTypeWithPublicConstructors), nameof (DataFlowTypeExtensions.RequiresAll),
 			ProducedBy = ProducedBy.Analyzer)]
-		[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresAll),
 		// https://github.com/dotnet/linker/issues/2737
+		[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresAll),
 			ProducedBy = ProducedBy.Trimmer)]
 		static void TestArraySetElementOneElementMerged ()
 		{
