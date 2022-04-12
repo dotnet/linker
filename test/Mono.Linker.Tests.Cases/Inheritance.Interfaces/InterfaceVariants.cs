@@ -263,8 +263,6 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 		}
 
 		// The interface methods themselves are used through the interface
-		// Add test case where a class that implements this, and also calls the static method and see if the interface is kept
-		// Add a test case where a class implements this interface, but never calls the method. 
 		[Kept]
 		internal interface IInternalStaticInterfaceWithInterfaceDefinitionUsed
 		{
