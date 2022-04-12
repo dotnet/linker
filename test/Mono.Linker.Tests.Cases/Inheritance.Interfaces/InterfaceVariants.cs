@@ -23,7 +23,10 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 			UninstantiatedPublicClassWithInterface.InternalStaticInterfaceMethodUsedThroughImplementation ();
 			InstantiatedClassWithInterfaces.InternalStaticInterfaceMethodUsedThroughImplementation ();
 			GenericMethodThatCallsInternalStaticInterfaceMethod
-				<ImplementsInternalStaticInterfaceWithInterfaceDefinitionUsed> ();
+				<ImplementsInternalStaticInterfaceWithInterfaceDefinitionUsedThroughGeneric> ();
+			typeof (InterfaceVariants).GetMethod ("GenericMethodThatCallsInternalStaticInterfaceMethod")
+				.MakeGenericMethod (typeof (ImplementsInternalStaticInterfaceWithInterfaceDefinitionNotUsedThroughGeneric))
+				.Invoke (null, null);
 			// Use all public interfaces - they're marked as public only to denote them as "used"
 			typeof (IPublicInterface).RequiresPublicMethods ();
 			typeof (IPublicStaticInterface).RequiresPublicMethods ();
@@ -39,12 +42,25 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 
 		[Kept]
 		[KeptInterface (typeof (IInternalStaticInterfaceWithInterfaceDefinitionUsed))]
-		internal class ImplementsInternalStaticInterfaceWithInterfaceDefinitionUsed : IInternalStaticInterfaceWithInterfaceDefinitionUsed
+		internal class ImplementsInternalStaticInterfaceWithInterfaceDefinitionUsedThroughGeneric : IInternalStaticInterfaceWithInterfaceDefinitionUsed
 		{
 			[Kept]
 			public static void InternalStaticInterfaceUsedThroughInterface ()
 			{
 			}
+			public static void UnusedMethod () { }
+		}
+
+		[Kept]
+		[KeptInterface (typeof (IInternalStaticInterfaceWithInterfaceDefinitionUsed))]
+		internal class ImplementsInternalStaticInterfaceWithInterfaceDefinitionNotUsedThroughGeneric : IInternalStaticInterfaceWithInterfaceDefinitionUsed
+		{
+			[Kept]
+			public static void InternalStaticInterfaceUsedThroughInterface ()
+			{
+			}
+
+			public static void UnusedMethod () { }
 		}
 
 		[Kept]
@@ -254,6 +270,8 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 		{
 			[Kept]
 			static abstract void InternalStaticInterfaceUsedThroughInterface ();
+
+			static abstract void UnusedMethod ();
 		}
 
 		private interface IPrivateInterface
