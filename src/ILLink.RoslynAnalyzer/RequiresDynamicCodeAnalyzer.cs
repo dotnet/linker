@@ -37,9 +37,12 @@ namespace ILLink.RoslynAnalyzer
 			options.IsMSBuildPropertyValueTrue (MSBuildPropertyOptionNames.EnableAotAnalyzer, compilation);
 
 		protected override bool VerifyAttributeArguments (AttributeData attribute) =>
-			RequiresUtils.VerifyRequiresDynamicCodeAttributeArguments (attribute);
+			attribute.ConstructorArguments.Length >= 1 && attribute.ConstructorArguments[0] is { Type: { SpecialType: SpecialType.System_String } } ctorArg;
 
-		protected override string GetMessageFromAttribute (AttributeData? requiresAttribute) =>
-			RequiresUtils.GetMessageFromAttribute (requiresAttribute);
+		protected override string GetMessageFromAttribute (AttributeData? requiresAttribute)
+		{
+			var message = (string) requiresAttribute!.ConstructorArguments[0].Value!;
+			return MessageFormat.FormatRequiresAttributeMessageArg (message);
+		}
 	}
 }
