@@ -16,7 +16,7 @@ namespace ILLink.RoslynAnalyzer
 			member.TargetHasRequiresUnreferencedCodeAttribute (out requiresAttributeData) && VerifyRequiresUnreferencedCodeAttributeArguments (requiresAttributeData);
 
 		public static bool TryGetRequiresDynamicCodeAttribute (this ISymbol member, [NotNullWhen (returnValue: true)] out AttributeData? requiresAttributeData) =>
-			member.TargetHasRequiresDynamicCodeAttribute (out requiresAttributeData) && VerifyRequiresUnreferencedCodeAttributeArguments (requiresAttributeData);
+			member.TargetHasRequiresDynamicCodeAttribute (out requiresAttributeData) && VerifyRequiresDynamicCodeAttributeArguments (requiresAttributeData);
 
 		// TODO: Consider sharing with linker DoesMethodRequireUnreferencedCode method
 		/// <summary>
