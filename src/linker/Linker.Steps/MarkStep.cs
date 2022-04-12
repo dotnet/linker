@@ -3055,7 +3055,7 @@ namespace Mono.Linker.Steps
 				foreach (MethodReference ov in method.Overrides) {
 					if (_context!.Resolve (ov)?.IsStatic == true
 						&& _context!.Resolve (ov.DeclaringType)?.IsInterface == true) {
-						staticInterfaceOverrideIndices.Add(ov);
+						staticInterfaceOverrideIndices.Add (ov);
 					}
 				}
 				foreach (var overrideToRemove in staticInterfaceOverrideIndices) {

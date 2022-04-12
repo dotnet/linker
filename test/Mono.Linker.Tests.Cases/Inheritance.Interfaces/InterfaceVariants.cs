@@ -32,7 +32,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 		}
 
 		[Kept]
-		internal static void GenericMethodThatCallsInternalStaticInterfaceMethod<T> () where T: IInternalStaticInterfaceWithInterfaceDefinitionUsed
+		internal static void GenericMethodThatCallsInternalStaticInterfaceMethod<T> () where T : IInternalStaticInterfaceWithInterfaceDefinitionUsed
 		{
 			T.InternalStaticInterfaceUsedThroughInterface ();
 		}
@@ -51,7 +51,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 		[KeptInterface (typeof (IEnumerator))]
 		[KeptInterface (typeof (IPublicInterface))]
 		[KeptInterface (typeof (IPublicStaticInterface))]
-
+		[KeptInterface (typeof (ICopyLibraryInterface))]
 		[KeptInterface (typeof (ICopyLibraryStaticInterface))]
 		public class UninstantiatedPublicClassWithInterface :
 			IPublicInterface,
@@ -247,10 +247,12 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 		}
 
 		// The interface methods themselves are used through the interface
+		// Add test case where a class that implements this, and also calls the static method and see if the interface is kept
+		// Add a test case where a class implements this interface, but never calls the method. 
 		[Kept]
 		internal interface IInternalStaticInterfaceWithInterfaceDefinitionUsed
 		{
-			[Kept] 
+			[Kept]
 			static abstract void InternalStaticInterfaceUsedThroughInterface ();
 		}
 
