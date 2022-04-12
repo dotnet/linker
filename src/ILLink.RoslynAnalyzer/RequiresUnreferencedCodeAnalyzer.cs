@@ -91,9 +91,9 @@ namespace ILLink.RoslynAnalyzer
 				ImmutableArray.Create ((s_dynamicTypeInvocation, new OperationKind[] { OperationKind.DynamicInvocation }));
 
 		protected override bool VerifyAttributeArguments (AttributeData attribute) =>
-			RequiresUtils.VerifyRequiresUnreferencedCodeAttributeArguments (attribute);
+			RequiresUnreferencedCodeUtils.VerifyRequiresUnreferencedCodeAttributeArguments (attribute);
 
 		protected override string GetMessageFromAttribute (AttributeData? requiresAttribute) =>
-			RequiresUtils.GetMessageFromAttribute (requiresAttribute);
+			RequiresUnreferencedCodeUtils.GetMessageFromAttribute (requiresAttribute);
 	}
 }

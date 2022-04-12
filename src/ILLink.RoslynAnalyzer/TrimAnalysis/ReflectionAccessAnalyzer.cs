@@ -73,7 +73,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 		static void ReportRequiresUnreferencedCodeDiagnostic (in DiagnosticContext diagnosticContext, AttributeData requiresAttributeData, ISymbol member)
 		{
-			var message = RequiresUtils.GetMessageFromAttribute (requiresAttributeData);
+			var message = RequiresUnreferencedCodeUtils.GetMessageFromAttribute (requiresAttributeData);
 			var url = RequiresAnalyzerBase.GetUrlFromAttribute (requiresAttributeData);
 			diagnosticContext.AddDiagnostic (DiagnosticId.RequiresUnreferencedCode, member.GetDisplayName (), message, url);
 		}
