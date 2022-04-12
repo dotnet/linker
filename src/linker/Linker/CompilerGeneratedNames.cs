@@ -20,6 +20,18 @@ namespace Mono.Linker
 			return className.StartsWith ("<>c");
 		}
 
+		internal static bool IsStateMachineType (string typeName)
+		{
+			if (!IsGeneratedMemberName (typeName))
+				return false;
+
+			int i = typeName.LastIndexOf ('>');
+			if (i == -1)
+				return false;
+
+			return (typeName.Length > i + 1) && typeName[i + 1] == 'd';
+		}
+
 		internal static bool IsLambdaOrLocalFunction (string methodName) => IsLambdaMethod (methodName) || IsLocalFunction (methodName);
 
 		// Lambda methods have generated names like "<UserMethod>b__0_1" where "UserMethod" is the name
@@ -34,7 +46,7 @@ namespace Mono.Linker
 				return false;
 
 			// Ignore the method ordinal/generation and lambda ordinal/generation.
-			return methodName[i + 1] == 'b';
+			return (methodName.Length > i + 1) && methodName[i + 1] == 'b';
 		}
 
 		// Local functions have generated names like "<UserMethod>g__LocalFunction|0_1" where "UserMethod" is the name
@@ -50,7 +62,7 @@ namespace Mono.Linker
 				return false;
 
 			// Ignore the method ordinal/generation and local function ordinal/generation.
-			return methodName[i + 1] == 'g';
+			return (methodName.Length > i + 1) && methodName[i + 1] == 'g';
 		}
 	}
 }
