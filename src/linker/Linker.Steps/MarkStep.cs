@@ -592,6 +592,7 @@ namespace Mono.Linker.Steps
 
 				using (ScopeStack.PushScope (scope)) {
 					MarkInterfaceImplementations (type);
+					RemoveStaticInterfaceOverrideAnnotations (type);
 				}
 			}
 		}
@@ -2265,6 +2266,24 @@ namespace Mono.Linker.Steps
 			}
 		}
 
+		/// <summary>
+		/// Removes the 'override' annotation for implementation of static interface methods when the interface method is removed.
+		/// </summary>
+		void RemoveStaticInterfaceOverrideAnnotations (TypeDefinition type)
+		{
+			foreach (var method in type.Methods) {
+				// Modify overrides in place
+				for (int i = 0; i < method.Overrides.Count;) {
+					if (Context.Resolve(method.Overrides[i].DeclaringType)?.IsInterface == true
+						&& Context.Resolve (method.Overrides[i])?.IsStatic == true
+						&& !Annotations.IsMarked (method.Overrides[i]))
+						method.Overrides.RemoveAt (i);
+					else
+						i++;
+				}
+			}
+		}
+
 		void MarkGenericParameterProvider (IGenericParameterProvider provider)
 		{
 			if (!provider.HasGenericParameters)
@@ -3051,17 +3070,13 @@ namespace Mono.Linker.Steps
 
 			// Mark overrides except for static interface methods
 			if (method.HasOverrides) {
-				List<MethodReference> staticInterfaceOverrideIndices = new ();
 				foreach (MethodReference ov in method.Overrides) {
-					if (_context!.Resolve (ov)?.IsStatic == true
-						&& _context!.Resolve (ov.DeclaringType)?.IsInterface == true) {
-						staticInterfaceOverrideIndices.Add (ov);
+					// Don't mark overrides for static interface methods.
+					// Since they can only be called on a concrete type and not the interface, these methods can safely be removed in some cases
+					if (Context.Resolve (ov)?.IsStatic == true
+						&& Context.Resolve (ov.DeclaringType)?.IsInterface == true) {
+						continue;
 					}
-				}
-				foreach (var overrideToRemove in staticInterfaceOverrideIndices) {
-					method.Overrides.Remove (overrideToRemove);
-				}
-				foreach (MethodReference ov in method.Overrides) {
 					MarkMethod (ov, new DependencyInfo (DependencyKind.MethodImplOverride, method));
 					MarkExplicitInterfaceImplementation (method, ov);
 				}
