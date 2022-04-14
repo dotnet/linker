@@ -217,7 +217,7 @@ namespace Mono.Linker.Tests.Cases.Libraries
 			void IInternalInterface.ExplicitImplementationInternalInterfaceMethod () { }
 
 			[Kept]
-			[RemovedOverride (typeof(IInternalStaticInterface))]
+			[RemovedOverride (typeof (IInternalStaticInterface))]
 			public static void InternalStaticInterfaceMethod () { }
 
 			static void IInternalStaticInterface.ExplicitImplementationInternalStaticInterfaceMethod () { }
@@ -301,7 +301,7 @@ namespace Mono.Linker.Tests.Cases.Libraries
 			void IInternalInterface.ExplicitImplementationInternalInterfaceMethod () { }
 
 			[Kept]
-			[RemovedOverride (typeof(IInternalStaticInterface))]
+			[RemovedOverride (typeof (IInternalStaticInterface))]
 			public static void InternalStaticInterfaceMethod () { }
 
 			static void IInternalStaticInterface.ExplicitImplementationInternalStaticInterfaceMethod () { }

@@ -45,7 +45,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 		internal class ImplementsInternalStaticInterfaceWithInterfaceDefinitionUsedThroughGeneric : IInternalStaticInterfaceWithInterfaceDefinitionUsed
 		{
 			[Kept]
-			[KeptOverride (typeof(IInternalStaticInterfaceWithInterfaceDefinitionUsed))]
+			[KeptOverride (typeof (IInternalStaticInterfaceWithInterfaceDefinitionUsed))]
 			public static void InternalStaticInterfaceUsedThroughInterface ()
 			{
 			}
@@ -104,7 +104,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 			static void IInternalStaticInterface.ExplicitImplementationInternalStaticInterfaceMethod () { }
 
 			[Kept]
-			[RemovedOverride (typeof(IInternalStaticInterfaceWithUsedMethodImplementation))]
+			[RemovedOverride (typeof (IInternalStaticInterfaceWithUsedMethodImplementation))]
 			public static void InternalStaticInterfaceMethodUsedThroughImplementation () { }
 
 			[Kept]
@@ -193,7 +193,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 			static void IInternalStaticInterface.ExplicitImplementationInternalStaticInterfaceMethod () { }
 
 			[Kept]
-			[RemovedOverride (typeof(IInternalStaticInterfaceWithUsedMethodImplementation))]
+			[RemovedOverride (typeof (IInternalStaticInterfaceWithUsedMethodImplementation))]
 			public static void InternalStaticInterfaceMethodUsedThroughImplementation () { }
 
 			[Kept]

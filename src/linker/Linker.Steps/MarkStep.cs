@@ -572,7 +572,7 @@ namespace Mono.Linker.Steps
 					ProcessVirtualMethod (method);
 			}
 		}
-		
+
 		/// <summary>
 		/// Does extra handling of marked types that have interfaces when it's necessary to know what types are marked or instantiated.
 		/// e.g. Marks the "implements interface" annotations and removes override annotations for static interface methods.
