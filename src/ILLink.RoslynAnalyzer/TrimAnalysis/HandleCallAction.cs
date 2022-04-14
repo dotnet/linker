@@ -44,12 +44,11 @@ namespace ILLink.Shared.TrimAnalysis
 		private partial GenericParameterValue GetGenericParameterValue (GenericParameterProxy genericParameter)
 			=> new (genericParameter.TypeParameterSymbol);
 
-		private partial DynamicallyAccessedMemberTypes GetMethodThisParameterAnnotation (MethodProxy method)
-		{
-			return method.Method.GetDynamicallyAccessedMemberTypes ();
-		}
 		private partial MethodThisParameterValue GetMethodThisParameterValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 			=> new (method.Method, dynamicallyAccessedMemberTypes);
+
+		private partial MethodThisParameterValue GetMethodThisParameterValue (MethodProxy method)
+			=> GetMethodThisParameterValue (method, method.Method.GetDynamicallyAccessedMemberTypes ());
 
 		private partial DynamicallyAccessedMemberTypes GetMethodParameterAnnotation (MethodProxy method, int parameterIndex)
 		{

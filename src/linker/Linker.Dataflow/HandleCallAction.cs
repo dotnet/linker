@@ -47,19 +47,17 @@ namespace ILLink.Shared.TrimAnalysis
 		private partial GenericParameterValue GetGenericParameterValue (GenericParameterProxy genericParameter)
 			=> new (genericParameter.GenericParameter, _context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameter.GenericParameter));
 
-		private partial DynamicallyAccessedMemberTypes GetMethodThisParameterAnnotation (MethodProxy method)
-		{
-			return _context.Annotations.FlowAnnotations.GetParameterAnnotation (method.Method, 0);
-		}
+		private partial MethodThisParameterValue GetMethodThisParameterValue (MethodProxy method)
+			=> GetMethodThisParameterValue (method, _context.Annotations.FlowAnnotations.GetParameterAnnotation (method.Method, 0));
 
+		private partial MethodThisParameterValue GetMethodThisParameterValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
+			=> new (method.Method, dynamicallyAccessedMemberTypes);
+			
 		private partial DynamicallyAccessedMemberTypes GetMethodParameterAnnotation (MethodProxy method, int parameterIndex)
 		{
 			Debug.Assert (method.Method.Parameters.Count > parameterIndex);
 			return _context.Annotations.FlowAnnotations.GetParameterAnnotation (method.Method, parameterIndex);
 		}
-
-		private partial MethodThisParameterValue GetMethodThisParameterValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
-			=> new (method.Method, dynamicallyAccessedMemberTypes);
 
 		private partial MethodParameterValue GetMethodParameterValue (MethodProxy method, int parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 			=> new (
