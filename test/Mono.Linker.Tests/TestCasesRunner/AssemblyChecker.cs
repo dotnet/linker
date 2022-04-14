@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Mono.Cecil;
@@ -176,7 +177,9 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				if (verifiedEventMethods.Contains (m.FullName))
 					continue;
 				var msign = m.GetSignature ();
-				VerifyMethod (m, linked?.Methods.FirstOrDefault (l => msign == l.GetSignature ()));
+				var linkedMethod = linked?.Methods.FirstOrDefault (l => msign == l.GetSignature ());
+				VerifyMethod (m, linkedMethod);
+				VerifyOverrides (m, linkedMethod);
 				linkedMembers.Remove (m.FullName);
 			}
 		}
@@ -209,6 +212,35 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				}
 
 				Assert.IsEmpty (expectedInterfaces, $"Expected interfaces were not found on {src}");
+			}
+		}
+
+		void VerifyOverrides (MethodDefinition original, MethodDefinition linked)
+		{
+			if (linked is null)
+				return;
+			var expectedBaseTypesOverridden = new HashSet<string> (original.CustomAttributes
+				.Where (ca => ca.AttributeType.Name == nameof (KeptOverrideAttribute))
+				.Select (ca => (ca.ConstructorArguments[0].Value as TypeDefinition).FullName));
+			var originalBaseTypesOverridden = new HashSet<string> (original.Overrides.Select (ov => ov.DeclaringType.FullName));
+			var linkedBaseTypesOverridden = new HashSet<string> (linked.Overrides.Select (ov => ov.DeclaringType.FullName));
+			foreach (var expectedBaseType in expectedBaseTypesOverridden) {
+				Assert.IsTrue (originalBaseTypesOverridden.Contains (expectedBaseType),
+					$"Method {linked.FullName} was expected to keep override {expectedBaseType}::{linked.Name}, " +
+					 "but it wasn't in the unlinked assembly");
+				Assert.IsTrue (linkedBaseTypesOverridden.Contains (expectedBaseType),
+					$"Method {linked.FullName} was expected to override {expectedBaseType}::{linked.Name}");
+			}
+
+			var expectedBaseTypesNotOverridden = new HashSet<string> (original.CustomAttributes
+				.Where (ca => ca.AttributeType.Name == nameof (RemovedOverrideAttribute))
+				.Select (ca => (ca.ConstructorArguments[0].Value as TypeDefinition).FullName));
+			foreach (var expectedRemovedBaseType in expectedBaseTypesNotOverridden) {
+				Assert.IsTrue (originalBaseTypesOverridden.Contains (expectedRemovedBaseType),
+					$"Method {linked.FullName} was expected to remove override {expectedRemovedBaseType}::{linked.Name}, " +
+					$"but it wasn't in the unlinked assembly");
+				Assert.IsFalse (linkedBaseTypesOverridden.Contains (expectedRemovedBaseType),
+					$"Method {linked.FullName} was expected to not override {expectedRemovedBaseType}::{linked.Name}");
 			}
 		}
 

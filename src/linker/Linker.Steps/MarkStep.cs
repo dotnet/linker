@@ -572,7 +572,11 @@ namespace Mono.Linker.Steps
 					ProcessVirtualMethod (method);
 			}
 		}
-
+		
+		/// <summary>
+		/// Does extra handling of marked types that have interfaces when it's necessary to know what types are marked or instantiated.
+		/// e.g. Marks the "implements interface" annotations and removes override annotations for static interface methods.
+		/// </summary>
 		void ProcessMarkedTypesWithInterfaces ()
 		{
 			// We may mark an interface type later on.  Which means we need to reprocess any time with one or more interface implementations that have not been marked
@@ -582,6 +586,9 @@ namespace Mono.Linker.Steps
 			var typesWithInterfaces = _typesWithInterfaces.ToArray ();
 
 			foreach ((var type, var scope) in typesWithInterfaces) {
+				// Regardless of the optimizations or whether or not the type is instantiated, we should
+				//	remove unneeded override annotations for static interface method implementations
+				RemoveStaticInterfaceOverrideAnnotations (type);
 				// Exception, types that have not been flagged as instantiated yet.  These types may not need their interfaces even if the
 				// interface type is marked
 				// UnusedInterfaces optimization is turned off mark all interface implementations
@@ -592,7 +599,6 @@ namespace Mono.Linker.Steps
 
 				using (ScopeStack.PushScope (scope)) {
 					MarkInterfaceImplementations (type);
-					RemoveStaticInterfaceOverrideAnnotations (type);
 				}
 			}
 		}
@@ -2267,14 +2273,16 @@ namespace Mono.Linker.Steps
 		}
 
 		/// <summary>
-		/// Removes the 'override' annotation for implementation of static interface methods when the interface method is removed.
+		/// Removes the 'override' annotation for implementations of static interface methods if the interface method is not marked.
 		/// </summary>
 		void RemoveStaticInterfaceOverrideAnnotations (TypeDefinition type)
 		{
 			foreach (var method in type.Methods) {
+				if (!Annotations.IsMarked (method))
+					continue;
 				// Modify overrides in place
 				for (int i = 0; i < method.Overrides.Count;) {
-					if (Context.Resolve(method.Overrides[i].DeclaringType)?.IsInterface == true
+					if (Context.Resolve (method.Overrides[i].DeclaringType)?.IsInterface == true
 						&& Context.Resolve (method.Overrides[i])?.IsStatic == true
 						&& !Annotations.IsMarked (method.Overrides[i]))
 						method.Overrides.RemoveAt (i);
