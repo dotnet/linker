@@ -52,7 +52,7 @@ namespace ILLink.Shared.TrimAnalysis
 
 		private partial MethodThisParameterValue GetMethodThisParameterValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 			=> new (method.Method, dynamicallyAccessedMemberTypes);
-			
+
 		private partial DynamicallyAccessedMemberTypes GetMethodParameterAnnotation (MethodProxy method, int parameterIndex)
 		{
 			Debug.Assert (method.Method.Parameters.Count > parameterIndex);
