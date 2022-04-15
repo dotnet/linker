@@ -71,6 +71,19 @@ namespace ILLink.Shared.TrimAnalysis
 				yield return new SystemTypeValue (new TypeProxy (nestedType));
 		}
 
+		private partial bool MethodIsTypeConstructor (MethodProxy method)
+		{
+			if (!method.Method.IsConstructor ())
+				return false;
+			var type = method.Method.ContainingType;
+			while (type is not null) {
+				if (type.IsTypeOf (WellKnownType.System_Type))
+					return true;
+				type = type.BaseType;
+			}
+			return false;
+		}
+
 		private partial bool TryGetBaseType (TypeProxy type, out TypeProxy? baseType)
 		{
 			if (type.Type.BaseType is not null) {

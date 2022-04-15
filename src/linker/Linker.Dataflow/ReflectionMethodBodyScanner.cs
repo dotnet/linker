@@ -312,6 +312,29 @@ namespace Mono.Linker.Dataflow
 					return handleCallAction.Invoke (calledMethodDefinition, instanceValue, parameterValues, out methodReturnValue);
 				}
 
+			case IntrinsicId.None: {
+					if (calledMethodDefinition.IsPInvokeImpl) {
+						// Is the PInvoke dangerous?
+						bool comDangerousMethod = IsComInterop (calledMethodDefinition.MethodReturnType, calledMethodDefinition.ReturnType);
+						foreach (ParameterDefinition pd in calledMethodDefinition.Parameters) {
+							comDangerousMethod |= IsComInterop (pd, pd.ParameterType);
+						}
+
+						if (comDangerousMethod) {
+							analysisContext.ReportWarning (DiagnosticId.CorrectnessOfCOMCannotBeGuaranteed, calledMethodDefinition.GetDisplayName ());
+						}
+					}
+					_markStep.CheckAndReportRequiresUnreferencedCode (calledMethodDefinition);
+
+					var instanceValue = MultiValueLattice.Top;
+					IReadOnlyList<MultiValue> parameterValues = methodParams;
+					if (calledMethodDefinition.HasImplicitThis ()) {
+						instanceValue = methodParams[0];
+						parameterValues = parameterValues.Skip (1).ToImmutableList ();
+					}
+					return handleCallAction.Invoke (calledMethodDefinition, instanceValue, parameterValues, out methodReturnValue);
+				}
+
 			case IntrinsicId.TypeDelegator_Ctor: {
 					// This is an identity function for analysis purposes
 					if (operation.OpCode == OpCodes.Newobj)
@@ -804,40 +827,7 @@ namespace Mono.Linker.Dataflow
 				break;
 
 			default:
-
-				if (calledMethodDefinition.IsPInvokeImpl) {
-					// Is the PInvoke dangerous?
-					bool comDangerousMethod = IsComInterop (calledMethodDefinition.MethodReturnType, calledMethodDefinition.ReturnType);
-					foreach (ParameterDefinition pd in calledMethodDefinition.Parameters) {
-						comDangerousMethod |= IsComInterop (pd, pd.ParameterType);
-					}
-
-					if (comDangerousMethod) {
-						analysisContext.ReportWarning (DiagnosticId.CorrectnessOfCOMCannotBeGuaranteed, calledMethodDefinition.GetDisplayName ());
-					}
-				}
-
-				if (requiresDataFlowAnalysis) {
-					for (int parameterIndex = 0; parameterIndex < methodParams.Count; parameterIndex++) {
-						var targetValue = GetMethodParameterValue (calledMethodDefinition, parameterIndex);
-
-						if (targetValue.DynamicallyAccessedMemberTypes != DynamicallyAccessedMemberTypes.None) {
-							RequireDynamicallyAccessedMembers (analysisContext, methodParams[parameterIndex], targetValue);
-						}
-					}
-				}
-
-				_markStep.CheckAndReportRequiresUnreferencedCode (calledMethodDefinition);
-
-				// To get good reporting of errors we need to track the origin of the value for all method calls
-				// but except Newobj as those are special.
-				if (GetReturnTypeWithoutModifiers (calledMethodDefinition.ReturnType).MetadataType != MetadataType.Void) {
-					methodReturnValue = GetMethodReturnValue (calledMethodDefinition, returnValueDynamicallyAccessedMemberTypes);
-
-					return true;
-				}
-
-				return false;
+				throw new NotImplementedException ("Unhandled instrinsic");
 			}
 
 			// If we get here, we handled this as an intrinsic.  As a convenience, if the code above

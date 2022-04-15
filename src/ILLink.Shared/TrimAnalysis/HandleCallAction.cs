@@ -689,6 +689,9 @@ namespace ILLink.Shared.TrimAnalysis
 			// Note that this will be DynamicallyAccessedMembers.None for the intrinsics which don't return types.
 			returnValue ??= calledMethod.ReturnsVoid () ? MultiValueLattice.Top : GetMethodReturnValue (calledMethod, returnValueDynamicallyAccessedMemberTypes);
 
+			if (MethodIsTypeConstructor(calledMethod))
+				returnValue = UnknownValue.Instance;
+
 			// Validate that the return value has the correct annotations as per the method return value annotations
 			if (returnValueDynamicallyAccessedMemberTypes != 0) {
 				foreach (var uniqueValue in returnValue.Value) {
@@ -804,6 +807,8 @@ namespace ILLink.Shared.TrimAnalysis
 			GetDynamicallyAccessedMemberTypesFromBindingFlagsForNestedTypes (bindingFlags);
 
 		private partial bool MethodRequiresDataFlowAnalysis (MethodProxy method);
+
+		private partial bool MethodIsTypeConstructor (MethodProxy method);
 
 		private partial DynamicallyAccessedMemberTypes GetReturnValueAnnotation (MethodProxy method);
 
