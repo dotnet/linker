@@ -689,7 +689,7 @@ namespace ILLink.Shared.TrimAnalysis
 			// Note that this will be DynamicallyAccessedMembers.None for the intrinsics which don't return types.
 			returnValue ??= calledMethod.ReturnsVoid () ? MultiValueLattice.Top : GetMethodReturnValue (calledMethod, returnValueDynamicallyAccessedMemberTypes);
 
-			if (MethodIsTypeConstructor(calledMethod))
+			if (MethodIsTypeConstructor (calledMethod))
 				returnValue = UnknownValue.Instance;
 
 			// Validate that the return value has the correct annotations as per the method return value annotations
