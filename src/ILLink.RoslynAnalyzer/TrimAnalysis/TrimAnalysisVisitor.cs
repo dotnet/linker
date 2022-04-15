@@ -195,13 +195,13 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 		public override MultiValue HandleArrayElementRead (MultiValue arrayValue, MultiValue indexValue, IOperation operation)
 		{
-			MultiValue result = TopValue;
 			if (indexValue.AsConstInt () is not int index)
 				return UnknownValue.Instance;
 
+			MultiValue result = TopValue;
 			foreach (var value in arrayValue) {
 				if (value is ArrayValue arr && arr.TryGetValueByIndex (index, out var elementValue))
-					result = result.Equals (TopValue) ? elementValue : _multiValueLattice.Meet (result, elementValue);
+					result = _multiValueLattice.Meet (result, elementValue);
 			}
 			return result.Equals (TopValue) ? UnknownValue.Instance : result;
 		}

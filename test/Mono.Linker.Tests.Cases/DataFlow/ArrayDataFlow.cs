@@ -22,7 +22,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TestArraySetElementOneElementStaticType ();
 			TestArraySetElementOneElementParameter (typeof (TestType));
 			TestArraySetElementMultipleElementsStaticType ();
-			TestMergedArrayElement ();
+			TestMergedArrayElement (1);
 			TestArraySetElementMultipleElementsMix<TestType> (typeof (TestType));
 
 			TestArraySetElementAndInitializerMultipleElementsMix<TestType> (typeof (TestType));
@@ -111,11 +111,11 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions.RequiresAll))]
-		[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions.RequiresAll), ProducedBy = ProducedBy.Analyzer)]
-		static void TestMergedArrayElement ()
+		[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions.RequiresAll))]
+		static void TestMergedArrayElement (int i)
 		{
 			Type[] arr = new Type[] { null };
-			if (true)
+			if (i == 1)
 				arr[0] = GetMethods ();
 			else
 				arr[0] = GetFields ();
