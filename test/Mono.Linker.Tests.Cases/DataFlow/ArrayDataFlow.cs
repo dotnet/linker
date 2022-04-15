@@ -22,6 +22,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TestArraySetElementOneElementStaticType ();
 			TestArraySetElementOneElementParameter (typeof (TestType));
 			TestArraySetElementMultipleElementsStaticType ();
+			TestMergedArrayElement ();
 			TestArraySetElementMultipleElementsMix<TestType> (typeof (TestType));
 
 			TestArraySetElementAndInitializerMultipleElementsMix<TestType> (typeof (TestType));
@@ -108,6 +109,24 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			arr[2].RequiresAll ();
 			arr[3].RequiresPublicMethods (); // Should warn - unknown value at this index
 		}
+
+		[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions.RequiresAll))]
+		[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions.RequiresAll), ProducedBy = ProducedBy.Analyzer)]
+		static void TestMergedArrayElement ()
+		{
+			Type[] arr = new Type[] { null };
+			if (true)
+				arr[0] = GetMethods ();
+			else
+				arr[0] = GetFields ();
+			arr[0].RequiresAll (); // Should warn - Methods/Fields does not have match annotations with All.
+		}
+
+		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+		static Type GetMethods () => null;
+
+		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)]
+		static Type GetFields () => null;
 
 		[ExpectedWarning ("IL2087", nameof (DataFlowTypeExtensions.RequiresPublicFields))]
 		[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicMethods))]
