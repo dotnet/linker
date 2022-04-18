@@ -808,6 +808,9 @@ namespace ILLink.Shared.TrimAnalysis
 
 		private partial bool MethodRequiresDataFlowAnalysis (MethodProxy method);
 
+		/// <Summary>
+		/// Returns true if the method is a .ctor for System.Type or a type that derives from System.Type (i.e. fields and params of this type can have DynamicallyAccessedMembers annotations)
+		/// </Summary>
 		private partial bool MethodIsTypeConstructor (MethodProxy method);
 
 		private partial DynamicallyAccessedMemberTypes GetReturnValueAnnotation (MethodProxy method);
