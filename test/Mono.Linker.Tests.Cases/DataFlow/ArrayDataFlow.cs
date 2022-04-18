@@ -28,6 +28,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TestArraySetElementAndInitializerMultipleElementsMix<TestType> (typeof (TestType));
 
 			TestGetElementAtUnknownIndex ();
+			TestMergedArrayElementWithUnknownIndex (0);
 
 			// Array reset - certain operations on array are not tracked fully (or impossible due to unknown inputs)
 			// and sometimes the only valid thing to do is to reset the array to all unknowns as it's impossible
@@ -165,6 +166,17 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		{
 			Type[] arr = new Type[] { typeof (TestType) };
 			arr[i].RequiresPublicFields ();
+		}
+
+		[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresAll))]
+		static void TestMergedArrayElementWithUnknownIndex (int i)
+		{
+			Type[] arr = new Type[] { null };
+			if (i == 1)
+				arr[0] = GetMethods ();
+			else
+				arr[i] = GetFields ();
+			arr[0].RequiresAll (); // Should warn - Methods/Fields does not have match annotations with All.
 		}
 
 		[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicFields))]
