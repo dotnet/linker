@@ -111,8 +111,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			arr[3].RequiresPublicMethods (); // Should warn - unknown value at this index
 		}
 
-		[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions.RequiresAll))]
-		[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions.RequiresAll))]
+		[ExpectedWarning ("IL2072", nameof (ArrayDataFlow.GetMethods))]
+		[ExpectedWarning ("IL2072", nameof (ArrayDataFlow.GetFields))]
 		static void TestMergedArrayElement (int i)
 		{
 			Type[] arr = new Type[] { null };
@@ -168,6 +168,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			arr[i].RequiresPublicFields ();
 		}
 
+		// Trimmer code doesnt handle locals from different branches separetely, therefore merges incorrectly GetMethods with Unknown producing both warnings
+		[ExpectedWarning ("IL2072", nameof (ArrayDataFlow.GetMethods), ProducedBy = ProducedBy.Trimmer)]
 		[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresAll))]
 		static void TestMergedArrayElementWithUnknownIndex (int i)
 		{
@@ -176,7 +178,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				arr[0] = GetMethods ();
 			else
 				arr[i] = GetFields ();
-			arr[0].RequiresAll (); // Should warn - Methods/Fields does not have match annotations with All.
+			arr[0].RequiresAll (); // Should warn - there is an unknown value on fields therefore the merged value should be unknown
 		}
 
 		[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicFields))]
