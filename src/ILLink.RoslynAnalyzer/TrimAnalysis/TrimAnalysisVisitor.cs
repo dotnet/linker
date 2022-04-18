@@ -202,6 +202,8 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			foreach (var value in arrayValue) {
 				if (value is ArrayValue arr && arr.TryGetValueByIndex (index, out var elementValue))
 					result = _multiValueLattice.Meet (result, elementValue);
+				else
+					return UnknownValue.Instance;
 			}
 			return result.Equals (TopValue) ? UnknownValue.Instance : result;
 		}
