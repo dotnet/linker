@@ -33,5 +33,24 @@ namespace ILLink.Shared.TypeSystemProxy
 		}
 		public static string GetNamespace (this WellKnownType type) => GetNamespaceAndName (type).Namespace;
 		public static string GetName (this WellKnownType type) => GetNamespaceAndName (type).Name;
+		public static WellKnownType? GetWellKnownType (string @namespace, string name)
+		{
+			return @namespace switch {
+				"System" => name switch {
+					"String" => WellKnownType.System_String,
+					"Nullable`1" => WellKnownType.System_Nullable_T,
+					"Type" => WellKnownType.System_Type,
+					"Array" => WellKnownType.System_Array,
+					"Attribute" => WellKnownType.System_Attribute,
+					"Object" => WellKnownType.System_Object,
+					_ => null
+				},
+				"System.Reflection" => name switch {
+					"IReflect" => WellKnownType.System_Reflection_IReflect,
+					_ => null
+				},
+				_ => null
+			};
+		}
 	}
 }

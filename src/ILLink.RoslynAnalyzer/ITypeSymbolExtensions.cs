@@ -60,6 +60,13 @@ namespace ILLink.RoslynAnalyzer
 
 		public static bool IsTypeOf (this ITypeSymbol symbol, WellKnownType wellKnownType)
 		{
+			bool istrue = symbol.IsTypeOf1 (wellKnownType);
+			Debug.Assert (istrue == (symbol.TryGetWellKnownType () == wellKnownType), $"symbol: {symbol.GetDisplayName ()}");
+			return symbol.TryGetWellKnownType () == wellKnownType;
+		}
+
+		public static bool IsTypeOf1 (this ITypeSymbol symbol, WellKnownType wellKnownType)
+		{
 			symbol = symbol.OriginalDefinition;
 			if (wellKnownType.TryGetSpecialType (out var specialType)) {
 				var symbolSpecialType = symbol.SpecialType;
@@ -69,6 +76,17 @@ namespace ILLink.RoslynAnalyzer
 			}
 			var (Namespace, Name) = wellKnownType.GetNamespaceAndName ();
 			return symbol.IsTypeOf (Namespace, Name);
+		}
+
+		public static WellKnownType? TryGetWellKnownType (this ITypeSymbol symbol)
+		{
+			return symbol.SpecialType switch {
+				SpecialType.System_String => WellKnownType.System_String,
+				SpecialType.System_Nullable_T => WellKnownType.System_Nullable_T,
+				SpecialType.System_Array => WellKnownType.System_Array,
+				SpecialType.System_Object => WellKnownType.System_Object,
+				_ => WellKnownTypeExtensions.GetWellKnownType (symbol.ContainingNamespace?.GetDisplayName () ?? "", symbol.MetadataName)
+			};
 		}
 	}
 }
