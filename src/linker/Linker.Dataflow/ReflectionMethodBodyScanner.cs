@@ -51,9 +51,9 @@ namespace Mono.Linker.Dataflow
 			return context.Annotations.FlowAnnotations.RequiresDataFlowAnalysis (fieldDefinition);
 		}
 
-		bool ShouldEnableReflectionPatternReporting ()
+		bool ShouldEnableReflectionPatternReporting (ICustomAttributeProvider? provider)
 		{
-			if (_markStep.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode ())
+			if (_markStep.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (provider))
 				return false;
 
 			return true;
@@ -74,7 +74,7 @@ namespace Mono.Linker.Dataflow
 				var method = methodBody.Method;
 				var methodReturnValue = GetMethodReturnValue (method);
 				if (methodReturnValue.DynamicallyAccessedMemberTypes != 0) {
-					RequireDynamicallyAccessedMembers (_scopeStack.CurrentScope.Origin, ShouldEnableReflectionPatternReporting (), ReturnValue, methodReturnValue);
+					RequireDynamicallyAccessedMembers (_scopeStack.CurrentScope.Origin, ShouldEnableReflectionPatternReporting (_scopeStack.CurrentScope.Origin.Provider), ReturnValue, methodReturnValue);
 				}
 			}
 		}
@@ -131,7 +131,7 @@ namespace Mono.Linker.Dataflow
 			var genericParameterValue = new GenericParameterValue (genericParameter, annotation);
 			MultiValue genericArgumentValue = GetTypeValueNodeFromGenericArgument (genericArgument);
 
-			RequireDynamicallyAccessedMembers (_scopeStack.CurrentScope.Origin, ShouldEnableReflectionPatternReporting (), genericArgumentValue, genericParameterValue);
+			RequireDynamicallyAccessedMembers (_scopeStack.CurrentScope.Origin, ShouldEnableReflectionPatternReporting (_scopeStack.CurrentScope.Origin.Provider), genericArgumentValue, genericParameterValue);
 		}
 
 		MultiValue GetTypeValueNodeFromGenericArgument (TypeReference genericArgument)
@@ -225,7 +225,7 @@ namespace Mono.Linker.Dataflow
 		{
 			if (field.DynamicallyAccessedMemberTypes != 0) {
 				_scopeStack.UpdateCurrentScopeInstructionOffset (operation.Offset);
-				RequireDynamicallyAccessedMembers (_scopeStack.CurrentScope.Origin, ShouldEnableReflectionPatternReporting (), valueToStore, field);
+				RequireDynamicallyAccessedMembers (_scopeStack.CurrentScope.Origin, ShouldEnableReflectionPatternReporting (_scopeStack.CurrentScope.Origin.Provider), valueToStore, field);
 			}
 		}
 
@@ -233,7 +233,7 @@ namespace Mono.Linker.Dataflow
 		{
 			if (parameter.DynamicallyAccessedMemberTypes != 0) {
 				_scopeStack.UpdateCurrentScopeInstructionOffset (operation.Offset);
-				RequireDynamicallyAccessedMembers (_scopeStack.CurrentScope.Origin, ShouldEnableReflectionPatternReporting (), valueToStore, parameter);
+				RequireDynamicallyAccessedMembers (_scopeStack.CurrentScope.Origin, ShouldEnableReflectionPatternReporting (_scopeStack.CurrentScope.Origin.Provider), valueToStore, parameter);
 			}
 		}
 
@@ -259,7 +259,7 @@ namespace Mono.Linker.Dataflow
 
 			_scopeStack.UpdateCurrentScopeInstructionOffset (operation.Offset);
 			var origin = _scopeStack.CurrentScope.Origin;
-			bool diagnosticsEnabled = ShouldEnableReflectionPatternReporting ();
+			bool diagnosticsEnabled = ShouldEnableReflectionPatternReporting (origin.Provider);
 			var handleCallAction = new HandleCallAction (_context, this, origin, diagnosticsEnabled, callingMethodDefinition);
 			switch (Intrinsics.GetIntrinsicIdForMethod (calledMethodDefinition)) {
 			case IntrinsicId.IntrospectionExtensions_GetTypeInfo:
@@ -783,7 +783,7 @@ namespace Mono.Linker.Dataflow
 					}
 				}
 
-				_markStep.CheckAndReportRequiresUnreferencedCode (calledMethodDefinition);
+				_markStep.CheckAndReportRequiresUnreferencedCode (calledMethodDefinition, _scopeStack.CurrentScope.Origin);
 
 				// To get good reporting of errors we need to track the origin of the value for all method calls
 				// but except Newobj as those are special.
