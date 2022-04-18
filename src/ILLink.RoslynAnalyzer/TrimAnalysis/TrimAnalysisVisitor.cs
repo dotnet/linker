@@ -1,6 +1,7 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
+using System;
 using System.Collections.Immutable;
 using System.Linq;
 using ILLink.RoslynAnalyzer.DataFlow;
@@ -236,10 +237,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			var diagnosticContext = DiagnosticContext.CreateDisabled ();
 			var handleCallAction = new HandleCallAction (diagnosticContext, Context.OwningSymbol, operation);
 			if (!handleCallAction.Invoke (new MethodProxy (calledMethod), instance, arguments, out MultiValue methodReturnValue)) {
-				if (!calledMethod.ReturnsVoid && calledMethod.ReturnType.IsTypeInterestingForDataflow ())
-					methodReturnValue = new MethodReturnValue (calledMethod);
-				else
-					methodReturnValue = TopValue;
+				throw new NotImplementedException ();
 			}
 
 			TrimAnalysisPatterns.Add (new TrimAnalysisMethodCallPattern (
