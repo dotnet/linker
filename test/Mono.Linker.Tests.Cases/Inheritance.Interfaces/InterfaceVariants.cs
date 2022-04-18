@@ -30,7 +30,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 			// Use all public interfaces - they're marked as public only to denote them as "used"
 			typeof (IPublicInterface).RequiresPublicMethods ();
 			typeof (IPublicStaticInterface).RequiresPublicMethods ();
-
+			var x = new ImplementsInternalStaticInterfaceUnused ();
 			var a = new InstantiatedClassWithInterfaces ();
 		}
 
@@ -43,6 +43,19 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 		[Kept]
 		[KeptInterface (typeof (IInternalStaticInterfaceWithInterfaceDefinitionUsed))]
 		internal class ImplementsInternalStaticInterfaceWithInterfaceDefinitionUsedThroughGeneric : IInternalStaticInterfaceWithInterfaceDefinitionUsed
+		{
+			[Kept]
+			[KeptOverride (typeof (IInternalStaticInterfaceWithInterfaceDefinitionUsed))]
+			public static void InternalStaticInterfaceUsedThroughInterface ()
+			{
+			}
+			public static void UnusedMethod () { }
+		}
+
+		[Kept]
+		[KeptMember (".ctor()")]
+		[KeptInterface (typeof (IInternalStaticInterfaceWithInterfaceDefinitionUsed))]
+		internal class ImplementsInternalStaticInterfaceUnused: IInternalStaticInterfaceWithInterfaceDefinitionUsed
 		{
 			[Kept]
 			[KeptOverride (typeof (IInternalStaticInterfaceWithInterfaceDefinitionUsed))]
