@@ -1,5 +1,5 @@
-// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
+// Copyright (c) .NET Foundation and contributors. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
 using System.Collections.Immutable;
@@ -103,7 +103,14 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 				break;
 			case IPropertyReferenceOperation propertyRef:
 				// A property assignment is really a call to the property setter.
-				var setMethod = propertyRef.Property.SetMethod!;
+				var setMethod = propertyRef.Property.SetMethod;
+				if (setMethod == null) {
+					// This can happen in a constructor - there it is possible to assign to a property
+					// without a setter. This turns into an assignment to the compiler-generated backing field.
+					// To match the linker, this should warn about the compiler-generated backing field.
+					// For now, just don't warn.
+					break;
+				}
 				TValue instanceValue = Visit (propertyRef.Instance, state);
 				// The return value of a property set expression is the value,
 				// even though a property setter has no return value.

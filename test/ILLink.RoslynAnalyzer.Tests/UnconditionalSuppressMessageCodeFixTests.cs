@@ -1,5 +1,5 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
+// Copyright (c) .NET Foundation and contributors. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
 using System.Threading.Tasks;
@@ -184,7 +184,7 @@ public class C
 				test,
 				fixtest,
 				baselineExpected: new[] {
-				// /0/Test0.cs(7,17): warning IL2117: Members annotated with 'RequiresDynamicCodeAttribute' require dynamic access otherwise can break functionality when trimming application code. message.
+				// /0/Test0.cs(7,17): warning IL3050: Members annotated with 'RequiresDynamicCodeAttribute' require dynamic access otherwise can break functionality when trimming application code. message.
 				VerifyCSUSMwithRDC.Diagnostic (DiagnosticId.RequiresDynamicCode).WithSpan (7, 17, 7, 21).WithArguments ("C.M1()", " message.", "")
 				},
 				fixedExpected: Array.Empty<DiagnosticResult> ());
