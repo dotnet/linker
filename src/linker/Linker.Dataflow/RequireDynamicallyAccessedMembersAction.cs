@@ -34,7 +34,7 @@ namespace ILLink.Shared.TrimAnalysis
 				type = default;
 				return false;
 			} else {
-				_reflectionMethodBodyScanner.MarkType (_origin.Provider, typeRef);
+				_reflectionMethodBodyScanner.MarkType (_origin, typeRef);
 				_context.MarkingHelpers.MarkMatchingExportedType (foundType, typeAssembly, new DependencyInfo (DependencyKind.DynamicallyAccessedMember, foundType), _origin);
 				type = new TypeProxy (foundType);
 				return true;
@@ -43,7 +43,7 @@ namespace ILLink.Shared.TrimAnalysis
 
 		private partial void MarkTypeForDynamicallyAccessedMembers (in TypeProxy type, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 		{
-			_reflectionMethodBodyScanner.MarkTypeForDynamicallyAccessedMembers (_origin.Provider, type.Type, dynamicallyAccessedMemberTypes, DependencyKind.DynamicallyAccessedMember);
+			_reflectionMethodBodyScanner.MarkTypeForDynamicallyAccessedMembers (_origin, type.Type, dynamicallyAccessedMemberTypes, DependencyKind.DynamicallyAccessedMember);
 		}
 	}
 }

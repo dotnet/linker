@@ -238,7 +238,7 @@ namespace Mono.Linker.Steps
 			_unreachableBlocksOptimizer = new UnreachableBlocksOptimizer (_context);
 			_markContext = new MarkStepContext ();
 			_scopeStack = new MarkScopeStack ();
-			_dynamicallyAccessedMembersTypeHierarchy = new DynamicallyAccessedMembersTypeHierarchy (_context, this, _scopeStack);
+			_dynamicallyAccessedMembersTypeHierarchy = new DynamicallyAccessedMembersTypeHierarchy (_context, this);
 
 			Initialize ();
 			Process ();
@@ -1600,7 +1600,7 @@ namespace Mono.Linker.Steps
 			MarkField (field, reason, origin);
 		}
 
-		void ReportWarningsForTypeHierarchyReflectionAccess (IMemberDefinition member)
+		void ReportWarningsForTypeHierarchyReflectionAccess (IMemberDefinition member, MessageOrigin origin)
 		{
 			Debug.Assert (member is MethodDefinition or FieldDefinition);
 
@@ -1609,7 +1609,7 @@ namespace Mono.Linker.Steps
 			// annotation on a type, not a callsite which uses the annotation. We always want to warn about
 			// possible reflection access indicated by these annotations.
 
-			var type = ScopeStack.CurrentScope.Origin.Provider as TypeDefinition;
+			var type = origin.Provider as TypeDefinition;
 			Debug.Assert (type != null);
 
 			static bool IsDeclaredWithinType (IMemberDefinition member, TypeDefinition type)
@@ -1625,7 +1625,7 @@ namespace Mono.Linker.Steps
 			var memberScope = reportOnMember ? ScopeStack.PushScope (new MessageOrigin (member)) : null;
 
 			try {
-				var origin = ScopeStack.CurrentScope.Origin;
+				origin = reportOnMember ? ScopeStack.CurrentScope.Origin : origin;
 
 				if (Annotations.DoesMemberRequireUnreferencedCode (member, out RequiresUnreferencedCodeAttribute? requiresUnreferencedCodeAttribute)) {
 					var id = reportOnMember ? DiagnosticId.DynamicallyAccessedMembersOnTypeReferencesMemberWithRequiresUnreferencedCode : DiagnosticId.DynamicallyAccessedMembersOnTypeReferencesMemberOnBaseWithRequiresUnreferencedCode;
@@ -1673,7 +1673,7 @@ namespace Mono.Linker.Steps
 
 				break;
 			case DependencyKind.DynamicallyAccessedMemberOnType:
-				ReportWarningsForTypeHierarchyReflectionAccess (field);
+				ReportWarningsForTypeHierarchyReflectionAccess (field, origin);
 				break;
 			}
 
@@ -2808,12 +2808,12 @@ namespace Mono.Linker.Steps
 
 			// Use the original reason as it's important to correctly generate warnings
 			// the updated reason is only useful for better tracking of dependencies.
-			ProcessAnalysisAnnotationsForMethod (method, originalReasonKind);
+			ProcessAnalysisAnnotationsForMethod (method, originalReasonKind, origin);
 
 			return method;
 		}
 
-		void ProcessAnalysisAnnotationsForMethod (MethodDefinition method, DependencyKind dependencyKind)
+		void ProcessAnalysisAnnotationsForMethod (MethodDefinition method, DependencyKind dependencyKind, in MessageOrigin origin)
 		{
 			switch (dependencyKind) {
 			// DirectCall, VirtualCall and NewObj are handled by ReflectionMethodBodyScanner
@@ -2887,7 +2887,7 @@ namespace Mono.Linker.Steps
 			if (dependencyKind == DependencyKind.DynamicallyAccessedMemberOnType) {
 				// DynamicallyAccessedMembers on type gets special treatment so that the warning origin
 				// is the type or the annotated member.
-				ReportWarningsForTypeHierarchyReflectionAccess (method);
+				ReportWarningsForTypeHierarchyReflectionAccess (method, origin);
 				return;
 			}
 
