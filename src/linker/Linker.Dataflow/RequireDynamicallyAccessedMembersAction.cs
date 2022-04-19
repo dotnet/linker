@@ -18,13 +18,12 @@ namespace ILLink.Shared.TrimAnalysis
 		public RequireDynamicallyAccessedMembersAction (
 			LinkContext context,
 			ReflectionMarker reflectionMarker,
-			in MessageOrigin origin,
-			bool diagnosticsEnabled)
+			in DiagnosticContext diagnosticContext)
 		{
-			_diagnosticContext = new DiagnosticContext (origin, diagnosticsEnabled, context);
 			_context = context;
-			_origin = origin;
 			_reflectionMarker = reflectionMarker;
+			_origin = diagnosticContext.Origin;
+			_diagnosticContext = diagnosticContext;
 		}
 
 		private partial bool TryResolveTypeNameAndMark (string typeName, out TypeProxy type)

@@ -22,17 +22,16 @@ namespace ILLink.Shared.TrimAnalysis
 		public HandleCallAction (
 			LinkContext context,
 			ReflectionMarker reflectionMarker,
-			in MessageOrigin origin,
-			bool diagnosticsEnabled,
+			in DiagnosticContext diagnosticContext,
 			MethodDefinition callingMethodDefinition)
 		{
 			_context = context;
 			_reflectionMarker = reflectionMarker;
-			_origin = origin;
+			_diagnosticContext = diagnosticContext;
+			_origin = diagnosticContext.Origin;
 			_callingMethodDefinition = callingMethodDefinition;
-			_diagnosticContext = new DiagnosticContext (origin, diagnosticsEnabled, context);
 			_annotations = context.Annotations.FlowAnnotations;
-			_requireDynamicallyAccessedMembersAction = new (context, reflectionMarker, origin, diagnosticsEnabled);
+			_requireDynamicallyAccessedMembersAction = new (context, reflectionMarker, diagnosticContext);
 		}
 
 		private partial bool MethodIsTypeConstructor (MethodProxy method)
