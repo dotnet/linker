@@ -54,7 +54,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 		// Set this to true to print out the dataflow states encountered during the analysis.
 		readonly bool showStates = false;
 
-		static readonly TracingType tracingMechanism = TracingType.Console;
+		static readonly TracingType tracingMechanism = Debugger.IsAttached ? TracingType.Debug : TracingType.Console;
 #pragma warning restore CA1805 // Do not initialize unnecessarily
 		ControlFlowGraphProxy cfg;
 
@@ -107,22 +107,30 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 		private static void TraceWriteLine (string tracingInfo)
 		{
-			if (tracingMechanism == TracingType.Console)
+			switch (tracingMechanism) {
+			case TracingType.Console:
 				Console.WriteLine (tracingInfo);
-			else if (tracingMechanism == TracingType.Debug)
+				break;
+			case TracingType.Debug:
 				Debug.WriteLine (tracingInfo);
-			else
+				break;
+			default:
 				throw new NotImplementedException (message: "invalid TracingType is being used");
+			}
 		}
 
 		private static void TraceWrite (string tracingInfo)
 		{
-			if (tracingMechanism == TracingType.Console)
+			switch (tracingMechanism) {
+			case TracingType.Console:
 				Console.Write (tracingInfo);
-			else if (tracingMechanism == TracingType.Debug)
+				break;
+			case TracingType.Debug:
 				Debug.Write (tracingInfo);
-			else
+				break;
+			default:
 				throw new NotImplementedException (message: "invalid TracingType is being used");
+			}
 		}
 
 		static void WriteIndented (string? s, int level)
