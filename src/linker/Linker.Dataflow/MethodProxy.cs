@@ -32,18 +32,7 @@ namespace ILLink.Shared.TypeSystemProxy
 
 		internal partial bool IsStatic () => Method.IsStatic;
 
-		/// <summary>
-		/// Uses the logic from <see cref="MethodBodyScanner.GetReturnTypeWithoutModifiers(TypeReference)"/> to get the
-		/// return type and determine if it is void
-		/// </summary>
-		internal partial bool ReturnsVoid ()
-		{
-			var returnType = Method.ReturnType;
-			while (returnType is IModifierType) {
-				returnType = ((IModifierType) returnType).ElementType;
-			}
-			return returnType.MetadataType == MetadataType.Void;
-		}
+		internal partial bool ReturnsVoid () => Method.ReturnsVoid ();
 
 		public override string ToString () => Method.ToString ();
 	}

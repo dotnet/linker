@@ -72,7 +72,7 @@ namespace Mono.Linker.Dataflow
 		{
 			Scan (methodBody);
 
-			if (GetReturnTypeWithoutModifiers (methodBody.Method.ReturnType).MetadataType != MetadataType.Void) {
+			if (!methodBody.Method.ReturnsVoid ()) {
 				var method = methodBody.Method;
 				var methodReturnValue = GetMethodReturnValue (method);
 				if (methodReturnValue.DynamicallyAccessedMemberTypes != 0) {
@@ -833,7 +833,7 @@ namespace Mono.Linker.Dataflow
 			// If we get here, we handled this as an intrinsic.  As a convenience, if the code above
 			// didn't set the return value (and the method has a return value), we will set it to be an
 			// unknown value with the return type of the method.
-			bool returnsVoid = GetReturnTypeWithoutModifiers (calledMethod.ReturnType).MetadataType == MetadataType.Void;
+			bool returnsVoid = calledMethod.ReturnsVoid ();
 			methodReturnValue = maybeMethodReturnValue ?? (returnsVoid ?
 				MultiValueLattice.Top :
 				GetMethodReturnValue (calledMethodDefinition, returnValueDynamicallyAccessedMemberTypes));
