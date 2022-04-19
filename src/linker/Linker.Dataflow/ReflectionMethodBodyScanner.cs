@@ -24,6 +24,7 @@ namespace Mono.Linker.Dataflow
 		readonly MarkStep _markStep;
 		MessageOrigin _origin;
 		readonly FlowAnnotations _annotations;
+		readonly ReflectionMarker _reflectionMarker;
 
 		public static bool RequiresReflectionMethodBodyScannerForCallSite (LinkContext context, MethodReference calledMethod)
 		{
@@ -66,6 +67,7 @@ namespace Mono.Linker.Dataflow
 			_markStep = parent;
 			_origin = origin;
 			_annotations = context.Annotations.FlowAnnotations;
+			_reflectionMarker = new ReflectionMarker (context, parent);
 		}
 
 		public void ScanAndProcessReturnValue (MethodBody methodBody)
@@ -242,7 +244,7 @@ namespace Mono.Linker.Dataflow
 
 			_origin = _origin.WithInstructionOffset (operation.Offset);
 			bool diagnosticsEnabled = ShouldEnableReflectionPatternReporting (_origin.Provider);
-			var handleCallAction = new HandleCallAction (_context, this, _origin, diagnosticsEnabled, callingMethodDefinition);
+			var handleCallAction = new HandleCallAction (_context, _reflectionMarker, _origin, diagnosticsEnabled, callingMethodDefinition);
 			switch (Intrinsics.GetIntrinsicIdForMethod (calledMethodDefinition)) {
 			case IntrinsicId.IntrospectionExtensions_GetTypeInfo:
 			case IntrinsicId.TypeInfo_AsType:
@@ -332,7 +334,7 @@ namespace Mono.Linker.Dataflow
 					var targetValue = _annotations.GetMethodParameterValue (calledMethodDefinition, 0, DynamicallyAccessedMemberTypes.PublicParameterlessConstructor);
 					foreach (var value in methodParams[0]) {
 						if (value is SystemTypeValue systemTypeValue) {
-							MarkConstructorsOnType (_origin, systemTypeValue.RepresentedType.Type, null, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+							_reflectionMarker.MarkConstructorsOnType (_origin, systemTypeValue.RepresentedType.Type, null, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 						} else {
 							RequireDynamicallyAccessedMembers (_origin, diagnosticsEnabled, value, targetValue);
 						}
@@ -384,10 +386,10 @@ namespace Mono.Linker.Dataflow
 						} else {
 							// Make sure the type is marked (this will mark it as used via reflection, which is sort of true)
 							// This should already be true for most cases (method params, fields, ...), but just in case
-							MarkType (_origin, staticType);
+							_reflectionMarker.MarkType (_origin, staticType);
 
 							var annotation = _markStep.DynamicallyAccessedMembersTypeHierarchy
-								.ApplyDynamicallyAccessedMembersToTypeHierarchy (this, staticType);
+								.ApplyDynamicallyAccessedMembersToTypeHierarchy (_reflectionMarker, staticType);
 
 							// Return a value which is "unknown type" with annotation. For now we'll use the return value node
 							// for the method, which means we're loosing the information about which staticType this
@@ -497,7 +499,7 @@ namespace Mono.Linker.Dataflow
 					foreach (var value in methodParams[0]) {
 						if (value is SystemTypeValue systemTypeValue) {
 							// Special case known type values as we can do better by applying exact binding flags and parameter count.
-							MarkConstructorsOnType (_origin, systemTypeValue.RepresentedType.Type,
+							_reflectionMarker.MarkConstructorsOnType (_origin, systemTypeValue.RepresentedType.Type,
 								ctorParameterCount == null ? null : m => m.Parameters.Count == ctorParameterCount, bindingFlags);
 						} else {
 							// Otherwise fall back to the bitfield requirements
@@ -741,7 +743,7 @@ namespace Mono.Linker.Dataflow
 								continue;
 							}
 
-							MarkConstructorsOnType (origin, resolvedType, parameterlessConstructor ? m => m.Parameters.Count == 0 : null, bindingFlags);
+							_reflectionMarker.MarkConstructorsOnType (origin, resolvedType, parameterlessConstructor ? m => m.Parameters.Count == 0 : null, bindingFlags);
 						} else {
 							if (diagnosticsEnabled)
 								_context.LogWarning (origin, DiagnosticId.UnrecognizedParameterInMethodCreateInstance, calledMethod.Parameters[1].Name, calledMethod.GetDisplayName ());
@@ -756,94 +758,8 @@ namespace Mono.Linker.Dataflow
 
 		void RequireDynamicallyAccessedMembers (in MessageOrigin origin, bool diagnosticsEnabled, in MultiValue value, ValueWithDynamicallyAccessedMembers targetValue)
 		{
-			var requireDynamicallyAccessedMembersAction = new RequireDynamicallyAccessedMembersAction (_context, this, origin, diagnosticsEnabled);
+			var requireDynamicallyAccessedMembersAction = new RequireDynamicallyAccessedMembersAction (_context, _reflectionMarker, origin, diagnosticsEnabled);
 			requireDynamicallyAccessedMembersAction.Invoke (value, targetValue);
-		}
-
-		internal void MarkTypeForDynamicallyAccessedMembers (in MessageOrigin origin, TypeDefinition typeDefinition, DynamicallyAccessedMemberTypes requiredMemberTypes, DependencyKind dependencyKind, bool declaredOnly = false)
-		{
-			foreach (var member in typeDefinition.GetDynamicallyAccessedMembers (_context, requiredMemberTypes, declaredOnly)) {
-				switch (member) {
-				case MethodDefinition method:
-					MarkMethod (origin, method, dependencyKind);
-					break;
-				case FieldDefinition field:
-					MarkField (origin, field, dependencyKind);
-					break;
-				case TypeDefinition nestedType:
-					MarkType (origin, nestedType, dependencyKind);
-					break;
-				case PropertyDefinition property:
-					MarkProperty (origin, property, dependencyKind);
-					break;
-				case EventDefinition @event:
-					MarkEvent (origin, @event, dependencyKind);
-					break;
-				case InterfaceImplementation interfaceImplementation:
-					MarkInterfaceImplementation (origin, interfaceImplementation, dependencyKind);
-					break;
-				}
-			}
-		}
-
-		internal void MarkType (in MessageOrigin origin, TypeReference typeReference, DependencyKind dependencyKind = DependencyKind.AccessedViaReflection)
-		{
-			if (_context.TryResolve (typeReference) is TypeDefinition type)
-				_markStep.MarkTypeVisibleToReflection (typeReference, type, new DependencyInfo (dependencyKind, origin.Provider), origin);
-		}
-
-		internal void MarkMethod (in MessageOrigin origin, MethodDefinition method, DependencyKind dependencyKind = DependencyKind.AccessedViaReflection)
-		{
-			_markStep.MarkMethodVisibleToReflection (method, new DependencyInfo (dependencyKind, origin.Provider), origin);
-		}
-
-		void MarkField (in MessageOrigin origin, FieldDefinition field, DependencyKind dependencyKind = DependencyKind.AccessedViaReflection)
-		{
-			_markStep.MarkFieldVisibleToReflection (field, new DependencyInfo (dependencyKind, origin.Provider), origin);
-		}
-
-		internal void MarkProperty (in MessageOrigin origin, PropertyDefinition property, DependencyKind dependencyKind = DependencyKind.AccessedViaReflection)
-		{
-			_markStep.MarkPropertyVisibleToReflection (property, new DependencyInfo (dependencyKind, origin.Provider), origin);
-		}
-
-		void MarkEvent (in MessageOrigin origin, EventDefinition @event, DependencyKind dependencyKind = DependencyKind.AccessedViaReflection)
-		{
-			_markStep.MarkEventVisibleToReflection (@event, new DependencyInfo (dependencyKind, origin.Provider), origin);
-		}
-
-		void MarkInterfaceImplementation (in MessageOrigin origin, InterfaceImplementation interfaceImplementation, DependencyKind dependencyKind = DependencyKind.AccessedViaReflection)
-		{
-			_markStep.MarkInterfaceImplementation (interfaceImplementation, null, new DependencyInfo (dependencyKind, origin.Provider));
-		}
-
-		internal void MarkConstructorsOnType (in MessageOrigin origin, TypeDefinition type, Func<MethodDefinition, bool>? filter, BindingFlags? bindingFlags = null)
-		{
-			foreach (var ctor in type.GetConstructorsOnType (filter, bindingFlags))
-				MarkMethod (origin, ctor);
-		}
-
-		internal void MarkFieldsOnTypeHierarchy (in MessageOrigin origin, TypeDefinition type, Func<FieldDefinition, bool> filter, BindingFlags? bindingFlags = BindingFlags.Default)
-		{
-			foreach (var field in type.GetFieldsOnTypeHierarchy (_context, filter, bindingFlags))
-				MarkField (origin, field);
-		}
-
-		internal void MarkPropertiesOnTypeHierarchy (in MessageOrigin origin, TypeDefinition type, Func<PropertyDefinition, bool> filter, BindingFlags? bindingFlags = BindingFlags.Default)
-		{
-			foreach (var property in type.GetPropertiesOnTypeHierarchy (_context, filter, bindingFlags))
-				MarkProperty (origin, property);
-		}
-
-		internal void MarkEventsOnTypeHierarchy (in MessageOrigin origin, TypeDefinition type, Func<EventDefinition, bool> filter, BindingFlags? bindingFlags = BindingFlags.Default)
-		{
-			foreach (var @event in type.GetEventsOnTypeHierarchy (_context, filter, bindingFlags))
-				MarkEvent (origin, @event);
-		}
-
-		internal void MarkStaticConstructor (in MessageOrigin origin, TypeDefinition type)
-		{
-			_markStep.MarkStaticConstructorVisibleToReflection (type, new DependencyInfo (DependencyKind.AccessedViaReflection, origin.Provider), origin);
 		}
 
 		static DynamicallyAccessedMemberTypes GetDynamicallyAccessedMemberTypesFromBindingFlagsForConstructors (BindingFlags? bindingFlags) =>

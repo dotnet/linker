@@ -12,19 +12,19 @@ namespace ILLink.Shared.TrimAnalysis
 	partial struct RequireDynamicallyAccessedMembersAction
 	{
 		readonly LinkContext _context;
-		readonly ReflectionMethodBodyScanner _reflectionMethodBodyScanner;
+		readonly ReflectionMarker _reflectionMarker;
 		readonly MessageOrigin _origin;
 
 		public RequireDynamicallyAccessedMembersAction (
 			LinkContext context,
-			ReflectionMethodBodyScanner reflectionMethodBodyScanner,
+			ReflectionMarker reflectionMarker,
 			in MessageOrigin origin,
 			bool diagnosticsEnabled)
 		{
 			_diagnosticContext = new DiagnosticContext (origin, diagnosticsEnabled, context);
 			_context = context;
 			_origin = origin;
-			_reflectionMethodBodyScanner = reflectionMethodBodyScanner;
+			_reflectionMarker = reflectionMarker;
 		}
 
 		private partial bool TryResolveTypeNameAndMark (string typeName, out TypeProxy type)
@@ -34,7 +34,7 @@ namespace ILLink.Shared.TrimAnalysis
 				type = default;
 				return false;
 			} else {
-				_reflectionMethodBodyScanner.MarkType (_origin, typeRef);
+				_reflectionMarker.MarkType (_origin, typeRef);
 				_context.MarkingHelpers.MarkMatchingExportedType (foundType, typeAssembly, new DependencyInfo (DependencyKind.DynamicallyAccessedMember, foundType), _origin);
 				type = new TypeProxy (foundType);
 				return true;
@@ -43,7 +43,7 @@ namespace ILLink.Shared.TrimAnalysis
 
 		private partial void MarkTypeForDynamicallyAccessedMembers (in TypeProxy type, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 		{
-			_reflectionMethodBodyScanner.MarkTypeForDynamicallyAccessedMembers (_origin, type.Type, dynamicallyAccessedMemberTypes, DependencyKind.DynamicallyAccessedMember);
+			_reflectionMarker.MarkTypeForDynamicallyAccessedMembers (_origin, type.Type, dynamicallyAccessedMemberTypes, DependencyKind.DynamicallyAccessedMember);
 		}
 	}
 }
