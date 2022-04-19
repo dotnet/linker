@@ -472,7 +472,7 @@ namespace Mono.Linker.Steps
 		void SweepOverrides (MethodDefinition method)
 		{
 			for (int i = 0; i < method.Overrides.Count;) {
-				if (Context.Resolve(method.Overrides[i]) is MethodDefinition ov && ShouldRemove (ov))
+				if (Context.Resolve (method.Overrides[i]) is MethodDefinition ov && ShouldRemove (ov))
 					method.Overrides.RemoveAt (i);
 				else
 					i++;
