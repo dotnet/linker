@@ -117,7 +117,7 @@ namespace Mono.Linker.Dataflow
 				// One of the base/interface types is already marked as having the annotation applied
 				// so we need to apply the annotation to this type as well
 				using var _ = _scopeStack.PushScope (new MessageOrigin (type));
-				var reflectionMethodBodyScanner = new ReflectionMethodBodyScanner (_context, _markStep, _scopeStack);
+				var reflectionMethodBodyScanner = new ReflectionMethodBodyScanner (_context, _markStep, _scopeStack.CurrentScope.Origin);
 				// Report warnings on access to annotated members, with the annotated type as the origin.
 				ApplyDynamicallyAccessedMembersToType (ref reflectionMethodBodyScanner, _scopeStack.CurrentScope.Origin.Provider, type, annotation);
 			}

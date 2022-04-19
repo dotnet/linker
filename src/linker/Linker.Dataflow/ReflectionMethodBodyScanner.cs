@@ -22,7 +22,7 @@ namespace Mono.Linker.Dataflow
 	class ReflectionMethodBodyScanner : MethodBodyScanner
 	{
 		readonly MarkStep _markStep;
-		readonly MarkScopeStack _scopeStack;
+		MessageOrigin _origin;
 
 		public static bool RequiresReflectionMethodBodyScannerForCallSite (LinkContext context, MethodReference calledMethod)
 		{
@@ -59,11 +59,11 @@ namespace Mono.Linker.Dataflow
 			return true;
 		}
 
-		public ReflectionMethodBodyScanner (LinkContext context, MarkStep parent, MarkScopeStack scopeStack)
+		public ReflectionMethodBodyScanner (LinkContext context, MarkStep parent, MessageOrigin origin)
 			: base (context)
 		{
 			_markStep = parent;
-			_scopeStack = scopeStack;
+			_origin = origin;
 		}
 
 		public void ScanAndProcessReturnValue (MethodBody methodBody)
@@ -74,7 +74,7 @@ namespace Mono.Linker.Dataflow
 				var method = methodBody.Method;
 				var methodReturnValue = GetMethodReturnValue (method);
 				if (methodReturnValue.DynamicallyAccessedMemberTypes != 0) {
-					RequireDynamicallyAccessedMembers (_scopeStack.CurrentScope.Origin, ShouldEnableReflectionPatternReporting (_scopeStack.CurrentScope.Origin.Provider), ReturnValue, methodReturnValue);
+					RequireDynamicallyAccessedMembers (_origin, ShouldEnableReflectionPatternReporting (_origin.Provider), ReturnValue, methodReturnValue);
 				}
 			}
 		}
@@ -87,7 +87,7 @@ namespace Mono.Linker.Dataflow
 				var parameterValue = GetMethodParameterValue (method, i + paramOffset);
 				if (parameterValue.DynamicallyAccessedMemberTypes != DynamicallyAccessedMemberTypes.None) {
 					MultiValue value = GetValueNodeForCustomAttributeArgument (arguments[i]);
-					RequireDynamicallyAccessedMembers (_scopeStack.CurrentScope.Origin, diagnosticsEnabled: true, value, parameterValue);
+					RequireDynamicallyAccessedMembers (_origin, diagnosticsEnabled: true, value, parameterValue);
 				}
 			}
 		}
@@ -99,7 +99,7 @@ namespace Mono.Linker.Dataflow
 				if (fieldValueCandidate is not ValueWithDynamicallyAccessedMembers fieldValue)
 					continue;
 
-				RequireDynamicallyAccessedMembers (_scopeStack.CurrentScope.Origin, diagnosticsEnabled: true, valueNode, fieldValue);
+				RequireDynamicallyAccessedMembers (_origin, diagnosticsEnabled: true, valueNode, fieldValue);
 			}
 		}
 
@@ -131,7 +131,7 @@ namespace Mono.Linker.Dataflow
 			var genericParameterValue = new GenericParameterValue (genericParameter, annotation);
 			MultiValue genericArgumentValue = GetTypeValueNodeFromGenericArgument (genericArgument);
 
-			RequireDynamicallyAccessedMembers (_scopeStack.CurrentScope.Origin, ShouldEnableReflectionPatternReporting (_scopeStack.CurrentScope.Origin.Provider), genericArgumentValue, genericParameterValue);
+			RequireDynamicallyAccessedMembers (_origin, ShouldEnableReflectionPatternReporting (_origin.Provider), genericArgumentValue, genericParameterValue);
 		}
 
 		MultiValue GetTypeValueNodeFromGenericArgument (TypeReference genericArgument)
@@ -224,16 +224,16 @@ namespace Mono.Linker.Dataflow
 		protected override void HandleStoreField (MethodDefinition method, FieldValue field, Instruction operation, MultiValue valueToStore)
 		{
 			if (field.DynamicallyAccessedMemberTypes != 0) {
-				_scopeStack.UpdateCurrentScopeInstructionOffset (operation.Offset);
-				RequireDynamicallyAccessedMembers (_scopeStack.CurrentScope.Origin, ShouldEnableReflectionPatternReporting (_scopeStack.CurrentScope.Origin.Provider), valueToStore, field);
+				_origin = _origin.WithInstructionOffset (operation.Offset);
+				RequireDynamicallyAccessedMembers (_origin, ShouldEnableReflectionPatternReporting (_origin.Provider), valueToStore, field);
 			}
 		}
 
 		protected override void HandleStoreParameter (MethodDefinition method, MethodParameterValue parameter, Instruction operation, MultiValue valueToStore)
 		{
 			if (parameter.DynamicallyAccessedMemberTypes != 0) {
-				_scopeStack.UpdateCurrentScopeInstructionOffset (operation.Offset);
-				RequireDynamicallyAccessedMembers (_scopeStack.CurrentScope.Origin, ShouldEnableReflectionPatternReporting (_scopeStack.CurrentScope.Origin.Provider), valueToStore, parameter);
+				_origin = _origin.WithInstructionOffset (operation.Offset);
+				RequireDynamicallyAccessedMembers (_origin, ShouldEnableReflectionPatternReporting (_origin.Provider), valueToStore, parameter);
 			}
 		}
 
@@ -257,8 +257,8 @@ namespace Mono.Linker.Dataflow
 			returnValueDynamicallyAccessedMemberTypes = requiresDataFlowAnalysis ?
 				_context.Annotations.FlowAnnotations.GetReturnParameterAnnotation (calledMethodDefinition) : 0;
 
-			_scopeStack.UpdateCurrentScopeInstructionOffset (operation.Offset);
-			var origin = _scopeStack.CurrentScope.Origin;
+			_origin = _origin.WithInstructionOffset (operation.Offset);
+			var origin = _origin;
 			bool diagnosticsEnabled = ShouldEnableReflectionPatternReporting (origin.Provider);
 			var handleCallAction = new HandleCallAction (_context, this, origin, diagnosticsEnabled, callingMethodDefinition);
 			switch (Intrinsics.GetIntrinsicIdForMethod (calledMethodDefinition)) {
@@ -553,7 +553,7 @@ namespace Mono.Linker.Dataflow
 								|| ResolveToTypeDefinition (foundTypeRef) is not TypeDefinition foundType) {
 								// Intentionally ignore - it's not wrong for code to call Type.GetType on non-existing name, the code might expect null/exception back.
 							} else {
-								_markStep.MarkTypeVisibleToReflection (foundTypeRef, foundType, new DependencyInfo (DependencyKind.AccessedViaReflection, callingMethodDefinition));
+								_markStep.MarkTypeVisibleToReflection (foundTypeRef, foundType, new DependencyInfo (DependencyKind.AccessedViaReflection, callingMethodDefinition), _origin);
 								AddReturnValue (new SystemTypeValue (foundType));
 								_context.MarkingHelpers.MarkMatchingExportedType (foundType, typeAssembly, new DependencyInfo (DependencyKind.AccessedViaReflection, foundType), origin);
 							}
@@ -783,7 +783,7 @@ namespace Mono.Linker.Dataflow
 					}
 				}
 
-				_markStep.CheckAndReportRequiresUnreferencedCode (calledMethodDefinition, _scopeStack.CurrentScope.Origin);
+				_markStep.CheckAndReportRequiresUnreferencedCode (calledMethodDefinition, _origin);
 
 				// To get good reporting of errors we need to track the origin of the value for all method calls
 				// but except Newobj as those are special.
@@ -1032,27 +1032,27 @@ namespace Mono.Linker.Dataflow
 		internal void MarkType (ICustomAttributeProvider? provider, TypeReference typeReference, DependencyKind dependencyKind = DependencyKind.AccessedViaReflection)
 		{
 			if (_context.TryResolve (typeReference) is TypeDefinition type)
-				_markStep.MarkTypeVisibleToReflection (typeReference, type, new DependencyInfo (dependencyKind, provider));
+				_markStep.MarkTypeVisibleToReflection (typeReference, type, new DependencyInfo (dependencyKind, provider), _origin);
 		}
 
 		internal void MarkMethod (ICustomAttributeProvider? provider, MethodDefinition method, DependencyKind dependencyKind = DependencyKind.AccessedViaReflection)
 		{
-			_markStep.MarkMethodVisibleToReflection (method, new DependencyInfo (dependencyKind, provider));
+			_markStep.MarkMethodVisibleToReflection (method, new DependencyInfo (dependencyKind, provider), _origin);
 		}
 
 		void MarkField (ICustomAttributeProvider? provider, FieldDefinition field, DependencyKind dependencyKind = DependencyKind.AccessedViaReflection)
 		{
-			_markStep.MarkFieldVisibleToReflection (field, new DependencyInfo (dependencyKind, provider));
+			_markStep.MarkFieldVisibleToReflection (field, new DependencyInfo (dependencyKind, provider), _origin);
 		}
 
 		internal void MarkProperty (ICustomAttributeProvider? provider, PropertyDefinition property, DependencyKind dependencyKind = DependencyKind.AccessedViaReflection)
 		{
-			_markStep.MarkPropertyVisibleToReflection (property, new DependencyInfo (dependencyKind, provider));
+			_markStep.MarkPropertyVisibleToReflection (property, new DependencyInfo (dependencyKind, provider), _origin);
 		}
 
 		void MarkEvent (ICustomAttributeProvider? provider, EventDefinition @event, DependencyKind dependencyKind = DependencyKind.AccessedViaReflection)
 		{
-			_markStep.MarkEventVisibleToReflection (@event, new DependencyInfo (dependencyKind, provider));
+			_markStep.MarkEventVisibleToReflection (@event, new DependencyInfo (dependencyKind, provider), _origin);
 		}
 
 		void MarkInterfaceImplementation (ICustomAttributeProvider? provider, InterfaceImplementation interfaceImplementation, DependencyKind dependencyKind = DependencyKind.AccessedViaReflection)
@@ -1086,7 +1086,7 @@ namespace Mono.Linker.Dataflow
 
 		internal void MarkStaticConstructor (ICustomAttributeProvider? provider, TypeDefinition type)
 		{
-			_markStep.MarkStaticConstructorVisibleToReflection (type, new DependencyInfo (DependencyKind.AccessedViaReflection, provider));
+			_markStep.MarkStaticConstructorVisibleToReflection (type, new DependencyInfo (DependencyKind.AccessedViaReflection, provider), _origin);
 		}
 
 		void ValidateGenericMethodInstantiation (
