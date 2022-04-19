@@ -89,23 +89,23 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			if (!trace)
 				return;
 
-			TraceWrite ("block " + block.Block.Ordinal + ": ", tracingMechanism);
+			TraceWrite ("block " + block.Block.Ordinal + ": ");
 			if (block.Block.Operations.FirstOrDefault () is IOperation firstBlockOp) {
-				TraceWriteLine (firstBlockOp.Syntax.ToString (), tracingMechanism);
+				TraceWriteLine (firstBlockOp.Syntax.ToString ());
 			} else if (block.Block.BranchValue is IOperation branchOp) {
-				TraceWriteLine (branchOp.Syntax.ToString (), tracingMechanism);
+				TraceWriteLine (branchOp.Syntax.ToString ());
 			} else {
-				TraceWriteLine ("", tracingMechanism);
+				TraceWriteLine ("");
 			}
-			TraceWrite ("predecessors: ", tracingMechanism);
+			TraceWrite ("predecessors: ");
 			foreach (var predecessor in cfg.GetPredecessors (block)) {
 				var predProxy = predecessor.Block;
-				TraceWrite (predProxy.Block.Ordinal + " ", tracingMechanism);
+				TraceWrite (predProxy.Block.Ordinal + " ");
 			}
-			TraceWriteLine ("", tracingMechanism);
+			TraceWriteLine ("");
 		}
 
-		private static void TraceWriteLine (string tracingInfo, TracingType tracingMechanism)
+		private static void TraceWriteLine (string tracingInfo)
 		{
 			if (tracingMechanism == TracingType.Console)
 				Console.WriteLine (tracingInfo);
@@ -115,7 +115,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 				throw new NotImplementedException (message: "invalid TracingType is being used");
 		}
 
-		private static void TraceWrite (string tracingInfo, TracingType tracingMechanism)
+		private static void TraceWrite (string tracingInfo)
 		{
 			if (tracingMechanism == TracingType.Console)
 				Console.Write (tracingInfo);
@@ -131,8 +131,8 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			if (lines == null)
 				return;
 			foreach (var line in lines) {
-				TraceWrite (new String ('\t', level), tracingMechanism);
-				TraceWriteLine (line, tracingMechanism);
+				TraceWrite (new String ('\t', level));
+				TraceWriteLine (line);
 			}
 		}
 
