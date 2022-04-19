@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) .NET Foundation and contributors. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -231,7 +234,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 #if NETCOREAPP
 		protected virtual NPath CompileCSharpAssemblyWithRoslyn (CompilerOptions options)
 		{
-			var languageVersion = LanguageVersion.Default;
+			var languageVersion = LanguageVersion.Preview;
 			var compilationOptions = new CSharpCompilationOptions (
 				outputKind: options.OutputPath.FileName.EndsWith (".exe") ? OutputKind.ConsoleApplication : OutputKind.DynamicallyLinkedLibrary,
 				assemblyIdentityComparer: DesktopAssemblyIdentityComparer.Default

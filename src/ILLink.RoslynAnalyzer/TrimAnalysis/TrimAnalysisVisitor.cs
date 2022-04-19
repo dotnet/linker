@@ -1,5 +1,5 @@
-// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
+// Copyright (c) .NET Foundation and contributors. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Immutable;
 using System.Linq;
@@ -124,13 +124,18 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 		public override MultiValue VisitFieldReference (IFieldReferenceOperation fieldRef, StateValue state)
 		{
-			if (fieldRef.Field.Type.IsTypeInterestingForDataflow ()) {
-				var field = fieldRef.Field;
-				if (field.Name is "Empty" && field.ContainingType.HasName ("System.String"))
+			var field = fieldRef.Field;
+			switch (field.Name) {
+			case "EmptyTypes" when field.ContainingType.IsTypeOf ("System", "Type"): {
+					return ArrayValue.Create (0);
+				}
+			case "Empty" when field.ContainingType.IsTypeOf ("System", "String"): {
 					return new KnownStringValue (string.Empty);
-
-				return new FieldValue (fieldRef.Field);
+				}
 			}
+
+			if (fieldRef.Field.Type.IsTypeInterestingForDataflow ())
+				return new FieldValue (fieldRef.Field);
 
 			return TopValue;
 		}
@@ -190,16 +195,17 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 		public override MultiValue HandleArrayElementRead (MultiValue arrayValue, MultiValue indexValue, IOperation operation)
 		{
-			if (arrayValue.AsSingleValue () is not ArrayValue arr)
-				return UnknownValue.Instance;
-
 			if (indexValue.AsConstInt () is not int index)
 				return UnknownValue.Instance;
 
-			if (arr.TryGetValueByIndex (index, out var elementValue))
-				return elementValue;
-
-			return UnknownValue.Instance;
+			MultiValue result = TopValue;
+			foreach (var value in arrayValue) {
+				if (value is ArrayValue arr && arr.TryGetValueByIndex (index, out var elementValue))
+					result = _multiValueLattice.Meet (result, elementValue);
+				else
+					return UnknownValue.Instance;
+			}
+			return result.Equals (TopValue) ? UnknownValue.Instance : result;
 		}
 
 		public override void HandleArrayElementWrite (MultiValue arrayValue, MultiValue indexValue, MultiValue valueToWrite, IOperation operation)
@@ -235,11 +241,20 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 			var diagnosticContext = DiagnosticContext.CreateDisabled ();
 			var handleCallAction = new HandleCallAction (diagnosticContext, Context.OwningSymbol, operation);
-			if (!handleCallAction.Invoke (new MethodProxy (calledMethod), instance, arguments, out MultiValue methodReturnValue)) {
-				if (!calledMethod.ReturnsVoid && calledMethod.ReturnType.IsTypeInterestingForDataflow ())
-					methodReturnValue = new MethodReturnValue (calledMethod);
-				else
-					methodReturnValue = TopValue;
+			if (!handleCallAction.Invoke (new MethodProxy (calledMethod), instance, arguments, out MultiValue methodReturnValue, out var intrinsicId)) {
+				switch (intrinsicId) {
+				case IntrinsicId.Array_Empty:
+					methodReturnValue = ArrayValue.Create (0);
+					break;
+
+				default:
+					if (!calledMethod.ReturnsVoid && calledMethod.ReturnType.IsTypeInterestingForDataflow ())
+						methodReturnValue = new MethodReturnValue (calledMethod);
+					else
+						methodReturnValue = TopValue;
+
+					break;
+				}
 			}
 
 			TrimAnalysisPatterns.Add (new TrimAnalysisMethodCallPattern (

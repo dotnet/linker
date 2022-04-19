@@ -1,5 +1,5 @@
-// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
+// Copyright (c) .NET Foundation and contributors. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
 using System.Diagnostics.CodeAnalysis;
@@ -36,6 +36,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TestAutomaticPropagation ();
 
 			PropertyWithAttributeMarkingItself.Test ();
+			new TestWriteToGetOnlyProperty ();
 		}
 
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
@@ -68,24 +69,24 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		[ExpectedWarning ("IL2072", nameof (PropertyDataFlow) + "." + nameof (PropertyWithPublicConstructor) + ".set", nameof (GetTypeWithPublicParameterlessConstructor))]
 		[ExpectedWarning ("IL2072", nameof (PropertyDataFlow) + "." + nameof (PropertyWithPublicConstructor) + ".set", nameof (GetTypeWithNonPublicConstructors))]
-		[ExpectedWarning ("IL2072", nameof (PropertyDataFlow) + "." + nameof (PropertyWithPublicConstructor) + ".set", nameof (GetUnkownType))]
+		[ExpectedWarning ("IL2072", nameof (PropertyDataFlow) + "." + nameof (PropertyWithPublicConstructor) + ".set", nameof (GetUnknownType))]
 		private void WriteToInstanceProperty ()
 		{
 			PropertyWithPublicConstructor = GetTypeWithPublicParameterlessConstructor ();
 			PropertyWithPublicConstructor = GetTypeWithPublicConstructors ();
 			PropertyWithPublicConstructor = GetTypeWithNonPublicConstructors ();
-			PropertyWithPublicConstructor = GetUnkownType ();
+			PropertyWithPublicConstructor = GetUnknownType ();
 		}
 
 		[ExpectedWarning ("IL2072", nameof (PropertyDataFlow) + "." + nameof (StaticPropertyWithPublicConstructor) + ".set", nameof (GetTypeWithPublicParameterlessConstructor))]
 		[ExpectedWarning ("IL2072", nameof (PropertyDataFlow) + "." + nameof (StaticPropertyWithPublicConstructor) + ".set", nameof (GetTypeWithNonPublicConstructors))]
-		[ExpectedWarning ("IL2072", nameof (PropertyDataFlow) + "." + nameof (StaticPropertyWithPublicConstructor) + ".set", nameof (GetUnkownType))]
+		[ExpectedWarning ("IL2072", nameof (PropertyDataFlow) + "." + nameof (StaticPropertyWithPublicConstructor) + ".set", nameof (GetUnknownType))]
 		private void WriteToStaticProperty ()
 		{
 			StaticPropertyWithPublicConstructor = GetTypeWithPublicParameterlessConstructor ();
 			StaticPropertyWithPublicConstructor = GetTypeWithPublicConstructors ();
 			StaticPropertyWithPublicConstructor = GetTypeWithNonPublicConstructors ();
-			StaticPropertyWithPublicConstructor = GetUnkownType ();
+			StaticPropertyWithPublicConstructor = GetUnknownType ();
 		}
 
 		[ExpectedWarning ("IL2072", nameof (PropertyDataFlow) + "." + nameof (StaticPropertyWithPublicConstructor) + ".set", nameof (GetTypeWithNonPublicConstructors))]
@@ -436,6 +437,20 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 		}
 
+		class TestWriteToGetOnlyProperty
+		{
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+			public Type GetOnlyProperty { get; }
+
+			// Analyzer doesn't warn about compiler-generated backing field of property
+			[ExpectedWarning ("IL2074", nameof (TestWriteToGetOnlyProperty), nameof (GetUnknownType),
+				ProducedBy = ProducedBy.Trimmer)]
+			public TestWriteToGetOnlyProperty ()
+			{
+				GetOnlyProperty = GetUnknownType ();
+			}
+		}
+
 		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
 		private static Type GetTypeWithPublicParameterlessConstructor ()
 		{
@@ -454,7 +469,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			return null;
 		}
 
-		private static Type GetUnkownType ()
+		private static Type GetUnknownType ()
 		{
 			return null;
 		}

@@ -1,5 +1,5 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
+// Copyright (c) .NET Foundation and contributors. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -90,6 +90,12 @@ namespace ILLink.Shared.TrimAnalysis
 
 		private partial void MarkPropertiesOnTypeHierarchy (TypeProxy type, string name, BindingFlags? bindingFlags)
 			=> _reflectionMethodBodyScanner.MarkPropertiesOnTypeHierarchy (_analysisContext, type.Type, p => p.Name == name, bindingFlags);
+
+		private partial void MarkPublicParameterlessConstructorOnType (TypeProxy type)
+			=> _reflectionMethodBodyScanner.MarkConstructorsOnType (_analysisContext, type.Type, m => m.IsPublic && m.Parameters.Count == 0);
+
+		private partial void MarkConstructorsOnType (TypeProxy type, BindingFlags? bindingFlags)
+			=> _reflectionMethodBodyScanner.MarkConstructorsOnType (_analysisContext, type.Type, null, bindingFlags);
 
 		private partial void MarkMethod (MethodProxy method)
 			=> _reflectionMethodBodyScanner.MarkMethod (_analysisContext, method.Method);

@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) .NET Foundation and contributors. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Linker;
@@ -8,6 +11,7 @@ using NUnit.Framework;
 
 namespace Mono.Linker.Tests
 {
+	[NonParallelizable]
 	[TestFixture]
 	public class GetDisplayNameTests
 	{
