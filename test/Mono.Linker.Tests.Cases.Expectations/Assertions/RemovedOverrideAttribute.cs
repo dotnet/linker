@@ -10,6 +10,7 @@ namespace Mono.Linker.Tests.Cases.Expectations.Assertions
 	/// Fails in tests if the method has the override method in the linked assembly,
 	///		or if the override is not found in the original assembly
 	/// </Summary>
+	/// <seealso cref="KeptOverrideAttribute" />
 	[AttributeUsage (AttributeTargets.Method, AllowMultiple = true, Inherited = false)]
 	public class RemovedOverrideAttribute : BaseInAssemblyAttribute
 	{

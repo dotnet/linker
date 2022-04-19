@@ -2292,7 +2292,7 @@ namespace Mono.Linker.Steps
 
 		/// <summary>
 		/// Returns true if any of the base methods of the <paramref name="method"/> passed is in an assembly that is not trimmed (i.e. action != trim).
-		/// Meant to be used to determine whether methods should be marked regardless of whether it is instantiated or not. 
+		/// Meant to be used to determine whether methods should be marked regardless of whether it is instantiated or not.
 		/// </summary>
 		/// <remarks>
 		/// When the unusedinterfaces optimization is on, this is used to mark methods that override an abstract method from a non-link assembly and must be kept.
@@ -3053,11 +3053,12 @@ namespace Mono.Linker.Steps
 				}
 			}
 
-			// Mark overrides except for static interface methods
+			// Mark overridden methods except for static interface methods
 			if (method.HasOverrides) {
 				foreach (MethodReference ov in method.Overrides) {
-					// Don't mark overrides for static interface methods.
-					// Since they can only be called on a concrete type and not the interface, these methods can safely be removed in some cases
+					// Method implementing a static interface method will have an override to it - note nonstatic methods usually don't unless they're explicit.
+					// Calling the implementation method directly has no impact on the interface, and as such it should not mark the interface or its method.
+					// Only if the interface method is referenced, then all the methods which implemented must be kept, but not the other way round.
 					if (Context.Resolve (ov)?.IsStatic == true
 						&& Context.Resolve (ov.DeclaringType)?.IsInterface == true) {
 						continue;

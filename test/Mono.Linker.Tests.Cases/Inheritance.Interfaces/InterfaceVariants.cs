@@ -17,65 +17,71 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 		public static void Main ()
 		{
 			Type t = typeof (UninstantiatedPublicClassWithInterface);
-			t = typeof (UninstantiatedPublicClassWithImplicitlyImplementedInterface);
+			t = typeof (UninstantiatedClassWithImplicitlyImplementedInterface);
 			t = typeof (UninstantiatedPublicClassWithPrivateInterface);
+			t = typeof (ImplementsUsedStaticInterface.InterfaceMethodUnused);
+			t = typeof (ImplementsUnusedStaticInterface.InterfaceMethodUnused);
 
-			UninstantiatedPublicClassWithInterface.InternalStaticInterfaceMethodUsedThroughImplementation ();
-			InstantiatedClassWithInterfaces.InternalStaticInterfaceMethodUsedThroughImplementation ();
+			ImplementsUnusedStaticInterface.InterfaceMethodUsedThroughImplementation.InternalStaticInterfaceMethodUsedThroughImplementation ();
 			GenericMethodThatCallsInternalStaticInterfaceMethod
-				<ImplementsInternalStaticInterfaceWithInterfaceDefinitionUsedThroughGeneric> ();
-			typeof (InterfaceVariants).GetMethod ("GenericMethodThatCallsInternalStaticInterfaceMethod")
-				.MakeGenericMethod (typeof (ImplementsInternalStaticInterfaceWithInterfaceDefinitionNotUsedThroughGeneric))
-				.Invoke (null, null);
+				<ImplementsUsedStaticInterface.InterfaceMethodUsedThroughInterface> ();
 			// Use all public interfaces - they're marked as public only to denote them as "used"
 			typeof (IPublicInterface).RequiresPublicMethods ();
 			typeof (IPublicStaticInterface).RequiresPublicMethods ();
-			var x = new ImplementsInternalStaticInterfaceUnused ();
-			var a = new InstantiatedClassWithInterfaces ();
+			var ___ = new InstantiatedClassWithInterfaces ();
 		}
 
 		[Kept]
-		internal static void GenericMethodThatCallsInternalStaticInterfaceMethod<T> () where T : IInternalStaticInterfaceWithInterfaceDefinitionUsed
+		internal static void GenericMethodThatCallsInternalStaticInterfaceMethod<T> () where T : IStaticInterfaceUsed
 		{
-			T.InternalStaticInterfaceUsedThroughInterface ();
+			T.StaticMethodUsedThroughInterface ();
 		}
 
 		[Kept]
-		[KeptInterface (typeof (IInternalStaticInterfaceWithInterfaceDefinitionUsed))]
-		internal class ImplementsInternalStaticInterfaceWithInterfaceDefinitionUsedThroughGeneric : IInternalStaticInterfaceWithInterfaceDefinitionUsed
+		class ImplementsUsedStaticInterface
 		{
+
 			[Kept]
-			[KeptOverride (typeof (IInternalStaticInterfaceWithInterfaceDefinitionUsed))]
-			public static void InternalStaticInterfaceUsedThroughInterface ()
+			[KeptInterface (typeof (IStaticInterfaceUsed))]
+			internal class InterfaceMethodUsedThroughInterface : IStaticInterfaceUsed
 			{
-			}
-			public static void UnusedMethod () { }
-		}
-
-		[Kept]
-		[KeptMember (".ctor()")]
-		[KeptInterface (typeof (IInternalStaticInterfaceWithInterfaceDefinitionUsed))]
-		internal class ImplementsInternalStaticInterfaceUnused : IInternalStaticInterfaceWithInterfaceDefinitionUsed
-		{
-			[Kept]
-			[KeptOverride (typeof (IInternalStaticInterfaceWithInterfaceDefinitionUsed))]
-			public static void InternalStaticInterfaceUsedThroughInterface ()
-			{
-			}
-			public static void UnusedMethod () { }
-		}
-
-		[Kept]
-		[KeptInterface (typeof (IInternalStaticInterfaceWithInterfaceDefinitionUsed))]
-		internal class ImplementsInternalStaticInterfaceWithInterfaceDefinitionNotUsedThroughGeneric : IInternalStaticInterfaceWithInterfaceDefinitionUsed
-		{
-			[Kept]
-			[KeptOverride (typeof (IInternalStaticInterfaceWithInterfaceDefinitionUsed))]
-			public static void InternalStaticInterfaceUsedThroughInterface ()
-			{
+				[Kept]
+				[KeptOverride (typeof (IStaticInterfaceUsed))]
+				public static void StaticMethodUsedThroughInterface ()
+				{
+				}
+				public static void UnusedMethod () { }
 			}
 
-			public static void UnusedMethod () { }
+			[Kept]
+			[KeptInterface (typeof (IStaticInterfaceUsed))]
+			internal class InterfaceMethodUnused : IStaticInterfaceUsed
+			{
+				[Kept]
+				[KeptOverride (typeof (IStaticInterfaceUsed))]
+				public static void StaticMethodUsedThroughInterface ()
+				{
+				}
+				public static void UnusedMethod () { }
+			}
+		}
+
+		[Kept]
+		internal class ImplementsUnusedStaticInterface
+		{
+			[Kept]
+			internal class InterfaceMethodUsedThroughImplementation : IStaticInterfaceUnused
+			{
+				[Kept]
+				[RemovedOverride (typeof (IStaticInterfaceUnused))]
+				public static void InternalStaticInterfaceMethodUsedThroughImplementation () { }
+			}
+
+			[Kept]
+			internal class InterfaceMethodUnused : IStaticInterfaceUnused
+			{
+				public static void InternalStaticInterfaceMethodUsedThroughImplementation () { }
+			}
 		}
 
 		[Kept]
@@ -89,7 +95,6 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 			IPublicStaticInterface,
 			IInternalInterface,
 			IInternalStaticInterface,
-			IInternalStaticInterfaceWithUsedMethodImplementation,
 			IEnumerator,
 			ICopyLibraryInterface,
 			ICopyLibraryStaticInterface
@@ -116,9 +121,6 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 
 			static void IInternalStaticInterface.ExplicitImplementationInternalStaticInterfaceMethod () { }
 
-			[Kept]
-			[RemovedOverride (typeof (IInternalStaticInterfaceWithUsedMethodImplementation))]
-			public static void InternalStaticInterfaceMethodUsedThroughImplementation () { }
 
 			[Kept]
 			[ExpectBodyModified]
@@ -149,9 +151,9 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 
 		[Kept]
 		[KeptInterface (typeof (IFormattable))]
-		public class UninstantiatedPublicClassWithImplicitlyImplementedInterface : IInternalInterface, IFormattable
+		public class UninstantiatedClassWithImplicitlyImplementedInterface : IInternalInterface, IFormattable
 		{
-			internal UninstantiatedPublicClassWithImplicitlyImplementedInterface () { }
+			internal UninstantiatedClassWithImplicitlyImplementedInterface () { }
 
 			public void InternalInterfaceMethod () { }
 
@@ -177,7 +179,6 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 			IPublicStaticInterface,
 			IInternalInterface,
 			IInternalStaticInterface,
-			IInternalStaticInterfaceWithUsedMethodImplementation,
 			IEnumerator,
 			ICopyLibraryInterface,
 			ICopyLibraryStaticInterface
@@ -204,10 +205,6 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 			public static void InternalStaticInterfaceMethod () { }
 
 			static void IInternalStaticInterface.ExplicitImplementationInternalStaticInterfaceMethod () { }
-
-			[Kept]
-			[RemovedOverride (typeof (IInternalStaticInterfaceWithUsedMethodImplementation))]
-			public static void InternalStaticInterfaceMethodUsedThroughImplementation () { }
 
 			[Kept]
 			bool IEnumerator.MoveNext () { throw new PlatformNotSupportedException (); }
@@ -274,17 +271,17 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 		}
 
 		// The interface methods themselves are not used, but the implementation of these methods is
-		internal interface IInternalStaticInterfaceWithUsedMethodImplementation
+		internal interface IStaticInterfaceUnused
 		{
 			static abstract void InternalStaticInterfaceMethodUsedThroughImplementation ();
 		}
 
 		// The interface methods themselves are used through the interface
 		[Kept]
-		internal interface IInternalStaticInterfaceWithInterfaceDefinitionUsed
+		internal interface IStaticInterfaceUsed
 		{
 			[Kept]
-			static abstract void InternalStaticInterfaceUsedThroughInterface ();
+			static abstract void StaticMethodUsedThroughInterface ();
 
 			static abstract void UnusedMethod ();
 		}

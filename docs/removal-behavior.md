@@ -6,7 +6,7 @@ The `unusedinterfaces` optimization controls whether or not classes have an anno
 
 ## Static abstract interface methods
 
-The linker's behavior for methods declared on interfaces as `static abstract` like below are defined in the following cases:
+The linker's behavior for methods declared on interfaces as `static abstract` like below are defined in the following cases using the example interface and class below:
 
 ```C#
 interface IFoo
@@ -18,11 +18,18 @@ class C : IFoo
 {
     static int GetNum() => 1;
 }
+```
 
-### Method is accessed on concrete types only
+### Method call on concrete type
+
+On a direct call to a static method which implements a static interface method, only the body is rooted, not its associated `MethodImpl`. Similarly, the interface method which it implements is not rooted.
+
+Example:
+
+In the following program, `C.GetNum()` would be kept, but `IFoo.GetNum()` would be removed.
 
 ```C#
-public class Program 
+public class Program
 {
     public static void Main()
     {
@@ -31,9 +38,13 @@ public class Program
 }
 ```
 
-If the interface methods are called only on concrete types, then the implementation method is kept, but the method on the interface type is removed.
+### Method call on a constrained type parameter
 
-### Method is accessed through a constrained type parameter
+On a call to a static abstract interface method that is accessed through a constrained type parameter, the interface method is rooted, as well as every implementation method on every type.
+
+Example:
+
+In the following program, `C.GetNum()`, `IFoo.GetNum()`, and `C2.GetNum()` are all kept.
 
 ```C#
 public class C2 : IFoo
@@ -52,5 +63,3 @@ public class Program
     }
 }
 ```
-
-If the interface method is accessed through a constrained type parameter, then the interface method is kept, as well as every implementation on every class. In the example above, `GetNum` will be kept on IFoo, C, and C2.
