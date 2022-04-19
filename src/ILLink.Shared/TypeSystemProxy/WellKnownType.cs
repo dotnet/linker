@@ -49,10 +49,16 @@ namespace ILLink.Shared.TypeSystemProxy
 					"Array" => WellKnownType.System_Array,
 					"Attribute" => WellKnownType.System_Attribute,
 					"Object" => WellKnownType.System_Object,
+					"NotSupportedException" => WellKnownType.System_NotSupportedException,
+					"Void" => WellKnownType.System_Void,
 					_ => null
 				},
 				"System.Reflection" => name switch {
 					"IReflect" => WellKnownType.System_Reflection_IReflect,
+					_ => null
+				},
+				"System.Runtime.CompilerServices" => name switch {
+					"DisablePrivateReflectionAttribute" => WellKnownType.System_Runtime_CompilerServices_DisablePrivateReflectionAttribute,
 					_ => null
 				},
 				_ => null
