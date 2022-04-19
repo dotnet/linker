@@ -55,7 +55,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 		[Kept]
 		[KeptMember (".ctor()")]
 		[KeptInterface (typeof (IInternalStaticInterfaceWithInterfaceDefinitionUsed))]
-		internal class ImplementsInternalStaticInterfaceUnused: IInternalStaticInterfaceWithInterfaceDefinitionUsed
+		internal class ImplementsInternalStaticInterfaceUnused : IInternalStaticInterfaceWithInterfaceDefinitionUsed
 		{
 			[Kept]
 			[KeptOverride (typeof (IInternalStaticInterfaceWithInterfaceDefinitionUsed))]
