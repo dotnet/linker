@@ -258,9 +258,8 @@ namespace Mono.Linker.Dataflow
 				_context.Annotations.FlowAnnotations.GetReturnParameterAnnotation (calledMethodDefinition) : 0;
 
 			_origin = _origin.WithInstructionOffset (operation.Offset);
-			var origin = _origin;
-			bool diagnosticsEnabled = ShouldEnableReflectionPatternReporting (origin.Provider);
-			var handleCallAction = new HandleCallAction (_context, this, origin, diagnosticsEnabled, callingMethodDefinition);
+			bool diagnosticsEnabled = ShouldEnableReflectionPatternReporting (_origin.Provider);
+			var handleCallAction = new HandleCallAction (_context, this, _origin, diagnosticsEnabled, callingMethodDefinition);
 			switch (Intrinsics.GetIntrinsicIdForMethod (calledMethodDefinition)) {
 			case IntrinsicId.IntrospectionExtensions_GetTypeInfo:
 			case IntrinsicId.TypeInfo_AsType:
@@ -333,7 +332,7 @@ namespace Mono.Linker.Dataflow
 					// We don't yet handle the case where you can create a nullable type with typeof(Nullable<>).MakeGenericType(T)
 					foreach (var value in methodParams[0]) {
 						if (value is SystemTypeValue typeValue) {
-							if (!AnalyzeGenericInstantiationTypeArray (origin, diagnosticsEnabled, methodParams[1], calledMethodDefinition, typeValue.RepresentedType.Type.GenericParameters)) {
+							if (!AnalyzeGenericInstantiationTypeArray (_origin, diagnosticsEnabled, methodParams[1], calledMethodDefinition, typeValue.RepresentedType.Type.GenericParameters)) {
 								bool hasUncheckedAnnotation = false;
 								foreach (var genericParameter in typeValue.RepresentedType.Type.GenericParameters) {
 									if (_context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameter) != DynamicallyAccessedMemberTypes.None ||
@@ -350,7 +349,7 @@ namespace Mono.Linker.Dataflow
 								}
 								if (hasUncheckedAnnotation) {
 									if (diagnosticsEnabled)
-										_context.LogWarning (origin, DiagnosticId.MakeGenericType, calledMethodDefinition.GetDisplayName ());
+										_context.LogWarning (_origin, DiagnosticId.MakeGenericType, calledMethodDefinition.GetDisplayName ());
 								}
 							}
 
@@ -390,7 +389,7 @@ namespace Mono.Linker.Dataflow
 						} else {
 							// We have no way to "include more" to fix this if we don't know, so we have to warn
 							if (diagnosticsEnabled)
-								_context.LogWarning (origin, DiagnosticId.MakeGenericType, calledMethodDefinition.GetDisplayName ());
+								_context.LogWarning (_origin, DiagnosticId.MakeGenericType, calledMethodDefinition.GetDisplayName ());
 						}
 						// We don't want to lose track of the type
 						// in case this is e.g. Activator.CreateInstance(typeof(Foo<>).MakeGenericType(...));
@@ -418,19 +417,19 @@ namespace Mono.Linker.Dataflow
 							foreach (var stringParam in methodParams[1]) {
 								if (stringParam is KnownStringValue stringValue) {
 									foreach (var method in systemTypeValue.RepresentedType.Type.GetMethodsOnTypeHierarchy (_context, m => m.Name == stringValue.Contents, bindingFlags)) {
-										ValidateGenericMethodInstantiation (origin, diagnosticsEnabled, method, methodParams[2], calledMethodDefinition);
-										MarkMethod (origin, method);
+										ValidateGenericMethodInstantiation (_origin, diagnosticsEnabled, method, methodParams[2], calledMethodDefinition);
+										MarkMethod (_origin, method);
 									}
 								} else {
 									if (hasTypeArguments) {
 										// We don't know what method the `MakeGenericMethod` was called on, so we have to assume
 										// that the method may have requirements which we can't fullfil -> warn.
 										if (diagnosticsEnabled)
-											_context.LogWarning (origin, DiagnosticId.MakeGenericMethod, DiagnosticUtilities.GetMethodSignatureDisplayName (calledMethod));
+											_context.LogWarning (_origin, DiagnosticId.MakeGenericMethod, DiagnosticUtilities.GetMethodSignatureDisplayName (calledMethod));
 									}
 
 									RequireDynamicallyAccessedMembers (
-										origin,
+										_origin,
 										diagnosticsEnabled,
 										value,
 										targetValue);
@@ -441,11 +440,11 @@ namespace Mono.Linker.Dataflow
 								// We don't know what method the `MakeGenericMethod` was called on, so we have to assume
 								// that the method may have requirements which we can't fullfil -> warn.
 								if (diagnosticsEnabled)
-									_context.LogWarning (origin, DiagnosticId.MakeGenericMethod, DiagnosticUtilities.GetMethodSignatureDisplayName (calledMethod));
+									_context.LogWarning (_origin, DiagnosticId.MakeGenericMethod, DiagnosticUtilities.GetMethodSignatureDisplayName (calledMethod));
 							}
 
 							RequireDynamicallyAccessedMembers (
-								origin,
+								_origin,
 								diagnosticsEnabled,
 								value,
 								targetValue);
@@ -463,9 +462,9 @@ namespace Mono.Linker.Dataflow
 					var targetValue = GetMethodParameterValue (calledMethodDefinition, 0, DynamicallyAccessedMemberTypes.PublicParameterlessConstructor);
 					foreach (var value in methodParams[0]) {
 						if (value is SystemTypeValue systemTypeValue) {
-							MarkConstructorsOnType (origin, systemTypeValue.RepresentedType.Type, null, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+							MarkConstructorsOnType (_origin, systemTypeValue.RepresentedType.Type, null, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 						} else {
-							RequireDynamicallyAccessedMembers (origin, diagnosticsEnabled, value, targetValue);
+							RequireDynamicallyAccessedMembers (_origin, diagnosticsEnabled, value, targetValue);
 						}
 					}
 				}
@@ -515,7 +514,7 @@ namespace Mono.Linker.Dataflow
 						} else {
 							// Make sure the type is marked (this will mark it as used via reflection, which is sort of true)
 							// This should already be true for most cases (method params, fields, ...), but just in case
-							MarkType (origin, staticType);
+							MarkType (_origin, staticType);
 
 							var annotation = _markStep.DynamicallyAccessedMembersTypeHierarchy
 								.ApplyDynamicallyAccessedMembersToTypeHierarchy (this, staticType);
@@ -544,7 +543,7 @@ namespace Mono.Linker.Dataflow
 					if ((parameters.Count == 3 && parameters[2].ParameterType.MetadataType == MetadataType.Boolean && methodParams[2].AsConstInt () != 0) ||
 						(parameters.Count == 5 && methodParams[4].AsConstInt () != 0)) {
 						if (diagnosticsEnabled)
-							_context.LogWarning (origin, DiagnosticId.CaseInsensitiveTypeGetTypeCallIsNotSupported, calledMethod.GetDisplayName ());
+							_context.LogWarning (_origin, DiagnosticId.CaseInsensitiveTypeGetTypeCallIsNotSupported, calledMethod.GetDisplayName ());
 						break;
 					}
 					foreach (var typeNameValue in methodParams[0]) {
@@ -555,7 +554,7 @@ namespace Mono.Linker.Dataflow
 							} else {
 								_markStep.MarkTypeVisibleToReflection (foundTypeRef, foundType, new DependencyInfo (DependencyKind.AccessedViaReflection, callingMethodDefinition), _origin);
 								AddReturnValue (new SystemTypeValue (foundType));
-								_context.MarkingHelpers.MarkMatchingExportedType (foundType, typeAssembly, new DependencyInfo (DependencyKind.AccessedViaReflection, foundType), origin);
+								_context.MarkingHelpers.MarkMatchingExportedType (foundType, typeAssembly, new DependencyInfo (DependencyKind.AccessedViaReflection, foundType), _origin);
 							}
 						} else if (typeNameValue == NullValue.Instance) {
 							// Nothing to do
@@ -565,7 +564,7 @@ namespace Mono.Linker.Dataflow
 							AddReturnValue (GetMethodReturnValue (calledMethodDefinition, valueWithDynamicallyAccessedMembers.DynamicallyAccessedMemberTypes));
 						} else {
 							if (diagnosticsEnabled)
-								_context.LogWarning (origin, DiagnosticId.UnrecognizedTypeNameInTypeGetType, calledMethod.GetDisplayName ());
+								_context.LogWarning (_origin, DiagnosticId.UnrecognizedTypeNameInTypeGetType, calledMethod.GetDisplayName ());
 						}
 					}
 
@@ -628,7 +627,7 @@ namespace Mono.Linker.Dataflow
 					foreach (var value in methodParams[0]) {
 						if (value is SystemTypeValue systemTypeValue) {
 							// Special case known type values as we can do better by applying exact binding flags and parameter count.
-							MarkConstructorsOnType (origin, systemTypeValue.RepresentedType.Type,
+							MarkConstructorsOnType (_origin, systemTypeValue.RepresentedType.Type,
 								ctorParameterCount == null ? null : m => m.Parameters.Count == ctorParameterCount, bindingFlags);
 						} else {
 							// Otherwise fall back to the bitfield requirements
@@ -642,7 +641,7 @@ namespace Mono.Linker.Dataflow
 
 							var targetValue = GetMethodParameterValue (calledMethodDefinition, 0, requiredMemberTypes);
 
-							RequireDynamicallyAccessedMembers (origin, diagnosticsEnabled, value, targetValue);
+							RequireDynamicallyAccessedMembers (_origin, diagnosticsEnabled, value, targetValue);
 						}
 					}
 				}
@@ -656,7 +655,7 @@ namespace Mono.Linker.Dataflow
 			// static CreateInstance (string assemblyName, string typeName, object?[]? activationAttributes)
 			//
 			case IntrinsicId.Activator_CreateInstance_AssemblyName_TypeName:
-				ProcessCreateInstanceByName (origin, diagnosticsEnabled, calledMethodDefinition, methodParams);
+				ProcessCreateInstanceByName (_origin, diagnosticsEnabled, calledMethodDefinition, methodParams);
 				break;
 
 			//
@@ -667,7 +666,7 @@ namespace Mono.Linker.Dataflow
 			// static CreateInstanceFrom (string assemblyFile, string typeName, object? []? activationAttributes)
 			//
 			case IntrinsicId.Activator_CreateInstanceFrom:
-				ProcessCreateInstanceByName (origin, diagnosticsEnabled, calledMethodDefinition, methodParams);
+				ProcessCreateInstanceByName (_origin, diagnosticsEnabled, calledMethodDefinition, methodParams);
 				break;
 
 			//
@@ -687,7 +686,7 @@ namespace Mono.Linker.Dataflow
 
 					var targetValue = new GenericParameterValue (calledMethodDefinition.GenericParameters[0], DynamicallyAccessedMemberTypes.PublicParameterlessConstructor);
 					RequireDynamicallyAccessedMembers (
-						origin,
+						_origin,
 						diagnosticsEnabled,
 						GetTypeValueNodeFromGenericArgument (genericCalledMethod.GenericArguments[0]),
 						targetValue);
@@ -717,7 +716,7 @@ namespace Mono.Linker.Dataflow
 					|| appDomainCreateInstance == IntrinsicId.AppDomain_CreateInstanceAndUnwrap
 					|| appDomainCreateInstance == IntrinsicId.AppDomain_CreateInstanceFrom
 					|| appDomainCreateInstance == IntrinsicId.AppDomain_CreateInstanceFromAndUnwrap:
-				ProcessCreateInstanceByName (origin, diagnosticsEnabled, calledMethodDefinition, methodParams);
+				ProcessCreateInstanceByName (_origin, diagnosticsEnabled, calledMethodDefinition, methodParams);
 				break;
 
 			//
@@ -730,7 +729,7 @@ namespace Mono.Linker.Dataflow
 			case IntrinsicId.Assembly_CreateInstance:
 				// For now always fail since we don't track assemblies (dotnet/linker/issues/1947)
 				if (diagnosticsEnabled)
-					_context.LogWarning (origin, DiagnosticId.ParametersOfAssemblyCreateInstanceCannotBeAnalyzed, calledMethodDefinition.GetDisplayName ());
+					_context.LogWarning (_origin, DiagnosticId.ParametersOfAssemblyCreateInstanceCannotBeAnalyzed, calledMethodDefinition.GetDisplayName ());
 				break;
 
 			//
@@ -742,14 +741,14 @@ namespace Mono.Linker.Dataflow
 
 					foreach (var methodValue in methodParams[0]) {
 						if (methodValue is SystemReflectionMethodBaseValue methodBaseValue) {
-							ValidateGenericMethodInstantiation (origin, diagnosticsEnabled, methodBaseValue.MethodRepresented.Method, methodParams[1], calledMethodDefinition);
+							ValidateGenericMethodInstantiation (_origin, diagnosticsEnabled, methodBaseValue.MethodRepresented.Method, methodParams[1], calledMethodDefinition);
 						} else if (methodValue == NullValue.Instance) {
 							// Nothing to do
 						} else {
 							// We don't know what method the `MakeGenericMethod` was called on, so we have to assume
 							// that the method may have requirements which we can't fullfil -> warn.
 							if (diagnosticsEnabled)
-								_context.LogWarning (origin, DiagnosticId.MakeGenericMethod, DiagnosticUtilities.GetMethodSignatureDisplayName (calledMethodDefinition));
+								_context.LogWarning (_origin, DiagnosticId.MakeGenericMethod, DiagnosticUtilities.GetMethodSignatureDisplayName (calledMethodDefinition));
 						}
 					}
 
@@ -769,7 +768,7 @@ namespace Mono.Linker.Dataflow
 
 					if (comDangerousMethod) {
 						if (diagnosticsEnabled)
-							_context.LogWarning (origin, DiagnosticId.CorrectnessOfCOMCannotBeGuaranteed, calledMethodDefinition.GetDisplayName ());
+							_context.LogWarning (_origin, DiagnosticId.CorrectnessOfCOMCannotBeGuaranteed, calledMethodDefinition.GetDisplayName ());
 					}
 				}
 
@@ -778,7 +777,7 @@ namespace Mono.Linker.Dataflow
 						var targetValue = GetMethodParameterValue (calledMethodDefinition, parameterIndex);
 
 						if (targetValue.DynamicallyAccessedMemberTypes != DynamicallyAccessedMemberTypes.None) {
-							RequireDynamicallyAccessedMembers (origin, diagnosticsEnabled, methodParams[parameterIndex], targetValue);
+							RequireDynamicallyAccessedMembers (_origin, diagnosticsEnabled, methodParams[parameterIndex], targetValue);
 						}
 					}
 				}
