@@ -13,7 +13,10 @@ namespace ILLink.Shared.TypeSystemProxy
 		System_Reflection_IReflect,
 		System_Array,
 		System_Object,
-		System_Attribute
+		System_Attribute,
+		System_NotSupportedException,
+		System_Runtime_CompilerServices_DisablePrivateReflectionAttribute,
+		System_Void
 	}
 
 	public static partial class WellKnownTypeExtensions
@@ -28,6 +31,9 @@ namespace ILLink.Shared.TypeSystemProxy
 				WellKnownType.System_Array => ("System", "Array"),
 				WellKnownType.System_Object => ("System", "Object"),
 				WellKnownType.System_Attribute => ("System", "Attribute"),
+				WellKnownType.System_NotSupportedException => ("System", "NotSupportedException"),
+				WellKnownType.System_Runtime_CompilerServices_DisablePrivateReflectionAttribute => ("System.Runtime.CompilerServices", "DisablePrivateReflectionAttribute"),
+				WellKnownType.System_Void => ("System", "Void"),
 				_ => throw new ArgumentException ($"{nameof (type)} is not a well-known type."),
 			};
 		}

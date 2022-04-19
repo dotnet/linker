@@ -2,7 +2,6 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System;
-using System.Diagnostics;
 using ILLink.Shared.TypeSystemProxy;
 using Microsoft.CodeAnalysis;
 
@@ -60,22 +59,7 @@ namespace ILLink.RoslynAnalyzer
 
 		public static bool IsTypeOf (this ITypeSymbol symbol, WellKnownType wellKnownType)
 		{
-			bool istrue = symbol.IsTypeOf1 (wellKnownType);
-			Debug.Assert (istrue == (symbol.TryGetWellKnownType () == wellKnownType), $"symbol: {symbol.GetDisplayName ()}");
 			return symbol.TryGetWellKnownType () == wellKnownType;
-		}
-
-		public static bool IsTypeOf1 (this ITypeSymbol symbol, WellKnownType wellKnownType)
-		{
-			symbol = symbol.OriginalDefinition;
-			if (wellKnownType.TryGetSpecialType (out var specialType)) {
-				var symbolSpecialType = symbol.SpecialType;
-				// Make sure checking the special type is the same as checking the metadata string names.
-				Debug.Assert (symbol.IsTypeOf (wellKnownType.GetNamespace (), wellKnownType.GetName ()) == (symbolSpecialType == specialType));
-				return symbolSpecialType == specialType;
-			}
-			var (Namespace, Name) = wellKnownType.GetNamespaceAndName ();
-			return symbol.IsTypeOf (Namespace, Name);
 		}
 
 		public static WellKnownType? TryGetWellKnownType (this ITypeSymbol symbol)

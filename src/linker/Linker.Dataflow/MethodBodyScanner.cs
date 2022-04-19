@@ -191,12 +191,12 @@ namespace Mono.Linker.Dataflow
 			if (valueCollection.TryGetValue (collectionKey, out ValueBasicBlockPair existingValue)) {
 				MultiValue value;
 				if (existingValue.BasicBlockIndex == curBasicBlock) {
-					// If the previous value was stored in the current basic block, then we can safely 
+					// If the previous value was stored in the current basic block, then we can safely
 					// overwrite the previous value with the new one.
 					value = valueToStore;
 				} else {
-					// If the previous value came from a previous basic block, then some other use of 
-					// the local could see the previous value, so we must merge the new value with the 
+					// If the previous value came from a previous basic block, then some other use of
+					// the local could see the previous value, so we must merge the new value with the
 					// old value.
 					value = MultiValueLattice.Meet (existingValue.Value, valueToStore);
 				}
@@ -951,7 +951,7 @@ namespace Mono.Linker.Dataflow
 		public static TypeDefinition? ResolveToTypeDefinition (LinkContext context, TypeReference typeReference)
 		{
 			if (typeReference is ArrayType)
-				return BCL.FindPredefinedType ("System", "Array", context);
+				return BCL.FindPredefinedType (WellKnownType.System_Array, context);
 
 			return context.TryResolve (typeReference);
 		}

@@ -3157,7 +3157,7 @@ namespace Mono.Linker.Steps
 			if (Context.MarkedKnownMembers.NotSupportedExceptionCtorString != null)
 				return;
 
-			var nse = BCL.FindPredefinedType ("System", "NotSupportedException", Context);
+			var nse = BCL.FindPredefinedType (WellKnownType.System_NotSupportedException, Context);
 			if (nse == null)
 				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage (null, DiagnosticId.CouldNotFindType, "System.NotSupportedException"));
 
@@ -3183,7 +3183,7 @@ namespace Mono.Linker.Steps
 			if (Context.MarkedKnownMembers.DisablePrivateReflectionAttributeCtor != null)
 				return false;
 
-			var disablePrivateReflection = BCL.FindPredefinedType ("System.Runtime.CompilerServices", "DisablePrivateReflectionAttribute", Context);
+			var disablePrivateReflection = BCL.FindPredefinedType (WellKnownType.System_Runtime_CompilerServices_DisablePrivateReflectionAttribute, Context);
 			if (disablePrivateReflection == null)
 				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage (null, DiagnosticId.CouldNotFindType, "System.Runtime.CompilerServices.DisablePrivateReflectionAttribute"));
 

@@ -104,7 +104,7 @@ namespace Mono.Linker.Steps
 				return knownTypeDef;
 			}
 
-			var voidType = BCL.FindPredefinedType ("System", "Void", _context);
+			var voidType = BCL.FindPredefinedType (WellKnownType.System_Void, _context);
 			if (voidType == null)
 				return null;
 
