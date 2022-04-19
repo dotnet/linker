@@ -217,7 +217,7 @@ namespace Mono.Linker.Dataflow
 			return applied;
 		}
 
-		void ApplyDynamicallyAccessedMembersToType (ref ReflectionMethodBodyScanner reflectionMethodBodyScanner, MessageOrigin origin, TypeDefinition type, DynamicallyAccessedMemberTypes annotation)
+		void ApplyDynamicallyAccessedMembersToType (ref ReflectionMethodBodyScanner reflectionMethodBodyScanner, in MessageOrigin origin, TypeDefinition type, DynamicallyAccessedMemberTypes annotation)
 		{
 			Debug.Assert (annotation != DynamicallyAccessedMemberTypes.None);
 

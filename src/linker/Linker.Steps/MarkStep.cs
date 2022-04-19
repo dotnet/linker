@@ -2940,7 +2940,7 @@ namespace Mono.Linker.Steps
 			return false;
 		}
 
-		internal void CheckAndReportRequiresUnreferencedCode (MethodDefinition method, MessageOrigin origin)
+		internal void CheckAndReportRequiresUnreferencedCode (MethodDefinition method, in MessageOrigin origin)
 		{
 			// If the caller of a method is already marked with `RequiresUnreferencedCodeAttribute` a new warning should not
 			// be produced for the callee.
@@ -2953,7 +2953,7 @@ namespace Mono.Linker.Steps
 			ReportRequiresUnreferencedCode (method.GetDisplayName (), requiresUnreferencedCode, origin);
 		}
 
-		private void ReportRequiresUnreferencedCode (string displayName, RequiresUnreferencedCodeAttribute requiresUnreferencedCode, MessageOrigin currentOrigin)
+		private void ReportRequiresUnreferencedCode (string displayName, RequiresUnreferencedCodeAttribute requiresUnreferencedCode, in MessageOrigin currentOrigin)
 		{
 			string arg1 = MessageFormat.FormatRequiresAttributeMessageArg (requiresUnreferencedCode.Message);
 			string arg2 = MessageFormat.FormatRequiresAttributeUrlArg (requiresUnreferencedCode.Url);
