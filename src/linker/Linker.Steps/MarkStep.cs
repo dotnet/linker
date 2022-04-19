@@ -1622,25 +1622,20 @@ namespace Mono.Linker.Steps
 			}
 
 			var reportOnMember = IsDeclaredWithinType (member, type);
-			var memberScope = reportOnMember ? ScopeStack.PushScope (new MessageOrigin (member)) : null;
+			if (reportOnMember)
+				origin = new MessageOrigin (member);
 
-			try {
-				origin = reportOnMember ? ScopeStack.CurrentScope.Origin : origin;
+			if (Annotations.DoesMemberRequireUnreferencedCode (member, out RequiresUnreferencedCodeAttribute? requiresUnreferencedCodeAttribute)) {
+				var id = reportOnMember ? DiagnosticId.DynamicallyAccessedMembersOnTypeReferencesMemberWithRequiresUnreferencedCode : DiagnosticId.DynamicallyAccessedMembersOnTypeReferencesMemberOnBaseWithRequiresUnreferencedCode;
+				Context.LogWarning (origin, id, type.GetDisplayName (),
+					((MemberReference) member).GetDisplayName (), // The cast is valid since it has to be a method or field
+					MessageFormat.FormatRequiresAttributeMessageArg (requiresUnreferencedCodeAttribute.Message),
+					MessageFormat.FormatRequiresAttributeMessageArg (requiresUnreferencedCodeAttribute.Url));
+			}
 
-				if (Annotations.DoesMemberRequireUnreferencedCode (member, out RequiresUnreferencedCodeAttribute? requiresUnreferencedCodeAttribute)) {
-					var id = reportOnMember ? DiagnosticId.DynamicallyAccessedMembersOnTypeReferencesMemberWithRequiresUnreferencedCode : DiagnosticId.DynamicallyAccessedMembersOnTypeReferencesMemberOnBaseWithRequiresUnreferencedCode;
-					Context.LogWarning (origin, id, type.GetDisplayName (),
-						((MemberReference) member).GetDisplayName (), // The cast is valid since it has to be a method or field
-						MessageFormat.FormatRequiresAttributeMessageArg (requiresUnreferencedCodeAttribute.Message),
-						MessageFormat.FormatRequiresAttributeMessageArg (requiresUnreferencedCodeAttribute.Url));
-				}
-
-				if (Context.Annotations.FlowAnnotations.ShouldWarnWhenAccessedForReflection (member)) {
-					var id = reportOnMember ? DiagnosticId.DynamicallyAccessedMembersOnTypeReferencesMemberWithDynamicallyAccessedMembers : DiagnosticId.DynamicallyAccessedMembersOnTypeReferencesMemberOnBaseWithDynamicallyAccessedMembers;
-					Context.LogWarning (origin, id, type.GetDisplayName (), ((MemberReference) member).GetDisplayName ());
-				}
-			} finally {
-				memberScope?.Dispose ();
+			if (Context.Annotations.FlowAnnotations.ShouldWarnWhenAccessedForReflection (member)) {
+				var id = reportOnMember ? DiagnosticId.DynamicallyAccessedMembersOnTypeReferencesMemberWithDynamicallyAccessedMembers : DiagnosticId.DynamicallyAccessedMembersOnTypeReferencesMemberOnBaseWithDynamicallyAccessedMembers;
+				Context.LogWarning (origin, id, type.GetDisplayName (), ((MemberReference) member).GetDisplayName ());
 			}
 		}
 
