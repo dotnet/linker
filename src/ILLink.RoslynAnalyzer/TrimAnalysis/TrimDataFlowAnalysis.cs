@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Diagnostics;
 using System.Linq;
 using ILLink.RoslynAnalyzer.DataFlow;
 using ILLink.Shared.DataFlow;
@@ -52,8 +53,16 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 		// Set this to true to print out the dataflow states encountered during the analysis.
 		readonly bool showStates = false;
+
+		static readonly TracingType tracingMechanism = TracingType.Console;
 #pragma warning restore CA1805 // Do not initialize unnecessarily
 		ControlFlowGraphProxy cfg;
+
+		private enum TracingType
+		{
+			Console,
+			Debug
+		}
 
 		public override void TraceStart (ControlFlowGraphProxy cfg)
 		{
@@ -80,20 +89,40 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			if (!trace)
 				return;
 
-			Console.Write ("block " + block.Block.Ordinal + ": ");
+			TraceWrite ("block " + block.Block.Ordinal + ": ", tracingMechanism);
 			if (block.Block.Operations.FirstOrDefault () is IOperation firstBlockOp) {
-				Console.WriteLine (firstBlockOp.Syntax.ToString ());
+				TraceWriteLine (firstBlockOp.Syntax.ToString (), tracingMechanism);
 			} else if (block.Block.BranchValue is IOperation branchOp) {
-				Console.WriteLine (branchOp.Syntax.ToString ());
+				TraceWriteLine (branchOp.Syntax.ToString (), tracingMechanism);
 			} else {
-				Console.WriteLine ();
+				TraceWriteLine ("", tracingMechanism);
 			}
-			Console.Write ("predecessors: ");
+			TraceWrite ("predecessors: ", tracingMechanism);
 			foreach (var predecessor in cfg.GetPredecessors (block)) {
 				var predProxy = predecessor.Block;
-				Console.Write (predProxy.Block.Ordinal + " ");
+				TraceWrite (predProxy.Block.Ordinal + " ", tracingMechanism);
 			}
-			Console.WriteLine ();
+			TraceWriteLine ("", tracingMechanism);
+		}
+
+		private static void TraceWriteLine (string tracingInfo, TracingType tracingMechanism)
+		{
+			if (tracingMechanism == TracingType.Console)
+				Console.WriteLine (tracingInfo);
+			else if (tracingMechanism == TracingType.Debug)
+				Debug.WriteLine (tracingInfo);
+			else
+				throw new NotImplementedException (message: "invalid TracingType is being used");
+		}
+
+		private static void TraceWrite (string tracingInfo, TracingType tracingMechanism)
+		{
+			if (tracingMechanism == TracingType.Console)
+				Console.Write (tracingInfo);
+			else if (tracingMechanism == TracingType.Debug)
+				Debug.Write (tracingInfo);
+			else
+				throw new NotImplementedException (message: "invalid TracingType is being used");
 		}
 
 		static void WriteIndented (string? s, int level)
@@ -102,8 +131,8 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			if (lines == null)
 				return;
 			foreach (var line in lines) {
-				Console.Write (new String ('\t', level));
-				Console.WriteLine (line);
+				TraceWrite (new String ('\t', level), tracingMechanism);
+				TraceWriteLine (line, tracingMechanism);
 			}
 		}
 
