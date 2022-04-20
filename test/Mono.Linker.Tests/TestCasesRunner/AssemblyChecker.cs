@@ -172,14 +172,13 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				linkedMembers.Remove (f.FullName);
 			}
 
-			foreach (var m in original.Methods) {
-				if (verifiedEventMethods.Contains (m.FullName))
+			foreach (var originalMethod in original.Methods) {
+				if (verifiedEventMethods.Contains (originalMethod.FullName))
 					continue;
-				var msign = m.GetSignature ();
-				var linkedMethod = linked?.Methods.FirstOrDefault (l => msign == l.GetSignature ());
-				VerifyMethod (m, linkedMethod);
-				VerifyOverrides (m, linkedMethod);
-				linkedMembers.Remove (m.FullName);
+				var methodSignature = originalMethod.GetSignature ();
+				var linkedMethod = linked?.Methods.FirstOrDefault (l => methodSignature == l.GetSignature ());
+				VerifyMethod (originalMethod, linkedMethod);
+				linkedMembers.Remove (originalMethod.FullName);
 			}
 		}
 
@@ -404,6 +403,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			VerifySecurityAttributes (src, linked);
 			VerifyArrayInitializers (src, linked);
 			VerifyMethodBody (src, linked);
+			VerifyOverrides (src, linked);
 		}
 
 		protected virtual void VerifyMethodBody (MethodDefinition src, MethodDefinition linked)
@@ -586,10 +586,10 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			/*
 			 - The test case will always need to have at least 1 reference.
 			 - Forcing all tests to define their expected references seems tedious
-			 
+
 			 Given the above, let's assume that when no [KeptReference] attributes are present,
 			 the test case does not want to make any assertions regarding references.
-			 
+
 			 Once 1 kept reference attribute is used, the test will need to define all of of it's expected references
 			*/
 			if (expected.Length == 0)
