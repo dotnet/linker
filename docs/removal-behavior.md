@@ -63,3 +63,7 @@ public class Program
     }
 }
 ```
+
+# `.override` directive and `MethodImpl` marking
+
+The linker currently does not mark `.override` or `MethodImpl` relationships. It will only remove the relationship if one of the methods is removed. These relationships are not always necessary, and future updates could add the ability to remove these relationships even if both methods are not trimmed.
