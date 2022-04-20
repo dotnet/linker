@@ -9,6 +9,7 @@ using ILLink.Shared.TrimAnalysis;
 using ILLink.Shared.TypeSystemProxy;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.FlowAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 
 using MultiValue = ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.SingleValue>;
@@ -32,8 +33,9 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 		public TrimAnalysisVisitor (
 			LocalStateLattice<MultiValue, ValueSetLattice<SingleValue>> lattice,
-			OperationBlockAnalysisContext context
-		) : base (lattice, context)
+			OperationBlockAnalysisContext context,
+			ImmutableDictionary<CaptureId, FlowCaptureKind> lValueFlowCaptures
+		) : base (lattice, context, lValueFlowCaptures)
 		{
 			_multiValueLattice = lattice.Lattice.ValueLattice;
 			TrimAnalysisPatterns = new TrimAnalysisPatternStore (_multiValueLattice);
@@ -195,16 +197,17 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 		public override MultiValue HandleArrayElementRead (MultiValue arrayValue, MultiValue indexValue, IOperation operation)
 		{
-			if (arrayValue.AsSingleValue () is not ArrayValue arr)
-				return UnknownValue.Instance;
-
 			if (indexValue.AsConstInt () is not int index)
 				return UnknownValue.Instance;
 
-			if (arr.TryGetValueByIndex (index, out var elementValue))
-				return elementValue;
-
-			return UnknownValue.Instance;
+			MultiValue result = TopValue;
+			foreach (var value in arrayValue) {
+				if (value is ArrayValue arr && arr.TryGetValueByIndex (index, out var elementValue))
+					result = _multiValueLattice.Meet (result, elementValue);
+				else
+					return UnknownValue.Instance;
+			}
+			return result.Equals (TopValue) ? UnknownValue.Instance : result;
 		}
 
 		public override void HandleArrayElementWrite (MultiValue arrayValue, MultiValue indexValue, MultiValue valueToWrite, IOperation operation)
@@ -240,6 +243,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 			var diagnosticContext = DiagnosticContext.CreateDisabled ();
 			var handleCallAction = new HandleCallAction (diagnosticContext, Context.OwningSymbol, operation);
+
 			if (!handleCallAction.Invoke (new MethodProxy (calledMethod), instance, arguments, out MultiValue methodReturnValue, out var intrinsicId)) {
 				switch (intrinsicId) {
 				case IntrinsicId.Array_Empty:
