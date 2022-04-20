@@ -689,7 +689,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			static void TestGetMethodFromHandle (Type unknownType = null)
 			{
-				MethodInfo m = (MethodInfo)MethodInfo.GetMethodFromHandle (typeof (MakeGenericMethod).GetMethod (nameof (GenericWithNoRequirements)).MethodHandle);
+				MethodInfo m = (MethodInfo) MethodInfo.GetMethodFromHandle (typeof (MakeGenericMethod).GetMethod (nameof (GenericWithNoRequirements)).MethodHandle);
 				m.MakeGenericMethod (unknownType);
 			}
 		}

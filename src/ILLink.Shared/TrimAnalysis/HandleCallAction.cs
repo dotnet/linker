@@ -144,8 +144,8 @@ namespace ILLink.Shared.TrimAnalysis
 				break;
 
 			case IntrinsicId.TypeDelegator_Ctor:
-				// This needs additional validation that the .ctor is called from a "newobj" instruction/operation
-				// so it can't be done easily in shared code yet.
+			// This needs additional validation that the .ctor is called from a "newobj" instruction/operation
+			// so it can't be done easily in shared code yet.
 			case IntrinsicId.Array_Empty:
 				// Array.Empty<T> must for now be handled by the specific implementation since it requires instantiated generic method handling
 				methodReturnValue = MultiValueLattice.Top;
