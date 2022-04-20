@@ -372,6 +372,7 @@ namespace Mono.Linker
 			return tr.MetadataType switch {
 				MetadataType.String => WellKnownType.System_String,
 				MetadataType.Object => WellKnownType.System_Object,
+				MetadataType.Void => WellKnownType.System_Void,
 				// TypeReferences of System.Array do not have a MetadataType of MetadataType.Array -- use string checking instead
 				MetadataType.Array or _ => WellKnownTypeExtensions.GetWellKnownType (tr.Namespace, tr.Name)
 			};
