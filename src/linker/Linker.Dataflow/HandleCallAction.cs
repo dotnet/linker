@@ -16,7 +16,6 @@ namespace ILLink.Shared.TrimAnalysis
 
 		readonly LinkContext _context;
 		readonly ReflectionMarker _reflectionMarker;
-		readonly MessageOrigin _origin;
 		readonly MethodDefinition _callingMethodDefinition;
 
 		public HandleCallAction (
@@ -28,7 +27,6 @@ namespace ILLink.Shared.TrimAnalysis
 			_context = context;
 			_reflectionMarker = reflectionMarker;
 			_diagnosticContext = diagnosticContext;
-			_origin = diagnosticContext.Origin;
 			_callingMethodDefinition = callingMethodDefinition;
 			_annotations = context.Annotations.FlowAnnotations;
 			_requireDynamicallyAccessedMembersAction = new (context, reflectionMarker, diagnosticContext);
@@ -71,33 +69,33 @@ namespace ILLink.Shared.TrimAnalysis
 		}
 
 		private partial void MarkStaticConstructor (TypeProxy type)
-			=> _reflectionMarker.MarkStaticConstructor (_origin, type.Type);
+			=> _reflectionMarker.MarkStaticConstructor (_diagnosticContext.Origin, type.Type);
 
 		private partial void MarkEventsOnTypeHierarchy (TypeProxy type, string name, BindingFlags? bindingFlags)
-			=> _reflectionMarker.MarkEventsOnTypeHierarchy (_origin, type.Type, e => e.Name == name, bindingFlags);
+			=> _reflectionMarker.MarkEventsOnTypeHierarchy (_diagnosticContext.Origin, type.Type, e => e.Name == name, bindingFlags);
 
 		private partial void MarkFieldsOnTypeHierarchy (TypeProxy type, string name, BindingFlags? bindingFlags)
-			=> _reflectionMarker.MarkFieldsOnTypeHierarchy (_origin, type.Type, f => f.Name == name, bindingFlags);
+			=> _reflectionMarker.MarkFieldsOnTypeHierarchy (_diagnosticContext.Origin, type.Type, f => f.Name == name, bindingFlags);
 
 		private partial void MarkPropertiesOnTypeHierarchy (TypeProxy type, string name, BindingFlags? bindingFlags)
-			=> _reflectionMarker.MarkPropertiesOnTypeHierarchy (_origin, type.Type, p => p.Name == name, bindingFlags);
+			=> _reflectionMarker.MarkPropertiesOnTypeHierarchy (_diagnosticContext.Origin, type.Type, p => p.Name == name, bindingFlags);
 
 		private partial void MarkPublicParameterlessConstructorOnType (TypeProxy type)
-			=> _reflectionMarker.MarkConstructorsOnType (_origin, type.Type, m => m.IsPublic && m.Parameters.Count == 0);
+			=> _reflectionMarker.MarkConstructorsOnType (_diagnosticContext.Origin, type.Type, m => m.IsPublic && m.Parameters.Count == 0);
 
 		private partial void MarkConstructorsOnType (TypeProxy type, BindingFlags? bindingFlags)
-			=> _reflectionMarker.MarkConstructorsOnType (_origin, type.Type, null, bindingFlags);
+			=> _reflectionMarker.MarkConstructorsOnType (_diagnosticContext.Origin, type.Type, null, bindingFlags);
 
 		private partial void MarkMethod (MethodProxy method)
-			=> _reflectionMarker.MarkMethod (_origin, method.Method);
+			=> _reflectionMarker.MarkMethod (_diagnosticContext.Origin, method.Method);
 
 		private partial void MarkType (TypeProxy type)
-			=> _reflectionMarker.MarkType (_origin, type.Type);
+			=> _reflectionMarker.MarkType (_diagnosticContext.Origin, type.Type);
 
 		private partial bool MarkAssociatedProperty (MethodProxy method)
 		{
 			if (method.Method.TryGetProperty (out PropertyDefinition? propertyDefinition)) {
-				_reflectionMarker.MarkProperty (_origin, propertyDefinition);
+				_reflectionMarker.MarkProperty (_diagnosticContext.Origin, propertyDefinition);
 				return true;
 			}
 

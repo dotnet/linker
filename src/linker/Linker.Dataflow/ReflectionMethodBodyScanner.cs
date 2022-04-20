@@ -90,7 +90,7 @@ namespace Mono.Linker.Dataflow
 				var parameterValue = _annotations.GetMethodParameterValue (method, i);
 				if (parameterValue.DynamicallyAccessedMemberTypes != DynamicallyAccessedMemberTypes.None) {
 					MultiValue value = GetValueNodeForCustomAttributeArgument (arguments[i]);
-					var diagnosticContext = new DiagnosticContext (_origin, diagnosticsEnabled: true ,_context);
+					var diagnosticContext = new DiagnosticContext (_origin, diagnosticsEnabled: true, _context);
 					RequireDynamicallyAccessedMembers (diagnosticContext, value, parameterValue);
 				}
 			}

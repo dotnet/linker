@@ -13,7 +13,6 @@ namespace ILLink.Shared.TrimAnalysis
 	{
 		readonly LinkContext _context;
 		readonly ReflectionMarker _reflectionMarker;
-		readonly MessageOrigin _origin;
 
 		public RequireDynamicallyAccessedMembersAction (
 			LinkContext context,
@@ -22,19 +21,18 @@ namespace ILLink.Shared.TrimAnalysis
 		{
 			_context = context;
 			_reflectionMarker = reflectionMarker;
-			_origin = diagnosticContext.Origin;
 			_diagnosticContext = diagnosticContext;
 		}
 
 		private partial bool TryResolveTypeNameAndMark (string typeName, out TypeProxy type)
 		{
-			if (!_context.TypeNameResolver.TryResolveTypeName (typeName, _origin.Provider, out TypeReference? typeRef, out AssemblyDefinition? typeAssembly)
+			if (!_context.TypeNameResolver.TryResolveTypeName (typeName, _diagnosticContext.Origin.Provider, out TypeReference? typeRef, out AssemblyDefinition? typeAssembly)
 				|| typeRef.ResolveToTypeDefinition (_context) is not TypeDefinition foundType) {
 				type = default;
 				return false;
 			} else {
-				_reflectionMarker.MarkType (_origin, typeRef);
-				_context.MarkingHelpers.MarkMatchingExportedType (foundType, typeAssembly, new DependencyInfo (DependencyKind.DynamicallyAccessedMember, foundType), _origin);
+				_reflectionMarker.MarkType (_diagnosticContext.Origin, typeRef);
+				_context.MarkingHelpers.MarkMatchingExportedType (foundType, typeAssembly, new DependencyInfo (DependencyKind.DynamicallyAccessedMember, foundType), _diagnosticContext.Origin);
 				type = new TypeProxy (foundType);
 				return true;
 			}
@@ -42,7 +40,7 @@ namespace ILLink.Shared.TrimAnalysis
 
 		private partial void MarkTypeForDynamicallyAccessedMembers (in TypeProxy type, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 		{
-			_reflectionMarker.MarkTypeForDynamicallyAccessedMembers (_origin, type.Type, dynamicallyAccessedMemberTypes, DependencyKind.DynamicallyAccessedMember);
+			_reflectionMarker.MarkTypeForDynamicallyAccessedMembers (_diagnosticContext.Origin, type.Type, dynamicallyAccessedMemberTypes, DependencyKind.DynamicallyAccessedMember);
 		}
 	}
 }
