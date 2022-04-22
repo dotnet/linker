@@ -20,7 +20,7 @@ namespace ILLink.Shared.TypeSystemProxy
 
 			var builder = ImmutableArray.CreateBuilder<GenericParameterProxy> (Type.GenericParameters.Count);
 			foreach (var genericParameter in Type.GenericParameters) {
-				builder.Add(new GenericParameterProxy (genericParameter));
+				builder.Add (new GenericParameterProxy (genericParameter));
 			}
 
 			return builder.ToImmutableArray ();

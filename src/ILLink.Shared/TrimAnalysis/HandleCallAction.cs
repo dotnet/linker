@@ -655,6 +655,55 @@ namespace ILLink.Shared.TrimAnalysis
 				}
 				break;
 
+			//
+			// System.Linq.Expressions.Expression
+			//
+			// static Call (Type, String, Type[], Expression[])
+			//
+			case IntrinsicId.Expression_Call: {
+					BindingFlags bindingFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy;
+
+					var targetValue = GetMethodParameterValue (
+						calledMethod,
+						0,
+						GetDynamicallyAccessedMemberTypesFromBindingFlagsForMethods (bindingFlags));
+
+					// This is true even if we "don't know" - so it's only false if we're sure that there are no type arguments
+					bool hasTypeArguments = (argumentValues[2].AsSingleValue () as ArrayValue)?.Size.AsConstInt () != 0;
+					foreach (var value in argumentValues[0]) {
+						if (value is SystemTypeValue systemTypeValue) {
+							foreach (var stringParam in argumentValues[1]) {
+								if (stringParam is KnownStringValue stringValue) {
+									foreach (var method in GetMethodsOnTypeHierarchy (systemTypeValue.RepresentedType, stringValue.Contents, bindingFlags)) {
+										ValidateGenericMethodInstantiation (method.RepresentedMethod, argumentValues[2], calledMethod);
+										MarkMethod (method.RepresentedMethod);
+									}
+								} else {
+									if (hasTypeArguments) {
+										// We don't know what method the `MakeGenericMethod` was called on, so we have to assume
+										// that the method may have requirements which we can't fullfil -> warn.
+										_diagnosticContext.AddDiagnostic (DiagnosticId.MakeGenericMethod, calledMethod.GetDisplayName ());
+									}
+
+									_requireDynamicallyAccessedMembersAction.Invoke (value, targetValue);
+								}
+							}
+						} else {
+							if (hasTypeArguments) {
+								// We don't know what method the `MakeGenericMethod` was called on, so we have to assume
+								// that the method may have requirements which we can't fullfil -> warn.
+								_diagnosticContext.AddDiagnostic (DiagnosticId.MakeGenericMethod, calledMethod.GetDisplayName ());
+							}
+
+							_requireDynamicallyAccessedMembersAction.Invoke (value, targetValue);
+						}
+					}
+				}
+				break;
+
+			//
+			// Nullable.GetUnderlyingType(Type)
+			//
 			case IntrinsicId.Nullable_GetUnderlyingType:
 				if (argumentValues[0].IsEmpty ()) {
 					returnValue = MultiValueLattice.Top;
@@ -663,8 +712,8 @@ namespace ILLink.Shared.TrimAnalysis
 
 				foreach (var singlevalue in argumentValues[0].AsEnumerable ()) {
 					AddReturnValue (singlevalue switch {
-						SystemTypeValue systemType => 
-							systemType.RepresentedType.IsTypeOf("System", "Nullable`1") 
+						SystemTypeValue systemType =>
+							systemType.RepresentedType.IsTypeOf ("System", "Nullable`1")
 								// This will happen if there's typeof(Nullable<>).MakeGenericType(unknown) - we know the return value is Nullable<>
 								// but we don't know of what. So we represent it as known type, but not as known nullable type.
 								// Has to be special cases here, since we need to return "unknown" type.
@@ -1031,7 +1080,7 @@ namespace ILLink.Shared.TrimAnalysis
 			}
 		}
 
-		ImmutableArray<GenericParameterValue> GetGenericParameterValues(ImmutableArray<GenericParameterProxy> genericParameters)
+		ImmutableArray<GenericParameterValue> GetGenericParameterValues (ImmutableArray<GenericParameterProxy> genericParameters)
 		{
 			if (genericParameters.IsEmpty)
 				return ImmutableArray<GenericParameterValue>.Empty;

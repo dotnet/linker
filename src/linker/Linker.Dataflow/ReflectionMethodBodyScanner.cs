@@ -293,7 +293,8 @@ namespace Mono.Linker.Dataflow
 			case IntrinsicId.MethodBase_GetMethodFromHandle:
 			case IntrinsicId.MethodBase_get_MethodHandle:
 			case IntrinsicId.Type_MakeGenericType:
-			case IntrinsicId.MethodInfo_MakeGenericMethod: {
+			case IntrinsicId.MethodInfo_MakeGenericMethod:
+			case IntrinsicId.Expression_Call: {
 					var instanceValue = MultiValueLattice.Top;
 					IReadOnlyList<MultiValue> parameterValues = methodParams;
 					if (calledMethodDefinition.HasImplicitThis ()) {
@@ -336,61 +337,6 @@ namespace Mono.Linker.Dataflow
 
 			case IntrinsicId.Array_Empty: {
 					AddReturnValue (ArrayValue.Create (0, ((GenericInstanceMethod) calledMethod).GenericArguments[0]));
-				}
-				break;
-
-			//
-			// System.Linq.Expressions.Expression
-			//
-			// static Call (Type, String, Type[], Expression[])
-			//
-			case IntrinsicId.Expression_Call: {
-					BindingFlags bindingFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy;
-
-					var targetValue = GetMethodParameterValue (
-						calledMethodDefinition,
-						0,
-						GetDynamicallyAccessedMemberTypesFromBindingFlagsForMethods (bindingFlags));
-
-					bool hasTypeArguments = (methodParams[2].AsSingleValue () as ArrayValue)?.Size.AsConstInt () != 0;
-					foreach (var value in methodParams[0]) {
-						if (value is SystemTypeValue systemTypeValue) {
-							foreach (var stringParam in methodParams[1]) {
-								if (stringParam is KnownStringValue stringValue) {
-									foreach (var method in systemTypeValue.RepresentedType.Type.GetMethodsOnTypeHierarchy (_context, m => m.Name == stringValue.Contents, bindingFlags)) {
-										ValidateGenericMethodInstantiation (_origin, diagnosticsEnabled, method, methodParams[2], calledMethodDefinition);
-										MarkMethod (_origin, method);
-									}
-								} else {
-									if (hasTypeArguments) {
-										// We don't know what method the `MakeGenericMethod` was called on, so we have to assume
-										// that the method may have requirements which we can't fullfil -> warn.
-										if (diagnosticsEnabled)
-											_context.LogWarning (_origin, DiagnosticId.MakeGenericMethod, DiagnosticUtilities.GetMethodSignatureDisplayName (calledMethod));
-									}
-
-									RequireDynamicallyAccessedMembers (
-										_origin,
-										diagnosticsEnabled,
-										value,
-										targetValue);
-								}
-							}
-						} else {
-							if (hasTypeArguments) {
-								// We don't know what method the `MakeGenericMethod` was called on, so we have to assume
-								// that the method may have requirements which we can't fullfil -> warn.
-								if (diagnosticsEnabled)
-									_context.LogWarning (_origin, DiagnosticId.MakeGenericMethod, DiagnosticUtilities.GetMethodSignatureDisplayName (calledMethod));
-							}
-
-							RequireDynamicallyAccessedMembers (
-								_origin,
-								diagnosticsEnabled,
-								value,
-								targetValue);
-						}
-					}
 				}
 				break;
 
@@ -766,59 +712,6 @@ namespace Mono.Linker.Dataflow
 			return false;
 		}
 
-		bool AnalyzeGenericInstantiationTypeArray (in MessageOrigin origin, bool diagnosticsEnabled, in MultiValue arrayParam, MethodDefinition calledMethod, IList<GenericParameter> genericParameters)
-		{
-			bool hasRequirements = false;
-			foreach (var genericParameter in genericParameters) {
-				if (_context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameter) != DynamicallyAccessedMemberTypes.None) {
-					hasRequirements = true;
-					break;
-				}
-			}
-
-			// If there are no requirements, then there's no point in warning
-			if (!hasRequirements)
-				return true;
-
-			foreach (var typesValue in arrayParam) {
-				if (typesValue is not ArrayValue array) {
-					return false;
-				}
-
-				int? size = array.Size.AsConstInt ();
-				if (size == null || size != genericParameters.Count) {
-					return false;
-				}
-
-				bool allIndicesKnown = true;
-				for (int i = 0; i < size.Value; i++) {
-					if (!array.TryGetValueByIndex (i, out MultiValue value) || value.AsSingleValue () is UnknownValue) {
-						allIndicesKnown = false;
-						break;
-					}
-				}
-
-				if (!allIndicesKnown) {
-					return false;
-				}
-
-				for (int i = 0; i < size.Value; i++) {
-					if (array.TryGetValueByIndex (i, out MultiValue value)) {
-						// https://github.com/dotnet/linker/issues/2428
-						// We need to report the target as "this" - as that was the previous behavior
-						// but with the annotation from the generic parameter.
-						var targetValue = GetMethodParameterValue (calledMethod, 0, _context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameters[i]));
-						RequireDynamicallyAccessedMembers (
-							origin,
-							diagnosticsEnabled,
-							value,
-							targetValue);
-					}
-				}
-			}
-			return true;
-		}
-
 		void ProcessCreateInstanceByName (in MessageOrigin origin, bool diagnosticsEnabled, MethodDefinition calledMethod, ValueNodeList methodParams)
 		{
 			BindingFlags bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
@@ -970,27 +863,7 @@ namespace Mono.Linker.Dataflow
 			_markStep.MarkStaticConstructorVisibleToReflection (type, new DependencyInfo (DependencyKind.AccessedViaReflection, origin.Provider), origin);
 		}
 
-		void ValidateGenericMethodInstantiation (
-			in MessageOrigin origin,
-			bool diagnosticsEnabled,
-			MethodDefinition genericMethod,
-			in MultiValue genericParametersArray,
-			MethodDefinition reflectionMethod)
-		{
-			if (!genericMethod.HasGenericParameters) {
-				return;
-			}
-
-			if (!AnalyzeGenericInstantiationTypeArray (origin, diagnosticsEnabled, genericParametersArray, reflectionMethod, genericMethod.GenericParameters)) {
-				if (diagnosticsEnabled)
-					_context.LogWarning (origin, DiagnosticId.MakeGenericMethod, DiagnosticUtilities.GetMethodSignatureDisplayName (reflectionMethod));
-			}
-		}
-
 		static DynamicallyAccessedMemberTypes GetDynamicallyAccessedMemberTypesFromBindingFlagsForConstructors (BindingFlags? bindingFlags) =>
 			HandleCallAction.GetDynamicallyAccessedMemberTypesFromBindingFlagsForConstructors (bindingFlags);
-
-		static DynamicallyAccessedMemberTypes GetDynamicallyAccessedMemberTypesFromBindingFlagsForMethods (BindingFlags? bindingFlags) =>
-			HandleCallAction.GetDynamicallyAccessedMemberTypesFromBindingFlagsForMethods (bindingFlags);
 	}
 }
