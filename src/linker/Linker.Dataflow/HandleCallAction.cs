@@ -2,8 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using ILLink.Shared.TypeSystemProxy;
 using Mono.Cecil;
@@ -33,6 +31,7 @@ namespace ILLink.Shared.TrimAnalysis
 			_origin = origin;
 			_callingMethodDefinition = callingMethodDefinition;
 			_diagnosticContext = new DiagnosticContext (origin, diagnosticsEnabled, context);
+			_annotationContext = new AnnotationContext (context);
 			_requireDynamicallyAccessedMembersAction = new (context, reflectionMethodBodyScanner, origin, diagnosticsEnabled);
 		}
 
@@ -52,33 +51,8 @@ namespace ILLink.Shared.TrimAnalysis
 			return false;
 		}
 
-		private partial DynamicallyAccessedMemberTypes GetReturnValueAnnotation (MethodProxy method)
-			=> _context.Annotations.FlowAnnotations.GetReturnParameterAnnotation (method.Method);
-
-		private partial MethodReturnValue GetMethodReturnValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
-			=> new (ReflectionMethodBodyScanner.ResolveToTypeDefinition (_context, method.Method.ReturnType), method.Method, dynamicallyAccessedMemberTypes);
-
 		private partial GenericParameterValue GetGenericParameterValue (GenericParameterProxy genericParameter)
 			=> new (genericParameter.GenericParameter, _context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameter.GenericParameter));
-
-		private partial MethodThisParameterValue GetMethodThisParameterValue (MethodProxy method)
-			=> GetMethodThisParameterValue (method, _context.Annotations.FlowAnnotations.GetParameterAnnotation (method.Method, 0));
-
-		private partial MethodThisParameterValue GetMethodThisParameterValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
-			=> new (method.Method, dynamicallyAccessedMemberTypes);
-
-		private partial DynamicallyAccessedMemberTypes GetMethodParameterAnnotation (MethodProxy method, int parameterIndex)
-		{
-			Debug.Assert (method.Method.Parameters.Count > parameterIndex);
-			return _context.Annotations.FlowAnnotations.GetParameterAnnotation (method.Method, parameterIndex + (method.IsStatic () ? 0 : 1));
-		}
-
-		private partial MethodParameterValue GetMethodParameterValue (MethodProxy method, int parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
-			=> new (
-				ReflectionMethodBodyScanner.ResolveToTypeDefinition (_context, method.Method.Parameters[parameterIndex].ParameterType),
-				method.Method,
-				parameterIndex,
-				dynamicallyAccessedMemberTypes);
 
 		private partial IEnumerable<SystemReflectionMethodBaseValue> GetMethodsOnTypeHierarchy (TypeProxy type, string name, BindingFlags? bindingFlags)
 		{
