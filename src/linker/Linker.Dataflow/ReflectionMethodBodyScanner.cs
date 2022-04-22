@@ -291,7 +291,9 @@ namespace Mono.Linker.Dataflow
 			case IntrinsicId.Type_get_BaseType:
 			case IntrinsicId.Type_GetConstructor:
 			case IntrinsicId.MethodBase_GetMethodFromHandle:
-			case IntrinsicId.MethodBase_get_MethodHandle: {
+			case IntrinsicId.MethodBase_get_MethodHandle:
+			case IntrinsicId.Type_MakeGenericType:
+			case IntrinsicId.MethodInfo_MakeGenericMethod: {
 					var instanceValue = MultiValueLattice.Top;
 					IReadOnlyList<MultiValue> parameterValues = methodParams;
 					if (calledMethodDefinition.HasImplicitThis ()) {
@@ -334,82 +336,6 @@ namespace Mono.Linker.Dataflow
 
 			case IntrinsicId.Array_Empty: {
 					AddReturnValue (ArrayValue.Create (0, ((GenericInstanceMethod) calledMethod).GenericArguments[0]));
-				}
-				break;
-
-			//
-			// System.Type
-			//
-			// Type MakeGenericType (params Type[] typeArguments)
-			//
-			case IntrinsicId.Type_MakeGenericType: {
-					// Shared HandleCallAction doesn't cover all the same functionality as this does
-					// We don't yet handle the case where you can create a nullable type with typeof(Nullable<>).MakeGenericType(T)
-					foreach (var value in methodParams[0]) {
-						if (value is SystemTypeValue typeValue) {
-							if (!AnalyzeGenericInstantiationTypeArray (_origin, diagnosticsEnabled, methodParams[1], calledMethodDefinition, typeValue.RepresentedType.Type.GenericParameters)) {
-								bool hasUncheckedAnnotation = false;
-								foreach (var genericParameter in typeValue.RepresentedType.Type.GenericParameters) {
-									if (_context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameter) != DynamicallyAccessedMemberTypes.None ||
-										(genericParameter.HasDefaultConstructorConstraint && !typeValue.RepresentedType.Type.IsTypeOf (WellKnownType.System_Nullable_T))) {
-										// If we failed to analyze the array, we go through the analyses again
-										// and intentionally ignore one particular annotation:
-										// Special case: Nullable<T> where T : struct
-										//  The struct constraint in C# implies new() constraints, but Nullable doesn't make a use of that part.
-										//  There are several places even in the framework where typeof(Nullable<>).MakeGenericType would warn
-										//  without any good reason to do so.
-										hasUncheckedAnnotation = true;
-										break;
-									}
-								}
-								if (hasUncheckedAnnotation) {
-									if (diagnosticsEnabled)
-										_context.LogWarning (_origin, DiagnosticId.MakeGenericType, calledMethodDefinition.GetDisplayName ());
-								}
-							}
-
-							// Nullables without a type argument are considered SystemTypeValues
-							if (typeValue.RepresentedType.IsTypeOf (WellKnownType.System_Nullable_T)) {
-								foreach (var argumentValue in methodParams[1]) {
-									if ((argumentValue as ArrayValue)?.TryGetValueByIndex (0, out var underlyingMultiValue) == true) {
-										foreach (var underlyingValue in underlyingMultiValue) {
-											switch (underlyingValue) {
-											// Don't warn on these types - it will throw instead
-											case NullableValueWithDynamicallyAccessedMembers:
-											case NullableSystemTypeValue:
-											case SystemTypeValue maybeArrayValue when maybeArrayValue.RepresentedType.IsTypeOf (WellKnownType.System_Array):
-												AddReturnValue (MultiValueLattice.Top);
-												break;
-											case SystemTypeValue systemTypeValue:
-												AddReturnValue (new NullableSystemTypeValue (typeValue.RepresentedType, new SystemTypeValue (systemTypeValue.RepresentedType)));
-												break;
-											// Generic Parameters and method parameters with annotations
-											case ValueWithDynamicallyAccessedMembers damValue:
-												AddReturnValue (new NullableValueWithDynamicallyAccessedMembers (typeValue.RepresentedType, damValue));
-												break;
-											// Everything else assume it has no annotations
-											default:
-												AddReturnValue (GetMethodReturnValue (calledMethodDefinition, returnValueDynamicallyAccessedMemberTypes));
-												break;
-											}
-										}
-									}
-								}
-								// We want to skip adding the `value` to the return Value because we have already added Nullable<value>
-								continue;
-							}
-							// We haven't found any generic parameters with annotations, so there's nothing to validate.
-						} else if (value == NullValue.Instance) {
-							// Do nothing - null value is valid and should not cause warnings nor marking
-						} else {
-							// We have no way to "include more" to fix this if we don't know, so we have to warn
-							if (diagnosticsEnabled)
-								_context.LogWarning (_origin, DiagnosticId.MakeGenericType, calledMethodDefinition.GetDisplayName ());
-						}
-						// We don't want to lose track of the type
-						// in case this is e.g. Activator.CreateInstance(typeof(Foo<>).MakeGenericType(...));
-						AddReturnValue (value);
-					}
 				}
 				break;
 
@@ -745,31 +671,6 @@ namespace Mono.Linker.Dataflow
 				// For now always fail since we don't track assemblies (dotnet/linker/issues/1947)
 				if (diagnosticsEnabled)
 					_context.LogWarning (_origin, DiagnosticId.ParametersOfAssemblyCreateInstanceCannotBeAnalyzed, calledMethodDefinition.GetDisplayName ());
-				break;
-
-			//
-			// System.Reflection.MethodInfo
-			//
-			// MakeGenericMethod (Type[] typeArguments)
-			//
-			case IntrinsicId.MethodInfo_MakeGenericMethod: {
-
-					foreach (var methodValue in methodParams[0]) {
-						if (methodValue is SystemReflectionMethodBaseValue methodBaseValue) {
-							ValidateGenericMethodInstantiation (_origin, diagnosticsEnabled, methodBaseValue.RepresentedMethod.Method, methodParams[1], calledMethodDefinition);
-						} else if (methodValue == NullValue.Instance) {
-							// Nothing to do
-						} else {
-							// We don't know what method the `MakeGenericMethod` was called on, so we have to assume
-							// that the method may have requirements which we can't fullfil -> warn.
-							if (diagnosticsEnabled)
-								_context.LogWarning (_origin, DiagnosticId.MakeGenericMethod, DiagnosticUtilities.GetMethodSignatureDisplayName (calledMethodDefinition));
-						}
-					}
-
-					// MakeGenericMethod doesn't change the identity of the MethodBase we're tracking so propagate to the return value
-					AddReturnValue (methodParams[0]);
-				}
 				break;
 
 			default:
