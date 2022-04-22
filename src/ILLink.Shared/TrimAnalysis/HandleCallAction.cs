@@ -663,7 +663,13 @@ namespace ILLink.Shared.TrimAnalysis
 
 				foreach (var singlevalue in argumentValues[0].AsEnumerable ()) {
 					AddReturnValue (singlevalue switch {
-						SystemTypeValue systemType => systemType,
+						SystemTypeValue systemType => 
+							systemType.RepresentedType.IsTypeOf("System", "Nullable`1") 
+								// This will happen if there's typeof(Nullable<>).MakeGenericType(unknown) - we know the return value is Nullable<>
+								// but we don't know of what. So we represent it as known type, but not as known nullable type.
+								// Has to be special cases here, since we need to return "unknown" type.
+								? GetMethodReturnValue (calledMethod, returnValueDynamicallyAccessedMemberTypes)
+								: MultiValueLattice.Top, // This returns null at runtime, so return empty value
 						NullableSystemTypeValue nullableSystemType => nullableSystemType.UnderlyingTypeValue,
 						NullableValueWithDynamicallyAccessedMembers nullableDamValue => nullableDamValue.UnderlyingTypeValue,
 						ValueWithDynamicallyAccessedMembers damValue => damValue,
@@ -727,17 +733,16 @@ namespace ILLink.Shared.TrimAnalysis
 											break;
 										// Everything else assume it has no annotations
 										default:
-											// TODO: This is weird - why not just propagate the input value??? we do that even if we don't understand
-											// since we don't want to loose track of the type
-											AddReturnValue (GetMethodReturnValue (calledMethod, returnValueDynamicallyAccessedMemberTypes));
+											// This returns just Nullable<> SystemTypeValue - so some things will work, but GetUnderlyingType won't propagate anything
+											// It's special cased to do that.
+											AddReturnValue (value);
 											break;
 										}
 									}
 								} else {
-									// TODO: This needs to set a return value! If there are two array values,
-									// the first one recognized we will handle it below and set a return value.
-									// The second one unrecognized and thus not an ArrayValue - we would add nothing
-									// but that needs to return unannotated value so that subsequent usage warns.
+									// This returns just Nullable<> SystemTypeValue - so some things will work, but GetUnderlyingType won't propagate anything
+									// It's special cased to do that.
+									AddReturnValue (value);
 								}
 							}
 							// We want to skip adding the `value` to the return Value because we have already added Nullable<value>
