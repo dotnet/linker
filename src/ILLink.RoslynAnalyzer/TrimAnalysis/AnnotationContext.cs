@@ -11,7 +11,6 @@ namespace ILLink.Shared.TrimAnalysis
 {
 	readonly partial struct AnnotationContext
 	{
-
 #pragma warning disable CA1822 // Mark members as static - the other partial implementations might need to be instance methods
 		internal partial MethodReturnValue GetMethodReturnValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 			=> new MethodReturnValue (method.Method, dynamicallyAccessedMemberTypes);
