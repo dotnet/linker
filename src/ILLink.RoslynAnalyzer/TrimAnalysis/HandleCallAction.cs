@@ -36,10 +36,6 @@ namespace ILLink.Shared.TrimAnalysis
 		// it's unclear if the same optimization makes sense for the analyzer.
 		private partial bool MethodRequiresDataFlowAnalysis (MethodProxy method) => FlowAnnotations.RequiresDataFlowAnalysis (method.Method);
 
-
-		private partial GenericParameterValue GetGenericParameterValue (GenericParameterProxy genericParameter)
-			=> new (genericParameter.TypeParameterSymbol);
-
 		private partial IEnumerable<SystemReflectionMethodBaseValue> GetMethodsOnTypeHierarchy (TypeProxy type, string name, BindingFlags? bindingFlags)
 		{
 			foreach (var method in type.Type.GetMethodsOnTypeHierarchy (m => m.Name == name, bindingFlags))

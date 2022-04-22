@@ -72,14 +72,14 @@ namespace ILLink.Shared.TrimAnalysis
 						// When generating type handles from IL, the GenericParameterValue with DAM annotations is not available.
 						// Once we convert it to a Value with annotations here, there is no need to convert it back in get_TypeHandle
 						RuntimeTypeHandleForNullableValueWithDynamicallyAccessedMembers nullableDamType when nullableDamType.UnderlyingTypeValue is RuntimeTypeHandleForGenericParameterValue underlyingGenericParameter
-							=> new NullableValueWithDynamicallyAccessedMembers (nullableDamType.NullableType, GetGenericParameterValue (underlyingGenericParameter.GenericParameter)),
+							=> new NullableValueWithDynamicallyAccessedMembers (nullableDamType.NullableType, _annotationContext.GetGenericParameterValue (underlyingGenericParameter.GenericParameter)),
 						// This should only happen if the code does something like typeof(Nullable<>).MakeGenericType(methodParameter).TypeHandle
 						RuntimeTypeHandleForNullableValueWithDynamicallyAccessedMembers nullableDamType when nullableDamType.UnderlyingTypeValue is ValueWithDynamicallyAccessedMembers underlyingTypeValue
 							=> new NullableValueWithDynamicallyAccessedMembers (nullableDamType.NullableType, underlyingTypeValue),
 						RuntimeTypeHandleValue typeHandle
 							=> new SystemTypeValue (typeHandle.RepresentedType),
 						RuntimeTypeHandleForGenericParameterValue genericParam
-							=> GetGenericParameterValue (genericParam.GenericParameter),
+							=> _annotationContext.GetGenericParameterValue (genericParam.GenericParameter),
 						_ => annotatedMethodReturnValue
 					});
 				}
@@ -970,8 +970,6 @@ namespace ILLink.Shared.TrimAnalysis
 		/// Returns true if the method is a .ctor for System.Type or a type that derives from System.Type (i.e. fields and params of this type can have DynamicallyAccessedMembers annotations)
 		/// </Summary>
 		private partial bool MethodIsTypeConstructor (MethodProxy method);
-
-		private partial GenericParameterValue GetGenericParameterValue (GenericParameterProxy genericParameter);
 
 		private partial IEnumerable<SystemReflectionMethodBaseValue> GetMethodsOnTypeHierarchy (TypeProxy type, string name, BindingFlags? bindingFlags);
 

@@ -19,6 +19,9 @@ namespace ILLink.Shared.TrimAnalysis
 		internal partial MethodReturnValue GetMethodReturnValue (MethodProxy method)
 			=> GetMethodReturnValue (method, _context.Annotations.FlowAnnotations.GetReturnParameterAnnotation (method.Method));
 
+		internal partial GenericParameterValue GetGenericParameterValue (GenericParameterProxy genericParameter)
+			=> new GenericParameterValue (genericParameter.GenericParameter, _context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameter.GenericParameter));
+
 #pragma warning disable CA1822 // Mark members as static - keep this an instance method for consistency with the others
 		internal partial MethodThisParameterValue GetMethodThisParameterValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 			=> new MethodThisParameterValue (method.Method, dynamicallyAccessedMemberTypes);

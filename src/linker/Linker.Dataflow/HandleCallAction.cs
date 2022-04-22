@@ -51,9 +51,6 @@ namespace ILLink.Shared.TrimAnalysis
 			return false;
 		}
 
-		private partial GenericParameterValue GetGenericParameterValue (GenericParameterProxy genericParameter)
-			=> new (genericParameter.GenericParameter, _context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameter.GenericParameter));
-
 		private partial IEnumerable<SystemReflectionMethodBaseValue> GetMethodsOnTypeHierarchy (TypeProxy type, string name, BindingFlags? bindingFlags)
 		{
 			foreach (var method in type.Type.GetMethodsOnTypeHierarchy (_context, m => m.Name == name, bindingFlags))

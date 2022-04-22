@@ -19,6 +19,9 @@ namespace ILLink.Shared.TrimAnalysis
 		internal partial MethodReturnValue GetMethodReturnValue (MethodProxy method)
 			=> GetMethodReturnValue (method, FlowAnnotations.GetMethodReturnValueAnnotation (method.Method));
 
+		internal partial GenericParameterValue GetGenericParameterValue (GenericParameterProxy genericParameter)
+			=> new GenericParameterValue (genericParameter.TypeParameterSymbol);
+
 		internal partial MethodThisParameterValue GetMethodThisParameterValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 			=> new MethodThisParameterValue (method.Method, dynamicallyAccessedMemberTypes);
 

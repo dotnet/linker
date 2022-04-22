@@ -83,10 +83,8 @@ namespace Mono.Linker.Dataflow
 
 		public void ProcessAttributeDataflow (MethodDefinition method, IList<CustomAttributeArgument> arguments)
 		{
-			int paramOffset = method.HasImplicitThis () ? 1 : 0;
-
 			for (int i = 0; i < method.Parameters.Count; i++) {
-				var parameterValue = GetMethodParameterValue (method, i + paramOffset);
+				var parameterValue = _annotationContext.GetMethodParameterValue (method, i);
 				if (parameterValue.DynamicallyAccessedMemberTypes != DynamicallyAccessedMemberTypes.None) {
 					MultiValue value = GetValueNodeForCustomAttributeArgument (arguments[i]);
 					RequireDynamicallyAccessedMembers (_origin, diagnosticsEnabled: true, value, parameterValue);
@@ -127,10 +125,9 @@ namespace Mono.Linker.Dataflow
 
 		public void ProcessGenericArgumentDataFlow (GenericParameter genericParameter, TypeReference genericArgument)
 		{
-			var annotation = _context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameter);
-			Debug.Assert (annotation != DynamicallyAccessedMemberTypes.None);
+			var genericParameterValue = _annotationContext.GetGenericParameterValue (genericParameter);
+			Debug.Assert (genericParameterValue.DynamicallyAccessedMemberTypes != DynamicallyAccessedMemberTypes.None);
 
-			var genericParameterValue = new GenericParameterValue (genericParameter, annotation);
 			MultiValue genericArgumentValue = GetTypeValueNodeFromGenericArgument (genericArgument);
 
 			RequireDynamicallyAccessedMembers (_origin, ShouldEnableReflectionPatternReporting (_origin.Provider), genericArgumentValue, genericParameterValue);
@@ -141,7 +138,7 @@ namespace Mono.Linker.Dataflow
 			if (genericArgument is GenericParameter inputGenericParameter) {
 				// Technically this should be a new value node type as it's not a System.Type instance representation, but just the generic parameter
 				// That said we only use it to perform the dynamically accessed members checks and for that purpose treating it as System.Type is perfectly valid.
-				return new GenericParameterValue (inputGenericParameter, _context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (inputGenericParameter));
+				return _annotationContext.GetGenericParameterValue (inputGenericParameter);
 			} else if (ResolveToTypeDefinition (genericArgument) is TypeDefinition genericArgumentType) {
 				if (genericArgumentType.IsTypeOf (WellKnownType.System_Nullable_T)) {
 					var innerGenericArgument = (genericArgument as IGenericInstance)?.GenericArguments.FirstOrDefault ();
@@ -175,9 +172,6 @@ namespace Mono.Linker.Dataflow
 			Debug.Fail ("Invalid IL or a bug in the scanner");
 		}
 
-		ValueWithDynamicallyAccessedMembers GetMethodParameterValue (MethodDefinition method, int parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
-			=> GetMethodParameterValueInternal (method, parameterIndex, dynamicallyAccessedMemberTypes);
-
 		protected override ValueWithDynamicallyAccessedMembers GetMethodParameterValue (MethodDefinition method, int parameterIndex)
 			=> GetMethodParameterValueInternal (method, parameterIndex, _context.Annotations.FlowAnnotations.GetParameterAnnotation (method, parameterIndex));
 
@@ -185,7 +179,7 @@ namespace Mono.Linker.Dataflow
 		{
 			if (method.HasImplicitThis ()) {
 				if (parameterIndex == 0)
-					return _annotationContext.GetMethodThisParameterValue (new (method), dynamicallyAccessedMemberTypes);
+					return _annotationContext.GetMethodThisParameterValue (method, dynamicallyAccessedMemberTypes);
 
 				parameterIndex--;
 			}
@@ -410,7 +404,7 @@ namespace Mono.Linker.Dataflow
 			case IntrinsicId.Expression_Call: {
 					BindingFlags bindingFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy;
 
-					var targetValue = GetMethodParameterValue (
+					var targetValue = _annotationContext.GetMethodParameterValue (
 						calledMethodDefinition,
 						0,
 						GetDynamicallyAccessedMemberTypesFromBindingFlagsForMethods (bindingFlags));
@@ -463,7 +457,7 @@ namespace Mono.Linker.Dataflow
 			// static New (Type)
 			//
 			case IntrinsicId.Expression_New: {
-					var targetValue = GetMethodParameterValue (calledMethodDefinition, 0, DynamicallyAccessedMemberTypes.PublicParameterlessConstructor);
+					var targetValue = _annotationContext.GetMethodParameterValue (calledMethodDefinition, 0, DynamicallyAccessedMemberTypes.PublicParameterlessConstructor);
 					foreach (var value in methodParams[0]) {
 						if (value is SystemTypeValue systemTypeValue) {
 							MarkConstructorsOnType (_origin, systemTypeValue.RepresentedType.Type, null, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
@@ -643,7 +637,7 @@ namespace Mono.Linker.Dataflow
 								requiredMemberTypes |= DynamicallyAccessedMemberTypes.PublicParameterlessConstructor;
 							}
 
-							var targetValue = GetMethodParameterValue (calledMethodDefinition, 0, requiredMemberTypes);
+							var targetValue = _annotationContext.GetMethodParameterValue (calledMethodDefinition, 0, requiredMemberTypes);
 
 							RequireDynamicallyAccessedMembers (_origin, diagnosticsEnabled, value, targetValue);
 						}
@@ -895,7 +889,7 @@ namespace Mono.Linker.Dataflow
 						// https://github.com/dotnet/linker/issues/2428
 						// We need to report the target as "this" - as that was the previous behavior
 						// but with the annotation from the generic parameter.
-						var targetValue = GetMethodParameterValue (calledMethod, 0, _context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameters[i]));
+						var targetValue = GetMethodParameterValueInternal (calledMethod, 0, _context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameters[i]));
 						RequireDynamicallyAccessedMembers (
 							origin,
 							diagnosticsEnabled,
