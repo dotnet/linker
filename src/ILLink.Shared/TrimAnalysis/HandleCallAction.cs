@@ -716,7 +716,7 @@ namespace ILLink.Shared.TrimAnalysis
 							systemType.RepresentedType.IsTypeOf ("System", "Nullable`1")
 								// This will happen if there's typeof(Nullable<>).MakeGenericType(unknown) - we know the return value is Nullable<>
 								// but we don't know of what. So we represent it as known type, but not as known nullable type.
-								// Has to be special cases here, since we need to return "unknown" type.
+								// Has to be special cased here, since we need to return "unknown" type.
 								? GetMethodReturnValue (calledMethod, returnValueDynamicallyAccessedMemberTypes)
 								: MultiValueLattice.Top, // This returns null at runtime, so return empty value
 						NullableSystemTypeValue nullableSystemType => nullableSystemType.UnderlyingTypeValue,
