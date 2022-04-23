@@ -173,9 +173,9 @@ namespace Mono.Linker.Dataflow
 		}
 
 		protected override ValueWithDynamicallyAccessedMembers GetMethodParameterValue (MethodDefinition method, int parameterIndex)
-			=> GetMethodParameterValueInternal (method, parameterIndex, _context.Annotations.FlowAnnotations.GetParameterAnnotation (method, parameterIndex));
+			=> GetMethodParameterValue (method, parameterIndex, _context.Annotations.FlowAnnotations.GetParameterAnnotation (method, parameterIndex));
 
-		ValueWithDynamicallyAccessedMembers GetMethodParameterValueInternal (MethodDefinition method, int parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
+		ValueWithDynamicallyAccessedMembers GetMethodParameterValue (MethodDefinition method, int parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 		{
 			if (method.HasImplicitThis ()) {
 				if (parameterIndex == 0)
@@ -889,7 +889,7 @@ namespace Mono.Linker.Dataflow
 						// https://github.com/dotnet/linker/issues/2428
 						// We need to report the target as "this" - as that was the previous behavior
 						// but with the annotation from the generic parameter.
-						var targetValue = GetMethodParameterValueInternal (calledMethod, 0, _context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameters[i]));
+						var targetValue = GetMethodParameterValue (calledMethod, 0, _context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameters[i]));
 						RequireDynamicallyAccessedMembers (
 							origin,
 							diagnosticsEnabled,

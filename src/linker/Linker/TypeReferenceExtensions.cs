@@ -402,11 +402,8 @@ namespace Mono.Linker
 		// Any data flow annotations placed on a type parameter which receives an array type apply to the array itself. None of the members in its
 		// element type should be marked.
 		public static TypeDefinition? ResolveToTypeDefinition (this TypeReference typeReference, LinkContext context)
-		{
-			if (typeReference is ArrayType)
-				return BCL.FindPredefinedType (WellKnownType.System_Array, context);
-
-			return context.TryResolve (typeReference);
-		}
+			=> typeReference is ArrayType
+				? BCL.FindPredefinedType (WellKnownType.System_Array, context)
+				: context.TryResolve (typeReference);
 	}
 }
