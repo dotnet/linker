@@ -531,7 +531,7 @@ namespace Mono.Linker.Dataflow
 			// static CreateInstance (string assemblyName, string typeName, object?[]? activationAttributes)
 			//
 			case IntrinsicId.Activator_CreateInstance_AssemblyName_TypeName:
-				ProcessCreateInstanceByName (_origin, diagnosticContext, calledMethodDefinition, methodParams);
+				ProcessCreateInstanceByName (diagnosticContext, calledMethodDefinition, methodParams);
 				break;
 
 			//
@@ -542,7 +542,7 @@ namespace Mono.Linker.Dataflow
 			// static CreateInstanceFrom (string assemblyFile, string typeName, object? []? activationAttributes)
 			//
 			case IntrinsicId.Activator_CreateInstanceFrom:
-				ProcessCreateInstanceByName (_origin, diagnosticContext, calledMethodDefinition, methodParams);
+				ProcessCreateInstanceByName (diagnosticContext, calledMethodDefinition, methodParams);
 				break;
 
 			//
@@ -591,7 +591,7 @@ namespace Mono.Linker.Dataflow
 					|| appDomainCreateInstance == IntrinsicId.AppDomain_CreateInstanceAndUnwrap
 					|| appDomainCreateInstance == IntrinsicId.AppDomain_CreateInstanceFrom
 					|| appDomainCreateInstance == IntrinsicId.AppDomain_CreateInstanceFromAndUnwrap:
-				ProcessCreateInstanceByName (_origin, diagnosticContext, calledMethodDefinition, methodParams);
+				ProcessCreateInstanceByName (diagnosticContext, calledMethodDefinition, methodParams);
 				break;
 
 			//
@@ -699,9 +699,8 @@ namespace Mono.Linker.Dataflow
 			return false;
 		}
 
-		void ProcessCreateInstanceByName (in MessageOrigin origin, in DiagnosticContext diagnosticContext, MethodDefinition calledMethod, ValueNodeList methodParams)
+		void ProcessCreateInstanceByName (in DiagnosticContext diagnosticContext, MethodDefinition calledMethod, ValueNodeList methodParams)
 		{
-			Debug.Assert (diagnosticContext.Origin == origin);
 			BindingFlags bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
 			bool parameterlessConstructor = true;
 			if (calledMethod.Parameters.Count == 8 && calledMethod.Parameters[2].ParameterType.MetadataType == MetadataType.Boolean) {
@@ -745,7 +744,7 @@ namespace Mono.Linker.Dataflow
 								continue;
 							}
 
-							_reflectionMarker.MarkConstructorsOnType (origin, resolvedType, parameterlessConstructor ? m => m.Parameters.Count == 0 : null, bindingFlags);
+							_reflectionMarker.MarkConstructorsOnType (diagnosticContext.Origin, resolvedType, parameterlessConstructor ? m => m.Parameters.Count == 0 : null, bindingFlags);
 						} else {
 							diagnosticContext.AddDiagnostic (DiagnosticId.UnrecognizedParameterInMethodCreateInstance, calledMethod.Parameters[1].Name, calledMethod.GetDisplayName ());
 						}

@@ -48,13 +48,10 @@ namespace Mono.Linker.Dataflow
 
 		internal bool TryResolveTypeNameAndMark (string typeName, MessageOrigin origin, [NotNullWhen (true)] out TypeDefinition? type)
 		{
-			// Only difference here is whether we treat arrays specially. Maybe we should do that more frequently elsewhere too.
-			// _reflectionMarker.MarkType (origin, );
 			if (!_context.TypeNameResolver.TryResolveTypeName (typeName, origin.Provider, out TypeReference? typeRef, out AssemblyDefinition? typeAssembly)
 				|| typeRef.ResolveToTypeDefinition (_context) is not TypeDefinition foundType) {
 				type = default;
 				return false;
-
 			}
 
 			_markStep.MarkTypeVisibleToReflection (typeRef, foundType, new DependencyInfo (DependencyKind.AccessedViaReflection, origin.Provider), origin);
