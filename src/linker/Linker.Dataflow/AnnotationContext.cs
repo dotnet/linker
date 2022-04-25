@@ -13,6 +13,9 @@ namespace ILLink.Shared.TrimAnalysis
 
 		public AnnotationContext (LinkContext context) => _context = context;
 
+		internal partial bool MethodRequiresDataFlowAnalysis (MethodProxy method)
+			=> _context.Annotations.FlowAnnotations.RequiresDataFlowAnalysis (method.Method);
+
 		internal partial MethodReturnValue GetMethodReturnValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 			=> new MethodReturnValue (method.Method.ReturnType.ResolveToTypeDefinition (_context), method.Method, dynamicallyAccessedMemberTypes);
 

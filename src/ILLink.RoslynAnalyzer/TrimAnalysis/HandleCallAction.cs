@@ -31,11 +31,6 @@ namespace ILLink.Shared.TrimAnalysis
 			_requireDynamicallyAccessedMembersAction = new (diagnosticContext, _reflectionAccessAnalyzer);
 		}
 
-		// TODO: This is relatively expensive on the analyzer since it doesn't cache the annotation information
-		// In linker this is an optimization to avoid the heavy lifting of analysis if there's no point
-		// it's unclear if the same optimization makes sense for the analyzer.
-		private partial bool MethodRequiresDataFlowAnalysis (MethodProxy method) => FlowAnnotations.RequiresDataFlowAnalysis (method.Method);
-
 		private partial IEnumerable<SystemReflectionMethodBaseValue> GetMethodsOnTypeHierarchy (TypeProxy type, string name, BindingFlags? bindingFlags)
 		{
 			foreach (var method in type.Type.GetMethodsOnTypeHierarchy (m => m.Name == name, bindingFlags))

@@ -35,9 +35,6 @@ namespace ILLink.Shared.TrimAnalysis
 			_requireDynamicallyAccessedMembersAction = new (context, reflectionMethodBodyScanner, origin, diagnosticsEnabled);
 		}
 
-		private partial bool MethodRequiresDataFlowAnalysis (MethodProxy method)
-			=> _context.Annotations.FlowAnnotations.RequiresDataFlowAnalysis (method.Method);
-
 		private partial bool MethodIsTypeConstructor (MethodProxy method)
 		{
 			if (!method.Method.IsConstructor)

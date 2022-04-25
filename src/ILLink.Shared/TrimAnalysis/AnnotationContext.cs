@@ -9,6 +9,8 @@ namespace ILLink.Shared.TrimAnalysis
 	// Shared helpers to go from MethodProxy to dataflow values.
 	readonly partial struct AnnotationContext
 	{
+		internal partial bool MethodRequiresDataFlowAnalysis (MethodProxy method);
+
 		internal partial MethodReturnValue GetMethodReturnValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes);
 
 		internal partial MethodReturnValue GetMethodReturnValue (MethodProxy method);

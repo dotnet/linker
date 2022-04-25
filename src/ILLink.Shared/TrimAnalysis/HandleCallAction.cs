@@ -28,7 +28,7 @@ namespace ILLink.Shared.TrimAnalysis
 		{
 			MultiValue? returnValue = null;
 
-			bool requiresDataFlowAnalysis = MethodRequiresDataFlowAnalysis (calledMethod);
+			bool requiresDataFlowAnalysis = _annotationContext.MethodRequiresDataFlowAnalysis (calledMethod);
 			var annotatedMethodReturnValue = _annotationContext.GetMethodReturnValue (calledMethod);
 			Debug.Assert (requiresDataFlowAnalysis || annotatedMethodReturnValue.DynamicallyAccessedMemberTypes == DynamicallyAccessedMemberTypes.None);
 
@@ -1163,8 +1163,6 @@ namespace ILLink.Shared.TrimAnalysis
 			GetDynamicallyAccessedMemberTypesFromBindingFlagsForMethods (bindingFlags) |
 			GetDynamicallyAccessedMemberTypesFromBindingFlagsForProperties (bindingFlags) |
 			GetDynamicallyAccessedMemberTypesFromBindingFlagsForNestedTypes (bindingFlags);
-
-		private partial bool MethodRequiresDataFlowAnalysis (MethodProxy method);
 
 		/// <Summary>
 		/// Returns true if the method is a .ctor for System.Type or a type that derives from System.Type (i.e. fields and params of this type can have DynamicallyAccessedMembers annotations)
