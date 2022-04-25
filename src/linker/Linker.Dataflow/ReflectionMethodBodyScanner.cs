@@ -23,7 +23,7 @@ namespace Mono.Linker.Dataflow
 	{
 		readonly MarkStep _markStep;
 		MessageOrigin _origin;
-		readonly AnnotationContext _annotationContext;
+		readonly FlowAnnotations _annotations;
 
 		public static bool RequiresReflectionMethodBodyScannerForCallSite (LinkContext context, MethodReference calledMethod)
 		{
@@ -65,7 +65,7 @@ namespace Mono.Linker.Dataflow
 		{
 			_markStep = parent;
 			_origin = origin;
-			_annotationContext = new AnnotationContext (context);
+			_annotations = context.Annotations.FlowAnnotations;
 		}
 
 		public void ScanAndProcessReturnValue (MethodBody methodBody)
@@ -74,7 +74,7 @@ namespace Mono.Linker.Dataflow
 
 			if (!methodBody.Method.ReturnsVoid ()) {
 				var method = methodBody.Method;
-				var methodReturnValue = _annotationContext.GetMethodReturnValue (method);
+				var methodReturnValue = _annotations.GetMethodReturnValue (method);
 				if (methodReturnValue.DynamicallyAccessedMemberTypes != 0) {
 					RequireDynamicallyAccessedMembers (_origin, ShouldEnableReflectionPatternReporting (_origin.Provider), ReturnValue, methodReturnValue);
 				}
@@ -84,7 +84,7 @@ namespace Mono.Linker.Dataflow
 		public void ProcessAttributeDataflow (MethodDefinition method, IList<CustomAttributeArgument> arguments)
 		{
 			for (int i = 0; i < method.Parameters.Count; i++) {
-				var parameterValue = _annotationContext.GetMethodParameterValue (method, i);
+				var parameterValue = _annotations.GetMethodParameterValue (method, i);
 				if (parameterValue.DynamicallyAccessedMemberTypes != DynamicallyAccessedMemberTypes.None) {
 					MultiValue value = GetValueNodeForCustomAttributeArgument (arguments[i]);
 					RequireDynamicallyAccessedMembers (_origin, diagnosticsEnabled: true, value, parameterValue);
@@ -125,7 +125,7 @@ namespace Mono.Linker.Dataflow
 
 		public void ProcessGenericArgumentDataFlow (GenericParameter genericParameter, TypeReference genericArgument)
 		{
-			var genericParameterValue = _annotationContext.GetGenericParameterValue (genericParameter);
+			var genericParameterValue = _annotations.GetGenericParameterValue (genericParameter);
 			Debug.Assert (genericParameterValue.DynamicallyAccessedMemberTypes != DynamicallyAccessedMemberTypes.None);
 
 			MultiValue genericArgumentValue = GetTypeValueNodeFromGenericArgument (genericArgument);
@@ -138,7 +138,7 @@ namespace Mono.Linker.Dataflow
 			if (genericArgument is GenericParameter inputGenericParameter) {
 				// Technically this should be a new value node type as it's not a System.Type instance representation, but just the generic parameter
 				// That said we only use it to perform the dynamically accessed members checks and for that purpose treating it as System.Type is perfectly valid.
-				return _annotationContext.GetGenericParameterValue (inputGenericParameter);
+				return _annotations.GetGenericParameterValue (inputGenericParameter);
 			} else if (ResolveToTypeDefinition (genericArgument) is TypeDefinition genericArgumentType) {
 				if (genericArgumentType.IsTypeOf (WellKnownType.System_Nullable_T)) {
 					var innerGenericArgument = (genericArgument as IGenericInstance)?.GenericArguments.FirstOrDefault ();
@@ -179,12 +179,12 @@ namespace Mono.Linker.Dataflow
 		{
 			if (method.HasImplicitThis ()) {
 				if (parameterIndex == 0)
-					return _annotationContext.GetMethodThisParameterValue (method, dynamicallyAccessedMemberTypes);
+					return _annotations.GetMethodThisParameterValue (method, dynamicallyAccessedMemberTypes);
 
 				parameterIndex--;
 			}
 
-			return _annotationContext.GetMethodParameterValue (method, parameterIndex, dynamicallyAccessedMemberTypes);
+			return _annotations.GetMethodParameterValue (method, parameterIndex, dynamicallyAccessedMemberTypes);
 		}
 
 		protected override MultiValue GetFieldValue (FieldDefinition field)
@@ -329,7 +329,7 @@ namespace Mono.Linker.Dataflow
 			// static New (Type)
 			//
 			case IntrinsicId.Expression_New: {
-					var targetValue = _annotationContext.GetMethodParameterValue (calledMethodDefinition, 0, DynamicallyAccessedMemberTypes.PublicParameterlessConstructor);
+					var targetValue = _annotations.GetMethodParameterValue (calledMethodDefinition, 0, DynamicallyAccessedMemberTypes.PublicParameterlessConstructor);
 					foreach (var value in methodParams[0]) {
 						if (value is SystemTypeValue systemTypeValue) {
 							MarkConstructorsOnType (_origin, systemTypeValue.RepresentedType.Type, null, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
@@ -365,7 +365,7 @@ namespace Mono.Linker.Dataflow
 						TypeDefinition? staticType = (valueNode as IValueWithStaticType)?.StaticType;
 						if (staticType is null) {
 							// We don't know anything about the type GetType was called on. Track this as a usual result of a method call without any annotations
-							AddReturnValue (_annotationContext.GetMethodReturnValue (calledMethodDefinition));
+							AddReturnValue (_annotations.GetMethodReturnValue (calledMethodDefinition));
 						} else if (staticType.IsSealed || staticType.IsTypeOf ("System", "Delegate")) {
 							// We can treat this one the same as if it was a typeof() expression
 
@@ -392,7 +392,7 @@ namespace Mono.Linker.Dataflow
 							// Return a value which is "unknown type" with annotation. For now we'll use the return value node
 							// for the method, which means we're loosing the information about which staticType this
 							// started with. For now we don't need it, but we can add it later on.
-							AddReturnValue (_annotationContext.GetMethodReturnValue (calledMethodDefinition, annotation));
+							AddReturnValue (_annotations.GetMethodReturnValue (calledMethodDefinition, annotation));
 						}
 					}
 				}
@@ -431,7 +431,7 @@ namespace Mono.Linker.Dataflow
 						} else if (typeNameValue is ValueWithDynamicallyAccessedMembers valueWithDynamicallyAccessedMembers && valueWithDynamicallyAccessedMembers.DynamicallyAccessedMemberTypes != 0) {
 							// Propagate the annotation from the type name to the return value. Annotation on a string value will be fullfilled whenever a value is assigned to the string with annotation.
 							// So while we don't know which type it is, we can guarantee that it will fulfill the annotation.
-							AddReturnValue (_annotationContext.GetMethodReturnValue (calledMethodDefinition, valueWithDynamicallyAccessedMembers.DynamicallyAccessedMemberTypes));
+							AddReturnValue (_annotations.GetMethodReturnValue (calledMethodDefinition, valueWithDynamicallyAccessedMembers.DynamicallyAccessedMemberTypes));
 						} else {
 							if (diagnosticsEnabled)
 								_context.LogWarning (_origin, DiagnosticId.UnrecognizedTypeNameInTypeGetType, calledMethod.GetDisplayName ());
@@ -509,7 +509,7 @@ namespace Mono.Linker.Dataflow
 								requiredMemberTypes |= DynamicallyAccessedMemberTypes.PublicParameterlessConstructor;
 							}
 
-							var targetValue = _annotationContext.GetMethodParameterValue (calledMethodDefinition, 0, requiredMemberTypes);
+							var targetValue = _annotations.GetMethodParameterValue (calledMethodDefinition, 0, requiredMemberTypes);
 
 							RequireDynamicallyAccessedMembers (_origin, diagnosticsEnabled, value, targetValue);
 						}
@@ -612,7 +612,7 @@ namespace Mono.Linker.Dataflow
 			bool returnsVoid = calledMethod.ReturnsVoid ();
 			methodReturnValue = maybeMethodReturnValue ?? (returnsVoid ?
 				MultiValueLattice.Top :
-				_annotationContext.GetMethodReturnValue (calledMethodDefinition, returnValueDynamicallyAccessedMemberTypes));
+				_annotations.GetMethodReturnValue (calledMethodDefinition, returnValueDynamicallyAccessedMemberTypes));
 
 			// Validate that the return value has the correct annotations as per the method return value annotations
 			if (returnValueDynamicallyAccessedMemberTypes != 0) {

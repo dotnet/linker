@@ -26,7 +26,7 @@ namespace ILLink.Shared.TrimAnalysis
 			_owningSymbol = owningSymbol;
 			_operation = operation;
 			_diagnosticContext = diagnosticContext;
-			_annotationContext = new AnnotationContext ();
+			_annotations = new FlowAnnotations ();
 			_reflectionAccessAnalyzer = new ReflectionAccessAnalyzer ();
 			_requireDynamicallyAccessedMembersAction = new (diagnosticContext, _reflectionAccessAnalyzer);
 		}

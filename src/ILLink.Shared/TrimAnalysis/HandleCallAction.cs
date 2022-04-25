@@ -21,15 +21,15 @@ namespace ILLink.Shared.TrimAnalysis
 		static ValueSetLattice<SingleValue> MultiValueLattice => default;
 
 		readonly DiagnosticContext _diagnosticContext;
-		readonly AnnotationContext _annotationContext;
+		readonly FlowAnnotations _annotations;
 		readonly RequireDynamicallyAccessedMembersAction _requireDynamicallyAccessedMembersAction;
 
 		public bool Invoke (MethodProxy calledMethod, MultiValue instanceValue, IReadOnlyList<MultiValue> argumentValues, out MultiValue methodReturnValue, out IntrinsicId intrinsicId)
 		{
 			MultiValue? returnValue = null;
 
-			bool requiresDataFlowAnalysis = _annotationContext.MethodRequiresDataFlowAnalysis (calledMethod);
-			var annotatedMethodReturnValue = _annotationContext.GetMethodReturnValue (calledMethod);
+			bool requiresDataFlowAnalysis = _annotations.MethodRequiresDataFlowAnalysis (calledMethod);
+			var annotatedMethodReturnValue = _annotations.GetMethodReturnValue (calledMethod);
 			Debug.Assert (requiresDataFlowAnalysis || annotatedMethodReturnValue.DynamicallyAccessedMemberTypes == DynamicallyAccessedMemberTypes.None);
 
 			intrinsicId = Intrinsics.GetIntrinsicIdForMethod (calledMethod);
@@ -73,14 +73,14 @@ namespace ILLink.Shared.TrimAnalysis
 						// When generating type handles from IL, the GenericParameterValue with DAM annotations is not available.
 						// Once we convert it to a Value with annotations here, there is no need to convert it back in get_TypeHandle
 						RuntimeTypeHandleForNullableValueWithDynamicallyAccessedMembers nullableDamType when nullableDamType.UnderlyingTypeValue is RuntimeTypeHandleForGenericParameterValue underlyingGenericParameter
-							=> new NullableValueWithDynamicallyAccessedMembers (nullableDamType.NullableType, _annotationContext.GetGenericParameterValue (underlyingGenericParameter.GenericParameter)),
+							=> new NullableValueWithDynamicallyAccessedMembers (nullableDamType.NullableType, _annotations.GetGenericParameterValue (underlyingGenericParameter.GenericParameter)),
 						// This should only happen if the code does something like typeof(Nullable<>).MakeGenericType(methodParameter).TypeHandle
 						RuntimeTypeHandleForNullableValueWithDynamicallyAccessedMembers nullableDamType when nullableDamType.UnderlyingTypeValue is ValueWithDynamicallyAccessedMembers underlyingTypeValue
 							=> new NullableValueWithDynamicallyAccessedMembers (nullableDamType.NullableType, underlyingTypeValue),
 						RuntimeTypeHandleValue typeHandle
 							=> new SystemTypeValue (typeHandle.RepresentedType),
 						RuntimeTypeHandleForGenericParameterValue genericParam
-							=> _annotationContext.GetGenericParameterValue (genericParam.GenericParameter),
+							=> _annotations.GetGenericParameterValue (genericParam.GenericParameter),
 						_ => annotatedMethodReturnValue
 					});
 				}
@@ -163,7 +163,7 @@ namespace ILLink.Shared.TrimAnalysis
 						break;
 					}
 
-					var targetValue = _annotationContext.GetMethodThisParameterValue (calledMethod, DynamicallyAccessedMemberTypesOverlay.Interfaces);
+					var targetValue = _annotations.GetMethodThisParameterValue (calledMethod, DynamicallyAccessedMemberTypesOverlay.Interfaces);
 					foreach (var value in instanceValue) {
 						foreach (var interfaceName in argumentValues[0]) {
 							if (interfaceName == NullValue.Instance) {
@@ -186,7 +186,7 @@ namespace ILLink.Shared.TrimAnalysis
 									&& valueWithDynamicallyAccessedMembers.DynamicallyAccessedMemberTypes == DynamicallyAccessedMemberTypes.All)
 									returnMemberTypes = DynamicallyAccessedMemberTypes.All;
 
-								AddReturnValue (_annotationContext.GetMethodReturnValue (calledMethod, returnMemberTypes));
+								AddReturnValue (_annotations.GetMethodReturnValue (calledMethod, returnMemberTypes));
 							}
 						}
 					}
@@ -286,7 +286,7 @@ namespace ILLink.Shared.TrimAnalysis
 						};
 					}
 
-					var targetValue = _annotationContext.GetMethodThisParameterValue (calledMethod, memberTypes);
+					var targetValue = _annotations.GetMethodThisParameterValue (calledMethod, memberTypes);
 					_requireDynamicallyAccessedMembersAction.Invoke (instanceValue, targetValue);
 				}
 				break;
@@ -328,7 +328,7 @@ namespace ILLink.Shared.TrimAnalysis
 						_ => throw new ArgumentException ($"Reflection call '{calledMethod.GetDisplayName ()}' inside '{GetContainingSymbolDisplayName ()}' is of unexpected member type."),
 					};
 
-					var targetValue = _annotationContext.GetMethodThisParameterValue (calledMethod, memberTypes);
+					var targetValue = _annotations.GetMethodThisParameterValue (calledMethod, memberTypes);
 					foreach (var value in instanceValue) {
 						if (value is SystemTypeValue systemTypeValue) {
 							foreach (var stringParam in argumentValues[0]) {
@@ -392,7 +392,7 @@ namespace ILLink.Shared.TrimAnalysis
 						requiredMemberTypes = GetDynamicallyAccessedMemberTypesFromBindingFlagsForMembers (bindingFlags);
 					}
 
-					var targetValue = _annotationContext.GetMethodThisParameterValue (calledMethod, requiredMemberTypes);
+					var targetValue = _annotations.GetMethodThisParameterValue (calledMethod, requiredMemberTypes);
 
 					// Go over all types we've seen
 					foreach (var value in instanceValue) {
@@ -430,7 +430,7 @@ namespace ILLink.Shared.TrimAnalysis
 						// Assume a default value for BindingFlags for methods that don't use BindingFlags as a parameter
 						bindingFlags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public;
 
-					var targetValue = _annotationContext.GetMethodThisParameterValue (calledMethod, GetDynamicallyAccessedMemberTypesFromBindingFlagsForMethods (bindingFlags));
+					var targetValue = _annotations.GetMethodThisParameterValue (calledMethod, GetDynamicallyAccessedMemberTypesFromBindingFlagsForMethods (bindingFlags));
 					foreach (var value in instanceValue) {
 						if (value is SystemTypeValue systemTypeValue) {
 							foreach (var stringParam in argumentValues[0]) {
@@ -476,7 +476,7 @@ namespace ILLink.Shared.TrimAnalysis
 						// Assume a default value for BindingFlags for methods that don't use BindingFlags as a parameter
 						bindingFlags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public;
 
-					var targetValue = _annotationContext.GetMethodThisParameterValue (calledMethod, GetDynamicallyAccessedMemberTypesFromBindingFlagsForNestedTypes (bindingFlags));
+					var targetValue = _annotations.GetMethodThisParameterValue (calledMethod, GetDynamicallyAccessedMemberTypesFromBindingFlagsForNestedTypes (bindingFlags));
 					foreach (var value in instanceValue) {
 						if (value is SystemTypeValue systemTypeValue) {
 							foreach (var stringParam in argumentValues[0]) {
@@ -494,7 +494,7 @@ namespace ILLink.Shared.TrimAnalysis
 
 									// We only applied the annotation based on binding flags, so we will keep the necessary types
 									// but we will not keep anything on them. So the return value has no known annotations on it
-									AddReturnValue (_annotationContext.GetMethodReturnValue (calledMethod, DynamicallyAccessedMemberTypes.None));
+									AddReturnValue (_annotations.GetMethodReturnValue (calledMethod, DynamicallyAccessedMemberTypes.None));
 								}
 							}
 						} else if (value is NullValue) {
@@ -508,9 +508,9 @@ namespace ILLink.Shared.TrimAnalysis
 							// since All applies recursively to all nested type (see MarkStep.MarkEntireType).
 							// Otherwise we only mark the nested type itself, nothing on it, so the return value has no annotation on it.
 							if (value is ValueWithDynamicallyAccessedMembers { DynamicallyAccessedMemberTypes: DynamicallyAccessedMemberTypes.All })
-								AddReturnValue (_annotationContext.GetMethodReturnValue (calledMethod, DynamicallyAccessedMemberTypes.All));
+								AddReturnValue (_annotations.GetMethodReturnValue (calledMethod, DynamicallyAccessedMemberTypes.All));
 							else
-								AddReturnValue (_annotationContext.GetMethodReturnValue (calledMethod, DynamicallyAccessedMemberTypes.None));
+								AddReturnValue (_annotations.GetMethodReturnValue (calledMethod, DynamicallyAccessedMemberTypes.None));
 						}
 					}
 				}
@@ -543,7 +543,7 @@ namespace ILLink.Shared.TrimAnalysis
 						_ => throw new ArgumentException ($"Reflection call '{calledMethod.GetDisplayName ()}' inside '{GetContainingSymbolDisplayName ()}' is of unexpected member type."),
 					};
 
-					var targetValue = _annotationContext.GetMethodParameterValue (calledMethod, 0, requiredMemberTypes);
+					var targetValue = _annotations.GetMethodParameterValue (calledMethod, 0, requiredMemberTypes);
 
 					foreach (var value in argumentValues[0]) {
 						if (value is SystemTypeValue systemTypeValue) {
@@ -611,7 +611,7 @@ namespace ILLink.Shared.TrimAnalysis
 						// In all other cases we may not even know which type this is about, so there's nothing we can do
 						// report it as a warning.
 						_diagnosticContext.AddDiagnostic (DiagnosticId.PropertyAccessorParameterInLinqExpressionsCannotBeStaticallyDetermined,
-							_annotationContext.GetMethodParameterValue (calledMethod, 1, DynamicallyAccessedMemberTypes.None).GetDiagnosticArgumentsForAnnotationMismatch ().ToArray ());
+							_annotations.GetMethodParameterValue (calledMethod, 1, DynamicallyAccessedMemberTypes.None).GetDiagnosticArgumentsForAnnotationMismatch ().ToArray ());
 					}
 				}
 				break;
@@ -632,7 +632,7 @@ namespace ILLink.Shared.TrimAnalysis
 						break;
 					}
 
-					var targetValue = _annotationContext.GetMethodParameterValue (calledMethod, 1, memberTypes);
+					var targetValue = _annotations.GetMethodParameterValue (calledMethod, 1, memberTypes);
 					foreach (var value in argumentValues[1]) {
 						if (value is SystemTypeValue systemTypeValue) {
 							foreach (var stringParam in argumentValues[2]) {
@@ -664,7 +664,7 @@ namespace ILLink.Shared.TrimAnalysis
 			case IntrinsicId.Expression_Call: {
 					BindingFlags bindingFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy;
 
-					var targetValue = _annotationContext.GetMethodParameterValue (
+					var targetValue = _annotations.GetMethodParameterValue (
 						calledMethod,
 						0,
 						GetDynamicallyAccessedMemberTypesFromBindingFlagsForMethods (bindingFlags));
@@ -851,7 +851,7 @@ namespace ILLink.Shared.TrimAnalysis
 									propagatedMemberTypes |= DynamicallyAccessedMemberTypes.Interfaces;
 							}
 
-							AddReturnValue (_annotationContext.GetMethodReturnValue (calledMethod, propagatedMemberTypes));
+							AddReturnValue (_annotations.GetMethodReturnValue (calledMethod, propagatedMemberTypes));
 						} else if (value is SystemTypeValue systemTypeValue) {
 							if (TryGetBaseType (systemTypeValue.RepresentedType, out var baseType))
 								AddReturnValue (new SystemTypeValue (baseType.Value));
@@ -912,7 +912,7 @@ namespace ILLink.Shared.TrimAnalysis
 							if (requiredMemberTypes == DynamicallyAccessedMemberTypes.PublicConstructors && ctorParameterCount == 0)
 								requiredMemberTypes = DynamicallyAccessedMemberTypes.PublicParameterlessConstructor;
 
-							var targetValue = _annotationContext.GetMethodThisParameterValue (calledMethod, requiredMemberTypes);
+							var targetValue = _annotations.GetMethodThisParameterValue (calledMethod, requiredMemberTypes);
 							_requireDynamicallyAccessedMembersAction.Invoke (value, targetValue);
 						}
 					}
@@ -951,10 +951,10 @@ namespace ILLink.Shared.TrimAnalysis
 				// Verify the argument values match the annotations on the parameter definition
 				if (requiresDataFlowAnalysis) {
 					if (!calledMethod.IsStatic ()) {
-						_requireDynamicallyAccessedMembersAction.Invoke (instanceValue, _annotationContext.GetMethodThisParameterValue (calledMethod));
+						_requireDynamicallyAccessedMembersAction.Invoke (instanceValue, _annotations.GetMethodThisParameterValue (calledMethod));
 					}
 					for (int argumentIndex = 0; argumentIndex < argumentValues.Count; argumentIndex++) {
-						_requireDynamicallyAccessedMembersAction.Invoke (argumentValues[argumentIndex], _annotationContext.GetMethodParameterValue (calledMethod, argumentIndex));
+						_requireDynamicallyAccessedMembersAction.Invoke (argumentValues[argumentIndex], _annotations.GetMethodParameterValue (calledMethod, argumentIndex));
 					}
 				}
 				break;
@@ -1059,7 +1059,7 @@ namespace ILLink.Shared.TrimAnalysis
 						// https://github.com/dotnet/linker/issues/2428
 						// We need to report the target as "this" - as that was the previous behavior
 						// but with the annotation from the generic parameter.
-						var targetValue = _annotationContext.GetMethodThisParameterValue (calledMethod, genericParameters[i].DynamicallyAccessedMemberTypes);
+						var targetValue = _annotations.GetMethodThisParameterValue (calledMethod, genericParameters[i].DynamicallyAccessedMemberTypes);
 						_requireDynamicallyAccessedMembersAction.Invoke (value, targetValue);
 					}
 				}
@@ -1089,7 +1089,7 @@ namespace ILLink.Shared.TrimAnalysis
 
 			var builder = ImmutableArray.CreateBuilder<GenericParameterValue> (genericParameters.Length);
 			foreach (var genericParameter in genericParameters) {
-				builder.Add (_annotationContext.GetGenericParameterValue (genericParameter));
+				builder.Add (_annotations.GetGenericParameterValue (genericParameter));
 			}
 			return builder.ToImmutableArray ();
 		}

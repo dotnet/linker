@@ -31,7 +31,7 @@ namespace ILLink.Shared.TrimAnalysis
 			_origin = origin;
 			_callingMethodDefinition = callingMethodDefinition;
 			_diagnosticContext = new DiagnosticContext (origin, diagnosticsEnabled, context);
-			_annotationContext = new AnnotationContext (context);
+			_annotations = context.Annotations.FlowAnnotations;
 			_requireDynamicallyAccessedMembersAction = new (context, reflectionMethodBodyScanner, origin, diagnosticsEnabled);
 		}
 
