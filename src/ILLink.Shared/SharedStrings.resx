@@ -903,6 +903,36 @@
   <data name="DynamicallyAccessedMembersMismatchTypeArgumentTargetsFieldMessage" xml:space="preserve">
     <value>value stored in field '{0}' does not satisfy {3} requirements. The generic parameter '{1}' of '{2}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
   </data>
+  <data name="DynamicallyAccessedMembersMismatchByRefParameterTargetsParameterTitle" xml:space="preserve">
+    <value>Target parameter argument does not satisfy 'DynamicallyAccessedMembersAttribute' in call to target method. The source by-reference parameter does not have matching annotations.</value>
+  </data>
+  <data name="DynamicallyAccessedMembersMismatchByRefParameterTargetsParameterMessage" xml:space="preserve">
+    <value>'{0}' argument does not satisfy {4} in call to '{1}'. The by-reference parameter '{2}' of method '{3}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+  </data>
+  <data name="DynamicallyAccessedMembersMismatchByRefParameterTargetsMethodReturnTypeTitle" xml:space="preserve">
+    <value>Target method return value does not satisfy 'DynamicallyAccessedMembersAttribute' requirements. The source by-reference parameter does not have matching annotations.</value>
+  </data>
+  <data name="DynamicallyAccessedMembersMismatchByRefParameterTargetsMethodReturnTypeMessage" xml:space="preserve">
+    <value>'{0}' method return value does not satisfy {3} requirements. The by-reference parameter '{1}' of method '{2}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+  </data>
+  <data name="DynamicallyAccessedMembersMismatchByRefParameterTargetsFieldTitle" xml:space="preserve">
+    <value>Value stored in target field does not satisfy 'DynamicallyAccessedMembersAttribute' requirements. The source by-reference parameter does not have matching annotations.</value>
+  </data>
+  <data name="DynamicallyAccessedMembersMismatchByRefParameterTargetsFieldMessage" xml:space="preserve">
+    <value>value stored in field '{0}' does not satisfy {3} requirements. The by-reference parameter '{1}' of method '{2}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+  </data>
+  <data name="DynamicallyAccessedMembersMismatchByRefParameterTargetsThisParameterTitle" xml:space="preserve">
+    <value>'this' argument does not satisfy 'DynamicallyAccessedMembersAttribute' in call to target method. The source by-reference parameter does not have matching annotations.</value>
+  </data>
+  <data name="DynamicallyAccessedMembersMismatchByRefParameterTargetsThisParameterMessage" xml:space="preserve">
+    <value>'this' argument does not satisfy {3} in call to '{0}'. The by-reference parameter '{1}' of method '{2}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+  </data>
+  <data name="DynamicallyAccessedMembersMismatchByRefParameterTargetsGenericParameterTitle" xml:space="preserve">
+    <value>Target generic argument does not satisfy 'DynamicallyAccessedMembersAttribute' in target method or type. The source by-reference parameter does not have matching annotations.</value>
+  </data>
+  <data name="DynamicallyAccessedMembersMismatchByRefParameterTargetsGenericParameterMessage" xml:space="preserve">
+    <value>'{0}' generic argument does not satisfy {4} in '{1}'. The by-reference parameter '{2}' of method '{3}' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.</value>
+  </data>
   <data name="DynamicallyAccessedMembersMismatchTypeArgumentTargetsThisParameterTitle" xml:space="preserve">
     <value>'this' argument does not satisfy 'DynamicallyAccessedMembersAttribute' in call to target method. The generic parameter of the source method or type does not have matching annotations.</value>
   </data>

@@ -44,6 +44,12 @@ namespace ILLink.RoslynAnalyzer
 			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.PropertyAccessorParameterInLinqExpressionsCannotBeStaticallyDetermined));
 			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.MakeGenericType));
 			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.MakeGenericMethod));
+			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchByRefParameterTargetsField));
+			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchByRefParameterTargetsGenericParameter));
+			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchByRefParameterTargetsMethodReturnType));
+			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchByRefParameterTargetsParameter));
+			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchByRefParameterTargetsThisParameter));
+
 			return diagDescriptorsArrayBuilder.ToImmutable ();
 
 			void AddRange (DiagnosticId first, DiagnosticId last)
@@ -81,7 +87,7 @@ namespace ILLink.RoslynAnalyzer
 					}
 
 					// Sub optimal way to handle analyzer not to generate warnings until the linker is fixed
-					// Iterators, local functions and lambdas are handled 
+					// Iterators, local functions and lambdas are handled
 					foreach (IOperation blockOperation in context.OperationBlocks) {
 						if (blockOperation is IBlockOperation blocks) {
 							foreach (IOperation operation in blocks.Operations) {
@@ -140,7 +146,7 @@ namespace ILLink.RoslynAnalyzer
 				return;
 
 			// Members inside nameof or cref comments, commonly used to access the string value of a variable, type, or a memeber,
-			// can generate diagnostics warnings, which can be noisy and unhelpful. 
+			// can generate diagnostics warnings, which can be noisy and unhelpful.
 			// Walking the node heirarchy to check if the member is inside a nameof/cref to not generate diagnostics
 			var parentNode = context.Node;
 			while (parentNode != null) {

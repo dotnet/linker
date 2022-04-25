@@ -49,5 +49,17 @@ namespace ILLink.Shared.TypeSystemProxy
 		internal partial bool ReturnsVoid () => Method.ReturnsVoid ();
 
 		public override string ToString () => Method.ToString ();
+
+		public ReferenceKind ParameterReferenceKind (int index)
+		{
+			var param = Method.Parameters[index];
+			if (!param.ParameterType.IsByReference)
+				return ReferenceKind.None;
+			if (param.IsIn)
+				return ReferenceKind.In;
+			if (param.IsOut)
+				return ReferenceKind.Out;
+			return ReferenceKind.Ref;
+		}
 	}
 }

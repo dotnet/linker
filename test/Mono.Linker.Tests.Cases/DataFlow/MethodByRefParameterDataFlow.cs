@@ -138,6 +138,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[ExpectedWarning ("IL2067", "typeWithMethods", nameof (TryGetAnnotatedValue))]
+		[ExpectedWarning ("IL2118", "by-reference parameter 'typeWithMethods'", nameof (TryGetAnnotatedValue))]
 		static void TestPassingRefParameter_Mismatch ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] ref Type typeWithMethods)
 		{
 			TryGetAnnotatedValue (ref typeWithMethods);
