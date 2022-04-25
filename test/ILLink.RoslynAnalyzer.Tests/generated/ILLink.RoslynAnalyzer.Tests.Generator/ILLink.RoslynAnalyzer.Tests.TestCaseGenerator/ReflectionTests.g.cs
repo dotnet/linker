@@ -38,12 +38,6 @@ namespace ILLink.RoslynAnalyzer.Tests
 		}
 
 		[Fact]
-		public Task ExpressionCallStringAndLocals ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
 		public Task ObjectGetTypeLibraryMode ()
 		{
 			return RunTest (allowMissingWarnings: true);
@@ -57,12 +51,6 @@ namespace ILLink.RoslynAnalyzer.Tests
 
 		[Fact]
 		public Task RunClassConstructorUsedViaReflection ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
-		public Task TypeDelegator ()
 		{
 			return RunTest (allowMissingWarnings: true);
 		}
