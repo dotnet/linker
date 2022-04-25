@@ -46,10 +46,27 @@ namespace Mono.Linker.Dataflow
 			}
 		}
 
-		internal void MarkType (in MessageOrigin origin, TypeReference typeReference, DependencyKind dependencyKind = DependencyKind.AccessedViaReflection)
+		internal bool TryResolveTypeNameAndMark (string typeName, MessageOrigin origin, [NotNullWhen (true)] out TypeDefinition? type)
 		{
-			if (_context.TryResolve (typeReference) is TypeDefinition type)
-				_markStep.MarkTypeVisibleToReflection (typeReference, type, new DependencyInfo (dependencyKind, origin.Provider), origin);
+			// Only difference here is whether we treat arrays specially. Maybe we should do that more frequently elsewhere too.
+			// _reflectionMarker.MarkType (origin, );
+			if (!_context.TypeNameResolver.TryResolveTypeName (typeName, origin.Provider, out TypeReference? typeRef, out AssemblyDefinition? typeAssembly)
+				|| ReflectionMethodBodyScanner.ResolveToTypeDefinition (_context, typeRef) is not TypeDefinition foundType) {
+				type = default;
+				return false;
+
+			}
+			
+			_markStep.MarkTypeVisibleToReflection (typeRef, foundType, new DependencyInfo (DependencyKind.AccessedViaReflection, origin.Provider), origin);
+			_context.MarkingHelpers.MarkMatchingExportedType (foundType, typeAssembly, new DependencyInfo (DependencyKind.DynamicallyAccessedMember, foundType), origin);
+
+			type = foundType;
+			return true;
+		}
+
+		internal void MarkType (in MessageOrigin origin, TypeDefinition type, DependencyKind dependencyKind = DependencyKind.AccessedViaReflection)
+		{
+			_markStep.MarkTypeVisibleToReflection (type, type, new DependencyInfo (dependencyKind, origin.Provider), origin);
 		}
 
 		internal void MarkMethod (in MessageOrigin origin, MethodDefinition method, DependencyKind dependencyKind = DependencyKind.AccessedViaReflection)

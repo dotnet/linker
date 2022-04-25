@@ -26,15 +26,12 @@ namespace ILLink.Shared.TrimAnalysis
 
 		private partial bool TryResolveTypeNameAndMark (string typeName, out TypeProxy type)
 		{
-			if (!_context.TypeNameResolver.TryResolveTypeName (typeName, _diagnosticContext.Origin.Provider, out TypeReference? typeRef, out AssemblyDefinition? typeAssembly)
-				|| typeRef.ResolveToTypeDefinition (_context) is not TypeDefinition foundType) {
+			if (_reflectionMarker.TryResolveTypeNameAndMark (typeName, _diagnosticContext.Origin, out TypeDefinition? foundType)) {
+				type = new (foundType);
+				return true;
+			} else {
 				type = default;
 				return false;
-			} else {
-				_reflectionMarker.MarkType (_diagnosticContext.Origin, typeRef);
-				_context.MarkingHelpers.MarkMatchingExportedType (foundType, typeAssembly, new DependencyInfo (DependencyKind.DynamicallyAccessedMember, foundType), _diagnosticContext.Origin);
-				type = new TypeProxy (foundType);
-				return true;
 			}
 		}
 
