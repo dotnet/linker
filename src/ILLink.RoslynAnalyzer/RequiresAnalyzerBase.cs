@@ -353,9 +353,14 @@ namespace ILLink.RoslynAnalyzer
 
 		private bool HasMismatchingAttributes (ISymbol member1, ISymbol member2)
 		{
-			bool member1HasAttribute = member1.TargetHasRequiresAttribute (RequiresAttributeName, out _);
-			bool member2HasAttribute = member2.TargetHasRequiresAttribute (RequiresAttributeName, out _);
-			return member1HasAttribute ^ member2HasAttribute;
+			bool member1CreatesRequirement = member1.TargetHasRequiresAttribute (RequiresAttributeName, out _);
+			bool member2CreatesRequirement = member2.TargetHasRequiresAttribute (RequiresAttributeName, out _);
+			bool member1FulfillsRequirement = member1.IsInRequiresScope (RequiresAttributeName);
+			bool member2FulfillsRequirement = member2.IsInRequiresScope (RequiresAttributeName);
+			if ((member1CreatesRequirement && !member2FulfillsRequirement) || (member2CreatesRequirement && !member1FulfillsRequirement))
+				return true;
+			else
+				return false;
 		}
 
 		protected abstract string GetMessageFromAttribute (AttributeData requiresAttribute);
