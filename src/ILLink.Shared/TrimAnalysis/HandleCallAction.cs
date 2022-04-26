@@ -959,8 +959,8 @@ namespace ILLink.Shared.TrimAnalysis
 						if (!(calledMethod.ParameterReferenceKind (argumentIndex) == ReferenceKind.Ref))
 							continue;
 						foreach (var value in argumentValues[argumentIndex]) {
-							// GenericParameterValues must be assigned to a local variable with 'typeof', so the arg must be a ref to a local variable
-							if (value is not ValueWithDynamicallyAccessedMembers valueWithDynamicallyAccessedMembers || value is GenericParameterValue)
+							// GenericParameterValue and MethodReturnValue must be assigned to a local variable, so the arg must be a ref to a local variable. In this case, no need to warn
+							if (value is not ValueWithDynamicallyAccessedMembers valueWithDynamicallyAccessedMembers || value is GenericParameterValue || value is MethodReturnValue)
 								continue;
 							_requireDynamicallyAccessedMembersAction.Invoke (
 									new ByRefParameterValue (calledMethod, argumentIndex, _annotations.GetMethodParameterValue (calledMethod, argumentIndex).DynamicallyAccessedMemberTypes),
