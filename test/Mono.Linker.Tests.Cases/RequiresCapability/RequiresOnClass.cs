@@ -298,6 +298,10 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		[RequiresDynamicCode ("RDC")]
 		class DerivedWithRequiresOnType : BaseWithoutRequiresOnType
 		{
+			// Analyzer needs to understand that the only way to get to this method is through the creation of the type, therefore not needing to warn
+			// https://github.com/dotnet/linker/issues/2765
+			[ExpectedWarning ("IL2046", "BaseWithoutRequiresOnType.Method()", "DerivedWithRequiresOnType.Method()", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3051", "BaseWithoutRequiresOnType.Method()", "DerivedWithRequiresOnType.Method()", ProducedBy = ProducedBy.Analyzer)]
 			public override void Method () { }
 		}
 
@@ -324,9 +328,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		[RequiresDynamicCode ("RDC")]
 		class DerivedWithRequiresOnTypeOverBaseWithNoRequires : BaseWithNoRequires
 		{
-			// https://github.com/dotnet/linker/issues/2763
-			[ExpectedWarning ("IL2046", ProducedBy = ProducedBy.Analyzer)]
-			[ExpectedWarning ("IL3051", ProducedBy = ProducedBy.Analyzer)]
+			// Should not warn since the members are not static
 			public override void Method ()
 			{
 			}
@@ -355,6 +357,10 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				return 1;
 			}
 
+			// Analyzer needs to understand that the only way to get to this method is through the creation of the type, therefore not needing to warn
+			// https://github.com/dotnet/linker/issues/2765
+			[ExpectedWarning ("IL2046", "InterfaceWithoutRequires.Method(Int32)", "ImplementationWithRequiresOnType.Method(Int32)", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3051", "InterfaceWithoutRequires.Method(Int32)", "ImplementationWithRequiresOnType.Method(Int32)", ProducedBy = ProducedBy.Analyzer)]
 			public int Method (int a)
 			{
 				return a;
