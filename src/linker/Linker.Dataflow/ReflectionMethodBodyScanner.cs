@@ -286,7 +286,8 @@ namespace Mono.Linker.Dataflow
 			case IntrinsicId.MethodBase_get_MethodHandle:
 			case IntrinsicId.Type_MakeGenericType:
 			case IntrinsicId.MethodInfo_MakeGenericMethod:
-			case IntrinsicId.Expression_Call: {
+			case IntrinsicId.Expression_Call:
+			case IntrinsicId.Expression_New: {
 					var instanceValue = MultiValueLattice.Top;
 					IReadOnlyList<MultiValue> parameterValues = methodParams;
 					if (calledMethodDefinition.HasImplicitThis ()) {
@@ -328,23 +329,6 @@ namespace Mono.Linker.Dataflow
 
 			case IntrinsicId.Array_Empty: {
 					AddReturnValue (ArrayValue.Create (0, ((GenericInstanceMethod) calledMethod).GenericArguments[0]));
-				}
-				break;
-
-			//
-			// System.Linq.Expressions.Expression
-			//
-			// static New (Type)
-			//
-			case IntrinsicId.Expression_New: {
-					var targetValue = _annotations.GetMethodParameterValue (calledMethodDefinition, 0, DynamicallyAccessedMemberTypes.PublicParameterlessConstructor);
-					foreach (var value in methodParams[0]) {
-						if (value is SystemTypeValue systemTypeValue) {
-							_reflectionMarker.MarkConstructorsOnType (_origin, systemTypeValue.RepresentedType.Type, null, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-						} else {
-							RequireDynamicallyAccessedMembers (diagnosticContext, value, targetValue);
-						}
-					}
 				}
 				break;
 
@@ -406,46 +390,6 @@ namespace Mono.Linker.Dataflow
 				}
 				break;
 
-			//
-			// System.Type
-			//
-			// GetType (string)
-			// GetType (string, Boolean)
-			// GetType (string, Boolean, Boolean)
-			// GetType (string, Func<AssemblyName, Assembly>, Func<Assembly, String, Boolean, Type>)
-			// GetType (string, Func<AssemblyName, Assembly>, Func<Assembly, String, Boolean, Type>, Boolean)
-			// GetType (string, Func<AssemblyName, Assembly>, Func<Assembly, String, Boolean, Type>, Boolean, Boolean)
-			//
-			case IntrinsicId.Type_GetType: {
-					var parameters = calledMethod.Parameters;
-					if ((parameters.Count == 3 && parameters[2].ParameterType.MetadataType == MetadataType.Boolean && methodParams[2].AsConstInt () != 0) ||
-						(parameters.Count == 5 && methodParams[4].AsConstInt () != 0)) {
-						diagnosticContext.AddDiagnostic (DiagnosticId.CaseInsensitiveTypeGetTypeCallIsNotSupported, calledMethod.GetDisplayName ());
-						break;
-					}
-					foreach (var typeNameValue in methodParams[0]) {
-						if (typeNameValue is KnownStringValue knownStringValue) {
-							if (!_context.TypeNameResolver.TryResolveTypeName (knownStringValue.Contents, callingMethodDefinition, out TypeReference? foundTypeRef, out AssemblyDefinition? typeAssembly, false)
-								|| ResolveToTypeDefinition (foundTypeRef) is not TypeDefinition foundType) {
-								// Intentionally ignore - it's not wrong for code to call Type.GetType on non-existing name, the code might expect null/exception back.
-							} else {
-								_markStep.MarkTypeVisibleToReflection (foundTypeRef, foundType, new DependencyInfo (DependencyKind.AccessedViaReflection, callingMethodDefinition), _origin);
-								AddReturnValue (new SystemTypeValue (foundType));
-								_context.MarkingHelpers.MarkMatchingExportedType (foundType, typeAssembly, new DependencyInfo (DependencyKind.AccessedViaReflection, foundType), _origin);
-							}
-						} else if (typeNameValue == NullValue.Instance) {
-							// Nothing to do
-						} else if (typeNameValue is ValueWithDynamicallyAccessedMembers valueWithDynamicallyAccessedMembers && valueWithDynamicallyAccessedMembers.DynamicallyAccessedMemberTypes != 0) {
-							// Propagate the annotation from the type name to the return value. Annotation on a string value will be fullfilled whenever a value is assigned to the string with annotation.
-							// So while we don't know which type it is, we can guarantee that it will fulfill the annotation.
-							AddReturnValue (_annotations.GetMethodReturnValue (calledMethodDefinition, valueWithDynamicallyAccessedMembers.DynamicallyAccessedMemberTypes));
-						} else {
-							diagnosticContext.AddDiagnostic (DiagnosticId.UnrecognizedTypeNameInTypeGetType, calledMethod.GetDisplayName ());
-						}
-					}
-
-				}
-				break;
 
 			//
 			// System.Activator

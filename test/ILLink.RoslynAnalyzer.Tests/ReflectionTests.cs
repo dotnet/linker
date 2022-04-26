@@ -67,7 +67,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 		[Fact]
 		public Task ExpressionNewType ()
 		{
-			return RunTest (allowMissingWarnings: true);
+			return RunTest ();
 		}
 
 		[Fact]

@@ -589,6 +589,23 @@ namespace ILLink.Shared.TrimAnalysis
 			//
 			// System.Linq.Expressions.Expression
 			//
+			// static New (Type)
+			//
+			case IntrinsicId.Expression_New: {
+					var targetValue = _annotations.GetMethodParameterValue (calledMethod, 0, DynamicallyAccessedMemberTypes.PublicParameterlessConstructor);
+					foreach (var value in argumentValues[0]) {
+						if (value is SystemTypeValue systemTypeValue) {
+							MarkConstructorsOnType (systemTypeValue.RepresentedType, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+						} else {
+							_requireDynamicallyAccessedMembersAction.Invoke (value, targetValue);
+						}
+					}
+				}
+				break;
+
+			//
+			// System.Linq.Expressions.Expression
+			//
 			// static Property (Expression, MethodInfo)
 			//
 			case IntrinsicId.Expression_Property when calledMethod.HasParameterOfType (1, "System.Reflection.MethodInfo"): {
@@ -725,6 +742,52 @@ namespace ILLink.Shared.TrimAnalysis
 						ValueWithDynamicallyAccessedMembers damValue => damValue,
 						_ => annotatedMethodReturnValue
 					});
+				}
+				break;
+
+			//
+			// System.Type
+			//
+			// GetType (string)
+			// GetType (string, Boolean)
+			// GetType (string, Boolean, Boolean)
+			// GetType (string, Func<AssemblyName, Assembly>, Func<Assembly, String, Boolean, Type>)
+			// GetType (string, Func<AssemblyName, Assembly>, Func<Assembly, String, Boolean, Type>, Boolean)
+			// GetType (string, Func<AssemblyName, Assembly>, Func<Assembly, String, Boolean, Type>, Boolean, Boolean)
+			//
+			case IntrinsicId.Type_GetType: {
+					if (argumentValues[0].IsEmpty ()) {
+						returnValue = MultiValueLattice.Top;
+						break;
+					}
+
+					if ((calledMethod.HasParametersCount (3) && calledMethod.HasParameterOfType (2, "System.Boolean") && argumentValues[2].AsConstInt () != 0) ||
+						(calledMethod.HasParametersCount (5) && argumentValues[4].AsConstInt () != 0)) {
+						_diagnosticContext.AddDiagnostic (DiagnosticId.CaseInsensitiveTypeGetTypeCallIsNotSupported, calledMethod.GetDisplayName ());
+						break;
+					}
+					foreach (var typeNameValue in argumentValues[0]) {
+						if (typeNameValue is KnownStringValue knownStringValue) {
+							if (!_context.TypeNameResolver.TryResolveTypeName (knownStringValue.Contents, callingMethodDefinition, out TypeReference? foundTypeRef, out AssemblyDefinition? typeAssembly, false)
+								|| ResolveToTypeDefinition (foundTypeRef) is not TypeDefinition foundType) {
+								// Intentionally ignore - it's not wrong for code to call Type.GetType on non-existing name, the code might expect null/exception back.
+							} else {
+								_markStep.MarkTypeVisibleToReflection (foundTypeRef, foundType, new DependencyInfo (DependencyKind.AccessedViaReflection, callingMethodDefinition), _origin);
+								AddReturnValue (new SystemTypeValue (foundType));
+								_context.MarkingHelpers.MarkMatchingExportedType (foundType, typeAssembly, new DependencyInfo (DependencyKind.AccessedViaReflection, foundType), _origin);
+							}
+						} else if (typeNameValue == NullValue.Instance) {
+							// Nothing to do
+						} else if (typeNameValue is ValueWithDynamicallyAccessedMembers valueWithDynamicallyAccessedMembers && valueWithDynamicallyAccessedMembers.DynamicallyAccessedMemberTypes != 0) {
+							// Propagate the annotation from the type name to the return value. Annotation on a string value will be fullfilled whenever a value is assigned to the string with annotation.
+							// So while we don't know which type it is, we can guarantee that it will fulfill the annotation.
+							AddReturnValue (_annotations.GetMethodReturnValue (calledMethodDefinition, valueWithDynamicallyAccessedMembers.DynamicallyAccessedMemberTypes));
+						} else {
+							if (diagnosticsEnabled)
+								_context.LogWarning (_origin, DiagnosticId.UnrecognizedTypeNameInTypeGetType, calledMethod.GetDisplayName ());
+						}
+					}
+
 				}
 				break;
 
