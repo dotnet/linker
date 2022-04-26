@@ -357,10 +357,7 @@ namespace ILLink.RoslynAnalyzer
 			bool member2CreatesRequirement = member2.TargetHasRequiresAttribute (RequiresAttributeName, out _);
 			bool member1FulfillsRequirement = member1.IsOverrideInRequiresScope (RequiresAttributeName);
 			bool member2FulfillsRequirement = member2.IsOverrideInRequiresScope (RequiresAttributeName);
-			if ((member1CreatesRequirement && !member2FulfillsRequirement) || (member2CreatesRequirement && !member1FulfillsRequirement))
-				return true;
-			else
-				return false;
+			return (member1CreatesRequirement && !member2FulfillsRequirement) || (member2CreatesRequirement && !member1FulfillsRequirement);
 		}
 
 		protected abstract string GetMessageFromAttribute (AttributeData requiresAttribute);
