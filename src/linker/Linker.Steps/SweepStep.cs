@@ -482,10 +482,10 @@ namespace Mono.Linker.Steps
 		/// <summary>
 		/// Returns true if the assembly of the <paramref name="scope"></paramref> is not set to link (i.e. action=copy is set for that assembly)
 		/// </summary>
-	    private bool IgnoreScope (IMetadataScope scope)
+		private bool IgnoreScope (IMetadataScope scope)
 		{
-		   AssemblyDefinition? assembly = Context.Resolve (scope);
-		   return assembly != null && Annotations.GetAction (assembly) != AssemblyAction.Link;
+			AssemblyDefinition? assembly = Context.Resolve (scope);
+			return assembly != null && Annotations.GetAction (assembly) != AssemblyAction.Link;
 		}
 
 		void SweepDebugInfo (Collection<MethodDefinition> methods)
