@@ -96,8 +96,6 @@ namespace ILLink.RoslynAnalyzer
 						}
 					}
 
-					if (context.OwningSymbol.ToDisplayString ().Contains ("TestTypeOverloadWith5ParametersWithoutIgnoreCase"))
-						Debug.WriteLine ("");
 					foreach (var operationBlock in context.OperationBlocks) {
 						ControlFlowGraph cfg = context.GetControlFlowGraph (operationBlock);
 						TrimDataFlowAnalysis trimDataFlowAnalysis = new (context, cfg);

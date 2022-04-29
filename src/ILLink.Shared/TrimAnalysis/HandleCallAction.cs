@@ -756,9 +756,6 @@ namespace ILLink.Shared.TrimAnalysis
 			// GetType (string, Func<AssemblyName, Assembly>, Func<Assembly, String, Boolean, Type>, Boolean, Boolean)
 			//
 			case IntrinsicId.Type_GetType: {
-					if (GetContainingSymbolDisplayName ().Contains ("TypeWithWarnings"))
-						Debug.WriteLine ("");
-
 					if (argumentValues[0].IsEmpty ()) {
 						returnValue = MultiValueLattice.Top;
 						break;
@@ -767,6 +764,7 @@ namespace ILLink.Shared.TrimAnalysis
 					if ((calledMethod.HasParametersCount (3) && calledMethod.HasParameterOfType (2, "System.Boolean") && argumentValues[2].AsConstInt () != 0) ||
 						(calledMethod.HasParametersCount (5) && argumentValues[4].AsConstInt () != 0)) {
 						_diagnosticContext.AddDiagnostic (DiagnosticId.CaseInsensitiveTypeGetTypeCallIsNotSupported, calledMethod.GetDisplayName ());
+						returnValue = MultiValueLattice.Top; // This effectively disables analysis of anything which uses the return value
 						break;
 					}
 
