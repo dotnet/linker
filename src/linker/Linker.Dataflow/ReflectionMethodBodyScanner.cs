@@ -287,7 +287,8 @@ namespace Mono.Linker.Dataflow
 			case IntrinsicId.Type_MakeGenericType:
 			case IntrinsicId.MethodInfo_MakeGenericMethod:
 			case IntrinsicId.Expression_Call:
-			case IntrinsicId.Expression_New: {
+			case IntrinsicId.Expression_New:
+			case IntrinsicId.Type_GetType: {
 					var instanceValue = MultiValueLattice.Top;
 					IReadOnlyList<MultiValue> parameterValues = methodParams;
 					if (calledMethodDefinition.HasImplicitThis ()) {

@@ -756,6 +756,9 @@ namespace ILLink.Shared.TrimAnalysis
 			// GetType (string, Func<AssemblyName, Assembly>, Func<Assembly, String, Boolean, Type>, Boolean, Boolean)
 			//
 			case IntrinsicId.Type_GetType: {
+					if (GetContainingSymbolDisplayName ().Contains ("TypeWithWarnings"))
+						Debug.WriteLine ("");
+
 					if (argumentValues[0].IsEmpty ()) {
 						returnValue = MultiValueLattice.Top;
 						break;
@@ -766,25 +769,25 @@ namespace ILLink.Shared.TrimAnalysis
 						_diagnosticContext.AddDiagnostic (DiagnosticId.CaseInsensitiveTypeGetTypeCallIsNotSupported, calledMethod.GetDisplayName ());
 						break;
 					}
+
 					foreach (var typeNameValue in argumentValues[0]) {
 						if (typeNameValue is KnownStringValue knownStringValue) {
-							if (!_context.TypeNameResolver.TryResolveTypeName (knownStringValue.Contents, callingMethodDefinition, out TypeReference? foundTypeRef, out AssemblyDefinition? typeAssembly, false)
-								|| ResolveToTypeDefinition (foundTypeRef) is not TypeDefinition foundType) {
+							if (!_requireDynamicallyAccessedMembersAction.TryResolveTypeNameAndMark (knownStringValue.Contents, false, out TypeProxy foundType)) {
 								// Intentionally ignore - it's not wrong for code to call Type.GetType on non-existing name, the code might expect null/exception back.
+								AddReturnValue (MultiValueLattice.Top);
 							} else {
-								_markStep.MarkTypeVisibleToReflection (foundTypeRef, foundType, new DependencyInfo (DependencyKind.AccessedViaReflection, callingMethodDefinition), _origin);
 								AddReturnValue (new SystemTypeValue (foundType));
-								_context.MarkingHelpers.MarkMatchingExportedType (foundType, typeAssembly, new DependencyInfo (DependencyKind.AccessedViaReflection, foundType), _origin);
 							}
 						} else if (typeNameValue == NullValue.Instance) {
-							// Nothing to do
+							// Nothing to do - this throws at runtime
+							AddReturnValue (MultiValueLattice.Top);
 						} else if (typeNameValue is ValueWithDynamicallyAccessedMembers valueWithDynamicallyAccessedMembers && valueWithDynamicallyAccessedMembers.DynamicallyAccessedMemberTypes != 0) {
 							// Propagate the annotation from the type name to the return value. Annotation on a string value will be fullfilled whenever a value is assigned to the string with annotation.
 							// So while we don't know which type it is, we can guarantee that it will fulfill the annotation.
-							AddReturnValue (_annotations.GetMethodReturnValue (calledMethodDefinition, valueWithDynamicallyAccessedMembers.DynamicallyAccessedMemberTypes));
+							AddReturnValue (_annotations.GetMethodReturnValue (calledMethod, valueWithDynamicallyAccessedMembers.DynamicallyAccessedMemberTypes));
 						} else {
-							if (diagnosticsEnabled)
-								_context.LogWarning (_origin, DiagnosticId.UnrecognizedTypeNameInTypeGetType, calledMethod.GetDisplayName ());
+							_diagnosticContext.AddDiagnostic (DiagnosticId.UnrecognizedTypeNameInTypeGetType, calledMethod.GetDisplayName ());
+							AddReturnValue (MultiValueLattice.Top);
 						}
 					}
 

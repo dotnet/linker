@@ -44,6 +44,8 @@ namespace ILLink.RoslynAnalyzer
 			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.PropertyAccessorParameterInLinqExpressionsCannotBeStaticallyDetermined));
 			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.MakeGenericType));
 			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.MakeGenericMethod));
+			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.CaseInsensitiveTypeGetTypeCallIsNotSupported));
+			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.UnrecognizedTypeNameInTypeGetType));
 			return diagDescriptorsArrayBuilder.ToImmutable ();
 
 			void AddRange (DiagnosticId first, DiagnosticId last)
@@ -94,6 +96,8 @@ namespace ILLink.RoslynAnalyzer
 						}
 					}
 
+					if (context.OwningSymbol.ToDisplayString ().Contains ("TestTypeOverloadWith5ParametersWithoutIgnoreCase"))
+						Debug.WriteLine ("");
 					foreach (var operationBlock in context.OperationBlocks) {
 						ControlFlowGraph cfg = context.GetControlFlowGraph (operationBlock);
 						TrimDataFlowAnalysis trimDataFlowAnalysis = new (context, cfg);
