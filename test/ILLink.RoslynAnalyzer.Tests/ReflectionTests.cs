@@ -13,7 +13,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 		[Fact]
 		public Task ActivatorCreateInstance ()
 		{
-			return RunTest (allowMissingWarnings: true);
+			return RunTest ();
 		}
 
 		[Fact]
