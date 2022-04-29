@@ -245,11 +245,11 @@ namespace Mono.Linker.Tests.Cases.Libraries
 			public static void CopyLibraryStaticInterfaceMethod () { }
 
 			[Kept]
-			[KeptOverride (typeof(ICopyLibraryStaticInterface))]
+			[KeptOverride (typeof (ICopyLibraryStaticInterface))]
 			static void ICopyLibraryStaticInterface.CopyLibraryExplicitImplementationStaticInterfaceMethod () { }
 
 			[Kept]
-			[KeptOverride (typeof(ISkipLibraryStaticInterface))]
+			[KeptOverride (typeof (ISkipLibraryStaticInterface))]
 			static void ISkipLibraryStaticInterface.StaticInterfaceMethod () { }
 		}
 
@@ -334,7 +334,7 @@ namespace Mono.Linker.Tests.Cases.Libraries
 			public static void CopyLibraryStaticInterfaceMethod () { }
 
 			[Kept]
-			[KeptOverride(typeof(ICopyLibraryStaticInterface))]
+			[KeptOverride (typeof (ICopyLibraryStaticInterface))]
 			static void ICopyLibraryStaticInterface.CopyLibraryExplicitImplementationStaticInterfaceMethod () { }
 		}
 
