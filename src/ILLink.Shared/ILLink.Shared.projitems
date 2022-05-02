@@ -10,7 +10,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)/**/*.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)TrimAnalysis\MemorySlot.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)SharedStrings.resx">
