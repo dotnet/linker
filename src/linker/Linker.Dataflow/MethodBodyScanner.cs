@@ -2,7 +2,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using ILLink.Shared.DataFlow;
 using ILLink.Shared.TrimAnalysis;
@@ -19,7 +21,7 @@ namespace Mono.Linker.Dataflow
 	/// </summary>
 	readonly struct StackSlot
 	{
-		public MultiValue Value { get; }
+		public IValueHolder ValueHolder { get; }
 
 		/// <summary>
 		/// True if the value is on the stack as a byref
@@ -28,21 +30,27 @@ namespace Mono.Linker.Dataflow
 
 		public StackSlot ()
 		{
-			Value = new MultiValue (UnknownValue.Instance);
+			ValueHolder = new ValueHolder (new MultiValue (UnknownValue.Instance), ValueHolderKind.LocalVariable);
 			IsByRef = false;
+		}
+
+		public StackSlot (IValueHolder valueHolder)
+		{
+			ValueHolder = valueHolder;
+			IsByRef = valueHolder is ValueHolder.ValueHolderReference<VariableDefinition>;
 		}
 
 		public StackSlot (SingleValue value, bool isByRef = false)
 		{
-			Value = new MultiValue (value);
+			ValueHolder = new MultiValue (value);
 			IsByRef = isByRef;
 		}
 
-		public StackSlot (MultiValue value, bool isByRef = false)
-		{
-			Value = value;
-			IsByRef = isByRef;
-		}
+		//public StackSlot (MultiValue value, bool isByRef = false)
+		//{
+		//	ValueHolder = value;
+		//	IsByRef = isByRef;
+		//}
 	}
 
 	abstract partial class MethodBodyScanner
@@ -100,7 +108,7 @@ namespace Mono.Linker.Dataflow
 
 		private static StackSlot MergeStackElement (StackSlot a, StackSlot b)
 		{
-			return new StackSlot (MultiValueLattice.Meet (a.Value, b.Value));
+			return new StackSlot (MultiValueLattice.Meet (a.ValueHolder.Value, b.ValueHolder.Value));
 		}
 
 		// Merge stacks together. This may return the first stack, the stack length must be the same for the two stacks.
@@ -181,29 +189,29 @@ namespace Mono.Linker.Dataflow
 		}
 
 		private static void StoreMethodLocalValue<KeyType> (
-			Dictionary<KeyType, ValueBasicBlockPair> valueCollection,
+			Dictionary<KeyType, ValueHolderBasicBlockPair> valueCollection,
 			in MultiValue valueToStore,
 			KeyType collectionKey,
 			int curBasicBlock,
 			int? maxTrackedValues = null)
 			where KeyType : notnull
 		{
-			if (valueCollection.TryGetValue (collectionKey, out ValueBasicBlockPair existingValue)) {
-				MultiValue value;
+			if (valueCollection.TryGetValue (collectionKey, out ValueHolderBasicBlockPair existingValue)) {
+				ValueHolder value;
 				if (existingValue.BasicBlockIndex == curBasicBlock) {
 					// If the previous value was stored in the current basic block, then we can safely
 					// overwrite the previous value with the new one.
-					value = valueToStore;
+					value = new ValueHolder (valueToStore, existingValue.Value.Kind);
 				} else {
 					// If the previous value came from a previous basic block, then some other use of
 					// the local could see the previous value, so we must merge the new value with the
 					// old value.
-					value = MultiValueLattice.Meet (existingValue.Value, valueToStore);
+					value = new ValueHolder (MultiValueLattice.Meet (existingValue.Value.Value, valueToStore), existingValue.Value.Kind);
 				}
-				valueCollection[collectionKey] = new ValueBasicBlockPair (value, curBasicBlock);
+				valueCollection[collectionKey] = new ValueHolderBasicBlockPair (value, curBasicBlock);
 			} else if (maxTrackedValues == null || valueCollection.Count < maxTrackedValues) {
 				// We're not currently tracking a value a this index, so store the value now.
-				valueCollection[collectionKey] = new ValueBasicBlockPair (valueToStore, curBasicBlock);
+				valueCollection[collectionKey] = new ValueHolderBasicBlockPair (new ValueHolder (valueToStore, ValueHolderKind.LocalVariable), curBasicBlock);
 			}
 		}
 
@@ -211,7 +219,7 @@ namespace Mono.Linker.Dataflow
 		{
 			MethodDefinition thisMethod = methodBody.Method;
 
-			Dictionary<VariableDefinition, ValueBasicBlockPair> locals = new Dictionary<VariableDefinition, ValueBasicBlockPair> (methodBody.Variables.Count);
+			Dictionary<VariableDefinition, ValueHolderBasicBlockPair> locals = new Dictionary<VariableDefinition, ValueHolderBasicBlockPair> (methodBody.Variables.Count);
 
 			Dictionary<int, Stack<StackSlot>> knownStacks = new Dictionary<int, Stack<StackSlot>> ();
 			Stack<StackSlot>? currentStack = new Stack<StackSlot> (methodBody.MaxStackSize);
@@ -431,7 +439,7 @@ namespace Mono.Linker.Dataflow
 
 				case Code.Newarr: {
 						StackSlot count = PopUnknown (currentStack, 1, methodBody, operation.Offset);
-						currentStack.Push (new StackSlot (ArrayValue.Create (count.Value, (TypeReference) operation.Operand)));
+						currentStack.Push (new StackSlot (new ValueHolder (ArrayValue.Create (count.ValueHolder.Value, (TypeReference) operation.Operand), ValueHolderKind.Stack)));
 					}
 					break;
 
@@ -486,7 +494,7 @@ namespace Mono.Linker.Dataflow
 				case Code.Stind_R8:
 				case Code.Stind_Ref:
 				case Code.Stobj:
-					ScanIndirectStore (operation, currentStack, methodBody);
+					ScanIndirectStore (operation, currentStack, methodBody, locals, curBasicBlock);
 					break;
 
 				case Code.Initobj:
@@ -580,7 +588,7 @@ namespace Mono.Linker.Dataflow
 						}
 						if (hasReturnValue) {
 							StackSlot retValue = PopUnknown (currentStack, 1, methodBody, operation.Offset);
-							ReturnValue = MultiValueLattice.Meet (ReturnValue, retValue.Value);
+							ReturnValue = MultiValueLattice.Meet (ReturnValue, retValue.ValueHolder.Value);
 						}
 						ClearStack (ref currentStack);
 						break;
@@ -694,7 +702,7 @@ namespace Mono.Linker.Dataflow
 			var valueToStore = PopUnknown (currentStack, 1, methodBody, operation.Offset);
 			var targetValue = GetMethodParameterValue (thisMethod, param.Sequence);
 			if (targetValue is MethodParameterValue targetParameterValue)
-				HandleStoreParameter (thisMethod, targetParameterValue, operation, valueToStore.Value);
+				HandleStoreParameter (thisMethod, targetParameterValue, operation, valueToStore.ValueHolder.Value);
 
 			// If the targetValue is MethodThisValue do nothing - it should never happen really, and if it does, there's nothing we can track there
 		}
@@ -703,7 +711,7 @@ namespace Mono.Linker.Dataflow
 			Instruction operation,
 			Stack<StackSlot> currentStack,
 			MethodBody methodBody,
-			Dictionary<VariableDefinition, ValueBasicBlockPair> locals)
+			Dictionary<VariableDefinition, ValueHolderBasicBlockPair> locals)
 		{
 			VariableDefinition localDef = GetLocalDef (operation, methodBody.Variables);
 			if (localDef == null) {
@@ -714,10 +722,10 @@ namespace Mono.Linker.Dataflow
 			bool isByRef = operation.OpCode.Code == Code.Ldloca || operation.OpCode.Code == Code.Ldloca_S
 				|| localDef.VariableType.IsByRefOrPointer ();
 
-			if (!locals.TryGetValue (localDef, out ValueBasicBlockPair localValue))
+			if (!locals.TryGetValue (localDef, out ValueHolderBasicBlockPair localValue))
 				currentStack.Push (new StackSlot (UnknownValue.Instance, isByRef));
 			else
-				currentStack.Push (new StackSlot (localValue.Value, isByRef));
+				currentStack.Push (isByRef ? new StackSlot (new ValueHolder.ValueHolderReference<VariableDefinition> (localValue.Value, localDef)) : new StackSlot (localValue.Value));
 		}
 
 		void ScanLdtoken (Instruction operation, Stack<StackSlot> currentStack)
@@ -763,7 +771,7 @@ namespace Mono.Linker.Dataflow
 			Instruction operation,
 			Stack<StackSlot> currentStack,
 			MethodBody methodBody,
-			Dictionary<VariableDefinition, ValueBasicBlockPair> locals,
+			Dictionary<VariableDefinition, ValueHolderBasicBlockPair> locals,
 			int curBasicBlock)
 		{
 			StackSlot valueToStore = PopUnknown (currentStack, 1, methodBody, operation.Offset);
@@ -773,25 +781,31 @@ namespace Mono.Linker.Dataflow
 				return;
 			}
 
-			StoreMethodLocalValue (locals, valueToStore.Value, localDef, curBasicBlock);
+			StoreMethodLocalValue (locals, valueToStore.ValueHolder.Value, localDef, curBasicBlock);
 		}
 
 		private void ScanIndirectStore (
 			Instruction operation,
 			Stack<StackSlot> currentStack,
-			MethodBody methodBody)
+			MethodBody methodBody,
+			Dictionary<VariableDefinition, ValueHolderBasicBlockPair> locals,
+			int curBasicBlock)
 		{
 			StackSlot valueToStore = PopUnknown (currentStack, 1, methodBody, operation.Offset);
 			StackSlot destination = PopUnknown (currentStack, 1, methodBody, operation.Offset);
 
-			foreach (var uniqueDestination in destination.Value) {
-				if (uniqueDestination is FieldValue fieldDestination) {
-					HandleStoreField (methodBody.Method, fieldDestination, operation, valueToStore.Value);
-				} else if (uniqueDestination is MethodParameterValue parameterDestination) {
-					HandleStoreParameter (methodBody.Method, parameterDestination, operation, valueToStore.Value);
-				}
+			switch ((destination.ValueHolder as ValueHolder.ValueHolderReference<VariableDefinition>)!.Kind)
+			{
+			case ValueHolderKind.Field:
+				HandleStoreField (methodBody.Method, (destination.ValueHolder.Value.AsSingleValue () as FieldValue)!, operation, valueToStore.ValueHolder.Value);
+				break;
+			case ValueHolderKind.Parameter:
+				HandleStoreParameter (methodBody.Method, (destination.ValueHolder.Value.AsSingleValue () as MethodParameterValue)!, operation, valueToStore.ValueHolder.Value);
+				break;
+			case ValueHolderKind.LocalVariable:
+				(destination.ValueHolder as ValueHolder.ValueHolderReference<VariableDefinition>)!.SetValue (valueToStore.ValueHolder.Value);
+				break;
 			}
-
 		}
 
 		protected abstract MultiValue GetFieldValue (FieldDefinition field);
@@ -809,7 +823,7 @@ namespace Mono.Linker.Dataflow
 
 			FieldDefinition? field = _context.TryResolve ((FieldReference) operation.Operand);
 			if (field != null) {
-				StackSlot slot = new StackSlot (GetFieldValue (field), isByRef);
+				StackSlot slot = new StackSlot (new ValueHolder (GetFieldValue (field), ValueHolderKind.Field));
 				currentStack.Push (slot);
 				return;
 			}
@@ -843,7 +857,7 @@ namespace Mono.Linker.Dataflow
 					if (value is not FieldValue fieldValue)
 						continue;
 
-					HandleStoreField (thisMethod, fieldValue, operation, valueToStoreSlot.Value);
+					HandleStoreField (thisMethod, fieldValue, operation, valueToStoreSlot.ValueHolder.Value);
 				}
 			}
 		}
@@ -876,7 +890,7 @@ namespace Mono.Linker.Dataflow
 			ValueNodeList methodParams = new ValueNodeList (countToPop);
 			for (int iParam = 0; iParam < countToPop; ++iParam) {
 				StackSlot slot = PopUnknown (currentStack, 1, containingMethodBody, ilOffset);
-				methodParams.Add (slot.Value);
+				methodParams.Add (slot.ValueHolder);
 			}
 
 			if (isNewObj) {
@@ -924,7 +938,11 @@ namespace Mono.Linker.Dataflow
 			}
 
 			if (isNewObj || !calledMethod.ReturnsVoid ())
-				currentStack.Push (new StackSlot (methodReturnValue, calledMethod.ReturnType.IsByRefOrPointer ()));
+				currentStack.Push (
+					new StackSlot (
+						calledMethod.ReturnType.IsByRefOrPointer () ? 
+						new ValueHolder.ValueHolderReference<VariableReference> (new ValueHolder (methodReturnValue, ValueHolderKind.Stack), null)
+						: new ValueHolder (methodReturnValue, ValueHolderKind.Stack));
 
 			foreach (var param in methodParams) {
 				foreach (var v in param) {
@@ -966,14 +984,14 @@ namespace Mono.Linker.Dataflow
 			StackSlot valueToStore = PopUnknown (currentStack, 1, methodBody, operation.Offset);
 			StackSlot indexToStoreAt = PopUnknown (currentStack, 1, methodBody, operation.Offset);
 			StackSlot arrayToStoreIn = PopUnknown (currentStack, 1, methodBody, operation.Offset);
-			int? indexToStoreAtInt = indexToStoreAt.Value.AsConstInt ();
-			foreach (var array in arrayToStoreIn.Value) {
+			int? indexToStoreAtInt = indexToStoreAt.ValueHolder.Value.AsConstInt ();
+			foreach (var array in arrayToStoreIn.ValueHolder.Value) {
 				if (array is ArrayValue arrValue) {
 					if (indexToStoreAtInt == null) {
 						MarkArrayValuesAsUnknown (arrValue, curBasicBlock);
 					} else {
 						// When we know the index, we can record the value at that index.
-						StoreMethodLocalValue (arrValue.IndexValues, valueToStore.Value, indexToStoreAtInt.Value, curBasicBlock, MaxTrackedArrayValues);
+						StoreMethodLocalValue (arrValue.IndexValues, valueToStore.ValueHolder.Value, indexToStoreAtInt.Value, curBasicBlock, MaxTrackedArrayValues);
 					}
 				}
 			}
@@ -987,13 +1005,13 @@ namespace Mono.Linker.Dataflow
 		{
 			StackSlot indexToLoadFrom = PopUnknown (currentStack, 1, methodBody, operation.Offset);
 			StackSlot arrayToLoadFrom = PopUnknown (currentStack, 1, methodBody, operation.Offset);
-			if (arrayToLoadFrom.Value.AsSingleValue () is not ArrayValue arr) {
+			if (arrayToLoadFrom.ValueHolder.Value.AsSingleValue () is not ArrayValue arr) {
 				PushUnknown (currentStack);
 				return;
 			}
 			bool isByRef = operation.OpCode.Code == Code.Ldelema;
 
-			int? index = indexToLoadFrom.Value.AsConstInt ();
+			int? index = indexToLoadFrom.ValueHolder.Value.AsConstInt ();
 			if (index == null) {
 				PushUnknown (currentStack);
 				if (isByRef) {
@@ -1002,8 +1020,8 @@ namespace Mono.Linker.Dataflow
 				return;
 			}
 
-			if (arr.IndexValues.TryGetValue (index.Value, out ValueBasicBlockPair arrayIndexValue))
-				currentStack.Push (new StackSlot (arrayIndexValue.Value, isByRef));
+			if (arr.IndexValues.TryGetValue (index.Value, out ValueHolderBasicBlockPair arrayIndexValue))
+				currentStack.Push (new StackSlot (arrayIndexValue.Value));
 			else
 				PushUnknown (currentStack);
 		}

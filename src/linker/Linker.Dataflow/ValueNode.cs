@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using ILLink.Shared.TrimAnalysis;
 using MultiValue = ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.SingleValue>;
 
 namespace Mono.Linker.Dataflow
@@ -47,15 +48,15 @@ namespace Mono.Linker.Dataflow
 		}
 	}
 
-	public struct ValueBasicBlockPair
+	internal struct MemorySlotBasicBlockPair
 	{
-		public ValueBasicBlockPair (MultiValue value, int basicBlockIndex)
+		internal MemorySlotBasicBlockPair (MemorySlot slot, int basicBlockIndex)
 		{
-			Value = value;
+			Value = slot;
 			BasicBlockIndex = basicBlockIndex;
 		}
 
-		public MultiValue Value { get; }
+		public MemorySlot Value { get; }
 		public int BasicBlockIndex { get; }
 	}
 }
