@@ -32,7 +32,7 @@ namespace Mono.Linker
 			return false;
 		}
 
-		public static LinkerAttributesInformation Create (LinkContext context, ICustomAttributeProvider provider)
+		public static LinkerAttributesInformation Create (LinkContext context, IMemberDefinition provider)
 		{
 			Debug.Assert (context.CustomAttributes.HasAny (provider));
 
@@ -74,6 +74,8 @@ namespace Mono.Linker
 				if (!TryFindAttributeList (cache, attributeValueType, out var attributeList)) {
 					attributeList = new List<Attribute> ();
 					cache.Add ((attributeValueType, attributeList));
+				} else {
+					context.LogWarning (provider, DiagnosticId.AttributeShouldOnlyBeUsedOnceOnMember, attributeValueType.FullName ?? "", (provider is MemberReference memberRef) ? memberRef.GetDisplayName () : provider.FullName);
 				}
 
 				attributeList.Add (attributeValue);
