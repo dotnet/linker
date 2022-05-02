@@ -42,12 +42,14 @@ namespace Mono.Linker
 				var attributeType = customAttribute.AttributeType;
 
 				Attribute? attributeValue;
+				bool allowMultiple = false;
 				switch (attributeType.Name) {
 				case "RequiresUnreferencedCodeAttribute" when attributeType.Namespace == "System.Diagnostics.CodeAnalysis":
 					attributeValue = ProcessRequiresUnreferencedCodeAttribute (context, provider, customAttribute);
 					break;
 				case "DynamicDependencyAttribute" when attributeType.Namespace == "System.Diagnostics.CodeAnalysis":
 					attributeValue = DynamicDependency.ProcessAttribute (context, provider, customAttribute);
+					allowMultiple = true;
 					break;
 				case "RemoveAttributeInstancesAttribute":
 					if (provider is not TypeDefinition td)
@@ -74,7 +76,7 @@ namespace Mono.Linker
 				if (!TryFindAttributeList (cache, attributeValueType, out var attributeList)) {
 					attributeList = new List<Attribute> ();
 					cache.Add ((attributeValueType, attributeList));
-				} else {
+				} else if (!allowMultiple) {
 					context.LogWarning (provider, DiagnosticId.AttributeShouldOnlyBeUsedOnceOnMember, attributeValueType.FullName ?? "", (provider is MemberReference memberRef) ? memberRef.GetDisplayName () : provider.FullName);
 				}
 
