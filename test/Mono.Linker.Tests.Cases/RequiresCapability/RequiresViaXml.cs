@@ -31,8 +31,11 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		}
 
 		[ExpectedWarning ("IL2026", "--MethodWithDuplicateRequiresAttribute--")]
+		[ExpectedWarning ("IL2026", "--MethodWithDuplicateRequiresAttribute--")]
 		static void TestDuplicateRequiresAttribute ()
 		{
+			MethodWithDuplicateRequiresAttribute ();
+			// A second callsite should not introduce extra warnings about the duplicate attributes.
 			MethodWithDuplicateRequiresAttribute ();
 		}
 
