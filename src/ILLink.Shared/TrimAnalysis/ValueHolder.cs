@@ -16,9 +16,9 @@ namespace ILLink.Shared.TrimAnalysis
 		{
 			readonly ValueHolder Holder;
 			public readonly TKey Key;
-			internal ValueHolderReference (ValueHolder slot, TKey key)
+			internal ValueHolderReference (ValueHolder holder, TKey key)
 			{
-				Holder = slot;
+				Holder = holder;
 				Key = key;
 			}
 			public  MultiValue Value => Holder.Value;
@@ -36,10 +36,11 @@ namespace ILLink.Shared.TrimAnalysis
 		{
 			return kind switch {
 				ValueHolderKind.LocalVariable => true,
-				ValueHolderKind.Field => true,
+				ValueHolderKind.Field => false,
 				ValueHolderKind.Parameter => false,
 				ValueHolderKind.ArrayElement => true,
-				ValueHolderKind.Stack => false
+				ValueHolderKind.Stack => false,
+				_ => false
 			};
 		}
     }
