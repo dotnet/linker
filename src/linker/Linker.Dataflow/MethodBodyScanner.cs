@@ -890,7 +890,7 @@ namespace Mono.Linker.Dataflow
 			ValueNodeList methodParams = new ValueNodeList (countToPop);
 			for (int iParam = 0; iParam < countToPop; ++iParam) {
 				StackSlot slot = PopUnknown (currentStack, 1, containingMethodBody, ilOffset);
-				methodParams.Add (slot.ValueHolder);
+				methodParams.Add (slot.ValueHolder.Value);
 			}
 
 			if (isNewObj) {
@@ -942,7 +942,7 @@ namespace Mono.Linker.Dataflow
 					new StackSlot (
 						calledMethod.ReturnType.IsByRefOrPointer () ? 
 						new ValueHolder.ValueHolderReference<VariableReference> (new ValueHolder (methodReturnValue, ValueHolderKind.Stack), null)
-						: new ValueHolder (methodReturnValue, ValueHolderKind.Stack));
+						: new ValueHolder (methodReturnValue, ValueHolderKind.Stack)));
 
 			foreach (var param in methodParams) {
 				foreach (var v in param) {

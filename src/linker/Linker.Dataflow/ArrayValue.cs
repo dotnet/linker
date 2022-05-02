@@ -36,11 +36,11 @@ namespace ILLink.Shared.TrimAnalysis
 		{
 			Size = size;
 			ElementType = elementType;
-			IndexValues = new Dictionary<int, MemorySlotBasicBlockPair> ();
+			IndexValues = new Dictionary<int, ValueHolderBasicBlockPair> ();
 		}
 
 		public TypeReference ElementType { get; }
-		public Dictionary<int, MemorySlotBasicBlockPair> IndexValues { get; }
+		public Dictionary<int, ValueHolderBasicBlockPair> IndexValues { get; }
 
 		public partial bool TryGetValueByIndex (int index, out MultiValue value)
 		{
@@ -69,8 +69,8 @@ namespace ILLink.Shared.TrimAnalysis
 				return false;
 
 			// If both sets T and O are the same size and "T intersect O" is empty, then T == O.
-			HashSet<KeyValuePair<int, MemorySlotBasicBlockPair>> thisValueSet = new (IndexValues);
-			HashSet<KeyValuePair<int, MemorySlotBasicBlockPair>> otherValueSet = new (otherArr.IndexValues);
+			HashSet<KeyValuePair<int, ValueHolderBasicBlockPair>> thisValueSet = new (IndexValues);
+			HashSet<KeyValuePair<int, ValueHolderBasicBlockPair>> otherValueSet = new (otherArr.IndexValues);
 			thisValueSet.ExceptWith (otherValueSet);
 			return thisValueSet.Count == 0;
 		}

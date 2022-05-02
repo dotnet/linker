@@ -48,9 +48,9 @@ namespace Mono.Linker.Dataflow
 		}
 	}
 
-	internal struct MemorySlotBasicBlockPair
+	internal struct ValueHolderBasicBlockPair
 	{
-		internal MemorySlotBasicBlockPair (MemorySlot slot, int basicBlockIndex)
+		internal ValueHolderBasicBlockPair (MemorySlot slot, int basicBlockIndex)
 		{
 			Value = slot;
 			BasicBlockIndex = basicBlockIndex;

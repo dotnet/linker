@@ -61,7 +61,7 @@ namespace ILLink.Shared.TrimAnalysis
 			case ArrayValue:
 				ArrayValue av = (ArrayValue) node;
 				foundCycle = av.Size.DetectCycle (seenNodes, allNodesSeen);
-				foreach (MemorySlotBasicBlockPair pair in av.IndexValues.Values) {
+				foreach (ValueHolderBasicBlockPair pair in av.IndexValues.Values) {
 					foreach (var v in pair.Value) {
 						foundCycle |= v.DetectCycle (seenNodes, allNodesSeen);
 					}
