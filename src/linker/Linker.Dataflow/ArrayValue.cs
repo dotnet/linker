@@ -79,7 +79,7 @@ namespace ILLink.Shared.TrimAnalysis
 		{
 			var newValue = new ArrayValue (Size.DeepCopy (), ElementType);
 			foreach (var kvp in IndexValues) {
-				newValue.IndexValues.Add (kvp.Key, new MemorySlotBasicBlockPair (kvp.Value.Value.Clone (), kvp.Value.BasicBlockIndex));
+				newValue.IndexValues.Add (kvp.Key, new ValueHolderBasicBlockPair (kvp.Value.Value, kvp.Value.BasicBlockIndex));
 			}
 
 			return newValue;
@@ -103,7 +103,7 @@ namespace ILLink.Shared.TrimAnalysis
 				result.Append (element.Key);
 				result.Append (",(");
 				bool firstValue = true;
-				foreach (var v in element.Value.Value) {
+				foreach (var v in element.Value.Value.Value) {
 					if (firstValue) {
 						result.Append (",");
 						firstValue = false;

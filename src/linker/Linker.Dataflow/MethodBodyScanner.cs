@@ -21,7 +21,7 @@ namespace Mono.Linker.Dataflow
 	/// </summary>
 	readonly struct StackSlot
 	{
-		public IValueHolder ValueHolder { get; }
+		public MultiValue Value { get; }
 
 		/// <summary>
 		/// True if the value is on the stack as a byref
@@ -30,21 +30,21 @@ namespace Mono.Linker.Dataflow
 
 		public StackSlot ()
 		{
-			ValueHolder = new ValueHolder (new MultiValue (UnknownValue.Instance), ValueHolderKind.LocalVariable);
+			Value = new MultiValue (UnknownValue.Instance);
 			IsByRef = false;
 		}
 
-		public StackSlot (IValueHolder valueHolder)
+		public StackSlot (MultiValue valueHolder)
 		{
-			ValueHolder = valueHolder;
-			IsByRef = valueHolder is ValueHolder.ValueHolderReference<VariableDefinition>;
+			Value = valueHolder;
+			IsByRef = valueHolder.AsSingleValue() is ValueHolder.Reference;
 		}
 
-		public StackSlot (SingleValue value, bool isByRef = false)
-		{
-			ValueHolder = new MultiValue (value);
-			IsByRef = isByRef;
-		}
+		// public StackSlot (SingleValue value, bool isByRef = false)
+		// {
+		// 	ValueHolder = new MultiValue (value);
+		// 	IsByRef = isByRef;
+		// }
 
 		//public StackSlot (MultiValue value, bool isByRef = false)
 		//{
@@ -108,7 +108,7 @@ namespace Mono.Linker.Dataflow
 
 		private static StackSlot MergeStackElement (StackSlot a, StackSlot b)
 		{
-			return new StackSlot (MultiValueLattice.Meet (a.ValueHolder.Value, b.ValueHolder.Value));
+			return new StackSlot (MultiValueLattice.Meet (a.Value.Value, b.Value.Value));
 		}
 
 		// Merge stacks together. This may return the first stack, the stack length must be the same for the two stacks.
@@ -439,7 +439,7 @@ namespace Mono.Linker.Dataflow
 
 				case Code.Newarr: {
 						StackSlot count = PopUnknown (currentStack, 1, methodBody, operation.Offset);
-						currentStack.Push (new StackSlot (new ValueHolder (ArrayValue.Create (count.ValueHolder.Value, (TypeReference) operation.Operand), ValueHolderKind.Stack)));
+						currentStack.Push (new StackSlot (new ValueHolder (ArrayValue.Create (count.Value.Value, (TypeReference) operation.Operand), ValueHolderKind.Stack)));
 					}
 					break;
 
@@ -588,7 +588,7 @@ namespace Mono.Linker.Dataflow
 						}
 						if (hasReturnValue) {
 							StackSlot retValue = PopUnknown (currentStack, 1, methodBody, operation.Offset);
-							ReturnValue = MultiValueLattice.Meet (ReturnValue, retValue.ValueHolder.Value);
+							ReturnValue = MultiValueLattice.Meet (ReturnValue, retValue.Value.Value);
 						}
 						ClearStack (ref currentStack);
 						break;
@@ -702,7 +702,7 @@ namespace Mono.Linker.Dataflow
 			var valueToStore = PopUnknown (currentStack, 1, methodBody, operation.Offset);
 			var targetValue = GetMethodParameterValue (thisMethod, param.Sequence);
 			if (targetValue is MethodParameterValue targetParameterValue)
-				HandleStoreParameter (thisMethod, targetParameterValue, operation, valueToStore.ValueHolder.Value);
+				HandleStoreParameter (thisMethod, targetParameterValue, operation, valueToStore.Value.Value);
 
 			// If the targetValue is MethodThisValue do nothing - it should never happen really, and if it does, there's nothing we can track there
 		}
@@ -723,9 +723,12 @@ namespace Mono.Linker.Dataflow
 				|| localDef.VariableType.IsByRefOrPointer ();
 
 			if (!locals.TryGetValue (localDef, out ValueHolderBasicBlockPair localValue))
-				currentStack.Push (new StackSlot (UnknownValue.Instance, isByRef));
+				currentStack.Push (new StackSlot ());
 			else
-				currentStack.Push (isByRef ? new StackSlot (new ValueHolder.ValueHolderReference<VariableDefinition> (localValue.Value, localDef)) : new StackSlot (localValue.Value));
+				currentStack.Push (
+					isByRef
+					? new StackSlot (new ValueHolder.Reference (localValue.Value, ValueHolderKind.LocalVariable))
+					: new StackSlot (localValue.Value.Value));
 		}
 
 		void ScanLdtoken (Instruction operation, Stack<StackSlot> currentStack)
@@ -781,32 +784,48 @@ namespace Mono.Linker.Dataflow
 				return;
 			}
 
-			StoreMethodLocalValue (locals, valueToStore.ValueHolder.Value, localDef, curBasicBlock);
+			StoreMethodLocalValue (locals, valueToStore.Value, localDef, curBasicBlock);
 		}
 
 		private void ScanIndirectStore (
 			Instruction operation,
 			Stack<StackSlot> currentStack,
-			MethodBody methodBody,
-			Dictionary<VariableDefinition, ValueHolderBasicBlockPair> locals,
-			int curBasicBlock)
+			MethodBody methodBody)
 		{
 			StackSlot valueToStore = PopUnknown (currentStack, 1, methodBody, operation.Offset);
 			StackSlot destination = PopUnknown (currentStack, 1, methodBody, operation.Offset);
+			if (destination.Value.AsSingleValue () is UnknownValue)
+				return;
+			if (destination.Value.AsSingleValue () is ValueHolder.Reference singleDestinationReference)
+				HandleReferenceAssignment (singleDestinationReference, valueToStore.Value);
+				// Handle single sure assignment
+			else {
+				foreach (SingleValue val in destination.Value) {
+					if (val is not ValueHolder.Reference destinationReference)
+						throw new LinkerFatalErrorException (new MessageContainer ());
+					MultiValue newValue = MultiValue.Meet(destinationReference.Value, valueToStore.Value);
+					HandleReferenceAssignment (destinationReference, newValue);
 
-			switch ((destination.ValueHolder as ValueHolder.ValueHolderReference<VariableDefinition>)!.Kind)
+				}
+			}
+
+			void HandleReferenceAssignment (ValueHolder.Reference destination, MultiValue valueToStore)
 			{
-			case ValueHolderKind.Field:
-				HandleStoreField (methodBody.Method, (destination.ValueHolder.Value.AsSingleValue () as FieldValue)!, operation, valueToStore.ValueHolder.Value);
-				break;
-			case ValueHolderKind.Parameter:
-				HandleStoreParameter (methodBody.Method, (destination.ValueHolder.Value.AsSingleValue () as MethodParameterValue)!, operation, valueToStore.ValueHolder.Value);
-				break;
-			case ValueHolderKind.LocalVariable:
-				(destination.ValueHolder as ValueHolder.ValueHolderReference<VariableDefinition>)!.SetValue (valueToStore.ValueHolder.Value);
-				break;
+				switch (destination.Kind) {
+				case ValueHolderKind.Field:
+					HandleStoreField (methodBody.Method, (destination.Value.AsSingleValue () as FieldValue)!, operation, valueToStore);
+					break;
+				case ValueHolderKind.Parameter:
+					HandleStoreParameter (methodBody.Method, (destination.Value.AsSingleValue () as MethodParameterValue)!, operation, valueToStore);
+					break;
+				case ValueHolderKind.LocalVariable:
+				case ValueHolderKind.ArrayElement:
+					destination.SetValue (valueToStore);
+					break;
+				}
 			}
 		}
+
 
 		protected abstract MultiValue GetFieldValue (FieldDefinition field);
 
@@ -823,7 +842,9 @@ namespace Mono.Linker.Dataflow
 
 			FieldDefinition? field = _context.TryResolve ((FieldReference) operation.Operand);
 			if (field != null) {
-				StackSlot slot = new StackSlot (new ValueHolder (GetFieldValue (field), ValueHolderKind.Field));
+				StackSlot slot = isByRef
+					? new StackSlot (ValueHolder.Reference.FieldReference (GetFieldValue (field)))
+					: new StackSlot (GetFieldValue (field));
 				currentStack.Push (slot);
 				return;
 			}
@@ -857,7 +878,7 @@ namespace Mono.Linker.Dataflow
 					if (value is not FieldValue fieldValue)
 						continue;
 
-					HandleStoreField (thisMethod, fieldValue, operation, valueToStoreSlot.ValueHolder.Value);
+					HandleStoreField (thisMethod, fieldValue, operation, valueToStoreSlot.Value.Value);
 				}
 			}
 		}
@@ -890,7 +911,7 @@ namespace Mono.Linker.Dataflow
 			ValueNodeList methodParams = new ValueNodeList (countToPop);
 			for (int iParam = 0; iParam < countToPop; ++iParam) {
 				StackSlot slot = PopUnknown (currentStack, 1, containingMethodBody, ilOffset);
-				methodParams.Add (slot.ValueHolder.Value);
+				methodParams.Add (slot.Value.Value);
 			}
 
 			if (isNewObj) {
@@ -940,8 +961,8 @@ namespace Mono.Linker.Dataflow
 			if (isNewObj || !calledMethod.ReturnsVoid ())
 				currentStack.Push (
 					new StackSlot (
-						calledMethod.ReturnType.IsByRefOrPointer () ? 
-						new ValueHolder.ValueHolderReference<VariableReference> (new ValueHolder (methodReturnValue, ValueHolderKind.Stack), null)
+						calledMethod.ReturnType.IsByRefOrPointer () ?
+						new ValueHolder.Reference<VariableReference> (new ValueHolder (methodReturnValue, ValueHolderKind.Stack), null)
 						: new ValueHolder (methodReturnValue, ValueHolderKind.Stack)));
 
 			foreach (var param in methodParams) {
@@ -984,14 +1005,14 @@ namespace Mono.Linker.Dataflow
 			StackSlot valueToStore = PopUnknown (currentStack, 1, methodBody, operation.Offset);
 			StackSlot indexToStoreAt = PopUnknown (currentStack, 1, methodBody, operation.Offset);
 			StackSlot arrayToStoreIn = PopUnknown (currentStack, 1, methodBody, operation.Offset);
-			int? indexToStoreAtInt = indexToStoreAt.ValueHolder.Value.AsConstInt ();
-			foreach (var array in arrayToStoreIn.ValueHolder.Value) {
+			int? indexToStoreAtInt = indexToStoreAt.Value.Value.AsConstInt ();
+			foreach (var array in arrayToStoreIn.Value.Value) {
 				if (array is ArrayValue arrValue) {
 					if (indexToStoreAtInt == null) {
 						MarkArrayValuesAsUnknown (arrValue, curBasicBlock);
 					} else {
 						// When we know the index, we can record the value at that index.
-						StoreMethodLocalValue (arrValue.IndexValues, valueToStore.ValueHolder.Value, indexToStoreAtInt.Value, curBasicBlock, MaxTrackedArrayValues);
+						StoreMethodLocalValue (arrValue.IndexValues, valueToStore.Value.Value, indexToStoreAtInt.Value, curBasicBlock, MaxTrackedArrayValues);
 					}
 				}
 			}
@@ -1005,13 +1026,13 @@ namespace Mono.Linker.Dataflow
 		{
 			StackSlot indexToLoadFrom = PopUnknown (currentStack, 1, methodBody, operation.Offset);
 			StackSlot arrayToLoadFrom = PopUnknown (currentStack, 1, methodBody, operation.Offset);
-			if (arrayToLoadFrom.ValueHolder.Value.AsSingleValue () is not ArrayValue arr) {
+			if (arrayToLoadFrom.Value.Value.AsSingleValue () is not ArrayValue arr) {
 				PushUnknown (currentStack);
 				return;
 			}
 			bool isByRef = operation.OpCode.Code == Code.Ldelema;
 
-			int? index = indexToLoadFrom.ValueHolder.Value.AsConstInt ();
+			int? index = indexToLoadFrom.Value.Value.AsConstInt ();
 			if (index == null) {
 				PushUnknown (currentStack);
 				if (isByRef) {
