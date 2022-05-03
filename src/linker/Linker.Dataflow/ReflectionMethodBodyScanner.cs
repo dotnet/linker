@@ -209,6 +209,60 @@ namespace Mono.Linker.Dataflow
 				}
 			}
 		}
+		protected override void HandleRefParameters (
+			MethodBody callingMethodBody,
+			MethodReference calledMethod,
+			ValueNodeList methodParams,
+			Instruction operation,
+			Stack<StackSlot> currentStack,
+			Dictionary<VariableDefinition, ValueBasicBlockPair> locals,
+			int curBasicBlock)
+		{
+			MethodDefinition? calledMethodDefinition = _context.Resolve (calledMethod);
+			bool methodIsResolved = calledMethodDefinition is not null;
+			for (int argumentIndex = 0; argumentIndex < methodParams.Count; argumentIndex++) {
+				if (!(calledMethod.ParameterReferenceKind (argumentIndex) == ReferenceKind.Ref
+						|| calledMethod.ParameterReferenceKind (argumentIndex) == ReferenceKind.Out))
+					continue;
+				SingleValue newByRefValue = methodIsResolved
+					? new ByRefParameterValue (
+						calledMethodDefinition!,
+						argumentIndex,
+						(GetMethodParameterValue(calledMethodDefinition!, argumentIndex) as MethodParameterValue)!.DynamicallyAccessedMemberTypes)
+					: UnknownValue.Instance;
+				foreach (var value in methodParams[argumentIndex]) {
+					switch (value)
+					{
+						case FieldReferenceValue fieldRef:
+						if (GetFieldValue(fieldRef.FieldDefinition).AsSingleValue() is FieldValue fieldValue) {
+							HandleStoreField(
+								callingMethodBody.Method,
+								fieldValue,
+								operation,
+								newByRefValue);
+						}
+						break;
+						case ParameterReferenceValue paramRef:
+							if (GetMethodParameterValue (paramRef.MethodDefinition, paramRef.ParameterIndex) is MethodParameterValue methodParameterValue) {
+								HandleStoreParameter (
+									callingMethodBody.Method,
+									methodParameterValue,
+									operation,
+									newByRefValue);
+							}
+						break;
+						case LocalVariableReferenceValue localRef:
+							StoreMethodLocalValue (locals,
+								newByRefValue,
+								localRef.LocalDefinition,
+								curBasicBlock);
+						break;
+						default:
+						break;
+					}
+				}
+			}
+		}
 
 		protected override void HandleStoreField (MethodDefinition method, FieldValue field, Instruction operation, MultiValue valueToStore)
 		{

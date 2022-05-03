@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using ILLink.Shared.TypeSystemProxy;
 using Mono.Cecil;
 
 namespace Mono.Linker
@@ -95,6 +96,28 @@ namespace Mono.Linker
 		public static bool HasParameterOfType (this MethodReference method, int parameterIndex, string fullTypeName)
 		{
 			return method.Parameters.Count > parameterIndex && method.Parameters[parameterIndex].ParameterType.IsTypeOf (fullTypeName);
+		}
+
+		public static bool HasImplicitThis (this MethodReference method)
+		{
+			return method.HasThis && !method.ExplicitThis;
+		}
+
+		public static ReferenceKind ParameterReferenceKind (this MethodReference method, int index)
+		{
+			if (method.HasImplicitThis ()) {
+				if (index == 0)
+					return ReferenceKind.None;
+				index--;
+			}
+			var param = method.Parameters[index];
+			if (!param.ParameterType.IsByReference)
+				return ReferenceKind.None;
+			if (param.IsIn)
+				return ReferenceKind.In;
+			if (param.IsOut)
+				return ReferenceKind.Out;
+			return ReferenceKind.Ref;
 		}
 	}
 }

@@ -954,18 +954,9 @@ namespace ILLink.Shared.TrimAnalysis
 						_requireDynamicallyAccessedMembersAction.Invoke (instanceValue, _annotations.GetMethodThisParameterValue (calledMethod));
 					}
 					for (int argumentIndex = 0; argumentIndex < argumentValues.Count; argumentIndex++) {
-						_requireDynamicallyAccessedMembersAction.Invoke (argumentValues[argumentIndex], _annotations.GetMethodParameterValue (calledMethod, argumentIndex));
-						// Warn if ref parameters don't match annotations exactly.
-						if (!(calledMethod.ParameterReferenceKind (argumentIndex) == ReferenceKind.Ref))
+						if (calledMethod.ParameterReferenceKind (argumentIndex) == ReferenceKind.Out)
 							continue;
-						foreach (var value in argumentValues[argumentIndex]) {
-							// GenericParameterValue and MethodReturnValue must be assigned to a local variable, so the arg must be a ref to a local variable. In this case, no need to warn
-							if (value is not ValueWithDynamicallyAccessedMembers valueWithDynamicallyAccessedMembers || value is GenericParameterValue || value is MethodReturnValue)
-								continue;
-							_requireDynamicallyAccessedMembersAction.Invoke (
-									new ByRefParameterValue (calledMethod, argumentIndex, _annotations.GetMethodParameterValue (calledMethod, argumentIndex).DynamicallyAccessedMemberTypes),
-									valueWithDynamicallyAccessedMembers);
-						}
+						_requireDynamicallyAccessedMembersAction.Invoke (argumentValues[argumentIndex], _annotations.GetMethodParameterValue (calledMethod, argumentIndex));
 					}
 				}
 				break;

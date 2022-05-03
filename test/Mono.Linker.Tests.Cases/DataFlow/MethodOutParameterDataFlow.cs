@@ -23,9 +23,15 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TestInitializedReadFromOutParameter_MismatchOnOutput_PassedTwice ();
 			TestInitializedReadFromOutParameter_MismatchOnInput ();
 			TestInitializedReadFromOutParameter_MismatchOnInput_PassedTwice ();
-			TestPassingOutParameter (out t);
+			// Gets Fields
 			TestPassingOutParameter_Mismatch (out t);
+			t.RequiresPublicFields ();
+			// Gets Methods
+			TestPassingOutParameter (out t);
+			// Needs Methods and gets Methods
 			TestAssigningToOutParameter (t, out t);
+			t = typeof (int);
+			// Needs Fields and gets Methods
 			TestAssigningToOutParameter_Mismatch (t, out t);
 		}
 
@@ -45,8 +51,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		// https://github.com/dotnet/linker/issues/2632
 		// These two warnings should not be generated, the annotations are all correct
-		[ExpectedWarning ("IL2062", nameof (TryGetAnnotatedValue))]
-		[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicMethods))]
+		//[ExpectedWarning ("IL2062", nameof (TryGetAnnotatedValue))]
 		static void TestUninitializedReadFromOutParameter ()
 		{
 			Type typeWithMethods;
@@ -56,7 +61,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		// https://github.com/dotnet/linker/issues/2632
 		// This test should generate a warning since there's mismatch on annotations
-		// [ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicFields))]
+		 [ExpectedWarning ("IL2118", nameof (DataFlowTypeExtensions.RequiresPublicFields))]
 		static void TestInitializedReadFromOutParameter_MismatchOnOutput ()
 		{
 			Type typeWithMethods = null;
@@ -66,7 +71,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		// https://github.com/dotnet/linker/issues/2632
 		// This test should generate a warning since there's mismatch on annotations
-		// [ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicFields))]
+		 [ExpectedWarning ("IL2118", nameof (DataFlowTypeExtensions.RequiresPublicFields))]
 		static void TestInitializedReadFromOutParameter_MismatchOnOutput_PassedTwice ()
 		{
 			Type typeWithMethods = null;
@@ -74,27 +79,27 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			typeWithMethods.RequiresPublicFields ();
 		}
 
-		[ExpectedWarning ("IL2072", nameof (TryGetAnnotatedValue))]
 		// https://github.com/dotnet/linker/issues/2632
 		// This second warning should not be generated, the value of typeWithMethods should have PublicMethods
 		// after the call with out parameter.
-		[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions.RequiresPublicMethods))]
+		[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions.RequiresPublicMethods), ProducedBy = ProducedBy.Analyzer)]
 		static void TestInitializedReadFromOutParameter_MismatchOnInput ()
 		{
 			Type typeWithMethods = GetTypeWithFields ();
+			// No warning on out parameter
 			TryGetAnnotatedValue (out typeWithMethods);
 			typeWithMethods.RequiresPublicMethods ();
 		}
 
 		[ExpectedWarning ("IL2072", nameof (TryGetAnnotatedValueFromValue))]
-		[ExpectedWarning ("IL2072", nameof (TryGetAnnotatedValueFromValue))]
 		// https://github.com/dotnet/linker/issues/2632
 		// This third warning should not be generated, the value of typeWithMethods should have PublicMethods
 		// after the call with out parameter.
-		[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions.RequiresPublicMethods))]
+		[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions.RequiresPublicMethods), ProducedBy = ProducedBy.Analyzer)]
 		static void TestInitializedReadFromOutParameter_MismatchOnInput_PassedTwice ()
 		{
 			Type typeWithMethods = GetTypeWithFields ();
+			// Warn on first parameter only, not on out parameter
 			TryGetAnnotatedValueFromValue (typeWithMethods, out typeWithMethods);
 			typeWithMethods.RequiresPublicMethods ();
 		}
@@ -104,7 +109,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TryGetAnnotatedValue (out typeWithMethods);
 		}
 
-		[ExpectedWarning ("IL2067", "typeWithFields", nameof (TryGetAnnotatedValue))]
+		[ExpectedWarning ("IL2118", "typeWithFields", nameof (TryGetAnnotatedValue))]
 		static void TestPassingOutParameter_Mismatch ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] out Type typeWithFields)
 		{
 			TryGetAnnotatedValue (out typeWithFields);
