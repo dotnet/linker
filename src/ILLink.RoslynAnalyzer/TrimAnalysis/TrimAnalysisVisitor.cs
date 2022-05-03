@@ -305,6 +305,9 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 					case SpecialType.System_String when constantValue is string stringConstantValue:
 						constValue = new KnownStringValue (stringConstantValue);
 						return true;
+					case SpecialType.System_Boolean when constantValue is bool boolConstantValue:
+						constValue = new ConstIntValue (boolConstantValue ? 1 : 0);
+						return true;
 					case SpecialType.System_SByte when constantValue is sbyte sbyteConstantValue:
 						constValue = new ConstIntValue (sbyteConstantValue);
 						return true;
@@ -321,7 +324,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 						constValue = new ConstIntValue (int32ConstantValue);
 						return true;
 					case SpecialType.System_UInt32 when constantValue is UInt32 uint32ConstantValue:
-						constValue = new ConstIntValue ((int)uint32ConstantValue);
+						constValue = new ConstIntValue ((int) uint32ConstantValue);
 						return true;
 					}
 				}

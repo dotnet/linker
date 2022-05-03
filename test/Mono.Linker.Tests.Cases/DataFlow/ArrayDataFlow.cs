@@ -597,7 +597,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			private const uint ConstUInt = 1;
 			// Longs and ULongs would need support for conversion logic, which is not implement yet
 
-			public static void Test()
+			public static void Test ()
 			{
 				var types = new Type[2];
 				types[0] = GetUnknownType ();
