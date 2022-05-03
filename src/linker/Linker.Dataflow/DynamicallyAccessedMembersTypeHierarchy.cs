@@ -47,14 +47,13 @@ namespace Mono.Linker.Dataflow
 
 		public (DynamicallyAccessedMemberTypes annotation, bool applied) ProcessMarkedTypeForDynamicallyAccessedMembersHierarchy (TypeDefinition type)
 		{
+			// We'll use the cache also as a way to detect and avoid recursion for interfaces and annotated base types
 			if (_typesInDynamicallyAccessedMembersHierarchy.TryGetValue (type, out var existingValue))
 				return existingValue;
 
 			DynamicallyAccessedMemberTypes annotation = _context.Annotations.FlowAnnotations.GetTypeAnnotation (type);
 			bool apply = false;
 
-			// We'll use the cache also as a way to detect and avoid recursion
-			// There's no possiblity to have recursion among base types, so only do this for interfaces
 			if (type.IsInterface)
 				_typesInDynamicallyAccessedMembersHierarchy.Add (type, (annotation, false));
 
