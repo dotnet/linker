@@ -582,7 +582,8 @@ namespace Mono.Linker
 		public bool TryGetLinkerAttribute<T> (IMemberDefinition member, [NotNullWhen (returnValue: true)] out T? attribute) where T : Attribute
 		{
 			var attributes = GetLinkerAttributes<T> (member);
-			attribute = attributes.FirstOrDefault ();
+			// This should only be called for attribute types which don't allow multiple attributes.
+			attribute = attributes.SingleOrDefault ();
 			return attribute != null;
 		}
 

@@ -60,6 +60,7 @@ namespace Mono.Linker
 						continue;
 
 					attributeValue = new RemoveAttributeInstancesAttribute (customAttribute.ConstructorArguments);
+					allowMultiple = true;
 					break;
 				default:
 					continue;
@@ -78,6 +79,7 @@ namespace Mono.Linker
 					cache.Add ((attributeValueType, attributeList));
 				} else if (!allowMultiple) {
 					context.LogWarning (provider, DiagnosticId.AttributeShouldOnlyBeUsedOnceOnMember, attributeValueType.FullName ?? "", (provider is MemberReference memberRef) ? memberRef.GetDisplayName () : provider.FullName);
+					continue;
 				}
 
 				attributeList.Add (attributeValue);
