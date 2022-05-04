@@ -255,6 +255,7 @@ namespace Mono.Linker.Dataflow
 			}
 
 			TrimAnalysisPatterns.Add (new TrimAnalysisMethodCallPattern (
+				operation,
 				calledMethod,
 				instanceValue,
 				arguments,
@@ -263,6 +264,7 @@ namespace Mono.Linker.Dataflow
 
 			var diagnosticContext = new DiagnosticContext (_origin, diagnosticsEnabled: false, _context);
 			return HandleCall (
+				operation,
 				calledMethod,
 				instanceValue,
 				arguments,
@@ -274,6 +276,7 @@ namespace Mono.Linker.Dataflow
 		}
 
 		public static bool HandleCall (
+			Instruction operation,
 			MethodReference calledMethod,
 			MultiValue instanceValue,
 			ImmutableArray<MultiValue> argumentValues,
@@ -363,7 +366,8 @@ namespace Mono.Linker.Dataflow
 
 			case IntrinsicId.TypeDelegator_Ctor: {
 					// This is an identity function for analysis purposes
-					AddReturnValue (argumentValues[0]);
+					if (operation.OpCode == OpCodes.Newobj)
+						AddReturnValue (argumentValues[0]);
 				}
 				break;
 
