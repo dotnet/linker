@@ -207,7 +207,50 @@ namespace Mono.Linker.Dataflow
 			}
 		}
 
-		public void Scan (MethodBody methodBody)
+		public virtual void InterproceduralScan (MethodBody methodBody)
+		{
+			var methodsInGroup = new ValueSet<MethodDefinition> (methodBody.Method);
+
+			// Optimization to prevent multiple scans of a method.
+			// Eventually we will need to allow re-scanning in some cases, for example
+			// when we discover new inputs to a method. But we aren't doing dataflow across
+			// lambdas and local functions yet, so no need for now.
+			var scannedMethods = new HashSet<MethodDefinition> ();
+
+			while (true) {
+				// Get the next method to scan.
+				MethodDefinition? methodToScan = null;
+				foreach (var method in methodsInGroup) {
+					if (!scannedMethods.Contains (method) && method.HasBody) {
+						methodToScan = method;
+						break;
+					}
+				}
+
+				if (methodToScan == null)
+					break;
+
+				Scan (methodToScan.Body, ref methodsInGroup);
+				scannedMethods.Add (methodToScan);
+			}
+		}
+
+		void TrackNestedFunctionReference (MethodReference referencedMethod, ref ValueSet<MethodDefinition> methodsInGroup)
+		{
+			if (_context.TryResolve (referencedMethod) is not MethodDefinition method)
+				return;
+
+			if (!CompilerGeneratedNames.IsLambdaOrLocalFunction (method.Name))
+				return;
+
+			var methods = new HashSet<MethodDefinition> (methodsInGroup);
+			methods.Add (method);
+			// Work around the fact that we can't mutate the ValueSEt in-place because it's a readonly struct.
+			methodsInGroup = new ValueSet<MethodDefinition> (methods);
+		}
+
+		// Scans the method as well as any nested functions (local functions or lambdas) reachable from it.
+		protected virtual void Scan (MethodBody methodBody, ref ValueSet<MethodDefinition> methodsInGroup)
 		{
 			MethodDefinition thisMethod = methodBody.Method;
 
@@ -315,11 +358,15 @@ namespace Mono.Linker.Dataflow
 					break;
 
 				case Code.Arglist:
-				case Code.Ldftn:
 				case Code.Sizeof:
 				case Code.Ldc_I8:
 				case Code.Ldc_R4:
 				case Code.Ldc_R8:
+					PushUnknown (currentStack);
+					break;
+
+				case Code.Ldftn:
+					TrackNestedFunctionReference ((MethodReference) operation.Operand, ref methodsInGroup);
 					PushUnknown (currentStack);
 					break;
 
@@ -545,6 +592,7 @@ namespace Mono.Linker.Dataflow
 				case Code.Call:
 				case Code.Callvirt:
 				case Code.Newobj:
+					TrackNestedFunctionReference ((MethodReference) operation.Operand, ref methodsInGroup);
 					HandleCall (methodBody, operation, currentStack, curBasicBlock);
 					break;
 

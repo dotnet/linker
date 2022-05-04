@@ -3539,7 +3539,7 @@ namespace Mono.Linker.Steps
 		{
 			if (requiresReflectionMethodBodyScanner) {
 				var scanner = new ReflectionMethodBodyScanner (Context, this, ScopeStack.CurrentScope.Origin);
-				scanner.ScanAndProcessReturnValue (body);
+				scanner.InterproceduralScan (body);
 			}
 		}
 

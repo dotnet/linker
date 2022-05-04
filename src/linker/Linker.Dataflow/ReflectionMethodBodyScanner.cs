@@ -71,9 +71,17 @@ namespace Mono.Linker.Dataflow
 			TrimAnalysisPatterns = new TrimAnalysisPatternStore (context);
 		}
 
-		public void ScanAndProcessReturnValue (MethodBody methodBody)
+		public override void InterproceduralScan (MethodBody methodBody)
 		{
-			Scan (methodBody);
+			base.InterproceduralScan (methodBody);
+
+			var reflectionMarker = new ReflectionMarker (_context, _markStep, enabled: true);
+			TrimAnalysisPatterns.MarkAndProduceDiagnostics (ShouldEnableReflectionPatternReporting (methodBody.Method), reflectionMarker, _markStep);
+		}
+
+		protected override void Scan (MethodBody methodBody, ref ValueSet<MethodDefinition> methodsInGroup)
+		{
+			base.Scan (methodBody, ref methodsInGroup);
 
 			if (!methodBody.Method.ReturnsVoid ()) {
 				var method = methodBody.Method;
@@ -83,8 +91,6 @@ namespace Mono.Linker.Dataflow
 			}
 
 			Debug.Assert (_origin.Provider == methodBody.Method);
-			var reflectionMarker = new ReflectionMarker (_context, _markStep, enabled: true);
-			TrimAnalysisPatterns.MarkAndProduceDiagnostics (ShouldEnableReflectionPatternReporting (methodBody.Method), reflectionMarker, _markStep);
 		}
 
 		public void ProcessAttributeDataflow (MethodDefinition method, IList<CustomAttributeArgument> arguments)
