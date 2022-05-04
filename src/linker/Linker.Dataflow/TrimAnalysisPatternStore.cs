@@ -33,13 +33,13 @@ namespace Mono.Linker.Dataflow
 			MethodCallPatterns.Add (pattern.Origin, pattern);
 		}
 
-		public void MarkAndProduceDiagnostics (bool diagnosticsEnabled, ReflectionMarker reflectionMarker, MarkStep markStep)
+		public void MarkAndProduceDiagnostics (bool enableReflectionPatternReporting, ReflectionMarker reflectionMarker, MarkStep markStep)
 		{
 			foreach (var pattern in AssignmentPatterns.Values)
-				pattern.MarkAndProduceDiagnostics (diagnosticsEnabled, reflectionMarker, _context);
+				pattern.MarkAndProduceDiagnostics (enableReflectionPatternReporting, reflectionMarker, _context);
 
 			foreach (var pattern in MethodCallPatterns.Values)
-				pattern.MarkAndProduceDiagnostics (diagnosticsEnabled, _context, reflectionMarker, markStep);
+				pattern.MarkAndProduceDiagnostics (enableReflectionPatternReporting, reflectionMarker, markStep, _context);
 		}
 	}
 }

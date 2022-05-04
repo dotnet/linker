@@ -237,8 +237,7 @@ namespace Mono.Linker.Dataflow
 			if (reflectionProcessed)
 				return false;
 
-			var callingMethodDefinition = callingMethodBody.Method;
-			Debug.Assert (callingMethodDefinition == _origin.Provider);
+			Debug.Assert (callingMethodBody.Method == _origin.Provider);
 			var calledMethodDefinition = _context.TryResolve (calledMethod);
 			if (calledMethodDefinition == null)
 				return false;
@@ -270,21 +269,19 @@ namespace Mono.Linker.Dataflow
 				diagnosticContext,
 				_reflectionMarker,
 				_context,
-				_annotations,
-				out methodReturnValue,
-				_markStep);
+				_markStep,
+				out methodReturnValue);
 		}
 
 		public static bool HandleCall (
 			MethodReference calledMethod,
 			MultiValue instanceValue,
-			ImmutableArray<MultiValue> parameterValues,
+			ImmutableArray<MultiValue> argumentValues,
 			DiagnosticContext diagnosticContext,
 			ReflectionMarker reflectionMarker,
 			LinkContext context,
-			FlowAnnotations annotations,
-			out MultiValue methodReturnValue,
-			MarkStep markStep)
+			MarkStep markStep,
+			out MultiValue methodReturnValue)
 		{
 			var origin = diagnosticContext.Origin;
 			var calledMethodDefinition = context.TryResolve (calledMethod);
@@ -292,8 +289,8 @@ namespace Mono.Linker.Dataflow
 			var callingMethodDefinition = origin.Provider as MethodDefinition;
 			Debug.Assert (callingMethodDefinition != null);
 
-			bool requiresDataFlowAnalysis = annotations.RequiresDataFlowAnalysis (calledMethodDefinition);
-			var annotatedMethodReturnValue = annotations.GetMethodReturnValue (calledMethodDefinition);
+			bool requiresDataFlowAnalysis = context.Annotations.FlowAnnotations.RequiresDataFlowAnalysis (calledMethodDefinition);
+			var annotatedMethodReturnValue = context.Annotations.FlowAnnotations.GetMethodReturnValue (calledMethodDefinition);
 			Debug.Assert (requiresDataFlowAnalysis || annotatedMethodReturnValue.DynamicallyAccessedMemberTypes == DynamicallyAccessedMemberTypes.None);
 
 			MultiValue? maybeMethodReturnValue = null;
@@ -344,7 +341,7 @@ namespace Mono.Linker.Dataflow
 					|| appDomainCreateInstance == IntrinsicId.AppDomain_CreateInstanceFrom
 					|| appDomainCreateInstance == IntrinsicId.AppDomain_CreateInstanceFromAndUnwrap:
 			case IntrinsicId.Assembly_CreateInstance: {
-					return handleCallAction.Invoke (calledMethodDefinition, instanceValue, parameterValues, out methodReturnValue, out _);
+					return handleCallAction.Invoke (calledMethodDefinition, instanceValue, argumentValues, out methodReturnValue, out _);
 				}
 
 			case IntrinsicId.None: {
@@ -361,12 +358,12 @@ namespace Mono.Linker.Dataflow
 					}
 					markStep.CheckAndReportRequiresUnreferencedCode (calledMethodDefinition, diagnosticContext);
 
-					return handleCallAction.Invoke (calledMethodDefinition, instanceValue, parameterValues, out methodReturnValue, out _);
+					return handleCallAction.Invoke (calledMethodDefinition, instanceValue, argumentValues, out methodReturnValue, out _);
 				}
 
 			case IntrinsicId.TypeDelegator_Ctor: {
 					// This is an identity function for analysis purposes
-					AddReturnValue (parameterValues[0]);
+					AddReturnValue (argumentValues[0]);
 				}
 				break;
 
@@ -400,7 +397,7 @@ namespace Mono.Linker.Dataflow
 						TypeDefinition? staticType = (valueNode as IValueWithStaticType)?.StaticType;
 						if (staticType is null) {
 							// We don't know anything about the type GetType was called on. Track this as a usual result of a method call without any annotations
-							AddReturnValue (annotations.GetMethodReturnValue (calledMethodDefinition));
+							AddReturnValue (context.Annotations.FlowAnnotations.GetMethodReturnValue (calledMethodDefinition));
 						} else if (staticType.IsSealed || staticType.IsTypeOf ("System", "Delegate")) {
 							// We can treat this one the same as if it was a typeof() expression
 
@@ -427,7 +424,7 @@ namespace Mono.Linker.Dataflow
 							// Return a value which is "unknown type" with annotation. For now we'll use the return value node
 							// for the method, which means we're loosing the information about which staticType this
 							// started with. For now we don't need it, but we can add it later on.
-							AddReturnValue (annotations.GetMethodReturnValue (calledMethodDefinition, annotation));
+							AddReturnValue (context.Annotations.FlowAnnotations.GetMethodReturnValue (calledMethodDefinition, annotation));
 						}
 					}
 				}
@@ -451,7 +448,7 @@ namespace Mono.Linker.Dataflow
 			bool returnsVoid = calledMethod.ReturnsVoid ();
 			methodReturnValue = maybeMethodReturnValue ?? (returnsVoid ?
 				MultiValueLattice.Top :
-				annotations.GetMethodReturnValue (calledMethodDefinition, annotatedMethodReturnValue.DynamicallyAccessedMemberTypes));
+				annotatedMethodReturnValue);
 
 			// Validate that the return value has the correct annotations as per the method return value annotations
 			if (annotatedMethodReturnValue.DynamicallyAccessedMemberTypes != 0) {

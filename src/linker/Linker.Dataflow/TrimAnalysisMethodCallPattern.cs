@@ -38,16 +38,15 @@ namespace Mono.Linker.Dataflow
 			Origin = origin;
 		}
 
-		public void MarkAndProduceDiagnostics (bool diagnosticsEnabled, LinkContext context, ReflectionMarker reflectionMarker, MarkStep markStep)
+		public void MarkAndProduceDiagnostics (bool diagnosticsEnabled, ReflectionMarker reflectionMarker, MarkStep markStep, LinkContext context)
 		{
 			var diagnosticContext = new DiagnosticContext (Origin, diagnosticsEnabled, context);
 			ReflectionMethodBodyScanner.HandleCall (CalledMethod, Instance, Arguments,
 				diagnosticContext,
 				reflectionMarker,
 				context,
-				context.Annotations.FlowAnnotations,
-				out MultiValue _,
-				markStep);
+				markStep,
+				out MultiValue _);
 		}
 	}
 }
