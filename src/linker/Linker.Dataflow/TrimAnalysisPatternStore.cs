@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Generic;
+using ILLink.Shared.TrimAnalysis;
 using Mono.Linker.Steps;
 
 namespace Mono.Linker.Dataflow
@@ -19,12 +20,13 @@ namespace Mono.Linker.Dataflow
 			_context = context;
 		}
 
-		public void Add (TrimAnalysisAssignmentPattern pattern, bool isReturnValue)
+		public void Add (TrimAnalysisAssignmentPattern pattern)
 		{
 			// In the linker, each pattern should have a unique origin (which has ILOffset)
 			// but we don't track the correct ILOffset for return instructions.
 			// https://github.com/dotnet/linker/issues/2778
 			// For now, work around it with a separate bit.
+			bool isReturnValue = pattern.Target.AsSingleValue () is MethodReturnValue;
 			AssignmentPatterns.Add ((pattern.Origin, isReturnValue), pattern);
 		}
 

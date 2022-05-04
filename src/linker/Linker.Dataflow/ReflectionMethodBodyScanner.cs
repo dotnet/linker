@@ -79,7 +79,7 @@ namespace Mono.Linker.Dataflow
 				var method = methodBody.Method;
 				var methodReturnValue = _annotations.GetMethodReturnValue (method);
 				if (methodReturnValue.DynamicallyAccessedMemberTypes != 0)
-					HandleAssignmentPattern (_origin, ReturnValue, methodReturnValue, isReturnValue: true);
+					HandleAssignmentPattern (_origin, ReturnValue, methodReturnValue);
 			}
 
 			Debug.Assert (_origin.Provider == methodBody.Method);
@@ -217,7 +217,7 @@ namespace Mono.Linker.Dataflow
 		{
 			if (field.DynamicallyAccessedMemberTypes != 0) {
 				_origin = _origin.WithInstructionOffset (operation.Offset);
-				HandleAssignmentPattern (_origin, valueToStore, field, isReturnValue: false);
+				HandleAssignmentPattern (_origin, valueToStore, field);
 			}
 		}
 
@@ -225,7 +225,7 @@ namespace Mono.Linker.Dataflow
 		{
 			if (parameter.DynamicallyAccessedMemberTypes != 0) {
 				_origin = _origin.WithInstructionOffset (operation.Offset);
-				HandleAssignmentPattern (_origin, valueToStore, parameter, isReturnValue: false);
+				HandleAssignmentPattern (_origin, valueToStore, parameter);
 			}
 		}
 
@@ -534,13 +534,9 @@ namespace Mono.Linker.Dataflow
 		void HandleAssignmentPattern (
 			in MessageOrigin origin,
 			in MultiValue value,
-			ValueWithDynamicallyAccessedMembers targetValue,
-			bool isReturnValue)
+			ValueWithDynamicallyAccessedMembers targetValue)
 		{
-			TrimAnalysisPatterns.Add (
-				new TrimAnalysisAssignmentPattern (value, targetValue, origin),
-				isReturnValue
-			);
+			TrimAnalysisPatterns.Add (new TrimAnalysisAssignmentPattern (value, targetValue, origin));
 		}
 
 		void RequireDynamicallyAccessedMembers (in DiagnosticContext diagnosticContext, in MultiValue value, ValueWithDynamicallyAccessedMembers targetValue)
