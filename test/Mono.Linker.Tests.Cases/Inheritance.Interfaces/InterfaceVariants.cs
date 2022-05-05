@@ -95,7 +95,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 			}
 
 			[Kept]
-			[KeptInterface(typeof(IStaticInterfaceMethodUnused))]
+			[KeptInterface (typeof (IStaticInterfaceMethodUnused))]
 			internal class InterfaceMethodUnused : IStaticInterfaceMethodUnused, IStaticInterfaceUnused
 			{
 				public static void InterfaceUsedMethodNot () { }
@@ -104,7 +104,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 			}
 
 			[Kept]
-			public static void Test()
+			public static void Test ()
 			{
 				InterfaceMethodUsedThroughImplementation.InterfaceUsedMethodNot ();
 				InterfaceMethodUsedThroughImplementation.InterfaceAndMethodNoUsed ();
