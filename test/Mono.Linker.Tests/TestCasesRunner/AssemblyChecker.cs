@@ -172,13 +172,12 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				linkedMembers.Remove (f.FullName);
 			}
 
-			foreach (var originalMethod in original.Methods) {
-				if (verifiedEventMethods.Contains (originalMethod.FullName))
+			foreach (var m in original.Methods) {
+				if (verifiedEventMethods.Contains (m.FullName))
 					continue;
-				var methodSignature = originalMethod.GetSignature ();
-				var linkedMethod = linked?.Methods.FirstOrDefault (l => methodSignature == l.GetSignature ());
-				VerifyMethod (originalMethod, linkedMethod);
-				linkedMembers.Remove (originalMethod.FullName);
+				var msign = m.GetSignature ();
+				VerifyMethod (m, linked?.Methods.FirstOrDefault (l => msign == l.GetSignature ()));
+				linkedMembers.Remove (m.FullName);
 			}
 		}
 
@@ -403,7 +402,6 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			VerifySecurityAttributes (src, linked);
 			VerifyArrayInitializers (src, linked);
 			VerifyMethodBody (src, linked);
-			VerifyOverrides (src, linked);
 		}
 
 		protected virtual void VerifyMethodBody (MethodDefinition src, MethodDefinition linked)

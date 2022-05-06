@@ -221,7 +221,6 @@ namespace Mono.Linker.Tests.Cases.Libraries
 			void IInternalInterface.ExplicitImplementationInternalInterfaceMethod () { }
 
 			[Kept]
-			[RemovedOverride (typeof (IInternalStaticInterface))]
 			public static void InternalStaticInterfaceMethod () { }
 
 			static void IInternalStaticInterface.ExplicitImplementationInternalStaticInterfaceMethod () { }
@@ -310,7 +309,6 @@ namespace Mono.Linker.Tests.Cases.Libraries
 			void IInternalInterface.ExplicitImplementationInternalInterfaceMethod () { }
 
 			[Kept]
-			[RemovedOverride (typeof (IInternalStaticInterface))]
 			public static void InternalStaticInterfaceMethod () { }
 
 			static void IInternalStaticInterface.ExplicitImplementationInternalStaticInterfaceMethod () { }
@@ -378,6 +376,7 @@ namespace Mono.Linker.Tests.Cases.Libraries
 		[Kept]
 		internal interface IInternalStaticInterface
 		{
+			[Kept] // https://github.com/dotnet/linker/issues/2733
 			static abstract void InternalStaticInterfaceMethod ();
 
 			static abstract void ExplicitImplementationInternalStaticInterfaceMethod ();
