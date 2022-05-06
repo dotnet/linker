@@ -472,12 +472,28 @@ namespace Mono.Linker.Steps
 		void SweepOverrides (MethodDefinition method)
 		{
 			for (int i = 0; i < method.Overrides.Count;) {
-				if (Context.Resolve (method.Overrides[i]) is MethodDefinition ov && ShouldRemove (ov))
+				// We can't rely on the context resolution cache anymore, since it may remember methods which are already removed
+				// So call the direct Resolve here and avoid the cache.
+				// It can still happen that the Resolve will return a removed method (this happens if the Overrides collection stores actual
+				// MethodDefinition and not MethodReference, in which case the Resolve is just "return this" and doesn't check the existence of the method
+				// in any way). In such case the Declaring type of the method is null. And since it has been removed the override pointing
+				// to it should be removed as well.
+				if (method.Overrides[i].Resolve () is MethodDefinition ov && ShouldRemove (ov) && (ov.DeclaringType == null || !IgnoreScope (ov.DeclaringType.Scope)))
 					method.Overrides.RemoveAt (i);
 				else
 					i++;
 			}
 		}
+
+		/// <summary>
+		/// Returns true if the assembly of the <paramref name="scope"></paramref> is not set to link (i.e. action=copy is set for that assembly)
+		/// </summary>
+		private bool IgnoreScope (IMetadataScope scope)
+		{
+			AssemblyDefinition? assembly = Context.Resolve (scope);
+			return assembly != null && Annotations.GetAction (assembly) != AssemblyAction.Link;
+		}
+
 		void SweepDebugInfo (Collection<MethodDefinition> methods)
 		{
 			List<ScopeDebugInformation>? sweptScopes = null;

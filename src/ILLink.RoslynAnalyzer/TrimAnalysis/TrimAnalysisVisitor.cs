@@ -55,17 +55,8 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			// If the return value is empty (TopValue basically) and the Operation tree
 			// reports it as having a constant value, use that as it will automatically cover
 			// cases we don't need/want to handle.
-			if (operation != null && returnValue.IsEmpty () && operation.ConstantValue.HasValue) {
-				object? constantValue = operation.ConstantValue.Value;
-				if (constantValue == null)
-					return NullValue.Instance;
-				else if (operation.Type?.SpecialType == SpecialType.System_String && constantValue is string stringConstantValue)
-					return new KnownStringValue (stringConstantValue);
-				else if (operation.Type?.TypeKind == TypeKind.Enum && constantValue is int enumConstantValue)
-					return new ConstIntValue (enumConstantValue);
-				else if (operation.Type?.SpecialType == SpecialType.System_Int32 && constantValue is int intConstantValue)
-					return new ConstIntValue (intConstantValue);
-			}
+			if (operation != null && returnValue.IsEmpty () && TryGetConstantValue (operation, out var constValue))
+				return constValue;
 
 			return returnValue;
 		}
@@ -136,6 +127,9 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 					return new KnownStringValue (string.Empty);
 				}
 			}
+
+			if (TryGetConstantValue (fieldRef, out var constValue))
+				return constValue;
 
 			if (fieldRef.Field.Type.IsTypeInterestingForDataflow ())
 				return new FieldValue (fieldRef.Field);
@@ -294,6 +288,50 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 					isReturnValue: true
 				);
 			}
+		}
+
+		static bool TryGetConstantValue (IOperation operation, out MultiValue constValue)
+		{
+			if (operation.ConstantValue.HasValue) {
+				object? constantValue = operation.ConstantValue.Value;
+				if (constantValue == null) {
+					constValue = NullValue.Instance;
+					return true;
+				} else if (operation.Type?.TypeKind == TypeKind.Enum && constantValue is int enumConstantValue) {
+					constValue = new ConstIntValue (enumConstantValue);
+					return true;
+				} else {
+					switch (operation.Type?.SpecialType) {
+					case SpecialType.System_String when constantValue is string stringConstantValue:
+						constValue = new KnownStringValue (stringConstantValue);
+						return true;
+					case SpecialType.System_Boolean when constantValue is bool boolConstantValue:
+						constValue = new ConstIntValue (boolConstantValue ? 1 : 0);
+						return true;
+					case SpecialType.System_SByte when constantValue is sbyte sbyteConstantValue:
+						constValue = new ConstIntValue (sbyteConstantValue);
+						return true;
+					case SpecialType.System_Byte when constantValue is byte byteConstantValue:
+						constValue = new ConstIntValue (byteConstantValue);
+						return true;
+					case SpecialType.System_Int16 when constantValue is Int16 int16ConstantValue:
+						constValue = new ConstIntValue (int16ConstantValue);
+						return true;
+					case SpecialType.System_UInt16 when constantValue is UInt16 uint16ConstantValue:
+						constValue = new ConstIntValue (uint16ConstantValue);
+						return true;
+					case SpecialType.System_Int32 when constantValue is Int32 int32ConstantValue:
+						constValue = new ConstIntValue (int32ConstantValue);
+						return true;
+					case SpecialType.System_UInt32 when constantValue is UInt32 uint32ConstantValue:
+						constValue = new ConstIntValue ((int) uint32ConstantValue);
+						return true;
+					}
+				}
+			}
+
+			constValue = default;
+			return false;
 		}
 	}
 }
