@@ -71,7 +71,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 			// The interface methods themselves are not used, but the implementation of these methods is
 			internal interface IStaticInterfaceMethodUnused
 			{
-				// Can be removed with Static Interface remov
+				// Can be removed with Static Interface trimming optimization
 				[Kept]
 				static abstract void InterfaceUsedMethodNot ();
 			}
@@ -80,6 +80,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 			[Kept]
 			internal interface IStaticInterfaceUnused
 			{
+				// Can be removed with Static Interface Trimming
 				[Kept]
 				static abstract void InterfaceAndMethodNoUsed ();
 			}
