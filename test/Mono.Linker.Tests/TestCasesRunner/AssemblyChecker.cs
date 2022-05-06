@@ -218,7 +218,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				return;
 			var expectedBaseTypesOverridden = new HashSet<string> (original.CustomAttributes
 				.Where (ca => ca.AttributeType.Name == nameof (KeptOverrideAttribute))
-				.Select (ca => (ca.ConstructorArguments[0].Value as TypeReference).FullName));
+				.Select (ca => (ca.ConstructorArguments[0].Value as TypeDefinition).FullName));
 			var originalBaseTypesOverridden = new HashSet<string> (original.Overrides.Select (ov => ov.DeclaringType.FullName));
 			var linkedBaseTypesOverridden = new HashSet<string> (linked.Overrides.Select (ov => ov.DeclaringType.FullName));
 			foreach (var expectedBaseType in expectedBaseTypesOverridden) {
@@ -231,7 +231,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 			var expectedBaseTypesNotOverridden = new HashSet<string> (original.CustomAttributes
 				.Where (ca => ca.AttributeType.Name == nameof (RemovedOverrideAttribute))
-				.Select (ca => (ca.ConstructorArguments[0].Value as TypeReference).FullName));
+				.Select (ca => (ca.ConstructorArguments[0].Value as TypeDefinition).FullName));
 			foreach (var expectedRemovedBaseType in expectedBaseTypesNotOverridden) {
 				Assert.IsTrue (originalBaseTypesOverridden.Contains (expectedRemovedBaseType),
 					$"Method {linked.FullName} was expected to remove override {expectedRemovedBaseType}::{linked.Name}, " +

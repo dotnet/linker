@@ -12,9 +12,7 @@ using Mono.Linker.Tests.Cases.Libraries.Dependencies;
 namespace Mono.Linker.Tests.Cases.Libraries
 {
 	[SetupCompileBefore ("copylibrary.dll", new[] { "Dependencies/CopyLibrary.cs" })]
-	[SetupCompileBefore ("skiplibrary.dll", new[] { "Dependencies/SkipLibrary.cs" })]
 	[SetupLinkerAction ("copy", "copylibrary")]
-	[SetupLinkerAction ("skip", "skiplibrary")]
 	[SetupLinkerArgument ("-a", "test.exe", "library")]
 	[SetupLinkerArgument ("--enable-opt", "ipconstprop")]
 	[VerifyMetadataNames]
@@ -190,7 +188,6 @@ namespace Mono.Linker.Tests.Cases.Libraries
 		[KeptInterface (typeof (IInternalStaticInterface))]
 		[KeptInterface (typeof (ICopyLibraryInterface))]
 		[KeptInterface (typeof (ICopyLibraryStaticInterface))]
-		[KeptInterface (typeof (ISkipLibraryStaticInterface))]
 		public class UninstantiatedPublicClassWithInterface :
 			IPublicInterface,
 			IPublicStaticInterface,
@@ -198,8 +195,7 @@ namespace Mono.Linker.Tests.Cases.Libraries
 			IInternalStaticInterface,
 			IEnumerator,
 			ICopyLibraryInterface,
-			ICopyLibraryStaticInterface,
-			ISkipLibraryStaticInterface
+			ICopyLibraryStaticInterface
 		{
 			internal UninstantiatedPublicClassWithInterface () { }
 
@@ -244,12 +240,7 @@ namespace Mono.Linker.Tests.Cases.Libraries
 			public static void CopyLibraryStaticInterfaceMethod () { }
 
 			[Kept]
-			[KeptOverride (typeof (ICopyLibraryStaticInterface))]
 			static void ICopyLibraryStaticInterface.CopyLibraryExplicitImplementationStaticInterfaceMethod () { }
-
-			[Kept]
-			[KeptOverride (typeof (ISkipLibraryStaticInterface))]
-			static void ISkipLibraryStaticInterface.StaticInterfaceMethod () { }
 		}
 
 		[Kept]
@@ -332,7 +323,6 @@ namespace Mono.Linker.Tests.Cases.Libraries
 			public static void CopyLibraryStaticInterfaceMethod () { }
 
 			[Kept]
-			[KeptOverride (typeof (ICopyLibraryStaticInterface))]
 			static void ICopyLibraryStaticInterface.CopyLibraryExplicitImplementationStaticInterfaceMethod () { }
 		}
 
