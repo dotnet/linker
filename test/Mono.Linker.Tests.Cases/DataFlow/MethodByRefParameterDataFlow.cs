@@ -88,9 +88,6 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[ExpectedWarning ("IL2118", nameof (TryGetAnnotatedValue), "RequiresPublicFields")]
-		// https://github.com/dotnet/linker/issues/2632
-		// This test should generate a warning since there's mismatch on annotations
-		// [ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicFields))]
 		static void TestReadFromRefParameter_MismatchOnOutput ()
 		{
 			Type typeWithMethods = null;
@@ -99,9 +96,6 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[ExpectedWarning ("IL2118", nameof (TryGetAnnotatedValue), "RequiresPublicFields")]
-		// https://github.com/dotnet/linker/issues/2632
-		// This test should generate a warning since there's mismatch on annotations
-		// [ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicFields))]
 		static void TestReadFromRefParameter_MismatchOnOutput_PassedTwice ()
 		{
 			Type typeWithMethods = null;

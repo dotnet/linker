@@ -49,9 +49,6 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			typeWithMethods.RequiresPublicMethods ();
 		}
 
-		// https://github.com/dotnet/linker/issues/2632
-		// These two warnings should not be generated, the annotations are all correct
-		//[ExpectedWarning ("IL2062", nameof (TryGetAnnotatedValue))]
 		static void TestUninitializedReadFromOutParameter ()
 		{
 			Type typeWithMethods;
@@ -59,8 +56,6 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			typeWithMethods.RequiresPublicMethods ();
 		}
 
-		// https://github.com/dotnet/linker/issues/2632
-		// This test should generate a warning since there's mismatch on annotations
 		 [ExpectedWarning ("IL2118", nameof (DataFlowTypeExtensions.RequiresPublicFields))]
 		static void TestInitializedReadFromOutParameter_MismatchOnOutput ()
 		{
@@ -80,7 +75,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		// https://github.com/dotnet/linker/issues/2632
-		// This second warning should not be generated, the value of typeWithMethods should have PublicMethods
+		// This warning should not be generated, the value of typeWithMethods should have PublicMethods
 		// after the call with out parameter.
 		[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions.RequiresPublicMethods), ProducedBy = ProducedBy.Analyzer)]
 		static void TestInitializedReadFromOutParameter_MismatchOnInput ()
@@ -93,7 +88,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		[ExpectedWarning ("IL2072", nameof (TryGetAnnotatedValueFromValue))]
 		// https://github.com/dotnet/linker/issues/2632
-		// This third warning should not be generated, the value of typeWithMethods should have PublicMethods
+		// This warning should not be generated, the value of typeWithMethods should have PublicMethods
 		// after the call with out parameter.
 		[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions.RequiresPublicMethods), ProducedBy = ProducedBy.Analyzer)]
 		static void TestInitializedReadFromOutParameter_MismatchOnInput_PassedTwice ()
