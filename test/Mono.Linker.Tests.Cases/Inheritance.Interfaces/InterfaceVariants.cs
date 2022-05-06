@@ -20,8 +20,9 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 			t = typeof (UninstantiatedPublicClassWithImplicitlyImplementedInterface);
 			t = typeof (UninstantiatedPublicClassWithPrivateInterface);
 			t = typeof (ImplementsUsedStaticInterface.InterfaceMethodUnused);
+			t = typeof (ImplementsUnusedStaticInterface.InterfaceMethodUnused);
 
-			ImplementsUnusedStaticInterface.Test (); ;
+			ImplementsUnusedStaticInterface.InterfaceMethodUsedThroughImplementation.InternalStaticInterfaceMethodUsedThroughImplementation ();
 			GenericMethodThatCallsInternalStaticInterfaceMethod
 				<ImplementsUsedStaticInterface.InterfaceMethodUsedThroughInterface> ();
 			// Use all public interfaces - they're marked as public only to denote them as "used"
@@ -63,53 +64,21 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 			}
 		}
 
-
 		[Kept]
 		internal class ImplementsUnusedStaticInterface
 		{
 			[Kept]
-			// The interface methods themselves are not used, but the implementation of these methods is
-			internal interface IStaticInterfaceMethodUnused
+			internal class InterfaceMethodUsedThroughImplementation : IStaticInterfaceUnused
 			{
-				static abstract void InterfaceUsedMethodNot ();
-			}
-
-			// The interface methods themselves are not used, but the implementation of these methods is
-			internal interface IStaticInterfaceUnused
-			{
-				static abstract void InterfaceAndMethodNoUsed ();
-			}
-
-			[Kept]
-			internal class InterfaceMethodUsedThroughImplementation : IStaticInterfaceMethodUnused, IStaticInterfaceUnused
-			{
-				[Kept]
-				[RemovedOverride (typeof (IStaticInterfaceMethodUnused))]
-				public static void InterfaceUsedMethodNot () { }
-
 				[Kept]
 				[RemovedOverride (typeof (IStaticInterfaceUnused))]
-				public static void InterfaceAndMethodNoUsed () { }
+				public static void InternalStaticInterfaceMethodUsedThroughImplementation () { }
 			}
 
 			[Kept]
-			[KeptInterface (typeof (IStaticInterfaceMethodUnused))]
-			internal class InterfaceMethodUnused : IStaticInterfaceMethodUnused, IStaticInterfaceUnused
+			internal class InterfaceMethodUnused : IStaticInterfaceUnused
 			{
-				public static void InterfaceUsedMethodNot () { }
-
-				public static void InterfaceAndMethodNoUsed () { }
-			}
-
-			[Kept]
-			public static void Test ()
-			{
-				InterfaceMethodUsedThroughImplementation.InterfaceUsedMethodNot ();
-				InterfaceMethodUsedThroughImplementation.InterfaceAndMethodNoUsed ();
-
-				Type t;
-				t = typeof (IStaticInterfaceMethodUnused);
-				t = typeof (InterfaceMethodUnused);
+				public static void InternalStaticInterfaceMethodUsedThroughImplementation () { }
 			}
 		}
 
@@ -308,8 +277,13 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 			static abstract void ExplicitImplementationInternalStaticInterfaceMethod ();
 		}
 
-		// The interface methods themselves are not used, but the implentation of these methods is
-		// https://github.com/dotnet/linker/issues/2733
+		// The interface methods themselves are not used, but the implementation of these methods is
+		internal interface IStaticInterfaceUnused
+		{
+			static abstract void InternalStaticInterfaceMethodUsedThroughImplementation ();
+		}
+
+		// The interface methods themselves are used through the interface
 		[Kept]
 		internal interface IInternalStaticInterfaceWithUsedMethod
 		{
