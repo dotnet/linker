@@ -12,37 +12,32 @@ namespace ILLink.Shared.TrimAnalysis
 	partial struct RequireDynamicallyAccessedMembersAction
 	{
 		readonly LinkContext _context;
-		readonly ReflectionMethodBodyScanner _reflectionMethodBodyScanner;
-		readonly ReflectionMethodBodyScanner.AnalysisContext _analysisContext;
+		readonly ReflectionMarker _reflectionMarker;
 
 		public RequireDynamicallyAccessedMembersAction (
 			LinkContext context,
-			ReflectionMethodBodyScanner reflectionMethodBodyScanner,
-			in ReflectionMethodBodyScanner.AnalysisContext analysisContext)
+			ReflectionMarker reflectionMarker,
+			in DiagnosticContext diagnosticContext)
 		{
-			_diagnosticContext = new DiagnosticContext (analysisContext.Origin, analysisContext.DiagnosticsEnabled, context);
 			_context = context;
-			_reflectionMethodBodyScanner = reflectionMethodBodyScanner;
-			_analysisContext = analysisContext;
+			_reflectionMarker = reflectionMarker;
+			_diagnosticContext = diagnosticContext;
 		}
 
-		private partial bool TryResolveTypeNameAndMark (string typeName, out TypeProxy type)
+		public partial bool TryResolveTypeNameAndMark (string typeName, bool needsAssemblyName, out TypeProxy type)
 		{
-			if (!_context.TypeNameResolver.TryResolveTypeName (typeName, _analysisContext.Origin.Provider, out TypeReference? typeRef, out AssemblyDefinition? typeAssembly)
-				|| ReflectionMethodBodyScanner.ResolveToTypeDefinition (_context, typeRef) is not TypeDefinition foundType) {
+			if (_reflectionMarker.TryResolveTypeNameAndMark (typeName, _diagnosticContext.Origin, needsAssemblyName, out TypeDefinition? foundType)) {
+				type = new (foundType);
+				return true;
+			} else {
 				type = default;
 				return false;
-			} else {
-				_reflectionMethodBodyScanner.MarkType (_analysisContext, typeRef);
-				_context.MarkingHelpers.MarkMatchingExportedType (foundType, typeAssembly, new DependencyInfo (DependencyKind.DynamicallyAccessedMember, foundType), _analysisContext.Origin);
-				type = new TypeProxy (foundType);
-				return true;
 			}
 		}
 
 		private partial void MarkTypeForDynamicallyAccessedMembers (in TypeProxy type, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 		{
-			_reflectionMethodBodyScanner.MarkTypeForDynamicallyAccessedMembers (_analysisContext, type.Type, dynamicallyAccessedMemberTypes, DependencyKind.DynamicallyAccessedMember);
+			_reflectionMarker.MarkTypeForDynamicallyAccessedMembers (_diagnosticContext.Origin, type.Type, dynamicallyAccessedMemberTypes, DependencyKind.DynamicallyAccessedMember);
 		}
 	}
 }

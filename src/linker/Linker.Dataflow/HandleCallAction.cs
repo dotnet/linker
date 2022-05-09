@@ -2,7 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using ILLink.Shared.TypeSystemProxy;
 using Mono.Cecil;
@@ -16,45 +15,35 @@ namespace ILLink.Shared.TrimAnalysis
 #pragma warning disable CA1822 // Mark members as static - the other partial implementations might need to be instance methods
 
 		readonly LinkContext _context;
-		readonly ReflectionMethodBodyScanner _reflectionMethodBodyScanner;
-		readonly ReflectionMethodBodyScanner.AnalysisContext _analysisContext;
+		readonly ReflectionMarker _reflectionMarker;
 		readonly MethodDefinition _callingMethodDefinition;
 
 		public HandleCallAction (
 			LinkContext context,
-			ReflectionMethodBodyScanner reflectionMethodBodyScanner,
-			in ReflectionMethodBodyScanner.AnalysisContext analysisContext,
+			ReflectionMarker reflectionMarker,
+			in DiagnosticContext diagnosticContext,
 			MethodDefinition callingMethodDefinition)
 		{
 			_context = context;
-			_reflectionMethodBodyScanner = reflectionMethodBodyScanner;
-			_analysisContext = analysisContext;
+			_reflectionMarker = reflectionMarker;
+			_diagnosticContext = diagnosticContext;
 			_callingMethodDefinition = callingMethodDefinition;
-			_diagnosticContext = new DiagnosticContext (analysisContext.Origin, analysisContext.DiagnosticsEnabled, context);
-			_requireDynamicallyAccessedMembersAction = new (context, reflectionMethodBodyScanner, analysisContext);
+			_annotations = context.Annotations.FlowAnnotations;
+			_requireDynamicallyAccessedMembersAction = new (context, reflectionMarker, diagnosticContext);
 		}
 
-		private partial bool MethodRequiresDataFlowAnalysis (MethodProxy method)
-			=> _context.Annotations.FlowAnnotations.RequiresDataFlowAnalysis (method.Method);
-
-		private partial DynamicallyAccessedMemberTypes GetReturnValueAnnotation (MethodProxy method)
-			=> _context.Annotations.FlowAnnotations.GetReturnParameterAnnotation (method.Method);
-
-		private partial MethodReturnValue GetMethodReturnValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
-			=> new (ReflectionMethodBodyScanner.ResolveToTypeDefinition (_context, method.Method.ReturnType), method.Method, dynamicallyAccessedMemberTypes);
-
-		private partial GenericParameterValue GetGenericParameterValue (GenericParameterProxy genericParameter)
-			=> new (genericParameter.GenericParameter, _context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (genericParameter.GenericParameter));
-
-		private partial MethodThisParameterValue GetMethodThisParameterValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
-			=> new (method.Method, dynamicallyAccessedMemberTypes);
-
-		private partial MethodParameterValue GetMethodParameterValue (MethodProxy method, int parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
-			=> new (
-				ReflectionMethodBodyScanner.ResolveToTypeDefinition (_context, method.Method.Parameters[parameterIndex].ParameterType),
-				method.Method,
-				parameterIndex,
-				dynamicallyAccessedMemberTypes);
+		private partial bool MethodIsTypeConstructor (MethodProxy method)
+		{
+			if (!method.Method.IsConstructor)
+				return false;
+			TypeDefinition? type = method.Method.DeclaringType;
+			while (type is not null) {
+				if (type.IsTypeOf (WellKnownType.System_Type))
+					return true;
+				type = _context.Resolve (type.BaseType);
+			}
+			return false;
+		}
 
 		private partial IEnumerable<SystemReflectionMethodBaseValue> GetMethodsOnTypeHierarchy (TypeProxy type, string name, BindingFlags? bindingFlags)
 		{
@@ -79,28 +68,60 @@ namespace ILLink.Shared.TrimAnalysis
 			return false;
 		}
 
+		private partial bool TryResolveTypeNameForCreateInstance (in MethodProxy calledMethod, string assemblyName, string typeName, out TypeProxy resolvedType)
+		{
+			var resolvedAssembly = _context.TryResolve (assemblyName);
+			if (resolvedAssembly == null) {
+				_diagnosticContext.AddDiagnostic (DiagnosticId.UnresolvedAssemblyInCreateInstance,
+					assemblyName,
+					calledMethod.GetDisplayName ());
+				resolvedType = default;
+				return false;
+			}
+
+			if (!_context.TypeNameResolver.TryResolveTypeName (resolvedAssembly, typeName, out TypeReference? typeRef)
+				|| _context.TryResolve (typeRef) is not TypeDefinition resolvedTypeDefinition
+				|| typeRef is ArrayType) {
+				// It's not wrong to have a reference to non-existing type - the code may well expect to get an exception in this case
+				// Note that we did find the assembly, so it's not a linker config problem, it's either intentional, or wrong versions of assemblies
+				// but linker can't know that. In case a user tries to create an array using System.Activator we should simply ignore it, the user
+				// might expect an exception to be thrown.
+				resolvedType = default;
+				return false;
+			}
+
+			resolvedType = new TypeProxy (resolvedTypeDefinition);
+			return true;
+		}
+
 		private partial void MarkStaticConstructor (TypeProxy type)
-			=> _reflectionMethodBodyScanner.MarkStaticConstructor (_analysisContext, type.Type);
+			=> _reflectionMarker.MarkStaticConstructor (_diagnosticContext.Origin, type.Type);
 
 		private partial void MarkEventsOnTypeHierarchy (TypeProxy type, string name, BindingFlags? bindingFlags)
-			=> _reflectionMethodBodyScanner.MarkEventsOnTypeHierarchy (_analysisContext, type.Type, e => e.Name == name, bindingFlags);
+			=> _reflectionMarker.MarkEventsOnTypeHierarchy (_diagnosticContext.Origin, type.Type, e => e.Name == name, bindingFlags);
 
 		private partial void MarkFieldsOnTypeHierarchy (TypeProxy type, string name, BindingFlags? bindingFlags)
-			=> _reflectionMethodBodyScanner.MarkFieldsOnTypeHierarchy (_analysisContext, type.Type, f => f.Name == name, bindingFlags);
+			=> _reflectionMarker.MarkFieldsOnTypeHierarchy (_diagnosticContext.Origin, type.Type, f => f.Name == name, bindingFlags);
 
 		private partial void MarkPropertiesOnTypeHierarchy (TypeProxy type, string name, BindingFlags? bindingFlags)
-			=> _reflectionMethodBodyScanner.MarkPropertiesOnTypeHierarchy (_analysisContext, type.Type, p => p.Name == name, bindingFlags);
+			=> _reflectionMarker.MarkPropertiesOnTypeHierarchy (_diagnosticContext.Origin, type.Type, p => p.Name == name, bindingFlags);
+
+		private partial void MarkPublicParameterlessConstructorOnType (TypeProxy type)
+			=> _reflectionMarker.MarkConstructorsOnType (_diagnosticContext.Origin, type.Type, m => m.IsPublic && m.Parameters.Count == 0);
+
+		private partial void MarkConstructorsOnType (TypeProxy type, BindingFlags? bindingFlags, int? parameterCount)
+			=> _reflectionMarker.MarkConstructorsOnType (_diagnosticContext.Origin, type.Type, parameterCount == null ? null : m => m.Parameters.Count == parameterCount, bindingFlags);
 
 		private partial void MarkMethod (MethodProxy method)
-			=> _reflectionMethodBodyScanner.MarkMethod (_analysisContext, method.Method);
+			=> _reflectionMarker.MarkMethod (_diagnosticContext.Origin, method.Method);
 
 		private partial void MarkType (TypeProxy type)
-			=> _reflectionMethodBodyScanner.MarkType (_analysisContext, type.Type);
+			=> _reflectionMarker.MarkType (_diagnosticContext.Origin, type.Type);
 
 		private partial bool MarkAssociatedProperty (MethodProxy method)
 		{
 			if (method.Method.TryGetProperty (out PropertyDefinition? propertyDefinition)) {
-				_reflectionMethodBodyScanner.MarkProperty (_analysisContext, propertyDefinition);
+				_reflectionMarker.MarkProperty (_diagnosticContext.Origin, propertyDefinition);
 				return true;
 			}
 

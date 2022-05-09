@@ -35,7 +35,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			TestAutomaticPropagation ();
 
+			WriteCapturedProperty.Test ();
+			WriteCapturedGetOnlyProperty.Test ();
+			ReadCapturedProperty.Test ();
+
 			PropertyWithAttributeMarkingItself.Test ();
+			WriteToGetOnlyProperty.Test ();
 		}
 
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
@@ -68,24 +73,24 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		[ExpectedWarning ("IL2072", nameof (PropertyDataFlow) + "." + nameof (PropertyWithPublicConstructor) + ".set", nameof (GetTypeWithPublicParameterlessConstructor))]
 		[ExpectedWarning ("IL2072", nameof (PropertyDataFlow) + "." + nameof (PropertyWithPublicConstructor) + ".set", nameof (GetTypeWithNonPublicConstructors))]
-		[ExpectedWarning ("IL2072", nameof (PropertyDataFlow) + "." + nameof (PropertyWithPublicConstructor) + ".set", nameof (GetUnkownType))]
+		[ExpectedWarning ("IL2072", nameof (PropertyDataFlow) + "." + nameof (PropertyWithPublicConstructor) + ".set", nameof (GetUnknownType))]
 		private void WriteToInstanceProperty ()
 		{
 			PropertyWithPublicConstructor = GetTypeWithPublicParameterlessConstructor ();
 			PropertyWithPublicConstructor = GetTypeWithPublicConstructors ();
 			PropertyWithPublicConstructor = GetTypeWithNonPublicConstructors ();
-			PropertyWithPublicConstructor = GetUnkownType ();
+			PropertyWithPublicConstructor = GetUnknownType ();
 		}
 
 		[ExpectedWarning ("IL2072", nameof (PropertyDataFlow) + "." + nameof (StaticPropertyWithPublicConstructor) + ".set", nameof (GetTypeWithPublicParameterlessConstructor))]
 		[ExpectedWarning ("IL2072", nameof (PropertyDataFlow) + "." + nameof (StaticPropertyWithPublicConstructor) + ".set", nameof (GetTypeWithNonPublicConstructors))]
-		[ExpectedWarning ("IL2072", nameof (PropertyDataFlow) + "." + nameof (StaticPropertyWithPublicConstructor) + ".set", nameof (GetUnkownType))]
+		[ExpectedWarning ("IL2072", nameof (PropertyDataFlow) + "." + nameof (StaticPropertyWithPublicConstructor) + ".set", nameof (GetUnknownType))]
 		private void WriteToStaticProperty ()
 		{
 			StaticPropertyWithPublicConstructor = GetTypeWithPublicParameterlessConstructor ();
 			StaticPropertyWithPublicConstructor = GetTypeWithPublicConstructors ();
 			StaticPropertyWithPublicConstructor = GetTypeWithNonPublicConstructors ();
-			StaticPropertyWithPublicConstructor = GetUnkownType ();
+			StaticPropertyWithPublicConstructor = GetUnknownType ();
 		}
 
 		[ExpectedWarning ("IL2072", nameof (PropertyDataFlow) + "." + nameof (StaticPropertyWithPublicConstructor) + ".set", nameof (GetTypeWithNonPublicConstructors))]
@@ -436,6 +441,112 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 		}
 
+
+		class WriteToGetOnlyProperty
+		{
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+			public Type GetOnlyProperty { get; }
+
+			// Analyzer doesn't warn about compiler-generated backing field of property: https://github.com/dotnet/linker/issues/2731
+			[ExpectedWarning ("IL2074", nameof (WriteToGetOnlyProperty), nameof (GetUnknownType),
+				ProducedBy = ProducedBy.Trimmer)]
+			public WriteToGetOnlyProperty ()
+			{
+				GetOnlyProperty = GetUnknownType ();
+			}
+
+			public static void Test ()
+			{
+				new WriteToGetOnlyProperty ();
+			}
+		}
+
+		class WriteCapturedProperty
+		{
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+			static Type Property { get; set; }
+
+			[ExpectedWarning ("IL2072", nameof (GetUnknownType), nameof (Property))]
+			[ExpectedWarning ("IL2072", nameof (GetTypeWithPublicConstructors), nameof (Property))]
+			static void TestNullCoalesce ()
+			{
+				Property = GetUnknownType () ?? GetTypeWithPublicConstructors ();
+			}
+
+			[ExpectedWarning ("IL2072", nameof (GetUnknownType), nameof (Property))]
+			static void TestNullCoalescingAssignment ()
+			{
+				Property ??= GetUnknownType ();
+			}
+
+			class NestedType
+			{
+				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+				public Type Property { get; set; }
+			}
+
+			NestedType NestedTypeProperty { get; set; }
+
+			[ExpectedWarning ("IL2072", nameof (GetUnknownType), nameof (Property))]
+			[ExpectedWarning ("IL2072", nameof (GetTypeWithPublicConstructors), nameof (Property))]
+			void TestNestedNullCoalescingAssignment ()
+			{
+				NestedTypeProperty.Property = GetUnknownType () ?? GetTypeWithPublicConstructors ();
+			}
+
+			[ExpectedWarning ("IL2072", nameof (GetUnknownType), nameof (Property))]
+			[ExpectedWarning ("IL2072", nameof (GetTypeWithPublicConstructors), nameof (Property))]
+			static void TestNullCoalescingAssignmentComplex ()
+			{
+				Property ??= (GetUnknownType () ?? GetTypeWithPublicConstructors ());
+			}
+
+			public static void Test ()
+			{
+				TestNullCoalesce ();
+				TestNullCoalescingAssignment ();
+				TestNullCoalescingAssignmentComplex ();
+				new WriteCapturedProperty ().TestNestedNullCoalescingAssignment ();
+			}
+		}
+
+		class WriteCapturedGetOnlyProperty
+		{
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+			Type GetOnlyProperty { get; }
+
+			// Analyzer doesn't warn about compiler-generated backing field of property: https://github.com/dotnet/linker/issues/2731
+			[ExpectedWarning ("IL2074", nameof (WriteCapturedGetOnlyProperty), nameof (GetUnknownType),
+				ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2074", nameof (WriteCapturedGetOnlyProperty), nameof (GetTypeWithPublicConstructors),
+				ProducedBy = ProducedBy.Trimmer)]
+			public WriteCapturedGetOnlyProperty ()
+			{
+				GetOnlyProperty = GetUnknownType () ?? GetTypeWithPublicConstructors ();
+			}
+
+			public static void Test ()
+			{
+				new WriteCapturedGetOnlyProperty ();
+			}
+		}
+
+		class ReadCapturedProperty
+		{
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			static Type PublicMethods { get; }
+
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)]
+			static Type PublicFields { get; }
+
+			[ExpectedWarning ("IL2072", nameof (PublicMethods), nameof (DataFlowTypeExtensions.RequiresAll))]
+			[ExpectedWarning ("IL2072", nameof (PublicFields), nameof (DataFlowTypeExtensions.RequiresAll))]
+			public static void Test ()
+			{
+				(PublicMethods ?? PublicFields).RequiresAll ();
+			}
+		}
+
 		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
 		private static Type GetTypeWithPublicParameterlessConstructor ()
 		{
@@ -454,7 +565,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			return null;
 		}
 
-		private static Type GetUnkownType ()
+		private static Type GetUnknownType ()
 		{
 			return null;
 		}

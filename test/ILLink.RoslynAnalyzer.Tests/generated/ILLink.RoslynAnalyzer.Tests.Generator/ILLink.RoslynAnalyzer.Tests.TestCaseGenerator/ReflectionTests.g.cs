@@ -38,12 +38,6 @@ namespace ILLink.RoslynAnalyzer.Tests
 		}
 
 		[Fact]
-		public Task ExpressionCallStringAndLocals ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
 		public Task ObjectGetTypeLibraryMode ()
 		{
 			return RunTest (allowMissingWarnings: true);
@@ -62,43 +56,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 		}
 
 		[Fact]
-		public Task TypeDelegator ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
 		public Task TypeHierarchyLibraryModeSuppressions ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
-		public Task TypeUsedViaReflectionAssemblyDoesntExist ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
-		public Task TypeUsedViaReflectionInDifferentAssembly ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
-		public Task TypeUsedViaReflectionLdstrIncomplete ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
-		public Task TypeUsedViaReflectionLdstrValidButChanged ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
-		public Task TypeUsedViaReflectionTypeNameIsSymbol ()
 		{
 			return RunTest (allowMissingWarnings: true);
 		}

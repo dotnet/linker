@@ -364,8 +364,18 @@ namespace Mono.Linker
 
 		public static bool IsTypeOf (this TypeReference tr, WellKnownType type)
 		{
-			var (@namespace, name) = type.GetNamespaceAndName ();
-			return tr.IsTypeOf (@namespace, name);
+			return tr.TryGetWellKnownType () == type;
+		}
+
+		public static WellKnownType? TryGetWellKnownType (this TypeReference tr)
+		{
+			return tr.MetadataType switch {
+				MetadataType.String => WellKnownType.System_String,
+				MetadataType.Object => WellKnownType.System_Object,
+				MetadataType.Void => WellKnownType.System_Void,
+				// TypeReferences of System.Array do not have a MetadataType of MetadataType.Array -- use string checking instead
+				MetadataType.Array or _ => WellKnownTypeExtensions.GetWellKnownType (tr.Namespace, tr.Name)
+			};
 		}
 
 		public static bool IsSubclassOf (this TypeReference type, string ns, string name, ITryResolveMetadata resolver)
@@ -387,5 +397,13 @@ namespace Mono.Linker
 			}
 			return type;
 		}
+
+		// Array types that are dynamically accessed should resolve to System.Array instead of its element type - which is what Cecil resolves to.
+		// Any data flow annotations placed on a type parameter which receives an array type apply to the array itself. None of the members in its
+		// element type should be marked.
+		public static TypeDefinition? ResolveToTypeDefinition (this TypeReference typeReference, LinkContext context)
+			=> typeReference is ArrayType
+				? BCL.FindPredefinedType (WellKnownType.System_Array, context)
+				: context.TryResolve (typeReference);
 	}
 }

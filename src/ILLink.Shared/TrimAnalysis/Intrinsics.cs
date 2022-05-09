@@ -19,7 +19,7 @@ namespace ILLink.Shared.TrimAnalysis
 				// System.Type.GetTypeInfo (Type type)
 				"GetTypeFromHandle" when calledMethod.IsDeclaredOnType ("System.Type") => IntrinsicId.Type_GetTypeFromHandle,
 
-				// System.Type.GetTypeHandle (Type type)
+				// System.Type.TypeHandle getter
 				"get_TypeHandle" when calledMethod.IsDeclaredOnType ("System.Type") => IntrinsicId.Type_get_TypeHandle,
 
 				// System.Reflection.MethodBase.GetMethodFromHandle (RuntimeMethodHandle handle)
@@ -28,6 +28,9 @@ namespace ILLink.Shared.TrimAnalysis
 					&& calledMethod.HasParameterOfType (0, "System.RuntimeMethodHandle")
 					&& (calledMethod.HasParametersCount (1) || calledMethod.HasParametersCount (2))
 					=> IntrinsicId.MethodBase_GetMethodFromHandle,
+
+				// System.Reflection.MethodBase.MethodHandle getter
+				"get_MethodHandle" when calledMethod.IsDeclaredOnType ("System.Reflection.MethodBase") => IntrinsicId.MethodBase_get_MethodHandle,
 
 				// static System.Type.MakeGenericType (Type [] typeArguments)
 				"MakeGenericType" when calledMethod.IsDeclaredOnType ("System.Type") => IntrinsicId.Type_MakeGenericType,
@@ -274,13 +277,6 @@ namespace ILLink.Shared.TrimAnalysis
 					&& calledMethod.HasParameterOfType (0, "System.String")
 					&& calledMethod.HasParameterOfType (1, "System.String")
 					=> IntrinsicId.Activator_CreateInstanceFrom,
-
-				// static T System.Activator.CreateInstance<T> ()
-				"CreateInstance" when calledMethod.IsDeclaredOnType ("System.Activator")
-					&& calledMethod.HasGenericParameters ()
-					&& calledMethod.HasGenericParametersCount (1)
-					&& calledMethod.HasParametersCount (0)
-					=> IntrinsicId.Activator_CreateInstanceOfT,
 
 				// System.AppDomain.CreateInstance (string assemblyName, string typeName)
 				// System.AppDomain.CreateInstance (string assemblyName, string typeName, bool ignoreCase, System.Reflection.BindingFlags bindingAttr, System.Reflection.Binder? binder, object? []? args, System.Globalization.CultureInfo? culture, object? []? activationAttributes)

@@ -14,6 +14,7 @@ namespace ILLink.Shared.TrimAnalysis
 		Array_Empty,
 		TypeInfo_AsType,
 		MethodBase_GetMethodFromHandle,
+		MethodBase_get_MethodHandle,
 
 		// Anything above this marker will require the method to be run through
 		// the reflection body scanner.
@@ -45,7 +46,6 @@ namespace ILLink.Shared.TrimAnalysis
 		Activator_CreateInstance_Type,
 		Activator_CreateInstance_AssemblyName_TypeName,
 		Activator_CreateInstanceFrom,
-		Activator_CreateInstanceOfT,
 		AppDomain_CreateInstance,
 		AppDomain_CreateInstanceAndUnwrap,
 		AppDomain_CreateInstanceFrom,

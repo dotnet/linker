@@ -10,7 +10,7 @@ using Microsoft.CodeAnalysis;
 
 namespace ILLink.RoslynAnalyzer.TrimAnalysis
 {
-	class ReflectionAccessAnalyzer
+	readonly struct ReflectionAccessAnalyzer
 	{
 #pragma warning disable CA1822 // Mark members as static - the other partial implementations might need to be instance methods
 		internal void GetReflectionAccessDiagnostics (in DiagnosticContext diagnosticContext, ITypeSymbol typeSymbol, DynamicallyAccessedMemberTypes requiredMemberTypes, bool declaredOnly = false)
@@ -59,6 +59,18 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 				GetReflectionAccessDiagnosticsForProperty (diagnosticContext, prop);
 		}
 
+		internal void GetReflectionAccessDiagnosticsForConstructorsOnType (in DiagnosticContext diagnosticContext, ITypeSymbol typeSymbol, BindingFlags? bindingFlags, int? parameterCount)
+		{
+			foreach (var c in typeSymbol.GetConstructorsOnType (filter: parameterCount.HasValue ? c => c.Parameters.Length == parameterCount.Value : null, bindingFlags: bindingFlags))
+				GetReflectionAccessDiagnosticsForMethod (diagnosticContext, c);
+		}
+
+		internal void GetReflectionAccessDiagnosticsForPublicParameterlessConstructor (in DiagnosticContext diagnosticContext, ITypeSymbol typeSymbol)
+		{
+			foreach (var c in typeSymbol.GetConstructorsOnType (filter: m => (m.DeclaredAccessibility == Accessibility.Public) && m.Parameters.Length == 0))
+				GetReflectionAccessDiagnosticsForMethod (diagnosticContext, c);
+		}
+
 		static void ReportRequiresUnreferencedCodeDiagnostic (in DiagnosticContext diagnosticContext, AttributeData requiresAttributeData, ISymbol member)
 		{
 			var message = RequiresUnreferencedCodeUtils.GetMessageFromAttribute (requiresAttributeData);
@@ -68,8 +80,8 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 		internal static void GetReflectionAccessDiagnosticsForMethod (in DiagnosticContext diagnosticContext, IMethodSymbol methodSymbol)
 		{
-			if (methodSymbol.TryGetRequiresUnreferencedCodeAttribute (out var requiresAttributeData))
-				ReportRequiresUnreferencedCodeDiagnostic (diagnosticContext, requiresAttributeData, methodSymbol);
+			if (methodSymbol.TryGetRequiresUnreferencedCodeAttribute (out var requiresUnreferencedCodeAttributeData))
+				ReportRequiresUnreferencedCodeDiagnostic (diagnosticContext, requiresUnreferencedCodeAttributeData, methodSymbol);
 
 			if (!methodSymbol.IsStatic && methodSymbol.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None)
 				diagnosticContext.AddDiagnostic (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection, methodSymbol.GetDisplayName ());
@@ -105,8 +117,8 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 		static void GetDiagnosticsForField (in DiagnosticContext diagnosticContext, IFieldSymbol fieldSymbol)
 		{
-			if (fieldSymbol.TryGetRequiresUnreferencedCodeAttribute (out var requiresAttributeData))
-				ReportRequiresUnreferencedCodeDiagnostic (diagnosticContext, requiresAttributeData, fieldSymbol);
+			if (fieldSymbol.TryGetRequiresUnreferencedCodeAttribute (out var requiresUnreferencedCodeAttributeData))
+				ReportRequiresUnreferencedCodeDiagnostic (diagnosticContext, requiresUnreferencedCodeAttributeData, fieldSymbol);
 
 			if (fieldSymbol.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None)
 				diagnosticContext.AddDiagnostic (DiagnosticId.DynamicallyAccessedMembersFieldAccessedViaReflection, fieldSymbol.GetDisplayName ());

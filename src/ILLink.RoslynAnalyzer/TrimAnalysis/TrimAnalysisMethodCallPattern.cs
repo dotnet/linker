@@ -13,13 +13,36 @@ using MultiValue = ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.Single
 
 namespace ILLink.RoslynAnalyzer.TrimAnalysis
 {
-	public readonly record struct TrimAnalysisMethodCallPattern (
-		IMethodSymbol CalledMethod,
-		MultiValue Instance,
-		ImmutableArray<MultiValue> Arguments,
-		IOperation Operation,
-		ISymbol OwningSymbol)
+	public readonly record struct TrimAnalysisMethodCallPattern
 	{
+		public IMethodSymbol CalledMethod { init; get; }
+		public MultiValue Instance { init; get; }
+		public ImmutableArray<MultiValue> Arguments { init; get; }
+		public IOperation Operation { init; get; }
+		public ISymbol OwningSymbol { init; get; }
+
+		public TrimAnalysisMethodCallPattern (
+			IMethodSymbol calledMethod,
+			MultiValue instance,
+			ImmutableArray<MultiValue> arguments,
+			IOperation operation,
+			ISymbol owningSymbol)
+		{
+			CalledMethod = calledMethod;
+			Instance = instance.Clone ();
+			if (arguments.IsEmpty) {
+				Arguments = ImmutableArray<MultiValue>.Empty;
+			} else {
+				var builder = ImmutableArray.CreateBuilder<MultiValue> ();
+				foreach (var argument in arguments) {
+					builder.Add (argument.Clone ());
+				}
+				Arguments = builder.ToImmutableArray ();
+			}
+			Operation = operation;
+			OwningSymbol = owningSymbol;
+		}
+
 		public TrimAnalysisMethodCallPattern Merge (ValueSetLattice<SingleValue> lattice, TrimAnalysisMethodCallPattern other)
 		{
 			Debug.Assert (Operation == other.Operation);
@@ -43,21 +66,12 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 		{
 			DiagnosticContext diagnosticContext = new (Operation.Syntax.GetLocation ());
 			HandleCallAction handleCallAction = new (diagnosticContext, OwningSymbol, Operation);
-			if (!handleCallAction.Invoke (new MethodProxy (CalledMethod), Instance, Arguments, out _)) {
-				// If the intrinsic handling didn't work we have to:
-				//   Handle the instance value
-				//   Handle argument passing
-				//   Construct the return value
-				// Note: this is temporary as eventually the handling of all method calls should be done in the shared code (not just intrinsics)
-				if (!CalledMethod.IsStatic) {
-					var requireDynamicallyAccessedMembersAction = new RequireDynamicallyAccessedMembersAction (diagnosticContext, new ReflectionAccessAnalyzer ());
-					requireDynamicallyAccessedMembersAction.Invoke (Instance, new MethodThisParameterValue (CalledMethod));
-				}
-
-				for (int argumentIndex = 0; argumentIndex < Arguments.Length; argumentIndex++) {
-					var requireDynamicallyAccessedMembersAction = new RequireDynamicallyAccessedMembersAction (diagnosticContext, new ReflectionAccessAnalyzer ());
-					requireDynamicallyAccessedMembersAction.Invoke (Arguments[argumentIndex], new MethodParameterValue (CalledMethod.Parameters[argumentIndex]));
-				}
+			if (!handleCallAction.Invoke (new MethodProxy (CalledMethod), Instance, Arguments, out _, out _)) {
+				// If this returns false it means the intrinsic needs special handling:
+				// case IntrinsicId.TypeDelegator_Ctor:
+				//    No diagnostics to report - this is an "identity" operation for data flow, can't produce diagnostics on its own
+				// case IntrinsicId.Array_Empty:
+				//    No diagnostics to report - constant value
 			}
 
 			return diagnosticContext.Diagnostics;

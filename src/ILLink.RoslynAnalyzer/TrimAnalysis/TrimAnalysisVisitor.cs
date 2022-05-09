@@ -1,6 +1,7 @@
 // Copyright (c) .NET Foundation and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System;
 using System.Collections.Immutable;
 using System.Linq;
 using ILLink.RoslynAnalyzer.DataFlow;
@@ -9,6 +10,7 @@ using ILLink.Shared.TrimAnalysis;
 using ILLink.Shared.TypeSystemProxy;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.FlowAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 
 using MultiValue = ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.SingleValue>;
@@ -28,12 +30,13 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 		// Limit tracking array values to 32 values for performance reasons.
 		// There are many arrays much longer than 32 elements in .NET,
 		// but the interesting ones for the linker are nearly always less than 32 elements.
-		private const int MaxTrackedArrayValues = 32;
+		const int MaxTrackedArrayValues = 32;
 
 		public TrimAnalysisVisitor (
 			LocalStateLattice<MultiValue, ValueSetLattice<SingleValue>> lattice,
-			OperationBlockAnalysisContext context
-		) : base (lattice, context)
+			OperationBlockAnalysisContext context,
+			ImmutableDictionary<CaptureId, FlowCaptureKind> lValueFlowCaptures
+		) : base (lattice, context, lValueFlowCaptures)
 		{
 			_multiValueLattice = lattice.Lattice.ValueLattice;
 			TrimAnalysisPatterns = new TrimAnalysisPatternStore (_multiValueLattice);
@@ -52,17 +55,8 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			// If the return value is empty (TopValue basically) and the Operation tree
 			// reports it as having a constant value, use that as it will automatically cover
 			// cases we don't need/want to handle.
-			if (operation != null && returnValue.IsEmpty () && operation.ConstantValue.HasValue) {
-				object? constantValue = operation.ConstantValue.Value;
-				if (constantValue == null)
-					return NullValue.Instance;
-				else if (operation.Type?.SpecialType == SpecialType.System_String && constantValue is string stringConstantValue)
-					return new KnownStringValue (stringConstantValue);
-				else if (operation.Type?.TypeKind == TypeKind.Enum && constantValue is int enumConstantValue)
-					return new ConstIntValue (enumConstantValue);
-				else if (operation.Type?.SpecialType == SpecialType.System_Int32 && constantValue is int intConstantValue)
-					return new ConstIntValue (intConstantValue);
-			}
+			if (operation != null && returnValue.IsEmpty () && TryGetConstantValue (operation, out var constValue))
+				return constValue;
 
 			return returnValue;
 		}
@@ -124,13 +118,21 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 		public override MultiValue VisitFieldReference (IFieldReferenceOperation fieldRef, StateValue state)
 		{
-			if (fieldRef.Field.Type.IsTypeInterestingForDataflow ()) {
-				var field = fieldRef.Field;
-				if (field.Name is "Empty" && field.ContainingType.HasName ("System.String"))
+			var field = fieldRef.Field;
+			switch (field.Name) {
+			case "EmptyTypes" when field.ContainingType.IsTypeOf ("System", "Type"): {
+					return ArrayValue.Create (0);
+				}
+			case "Empty" when field.ContainingType.IsTypeOf ("System", "String"): {
 					return new KnownStringValue (string.Empty);
-
-				return new FieldValue (fieldRef.Field);
+				}
 			}
+
+			if (TryGetConstantValue (fieldRef, out var constValue))
+				return constValue;
+
+			if (fieldRef.Field.Type.IsTypeInterestingForDataflow ())
+				return new FieldValue (fieldRef.Field);
 
 			return TopValue;
 		}
@@ -183,6 +185,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			// TODO: consider not tracking patterns unless the target is something
 			// annotated with DAMT.
 			TrimAnalysisPatterns.Add (
+				// This will copy the values if necessary
 				new TrimAnalysisAssignmentPattern (source, target, operation),
 				isReturnValue: false
 			);
@@ -190,16 +193,17 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 		public override MultiValue HandleArrayElementRead (MultiValue arrayValue, MultiValue indexValue, IOperation operation)
 		{
-			if (arrayValue.AsSingleValue () is not ArrayValue arr)
-				return UnknownValue.Instance;
-
 			if (indexValue.AsConstInt () is not int index)
 				return UnknownValue.Instance;
 
-			if (arr.TryGetValueByIndex (index, out var elementValue))
-				return elementValue;
-
-			return UnknownValue.Instance;
+			MultiValue result = TopValue;
+			foreach (var value in arrayValue) {
+				if (value is ArrayValue arr && arr.TryGetValueByIndex (index, out var elementValue))
+					result = _multiValueLattice.Meet (result, elementValue);
+				else
+					return UnknownValue.Instance;
+			}
+			return result.Equals (TopValue) ? UnknownValue.Instance : result;
 		}
 
 		public override void HandleArrayElementWrite (MultiValue arrayValue, MultiValue indexValue, MultiValue valueToWrite, IOperation operation)
@@ -235,13 +239,27 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 			var diagnosticContext = DiagnosticContext.CreateDisabled ();
 			var handleCallAction = new HandleCallAction (diagnosticContext, Context.OwningSymbol, operation);
-			if (!handleCallAction.Invoke (new MethodProxy (calledMethod), instance, arguments, out MultiValue methodReturnValue)) {
-				if (!calledMethod.ReturnsVoid && calledMethod.ReturnType.IsTypeInterestingForDataflow ())
-					methodReturnValue = new MethodReturnValue (calledMethod);
-				else
-					methodReturnValue = TopValue;
+
+			if (!handleCallAction.Invoke (new MethodProxy (calledMethod), instance, arguments, out MultiValue methodReturnValue, out var intrinsicId)) {
+				switch (intrinsicId) {
+				case IntrinsicId.Array_Empty:
+					methodReturnValue = ArrayValue.Create (0);
+					break;
+
+				case IntrinsicId.TypeDelegator_Ctor:
+					if (operation is IObjectCreationOperation)
+						methodReturnValue = arguments[0];
+					else
+						methodReturnValue = TopValue;
+
+					break;
+
+				default:
+					throw new InvalidOperationException ($"Unexpected method {calledMethod.GetDisplayName ()} unhandled by HandleCallAction.");
+				}
 			}
 
+			// This will copy the values if necessary
 			TrimAnalysisPatterns.Add (new TrimAnalysisMethodCallPattern (
 				calledMethod,
 				instance,
@@ -270,6 +288,50 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 					isReturnValue: true
 				);
 			}
+		}
+
+		static bool TryGetConstantValue (IOperation operation, out MultiValue constValue)
+		{
+			if (operation.ConstantValue.HasValue) {
+				object? constantValue = operation.ConstantValue.Value;
+				if (constantValue == null) {
+					constValue = NullValue.Instance;
+					return true;
+				} else if (operation.Type?.TypeKind == TypeKind.Enum && constantValue is int enumConstantValue) {
+					constValue = new ConstIntValue (enumConstantValue);
+					return true;
+				} else {
+					switch (operation.Type?.SpecialType) {
+					case SpecialType.System_String when constantValue is string stringConstantValue:
+						constValue = new KnownStringValue (stringConstantValue);
+						return true;
+					case SpecialType.System_Boolean when constantValue is bool boolConstantValue:
+						constValue = new ConstIntValue (boolConstantValue ? 1 : 0);
+						return true;
+					case SpecialType.System_SByte when constantValue is sbyte sbyteConstantValue:
+						constValue = new ConstIntValue (sbyteConstantValue);
+						return true;
+					case SpecialType.System_Byte when constantValue is byte byteConstantValue:
+						constValue = new ConstIntValue (byteConstantValue);
+						return true;
+					case SpecialType.System_Int16 when constantValue is Int16 int16ConstantValue:
+						constValue = new ConstIntValue (int16ConstantValue);
+						return true;
+					case SpecialType.System_UInt16 when constantValue is UInt16 uint16ConstantValue:
+						constValue = new ConstIntValue (uint16ConstantValue);
+						return true;
+					case SpecialType.System_Int32 when constantValue is Int32 int32ConstantValue:
+						constValue = new ConstIntValue (int32ConstantValue);
+						return true;
+					case SpecialType.System_UInt32 when constantValue is UInt32 uint32ConstantValue:
+						constValue = new ConstIntValue ((int) uint32ConstantValue);
+						return true;
+					}
+				}
+			}
+
+			constValue = default;
+			return false;
 		}
 	}
 }
