@@ -15,9 +15,7 @@ namespace Mono.Linker
 	public class CompilerGeneratedState
 	{
 		readonly LinkContext _context;
-
-		readonly Dictionary<TypeDefinition, MethodDefinition> _generatedTypeToUserCodeMethod;
-
+		readonly Dictionary<TypeDefinition, MethodDefinition> _compilerGeneratedTypeToUserCodeMethod;
 		readonly Dictionary<TypeDefinition, TypeArgumentInfo> _generatedTypeToTypeArgumentInfo;
 		readonly record struct TypeArgumentInfo (
 			/// <summary>The method which calls the ctor for the given type</summary>
@@ -32,7 +30,7 @@ namespace Mono.Linker
 		public CompilerGeneratedState (LinkContext context)
 		{
 			_context = context;
-			_generatedTypeToUserCodeMethod = new Dictionary<TypeDefinition, MethodDefinition> ();
+			_compilerGeneratedTypeToUserCodeMethod = new Dictionary<TypeDefinition, MethodDefinition> ();
 			_generatedTypeToTypeArgumentInfo = new Dictionary<TypeDefinition, TypeArgumentInfo> ();
 			_compilerGeneratedMethodToUserCodeMethod = new Dictionary<MethodDefinition, MethodDefinition> ();
 			_typesWithPopulatedCache = new HashSet<TypeDefinition> ();
@@ -125,8 +123,8 @@ namespace Mono.Linker
 						callGraph.TrackCall (method, stateMachineType);
 						// Initially fill the dictionary with all null type args. After we have fully filled out
 						// user methods, we'll fill in the type args
-						if (!_generatedTypeToUserCodeMethod.TryAdd (stateMachineType, method)) {
-							var alreadyAssociatedMethod = _generatedTypeToUserCodeMethod[stateMachineType];
+						if (!_compilerGeneratedTypeToUserCodeMethod.TryAdd (stateMachineType, method)) {
+							var alreadyAssociatedMethod = _compilerGeneratedTypeToUserCodeMethod[stateMachineType];
 							_context.LogWarning (new MessageOrigin (method), DiagnosticId.MethodsAreAssociatedWithStateMachine, method.GetDisplayName (), alreadyAssociatedMethod.GetDisplayName (), stateMachineType.GetDisplayName ());
 						}
 						// Already warned above if multiple methods map to the same type
@@ -174,11 +172,13 @@ namespace Mono.Linker
 							_context.LogWarning (new MessageOrigin (userDefinedMethod), DiagnosticId.MethodsAreAssociatedWithUserMethod, userDefinedMethod.GetDisplayName (), alreadyAssociatedMethod.GetDisplayName (), nestedFunction.GetDisplayName ());
 						}
 						break;
-					case TypeDefinition generatedType:
-						// Types in the call graph are always state machine types or display classes
+					case TypeDefinition stateMachineType:
+						// Types in the call graph are always state machine types
+						// For those all their methods are not tracked explicitly in the call graph; instead, they
+						// are represented by the state machine type itself.
 						// We are already tracking the association of the state machine type to the user code method
 						// above, so no need to track it here.
-						Debug.Assert (CompilerGeneratedNames.IsStateMachineType (generatedType.Name));
+						Debug.Assert (CompilerGeneratedNames.IsStateMachineType (stateMachineType.Name));
 						break;
 					default:
 						throw new InvalidOperationException ();
@@ -311,7 +311,7 @@ namespace Mono.Linker
 
 			TypeDefinition sourceType = (sourceMember as TypeDefinition) ?? sourceMember.DeclaringType;
 
-			if (_generatedTypeToUserCodeMethod.TryGetValue (sourceType, out owningMethod)) {
+			if (_compilerGeneratedTypeToUserCodeMethod.TryGetValue (sourceType, out owningMethod)) {
 				return true;
 			}
 
@@ -339,7 +339,7 @@ namespace Mono.Linker
 					return true;
 			}
 
-			if (_generatedTypeToUserCodeMethod.TryGetValue (sourceType, out owningMethod)) {
+			if (_compilerGeneratedTypeToUserCodeMethod.TryGetValue (sourceType, out owningMethod)) {
 				return true;
 			}
 
