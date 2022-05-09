@@ -30,8 +30,7 @@ namespace Mono.Linker
 
 		public void TrackCall (MethodDefinition fromMethod, TypeDefinition toType)
 		{
-			Debug.Assert (CompilerGeneratedNames.IsStateMachineType (toType.Name) ||
-						  CompilerGeneratedNames.IsLambdaDisplayClass (toType.Name));
+			Debug.Assert (CompilerGeneratedNames.IsStateMachineType (toType.Name));
 			TrackCallInternal (fromMethod, toType);
 		}
 
