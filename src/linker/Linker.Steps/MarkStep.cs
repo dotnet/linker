@@ -1626,7 +1626,7 @@ namespace Mono.Linker.Steps
 			if (reportOnMember)
 				origin = new MessageOrigin (member);
 
-			if (Annotations.DoesMemberRequireUnreferencedCode (member, out RequiresUnreferencedCodeAttribute? requiresUnreferencedCodeAttribute)) {
+			if (Annotations.DoesMemberRequiresUnreferencedCode (member, out RequiresUnreferencedCodeAttribute? requiresUnreferencedCodeAttribute)) {
 				var id = reportOnMember ? DiagnosticId.DynamicallyAccessedMembersOnTypeReferencesMemberWithRequiresUnreferencedCode : DiagnosticId.DynamicallyAccessedMembersOnTypeReferencesMemberOnBaseWithRequiresUnreferencedCode;
 				Context.LogWarning (origin, id, type.GetDisplayName (),
 					((MemberReference) member).GetDisplayName (), // The cast is valid since it has to be a method or field
@@ -1654,7 +1654,7 @@ namespace Mono.Linker.Steps
 			}
 
 			if (reason.Kind != DependencyKind.DynamicallyAccessedMemberOnType &&
-				Annotations.DoesFieldRequireUnreferencedCode (field, out RequiresUnreferencedCodeAttribute? requiresUnreferencedCodeAttribute) &&
+				Annotations.DoesFieldRequiresUnreferencedCode (field, out RequiresUnreferencedCodeAttribute? requiresUnreferencedCodeAttribute) &&
 				!ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (origin.Provider))
 				ReportRequiresUnreferencedCode (field.GetDisplayName (), requiresUnreferencedCodeAttribute, origin);
 
@@ -2919,7 +2919,7 @@ namespace Mono.Linker.Steps
 				return false;
 
 			if (originMember is MethodDefinition &&
-				Annotations.IsMethodInRequiresUnreferencedCodeScope ((MethodDefinition) originMember))
+				Annotations.IsInRequiresScope ((MethodDefinition) originMember))
 				return true;
 
 			if (originMember is not IMemberDefinition member)
@@ -2928,7 +2928,7 @@ namespace Mono.Linker.Steps
 			MethodDefinition? owningMethod;
 			while (Context.CompilerGeneratedState.TryGetOwningMethodForCompilerGeneratedMember (member, out owningMethod)) {
 				Debug.Assert (owningMethod != member);
-				if (Annotations.IsMethodInRequiresUnreferencedCodeScope (owningMethod))
+				if (Annotations.IsInRequiresScope (owningMethod))
 					return true;
 				member = owningMethod;
 			}
@@ -2943,7 +2943,7 @@ namespace Mono.Linker.Steps
 			if (ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (origin.Provider))
 				return;
 
-			if (!Annotations.DoesMethodRequireUnreferencedCode (method, out RequiresUnreferencedCodeAttribute? requiresUnreferencedCode))
+			if (!Annotations.DoesMethodRequiresUnreferencedCode (method, out RequiresUnreferencedCodeAttribute? requiresUnreferencedCode))
 				return;
 
 			ReportRequiresUnreferencedCode (method.GetDisplayName (), requiresUnreferencedCode, origin);

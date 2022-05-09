@@ -8,11 +8,11 @@ namespace ILLink.RoslynAnalyzer
 {
 	public static class RequiresISymbolExtensions
 	{
-		// TODO: Consider sharing with linker DoesMethodRequireUnreferencedCode method
+		// TODO: Consider sharing with linker DoesMemberRequires method
 		/// <summary>
 		/// True if the target of a call is considered to be annotated with the Requires... attribute
 		/// </summary>
-		public static bool TargetHasRequiresAttribute (this ISymbol member, string requiresAttribute, [NotNullWhen (returnValue: true)] out AttributeData? requiresAttributeData)
+		public static bool DoesMemberRequires (this ISymbol member, string requiresAttribute, [NotNullWhen (returnValue: true)] out AttributeData? requiresAttributeData)
 		{
 			requiresAttributeData = null;
 			if (member.IsStaticConstructor ())
@@ -28,7 +28,7 @@ namespace ILLink.RoslynAnalyzer
 			return false;
 		}
 
-		// TODO: Consider sharing with linker IsMethodInRequiresUnreferencedCodeScope method
+		// TODO: Consider sharing with linker IsInRequiresScope method
 		/// <summary>
 		/// True if the source of a call is considered to be annotated with the Requires... attribute
 		/// </summary>
