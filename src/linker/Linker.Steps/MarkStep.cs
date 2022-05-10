@@ -1626,7 +1626,7 @@ namespace Mono.Linker.Steps
 			if (reportOnMember)
 				origin = new MessageOrigin (member);
 
-			if (Annotations.DoesMemberRequiresUnreferencedCode (member, out RequiresUnreferencedCodeAttribute? requiresUnreferencedCodeAttribute)) {
+			if (Annotations.DoesMemberRequireUnreferencedCode (member, out RequiresUnreferencedCodeAttribute? requiresUnreferencedCodeAttribute)) {
 				var id = reportOnMember ? DiagnosticId.DynamicallyAccessedMembersOnTypeReferencesMemberWithRequiresUnreferencedCode : DiagnosticId.DynamicallyAccessedMembersOnTypeReferencesMemberOnBaseWithRequiresUnreferencedCode;
 				Context.LogWarning (origin, id, type.GetDisplayName (),
 					((MemberReference) member).GetDisplayName (), // The cast is valid since it has to be a method or field
