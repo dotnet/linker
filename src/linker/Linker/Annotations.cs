@@ -591,10 +591,10 @@ namespace Mono.Linker
 		/// Determines if method is within a declared RUC scope - this typically means that trim analysis
 		/// warnings should be suppressed in such a method.
 		/// </summary>
-		/// <remarks>Unlike <see cref="DoesMethodRequireUnreferencedCode(MethodDefinition, out RequiresUnreferencedCodeAttribute)"/>
+		/// <remarks>Unlike <see cref="DoesMemberRequireUnreferencedCode(IMemberDefinition, out RequiresUnreferencedCodeAttribute?)"/>
 		/// if a declaring type has RUC, all methods in that type are considered "in scope" of that RUC. So this includes also
 		/// instance methods (not just statics and .ctors).</remarks>
-		internal bool IsInRequiresScope (MethodDefinition method)
+		internal bool IsInRequiresUnreferencedCodeScope (MethodDefinition method)
 		{
 			if (HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (method) && !method.IsStaticConstructor ())
 				return true;
@@ -608,7 +608,7 @@ namespace Mono.Linker
 		/// <summary>
 		/// Determines if a member requires unreferenced code (and thus any usage of such method should be warned about).
 		/// </summary>
-		/// <remarks>Unlike <see cref="IsInRequiresScope(MethodDefinition)"/> only static methods 
+		/// <remarks>Unlike <see cref="IsInRequiresUnreferencedCodeScope(MethodDefinition)"/> only static methods 
 		/// and .ctors are reported as requiring unreferenced code when the declaring type has RUC on it.</remarks>
 		internal bool DoesMemberRequireUnreferencedCode (IMemberDefinition member, [NotNullWhen (returnValue: true)] out RequiresUnreferencedCodeAttribute? attribute)
 		{
