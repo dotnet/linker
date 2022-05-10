@@ -12,7 +12,7 @@ namespace ILLink.RoslynAnalyzer
 		/// <summary>
 		/// True if the target of a call is considered to be annotated with the Requires... attribute
 		/// </summary>
-		public static bool DoesMemberRequires (this ISymbol member, string requiresAttribute, [NotNullWhen (returnValue: true)] out AttributeData? requiresAttributeData)
+		public static bool DoesMemberRequire (this ISymbol member, string requiresAttribute, [NotNullWhen (returnValue: true)] out AttributeData? requiresAttributeData)
 		{
 			requiresAttributeData = null;
 			if (member.IsStaticConstructor ())
@@ -41,7 +41,7 @@ namespace ILLink.RoslynAnalyzer
 		/// True if member of a call is considered to be annotated with the Requires... attribute.
 		/// Doesn't check the associated symbol for overrides and virtual methods because the analyzer should warn on mismatched between the property AND the accessors
 		/// </summary>
-		/// <param name="containingSymbol">
+		/// <param name="member">
 		///	Symbol that is either an overriding member or an overriden/virtual member
 		/// </param>
 		public static bool IsOverrideInRequiresScope (this ISymbol member, string requiresAttribute)

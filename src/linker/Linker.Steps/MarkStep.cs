@@ -1654,7 +1654,7 @@ namespace Mono.Linker.Steps
 			}
 
 			if (reason.Kind != DependencyKind.DynamicallyAccessedMemberOnType &&
-				Annotations.DoesFieldRequiresUnreferencedCode (field, out RequiresUnreferencedCodeAttribute? requiresUnreferencedCodeAttribute) &&
+				Annotations.DoesFieldRequireUnreferencedCode (field, out RequiresUnreferencedCodeAttribute? requiresUnreferencedCodeAttribute) &&
 				!ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (origin.Provider))
 				ReportRequiresUnreferencedCode (field.GetDisplayName (), requiresUnreferencedCodeAttribute, origin);
 
@@ -2943,7 +2943,7 @@ namespace Mono.Linker.Steps
 			if (ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (origin.Provider))
 				return;
 
-			if (!Annotations.DoesMethodRequiresUnreferencedCode (method, out RequiresUnreferencedCodeAttribute? requiresUnreferencedCode))
+			if (!Annotations.DoesMethodRequireUnreferencedCode (method, out RequiresUnreferencedCodeAttribute? requiresUnreferencedCode))
 				return;
 
 			ReportRequiresUnreferencedCode (method.GetDisplayName (), requiresUnreferencedCode, origin);

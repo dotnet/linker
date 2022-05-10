@@ -591,7 +591,7 @@ namespace Mono.Linker
 		/// Determines if method is within a declared RUC scope - this typically means that trim analysis
 		/// warnings should be suppressed in such a method.
 		/// </summary>
-		/// <remarks>Unlike <see cref="DoesMethodRequiresUnreferencedCode(MethodDefinition, out RequiresUnreferencedCodeAttribute)"/>
+		/// <remarks>Unlike <see cref="DoesMethodRequireUnreferencedCode(MethodDefinition, out RequiresUnreferencedCodeAttribute)"/>
 		/// if a declaring type has RUC, all methods in that type are considered "in scope" of that RUC. So this includes also
 		/// instance methods (not just statics and .ctors).</remarks>
 		internal bool IsInRequiresScope (MethodDefinition method)
@@ -610,17 +610,17 @@ namespace Mono.Linker
 		/// </summary>
 		/// <remarks>Unlike <see cref="IsInRequiresScope(MethodDefinition)"/> only static methods 
 		/// and .ctors are reported as requiring unreferenced code when the declaring type has RUC on it.</remarks>
-		internal bool DoesMemberRequiresUnreferencedCode (IMemberDefinition member, [NotNullWhen (returnValue: true)] out RequiresUnreferencedCodeAttribute? attribute)
+		internal bool DoesMemberRequireUnreferencedCode (IMemberDefinition member, [NotNullWhen (returnValue: true)] out RequiresUnreferencedCodeAttribute? attribute)
 		{
 			attribute = null;
 			return member switch {
-				MethodDefinition method => DoesMethodRequiresUnreferencedCode (method, out attribute),
-				FieldDefinition field => DoesFieldRequiresUnreferencedCode (field, out attribute),
+				MethodDefinition method => DoesMethodRequireUnreferencedCode (method, out attribute),
+				FieldDefinition field => DoesFieldRequireUnreferencedCode (field, out attribute),
 				_ => false
 			};
 		}
 
-		internal bool DoesMethodRequiresUnreferencedCode (MethodDefinition originalMethod, [NotNullWhen (returnValue: true)] out RequiresUnreferencedCodeAttribute? attribute)
+		internal bool DoesMethodRequireUnreferencedCode (MethodDefinition originalMethod, [NotNullWhen (returnValue: true)] out RequiresUnreferencedCodeAttribute? attribute)
 		{
 			MethodDefinition? method = originalMethod;
 			do {
@@ -639,7 +639,7 @@ namespace Mono.Linker
 			return false;
 		}
 
-		internal bool DoesFieldRequiresUnreferencedCode (FieldDefinition field, [NotNullWhen (returnValue: true)] out RequiresUnreferencedCodeAttribute? attribute)
+		internal bool DoesFieldRequireUnreferencedCode (FieldDefinition field, [NotNullWhen (returnValue: true)] out RequiresUnreferencedCodeAttribute? attribute)
 		{
 			if (!field.IsStatic || field.DeclaringType is null) {
 				attribute = null;
