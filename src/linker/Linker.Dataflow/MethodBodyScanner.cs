@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using ILLink.Shared.DataFlow;
 using ILLink.Shared.TrimAnalysis;
@@ -207,7 +208,7 @@ namespace Mono.Linker.Dataflow
 			}
 		}
 
-		public virtual void InterproceduralScan (MethodBody methodBody)
+		public virtual void InterproceduralScan (MethodBody methodBody, out HashSet<MethodDefinition> scannedMethods)
 		{
 			var methodsInGroup = new ValueSet<MethodDefinition> (methodBody.Method);
 
@@ -215,7 +216,7 @@ namespace Mono.Linker.Dataflow
 			// Eventually we will need to allow re-scanning in some cases, for example
 			// when we discover new inputs to a method. But we aren't doing dataflow across
 			// lambdas and local functions yet, so no need for now.
-			var scannedMethods = new HashSet<MethodDefinition> ();
+			scannedMethods = new HashSet<MethodDefinition> ();
 
 			while (true) {
 				// Get the next method to scan.
@@ -230,8 +231,29 @@ namespace Mono.Linker.Dataflow
 				if (methodToScan == null)
 					break;
 
-				Scan (methodToScan.Body, ref methodsInGroup);
+				if (!CompilerGeneratedState.TryGetStateMachineType (methodToScan, out TypeDefinition? stateMachineType)) {
+					Scan (methodToScan.Body, ref methodsInGroup);
+				} else {
+					// Also scan the kickoff method, even though this probably never produces dataflow warnings...
+					Scan (methodToScan.Body, ref methodsInGroup);
+					// For state machine methods, also scan the state machine members.
+					// Simplification: assume that all generated methods of the state machine type are
+					// invoked at the point where the state machine method is called.
+					foreach (var method in stateMachineType.Methods) {
+						Debug.Assert (!CompilerGeneratedNames.IsLambdaOrLocalFunction (method.Name));
+						if (method.Body is MethodBody stateMachineBody)
+							Scan (stateMachineBody, ref methodsInGroup);
+					}
+				}
 				scannedMethods.Add (methodToScan);
+			}
+
+			if (_context.CompilerGeneratedState.TryGetCompilerGeneratedCalleesForUserMethod (methodBody.Method, out List<IMemberDefinition>? compilerGeneratedCallees)) {
+				// should be the same set.
+				var calleeMethods = compilerGeneratedCallees.OfType<MethodDefinition> ();
+				Debug.Assert (calleeMethods.Count() == scannedMethods.Count - 1);
+				foreach (var method in calleeMethods)
+					Debug.Assert (scannedMethods.Contains (method));
 			}
 		}
 

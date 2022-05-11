@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using Mono.Linker.Steps;
 using ILLink.Shared.TrimAnalysis;
 
 using MultiValue = ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.SingleValue>;
@@ -28,6 +29,7 @@ namespace Mono.Linker.Dataflow
 					if (targetValue is not ValueWithDynamicallyAccessedMembers targetWithDynamicallyAccessedMembers)
 						throw new NotImplementedException ();
 
+					diagnosticsEnabled &= !MarkStep.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (Origin.Provider, context);
 					var diagnosticContext = new DiagnosticContext (Origin, diagnosticsEnabled, context);
 					var requireDynamicallyAccessedMembersAction = new RequireDynamicallyAccessedMembersAction (reflectionMarker, diagnosticContext);
 					requireDynamicallyAccessedMembersAction.Invoke (sourceValue, targetWithDynamicallyAccessedMembers);

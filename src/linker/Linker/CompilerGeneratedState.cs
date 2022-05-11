@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using ILLink.Shared;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -17,14 +18,14 @@ namespace Mono.Linker
 		readonly LinkContext _context;
 		readonly Dictionary<TypeDefinition, MethodDefinition> _compilerGeneratedTypeToUserCodeMethod;
 		readonly Dictionary<MethodDefinition, MethodDefinition> _compilerGeneratedMethodToUserCodeMethod;
-		readonly HashSet<TypeDefinition> _typesWithPopulatedCache;
+		readonly Dictionary<TypeDefinition, Dictionary<MethodDefinition, List<IMemberDefinition>>?> _typesWithPopulatedCache;
 
 		public CompilerGeneratedState (LinkContext context)
 		{
 			_context = context;
 			_compilerGeneratedTypeToUserCodeMethod = new Dictionary<TypeDefinition, MethodDefinition> ();
 			_compilerGeneratedMethodToUserCodeMethod = new Dictionary<MethodDefinition, MethodDefinition> ();
-			_typesWithPopulatedCache = new HashSet<TypeDefinition> ();
+			_typesWithPopulatedCache = new Dictionary<TypeDefinition, Dictionary<MethodDefinition, List<IMemberDefinition>>?> ();
 		}
 
 		static IEnumerable<TypeDefinition> GetCompilerGeneratedNestedTypes (TypeDefinition type)
@@ -40,10 +41,33 @@ namespace Mono.Linker
 			}
 		}
 
+		// TODO: cache?
+		public static bool TryGetStateMachineType (MethodDefinition method, [NotNullWhen (true)] out TypeDefinition? stateMachineType) {
+			stateMachineType = null;
+			// Discover state machine methods.
+			if (!method.HasCustomAttributes)
+				return false;
+
+			foreach (var attribute in method.CustomAttributes) {
+				if (attribute.AttributeType.Namespace != "System.Runtime.CompilerServices")
+					continue;
+
+				switch (attribute.AttributeType.Name) {
+				case "AsyncIteratorStateMachineAttribute":
+				case "AsyncStateMachineAttribute":
+				case "IteratorStateMachineAttribute":
+					stateMachineType = GetFirstConstructorArgumentAsType (attribute);
+					return stateMachineType != null;
+				}
+			}
+			return false;
+		}
+
 		void PopulateCacheForType (TypeDefinition type)
 		{
+			Debug.Assert (!CompilerGeneratedNames.IsGeneratedMemberName (type.Name));
 			// Avoid repeat scans of the same type
-			if (!_typesWithPopulatedCache.Add (type))
+			if (_typesWithPopulatedCache.ContainsKey (type))
 				return;
 
 			var callGraph = new CompilerGeneratedCallGraph ();
@@ -86,31 +110,15 @@ namespace Mono.Linker
 					}
 				}
 
-				// Discover state machine methods.
-				if (!method.HasCustomAttributes)
-					return;
+				if (TryGetStateMachineType (method, out TypeDefinition? stateMachineType)) {
+					Debug.Assert (stateMachineType.DeclaringType == type ||
+						(CompilerGeneratedNames.IsGeneratedMemberName (stateMachineType.DeclaringType.Name) &&
+						 stateMachineType.DeclaringType.DeclaringType == type));
+					callGraph.TrackCall (method, stateMachineType);
 
-				foreach (var attribute in method.CustomAttributes) {
-					if (attribute.AttributeType.Namespace != "System.Runtime.CompilerServices")
-						continue;
-
-					switch (attribute.AttributeType.Name) {
-					case "AsyncIteratorStateMachineAttribute":
-					case "AsyncStateMachineAttribute":
-					case "IteratorStateMachineAttribute":
-						TypeDefinition? stateMachineType = GetFirstConstructorArgumentAsType (attribute);
-						if (stateMachineType == null)
-							break;
-						Debug.Assert (stateMachineType.DeclaringType == type ||
-							(CompilerGeneratedNames.IsGeneratedMemberName (stateMachineType.DeclaringType.Name) &&
-							 stateMachineType.DeclaringType.DeclaringType == type));
-						callGraph.TrackCall (method, stateMachineType);
-						if (!_compilerGeneratedTypeToUserCodeMethod.TryAdd (stateMachineType, method)) {
-							var alreadyAssociatedMethod = _compilerGeneratedTypeToUserCodeMethod[stateMachineType];
-							_context.LogWarning (new MessageOrigin (method), DiagnosticId.MethodsAreAssociatedWithStateMachine, method.GetDisplayName (), alreadyAssociatedMethod.GetDisplayName (), stateMachineType.GetDisplayName ());
-						}
-
-						break;
+					if (!_compilerGeneratedTypeToUserCodeMethod.TryAdd (stateMachineType, method)) {
+						var alreadyAssociatedMethod = _compilerGeneratedTypeToUserCodeMethod[stateMachineType];
+						_context.LogWarning (new MessageOrigin (method), DiagnosticId.MethodsAreAssociatedWithStateMachine, method.GetDisplayName (), alreadyAssociatedMethod.GetDisplayName (), stateMachineType.GetDisplayName ());
 					}
 				}
 			}
@@ -141,8 +149,17 @@ namespace Mono.Linker
 			// Note: this only discovers nested functions which are referenced from the user
 			// code or its referenced nested functions. There is no reliable way to determine from
 			// IL which user code an unused nested function belongs to.
+
+			Dictionary<MethodDefinition, List<IMemberDefinition>>? compilerGeneratedCallees = null;
 			foreach (var userDefinedMethod in callingMethods) {
-				foreach (var compilerGeneratedMember in callGraph.GetReachableMembers (userDefinedMethod)) {
+				var callees = callGraph.GetReachableMembers (userDefinedMethod);
+				if (!callees.Any ())
+					continue;
+
+				compilerGeneratedCallees ??= new Dictionary<MethodDefinition, List<IMemberDefinition>> ();
+				compilerGeneratedCallees.Add (userDefinedMethod, new List<IMemberDefinition> (callees));
+
+				foreach (var compilerGeneratedMember in callees) {
 					switch (compilerGeneratedMember) {
 					case MethodDefinition nestedFunction:
 						Debug.Assert (CompilerGeneratedNames.IsLambdaOrLocalFunction (nestedFunction.Name));
@@ -165,6 +182,8 @@ namespace Mono.Linker
 					}
 				}
 			}
+
+			_typesWithPopulatedCache.Add (type, compilerGeneratedCallees);
 		}
 
 		static TypeDefinition? GetFirstConstructorArgumentAsType (CustomAttribute attribute)
@@ -173,6 +192,17 @@ namespace Mono.Linker
 				return null;
 
 			return attribute.ConstructorArguments[0].Value as TypeDefinition;
+		}
+
+		public bool TryGetCompilerGeneratedCalleesForUserMethod (MethodDefinition method, [NotNullWhen (true)] out List<IMemberDefinition>? callees)
+		{
+			callees = null;
+			if (CompilerGeneratedNames.IsGeneratedMemberName (method.Name) || CompilerGeneratedNames.IsGeneratedMemberName (method.DeclaringType.Name))
+				return false;
+
+			// We should only ever populate the cache for types that aren't compiler-generated.
+			PopulateCacheForType (method.DeclaringType);
+			return _typesWithPopulatedCache[method.DeclaringType]?.TryGetValue (method, out callees) == true;
 		}
 
 		// For state machine types/members, maps back to the state machine method.

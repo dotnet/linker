@@ -55,7 +55,7 @@ namespace Mono.Linker.Dataflow
 
 		bool ShouldEnableReflectionPatternReporting (ICustomAttributeProvider? provider)
 		{
-			if (_markStep.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (provider))
+			if (MarkStep.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (provider, _context))
 				return false;
 
 			return true;
@@ -67,20 +67,22 @@ namespace Mono.Linker.Dataflow
 			_markStep = parent;
 			_origin = origin;
 			_annotations = context.Annotations.FlowAnnotations;
-			_reflectionMarker = new ReflectionMarker (context, parent, enabled: false);
+			_reflectionMarker = new ReflectionMarker (context, parent, enabled: false, enableReflectionPatternReporting: true);
 			TrimAnalysisPatterns = new TrimAnalysisPatternStore (context);
 		}
 
-		public override void InterproceduralScan (MethodBody methodBody)
+		public override void InterproceduralScan (MethodBody methodBody, out HashSet<MethodDefinition> scannedMethods)
 		{
-			base.InterproceduralScan (methodBody);
+			// TODO: remove scannedmethods
+			base.InterproceduralScan (methodBody, out scannedMethods);
 
-			var reflectionMarker = new ReflectionMarker (_context, _markStep, enabled: true);
-			TrimAnalysisPatterns.MarkAndProduceDiagnostics (ShouldEnableReflectionPatternReporting (methodBody.Method), reflectionMarker, _markStep);
+			var reflectionMarker = new ReflectionMarker (_context, _markStep, enabled: true, enableReflectionPatternReporting: true);
+			TrimAnalysisPatterns.MarkAndProduceDiagnostics (enableReflectionPatternReporting: true, reflectionMarker, _markStep);
 		}
 
 		protected override void Scan (MethodBody methodBody, ref ValueSet<MethodDefinition> methodsInGroup)
 		{
+			_origin = new MessageOrigin (methodBody.Method);
 			base.Scan (methodBody, ref methodsInGroup);
 
 			if (!methodBody.Method.ReturnsVoid ()) {
@@ -100,7 +102,7 @@ namespace Mono.Linker.Dataflow
 				if (parameterValue.DynamicallyAccessedMemberTypes != DynamicallyAccessedMemberTypes.None) {
 					MultiValue value = GetValueNodeForCustomAttributeArgument (arguments[i]);
 					var diagnosticContext = new DiagnosticContext (_origin, diagnosticsEnabled: true, _context);
-					RequireDynamicallyAccessedMembers (diagnosticContext, value, parameterValue);
+					RequireDynamicallyAccessedMembers (diagnosticContext, value, parameterValue, enableReflectionPatternReporting: true);
 				}
 			}
 		}
@@ -113,7 +115,7 @@ namespace Mono.Linker.Dataflow
 					continue;
 
 				var diagnosticContext = new DiagnosticContext (_origin, diagnosticsEnabled: true, _context);
-				RequireDynamicallyAccessedMembers (diagnosticContext, valueNode, fieldValue);
+				RequireDynamicallyAccessedMembers (diagnosticContext, valueNode, fieldValue, enableReflectionPatternReporting: true);
 			}
 		}
 
@@ -137,15 +139,16 @@ namespace Mono.Linker.Dataflow
 			return value;
 		}
 
-		public void ProcessGenericArgumentDataFlow (GenericParameter genericParameter, TypeReference genericArgument)
+		public void ProcessGenericArgumentDataFlow (GenericParameter genericParameter, TypeReference genericArgument, bool enableReflectionPatternReporting)
 		{
 			var genericParameterValue = _annotations.GetGenericParameterValue (genericParameter);
 			Debug.Assert (genericParameterValue.DynamicallyAccessedMemberTypes != DynamicallyAccessedMemberTypes.None);
 
 			MultiValue genericArgumentValue = GetTypeValueNodeFromGenericArgument (genericArgument, _context);
 
-			var diagnosticContext = new DiagnosticContext (_origin, ShouldEnableReflectionPatternReporting (_origin.Provider), _context);
-			RequireDynamicallyAccessedMembers (diagnosticContext, genericArgumentValue, genericParameterValue);
+			enableReflectionPatternReporting &= ShouldEnableReflectionPatternReporting (_origin.Provider);
+			var diagnosticContext = new DiagnosticContext (_origin, enableReflectionPatternReporting, _context);
+			RequireDynamicallyAccessedMembers (diagnosticContext, genericArgumentValue, genericParameterValue, enableReflectionPatternReporting);
 		}
 
 		static MultiValue GetTypeValueNodeFromGenericArgument (TypeReference genericArgument, LinkContext context)
@@ -549,9 +552,10 @@ namespace Mono.Linker.Dataflow
 			TrimAnalysisPatterns.Add (new TrimAnalysisAssignmentPattern (value, targetValue, origin));
 		}
 
-		void RequireDynamicallyAccessedMembers (in DiagnosticContext diagnosticContext, in MultiValue value, ValueWithDynamicallyAccessedMembers targetValue)
+		void RequireDynamicallyAccessedMembers (in DiagnosticContext diagnosticContext, in MultiValue value, ValueWithDynamicallyAccessedMembers targetValue, bool enableReflectionPatternReporting)
 		{
-			var reflectionMarker = new ReflectionMarker (_context, _markStep, enabled: true);
+			Debug.Assert (enableReflectionPatternReporting == diagnosticContext.DiagnosticsEnabled);
+			var reflectionMarker = new ReflectionMarker (_context, _markStep, enabled: true, enableReflectionPatternReporting);
 			var requireDynamicallyAccessedMembersAction = new RequireDynamicallyAccessedMembersAction (reflectionMarker, diagnosticContext);
 			requireDynamicallyAccessedMembersAction.Invoke (value, targetValue);
 		}
