@@ -875,7 +875,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 
 			[Kept]
 			[KeptMember (".ctor()")]
-			[KeptInterface (typeof(IUnusedInterface))]
+			[KeptInterface (typeof (IUnusedInterface))]
 			public class ImplementsUnusedInterface : IUnusedInterface
 			{
 				int IUnusedInterface.UnusedMethodExplicit () => 0;

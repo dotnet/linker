@@ -322,7 +322,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 				{
 					UsesAllMethods.StaticMethodCalledOnConcreteType ();
 					var x = new UsesAllMethods ();
-					((IStaticAndInstanceMethods)x).InstanceMethod ();
+					((IStaticAndInstanceMethods) x).InstanceMethod ();
 					CallExplicitImplMethod<UsesAllMethods> ();
 				}
 			}
@@ -430,19 +430,19 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 				public static int UsedOnConcreteType () => 0;
 
 				[Kept]
-				[KeptOverride (typeof(IBase1))]
+				[KeptOverride (typeof (IBase1))]
 				[RemovedOverride (typeof (IInheritsFromBase))]
 				public static int UsedOnBaseOnlyConstrainedTypeImplicitImpl () => 0;
 
 				[Kept]
-				[KeptOverride (typeof(IInheritsFromBase))]
+				[KeptOverride (typeof (IInheritsFromBase))]
 				static int IInheritsFromBase.UsedOnConstrainedTypeExplicitImpl () => 0;
 
 				[Kept]
-				[KeptOverride (typeof(IBase1))]
+				[KeptOverride (typeof (IBase1))]
 				static int IBase1.UsedOnConstrainedTypeExplicitImpl () => 0;
 
-				public static int UnusedImplicitImpl () =>0;
+				public static int UnusedImplicitImpl () => 0;
 
 				static int IBase1.UnusedExplicitImpl () => 0;
 
@@ -471,24 +471,24 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 				public static int UsedOnConcreteType () => 0;
 
 				[Kept]
-				[KeptOverride (typeof(IBase1))]
-				[KeptOverride (typeof(IBase2))]
+				[KeptOverride (typeof (IBase1))]
+				[KeptOverride (typeof (IBase2))]
 				[RemovedOverride (typeof (IInheritsFromMultipleBases))]
 				public static int UsedOnBaseOnlyConstrainedTypeImplicitImpl () => 0;
 
 				[Kept]
-				[KeptOverride (typeof(IBase1))]
+				[KeptOverride (typeof (IBase1))]
 				static int IBase1.UsedOnConstrainedTypeExplicitImpl () => 0;
 
 				[Kept]
-				[KeptOverride (typeof(IBase2))]
+				[KeptOverride (typeof (IBase2))]
 				static int IBase2.UsedOnConstrainedTypeExplicitImpl () => 0;
 
 				[Kept]
-				[KeptOverride (typeof(IInheritsFromMultipleBases))]
+				[KeptOverride (typeof (IInheritsFromMultipleBases))]
 				static int IInheritsFromMultipleBases.UsedOnConstrainedTypeExplicitImpl () => 0;
 
-				public static int UnusedImplicitImpl () =>0;
+				public static int UnusedImplicitImpl () => 0;
 
 				static int IBase1.UnusedExplicitImpl () => 0;
 
@@ -509,27 +509,27 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 			}
 
 			[Kept]
-			public static void CallBase1TypeConstrainedMethod<T> () where T: IBase1
+			public static void CallBase1TypeConstrainedMethod<T> () where T : IBase1
 			{
 				T.UsedOnBaseOnlyConstrainedTypeImplicitImpl ();
 				T.UsedOnConstrainedTypeExplicitImpl ();
 			}
 
 			[Kept]
-			public static void CallBase2TypeConstrainedMethod<T> () where T: IBase2
+			public static void CallBase2TypeConstrainedMethod<T> () where T : IBase2
 			{
 				T.UsedOnBaseOnlyConstrainedTypeImplicitImpl ();
 				T.UsedOnConstrainedTypeExplicitImpl ();
 			}
 
 			[Kept]
-			public static void CallSingleInheritTypeConstrainedMethod<T> () where T: IInheritsFromBase
+			public static void CallSingleInheritTypeConstrainedMethod<T> () where T : IInheritsFromBase
 			{
 				T.UsedOnConstrainedTypeExplicitImpl ();
 			}
 
 			[Kept]
-			public static void CallDoubleInheritTypeConstrainedMethod<T> () where T: IInheritsFromMultipleBases
+			public static void CallDoubleInheritTypeConstrainedMethod<T> () where T : IInheritsFromMultipleBases
 			{
 				T.UsedOnConstrainedTypeExplicitImpl ();
 			}
@@ -538,7 +538,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 			public static void Test ()
 			{
 				ImplementsIInheritsFromBase.Test ();
-				ImplementsIInheritsFromTwoBases.Test (); 
+				ImplementsIInheritsFromTwoBases.Test ();
 			}
 		}
 
