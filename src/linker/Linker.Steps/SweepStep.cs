@@ -474,12 +474,16 @@ namespace Mono.Linker.Steps
 			for (int i = 0; i < method.Overrides.Count;) {
 				// We can't rely on the context resolution cache anymore, since it may remember methods which are already removed
 				// So call the direct Resolve here and avoid the cache.
-				// It can still happen that the Resolve will return a removed method (this happens if the Overrides collection stores actual
-				// MethodDefinition and not MethodReference, in which case the Resolve is just "return this" and doesn't check the existence of the method
-				// in any way). In such case the Declaring type of the method is null. And since it has been removed the override pointing
-				// to it should be removed as well.
-				// Resolve() may also return null if the method has been removed, in which case the override should be removed from the list
-				if (method.Overrides[i].Resolve () is not MethodDefinition ov || ShouldRemove (ov) && (ov.DeclaringType == null || !IgnoreScope (ov.DeclaringType.Scope)))
+				// We want to remove a method from the list of Overrides if:
+				//	Resolve() is null. This can happen for a couple of reasons, but it indicates the method isn't in the final assembly.
+				//	OR
+				//	ShouldRemove(ov) returns false
+				//	AND ov.DeclaringType is not null
+				//	AND ov.DeclaringType is in a `link` scope (i.e. !IgnoreScope).
+				//		If ShouldRemove(ov) returns false we are removing the method from the assembly if it is a `link` assembly.
+				//		ov.DeclaringType may be null if `ov` is a MethodDefinition already and just	returns `this` even though it shouldn't exist.
+				//		If the override is not in a `link` scope, ShouldRemove may return true even though the method will not be removed.
+				if (method.Overrides[i].Resolve () is not MethodDefinition ov || ShouldRemove (ov) && ov.DeclaringType is not null && !IgnoreScope (ov.DeclaringType.Scope))
 					method.Overrides.RemoveAt (i);
 				else
 					i++;
@@ -487,7 +491,7 @@ namespace Mono.Linker.Steps
 		}
 
 		/// <summary>
-		/// Returns true if the assembly of the <paramref name="scope"></paramref> is not set to link (i.e. action=copy is set for that assembly)
+		/// Returns true if the assembly of the <paramref name="scope"></paramref> is not set to link (e.g. action=copy is set for that assembly)
 		/// </summary>
 		private bool IgnoreScope (IMetadataScope scope)
 		{
