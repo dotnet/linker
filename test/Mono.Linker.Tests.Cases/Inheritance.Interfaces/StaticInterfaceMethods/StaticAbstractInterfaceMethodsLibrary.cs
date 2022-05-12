@@ -12,7 +12,8 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 {
-	public class StaticAbstractInterfaceMethods
+	[SetupLinkerArgument ("-a", "test.exe", "library")]
+	public static class StaticAbstractInterfaceMethodsLibrary
 	{
 		public static void Main ()
 		{
@@ -20,7 +21,6 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 			InterfaceWithMethodsUsedEachWay.Test ();
 			InterfaceMethodUsedOnConcreteType.Test ();
 			InterfaceMethodsKeptThroughReflection.Test ();
-			InterfaceHasStaticAndInstanceMethods.Test ();
 			StaticInterfaceInheritance.Test ();
 			GenericStaticInterface.Test ();
 			RecursiveGenericInterface.Test ();
@@ -28,30 +28,48 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 		}
 
 		[Kept]
-		public class InterfaceMethodsUsedThroughConstrainedType
+		public static class InterfaceMethodsUsedThroughConstrainedType
 		{
 			[Kept]
 			public interface IUsedThroughConstrainedType
 			{
 				[Kept]
-				public static abstract int UsedThroughConstrainedType ();
+				static abstract int UsedThroughConstrainedType ();
 			}
 
 			[Kept]
+			internal interface IUsedThroughConstrainedTypeInternal
+			{
+				static abstract int UsedThroughConstrainedType ();
+			}
+
+			[Kept]
+			[KeptMember (".ctor()")]
 			[KeptInterface (typeof (IUsedThroughConstrainedType))]
-			public class UsesIUsedThroughConstrainedTypeMethods : IUsedThroughConstrainedType
+			[KeptInterface (typeof (IUsedThroughConstrainedTypeInternal))]
+			public class UsesIUsedThroughConstrainedTypeMethods : IUsedThroughConstrainedType, IUsedThroughConstrainedTypeInternal
 			{
 				[Kept]
 				[KeptOverride (typeof (IUsedThroughConstrainedType))]
+				[RemovedOverride (typeof (IUsedThroughConstrainedTypeInternal))]
 				public static int UsedThroughConstrainedType () => 0;
 			}
 
 			[Kept]
+			[KeptMember (".ctor()")]
 			[KeptInterface (typeof (IUsedThroughConstrainedType))]
-			public class UnusedIUsedThroughConstrainedTypeMethods : IUsedThroughConstrainedType
+			[KeptInterface (typeof (IUsedThroughConstrainedTypeInternal))]
+			public class UnusedIUsedThroughConstrainedTypeMethods : IUsedThroughConstrainedType, IUsedThroughConstrainedTypeInternal
 			{
 				[Kept]
 				[KeptOverride (typeof (IUsedThroughConstrainedType))]
+				[RemovedOverride (typeof (IUsedThroughConstrainedTypeInternal))]
+				public static int UsedThroughConstrainedType () => 0;
+			}
+
+			// Should this be kept?
+			private class UnusedIUsedThroughConstrainedTypeMethodsPrivate : IUsedThroughConstrainedType, IUsedThroughConstrainedTypeInternal
+			{
 				public static int UsedThroughConstrainedType () => 0;
 			}
 
@@ -65,16 +83,16 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 			public static void Test ()
 			{
 				CallMethodOnConstrainedType<UsesIUsedThroughConstrainedTypeMethods> ();
-
 				Type t = typeof (UnusedIUsedThroughConstrainedTypeMethods);
 
 				ExplicitImplementation.Test ();
 			}
 
 			[Kept]
-			public class ExplicitImplementation
+			public static class ExplicitImplementation
 			{
 				[Kept]
+				[KeptMember (".ctor()")]
 				[KeptInterface (typeof (IUsedThroughConstrainedTypeExplicitImplementation))]
 				public class UsedIUsedThroughConstrainedTypeExplicitMethods : IUsedThroughConstrainedTypeExplicitImplementation
 				{
@@ -84,8 +102,10 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 				}
 
 				[Kept]
+				[KeptMember (".ctor()")]
 				[KeptInterface (typeof (IUsedThroughConstrainedTypeExplicitImplementation))]
-				public class UnusedIUsedThroughConstrainedTypeExplicitMethods : IUsedThroughConstrainedTypeExplicitImplementation
+				public class UnusedIUsedThroughConstrainedTypeExplicitMethods
+					: IUsedThroughConstrainedTypeExplicitImplementation
 				{
 					[Kept]
 					[KeptOverride (typeof (IUsedThroughConstrainedTypeExplicitImplementation))]
@@ -96,7 +116,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 				public interface IUsedThroughConstrainedTypeExplicitImplementation
 				{
 					[Kept]
-					public static abstract int UsedThroughConstrainedType ();
+					static abstract int UsedThroughConstrainedType ();
 				}
 
 				[Kept]
@@ -116,38 +136,42 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 		}
 
 		[Kept]
-		public class InterfaceMethodUsedOnConcreteType
+		public static class InterfaceMethodUsedOnConcreteType
 		{
 			[Kept]
-			public class UsesIUsedOnConcreteTypeMethods : IUsedOnConcreteType
+			[KeptMember (".ctor()")]
+			[KeptInterface (typeof (IUsedOnConcreteType))]
+			[KeptInterface (typeof (IUsedOnConcreteTypeInternal))]
+			public class UsesIUsedOnConcreteTypeMethods : IUsedOnConcreteType, IUsedOnConcreteTypeInternal
 			{
 				[Kept]
-				[RemovedOverride (typeof (IUsedOnConcreteType))]
+				[KeptOverride (typeof (IUsedOnConcreteType))]
+				[RemovedOverride (typeof (IUsedOnConcreteTypeInternal))]
 				public static int UsedOnConcreteType () => 0;
 			}
 
 			[Kept]
-			public class UnusedIUsedOnConcreteTypeMethods : IUsedOnConcreteType
-			{
-				public static int UsedOnConcreteType () => 0;
-			}
-
 			public interface IUsedOnConcreteType
 			{
+				[Kept]
 				public static abstract int UsedOnConcreteType ();
+			}
+
+			[Kept]
+			internal interface IUsedOnConcreteTypeInternal
+			{
+				static abstract int UsedOnConcreteType ();
 			}
 
 			[Kept]
 			public static void Test ()
 			{
 				UsesIUsedOnConcreteTypeMethods.UsedOnConcreteType ();
-
-				Type t = typeof (UnusedIUsedOnConcreteTypeMethods);
 			}
 		}
 
 		[Kept]
-		public class InterfaceWithMethodsUsedEachWay
+		public static class InterfaceWithMethodsUsedEachWay
 		{
 
 			[Kept]
@@ -156,6 +180,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 				[Kept]
 				public static abstract int UsedThroughConstrainedType ();
 
+				[Kept]
 				public static abstract int UsedOnConcreteType ();
 
 				[Kept]
@@ -163,8 +188,33 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 			}
 
 			[Kept]
+			internal interface IUsedEveryWayInternal
+			{
+				[Kept]
+				internal static abstract int UsedThroughConstrainedType ();
+
+				internal static abstract int UsedOnConcreteType ();
+
+				[Kept]
+				internal static abstract int UsedThroughConstrainedTypeExplicit ();
+			}
+
+			[Kept]
+			internal interface IUnusedEveryWayInternal
+			{
+				internal static abstract int UsedThroughConstrainedType ();
+
+				internal static abstract int UsedOnConcreteType ();
+
+				internal static abstract int UsedThroughConstrainedTypeExplicit ();
+			}
+
+			[Kept]
+			[KeptMember (".ctor()")]
 			[KeptInterface (typeof (IUsedEveryWay))]
-			public class UsedIUsedEveryWay : IUsedEveryWay
+			[KeptInterface (typeof (IUsedEveryWayInternal))]
+			[KeptInterface (typeof (IUnusedEveryWayInternal))]
+			public class UsedIUsedEveryWay : IUsedEveryWay, IUsedEveryWayInternal, IUnusedEveryWayInternal
 			{
 
 				[Kept]
@@ -172,26 +222,46 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 				static int IUsedEveryWay.UsedThroughConstrainedTypeExplicit () => 0;
 
 				[Kept]
-				[RemovedOverride (typeof (IUsedEveryWay))]
+				[KeptOverride (typeof (IUsedEveryWayInternal))]
+				static int IUsedEveryWayInternal.UsedThroughConstrainedTypeExplicit () => 0;
+
+				static int IUnusedEveryWayInternal.UsedThroughConstrainedTypeExplicit () => 0;
+
+				[Kept]
+				[KeptOverride (typeof (IUsedEveryWay))]
+				[RemovedOverride (typeof (IUsedEveryWayInternal))]
+				[RemovedOverride (typeof (IUnusedEveryWayInternal))]
 				public static int UsedOnConcreteType () => 0;
 
 				[Kept]
 				[KeptOverride (typeof (IUsedEveryWay))]
+				[KeptOverride (typeof (IUsedEveryWayInternal))]
+				[RemovedOverride (typeof (IUnusedEveryWayInternal))]
 				public static int UsedThroughConstrainedType () => 0;
 			}
 
 			[Kept]
 			[KeptInterface (typeof (IUsedEveryWay))]
-			public class UnusedIUsedEveryWay : IUsedEveryWay
+			[KeptInterface (typeof (IUsedEveryWayInternal))]
+			[KeptInterface (typeof (IUnusedEveryWayInternal))]
+			internal class UnusedIUsedEveryWayInternal : IUsedEveryWay, IUsedEveryWayInternal, IUnusedEveryWayInternal
 			{
 				[Kept]
 				[KeptOverride (typeof (IUsedEveryWay))]
 				static int IUsedEveryWay.UsedThroughConstrainedTypeExplicit () => 0;
 
+				[Kept]
+				[KeptOverride (typeof (IUsedEveryWayInternal))]
+				static int IUsedEveryWayInternal.UsedThroughConstrainedTypeExplicit () => 0;
+
+				static int IUnusedEveryWayInternal.UsedThroughConstrainedTypeExplicit () => 0;
+
+				[Kept]
 				public static int UsedOnConcreteType () => 0;
 
 				[Kept]
 				[KeptOverride (typeof (IUsedEveryWay))]
+				[KeptOverride (typeof (IUsedEveryWayInternal))]
 				public static int UsedThroughConstrainedType () => 0;
 			}
 
@@ -203,17 +273,25 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 			}
 
 			[Kept]
+			internal static void CallTypeConstrainedMethodsInternal<T> () where T : IUsedEveryWayInternal
+			{
+				T.UsedThroughConstrainedType ();
+				T.UsedThroughConstrainedTypeExplicit ();
+			}
+
+			[Kept]
 			public static void Test ()
 			{
 				UsedIUsedEveryWay.UsedOnConcreteType ();
 				CallTypeConstrainedMethods<UsedIUsedEveryWay> ();
+				CallTypeConstrainedMethodsInternal<UsedIUsedEveryWay> ();
 
-				Type t = typeof (UnusedIUsedEveryWay);
+				Type t = typeof (UnusedIUsedEveryWayInternal);
 			}
 		}
 
 		[Kept]
-		public class InterfaceMethodsKeptThroughReflection
+		public static class InterfaceMethodsKeptThroughReflection
 		{
 			[Kept]
 			public interface IMethodsKeptThroughReflection
@@ -229,6 +307,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 			}
 
 			[Kept]
+			[KeptMember (".ctor()")]
 			[KeptInterface (typeof (IMethodsKeptThroughReflection))]
 			public class UsedMethodsKeptThroughtReflection : IMethodsKeptThroughReflection
 			{
@@ -247,7 +326,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 
 			[Kept]
 			[KeptInterface (typeof (IMethodsKeptThroughReflection))]
-			public class UnusedMethodsKeptThroughtReflection : IMethodsKeptThroughReflection
+			internal class UnusedMethodsKeptThroughtReflection : IMethodsKeptThroughReflection
 			{
 				[Kept]
 				[KeptOverride (typeof (IMethodsKeptThroughReflection))]
@@ -280,11 +359,12 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 		}
 
 		[Kept]
-		public class InterfaceHasStaticAndInstanceMethods
+		public static class InterfaceHasStaticAndInstanceMethods
 		{
 			[Kept]
 			public interface IStaticAndInstanceMethods
 			{
+				[Kept]
 				public static abstract int StaticMethodCalledOnConcreteType ();
 
 				[Kept]
@@ -295,50 +375,111 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 			}
 
 			[Kept]
-			public static void CallExplicitImplMethod<T> () where T : IStaticAndInstanceMethods
+			internal interface IStaticAndInstanceMethodsInternalUnused
+			{
+				static abstract int StaticMethodCalledOnConcreteType ();
+
+				static abstract int StaticMethodExplicitImpl ();
+
+				int InstanceMethod ();
+			}
+
+			[Kept]
+			internal interface IStaticAndInstanceMethodsInternalUsed
+			{
+				static abstract int StaticMethodCalledOnConcreteType ();
+
+				[Kept]
+				static abstract int StaticMethodExplicitImpl ();
+
+				[Kept]
+				int InstanceMethod ();
+			}
+
+			[Kept]
+			internal static void CallExplicitImplMethod<T> () where T : IStaticAndInstanceMethods, new()
 			{
 				T.StaticMethodExplicitImpl ();
+				IStaticAndInstanceMethods x = new T ();
+				x.InstanceMethod ();
+			}
+
+			[Kept]
+			internal static void CallExplicitImplMethodInternalUsed<T> () where T : IStaticAndInstanceMethodsInternalUsed, new()
+			{
+				T.StaticMethodExplicitImpl ();
+				IStaticAndInstanceMethodsInternalUsed x = new T ();
+				x.InstanceMethod ();
 			}
 
 			[Kept]
 			[KeptMember (".ctor()")]
 			[KeptInterface (typeof (IStaticAndInstanceMethods))]
-			public class UsesAllMethods : IStaticAndInstanceMethods
+			[KeptInterface (typeof (IStaticAndInstanceMethodsInternalUsed))]
+			[KeptInterface (typeof (IStaticAndInstanceMethodsInternalUnused))]
+			public class UsesAllMethods : IStaticAndInstanceMethods, IStaticAndInstanceMethodsInternalUnused, IStaticAndInstanceMethodsInternalUsed
 			{
 				[Kept]
-				[RemovedOverride (typeof (IStaticAndInstanceMethods))]
+				[KeptOverride (typeof (IStaticAndInstanceMethods))]
+				[RemovedOverride (typeof (IStaticAndInstanceMethodsInternalUsed))]
+				[RemovedOverride (typeof (IStaticAndInstanceMethodsInternalUnused))]
 				public static int StaticMethodCalledOnConcreteType () => 0;
 
 				[Kept]
-				// Non-static implementation methods don't explicitly override the interface method
+				// No .override / MethodImpl for implicit instance methods
 				public int InstanceMethod () => 0;
 
 				[Kept]
 				[KeptOverride (typeof (IStaticAndInstanceMethods))]
 				static int IStaticAndInstanceMethods.StaticMethodExplicitImpl () => 0;
+
+				static int IStaticAndInstanceMethodsInternalUnused.StaticMethodExplicitImpl () => 0;
+
+				[Kept]
+				[KeptOverride (typeof (IStaticAndInstanceMethodsInternalUsed))]
+				static int IStaticAndInstanceMethodsInternalUsed.StaticMethodExplicitImpl () => 0;
 
 				[Kept]
 				public static void Test ()
 				{
 					UsesAllMethods.StaticMethodCalledOnConcreteType ();
-					var x = new UsesAllMethods ();
-					((IStaticAndInstanceMethods)x).InstanceMethod ();
 					CallExplicitImplMethod<UsesAllMethods> ();
+					CallExplicitImplMethodInternalUsed<UsesAllMethods> ();
 				}
 			}
 
 			[Kept]
-			// Bug
-			//[KeptInterface (typeof (IStaticAndInstanceMethods))]
-			public class UnusedMethods : IStaticAndInstanceMethods
+			[KeptMember (".ctor()")]
+			[KeptInterface (typeof (IStaticAndInstanceMethods))]
+			[KeptInterface (typeof (IStaticAndInstanceMethodsInternalUsed))]
+			[KeptInterface (typeof (IStaticAndInstanceMethodsInternalUnused))]
+			public class UnusedMethods : IStaticAndInstanceMethods, IStaticAndInstanceMethodsInternalUnused, IStaticAndInstanceMethodsInternalUsed
 			{
+				[Kept]
+				[KeptOverride (typeof (IStaticAndInstanceMethods))]
+				[RemovedOverride (typeof (IStaticAndInstanceMethodsInternalUsed))]
+				[RemovedOverride (typeof (IStaticAndInstanceMethodsInternalUnused))]
 				public static int StaticMethodCalledOnConcreteType () => 0;
 
 				[Kept]
 				[KeptOverride (typeof (IStaticAndInstanceMethods))]
 				static int IStaticAndInstanceMethods.StaticMethodExplicitImpl () => 0;
 
-				public int InstanceMethod () => 0;
+				static int IStaticAndInstanceMethodsInternalUnused.StaticMethodExplicitImpl () => 0;
+
+				[Kept]
+				[KeptOverride (typeof (IStaticAndInstanceMethodsInternalUsed))]
+				static int IStaticAndInstanceMethodsInternalUsed.StaticMethodExplicitImpl () => 0;
+
+				[Kept]
+				[KeptOverride (typeof (IStaticAndInstanceMethods))]
+				int IStaticAndInstanceMethods.InstanceMethod () => 0;
+
+				[Kept]
+				[KeptOverride (typeof (IStaticAndInstanceMethodsInternalUsed))]
+				int IStaticAndInstanceMethodsInternalUsed.InstanceMethod () => 0;
+
+				int IStaticAndInstanceMethodsInternalUnused.InstanceMethod () => 0;
 
 				[Kept]
 				public static void Test () { }
@@ -353,11 +494,12 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 		}
 
 		[Kept]
-		public class StaticInterfaceInheritance
+		public static class StaticInterfaceInheritance
 		{
 			[Kept]
-			public interface IBase1
+			public interface IBase
 			{
+				[Kept]
 				public static abstract int UsedOnConcreteType ();
 
 				[Kept]
@@ -365,26 +507,19 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 
 				[Kept]
 				public static abstract int UsedOnConstrainedTypeExplicitImpl ();
-				public static abstract int UnusedImplicitImpl ();
-				public static abstract int UnusedExplicitImpl ();
-			}
-
-			[Kept]
-			[KeptInterface (typeof (IBase1))]
-			public interface IInheritsFromBase : IBase1
-			{
-				public static abstract int UsedOnConcreteType ();
-				public static abstract int UsedOnBaseOnlyConstrainedTypeImplicitImpl ();
 
 				[Kept]
-				public static abstract int UsedOnConstrainedTypeExplicitImpl ();
 				public static abstract int UnusedImplicitImpl ();
+
+				[Kept]
 				public static abstract int UnusedExplicitImpl ();
 			}
 
 			[Kept]
-			public interface IBase2
+			[KeptInterface (typeof (IBase))]
+			public interface IInheritsFromBase : IBase
 			{
+				[Kept]
 				public static abstract int UsedOnConcreteType ();
 
 				[Kept]
@@ -392,60 +527,90 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 
 				[Kept]
 				public static abstract int UsedOnConstrainedTypeExplicitImpl ();
-				public static abstract int UnusedImplicitImpl ();
-				public static abstract int UnusedExplicitImpl ();
-			}
-
-			[Kept]
-			[KeptInterface (typeof (IBase1))]
-			[KeptInterface (typeof (IBase2))]
-			public interface IInheritsFromMultipleBases : IBase1, IBase2, IUnusedInterface
-			{
-				public static abstract int UsedOnConcreteType ();
-				public static abstract int UsedOnBaseOnlyConstrainedTypeImplicitImpl ();
 
 				[Kept]
-				public static abstract int UsedOnConstrainedTypeExplicitImpl ();
-				public static abstract int UnusedImplicitImpl ();
-				public static abstract int UnusedExplicitImpl ();
-			}
-
-			public interface IUnusedInterface
-			{
-				public static abstract int UsedOnConcreteType ();
-
 				public static abstract int UnusedImplicitImpl ();
 
+				[Kept]
 				public static abstract int UnusedExplicitImpl ();
 			}
 
 			[Kept]
-			[KeptInterface (typeof (IBase1))]
+			internal interface IBaseInternal
+			{
+				static abstract int UsedOnConcreteType ();
+
+				[Kept]
+				static abstract int UsedOnBaseOnlyConstrainedTypeImplicitImpl ();
+
+				[Kept]
+				static abstract int UsedOnConstrainedTypeExplicitImpl ();
+
+				static abstract int UnusedImplicitImpl ();
+
+				static abstract int UnusedExplicitImpl ();
+			}
+
+			[Kept]
+			[KeptInterface (typeof (IBase))]
+			[KeptInterface (typeof (IBaseInternal))]
+			[KeptInterface (typeof (IUnusedInterface))]
+			internal interface IInheritsFromMultipleBases : IBase, IBaseInternal, IUnusedInterface
+			{
+				static abstract int UsedOnConcreteType ();
+				static abstract int UsedOnBaseOnlyConstrainedTypeImplicitImpl ();
+
+				[Kept]
+				static abstract int UsedOnConstrainedTypeExplicitImpl ();
+				static abstract int UnusedImplicitImpl ();
+				static abstract int UnusedExplicitImpl ();
+			}
+
+			[Kept]
+			internal interface IUnusedInterface
+			{
+				static abstract int UsedOnConcreteType ();
+
+				static abstract int UnusedImplicitImpl ();
+
+				static abstract int UnusedExplicitImpl ();
+			}
+
+			[Kept]
+			[KeptMember (".ctor()")]
+			[KeptInterface (typeof (IBase))]
 			[KeptInterface (typeof (IInheritsFromBase))]
 			public class ImplementsIInheritsFromBase : IInheritsFromBase
 			{
 				[Kept]
-				[RemovedOverride (typeof (IInheritsFromBase))]
-				[RemovedOverride (typeof (IBase1))]
+				[KeptOverride (typeof (IInheritsFromBase))]
+				[KeptOverride (typeof (IBase))]
 				public static int UsedOnConcreteType () => 0;
 
 				[Kept]
-				[KeptOverride (typeof(IBase1))]
-				[RemovedOverride (typeof (IInheritsFromBase))]
+				[KeptOverride (typeof (IBase))]
+				[KeptOverride (typeof (IInheritsFromBase))]
 				public static int UsedOnBaseOnlyConstrainedTypeImplicitImpl () => 0;
 
 				[Kept]
-				[KeptOverride (typeof(IInheritsFromBase))]
+				[KeptOverride (typeof (IInheritsFromBase))]
 				static int IInheritsFromBase.UsedOnConstrainedTypeExplicitImpl () => 0;
 
 				[Kept]
-				[KeptOverride (typeof(IBase1))]
-				static int IBase1.UsedOnConstrainedTypeExplicitImpl () => 0;
+				[KeptOverride (typeof (IBase))]
+				static int IBase.UsedOnConstrainedTypeExplicitImpl () => 0;
 
-				public static int UnusedImplicitImpl () =>0;
+				[Kept]
+				[KeptOverride (typeof (IBase))]
+				[KeptOverride (typeof (IInheritsFromBase))]
+				public static int UnusedImplicitImpl () => 0;
 
-				static int IBase1.UnusedExplicitImpl () => 0;
+				[Kept]
+				[KeptOverride (typeof (IBase))]
+				static int IBase.UnusedExplicitImpl () => 0;
 
+				[Kept]
+				[KeptOverride (typeof (IInheritsFromBase))]
 				static int IInheritsFromBase.UnusedExplicitImpl () => 0;
 
 				[Kept]
@@ -457,42 +622,48 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 				}
 			}
 
+			[Kept]
+			[KeptMember (".ctor()")]
 			[KeptInterface (typeof (IInheritsFromMultipleBases))]
-			[KeptInterface (typeof (IBase1))]
-			[KeptInterface (typeof (IBase2))]
-			// [RemovedInterface (typeof (IUnusedInterface))]
+			[KeptInterface (typeof (IBase))]
+			[KeptInterface (typeof (IBaseInternal))]
+			[KeptInterface (typeof (IUnusedInterface))]
 			public class ImplementsIInheritsFromTwoBases : IInheritsFromMultipleBases
 			{
 				[Kept]
 				[RemovedOverride (typeof (IInheritsFromMultipleBases))]
-				[RemovedOverride (typeof (IBase1))]
-				[RemovedOverride (typeof (IBase2))]
+				[KeptOverride (typeof (IBase))]
+				[RemovedOverride (typeof (IBaseInternal))]
 				[RemovedOverride (typeof (IUnusedInterface))]
 				public static int UsedOnConcreteType () => 0;
 
 				[Kept]
-				[KeptOverride (typeof(IBase1))]
-				[KeptOverride (typeof(IBase2))]
+				[KeptOverride (typeof (IBase))]
+				[KeptOverride (typeof (IBaseInternal))]
 				[RemovedOverride (typeof (IInheritsFromMultipleBases))]
 				public static int UsedOnBaseOnlyConstrainedTypeImplicitImpl () => 0;
 
 				[Kept]
-				[KeptOverride (typeof(IBase1))]
-				static int IBase1.UsedOnConstrainedTypeExplicitImpl () => 0;
+				[KeptOverride (typeof (IBase))]
+				static int IBase.UsedOnConstrainedTypeExplicitImpl () => 0;
 
 				[Kept]
-				[KeptOverride (typeof(IBase2))]
-				static int IBase2.UsedOnConstrainedTypeExplicitImpl () => 0;
+				[KeptOverride (typeof (IBaseInternal))]
+				static int IBaseInternal.UsedOnConstrainedTypeExplicitImpl () => 0;
 
 				[Kept]
-				[KeptOverride (typeof(IInheritsFromMultipleBases))]
+				[KeptOverride (typeof (IInheritsFromMultipleBases))]
 				static int IInheritsFromMultipleBases.UsedOnConstrainedTypeExplicitImpl () => 0;
 
-				public static int UnusedImplicitImpl () =>0;
+				[Kept]
+				[KeptOverride (typeof (IBase))]
+				public static int UnusedImplicitImpl () => 0;
 
-				static int IBase1.UnusedExplicitImpl () => 0;
+				[Kept]
+				[KeptOverride (typeof (IBase))]
+				static int IBase.UnusedExplicitImpl () => 0;
 
-				static int IBase2.UnusedExplicitImpl () => 0;
+				static int IBaseInternal.UnusedExplicitImpl () => 0;
 
 				static int IInheritsFromMultipleBases.UnusedExplicitImpl () => 0;
 
@@ -509,27 +680,27 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 			}
 
 			[Kept]
-			public static void CallBase1TypeConstrainedMethod<T> () where T: IBase1
+			public static void CallBase1TypeConstrainedMethod<T> () where T : IBase
 			{
 				T.UsedOnBaseOnlyConstrainedTypeImplicitImpl ();
 				T.UsedOnConstrainedTypeExplicitImpl ();
 			}
 
 			[Kept]
-			public static void CallBase2TypeConstrainedMethod<T> () where T: IBase2
+			internal static void CallBase2TypeConstrainedMethod<T> () where T : IBaseInternal
 			{
 				T.UsedOnBaseOnlyConstrainedTypeImplicitImpl ();
 				T.UsedOnConstrainedTypeExplicitImpl ();
 			}
 
 			[Kept]
-			public static void CallSingleInheritTypeConstrainedMethod<T> () where T: IInheritsFromBase
+			public static void CallSingleInheritTypeConstrainedMethod<T> () where T : IInheritsFromBase
 			{
 				T.UsedOnConstrainedTypeExplicitImpl ();
 			}
 
 			[Kept]
-			public static void CallDoubleInheritTypeConstrainedMethod<T> () where T: IInheritsFromMultipleBases
+			internal static void CallDoubleInheritTypeConstrainedMethod<T> () where T : IInheritsFromMultipleBases
 			{
 				T.UsedOnConstrainedTypeExplicitImpl ();
 			}
@@ -538,27 +709,29 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 			public static void Test ()
 			{
 				ImplementsIInheritsFromBase.Test ();
-				ImplementsIInheritsFromTwoBases.Test (); 
+				ImplementsIInheritsFromTwoBases.Test ();
 			}
 		}
 
 		[Kept]
-		public class GenericStaticInterface
+		public static class GenericStaticInterface
 		{
 			[Kept]
 			public interface IGenericInterface<T>
 			{
+				[Kept]
 				public static abstract T GetT ();
 				[Kept]
 				public static abstract T GetTExplicit ();
 			}
 
 			[Kept]
+			[KeptMember (".ctor()")]
 			[KeptInterface (typeof (IGenericInterface<int>))]
 			public class ImplementsGenericInterface : IGenericInterface<int>
 			{
 				[Kept]
-				[RemovedOverride (typeof (IGenericInterface<int>))]
+				[KeptOverride (typeof (IGenericInterface<int>))]
 				public static int GetT () => 0;
 
 				[Kept]
@@ -568,9 +741,12 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 
 			[Kept]
 			[KeptInterface (typeof (IGenericInterface<int>))]
-			public class ImplementsGenericInterfaceUnused : IGenericInterface<int>
+			internal class ImplementsGenericInterfaceUnused : IGenericInterface<int>
 			{
+				[Kept]
+				[KeptOverride (typeof (IGenericInterface<int>))]
 				public static int GetT () => 0;
+
 				[Kept]
 				[KeptOverride (typeof (IGenericInterface<int>))]
 				static int IGenericInterface<int>.GetTExplicit () => 0;
@@ -582,7 +758,6 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 				ImplementsGenericInterface.GetT ();
 				CallExplicitMethod<ImplementsGenericInterface, int> ();
 				Type t = typeof (ImplementsGenericInterfaceUnused);
-
 			}
 
 			[Kept]
@@ -593,54 +768,87 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 		}
 
 		[Kept]
-		public class RecursiveGenericInterface
+		public static class RecursiveGenericInterface
 		{
 			[Kept]
 			public interface IGenericInterface<T> where T : IGenericInterface<T>
 			{
+				[Kept]
 				public static abstract T GetT ();
 				[Kept]
 				public static abstract T GetTExplicit ();
 			}
 
 			[Kept]
+			internal interface IGenericInterfaceInternal<T> where T : IGenericInterfaceInternal<T>
+			{
+				static abstract T GetT ();
+
+				static abstract T GetTExplicit ();
+			}
+
+			[Kept]
+			[KeptMember (".ctor()")]
 			[KeptInterface (typeof (IGenericInterface<ImplementsIGenericInterfaceOfSelf>))]
-			public class ImplementsIGenericInterfaceOfSelf : IGenericInterface<ImplementsIGenericInterfaceOfSelf>
+			[KeptInterface (typeof (IGenericInterfaceInternal<ImplementsIGenericInterfaceOfSelf>))]
+			public class ImplementsIGenericInterfaceOfSelf : IGenericInterface<ImplementsIGenericInterfaceOfSelf>, IGenericInterfaceInternal<ImplementsIGenericInterfaceOfSelf>
 			{
 				[Kept]
-				[RemovedOverride (typeof (IGenericInterface<ImplementsIGenericInterfaceOfSelf>))]
+				[KeptOverride (typeof (IGenericInterface<ImplementsIGenericInterfaceOfSelf>))]
+				[RemovedOverride (typeof (IGenericInterfaceInternal<ImplementsIGenericInterfaceOfSelf>))]
 				public static ImplementsIGenericInterfaceOfSelf GetT () => throw new NotImplementedException ();
 
 				[Kept]
 				[KeptOverride (typeof (IGenericInterface<ImplementsIGenericInterfaceOfSelf>))]
 				static ImplementsIGenericInterfaceOfSelf IGenericInterface<ImplementsIGenericInterfaceOfSelf>.GetTExplicit ()
 					=> throw new NotImplementedException ();
+
+				static ImplementsIGenericInterfaceOfSelf IGenericInterfaceInternal<ImplementsIGenericInterfaceOfSelf>.GetTExplicit ()
+					=> throw new NotImplementedException ();
 			}
 
 			[Kept]
+			[KeptMember (".ctor()")]
 			[KeptInterface (typeof (IGenericInterface<ImplementsIGenericInterfaceOfSelf>))]
-			public class ImplementsIGenericInterfaceOfOther : IGenericInterface<ImplementsIGenericInterfaceOfSelf>
+			[KeptInterface (typeof (IGenericInterfaceInternal<ImplementsIGenericInterfaceOfSelf>))]
+			public class ImplementsIGenericInterfaceOfOther : IGenericInterface<ImplementsIGenericInterfaceOfSelf>, IGenericInterfaceInternal<ImplementsIGenericInterfaceOfSelf>
 			{
 				[Kept]
-				[RemovedOverride (typeof (IGenericInterface<ImplementsIGenericInterfaceOfSelf>))]
+				[KeptOverride (typeof (IGenericInterface<ImplementsIGenericInterfaceOfSelf>))]
+				[RemovedOverride (typeof (IGenericInterfaceInternal<ImplementsIGenericInterfaceOfSelf>))]
 				public static ImplementsIGenericInterfaceOfSelf GetT () => throw new NotImplementedException ();
 
 				[Kept]
 				[KeptOverride (typeof (IGenericInterface<ImplementsIGenericInterfaceOfSelf>))]
 				static ImplementsIGenericInterfaceOfSelf IGenericInterface<ImplementsIGenericInterfaceOfSelf>.GetTExplicit ()
+					=> throw new NotImplementedException ();
+
+				static ImplementsIGenericInterfaceOfSelf IGenericInterfaceInternal<ImplementsIGenericInterfaceOfSelf>.GetTExplicit ()
 					=> throw new NotImplementedException ();
 			}
 
 			[Kept]
 			[KeptInterface (typeof (IGenericInterface<ImplementsIGenericInterfaceOfSelfUnused>))]
-			public class ImplementsIGenericInterfaceOfSelfUnused : IGenericInterface<ImplementsIGenericInterfaceOfSelfUnused>
+			[KeptInterface (typeof (IGenericInterfaceInternal<ImplementsIGenericInterfaceOfSelfUnused>))]
+			internal class ImplementsIGenericInterfaceOfSelfUnused : IGenericInterface<ImplementsIGenericInterfaceOfSelfUnused>, IGenericInterfaceInternal<ImplementsIGenericInterfaceOfSelfUnused>
 			{
+				[Kept]
+				[KeptOverride (typeof (IGenericInterface<ImplementsIGenericInterfaceOfSelfUnused>))]
 				public static ImplementsIGenericInterfaceOfSelfUnused GetT () => throw new NotImplementedException ();
 
 				[Kept]
 				[KeptOverride (typeof (IGenericInterface<ImplementsIGenericInterfaceOfSelfUnused>))]
 				static ImplementsIGenericInterfaceOfSelfUnused IGenericInterface<ImplementsIGenericInterfaceOfSelfUnused>.GetTExplicit ()
 					=> throw new NotImplementedException ();
+
+				static ImplementsIGenericInterfaceOfSelfUnused IGenericInterfaceInternal<ImplementsIGenericInterfaceOfSelfUnused>.GetTExplicit ()
+					=> throw new NotImplementedException ();
+			}
+
+			[Kept]
+			public static void CallExplicitGetT<T> () where T : IGenericInterface<ImplementsIGenericInterfaceOfSelf>
+			{
+				T.GetTExplicit ();
 			}
 
 			[Kept]
@@ -653,63 +861,37 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 
 				Type t = typeof (ImplementsIGenericInterfaceOfSelfUnused);
 			}
-
-			[Kept]
-			public static void CallExplicitGetT<T> () where T : IGenericInterface<ImplementsIGenericInterfaceOfSelf>
-			{
-				T.GetTExplicit ();
-			}
 		}
 
 		[Kept]
-		public class UnusedInterfaces
+		public static class UnusedInterfaces
 		{
-			public interface IUnusedInterface
+			[Kept]
+			internal interface IUnusedInterface
 			{
-				public int UnusedMethodImplicit ();
-				public int UnusedMethodExplicit ();
+				int UnusedMethodImplicit ();
+				int UnusedMethodExplicit ();
 			}
 
 			[Kept]
-			public interface IUnusedMethods
-			{
-				public int UnusedMethodImplicit ();
-				public int UnusedMethodExplicit ();
-			}
-
-			[Kept]
+			[KeptMember (".ctor()")]
+			[KeptInterface (typeof(IUnusedInterface))]
 			public class ImplementsUnusedInterface : IUnusedInterface
 			{
 				int IUnusedInterface.UnusedMethodExplicit () => 0;
 
+				[Kept]
+				// Bug: We should be able to remove this override
+				//[RemovedOverride (typeof (IUnusedInterface))]
 				public int UnusedMethodImplicit () => 0;
 			}
-
-			[Kept]
-			// In link mode, if we remove all methods from the interface, we should be able to remove the interface. We need it now since we don't remove the type constraint from UsesIUnusedMethods<T>
-			[KeptInterface (typeof (IUnusedMethods))]
-			public class ImplementsIUnusedMethods : IUnusedMethods
-			{
-				int IUnusedMethods.UnusedMethodExplicit () => 0;
-
-				public int UnusedMethodImplicit () => 0;
-			}
-
-			[Kept]
-			// In link mode, if there are no constrained calls we should be able to remove the type constraint
-			public static void UsesIUnusedMethods<T> () where T : IUnusedMethods { }
 
 			[Kept]
 			public static void Test ()
 			{
-				UsesIUnusedMethods<ImplementsIUnusedMethods> ();
 				Type t = typeof (ImplementsUnusedInterface);
 			}
 		}
-
-		public class ClassInheritance
-		{
-
-		}
 	}
 }
+
