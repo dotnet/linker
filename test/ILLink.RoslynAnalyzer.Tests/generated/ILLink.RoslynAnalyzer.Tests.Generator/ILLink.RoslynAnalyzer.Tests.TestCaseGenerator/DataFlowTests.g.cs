@@ -8,7 +8,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 	{
 
 		[Fact]
-		public Task CompilerGeneratedStateMachines ()
+		public Task CompilerGeneratedStateMachine ()
 		{
 			return RunTest (allowMissingWarnings: true);
 		}

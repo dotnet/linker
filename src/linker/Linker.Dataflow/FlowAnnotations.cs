@@ -392,7 +392,7 @@ namespace ILLink.Shared.TrimAnalysis
 			if (!(CompilerGeneratedNames.IsStateMachineType (typeDef.Name) || CompilerGeneratedNames.IsLambdaDisplayClass (typeDef.Name))) {
 				return null;
 			}
-			var attrs = _context.CompilerGeneratedState.TryGetGeneratedTypeAttributes (typeDef);
+			var attrs = _context.CompilerGeneratedState.GetGeneratedTypeAttributes (typeDef);
 			Debug.Assert (attrs is null || attrs.Count == typeDef.GenericParameters.Count);
 			return attrs;
 		}
