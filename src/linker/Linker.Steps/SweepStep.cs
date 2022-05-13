@@ -475,15 +475,17 @@ namespace Mono.Linker.Steps
 				// We can't rely on the context resolution cache anymore, since it may remember methods which are already removed
 				// So call the direct Resolve here and avoid the cache.
 				// We want to remove a method from the list of Overrides if:
-				//	Resolve() is null. This can happen for a couple of reasons, but it indicates the method isn't in the final assembly.
+				//	Resolve() is null
+				//		This can happen for a couple of reasons, but it indicates the method isn't in the final assembly.
+				//		Resolve also may return a removed value if method.Overrides[i] is a MethodDefinition. In this case, Resolve short circuits and returns `this`.
 				//	OR
-				//	ShouldRemove(ov) returns false
-				//	AND ov.DeclaringType is not null
-				//	AND ov.DeclaringType is in a `link` scope (i.e. !IgnoreScope).
-				//		If ShouldRemove(ov) returns false we are removing the method from the assembly if it is a `link` assembly.
-				//		ov.DeclaringType may be null if `ov` is a MethodDefinition already and just	returns `this` even though it shouldn't exist.
-				//		If the override is not in a `link` scope, ShouldRemove may return true even though the method will not be removed.
-				if (method.Overrides[i].Resolve () is not MethodDefinition ov || ShouldRemove (ov) && ov.DeclaringType is not null && !IgnoreScope (ov.DeclaringType.Scope))
+				//	ov.DeclaringType is null
+				//		ov.DeclaringType may be null if Resolve short circuited and returned a removed method. In this case, we want to remove the override.
+				//	OR
+				//	ov is in a `link` scope and is unmarked
+				//		We need to make sure the override is in a link scope.
+				//		Only things in a link scope are marked, so ShouldRemove is only valid for items in a `link` scope.
+				if (method.Overrides[i].Resolve () is not MethodDefinition ov || ov.DeclaringType is null || (IsLinkScope (ov.DeclaringType.Scope) && ShouldRemove (ov)))
 					method.Overrides.RemoveAt (i);
 				else
 					i++;
@@ -493,10 +495,10 @@ namespace Mono.Linker.Steps
 		/// <summary>
 		/// Returns true if the assembly of the <paramref name="scope"></paramref> is not set to link (e.g. action=copy is set for that assembly)
 		/// </summary>
-		private bool IgnoreScope (IMetadataScope scope)
+		private bool IsLinkScope (IMetadataScope scope)
 		{
 			AssemblyDefinition? assembly = Context.Resolve (scope);
-			return assembly != null && Annotations.GetAction (assembly) != AssemblyAction.Link;
+			return assembly != null && Annotations.GetAction (assembly) == AssemblyAction.Link;
 		}
 
 		void SweepDebugInfo (Collection<MethodDefinition> methods)
