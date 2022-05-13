@@ -483,7 +483,7 @@ namespace Mono.Linker.Steps
 				//		ov.DeclaringType may be null if Resolve short circuited and returned a removed method. In this case, we want to remove the override.
 				//	OR
 				//	ov is in a `link` scope and is unmarked
-				//		We need to make sure the override is in a link scope.
+				//		ShouldRemove returns true if the method is unmarked, but we also We need to make sure the override is in a link scope.
 				//		Only things in a link scope are marked, so ShouldRemove is only valid for items in a `link` scope.
 				if (method.Overrides[i].Resolve () is not MethodDefinition ov || ov.DeclaringType is null || (IsLinkScope (ov.DeclaringType.Scope) && ShouldRemove (ov)))
 					method.Overrides.RemoveAt (i);
