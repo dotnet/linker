@@ -372,7 +372,7 @@ namespace ILLink.Shared.TrimAnalysis
 
 			DynamicallyAccessedMemberTypes[]? typeGenericParameterAnnotations = null;
 			if (type.HasGenericParameters) {
-				var attrs = TryGetGeneratedTypeAttributes (type);
+				var attrs = GetGeneratedTypeAttributes (type);
 				for (int genericParameterIndex = 0; genericParameterIndex < type.GenericParameters.Count; genericParameterIndex++) {
 					var provider = attrs?[genericParameterIndex] ?? type.GenericParameters[genericParameterIndex];
 					var annotation = GetMemberTypesForDynamicallyAccessedMembersAttribute (type, providerIfNotMember: provider);
@@ -387,9 +387,9 @@ namespace ILLink.Shared.TrimAnalysis
 			return new TypeAnnotations (type, typeAnnotation, annotatedMethods.ToArray (), annotatedFields.ToArray (), typeGenericParameterAnnotations);
 		}
 
-		private IReadOnlyList<ICustomAttributeProvider>? TryGetGeneratedTypeAttributes (TypeDefinition typeDef)
+		private IReadOnlyList<ICustomAttributeProvider>? GetGeneratedTypeAttributes (TypeDefinition typeDef)
 		{
-			if (!(CompilerGeneratedNames.IsStateMachineType (typeDef.Name) || CompilerGeneratedNames.IsLambdaDisplayClass (typeDef.Name))) {
+			if (!(CompilerGeneratedNames.IsGeneratedTypeName (typeDef.Name))) {
 				return null;
 			}
 			var attrs = _context.CompilerGeneratedState.GetGeneratedTypeAttributes (typeDef);

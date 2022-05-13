@@ -310,8 +310,7 @@ namespace Mono.Linker
 		/// </summary>
 		public IReadOnlyList<ICustomAttributeProvider>? GetGeneratedTypeAttributes (TypeDefinition generatedType)
 		{
-			Debug.Assert (CompilerGeneratedNames.IsStateMachineType (generatedType.Name)
-				|| CompilerGeneratedNames.IsLambdaDisplayClass (generatedType.Name));
+			Debug.Assert (CompilerGeneratedNames.IsGeneratedType (generatedType.Name));
 
 			var typeToCache = PopulateCacheForType (generatedType);
 			if (typeToCache is null)
