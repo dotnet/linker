@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
@@ -25,6 +26,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 			GenericStaticInterface.Test ();
 			RecursiveGenericInterface.Test ();
 			UnusedInterfaces.Test ();
+			ClassInheritance.Test ();
 		}
 
 		[Kept]
@@ -708,8 +710,57 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 			}
 		}
 
+		[Kept]
 		public class ClassInheritance
 		{
+			[Kept]
+			public interface IBase
+			{
+				[Kept]
+				static abstract int ExplicitlyImplemented ();
+				static abstract int ImplicitlyImplementedUsedOnType ();
+				static abstract int ImplicitlyImplementedUsedOnInterface ();
+				int GetInt ();
+			}
+
+			[Kept]
+			[KeptInterface (typeof (IBase))]
+			public abstract class BaseKeptOnType : IBase
+			{
+				[Kept]
+				[KeptOverride (typeof (IBase))]
+				static int IBase.ExplicitlyImplemented () => 0;
+
+				// Don't use at all
+				public static int ImplicitlyImplementedUsedOnType () => 0;
+
+				public static int ImplicitlyImplementedUsedOnInterface () => 0;
+				public int GetInt () => 0;
+			}
+
+			[Kept]
+			[KeptInterface (typeof (IBase))]
+			[KeptBaseType (typeof (BaseKeptOnType))]
+			public class InheritsFromBase : BaseKeptOnType, IBase
+			{
+				// Use on this type only
+				[Kept]
+				//[RemovedOverride (typeof(IBase))]
+				public static int ImplictlyImplementedUsedOnType () => 0;
+			}
+
+			[Kept]
+			public static void CallIBaseMethod<T> () where T : IBase
+			{
+				T.ExplicitlyImplemented ();
+			}
+
+			[Kept]
+			public static void Test ()
+			{
+				InheritsFromBase.ImplictlyImplementedUsedOnType ();
+				CallIBaseMethod<InheritsFromBase> ();
+			}
 
 		}
 	}
