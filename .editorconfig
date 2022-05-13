@@ -116,6 +116,9 @@ dotnet_diagnostic.IDE0082.severity = warning
 # IDE0110: Remove unnecessary discard
 dotnet_diagnostic.IDE0110.severity = warning
 
+# CS8524: Switch doesn't handle unnamed enum values
+dotnet_diagnostic.CS8524.severity = none
+
 ## CA analyzer rules
 dotnet_analyzer_diagnostic.category-performance.severity = warning
 dotnet_analyzer_diagnostic.category-maintainability.severity = warning
