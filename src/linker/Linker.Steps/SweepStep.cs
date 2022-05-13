@@ -493,7 +493,7 @@ namespace Mono.Linker.Steps
 		}
 
 		/// <summary>
-		/// Returns true if the assembly of the <paramref name="scope"></paramref> is not set to link (e.g. action=copy is set for that assembly)
+		/// Returns true if the assembly of the <paramref name="scope"></paramref> is set to link
 		/// </summary>
 		private bool IsLinkScope (IMetadataScope scope)
 		{

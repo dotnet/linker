@@ -328,8 +328,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 			}
 
 			[Kept]
-			// Bug
-			//[KeptInterface (typeof (IStaticAndInstanceMethods))]
+			[KeptInterface (typeof (IStaticAndInstanceMethods))]
 			public class UnusedMethods : IStaticAndInstanceMethods
 			{
 				public static int StaticMethodCalledOnConcreteType () => 0;
@@ -338,6 +337,8 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 				[KeptOverride (typeof (IStaticAndInstanceMethods))]
 				static int IStaticAndInstanceMethods.StaticMethodExplicitImpl () => 0;
 
+				// Bug: If .ctor is removed, we can remove unused instance methods
+				[Kept]
 				public int InstanceMethod () => 0;
 
 				[Kept]
