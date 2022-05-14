@@ -231,36 +231,35 @@ namespace Mono.Linker.Dataflow
 					? new ByRefParameterValue (
 						calledMethodDefinition!,
 						argumentIndex,
-						(GetMethodParameterValue(calledMethodDefinition!, argumentIndex) as MethodParameterValue)!.DynamicallyAccessedMemberTypes)
+						(GetMethodParameterValue (calledMethodDefinition!, argumentIndex) as MethodParameterValue)!.DynamicallyAccessedMemberTypes)
 					: UnknownValue.Instance;
 				foreach (var value in methodParams[argumentIndex]) {
-					switch (value)
-					{
-						case FieldReferenceValue fieldRef:
-						if (GetFieldValue(fieldRef.FieldDefinition).AsSingleValue() is FieldValue fieldValue) {
-							HandleStoreField(
+					switch (value) {
+					case FieldReferenceValue fieldRef:
+						if (GetFieldValue (fieldRef.FieldDefinition).AsSingleValue () is FieldValue fieldValue) {
+							HandleStoreField (
 								callingMethodBody.Method,
 								fieldValue,
 								operation,
 								newByRefValue);
 						}
 						break;
-						case ParameterReferenceValue paramRef:
-							if (GetMethodParameterValue (paramRef.MethodDefinition, paramRef.ParameterIndex) is MethodParameterValue methodParameterValue) {
-								HandleStoreParameter (
-									callingMethodBody.Method,
-									methodParameterValue,
-									operation,
-									newByRefValue);
-							}
+					case ParameterReferenceValue paramRef:
+						if (GetMethodParameterValue (paramRef.MethodDefinition, paramRef.ParameterIndex) is MethodParameterValue methodParameterValue) {
+							HandleStoreParameter (
+								callingMethodBody.Method,
+								methodParameterValue,
+								operation,
+								newByRefValue);
+						}
 						break;
-						case LocalVariableReferenceValue localRef:
-							StoreMethodLocalValue (locals,
-								newByRefValue,
-								localRef.LocalDefinition,
-								curBasicBlock);
+					case LocalVariableReferenceValue localRef:
+						StoreMethodLocalValue (locals,
+							newByRefValue,
+							localRef.LocalDefinition,
+							curBasicBlock);
 						break;
-						default:
+					default:
 						break;
 					}
 				}

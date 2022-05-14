@@ -10,8 +10,8 @@ using ILLink.Shared.TypeSystemProxy;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Collections.Generic;
-using MultiValue = ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.SingleValue>;
 using LocalVariableStore = System.Collections.Generic.Dictionary<Mono.Cecil.Cil.VariableDefinition, Mono.Linker.Dataflow.ValueBasicBlockPair>;
+using MultiValue = ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.SingleValue>;
 
 namespace Mono.Linker.Dataflow
 {
@@ -727,8 +727,7 @@ namespace Mono.Linker.Dataflow
 			StackSlot newSlot;
 			if (isByRef) {
 				newSlot = new StackSlot (new LocalVariableReferenceValue (localDef));
-			}
-			else if (locals.TryGetValue (localDef, out ValueBasicBlockPair localValue))
+			} else if (locals.TryGetValue (localDef, out ValueBasicBlockPair localValue))
 				newSlot = new StackSlot (localValue.Value);
 			else
 				newSlot = new StackSlot (UnknownValue.Instance);
@@ -807,7 +806,7 @@ namespace Mono.Linker.Dataflow
 					StoreMethodLocalValue (locals, valueToStore.Value, localReference.LocalDefinition, curBasicBlock);
 					break;
 				case FieldReferenceValue fieldReference
-				when GetFieldValue (fieldReference.FieldDefinition).AsSingleValue() is FieldValue fieldValue:
+				when GetFieldValue (fieldReference.FieldDefinition).AsSingleValue () is FieldValue fieldValue:
 					HandleStoreField (methodBody.Method, fieldValue, operation, valueToStore.Value);
 					break;
 				case ParameterReferenceValue parameterReference
@@ -969,7 +968,7 @@ namespace Mono.Linker.Dataflow
 			SingleValue? newObjValue;
 			ValueNodeList methodParams = PopCallArguments (currentStack, calledMethod, callingMethodBody, isNewObj,
 														   operation.Offset, out newObjValue);
-			ValueNodeList dereferencedMethodParams = new (methodParams.Select (param => DereferenceValue (param, locals)).ToList());
+			ValueNodeList dereferencedMethodParams = new (methodParams.Select (param => DereferenceValue (param, locals)).ToList ());
 			MultiValue methodReturnValue;
 			bool handledFunction = HandleCall (
 				callingMethodBody,

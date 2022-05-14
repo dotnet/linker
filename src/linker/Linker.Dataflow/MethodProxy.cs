@@ -52,6 +52,6 @@ namespace ILLink.Shared.TypeSystemProxy
 
 		public override string ToString () => Method.ToString ();
 
-		public ReferenceKind ParameterReferenceKind (int index) => Method.ParameterReferenceKind(index);
+		public ReferenceKind ParameterReferenceKind (int index) => Method.ParameterReferenceKind (index);
 	}
 }
