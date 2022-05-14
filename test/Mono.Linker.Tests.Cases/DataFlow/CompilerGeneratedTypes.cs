@@ -1,6 +1,7 @@
 // Copyright (c) .NET Foundation and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
@@ -11,7 +12,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 {
 	[ExpectedNoWarnings]
 	[SkipKeptItemsValidation]
-	class CompilerGeneratedStateMachine
+	class CompilerGeneratedTypes
 	{
 		public static void Main ()
 		{
@@ -22,11 +23,14 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			IteratorCapture ();
 			NestedIterators ();
 			IteratorInsideClosure ();
+			IteratorInsideClosureMismatch ();
 
 			// Async
 			Async ();
-			AsyncTypeMismatch ();
 			AsyncCapture ();
+			AsyncTypeMismatch ();
+			AsyncInsideClosure ();
+			AsyncInsideClosureMismatch ();
 		}
 
 		private static void UseIterator ()
@@ -127,6 +131,27 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 		}
 
+		private static void IteratorInsideClosureMismatch ()
+		{
+			Outer<string> ();
+
+			IEnumerable<object> Outer<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicProperties)] T1> ()
+			{
+				int x = 0;
+				foreach (var o in Inner<string> ()) yield return o;
+
+				[ExpectedWarning("IL2090", "T1", "PublicMethods", CompilerGeneratedCode = true)]
+				[ExpectedWarning("IL2090", "T2", "PublicProperties", CompilerGeneratedCode = true)]
+				IEnumerable<object> Inner<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] T2> ()
+				{
+					x++;
+					foreach (var m in typeof (T1).GetMethods ()) yield return m;
+					foreach (var p in typeof (T2).GetProperties ()) yield return p;
+				}
+			}
+
+		}
+
 		private static void Async ()
 		{
 			Local<string> ().Wait ();
@@ -175,6 +200,27 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				int x = 0;
 				Inner<string> ().Wait ();
 				async Task Inner<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicProperties)] T2> ()
+				{
+					await Task.Delay (0);
+					x++;
+					_ = typeof (T1).GetMethods ();
+					_ = typeof (T2).GetProperties ();
+				}
+			}
+		}
+
+		private static void AsyncInsideClosureMismatch ()
+		{
+			Outer<string> ();
+
+			void Outer<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicProperties)] T1> ()
+			{
+				int x = 0;
+				Inner<string> ().Wait ();
+
+				[ExpectedWarning("IL2090", "T1", "PublicMethods", CompilerGeneratedCode = true)]
+				[ExpectedWarning("IL2090", "T2", "PublicProperties", CompilerGeneratedCode=true)]
+				async Task Inner<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] T2> ()
 				{
 					await Task.Delay (0);
 					x++;

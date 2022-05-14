@@ -104,8 +104,9 @@ namespace Mono.Linker
 							continue;
 
 						if (lambdaOrLocalFunction.IsConstructor &&
-							!method.IsStaticConstructor () &&
 							lambdaOrLocalFunction.DeclaringType is var generatedType &&
+							// Don't consider calls in the same type, like inside a static constructor
+							method.DeclaringType != generatedType &&
 							CompilerGeneratedNames.IsLambdaDisplayClass (generatedType.Name)) {
 							// fill in null for now, attribute providers will be filled in later
 							if (!_generatedTypeToTypeArgumentInfo.TryAdd (generatedType, new TypeArgumentInfo (method, null))) {
@@ -339,9 +340,8 @@ namespace Mono.Linker
 
 			TypeDefinition sourceType = (sourceMember as TypeDefinition) ?? sourceMember.DeclaringType;
 
-			if (_compilerGeneratedTypeToUserCodeMethod.TryGetValue (sourceType, out owningMethod)) {
+			if (_compilerGeneratedTypeToUserCodeMethod.TryGetValue (sourceType, out owningMethod))
 				return true;
-			}
 
 			if (!CompilerGeneratedNames.IsGeneratedMemberName (sourceMember.Name) && !CompilerGeneratedNames.IsGeneratedMemberName (sourceType.Name))
 				return false;
@@ -358,9 +358,8 @@ namespace Mono.Linker
 					return true;
 			}
 
-			if (_compilerGeneratedTypeToUserCodeMethod.TryGetValue (sourceType, out owningMethod)) {
+			if (_compilerGeneratedTypeToUserCodeMethod.TryGetValue (sourceType, out owningMethod))
 				return true;
-			}
 
 			return false;
 		}

@@ -389,7 +389,7 @@ namespace ILLink.Shared.TrimAnalysis
 
 		private IReadOnlyList<ICustomAttributeProvider>? GetGeneratedTypeAttributes (TypeDefinition typeDef)
 		{
-			if (!(CompilerGeneratedNames.IsGeneratedTypeName (typeDef.Name))) {
+			if (!CompilerGeneratedNames.IsGeneratedType (typeDef.Name)) {
 				return null;
 			}
 			var attrs = _context.CompilerGeneratedState.GetGeneratedTypeAttributes (typeDef);
