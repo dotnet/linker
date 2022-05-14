@@ -38,6 +38,7 @@ using System.Linq;
 using System.Reflection.Runtime.TypeParsing;
 using System.Text.RegularExpressions;
 using ILLink.Shared;
+using ILLink.Shared.TrimAnalysis;
 using ILLink.Shared.TypeSystemProxy;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -574,10 +575,6 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		/// <summary>
-		/// Does extra handling of marked types that have interfaces when it's necessary to know what types are marked or instantiated.
-		/// e.g. Marks the "implements interface" annotations and removes override annotations for static interface methods.
-		/// </summary>
 		void ProcessMarkedTypesWithInterfaces ()
 		{
 			// We may mark an interface type later on.  Which means we need to reprocess any time with one or more interface implementations that have not been marked
@@ -1660,7 +1657,7 @@ namespace Mono.Linker.Steps
 			if (reason.Kind != DependencyKind.DynamicallyAccessedMemberOnType &&
 				Annotations.DoesFieldRequireUnreferencedCode (field, out RequiresUnreferencedCodeAttribute? requiresUnreferencedCodeAttribute) &&
 				!ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (origin.Provider))
-				ReportRequiresUnreferencedCode (field.GetDisplayName (), requiresUnreferencedCodeAttribute, origin);
+				ReportRequiresUnreferencedCode (field.GetDisplayName (), requiresUnreferencedCodeAttribute, new DiagnosticContext (origin, diagnosticsEnabled: true, Context));
 
 			switch (reason.Kind) {
 			case DependencyKind.AccessedViaReflection:
@@ -2891,7 +2888,7 @@ namespace Mono.Linker.Steps
 				return;
 			}
 
-			CheckAndReportRequiresUnreferencedCode (method, ScopeStack.CurrentScope.Origin);
+			CheckAndReportRequiresUnreferencedCode (method, new DiagnosticContext (ScopeStack.CurrentScope.Origin, diagnosticsEnabled: true, Context));
 
 			if (Context.Annotations.FlowAnnotations.ShouldWarnWhenAccessedForReflection (method)) {
 				// If the current scope has analysis warnings suppressed, don't generate any
@@ -2923,7 +2920,7 @@ namespace Mono.Linker.Steps
 				return false;
 
 			if (originMember is MethodDefinition &&
-				Annotations.IsMethodInRequiresUnreferencedCodeScope ((MethodDefinition) originMember))
+				Annotations.IsInRequiresUnreferencedCodeScope ((MethodDefinition) originMember))
 				return true;
 
 			if (originMember is not IMemberDefinition member)
@@ -2932,7 +2929,7 @@ namespace Mono.Linker.Steps
 			MethodDefinition? owningMethod;
 			while (Context.CompilerGeneratedState.TryGetOwningMethodForCompilerGeneratedMember (member, out owningMethod)) {
 				Debug.Assert (owningMethod != member);
-				if (Annotations.IsMethodInRequiresUnreferencedCodeScope (owningMethod))
+				if (Annotations.IsInRequiresUnreferencedCodeScope (owningMethod))
 					return true;
 				member = owningMethod;
 			}
@@ -2940,24 +2937,24 @@ namespace Mono.Linker.Steps
 			return false;
 		}
 
-		internal void CheckAndReportRequiresUnreferencedCode (MethodDefinition method, in MessageOrigin origin)
+		internal void CheckAndReportRequiresUnreferencedCode (MethodDefinition method, in DiagnosticContext diagnosticContext)
 		{
 			// If the caller of a method is already marked with `RequiresUnreferencedCodeAttribute` a new warning should not
 			// be produced for the callee.
-			if (ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (origin.Provider))
+			if (ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (diagnosticContext.Origin.Provider))
 				return;
 
 			if (!Annotations.DoesMethodRequireUnreferencedCode (method, out RequiresUnreferencedCodeAttribute? requiresUnreferencedCode))
 				return;
 
-			ReportRequiresUnreferencedCode (method.GetDisplayName (), requiresUnreferencedCode, origin);
+			ReportRequiresUnreferencedCode (method.GetDisplayName (), requiresUnreferencedCode, diagnosticContext);
 		}
 
-		private void ReportRequiresUnreferencedCode (string displayName, RequiresUnreferencedCodeAttribute requiresUnreferencedCode, in MessageOrigin currentOrigin)
+		private static void ReportRequiresUnreferencedCode (string displayName, RequiresUnreferencedCodeAttribute requiresUnreferencedCode, in DiagnosticContext diagnosticContext)
 		{
 			string arg1 = MessageFormat.FormatRequiresAttributeMessageArg (requiresUnreferencedCode.Message);
 			string arg2 = MessageFormat.FormatRequiresAttributeUrlArg (requiresUnreferencedCode.Url);
-			Context.LogWarning (currentOrigin, DiagnosticId.RequiresUnreferencedCode, displayName, arg1, arg2);
+			diagnosticContext.AddDiagnostic (DiagnosticId.RequiresUnreferencedCode, displayName, arg1, arg2);
 		}
 
 		protected (MethodReference, DependencyInfo) GetOriginalMethod (MethodReference method, DependencyInfo reason)
@@ -3047,16 +3044,8 @@ namespace Mono.Linker.Steps
 				}
 			}
 
-			// Mark overridden methods except for static interface methods
 			if (method.HasOverrides) {
 				foreach (MethodReference ov in method.Overrides) {
-					// Method implementing a static interface method will have an override to it - note nonstatic methods usually don't unless they're explicit.
-					// Calling the implementation method directly has no impact on the interface, and as such it should not mark the interface or its method.
-					// Only if the interface method is referenced, then all the methods which implemented must be kept, but not the other way round.
-					if (Context.Resolve (ov)?.IsStatic == true
-						&& Context.Resolve (ov.DeclaringType)?.IsInterface == true) {
-						continue;
-					}
 					MarkMethod (ov, new DependencyInfo (DependencyKind.MethodImplOverride, method), ScopeStack.CurrentScope.Origin);
 					MarkExplicitInterfaceImplementation (method, ov);
 				}
