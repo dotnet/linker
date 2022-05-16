@@ -698,25 +698,14 @@ namespace ILLink.Shared.TrimAnalysis
 			=> GetMethodParameterValue (method, parameterIndex, GetParameterAnnotation (method.Method, parameterIndex + (method.IsStatic () ? 0 : 1)));
 
 		// Linker-specific dataflow value creation. Eventually more of these should be shared.
-
 		internal SingleValue GetFieldValue (FieldDefinition field)
-		{
-			switch (field.Name) {
-			case "EmptyTypes" when field.DeclaringType.IsTypeOf (WellKnownType.System_Type): {
-					return ArrayValue.Create (0, field.DeclaringType);
-				}
-			case "Empty" when field.DeclaringType.IsTypeOf (WellKnownType.System_String): {
-					return new KnownStringValue (string.Empty);
-				}
+			=> field.Name switch {
+				"EmptyTypes" when field.DeclaringType.IsTypeOf (WellKnownType.System_Type) => ArrayValue.Create (0, field.DeclaringType),
+				"Empty" when field.DeclaringType.IsTypeOf (WellKnownType.System_String) => new KnownStringValue (string.Empty),
+				_ => new FieldValue (field.FieldType.ResolveToTypeDefinition (_context), field, GetFieldAnnotation (field))
+			};
 
-			default: {
-					DynamicallyAccessedMemberTypes memberTypes = GetFieldAnnotation (field);
-					return new FieldValue (field.FieldType.ResolveToTypeDefinition (_context), field, memberTypes);
-				}
-			}
-		}
-
-		internal SingleValue GetTypeValueNodeFromGenericArgument (TypeReference genericArgument)
+		internal SingleValue GetTypeValueFromGenericArgument (TypeReference genericArgument)
 		{
 			if (genericArgument is GenericParameter inputGenericParameter) {
 				// Technically this should be a new value node type as it's not a System.Type instance representation, but just the generic parameter

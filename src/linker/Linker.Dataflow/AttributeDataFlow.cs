@@ -3,9 +3,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using ILLink.Shared.DataFlow;
 using ILLink.Shared.TrimAnalysis;
 using Mono.Cecil;
 using Mono.Linker.Steps;
@@ -13,13 +11,13 @@ using MultiValue = ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.Single
 
 namespace Mono.Linker.Dataflow
 {
-	public class FlowInsensitiveReflectionScanner
+	public readonly struct AttributeDataFlow
 	{
 		readonly LinkContext _context;
 		readonly MarkStep _markStep;
 		readonly MessageOrigin _origin;
 
-		public FlowInsensitiveReflectionScanner (LinkContext context, MarkStep markStep, in MessageOrigin origin)
+		public AttributeDataFlow (LinkContext context, MarkStep markStep, in MessageOrigin origin)
 		{
 			_context = context;
 			_markStep = markStep;
@@ -31,7 +29,7 @@ namespace Mono.Linker.Dataflow
 			for (int i = 0; i < method.Parameters.Count; i++) {
 				var parameterValue = _context.Annotations.FlowAnnotations.GetMethodParameterValue (method, i);
 				if (parameterValue.DynamicallyAccessedMemberTypes != DynamicallyAccessedMemberTypes.None) {
-					MultiValue value = GetValueNodeForCustomAttributeArgument (arguments[i]);
+					MultiValue value = GetValueForCustomAttributeArgument (arguments[i]);
 					var diagnosticContext = new DiagnosticContext (_origin, diagnosticsEnabled: true, _context);
 					RequireDynamicallyAccessedMembers (diagnosticContext, value, parameterValue);
 				}
@@ -40,7 +38,7 @@ namespace Mono.Linker.Dataflow
 
 		public void ProcessAttributeDataflow (FieldDefinition field, CustomAttributeArgument value)
 		{
-			MultiValue valueNode = GetValueNodeForCustomAttributeArgument (value);
+			MultiValue valueNode = GetValueForCustomAttributeArgument (value);
 			var fieldValueCandidate = _context.Annotations.FlowAnnotations.GetFieldValue (field);
 			if (fieldValueCandidate is not ValueWithDynamicallyAccessedMembers fieldValue)
 				return;
@@ -49,35 +47,20 @@ namespace Mono.Linker.Dataflow
 			RequireDynamicallyAccessedMembers (diagnosticContext, valueNode, fieldValue);
 		}
 
-		MultiValue GetValueNodeForCustomAttributeArgument (CustomAttributeArgument argument)
+		MultiValue GetValueForCustomAttributeArgument (CustomAttributeArgument argument)
 		{
-			SingleValue value;
 			if (argument.Type.Name == "Type") {
 				TypeDefinition? referencedType = ((TypeReference) argument.Value).ResolveToTypeDefinition (_context);
-				if (referencedType == null)
-					value = UnknownValue.Instance;
-				else
-					value = new SystemTypeValue (referencedType);
-			} else if (argument.Type.MetadataType == MetadataType.String) {
-				value = new KnownStringValue ((string) argument.Value);
-			} else {
-				// We shouldn't have gotten a non-null annotation for this from GetParameterAnnotation
-				throw new InvalidOperationException ();
+				return referencedType == null
+					? UnknownValue.Instance
+					: new SystemTypeValue (referencedType);
 			}
 
-			Debug.Assert (value != null);
-			return value;
-		}
+			if (argument.Type.MetadataType == MetadataType.String)
+				return new KnownStringValue ((string) argument.Value);
 
-		public void ProcessGenericArgumentDataFlow (GenericParameter genericParameter, TypeReference genericArgument)
-		{
-			var genericParameterValue = _context.Annotations.FlowAnnotations.GetGenericParameterValue (genericParameter);
-			Debug.Assert (genericParameterValue.DynamicallyAccessedMemberTypes != DynamicallyAccessedMemberTypes.None);
-
-			MultiValue genericArgumentValue = _context.Annotations.FlowAnnotations.GetTypeValueNodeFromGenericArgument (genericArgument);
-
-			var diagnosticContext = new DiagnosticContext (_origin, !_context.Annotations.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (_origin.Provider), _context);
-			RequireDynamicallyAccessedMembers (diagnosticContext, genericArgumentValue, genericParameterValue);
+			// We shouldn't have gotten a non-null annotation for this from GetParameterAnnotation
+			throw new InvalidOperationException ();
 		}
 
 		void RequireDynamicallyAccessedMembers (in DiagnosticContext diagnosticContext, in MultiValue value, ValueWithDynamicallyAccessedMembers targetValue)

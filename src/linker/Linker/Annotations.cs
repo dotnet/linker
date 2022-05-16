@@ -626,9 +626,6 @@ namespace Mono.Linker
 			// since that attribute automatically suppresses all trim analysis warnings.
 			// Check both the immediate origin method as well as suppression context method
 			// since that will be different for compiler generated code.
-			if (originMember == null)
-				return false;
-
 			if (originMember is MethodDefinition &&
 				IsInRequiresUnreferencedCodeScope ((MethodDefinition) originMember))
 				return true;
