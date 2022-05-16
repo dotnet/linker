@@ -707,7 +707,6 @@ namespace Mono.Linker.Dataflow
 				HandleStoreParameter (thisMethod, targetParameterValue, operation, DereferenceValue (valueToStore.Value, locals));
 
 			// If the targetValue is MethodThisValue do nothing - it should never happen really, and if it does, there's nothing we can track there
-
 		}
 
 		private void ScanLdloc (
