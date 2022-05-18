@@ -12,9 +12,6 @@ namespace ILLink.Shared.TrimAnalysis
 		{
 			FieldDefinition = field;
 		}
-		public override SingleValue DeepCopy ()
-		{
-			return this;
-		}
+		public override SingleValue DeepCopy () => this;
 	}
 }

@@ -87,7 +87,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			typeWithMethods.RequiresPublicMethods ();
 		}
 
-		[ExpectedWarning ("IL2118", nameof (TryGetAnnotatedValue), "RequiresPublicFields")]
+		[ExpectedWarning ("IL2067", nameof (TryGetAnnotatedValue), "RequiresPublicFields")]
 		static void TestReadFromRefParameter_MismatchOnOutput ()
 		{
 			Type typeWithMethods = null;
@@ -95,7 +95,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			typeWithMethods.RequiresPublicFields ();
 		}
 
-		[ExpectedWarning ("IL2118", nameof (TryGetAnnotatedValue), "RequiresPublicFields")]
+		[ExpectedWarning ("IL2067", nameof (TryGetAnnotatedValue), "RequiresPublicFields")]
 		static void TestReadFromRefParameter_MismatchOnOutput_PassedTwice ()
 		{
 			Type typeWithMethods = null;
@@ -134,7 +134,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[ExpectedWarning ("IL2067", "typeWithMethods", nameof (TryGetAnnotatedValue))]
-		[ExpectedWarning ("IL2118", "by-reference parameter 'typeWithMethods'", nameof (TryGetAnnotatedValue))]
+		[ExpectedWarning ("IL2067", "typeWithMethods", nameof (TryGetAnnotatedValue))]
 		static void TestPassingRefParameter_Mismatch ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] ref Type typeWithMethods)
 		{
 			TryGetAnnotatedValue (ref typeWithMethods);

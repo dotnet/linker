@@ -42,7 +42,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		// Trimmer and analyzer use different formats for ref parameters: https://github.com/dotnet/linker/issues/2406
 		[ExpectedWarning ("IL2077", nameof (ByRefDataflow) + "." + nameof (MethodWithRefParameter) + "(Type&)", ProducedBy = ProducedBy.Trimmer)]
 		[ExpectedWarning ("IL2077", nameof (ByRefDataflow) + "." + nameof (MethodWithRefParameter) + "(ref Type)", ProducedBy = ProducedBy.Analyzer)]
-		[ExpectedWarning ("IL2120", nameof (s_typeWithPublicParameterlessConstructor), "by-reference parameter 'type'", nameof (MethodWithRefParameter), ProducedBy = ProducedBy.Trimmer)]
+		[ExpectedWarning ("IL2069", nameof (s_typeWithPublicParameterlessConstructor), "parameter 'type'", nameof (MethodWithRefParameter), ProducedBy = ProducedBy.Trimmer)]
 		// MethodWithRefParameter (ref x)
 		[ExpectedWarning ("IL2077", nameof (ByRefDataflow) + "." + nameof (MethodWithRefParameter) + "(Type&)", ProducedBy = ProducedBy.Trimmer)]
 		[ExpectedWarning ("IL2077", nameof (ByRefDataflow) + "." + nameof (MethodWithRefParameter) + "(ref Type)", ProducedBy = ProducedBy.Analyzer)]
