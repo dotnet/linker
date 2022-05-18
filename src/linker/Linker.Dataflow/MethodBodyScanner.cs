@@ -478,7 +478,7 @@ namespace Mono.Linker.Dataflow
 
 				case Code.Stfld:
 				case Code.Stsfld:
-					ScanStfld (operation, currentStack, thisMethod, methodBody, locals);
+					ScanStfld (operation, currentStack, thisMethod, methodBody);
 					break;
 
 				case Code.Cpobj:
@@ -504,7 +504,7 @@ namespace Mono.Linker.Dataflow
 
 				case Code.Starg:
 				case Code.Starg_S:
-					ScanStarg (operation, currentStack, thisMethod, methodBody, locals);
+					ScanStarg (operation, currentStack, thisMethod, methodBody);
 					break;
 
 				case Code.Stloc:
@@ -701,14 +701,13 @@ namespace Mono.Linker.Dataflow
 			Instruction operation,
 			Stack<StackSlot> currentStack,
 			MethodDefinition thisMethod,
-			MethodBody methodBody,
-			LocalVariableStore locals)
+			MethodBody methodBody)
 		{
 			ParameterDefinition param = (ParameterDefinition) operation.Operand;
 			var valueToStore = PopUnknown (currentStack, 1, methodBody, operation.Offset);
 			var targetValue = GetMethodParameterValue (thisMethod, param.Sequence);
 			if (targetValue is MethodParameterValue targetParameterValue)
-				HandleStoreParameter (thisMethod, targetParameterValue, operation, DereferenceValue (valueToStore.Value, locals));
+				HandleStoreParameter (thisMethod, targetParameterValue, operation, valueToStore.Value);
 
 			// If the targetValue is MethodThisValue do nothing - it should never happen really, and if it does, there's nothing we can track there
 		}
@@ -866,8 +865,7 @@ namespace Mono.Linker.Dataflow
 			Instruction operation,
 			Stack<StackSlot> currentStack,
 			MethodDefinition thisMethod,
-			MethodBody methodBody,
-			LocalVariableStore locals)
+			MethodBody methodBody)
 		{
 			StackSlot valueToStoreSlot = PopUnknown (currentStack, 1, methodBody, operation.Offset);
 			if (operation.OpCode.Code == Code.Stfld)
@@ -881,7 +879,7 @@ namespace Mono.Linker.Dataflow
 					if (value is not FieldValue fieldValue)
 						continue;
 
-					HandleStoreField (thisMethod, fieldValue, operation, DereferenceValue (valueToStoreSlot.Value, locals));
+					HandleStoreField (thisMethod, fieldValue, operation,valueToStoreSlot.Value);
 				}
 			}
 		}

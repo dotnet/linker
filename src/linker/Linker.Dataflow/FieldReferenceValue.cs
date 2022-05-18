@@ -5,13 +5,8 @@ using Mono.Cecil;
 
 namespace ILLink.Shared.TrimAnalysis
 {
-	public partial record FieldReferenceValue : ReferenceValue
+	public partial record FieldReferenceValue (FieldDefinition FieldDefinition) : ReferenceValue
 	{
-		public readonly FieldDefinition FieldDefinition;
-		public FieldReferenceValue (FieldDefinition field)
-		{
-			FieldDefinition = field;
-		}
 		public override SingleValue DeepCopy () => this;
 	}
 }
