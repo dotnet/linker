@@ -212,18 +212,16 @@ namespace Mono.Linker.Steps
 				return null;
 
 			var analyzer = new ConstantExpressionMethodAnalyzer (this);
-			if (analyzer.Analyze (callee, callStack)) {
-				return new MethodResult (analyzer.Result, analyzer.SideEffectFreeResult && !HasSideEffects (method));
-			}
+			if (analyzer.Analyze (callee, callStack))
+				return new MethodResult (analyzer.Result, analyzer.SideEffectFreeResult);
 
 			return null;
-
-			static bool HasSideEffects (MethodDefinition method)
-			{
-				return !method.DeclaringType.IsBeforeFieldInit;
-			}
 		}
 
+		static bool HasSideEffects (MethodDefinition method)
+		{
+			return !method.DeclaringType.IsBeforeFieldInit;
+		}
 
 		//
 		// Return expression with a value when method implementation can be
@@ -1398,6 +1396,8 @@ namespace Mono.Linker.Steps
 				Instruction? jmpTarget = null;
 				Instruction? linstr;
 				object? left, right, operand;
+
+				SideEffectFreeResult = !HasSideEffects (method);
 
 				//
 				// We could implement a full-blown interpreter here but for now, it handles
