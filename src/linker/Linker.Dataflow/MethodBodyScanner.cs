@@ -251,9 +251,9 @@ namespace Mono.Linker.Dataflow
 			if (_context.CompilerGeneratedState.TryGetCompilerGeneratedCalleesForUserMethod (methodBody.Method, out List<IMemberDefinition>? compilerGeneratedCallees)) {
 				// should be the same set.
 				var calleeMethods = compilerGeneratedCallees.OfType<MethodDefinition> ();
-				Debug.Assert (calleeMethods.Count() == scannedMethods.Count - 1);
+				Debug.Assert (calleeMethods.Count() == methodsInGroup.Count() - 1);
 				foreach (var method in calleeMethods)
-					Debug.Assert (scannedMethods.Contains (method));
+					Debug.Assert (methodsInGroup.Contains (method));
 			}
 		}
 

@@ -427,8 +427,6 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 			class DynamicallyAccessedLambda
 			{
 				[ExpectedWarning ("IL2118", nameof (TestCallRUCMethodInDynamicallyAccessedLambda), ProducedBy = ProducedBy.Trimmer)]
-				[ExpectedWarning ("IL2118", nameof (DynamicallyAccessedLambda), ProducedBy = ProducedBy.Trimmer)] // displayclass ctor
-				[ExpectedWarning ("IL2118", nameof (DynamicallyAccessedLambda), ProducedBy = ProducedBy.Trimmer)] // displayclass cctor
 				[UnconditionalSuppressMessage ("Test", "IL2026")]
 				public static void TestCallRUCMethodInDynamicallyAccessedLambda ()
 				{
@@ -443,8 +441,6 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 			class DynamicallyAccessedLambdaUnused
 			{
 				[ExpectedWarning ("IL2118", nameof (TestCallRUCMethodInDynamicallyAccessedLambda), ProducedBy = ProducedBy.Trimmer)]
-				[ExpectedWarning ("IL2118", nameof (DynamicallyAccessedLambda), ProducedBy = ProducedBy.Trimmer)] // displayclass ctor
-				[ExpectedWarning ("IL2118", nameof (DynamicallyAccessedLambda), ProducedBy = ProducedBy.Trimmer)] // displayclass cctor
 				[UnconditionalSuppressMessage ("Test", "IL2026")]
 				public static void TestCallRUCMethodInDynamicallyAccessedLambda ()
 				{

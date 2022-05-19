@@ -1780,10 +1780,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			[ExpectedWarning ("IL2026", "Requires to suppress", ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2026", "Requires to suppress", ProducedBy = ProducedBy.Trimmer)]
 			// Linker warns about reflection access to compiler-generated state machine members.
-			[ExpectedWarning ("IL2118", nameof (StateMachinesOnlyReferencedViaReflection), "<" + nameof (TestAsyncOnlyReferencedViaReflectionWhichShouldWarn) + ">d__3()", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2118", nameof (StateMachinesOnlyReferencedViaReflection), "<" + nameof (TestAsyncOnlyReferencedViaReflectionWhichShouldSuppress) + ">d__1()", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2118", nameof (StateMachinesOnlyReferencedViaReflection), "<" + nameof (TestIteratorOnlyReferencedViaReflectionWhichShouldSuppress) + ">d__0(Int32)", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2118", nameof (StateMachinesOnlyReferencedViaReflection), "<" + nameof (TestIteratorOnlyReferencedViaReflectionWhichShouldWarn) + ">d__2(Int32)", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2118", nameof (StateMachinesOnlyReferencedViaReflection), "<" + nameof (TestAsyncOnlyReferencedViaReflectionWhichShouldWarn) + ">", "MoveNext()")]
+			[ExpectedWarning ("IL2118", nameof (StateMachinesOnlyReferencedViaReflection), "<" + nameof (TestIteratorOnlyReferencedViaReflectionWhichShouldWarn) + ">", "MoveNext()")]
 			static void TestAll ()
 			{
 				typeof (StateMachinesOnlyReferencedViaReflection).RequiresAll ();
@@ -1891,12 +1889,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			[ExpectedWarning ("IL2026", "--TestLocalFunctionInMethodWithRequires--", ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2026", "--TestLocalFunctionWithClosureInMethodWithRequires--", ProducedBy = ProducedBy.Trimmer)]
 			// Linker warns about reflection access to compiler-generated code
-			[ExpectedWarning ("IL2118", nameof (LocalFunctionsReferencedViaReflection), nameof (TestLocalFunctionWithRequires))]
-			[ExpectedWarning ("IL2118", nameof (LocalFunctionsReferencedViaReflection), nameof (TestLocalFunctionWithRequiresOnlyAccessedViaReflection))]
-			[ExpectedWarning ("IL2118", nameof (LocalFunctionsReferencedViaReflection), nameof (TestLocalFunctionWithClosureWithRequires))]
 			[ExpectedWarning ("IL2118", nameof (LocalFunctionsReferencedViaReflection), nameof (TestLocalFunctionInMethodWithRequiresOnlyAccessedViaReflection))]
-			[ExpectedWarning ("IL2118", nameof (LocalFunctionsReferencedViaReflection), nameof (TestLocalFunctionWithClosureInMethodWithRequires))]
-			[ExpectedWarning ("IL2118", nameof (LocalFunctionsReferencedViaReflection), nameof (TestLocalFunctionInMethodWithRequires))]
 			static void TestAll ()
 			{
 				typeof (LocalFunctionsReferencedViaReflection).RequiresAll ();
@@ -1913,12 +1906,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			[ExpectedWarning ("IL2026", "--TestLocalFunctionInMethodWithRequires--", ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2026", "--TestLocalFunctionWithClosureInMethodWithRequires--", ProducedBy = ProducedBy.Trimmer)]
 			// Linker warns about reflection access to compiler-generated code
-			[ExpectedWarning ("IL2118", nameof (LocalFunctionsReferencedViaReflection), nameof (TestLocalFunctionWithRequires))]
-			[ExpectedWarning ("IL2118", nameof (LocalFunctionsReferencedViaReflection), nameof (TestLocalFunctionWithRequiresOnlyAccessedViaReflection))]
-			[ExpectedWarning ("IL2118", nameof (LocalFunctionsReferencedViaReflection), nameof (TestLocalFunctionWithClosureWithRequires))]
-			[ExpectedWarning ("IL2118", nameof (LocalFunctionsReferencedViaReflection), nameof (TestLocalFunctionInMethodWithRequiresOnlyAccessedViaReflection))]
-			[ExpectedWarning ("IL2118", nameof (LocalFunctionsReferencedViaReflection), nameof (TestLocalFunctionWithClosureInMethodWithRequires))]
-			[ExpectedWarning ("IL2118", nameof (LocalFunctionsReferencedViaReflection), nameof (TestLocalFunctionInMethodWithRequires))]
+			[ExpectedWarning ("IL2118", nameof (LocalFunctionsReferencedViaReflection), "<" + nameof (TestLocalFunctionInMethodWithRequiresOnlyAccessedViaReflection) + ">")]
 			static void TestNonPublicMethods ()
 			{
 				typeof (LocalFunctionsReferencedViaReflection).RequiresNonPublicMethods ();
@@ -1997,15 +1985,6 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			[ExpectedWarning ("IL2026", "--TestLambdaWithClosureWithRequires--", ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2026", "--TestLambdaInMethodWithRequires--", ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2026", "--TestLambdaWithClosureInMethodWithRequires--", ProducedBy = ProducedBy.Trimmer)]
-			// Linker warns about reflection access to compiler-generated code.
-			[ExpectedWarning ("IL2118", nameof (LambdasReferencedViaReflection), "..cctor()", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2118", nameof (LambdasReferencedViaReflection), "<>c()", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2118", nameof (LambdasReferencedViaReflection), "<" + nameof (TestLambdaWithRequires) + ">b__0_0()", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2118", nameof (LambdasReferencedViaReflection), "<" + nameof (TestLambdaInMethodWithRequires) + ">b__2_0()", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2118", nameof (LambdasReferencedViaReflection), "<>c__DisplayClass1_0()", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2118", nameof (LambdasReferencedViaReflection), "<>c__DisplayClass1_0.<" + nameof (TestLambdaWithClosureWithRequires) + ">b__0()", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2118", nameof (LambdasReferencedViaReflection), "<>c__DisplayClass3_0()", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2118", nameof (LambdasReferencedViaReflection), "<>c__DisplayClass3_0.<" + nameof (TestLambdaWithClosureInMethodWithRequires) + ">b__0()", ProducedBy = ProducedBy.Trimmer)]
 			static void TestAll ()
 			{
 				typeof (LambdasReferencedViaReflection).RequiresAll ();

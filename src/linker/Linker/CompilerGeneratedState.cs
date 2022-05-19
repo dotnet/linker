@@ -41,6 +41,17 @@ namespace Mono.Linker
 			}
 		}
 
+		public static bool IsNestedFunctionOrStateMachineMember (IMemberDefinition member)
+		{
+			if (member is MethodDefinition method && CompilerGeneratedNames.IsLambdaOrLocalFunction (method.Name))
+				return true;
+
+			if (member.DeclaringType is not TypeDefinition declaringType)
+				return false;
+
+			return CompilerGeneratedNames.IsStateMachineType (declaringType.Name);
+		}
+
 		// TODO: cache?
 		public static bool TryGetStateMachineType (MethodDefinition method, [NotNullWhen (true)] out TypeDefinition? stateMachineType) {
 			stateMachineType = null;
@@ -65,7 +76,7 @@ namespace Mono.Linker
 
 		void PopulateCacheForType (TypeDefinition type)
 		{
-			Debug.Assert (!CompilerGeneratedNames.IsGeneratedMemberName (type.Name));
+			Debug.Assert (!CompilerGeneratedNames.IsStateMachineType (type.Name) && !CompilerGeneratedNames.IsLambdaDisplayClass (type.Name));
 			// Avoid repeat scans of the same type
 			if (_typesWithPopulatedCache.ContainsKey (type))
 				return;
@@ -197,12 +208,19 @@ namespace Mono.Linker
 		public bool TryGetCompilerGeneratedCalleesForUserMethod (MethodDefinition method, [NotNullWhen (true)] out List<IMemberDefinition>? callees)
 		{
 			callees = null;
-			if (CompilerGeneratedNames.IsGeneratedMemberName (method.Name) || CompilerGeneratedNames.IsGeneratedMemberName (method.DeclaringType.Name))
+			if (IsNestedFunctionOrStateMachineMember (method))
+				return false;
+
+			var typeToCache = method.DeclaringType;
+			while (typeToCache != null && CompilerGeneratedNames.IsGeneratedMemberName (typeToCache.Name))
+				typeToCache = typeToCache.DeclaringType;
+
+			if (typeToCache == null)
 				return false;
 
 			// We should only ever populate the cache for types that aren't compiler-generated.
-			PopulateCacheForType (method.DeclaringType);
-			return _typesWithPopulatedCache[method.DeclaringType]?.TryGetValue (method, out callees) == true;
+			PopulateCacheForType (typeToCache);
+			return _typesWithPopulatedCache[typeToCache]?.TryGetValue (method, out callees) == true;
 		}
 
 		// For state machine types/members, maps back to the state machine method.
@@ -225,7 +243,7 @@ namespace Mono.Linker
 			if (_compilerGeneratedTypeToUserCodeMethod.TryGetValue (sourceType, out owningMethod))
 				return true;
 
-			if (!CompilerGeneratedNames.IsGeneratedMemberName (sourceMember.Name) && !CompilerGeneratedNames.IsGeneratedMemberName (sourceType.Name))
+			if (!IsNestedFunctionOrStateMachineMember (sourceMember))
 				return false;
 
 			// sourceType is a state machine type, or the type containing a lambda or local function.

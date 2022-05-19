@@ -24,7 +24,7 @@ namespace Mono.Linker.Dataflow
 		MessageOrigin _origin;
 		readonly FlowAnnotations _annotations;
 		readonly ReflectionMarker _reflectionMarker;
-		readonly TrimAnalysisPatternStore TrimAnalysisPatterns;
+		public readonly TrimAnalysisPatternStore TrimAnalysisPatterns;
 
 		public static bool RequiresReflectionMethodBodyScannerForCallSite (LinkContext context, MethodReference calledMethod)
 		{

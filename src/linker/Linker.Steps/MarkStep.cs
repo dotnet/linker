@@ -68,7 +68,7 @@ namespace Mono.Linker.Steps
 		protected List<TypeDefinition> _dynamicInterfaceCastableImplementationTypes;
 		protected List<(MethodBody, MarkScopeStack.Scope)> _unreachableBodies;
 
-		readonly List<(TypeDefinition Type, MethodBody Body, Instruction Instr)> _pending_isinst_instr;
+		readonly HashSet<(TypeDefinition Type, MethodBody Body, Instruction Instr)> _pending_isinst_instr;
 		UnreachableBlocksOptimizer? _unreachableBlocksOptimizer;
 		UnreachableBlocksOptimizer UnreachableBlocksOptimizer {
 			get {
@@ -226,7 +226,7 @@ namespace Mono.Linker.Steps
 			_dynamicInterfaceCastableImplementationTypesDiscovered = new HashSet<AssemblyDefinition> ();
 			_dynamicInterfaceCastableImplementationTypes = new List<TypeDefinition> ();
 			_unreachableBodies = new List<(MethodBody, MarkScopeStack.Scope)> ();
-			_pending_isinst_instr = new List<(TypeDefinition, MethodBody, Instruction)> ();
+			_pending_isinst_instr = new HashSet<(TypeDefinition, MethodBody, Instruction)> ();
 			_entireTypesMarked = new HashSet<TypeDefinition> ();
 		}
 
@@ -527,20 +527,17 @@ namespace Mono.Linker.Steps
 
 		void ProcessPendingTypeChecks ()
 		{
-			for (int i = 0; i < _pending_isinst_instr.Count; ++i) {
-				var item = _pending_isinst_instr[i];
-				TypeDefinition type = item.Type;
+			foreach ((TypeDefinition type, MethodBody body, Instruction instr) in _pending_isinst_instr) {
 				if (Annotations.IsInstantiated (type))
 					continue;
 
-				Instruction instr = item.Instr;
-				LinkerILProcessor ilProcessor = item.Body.GetLinkerILProcessor ();
+				LinkerILProcessor ilProcessor = body.GetLinkerILProcessor ();
 
 				ilProcessor.InsertAfter (instr, Instruction.Create (OpCodes.Ldnull));
 				Instruction new_instr = Instruction.Create (OpCodes.Pop);
 				ilProcessor.Replace (instr, new_instr);
 
-				Context.LogMessage ($"Removing typecheck of '{type.FullName}' inside '{item.Body.Method.GetDisplayName ()}' method.");
+				Context.LogMessage ($"Removing typecheck of '{type.FullName}' inside '{body.Method.GetDisplayName ()}' method.");
 			}
 		}
 
@@ -1641,8 +1638,7 @@ namespace Mono.Linker.Steps
 			}
 
 			// TODO: add tests for this
-			if (member is MethodDefinition method &&
-				(CompilerGeneratedNames.IsGeneratedMemberName (method.Name) || CompilerGeneratedNames.IsGeneratedMemberName (method.DeclaringType.Name))) {
+			if (member is MethodDefinition method && CompilerGeneratedState.IsNestedFunctionOrStateMachineMember (method)) {
 				var id = reportOnMember ? DiagnosticId.DynamicallyAccessedMembersOnTypeReferencesCompilerGeneratedMember : DiagnosticId.DynamicallyAccessedMembersOnTypeReferencesCompilerGeneratedMemberOnBase;
 				Context.LogWarning (origin, id, type.GetDisplayName (), method.GetDisplayName ());
 			}
@@ -2821,6 +2817,34 @@ namespace Mono.Linker.Steps
 		{
 			if (!enableReflectionPatternReporting)
 				return;
+
+			// TODO: could inline CheckAndReport which does the same check.
+			// TODO: should probably use origin, not scopestack, for compiler-generated code.
+			if (ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (ScopeStack.CurrentScope.Origin.Provider, Context))
+				return;
+
+			switch (dependencyKind) {
+			case DependencyKind.AccessedViaReflection:
+			case DependencyKind.DynamicallyAccessedMember:
+				if (method.Name.Contains("IteratorWithUnannotatedDataflow"))
+					Console.Write("");
+
+				if (!CompilerGeneratedState.IsNestedFunctionOrStateMachineMember (method))
+					break;
+
+				if (method.Body == null)
+					break;
+					
+				if (ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (method, Context))
+					break;
+
+				if (!CheckRequiresReflectionMethodBodyScanner (method.Body, enableReflectionPatternReporting: false))
+					break;
+
+				Context.LogWarning (ScopeStack.CurrentScope.Origin, DiagnosticId.CompilerGeneratedMemberAccessedViaReflection, method.GetDisplayName ());
+				break;
+			}
+			
 			switch (dependencyKind) {
 			// DirectCall, VirtualCall and NewObj are handled by ReflectionMethodBodyScanner
 			// This is necessary since the ReflectionMethodBodyScanner has intrinsic handling for some
@@ -2893,14 +2917,10 @@ namespace Mono.Linker.Steps
 			if (dependencyKind == DependencyKind.DynamicallyAccessedMemberOnType) {
 				// DynamicallyAccessedMembers on type gets special treatment so that the warning origin
 				// is the type or the annotated member.
-				ReportWarningsForTypeHierarchyReflectionAccess (method, origin);
+				ReportWarningsForTypeHierarchyReflectionAccess (method, origin); // TODO: check cache for reflection access!!
 				return;
 			}
 
-			// TODO: could inline CheckAndReport which does the same check.
-			// TODO: should probably use origin, not scopestack, for compiler-generated code.
-			if (ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (ScopeStack.CurrentScope.Origin.Provider, Context))
-				return;
 
 			CheckAndReportRequiresUnreferencedCode (method, new DiagnosticContext (origin, diagnosticsEnabled: true, Context));
 
@@ -2917,15 +2937,6 @@ namespace Mono.Linker.Steps
 				}
 
 				Context.LogWarning (ScopeStack.CurrentScope.Origin, DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection, method.GetDisplayName ());
-			}
-
-			switch (dependencyKind) {
-			case DependencyKind.AccessedViaReflection:
-			case DependencyKind.DynamicallyAccessedMember:
-				if (CompilerGeneratedNames.IsGeneratedMemberName (method.Name) || CompilerGeneratedNames.IsGeneratedMemberName (method.DeclaringType.Name)) {
-					Context.LogWarning (ScopeStack.CurrentScope.Origin, DiagnosticId.CompilerGeneratedMemberAccessedViaReflection, method.GetDisplayName ());
-				}
-				break;
 			}
 		}
 
@@ -3426,6 +3437,11 @@ namespace Mono.Linker.Steps
 
 			MarkInterfacesNeededByBodyStack (body);
 
+			return CheckRequiresReflectionMethodBodyScanner (body, enableReflectionPatternReporting);
+		}
+
+		bool CheckRequiresReflectionMethodBodyScanner (MethodBody body, bool enableReflectionPatternReporting)
+		{
 			bool requiresReflectionMethodBodyScanner =
 				ReflectionMethodBodyScanner.RequiresReflectionMethodBodyScannerForMethodBody (Context, body.Method);
 			var origin = new MessageOrigin (body.Method);

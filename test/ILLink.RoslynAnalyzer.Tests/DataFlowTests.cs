@@ -65,6 +65,12 @@ namespace ILLink.RoslynAnalyzer.Tests
 		}
 
 		[Fact]
+		public Task CompilerGeneratedCodeAccessedViaReflection ()
+		{
+			return RunTest ();
+		}
+
+		[Fact]
 		public Task DynamicDependencyDataflow ()
 		{
 			return RunTest (nameof (DynamicDependencyDataflow));
