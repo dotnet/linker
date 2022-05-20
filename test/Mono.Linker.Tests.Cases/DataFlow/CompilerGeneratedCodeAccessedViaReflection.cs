@@ -34,13 +34,16 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 
 			[ExpectedWarning ("IL2026", "--MethodWithRequires--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 			public static IEnumerable<int> IteratorCallsMethodWithRequires ()
 			{
 				yield return 0;
 				MethodWithRequires ();
 			}
 
-			[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true,
+				ProducedBy = ProducedBy.Trimmer)]
 			public static IEnumerable<int> IteratorWithAnnotatedDataflow ()
 			{
 				var t = GetAll ();
@@ -48,7 +51,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				t.RequiresAll ();
 			}
 
-			[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true,
+				ProducedBy = ProducedBy.Trimmer)]
 			public static IEnumerable<int> IteratorWithUnannotatedDataflow ()
 			{
 				var t = GetWithPublicMethods ();
@@ -56,31 +60,33 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				t.RequiresAll ();
 			}
 
-
 			public static async Task AsyncWithoutDataflow ()
 			{
 			}
 
 			[ExpectedWarning ("IL2026", "--MethodWithRequires--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 			public static async Task AsyncCallsMethodWithRequires ()
 			{
 				MethodWithRequires ();
 			}
 
-			[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true,
+				ProducedBy = ProducedBy.Trimmer)]
 			public static async Task AsyncWithAnnotatedDataflow ()
 			{
 				var t = GetAll ();
 				t.RequiresAll ();
 			}
 
-			[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true,
+				ProducedBy = ProducedBy.Trimmer)]
 			public static async Task AsyncWithUnannotatedDataflow ()
 			{
 				var t = GetWithPublicMethods ();
 				t.RequiresAll ();
 			}
-
 
 			public static async IAsyncEnumerable<int> AsyncIteratorWithoutDataflow ()
 			{
@@ -88,13 +94,16 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 
 			[ExpectedWarning ("IL2026", "--MethodWithRequires--", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 			public static async IAsyncEnumerable<int> AsyncIteratorCallsMethodWithRequires ()
 			{
 				yield return await MethodAsync ();
 				MethodWithRequires ();
 			}
 
-			[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true,
+				ProducedBy = ProducedBy.Trimmer)]
 			public static async IAsyncEnumerable<int> AsyncIteratorWithAnnotatedDataflow ()
 			{
 				var t = GetAll ();
@@ -102,7 +111,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				t.RequiresAll ();
 			}
 
-			[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true,
+				ProducedBy = ProducedBy.Trimmer)]
 			public static async IAsyncEnumerable<int> AsyncIteratorWithUnannotatedDataflow ()
 			{
 				var t = GetWithPublicMethods ();
@@ -110,15 +120,15 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				t.RequiresAll ();
 			}
 
-			[ExpectedWarning ("IL2118", nameof (IteratorWithUnannotatedDataflow))]
-			[ExpectedWarning ("IL2118", nameof (IteratorCallsMethodWithRequires))]
-			[ExpectedWarning ("IL2118", nameof (IteratorWithAnnotatedDataflow))]
-			[ExpectedWarning ("IL2118", nameof (AsyncWithUnannotatedDataflow))]
-			[ExpectedWarning ("IL2118", nameof (AsyncCallsMethodWithRequires))]
-			[ExpectedWarning ("IL2118", nameof (AsyncWithAnnotatedDataflow))]
-			[ExpectedWarning ("IL2118", nameof (AsyncIteratorWithUnannotatedDataflow))]
-			[ExpectedWarning ("IL2118", nameof (AsyncIteratorCallsMethodWithRequires))]
-			[ExpectedWarning ("IL2118", nameof (AsyncIteratorWithAnnotatedDataflow))]
+			[ExpectedWarning ("IL2118", nameof (IteratorWithUnannotatedDataflow), ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2118", nameof (IteratorCallsMethodWithRequires), ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2118", nameof (IteratorWithAnnotatedDataflow), ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2118", nameof (AsyncWithUnannotatedDataflow), ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2118", nameof (AsyncCallsMethodWithRequires), ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2118", nameof (AsyncWithAnnotatedDataflow), ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2118", nameof (AsyncIteratorWithUnannotatedDataflow), ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2118", nameof (AsyncIteratorCallsMethodWithRequires), ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2118", nameof (AsyncIteratorWithAnnotatedDataflow), ProducedBy = ProducedBy.Trimmer)]
 			public static void Test ()
 			{
 				typeof (StateMachines).RequiresAll ();
@@ -137,6 +147,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 				var lambda =
 					[ExpectedWarning ("IL2026", "--MethodWithRequires--")]
+					[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+					[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 					() => MethodWithRequires ();
 				lambda();
 			}
@@ -154,7 +166,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			static void LambdaWithUnannotatedDataflow ()
 			{
 				var lambda =
-				[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions.RequiresAll))]
+				[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions.RequiresAll),
+					ProducedBy = ProducedBy.Trimmer)]
 				() => {
 					var t = GetWithPublicMethods ();
 					t.RequiresAll ();
@@ -166,7 +179,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 				var t = GetWithPublicMethods ();
 				var lambda =
-				[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions.RequiresAll))]
+				[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions.RequiresAll),
+					ProducedBy = ProducedBy.Trimmer)]
 				() => {
 					t.RequiresAll ();
 				};
@@ -182,10 +196,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				lambda ();
 			}
 
-			[ExpectedWarning ("IL2118", nameof (LambdaCallsMethodWithRequires))]
-			[ExpectedWarning ("IL2118", nameof (LambdaWithAnnotatedDataflow))] // Warns even though the method is correctly annotated.
-			[ExpectedWarning ("IL2118", nameof (LambdaWithUnannotatedDataflow))]
-			[ExpectedWarning ("IL2118", nameof (LambdaWithCapturedTypeToDAM))]
+			[ExpectedWarning ("IL2118", nameof (LambdaCallsMethodWithRequires), ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2118", nameof (LambdaWithAnnotatedDataflow), ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2118", nameof (LambdaWithUnannotatedDataflow), ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2118", nameof (LambdaWithCapturedTypeToDAM), ProducedBy = ProducedBy.Trimmer)]
 			public static void Test ()
 			{
 				typeof (Lambdas).RequiresAll ();
@@ -203,6 +217,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			static void LocalFunctionCallsMethodWithRequires ()
 			{
 				[ExpectedWarning ("IL2026", "--MethodWithRequires--")]
+				[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+				[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 				void LocalFunction() => MethodWithRequires ();
 				LocalFunction ();
 			}
@@ -218,7 +234,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			static void LocalFunctionWithUnannotatedDataflow ()
 			{
-				[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions.RequiresAll))]
+				[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions.RequiresAll),
+					ProducedBy = ProducedBy.Trimmer)]
 				void LocalFunction () {
 					var t = GetWithPublicMethods ();
 					t.RequiresAll ();
@@ -229,7 +246,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			static void LocalFunctionWithCapturedTypeToDAM ()
 			{
 				var t = GetAll ();
-				[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions.RequiresAll))]
+				[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions.RequiresAll),
+					ProducedBy = ProducedBy.Trimmer)]
 				void LocalFunction () {
 					t.RequiresAll ();
 				};
@@ -244,10 +262,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				LocalFunction ();
 			}
 
-			[ExpectedWarning ("IL2118", nameof (LocalFunctionCallsMethodWithRequires))]
-			[ExpectedWarning ("IL2118", nameof (LocalFunctionWithAnnotatedDataflow))]
-			[ExpectedWarning ("IL2118", nameof (LocalFunctionWithUnannotatedDataflow))]
-			[ExpectedWarning ("IL2118", nameof (LocalFunctionWithCapturedTypeToDAM))]
+			[ExpectedWarning ("IL2118", nameof (LocalFunctionCallsMethodWithRequires), ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2118", nameof (LocalFunctionWithAnnotatedDataflow), ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2118", nameof (LocalFunctionWithUnannotatedDataflow), ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2118", nameof (LocalFunctionWithCapturedTypeToDAM), ProducedBy = ProducedBy.Trimmer)]
 			public static void Test ()
 			{
 				typeof (LocalFunctions).RequiresAll ();
