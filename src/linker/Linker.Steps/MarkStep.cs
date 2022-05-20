@@ -69,6 +69,8 @@ namespace Mono.Linker.Steps
 		protected List<(MethodBody, MarkScopeStack.Scope)> _unreachableBodies;
 
 		readonly HashSet<(TypeDefinition Type, MethodBody Body, Instruction Instr)> _pending_isinst_instr;
+		readonly Dictionary<MethodBody, bool> _compilerGeneratedMethodRequiresScanner;
+
 		UnreachableBlocksOptimizer? _unreachableBlocksOptimizer;
 		UnreachableBlocksOptimizer UnreachableBlocksOptimizer {
 			get {
@@ -228,6 +230,7 @@ namespace Mono.Linker.Steps
 			_unreachableBodies = new List<(MethodBody, MarkScopeStack.Scope)> ();
 			_pending_isinst_instr = new HashSet<(TypeDefinition, MethodBody, Instruction)> ();
 			_entireTypesMarked = new HashSet<TypeDefinition> ();
+			_compilerGeneratedMethodRequiresScanner = new Dictionary<MethodBody, bool> ();
 		}
 
 		public AnnotationStore Annotations => Context.Annotations;
@@ -2838,7 +2841,7 @@ namespace Mono.Linker.Steps
 				if (ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (method, Context))
 					break;
 
-				if (!CheckRequiresReflectionMethodBodyScanner (method.Body, enableReflectionPatternReporting: false))
+				if (!CheckRequiresReflectionMethodBodyScanner (method.Body, enableReflectionPatternReporting: true))
 					break;
 
 				Context.LogWarning (ScopeStack.CurrentScope.Origin, DiagnosticId.CompilerGeneratedMemberAccessedViaReflection, method.GetDisplayName ());
@@ -3388,9 +3391,8 @@ namespace Mono.Linker.Steps
 
 			if (CompilerGeneratedNames.IsGeneratedMemberName (body.Method.Name) || CompilerGeneratedNames.IsGeneratedMemberName (body.Method.DeclaringType.Name))
 			{
-			// if (Context.CompilerGeneratedState.TryGetOwningMethodForCompilerGeneratedMember (body.Method, out _)) {
-				MarkAndCheckRequiresReflectionMethodBodyScanner (body, enableReflectionPatternReporting: false);
-			} else if (InterproceduralMarkAndCheckRequiresReflectionMethodBodyScanner (body)) {
+				CheckRequiresReflectionMethodBodyScanner (body, enableReflectionPatternReporting: true);
+			} else if (InterproceduralCheckRequiresReflectionMethodBodyScanner (body)) {
 				// It's user code. Now check the entire closure to see if the method or any of the compiler-generated methods
 				// We need to scan the closure. Do it!
 				Debug.Assert (ScopeStack.CurrentScope.Origin.Provider == body.Method);
@@ -3401,9 +3403,9 @@ namespace Mono.Linker.Steps
 			PostMarkMethodBody (body);
 		}
 
-		bool InterproceduralMarkAndCheckRequiresReflectionMethodBodyScanner (MethodBody body) {
+		bool InterproceduralCheckRequiresReflectionMethodBodyScanner (MethodBody body) {
 
-			bool requiresReflectionMethodBodyScanner = MarkAndCheckRequiresReflectionMethodBodyScanner (body, enableReflectionPatternReporting: true);
+			bool requiresReflectionMethodBodyScanner = CheckRequiresReflectionMethodBodyScanner (body, enableReflectionPatternReporting: true);
 			if (!Context.CompilerGeneratedState.TryGetCompilerGeneratedCalleesForUserMethod (body.Method, out List<IMemberDefinition>? compilerGeneratedCallees))
 				return requiresReflectionMethodBodyScanner;
 
@@ -3411,12 +3413,12 @@ namespace Mono.Linker.Steps
 				switch (compilerGeneratedCallee) {
 				case MethodDefinition nestedFunction:
 					if (nestedFunction.Body is MethodBody nestedBody)
-						requiresReflectionMethodBodyScanner |= MarkAndCheckRequiresReflectionMethodBodyScanner (nestedBody, enableReflectionPatternReporting: true);
+						requiresReflectionMethodBodyScanner |= CheckRequiresReflectionMethodBodyScanner (nestedBody, enableReflectionPatternReporting: true);
 					break;
 				case TypeDefinition stateMachineType:
 					foreach (var method in stateMachineType.Methods) {
 						if (method.Body is MethodBody stateMachineBody)
-							requiresReflectionMethodBodyScanner |= MarkAndCheckRequiresReflectionMethodBodyScanner (stateMachineBody, enableReflectionPatternReporting: true);
+							requiresReflectionMethodBodyScanner |= CheckRequiresReflectionMethodBodyScanner (stateMachineBody, enableReflectionPatternReporting: true);
 					}
 					break;
 				default:
@@ -3426,7 +3428,18 @@ namespace Mono.Linker.Steps
 			return requiresReflectionMethodBodyScanner;
 		}
 
-		bool MarkAndCheckRequiresReflectionMethodBodyScanner (MethodBody body, bool enableReflectionPatternReporting) {
+
+		bool CheckRequiresReflectionMethodBodyScanner (MethodBody body, bool enableReflectionPatternReporting) {
+
+			bool isCompilerGenerated = CompilerGeneratedNames.IsGeneratedMemberName (body.Method.Name) || CompilerGeneratedNames.IsGeneratedMemberName (body.Method.DeclaringType.Name);
+			bool requiresReflectionMethodBodyScanner;
+			if (isCompilerGenerated) {
+				// This may get called multiple times for compiler-generated code: once for
+				// reflection access, and once as part of the interprocedural scan of the user method.
+				// Cache this to avoid doing work and producing warnings twice.
+				if (_compilerGeneratedMethodRequiresScanner.TryGetValue (body, out requiresReflectionMethodBodyScanner))
+					return requiresReflectionMethodBodyScanner;
+			}
 
 			foreach (VariableDefinition var in body.Variables)
 				MarkType (var.VariableType, new DependencyInfo (DependencyKind.VariableType, body.Method), enableReflectionPatternReporting);
@@ -3437,17 +3450,16 @@ namespace Mono.Linker.Steps
 
 			MarkInterfacesNeededByBodyStack (body);
 
-			return CheckRequiresReflectionMethodBodyScanner (body, enableReflectionPatternReporting);
-		}
 
-		bool CheckRequiresReflectionMethodBodyScanner (MethodBody body, bool enableReflectionPatternReporting)
-		{
-			bool requiresReflectionMethodBodyScanner =
+			requiresReflectionMethodBodyScanner =
 				ReflectionMethodBodyScanner.RequiresReflectionMethodBodyScannerForMethodBody (Context, body.Method);
 			var origin = new MessageOrigin (body.Method);
 			using var _ = ScopeStack.PushScope (origin);
 			foreach (Instruction instruction in body.Instructions)
 				MarkInstruction (instruction, body.Method, ref requiresReflectionMethodBodyScanner, enableReflectionPatternReporting);
+
+			if (isCompilerGenerated)
+				_compilerGeneratedMethodRequiresScanner.Add (body, requiresReflectionMethodBodyScanner);
 			return requiresReflectionMethodBodyScanner;
 		}
 
