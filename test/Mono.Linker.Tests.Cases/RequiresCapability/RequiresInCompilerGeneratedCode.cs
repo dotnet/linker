@@ -941,7 +941,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				}
 			}
 
-			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.NonPublicMethods)]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicMethods)]
 			static Type typeWithNonPublicMethods;
 
 			[ExpectedWarning ("IL2026")]
@@ -1092,10 +1092,10 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			static void TestLambdaWithRequires ()
 			{
 				Action lambda =
-					[RequiresUnreferencedCodeAttribute("--LambdaWithRequires--")]
-					[RequiresAssemblyFiles ("--LambdaWithRequires--")]
-					[RequiresDynamicCode ("--LambdaWithRequires--")]
-					() => MethodWithRequires ();
+					[RequiresUnreferencedCodeAttribute ("--LambdaWithRequires--")]
+				[RequiresAssemblyFiles ("--LambdaWithRequires--")]
+				[RequiresDynamicCode ("--LambdaWithRequires--")]
+				() => MethodWithRequires ();
 
 				lambda ();
 			}
@@ -1115,10 +1115,10 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			static void TestLambdaWithRequiresUnused ()
 			{
 				Action _ =
-					[RequiresUnreferencedCode("--LambdaWithRequires--")]
-					[RequiresAssemblyFiles ("--LambdaWithRequires--")]
-					[RequiresDynamicCode ("--LambdaWithRequires--")]
-					() => MethodWithRequires ();
+					[RequiresUnreferencedCode ("--LambdaWithRequires--")]
+				[RequiresAssemblyFiles ("--LambdaWithRequires--")]
+				[RequiresDynamicCode ("--LambdaWithRequires--")]
+				() => MethodWithRequires ();
 			}
 
 			static void TestCallWithClosure (int p = 0)

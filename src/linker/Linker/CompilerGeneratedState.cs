@@ -53,7 +53,8 @@ namespace Mono.Linker
 		}
 
 		// TODO: cache?
-		public static bool TryGetStateMachineType (MethodDefinition method, [NotNullWhen (true)] out TypeDefinition? stateMachineType) {
+		public static bool TryGetStateMachineType (MethodDefinition method, [NotNullWhen (true)] out TypeDefinition? stateMachineType)
+		{
 			stateMachineType = null;
 			// Discover state machine methods.
 			if (!method.HasCustomAttributes)

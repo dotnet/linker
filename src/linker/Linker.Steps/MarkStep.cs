@@ -2826,15 +2826,12 @@ namespace Mono.Linker.Steps
 			switch (dependencyKind) {
 			case DependencyKind.AccessedViaReflection:
 			case DependencyKind.DynamicallyAccessedMember:
-				if (method.Name.Contains("IteratorWithUnannotatedDataflow"))
-					Console.Write("");
-
 				if (!CompilerGeneratedState.IsNestedFunctionOrStateMachineMember (method))
 					break;
 
 				if (method.Body == null)
 					break;
-					
+
 				if (ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (method, Context))
 					break;
 
@@ -2844,7 +2841,7 @@ namespace Mono.Linker.Steps
 				Context.LogWarning (ScopeStack.CurrentScope.Origin, DiagnosticId.CompilerGeneratedMemberAccessedViaReflection, method.GetDisplayName ());
 				break;
 			}
-			
+
 			switch (dependencyKind) {
 			// DirectCall, VirtualCall and NewObj are handled by ReflectionMethodBodyScanner
 			// This is necessary since the ReflectionMethodBodyScanner has intrinsic handling for some
@@ -3386,8 +3383,7 @@ namespace Mono.Linker.Steps
 				return;
 			}
 
-			if (CompilerGeneratedNames.IsGeneratedMemberName (body.Method.Name) || CompilerGeneratedNames.IsGeneratedMemberName (body.Method.DeclaringType.Name))
-			{
+			if (CompilerGeneratedNames.IsGeneratedMemberName (body.Method.Name) || CompilerGeneratedNames.IsGeneratedMemberName (body.Method.DeclaringType.Name)) {
 				CheckRequiresReflectionMethodBodyScanner (body);
 			} else if (InterproceduralCheckRequiresReflectionMethodBodyScanner (body)) {
 				// It's user code. Now check the entire closure to see if the method or any of the compiler-generated methods
@@ -3400,7 +3396,8 @@ namespace Mono.Linker.Steps
 			PostMarkMethodBody (body);
 		}
 
-		bool InterproceduralCheckRequiresReflectionMethodBodyScanner (MethodBody body) {
+		bool InterproceduralCheckRequiresReflectionMethodBodyScanner (MethodBody body)
+		{
 
 			bool requiresReflectionMethodBodyScanner = CheckRequiresReflectionMethodBodyScanner (body);
 			if (!Context.CompilerGeneratedState.TryGetCompilerGeneratedCalleesForUserMethod (body.Method, out List<IMemberDefinition>? compilerGeneratedCallees))
@@ -3426,7 +3423,8 @@ namespace Mono.Linker.Steps
 		}
 
 
-		bool CheckRequiresReflectionMethodBodyScanner (MethodBody body) {
+		bool CheckRequiresReflectionMethodBodyScanner (MethodBody body)
+		{
 
 			bool isCompilerGenerated = CompilerGeneratedNames.IsGeneratedMemberName (body.Method.Name) || CompilerGeneratedNames.IsGeneratedMemberName (body.Method.DeclaringType.Name);
 			bool requiresReflectionMethodBodyScanner;

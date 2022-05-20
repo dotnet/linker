@@ -147,10 +147,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 				var lambda =
 					[ExpectedWarning ("IL2026", "--MethodWithRequires--")]
-					[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
-					[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
-					() => MethodWithRequires ();
-				lambda();
+				[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+				[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+				() => MethodWithRequires ();
+				lambda ();
 			}
 
 			static void LambdaWithAnnotatedDataflow ()
@@ -160,7 +160,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 					var t = GetAll ();
 					t.RequiresAll ();
 				};
-				lambda();
+				lambda ();
 			}
 
 			static void LambdaWithUnannotatedDataflow ()
@@ -211,7 +211,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			static void LocalFunctionWithoutDataflow ()
 			{
 				int LocalFunction () => 0;
-				LocalFunction();
+				LocalFunction ();
 			}
 
 			static void LocalFunctionCallsMethodWithRequires ()
@@ -219,13 +219,14 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				[ExpectedWarning ("IL2026", "--MethodWithRequires--")]
 				[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 				[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
-				void LocalFunction() => MethodWithRequires ();
+				void LocalFunction () => MethodWithRequires ();
 				LocalFunction ();
 			}
 
 			static void LocalFunctionWithAnnotatedDataflow ()
 			{
-				void LocalFunction() {
+				void LocalFunction ()
+				{
 					var t = GetAll ();
 					t.RequiresAll ();
 				};
@@ -236,11 +237,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 				[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions.RequiresAll),
 					ProducedBy = ProducedBy.Trimmer)]
-				void LocalFunction () {
+				void LocalFunction ()
+				{
 					var t = GetWithPublicMethods ();
 					t.RequiresAll ();
 				};
-				LocalFunction();
+				LocalFunction ();
 			}
 
 			static void LocalFunctionWithCapturedTypeToDAM ()
@@ -248,7 +250,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				var t = GetAll ();
 				[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions.RequiresAll),
 					ProducedBy = ProducedBy.Trimmer)]
-				void LocalFunction () {
+				void LocalFunction ()
+				{
 					t.RequiresAll ();
 				};
 				LocalFunction ();
