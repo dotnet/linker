@@ -981,7 +981,10 @@ namespace Mono.Linker.Dataflow
 			return dereferencedValue;
 		}
 
-		protected void HandleRefParameters (
+		/// <summary>
+		/// Assigns a MethodParameterValue to the location of each parameter passed by reference. (i.e. assigns the value to x when passing `ref x` as a parameter)
+		/// </summary>
+		protected void AssignRefAndOutParameters (
 			MethodBody callingMethodBody,
 			MethodReference calledMethod,
 			ValueNodeList methodArguments,
@@ -1047,8 +1050,7 @@ namespace Mono.Linker.Dataflow
 			if (isNewObj || !calledMethod.ReturnsVoid ())
 				currentStack.Push (new StackSlot (methodReturnValue));
 
-			// Handle ref params
-			HandleRefParameters (callingMethodBody, calledMethod, methodArguments, operation, locals, curBasicBlock);
+			AssignRefAndOutParameters (callingMethodBody, calledMethod, methodArguments, operation, locals, curBasicBlock);
 
 			foreach (var param in methodArguments) {
 				foreach (var v in param) {
