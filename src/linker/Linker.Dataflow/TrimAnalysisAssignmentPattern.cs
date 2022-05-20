@@ -22,15 +22,16 @@ namespace Mono.Linker.Dataflow
 			Origin = origin;
 		}
 
-		public void MarkAndProduceDiagnostics (bool diagnosticsEnabled, ReflectionMarker reflectionMarker, LinkContext context)
+		public void MarkAndProduceDiagnostics (ReflectionMarker reflectionMarker, LinkContext context)
 		{
+			bool diagnosticsEnabled = !MarkStep.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (Origin.Provider, context);
+			var diagnosticContext = new DiagnosticContext (Origin, diagnosticsEnabled, context);
+
 			foreach (var sourceValue in Source) {
 				foreach (var targetValue in Target) {
 					if (targetValue is not ValueWithDynamicallyAccessedMembers targetWithDynamicallyAccessedMembers)
 						throw new NotImplementedException ();
 
-					diagnosticsEnabled &= !MarkStep.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (Origin.Provider, context);
-					var diagnosticContext = new DiagnosticContext (Origin, diagnosticsEnabled, context);
 					var requireDynamicallyAccessedMembersAction = new RequireDynamicallyAccessedMembersAction (reflectionMarker, diagnosticContext);
 					requireDynamicallyAccessedMembersAction.Invoke (sourceValue, targetWithDynamicallyAccessedMembers);
 				}

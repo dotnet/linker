@@ -67,7 +67,7 @@ namespace Mono.Linker.Dataflow
 			_markStep = parent;
 			_origin = origin;
 			_annotations = context.Annotations.FlowAnnotations;
-			_reflectionMarker = new ReflectionMarker (context, parent, enabled: false, enableReflectionPatternReporting: true);
+			_reflectionMarker = new ReflectionMarker (context, parent, enabled: false);
 			TrimAnalysisPatterns = new TrimAnalysisPatternStore (context);
 		}
 
@@ -76,8 +76,8 @@ namespace Mono.Linker.Dataflow
 			// TODO: remove scannedmethods
 			base.InterproceduralScan (methodBody, out scannedMethods);
 
-			var reflectionMarker = new ReflectionMarker (_context, _markStep, enabled: true, enableReflectionPatternReporting: true);
-			TrimAnalysisPatterns.MarkAndProduceDiagnostics (enableReflectionPatternReporting: true, reflectionMarker, _markStep);
+			var reflectionMarker = new ReflectionMarker (_context, _markStep, enabled: true);
+			TrimAnalysisPatterns.MarkAndProduceDiagnostics (reflectionMarker, _markStep);
 		}
 
 		protected override void Scan (MethodBody methodBody, ref ValueSet<MethodDefinition> methodsInGroup)
@@ -102,7 +102,7 @@ namespace Mono.Linker.Dataflow
 				if (parameterValue.DynamicallyAccessedMemberTypes != DynamicallyAccessedMemberTypes.None) {
 					MultiValue value = GetValueNodeForCustomAttributeArgument (arguments[i]);
 					var diagnosticContext = new DiagnosticContext (_origin, diagnosticsEnabled: true, _context);
-					RequireDynamicallyAccessedMembers (diagnosticContext, value, parameterValue, enableReflectionPatternReporting: true);
+					RequireDynamicallyAccessedMembers (diagnosticContext, value, parameterValue);
 				}
 			}
 		}
@@ -115,7 +115,7 @@ namespace Mono.Linker.Dataflow
 					continue;
 
 				var diagnosticContext = new DiagnosticContext (_origin, diagnosticsEnabled: true, _context);
-				RequireDynamicallyAccessedMembers (diagnosticContext, valueNode, fieldValue, enableReflectionPatternReporting: true);
+				RequireDynamicallyAccessedMembers (diagnosticContext, valueNode, fieldValue);
 			}
 		}
 
@@ -139,16 +139,16 @@ namespace Mono.Linker.Dataflow
 			return value;
 		}
 
-		public void ProcessGenericArgumentDataFlow (GenericParameter genericParameter, TypeReference genericArgument, bool enableReflectionPatternReporting)
+		public void ProcessGenericArgumentDataFlow (GenericParameter genericParameter, TypeReference genericArgument)
 		{
 			var genericParameterValue = _annotations.GetGenericParameterValue (genericParameter);
 			Debug.Assert (genericParameterValue.DynamicallyAccessedMemberTypes != DynamicallyAccessedMemberTypes.None);
 
 			MultiValue genericArgumentValue = GetTypeValueNodeFromGenericArgument (genericArgument, _context);
 
-			enableReflectionPatternReporting &= ShouldEnableReflectionPatternReporting (_origin.Provider);
+			bool enableReflectionPatternReporting = ShouldEnableReflectionPatternReporting (_origin.Provider);
 			var diagnosticContext = new DiagnosticContext (_origin, enableReflectionPatternReporting, _context);
-			RequireDynamicallyAccessedMembers (diagnosticContext, genericArgumentValue, genericParameterValue, enableReflectionPatternReporting);
+			RequireDynamicallyAccessedMembers (diagnosticContext, genericArgumentValue, genericParameterValue);
 		}
 
 		static MultiValue GetTypeValueNodeFromGenericArgument (TypeReference genericArgument, LinkContext context)
@@ -552,10 +552,9 @@ namespace Mono.Linker.Dataflow
 			TrimAnalysisPatterns.Add (new TrimAnalysisAssignmentPattern (value, targetValue, origin));
 		}
 
-		void RequireDynamicallyAccessedMembers (in DiagnosticContext diagnosticContext, in MultiValue value, ValueWithDynamicallyAccessedMembers targetValue, bool enableReflectionPatternReporting)
+		void RequireDynamicallyAccessedMembers (in DiagnosticContext diagnosticContext, in MultiValue value, ValueWithDynamicallyAccessedMembers targetValue)
 		{
-			Debug.Assert (enableReflectionPatternReporting == diagnosticContext.DiagnosticsEnabled);
-			var reflectionMarker = new ReflectionMarker (_context, _markStep, enabled: true, enableReflectionPatternReporting);
+			var reflectionMarker = new ReflectionMarker (_context, _markStep, enabled: true);
 			var requireDynamicallyAccessedMembersAction = new RequireDynamicallyAccessedMembersAction (reflectionMarker, diagnosticContext);
 			requireDynamicallyAccessedMembersAction.Invoke (value, targetValue);
 		}

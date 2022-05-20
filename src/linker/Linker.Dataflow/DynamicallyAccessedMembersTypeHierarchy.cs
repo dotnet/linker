@@ -108,7 +108,7 @@ namespace Mono.Linker.Dataflow
 				// One of the base/interface types is already marked as having the annotation applied
 				// so we need to apply the annotation to this type as well
 				var origin = new MessageOrigin (type);
-				var reflectionMarker = new ReflectionMarker (_context, _markStep, enabled: true, enableReflectionPatternReporting: true);
+				var reflectionMarker = new ReflectionMarker (_context, _markStep, enabled: true);
 				// Report warnings on access to annotated members, with the annotated type as the origin.
 				ApplyDynamicallyAccessedMembersToType (reflectionMarker, origin, type, annotation);
 			}
@@ -127,7 +127,7 @@ namespace Mono.Linker.Dataflow
 
 			// Apply the effective annotation for the type
 			var origin = new MessageOrigin (type);
-			var reflectionMarker = new ReflectionMarker (_context, _markStep, enabled: true, enableReflectionPatternReporting: true);
+			var reflectionMarker = new ReflectionMarker (_context, _markStep, enabled: true);
 			// Report warnings on access to annotated members, with the annotated type as the origin.
 			ApplyDynamicallyAccessedMembersToType (reflectionMarker, origin, type, annotation);
 

@@ -42,9 +42,9 @@ namespace Mono.Linker.Dataflow
 			Origin = origin;
 		}
 
-		public void MarkAndProduceDiagnostics (bool diagnosticsEnabled, ReflectionMarker reflectionMarker, MarkStep markStep, LinkContext context)
+		public void MarkAndProduceDiagnostics (ReflectionMarker reflectionMarker, MarkStep markStep, LinkContext context)
 		{
-			diagnosticsEnabled &= !MarkStep.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (Origin.Provider, context);
+			bool diagnosticsEnabled = !MarkStep.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (Origin.Provider, context);
 			var diagnosticContext = new DiagnosticContext (Origin, diagnosticsEnabled, context);
 			ReflectionMethodBodyScanner.HandleCall (Operation, CalledMethod, Instance, Arguments,
 				diagnosticContext,

@@ -16,14 +16,12 @@ namespace Mono.Linker.Dataflow
 		readonly LinkContext _context;
 		readonly MarkStep _markStep;
 		readonly bool _enabled;
-		readonly bool _enableReflectionPatternReporting;
 
-		public ReflectionMarker (LinkContext context, MarkStep markStep, bool enabled, bool enableReflectionPatternReporting)
+		public ReflectionMarker (LinkContext context, MarkStep markStep, bool enabled)
 		{
 			_context = context;
 			_markStep = markStep;
 			_enabled = enabled;
-			_enableReflectionPatternReporting = enableReflectionPatternReporting;
 		}
 
 		internal void MarkTypeForDynamicallyAccessedMembers (in MessageOrigin origin, TypeDefinition typeDefinition, DynamicallyAccessedMemberTypes requiredMemberTypes, DependencyKind dependencyKind, bool declaredOnly = false)
@@ -65,7 +63,7 @@ namespace Mono.Linker.Dataflow
 
 			if (_enabled) {
 				var origin = diagnosticContext.Origin;
-				_markStep.MarkTypeVisibleToReflection (typeRef, foundType, new DependencyInfo (DependencyKind.AccessedViaReflection, origin.Provider), origin, enableReflectionPatternReporting: true);
+				_markStep.MarkTypeVisibleToReflection (typeRef, foundType, new DependencyInfo (DependencyKind.AccessedViaReflection, origin.Provider), origin);
 				_context.MarkingHelpers.MarkMatchingExportedType (foundType, typeAssembly, new DependencyInfo (DependencyKind.DynamicallyAccessedMember, foundType), origin);
 			}
 
@@ -78,7 +76,7 @@ namespace Mono.Linker.Dataflow
 			if (!_enabled)
 				return;
 
-			_markStep.MarkTypeVisibleToReflection (type, type, new DependencyInfo (dependencyKind, origin.Provider), origin, enableReflectionPatternReporting: true);
+			_markStep.MarkTypeVisibleToReflection (type, type, new DependencyInfo (dependencyKind, origin.Provider), origin);
 		}
 
 		internal void MarkMethod (in MessageOrigin origin, MethodDefinition method, DependencyKind dependencyKind = DependencyKind.AccessedViaReflection)
@@ -86,7 +84,7 @@ namespace Mono.Linker.Dataflow
 			if (!_enabled)
 				return;
 
-			_markStep.MarkMethodVisibleToReflection (method, new DependencyInfo (dependencyKind, origin.Provider), origin, _enableReflectionPatternReporting);
+			_markStep.MarkMethodVisibleToReflection (method, new DependencyInfo (dependencyKind, origin.Provider), origin);
 		}
 
 		void MarkField (in MessageOrigin origin, FieldDefinition field, DependencyKind dependencyKind = DependencyKind.AccessedViaReflection)
