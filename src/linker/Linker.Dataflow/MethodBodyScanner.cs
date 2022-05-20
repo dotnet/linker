@@ -1128,9 +1128,10 @@ namespace Mono.Linker.Dataflow
 				}
 			}
 			// Don't try to track refs to array elements. Set it as unknown, then push unknown to the stack
-			else if (isByRef)
+			else if (isByRef) {
 				arr.IndexValues[index.Value] = new ValueBasicBlockPair (UnknownValue.Instance, curBasicBlock);
-			else if (arr.IndexValues.TryGetValue (index.Value, out ValueBasicBlockPair arrayIndexValue))
+				PushUnknown (currentStack);
+			} else if (arr.IndexValues.TryGetValue (index.Value, out ValueBasicBlockPair arrayIndexValue))
 				currentStack.Push (new StackSlot (arrayIndexValue.Value));
 			else
 				PushUnknown (currentStack);
