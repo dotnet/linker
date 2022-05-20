@@ -175,7 +175,5 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		class TestType
 		{
 		}
-
-
 	}
 }

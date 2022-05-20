@@ -1124,16 +1124,14 @@ namespace Mono.Linker.Dataflow
 				if (isByRef) {
 					MarkArrayValuesAsUnknown (arr, curBasicBlock);
 				}
-				return;
 			}
-
-			if (arr.IndexValues.TryGetValue (index.Value, out ValueBasicBlockPair arrayIndexValue))
-				currentStack.Push (new StackSlot (isByRef ? new ArrayElementReferenceValue (arrayIndexValue.Value) : arrayIndexValue.Value));
+			// Don't try to track refs to array elements. Set it as unknown, then push unknown to the stack
+			else if (isByRef)
+				arr.IndexValues[index.Value] = new ValueBasicBlockPair (UnknownValue.Instance, curBasicBlock);
+			else if (arr.IndexValues.TryGetValue (index.Value, out ValueBasicBlockPair arrayIndexValue))
+				currentStack.Push (new StackSlot (arrayIndexValue.Value));
 			else
 				PushUnknown (currentStack);
-
-			if (index is int && isByRef)
-				arr.IndexValues[index.Value] = new ValueBasicBlockPair (UnknownValue.Instance, curBasicBlock);
 		}
 	}
 }

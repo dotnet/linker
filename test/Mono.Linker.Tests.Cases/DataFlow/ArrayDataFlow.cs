@@ -226,7 +226,6 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		// https://github.com/dotnet/linker/issues/2680 - analyzer doesn't reset array in this case
 		[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicFields), ProducedBy = ProducedBy.Trimmer)]
-		// https://github.com/dotnet/linker/issues/2632 - Ref params don't reset or track.
 		[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicMethods), ProducedBy = ProducedBy.Trimmer)]
 		static void TestArrayResetGetElementOnByRefArray (int i = 0)
 		{
