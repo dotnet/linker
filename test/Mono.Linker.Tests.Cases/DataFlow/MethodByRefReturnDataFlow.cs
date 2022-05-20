@@ -30,6 +30,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 		static ref Type ReturnAnnotatedTypeReferenceAsAnnotated () { return ref _annotatedField; }
 
+		[ExpectedWarning ("IL2026", "Message for --TestType.Requires--", ProducedBy = ProducedBy.Trimmer)]
 		static void AssignToAnnotatedTypeReference ()
 		{
 			ref Type typeShouldHaveAllMethods = ref ReturnAnnotatedTypeReferenceAsAnnotated ();
