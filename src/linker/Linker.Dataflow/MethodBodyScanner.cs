@@ -176,7 +176,7 @@ namespace Mono.Linker.Dataflow
 		}
 
 		[Conditional ("DEBUG")]
-		static void ValidateLocalStore (LocalVariableStore locals, MethodDefinition method, int ilOffset)
+		static void ValidateNoReferenceToReference (LocalVariableStore locals, MethodDefinition method, int ilOffset)
 		{
 			foreach (var keyValuePair in locals) {
 				MultiValue localValue = keyValuePair.Value.Value;
@@ -184,7 +184,10 @@ namespace Mono.Linker.Dataflow
 				foreach (var val in localValue) {
 					if (val is LocalVariableReferenceValue reference
 						&& locals[reference.LocalDefinition].Value.Any (v => v is ReferenceValue)) {
-						throw new LinkerFatalErrorException (MessageContainer.CreateCustomErrorMessage ($"In method {method.FullName}, local variable {localVariable.Index} references variable {reference.LocalDefinition.Index} which is a reference.", (int) DiagnosticId.LinkerUnexpectedError, origin: new MessageOrigin (method, ilOffset)));
+						throw new LinkerFatalErrorException (MessageContainer.CreateCustomErrorMessage (
+								$"In method {method.FullName}, local variable {localVariable.Index} references variable {reference.LocalDefinition.Index} which is a reference.",
+								(int) DiagnosticId.LinkerUnexpectedError,
+								origin: new MessageOrigin (method, ilOffset)));
 					}
 				}
 			}
@@ -232,7 +235,7 @@ namespace Mono.Linker.Dataflow
 
 			ReturnValue = new ();
 			foreach (Instruction operation in methodBody.Instructions) {
-				ValidateLocalStore (locals, methodBody.Method, operation.Offset);
+				ValidateNoReferenceToReference (locals, methodBody.Method, operation.Offset);
 				int curBasicBlock = blockIterator.MoveNext (operation);
 
 				if (knownStacks.ContainsKey (operation.Offset)) {
@@ -841,10 +844,13 @@ namespace Mono.Linker.Dataflow
 					HandleStoreMethodReturnValue (method, methodReturnValue, operation, source);
 					break;
 				case UnknownValue:
-					// These cases are usually refs to array elements or interop.
+					// These cases should only be refs to array elements.
 					break;
 				default:
-					throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage ($"Unhandled StoreReference call. Unhandled attempt to store a value in {value} of type {value.GetType ()}.", (int) DiagnosticId.LinkerUnexpectedError, origin: new MessageOrigin (method, operation.Offset)));
+					throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage (
+						$"Unhandled StoreReference call. Unhandled attempt to store a value in {value} of type {value.GetType ()}.",
+						(int) DiagnosticId.LinkerUnexpectedError,
+						origin: new MessageOrigin (method, operation.Offset)));
 				}
 			}
 

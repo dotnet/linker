@@ -8,9 +8,9 @@ namespace ILLink.Shared.TrimAnalysis
 	public partial record LocalVariableReferenceValue : ReferenceValue
 	{
 		public readonly VariableDefinition LocalDefinition;
-		public LocalVariableReferenceValue (VariableDefinition localDef)
+		public LocalVariableReferenceValue (VariableDefinition localDefinition)
 		{
-			LocalDefinition = localDef;
+			LocalDefinition = localDefinition;
 		}
 		public override SingleValue DeepCopy ()
 		{
