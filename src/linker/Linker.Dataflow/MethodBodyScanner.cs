@@ -806,10 +806,18 @@ namespace Mono.Linker.Dataflow
 			StackSlot valueToStore = PopUnknown (currentStack, 1, methodBody, operation.Offset);
 			StackSlot destination = PopUnknown (currentStack, 1, methodBody, operation.Offset);
 
-			StoreReference (destination.Value, valueToStore.Value, methodBody.Method, operation, locals, curBasicBlock);
+			StoreInReference (destination.Value, valueToStore.Value, methodBody.Method, operation, locals, curBasicBlock);
 		}
 
-		protected void StoreReference (MultiValue target, MultiValue source, MethodDefinition method, Instruction operation, LocalVariableStore locals, int curBasicBlock)
+		/// <summary>
+		/// Handles storing the source value in a target <see cref="ReferenceValue"/> or MultiValue of ReferenceValues.
+		/// </summary>
+		/// <param name="target">A set of <see cref="ReferenceValue"/> that a value is being stored into</param>
+		/// <param name="source">The value to store</param>
+		/// <param name="method">The method body that contains the operation causing the store</param>
+		/// <param name="operation">The instruction causing the store</param>
+		/// <exception cref="LinkerFatalErrorException">Throws if <paramref name="target"/> is not a valid target for an indirect store.</exception>
+		protected void StoreInReference (MultiValue target, MultiValue source, MethodDefinition method, Instruction operation, LocalVariableStore locals, int curBasicBlock)
 		{
 			foreach (var value in target) {
 				switch (value) {
@@ -829,15 +837,14 @@ namespace Mono.Linker.Dataflow
 					HandleStoreMethodThisParameter (method, thisParameterValue, operation, source);
 					break;
 				case MethodReturnValue methodReturnValue:
+					// Ref returns don't have special ReferenceValue values, so assume if the target here is a MethodReturnValue then it must be a ref return value
 					HandleStoreMethodReturnValue (method, methodReturnValue, operation, source);
 					break;
-				case ArrayElementReferenceValue:
-				// Array elements are set to Unknown when a reference is taken, we don't track dataflow through array element references yet
 				case UnknownValue:
-					// If we don't know where the value is being stored, should we warn?
+					// These cases are usually refs to array elements or interop.
 					break;
 				default:
-					throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage ($"Unhandled StoreReference call. {value} of type {value.GetType ()} was unhandled.", (int) DiagnosticId.LinkerUnexpectedError, origin: new MessageOrigin (method, operation.Offset)));
+					throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage ($"Unhandled StoreReference call. Unhandled attempt to store a value in {value} of type {value.GetType ()}.", (int) DiagnosticId.LinkerUnexpectedError, origin: new MessageOrigin (method, operation.Offset)));
 				}
 			}
 
@@ -968,9 +975,6 @@ namespace Mono.Linker.Dataflow
 					else
 						dereferencedValue = MultiValue.Meet (dereferencedValue, UnknownValue.Instance);
 					break;
-				case ArrayElementReferenceValue arrayReferenceValue:
-					dereferencedValue = MultiValue.Meet (dereferencedValue, arrayReferenceValue.ReferencedValue);
-					break;
 				case ReferenceValue referenceValue:
 					throw new NotImplementedException ($"Unhandled dereference of ReferenceValue of type {referenceValue.GetType ().FullName}");
 				default:
@@ -1006,7 +1010,7 @@ namespace Mono.Linker.Dataflow
 						parameterIndex,
 						_context.Annotations.FlowAnnotations.GetParameterAnnotation (calledMethodDefinition, parameterIndex))
 					: UnknownValue.Instance;
-				StoreReference (methodArguments[ilArgumentIndex], newByRefValue, callingMethodBody.Method, operation, locals, curBasicBlock);
+				StoreInReference (methodArguments[ilArgumentIndex], newByRefValue, callingMethodBody.Method, operation, locals, curBasicBlock);
 			}
 		}
 
