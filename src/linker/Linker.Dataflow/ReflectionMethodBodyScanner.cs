@@ -53,14 +53,6 @@ namespace Mono.Linker.Dataflow
 			return context.Annotations.FlowAnnotations.RequiresDataFlowAnalysis (fieldDefinition);
 		}
 
-		bool ShouldEnableReflectionPatternReporting (ICustomAttributeProvider? provider)
-		{
-			if (MarkStep.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (provider, _context))
-				return false;
-
-			return true;
-		}
-
 		public ReflectionMethodBodyScanner (LinkContext context, MarkStep parent, MessageOrigin origin)
 			: base (context)
 		{
@@ -95,90 +87,6 @@ namespace Mono.Linker.Dataflow
 			Debug.Assert (_origin.Provider == methodBody.Method);
 		}
 
-		public void ProcessAttributeDataflow (MethodDefinition method, IList<CustomAttributeArgument> arguments)
-		{
-			for (int i = 0; i < method.Parameters.Count; i++) {
-				var parameterValue = _annotations.GetMethodParameterValue (method, i);
-				if (parameterValue.DynamicallyAccessedMemberTypes != DynamicallyAccessedMemberTypes.None) {
-					MultiValue value = GetValueNodeForCustomAttributeArgument (arguments[i]);
-					var diagnosticContext = new DiagnosticContext (_origin, diagnosticsEnabled: true, _context);
-					RequireDynamicallyAccessedMembers (diagnosticContext, value, parameterValue);
-				}
-			}
-		}
-
-		public void ProcessAttributeDataflow (FieldDefinition field, CustomAttributeArgument value)
-		{
-			MultiValue valueNode = GetValueNodeForCustomAttributeArgument (value);
-			foreach (var fieldValueCandidate in GetFieldValue (field)) {
-				if (fieldValueCandidate is not ValueWithDynamicallyAccessedMembers fieldValue)
-					continue;
-
-				var diagnosticContext = new DiagnosticContext (_origin, diagnosticsEnabled: true, _context);
-				RequireDynamicallyAccessedMembers (diagnosticContext, valueNode, fieldValue);
-			}
-		}
-
-		MultiValue GetValueNodeForCustomAttributeArgument (CustomAttributeArgument argument)
-		{
-			SingleValue value;
-			if (argument.Type.Name == "Type") {
-				TypeDefinition? referencedType = ResolveToTypeDefinition ((TypeReference) argument.Value);
-				if (referencedType == null)
-					value = UnknownValue.Instance;
-				else
-					value = new SystemTypeValue (referencedType);
-			} else if (argument.Type.MetadataType == MetadataType.String) {
-				value = new KnownStringValue ((string) argument.Value);
-			} else {
-				// We shouldn't have gotten a non-null annotation for this from GetParameterAnnotation
-				throw new InvalidOperationException ();
-			}
-
-			Debug.Assert (value != null);
-			return value;
-		}
-
-		public void ProcessGenericArgumentDataFlow (GenericParameter genericParameter, TypeReference genericArgument)
-		{
-			var genericParameterValue = _annotations.GetGenericParameterValue (genericParameter);
-			Debug.Assert (genericParameterValue.DynamicallyAccessedMemberTypes != DynamicallyAccessedMemberTypes.None);
-
-			MultiValue genericArgumentValue = GetTypeValueNodeFromGenericArgument (genericArgument, _context);
-
-			bool enableReflectionPatternReporting = ShouldEnableReflectionPatternReporting (_origin.Provider);
-			var diagnosticContext = new DiagnosticContext (_origin, enableReflectionPatternReporting, _context);
-			RequireDynamicallyAccessedMembers (diagnosticContext, genericArgumentValue, genericParameterValue);
-		}
-
-		static MultiValue GetTypeValueNodeFromGenericArgument (TypeReference genericArgument, LinkContext context)
-		{
-			if (genericArgument is GenericParameter inputGenericParameter) {
-				// Technically this should be a new value node type as it's not a System.Type instance representation, but just the generic parameter
-				// That said we only use it to perform the dynamically accessed members checks and for that purpose treating it as System.Type is perfectly valid.
-				return context.Annotations.FlowAnnotations.GetGenericParameterValue (inputGenericParameter);
-			} else if (genericArgument.ResolveToTypeDefinition (context) is TypeDefinition genericArgumentType) {
-				if (genericArgumentType.IsTypeOf (WellKnownType.System_Nullable_T)) {
-					var innerGenericArgument = (genericArgument as IGenericInstance)?.GenericArguments.FirstOrDefault ();
-					switch (innerGenericArgument) {
-					case GenericParameter gp:
-						return new NullableValueWithDynamicallyAccessedMembers (genericArgumentType,
-							new GenericParameterValue (gp, context.Annotations.FlowAnnotations.GetGenericParameterAnnotation (gp)));
-
-					case TypeReference underlyingType:
-						if (underlyingType.ResolveToTypeDefinition (context) is TypeDefinition underlyingTypeDefinition)
-							return new NullableSystemTypeValue (genericArgumentType, new SystemTypeValue (underlyingTypeDefinition));
-						else
-							return UnknownValue.Instance;
-					}
-				}
-				// All values except for Nullable<T>, including Nullable<> (with no type arguments)
-				return new SystemTypeValue (genericArgumentType);
-			} else {
-				return UnknownValue.Instance;
-			}
-		}
-
 		protected override void WarnAboutInvalidILInMethod (MethodBody method, int ilOffset)
 		{
 			// Serves as a debug helper to make sure valid IL is not considered invalid.
@@ -205,22 +113,7 @@ namespace Mono.Linker.Dataflow
 			return _annotations.GetMethodParameterValue (method, parameterIndex, dynamicallyAccessedMemberTypes);
 		}
 
-		protected override MultiValue GetFieldValue (FieldDefinition field)
-		{
-			switch (field.Name) {
-			case "EmptyTypes" when field.DeclaringType.IsTypeOf (WellKnownType.System_Type): {
-					return ArrayValue.Create (0, field.DeclaringType);
-				}
-			case "Empty" when field.DeclaringType.IsTypeOf (WellKnownType.System_String): {
-					return new KnownStringValue (string.Empty);
-				}
-
-			default: {
-					DynamicallyAccessedMemberTypes memberTypes = _context.Annotations.FlowAnnotations.GetFieldAnnotation (field);
-					return new FieldValue (ResolveToTypeDefinition (field.FieldType), field, memberTypes);
-				}
-			}
-		}
+		protected override MultiValue GetFieldValue (FieldDefinition field) => _annotations.GetFieldValue (field);
 
 		protected override void HandleStoreField (MethodDefinition method, FieldValue field, Instruction operation, MultiValue valueToStore)
 		{
@@ -550,13 +443,6 @@ namespace Mono.Linker.Dataflow
 			ValueWithDynamicallyAccessedMembers targetValue)
 		{
 			TrimAnalysisPatterns.Add (new TrimAnalysisAssignmentPattern (value, targetValue, origin));
-		}
-
-		void RequireDynamicallyAccessedMembers (in DiagnosticContext diagnosticContext, in MultiValue value, ValueWithDynamicallyAccessedMembers targetValue)
-		{
-			var reflectionMarker = new ReflectionMarker (_context, _markStep, enabled: true);
-			var requireDynamicallyAccessedMembersAction = new RequireDynamicallyAccessedMembersAction (reflectionMarker, diagnosticContext);
-			requireDynamicallyAccessedMembersAction.Invoke (value, targetValue);
 		}
 	}
 }

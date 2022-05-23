@@ -44,7 +44,7 @@ namespace Mono.Linker.Dataflow
 
 		public void MarkAndProduceDiagnostics (ReflectionMarker reflectionMarker, MarkStep markStep, LinkContext context)
 		{
-			bool diagnosticsEnabled = !MarkStep.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (Origin.Provider, context);
+			bool diagnosticsEnabled = !context.Annotations.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (Origin.Provider);
 			var diagnosticContext = new DiagnosticContext (Origin, diagnosticsEnabled, context);
 			ReflectionMethodBodyScanner.HandleCall (Operation, CalledMethod, Instance, Arguments,
 				diagnosticContext,

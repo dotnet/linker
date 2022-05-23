@@ -23,7 +23,7 @@ namespace Mono.Linker.Dataflow
 
 		public void MarkAndProduceDiagnostics (ReflectionMarker reflectionMarker, LinkContext context)
 		{
-			bool diagnosticsEnabled = !MarkStep.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (Origin.Provider, context);
+			bool diagnosticsEnabled = !context.Annotations.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (Origin.Provider);
 			var diagnosticContext = new DiagnosticContext (Origin, diagnosticsEnabled, context);
 
 			foreach (var sourceValue in Source) {
