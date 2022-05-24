@@ -2822,15 +2822,26 @@ namespace Mono.Linker.Steps
 
 		void ProcessAnalysisAnnotationsForMethod (MethodDefinition method, DependencyKind dependencyKind, in MessageOrigin origin)
 		{
+			// For DAM on type, the current scope is the caller of GetType, while the origin is the type itself.
+			// Should not suppress type hierarchy warnings if the callsite to GetType happens to have RUC.
+			// For compiler-generated code, the scopestack has the user method, while the origin is the compiler-generated code.
+			if (origin.Provider != ScopeStack.CurrentScope.Origin.Provider)
+				Debug.Assert (dependencyKind == DependencyKind.DynamicallyAccessedMemberOnType || CompilerGeneratedState.IsNestedFunctionOrStateMachineMember((MethodDefinition) origin.Provider));
+
+			// This must happen before the check for virtual methods, because it should warn about
+			// reflection access to compiler-generated state machine code emitted into the
+			// virtual MoveNext method.
 			switch (dependencyKind) {
 			case DependencyKind.AccessedViaReflection:
 			case DependencyKind.DynamicallyAccessedMember:
 				if (!CompilerGeneratedState.IsNestedFunctionOrStateMachineMember (method))
 					break;
 
-				if (method.Body == null)
+				if (Annotations.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (origin.Provider))
 					break;
 
+				if (method.Body == null)
+					break;
 				if (Annotations.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (method))
 					break;
 
@@ -2840,7 +2851,7 @@ namespace Mono.Linker.Steps
 				if (!CheckRequiresReflectionMethodBodyScanner (method.Body))
 					break;
 
-				Context.LogWarning (ScopeStack.CurrentScope.Origin, DiagnosticId.CompilerGeneratedMemberAccessedViaReflection, method.GetDisplayName ());
+				Context.LogWarning (origin, DiagnosticId.CompilerGeneratedMemberAccessedViaReflection, method.GetDisplayName ());
 				break;
 			}
 
@@ -2921,8 +2932,7 @@ namespace Mono.Linker.Steps
 			}
 
 			// TODO: could inline CheckAndReport which does the same check.
-			// TODO: should probably use origin, not scopestack, for compiler-generated code.
-			if (Annotations.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (ScopeStack.CurrentScope.Origin.Provider))
+			if (Annotations.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (origin.Provider))
 				return;
 
 			if (Annotations.DoesMethodRequireUnreferencedCode (method, out RequiresUnreferencedCodeAttribute? requiresUnreferencedCode))
@@ -2940,7 +2950,7 @@ namespace Mono.Linker.Steps
 					break;
 				}
 
-				Context.LogWarning (ScopeStack.CurrentScope.Origin, DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection, method.GetDisplayName ());
+				Context.LogWarning (origin, DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection, method.GetDisplayName ());
 			}
 		}
 
