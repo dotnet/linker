@@ -46,11 +46,11 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 		}
 
-		[ExpectedWarning ("IL2090", nameof (DynamicallyAccessedMemberTypes.PublicProperties), CompilerGeneratedCode = true)]
 		private static void IteratorTypeMismatch ()
 		{
 			_ = Local<string> ();
 
+			[ExpectedWarning ("IL2090", nameof (DynamicallyAccessedMemberTypes.PublicProperties), CompilerGeneratedCode = true)]
 			static IEnumerable<object> Local<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] T> ()
 			{
 				foreach (var m in typeof (T).GetMethods ()) {
