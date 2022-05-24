@@ -2822,11 +2822,6 @@ namespace Mono.Linker.Steps
 
 		void ProcessAnalysisAnnotationsForMethod (MethodDefinition method, DependencyKind dependencyKind, in MessageOrigin origin)
 		{
-			// TODO: could inline CheckAndReport which does the same check.
-			// TODO: should probably use origin, not scopestack, for compiler-generated code.
-			if (Annotations.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (ScopeStack.CurrentScope.Origin.Provider))
-				return;
-
 			switch (dependencyKind) {
 			case DependencyKind.AccessedViaReflection:
 			case DependencyKind.DynamicallyAccessedMember:
@@ -2921,6 +2916,11 @@ namespace Mono.Linker.Steps
 				ReportWarningsForTypeHierarchyReflectionAccess (method, origin); // TODO: check cache for reflection access!!
 				return;
 			}
+
+			// TODO: could inline CheckAndReport which does the same check.
+			// TODO: should probably use origin, not scopestack, for compiler-generated code.
+			if (Annotations.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (ScopeStack.CurrentScope.Origin.Provider))
+				return;
 
 			CheckAndReportRequiresUnreferencedCode (method, new DiagnosticContext (origin, diagnosticsEnabled: true, Context));
 
