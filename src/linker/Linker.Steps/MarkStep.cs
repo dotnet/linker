@@ -2834,6 +2834,9 @@ namespace Mono.Linker.Steps
 				if (Annotations.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (method))
 					break;
 
+				if (Annotations.FlowAnnotations.ShouldWarnWhenAccessedForReflection (method))
+					break;
+
 				if (!CheckRequiresReflectionMethodBodyScanner (method.Body))
 					break;
 

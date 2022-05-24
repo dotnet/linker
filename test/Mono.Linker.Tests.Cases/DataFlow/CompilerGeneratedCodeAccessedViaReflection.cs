@@ -163,6 +163,16 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				lambda ();
 			}
 
+			[ExpectedWarning ("IL2111", "<" + nameof (LambdaWithAnnotatedParameter) + ">")]
+			static void LambdaWithAnnotatedParameter ()
+			{
+				var lambda =
+				([DynamicallyAccessedMembersAttribute(DynamicallyAccessedMemberTypes.All)] Type t) => {
+					t.RequiresAll ();
+				};
+				lambda (null);
+			}
+
 			static void LambdaWithUnannotatedDataflow ()
 			{
 				var lambda =
@@ -198,6 +208,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			[ExpectedWarning ("IL2118", nameof (LambdaCallsMethodWithRequires), ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2118", nameof (LambdaWithAnnotatedDataflow), ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2111", nameof (LambdaWithAnnotatedParameter), ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2118", nameof (LambdaWithUnannotatedDataflow), ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2118", nameof (LambdaWithCapturedTypeToDAM), ProducedBy = ProducedBy.Trimmer)]
 			public static void Test ()
