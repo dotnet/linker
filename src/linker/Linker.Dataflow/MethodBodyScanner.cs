@@ -691,6 +691,7 @@ namespace Mono.Linker.Dataflow
 					paramNum = paramDefinition.Index;
 				}
 
+				// This is semantically wrong if it returns true - we would representing a reference parameter as a reference to a parameter - but it should be fine for now
 				isByRef = paramDefinition.ParameterType.IsByRefOrPointer ();
 			}
 
@@ -698,7 +699,6 @@ namespace Mono.Linker.Dataflow
 
 			StackSlot slot = new StackSlot (
 				isByRef
-				// This is semantically wrong - we're representing a reference parameter as a reference to a parameter - but it should be fine for now
 				? new ParameterReferenceValue (thisMethod, paramNum)
 				: GetMethodParameterValue (thisMethod, paramNum));
 			currentStack.Push (slot);
@@ -1005,16 +1005,12 @@ namespace Mono.Linker.Dataflow
 			MethodDefinition? calledMethodDefinition = _context.Resolve (calledMethod);
 			bool methodIsResolved = calledMethodDefinition is not null;
 			int offset = calledMethod.HasImplicitThis () ? 1 : 0;
-			for (var (ilArgumentIndex, parameterIndex) = (offset, 0); ilArgumentIndex < methodArguments.Count; ilArgumentIndex++, parameterIndex++) {
-				if (!(calledMethod.ParameterReferenceKind (ilArgumentIndex) == ReferenceKind.Ref
-						|| calledMethod.ParameterReferenceKind (ilArgumentIndex) == ReferenceKind.Out))
+			int parameterIndex = 0;
+			for (int ilArgumentIndex = offset; ilArgumentIndex < methodArguments.Count; ilArgumentIndex++, parameterIndex++) {
+				if (calledMethod.ParameterReferenceKind (ilArgumentIndex) is not (ReferenceKind.Ref or ReferenceKind.Out))
 					continue;
 				SingleValue newByRefValue = methodIsResolved
-					? new MethodParameterValue (
-						ResolveToTypeDefinition (calledMethodDefinition!.Parameters[parameterIndex].ParameterType),
-						calledMethodDefinition!,
-						parameterIndex,
-						_context.Annotations.FlowAnnotations.GetParameterAnnotation (calledMethodDefinition, parameterIndex))
+					? _context.Annotations.FlowAnnotations.GetMethodParameterValue(calledMethodDefinition!, parameterIndex)
 					: UnknownValue.Instance;
 				StoreInReference (methodArguments[ilArgumentIndex], newByRefValue, callingMethodBody.Method, operation, locals, curBasicBlock);
 			}
