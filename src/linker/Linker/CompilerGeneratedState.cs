@@ -287,7 +287,7 @@ namespace Mono.Linker
 					case Code.Initobj:
 					case Code.Newobj:
 						if (instr.Operand is MethodReference { DeclaringType: GenericInstanceType typeRef }
-							&& stateMachineType == _context.TryResolve(typeRef)) {
+							&& stateMachineType == _context.TryResolve (typeRef)) {
 							return typeRef;
 						}
 						break;

@@ -140,8 +140,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				int x = 0;
 				foreach (var o in Inner<string> ()) yield return o;
 
-				[ExpectedWarning("IL2090", "T1", "PublicMethods", CompilerGeneratedCode = true)]
-				[ExpectedWarning("IL2090", "T2", "PublicProperties", CompilerGeneratedCode = true)]
+				[ExpectedWarning ("IL2090", "T1", "PublicMethods", CompilerGeneratedCode = true)]
+				[ExpectedWarning ("IL2090", "T2", "PublicProperties", CompilerGeneratedCode = true)]
 				IEnumerable<object> Inner<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] T2> ()
 				{
 					x++;
@@ -218,8 +218,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				int x = 0;
 				Inner<string> ().Wait ();
 
-				[ExpectedWarning("IL2090", "T1", "PublicMethods", CompilerGeneratedCode = true)]
-				[ExpectedWarning("IL2090", "T2", "PublicProperties", CompilerGeneratedCode=true)]
+				[ExpectedWarning ("IL2090", "T1", "PublicMethods", CompilerGeneratedCode = true)]
+				[ExpectedWarning ("IL2090", "T2", "PublicProperties", CompilerGeneratedCode = true)]
 				async Task Inner<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] T2> ()
 				{
 					await Task.Delay (0);
