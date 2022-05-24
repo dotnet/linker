@@ -68,7 +68,7 @@ namespace Mono.Linker.Steps
 		protected List<TypeDefinition> _dynamicInterfaceCastableImplementationTypes;
 		protected List<(MethodBody, MarkScopeStack.Scope)> _unreachableBodies;
 
-		readonly HashSet<(TypeDefinition Type, MethodBody Body, Instruction Instr)> _pending_isinst_instr;
+		readonly List<(TypeDefinition Type, MethodBody Body, Instruction Instr)> _pending_isinst_instr;
 		readonly Dictionary<MethodBody, bool> _compilerGeneratedMethodRequiresScanner;
 
 		UnreachableBlocksOptimizer? _unreachableBlocksOptimizer;
@@ -228,7 +228,7 @@ namespace Mono.Linker.Steps
 			_dynamicInterfaceCastableImplementationTypesDiscovered = new HashSet<AssemblyDefinition> ();
 			_dynamicInterfaceCastableImplementationTypes = new List<TypeDefinition> ();
 			_unreachableBodies = new List<(MethodBody, MarkScopeStack.Scope)> ();
-			_pending_isinst_instr = new HashSet<(TypeDefinition, MethodBody, Instruction)> ();
+			_pending_isinst_instr = new List<(TypeDefinition, MethodBody, Instruction)> ();
 			_entireTypesMarked = new HashSet<TypeDefinition> ();
 			_compilerGeneratedMethodRequiresScanner = new Dictionary<MethodBody, bool> ();
 		}
@@ -530,17 +530,21 @@ namespace Mono.Linker.Steps
 
 		void ProcessPendingTypeChecks ()
 		{
-			foreach ((TypeDefinition type, MethodBody body, Instruction instr) in _pending_isinst_instr) {
+			for (int i = 0; i < _pending_isinst_instr.Count; ++i) {
+				var item = _pending_isinst_instr[i];
+				TypeDefinition type = item.Type;
+
 				if (Annotations.IsInstantiated (type))
 					continue;
 
-				LinkerILProcessor ilProcessor = body.GetLinkerILProcessor ();
+				Instruction instr = item.Instr;
+				LinkerILProcessor ilProcessor = item.Body.GetLinkerILProcessor ();
 
 				ilProcessor.InsertAfter (instr, Instruction.Create (OpCodes.Ldnull));
 				Instruction new_instr = Instruction.Create (OpCodes.Pop);
 				ilProcessor.Replace (instr, new_instr);
 
-				Context.LogMessage ($"Removing typecheck of '{type.FullName}' inside '{body.Method.GetDisplayName ()}' method.");
+				Context.LogMessage ($"Removing typecheck of '{type.FullName}' inside '{item.Body.Method.GetDisplayName ()}' method.");
 			}
 		}
 
@@ -3355,14 +3359,14 @@ namespace Mono.Linker.Steps
 				return;
 			}
 
-			if (CompilerGeneratedNames.IsGeneratedMemberName (body.Method.Name) || CompilerGeneratedNames.IsGeneratedMemberName (body.Method.DeclaringType.Name)) {
+			if (CompilerGeneratedState.IsNestedFunctionOrStateMachineMember (body.Method)) {
 				CheckRequiresReflectionMethodBodyScanner (body);
 			} else if (InterproceduralCheckRequiresReflectionMethodBodyScanner (body)) {
 				// It's user code. Now check the entire closure to see if the method or any of the compiler-generated methods
 				// We need to scan the closure. Do it!
 				Debug.Assert (ScopeStack.CurrentScope.Origin.Provider == body.Method);
 				var scanner = new ReflectionMethodBodyScanner (Context, this, ScopeStack.CurrentScope.Origin);
-				scanner.InterproceduralScan (body, out HashSet<MethodDefinition> _);
+				scanner.InterproceduralScan (body);
 			}
 
 			PostMarkMethodBody (body);
@@ -3397,16 +3401,11 @@ namespace Mono.Linker.Steps
 
 		bool CheckRequiresReflectionMethodBodyScanner (MethodBody body)
 		{
-
-			bool isCompilerGenerated = CompilerGeneratedNames.IsGeneratedMemberName (body.Method.Name) || CompilerGeneratedNames.IsGeneratedMemberName (body.Method.DeclaringType.Name);
-			bool requiresReflectionMethodBodyScanner;
-			if (isCompilerGenerated) {
-				// This may get called multiple times for compiler-generated code: once for
-				// reflection access, and once as part of the interprocedural scan of the user method.
-				// Cache this to avoid doing work and producing warnings twice.
-				if (_compilerGeneratedMethodRequiresScanner.TryGetValue (body, out requiresReflectionMethodBodyScanner))
-					return requiresReflectionMethodBodyScanner;
-			}
+			// This may get called multiple times for compiler-generated code: once for
+			// reflection access, and once as part of the interprocedural scan of the user method.
+			// This check ensures that we only do the work once.
+			if (_compilerGeneratedMethodRequiresScanner.TryGetValue (body, out bool requiresReflectionMethodBodyScanner))
+				return requiresReflectionMethodBodyScanner;
 
 			foreach (VariableDefinition var in body.Variables)
 				MarkType (var.VariableType, new DependencyInfo (DependencyKind.VariableType, body.Method));
@@ -3417,7 +3416,6 @@ namespace Mono.Linker.Steps
 
 			MarkInterfacesNeededByBodyStack (body);
 
-
 			requiresReflectionMethodBodyScanner =
 				ReflectionMethodBodyScanner.RequiresReflectionMethodBodyScannerForMethodBody (Context, body.Method);
 			var origin = new MessageOrigin (body.Method);
@@ -3425,7 +3423,7 @@ namespace Mono.Linker.Steps
 			foreach (Instruction instruction in body.Instructions)
 				MarkInstruction (instruction, body.Method, ref requiresReflectionMethodBodyScanner);
 
-			if (isCompilerGenerated)
+			if (CompilerGeneratedState.IsNestedFunctionOrStateMachineMember (body.Method))
 				_compilerGeneratedMethodRequiresScanner.Add (body, requiresReflectionMethodBodyScanner);
 			return requiresReflectionMethodBodyScanner;
 		}

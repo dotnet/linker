@@ -63,10 +63,9 @@ namespace Mono.Linker.Dataflow
 			TrimAnalysisPatterns = new TrimAnalysisPatternStore (context);
 		}
 
-		public override void InterproceduralScan (MethodBody methodBody, out HashSet<MethodDefinition> scannedMethods)
+		public override void InterproceduralScan (MethodBody methodBody)
 		{
-			// TODO: remove scannedmethods
-			base.InterproceduralScan (methodBody, out scannedMethods);
+			base.InterproceduralScan (methodBody);
 
 			var reflectionMarker = new ReflectionMarker (_context, _markStep, enabled: true);
 			TrimAnalysisPatterns.MarkAndProduceDiagnostics (reflectionMarker, _markStep);
@@ -83,8 +82,6 @@ namespace Mono.Linker.Dataflow
 				if (methodReturnValue.DynamicallyAccessedMemberTypes != 0)
 					HandleAssignmentPattern (_origin, ReturnValue, methodReturnValue);
 			}
-
-			Debug.Assert (_origin.Provider == methodBody.Method);
 		}
 
 		protected override void WarnAboutInvalidILInMethod (MethodBody method, int ilOffset)

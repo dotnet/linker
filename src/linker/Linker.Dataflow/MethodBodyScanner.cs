@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using ILLink.Shared.DataFlow;
 using ILLink.Shared.TrimAnalysis;
@@ -208,7 +209,8 @@ namespace Mono.Linker.Dataflow
 			}
 		}
 
-		public virtual void InterproceduralScan (MethodBody methodBody, out HashSet<MethodDefinition> scannedMethods)
+		// Scans the method as well as any nested functions (local functions or lambdas) reachable from it.
+		public virtual void InterproceduralScan (MethodBody methodBody)
 		{
 			var methodsInGroup = new ValueSet<MethodDefinition> (methodBody.Method);
 
@@ -216,44 +218,49 @@ namespace Mono.Linker.Dataflow
 			// Eventually we will need to allow re-scanning in some cases, for example
 			// when we discover new inputs to a method. But we aren't doing dataflow across
 			// lambdas and local functions yet, so no need for now.
-			scannedMethods = new HashSet<MethodDefinition> ();
+			HashSet<MethodDefinition> scannedMethods = new HashSet<MethodDefinition> ();
 
 			while (true) {
-				// Get the next method to scan.
-				MethodDefinition? methodToScan = null;
-				foreach (var method in methodsInGroup) {
-					if (!scannedMethods.Contains (method) && method.HasBody) {
-						methodToScan = method;
-						break;
-					}
-				}
-
-				if (methodToScan == null)
+				if (!TryGetNextMethodToScan (out MethodDefinition? methodToScan))
 					break;
 
-				if (!CompilerGeneratedState.TryGetStateMachineType (methodToScan, out TypeDefinition? stateMachineType)) {
-					Scan (methodToScan.Body, ref methodsInGroup);
-				} else {
-					// Also scan the kickoff method, even though this probably never produces dataflow warnings...
-					Scan (methodToScan.Body, ref methodsInGroup);
-					// For state machine methods, also scan the state machine members.
-					// Simplification: assume that all generated methods of the state machine type are
-					// invoked at the point where the state machine method is called.
+				scannedMethods.Add (methodToScan);
+				Scan (methodToScan.Body, ref methodsInGroup);
+
+				// For state machine methods, also scan the state machine members.
+				// Simplification: assume that all generated methods of the state machine type are
+				// invoked at the point where the state machine method is called.			
+				if (CompilerGeneratedState.TryGetStateMachineType (methodToScan, out TypeDefinition? stateMachineType)) {
 					foreach (var method in stateMachineType.Methods) {
 						Debug.Assert (!CompilerGeneratedNames.IsLambdaOrLocalFunction (method.Name));
 						if (method.Body is MethodBody stateMachineBody)
 							Scan (stateMachineBody, ref methodsInGroup);
 					}
 				}
-				scannedMethods.Add (methodToScan);
 			}
 
+#if DEBUG
+			// Validate that the compiler-generated callees tracked by the compiler-generated state
+			// are the same set of methods that we discovered and scanned above.
 			if (_context.CompilerGeneratedState.TryGetCompilerGeneratedCalleesForUserMethod (methodBody.Method, out List<IMemberDefinition>? compilerGeneratedCallees)) {
-				// should be the same set.
 				var calleeMethods = compilerGeneratedCallees.OfType<MethodDefinition> ();
-				Debug.Assert (calleeMethods.Count () == methodsInGroup.Count () - 1);
+				Debug.Assert (methodsInGroup.Count () == 1 + calleeMethods.Count ());
 				foreach (var method in calleeMethods)
 					Debug.Assert (methodsInGroup.Contains (method));
+			} else {
+				Debug.Assert (methodsInGroup.Count () == 1);
+			}
+#endif
+
+			bool TryGetNextMethodToScan ([NotNullWhen (true)] out MethodDefinition? method) {
+				foreach (var candidate in methodsInGroup) {
+					if (!scannedMethods.Contains (candidate) && candidate.HasBody) {
+						method = candidate;
+						return true;
+					}
+				}
+				method = null;
+				return false;
 			}
 		}
 
@@ -265,13 +272,12 @@ namespace Mono.Linker.Dataflow
 			if (!CompilerGeneratedNames.IsLambdaOrLocalFunction (method.Name))
 				return;
 
+			// Work around the fact that we can't mutate the ValueSet in-place because it's a readonly struct.
 			var methods = new HashSet<MethodDefinition> (methodsInGroup);
 			methods.Add (method);
-			// Work around the fact that we can't mutate the ValueSEt in-place because it's a readonly struct.
 			methodsInGroup = new ValueSet<MethodDefinition> (methods);
 		}
 
-		// Scans the method as well as any nested functions (local functions or lambdas) reachable from it.
 		protected virtual void Scan (MethodBody methodBody, ref ValueSet<MethodDefinition> methodsInGroup)
 		{
 			MethodDefinition thisMethod = methodBody.Method;
