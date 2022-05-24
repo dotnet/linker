@@ -70,8 +70,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		class ClassWithKeptPublicMethods
 		{
 			[Kept]
-			[KeptAttributeAttribute(typeof(RequiresUnreferencedCodeAttribute))]
-			[RequiresUnreferencedCode("--ClassWithKeptPublicMethods--")]
+			[KeptAttributeAttribute (typeof (RequiresUnreferencedCodeAttribute))]
+			[RequiresUnreferencedCode ("--ClassWithKeptPublicMethods--")]
 			public static void KeptMethod () { }
 			static void Method () { }
 		}
