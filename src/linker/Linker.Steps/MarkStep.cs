@@ -2922,7 +2922,8 @@ namespace Mono.Linker.Steps
 			if (Annotations.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (ScopeStack.CurrentScope.Origin.Provider))
 				return;
 
-			CheckAndReportRequiresUnreferencedCode (method, new DiagnosticContext (origin, diagnosticsEnabled: true, Context));
+			if (Annotations.DoesMethodRequireUnreferencedCode (method, out RequiresUnreferencedCodeAttribute? requiresUnreferencedCode))
+				ReportRequiresUnreferencedCode (method.GetDisplayName (), requiresUnreferencedCode, new DiagnosticContext (origin, diagnosticsEnabled: true, Context));
 
 			if (Annotations.FlowAnnotations.ShouldWarnWhenAccessedForReflection (method)) {
 				// ReflectionMethodBodyScanner handles more cases for data flow annotations
@@ -2940,20 +2941,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		internal void CheckAndReportRequiresUnreferencedCode (MethodDefinition method, in DiagnosticContext diagnosticContext)
-		{
-			// If the caller of a method is already marked with `RequiresUnreferencedCodeAttribute` a new warning should not
-			// be produced for the callee.
-			if (Annotations.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (diagnosticContext.Origin.Provider))
-				return;
-
-			if (!Annotations.DoesMethodRequireUnreferencedCode (method, out RequiresUnreferencedCodeAttribute? requiresUnreferencedCode))
-				return;
-
-			ReportRequiresUnreferencedCode (method.GetDisplayName (), requiresUnreferencedCode, diagnosticContext);
-		}
-
-		private static void ReportRequiresUnreferencedCode (string displayName, RequiresUnreferencedCodeAttribute requiresUnreferencedCode, in DiagnosticContext diagnosticContext)
+		internal static void ReportRequiresUnreferencedCode (string displayName, RequiresUnreferencedCodeAttribute requiresUnreferencedCode, in DiagnosticContext diagnosticContext)
 		{
 			string arg1 = MessageFormat.FormatRequiresAttributeMessageArg (requiresUnreferencedCode.Message);
 			string arg2 = MessageFormat.FormatRequiresAttributeUrlArg (requiresUnreferencedCode.Url);
