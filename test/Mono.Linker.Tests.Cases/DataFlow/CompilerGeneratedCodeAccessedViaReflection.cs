@@ -21,12 +21,16 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 	{
 		public static void Main ()
 		{
-			StateMachines.Test ();
+			IteratorStateMachines.Test ();
+			AsyncStateMachines.Test ();
+			AsyncIteratorStateMachines.Test ();
 			Lambdas.Test ();
 			LocalFunctions.Test ();
 		}
 
-		class StateMachines
+		[ExpectedWarning ("IL2120", "<" + nameof (BaseIteratorWithAnnotatedDataflow) + ">", "MoveNext()")]
+		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+		class IteratorStateMachines : BaseTypeWithIteratorStateMachines
 		{
 			public static IEnumerable<int> IteratorWithoutDataflow ()
 			{
@@ -36,6 +40,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[ExpectedWarning ("IL2026", "--MethodWithRequires--", CompilerGeneratedCode = true)]
 			[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 			[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL2119", "<" + nameof (IteratorCallsMethodWithRequires) + ">", CompilerGeneratedCode = true)]
 			public static IEnumerable<int> IteratorCallsMethodWithRequires ()
 			{
 				yield return 0;
@@ -44,6 +49,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true,
 				ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2119", "<" + nameof (IteratorWithAnnotatedDataflow) + ">", CompilerGeneratedCode = true)]
 			public static IEnumerable<int> IteratorWithAnnotatedDataflow ()
 			{
 				var t = GetAll ();
@@ -53,6 +59,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true,
 				ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2119", "<" + nameof (IteratorWithUnannotatedDataflow) + ">", "MoveNext", CompilerGeneratedCode = true)]
 			public static IEnumerable<int> IteratorWithUnannotatedDataflow ()
 			{
 				var t = GetWithPublicMethods ();
@@ -60,6 +67,53 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				t.RequiresAll ();
 			}
 
+			[ExpectedWarning ("IL2112", nameof (RUCTypeWithIterators) + "()", "--RUCTypeWithIterators--", CompilerGeneratedCode = true)]
+			[RequiresUnreferencedCode ("--RUCTypeWithIterators--")]
+			class RUCTypeWithIterators
+			{
+				[ExpectedWarning ("IL2112", nameof (StaticIteratorCallsMethodWithRequires), "--RUCTypeWithIterators--")]
+				[ExpectedWarning ("IL2112", "<" + nameof (StaticIteratorCallsMethodWithRequires) + ">", "--RUCTypeWithIterators--", CompilerGeneratedCode = true)] // state machine ctor
+				public static IEnumerable<int> StaticIteratorCallsMethodWithRequires ()
+				{
+					yield return 0;
+					MethodWithRequires ();
+				}
+
+				// BUG: this should also give IL2112 for the InstanceIteratorCallsMethodWithRequires state machine constructor.
+				// https://github.com/dotnet/linker/issues/2806
+				// [ExpectedWarning ("IL2026", "<" + nameof (RUCTypeWithIterators.InstanceIteratorCallsMethodWithRequires) + ">")]
+				// With that, the IL2119 warning should also go away.
+				[ExpectedWarning ("IL2119", "<" + nameof (InstanceIteratorCallsMethodWithRequires) + ">", CompilerGeneratedCode = true)]
+				public IEnumerable<int> InstanceIteratorCallsMethodWithRequires ()
+				{
+					yield return 0;
+					MethodWithRequires ();
+				}
+			}
+
+			[ExpectedWarning ("IL2118", "<" + nameof (IteratorWithUnannotatedDataflow) + ">", "MoveNext", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2118", "<" + nameof (IteratorCallsMethodWithRequires) + ">", "MoveNext", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2118", "<" + nameof (IteratorWithAnnotatedDataflow) + ">", "MoveNext", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2118", "<" + nameof (BaseIteratorWithAnnotatedDataflow) + ">", "MoveNext", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", nameof (RUCTypeWithIterators) + "()", ProducedBy = ProducedBy.Trimmer)]
+			// Expect to see warnings about RUC on type, for all static state machine members.
+			[ExpectedWarning ("IL2026", nameof (RUCTypeWithIterators.StaticIteratorCallsMethodWithRequires) + "()", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "<" + nameof (RUCTypeWithIterators.StaticIteratorCallsMethodWithRequires) + ">", ProducedBy = ProducedBy.Trimmer)]
+			// BUG: this should also give IL2026 for the InstanceIteratorCallsMethodWithRequires state machine constructor.
+			// https://github.com/dotnet/linker/issues/2806
+			// [ExpectedWarning ("IL2026", "<" + nameof (RUCTypeWithIterators.InstanceIteratorCallsMethodWithRequires) + ">")]
+			// With that, the IL2118 warning should also go away.
+			[ExpectedWarning ("IL2118", "<" + nameof (RUCTypeWithIterators.InstanceIteratorCallsMethodWithRequires) + ">", "MoveNext", ProducedBy = ProducedBy.Trimmer)]
+			public static void Test (IteratorStateMachines test = null)
+			{
+				typeof (IteratorStateMachines).RequiresAll ();
+
+				test.GetType ().RequiresAll ();
+			}
+		}
+
+		class AsyncStateMachines
+		{
 			public static async Task AsyncWithoutDataflow ()
 			{
 			}
@@ -88,6 +142,17 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				t.RequiresAll ();
 			}
 
+			[ExpectedWarning ("IL2118", nameof (AsyncWithUnannotatedDataflow), ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2118", nameof (AsyncCallsMethodWithRequires), ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2118", nameof (AsyncWithAnnotatedDataflow), ProducedBy = ProducedBy.Trimmer)]
+			public static void Test ()
+			{
+				typeof (AsyncStateMachines).RequiresAll ();
+			}
+		}
+
+		class AsyncIteratorStateMachines
+		{
 			public static async IAsyncEnumerable<int> AsyncIteratorWithoutDataflow ()
 			{
 				yield return await MethodAsync ();
@@ -121,43 +186,16 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				t.RequiresAll ();
 			}
 
-			[RequiresUnreferencedCode ("--RUCTypeWithIterators--")]
-			class RUCTypeWithIterators
-			{
-				public static IEnumerable<int> StaticIteratorCallsMethodWithRequires ()
-				{
-					yield return 0;
-					MethodWithRequires ();
-				}
-
-				public IEnumerable<int> InstanceIteratorCallsMethodWithRequires ()
-				{
-					yield return 0;
-					MethodWithRequires ();
-				}
-			}
-
-			[ExpectedWarning ("IL2118", "<" + nameof (IteratorWithUnannotatedDataflow) + ">", "MoveNext", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2118", "<" + nameof (IteratorCallsMethodWithRequires) + ">", "MoveNext", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2118", nameof (IteratorWithAnnotatedDataflow), ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2118", nameof (AsyncWithUnannotatedDataflow), ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2118", nameof (AsyncCallsMethodWithRequires), ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2118", nameof (AsyncWithAnnotatedDataflow), ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2118", nameof (AsyncIteratorWithUnannotatedDataflow), ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2118", "<" + nameof (AsyncIteratorCallsMethodWithRequires) + ">", "MoveNext", ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2118", nameof (AsyncIteratorWithAnnotatedDataflow), ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", nameof (RUCTypeWithIterators) + "()", ProducedBy = ProducedBy.Trimmer)]
-			// Expect to see warnings about RUC on type, for all static state machine members.
-			[ExpectedWarning ("IL2026", nameof (RUCTypeWithIterators.StaticIteratorCallsMethodWithRequires) + "()", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "<" + nameof (RUCTypeWithIterators.StaticIteratorCallsMethodWithRequires) + ">", ProducedBy = ProducedBy.Trimmer)]
-			// But for non-static members, expect to see warnings about compiler-generated code.
-			[ExpectedWarning ("IL2118", "<" + nameof (RUCTypeWithIterators.InstanceIteratorCallsMethodWithRequires) + ">", "MoveNext", ProducedBy = ProducedBy.Trimmer)]
 			public static void Test ()
 			{
-				typeof (StateMachines).RequiresAll ();
+				typeof (AsyncIteratorStateMachines).RequiresAll ();
 			}
 		}
 
+		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
 		class Lambdas
 		{
 			static void LambdaWithoutDataflow ()
@@ -172,6 +210,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 					[ExpectedWarning ("IL2026", "--MethodWithRequires--")]
 				[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 				[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+				[ExpectedWarning ("IL2119", "<" + nameof (LambdaCallsMethodWithRequires) + ">")]
 				() => MethodWithRequires ();
 				lambda ();
 			}
@@ -180,6 +219,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			static void LambdaWithAnnotatedDataflow ()
 			{
 				var lambda =
+				[ExpectedWarning ("IL2119", "<" + nameof (LambdaWithAnnotatedDataflow) + ">")]
 				() => {
 					var t = GetAll ();
 					t.RequiresAll ();
@@ -191,6 +231,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			static void LambdaWithAnnotatedParameter ()
 			{
 				var lambda =
+				[ExpectedWarning ("IL2114", "<" + nameof (LambdaWithAnnotatedParameter) + ">")]
 				([DynamicallyAccessedMembersAttribute(DynamicallyAccessedMemberTypes.All)] Type t) => {
 					t.RequiresAll ();
 				};
@@ -200,6 +241,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			static void LambdaWithUnannotatedDataflow ()
 			{
 				var lambda =
+				[ExpectedWarning ("IL2119", "<" + nameof (LambdaWithUnannotatedDataflow) + ">")]
 				[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions.RequiresAll),
 					ProducedBy = ProducedBy.Trimmer)]
 				() => {
@@ -213,6 +255,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 				var t = GetWithPublicMethods ();
 				var lambda =
+				[ExpectedWarning ("IL2119", "<" + nameof (LambdaWithCapturedTypeToDAM) + ">")]
 				[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions.RequiresAll),
 					ProducedBy = ProducedBy.Trimmer)]
 				() => {
@@ -230,15 +273,20 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				lambda ();
 			}
 
+			[ExpectedWarning ("IL2112", nameof (RUCTypeWithLambdas) + "()", "--RUCTypeWithLambdas--", CompilerGeneratedCode = true)]
 			[RequiresUnreferencedCode ("--RUCTypeWithLambdas--")]
 			class RUCTypeWithLambdas
 			{
 				public void MethodWithLambdas ()
 				{
-					var lambda = () => MethodWithRequires ();
+					var lambda =
+						[ExpectedWarning ("IL2119", "<" + nameof (MethodWithLambdas) + ">")]
+						() => MethodWithRequires ();
 
 					int i = 0;
-					var lambdaWithCapturedState = () => {
+					var lambdaWithCapturedState =
+					[ExpectedWarning ("IL2119", "<" + nameof (MethodWithLambdas) + ">")]
+					() => {
 						i++;
 						MethodWithRequires ();
 					};
@@ -248,21 +296,24 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				}
 			}
 
-			[ExpectedWarning ("IL2118", nameof (LambdaCallsMethodWithRequires), ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2118", nameof (LambdaWithAnnotatedDataflow), ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2111", nameof (LambdaWithAnnotatedParameter), ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2118", nameof (LambdaWithUnannotatedDataflow), ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2118", nameof (LambdaWithCapturedTypeToDAM), ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2118", "<" + nameof (LambdaCallsMethodWithRequires) + ">", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2118", "<" + nameof (LambdaWithAnnotatedDataflow) + ">", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2111", "<" + nameof (LambdaWithAnnotatedParameter) + ">", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2118", "<" + nameof (LambdaWithUnannotatedDataflow) + ">", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2118", "<" + nameof (LambdaWithCapturedTypeToDAM) + ">", ProducedBy = ProducedBy.Trimmer)]
 			// Expect RUC warnings for static, compiler-generated code warnings for instance.
 			[ExpectedWarning ("IL2026", nameof (RUCTypeWithLambdas) + "()", ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2118", "<" + nameof (RUCTypeWithLambdas.MethodWithLambdas) + ">", ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2118", "<" + nameof (RUCTypeWithLambdas.MethodWithLambdas) + ">", ProducedBy = ProducedBy.Trimmer)]
-			public static void Test ()
+			public static void Test (Lambdas test = null)
 			{
 				typeof (Lambdas).RequiresAll ();
+
+				test.GetType ().RequiresAll ();
 			}
 		}
 
+		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
 		class LocalFunctions
 		{
 			static void LocalFunctionWithoutDataflow ()
@@ -276,12 +327,14 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				[ExpectedWarning ("IL2026", "--MethodWithRequires--")]
 				[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 				[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+				[ExpectedWarning ("IL2119", "<" + nameof (LocalFunctionCallsMethodWithRequires) + ">")]
 				void LocalFunction () => MethodWithRequires ();
 				LocalFunction ();
 			}
 
 			static void LocalFunctionWithAnnotatedDataflow ()
 			{
+				[ExpectedWarning ("IL2119", "<" + nameof (LocalFunctionWithAnnotatedDataflow) + ">")]
 				void LocalFunction ()
 				{
 					var t = GetAll ();
@@ -294,6 +347,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 				[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions.RequiresAll),
 					ProducedBy = ProducedBy.Trimmer)]
+				[ExpectedWarning ("IL2119", "<" + nameof (LocalFunctionWithUnannotatedDataflow) + ">")]
 				void LocalFunction ()
 				{
 					var t = GetWithPublicMethods ();
@@ -307,6 +361,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				var t = GetAll ();
 				[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions.RequiresAll),
 					ProducedBy = ProducedBy.Trimmer)]
+				[ExpectedWarning ("IL2119", "<" + nameof (LocalFunctionWithCapturedTypeToDAM) + ">")]
 				void LocalFunction ()
 				{
 					t.RequiresAll ();
@@ -322,16 +377,20 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				LocalFunction ();
 			}
 
+			[ExpectedWarning ("IL2112", nameof (RUCTypeWithLocalFunctions) + "()", CompilerGeneratedCode = true)]
 			[RequiresUnreferencedCode ("--RUCTypeWithLocalFunctions--")]
 			class RUCTypeWithLocalFunctions
 			{
 				public void MethodWithLocalFunctions ()
 				{
+					[ExpectedWarning ("IL2112", "<" + nameof (MethodWithLocalFunctions) + ">")]
 					void LocalFunction () => MethodWithRequires ();
 
+					[ExpectedWarning ("IL2112", "<" + nameof (MethodWithLocalFunctions) + ">")]
 					static void StaticLocalFunction () => MethodWithRequires ();
 
 					int i = 0;
+					[ExpectedWarning ("IL2112", "<" + nameof (MethodWithLocalFunctions) + ">")]
 					void LocalFunctionWithCapturedState () {
 						i++;
 						MethodWithRequires ();
@@ -352,9 +411,11 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[ExpectedWarning ("IL2026", "<" + nameof (RUCTypeWithLocalFunctions.MethodWithLocalFunctions) + ">", "LocalFunctionWithCapturedState", ProducedBy = ProducedBy.Trimmer)] // displayclass ctor
 			[ExpectedWarning ("IL2026", "<" + nameof (RUCTypeWithLocalFunctions.MethodWithLocalFunctions) + ">", "StaticLocalFunction", ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2026", "<" + nameof (RUCTypeWithLocalFunctions.MethodWithLocalFunctions) + ">", "LocalFunction", ProducedBy = ProducedBy.Trimmer)]
-			public static void Test ()
+			public static void Test (LocalFunctions test = null)
 			{
 				typeof (LocalFunctions).RequiresAll ();
+
+				test.GetType ().RequiresAll ();
 			}
 		}
 

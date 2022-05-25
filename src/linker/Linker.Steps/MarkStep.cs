@@ -533,7 +533,6 @@ namespace Mono.Linker.Steps
 			for (int i = 0; i < _pending_isinst_instr.Count; ++i) {
 				var item = _pending_isinst_instr[i];
 				TypeDefinition type = item.Type;
-
 				if (Annotations.IsInstantiated (type))
 					continue;
 
@@ -1631,6 +1630,28 @@ namespace Mono.Linker.Steps
 			if (reportOnMember)
 				origin = new MessageOrigin (member);
 
+			// Must go before the virtual check, to produce warnings for dangerous compiler-generated MoveNext methods
+			// (which don't have RUC annotations).
+			if (member is MethodDefinition method) {
+				if (method.FullName.Contains("GetEnumerator") && method.FullName.Contains("StaticIteratorCallsMethodWithRequires"))
+					Console.Write("");
+
+				if (CompilerGeneratedState.IsNestedFunctionOrStateMachineMember (method) &&
+					method.Body != null &&
+					CheckRequiresReflectionMethodBodyScanner (method.Body) &&
+					!Annotations.DoesMethodRequireUnreferencedCode (method, out _) &&
+					!Annotations.FlowAnnotations.ShouldWarnWhenAccessedForReflection (method)) {
+					var id = reportOnMember ? DiagnosticId.DynamicallyAccessedMembersOnTypeReferencesCompilerGeneratedMember : DiagnosticId.DynamicallyAccessedMembersOnTypeReferencesCompilerGeneratedMemberOnBase;
+					Context.LogWarning (origin, id, type.GetDisplayName (), method.GetDisplayName ());
+				}
+
+				// All override methods should have the same annotations as their base methods
+				// (else we will produce warning IL2046 or IL2092 or some other warning).
+				// When marking override methods via DynamicallyAccessedMembers, we should only issue a warning for the base method.
+				if (method.IsVirtual && Annotations.GetBaseMethods (method) != null)
+					return;
+			}
+
 			if (Annotations.DoesMemberRequireUnreferencedCode (member, out RequiresUnreferencedCodeAttribute? requiresUnreferencedCodeAttribute)) {
 				var id = reportOnMember ? DiagnosticId.DynamicallyAccessedMembersOnTypeReferencesMemberWithRequiresUnreferencedCode : DiagnosticId.DynamicallyAccessedMembersOnTypeReferencesMemberOnBaseWithRequiresUnreferencedCode;
 				Context.LogWarning (origin, id, type.GetDisplayName (),
@@ -1644,11 +1665,6 @@ namespace Mono.Linker.Steps
 				Context.LogWarning (origin, id, type.GetDisplayName (), ((MemberReference) member).GetDisplayName ());
 			}
 
-			// TODO: add tests for this
-			if (member is MethodDefinition method && CompilerGeneratedState.IsNestedFunctionOrStateMachineMember (method)) {
-				var id = reportOnMember ? DiagnosticId.DynamicallyAccessedMembersOnTypeReferencesCompilerGeneratedMember : DiagnosticId.DynamicallyAccessedMembersOnTypeReferencesCompilerGeneratedMemberOnBase;
-				Context.LogWarning (origin, id, type.GetDisplayName (), method.GetDisplayName ());
-			}
 		}
 
 		void MarkField (FieldDefinition field, in DependencyInfo reason, in MessageOrigin origin)
@@ -2912,11 +2928,6 @@ namespace Mono.Linker.Steps
 
 			case DependencyKind.DynamicallyAccessedMember:
 			case DependencyKind.DynamicallyAccessedMemberOnType:
-				// All override methods should have the same annotations as their base methods
-				// (else we will produce warning IL2046 or IL2092 or some other warning).
-				// When marking override methods via DynamicallyAccessedMembers, we should only issue a warning for the base method.
-				if (method.IsVirtual && Annotations.GetBaseMethods (method) != null)
-					return;
 				break;
 
 			default:
@@ -2930,6 +2941,14 @@ namespace Mono.Linker.Steps
 				// is the type or the annotated member.
 				ReportWarningsForTypeHierarchyReflectionAccess (method, origin); // TODO: check cache for reflection access!!
 				return;
+			}
+
+			if (dependencyKind == DependencyKind.DynamicallyAccessedMember) {
+				// All override methods should have the same annotations as their base methods
+				// (else we will produce warning IL2046 or IL2092 or some other warning).
+				// When marking override methods via DynamicallyAccessedMembers, we should only issue a warning for the base method.
+				if (method.IsVirtual && Annotations.GetBaseMethods (method) != null)
+					return;
 			}
 
 			if (Annotations.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (origin.Provider))
