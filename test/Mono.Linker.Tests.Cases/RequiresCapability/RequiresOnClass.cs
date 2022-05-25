@@ -719,7 +719,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			{
 				[ExpectedWarning ("IL2112", "DAMAnnotatedClassAccessedFromRUCScope.RUCMethod", ProducedBy = ProducedBy.Trimmer)]
 				[RequiresUnreferencedCode ("--RUCMethod--")]
-				public static void RUCMethod () {}
+				public static void RUCMethod () { }
 			}
 
 			// RUC on the callsite to GetType should not suppress warnings about the

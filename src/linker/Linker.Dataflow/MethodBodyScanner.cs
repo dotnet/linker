@@ -252,7 +252,8 @@ namespace Mono.Linker.Dataflow
 			}
 #endif
 
-			bool TryGetNextMethodToScan ([NotNullWhen (true)] out MethodDefinition? method) {
+			bool TryGetNextMethodToScan ([NotNullWhen (true)] out MethodDefinition? method)
+			{
 				foreach (var candidate in methodsInGroup) {
 					if (!scannedMethods.Contains (candidate) && candidate.HasBody) {
 						method = candidate;

@@ -3,7 +3,6 @@
 
 using System;
 using ILLink.Shared.TrimAnalysis;
-using Mono.Linker.Steps;
 using MultiValue = ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.SingleValue>;
 
 namespace Mono.Linker.Dataflow

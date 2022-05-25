@@ -2842,7 +2842,7 @@ namespace Mono.Linker.Steps
 			// Should not suppress type hierarchy warnings if the callsite to GetType happens to have RUC.
 			// For compiler-generated code, the scopestack has the user method, while the origin is the compiler-generated code.
 			if (origin.Provider != ScopeStack.CurrentScope.Origin.Provider)
-				Debug.Assert (dependencyKind == DependencyKind.DynamicallyAccessedMemberOnType || CompilerGeneratedState.IsNestedFunctionOrStateMachineMember((MethodDefinition) origin.Provider));
+				Debug.Assert (dependencyKind == DependencyKind.DynamicallyAccessedMemberOnType || CompilerGeneratedState.IsNestedFunctionOrStateMachineMember ((MethodDefinition) origin.Provider));
 
 			// This must happen before the check for virtual methods, because it should warn about
 			// reflection access to compiler-generated state machine code emitted into the

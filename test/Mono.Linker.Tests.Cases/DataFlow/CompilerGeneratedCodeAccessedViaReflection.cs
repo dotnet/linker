@@ -28,6 +28,17 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			LocalFunctions.Test ();
 		}
 
+		class BaseTypeWithIteratorStateMachines
+		{
+			[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true)]
+			public static IEnumerable<int> BaseIteratorWithAnnotatedDataflow ()
+			{
+				var t = GetAll ();
+				yield return 0;
+				t.RequiresAll ();
+			}
+		}
+
 		[ExpectedWarning ("IL2120", "<" + nameof (BaseIteratorWithAnnotatedDataflow) + ">", "MoveNext()")]
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
 		class IteratorStateMachines : BaseTypeWithIteratorStateMachines
@@ -232,7 +243,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 				var lambda =
 				[ExpectedWarning ("IL2114", "<" + nameof (LambdaWithAnnotatedParameter) + ">")]
-				([DynamicallyAccessedMembersAttribute(DynamicallyAccessedMemberTypes.All)] Type t) => {
+				([DynamicallyAccessedMembersAttribute (DynamicallyAccessedMemberTypes.All)] Type t) => {
 					t.RequiresAll ();
 				};
 				lambda (null);
@@ -281,7 +292,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				{
 					var lambda =
 						[ExpectedWarning ("IL2119", "<" + nameof (MethodWithLambdas) + ">")]
-						() => MethodWithRequires ();
+					() => MethodWithRequires ();
 
 					int i = 0;
 					var lambdaWithCapturedState =
@@ -391,7 +402,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 					int i = 0;
 					[ExpectedWarning ("IL2112", "<" + nameof (MethodWithLocalFunctions) + ">")]
-					void LocalFunctionWithCapturedState () {
+					void LocalFunctionWithCapturedState ()
+					{
 						i++;
 						MethodWithRequires ();
 					}
