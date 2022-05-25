@@ -245,15 +245,16 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				if (overriddenMethod.Resolve () is not MethodDefinition overriddenDefinition) {
 					Assert.Fail ($"Method {linked.GetDisplayName ()} overrides method {overriddenMethod} which does not exist");
 				} else if (overriddenDefinition.DeclaringType.IsInterface) {
-					Assert.True (linked.DeclaringType.Interfaces.Select (i => i.InterfaceType).Contains (overriddenMethod.DeclaringType),
+					Assert.True (linked.DeclaringType.Interfaces.Select (i => i.InterfaceType.FullName).Contains (overriddenMethod.DeclaringType.FullName),
 						$"Method {linked} overrides method {overriddenMethod}, but {linked.DeclaringType} does not implement interface {overriddenMethod.DeclaringType}");
 				} else {
 					TypeReference baseType = linked.DeclaringType;
 					TypeReference overriddenType = overriddenMethod.DeclaringType;
 					while (baseType is not null) {
-						if (baseType.Equals (overriddenType))
+						if (baseType.FullName == overriddenType)
 							break;
-						if (baseType.Resolve ()?.BaseType is null)
+						baseType = baseType.Resolve ()?.BaseType;
+						if (baseType is null)
 							Assert.Fail ($"Method {linked} overrides method {overriddenMethod} from, but {linked.DeclaringType} does not inherit from type {overriddenMethod.DeclaringType}");
 					}
 				}
