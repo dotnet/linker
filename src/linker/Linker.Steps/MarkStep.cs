@@ -2842,7 +2842,8 @@ namespace Mono.Linker.Steps
 
 				if (method.Body == null)
 					break;
-				if (Annotations.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (method))
+
+				if (Annotations.DoesMethodRequireUnreferencedCode (method, out _))
 					break;
 
 				if (Annotations.FlowAnnotations.ShouldWarnWhenAccessedForReflection (method))
@@ -2931,7 +2932,6 @@ namespace Mono.Linker.Steps
 				return;
 			}
 
-			// TODO: could inline CheckAndReport which does the same check.
 			if (Annotations.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (origin.Provider))
 				return;
 
