@@ -1633,14 +1633,7 @@ namespace Mono.Linker.Steps
 			// Must go before the virtual check, to produce warnings for dangerous compiler-generated MoveNext methods
 			// (which don't have RUC annotations).
 			if (member is MethodDefinition method) {
-				if (method.FullName.Contains("GetEnumerator") && method.FullName.Contains("StaticIteratorCallsMethodWithRequires"))
-					Console.Write("");
-
-				if (CompilerGeneratedState.IsNestedFunctionOrStateMachineMember (method) &&
-					method.Body != null &&
-					CheckRequiresReflectionMethodBodyScanner (method.Body) &&
-					!Annotations.DoesMethodRequireUnreferencedCode (method, out _) &&
-					!Annotations.FlowAnnotations.ShouldWarnWhenAccessedForReflection (method)) {
+				if (ShouldWarnForReflectionAccessToCompilerGeneratedCode (method)) {
 					var id = reportOnMember ? DiagnosticId.DynamicallyAccessedMembersOnTypeReferencesCompilerGeneratedMember : DiagnosticId.DynamicallyAccessedMembersOnTypeReferencesCompilerGeneratedMemberOnBase;
 					Context.LogWarning (origin, id, type.GetDisplayName (), method.GetDisplayName ());
 				}
@@ -1664,7 +1657,6 @@ namespace Mono.Linker.Steps
 				var id = reportOnMember ? DiagnosticId.DynamicallyAccessedMembersOnTypeReferencesMemberWithDynamicallyAccessedMembers : DiagnosticId.DynamicallyAccessedMembersOnTypeReferencesMemberOnBaseWithDynamicallyAccessedMembers;
 				Context.LogWarning (origin, id, type.GetDisplayName (), ((MemberReference) member).GetDisplayName ());
 			}
-
 		}
 
 		void MarkField (FieldDefinition field, in DependencyInfo reason, in MessageOrigin origin)
@@ -2836,6 +2828,20 @@ namespace Mono.Linker.Steps
 			return method;
 		}
 
+		bool ShouldWarnForReflectionAccessToCompilerGeneratedCode (MethodDefinition method)
+		{
+			if (!CompilerGeneratedState.IsNestedFunctionOrStateMachineMember (method) || method.Body == null)
+				return false;
+
+			// No need to warn if it's already covered by the Requires attribute or explicit annotations on the method.
+			if (Annotations.DoesMethodRequireUnreferencedCode (method, out _) || Annotations.FlowAnnotations.ShouldWarnWhenAccessedForReflection (method))
+				return false;
+
+			// Warn only if it has potential dataflow issues, as approximated by our check to see if it requires
+			// the reflection scanner.
+			return MarkAndCheckRequiresReflectionMethodBodyScanner (method.Body);
+		}
+
 		void ProcessAnalysisAnnotationsForMethod (MethodDefinition method, DependencyKind dependencyKind, in MessageOrigin origin)
 		{
 			// For DAM on type, the current scope is the caller of GetType, while the origin is the type itself.
@@ -2850,25 +2856,8 @@ namespace Mono.Linker.Steps
 			switch (dependencyKind) {
 			case DependencyKind.AccessedViaReflection:
 			case DependencyKind.DynamicallyAccessedMember:
-				if (!CompilerGeneratedState.IsNestedFunctionOrStateMachineMember (method))
-					break;
-
-				if (Annotations.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (origin.Provider))
-					break;
-
-				if (method.Body == null)
-					break;
-
-				if (Annotations.DoesMethodRequireUnreferencedCode (method, out _))
-					break;
-
-				if (Annotations.FlowAnnotations.ShouldWarnWhenAccessedForReflection (method))
-					break;
-
-				if (!CheckRequiresReflectionMethodBodyScanner (method.Body))
-					break;
-
-				Context.LogWarning (origin, DiagnosticId.CompilerGeneratedMemberAccessedViaReflection, method.GetDisplayName ());
+				if (!Annotations.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (origin.Provider) && ShouldWarnForReflectionAccessToCompilerGeneratedCode (method))
+					Context.LogWarning (origin, DiagnosticId.CompilerGeneratedMemberAccessedViaReflection, method.GetDisplayName ());
 				break;
 			}
 
@@ -2939,7 +2928,7 @@ namespace Mono.Linker.Steps
 			if (dependencyKind == DependencyKind.DynamicallyAccessedMemberOnType) {
 				// DynamicallyAccessedMembers on type gets special treatment so that the warning origin
 				// is the type or the annotated member.
-				ReportWarningsForTypeHierarchyReflectionAccess (method, origin); // TODO: check cache for reflection access!!
+				ReportWarningsForTypeHierarchyReflectionAccess (method, origin);
 				return;
 			}
 
@@ -3379,47 +3368,39 @@ namespace Mono.Linker.Steps
 				return;
 			}
 
-			if (CompilerGeneratedState.IsNestedFunctionOrStateMachineMember (body.Method)) {
-				CheckRequiresReflectionMethodBodyScanner (body);
-			} else if (InterproceduralCheckRequiresReflectionMethodBodyScanner (body)) {
-				// It's user code. Now check the entire closure to see if the method or any of the compiler-generated methods
-				// We need to scan the closure. Do it!
-				Debug.Assert (ScopeStack.CurrentScope.Origin.Provider == body.Method);
-				var scanner = new ReflectionMethodBodyScanner (Context, this, ScopeStack.CurrentScope.Origin);
-				scanner.InterproceduralScan (body);
-			}
+			bool requiresReflectionMethodBodyScanner = MarkAndCheckRequiresReflectionMethodBodyScanner (body);
 
-			PostMarkMethodBody (body);
-		}
+			if (CompilerGeneratedState.IsNestedFunctionOrStateMachineMember (body.Method))
+				return;
 
-		bool InterproceduralCheckRequiresReflectionMethodBodyScanner (MethodBody body)
-		{
-
-			bool requiresReflectionMethodBodyScanner = CheckRequiresReflectionMethodBodyScanner (body);
-			if (!Context.CompilerGeneratedState.TryGetCompilerGeneratedCalleesForUserMethod (body.Method, out List<IMemberDefinition>? compilerGeneratedCallees))
-				return requiresReflectionMethodBodyScanner;
-
-			foreach (var compilerGeneratedCallee in compilerGeneratedCallees) {
-				switch (compilerGeneratedCallee) {
-				case MethodDefinition nestedFunction:
-					if (nestedFunction.Body is MethodBody nestedBody)
-						requiresReflectionMethodBodyScanner |= CheckRequiresReflectionMethodBodyScanner (nestedBody);
-					break;
-				case TypeDefinition stateMachineType:
-					foreach (var method in stateMachineType.Methods) {
-						if (method.Body is MethodBody stateMachineBody)
-							requiresReflectionMethodBodyScanner |= CheckRequiresReflectionMethodBodyScanner (stateMachineBody);
+			if (Context.CompilerGeneratedState.TryGetCompilerGeneratedCalleesForUserMethod (body.Method, out List<IMemberDefinition>? compilerGeneratedCallees)) {
+				foreach (var compilerGeneratedCallee in compilerGeneratedCallees) {
+					switch (compilerGeneratedCallee) {
+					case MethodDefinition nestedFunction:
+						if (nestedFunction.Body is MethodBody nestedBody)
+							requiresReflectionMethodBodyScanner |= MarkAndCheckRequiresReflectionMethodBodyScanner (nestedBody);
+						break;
+					case TypeDefinition stateMachineType:
+						foreach (var method in stateMachineType.Methods) {
+							if (method.Body is MethodBody stateMachineBody)
+								requiresReflectionMethodBodyScanner |= MarkAndCheckRequiresReflectionMethodBodyScanner (stateMachineBody);
+						}
+						break;
+					default:
+						throw new InvalidOperationException ();
 					}
-					break;
-				default:
-					throw new InvalidOperationException ();
 				}
 			}
-			return requiresReflectionMethodBodyScanner;
+
+			if (!requiresReflectionMethodBodyScanner)
+				return;
+
+			Debug.Assert (ScopeStack.CurrentScope.Origin.Provider == body.Method);
+			var scanner = new ReflectionMethodBodyScanner (Context, this, ScopeStack.CurrentScope.Origin);
+			scanner.InterproceduralScan (body);
 		}
 
-
-		bool CheckRequiresReflectionMethodBodyScanner (MethodBody body)
+		bool MarkAndCheckRequiresReflectionMethodBodyScanner (MethodBody body)
 		{
 			// This may get called multiple times for compiler-generated code: once for
 			// reflection access, and once as part of the interprocedural scan of the user method.
@@ -3445,6 +3426,9 @@ namespace Mono.Linker.Steps
 
 			if (CompilerGeneratedState.IsNestedFunctionOrStateMachineMember (body.Method))
 				_compilerGeneratedMethodRequiresScanner.Add (body, requiresReflectionMethodBodyScanner);
+
+			PostMarkMethodBody (body);
+
 			return requiresReflectionMethodBodyScanner;
 		}
 

@@ -60,7 +60,6 @@ namespace Mono.Linker
 			return CompilerGeneratedNames.IsStateMachineType (declaringType.Name);
 		}
 
-		// TODO: cache?
 		public static bool TryGetStateMachineType (MethodDefinition method, [NotNullWhen (true)] out TypeDefinition? stateMachineType)
 		{
 			stateMachineType = null;
