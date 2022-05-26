@@ -848,7 +848,7 @@ namespace Mono.Linker.Dataflow
 					// These cases should only be refs to array elements.
 				default:
 					// Should Add a new "Reference cannot be statically determined" warning code
-					_context.LogError (new MessageOrigin (method, operation.Offset), DiagnosticId.LinkerUnexpectedError);
+					_context.LogWarning (new MessageOrigin (method, operation.Offset), DiagnosticId.ReferenceStoredToCannotBeStaticallyDetermined, method.GetDisplayName ());
 					break;
 				}
 			}
