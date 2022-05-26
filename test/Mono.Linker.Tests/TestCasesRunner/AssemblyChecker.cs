@@ -251,7 +251,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 					TypeReference baseType = linked.DeclaringType;
 					TypeReference overriddenType = overriddenMethod.DeclaringType;
 					while (baseType is not null) {
-						if (baseType.FullName == overriddenType)
+						if (baseType.FullName == overriddenType.FullName)
 							break;
 						baseType = baseType.Resolve ()?.BaseType;
 						if (baseType is null)
