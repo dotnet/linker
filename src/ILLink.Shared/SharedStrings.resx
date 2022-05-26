@@ -1167,4 +1167,10 @@
   <data name="UnrecognizedInternalAttributeTitle" xml:space="preserve">
     <value>Unrecognized internal attribute '{0}'</value>
   </data>
+  <data name="ReferenceStoredToCannotBeStaticallyDeterminedMessage" xml:space="preserve">
+    <value>In method '{0}' value was stored to a referenced location that cannot be statically determined. The location may have 'DynamicallyAccessedMembers' requirements unmet by the value stored.</value>
+  </data>
+  <data name="ReferenceStoredToCannotBeStaticallyDeterminedTitle" xml:space="preserve">
+    <value>A value was stored to an location that is unknown and may have 'DynamicallyAccessedMembers' requirements that are unmet by the value stored.</value>
+  </data>
 </root>

@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using ILLink.Shared;
 using ILLink.Shared.DataFlow;
@@ -845,12 +846,10 @@ namespace Mono.Linker.Dataflow
 					break;
 				case UnknownValue:
 					// These cases should only be refs to array elements.
-					break;
 				default:
-					throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage (
-						$"Unhandled StoreReference call. Unhandled attempt to store a value in {value} of type {value.GetType ()}.",
-						(int) DiagnosticId.LinkerUnexpectedError,
-						origin: new MessageOrigin (method, operation.Offset)));
+					// Should Add a new "Reference cannot be statically determined" warning code
+					_context.LogError (new MessageOrigin (method, operation.Offset), DiagnosticId.LinkerUnexpectedError);
+					break;
 				}
 			}
 
