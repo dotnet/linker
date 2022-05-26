@@ -228,6 +228,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicFields), ProducedBy = ProducedBy.Trimmer)]
 		// https://github.com/dotnet/linker/issues/2680 - analyzer doesn't reset array in this case
 		[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicMethods), ProducedBy = ProducedBy.Trimmer)]
+		[ExpectedWarning ("IL2118")]
+		[ExpectedWarning ("IL2118")]
 		static void TestArrayResetGetElementOnByRefArray (int i = 0)
 		{
 			Type[] arr = new Type[] { typeof (TestType), typeof (TestType) };
@@ -464,6 +466,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicProperties), ProducedBy = ProducedBy.Trimmer)]
 			// Multidimensional Arrays not handled -- assumed to be UnknownValue
 			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresPublicMethods), ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2118")]
+			[ExpectedWarning ("IL2118")]
 			static void TestArrayResetGetElementOnByRefArray (int i = 0)
 			{
 				Type[,] arr = new Type[,] { { typeof (TestType) } };
