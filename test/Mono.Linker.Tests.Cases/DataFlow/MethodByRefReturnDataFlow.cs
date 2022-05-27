@@ -17,6 +17,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		{
 			ReturnAnnotatedTypeReferenceAsUnannotated ();
 			AssignToAnnotatedTypeReference ();
+			AssignDirectlyToAnnotatedTypeReference ();
 		}
 
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
@@ -38,6 +39,13 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			ref Type typeShouldHaveAllMethods = ref ReturnAnnotatedTypeReferenceAsAnnotated ();
 			typeShouldHaveAllMethods = typeof (TestTypeWithRequires); // This should apply the annotation -> cause IL2026 due to RUC method
 			_annotatedField.GetMethods (); // Doesn't warn, but now contains typeof(TestType) - no warning here is correct
+		}
+
+		// Same as above for IL analysis, but this looks different to the Roslyn analyzer.
+		static void AssignDirectlyToAnnotatedTypeReference ()
+		{
+			ReturnAnnotatedTypeReferenceAsAnnotated () = typeof (TestTypeWithRequires);
+			_annotatedField.GetMethods ();
 		}
 
 		public class TestTypeWithRequires
