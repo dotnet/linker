@@ -215,7 +215,7 @@ namespace ILLink.Shared
 				2103 => MessageSubCategory.TrimAnalysis,
 				2106 => MessageSubCategory.TrimAnalysis,
 				2107 => MessageSubCategory.TrimAnalysis,
-				>= 2109 and <= 2116 => MessageSubCategory.TrimAnalysis,
+				>= 2109 and <= 2120 => MessageSubCategory.TrimAnalysis,
 				>= 3050 and <= 3052 => MessageSubCategory.AotAnalysis,
 				>= 3054 and <= 3055 => MessageSubCategory.AotAnalysis,
 				_ => MessageSubCategory.None,
