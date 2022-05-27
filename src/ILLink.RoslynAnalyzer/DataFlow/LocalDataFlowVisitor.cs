@@ -185,6 +185,9 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 				// The linker doesn't track these yet: https://github.com/dotnet/linker/issues/2158
 				// Skip for now in the analyzer as well.
 				break;
+			// Keep these cases in sync with those in CapturedReferenceValue, for any that
+			// can show up in a flow capture reference (for example, where the right-hand side
+			// is a null-coalescing operator).
 			default:
 				// NoneOperation represents operations which are unimplemented by Roslyn
 				// (don't have specific I*Operation types), such as pointer dereferences.

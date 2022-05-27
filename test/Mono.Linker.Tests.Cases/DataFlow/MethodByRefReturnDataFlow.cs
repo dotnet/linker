@@ -48,6 +48,18 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			_annotatedField.GetMethods ();
 		}
 
+		static void AssignToCapturedAnnotatedTypeReference ()
+		{
+			// In this testcase, the Roslyn analyzer sees an assignment to a flow-capture reference.
+			ReturnAnnotatedTypeReferenceAsAnnotated () = GetWithPublicMethods () ?? GetWithPublicFields ();
+		}
+
+		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+		static Type GetWithPublicMethods () => null;
+
+		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)]
+		static Type GetWithPublicFields () => null;
+
 		public class TestTypeWithRequires
 		{
 			[RequiresUnreferencedCode ("Message for --TestType.Requires--")]
