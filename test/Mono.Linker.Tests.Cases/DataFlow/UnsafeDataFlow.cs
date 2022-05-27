@@ -35,7 +35,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		// We don't analyze the pointer manipulation, so it should produce a warning
 		// about reading an unknown type, without crashing the analyzer.
 		[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresAll))]
-		[ExpectedWarning ("IL2118")]
+		[ExpectedWarning ("IL2118", ProducedBy = ProducedBy.Trimmer)]
 		static unsafe void TestWriteToPointer ()
 		{
 			int i = 6;
@@ -48,7 +48,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		// We don't analyze the stackalloc'd struct member, so it should produce a warning
 		// about reading an unknown type, without crashing the analyzer.
 		[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresAll))]
-		[ExpectedWarning ("IL2118")]
+		[ExpectedWarning ("IL2118", ProducedBy = ProducedBy.Trimmer)]
 		static unsafe void TestWriteToStackAllocedStruct ()
 		{
 			var stackArr = stackalloc S[1];

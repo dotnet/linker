@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using ILLink.Shared;
 using ILLink.Shared.DataFlow;
@@ -845,7 +844,7 @@ namespace Mono.Linker.Dataflow
 					HandleStoreMethodReturnValue (method, methodReturnValue, operation, source);
 					break;
 				case UnknownValue:
-					// These cases should only be refs to array elements.
+				// These cases should only be refs to array elements.
 				default:
 					// Should Add a new "Reference cannot be statically determined" warning code
 					_context.LogWarning (new MessageOrigin (method, operation.Offset), DiagnosticId.ReferenceStoredToCannotBeStaticallyDetermined, method.GetDisplayName ());
