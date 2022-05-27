@@ -470,7 +470,6 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			// https://github.com/dotnet/linker/issues/2158 - analyzer doesn't work the same as linker, it simply doesn't handle refs
 			[ExpectedWarning ("IL2060", nameof (MethodInfo.MakeGenericMethod), ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2118", ProducedBy = ProducedBy.Trimmer)]
 			static void TestWithArrayUnknownIndexSetByRef (int indexToSet)
 			{
 				Type[] types = new Type[1];

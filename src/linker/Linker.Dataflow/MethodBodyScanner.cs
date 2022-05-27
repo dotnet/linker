@@ -843,8 +843,17 @@ namespace Mono.Linker.Dataflow
 					// Ref returns don't have special ReferenceValue values, so assume if the target here is a MethodReturnValue then it must be a ref return value
 					HandleStoreMethodReturnValue (method, methodReturnValue, operation, source);
 					break;
+				case IValueWithStaticType typedValue:
+					if (typedValue.StaticType is not TypeReference typeRef
+						|| ResolveToTypeDefinition (typeRef) is not TypeDefinition typeOfTarget)
+						break;
+
+					if (typeOfTarget.IsTypeOf(WellKnownType.System_String) || typeOfTarget.IsTypeOf (WellKnownType.System_Type))
+						_context.LogWarning (new MessageOrigin (method, operation.Offset), DiagnosticId.ReferenceStoredToCannotBeStaticallyDetermined, method.GetDisplayName ());
+					break;
 				case UnknownValue:
-				// These cases should only be refs to array elements.
+					// These cases should only be refs to array elements.
+					break;
 				default:
 					// Should Add a new "Reference cannot be statically determined" warning code
 					_context.LogWarning (new MessageOrigin (method, operation.Offset), DiagnosticId.ReferenceStoredToCannotBeStaticallyDetermined, method.GetDisplayName ());
