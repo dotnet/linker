@@ -18,6 +18,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			ReturnAnnotatedTypeReferenceAsUnannotated ();
 			AssignToAnnotatedTypeReference ();
 			AssignDirectlyToAnnotatedTypeReference ();
+			AssignToCapturedAnnotatedTypeReference ();
 		}
 
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
@@ -42,12 +43,14 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		// Same as above for IL analysis, but this looks different to the Roslyn analyzer.
+		[ExpectedWarning ("IL2026", "Message for --TestType.Requires--", ProducedBy = ProducedBy.Trimmer)]
 		static void AssignDirectlyToAnnotatedTypeReference ()
 		{
 			ReturnAnnotatedTypeReferenceAsAnnotated () = typeof (TestTypeWithRequires);
 			_annotatedField.GetMethods ();
 		}
 
+		[ExpectedWarning ("IL2073", nameof (GetWithPublicFields), ProducedBy = ProducedBy.Trimmer)]
 		static void AssignToCapturedAnnotatedTypeReference ()
 		{
 			// In this testcase, the Roslyn analyzer sees an assignment to a flow-capture reference.
