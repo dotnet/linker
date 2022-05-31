@@ -1,9 +1,0 @@
-{
-  "profiles": {
-    "Mono.Linker": {
-      "commandName": "Project",
-      "commandLineArgs": "@linker.rsp",
-      "workingDirectory": "F:\\ILLinker\\fx\\c1\\repro"
-    }
-  }
-}

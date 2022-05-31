@@ -112,7 +112,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[Kept]
 			[KeptAttributeAttribute (typeof (RequiresUnreferencedCodeAttribute))]
 			[RequiresUnreferencedCode ("")]
-			static unsafe void IntPtrDeref (int pp)
+			static unsafe void IntPtrDeref ()
 			{
 				*_ptr = GetDangerous ();
 			}
@@ -129,7 +129,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[ExpectedWarning ("IL2026")]
 			public static void Test ()
 			{
-				IntPtrDeref (0);
+				IntPtrDeref ();
 			}
 		}
 	}
