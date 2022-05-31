@@ -45,6 +45,7 @@ namespace Mono.Linker.Dataflow
 	{
 		protected readonly LinkContext _context;
 		protected static ValueSetLattice<SingleValue> MultiValueLattice => default;
+		protected static ValueSetLattice<MethodProxy> MethodLattice => default;
 
 		protected MethodBodyScanner (LinkContext context)
 		{
@@ -225,7 +226,7 @@ namespace Mono.Linker.Dataflow
 		// reachable from it.
 		public virtual void InterproceduralScan (MethodBody methodBody)
 		{
-			var methodsInGroup = new ValueSet<MethodDefinition> (methodBody.Method);
+			var methodsInGroup = new ValueSet<MethodProxy> (methodBody.Method);
 
 			// Optimization to prevent multiple scans of a method.
 			// Eventually we will need to allow re-scanning in some cases, for example
@@ -268,8 +269,9 @@ namespace Mono.Linker.Dataflow
 			bool TryGetNextMethodToScan ([NotNullWhen (true)] out MethodDefinition? method)
 			{
 				foreach (var candidate in methodsInGroup) {
-					if (!scannedMethods.Contains (candidate) && candidate.HasBody) {
-						method = candidate;
+					var candidateMethod = candidate.Method;
+					if (!scannedMethods.Contains (candidateMethod) && candidateMethod.HasBody) {
+						method = candidateMethod;
 						return true;
 					}
 				}
@@ -278,7 +280,7 @@ namespace Mono.Linker.Dataflow
 			}
 		}
 
-		void TrackNestedFunctionReference (MethodReference referencedMethod, ref ValueSet<MethodDefinition> methodsInGroup)
+		void TrackNestedFunctionReference (MethodReference referencedMethod, ref ValueSet<MethodProxy> methodsInGroup)
 		{
 			if (_context.TryResolve (referencedMethod) is not MethodDefinition method)
 				return;
@@ -286,13 +288,10 @@ namespace Mono.Linker.Dataflow
 			if (!CompilerGeneratedNames.IsLambdaOrLocalFunction (method.Name))
 				return;
 
-			// Work around the fact that we can't mutate the ValueSet in-place because it's a readonly struct.
-			var methods = new HashSet<MethodDefinition> (methodsInGroup);
-			methods.Add (method);
-			methodsInGroup = new ValueSet<MethodDefinition> (methods);
+			methodsInGroup = MethodLattice.Meet (methodsInGroup, new (method));
 		}
 
-		protected virtual void Scan (MethodBody methodBody, ref ValueSet<MethodDefinition> methodsInGroup)
+		protected virtual void Scan (MethodBody methodBody, ref ValueSet<MethodProxy> methodsInGroup)
 		{
 			MethodDefinition thisMethod = methodBody.Method;
 

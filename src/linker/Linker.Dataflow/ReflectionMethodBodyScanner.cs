@@ -70,7 +70,7 @@ namespace Mono.Linker.Dataflow
 			TrimAnalysisPatterns.MarkAndProduceDiagnostics (reflectionMarker, _markStep);
 		}
 
-		protected override void Scan (MethodBody methodBody, ref ValueSet<MethodDefinition> methodsInGroup)
+		protected override void Scan (MethodBody methodBody, ref ValueSet<MethodProxy> methodsInGroup)
 		{
 			_origin = new MessageOrigin (methodBody.Method);
 			base.Scan (methodBody, ref methodsInGroup);
