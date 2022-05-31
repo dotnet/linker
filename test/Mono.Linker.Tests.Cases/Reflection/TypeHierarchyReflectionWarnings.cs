@@ -49,7 +49,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			// for some non-reflection access.
 			var f = AnnotatedPublicMethods.DAMField;
 
-			RUCOnVirtualMethodDerivedAnnotated.Test ();
+			RUCOnNewSlotVirtualMethodDerivedAnnotated.Test ();
 
 			CompilerGeneratedBackingField.Test ();
 		}
@@ -598,7 +598,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 		}
 
 		[Kept]
-		class RUCOnVirtualMethodDerivedAnnotated
+		class RUCOnNewSlotVirtualMethodDerivedAnnotated
 		{
 			[Kept]
 			[KeptMember (".ctor()")]
@@ -616,6 +616,8 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			[KeptBaseType (typeof (Base))]
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 			[ExpectedWarning ("IL2113", "--RUCOnVirtualMethodDerivedAnnotated.Base.RUCVirtualMethod--")]
+			// https://github.com/dotnet/linker/issues/2815
+			// [ExpectedWarning ("IL2112", "--RUCOnVirtualMethodDerivedAnnotated.Derived.RUCVirtualMethod--")]
 			public class Derived : Base
 			{
 				[Kept]
