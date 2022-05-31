@@ -843,20 +843,17 @@ namespace Mono.Linker.Dataflow
 					// Ref returns don't have special ReferenceValue values, so assume if the target here is a MethodReturnValue then it must be a ref return value
 					HandleStoreMethodReturnValue (method, methodReturnValue, operation, source);
 					break;
-				case IValueWithStaticType typedValue:
-					if (typedValue.StaticType is not TypeReference typeRef
-						|| ResolveToTypeDefinition (typeRef) is not TypeDefinition typeOfTarget)
-						break;
-
-					if (typeOfTarget.IsTypeOf(WellKnownType.System_String) || typeOfTarget.IsTypeOf (WellKnownType.System_Type))
-						_context.LogWarning (new MessageOrigin (method, operation.Offset), DiagnosticId.ReferenceStoredToCannotBeStaticallyDetermined, method.GetDisplayName ());
-					break;
-				case UnknownValue:
-					// These cases should only be refs to array elements.
+				case IValueWithStaticType valueWithStaticType:
+					if (valueWithStaticType.StaticType is not null && _context.Annotations.FlowAnnotations.IsTypeInterestingForDataflow (valueWithStaticType.StaticType))
+						throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage (
+							$"Unhandled StoreReference call. Unhandled attempt to store a value in {value} of type {value.GetType ()}.",
+							(int) DiagnosticId.LinkerUnexpectedError,
+							origin: new MessageOrigin (method, operation.Offset)));
+					// This should only happen for pointer derefs, which can't point to interesting types
 					break;
 				default:
-					// Should Add a new "Reference cannot be statically determined" warning code
-					_context.LogWarning (new MessageOrigin (method, operation.Offset), DiagnosticId.ReferenceStoredToCannotBeStaticallyDetermined, method.GetDisplayName ());
+					// These cases should only be refs to array elements
+					// References to array elements are not yet tracked and since we don't allow annotations on arrays, they won't cause problems
 					break;
 				}
 			}
