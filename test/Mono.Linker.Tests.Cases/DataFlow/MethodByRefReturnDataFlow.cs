@@ -43,6 +43,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		// Same as above for IL analysis, but this looks different to the Roslyn analyzer.
+		// https://github.com/dotnet/linker/issues/2158
 		[ExpectedWarning ("IL2026", "Message for --TestType.Requires--", ProducedBy = ProducedBy.Trimmer)]
 		static void AssignDirectlyToAnnotatedTypeReference ()
 		{
@@ -50,6 +51,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			_annotatedField.GetMethods ();
 		}
 
+		// https://github.com/dotnet/linker/issues/2158
 		[ExpectedWarning ("IL2073", nameof (GetWithPublicFields), ProducedBy = ProducedBy.Trimmer)]
 		static void AssignToCapturedAnnotatedTypeReference ()
 		{
