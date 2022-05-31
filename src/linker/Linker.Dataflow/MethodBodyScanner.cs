@@ -221,7 +221,8 @@ namespace Mono.Linker.Dataflow
 			}
 		}
 
-		// Scans the method as well as any nested functions (local functions or lambdas) reachable from it.
+		// Scans the method as well as any nested functions (local functions or lambdas) and state machines
+		// reachable from it.
 		public virtual void InterproceduralScan (MethodBody methodBody)
 		{
 			var methodsInGroup = new ValueSet<MethodDefinition> (methodBody.Method);

@@ -25,7 +25,11 @@ namespace Mono.Linker
 			IReadOnlyList<ICustomAttributeProvider>? OriginalAttributes);
 
 		readonly Dictionary<MethodDefinition, MethodDefinition> _compilerGeneratedMethodToUserCodeMethod;
-		readonly Dictionary<TypeDefinition, Dictionary<MethodDefinition, List<IMemberDefinition>>?> _typesWithPopulatedCache;
+
+		// For each type that has had its cache populated, stores a map of methods which have corresponding
+		// compiler-generated members (either methods or state machine types) to those compiler-generated members,
+		// or null if the type has no methods with compiler-generated members.
+		readonly Dictionary<TypeDefinition, Dictionary<MethodDefinition, List<IMemberDefinition>>?> _cachedTypeToCompilerGeneratedMembers;
 
 		public CompilerGeneratedState (LinkContext context)
 		{
@@ -33,7 +37,7 @@ namespace Mono.Linker
 			_compilerGeneratedTypeToUserCodeMethod = new Dictionary<TypeDefinition, MethodDefinition> ();
 			_generatedTypeToTypeArgumentInfo = new Dictionary<TypeDefinition, TypeArgumentInfo> ();
 			_compilerGeneratedMethodToUserCodeMethod = new Dictionary<MethodDefinition, MethodDefinition> ();
-			_typesWithPopulatedCache = new Dictionary<TypeDefinition, Dictionary<MethodDefinition, List<IMemberDefinition>>?> ();
+			_cachedTypeToCompilerGeneratedMembers = new Dictionary<TypeDefinition, Dictionary<MethodDefinition, List<IMemberDefinition>>?> ();
 		}
 
 		static IEnumerable<TypeDefinition> GetCompilerGeneratedNestedTypes (TypeDefinition type)
@@ -49,6 +53,7 @@ namespace Mono.Linker
 			}
 		}
 
+		// "Nested function" refers to lambdas and local functions.
 		public static bool IsNestedFunctionOrStateMachineMember (IMemberDefinition member)
 		{
 			if (member is MethodDefinition method && CompilerGeneratedNames.IsLambdaOrLocalFunction (method.Name))
@@ -104,11 +109,11 @@ namespace Mono.Linker
 				return null;
 
 			// Avoid repeat scans of the same type
-			if (_typesWithPopulatedCache.ContainsKey (type))
+			if (_cachedTypeToCompilerGeneratedMembers.ContainsKey (type))
 				return type;
 
 			var callGraph = new CompilerGeneratedCallGraph ();
-			var callingMethods = new HashSet<MethodDefinition> ();
+			var userDefinedMethods = new HashSet<MethodDefinition> ();
 
 			void ProcessMethod (MethodDefinition method)
 			{
@@ -116,7 +121,7 @@ namespace Mono.Linker
 				if (!CompilerGeneratedNames.IsLambdaOrLocalFunction (method.Name)) {
 					if (!isStateMachineMember) {
 						// If it's not a nested function, track as an entry point to the call graph.
-						var added = callingMethods.Add (method);
+						var added = userDefinedMethods.Add (method);
 						Debug.Assert (added);
 					}
 				} else {
@@ -204,7 +209,7 @@ namespace Mono.Linker
 			// IL which user code an unused nested function belongs to.
 
 			Dictionary<MethodDefinition, List<IMemberDefinition>>? compilerGeneratedCallees = null;
-			foreach (var userDefinedMethod in callingMethods) {
+			foreach (var userDefinedMethod in userDefinedMethods) {
 				var callees = callGraph.GetReachableMembers (userDefinedMethod);
 				if (!callees.Any ())
 					continue;
@@ -243,7 +248,7 @@ namespace Mono.Linker
 					MapGeneratedTypeTypeParameters (generatedType);
 			}
 
-			_typesWithPopulatedCache.Add (type, compilerGeneratedCallees);
+			_cachedTypeToCompilerGeneratedMembers.Add (type, compilerGeneratedCallees);
 			return type;
 
 			/// <summary>
@@ -343,7 +348,7 @@ namespace Mono.Linker
 			if (typeToCache is null)
 				return false;
 
-			return _typesWithPopulatedCache[typeToCache]?.TryGetValue (method, out callees) == true;
+			return _cachedTypeToCompilerGeneratedMembers[typeToCache]?.TryGetValue (method, out callees) == true;
 		}
 
 		/// <summary>

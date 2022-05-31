@@ -30,6 +30,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		class BaseTypeWithIteratorStateMachines
 		{
+			// Annotations aren't propagated to hoisted locals: https://github.com/dotnet/linker/issues/2001
 			[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true)]
 			public static IEnumerable<int> BaseIteratorWithCorrectDataflow ()
 			{
@@ -61,9 +62,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				MethodWithRequires ();
 			}
 
+			[ExpectedWarning ("IL2119", "<" + nameof (IteratorWithCorrectDataflow) + ">", "MoveNext", CompilerGeneratedCode = true)]
+			// Annotations aren't propagated to hoisted locals: https://github.com/dotnet/linker/issues/2001
 			[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true,
 				ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2119", "<" + nameof (IteratorWithCorrectDataflow) + ">", "MoveNext", CompilerGeneratedCode = true)]
 			public static IEnumerable<int> IteratorWithCorrectDataflow ()
 			{
 				var t = GetAll ();
@@ -71,9 +73,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				t.RequiresAll ();
 			}
 
+			[ExpectedWarning ("IL2119", "<" + nameof (IteratorWithProblematicDataflow) + ">", "MoveNext", CompilerGeneratedCode = true)]
+			// Annotations aren't propagated to hoisted locals: https://github.com/dotnet/linker/issues/2001
 			[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true,
 				ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2119", "<" + nameof (IteratorWithProblematicDataflow) + ">", "MoveNext", CompilerGeneratedCode = true)]
 			public static IEnumerable<int> IteratorWithProblematicDataflow ()
 			{
 				var t = GetWithPublicMethods ();
@@ -153,6 +156,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				MethodWithRequires ();
 			}
 
+			// Annotations aren't propagated to hoisted locals: https://github.com/dotnet/linker/issues/2001
 			[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true,
 				ProducedBy = ProducedBy.Trimmer)]
 			public static async Task AsyncWithCorrectDataflow ()
@@ -161,6 +165,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				t.RequiresAll ();
 			}
 
+			// Annotations aren't propagated to hoisted locals: https://github.com/dotnet/linker/issues/2001
 			[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true,
 				ProducedBy = ProducedBy.Trimmer)]
 			public static async Task AsyncWithProblematicDataflow ()
@@ -197,6 +202,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				MethodWithRequires ();
 			}
 
+			// Annotations aren't propagated to hoisted locals: https://github.com/dotnet/linker/issues/2001
 			[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true,
 				ProducedBy = ProducedBy.Trimmer)]
 			public static async IAsyncEnumerable<int> AsyncIteratorWithCorrectDataflow ()
@@ -206,6 +212,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				t.RequiresAll ();
 			}
 
+			// Annotations aren't propagated to hoisted locals: https://github.com/dotnet/linker/issues/2001
 			[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions.RequiresAll),
 				nameof (AsyncIteratorWithProblematicDataflow), CompilerGeneratedCode = true,
 				ProducedBy = ProducedBy.Trimmer)]
@@ -252,6 +259,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			static void LambdaWithCorrectDataflow ()
 			{
 				var lambda =
+				// Annotations aren't propagated to hoisted locals: https://github.com/dotnet/linker/issues/2001
 				[ExpectedWarning ("IL2119", "<" + nameof (LambdaWithCorrectDataflow) + ">",
 					ProducedBy = ProducedBy.Trimmer)]
 				() => {
@@ -294,6 +302,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				var lambda =
 				[ExpectedWarning ("IL2119", "<" + nameof (LambdaWithCapturedTypeToDAM) + ">",
 					ProducedBy = ProducedBy.Trimmer)]
+				// Annotations aren't propagated to hoisted locals: https://github.com/dotnet/linker/issues/2001
 				[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions.RequiresAll),
 					ProducedBy = ProducedBy.Trimmer)]
 				() => {
@@ -413,9 +422,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			static void LocalFunctionWithCapturedTypeToDAM ()
 			{
 				var t = GetAll ();
-				[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions.RequiresAll),
-					ProducedBy = ProducedBy.Trimmer)]
 				[ExpectedWarning ("IL2119", "<" + nameof (LocalFunctionWithCapturedTypeToDAM) + ">",
+					ProducedBy = ProducedBy.Trimmer)]
+				// Annotations aren't propagated to hoisted locals: https://github.com/dotnet/linker/issues/2001
+				[ExpectedWarning ("IL2077", nameof (DataFlowTypeExtensions.RequiresAll),
 					ProducedBy = ProducedBy.Trimmer)]
 				void LocalFunction ()
 				{

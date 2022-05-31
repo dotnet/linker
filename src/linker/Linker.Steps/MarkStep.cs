@@ -69,6 +69,9 @@ namespace Mono.Linker.Steps
 		protected List<(MethodBody, MarkScopeStack.Scope)> _unreachableBodies;
 
 		readonly List<(TypeDefinition Type, MethodBody Body, Instruction Instr)> _pending_isinst_instr;
+
+		// Stores, for compiler-generated methods only, whether they require the reflection
+		// method body scanner.
 		readonly Dictionary<MethodBody, bool> _compilerGeneratedMethodRequiresScanner;
 
 		UnreachableBlocksOptimizer? _unreachableBlocksOptimizer;
@@ -2837,29 +2840,22 @@ namespace Mono.Linker.Steps
 				return false;
 
 			// Warn only if it has potential dataflow issues, as approximated by our check to see if it requires
-			// the reflection scanner.
+			// the reflection scanner. Checking this will also mark direct dependencies of the method body, if it
+			// hasn't been marked already. A cache ensures this only happens once for the method, whether or not
+			// it is accessed via reflection.
 			return MarkAndCheckRequiresReflectionMethodBodyScanner (method.Body);
 		}
 
 		void ProcessAnalysisAnnotationsForMethod (MethodDefinition method, DependencyKind dependencyKind, in MessageOrigin origin)
 		{
-			// For DAM on type, the current scope is the caller of GetType, while the origin is the type itself.
-			// Should not suppress type hierarchy warnings if the callsite to GetType happens to have RUC.
-			// For compiler-generated code, the scopestack has the user method, while the origin is the compiler-generated code.
+			// There are only two ways to get there such that the origin isn't the same as the top of the scopestack.
+			// - For DAM on type, the current scope is the caller of GetType, while the origin is the type itself.
+			// - For warnings produced inside compiler-generated code, the current scope is the user code that
+			//   owns the compiler-generated code, while the origin is the compiler-generated code.
+			// In either case any warnings produced here should use the origin instead of the scopestack.
 			if (origin.Provider != ScopeStack.CurrentScope.Origin.Provider) {
 				Debug.Assert (dependencyKind == DependencyKind.DynamicallyAccessedMemberOnType ||
 					(origin.Provider is MethodDefinition originMethod && CompilerGeneratedState.IsNestedFunctionOrStateMachineMember (originMethod)));
-			}
-
-			// Warn about reflection access to compiler-generated code.
-			// This must happen before the check for virtual methods, because it should include the
-			// virtual MoveNext method of state machines.
-			switch (dependencyKind) {
-			case DependencyKind.AccessedViaReflection:
-			case DependencyKind.DynamicallyAccessedMember:
-				if (!Annotations.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (origin.Provider) && ShouldWarnForReflectionAccessToCompilerGeneratedCode (method))
-					Context.LogWarning (origin, DiagnosticId.CompilerGeneratedMemberAccessedViaReflection, method.GetDisplayName ());
-				break;
 			}
 
 			switch (dependencyKind) {
@@ -2916,29 +2912,39 @@ namespace Mono.Linker.Steps
 			case DependencyKind.KeptForSpecialAttribute:
 				return;
 
-			default:
-				// All other cases have the potential of us missing a warning if we don't report it
-				// It is possible that in some cases we may report the same warning twice, but that's better than not reporting it.
-				break;
-			}
-
-			switch (dependencyKind) {
 			case DependencyKind.DynamicallyAccessedMemberOnType:
 				// DynamicallyAccessedMembers on type gets special treatment so that the warning origin
 				// is the type or the annotated member.
 				ReportWarningsForTypeHierarchyReflectionAccess (method, origin);
 				return;
+
+			default:
+				// All other cases have the potential of us missing a warning if we don't report it
+				// It is possible that in some cases we may report the same warning twice, but that's better than not reporting it.
+				break;
+			};
+
+			if (Annotations.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (origin.Provider))
+				return;
+
+			// Warn about reflection access to compiler-generated code.
+			// This must happen before the check for virtual methods, because it should include the
+			// virtual MoveNext method of state machines.
+			switch (dependencyKind) {
+			case DependencyKind.AccessedViaReflection:
 			case DependencyKind.DynamicallyAccessedMember:
+				if (ShouldWarnForReflectionAccessToCompilerGeneratedCode (method))
+					Context.LogWarning (origin, DiagnosticId.CompilerGeneratedMemberAccessedViaReflection, method.GetDisplayName ());
+				break;
+			}
+
+			if (dependencyKind == DependencyKind.DynamicallyAccessedMember) {
 				// All override methods should have the same annotations as their base methods
 				// (else we will produce warning IL2046 or IL2092 or some other warning).
 				// When marking override methods via DynamicallyAccessedMembers, we should only issue a warning for the base method.
 				if (method.IsVirtual && Annotations.GetBaseMethods (method) != null)
 					return;
-				break;
 			}
-
-			if (Annotations.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (origin.Provider))
-				return;
 
 			if (Annotations.DoesMethodRequireUnreferencedCode (method, out RequiresUnreferencedCodeAttribute? requiresUnreferencedCode))
 				ReportRequiresUnreferencedCode (method.GetDisplayName (), requiresUnreferencedCode, new DiagnosticContext (origin, diagnosticsEnabled: true, Context));
@@ -3367,6 +3373,8 @@ namespace Mono.Linker.Steps
 
 			bool requiresReflectionMethodBodyScanner = MarkAndCheckRequiresReflectionMethodBodyScanner (body);
 
+			// Data-flow (reflection scanning) for compiler-generated methods will happen as part of the
+			// data-flow scan of the user-defined method which uses this compiler-generated method.
 			if (CompilerGeneratedState.IsNestedFunctionOrStateMachineMember (body.Method))
 				return;
 
@@ -3566,6 +3574,10 @@ namespace Mono.Linker.Steps
 		//
 		protected virtual void MarkReflectionLikeDependencies (MethodBody body, bool requiresReflectionMethodBodyScanner)
 		{
+			// requiresReflectionMethodBodyScanner tells us whether the method body itself requires a dataflow scan.
+
+			// If the method body owns any compiler-generated code, we might still need to do a scan of it together with
+			// all of the compiler-generated code it owns, so first check any compiler-generated callees.
 			if (Context.CompilerGeneratedState.TryGetCompilerGeneratedCalleesForUserMethod (body.Method, out List<IMemberDefinition>? compilerGeneratedCallees)) {
 				foreach (var compilerGeneratedCallee in compilerGeneratedCallees) {
 					switch (compilerGeneratedCallee) {
