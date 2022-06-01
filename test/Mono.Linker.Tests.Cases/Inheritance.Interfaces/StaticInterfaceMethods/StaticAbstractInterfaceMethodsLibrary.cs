@@ -67,7 +67,6 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 				public static int UsedThroughConstrainedType () => 0;
 			}
 
-			// Should this be kept?
 			private class UnusedIUsedThroughConstrainedTypeMethodsPrivate : IUsedThroughConstrainedType, IUsedThroughConstrainedTypeInternal
 			{
 				public static int UsedThroughConstrainedType () => 0;

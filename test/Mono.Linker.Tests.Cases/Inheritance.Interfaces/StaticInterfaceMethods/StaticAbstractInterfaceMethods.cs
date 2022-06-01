@@ -745,7 +745,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 			{
 				// Use on this type only
 				[Kept]
-				//[RemovedOverride (typeof(IBase))]
+				//[RemovedOverride (typeof (IBase))]
 				public static int ImplictlyImplementedUsedOnType () => 0;
 			}
 
