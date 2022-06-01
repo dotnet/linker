@@ -92,7 +92,6 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 			}
 
 			[Kept]
-			[KeptInterface (typeof (IStaticInterfaceMethodUnused))] // Bug
 			internal class InterfaceMethodUnused : IStaticInterfaceMethodUnused, IStaticInterfaceUnused
 			{
 				public static void InterfaceUsedMethodNot () { }
@@ -101,14 +100,22 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 			}
 
 			[Kept]
+			// This method keeps InterfaceMethodUnused without making it 'relevant to variant casting' like
+			//	doing a typeof or type argument would do. If the type is relevant to variant casting,
+			//	we will keep all interface implementations for interfaces that are kept
+			internal static void KeepInterfaceMethodUnused (InterfaceMethodUnused x) { }
+
+			[Kept]
 			public static void Test ()
 			{
 				InterfaceMethodUsedThroughImplementation.InterfaceUsedMethodNot ();
 				InterfaceMethodUsedThroughImplementation.InterfaceAndMethodNoUsed ();
 
-				Type t;
-				t = typeof (IStaticInterfaceMethodUnused);
-				t = typeof (InterfaceMethodUnused);
+				// The interface has to be kept this way, because if both the type and the interface may
+				//	appear on the stack then they would be marked as relevant to variant casting and the
+				//	interface implementation would be kept.
+				Type t = typeof (IStaticInterfaceMethodUnused);
+				KeepAnother (null);
 			}
 		}
 
