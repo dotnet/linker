@@ -43,5 +43,11 @@ namespace Mono.Linker
 				return Base.DeclaringType;
 			}
 		}
+
+		public bool IsStaticInterfaceMethodPair {
+			get => IsOverrideOfInterfaceMember
+				&& Base.IsAbstract && Base.IsStatic
+				&& Override.IsStatic;
+		}
 	}
 }

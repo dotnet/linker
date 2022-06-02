@@ -868,8 +868,8 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 			[Kept]
 			internal interface IUnusedInterface
 			{
-				int UnusedMethodImplicit ();
-				int UnusedMethodExplicit ();
+				static abstract int UnusedMethodImplicit ();
+				static abstract int UnusedMethodExplicit ();
 			}
 
 			[Kept]
@@ -877,12 +877,11 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 			[KeptInterface (typeof (IUnusedInterface))]
 			public class ImplementsUnusedInterface : IUnusedInterface
 			{
-				int IUnusedInterface.UnusedMethodExplicit () => 0;
+				static int IUnusedInterface.UnusedMethodExplicit () => 0;
 
 				[Kept]
-				// Bug: We should be able to remove this override
-				//[RemovedOverride (typeof (IUnusedInterface))]
-				public int UnusedMethodImplicit () => 0;
+				[RemovedOverride (typeof (IUnusedInterface))]
+				public static int UnusedMethodImplicit () => 0;
 			}
 
 			[Kept]

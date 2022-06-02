@@ -744,9 +744,9 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 			public class InheritsFromBase : BaseKeptOnType, IBase
 			{
 				// Use on this type only
+				// This doesn't override IBase.ImplicitlyImplementedUsedOnType
 				[Kept]
-				//[RemovedOverride (typeof (IBase))]
-				public static int ImplictlyImplementedUsedOnType () => 0;
+				public new static int ImplictlyImplementedUsedOnType () => 0;
 			}
 
 			[Kept]

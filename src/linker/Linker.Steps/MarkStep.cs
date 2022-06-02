@@ -730,6 +730,9 @@ namespace Mono.Linker.Steps
 				MarkMethod (method, new DependencyInfo (DependencyKind.Override, @base), ScopeStack.CurrentScope.Origin);
 			}
 
+			if (overrideInformation.IsStaticInterfaceMethodPair)
+				MarkExplicitInterfaceImplementation (method, @base);
+
 			if (method.IsVirtual)
 				ProcessVirtualMethod (method);
 		}
@@ -740,7 +743,7 @@ namespace Mono.Linker.Steps
 				return false;
 
 			// This is a static interface method and these checks should all be true
-			if (overrideInformation.Override.IsStatic && overrideInformation.Base.IsStatic && overrideInformation.Base.IsAbstract && !overrideInformation.Override.IsVirtual)
+			if (overrideInformation.IsStaticInterfaceMethodPair)
 				return false;
 
 			if (overrideInformation.MatchingInterfaceImplementation != null)
@@ -3036,12 +3039,7 @@ namespace Mono.Linker.Steps
 			}
 
 			if (method.IsStatic && method.DeclaringType.IsInterface) {
-				//var overridingMethods = Annotations.GetOverrides (method);
-				//if (overridingMethods is not null) {
-				//	foreach (var overrideInfo in overridingMethods) {
 				_virtual_methods.Add ((method, ScopeStack.CurrentScope));
-					//}
-				//}
 			}
 
 			MarkMethodSpecialCustomAttributes (method);
@@ -3382,7 +3380,7 @@ namespace Mono.Linker.Steps
 		{
 			// If a type could be on the stack in the body and an interface it implements could be on the stack on the body
 			// then we need to mark that interface implementation.  When this occurs it is not safe to remove the interface implementation from the type
-			// even if the type is never instantiated
+			// even if the type is never instantiated. (ex. `Type1 x = null; IFoo y = (IFoo)x;`)
 			var implementations = new InterfacesOnStackScanner (Context).GetReferencedInterfaces (body);
 			if (implementations == null)
 				return;
