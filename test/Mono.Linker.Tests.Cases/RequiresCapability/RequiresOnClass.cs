@@ -86,7 +86,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			// The attribute would generate warning, but it is suppressed due to the Requires on the type
-			[AttributeWithRequires()]
+			[AttributeWithRequires ()]
 			public static void AttributedMethod () { }
 		}
 
@@ -909,7 +909,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		public class AttributeParametersAndProperties
 		{
-			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicProperties)]
 			public static Type AnnotatedField;
 
 			[AttributeUsage (AttributeTargets.Method, AllowMultiple = true)]
