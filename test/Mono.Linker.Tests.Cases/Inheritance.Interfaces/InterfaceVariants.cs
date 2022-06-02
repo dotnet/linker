@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections;
+using System.Runtime.CompilerServices;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Helpers;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
@@ -115,7 +116,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 				//	appear on the stack then they would be marked as relevant to variant casting and the
 				//	interface implementation would be kept.
 				Type t = typeof (IStaticInterfaceMethodUnused);
-				KeepAnother (null);
+				KeepInterfaceMethodUnused (null);
 			}
 		}
 

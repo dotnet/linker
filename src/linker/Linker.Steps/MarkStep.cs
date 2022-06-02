@@ -3028,14 +3028,20 @@ namespace Mono.Linker.Steps
 					// Calling the implementation method directly has no impact on the interface, and as such it should not mark the interface or its method.
 					// Only if the interface method is referenced, then all the methods which implemented must be kept, but not the other way round.
 					if (Context.Resolve (ov)?.IsStatic == true
-						&& Context.Resolve (ov.DeclaringType)?.IsInterface == true
-						// Public methods can be called directly on the type. If it non-public it is an explicit implementation and if the method is marked we need to mark the override.
-						&& method.IsPublic) {
+						&& Context.Resolve (ov.DeclaringType)?.IsInterface == true )
 						continue;
-					}
 					MarkMethod (ov, new DependencyInfo (DependencyKind.MethodImplOverride, method), ScopeStack.CurrentScope.Origin);
 					MarkExplicitInterfaceImplementation (method, ov);
 				}
+			}
+
+			if (method.IsStatic && method.DeclaringType.IsInterface) {
+				//var overridingMethods = Annotations.GetOverrides (method);
+				//if (overridingMethods is not null) {
+				//	foreach (var overrideInfo in overridingMethods) {
+				_virtual_methods.Add ((method, ScopeStack.CurrentScope));
+					//}
+				//}
 			}
 
 			MarkMethodSpecialCustomAttributes (method);
@@ -3124,9 +3130,9 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void MarkExplicitInterfaceImplementation (MethodDefinition method, MethodReference ov)
+		void MarkExplicitInterfaceImplementation (MethodDefinition method, MethodReference overriddenMethod)
 		{
-			if (Context.Resolve (ov) is not MethodDefinition resolvedOverride)
+			if (Context.Resolve (overriddenMethod) is not MethodDefinition resolvedOverride)
 				return;
 
 			if (resolvedOverride.DeclaringType.IsInterface) {
