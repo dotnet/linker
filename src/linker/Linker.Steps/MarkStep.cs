@@ -738,10 +738,6 @@ namespace Mono.Linker.Steps
 			if (IsInterfaceOverrideThatDoesNotNeedMarked (overrideInformation, isInstantiated))
 				return;
 
-			//// Interface static veitual methods will be abstract and will also by pass this check to get marked
-			//if (!isInstantiated && !@base.IsAbstract && Context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, method))
-			//	return;
-
 			// Only track instantiations if override removal is enabled and the type is instantiated.
 			// If it's disabled, all overrides are kept, so there's no instantiation site to blame.
 			if (Context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, method) && isInstantiated) {
@@ -763,10 +759,14 @@ namespace Mono.Linker.Steps
 
 		bool IsInterfaceOverrideThatDoesNotNeedMarked (OverrideInformation overrideInformation, bool isInstantiated)
 		{
+			// If it's a non-static interface method and the type isn't instantiated, we don't need to mark the override
+			if (!isInstantiated && !overrideInformation.Base.IsAbstract
+				&& Context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, overrideInformation.Override))
+				return true;
+
 			if (!overrideInformation.IsOverrideOfInterfaceMember || isInstantiated)
 				return false;
 
-			// This is a static interface method and these checks should all be true
 			if (overrideInformation.IsStaticInterfaceMethodPair)
 				return false;
 
