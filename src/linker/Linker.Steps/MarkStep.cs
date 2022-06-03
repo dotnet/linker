@@ -578,6 +578,9 @@ namespace Mono.Linker.Steps
 			}
 		}
 
+		/// <summary>
+		/// Handles marking implementations of static interface methods and the interface implementations of types that implement a static interface method.
+		/// </summary>
 		void ProcessStaticInterfaceMethods ()
 		{
 			foreach ((MethodDefinition method, MarkScopeStack.Scope scope) in _static_interface_methods) {
@@ -712,6 +715,9 @@ namespace Mono.Linker.Steps
 			}
 		}
 
+		/// <summary>
+		/// Handles marking overriding methods if the type with the overriding method is instantiated or if the base method is a static abstract interface method
+		/// </summary>
 		void ProcessOverride (OverrideInformation overrideInformation)
 		{
 			var method = overrideInformation.Override;
@@ -727,14 +733,14 @@ namespace Mono.Linker.Steps
 
 			var isInstantiated = Annotations.IsInstantiated (method.DeclaringType);
 
-			// We don't need to mark overrides until it is possible that the type could be instantiated
+			// We don't need to mark overrides until it is possible that the type could be instantiated or the method is a static interface method
 			// Note : The base type is interface check should be removed once we have base type sweeping
 			if (IsInterfaceOverrideThatDoesNotNeedMarked (overrideInformation, isInstantiated))
 				return;
 
-			// Interface static veitual methods will be abstract and will also by pass this check to get marked
-			if (!isInstantiated && !@base.IsAbstract && Context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, method))
-				return;
+			//// Interface static veitual methods will be abstract and will also by pass this check to get marked
+			//if (!isInstantiated && !@base.IsAbstract && Context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, method))
+			//	return;
 
 			// Only track instantiations if override removal is enabled and the type is instantiated.
 			// If it's disabled, all overrides are kept, so there's no instantiation site to blame.
@@ -746,6 +752,8 @@ namespace Mono.Linker.Steps
 				MarkMethod (method, new DependencyInfo (DependencyKind.Override, @base), ScopeStack.CurrentScope.Origin);
 			}
 
+			// We need to mark the interface implementation for static interface methods
+			// Explicit interface method implementations already mark the interface implementation in ProcessMethod
 			if (overrideInformation.IsStaticInterfaceMethodPair)
 				MarkExplicitInterfaceImplementation (method, @base);
 
