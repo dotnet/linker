@@ -1586,7 +1586,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			[Kept]
 			// https://github.com/dotnet/linker/issues/2819
 			[ExpectedWarning ("IL2072", ProducedBy = ProducedBy.Trimmer)]
-			static void TestIsInstOf(object o)
+			static void TestIsInstOf (object o)
 			{
 				if (o is Target t) {
 					t.GetType ().RequiresPublicParameterlessConstructor ();
@@ -1594,7 +1594,7 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			}
 
 			[Kept]
-			public static void Test()
+			public static void Test ()
 			{
 				var target = new Target ();
 				TestIsInstOf (target);
