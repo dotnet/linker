@@ -68,11 +68,7 @@ namespace Mono.Linker.Steps
 			Process ();
 
 			foreach (AssemblyDefinition assembly in context.GetAssemblies ()) {
-				try {
-					ProcessAssembly (assembly);
-				} catch (Exception e) {
-					throw new InternalErrorException ($"Step '{GetType ().Name}' failed when processing assembly '{assembly.FullName}'.", e);
-				}
+				ProcessAssembly (assembly);
 			}
 
 			EndProcess ();
