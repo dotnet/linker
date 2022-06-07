@@ -3050,15 +3050,15 @@ namespace Mono.Linker.Steps
 			// Mark overridden methods and interface implementations except for static interface methods
 			// This will not mark implicit interface methods because they do not have a MethodImpl and aren't in the .Overrides
 			if (method.HasOverrides) {
-				foreach (MethodReference ov in method.Overrides) {
+				foreach (MethodReference @base in method.Overrides) {
 					// Method implementing a static interface method will have an override to it - note nonstatic methods usually don't unless they're explicit.
 					// Calling the implementation method directly has no impact on the interface, and as such it should not mark the interface or its method.
 					// Only if the interface method is referenced, then all the methods which implemented must be kept, but not the other way round.
-					if (Context.Resolve (ov)?.IsStatic == true
-						&& Context.Resolve (ov.DeclaringType)?.IsInterface == true)
+					if (Context.Resolve (@base) is MethodDefinition baseDefinition
+						&& new OverrideInformation.OverridePair (baseDefinition, method).IsStaticInterfaceMethodPair ())
 						continue;
-					MarkMethod (ov, new DependencyInfo (DependencyKind.MethodImplOverride, method), ScopeStack.CurrentScope.Origin);
-					MarkExplicitInterfaceImplementation (method, ov);
+					MarkMethod (@base, new DependencyInfo (DependencyKind.MethodImplOverride, method), ScopeStack.CurrentScope.Origin);
+					MarkExplicitInterfaceImplementation (method, @base);
 				}
 			}
 
