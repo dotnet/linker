@@ -34,6 +34,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.Loader;
 using System.Text;
@@ -789,14 +790,18 @@ namespace Mono.Linker
 				if (throwOnFatalLinkerException)
 					throw;
 				return lex.MessageContainer.Code ?? 1;
+			}
+			catch (ArgumentException) {
+				Context.LogError (null, DiagnosticId.LinkerUnexpectedError);
+				throw;
 			} catch (ResolutionException e) {
 				Context.LogError (null, DiagnosticId.FailedToResolveMetadataElement, e.Message);
-			} catch (Exception) {
+			} catch (Exception e) {
 				// Unhandled exceptions are usually linker bugs. Ask the user to report it.
 				Context.LogError (null, DiagnosticId.LinkerUnexpectedError);
+				Environment.FailFast ("Unexpected Error", e);
 				// Don't swallow the exception and exit code - rethrow it and let the surrounding tooling decide what to do.
 				// The stack trace will go to stderr, and the MSBuild task will surface it with High importance.
-				throw;
 			} finally {
 				Context.FlushCachedWarnings ();
 				Context.Tracer.Finish ();

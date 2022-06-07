@@ -70,8 +70,10 @@ namespace Mono.Linker.Steps
 			foreach (AssemblyDefinition assembly in context.GetAssemblies ()) {
 				try {
 					ProcessAssembly (assembly);
+				} catch (LinkerFatalErrorException lfe) {
+					throw new InternalErrorException ($"Step '{GetType ().Name}' failed when processing assembly '{assembly.FullName}'.", lfe);
 				} catch (Exception e) {
-					throw new InternalErrorException ($"Step '{GetType ().Name}' failed when processing assembly '{assembly.FullName}'.", e);
+					Environment.FailFast ("Unexpected Error", e);
 				}
 			}
 

@@ -551,8 +551,7 @@ namespace Mono.Linker.Steps
 				try {
 					ProcessMethod (method, reason, origin);
 				} catch (Exception e) when (!(e is LinkerFatalErrorException)) {
-					throw new LinkerFatalErrorException (
-						MessageContainer.CreateErrorMessage (origin, DiagnosticId.CouldNotFindMethodInAssembly, method.GetDisplayName (), method.Module.Name), e);
+					Environment.FailFast ("Unexpected Error", e);
 				}
 			}
 		}
