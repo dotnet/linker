@@ -235,8 +235,7 @@ namespace Mono.Linker
 			{
 				Debug.Assert (CompilerGeneratedNames.IsGeneratedType (generatedType.Name));
 
-				if (!_generatedTypeToTypeArgumentInfo.TryGetValue(generatedType, out var typeInfo))
-				{
+				if (!_generatedTypeToTypeArgumentInfo.TryGetValue (generatedType, out var typeInfo)) {
 					// This can happen for static (non-capturing) closure environments, where more than
 					// nested function can map to the same closure environment. Since the current functionality
 					// is based on a one-to-one relationship between environments (types) and methods, this is
@@ -273,7 +272,7 @@ namespace Mono.Linker
 									userAttrs = param;
 								} else if (_context.TryResolve ((TypeReference) param.Owner) is { } owningType) {
 									MapGeneratedTypeTypeParameters (owningType);
-									if (_generatedTypeToTypeArgumentInfo.TryGetValue(owningType, out var owningInfo) &&
+									if (_generatedTypeToTypeArgumentInfo.TryGetValue (owningType, out var owningInfo) &&
 										owningInfo.OriginalAttributes is { } owningAttrs) {
 										userAttrs = owningAttrs[param.Position];
 									}

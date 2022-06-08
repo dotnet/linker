@@ -239,27 +239,27 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			GlobalClosureClass<int>.M2<int> ();
 		}
 
-		private sealed class GlobalClosureClass<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] T>
+		private sealed class GlobalClosureClass<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] T>
 		{
-			public static void M1<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] U>()
+			public static void M1<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicProperties)] U> ()
 			{
-				Func<string, Action> a = (string s) => () => Console.WriteLine(s + typeof(T).GetMethods());
+				Func<string, Action> a = (string s) => () => Console.WriteLine (s + typeof (T).GetMethods ());
 				Func<string, Action> b = (string s) =>
 					// https://github.com/dotnet/linker/issues/2826
 					[ExpectedWarning ("IL2090", "U", "PublicProperties", ProducedBy = ProducedBy.Trimmer)]
-					() => Console.WriteLine(s + typeof(U).GetProperties());
-				a("");
-				b("");
+				() => Console.WriteLine (s + typeof (U).GetProperties ());
+				a ("");
+				b ("");
 			}
-			public static void M2<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] U>()
+			public static void M2<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicProperties)] U> ()
 			{
-				Func<string, Action> a = (string s) => () => Console.WriteLine(s + typeof(T).GetMethods());
+				Func<string, Action> a = (string s) => () => Console.WriteLine (s + typeof (T).GetMethods ());
 				Func<string, Action> b = (string s) =>
 					// https://github.com/dotnet/linker/issues/2826
 					[ExpectedWarning ("IL2090", "U", "PublicProperties", ProducedBy = ProducedBy.Trimmer)]
-					() => Console.WriteLine(s + typeof(U).GetProperties());
-				a("");
-				b("");
+				() => Console.WriteLine (s + typeof (U).GetProperties ());
+				a ("");
+				b ("");
 			}
 		}
 	}
