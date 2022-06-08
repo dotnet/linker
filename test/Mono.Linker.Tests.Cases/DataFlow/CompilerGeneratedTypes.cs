@@ -246,7 +246,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				Func<string, Action> a = (string s) => () => Console.WriteLine(s + typeof(T).GetMethods());
 				Func<string, Action> b = (string s) =>
 					// https://github.com/dotnet/linker/issues/2826
-					[ExpectedWarning ("IL2090", "U", "PublicProperties")]
+					[ExpectedWarning ("IL2090", "U", "PublicProperties", ProducedBy = ProducedBy.Trimmer)]
 					() => Console.WriteLine(s + typeof(U).GetProperties());
 				a("");
 				b("");
@@ -256,7 +256,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				Func<string, Action> a = (string s) => () => Console.WriteLine(s + typeof(T).GetMethods());
 				Func<string, Action> b = (string s) =>
 					// https://github.com/dotnet/linker/issues/2826
-					[ExpectedWarning ("IL2090", "U", "PublicProperties")]
+					[ExpectedWarning ("IL2090", "U", "PublicProperties", ProducedBy = ProducedBy.Trimmer)]
 					() => Console.WriteLine(s + typeof(U).GetProperties());
 				a("");
 				b("");
