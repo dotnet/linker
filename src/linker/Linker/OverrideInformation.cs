@@ -19,7 +19,7 @@ namespace Mono.Linker
 			this.resolver = resolver;
 		}
 
-		public record struct OverridePair(MethodDefinition Base, MethodDefinition Override)
+		public record struct OverridePair (MethodDefinition Base, MethodDefinition Override)
 		{
 			public bool IsStaticInterfaceMethodPair () => Base.DeclaringType.IsInterface && Base.IsStatic && Override.IsStatic;
 		}
