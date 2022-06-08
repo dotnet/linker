@@ -768,7 +768,7 @@ namespace Mono.Linker
 		// to the error code.
 		// May propagate exceptions, which will result in the process getting an
 		// exit code determined by dotnet.
-		public int Run (ILogger? customLogger = null, bool throwInsteadOfFail = false)
+		public int Run (ILogger? customLogger = null)
 		{
 			int setupStatus = SetupContext (customLogger);
 			if (setupStatus > 0)
@@ -781,7 +781,7 @@ namespace Mono.Linker
 
 			try {
 				p.Process (Context);
-			} catch (Exception e) when (FailCatch (e, throwInsteadOfFail)) {
+			} catch (Exception e) when (FailCatch (e)) {
 				// Proces will be terminated in exception filter.
 				throw e;
 			} finally {
@@ -795,7 +795,7 @@ namespace Mono.Linker
 		/// <summary>
 		/// Handles exceptions in the linker. Prints error messages, then calls Environment.FailFast to create a dump with the full call stack.
 		/// </summary>
-		bool FailCatch (Exception e, bool throwInsteadOfFail)
+		bool FailCatch (Exception e)
 		{
 
 			switch (e) {
