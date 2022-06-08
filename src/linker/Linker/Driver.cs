@@ -94,7 +94,7 @@ namespace Mono.Linker
 						string responseFileName = arg.Substring (1);
 						using (var responseFileText = new StreamReader (responseFileName))
 							ParseResponseFile (responseFileText, result);
-					} catch (Exception e) {
+					} catch (Exception e) when (e is IOException or ObjectDisposedException) {
 						Console.Error.WriteLine ("Cannot read response file due to '{0}'", e.Message);
 						return false;
 					}
@@ -768,7 +768,7 @@ namespace Mono.Linker
 		// to the error code.
 		// May propagate exceptions, which will result in the process getting an
 		// exit code determined by dotnet.
-		public int Run (ILogger? customLogger = null, bool throwOnFatalLinkerException = false)
+		public int Run (ILogger? customLogger = null, bool throwInsteadOfFail = false)
 		{
 			int setupStatus = SetupContext (customLogger);
 			if (setupStatus > 0)
@@ -781,33 +781,41 @@ namespace Mono.Linker
 
 			try {
 				p.Process (Context);
-			} catch (LinkerFatalErrorException lex) {
-				Context.LogMessage (lex.MessageContainer);
-				Console.Error.WriteLine (lex.ToString ());
-				Debug.Assert (lex.MessageContainer.Category == MessageCategory.Error);
-				Debug.Assert (lex.MessageContainer.Code != null);
-				Debug.Assert (lex.MessageContainer.Code.Value != 0);
-				if (throwOnFatalLinkerException)
-					throw;
-				return lex.MessageContainer.Code ?? 1;
-			}
-			catch (ArgumentException) {
-				Context.LogError (null, DiagnosticId.LinkerUnexpectedError);
-				throw;
-			} catch (ResolutionException e) {
-				Context.LogError (null, DiagnosticId.FailedToResolveMetadataElement, e.Message);
-			} catch (Exception e) {
-				// Unhandled exceptions are usually linker bugs. Ask the user to report it.
-				Context.LogError (null, DiagnosticId.LinkerUnexpectedError);
-				Environment.FailFast ("Unexpected Error", e);
-				// Don't swallow the exception and exit code - rethrow it and let the surrounding tooling decide what to do.
-				// The stack trace will go to stderr, and the MSBuild task will surface it with High importance.
+			} catch (Exception e) when (FailCatch (e, throwInsteadOfFail)) {
+				// Proces will be terminated in exception filter.
+				throw e;
 			} finally {
 				Context.FlushCachedWarnings ();
 				Context.Tracer.Finish ();
 			}
 
 			return Context.ErrorsCount > 0 ? 1 : 0;
+		}
+
+		/// <summary>
+		/// Handles exceptions in the linker. Prints error messages, then calls Environment.FailFast to create a dump with the full call stack.
+		/// </summary>
+		bool FailCatch (Exception e, bool throwInsteadOfFail)
+		{
+
+			switch (e) {
+			case LinkerFatalErrorException lex:
+				Context.LogMessage (lex.MessageContainer);
+				Console.Error.WriteLine (lex.ToString ());
+				Debug.Assert (lex.MessageContainer.Category == MessageCategory.Error);
+				Debug.Assert (lex.MessageContainer.Code != null);
+				Debug.Assert (lex.MessageContainer.Code.Value != 0);
+				break;
+			case ResolutionException re:
+				Context.LogError (null, DiagnosticId.FailedToResolveMetadataElement, re.Message);
+				break;
+			default:
+				Context.LogError (null, DiagnosticId.LinkerUnexpectedError);
+				break;
+			}
+			Context.FlushCachedWarnings ();
+			Context.Tracer.Finish ();
+			return false;
 		}
 
 		partial void PreProcessPipeline (Pipeline pipeline);

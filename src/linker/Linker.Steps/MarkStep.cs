@@ -548,11 +548,7 @@ namespace Mono.Linker.Steps
 		{
 			while (!QueueIsEmpty ()) {
 				(MethodDefinition method, DependencyInfo reason, MessageOrigin origin) = _methods.Dequeue ();
-				try {
-					ProcessMethod (method, reason, origin);
-				} catch (Exception e) when (!(e is LinkerFatalErrorException)) {
-					Environment.FailFast ("Unexpected Error", e);
-				}
+				ProcessMethod (method, reason, origin);
 			}
 		}
 

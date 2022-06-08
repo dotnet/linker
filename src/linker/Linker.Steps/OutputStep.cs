@@ -133,7 +133,7 @@ namespace Mono.Linker.Steps
 			try {
 				assembly.Write (outputName, writerParameters);
 			} catch (Exception e) {
-				// Don't fail fast - give nice error message
+				// We should be okay catching everything here, assembly.Write is all in Cecil and most of the state necessary to debug will be captured in assembly
 				throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage (null, DiagnosticId.FailedToWriteOutput, outputName), e);
 			}
 		}
