@@ -781,7 +781,7 @@ namespace Mono.Linker
 			try {
 				p.Process (Context);
 			} catch (Exception e) when (LogFatalError (e)) {
-				// Proces will be terminated in exception filter.
+				// Unreachable
 				throw;
 			}
 
