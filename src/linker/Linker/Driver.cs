@@ -34,7 +34,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.Loader;
 using System.Text;
@@ -781,27 +780,25 @@ namespace Mono.Linker
 
 			try {
 				p.Process (Context);
-			} catch (Exception e) when (FailCatch (e)) {
+			} catch (Exception e) when (LogFatalError (e)) {
 				// Proces will be terminated in exception filter.
-				throw e;
-			} finally {
-				Context.FlushCachedWarnings ();
-				Context.Tracer.Finish ();
+				throw;
 			}
 
+			Context.FlushCachedWarnings ();
+			Context.Tracer.Finish ();
 			return Context.ErrorsCount > 0 ? 1 : 0;
 		}
 
 		/// <summary>
-		/// Handles exceptions in the linker. Prints error messages, then calls Environment.FailFast to create a dump with the full call stack.
+		/// This method is called in the exception filter for unexpected exceptions.
+		/// Prints error messages and returns false to avoid catching in the exception filter.
 		/// </summary>
-		bool FailCatch (Exception e)
+		bool LogFatalError (Exception e)
 		{
-
 			switch (e) {
 			case LinkerFatalErrorException lex:
 				Context.LogMessage (lex.MessageContainer);
-				Console.Error.WriteLine (lex.ToString ());
 				Debug.Assert (lex.MessageContainer.Category == MessageCategory.Error);
 				Debug.Assert (lex.MessageContainer.Code != null);
 				Debug.Assert (lex.MessageContainer.Code.Value != 0);
@@ -813,8 +810,6 @@ namespace Mono.Linker
 				Context.LogError (null, DiagnosticId.LinkerUnexpectedError);
 				break;
 			}
-			Context.FlushCachedWarnings ();
-			Context.Tracer.Finish ();
 			return false;
 		}
 
