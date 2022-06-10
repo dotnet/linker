@@ -99,7 +99,8 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 		public override MultiValue VisitParameterReference (IParameterReferenceOperation paramRef, StateValue state)
 		{
-			return paramRef.Parameter.Type.IsTypeInterestingForDataflow () ? new MethodParameterValue (paramRef.Parameter) : TopValue;
+			// Reading from a parameter always returns the same annotated value. We don't track modifications.
+			return GetParameterTargetValue (paramRef.Parameter);
 		}
 
 		public override MultiValue VisitInstanceReference (IInstanceReferenceOperation instanceRef, StateValue state)
@@ -136,10 +137,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			if (TryGetConstantValue (fieldRef, out var constValue))
 				return constValue;
 
-			if (fieldRef.Field.Type.IsTypeInterestingForDataflow ())
-				return new FieldValue (fieldRef.Field);
-
-			return TopValue;
+			return GetFieldTargetValue (fieldRef.Field);
 		}
 
 		public override MultiValue VisitTypeOf (ITypeOfOperation typeOfOperation, StateValue state)
@@ -181,6 +179,16 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 		// - assignments
 		// - method calls
 		// - value returned from a method
+
+		public override MultiValue GetFieldTargetValue (IFieldSymbol field)
+		{
+			return field.Type.IsTypeInterestingForDataflow () ? new FieldValue (field) : TopValue;
+		}
+
+		public override MultiValue GetParameterTargetValue (IParameterSymbol parameter)
+		{
+			return parameter.Type.IsTypeInterestingForDataflow () ? new MethodParameterValue (parameter) : TopValue;
+		}
 
 		public override void HandleAssignment (MultiValue source, MultiValue target, IOperation operation)
 		{
