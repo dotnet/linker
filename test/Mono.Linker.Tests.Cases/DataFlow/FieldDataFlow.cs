@@ -38,6 +38,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			_ = _annotationOnWrongType;
 
 			TestStringEmpty ();
+
+			WriteArrayField.Test ();
 		}
 
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
@@ -248,6 +250,16 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
 			public static Type _staticTypeWithPublicParameterlessConstructor;
+		}
+
+		class WriteArrayField
+		{
+			static Type[] ArrayField = Array.Empty<Type>();
+
+			public static void Test ()
+			{
+				ArrayField = Array.Empty<Type>();
+			}
 		}
 	}
 }
