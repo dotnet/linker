@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
+using Mono.Linker.Tests.Cases.Expectations.Helpers;
 
 namespace Mono.Linker.Tests.Cases.DataFlow
 {
@@ -189,6 +190,45 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				TestNullCoalesce ();
 				TestNullCoalescingAssignment ();
 				TestNullCoalescingAssignmentComplex ();
+			}
+		}
+
+		class AccessReturnedInstanceField
+		{
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			Type field;
+
+			static AccessReturnedInstanceField GetInstance ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] Type unused) => null;
+
+			[ExpectedWarning ("IL2072", nameof (GetUnknownType), nameof (GetInstance),
+				ProducedBy = ProducedBy.Trimmer)] // https://github.com/dotnet/linker/issues/2832
+			[ExpectedWarning ("IL2077", nameof (field), nameof (DataFlowTypeExtensions.RequiresAll))]
+			static void TestRead ()
+			{
+				GetInstance (GetUnknownType ()).field.RequiresAll ();
+			}
+
+			[ExpectedWarning ("IL2072", nameof (GetUnknownType), nameof (GetInstance),
+				ProducedBy = ProducedBy.Trimmer)] // https://github.com/dotnet/linker/issues/2832
+			[ExpectedWarning ("IL2074", nameof (GetUnknownType), nameof (field))]
+			static void TestWrite ()
+			{
+				GetInstance (GetUnknownType ()).field = GetUnknownType ();
+			}
+
+			[ExpectedWarning ("IL2072", nameof (GetUnknownType), nameof (GetInstance),
+				ProducedBy = ProducedBy.Trimmer)] // https://github.com/dotnet/linker/issues/2832
+			[ExpectedWarning ("IL2074", nameof (GetUnknownType), nameof (field))]
+			static void TestNullCoalescingAssignment ()
+			{
+				GetInstance (GetUnknownType ()).field ??= GetUnknownType ();
+			}
+
+			public static void Test ()
+			{
+				TestRead ();
+				TestWrite ();
+				TestNullCoalescingAssignment ();
 			}
 		}
 
