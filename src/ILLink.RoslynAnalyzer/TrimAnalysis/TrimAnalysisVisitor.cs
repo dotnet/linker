@@ -121,17 +121,16 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 		{
 			var field = fieldRef.Field;
 			switch (field.Name) {
-			case "EmptyTypes" when field.ContainingType.IsTypeOf ("System", "Type"): {
+			case "EmptyTypes" when field.ContainingType.IsTypeOf ("System", "Type"):
+#if DEBUG
+			case "ArrayField" when field.ContainingType.IsTypeOf ("Mono.Linker.Tests.Cases.DataFlow", "WriteArrayField"):
+#endif
+				{
 					return ArrayValue.Create (0);
 				}
 			case "Empty" when field.ContainingType.IsTypeOf ("System", "String"): {
 					return new KnownStringValue (string.Empty);
 				}
-#if DEBUG
-			case "ArrayField" when field.ContainingType.IsTypeOf ("Mono.Linker.Tests.Cases.DataFlow", "WriteArrayField"): {
-					return ArrayValue.Create (0);
-				}
-#endif
 			}
 
 			if (TryGetConstantValue (fieldRef, out var constValue))

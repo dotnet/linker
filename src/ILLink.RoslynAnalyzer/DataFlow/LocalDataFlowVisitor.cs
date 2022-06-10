@@ -182,17 +182,17 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 				Debug.Assert (operation.Target is not IFlowCaptureReferenceOperation);
 				break;
 			case IInvalidOperation:
-				// This can happen for a field assignment in an attribute instance.
-				// TODO: validate against the field attributes.
+			// This can happen for a field assignment in an attribute instance.
+			// TODO: validate against the field attributes.
 			case IInstanceReferenceOperation:
-				// Assignment to 'this' is not tracked currently.
-				// Not relevant for trimming dataflow.
+			// Assignment to 'this' is not tracked currently.
+			// Not relevant for trimming dataflow.
 			case IInvocationOperation:
-				// This can happen for an assignment to a ref return. Skip for now.
-				// The analyzer doesn't handle refs yet. This should be fixed once the analyzer
-				// also produces warnings for ref params/locals/returns.
-				// https://github.com/dotnet/linker/issues/2632
-				// https://github.com/dotnet/linker/issues/2158
+			// This can happen for an assignment to a ref return. Skip for now.
+			// The analyzer doesn't handle refs yet. This should be fixed once the analyzer
+			// also produces warnings for ref params/locals/returns.
+			// https://github.com/dotnet/linker/issues/2632
+			// https://github.com/dotnet/linker/issues/2158
 			case IEventReferenceOperation:
 				// An event assignment is an assignment to the generated backing field for
 				// auto-implemented events. There is no Roslyn API to access the field, so

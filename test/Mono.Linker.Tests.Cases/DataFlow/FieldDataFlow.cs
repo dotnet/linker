@@ -41,6 +41,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TestStringEmpty ();
 
 			WriteArrayField.Test ();
+			AccessReturnedInstanceField.Test ();
 		}
 
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
@@ -294,11 +295,22 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		class WriteArrayField
 		{
-			static Type[] ArrayField = Array.Empty<Type>();
+			static Type[] ArrayField;
+
+			static void TestAssignment ()
+			{
+				ArrayField = Array.Empty<Type> ();
+			}
+
+			static void TestCoalescingAssignment ()
+			{
+				ArrayField ??= Array.Empty<Type> ();
+			}
 
 			public static void Test ()
 			{
-				ArrayField = Array.Empty<Type>();
+				TestAssignment ();
+				TestCoalescingAssignment ();
 			}
 		}
 	}

@@ -114,6 +114,12 @@ namespace ILLink.RoslynAnalyzer.Tests
 		}
 
 		[Fact]
+		public Task MethodByRefReturnDataFlow ()
+		{
+			return RunTest ();
+		}
+
+		[Fact]
 		public Task GetInterfaceDataFlow ()
 		{
 			return RunTest (allowMissingWarnings: true);
