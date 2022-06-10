@@ -192,6 +192,11 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 				// https://github.com/dotnet/linker/issues/2632
 				// https://github.com/dotnet/linker/issues/2158
 				break;
+			case IEventReferenceOperation:
+				// An event assignment is an assignment to the generated backing field for
+				// auto-implemented events. There is no Roslyn API to access the field, so
+				// skip this. https://github.com/dotnet/roslyn/issues/40103
+				break;
 			// Keep these cases in sync with those in CapturedReferenceValue, for any that
 			// can show up in a flow capture reference (for example, where the right-hand side
 			// is a null-coalescing operator).
