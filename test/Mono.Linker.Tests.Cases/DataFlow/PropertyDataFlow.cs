@@ -40,6 +40,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			ReadCapturedProperty.Test ();
 
 			PropertyWithAttributeMarkingItself.Test ();
+			WriteToSetOnlyProperty.Test ();
 			WriteToGetOnlyProperty.Test ();
 
 			BasePropertyAccess.Test ();
@@ -443,6 +444,32 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 		}
 
+		class WriteToSetOnlyProperty
+		{
+			static Type _setOnlyProperty;
+
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+			public static Type SetOnlyProperty { set => _setOnlyProperty = value; }
+
+			[ExpectedWarning ("IL2072", nameof (GetUnknownType), nameof (SetOnlyProperty))]
+			static void TestAssign ()
+			{
+				SetOnlyProperty = GetUnknownType ();
+			}
+
+			[ExpectedWarning ("IL2072", nameof (GetUnknownType), nameof (SetOnlyProperty))]
+			[ExpectedWarning ("IL2072", nameof (GetTypeWithNonPublicConstructors), nameof (SetOnlyProperty))]
+			static void TestAssignCaptured (bool b = false)
+			{
+				SetOnlyProperty = b ? GetUnknownType () : GetTypeWithNonPublicConstructors ();
+			}
+
+			public static void Test ()
+			{
+				TestAssign ();
+				TestAssignCaptured ();
+			}
+		}
 
 		class WriteToGetOnlyProperty
 		{
