@@ -587,8 +587,12 @@ namespace Mono.Linker.Steps
 				using (ScopeStack.PushScope (scope)) {
 					var overrides = Annotations.GetOverrides (method);
 					if (overrides != null) {
-						foreach (OverrideInformation @override in overrides)
+						foreach (OverrideInformation @override in overrides) {
 							ProcessOverride (@override);
+							// We need to mark the interface implementation for static interface methods
+							// Explicit interface method implementations already mark the interface implementation in ProcessMethod
+							MarkExplicitInterfaceImplementation (@override.Override, @override.Base);
+						}
 					}
 				}
 			}
@@ -751,11 +755,6 @@ namespace Mono.Linker.Steps
 				Debug.Assert (!Context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, method) || @base.IsAbstract);
 				MarkMethod (method, new DependencyInfo (DependencyKind.Override, @base), ScopeStack.CurrentScope.Origin);
 			}
-
-			// We need to mark the interface implementation for static interface methods
-			// Explicit interface method implementations already mark the interface implementation in ProcessMethod
-			if (overrideInformation.IsStaticInterfaceMethodPair)
-				MarkExplicitInterfaceImplementation (method, @base);
 
 			if (method.IsVirtual)
 				ProcessVirtualMethod (method);

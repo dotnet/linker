@@ -27,6 +27,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 			RecursiveGenericInterface.Test ();
 			UnusedInterfaces.Test ();
 			ClassInheritance.Test ();
+			ProcessOverrideAfterMarkedBase.Test ();
 		}
 
 		[Kept]
@@ -376,13 +377,13 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 			[KeptInterface (typeof (IBase1))]
 			public interface IInheritsFromBase : IBase1
 			{
-				public static abstract int UsedOnConcreteType ();
-				public static abstract int UsedOnBaseOnlyConstrainedTypeImplicitImpl ();
+				public static new abstract int UsedOnConcreteType ();
+				public static new abstract int UsedOnBaseOnlyConstrainedTypeImplicitImpl ();
 
 				[Kept]
-				public static abstract int UsedOnConstrainedTypeExplicitImpl ();
-				public static abstract int UnusedImplicitImpl ();
-				public static abstract int UnusedExplicitImpl ();
+				public static new abstract int UsedOnConstrainedTypeExplicitImpl ();
+				public static new abstract int UnusedImplicitImpl ();
+				public static new abstract int UnusedExplicitImpl ();
 			}
 
 			[Kept]
@@ -404,13 +405,13 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 			[KeptInterface (typeof (IBase2))]
 			public interface IInheritsFromMultipleBases : IBase1, IBase2, IUnusedInterface
 			{
-				public static abstract int UsedOnConcreteType ();
-				public static abstract int UsedOnBaseOnlyConstrainedTypeImplicitImpl ();
+				public static new abstract int UsedOnConcreteType ();
+				public static new abstract int UsedOnBaseOnlyConstrainedTypeImplicitImpl ();
 
 				[Kept]
-				public static abstract int UsedOnConstrainedTypeExplicitImpl ();
-				public static abstract int UnusedImplicitImpl ();
-				public static abstract int UnusedExplicitImpl ();
+				public static new abstract int UsedOnConstrainedTypeExplicitImpl ();
+				public static new abstract int UnusedImplicitImpl ();
+				public static new abstract int UnusedExplicitImpl ();
 			}
 
 			public interface IUnusedInterface
@@ -746,7 +747,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 				// Use on this type only
 				// This doesn't override IBase.ImplicitlyImplementedUsedOnType
 				[Kept]
-				public new static int ImplictlyImplementedUsedOnType () => 0;
+				public static int ImplictlyImplementedUsedOnType () => 0;
 			}
 
 			[Kept]
@@ -761,7 +762,33 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 				InheritsFromBase.ImplictlyImplementedUsedOnType ();
 				CallIBaseMethod<InheritsFromBase> ();
 			}
+		}
 
+		[Kept]
+		public static class ProcessOverrideAfterMarkedBase
+		{
+			[Kept]
+			interface IFoo
+			{
+				[Kept]
+				static abstract int Method ();
+			}
+
+			[Kept]
+			[KeptInterface (typeof (IFoo))]
+			class Foo : IFoo
+			{
+				[Kept]
+				[KeptOverride (typeof (IFoo))]
+				public static int Method () => 0;
+			}
+
+			[Kept]
+			public static void Test ()
+			{
+				typeof (Foo).RequiresPublicMethods ();
+				typeof (IFoo).RequiresPublicMethods ();
+			}
 		}
 	}
 }
