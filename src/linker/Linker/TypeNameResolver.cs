@@ -73,12 +73,12 @@ namespace Mono.Linker
 				_ => throw new NotSupportedException ()
 			};
 
-			if (typeAssembly != null && TryResolveTypeName (typeAssembly, parsedTypeName, typeResolutionRecords, out typeReference))
+			if (typeAssembly != null && TryResolveTypeName (typeAssembly, parsedTypeName, out typeReference, typeResolutionRecords))
 				return true;
 
 			// If type is not found in the caller's assembly, try in core assembly.
 			typeAssembly = _context.TryResolve (PlatformAssemblies.CoreLib);
-			if (typeAssembly != null && TryResolveTypeName (typeAssembly, parsedTypeName, typeResolutionRecords, out typeReference))
+			if (typeAssembly != null && TryResolveTypeName (typeAssembly, parsedTypeName, out typeReference, typeResolutionRecords))
 				return true;
 
 			// It is common to use Type.GetType for looking if a type is available.
@@ -89,7 +89,7 @@ namespace Mono.Linker
 			typeResolutionRecords = null;
 			return false;
 
-			bool TryResolveTypeName (AssemblyDefinition assemblyDefinition, TypeName typeName, List<TypeResolutionRecord> typeResolutionRecords, [NotNullWhen (true)] out TypeReference? typeReference)
+			bool TryResolveTypeName (AssemblyDefinition assemblyDefinition, TypeName typeName, [NotNullWhen (true)] out TypeReference? typeReference, List<TypeResolutionRecord> typeResolutionRecords)
 			{
 				typeReference = null;
 				if (assemblyDefinition == null)
@@ -104,10 +104,14 @@ namespace Mono.Linker
 			AssemblyDefinition assembly,
 			string typeNameString,
 			[NotNullWhen (true)] out TypeReference? typeReference,
-			[NotNullWhen (true)] out List<TypeResolutionRecord> typeResolutionRecords)
+			[NotNullWhen (true)] out List<TypeResolutionRecord>? typeResolutionRecords)
 		{
 			typeResolutionRecords = new List<TypeResolutionRecord> ();
 			typeReference = ResolveTypeName (assembly, TypeParser.ParseTypeName (typeNameString), typeResolutionRecords);
+
+			if (typeReference == null)
+				typeResolutionRecords = null;
+
 			return typeReference != null;
 		}
 
