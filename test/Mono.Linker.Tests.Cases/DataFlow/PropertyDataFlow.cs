@@ -40,7 +40,11 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			ReadCapturedProperty.Test ();
 
 			PropertyWithAttributeMarkingItself.Test ();
+			WriteToSetOnlyProperty.Test ();
 			WriteToGetOnlyProperty.Test ();
+
+			BasePropertyAccess.Test ();
+			AccessReturnedInstanceProperty.Test ();
 		}
 
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
@@ -441,6 +445,32 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 		}
 
+		class WriteToSetOnlyProperty
+		{
+			static Type _setOnlyProperty;
+
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+			public static Type SetOnlyProperty { set => _setOnlyProperty = value; }
+
+			[ExpectedWarning ("IL2072", nameof (GetUnknownType), nameof (SetOnlyProperty))]
+			static void TestAssign ()
+			{
+				SetOnlyProperty = GetUnknownType ();
+			}
+
+			[ExpectedWarning ("IL2072", nameof (GetUnknownType), nameof (SetOnlyProperty))]
+			[ExpectedWarning ("IL2072", nameof (GetTypeWithNonPublicConstructors), nameof (SetOnlyProperty))]
+			static void TestAssignCaptured (bool b = false)
+			{
+				SetOnlyProperty = b ? GetUnknownType () : GetTypeWithNonPublicConstructors ();
+			}
+
+			public static void Test ()
+			{
+				TestAssign ();
+				TestAssignCaptured ();
+			}
+		}
 
 		class WriteToGetOnlyProperty
 		{
@@ -544,6 +574,82 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			public static void Test ()
 			{
 				(PublicMethods ?? PublicFields).RequiresAll ();
+			}
+		}
+
+		class BasePropertyAccess
+		{
+			class Base
+			{
+				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+				public virtual Type DerivedGetOnly { get; set; }
+
+				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+				public virtual Type DerivedSetOnly { get; set; }
+			}
+
+			class Derived : Base
+			{
+				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+				public override Type DerivedGetOnly { get => null; }
+
+				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+				public override Type DerivedSetOnly { set => throw null; }
+			}
+
+			[ExpectedWarning ("IL2072", nameof (Derived.DerivedGetOnly) + ".set", nameof (GetTypeWithNonPublicConstructors))]
+			static void TestWriteToDerivedGetOnly ()
+			{
+				new Derived ().DerivedGetOnly = GetTypeWithNonPublicConstructors ();
+			}
+
+			[ExpectedWarning ("IL2072", nameof (Derived.DerivedSetOnly) + ".get", nameof (DataFlowTypeExtensions.RequiresAll))]
+			static void TestReadFromDerivedSetOnly ()
+			{
+				new Derived ().DerivedSetOnly.RequiresAll ();
+			}
+
+			public static void Test ()
+			{
+				TestWriteToDerivedGetOnly ();
+				TestReadFromDerivedSetOnly ();
+			}
+		}
+
+		class AccessReturnedInstanceProperty
+		{
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			Type Property { get; set; }
+
+			static AccessReturnedInstanceProperty GetInstance ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] Type unused) => null;
+
+			[ExpectedWarning ("IL2072", nameof (GetUnknownType), nameof (GetInstance))]
+			[ExpectedWarning ("IL2072", nameof (Property) + ".get", nameof (DataFlowTypeExtensions.RequiresAll))]
+			static void TestRead ()
+			{
+				GetInstance (GetUnknownType ()).Property.RequiresAll ();
+			}
+
+			[ExpectedWarning ("IL2072", nameof (GetUnknownType), nameof (GetInstance))]
+			[ExpectedWarning ("IL2072", nameof (GetUnknownType), nameof (Property) + ".set")]
+			static void TestWrite ()
+			{
+				GetInstance (GetUnknownType ()).Property = GetUnknownType ();
+			}
+
+
+			[ExpectedWarning ("IL2072", nameof (GetUnknownType), nameof (GetInstance))]
+			[ExpectedWarning ("IL2072", nameof (GetUnknownType), nameof (Property) + ".set")]
+			static void TestNullCoalescingAssignment ()
+			{
+				GetInstance (GetUnknownType ()).Property ??= GetUnknownType ();
+			}
+
+			public static void Test ()
+			{
+				TestRead ();
+				TestWrite ();
+				TestNullCoalescingAssignment ();
 			}
 		}
 
