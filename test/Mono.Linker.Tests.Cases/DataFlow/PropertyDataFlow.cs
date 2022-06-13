@@ -44,6 +44,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			WriteToGetOnlyProperty.Test ();
 
 			BasePropertyAccess.Test ();
+			AccessReturnedInstanceProperty.Test ();
 		}
 
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
@@ -612,6 +613,43 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 				TestWriteToDerivedGetOnly ();
 				TestReadFromDerivedSetOnly ();
+			}
+		}
+
+		class AccessReturnedInstanceProperty
+		{
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			Type Property { get; set; }
+
+			static AccessReturnedInstanceProperty GetInstance ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] Type unused) => null;
+
+			[ExpectedWarning ("IL2072", nameof (GetUnknownType), nameof (GetInstance))]
+			[ExpectedWarning ("IL2072", nameof (Property) + ".get", nameof (DataFlowTypeExtensions.RequiresAll))]
+			static void TestRead ()
+			{
+				GetInstance (GetUnknownType ()).Property.RequiresAll ();
+			}
+
+			[ExpectedWarning ("IL2072", nameof (GetUnknownType), nameof (GetInstance))]
+			[ExpectedWarning ("IL2072", nameof (GetUnknownType), nameof (Property) + ".set")]
+			static void TestWrite ()
+			{
+				GetInstance (GetUnknownType ()).Property = GetUnknownType ();
+			}
+
+
+			[ExpectedWarning ("IL2072", nameof (GetUnknownType), nameof (GetInstance))]
+			[ExpectedWarning ("IL2072", nameof (GetUnknownType), nameof (Property) + ".set")]
+			static void TestNullCoalescingAssignment ()
+			{
+				GetInstance (GetUnknownType ()).Property ??= GetUnknownType ();
+			}
+
+			public static void Test ()
+			{
+				TestRead ();
+				TestWrite ();
+				TestNullCoalescingAssignment ();
 			}
 		}
 

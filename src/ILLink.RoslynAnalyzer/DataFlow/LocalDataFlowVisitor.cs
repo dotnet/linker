@@ -217,7 +217,10 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 		public override TValue VisitFlowCaptureReference (IFlowCaptureReferenceOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
 		{
 			if (!operation.GetValueUsageInfo (Context.OwningSymbol).HasFlag (ValueUsageInfo.Read)) {
-				// Debug.Assert (IsLValueFlowCapture (operation.Id)); // https://github.com/dotnet/roslyn/issues/60757
+				// There are known cases where this assert doesn't hold, because LValueFlowCaptureProvider
+				// produces the wrong result in some cases for flow captures with IsInitialization = true.
+				// https://github.com/dotnet/linker/issues/2749 
+				// Debug.Assert (IsLValueFlowCapture (operation.Id));
 				return TopValue;
 			}
 
