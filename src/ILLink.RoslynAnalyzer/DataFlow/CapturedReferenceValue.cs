@@ -22,6 +22,8 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 				break;
 			case OperationKind.None:
 			case OperationKind.InstanceReference:
+			case OperationKind.Invocation:
+			case OperationKind.EventReference:
 				// These will just be ignored when referenced later.
 				break;
 			default:

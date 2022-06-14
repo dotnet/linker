@@ -57,6 +57,10 @@ namespace Mono.Linker.Tests.Cases.Reflection
 			NullValue.Test ();
 			NoValue.Test ();
 			UnknownValue.Test ();
+
+			PrivateMembersOnBaseTypesAppliedToDerived.Test ();
+
+			IsInstOf.Test ();
 		}
 
 		[Kept]
@@ -1514,6 +1518,86 @@ namespace Mono.Linker.Tests.Cases.Reflection
 				TestType unknownValue = GetInstance ();
 				// Should warn about the return value of GetType
 				unknownValue.GetType ().RequiresAll ();
+			}
+		}
+
+		[Kept]
+		class PrivateMembersOnBaseTypesAppliedToDerived
+		{
+			[Kept]
+			[KeptMember (".ctor()")]
+			class SuperBase
+			{
+				// Is not kept - correct
+				private void SuperBasePrivateMethod () { }
+			}
+
+			[Kept]
+			[KeptMember (".ctor()")]
+			[KeptBaseType (typeof (SuperBase))]
+			class Base : SuperBase
+			{
+				// https://github.com/dotnet/linker/issues/2813
+				// This doesn't need to be preserved - non-public annotations don't apply to base types
+				[Kept]
+				private void BasePrivateMethod () { }
+			}
+
+			[Kept]
+			[KeptMember (".ctor()")]
+			[KeptBaseType (typeof (Base))]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicMethods)]
+			class Derived : Base
+			{
+				[Kept]
+				private void DerivedPrivateMethod () { }
+			}
+
+			[Kept]
+			static Derived _instance;
+
+			[Kept]
+			[ExpectedWarning ("IL2072", "System.Type.BaseType.get")]
+			public static void Test ()
+			{
+				_instance = new Derived ();
+				Type type = _instance.GetType ();
+
+				// This should work - the statically typed _instance (Derived) has NonPublicMethods annotation
+				type.RequiresNonPublicMethods ();
+
+				// This should warn - non-public annotations don't propagate to base types
+				type.BaseType.RequiresNonPublicMethods ();
+			}
+		}
+
+		[Kept]
+		class IsInstOf
+		{
+			[Kept]
+			[KeptMember (".ctor()")]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+			class Target
+			{
+			}
+
+			[Kept]
+			// https://github.com/dotnet/linker/issues/2819
+			[ExpectedWarning ("IL2072", ProducedBy = ProducedBy.Trimmer)]
+			static void TestIsInstOf (object o)
+			{
+				if (o is Target t) {
+					t.GetType ().RequiresPublicParameterlessConstructor ();
+				}
+			}
+
+			[Kept]
+			public static void Test ()
+			{
+				var target = new Target ();
+				TestIsInstOf (target);
 			}
 		}
 	}

@@ -15,7 +15,7 @@ using Mono.Linker.Dataflow;
 
 namespace ILLink.Shared.TrimAnalysis
 {
-	readonly partial struct FlowAnnotations
+	partial class FlowAnnotations
 	{
 		readonly LinkContext _context;
 		readonly Dictionary<TypeDefinition, TypeAnnotations> _annotations = new Dictionary<TypeDefinition, TypeAnnotations> ();
@@ -146,6 +146,17 @@ namespace ILLink.Shared.TrimAnalysis
 
 		public bool ShouldWarnWhenAccessedForReflection (FieldDefinition field) =>
 			GetAnnotations (field.DeclaringType).TryGetAnnotation (field, out _);
+
+		public bool IsTypeInterestingForDataflow (TypeReference typeReference)
+		{
+			if (typeReference.MetadataType == MetadataType.String)
+				return true;
+
+			TypeDefinition? type = _context.TryResolve (typeReference);
+			return type != null && (
+				_hierarchyInfo.IsSystemType (type) ||
+				_hierarchyInfo.IsSystemReflectionIReflect (type));
+		}
 
 		TypeAnnotations GetAnnotations (TypeDefinition type)
 		{
@@ -451,17 +462,6 @@ namespace ILLink.Shared.TrimAnalysis
 			}
 
 			return true;
-		}
-
-		bool IsTypeInterestingForDataflow (TypeReference typeReference)
-		{
-			if (typeReference.MetadataType == MetadataType.String)
-				return true;
-
-			TypeDefinition? type = _context.TryResolve (typeReference);
-			return type != null && (
-				_hierarchyInfo.IsSystemType (type) ||
-				_hierarchyInfo.IsSystemReflectionIReflect (type));
 		}
 
 		internal void ValidateMethodAnnotationsAreSame (MethodDefinition method, MethodDefinition baseMethod)

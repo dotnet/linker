@@ -13,6 +13,9 @@ using ILLink.Shared.DataFlow;
 using ILLink.Shared.TypeSystemProxy;
 using MultiValue = ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.SingleValue>;
 
+// This is needed due to NativeAOT which doesn't enable nullable globally yet
+#nullable enable
+
 namespace ILLink.Shared.TrimAnalysis
 {
 	[StructLayout (LayoutKind.Auto)] // A good way to avoid CS0282, we don't really care about field order
@@ -1161,6 +1164,10 @@ namespace ILLink.Shared.TrimAnalysis
 			// Disable warnings for all unimplemented intrinsics. Some intrinsic methods have annotations, but analyzing them
 			// would produce unnecessary warnings even for cases that are intrinsically handled. So we disable handling these calls
 			// until a proper intrinsic handling is made
+			// NOTE: Currently this is done "for the analyzer" and it relies on linker/NativeAOT to not call HandleCallAction
+			// for intrinsics which linker/NativeAOT need special handling for or those which are not implemented here and only there.
+			// Ideally we would run everything through HandleCallAction and it would return "false" for intrinsics it doesn't handle
+			// like it already does for Activator.CreateInstance<T> for example.
 			default:
 				methodReturnValue = MultiValueLattice.Top;
 				return true;
@@ -1318,7 +1325,7 @@ namespace ILLink.Shared.TrimAnalysis
 							continue;
 						}
 						if (typeNameValue is KnownStringValue typeNameStringValue) {
-							if (!TryResolveTypeNameForCreateInstance (calledMethod, assemblyNameStringValue.Contents, typeNameStringValue.Contents, out TypeProxy resolvedType)) {
+							if (!TryResolveTypeNameForCreateInstanceAndMark (calledMethod, assemblyNameStringValue.Contents, typeNameStringValue.Contents, out TypeProxy resolvedType)) {
 								// It's not wrong to have a reference to non-existing type - the code may well expect to get an exception in this case
 								// Note that we did find the assembly, so it's not a linker config problem, it's either intentional, or wrong versions of assemblies
 								// but linker can't know that. In case a user tries to create an array using System.Activator we should simply ignore it, the user
@@ -1418,7 +1425,7 @@ namespace ILLink.Shared.TrimAnalysis
 
 		private partial bool TryGetBaseType (TypeProxy type, [NotNullWhen (true)] out TypeProxy? baseType);
 
-		private partial bool TryResolveTypeNameForCreateInstance (in MethodProxy calledMethod, string assemblyName, string typeName, out TypeProxy resolvedType);
+		private partial bool TryResolveTypeNameForCreateInstanceAndMark (in MethodProxy calledMethod, string assemblyName, string typeName, out TypeProxy resolvedType);
 
 		private partial void MarkStaticConstructor (TypeProxy type);
 
