@@ -45,6 +45,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			BasePropertyAccess.Test ();
 			AccessReturnedInstanceProperty.Test ();
+
+			ExplicitIndexerAccess.Test ();
+			ImplicitIndexerAccess.Test ();
 		}
 
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors)]
@@ -643,6 +646,74 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			static void TestNullCoalescingAssignment ()
 			{
 				GetInstance (GetUnknownType ()).Property ??= GetUnknownType ();
+			}
+
+			public static void Test ()
+			{
+				TestRead ();
+				TestWrite ();
+				TestNullCoalescingAssignment ();
+			}
+		}
+
+		class ExplicitIndexerAccess
+		{
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			Type this[Index idx] {
+				get => throw new NotImplementedException ();
+				set => throw new NotImplementedException ();
+			}
+
+			[ExpectedWarning ("IL2072", "this[Index].get", nameof (DataFlowTypeExtensions.RequiresAll), ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL2072", "Item.get", nameof (DataFlowTypeExtensions.RequiresAll), ProducedBy = ProducedBy.Trimmer)]
+			static void TestRead (ExplicitIndexerAccess instance = null)
+			{
+				instance[new Index(1)].RequiresAll ();
+			}
+
+			[ExpectedWarning ("IL2072", nameof (GetTypeWithPublicConstructors), "this[Index].set", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL2072", nameof (GetTypeWithPublicConstructors), "Item.set", ProducedBy = ProducedBy.Trimmer)]
+			static void TestWrite (ExplicitIndexerAccess instance = null)
+			{
+				instance[^1] = GetTypeWithPublicConstructors ();
+			}
+
+			public static void Test ()
+			{
+				TestRead ();
+				TestWrite ();
+			}
+		}
+
+		class ImplicitIndexerAccess
+		{
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			Type this[int idx] {
+				get => throw new NotImplementedException ();
+				set => throw new NotImplementedException ();
+			}
+
+			int Length => throw new NotImplementedException ();
+
+			[ExpectedWarning ("IL2072", "this[Int32].get", nameof (DataFlowTypeExtensions.RequiresAll), ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL2072", "Item.get", nameof (DataFlowTypeExtensions.RequiresAll), ProducedBy = ProducedBy.Trimmer)]
+			static void TestRead (ImplicitIndexerAccess instance = null)
+			{
+				instance[new Index(1)].RequiresAll ();
+			}
+
+			[ExpectedWarning ("IL2072", nameof (GetTypeWithPublicConstructors), "this[Int32].set", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL2072", nameof (GetTypeWithPublicConstructors), "Item.set", ProducedBy = ProducedBy.Trimmer)]
+			static void TestWrite (ImplicitIndexerAccess instance = null)
+			{
+				instance[^1] = GetTypeWithPublicConstructors ();
+			}
+
+			[ExpectedWarning ("IL2072", nameof (GetUnknownType), "this[Int32].set", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL2072", nameof (GetUnknownType), "Item.set", ProducedBy = ProducedBy.Trimmer)]
+			static void TestNullCoalescingAssignment (ImplicitIndexerAccess instance = null)
+			{
+				instance[new Index(1)] ??= GetUnknownType ();
 			}
 
 			public static void Test ()
