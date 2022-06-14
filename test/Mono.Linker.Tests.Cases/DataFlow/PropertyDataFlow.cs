@@ -716,11 +716,22 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				instance[new Index (1)] ??= GetUnknownType ();
 			}
 
+			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresAll))]
+			static void TestSpanIndexerAccess (int start = 0, int end = 3)
+			{
+				Span<byte> bytes = stackalloc byte[4] { 1, 2, 3, 4 };
+				bytes[^4] = 0; // This calls the get indexer which has a ref return.
+				int index = bytes[0];
+				Type[] types = new Type[] { GetUnknownType () };
+				types[index].RequiresAll ();
+			}
+
 			public static void Test ()
 			{
 				TestRead ();
 				TestWrite ();
 				TestNullCoalescingAssignment ();
+				TestSpanIndexerAccess ();
 			}
 		}
 

@@ -138,7 +138,15 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 					// https://github.com/dotnet/roslyn/issues/25057
 					TValue instanceValue = Visit (propertyRef.Instance, state);
 					TValue value = Visit (operation.Value, state);
-					ProcessPropertySet (propertyRef.Property, instanceValue, value, operation);
+					IMethodSymbol? setMethod = propertyRef.Property.GetSetMethod ();
+					if (setMethod == null) {
+						// This can happen in a constructor - there it is possible to assign to a property
+						// without a setter. This turns into an assignment to the compiler-generated backing field.
+						// To match the linker, this should warn about the compiler-generated backing field.
+						// For now, just don't warn. https://github.com/dotnet/linker/issues/2731
+						break;
+					}
+					HandleMethodCall (setMethod, instanceValue, ImmutableArray.Create (value), operation);
 					// The return value of a property set expression is the value,
 					// even though a property setter has no return value.
 					return value;
@@ -146,9 +154,23 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			case IImplicitIndexerReferenceOperation indexerRef: {
 					// An implicit reference to an indexer where the argument is a System.Index
 					TValue instanceValue = Visit (indexerRef.Instance, state);
+					TValue indexArgumentValue = Visit (indexerRef.Argument, state);
 					TValue value = Visit (operation.Value, state);
+
 					var property = (IPropertySymbol) indexerRef.IndexerSymbol;
-					ProcessPropertySet (property, instanceValue, value, operation);
+
+					var argumentsBuilder = ImmutableArray.CreateBuilder<TValue> ();
+					argumentsBuilder.Add (indexArgumentValue);
+					argumentsBuilder.Add (value);
+
+					IMethodSymbol? setMethod = property.GetSetMethod ();
+					if (setMethod == null) {
+						// It might actually be a call to a ref-returning get method,
+						// like Span<T>.this[int].get. We don't handle ref returns yet.
+						break;
+					}
+
+					HandleMethodCall (setMethod, instanceValue, argumentsBuilder.ToImmutableArray (), operation);
 					return value;
 				}
 
@@ -264,7 +286,8 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			// Accessing property for reading is really a call to the getter
 			// The setter case is handled in assignment operation since here we don't have access to the value to pass to the setter
 			TValue instanceValue = Visit (operation.Instance, state);
-			return ProcessPropertyGet (operation.Property, instanceValue, operation);
+			IMethodSymbol? getMethod = operation.Property.GetGetMethod ();
+			return HandleMethodCall (getMethod!, instanceValue, ImmutableArray<TValue>.Empty, operation);
 		}
 
 		public override TValue VisitImplicitIndexerReference (IImplicitIndexerReferenceOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
@@ -273,7 +296,16 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 				return TopValue;
 
 			TValue instanceValue = Visit (operation.Instance, state);
-			return ProcessPropertyGet ((IPropertySymbol) operation.IndexerSymbol, instanceValue, operation);
+			TValue indexArgumentValue = Visit (operation.Argument, state);
+
+			if (operation.IndexerSymbol is not IPropertySymbol indexerProperty) {
+				// For example, System.Span<T>.Slice(int, int).
+				// Don't try to handle it for now.
+				return TopValue;
+			}
+
+			IMethodSymbol getMethod = indexerProperty.GetGetMethod ()!;
+			return HandleMethodCall (getMethod, instanceValue, ImmutableArray.Create (indexArgumentValue), operation);
 		}
 
 		public override TValue VisitArrayElementReference (IArrayElementReferenceOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
@@ -319,35 +351,6 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 				return TopValue;
 
 			return ProcessMethodCall (operation, operation.Constructor, null, operation.Arguments, state);
-		}
-
-		void ProcessPropertySet (IPropertySymbol property, TValue instanceValue, TValue value, IOperation operation)
-		{
-			IPropertySymbol? declaringProperty = property;
-			IMethodSymbol? setMethod;
-			while ((setMethod = declaringProperty.SetMethod) == null) {
-				if ((declaringProperty = declaringProperty.OverriddenProperty) == null)
-					break;
-			}
-			if (setMethod == null) {
-				// This can happen in a constructor - there it is possible to assign to a property
-				// without a setter. This turns into an assignment to the compiler-generated backing field.
-				// To match the linker, this should warn about the compiler-generated backing field.
-				// For now, just don't warn. https://github.com/dotnet/linker/issues/2731
-				return;
-			}
-			HandleMethodCall (setMethod, instanceValue, ImmutableArray.Create (value), operation);
-		}
-
-		TValue ProcessPropertyGet (IPropertySymbol property, TValue instanceValue, IOperation operation)
-		{
-			IPropertySymbol? declaringProperty = property;
-			IMethodSymbol? getMethod;
-			while ((getMethod = declaringProperty.GetMethod) == null) {
-				if ((declaringProperty = declaringProperty.OverriddenProperty) == null)
-					break;
-			}
-			return HandleMethodCall (getMethod!, instanceValue, ImmutableArray<TValue>.Empty, operation);
 		}
 
 		TValue ProcessMethodCall (
