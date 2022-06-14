@@ -743,7 +743,7 @@ namespace Mono.Linker.Steps
 			if (IsInterfaceOverrideThatDoesNotNeedMarked (overrideInformation, isInstantiated))
 				return;
 
-			// Interface static veitual methods will be abstract and will also by pass this check to get marked
+			// Interface static virtual methods will be abstract and will also bypass this check to get marked
 			if (!isInstantiated && !@base.IsAbstract && Context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, method))
 				return;
 
@@ -3102,7 +3102,7 @@ namespace Mono.Linker.Steps
 			if (method.IsVirtual)
 				_virtual_methods.Add ((method, ScopeStack.CurrentScope));
 
-			if (method.IsStatic && method.DeclaringType.IsInterface)
+			if (method.IsStatic && method.IsAbstract && method.DeclaringType.IsInterface)
 				_static_interface_methods.Add ((method, ScopeStack.CurrentScope));
 
 			MarkNewCodeDependencies (method);
