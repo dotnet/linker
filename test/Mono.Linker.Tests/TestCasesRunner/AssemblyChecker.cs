@@ -735,7 +735,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			verifiedGeneratedTypes.Add (srcImplementationDetails.FullName);
 		}
 
-		void VerifyPrivateImplementationDetailsType (ModuleDefinition src, ModuleDefinition linked, out TypeDefinition srcImplementationDetails, out TypeDefinition linkedImplementationDetails)
+		static void VerifyPrivateImplementationDetailsType (ModuleDefinition src, ModuleDefinition linked, out TypeDefinition srcImplementationDetails, out TypeDefinition linkedImplementationDetails)
 		{
 			srcImplementationDetails = src.Types.FirstOrDefault (t => string.IsNullOrEmpty (t.Namespace) && t.Name.StartsWith ("<PrivateImplementationDetails>"));
 
@@ -905,7 +905,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			var expectedFieldNames = src.CustomAttributes
 				.Where (a => a.AttributeType.Name == nameof (KeptDelegateCacheFieldAttribute))
 				.Select (a => (a.ConstructorArguments[0].Value as string, a.ConstructorArguments[1].Value as string))
-				.Select (indexAndField => ($"<{indexAndField.Item1}>__{indexAndField.Item2}"))
+				.Select (indexAndField => $"<{indexAndField.Item1}>__{indexAndField.Item2}")
 				.ToList ();
 
 			if (expectedFieldNames.Count == 0)

@@ -11,7 +11,7 @@ namespace Mono.Linker.Tests.Cases.Expectations.Assertions
 		public KeptDelegateCacheFieldAttribute (string classIndex, string fieldName)
 		{
 			if (string.IsNullOrEmpty (classIndex))
-				throw new ArgumentException (nameof (classIndex));
+				throw new ArgumentNullException (nameof (classIndex));
 			if (string.IsNullOrEmpty (fieldName))
 				throw new ArgumentNullException (nameof (fieldName));
 		}

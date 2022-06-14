@@ -668,7 +668,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[ExpectedWarning ("IL2072", "Item.get", nameof (DataFlowTypeExtensions.RequiresAll), ProducedBy = ProducedBy.Trimmer)]
 			static void TestRead (ExplicitIndexerAccess instance = null)
 			{
-				instance[new Index(1)].RequiresAll ();
+				instance[new Index (1)].RequiresAll ();
 			}
 
 			[ExpectedWarning ("IL2072", nameof (GetTypeWithPublicConstructors), "this[Index].set", ProducedBy = ProducedBy.Analyzer)]
@@ -699,7 +699,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[ExpectedWarning ("IL2072", "Item.get", nameof (DataFlowTypeExtensions.RequiresAll), ProducedBy = ProducedBy.Trimmer)]
 			static void TestRead (ImplicitIndexerAccess instance = null)
 			{
-				instance[new Index(1)].RequiresAll ();
+				instance[new Index (1)].RequiresAll ();
 			}
 
 			[ExpectedWarning ("IL2072", nameof (GetTypeWithPublicConstructors), "this[Int32].set", ProducedBy = ProducedBy.Analyzer)]
@@ -713,7 +713,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[ExpectedWarning ("IL2072", nameof (GetUnknownType), "Item.set", ProducedBy = ProducedBy.Trimmer)]
 			static void TestNullCoalescingAssignment (ImplicitIndexerAccess instance = null)
 			{
-				instance[new Index(1)] ??= GetUnknownType ();
+				instance[new Index (1)] ??= GetUnknownType ();
 			}
 
 			public static void Test ()

@@ -144,13 +144,13 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 					return value;
 				}
 			case IImplicitIndexerReferenceOperation indexerRef: {
-				// An implicit reference to an indexer where the argument is a System.Index
-				TValue instanceValue = Visit (indexerRef.Instance, state);
-				TValue value = Visit (operation.Value, state);
-				var property = (IPropertySymbol) indexerRef.IndexerSymbol;
-				ProcessPropertySet (property, instanceValue, value, operation);
-				return value;
-			}
+					// An implicit reference to an indexer where the argument is a System.Index
+					TValue instanceValue = Visit (indexerRef.Instance, state);
+					TValue value = Visit (operation.Value, state);
+					var property = (IPropertySymbol) indexerRef.IndexerSymbol;
+					ProcessPropertySet (property, instanceValue, value, operation);
+					return value;
+				}
 
 			// TODO: when setting a property in an attribute, target is an IPropertyReference.
 			case ILocalReferenceOperation localRef: {
@@ -186,9 +186,9 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			// https://github.com/dotnet/linker/issues/2632
 			// https://github.com/dotnet/linker/issues/2158
 			case IEventReferenceOperation:
-			// An event assignment is an assignment to the generated backing field for
-			// auto-implemented events. There is no Roslyn API to access the field, so
-			// skip this. https://github.com/dotnet/roslyn/issues/40103
+				// An event assignment is an assignment to the generated backing field for
+				// auto-implemented events. There is no Roslyn API to access the field, so
+				// skip this. https://github.com/dotnet/roslyn/issues/40103
 				Visit (targetOperation, state);
 				break;
 
@@ -200,7 +200,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 				// (don't have specific I*Operation types), such as pointer dereferences.
 				if (targetOperation.Kind is OperationKind.None)
 					break;
-				throw new NotImplementedException ($"{targetOperation.GetType ().ToString ()}: {targetOperation.Syntax.GetLocation ().GetLineSpan()}");
+				throw new NotImplementedException ($"{targetOperation.GetType ().ToString ()}: {targetOperation.Syntax.GetLocation ().GetLineSpan ()}");
 			}
 			return Visit (operation.Value, state);
 		}
