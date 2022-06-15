@@ -65,6 +65,8 @@ namespace ILLink.Shared.DataFlow
 			return true;
 		}
 
+		public int Count => Dictionary?.Count ?? 0;
+
 		public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator ()
 		{
 			return Dictionary?.GetEnumerator () ?? Enumerable.Empty<KeyValuePair<TKey, TValue>> ().GetEnumerator ();
