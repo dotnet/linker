@@ -5,53 +5,54 @@ using System;
 
 namespace ILLink.Shared.DataFlow
 {
-    struct Maybe<T> : IEquatable<Maybe<T>>
-        where T : struct, IEquatable<T>
-    {
-        public T? MaybeValue;
+	struct Maybe<T> : IEquatable<Maybe<T>>
+		where T : struct, IEquatable<T>
+	{
+		public T? MaybeValue;
 
-        public Maybe (T value) => MaybeValue = value;
+		public Maybe (T value) => MaybeValue = value;
 
-        public bool Equals (Maybe<T> other) => MaybeValue?.Equals (other.MaybeValue) ?? other.MaybeValue == null;
+		public bool Equals (Maybe<T> other) => MaybeValue?.Equals (other.MaybeValue) ?? other.MaybeValue == null;
 
-        public override bool Equals (object? obj) => obj is Maybe<T> other && Equals (other);
+		public override bool Equals (object? obj) => obj is Maybe<T> other && Equals (other);
 
-        public override int GetHashCode () => MaybeValue?.GetHashCode () ?? 0;
+		public override int GetHashCode () => MaybeValue?.GetHashCode () ?? 0;
 
-        public Maybe<T> Clone () {
-            if (MaybeValue is not T value)
-                return default;
+		public Maybe<T> Clone ()
+		{
+			if (MaybeValue is not T value)
+				return default;
 
-            if (value is IDeepCopyValue<T> copyValue)
-                return new (copyValue.DeepCopy ());
-                
-            return new (value);
-        }
-    }
+			if (value is IDeepCopyValue<T> copyValue)
+				return new (copyValue.DeepCopy ());
 
-    struct MaybeLattice<T, TValueLattice> : ILattice<Maybe<T>>
-        where T : struct, IEquatable<T>
-        where TValueLattice : ILattice<T>
-    {
-        public readonly TValueLattice ValueLattice;
+			return new (value);
+		}
+	}
 
-        public MaybeLattice (TValueLattice valueLattice)
-        {
-            ValueLattice = valueLattice;
-            Top = default;
-        }
+	struct MaybeLattice<T, TValueLattice> : ILattice<Maybe<T>>
+		where T : struct, IEquatable<T>
+		where TValueLattice : ILattice<T>
+	{
+		public readonly TValueLattice ValueLattice;
 
-        public Maybe<T> Top { get; }
+		public MaybeLattice (TValueLattice valueLattice)
+		{
+			ValueLattice = valueLattice;
+			Top = default;
+		}
 
-        public Maybe<T> Meet (Maybe<T> left, Maybe<T> right)
-        {
-            if (left.MaybeValue is not T leftValue)
-                return right.Clone ();
+		public Maybe<T> Top { get; }
 
-            if (right.MaybeValue is not T rightValue)
-                return left.Clone ();
+		public Maybe<T> Meet (Maybe<T> left, Maybe<T> right)
+		{
+			if (left.MaybeValue is not T leftValue)
+				return right.Clone ();
 
-            return new Maybe<T> (ValueLattice.Meet (leftValue, rightValue));
-        }
-    }
+			if (right.MaybeValue is not T rightValue)
+				return left.Clone ();
+
+			return new Maybe<T> (ValueLattice.Meet (leftValue, rightValue));
+		}
+	}
 }

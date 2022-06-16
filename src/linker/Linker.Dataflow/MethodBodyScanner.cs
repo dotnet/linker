@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using ILLink.Shared;
 using ILLink.Shared.DataFlow;
@@ -13,19 +12,12 @@ using ILLink.Shared.TypeSystemProxy;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Collections.Generic;
-
-using LocalVariableStore = System.Collections.Generic.Dictionary<
-	Mono.Cecil.Cil.VariableDefinition,
-	Mono.Linker.Dataflow.ValueBasicBlockPair>;
-
-using HoistedLocalStore = ILLink.Shared.DataFlow.DefaultValueDictionary<
-	Mono.Linker.Dataflow.HoistedLocalKey,
-	Mono.Linker.Dataflow.ValueBasicBlockPair>;
-
 using HoistedLocalState = ILLink.Shared.DataFlow.DefaultValueDictionary<
 	Mono.Linker.Dataflow.HoistedLocalKey,
 	ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.SingleValue>>;
-
+using HoistedLocalStore = ILLink.Shared.DataFlow.DefaultValueDictionary<
+	Mono.Linker.Dataflow.HoistedLocalKey,
+	Mono.Linker.Dataflow.ValueBasicBlockPair>;
 using InterproceduralState = ILLink.Shared.DataFlow.DefaultValueDictionary<
 	ILLink.Shared.TypeSystemProxy.MethodProxy,
 	ILLink.Shared.DataFlow.Maybe<
@@ -35,6 +27,9 @@ using InterproceduralState = ILLink.Shared.DataFlow.DefaultValueDictionary<
 		>
 	>
 >;
+using LocalVariableStore = System.Collections.Generic.Dictionary<
+	Mono.Cecil.Cil.VariableDefinition,
+	Mono.Linker.Dataflow.ValueBasicBlockPair>;
 using MultiValue = ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.SingleValue>;
 
 namespace Mono.Linker.Dataflow
@@ -271,7 +266,7 @@ namespace Mono.Linker.Dataflow
 
 			interproceduralState.Set (new MethodProxy (methodBody.Method),
 				new (new HoistedLocalState (UnknownValue.Instance)));
-		
+
 			while (!interproceduralState.Equals (oldInterproceduralState)) {
 				oldInterproceduralState = interproceduralState.Clone ();
 

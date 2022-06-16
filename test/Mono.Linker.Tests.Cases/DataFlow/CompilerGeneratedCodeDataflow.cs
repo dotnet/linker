@@ -1,10 +1,10 @@
-	// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System;
-using System.Reflection;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using System.Threading.Tasks;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Helpers;
@@ -99,7 +99,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			static void WarningsInBody ()
 			{
 				[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll))]
-				static void LocalFunction () {
+				static void LocalFunction ()
+				{
 					Type t = GetWithPublicMethods ();
 					t.RequiresAll ();
 				}
@@ -112,7 +113,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				// Trimmer doesn't warn because this is unused code.
 				[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll),
 					ProducedBy = ProducedBy.Analyzer)]
-				static void LocalFunction () {
+				static void LocalFunction ()
+				{
 					Type t = GetWithPublicMethods ();
 					t.RequiresAll ();
 				}
@@ -124,7 +126,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				LocalFunction ();
 
 				[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll))]
-				void LocalFunction () {
+				void LocalFunction ()
+				{
 					t.RequiresAll ();
 				}
 			}
@@ -186,7 +189,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 				CallerOfLocalFunction ();
 
-				void CallerOfLocalFunction () {
+				void CallerOfLocalFunction ()
+				{
 					t = GetWithPublicFields ();
 					LocalFunction ();
 				}
@@ -201,13 +205,15 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				Type t = GetUnknownType ();
 				A ();
 
-				void A () {
+				void A ()
+				{
 					t = GetWithPublicMethods ();
 					LocalFunction ();
 					B ();
 				}
 
-				void B () {
+				void B ()
+				{
 					t = GetWithPublicFields ();
 					LocalFunction ();
 					A ();
@@ -285,10 +291,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 				var lambda =
 					[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll))]
-					() => {
-						Type t = GetWithPublicMethods ();
-						t.RequiresAll ();
-					};
+				() => {
+					Type t = GetWithPublicMethods ();
+					t.RequiresAll ();
+				};
 
 				lambda ();
 			}
@@ -297,10 +303,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 				var lambda =
 					[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll))]
-					() => {
-						Type t = GetWithPublicMethods ();
-						t.RequiresAll ();
-					};
+				() => {
+					Type t = GetWithPublicMethods ();
+					t.RequiresAll ();
+				};
 			}
 
 			static void ReadCapturedVariable ()
@@ -308,7 +314,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				Type t = GetWithPublicMethods ();
 				Action lambda =
 					[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll))]
-					() => t.RequiresAll ();
+				() => t.RequiresAll ();
 				lambda ();
 			}
 
@@ -329,7 +335,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 				var lambda =
 					[ExpectedWarning ("IL2067", nameof (ReadCapturedParameter), "tParameter", nameof (DataFlowTypeExtensions.RequiresAll))]
-					() => tParameter.RequiresAll ();
+				() => tParameter.RequiresAll ();
 
 				lambda ();
 			}
@@ -339,7 +345,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				tParameter = GetWithPublicMethods ();
 				var lambda =
 					[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll))] // TODO: should be 2072.
-					() => tParameter.RequiresAll ();
+				() => tParameter.RequiresAll ();
 				lambda ();
 			}
 
@@ -352,7 +358,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				Type notCaptured = GetWithPublicFields ();
 				Action lambda =
 					[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll))]
-					() => t.RequiresAll ();
+				() => t.RequiresAll ();
 				lambda ();
 				notCaptured.RequiresAll ();
 			}
@@ -425,7 +431,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		[RequiresUnreferencedCode ("RUC")]
-		static void RUCMethod () {}
+		static void RUCMethod () { }
 
 		struct TestStruct
 		{
@@ -433,4 +439,4 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			public Type TypeWithPublicFields => null;
 		}
 	}
-} 
+}

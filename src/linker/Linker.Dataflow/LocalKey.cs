@@ -6,14 +6,14 @@ using Mono.Cecil.Cil;
 
 namespace ILLink.Shared.DataFlow
 {
-    public readonly struct LocalKey : IEquatable<LocalKey>
-    {
-        public readonly VariableDefinition Local;
+	public readonly struct LocalKey : IEquatable<LocalKey>
+	{
+		public readonly VariableDefinition Local;
 
-        public LocalKey (VariableDefinition local) => Local = local;
+		public LocalKey (VariableDefinition local) => Local = local;
 
-        public bool Equals (LocalKey other) => Local.Equals (other.Local);
+		public bool Equals (LocalKey other) => Local.Equals (other.Local);
 
-        public override int GetHashCode () => Local.GetHashCode ();
-    }
+		public override int GetHashCode () => Local.GetHashCode ();
+	}
 }
