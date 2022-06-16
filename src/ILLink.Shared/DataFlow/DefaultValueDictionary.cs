@@ -105,5 +105,7 @@ namespace ILLink.Shared.DataFlow
 			}
 			return new DefaultValueDictionary<TKey, TValue> (defaultValue, dict);
 		}
+
+		public override int GetHashCode () => throw new NotImplementedException ();
 	}
 }

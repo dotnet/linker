@@ -30,7 +30,13 @@ namespace Mono.Linker.Dataflow
 			// https://github.com/dotnet/linker/issues/2778
 			// For now, work around it with a separate bit.
 			bool isReturnValue = pattern.Target.AsSingleValue () is MethodReturnValue;
-			AssignmentPatterns.Add ((pattern.Origin, isReturnValue), pattern);
+
+			if (!AssignmentPatterns.TryGetValue ((pattern.Origin, isReturnValue), out var existingPattern)) {
+				AssignmentPatterns.Add ((pattern.Origin, isReturnValue), pattern);
+				return;
+			}
+
+			AssignmentPatterns[(pattern.Origin, isReturnValue)] = pattern.Merge (Lattice, existingPattern);
 		}
 
 		public void Add (TrimAnalysisMethodCallPattern pattern)
