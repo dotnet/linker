@@ -274,6 +274,8 @@ namespace Mono.Linker.Dataflow
 				// are changes discovered in the hoisted local state on entry to any method.
 				foreach (var (method, _) in oldInterproceduralState) {
 					var methodToScan = method.Method;
+					if (methodToScan.Body == null)
+						continue;
 
 					Scan (methodToScan.Body, ref interproceduralState);
 

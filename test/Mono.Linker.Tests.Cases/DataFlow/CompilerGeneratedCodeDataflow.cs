@@ -40,7 +40,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true)]
 			// Linker doesn't track backwards branches
-			// [ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true,
+				ProducedBy = ProducedBy.Analyzer)]
 			static IEnumerable<int> FlowAcrossYieldReturnWithBackwardsBranch (int n = 0)
 			{
 				Type t = GetWithPublicMethods ();
@@ -78,8 +79,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		class AsyncIterator
 		{
-			[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll),
-				CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true,
+				ProducedBy = ProducedBy.Trimmer)]
 			static async IAsyncEnumerable<int> FlowAcrossAwaitAndYieldReturn ()
 			{
 				Type t = GetWithPublicMethods ();
@@ -98,7 +99,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		{
 			static void WarningsInBody ()
 			{
-				[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll))]
+				[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll),
+					ProducedBy = ProducedBy.Trimmer)]
 				static void LocalFunction ()
 				{
 					Type t = GetWithPublicMethods ();
@@ -111,8 +113,6 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			static void WarningsInBodyUnused ()
 			{
 				// Trimmer doesn't warn because this is unused code.
-				[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll),
-					ProducedBy = ProducedBy.Analyzer)]
 				static void LocalFunction ()
 				{
 					Type t = GetWithPublicMethods ();
@@ -125,7 +125,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				Type t = GetWithPublicMethods ();
 				LocalFunction ();
 
-				[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll))]
+				[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll),
+					ProducedBy = ProducedBy.Trimmer)]
 				void LocalFunction ()
 				{
 					t.RequiresAll ();
@@ -143,8 +144,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 				LocalFunction ();
 
-				[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll))]
-				[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll))]
+				[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll),
+					ProducedBy = ProducedBy.Trimmer)]
+				[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll),
+					ProducedBy = ProducedBy.Trimmer)]
 				void LocalFunction () => t.RequiresAll ();
 			}
 
@@ -161,8 +164,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 				LocalFunction ();
 
-				[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll))]
-				[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll))]
+				[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll),
+					ProducedBy = ProducedBy.Trimmer)]
+				[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll),
+					ProducedBy = ProducedBy.Trimmer)]
 				void LocalFunction () => t.RequiresAll ();
 			}
 
@@ -176,7 +181,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 					t = GetWithPublicFields ();
 				}
 
-				[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll))]
+				[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll),
+					ProducedBy = ProducedBy.Trimmer)]
 				// Linker doesn't handle backwards branches
 				// [ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll))]
 				void LocalFunction () => t.RequiresAll ();
@@ -195,8 +201,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 					LocalFunction ();
 				}
 
-				[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll))]
-				[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll))]
+				[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll),
+					ProducedBy = ProducedBy.Trimmer)]
+				[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll),
+					ProducedBy = ProducedBy.Trimmer)]
 				void LocalFunction () => t.RequiresAll ();
 			}
 
@@ -219,8 +227,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 					A ();
 				}
 
-				[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll))]
-				[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll))]
+				[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll),
+					ProducedBy = ProducedBy.Trimmer)]
+				[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll),
+					ProducedBy = ProducedBy.Trimmer)]
 				void LocalFunction () => t.RequiresAll ();
 			}
 
@@ -228,7 +238,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 				LocalFunction ();
 
-				[ExpectedWarning ("IL2067", nameof (ReadCapturedParameter), "tParameter", nameof (DataFlowTypeExtensions.RequiresAll))]
+				[ExpectedWarning ("IL2067", nameof (ReadCapturedParameter), "tParameter", nameof (DataFlowTypeExtensions.RequiresAll),
+					ProducedBy = ProducedBy.Trimmer)]
 				void LocalFunction () => tParameter.RequiresAll ();
 			}
 
@@ -237,7 +248,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				tParameter = GetWithPublicMethods (); // Changes the state of the parameter (only allowed for hoisted locals)
 				LocalFunction ();
 
-				[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll))]
+				[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll),
+					ProducedBy = ProducedBy.Trimmer)]
 				void LocalFunction () => tParameter.RequiresAll ();
 			}
 
@@ -251,14 +263,14 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				LocalFunction ();
 				notCaptured.RequiresAll ();
 
-				[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll))]
+				[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll),
+					ProducedBy = ProducedBy.Trimmer)]
 				void LocalFunction () => t.RequiresAll ();
 			}
 
-			// [ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll))]
-			// TODO: propagate state out. For now, just flows in.
-			// This 2062 should really be a 2072.
-			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresAll))]
+			// State flowing out of a local function is not tracked, so this just produces a warning about an unknown type.
+			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresAll),
+					ProducedBy = ProducedBy.Trimmer)]
 			static void WriteCapturedVariable ()
 			{
 				Type t;
@@ -290,7 +302,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			static void WarningsInBody ()
 			{
 				var lambda =
-					[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll))]
+					[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll),
+					ProducedBy = ProducedBy.Trimmer)]
 				() => {
 					Type t = GetWithPublicMethods ();
 					t.RequiresAll ();
@@ -302,7 +315,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			static void WarningsInBodyUnused ()
 			{
 				var lambda =
-					[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll))]
+					[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll),
+					ProducedBy = ProducedBy.Trimmer)]
 				() => {
 					Type t = GetWithPublicMethods ();
 					t.RequiresAll ();
@@ -313,7 +327,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 				Type t = GetWithPublicMethods ();
 				Action lambda =
-					[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll))]
+					[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll),
+					ProducedBy = ProducedBy.Trimmer)]
 				() => t.RequiresAll ();
 				lambda ();
 			}
@@ -334,7 +349,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			public static void ReadCapturedParameter (Type tParameter)
 			{
 				var lambda =
-					[ExpectedWarning ("IL2067", nameof (ReadCapturedParameter), "tParameter", nameof (DataFlowTypeExtensions.RequiresAll))]
+					[ExpectedWarning ("IL2067", nameof (ReadCapturedParameter), "tParameter", nameof (DataFlowTypeExtensions.RequiresAll),
+					ProducedBy = ProducedBy.Trimmer)]
 				() => tParameter.RequiresAll ();
 
 				lambda ();
@@ -344,20 +360,21 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 				tParameter = GetWithPublicMethods ();
 				var lambda =
-					[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll))] // TODO: should be 2072.
+					[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll),
+					ProducedBy = ProducedBy.Trimmer)]
 				() => tParameter.RequiresAll ();
 				lambda ();
 			}
 
 			[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll),
-				// analyzer clears all local state, but trimmer doesn't
 				ProducedBy = ProducedBy.Trimmer)]
 			static void ReadCapturedVariableWithUnhoistedLocals ()
 			{
 				Type t = GetWithPublicMethods ();
 				Type notCaptured = GetWithPublicFields ();
 				Action lambda =
-					[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll))]
+					[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll),
+					ProducedBy = ProducedBy.Trimmer)]
 				() => t.RequiresAll ();
 				lambda ();
 				notCaptured.RequiresAll ();
@@ -388,9 +405,11 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		class Complex
 		{
-			[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true,
+					ProducedBy = ProducedBy.Trimmer)]
 			// Linker merges branches going forward
-			[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true,
+					ProducedBy = ProducedBy.Trimmer)]
 			static IEnumerable<int> IteratorWithLocalFunctions ()
 			{
 				Type t = GetWithPublicMethods ();
@@ -403,8 +422,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				LocalFunction ();
 				t.RequiresAll ();
 
-				[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll))]
-				[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll))]
+				[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll),
+					ProducedBy = ProducedBy.Trimmer)]
+				[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll),
+					ProducedBy = ProducedBy.Trimmer)]
 				void LocalFunction () => t.RequiresAll ();
 			}
 
