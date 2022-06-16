@@ -199,7 +199,7 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 				void LocalFunction () => typeof (TypeWithRUCMethod).RequiresNonPublicMethods ();
 			}
 
-			[UnconditionalSuppressMessage ("Test", "IL2077")]
+			[UnconditionalSuppressMessage ("Test", "IL2067")]
 			static void TestMethodParameterWithRequirements (Type unknownType = null)
 			{
 				LocalFunction ();
@@ -403,7 +403,7 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 				() => typeof (TypeWithRUCMethod).RequiresNonPublicMethods ();
 			}
 
-			[UnconditionalSuppressMessage ("Test", "IL2077")]
+			[UnconditionalSuppressMessage ("Test", "IL2067")]
 			static void TestMethodParameterWithRequirements (Type unknownType = null)
 			{
 				Action _ =

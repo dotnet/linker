@@ -27,6 +27,8 @@ namespace ILLink.Shared.DataFlow
 
 		public DefaultValueDictionary (TValue defaultValue) => (Dictionary, DefaultValue) = (null, defaultValue);
 
+		private DefaultValueDictionary (TValue defaultValue, Dictionary<TKey, TValue> dictionary) => (Dictionary, DefaultValue) = (dictionary, defaultValue);
+
 		public DefaultValueDictionary (DefaultValueDictionary<TKey, TValue> other)
 		{
 			Dictionary = other.Dictionary == null ? null : new Dictionary<TKey, TValue> (other.Dictionary);
@@ -65,6 +67,8 @@ namespace ILLink.Shared.DataFlow
 			return true;
 		}
 
+		public override bool Equals (object? obj) => obj is DefaultValueDictionary<TKey, TValue> other && Equals (other);
+
 		public int Count => Dictionary?.Count ?? 0;
 
 		public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator ()
@@ -85,6 +89,21 @@ namespace ILLink.Shared.DataFlow
 			sb.Append (Environment.NewLine).Append ("\t_ -> ").Append (DefaultValue.ToString ());
 			sb.Append (Environment.NewLine).Append ("}");
 			return sb.ToString ();
+		}
+
+		public DefaultValueDictionary<TKey, TValue> Clone ()
+		{
+			var defaultValue = DefaultValue is IDeepCopyValue<TValue> copyDefaultValue ? copyDefaultValue.DeepCopy () : DefaultValue;
+			if (Dictionary == null)
+				return new DefaultValueDictionary<TKey, TValue> (defaultValue);
+
+			var dict = new Dictionary<TKey, TValue> ();
+			foreach (var kvp in Dictionary) {
+				var key = kvp.Key;
+				var value = kvp.Value;
+				dict.Add (key, value is IDeepCopyValue<TValue> copyValue ? copyValue.DeepCopy () : value);
+			}
+			return new DefaultValueDictionary<TKey, TValue> (defaultValue, dict);
 		}
 	}
 }

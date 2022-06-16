@@ -4,6 +4,7 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
 using ILLink.Shared.TrimAnalysis;
+using ILLink.Shared.DataFlow;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Linker.Steps;
@@ -40,6 +41,25 @@ namespace Mono.Linker.Dataflow
 				Arguments = builder.ToImmutableArray ();
 			}
 			Origin = origin;
+		}
+
+		public TrimAnalysisMethodCallPattern Merge (ValueSetLattice<SingleValue> lattice, TrimAnalysisMethodCallPattern other)
+		{
+			Debug.Assert (Operation == other.Operation);
+			Debug.Assert (Origin == other.Origin);
+			Debug.Assert (CalledMethod == other.CalledMethod);
+			Debug.Assert (Arguments.Length == other.Arguments.Length);
+
+			var argumentsBuilder = ImmutableArray.CreateBuilder<MultiValue> ();
+			for (int i = 0; i < Arguments.Length; i++)
+				argumentsBuilder.Add (lattice.Meet (Arguments[i], other.Arguments[i]));
+
+			return new TrimAnalysisMethodCallPattern (
+				Operation,
+				CalledMethod,
+				lattice.Meet (Instance, other.Instance),
+				argumentsBuilder.ToImmutable (),
+				Origin);
 		}
 
 		public void MarkAndProduceDiagnostics (ReflectionMarker reflectionMarker, MarkStep markStep, LinkContext context)

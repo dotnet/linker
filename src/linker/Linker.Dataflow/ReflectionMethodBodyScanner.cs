@@ -67,7 +67,7 @@ namespace Mono.Linker.Dataflow
 			_origin = origin;
 			_annotations = context.Annotations.FlowAnnotations;
 			_reflectionMarker = new ReflectionMarker (context, parent, enabled: false);
-			TrimAnalysisPatterns = new TrimAnalysisPatternStore (context);
+			TrimAnalysisPatterns = new TrimAnalysisPatternStore (MultiValueLattice, context);
 		}
 
 		public override void InterproceduralScan (MethodBody methodBody)

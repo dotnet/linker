@@ -267,31 +267,30 @@ namespace Mono.Linker.Dataflow
 		{
 			// Untracked methods get the default value (null).
 			var interproceduralState = new InterproceduralState (default (Maybe<HoistedLocalState>));
+			var oldInterproceduralState = interproceduralState.Clone ();
+
 			interproceduralState.Set (new MethodProxy (methodBody.Method),
 				new (new HoistedLocalState (UnknownValue.Instance)));
+		
+			while (!interproceduralState.Equals (oldInterproceduralState)) {
+				oldInterproceduralState = interproceduralState.Clone ();
 
-			// Optimization to prevent multiple scans of a method.
-			// Eventually we will need to allow re-scanning in some cases, for example
-			// when we discover new inputs to a method. But for now, only scan a method
-			// once. This means we will miss some possible inputs to methods that are
-			// called multiple times.
-			HashSet<MethodDefinition> scannedMethods = new ();
+				// Flow state through all methods encountered so far, as long as there
+				// are changes discovered in the hoisted local state on entry to any method.
+				foreach (var (method, _) in oldInterproceduralState) {
+					var methodToScan = method.Method;
 
-			while (true) {
-				if (!TryGetNextMethodToScan (out MethodDefinition? methodToScan))
-					break;
+					Scan (methodToScan.Body, ref interproceduralState);
 
-				scannedMethods.Add (methodToScan);
-				Scan (methodToScan.Body, ref interproceduralState);
-
-				// For state machine methods, also scan the state machine members.
-				// Simplification: assume that all generated methods of the state machine type are
-				// invoked at the point where the state machine method is called.			
-				if (CompilerGeneratedState.TryGetStateMachineType (methodToScan, out TypeDefinition? stateMachineType)) {
-					foreach (var method in stateMachineType.Methods) {
-						Debug.Assert (!CompilerGeneratedNames.IsLambdaOrLocalFunction (method.Name));
-						if (method.Body is MethodBody stateMachineBody)
-							Scan (stateMachineBody, ref interproceduralState);
+					// For state machine methods, also scan the state machine members.
+					// Simplification: assume that all generated methods of the state machine type are
+					// invoked at the point where the state machine method is called.			
+					if (CompilerGeneratedState.TryGetStateMachineType (methodToScan, out TypeDefinition? stateMachineType)) {
+						foreach (var stateMachineMethod in stateMachineType.Methods) {
+							Debug.Assert (!CompilerGeneratedNames.IsLambdaOrLocalFunction (stateMachineMethod.Name));
+							if (stateMachineMethod.Body is MethodBody stateMachineBody)
+								Scan (stateMachineBody, ref interproceduralState);
+						}
 					}
 				}
 			}
@@ -308,19 +307,6 @@ namespace Mono.Linker.Dataflow
 				Debug.Assert (interproceduralState.Count == 1);
 			}
 #endif
-
-			bool TryGetNextMethodToScan ([NotNullWhen (true)] out MethodDefinition? method)
-			{
-				foreach (var (candidate, _) in interproceduralState) {
-					var candidateMethod = candidate.Method;
-					if (!scannedMethods.Contains (candidateMethod) && candidateMethod.HasBody) {
-						method = candidateMethod;
-						return true;
-					}
-				}
-				method = null;
-				return false;
-			}
 		}
 
 		void TrackNestedFunctionReference (MethodReference referencedMethod, ref HoistedLocalStore hoistedLocals, ref InterproceduralState interproceduralState)

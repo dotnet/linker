@@ -3,6 +3,7 @@
 
 using System.Collections.Generic;
 using ILLink.Shared.TrimAnalysis;
+using ILLink.Shared.DataFlow;
 using Mono.Linker.Steps;
 
 namespace Mono.Linker.Dataflow
@@ -11,12 +12,14 @@ namespace Mono.Linker.Dataflow
 	{
 		readonly Dictionary<(MessageOrigin, bool), TrimAnalysisAssignmentPattern> AssignmentPatterns;
 		readonly Dictionary<MessageOrigin, TrimAnalysisMethodCallPattern> MethodCallPatterns;
+		readonly ValueSetLattice<SingleValue> Lattice;
 		readonly LinkContext _context;
 
-		public TrimAnalysisPatternStore (LinkContext context)
+		public TrimAnalysisPatternStore (ValueSetLattice<SingleValue> lattice, LinkContext context)
 		{
 			AssignmentPatterns = new Dictionary<(MessageOrigin, bool), TrimAnalysisAssignmentPattern> ();
 			MethodCallPatterns = new Dictionary<MessageOrigin, TrimAnalysisMethodCallPattern> ();
+			Lattice = lattice;
 			_context = context;
 		}
 
@@ -32,7 +35,12 @@ namespace Mono.Linker.Dataflow
 
 		public void Add (TrimAnalysisMethodCallPattern pattern)
 		{
-			MethodCallPatterns.Add (pattern.Origin, pattern);
+			if (!MethodCallPatterns.TryGetValue (pattern.Origin, out var existingPattern)) {
+				MethodCallPatterns.Add (pattern.Origin, pattern);
+				return;
+			}
+
+			MethodCallPatterns[pattern.Origin] = pattern.Merge (Lattice, existingPattern);
 		}
 
 		public void MarkAndProduceDiagnostics (ReflectionMarker reflectionMarker, MarkStep markStep)
