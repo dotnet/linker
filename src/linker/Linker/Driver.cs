@@ -162,6 +162,8 @@ namespace Mono.Linker
 			Context.LogError (null, DiagnosticId.MissingArgumentForCommanLineOptionName, optionName);
 		}
 
+		public enum DependenciesFileFormat {Xml, Dgml};
+
 		// Perform setup of the LinkContext and parse the arguments.
 		// Return values:
 		// 0 => successfully set up context with all arguments
@@ -183,6 +185,7 @@ namespace Mono.Linker
 			bool deterministic_used = false;
 			bool keepCompilersResources = false;
 			MetadataTrimming metadataTrimming = MetadataTrimming.Any;
+			DependenciesFileFormat fileType = DependenciesFileFormat.Xml;
 
 			List<BaseStep> inputs = CreateDefaultResolvers ();
 
@@ -220,6 +223,15 @@ namespace Mono.Linker
 
 					case "--dump-dependencies":
 						dumpDependencies = true;
+						continue;
+					
+					case "--dependencies-file-format":
+						if (!GetStringParam (token, out var dependenciesFileFormat))
+							return -1;
+						
+						if (!Enum.TryParse(dependenciesFileFormat, out fileType)) {
+							context.LogError (null, DiagnosticId.InvalidDependenciesFileFormat);
+						}
 						continue;
 
 					case "--reduced-tracing":
@@ -689,8 +701,15 @@ namespace Mono.Linker
 			if (!new_mvid_used && !deterministic_used) {
 				context.DeterministicOutput = true;
 			}
-			if (dumpDependencies)
-				AddXmlDependencyRecorder (context, dependenciesFileName);
+			if (dumpDependencies) {
+				if (fileType == DependenciesFileFormat.Xml) {
+					AddXmlDependencyRecorder (context, dependenciesFileName);
+				} else {
+					AddDgmlDependencyRecorder (context, dependenciesFileName);
+				}
+				
+			}
+
 
 			if (set_optimizations.Count > 0) {
 				foreach (var (opt, assemblyName, enable) in set_optimizations) {
@@ -874,6 +893,11 @@ namespace Mono.Linker
 		protected virtual void AddXmlDependencyRecorder (LinkContext context, string? fileName)
 		{
 			context.Tracer.AddRecorder (new XmlDependencyRecorder (context, fileName));
+		}
+
+		protected virtual void AddDgmlDependencyRecorder (LinkContext context, string? fileName)
+		{
+			context.Tracer.AddRecorder (new DgmlDependencyRecorder (context, fileName));
 		}
 
 		protected bool AddMarkHandler (Pipeline pipeline, string arg)
@@ -1345,9 +1369,12 @@ namespace Mono.Linker
 
 			Console.WriteLine ();
 			Console.WriteLine ("Analyzer");
-			Console.WriteLine ("  --dependencies-file FILE   Specify the dependencies output. Defaults to 'output/linker-dependencies.xml.gz'");
-			Console.WriteLine ("  --dump-dependencies        Dump dependencies for the linker analyzer tool");
-			Console.WriteLine ("  --reduced-tracing          Reduces dependency output related to assemblies that will not be modified");
+			Console.WriteLine ("  --dependencies-file FILE              Specify the dependencies output. Defaults to 'output/linker-dependencies.xml.gz'");
+			Console.WriteLine ("  --dump-dependencies        			Dump dependencies for the linker analyzer tool");
+			Console.WriteLine ("  --dependencies-file-format FORMAT 	Specify output file type. Defaults to 'xml'");
+			Console.WriteLine ("                                          xml: ");
+			Console.WriteLine ("                                          dgml: ");
+			Console.WriteLine ("  --reduced-tracing          			Reduces dependency output related to assemblies that will not be modified");
 			Console.WriteLine ("");
 		}
 
