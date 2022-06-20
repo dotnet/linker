@@ -39,8 +39,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true)]
 			// Linker doesn't track backwards branches
-			[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true,
-				ProducedBy = ProducedBy.Analyzer)]
+			// [ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true)]
 			static IEnumerable<int> FlowAcrossYieldReturnWithBackwardsBranch (int n = 0)
 			{
 				Type t = GetWithPublicMethods ();
