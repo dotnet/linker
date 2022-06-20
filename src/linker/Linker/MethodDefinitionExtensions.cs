@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using Mono.Cecil;
 
 namespace Mono.Linker
@@ -97,6 +98,12 @@ namespace Mono.Linker
 				di.Scope.Constants.Clear ();
 				di.Scope = null;
 			}
+		}
+
+		public static bool IsInit (this MethodDefinition methodDefinition)
+		{
+			return methodDefinition.IsSetter && methodDefinition.ReturnType.IsRequiredModifier
+				&& ((RequiredModifierType)methodDefinition.ReturnType).ModifierType.IsTypeOf ("System.Runtime.CompilerServices.IsExternalInit");
 		}
 	}
 }

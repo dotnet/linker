@@ -212,6 +212,18 @@ namespace Mono.Linker.Tests
 			GenericClassMultipleParameters<MethodT, string>.NestedGenericClassMultipleParameters<int, MethodV> p)
 		{
 		}
+		public string Property {
+			[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.Property.get")]
+			get;
+			[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.Property.init")]
+			init;
+		}
+		public string Property2 {
+			[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.Property2.get")]
+			get;
+			[DisplayName ("Mono.Linker.Tests.GetDisplayNameTests.Property2.set")]
+			set;
+		}
 	}
 }
 
