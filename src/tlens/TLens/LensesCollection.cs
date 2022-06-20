@@ -10,7 +10,7 @@ namespace TLens
 {
 	static class LensesCollection
 	{
-		sealed public class LensAnalyzerDetails
+		public sealed class LensAnalyzerDetails
 		{
 			public LensAnalyzerDetails (string name, string description, Type analyzerType)
 			{
