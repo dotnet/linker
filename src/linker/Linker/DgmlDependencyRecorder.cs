@@ -54,7 +54,7 @@ namespace Mono.Linker
 
 			XmlWriterSettings settings = new XmlWriterSettings {
 				Indent = true,
-				IndentChars = "\t"
+				IndentChars = " "
 			};
 
 			if (fileName == null)
@@ -90,7 +90,7 @@ namespace Mono.Linker
 			{
 				foreach (var pair in nodeList) {
 					writer.WriteStartElement ("Node");
-					writer.WriteAttributeString ("Id", pair.Value.ToString());
+					writer.WriteAttributeString ("Id", pair.Value.ToString ());
 					writer.WriteAttributeString ("Label", pair.Key);
 					writer.WriteEndElement ();
 				}
@@ -183,6 +183,7 @@ namespace Mono.Linker
 			string _dependent = TokenString (source);
 			string _dependee = TokenString (target);
 
+			// figure out why nodes are sometimes null, are we missing some information in the graph?
 			if (!(source == null | nodeList.ContainsKey (_dependent))) AddNode (_dependent);
 			if (!(target == null | nodeList.ContainsKey (_dependee))) AddNode (_dependee);
 			if (source != target && source != null && target != null) {
@@ -202,7 +203,7 @@ namespace Mono.Linker
 
 		void AddLink (string source, string target, DependencyInfo reason)
 		{
-			linkList.Add ((source, target, TokenString (reason)));
+			linkList.Add ((source, target, TokenString (reason.Kind)));
 		}
 
 		static bool IsAssemblyBound (TypeDefinition td)

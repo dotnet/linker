@@ -162,7 +162,7 @@ namespace Mono.Linker
 			Context.LogError (null, DiagnosticId.MissingArgumentForCommanLineOptionName, optionName);
 		}
 
-		public enum DependenciesFileFormat {Xml, Dgml};
+		public enum DependenciesFileFormat { Xml, Dgml };
 
 		// Perform setup of the LinkContext and parse the arguments.
 		// Return values:
@@ -224,12 +224,12 @@ namespace Mono.Linker
 					case "--dump-dependencies":
 						dumpDependencies = true;
 						continue;
-					
+
 					case "--dependencies-file-format":
 						if (!GetStringParam (token, out var dependenciesFileFormat))
 							return -1;
-						
-						if (!Enum.TryParse(dependenciesFileFormat, out fileType)) {
+
+						if (!Enum.TryParse (dependenciesFileFormat, out fileType)) {
 							context.LogError (null, DiagnosticId.InvalidDependenciesFileFormat);
 						}
 						continue;
@@ -707,7 +707,7 @@ namespace Mono.Linker
 				} else {
 					AddDgmlDependencyRecorder (context, dependenciesFileName);
 				}
-				
+
 			}
 
 
