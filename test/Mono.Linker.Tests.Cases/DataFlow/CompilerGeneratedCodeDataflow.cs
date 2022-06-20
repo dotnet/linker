@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
 using System.Threading.Tasks;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Helpers;
@@ -269,11 +268,11 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 
 			// State flowing out of a local function is not tracked, so this just produces a warning about an unknown type.
-			[ExpectedWarning ("IL2062", nameof (DataFlowTypeExtensions.RequiresAll),
-					ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions.RequiresAll),
+				ProducedBy = ProducedBy.Trimmer)]
 			static void WriteCapturedVariable ()
 			{
-				Type t;
+				Type t = GetUnknownType ();
 				LocalFunction ();
 				t.RequiresAll ();
 
@@ -335,14 +334,16 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			static void ReadCapturedVariableAfterWriteAfterDefinition ()
 			{
-				Type t = GetAll ();
+				Type t = GetWithPublicFields ();
 
-				// TODO: this is a hole! Maybe we need to track lambda values.
 				Action lambda =
-					// [ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll))]
-					() => t.RequiresAll ();
+					[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll),
+					ProducedBy = ProducedBy.Trimmer)] () => t.RequiresAll ();
 
 				t = GetWithPublicMethods ();
+				// No warning. This is an analysis hole!
+				// We don't track captured delegates. Instead, we analyze lambdas
+				// at the point of declaration.
 				lambda ();
 			}
 
@@ -380,11 +381,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				notCaptured.RequiresAll ();
 			}
 
-			// [ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll))]
-			// TODO
+			// State flowing out of a lambda is not tracked, so this just produces a warning about an unknown type.
+			[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions.RequiresAll),
+				ProducedBy = ProducedBy.Trimmer)]
 			static void WriteCapturedVariable ()
 			{
-				Type t = null;
+				Type t = GetUnknownType ();
 				Action lambda = () => t = GetWithPublicMethods ();
 				lambda ();
 				t.RequiresAll ();

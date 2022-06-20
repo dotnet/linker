@@ -15,7 +15,6 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.FlowAnalysis;
-using Microsoft.CodeAnalysis.Operations;
 
 namespace ILLink.RoslynAnalyzer
 {
@@ -63,13 +62,14 @@ namespace ILLink.RoslynAnalyzer
 
 		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => GetSupportedDiagnostics ();
 
-		bool HasCompilerGeneratedCode (IOperation operation) {
+		bool HasCompilerGeneratedCode (IOperation operation)
+		{
 			switch (operation.Kind) {
-				case OperationKind.AnonymousFunction:
-				case OperationKind.LocalFunction:
-				case OperationKind.YieldBreak:
-				case OperationKind.YieldReturn:
-					return true;
+			case OperationKind.AnonymousFunction:
+			case OperationKind.LocalFunction:
+			case OperationKind.YieldBreak:
+			case OperationKind.YieldReturn:
+				return true;
 			}
 
 			foreach (var child in operation.ChildOperations) {

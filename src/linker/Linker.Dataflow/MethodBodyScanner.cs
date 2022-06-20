@@ -20,13 +20,9 @@ using HoistedLocalStore = ILLink.Shared.DataFlow.DefaultValueDictionary<
 	Mono.Linker.Dataflow.ValueBasicBlockPair>;
 using InterproceduralState = ILLink.Shared.DataFlow.DefaultValueDictionary<
 	ILLink.Shared.TypeSystemProxy.MethodProxy,
-	ILLink.Shared.DataFlow.Maybe<
-		ILLink.Shared.DataFlow.DefaultValueDictionary<
-			Mono.Linker.Dataflow.HoistedLocalKey,
-			ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.SingleValue>
-		>
-	>
->;
+	ILLink.Shared.DataFlow.Maybe<ILLink.Shared.DataFlow.DefaultValueDictionary<
+		Mono.Linker.Dataflow.HoistedLocalKey,
+		ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.SingleValue>>>>;
 using LocalVariableStore = System.Collections.Generic.Dictionary<
 	Mono.Cecil.Cil.VariableDefinition,
 	Mono.Linker.Dataflow.ValueBasicBlockPair>;
