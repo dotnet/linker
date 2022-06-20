@@ -267,13 +267,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				void LocalFunction () => t.RequiresAll ();
 			}
 
-			// State flowing out of a local function is not tracked, so this just produces a warning about an unknown type.
-			[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions.RequiresAll),
-				ProducedBy = ProducedBy.Trimmer)]
 			static void WriteCapturedVariable ()
 			{
-				Type t = GetUnknownType ();
+				Type t = GetAll ();
 				LocalFunction ();
+				// No warning. This is an analysis hole!
+				// We don't flow state out of local functions.
 				t.RequiresAll ();
 
 				void LocalFunction () => t = GetWithPublicMethods ();
@@ -381,14 +380,13 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				notCaptured.RequiresAll ();
 			}
 
-			// State flowing out of a lambda is not tracked, so this just produces a warning about an unknown type.
-			[ExpectedWarning ("IL2072", nameof (DataFlowTypeExtensions.RequiresAll),
-				ProducedBy = ProducedBy.Trimmer)]
 			static void WriteCapturedVariable ()
 			{
-				Type t = GetUnknownType ();
+				Type t = GetAll ();
 				Action lambda = () => t = GetWithPublicMethods ();
 				lambda ();
+				// No warning. This is an analysis hole!
+				// We don't flow state out of lambdas.
 				t.RequiresAll ();
 			}
 
