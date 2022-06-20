@@ -1372,8 +1372,8 @@ namespace Mono.Linker
 			Console.WriteLine ("  --dependencies-file FILE              Specify the dependencies output. Defaults to 'output/linker-dependencies.xml.gz'");
 			Console.WriteLine ("  --dump-dependencies        			Dump dependencies for the linker analyzer tool");
 			Console.WriteLine ("  --dependencies-file-format FORMAT 	Specify output file type. Defaults to 'xml'");
-			Console.WriteLine ("                                          xml: ");
-			Console.WriteLine ("                                          dgml: ");
+			Console.WriteLine ("									      xml: outputs an .xml file");
+			Console.WriteLine ("                                          dgml: outputs a .dgml file, compatible with the DependencyGraphViewer");
 			Console.WriteLine ("  --reduced-tracing          			Reduces dependency output related to assemblies that will not be modified");
 			Console.WriteLine ("");
 		}
