@@ -103,7 +103,7 @@ namespace Mono.Linker
 		public static bool IsInit (this MethodDefinition methodDefinition)
 		{
 			return methodDefinition.IsSetter && methodDefinition.ReturnType.IsRequiredModifier
-				&& ((RequiredModifierType)methodDefinition.ReturnType).ModifierType.IsTypeOf ("System.Runtime.CompilerServices.IsExternalInit");
+				&& ((RequiredModifierType) methodDefinition.ReturnType).ModifierType.IsTypeOf ("System.Runtime.CompilerServices.IsExternalInit");
 		}
 	}
 }
