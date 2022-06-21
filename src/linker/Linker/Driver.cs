@@ -705,13 +705,13 @@ namespace Mono.Linker
 			if (dumpDependencies) {
 				switch (fileType) {
 				case DependenciesFileFormat.Xml:
-						AddXmlDependencyRecorder (context, dependenciesFileName);
+					AddXmlDependencyRecorder (context, dependenciesFileName);
 					break;
 				case DependenciesFileFormat.Dgml:
-						AddDgmlDependencyRecorder (context, dependenciesFileName);
+					AddDgmlDependencyRecorder (context, dependenciesFileName);
 					break;
 				default:
-					context.LogError(null, DiagnosticId.InvalidDependenciesFileFormat);
+					context.LogError (null, DiagnosticId.InvalidDependenciesFileFormat);
 					break;
 				}
 			}

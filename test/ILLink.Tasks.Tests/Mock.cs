@@ -148,6 +148,12 @@ namespace ILLink.Tasks.Tests
 			Context.Tracer.AddRecorder (MockXmlDependencyRecorder.Singleton);
 		}
 
+		protected override void AddDgmlDependencyRecorder (LinkContext context, string file)
+		{
+			// Don't try to open the output file for writing - just pretend it exists.
+			Context.Tracer.AddRecorder (MockDgmlDependencyRecorder.Singleton);
+		}
+
 		public IEnumerable<IDependencyRecorder> GetDependencyRecorders ()
 		{
 			return (IEnumerable<IDependencyRecorder>) typeof (Tracer).GetField ("recorders", BindingFlags.NonPublic | BindingFlags.Instance).GetValue (Context.Tracer);
@@ -178,6 +184,13 @@ namespace ILLink.Tasks.Tests
 	}
 
 	public class MockXmlDependencyRecorder : IDependencyRecorder
+	{
+		public static MockXmlDependencyRecorder Singleton { get; } = new MockXmlDependencyRecorder ();
+		public void RecordDependency (object source, object arget, bool marked) { }
+		public void RecordDependency (object target, in DependencyInfo reason, bool marked) { }
+	}
+
+	public class MockDgmlDependencyRecorder : IDependencyRecorder
 	{
 		public static MockXmlDependencyRecorder Singleton { get; } = new MockXmlDependencyRecorder ();
 		public void RecordDependency (object source, object arget, bool marked) { }
