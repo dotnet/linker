@@ -231,6 +231,7 @@ namespace Mono.Linker
 
 						if (!Enum.TryParse (dependenciesFileFormat, out fileType)) {
 							context.LogError (null, DiagnosticId.InvalidDependenciesFileFormat);
+							return -1;
 						}
 						continue;
 
@@ -707,7 +708,6 @@ namespace Mono.Linker
 				} else {
 					AddDgmlDependencyRecorder (context, dependenciesFileName);
 				}
-
 			}
 
 
@@ -1370,11 +1370,12 @@ namespace Mono.Linker
 			Console.WriteLine ();
 			Console.WriteLine ("Analyzer");
 			Console.WriteLine ("  --dependencies-file FILE              Specify the dependencies output. Defaults to 'output/linker-dependencies.xml.gz'");
-			Console.WriteLine ("  --dump-dependencies        			Dump dependencies for the linker analyzer tool");
-			Console.WriteLine ("  --dependencies-file-format FORMAT 	Specify output file type. Defaults to 'xml'");
-			Console.WriteLine ("									      xml: outputs an .xml file");
-			Console.WriteLine ("                                          dgml: outputs a .dgml file, compatible with the DependencyGraphViewer");
-			Console.WriteLine ("  --reduced-tracing          			Reduces dependency output related to assemblies that will not be modified");
+			Console.WriteLine ("                                        if 'Xml' is file format, 'output/linker-dependencies.dgml.gz if 'Dgml' is file format");
+			Console.WriteLine ("  --dump-dependencies                   Dump dependencies for the linker analyzer tool");
+			Console.WriteLine ("  --dependencies-file-format FORMAT     Specify output file type. Defaults to 'Xml'");
+			Console.WriteLine ("                                          Xml: outputs an .xml file");
+			Console.WriteLine ("                                          Dgml: outputs a .dgml file, compatible with the DependencyGraphViewer");
+			Console.WriteLine ("  --reduced-tracing                     Reduces dependency output related to assemblies that will not be modified");
 			Console.WriteLine ("");
 		}
 

@@ -75,16 +75,11 @@ namespace Mono.Linker
 			writer = XmlWriter.Create (stream, settings);
 			writer.WriteStartDocument ();
 			writer.WriteStartElement ("DirectedGraph", "http://schemas.microsoft.com/vs/2009/dgml");
-			// writer.WriteStartAttribute ("xmlns");
-			// writer.WriteString ("http://schemas.microsoft.com/vs/2009/dgml");
-			// writer.WriteEndAttribute ();
-
 		}
 
 		public void WriteDgmlGraphToFile ()
 		{
-			if (writer == null)
-				return;
+			Debug.Assert (writer != null);
 
 			writer.WriteStartElement ("Nodes");
 			{
@@ -146,7 +141,6 @@ namespace Mono.Linker
 
 		public Dictionary<string, int> nodeList = new ();
 		public HashSet<(string dependent, string dependee, string reason)> linkList = new (); // first element is source, second is target (dependent --> dependee), third is reason
-		private int _nodeNextId = 0;
 
 		public void RecordDependency (object target, in DependencyInfo reason, bool marked)
 		{
@@ -157,15 +151,18 @@ namespace Mono.Linker
 				return;
 
 			// For now, just report a dependency from source to target without noting the DependencyKind.
-			RecordDependency (reason.Source, target, reason);
+			RecordDependency (reason.Source, target, reason.Kind);
 		}
 
-		public void RecordDependency (object? source, object target, DependencyInfo reason)
+		public void RecordDependency (object? source, object target, object? reason)
 		{
 			if (writer == null)
 				throw new InvalidOperationException ();
 
 			if (!ShouldRecord (source) && !ShouldRecord (target))
+				return;
+
+			if (source == null | target == null)
 				return;
 
 			// We use a few hacks to work around MarkStep outputting thousands of edges even
@@ -180,14 +177,14 @@ namespace Mono.Linker
 			if (source is InterfaceImplementation || target is InterfaceImplementation)
 				return;
 
-			string _dependent = TokenString (source);
-			string _dependee = TokenString (target);
+			string dependent = TokenString (source);
+			string dependee = TokenString (target);
 
 			// figure out why nodes are sometimes null, are we missing some information in the graph?
-			if (!(source == null | nodeList.ContainsKey (_dependent))) AddNode (_dependent);
-			if (!(target == null | nodeList.ContainsKey (_dependee))) AddNode (_dependee);
-			if (source != target && source != null && target != null) {
-				AddLink (_dependent, _dependee, reason);
+			if (!nodeList.ContainsKey (dependent)) AddNode (dependent);
+			if (!nodeList.ContainsKey (dependee)) AddNode (dependee);
+			if (source != target) {
+				AddLink (dependent, dependee, reason);
 			}
 		}
 
@@ -195,114 +192,13 @@ namespace Mono.Linker
 
 		void AddNode (string node)
 		{
-			if (!nodeList.ContainsKey (node)) {
-				nodeList.Add (node, _nodeIndex);
-				_nodeIndex++;
-			}
+			nodeList.Add (node, _nodeIndex);
+			_nodeIndex++;
 		}
 
-		void AddLink (string source, string target, DependencyInfo reason)
+		void AddLink (string source, string target, object? kind)
 		{
-			linkList.Add ((source, target, TokenString (reason.Kind)));
-		}
-
-		static bool IsAssemblyBound (TypeDefinition td)
-		{
-			do {
-				if (td.IsNestedPrivate || td.IsNestedAssembly || td.IsNestedFamilyAndAssembly)
-					return true;
-
-				td = td.DeclaringType;
-			} while (td != null);
-
-			return false;
-		}
-
-		string TokenString (object? o)
-		{
-			if (o == null)
-				return "N:null";
-
-			if (o is TypeReference t) {
-				bool addAssembly = true;
-				var td = context.TryResolve (t);
-
-				if (td != null) {
-					addAssembly = td.IsNotPublic || IsAssemblyBound (td);
-					t = td;
-				}
-
-				var addition = addAssembly ? $":{t.Module}" : "";
-
-				return $"{((IMetadataTokenProvider) o).MetadataToken.TokenType}:{o}{addition}";
-			}
-
-			if (o is IMetadataTokenProvider provider)
-				return provider.MetadataToken.TokenType + ":" + o;
-
-			return "Other:" + o;
-		}
-
-		bool WillAssemblyBeModified (AssemblyDefinition assembly)
-		{
-			switch (context.Annotations.GetAction (assembly)) {
-			case AssemblyAction.Link:
-			case AssemblyAction.AddBypassNGen:
-			case AssemblyAction.AddBypassNGenUsed:
-				return true;
-			default:
-				return false;
-			}
-		}
-
-		bool ShouldRecord (object? o)
-		{
-			if (!context.EnableReducedTracing)
-				return true;
-
-			if (o is TypeDefinition t)
-				return WillAssemblyBeModified (t.Module.Assembly);
-
-			if (o is IMemberDefinition m)
-				return WillAssemblyBeModified (m.DeclaringType.Module.Assembly);
-
-			if (o is TypeReference typeRef) {
-				var resolved = context.TryResolve (typeRef);
-
-				// Err on the side of caution if we can't resolve
-				if (resolved == null)
-					return true;
-
-				return WillAssemblyBeModified (resolved.Module.Assembly);
-			}
-
-			if (o is MemberReference mRef) {
-				var resolved = mRef.Resolve ();
-
-				// Err on the side of caution if we can't resolve
-				if (resolved == null)
-					return true;
-
-				return WillAssemblyBeModified (resolved.DeclaringType.Module.Assembly);
-			}
-
-			if (o is ModuleDefinition module)
-				return WillAssemblyBeModified (module.Assembly);
-
-			if (o is AssemblyDefinition assembly)
-				return WillAssemblyBeModified (assembly);
-
-			if (o is ParameterDefinition parameter) {
-				if (parameter.Method is MethodDefinition parameterMethodDefinition)
-					return WillAssemblyBeModified (parameterMethodDefinition.DeclaringType.Module.Assembly);
-			}
-
-			return true;
-		}
-
-		public void RecordDependency (object source, object target, bool marked)
-		{
-			throw new NotImplementedException ();
+			linkList.Add ((source, target, TokenString (kind)));
 		}
 	}
 }
