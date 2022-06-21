@@ -37,7 +37,6 @@ namespace Mono.Linker
 	/// </summary>
 	public class DependencyRecorderHelper
 	{
-		private readonly LinkContext context;
 		public static bool IsAssemblyBound (TypeDefinition td)
 		{
 			do {
@@ -50,7 +49,7 @@ namespace Mono.Linker
 			return false;
 		}
 
-		public string TokenString (object? o)
+		public static string TokenString (LinkContext context, object? o)
 		{
 			if (o == null)
 				return "N:null";
@@ -75,7 +74,7 @@ namespace Mono.Linker
 			return "Other:" + o;
 		}
 
-		public bool WillAssemblyBeModified (AssemblyDefinition assembly)
+		public static bool WillAssemblyBeModified (LinkContext context, AssemblyDefinition assembly)
 		{
 			switch (context.Annotations.GetAction (assembly)) {
 			case AssemblyAction.Link:
@@ -87,16 +86,16 @@ namespace Mono.Linker
 			}
 		}
 
-		public bool ShouldRecord (object? o)
+		public static bool ShouldRecord (LinkContext context, object? o)
 		{
 			if (!context.EnableReducedTracing)
 				return true;
 
 			if (o is TypeDefinition t)
-				return WillAssemblyBeModified (t.Module.Assembly);
+				return WillAssemblyBeModified (context, t.Module.Assembly);
 
 			if (o is IMemberDefinition m)
-				return WillAssemblyBeModified (m.DeclaringType.Module.Assembly);
+				return WillAssemblyBeModified (context, m.DeclaringType.Module.Assembly);
 
 			if (o is TypeReference typeRef) {
 				var resolved = context.TryResolve (typeRef);
@@ -105,7 +104,7 @@ namespace Mono.Linker
 				if (resolved == null)
 					return true;
 
-				return WillAssemblyBeModified (resolved.Module.Assembly);
+				return WillAssemblyBeModified (context, resolved.Module.Assembly);
 			}
 
 			if (o is MemberReference mRef) {
@@ -115,18 +114,18 @@ namespace Mono.Linker
 				if (resolved == null)
 					return true;
 
-				return WillAssemblyBeModified (resolved.DeclaringType.Module.Assembly);
+				return WillAssemblyBeModified (context, resolved.DeclaringType.Module.Assembly);
 			}
 
 			if (o is ModuleDefinition module)
-				return WillAssemblyBeModified (module.Assembly);
+				return WillAssemblyBeModified (context, module.Assembly);
 
 			if (o is AssemblyDefinition assembly)
-				return WillAssemblyBeModified (assembly);
+				return WillAssemblyBeModified (context, assembly);
 
 			if (o is ParameterDefinition parameter) {
 				if (parameter.Method is MethodDefinition parameterMethodDefinition)
-					return WillAssemblyBeModified (parameterMethodDefinition.DeclaringType.Module.Assembly);
+					return WillAssemblyBeModified (context, parameterMethodDefinition.DeclaringType.Module.Assembly);
 			}
 
 			return true;

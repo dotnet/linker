@@ -703,10 +703,16 @@ namespace Mono.Linker
 				context.DeterministicOutput = true;
 			}
 			if (dumpDependencies) {
-				if (fileType == DependenciesFileFormat.Xml) {
-					AddXmlDependencyRecorder (context, dependenciesFileName);
-				} else {
-					AddDgmlDependencyRecorder (context, dependenciesFileName);
+				switch (fileType) {
+				case DependenciesFileFormat.Xml:
+						AddXmlDependencyRecorder (context, dependenciesFileName);
+					break;
+				case DependenciesFileFormat.Dgml:
+						AddDgmlDependencyRecorder (context, dependenciesFileName);
+					break;
+				default:
+					context.LogError(null, DiagnosticId.InvalidDependenciesFileFormat);
+					break;
 				}
 			}
 

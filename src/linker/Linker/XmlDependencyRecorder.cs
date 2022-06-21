@@ -108,7 +108,7 @@ namespace Mono.Linker
 			if (writer == null)
 				throw new InvalidOperationException ();
 
-			if (!ShouldRecord (source) && !ShouldRecord (target))
+			if (!DependencyRecorderHelper.ShouldRecord (context, source) && !DependencyRecorderHelper.ShouldRecord (context, target))
 				return;
 
 			// We use a few hacks to work around MarkStep outputting thousands of edges even
@@ -127,8 +127,8 @@ namespace Mono.Linker
 				writer.WriteStartElement ("edge");
 				if (marked)
 					writer.WriteAttributeString ("mark", "1");
-				writer.WriteAttributeString ("b", TokenString (source));
-				writer.WriteAttributeString ("e", TokenString (target));
+				writer.WriteAttributeString ("b", DependencyRecorderHelper.TokenString (context, source));
+				writer.WriteAttributeString ("e", DependencyRecorderHelper.TokenString (context, target));
 				writer.WriteEndElement ();
 			}
 		}
