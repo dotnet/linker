@@ -11,7 +11,7 @@ using Mono.Linker.Tests.Cases.Libraries.Dependencies;
 
 namespace Mono.Linker.Tests.Cases.Libraries
 {
-	[SetupCompileBefore ("copylibrary.dll", new[] { "Dependencies/CopyLibrary.cs" })]
+	[SetupCompileBefore ("copylibrary.dll", new[] { "Dependencies/CopyLibrary.cs" }, removeFromLinkerInput: true)]
 	[SetupLinkerArgument ("--skip-unresolved", "true")]
 	[SetupLinkerArgument ("-a", "test.exe", "library")]
 	[SetupLinkerArgument ("--enable-opt", "ipconstprop")]
@@ -233,20 +233,19 @@ namespace Mono.Linker.Tests.Cases.Libraries
 			[Kept]
 			public void CopyLibraryInterfaceMethod () { }
 
-			[Kept]
 			void ICopyLibraryInterface.CopyLibraryExplicitImplementationInterfaceMethod () { }
 
 			[Kept]
 			public static void CopyLibraryStaticInterfaceMethod () { }
 
-			[Kept]
 			static void ICopyLibraryStaticInterface.CopyLibraryExplicitImplementationStaticInterfaceMethod () { }
 		}
 
 		[Kept]
 		[KeptInterface (typeof (IInternalInterface))]
 		[KeptInterface (typeof (IFormattable))]
-		public class UninstantiatedPublicClassWithImplicitlyImplementedInterface : IInternalInterface, IFormattable
+		[KeptInterface (typeof (ICopyLibraryInterfaceNoMethodImpl))]
+		public class UninstantiatedPublicClassWithImplicitlyImplementedInterface : IInternalInterface, IFormattable, ICopyLibraryInterfaceNoMethodImpl
 		{
 			internal UninstantiatedPublicClassWithImplicitlyImplementedInterface () { }
 
@@ -260,6 +259,9 @@ namespace Mono.Linker.Tests.Cases.Libraries
 			{
 				return "formatted string";
 			}
+
+			[Kept]
+			public void CopyLibraryInterfaceNoMethodImpl () { }
 		}
 
 		[Kept]
@@ -270,6 +272,7 @@ namespace Mono.Linker.Tests.Cases.Libraries
 		[KeptInterface (typeof (IInternalStaticInterface))]
 		[KeptInterface (typeof (ICopyLibraryInterface))]
 		[KeptInterface (typeof (ICopyLibraryStaticInterface))]
+		[KeptInterface (typeof (ICopyLibraryInterfaceNoMethodImpl))]
 		public class InstantiatedClassWithInterfaces :
 			IPublicInterface,
 			IPublicStaticInterface,
@@ -277,7 +280,8 @@ namespace Mono.Linker.Tests.Cases.Libraries
 			IInternalStaticInterface,
 			IEnumerator,
 			ICopyLibraryInterface,
-			ICopyLibraryStaticInterface
+			ICopyLibraryStaticInterface,
+			ICopyLibraryInterfaceNoMethodImpl
 		{
 			[Kept]
 			public InstantiatedClassWithInterfaces () { }
@@ -316,14 +320,15 @@ namespace Mono.Linker.Tests.Cases.Libraries
 			[Kept]
 			public void CopyLibraryInterfaceMethod () { }
 
-			[Kept]
 			void ICopyLibraryInterface.CopyLibraryExplicitImplementationInterfaceMethod () { }
 
 			[Kept]
 			public static void CopyLibraryStaticInterfaceMethod () { }
 
-			[Kept]
 			static void ICopyLibraryStaticInterface.CopyLibraryExplicitImplementationStaticInterfaceMethod () { }
+
+			[Kept]
+			public void CopyLibraryInterfaceNoMethodImpl () { }
 		}
 
 		[Kept]
@@ -366,6 +371,7 @@ namespace Mono.Linker.Tests.Cases.Libraries
 		[Kept]
 		internal interface IInternalStaticInterface
 		{
+			[Kept] // Can be removed with Static interface method removal
 			static abstract void InternalStaticInterfaceMethod ();
 
 			static abstract void ExplicitImplementationInternalStaticInterfaceMethod ();
