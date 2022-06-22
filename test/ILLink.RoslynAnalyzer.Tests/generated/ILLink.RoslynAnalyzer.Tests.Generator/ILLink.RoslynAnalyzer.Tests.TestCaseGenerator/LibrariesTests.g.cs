@@ -34,6 +34,12 @@ namespace ILLink.RoslynAnalyzer.Tests
 		}
 
 		[Fact]
+		public Task LibraryWithUnresolvedInterfaces ()
+		{
+			return RunTest (allowMissingWarnings: true);
+		}
+
+		[Fact]
 		public Task RootLibrary ()
 		{
 			return RunTest (allowMissingWarnings: true);
@@ -41,12 +47,6 @@ namespace ILLink.RoslynAnalyzer.Tests
 
 		[Fact]
 		public Task RootLibraryInternalsWithIVT ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
-		public Task RootLibrarySkipUnresolved ()
 		{
 			return RunTest (allowMissingWarnings: true);
 		}

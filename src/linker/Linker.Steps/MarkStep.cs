@@ -3526,7 +3526,7 @@ namespace Mono.Linker.Steps
 			if (!Context.IsOptimizationEnabled (CodeOptimizations.UnusedInterfaces, type))
 				return true;
 
-			if (Context.Resolve(iface.InterfaceType) is not TypeDefinition resolvedInterfaceType)
+			if (Context.Resolve (iface.InterfaceType) is not TypeDefinition resolvedInterfaceType)
 				return false;
 
 			if (Annotations.IsMarked (resolvedInterfaceType))

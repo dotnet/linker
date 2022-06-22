@@ -37,7 +37,7 @@ namespace Mono.Linker.Tests.Cases.Libraries
 			ICopyLibraryStaticInterface,
 			ICopyLibraryInterfaceNoMethodImpl
 		{
-			internal UninstantiatedPublicClassInterfaces  () { }
+			internal UninstantiatedPublicClassInterfaces () { }
 
 			[Kept]
 			public void CopyLibraryInterfaceMethod () { }
