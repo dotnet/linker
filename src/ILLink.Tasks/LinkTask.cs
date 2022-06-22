@@ -192,13 +192,6 @@ namespace ILLink.Tasks
 		bool? _removeSymbols;
 
 		/// <summary>
-		/// The version of the link task. Used to determine the meaning of certain properties.
-		/// Roughly maps to the TargetFrameworkVersion, but normalized to pure int value.
-		/// </summary>
-		[Required]
-		public int LinkFrameworkVersion { get; set; }
-
-		/// <summary>
 		///   Sets the default action for trimmable assemblies.
 		///   Maps to '--trim-mode'
 		/// </summary>
@@ -455,29 +448,20 @@ namespace ILLink.Tasks
 					"partial" => "link",
 					var x => x
 				};
-			} else {
-				trimMode = LinkFrameworkVersion switch {
-					< 6 => "copyused",
-					_ => "link"
-				};
-			}
-			args.Append ("--trim-mode ").AppendLine (trimMode);
+				args.Append ("--trim-mode ").AppendLine (trimMode);
+			} 
 
 			string defaultAction;
-			if (DefaultAction != null && LinkFrameworkVersion < 7) {
-				defaultAction = DefaultAction;
+			if (TrimMode == "full") {
+				defaultAction = "link";
+			} else if (TrimMode == "partial") {
+				defaultAction = "copy";
 			} else {
-				defaultAction = (LinkFrameworkVersion, TrimMode) switch {
-					(_, "full") => "link",
-					(_, "partial") => "copy",
-					( < 6, _) => trimMode, // Use resolved trim mode, not original
-					(6, _) => "copy",
-					_ => "link",
-				};
-			}
-			args.Append ("--action ").AppendLine (defaultAction);
+				defaultAction = DefaultAction;
+			} 
 
-
+			if (defaultAction != null)
+				args.Append ("--action ").AppendLine (defaultAction);
 
 			if (CustomSteps != null) {
 				foreach (var customStep in CustomSteps) {

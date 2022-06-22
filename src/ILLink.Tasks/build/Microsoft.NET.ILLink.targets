@@ -166,7 +166,6 @@ Copyright (c) .NET Foundation. All rights reserved.
     <ILLink AssemblyPaths="@(ManagedAssemblyToLink)"
             ReferenceAssemblyPaths="@(ReferencePath)"
             RootAssemblyNames="@(TrimmerRootAssembly)"
-            LinkFrameworkVersion="$(_LinkFrameworkVersion)"
             TrimMode="$(TrimMode)"
             DefaultAction="$(_TrimmerDefaultAction)"
             RemoveSymbols="$(TrimmerRemoveSymbols)"
@@ -221,10 +220,6 @@ Copyright (c) .NET Foundation. All rights reserved.
          potentially problematic when warnings are suppressed. -->
     <NETSdkInformation Condition="'$(PublishTrimmed)' == 'true' And '$(SuppressTrimAnalysisWarnings)' == 'true'" ResourceName="ILLinkOptimizedAssemblies" />
 
-    <!-- In .NET 7, TrimmerDefaultAction is deprecated. TrimMode can be used for the supported configurations. -->
-    <Warning Condition="'$(TrimmerDefaultAction)' != '' And $([MSBuild]::VersionGreaterThan('$(TargetFrameworkVersion)', '6.0'))"
-             Text="Property 'TrimmerDefaultAction' is deprecated in .NET 7 and will be ignored. Use TrimMode instead." />
-
     <!-- The defaults currently root non-framework assemblies, which
          is a no-op for portable apps. If we later support more ways
          to customize the behavior we can allow linking portable apps
@@ -238,9 +233,26 @@ Copyright (c) .NET Foundation. All rights reserved.
       <ILLinkWarningLevel Condition=" '$(ILLinkWarningLevel)' == '' ">0</ILLinkWarningLevel>
     </PropertyGroup>
 
+    <!-- In .NET 7, TrimmerDefaultAction is deprecated. TrimMode can be used for the supported configurations. -->
+    <Warning Condition="'$(TrimmerDefaultAction)' != '' And $([MSBuild]::VersionGreaterThan('$(TargetFrameworkVersion)', '6.0'))"
+             Text="Property 'TrimmerDefaultAction' is deprecated in .NET 7 and will be ignored. Use TrimMode instead." />
+
+    <!-- Set up TrimMode and TrimmerDefaultAction. -->
+    <PropertyGroup>
+      <TrimMode Condition="'$(TrimMode)' == '' And $([MSBuild]::VersionLessThan($(TargetFrameworkVersion), '6.0'))">copyused</TrimMode>
+      <TrimMode Condition="'$(TrimMode)' == '' And $([MSBuild]::VersionEquals($(TargetFrameworkVersion), '6.0'))">partial</TrimMode>
+      <TrimMode Condition="'$(TrimMode)' == ''">full</TrimMode>
+
+      <!-- Set TrimmerDefaultAction for compat in < 7.0 -->
+      <_TrimmerDefaultAction Condition="$([MSBuild]::VersionLessThan($(TargetFrameworkVersion), '7.0'))">$(TrimmerDefaultAction)</_TrimmerDefaultAction>
+      <_TrimmerDefaultAction Condition="'$(_TrimmerDefaultAction)' == '' And $([MSBuild]::VersionLessThan($(TargetFrameworkVersion), '6.0'))">$(TrimMode)</_TrimmerDefaultAction>
+      <_TrimmerDefaultAction Condition="'$(_TrimmerDefaultAction)' == '' And $([MSBuild]::VersionEquals($(TargetFrameworkVersion), '6.0'))">copy</_TrimmerDefaultAction>
+      <_TrimmerDefaultAction Condition="'$(_TrimmerDefaultAction)' == ''">link</_TrimmerDefaultAction>
+    </PropertyGroup>
+
     <PropertyGroup>
       <!-- Set TrimmerDefaultAction for compat -->
-      <_TrimmerDefaultAction>$(TrimmerDefaultAction)</_TrimmerDefaultAction>
+      <_TrimmerDefaultAction Condition="$([MSBuild]::VersionLessThan($(TargetFrameworkVersion), '6.0'))">$(TrimmerDefaultAction)</_TrimmerDefaultAction>
       <ILLinkTreatWarningsAsErrors Condition=" '$(ILLinkTreatWarningsAsErrors)' == '' ">$(TreatWarningsAsErrors)</ILLinkTreatWarningsAsErrors>
       <_ExtraTrimmerArgs>--skip-unresolved true $(_ExtraTrimmerArgs)</_ExtraTrimmerArgs>
       <TrimmerSingleWarn Condition=" '$(TrimmerSingleWarn)' == '' ">true</TrimmerSingleWarn>
