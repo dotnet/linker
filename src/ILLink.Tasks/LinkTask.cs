@@ -483,7 +483,7 @@ namespace ILLink.Tasks
 				args.AppendLine ("--dump-dependencies");
 
 			if (DependenciesFileFormat != null) {
-				args.AppendLine ("--dependencies-file-format " + DependenciesFileFormat);
+				args.Append ("--dependencies-file-format ").AppendLine(DependenciesFileFormat);
 			}
 
 			return args.ToString ();

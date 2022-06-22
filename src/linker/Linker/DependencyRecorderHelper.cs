@@ -11,7 +11,7 @@ namespace Mono.Linker
 	/// </summary>
 	public class DependencyRecorderHelper
 	{
-		public static bool IsAssemblyBound (TypeDefinition td)
+		static bool IsAssemblyBound (TypeDefinition td)
 		{
 			do {
 				if (td.IsNestedPrivate || td.IsNestedAssembly || td.IsNestedFamilyAndAssembly)
@@ -48,7 +48,7 @@ namespace Mono.Linker
 			return "Other:" + o;
 		}
 
-		public static bool WillAssemblyBeModified (LinkContext context, AssemblyDefinition assembly)
+		static bool WillAssemblyBeModified (LinkContext context, AssemblyDefinition assembly)
 		{
 			switch (context.Annotations.GetAction (assembly)) {
 			case AssemblyAction.Link:
@@ -58,6 +58,29 @@ namespace Mono.Linker
 			default:
 				return false;
 			}
+		}
+
+		public static bool ShouldRecord(LinkContext context, object? source, object target)
+		{
+			if (source == null || target == null)
+				return false;
+
+			// We use a few hacks to work around MarkStep outputting thousands of edges even
+			// with the above ShouldRecord checks. Ideally we would format these into a meaningful format
+			// however I don't think that is worth the effort at the moment.
+
+			// Prevent useless logging of attributes like `e="Other:Mono.Cecil.CustomAttribute"`.
+			if (source is CustomAttribute || target is CustomAttribute)
+				return false;
+
+			// Prevent useless logging of interface implementations like `e="InterfaceImpl:Mono.Cecil.InterfaceImplementation"`.
+			if (source is InterfaceImplementation || target is InterfaceImplementation)
+				return false;
+
+			if (!ShouldRecord(context, source) && !ShouldRecord(context, target)) {
+				return false;
+			}
+			return true;
 		}
 
 		public static bool ShouldRecord (LinkContext context, object? o)

@@ -1185,7 +1185,10 @@
   <data name="UnrecognizedInternalAttributeTitle" xml:space="preserve">
     <value>Unrecognized internal attribute '{0}'</value>
   </data>
-  <data name="InvalidDependenciesFileFormat" xml:space="preserve">
+  <data name="InvalidDependenciesFileFormatMessage" xml:space="preserve">
     <value>The only allowed file types are Xml or Dgml</value>
+  </data>
+  <data name="InvalidDependenciesFileFormatTitle" xml:space="preserve">
+    <value>Unrecognized file type {0}</value>
   </data>
 </root>

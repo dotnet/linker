@@ -134,22 +134,7 @@ namespace Mono.Linker
 			if (writer == null)
 				throw new InvalidOperationException ();
 
-			if (!DependencyRecorderHelper.ShouldRecord (context, source) && !DependencyRecorderHelper.ShouldRecord (context, target))
-				return;
-
-			if (source == null | target == null)
-				return;
-
-			// We use a few hacks to work around MarkStep outputting thousands of edges even
-			// with the above ShouldRecord checks. Ideally we would format these into a meaningful format
-			// however I don't think that is worth the effort at the moment.
-
-			// Prevent useless logging of attributes like `e="Other:Mono.Cecil.CustomAttribute"`.
-			if (source is CustomAttribute || target is CustomAttribute)
-				return;
-
-			// Prevent useless logging of interface implementations like `e="InterfaceImpl:Mono.Cecil.InterfaceImplementation"`.
-			if (source is InterfaceImplementation || target is InterfaceImplementation)
+			if (!DependencyRecorderHelper.ShouldRecord (context, source, target))
 				return;
 
 			string dependent = DependencyRecorderHelper.TokenString (context, source);

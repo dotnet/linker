@@ -518,7 +518,12 @@ namespace ILLink.Tasks.Tests
 				case "Dgml":
 					Assert.Equal (MockDgmlDependencyRecorder.Singleton, driver.GetDependencyRecorders ()?.Single ());
 					break;
+				default:
+					Assert.Throws<ArgumentException> (() => task.CreateDriver ());
+						break;
 				}
+
+
 			}
 		}
 
