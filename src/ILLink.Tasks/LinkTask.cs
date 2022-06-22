@@ -192,6 +192,13 @@ namespace ILLink.Tasks
 		bool? _removeSymbols;
 
 		/// <summary>
+		/// The version of the link task. Used to determine the meaning of certain properties.
+		/// Roughly maps to the TargetFrameworkVersion.
+		/// </summary>
+		[Required]
+		public int LinkVersion { get; set; }
+
+		/// <summary>
 		///   Sets the default action for trimmable assemblies.
 		///   Maps to '--trim-mode'
 		/// </summary>
@@ -323,10 +330,10 @@ namespace ILLink.Tasks
 
 				args.Append ("-reference ").AppendLine (Quote (assemblyPath));
 
-				string trimMode = assembly.GetMetadata ("TrimMode");
-				if (!String.IsNullOrEmpty (trimMode)) {
+				string assemblyTrimMode = assembly.GetMetadata ("TrimMode");
+				if (!String.IsNullOrEmpty (assemblyTrimMode)) {
 					args.Append ("--action ");
-					args.Append (trimMode);
+					args.Append (assemblyTrimMode);
 					args.Append (' ').AppendLine (Quote (assemblyName));
 				}
 
@@ -441,8 +448,44 @@ namespace ILLink.Tasks
 			if (_removeSymbols == false)
 				args.AppendLine ("-b");
 
+			string trimMode;
 			if (TrimMode != null)
-				args.Append ("--trim-mode ").AppendLine (TrimMode);
+			{
+				trimMode = TrimMode switch
+				{
+					"full" => "link",
+					"partial" => "link",
+					var x => x
+				};
+			}
+			else
+			{
+				trimMode = LinkVersion switch
+				{
+					< 6 => "copyused",
+					_ => "link"
+				};
+			}
+			args.Append ("--trim-mode ").AppendLine (trimMode);
+
+			string defaultAction;
+			if (DefaultAction != null && LinkVersion < 7)
+			{
+				defaultAction = DefaultAction;
+			}
+			else
+			{
+				defaultAction = (LinkVersion, TrimMode) switch
+				{
+					(_, "full") => "link",
+					(_, "partial") => "copy",
+					(< 6, _) => trimMode, // Use resolved trim mode, not original
+					(6, _) => "copy",
+					_ => "link",
+				};
+			}
+			args.Append("--action ").AppendLine (defaultAction);
+
 
 			if (DefaultAction != null)
 				args.Append ("--action ").AppendLine (DefaultAction);
