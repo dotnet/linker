@@ -21,6 +21,7 @@ namespace ILLink.Tasks.Tests
 		public MockTask ()
 		{
 			// Ensure that [Required] members are non-null
+			LinkVersion = 7;
 			AssemblyPaths = Array.Empty<ITaskItem> ();
 			RootAssemblyNames = Array.Empty<ITaskItem> ();
 			ILLinkPath = Path.Combine (Path.GetDirectoryName (Assembly.GetExecutingAssembly ().Location), "illink.dll");
@@ -71,13 +72,8 @@ namespace ILLink.Tasks.Tests
 
 	public class MockBuildEngine : IBuildEngine
 	{
-		public readonly List<BuildWarningEventArgs> Warnings = new List<BuildWarningEventArgs>();
-
 		public void LogErrorEvent (BuildErrorEventArgs e) { }
-		public void LogWarningEvent (BuildWarningEventArgs e)
-		{ 
-			Warnings.Add(e);
-		}
+		public void LogWarningEvent (BuildWarningEventArgs e) { }
 		public void LogMessageEvent (BuildMessageEventArgs e) { }
 		public void LogCustomEvent (CustomBuildEventArgs e) { }
 		public bool BuildProjectFile (string projectFileName, string[] targetNames, IDictionary globalProperties, IDictionary targetOutputs) => false;
