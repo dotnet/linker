@@ -449,19 +449,14 @@ namespace ILLink.Tasks
 				args.AppendLine ("-b");
 
 			string trimMode;
-			if (TrimMode != null)
-			{
-				trimMode = TrimMode switch
-				{
+			if (TrimMode != null) {
+				trimMode = TrimMode switch {
 					"full" => "link",
 					"partial" => "link",
 					var x => x
 				};
-			}
-			else
-			{
-				trimMode = LinkVersion switch
-				{
+			} else {
+				trimMode = LinkVersion switch {
 					< 6 => "copyused",
 					_ => "link"
 				};
@@ -469,22 +464,18 @@ namespace ILLink.Tasks
 			args.Append ("--trim-mode ").AppendLine (trimMode);
 
 			string defaultAction;
-			if (DefaultAction != null && LinkVersion < 7)
-			{
+			if (DefaultAction != null && LinkVersion < 7) {
 				defaultAction = DefaultAction;
-			}
-			else
-			{
-				defaultAction = (LinkVersion, TrimMode) switch
-				{
+			} else {
+				defaultAction = (LinkVersion, TrimMode) switch {
 					(_, "full") => "link",
 					(_, "partial") => "copy",
-					(< 6, _) => trimMode, // Use resolved trim mode, not original
+					( < 6, _) => trimMode, // Use resolved trim mode, not original
 					(6, _) => "copy",
 					_ => "link",
 				};
 			}
-			args.Append("--action ").AppendLine (defaultAction);
+			args.Append ("--action ").AppendLine (defaultAction);
 
 
 			if (DefaultAction != null)
