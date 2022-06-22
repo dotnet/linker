@@ -46,6 +46,12 @@ namespace ILLink.RoslynAnalyzer.Tests
 		}
 
 		[Fact]
+		public Task RootLibrarySkipUnresolved ()
+		{
+			return RunTest (allowMissingWarnings: true);
+		}
+
+		[Fact]
 		public Task RootLibraryVisibleAndDescriptor ()
 		{
 			return RunTest (allowMissingWarnings: true);
