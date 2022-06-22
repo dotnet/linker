@@ -16,10 +16,10 @@ namespace Mono.Linker.Tests.Cases.Libraries
 	[SetupLinkerArgument ("-a", "test.exe", "library")]
 	[SetupLinkerArgument ("--enable-opt", "ipconstprop")]
 	[VerifyMetadataNames]
-	public class LibraryWithUnresolveInterfaces
+	public class LibraryWithUnresolvedInterfaces
 	{
 		[Kept]
-		public LibraryWithUnresolveInterfaces ()
+		public LibraryWithUnresolvedInterfaces ()
 		{
 		}
 
@@ -31,33 +31,13 @@ namespace Mono.Linker.Tests.Cases.Libraries
 		[Kept]
 		[KeptInterface (typeof (ICopyLibraryInterface))]
 		[KeptInterface (typeof (ICopyLibraryStaticInterface))]
-		public class UninstantiatedPublicClassWithInterface :
-			ICopyLibraryInterface,
-			ICopyLibraryStaticInterface
-		{
-			internal UninstantiatedPublicClassWithInterface () { }
-
-			[Kept]
-			public void CopyLibraryInterfaceMethod () { }
-
-			void ICopyLibraryInterface.CopyLibraryExplicitImplementationInterfaceMethod () { }
-
-			[Kept]
-			public static void CopyLibraryStaticInterfaceMethod () { }
-
-			static void ICopyLibraryStaticInterface.CopyLibraryExplicitImplementationStaticInterfaceMethod () { }
-		}
-
-		[Kept]
-		[KeptInterface (typeof (ICopyLibraryInterface))]
-		[KeptInterface (typeof (ICopyLibraryStaticInterface))]
 		[KeptInterface (typeof (ICopyLibraryInterfaceNoMethodImpl))]
-		public class UninstantiatedPublicClassWithImplicitlyImplementedInterface :
+		public class UninstantiatedPublicClassInterfaces :
 			ICopyLibraryInterface,
 			ICopyLibraryStaticInterface,
 			ICopyLibraryInterfaceNoMethodImpl
 		{
-			internal UninstantiatedPublicClassWithImplicitlyImplementedInterface () { }
+			internal UninstantiatedPublicClassInterfaces  () { }
 
 			[Kept]
 			public void CopyLibraryInterfaceMethod () { }

@@ -37,7 +37,6 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.Loader;
 using System.Text;
-using System.Threading;
 using ILLink.Shared;
 using Mono.Cecil;
 using Mono.Linker.Steps;
@@ -52,9 +51,6 @@ namespace Mono.Linker
 
 		public static int Main (string[] args)
 		{
-			while (!Debugger.IsAttached) {
-				Thread.Sleep (100);
-			}
 			if (args.Length == 0) {
 				Console.Error.WriteLine ("No parameters specified");
 				return 1;
