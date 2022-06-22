@@ -60,7 +60,7 @@ namespace ILLink.Tasks
 		public ITaskItem OutputDirectory { get; set; }
 
 		/// <summary>
-		/// The subset of warnings that have to be turned off. 
+		/// The subset of warnings that have to be turned off.
 		/// Maps to '--nowarn'.
 		/// </summary>
 		public string NoWarn { get; set; }
@@ -193,10 +193,10 @@ namespace ILLink.Tasks
 
 		/// <summary>
 		/// The version of the link task. Used to determine the meaning of certain properties.
-		/// Roughly maps to the TargetFrameworkVersion.
+		/// Roughly maps to the TargetFrameworkVersion, but normalized to pure int value.
 		/// </summary>
 		[Required]
-		public int LinkVersion { get; set; }
+		public int LinkFrameworkVersion { get; set; }
 
 		/// <summary>
 		///   Sets the default action for trimmable assemblies.
@@ -456,7 +456,7 @@ namespace ILLink.Tasks
 					var x => x
 				};
 			} else {
-				trimMode = LinkVersion switch {
+				trimMode = LinkFrameworkVersion switch {
 					< 6 => "copyused",
 					_ => "link"
 				};
@@ -464,10 +464,10 @@ namespace ILLink.Tasks
 			args.Append ("--trim-mode ").AppendLine (trimMode);
 
 			string defaultAction;
-			if (DefaultAction != null && LinkVersion < 7) {
+			if (DefaultAction != null && LinkFrameworkVersion < 7) {
 				defaultAction = DefaultAction;
 			} else {
-				defaultAction = (LinkVersion, TrimMode) switch {
+				defaultAction = (LinkFrameworkVersion, TrimMode) switch {
 					(_, "full") => "link",
 					(_, "partial") => "copy",
 					( < 6, _) => trimMode, // Use resolved trim mode, not original
@@ -478,8 +478,6 @@ namespace ILLink.Tasks
 			args.Append ("--action ").AppendLine (defaultAction);
 
 
-			if (DefaultAction != null)
-				args.Append ("--action ").AppendLine (DefaultAction);
 
 			if (CustomSteps != null) {
 				foreach (var customStep in CustomSteps) {

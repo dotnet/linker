@@ -154,19 +154,19 @@ Copyright (c) .NET Foundation. All rights reserved.
       <_DotNetHostFileName Condition="$([MSBuild]::IsOSPlatform(`Windows`))">dotnet.exe</_DotNetHostFileName>
     </PropertyGroup>
 
-    <!-- Define a LinkVersion to support different options behavior based on TFM. -->
+    <!-- Define a LinkFrameworkVersion to support different options behavior based on TFM. -->
     <PropertyGroup>
-      <_LinkVersion Condition="$([MSBuild]::VersionGreaterThan('$(TargetFrameworkVersion)', '6.0'))">7</_LinkVersion>
-      <_LinkVersion Condition="$([MSBuild]::VersionEquals('$(TargetFrameworkVersion)', '6.0'))">6</_LinkVersion>
-      <_LinkVersion Condition="$([MSBuild]::VersionLessThan('$(TargetFrameworkVersion)', '6.0'))">5</_LinkVersion>
-      <_LinkVersion Condition="$([MSBuild]::VersionLessThan('$(TargetFrameworkVersion)', '5.0'))">3</_LinkVersion>
+      <_LinkFrameworkVersion Condition="$([MSBuild]::VersionGreaterThan('$(TargetFrameworkVersion)', '6.0'))">7</_LinkFrameworkVersion>
+      <_LinkFrameworkVersion Condition="$([MSBuild]::VersionEquals('$(TargetFrameworkVersion)', '6.0'))">6</_LinkFrameworkVersion>
+      <_LinkFrameworkVersion Condition="$([MSBuild]::VersionLessThan('$(TargetFrameworkVersion)', '6.0'))">5</_LinkFrameworkVersion>
+      <_LinkFrameworkVersion Condition="$([MSBuild]::VersionLessThan('$(TargetFrameworkVersion)', '5.0'))">3</_LinkFrameworkVersion>
     </PropertyGroup>
 
     <Delete Files="@(_LinkedResolvedFileToPublishCandidate)" />
     <ILLink AssemblyPaths="@(ManagedAssemblyToLink)"
             ReferenceAssemblyPaths="@(ReferencePath)"
             RootAssemblyNames="@(TrimmerRootAssembly)"
-            LinkVersion="$(_LinkVersion)"
+            LinkFrameworkVersion="$(_LinkFrameworkVersion)"
             TrimMode="$(TrimMode)"
             DefaultAction="$(_TrimmerDefaultAction)"
             RemoveSymbols="$(TrimmerRemoveSymbols)"
@@ -223,7 +223,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 
     <!-- In .NET 7, TrimmerDefaultAction is deprecated. TrimMode can be used for the supported configurations. -->
     <Warning Condition="'$(TrimmerDefaultAction)' != '' And $([MSBuild]::VersionGreaterThan('$(TargetFrameworkVersion)', '6.0'))"
-             Text="Property 'TrimmerDefaultAction' is deprecated in .NET 7." />
+             Text="Property 'TrimmerDefaultAction' is deprecated in .NET 7 and will be ignored. Use TrimMode instead." />
 
     <!-- The defaults currently root non-framework assemblies, which
          is a no-op for portable apps. If we later support more ways
