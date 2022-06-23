@@ -519,11 +519,8 @@ namespace ILLink.Tasks.Tests
 					Assert.Equal (MockDgmlDependencyRecorder.Singleton, driver.GetDependencyRecorders ()?.Single ());
 					break;
 				default:
-					Assert.Throws<ArgumentException> (() => task.CreateDriver ());
-						break;
+					throw new InvalidOperationException ();
 				}
-
-
 			}
 		}
 

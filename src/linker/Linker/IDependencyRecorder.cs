@@ -58,7 +58,6 @@ namespace Mono.Linker
 		/// <summary>
 		/// Indicates that the linker has completed recording.
 		/// </summary>
-		/// <remarks>Used to close files.</remarks>
 		void FinishRecording ();
 	}
 }

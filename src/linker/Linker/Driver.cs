@@ -162,7 +162,7 @@ namespace Mono.Linker
 			Context.LogError (null, DiagnosticId.MissingArgumentForCommanLineOptionName, optionName);
 		}
 
-		public enum DependenciesFileFormat { xml, dgml };
+		public enum DependenciesFileFormat { Xml, Dgml };
 
 		// Perform setup of the LinkContext and parse the arguments.
 		// Return values:
@@ -185,7 +185,7 @@ namespace Mono.Linker
 			bool deterministic_used = false;
 			bool keepCompilersResources = false;
 			MetadataTrimming metadataTrimming = MetadataTrimming.Any;
-			DependenciesFileFormat fileType = DependenciesFileFormat.xml;
+			DependenciesFileFormat fileType = DependenciesFileFormat.Xml;
 
 			List<BaseStep> inputs = CreateDefaultResolvers ();
 
@@ -229,7 +229,7 @@ namespace Mono.Linker
 						if (!GetStringParam (token, out var dependenciesFileFormat))
 							return -1;
 
-						if (!Enum.TryParse (dependenciesFileFormat.ToLower(), out fileType)) {
+						if (!Enum.TryParse (dependenciesFileFormat,ignoreCase: true, out fileType)) {
 							context.LogError (null, DiagnosticId.InvalidDependenciesFileFormat);
 							return -1;
 						}
@@ -704,10 +704,10 @@ namespace Mono.Linker
 			}
 			if (dumpDependencies) {
 				switch (fileType) {
-				case DependenciesFileFormat.xml:
+				case DependenciesFileFormat.Xml:
 					AddXmlDependencyRecorder (context, dependenciesFileName);
 					break;
-				case DependenciesFileFormat.dgml:
+				case DependenciesFileFormat.Dgml:
 					AddDgmlDependencyRecorder (context, dependenciesFileName);
 					break;
 				default:

@@ -82,9 +82,11 @@ namespace Mono.Linker
 			writer.WriteEndDocument ();
 			writer.Flush ();
 		}
+
 		public void Dispose ()
 		{
-			Debug.Assert (writer != null);
+			if (writer == null)
+				return;
 
 			writer.Dispose ();
 			stream?.Dispose ();
