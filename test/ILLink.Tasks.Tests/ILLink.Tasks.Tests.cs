@@ -501,7 +501,9 @@ namespace ILLink.Tasks.Tests
 
 		[Theory]
 		[InlineData ("Xml")]
-		[InlineData ("Dgml")]
+		[InlineData ("xml")]
+		[InlineData ("dgml")]
+		[InlineData ("Txt")]
 		public void TestDependenciesFileFormat (string fileFormat)
 		{
 			var task = new MockTask () {
@@ -511,15 +513,16 @@ namespace ILLink.Tasks.Tests
 			// translate string to enum
 			// check if enum matches output file format of recorder
 			using (var driver = task.CreateDriver ()) {
-				switch (fileFormat) {
-				case "Xml":
+				switch (fileFormat.ToLower()) {
+				case "xml":
 					Assert.Equal (MockXmlDependencyRecorder.Singleton, driver.GetDependencyRecorders ()?.Single ());
 					break;
-				case "Dgml":
+				case "dgml":
 					Assert.Equal (MockDgmlDependencyRecorder.Singleton, driver.GetDependencyRecorders ()?.Single ());
 					break;
 				default:
-					throw new InvalidOperationException ();
+					Assert.Equal (1047, driver.Logger.Messages[0].Code);
+					break;
 				}
 			}
 		}
