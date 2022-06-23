@@ -16,8 +16,9 @@ namespace Mono.Linker
 	/// </summary>
 	public class DgmlDependencyRecorder : IDependencyRecorder, IDisposable
 	{
-		public const string DefaultDependenciesFileName = "linker-dependencies.dgml.gz";
-
+		public const string DefaultDependenciesFileName = "linker-dependencies.dgml";
+		public Dictionary<string, int> nodeList = new ();
+		public HashSet<(string dependent, string dependee, string reason)> linkList = new (); // first element is source, second is target (dependent --> dependee), third is reason
 
 		private readonly LinkContext context;
 		private XmlWriter? writer;
@@ -41,18 +42,14 @@ namespace Mono.Linker
 			}
 
 			var depsFile = File.OpenWrite (fileName);
-
-			if (Path.GetExtension (fileName) == ".dgml")
-				stream = depsFile;
-			else
-				stream = new GZipStream (depsFile, CompressionMode.Compress);
+			stream = depsFile;
 
 			writer = XmlWriter.Create (stream, settings);
 			writer.WriteStartDocument ();
 			writer.WriteStartElement ("DirectedGraph", "http://schemas.microsoft.com/vs/2009/dgml");
 		}
 
-		public void WriteDgmlGraphToFile ()
+		public void FinishRecording ()
 		{
 			Debug.Assert (writer != null);
 
@@ -78,15 +75,6 @@ namespace Mono.Linker
 				}
 			}
 			writer.WriteEndElement ();
-		}
-
-		public void Dispose ()
-		{
-			if (writer == null)
-				return;
-
-			// put all code to generate dgml here
-			WriteDgmlGraphToFile ();
 
 			writer.WriteStartElement ("Properties");
 			{
@@ -108,14 +96,18 @@ namespace Mono.Linker
 			writer.WriteEndDocument ();
 
 			writer.Flush ();
+		}
+
+		public void Dispose ()
+		{
+			if (writer == null)
+				return;
+
 			writer.Dispose ();
 			stream?.Dispose ();
 			writer = null;
 			stream = null;
 		}
-
-		public Dictionary<string, int> nodeList = new ();
-		public HashSet<(string dependent, string dependee, string reason)> linkList = new (); // first element is source, second is target (dependent --> dependee), third is reason
 
 		public void RecordDependency (object target, in DependencyInfo reason, bool marked)
 		{

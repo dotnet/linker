@@ -162,7 +162,7 @@ namespace Mono.Linker
 			Context.LogError (null, DiagnosticId.MissingArgumentForCommanLineOptionName, optionName);
 		}
 
-		public enum DependenciesFileFormat { Xml, Dgml };
+		public enum DependenciesFileFormat { xml, dgml };
 
 		// Perform setup of the LinkContext and parse the arguments.
 		// Return values:
@@ -185,7 +185,7 @@ namespace Mono.Linker
 			bool deterministic_used = false;
 			bool keepCompilersResources = false;
 			MetadataTrimming metadataTrimming = MetadataTrimming.Any;
-			DependenciesFileFormat fileType = DependenciesFileFormat.Xml;
+			DependenciesFileFormat fileType = DependenciesFileFormat.xml;
 
 			List<BaseStep> inputs = CreateDefaultResolvers ();
 
@@ -229,7 +229,7 @@ namespace Mono.Linker
 						if (!GetStringParam (token, out var dependenciesFileFormat))
 							return -1;
 
-						if (!Enum.TryParse (dependenciesFileFormat, out fileType)) {
+						if (!Enum.TryParse (dependenciesFileFormat.ToLower(), out fileType)) {
 							context.LogError (null, DiagnosticId.InvalidDependenciesFileFormat);
 							return -1;
 						}
@@ -704,10 +704,10 @@ namespace Mono.Linker
 			}
 			if (dumpDependencies) {
 				switch (fileType) {
-				case DependenciesFileFormat.Xml:
+				case DependenciesFileFormat.xml:
 					AddXmlDependencyRecorder (context, dependenciesFileName);
 					break;
-				case DependenciesFileFormat.Dgml:
+				case DependenciesFileFormat.dgml:
 					AddDgmlDependencyRecorder (context, dependenciesFileName);
 					break;
 				default:
@@ -1379,8 +1379,8 @@ namespace Mono.Linker
 			Console.WriteLine ("                                        if 'Xml' is file format, 'output/linker-dependencies.dgml.gz if 'Dgml' is file format");
 			Console.WriteLine ("  --dump-dependencies                   Dump dependencies for the linker analyzer tool");
 			Console.WriteLine ("  --dependencies-file-format FORMAT     Specify output file type. Defaults to 'Xml'");
-			Console.WriteLine ("                                          Xml: outputs an .xml file");
-			Console.WriteLine ("                                          Dgml: outputs a .dgml file, compatible with the DependencyGraphViewer");
+			Console.WriteLine ("                                          xml: outputs an .xml file");
+			Console.WriteLine ("                                          dgml: outputs a .dgml file, compatible with the DependencyGraphViewer");
 			Console.WriteLine ("  --reduced-tracing                     Reduces dependency output related to assemblies that will not be modified");
 			Console.WriteLine ("");
 		}

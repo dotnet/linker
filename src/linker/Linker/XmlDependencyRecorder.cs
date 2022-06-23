@@ -27,6 +27,7 @@
 //
 
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Xml;
@@ -39,7 +40,7 @@ namespace Mono.Linker
 	/// </summary>
 	public class XmlDependencyRecorder : IDependencyRecorder, IDisposable
 	{
-		public const string DefaultDependenciesFileName = "linker-dependencies.xml.gz";
+		public const string DefaultDependenciesFileName = "linker-dependencies.xml";
 
 		private readonly LinkContext context;
 		private XmlWriter? writer;
@@ -63,11 +64,7 @@ namespace Mono.Linker
 			}
 
 			var depsFile = File.OpenWrite (fileName);
-
-			if (Path.GetExtension (fileName) == ".xml")
-				stream = depsFile;
-			else
-				stream = new GZipStream (depsFile, CompressionMode.Compress);
+			stream = depsFile;
 
 			writer = XmlWriter.Create (stream, settings);
 			writer.WriteStartDocument ();
@@ -77,14 +74,18 @@ namespace Mono.Linker
 			writer.WriteEndAttribute ();
 		}
 
-		public void Dispose ()
+		public void FinishRecording()
 		{
-			if (writer == null)
-				return;
+			Debug.Assert (writer != null);
 
 			writer.WriteEndElement ();
 			writer.WriteEndDocument ();
 			writer.Flush ();
+		}
+		public void Dispose ()
+		{
+			Debug.Assert (writer != null);
+
 			writer.Dispose ();
 			stream?.Dispose ();
 			writer = null;

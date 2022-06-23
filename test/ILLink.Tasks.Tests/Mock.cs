@@ -188,6 +188,7 @@ namespace ILLink.Tasks.Tests
 		public static MockXmlDependencyRecorder Singleton { get; } = new MockXmlDependencyRecorder ();
 		public void RecordDependency (object source, object arget, bool marked) { }
 		public void RecordDependency (object target, in DependencyInfo reason, bool marked) { }
+		public void FinishRecording () { }
 	}
 
 	public class MockDgmlDependencyRecorder : IDependencyRecorder
@@ -195,6 +196,7 @@ namespace ILLink.Tasks.Tests
 		public static MockXmlDependencyRecorder Singleton { get; } = new MockXmlDependencyRecorder ();
 		public void RecordDependency (object source, object arget, bool marked) { }
 		public void RecordDependency (object target, in DependencyInfo reason, bool marked) { }
+		public void FinishRecording () { }
 	}
 
 	public class MockCustomStep : IStep
