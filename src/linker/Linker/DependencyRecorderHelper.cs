@@ -60,7 +60,7 @@ namespace Mono.Linker
 			}
 		}
 
-		public static bool ShouldRecord(LinkContext context, object? source, object target)
+		public static bool ShouldRecord (LinkContext context, object? source, object target)
 		{
 			if (source == null || target == null)
 				return false;
@@ -77,7 +77,7 @@ namespace Mono.Linker
 			if (source is InterfaceImplementation || target is InterfaceImplementation)
 				return false;
 
-			if (!ShouldRecord(context, source) && !ShouldRecord(context, target)) {
+			if (!ShouldRecord (context, source) && !ShouldRecord (context, target)) {
 				return false;
 			}
 			return true;

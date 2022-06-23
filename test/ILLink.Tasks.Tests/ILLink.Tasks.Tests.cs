@@ -513,7 +513,7 @@ namespace ILLink.Tasks.Tests
 			// translate string to enum
 			// check if enum matches output file format of recorder
 			using (var driver = task.CreateDriver ()) {
-				switch (fileFormat.ToLower()) {
+				switch (fileFormat.ToLower ()) {
 				case "xml":
 					Assert.Equal (MockXmlDependencyRecorder.Singleton, driver.GetDependencyRecorders ()?.Single ());
 					break;
