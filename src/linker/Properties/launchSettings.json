@@ -1,9 +1,0 @@
-{
-  "profiles": {
-    "Mono.Linker": {
-      "commandName": "Project",
-      "commandLineArgs": "@\"C:\\src\\scratch\\tutorials\\HelloWorld\\ILLink.rsp\"",
-      "workingDirectory": "C:\\src\\scratch\\tutorials\\HelloWorld"
-    }
-  }
-}
