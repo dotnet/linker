@@ -154,14 +154,6 @@ Copyright (c) .NET Foundation. All rights reserved.
       <_DotNetHostFileName Condition="$([MSBuild]::IsOSPlatform(`Windows`))">dotnet.exe</_DotNetHostFileName>
     </PropertyGroup>
 
-    <!-- Define a LinkFrameworkVersion to support different options behavior based on TFM. -->
-    <PropertyGroup>
-      <_LinkFrameworkVersion Condition="$([MSBuild]::VersionGreaterThan('$(TargetFrameworkVersion)', '6.0'))">7</_LinkFrameworkVersion>
-      <_LinkFrameworkVersion Condition="$([MSBuild]::VersionEquals('$(TargetFrameworkVersion)', '6.0'))">6</_LinkFrameworkVersion>
-      <_LinkFrameworkVersion Condition="$([MSBuild]::VersionLessThan('$(TargetFrameworkVersion)', '6.0'))">5</_LinkFrameworkVersion>
-      <_LinkFrameworkVersion Condition="$([MSBuild]::VersionLessThan('$(TargetFrameworkVersion)', '5.0'))">3</_LinkFrameworkVersion>
-    </PropertyGroup>
-
     <Delete Files="@(_LinkedResolvedFileToPublishCandidate)" />
     <ILLink AssemblyPaths="@(ManagedAssemblyToLink)"
             ReferenceAssemblyPaths="@(ReferencePath)"
