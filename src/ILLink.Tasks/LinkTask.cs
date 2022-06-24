@@ -347,8 +347,8 @@ namespace ILLink.Tasks
 					if (isTrimmable.Equals("true", StringComparison.OrdinalIgnoreCase)) {
 						// isTrimmable ~= true
 						assemblyTrimMode = trimMode;
-					} else if (isTrimmable.Equals("false", StringComparison.OrdinalIgnoreCase) || isTrimmable == "") {
-						// isTrimmable ~= false or null
+					} else if (isTrimmable.Equals("false", StringComparison.OrdinalIgnoreCase)) {
+						// isTrimmable ~= false
 						assemblyTrimMode = defaultAction;
 					}
 				}
