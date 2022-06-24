@@ -242,8 +242,6 @@ Copyright (c) .NET Foundation. All rights reserved.
     </PropertyGroup>
 
     <PropertyGroup>
-      <!-- Set TrimmerDefaultAction for compat -->
-      <_TrimmerDefaultAction Condition="$([MSBuild]::VersionLessThan($(TargetFrameworkVersion), '6.0'))">$(TrimmerDefaultAction)</_TrimmerDefaultAction>
       <ILLinkTreatWarningsAsErrors Condition=" '$(ILLinkTreatWarningsAsErrors)' == '' ">$(TreatWarningsAsErrors)</ILLinkTreatWarningsAsErrors>
       <_ExtraTrimmerArgs>--skip-unresolved true $(_ExtraTrimmerArgs)</_ExtraTrimmerArgs>
       <TrimmerSingleWarn Condition=" '$(TrimmerSingleWarn)' == '' ">true</TrimmerSingleWarn>
