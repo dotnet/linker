@@ -247,7 +247,6 @@ Copyright (c) .NET Foundation. All rights reserved.
       <_TrimmerDefaultAction Condition="$([MSBuild]::VersionLessThan($(TargetFrameworkVersion), '7.0'))">$(TrimmerDefaultAction)</_TrimmerDefaultAction>
       <_TrimmerDefaultAction Condition="'$(_TrimmerDefaultAction)' == '' And $([MSBuild]::VersionLessThan($(TargetFrameworkVersion), '6.0'))">$(TrimMode)</_TrimmerDefaultAction>
       <_TrimmerDefaultAction Condition="'$(_TrimmerDefaultAction)' == '' And $([MSBuild]::VersionEquals($(TargetFrameworkVersion), '6.0'))">copy</_TrimmerDefaultAction>
-      <_TrimmerDefaultAction Condition="'$(_TrimmerDefaultAction)' == ''">link</_TrimmerDefaultAction>
     </PropertyGroup>
 
     <PropertyGroup>
