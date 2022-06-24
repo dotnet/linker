@@ -57,83 +57,39 @@ namespace ILLink.Tasks.Tests
 		};
 
 		[Theory]
-		[InlineData (3, AssemblyAction.CopyUsed)]
-		[InlineData (5, AssemblyAction.CopyUsed)]
-		[InlineData (6, AssemblyAction.Copy)]
-		[InlineData (7, AssemblyAction.Link)]
-		public void DefaultDefaultAction (int linkVersion, AssemblyAction expectedDefault)
+		[InlineData ("full", AssemblyAction.Link)]
+		[InlineData ("partial", AssemblyAction.Copy)]
+		public void TrimModeFullAndPartial (string trimMode, AssemblyAction expectedDefaultAction)
 		{
 			var task = new MockTask () {
-				LinkVersion = linkVersion
+				TrimMode = trimMode
 			};
 			using (var driver = task.CreateDriver ()) {
-				Assert.Equal (expectedDefault, driver.Context.DefaultAction);
+				Assert.Equal (AssemblyAction.Link, driver.Context.TrimAction);
+				Assert.Equal (expectedDefaultAction, driver.Context.DefaultAction);
 			}
 		}
 
 		[Theory]
-		[InlineData (3, "copyused", AssemblyAction.CopyUsed)]
-		[InlineData (3, "copy", AssemblyAction.Copy)]
-		[InlineData (3, "link", AssemblyAction.Link)]
-		[InlineData (5, "copyused", AssemblyAction.CopyUsed)]
-		[InlineData (5, "copy", AssemblyAction.Copy)]
-		[InlineData (5, "link", AssemblyAction.Link)]
-		// Trim Mode settings don't affect DefaultAction after 5, unless 'full' or 'partial'
-		[InlineData (6, "copyused", AssemblyAction.Copy)]
-		[InlineData (6, "copy", AssemblyAction.Copy)]
-		[InlineData (6, "link", AssemblyAction.Copy)]
-		[InlineData (7, "copyused", AssemblyAction.Link)]
-		[InlineData (7, "copy", AssemblyAction.Link)]
-		[InlineData (7, "link", AssemblyAction.Link)]
-		// 'Full' and 'partial' are always respected
-		[InlineData (3, "full", AssemblyAction.Link)]
-		[InlineData (5, "full", AssemblyAction.Link)]
-		[InlineData (6, "full", AssemblyAction.Link)]
-		[InlineData (7, "full", AssemblyAction.Link)]
-		[InlineData (3, "partial", AssemblyAction.Copy)]
-		[InlineData (5, "partial", AssemblyAction.Copy)]
-		[InlineData (6, "partial", AssemblyAction.Copy)]
-		[InlineData (7, "partial", AssemblyAction.Copy)]
-		public void DefaultActionWithTrimMode (int linkVersion, string trimMode, AssemblyAction expectedDefault)
+		[InlineData ("full", AssemblyAction.Link)]
+		[InlineData ("partial", AssemblyAction.Copy)]
+		public void TrimModeAssemblyPaths (string trimMode, AssemblyAction notTrimmedAction)
 		{
-			var task = new MockTask () {
-				LinkVersion = linkVersion,
-				TrimMode = trimMode
+			var assemblyPaths = new ITaskItem[] {
+				new TaskItem("Assembly1.dll", new Dictionary<string, string> {{ "IsTrimmable", "true" }}),
+				new TaskItem("Assembly2.dll", new Dictionary<string, string> ()),
 			};
-			using var driver = task.CreateDriver ();
-			Assert.Equal (expectedDefault, driver.Context.DefaultAction);
-		}
-
-		[Theory]
-		[InlineData (3, "copyused", AssemblyAction.CopyUsed)]
-		[InlineData (3, "copy", AssemblyAction.Copy)]
-		[InlineData (3, "link", AssemblyAction.Link)]
-		[InlineData (5, "copyused", AssemblyAction.CopyUsed)]
-		[InlineData (5, "copy", AssemblyAction.Copy)]
-		[InlineData (5, "link", AssemblyAction.Link)]
-		[InlineData (6, "copyused", AssemblyAction.CopyUsed)]
-		[InlineData (6, "copy", AssemblyAction.Copy)]
-		[InlineData (6, "link", AssemblyAction.Link)]
-		[InlineData (7, "copyused", AssemblyAction.CopyUsed)]
-		[InlineData (7, "copy", AssemblyAction.Copy)]
-		[InlineData (7, "link", AssemblyAction.Link)]
-		// 'Full' and 'partial' are always respected
-		[InlineData (3, "full", AssemblyAction.Link)]
-		[InlineData (5, "full", AssemblyAction.Link)]
-		[InlineData (6, "full", AssemblyAction.Link)]
-		[InlineData (7, "full", AssemblyAction.Link)]
-		[InlineData (3, "partial", AssemblyAction.Link)]
-		[InlineData (5, "partial", AssemblyAction.Link)]
-		[InlineData (6, "partial", AssemblyAction.Link)]
-		[InlineData (7, "partial", AssemblyAction.Link)]
-		public void TrimActionWithTrimMode (int linkVersion, string trimMode, AssemblyAction expectedDefault)
-		{
 			var task = new MockTask () {
-				LinkVersion = linkVersion,
-				TrimMode = trimMode
+				TrimMode = trimMode,
+				AssemblyPaths = assemblyPaths
 			};
-			using var driver = task.CreateDriver ();
-			Assert.Equal (expectedDefault, driver.Context.TrimAction);
+			using var driver = task.CreateDriver();
+			var context = driver.Context;
+			var references = driver.GetReferenceAssemblies();
+			Assert.Equal("", assemblyPaths[0].GetMetadata("TrimMode"));
+			Assert.Equal(AssemblyAction.Link, context.Actions["Assembly1"]);
+			Assert.Equal("", assemblyPaths[1].GetMetadata("TrimMode"));
+			Assert.Equal(notTrimmedAction, context.Actions["Assembly2"]);
 		}
 
 		[Theory]

@@ -200,6 +200,7 @@ namespace ILLink.Tasks
 		/// <summary>
 		///   Sets the default action for assemblies which have not opted into trimming.
 		///   Maps to '--action'
+		/// </summary>
 		public string DefaultAction { get; set; }
 
 		/// <summary>
@@ -312,6 +313,23 @@ namespace ILLink.Tasks
 					args.AppendLine ("--singlewarn-");
 			}
 
+			string trimMode = TrimMode switch {
+				"full" => "link",
+				"partial" => "link",
+				var x => x
+			};
+			if (trimMode != null)
+				args.Append ("--trim-mode ").AppendLine (trimMode);
+
+			string defaultAction = TrimMode switch {
+				"full" => "link",
+				"partial" => "copy",
+				_ => DefaultAction
+			};
+			if (defaultAction != null)
+				args.Append ("--action ").AppendLine (defaultAction);
+
+
 			HashSet<string> assemblyNames = new HashSet<string> (StringComparer.OrdinalIgnoreCase);
 			foreach (var assembly in AssemblyPaths) {
 				var assemblyPath = assembly.ItemSpec;
@@ -324,7 +342,17 @@ namespace ILLink.Tasks
 				args.Append ("-reference ").AppendLine (Quote (assemblyPath));
 
 				string assemblyTrimMode = assembly.GetMetadata ("TrimMode");
-				if (!String.IsNullOrEmpty (assemblyTrimMode)) {
+				string isTrimmable = assembly.GetMetadata ("IsTrimmable");
+				if (string.IsNullOrEmpty(assemblyTrimMode)) {
+					if (isTrimmable.Equals("true", StringComparison.OrdinalIgnoreCase)) {
+						// isTrimmable ~= true
+						assemblyTrimMode = trimMode;
+					} else if (isTrimmable.Equals("false", StringComparison.OrdinalIgnoreCase) || isTrimmable == "") {
+						// isTrimmable ~= false or null
+						assemblyTrimMode = defaultAction;
+					}
+				}
+				if (!string.IsNullOrEmpty (assemblyTrimMode)) {
 					args.Append ("--action ");
 					args.Append (assemblyTrimMode);
 					args.Append (' ').AppendLine (Quote (assemblyName));
@@ -440,28 +468,6 @@ namespace ILLink.Tasks
 
 			if (_removeSymbols == false)
 				args.AppendLine ("-b");
-
-			string trimMode;
-			if (TrimMode != null) {
-				trimMode = TrimMode switch {
-					"full" => "link",
-					"partial" => "link",
-					var x => x
-				};
-				args.Append ("--trim-mode ").AppendLine (trimMode);
-			} 
-
-			string defaultAction;
-			if (TrimMode == "full") {
-				defaultAction = "link";
-			} else if (TrimMode == "partial") {
-				defaultAction = "copy";
-			} else {
-				defaultAction = DefaultAction;
-			} 
-
-			if (defaultAction != null)
-				args.Append ("--action ").AppendLine (defaultAction);
 
 			if (CustomSteps != null) {
 				foreach (var customStep in CustomSteps) {

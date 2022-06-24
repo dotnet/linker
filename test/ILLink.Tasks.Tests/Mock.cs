@@ -21,7 +21,6 @@ namespace ILLink.Tasks.Tests
 		public MockTask ()
 		{
 			// Ensure that [Required] members are non-null
-			LinkVersion = 7;
 			AssemblyPaths = Array.Empty<ITaskItem> ();
 			RootAssemblyNames = Array.Empty<ITaskItem> ();
 			ILLinkPath = Path.Combine (Path.GetDirectoryName (Assembly.GetExecutingAssembly ().Location), "illink.dll");

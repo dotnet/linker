@@ -313,16 +313,6 @@ Copyright (c) .NET Foundation. All rights reserved.
       </ManagedAssemblyToLink>
     </ItemGroup>
 
-    <!-- In .NET6+, set the action explicitly for any with IsTrimmable MSBuild metadata -->
-    <ItemGroup Condition=" $([MSBuild]::VersionGreaterThanOrEquals('$(TargetFrameworkVersion)', '6.0')) ">
-      <ManagedAssemblyToLink Condition=" '%(ManagedAssemblyToLink.IsTrimmable)' == 'true' And '%(ManagedAssemblyToLink.TrimMode)' == '' ">
-        <TrimMode>$(TrimMode)</TrimMode>
-      </ManagedAssemblyToLink>
-      <ManagedAssemblyToLink Condition=" '%(ManagedAssemblyToLink.IsTrimmable)' == 'false' And '%(ManagedAssemblyToLink.TrimMode)' == '' ">
-        <TrimMode>$(TrimmerDefaultAction)</TrimMode>
-      </ManagedAssemblyToLink>
-    </ItemGroup>
-
     <ItemGroup>
       <!-- Don't collapse to a single warning for the intermediate assembly.
            This just sets metadata on the items in ManagedAssemblyToLink that came from IntermediateAssembly. -->
