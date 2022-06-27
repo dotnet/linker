@@ -12,11 +12,6 @@ using ILLink.Shared.TypeSystemProxy;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Linker.Steps;
-using InterproceduralState = ILLink.Shared.DataFlow.DefaultValueDictionary<
-	ILLink.Shared.TypeSystemProxy.MethodProxy,
-	ILLink.Shared.DataFlow.Maybe<ILLink.Shared.DataFlow.DefaultValueDictionary<
-		Mono.Linker.Dataflow.HoistedLocalKey,
-		ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.SingleValue>>>>;
 using MultiValue = ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.SingleValue>;
 
 namespace Mono.Linker.Dataflow

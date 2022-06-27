@@ -55,8 +55,8 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 				yield return 0;
 			}
 
-			// See https://github.com/dotnet/linker/issues/2587
-			[UnconditionalSuppressMessage ("Linker sees the compiler generated property", "IL2077")]
+			[ExpectedWarning ("IL2067", "unknownType", nameof (DataFlowTypeExtensions.RequiresNonPublicMethods), CompilerGeneratedCode = true,
+				ProducedBy = ProducedBy.Trimmer)]
 			static IEnumerable<int> TestMethodParameterWithRequirements (Type unknownType = null)
 			{
 				unknownType.RequiresNonPublicMethods ();
@@ -122,8 +122,8 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 				await MethodAsync ();
 			}
 
-			// See https://github.com/dotnet/linker/issues/2587
-			[UnconditionalSuppressMessage ("Linker sees the compiler generated property", "IL2077")]
+			[ExpectedWarning ("IL2067", "unknownType", nameof (DataFlowTypeExtensions.RequiresNonPublicMethods), CompilerGeneratedCode = true,
+				ProducedBy = ProducedBy.Trimmer)]
 			static async void TestMethodParameterWithRequirements (Type unknownType = null)
 			{
 				unknownType.RequiresNonPublicMethods ();

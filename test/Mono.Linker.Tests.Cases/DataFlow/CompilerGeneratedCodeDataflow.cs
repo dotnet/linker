@@ -37,9 +37,49 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				t.RequiresAll ();
 			}
 
+			// Linker tracks all assignments of hoisted locals, so this produces warnings.
+			[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresPublicFields), CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresPublicMethods), CompilerGeneratedCode = true)]
+			static IEnumerable<int> NoFlowAcrossYieldReturn ()
+			{
+				Type t = GetWithPublicMethods ();
+				t.RequiresPublicMethods ();
+				yield return 0;
+				t = GetWithPublicFields ();
+				t.RequiresPublicFields ();
+			}
+
+			[ExpectedWarning ("IL2067", "publicMethodsType", nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true)]
+			static IEnumerable<int> UseParameterBeforeYieldReturn ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type publicMethodsType = null)
+			{
+				publicMethodsType.RequiresAll ();
+				yield return 0;
+			}
+
+			[ExpectedWarning ("IL2067", "unknownType", nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true)]
+			static IEnumerable<int> UseUnannotatedParameterBeforeYieldReturn (Type unknownType = null)
+			{
+				unknownType.RequiresAll ();
+				yield return 0;
+			}
+
+			[ExpectedWarning ("IL2067", "publicMethodsType", nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true)]
+			static IEnumerable<int> FlowParameterAcrossYieldReturn ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type publicMethodsType = null)
+			{
+				yield return 0;
+				publicMethodsType.RequiresAll ();
+			}
+
+			[ExpectedWarning ("IL2067", "unknownType", nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true)]
+			static IEnumerable<int> FlowUnannotatedParameterAcrossYieldReturn (Type unknownType = null)
+			{
+				yield return 0;
+				unknownType.RequiresAll ();
+			}
+
 			[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true)]
-			// Linker doesn't track backwards branches
-			// [ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true)]
+			// Linker includes backwards branches for hoisted locals, by virtue of tracking all assignments.
+			[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true)]
 			static IEnumerable<int> FlowAcrossYieldReturnWithBackwardsBranch (int n = 0)
 			{
 				Type t = GetWithPublicMethods ();
@@ -54,6 +94,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			public static void Test ()
 			{
 				FlowAcrossYieldReturn ();
+				NoFlowAcrossYieldReturn ();
+				NoFlowAcrossYieldReturn ();
+				UseParameterBeforeYieldReturn ();
+				UseUnannotatedParameterBeforeYieldReturn ();
+				FlowParameterAcrossYieldReturn ();
+				FlowUnannotatedParameterAcrossYieldReturn ();
 				FlowAcrossYieldReturnWithBackwardsBranch ();
 			}
 		}
@@ -69,9 +115,30 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				t.RequiresAll ();
 			}
 
+			// Linker tracks all assignments of hoisted locals, so this produces warnings.
+			[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresPublicFields), CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresPublicMethods), CompilerGeneratedCode = true)]
+			static async void NoFlowAcrossAwait ()
+			{
+				Type t = GetWithPublicMethods ();
+				t.RequiresPublicMethods ();
+				await MethodAsync ();
+				t = GetWithPublicFields ();
+				t.RequiresPublicFields ();
+			}
+
+			[ExpectedWarning ("IL2067", "publicMethodsType", nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true)]
+			static async void FlowParameterAcrossAwait ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type publicMethodsType = null)
+			{
+				await MethodAsync ();
+				publicMethodsType.RequiresAll ();
+			}
+
 			public static void Test ()
 			{
 				FlowAcrossAwait ();
+				NoFlowAcrossAwait ();
+				FlowParameterAcrossAwait ();
 			}
 		}
 
@@ -181,8 +248,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 				[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll),
 					ProducedBy = ProducedBy.Trimmer)]
-				// Linker doesn't handle backwards branches
-				// [ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll))]
+				// Linker includes backwards branches for hoisted locals, by virtue of tracking all assignments.
+				[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll))]
 				void LocalFunction () => t.RequiresAll ();
 			}
 
@@ -225,6 +292,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 					A ();
 				}
 
+				[ExpectedWarning ("IL2072", nameof (GetUnknownType), nameof (DataFlowTypeExtensions.RequiresAll),
+					ProducedBy = ProducedBy.Trimmer)]
 				[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll),
 					ProducedBy = ProducedBy.Trimmer)]
 				[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll),
@@ -243,12 +312,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			public static void ReadCapturedParameterAfterWrite (Type tParameter)
 			{
-				tParameter = GetWithPublicMethods (); // Changes the state of the parameter (only allowed for hoisted locals)
+				tParameter = GetWithPublicMethods ();
 				LocalFunction ();
 
-				[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll),
+				[ExpectedWarning ("IL2067", "tParameter", nameof (DataFlowTypeExtensions.RequiresPublicMethods),
 					ProducedBy = ProducedBy.Trimmer)]
-				void LocalFunction () => tParameter.RequiresAll ();
+				void LocalFunction () => tParameter.RequiresPublicMethods ();
 			}
 
 			[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll),
@@ -266,12 +335,15 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				void LocalFunction () => t.RequiresAll ();
 			}
 
+			[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll),
+				ProducedBy = ProducedBy.Trimmer)]
+			// We include all writes, including ones that can't reach the local function invocation.
+			[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll),
+				ProducedBy = ProducedBy.Trimmer)]
 			static void WriteCapturedVariable ()
 			{
-				Type t = GetAll ();
+				Type t = GetWithPublicFields ();
 				LocalFunction ();
-				// No warning. This is an analysis hole!
-				// We don't flow state out of local functions.
 				t.RequiresAll ();
 
 				void LocalFunction () => t = GetWithPublicMethods ();
@@ -336,12 +408,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 				Action lambda =
 					[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll),
-					ProducedBy = ProducedBy.Trimmer)] () => t.RequiresAll ();
+						ProducedBy = ProducedBy.Trimmer)]
+				[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll),
+						ProducedBy = ProducedBy.Trimmer)]
+				() => t.RequiresAll ();
 
 				t = GetWithPublicMethods ();
-				// No warning. This is an analysis hole!
-				// We don't track captured delegates. Instead, we analyze lambdas
-				// at the point of declaration.
 				lambda ();
 			}
 
@@ -359,9 +431,11 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 				tParameter = GetWithPublicMethods ();
 				var lambda =
-					[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll),
-					ProducedBy = ProducedBy.Trimmer)]
-				() => tParameter.RequiresAll ();
+					// We produce dataflow warnings for the unknown parameter even though it has been overwritten
+					// with a value that satisfies the requirement.
+					[ExpectedWarning ("IL2067", "tParameter", nameof (DataFlowTypeExtensions.RequiresPublicMethods),
+						ProducedBy = ProducedBy.Trimmer)]
+				() => tParameter.RequiresPublicMethods ();
 				lambda ();
 			}
 
@@ -379,13 +453,16 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				notCaptured.RequiresAll ();
 			}
 
+			[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll),
+				ProducedBy = ProducedBy.Trimmer)]
+			// We include all writes, including ones that can't reach the local function invocation.
+			[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll),
+				ProducedBy = ProducedBy.Trimmer)]
 			static void WriteCapturedVariable ()
 			{
-				Type t = GetAll ();
+				Type t = GetWithPublicFields ();
 				Action lambda = () => t = GetWithPublicMethods ();
 				lambda ();
-				// No warning. This is an analysis hole!
-				// We don't flow state out of lambdas.
 				t.RequiresAll ();
 			}
 
