@@ -55,8 +55,7 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 				yield return 0;
 			}
 
-			[ExpectedWarning ("IL2067", "unknownType", nameof (DataFlowTypeExtensions.RequiresNonPublicMethods), CompilerGeneratedCode = true,
-				ProducedBy = ProducedBy.Trimmer)]
+			[UnconditionalSuppressMessage ("Test", "IL2067")]
 			static IEnumerable<int> TestMethodParameterWithRequirements (Type unknownType = null)
 			{
 				unknownType.RequiresNonPublicMethods ();
@@ -122,8 +121,7 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 				await MethodAsync ();
 			}
 
-			[ExpectedWarning ("IL2067", "unknownType", nameof (DataFlowTypeExtensions.RequiresNonPublicMethods), CompilerGeneratedCode = true,
-				ProducedBy = ProducedBy.Trimmer)]
+			[UnconditionalSuppressMessage ("Test", "IL2067")]
 			static async void TestMethodParameterWithRequirements (Type unknownType = null)
 			{
 				unknownType.RequiresNonPublicMethods ();

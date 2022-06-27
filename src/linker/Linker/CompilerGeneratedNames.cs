@@ -32,18 +32,6 @@ namespace Mono.Linker
 			return (typeName.Length > i + 1) && typeName[i + 1] == 'd';
 		}
 
-		internal static bool IsHoistedStateMachineField (string fieldName)
-		{
-			if (!IsGeneratedMemberName (fieldName))
-				return false;
-
-			int i = fieldName.LastIndexOf ('>');
-			if (i == -1)
-				return false;
-
-			return (fieldName.Length > i + 1) && fieldName[i + 1] == '5';
-		}
-
 		internal static bool IsGeneratedType (string name) => IsStateMachineType (name) || IsLambdaDisplayClass (name);
 
 		internal static bool IsLambdaOrLocalFunction (string methodName) => IsLambdaMethod (methodName) || IsLocalFunction (methodName);

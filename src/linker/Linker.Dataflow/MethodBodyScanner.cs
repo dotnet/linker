@@ -241,7 +241,6 @@ namespace Mono.Linker.Dataflow
 		// reachable from it.
 		public virtual void InterproceduralScan (MethodBody methodBody)
 		{
-			// Untracked methods get the default value (null).
 			var methodGroupLattice = new ValueSetLattice<MethodProxy> ();
 			// Note that the default value of a hoisted local will be MultiValueLattice.Top, not UnknownValue.Instance.
 			// This ensures that there are no warnings for the "unassigned state" of a parameter.
