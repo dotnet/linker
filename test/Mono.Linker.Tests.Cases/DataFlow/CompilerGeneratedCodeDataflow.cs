@@ -249,7 +249,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll),
 					ProducedBy = ProducedBy.Trimmer)]
 				// Linker includes backwards branches for hoisted locals, by virtue of tracking all assignments.
-				[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll))]
+				[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll),
+					ProducedBy = ProducedBy.Trimmer)]
 				void LocalFunction () => t.RequiresAll ();
 			}
 
