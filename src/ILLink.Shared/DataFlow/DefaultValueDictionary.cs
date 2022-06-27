@@ -106,6 +106,8 @@ namespace ILLink.Shared.DataFlow
 			return new DefaultValueDictionary<TKey, TValue> (defaultValue, dict);
 		}
 
+		// Prevent warning CS0659 https://docs.microsoft.com/en-us/dotnet/csharp/misc/cs0659.
+		// This type should never be used as a dictionary key.
 		public override int GetHashCode () => throw new NotImplementedException ();
 	}
 }

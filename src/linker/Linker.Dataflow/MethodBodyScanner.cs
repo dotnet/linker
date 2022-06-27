@@ -334,8 +334,7 @@ namespace Mono.Linker.Dataflow
 			LocalVariableStore locals = new (methodBody.Variables.Count);
 			// Initialize the hoisted locals state on entry to this method, from the interprocedural state.
 			// Use -1 as the basic block index for any values we track on entry to the method.
-			var defaultValue = new ValueBasicBlockPair (UnknownValue.Instance, -1);
-			var hoistedLocals = new HoistedLocalStore (defaultValue);
+			var hoistedLocals = new HoistedLocalStore (new ValueBasicBlockPair (UnknownValue.Instance, -1));
 			if (interproceduralState.Get (new MethodProxy (methodBody.Method)).MaybeValue is HoistedLocalState hoistedLocalsOnEntry) {
 				foreach (var (hoistedLocal, value) in hoistedLocalsOnEntry)
 					hoistedLocals.Set (hoistedLocal, new ValueBasicBlockPair (value, -1));
