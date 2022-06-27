@@ -1741,7 +1741,7 @@ namespace Mono.Linker.Steps
 		protected virtual bool IgnoreScope (IMetadataScope scope)
 		{
 			AssemblyDefinition? assembly = Context.Resolve (scope);
-			return assembly != null && Annotations.GetAction (assembly) != AssemblyAction.Link;
+			return assembly is null || Annotations.GetAction (assembly) != AssemblyAction.Link;
 		}
 
 		void MarkModule (ModuleDefinition module, DependencyInfo reason)
@@ -2321,7 +2321,7 @@ namespace Mono.Linker.Steps
 				// If the type is marked, we need to keep overrides of abstract members defined in assemblies
 				// that are copied.  However, if the base method is virtual, then we don't need to keep the override
 				// until the type could be instantiated
-				if (!@base.IsAbstract)
+				if (!(@base.IsAbstract || (@base.IsStatic && @base.IsVirtual)))
 					continue;
 
 				if (IgnoreScope (@base.DeclaringType.Scope))
