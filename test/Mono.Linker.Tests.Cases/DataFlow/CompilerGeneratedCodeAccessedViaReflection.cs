@@ -68,6 +68,15 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				t.RequiresAll ();
 			}
 
+			[ExpectedWarning ("IL2119", "<" + nameof (IteratorWithIntegerDataflow) + ">", "MoveNext", CompilerGeneratedCode = true)]
+			public static IEnumerable<int> IteratorWithIntegerDataflow ()
+			{
+				int integerLocal = 0;
+				yield return 0;
+				var types = new Type[] { GetWithPublicMethods (), GetWithPublicFields () };
+				types[integerLocal].RequiresPublicMethods ();
+			}
+
 			[ExpectedWarning ("IL2119", "<" + nameof (IteratorWithProblematicDataflow) + ">", "MoveNext", CompilerGeneratedCode = true)]
 			[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true,
 				ProducedBy = ProducedBy.Trimmer)]
@@ -115,6 +124,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2118", "<" + nameof (IteratorWithCorrectDataflow) + ">", "MoveNext",
 				ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2118", "<" + nameof (IteratorWithIntegerDataflow) + ">", "MoveNext",
+				ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2118", "<" + nameof (BaseIteratorWithCorrectDataflow) + ">", "MoveNext",
 				ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2026", nameof (RUCTypeWithIterators) + "()", "--RUCTypeWithIterators--")]
@@ -127,6 +138,18 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			// [ExpectedWarning ("IL2026", "<" + nameof (RUCTypeWithIterators.InstanceIteratorCallsMethodWithRequires) + ">")]
 			// With that, the IL2118 warning should also go away.
 			[ExpectedWarning ("IL2118", "<" + nameof (RUCTypeWithIterators.InstanceIteratorCallsMethodWithRequires) + ">", "MoveNext",
+				ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2118", "<" + nameof (IteratorWithCorrectDataflow) + ">", "<t>",
+				ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2118", "<" + nameof (IteratorWithProblematicDataflow) + ">", "<t>",
+				ProducedBy = ProducedBy.Trimmer)]
+			// Technically the access to IteratorWithIntegerDataflow should warn about access to the integer
+			// field integerLocal, but our heuristics only warn if the field type satisfies the
+			// "IsTypeInterestingForDatafllow" check. This is likely good enough because in most cases the
+			// compiler-generated code will have other hoisted fields with types that _are_ interesting for dataflow.
+			[ExpectedWarning ("IL2118", "<" + nameof (IteratorWithIntegerDataflow) + ">", "<types>",
+				ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2118", "<" + nameof (BaseIteratorWithCorrectDataflow) + ">", "<t>",
 				ProducedBy = ProducedBy.Trimmer)]
 			public static void Test (IteratorStateMachines test = null)
 			{
@@ -169,6 +192,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[ExpectedWarning ("IL2118", "<" + nameof (AsyncCallsMethodWithRequires) + ">", "MoveNext",
 				ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2118", "<" + nameof (AsyncWithCorrectDataflow) + ">", "MoveNext",
+				ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2118", "<" + nameof (AsyncWithCorrectDataflow) + ">", "<t>",
+				ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2118", "<" + nameof (AsyncWithProblematicDataflow) + ">", "<t>",
 				ProducedBy = ProducedBy.Trimmer)]
 			public static void Test ()
 			{
@@ -213,6 +240,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[ExpectedWarning ("IL2118", "<" + nameof (AsyncIteratorCallsMethodWithRequires) + ">", "MoveNext",
 				ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2118", "<" + nameof (AsyncIteratorWithCorrectDataflow) + ">", "MoveNext",
+				ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2118", "<" + nameof (AsyncIteratorWithCorrectDataflow) + ">", "<t>",
+				ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2118", "<" + nameof (AsyncIteratorWithProblematicDataflow) + ">", "<t>",
 				ProducedBy = ProducedBy.Trimmer)]
 			public static void Test ()
 			{
@@ -496,6 +527,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 		static Type GetWithPublicMethods () => null;
+
+		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)]
+		static Type GetWithPublicFields () => null;
 
 		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
 		static Type GetAll () => null;

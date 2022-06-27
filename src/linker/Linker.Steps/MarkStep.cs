@@ -1669,25 +1669,7 @@ namespace Mono.Linker.Steps
 				Annotations.Mark (field, reason, origin);
 			}
 
-			if (reason.Kind != DependencyKind.DynamicallyAccessedMemberOnType &&
-				Annotations.DoesFieldRequireUnreferencedCode (field, out RequiresUnreferencedCodeAttribute? requiresUnreferencedCodeAttribute) &&
-				!Annotations.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (origin.Provider))
-				ReportRequiresUnreferencedCode (field.GetDisplayName (), requiresUnreferencedCodeAttribute, new DiagnosticContext (origin, diagnosticsEnabled: true, Context));
-
-			switch (reason.Kind) {
-			case DependencyKind.AccessedViaReflection:
-			case DependencyKind.DynamicDependency:
-			case DependencyKind.DynamicallyAccessedMember:
-			case DependencyKind.InteropMethodDependency:
-				if (Annotations.FlowAnnotations.ShouldWarnWhenAccessedForReflection (field) &&
-					!Annotations.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (origin.Provider))
-					Context.LogWarning (origin, DiagnosticId.DynamicallyAccessedMembersFieldAccessedViaReflection, field.GetDisplayName ());
-
-				break;
-			case DependencyKind.DynamicallyAccessedMemberOnType:
-				ReportWarningsForTypeHierarchyReflectionAccess (field, origin);
-				break;
-			}
+			ProcessAnalysisAnnotationsForField (field, reason.Kind, in origin);
 
 			if (CheckProcessed (field))
 				return;
@@ -1732,6 +1714,62 @@ namespace Mono.Linker.Steps
 			if (Annotations.HasSubstitutedInit (field)) {
 				Annotations.SetPreservedStaticCtor (parent);
 				Annotations.SetSubstitutedInit (parent);
+			}
+		}
+
+		bool ShouldWarnForReflectionAccessToCompilerGeneratedCode (FieldDefinition field)
+		{
+			if (!CompilerGeneratedState.IsNestedFunctionOrStateMachineMember (field))
+				return false;
+
+			// No need to warn if it's already covered by the Requires attribute or explicit annotations on the field.
+			if (Annotations.DoesFieldRequireUnreferencedCode (field, out _) || Annotations.FlowAnnotations.ShouldWarnWhenAccessedForReflection (field))
+				return false;
+
+			// Only warn for types which are interesting for dataflow. Note that this does
+			// not include integer types, even though we track integers in the dataflow analysis.
+			// Technically we should also warn for integer types, but this leads to more warnings
+			// for example about the compiler-generated "state" field for state machine methods.
+			// This should be ok because in most cases the state machine types will also have other
+			// hoisted locals that produce warnings anyway when accessed via reflection.
+			return Annotations.FlowAnnotations.IsTypeInterestingForDataflow (field.FieldType);
+		}
+
+		void ProcessAnalysisAnnotationsForField (FieldDefinition field, DependencyKind dependencyKind, in MessageOrigin origin)
+		{
+			if (origin.Provider != ScopeStack.CurrentScope.Origin.Provider) {
+				Debug.Assert (dependencyKind == DependencyKind.DynamicallyAccessedMemberOnType ||
+					(origin.Provider is MethodDefinition originMethod && CompilerGeneratedState.IsNestedFunctionOrStateMachineMember (originMethod)));
+			}
+
+			if (dependencyKind == DependencyKind.DynamicallyAccessedMemberOnType) {
+				ReportWarningsForTypeHierarchyReflectionAccess (field, origin);
+				return;
+			}
+
+			if (Annotations.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (origin.Provider))
+				return;
+
+			switch (dependencyKind) {
+			case DependencyKind.AccessedViaReflection:
+			case DependencyKind.DynamicallyAccessedMember:
+				if (ShouldWarnForReflectionAccessToCompilerGeneratedCode (field))
+					Context.LogWarning (origin, DiagnosticId.CompilerGeneratedMemberAccessedViaReflection, field.GetDisplayName ());
+				break;
+			}
+
+			if (Annotations.DoesFieldRequireUnreferencedCode (field, out RequiresUnreferencedCodeAttribute? requiresUnreferencedCodeAttribute))
+				ReportRequiresUnreferencedCode (field.GetDisplayName (), requiresUnreferencedCodeAttribute, new DiagnosticContext (origin, diagnosticsEnabled: true, Context));
+
+			switch (dependencyKind) {
+			case DependencyKind.AccessedViaReflection:
+			case DependencyKind.DynamicDependency:
+			case DependencyKind.DynamicallyAccessedMember:
+			case DependencyKind.InteropMethodDependency:
+				if (Annotations.FlowAnnotations.ShouldWarnWhenAccessedForReflection (field))
+					Context.LogWarning (origin, DiagnosticId.DynamicallyAccessedMembersFieldAccessedViaReflection, field.GetDisplayName ());
+
+				break;
 			}
 		}
 
