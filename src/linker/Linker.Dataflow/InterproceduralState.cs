@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using ILLink.Shared.DataFlow;
 using ILLink.Shared.TypeSystemProxy;
 using HoistedLocalState = ILLink.Shared.DataFlow.DefaultValueDictionary<
@@ -37,6 +36,7 @@ namespace Mono.Linker.Dataflow
 			methodsList.Add (method);
 			Methods = new ValueSet<MethodProxy> (methodsList);
 		}
+
 		public void SetHoistedLocal (HoistedLocalKey key, MultiValue value)
 		{
 			// For hoisted locals, we track the entire set of assigned values seen
@@ -50,7 +50,6 @@ namespace Mono.Linker.Dataflow
 		public MultiValue GetHoistedLocal (HoistedLocalKey key)
 		{
 			var value = HoistedLocals.Get (key);
-			Debug.Assert (!value.Equals (lattice.HoistedLocalsLattice.Top));
 			return value;
 		}
 	}

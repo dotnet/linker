@@ -236,6 +236,27 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				void LocalFunction () => t.RequiresAll ();
 			}
 
+			static void ReadCapturedVariableInMultipleBranchesDistinct (bool b = false)
+			{
+				Type t;
+				if (b) {
+					t = GetWithPublicMethods ();
+					LocalFunctionRequiresMethods ();
+				} else {
+					t = GetWithPublicFields ();
+					LocalFunctionRequiresFields ();
+				}
+
+				// We include all writes, including ones that can't reach the local function invocation.
+				[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresPublicFields),
+					ProducedBy = ProducedBy.Trimmer)]
+				void LocalFunctionRequiresFields () => t.RequiresPublicFields ();
+				// We include all writes, including ones that can't reach the local function invocation.
+				[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresPublicMethods),
+					ProducedBy = ProducedBy.Trimmer)]
+				void LocalFunctionRequiresMethods () => t.RequiresPublicMethods ();
+			}
+
 			static void ReadCapturedVariableWithBackwardsBranch (int i = 0)
 			{
 				Type t = GetWithPublicMethods ();
@@ -357,6 +378,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				ReadCapturedVariable ();
 				ReadMergedCapturedVariable ();
 				ReadCapturedVariableInMultipleBranches ();
+				ReadCapturedVariableInMultipleBranchesDistinct ();
 				ReadCapturedVariableInMultipleFunctions ();
 				ReadCapturedVariableInCallGraphCycle ();
 				ReadCapturedVariableWithBackwardsBranch ();

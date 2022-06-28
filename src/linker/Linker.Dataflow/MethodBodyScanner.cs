@@ -195,21 +195,6 @@ namespace Mono.Linker.Dataflow
 			}
 		}
 
-		protected static void StoreLocalValue<TKey> (
-			ref DefaultValueDictionary<TKey, ValueBasicBlockPair> valueCollection,
-			in MultiValue valueToStore,
-			TKey key,
-			int curBasicBlock
-		) where TKey : IEquatable<TKey>
-		{
-			var existingValue = valueCollection.Get (key);
-			valueCollection.Set (key, new ValueBasicBlockPair (
-				existingValue.BasicBlockIndex switch {
-					int basicBlock when basicBlock == curBasicBlock => valueToStore,
-					-1 => valueToStore,
-					_ => MultiValueLattice.Meet (existingValue.Value, valueToStore)
-				}, curBasicBlock));
-		}
 		protected static void StoreMethodLocalValue<KeyType> (
 			Dictionary<KeyType, ValueBasicBlockPair> valueCollection,
 			in MultiValue valueToStore,
@@ -241,15 +226,12 @@ namespace Mono.Linker.Dataflow
 		// reachable from it.
 		public virtual void InterproceduralScan (MethodBody methodBody)
 		{
-			var methodGroupLattice = new ValueSetLattice<MethodProxy> ();
 			// Note that the default value of a hoisted local will be MultiValueLattice.Top, not UnknownValue.Instance.
 			// This ensures that there are no warnings for the "unassigned state" of a parameter.
 			// Definite assignment should ensure that there is no way for this to be an analysis hole.
-			// When getting a hoisted local value, we also assert that the value is not Top.
-			var hoistedLocalsLattice = new DictionaryLattice<HoistedLocalKey, MultiValue, ValueSetLattice<SingleValue>> (
-				MultiValueLattice
-			);
-			var interproceduralStateLattice = new InterproceduralStateLattice (methodGroupLattice, hoistedLocalsLattice);
+			var interproceduralStateLattice = new InterproceduralStateLattice (
+				new ValueSetLattice<MethodProxy> (),
+				new DictionaryLattice<HoistedLocalKey, MultiValue, ValueSetLattice<SingleValue>> (MultiValueLattice));
 			var interproceduralState = interproceduralStateLattice.Top;
 
 			var oldInterproceduralState = interproceduralState.Clone ();
