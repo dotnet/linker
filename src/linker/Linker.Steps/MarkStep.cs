@@ -1741,7 +1741,7 @@ namespace Mono.Linker.Steps
 		protected virtual bool IgnoreScope (IMetadataScope scope)
 		{
 			AssemblyDefinition? assembly = Context.Resolve (scope);
-			return assembly is null || Annotations.GetAction (assembly) != AssemblyAction.Link;
+			return assembly != null && Annotations.GetAction (assembly) != AssemblyAction.Link;
 		}
 
 		void MarkModule (ModuleDefinition module, DependencyInfo reason)
