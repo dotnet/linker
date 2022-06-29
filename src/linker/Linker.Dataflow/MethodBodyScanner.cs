@@ -241,19 +241,8 @@ namespace Mono.Linker.Dataflow
 
 				// Flow state through all methods encountered so far, as long as there
 				// are changes discovered in the hoisted local state on entry to any method.
-				foreach (var methodBodyValue in oldInterproceduralState.MethodBodies) {
+				foreach (var methodBodyValue in oldInterproceduralState.MethodBodies)
 					Scan (methodBodyValue.MethodBody, ref interproceduralState);
-					// For state machine methods, also scan the state machine members.
-					// Simplification: assume that all generated methods of the state machine type are
-					// reached at the point where the state machine method is reached.
-					if (CompilerGeneratedState.TryGetStateMachineType (methodBodyValue.MethodBody.Method, out TypeDefinition? stateMachineType)) {
-						foreach (var stateMachineMethod in stateMachineType.Methods) {
-							Debug.Assert (!CompilerGeneratedNames.IsLambdaOrLocalFunction (stateMachineMethod.Name));
-							if (stateMachineMethod.Body is MethodBody stateMachineMethodBody)
-								interproceduralState.TrackMethod (new MethodBodyValue (stateMachineMethodBody));
-						}
-					}
-				}
 			}
 
 #if DEBUG

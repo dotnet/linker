@@ -3,7 +3,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using ILLink.Shared.DataFlow;
+using Mono.Cecil;
 using Mono.Cecil.Cil;
 using HoistedLocalState = ILLink.Shared.DataFlow.DefaultValueDictionary<
 	Mono.Linker.Dataflow.HoistedLocalKey,
@@ -37,6 +39,18 @@ namespace Mono.Linker.Dataflow
 			// Work around the fact that ValueSet is readonly
 			var methodsList = new List<MethodBodyValue> (MethodBodies);
 			methodsList.Add (methodBody);
+
+			// For state machine methods, also scan the state machine members.
+			// Simplification: assume that all generated methods of the state machine type are
+			// reached at the point where the state machine method is reached.
+			if (CompilerGeneratedState.TryGetStateMachineType (methodBody.MethodBody.Method, out TypeDefinition? stateMachineType)) {
+				foreach (var stateMachineMethod in stateMachineType.Methods) {
+					Debug.Assert (!CompilerGeneratedNames.IsLambdaOrLocalFunction (stateMachineMethod.Name));
+					if (stateMachineMethod.Body is MethodBody stateMachineMethodBody)
+						methodsList.Add (new MethodBodyValue (stateMachineMethodBody));
+				}
+			}
+
 			MethodBodies = new ValueSet<MethodBodyValue> (methodsList);
 		}
 
