@@ -40,6 +40,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		[ExpectedWarning ("IL2120", "<" + nameof (BaseIteratorWithCorrectDataflow) + ">", "MoveNext",
 			ProducedBy = ProducedBy.Trimmer)]
+		[ExpectedWarning ("IL2120", "<" + nameof (BaseIteratorWithCorrectDataflow) + ">", "<t>",
+			ProducedBy = ProducedBy.Trimmer)]
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
 		class IteratorStateMachines : BaseTypeWithIteratorStateMachines
 		{
@@ -61,14 +63,16 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 
 			[ExpectedWarning ("IL2119", "<" + nameof (IteratorWithCorrectDataflow) + ">", "MoveNext", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL2119", "<t_IteratorWithCorrectDataflow>", CompilerGeneratedCode = true)]
 			public static IEnumerable<int> IteratorWithCorrectDataflow ()
 			{
-				var t = GetAll ();
+				var t_IteratorWithCorrectDataflow = GetAll ();
 				yield return 0;
-				t.RequiresAll ();
+				t_IteratorWithCorrectDataflow.RequiresAll ();
 			}
 
 			[ExpectedWarning ("IL2119", "<" + nameof (IteratorWithIntegerDataflow) + ">", "MoveNext", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL2119", "<types>", CompilerGeneratedCode = true)]
 			public static IEnumerable<int> IteratorWithIntegerDataflow ()
 			{
 				int integerLocal = 0;
@@ -78,13 +82,14 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 
 			[ExpectedWarning ("IL2119", "<" + nameof (IteratorWithProblematicDataflow) + ">", "MoveNext", CompilerGeneratedCode = true)]
+			[ExpectedWarning ("IL2119", "<t_IteratorWithProblematicDataflow>", CompilerGeneratedCode = true)]
 			[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true,
 				ProducedBy = ProducedBy.Trimmer)]
 			public static IEnumerable<int> IteratorWithProblematicDataflow ()
 			{
-				var t = GetWithPublicMethods ();
+				var t_IteratorWithProblematicDataflow = GetWithPublicMethods ();
 				yield return 0;
-				t.RequiresAll ();
+				t_IteratorWithProblematicDataflow.RequiresAll ();
 			}
 
 			[ExpectedWarning ("IL2112", nameof (RUCTypeWithIterators) + "()", "--RUCTypeWithIterators--", CompilerGeneratedCode = true)]
@@ -139,9 +144,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			// With that, the IL2118 warning should also go away.
 			[ExpectedWarning ("IL2118", "<" + nameof (RUCTypeWithIterators.InstanceIteratorCallsMethodWithRequires) + ">", "MoveNext",
 				ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2118", "<" + nameof (IteratorWithCorrectDataflow) + ">", "<t>",
+			[ExpectedWarning ("IL2118", "<" + nameof (IteratorWithCorrectDataflow) + ">", "<t_IteratorWithCorrectDataflow>",
 				ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2118", "<" + nameof (IteratorWithProblematicDataflow) + ">", "<t>",
+			[ExpectedWarning ("IL2118", "<" + nameof (IteratorWithProblematicDataflow) + ">", "<t_IteratorWithProblematicDataflow>",
 				ProducedBy = ProducedBy.Trimmer)]
 			// Technically the access to IteratorWithIntegerDataflow should warn about access to the integer
 			// field integerLocal, but our heuristics only warn if the field type satisfies the
@@ -175,16 +180,16 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			public static async Task AsyncWithCorrectDataflow ()
 			{
-				var t = GetAll ();
-				t.RequiresAll ();
+				var t_AsyncWithCorrectDataflow = GetAll ();
+				t_AsyncWithCorrectDataflow.RequiresAll ();
 			}
 
 			[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll), CompilerGeneratedCode = true,
 				ProducedBy = ProducedBy.Trimmer)]
 			public static async Task AsyncWithProblematicDataflow ()
 			{
-				var t = GetWithPublicMethods ();
-				t.RequiresAll ();
+				var t_AsyncWithProblematicDataflow = GetWithPublicMethods ();
+				t_AsyncWithProblematicDataflow.RequiresAll ();
 			}
 
 			[ExpectedWarning ("IL2118", "<" + nameof (AsyncWithProblematicDataflow) + ">", "MoveNext",
@@ -193,9 +198,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2118", "<" + nameof (AsyncWithCorrectDataflow) + ">", "MoveNext",
 				ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2118", "<" + nameof (AsyncWithCorrectDataflow) + ">", "<t>",
+			[ExpectedWarning ("IL2118", "<" + nameof (AsyncWithCorrectDataflow) + ">", "<t_AsyncWithCorrectDataflow>",
 				ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2118", "<" + nameof (AsyncWithProblematicDataflow) + ">", "<t>",
+			[ExpectedWarning ("IL2118", "<" + nameof (AsyncWithProblematicDataflow) + ">", "<t_AsyncWithProblematicDataflow>",
 				ProducedBy = ProducedBy.Trimmer)]
 			public static void Test ()
 			{

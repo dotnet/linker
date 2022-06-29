@@ -47,6 +47,8 @@ namespace Mono.Linker.Dataflow
 		protected readonly LinkContext _context;
 		protected static ValueSetLattice<SingleValue> MultiValueLattice => default;
 
+		static InterproceduralStateLattice InterproceduralStateLattice => default;
+
 		protected MethodBodyScanner (LinkContext context)
 		{
 			this._context = context;
@@ -224,38 +226,31 @@ namespace Mono.Linker.Dataflow
 
 		// Scans the method as well as any nested functions (local functions or lambdas) and state machines
 		// reachable from it.
-		public virtual void InterproceduralScan (MethodBody methodBody)
+		public virtual void InterproceduralScan (MethodBody startingMethodBody)
 		{
 			// Note that the default value of a hoisted local will be MultiValueLattice.Top, not UnknownValue.Instance.
 			// This ensures that there are no warnings for the "unassigned state" of a parameter.
 			// Definite assignment should ensure that there is no way for this to be an analysis hole.
-			var interproceduralStateLattice = new InterproceduralStateLattice (
-				new ValueSetLattice<MethodProxy> (),
-				new DictionaryLattice<HoistedLocalKey, MultiValue, ValueSetLattice<SingleValue>> (MultiValueLattice));
-			var interproceduralState = interproceduralStateLattice.Top;
+			var interproceduralState = InterproceduralStateLattice.Top;
 
 			var oldInterproceduralState = interproceduralState.Clone ();
-			interproceduralState.TrackMethod (new MethodProxy (methodBody.Method));
+			interproceduralState.TrackMethod (new MethodBodyValue (startingMethodBody));
 
 			while (!interproceduralState.Equals (oldInterproceduralState)) {
 				oldInterproceduralState = interproceduralState.Clone ();
 
 				// Flow state through all methods encountered so far, as long as there
 				// are changes discovered in the hoisted local state on entry to any method.
-				foreach (var method in oldInterproceduralState.Methods) {
-					var methodToScan = method.Method;
-					if (methodToScan.Body == null)
-						continue;
-
-					Scan (methodToScan.Body, ref interproceduralState);
-
+				foreach (var methodBodyValue in oldInterproceduralState.MethodBodies) {
+					Scan (methodBodyValue.MethodBody, ref interproceduralState);
 					// For state machine methods, also scan the state machine members.
 					// Simplification: assume that all generated methods of the state machine type are
-					// invoked at the point where the state machine method is called.
-					if (CompilerGeneratedState.TryGetStateMachineType (methodToScan, out TypeDefinition? stateMachineType)) {
+					// reached at the point where the state machine method is reached.
+					if (CompilerGeneratedState.TryGetStateMachineType (methodBodyValue.MethodBody.Method, out TypeDefinition? stateMachineType)) {
 						foreach (var stateMachineMethod in stateMachineType.Methods) {
 							Debug.Assert (!CompilerGeneratedNames.IsLambdaOrLocalFunction (stateMachineMethod.Name));
-							interproceduralState.TrackMethod (new MethodProxy (stateMachineMethod));
+							if (stateMachineMethod.Body is MethodBody stateMachineMethodBody)
+								interproceduralState.TrackMethod (new MethodBodyValue (stateMachineMethodBody));
 						}
 					}
 				}
@@ -264,7 +259,7 @@ namespace Mono.Linker.Dataflow
 #if DEBUG
 			// Validate that the compiler-generated callees tracked by the compiler-generated state
 			// are the same set of methods that we discovered and scanned above.
-			if (_context.CompilerGeneratedState.TryGetCompilerGeneratedCalleesForUserMethod (methodBody.Method, out List<IMemberDefinition>? compilerGeneratedCallees)) {
+			if (_context.CompilerGeneratedState.TryGetCompilerGeneratedCalleesForUserMethod (startingMethodBody.Method, out List<IMemberDefinition>? compilerGeneratedCallees)) {
 				var calleeMethods = compilerGeneratedCallees.OfType<MethodDefinition> ();
 				// https://github.com/dotnet/linker/issues/2845
 				// Disabled asserts due to a bug
@@ -272,7 +267,7 @@ namespace Mono.Linker.Dataflow
 				// foreach (var method in calleeMethods)
 				// 	Debug.Assert (interproceduralState.Any (kvp => kvp.Key.Method == method));
 			} else {
-				Debug.Assert (interproceduralState.Methods.Count () == 1);
+				Debug.Assert (interproceduralState.MethodBodies.Count () == 1);
 			}
 #endif
 		}
@@ -285,7 +280,8 @@ namespace Mono.Linker.Dataflow
 			if (!CompilerGeneratedNames.IsLambdaOrLocalFunction (method.Name))
 				return;
 
-			interproceduralState.TrackMethod (method);
+			if (method.Body is MethodBody methodBody)
+				interproceduralState.TrackMethod (new MethodBodyValue (methodBody));
 		}
 
 		protected virtual void Scan (MethodBody methodBody, ref InterproceduralState interproceduralState)
