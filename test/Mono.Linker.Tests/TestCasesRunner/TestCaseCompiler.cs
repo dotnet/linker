@@ -128,7 +128,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 				if (setupCompileInfo.RemoveFromLinkerInput) {
 					removeFromLinkerInputAssemblies.Add (output);
-					File.Copy (output, _sandbox.ReferencesDirectory.Combine(output.FileName), true);
+					File.Copy (output, _sandbox.ReferencesDirectory.Combine (output.FileName), true);
 				}
 
 				if (setupCompileInfo.AddAsReference)

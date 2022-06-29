@@ -28,13 +28,13 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 		{
 			[Kept]
 			[KeptMember (".ctor()")]
-			[KeptInterface (typeof(IStaticVirtualMethods))]
+			[KeptInterface (typeof (IStaticVirtualMethods))]
 			public class ExplcitImplementations : IStaticVirtualMethods
 			{
 				[Kept]
-				static int IStaticVirtualMethods.Property { [Kept][KeptOverride (typeof(IStaticVirtualMethods))]get => 1; [Kept][KeptOverride (typeof(IStaticVirtualMethods))]set => _ = value; }
+				static int IStaticVirtualMethods.Property { S[Kept][KeptOverride (typeof (IStaticVirtualMethods))] get => 1; [Kept][KeptOverride (typeof (IStaticVirtualMethods))] set => _ = value; }
 				[Kept]
-				[KeptOverride (typeof(IStaticVirtualMethods))]
+				[KeptOverride (typeof (IStaticVirtualMethods))]
 				static int IStaticVirtualMethods.Method () => 1;
 			}
 		}
