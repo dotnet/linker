@@ -18,13 +18,14 @@ namespace Mono.Linker
 			if (methodDefinition != null && (methodDefinition.IsSetter || methodDefinition.IsGetter)) {
 				// Append property name
 				string name;
-				// Remove set_/get_ from beginning and add .get/.set/.init to end
+				// Remove set_/get_ prefix from method to get property name
+				var propertyName = methodDefinition.Name.AsSpan (4);
 				if (methodDefinition.IsGetter)
-					name = string.Concat (methodDefinition.Name.AsSpan (4), ".get");
+					name = string.Concat (propertyName, ".get");
 				else if (methodDefinition.IsInit ())
-					name = string.Concat (methodDefinition.Name.AsSpan (4), ".init");
+					name = string.Concat (propertyName, ".init");
 				else
-					name = string.Concat (methodDefinition.Name.AsSpan (4), ".set");
+					name = string.Concat (propertyName, ".set");
 
 				sb.Append (name);
 				// Insert declaring type name and namespace
