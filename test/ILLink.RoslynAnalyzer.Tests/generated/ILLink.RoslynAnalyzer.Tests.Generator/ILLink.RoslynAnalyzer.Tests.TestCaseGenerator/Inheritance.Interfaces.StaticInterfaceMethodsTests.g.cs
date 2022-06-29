@@ -7,6 +7,8 @@ namespace ILLink.RoslynAnalyzer.Tests.Inheritance.Interfaces
 	public sealed partial class StaticInterfaceMethodsTests : LinkerTestBase
 	{
 
+		protected override string TestSuiteName => "Inheritance.Interfaces.StaticInterfaceMethods";
+
 		[Fact]
 		public Task StaticVirtualInterfaceMethodsLibrary ()
 		{

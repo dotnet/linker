@@ -126,8 +126,10 @@ namespace Mono.Linker.Tests.TestCasesRunner
 					CollectSetupBeforeResourcesFiles (setupCompileInfo));
 				var output = CompileAssembly (options);
 
-				if (setupCompileInfo.RemoveFromLinkerInput)
+				if (setupCompileInfo.RemoveFromLinkerInput) {
 					removeFromLinkerInputAssemblies.Add (output);
+					File.Copy (output, _sandbox.ReferencesDirectory.Combine(output.FileName), true);
+				}
 
 				if (setupCompileInfo.AddAsReference)
 					yield return output;
