@@ -120,6 +120,10 @@ namespace Mono.Linker.Tests.TestCasesRunner
 					string assemblyName = (string) assemblyAttr.ConstructorArguments[1].Value;
 					if ((string) assemblyAttr.ConstructorArguments[0].Value == "copy") {
 						VerifyCopyAssemblyIsKeptUnmodified (outputDirectory, assemblyName + (assemblyName == "test" ? ".exe" : ".dll"));
+					} else if ((string) assemblyAttr.ConstructorArguments[0].Value == "skip") {
+						// `skip` assemblies need to be copied to make sure they can be resolved
+						var fileName = assemblyName + (assemblyName == "test" ? ".exe" : ".dll");
+						System.IO.File.Copy (outputDirectory.Parent.Combine ("input").Combine (fileName), outputDirectory.Combine (fileName));
 					}
 
 					actionAssemblies.Add (assemblyName);
