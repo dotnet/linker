@@ -82,8 +82,9 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 		void InitializeResolvers (LinkedTestCaseResult linkedResult)
 		{
-			_originalsResolver.AddSearchDirectory (linkedResult.ExpectationsAssemblyPath.Parent.ToString ());
-			_linkedResolver.AddSearchDirectory (linkedResult.OutputAssemblyPath.Parent.ToString ());
+			_originalsResolver.AddSearchDirectory (linkedResult.Sandbox.ExpectationsDirectory);
+			_linkedResolver.AddSearchDirectory (linkedResult.Sandbox.OutputDirectory);
+			_linkedResolver.AddSearchDirectory (linkedResult.Sandbox.ReferencesDirectory);
 		}
 
 		protected AssemblyDefinition ResolveLinkedAssembly (string assemblyName)

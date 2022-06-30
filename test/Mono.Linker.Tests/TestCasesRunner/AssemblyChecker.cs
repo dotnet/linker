@@ -243,14 +243,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			}
 
 			foreach (var overriddenMethod in linked.Overrides) {
-				MethodDefinition? maybeOverriddenMethod;
-				// Try to resolve, but it may come from an unreferenced or skip assembly
-				try {
-					maybeOverriddenMethod = overriddenMethod.Resolve ();
-				} catch (AssemblyResolutionException) {
-					continue;
-				}
-				if (maybeOverriddenMethod is not MethodDefinition overriddenDefinition) {
+				if (overriddenMethod.Resolve() is not MethodDefinition overriddenDefinition) {
 					Assert.Fail ($"Method {linked.GetDisplayName ()} overrides method {overriddenMethod} which does not exist");
 				} else if (overriddenDefinition.DeclaringType.IsInterface) {
 					Assert.True (linked.DeclaringType.Interfaces.Select (i => i.InterfaceType.FullName).Contains (overriddenMethod.DeclaringType.FullName),
