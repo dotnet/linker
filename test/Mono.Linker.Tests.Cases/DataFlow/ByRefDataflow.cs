@@ -126,7 +126,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			static IntPtr GetDangerous () { return IntPtr.Zero; }
 
 			[Kept]
-			[ExpectedWarning("IL2070")]
+			[ExpectedWarning ("IL2070")]
 			static unsafe void LocalStackAllocDeref (Type t)
 			{
 				// Code pattern from CoreLib which caused problems in AOT port
