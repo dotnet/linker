@@ -3,6 +3,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Collections.Immutable;
 using System.Linq;
 using ILLink.RoslynAnalyzer.DataFlow;
 using ILLink.Shared.DataFlow;
@@ -11,39 +12,34 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.FlowAnalysis;
 
+using LocalStateValue = ILLink.RoslynAnalyzer.DataFlow.LocalState<
+	ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.SingleValue>>;
+
+using MultiValue = ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.SingleValue>;
+
 namespace ILLink.RoslynAnalyzer.TrimAnalysis
 {
-	public class TrimDataFlowAnalysis
-		: ForwardDataFlowAnalysis<
-			LocalState<ValueSet<SingleValue>>,
-			LocalDataFlowState<ValueSet<SingleValue>, ValueSetLattice<SingleValue>>,
-			LocalStateLattice<ValueSet<SingleValue>, ValueSetLattice<SingleValue>>,
-			BlockProxy,
-			RegionProxy,
-			ControlFlowGraphProxy,
-			TrimAnalysisVisitor
-		>
+	public class TrimDataFlowAnalysis : LocalDataFlowAnalysis<MultiValue, ValueSetLattice<SingleValue>, TrimAnalysisVisitor>
 	{
-		readonly ControlFlowGraphProxy ControlFlowGraph;
+		public TrimAnalysisPatternStore TrimAnalysisPatterns { get; }
 
-		readonly LocalStateLattice<ValueSet<SingleValue>, ValueSetLattice<SingleValue>> Lattice;
-
-		readonly OperationBlockAnalysisContext Context;
-
-		public TrimDataFlowAnalysis (OperationBlockAnalysisContext context, ControlFlowGraph cfg)
+		public TrimDataFlowAnalysis (OperationBlockAnalysisContext context, IOperation operationBlock)
+			: base (context, operationBlock)
 		{
-			ControlFlowGraph = new ControlFlowGraphProxy (cfg);
-			Lattice = new (new ValueSetLattice<SingleValue> ());
-			Context = context;
+			TrimAnalysisPatterns = new TrimAnalysisPatternStore (Lattice.Lattice.ValueLattice);
 		}
 
-		public TrimAnalysisPatternStore ComputeTrimAnalysisPatterns ()
-		{
-			var lValueFlowCaptures = LValueFlowCapturesProvider.CreateLValueFlowCaptures (ControlFlowGraph.ControlFlowGraph);
-			var visitor = new TrimAnalysisVisitor (Lattice, Context, lValueFlowCaptures);
-			Fixpoint (ControlFlowGraph, Lattice, visitor);
-			return visitor.TrimAnalysisPatterns;
-		}
+		protected override TrimAnalysisVisitor GetVisitor (
+			IMethodSymbol method,
+			ControlFlowGraph methodCFG,
+			ImmutableDictionary<CaptureId, FlowCaptureKind> lValueFlowCaptures,
+			InterproceduralState<MultiValue, ValueSetLattice<SingleValue>> interproceduralState)
+		 => new (Lattice,
+				method,
+				methodCFG,
+				lValueFlowCaptures,
+				TrimAnalysisPatterns,
+				interproceduralState);
 
 #if DEBUG
 #pragma warning disable CA1805 // Do not initialize unnecessarily
@@ -146,9 +142,9 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 		}
 
 		public override void TraceBlockInput (
-			LocalState<ValueSet<SingleValue>> normalState,
-			LocalState<ValueSet<SingleValue>>? exceptionState,
-			LocalState<ValueSet<SingleValue>>? exceptionFinallyState
+			LocalStateValue normalState,
+			LocalStateValue? exceptionState,
+			LocalStateValue? exceptionFinallyState
 		)
 		{
 			if (trace && showStates) {
@@ -163,9 +159,9 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 		}
 
 		public override void TraceBlockOutput (
-			LocalState<ValueSet<SingleValue>> normalState,
-			LocalState<ValueSet<SingleValue>>? exceptionState,
-			LocalState<ValueSet<SingleValue>>? exceptionFinallyState
+			LocalStateValue normalState,
+			LocalStateValue? exceptionState,
+			LocalStateValue? exceptionFinallyState
 		)
 		{
 			if (trace && showStates) {
