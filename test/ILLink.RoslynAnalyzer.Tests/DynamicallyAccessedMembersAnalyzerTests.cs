@@ -4,9 +4,11 @@
 using System.Threading.Tasks;
 using ILLink.Shared;
 using Microsoft.CodeAnalysis.Testing;
+using Microsoft.CodeAnalysis.Text;
 using Xunit;
-using VerifyCS = ILLink.RoslynAnalyzer.Tests.CSharpAnalyzerVerifier<
-	ILLink.RoslynAnalyzer.DynamicallyAccessedMembersAnalyzer>;
+using VerifyCS = ILLink.RoslynAnalyzer.Tests.CSharpCodeFixVerifier<
+	ILLink.RoslynAnalyzer.DynamicallyAccessedMembersAnalyzer,
+	ILLink.CodeFix.DynamicallyAccessedMemberCodeFixProvider>;
 
 namespace ILLink.RoslynAnalyzer.Tests
 {
@@ -18,7 +20,31 @@ namespace ILLink.RoslynAnalyzer.Tests
 				TestCaseUtils.UseMSBuildProperties (MSBuildPropertyOptionNames.EnableTrimAnalyzer),
 				expected: expected);
 		}
-
+		static Task VerifyDynamicallyAccessedMembersCodeFix (
+			string source,
+			string fixedSource,
+			DiagnosticResult[] baselineExpected,
+			DiagnosticResult[] fixedExpected,
+			int? numberOfIterations = null)
+		{
+			var test = new VerifyCS.Test {
+				TestCode = source,
+				FixedCode = fixedSource,
+				ReferenceAssemblies = TestCaseUtils.Net6PreviewAssemblies
+			};
+			test.ExpectedDiagnostics.AddRange (baselineExpected);
+			test.TestState.AnalyzerConfigFiles.Add (
+						("/.editorconfig", SourceText.From (@$"
+is_global = true
+build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
+			if (numberOfIterations != null) {
+				test.NumberOfIncrementalIterations = numberOfIterations;
+				test.NumberOfFixAllIterations = numberOfIterations;
+			}
+			test.FixedState.ExpectedDiagnostics.AddRange (fixedExpected);
+			return test.RunAsync ();
+		}
+		
 		[Fact]
 		public Task NoWarningsIfAnalyzerIsNotEnabled ()
 		{
