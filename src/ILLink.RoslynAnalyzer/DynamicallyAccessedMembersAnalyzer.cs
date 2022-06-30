@@ -23,6 +23,7 @@ namespace ILLink.RoslynAnalyzer
 	{
 		internal const string DynamicallyAccessedMembers = nameof (DynamicallyAccessedMembers);
 		internal const string DynamicallyAccessedMembersAttribute = nameof (DynamicallyAccessedMembersAttribute);
+		public const string FullyQualifiedDynamicallyAccessedMembersAttribute = "System.Diagnostics.CodeAnalysis." + DynamicallyAccessedMembersAttribute;
 
 		static ImmutableArray<DiagnosticDescriptor> GetSupportedDiagnostics ()
 		{
@@ -102,7 +103,7 @@ namespace ILLink.RoslynAnalyzer
 					}
 
 					// Sub optimal way to handle analyzer not to generate warnings until the linker is fixed
-					// Iterators, local functions and lambdas are handled 
+					// Iterators, local functions and lambdas are handled
 					foreach (IOperation blockOperation in context.OperationBlocks) {
 						if (HasCompilerGeneratedCode (blockOperation))
 							return;
@@ -149,12 +150,12 @@ namespace ILLink.RoslynAnalyzer
 
 			var symbol = context.SemanticModel.GetSymbolInfo (context.Node).Symbol;
 
-			// Avoid unnecesary execution if not NamedType or Method
+			// Avoid unnecessary execution if not NamedType or Method
 			if (symbol is not INamedTypeSymbol && symbol is not IMethodSymbol)
 				return;
 
 			// Members inside nameof or cref comments, commonly used to access the string value of a variable, type, or a memeber,
-			// can generate diagnostics warnings, which can be noisy and unhelpful. 
+			// can generate diagnostics warnings, which can be noisy and unhelpful.
 			// Walking the node heirarchy to check if the member is inside a nameof/cref to not generate diagnostics
 			var parentNode = context.Node;
 			while (parentNode != null) {
