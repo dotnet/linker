@@ -243,7 +243,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			}
 
 			foreach (var overriddenMethod in linked.Overrides) {
-				if (overriddenMethod.Resolve() is not MethodDefinition overriddenDefinition) {
+				if (overriddenMethod.Resolve () is not MethodDefinition overriddenDefinition) {
 					Assert.Fail ($"Method {linked.GetDisplayName ()} overrides method {overriddenMethod} which does not exist");
 				} else if (overriddenDefinition.DeclaringType.IsInterface) {
 					Assert.True (linked.DeclaringType.Interfaces.Select (i => i.InterfaceType.FullName).Contains (overriddenMethod.DeclaringType.FullName),
