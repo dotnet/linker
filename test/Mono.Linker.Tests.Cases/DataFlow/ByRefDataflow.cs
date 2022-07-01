@@ -179,6 +179,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 
 			[Kept]
+			// https://github.com/dotnet/linker/issues/2874
 			[ExpectedWarning ("IL2069", ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2069", ProducedBy = ProducedBy.Trimmer)]
 			public static void Test ()
