@@ -10,6 +10,12 @@ namespace ILLink.RoslynAnalyzer.Tests.Inheritance.Interfaces
 		protected override string TestSuiteName => "Inheritance.Interfaces.StaticInterfaceMethods";
 
 		[Fact]
+		public Task StaticVirtualInterfaceMethods ()
+		{
+			return RunTest (allowMissingWarnings: true);
+		}
+
+		[Fact]
 		public Task StaticVirtualInterfaceMethodsLibrary ()
 		{
 			return RunTest (allowMissingWarnings: true);

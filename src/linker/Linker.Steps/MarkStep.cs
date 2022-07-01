@@ -2304,31 +2304,47 @@ namespace Mono.Linker.Steps
 		/// </remarks>
 		bool IsMethodNeededByTypeDueToPreservedScope (MethodDefinition method)
 		{
-			// Static methods may also have base methods in static interface methods. These methods are not captured by IsVirtual and must be checked separately
-			if (!(method.IsVirtual || method.IsStatic))
-				return false;
-
 			var base_list = Annotations.GetBaseMethods (method);
 			if (base_list == null)
 				return false;
 
 			foreach (MethodDefinition @base in base_list) {
-				// Just because the type is marked does not mean we need interface methods.
-				// if the type is never instantiated, interfaces will be removed - but only if the optimization is enabled
-				if (@base.DeclaringType.IsInterface && Context.IsOptimizationEnabled (CodeOptimizations.UnusedInterfaces, method.DeclaringType))
+				// column titles refer to if the base method / base method type is X
+				// ----------------------------------------------------------------------------------
+				// Base type: | base meth  | base meth | base type is     | Method scope w | method is
+				// base/iface | inst/stat  | virt/abst | iface w/ static  | UnusedIFaceOpt | needed
+				// ----------------------------------------------------------------------------------
+				// base       | instance   | virtual   | n/a              | n/a            | no
+				// base       | instance   | abstract  | n/a              | n/a            | yes
+				// base       | static     | *         | n/a              | n/a            | yes
+				// iface      | instance   | virtual   | *                | yes            | no
+				// iface      | instance   | abstract  | yes              | yes            | yes
+				// iface      | instance   | *         | no               | yes            | no
+				// iface      | static     | *         | always yes       | yes            | yes
+				// iface      | *          | *         | *                | no             | yes
+
+				// if the base method isn't in a preserve scope, don't even worry about anything else
+				if (!IgnoreScope (@base.DeclaringType.Scope) && !IsMethodNeededByTypeDueToPreservedScope (@base))
 					continue;
 
-				// If the type is marked, we need to keep overrides of abstract members defined in assemblies
-				// that are copied.  However, if the base method is virtual, then we don't need to keep the override
-				// until the type could be instantiated
-				if (!(@base.IsAbstract || (@base.IsStatic && @base.IsVirtual)))
+				// base/iface | inst/stat  | virt/abst | iface has static | UnusedIFaceOpt | needed
+				// --------------------------------------------------------------------------------
+				// iface      | instance   | virtual   | *                | yes            | no
+				if (!@base.DeclaringType.IsInterface && !@base.IsStatic && @base.IsVirtual && !@base.IsAbstract)
+					continue;
+				// base/iface | inst/stat  | virt/abst | iface has static | UnusedIFaceOpt | needed
+				// --------------------------------------------------------------------------------
+				// iface      | instance   | virtual   | *                | yes            | no
+				if (@base.DeclaringType.IsInterface && !@base.IsStatic && @base.IsVirtual && !@base.IsAbstract && Context.IsOptimizationEnabled(CodeOptimizations.UnusedInterfaces, method.DeclaringType))
+					continue;
+				// base/iface | inst/stat  | virt/abst | iface has static | UnusedIFaceOpt | needed
+				// --------------------------------------------------------------------------------
+				// iface      | instance   | *         | no               | yes            | no
+				if (@base.DeclaringType.IsInterface && !@base.IsStatic && !@base.DeclaringType.Methods.Any (m => m.IsStatic) && Context.IsOptimizationEnabled(CodeOptimizations.UnusedInterfaces, method.DeclaringType))
 					continue;
 
-				if (IgnoreScope (@base.DeclaringType.Scope))
-					return true;
-
-				if (IsMethodNeededByTypeDueToPreservedScope (@base))
-					return true;
+				// If all the other checks haven't told us to skip marking, it is needed
+				return true;
 			}
 
 			return false;

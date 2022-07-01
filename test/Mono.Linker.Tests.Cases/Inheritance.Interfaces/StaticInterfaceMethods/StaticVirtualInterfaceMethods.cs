@@ -15,19 +15,22 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 {
 	[SetupCompileBefore ("library.dll", new[] { "Dependencies/Library.cs" })]
 	[SetupLinkerAction ("skip", "library")]
-	[SetupLinkerArgument ("-a", "test.exe", "library")]
-	public static class StaticVirtualInterfaceMethodsLibrary
+	[SetupLinkerArgument ("-a", "test.exe")]
+	public static class StaticVirtualInterfaceMethods
 	{
 		[Kept]
 		public static void Main ()
 		{
+			var x = typeof (IfaceMethodInPreserveScope.ExplcitImplementations);
+			x = typeof (IfaceMethodInPreserveScope);
+			x = typeof (AbstractStaticInPreserveScope.ExplcitImplementations);
+			x = typeof (AbstractStaticInPreserveScope);
 		}
 
 		[Kept]
 		public static class IfaceMethodInPreserveScope
 		{
 			[Kept]
-			[KeptMember (".ctor()")]
 			[KeptInterface (typeof (IStaticVirtualMethods))]
 			public class ExplcitImplementations : IStaticVirtualMethods
 			{
@@ -36,8 +39,6 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 				[Kept]
 				[KeptOverride (typeof (IStaticVirtualMethods))]
 				static int IStaticVirtualMethods.Method () => 1;
-				[Kept]
-				[KeptOverride (typeof(IStaticVirtualMethods))]
 				int IStaticVirtualMethods.InstanceMethod () => 0;
 			}
 		}
@@ -46,7 +47,6 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 		public static class AbstractStaticInPreserveScope
 		{
 			[Kept]
-			[KeptMember (".ctor()")]
 			[KeptInterface (typeof (IStaticAbstractMethods))]
 			public class ExplcitImplementations : IStaticAbstractMethods
 			{
