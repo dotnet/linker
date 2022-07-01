@@ -2317,7 +2317,7 @@ namespace Mono.Linker.Steps
 				// base       | instance   | virtual   | n/a              | n/a            | no
 				// base       | instance   | abstract  | n/a              | n/a            | yes
 				// base       | static     | *         | n/a              | n/a            | yes
-				// iface      | instance   | virtual   | *                | yes            | no
+				// iface      | instance   | virtual   | *                | *              | no
 				// iface      | instance   | abstract  | yes              | yes            | yes
 				// iface      | instance   | *         | no               | yes            | no
 				// iface      | static     | *         | always yes       | yes            | yes
@@ -2329,17 +2329,23 @@ namespace Mono.Linker.Steps
 
 				// base/iface | inst/stat  | virt/abst | iface has static | UnusedIFaceOpt | needed
 				// --------------------------------------------------------------------------------
-				// iface      | instance   | virtual   | *                | yes            | no
+				// base       | instance   | virtual   | n/a              | n/a            | no
+				// Instance methods of base types only need implmentations if the base is abstract
+				// A virtual instance method with a default impl on the base doesn't need to be kept
 				if (!@base.DeclaringType.IsInterface && !@base.IsStatic && @base.IsVirtual && !@base.IsAbstract)
 					continue;
 				// base/iface | inst/stat  | virt/abst | iface has static | UnusedIFaceOpt | needed
 				// --------------------------------------------------------------------------------
 				// iface      | instance   | virtual   | *                | yes            | no
-				if (@base.DeclaringType.IsInterface && !@base.IsStatic && @base.IsVirtual && !@base.IsAbstract && Context.IsOptimizationEnabled(CodeOptimizations.UnusedInterfaces, method.DeclaringType))
+				// Uninstantiated types will not need iface instance methods unless they are abstract
+				// Abstract iface methods must be implemented for valid IL, but not virtuals
+				if (@base.DeclaringType.IsInterface && !@base.IsStatic && @base.IsVirtual && !@base.IsAbstract)
 					continue;
 				// base/iface | inst/stat  | virt/abst | iface has static | UnusedIFaceOpt | needed
 				// --------------------------------------------------------------------------------
 				// iface      | instance   | *         | no               | yes            | no
+				// Instance methods of interfaces without static methods don't need marking
+				// It is still very possible that the interface could be removed
 				if (@base.DeclaringType.IsInterface && !@base.IsStatic && !@base.DeclaringType.Methods.Any (m => m.IsStatic) && Context.IsOptimizationEnabled(CodeOptimizations.UnusedInterfaces, method.DeclaringType))
 					continue;
 
