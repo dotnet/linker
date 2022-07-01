@@ -343,11 +343,11 @@ namespace ILLink.Tasks
 
 				string assemblyTrimMode = assembly.GetMetadata ("TrimMode");
 				string isTrimmable = assembly.GetMetadata ("IsTrimmable");
-				if (string.IsNullOrEmpty(assemblyTrimMode)) {
-					if (isTrimmable.Equals("true", StringComparison.OrdinalIgnoreCase)) {
+				if (string.IsNullOrEmpty (assemblyTrimMode)) {
+					if (isTrimmable.Equals ("true", StringComparison.OrdinalIgnoreCase)) {
 						// isTrimmable ~= true
 						assemblyTrimMode = trimMode;
-					} else if (isTrimmable.Equals("false", StringComparison.OrdinalIgnoreCase)) {
+					} else if (isTrimmable.Equals ("false", StringComparison.OrdinalIgnoreCase)) {
 						// isTrimmable ~= false
 						assemblyTrimMode = defaultAction;
 					}

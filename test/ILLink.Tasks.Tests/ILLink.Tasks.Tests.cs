@@ -73,7 +73,7 @@ namespace ILLink.Tasks.Tests
 		[Theory]
 		[InlineData ("full", AssemblyAction.Link)]
 		[InlineData ("partial", AssemblyAction.Copy)]
-		public void TrimModeAssemblyPaths (string trimMode, AssemblyAction notTrimmedAction)
+		public void TrimModeAssemblyPaths (string trimMode)
 		{
 			var assemblyPaths = new ITaskItem[] {
 				new TaskItem("Assembly1.dll", new Dictionary<string, string> {{ "IsTrimmable", "true" }}),
@@ -83,13 +83,13 @@ namespace ILLink.Tasks.Tests
 				TrimMode = trimMode,
 				AssemblyPaths = assemblyPaths
 			};
-			using var driver = task.CreateDriver();
+			using var driver = task.CreateDriver ();
 			var context = driver.Context;
-			var references = driver.GetReferenceAssemblies();
-			Assert.Equal("", assemblyPaths[0].GetMetadata("TrimMode"));
-			Assert.Equal(AssemblyAction.Link, context.Actions["Assembly1"]);
-			Assert.Equal("", assemblyPaths[1].GetMetadata("TrimMode"));
-			Assert.False(context.Actions.ContainsKey("Assembly2"));
+			var references = driver.GetReferenceAssemblies ();
+			Assert.Equal ("", assemblyPaths[0].GetMetadata ("TrimMode"));
+			Assert.Equal (AssemblyAction.Link, context.Actions["Assembly1"]);
+			Assert.Equal ("", assemblyPaths[1].GetMetadata ("TrimMode"));
+			Assert.False (context.Actions.ContainsKey ("Assembly2"));
 		}
 
 		[Theory]
