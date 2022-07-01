@@ -166,7 +166,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			static Type _publicPropertiesField;
 
 			[Kept]
-			static void TwoOutRefs(
+			static void TwoOutRefs (
 				[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
 				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 				out Type publicMethods,
@@ -179,9 +179,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 
 			[Kept]
-			[ExpectedWarning ("IL2069")]
-			[ExpectedWarning ("IL2069")]
-			public static void Test()
+			[ExpectedWarning ("IL2069", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2069", ProducedBy = ProducedBy.Trimmer)]
+			public static void Test ()
 			{
 				TwoOutRefs (out _publicMethodsField, out _publicPropertiesField);
 			}
