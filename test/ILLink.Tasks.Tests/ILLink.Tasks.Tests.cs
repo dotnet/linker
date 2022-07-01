@@ -78,6 +78,7 @@ namespace ILLink.Tasks.Tests
 			var assemblyPaths = new ITaskItem[] {
 				new TaskItem("Assembly1.dll", new Dictionary<string, string> {{ "IsTrimmable", "true" }}),
 				new TaskItem("Assembly2.dll", new Dictionary<string, string> ()),
+				new TaskItem("Assembly3.dll", new Dictionary<string, string> {{ "IsTrimmable", "false" }}),
 			};
 			var task = new MockTask () {
 				TrimMode = trimMode,
@@ -90,6 +91,8 @@ namespace ILLink.Tasks.Tests
 			Assert.Equal (AssemblyAction.Link, context.Actions["Assembly1"]);
 			Assert.Equal ("", assemblyPaths[1].GetMetadata ("TrimMode"));
 			Assert.False (context.Actions.ContainsKey ("Assembly2"));
+			Assert.Equal ("", assemblyPaths[2].GetMetadata ("TrimMode"));
+			Assert.Equal (AssemblyAction.Copy, context.Actions["Assembly3"]);
 		}
 
 		[Theory]

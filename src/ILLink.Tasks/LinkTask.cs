@@ -349,7 +349,7 @@ namespace ILLink.Tasks
 						assemblyTrimMode = trimMode;
 					} else if (isTrimmable.Equals ("false", StringComparison.OrdinalIgnoreCase)) {
 						// isTrimmable ~= false
-						assemblyTrimMode = defaultAction;
+						assemblyTrimMode = "copy";
 					}
 				}
 				if (!string.IsNullOrEmpty (assemblyTrimMode)) {
