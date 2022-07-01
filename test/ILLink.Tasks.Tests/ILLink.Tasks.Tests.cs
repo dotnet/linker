@@ -71,8 +71,8 @@ namespace ILLink.Tasks.Tests
 		}
 
 		[Theory]
-		[InlineData ("full", AssemblyAction.Link)]
-		[InlineData ("partial", AssemblyAction.Copy)]
+		[InlineData ("full")]
+		[InlineData ("partial")]
 		public void TrimModeAssemblyPaths (string trimMode)
 		{
 			var assemblyPaths = new ITaskItem[] {
