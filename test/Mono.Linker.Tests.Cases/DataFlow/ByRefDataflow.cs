@@ -34,6 +34,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			PassRefToParameter (null);
 
 			PointerDereference.Test ();
+			MultipleOutRefsToField.Test ();
 		}
 
 		[Kept]
@@ -148,6 +149,41 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 				IntPtrDeref ();
 				LocalStackAllocDeref (null);
+			}
+		}
+
+		[Kept]
+		class MultipleOutRefsToField
+		{
+			[Kept]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			static Type _publicMethodsField;
+
+			[Kept]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicProperties)]
+			static Type _publicPropertiesField;
+
+			[Kept]
+			static void TwoOutRefs(
+				[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+				out Type publicMethods,
+				[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicProperties)]
+				out Type publicProperties)
+			{
+				publicMethods = null;
+				publicProperties = null;
+			}
+
+			[Kept]
+			[ExpectedWarning ("IL2069")]
+			[ExpectedWarning ("IL2069")]
+			public static void Test()
+			{
+				TwoOutRefs (out _publicMethodsField, out _publicPropertiesField);
 			}
 		}
 	}
