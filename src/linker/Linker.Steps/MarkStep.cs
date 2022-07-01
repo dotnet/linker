@@ -2309,7 +2309,10 @@ namespace Mono.Linker.Steps
 				return false;
 
 			foreach (MethodDefinition @base in base_list) {
-				// column titles refer to if the base method / base method type is X
+				// if the base method isn't in a preserve scope, don't even worry about anything else
+				if (!IgnoreScope (@base.DeclaringType.Scope) && !IsMethodNeededByTypeDueToPreservedScope (@base))
+					continue;
+
 				// ----------------------------------------------------------------------------------
 				// Base type: | base meth  | base meth | base type is     | Method scope w | method is
 				// base/iface | inst/stat  | virt/abst | iface w/ static  | UnusedIFaceOpt | needed
@@ -2323,9 +2326,6 @@ namespace Mono.Linker.Steps
 				// iface      | static     | *         | always yes       | yes            | yes
 				// iface      | *          | *         | *                | no             | yes
 
-				// if the base method isn't in a preserve scope, don't even worry about anything else
-				if (!IgnoreScope (@base.DeclaringType.Scope) && !IsMethodNeededByTypeDueToPreservedScope (@base))
-					continue;
 
 				// base/iface | inst/stat  | virt/abst | iface has static | UnusedIFaceOpt | needed
 				// --------------------------------------------------------------------------------
