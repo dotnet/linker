@@ -89,7 +89,7 @@ namespace ILLink.Tasks.Tests
 			Assert.Equal("", assemblyPaths[0].GetMetadata("TrimMode"));
 			Assert.Equal(AssemblyAction.Link, context.Actions["Assembly1"]);
 			Assert.Equal("", assemblyPaths[1].GetMetadata("TrimMode"));
-			Assert.Equal(notTrimmedAction, context.Actions["Assembly2"]);
+			Assert.False(context.Actions.ContainsKey("Assembly2"));
 		}
 
 		[Theory]
