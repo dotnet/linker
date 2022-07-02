@@ -2346,7 +2346,7 @@ namespace Mono.Linker.Steps
 				// iface      | instance   | *         | no               | yes            | no
 				// Instance methods of interfaces without static methods don't need marking
 				// It is still very possible that the interface could be removed
-				if (@base.DeclaringType.IsInterface && !@base.IsStatic && !@base.DeclaringType.Methods.Any (m => m.IsStatic) && Context.IsOptimizationEnabled(CodeOptimizations.UnusedInterfaces, method.DeclaringType))
+				if (@base.DeclaringType.IsInterface && !@base.IsStatic && !@base.DeclaringType.Methods.Any (m => m.IsStatic) && Context.IsOptimizationEnabled (CodeOptimizations.UnusedInterfaces, method.DeclaringType))
 					continue;
 
 				// If all the other checks haven't told us to skip marking, it is needed

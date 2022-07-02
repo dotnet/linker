@@ -56,7 +56,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 				[KeptOverride (typeof (IStaticAbstractMethods))]
 				static int IStaticAbstractMethods.Method () => 1;
 				[Kept]
-				[KeptOverride (typeof(IStaticAbstractMethods))]
+				[KeptOverride (typeof (IStaticAbstractMethods))]
 				int IStaticAbstractMethods.InstanceMethod () => 0;
 			}
 		}
