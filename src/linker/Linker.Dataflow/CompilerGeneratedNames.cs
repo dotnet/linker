@@ -1,7 +1,7 @@
 // Copyright (c) .NET Foundation and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-namespace Mono.Linker
+namespace Mono.Linker.Dataflow
 {
 	sealed class CompilerGeneratedNames
 	{
@@ -31,7 +31,7 @@ namespace Mono.Linker
 			if (i == -1)
 				return false;
 
-			return (typeName.Length > i + 1) && typeName[i + 1] == 'd';
+			return typeName.Length > i + 1 && typeName[i + 1] == 'd';
 		}
 
 		internal static bool IsGeneratedType (string name) => IsStateMachineType (name) || IsLambdaDisplayClass (name);
@@ -50,7 +50,7 @@ namespace Mono.Linker
 				return false;
 
 			// Ignore the method ordinal/generation and lambda ordinal/generation.
-			return (methodName.Length > i + 1) && methodName[i + 1] == 'b';
+			return methodName.Length > i + 1 && methodName[i + 1] == 'b';
 		}
 
 		// Local functions have generated names like "<UserMethod>g__LocalFunction|0_1" where "UserMethod" is the name
@@ -66,7 +66,7 @@ namespace Mono.Linker
 				return false;
 
 			// Ignore the method ordinal/generation and local function ordinal/generation.
-			return (methodName.Length > i + 1) && methodName[i + 1] == 'g';
+			return methodName.Length > i + 1 && methodName[i + 1] == 'g';
 		}
 	}
 }
