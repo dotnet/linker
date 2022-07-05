@@ -3648,7 +3648,7 @@ namespace Mono.Linker.Steps
 
 			Debug.Assert (ScopeStack.CurrentScope.Origin.Provider == body.Method);
 			var scanner = new ReflectionMethodBodyScanner (Context, this, ScopeStack.CurrentScope.Origin);
-			scanner.InterproceduralScan (body.Method);
+			scanner.InterproceduralScan (body);
 
 		}
 
