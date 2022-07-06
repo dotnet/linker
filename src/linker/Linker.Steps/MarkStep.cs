@@ -585,14 +585,6 @@ namespace Mono.Linker.Steps
 			var typesWithInterfaces = _typesWithInterfaces.ToArray ();
 
 			foreach ((var type, var scope) in typesWithInterfaces) {
-				// Exception, types that have not been flagged as instantiated yet.  These types may not need their interfaces even if the
-				// interface type is marked
-				// UnusedInterfaces optimization is turned off mark all interface implementations
-				bool unusedInterfacesOptimizationEnabled = Context.IsOptimizationEnabled (CodeOptimizations.UnusedInterfaces, type);
-				if (!Annotations.IsInstantiated (type) && !Annotations.IsRelevantToVariantCasting (type) &&
-					unusedInterfacesOptimizationEnabled)
-					continue;
-
 				using (ScopeStack.PushScope (scope)) {
 					MarkInterfaceImplementations (type);
 				}
@@ -2259,6 +2251,13 @@ namespace Mono.Linker.Steps
 			}
 		}
 
+		/// <summary>
+		/// Marks the interface implementations for types using the information from the current MarkContext.
+		/// Uses <see cref="AnnotationStore.IsInstantiated(TypeDefinition)"/> and
+		/// <see cref="AnnotationStore.IsRelevantToVariantCasting(TypeDefinition)"/> to determine what is necessary to keep.
+		/// Caller should call <see cref="AnnotationStore.MarkInstantiated(TypeDefinition)"/> and
+		/// <see cref="AnnotationStore.MarkRelevantToVariantCasting(TypeDefinition)"/> on <paramref name="type"/> before calling this method.
+		/// </summary>
 		void MarkInterfaceImplementations (TypeDefinition type)
 		{
 			if (!type.HasInterfaces)
@@ -2269,6 +2268,12 @@ namespace Mono.Linker.Steps
 				// This enables stripping of interfaces that are never used
 				if (ShouldMarkInterfaceImplementation (type, iface))
 					MarkInterfaceImplementation (iface, new MessageOrigin (type));
+
+				// Now that we've marked iface impls, we should check again if any of the type's methods are needed due to preserved scope.
+				// However, we can short circuit here if the optimization is disabled -- we know all interface methods will already be marked in this case
+				if (Context.IsOptimizationEnabled (CodeOptimizations.UnusedInterfaces, type))
+					// If we have to be sure that we mark an interface implementation before we mark the methods, we double check here
+					MarkMethodsIf (type.Methods, IsMethodNeededByTypeDueToPreservedScope, new DependencyInfo (DependencyKind.VirtualNeededDueToPreservedScope, type), ScopeStack.CurrentScope.Origin);
 			}
 		}
 
@@ -2304,6 +2309,8 @@ namespace Mono.Linker.Steps
 		/// </remarks>
 		bool IsMethodNeededByTypeDueToPreservedScope (MethodDefinition method)
 		{
+			if (Annotations.IsMarked (method))
+				return false;
 			var base_list = Annotations.GetBaseMethods (method);
 			if (base_list == null)
 				return false;
@@ -2313,46 +2320,37 @@ namespace Mono.Linker.Steps
 				if (!IgnoreScope (@base.DeclaringType.Scope) && !IsMethodNeededByTypeDueToPreservedScope (@base))
 					continue;
 
-				// ----------------------------------------------------------------------------------
-				// Base type: | base meth  | base meth | base type is     | Method scope w | method is
-				// base/iface | inst/stat  | virt/abst | iface w/ static  | UnusedIFaceOpt | needed
-				// ----------------------------------------------------------------------------------
-				// base       | instance   | virtual   | n/a              | n/a            | no
-				// base       | instance   | abstract  | n/a              | n/a            | yes
-				// base       | static     | *         | n/a              | n/a            | yes
-				// iface      | instance   | virtual   | *                | *              | no
-				// iface      | instance   | abstract  | yes              | yes            | yes
-				// iface      | instance   | *         | no               | yes            | no
-				// iface      | static     | *         | always yes       | yes            | yes
-				// iface      | *          | *         | *                | no             | yes
+				Debug.Assert (@base.IsVirtual);
+
+				// If the interface implementation is marked, we need to keep abstract methods
+				if (@base.DeclaringType.IsInterface
+					&& @base.IsAbstract
+					&& Context.IsOptimizationEnabled (CodeOptimizations.UnusedInterfaces, method.DeclaringType)
+					&& TryGetCorrespondingInterfaceImplementation (method.DeclaringType, @base.DeclaringType, out var iface)
+					&& Annotations.IsMarked (iface))
+					return true;
 
 
-				// base/iface | inst/stat  | virt/abst | iface has static | UnusedIFaceOpt | needed
-				// --------------------------------------------------------------------------------
-				// base       | instance   | virtual   | n/a              | n/a            | no
-				// Instance methods of base types only need implmentations if the base is abstract
-				// A virtual instance method with a default impl on the base doesn't need to be kept
-				if (!@base.DeclaringType.IsInterface && !@base.IsStatic && @base.IsVirtual && !@base.IsAbstract)
-					continue;
-				// base/iface | inst/stat  | virt/abst | iface has static | UnusedIFaceOpt | needed
-				// --------------------------------------------------------------------------------
-				// iface      | instance   | virtual   | *                | yes            | no
-				// Uninstantiated types will not need iface instance methods unless they are abstract
-				// Abstract iface methods must be implemented for valid IL, but not virtuals
-				if (@base.DeclaringType.IsInterface && !@base.IsStatic && @base.IsVirtual && !@base.IsAbstract)
-					continue;
-				// base/iface | inst/stat  | virt/abst | iface has static | UnusedIFaceOpt | needed
-				// --------------------------------------------------------------------------------
-				// iface      | instance   | *         | no               | yes            | no
-				// Instance methods of interfaces without static methods don't need marking
-				// It is still very possible that the interface could be removed
-				if (@base.DeclaringType.IsInterface && !@base.IsStatic && !@base.DeclaringType.Methods.Any (m => m.IsStatic) && Context.IsOptimizationEnabled (CodeOptimizations.UnusedInterfaces, method.DeclaringType))
+				// We don't need to keep a method here if it's instance and has a default implementation
+				if (!@base.IsStatic && (!@base.IsAbstract || @base.DeclaringType.IsInterface))
 					continue;
 
 				// If all the other checks haven't told us to skip marking, it is needed
 				return true;
 			}
 
+			return false;
+		}
+
+		bool TryGetCorrespondingInterfaceImplementation (TypeDefinition typeWithInterface, TypeDefinition interfaceType, [NotNullWhen (true)] out InterfaceImplementation? interfaceImplementation)
+		{
+			foreach (var @interface in typeWithInterface.Interfaces) {
+				if (Context.Resolve (@interface.InterfaceType)?.Equals (interfaceType) == true) {
+					interfaceImplementation = @interface;
+					return true;
+				}
+			}
+			interfaceImplementation = null;
 			return false;
 		}
 
@@ -3139,8 +3137,6 @@ namespace Mono.Linker.Steps
 
 			using var typeScope = ScopeStack.PushScope (new MessageOrigin (type));
 
-			MarkInterfaceImplementations (type);
-
 			foreach (var method in GetRequiredMethodsForInstantiatedType (type))
 				MarkMethod (method, new DependencyInfo (DependencyKind.MethodForInstantiatedType, type), ScopeStack.CurrentScope.Origin);
 
@@ -3540,6 +3536,12 @@ namespace Mono.Linker.Steps
 			}
 		}
 
+		/// <summary>
+		/// Returns whether or not an interface implementation should be marked, and false if the interface implementation is not needed or is already marked.
+		/// Uses <see cref="AnnotationStore.IsInstantiated(TypeDefinition)"/> and <see cref="AnnotationStore.IsRelevantToVariantCasting(TypeDefinition)"/>
+		/// to determine whether to mark the type.
+		/// Always returns true if an unmarked interface implementation is passed and <see cref="CodeOptimizations.UnusedInterfaces"/> is not enabled.
+		/// </summary>
 		protected virtual bool ShouldMarkInterfaceImplementation (TypeDefinition type, InterfaceImplementation iface)
 		{
 			if (Annotations.IsMarked (iface))
@@ -3551,14 +3553,17 @@ namespace Mono.Linker.Steps
 			if (Context.Resolve (iface.InterfaceType) is not TypeDefinition resolvedInterfaceType)
 				return false;
 
-			if (Annotations.IsMarked (resolvedInterfaceType))
-				return true;
+			if (Annotations.IsInstantiated (type) || Annotations.IsRelevantToVariantCasting (type)) {
+				if (Annotations.IsMarked (resolvedInterfaceType))
+					return true;
 
-			// It's hard to know if a com or windows runtime interface will be needed from managed code alone,
-			// so as a precaution we will mark these interfaces once the type is instantiated
-			if (resolvedInterfaceType.IsImport || resolvedInterfaceType.IsWindowsRuntime)
+				// It's hard to know if a com or windows runtime interface will be needed from managed code alone,
+				// so as a precaution we will mark these interfaces once the type is instantiated
+				if (resolvedInterfaceType.IsImport || resolvedInterfaceType.IsWindowsRuntime)
+					return true;
+			} else if (Annotations.IsMarked (resolvedInterfaceType) && Annotations.HasMarkedStaticMethods(resolvedInterfaceType)) {
 				return true;
-
+			}
 
 			return IsFullyPreserved (type);
 		}
