@@ -27,5 +27,11 @@ namespace ILLink.RoslynAnalyzer.Tests.Inheritance.Interfaces
 			return RunTest (allowMissingWarnings: true);
 		}
 
+		[Fact]
+		public Task UnusedStaticInterfaceMethods ()
+		{
+			return RunTest (allowMissingWarnings: true);
+		}
+
 	}
 }
