@@ -2374,17 +2374,19 @@ namespace Mono.Linker.Steps
 
 				Debug.Assert (@base.IsVirtual);
 
-				// If the interface implementation is marked, we need to keep abstract methods
+				// If the interface implementation is marked (or we don't remove interface implementations), we need to keep abstract methods
 				if (@base.DeclaringType.IsInterface
 					&& @base.IsAbstract
-					&& Context.IsOptimizationEnabled (CodeOptimizations.UnusedInterfaces, method.DeclaringType)
-					&& TryGetCorrespondingInterfaceImplementation (method.DeclaringType, @base.DeclaringType, out var iface)
-					&& Annotations.IsMarked (iface))
+					&& (!Context.IsOptimizationEnabled (CodeOptimizations.UnusedInterfaces, method.DeclaringType)
+						|| (TryGetCorrespondingInterfaceImplementation (method.DeclaringType, @base.DeclaringType, out var iface)
+							&& Annotations.IsMarked (iface))))
 					return true;
 
 
-				// We don't need to keep a method here if it's instance and has a default implementation
-				if (!@base.IsStatic && (!@base.IsAbstract || @base.DeclaringType.IsInterface))
+				// We don't need to keep a method here if it's
+				// 1. instance
+				// 2. has a default implementation or 
+				if (!@base.IsStatic && (!@base.IsAbstract || (@base.DeclaringType.IsInterface && Context.IsOptimizationEnabled (CodeOptimizations.UnusedInterfaces, method.DeclaringType))))
 					continue;
 
 				// If all the other checks haven't told us to skip marking, it is needed
