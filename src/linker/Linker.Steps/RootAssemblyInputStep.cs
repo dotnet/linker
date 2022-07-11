@@ -153,6 +153,11 @@ namespace Mono.Linker.Steps
 				//
 				preserve = preserve_anything;
 				Annotations.SetMembersPreserve (type, preserve);
+				// Keep all interfaces and interface members in library mode
+				if (type.IsInterface) {
+					Annotations.Mark (type, new DependencyInfo (DependencyKind.RootAssembly, type.Module.Assembly), new MessageOrigin (type.Module.Assembly));
+					Annotations.SetPreserve (type, TypePreserve.All);
+				}
 				break;
 			default:
 				Annotations.Mark (type, new DependencyInfo (DependencyKind.RootAssembly, type.Module.Assembly), new MessageOrigin (type.Module.Assembly));
