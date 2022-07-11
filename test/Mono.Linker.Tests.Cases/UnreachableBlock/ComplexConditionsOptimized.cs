@@ -24,9 +24,12 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 			}
 
 			[Kept]
+			[ExpectBodyModified]
 			public static void Test ()
 			{
-				Helper ();
+				// https://github.com/dotnet/linker/issues/2872
+				// Uncomment the call to make the test crash the linker
+				//Helper ();
 				switch (KnownInteger) {
 				case 0:
 					Unreached ();
@@ -41,12 +44,16 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 				}
 			}
 
+			// https://github.com/dotnet/linker/issues/2872
+			// Should be removed
+			[Kept]
 			static void Unreached () { }
 
 			[Kept]
 			static void Reached () { }
 
-			[Kept]
+			// https://github.com/dotnet/linker/issues/2872
+			//[Kept]
 			static void Helper () { }
 		}
 	}
