@@ -81,7 +81,7 @@ namespace ILLink.CodeFix
 			SyntaxNode diagnosticNode = root!.FindNode (diagnostic.Location.SourceSpan);
 			var attributableSymbol = (diagnosticNode is InvocationExpressionSyntax invocationExpression 
 					&& invocationExpression.Expression is MemberAccessExpressionSyntax simpleMember 
-					&& simpleMember.Expression is IdentifierNameSyntax name) ? model.GetSymbolInfo(diagnosticNode).Symbol : null;
+					&& simpleMember.Expression is IdentifierNameSyntax name) ? model.GetSymbolInfo(name).Symbol : null;
 
 			if (attributableSymbol is null) return;
 
