@@ -84,11 +84,11 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 			internal class InterfaceMethodUsedThroughImplementation : IStaticInterfaceMethodUnused, IStaticInterfaceUnused
 			{
 				[Kept]
-				[RemovedOverride (typeof(IStaticInterfaceMethodUnused))]
+				[RemovedOverride (typeof (IStaticInterfaceMethodUnused))]
 				public static void InterfaceUsedMethodNot () { }
 
 				[Kept]
-				[RemovedOverride (typeof(IStaticInterfaceUnused))]
+				[RemovedOverride (typeof (IStaticInterfaceUnused))]
 				public static void InterfaceAndMethodNoUsed () { }
 			}
 

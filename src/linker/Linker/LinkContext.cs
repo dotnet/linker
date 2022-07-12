@@ -38,7 +38,6 @@ using ILLink.Shared;
 using ILLink.Shared.TypeSystemProxy;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using Mono.Linker.Dataflow;
 using Mono.Linker.Steps;
 
 namespace Mono.Linker
@@ -484,7 +483,7 @@ namespace Mono.Linker
 			}
 		}
 
-		public AssemblyRootMode? GetAssemblyRootMode(IMetadataScope scope)
+		public AssemblyRootMode? GetAssemblyRootMode (IMetadataScope scope)
 		{
 			AssemblyDefinition? assembly = Resolve (scope);
 			if (assembly is not AssemblyDefinition ad || !AssemblyRootModes.ContainsKey (ad))

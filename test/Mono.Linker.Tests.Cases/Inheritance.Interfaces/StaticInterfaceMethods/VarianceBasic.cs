@@ -41,7 +41,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 			static abstract int Method2 ();
 		}
 		[Kept]
-		[KeptInterface (typeof(InterfaceScenario1<object>))]
+		[KeptInterface (typeof (InterfaceScenario1<object>))]
 		public class BaseScenario1 : InterfaceScenario1<object>
 		{
 			[Kept]
@@ -51,13 +51,13 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 			}
 		}
 		[Kept]
-		[KeptBaseType(typeof(BaseScenario1))]
+		[KeptBaseType (typeof (BaseScenario1))]
 		public class DerivedScenario1 : BaseScenario1
 		{
 		}
 		[Kept]
-		[KeptInterface (typeof(InterfaceScenario2<string>))]
-		[KeptInterface (typeof(InterfaceScenario2<object>))]
+		[KeptInterface (typeof (InterfaceScenario2<string>))]
+		[KeptInterface (typeof (InterfaceScenario2<object>))]
 		public class BaseScenario2 : InterfaceScenario2<string>, InterfaceScenario2<object>
 		{
 			[Kept]
@@ -85,8 +85,8 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 			}
 		}
 		[Kept]
-		[KeptBaseType(typeof(BaseScenario2))]
-		[KeptInterface(typeof(InterfaceScenario2<object>))]
+		[KeptBaseType (typeof (BaseScenario2))]
+		[KeptInterface (typeof (InterfaceScenario2<object>))]
 		public class DerivedScenario2 : BaseScenario2, InterfaceScenario2<object>
 		{
 			[Kept]

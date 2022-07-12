@@ -821,10 +821,10 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 			[Kept]
 			internal interface IGenericInterfaceInternal<T> where T : IGenericInterfaceInternal<T>
 			{
-			[Kept]
+				[Kept]
 				static abstract T GetT ();
 
-			[Kept]
+				[Kept]
 				static abstract T GetTExplicit ();
 			}
 

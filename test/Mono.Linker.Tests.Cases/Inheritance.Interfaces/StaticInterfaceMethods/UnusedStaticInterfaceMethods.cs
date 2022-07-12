@@ -18,8 +18,8 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 		{
 			Foo.KeepFoo ();
 			KeepIFooStaticUnused (null);
-			((IFooStaticUsed)null).InstanceVirtual ();
-			((IFooStaticUsed)null).InstanceAbstract ();
+			((IFooStaticUsed) null).InstanceVirtual ();
+			((IFooStaticUsed) null).InstanceAbstract ();
 			Type t = typeof (FooVariantCastable);
 			CallGetIntStaticUsed<FooVariantCastable> ();
 		}
@@ -67,8 +67,8 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 		}
 
 		[Kept]
-		[KeptInterface(typeof(IFooStaticUsed))]
-		[KeptInterface(typeof(IFooStaticUnused))]
+		[KeptInterface (typeof (IFooStaticUsed))]
+		[KeptInterface (typeof (IFooStaticUnused))]
 		class FooVariantCastable : IFooStaticUnused, IFooStaticUsed
 		{
 			public int InstanceVirtualUnused () => 1;
