@@ -28,14 +28,14 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 		}
 
 		// Unmarked interface methods with a default implementation don't need to be kept. They won't be called and aren't required for valid IL.
-			[Kept]
-			[KeptInterface (typeof (IStaticInterfaceWithDefaultImpls))]
-			public class VirtualInterfaceMethods : IStaticInterfaceWithDefaultImpls
-			{
-				static int IStaticInterfaceWithDefaultImpls.Property { get => 1; set => _ = value; }
-				static int IStaticInterfaceWithDefaultImpls.Method () => 1;
-				int IStaticInterfaceWithDefaultImpls.InstanceMethod () => 0;
-			}
+		[Kept]
+		[KeptInterface (typeof (IStaticInterfaceWithDefaultImpls))]
+		public class VirtualInterfaceMethods : IStaticInterfaceWithDefaultImpls
+		{
+			static int IStaticInterfaceWithDefaultImpls.Property { get => 1; set => _ = value; }
+			static int IStaticInterfaceWithDefaultImpls.Method () => 1;
+			int IStaticInterfaceWithDefaultImpls.InstanceMethod () => 0;
+		}
 
 		[Kept]
 		[KeptInterface (typeof (IStaticAbstractMethods))]

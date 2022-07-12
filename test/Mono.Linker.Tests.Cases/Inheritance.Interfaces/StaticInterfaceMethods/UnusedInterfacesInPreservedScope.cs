@@ -32,7 +32,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 		[Kept]
 		class MyType : IStaticInterfaceWithDefaultImpls
 		{
-			public static int Property {  get => 0;  set => _ = value; }
+			public static int Property { get => 0; set => _ = value; }
 			public static int Method () => 0;
 			public int InstanceMethod () => 0;
 		}
