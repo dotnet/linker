@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis.Text;
 using Xunit;
 using VerifyCS = ILLink.RoslynAnalyzer.Tests.CSharpCodeFixVerifier<
 	ILLink.RoslynAnalyzer.DynamicallyAccessedMembersAnalyzer,
-	ILLink.CodeFix.DynamicallyAccessedMemberCodeFixProvider>;
+	ILLink.CodeFix.DAMCodeFixProvider>;
 
 namespace ILLink.RoslynAnalyzer.Tests
 {
@@ -47,7 +47,7 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 		}
 
 		[Fact]
-		public async Task MembersViaReflection ()
+		public async Task MismatchParameter2070 ()
 		{
 			var test = @"
 			using System;
@@ -95,6 +95,50 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 				VerifyCS.Diagnostic(DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsThisParameter).WithSpan(17, 21, 17, 35).WithArguments("System.Type.GetMethods()", "T", "C.M(Type)", "'DynamicallyAccessedMemberTypes.PublicMethods'") },
 				fixedExpected: Array.Empty<DiagnosticResult> ());
 		}
+
+			[Fact]
+		public async Task DAMxxx ()
+		{
+			var test = @"
+			using System;
+			using System.Diagnostics.CodeAnalysis;
+			
+			public class Base 
+			{
+				virtual void M([DynamicallyAccessedMembers(All)] Type t) {}
+			}
+			
+			class C
+			{
+				override void M(Type t) 
+			}
+					";
+			var fixtest = @"
+			using System;
+			using System.Diagnostics.CodeAnalysis;
+			
+			public class Foo 
+			{
+			}
+			
+			class C
+			{
+				public static void Main()
+				{
+					M(typeof(Foo));
+				}
+				static void M ([DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicMethods | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods)] Type T)
+				{
+					T.GetMethods();
+				}
+			}
+			";
+			// baselineExpected: Array.Empty<DiagnosticResult> (), fixedExpected: Array.Empty<DiagnosticResult> ());
+			await VerifyDynamicallyAccessedMembersCodeFix (test, fixtest, new [] {
+				// /0/Test0.cs(17,6): warning IL2070: 'this' argument does not satisfy 'DynamicallyAccessedMemberTypes.PublicMethods' in call to 'System.Type.GetMethods()'. The parameter 'T' of method 'C.M(Type)' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.				
+				VerifyCS.Diagnostic(DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsThisParameter).WithSpan(17, 21, 17, 35).WithArguments("System.Type.GetMethods()", "T", "C.M(Type)", "'DynamicallyAccessedMemberTypes.PublicMethods'") },
+				fixedExpected: Array.Empty<DiagnosticResult> ());
+		}	
 		
 		[Fact]
 		public Task NoWarningsIfAnalyzerIsNotEnabled ()

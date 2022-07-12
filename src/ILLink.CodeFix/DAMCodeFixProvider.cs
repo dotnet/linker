@@ -19,9 +19,9 @@ using Microsoft.CodeAnalysis.Simplification;
 
 namespace ILLink.CodeFix
 {
-	[ExportCodeFixProvider (LanguageNames.CSharp, Name = nameof (DynamicallyAccessedMemberCodeFixProvider)), Shared]
+	// [ExportCodeFixProvider (LanguageNames.CSharp, Name = nameof (DAMCodeFixProvider)), Shared]
 
-	public abstract class DAMCodeFixProvider : Microsoft.CodeAnalysis.CodeFixes.CodeFixProvider
+	public class DAMCodeFixProvider : Microsoft.CodeAnalysis.CodeFixes.CodeFixProvider
 	{
 		public static ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => DynamicallyAccessedMembersAnalyzer.GetSupportedDiagnostics();
 
@@ -34,6 +34,13 @@ namespace ILLink.CodeFix
 		private protected static AttributeableParentTargets AttributableParentTargets => AttributeableParentTargets.MethodOrConstructor;
 
 		public sealed override Task RegisterCodeFixesAsync (CodeFixContext context) => BaseRegisterCodeFixesAsync (context);
+		
+		static ImmutableHashSet<string> AttriubuteOnReturn () {
+			var diagDescriptorsArrayBuilder = ImmutableHashSet.CreateBuilder<string> ();
+			diagDescriptorsArrayBuilder.Add (DiagnosticId.DynamicallyAccessedMembersOnMethodReturnValueCanOnlyApplyToTypesOrStrings.AsString());
+			diagDescriptorsArrayBuilder.Add (DiagnosticId.DynamicallyAccessedMembersMismatchOnMethodReturnValueBetweenOverrides.AsString());
+			return diagDescriptorsArrayBuilder.ToImmutable();
+		}
 
 		protected static SyntaxNode[] GetAttributeArguments (ISymbol attributableSymbol, ISymbol targetSymbol, SyntaxGenerator syntaxGenerator, Diagnostic diagnostic)
 		{
@@ -50,6 +57,7 @@ namespace ILLink.CodeFix
 			else if (diagnostic.Id == DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsThisParameter.AsString()) {
 				return new[] { syntaxGenerator.AttributeArgument ( syntaxGenerator.TypedConstantExpression(targetSymbol.GetAttributes().First(attr => attr.AttributeClass?.ToDisplayString() == DynamicallyAccessedMembersAnalyzer.FullyQualifiedDynamicallyAccessedMembersAttribute).ConstructorArguments[0]) )};
 			}
+			// intrinsics 
 			else {
 				return new[] { syntaxGenerator.AttributeArgument ( syntaxGenerator.LiteralExpression("")) };
 			}
@@ -63,29 +71,48 @@ namespace ILLink.CodeFix
 
 		protected async Task BaseRegisterCodeFixesAsync (CodeFixContext context)
 		{
+
+			bool ReturnAttribute = false;
 			var document = context.Document;
 			var root = await document.GetSyntaxRootAsync (context.CancellationToken).ConfigureAwait (false);
 			var diagnostic = context.Diagnostics.First ();
-			SyntaxNode targetNode = root!.FindNode (diagnostic.Location.SourceSpan);
-			if (FindAttributableParent (targetNode, AttributableParentTargets) is not SyntaxNode attributableNode)
-				return;
-
-
+			var props = diagnostic.Properties;
 			var model = await document.GetSemanticModelAsync (context.CancellationToken).ConfigureAwait (false);
+			SyntaxNode diagnosticNode = root!.FindNode (diagnostic.Location.SourceSpan);
+			var attributableSymbol = (diagnosticNode is InvocationExpressionSyntax invocationExpression 
+					&& invocationExpression.Expression is MemberAccessExpressionSyntax simpleMember 
+					&& simpleMember.Expression is IdentifierNameSyntax name) ? model.GetSymbolInfo(diagnosticNode).Symbol : null;
+
+			if (attributableSymbol is null) return;
+
+			var attributableNodeList = attributableSymbol.DeclaringSyntaxReferences;
+
+			// not sure what the list will look like - this logic is just to assign *something* to the attributableNode
+			var attributableNode = (attributableNodeList.Length == 1) ? attributableNodeList[0].GetSyntax() : null;
+
+			if (attributableNode is null) return;
+
+			// grab the attributable node from the dictionary that's being passed in
+			// if (FindAttributableParent (targetNode, AttributableParentTargets) is not SyntaxNode attributableNode )
+			// 	return;
+
 			// var nodeType = model.GetOperation ( targetNode ); 
 			// tryget value for each key, read key to find the parameter name etc 
-			var targetSymbol = model!.GetSymbolInfo (targetNode).Symbol!;
-
-			var attributableSymbol = model!.GetDeclaredSymbol (attributableNode)!;
+			var targetSymbol = model!.GetSymbolInfo (diagnosticNode).Symbol!;
+			// var attributableSymbol = model!.GetDeclaredSymbol (attributableNode)!;
 			var attributeSymbol = model!.Compilation.GetTypeByMetadataName (FullyQualifiedAttributeName)!;
 			var attributeArguments = GetAttributeArguments (attributableSymbol, targetSymbol, SyntaxGenerator.GetGenerator (document), diagnostic);
 			var codeFixTitle = CodeFixTitle.ToString ();
 			// check set if attribute is on return or not
+			var returnAttributes = AttriubuteOnReturn ();
+			if (returnAttributes.Contains(attributeSymbol.ToString())) {
+				ReturnAttribute = true;
+			}
 
 			context.RegisterCodeFix (CodeAction.Create (
 				title: codeFixTitle,
 				createChangedDocument: ct => AddAttributeAsync (
-					document, attributableNode, attributeArguments, attributeSymbol, ct),
+					document, attributableNode, attributeArguments, attributeSymbol, ReturnAttribute, ct),
 				equivalenceKey: codeFixTitle), diagnostic);
 		}
 
@@ -137,7 +164,6 @@ namespace ILLink.CodeFix
 				case PropertyDeclarationSyntax when targets.HasFlag (AttributeableParentTargets.Property):
 				case FieldDeclarationSyntax when targets.HasFlag (AttributeableParentTargets.Field):
 				case EventDeclarationSyntax when targets.HasFlag (AttributeableParentTargets.Event):
-				case ParameterSyntax when targets.HasFlag (AttributeableParentTargets.Parameter):
 					return (CSharpSyntaxNode) parentNode;
 
 				default:
