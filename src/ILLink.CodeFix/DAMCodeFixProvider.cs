@@ -31,8 +31,6 @@ namespace ILLink.CodeFix
 
 		private protected static string FullyQualifiedAttributeName => DynamicallyAccessedMembersAnalyzer.FullyQualifiedDynamicallyAccessedMembersAttribute;
 
-		private protected static AttributeableParentTargets AttributableParentTargets => AttributeableParentTargets.MethodOrConstructor;
-
 		public sealed override Task RegisterCodeFixesAsync (CodeFixContext context) => BaseRegisterCodeFixesAsync (context);
 		
 		static ImmutableHashSet<string> AttriubuteOnReturn () {
@@ -57,7 +55,6 @@ namespace ILLink.CodeFix
 			else if (diagnostic.Id == DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsThisParameter.AsString()) {
 				return new[] { syntaxGenerator.AttributeArgument ( syntaxGenerator.TypedConstantExpression(targetSymbol.GetAttributes().First(attr => attr.AttributeClass?.ToDisplayString() == DynamicallyAccessedMembersAnalyzer.FullyQualifiedDynamicallyAccessedMembersAttribute).ConstructorArguments[0]) )};
 			}
-			// intrinsics 
 			else {
 				return new[] { syntaxGenerator.AttributeArgument ( syntaxGenerator.LiteralExpression("")) };
 			}
@@ -87,23 +84,13 @@ namespace ILLink.CodeFix
 
 			var attributableNodeList = attributableSymbol.DeclaringSyntaxReferences;
 
-			// not sure what the list will look like - this logic is just to assign *something* to the attributableNode
 			var attributableNode = (attributableNodeList.Length == 1) ? attributableNodeList[0].GetSyntax() : null;
 
 			if (attributableNode is null) return;
-
-			// grab the attributable node from the dictionary that's being passed in
-			// if (FindAttributableParent (targetNode, AttributableParentTargets) is not SyntaxNode attributableNode )
-			// 	return;
-
-			// var nodeType = model.GetOperation ( targetNode ); 
-			// tryget value for each key, read key to find the parameter name etc 
 			var targetSymbol = model!.GetSymbolInfo (diagnosticNode).Symbol!;
-			// var attributableSymbol = model!.GetDeclaredSymbol (attributableNode)!;
 			var attributeSymbol = model!.Compilation.GetTypeByMetadataName (FullyQualifiedAttributeName)!;
 			var attributeArguments = GetAttributeArguments (attributableSymbol, targetSymbol, SyntaxGenerator.GetGenerator (document), diagnostic);
 			var codeFixTitle = CodeFixTitle.ToString ();
-			// check set if attribute is on return or not
 			var returnAttributes = AttriubuteOnReturn ();
 			if (returnAttributes.Contains(attributeSymbol.ToString())) {
 				ReturnAttribute = true;
@@ -139,40 +126,6 @@ namespace ILLink.CodeFix
 				editor.AddAttribute (targetNode, attribute);
 			}
 			return editor.GetChangedDocument ();
-		}
-
-		[Flags]
-		protected enum AttributeableParentTargets
-		{
-			MethodOrConstructor = 0x0001,
-			Property = 0x0002,
-			Field = 0x0004,
-			Event = 0x0008,
-			Parameter = 0x0016,
-			All = MethodOrConstructor | Property | Field | Event | Parameter
-		}
-
-		private static CSharpSyntaxNode? FindAttributableParent (SyntaxNode node, AttributeableParentTargets targets)
-		{
-			SyntaxNode? parentNode = node.Parent;
-			while (parentNode is not null) {
-				switch (parentNode) {
-				case LambdaExpressionSyntax:
-					return null;
-
-				case LocalFunctionStatementSyntax or BaseMethodDeclarationSyntax when targets.HasFlag (AttributeableParentTargets.MethodOrConstructor):
-				case PropertyDeclarationSyntax when targets.HasFlag (AttributeableParentTargets.Property):
-				case FieldDeclarationSyntax when targets.HasFlag (AttributeableParentTargets.Field):
-				case EventDeclarationSyntax when targets.HasFlag (AttributeableParentTargets.Event):
-					return (CSharpSyntaxNode) parentNode;
-
-				default:
-					parentNode = parentNode.Parent;
-					break;
-				}
-			}
-
-			return null;
 		}
 
 		protected static bool HasPublicAccessibility (ISymbol? m)
