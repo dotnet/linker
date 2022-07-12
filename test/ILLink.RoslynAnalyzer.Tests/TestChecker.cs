@@ -17,7 +17,7 @@ using Xunit;
 
 namespace ILLink.RoslynAnalyzer.Tests
 {
-	internal sealed class TestChecker : CSharpSyntaxWalker
+	internal class TestChecker : CSharpSyntaxWalker
 	{
 		private readonly CSharpSyntaxTree _tree;
 		private readonly SemanticModel _semanticModel;

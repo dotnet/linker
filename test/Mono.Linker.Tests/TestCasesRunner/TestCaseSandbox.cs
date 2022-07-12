@@ -57,7 +57,6 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			OutputDirectory = _directory.Combine ("output").EnsureDirectoryExists ();
 			ExpectationsDirectory = _directory.Combine ("expectations").EnsureDirectoryExists ();
 			ResourcesDirectory = _directory.Combine ("resources").EnsureDirectoryExists ();
-			ReferencesDirectory = _directory.Combine ("references").EnsureDirectoryExists ();
 		}
 
 		public NPath InputDirectory { get; }
@@ -67,8 +66,6 @@ namespace Mono.Linker.Tests.TestCasesRunner
 		public NPath ExpectationsDirectory { get; }
 
 		public NPath ResourcesDirectory { get; }
-
-		public NPath ReferencesDirectory { get; }
 
 		public IEnumerable<NPath> SourceFiles {
 			get { return _directory.Files ("*.cs"); }

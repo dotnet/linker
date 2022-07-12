@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods.Dependencies
 {
-	public interface IStaticVirtualMethods
+	public interface IStaticInterfaceWithDefaultImpls
 	{
 		static virtual int Property { get => 0; set => _ = value; }
 		static virtual int Method () => 0;

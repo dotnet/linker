@@ -63,7 +63,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			return (new CompilationWithAnalyzers (comp, SupportedDiagnosticAnalyzers, compWithAnalyzerOptions), comp.GetSemanticModel (src), exceptionDiagnostics);
 		}
 
-		sealed class SimpleAnalyzerOptions : AnalyzerConfigOptionsProvider
+		class SimpleAnalyzerOptions : AnalyzerConfigOptionsProvider
 		{
 			public SimpleAnalyzerOptions ((string, string)[]? globalOptions)
 			{
@@ -81,7 +81,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 			public override AnalyzerConfigOptions GetOptions (AdditionalText textFile)
 				=> SimpleAnalyzerConfigOptions.Empty;
 
-			sealed class SimpleAnalyzerConfigOptions : AnalyzerConfigOptions
+			class SimpleAnalyzerConfigOptions : AnalyzerConfigOptions
 			{
 				public static readonly SimpleAnalyzerConfigOptions Empty = new SimpleAnalyzerConfigOptions (ImmutableDictionary<string, string>.Empty);
 

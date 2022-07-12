@@ -82,9 +82,8 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 		void InitializeResolvers (LinkedTestCaseResult linkedResult)
 		{
-			_originalsResolver.AddSearchDirectory (linkedResult.Sandbox.ExpectationsDirectory);
-			_linkedResolver.AddSearchDirectory (linkedResult.Sandbox.OutputDirectory);
-			_linkedResolver.AddSearchDirectory (linkedResult.Sandbox.ReferencesDirectory);
+			_originalsResolver.AddSearchDirectory (linkedResult.ExpectationsAssemblyPath.Parent.ToString ());
+			_linkedResolver.AddSearchDirectory (linkedResult.OutputAssemblyPath.Parent.ToString ());
 		}
 
 		protected AssemblyDefinition ResolveLinkedAssembly (string assemblyName)
@@ -121,10 +120,6 @@ namespace Mono.Linker.Tests.TestCasesRunner
 					string assemblyName = (string) assemblyAttr.ConstructorArguments[1].Value;
 					if ((string) assemblyAttr.ConstructorArguments[0].Value == "copy") {
 						VerifyCopyAssemblyIsKeptUnmodified (outputDirectory, assemblyName + (assemblyName == "test" ? ".exe" : ".dll"));
-					} else if ((string) assemblyAttr.ConstructorArguments[0].Value == "skip") {
-						// `skip` assemblies need to be copied to make sure they can be resolved
-						var fileName = assemblyName + (assemblyName == "test" ? ".exe" : ".dll");
-						System.IO.File.Copy (outputDirectory.Parent.Combine ("input").Combine (fileName), outputDirectory.Parent.Combine ("references").Combine (fileName), true);
 					}
 
 					actionAssemblies.Add (assemblyName);

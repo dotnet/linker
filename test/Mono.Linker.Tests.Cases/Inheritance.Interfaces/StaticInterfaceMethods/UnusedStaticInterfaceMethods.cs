@@ -54,7 +54,6 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 		static void KeepIFooStaticUnused (IFooStaticUnused x) { }
 
 		[Kept]
-		[KeptInterface(typeof(IFooStaticUsed))]
 		class Foo : IFooStaticUnused, IFooStaticUsed
 		{
 			public int InstanceVirtualUnused () => 1;
@@ -63,9 +62,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 			[Kept]
 			public static void KeepFoo () { }
 			public int InstanceVirtual () => 1;
-			[Kept]
 			public int InstanceAbstract () => 0;
-			[Kept]
 			public static int StaticAbstract () => 0;
 		}
 

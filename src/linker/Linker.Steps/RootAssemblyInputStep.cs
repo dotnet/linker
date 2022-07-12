@@ -24,6 +24,16 @@ namespace Mono.Linker.Steps
 			if (assembly == null)
 				return;
 
+			if (Context.AssemblyRootModes.TryGetValue (assembly, out var mode)) {
+				// If we add two rootModes for the same assembly without one being default, the input is invalid
+				if (mode != rootMode && mode != AssemblyRootMode.Default && rootMode != AssemblyRootMode.Default)
+					throw new InvalidDataException ($"Expected {assembly.Name} to have the same root mode, but there was {mode} and {rootMode}");
+				else
+					// Replace the default with the non-default
+					Context.AssemblyRootModes[assembly] = rootMode == AssemblyRootMode.Default ? mode : rootMode;
+			} else {
+				Context.AssemblyRootModes.Add (assembly, rootMode);
+			}
 			var di = new DependencyInfo (DependencyKind.RootAssembly, assembly);
 			var origin = new MessageOrigin (assembly);
 
@@ -142,6 +152,12 @@ namespace Mono.Linker.Steps
 
 			if ((preserve & TypePreserveMembers.Internal) != 0 && IsTypePrivate (type))
 				preserve_anything &= ~TypePreserveMembers.Internal;
+
+			// Keep all interfaces and interface members in library mode
+			if ((preserve & TypePreserveMembers.Library) != 0 && type.IsInterface) {
+				Annotations.Mark (type, new DependencyInfo (DependencyKind.RootAssembly, type.Module.Assembly), new MessageOrigin (type.Module.Assembly));
+				Annotations.SetPreserve (type, TypePreserve.All);
+			}
 
 			switch (preserve_anything) {
 			case 0:

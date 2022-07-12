@@ -161,15 +161,6 @@ namespace Mono.Linker
 			return fieldType_init.Contains (type);
 		}
 
-		public bool HasMarkedStaticMethods (TypeDefinition type)
-		{
-			foreach (var method in type.Methods) {
-				if (method.IsStatic && IsMarked (method))
-					return true;
-			}
-			return false;
-		}
-
 		[Obsolete ("Mark token providers with a reason instead.")]
 		public void Mark (IMetadataTokenProvider provider)
 		{
