@@ -47,7 +47,7 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 		}
 
 		[Fact]
-		public async Task MismatchParameter2070 ()
+		public async Task DiagID_2070 ()
 		{
 			var test = @"
 			using System;
@@ -88,9 +88,52 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 				}
 			}";
 			// baselineExpected: Array.Empty<DiagnosticResult> (), fixedExpected: Array.Empty<DiagnosticResult> ());
-			await VerifyDynamicallyAccessedMembersCodeFix (test, fixtest, new [] {
+			await VerifyDynamicallyAccessedMembersCodeFix (test, fixtest, new[] {
 				// /0/Test0.cs(17,6): warning IL2070: 'this' argument does not satisfy 'DynamicallyAccessedMemberTypes.PublicMethods' in call to 'System.Type.GetMethods()'. The parameter 'T' of method 'C.M(Type)' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.				
 				VerifyCS.Diagnostic(DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsThisParameter).WithSpan(17, 21, 17, 35).WithArguments("System.Type.GetMethods()", "T", "C.M(Type)", "'DynamicallyAccessedMemberTypes.PublicMethods'") },
+				fixedExpected: Array.Empty<DiagnosticResult> ());
+		}
+
+		[Fact]
+		public async Task DiagID_2080 ()
+		{
+			var test = @"
+using System;
+using System.Diagnostics.CodeAnalysis;
+public class Foo
+{
+}
+
+class C
+{
+    private static Type f = typeof(Foo);
+
+    public static void Main()
+    {
+        f.GetMethod(""Bar"");
+	}
+}";
+			var fixtest = @"
+using System;
+using System.Diagnostics.CodeAnalysis;
+public class Foo
+{
+}
+
+class C
+{
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+    private static Type f = typeof(Foo);
+
+    public static void Main()
+    {
+        f.GetMethod(""Bar"");
+	}
+}";
+			// baselineExpected: Array.Empty<DiagnosticResult> (), fixedExpected: Array.Empty<DiagnosticResult> ());
+			await VerifyDynamicallyAccessedMembersCodeFix (test, fixtest, new[] {
+				// /0/Test0.cs(14,9): warning IL2080: 'this' argument does not satisfy 'DynamicallyAccessedMemberTypes.PublicMethods' in call to 'System.Type.GetMethod(String)'. The field 'C.f' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.
+                VerifyCS.Diagnostic(DiagnosticId.DynamicallyAccessedMembersMismatchFieldTargetsThisParameter).WithSpan(14, 9, 14, 27).WithArguments("System.Type.GetMethod(String)", "C.f", "'DynamicallyAccessedMemberTypes.PublicMethods'")},
 				fixedExpected: Array.Empty<DiagnosticResult> ());
 		}
 

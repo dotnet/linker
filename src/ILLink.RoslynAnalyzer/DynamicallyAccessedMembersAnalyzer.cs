@@ -246,14 +246,10 @@ namespace ILLink.RoslynAnalyzer
 					method.Locations[0], method.GetDisplayName (), overriddenMethod.GetDisplayName ()));
 
 			for (int i = 0; i < method.Parameters.Length; i++) {
-				if (FlowAnnotations.GetMethodParameterAnnotation (method.Parameters[i]) != FlowAnnotations.GetMethodParameterAnnotation (overriddenMethod.Parameters[i]))
-				{
-					var d = ImmutableDictionary.Create<string, string?> ();
-					d = d.Add("ParameterName", method.Parameters[i].GetDisplayName());
+				if (FlowAnnotations.GetMethodParameterAnnotation (method.Parameters[i]) != FlowAnnotations.GetMethodParameterAnnotation (overriddenMethod.Parameters[i])) {
 					context.ReportDiagnostic (Diagnostic.Create (
 						DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchOnMethodParameterBetweenOverrides),
 						method.Parameters[i].Locations[0],
-						d,
 						method.Parameters[i].GetDisplayName (), method.GetDisplayName (), overriddenMethod.Parameters[i].GetDisplayName (), overriddenMethod.GetDisplayName ()));
 				}
 			}

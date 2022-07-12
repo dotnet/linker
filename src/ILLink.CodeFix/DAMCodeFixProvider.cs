@@ -2,13 +2,13 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Collections.Immutable;
-using ILLink.Shared;
-using ILLink.RoslynAnalyzer;
 using ILLink.CodeFixProvider;
+using ILLink.RoslynAnalyzer;
+using ILLink.Shared;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -19,11 +19,9 @@ using Microsoft.CodeAnalysis.Simplification;
 
 namespace ILLink.CodeFix
 {
-	// [ExportCodeFixProvider (LanguageNames.CSharp, Name = nameof (DAMCodeFixProvider)), Shared]
-
 	public class DAMCodeFixProvider : Microsoft.CodeAnalysis.CodeFixes.CodeFixProvider
 	{
-		public static ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => DynamicallyAccessedMembersAnalyzer.GetSupportedDiagnostics();
+		public static ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => DynamicallyAccessedMembersAnalyzer.GetSupportedDiagnostics ();
 
 		public sealed override ImmutableArray<string> FixableDiagnosticIds => SupportedDiagnostics.Select (dd => dd.Id).ToImmutableArray ();
 
@@ -32,12 +30,13 @@ namespace ILLink.CodeFix
 		private protected static string FullyQualifiedAttributeName => DynamicallyAccessedMembersAnalyzer.FullyQualifiedDynamicallyAccessedMembersAttribute;
 
 		public sealed override Task RegisterCodeFixesAsync (CodeFixContext context) => BaseRegisterCodeFixesAsync (context);
-		
-		static ImmutableHashSet<string> AttriubuteOnReturn () {
+
+		static ImmutableHashSet<string> AttriubuteOnReturn ()
+		{
 			var diagDescriptorsArrayBuilder = ImmutableHashSet.CreateBuilder<string> ();
-			diagDescriptorsArrayBuilder.Add (DiagnosticId.DynamicallyAccessedMembersOnMethodReturnValueCanOnlyApplyToTypesOrStrings.AsString());
-			diagDescriptorsArrayBuilder.Add (DiagnosticId.DynamicallyAccessedMembersMismatchOnMethodReturnValueBetweenOverrides.AsString());
-			return diagDescriptorsArrayBuilder.ToImmutable();
+			diagDescriptorsArrayBuilder.Add (DiagnosticId.DynamicallyAccessedMembersOnMethodReturnValueCanOnlyApplyToTypesOrStrings.AsString ());
+			diagDescriptorsArrayBuilder.Add (DiagnosticId.DynamicallyAccessedMembersMismatchOnMethodReturnValueBetweenOverrides.AsString ());
+			return diagDescriptorsArrayBuilder.ToImmutable ();
 		}
 
 		protected static SyntaxNode[] GetAttributeArguments (ISymbol attributableSymbol, ISymbol targetSymbol, SyntaxGenerator syntaxGenerator, Diagnostic diagnostic)
@@ -46,17 +45,14 @@ namespace ILLink.CodeFix
 			if (string.IsNullOrEmpty (symbolDisplayName) || HasPublicAccessibility (attributableSymbol))
 				return Array.Empty<SyntaxNode> ();
 
-			if (diagnostic.Id == DiagnosticId.DynamicallyAccessedMembersFieldAccessedViaReflection.AsString()) {
-				return new[] { syntaxGenerator.AttributeArgument ( syntaxGenerator.BitwiseOrExpression(syntaxGenerator.DottedName("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicFields"), syntaxGenerator.DottedName("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicFields"))) };
-			}
-			else if  (diagnostic.Id == DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection.AsString()) {
-				return new[] { syntaxGenerator.AttributeArgument ( syntaxGenerator.BitwiseOrExpression(syntaxGenerator.DottedName("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicMethods"), syntaxGenerator.DottedName("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods"))) };
-			}
-			else if (diagnostic.Id == DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsThisParameter.AsString()) {
-				return new[] { syntaxGenerator.AttributeArgument ( syntaxGenerator.TypedConstantExpression(targetSymbol.GetAttributes().First(attr => attr.AttributeClass?.ToDisplayString() == DynamicallyAccessedMembersAnalyzer.FullyQualifiedDynamicallyAccessedMembersAttribute).ConstructorArguments[0]) )};
-			}
-			else {
-				return new[] { syntaxGenerator.AttributeArgument ( syntaxGenerator.LiteralExpression("")) };
+			if (diagnostic.Id == DiagnosticId.DynamicallyAccessedMembersFieldAccessedViaReflection.AsString ()) {
+				return new[] { syntaxGenerator.AttributeArgument (syntaxGenerator.BitwiseOrExpression (syntaxGenerator.DottedName ("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicFields"), syntaxGenerator.DottedName ("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicFields"))) };
+			} else if (diagnostic.Id == DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection.AsString ()) {
+				return new[] { syntaxGenerator.AttributeArgument (syntaxGenerator.BitwiseOrExpression (syntaxGenerator.DottedName ("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicMethods"), syntaxGenerator.DottedName ("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods"))) };
+			} else if (diagnostic.Id == DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsThisParameter.AsString () || diagnostic.Id == DiagnosticId.DynamicallyAccessedMembersMismatchFieldTargetsThisParameter.AsString () || diagnostic.Id == DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsMethodReturnType.AsString ()) {
+				return new[] { syntaxGenerator.AttributeArgument (syntaxGenerator.TypedConstantExpression (targetSymbol.GetAttributes ().First (attr => attr.AttributeClass?.ToDisplayString () == DynamicallyAccessedMembersAnalyzer.FullyQualifiedDynamicallyAccessedMembersAttribute).ConstructorArguments[0])) };
+			} else {
+				return new[] { syntaxGenerator.AttributeArgument (syntaxGenerator.LiteralExpression ("")) };
 			}
 		}
 
@@ -66,7 +62,7 @@ namespace ILLink.CodeFix
 			return WellKnownFixAllProviders.BatchFixer;
 		}
 
-		protected async Task BaseRegisterCodeFixesAsync (CodeFixContext context)
+		protected static async Task BaseRegisterCodeFixesAsync (CodeFixContext context)
 		{
 
 			bool ReturnAttribute = false;
@@ -76,15 +72,15 @@ namespace ILLink.CodeFix
 			var props = diagnostic.Properties;
 			var model = await document.GetSemanticModelAsync (context.CancellationToken).ConfigureAwait (false);
 			SyntaxNode diagnosticNode = root!.FindNode (diagnostic.Location.SourceSpan);
-			var attributableSymbol = (diagnosticNode is InvocationExpressionSyntax invocationExpression 
-					&& invocationExpression.Expression is MemberAccessExpressionSyntax simpleMember 
-					&& simpleMember.Expression is IdentifierNameSyntax name) ? model.GetSymbolInfo(name).Symbol : null;
+			var attributableSymbol = (diagnosticNode is InvocationExpressionSyntax invocationExpression
+					&& invocationExpression.Expression is MemberAccessExpressionSyntax simpleMember
+					&& simpleMember.Expression is IdentifierNameSyntax name) ? model.GetSymbolInfo (name).Symbol : null;
 
 			if (attributableSymbol is null) return;
 
 			var attributableNodeList = attributableSymbol.DeclaringSyntaxReferences;
 
-			var attributableNode = (attributableNodeList.Length == 1) ? attributableNodeList[0].GetSyntax() : null;
+			var attributableNode = (attributableNodeList.Length == 1) ? attributableNodeList[0].GetSyntax () : null;
 
 			if (attributableNode is null) return;
 			var targetSymbol = model!.GetSymbolInfo (diagnosticNode).Symbol!;
@@ -92,7 +88,7 @@ namespace ILLink.CodeFix
 			var attributeArguments = GetAttributeArguments (attributableSymbol, targetSymbol, SyntaxGenerator.GetGenerator (document), diagnostic);
 			var codeFixTitle = CodeFixTitle.ToString ();
 			var returnAttributes = AttriubuteOnReturn ();
-			if (returnAttributes.Contains(attributeSymbol.ToString())) {
+			if (returnAttributes.Contains (attributeSymbol.ToString ())) {
 				ReturnAttribute = true;
 			}
 
@@ -117,12 +113,9 @@ namespace ILLink.CodeFix
 				generator.TypeExpression (attributeSymbol), attributeArguments)
 				.WithAdditionalAnnotations (Simplifier.Annotation, Simplifier.AddImportsAnnotation);
 
-			if (AddAsReturnAttribute)
-			{
-				editor.AddReturnAttribute(targetNode, attribute);
-			} 
-			else
-			{
+			if (AddAsReturnAttribute) {
+				editor.AddReturnAttribute (targetNode, attribute);
+			} else {
 				editor.AddAttribute (targetNode, attribute);
 			}
 			return editor.GetChangedDocument ();
