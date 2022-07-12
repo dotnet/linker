@@ -31,7 +31,7 @@ namespace ILLink.CodeFix
 
 		public sealed override Task RegisterCodeFixesAsync (CodeFixContext context) => BaseRegisterCodeFixesAsync (context);
 
-		static ImmutableHashSet<string> AttriubuteOnReturn ()
+		static readonly ImmutableArray<string> AttributesOnReturn =
 		{
 			var diagDescriptorsArrayBuilder = ImmutableHashSet.CreateBuilder<string> ();
 			diagDescriptorsArrayBuilder.Add (DiagnosticId.DynamicallyAccessedMembersOnMethodReturnValueCanOnlyApplyToTypesOrStrings.AsString ());
@@ -72,9 +72,10 @@ namespace ILLink.CodeFix
 			var props = diagnostic.Properties;
 			var model = await document.GetSemanticModelAsync (context.CancellationToken).ConfigureAwait (false);
 			SyntaxNode diagnosticNode = root!.FindNode (diagnostic.Location.SourceSpan);
-			var attributableSymbol = (diagnosticNode is InvocationExpressionSyntax invocationExpression
-					&& invocationExpression.Expression is MemberAccessExpressionSyntax simpleMember
-					&& simpleMember.Expression is IdentifierNameSyntax name) ? model.GetSymbolInfo (name).Symbol : null;
+			var attributableSymbol = (diagnosticNode is InvocationExpressionSyntax { 
+			    Expression: MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax name } }) 
+					? model.GetSymbolInfo (name).Symbol 
+					: null;
 
 			if (attributableSymbol is null) return;
 
