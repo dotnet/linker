@@ -35,7 +35,6 @@ namespace Mono.Linker.Tests.Cases.Interop.PInvoke.Warnings
 			Call_CanSuppressPInvokeWithRequiresUnreferencedCode ();
 			Call_PInvokeWithRequiresUnreferencedCode ();
 			Call_PInvokeWithVoidPointerArg ();
-			Call_PInvokeWithFunctionPointerArg ();
 			Call_PInvokeWithStructPointerArg ();
 			Call_PInvokeWithSequentialStructPointerArg ();
 		}
@@ -198,14 +197,6 @@ namespace Mono.Linker.Tests.Cases.Interop.PInvoke.Warnings
 
 		[DllImport ("Foo")]
 		static extern unsafe void PInvokeWithVoidPointerArg (void* arg);
-
-		static unsafe void Call_PInvokeWithFunctionPointerArg ()
-		{
-			PInvokeWithFunctionPointerArg (null);
-		}
-
-		[DllImport ("Foo")]
-		static extern unsafe void PInvokeWithFunctionPointerArg (delegate* unmanaged<void>* arg);
 
 		static unsafe void Call_PInvokeWithStructPointerArg ()
 		{
