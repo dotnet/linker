@@ -21,7 +21,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 {
 	[SetupCompileBefore ("library.dll", new[] { "Dependencies/Library.cs" })]
 	[SetupLinkerAction ("skip", "library")]
-	class UnusedInterfacesInPreserveScope
+	class UnusedInterfacesInPreservedScope
 	{
 		[Kept]
 		public static void Main ()
@@ -30,13 +30,9 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 		}
 
 		[Kept]
-		[KeptInterface (typeof (IStaticVirtualMethods))]
-		class MyType : IStaticVirtualMethods
+		class MyType : IStaticInterfaceWithDefaultImpls
 		{
-			[Kept]
-			public static int Property { [Kept][KeptOverride (typeof (IStaticVirtualMethods))] get => 0; [Kept][KeptOverride (typeof (IStaticVirtualMethods))] set => _ = value; }
-			[Kept]
-			[KeptOverride (typeof (IStaticVirtualMethods))]
+			public static int Property {  get => 0;  set => _ = value; }
 			public static int Method () => 0;
 			public int InstanceMethod () => 0;
 		}

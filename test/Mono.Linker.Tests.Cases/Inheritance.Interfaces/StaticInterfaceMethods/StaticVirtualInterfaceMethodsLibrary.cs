@@ -28,17 +28,17 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 		{
 			[Kept]
 			[KeptMember (".ctor()")]
-			[KeptInterface (typeof (IStaticVirtualMethods))]
-			public class ExplcitImplementations : IStaticVirtualMethods
+			[KeptInterface (typeof (IStaticInterfaceWithDefaultImpls))]
+			public class ExplcitImplementations : IStaticInterfaceWithDefaultImpls
 			{
 				[Kept]
-				static int IStaticVirtualMethods.Property { [Kept][KeptOverride (typeof (IStaticVirtualMethods))] get => 1; [Kept][KeptOverride (typeof (IStaticVirtualMethods))] set => _ = value; }
+				static int IStaticInterfaceWithDefaultImpls.Property { [Kept][KeptOverride (typeof (IStaticInterfaceWithDefaultImpls))] get => 1; [Kept][KeptOverride (typeof (IStaticInterfaceWithDefaultImpls))] set => _ = value; }
 				[Kept]
-				[KeptOverride (typeof (IStaticVirtualMethods))]
-				static int IStaticVirtualMethods.Method () => 1;
+				[KeptOverride (typeof (IStaticInterfaceWithDefaultImpls))]
+				static int IStaticInterfaceWithDefaultImpls.Method () => 1;
 				[Kept]
-				[KeptOverride (typeof (IStaticVirtualMethods))]
-				int IStaticVirtualMethods.InstanceMethod () => 0;
+				[KeptOverride (typeof (IStaticInterfaceWithDefaultImpls))]
+				int IStaticInterfaceWithDefaultImpls.InstanceMethod () => 0;
 			}
 		}
 

@@ -597,8 +597,9 @@ namespace Mono.Linker.Steps
 						!unusedInterfacesOptimizationEnabled) {
 						MarkInterfaceImplementations (type);
 					}
+					// We need to check all methods here -- _interfaceOverrides won't have preserved scope methods if they are not
+					//  marked, but abstract methods from preserved scope must still be kept for valid IL
 					MarkMethodsIf (type.Methods, IsInterfaceMethodNeededByTypeDueToPreservedScope, new DependencyInfo (DependencyKind.VirtualNeededDueToPreservedScope, type), ScopeStack.CurrentScope.Origin);
-					//MarkMethodsIf (type.Methods, IsInterfaceImplementationMethodNeededByTypeDueToInterface, new DependencyInfo (DependencyKind.Override, type), ScopeStack.CurrentScope.Origin);
 				}
 			}
 
@@ -607,8 +608,6 @@ namespace Mono.Linker.Steps
 				using (ScopeStack.PushScope (scope)) {
 					if (IsInterfaceImplementationMethodNeededByTypeDueToInterface (overrideInformation))
 						MarkMethod (overrideInformation.Override, new DependencyInfo (DependencyKind.Override, overrideInformation.Base), scope.Origin);
-					if (IsInterfaceMethodNeededByTypeDueToPreservedScope (overrideInformation.Override))
-						MarkMethod (overrideInformation.Override, new DependencyInfo (DependencyKind.VirtualNeededDueToPreservedScope, overrideInformation.Base), scope.Origin);
 				}
 			}
 		}
