@@ -54,7 +54,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			var existingValue = HoistedLocals.Get (key);
 			if (existingValue.MaybeValue != null)
 				return; // Already tracked
-			
+
 			HoistedLocals.Set (key, new Maybe<TValue> (lattice.HoistedLocalLattice.ValueLattice.ValueLattice.Top));
 		}
 
@@ -88,7 +88,8 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 		public InterproceduralStateLattice (
 			ValueSetLattice<MethodBodyValue> methodLattice,
 			DictionaryLattice<LocalKey, Maybe<TValue>, MaybeLattice<TValue, TValueLattice>> hoistedLocalLattice
-		) {
+		)
+		{
 			MethodLattice = methodLattice;
 			HoistedLocalLattice = hoistedLocalLattice;
 		}

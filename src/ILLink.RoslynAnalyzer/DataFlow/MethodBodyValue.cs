@@ -22,7 +22,8 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			ControlFlowGraph = cfg;
 		}
 
-		public bool Equals (MethodBodyValue other) {
+		public bool Equals (MethodBodyValue other)
+		{
 			if (!ReferenceEquals (Method, other.Method))
 				return false;
 

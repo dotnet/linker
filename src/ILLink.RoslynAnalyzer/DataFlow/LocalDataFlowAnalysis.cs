@@ -4,10 +4,10 @@
 using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.FlowAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
 using ILLink.Shared.DataFlow;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.FlowAnalysis;
 
 namespace ILLink.RoslynAnalyzer.DataFlow
 {
@@ -35,7 +35,8 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 
 		readonly IOperation OperationBlock;
 
-		protected LocalDataFlowAnalysis (OperationBlockAnalysisContext context, IOperation operationBlock) {
+		protected LocalDataFlowAnalysis (OperationBlockAnalysisContext context, IOperation operationBlock)
+		{
 			Lattice = new (new TLattice ());
 			Context = context;
 			OperationBlock = operationBlock;
