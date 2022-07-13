@@ -32,7 +32,7 @@ The warning suppression could present a challenge to the software development li
 
 If we keep the warning suppression on this trimmer-compatible code, we will end up with a potentially dangerous case. Should we later add some trimmer-incompatible code within the scope of the suppression which triggers the suppressed warning, we will not be informed about it during the trimming process. That is, the warning issued by the linker will be silenced by the suppression we left over and it will not be displayed. This may result in a scenario, in which the trimming completes with no warnings, yet errors occur at runtime. 
 
-This can be illustrated with the following example. Let us extend the trimmer-compatible code to print properties of previously inspected properties. 
+This can be illustrated with the following example. Let us extend the above example to print properties of previously inspected properties. 
 
 ```csharp
     [UnconditionalSuppressMessage("trim", "IL2075", Justification = "It's OK to print only the properties which were actually used.")]
@@ -65,7 +65,6 @@ Let us again consider the example of the trimmer-compatible code with a redundan
 
 ```csharp
     [UnconditionalSuppressMessage("trim", "IL2075", Justification = "It's OK to print only the properties which were actually used.")]
-
     void PrintProperties<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>(T instance)
     {
         foreach (var p in typeof(T).GetProperties())
