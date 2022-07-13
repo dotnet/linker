@@ -2476,7 +2476,7 @@ namespace Mono.Linker.Steps
 
 			// If the interface is from a preserved scope but the method is not marked, do not mark the implementation method
 			// We know the method cannot be called if it is not marked
-			if (IgnoreScope (@base.DeclaringType.Scope) && !Annotations.IsMarked (@base))
+			if (!Annotations.IsMarked (@base))
 				return false;
 
 			// If the method is static and the implementing type is relevant to variant casting, mark the implementation method. 		
