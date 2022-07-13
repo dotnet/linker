@@ -64,7 +64,7 @@ namespace Mono.Linker.Steps
 		readonly List<AttributeProviderPair> _ivt_attributes;
 		protected Queue<(AttributeProviderPair, DependencyInfo, MarkScopeStack.Scope)> _lateMarkedAttributes;
 		protected List<(TypeDefinition, MarkScopeStack.Scope)> _typesWithInterfaces;
-		protected List<(OverrideInformation, MarkScopeStack.Scope)> _interfaceOverrides;
+		protected HashSet<(OverrideInformation, MarkScopeStack.Scope)> _interfaceOverrides;
 		protected HashSet<AssemblyDefinition> _dynamicInterfaceCastableImplementationTypesDiscovered;
 		protected List<TypeDefinition> _dynamicInterfaceCastableImplementationTypes;
 		protected List<(MethodBody, MarkScopeStack.Scope)> _unreachableBodies;
@@ -229,7 +229,7 @@ namespace Mono.Linker.Steps
 			_ivt_attributes = new List<AttributeProviderPair> ();
 			_lateMarkedAttributes = new Queue<(AttributeProviderPair, DependencyInfo, MarkScopeStack.Scope)> ();
 			_typesWithInterfaces = new List<(TypeDefinition, MarkScopeStack.Scope)> ();
-			_interfaceOverrides = new List<(OverrideInformation, MarkScopeStack.Scope)> ();
+			_interfaceOverrides = new HashSet<(OverrideInformation, MarkScopeStack.Scope)> ();
 			_dynamicInterfaceCastableImplementationTypesDiscovered = new HashSet<AssemblyDefinition> ();
 			_dynamicInterfaceCastableImplementationTypes = new List<TypeDefinition> ();
 			_unreachableBodies = new List<(MethodBody, MarkScopeStack.Scope)> ();
@@ -578,6 +578,11 @@ namespace Mono.Linker.Steps
 			}
 		}
 
+		/// <summary>
+		/// Handles marking of interface implementations, and the marking of methods that implement interfaces
+		/// once the linker knows whether a type is instantiated or relevant to variant casting,
+		/// and after interfaces and interface methods have been marked.
+		/// </summary>
 		void ProcessMarkedTypesWithInterfaces ()
 		{
 			// We may mark an interface type later on.  Which means we need to reprocess any time with one or more interface implementations that have not been marked
