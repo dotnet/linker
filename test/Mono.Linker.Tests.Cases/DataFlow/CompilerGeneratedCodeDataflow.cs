@@ -516,9 +516,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				Type t = GetWithPublicMethods ();
 
 				var outerLambda =
-				[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll))]
 				() => {
-					var innerLambda = () => t.RequiresAll ();
+					var innerLambda =
+					[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll))]
+					() => t.RequiresAll ();
 
 					innerLambda ();
 				};

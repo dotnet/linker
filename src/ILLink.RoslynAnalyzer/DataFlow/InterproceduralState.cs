@@ -8,7 +8,7 @@ using ILLink.Shared.DataFlow;
 
 namespace ILLink.RoslynAnalyzer.DataFlow
 {
-	// Tracks the set of methods which get analyzer together during interprocedural analysis,
+	// Tracks the set of methods which get analyzed together during interprocedural analysis,
 	// and the possible states of hoisted locals in state machine methods and lambdas/local functions.
 	public struct InterproceduralState<TValue, TValueLattice> : IEquatable<InterproceduralState<TValue, TValueLattice>>
 		where TValue : struct, IEquatable<TValue>
