@@ -61,24 +61,6 @@ namespace ILLink.RoslynAnalyzer
 
 		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => GetSupportedDiagnostics ();
 
-		bool HasCompilerGeneratedCode (IOperation operation)
-		{
-			switch (operation.Kind) {
-			case OperationKind.AnonymousFunction:
-			case OperationKind.LocalFunction:
-			case OperationKind.YieldBreak:
-			case OperationKind.YieldReturn:
-				return true;
-			}
-
-			foreach (var child in operation.ChildOperations) {
-				if (HasCompilerGeneratedCode (child))
-					return true;
-			}
-
-			return false;
-		}
-
 		public override void Initialize (AnalysisContext context)
 		{
 			if (!System.Diagnostics.Debugger.IsAttached)
