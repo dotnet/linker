@@ -2,7 +2,7 @@
 
 Dynamic reflection patterns pose a serious challenge to the linker trimming capabilities. The tool is able to infer simple reflection patterns; but there still cases which the tool will not be able to reason about. When the linker fails to recognize a certain pattern, a warning appears informing the user that the trimming process may break the functionality of the app.
 
-There are cases where the developer confident about safety of a given pattern, but the linker is unable to reason about it and still produces a warning. The developer may use warning suppression to silence the warning. An example of such pattern may be listing all properties of an object using reflection mechanism which may be useful for diagnostic purposes.
+There are cases where the developer is confident about the safety of a given pattern, but the linker is unable to reason about it and still produces a warning. The developer may use warning suppression to silence the warning. An example of such pattern may be listing all properties of an object using reflection mechanism which may be useful for diagnostic purposes.
 ```csharp
     [UnconditionalSuppressMessage("trim", "IL2075", Justification = "It's OK to print only the properties which were actually used.")]
     void PrintProperties(object instance)
@@ -30,7 +30,7 @@ The warning suppression could present a challenge to the software development li
 
 ```
 
-If we keep the warning suppression on this trimmer-compatible code, we will end up with a potentially dangerous case. Should we later add some trimmer-incompatible code within the scope of the suppression which triggers the suppressed warning, we will not be informed about it during the trimming process. That is, the warning issued by the linker will be silenced by the suppression we left over and it will not be displayed. This may result in a scenario, in which the trimming completes with no warnings, yet errors occur at runtime. 
+If we keep the warning suppression on this trimmer-compatible code, we will end up with a potentially dangerous case. Should we later add some trimmer-incompatible code within the scope of the suppression which triggers the suppressed warning, we will not be informed about it during the trimming process. That is, the warning issued by the linker will be silenced by the suppression we left over and it will not be displayed. This may result in a scenario in which the trimming completes with no warnings, yet errors occur at runtime. 
 
 This can be illustrated with the following example. Let us extend the above example to print properties of previously inspected properties. 
 
