@@ -21,15 +21,24 @@ namespace ILLink.CodeFix
 {
 	public class DAMCodeFixProvider : Microsoft.CodeAnalysis.CodeFixes.CodeFixProvider
 	{
-		public static ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => DynamicallyAccessedMembersAnalyzer.GetSupportedDiagnostics ();
+		public static ImmutableArray<DiagnosticDescriptor> GetSupportedDiagnostics () 
+		{
+			var diagDescriptorsArrayBuilder = ImmutableArray.CreateBuilder<DiagnosticDescriptor> ();
+			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersFieldAccessedViaReflection));
+			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection));
+			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsThisParameter));
+			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchFieldTargetsThisParameter));
+			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsMethodReturnType));
+			return diagDescriptorsArrayBuilder.ToImmutable ();
+		} 
+
+		public static ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => GetSupportedDiagnostics ();
 
 		public sealed override ImmutableArray<string> FixableDiagnosticIds => SupportedDiagnostics.Select (dd => dd.Id).ToImmutableArray ();
 
 		private protected static LocalizableString CodeFixTitle => new LocalizableResourceString (nameof (Resources.DynamicallyAccessedMembersCodeFixTitle), Resources.ResourceManager, typeof (Resources));
 
 		private protected static string FullyQualifiedAttributeName => DynamicallyAccessedMembersAnalyzer.FullyQualifiedDynamicallyAccessedMembersAttribute;
-
-		public sealed override Task RegisterCodeFixesAsync (CodeFixContext context) => BaseRegisterCodeFixesAsync (context);
 
 		static ImmutableHashSet<string> AttriubuteOnReturn ()
 		{
@@ -39,20 +48,17 @@ namespace ILLink.CodeFix
 			return diagDescriptorsArrayBuilder.ToImmutable ();
 		}
 
-		protected static SyntaxNode[] GetAttributeArguments (ISymbol attributableSymbol, ISymbol targetSymbol, SyntaxGenerator syntaxGenerator, Diagnostic diagnostic)
+		protected static SyntaxNode[] GetAttributeArguments (ISymbol targetSymbol, SyntaxGenerator syntaxGenerator, Diagnostic diagnostic)
 		{
-			var symbolDisplayName = targetSymbol.GetDisplayName ();
-			if (string.IsNullOrEmpty (symbolDisplayName) || HasPublicAccessibility (attributableSymbol))
-				return Array.Empty<SyntaxNode> ();
-
-			if (diagnostic.Id == DiagnosticId.DynamicallyAccessedMembersFieldAccessedViaReflection.AsString ()) {
-				return new[] { syntaxGenerator.AttributeArgument (syntaxGenerator.BitwiseOrExpression (syntaxGenerator.DottedName ("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicFields"), syntaxGenerator.DottedName ("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicFields"))) };
-			} else if (diagnostic.Id == DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection.AsString ()) {
-				return new[] { syntaxGenerator.AttributeArgument (syntaxGenerator.BitwiseOrExpression (syntaxGenerator.DottedName ("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicMethods"), syntaxGenerator.DottedName ("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods"))) };
-			} else if (diagnostic.Id == DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsThisParameter.AsString () || diagnostic.Id == DiagnosticId.DynamicallyAccessedMembersMismatchFieldTargetsThisParameter.AsString () || diagnostic.Id == DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsMethodReturnType.AsString ()) {
+			// if (diagnostic.Id == DiagnosticId.DynamicallyAccessedMembersFieldAccessedViaReflection.AsString ()) {
+			// 	return new[] { syntaxGenerator.AttributeArgument (syntaxGenerator.BitwiseOrExpression (syntaxGenerator.DottedName ("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicFields"), syntaxGenerator.DottedName ("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicFields"))) };
+			// } else if (diagnostic.Id == DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection.AsString ()) {
+			// 	return new[] { syntaxGenerator.AttributeArgument (syntaxGenerator.BitwiseOrExpression (syntaxGenerator.DottedName ("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicMethods"), syntaxGenerator.DottedName ("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods"))) };
+			// } else 
+			if (diagnostic.Id == DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsThisParameter.AsString () || diagnostic.Id == DiagnosticId.DynamicallyAccessedMembersMismatchFieldTargetsThisParameter.AsString () || diagnostic.Id == DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsMethodReturnType.AsString ()) {
 				return new[] { syntaxGenerator.AttributeArgument (syntaxGenerator.TypedConstantExpression (targetSymbol.GetAttributes ().First (attr => attr.AttributeClass?.ToDisplayString () == DynamicallyAccessedMembersAnalyzer.FullyQualifiedDynamicallyAccessedMembersAttribute).ConstructorArguments[0])) };
 			} else {
-				return new[] { syntaxGenerator.AttributeArgument (syntaxGenerator.LiteralExpression ("")) };
+				return Array.Empty<SyntaxNode> ();
 			}
 		}
 
@@ -62,7 +68,7 @@ namespace ILLink.CodeFix
 			return WellKnownFixAllProviders.BatchFixer;
 		}
 
-		protected static async Task BaseRegisterCodeFixesAsync (CodeFixContext context)
+		public override async Task RegisterCodeFixesAsync (CodeFixContext context)
 		{
 
 			bool ReturnAttribute = false;
@@ -76,19 +82,23 @@ namespace ILLink.CodeFix
 					&& invocationExpression.Expression is MemberAccessExpressionSyntax simpleMember
 					&& simpleMember.Expression is IdentifierNameSyntax name) ? model.GetSymbolInfo (name).Symbol : null;
 
-			if (attributableSymbol is null) return;
+			if (attributableSymbol is null) 
+				return;
 
 			var attributableNodeList = attributableSymbol.DeclaringSyntaxReferences;
 
-			var attributableNode = (attributableNodeList.Length == 1) ? attributableNodeList[0].GetSyntax () : null;
+			if (attributableNodeList.Length != 1)
+				return;
+
+			var attributableNode = attributableNodeList[0].GetSyntax ();
 
 			if (attributableNode is null) return;
-			var targetSymbol = model!.GetSymbolInfo (diagnosticNode).Symbol!;
+			var diagnosticSymbol = model!.GetSymbolInfo (diagnosticNode).Symbol!;
 			var attributeSymbol = model!.Compilation.GetTypeByMetadataName (FullyQualifiedAttributeName)!;
-			var attributeArguments = GetAttributeArguments (attributableSymbol, targetSymbol, SyntaxGenerator.GetGenerator (document), diagnostic);
+			var attributeArguments = GetAttributeArguments (diagnosticSymbol, SyntaxGenerator.GetGenerator (document), diagnostic);
 			var codeFixTitle = CodeFixTitle.ToString ();
 			var returnAttributes = AttriubuteOnReturn ();
-			if (returnAttributes.Contains (attributeSymbol.ToString ())) {
+			if (returnAttributes.Contains (diagnostic.Id)) {
 				ReturnAttribute = true;
 			}
 
@@ -104,7 +114,7 @@ namespace ILLink.CodeFix
 			SyntaxNode targetNode,
 			SyntaxNode[] attributeArguments,
 			ITypeSymbol attributeSymbol,
-			bool AddAsReturnAttribute,
+			bool addAsReturnAttribute,
 			CancellationToken cancellationToken)
 		{
 			var editor = await DocumentEditor.CreateAsync (document, cancellationToken).ConfigureAwait (false);
@@ -113,25 +123,12 @@ namespace ILLink.CodeFix
 				generator.TypeExpression (attributeSymbol), attributeArguments)
 				.WithAdditionalAnnotations (Simplifier.Annotation, Simplifier.AddImportsAnnotation);
 
-			if (AddAsReturnAttribute) {
+			if (addAsReturnAttribute) {
 				editor.AddReturnAttribute (targetNode, attribute);
 			} else {
 				editor.AddAttribute (targetNode, attribute);
 			}
 			return editor.GetChangedDocument ();
-		}
-
-		protected static bool HasPublicAccessibility (ISymbol? m)
-		{
-			if (m is not { DeclaredAccessibility: Accessibility.Public or Accessibility.Protected }) {
-				return false;
-			}
-			for (var t = m.ContainingType; t is not null; t = t.ContainingType) {
-				if (t.DeclaredAccessibility != Accessibility.Public) {
-					return false;
-				}
-			}
-			return true;
 		}
 	}
 }
