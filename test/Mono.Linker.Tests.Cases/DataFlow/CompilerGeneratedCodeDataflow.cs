@@ -527,11 +527,117 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				outerLambda ();
 			}
 
+			[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll))]
+			[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll))]
+			static void LocalFunctionInTryRegion ()
+			{
+				Type t = GetWithPublicMethods ();
+
+				// This reproduces a bug where the enclosing try region of the local function
+				// is part of a different control flow graph (that of the containing method).
+				// Add a few basic blocks so that the first basic block of the try would throw
+				// an IndexOutOfRangeException if used to index into the local function's basic blocks.
+				var r = new Random ();
+				int i = 0;
+				if (r.Next () == 0)
+					i++;
+				if (r.Next () == 0)
+					i++;
+				if (r.Next () == 0)
+					i++;
+
+				try {
+					[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll))]
+					[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll))]
+					void LocalFunction ()
+					{
+						t = GetWithPublicFields ();
+						t.RequiresAll ();
+					}
+
+					LocalFunction ();
+				} finally {
+					t.RequiresAll ();
+				}
+			}
+
+			[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll))]
+			[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll))]
+			static void LocalFunctionInFinallyRegion ()
+			{
+				Type t;
+
+				// This reproduces a bug where the enclosing try region of the local function
+				// is part of a different control flow graph (that of the containing method).
+				// Add a few basic blocks so that the first basic block of the try would throw
+				// an IndexOutOfRangeException if used to index into the local function's basic blocks.
+				var r = new Random ();
+				int i = 0;
+				if (r.Next () == 0)
+					i++;
+				if (r.Next () == 0)
+					i++;
+				if (r.Next () == 0)
+					i++;
+
+				try {
+					t = GetWithPublicMethods ();
+				} finally {
+					[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll))]
+					[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll))]
+					void LocalFunction ()
+					{
+						t = GetWithPublicFields ();
+						t.RequiresAll ();
+					}
+
+					LocalFunction ();
+					t.RequiresAll ();
+				}
+			}
+
+			[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll))]
+			[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll))]
+			static void LambdaInTryRegion ()
+			{
+				Type t = GetWithPublicMethods ();
+
+				// This reproduces a bug where the enclosing try region of the local function
+				// is part of a different control flow graph (that of the containing method).
+				// Add a few basic blocks so that the first basic block of the try would throw
+				// an IndexOutOfRangeException if used to index into the local function's basic blocks.
+				var r = new Random ();
+				int i = 0;
+				if (r.Next () == 0)
+					i++;
+				if (r.Next () == 0)
+					i++;
+				if (r.Next () == 0)
+					i++;
+
+				try {
+					var lambda =
+					[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll))]
+					[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll))]
+					() => {
+						t = GetWithPublicFields ();
+						t.RequiresAll ();
+					};
+
+					lambda ();
+				} finally {
+					t.RequiresAll ();
+				}
+			}
+
 			public static void Test ()
 			{
 				IteratorWithLocalFunctions ();
 				NestedLocalFunctions ();
 				NestedLambdas ();
+				LocalFunctionInTryRegion ();
+				LocalFunctionInFinallyRegion ();
+				LambdaInTryRegion ();
 			}
 		}
 
