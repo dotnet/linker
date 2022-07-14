@@ -32,12 +32,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			ControlFlowGraph methodCFG,
 			ImmutableDictionary<CaptureId, FlowCaptureKind> lValueFlowCaptures,
 			InterproceduralState<MultiValue, ValueSetLattice<SingleValue>> interproceduralState)
-		 => new (Lattice,
-				method,
-				methodCFG,
-				lValueFlowCaptures,
-				TrimAnalysisPatterns,
-				interproceduralState);
+		 => new (Lattice, method, methodCFG, lValueFlowCaptures, TrimAnalysisPatterns, interproceduralState);
 
 #if DEBUG
 #pragma warning disable CA1805 // Do not initialize unnecessarily
