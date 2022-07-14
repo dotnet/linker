@@ -2470,9 +2470,8 @@ namespace Mono.Linker.Steps
 
 			// If the interface method is abstract, mark the implementation method
 			// The method is needed for valid IL.
-			if (@base.IsAbstract) {
+			if (@base.IsAbstract)
 				return true;
-			}
 
 			// If the interface is from a preserved scope but the method is not marked, do not mark the implementation method
 			// We know the method cannot be called if it is not marked
@@ -2481,19 +2480,12 @@ namespace Mono.Linker.Steps
 
 			// If the method is static and the implementing type is relevant to variant casting, mark the implementation method. 		
 			// A static method may only be called through a constrained call if the type is relevant to variant casting.
-			if (@base.IsStatic) {
-				if (Annotations.IsRelevantToVariantCasting (method.DeclaringType))
-					return true;
-				else
-					// If the method is static and the implementing type is not relevant to variant casting, do not mark the implementation method.
-					return false;
-			}
+			if (@base.IsStatic)
+				return Annotations.IsRelevantToVariantCasting (method.DeclaringType);
 
 			// If the implementing type is marked as instantiated, mark the implementation method.
 			// If the type is not instantiated, do not mark the implementation method
-			if (Annotations.IsInstantiated (method.DeclaringType))
-				return true;
-			return false;
+			return Annotations.IsInstantiated (method.DeclaringType);
 		}
 
 		/// <summary>
