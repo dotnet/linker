@@ -40,13 +40,7 @@ namespace ILLink.CodeFix
 
 		private protected static string FullyQualifiedAttributeName => DynamicallyAccessedMembersAnalyzer.FullyQualifiedDynamicallyAccessedMembersAttribute;
 
-		static ImmutableHashSet<string> AttriubuteOnReturn ()
-		{
-			var diagDescriptorsArrayBuilder = ImmutableHashSet.CreateBuilder<string> ();
-			diagDescriptorsArrayBuilder.Add (DiagnosticId.DynamicallyAccessedMembersOnMethodReturnValueCanOnlyApplyToTypesOrStrings.AsString ());
-			diagDescriptorsArrayBuilder.Add (DiagnosticId.DynamicallyAccessedMembersMismatchOnMethodReturnValueBetweenOverrides.AsString ());
-			return diagDescriptorsArrayBuilder.ToImmutable ();
-		}
+		private static readonly string[] AttributeOnReturn = {DiagnosticId.DynamicallyAccessedMembersOnMethodReturnValueCanOnlyApplyToTypesOrStrings.AsString (), DiagnosticId.DynamicallyAccessedMembersMismatchOnMethodReturnValueBetweenOverrides.AsString ()};
 
 		protected static SyntaxNode[] GetAttributeArguments (ISymbol targetSymbol, SyntaxGenerator syntaxGenerator, Diagnostic diagnostic)
 		{
@@ -97,8 +91,7 @@ namespace ILLink.CodeFix
 			var attributeSymbol = model!.Compilation.GetTypeByMetadataName (FullyQualifiedAttributeName)!;
 			var attributeArguments = GetAttributeArguments (diagnosticSymbol, SyntaxGenerator.GetGenerator (document), diagnostic);
 			var codeFixTitle = CodeFixTitle.ToString ();
-			var returnAttributes = AttriubuteOnReturn ();
-			if (returnAttributes.Contains (diagnostic.Id)) {
+			if (AttributeOnReturn.Contains (diagnostic.Id)) {
 				ReturnAttribute = true;
 			}
 
