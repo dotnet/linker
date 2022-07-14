@@ -21,7 +21,7 @@ namespace ILLink.CodeFix
 {
 	public class DAMCodeFixProvider : Microsoft.CodeAnalysis.CodeFixes.CodeFixProvider
 	{
-		public static ImmutableArray<DiagnosticDescriptor> GetSupportedDiagnostics () 
+		public static ImmutableArray<DiagnosticDescriptor> GetSupportedDiagnostics ()
 		{
 			var diagDescriptorsArrayBuilder = ImmutableArray.CreateBuilder<DiagnosticDescriptor> ();
 			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersFieldAccessedViaReflection));
@@ -30,7 +30,7 @@ namespace ILLink.CodeFix
 			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchFieldTargetsThisParameter));
 			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsMethodReturnType));
 			return diagDescriptorsArrayBuilder.ToImmutable ();
-		} 
+		}
 
 		public static ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => GetSupportedDiagnostics ();
 
@@ -44,11 +44,6 @@ namespace ILLink.CodeFix
 
 		protected static SyntaxNode[] GetAttributeArguments (ISymbol targetSymbol, SyntaxGenerator syntaxGenerator, Diagnostic diagnostic)
 		{
-			// if (diagnostic.Id == DiagnosticId.DynamicallyAccessedMembersFieldAccessedViaReflection.AsString ()) {
-			// 	return new[] { syntaxGenerator.AttributeArgument (syntaxGenerator.BitwiseOrExpression (syntaxGenerator.DottedName ("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicFields"), syntaxGenerator.DottedName ("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicFields"))) };
-			// } else if (diagnostic.Id == DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection.AsString ()) {
-			// 	return new[] { syntaxGenerator.AttributeArgument (syntaxGenerator.BitwiseOrExpression (syntaxGenerator.DottedName ("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicMethods"), syntaxGenerator.DottedName ("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods"))) };
-			// } else 
 			if (diagnostic.Id == DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsThisParameter.AsString () || diagnostic.Id == DiagnosticId.DynamicallyAccessedMembersMismatchFieldTargetsThisParameter.AsString () || diagnostic.Id == DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsMethodReturnType.AsString ()) {
 				return new[] { syntaxGenerator.AttributeArgument (syntaxGenerator.TypedConstantExpression (targetSymbol.GetAttributes ().First (attr => attr.AttributeClass?.ToDisplayString () == DynamicallyAccessedMembersAnalyzer.FullyQualifiedDynamicallyAccessedMembersAttribute).ConstructorArguments[0])) };
 			} else {
@@ -76,7 +71,7 @@ namespace ILLink.CodeFix
 					&& invocationExpression.Expression is MemberAccessExpressionSyntax simpleMember
 					&& simpleMember.Expression is IdentifierNameSyntax name) ? model.GetSymbolInfo (name).Symbol : null;
 
-			if (attributableSymbol is null) 
+			if (attributableSymbol is null)
 				return;
 
 			var attributableNodeList = attributableSymbol.DeclaringSyntaxReferences;
