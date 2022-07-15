@@ -24,16 +24,6 @@ namespace Mono.Linker.Steps
 			if (assembly == null)
 				return;
 
-			if (Context.AssemblyRootModes.TryGetValue (assembly, out var mode)) {
-				// If we add two rootModes for the same assembly without one being default, the input is invalid
-				if (mode != rootMode && mode != AssemblyRootMode.Default && rootMode != AssemblyRootMode.Default)
-					throw new InvalidDataException ($"Expected {assembly.Name} to have the same root mode, but there was {mode} and {rootMode}");
-				else
-					// Replace the default with the non-default
-					Context.AssemblyRootModes[assembly] = rootMode == AssemblyRootMode.Default ? mode : rootMode;
-			} else {
-				Context.AssemblyRootModes.Add (assembly, rootMode);
-			}
 			var di = new DependencyInfo (DependencyKind.RootAssembly, assembly);
 			var origin = new MessageOrigin (assembly);
 

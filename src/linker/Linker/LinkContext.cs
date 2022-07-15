@@ -187,8 +187,6 @@ namespace Mono.Linker
 
 		public HashSet<string> AssembliesWithGeneratedSingleWarning { get; set; }
 
-		public Dictionary<AssemblyDefinition, AssemblyRootMode> AssemblyRootModes { get; }
-
 		public SerializationMarker SerializationMarker { get; }
 
 		public LinkContext (Pipeline pipeline, ILogger logger, string outputDirectory)
@@ -225,7 +223,6 @@ namespace Mono.Linker
 			GeneralSingleWarn = false;
 			SingleWarn = new Dictionary<string, bool> ();
 			AssembliesWithGeneratedSingleWarning = new HashSet<string> ();
-			AssemblyRootModes = new Dictionary<AssemblyDefinition, AssemblyRootMode> ();
 
 			const CodeOptimizations defaultOptimizations =
 				CodeOptimizations.BeforeFieldInit |
@@ -482,14 +479,6 @@ namespace Mono.Linker
 					toProcess.Enqueue (reference);
 				}
 			}
-		}
-
-		public AssemblyRootMode? GetAssemblyRootMode (IMetadataScope scope)
-		{
-			AssemblyDefinition? assembly = Resolve (scope);
-			if (assembly is not AssemblyDefinition ad || !AssemblyRootModes.ContainsKey (ad))
-				return null;
-			return AssemblyRootModes[ad];
 		}
 
 		public void SetCustomData (string key, string value)

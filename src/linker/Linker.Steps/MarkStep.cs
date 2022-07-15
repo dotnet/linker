@@ -2451,12 +2451,6 @@ namespace Mono.Linker.Steps
 			if (!@base.DeclaringType.IsInterface)
 				return false;
 
-			// All interface methods and overrides should be kept in library mode.
-			// COM in the runtime library may expect the interfaces to exist, so we should keep them.
-			// (Technically only instance methods are required, but this is much simpler
-			if (Context.GetAssemblyRootMode (method.DeclaringType.Scope) == AssemblyRootMode.Library)
-				return true;
-
 			// If the interface implementation is not marked, do not mark the implementation method
 			// A type that doesn't implement the interface isn't required to have methods that implement the interface.
 			InterfaceImplementation? iface = overrideInformation.MatchingInterfaceImplementation;
