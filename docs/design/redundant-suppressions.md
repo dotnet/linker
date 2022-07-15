@@ -53,7 +53,7 @@ Now the code is again trimmer-incompatible, the reflection pattern will trigger 
 
 ## Detecting redundant warning suppressions
 
-In order to avoid the above scenario, we would like to have a option of detecting and reporting the warning suppressions which are not tied to any warnings caused trimmer-incompatible patterns.
+In order to avoid the above scenario, we would like to have an option to detect and report the warning suppressions which are not tied to any warnings caused by trim-incompatible patterns.
 
 This may be achieved by extending the linker tool functionality to check which suppression do in fact suppress warnings and reporting those which do not.
 
@@ -77,7 +77,7 @@ Let us again consider the example of the trimmer-compatible code with a redundan
 
 In order to detect the warning suppression not tied to any trimmer-incompatible pattern we should run the `dotnet publish` command and pass the `--check-suppressions` option.
 ```shell
-  dotnet publish -r win-x64 -p:PublishTrimmed=True p:_ExtraTrimmerArgs="--check-suppressions"
+  dotnet publish -r win-x64 -p:PublishTrimmed=True -p:_ExtraTrimmerArgs="--check-suppressions"
 ```
 
 The warning should be reported in the output of the command.
