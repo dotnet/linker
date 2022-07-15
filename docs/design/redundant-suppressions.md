@@ -2,77 +2,78 @@
 
 Dynamic reflection patterns pose a serious challenge to the linker trimming capabilities. The tool is able to infer simple reflection patterns; but there still cases which the tool will not be able to reason about. When the linker fails to recognize a certain pattern, a warning appears informing the user that the trimming process may break the functionality of the app.
 
-There are cases where the developer is confident about the safety of a given pattern, but the linker is unable to reason about it and still produces a warning. The developer may use warning suppression to silence the warning. An example of such pattern may be listing all properties of an object using reflection mechanism which may be useful for diagnostic purposes.
+There are cases where the developer is confident about the safety of a given pattern, but the linker is unable to reason about it and still produces a warning. The developer may use warning suppression to silence the warning. An example of such pattern may be using methods from a private class using reflection.
 ```csharp
-    [UnconditionalSuppressMessage("trim", "IL2075", Justification = "It's OK to print only the properties which were actually used.")]
-    void PrintProperties(object instance)
+    [DynamicDependency(DynamicallyAccessedMemberTypes.PublicMethods, typeof(NameProvider))]
+    public void Test()
     {
-        foreach (var p in instance.GetType().GetProperties())
-        {
-            PrintPropertyValue(p, instance);
-        }
+        PrintName(typeof(NameProvider));
     }
 
+    [UnconditionalSuppressMessage("trim", "IL2070", Justification = "DynamicDependency attribute will instruct the linker to keep the public methods on NameProvider.")]
+    public void PrintName(Type type)
+    {
+        string name = (string)type.GetMethod("GetName")!.Invoke(null, null)!;
+        Console.WriteLine(name);
+    }
+
+    private class NameProvider
+    {
+        public static string GetName() => "NiceName";
+        public static string suffix = "no really";
+    }
 ```
 
 ## Redundant warnings
-The warning suppression could present a challenge to the software development lifecycle. Let us again consider the above example of listing all properties on an object instance. We can rewrite the code in such a way, that the linker is able to statically reason about it. Then, the warning is no longer issued and the suppression becomes redundant. We should remove it.
+The warning suppression could present a challenge to the software development lifecycle. Let us again consider the above example of accessing methods of a private class. We can rewrite the code in such a way, that the linker is able to reason about it. Then, the warning is no longer issued and the suppression becomes redundant. We should remove it.
 
 ```csharp
-    [UnconditionalSuppressMessage("trim", "IL2075", Justification = "It's OK to print only the properties which were actually used.")] // This should be removed
-    void PrintProperties<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>(T instance)
+    [UnconditionalSuppressMessage("trim", "IL2070", Justification = "DynamicDependency attribute will instruct the linker to keep the public methods on NameProvider.")] // This should be removed
+    public void PrintName([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
     {
-        foreach (var p in typeof(T).GetProperties())
-        {
-            PrintPropertyValue(p, instance);
-        }
+        string name = (string)type.GetMethod("GetName")!.Invoke(null, null)!;
+        Console.WriteLine(name);
     }
-
 ```
 
 If we keep the warning suppression on this trimmer-compatible code, we will end up with a potentially dangerous case. Should we later add some trimmer-incompatible code within the scope of the suppression which triggers the suppressed warning, we will not be informed about it during the trimming process. That is, the warning issued by the linker will be silenced by the suppression we left over and it will not be displayed. This may result in a scenario in which the trimming completes with no warnings, yet errors occur at runtime. 
 
-This can be illustrated with the following example. Let us extend the above example to print properties of previously inspected properties. 
+This can be illustrated with the following example. Let us extend the above code to also print the value of `suffix` field.
 
 ```csharp
-    [UnconditionalSuppressMessage("trim", "IL2075", Justification = "It's OK to print only the properties which were actually used.")]
-    void PrintProperties<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>(T instance)
+    [UnconditionalSuppressMessage("trim", "IL2070", Justification = "DynamicDependency attribute will instruct the linker to keep the public methods on NameProvider.")]
+    public void PrintName([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
     {
-        foreach (var p in typeof(T).GetProperties())
-        {
-            foreach(var sp in p.GetType().GetProperties())
-            {
-                PrintPropertyValue(sp, p);
-            }
-        }
+        string name = (string)type.GetMethod("GetName")!.Invoke(null, null)!;
+        string suffix = (string)type.GetField("suffix")!.GetValue(null)!; // This is will issue a warning (only public methods are guaranteed to be kept).
+        Console.WriteLine(name);
+        Console.WriteLine(suffix);
     }
 ```
 
-Now the code is again trimmer-incompatible, the reflection pattern will trigger a `IL2075` warning. However, as we forgot to remove the suppression silencing the `IL2075` warnings, the warning will be suppressed. We will not be informed about this trimmer-incompatible pattern during trimming.
+Now the code is again trimmer-incompatible, the `GetField("suffix")` call will trigger a `IL2070` warning. However, as we forgot to remove the suppression silencing the `IL2070` warnings, the warning will be suppressed. We will not be informed about this trimmer-incompatible pattern during trimming.
 
 
 ## Detecting redundant warning suppressions
 
 In order to avoid the above scenario, we would like to have an option to detect and report the warning suppressions which are not tied to any warnings caused by trim-incompatible patterns.
 
-This may be achieved by extending the linker tool functionality to check which suppression do in fact suppress warnings and reporting those which do not.
+This may be achieved by extending the linker tool functionality to check which suppression do in fact suppress warnings and reporting those which do not. 
 
 The said functionality can be implemented as an optional feature, triggered by passing a `
 --check-suppressions` command line argument to the linker. Running the tool with this option will report all of the warning suppressions which do not suppress any warnings.
 
+***NOTE:*** We will only process suppressions produced by the linker, other suppressions will be ignored.
 ### Example:
 Let us again consider the example of the trimmer-compatible code with a redundant warning suppression. 
 
 ```csharp
-    [UnconditionalSuppressMessage("trim", "IL2075", Justification = "It's OK to print only the properties which were actually used.")]
-    void PrintProperties<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>(T instance)
+    [UnconditionalSuppressMessage("trim", "IL2070", Justification = "DynamicDependency attribute will instruct the linker to keep the public methods on NameProvider.")] // This should be removed
+    public void PrintName([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
     {
-        foreach (var p in typeof(T).GetProperties())
-        {
-            PrintPropertyValue(p, instance);
-        }
+        string name = (string)type.GetMethod("GetName")!.Invoke(null, null)!;
+        Console.WriteLine(name);
     }
-
 ```
 
 In order to detect the warning suppression not tied to any trimmer-incompatible pattern we should run the `dotnet publish` command and pass the `--check-suppressions` option.
@@ -83,7 +84,7 @@ In order to detect the warning suppression not tied to any trimmer-incompatible 
 The warning should be reported in the output of the command.
 
 ```
-Trim analysis warning IL2021: Program.PrintProperties<T>(T): Unused UnconditionalSuppressMessageAttribute suppressing the IL2075 warning found. Consider removing the unused warning suppression.
+Trim analysis warning IL2021: Program.PrintName(Type): Unused UnconditionalSuppressMessageAttribute suppressing the IL2070 warning found. Consider removing the unused warning suppression.
 ```
 
 ## Other solutions
