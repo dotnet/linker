@@ -40,14 +40,18 @@ namespace ILLink.CodeFix
 
 		private protected static string FullyQualifiedAttributeName => DynamicallyAccessedMembersAnalyzer.FullyQualifiedDynamicallyAccessedMembersAttribute;
 
-		private static readonly string[] AttributeOnReturn = {DiagnosticId.DynamicallyAccessedMembersOnMethodReturnValueCanOnlyApplyToTypesOrStrings.AsString (), DiagnosticId.DynamicallyAccessedMembersMismatchOnMethodReturnValueBetweenOverrides.AsString ()};
-
 		protected static SyntaxNode[] GetAttributeArguments (ISymbol targetSymbol, SyntaxGenerator syntaxGenerator, Diagnostic diagnostic)
 		{
-			if (diagnostic.Id == DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsThisParameter.AsString () || diagnostic.Id == DiagnosticId.DynamicallyAccessedMembersMismatchFieldTargetsThisParameter.AsString () || diagnostic.Id == DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsMethodReturnType.AsString ()) {
-				return new[] { syntaxGenerator.AttributeArgument (syntaxGenerator.TypedConstantExpression (targetSymbol.GetAttributes ().First (attr => attr.AttributeClass?.ToDisplayString () == DynamicallyAccessedMembersAnalyzer.FullyQualifiedDynamicallyAccessedMembersAttribute).ConstructorArguments[0])) };
-			} else {
-				return Array.Empty<SyntaxNode> ();
+			object id = Enum.Parse(typeof(DiagnosticId), diagnostic.Id.Substring(2));
+			switch (id) {
+				case DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsThisParameter:
+					return new[] { syntaxGenerator.AttributeArgument (syntaxGenerator.TypedConstantExpression (targetSymbol.GetAttributes ().First (attr => attr.AttributeClass?.ToDisplayString () == DynamicallyAccessedMembersAnalyzer.FullyQualifiedDynamicallyAccessedMembersAttribute).ConstructorArguments[0])) };
+				case DiagnosticId.DynamicallyAccessedMembersMismatchFieldTargetsThisParameter:
+					return new[] { syntaxGenerator.AttributeArgument (syntaxGenerator.TypedConstantExpression (targetSymbol.GetAttributes ().First (attr => attr.AttributeClass?.ToDisplayString () == DynamicallyAccessedMembersAnalyzer.FullyQualifiedDynamicallyAccessedMembersAttribute).ConstructorArguments[0])) };
+				case DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsMethodReturnType:
+					return new[] { syntaxGenerator.AttributeArgument (syntaxGenerator.TypedConstantExpression (targetSymbol.GetAttributes ().First (attr => attr.AttributeClass?.ToDisplayString () == DynamicallyAccessedMembersAnalyzer.FullyQualifiedDynamicallyAccessedMembersAttribute).ConstructorArguments[0])) };
+				default:
+					return Array.Empty<SyntaxNode> ();
 			}
 		}
 
@@ -59,8 +63,6 @@ namespace ILLink.CodeFix
 
 		public override async Task RegisterCodeFixesAsync (CodeFixContext context)
 		{
-
-			bool ReturnAttribute = false;
 			var document = context.Document;
 			var root = await document.GetSyntaxRootAsync (context.CancellationToken).ConfigureAwait (false);
 			var diagnostic = context.Diagnostics.First ();
@@ -82,18 +84,15 @@ namespace ILLink.CodeFix
 			var attributableNode = attributableNodeList[0].GetSyntax ();
 
 			if (attributableNode is null) return;
-			var diagnosticSymbol = model!.GetSymbolInfo (diagnosticNode).Symbol!;
+			var targetSymbol = model!.GetSymbolInfo (diagnosticNode).Symbol!;
 			var attributeSymbol = model!.Compilation.GetTypeByMetadataName (FullyQualifiedAttributeName)!;
-			var attributeArguments = GetAttributeArguments (diagnosticSymbol, SyntaxGenerator.GetGenerator (document), diagnostic);
+			var attributeArguments = GetAttributeArguments (targetSymbol, SyntaxGenerator.GetGenerator (document), diagnostic);
 			var codeFixTitle = CodeFixTitle.ToString ();
-			if (AttributeOnReturn.Contains (diagnostic.Id)) {
-				ReturnAttribute = true;
-			}
 
 			context.RegisterCodeFix (CodeAction.Create (
 				title: codeFixTitle,
 				createChangedDocument: ct => AddAttributeAsync (
-					document, attributableNode, attributeArguments, attributeSymbol, ReturnAttribute, ct),
+					document, attributableNode, attributeArguments, attributeSymbol, ct),
 				equivalenceKey: codeFixTitle), diagnostic);
 		}
 
@@ -102,7 +101,6 @@ namespace ILLink.CodeFix
 			SyntaxNode targetNode,
 			SyntaxNode[] attributeArguments,
 			ITypeSymbol attributeSymbol,
-			bool addAsReturnAttribute,
 			CancellationToken cancellationToken)
 		{
 			var editor = await DocumentEditor.CreateAsync (document, cancellationToken).ConfigureAwait (false);
@@ -111,11 +109,7 @@ namespace ILLink.CodeFix
 				generator.TypeExpression (attributeSymbol), attributeArguments)
 				.WithAdditionalAnnotations (Simplifier.Annotation, Simplifier.AddImportsAnnotation);
 
-			if (addAsReturnAttribute) {
-				editor.AddReturnAttribute (targetNode, attribute);
-			} else {
-				editor.AddAttribute (targetNode, attribute);
-			}
+			editor.AddAttribute (targetNode, attribute);
 			return editor.GetChangedDocument ();
 		}
 	}
