@@ -32,7 +32,6 @@ namespace ILLink.CodeFix
 		protected async Task BaseRegisterCodeFixesAsync (CodeFixContext context)
 		{
 			var document = context.Document;
-			var root = await document.GetSyntaxRootAsync (context.CancellationToken).ConfigureAwait (false);
 			if (await document.GetSyntaxRootAsync (context.CancellationToken).ConfigureAwait (false) is not { } root)
 				return;
 			var diagnostic = context.Diagnostics.First ();
