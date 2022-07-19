@@ -40,14 +40,14 @@ namespace ILLink.CodeFix
 			if (FindAttributableParent (targetNode, AttributableParentTargets) is not SyntaxNode attributableNode)
 				return;
 
-			if (await document.GetSemanticModelAsync (context.CancellationToken).ConfigureAwait (false) is not {} model)
+			if (await document.GetSemanticModelAsync (context.CancellationToken).ConfigureAwait (false) is not { } model)
 				return;
-			if (model.GetSymbolInfo (targetNode).Symbol is not {} targetSymbol)
+			if (model.GetSymbolInfo (targetNode).Symbol is not { } targetSymbol)
 				return;
-			if (model.GetDeclaredSymbol (attributableNode) is not {} attributableSymbol)
+			if (model.Compilation.GetTypeByMetadataName (FullyQualifiedAttributeName) is not { } attributeSymbol)
 				return;
-			if (model.Compilation.GetTypeByMetadataName (FullyQualifiedAttributeName) is not {} attributeSymbol)
-				return;
+			// N.B. May be null for FieldDeclaration, since field declarations can declare multiple variables
+			var attributableSymbol = model.GetDeclaredSymbol (attributableNode);
 
 			var attributeArguments = GetAttributeArguments (attributableSymbol, targetSymbol, SyntaxGenerator.GetGenerator (document), diagnostic);
 			var codeFixTitle = CodeFixTitle.ToString ();
@@ -110,7 +110,7 @@ namespace ILLink.CodeFix
 		}
 
 		protected abstract SyntaxNode[] GetAttributeArguments (
-			ISymbol attributableSymbol,
+			ISymbol? attributableSymbol,
 			ISymbol targetSymbol,
 			SyntaxGenerator syntaxGenerator,
 			Diagnostic diagnostic);

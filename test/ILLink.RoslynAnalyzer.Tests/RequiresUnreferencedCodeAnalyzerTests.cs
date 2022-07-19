@@ -83,7 +83,7 @@ public class C
     public void M3() => M2(M1());
 }
 """;
-			await VerifyRequiresUnreferencedCodeCodeFix(test, fixtest, new[] {
+			await VerifyRequiresUnreferencedCodeCodeFix (test, fixtest, new[] {
 				// /0/Test0.cs(9,25): warning IL2026: Using member 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. message.
 				VerifyCS.Diagnostic(DiagnosticId.RequiresUnreferencedCode).WithSpan(9, 25, 9, 29).WithArguments("C.M1()", " message.", ""),
 			}, new[] {
