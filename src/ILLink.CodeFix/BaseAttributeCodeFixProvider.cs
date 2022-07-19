@@ -33,7 +33,7 @@ namespace ILLink.CodeFix
 		{
 			var document = context.Document;
 			var root = await document.GetSyntaxRootAsync (context.CancellationToken).ConfigureAwait (false);
-			if (root is null)
+			if (await document.GetSyntaxRootAsync (context.CancellationToken).ConfigureAwait (false) is not { } root)
 				return;
 			var diagnostic = context.Diagnostics.First ();
 			SyntaxNode targetNode = root.FindNode (diagnostic.Location.SourceSpan, getInnermostNodeForTie: true);
