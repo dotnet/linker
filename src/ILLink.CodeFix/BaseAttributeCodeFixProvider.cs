@@ -34,15 +34,17 @@ namespace ILLink.CodeFix
 			var document = context.Document;
 			var root = await document.GetSyntaxRootAsync (context.CancellationToken).ConfigureAwait (false);
 			var diagnostic = context.Diagnostics.First ();
-			SyntaxNode targetNode = root!.FindNode (diagnostic.Location.SourceSpan);
+			SyntaxNode targetNode = root!.FindNode (diagnostic.Location.SourceSpan, getInnermostNodeForTie: true);
 			if (FindAttributableParent (targetNode, AttributableParentTargets) is not SyntaxNode attributableNode)
 				return;
 
-			var model = await document.GetSemanticModelAsync (context.CancellationToken).ConfigureAwait (false);
-			var targetSymbol = model!.GetSymbolInfo (targetNode).Symbol!;
+			if (await document.GetSemanticModelAsync (context.CancellationToken).ConfigureAwait (false) is not {} model)
+				return;
+			if (model.GetSymbolInfo (targetNode).Symbol is not {} targetSymbol)
+				return;
 
-			var attributableSymbol = model!.GetDeclaredSymbol (attributableNode)!;
-			var attributeSymbol = model!.Compilation.GetTypeByMetadataName (FullyQualifiedAttributeName)!;
+			var attributableSymbol = model.GetDeclaredSymbol (attributableNode)!;
+			var attributeSymbol = model.Compilation.GetTypeByMetadataName (FullyQualifiedAttributeName)!;
 			var attributeArguments = GetAttributeArguments (attributableSymbol, targetSymbol, SyntaxGenerator.GetGenerator (document), diagnostic);
 			var codeFixTitle = CodeFixTitle.ToString ();
 
