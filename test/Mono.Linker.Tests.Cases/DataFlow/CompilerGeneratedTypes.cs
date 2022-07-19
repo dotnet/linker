@@ -12,7 +12,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 {
 	[ExpectedNoWarnings]
 	[SkipKeptItemsValidation]
-	class CompilerGeneratedTypes
+	public class CompilerGeneratedTypes
 	{
 		public static void Main ()
 		{
@@ -237,6 +237,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		{
 			GlobalClosureClass<int>.M1<int> ();
 			GlobalClosureClass<int>.M2<int> ();
+			GlobalClosureClass<int>.SameClosureForLambda1();
+			GlobalClosureClass<int>.SameClosureForLambda2();
 		}
 
 		private sealed class GlobalClosureClass<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] T>
@@ -256,6 +258,22 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				() => Console.WriteLine (s + typeof (U).GetProperties ());
 				a ("");
 				b ("");
+			}
+
+			public static void SameClosureForLambda1 ()
+			{
+				var l =
+				[ExpectedWarning ("IL2090", nameof (GlobalClosureClass<T>), nameof (System.Type.GetProperties))]
+				() => typeof(T).GetProperties ();
+				l();
+			}
+
+			public static void SameClosureForLambda2 ()
+			{
+				var l =
+				[ExpectedWarning ("IL2090", nameof (GlobalClosureClass<T>), nameof (System.Type.GetProperties))]
+				() => typeof(T).GetProperties();
+				l();
 			}
 		}
 	}

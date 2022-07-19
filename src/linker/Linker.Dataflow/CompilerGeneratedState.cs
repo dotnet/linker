@@ -183,9 +183,9 @@ namespace Mono.Linker.Dataflow
 									method.DeclaringType != generatedType && // TODO: necessary?
 									CompilerGeneratedNames.IsLambdaDisplayClass (generatedType.Name)) {
 									if (!_generatedTypeToTypeArgumentInfo.TryAdd (generatedType, new TypeArgumentInfo (method, null))) {
-										var alreadyAssociatedMethod = _generatedTypeToTypeArgumentInfo[generatedType].CreatingMethod;
-										if (method != alreadyAssociatedMethod)
-											_context.LogWarning (new MessageOrigin (method), DiagnosticId.MethodsAreAssociatedWithUserMethod, method.GetDisplayName (), alreadyAssociatedMethod.GetDisplayName (), generatedType.GetDisplayName ());
+										// It's expected that there may be multiple methods associated with the same closure environment.
+										// All of these methods will substitute the same type arguments into the closure environment
+										// (if it is generic). Don't warn.
 									}
 									continue;
 								}
@@ -348,6 +348,7 @@ namespace Mono.Linker.Dataflow
 			GenericInstanceType? ScanForInit (TypeDefinition compilerGeneratedType, MethodBody body)
 			{
 				foreach (var instr in body.Instructions) {
+					bool handled = false;
 					switch (instr.OpCode.Code) {
 					case Code.Initobj:
 					case Code.Newobj: {
@@ -355,6 +356,7 @@ namespace Mono.Linker.Dataflow
 								&& compilerGeneratedType == _context.TryResolve (typeRef)) {
 								return typeRef;
 							}
+							handled = true;
 						}
 						break;
 					case Code.Stsfld: {
@@ -362,8 +364,22 @@ namespace Mono.Linker.Dataflow
 								&& compilerGeneratedType == _context.TryResolve (typeRef)) {
 								return typeRef;
 							}
+							handled = true;
 						}
 						break;
+					}
+
+					// Also look for type substitutions into generic methods
+					// (such as AsyncTaskMethodBuilder::Start<TStateMachine>).
+					if (!handled && instr.OpCode.OperandType is OperandType.InlineMethod) {
+						var mr = (MethodReference) instr.Operand;
+						if (mr is GenericInstanceMethod gim) {
+							foreach (var tr in gim.GenericArguments) {
+								if (tr is GenericInstanceType git && compilerGeneratedType == _context.TryResolve (git)) {
+									return git;
+								}
+							}
+						}
 					}
 				}
 				return null;

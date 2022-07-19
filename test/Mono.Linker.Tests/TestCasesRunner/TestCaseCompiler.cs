@@ -267,7 +267,14 @@ namespace Mono.Linker.Tests.TestCasesRunner
 					case "/langversion:7.3":
 						languageVersion = LanguageVersion.CSharp7_3;
 						break;
-
+					default:
+						var splitIndex = option.IndexOf (":");
+						if (splitIndex != -1 && option[..splitIndex] == "/main") {
+							var mainTypeName = option[(splitIndex+1)..];
+							compilationOptions = compilationOptions.WithMainTypeName (mainTypeName);
+							break;
+						}
+						throw new NotImplementedException (option);
 					}
 				}
 			}
