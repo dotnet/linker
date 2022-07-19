@@ -237,8 +237,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		{
 			GlobalClosureClass<int>.M1<int> ();
 			GlobalClosureClass<int>.M2<int> ();
-			GlobalClosureClass<int>.SameClosureForLambda1();
-			GlobalClosureClass<int>.SameClosureForLambda2();
+			GlobalClosureClass<int>.SameClosureForLambda1 ();
+			GlobalClosureClass<int>.SameClosureForLambda2 ();
 		}
 
 		private sealed class GlobalClosureClass<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] T>
@@ -264,16 +264,16 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 				var l =
 				[ExpectedWarning ("IL2090", nameof (GlobalClosureClass<T>), nameof (System.Type.GetProperties))]
-				() => typeof(T).GetProperties ();
-				l();
+				() => typeof (T).GetProperties ();
+				l ();
 			}
 
 			public static void SameClosureForLambda2 ()
 			{
 				var l =
 				[ExpectedWarning ("IL2090", nameof (GlobalClosureClass<T>), nameof (System.Type.GetProperties))]
-				() => typeof(T).GetProperties();
-				l();
+				() => typeof (T).GetProperties ();
+				l ();
 			}
 		}
 	}
