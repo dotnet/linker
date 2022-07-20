@@ -1,8 +1,8 @@
 # Redundant Warning Suppression Detection
 
-Dynamic reflection patterns pose a serious challenge to the linker trimming capabilities. The tool is able to infer simple reflection patterns; but there still cases which the tool will not be able to reason about. When the linker fails to recognize a certain pattern, a warning appears informing the user that the trimming process may break the functionality of the app.
+Dynamic reflection patterns pose a serious challenge to the linker trimming capabilities. The tool is able to infer simple reflection patterns; but there are still cases which the tool will not be able to reason about. When the linker fails to recognize a certain pattern, a warning appears informing the user that the trimming process may break the functionality of the app.
 
-There are cases where the developer is confident about the safety of a given pattern, but the linker is unable to reason about it and still produces a warning. The developer may use warning suppression to silence the warning. An example of such pattern may be using methods from a private class using reflection.
+There are cases where the developer is confident about the safety of a given pattern, but the linker is unable to reason about it and still produces a warning. The developer may use warning suppression to silence the warning. An example of such pattern may be using methods from a class using reflection.
 ```csharp
     [DynamicDependency(DynamicallyAccessedMemberTypes.PublicMethods, typeof(NameProvider))]
     public void Test()
@@ -28,7 +28,8 @@ There are cases where the developer is confident about the safety of a given pat
 The warning suppression could present a challenge to the software development lifecycle. Let us again consider the above example of accessing methods of a private class. We can rewrite the code in such a way, that the linker is able to reason about it. Then, the warning is no longer issued and the suppression becomes redundant. We should remove it.
 
 ```csharp
-    [UnconditionalSuppressMessage("trim", "IL2070", Justification = "DynamicDependency attribute will instruct the linker to keep the public methods on NameProvider.")] // This should be removed
+    // Now the DynamicDependencyAttribute can be removed as well as the suppression here
+    [UnconditionalSuppressMessage("trim", "IL2070", Justification = "DynamicDependency attribute will instruct the linker to keep the public methods on NameProvider.")]
     public void PrintName([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
     {
         string name = (string)type.GetMethod("GetName")!.Invoke(null, null)!;
@@ -45,7 +46,7 @@ This can be illustrated with the following example. Let us extend the above code
     public void PrintName([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
     {
         string name = (string)type.GetMethod("GetName")!.Invoke(null, null)!;
-        string suffix = (string)type.GetField("suffix")!.GetValue(null)!; // This is will issue a warning (only public methods are guaranteed to be kept).
+        string suffix = (string)type.GetField("suffix")!.GetValue(null)!; // IL2070 - only public methods are guaranteed to be kept
         Console.WriteLine(name);
         Console.WriteLine(suffix);
     }
