@@ -40,16 +40,16 @@ namespace ILLink.CodeFix
 
 		protected static SyntaxNode[] GetAttributeArguments (ISymbol targetSymbol, SyntaxGenerator syntaxGenerator, Diagnostic diagnostic)
 		{
-			object id = Enum.Parse(typeof(DiagnosticId), diagnostic.Id.Substring(2));
+			object id = Enum.Parse (typeof (DiagnosticId), diagnostic.Id.Substring (2));
 			switch (id) {
-				case DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsThisParameter:
-					return new[] { syntaxGenerator.AttributeArgument (syntaxGenerator.TypedConstantExpression (targetSymbol.GetAttributes ().First (attr => attr.AttributeClass?.ToDisplayString () == DynamicallyAccessedMembersAnalyzer.FullyQualifiedDynamicallyAccessedMembersAttribute).ConstructorArguments[0])) };
-				case DiagnosticId.DynamicallyAccessedMembersMismatchFieldTargetsThisParameter:
-					return new[] { syntaxGenerator.AttributeArgument (syntaxGenerator.TypedConstantExpression (targetSymbol.GetAttributes ().First (attr => attr.AttributeClass?.ToDisplayString () == DynamicallyAccessedMembersAnalyzer.FullyQualifiedDynamicallyAccessedMembersAttribute).ConstructorArguments[0])) };
-				case DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsMethodReturnType:
-					return new[] { syntaxGenerator.AttributeArgument (syntaxGenerator.TypedConstantExpression (targetSymbol.GetAttributes ().First (attr => attr.AttributeClass?.ToDisplayString () == DynamicallyAccessedMembersAnalyzer.FullyQualifiedDynamicallyAccessedMembersAttribute).ConstructorArguments[0])) };
-				default:
-					return Array.Empty<SyntaxNode> ();
+			case DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsThisParameter:
+				return new[] { syntaxGenerator.AttributeArgument (syntaxGenerator.TypedConstantExpression (targetSymbol.GetAttributes ().First (attr => attr.AttributeClass?.ToDisplayString () == DynamicallyAccessedMembersAnalyzer.FullyQualifiedDynamicallyAccessedMembersAttribute).ConstructorArguments[0])) };
+			case DiagnosticId.DynamicallyAccessedMembersMismatchFieldTargetsThisParameter:
+				return new[] { syntaxGenerator.AttributeArgument (syntaxGenerator.TypedConstantExpression (targetSymbol.GetAttributes ().First (attr => attr.AttributeClass?.ToDisplayString () == DynamicallyAccessedMembersAnalyzer.FullyQualifiedDynamicallyAccessedMembersAttribute).ConstructorArguments[0])) };
+			case DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsMethodReturnType:
+				return new[] { syntaxGenerator.AttributeArgument (syntaxGenerator.TypedConstantExpression (targetSymbol.GetAttributes ().First (attr => attr.AttributeClass?.ToDisplayString () == DynamicallyAccessedMembersAnalyzer.FullyQualifiedDynamicallyAccessedMembersAttribute).ConstructorArguments[0])) };
+			default:
+				return Array.Empty<SyntaxNode> ();
 			}
 		}
 
