@@ -10,7 +10,7 @@ using ILLink.Shared;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
-namespace Mono.Linker
+namespace Mono.Linker.Dataflow
 {
 	// Currently this is implemented using heuristics
 	public class CompilerGeneratedState
@@ -102,10 +102,8 @@ namespace Mono.Linker
 		/// up and find the nearest containing user type. Returns the nearest user type,
 		/// or null if none was found.
 		/// </summary>
-		TypeDefinition? PopulateCacheForType (TypeDefinition type)
+		TypeDefinition? GetCompilerGeneratedStateForType (TypeDefinition type)
 		{
-			var originalType = type;
-
 			// Look in the declaring type if this is a compiler-generated type (state machine or display class).
 			// State machines can be emitted into display classes, so we may also need to go one more level up.
 			// To avoid depending on implementation details, we go up until we see a non-compiler-generated type.
@@ -175,8 +173,8 @@ namespace Mono.Linker
 
 				if (TryGetStateMachineType (method, out TypeDefinition? stateMachineType)) {
 					Debug.Assert (stateMachineType.DeclaringType == type ||
-						(CompilerGeneratedNames.IsGeneratedMemberName (stateMachineType.DeclaringType.Name) &&
-						 stateMachineType.DeclaringType.DeclaringType == type));
+						CompilerGeneratedNames.IsGeneratedMemberName (stateMachineType.DeclaringType.Name) &&
+						 stateMachineType.DeclaringType.DeclaringType == type);
 					callGraph.TrackCall (method, stateMachineType);
 
 					if (!_compilerGeneratedTypeToUserCodeMethod.TryAdd (stateMachineType, method)) {
@@ -185,7 +183,7 @@ namespace Mono.Linker
 					}
 					// Already warned above if multiple methods map to the same type
 					// Fill in null for argument providers now, the real providers will be filled in later
-					_ = _generatedTypeToTypeArgumentInfo.TryAdd (stateMachineType, new TypeArgumentInfo (method, null));
+					_generatedTypeToTypeArgumentInfo[stateMachineType] = new TypeArgumentInfo (method, null);
 				}
 			}
 
@@ -294,6 +292,7 @@ namespace Mono.Linker
 					if (typeRef is null) {
 						return;
 					}
+
 					for (int i = 0; i < typeRef.GenericArguments.Count; i++) {
 						var typeArg = typeRef.GenericArguments[i];
 						// Start with the existing parameters, in case we can't find the mapped one
@@ -323,6 +322,7 @@ namespace Mono.Linker
 
 						typeArgs[i] = userAttrs;
 					}
+
 					_generatedTypeToTypeArgumentInfo[generatedType] = typeInfo with { OriginalAttributes = typeArgs };
 				}
 			}
@@ -358,7 +358,7 @@ namespace Mono.Linker
 			if (IsNestedFunctionOrStateMachineMember (method))
 				return false;
 
-			var typeToCache = PopulateCacheForType (method.DeclaringType);
+			var typeToCache = GetCompilerGeneratedStateForType (method.DeclaringType);
 			if (typeToCache is null)
 				return false;
 
@@ -373,7 +373,7 @@ namespace Mono.Linker
 		{
 			Debug.Assert (CompilerGeneratedNames.IsGeneratedType (generatedType.Name));
 
-			var typeToCache = PopulateCacheForType (generatedType);
+			var typeToCache = GetCompilerGeneratedStateForType (generatedType);
 			if (typeToCache is null)
 				return null;
 
@@ -398,7 +398,7 @@ namespace Mono.Linker
 					return true;
 			}
 
-			TypeDefinition sourceType = (sourceMember as TypeDefinition) ?? sourceMember.DeclaringType;
+			TypeDefinition sourceType = sourceMember as TypeDefinition ?? sourceMember.DeclaringType;
 
 			if (_compilerGeneratedTypeToUserCodeMethod.TryGetValue (sourceType, out owningMethod))
 				return true;
@@ -409,7 +409,7 @@ namespace Mono.Linker
 			// sourceType is a state machine type, or the type containing a lambda or local function.
 			// Search all methods to find the one which points to the type as its
 			// state machine implementation.
-			var typeToCache = PopulateCacheForType (sourceType);
+			var typeToCache = GetCompilerGeneratedStateForType (sourceType);
 			if (typeToCache is null)
 				return false;
 

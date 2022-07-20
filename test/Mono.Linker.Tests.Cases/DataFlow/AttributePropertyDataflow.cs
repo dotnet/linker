@@ -16,8 +16,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 	{
 		[KeptAttributeAttribute (typeof (KeepsPublicConstructorsAttribute))]
 		[KeptAttributeAttribute (typeof (KeepsPublicMethodsAttribute))]
+		[KeptAttributeAttribute (typeof (KeepsPublicFieldsAttribute))]
+		[KeptAttributeAttribute (typeof (TypeArrayAttribute))]
 		[KeepsPublicConstructors (Type = typeof (ClassWithKeptPublicConstructor))]
-		[KeepsPublicMethods ("Mono.Linker.Tests.Cases.DataFlow.AttributePropertyDataflow+ClassWithKeptPublicMethods")]
+		[KeepsPublicMethods (Type = "Mono.Linker.Tests.Cases.DataFlow.AttributePropertyDataflow+ClassWithKeptPublicMethods")]
+		[KeepsPublicFields (Type = null, TypeName = null)]
+		[TypeArray (Types = new Type[] { typeof (AttributePropertyDataflow) })]
 		// Trimmer only for now - https://github.com/dotnet/linker/issues/2273
 		[ExpectedWarning ("IL2026", "--ClassWithKeptPublicMethods--", ProducedBy = ProducedBy.Trimmer)]
 		public static void Main ()
@@ -47,12 +51,38 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		class KeepsPublicMethodsAttribute : Attribute
 		{
 			[Kept]
-			public KeepsPublicMethodsAttribute (
-				[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
-				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
-				string type)
+			public KeepsPublicMethodsAttribute ()
 			{
 			}
+
+			[field: Kept]
+			[Kept]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			public string Type { get; [Kept] set; }
+		}
+
+		// Used to test null values
+		[Kept]
+		[KeptBaseType (typeof (Attribute))]
+		class KeepsPublicFieldsAttribute : Attribute
+		{
+			[Kept]
+			public KeepsPublicFieldsAttribute ()
+			{
+			}
+
+			[field: Kept]
+			[Kept]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)]
+			public Type Type { get; [Kept] set; }
+
+			[field: Kept]
+			[Kept]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)]
+			public string TypeName { get; [Kept] set; }
 		}
 
 		[Kept]
@@ -74,6 +104,20 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[RequiresUnreferencedCode ("--ClassWithKeptPublicMethods--")]
 			public static void KeptMethod () { }
 			static void Method () { }
+		}
+
+		[Kept]
+		[KeptBaseType (typeof (Attribute))]
+		class TypeArrayAttribute : Attribute
+		{
+			[Kept]
+			public TypeArrayAttribute ()
+			{
+			}
+
+			[field: Kept]
+			[Kept]
+			public Type[] Types { get; [Kept] set; }
 		}
 	}
 }
