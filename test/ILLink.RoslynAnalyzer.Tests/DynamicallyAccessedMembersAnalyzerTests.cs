@@ -500,60 +500,6 @@ class C
 		}
 
 
-		public Task CodeFix_MismatchParamTargetsReturn_PublicMethods ()
-		{
-			var test = $$"""
-using System;
-using System.Diagnostics.CodeAnalysis;
-
-public class Foo
-{
-}
-
-class C
-{
-    public static void Main()
-    {
-        M(typeof(Foo));
-    }
-
-    [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
-    private static Type M(Type type)
-    {
-        return type;
-    }
-}
-""";
-// 			var fixtest = $$"""
-// using System;
-// using System.Diagnostics.CodeAnalysis;
-
-// public class Foo
-// {
-// }
-
-// class C
-// {
-//     public static void Main()
-//     {
-//         M(typeof(Foo));
-//     }
-
-//     [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
-//     private static Type M([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
-//     {
-//         return type;
-//     }
-// }
-// """;
-			return VerifyCS.VerifyAnalyzerAsync (test);
-			// await VerifyDynamicallyAccessedMembersCodeFix (test, fixtest, new [] {
-			// 	// /0/Test0.cs(19,16): warning IL2068: 'C.M(Type)' method return value does not satisfy 'DynamicallyAccessedMemberTypes.PublicMethods' requirements. The parameter 'type' of method 'C.M(Type)' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.
-            //     VerifyCS.Diagnostic(DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsMethodReturnType).WithSpan(19, 16, 19, 20).WithArguments("C.M(Type)", "type", "C.M(Type)", "'DynamicallyAccessedMemberTypes.PublicMethods'")},
-			// 	fixedExpected: Array.Empty<DiagnosticResult> ());
-		}
-
-
 		public Task CodeFix_MethodReturnTargetsParam_PublicMethods ()
 		{
 			var test = $$"""
@@ -605,6 +551,95 @@ class C
             //     VerifyCS.Diagnostic(DiagnosticId.DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsThisParameter).WithSpan(12, 9, 12, 34).WithArguments("System.Type.GetMethod(String)", "C.GetFoo()", "'DynamicallyAccessedMemberTypes.PublicMethods'")},
 			// 	fixedExpected: Array.Empty<DiagnosticResult> ());
 		}
+[Fact]
+public Task CodeFix_MismatchParamTargetsMethodReturn ()
+		{
+			var test = $$"""
+using System;
+using System.Diagnostics.CodeAnalysis;
+
+class C
+{
+[return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+Type M(Type t) {
+    return t;
+}
+}
+""";
+			var fixtest = $$"""
+using System;
+using System.Diagnostics.CodeAnalysis;
+
+class C
+{
+[return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+Type M([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type t) {
+    return t;
+}
+}
+""";
+			return VerifyCS.VerifyAnalyzerAsync (test);
+			// await VerifyDynamicallyAccessedMembersCodeFix (test, fixtest, new [] {
+			// 	// /0/Test0.cs(8,12): warning IL2068: 'C.M(Type)' method return value does not satisfy 'DynamicallyAccessedMemberTypes.All' requirements. The parameter 't' of method 'C.M(Type)' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.
+			// 	VerifyCS.Diagnostic(DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsMethodReturnType).WithSpan(8, 12, 8, 13).WithArguments("C.M(Type)", "t", "C.M(Type)", "'DynamicallyAccessedMemberTypes.All'")},
+			// 	fixedExpected: Array.Empty<DiagnosticResult> ());
+		}
+		[Fact]
+public async Task CodeFix_ ()
+		{
+			var test = $$"""
+namespace System
+{
+	class C : TestSystemTypeBase
+	{
+		public static void Main()
+		{
+			new C().M1();
+		}
+
+		private void M1()
+		{
+			M2(this);
+		}
+
+		private static void M2(
+			[System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(
+				System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
+		{
+		}
+	}
+}
+""";
+			var fixtest = $$"""
+namespace System
+{
+	class C : TestSystemTypeBase
+	{
+		public static void Main()
+		{
+			new C().M1();
+		}
+
+		private void M1()
+		{
+			M2(this);
+		}
+
+		private static void M2(
+			[System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(
+				System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
+		{
+		}
+	}
+}
+""";
+			// return VerifyCS.VerifyAnalyzerAsync (test);
+			await VerifyDynamicallyAccessedMembersCodeFix (string.Concat (GetSystemTypeBase (), test), fixtest, new [] {
+				    // /0/Test0.cs(198,4): warning IL2082: 'type' argument does not satisfy 'DynamicallyAccessedMemberTypes.PublicMethods' in call to 'System.C.M2(Type)'. The implicit 'this' argument of method 'System.C.M1()' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.
+				VerifyCS.Diagnostic(DiagnosticId.DynamicallyAccessedMembersMismatchThisParameterTargetsParameter).WithSpan(198, 4, 198, 12).WithArguments("type", "System.C.M2(Type)", "System.C.M1()", "'DynamicallyAccessedMemberTypes.PublicMethods'")},
+				fixedExpected: Array.Empty<DiagnosticResult> ());
+		}
+
 
 #endregion
 		[Fact]
