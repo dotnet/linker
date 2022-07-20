@@ -46,9 +46,10 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 			test.FixedState.ExpectedDiagnostics.AddRange (fixedExpected);
 			return test.RunAsync ();
 		}
+
 		#region CodeFixTests
 		[Fact]
-		public async Task CodeFix_MismatchParamTargetsThisParam_PublicMethods ()
+		public async Task CodeFix_IL2070_MismatchParamTargetsThisParam_PublicMethods ()
 		{
 			var test = $$"""
 using System;
@@ -88,8 +89,9 @@ class C
 				fixedExpected: Array.Empty<DiagnosticResult> ());
 		}
 
+		// issue with test: all methods for BindingFlags are currently being preserved, not just NonPublicMethods
 		[Fact]
-		public Task CodeFix_MismatchParamTargetsParam_NonPublicMethods ()
+		public Task CodeFix_IL2070_MismatchParamTargetsParam_NonPublicMethods ()
 		{
 			var test = $$"""
 using System;
@@ -134,7 +136,7 @@ class C
 
 
 		[Fact]
-		public async Task CodeFix_MismatchFieldTargetsPrivateParam_PublicMethods ()
+		public async Task CodeFix_IL2080_MismatchFieldTargetsPrivateParam_PublicMethods ()
 		{
 			var test = $$"""
 using System;
@@ -178,7 +180,7 @@ class C
 		}
 
 		[Fact]
-		public async Task CodeFix_MismatchFieldTargetsPublicParam_PublicMethods ()
+		public async Task CodeFix_IL2080_MismatchFieldTargetsPublicParam_PublicMethods ()
 		{
 			var test = $$"""
 using System;
@@ -223,7 +225,8 @@ class C
 
 		// these diagnosticIDs are currently unsupported, and as such will currently return no CodeFixers. However, they will soon be supported and as such comments have been left to indicate the error and fix they will accomplish.
 
-		public static Task CodeFix_MismatchparamTargetsParam_PublicMethods ()
+		[Fact]
+		public static Task CodeFix_IL2067_MismatchparamTargetsParam_PublicMethods ()
 		{
 			var test = $$"""
 using System;
@@ -284,8 +287,8 @@ class C
 			// 	fixedExpected: Array.Empty<DiagnosticResult> ());
 		}
 
-
-		public static Task CodeFix_MismatchMethodParamBtOverride_NonPublicMethods ()
+		[Fact]
+		public static Task CodeFix_IL2092_MismatchMethodParamBtOverride_NonPublicMethods ()
 		{
 			var test = $$"""
 using System;
@@ -330,10 +333,8 @@ public class C : Base
 			// 	fixedExpected: Array.Empty<DiagnosticResult> ());
 		}
 
-
-
-
-		public static Task CodeFix_MismatchMethodParamBtOverride_NonPublicMethods_Reverse ()
+		[Fact]
+		public static Task CodeFix_IL2092_MismatchMethodParamBtOverride_NonPublicMethods_Reverse ()
 		{
 			var test = $$"""
 using System;
@@ -379,8 +380,8 @@ public class C : Base
 		}
 
 
-
-		public static Task CodeFix_MismatchParamTargetsParam_PublicMethods ()
+		[Fact]
+		public static Task CodeFix_IL2067_MismatchParamTargetsParam_PublicMethods ()
 		{
 			var test = $$"""
 using System;
@@ -441,7 +442,8 @@ class C
 			// 	fixedExpected: Array.Empty<DiagnosticResult> ());
 		}
 
-		public static Task CodeFix_MismatchParamTargetsField_PublicMethods ()
+		[Fact]
+		public static Task CodeFix_IL2069_MismatchParamTargetsField_PublicMethods ()
 		{
 			var test = $$"""
 using System;
@@ -499,8 +501,8 @@ class C
 			// 	fixedExpected: Array.Empty<DiagnosticResult> ());
 		}
 
-
-		public static Task CodeFix_MethodReturnTargetsParam_PublicMethods ()
+		[Fact]
+		public static Task CodeFix_IL2075_MethodReturnTargetsParam_PublicMethods ()
 		{
 			var test = $$"""
 using System;
@@ -551,8 +553,9 @@ class C
 			//     VerifyCS.Diagnostic(DiagnosticId.DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsThisParameter).WithSpan(12, 9, 12, 34).WithArguments("System.Type.GetMethod(String)", "C.GetFoo()", "'DynamicallyAccessedMemberTypes.PublicMethods'")},
 			// 	fixedExpected: Array.Empty<DiagnosticResult> ());
 		}
+
 		[Fact]
-		public Task CodeFix_MismatchParamTargetsMethodReturn ()
+		public Task CodeFix_IL2068_MismatchParamTargetsMethodReturn ()
 		{
 			var test = $$"""
 using System;
@@ -572,64 +575,8 @@ Type M(Type t) {
 			// 	VerifyCS.Diagnostic(DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsMethodReturnType).WithSpan(8, 12, 8, 13).WithArguments("C.M(Type)", "t", "C.M(Type)", "'DynamicallyAccessedMemberTypes.All'")},
 			// 	fixedExpected: Array.Empty<DiagnosticResult> ());
 		}
-		[Fact]
-		public async Task CodeFix_ ()
-		{
-			var test = $$"""
-namespace System
-{
-	class C : TestSystemTypeBase
-	{
-		public static void Main()
-		{
-			new C().M1();
-		}
-
-		private void M1()
-		{
-			M2(this);
-		}
-
-		private static void M2(
-			[System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(
-				System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
-		{
-		}
-	}
-}
-""";
-			var fixtest = $$"""
-namespace System
-{
-	class C : TestSystemTypeBase
-	{
-		public static void Main()
-		{
-			new C().M1();
-		}
-
-		private void M1()
-		{
-			M2(this);
-		}
-
-		private static void M2(
-			[System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(
-				System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
-		{
-		}
-	}
-}
-""";
-			// return VerifyCS.VerifyAnalyzerAsync (test);
-			await VerifyDynamicallyAccessedMembersCodeFix (string.Concat (GetSystemTypeBase (), test), fixtest, new[] {
-				    // /0/Test0.cs(198,4): warning IL2082: 'type' argument does not satisfy 'DynamicallyAccessedMemberTypes.PublicMethods' in call to 'System.C.M2(Type)'. The implicit 'this' argument of method 'System.C.M1()' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.
-				VerifyCS.Diagnostic(DiagnosticId.DynamicallyAccessedMembersMismatchThisParameterTargetsParameter).WithSpan(198, 4, 198, 12).WithArguments("type", "System.C.M2(Type)", "System.C.M1()", "'DynamicallyAccessedMemberTypes.PublicMethods'")},
-				fixedExpected: Array.Empty<DiagnosticResult> ());
-		}
-
-
 		#endregion
+
 		[Fact]
 		public Task NoWarningsIfAnalyzerIsNotEnabled ()
 		{
