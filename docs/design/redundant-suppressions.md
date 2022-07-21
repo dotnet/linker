@@ -61,8 +61,7 @@ In order to avoid the above scenario, we would like to have an option to detect 
 
 This may be achieved by extending the linker tool functionality to check which suppression do in fact suppress warnings and reporting those which do not. 
 
-The said functionality can be implemented as an optional feature, triggered by passing a `
---check-suppressions` command line argument to the linker. Running the tool with this option will report all of the warning suppressions which do not suppress any warnings.
+Running the tool with the redundant warning suppressions detection enabled will report all of the warning suppressions which do not suppress any warnings. The way to turn it on is TBD.
 
 ***NOTE:*** We will only process suppressions produced by the linker, other suppressions will be ignored.
 ### Example:
@@ -77,10 +76,7 @@ Let us again consider the example of the trimmer-compatible code with a redundan
     }
 ```
 
-In order to detect the warning suppression not tied to any trimmer-incompatible pattern we should run the `dotnet publish` command and pass the `--check-suppressions` option.
-```shell
-  dotnet publish -r win-x64 -p:PublishTrimmed=True -p:_ExtraTrimmerArgs="--check-suppressions"
-```
+In order to detect the warning suppression not tied to any trimmer-incompatible pattern we should run the linker with the redundant warning suppressions detection enabled.
 
 The warning should be reported in the output of the command.
 
