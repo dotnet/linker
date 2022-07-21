@@ -180,10 +180,9 @@ namespace Mono.Linker.Dataflow
 									continue;
 
 								if (field.DeclaringType is var generatedType &&
-									method.DeclaringType != generatedType && // TODO: necessary?
 									CompilerGeneratedNames.IsLambdaDisplayClass (generatedType.Name)) {
 									if (!_generatedTypeToTypeArgumentInfo.TryAdd (generatedType, new TypeArgumentInfo (method, null))) {
-										// It's expected that there may be multiple methods associated with the same closure environment.
+										// It's expected that there may be multiple methods associated with the same static closure environment.
 										// All of these methods will substitute the same type arguments into the closure environment
 										// (if it is generic). Don't warn.
 									}

@@ -273,7 +273,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 					default:
 						var splitIndex = option.IndexOf (":");
 						if (splitIndex != -1 && option[..splitIndex] == "/main") {
-							var mainTypeName = option[(splitIndex+1)..];
+							var mainTypeName = option[(splitIndex + 1)..];
 							compilationOptions = compilationOptions.WithMainTypeName (mainTypeName);
 							break;
 						}
