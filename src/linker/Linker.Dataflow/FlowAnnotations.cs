@@ -28,12 +28,16 @@ namespace ILLink.Shared.TrimAnalysis
 		}
 
 		public bool RequiresDataFlowAnalysis (MethodDefinition method) =>
+			GetAnnotations (method.DeclaringType).TryGetAnnotation (method, out var methodAnnotations)
+				&& (methodAnnotations.ReturnParameterAnnotation != DynamicallyAccessedMemberTypes.None || methodAnnotations.ParameterAnnotations != null);
+
+		public bool HasAnnotations (MethodDefinition method) =>
 			GetAnnotations (method.DeclaringType).TryGetAnnotation (method, out _);
 
 		public bool RequiresDataFlowAnalysis (FieldDefinition field) =>
 			GetAnnotations (field.DeclaringType).TryGetAnnotation (field, out _);
 
-		public bool RequiresDataFlowAnalysis (GenericParameter genericParameter) =>
+		public bool HasAnnotations (GenericParameter genericParameter) =>
 			GetGenericParameterAnnotation (genericParameter) != DynamicallyAccessedMemberTypes.None;
 
 		/// <summary>
