@@ -28,6 +28,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			LocalFunctions.Test ();
 
 			LambdaWhichMarksItself.Test ();
+			LocalFunctionWhichMarksItself.Test ();
+			LocalFunctionWhichMarksItselfOnlyAccessedViaReflection.Test ();
 		}
 
 		class BaseTypeWithIteratorStateMachines
@@ -398,18 +400,62 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 		}
 
+		static void RequiresAllOnT<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] T> () { }
+
 		class LambdaWhichMarksItself
 		{
-			static void RequiresAllOnT<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] T> () { }
-
 			public static void Test ()
 			{
-				var a = () => {
-					// https://github.com/dotnet/linker/issues/2903
-					//RequiresAllOnT<LambdaWhichMarksItself> ();
+				var a =
+				[ExpectedWarning ("IL2118", nameof (LambdaWhichMarksItself), "<Test>",
+					ProducedBy = ProducedBy.Trimmer)]
+				() => {
+					RequiresAllOnT<LambdaWhichMarksItself> ();
 				};
 
 				a ();
+			}
+		}
+
+		class LocalFunctionWhichMarksItself
+		{
+			public static void Test ()
+			{
+				[ExpectedWarning ("IL2118", nameof (LocalFunctionWhichMarksItself), "<Test>",
+					ProducedBy = ProducedBy.Trimmer)]
+				void LocalFunction ()
+				{
+					RequiresNonPublicMethodsMethodsOnT<LocalFunctionWhichMarksItself> ();
+				};
+
+				LocalFunction ();
+			}
+		}
+
+		static void RequiresNonPublicMethodsMethodsOnT<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicMethods)] T> () { }
+
+		class LocalFunctionWhichMarksItselfOnlyAccessedViaReflection
+		{
+			[ExpectedWarning ("IL2118", nameof (LocalFunctionWhichMarksItselfOnlyAccessedViaReflection), "<" + nameof (ClassWithLocalFunction.MethodWithLocalFunction) + ">", "LocalFunction",
+				ProducedBy = ProducedBy.Trimmer)]
+			public static void Test ()
+			{
+				RequiresNonPublicMethodsMethodsOnT<ClassWithLocalFunction> ();
+			}
+
+			public class ClassWithLocalFunction
+			{
+				public static void MethodWithLocalFunction ()
+				{
+					[ExpectedWarning ("IL2118", nameof (LocalFunctionWhichMarksItselfOnlyAccessedViaReflection), "<" + nameof (MethodWithLocalFunction) + ">", nameof (LocalFunction),
+						ProducedBy = ProducedBy.Trimmer)]
+					static void LocalFunction ()
+					{
+						RequiresNonPublicMethodsMethodsOnT<ClassWithLocalFunction> ();
+					};
+
+					LocalFunction ();
+				}
 			}
 		}
 

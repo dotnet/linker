@@ -2885,7 +2885,7 @@ namespace Mono.Linker.Steps
 			// the reflection scanner. Checking this will also mark direct dependencies of the method body, if it
 			// hasn't been marked already. A cache ensures this only happens once for the method, whether or not
 			// it is accessed via reflection.
-			return MarkAndCheckRequiresReflectionMethodBodyScanner (method.Body);
+			return CheckRequiresReflectionMethodBodyScanner (method.Body);
 		}
 
 		void ProcessAnalysisAnnotationsForMethod (MethodDefinition method, DependencyKind dependencyKind, in MessageOrigin origin)
@@ -3413,6 +3413,8 @@ namespace Mono.Linker.Steps
 				return;
 			}
 
+			// Note: we need to mark compiler-generated method bodies in case they are only accessed via
+			// reflection, in which case we will never do a full data-flow scan of the user-defined method.
 			bool requiresReflectionMethodBodyScanner = MarkAndCheckRequiresReflectionMethodBodyScanner (body);
 
 			// Data-flow (reflection scanning) for compiler-generated methods will happen as part of the
@@ -3423,11 +3425,46 @@ namespace Mono.Linker.Steps
 			MarkReflectionLikeDependencies (body, requiresReflectionMethodBodyScanner);
 		}
 
+		bool CheckRequiresReflectionMethodBodyScanner (MethodBody body)
+		{
+			if (ReflectionMethodBodyScanner.RequiresReflectionMethodBodyScannerForMethodBody (Context, body.Method))
+				return true;
+
+			foreach (Instruction instruction in body.Instructions) {
+				switch (instruction.OpCode.OperandType) {
+				case OperandType.InlineField:
+					switch (instruction.OpCode.Code) {
+					case Code.Stfld:
+					case Code.Stsfld:
+					case Code.Ldflda:
+					case Code.Ldsflda:
+						if (ReflectionMethodBodyScanner.RequiresReflectionMethodBodyScannerForAccess (Context, (FieldReference) instruction.Operand))
+							return true;
+						break;
+
+					default:
+						break;
+					}
+					break;
+
+				case OperandType.InlineMethod:
+					if (ReflectionMethodBodyScanner.RequiresReflectionMethodBodyScannerForCallSite (Context, (MethodReference) instruction.Operand))
+						return true;
+					break;
+				}
+			}
+			return false;
+		}
+
+		// Keep the return value of this method in sync with that of CheckRequiresReflectionMethodBodyScanner.
+		// It computes the same value, while also marking as it goes, as an optimization.
+		// This should only be called behind a check to IsProcessed for the method or corresponding user method,
+		// to avoid recursion.
 		bool MarkAndCheckRequiresReflectionMethodBodyScanner (MethodBody body)
 		{
 			// This may get called multiple times for compiler-generated code: once for
 			// reflection access, and once as part of the interprocedural scan of the user method.
-			// This check ensures that we only do the work once.
+			// This check ensures that we only do the work and produce warnings once.
 			if (_compilerGeneratedMethodRequiresScanner.TryGetValue (body, out bool requiresReflectionMethodBodyScanner))
 				return requiresReflectionMethodBodyScanner;
 
@@ -3620,6 +3657,7 @@ namespace Mono.Linker.Steps
 		//
 		protected virtual void MarkReflectionLikeDependencies (MethodBody body, bool requiresReflectionMethodBodyScanner)
 		{
+			Debug.Assert (!CompilerGeneratedState.IsNestedFunctionOrStateMachineMember (body.Method));
 			// requiresReflectionMethodBodyScanner tells us whether the method body itself requires a dataflow scan.
 
 			// If the method body owns any compiler-generated code, we might still need to do a scan of it together with
