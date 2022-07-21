@@ -527,7 +527,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		{
 			static void RequiresAllOnT<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] T> () { }
 
-			static void RequiresNonPublicMethodsMethodsOnT<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicMethods)] T> () { }
+			static void RequiresNonPublicMethodsOnT<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicMethods)] T> () { }
 
 			class LambdaWhichMarksItself
 			{
@@ -603,7 +603,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 					ProducedBy = ProducedBy.Trimmer)]
 				public static void Test ()
 				{
-					RequiresNonPublicMethodsMethodsOnT<ClassWithLocalFunction> ();
+					RequiresNonPublicMethodsOnT<ClassWithLocalFunction> ();
 				}
 
 				public class ClassWithLocalFunction
@@ -614,7 +614,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 							ProducedBy = ProducedBy.Trimmer)]
 						static void LocalFunction ()
 						{
-							RequiresNonPublicMethodsMethodsOnT<ClassWithLocalFunction> ();
+							RequiresNonPublicMethodsOnT<ClassWithLocalFunction> ();
 						};
 
 						LocalFunction ();

@@ -3467,6 +3467,16 @@ namespace Mono.Linker.Steps
 		// to avoid recursion.
 		bool MarkAndCheckRequiresReflectionMethodBodyScanner (MethodBody body)
 		{
+#if DEBUG
+			if (!Annotations.IsProcessed (body.Method)) {
+				Debug.Assert (CompilerGeneratedState.IsNestedFunctionOrStateMachineMember (body.Method));
+				MethodDefinition owningMethod = body.Method;
+				while (Context.CompilerGeneratedState.TryGetOwningMethodForCompilerGeneratedMember (owningMethod, out var owner))
+					owningMethod = owner;
+				Debug.Assert (owningMethod != body.Method);
+				Debug.Assert (Annotations.IsProcessed (owningMethod));
+			}
+#endif
 			// This may get called multiple times for compiler-generated code: once for
 			// reflection access, and once as part of the interprocedural scan of the user method.
 			// This check ensures that we only do the work and produce warnings once.
@@ -3493,6 +3503,7 @@ namespace Mono.Linker.Steps
 
 			PostMarkMethodBody (body);
 
+			Debug.Assert (requiresReflectionMethodBodyScanner == CheckRequiresReflectionMethodBodyScanner (body));
 			return requiresReflectionMethodBodyScanner;
 		}
 
