@@ -3413,8 +3413,11 @@ namespace Mono.Linker.Steps
 				return;
 			}
 
-			// Note: we need to mark compiler-generated method bodies in case they are only accessed via
-			// reflection, in which case we will never do a full data-flow scan of the user-defined method.
+			// Note: we mark the method body of every method here including compiler-generated methods,
+			// whether they are accessed from the user method or via reflection.
+			// But for compiler-generated methods we only do dataflow analysis if they're used through their
+			// corresponding user method, so we will skip dataflow for compiler-generated methods which
+			// are only accessed via reflection.
 			bool requiresReflectionMethodBodyScanner = MarkAndCheckRequiresReflectionMethodBodyScanner (body);
 
 			// Data-flow (reflection scanning) for compiler-generated methods will happen as part of the
@@ -3427,6 +3430,8 @@ namespace Mono.Linker.Steps
 
 		bool CheckRequiresReflectionMethodBodyScanner (MethodBody body)
 		{
+			// This method is only called on reflection access to compiler-generated methods.
+			// This should be uncommon, so don't cache the result.
 			if (ReflectionMethodBodyScanner.RequiresReflectionMethodBodyScannerForMethodBody (Context, body.Method))
 				return true;
 
