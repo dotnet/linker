@@ -279,7 +279,7 @@ class C
 //    NeedsPublicMethodsOnParameter(type);
 //}
 //}
-""";
+//""";
             return VerifyCS.VerifyAnalyzerAsync (test);
             // await VerifyDynamicallyAccessedMembersCodeFix (test, fixtest, new [] {
             //     // /0/Test0.cs(23,3): warning IL2067: 'parameter' argument does not satisfy 'DynamicallyAccessedMemberTypes.PublicMethods' in call to 'C.NeedsPublicMethodsOnParameter(Type)'. The parameter 'type' of method 'C.M(Type)' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.
