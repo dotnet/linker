@@ -270,7 +270,7 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 				fixedExpected: Array.Empty<DiagnosticResult> ());
 		}
 
-				[Fact]
+		[Fact]
 		public async Task CodeFix_IL2080_MismatchFieldTargetsPublicParam_Int ()
 		{
 			var test = $$"""

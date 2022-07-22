@@ -74,21 +74,21 @@ namespace ILLink.CodeFix
 			if (model.Compilation.GetTypeByMetadataName (FullyQualifiedAttributeName) is not { } attributeSymbol)
 				return;
 
-			if (diagnosticNode is not InvocationExpressionSyntax invocationExpression) 
+			if (diagnosticNode is not InvocationExpressionSyntax invocationExpression)
 				return;
-			
+
 			var arguments = invocationExpression.ArgumentList.Arguments;
-			
+
 			if (arguments.Count > 1)
 				return;
 
-			if (arguments.Count == 1){
-				if (arguments[0].Expression is not LiteralExpressionSyntax literalSyntax 
-					|| literalSyntax.Kind() is not SyntaxKind.StringLiteralExpression) {
+			if (arguments.Count == 1) {
+				if (arguments[0].Expression is not LiteralExpressionSyntax literalSyntax
+					|| literalSyntax.Kind () is not SyntaxKind.StringLiteralExpression) {
 					return;
 				}
 			}
-			
+
 			// N.B. May be null for FieldDeclaration, since field declarations can declare multiple variables
 			var attributableSymbol = (invocationExpression.Expression is MemberAccessExpressionSyntax simpleMember
 					&& simpleMember.Expression is IdentifierNameSyntax name) ? model.GetSymbolInfo (name).Symbol : null;
