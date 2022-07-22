@@ -27,34 +27,5 @@ namespace ILLink.Shared.TrimAnalysis
 
 			Diagnostics.Add (Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (id), Location, args));
 		}
-
-		public partial void AddDiagnostic (DiagnosticId id, ValueWithDynamicallyAccessedMembers sourceAttribute, params string[] args)
-		{
-			if (Location == null) {
-				return;
-			}
-
-			switch (sourceAttribute) {
-			case FieldValue field:
-				Location fieldLocation = field.FieldSymbol.DeclaringSyntaxReferences[0].GetSyntax ().GetLocation ();
-				Diagnostics.Add (Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (id), Location, fieldLocation));
-				break;
-			case MethodParameterValue mpv:
-				Location mpvLocation = mpv.ParameterSymbol.DeclaringSyntaxReferences[0].GetSyntax ().GetLocation ();
-				Diagnostics.Add (Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (id), Location, mpvLocation));
-				break;
-			case MethodReturnValue mrv:
-				Location mrvLocation = mrv.MethodSymbol.DeclaringSyntaxReferences[0].GetSyntax ().GetLocation ();
-				Diagnostics.Add (Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (id), Location, mrvLocation));
-				break;
-			case MethodThisParameterValue mtpv:
-				Location mptvLocation = mtpv.MethodSymbol.DeclaringSyntaxReferences[0].GetSyntax ().GetLocation ();
-				Diagnostics.Add (Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (id), Location, mptvLocation));
-				break;
-				// case GenericParameterValue gpv:
-				// 	Location gpvLocation = gpv.
-				// break;
-			}
-		}
 	}
 }
