@@ -19,5 +19,8 @@ namespace ILLink.Shared.TrimAnalysis
 			if (DiagnosticsEnabled)
 				_context.LogWarning (Origin, id, args);
 		}
+
+		public partial void AddDiagnostic (DiagnosticId id, ValueWithDynamicallyAccessedMembers sourceValue, params string[] args);
+
 	}
 }

@@ -26,7 +26,6 @@ namespace ILLink.CodeFix
 			var diagDescriptorsArrayBuilder = ImmutableArray.CreateBuilder<DiagnosticDescriptor> ();
 			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsThisParameter));
 			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchFieldTargetsThisParameter));
-			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsMethodReturnType));
 			return diagDescriptorsArrayBuilder.ToImmutable ();
 		}
 
@@ -62,36 +61,53 @@ namespace ILLink.CodeFix
 		public override async Task RegisterCodeFixesAsync (CodeFixContext context)
 		{
 			var document = context.Document;
-			var root = await document.GetSyntaxRootAsync (context.CancellationToken).ConfigureAwait (false);
+			if (await document.GetSyntaxRootAsync (context.CancellationToken).ConfigureAwait (false) is not { } root)
+				return;
 			var diagnostic = context.Diagnostics.First ();
-			var props = diagnostic.Properties;
-			var model = await document.GetSemanticModelAsync (context.CancellationToken).ConfigureAwait (false);
-			SyntaxNode diagnosticNode = root!.FindNode (diagnostic.Location.SourceSpan);
-			var attributableSymbol = (diagnosticNode is InvocationExpressionSyntax invocationExpression
-					&& invocationExpression.Expression is MemberAccessExpressionSyntax simpleMember
-					&& simpleMember.Expression is IdentifierNameSyntax name) ? model.GetSymbolInfo (name).Symbol : null;
-
-			if (attributableSymbol is null)
+			SyntaxNode diagnosticNode = root.FindNode (diagnostic.Location.SourceSpan, getInnermostNodeForTie: true);
+			if (await document.GetSemanticModelAsync (context.CancellationToken).ConfigureAwait (false) is not { } model)
+				return;
+			// Note: We get the target symbol from the diagnostic location. 
+			// This works when the diagnostic location is a method call, because the target symbol will be the called method with annotations, but won't work in general for other kinds of diagnostics.
+			if (model.GetSymbolInfo (diagnosticNode).Symbol is not { } targetSymbol)
+				return;
+			if (model.Compilation.GetTypeByMetadataName (FullyQualifiedAttributeName) is not { } attributeSymbol)
 				return;
 
-			var attributableNodeList = attributableSymbol.DeclaringSyntaxReferences;
-
-			if (attributableNodeList.Length != 1)
+			// N.B. May be null for FieldDeclaration, since field declarations can declare multiple variables
+			if (diagnosticNode is not InvocationExpressionSyntax invocationExpression) {
 				return;
+			} else {
+				foreach (ArgumentSyntax arg in invocationExpression.ArgumentList.Arguments) {
+					if (arg.Expression is MemberAccessExpressionSyntax) {
+						return;
+					}
+				}
+				var attributableSymbol = (invocationExpression.Expression is MemberAccessExpressionSyntax simpleMember
+						&& simpleMember.Expression is IdentifierNameSyntax name) ? model.GetSymbolInfo (name).Symbol : null;
 
-			var attributableNode = attributableNodeList[0].GetSyntax ();
 
-			if (attributableNode is null) return;
-			var targetSymbol = model!.GetSymbolInfo (diagnosticNode).Symbol!;
-			var attributeSymbol = model!.Compilation.GetTypeByMetadataName (FullyQualifiedAttributeName)!;
-			var attributeArguments = GetAttributeArguments (targetSymbol, SyntaxGenerator.GetGenerator (document), diagnostic);
-			var codeFixTitle = CodeFixTitle.ToString ();
+				if (attributableSymbol is null)
+					return;
 
-			context.RegisterCodeFix (CodeAction.Create (
-				title: codeFixTitle,
-				createChangedDocument: ct => AddAttributeAsync (
-					document, attributableNode, attributeArguments, attributeSymbol, ct),
-				equivalenceKey: codeFixTitle), diagnostic);
+				var attributableNodeList = attributableSymbol.DeclaringSyntaxReferences;
+
+				if (attributableNodeList.Length != 1)
+					return;
+
+				var attributableNode = attributableNodeList[0].GetSyntax ();
+
+				if (attributableNode is null) return;
+
+				var attributeArguments = GetAttributeArguments (targetSymbol, SyntaxGenerator.GetGenerator (document), diagnostic);
+				var codeFixTitle = CodeFixTitle.ToString ();
+
+				context.RegisterCodeFix (CodeAction.Create (
+					title: codeFixTitle,
+					createChangedDocument: ct => AddAttributeAsync (
+						document, attributableNode, attributeArguments, attributeSymbol, ct),
+					equivalenceKey: codeFixTitle), diagnostic);
+			}
 		}
 
 		private static async Task<Document> AddAttributeAsync (
