@@ -34,6 +34,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			// Closures
 			GlobalClosures ();
+			LambdaInsideIterator<int> ();
+			LocalFunctionInsideIterator<int> ();
+			CapturingLambdaInsideIterator<int> ();
+			CapturingLocalFunctionInsideIterator<int> ();
+			LambdaInsideAsync<int> ();
+			LocalFunctionInsideAsync<int> ();
 		}
 
 		private static void UseIterator ()
@@ -275,6 +281,57 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				() => typeof (T).GetProperties ();
 				l ();
 			}
+		}
+
+		static IEnumerable<int> LambdaInsideIterator<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] T> ()
+		{
+			var l = () => typeof (T).GetMethods ();
+			yield return 1;
+			l ();
+		}
+
+		static IEnumerable<int> LocalFunctionInsideIterator<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] T> ()
+		{
+			void LocalFunction () => typeof (T).GetMethods ();
+			yield return 1;
+			LocalFunction ();
+		}
+
+		static IEnumerable<int> CapturingLambdaInsideIterator<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] T> ()
+		{
+			int i = 0;
+			var l = () => {
+				typeof (T).GetMethods ();
+				i++;
+			};
+			yield return i;
+			l ();
+		}
+
+		static IEnumerable<int> CapturingLocalFunctionInsideIterator<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] T> ()
+		{
+			int i = 0;
+			void LocalFunction ()
+			{
+				typeof (T).GetMethods ();
+				i++;
+			}
+			yield return i;
+			LocalFunction ();
+		}
+
+		static async Task LambdaInsideAsync<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] T> ()
+		{
+			var l = () => typeof (T).GetMethods ();
+			await Task.Delay (0);
+			l ();
+		}
+
+		static async Task LocalFunctionInsideAsync<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] T> ()
+		{
+			void LocalFunction () => typeof (T).GetMethods ();
+			await Task.Delay (0);
+			LocalFunction ();
 		}
 	}
 }

@@ -180,6 +180,8 @@ namespace Mono.Linker.Dataflow
 									continue;
 
 								if (field.DeclaringType is var generatedType &&
+									// Don't consider field accesses in the same type, like inside a static constructor
+									method.DeclaringType != generatedType &&
 									CompilerGeneratedNames.IsLambdaDisplayClass (generatedType.Name)) {
 									if (!_generatedTypeToTypeArgumentInfo.TryAdd (generatedType, new TypeArgumentInfo (method, null))) {
 										// It's expected that there may be multiple methods associated with the same static closure environment.
