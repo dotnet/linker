@@ -89,9 +89,8 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 				fixedExpected: Array.Empty<DiagnosticResult> ());
 		}
 
-		// issue with test: all methods for BindingFlags are currently being preserved, not just NonPublicMethods
 		[Fact]
-		public async Task CodeFix_IL2070_MismatchParamTargetsParam_NonPublicMethods ()
+		public async Task CodeFix_IL2070_ArgsTurnOffCodeFix ()
 		{
 			var test = $$"""
 			using System;
@@ -109,49 +108,21 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 				}
 			}
 			""";
-			// var fixtest = $$"""
-			// using System;
-			// using System.Reflection;
-			// using System.Diagnostics.CodeAnalysis;
-
-			// class C
-			// {
-			// public static void Main()
-			// {
-			//    M(typeof(C));
-			// }
-			// static void M([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.NonPublicMethods)] Type t)
-			// {
-			//    t.GetMethods(BindingFlags.NonPublic);
-			// }
-			// }
-			// """;
-			// await VerifyDynamicallyAccessedMembersCodeFix (test, fixtest, new[] {
-			//     // /0/Test0.cs(12,3): warning IL2070: 'this' argument does not satisfy 'DynamicallyAccessedMemberTypes.NonPublicMethods' in call to 'System.Type.GetMethods(BindingFlags)'.
-			//     // The parameter 't' of method 'C.M(Type)' does not have matching annotations.
-			//     // The source value must declare at least the same requirements as those declared on the target location it is assigned to.
-			//VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsThisParameter)
-			//.WithSpan (12, 3, 12, 39)
-			//.WithArguments ("System.Type.GetMethods(BindingFlags)",
-			//	  "t",
-			//	  "C.M(Type)",
-			//	  "'DynamicallyAccessedMemberTypes.NonPublicMethods'") } ,
-			// /0/Test0.cs(9,3): warning IL2111: Method 'C.M(Type)' with parameters or return value with `DynamicallyAccessedMembersAttribute` is accessed via reflection.
-			// // Trimmer can't guarantee availability of the requirements of the method.
-			//new[] { VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMethodAccessedViaReflection).WithSpan (9, 3, 9, 15).WithArguments ("C.M(Type)") });
-
-			var diag = new[] {VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsThisParameter)
+			var diag = new[] {
+			    // /0/Test0.cs(12,3): warning IL2070: 'this' argument does not satisfy 'DynamicallyAccessedMemberTypes.NonPublicMethods' in call to 'System.Type.GetMethods(BindingFlags)'.
+			    // The parameter 't' of method 'C.M(Type)' does not have matching annotations.
+			    // The source value must declare at least the same requirements as those declared on the target location it is assigned to.
+			VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsThisParameter)
 			.WithSpan (12, 3, 12, 39)
 			.WithArguments ("System.Type.GetMethods(BindingFlags)",
 				  "t",
 				  "C.M(Type)",
 				  "'DynamicallyAccessedMemberTypes.NonPublicMethods'") };
 			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag);
-
 		}
 
 		[Fact]
-		public async Task CodeFix_IL_ ()
+		public async Task CodeFix_IL2070_GetMethodsInArg ()
 		{
 			var test = $$"""
 			using System.Reflection;
@@ -251,6 +222,56 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 
 		[Fact]
 		public async Task CodeFix_IL2080_MismatchFieldTargetsPublicParam_PublicMethods ()
+		{
+			var test = $$"""
+			using System;
+			using System.Diagnostics.CodeAnalysis;
+			public class Foo
+			{
+			}
+
+			class C
+			{
+				public static Type f = typeof(Foo);
+
+				public static void Main()
+				{
+					f.GetMethod("Bar");
+				}
+			}
+			""";
+			var fixtest = $$"""
+			using System;
+			using System.Diagnostics.CodeAnalysis;
+			public class Foo
+			{
+			}
+
+			class C
+			{
+			    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+			    public static Type f = typeof(Foo);
+
+			    public static void Main()
+				{
+					f.GetMethod("Bar");
+				}
+			}
+			""";
+			await VerifyDynamicallyAccessedMembersCodeFix (test, fixtest, new[] {
+				// /0/Test0.cs(13,3): warning IL2080: 'this' argument does not satisfy 'DynamicallyAccessedMemberTypes.PublicMethods' in call to 'System.Type.GetMethod(String)'.
+				// The field 'C.f' does not have matching annotations.
+				// The source value must declare at least the same requirements as those declared on the target location it is assigned to.
+				VerifyCS.Diagnostic(DiagnosticId.DynamicallyAccessedMembersMismatchFieldTargetsThisParameter)
+				.WithSpan(13, 3, 13, 21)
+				.WithArguments("System.Type.GetMethod(String)",
+					"C.f",
+					"'DynamicallyAccessedMemberTypes.PublicMethods'")},
+				fixedExpected: Array.Empty<DiagnosticResult> ());
+		}
+
+				[Fact]
+		public async Task CodeFix_IL2080_MismatchFieldTargetsPublicParam_Int ()
 		{
 			var test = $$"""
 			using System;

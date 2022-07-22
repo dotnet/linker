@@ -74,40 +74,46 @@ namespace ILLink.CodeFix
 			if (model.Compilation.GetTypeByMetadataName (FullyQualifiedAttributeName) is not { } attributeSymbol)
 				return;
 
-			// N.B. May be null for FieldDeclaration, since field declarations can declare multiple variables
-			if (diagnosticNode is not InvocationExpressionSyntax invocationExpression) {
+			if (diagnosticNode is not InvocationExpressionSyntax invocationExpression) 
 				return;
-			} else {
-				foreach (ArgumentSyntax arg in invocationExpression.ArgumentList.Arguments) {
-					if (arg.Expression is MemberAccessExpressionSyntax) {
-						return;
-					}
+			
+			var arguments = invocationExpression.ArgumentList.Arguments;
+			
+			if (arguments.Count > 1)
+				return;
+
+			if (arguments.Count == 1){
+				if (arguments[0].Expression is not LiteralExpressionSyntax literalSyntax 
+					|| literalSyntax.Kind() is not SyntaxKind.StringLiteralExpression) {
+					return;
 				}
-				var attributableSymbol = (invocationExpression.Expression is MemberAccessExpressionSyntax simpleMember
-						&& simpleMember.Expression is IdentifierNameSyntax name) ? model.GetSymbolInfo (name).Symbol : null;
-
-
-				if (attributableSymbol is null)
-					return;
-
-				var attributableNodeList = attributableSymbol.DeclaringSyntaxReferences;
-
-				if (attributableNodeList.Length != 1)
-					return;
-
-				var attributableNode = attributableNodeList[0].GetSyntax ();
-
-				if (attributableNode is null) return;
-
-				var attributeArguments = GetAttributeArguments (targetSymbol, SyntaxGenerator.GetGenerator (document), diagnostic);
-				var codeFixTitle = CodeFixTitle.ToString ();
-
-				context.RegisterCodeFix (CodeAction.Create (
-					title: codeFixTitle,
-					createChangedDocument: ct => AddAttributeAsync (
-						document, attributableNode, attributeArguments, attributeSymbol, ct),
-					equivalenceKey: codeFixTitle), diagnostic);
 			}
+			
+			// N.B. May be null for FieldDeclaration, since field declarations can declare multiple variables
+			var attributableSymbol = (invocationExpression.Expression is MemberAccessExpressionSyntax simpleMember
+					&& simpleMember.Expression is IdentifierNameSyntax name) ? model.GetSymbolInfo (name).Symbol : null;
+
+
+			if (attributableSymbol is null)
+				return;
+
+			var attributableNodeList = attributableSymbol.DeclaringSyntaxReferences;
+
+			if (attributableNodeList.Length != 1)
+				return;
+
+			var attributableNode = attributableNodeList[0].GetSyntax ();
+
+			if (attributableNode is null) return;
+
+			var attributeArguments = GetAttributeArguments (targetSymbol, SyntaxGenerator.GetGenerator (document), diagnostic);
+			var codeFixTitle = CodeFixTitle.ToString ();
+
+			context.RegisterCodeFix (CodeAction.Create (
+				title: codeFixTitle,
+				createChangedDocument: ct => AddAttributeAsync (
+					document, attributableNode, attributeArguments, attributeSymbol, ct),
+				equivalenceKey: codeFixTitle), diagnostic);
 		}
 
 		private static async Task<Document> AddAttributeAsync (
