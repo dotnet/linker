@@ -26,6 +26,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			AsyncIteratorStateMachines.Test ();
 			Lambdas.Test ();
 			LocalFunctions.Test ();
+
+			SelfMarkingMethods.Test ();
 		}
 
 		class BaseTypeWithIteratorStateMachines
@@ -518,6 +520,106 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				typeof (LocalFunctions).RequiresAll ();
 
 				test.GetType ().RequiresAll ();
+			}
+		}
+
+		class SelfMarkingMethods
+		{
+			static void RequiresAllOnT<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] T> () { }
+
+			static void RequiresNonPublicMethodsOnT<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicMethods)] T> () { }
+
+			class LambdaWhichMarksItself
+			{
+				public static void Test ()
+				{
+					var a =
+					() => {
+						RequiresAllOnT<LambdaWhichMarksItself> ();
+					};
+
+					a ();
+				}
+			}
+
+			class LocalFunctionWhichMarksItself
+			{
+				public static void Test ()
+				{
+					void LocalFunction ()
+					{
+						RequiresAllOnT<LocalFunctionWhichMarksItself> ();
+					};
+
+					LocalFunction ();
+				}
+			}
+
+			class IteratorWhichMarksItself
+			{
+				public static IEnumerable<int> Test ()
+				{
+					yield return 0;
+
+					RequiresAllOnT<IteratorWhichMarksItself> ();
+
+					yield return 1;
+				}
+			}
+
+			class AsyncWhichMarksItself
+			{
+				public static async void Test ()
+				{
+					await MethodAsync ();
+
+					RequiresAllOnT<AsyncWhichMarksItself> ();
+
+					await MethodAsync ();
+				}
+			}
+
+
+			class MethodWhichMarksItself
+			{
+				static void RequiresAllOnT<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] T> () { }
+
+				public static void Test ()
+				{
+					RequiresAllOnT<MethodWhichMarksItself> ();
+				}
+			}
+
+
+			class LocalFunctionWhichMarksItselfOnlyAccessedViaReflection
+			{
+				public static void Test ()
+				{
+					RequiresNonPublicMethodsOnT<ClassWithLocalFunction> ();
+				}
+
+				public class ClassWithLocalFunction
+				{
+					public static void MethodWithLocalFunction ()
+					{
+						static void LocalFunction ()
+						{
+							RequiresNonPublicMethodsOnT<ClassWithLocalFunction> ();
+						};
+
+						LocalFunction ();
+					}
+				}
+			}
+
+			public static void Test ()
+			{
+				LambdaWhichMarksItself.Test ();
+				LocalFunctionWhichMarksItself.Test ();
+				IteratorWhichMarksItself.Test ();
+				AsyncWhichMarksItself.Test ();
+				MethodWhichMarksItself.Test ();
+				LocalFunctionWhichMarksItselfOnlyAccessedViaReflection.Test ();
 			}
 		}
 
