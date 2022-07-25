@@ -26,7 +26,7 @@ namespace ILLink.CodeFix
 			var diagDescriptorsArrayBuilder = ImmutableArray.CreateBuilder<DiagnosticDescriptor> ();
 			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsThisParameter));
 			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchFieldTargetsThisParameter));
-			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchOnMethodParameterBetweenOverrides));
+			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsParameter));
 			return diagDescriptorsArrayBuilder.ToImmutable ();
 		}
 
@@ -82,16 +82,22 @@ namespace ILLink.CodeFix
 				return;
 
 			if (arguments.Count == 1) {
-				if (arguments[0].Expression is not LiteralExpressionSyntax literalSyntax
-					|| literalSyntax.Kind () is not SyntaxKind.StringLiteralExpression) {
-					return;
+				switch (arguments[0].Expression) {
+					case IdentifierNameSyntax:
+						break;
+					case LiteralExpressionSyntax literalSyntax:
+						if (literalSyntax.Kind () is SyntaxKind.StringLiteralExpression)
+							break;
+						return;
+					default:
+						return;
+					
 				}
 			}
 
 			// N.B. May be null for FieldDeclaration, since field declarations can declare multiple variables
 			var attributableSymbol = (invocationExpression.Expression is MemberAccessExpressionSyntax simpleMember
 					&& simpleMember.Expression is IdentifierNameSyntax name) ? model.GetSymbolInfo (name).Symbol : null;
-
 
 			if (attributableSymbol is null)
 				return;

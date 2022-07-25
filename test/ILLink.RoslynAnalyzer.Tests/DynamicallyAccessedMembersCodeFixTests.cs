@@ -166,7 +166,11 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 
 			await VerifyDynamicallyAccessedMembersCodeFix (test, fixtest, new[] {
 				// /0/Test0.cs(10,27): warning IL2070: 'this' argument does not satisfy 'DynamicallyAccessedMemberTypes.PublicMethods' in call to 'System.Type.GetMethods()'. The parameter 't' of method 'System.C.Main(Type)' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.
-				VerifyCS.Diagnostic(DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsThisParameter).WithSpan(10, 27, 10, 41).WithArguments("System.Type.GetMethods()", "t", "System.C.Main(Type)", "'DynamicallyAccessedMemberTypes.PublicMethods'")},
+				VerifyCS.Diagnostic(DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsThisParameter)
+				.WithSpan(10, 27, 10, 41)
+				.WithArguments("System.Type.GetMethods()", 
+				"t", "System.C.Main(Type)", 
+				"'DynamicallyAccessedMemberTypes.PublicMethods'")},
 				fixedExpected: Array.Empty<DiagnosticResult> ());
 		}
 
