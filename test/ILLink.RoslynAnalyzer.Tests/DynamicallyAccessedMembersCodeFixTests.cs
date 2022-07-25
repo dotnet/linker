@@ -323,76 +323,6 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 		// these diagnosticIDs are currently unsupported, and as such will currently return no CodeFixers. However, they will soon be supported and as such comments have been left to indicate the error and fix they will accomplish.
 
 		[Fact]
-		public async Task CodeFix_IL2067_MismatchParamTargetsParam_PublicMethods ()
-		{
-			var test = $$"""
-			using System;
-			using System.Diagnostics.CodeAnalysis;
-
-			public class Foo
-			{
-			}
-
-			class C
-			{
-				public static void Main()
-				{
-					M(typeof(Foo));
-				}
-
-				private static void NeedsPublicMethodsOnParameter(
-					[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] Type parameter)
-				{
-				}
-
-				private static void M(Type type)
-				{
-					NeedsPublicMethodsOnParameter(type);
-				}
-			}
-			""";
-			//            var fixtest = $$"""
-			//using System;
-			//using System.Diagnostics.CodeAnalysis;
-
-			//public class Foo
-			//{
-			//}
-
-			//class C
-			//{
-			//public static void Main()
-			//{
-			//    M(typeof(Foo));
-			//}
-
-			//private static void NeedsPublicMethodsOnParameter(
-			//    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] Type parameter)
-			//{
-			//}
-
-			//private static void M([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
-			//{
-			//    NeedsPublicMethodsOnParameter(type);
-			//}
-			//}
-			//""";
-			// await VerifyDynamicallyAccessedMembersCodeFix (test, fixtest, new [] {
-			//     // /0/Test0.cs(22,3): warning IL2067: 'parameter' argument does not satisfy 'DynamicallyAccessedMemberTypes.PublicMethods' in call to 'C.NeedsPublicMethodsOnParameter(Type)'.
-			//     // The parameter 'type' of method 'C.M(Type)' does not have matching annotations.
-			//     // The source value must declare at least the same requirements as those declared on the target location it is assigned to.
-			//     VerifyCS.Diagnostic(DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsParameter).WithSpan(22, 3, 22, 38).WithArguments("parameter", "C.NeedsPublicMethodsOnParameter(Type)", "type", "C.M(Type)", "'DynamicallyAccessedMemberTypes.PublicMethods'")},
-			//     fixedExpected: Array.Empty<DiagnosticResult> ());
-			var diag = new[] {VerifyCS.Diagnostic(DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsParameter)
-			.WithSpan(22, 3, 22, 38)
-			.WithArguments("parameter",
-				"C.NeedsPublicMethodsOnParameter(Type)",
-				"type", "C.M(Type)",
-				"'DynamicallyAccessedMemberTypes.PublicMethods'")};
-			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag);
-		}
-
-		[Fact]
 		public async Task CodeFix_IL2092_MismatchMethodParamBtOverride_NonPublicMethods ()
 		{
 			var test = $$"""
@@ -413,40 +343,40 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 				}
 			}
 			""";
-			//            var fixtest = $$"""
-			//using System;
-			//using System.Diagnostics.CodeAnalysis;
+			var fixtest = $$"""
+			using System;
+			using System.Diagnostics.CodeAnalysis;
 
-			//public class Base
-			//{
-			//    public virtual void M([DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicMethods)] Type t) {}
-			//}
+			public class Base
+			{
+			   public virtual void M([DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicMethods)] Type t) {}
+			}
 
-			//public class C : Base
-			//{
-			//    public override void M([DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicMethods)] Type t) {}
+			public class C : Base
+			{
+			   public override void M([DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicMethods)] Type t) {}
 
-			//    public static void Main() {
+			   public static void Main() {
 
-			//}
-			//}
-			//""";
-			// await VerifyDynamicallyAccessedMembersCodeFix (test, fixtest, new [] {
-			//     // /0/Test0.cs(11,33): warning IL2092: 'DynamicallyAccessedMemberTypes' in 'DynamicallyAccessedMembersAttribute' on the parameter 't' of method 'C.M(Type)'
-			//     // don't match overridden parameter 't' of method 'Base.M(Type)'.
-			//     // All overridden members must have the same 'DynamicallyAccessedMembersAttribute' usage.
-			//     VerifyCS.Diagnostic(DiagnosticId.DynamicallyAccessedMembersMismatchOnMethodParameterBetweenOverrides)
-			//     .WithSpan(11, 30, 11, 31)
-			//     .WithArguments("t", "C.M(Type)",
-			//         "t",
-			//         "Base.M(Type)") },
-			//     fixedExpected: Array.Empty<DiagnosticResult> ());
-			var diag = new[] {VerifyCS.Diagnostic(DiagnosticId.DynamicallyAccessedMembersMismatchOnMethodParameterBetweenOverrides)
-			.WithSpan(11, 30, 11, 31)
-			.WithArguments("t", "C.M(Type)",
-				"t",
-				"Base.M(Type)") };
-			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag);
+			}
+			}
+			""";
+			await VerifyDynamicallyAccessedMembersCodeFix (test, fixtest, new [] {
+			    // /0/Test0.cs(11,33): warning IL2092: 'DynamicallyAccessedMemberTypes' in 'DynamicallyAccessedMembersAttribute' on the parameter 't' of method 'C.M(Type)'
+			    // don't match overridden parameter 't' of method 'Base.M(Type)'.
+			    // All overridden members must have the same 'DynamicallyAccessedMembersAttribute' usage.
+			    VerifyCS.Diagnostic(DiagnosticId.DynamicallyAccessedMembersMismatchOnMethodParameterBetweenOverrides)
+			    .WithSpan(11, 30, 11, 31)
+			    .WithArguments("t", "C.M(Type)",
+			        "t",
+			        "Base.M(Type)") },
+			    fixedExpected: Array.Empty<DiagnosticResult> ());
+			// var diag = new[] {VerifyCS.Diagnostic(DiagnosticId.DynamicallyAccessedMembersMismatchOnMethodParameterBetweenOverrides)
+			// .WithSpan(11, 30, 11, 31)
+			// .WithArguments("t", "C.M(Type)",
+			// 	"t",
+			// 	"Base.M(Type)") };
+			// await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag);
 		}
 
 		[Fact]
