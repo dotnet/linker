@@ -142,12 +142,12 @@ namespace Mono.Linker.Dataflow
 					foreach (var instruction in method.Body.Instructions) {
 						switch (instruction.OpCode.OperandType) {
 						case OperandType.InlineMethod: {
-								MethodDefinition? lambdaOrLocalFunction = _context.TryResolve ((MethodReference) instruction.Operand);
-								if (lambdaOrLocalFunction == null)
+								MethodDefinition? referencedMethod = _context.TryResolve ((MethodReference) instruction.Operand);
+								if (referencedMethod == null)
 									continue;
 
-								if (lambdaOrLocalFunction.IsConstructor &&
-									lambdaOrLocalFunction.DeclaringType is var generatedType &&
+								if (referencedMethod.IsConstructor &&
+									referencedMethod.DeclaringType is var generatedType &&
 									// Don't consider calls in the same type, like inside a static constructor
 									method.DeclaringType != generatedType &&
 									CompilerGeneratedNames.IsLambdaDisplayClass (generatedType.Name)) {
@@ -159,13 +159,13 @@ namespace Mono.Linker.Dataflow
 									continue;
 								}
 
-								if (!CompilerGeneratedNames.IsLambdaOrLocalFunction (lambdaOrLocalFunction.Name))
+								if (!CompilerGeneratedNames.IsLambdaOrLocalFunction (referencedMethod.Name))
 									continue;
 
 								if (isStateMachineMember) {
-									callGraph.TrackCall (method.DeclaringType, lambdaOrLocalFunction);
+									callGraph.TrackCall (method.DeclaringType, referencedMethod);
 								} else {
-									callGraph.TrackCall (method, lambdaOrLocalFunction);
+									callGraph.TrackCall (method, referencedMethod);
 								}
 							}
 							break;
