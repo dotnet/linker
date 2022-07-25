@@ -46,9 +46,8 @@ namespace LinkerAnalyzer.Core
 			Console.WriteLine ("Loading dependency tree from: {0}", filename);
 
 			try {
-				using (var fileStream = File.OpenRead (filename))
-				using (var zipStream = new GZipStream (fileStream, CompressionMode.Decompress)) {
-					Load (zipStream);
+				using (var fileStream = File.OpenRead (filename)) {
+					Load (fileStream);
 				}
 			} catch (Exception) {
 				Console.WriteLine ("Unable to open and read the dependencies.");
@@ -56,17 +55,17 @@ namespace LinkerAnalyzer.Core
 			}
 		}
 
-		void Load (GZipStream zipStream)
+		void Load (FileStream fileStream)
 		{
-			using (XmlReader reader = XmlReader.Create (zipStream)) {
+			using (XmlReader reader = XmlReader.Create (fileStream)) {
 				while (reader.Read ()) {
 					switch (reader.NodeType) {
 					case XmlNodeType.Element:
-						//Console.WriteLine (reader.Name);
+						// Console.WriteLine (reader.Name);
 						if (reader.Name == "edge" && reader.IsStartElement ()) {
 							string b = reader.GetAttribute ("b");
 							string e = reader.GetAttribute ("e");
-							//Console.WriteLine ("edge value " + b + "  -->  " + e);
+							// Console.WriteLine ("edge value " + b + "  -->  " + e);
 
 							if (e != b) {
 								VertexData begin = Vertex (b, true);
@@ -76,13 +75,13 @@ namespace LinkerAnalyzer.Core
 									end.parentIndexes = new List<int> ();
 								if (!end.parentIndexes.Contains (begin.index)) {
 									end.parentIndexes.Add (begin.index);
-									//Console.WriteLine (" end parent index: {0}", end.parentIndexes);
+									// Console.WriteLine (" end parent index: {0}", end.parentIndexes);
 								}
 							}
 						}
 						break;
 					default:
-						//Console.WriteLine ("node: " + reader.NodeType);
+						// Console.WriteLine ("node: " + reader.NodeType);
 						break;
 					}
 				}

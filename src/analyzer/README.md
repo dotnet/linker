@@ -27,20 +27,31 @@ For .NET SDK style projects, you will want to use `_TrimmerDumpDependencies` ins
 
 ```msbuild /p:_TrimmerDumpDependencies=true /p:Configuration=Release YourAppProject.csproj```
 
-After a successful build, there will be a linker-dependencies.xml.gz
+After a successful build, there will be a linker-dependencies.xml
 file created, containing the information for the analyzer.
+
+### Specifying file type
+
+The linker is also set up to dump dependencies as a DGML (Directed
+Graph Markup Language) file for .NET SDK projects. In order to dump a DGML file, 
+`_TrimmerDependenciesFileFormat` should be used:
+
+```msbuild /p:_TrimmerDumpDependencies=true /p:_TrimmerDependenciesFileFormat=dgml /p:Configuration=Release YourAppProject.csproj```
+
+After a successful build, there will be a linker-dependencies.dgml file created,
+containing the information for the analyzer.
 
 ## How to use the analyzer
 
 Let say you would like to know, why a type, Android.App.Activity for
 example, was marked by the linker. So run the analyzer like this:
 
-```illinkanalyzer -t Android.App.Activity linker-dependencies.xml.gz```
+```illinkanalyzer -t Android.App.Activity linker-dependencies.xml```
 
 Output:
 
 ```
-Loading dependency tree from: linker-dependencies.xml.gz
+Loading dependency tree from: linker-dependencies.xml
 
 --- Type dependencies: 'Android.App.Activity' -----------------------
 
@@ -69,12 +80,12 @@ linker step.
 Now we might want to see the `MainActivity` dependencies. That could
 be done by the following analyzer run:
 
-```illinkanalyzer -r TypeDef:XA.App.MainActivity linker-dependencies.xml.gz```
+```illinkanalyzer -r TypeDef:XA.App.MainActivity linker-dependencies.xml```
 
 Output:
 
 ```
-Loading dependency tree from: linker-dependencies.xml.gz
+Loading dependency tree from: linker-dependencies.xml
 
 --- Raw dependencies: 'TypeDef:XA.App.MainActivity' -----------------
 
@@ -104,7 +115,7 @@ just dependency on the Mark step.
 ```
 Usage:
 
-	illinkanalyzer [Options] <linker-dependency-file.xml.gz>
+	illinkanalyzer [Options] <linker-dependency-file.xml>
 
 Options:
 
