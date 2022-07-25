@@ -373,8 +373,7 @@ namespace Mono.Linker.Dataflow
 					// Also look for type substitutions into generic methods
 					// (such as AsyncTaskMethodBuilder::Start<TStateMachine>).
 					if (!handled && instr.OpCode.OperandType is OperandType.InlineMethod) {
-						var mr = (MethodReference) instr.Operand;
-						if (mr is GenericInstanceMethod gim) {
+						if (instr.Operand is GenericInstanceMethod gim) {
 							foreach (var tr in gim.GenericArguments) {
 								if (tr is GenericInstanceType git && compilerGeneratedType == _context.TryResolve (git)) {
 									return git;
