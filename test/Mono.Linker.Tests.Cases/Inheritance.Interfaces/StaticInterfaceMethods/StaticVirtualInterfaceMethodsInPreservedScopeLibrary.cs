@@ -65,8 +65,6 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 			[KeptOverride (typeof (IStaticInterfaceWithDefaultImpls))]
 			static int IStaticInterfaceWithDefaultImpls.Method () => 1;
 			// Type has private ctor, so instance methods can be removed. Since there's a default impl, we can remove this interface method
-			[Kept]
-			[KeptOverride (typeof (IStaticInterfaceWithDefaultImpls))]
 			int IStaticInterfaceWithDefaultImpls.InstanceMethod () => 0;
 		}
 

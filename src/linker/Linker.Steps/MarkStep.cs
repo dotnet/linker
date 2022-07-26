@@ -2409,8 +2409,6 @@ namespace Mono.Linker.Steps
 					&& !IsInterfaceMethodNeededByTypeDueToPreservedScope (@base)
 					&& !IsMethodNeededByTypeDueToPreservedScope (@base))
 					continue;
-				if (!Context.IsOptimizationEnabled (CodeOptimizations.UnusedInterfaces, method))
-					return true;
 
 				// If the type doesn't implement the interface, skip
 				// Below this, we know the base must come from an interface in a preserved scope that the type implements
