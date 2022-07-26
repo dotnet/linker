@@ -2361,7 +2361,7 @@ namespace Mono.Linker.Steps
 			if (Annotations.IsMarked (method))
 				return false;
 			// All methods we care about here will be virtual or static
-			if (!(method.IsVirtual || method.IsStatic))
+			if (!method.IsVirtual)
 				return false;
 
 			var base_list = Annotations.GetBaseMethods (method);
@@ -2369,11 +2369,11 @@ namespace Mono.Linker.Steps
 				return false;
 
 			foreach (MethodDefinition @base in base_list) {
-				if (!IgnoreScope (@base.DeclaringType.Scope) && !IsMethodNeededByTypeDueToPreservedScope (@base))
-					continue;
-
 				// Skip interface methods, they will be captured later by IsInterfaceMethodNeededByTypeDueToPreservedScope
 				if (@base.DeclaringType.IsInterface)
+					continue;
+
+				if (!IgnoreScope (@base.DeclaringType.Scope) && !IsMethodNeededByTypeDueToPreservedScope (@base))
 					continue;
 
 				// If the type is marked, we need to keep overrides of abstract members defined in assemblies
@@ -2472,7 +2472,7 @@ namespace Mono.Linker.Steps
 			if (!Annotations.IsMarked (@base))
 				return false;
 
-			// If the method is static and the implementing type is relevant to variant casting, mark the implementation method. 		
+			// If the method is static and the implementing type is relevant to variant casting, mark the implementation method.
 			// A static method may only be called through a constrained call if the type is relevant to variant casting.
 			if (@base.IsStatic)
 				return Annotations.IsRelevantToVariantCasting (method.DeclaringType);
