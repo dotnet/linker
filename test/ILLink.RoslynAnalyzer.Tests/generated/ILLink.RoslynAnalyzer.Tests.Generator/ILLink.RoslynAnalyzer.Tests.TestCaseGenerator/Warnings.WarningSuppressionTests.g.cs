@@ -14,6 +14,36 @@ namespace ILLink.RoslynAnalyzer.Tests.Warnings
 		}
 
 		[Fact]
+		public Task DetectRedundantSuppressionsFeatureSubstitutions ()
+		{
+			return RunTest (allowMissingWarnings: true);
+		}
+
+		[Fact]
+		public Task DetectRedundantSuppressionsInAssembly ()
+		{
+			return RunTest (allowMissingWarnings: true);
+		}
+
+		[Fact]
+		public Task DetectRedundantSuppressionsInMembersAndTypes ()
+		{
+			return RunTest (allowMissingWarnings: true);
+		}
+
+		[Fact]
+		public Task DetectRedundantSuppressionsInMembersAndTypesUsingTarget ()
+		{
+			return RunTest (allowMissingWarnings: true);
+		}
+
+		[Fact]
+		public Task DetectRedundantSuppressionsInModule ()
+		{
+			return RunTest (allowMissingWarnings: true);
+		}
+
+		[Fact]
 		public Task SuppressWarningsInAssembly ()
 		{
 			return RunTest (allowMissingWarnings: true);

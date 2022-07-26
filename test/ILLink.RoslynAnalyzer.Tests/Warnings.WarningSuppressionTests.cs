@@ -27,5 +27,11 @@ namespace ILLink.RoslynAnalyzer.Tests.Warnings
 		{
 			return RunTest (allowMissingWarnings: true);
 		}
+
+		[Fact (Skip = "https://github.com/dotnet/linker/issues/2579")]
+		public Task DetectRedundantSuppressionsFromXML ()
+		{
+			return RunTest (allowMissingWarnings: true);
+		}
 	}
 }
