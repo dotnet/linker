@@ -63,11 +63,13 @@ namespace ILLink.CodeFix
 			if (await document.GetSyntaxRootAsync (context.CancellationToken).ConfigureAwait (false) is not { } root)
 				return;
 			var diagnostic = context.Diagnostics.First ();
+			SyntaxNode sourceNode = root.FindNode(diagnostic.AdditionalLocations[0].SourceSpan, getInnermostNodeForTie: true);
 			SyntaxNode diagnosticNode = root.FindNode (diagnostic.Location.SourceSpan, getInnermostNodeForTie: true);
 			if (await document.GetSemanticModelAsync (context.CancellationToken).ConfigureAwait (false) is not { } model)
 				return;
 			// Note: We get the target symbol from the diagnostic location. 
 			// This works when the diagnostic location is a method call, because the target symbol will be the called method with annotations, but won't work in general for other kinds of diagnostics.
+			// TODO: Fix targetSymbol so it's not necessarily derived from diagnosticNode --> use the location from DiagnosticContext.cs
 			if (model.GetSymbolInfo (diagnosticNode).Symbol is not { } targetSymbol)
 				return;
 			if (model.Compilation.GetTypeByMetadataName (FullyQualifiedAttributeName) is not { } attributeSymbol)
@@ -91,23 +93,12 @@ namespace ILLink.CodeFix
 						return;
 					default:
 						return;
-					
 				}
 			}
 
 			// N.B. May be null for FieldDeclaration, since field declarations can declare multiple variables
-			var attributableSymbol = (invocationExpression.Expression is MemberAccessExpressionSyntax simpleMember
-					&& simpleMember.Expression is IdentifierNameSyntax name) ? model.GetSymbolInfo (name).Symbol : null;
 
-			if (attributableSymbol is null)
-				return;
-
-			var attributableNodeList = attributableSymbol.DeclaringSyntaxReferences;
-
-			if (attributableNodeList.Length != 1)
-				return;
-
-			var attributableNode = attributableNodeList[0].GetSyntax ();
+			var attributableNode = sourceNode; 
 
 			if (attributableNode is null) return;
 

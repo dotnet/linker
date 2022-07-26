@@ -27,5 +27,36 @@ namespace ILLink.Shared.TrimAnalysis
 
 			Diagnostics.Add (Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (id), Location, args));
 		}
+
+		public partial void AddDiagnostic (DiagnosticId id, ValueWithDynamicallyAccessedMembers sourceAttribute, params string[] args)
+		{
+			if (Location == null) {
+				return;
+			}
+
+			
+			Location[] sourceLocation = new Location[1];
+			switch (sourceAttribute) {
+			case FieldValue field:
+				Location fieldLocation = field.FieldSymbol.DeclaringSyntaxReferences[0].GetSyntax ().GetLocation ();
+				sourceLocation[0] = fieldLocation;
+				break;
+			case MethodParameterValue mpv:
+				Location mpvLocation = mpv.ParameterSymbol.DeclaringSyntaxReferences[0].GetSyntax ().GetLocation ();
+				sourceLocation[0] = mpvLocation;
+				break;
+			case MethodReturnValue mrv:
+				Location mrvLocation = mrv.MethodSymbol.DeclaringSyntaxReferences[0].GetSyntax ().GetLocation ();
+				sourceLocation[0] = mrvLocation;
+				break;
+			case MethodThisParameterValue mtpv:
+				Location mptvLocation = mtpv.MethodSymbol.DeclaringSyntaxReferences[0].GetSyntax ().GetLocation ();
+				sourceLocation[0] = mptvLocation;
+				break;
+			default:
+				return;
+			}
+			Diagnostics.Add (Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (id), Location, sourceLocation, args));
+		}
 	}
 }
