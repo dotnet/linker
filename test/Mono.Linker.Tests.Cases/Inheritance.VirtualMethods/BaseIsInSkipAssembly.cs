@@ -13,19 +13,19 @@ namespace Mono.Linker.Tests.Cases.Inheritance.VirtualMethods
 		public static void Main ()
 		{
 			new Instantiated ();
-			Type _ = typeof(Uninstantiated);
+			Type _ = typeof (Uninstantiated);
 		}
 
 		[Kept]
-		[KeptBaseType(typeof(BaseInSkipAssembly))]
+		[KeptBaseType (typeof (BaseInSkipAssembly))]
 		class Uninstantiated : BaseInSkipAssembly
 		{
 			public override int Method () => 1;
 		}
 
 		[Kept]
-		[KeptBaseType(typeof(BaseInSkipAssembly))]
-		[KeptMember(".ctor()")]
+		[KeptBaseType (typeof (BaseInSkipAssembly))]
+		[KeptMember (".ctor()")]
 		class Instantiated : BaseInSkipAssembly
 		{
 			[Kept]
