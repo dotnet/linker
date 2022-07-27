@@ -14,13 +14,15 @@ Whether or not a method implementing an interface method is required due to the 
 - Implementing type is marked as instantiated or not
 - Interface Implementation is marked or not
 
+Note that in library mode, interface methods that can be accessed by COM or native code are marked by the linker in library mode.
+
 ### If Linker is in library mode, mark the implementation method
 All interfaces and interface methods should be kept for library mode. COM in the runtime library may expect the interfaces to exist, so we should keep them.
 
 Cases left (bold means we know it is only one of the possible options now):
 - Base method is abstract or has a default implementation
 - Method is Instance or Static
-- __Linker is in exe mode__
+- Linker is in library mode or exe mode
 - Implementing type is relevant to variant casting or not
 - Base method is marked as used or not
 - Base method from preserved scope or not
@@ -33,7 +35,7 @@ A type that doesn't implement the interface isn't required to have methods that 
 Cases left (bold means we know it is only one of the possible options now):
 - Base method is abstract or has a default implementation
 - Method is Instance or Static
-- __Linker is in exe mode__
+- Linker is in library mode or exe mode
 - Implementing type is relevant to variant casting or not
 - Base method is marked as used or not
 - Base method from preserved scope or not
@@ -46,7 +48,7 @@ Unmarked interface methods from `link` assemblies will be removed so the impleme
 Cases left:
 - Base method is abstract or has a default implementation
 - Method is Instance or Static
-- __Linker is in exe mode__
+- Linker is in library mode or exe mode
 - Implementing type is relevant to variant casting or not
 - ~~Base method is marked as used or not~~
 - ~~Base method from preserved scope or not~~
@@ -60,19 +62,35 @@ The method is needed for valid IL.
 Cases left:
 - __Base method has a default implementation__
 - Method is Instance or Static
-- __Linker is in exe mode__
+- Linker is in library mode or exe mode
 - Implementing type is relevant to variant casting or not
 - Base method is marked as used or from preserved scope
 - Implementing type is marked as instantiated or not
 - __Interface Implementation is marked__
 
-### If the interface is from a preserved scope but the method is not marked, do not mark the implementation method
+### If the interface is from a preserved scope and the linker is in library mode, we should treat the base method as marked
+#### If the method is static, mark the implementation method
+An application may use this method through a constrained type parameter
+#### If the method is an instance method, and the type is instantiated or has a non-private constructor, mark the implementation method
+An application can create an instance and call the method through the interface
+
+All other behaviors are the same regardless of whether or not the linker is in library or exe mode, or whether or not the interface is in a preserved scope.
+
+Cases left:
+- __Base method has a default implementation__
+- Method is Instance or Static
+- ~~Linker is in library mode or exe mode~~
+- Implementing type is relevant to variant casting or not
+- Base method is marked as used _or not_ ~~or from preserved scope~~
+- Implementing type is marked as instantiated or not
+- __Interface Implementation is marked__
+
+### If the interface method is not marked, do not mark the implementation method
 We know the method cannot be called if it is not marked.
 
 Cases left:
 - __Base method has a default implementation__
 - Method is Instance or Static
-- __Linker is in exe mode__
 - Implementing type is relevant to variant casting or not
 - __Base method is marked as used__
 - Implementing type is marked as instantiated or not
@@ -84,7 +102,6 @@ A static method may only be called through a constrained call if the type is rel
 Cases left:
 - __Base method has a default implementation__
 - __Method is Instance__
-- __Linker is in exe mode__
 - Implementing type is relevant to variant casting or not
 - __Base method is marked as used__
 - Implementing type is marked as instantiated or not
@@ -95,7 +112,6 @@ Instance methods are not affected by whether or not it's relevant to variant cas
 Cases left:
 - __Base method has a default implementation__
 - __Method is Instance__
-- __Linker is in exe mode__
 -~~Implementing type is relevant to variant casting or not~~
 - __Base method is marked as used__
 - Implementing type is marked as instantiated or not
@@ -108,13 +124,15 @@ This should cover all the cases, but let me know if there are cases I don't ment
 
 Summary:
 
-if __Linker is in library mode__ then mark the implementation method.
-
-else if __Interface Implementation is not marked__ then do not mark the implementation method.
+if __Interface Implementation is not marked__ then do not mark the implementation method.
 
 else if __Base method is marked as not used__ AND __Interface is not from preserved scope__ do not mark the implementation method
 
 else if __Base method does not have a default implementation__ then mark the implementation method
+
+else if __Interface is from preserved scope__ AND __Linker is in library mode__ AND __Method is static__ then mark the implementation method
+
+else if __Interface is from preserved scope__ AND __Linker is in library mode__ AND __Method is instance__ AND __Implementing type is marked as instantiated__ then mark the implementing method
 
 else if __Interface is from preserved scope__ AND __Base method is marked as not used__ then do not mark the implementation method
 

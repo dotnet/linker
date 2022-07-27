@@ -602,9 +602,16 @@ namespace Mono.Linker.Steps
 						!unusedInterfacesOptimizationEnabled) {
 						MarkInterfaceImplementations (type);
 					}
-					// We need to check all methods here -- _interfaceOverrides won't have preserved scope methods if they are not
-					//  marked, but abstract methods from preserved scope must still be kept for valid IL
-					MarkMethodsIf (type.Methods, IsInterfaceMethodNeededByTypeDueToPreservedScope, new DependencyInfo (DependencyKind.VirtualNeededDueToPreservedScope, type), ScopeStack.CurrentScope.Origin);
+					// OverrideInformation for interfaces in PreservedScope aren't added yet
+					foreach (var method in type.Methods) {
+						var bases = Annotations.GetBaseMethods (method);
+						if (bases is null)
+							continue;
+						foreach (var @base in bases) {
+							if (@base.DeclaringType.IsInterface && IgnoreScope (@base.DeclaringType.Scope))
+								_interfaceOverrides.Add ((new OverrideInformation (@base, method, Context), ScopeStack.CurrentScope));
+						}
+					}
 				}
 			}
 
@@ -756,35 +763,22 @@ namespace Mono.Linker.Steps
 		/// </summary>
 		bool IsInterfaceImplementationMarkedRecursively (TypeDefinition type, TypeDefinition interfaceType)
 		{
+			if (type.Equals (interfaceType))
+				return true;
 			if (type.HasInterfaces) {
 				foreach (var intf in type.Interfaces) {
 					TypeDefinition? resolvedInterface = Context.Resolve (intf.InterfaceType);
 					if (resolvedInterface == null)
 						continue;
 
-					if (Annotations.IsMarked (intf) && RequiresInterfaceRecursively (resolvedInterface, interfaceType))
+					if (Annotations.IsMarked (intf) && IsInterfaceImplementationMarkedRecursively (resolvedInterface, interfaceType))
 						return true;
 				}
 			}
-
-			return false;
-		}
-
-		bool RequiresInterfaceRecursively (TypeDefinition typeToExamine, TypeDefinition interfaceType)
-		{
-			if (typeToExamine == interfaceType)
+			if (Context.Resolve (type.BaseType) is TypeDefinition baseType
+				&& Annotations.IsMarked (baseType)
+				&& IsInterfaceImplementationMarkedRecursively (baseType, interfaceType))
 				return true;
-
-			if (typeToExamine.HasInterfaces) {
-				foreach (var iface in typeToExamine.Interfaces) {
-					var resolved = Context.TryResolve (iface.InterfaceType);
-					if (resolved == null)
-						continue;
-
-					if (RequiresInterfaceRecursively (resolved, interfaceType))
-						return true;
-				}
-			}
 
 			return false;
 		}
@@ -2390,53 +2384,6 @@ namespace Mono.Linker.Steps
 		}
 
 		/// <summary>
-		/// Returns whether a method is needed by an interface that is in preserve scope. This should be called after interface implementations have been marked.
-		/// </summary>
-		bool IsInterfaceMethodNeededByTypeDueToPreservedScope (MethodDefinition method)
-		{
-			if (Annotations.IsMarked (method))
-				return false;
-
-			var base_list = Annotations.GetBaseMethods (method);
-			if (base_list == null)
-				return false;
-
-			foreach (MethodDefinition @base in base_list) {
-				if (!@base.DeclaringType.IsInterface)
-					continue;
-
-				if (!IgnoreScope (@base.DeclaringType.Scope)
-					&& !IsInterfaceMethodNeededByTypeDueToPreservedScope (@base)
-					&& !IsMethodNeededByTypeDueToPreservedScope (@base))
-					continue;
-
-				// If the type doesn't implement the interface, skip
-				// Below this, we know the base must come from an interface in a preserved scope that the type implements
-				InterfaceImplementation? iface = new OverrideInformation.OverridePair (@base, method).GetMatchingInterfaceImplementation (Context);
-				if (!(iface is not null && Annotations.IsMarked (iface)))
-					continue;
-
-				// We need to keep all abstract methods from marked ifaceImpls for valid IL
-				// Below this, we know the base has a default implementation
-				if (@base.IsAbstract)
-					return true;
-
-				// If the method is static, we'll need the method if the base is marked AND the type could be used as a type argument constrained to the interface (tracked by IsRelevantToVariantCasting)
-				// We also need to keep the method if it's in library mode or could be used in code we can't see. We'll use the UnusedInterfaces as a signal for that
-				if (@base.IsStatic &&
-					(!Context.IsOptimizationEnabled (CodeOptimizations.UnusedInterfaces, method)
-					|| (Annotations.IsMarked (@base)
-						&& Annotations.IsRelevantToVariantCasting (method.DeclaringType))))
-					return true;
-
-				// Instance methods only need to be kept if the type is instantiated, regardless of library mode or not
-				if (!@base.IsStatic && Annotations.IsInstantiated (method.DeclaringType))
-					return true;
-			}
-			return false;
-		}
-
-		/// <summary>
 		/// Returns true if the override method is required due to the interface that the base method is declared on.
 		/// </summary>
 		bool IsInterfaceImplementationMethodNeededByTypeDueToInterface (OverrideInformation overrideInformation)
@@ -2452,7 +2399,8 @@ namespace Mono.Linker.Steps
 			// If the interface implementation is not marked, do not mark the implementation method
 			// A type that doesn't implement the interface isn't required to have methods that implement the interface.
 			InterfaceImplementation? iface = overrideInformation.MatchingInterfaceImplementation;
-			if (!(iface is not null && (Annotations.IsMarked (iface) || IsInterfaceImplementationMarkedRecursively (method.DeclaringType, @base.DeclaringType))))
+			if (!((iface is not null && Annotations.IsMarked (iface))
+				|| IsInterfaceImplementationMarkedRecursively (method.DeclaringType, @base.DeclaringType)))
 				return false;
 
 			// If the interface method is not marked and the interface doesn't come from a preserved scope, do not mark the implementation method
@@ -2464,6 +2412,19 @@ namespace Mono.Linker.Steps
 			// The method is needed for valid IL.
 			if (@base.IsAbstract)
 				return true;
+
+			// Interface methods in a preserved scope need different behaviors in library mode
+			// We'll use the unusedinterfaces as a signal for library mode
+			if (IgnoreScope (@base.DeclaringType.Scope) && !Context.IsOptimizationEnabled (CodeOptimizations.UnusedInterfaces, method)) {
+				// If the method is static, a consuming app could use the method through a constrained type parameter, so we need it
+				if (@base.IsStatic)
+					return true;
+
+				// For instance methods, we need to keep the implementing method if the type can be instantiated by a consuming app
+				if (!@base.IsStatic
+					&& Annotations.IsInstantiated (method.DeclaringType))
+					return true;
+			}
 
 			// If the interface is from a preserved scope but the method is not marked, do not mark the implementation method
 			// We know the method cannot be called if it is not marked
