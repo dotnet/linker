@@ -25,7 +25,6 @@ namespace Mono.Linker.Steps
 				.Where (suppression => ((DiagnosticId) suppression.suppressMessageInfo.Id).GetDiagnosticCategory () == DiagnosticCategory.Trimming);
 
 			foreach (var (provider, suppressMessageInfo) in redundantSuppressions) {
-
 				var source = GetSuppresionProvider (provider);
 
 				context.LogWarning (new MessageOrigin (source), DiagnosticId.RedundantSuppression, $"IL{suppressMessageInfo.Id:0000}");

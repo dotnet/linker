@@ -1192,9 +1192,9 @@
     <value>Unrecognized dependencies file type.</value>
   </data>
   <data name="RedundantSuppressionMessage" xml:space="preserve">
-    <value>Unused UnconditionalSuppressMessageAttribute suppressing the '{0}' warning found. Consider removing the unused warning suppression.</value>
+    <value>Unused 'UnconditionalSuppressMessageAttribute' for warning '{0}'. Consider removing the unused warning suppression.</value>
   </data>
   <data name="RedundantSuppressionTitle" xml:space="preserve">
-    <value>Unused UnconditionalSuppressMessageAttribute found. Consider removing the unused warning suppression.</value>
+    <value>Unused 'UnconditionalSuppressMessageAttribute' found. Consider removing the unused warning suppression.</value>
   </data>
 </root>

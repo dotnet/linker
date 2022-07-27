@@ -537,7 +537,6 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 				}
 			}
 
-			//[UnconditionalSuppressMessage ("Test", "IL2026")] // ask
 			static async void TestIteratorLocalFunctionInAsync ()
 			{
 				await MethodAsync ();

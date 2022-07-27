@@ -12,6 +12,9 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 [module: UnconditionalSuppressMessage ("Test", "IL2071", Scope = "type", Target = "T:Mono.Linker.Tests.Cases.Warnings.WarningSuppression.DetectRedundantSuppressionsInMembersAndTypesUsingTarget.RedundantSuppressionOnNestedType.NestedType")]
 [module: UnconditionalSuppressMessage ("Test", "IL2071", Scope = "member", Target = "M:Mono.Linker.Tests.Cases.Warnings.WarningSuppression.DetectRedundantSuppressionsInMembersAndTypesUsingTarget.RedundantSuppressionOnProperty.get_TrimmerCompatibleProperty")]
 
+// The IL2121 warnings are reported on the suppressions targets.
+// When the suppressions are declared on the assembly level, ideally they should also be reported on the assembly level.
+
 namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 {
 	[ExpectedNoWarnings]
@@ -41,7 +44,7 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 		{
 			public static void Test ()
 			{
-				DetectRedundantSuppressionsInMembersAndTypesUsingTarget.TrimmerCompatibleMethod ();
+				TrimmerCompatibleMethod ();
 			}
 		}
 
@@ -50,7 +53,7 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 			[ExpectedWarning ("IL2121", "IL2071", ProducedBy = ProducedBy.Trimmer)]
 			public static void Test ()
 			{
-				DetectRedundantSuppressionsInMembersAndTypesUsingTarget.TrimmerCompatibleMethod ();
+				TrimmerCompatibleMethod ();
 			}
 		}
 
@@ -66,7 +69,7 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 			{
 				public static void TrimmerCompatibleMethod ()
 				{
-					DetectRedundantSuppressionsInMembersAndTypesUsingTarget.TrimmerCompatibleMethod ();
+					TrimmerCompatibleMethod ();
 				}
 			}
 		}
@@ -81,7 +84,7 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 			public static string TrimmerCompatibleProperty {
 				[ExpectedWarning ("IL2121", "IL2071", ProducedBy = ProducedBy.Trimmer)]
 				get {
-					return DetectRedundantSuppressionsInMembersAndTypesUsingTarget.TrimmerCompatibleMethod ();
+					return TrimmerCompatibleMethod ();
 				}
 			}
 		}

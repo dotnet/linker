@@ -195,7 +195,4 @@
   <data name="IL2103" xml:space="preserve">
     <value>Value passed to the '{0}' parameter of method '{1}' cannot be statically determined as a property accessor.</value>
   </data>
-  <data name="IL2121" xml:space="preserve">
-    <value>Unused UnconditionalSuppressMessageAttribute suppressing the '{0}' warning found. Consider removing the unused warning suppression.</value>
-  </data>
 </root>

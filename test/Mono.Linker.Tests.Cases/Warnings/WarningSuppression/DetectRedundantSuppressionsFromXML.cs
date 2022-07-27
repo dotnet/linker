@@ -23,6 +23,8 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 		[ExpectedWarning ("IL2121", "IL2109", ProducedBy = ProducedBy.Trimmer)]
 		public class DetectRedundantSuppressions
 		{
+			// The warning should ideally point to XML.
+			// https://github.com/dotnet/linker/issues/2923
 			[ExpectedWarning ("IL2121", "IL2026", ProducedBy = ProducedBy.Trimmer)]
 			public static void Test ()
 			{

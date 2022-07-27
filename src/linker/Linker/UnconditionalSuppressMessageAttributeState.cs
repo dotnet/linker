@@ -122,13 +122,17 @@ namespace Mono.Linker
 			info = default;
 
 			if (TryGetSuppressionsForProvider (provider, out var suppressions)) {
-				return TryGetSuppression (suppressions, id, out info);
+				if (suppressions != null && suppressions.TryGetValue (id, out var suppression)) {
+					suppression.Used = true;
+					info = suppression.SuppressMessageInfo;
+					return true;
+				}
 			}
 
 			return false;
 		}
 
-		public bool TryGetSuppressionsForProvider (ICustomAttributeProvider? provider, out Dictionary<int, Suppression>? suppressions)
+		bool TryGetSuppressionsForProvider (ICustomAttributeProvider? provider, out Dictionary<int, Suppression>? suppressions)
 		{
 			suppressions = null;
 			if (provider == null)
@@ -167,18 +171,6 @@ namespace Mono.Linker
 
 			if (_suppressions.TryGetValue (provider, out suppressions))
 				return true;
-
-			return false;
-		}
-
-		static bool TryGetSuppression (Dictionary<int, Suppression>? suppressions, int id, out SuppressMessageInfo info)
-		{
-			info = default;
-			if (suppressions != null && suppressions.TryGetValue (id, out var suppression)) {
-				suppression.Used = true;
-				info = suppression.SuppressMessageInfo;
-				return true;
-			}
 
 			return false;
 		}

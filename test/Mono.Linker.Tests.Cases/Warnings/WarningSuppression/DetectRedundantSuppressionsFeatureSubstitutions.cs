@@ -15,7 +15,6 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 	[SkipKeptItemsValidation]
 	public class DetectRedundantSuppressionsFeatureSubstitutions
 	{
-		// https://github.com/dotnet/linker/issues/2920
 		public static void Main ()
 		{
 			ReportRedundantSuppressionWhenTrimmerIncompatibleCodeDisabled.Test ();
@@ -38,6 +37,12 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 
 		class ReportRedundantSuppressionWhenTrimmerIncompatibleCodeDisabled
 		{
+			// The test simulates the following issue.
+			// https://github.com/dotnet/linker/issues/2921
+			// The suppressed warning is issued in the 'if' branch.
+			// With feature switched to false, the linker sees only the 'else' branch.
+			// The 'else' branch contains trimmer-compatible code, the linker identifies the suppression as redundant.
+
 			[ExpectedWarning ("IL2121", "IL2072")]
 			[UnconditionalSuppressMessage ("Test", "IL2072")]
 			public static void Test ()

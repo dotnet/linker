@@ -44,7 +44,7 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 		{
 			public static void Test ()
 			{
-				DetectRedundantSuppressionsInMembersAndTypes.TrimmerCompatibleMethod ();
+				TrimmerCompatibleMethod ();
 			}
 		}
 
@@ -54,7 +54,7 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 			[UnconditionalSuppressMessage ("Test", "IL2071")]
 			public static void Test ()
 			{
-				DetectRedundantSuppressionsInMembersAndTypes.TrimmerCompatibleMethod ();
+				TrimmerCompatibleMethod ();
 			}
 		}
 
@@ -66,7 +66,7 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 				[UnconditionalSuppressMessage ("Test", "IL2071")]
 				void LocalMethod ()
 				{
-					DetectRedundantSuppressionsInMembersAndTypes.TrimmerCompatibleMethod ();
+					TrimmerCompatibleMethod ();
 				}
 
 				LocalMethod ();
@@ -102,7 +102,7 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 				[ExpectedWarning ("IL2121", "IL2071", ProducedBy = ProducedBy.Trimmer)]
 				[UnconditionalSuppressMessage ("Test", "IL2071")]
 				get {
-					return DetectRedundantSuppressionsInMembersAndTypes.TrimmerCompatibleMethod ();
+					return TrimmerCompatibleMethod ();
 				}
 			}
 		}
@@ -119,7 +119,7 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 			[UnconditionalSuppressMessage ("Test", "IL2071")]
 			public static void Test ()
 			{
-				DetectRedundantSuppressionsInMembersAndTypes.TrimmerCompatibleMethod ();
+				TrimmerCompatibleMethod ();
 			}
 		}
 
@@ -130,7 +130,7 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 			[UnconditionalSuppressMessage ("Test", "IL2072")]
 			public static void Test ()
 			{
-				Expression.Call (DetectRedundantSuppressionsInMembersAndTypes.TriggerUnrecognizedPattern (), "", Type.EmptyTypes);
+				Expression.Call (TriggerUnrecognizedPattern (), "", Type.EmptyTypes);
 			}
 		}
 
@@ -139,13 +139,15 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 			[UnconditionalSuppressMessage ("Test", "IL3052")]
 			public static void Test ()
 			{
-				DetectRedundantSuppressionsInMembersAndTypes.TrimmerCompatibleMethod ();
+				TrimmerCompatibleMethod ();
 			}
 		}
 
-		// Methods with unreachable bodies are not processed https://github.com/dotnet/linker/issues/2921
 		public class DoNotReportSuppressionsOnMethodsConvertedToThrow
 		{
+			// The tool is unable to determine whether a suppression is redundant when it is placed on a method with unreachable body.
+			// Currently suppressions on methods with unreachable bodies should never be reported as redundant.
+			// https://github.com/dotnet/linker/issues/2920
 			public static void Test ()
 			{
 				UsedToMarkMethod (null);
@@ -158,10 +160,11 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 
 			class TypeWithMethodConvertedToThrow
 			{
+				// The suppression is redundant, but it should not be reported.
 				[UnconditionalSuppressMessage ("Test", "IL2072")]
 				public void MethodConvertedToThrow ()
 				{
-					DetectRedundantSuppressionsInMembersAndTypes.TrimmerCompatibleMethod ();
+					TrimmerCompatibleMethod ();
 				}
 			}
 		}
@@ -172,7 +175,7 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 			[UnconditionalSuppressMessage ("Test", "IL2072")]
 			public static void Test ()
 			{
-				DetectRedundantSuppressionsInMembersAndTypes.TrimmerCompatibleMethod ();
+				TrimmerCompatibleMethod ();
 			}
 		}
 	}
