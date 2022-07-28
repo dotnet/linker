@@ -3109,8 +3109,11 @@ namespace Mono.Linker.Steps
 			}
 
 			MarkMethodSpecialCustomAttributes (method);
-			if (method.IsVirtual || Annotations.GetBaseMethods(method) is not null)
+			if (method.IsVirtual || Annotations.GetBaseMethods (method) is not null) {
+				// The only methods with bases that arent virtual should be static interface methods
+				Debug.Assert (method.IsVirtual || method.IsStatic);
 				_methodsWithOverrides.Add ((method, ScopeStack.CurrentScope));
+			}
 
 			MarkNewCodeDependencies (method);
 

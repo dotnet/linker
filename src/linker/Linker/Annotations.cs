@@ -675,7 +675,7 @@ namespace Mono.Linker
 
 		public void EnqueueVirtualMethod (MethodDefinition method)
 		{
-			if (!(method.IsVirtual || context.Annotations.GetBaseMethods(method) is not null))
+			if (!(method.IsVirtual || context.Annotations.GetBaseMethods (method) is not null))
 				return;
 
 			if (FlowAnnotations.RequiresDataFlowAnalysis (method) || HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (method))

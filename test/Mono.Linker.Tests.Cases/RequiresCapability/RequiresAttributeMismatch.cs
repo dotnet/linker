@@ -456,13 +456,13 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		class StaticInterfaceMethods
 		{
-			[ExpectedWarning("IL2026")]
-			[ExpectedWarning("IL2026")]
-			[ExpectedWarning("IL2026")]
-			[ExpectedWarning("IL2026")]
-			[ExpectedWarning("IL2026")]
-			[ExpectedWarning("IL2026")]
-			public static void Test()
+			[ExpectedWarning ("IL2026")]
+			[ExpectedWarning ("IL2026")]
+			[ExpectedWarning ("IL2026")]
+			[ExpectedWarning ("IL2026")]
+			[ExpectedWarning ("IL2026")]
+			[ExpectedWarning ("IL2026")]
+			public static void Test ()
 			{
 				typeof (IRequires).RequiresPublicMethods ();
 				typeof (INoRequires).RequiresPublicMethods ();
