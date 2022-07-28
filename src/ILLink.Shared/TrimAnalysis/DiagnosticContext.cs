@@ -20,5 +20,10 @@ namespace ILLink.Shared.TrimAnalysis
 		/// <param name="id">The diagnostic ID, this will be used to determine the category of diagnostic (trimmer, AOT, single-file)</param>
 		/// <param name="args">The arguments for diagnostic message.</param>
 		public partial void AddDiagnostic (DiagnosticId id, params string[] args);
+
+		/// <param name="id">The diagnostic ID, this will be used to determine the category of diagnostic (trimmer, AOT, single-file)</param>
+		/// <param name="args">The arguments for diagnostic message.</param>
+		/// <param name="sourceValue">The value for the source of the diagnostic</param>
+		public partial void AddDiagnostic (DiagnosticId id, ValueWithDynamicallyAccessedMembers sourceValue, ValueWithDynamicallyAccessedMembers originalValue, params string[] args);
 	}
 }

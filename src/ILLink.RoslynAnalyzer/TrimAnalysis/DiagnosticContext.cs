@@ -28,30 +28,47 @@ namespace ILLink.Shared.TrimAnalysis
 			Diagnostics.Add (Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (id), Location, args));
 		}
 
-		public partial void AddDiagnostic (DiagnosticId id, ValueWithDynamicallyAccessedMembers sourceAttribute, params string[] args)
+		public partial void AddDiagnostic (DiagnosticId id, ValueWithDynamicallyAccessedMembers sourceValue, ValueWithDynamicallyAccessedMembers originalValue, params string[] args)
 		{
 			if (Location == null) {
 				return;
 			}
 
-			
-			Location[] sourceLocation = new Location[1];
-			switch (sourceAttribute) {
+			List<Location> sourceLocation = new ();
+			switch (sourceValue) {
 			case FieldValue field:
-				Location fieldLocation = field.FieldSymbol.DeclaringSyntaxReferences[0].GetSyntax ().GetLocation ();
-				sourceLocation[0] = fieldLocation;
+				Location sourceFieldLocation = field.FieldSymbol.DeclaringSyntaxReferences[0].GetSyntax ().GetLocation ();
+				sourceLocation.Add(sourceFieldLocation);
 				break;
 			case MethodParameterValue mpv:
-				Location mpvLocation = mpv.ParameterSymbol.DeclaringSyntaxReferences[0].GetSyntax ().GetLocation ();
-				sourceLocation[0] = mpvLocation;
+				Location sourceMpvLocation = mpv.ParameterSymbol.DeclaringSyntaxReferences[0].GetSyntax ().GetLocation ();
+				sourceLocation.Add(sourceMpvLocation);
 				break;
 			case MethodReturnValue mrv:
-				Location mrvLocation = mrv.MethodSymbol.DeclaringSyntaxReferences[0].GetSyntax ().GetLocation ();
-				sourceLocation[0] = mrvLocation;
+				Location sourceMrvLocation = mrv.MethodSymbol.DeclaringSyntaxReferences[0].GetSyntax ().GetLocation ();
+				sourceLocation.Add(sourceMrvLocation);
 				break;
 			case MethodThisParameterValue mtpv:
-				Location mptvLocation = mtpv.MethodSymbol.DeclaringSyntaxReferences[0].GetSyntax ().GetLocation ();
-				sourceLocation[0] = mptvLocation;
+				Location sourceMptvLocation = mtpv.MethodSymbol.DeclaringSyntaxReferences[0].GetSyntax ().GetLocation ();
+				sourceLocation.Add(sourceMptvLocation);
+				break;
+			default:
+				return;
+			}
+			switch (originalValue) {
+			case FieldValue field:
+				Location originalFieldLocation = field.FieldSymbol.DeclaringSyntaxReferences[0].GetSyntax ().GetLocation ();
+				sourceLocation.Add(originalFieldLocation);
+				break;
+			case MethodParameterValue mpv:
+				Location originalMpvLocation = mpv.ParameterSymbol.DeclaringSyntaxReferences[0].GetSyntax ().GetLocation ();
+				sourceLocation.Add(originalMpvLocation);
+				break;
+			case MethodReturnValue mrv:
+				Location originalMrvLocation = mrv.MethodSymbol.DeclaringSyntaxReferences[0].GetSyntax ().GetLocation ();
+				sourceLocation.Add(originalMrvLocation);
+				break;
+			case MethodThisParameterValue:
 				break;
 			default:
 				return;
