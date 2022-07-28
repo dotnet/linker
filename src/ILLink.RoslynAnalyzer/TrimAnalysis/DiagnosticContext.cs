@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using ILLink.RoslynAnalyzer;
 using Microsoft.CodeAnalysis;
 
@@ -34,46 +35,32 @@ namespace ILLink.Shared.TrimAnalysis
 				return;
 			}
 
-			List<Location> sourceLocation = new ();
+			Location[] sourceLocation = new Location[1];
 			switch (sourceValue) {
 			case FieldValue field:
 				Location sourceFieldLocation = field.FieldSymbol.DeclaringSyntaxReferences[0].GetSyntax ().GetLocation ();
-				sourceLocation.Add(sourceFieldLocation);
+				sourceLocation[0] = sourceFieldLocation;
 				break;
 			case MethodParameterValue mpv:
 				Location sourceMpvLocation = mpv.ParameterSymbol.DeclaringSyntaxReferences[0].GetSyntax ().GetLocation ();
-				sourceLocation.Add(sourceMpvLocation);
+				sourceLocation[0] = sourceMpvLocation;
 				break;
 			case MethodReturnValue mrv:
 				Location sourceMrvLocation = mrv.MethodSymbol.DeclaringSyntaxReferences[0].GetSyntax ().GetLocation ();
-				sourceLocation.Add(sourceMrvLocation);
+				sourceLocation[0] = sourceMrvLocation;
 				break;
 			case MethodThisParameterValue mtpv:
 				Location sourceMptvLocation = mtpv.MethodSymbol.DeclaringSyntaxReferences[0].GetSyntax ().GetLocation ();
-				sourceLocation.Add(sourceMptvLocation);
+				sourceLocation[0] = sourceMptvLocation;
 				break;
 			default:
 				return;
 			}
-			switch (originalValue) {
-			case FieldValue field:
-				Location originalFieldLocation = field.FieldSymbol.DeclaringSyntaxReferences[0].GetSyntax ().GetLocation ();
-				sourceLocation.Add(originalFieldLocation);
-				break;
-			case MethodParameterValue mpv:
-				Location originalMpvLocation = mpv.ParameterSymbol.DeclaringSyntaxReferences[0].GetSyntax ().GetLocation ();
-				sourceLocation.Add(originalMpvLocation);
-				break;
-			case MethodReturnValue mrv:
-				Location originalMrvLocation = mrv.MethodSymbol.DeclaringSyntaxReferences[0].GetSyntax ().GetLocation ();
-				sourceLocation.Add(originalMrvLocation);
-				break;
-			case MethodThisParameterValue:
-				break;
-			default:
-				return;
-			}
-			Diagnostics.Add (Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (id), Location, sourceLocation, args));
+
+			Dictionary<string, string?> DAMArgument = new Dictionary<string, string?> ();
+			DAMArgument.Add ("attributeArgument", originalValue.DynamicallyAccessedMemberTypes.ToString ());
+
+			Diagnostics.Add (Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (id), Location, sourceLocation, DAMArgument.ToImmutableDictionary(), args));
 		}
 	}
 }

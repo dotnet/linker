@@ -29,6 +29,8 @@ namespace ILLink.CodeFix
 			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsField));
 			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsThisParameter));
 			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchFieldTargetsThisParameter));
+			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsThisParameter));
+			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchOnMethodParameterBetweenOverrides));
 			return diagDescriptorsArrayBuilder.ToImmutable ();
 		}
 
@@ -39,8 +41,6 @@ namespace ILLink.CodeFix
 		private protected static LocalizableString CodeFixTitle => new LocalizableResourceString (nameof (Resources.DynamicallyAccessedMembersCodeFixTitle), Resources.ResourceManager, typeof (Resources));
 
 		private protected static string FullyQualifiedAttributeName => DynamicallyAccessedMembersAnalyzer.FullyQualifiedDynamicallyAccessedMembersAttribute;
-
-		private protected AttributeableParentTargets AttributableParentTargets { get; }
 
 		private static readonly string[] AttributeOnReturn = { DiagnosticId.DynamicallyAccessedMembersOnMethodReturnValueCanOnlyApplyToTypesOrStrings.AsString (), DiagnosticId.DynamicallyAccessedMembersMismatchOnMethodReturnValueBetweenOverrides.AsString () };
 
@@ -80,40 +80,33 @@ namespace ILLink.CodeFix
 			var diagnostic = context.Diagnostics.First ();
 
 			SyntaxNode sourceNode;
-			SyntaxNode originalAttributeNode;
-			if (diagnostic.AdditionalLocations.Count == 2) {
+			if (diagnostic.AdditionalLocations.Count != 0) {
 				sourceNode = root.FindNode (diagnostic.AdditionalLocations[0].SourceSpan, getInnermostNodeForTie: true);
-				originalAttributeNode = root.FindNode (diagnostic.AdditionalLocations[1].SourceSpan, getInnermostNodeForTie: true);
-			} else if (diagnostic.AdditionalLocations.Count == 1) {
-				sourceNode = root.FindNode (diagnostic.AdditionalLocations[0].SourceSpan, getInnermostNodeForTie: true);
-				originalAttributeNode = root.FindNode (diagnostic.Location.SourceSpan, getInnermostNodeForTie: true); // null?
-			} else
+			} else {
 				return;
+			}
+
+			string? stringArgs = diagnostic.Properties["attributeArgument"];
+
+			if (stringArgs == null) {
+				return;
+			}
+
+			var syntaxGenerator = SyntaxGenerator.GetGenerator (document);
+
+			var attributeArguments = new[] { syntaxGenerator.AttributeArgument (syntaxGenerator.MemberAccessExpression (syntaxGenerator.DottedName ("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes"), stringArgs)) };
+
 			if (await document.GetSemanticModelAsync (context.CancellationToken).ConfigureAwait (false) is not { } model)
 				return;
+
 			// Note: We get the target symbol from the diagnostic location. 
 			// This works when the diagnostic location is a method call, because the target symbol will be the called method with annotations, but won't work in general for other kinds of diagnostics.
 			// TODO: Fix targetSymbol so it's not necessarily derived from diagnosticNode --> use the location from DiagnosticContext.cs
 
-			SyntaxNode diagnosticNode = root.FindNode (diagnostic.Location.SourceSpan, getInnermostNodeForTie: true);
 
-			SyntaxNode[] attributeArguments;
 
-			if (model.GetSymbolInfo (diagnosticNode).Symbol is { } targetSymbol) {
-				attributeArguments = GetAttributeArguments (targetSymbol, SyntaxGenerator.GetGenerator (document), diagnostic);
-			} else {
-				if (originalAttributeNode is MethodDeclarationSyntax methodDeclaration) {
-					attributeArguments = new SyntaxNode[] { methodDeclaration.AttributeLists[0].Attributes[0].ArgumentList.Arguments[0] }; // fix this: can't always grab the first attribute/argument bs there could be multiple
-				} else if (originalAttributeNode is VariableDeclaratorSyntax varDeclaration) {
-					if (FindAttributableParent (varDeclaration, AttributableParentTargets) is FieldDeclarationSyntax aNode) {
-						attributeArguments = new SyntaxNode[] { aNode.AttributeLists[0].Attributes[0].ArgumentList.Arguments[0] };
-					} else {
-						return;
-					}
-				} else {
-					return;
-				}
-			}
+			SyntaxNode originalAttributeNode = root.FindNode (diagnostic.Location.SourceSpan, getInnermostNodeForTie: true);
+			//attributeArguments = GetAttributeArguments (targetSymbol, SyntaxGenerator.GetGenerator (document), diagnostic);
 
 
 
@@ -181,43 +174,6 @@ namespace ILLink.CodeFix
 				editor.AddAttribute (targetNode, attribute);
 			}
 			return editor.GetChangedDocument ();
-		}
-
-		[Flags]
-		protected enum AttributeableParentTargets
-		{
-			MethodOrConstructor = 0x0001,
-			Property = 0x0002,
-			Field = 0x0004,
-			Event = 0x0008,
-			All = MethodOrConstructor | Property | Field | Event
-		}
-
-		private static CSharpSyntaxNode? FindAttributableParent (SyntaxNode node, AttributeableParentTargets targets)
-		{
-			SyntaxNode? parentNode = node.Parent;
-			while (parentNode is not null) {
-				switch (parentNode) {
-					case LambdaExpressionSyntax:
-						return null;
-
-					case LocalFunctionStatementSyntax or BaseMethodDeclarationSyntax when targets.HasFlag (AttributeableParentTargets.MethodOrConstructor):
-					case PropertyDeclarationSyntax when targets.HasFlag (AttributeableParentTargets.Property):
-					case EventDeclarationSyntax when targets.HasFlag (AttributeableParentTargets.Event):
-						return (CSharpSyntaxNode) parentNode;
-					case FieldDeclarationSyntax fieldDeclaration:
-						if (fieldDeclaration.AttributeLists.Count != 0) {
-							return (CSharpSyntaxNode) parentNode;
-						}
-						break;
-
-					default:
-						parentNode = parentNode.Parent;
-						break;
-				}
-			}
-
-			return null;
 		}
 	}
 }
