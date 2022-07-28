@@ -30,6 +30,8 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 			NestedType.Warning ();
 
 			SuppressOnTypeMarkedEntirely.Test ();
+
+			SuppressOnProperty.Test ();
 		}
 
 		public static Type TriggerUnrecognizedPattern ()
@@ -127,5 +129,21 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 
 		[RequiresUnreferencedCode ("")]
 		static void MethodWithRUC () { }
+	}
+
+	class SuppressOnProperty
+	{
+		public static void Test ()
+		{
+			var test = Property;
+		}
+
+		[UnconditionalSuppressMessage ("Test", "IL2072")]
+		static int Property {
+			get {
+				Expression.Call (SuppressWarningsInMembersAndTypes.TriggerUnrecognizedPattern (), "", Type.EmptyTypes);
+				return 0;
+			}
+		}
 	}
 }
