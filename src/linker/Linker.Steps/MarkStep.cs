@@ -775,10 +775,6 @@ namespace Mono.Linker.Steps
 						return true;
 				}
 			}
-			if (Context.Resolve (type.BaseType) is TypeDefinition baseType
-				&& Annotations.IsMarked (baseType)
-				&& IsInterfaceImplementationMarkedRecursively (baseType, interfaceType))
-				return true;
 
 			return false;
 		}
