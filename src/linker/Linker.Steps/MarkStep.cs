@@ -59,7 +59,7 @@ namespace Mono.Linker.Steps
 		}
 
 		protected Queue<(MethodDefinition, DependencyInfo, MessageOrigin)> _methods;
-		protected List<(MethodDefinition, MarkScopeStack.Scope)> _virtual_methods;
+		protected List<(MethodDefinition, MarkScopeStack.Scope)> _methodsWithOverrides;
 		protected Queue<AttributeProviderPair> _assemblyLevelAttributes;
 		readonly List<AttributeProviderPair> _ivt_attributes;
 		protected Queue<(AttributeProviderPair, DependencyInfo, MarkScopeStack.Scope)> _lateMarkedAttributes;
@@ -223,7 +223,7 @@ namespace Mono.Linker.Steps
 		public MarkStep ()
 		{
 			_methods = new Queue<(MethodDefinition, DependencyInfo, MessageOrigin)> ();
-			_virtual_methods = new List<(MethodDefinition, MarkScopeStack.Scope)> ();
+			_methodsWithOverrides = new List<(MethodDefinition, MarkScopeStack.Scope)> ();
 			_assemblyLevelAttributes = new Queue<AttributeProviderPair> ();
 			_ivt_attributes = new List<AttributeProviderPair> ();
 			_lateMarkedAttributes = new Queue<(AttributeProviderPair, DependencyInfo, MarkScopeStack.Scope)> ();
@@ -570,7 +570,7 @@ namespace Mono.Linker.Steps
 
 		void ProcessVirtualMethods ()
 		{
-			foreach ((MethodDefinition method, MarkScopeStack.Scope scope) in _virtual_methods) {
+			foreach ((MethodDefinition method, MarkScopeStack.Scope scope) in _methodsWithOverrides) {
 				using (ScopeStack.PushScope (scope))
 					ProcessVirtualMethod (method);
 			}
@@ -3109,8 +3109,8 @@ namespace Mono.Linker.Steps
 			}
 
 			MarkMethodSpecialCustomAttributes (method);
-			if (method.IsVirtual)
-				_virtual_methods.Add ((method, ScopeStack.CurrentScope));
+			if (method.IsVirtual || Annotations.GetBaseMethods(method) is not null)
+				_methodsWithOverrides.Add ((method, ScopeStack.CurrentScope));
 
 			MarkNewCodeDependencies (method);
 
