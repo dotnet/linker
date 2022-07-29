@@ -775,10 +775,6 @@ namespace Mono.Linker.Steps
 						return true;
 				}
 			}
-			if (Context.Resolve (type.BaseType) is TypeDefinition baseType
-				&& Annotations.IsMarked (baseType)
-				&& IsInterfaceImplementationMarkedRecursively (baseType, interfaceType))
-				return true;
 
 			return false;
 		}
@@ -2354,7 +2350,7 @@ namespace Mono.Linker.Steps
 		{
 			if (Annotations.IsMarked (method))
 				return false;
-			// All methods we care about here will be virtual or static
+			// All methods we care about here will be virtual
 			if (!method.IsVirtual)
 				return false;
 
@@ -2363,7 +2359,7 @@ namespace Mono.Linker.Steps
 				return false;
 
 			foreach (MethodDefinition @base in base_list) {
-				// Skip interface methods, they will be captured later by IsInterfaceMethodNeededByTypeDueToPreservedScope
+				// Skip interface methods, they will be captured later by IsInterfaceImplementationMethodNeededByTypeDueToInterface
 				if (@base.DeclaringType.IsInterface)
 					continue;
 
