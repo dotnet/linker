@@ -22,14 +22,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 	[SetupLinkerDescriptorFile ("CompilerGeneratedCodeInPreservedAssembly.xml")]
 	class CompilerGeneratedCodeInPreservedAssembly
 	{
-		[ExpectedWarning ("IL2026", "--" + nameof (Inner) + "." + nameof (Inner.WithWarningLocalFunctionInner) + "--")]
-		[ExpectedWarning ("IL2026", "--" + nameof (WithWarningLocalFunction) + "--")]
 		public static void Main ()
 		{
 			Inner.WithLocalFunctionInner ();
 			WithLocalFunction ();
-			Inner.WithWarningLocalFunctionInner ();
-			WithWarningLocalFunction ();
 		}
 
 		class Inner
@@ -54,24 +50,6 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 					Requires ();
 				}
 			}
-
-			// Same as above, but with a pattern in the local function that warns even if we
-			// don't do data flow analysis. The warning is not suppressed by RUC, because the local
-			// function's association with the method is not detected.
-			[RequiresUnreferencedCode ("--" + nameof (Inner) + "." + nameof (WithWarningLocalFunctionInner) + "--")]
-			public static void WithWarningLocalFunctionInner ()
-			{
-				if (AlwaysFalse) {
-					LocalWithWarning<int> ();
-				}
-
-				[ExpectedWarning ("IL2091", ProducedBy = ProducedBy.Trimmer)]
-				void LocalWithWarning<T> ()
-				{
-					// Warning!
-					RequiresAllOnT<T> ();
-				}
-			}
 		}
 
 		// In this case the compiler generated state will currently see the original method body
@@ -92,27 +70,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 		}
 
-		// Same as above, but with a pattern in the local function that warns even if we
-		// don't do data flow analysis. The warning is suppressed by RUC because the local
-		// function is associated with the method.
-		[RequiresUnreferencedCode ("--" + nameof (WithWarningLocalFunction) + "--")]
-		public static void WithWarningLocalFunction ()
-		{
-			if (AlwaysFalse) {
-				LocalWithWarning<int> ();
-			}
-
-			void LocalWithWarning<T> ()
-			{
-				// No warning
-				RequiresAllOnT<T> ();
-			}
-		}
 		public static bool AlwaysFalse => false;
 
 		[RequiresUnreferencedCode ("RUC")]
 		static void Requires () { }
-
-		static void RequiresAllOnT<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] T> () { }
 	}
 }
