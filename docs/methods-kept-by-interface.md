@@ -14,7 +14,7 @@ Whether or not a method implementing an interface method is required due to the 
 - Implementing type is marked as instantiated or not
 - Interface Implementation is marked or not
 
-Note that in library mode, interface methods that can be accessed by COM or native code are marked by the linker in library mode.
+Note that in library mode, interface methods that can be accessed by COM or native code are marked by the linker.
 
 ### If Linker is in library mode, mark the implementation method
 All interfaces and interface methods should be kept for library mode. COM in the runtime library may expect the interfaces to exist, so we should keep them.
