@@ -685,7 +685,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				static virtual Type VirtualMethod<T> (Type t) { return null; }
 				static abstract Type AbstractMethod<T> (Type t);
 			}
-			
+
 			class ImplIDamOnNoneMatch : IDamOnNone
 			{
 				public static Type VirtualMethod<T> (Type t) { return null; }
