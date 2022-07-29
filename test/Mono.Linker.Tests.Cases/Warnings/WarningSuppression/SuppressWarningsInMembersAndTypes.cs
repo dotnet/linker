@@ -21,6 +21,8 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 			suppressWarningsInType.Warning2 ();
 			var nestedType = new SuppressWarningsInType.NestedType ();
 			nestedType.Warning3 ();
+			var property = suppressWarningsInType.Property;
+			suppressWarningsInType.Event += SuppressWarningsInType.EventSubscriber;
 
 			var suppressWarningsInMembers = new SuppressWarningsInMembers ();
 			suppressWarningsInMembers.Method ();
@@ -32,6 +34,8 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 			SuppressOnTypeMarkedEntirely.Test ();
 
 			SuppressOnProperty.Test ();
+
+			SuppressOnEvent.Test ();
 		}
 
 		public static Type TriggerUnrecognizedPattern ()
@@ -74,6 +78,23 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 				SuppressWarningsInMembersAndTypes.TriggerUnrecognizedPattern ();
 				Warning4 ();
 			}
+		}
+
+		public int Property {
+			get {
+				Expression.Call (SuppressWarningsInMembersAndTypes.TriggerUnrecognizedPattern (), "", Type.EmptyTypes);
+				return 0;
+			}
+		}
+
+		public static void EventSubscriber (object sender, EventArgs e)
+		{
+
+		}
+
+		public event EventHandler<EventArgs> Event {
+			add { Expression.Call (SuppressWarningsInMembersAndTypes.TriggerUnrecognizedPattern (), "", Type.EmptyTypes); }
+			remove { }
 		}
 	}
 
@@ -144,6 +165,25 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 				Expression.Call (SuppressWarningsInMembersAndTypes.TriggerUnrecognizedPattern (), "", Type.EmptyTypes);
 				return 0;
 			}
+		}
+	}
+
+	class SuppressOnEvent
+	{
+		public static void Test ()
+		{
+			Event += EventSubscriber;
+		}
+
+		static void EventSubscriber (object sender, EventArgs e)
+		{
+
+		}
+
+		[UnconditionalSuppressMessage ("Test", "IL2072")]
+		static event EventHandler<EventArgs> Event {
+			add { Expression.Call (SuppressWarningsInMembersAndTypes.TriggerUnrecognizedPattern (), "", Type.EmptyTypes); }
+			remove { }
 		}
 	}
 }
