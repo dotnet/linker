@@ -2359,7 +2359,7 @@ namespace Mono.Linker.Steps
 				return false;
 
 			foreach (MethodDefinition @base in base_list) {
-				// Skip interface methods, they will be captured later by IsInterfaceMethodNeededByTypeDueToPreservedScope
+				// Skip interface methods, they will be captured later by IsInterfaceImplementationMethodNeededByTypeDueToInterface
 				if (@base.DeclaringType.IsInterface)
 					continue;
 
