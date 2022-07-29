@@ -39,8 +39,8 @@ namespace Mono.Linker
 			if (!_suppressions.TryGetValue (provider, out var suppressions)) {
 				suppressions = new Dictionary<int, Suppression> ();
 				_suppressions.Add (provider, suppressions);
-			} else if (suppressions.ContainsKey (info.Id)) {
-				used = suppressions[info.Id].Used;
+			} else if (suppressions.TryGetValue (info.Id, out Suppression? value)) {
+				used = value.Used;
 				string? elementName = provider is MemberReference memberRef ? memberRef.GetDisplayName () : provider.ToString ();
 				_context.LogMessage ($"Element '{elementName}' has more than one unconditional suppression. Note that only the last one is used.");
 			}
