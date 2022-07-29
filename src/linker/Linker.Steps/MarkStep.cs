@@ -771,7 +771,7 @@ namespace Mono.Linker.Steps
 					if (resolvedInterface == null)
 						continue;
 
-					if (Annotations.IsMarked(intf) && IsInterfaceImplementationMarkedRecursively (resolvedInterface, interfaceType))
+					if (Annotations.IsMarked (intf) && IsInterfaceImplementationMarkedRecursively (resolvedInterface, interfaceType))
 						return true;
 				}
 			}
@@ -2430,7 +2430,7 @@ namespace Mono.Linker.Steps
 			// A static method may only be called through a constrained call if the type is relevant to variant casting.
 			if (@base.IsStatic)
 				return Annotations.IsRelevantToVariantCasting (method.DeclaringType)
-					|| IgnoreScope(@base.DeclaringType.Scope);
+					|| IgnoreScope (@base.DeclaringType.Scope);
 
 			// If the implementing type is marked as instantiated, mark the implementation method.
 			// If the type is not instantiated, do not mark the implementation method

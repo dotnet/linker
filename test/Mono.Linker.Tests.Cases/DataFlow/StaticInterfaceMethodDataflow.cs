@@ -66,7 +66,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 
 			[Kept]
-			[KeptInterface(typeof(IFoo))]
+			[KeptInterface (typeof (IFoo))]
 			class ImplIFoo : IFoo
 			{
 				[Kept]

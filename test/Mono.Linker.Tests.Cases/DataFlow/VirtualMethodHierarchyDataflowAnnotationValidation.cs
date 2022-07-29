@@ -623,22 +623,22 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			class ImplIDamOnAllMissing : IDamOnAll
 			{
-				//[ExpectedWarning("IL2092")]
-				[ExpectedWarning("IL2093")]
-				[ExpectedWarning("IL2095")]
+				//[ExpectedWarning("IL2092")] // PR: https://github.com/dotnet/linker/pull/2926
+				[ExpectedWarning ("IL2093")]
+				[ExpectedWarning ("IL2095")]
 				public static Type AbstractMethod<T> (Type type) => null;
 
-				//[ExpectedWarning("IL2092")]
-				[ExpectedWarning("IL2093")]
-				[ExpectedWarning("IL2095")]
+				//[ExpectedWarning("IL2092")] // PR: https://github.com/dotnet/linker/pull/2926
+				[ExpectedWarning ("IL2093")]
+				[ExpectedWarning ("IL2095")]
 				public static Type VirtualMethod<T> (Type type) => null;
 			}
 
 			class ImplIDamOnAllMismatch : IDamOnAll
 			{
-				//[ExpectedWarning("IL2092")]
-				[ExpectedWarning("IL2093")]
-				[ExpectedWarning("IL2095")]
+				//[ExpectedWarning("IL2092")] // PR: https://github.com/dotnet/linker/pull/2926
+				[ExpectedWarning ("IL2093")]
+				[ExpectedWarning ("IL2095")]
 				[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)]
 				public static Type AbstractMethod
 					<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
@@ -647,9 +647,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 					Type type)
 				{ return null; }
 
-				//[ExpectedWarning("IL2092")]
-				[ExpectedWarning("IL2093")]
-				[ExpectedWarning("IL2095")]
+				//[ExpectedWarning("IL2092")] // PR: https://github.com/dotnet/linker/pull/2926
+				[ExpectedWarning ("IL2093")]
+				[ExpectedWarning ("IL2095")]
 				[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)]
 				public static Type VirtualMethod
 					<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
