@@ -29,7 +29,13 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 		public class ImplementVirtualIface : IStaticInterfaceWithDefaultImpls
 		{
 			[Kept]
-			static int IStaticInterfaceWithDefaultImpls.Property { [Kept][KeptOverride (typeof (IStaticInterfaceWithDefaultImpls))] get => 1; [Kept][KeptOverride (typeof (IStaticInterfaceWithDefaultImpls))] set => _ = value; }
+			static int IStaticInterfaceWithDefaultImpls.Property {
+				[Kept]
+				[KeptOverride (typeof (IStaticInterfaceWithDefaultImpls))]
+				get => 1; [Kept]
+				[KeptOverride (typeof (IStaticInterfaceWithDefaultImpls))]
+				set => _ = value;
+			}
 			[Kept]
 			[KeptOverride (typeof (IStaticInterfaceWithDefaultImpls))]
 			static int IStaticInterfaceWithDefaultImpls.Method () => 1;
@@ -45,7 +51,13 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 			[Kept]
 			protected ImplementVirtualIfaceProtectedCtor () { }
 			[Kept]
-			static int IStaticInterfaceWithDefaultImpls.Property { [Kept][KeptOverride (typeof (IStaticInterfaceWithDefaultImpls))] get => 1; [Kept][KeptOverride (typeof (IStaticInterfaceWithDefaultImpls))] set => _ = value; }
+			static int IStaticInterfaceWithDefaultImpls.Property {
+				[Kept]
+				[KeptOverride (typeof (IStaticInterfaceWithDefaultImpls))]
+				get => 1; [Kept]
+				[KeptOverride (typeof (IStaticInterfaceWithDefaultImpls))]
+				set => _ = value;
+			}
 			[Kept]
 			[KeptOverride (typeof (IStaticInterfaceWithDefaultImpls))]
 			static int IStaticInterfaceWithDefaultImpls.Method () => 1;
@@ -59,8 +71,16 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 		public class ImplementVirtualIfaceUninstantiated : IStaticInterfaceWithDefaultImpls
 		{
 			private ImplementVirtualIfaceUninstantiated () { }
+
 			[Kept]
-			static int IStaticInterfaceWithDefaultImpls.Property { [Kept][KeptOverride (typeof (IStaticInterfaceWithDefaultImpls))] get => 1; [Kept][KeptOverride (typeof (IStaticInterfaceWithDefaultImpls))] set => _ = value; }
+			static int IStaticInterfaceWithDefaultImpls.Property {
+				[Kept]
+				[KeptOverride (typeof (IStaticInterfaceWithDefaultImpls))]
+				get => 1; [Kept]
+				[KeptOverride (typeof (IStaticInterfaceWithDefaultImpls))]
+				set => _ = value;
+			}
+
 			[Kept]
 			[KeptOverride (typeof (IStaticInterfaceWithDefaultImpls))]
 			static int IStaticInterfaceWithDefaultImpls.Method () => 1;
@@ -74,7 +94,13 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 		{
 			private ImplicitImplementVirtualIfaceUninstantiated () { }
 			[Kept]
-			public static int Property { [Kept][KeptOverride (typeof (IStaticInterfaceWithDefaultImpls))] get => 1; [Kept][KeptOverride (typeof (IStaticInterfaceWithDefaultImpls))] set => _ = value; }
+			public static int Property {
+				[Kept]
+				[KeptOverride (typeof (IStaticInterfaceWithDefaultImpls))]
+				get => 1; [Kept]
+				[KeptOverride (typeof (IStaticInterfaceWithDefaultImpls))]
+				set => _ = value;
+			}
 			[Kept]
 			[KeptOverride (typeof (IStaticInterfaceWithDefaultImpls))]
 			public static int Method () => 1;

@@ -79,7 +79,17 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 		[KeptInterface (typeof (IStaticInterfaceWithDefaultImpls))]
 		public class InstantiatedClass : IStaticInterfaceWithDefaultImpls
 		{
-			static int IStaticInterfaceWithDefaultImpls.Property { get => 1; set => _ = value; }
+			[Kept]
+			static int IStaticInterfaceWithDefaultImpls.Property {
+				[Kept]
+				[KeptOverride (typeof (IStaticInterfaceWithDefaultImpls))]
+				get => 1;
+				[Kept]
+				[KeptOverride (typeof (IStaticInterfaceWithDefaultImpls))]
+				set => _ = value;
+			}
+			[Kept]
+			[KeptOverride (typeof (IStaticInterfaceWithDefaultImpls))]
 			static int IStaticInterfaceWithDefaultImpls.Method () => 1;
 			[Kept]
 			int IStaticInterfaceWithDefaultImpls.InstanceMethod () => 0;

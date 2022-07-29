@@ -27,13 +27,25 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 			x = typeof (IStaticAbstractMethods);
 		}
 
-		// Unmarked interface methods with a default implementation don't need to be kept. They won't be called and aren't required for valid IL.
 		[Kept]
 		[KeptInterface (typeof (IStaticInterfaceWithDefaultImpls))]
 		public class VirtualInterfaceMethods : IStaticInterfaceWithDefaultImpls
 		{
-			static int IStaticInterfaceWithDefaultImpls.Property { get => 1; set => _ = value; }
+			[Kept]
+			static int IStaticInterfaceWithDefaultImpls.Property {
+				[Kept]
+				[KeptOverride (typeof (IStaticInterfaceWithDefaultImpls))]
+				get => 1;
+				[Kept]
+				[KeptOverride (typeof (IStaticInterfaceWithDefaultImpls))]
+				set => _ = value;
+			}
+
+			[Kept]
+			[KeptOverride (typeof (IStaticInterfaceWithDefaultImpls))]
 			static int IStaticInterfaceWithDefaultImpls.Method () => 1;
+
+			// There is a default implementation and the type isn't instantiated, so we don't need this
 			int IStaticInterfaceWithDefaultImpls.InstanceMethod () => 0;
 		}
 
@@ -42,10 +54,18 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.StaticInterfaceMethods
 		public class AbstractInterfaceMethods : IStaticAbstractMethods
 		{
 			[Kept]
-			static int IStaticAbstractMethods.Property { [Kept][KeptOverride (typeof (IStaticAbstractMethods))] get => 1; [Kept][KeptOverride (typeof (IStaticAbstractMethods))] set => _ = value; }
+			static int IStaticAbstractMethods.Property {
+				[Kept]
+				[KeptOverride (typeof (IStaticAbstractMethods))]
+				get => 1; [Kept]
+				[KeptOverride (typeof (IStaticAbstractMethods))]
+				set => _ = value;
+			}
+
 			[Kept]
 			[KeptOverride (typeof (IStaticAbstractMethods))]
 			static int IStaticAbstractMethods.Method () => 1;
+
 			[Kept]
 			[KeptOverride (typeof (IStaticAbstractMethods))]
 			int IStaticAbstractMethods.InstanceMethod () => 0;

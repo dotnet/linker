@@ -771,7 +771,7 @@ namespace Mono.Linker.Steps
 					if (resolvedInterface == null)
 						continue;
 
-					if (Annotations.IsMarked (intf) && IsInterfaceImplementationMarkedRecursively (resolvedInterface, interfaceType))
+					if (Annotations.IsMarked(intf) && IsInterfaceImplementationMarkedRecursively (resolvedInterface, interfaceType))
 						return true;
 				}
 			}
@@ -2368,7 +2368,7 @@ namespace Mono.Linker.Steps
 
 				// If the type is marked, we need to keep overrides of abstract members defined in assemblies
 				// that are copied to keep the IL valid.
-				// However, if the base method has a default implementation, then we don't need to keep the override
+				// However, if the base method is a non-abstract virtual (has an implementation on the base type), then we don't need to keep the override
 				// until the type could be instantiated
 				if (!@base.IsAbstract)
 					continue;
@@ -2409,28 +2409,28 @@ namespace Mono.Linker.Steps
 			if (@base.IsAbstract)
 				return true;
 
-			// Interface methods in a preserved scope need different behaviors in library mode
-			// We'll use the unusedinterfaces as a signal for library mode
-			if (IgnoreScope (@base.DeclaringType.Scope) && !Context.IsOptimizationEnabled (CodeOptimizations.UnusedInterfaces, method)) {
-				// If the method is static, a consuming app could use the method through a constrained type parameter, so we need it
-				if (@base.IsStatic)
-					return true;
+			//// Interface methods in a preserved scope need different behaviors in library mode
+			//// We'll use the unusedinterfaces as a signal for library mode
+			//if (IgnoreScope (@base.DeclaringType.Scope)) {
+			//	// If the method is static, a consuming app could use the method through a constrained type parameter, so we need it
+			//	if (@base.IsStatic)
+			//		return true;
 
-				// For instance methods, we need to keep the implementing method if the type can be instantiated by a consuming app
-				if (!@base.IsStatic
-					&& Annotations.IsInstantiated (method.DeclaringType))
-					return true;
-			}
+			//	// For instance methods, we need to keep the implementing method if the type can be instantiated by a consuming app
+			//	if (Annotations.IsInstantiated (method.DeclaringType))
+			//		return true;
+			//}
 
-			// If the interface is from a preserved scope but the method is not marked, do not mark the implementation method
-			// We know the method cannot be called if it is not marked
-			if (!Annotations.IsMarked (@base))
-				return false;
+			//// If the interface is from a preserved scope but the method is not marked, do not mark the implementation method
+			//// We know the method cannot be called if it is not marked
+			//if (!Annotations.IsMarked (@base))
+			//	return false;
 
 			// If the method is static and the implementing type is relevant to variant casting, mark the implementation method.
 			// A static method may only be called through a constrained call if the type is relevant to variant casting.
 			if (@base.IsStatic)
-				return Annotations.IsRelevantToVariantCasting (method.DeclaringType);
+				return Annotations.IsRelevantToVariantCasting (method.DeclaringType)
+					|| IgnoreScope(@base.DeclaringType.Scope);
 
 			// If the implementing type is marked as instantiated, mark the implementation method.
 			// If the type is not instantiated, do not mark the implementation method
