@@ -2350,7 +2350,7 @@ namespace Mono.Linker.Steps
 		{
 			if (Annotations.IsMarked (method))
 				return false;
-			// All methods we care about here will be virtual or static
+			// All methods we care about here will be virtual
 			if (!method.IsVirtual)
 				return false;
 
