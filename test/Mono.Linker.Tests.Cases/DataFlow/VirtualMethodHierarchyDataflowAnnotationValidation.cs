@@ -600,6 +600,84 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 			public virtual Type ReturnValueInterfaceWithoutImplementationWith () => null;
 		}
+
+		static class StaticInterfaceMethods
+		{
+			interface IDamOnAll
+			{
+				[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+				static abstract Type AbstractMethod
+					<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicProperties)]
+				T> (
+					[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)]
+					Type type);
+
+				[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+				static virtual Type VirtualMethod
+					<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicProperties)]
+				T> (
+					[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)]
+					Type type)
+				{ return null; }
+			}
+
+			class ImplIDamOnAllMissing : IDamOnAll
+			{
+				//[ExpectedWarning("IL2092")]
+				[ExpectedWarning("IL2093")]
+				[ExpectedWarning("IL2095")]
+				public static Type AbstractMethod<T> (Type type) => null;
+
+				//[ExpectedWarning("IL2092")]
+				[ExpectedWarning("IL2093")]
+				[ExpectedWarning("IL2095")]
+				public static Type VirtualMethod<T> (Type type) => null;
+			}
+
+			class ImplIDamOnAllMismatch : IDamOnAll
+			{
+				//[ExpectedWarning("IL2092")]
+				[ExpectedWarning("IL2093")]
+				[ExpectedWarning("IL2095")]
+				[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)]
+				public static Type AbstractMethod
+					<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+				T> (
+					[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
+					Type type)
+				{ return null; }
+
+				//[ExpectedWarning("IL2092")]
+				[ExpectedWarning("IL2093")]
+				[ExpectedWarning("IL2095")]
+				[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)]
+				public static Type VirtualMethod
+					<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+				T> (
+					[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+					Type type)
+				{ return null; }
+			}
+
+			class ImplIDamOnAllMatch : IDamOnAll
+			{
+				[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+				public static Type AbstractMethod
+								<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicProperties)]
+				T> (
+								[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)]
+					Type type)
+				{ return null; }
+
+				[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+				public static Type VirtualMethod
+					<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicProperties)]
+				T> (
+					[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)]
+					Type type)
+				{ return null; }
+			}
+		}
 	}
 }
 
