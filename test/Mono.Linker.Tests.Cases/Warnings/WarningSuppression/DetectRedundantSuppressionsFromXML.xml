@@ -12,7 +12,7 @@
 				<attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
 					<argument>ILLink</argument>
 					<argument>IL2109</argument>
-			</attribute>
+				</attribute>
 			</type>
 		</type>
 	</assembly>

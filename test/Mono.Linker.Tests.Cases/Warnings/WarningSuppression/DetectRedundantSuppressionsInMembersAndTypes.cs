@@ -18,9 +18,9 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 		{
 			RedundantSuppressionOnType.Test ();
 			RedundantSuppressionOnMethod.Test ();
-			RedundantSuppressionOnLocalMethod.Test ();
 			RedundantSuppressionOnNestedType.Test ();
 			RedundantSuppressionOnProperty.Test ();
+			RedundantSuppressionOnEvent.Test ();
 			MultipleRedundantSuppressions.Test ();
 			RedundantAndUsedSuppressions.Test ();
 			DoNotReportNonLinkerSuppressions.Test ();
@@ -58,21 +58,6 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 			}
 		}
 
-		public class RedundantSuppressionOnLocalMethod
-		{
-			public static void Test ()
-			{
-				[ExpectedWarning ("IL2121", "IL2071", ProducedBy = ProducedBy.Trimmer)]
-				[UnconditionalSuppressMessage ("Test", "IL2071")]
-				void LocalMethod ()
-				{
-					TrimmerCompatibleMethod ();
-				}
-
-				LocalMethod ();
-			}
-		}
-
 		public class RedundantSuppressionOnNestedType
 		{
 			public static void Test ()
@@ -104,6 +89,26 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 				get {
 					return TrimmerCompatibleMethod ();
 				}
+			}
+		}
+
+		public class RedundantSuppressionOnEvent
+		{
+			public static void Test ()
+			{
+				Event += EventSubscriber;
+			}
+
+			static void EventSubscriber (object sender, EventArgs e)
+			{
+
+			}
+
+			static event EventHandler<EventArgs> Event {
+				[ExpectedWarning ("IL2121", "IL2072", ProducedBy = ProducedBy.Trimmer)]
+				[UnconditionalSuppressMessage ("Test", "IL2072")]
+				add { TrimmerCompatibleMethod (); }
+				remove { }
 			}
 		}
 

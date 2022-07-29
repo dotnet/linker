@@ -32,6 +32,12 @@ namespace ILLink.RoslynAnalyzer.Tests.Warnings
 		}
 
 		[Fact]
+		public Task DetectRedundantSuppressionsInCompilerGeneratedCode ()
+		{
+			return RunTest (allowMissingWarnings: true);
+		}
+
+		[Fact]
 		public Task DetectRedundantSuppressionsInMembersAndTypes ()
 		{
 			return RunTest (allowMissingWarnings: true);

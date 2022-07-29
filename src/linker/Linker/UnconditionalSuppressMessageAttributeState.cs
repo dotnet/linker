@@ -169,10 +169,7 @@ namespace Mono.Linker
 					AddSuppression (suppressionInfo, member);
 			}
 
-			if (_suppressions.TryGetValue (provider, out suppressions))
-				return true;
-
-			return false;
+			return _suppressions.TryGetValue (provider, out suppressions);
 		}
 
 		static bool TryDecodeSuppressMessageAttributeData (CustomAttribute attribute, out SuppressMessageInfo info)

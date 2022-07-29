@@ -31,13 +31,6 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		private static ICustomAttributeProvider GetSuppresionProvider (ICustomAttributeProvider provider)
-		{
-			if (provider is ModuleDefinition module) {
-				return module.Assembly;
-			}
-
-			return provider;
-		}
+		private static ICustomAttributeProvider GetSuppresionProvider (ICustomAttributeProvider provider) => provider is ModuleDefinition module ? module.Assembly : provider;
 	}
 }
