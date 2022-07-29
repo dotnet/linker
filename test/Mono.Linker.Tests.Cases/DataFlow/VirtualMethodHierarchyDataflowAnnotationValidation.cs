@@ -679,12 +679,53 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 					Type type)
 				{ return null; }
 			}
+
+			interface IDamOnNone
+			{
+				static virtual Type VirtualMethod<T> (Type t) { return null; }
+				static abstract Type AbstractMethod<T> (Type t);
+			}
+			
+			class ImplIDamOnNoneMatch : IDamOnNone
+			{
+				public static Type VirtualMethod<T> (Type t) { return null; }
+				public static Type AbstractMethod<T> (Type t) { return null; }
+			}
+
+			class ImplIDamOnNoneMismatch : IDamOnNone
+			{
+				[ExpectedWarning ("IL2092")]
+				[ExpectedWarning ("IL2093")]
+				[ExpectedWarning ("IL2095")]
+				[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)]
+				public static Type AbstractMethod
+					<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+				T> (
+					[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
+					Type type)
+				{ return null; }
+
+				[ExpectedWarning ("IL2092")]
+				[ExpectedWarning ("IL2093")]
+				[ExpectedWarning ("IL2095")]
+				[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)]
+				public static Type VirtualMethod
+					<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+				T> (
+					[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+					Type type)
+				{ return null; }
+			}
+
 			public static void Test ()
 			{
 				typeof (ImplIDamOnAllMatch).RequiresPublicMethods ();
 				typeof (ImplIDamOnAllMismatch).RequiresPublicMethods ();
 				typeof (ImplIDamOnAllMissing).RequiresPublicMethods ();
 				typeof (IDamOnAll).RequiresPublicMethods ();
+				typeof (ImplIDamOnNoneMatch).RequiresPublicMethods ();
+				typeof (ImplIDamOnNoneMismatch).RequiresPublicMethods ();
+				typeof (IDamOnNone).RequiresPublicMethods ();
 			}
 		}
 	}
