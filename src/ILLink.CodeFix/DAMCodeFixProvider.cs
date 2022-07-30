@@ -37,17 +37,9 @@ namespace ILLink.CodeFix
 
 		private protected static string FullyQualifiedAttributeName => DynamicallyAccessedMembersAnalyzer.FullyQualifiedDynamicallyAccessedMembersAttribute;
 
-		protected static SyntaxNode[] GetAttributeArguments (ISymbol targetSymbol, SyntaxGenerator syntaxGenerator, Diagnostic diagnostic)
+		protected static SyntaxNode[] GetAttributeArguments (ISymbol targetSymbol, SyntaxGenerator syntaxGenerator, ITypeSymbol attributeSymbol)
 		{
-			object id = Enum.Parse (typeof (DiagnosticId), diagnostic.Id.Substring (2));
-			switch (id) {
-			case DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsThisParameter:
-				return new[] { syntaxGenerator.AttributeArgument (syntaxGenerator.TypedConstantExpression (targetSymbol.GetAttributes ().First (attr => attr.AttributeClass?.ToDisplayString () == DynamicallyAccessedMembersAnalyzer.FullyQualifiedDynamicallyAccessedMembersAttribute).ConstructorArguments[0])) };
-			case DiagnosticId.DynamicallyAccessedMembersMismatchFieldTargetsThisParameter:
-				return new[] { syntaxGenerator.AttributeArgument (syntaxGenerator.TypedConstantExpression (targetSymbol.GetAttributes ().First (attr => attr.AttributeClass?.ToDisplayString () == DynamicallyAccessedMembersAnalyzer.FullyQualifiedDynamicallyAccessedMembersAttribute).ConstructorArguments[0])) };
-			default:
-				return Array.Empty<SyntaxNode> ();
-			}
+			return new[] { syntaxGenerator.AttributeArgument (syntaxGenerator.TypedConstantExpression (targetSymbol.GetAttributes ().First (attr => SymbolEqualityComparer.Default.Equals (attr.AttributeClass, attributeSymbol)).ConstructorArguments[0])) };
 		}
 
 		public sealed override FixAllProvider GetFixAllProvider ()
@@ -104,25 +96,25 @@ namespace ILLink.CodeFix
 
 			if (attributableNode is null) return;
 
-			var attributeArguments = GetAttributeArguments (targetSymbol, SyntaxGenerator.GetGenerator (document), diagnostic);
 			var codeFixTitle = CodeFixTitle.ToString ();
 
 			context.RegisterCodeFix (CodeAction.Create (
 				title: codeFixTitle,
 				createChangedDocument: ct => AddAttributeAsync (
-					document, attributableNode, attributeArguments, attributeSymbol, ct),
+					document, attributableNode, targetSymbol, attributeSymbol, ct),
 				equivalenceKey: codeFixTitle), diagnostic);
 		}
 
 		private static async Task<Document> AddAttributeAsync (
 			Document document,
 			SyntaxNode targetNode,
-			SyntaxNode[] attributeArguments,
+			ISymbol targetSymbol,
 			ITypeSymbol attributeSymbol,
 			CancellationToken cancellationToken)
 		{
 			var editor = await DocumentEditor.CreateAsync (document, cancellationToken).ConfigureAwait (false);
 			var generator = editor.Generator;
+			var attributeArguments = GetAttributeArguments (targetSymbol, generator, attributeSymbol);
 			var attribute = generator.Attribute (
 				generator.TypeExpression (attributeSymbol), attributeArguments)
 				.WithAdditionalAnnotations (Simplifier.Annotation, Simplifier.AddImportsAnnotation);
