@@ -710,6 +710,12 @@ namespace Mono.Linker.Steps
 					ProcessOverride (@override);
 			}
 
+			var bases = Annotations.GetBaseMethods (method);
+			if (bases != null) {
+				foreach (MethodDefinition @base in bases)
+					ProcessOverride (new OverrideInformation (@base, method, Context));
+			}
+
 			var defaultImplementations = Annotations.GetDefaultInterfaceImplementations (method);
 			if (defaultImplementations != null) {
 				foreach (var defaultImplementationInfo in defaultImplementations) {
@@ -763,21 +769,55 @@ namespace Mono.Linker.Steps
 		/// </summary>
 		bool IsInterfaceImplementationMarkedRecursively (TypeDefinition type, TypeDefinition interfaceType)
 		{
-			if (type.Equals (interfaceType))
-				return true;
 			if (type.HasInterfaces) {
 				foreach (var intf in type.Interfaces) {
 					TypeDefinition? resolvedInterface = Context.Resolve (intf.InterfaceType);
 					if (resolvedInterface == null)
 						continue;
 
-					if (Annotations.IsMarked (intf) && IsInterfaceImplementationMarkedRecursively (resolvedInterface, interfaceType))
+					if (Annotations.IsMarked (intf) && RequiresInterfaceRecursively (resolvedInterface, interfaceType))
 						return true;
 				}
 			}
 
 			return false;
 		}
+
+		bool RequiresInterfaceRecursively (TypeDefinition typeToExamine, TypeDefinition interfaceType)
+		{
+			if (typeToExamine == interfaceType)
+				return true;
+
+			if (typeToExamine.HasInterfaces) {
+				foreach (var iface in typeToExamine.Interfaces) {
+					var resolved = Context.TryResolve (iface.InterfaceType);
+					if (resolved == null)
+						continue;
+
+					if (RequiresInterfaceRecursively (resolved, interfaceType))
+						return true;
+				}
+			}
+
+			return false;
+		}
+		//bool IsInterfaceImplementationMarkedRecursively (TypeDefinition type, TypeDefinition interfaceType)
+		//{
+		//	if (type.Equals (interfaceType))
+		//		return true;
+		//	if (type.HasInterfaces) {
+		//		foreach (var intf in type.Interfaces) {
+		//			TypeDefinition? resolvedInterface = Context.Resolve (intf.InterfaceType);
+		//			if (resolvedInterface == null)
+		//				continue;
+
+		//			if ( IsInterfaceImplementationMarkedRecursively (resolvedInterface, interfaceType))
+		//				return true;
+		//		}
+		//	}
+
+		//	return false;
+		//}
 
 		void ProcessDefaultImplementation (TypeDefinition typeWithDefaultImplementedInterfaceMethod, InterfaceImplementation implementation)
 		{
@@ -2408,23 +2448,6 @@ namespace Mono.Linker.Steps
 			// The method is needed for valid IL.
 			if (@base.IsAbstract)
 				return true;
-
-			//// Interface methods in a preserved scope need different behaviors in library mode
-			//// We'll use the unusedinterfaces as a signal for library mode
-			//if (IgnoreScope (@base.DeclaringType.Scope)) {
-			//	// If the method is static, a consuming app could use the method through a constrained type parameter, so we need it
-			//	if (@base.IsStatic)
-			//		return true;
-
-			//	// For instance methods, we need to keep the implementing method if the type can be instantiated by a consuming app
-			//	if (Annotations.IsInstantiated (method.DeclaringType))
-			//		return true;
-			//}
-
-			//// If the interface is from a preserved scope but the method is not marked, do not mark the implementation method
-			//// We know the method cannot be called if it is not marked
-			//if (!Annotations.IsMarked (@base))
-			//	return false;
 
 			// If the method is static and the implementing type is relevant to variant casting, mark the implementation method.
 			// A static method may only be called through a constrained call if the type is relevant to variant casting.
