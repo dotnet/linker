@@ -570,7 +570,8 @@ namespace Mono.Linker.Steps
 
 		void ProcessVirtualMethods ()
 		{
-			foreach ((MethodDefinition method, MarkScopeStack.Scope scope) in _methodsWithBases) {
+			var virtualMethods = _methodsWithBases.ToArray ();
+			foreach ((MethodDefinition method, MarkScopeStack.Scope scope) in virtualMethods) {
 				using (ScopeStack.PushScope (scope))
 					ProcessVirtualMethod (method);
 			}
@@ -684,6 +685,12 @@ namespace Mono.Linker.Steps
 				foreach (OverrideInformation @override in overrides)
 					ProcessOverride (@override);
 			}
+			var bases = Annotations.GetBaseMethods (method);
+			if (bases != null) {
+				foreach (MethodDefinition @base in bases)
+					ProcessOverride (new OverrideInformation (@base, method, Context));
+			}
+
 
 			var defaultImplementations = Annotations.GetDefaultInterfaceImplementations (method);
 			if (defaultImplementations != null) {
@@ -727,8 +734,8 @@ namespace Mono.Linker.Steps
 				MarkMethod (method, new DependencyInfo (DependencyKind.Override, @base), ScopeStack.CurrentScope.Origin);
 			}
 
-			if (method.IsVirtual)
-				ProcessVirtualMethod (method);
+			if (method.IsVirtual || method.IsStatic && method.DeclaringType.HasInterfaces)
+				_methodsWithBases.Add ((method, ScopeStack.CurrentScope));
 		}
 
 		bool IsInterfaceOverrideThatDoesNotNeedMarked (OverrideInformation overrideInformation, bool isInstantiated)
@@ -3109,9 +3116,10 @@ namespace Mono.Linker.Steps
 			}
 
 			MarkMethodSpecialCustomAttributes (method);
-			if (method.IsVirtual || Annotations.GetBaseMethods (method) is not null) {
+
+			// Implementations of static interface methods may not be virtual
+			if (method.IsVirtual || (method.IsStatic && method.DeclaringType.HasInterfaces) {
 				// The only methods with bases that arent virtual should be static interface methods
-				Debug.Assert (method.IsVirtual || method.IsStatic);
 				_methodsWithBases.Add ((method, ScopeStack.CurrentScope));
 			}
 
