@@ -675,10 +675,13 @@ namespace Mono.Linker
 
 		public void EnqueueVirtualMethod (MethodDefinition method)
 		{
-			if (!(method.IsVirtual || context.Annotations.GetBaseMethods (method) is not null))
+			if (!method.IsVirtual)
 				return;
 
-			if (FlowAnnotations.RequiresDataFlowAnalysis (method) || HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (method))
+			// Implementations of static interface methods are not virtual and won't show up here.
+			// If the base static interface methods doesn't have annotations, the implementation still might and we need to warn.
+			// To account for this, we'll make sure to check all static interface method's overrides
+			if (FlowAnnotations.RequiresDataFlowAnalysis (method) || HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (method) || method.IsStatic)
 				VirtualMethodsWithAnnotationsToValidate.Add (method);
 		}
 	}
