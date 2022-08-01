@@ -14,7 +14,6 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
-using Microsoft.CodeAnalysis.FlowAnalysis;
 
 namespace ILLink.RoslynAnalyzer
 {
@@ -23,8 +22,9 @@ namespace ILLink.RoslynAnalyzer
 	{
 		internal const string DynamicallyAccessedMembers = nameof (DynamicallyAccessedMembers);
 		internal const string DynamicallyAccessedMembersAttribute = nameof (DynamicallyAccessedMembersAttribute);
+		public const string FullyQualifiedDynamicallyAccessedMembersAttribute = "System.Diagnostics.CodeAnalysis." + DynamicallyAccessedMembersAttribute;
 
-		static ImmutableArray<DiagnosticDescriptor> GetSupportedDiagnostics ()
+		public static ImmutableArray<DiagnosticDescriptor> GetSupportedDiagnostics ()
 		{
 			var diagDescriptorsArrayBuilder = ImmutableArray.CreateBuilder<DiagnosticDescriptor> (26);
 			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.RequiresUnreferencedCode));
@@ -62,24 +62,6 @@ namespace ILLink.RoslynAnalyzer
 
 		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => GetSupportedDiagnostics ();
 
-		bool HasCompilerGeneratedCode (IOperation operation)
-		{
-			switch (operation.Kind) {
-			case OperationKind.AnonymousFunction:
-			case OperationKind.LocalFunction:
-			case OperationKind.YieldBreak:
-			case OperationKind.YieldReturn:
-				return true;
-			}
-
-			foreach (var child in operation.ChildOperations) {
-				if (HasCompilerGeneratedCode (child))
-					return true;
-			}
-
-			return false;
-		}
-
 		public override void Initialize (AnalysisContext context)
 		{
 			if (!System.Diagnostics.Debugger.IsAttached)
@@ -93,28 +75,12 @@ namespace ILLink.RoslynAnalyzer
 					if (context.OwningSymbol.IsInRequiresUnreferencedCodeAttributeScope ())
 						return;
 
-					// See https://github.com/dotnet/linker/issues/2587
-					// Need to punt on handling compiler generated methods until the linker is fixed
-					// async is handled here and the rest are handled just below
-					// iterators could be handled here once https://github.com/dotnet/roslyn/issues/20179 is fixed
-					if (context.OwningSymbol is IMethodSymbol methodSymbol && methodSymbol.IsAsync) {
-						return;
-					}
-
-					// Sub optimal way to handle analyzer not to generate warnings until the linker is fixed
-					// Iterators, local functions and lambdas are handled 
-					foreach (IOperation blockOperation in context.OperationBlocks) {
-						if (HasCompilerGeneratedCode (blockOperation))
-							return;
-					}
 
 					foreach (var operationBlock in context.OperationBlocks) {
-						ControlFlowGraph cfg = context.GetControlFlowGraph (operationBlock);
-						TrimDataFlowAnalysis trimDataFlowAnalysis = new (context, cfg);
-
-						foreach (var diagnostic in trimDataFlowAnalysis.ComputeTrimAnalysisPatterns ().CollectDiagnostics ()) {
+						TrimDataFlowAnalysis trimDataFlowAnalysis = new (context, operationBlock);
+						trimDataFlowAnalysis.InterproceduralAnalyze ();
+						foreach (var diagnostic in trimDataFlowAnalysis.TrimAnalysisPatterns.CollectDiagnostics ())
 							context.ReportDiagnostic (diagnostic);
-						}
 					}
 				});
 				context.RegisterSyntaxNodeAction (context => {
@@ -149,12 +115,12 @@ namespace ILLink.RoslynAnalyzer
 
 			var symbol = context.SemanticModel.GetSymbolInfo (context.Node).Symbol;
 
-			// Avoid unnecesary execution if not NamedType or Method
+			// Avoid unnecessary execution if not NamedType or Method
 			if (symbol is not INamedTypeSymbol && symbol is not IMethodSymbol)
 				return;
 
 			// Members inside nameof or cref comments, commonly used to access the string value of a variable, type, or a memeber,
-			// can generate diagnostics warnings, which can be noisy and unhelpful. 
+			// can generate diagnostics warnings, which can be noisy and unhelpful.
 			// Walking the node heirarchy to check if the member is inside a nameof/cref to not generate diagnostics
 			var parentNode = context.Node;
 			while (parentNode != null) {
@@ -245,11 +211,12 @@ namespace ILLink.RoslynAnalyzer
 					method.Locations[0], method.GetDisplayName (), overriddenMethod.GetDisplayName ()));
 
 			for (int i = 0; i < method.Parameters.Length; i++) {
-				if (FlowAnnotations.GetMethodParameterAnnotation (method.Parameters[i]) != FlowAnnotations.GetMethodParameterAnnotation (overriddenMethod.Parameters[i]))
+				if (FlowAnnotations.GetMethodParameterAnnotation (method.Parameters[i]) != FlowAnnotations.GetMethodParameterAnnotation (overriddenMethod.Parameters[i])) {
 					context.ReportDiagnostic (Diagnostic.Create (
 						DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchOnMethodParameterBetweenOverrides),
 						method.Parameters[i].Locations[0],
 						method.Parameters[i].GetDisplayName (), method.GetDisplayName (), overriddenMethod.Parameters[i].GetDisplayName (), overriddenMethod.GetDisplayName ()));
+				}
 			}
 
 			for (int i = 0; i < method.TypeParameters.Length; i++) {
