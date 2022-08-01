@@ -20,7 +20,7 @@ using Microsoft.CodeAnalysis.Simplification;
 
 namespace ILLink.CodeFix
 {
-	[ExportCodeFixProvider(LanguageNames.CSharp), Shared]
+	[ExportCodeFixProvider (LanguageNames.CSharp, Name = nameof (DAMCodeFixProvider)), Shared]
 	public sealed class DAMCodeFixProvider : Microsoft.CodeAnalysis.CodeFixes.CodeFixProvider
 	{
 		private static ImmutableArray<DiagnosticDescriptor> GetSupportedDiagnostics ()
