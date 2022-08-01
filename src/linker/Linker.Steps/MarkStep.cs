@@ -795,23 +795,6 @@ namespace Mono.Linker.Steps
 
 			return false;
 		}
-		//bool IsInterfaceImplementationMarkedRecursively (TypeDefinition type, TypeDefinition interfaceType)
-		//{
-		//	if (type.Equals (interfaceType))
-		//		return true;
-		//	if (type.HasInterfaces) {
-		//		foreach (var intf in type.Interfaces) {
-		//			TypeDefinition? resolvedInterface = Context.Resolve (intf.InterfaceType);
-		//			if (resolvedInterface == null)
-		//				continue;
-
-		//			if ( IsInterfaceImplementationMarkedRecursively (resolvedInterface, interfaceType))
-		//				return true;
-		//		}
-		//	}
-
-		//	return false;
-		//}
 
 		void ProcessDefaultImplementation (TypeDefinition typeWithDefaultImplementedInterfaceMethod, InterfaceImplementation implementation)
 		{
