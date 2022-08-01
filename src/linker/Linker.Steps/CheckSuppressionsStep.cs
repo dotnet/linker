@@ -45,5 +45,10 @@ namespace Mono.Linker.Steps
 		{
 			Context.Suppressions.GatherSuppressions (property);
 		}
+
+		public override void ProcessEvent (EventDefinition @event)
+		{
+			Context.Suppressions.GatherSuppressions (@event);
+		}
 	}
 }

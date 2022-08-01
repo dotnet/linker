@@ -26,6 +26,8 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 			DoNotReportNonLinkerSuppressions.Test ();
 			DoNotReportSuppressionsOnMethodsConvertedToThrow.Test ();
 			SuppressRedundantSuppressionWarning.Test ();
+			RedundantSuppressionWithRUC.Test ();
+			DoNotReportUnnecessaryRedundantWarningSuppressions.Test ();
 		}
 
 		public static Type TriggerUnrecognizedPattern ()
@@ -181,6 +183,34 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 			public static void Test ()
 			{
 				TrimmerCompatibleMethod ();
+			}
+		}
+
+		public class DoNotReportUnnecessaryRedundantWarningSuppressions
+		{
+			[UnconditionalSuppressMessage ("Test", "IL2121")]
+			[UnconditionalSuppressMessage ("Test", "IL2072")]
+			public static void Test ()
+			{
+				Expression.Call (TriggerUnrecognizedPattern (), "", Type.EmptyTypes);
+			}
+		}
+
+		public class RedundantSuppressionWithRUC
+		{
+			[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Trimmer)]
+			public static void Test ()
+			{
+				MethodMarkedRUC ();
+
+			}
+
+			[ExpectedWarning ("IL2121", "IL2072", ProducedBy = ProducedBy.Trimmer)]
+			[UnconditionalSuppressMessage ("Test", "IL2072")]
+			[RequiresUnreferencedCode ("Test")]
+			public static void MethodMarkedRUC ()
+			{
+				Expression.Call (TriggerUnrecognizedPattern (), "", Type.EmptyTypes);
 			}
 		}
 	}

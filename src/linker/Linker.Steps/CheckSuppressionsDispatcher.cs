@@ -20,9 +20,11 @@ namespace Mono.Linker.Steps
 			base.Process (context);
 			var redundantSuppressions = context.Suppressions.GetUnusedSuppressions ();
 
-			// Suppressions targeting warning caused by anything but the linker should not be reported
+			// Suppressions targeting warning caused by anything but the linker should not be reported.
+			// Suppressions targeting RedundantSuppression warning should not be reported.
 			redundantSuppressions = redundantSuppressions
-				.Where (suppression => ((DiagnosticId) suppression.suppressMessageInfo.Id).GetDiagnosticCategory () == DiagnosticCategory.Trimming);
+				.Where (suppression => ((DiagnosticId) suppression.suppressMessageInfo.Id).GetDiagnosticCategory () == DiagnosticCategory.Trimming)
+				.Where (suppression => ((DiagnosticId) suppression.suppressMessageInfo.Id) != DiagnosticId.RedundantSuppression);
 
 			foreach (var (provider, suppressMessageInfo) in redundantSuppressions) {
 				var source = GetSuppresionProvider (provider);
