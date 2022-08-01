@@ -1,4 +1,4 @@
-﻿// Copyright (c) .NET Foundation and contributors. All rights reserved.
+// Copyright (c) .NET Foundation and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -39,6 +39,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 					LocalWithWarning<int> ();
 				}
 
+				// https://github.com/dotnet/linker/issues/2937
 				[ExpectedWarning ("IL2091", ProducedBy = ProducedBy.Trimmer)]
 				void LocalWithWarning<T> ()
 				{
@@ -59,6 +60,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				LocalWithWarning<int> ();
 			}
 
+			// https://github.com/dotnet/linker/issues/2937
 			void LocalWithWarning<T> ()
 			{
 				// No warning
