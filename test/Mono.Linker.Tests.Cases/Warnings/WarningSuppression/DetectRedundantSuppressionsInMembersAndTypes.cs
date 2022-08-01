@@ -198,7 +198,7 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 
 		public class RedundantSuppressionWithRUC
 		{
-			[ExpectedWarning ("IL2026", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026")]
 			public static void Test ()
 			{
 				MethodMarkedRUC ();
