@@ -102,7 +102,7 @@ namespace Mono.Linker.Dataflow
 		/// up and find the nearest containing user type. Returns the nearest user type,
 		/// or null if none was found.
 		/// </summary>
-		TypeDefinition? PopulateCacheForType (TypeDefinition type)
+		TypeDefinition? GetCompilerGeneratedStateForType (TypeDefinition type)
 		{
 			// Look in the declaring type if this is a compiler-generated type (state machine or display class).
 			// State machines can be emitted into display classes, so we may also need to go one more level up.
@@ -140,33 +140,58 @@ namespace Mono.Linker.Dataflow
 				// calls to local functions, and lambda assignments (which use ldftn).
 				if (method.Body != null) {
 					foreach (var instruction in method.Body.Instructions) {
-						if (instruction.OpCode.OperandType != OperandType.InlineMethod)
-							continue;
+						switch (instruction.OpCode.OperandType) {
+						case OperandType.InlineMethod: {
+								MethodDefinition? referencedMethod = _context.TryResolve ((MethodReference) instruction.Operand);
+								if (referencedMethod == null)
+									continue;
 
-						MethodDefinition? lambdaOrLocalFunction = _context.TryResolve ((MethodReference) instruction.Operand);
-						if (lambdaOrLocalFunction == null)
-							continue;
+								if (referencedMethod.IsConstructor &&
+									referencedMethod.DeclaringType is var generatedType &&
+									// Don't consider calls in the same type, like inside a static constructor
+									method.DeclaringType != generatedType &&
+									CompilerGeneratedNames.IsLambdaDisplayClass (generatedType.Name)) {
+									// fill in null for now, attribute providers will be filled in later
+									if (!_generatedTypeToTypeArgumentInfo.TryAdd (generatedType, new TypeArgumentInfo (method, null))) {
+										var alreadyAssociatedMethod = _generatedTypeToTypeArgumentInfo[generatedType].CreatingMethod;
+										_context.LogWarning (new MessageOrigin (method), DiagnosticId.MethodsAreAssociatedWithUserMethod, method.GetDisplayName (), alreadyAssociatedMethod.GetDisplayName (), generatedType.GetDisplayName ());
+									}
+									continue;
+								}
 
-						if (lambdaOrLocalFunction.IsConstructor &&
-							lambdaOrLocalFunction.DeclaringType is var generatedType &&
-							// Don't consider calls in the same type, like inside a static constructor
-							method.DeclaringType != generatedType &&
-							CompilerGeneratedNames.IsLambdaDisplayClass (generatedType.Name)) {
-							// fill in null for now, attribute providers will be filled in later
-							if (!_generatedTypeToTypeArgumentInfo.TryAdd (generatedType, new TypeArgumentInfo (method, null))) {
-								var alreadyAssociatedMethod = _generatedTypeToTypeArgumentInfo[generatedType].CreatingMethod;
-								_context.LogWarning (new MessageOrigin (method), DiagnosticId.MethodsAreAssociatedWithUserMethod, method.GetDisplayName (), alreadyAssociatedMethod.GetDisplayName (), generatedType.GetDisplayName ());
+								if (!CompilerGeneratedNames.IsLambdaOrLocalFunction (referencedMethod.Name))
+									continue;
+
+								if (isStateMachineMember) {
+									callGraph.TrackCall (method.DeclaringType, referencedMethod);
+								} else {
+									callGraph.TrackCall (method, referencedMethod);
+								}
 							}
-							continue;
-						}
+							break;
 
-						if (!CompilerGeneratedNames.IsLambdaOrLocalFunction (lambdaOrLocalFunction.Name))
-							continue;
+						case OperandType.InlineField: {
+								// Same as above, but stsfld instead of a call to the constructor
+								if (instruction.OpCode.Code is not Code.Stsfld)
+									continue;
 
-						if (isStateMachineMember) {
-							callGraph.TrackCall (method.DeclaringType, lambdaOrLocalFunction);
-						} else {
-							callGraph.TrackCall (method, lambdaOrLocalFunction);
+								FieldDefinition? field = _context.TryResolve ((FieldReference) instruction.Operand);
+								if (field == null)
+									continue;
+
+								if (field.DeclaringType is var generatedType &&
+									// Don't consider field accesses in the same type, like inside a static constructor
+									method.DeclaringType != generatedType &&
+									CompilerGeneratedNames.IsLambdaDisplayClass (generatedType.Name)) {
+									if (!_generatedTypeToTypeArgumentInfo.TryAdd (generatedType, new TypeArgumentInfo (method, null))) {
+										// It's expected that there may be multiple methods associated with the same static closure environment.
+										// All of these methods will substitute the same type arguments into the closure environment
+										// (if it is generic). Don't warn.
+									}
+									continue;
+								}
+							}
+							break;
 						}
 					}
 				}
@@ -183,7 +208,7 @@ namespace Mono.Linker.Dataflow
 					}
 					// Already warned above if multiple methods map to the same type
 					// Fill in null for argument providers now, the real providers will be filled in later
-					_ = _generatedTypeToTypeArgumentInfo.TryAdd (stateMachineType, new TypeArgumentInfo (method, null));
+					_generatedTypeToTypeArgumentInfo[stateMachineType] = new TypeArgumentInfo (method, null);
 				}
 			}
 
@@ -274,14 +299,7 @@ namespace Mono.Linker.Dataflow
 			{
 				Debug.Assert (CompilerGeneratedNames.IsGeneratedType (generatedType.Name));
 
-				if (!_generatedTypeToTypeArgumentInfo.TryGetValue (generatedType, out var typeInfo)) {
-					// This can happen for static (non-capturing) closure environments, where more than
-					// nested function can map to the same closure environment. Since the current functionality
-					// is based on a one-to-one relationship between environments (types) and methods, this is
-					// not supported.
-					return;
-				}
-
+				var typeInfo = _generatedTypeToTypeArgumentInfo[generatedType];
 				if (typeInfo.OriginalAttributes is not null) {
 					return;
 				}
@@ -292,6 +310,7 @@ namespace Mono.Linker.Dataflow
 					if (typeRef is null) {
 						return;
 					}
+
 					for (int i = 0; i < typeRef.GenericArguments.Count; i++) {
 						var typeArg = typeRef.GenericArguments[i];
 						// Start with the existing parameters, in case we can't find the mapped one
@@ -311,9 +330,10 @@ namespace Mono.Linker.Dataflow
 									userAttrs = param;
 								} else if (_context.TryResolve ((TypeReference) param.Owner) is { } owningType) {
 									MapGeneratedTypeTypeParameters (owningType);
-									if (_generatedTypeToTypeArgumentInfo.TryGetValue (owningType, out var owningInfo) &&
-										owningInfo.OriginalAttributes is { } owningAttrs) {
+									if (_generatedTypeToTypeArgumentInfo[owningType].OriginalAttributes is { } owningAttrs) {
 										userAttrs = owningAttrs[param.Position];
+									} else {
+										Debug.Assert (false, "This should be impossible in valid code");
 									}
 								}
 							}
@@ -321,21 +341,45 @@ namespace Mono.Linker.Dataflow
 
 						typeArgs[i] = userAttrs;
 					}
+
 					_generatedTypeToTypeArgumentInfo[generatedType] = typeInfo with { OriginalAttributes = typeArgs };
 				}
 			}
 
-			GenericInstanceType? ScanForInit (TypeDefinition stateMachineType, MethodBody body)
+			GenericInstanceType? ScanForInit (TypeDefinition compilerGeneratedType, MethodBody body)
 			{
 				foreach (var instr in body.Instructions) {
+					bool handled = false;
 					switch (instr.OpCode.Code) {
 					case Code.Initobj:
-					case Code.Newobj:
-						if (instr.Operand is MethodReference { DeclaringType: GenericInstanceType typeRef }
-							&& stateMachineType == _context.TryResolve (typeRef)) {
-							return typeRef;
+					case Code.Newobj: {
+							if (instr.Operand is MethodReference { DeclaringType: GenericInstanceType typeRef }
+								&& compilerGeneratedType == _context.TryResolve (typeRef)) {
+								return typeRef;
+							}
+							handled = true;
 						}
 						break;
+					case Code.Stsfld: {
+							if (instr.Operand is FieldReference { DeclaringType: GenericInstanceType typeRef }
+								&& compilerGeneratedType == _context.TryResolve (typeRef)) {
+								return typeRef;
+							}
+							handled = true;
+						}
+						break;
+					}
+
+					// Also look for type substitutions into generic methods
+					// (such as AsyncTaskMethodBuilder::Start<TStateMachine>).
+					if (!handled && instr.OpCode.OperandType is OperandType.InlineMethod) {
+						if (instr.Operand is GenericInstanceMethod gim) {
+							foreach (var tr in gim.GenericArguments) {
+								if (tr is GenericInstanceType git && compilerGeneratedType == _context.TryResolve (git)) {
+									return git;
+								}
+							}
+						}
 					}
 				}
 				return null;
@@ -356,7 +400,7 @@ namespace Mono.Linker.Dataflow
 			if (IsNestedFunctionOrStateMachineMember (method))
 				return false;
 
-			var typeToCache = PopulateCacheForType (method.DeclaringType);
+			var typeToCache = GetCompilerGeneratedStateForType (method.DeclaringType);
 			if (typeToCache is null)
 				return false;
 
@@ -371,7 +415,7 @@ namespace Mono.Linker.Dataflow
 		{
 			Debug.Assert (CompilerGeneratedNames.IsGeneratedType (generatedType.Name));
 
-			var typeToCache = PopulateCacheForType (generatedType);
+			var typeToCache = GetCompilerGeneratedStateForType (generatedType);
 			if (typeToCache is null)
 				return null;
 
@@ -407,7 +451,7 @@ namespace Mono.Linker.Dataflow
 			// sourceType is a state machine type, or the type containing a lambda or local function.
 			// Search all methods to find the one which points to the type as its
 			// state machine implementation.
-			var typeToCache = PopulateCacheForType (sourceType);
+			var typeToCache = GetCompilerGeneratedStateForType (sourceType);
 			if (typeToCache is null)
 				return false;
 
