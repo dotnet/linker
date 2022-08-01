@@ -710,12 +710,6 @@ namespace Mono.Linker.Steps
 					ProcessOverride (@override);
 			}
 
-			var bases = Annotations.GetBaseMethods (method);
-			if (bases != null) {
-				foreach (MethodDefinition @base in bases)
-					ProcessOverride (new OverrideInformation (@base, method, Context));
-			}
-
 			var defaultImplementations = Annotations.GetDefaultInterfaceImplementations (method);
 			if (defaultImplementations != null) {
 				foreach (var defaultImplementationInfo in defaultImplementations) {
