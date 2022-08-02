@@ -39,9 +39,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			// Linker tracks all assignments of hoisted locals, so this produces warnings.
 			[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresPublicFields), CompilerGeneratedCode = true,
-				ProducedBy = ProducedBy.Trimmer)]
+				ProducedBy = ProducedBy.Trimmer | ProducedBy.NativeAot)]
 			[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresPublicMethods), CompilerGeneratedCode = true,
-				ProducedBy = ProducedBy.Trimmer)]
+				ProducedBy = ProducedBy.Trimmer | ProducedBy.NativeAot)]
 			static IEnumerable<int> NoFlowAcrossYieldReturn ()
 			{
 				Type t = GetWithPublicMethods ();
@@ -119,9 +119,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			// Linker tracks all assignments of hoisted locals, so this produces warnings.
 			[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresPublicFields), CompilerGeneratedCode = true,
-				ProducedBy = ProducedBy.Trimmer)]
+				ProducedBy = ProducedBy.Trimmer | ProducedBy.NativeAot)]
 			[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresPublicMethods), CompilerGeneratedCode = true,
-				ProducedBy = ProducedBy.Trimmer)]
+				ProducedBy = ProducedBy.Trimmer | ProducedBy.NativeAot)]
 			static async void NoFlowAcrossAwait ()
 			{
 				Type t = GetWithPublicMethods ();
@@ -311,7 +311,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				void LocalFunction () => t.RequiresAll ();
 			}
 
-			public static void ReadCapturedParameter (Type tParameter)
+			public static void ReadCapturedParameter (Type tParameter = null)
 			{
 				LocalFunction ();
 
@@ -319,13 +319,33 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				void LocalFunction () => tParameter.RequiresAll ();
 			}
 
-			public static void ReadCapturedParameterAfterWrite (Type tParameter)
+			public static void ReadCapturedAnnotatedParameter ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type tParameter = null)
+			{
+				LocalFunction ();
+
+				[ExpectedWarning ("IL2067", nameof (ReadCapturedAnnotatedParameter), "tParameter", nameof (DataFlowTypeExtensions.RequiresAll))]
+				void LocalFunction () => tParameter.RequiresAll ();
+			}
+
+			public static void ReadCapturedParameterAfterWrite (Type tParameter = null)
 			{
 				tParameter = GetWithPublicMethods ();
 				LocalFunction ();
 
+				// We produce dataflow warnings for the unknown parameter even though it has been overwritten
+				// with a value that satisfies the requirement.
 				[ExpectedWarning ("IL2067", "tParameter", nameof (DataFlowTypeExtensions.RequiresPublicMethods))]
 				void LocalFunction () => tParameter.RequiresPublicMethods ();
+			}
+
+			[ExpectedWarning ("IL2072", "tParameter", nameof (GetWithPublicFields), ProducedBy = ProducedBy.Analyzer)]
+			public static void ReadCapturedParameterAfterWriteMismatch ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type tParameter = null)
+			{
+				tParameter = GetWithPublicFields ();
+				LocalFunction ();
+
+				[ExpectedWarning ("IL2067", "tParameter", nameof (DataFlowTypeExtensions.RequiresPublicFields))]
+				void LocalFunction () => tParameter.RequiresPublicFields ();
 			}
 
 			[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll))]
@@ -363,8 +383,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				ReadCapturedVariableInMultipleFunctions ();
 				ReadCapturedVariableInCallGraphCycle ();
 				ReadCapturedVariableWithBackwardsBranch ();
-				ReadCapturedParameter (null);
-				ReadCapturedParameterAfterWrite (null);
+				ReadCapturedParameter ();
+				ReadCapturedAnnotatedParameter ();
+				ReadCapturedParameterAfterWrite ();
+				ReadCapturedParameterAfterWriteMismatch ();
 				ReadCapturedVariableWithUnhoistedLocals ();
 				WriteCapturedVariable ();
 			}
@@ -408,7 +430,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				Type t = GetWithPublicFields ();
 
 				Action lambda =
-					[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll))]
+				[ExpectedWarning ("IL2072", nameof (GetWithPublicFields), nameof (DataFlowTypeExtensions.RequiresAll))]
 				[ExpectedWarning ("IL2072", nameof (GetWithPublicMethods), nameof (DataFlowTypeExtensions.RequiresAll))]
 				() => t.RequiresAll ();
 
@@ -416,7 +438,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				lambda ();
 			}
 
-			public static void ReadCapturedParameter (Type tParameter)
+			public static void ReadCapturedParameter (Type tParameter = null)
 			{
 				var lambda =
 					[ExpectedWarning ("IL2067", nameof (ReadCapturedParameter), "tParameter", nameof (DataFlowTypeExtensions.RequiresAll))]
@@ -425,7 +447,16 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				lambda ();
 			}
 
-			public static void ReadCapturedParameterAfterWrite (Type tParameter)
+			public static void ReadCapturedAnnotatedParameter ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type tParameter = null)
+			{
+				var lambda =
+					[ExpectedWarning ("IL2067", nameof (ReadCapturedAnnotatedParameter), "tParameter", nameof (DataFlowTypeExtensions.RequiresAll))]
+				() => tParameter.RequiresAll ();
+
+				lambda ();
+			}
+
+			public static void ReadCapturedParameterAfterWrite (Type tParameter = null)
 			{
 				tParameter = GetWithPublicMethods ();
 				var lambda =
@@ -433,6 +464,16 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 					// with a value that satisfies the requirement.
 					[ExpectedWarning ("IL2067", "tParameter", nameof (DataFlowTypeExtensions.RequiresPublicMethods))]
 				() => tParameter.RequiresPublicMethods ();
+				lambda ();
+			}
+
+			[ExpectedWarning ("IL2072", "tParameter", nameof (GetWithPublicFields), ProducedBy = ProducedBy.Analyzer)]
+			public static void ReadCapturedParameterAfterWriteMismatch ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type tParameter = null)
+			{
+				tParameter = GetWithPublicFields ();
+				var lambda =
+					[ExpectedWarning ("IL2067", "tParameter", nameof (DataFlowTypeExtensions.RequiresPublicFields))]
+				() => tParameter.RequiresPublicFields ();
 				lambda ();
 			}
 
@@ -465,8 +506,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				WarningsInBodyUnused ();
 				ReadCapturedVariable ();
 				ReadCapturedVariableAfterWriteAfterDefinition ();
-				ReadCapturedParameter (null);
-				ReadCapturedParameterAfterWrite (null);
+				ReadCapturedParameter ();
+				ReadCapturedAnnotatedParameter ();
+				ReadCapturedParameterAfterWrite ();
+				ReadCapturedParameterAfterWriteMismatch ();
 				ReadCapturedVariableWithUnhoistedLocals ();
 				WriteCapturedVariable ();
 			}
