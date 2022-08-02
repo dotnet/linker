@@ -7,7 +7,6 @@ using System.Composition;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 using ILLink.CodeFixProvider;
 using ILLink.RoslynAnalyzer;
 using ILLink.Shared;
@@ -55,28 +54,6 @@ namespace ILLink.CodeFix
 			DiagnosticId.DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsMethodReturnType.AsString()
 		};
 
-		protected static SyntaxNode[] GetAttributeArguments (ISymbol? targetSymbol, SyntaxGenerator syntaxGenerator, Diagnostic diagnostic)
-
-		{
-			if (targetSymbol == null)
-				return Array.Empty<SyntaxNode> ();
-			object id = Enum.Parse (typeof (DiagnosticId), diagnostic.Id.Substring (2));
-			switch (id) {
-			case DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsThisParameter:
-				return new[] { syntaxGenerator.AttributeArgument (syntaxGenerator.TypedConstantExpression (targetSymbol.GetAttributes ().First (attr => attr.AttributeClass?.ToDisplayString () == DynamicallyAccessedMembersAnalyzer.FullyQualifiedDynamicallyAccessedMembersAttribute).ConstructorArguments[0])) };
-			case DiagnosticId.DynamicallyAccessedMembersMismatchFieldTargetsThisParameter:
-				return new[] { syntaxGenerator.AttributeArgument (syntaxGenerator.TypedConstantExpression (targetSymbol.GetAttributes ().First (attr => attr.AttributeClass?.ToDisplayString () == DynamicallyAccessedMembersAnalyzer.FullyQualifiedDynamicallyAccessedMembersAttribute).ConstructorArguments[0])) };
-			case DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsMethodReturnType:
-				return new[] { syntaxGenerator.AttributeArgument (syntaxGenerator.TypedConstantExpression (targetSymbol.GetAttributes ().First (attr => attr.AttributeClass?.ToDisplayString () == DynamicallyAccessedMembersAnalyzer.FullyQualifiedDynamicallyAccessedMembersAttribute).ConstructorArguments[0])) };
-			case DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsParameter:
-				return new[] { syntaxGenerator.AttributeArgument (syntaxGenerator.MemberAccessExpression (syntaxGenerator.DottedName ("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes"), "PublicMethods")) };
-			case DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsField:
-				return new[] { syntaxGenerator.AttributeArgument (syntaxGenerator.MemberAccessExpression (syntaxGenerator.DottedName ("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes"), "PublicMethods")) };
-			default:
-				return Array.Empty<SyntaxNode> ();
-			}
-		}
-
 		public sealed override FixAllProvider GetFixAllProvider ()
 		{
 			// See https://github.com/dotnet/roslyn/blob/master/docs/analyzers/FixAllProvider.md for more information on Fix All Providers
@@ -113,34 +90,8 @@ namespace ILLink.CodeFix
 			if (await document.GetSemanticModelAsync (context.CancellationToken).ConfigureAwait (false) is not { } model)
 				return;
 
-			SyntaxNode originalAttributeNode = root.FindNode (diagnostic.Location.SourceSpan, getInnermostNodeForTie: true);
-
 			if (model.Compilation.GetTypeByMetadataName (FullyQualifiedAttributeName) is not { } attributeSymbol)
 				return;
-
-			if (diagnosticNode is not InvocationExpressionSyntax invocationExpression)
-				return;
-
-			var arguments = invocationExpression.ArgumentList.Arguments;
-
-			if (arguments.Count > 1)
-				return;
-
-			if (arguments.Count == 1) {
-				switch (arguments[0].Expression) {
-					case IdentifierNameSyntax:
-						break;
-					case LiteralExpressionSyntax literalSyntax:
-						if (literalSyntax.Kind () is SyntaxKind.StringLiteralExpression)
-							break;
-						return;
-					case TypeOfExpressionSyntax:
-						break;
-					default:
-						return;
-					}
-				}
-			
 
 			var codeFixTitle = CodeFixTitle.ToString ();
 
