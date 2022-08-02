@@ -53,6 +53,10 @@ namespace ILLink.Shared.TrimAnalysis
 				Location sourceMptvLocation = mtpv.MethodSymbol.DeclaringSyntaxReferences[0].GetSyntax ().GetLocation ();
 				sourceLocation[0] = sourceMptvLocation;
 				break;
+			case GenericParameterValue gpv:
+				Location sourceGpvLocation = gpv.GenericParameter.TypeParameterSymbol.DeclaringSyntaxReferences[0].GetSyntax().GetLocation();
+				sourceLocation[0] = sourceGpvLocation;
+				break;
 			default:
 				return;
 			}

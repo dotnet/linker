@@ -205,7 +205,8 @@ namespace ILLink.RoslynAnalyzer
 
 		static void VerifyDamOnMethodsMatch (SymbolAnalysisContext context, IMethodSymbol method, IMethodSymbol overriddenMethod)
 		{
-			if (FlowAnnotations.GetMethodReturnValueAnnotation (method) != FlowAnnotations.GetMethodReturnValueAnnotation (overriddenMethod))
+			var args = FlowAnnotations.GetMethodReturnValueAnnotation (overriddenMethod);
+			if (FlowAnnotations.GetMethodReturnValueAnnotation (method) != args)
 				context.ReportDiagnostic (Diagnostic.Create (
 					DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchOnMethodReturnValueBetweenOverrides),
 					method.Locations[0], method.GetDisplayName (), overriddenMethod.GetDisplayName ()));

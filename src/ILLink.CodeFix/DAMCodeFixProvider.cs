@@ -6,6 +6,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using ILLink.CodeFixProvider;
 using ILLink.RoslynAnalyzer;
 using ILLink.Shared;
@@ -31,6 +32,9 @@ namespace ILLink.CodeFix
 			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchFieldTargetsThisParameter));
 			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsThisParameter));
 			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchOnMethodParameterBetweenOverrides));
+			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsMethodReturnType));
+			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchTypeArgumentTargetsThisParameter));
+			diagDescriptorsArrayBuilder.Add (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchTypeArgumentTargetsParameter));
 			return diagDescriptorsArrayBuilder.ToImmutable ();
 		}
 
@@ -42,7 +46,12 @@ namespace ILLink.CodeFix
 
 		private protected static string FullyQualifiedAttributeName => DynamicallyAccessedMembersAnalyzer.FullyQualifiedDynamicallyAccessedMembersAttribute;
 
-		private static readonly string[] AttributeOnReturn = { DiagnosticId.DynamicallyAccessedMembersOnMethodReturnValueCanOnlyApplyToTypesOrStrings.AsString (), DiagnosticId.DynamicallyAccessedMembersMismatchOnMethodReturnValueBetweenOverrides.AsString () };
+		private static readonly string[] AttributeOnReturn = { 
+			DiagnosticId.DynamicallyAccessedMembersOnMethodReturnValueCanOnlyApplyToTypesOrStrings.AsString (), 
+			DiagnosticId.DynamicallyAccessedMembersMismatchOnMethodReturnValueBetweenOverrides.AsString (), 
+			DiagnosticId.DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsThisParameter.AsString () ,
+			DiagnosticId.DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsMethodReturnType.AsString()
+		};
 
 		protected static SyntaxNode[] GetAttributeArguments (ISymbol? targetSymbol, SyntaxGenerator syntaxGenerator, Diagnostic diagnostic)
 		{
@@ -77,14 +86,16 @@ namespace ILLink.CodeFix
 			var document = context.Document;
 			if (await document.GetSyntaxRootAsync (context.CancellationToken).ConfigureAwait (false) is not { } root)
 				return;
-			var diagnostic = context.Diagnostics.First ();
+			var diagnostic = context.Diagnostics[0];
 
-			SyntaxNode sourceNode;
+			SyntaxNode attributableNode;
 			if (diagnostic.AdditionalLocations.Count != 0) {
-				sourceNode = root.FindNode (diagnostic.AdditionalLocations[0].SourceSpan, getInnermostNodeForTie: true);
+				attributableNode = root.FindNode (diagnostic.AdditionalLocations[0].SourceSpan, getInnermostNodeForTie: true);
 			} else {
 				return;
 			}
+
+			if (attributableNode is null) return;
 
 			string? stringArgs = diagnostic.Properties["attributeArgument"];
 
@@ -99,16 +110,7 @@ namespace ILLink.CodeFix
 			if (await document.GetSemanticModelAsync (context.CancellationToken).ConfigureAwait (false) is not { } model)
 				return;
 
-			// Note: We get the target symbol from the diagnostic location. 
-			// This works when the diagnostic location is a method call, because the target symbol will be the called method with annotations, but won't work in general for other kinds of diagnostics.
-			// TODO: Fix targetSymbol so it's not necessarily derived from diagnosticNode --> use the location from DiagnosticContext.cs
-
-
-
 			SyntaxNode originalAttributeNode = root.FindNode (diagnostic.Location.SourceSpan, getInnermostNodeForTie: true);
-			//attributeArguments = GetAttributeArguments (targetSymbol, SyntaxGenerator.GetGenerator (document), diagnostic);
-
-
 
 			if (model.Compilation.GetTypeByMetadataName (FullyQualifiedAttributeName) is not { } attributeSymbol)
 				return;
@@ -129,17 +131,13 @@ namespace ILLink.CodeFix
 						if (literalSyntax.Kind () is SyntaxKind.StringLiteralExpression)
 							break;
 						return;
+					case TypeOfExpressionSyntax:
+						break;
 					default:
 						return;
 					}
 				}
 			
-			
-			// N.B. May be null for FieldDeclaration, since field declarations can declare multiple variables
-
-			var attributableNode = sourceNode;
-
-			if (attributableNode is null) return;
 
 			var codeFixTitle = CodeFixTitle.ToString ();
 
@@ -169,7 +167,8 @@ namespace ILLink.CodeFix
 				.WithAdditionalAnnotations (Simplifier.Annotation, Simplifier.AddImportsAnnotation);
 
 			if (addAsReturnAttribute) {
-				editor.AddReturnAttribute (targetNode, attribute);
+				// don't use AddReturnAttribute because it's the same as AddAttribute (bug)
+				editor.ReplaceNode (targetNode, (d, g) => g.AddReturnAttributes (d, new[] { attribute }));
 			} else {
 				editor.AddAttribute (targetNode, attribute);
 			}

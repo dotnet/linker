@@ -329,8 +329,6 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 				fixedExpected: Array.Empty<DiagnosticResult> ());
 		}
 
-		// these diagnosticIDs are currently unsupported, and as such will currently return no CodeFixers. However, they will soon be supported and as such comments have been left to indicate the error and fix they will accomplish.
-
 		[Fact]
 		public async Task CodeFix_IL2092_MismatchMethodParamBtOverride_NonPublicMethods ()
 		{
@@ -429,16 +427,10 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 					"t",
 					"Base.M(Type)") },
 				fixedExpected: Array.Empty<DiagnosticResult> ());
-			// var diag = new[] {VerifyCS.Diagnostic(DiagnosticId.DynamicallyAccessedMembersMismatchOnMethodParameterBetweenOverrides)
-			// 	.WithSpan(11, 140, 11, 141)
-			// 	.WithArguments("t", "C.M(Type)",
-			// 		"t",
-			// 		"Base.M(Type)") };
-			// await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag);
 		}
 
 		[Fact]
-		public async Task CodeFix_IL2068_MismatchParamTargetsMethodReturn () // issue: 
+		public async Task CodeFix_IL2068_MismatchParamTargetsMethodReturn ()
 		{
 			var test = $$"""
 			using System;
@@ -475,17 +467,10 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 					"t",
 					"C.M(Type)", "'DynamicallyAccessedMemberTypes.All'")},
 			    fixedExpected: Array.Empty<DiagnosticResult> ());
-			// var diag = new[] {VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsMethodReturnType)
-			//  .WithSpan (8, 10, 8, 11)
-			//  .WithSpan (7, 9, 7, 15)
-			//  .WithArguments ("C.M(Type)",
-			// 		"t",
-			// 		"C.M(Type)", "'DynamicallyAccessedMemberTypes.All'")};
-			// await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag);
 		}
 
 		[Fact]
-		public async Task CodeFix_IL2069_MismatchParamTargetsField_PublicMethods () // issue: targetSymbol is null if it depends on diagnosticID 
+		public async Task CodeFix_IL2069_MismatchParamTargetsField_PublicMethods ()
 		{
 			var test = $$"""
 			using System;
@@ -548,14 +533,6 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 						"C.M(Type)",
 						"'DynamicallyAccessedMemberTypes.PublicMethods'")},
 				fixedExpected: Array.Empty<DiagnosticResult> ());
-			// var diag = new[] {VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsField)
-			// 		.WithSpan (17, 3, 17, 11)
-			// 		.WithSpan (15, 24, 15, 33)
-			// 		.WithArguments ("C.f",
-			// 			"type",
-			// 			"C.M(Type)",
-			// 			"'DynamicallyAccessedMemberTypes.PublicMethods'")};
-			// await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag);
 		}
 
 		[Fact]
@@ -592,13 +569,13 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 
 			class C
 			{
-			    public static void Main()
-			    {
-			        GetFoo().GetMethod("Bar");
+				public static void Main()
+				{
+					GetFoo().GetMethod("Bar");
 				}
 
-				[return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
-				private static Type GetFoo ()
+			    [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+			    private static Type GetFoo ()
 				{
 					return typeof (Foo);
 				}
@@ -618,7 +595,59 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 		}
 
 		[Fact]
-		public async Task CodeFix_IL20 ()
+		public async Task CodeFix_IL2073 ()
+		{
+			var test = $$"""
+			using System;
+			using System.Diagnostics.CodeAnalysis;
+
+			class Foo {}
+
+			class C {
+				Type Main(Type t) {
+					return t;
+				}
+
+				[return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+				Type M() {
+					return Main(typeof(Foo));
+				}
+			}
+			""";
+			var fixtest = $$"""
+			using System;
+			using System.Diagnostics.CodeAnalysis;
+
+			class Foo {}
+
+			class C {
+			    [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+			    Type Main([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] Type t) {
+					return t;
+				}
+
+				[return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+				Type M() {
+					return Main(typeof(Foo));
+				}
+			}
+			""";
+			await VerifyDynamicallyAccessedMembersCodeFix (test, fixtest, new [] {
+				// /0/Test0.cs(13,10): warning IL2073: 'C.M()' method return value does not satisfy 'DynamicallyAccessedMemberTypes.PublicMethods' requirements. 
+				// The return value of method 'C.Main(Type)' does not have matching annotations. 
+				// The source value must declare at least the same requirements as those declared on the target location it is assigned to.
+				VerifyCS.Diagnostic(DiagnosticId.DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsMethodReturnType)
+					.WithSpan(13, 10, 13, 27)
+					.WithSpan(7, 2, 9, 3)
+					.WithArguments("C.M()", 
+						"C.Main(Type)", 
+						"'DynamicallyAccessedMemberTypes.PublicMethods'")},
+				fixedExpected: Array.Empty<DiagnosticResult> (), 2);
+
+		}
+
+		[Fact]
+		public async Task CodeFix_IL2090 ()
 		{
 			var test = $$"""
 			using System;
@@ -626,21 +655,103 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 			
 			class C<T> {
 
-				void M() {
-
-				typeof(T).GetMethods();
-
+				void M() 
+				{
+					typeof(T).GetMethods();
 				}
-
 			}
 			""";
 			var fixtest = $$"""
+			using System;
+			using System.Diagnostics.CodeAnalysis;
+			
+			class C<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] T> {
 
+				void M() 
+				{
+					typeof(T).GetMethods();
+				}
+			}
 			""";
-			await VerifyDynamicallyAccessedMembersCodeFix (test, test,
-				baselineExpected: Array.Empty<DiagnosticResult> (),
+			await VerifyDynamicallyAccessedMembersCodeFix (test, fixtest,
+				new[] {
+					// /0/Test0.cs(8,3): warning IL2090: 'this' argument does not satisfy 'DynamicallyAccessedMemberTypes.PublicMethods' in call to 'System.Type.GetMethods()'.
+					// The generic parameter 'T' of 'C<T>' does not have matching annotations.
+					// The source value must declare at least the same requirements as those declared on the target location it is assigned to.
+					VerifyCS.Diagnostic(DiagnosticId.DynamicallyAccessedMembersMismatchTypeArgumentTargetsThisParameter)
+						.WithSpan(8, 3, 8, 25)
+						.WithSpan(4, 9, 4, 10)
+						.WithArguments("System.Type.GetMethods()", 
+							"T", 
+							"C<T>", 
+							"'DynamicallyAccessedMemberTypes.PublicMethods'")},
 				fixedExpected: Array.Empty<DiagnosticResult> ());
 
 		}
+
+
+		[Fact]
+		public async Task CodeFix_IL2087 ()
+		{
+			var test = $$"""
+			using System;
+			using System.Diagnostics.CodeAnalysis;
+
+			class C
+			{
+				public static void Main()
+				{
+					M2<int>();
+				}
+
+				private static void M1(
+					[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
+				{
+				}
+
+				private static void M2<T>()
+				{
+					M1(typeof(T));
+				}
+			}
+			""";
+			var fixtest = $$"""
+			using System;
+			using System.Diagnostics.CodeAnalysis;
+
+			class C
+			{
+				public static void Main()
+				{
+					M2<int>();
+				}
+
+				private static void M1(
+					[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] Type type)
+				{
+				}
+
+				private static void M2<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] T>()
+				{
+					M1(typeof(T));
+				}
+			}
+			""";
+			await VerifyDynamicallyAccessedMembersCodeFix (test, fixtest, new[] {
+					// /0/Test0.cs(18,3): warning IL2087: 'type' argument does not satisfy 'DynamicallyAccessedMemberTypes.PublicMethods' in call to 'C.M1(Type)'.
+					// The generic parameter 'T' of 'C.M2<T>()' does not have matching annotations.
+					// The source value must declare at least the same requirements as those declared on the target location it is assigned to.
+					VerifyCS.Diagnostic(DiagnosticId.DynamicallyAccessedMembersMismatchTypeArgumentTargetsParameter)
+						.WithSpan(18, 3, 18, 16)
+						.WithSpan(16, 25, 16, 26)
+						.WithArguments("type", 
+							"C.M1(Type)", 
+							"T", 
+							"C.M2<T>()", 
+							"'DynamicallyAccessedMemberTypes.PublicMethods'")},
+				fixedExpected: Array.Empty<DiagnosticResult> ());
+
 		}
+
+	}
 }
